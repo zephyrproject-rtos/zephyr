@@ -459,7 +459,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (default_stream && default_stream->ep == ep) {
-		if (bt_audio_stream_reconfig(default_stream, cap,
+		if (bt_audio_stream_reconfig(default_stream,
 					     &named_preset->preset.codec) < 0) {
 			shell_error(sh, "Unable reconfig stream");
 			return -ENOEXEC;
@@ -474,7 +474,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 			stream = default_stream;
 		}
 
-		err = bt_audio_stream_config(default_conn, stream, ep, cap,
+		err = bt_audio_stream_config(default_conn, stream, ep,
 					     &named_preset->preset.codec);
 		if (err != 0) {
 			shell_error(sh, "Unable to config stream: %d");

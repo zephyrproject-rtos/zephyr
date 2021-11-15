@@ -54,16 +54,14 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 int bt_audio_stream_config(struct bt_conn *conn,
 			   struct bt_audio_stream *stream,
 			   struct bt_audio_ep *ep,
-			   struct bt_audio_capability *cap,
 			   struct bt_codec *codec)
 {
-	BT_DBG("conn %p stream %p, ep %p cap %p codec %p codec id 0x%02x "
-	       "codec cid 0x%04x codec vid 0x%04x", conn, stream, ep, cap,
+	BT_DBG("conn %p stream %p, ep %p codec %p codec id 0x%02x "
+	       "codec cid 0x%04x codec vid 0x%04x", conn, stream, ep,
 	       codec, codec ? codec->id : 0, codec ? codec->cid : 0,
 	       codec ? codec->vid : 0);
 
-	CHECKIF(conn == NULL || stream == NULL || cap == NULL ||
-		cap->ops == NULL || codec == NULL) {
+	CHECKIF(conn == NULL || stream == NULL || codec == NULL) {
 		BT_DBG("NULL value(s) supplied)");
 		return -EINVAL;
 	}
@@ -82,20 +80,14 @@ int bt_audio_stream_config(struct bt_conn *conn,
 		return -EBADMSG;
 	}
 
-	/* Check that codec and frequency are supported */
-	if (cap->codec->id != codec->id) {
-		BT_ERR("Invalid codec id");
-		return -EINVAL;
-	}
-
-	bt_audio_stream_attach(conn, stream, ep, cap, codec);
+	bt_audio_stream_attach(conn, stream, ep, NULL, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 	} else {
 		int err;
 
-		err = bap_config(stream, cap, codec);
+		err = bap_config(stream, codec);
 		if (err != 0) {
 			BT_DBG("Failed to configure stream: %d", err);
 			return err;
@@ -106,36 +98,34 @@ int bt_audio_stream_config(struct bt_conn *conn,
 }
 
 int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
-			     struct bt_audio_capability *cap,
 			     struct bt_codec *codec)
 {
-	BT_DBG("stream %p cap %p codec %p", stream, cap, codec);
+	struct bt_audio_ep *ep;
+
+	BT_DBG("stream %p codec %p", stream, codec);
 
 	if (stream == NULL || stream->ep == NULL) {
 		BT_DBG("Invalid stream or endpoint");
 		return -EINVAL;
 	}
 
+	ep = stream->ep;
+
 	if (codec == NULL) {
 		BT_DBG("NULL codec");
 		return -EINVAL;
 	}
 
-	if (bt_audio_ep_is_broadcast_src(stream->ep)) {
+	if (bt_audio_ep_is_broadcast_src(ep)) {
 		BT_DBG("Cannot use %s to reconfigure broadcast source streams",
 		       __func__);
 		return -EINVAL;
-	} else if (bt_audio_ep_is_broadcast_snk(stream->ep)) {
+	} else if (bt_audio_ep_is_broadcast_snk(ep)) {
 		BT_DBG("Cannot reconfigure broadcast sink streams");
 		return -EINVAL;
 	}
 
-	if (stream->cap == NULL || stream->cap->ops == NULL) {
-		BT_DBG("Invalid capabilities or capabilities ops");
-		return -EINVAL;
-	}
-
-	switch (stream->ep->status.state) {
+	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
 	case BT_AUDIO_EP_STATE_IDLE:
 	 /* or 0x01 (Codec Configured) */
@@ -145,27 +135,33 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(stream->ep->status.state));
+		       bt_audio_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
 
-	/* Check that codec is supported */
-	if (cap->codec->id != codec->id) {
-		return -ENOTSUP;
-	}
+	bt_audio_stream_attach(stream->conn, stream, ep, NULL, codec);
 
-	if (cap->ops->reconfig) {
-		int err = cap->ops->reconfig(stream, cap, codec);
+	if (ep->type == BT_AUDIO_EP_LOCAL) {
+		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+	} else {
+		int err;
+
+		err = bap_config(stream, codec);
 		if (err) {
 			return err;
 		}
-	}
 
-	bt_audio_stream_attach(stream->conn, stream, stream->ep, cap, codec);
+		stream->codec = codec;
 
-	if (stream->ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(stream->ep,
-				      BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+		/* Terminate CIG if there is an existing QoS,
+		 * so that we can create a new one
+		 */
+		if (stream->iso != NULL) {
+			err = bt_audio_cig_terminate(stream);
+			if (err != 0) {
+				return err;
+			}
+		}
 	}
 
 	return 0;
