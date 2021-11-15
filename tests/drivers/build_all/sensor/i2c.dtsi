@@ -666,15 +666,15 @@ test_i2c_lm75: lm75@4e {
 	reg = <0x4e>;
 };
 
-test_i2c_ina23x: ina23x@4f {
-	compatible = "ti,ina23x";
-	label = "INA23X";
+test_i2c_ina230: ina230@4f {
+	compatible = "ti,ina230";
+	label = "INA230";
 	reg = <0x4f>;
 	config = <0>;
-	current_lsb = <1>;
+	current-lsb = <1>;
 	rshunt = <0>;
 	mask = <0>;
-	alert_limit = <0>;
+	alert-limit = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
@@ -683,4 +683,16 @@ test_i2c_lm77: lm77@50 {
 	label = "LM77";
 	reg = <0x50>;
 	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ina231: ina231@51 {
+	compatible = "ti,ina230";
+	label = "INA231";
+	reg = <0x51>;
+	config = <0>;
+	current-lsb = <1>;
+	rshunt = <0>;
+	mask = <0>;
+	alert-limit = <0>;
+	irq-gpios = <&test_gpio 0 0>;
 };

@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 The Chromium OS Authors
+ * Copyright 2021 Grinn
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,44 +9,44 @@
 #include <drivers/gpio.h>
 #include <logging/log.h>
 
-#include "ina23x.h"
+#include "ina230.h"
 
-LOG_MODULE_DECLARE(INA23X, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
-static void ina23x_gpio_callback(const struct device *port,
+static void ina230_gpio_callback(const struct device *port,
 				 struct gpio_callback *cb, uint32_t pin)
 {
-	struct sensor_trigger ina23x_trigger;
-	struct ina23x_data *ina23x = CONTAINER_OF(cb, struct ina23x_data, gpio_cb);
-	const struct device *dev = (const struct device *)ina23x->dev;
+	struct sensor_trigger ina230_trigger;
+	struct ina230_data *ina230 = CONTAINER_OF(cb, struct ina230_data, gpio_cb);
+	const struct device *dev = (const struct device *)ina230->dev;
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pin);
 	ARG_UNUSED(cb);
 
-	if (ina23x->handler_alert) {
-		ina23x_trigger.type = SENSOR_TRIG_DATA_READY;
-		ina23x->handler_alert(dev, &ina23x_trigger);
+	if (ina230->handler_alert) {
+		ina230_trigger.type = SENSOR_TRIG_DATA_READY;
+		ina230->handler_alert(dev, &ina230_trigger);
 	}
 }
 
-int ina23x_trigger_set(const struct device *dev,
+int ina230_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct ina23x_data *ina23x = dev->data;
+	struct ina230_data *ina230 = dev->data;
 
 	ARG_UNUSED(trig);
 
-	ina23x->handler_alert = handler;
+	ina230->handler_alert = handler;
 
 	return 0;
 }
 
-int ina23x_trigger_mode_init(const struct device *dev)
+int ina230_trigger_mode_init(const struct device *dev)
 {
-	struct ina23x_data *ina23x = dev->data;
-	const struct ina23x_config *config = dev->config;
+	struct ina230_data *ina230 = dev->data;
+	const struct ina230_config *config = dev->config;
 	int ret;
 
 	/* setup alert gpio interrupt */
@@ -54,7 +55,7 @@ int ina23x_trigger_mode_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ina23x->dev = dev;
+	ina230->dev = dev;
 
 	ret = gpio_pin_configure_dt(&config->gpio_alert, GPIO_INPUT);
 	if (ret < 0) {
@@ -62,11 +63,11 @@ int ina23x_trigger_mode_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&ina23x->gpio_cb,
-			   ina23x_gpio_callback,
+	gpio_init_callback(&ina230->gpio_cb,
+			   ina230_gpio_callback,
 			   BIT(config->gpio_alert.pin));
 
-	ret = gpio_add_callback(config->gpio_alert.port, &ina23x->gpio_cb);
+	ret = gpio_add_callback(config->gpio_alert.port, &ina230->gpio_cb);
 	if (ret < 0) {
 		LOG_ERR("Could not set gpio callback");
 		return ret;
