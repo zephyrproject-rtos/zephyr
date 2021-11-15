@@ -16,3 +16,5 @@ int bap_metadata(struct bt_audio_stream *stream,
 		 uint8_t meta_count, struct bt_codec_data *meta);
 
 int bap_disable(struct bt_audio_stream *stream);
+
+int bap_start(struct bt_audio_stream *stream);
