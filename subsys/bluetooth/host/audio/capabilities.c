@@ -78,6 +78,8 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 		pref->pref_pd_min = cap->pref.pref_pd_min;
 		pref->pref_pd_max = cap->pref.pref_pd_max;
 
+		(*stream)->user_data = cap;
+
 		return 0;
 	}
 
@@ -104,6 +106,8 @@ static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		int err;
+
 		if (codec->id != cap->codec->id) {
 			continue;
 		}
@@ -122,8 +126,15 @@ static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 		pref->pref_pd_min = cap->pref.pref_pd_min;
 		pref->pref_pd_max = cap->pref.pref_pd_max;
 
-		return cap->ops->reconfig(stream, cap,
+		err = cap->ops->reconfig(stream, cap,
 					  (struct bt_codec *)codec);
+		if (err != 0) {
+			return err;
+		}
+
+		stream->user_data = cap;
+
+		return 0;
 	}
 
 	BT_ERR("No capability for type %u and codec ID %u", type, codec->id);
@@ -134,71 +145,85 @@ static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 static int unicast_server_qos_cb(struct bt_audio_stream *stream,
 				 const struct bt_codec_qos *qos)
 {
-	if (stream->cap->ops == NULL || stream->cap->ops->qos == NULL) {
+	struct bt_audio_capability *cap = stream->user_data;
+
+	if (cap->ops == NULL || cap->ops->qos == NULL) {
 		return -EACCES;
 	}
 
-	return stream->cap->ops->qos(stream, (struct bt_codec_qos *)qos);
+	return cap->ops->qos(stream, (struct bt_codec_qos *)qos);
 }
 
 static int unicast_server_enable_cb(struct bt_audio_stream *stream,
 				    uint8_t meta_count,
 				    const struct bt_codec_data *meta)
 {
-	if (stream->cap->ops == NULL || stream->cap->ops->enable == NULL) {
+	struct bt_audio_capability *cap = stream->user_data;
+
+	if (cap->ops == NULL || cap->ops->enable == NULL) {
 		return -EACCES;
 	}
 
-	return stream->cap->ops->enable(stream, meta_count,
+	return cap->ops->enable(stream, meta_count,
 					(struct bt_codec_data *)meta);
 }
 
 static int unicast_server_start_cb(struct bt_audio_stream *stream)
 {
-	if (stream->cap->ops == NULL || stream->cap->ops->start == NULL) {
+	struct bt_audio_capability *cap = stream->user_data;
+
+	if (cap->ops == NULL || cap->ops->start == NULL) {
 		return -EACCES;
 	}
 
-	return stream->cap->ops->start(stream);
+	return cap->ops->start(stream);
 }
 
 static int unicast_server_metadata_cb(struct bt_audio_stream *stream,
 				      uint8_t meta_count,
 				      const struct bt_codec_data *meta)
 {
-	if (stream->cap->ops == NULL || stream->cap->ops->metadata == NULL) {
+	struct bt_audio_capability *cap = stream->user_data;
+
+	if (cap->ops == NULL || cap->ops->metadata == NULL) {
 		return -EACCES;
 	}
 
-	return stream->cap->ops->metadata(stream, meta_count,
+	return cap->ops->metadata(stream, meta_count,
 					  (struct bt_codec_data *)meta);
 }
 
 static int unicast_server_disable_cb(struct bt_audio_stream *stream)
 {
-	if (stream->cap->ops == NULL || stream->cap->ops->disable == NULL) {
+	struct bt_audio_capability *cap = stream->user_data;
+
+	if (cap->ops == NULL || cap->ops->disable == NULL) {
 		return -EACCES;
 	}
 
-	return stream->cap->ops->disable(stream);
+	return cap->ops->disable(stream);
 }
 
 static int unicast_server_stop_cb(struct bt_audio_stream *stream)
 {
-	if (stream->cap->ops == NULL || stream->cap->ops->stop == NULL) {
+	struct bt_audio_capability *cap = stream->user_data;
+
+	if (cap->ops == NULL || cap->ops->stop == NULL) {
 		return -EACCES;
 	}
 
-	return stream->cap->ops->stop(stream);
+	return cap->ops->stop(stream);
 }
 
 static int unicast_server_release_cb(struct bt_audio_stream *stream)
 {
-	if (stream->cap->ops == NULL || stream->cap->ops->release == NULL) {
+	struct bt_audio_capability *cap = stream->user_data;
+
+	if (cap->ops == NULL || cap->ops->release == NULL) {
 		return -EACCES;
 	}
 
-	return stream->cap->ops->release(stream);
+	return cap->ops->release(stream);
 }
 
 static int publish_capability_cb(struct bt_conn *conn, uint8_t type,
