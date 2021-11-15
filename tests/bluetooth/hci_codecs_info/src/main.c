@@ -48,7 +48,9 @@ uint8_t hci_vendor_read_vs_codecs(
 	return NUM_VS_CODECS;
 }
 
-void test_read_codecs(void)
+ZTEST_SUITE(test_hci_codecs_info, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_hci_codecs_info, test_read_codecs)
 {
 	const struct bt_hci_rp_read_codecs *codecs;
 	struct net_buf *rsp;
@@ -103,7 +105,7 @@ void test_read_codecs(void)
 	net_buf_unref(rsp);
 }
 
-void test_read_codecs_v2(void)
+ZTEST(test_hci_codecs_info, test_read_codecs_v2)
 {
 	const struct bt_hci_rp_read_codecs_v2 *codecs;
 	struct net_buf *rsp;
@@ -205,7 +207,7 @@ uint8_t hci_vendor_read_codec_capabilities(uint8_t coding_format,
 	return 0;
 }
 
-void test_read_codec_capabilities(void)
+ZTEST(test_hci_codecs_info, test_read_codec_capabilities)
 {
 	struct bt_hci_cp_read_codec_capabilities *cp;
 	struct bt_hci_rp_read_codec_capabilities *rp;
@@ -287,7 +289,7 @@ uint8_t hci_vendor_read_ctlr_delay(uint8_t coding_format,
 	return 0;
 }
 
-void test_read_ctlr_delay(void)
+ZTEST(test_hci_codecs_info, test_read_ctlr_delay)
 {
 	struct bt_hci_cp_read_ctlr_delay *cp;
 	struct bt_hci_rp_read_ctlr_delay *rp;
@@ -323,16 +325,4 @@ void test_read_ctlr_delay(void)
 		      "Reading controller min delay failed");
 	zassert_equal(sys_get_le24(rp->max_ctlr_delay), MAX_CTLR_DELAY,
 		      "Reading controller max delay failed");
-}
-
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_hci_codecs_info,
-			 ztest_unit_test(test_read_codecs),
-			 ztest_unit_test(test_read_codecs_v2),
-			 ztest_unit_test(test_read_codec_capabilities),
-			 ztest_unit_test(test_read_ctlr_delay));
-	ztest_run_test_suite(test_hci_codecs_info);
 }
