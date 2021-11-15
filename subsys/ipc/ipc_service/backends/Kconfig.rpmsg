@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if IPC_SERVICE_BACKEND_RPMSG
+
+config IPC_SERVICE_BACKEND_RPMSG_WQ_STACK_SIZE
+	int "Size of RX work queue stack"
+	default 1024
+	help
+	  Size of stack used by work queue RX thread. This work queue is
+	  created in the multi-instance / multi-core RPMsg backend module to
+	  prevent notifying service users about received data from the system
+	  work queue. Size is the same for all instances.
+
+endif # IP_SERVICE_BACKEND_RPMSG
