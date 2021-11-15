@@ -180,7 +180,7 @@ int bt_audio_ep_set_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 			     uint8_t len, struct bt_codec *codec);
 
 int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-		       struct bt_audio_capability *cap, struct bt_codec *codec);
+		       struct bt_codec *codec);
 
 int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 		    struct bt_codec_qos *qos);

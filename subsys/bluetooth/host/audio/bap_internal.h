@@ -7,5 +7,4 @@
  */
 
 int bap_config(struct bt_audio_stream *stream,
-	       struct bt_audio_capability *cap,
 	       struct bt_codec *codec);

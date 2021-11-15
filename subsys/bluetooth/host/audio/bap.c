@@ -41,9 +41,7 @@ static const struct bt_uuid *ase_snk_uuid = BT_UUID_ASCS_ASE_SNK;
 static const struct bt_uuid *ase_src_uuid = BT_UUID_ASCS_ASE_SRC;
 static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
-int bap_config(struct bt_audio_stream *stream,
-	       struct bt_audio_capability *cap,
-	       struct bt_codec *codec)
+int bap_config(struct bt_audio_stream *stream, struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct bt_ascs_config_op *op;
@@ -55,7 +53,7 @@ int bap_config(struct bt_audio_stream *stream,
 	op = net_buf_simple_add(buf, sizeof(*op));
 	op->num_ases = 0x01;
 
-	err = bt_audio_ep_config(ep, buf, cap, codec);
+	err = bt_audio_ep_config(ep, buf, codec);
 	if (err) {
 		return err;
 	}
@@ -63,34 +61,6 @@ int bap_config(struct bt_audio_stream *stream,
 	err = bt_audio_ep_send(stream->conn, ep, buf);
 	if (err) {
 		return err;
-	}
-
-	return 0;
-}
-
-static int bap_reconfig(struct bt_audio_stream *stream,
-			struct bt_audio_capability *cap, struct bt_codec *codec)
-{
-	int err;
-
-	BT_DBG("stream %p cap %p codec %p", stream, cap, codec);
-
-	err = bap_config(stream, cap, codec);
-	if (err) {
-		return err;
-	}
-
-	stream->cap = cap;
-	stream->codec = codec;
-
-	/* Terminate CIG if there is an existing QoS,
-	 * so that we can create a new one
-	 */
-	if (stream->iso != NULL) {
-		err = bt_audio_cig_terminate(stream);
-		if (err != 0) {
-			return err;
-		}
 	}
 
 	return 0;
@@ -278,7 +248,7 @@ static int bap_release(struct bt_audio_stream *stream)
 
 static struct bt_audio_capability_ops cap_ops = {
 	.config		= NULL,
-	.reconfig	= bap_reconfig,
+	.reconfig	= NULL,
 	.qos		= NULL,
 	.enable		= bap_enable,
 	.metadata	= bap_metadata,
