@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,ipc_shm;
+	};
+
+	reserved-memory {
+		/delete-node/ memory@20070000;
+
+		sram_ipc0: memory@20070000 {
+			reg = <0x20070000 0x8000>;
+		};
+
+		sram_ipc1: memory@20078000 {
+			reg = <0x20078000 0x8000>;
+		};
+	};
+
+	soc {
+		/delete-node/ ipc@41012000;
+
+		mbox: mbox@41012000 {
+			compatible = "nordic,mbox-nrf-ipc";
+			reg = <0x41012000 0x1000>;
+			tx-mask = <0x0000ffff>;
+			rx-mask = <0x0000ffff>;
+			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+	};
+
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		memory-region = <&sram_ipc0>;
+		mboxes = <&mbox 0>, <&mbox 1>;
+		mbox-names = "rx", "tx";
+		role = "remote";
+		status = "okay";
+	};
+
+	ipc1: ipc1 {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		memory-region = <&sram_ipc1>;
+		mboxes = <&mbox 2>, <&mbox 3>;
+		mbox-names = "rx", "tx";
+		role = "remote";
+		status = "okay";
+	};
+};
