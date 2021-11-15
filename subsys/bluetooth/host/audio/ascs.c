@@ -28,6 +28,7 @@
 #include "../conn_internal.h"
 
 #include "endpoint.h"
+#include "unicast_server.h"
 #include "pacs_internal.h"
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
@@ -55,42 +56,6 @@ struct bt_ascs {
 };
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
-
-static const struct bt_audio_unicast_server_cb *server_cb;
-
-int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb *cb)
-{
-	CHECKIF(cb == NULL) {
-		BT_DBG("cb is NULL");
-		return -EINVAL;
-	}
-
-	if (server_cb != NULL) {
-		BT_DBG("callback structure already registered");
-		return -EALREADY;
-	}
-
-	server_cb = cb;
-
-	return 0;
-}
-
-int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb)
-{
-	CHECKIF(cb == NULL) {
-		BT_DBG("cb is NULL");
-		return -EINVAL;
-	}
-
-	if (server_cb != cb) {
-		BT_DBG("callback structure not registered");
-		return -EINVAL;
-	}
-
-	server_cb = NULL;
-
-	return 0;
-}
 
 static void ascs_ase_cfg_changed(const struct bt_gatt_attr *attr,
 				 uint16_t value)
@@ -227,8 +192,8 @@ static void ase_release(struct bt_ascs_ase *ase, bool cache)
 
 	BT_DBG("ase %p", ase);
 
-	if (server_cb != NULL && server_cb->release != NULL) {
-		err = server_cb->release(ase->ep.stream);
+	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
+		err = unicast_server_cb->release(ase->ep.stream);
 	} else {
 		err = -EOPNOTSUPP;
 	}
@@ -296,8 +261,8 @@ static void ase_disable(struct bt_ascs_ase *ase)
 
 	stream = ep->stream;
 
-	if (server_cb != NULL && server_cb->release != NULL) {
-		err = server_cb->disable(stream);
+	if (unicast_server_cb != NULL && unicast_server_cb->disable != NULL) {
+		err = unicast_server_cb->disable(stream);
 	} else {
 		err = -EOPNOTSUPP;
 	}
@@ -692,11 +657,12 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	}
 
 	if (ase->ep.stream != NULL) {
-		if (server_cb != NULL && server_cb->reconfig != NULL) {
-			err = server_cb->reconfig(ase->ep.stream,
-						  ASE_DIR(ase->ep.status.id),
-						  &ase->ep.codec,
-						  &ase->ep.qos_pref);
+		if (unicast_server_cb != NULL &&
+		    unicast_server_cb->reconfig != NULL) {
+			err = unicast_server_cb->reconfig(ase->ep.stream,
+							  ASE_DIR(ase->ep.status.id),
+							  &ase->ep.codec,
+							  &ase->ep.qos_pref);
 		} else {
 			err = -EOPNOTSUPP;
 		}
@@ -716,11 +682,12 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		stream = ase->ep.stream;
 	} else {
 		stream = NULL;
-		if (server_cb != NULL && server_cb->config != NULL) {
-			err = server_cb->config(ascs->conn, &ase->ep,
-						ASE_DIR(ase->ep.status.id),
-						&ase->ep.codec, &stream,
-						&ase->ep.qos_pref);
+		if (unicast_server_cb != NULL &&
+		    unicast_server_cb->config != NULL) {
+			err = unicast_server_cb->config(ascs->conn, &ase->ep,
+							ASE_DIR(ase->ep.status.id),
+							&ase->ep.codec, &stream,
+							&ase->ep.qos_pref);
 		} else {
 			err = -EOPNOTSUPP;
 		}
@@ -845,10 +812,10 @@ static int ase_stream_qos(struct bt_audio_stream *stream, struct bt_codec_qos *q
 		return -EINVAL;
 	}
 
-	if (server_cb != NULL && server_cb->config != NULL) {
+	if (unicast_server_cb != NULL && unicast_server_cb->qos != NULL) {
 		int err;
 
-		err = server_cb->qos(stream, qos);
+		err = unicast_server_cb->qos(stream, qos);
 		if (err != 0) {
 			return err;
 		}
@@ -1005,9 +972,9 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 	}
 
 	stream = ep->stream;
-	if (server_cb != NULL && server_cb->metadata != NULL) {
-		err = server_cb->metadata(stream, ep->codec.meta_count,
-					  ep->codec.meta);
+	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
+		err = unicast_server_cb->metadata(stream, ep->codec.meta_count,
+						  ep->codec.meta);
 	} else {
 		err = -EOPNOTSUPP;
 	}
@@ -1061,9 +1028,9 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 	}
 
 	stream = ep->stream;
-	if (server_cb != NULL && server_cb->enable != NULL) {
-		err = server_cb->enable(stream, ep->codec.meta_count,
-					ep->codec.meta);
+	if (unicast_server_cb != NULL && unicast_server_cb->enable != NULL) {
+		err = unicast_server_cb->enable(stream, ep->codec.meta_count,
+						ep->codec.meta);
 	} else {
 		err = -EOPNOTSUPP;
 	}
@@ -1173,8 +1140,8 @@ static void ase_start(struct bt_ascs_ase *ase)
 	}
 
 	stream = ep->stream;
-	if (server_cb != NULL && server_cb->start != NULL) {
-		err = server_cb->start(stream);
+	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
+		err = unicast_server_cb->start(stream);
 	} else {
 		err = -EOPNOTSUPP;
 	}
@@ -1305,8 +1272,8 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	}
 
 	stream = ep->stream;
-	if (server_cb != NULL && server_cb->stop != NULL) {
-		err = server_cb->stop(stream);
+	if (unicast_server_cb != NULL && unicast_server_cb->stop != NULL) {
+		err = unicast_server_cb->stop(stream);
 	} else {
 		err = -EOPNOTSUPP;
 	}
