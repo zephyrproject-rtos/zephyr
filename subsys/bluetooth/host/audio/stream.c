@@ -15,7 +15,6 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
-#include <bluetooth/audio/capabilities.h>
 
 #include "../conn_internal.h"
 #include "../iso_internal.h"
@@ -825,7 +824,6 @@ void bt_audio_stream_detach(struct bt_audio_stream *stream)
 	bt_audio_ep_detach(stream->ep, stream);
 
 	stream->conn = NULL;
-	stream->cap = NULL;
 	stream->codec = NULL;
 
 	if (!is_broadcast) {

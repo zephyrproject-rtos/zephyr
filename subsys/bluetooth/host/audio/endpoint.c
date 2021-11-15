@@ -1209,8 +1209,8 @@ int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->status.id;
-	req->latency = 0x02; /* TODO: Select target latency based on cap? */
-	req->phy = 0x02; /* TODO: Select target PHY based on cap? */
+	req->latency = 0x02; /* TODO: Select target latency based on additional input? */
+	req->phy = 0x02; /* TODO: Select target PHY based on additional input? */
 	req->codec.id = codec->id;
 	req->codec.cid = codec->cid;
 	req->codec.vid = codec->vid;
