@@ -38,7 +38,9 @@ static struct bt_l2cap_server test_inv_server = {
 	.psm		= 0xffff,
 };
 
-void test_l2cap_register(void)
+ZTEST_SUITE(test_l2cap, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_l2cap, test_l2cap_register)
 {
 	/* Attempt to register server with PSM auto allocation */
 	zassert_false(bt_l2cap_server_register(&test_server),
@@ -67,12 +69,4 @@ void test_l2cap_register(void)
 	/* Attempt to re-register server with dynamic PSM */
 	zassert_true(bt_l2cap_server_register(&test_dyn_server),
 		     "Test dynamic PSM server duplicate succeeded");
-}
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_l2cap,
-			 ztest_unit_test(test_l2cap_register));
-	ztest_run_test_suite(test_l2cap);
 }
