@@ -344,16 +344,17 @@ bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
 			       const struct bt_codec_qos *qos)
 {
-	if (stream->cap->pref.latency < qos->latency) {
+	const struct bt_codec_qos_pref *qos_pref = &stream->ep->qos_pref;
+
+	if (qos_pref->latency < qos->latency) {
 		BT_DBG("Latency %u higher than preferred max %u",
-			qos->latency, stream->cap->pref.latency);
+			qos->latency, qos_pref->latency);
 		return false;
 	}
 
-	if (!IN_RANGE(stream->cap->pref.pd_min, stream->cap->pref.pd_max, qos->pd)) {
+	if (!IN_RANGE(qos_pref->pd_min, qos_pref->pd_max, qos->pd)) {
 		BT_DBG("Presentation Delay not within range: min %u max %u pd %u",
-			stream->cap->pref.pd_min, stream->cap->pref.pd_max,
-			qos->pd);
+			qos_pref->pd_min, qos_pref->pd_max, qos->pd);
 		return false;
 	}
 
