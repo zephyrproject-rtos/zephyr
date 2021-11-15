@@ -914,7 +914,7 @@ struct net_pkt *dsa_ksz8xxx_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
 	if (dsa_is_port_master(iface)) {
 		port_idx = DSA_KSZ8795_TAIL_TAG_LOOKUP;
 	} else {
-		port_idx = (1 << (ctx->dsa_port_idx - 1));
+		port_idx = (1 << (ctx->dsa_port_idx));
 	}
 
 	NET_DBG("TT - port: 0x%x[%p] LEN: %d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
