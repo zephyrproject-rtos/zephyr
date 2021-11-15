@@ -82,7 +82,7 @@ static int bt_audio_broadcast_source_setup_stream(uint8_t index,
 		return -ENOMEM;
 	}
 
-	bt_audio_stream_attach(NULL, stream, ep, NULL, codec);
+	bt_audio_stream_attach(NULL, stream, ep, codec);
 	stream->qos = qos;
 	err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos, qos);
 	if (err) {
@@ -428,7 +428,7 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 	for (size_t i = 0; i < source->stream_count; i++) {
 		stream = &source->streams[i];
 
-		bt_audio_stream_attach(NULL, stream, stream->ep, NULL, codec);
+		bt_audio_stream_attach(NULL, stream, stream->ep, codec);
 	}
 
 	err = bt_audio_set_base(source, codec);
