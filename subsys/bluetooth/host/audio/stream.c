@@ -676,11 +676,6 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 		return -EINVAL;
 	}
 
-	if (stream->cap == NULL || stream->cap->ops == NULL) {
-		BT_DBG("Invalid capabilities or capabilities ops");
-		return -EINVAL;
-	}
-
 	switch (stream->ep->status.state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
 	case BT_AUDIO_EP_STATE_ENABLING:
@@ -691,17 +686,12 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 		return -EBADMSG;
 	}
 
-	if (stream->cap->ops->start == NULL) {
-		err = 0;
-		goto done;
-	}
-
-	err = stream->cap->ops->start(stream);
-	if (err) {
+	err = bap_start(stream);
+	if (err != 0) {
+		BT_DBG("Starting stream failed: %d", err);
 		return err;
 	}
 
-done:
 	if (stream->ep->type == BT_AUDIO_EP_LOCAL) {
 		bt_audio_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
 	}
