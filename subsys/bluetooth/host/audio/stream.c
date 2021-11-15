@@ -575,8 +575,7 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 
 	BT_DBG("stream %p metadata count %u", stream, meta_count);
 
-	if (stream == NULL || stream->ep == NULL || stream->cap == NULL ||
-	    stream->cap->ops == NULL) {
+	if (stream == NULL || stream->ep == NULL) {
 		return -EINVAL;
 	}
 
@@ -592,16 +591,12 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	if (stream->cap->ops->metadata == NULL) {
-		goto done;
-	}
-
-	err = stream->cap->ops->metadata(stream, meta_count, meta);
-	if (err) {
+	err = bap_metadata(stream, meta_count, meta);
+	if (err != 0) {
+		BT_DBG("Updating metadata failed: %d", err);
 		return err;
 	}
 
-done:
 	if (stream->ep->type != BT_AUDIO_EP_LOCAL) {
 		return 0;
 	}
