@@ -375,6 +375,14 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+	/* Configure USDHC1 using  SysPll2Pfd2*/
+	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Usdhc1, &rootCfg);
+	CLOCK_EnableClock(kCLOCK_Usdhc1);
+#endif
+
 	/* Keep core clock ungated during WFI */
 	CCM->GPR_PRIVATE1_SET = 0x1;
 	/* Keep the system clock running so SYSTICK can wake up the system from
@@ -392,6 +400,33 @@ static ALWAYS_INLINE void clock_init(void)
 	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_CM7_FORCE_HCLK_EN_MASK;
 #endif
 }
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+
+/* Usdhc driver needs to re-configure pinmux
+ * Pinmux depends on board design.
+ * From the perspective of Usdhc driver,
+ * it can't access board specific function.
+ * So SoC provides this for board to register
+ * its usdhc pinmux and for usdhc to access
+ * pinmux.
+ */
+
+static usdhc_pin_cfg_cb g_usdhc_pin_cfg_cb;
+
+void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb)
+{
+	g_usdhc_pin_cfg_cb = cb;
+}
+
+void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength)
+{
+	if (g_usdhc_pin_cfg_cb)
+		g_usdhc_pin_cfg_cb(nusdhc, init,
+			speed, strength);
+}
+#endif
 
 /**
  *
