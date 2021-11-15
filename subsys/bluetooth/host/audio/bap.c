@@ -89,8 +89,8 @@ int bap_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 	return bt_audio_ep_send(stream->conn, ep, buf);
 }
 
-static int bap_metadata(struct bt_audio_stream *stream,
-			uint8_t meta_count, struct bt_codec_data *meta)
+int bap_metadata(struct bt_audio_stream *stream,
+		 uint8_t meta_count, struct bt_codec_data *meta)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
