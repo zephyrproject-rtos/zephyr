@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* This is built with a custom cmake rule, so it doesn't get zephyrese
+ * conventions set up for it.
+ */
+#ifndef _ASMLANGUAGE
+#define _ASMLANGUAGE
+#endif
+
 #include <cavs-mem.h>
 
 	.global	_start
