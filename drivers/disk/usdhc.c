@@ -840,11 +840,17 @@ static int usdhc_Internal_dma_cfg(struct usdhc_priv *priv,
 		base->ADMA_SYS_ADDR = (uint32_t)(dma_cfg->adma_table);
 	}
 
+#if (defined(FSL_FEATURE_USDHC_HAS_NO_RW_BURST_LEN) && FSL_FEATURE_USDHC_HAS_NO_RW_BURST_LEN)
+	/* select DMA mode */
+	base->PROT_CTRL &= ~(USDHC_PROT_CTRL_DMASEL_MASK);
+	base->PROT_CTRL |= USDHC_PROT_CTRL_DMASEL(dma_cfg->dma_mode);
+#else
 	/* select DMA mode and config the burst length */
 	base->PROT_CTRL &= ~(USDHC_PROT_CTRL_DMASEL_MASK |
 		USDHC_PROT_CTRL_BURST_LEN_EN_MASK);
 	base->PROT_CTRL |= USDHC_PROT_CTRL_DMASEL(dma_cfg->dma_mode) |
 		USDHC_PROT_CTRL_BURST_LEN_EN(dma_cfg->burst_len);
+#endif
 	/* enable DMA */
 	base->MIX_CTRL |= USDHC_MIX_CTRL_DMAEN_MASK;
 
@@ -1534,12 +1540,6 @@ int usdhc_adjust_tuning_timing(USDHC_Type *base, uint32_t delay)
 	return 0;
 }
 
-static inline void usdhc_set_retuning_timer(USDHC_Type *base, uint32_t counter)
-{
-	base->HOST_CTRL_CAP &= ~USDHC_HOST_CTRL_CAP_TIME_COUNT_RETUNING_MASK;
-	base->HOST_CTRL_CAP |= USDHC_HOST_CTRL_CAP_TIME_COUNT_RETUNING(counter);
-}
-
 static inline void usdhc_set_bus_width(USDHC_Type *base,
 	enum usdhc_data_bus_width width)
 {
@@ -1595,7 +1595,8 @@ static int usdhc_execute_tuning(struct usdhc_priv *priv)
 		return -EIO;
 	}
 
-	usdhc_set_retuning_timer(base, SDHC_RETUNING_TIMER_COUNT);
+	/* Enable auto retuning */
+	base->MIX_CTRL |= USDHC_MIX_CTRL_AUTO_TUNE_EN_MASK;
 
 	return 0;
 }
@@ -2193,6 +2194,12 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 	/* Endian mode*/
 	proctl |= USDHC_PROT_CTRL_EMODE(config->endian);
 
+#if (defined(FSL_FEATURE_USDHC_HAS_NO_RW_BURST_LEN) && FSL_FEATURE_USDHC_HAS_NO_RW_BURST_LEN)
+	/* Watermark level */
+	wml &= ~(USDHC_WTMK_LVL_RD_WML_MASK | USDHC_WTMK_LVL_WR_WML_MASK);
+	wml |= (USDHC_WTMK_LVL_RD_WML(config->read_watermark) |
+		USDHC_WTMK_LVL_WR_WML(config->write_watermark));
+#else
 	/* Watermark level */
 	wml &= ~(USDHC_WTMK_LVL_RD_WML_MASK |
 			USDHC_WTMK_LVL_WR_WML_MASK |
@@ -2202,6 +2209,7 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 			USDHC_WTMK_LVL_WR_WML(config->write_watermark) |
 			USDHC_WTMK_LVL_RD_BRST_LEN(config->read_burst_len) |
 			USDHC_WTMK_LVL_WR_BRST_LEN(config->write_burst_len));
+#endif
 
 	/* config the data timeout value */
 	sysctl &= ~USDHC_SYS_CTRL_DTOCV_MASK;
