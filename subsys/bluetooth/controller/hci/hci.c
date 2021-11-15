@@ -47,6 +47,9 @@
 #include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
 #include "ll_sw/ull_sync_types.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
 #include "ll_sw/ull_sync_internal.h"
 #include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_conn_internal.h"
@@ -2325,6 +2328,7 @@ static void le_reject_cis(struct net_buf *buf, struct net_buf **evt)
 
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_remote_features *cmd = (void *)buf->data;
@@ -2336,6 +2340,7 @@ static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status(status);
 }
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 static void le_read_chan_map(struct net_buf *buf, struct net_buf **evt)
 {
@@ -3995,9 +4000,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_read_chan_map(cmd, evt);
 		break;
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
 		le_read_remote_features(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 	case BT_OCF(BT_HCI_OP_LE_CONN_UPDATE):
 		le_conn_update(cmd, evt);
@@ -4380,7 +4387,20 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	rp->status = 0x00;
 	hci_vendor_read_key_hierarchy_roots(rp->ir, rp->er);
 }
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
+static void vs_set_min_used_chans(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_vs_set_min_num_used_chans *cmd = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(cmd->handle);
+	uint8_t status;
 
+	status = ll_set_min_used_chans(handle, cmd->phys, cmd->min_used_chans);
+
+	*evt = cmd_complete_status(status);
+}
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 static void vs_write_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4634,6 +4654,14 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		mesh_cmd_handle(cmd, evt);
 		break;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
+	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
+		vs_set_min_used_chans(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	default:
 		return -EINVAL;

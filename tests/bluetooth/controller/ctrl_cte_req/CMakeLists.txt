@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2021 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.13.1)
+
+if (NOT BOARD STREQUAL unit_testing)
+  message(FATAL_ERROR "This project can only be used with '-DBOARD=unit_testing'.")
+endif()
+
+FILE(GLOB SOURCES
+  src/*.c
+)
+
+project(bluetooth_ull_llcp_le_cte_req)
+find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
+include(${ZEPHYR_BASE}/tests/bluetooth/controller/common/defaults_cmake.txt)
+target_sources(testbinary PRIVATE ${ll_sw_sources} ${mock_sources} ${common_sources})
+set(CMAKE_BUILD_TYPE Debug)

@@ -10,6 +10,7 @@
 #include <sys/byteorder.h>
 
 #include "hal/cpu.h"
+#include "hal/ccm.h"
 #include "hal/ticker.h"
 
 #include "util/util.h"
@@ -29,6 +30,7 @@
 #include "lll/lll_adv_pdu.h"
 #include "lll_adv_sync.h"
 #include "lll/lll_df_types.h"
+#include "lll_conn.h"
 #include "lll_chan.h"
 
 #include "ull_adv_types.h"
