@@ -26,6 +26,7 @@
 #include "common/log.h"
 
 #include "pacs_internal.h"
+#include "unicast_server.h"
 
 #if defined(CONFIG_BT_BAP)
 
@@ -53,9 +54,9 @@ static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
 static ssize_t pac_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
-	sys_slist_t *lst;
-	struct bt_audio_capability *cap;
 	struct bt_pacs_read_rsp *rsp;
+	uint8_t type;
+	int err;
 
 	/* Reset if buffer before using */
 	net_buf_simple_reset(&read_buf);
@@ -64,31 +65,39 @@ static ssize_t pac_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	rsp->num_pac = 0;
 
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_PACS_SNK)) {
-		lst = bt_audio_capability_get(BT_AUDIO_SINK);
+		type = BT_AUDIO_SINK;
 	} else {
-		lst = bt_audio_capability_get(BT_AUDIO_SOURCE);
+		type = BT_AUDIO_SOURCE;
 	}
 
-	if (!lst) {
+	if (unicast_server_cb == NULL ||
+	    unicast_server_cb->publish_capability == NULL) {
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
 					 read_buf.data, read_buf.len);
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+	while (true) {
+		struct bt_codec codec;
 		struct bt_pac *pac;
 		struct bt_pac_meta *meta;
 
+		err = unicast_server_cb->publish_capability(conn, type,
+							    rsp->num_pac,
+							    &codec);
+		if (err != 0) {
+			break;
+		}
+
 		pac = net_buf_simple_add(&read_buf, sizeof(*pac));
 
-		pac->codec.id = cap->codec->id;
-		pac->codec.cid = sys_cpu_to_le16(cap->codec->cid);
-		pac->codec.vid = sys_cpu_to_le16(cap->codec->vid);
+		pac->codec.id = codec.id;
+		pac->codec.cid = sys_cpu_to_le16(codec.cid);
+		pac->codec.vid = sys_cpu_to_le16(codec.vid);
 		pac->cc_len = read_buf.len;
 
-		pac_data_add(&read_buf, cap->codec->data_count,
-			     cap->codec->data);
+		pac_data_add(&read_buf, codec.data_count, codec.data);
 
-		/* Buffer size shall never be bellow PAC len since we are just
+		/* Buffer size shall never be below PAC len since we are just
 		 * append data.
 		 */
 		__ASSERT_NO_MSG(read_buf.len >= pac->cc_len);
@@ -97,8 +106,7 @@ static ssize_t pac_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 		meta = net_buf_simple_add(&read_buf, sizeof(*meta));
 		meta->len = read_buf.len;
-		pac_data_add(&read_buf, cap->codec->meta_count,
-			     cap->codec->meta);
+		pac_data_add(&read_buf, codec.meta_count, codec.meta);
 		meta->len = read_buf.len - meta->len;
 
 		BT_DBG("pac #%u: codec capability len %u metadata len %u",
