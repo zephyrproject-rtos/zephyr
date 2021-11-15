@@ -10,6 +10,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CAPABILITIES_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CAPABILITIES_H_
 
+#include <bluetooth/audio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -86,6 +88,170 @@ struct bt_audio_capability_pref {
 	/** @brief Preferred maximum Presentation Delay	*/
 	uint32_t pref_pd_max;
 };
+
+struct bt_audio_capability; /* Handle circular dependency */
+
+/** @brief Capability operations structure.
+ *
+ *  These are only used for unicast streams and broadcast sink streams.
+ */
+struct bt_audio_capability_ops {
+	/** @brief Capability config callback
+	 *
+	 *  Config callback is called whenever a new Audio Stream needs to be
+	 *  allocated.
+	 *
+	 *  @param conn Connection object
+	 *  @param ep Remote Audio Endpoint being configured
+	 *  @param cap Local Audio Capability being configured
+	 *  @param codec Codec configuration
+	 *
+	 *  @return Allocated Audio Stream object or NULL in case of error.
+	 */
+	struct bt_audio_stream *(*config)(struct bt_conn *conn,
+					  struct bt_audio_ep *ep,
+					  struct bt_audio_capability *cap,
+					  struct bt_codec *codec);
+
+	/** @brief Capability reconfig callback
+	 *
+	 *  Reconfig callback is called whenever an Audio Stream needs to be
+	 *  reconfigured with different codec configuration.
+	 *
+	 *  @param stream Stream object being reconfigured.
+	 *  @param cap Local Audio Capability being reconfigured
+	 *  @param codec Codec configuration
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*reconfig)(struct bt_audio_stream *stream,
+			struct bt_audio_capability *cap,
+			struct bt_codec *codec);
+
+	/** @brief Capability QoS callback
+	 *
+	 *  QoS callback is called whenever an Audio Stream Quality of
+	 *  Service needs to be configured.
+	 *
+	 *  @param stream Stream object being reconfigured.
+	 *  @param QoS Quality of Service configuration
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*qos)(struct bt_audio_stream *stream, struct bt_codec_qos *qos);
+
+	/** @brief Capability Enable callback
+	 *
+	 *  Enable callback is called whenever an Audio Stream is about to be
+	 *  enabled to stream.
+	 *
+	 *  @param stream Stream object being enabled.
+	 *  @param meta_count Number of metadata entries
+	 *  @param meta Metadata entries
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*enable)(struct bt_audio_stream *stream, uint8_t meta_count,
+		      struct bt_codec_data *meta);
+
+	/** @brief Capability Start callback
+	 *
+	 *  Start callback is called whenever an Audio Stream is about to be
+	 *  start streaming.
+	 *
+	 *  @param stream Stream object.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*start)(struct bt_audio_stream *stream);
+
+	/** @brief Capability Metadata callback
+	 *
+	 *  Metadata callback is called whenever an Audio Stream is needs to
+	 *  update its metadata.
+	 *
+	 *  @param stream Stream object.
+	 *  @param meta_count Number of metadata entries
+	 *  @param meta Metadata entries
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*metadata)(struct bt_audio_stream *stream, uint8_t meta_count,
+			struct bt_codec_data *meta);
+
+	/** @brief Capability Disable callback
+	 *
+	 *  Disable callback is called whenever an Audio Stream is about to be
+	 *  disabled to stream.
+	 *
+	 *  @param stream Stream object being disabled.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*disable)(struct bt_audio_stream *stream);
+
+	/** @brief Capability Stop callback
+	 *
+	 *  Stop callback is called whenever an Audio Stream is about to be
+	 *  stop streaming.
+	 *
+	 *  @param stream Stream object.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*stop)(struct bt_audio_stream *stream);
+
+	/** @brief Capability release callback
+	 *
+	 *  Release callback is called whenever a new Audio Stream needs to be
+	 *  deallocated.
+	 *
+	 *  @param stream Stream object.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*release)(struct bt_audio_stream *stream);
+};
+
+/** @brief Audio Capability structure.
+ *
+ *  Audio Capability represents a Local Codec including its preferrable
+ *  Quality of service.
+ *
+ */
+struct bt_audio_capability {
+	/** Capability type */
+	uint8_t  type;
+	/** Supported Audio Contexts */
+	uint16_t context;
+	/** Capability codec reference */
+	struct bt_codec *codec;
+	/** Capability preferences */
+	struct bt_audio_capability_pref pref;
+	/** Capability operations reference */
+	struct bt_audio_capability_ops *ops;
+	sys_snode_t node;
+};
+
+/** @brief Register Audio Capability.
+ *
+ *  Register Audio Local Capability.
+ *
+ *  @param cap Capability structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_capability_register(struct bt_audio_capability *cap);
+
+/** @brief Unregister Audio Capability.
+ *
+ *  Unregister Audio Local Capability.
+ *
+ *  @param cap Capability structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_capability_unregister(struct bt_audio_capability *cap);
 
 #ifdef __cplusplus
 }
