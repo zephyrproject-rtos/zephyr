@@ -1,0 +1,6 @@
+tests:
+  stress.mutex:
+    tags: stress
+    # With multiple CPUs, it's eaiser to reproduce issues.
+    filter: (CONFIG_MP_NUM_CPUS > 1)
+    slow: true
