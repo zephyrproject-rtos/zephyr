@@ -73,6 +73,7 @@
 
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_test.h"
 #include "ll_settings.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -783,6 +784,14 @@ void ll_reset(void)
 	err = ull_adv_reset_finalize();
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_BROADCASTER */
+
+	/* Reset/End DTM Tx or Rx commands */
+	if (IS_ENABLED(CONFIG_BT_CTLR_DTM)) {
+		uint16_t num_rx;
+
+		(void)ll_test_end(&num_rx);
+		ARG_UNUSED(num_rx);
+	}
 
 	/* Common to init and reset */
 	err = init_reset();
