@@ -696,3 +696,13 @@ test_i2c_ina231: ina231@51 {
 	alert-limit = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_ina237: ina237@52 {
+	compatible = "ti,ina237";
+	label = "INA237";
+	reg = <0x52>;
+	config = <0>;
+	current-lsb = <1>;
+	adc-config = <0>;
+	rshunt = <0>;
+};

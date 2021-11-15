@@ -15,6 +15,11 @@ config INA230
 	help
 	  Enable driver for INA230/INA231.
 
+config INA237
+	bool "INA237"
+	help
+	  Enable driver for INA237.
+
 config INA230_TRIGGER
 	bool "INA230 trigger mode"
 	depends on INA230
