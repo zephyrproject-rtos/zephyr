@@ -1,0 +1,15 @@
+# HummingBird core implementation
+
+# Copyright (c) 2021 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Nuclei HummingBird SoC Core"
+	depends on SOC_SERIES_HUMMINGBIRD
+
+config SOC_HUMMINGBIRD
+	bool "Nuclei HummingBird SoC Core"
+	help
+	  Enable support for Nuclei HummingBird SoC core
+
+endchoice

@@ -1,0 +1,30 @@
+# Copyright (c) 2021 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_HUMMINGBIRD
+
+config SOC_SERIES
+	default "hummingbird"
+
+config SOC
+	default "hummingbird"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	default y
+
+config RISCV_GP
+	default y
+
+config RISCV_HAS_PLIC
+	default y
+
+config NUM_IRQS
+	default 16
+
+endif # SOC_SERIES_HUMMINGBIRD

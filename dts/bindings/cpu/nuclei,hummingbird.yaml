@@ -1,0 +1,8 @@
+# Copyright (c) 2021 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuclei HummingBird RISC-V Core
+
+compatible: "nuclei,hummingbird"
+
+include: cpu.yaml

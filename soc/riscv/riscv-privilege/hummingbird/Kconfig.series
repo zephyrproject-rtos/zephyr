@@ -1,0 +1,16 @@
+# HummingBird core implementation
+
+# Copyright (c) 2021 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HUMMINGBIRD
+	bool "Nuclei HummingBird SoC Core"
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	select ATOMIC_OPERATIONS_C
+	select COMPRESSED_ISA
+	select INCLUDE_RESET_VECTOR
+	select BUILD_OUTPUT_HEX
+
+	help
+	  Enable support for Nuclei HummingBird series SoC core
