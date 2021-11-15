@@ -13,6 +13,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/audio.h>
+#include <bluetooth/audio/capabilities.h>
 #include <sys/byteorder.h>
 
 #define MAX_PAC 1

@@ -8,6 +8,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/audio.h>
+#include <bluetooth/audio/capabilities.h>
 #include "common.h"
 #include "unicast_common.h"
 

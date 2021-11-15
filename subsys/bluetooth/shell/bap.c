@@ -20,6 +20,7 @@
 
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
+#include <bluetooth/audio/capabilities.h>
 
 #include "bt.h"
 
