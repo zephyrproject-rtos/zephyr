@@ -14,7 +14,6 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
-#include <bluetooth/audio/capabilities.h>
 
 #include "../conn_internal.h"
 #include "../iso_internal.h"
@@ -97,9 +96,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 		}
 	}
 
-	/* TODO: Wait for an parse PA data and use the capability ops to
-	 * get audio streams from the upper layer
-	 * TBD: What if sync to a bad broadcast source that does not send
+	/* TBD: What if sync to a bad broadcast source that does not send
 	 * properly formatted (or any) BASE?
 	 */
 }
@@ -365,13 +362,6 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 			return false;
 		}
 	}
-
-	/* TODO: We can already at this point validate whether the BASE
-	 * is useful for us based on our capabilities. E.g. if the codec
-	 * or number of BIS doesn't match our capabilities, there's no
-	 * reason to continue with the BASE. For now let the upper layer
-	 * decide.
-	 */
 
 	if (sink->biginfo_received) {
 		uint8_t num_bis = 0;

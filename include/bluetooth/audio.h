@@ -1773,7 +1773,7 @@ void bt_audio_broadcast_sink_register_cb(struct bt_audio_broadcast_sink_cb *cb);
 /** @brief Start scan for broadcast sources.
  *
  *  Starts a scan for broadcast sources. Scan results will be received by
- *  the scan_recv callback of the struct bt_audio_capability_ops.
+ *  the scan_recv callback.
  *  Only reports from devices advertising broadcast audio support will be sent.
  *  Note that a broadcast source may advertise broadcast audio capabilities,
  *  but may not be streaming.
