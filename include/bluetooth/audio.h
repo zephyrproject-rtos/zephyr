@@ -1032,6 +1032,23 @@ struct bt_audio_unicast_server_cb {
 	 */
 	int (*release)(struct bt_audio_stream *stream);
 
+	/** @brief Stream release callback
+	 *
+	 *  Release callback is called whenever a new Audio Stream needs to be
+	 *  released and thus deallocated.
+	 *
+	 *  @param type   Type of the endpoint.
+	 *  @param index  Index of the codec object requested. Multiple objects
+	 *                may be returned, and this value keep tracks of how
+	 *                many have previously been returned.
+	 *  @param codec  Codec object that shall be populated if returning
+	 *                success (0). Ignored if returning non-zero.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*publish_capability)(uint8_t type, uint8_t index,
+				  struct bt_codec *const codec);
+
 	/* Internally used list node */
 	sys_snode_t node;
 };
