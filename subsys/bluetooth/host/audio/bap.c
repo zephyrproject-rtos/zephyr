@@ -579,7 +579,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 		       pac, bpac->codec.id, bpac->codec.data_count,
 		       bpac->codec.meta_count);
 
-		params->func(conn, &bpac->cap, NULL, params);
+		params->func(conn, &bpac->codec, NULL, params);
 
 		rsp->num_pac--;
 		params->num_caps++;
