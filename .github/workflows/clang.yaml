@@ -23,6 +23,7 @@ jobs:
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
     outputs:
       report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
@@ -48,7 +49,7 @@ jobs:
           # So first retry to update, if that does not work, remove all modules
           # and start over. (Workaround until we implement more robust module
           # west caching).
-          west update 1> west.update.log || west update 1> west.update-2.log || ( rm -rf ../modules && west update)
+          west update 2>&1 1> west.log || west update 2>&1 1> west2.log || ( rm -rf ../modules && west update)
 
       - name: Check Environment
         run: |
@@ -64,13 +65,10 @@ jobs:
           git config --global user.name "Zephyr Builder"
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
-          #
-          git rebase origin/main
-          commit_range="origin/${{github.base_ref}}..HEAD"
           # check if we need to run a full twister or not based on files changed
-          SC=$(./scripts/ci/what_changed.py --commits ${commit_range})
+          SC=$(./scripts/ci/what_changed.py --commits ${COMMIT_RANGE}
           # Get twister arguments based on the files changed
-          ./scripts/ci/get_twister_opt.py --commits ${commit_range}
+          ./scripts/ci/get_twister_opt.py --commits ${COMMIT_RANGE}
           if [ "$SC" = "full" ]; then
             # Full twister
             ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} --retry-failed 2
