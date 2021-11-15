@@ -46,7 +46,10 @@ struct ipc_rpmsg_ept {
 	struct rpmsg_endpoint ep;
 
 	/** Name of the endpoint. */
-	const char *name;
+	char name[RPMSG_NAME_SIZE];
+
+	/** Destination endpoint. */
+	uint32_t dest;
 
 	/** Bound flag. */
 	volatile bool bound;
@@ -77,6 +80,9 @@ struct ipc_rpmsg_instance {
 
 	/** EPT (instance) callback. */
 	rpmsg_ept_cb cb;
+
+	/** Mutex for the instance. */
+	struct k_mutex mtx;
 };
 
 /** @brief Init an RPMsg instance.
