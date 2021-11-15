@@ -136,15 +136,18 @@ int ipc_service_open_instance(const struct device *instance);
  *  Registers IPC endpoint onto an instance to enable communication with a
  *  remote device.
  *
- *  The same function registers endpoints for both master and slave devices.
+ *  The same function registers endpoints for both host and remote devices.
  *
  *  @param instance Instance to register the endpoint onto.
  *  @param ept Endpoint object.
  *  @param cfg Endpoint configuration.
  *
  *  @retval -EIO when no backend is registered.
- *  @retval -EINVAL when instance or endpoint configuration is invalid.
- *  @retval Other errno codes depending on the implementation of the backend.
+ *  @retval -EINVAL when instance, endpoint or configuration is invalid.
+ *  @retval -EBUSY when the instance is busy.
+ *
+ *  @retval 0 on success.
+ *  @retval other errno codes depending on the implementation of the backend.
  */
 int ipc_service_register_endpoint(const struct device *instance,
 				  struct ipc_ept *ept,
@@ -156,8 +159,14 @@ int ipc_service_register_endpoint(const struct device *instance,
  *  @param data Pointer to the buffer to send.
  *  @param len Number of bytes to send.
  *
- *  @retval -EIO when no backend is registered.
- *  @retval Other errno codes depending on the implementation of the backend.
+ *  @retval -EIO when no backend is registered or send hook is missing from
+ *	    backend.
+ *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -EBADMSG when the message is invalid.
+ *  @retval -EBUSY when the instance is busy.
+ *
+ *  @retval 0 on success.
+ *  @retval other errno codes depending on the implementation of the backend.
  */
 int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
 

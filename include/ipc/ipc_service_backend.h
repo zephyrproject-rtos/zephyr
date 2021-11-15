@@ -44,7 +44,13 @@ struct ipc_service_backend {
 	 *  @param data Pointer to the buffer to send.
 	 *  @param len Number of bytes to send.
 	 *
-	 *  @retval Status code.
+	 *  @retval -EINVAL when instance is invalid.
+	 *  @retval -EBADMSG when the message is invalid.
+	 *  @retval -EBUSY when the instance is busy or not ready.
+	 *
+	 *  @retval 0 on success
+	 *  @retval other errno codes depending on the implementation of the
+	 *	    backend.
 	 */
 	int (*send)(const struct device *instance, void *token,
 		    const void *data, size_t len);
@@ -55,7 +61,12 @@ struct ipc_service_backend {
 	 *  @param token Backend-specific token.
 	 *  @param cfg Endpoint configuration.
 	 *
-	 *  @retval Status code.
+	 *  @retval -EINVAL when the endpoint configuration or instance is invalid.
+	 *  @retval -EBUSY when the instance is busy or not ready.
+	 *
+	 *  @retval 0 on success
+	 *  @retval other errno codes depending on the implementation of the
+	 *	    backend.
 	 */
 	int (*register_endpoint)(const struct device *instance,
 				 void **token,

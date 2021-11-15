@@ -100,7 +100,7 @@ static struct rpmsg_mi_instance *get_available_instance(const struct ipc_ept_cfg
 static struct ipc_rpmsg_ept *get_available_ept_slot(struct ipc_rpmsg_instance *rpmsg_instance)
 {
 	for (size_t i = 0; i < NUM_ENDPOINTS; i++) {
-		if (rpmsg_instance->endpoint[i].name == NULL) {
+		if (rpmsg_instance->endpoint[i].name[0] == '\0') {
 			return &rpmsg_instance->endpoint[i];
 		}
 	}
@@ -299,7 +299,8 @@ static int register_ept(const struct device *dev,
 		return -ENODEV;
 	}
 
-	rpmsg_ept->name = cfg->name;
+	strncpy(rpmsg_ept->name, cfg->name ? cfg->name : "", sizeof(rpmsg_ept->name));
+
 	rpmsg_ept->cb = &cfg->cb;
 	rpmsg_ept->priv = cfg->priv;
 	rpmsg_ept->bound = false;
