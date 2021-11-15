@@ -430,6 +430,34 @@
 			#pwm-cells = <2>;
 			status = "disabled";
 		};
+
+		adc1: adc@42280000 {
+			compatible = "nxp,vf610-adc";
+			reg = <0x42280000 0x4000>;
+			clk-source = <1>;
+			clk-divider = <2>;
+			interrupts = <100 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		adc2: adc@42284000 {
+			compatible = "nxp,vf610-adc";
+			reg = <0x42284000 0x4000>;
+			clk-source = <1>;
+			clk-divider = <2>;
+			interrupts = <101 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
 	};
 };
 
