@@ -882,8 +882,6 @@ struct bt_audio_stream {
 	struct bt_conn *conn;
 	/** Endpoint reference */
 	struct bt_audio_ep *ep;
-	/** Capability reference */
-	struct bt_audio_capability *cap;
 	/** Codec Configuration */
 	struct bt_codec *codec;
 	/** QoS Configuration */
@@ -900,6 +898,9 @@ struct bt_audio_stream {
 		struct bt_audio_broadcast_source *broadcast_source;
 		struct bt_audio_broadcast_sink *broadcast_sink;
 	};
+
+	/** Stream user data */
+	void *user_data;
 };
 
 /** Unicast Server callback structure */
@@ -1053,6 +1054,7 @@ struct bt_audio_unicast_server_cb {
 	sys_snode_t node;
 };
 
+struct bt_audio_capability; /* Handle circular dependency */
 /** @brief Capability operations structure.
  *
  *  These are only used for unicast streams and broadcast sink streams.
