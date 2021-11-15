@@ -1,0 +1,5 @@
+# Copyright (c) 2021 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LICHEE_TANG
+	bool "Sipeed Lichee Tang target"

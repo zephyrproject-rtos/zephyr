@@ -1,0 +1,9 @@
+identifier: lichee_tang
+name: Sipeed Lichee Tang
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+  - xtools
+flash: 128
+ram: 32

@@ -1,0 +1,11 @@
+# Sipeed Lichee Tang Development Board Configuration
+
+# Copyright (c) 2021 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LICHEE_TANG
+
+config BOARD
+	default "lichee_tang"
+
+endif

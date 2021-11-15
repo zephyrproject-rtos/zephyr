@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2021 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nuclei_hummingbird.dtsi>
+
+/ {
+	model = "Sipeed Lichee Tang";
+	compatible = "sipeed,lichee_tang";
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};

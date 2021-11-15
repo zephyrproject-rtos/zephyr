@@ -199,6 +199,7 @@
 /drivers/*/*sam4l*                        @nandojve
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*gd32*                         @nandojve
+/drivers/*/*hummingbird*                  @soburi
 /drivers/*/*litex*                        @mateusz-holenko @kgugala @pgielda
 /drivers/*/*mcux*                         @mmahadevan108 @dleach02
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
