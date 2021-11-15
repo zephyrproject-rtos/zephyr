@@ -1477,7 +1477,7 @@ struct bt_audio_discover_params;
  */
 typedef void
 (*bt_audio_discover_func_t)(struct bt_conn *conn,
-			    struct bt_audio_capability *cap,
+			    struct bt_codec *codec,
 			    struct bt_audio_ep *ep,
 			    struct bt_audio_discover_params *params);
 

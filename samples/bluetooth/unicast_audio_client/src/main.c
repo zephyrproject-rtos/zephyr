@@ -21,7 +21,7 @@ static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_audio_stream audio_stream;
 static struct bt_audio_unicast_group *unicast_group;
-static struct bt_audio_capability *remote_capabilities[CONFIG_BT_BAP_PAC_COUNT];
+static struct bt_codec *remote_codecs[CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *sinks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE, NULL);
 
@@ -406,34 +406,34 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 	sinks[index] = ep;
 }
 
-static void add_remote_capability(struct bt_audio_capability *cap, int index,
+static void add_remote_codec(struct bt_codec *codec, int index,
 				  uint8_t type)
 {
-	printk("#%u: cap %p type 0x%02x\n", index, cap, type);
+	printk("#%u: codec %p type 0x%02x\n", index, codec, type);
 
-	print_codec(cap->codec);
+	print_codec(codec);
 
 	if (type != BT_AUDIO_SINK && type != BT_AUDIO_SOURCE) {
 		return;
 	}
 
 	if (index < CONFIG_BT_BAP_PAC_COUNT) {
-		remote_capabilities[index] = cap;
+		remote_codecs[index] = codec;
 	}
 }
 
 static void discover_sink_cb(struct bt_conn *conn,
-			    struct bt_audio_capability *cap,
-			    struct bt_audio_ep *ep,
-			    struct bt_audio_discover_params *params)
+			     struct bt_codec *codec,
+			     struct bt_audio_ep *ep,
+			     struct bt_audio_discover_params *params)
 {
 	if (params->err != 0) {
 		printk("Discovery failed: %d\n", params->err);
 		return;
 	}
 
-	if (cap != NULL) {
-		add_remote_capability(cap, params->num_caps, params->type);
+	if (codec != NULL) {
+		add_remote_codec(codec, params->num_caps, params->type);
 		return;
 	}
 
