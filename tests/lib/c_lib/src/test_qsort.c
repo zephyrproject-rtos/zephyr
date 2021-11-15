@@ -16,7 +16,12 @@ static int compare_ints(const void *a, const void *b)
 	return (aa > bb) - (aa < bb);
 }
 
-void test_qsort(void)
+/**
+ *
+ * @brief Test qsort function
+ *
+ */
+ZTEST(test_c_lib, test_qsort)
 {
 	{
 		int actual_int[] = { 1, 3, 2 };
@@ -132,7 +137,7 @@ static int compare_ints_with_boolp_arg(const void *a, const void *b, void *argp)
 	return (aa > bb) - (aa < bb);
 }
 
-void test_qsort_r(void)
+ZTEST(test_c_lib, test_qsort_r)
 {
 	bool arg = false;
 
