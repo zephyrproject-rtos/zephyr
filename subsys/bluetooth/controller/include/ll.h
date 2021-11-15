@@ -255,8 +255,8 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 		    uint16_t interval_max, uint16_t latency, uint16_t timeout);
 uint8_t ll_chm_update(uint8_t const *const chm);
 uint8_t ll_chm_get(uint16_t handle, uint8_t *const chm);
-uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
-		     uint8_t const *const ediv, uint8_t const *const ltk);
+uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num, uint8_t const *const ediv,
+			uint8_t const *const ltk);
 uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t err_code,
 			   uint8_t const *const ltk);
 uint8_t ll_feature_req_send(uint16_t handle);
@@ -284,6 +284,9 @@ void ll_length_max_get(uint16_t *const max_tx_octets,
 uint8_t ll_phy_get(uint16_t handle, uint8_t *const tx, uint8_t *const rx);
 uint8_t ll_phy_default_set(uint8_t tx, uint8_t rx);
 uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx);
+
+uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
+		     uint8_t const min_used_chans);
 
 /* Direction Finding */
 /* Sets CTE transmission parameters for periodic advertising */
