@@ -388,6 +388,8 @@ struct usdhc_config {
 	uint8_t detect_pin;
 	gpio_dt_flags_t detect_flags;
 
+	bool detect_dat3;
+
 	bool no_1_8_v;
 
 	uint32_t data_timeout;
@@ -514,6 +516,9 @@ enum usdhc_xfer_data_type {
 #define CARD_BUS_STRENGTH_5 (5U)
 #define CARD_BUS_STRENGTH_6 (6U)
 #define CARD_BUS_STRENGTH_7 (7U)
+
+#define USDHC_DAT3_PULL_DOWN 0U /*!< Data 3 pull down */
+#define USDHC_DAT3_PULL_UP 1U /*!< Data 3 pull up */
 
 enum usdhc_adma_flag {
 	USDHC_ADMA_SINGLE_FLAG = 0U,
@@ -2604,6 +2609,33 @@ APP_SEND_OP_COND_AGAIN:
 
 static K_MUTEX_DEFINE(z_usdhc_init_lock);
 
+
+static int usdhc_dat3_pull(bool pullup, struct usdhc_priv *priv)
+{
+	int ret = 0U;
+
+	/* Call board specific function to pull down DAT3 */
+	imxrt_usdhc_dat3_pull(pullup);
+#ifdef CONFIG_SDMMC_USDHC_DAT3_PWR_TOGGLE
+	if (!pullup) {
+		/* Power off the card to clear DAT3 legacy status */
+		if (priv->pwr_gpio) {
+			ret = gpio_pin_set(priv->pwr_gpio, priv->config->pwr_pin, 0);
+			if (ret) {
+				return ret;
+			}
+			/* Delay for card power off to complete */
+			usdhc_millsec_delay(CONFIG_SDMMC_USDHC_DAT3_PWR_DELAY);
+			ret = gpio_pin_set(priv->pwr_gpio, priv->config->pwr_pin, 1);
+			if (ret) {
+				return ret;
+			}
+		}
+	}
+#endif
+	return ret;
+}
+
 static int usdhc_board_access_init(struct usdhc_priv *priv)
 {
 	const struct usdhc_config *config = priv->config;
@@ -2626,6 +2658,11 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		}
 	}
 
+	if (config->detect_dat3) {
+		priv->detect_type = SD_DETECT_HOST_DATA3;
+	}
+
+
 	if (priv->pwr_gpio) {
 		ret = gpio_pin_configure(priv->pwr_gpio,
 				config->pwr_pin,
@@ -2643,10 +2680,21 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 	if (!priv->detect_gpio) {
 		LOG_INF("USDHC detection other than GPIO");
-		/* DATA3 does not monitor card insertion */
-		base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
+		if (config->detect_dat3) {
+			base->PROT_CTRL |= USDHC_PROT_CTRL_D3CD_MASK;
+			/* Pull down DAT3 */
+			usdhc_dat3_pull(USDHC_DAT3_PULL_DOWN, priv);
+		} else {
+			/* DATA3 does not monitor card insertion */
+			base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
+		}
 		if ((base->PRES_STATE & USDHC_PRES_STATE_CINST_MASK) != 0) {
 			priv->inserted = true;
+			if (config->detect_dat3) {
+				usdhc_dat3_pull(USDHC_DAT3_PULL_UP, priv);
+				/* Disable DAT3 detect function */
+				base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
+			}
 		} else {
 			priv->inserted = false;
 			return -ENODEV;
@@ -2853,6 +2901,7 @@ static int disk_usdhc_init(const struct device *dev)
 		DISK_ACCESS_USDHC_INIT_PWR(n)				\
 		DISK_ACCESS_USDHC_INIT_CD(n)				\
 		.no_1_8_v = DT_INST_PROP(n, no_1_8_v),			\
+		.detect_dat3 = DT_INST_PROP(n, detect_dat3),	\
 		.data_timeout = USDHC_DATA_TIMEOUT,			\
 		.endian = USDHC_LITTLE_ENDIAN,				\
 		.read_watermark = USDHC_READ_WATERMARK_LEVEL,		\
