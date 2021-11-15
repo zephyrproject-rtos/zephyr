@@ -602,7 +602,6 @@ static int configure_stream(struct bt_audio_stream *stream)
 	int err;
 
 	err = bt_audio_stream_config(default_conn, stream, sinks[0],
-				     remote_capabilities[0],
 				     &preset_16_2_1.codec);
 	if (err != 0) {
 		printk("Could not configure stream\n");

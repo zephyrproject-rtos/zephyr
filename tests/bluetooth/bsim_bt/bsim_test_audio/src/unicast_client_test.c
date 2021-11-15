@@ -389,7 +389,6 @@ static int configure_stream(struct bt_audio_stream *stream,
 	UNSET_FLAG(flag_stream_configured);
 
 	err = bt_audio_stream_config(g_conn, stream, ep,
-				     g_remote_capabilities[0],
 				     &preset_16_2_1.codec);
 	if (err != 0) {
 		FAIL("Could not configure stream: %d\n", err);

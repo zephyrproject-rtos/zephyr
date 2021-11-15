@@ -1516,7 +1516,6 @@ int bt_audio_discover(struct bt_conn *conn,
  *  @param conn Connection object
  *  @param stream Stream object being configured
  *  @param ep Remote Audio Endpoint being configured
- *  @param cap Local Audio Capability being configured
  *  @param codec Codec configuration
  *
  *  @return Allocated Audio Stream object or NULL in case of error.
@@ -1524,7 +1523,6 @@ int bt_audio_discover(struct bt_conn *conn,
 int bt_audio_stream_config(struct bt_conn *conn,
 			   struct bt_audio_stream *stream,
 			   struct bt_audio_ep *ep,
-			   struct bt_audio_capability *cap,
 			   struct bt_codec *codec);
 
 /** @brief Reconfigure Audio Stream
@@ -1535,13 +1533,11 @@ int bt_audio_stream_config(struct bt_conn *conn,
  *  This can only be done for unicast streams.
  *
  *  @param stream Stream object being reconfigured
- *  @param cap Local Audio Capability being reconfigured
  *  @param codec Codec configuration
  *
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
-			     struct bt_audio_capability *cap,
 			     struct bt_codec *codec);
 
 /** @brief Configure Audio Stream QoS
