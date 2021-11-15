@@ -35,7 +35,7 @@ static struct bt_audio_broadcast_source *default_source;
 static struct bt_audio_stream broadcast_sink_streams[BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_broadcast_sink *default_sink;
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
-static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
+static struct bt_codec *rcodecs[2][CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *snks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_ep *srcs[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_stream *default_stream;
@@ -166,20 +166,18 @@ static void print_codec(const struct bt_codec *codec)
 	}
 }
 
-static void add_capability(struct bt_audio_capability *cap, int index,
-			   uint8_t type)
+static void add_codec(struct bt_codec *codec, int index, uint8_t type)
 {
-	shell_print(ctx_shell, "#%u: cap %p type 0x%02x", index, cap,
-		    type);
+	shell_print(ctx_shell, "#%u: codec %p type 0x%02x", index, codec, type);
 
-	print_codec(cap->codec);
+	print_codec(codec);
 
 	if (type != BT_AUDIO_SINK && type != BT_AUDIO_SOURCE) {
 		return;
 	}
 
 	if (index < CONFIG_BT_BAP_PAC_COUNT) {
-		rcaps[type - 1][index] = cap;
+		rcodecs[type - 1][index] = codec;
 	}
 }
 
@@ -197,12 +195,12 @@ static void add_source(struct bt_audio_ep *ep, int index)
 	srcs[index] = ep;
 }
 
-static void discover_cb(struct bt_conn *conn, struct bt_audio_capability *cap,
+static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_ep *ep,
 			struct bt_audio_discover_params *params)
 {
-	if (cap) {
-		add_capability(cap, params->num_caps, params->type);
+	if (codec != NULL) {
+		add_codec(codec, params->num_caps, params->type);
 		return;
 	}
 
@@ -221,12 +219,12 @@ static void discover_cb(struct bt_conn *conn, struct bt_audio_capability *cap,
 	memset(params, 0, sizeof(*params));
 }
 
-static void discover_all(struct bt_conn *conn, struct bt_audio_capability *cap,
+static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_ep *ep,
 			struct bt_audio_discover_params *params)
 {
-	if (cap) {
-		add_capability(cap, params->num_caps, params->type);
+	if (codec != NULL) {
+		add_codec(codec, params->num_caps, params->type);
 		return;
 	}
 
@@ -403,10 +401,8 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
 	int32_t index, dir;
-	struct bt_audio_capability *cap = NULL;
 	struct bt_audio_ep *ep = NULL;
 	struct named_lc3_preset *named_preset;
-	int i;
 
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
@@ -444,18 +440,6 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 				    argv[4]);
 			return -ENOEXEC;
 		}
-	}
-
-	for (i = 0; i < ARRAY_SIZE(rcaps); i++) {
-		if (rcaps[dir - 1][i]) {
-			cap = rcaps[dir - 1][i];
-			break;
-		}
-	}
-
-	if (!cap) {
-		shell_error(sh, "Unable to find matching capabilities");
-		return -ENOEXEC;
 	}
 
 	if (default_stream && default_stream->ep == ep) {

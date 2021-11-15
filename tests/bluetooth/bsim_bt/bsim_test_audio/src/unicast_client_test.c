@@ -14,7 +14,7 @@
 extern enum bst_result_t bst_result;
 
 static struct bt_audio_stream g_streams[CONFIG_BT_BAP_ASE_SNK_COUNT];
-static struct bt_audio_capability *g_remote_capabilities[CONFIG_BT_BAP_PAC_COUNT];
+static struct bt_codec *g_remote_codecs[CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *g_sinks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_conn *g_conn;
 
@@ -218,28 +218,27 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 	g_sinks[index] = ep;
 }
 
-static void add_remote_capability(struct bt_audio_capability *cap, int index,
-				  uint8_t type)
+static void add_remote_codec(struct bt_codec *codec, int index, uint8_t type)
 {
-	printk("#%u: cap %p type 0x%02x\n", index, cap, type);
+	printk("#%u: codec %p type 0x%02x\n", index, codec, type);
 
-	print_codec(cap->codec);
+	print_codec(codec);
 
 	if (type != BT_AUDIO_SINK && type != BT_AUDIO_SOURCE) {
 		return;
 	}
 
 	if (index < CONFIG_BT_BAP_PAC_COUNT) {
-		g_remote_capabilities[index] = cap;
+		g_remote_codecs[index] = codec;
 	}
 }
 
 static void discover_sink_cb(struct bt_conn *conn,
-			    struct bt_audio_capability *cap,
+			    struct bt_codec *codec,
 			    struct bt_audio_ep *ep,
 			    struct bt_audio_discover_params *params)
 {
-	static bool capability_found;
+	static bool codec_found;
 	static bool endpoint_found;
 
 	if (params->err != 0) {
@@ -247,9 +246,9 @@ static void discover_sink_cb(struct bt_conn *conn,
 		return;
 	}
 
-	if (cap != NULL) {
-		add_remote_capability(cap, params->num_caps, params->type);
-		capability_found = true;
+	if (codec != NULL) {
+		add_remote_codec(codec, params->num_caps, params->type);
+		codec_found = true;
 		return;
 	}
 
@@ -268,10 +267,10 @@ static void discover_sink_cb(struct bt_conn *conn,
 
 	(void)memset(params, 0, sizeof(*params));
 
-	if (endpoint_found && capability_found) {
+	if (endpoint_found && codec_found) {
 		SET_FLAG(flag_sink_discovered);
 	} else {
-		FAIL("Did not discover endpoint and capabilities\n");
+		FAIL("Did not discover endpoint and codec\n");
 	}
 }
 
