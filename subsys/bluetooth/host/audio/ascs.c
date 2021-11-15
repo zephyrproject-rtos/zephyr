@@ -712,7 +712,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	/* TODO: bt_audio_stream_attach duplicates some of the
 	 * ase_stream_add. Should be cleaned up.
 	 */
-	bt_audio_stream_attach(ascs->conn, stream, &ase->ep, NULL,
+	bt_audio_stream_attach(ascs->conn, stream, &ase->ep,
 			       &ase->ep.codec);
 
 	bt_audio_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
