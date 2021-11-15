@@ -157,7 +157,7 @@ static int bap_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-static int bap_disable(struct bt_audio_stream *stream)
+int bap_disable(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
