@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Tokita Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_HUMMINGBIRD_UART := nuclei,hummingbird-uart
+
+config UART_HUMMINGBIRD
+	bool "Nuclei HummingBird serial driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_HUMMINGBIRD_UART))
+	depends on SOC_SERIES_HUMMINGBIRD
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the UART driver for Nuclei HummingBird core.

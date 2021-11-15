@@ -63,5 +63,12 @@
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;
 		};
+
+		uart0: serial@10013000 {
+			compatible = "nuclei,hummingbird-uart";
+			reg = <0x10013000 0x400>;
+			status = "disabled";
+			label = "UART_0";
+		};
 	};
 };

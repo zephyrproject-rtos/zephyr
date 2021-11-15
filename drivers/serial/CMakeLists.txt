@@ -46,6 +46,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_NEORV32 uart_neorv32.c)
 zephyr_library_sources_ifdef(CONFIG_USART_GD32 usart_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XEN_HVC uart_hvc_xen.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XEN_HVC_CONSOLEIO uart_hvc_xen_consoleio.c)
+zephyr_library_sources_ifdef(CONFIG_UART_HUMMINGBIRD uart_hummingbird.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 

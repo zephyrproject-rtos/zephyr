@@ -11,7 +11,14 @@
 	model = "Sipeed Lichee Tang";
 	compatible = "sipeed,lichee_tang";
 	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
 };
