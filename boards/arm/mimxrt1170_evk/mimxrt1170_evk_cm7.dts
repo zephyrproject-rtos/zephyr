@@ -62,3 +62,10 @@
 &lpadc0 {
 	status = "okay";
 };
+
+&usdhc1 {
+	status = "okay";
+	no-1-8-v;
+	detect-dat3;
+	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
+};

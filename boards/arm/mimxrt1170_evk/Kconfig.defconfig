@@ -14,4 +14,17 @@ choice CODE_LOCATION
 	default CODE_SRAM0 if BOARD_MIMXRT1170_EVK_CM4
 endchoice
 
+if DISK_DRIVERS
+
+config DISK_DRIVER_SDMMC
+	default y
+
+config SDMMC_USDHC_DAT3_PWR_TOGGLE
+	default y
+
+config SDMMC_USDHC_DAT3_PWR_DELAY
+	default 1000
+
+endif
+
 endif # BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4
