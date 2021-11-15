@@ -775,11 +775,6 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 		return -EINVAL;
 	}
 
-	CHECKIF(stream->cap == NULL || stream->cap->ops == NULL) {
-		BT_DBG("Capability or capability ops is NULL");
-		return -EINVAL;
-	}
-
 	switch (stream->ep->status.state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
 	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
@@ -798,20 +793,12 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 		return -EBADMSG;
 	}
 
-	if (stream->cap->ops->release == NULL) {
-		err = 0;
-		goto done;
-	}
-
-	err = stream->cap->ops->release(stream);
-	if (err) {
-		if (err == -ENOTCONN) {
-			return 0;
-		}
+	err = bap_release(stream);
+	if (err != 0) {
+		BT_DBG("Stopping stream failed: %d", err);
 		return err;
 	}
 
-done:
 	if (stream->ep->type != BT_AUDIO_EP_LOCAL) {
 		return err;
 	}
