@@ -214,6 +214,33 @@
 
 #define PKT_BIS_US(octets, mic, phy) PDU_MAX_US((octets), (mic), (phy))
 
+/* TODO: verify if the following lines are correct */
+/* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
+ * index, directed adv report, and mesh channel and instant.
+ */
+#define PDU_AC_SIZE_RSSI 1
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+#define PDU_AC_SIZE_PRIV 1
+#else
+#define PDU_AC_SIZE_PRIV 0
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+#define PDU_AC_SIZE_SCFP 1
+#else
+#define PDU_AC_SIZE_SCFP 0
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#define PDU_AC_SIZE_MESH 5
+#else
+#define PDU_AC_SIZE_MESH 0
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#define PDU_AC_LL_SIZE_EXTRA (PDU_AC_SIZE_RSSI + \
+			      PDU_AC_SIZE_PRIV + \
+			      PDU_AC_SIZE_SCFP + \
+			      PDU_AC_SIZE_MESH)
+
+
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
 	uint8_t data[PDU_AC_DATA_SIZE_MAX];
@@ -485,10 +512,13 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_PHY_RSP = 0x17,
 	PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND = 0x18,
 	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
+	PDU_DATA_LLCTRL_TYPE_CTE_REQ = 0x1A,
+	PDU_DATA_LLCTRL_TYPE_CTE_RSP = 0x1B,
 	PDU_DATA_LLCTRL_TYPE_CIS_REQ = 0x1F,
 	PDU_DATA_LLCTRL_TYPE_CIS_RSP = 0x20,
 	PDU_DATA_LLCTRL_TYPE_CIS_IND = 0x21,
 	PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND = 0x22,
+	PDU_DATA_LLCTRL_TYPE_UNUSED = 0xFF
 };
 
 struct pdu_data_llctrl_conn_update_ind {
@@ -641,6 +671,24 @@ struct pdu_data_llctrl_min_used_chans_ind {
 	uint8_t min_used_chans;
 } __packed;
 
+struct pdu_data_llctrl_cte_req {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t min_cte_len_req : 5;
+	uint8_t rfu : 1;
+	uint8_t cte_type_req : 2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t cte_type_req : 2;
+	uint8_t rfu : 1;
+	uint8_t min_cte_len_req : 5;
+#else
+#error "Unsupported endianness"
+#endif
+} __packed;
+
+struct pdu_data_llctrl_cte_rsp {
+	/* no members */
+} __packed;
+
 struct pdu_data_llctrl_cis_req {
 	uint8_t cig_id;
 	uint8_t cis_id;
@@ -733,6 +781,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
+		struct pdu_data_llctrl_cte_req cte_req;
+		struct pdu_data_llctrl_cte_rsp cte_rsp;
 		struct pdu_data_llctrl_cis_req cis_req;
 		struct pdu_data_llctrl_cis_rsp cis_rsp;
 		struct pdu_data_llctrl_cis_ind cis_ind;

@@ -74,6 +74,27 @@ config BT_CTLR_TIFS_HW_SUPPORT
 config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
 
+choice BT_LL_SW_LLCP_IMPL
+	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
+	default BT_LL_SW_LLCP_LEGACY
+	help
+	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+
+config BT_LL_SW_LLCP_LEGACY
+	bool "Legacy implementation"
+	help
+	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
+
+config BT_LL_SW_LLCP
+	bool "New implementation, replacing the legacy one [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+	  It is considered experimental because it is still under development and is not qualifiable yet.
+
+endchoice
+
+
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Controller's Co-Operative high priority Rx thread stack size.
 	int "High priority Rx thread stack size"
@@ -460,6 +481,49 @@ config BT_CTLR_LLCP_CONN
 	  for LLCP procedures must be met. Executing LLCP procedures on
 	  more than this number of connections simultaneously may cause
 	  instabilities.
+
+if !BT_LL_SW_LLCP_LEGACY
+config BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	int
+	default 4
+	help
+	  The theoretical maximum number of tx ctrl buffers needed for any connection, is 4.
+	  two for active encryption procedure plus one for rejecting a remote request
+	  and one for a local terminate
+
+config BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be reserved per connection"
+	default BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	range 0 BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	help
+	  Set the number control buffers that is to be pre allocated per connection
+	  This defines the minimum number of buffers available for any connection
+	  Setting this to non zero will ensure a connection will always have access
+	  to buffer(s) for control procedure TX
+
+config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be available across all connections"
+	default 0
+	range 0 255
+	help
+	  Set the number control buffers that is to be available for tx.
+	  This defines the size of the pool of tx buffers available
+	  for control procedure tx. This pool is shared across all
+	  procedures/connections with allocation through a fifo queue.
+	  Configure between 0 and (4 - BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) * BT_CTLR_LLCP_CONN
+
+config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
+	int "Number of control procedure contexts to be available across all connections"
+	default BT_CTLR_LLCP_CONN
+	range 1 255
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handlign control procedures. This pool is shared across all
+	  connections (local vs remote initiate), with allocation through a queue
+
+endif #!BT_LL_SW_LLCP_LEGACY
+
 
 config BT_CTLR_LLID_DATA_START_EMPTY
 	bool "Handle zero length L2CAP start frame"

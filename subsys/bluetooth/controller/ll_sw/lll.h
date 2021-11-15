@@ -143,6 +143,9 @@ enum done_result {
 	DONE_LATE
 };
 
+/* Forward declaration data type to store CTE IQ samples report related data */
+struct cte_conn_iq_report;
+
 struct ull_hdr {
 	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
 				* events
@@ -279,6 +282,8 @@ struct node_rx_ftr {
 				*/
 		void *aux_ptr;
 		uint8_t aux_phy;
+		uint8_t aux_sched;
+		struct cte_conn_iq_report *iq_report;
 	};
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
