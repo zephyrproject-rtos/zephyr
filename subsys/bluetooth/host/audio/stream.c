@@ -721,11 +721,6 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 		return -EINVAL;
 	}
 
-	if (stream->cap == NULL || stream->cap->ops == NULL) {
-		BT_DBG("Invalid capabilities or capabilities ops");
-		return -EINVAL;
-	}
-
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x03 (Disabling) */
 	case BT_AUDIO_EP_STATE_DISABLING:
@@ -736,17 +731,12 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 		return -EBADMSG;
 	}
 
-	if (stream->cap->ops->stop == NULL) {
-		err = 0;
-		goto done;
-	}
-
-	err = stream->cap->ops->stop(stream);
-	if (err) {
+	err = bap_stop(stream);
+	if (err != 0) {
+		BT_DBG("Stopping stream failed: %d", err);
 		return err;
 	}
 
-done:
 	if (ep->type != BT_AUDIO_EP_LOCAL) {
 		return err;
 	}
