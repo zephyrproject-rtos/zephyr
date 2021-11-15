@@ -199,47 +199,38 @@ See :ref:`missing-dt-binding` for troubleshooting.
 Set devicetree overlays
 ***********************
 
-Devicetree overlays are explained in :ref:`devicetree-intro`. The CMake
-variable :makevar:`DTC_OVERLAY_FILE` contains a space- or semicolon-separated
-list of overlays. If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they
-are included in that order by the C preprocessor.
+You can set devicetree overlays that the C preprocessor must include in the
+build using one of the following methods, listed in order of priority. The
+first method detected by the C preprocessor will make it ignore all the
+later methods in the list.
 
-Devicetree overlays can be specified by the user directly, in a
-:file:`CMakeLists.txt` file, or applied automatically.
+1. Using the :makevar:`DTC_OVERLAY_FILE` CMake variable. You can use the CMake
+   variable :makevar:`DTC_OVERLAY_FILE` to list the overlays, using spaces or
+   semicolons as separators. When :makevar:`DTC_OVERLAY_FILE` specifies
+   multiple files, the C preprocessor includes them in the order in which they
+   are specified. See `this link`_ for more details on how to set CMake
+   variables.
+#. Using the :file:`boards/<BOARD>_<revision>.overlay` file in the application
+   folder. To use this method, the board must support multiple revisions. See
+   :ref:`porting_board_revisions`. If the :file:`boards/<BOARD>.overlay` file
+   also exists, the :file:`boards/<BOARD>_<revision>.overlay` file is merged
+   into it.
+#. Using the :file:`boards/<BOARD>.overlay` file in the application folder.
+#. Using the :file:`<BOARD>.overlay` file in the application folder.
+#. Using the :file:`app.overlay` file in the application folder.
 
-Overlay files are applied according to the following scheme:
-
-1. If ``DTC_OVERLAY_FILE`` is set, the overlay file(s) in it are merged and used
-   by the application. ``DTC_OVERLAY_FILE`` can be set in various ways:
-
-   1. In :file:`CMakeLists.txt`, before calling ``find_package(Zephyr)``
-
-   2. By passing ``-DDTC_OVERLAY_FILE="file1.overlay;file2.overlay;..."``,
-      either directly or via ``west``
-
-   3. From the CMake variable cache
-
-#. Otherwise, the file :file:`boards/<BOARD>_<revision>.overlay` is used if it
-   exists in the application folder. This requires that the board supports
-   multiple revisions, see :ref:`porting_board_revisions`.
-   The :file:`boards/<BOARD>_<revision>.overlay` file will be merged with
-   :file:`boards/<BOARD>.overlay` if this file also exists.
-#. Otherwise the file :file:`boards/<BOARD>.overlay` is used if it exists in the
-   application folder.
-#. Otherwise, :file:`<BOARD>.overlay` is used if it exists in the application
-   folder.
-#. Otherwise, :file:`app.overlay` will from the application folder is used if it
-   exists.
-
-Here is an example :ref:`using west build <west-building-dtc-overlay-file>`.
-However you set the value, it is saved in the CMake cache between builds.
+You can find :ref:`here <west-building-dtc-overlay-file>` an example that uses
+``west build``.
+The value set is stored in the CMake cache and used in all the successive builds.
 
 The :ref:`build system <build_overview>` prints all the devicetree overlays it
-finds in the configuration phase, like this:
+finds in the configuration phase as follows:
 
 .. code-block:: none
 
    -- Found devicetree overlay: .../some/file.overlay
+
+For more information on devicetree overlays, see :ref:`devicetree-intro`.
 
 .. _use-dt-overlays:
 
@@ -600,3 +591,5 @@ supporting a devicetree alias to specify the hardware specific portions, as is
 done in the :ref:`blinky-sample`. The application can then be configured in
 :ref:`BOARD.dts <devicetree-in-out-files>` files or via :ref:`devicetree
 overlays <use-dt-overlays>`.
+
+.. _this link: https://cmake.org/cmake/help/latest/command/set.html#set-normal-variable
