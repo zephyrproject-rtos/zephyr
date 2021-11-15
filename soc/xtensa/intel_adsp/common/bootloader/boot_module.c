@@ -6,6 +6,11 @@
  * Author: Marcin Maka <marcin.maka@linux.intel.com>
  */
 
+/* Older (GCC 4.2-based) XCC variants need a fixup file. */
+#if defined(__XCC__) && (__GNUC__ == 4)
+#include <toolchain/xcc_missing_defs.h>
+#endif
+
 #include "manifest.h"
 #include <soc/memory.h>
 
