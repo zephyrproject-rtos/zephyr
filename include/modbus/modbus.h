@@ -406,6 +406,13 @@ struct modbus_serial_param {
 	 *    UART_CFG_PARITY_ODD
 	 */
 	enum uart_config_parity parity;
+	/** stop_bits_client UART's stop bits setting if in client mode:
+	 *    UART_CFG_STOP_BITS_0_5,
+	 *    UART_CFG_STOP_BITS_1,
+	 *    UART_CFG_STOP_BITS_1_5,
+	 *    UART_CFG_STOP_BITS_2,
+	 */
+	enum uart_config_stop_bits stop_bits_client;
 };
 
 /**
