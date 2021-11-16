@@ -319,14 +319,14 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1, ticks_at_start, remainder);
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
 
 	radio_gpio_pa_lna_enable(start_us + radio_tx_ready_delay_get(phy, 1) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
-#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+				 HAL_RADIO_GPIO_PA_OFFSET);
+#else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	ARG_UNUSED(start_us);
-#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
