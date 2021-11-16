@@ -306,7 +306,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	} else {
 		pdu_big_info_size = PDU_BIG_INFO_CLEARTEXT_SIZE;
 	}
-	hdr_data[0] = pdu_big_info_size + 2U;
+	hdr_data[0] = pdu_big_info_size + PDU_ADV_DATA_HEADER_SIZE;
 	err = ull_adv_sync_pdu_set_clear(lll_adv_sync, pdu_prev, pdu,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
@@ -317,10 +317,12 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		return err;
 	}
 
-	memcpy(&acad, &hdr_data[1], sizeof(acad));
-	acad[0] = pdu_big_info_size + 1U;
-	acad[1] = BT_DATA_BIG_INFO;
-	big_info = (void *)&acad[2];
+	(void)memcpy(&acad, &hdr_data[1], sizeof(acad));
+	acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] =
+		pdu_big_info_size + (PDU_ADV_DATA_HEADER_SIZE -
+				     PDU_ADV_DATA_HEADER_LEN_SIZE);
+	acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_BIG_INFO;
+	big_info = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 
 	/* big_info->offset, big_info->offset_units and
 	 * big_info->payload_count_framing[] will be filled by periodic

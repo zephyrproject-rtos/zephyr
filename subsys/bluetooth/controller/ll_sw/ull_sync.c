@@ -917,8 +917,10 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 	/* Find the Channel Map Update Indication */
 	do {
 		/* Pick the length and find the Channel Map Update Indication */
-		ad_len = acad[0];
-		if (ad_len && (acad[1] == BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+		ad_len = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+		if (ad_len &&
+		    (acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
+		     BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
 			break;
 		}
 
@@ -945,7 +947,7 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 		chm_last = 0U;
 	}
 
-	chm_upd_ind = (void *)&acad[2];
+	chm_upd_ind = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 	(void)memcpy(lll->chm[chm_last].data_chan_map, chm_upd_ind->chm,
 		     sizeof(lll->chm[chm_last].data_chan_map));
 	lll->chm[chm_last].data_chan_count =

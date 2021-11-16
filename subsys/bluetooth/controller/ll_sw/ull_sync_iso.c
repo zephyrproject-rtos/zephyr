@@ -269,13 +269,14 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	uint32_t ret;
 	uint8_t sca;
 
-	if (acad_len < (PDU_BIG_INFO_CLEARTEXT_SIZE + 2)) {
+	if (acad_len < (PDU_BIG_INFO_CLEARTEXT_SIZE +
+			PDU_ADV_DATA_HEADER_SIZE)) {
 		return;
 	}
 
-	/* TODO: Parse and find the BIGInfo */
-	bi_size = acad[0];
-	bi = (void *)&acad[2];
+	/* FIXME: Parse and find the BIGInfo */
+	bi_size = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+	bi = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 
 	lll = &sync_iso->lll;
 	memcpy(lll->seed_access_addr, &bi->seed_access_addr,
