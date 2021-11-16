@@ -46,7 +46,8 @@ jobs:
       - name: west setup
         run: |
           west init -l . || true
-          west update 2>&1 1> west.update.log
+          west config --global update.narrow true
+          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
       - name: Run Bluetooth Tests with BSIM
         run: |
