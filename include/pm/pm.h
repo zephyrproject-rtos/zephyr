@@ -215,7 +215,7 @@ void pm_power_state_exit_post_ops(struct pm_state_info info);
 
 #endif /* CONFIG_PM */
 
-void z_pm_save_idle_exit(int32_t ticks);
+void z_pm_save_idle_exit(void);
 
 #ifdef __cplusplus
 }
