@@ -625,7 +625,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
 
 	sync_offset_us = ftr->radio_end_us;
-	sync_offset_us += (uint32_t)si->offs * lll->window_size_event_us;
+	sync_offset_us += (uint32_t)sys_le16_to_cpu(si->offs) *
+			  lll->window_size_event_us;
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (si->offs_adjust ? OFFS_ADJUST_US : 0U);
 	sync_offset_us -= PDU_AC_US(pdu->len, lll->phy, ftr->phy_flags);

@@ -6420,7 +6420,8 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	sep->bn = lll->bn;
 	sep->pto = lll->pto;
 	sep->irc = lll->irc;
-	sep->max_pdu = lll->max_pdu;
+	sep->max_pdu = sys_cpu_to_le16(lll->max_pdu);
+	sep->iso_interval = sys_cpu_to_le16(sync_iso->iso_interval);
 	sep->num_bis = lll->num_bis;
 
 	/* TODO: Connection handle list of all BISes in the BIG */
@@ -6509,7 +6510,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	sep->bn = lll->bn;
 	sep->pto = lll->pto;
 	sep->irc = lll->irc;
-	sep->max_pdu = lll->max_pdu;
+	sep->max_pdu = sys_cpu_to_le16(lll->max_pdu);
 	sep->num_bis = lll->num_bis;
 
 	/* TODO: Connection handle list of all BISes in the BIG */
