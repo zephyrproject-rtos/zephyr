@@ -528,7 +528,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	lll->chm[chm_last].data_chan_count =
 		util_ones_count_get(data_chan_map,
 				    sizeof(lll->chm[chm_last].data_chan_map));
-	if (lll->chm[chm_last].data_chan_count < 2) {
+	if (lll->chm[chm_last].data_chan_count < CHM_USED_COUNT_MIN) {
 		/* Ignore sync setup, invalid available channel count */
 		return;
 	}
@@ -953,7 +953,7 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 	lll->chm[chm_last].data_chan_count =
 		util_ones_count_get(lll->chm[chm_last].data_chan_map,
 				    sizeof(lll->chm[chm_last].data_chan_map));
-	if (lll->chm[chm_last].data_chan_count < 2) {
+	if (lll->chm[chm_last].data_chan_count < CHM_USED_COUNT_MIN) {
 		/* Ignore channel map, invalid available channel count */
 		return;
 	}
