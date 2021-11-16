@@ -235,6 +235,9 @@ static void stream_enabled(struct bt_audio_stream *stream)
 static void stream_started(struct bt_audio_stream *stream)
 {
 	printk("Audio Stream %p started\n", stream);
+
+	/* Start send timer */
+	k_work_schedule(&audio_send_work, K_MSEC(0));
 }
 
 static void stream_metadata_updated(struct bt_audio_stream *stream)
@@ -260,9 +263,6 @@ static void stream_released(struct bt_audio_stream *stream)
 static void stream_connected(struct bt_audio_stream *stream)
 {
 	printk("Audio Stream %p connected, start sending\n", stream);
-
-	/* Start send timer */
-	k_work_schedule(&audio_send_work, K_MSEC(0));
 }
 
 static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
