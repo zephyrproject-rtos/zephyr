@@ -495,10 +495,5 @@ static void IoApicRedUpdateLo(unsigned int irq,
 	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
 }
 
-
-#ifdef CONFIG_PM_DEVICE
-SYS_DEVICE_DEFINE("ioapic", ioapic_init, ioapic_pm_action, PRE_KERNEL_1,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#else
-SYS_INIT(ioapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif
+DEVICE_DEFINE(ioapic, "ioapic", ioapic_init, ioapic_pm_action, NULL, NULL,
+	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
