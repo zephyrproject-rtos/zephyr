@@ -15,7 +15,6 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
-#include <bluetooth/audio/capabilities.h>
 
 #include "../hci_core.h"
 #include "../conn_internal.h"
@@ -29,9 +28,12 @@
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 
+#define PAC_TYPE_UNUSED 0
+
 static struct bap_pac {
-	struct bt_audio_capability cap;
-	struct bt_codec            codec;
+	uint8_t type; /* type == PAC_TYPE_UNUSED means unused */
+	uint16_t context;
+	struct bt_codec codec;
 } cache[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_PAC_COUNT];
 
 static const struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
@@ -246,18 +248,6 @@ int bap_release(struct bt_audio_stream *stream)
 	return bt_audio_ep_send(stream->conn, ep, buf);
 }
 
-static struct bt_audio_capability_ops cap_ops = {
-	.config		= NULL,
-	.reconfig	= NULL,
-	.qos		= NULL,
-	.enable		= bap_enable,
-	.metadata	= bap_metadata,
-	.start		= bap_start,
-	.disable	= bap_disable,
-	.stop		= bap_stop,
-	.release	= bap_release,
-};
-
 static uint8_t cp_discover_func(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				struct bt_gatt_discover_params *discover)
@@ -422,23 +412,23 @@ static uint8_t pacs_context_read_func(struct bt_conn *conn, uint8_t err,
 	for (i = 0; i < CONFIG_BT_BAP_PAC_COUNT; i++) {
 		struct bap_pac *pac = &cache[index][i];
 
-		if (!pac->cap.ops) {
+		if (pac->type == PAC_TYPE_UNUSED) {
 			continue;
 		}
 
-		switch (pac->cap.type) {
+		switch (pac->type) {
 		case BT_AUDIO_SINK:
-			pac->cap.context = sys_le16_to_cpu(context->snk);
+			pac->context = sys_le16_to_cpu(context->snk);
 			break;
 		case BT_AUDIO_SOURCE:
-			pac->cap.context = sys_le16_to_cpu(context->src);
+			pac->context = sys_le16_to_cpu(context->src);
 			break;
 		default:
 			BT_WARN("Cached pac with invalid type: %u",
-				pac->cap.type);
+				pac->type);
 		}
 
-		BT_DBG("pac %p context 0x%04x", pac, pac->cap.context);
+		BT_DBG("pac %p context 0x%04x", pac, pac->context);
 	}
 
 discover_ase:
@@ -478,10 +468,8 @@ static struct bap_pac *pac_alloc(struct bt_conn *conn, uint8_t type)
 	for (i = 0; i < CONFIG_BT_BAP_PAC_COUNT; i++) {
 		struct bap_pac *pac = &cache[index][i];
 
-		if (!pac->cap.ops) {
-			pac->cap.type = type;
-			pac->cap.ops = &cap_ops;
-			pac->cap.codec = &pac->codec;
+		if (pac->type == PAC_TYPE_UNUSED) {
+			pac->type = type;
 			return pac;
 		}
 	}
@@ -557,7 +545,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 					  sys_le16_to_cpu(pac->codec.cid),
 					  sys_le16_to_cpu(pac->codec.vid),
 					  &buf, pac->cc_len, &bpac->codec)) {
-			BT_ERR("Unable to parse Codec Capabilities");
+			BT_ERR("Unable to parse Codec");
 			break;
 		}
 
@@ -610,7 +598,7 @@ static void pac_reset(struct bt_conn *conn)
 	for (i = 0; i < CONFIG_BT_BAP_PAC_COUNT; i++) {
 		struct bap_pac *pac = &cache[index][i];
 
-		if (pac->cap.ops) {
+		if (pac->type != PAC_TYPE_UNUSED) {
 			memset(pac, 0, sizeof(*pac));
 		}
 	}
