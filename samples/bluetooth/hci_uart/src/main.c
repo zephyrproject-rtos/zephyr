@@ -343,7 +343,7 @@ static int hci_uart_init(const struct device *unused)
 	return 0;
 }
 
-SYS_DEVICE_DEFINE("hci_uart", hci_uart_init, NULL,
+SYS_DEVICE_DEFINE("hci_uart", hci_uart_init,
 		  APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 void main(void)
