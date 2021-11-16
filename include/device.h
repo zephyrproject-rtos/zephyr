@@ -83,16 +83,14 @@ typedef int16_t device_handle_t;
 /**
  * @def SYS_DEVICE_DEFINE
  *
- * @brief Run an initialization function at boot at specified priority,
- * and define device PM control function.
+ * @brief Run an initialization function at boot at specified priority.
  *
  * @details Invokes DEVICE_DEFINE() with no power management support
  * (@p pm_action_cb), no API (@p api_ptr), and a device name derived from
  * the @p init_fn name (@p dev_name).
  */
-#define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_action_cb, level, prio) \
-	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn,		\
-		      pm_action_cb,					\
+#define SYS_DEVICE_DEFINE(drv_name, init_fn, level, prio)		\
+	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn, NULL,	\
 		      NULL, NULL, level, prio, NULL)
 
 /**
