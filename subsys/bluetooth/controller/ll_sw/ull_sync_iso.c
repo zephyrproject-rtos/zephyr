@@ -288,7 +288,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->data_chan_map[4] &= ~0xE0;
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
 						   sizeof(lll->data_chan_map));
-	if (lll->data_chan_count < 2) {
+	if (lll->data_chan_count < CHM_USED_COUNT_MIN) {
 		return;
 	}
 
