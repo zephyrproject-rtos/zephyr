@@ -64,10 +64,9 @@ static void disabled_cb(void *param);
 static void tx_lll_flush(void *param);
 
 static memq_link_t link_lll_prepare;
-static struct mayfly mfy_lll_prepare = {0, 0, &link_lll_prepare, NULL, NULL};
+static struct mayfly mfy_lll_prepare = {0U, 0U, &link_lll_prepare, NULL, NULL};
 
 static struct ll_adv_iso_set ll_adv_iso[BT_CTLR_ADV_SET];
-static void *adv_iso_free;
 
 uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
@@ -88,7 +87,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	memq_link_t *link_term;
 	struct ll_adv_set *adv;
 	uint16_t ctrl_spacing;
-	uint16_t latency_pdu;
+	uint32_t latency_pdu;
 	uint8_t ter_idx;
 	uint8_t *acad;
 	uint32_t ret;
@@ -118,7 +117,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
-		if (num_bis == 0 || num_bis > 0x1F) {
+		if (num_bis == 0U || num_bis > 0x1F) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 
@@ -144,15 +143,15 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 
-		if (packing > 1) {
+		if (packing > 1U) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 
-		if (framing > 1) {
+		if (framing > 1U) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 
-		if (encryption > 1) {
+		if (encryption > 1U) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
@@ -185,14 +184,19 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* BN (Burst Count), Mandatory BN = 1 */
 	bn = ceiling_fraction(max_sdu, lll_adv_iso->max_pdu);
 	if (bn > PDU_BIG_BN_MAX) {
+		/* Restrict each BIG event to maximum burst per BIG event */
 		lll_adv_iso->bn = PDU_BIG_BN_MAX;
+
+		/* Ceil the required burst count per SDU to next maximum burst
+		 * per BIG event.
+		 */
 		bn = ceiling_fraction(bn, PDU_BIG_BN_MAX) * PDU_BIG_BN_MAX;
 	} else {
 		lll_adv_iso->bn = bn;
 	}
 
 	/* Immediate Repetition Count (IRC), Mandatory IRC = 1 */
-	lll_adv_iso->irc = rtn + 1;
+	lll_adv_iso->irc = rtn + 1U;
 
 	/* Calculate NSE (No. of Sub Events), Mandatory NSE = 1,
 	 * without PTO added.
@@ -210,7 +214,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), encryption, phy,
 				  lll_adv_iso->phy_flags) + EVENT_IFS_US;
 
-	latency_pdu = max_latency * lll_adv_iso->bn / bn;
+	latency_pdu = max_latency * USEC_PER_MSEC * lll_adv_iso->bn / bn;
 
 	/* Based on packing requested, sequential or interleaved */
 	if (packing) {
@@ -222,8 +226,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			   lll_adv_iso->num_bis;
 		reserve = latency + ctrl_spacing +
 			  (EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US);
-		if (reserve < (latency_pdu * 1000U)) {
-			lll_adv_iso->ptc = (((latency_pdu * 1000U) - reserve) /
+		if (reserve < latency_pdu) {
+			lll_adv_iso->ptc = ((latency_pdu - reserve) /
 					    (lll_adv_iso->sub_interval *
 					     lll_adv_iso->bn)) *
 					   lll_adv_iso->bn;
@@ -240,8 +244,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		latency = lll_adv_iso->sub_interval * lll_adv_iso->nse;
 		reserve = latency + ctrl_spacing +
 			  (EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US);
-		if (reserve < (latency_pdu * 1000U)) {
-			lll_adv_iso->ptc = (((latency_pdu * 1000U) - reserve) /
+		if (reserve < latency_pdu) {
+			lll_adv_iso->ptc = ((latency_pdu - reserve) /
 					    (lll_adv_iso->sub_interval *
 					     lll_adv_iso->bn)) *
 					   lll_adv_iso->bn;
@@ -290,7 +294,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	 * or integer multiple of SDU interval for unframed PDUs
 	 */
 	iso_interval_us = ((sdu_interval * lll_adv_iso->bn) /
-			   (bn * 1250U)) * 1250U;
+			   (bn * CONN_INT_UNIT_US)) * CONN_INT_UNIT_US;
 
 	/* Allocate next PDU */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
@@ -338,14 +342,14 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	big_info->spacing = sys_cpu_to_le24(lll_adv_iso->bis_spacing);
 	big_info->irc = lll_adv_iso->irc;
 	big_info->max_pdu = lll_adv_iso->max_pdu;
-	memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
-	       sizeof(big_info->seed_access_addr));
+	(void)memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
+		     sizeof(big_info->seed_access_addr));
 	big_info->sdu_interval = sys_cpu_to_le24(sdu_interval);
 	big_info->max_sdu = max_sdu;
-	memcpy(&big_info->base_crc_init, lll_adv_iso->base_crc_init,
-	       sizeof(big_info->base_crc_init));
-	memcpy(big_info->chm_phy, lll_adv_iso->data_chan_map,
-	       sizeof(big_info->chm_phy));
+	(void)memcpy(&big_info->base_crc_init, lll_adv_iso->base_crc_init,
+		     sizeof(big_info->base_crc_init));
+	(void)memcpy(big_info->chm_phy, lll_adv_iso->data_chan_map,
+		     sizeof(big_info->chm_phy));
 	big_info->chm_phy[4] &= 0x1F;
 	big_info->chm_phy[4] |= ((find_lsb_set(phy) - 1U) << 5);
 	big_info->payload_count_framing[0] = lll_adv_iso->payload_count;
@@ -515,7 +519,7 @@ uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
 		if (adv_iso->lll.adv &&
 		    (adv_iso->hci_handle == hci_handle)) {
 			*handle = idx;
-			return 0;
+			return 0U;
 		}
 	}
 
@@ -542,9 +546,9 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 	}
 
 	if (adv_iso_empty) {
-		memset(adv_iso_empty, 0, sizeof(*adv_iso_empty));
+		memset(adv_iso_empty, 0U, sizeof(*adv_iso_empty));
 		adv_iso_empty->hci_handle = hci_handle;
-		return 0;
+		return 0U;
 	}
 
 	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -554,7 +558,7 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, mfy_iso_offset_get};
+	static struct mayfly mfy = {0U, 0U, &link, NULL, mfy_iso_offset_get};
 	uint32_t ret;
 
 	mfy.param = sync;
@@ -625,11 +629,9 @@ void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
 
 static int init_reset(void)
 {
-	/* Initialize pool. */
-	mem_init(ll_adv_iso, sizeof(struct ll_adv_iso_set),
-		 sizeof(ll_adv_iso) / sizeof(struct ll_adv_iso_set),
-		 &adv_iso_free);
-
+	/* Add initializations common to power up initialization and HCI reset
+	 * initializations.
+	 */
 	return 0;
 }
 
@@ -653,11 +655,11 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 
 	ull_hdr_init(&adv_iso->ull);
 
-	/* TODO: Calc slot_us */
+	/* FIXME: Calc slot_us */
 	slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-	slot_us += 1000;
+	slot_us += 1000U;
 
-	adv_iso->ull.ticks_active_to_start = 0;
+	adv_iso->ull.ticks_active_to_start = 0U;
 	adv_iso->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	adv_iso->ull.ticks_preempt_to_start =
@@ -668,7 +670,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		ticks_slot_overhead = MAX(adv_iso->ull.ticks_active_to_start,
 					  adv_iso->ull.ticks_prepare_to_start);
 	} else {
-		ticks_slot_overhead = 0;
+		ticks_slot_overhead = 0U;
 	}
 
 	/* setup to use ISO create prepare function for first radio event */
@@ -677,7 +679,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
-			   ticks_anchor, 0,
+			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
 			   TICKER_NULL_LAZY,
@@ -727,6 +729,11 @@ static void mfy_iso_offset_get(void *param)
 					       NULL, NULL,
 					       ticker_op_cb, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
+			/* Busy wait until Ticker Job is enabled after any Radio
+			 * event is done using the Radio hardware. Ticker Job
+			 * ISR is disabled during Radio events in LOW_LAT
+			 * feature to avoid Radio ISR latencies.
+			 */
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
 						 TICKER_USER_ID_ULL_LOW);
@@ -746,7 +753,7 @@ static void mfy_iso_offset_get(void *param)
 
 	pdu = lll_adv_sync_data_latest_peek(&sync->lll);
 	bi = big_info_get(pdu);
-	big_info_offset_fill(bi, ticks_to_expire, 0);
+	big_info_offset_fill(bi, ticks_to_expire, 0U);
 	bi->payload_count_framing[0] = payload_count;
 	bi->payload_count_framing[1] = payload_count >> 8;
 	bi->payload_count_framing[2] = payload_count >> 16;
@@ -804,7 +811,7 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
 	offs = offs / OFFS_UNIT_30_US;
-	if (!!(offs >> 13)) {
+	if (!!(offs >> OFFS_UNIT_BITS)) {
 		bi->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /
 						   OFFS_UNIT_30_US));
 		bi->offs_units = 1U;
@@ -853,7 +860,7 @@ static void ticker_op_cb(uint32_t status, void *param)
 static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, adv_iso_disable};
+	static struct mayfly mfy = {0U, 0U, &link, NULL, adv_iso_disable};
 	uint32_t ret;
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
@@ -861,7 +868,7 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	/* Check if any pending LLL events that need to be aborted */
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+			     TICKER_USER_ID_ULL_HIGH, 0U, &mfy);
 	LL_ASSERT(!ret);
 }
 
@@ -875,7 +882,7 @@ static void adv_iso_disable(void *param)
 	hdr = &adv_iso->ull;
 	if (ull_ref_get(hdr)) {
 		static memq_link_t link;
-		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		static struct mayfly mfy = {0U, 0U, &link, NULL, lll_disable};
 		uint32_t ret;
 
 		mfy.param = &adv_iso->lll;
@@ -889,7 +896,7 @@ static void adv_iso_disable(void *param)
 
 		/* Trigger LLL disable */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-				     TICKER_USER_ID_LLL, 0, &mfy);
+				     TICKER_USER_ID_LLL, 0U, &mfy);
 		LL_ASSERT(!ret);
 	} else {
 		/* No pending LLL events */
@@ -900,12 +907,12 @@ static void adv_iso_disable(void *param)
 static void disabled_cb(void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, tx_lll_flush};
+	static struct mayfly mfy = {0U, 0U, &link, NULL, tx_lll_flush};
 	uint32_t ret;
 
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-			     TICKER_USER_ID_LLL, 0, &mfy);
+			     TICKER_USER_ID_LLL, 0U, &mfy);
 	LL_ASSERT(!ret);
 }
 

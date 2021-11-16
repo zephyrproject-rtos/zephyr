@@ -6320,6 +6320,10 @@ no_ext_hdr:
 			       sizeof(*sep));
 
 		sep->sync_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+
+		/* NOTE: both sep and bi struct store little-endian values,
+		 *       explicit endian-ness conversion not required.
+		 */
 		sep->num_bis = bi->num_bis;
 		sep->nse = bi->nse;
 		sep->iso_interval = bi->iso_interval;
@@ -6385,7 +6389,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 		return;
 	}
 
-	/* TODO: Fill latency */
+	/* FIXME: Fill latency */
 	sys_put_le32(0, sep->latency);
 
 	sep->nse = lll->nse;
@@ -6396,7 +6400,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	sep->iso_interval = sys_cpu_to_le16(sync_iso->iso_interval);
 	sep->num_bis = lll->num_bis;
 
-	/* TODO: Connection handle list of all BISes in the BIG */
+	/* FIXME: Connection handle list of all BISes in the BIG */
 	sep->handle[0] = sys_cpu_to_le16(0);
 }
 
@@ -6404,7 +6408,7 @@ static void le_sync_iso_pdu(struct pdu_data *pdu,
 			    struct node_rx_pdu *node_rx,
 			    struct net_buf *buf)
 {
-	printk("Sync ISO PDU (%u)\n", pdu->len);
+	/* FIXME: integrate with ISOAL interface */
 }
 
 static void le_big_sync_lost(struct pdu_data *pdu,
@@ -6473,7 +6477,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 		return;
 	}
 
-	/* TODO: Fill sync delay and latency */
+	/* FIXME: Fill sync delay and latency */
 	sys_put_le24(0, sep->sync_delay);
 	sys_put_le24(0, sep->latency);
 
@@ -6485,7 +6489,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	sep->max_pdu = sys_cpu_to_le16(lll->max_pdu);
 	sep->num_bis = lll->num_bis;
 
-	/* TODO: Connection handle list of all BISes in the BIG */
+	/* FIXME: Connection handle list of all BISes in the BIG */
 	sep->handle[0] = sys_cpu_to_le16(0);
 }
 

@@ -56,7 +56,7 @@ static void sync_iso_disable(void *param);
 static void disabled_cb(void *param);
 
 static memq_link_t link_lll_prepare;
-static struct mayfly mfy_lll_prepare = {0, 0, &link_lll_prepare, NULL, NULL};
+static struct mayfly mfy_lll_prepare = {0U, 0U, &link_lll_prepare, NULL, NULL};
 
 static struct ll_sync_iso_set ll_sync_iso[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 static void *sync_iso_free;
@@ -279,14 +279,15 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	bi = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 
 	lll = &sync_iso->lll;
-	memcpy(lll->seed_access_addr, &bi->seed_access_addr,
-	       sizeof(lll->seed_access_addr));
-	memcpy(lll->base_crc_init, &bi->base_crc_init,
-	       sizeof(lll->base_crc_init));
+	(void)memcpy(lll->seed_access_addr, &bi->seed_access_addr,
+		     sizeof(lll->seed_access_addr));
+	(void)memcpy(lll->base_crc_init, &bi->base_crc_init,
+		     sizeof(lll->base_crc_init));
 
-	memcpy(lll->data_chan_map, bi->chm_phy, sizeof(lll->data_chan_map));
-	lll->data_chan_map[4] &= ~0xE0;
-	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
+	(void)memcpy(lll->data_chan_map, bi->chm_phy,
+		     sizeof(lll->data_chan_map));
+	lll->data_chan_map[4] &= 0x1F;
+	lll->data_chan_count = util_ones_count_get(lll->data_chan_map,
 						   sizeof(lll->data_chan_map));
 	if (lll->data_chan_count < CHM_USED_COUNT_MIN) {
 		return;
@@ -330,7 +331,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	interval_us = sync_iso->iso_interval * CONN_INT_UNIT_US;
 
 	sync_iso->timeout_reload =
-		RADIO_SYNC_EVENTS((sync_iso->timeout * 10U * 1000U),
+		RADIO_SYNC_EVENTS((sync_iso->timeout * 10U * USEC_PER_MSEC),
 				  interval_us);
 
 	sca = sync_iso->sync->lll.sca;
@@ -340,15 +341,15 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 				 interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
 	if (bi->offs_units) {
-		lll->window_size_event_us = 300U;
+		lll->window_size_event_us = OFFS_UNIT_300_US;
 	} else {
-		lll->window_size_event_us = 30U;
+		lll->window_size_event_us = OFFS_UNIT_30_US;
 	}
 
 	ftr = &node_rx->rx_ftr;
 	pdu = (void *)((struct node_rx_pdu *)node_rx)->pdu;
 
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
 	sync_iso_offset_us = ftr->radio_end_us;
 	sync_iso_offset_us += (uint32_t)sys_le16_to_cpu(bi->offs) *
@@ -447,7 +448,7 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 
 	/* Events elapsed used in timeout checks below */
 	latency_event = lll->latency_event;
-	elapsed_event = latency_event + 1;
+	elapsed_event = latency_event + 1U;
 
 	/* Sync drift compensation and new skip calculation
 	 */
@@ -465,12 +466,8 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 	/* Reset supervision countdown */
 	if (done->extra.crc_valid) {
 		sync_iso->timeout_expire = 0U;
-	}
-
-	/* if anchor point not sync-ed, start timeout countdown, and break
-	 * latency if any.
-	 */
-	else {
+	} else {
+		/* if anchor point not sync-ed, start timeout countdown */
 		if (!sync_iso->timeout_expire) {
 			sync_iso->timeout_expire = sync_iso->timeout_reload;
 		}
@@ -497,7 +494,7 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 
 	/* check if skip needs update */
 	lazy = 0U;
-	if ((force) || (latency_event != lll->latency_event)) {
+	if (force || (latency_event != lll->latency_event)) {
 		lazy = lll->latency_event + 1U;
 	}
 
@@ -517,7 +514,7 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 					      (TICKER_ID_SCAN_SYNC_ISO_BASE +
 					       handle),
 					      ticks_drift_plus,
-					      ticks_drift_minus, 0, 0,
+					      ticks_drift_minus, 0U, 0U,
 					      lazy, force,
 					      ticker_update_op_cb,
 					      sync_iso);
@@ -620,7 +617,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	mfy_lll_prepare.param = &p;
 
 	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0U,
 			     &mfy_lll_prepare);
 	LL_ASSERT(!ret);
 
@@ -643,7 +640,7 @@ static void ticker_update_op_cb(uint32_t status, void *param)
 static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, sync_iso_disable};
+	static struct mayfly mfy = {0U, 0U, &link, NULL, sync_iso_disable};
 	uint32_t ret;
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
@@ -651,7 +648,7 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	/* Check if any pending LLL events that need to be aborted */
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+			     TICKER_USER_ID_ULL_HIGH, 0U, &mfy);
 	LL_ASSERT(!ret);
 }
 
@@ -665,7 +662,7 @@ static void sync_iso_disable(void *param)
 	hdr = &sync_iso->ull;
 	if (ull_ref_get(hdr)) {
 		static memq_link_t link;
-		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		static struct mayfly mfy = {0U, 0U, &link, NULL, lll_disable};
 		uint32_t ret;
 
 		mfy.param = &sync_iso->lll;
@@ -679,7 +676,7 @@ static void sync_iso_disable(void *param)
 
 		/* Trigger LLL disable */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-				     TICKER_USER_ID_LLL, 0, &mfy);
+				     TICKER_USER_ID_LLL, 0U, &mfy);
 		LL_ASSERT(!ret);
 	} else {
 		/* No pending LLL events */
