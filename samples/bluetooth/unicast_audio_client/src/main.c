@@ -69,14 +69,6 @@ static void print_codec(const struct bt_codec *codec)
 	}
 }
 
-static void print_qos(struct bt_codec_qos *qos)
-{
-	printk("QoS: dir 0x%02x interval %u framing 0x%02x phy 0x%02x sdu %u "
-	       "rtn %u latency %u pd %u\n",
-	       qos->dir, qos->interval, qos->framing, qos->phy, qos->sdu,
-	       qos->rtn, qos->latency, qos->pd);
-}
-
 /**
  * @brief Send audio data on timeout
  *
@@ -128,112 +120,6 @@ static void audio_timer_timeout(struct k_work *work)
 		len_to_send = 1;
 	}
 }
-
-static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
-					struct bt_audio_ep *ep,
-					struct bt_audio_capability *cap,
-					struct bt_codec *codec)
-{
-	printk("ASE Codec Config: conn %p ep %p cap %p\n", conn, ep, cap);
-
-	print_codec(codec);
-
-	if (audio_stream.conn == NULL) {
-		return &audio_stream;
-	}
-
-	printk("No streams available\n");
-
-	return NULL;
-}
-
-static int lc3_reconfig(struct bt_audio_stream *stream,
-			struct bt_audio_capability *cap,
-			struct bt_codec *codec)
-{
-	printk("ASE Codec Reconfig: stream %p cap %p\n", stream, cap);
-
-	print_codec(codec);
-
-	return 0;
-}
-
-static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
-{
-	printk("QoS: stream %p qos %p\n", stream, qos);
-
-	print_qos(qos);
-
-	return 0;
-}
-
-static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
-		      struct bt_codec_data *meta)
-{
-	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
-
-	return 0;
-}
-
-static int lc3_start(struct bt_audio_stream *stream)
-{
-	printk("Start: stream %p\n", stream);
-
-	return 0;
-}
-
-static int lc3_metadata(struct bt_audio_stream *stream, uint8_t meta_count,
-			struct bt_codec_data *meta)
-{
-	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
-
-	return 0;
-}
-
-static int lc3_disable(struct bt_audio_stream *stream)
-{
-	printk("Disable: stream %p\n", stream);
-
-	return 0;
-}
-
-static int lc3_stop(struct bt_audio_stream *stream)
-{
-	printk("Stop: stream %p\n", stream);
-
-	return 0;
-}
-
-static int lc3_release(struct bt_audio_stream *stream)
-{
-	printk("Release: stream %p\n", stream);
-
-	return 0;
-}
-
-static struct bt_audio_capability_ops lc3_ops = {
-	.config = lc3_config,
-	.reconfig = lc3_reconfig,
-	.qos = lc3_qos,
-	.enable = lc3_enable,
-	.start = lc3_start,
-	.metadata = lc3_metadata,
-	.disable = lc3_disable,
-	.stop = lc3_stop,
-	.release = lc3_release,
-};
-
-static struct bt_audio_capability caps[] = {
-	{
-		.type = BT_AUDIO_SOURCE,
-		.pref = BT_AUDIO_CAPABILITY_PREF(
-				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
-				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000,
-				40000, 40000),
-		.codec = &preset_16_2_1.codec,
-		.ops = &lc3_ops,
-	}
-};
 
 static bool check_audio_support(struct bt_data *data, void *user_data)
 {
@@ -520,14 +406,6 @@ static int init(void)
 	if (err != 0) {
 		printk("Bluetooth enable failed (err %d)\n", err);
 		return err;
-	}
-
-	for (size_t i = 0; i < ARRAY_SIZE(caps); i++) {
-		err = bt_audio_capability_register(&caps[i]);
-		if (err != 0) {
-			printk("Register capabilities[%zu] failed: %d", i, err);
-			return err;
-		}
 	}
 
 	audio_stream.ops = &stream_ops;
