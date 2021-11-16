@@ -309,7 +309,7 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config COMPILER_COLOR_DIAGNOSTICS
-	bool "Enable colored diganostics"
+	bool "Enable colored diagnostics"
 	default y
 	help
 	  Compiler diagnostic messages are colorized.
