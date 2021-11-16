@@ -94,16 +94,16 @@ jobs:
           ./scripts/ci/get_twister_opt.py --commits ${COMMIT_RANGE}
           if [ "$SC" = "full" ]; then
             # Full twister
-            ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} --retry-failed 2
             echo "::set-output name=report_needed::1";
+            ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} --retry-failed 2
           else
             # We can limit scope to just what has changed
             if [ -s modified_tests.args ]; then
               # we are working with one platform at a time
               sed -i '/--all/d' modified_tests.args
+              echo "::set-output name=report_needed::1";
               # Full twister but with options based on changes
               ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} +modified_tests.args --retry-failed 2
-              echo "::set-output name=report_needed::1";
             else
               # if nothing is run, skip reporting step
               echo "::set-output name=report_needed::0";
