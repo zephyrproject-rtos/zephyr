@@ -56,7 +56,7 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	struct bt_audio_stream_ops *ops = ep->stream->ops;
 	const bool is_broadcast = bt_audio_ep_is_broadcast(ep);
 
-	BT_DBG("stream %p ep %p", chan, ep);
+	BT_DBG("stream %p ep %p type %u", chan, ep, ep != NULL ? ep->type : 0);
 
 	if (is_broadcast) {
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
@@ -72,24 +72,12 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	}
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
+		BT_DBG("endpoint not in enabling state: %s",
+		       bt_audio_ep_state_str(ep->status.state));
 		return;
 	}
 
-	/* Only auto-start sink role otherwise wait for it to be started. */
-	switch (ep->type) {
-	case BT_AUDIO_EP_LOCAL:
-		/* Server */
-		if (bt_audio_ep_is_snk(ep)) {
-			bt_audio_stream_start(ep->stream);
-		}
-		return;
-	case BT_AUDIO_EP_REMOTE:
-		/* Client */
-		if (bt_audio_ep_is_src(ep)) {
-			bt_audio_stream_start(ep->stream);
-		}
-		return;
-	}
+	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 }
 
 static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
