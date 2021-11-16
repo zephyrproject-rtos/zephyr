@@ -75,7 +75,7 @@ Here are some ``west build`` usage examples, grouped by area.
 Forcing CMake to Run Again
 --------------------------
 
-To force a CMake re-run, use the ``--cmake`` (or ``--c``) option::
+To force a CMake re-run, use the ``--cmake`` (or ``-c``) option::
 
   west build -c
 
