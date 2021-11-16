@@ -329,18 +329,19 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	 * advertising event.
 	 */
 
-	big_info->iso_interval = iso_interval_us / 1250U;
+	big_info->iso_interval =
+		sys_cpu_to_le16(iso_interval_us / CONN_INT_UNIT_US);
 	big_info->num_bis = lll_adv_iso->num_bis;
 	big_info->nse = lll_adv_iso->nse;
 	big_info->bn = lll_adv_iso->bn;
-	big_info->sub_interval = lll_adv_iso->sub_interval;
+	big_info->sub_interval = sys_cpu_to_le24(lll_adv_iso->sub_interval);
 	big_info->pto = lll_adv_iso->pto;
-	big_info->spacing = lll_adv_iso->bis_spacing;
+	big_info->spacing = sys_cpu_to_le24(lll_adv_iso->bis_spacing);
 	big_info->irc = lll_adv_iso->irc;
 	big_info->max_pdu = lll_adv_iso->max_pdu;
 	memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
 	       sizeof(big_info->seed_access_addr));
-	big_info->sdu_interval = sdu_interval;
+	big_info->sdu_interval = sys_cpu_to_le24(sdu_interval);
 	big_info->max_sdu = max_sdu;
 	memcpy(&big_info->base_crc_init, lll_adv_iso->base_crc_init,
 	       sizeof(big_info->base_crc_init));
@@ -805,10 +806,11 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> 13)) {
-		bi->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		bi->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /
+						   OFFS_UNIT_30_US));
 		bi->offs_units = 1U;
 	} else {
-		bi->offs = offs;
+		bi->offs = sys_cpu_to_le16(offs);
 		bi->offs_units = 0U;
 	}
 }

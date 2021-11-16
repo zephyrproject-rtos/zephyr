@@ -300,7 +300,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->num_bis = bi->num_bis;
 	lll->bn = bi->bn;
 	lll->nse = bi->nse;
-	lll->sub_interval = bi->sub_interval;
+	lll->sub_interval = sys_le24_to_cpu(bi->sub_interval);
 	lll->max_pdu = bi->max_pdu;
 	lll->pto = bi->pto;
 	if (lll->pto) {
@@ -308,9 +308,9 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	} else {
 		lll->ptc = 0U;
 	}
-	lll->bis_spacing = bi->spacing;
+	lll->bis_spacing = sys_le24_to_cpu(bi->spacing);
 	lll->irc = bi->irc;
-	lll->sdu_interval = bi->sdu_interval;
+	lll->sdu_interval = sys_le24_to_cpu(bi->sdu_interval);
 
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[1] << 8;
@@ -350,7 +350,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
 
 	sync_iso_offset_us = ftr->radio_end_us;
-	sync_iso_offset_us += (uint32_t)bi->offs * lll->window_size_event_us;
+	sync_iso_offset_us += (uint32_t)sys_le16_to_cpu(bi->offs) *
+			      lll->window_size_event_us;
 	sync_iso_offset_us -= PDU_BIS_US(pdu->len, lll->enc, lll->phy,
 					 ftr->phy_flags);
 	sync_iso_offset_us -= EVENT_OVERHEAD_START_US;
