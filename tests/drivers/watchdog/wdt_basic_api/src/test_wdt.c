@@ -60,7 +60,6 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/zephyr.h>
 #include <ztest.h>
-#include "test_wdt.h"
 
 /*
  * To use this test, either the devicetree's /aliases must have a
@@ -356,7 +355,7 @@ static int test_wdt_bad_window_max(void)
 	return TC_FAIL;
 }
 
-void test_wdt(void)
+ZTEST(wdt_basic_test_suite, test_wdt)
 {
 	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)) {
 		zassert_true(test_wdt_no_callback() == TC_PASS, NULL);
