@@ -6320,14 +6320,19 @@ no_ext_hdr:
 	}
 
 	if ((le_event_mask & BT_EVT_MASK_LE_BIGINFO_ADV_REPORT) && acad &&
-	    (acad_len >= (PDU_BIG_INFO_CLEARTEXT_SIZE + 2))) {
+	    (acad_len >= (PDU_BIG_INFO_CLEARTEXT_SIZE +
+			  PDU_ADV_DATA_HEADER_SIZE))) {
 		struct bt_hci_evt_le_biginfo_adv_report *sep;
 		struct pdu_big_info *bi;
 		uint8_t bi_size;
 
-		/* TODO: Parse and find the BIGInfo */
-		bi_size = acad[0];
-		bi = (void *)&acad[2];
+		/* FIXME: Parse and find the BIGInfo */
+		if (acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] != BT_DATA_BIG_INFO) {
+			return;
+		}
+
+		bi_size = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+		bi = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 
 		/* Allocate new event buffer if periodic advertising report was
 		 * constructed with the caller supplied buffer.

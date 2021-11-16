@@ -882,8 +882,10 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 		     sizeof(acad));
 	ad = acad;
 	do {
-		ad_len = ad[0];
-		if (ad_len && (ad[1] == BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+		ad_len = ad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+		if (ad_len &&
+		    (ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
+		     BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
 			break;
 		}
 
@@ -1485,11 +1487,11 @@ static uint8_t sync_chm_update(uint8_t handle)
 	(void)memcpy(&acad, &hdr_data[ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET],
 		     sizeof(acad));
 	acad += acad_len_prev;
-	acad[0] = sizeof(*chm_upd_ind) + 1U;
-	acad[1] = BT_DATA_CHANNEL_MAP_UPDATE_IND;
+	acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = sizeof(*chm_upd_ind) + 1U;
+	acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_CHANNEL_MAP_UPDATE_IND;
 
 	/* Populate the Channel Map Indication structure */
-	chm_upd_ind = (void *)&acad[2];
+	chm_upd_ind = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 	(void)ull_chan_map_get(chm_upd_ind->chm);
 	instant = lll_sync->event_counter + 6U;
 	chm_upd_ind->instant = sys_cpu_to_le16(instant);
