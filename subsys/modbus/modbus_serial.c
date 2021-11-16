@@ -547,6 +547,20 @@ int modbus_serial_init(struct modbus_context *ctx,
 		return -EINVAL;
 	}
 
+	if (ctx->client) {
+		/* Allow custom stop bit settings only in client mode */
+		switch (param.serial.stop_bits_client) {
+		case UART_CFG_STOP_BITS_0_5:
+		case UART_CFG_STOP_BITS_1:
+		case UART_CFG_STOP_BITS_1_5:
+		case UART_CFG_STOP_BITS_2:
+			uart_cfg.stop_bits = param.serial.stop_bits_client;
+			break;
+		default:
+			return -EINVAL;
+		}
+	}
+
 	if (uart_configure(cfg->dev, &uart_cfg) != 0) {
 		LOG_ERR("Failed to configure UART");
 		return -EINVAL;
