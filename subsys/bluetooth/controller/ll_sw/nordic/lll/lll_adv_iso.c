@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <soc.h>
+#include <sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
