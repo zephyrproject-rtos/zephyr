@@ -334,6 +334,9 @@ struct node_rx_iso_meta {
 /* Define invalid/unassigned Controller LLL context handle */
 #define LLL_HANDLE_INVALID     0xFFFF
 
+/* Define invalid/unassigned Controller Advertising LLL context handle */
+#define LLL_ADV_HANDLE_INVALID 0xFF
+
 /* Header of node_rx_pdu */
 struct node_rx_hdr {
 	union {

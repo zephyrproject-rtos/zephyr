@@ -609,7 +609,7 @@ void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
 	lll = &adv_iso->lll;
 
 	/* Skip if terminated already (we come here if pipeline being flushed */
-	if (unlikely(lll->handle == 0xFF)) {
+	if (unlikely(lll->handle == LLL_ADV_HANDLE_INVALID)) {
 		return;
 	}
 
@@ -620,7 +620,7 @@ void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
 		  (ret == TICKER_STATUS_BUSY));
 
 	/* Invalidate the handle */
-	lll->handle = 0xFF;
+	lll->handle = LLL_ADV_HANDLE_INVALID;
 }
 
 static int init_reset(void)
