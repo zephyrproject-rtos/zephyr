@@ -80,8 +80,10 @@ static int stm32h7_init(const struct device *arg)
 	SystemCoreClock = 64000000;
 
 	/* Power Configuration */
-#ifdef SMPS
+#if defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS)
 	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS)
+#error Unsupported configuration: Selected SoC do not support SMPS
 #else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif
