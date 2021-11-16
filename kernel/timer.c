@@ -30,10 +30,15 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 	/*
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
-	 * since we're already aligned to a tick boundary
+	 * since we're already aligned to a tick boundary.
+	 *
+	 * Check if timeout is not in the queue. Check is done in case higher
+	 * priority interrupt restarted the timeout. In that case this expiration
+	 * is no longer valid.
 	 */
 	if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
-	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
+	    !K_TIMEOUT_EQ(timer->period, K_FOREVER) &&
+	    !sys_dnode_is_linked(&t->node)) {
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			     timer->period);
 	}
@@ -145,6 +150,11 @@ static inline void z_vrfy_k_timer_start(struct k_timer *timer,
 void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
+
+	/* Reset period to prevent scheduling periodic timeout if stopping is
+	 * preempting expiration handler (done from higher priority context).
+	 */
+	timer->period = K_NO_WAIT;
 
 	int inactive = z_abort_timeout(&timer->timeout) != 0;
 
