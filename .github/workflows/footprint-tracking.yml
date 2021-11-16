@@ -52,7 +52,8 @@ jobs:
       - name: west setup
         run: |
           west init -l . || true
-          west update
+          west config --global update.narrow true
+          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
