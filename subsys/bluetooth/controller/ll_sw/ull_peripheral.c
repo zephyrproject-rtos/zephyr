@@ -149,8 +149,10 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 			       sizeof(lll->data_chan_map));
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
 	lll->interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
-	if ((lll->data_chan_count < 2) || (lll->data_chan_hop < 5) ||
-	    (lll->data_chan_hop > 16) || !lll->interval) {
+	if ((lll->data_chan_count < CHM_USED_COUNT_MIN) ||
+	    (lll->data_chan_hop < CHM_HOP_COUNT_MIN) ||
+	    (lll->data_chan_hop > CHM_HOP_COUNT_MAX) ||
+	    !lll->interval) {
 		invalid_release(&adv->ull, lll, link, rx);
 
 		return;

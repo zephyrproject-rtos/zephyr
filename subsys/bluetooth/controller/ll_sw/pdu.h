@@ -110,6 +110,13 @@
 #define EVENT_INSTANT_MAX         0xffff
 #define EVENT_INSTANT_LATENCY_MAX 0x7fff
 
+/* Channel Map Unused channels count minimum */
+#define CHM_USED_COUNT_MIN     2U
+
+/* Channel Map hop count minimum and maximum */
+#define CHM_HOP_COUNT_MIN      5U
+#define CHM_HOP_COUNT_MAX      16U
+
 /* Offset Units field encoding */
 #define OFFS_UNIT_BITS         13
 #define OFFS_UNIT_30_US        30
