@@ -9,6 +9,7 @@
 
 #include <toolchain.h>
 
+/* FIXME: Implement vendor specific data path configuration */
 static bool dummy;
 
 bool ll_data_path_configured(uint8_t data_path_dir, uint8_t data_path_id)

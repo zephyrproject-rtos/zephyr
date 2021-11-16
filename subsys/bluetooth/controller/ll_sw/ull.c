@@ -2543,8 +2543,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 #if defined(CONFIG_BT_OBSERVER) || \
 	defined(CONFIG_BT_CTLR_ADV_PERIODIC) || \
-	defined(CONFIG_BT_CTLR_ADV_ISO) || \
-	defined(CONFIG_BT_CTLR_SYNC_ISO) || \
+	defined(CONFIG_BT_CTLR_BROADCAST_ISO) || \
 	defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
 	defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
@@ -2591,8 +2590,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	break;
 #endif /* CONFIG_BT_OBSERVER ||
 	* CONFIG_BT_CTLR_ADV_PERIODIC ||
-	* CONFIG_BT_CTLR_ADV_ISO ||
-	* CONFIG_BT_CTLR_SYNC_ISO ||
+	* CONFIG_BT_CTLR_BROADCAST_ISO ||
 	* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
 	* CONFIG_BT_CTLR_PROFILE_ISR ||
 	* CONFIG_BT_CTLR_ADV_INDICATION ||
