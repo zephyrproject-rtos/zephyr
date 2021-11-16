@@ -159,6 +159,7 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 	struct gap_sec_level_changed_ev sec_ev;
 	struct gap_bond_lost_ev bond_ev;
+	struct bt_conn_info info;
 
 	switch (err) {
 	case BT_SECURITY_ERR_SUCCESS:
@@ -171,11 +172,23 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 			    CONTROLLER_INDEX, (uint8_t *) &sec_ev, sizeof(sec_ev));
 		break;
 	case BT_SECURITY_ERR_PIN_OR_KEY_MISSING:
-		memcpy(bond_ev.address, addr->a.val, sizeof(bond_ev.address));
-		bond_ev.address_type = addr->type;
+		/* for central role this means that peer have no LTK when we
+		 * started encryption procedure
+		 *
+		 * This means bond is lost and we restart pairing to re-bond
+		 */
+		if (bt_conn_get_info(conn, &info) == 0 &&
+		    info.role == BT_CONN_ROLE_CENTRAL) {
+			LOG_DBG("Bond lost");
 
-		tester_send(BTP_SERVICE_ID_GAP, GAP_EV_BOND_LOST,
-			    CONTROLLER_INDEX, (uint8_t *) &bond_ev, sizeof(bond_ev));
+			(void)memcpy(bond_ev.address, addr->a.val, sizeof(bond_ev.address));
+			bond_ev.address_type = addr->type;
+
+			tester_send(BTP_SERVICE_ID_GAP, GAP_EV_BOND_LOST,
+				    CONTROLLER_INDEX, (uint8_t *)&bond_ev, sizeof(bond_ev));
+
+			(void)bt_conn_set_security(conn, BT_SECURITY_L2 | BT_SECURITY_FORCE_PAIR);
+		}
 		break;
 	default:
 		break;
