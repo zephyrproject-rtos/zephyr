@@ -191,7 +191,7 @@ static uint32_t cis_pending_count;
 /* In HCI event PHY indices start at 1 compare to 0 indexed in aux_ptr field in
  * the Common Extended Payload Format in the PDUs.
  */
-#define HCI_AUX_PHY_TO_HCI_PHY(aux_phy) (aux_phy + 1)
+#define HCI_AUX_PHY_TO_HCI_PHY(aux_phy) ((aux_phy) + 1)
 
 #define DEFAULT_EVENT_MASK           0x1fffffffffff
 #define DEFAULT_EVENT_MASK_PAGE_2    0x0
@@ -6353,7 +6353,7 @@ no_ext_hdr:
 		sys_put_le24(sys_le24_to_cpu(bi->sdu_interval),
 			     sep->sdu_interval);
 		sep->max_sdu = bi->max_sdu;
-		sep->phy = (bi->chm_phy[4] >> 5) + 1;
+		sep->phy = HCI_AUX_PHY_TO_HCI_PHY(bi->chm_phy[4] >> 5);
 		sep->framing = (bi->payload_count_framing[4] >> 7) & 0x01;
 		if (bi_size == (PDU_BIG_INFO_ENCRYPTED_SIZE + 1)) {
 			sep->encryption = 1U;
