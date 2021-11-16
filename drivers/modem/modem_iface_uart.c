@@ -99,6 +99,11 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 	if (total_size > 0) {
 		k_sem_give(&data->rx_sem);
 	}
+
+	/* Disable the TX interrupt once tranmission is complete */
+	if (uart_irq_tx_complete(ctx->iface.dev) > 0) {
+		uart_irq_tx_disable(ctx->iface.dev);
+	}
 }
 
 static int modem_iface_uart_read(struct modem_iface *iface,
