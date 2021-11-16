@@ -585,26 +585,6 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 			return MGMT_ERR_ENOENT;
 		}
 
-		/*
-		 * If request includes proper data hash we can check whether there is
-		 * upload in progress (interrupted due to e.g. link disconnection) with
-		 * the same data hash so we can just resume it by simply including
-		 * current upload offset in response.
-		 */
-		if ((req->data_sha_len > 0) && (g_img_mgmt_state.area_id != -1)) {
-			if ((g_img_mgmt_state.data_sha_len == req->data_sha_len) &&
-			    !memcmp(g_img_mgmt_state.data_sha, req->data_sha, req->data_sha_len)) {
-				return 0;
-			}
-		}
-
-		action->area_id = img_mgmt_get_unused_slot_area_id(req->image - 1);
-		if (action->area_id < 0) {
-			/* No slot where to upload! */
-			*errstr = img_mgmt_err_str_no_slot;
-			return MGMT_ERR_ENOMEM;
-		}
-
 #if defined(CONFIG_IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT)
 		if (hdr->ih_flags & IMAGE_F_ROM_FIXED_ADDR) {
 			rc = flash_area_open(action->area_id, &fa);
