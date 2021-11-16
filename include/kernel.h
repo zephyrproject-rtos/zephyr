@@ -21,6 +21,12 @@
 #include <toolchain.h>
 #include <tracing/tracing_macros.h>
 
+/* Toolchain workaround.  Older Cadence xcc versions don't like the
+ * C11-style redeclaration of typedefs that happens in this file, so
+ * this is used to suppress the second one.
+ */
+#define XCC_NO_REDECLARE (defined(__XCC__) && __GNUC__ == 4)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -109,9 +115,6 @@ typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
  * @addtogroup thread_apis
  * @{
  */
-
-typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
-				   void *user_data);
 
 /**
  * @brief Iterate over all the threads in the system.
@@ -1344,7 +1347,9 @@ struct k_timer {
  *
  * @return N/A
  */
+#if !XCC_NO_REDECLARE
 typedef void (*k_timer_expiry_t)(struct k_timer *timer);
+#endif
 
 /**
  * @typedef k_timer_stop_t
@@ -1362,7 +1367,9 @@ typedef void (*k_timer_expiry_t)(struct k_timer *timer);
  *
  * @return N/A
  */
+#if !XCC_NO_REDECLARE
 typedef void (*k_timer_stop_t)(struct k_timer *timer);
+#endif
 
 /**
  * @brief Statically define and initialize a timer.
@@ -2558,8 +2565,6 @@ struct k_lifo {
  */
 #define K_STACK_FLAG_ALLOC	((uint8_t)1)	/* Buffer was allocated */
 
-typedef uintptr_t stack_data_t;
-
 struct k_stack {
 	_wait_q_t wait_q;
 	struct k_spinlock lock;
@@ -3063,7 +3068,9 @@ struct k_work_sync;
  *
  * @param work the work item that provided the handler.
  */
+#if !XCC_NO_REDECLARE
 typedef void (*k_work_handler_t)(struct k_work *work);
+#endif
 
 /** @brief Initialize a (non-delayable) work structure.
  *
@@ -4002,7 +4009,9 @@ struct k_work_user;
  *
  * @return N/A
  */
+#if !XCC_NO_REDECLARE
 typedef void (*k_work_user_handler_t)(struct k_work_user *work);
+#endif
 
 /**
  * @cond INTERNAL_HIDDEN
