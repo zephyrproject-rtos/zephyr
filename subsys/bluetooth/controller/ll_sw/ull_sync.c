@@ -555,9 +555,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	interval_us = interval * CONN_INT_UNIT_US;
 
 	/* Convert fromm 10ms units to interval units */
-	sync->timeout_reload =
-		RADIO_SYNC_EVENTS((sync->timeout * 10U * USEC_PER_MSEC),
-				  interval_us);
+	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U *
+						  USEC_PER_MSEC), interval_us);
 
 	sync->sync_expire = CONN_ESTAB_COUNTDOWN;
 
@@ -567,12 +566,6 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sca = (si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
 	       PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
 	      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS;
-
-	interval = sys_le16_to_cpu(si->interval);
-	interval_us = interval * CONN_INT_UNIT_US;
-
-	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
-						 interval_us);
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	lll->sca = sca;

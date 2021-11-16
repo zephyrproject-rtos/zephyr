@@ -128,7 +128,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	 * shall return the error code Unknown Connection Identifier (0x02)
 	 */
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
-	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
+	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	isoal_sink_handle_t sink_hdl;
 	isoal_status_t err = 0;
