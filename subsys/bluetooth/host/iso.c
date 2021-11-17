@@ -560,6 +560,29 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state)
 }
 #endif /* CONFIG_BT_DEBUG_ISO */
 
+int bt_iso_chan_get_info(const struct bt_iso_chan *chan,
+			 struct bt_iso_info *info)
+{
+	CHECKIF(chan == NULL) {
+		BT_DBG("chan is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(chan->iso == NULL) {
+		BT_DBG("chan->iso is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(info == NULL) {
+		BT_DBG("info is NULL");
+		return -EINVAL;
+	}
+
+	info->type = chan->iso->iso.type;
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 {
