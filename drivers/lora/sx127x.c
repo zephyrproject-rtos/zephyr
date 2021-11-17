@@ -135,7 +135,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1272) +
 #define SX127X_PA_OUTPUT(power)		SX127X_PA_BOOST
 #elif DT_INST_NODE_HAS_PROP(0, power_amplifier_output)
 #define SX127X_PA_OUTPUT(power)				\
-	DT_ENUM_IDX(DT_DRV_INST(0), power_amplifier_output)
+	DT_INST_ENUM_IDX(0, power_amplifier_output)
 #else
 BUILD_ASSERT(0, "None of rfo-enable-gpios, pa-boost-enable-gpios and "
 	     "power-amplifier-output has been specified. "
