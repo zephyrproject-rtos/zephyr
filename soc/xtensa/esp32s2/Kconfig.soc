@@ -191,16 +191,16 @@ choice ESP32S2_UNIVERSAL_MAC_ADDRESSES
 	  When using a custom universal MAC address range, the correct setting will depend on the
 	  allocation of MAC addresses in this range (either 1 or 2 per device).
 
-	config ESP32S2_UNIVERSAL_MAC_ADDRESSES_ONE
-		bool "Two"
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+config ESP32S2_UNIVERSAL_MAC_ADDRESSES_ONE
+	bool "Two"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
 
-	config ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
-		bool "Two"
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+config ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
+	bool "Two"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
 
-endchoice
+endchoice # ESP32S2_UNIVERSAL_MAC_ADDRESSES
 
 config ESP_MAC_ADDR_UNIVERSE_WIFI_AP
 	bool
