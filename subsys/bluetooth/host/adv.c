@@ -511,7 +511,7 @@ static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op
 				if (offset == 0) {
 					set_data->data[0] = len + 1;
 					set_data->data[1] = type;
-					memcpy(&set_data->data[2], data[j].data, set_data->len);
+					memcpy(&set_data->data[2], data[j].data, set_data->len - 2);
 					offset += set_data->len - 2;
 				} else {
 					memcpy(&set_data->data[0], &data[j].data[offset],

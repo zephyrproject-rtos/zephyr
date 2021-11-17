@@ -102,14 +102,26 @@ static inline void h4_get_type(void)
 	}
 }
 
+static void h4_read_hdr(void)
+{
+	int bytes_read = rx.hdr_len - rx.remaining;
+	int ret;
+
+	ret = uart_fifo_read(h4_dev, rx.hdr + bytes_read, rx.remaining);
+	if (unlikely(ret < 0)) {
+		BT_ERR("Unable to read from UART (ret %d)", ret);
+	} else {
+		rx.remaining -= ret;
+	}
+}
+
 static inline void get_acl_hdr(void)
 {
-	struct bt_hci_acl_hdr *hdr = &rx.acl;
-	int to_read = sizeof(*hdr) - rx.remaining;
+	h4_read_hdr();
 
-	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
-				       rx.remaining);
 	if (!rx.remaining) {
+		struct bt_hci_acl_hdr *hdr = &rx.acl;
+
 		rx.remaining = sys_le16_to_cpu(hdr->len);
 		BT_DBG("Got ACL header. Payload %u bytes", rx.remaining);
 		rx.have_hdr = true;
@@ -118,13 +130,12 @@ static inline void get_acl_hdr(void)
 
 static inline void get_iso_hdr(void)
 {
-	struct bt_hci_iso_hdr *hdr = &rx.iso;
-	unsigned int to_read = sizeof(*hdr) - rx.remaining;
+	h4_read_hdr();
 
-	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
-				       rx.remaining);
 	if (!rx.remaining) {
-		rx.remaining = sys_le16_to_cpu(hdr->len);
+		struct bt_hci_iso_hdr *hdr = &rx.iso;
+
+		rx.remaining = bt_iso_hdr_len(sys_le16_to_cpu(hdr->len));
 		BT_DBG("Got ISO header. Payload %u bytes", rx.remaining);
 		rx.have_hdr = true;
 	}
@@ -133,10 +144,9 @@ static inline void get_iso_hdr(void)
 static inline void get_evt_hdr(void)
 {
 	struct bt_hci_evt_hdr *hdr = &rx.evt;
-	int to_read = rx.hdr_len - rx.remaining;
 
-	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
-				       rx.remaining);
+	h4_read_hdr();
+
 	if (rx.hdr_len == sizeof(*hdr) && rx.remaining < sizeof(*hdr)) {
 		switch (rx.evt.evt) {
 		case BT_HCI_EVT_LE_META_EVENT:
@@ -253,8 +263,15 @@ static void rx_thread(void *p1, void *p2, void *p3)
 static size_t h4_discard(const struct device *uart, size_t len)
 {
 	uint8_t buf[33];
+	int err;
 
-	return uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
+	err = uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
+	if (unlikely(err < 0)) {
+		BT_ERR("Unable to read from UART (err %d)", err);
+		return 0;
+	}
+
+	return err;
 }
 
 static inline void read_payload(void)
@@ -291,6 +308,11 @@ static inline void read_payload(void)
 	}
 
 	read = uart_fifo_read(h4_dev, net_buf_tail(rx.buf), rx.remaining);
+	if (unlikely(read < 0)) {
+		BT_ERR("Failed to read UART (err %d)", read);
+		return;
+	}
+
 	net_buf_add(rx.buf, read);
 	rx.remaining -= read;
 
@@ -401,7 +423,11 @@ static inline void process_tx(void)
 	}
 
 	bytes = uart_fifo_fill(h4_dev, tx.buf->data, tx.buf->len);
-	net_buf_pull(tx.buf, bytes);
+	if (unlikely(bytes < 0)) {
+		BT_ERR("Unable to write to UART (err %d)", bytes);
+	} else {
+		net_buf_pull(tx.buf, bytes);
+	}
 
 	if (tx.buf->len) {
 		return;

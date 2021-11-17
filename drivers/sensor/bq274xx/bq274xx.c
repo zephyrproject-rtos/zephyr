@@ -727,8 +727,8 @@ static int bq274xx_exit_shutdown_mode(const struct device *dev)
 	return 0;
 }
 
-static int bq274xx_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int bq274xx_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	int ret;
 	struct bq274xx_data *data = dev->data;
@@ -773,7 +773,7 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),   \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, bq274xx_pm_control,  \
+	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, bq274xx_pm_action,   \
 			    &bq274xx_driver_##index,                           \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \

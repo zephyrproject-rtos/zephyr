@@ -494,8 +494,8 @@ static int st7735r_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int st7735r_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int st7735r_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	int ret = 0;
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
@@ -573,7 +573,7 @@ static const struct display_driver_api st7735r_api = {
 		.x_offset = DT_INST_PROP(inst, x_offset),			\
 		.y_offset = DT_INST_PROP(inst, y_offset),			\
 	};									\
-	DEVICE_DT_INST_DEFINE(inst, st7735r_init, st7735r_pm_control,		\
+	DEVICE_DT_INST_DEFINE(inst, st7735r_init, st7735r_pm_action,		\
 			      &st7735r_data_ ## inst, &st7735r_config_ ## inst,	\
 			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,	\
 			      &st7735r_api);

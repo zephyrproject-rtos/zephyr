@@ -10,6 +10,11 @@ menuconfig USB_DEVICE_DRIVER
 
 if USB_DEVICE_DRIVER
 
+config USB_DEVICE_REMOTE_WAKEUP
+	bool
+	help
+	  USB device controller supports remote wakeup feature.
+
 config USB_DW
 	bool "Designware USB Device Controller Driver"
 	help
@@ -28,7 +33,7 @@ config USB_DC_STM32
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	help
-	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4 and G4 family of
+	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4, G4, U5 family of
 	  processors.
 
 config USB_DC_STM32_DISCONN_ENABLE
@@ -67,6 +72,7 @@ config USB_NRFX
 	depends on HAS_HW_NRF_USBD
 	select NRFX_USBD
 	select NRFX_POWER
+	select USB_DEVICE_REMOTE_WAKEUP
 	help
 	  nRF USB Device Controller Driver
 

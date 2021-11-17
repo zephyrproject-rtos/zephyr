@@ -481,8 +481,8 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
  * @param pm_state - power management state
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_device_pm_ctrl(const struct device *dev,
-				  enum pm_device_action action)
+static int fdc2x1x_device_pm_action(const struct device *dev,
+				    enum pm_device_action action)
 {
 	int ret;
 	const struct fdc2x1x_config *cfg = dev->config;
@@ -1027,7 +1027,7 @@ static int fdc2x1x_init(const struct device *dev)
 									   \
 	DEVICE_DT_INST_DEFINE(n,					   \
 			      fdc2x1x_init,				   \
-			      fdc2x1x_device_pm_ctrl,			   \
+			      fdc2x1x_device_pm_action,			   \
 			      &fdc2x1x_data_##n,			   \
 			      &fdc2x1x_config_##n,			   \
 			      POST_KERNEL,				   \

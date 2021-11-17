@@ -24,6 +24,8 @@ extern "C" {
 /** Number of endpoints. */
 #define NUM_ENDPOINTS	CONFIG_IPC_SERVICE_NUM_ENDPOINTS_PER_INSTANCE
 
+struct ipc_rpmsg_ept;
+
 /**
  * @typedef rpmsg_ept_bound_cb
  * @brief Define the bound callback.
@@ -33,13 +35,13 @@ extern "C" {
  *
  * @param ept Endpoint of the instance just bound.
  */
-typedef void (*rpmsg_ept_bound_cb)(struct ipc_ept *ept);
+typedef void (*rpmsg_ept_bound_cb)(struct ipc_rpmsg_ept *ept);
 
 /** @brief Endpoint structure.
  *
  *  Used to define an endpoint to be encapsulated in an RPMsg instance.
  */
-struct ipc_ept {
+struct ipc_rpmsg_ept {
 	/** RPMsg endpoint. */
 	struct rpmsg_endpoint ep;
 
@@ -62,7 +64,7 @@ struct ipc_ept {
  */
 struct ipc_rpmsg_instance {
 	/** Endpoints in the instance. */
-	struct ipc_ept endpoint[NUM_ENDPOINTS];
+	struct ipc_rpmsg_ept endpoint[NUM_ENDPOINTS];
 
 	/** RPMsg virtIO device. */
 	struct rpmsg_virtio_device rvdev;
@@ -115,7 +117,7 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
  *  @retval Other errno codes depending on the OpenAMP implementation.
  */
 int ipc_rpmsg_register_ept(struct ipc_rpmsg_instance *instance, unsigned int role,
-			   struct ipc_ept *ept);
+			   struct ipc_rpmsg_ept *ept);
 
 /**
  * @}

@@ -78,10 +78,6 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 
 	spi->ctx.config = config;
 
-	if (config->cs) {
-		spi_context_cs_configure(&spi->ctx);
-	}
-
 	return 0;
 }
 
@@ -185,10 +181,17 @@ static struct spi_driver_api spi_oc_simple_api = {
 
 int spi_oc_simple_init(const struct device *dev)
 {
+	int err;
 	const struct spi_oc_simple_cfg *info = dev->config;
+	struct spi_oc_simple_data *data = dev->data;
 
 	/* Clear chip selects */
 	sys_write8(0, SPI_OC_SIMPLE_SPSS(info));
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	/* Make sure the context is unlocked */
 	spi_context_unlock_unconditionally(&SPI_OC_SIMPLE_DATA(dev)->ctx);
@@ -212,6 +215,7 @@ int spi_oc_simple_init(const struct device *dev)
 	static struct spi_oc_simple_data spi_oc_simple_data_##inst = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_##inst, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx) \
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\

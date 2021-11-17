@@ -13,7 +13,7 @@ properties:
 
     apb3-prescaler:
       type: int
-      required: false
+      required: true
       enum:
         - 1
         - 2

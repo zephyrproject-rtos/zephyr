@@ -52,3 +52,4 @@ scripts/requirements*
 scripts/checkpatch/*
 scripts/checkpatch.pl
 scripts/ci/pylintrc
+scripts/footprint/*

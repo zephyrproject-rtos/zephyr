@@ -10,6 +10,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
+#include "soc_espi.h"
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
@@ -105,18 +106,16 @@ static void chip_configure_pll(const struct pll_config_t *pll)
 		((IT8XXX2_ECPM_SCDCR3 & 0xf) != pll->div_ec)) {
 #ifdef CONFIG_ESPI
 		/*
-		 * TODO: implement me
 		 * We have to disable eSPI pad before changing
 		 * PLL sequence or sequence will fail if CS# pin is low.
 		 */
+		espi_it8xxx2_enable_pad_ctrl(ESPI_IT8XXX2_SOC_DEV, false);
 #endif
 		/* Run change PLL sequence */
 		chip_run_pll_sequence(pll);
 #ifdef CONFIG_ESPI
-		/*
-		 * TODO: implement me
-		 * Enable eSPI pad after changing PLL sequence
-		 */
+		/* Enable eSPI pad after changing PLL sequence */
+		espi_it8xxx2_enable_pad_ctrl(ESPI_IT8XXX2_SOC_DEV, true);
 #endif
 	}
 }
@@ -141,14 +140,14 @@ SYS_INIT(chip_change_pll, POST_KERNEL, 0);
 
 extern volatile int wait_interrupt_fired;
 
-static ALWAYS_INLINE void riscv_idle(unsigned int key)
+void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 {
 	/* Disable M-mode external interrupt */
 	csr_clear(mie, MIP_MEIP);
 
 	sys_trace_idle();
 	/* Chip doze after wfi instruction */
-	chip_pll_ctrl(CHIP_PLL_DOZE);
+	chip_pll_ctrl(mode);
 	/* Set flag before entering low power mode. */
 	wait_interrupt_fired = 1;
 	/* unlock interrupts */
@@ -173,12 +172,12 @@ static ALWAYS_INLINE void riscv_idle(unsigned int key)
 
 void arch_cpu_idle(void)
 {
-	riscv_idle(MSTATUS_IEN);
+	riscv_idle(CHIP_PLL_DOZE, MSTATUS_IEN);
 }
 
 void arch_cpu_atomic_idle(unsigned int key)
 {
-	riscv_idle(key);
+	riscv_idle(CHIP_PLL_DOZE, key);
 }
 
 static int ite_it8xxx2_init(const struct device *arg)

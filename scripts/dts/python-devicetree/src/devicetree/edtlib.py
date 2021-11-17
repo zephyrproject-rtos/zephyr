@@ -419,6 +419,7 @@ class EDT:
             node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
             node._init_binding()
             node._init_regs()
+            node._init_ranges()
 
             self.nodes.append(node)
             self._node2enode[dt_node] = node
@@ -612,6 +613,10 @@ class Node:
     compats:
       A list of 'compatible' strings for the node, in the same order that
       they're listed in the .dts file
+
+    ranges:
+      A list if Range objects extracted from the node's ranges property.
+      The list is empty if the node does not have a range property.
 
     regs:
       A list of Register objects for the node's registers
@@ -1134,6 +1139,67 @@ class Node:
                      f"{self.edt.dts_path}, but is not declared in "
                      f"'properties:' in {self.binding_path}")
 
+    def _init_ranges(self):
+        # Initializes self.ranges
+        node = self._node
+
+        self.ranges = []
+
+        if "ranges" not in node.props:
+            return
+
+        child_address_cells = node.props.get("#address-cells")
+        parent_address_cells = _address_cells(node)
+        if child_address_cells is None:
+            child_address_cells = 2 # Default value per DT spec.
+        else:
+            child_address_cells = child_address_cells.to_num()
+        child_size_cells = node.props.get("#size-cells")
+        if child_size_cells is None:
+            child_size_cells = 1 # Default value per DT spec.
+        else:
+            child_size_cells = child_size_cells.to_num()
+
+        # Number of cells for one translation 3-tuple in 'ranges'
+        entry_cells = child_address_cells + parent_address_cells + child_size_cells
+
+        if entry_cells == 0:
+            if len(node.props["ranges"].value) == 0:
+                return
+            else:
+                _err(f"'ranges' should be empty in {self._node.path} since "
+                     f"<#address-cells> = {child_address_cells}, "
+                     f"<#address-cells for parent> = {parent_address_cells} and "
+                     f"<#size-cells> = {child_size_cells}")
+
+        for raw_range in _slice(node, "ranges", 4*entry_cells,
+                                f"4*(<#address-cells> (= {child_address_cells}) + "
+                                "<#address-cells for parent> "
+                                f"(= {parent_address_cells}) + "
+                                f"<#size-cells> (= {child_size_cells}))"):
+
+            range = Range()
+            range.node = self
+            range.child_bus_cells = child_address_cells
+            if child_address_cells == 0:
+                range.child_bus_addr = None
+            else:
+                range.child_bus_addr = to_num(raw_range[:4*child_address_cells])
+            range.parent_bus_cells = parent_address_cells
+            if parent_address_cells == 0:
+                range.parent_bus_addr = None
+            else:
+                range.parent_bus_addr = to_num(raw_range[(4*child_address_cells):\
+                                            (4*child_address_cells + 4*parent_address_cells)])
+            range.length_cells = child_size_cells
+            if child_size_cells == 0:
+                range.length = None
+            else:
+                range.length = to_num(raw_range[(4*child_address_cells + \
+                                                    4*parent_address_cells):])
+
+            self.ranges.append(range)
+
     def _init_regs(self):
         # Initializes self.regs
 
@@ -1315,6 +1381,55 @@ class Node:
 
         return OrderedDict(zip(cell_names, data_list))
 
+
+class Range:
+    """
+    Represents a translation range on a node as described by the 'ranges' property.
+
+    These attributes are available on Range objects:
+
+    node:
+      The Node instance this range is from
+
+    child_bus_cells:
+      Is the number of cells (4-bytes wide words) describing the child bus address.
+
+    child_bus_addr:
+      Is a physical address within the child bus address space, or None if the
+      child address-cells is equal 0.
+
+    parent_bus_cells:
+      Is the number of cells (4-bytes wide words) describing the parent bus address.
+
+    parent_bus_addr:
+      Is a physical address within the parent bus address space, or None if the
+      parent address-cells is equal 0.
+
+    length_cells:
+      Is the number of cells (4-bytes wide words) describing the size of range in
+      the child address space.
+
+    length:
+      Specifies the size of the range in the child address space, or None if the
+      child size-cells is equal 0.
+    """
+    def __repr__(self):
+        fields = []
+
+        if self.child_bus_cells is not None:
+            fields.append("child-bus-cells: " + hex(self.child_bus_cells))
+        if self.child_bus_addr is not None:
+            fields.append("child-bus-addr: " + hex(self.child_bus_addr))
+        if self.parent_bus_cells is not None:
+            fields.append("parent-bus-cells: " + hex(self.parent_bus_cells))
+        if self.parent_bus_addr is not None:
+            fields.append("parent-bus-addr: " + hex(self.parent_bus_addr))
+        if self.length_cells is not None:
+            fields.append("length-cells " + hex(self.length_cells))
+        if self.length is not None:
+            fields.append("length " + hex(self.length))
+
+        return "<Range, {}>".format(", ".join(fields))
 
 class Register:
     """

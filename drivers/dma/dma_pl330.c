@@ -590,5 +590,5 @@ static struct dma_pl330_dev_data pl330_data;
 
 DEVICE_DT_INST_DEFINE(0, &dma_pl330_initialize, NULL,
 		    &pl330_data, &pl330_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,
 		    &pl330_driver_api);

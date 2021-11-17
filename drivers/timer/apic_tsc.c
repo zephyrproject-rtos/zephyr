@@ -97,6 +97,11 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t) rdtsc();
 }
 
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return rdtsc();
+}
+
 static inline uint32_t timer_irq(void)
 {
 	/* The Zephyr APIC API is... idiosyncratic.  The timer is a

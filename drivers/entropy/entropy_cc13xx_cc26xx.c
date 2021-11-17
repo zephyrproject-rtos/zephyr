@@ -264,8 +264,8 @@ static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int entropy_cc13xx_cc26xx_pm_control(const struct device *dev,
-					    enum pm_device_action action)
+static int entropy_cc13xx_cc26xx_pm_action(const struct device *dev,
+					   enum pm_device_action action)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 
@@ -351,7 +351,7 @@ static struct entropy_cc13xx_cc26xx_data entropy_cc13xx_cc26xx_data = {
 
 DEVICE_DT_INST_DEFINE(0,
 		entropy_cc13xx_cc26xx_init,
-		entropy_cc13xx_cc26xx_pm_control,
+		entropy_cc13xx_cc26xx_pm_action,
 		&entropy_cc13xx_cc26xx_data, NULL,
 		PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		&entropy_cc13xx_cc26xx_driver_api);

@@ -11,16 +11,16 @@
 
 static int dummy_open(const struct device *dev)
 {
-	return pm_device_get(dev);
+	return pm_device_runtime_get(dev);
 }
 
 static int dummy_close(const struct device *dev)
 {
-	return pm_device_put(dev);
+	return pm_device_runtime_put(dev);
 }
 
-static int dummy_device_pm_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int dummy_device_pm_action(const struct device *dev,
+				  enum pm_device_action action)
 {
 	return 0;
 }
@@ -32,10 +32,10 @@ static const struct dummy_driver_api funcs = {
 
 int dummy_init(const struct device *dev)
 {
-	pm_device_enable(dev);
+	pm_device_runtime_enable(dev);
 	return 0;
 }
 
 DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
-		    dummy_device_pm_ctrl, NULL, NULL, APPLICATION,
+		    dummy_device_pm_action, NULL, NULL, APPLICATION,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);

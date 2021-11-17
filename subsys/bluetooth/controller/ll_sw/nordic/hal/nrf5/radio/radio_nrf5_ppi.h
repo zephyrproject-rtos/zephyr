@@ -262,8 +262,6 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
 /******************************************************************************/
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-
 #define HAL_ENABLE_PALNA_PPI  15
 #define HAL_DISABLE_PALNA_PPI 16
 
@@ -273,20 +271,16 @@ static inline void hal_palna_ppi_setup(void)
 		NRF_PPI,
 		HAL_ENABLE_PALNA_PPI,
 		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[2]),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
-				CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN]));
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_PALNA_GPIOTE_CHAN]));
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_DISABLE_PALNA_PPI,
 		(uint32_t)&(NRF_RADIO->EVENTS_DISABLED),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
-				CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN]));
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_PALNA_GPIOTE_CHAN]));
 }
 
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
-
 /******************************************************************************/
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
 static inline void hal_pa_ppi_setup(void)
 {
 	/* Nothing specific to PA with FEM to handle inside TRX chains */
@@ -306,21 +300,17 @@ static inline void hal_fem_ppi_setup(void)
 		NRF_PPI,
 		HAL_ENABLE_FEM_PPI,
 		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[3]),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
-				CONFIG_BT_CTLR_PDN_GPIOTE_CHAN]),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
-				CONFIG_BT_CTLR_CSN_GPIOTE_CHAN]));
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_PDN_GPIOTE_CHAN]),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_CSN_GPIOTE_CHAN]));
 	nrf_ppi_channel_and_fork_endpoint_setup(
 		NRF_PPI,
 		HAL_DISABLE_FEM_PPI,
 		(uint32_t)&(NRF_RADIO->EVENTS_DISABLED),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
-				CONFIG_BT_CTLR_PDN_GPIOTE_CHAN]),
-		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
-				CONFIG_BT_CTLR_CSN_GPIOTE_CHAN]));
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_PDN_GPIOTE_CHAN]),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_CSN_GPIOTE_CHAN]));
 }
 
-#endif /* CONFIG_BT_CTLR_FEM_NRF21540 */
+#endif /* HAL_RADIO_FEM_IS_NRF21540 */
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)

@@ -1,0 +1,11 @@
+sample:
+    description: This app provides an example of how to integrate
+        IPC Service with Zephyr (static_vrings_mi backend)
+    name: IPC Service example integration (static_vrings_mi backend)
+tests:
+    sample.ipc.static_vrings_mi.nrf:
+        platform_allow: nrf5340dk_nrf5340_cpuapp bl5340_dvk_cpuapp
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpuapp bl5340_dvk_cpuapp
+        tags: ipc
+        build_only: true

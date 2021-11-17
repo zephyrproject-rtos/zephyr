@@ -326,8 +326,8 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
-					enum pm_device_action action)
+static int i2c_cc13xx_cc26xx_pm_action(const struct device *dev,
+				       enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -437,7 +437,7 @@ static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
 
 DEVICE_DT_INST_DEFINE(0,
 		i2c_cc13xx_cc26xx_init,
-		i2c_cc13xx_cc26xx_pm_control,
+		i2c_cc13xx_cc26xx_pm_action,
 		&i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config,
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		&i2c_cc13xx_cc26xx_driver_api);

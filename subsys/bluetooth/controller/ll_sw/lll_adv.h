@@ -67,6 +67,9 @@ struct lll_adv_aux {
 	uint32_t ticks_offset;
 
 	struct lll_adv_pdu data;
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	struct pdu_adv     *last_pdu;
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	int8_t tx_pwr_lvl;

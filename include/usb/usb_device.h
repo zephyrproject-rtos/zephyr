@@ -434,6 +434,13 @@ bool usb_transfer_is_busy(uint8_t ep);
 int usb_wakeup_request(void);
 
 /**
+ * @brief Get status of the USB remote wakeup feature
+ *
+ * @return true if remote wakeup has been enabled by the host, false otherwise.
+ */
+bool usb_get_remote_wakeup_status(void);
+
+/**
  * @}
  */
 

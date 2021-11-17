@@ -136,8 +136,8 @@ static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
-	struct bt_iso_cig_create_param param;
-	static struct bt_iso_chan *chans[CIS_ISO_CHAN_COUNT];
+	struct bt_iso_cig_param param;
+	struct bt_iso_chan *chans[CIS_ISO_CHAN_COUNT];
 
 	if (cig != NULL) {
 		shell_error(sh, "Already created");
@@ -417,6 +417,8 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 	param.bis_channels = bis_channels;
 	param.num_bis = BIS_ISO_CHAN_COUNT;
 	param.encryption = false;
+	param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	param.framing = BT_ISO_FRAMING_UNFRAMED;
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "enc")) {
@@ -431,6 +433,8 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
+	} else {
+		memset(param.bcode, 0, sizeof(param.bcode));
 	}
 
 	err = bt_iso_big_create(adv, &param, &big);

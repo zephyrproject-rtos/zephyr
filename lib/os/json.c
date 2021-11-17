@@ -319,6 +319,23 @@ static int arr_init(struct json_obj *json, char *data, size_t len)
 	return 0;
 }
 
+static int arr_init(struct json_obj *json, char *data, size_t len)
+{
+	struct token token;
+
+	lexer_init(&json->lexer, data, len);
+
+	if (!lexer_next(&json->lexer, &token)) {
+		return -EINVAL;
+	}
+
+	if (token.type != JSON_TOK_ARRAY_START) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int element_token(enum json_tokens token)
 {
 	switch (token) {

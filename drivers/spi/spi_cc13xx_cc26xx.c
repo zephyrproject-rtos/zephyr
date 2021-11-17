@@ -114,8 +114,6 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 			    cfg->cs_pin, cfg->sck_pin);
 
 	ctx->config = config;
-	/* This will reconfigure the CS pin as GPIO if same as cfg->cs_pin. */
-	spi_context_cs_configure(ctx);
 
 	/* Disable SSI before making configuration changes */
 	SSIDisable(cfg->base);
@@ -208,8 +206,8 @@ static int spi_cc13xx_cc26xx_release(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
-					enum pm_device_action action)
+static int spi_cc13xx_cc26xx_pm_action(const struct device *dev,
+				       enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -292,19 +290,25 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
 	DEVICE_DT_INST_DEFINE(n,						    \
 		spi_cc13xx_cc26xx_init_##n,				    \
-		spi_cc13xx_cc26xx_pm_control,				    \
+		spi_cc13xx_cc26xx_pm_action,				    \
 		&spi_cc13xx_cc26xx_data_##n, &spi_cc13xx_cc26xx_config_##n, \
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			    \
 		&spi_cc13xx_cc26xx_driver_api)
 
-#define SPI_CC13XX_CC26XX_INIT_FUNC(n)					    \
-	static int spi_cc13xx_cc26xx_init_##n(const struct device *dev)	    \
-	{								    \
-		SPI_CC13XX_CC26XX_POWER_SPI(n);				    \
-									    \
-		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);\
-									    \
-		return 0;						    \
+#define SPI_CC13XX_CC26XX_INIT_FUNC(n)						\
+	static int spi_cc13xx_cc26xx_init_##n(const struct device *dev)		\
+	{									\
+		int err;							\
+		SPI_CC13XX_CC26XX_POWER_SPI(n);					\
+										\
+		err = spi_context_cs_configure_all(&get_dev_data(dev)->ctx);	\
+		if (err < 0) {							\
+			return err;						\
+		}								\
+										\
+		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);	\
+										\
+		return 0;							\
 	}
 
 #define SPI_CC13XX_CC26XX_INIT(n)					\
@@ -322,10 +326,11 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 									\
 	static struct spi_cc13xx_cc26xx_data				\
 		spi_cc13xx_cc26xx_data_##n = {				\
-		SPI_CONTEXT_INIT_LOCK(spi_cc13xx_cc26xx_data_##n, ctx),	  \
-		SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_##n, ctx),	  \
-	};								  \
-									  \
+		SPI_CONTEXT_INIT_LOCK(spi_cc13xx_cc26xx_data_##n, ctx),	\
+		SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_##n, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
+	};								\
+									\
 	SPI_CC13XX_CC26XX_DEVICE_INIT(n);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_CC13XX_CC26XX_INIT)

@@ -353,7 +353,7 @@ static int gpio_atcgpio100_init(const struct device *port)
 		&gpio_atcgpio100_data_##n,				\
 		&gpio_atcgpio100_config_##n,				\
 		POST_KERNEL,						\
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+		CONFIG_GPIO_INIT_PRIORITY,				\
 		&gpio_atcgpio100_api);					\
 									\
 	static void gpio_atcgpio100_cfg_func_##n(void)			\

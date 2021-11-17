@@ -429,8 +429,8 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int gpio_dw_device_ctrl(const struct device *dev,
-			       enum pm_device_action action)
+static int gpio_dw_device_pm_action(const struct device *dev,
+				    enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -535,8 +535,8 @@ static struct gpio_dw_runtime gpio_0_runtime = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_0_runtime,
-	      &gpio_config_0, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      gpio_dw_initialize, gpio_dw_device_pm_action, &gpio_0_runtime,
+	      &gpio_config_0, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
 #if DT_INST_IRQ_HAS_CELL(0, flags)
@@ -597,8 +597,8 @@ static struct gpio_dw_runtime gpio_1_runtime = {
 };
 
 DEVICE_DT_INST_DEFINE(1,
-	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_1_runtime,
-	      &gpio_dw_config_1, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      gpio_dw_initialize, gpio_dw_device_pm_action, &gpio_1_runtime,
+	      &gpio_dw_config_1, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
 #if DT_INST_IRQ_HAS_CELL(1, flags)
@@ -658,8 +658,8 @@ static struct gpio_dw_runtime gpio_2_runtime = {
 };
 
 DEVICE_DT_INST_DEFINE(2,
-	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_2_runtime,
-	      &gpio_dw_config_2, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      gpio_dw_initialize, gpio_dw_device_pm_action, &gpio_2_runtime,
+	      &gpio_dw_config_2, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
 #if DT_INST_IRQ_HAS_CELL(2, flags)
@@ -719,8 +719,8 @@ static struct gpio_dw_runtime gpio_3_runtime = {
 };
 
 DEVICE_DT_INST_DEFINE(3,
-	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_3_runtime,
-	      &gpio_dw_config_3, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
+	      gpio_dw_initialize, gpio_dw_device_pm_action, &gpio_3_runtime,
+	      &gpio_dw_config_3, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
 #if DT_INST_IRQ_HAS_CELL(3, flags)

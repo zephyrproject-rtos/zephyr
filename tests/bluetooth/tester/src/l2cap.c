@@ -133,6 +133,8 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 		}
 	}
 
+	chan->in_use = false;
+
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DISCONNECTED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }

@@ -11,13 +11,23 @@ config IPC_SERVICE_BACKEND_RPMSG_MI
 	select OPENAMP
 	select IPM
 
+config IPC_SERVICE_BACKEND_ZTEST
+	depends on ZTEST
+	bool "IPC service backend test"
+
 endchoice
 
-if IPC_SERVICE_BACKEND_RPMSG_MI
+config IPC_SERVICE_NUM_ENDPOINTS_PER_INSTANCE
+	int "Max number of registered endpoints per instance"
+	default 2
+	help
+	  Maximal number of endpoints that can be registered for one instance.
 
-rsource "Kconfig.rpmsg_mi"
-
-endif # IP_SERVICE_BACKEND_RPMSG_MI
+config IPC_SERVICE_REG_BACKEND_PRIORITY
+	int "Initialization priority of modules registering IPC backend"
+	default 46
+	help
+	  The backend must be registered before the endpoint register.
 
 config IPC_SERVICE_RPMSG
 	bool "RPMsg support library"
@@ -28,3 +38,5 @@ config IPC_SERVICE_STATIC_VRINGS
 	bool "Static VRINGs support library"
 	help
 	  "Static VRINGs library"
+
+rsource "Kconfig.rpmsg_mi"

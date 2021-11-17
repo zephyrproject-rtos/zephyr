@@ -23,6 +23,12 @@ void crp_test_rng(void);
  */
 void crp_test(void);
 
+/**
+ * @brief Generates device certificate signing request (CSR) using Mbed TLS
+ * X.509 and TF-M crypto service.
+ */
+void crp_generate_csr(void);
+
 #ifdef __cplusplus
 }
 #endif

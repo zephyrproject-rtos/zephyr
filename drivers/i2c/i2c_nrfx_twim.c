@@ -290,8 +290,8 @@ static int init_twim(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int twim_nrfx_pm_control(const struct device *dev,
-				enum pm_device_action action)
+static int twim_nrfx_pm_action(const struct device *dev,
+			       enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -372,7 +372,7 @@ static int twim_nrfx_pm_control(const struct device *dev,
 	};								       \
 	DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twim_##idx##_init,				       \
-		      twim_nrfx_pm_control,				       \
+		      twim_nrfx_pm_action,				       \
 		      &twim_##idx##_data,				       \
 		      &twim_##idx##z_config,				       \
 		      POST_KERNEL,					       \

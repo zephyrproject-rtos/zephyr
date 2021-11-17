@@ -78,6 +78,12 @@
 	current-speed = <460800>;
 	clock-frequency = <1804800>;
 };
+&ite_uart1_wrapper {
+	status = "okay";
+};
+&ite_uart2_wrapper {
+	status = "okay";
+};
 &pwm0 {
 	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C6>;

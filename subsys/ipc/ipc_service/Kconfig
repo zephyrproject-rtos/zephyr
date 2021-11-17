@@ -13,18 +13,6 @@ if IPC_SERVICE
 
 rsource "backends/Kconfig"
 
-config IPC_SERVICE_NUM_ENDPOINTS_PER_INSTANCE
-	int "Max number of registered endpoints per instance"
-	default 2
-	help
-	  Maximal number of endpoints that can be registered for one instance.
-
-config IPC_SERVICE_REG_BACKEND_PRIORITY
-	int "Initialization priority of modules registering IPC backend"
-	default 46
-	help
-	  The backend must be registered before the endpoint register.
-
 module = IPC_SERVICE
 module-str = IPC service and backend
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"

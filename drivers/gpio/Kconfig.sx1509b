@@ -15,12 +15,6 @@ menuconfig GPIO_SX1509B
 
 if GPIO_SX1509B
 
-config GPIO_SX1509B_INIT_PRIORITY
-	int "Init priority"
-	default 70
-	help
-	  Device driver initialization priority.
-
 config GPIO_SX1509B_INTERRUPT
 	bool "Interrupt enable"
 	default n

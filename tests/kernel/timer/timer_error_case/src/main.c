@@ -366,7 +366,7 @@ void test_timeout_end_calc(void)
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, &tstack, &mytimer, &sync_timer);
-	ztest_test_suite(timer_api,
+	ztest_test_suite(timer_api_error,
 			 ztest_user_unit_test(test_timer_stop_null),
 			 ztest_user_unit_test(test_timer_status_get_null),
 			 ztest_user_unit_test(test_timer_status_sync_null),
@@ -377,5 +377,5 @@ void test_main(void)
 			 ztest_user_unit_test(test_timer_add_timeout),
 			 ztest_unit_test(test_timeout_end_calc),
 			 ztest_user_unit_test(test_timer_start_null));
-	ztest_run_test_suite(timer_api);
+	ztest_run_test_suite(timer_api_error);
 }

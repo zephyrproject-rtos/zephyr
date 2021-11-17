@@ -251,6 +251,7 @@ static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 	if (err) {
 		/* We still have the ownership of the buffer */
 		req->buf = buf;
+		chan->req = NULL;
 	}
 
 	return err;
@@ -435,7 +436,7 @@ static inline bool att_chan_is_connected(struct bt_att_chan *chan)
 static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 			    bt_att_chan_sent_t cb)
 {
-	BT_DBG("chan %p flags %u code 0x%02x", chan, atomic_get(chan->flags),
+	BT_DBG("chan %p flags %lu code 0x%02x", chan, atomic_get(chan->flags),
 	       ((struct bt_att_hdr *)buf->data)->code);
 
 	return chan_send(chan, buf, cb);
@@ -2525,7 +2526,6 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 static void att_reset(struct bt_att *att)
 {
-	struct bt_att_req *req, *tmp;
 	struct net_buf *buf;
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
@@ -2542,7 +2542,12 @@ static void att_reset(struct bt_att *att)
 	att->conn = NULL;
 
 	/* Notify pending requests */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->reqs, req, tmp, node) {
+	while (!sys_slist_is_empty(&att->reqs)) {
+		struct bt_att_req *req;
+		sys_snode_t *node;
+
+		node = sys_slist_get_not_empty(&att->reqs);
+		req = CONTAINER_OF(node, struct bt_att_req, node);
 		if (req->func) {
 			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0,
 				  req->user_data);
@@ -2605,7 +2610,7 @@ static struct bt_att_chan *att_get_fixed_chan(struct bt_conn *conn)
 
 static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 {
-	BT_DBG("att %p chan %p flags %u", att, chan, atomic_get(chan->flags));
+	BT_DBG("att %p chan %p flags %lu", att, chan, atomic_get(chan->flags));
 
 	if (sys_slist_is_empty(&att->chans)) {
 		/* Init general queues when attaching the first channel */

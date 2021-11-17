@@ -213,7 +213,6 @@ static int spi_mcux_configure(const struct device *dev,
 		SPI_SetDummyData(base, 0);
 
 		data->ctx.config = spi_cfg;
-		spi_context_cs_configure(&data->ctx);
 	} else {
 		spi_slave_config_t slave_config;
 
@@ -674,6 +673,7 @@ static int spi_mcux_release(const struct device *dev,
 
 static int spi_mcux_init(const struct device *dev)
 {
+	int err;
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 
@@ -692,6 +692,12 @@ static int spi_mcux_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_SPI_MCUX_FLEXCOMM_DMA */
+
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -762,6 +768,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)	\
 		SPI_DMA_CHANNELS(id)		\
 	};								\
 	DEVICE_DT_INST_DEFINE(id,					\
@@ -770,7 +777,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_mcux_driver_api);			\
 	\
 	SPI_MCUX_FLEXCOMM_IRQ_HANDLER(id)

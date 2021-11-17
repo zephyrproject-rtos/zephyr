@@ -81,7 +81,8 @@ static uint32_t get_len(const uint8_t *hdr_buf, uint8_t type)
 	case H4_CMD:
 		return ((const struct bt_hci_cmd_hdr *)hdr_buf)->param_len;
 	case H4_ISO:
-		return sys_le16_to_cpu(((const struct bt_hci_iso_data_hdr *)hdr_buf)->slen);
+		return bt_iso_hdr_len(
+			sys_le16_to_cpu(((const struct bt_hci_iso_hdr *)hdr_buf)->len));
 	case H4_ACL:
 		return sys_le16_to_cpu(((const struct bt_hci_acl_hdr *)hdr_buf)->len);
 	default:
@@ -97,7 +98,7 @@ static int hdr_len(uint8_t type)
 	case H4_CMD:
 		return sizeof(struct bt_hci_cmd_hdr);
 	case H4_ISO:
-		return sizeof(struct bt_hci_iso_data_hdr);
+		return sizeof(struct bt_hci_iso_hdr);
 	case H4_ACL:
 		return sizeof(struct bt_hci_acl_hdr);
 	default:

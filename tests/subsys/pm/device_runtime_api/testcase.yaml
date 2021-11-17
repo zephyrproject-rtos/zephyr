@@ -1,0 +1,3 @@
+tests:
+  subsys.pm.device_runtime_api:
+    tags: pm

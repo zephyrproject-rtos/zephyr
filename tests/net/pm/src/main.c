@@ -21,8 +21,8 @@ struct fake_dev_context {
 	struct net_if *iface;
 };
 
-static int fake_dev_pm_control(const struct device *dev,
-			       enum pm_device_action action)
+static int fake_dev_pm_action(const struct device *dev,
+			      enum pm_device_action action)
 {
 	struct fake_dev_context *ctx = dev->data;
 	int ret;
@@ -100,7 +100,7 @@ static struct dummy_api fake_dev_if_api = {
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
 NET_DEVICE_INIT(fake_dev, "fake_dev",
-		fake_dev_init, fake_dev_pm_control,
+		fake_dev_init, fake_dev_pm_action,
 		&fake_dev_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_dev_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);

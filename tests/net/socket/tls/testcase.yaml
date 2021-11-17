@@ -3,6 +3,8 @@ common:
   min_ram: 32
   tags: net socket tls
   filter: TOOLCHAIN_HAS_NEWLIB == 1
+  integration_platforms:
+    - qemu_x86
 tests:
   net.socket.tls:
     extra_configs:

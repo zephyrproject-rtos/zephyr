@@ -549,8 +549,8 @@ static int bmp388_get_calibration_data(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int bmp388_device_ctrl(const struct device *dev,
-			      enum pm_device_action action)
+static int bmp388_pm_action(const struct device *dev,
+			    enum pm_device_action action)
 {
 	uint8_t reg_val;
 
@@ -723,7 +723,7 @@ static int bmp388_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(						   \
 		inst,							   \
 		bmp388_init,						   \
-		bmp388_device_ctrl,					   \
+		bmp388_pm_action,					   \
 		&bmp388_data_##inst,					   \
 		&bmp388_config_##inst,					   \
 		POST_KERNEL,						   \

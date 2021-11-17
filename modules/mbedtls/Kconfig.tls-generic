@@ -73,6 +73,20 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "Enable the RSA-PSK based ciphersuite modes"
 
+config MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
+	bool
+	default y if MBEDTLS_KEY_EXCHANGE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+
+config MBEDTLS_PSK_MAX_LEN
+	int "Max size of TLS pre-shared keys"
+	default 32
+	depends on MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
+	help
+	  Max size of TLS pre-shared keys, in bytes.
+
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "Enable the RSA-only based ciphersuite modes"
 	default y if !NET_L2_OPENTHREAD
@@ -360,5 +374,11 @@ config MBEDTLS_HAVE_TIME_DATE
 	  System has time.h, time(), and an implementation for gmtime_r().
 	  There also need to be a valid time source in the system, as mbedTLS
 	  expects a valid date/time for certificate validation."
+
+config MBEDTLS_PKCS5_C
+	bool "Enable password-based encryption functions"
+	select MBEDTLS_MD
+	help
+	  Enable PKCS5 functions
 
 endmenu

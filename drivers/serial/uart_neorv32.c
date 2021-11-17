@@ -440,7 +440,8 @@ static int neorv32_uart_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int neorv32_uart_pm_control(const struct device *dev, enum pm_device_action action)
+static int neorv32_uart_pm_action(const struct device *dev,
+				  enum pm_device_action action)
 {
 	uint32_t ctrl = neorv32_uart_read_ctrl(dev);
 
@@ -484,9 +485,9 @@ static const struct uart_driver_api neorv32_uart_driver_api = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-#define NEORV32_UART_PM_CONTROL_FUNC neorv32_uart_pm_control
+#define NEORV32_UART_PM_ACTION_CB neorv32_uart_pm_action
 #else /* CONFIG_PM_DEVICE */
-#define NEORV32_UART_PM_CONTROL_FUNC NULL
+#define NEORV32_UART_PM_ACTION_CB NULL
 #endif /* ! CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -536,7 +537,7 @@ static const struct uart_driver_api neorv32_uart_driver_api = {
 	};								\
 									\
 	DEVICE_DT_DEFINE(node_id, &neorv32_uart_init,			\
-			 NEORV32_UART_PM_CONTROL_FUNC,			\
+			 NEORV32_UART_PM_ACTION_CB,			\
 			 &neorv32_uart_##n##_data,			\
 			 &neorv32_uart_##n##_config,			\
 			 PRE_KERNEL_1,					\

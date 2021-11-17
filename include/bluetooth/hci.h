@@ -74,6 +74,7 @@ struct bt_hci_acl_hdr {
 	(((pb) & 0x0003) | (((ts) & 0x0001) << 2))
 #define bt_iso_handle_pack(h, pb, ts) \
 	((h) | (bt_iso_pack_flags(pb, ts) << 12))
+#define bt_iso_hdr_len(h)                ((h) & BIT_MASK(14))
 
 #define BT_ISO_DATA_VALID                0x00
 #define BT_ISO_DATA_INVALID              0x01
@@ -96,8 +97,8 @@ struct bt_hci_iso_ts_data_hdr {
 #define BT_HCI_ISO_TS_DATA_HDR_SIZE     8
 
 struct bt_hci_iso_hdr {
-	uint16_t handle;
-	uint16_t len;
+	uint16_t handle; /* 12 bit handle, 2 bit PB flags, 1 bit TS_Flag, 1 bit RFU */
+	uint16_t len; /* 14 bits, 2 bits RFU */
 } __packed;
 #define BT_HCI_ISO_HDR_SIZE             4
 
@@ -1431,6 +1432,7 @@ struct bt_hci_cp_le_ext_create_conn {
 
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST               BIT(0)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED       BIT(1)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE       BIT(2)
 
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_FILTERING     0
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOA           BIT(0)

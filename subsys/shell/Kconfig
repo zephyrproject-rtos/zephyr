@@ -15,7 +15,7 @@ if SHELL
 module = SHELL
 module-str = Shell
 source "subsys/logging/Kconfig.template.log_config"
-source "subsys/shell/Kconfig.backends"
+source "subsys/shell/backends/Kconfig.backends"
 
 config SHELL_MINIMAL
 	bool "Default config to reduce flash and memory requirements"

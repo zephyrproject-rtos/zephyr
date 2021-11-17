@@ -105,7 +105,7 @@ static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 	}
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = pm_device_get(port_device);
+	ret = pm_device_runtime_get(port_device);
 	if (ret != 0) {
 		return ret;
 	}
@@ -114,7 +114,7 @@ static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 	gpio_stm32_configure(port_device, STM32_PIN(pin), func, altf);
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = pm_device_put(port_device);
+	ret = pm_device_runtime_put(port_device);
 #endif
 
 	return ret;

@@ -309,7 +309,7 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config COMPILER_COLOR_DIAGNOSTICS
-	bool "Enable colored diganostics"
+	bool "Enable colored diagnostics"
 	default y
 	help
 	  Compiler diagnostic messages are colorized.
@@ -505,6 +505,15 @@ config MAKEFILE_EXPORTS
 	help
 	  Generates a file with build information that can be read by
 	  third party Makefile-based build systems.
+
+config BUILD_OUTPUT_META
+	bool "Create a build meta file"
+	help
+	  Create a build meta file in the build directory containing lists of:
+	  - Zephyr: path and revision (if git repo)
+	  - Zephyr modules: name, path, and revision (if git repo)
+	  - West projects: path and revision
+	  File extension is .meta
 
 endmenu
 

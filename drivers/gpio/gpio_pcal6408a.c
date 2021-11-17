@@ -144,7 +144,7 @@ static int pcal6408a_pin_configure(const struct device *dev,
 	/* Drive strength configuration in this device is incompatible with
 	 * the currently available GPIO API flags, hence it is not supported.
 	 */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
+	if ((flags & GPIO_DS_ALT) != 0) {
 		return -ENOTSUP;
 	}
 

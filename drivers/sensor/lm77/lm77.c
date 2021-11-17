@@ -361,7 +361,8 @@ static int lm77_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int lm77_pm_control(const struct device *dev, enum pm_device_action action)
+static int lm77_pm_action(const struct device *dev,
+			  enum pm_device_action action)
 {
 	const struct lm77_config *config = dev->config;
 	union lm77_reg_config creg = config->config_dt;
@@ -395,9 +396,9 @@ static int lm77_pm_control(const struct device *dev, enum pm_device_action actio
 #endif /* ! LM77_TRIGGER_SUPPORT */
 
 #ifdef CONFIG_PM_DEVICE
-#define LM77_PM_CONTROL_FUNC lm77_pm_control
+#define LM77_PM_ACTION_CB lm77_pm_action
 #else /* CONFIG_PM_DEVICE */
-#define LM77_PM_CONTROL_FUNC NULL
+#define LM77_PM_ACTION_CB NULL
 #endif /* ! CONFIG_PM_DEVICE */
 
 #define LM77_INIT(n)							\
@@ -417,7 +418,7 @@ static int lm77_pm_control(const struct device *dev, enum pm_device_action actio
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, lm77_init,				\
-			      LM77_PM_CONTROL_FUNC,			\
+			      LM77_PM_ACTION_CB,			\
 			      &lm77_data_##n,				\
 			      &lm77_config_##n, POST_KERNEL,		\
 			      CONFIG_SENSOR_INIT_PRIORITY,		\

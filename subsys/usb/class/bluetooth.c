@@ -195,11 +195,11 @@ static uint16_t hci_pkt_get_len(struct net_buf *buf,
 		break;
 	}
 	case BT_BUF_ISO_OUT: {
-		struct bt_hci_iso_data_hdr *iso_hdr;
+		struct bt_hci_iso_hdr *iso_hdr;
 
 		hdr_len = sizeof(*iso_hdr);
-		iso_hdr = (struct bt_hci_iso_data_hdr *)data;
-		len = sys_le16_to_cpu(iso_hdr->slen) + hdr_len;
+		iso_hdr = (struct bt_hci_iso_hdr *)data;
+		len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len)) + hdr_len;
 		break;
 	}
 	default:

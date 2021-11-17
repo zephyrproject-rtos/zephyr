@@ -15,7 +15,11 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include <soc.h>
 #include <drivers/spi.h>
+#ifndef CONFIG_SOC_ESP32C3
 #include <drivers/interrupt_controller/intc_esp32.h>
+#else
+#include <drivers/interrupt_controller/intc_esp32c3.h>
+#endif
 #include <drivers/gpio/gpio_esp32.h>
 #include <drivers/clock_control.h>
 #include "spi_context.h"
@@ -40,6 +44,17 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #define SCLK_IDX_3 SPI3_CLK_OUT_MUX_IDX
 #define CSEL_IDX_2 FSPICS0_OUT_IDX
 #define CSEL_IDX_3 SPI3_CS0_OUT_IDX
+#elif defined(CONFIG_SOC_ESP32C3)
+#define MISO_IDX_2 FSPIQ_IN_IDX
+#define MOSI_IDX_2 FSPID_OUT_IDX
+#define SCLK_IDX_2 FSPICLK_OUT_IDX
+#define CSEL_IDX_2 FSPICS0_OUT_IDX
+#endif
+
+#ifdef CONFIG_SOC_ESP32C3
+#define ISR_HANDLER isr_handler_t
+#else
+#define ISR_HANDLER intr_handler_t
 #endif
 
 static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
@@ -116,6 +131,7 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 
 static int spi_esp32_init(const struct device *dev)
 {
+	int err;
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
 
@@ -124,8 +140,17 @@ static int spi_esp32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
-	data->irq_line = esp_intr_alloc(cfg->irq_source, 0, spi_esp32_isr, (void *)dev, NULL);
+	data->irq_line = esp_intr_alloc(cfg->irq_source,
+			0,
+			(ISR_HANDLER)spi_esp32_isr,
+			(void *)dev,
+			NULL);
 #endif
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -241,8 +266,6 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 					cfg->use_iomux,
 					GPIO_OUTPUT | GPIO_ACTIVE_LOW);
 	}
-
-	spi_context_cs_configure(&data->ctx);
 
 	/* input parameters to calculate timing configuration */
 	spi_hal_timing_param_t timing_param = {
@@ -392,6 +415,7 @@ static const struct spi_driver_api spi_api = {
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)	\
 		.hal = {	\
 			.hw = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
 		},	\
@@ -434,9 +458,9 @@ static const struct spi_driver_api spi_api = {
 	};	\
 		\
 	DEVICE_DT_DEFINE(DT_NODELABEL(spi##idx), &spi_esp32_init,	\
-			      device_pm_control_no, &spi_data_##idx,	\
+			      NULL, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &spi_api);
+			      CONFIG_SPI_INIT_PRIORITY, &spi_api);
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi2), okay)
 ESP32_SPI_INIT(2);

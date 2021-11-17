@@ -98,10 +98,7 @@ typedef int16_t device_handle_t;
 /**
  * @def DEVICE_DEFINE
  *
- * @brief Create device object and set it up for boot time initialization,
- * with the option to pm_control. In case of Device Idle Power
- * Management is enabled, make sure the device is in suspended state after
- * initialization.
+ * @brief Create device object and set it up for boot time initialization.
  *
  * @details This macro defines a device object that is automatically
  * configured by the kernel during system initialization. Note that
@@ -699,51 +696,6 @@ static inline bool device_is_ready(const struct device *dev)
 	Z_DEVICE_STATE_DEFINE(node_id, dev_name, pm_action_cb)		\
 	Z_DEVICE_DEFINE_PM_SLOT(dev_name)
 
-/* Helper macros needed for CONFIG_DEVICE_HANDLE_PADDING. These should
- * be deleted when that option is removed.
- *
- * This is implemented "by hand" -- rather than using a helper macro
- * like UTIL_LISTIFY() -- because we need to allow users to wrap
- * DEVICE_DT_DEFINE with UTIL_LISTIFY, like this:
- *
- *     #define DEFINE_FOO_DEVICE(...) DEVICE_DT_DEFINE(...)
- *     UTIL_LISTIFY(N, DEFINE_FOO_DEVICE)
- *
- * If Z_DEVICE_HANDLE_PADDING uses UTIL_LISTIFY, this type of code
- * would fail, because the UTIL_LISTIFY token within the
- * Z_DEVICE_DEFINE_HANDLES expansion would not be expanded again,
- * since it appears in a context where UTIL_LISTIFY is already being
- * expanded. Standard C does not reexpand macros appearing in their
- * own expansion; this would lead to infinite recursions in general.
- */
-#define Z_DEVICE_HANDLE_PADDING \
-	Z_DEVICE_HANDLE_PADDING_(CONFIG_DEVICE_HANDLE_PADDING)
-#define Z_DEVICE_HANDLE_PADDING_(count) \
-	Z_DEVICE_HANDLE_PADDING__(count)
-#define Z_DEVICE_HANDLE_PADDING__(count) \
-	Z_DEVICE_HANDLE_PADDING_ ## count
-#define Z_DEVICE_HANDLE_PADDING_10 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_9
-#define Z_DEVICE_HANDLE_PADDING_9 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_8
-#define Z_DEVICE_HANDLE_PADDING_8 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_7
-#define Z_DEVICE_HANDLE_PADDING_7 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_6
-#define Z_DEVICE_HANDLE_PADDING_6 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_5
-#define Z_DEVICE_HANDLE_PADDING_5 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_4
-#define Z_DEVICE_HANDLE_PADDING_4 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_3
-#define Z_DEVICE_HANDLE_PADDING_3 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_2
-#define Z_DEVICE_HANDLE_PADDING_2 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_1
-#define Z_DEVICE_HANDLE_PADDING_1 \
-	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_0
-#define Z_DEVICE_HANDLE_PADDING_0 EMPTY
-
 /* Initial build provides a record that associates the device object
  * with its devicetree ordinal, and provides the dependency ordinals.
  * These are provided as weak definitions (to prevent the reference
@@ -779,7 +731,6 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		))							\
 			DEVICE_HANDLE_SEP,				\
 			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
-			Z_DEVICE_HANDLE_PADDING				\
 		};
 
 #ifdef CONFIG_PM_DEVICE

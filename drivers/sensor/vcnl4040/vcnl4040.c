@@ -218,8 +218,8 @@ static int vcnl4040_ambient_setup(const struct device *dev)
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int vcnl4040_device_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int vcnl4040_pm_action(const struct device *dev,
+			      enum pm_device_action action)
 {
 	int ret = 0;
 	uint16_t ps_conf;
@@ -364,5 +364,5 @@ static const struct vcnl4040_config vcnl4040_config = {
 static struct vcnl4040_data vcnl4040_data;
 
 DEVICE_DT_INST_DEFINE(0, vcnl4040_init,
-	      vcnl4040_device_ctrl, &vcnl4040_data, &vcnl4040_config,
+	      vcnl4040_pm_action, &vcnl4040_data, &vcnl4040_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);

@@ -135,6 +135,9 @@ html_show_sphinx = False
 html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
 
 is_release = tags.has("release")  # pylint: disable=undefined-variable
+reference_prefix = ""
+if tags.has("publish"):  # pylint: disable=undefined-variable
+    reference_prefix = f"/{version}" if is_release else "/latest"
 docs_title = "Docs / {}".format(version if is_release else "Latest")
 html_context = {
     "show_license": True,
@@ -151,6 +154,11 @@ html_context = {
         ("1.14.1", "/1.14.1/"),
     ),
     "display_vcs_link": True,
+    "reference_links": {
+        "API": f"{reference_prefix}/doxygen/html/index.html",
+        "Kconfig Options": f"{reference_prefix}/reference/kconfig/index.html",
+        "Devicetree Bindings": f"{reference_prefix}/reference/devicetree/bindings.html",
+    }
 }
 
 # -- Options for LaTeX output ---------------------------------------------

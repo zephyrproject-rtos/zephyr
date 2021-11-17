@@ -70,8 +70,7 @@ static int configure(const struct device *dev,
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
-		LOG_ERR("Master mode is not supported on %s",
-			    dev->name);
+		LOG_ERR("Master mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -86,8 +85,7 @@ static int configure(const struct device *dev,
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8) {
-		LOG_ERR("Word sizes other than 8 bits"
-			    " are not supported");
+		LOG_ERR("Word sizes other than 8 bits are not supported");
 		return -EINVAL;
 	}
 
@@ -105,41 +103,35 @@ static int configure(const struct device *dev,
 	return 0;
 }
 
-static void prepare_for_transfer(const struct device *dev)
+static void prepare_for_transfer(const struct device *dev,
+				 const uint8_t *tx_buf, size_t tx_buf_len,
+				 uint8_t *rx_buf, size_t rx_buf_len)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
-	struct spi_context *ctx = &dev_data->ctx;
 	int status;
 
-	size_t buf_len = spi_context_max_continuous_chunk(ctx);
-
-	if (buf_len > 0) {
+	if (tx_buf_len > dev_config->max_buf_len ||
+	    rx_buf_len > dev_config->max_buf_len) {
+		LOG_ERR("Invalid buffer sizes: Tx %d/Rx %d",
+			tx_buf_len, rx_buf_len);
+		status = -EINVAL;
+	} else {
 		nrfx_err_t result;
 
-		if (buf_len > dev_config->max_buf_len) {
-			buf_len = dev_config->max_buf_len;
-		}
-
-		result = nrfx_spis_buffers_set(
-			&dev_config->spis,
-			ctx->tx_buf,
-			spi_context_tx_buf_on(ctx) ? buf_len : 0,
-			ctx->rx_buf,
-			spi_context_rx_buf_on(ctx) ? buf_len : 0);
+		result = nrfx_spis_buffers_set(&dev_config->spis,
+					       tx_buf, tx_buf_len,
+					       rx_buf, rx_buf_len);
 		if (result == NRFX_SUCCESS) {
 			return;
 		}
 
-		/* Cannot prepare for transfer. */
 		status = -EIO;
-	} else {
-		/* Zero-length buffer provided. */
-		status = 0;
 	}
 
-	spi_context_complete(ctx, status);
+	spi_context_complete(&dev_data->ctx, status);
 }
+
 
 static int transceive(const struct device *dev,
 		      const struct spi_config *spi_cfg,
@@ -165,9 +157,11 @@ static int transceive(const struct device *dev,
 		LOG_ERR("Only buffers located in RAM are supported");
 		error = -ENOTSUP;
 	} else {
-		spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
-
-		prepare_for_transfer(dev);
+		prepare_for_transfer(dev,
+				     tx_bufs ? tx_bufs->buffers[0].buf : NULL,
+				     tx_bufs ? tx_bufs->buffers[0].len : 0,
+				     rx_bufs ? rx_bufs->buffers[0].buf : NULL,
+				     rx_bufs ? rx_bufs->buffers[0].len : 0);
 
 		error = spi_context_wait_for_completion(&dev_data->ctx);
 	}
@@ -232,8 +226,8 @@ static int init_spis(const struct device *dev,
 		     const nrfx_spis_config_t *config)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
-	/* This sets only default values of frequency, mode and bit order.
-	 * The proper ones are set in configure() when a transfer is started.
+	/* This sets only default values of mode and bit order. The ones to be
+	 * actually used are set in configure() when a transfer is prepared.
 	 */
 	nrfx_err_t result = nrfx_spis_init(&get_dev_config(dev)->spis,
 					   config,
@@ -285,7 +279,7 @@ static int init_spis(const struct device *dev,
 	};								       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spis = NRFX_SPIS_INSTANCE(idx),			       \
-		.max_buf_len = (1 << SPIS##idx##_EASYDMA_MAXCNT_SIZE) - 1,     \
+		.max_buf_len = BIT_MASK(SPIS##idx##_EASYDMA_MAXCNT_SIZE),      \
 	};								       \
 	DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_##idx##_init,				       \

@@ -13,6 +13,7 @@
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/gatt.h>
 #include <bluetooth/hci.h>
 
 #include <sys/byteorder.h>
@@ -40,6 +41,52 @@ static uint8_t oob_legacy_tk[16] = { 0 };
 static struct bt_le_oob oob_sc_local = { 0 };
 static struct bt_le_oob oob_sc_remote = { 0 };
 #endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
+
+#if defined(CONFIG_BT_PRIVACY)
+static struct {
+	bt_addr_le_t addr;
+	bool supported;
+} cars[CONFIG_BT_MAX_PAIRED];
+
+static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
+			  struct bt_gatt_read_params *params, const void *data,
+			  uint16_t length);
+
+static struct bt_gatt_read_params read_car_params = {
+		.func = read_car_cb,
+		.by_uuid.uuid = BT_UUID_CENTRAL_ADDR_RES,
+		.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
+		.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+};
+
+static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
+			  struct bt_gatt_read_params *params, const void *data,
+			  uint16_t length)
+{
+	struct bt_conn_info info;
+	bool supported = false;
+
+	if (!err && data && length == 1) {
+		const uint8_t *tmp = data;
+
+		/* only 0 or 1 are valid values */
+		if (tmp[0] == 1) {
+			supported = true;
+		}
+	}
+
+	bt_conn_get_info(conn, &info);
+
+	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
+		if (bt_addr_le_cmp(info.le.dst, &cars[i].addr) == 0) {
+			cars[i].supported = supported;
+			break;
+		}
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+#endif
 
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
@@ -494,13 +541,28 @@ static void start_directed_advertising(const uint8_t *data, uint16_t len)
 	const struct gap_start_directed_adv_cmd *cmd = (void *)data;
 	struct gap_start_directed_adv_rp rp;
 	struct bt_le_adv_param adv_param;
+	uint16_t options = sys_le16_to_cpu(cmd->options);
+	const bt_addr_le_t *peer = (bt_addr_le_t *)data;
 
-	adv_param = *BT_LE_ADV_CONN_DIR((bt_addr_le_t *)data);
+	adv_param = *BT_LE_ADV_CONN_DIR(peer);
 
-	if (cmd->high_duty == 0) {
+	if (!(options & GAP_START_DIRECTED_ADV_HD)) {
 		adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
 		adv_param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 		adv_param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
+	}
+
+	if (options & GAP_START_DIRECTED_ADV_PEER_RPA) {
+#if defined(CONFIG_BT_PRIVACY)
+		/* check if peer supports Central Address Resolution */
+		for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
+			if (bt_addr_le_cmp(peer, &cars[i].addr) == 0) {
+				if (cars[i].supported) {
+					adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
+				}
+			}
+		}
+#endif
 	}
 
 	if (bt_le_adv_start(&adv_param, NULL, 0, NULL, 0) < 0) {
@@ -825,6 +887,29 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 	return BT_SECURITY_ERR_SUCCESS;
 }
 
+void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
+{
+	struct gap_bond_pairing_failed_ev ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
+	ev.address_type = addr->type;
+	ev.reason = reason;
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_PAIRING_FAILED, CONTROLLER_INDEX,
+		    (uint8_t *)&ev, sizeof(ev));
+}
+
+static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+#if defined(CONFIG_BT_PRIVACY)
+	/* Read peer's Central Address Resolution if bonded */
+	if (bonded) {
+		bt_gatt_read(conn, &read_car_params);
+	}
+#endif
+}
+
 static void set_io_cap(const uint8_t *data, uint16_t len)
 {
 	const struct gap_set_io_cap_cmd *cmd = (void *) data;
@@ -862,6 +947,8 @@ static void set_io_cap(const uint8_t *data, uint16_t len)
 	}
 
 	cb.pairing_accept = auth_pairing_accept;
+	cb.pairing_failed = auth_pairing_failed;
+	cb.pairing_complete = auth_pairing_complete;
 
 	if (bt_conn_auth_cb_register(&cb)) {
 		status = BTP_STATUS_FAILED;

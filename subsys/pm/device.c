@@ -35,10 +35,6 @@ int pm_device_state_set(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	if (atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
-		return -EBUSY;
-	}
-
 	switch (state) {
 	case PM_DEVICE_STATE_SUSPENDED:
 		if (pm->state == PM_DEVICE_STATE_SUSPENDED) {
@@ -157,15 +153,15 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 
 	flags =	atomic_get(&pm->flags);
 
-	if ((flags & BIT(PM_DEVICE_FLAGS_WS_CAPABLE)) == 0U) {
+	if ((flags & BIT(PM_DEVICE_FLAG_WS_CAPABLE)) == 0U) {
 		return false;
 	}
 
 	if (enable) {
 		new_flags = flags |
-			BIT(PM_DEVICE_FLAGS_WS_ENABLED);
+			BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	} else {
-		new_flags = flags & ~BIT(PM_DEVICE_FLAGS_WS_ENABLED);
+		new_flags = flags & ~BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	}
 
 	return atomic_cas(&pm->flags, flags, new_flags);
@@ -180,7 +176,7 @@ bool pm_device_wakeup_is_enabled(const struct device *dev)
 	}
 
 	return atomic_test_bit(&pm->flags,
-			       PM_DEVICE_FLAGS_WS_ENABLED);
+			       PM_DEVICE_FLAG_WS_ENABLED);
 }
 
 bool pm_device_wakeup_is_capable(const struct device *dev)
@@ -192,5 +188,5 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 	}
 
 	return atomic_test_bit(&pm->flags,
-			       PM_DEVICE_FLAGS_WS_CAPABLE);
+			       PM_DEVICE_FLAG_WS_CAPABLE);
 }

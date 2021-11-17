@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	status = "okay";
+	interrupts = <8 0>;
+};
+
+&wdt0 {
+	status = "disabled";
+};
+
+/ {
+	wdt_counter: wdt-counter {
+		compatible = "zephyr,counter-watchdog";
+		status = "okay";
+		counter = <&timer0>;
+		label = "WDT_COUNTER";
+	};
+};

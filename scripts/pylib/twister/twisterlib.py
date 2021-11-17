@@ -24,7 +24,6 @@ import glob
 import concurrent
 import xml.etree.ElementTree as ET
 import logging
-import pty
 from pathlib import Path
 from distutils.spawn import find_executable
 from colorama import Fore
@@ -57,6 +56,14 @@ try:
     import psutil
 except ImportError:
     print("Install psutil python module with pip to run in Qemu.")
+
+try:
+    import pty
+except ImportError as capture_error:
+    if os.name == "nt":  # "nt" means that program is running on Windows OS
+        pass  # "--device-serial-pty" option is not supported on Windows OS
+    else:
+        raise capture_error
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -2799,7 +2806,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             logger.info("Cannot read zephyr version.")
 
     def get_platform_instances(self, platform):
-        filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
+        filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + os.sep)}
         return filtered_dict
 
     def config(self):

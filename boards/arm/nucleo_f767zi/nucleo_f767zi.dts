@@ -27,7 +27,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,dtcm = &dtcm;
-		zephyr,can-primary = &can1;
+		zephyr,canbus = &can1;
 	};
 
 	leds {
@@ -117,11 +117,11 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &timers1 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm1: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch3_pe13>;
 	};
 };

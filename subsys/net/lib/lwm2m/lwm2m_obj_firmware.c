@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FIRMWARE_UPDATE_RESULT_ID		5
 #define FIRMWARE_PACKAGE_NAME_ID		6
 #define FIRMWARE_PACKAGE_VERSION_ID		7
-#define FIRMWARE_UPDATE_PROTO_SUPPORT_ID	8 /* TODO */
+#define FIRMWARE_UPDATE_PROTO_SUPPORT_ID	8
 #define FIRMWARE_UPDATE_DELIV_METHOD_ID		9
 
 #define FIRMWARE_MAX_ID				10
@@ -49,6 +49,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* resource state variables */
 static uint8_t update_state;
 static uint8_t update_result;
+static uint8_t supported_protocol;
 static uint8_t delivery_method;
 static char package_uri[PACKAGE_URI_LEN];
 
@@ -332,6 +333,10 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 			  &update_state, sizeof(update_state));
 	INIT_OBJ_RES_DATA(FIRMWARE_UPDATE_RESULT_ID, res, i, res_inst, j,
 			  &update_result, sizeof(update_result));
+	INIT_OBJ_RES_OPTDATA(FIRMWARE_PACKAGE_NAME_ID, res, i, res_inst, j);
+	INIT_OBJ_RES_OPTDATA(FIRMWARE_PACKAGE_VERSION_ID, res, i, res_inst, j);
+	INIT_OBJ_RES_DATA(FIRMWARE_UPDATE_PROTO_SUPPORT_ID, res, i, res_inst, j,
+			  &supported_protocol, sizeof(supported_protocol));
 	INIT_OBJ_RES_DATA(FIRMWARE_UPDATE_DELIV_METHOD_ID, res, i, res_inst, j,
 			  &delivery_method, sizeof(delivery_method));
 

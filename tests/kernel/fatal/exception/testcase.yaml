@@ -21,4 +21,6 @@ tests:
     tags: kernel ignore_faults userspace
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
+    # FIXME: See issue #39948
+    platform_exclude: qemu_cortex_a9
     tags: kernel ignore_faults

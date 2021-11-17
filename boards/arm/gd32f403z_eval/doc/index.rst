@@ -149,6 +149,53 @@ headers J1 and J100 that can be used with any ARM compatible tools.
       :compact:
 
 
+Using ROM bootloader
+====================
+
+The GD32F403 MCU have a ROM bootloader which allow flash programming.  User
+should install `GD32 ISP Console`_ software at some Linux path.  The recommended
+is :code:`$HOME/.local/bin`.
+
+#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: gd32f403z_eval
+      :goals: build
+      :compact:
+
+#. Enable board bootloader:
+
+   - Remove boot-0 jumper
+   - press reset button
+
+#. To flash an image:
+
+   .. code-block:: console
+
+      west build -b gd32f403z_eval samples/hello_world
+      west flash -r gd32isp [--port=/dev/ttyUSB0]
+
+#. Run your favorite terminal program to listen for output. Under Linux the
+   terminal should be :code:`/dev/ttyUSB0`. For example:
+
+   .. code-block:: console
+
+      $ minicom -D /dev/ttyUSB0 -o
+
+   The -o option tells minicom not to send the modem initialization
+   string. Connection should be configured as follows:
+
+      - Speed: 115200
+      - Data: 8 bits
+      - Parity: None
+      - Stop bits: 1
+
+   Press reset button
+
+   You should see "Hello World! gd32f403z_eval" in your terminal.
+
+
 .. _GigaDevice Cortex-M4F High Performance SoC Website:
 	https://www.gigadevice.com/products/microcontrollers/gd32/arm-cortex-m4/high-performance-line/gd32f403-series/
 

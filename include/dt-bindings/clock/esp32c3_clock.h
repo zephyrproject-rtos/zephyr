@@ -18,7 +18,8 @@
 #define ESP32_CLK_CPU_160M             160U
 
 /* Supported XTAL Frequencies */
-#define ESP32_CLK_XTAL_40M             0U
+#define ESP32_CLK_XTAL_32M             0U
+#define ESP32_CLK_XTAL_40M             1U
 
 /* Modules IDs
  * These IDs are actually offsets in CLK and RST Control registers.

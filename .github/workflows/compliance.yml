@@ -1,4 +1,4 @@
-name: Compliance
+name: Compliance Checks
 
 on: pull_request
 
@@ -19,7 +19,7 @@ jobs:
       run: |
         python3 ./scripts/get_maintainer.py path CMakeLists.txt
 
-  compliance_job:
+  check_compliance:
     runs-on: ubuntu-latest
     name: Run compliance checks on patch series (PR)
     steps:
@@ -57,7 +57,7 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true
-        west update
+        west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
     - name: Run Compliance Tests
       continue-on-error: true

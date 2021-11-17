@@ -32,7 +32,7 @@ static void pm_save_idle(void)
 	/*
 	 * Call the suspend hook function of the soc interface to allow
 	 * entry into a low power state. The function returns
-	 * PM_STATE_ACTIVE if low power state was not entered, in which
+	 * false if low power state was not entered, in which
 	 * case, kernel does normal idle processing.
 	 *
 	 * This function is entered with interrupts disabled. If a low power
@@ -42,13 +42,13 @@ static void pm_save_idle(void)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	if (pm_system_suspend(ticks) == PM_STATE_ACTIVE) {
+	if (pm_system_suspend(ticks) == false) {
 		k_cpu_idle();
 	}
 #endif
 }
 
-void z_pm_save_idle_exit(int32_t ticks)
+void z_pm_save_idle_exit(void)
 {
 #ifdef CONFIG_PM
 	/* Some CPU low power states require notification at the ISR

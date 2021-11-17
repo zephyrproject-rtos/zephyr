@@ -781,10 +781,12 @@ use_random_mac:
 
 	memset(ppp->buf, 0, sizeof(ppp->buf));
 
-	/* If we have a GSM modem with PPP support, then do not start the
-	 * interface automatically but only after the modem is ready.
+	/* If we have a GSM modem with PPP support or interface autostart is disabled
+	 * from Kconfig, then do not start the interface automatically but only
+	 * after the modem is ready or when manually started.
 	 */
-	if (IS_ENABLED(CONFIG_MODEM_GSM_PPP)) {
+	if (IS_ENABLED(CONFIG_MODEM_GSM_PPP) ||
+	    IS_ENABLED(CONFIG_PPP_NET_IF_NO_AUTO_START)) {
 		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	}
 }

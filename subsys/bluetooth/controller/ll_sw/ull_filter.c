@@ -30,6 +30,10 @@
 #include "lll_conn.h"
 #include "lll_filter.h"
 
+#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
+#include "ll_sw/ull_tx_queue.h"
+#endif
+
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
@@ -114,7 +118,8 @@ static struct k_work_delayable rpa_work;
 		    !memcmp(list[i].id_addr.val, addr, BDADDR_SIZE))
 
 static void fal_clear(void);
-static uint8_t fal_find(uint8_t addr_type, uint8_t *addr, uint8_t *free);
+static uint8_t fal_find(uint8_t addr_type, const uint8_t *const addr,
+			uint8_t *const free_idx);
 static uint32_t fal_add(bt_addr_le_t *id_addr);
 static uint32_t fal_remove(bt_addr_le_t *id_addr);
 static void fal_update(void);
@@ -136,8 +141,10 @@ static uint32_t filter_remove(struct lll_filter *filter, uint8_t addr_type,
 			   uint8_t *bdaddr);
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
-static void filter_insert(struct lll_filter *filter, int index,
-			  uint8_t addr_type, uint8_t *bdaddr);
+static uint32_t filter_find(const struct lll_filter *const filter,
+			    uint8_t addr_type, const uint8_t *const bdaddr);
+static void filter_insert(struct lll_filter *const filter, int index,
+			  uint8_t addr_type, const uint8_t *const bdaddr);
 static void filter_clear(struct lll_filter *filter);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY) && \
@@ -652,6 +659,15 @@ struct lll_filter *ull_filter_lll_get(bool filter)
 #endif
 }
 
+uint8_t ull_filter_lll_fal_match(const struct lll_filter *const filter,
+				 uint8_t addr_type, const uint8_t *const addr,
+				 uint8_t *devmatch_id)
+{
+	*devmatch_id = filter_find(filter, addr_type, addr);
+
+	return (*devmatch_id) == FILTER_IDX_NONE ? 0U : 1U;
+}
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 void ull_filter_adv_scan_state_cb(uint8_t bm)
 {
@@ -901,8 +917,9 @@ bool ull_filter_lll_rl_idx_allowed(uint8_t irkmatch_ok, uint8_t rl_idx)
 	return !rl[rl_idx].pirk || rl[rl_idx].dev;
 }
 
-bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr,
-				    uint8_t *rl_idx)
+bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type,
+				    const uint8_t *id_addr,
+				    uint8_t *const rl_idx)
 {
 	uint8_t i, j;
 
@@ -933,8 +950,8 @@ bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr,
 	return true;
 }
 
-bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type, uint8_t *id_addr,
-				    uint8_t rl_idx)
+bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type,
+				    const uint8_t *id_addr, uint8_t rl_idx)
 {
 	/* Unable to resolve if AR is disabled, no RL entry or no local IRK */
 	if (!rl_enable || rl_idx >= ARRAY_SIZE(rl) || !rl[rl_idx].lirk) {
@@ -1005,7 +1022,8 @@ static void fal_clear(void)
 	}
 }
 
-static uint8_t fal_find(uint8_t addr_type, uint8_t *addr, uint8_t *free_idx)
+static uint8_t fal_find(uint8_t addr_type, const uint8_t *const addr,
+			uint8_t *const free_idx)
 {
 	int i;
 
@@ -1204,8 +1222,25 @@ static uint32_t filter_remove(struct lll_filter *filter, uint8_t addr_type,
 {
 	int index;
 
-	if (!filter->enable_bitmask) {
+	index = filter_find(filter, addr_type, bdaddr);
+	if (index == FILTER_IDX_NONE) {
 		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	filter->enable_bitmask &= ~BIT(index);
+	filter->addr_type_bitmask &= ~BIT(index);
+
+	return 0;
+}
+#endif /* !CONFIG_BT_CTLR_PRIVACY */
+
+static uint32_t filter_find(const struct lll_filter *const filter,
+			    uint8_t addr_type, const uint8_t *const bdaddr)
+{
+	int index;
+
+	if (!filter->enable_bitmask) {
+		return FILTER_IDX_NONE;
 	}
 
 	index = FAL_SIZE;
@@ -1214,18 +1249,15 @@ static uint32_t filter_remove(struct lll_filter *filter, uint8_t addr_type,
 		    (((filter->addr_type_bitmask >> index) & 0x01) ==
 		     (addr_type & 0x01)) &&
 		    !memcmp(filter->bdaddr[index], bdaddr, BDADDR_SIZE)) {
-			filter->enable_bitmask &= ~BIT(index);
-			filter->addr_type_bitmask &= ~BIT(index);
-			return 0;
+			return index;
 		}
 	}
 
-	return BT_HCI_ERR_INVALID_PARAM;
+	return FILTER_IDX_NONE;
 }
-#endif /* !CONFIG_BT_CTLR_PRIVACY */
 
-static void filter_insert(struct lll_filter *filter, int index,
-			  uint8_t addr_type, uint8_t *bdaddr)
+static void filter_insert(struct lll_filter *const filter, int index,
+			  uint8_t addr_type, const uint8_t *const bdaddr)
 {
 	filter->enable_bitmask |= BIT(index);
 	filter->addr_type_bitmask |= ((addr_type & 0x01) << index);

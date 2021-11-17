@@ -294,8 +294,8 @@ static void pwm_nrfx_uninit(const struct device *dev)
 	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
 }
 
-static int pwm_nrfx_pm_control(const struct device *dev,
-			       enum pm_device_action action)
+static int pwm_nrfx_pm_action(const struct device *dev,
+			      enum pm_device_action action)
 {
 	int err = 0;
 
@@ -314,7 +314,7 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 }
 #else
 
-#define pwm_nrfx_pm_control NULL
+#define pwm_nrfx_pm_action NULL
 
 #endif /* CONFIG_PM_DEVICE */
 
@@ -369,7 +369,7 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 		.seq.length = NRF_PWM_CHANNEL_COUNT			      \
 	};								      \
 	DEVICE_DT_DEFINE(PWM(idx),					      \
-		      pwm_nrfx_init, pwm_nrfx_pm_control,		      \
+		      pwm_nrfx_init, pwm_nrfx_pm_action,		      \
 		      &pwm_nrfx_##idx##_data,				      \
 		      &pwm_nrfx_##idx##config,				      \
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \

@@ -1,8 +1,0 @@
-sample:
-  description: MHU dual core sample
-    application
-  name: ipm_mhu_dual_core
-tests:
-  sample.ipc.ipm.ipm_mhu_dual_core:
-    tags: ipm
-    platform_allow: v2m_musca_b1 v2m_musca_b1_ns

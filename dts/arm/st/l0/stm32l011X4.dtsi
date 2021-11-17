@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <st/l0/stm32l011.dtsi>
+#include <st/l0/stm32l010.dtsi>
 
 / {
 	sram0: memory@20000000 {

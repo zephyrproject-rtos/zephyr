@@ -1,0 +1,16 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-SPI-FIU controller node
+
+compatible: "nuvoton,npcx-spi-fiu"
+
+include: [spi-controller.yaml]
+
+properties:
+    reg:
+        required: true
+    clocks:
+        required: true
+    label:
+        required: true

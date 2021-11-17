@@ -12,8 +12,18 @@
 
 #include <string.h>
 #include <drivers/watchdog.h>
+#ifndef CONFIG_SOC_ESP32C3
 #include <drivers/interrupt_controller/intc_esp32.h>
+#else
+#include <drivers/interrupt_controller/intc_esp32c3.h>
+#endif
 #include <device.h>
+
+#ifdef CONFIG_SOC_ESP32C3
+#define ISR_HANDLER isr_handler_t
+#else
+#define ISR_HANDLER intr_handler_t
+#endif
 
 /* FIXME: This struct shall be removed from here, when esp32 timer driver got
  * implemented.
@@ -150,15 +160,23 @@ static int wdt_esp32_set_config(const struct device *dev, uint8_t options)
 		v |= TIMG_WDT_STG_SEL_OFF << TIMG_WDT_STG1_S;
 
 		/* Disable interrupts for this mode. */
+		#ifndef CONFIG_SOC_ESP32C3
 		v &= ~(TIMG_WDT_LEVEL_INT_EN | TIMG_WDT_EDGE_INT_EN);
+		#else
+		v &= ~(TIMG_WDT_INT_ENA);
+		#endif
 	} else if (data->mode == WDT_MODE_INTERRUPT_RESET) {
 		/* Interrupt first, and warm reset if not reloaded */
 		v |= TIMG_WDT_STG_SEL_INT << TIMG_WDT_STG0_S;
 		v |= TIMG_WDT_STG_SEL_RESET_SYSTEM << TIMG_WDT_STG1_S;
 
 		/* Use level-triggered interrupts. */
+		#ifndef CONFIG_SOC_ESP32C3
 		v |= TIMG_WDT_LEVEL_INT_EN;
 		v &= ~TIMG_WDT_EDGE_INT_EN;
+		#else
+		v |= TIMG_WDT_INT_ENA;
+		#endif
 	} else {
 		return -EINVAL;
 	}
@@ -206,10 +224,15 @@ static int wdt_esp32_init(const struct device *dev)
 	wdt_esp32_disable(dev);
 #endif
 
-	/* This is a level 4 interrupt, which is handled by _Level4Vector,
+	/* For xtensa esp32 chips, this is a level 4 interrupt,
+	 * which is handled by _Level4Vector,
 	 * located in xtensa_vectors.S.
 	 */
-	data->irq_line = esp_intr_alloc(config->irq_source, 0, wdt_esp32_isr, (void *)dev, NULL);
+	data->irq_line = esp_intr_alloc(config->irq_source,
+		0,
+		(ISR_HANDLER)wdt_esp32_isr,
+		(void *)dev,
+		NULL);
 
 	wdt_esp32_enable(dev);
 

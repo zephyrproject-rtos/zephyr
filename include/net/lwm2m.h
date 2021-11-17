@@ -57,11 +57,13 @@
 #define IPSO_OBJECT_HUMIDITY_SENSOR_ID      3304
 #define IPSO_OBJECT_LIGHT_CONTROL_ID        3311
 #define IPSO_OBJECT_ACCELEROMETER_ID        3313
+#define IPSO_OBJECT_CURRENT_SENSOR_ID       3317
 #define IPSO_OBJECT_PRESSURE_ID             3323
 #define IPSO_OBJECT_BUZZER_ID               3338
 #define IPSO_OBJECT_TIMER_ID                3340
 #define IPSO_OBJECT_ONOFF_SWITCH_ID         3342
 #define IPSO_OBJECT_PUSH_BUTTON_ID          3347
+#define IPSO_OBJECT_FILLING_LEVEL_SENSOR_ID 3435
 /* clang-format on */
 
 typedef void (*lwm2m_socket_fault_cb_t)(int error);
@@ -93,6 +95,12 @@ struct lwm2m_ctx {
 	 *  LwM2M engine calls tls_credential_(add|delete)
 	 */
 	int tls_tag;
+
+	/** When MBEDTLS SNI is enabled socket must be set with destination
+	 *  hostname server.
+	 */
+	char *desthostname;
+	uint16_t desthostnamelen;
 
 	/** Client can set load_credentials function as a way of overriding
 	 *  the default behavior of load_tls_credential() in lwm2m_engine.c
@@ -880,6 +888,18 @@ int lwm2m_engine_delete_res_inst(char *pathstr);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms);
+
+/**
+ * @brief Update the period of the device service.
+ *
+ * Change the duration of the periodic device service that notifies the
+ * current time.
+ *
+ * @param[in] period_ms New period for the device service (in milliseconds)
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_update_device_service_period(uint32_t period_ms);
 
 /**
  * @brief Start the LwM2M engine

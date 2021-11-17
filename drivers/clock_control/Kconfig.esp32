@@ -5,6 +5,6 @@
 
 config CLOCK_CONTROL_ESP32
 	bool "ESP32 Clock driver"
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
 	  Enable support for ESP32 clock driver.

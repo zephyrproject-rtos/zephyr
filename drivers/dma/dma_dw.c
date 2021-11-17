@@ -413,7 +413,7 @@ static const struct dma_driver_api dw_dma_driver_api = {
 			    NULL,					\
 			    &dw_dma##inst##_data,			\
 			    &dw_dma##inst##_config, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_DMA_INIT_PRIORITY,			\
 			    &dw_dma_driver_api);			\
 									\
 	static void dw_dma##inst##_irq_config(void)			\

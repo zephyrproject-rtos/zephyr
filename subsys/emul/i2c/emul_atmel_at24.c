@@ -61,6 +61,7 @@ static int at24_emul_transfer(struct i2c_emul *emul, struct i2c_msg *msgs,
 	const struct at24_emul_cfg *cfg;
 	unsigned int len;
 	bool too_fast;
+	uint32_t i2c_cfg;
 
 	data = CONTAINER_OF(emul, struct at24_emul_data, emul);
 	cfg = emul->parent->cfg;
@@ -71,9 +72,12 @@ static int at24_emul_transfer(struct i2c_emul *emul, struct i2c_msg *msgs,
 		return -EIO;
 	}
 
+	if (i2c_get_config(data->i2c, &i2c_cfg)) {
+		LOG_ERR("i2c_get_config failed");
+		return -EIO;
+	}
 	/* For testing purposes, fail if the bus speed is above standard */
-	too_fast = (I2C_SPEED_GET(i2c_emul_get_config(data->i2c)) >
-		 I2C_SPEED_STANDARD);
+	too_fast = (I2C_SPEED_GET(i2c_cfg) > I2C_SPEED_STANDARD);
 	if (too_fast) {
 		LOG_ERR("Speed too high");
 		return -EIO;

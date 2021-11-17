@@ -9,8 +9,8 @@ menuconfig MBOX
 
 if MBOX
 
-config MBOX_NRFX
-	bool "MBOX NRF driver"
+config MBOX_NRFX_IPC
+	bool "MBOX NRF IPC driver"
 	depends on HAS_HW_NRF_IPC
 	select NRFX_IPC
 	help

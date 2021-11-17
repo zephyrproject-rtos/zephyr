@@ -593,7 +593,7 @@ int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 	start_time = k_uptime_ticks();
 
 	while (can->ESR & CAN_ESR_BOFF) {
-		if (timeout != K_FOREVER &&
+		if (!K_TIMEOUT_EQ(timeout, K_FOREVER) &&
 		    k_uptime_ticks() - start_time >= timeout.ticks) {
 			goto done;
 		}

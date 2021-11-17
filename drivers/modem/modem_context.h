@@ -71,7 +71,7 @@ struct modem_context {
 	int   data_lac;
 	int   data_cellid;
 #endif
-	int   data_rssi;
+	int   *data_rssi;
 	bool  is_automatic_oper;
 	/* pin config */
 	struct modem_pin *pins;

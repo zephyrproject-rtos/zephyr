@@ -10,6 +10,10 @@ menuconfig PCIE
 
 if PCIE
 
+module = PCIE
+module-str = pcie
+source "subsys/logging/Kconfig.template.log_config"
+
 config PCIE_MSI
 	bool "Enable support for PCI(e) MSI"
 	help
@@ -39,6 +43,12 @@ config PCIE_MSI_X
 	  if you want to support multi-vector on MSI-X as well.
 
 endif # PCIE_MSI
+
+config PCIE_PTM
+	bool "Enable support for PCI(e) Precision Time Management (PTM)"
+	help
+	  This will enable support both PTM root and PTM requester features.
+	  Up to the PCIe device driver to enable its PTM requester capability.
 
 config PCIE_SHELL
 	bool "Enable PCIe/new PCI Shell"

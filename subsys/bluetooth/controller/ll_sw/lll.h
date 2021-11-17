@@ -25,6 +25,9 @@
 #define SCAN_INT_UNIT_US 625U
 #define CONN_INT_UNIT_US 1250U
 
+/* Intervals after which connection or sync establishment is considered lost */
+#define CONN_ESTAB_COUNTDOWN 6U
+
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 #define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -139,6 +142,9 @@ enum done_result {
 	DONE_ABORTED,
 	DONE_LATE
 };
+
+/* Forward declaration data type to store CTE IQ samples report related data */
+struct cte_conn_iq_report;
 
 struct ull_hdr {
 	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
@@ -276,11 +282,27 @@ struct node_rx_ftr {
 				*/
 		void *aux_ptr;
 		uint8_t aux_phy;
+		uint8_t aux_sched;
+		struct cte_conn_iq_report *iq_report;
 	};
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
 	uint8_t  rssi;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	uint8_t  rl_idx;
+	uint8_t  lrpa_used:1;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	uint8_t  direct:1;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	uint8_t  direct_resolved:1;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 	uint8_t  aux_lll_sched:1;
 	uint8_t  aux_w4next:1;
 	uint8_t  aux_failed:1;
@@ -292,13 +314,7 @@ struct node_rx_ftr {
 	uint8_t  scan_req:1;
 	uint8_t  scan_rsp:1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_OBSERVER */
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	uint8_t  direct:1;
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	uint8_t  lrpa_used:1;
-	uint8_t  rl_idx;
-#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	uint8_t  chan_idx;
 #endif /* CONFIG_BT_HCI_MESH_EXT */

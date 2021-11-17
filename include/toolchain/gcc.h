@@ -63,6 +63,12 @@
 #define BUILD_ASSERT(EXPR, MSG...)
 #endif
 
+#ifdef __cplusplus
+#define ZRESTRICT __restrict
+#else
+#define ZRESTRICT restrict
+#endif
+
 #include <toolchain/common.h>
 #include <stdbool.h>
 

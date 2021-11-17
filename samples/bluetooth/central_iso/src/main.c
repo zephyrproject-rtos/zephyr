@@ -216,8 +216,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 void main(void)
 {
 	int err;
-	static struct bt_iso_chan *channels[1];
-	struct bt_iso_cig_create_param param;
+	struct bt_iso_chan *channels[1];
+	struct bt_iso_cig_param param;
 	struct bt_iso_cig *cig;
 
 	err = bt_enable(NULL);

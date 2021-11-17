@@ -30,10 +30,21 @@
 
 #ifdef CONFIG_INIT_ARM_PLL
 static const clock_arm_pll_config_t armPllConfig = {
+#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
+	/* resulting frequency: 24 * (166/(2* 2)) = 984MHz */
 	/* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
 	.postDivider = kCLOCK_PllPostDiv2,
 	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
 	.loopDivider = 166,
+#elif defined(CONFIG_SOC_MIMXRT1166_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+	/* resulting frequency: 24 * (200/(2 * 4)) = 600MHz */
+	/* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
+	.postDivider = kCLOCK_PllPostDiv4,
+	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
+	.loopDivider = 200,
+#else
+	#error "Unknown SOC, no pll configuration defined"
+#endif
 };
 #endif
 
@@ -123,12 +134,15 @@ static ALWAYS_INLINE void clock_init(void)
 	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P15V);
 #endif
 
+/* RT1160 does not have Foward Body Biasing on the CM7 core */
+#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
 	/* Check if FBB need to be enabled in OverDrive(OD) mode */
 	if (((OCOTP->FUSEN[7].FUSE & 0x10U) >> 4U) != 1) {
 		PMU_EnableBodyBias(ANADIG_PMU, kPMU_FBB_CM7, true);
 	} else {
 		PMU_EnableBodyBias(ANADIG_PMU, kPMU_FBB_CM7, false);
 	}
+#endif
 
 #if CONFIG_BYPASS_LDO_LPSR
 	PMU_StaticEnableLpsrAnaLdoBypassMode(ANADIG_LDO_SNVS, true);
@@ -181,17 +195,26 @@ static ALWAYS_INLINE void clock_init(void)
 		(ANADIG_OSC->OSC_24M_CTRL & ANADIG_OSC_OSC_24M_CTRL_OSC_24M_STABLE_MASK)) {
 	}
 
+	rootCfg.div = 1;
+
+#ifdef CONFIG_CPU_CORTEX_M7
 	/* Switch both core, M7 Systick and Bus_Lpsr to OscRC48MDiv2 first */
 	rootCfg.mux = kCLOCK_M7_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
-
-#if CONFIG_SOC_MIMXRT1176_CM7
 	CLOCK_SetRootClock(kCLOCK_Root_M7, &rootCfg);
+
+	rootCfg.mux = kCLOCK_M7_SYSTICK_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_M7_Systick, &rootCfg);
 #endif
 
-#if CONFIG_SOC_MIMXRT1176_CM4
+#if CONFIG_CPU_CORTEX_M4
+	rootCfg.mux = kCLOCK_M4_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_M4, &rootCfg);
+
+	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
 #endif
 
@@ -252,28 +275,33 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Module clock root configurations. */
 	/* Configure M7 using ARM_PLL_CLK */
-#ifdef CONFIG_SOC_MIMXRT1176_CM7
+#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
 	rootCfg.mux = kCLOCK_M7_ClockRoot_MuxArmPllOut;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_M7, &rootCfg);
 #endif
 
-	/* Configure M4 using SYS_PLL3_PFD3_CLK */
-#ifdef CONFIG_SOC_MIMXRT1176_CM4
+#if defined(CONFIG_SOC_MIMXRT1166_CM4)
+	/* Configure M4 using SYS_PLL3_CLK */
+	rootCfg.mux = kCLOCK_M4_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_M4, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1176_CM4)
+	/* Configure M4 using SYS_PLL3_CLK_PFD3_CLK */
 	rootCfg.mux = kCLOCK_M4_ClockRoot_MuxSysPll3Pfd3;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_M4, &rootCfg);
 #endif
 
 	/* Configure BUS using SYS_PLL3_CLK */
-#ifdef CONFIG_SOC_MIMXRT1176_CM7
+#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
 	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
 #endif
 
 	/* Configure BUS_LPSR using SYS_PLL3_CLK */
-#ifdef CONFIG_SOC_MIMXRT1176_CM4
+#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
 	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 3;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
@@ -290,14 +318,14 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Cstrace, &rootCfg);
 
 	/* Configure M4_SYSTICK using OSC_RC_48M_DIV2 */
-#ifdef CONFIG_SOC_MIMXRT1176_CM4
+#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
 	rootCfg.mux = kCLOCK_M4_SYSTICK_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_M4_Systick, &rootCfg);
 #endif
 
 	/* Configure M7_SYSTICK using OSC_RC_48M_DIV2 */
-#ifdef CONFIG_SOC_MIMXRT1176_CM7
+#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
 	rootCfg.mux = kCLOCK_M7_SYSTICK_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 240;
 	CLOCK_SetRootClock(kCLOCK_Root_M7_Systick, &rootCfg);
@@ -389,7 +417,7 @@ static int imxrt_init(const struct device *arg)
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 	}
 
-#if CONFIG_SOC_MIMXRT1176_CM7
+#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
 	if (SCB_CCR_IC_Msk != (SCB_CCR_IC_Msk & SCB->CCR)) {
 		SCB_EnableICache();
 	}
@@ -398,7 +426,7 @@ static int imxrt_init(const struct device *arg)
 	}
 #endif
 
-#if CONFIG_SOC_MIMXRT1176_CM4
+#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
 	/* Initialize Cache */
 	/* Enable Code Bus Cache */
 	if (0U == (LMEM->PCCCR & LMEM_PCCCR_ENCACHE_MASK)) {

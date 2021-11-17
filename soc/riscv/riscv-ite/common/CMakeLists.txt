@@ -6,3 +6,5 @@ zephyr_sources(
   soc_common_irq.c
   vector.S
   )
+
+zephyr_sources_ifdef(CONFIG_PM power.c)

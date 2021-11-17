@@ -5,3 +5,28 @@
  */
 
 #include <st/u5/stm32u5.dtsi>
+
+
+/ {
+	soc {
+		usbotg_fs: otgfs@42040000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x42040000 0x80000>;
+			interrupts = <73 0>;
+			interrupt-names = "otgfs";
+			num-bidir-endpoints = <6>;
+			ram-size = <1280>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00004000>;
+			phys = <&otgfs_phy>;
+			status = "disabled";
+			label= "OTGFS";
+		};
+	};
+
+	otgfs_phy: otgfs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "OTGFS_PHY";
+	};
+};
