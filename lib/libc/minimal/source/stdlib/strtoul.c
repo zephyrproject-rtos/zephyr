@@ -79,9 +79,9 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 	cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
 	for (acc = 0, any = 0;; c = *s++) {
 		if (isdigit((unsigned char)c)) {
-			c -= '0';
+			c = (char)c - '0';
 		} else if (isalpha((unsigned char)c)) {
-			c -= isupper((unsigned char)c) ? 'A' - 10 : 'a' - 10;
+			c = (char)c - (isupper(c) ? 'A' : 'a') + 10;
 		} else {
 			break;
 		}
