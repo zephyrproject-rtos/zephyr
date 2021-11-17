@@ -2240,7 +2240,8 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #endif
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
-		if (!conn->iso.is_bis) {
+		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
+		    conn->iso.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 			info->le.dst = &conn->iso.acl->le.dst;
 			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
 		} else {
