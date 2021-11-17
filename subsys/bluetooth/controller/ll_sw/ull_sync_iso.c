@@ -335,8 +335,9 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	sca = sync_iso->sync->lll.sca;
 	lll->window_widening_periodic_us =
-		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
-		  interval_us) + (1000000 - 1)) / 1000000U;
+		ceiling_fraction(((lll_clock_ppm_local_get() +
+				   lll_clock_ppm_get(sca)) *
+				 interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
 	if (bi->offs_units) {
 		lll->window_size_event_us = 300U;

@@ -190,9 +190,9 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* calculate the window widening */
 	conn->periph.sca = pdu_adv->connect_ind.sca;
 	lll->periph.window_widening_periodic_us =
-		(((lll_clock_ppm_local_get() +
-		   lll_clock_ppm_get(conn->periph.sca)) *
-		  conn_interval_us) + (1000000 - 1)) / 1000000U;
+		ceiling_fraction(((lll_clock_ppm_local_get() +
+				   lll_clock_ppm_get(conn->periph.sca)) *
+				  conn_interval_us), USEC_PER_SEC);
 	lll->periph.window_widening_max_us = (conn_interval_us >> 1) -
 					    EVENT_IFS_US;
 	lll->periph.window_size_event_us = pdu_adv->connect_ind.win_size *
