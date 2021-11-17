@@ -31,9 +31,9 @@ extern "C" {
 /**
  * @brief SPI operational mode
  */
-#define SPI_OP_MODE_MASTER	0
+#define SPI_OP_MODE_MASTER	0U
 #define SPI_OP_MODE_SLAVE	BIT(0)
-#define SPI_OP_MODE_MASK	0x1
+#define SPI_OP_MODE_MASK	0x1U
 #define SPI_OP_MODE_GET(_operation_) ((_operation_) & SPI_OP_MODE_MASK)
 
 /**
@@ -63,21 +63,21 @@ extern "C" {
  */
 #define SPI_MODE_LOOP		BIT(3)
 
-#define SPI_MODE_MASK		(0xE)
+#define SPI_MODE_MASK		(0xEU)
 #define SPI_MODE_GET(_mode_)			\
 	((_mode_) & SPI_MODE_MASK)
 
 /**
  * @brief SPI Transfer modes (host controller dependent)
  */
-#define SPI_TRANSFER_MSB	(0)
+#define SPI_TRANSFER_MSB	(0U)
 #define SPI_TRANSFER_LSB	BIT(4)
 
 /**
  * @brief SPI word size
  */
-#define SPI_WORD_SIZE_SHIFT	(5)
-#define SPI_WORD_SIZE_MASK	(0x3F << SPI_WORD_SIZE_SHIFT)
+#define SPI_WORD_SIZE_SHIFT	(5U)
+#define SPI_WORD_SIZE_MASK	(0x3FU << SPI_WORD_SIZE_SHIFT)
 #define SPI_WORD_SIZE_GET(_operation_)					\
 	(((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
 
@@ -90,12 +90,12 @@ extern "C" {
  * Some controllers support dual, quad or octal MISO lines connected to slaves.
  * Default is single, which is the case most of the time.
  */
-#define SPI_LINES_SINGLE	(0 << 11)
-#define SPI_LINES_DUAL		(1 << 11)
-#define SPI_LINES_QUAD		(2 << 11)
-#define SPI_LINES_OCTAL		(3 << 11)
+#define SPI_LINES_SINGLE	(0U << 11)
+#define SPI_LINES_DUAL		(1U << 11)
+#define SPI_LINES_QUAD		(2U << 11)
+#define SPI_LINES_OCTAL		(3U << 11)
 
-#define SPI_LINES_MASK		(0x3 << 11)
+#define SPI_LINES_MASK		(0x3U << 11)
 
 /**
  * @brief Specific SPI devices control bits
