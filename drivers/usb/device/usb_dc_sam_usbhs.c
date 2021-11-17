@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(usb_dc_sam_usbhs);
 
 #define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)
 #if DT_INST_NODE_HAS_PROP(0, maximum_speed)
-#define USB_MAXIMUM_SPEED	DT_ENUM_IDX(DT_DRV_INST(0), maximum_speed)
+#define USB_MAXIMUM_SPEED	DT_INST_ENUM_IDX(0, maximum_speed)
 #else
 #define USB_MAXIMUM_SPEED	2 /* Default to high-speed */
 #endif

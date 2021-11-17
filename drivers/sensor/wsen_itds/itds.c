@@ -397,8 +397,8 @@ static const struct itds_device_config itds_config_##idx = {		\
 	.gpio_port = DT_INST_GPIO_LABEL(idx, int_gpios),		\
 	.int_pin = DT_INST_GPIO_PIN(idx, int_gpios),			\
 	.int_flags = DT_INST_GPIO_FLAGS(idx, int_gpios),		\
-	.def_odr = DT_ENUM_IDX(DT_DRV_INST(idx), odr),			\
-	.def_op_mode = DT_ENUM_IDX(DT_DRV_INST(idx), op_mode),		\
+	.def_odr = DT_INST_ENUM_IDX(idx, odr),				\
+	.def_op_mode = DT_INST_ENUM_IDX(idx, op_mode),			\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(idx, itds_init, NULL,				\
