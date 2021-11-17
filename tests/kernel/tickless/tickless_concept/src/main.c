@@ -33,14 +33,14 @@ static struct k_thread tdata[NUM_THREAD];
 		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			k_busy_wait(50);       \
-	} while (0)
+	} while (false)
 #else
 #define ALIGN_MS_BOUNDARY()		       \
 	do {				       \
 		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			;		       \
-	} while (0)
+	} while (false)
 #endif
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
 static int64_t elapsed_slice;

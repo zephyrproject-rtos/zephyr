@@ -215,7 +215,7 @@ extern "C" {
 	}; \
 	Z_LOG_INTERNAL2(is_user_context, src_level, \
 			Z_LOG_STR(_level, __VA_ARGS__)); \
-} while (0)
+} while (false)
 
 #define _LOG_INTERNAL_0(_src_level, _str) \
 	log_0(_str, _src_level)
@@ -479,7 +479,7 @@ enum log_strdup_action {
 	Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
 			  CONFIG_LOG_DOMAIN_ID, NULL, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
-} while (0)
+} while (false)
 
 
 /** @brief Get name of the log source.

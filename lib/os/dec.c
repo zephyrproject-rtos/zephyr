@@ -25,7 +25,7 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value)
 		divisor /= 10;
 	}
 
-	if (buflen) {
+	if (buflen != 0U) {
 		*buf = '\0';
 	}
 

@@ -143,7 +143,7 @@
 		if (gpio_pin_set_raw((dev), (pin), (bit))) {			\
 			printk("Err set " GPIO_NAME "%d! %x\n", (pin), (bit));	\
 		}								\
-	} while (0)								\
+	} while (false)								\
 
 
 #define GPIO_PIN_CFG(dev, pin, dir)						\
@@ -151,7 +151,7 @@
 		if (gpio_pin_configure((dev), (pin), (dir))) {			\
 			printk("Err cfg " GPIO_NAME "%d! %x\n", (pin), (dir));	\
 		}								\
-	} while (0)
+	} while (false)
 
 
 struct pi_lcd_data {

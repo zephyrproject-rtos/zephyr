@@ -37,13 +37,13 @@ uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 
 		for (j = 0; j < 8; j++) {
 			if (reversed) {
-				if (crc & 0x01) {
+				if ((crc & 0x01) != 0) {
 					crc = (crc >> 1) ^ polynomial;
 				} else {
 					crc >>= 1;
 				}
 			} else {
-				if (crc & 0x80) {
+				if ((crc & 0x80) != 0) {
 					crc = (crc << 1) ^ polynomial;
 				} else {
 					crc <<= 1;

@@ -49,7 +49,7 @@ do { \
 	rc = flash_read(fdev, FLASH_BASE + start, read_buf, size); \
 	zassert_equal(rc, 0, "should succeed"); \
 	zassert_mem_equal(read_buf, buf, size, "should equal %s", #buf);\
-} while (0)
+} while (false)
 
 #define VERIFY_WRITTEN(start, size) VERIFY_BUF(start, size, written_pattern)
 #define VERIFY_ERASED(start, size) VERIFY_BUF(start, size, erased_pattern)

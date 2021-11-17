@@ -42,7 +42,7 @@ static struct net_if *default_iface;
 		net_byte_to_hex(out, value, 'A', true);		 \
 		zassert_false(strcmp(out, expected),		 \
 			      "Test 0x%s failed.\n", expected);	 \
-	} while (0)
+	} while (false)
 
 #define TEST_BYTE_2(value, expected)				 \
 	do {							 \
@@ -50,7 +50,7 @@ static struct net_if *default_iface;
 		net_byte_to_hex(out, value, 'a', true);		 \
 		zassert_false(strcmp(out, expected),		 \
 			      "Test 0x%s failed.\n", expected);	 \
-	} while (0)
+	} while (false)
 
 #define TEST_LL_6(a, b, c, d, e, f, expected)				\
 	do {								\
@@ -58,7 +58,7 @@ static struct net_if *default_iface;
 		zassert_false(strcmp(net_sprint_ll_addr(ll, sizeof(ll)),\
 				     expected),				\
 			      "Test %s failed.\n", expected);		\
-	} while (0)
+	} while (false)
 
 #define TEST_LL_8(a, b, c, d, e, f, g, h, expected)			\
 	do {								\
@@ -66,7 +66,7 @@ static struct net_if *default_iface;
 		zassert_false(strcmp(net_sprint_ll_addr(ll, sizeof(ll)), \
 				     expected),				\
 			      "Test %s failed.\n", expected);		\
-	} while (0)
+	} while (false)
 
 #define TEST_LL_6_TWO(a, b, c, d, e, f, expected)			\
 	do {								\
@@ -81,7 +81,7 @@ static struct net_if *default_iface;
 		zassert_false(strcmp(out, expected),			\
 			      "Test %s failed, got %s\n", expected,	\
 			      out);					\
-	} while (0)
+	} while (false)
 
 #define TEST_IPV6(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, expected)  \
 	do {								     \
@@ -91,7 +91,7 @@ static struct net_if *default_iface;
 		zassert_false(strcmp(ptr, expected),			     \
 			      "Test %s failed, got %s\n", expected,	     \
 			      ptr);					     \
-	} while (0)
+	} while (false)
 
 #define TEST_IPV4(a, b, c, d, expected)					\
 	do {								\
@@ -100,7 +100,7 @@ static struct net_if *default_iface;
 		zassert_false(strcmp(ptr, expected),			\
 			      "Test %s failed, got %s\n", expected,	\
 			      ptr);					\
-	} while (0)
+	} while (false)
 
 struct net_test_context {
 	uint8_t mac_addr[6];

@@ -107,7 +107,7 @@ struct backend_cb backend_ctrl_blk;
 		DBG_PRINT("%d log message with %d arguments fit in %d space.\n", \
 			_cnt, nargs, CONFIG_LOG_BUFFER_SIZE); \
 	} \
-} while (0)
+} while (false)
 
 /** Test how many messages fits in the logging buffer in deferred mode. Test
  * serves as the comparison between logging versions.
@@ -145,7 +145,7 @@ void test_log_capacity(void)
 		  "%d message logged in %u cycles.\n", \
 			nargs, cyc / _msg_cnt, k_cyc_to_us_ceil32(cyc) / _msg_cnt, \
 			_msg_cnt, cyc); \
-} while (0)
+} while (false)
 
 void test_log_message_store_time_no_overwrite(void)
 {
@@ -185,7 +185,7 @@ void test_log_message_store_time_no_overwrite(void)
 		  "%d message logged in %u cycles.\n", \
 			nargs, cyc / _msg_cnt, k_cyc_to_us_ceil32(cyc) / _msg_cnt, \
 			_msg_cnt, cyc); \
-} while (0)
+} while (false)
 
 void test_log_message_store_time_overwrite(void)
 {

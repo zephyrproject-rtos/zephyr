@@ -60,7 +60,7 @@
 		if (isnan((val))) {	\
 			return 0.0;	\
 		}			\
-	} while (0)
+	} while (false)
 
 #define IFINFINITERETURN(val, def)		\
 	do {					\
@@ -71,7 +71,7 @@
 				return -def;	\
 			}			\
 		}				\
-	} while (0)
+	} while (false)
 
 static inline double arm_snr_f64(const double *pRef, const double *pTest,
 	uint32_t buffSize)

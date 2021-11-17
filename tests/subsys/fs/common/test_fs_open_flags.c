@@ -127,7 +127,7 @@ do {					\
 	ZUNLINK(ts);			\
 	ZOPEN(ts, FS_O_CREATE, 0);	\
 	ZCLOSE(ts);			\
-} while (0)
+} while (false)
 
 void test_fs_open_flags(void)
 {

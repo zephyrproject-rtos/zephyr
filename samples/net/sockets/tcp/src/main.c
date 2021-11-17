@@ -21,7 +21,7 @@
 do {									\
 	printf("Error: " fmt "(): %s\n" ## args, strerror(errno));	\
 	exit(errno);							\
-} while (0)								\
+} while (false)								\
 
 /*
  * This application is used together with the TTCN-3 based sanity check

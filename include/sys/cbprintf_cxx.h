@@ -9,52 +9,52 @@
 #ifdef __cplusplus
 
 /* C++ version for detecting a pointer to a string. */
-static inline int z_cbprintf_cxx_is_pchar(char *)
+static inline bool z_cbprintf_cxx_is_pchar(char *)
 {
-	return 1;
+	return true;
 }
 
-static inline int z_cbprintf_cxx_is_pchar(const char *)
+static inline bool z_cbprintf_cxx_is_pchar(const char *)
 {
-	return 1;
+	return true;
 }
 
-static inline int z_cbprintf_cxx_is_pchar(volatile char *)
+static inline bool z_cbprintf_cxx_is_pchar(volatile char *)
 {
-	return 1;
+	return true;
 }
 
-static inline int z_cbprintf_cxx_is_pchar(const volatile char *)
+static inline bool z_cbprintf_cxx_is_pchar(const volatile char *)
 {
-	return 1;
+	return true;
 }
 
-static inline int z_cbprintf_cxx_is_pchar(wchar_t *)
+static inline bool z_cbprintf_cxx_is_pchar(wchar_t *)
 {
-	return 1;
+	return true;
 }
 
-static inline int z_cbprintf_cxx_is_pchar(const wchar_t *)
+static inline bool z_cbprintf_cxx_is_pchar(const wchar_t *)
 {
-	return 1;
+	return true;
 }
 
-static inline int z_cbprintf_cxx_is_pchar(volatile wchar_t *)
+static inline bool z_cbprintf_cxx_is_pchar(volatile wchar_t *)
 {
-	return 1;
+	return true;
 }
 
-static inline int z_cbprintf_cxx_is_pchar(const volatile wchar_t *)
+static inline bool z_cbprintf_cxx_is_pchar(const volatile wchar_t *)
 {
-	return 1;
+	return true;
 }
 
 template < typename T >
-static inline int z_cbprintf_cxx_is_pchar(T arg)
+static inline bool z_cbprintf_cxx_is_pchar(T arg)
 {
 	_Pragma("GCC diagnostic push")
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
-	return 0;
+	return false;
 	_Pragma("GCC diagnostic pop")
 }
 

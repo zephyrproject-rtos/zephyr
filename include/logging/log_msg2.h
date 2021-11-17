@@ -209,7 +209,7 @@ enum z_log_msg2_mode {
 		     Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
 			   (uint32_t)_plen, _dlen); \
 	z_log_msg2_finalize(_msg, _source, _desc, _data); \
-} while (0)
+} while (false)
 
 #define Z_LOG_MSG2_STACK_CREATE(_domain_id, _source, _level, _data, _dlen, ...)\
 do { \
@@ -222,7 +222,7 @@ do { \
 	} \
 	struct log_msg2 *_msg; \
 	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
-	if (_plen) { \
+	if (_plen != 0) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
 					_plen, Z_LOG_MSG2_ALIGN_OFFSET, \
 					0, __VA_ARGS__);\
@@ -233,7 +233,7 @@ do { \
 	LOG_MSG2_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
 	z_log_msg2_static_create((void *)_source, _desc, _msg->data, _data); \
-} while (0)
+} while (false)
 
 #if CONFIG_LOG_SPEED
 #define Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, _level, ...) do { \
@@ -252,7 +252,7 @@ do { \
 					0, __VA_ARGS__); \
 	} \
 	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
-} while (0)
+} while (false)
 #else
 /* Alternative empty macro created to speed up compilation when LOG_SPEED is
  * disabled (default).
@@ -352,7 +352,7 @@ do {\
 				  _level, (uint8_t *)_data, _dlen,\
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
-} while (0)
+} while (false)
 #elif CONFIG_LOG2_MODE_IMMEDIATE /* CONFIG_LOG2_ALWAYS_RUNTIME */
 #define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
@@ -369,7 +369,7 @@ do { \
 				_data, _dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
 		_mode = Z_LOG_MSG2_MODE_SYNC; \
 	} \
-} while (0)
+} while (false)
 #else /* CONFIG_LOG2_ALWAYS_RUNTIME */
 #define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
@@ -393,7 +393,7 @@ do { \
 		_mode = Z_LOG_MSG2_MODE_FROM_STACK; \
 	} \
 	(void)_mode; \
-} while (0)
+} while (false)
 #endif /* CONFIG_LOG2_ALWAYS_RUNTIME */
 
 #define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\

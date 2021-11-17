@@ -202,7 +202,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	bool parsing = false;
 
 	/* Buffer must be aligned at least to size of a pointer. */
-	if ((uintptr_t)packaged & (sizeof(void *) - 1)) {
+	if (((uintptr_t)packaged & (sizeof(void *) - 1)) != 0UL) {
 		return -EFAULT;
 	}
 
@@ -260,7 +260,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	goto process_string;
 
 	/* Scan the format string */
-	while (*++fmt) {
+	while (*++fmt != '\0') {
 		if (!parsing) {
 			if (*fmt == '%') {
 				parsing = true;
@@ -364,7 +364,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			}
 			/* align destination buffer location */
 			buf = (void *) ROUND_UP(buf, align);
-			if (buf0) {
+			if (buf0 != NULL) {
 				/* make sure it fits */
 				if (buf - buf0 + size > len) {
 					return -ENOSPC;
@@ -399,7 +399,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		if (*fmt == 's') {
 			s = va_arg(ap, char *);
 process_string:
-			if (buf0) {
+			if (buf0 != NULL) {
 				*(const char **)buf = s;
 			}
 
@@ -412,7 +412,7 @@ process_string:
 
 			if (ptr_in_rodata(s) && !str_idxs) {
 				/* do nothing special */
-			} else if (buf0) {
+			} else if (buf0 != NULL) {
 
 				/*
 				 * Remember string pointer location.
@@ -432,7 +432,7 @@ process_string:
 				uint8_t ro_flag = need_ro ?
 						  CBPRINTF_STR_POS_RO_FLAG : 0;
 
-				if (ro_flag) {
+				if (ro_flag != 0U) {
 					s_ro_cnt++;
 				} else {
 					s_rw_cnt++;
@@ -460,21 +460,21 @@ process_string:
 		} else if (size == sizeof(int)) {
 			int v = va_arg(ap, int);
 
-			if (buf0) {
+			if (buf0 != NULL) {
 				*(int *)buf = v;
 			}
 			buf += sizeof(int);
 		} else if (size == sizeof(long)) {
 			long v = va_arg(ap, long);
 
-			if (buf0) {
+			if (buf0 != NULL) {
 				*(long *)buf = v;
 			}
 			buf += sizeof(long);
 		} else if (size == sizeof(long long)) {
 			long long v = va_arg(ap, long long);
 
-			if (buf0) {
+			if (buf0 != NULL) {
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
 					memcpy(buf, &v, sizeof(long long));
 				} else {
@@ -516,7 +516,7 @@ process_string:
 	buf0[2] = s_ro_cnt;
 
 	/* Store strings pointer locations of read only strings. */
-	if (s_ro_cnt) {
+	if (s_ro_cnt != 0U) {
 		for (i = 0; i < s_idx; i++) {
 			if (!(str_ptr_pos[i] & CBPRINTF_STR_POS_RO_FLAG)) {
 				continue;
@@ -536,7 +536,7 @@ process_string:
 	/* Store strings prefixed by their pointer location. */
 	for (i = 0; i < s_idx; i++) {
 		/* Process only RW strings. */
-		if (str_ptr_pos[i] & CBPRINTF_STR_POS_RO_FLAG) {
+		if ((str_ptr_pos[i] & CBPRINTF_STR_POS_RO_FLAG) != 0UL) {
 			continue;
 		}
 
@@ -646,7 +646,7 @@ int cbprintf_fsc_package(void *in_packaged,
 
 	out_len = in_len;
 
-	if (packaged) {
+	if (packaged != NULL) {
 		unsigned int rw_strs_len = in_len - (args_size + ros_nbr);
 
 		memcpy(out, buf, args_size);
@@ -669,7 +669,7 @@ int cbprintf_fsc_package(void *in_packaged,
 		out_len += slen;
 
 		/* Copy string into the buffer (if provided) and enough space. */
-		if (packaged) {
+		if (packaged != NULL) {
 			if (out_len > len) {
 				return -ENOSPC;
 			}

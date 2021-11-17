@@ -1301,13 +1301,13 @@ static void test_foreach_status_okay(void)
 	 * using macros with side effects in the current scope.
 	 */
 	val = 0;
-#define INC(inst_ignored) do { val++; } while (0);
+#define INC(inst_ignored) do { val++; } while (false);
 	DT_INST_FOREACH_STATUS_OKAY(INC)
 	zassert_equal(val, 2, "");
 #undef INC
 
 	val = 0;
-#define INC_ARG(arg) do { val++; val += arg; } while (0)
+#define INC_ARG(arg) do { val++; val += arg; } while (false)
 #define INC(inst_ignored, arg) INC_ARG(arg);
 	DT_INST_FOREACH_STATUS_OKAY_VARGS(INC, 1)
 	zassert_equal(val, 4, "");

@@ -107,7 +107,7 @@ static inline bool z_zassert(bool cond,
 			    (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))), \
 			    ()) \
 	} \
-} while (0)
+} while (false)
 
 /**
  * @brief Assert that this function call won't be reached

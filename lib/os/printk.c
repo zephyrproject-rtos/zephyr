@@ -126,7 +126,7 @@ void vprintk(const char *fmt, va_list ap)
 
 		cbvprintf(buf_char_out, &ctx, fmt, ap);
 
-		if (ctx.buf_count) {
+		if (ctx.buf_count != 0U) {
 			buf_flush(&ctx);
 		}
 	} else {

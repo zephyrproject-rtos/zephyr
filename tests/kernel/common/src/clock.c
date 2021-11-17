@@ -12,14 +12,14 @@
 		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			k_busy_wait(50);       \
-	} while (0)
+	} while (false)
 #else
 #define ALIGN_MS_BOUNDARY		       \
 	do {				       \
 		uint32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			;		       \
-	} while (0)
+	} while (false)
 #endif
 
 struct timer_data {

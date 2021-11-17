@@ -1234,7 +1234,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 			    DEVICE_DT_INST_GET(n),			\
 			    0);						\
 		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));		\
-	} while (0)
+	} while (false)
 
 #define ETH_MCUX_IRQ(n, name)						\
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(n, name),			\
@@ -1252,7 +1252,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 			    DEVICE_DT_INST_GET(n),					\
 			    0);								\
 		irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq));	\
-	} while (0)
+	} while (false)
 
 #define ETH_MCUX_IRQ_PTP(n)						\
 	COND_CODE_1(DT_NODE_HAS_STATUS(PTP_INST_NODEID(n), okay),	\

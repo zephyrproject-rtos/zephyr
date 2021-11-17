@@ -44,13 +44,13 @@
 	do { \
 		bst_result = Failed; \
 		bs_trace_error_time_line(__VA_ARGS__); \
-	} while (0)
+	} while (false)
 
 #define PASS(...) \
 	do { \
 		bst_result = Passed; \
 		bs_trace_info_time(1, __VA_ARGS__); \
-	} while (0)
+	} while (false)
 
 #define AD_SIZE 1
 extern const struct bt_data ad[AD_SIZE];

@@ -291,7 +291,7 @@ drop:
 		NET_DBG("%s %s from %s to %s", action, pkt_str,         \
 			log_strdup(net_sprint_ipv6_addr(src)),		\
 			log_strdup(net_sprint_ipv6_addr(dst)));		\
-	} while (0)
+	} while (false)
 
 #define dbg_addr_recv(pkt_str, src, dst)	\
 	dbg_addr("Received", pkt_str, src, dst)
