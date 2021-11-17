@@ -61,7 +61,7 @@ static int runtime_suspend(const struct device *dev, bool async)
 		(void)k_work_schedule(&pm->work, K_NO_WAIT);
 	} else {
 		/* suspend now */
-		ret = pm->action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+		ret = pm_device_action_run(pm->dev, PM_DEVICE_ACTION_SUSPEND);
 		if (ret < 0) {
 			pm->usage++;
 			goto unlock;
@@ -83,12 +83,8 @@ static void runtime_suspend_work(struct k_work *work)
 	int ret;
 	struct pm_device *pm = CONTAINER_OF(work, struct pm_device, work);
 
-	ret = pm->action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
-
 	(void)k_mutex_lock(&pm->lock, K_FOREVER);
-	if (ret == 0) {
-		pm->state = PM_DEVICE_STATE_SUSPENDED;
-	}
+	ret = pm_device_action_run(pm->dev, PM_DEVICE_ACTION_SUSPEND);
 	k_condvar_broadcast(&pm->condvar);
 	k_mutex_unlock(&pm->lock);
 
@@ -142,13 +138,14 @@ int pm_device_runtime_get(const struct device *dev)
 		goto unlock;
 	}
 
-	ret = pm->action_cb(pm->dev, PM_DEVICE_ACTION_RESUME);
+	ret = pm_device_action_run(pm->dev, PM_DEVICE_ACTION_RESUME);
 	if (ret < 0) {
-		pm->usage--;
-		goto unlock;
+		if (ret == -EALREADY) {
+			ret = 0;
+		} else {
+			pm->usage--;
+		}
 	}
-
-	pm->state = PM_DEVICE_STATE_ACTIVE;
 
 unlock:
 	if (!k_is_pre_kernel()) {
@@ -262,12 +259,10 @@ int pm_device_runtime_disable(const struct device *dev)
 
 	/* wake up the device if suspended */
 	if (pm->state == PM_DEVICE_STATE_SUSPENDED) {
-		ret = pm->action_cb(pm->dev, PM_DEVICE_ACTION_RESUME);
+		ret = pm_device_action_run(pm->dev, PM_DEVICE_ACTION_RESUME);
 		if (ret < 0) {
 			goto unlock;
 		}
-
-		pm->state = PM_DEVICE_STATE_ACTIVE;
 	}
 
 	atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
