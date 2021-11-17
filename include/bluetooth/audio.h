@@ -1047,9 +1047,6 @@ struct bt_audio_unicast_server_cb {
 	 */
 	int (*publish_capability)(uint8_t type, uint8_t index,
 				  struct bt_codec *const codec);
-
-	/* Internally used list node */
-	sys_snode_t node;
 };
 
 /** Broadcast Audio Sink callback structure */
