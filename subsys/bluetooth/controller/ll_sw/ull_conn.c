@@ -3126,9 +3126,9 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				instant_latency;
 
 			lll->periph.window_widening_periodic_us =
-				(((lll_clock_ppm_local_get() +
-				   lll_clock_ppm_get(conn->periph.sca)) *
-				  conn_interval_us) + (1000000 - 1)) / 1000000U;
+				ceiling_fraction(((lll_clock_ppm_local_get() +
+					lll_clock_ppm_get(conn->periph.sca)) *
+					conn_interval_us), USEC_PER_SEC);
 			lll->periph.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;
 			lll->periph.window_size_prepare_us =

@@ -1221,9 +1221,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 		interval_min_us = time_us +
 				  (scan_delay + scan_window) * USEC_PER_MSEC;
 		if ((interval * SCAN_INT_UNIT_US) < interval_min_us) {
-			interval = (interval_min_us +
-				(SCAN_INT_UNIT_US - 1)) /
-				SCAN_INT_UNIT_US;
+			interval = ceiling_fraction(interval_min_us,
+						    SCAN_INT_UNIT_US);
 		}
 
 		/* passive scanning */
