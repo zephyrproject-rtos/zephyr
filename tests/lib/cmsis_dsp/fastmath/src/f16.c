@@ -86,7 +86,9 @@ static void test_arm_sin_f16(void)
 }
 #endif
 
-static void test_arm_sqrt_f16(void)
+ZTEST_SUITE(fastmath_f16, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(fastmath_f16, test_arm_sqrt_f16)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(in_sqrt);
@@ -155,10 +157,10 @@ static void test_arm_vlog_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_vlog_f16, all, in_log, ref_log, 25);
-DEFINE_TEST_VARIANT3(arm_vlog_f16, 3, in_log, ref_log, 3);
-DEFINE_TEST_VARIANT3(arm_vlog_f16, 8, in_log, ref_log, 8);
-DEFINE_TEST_VARIANT3(arm_vlog_f16, 11, in_log, ref_log, 11);
+DEFINE_TEST_VARIANT3(fastmath_f16, arm_vlog_f16, all, in_log, ref_log, 25);
+DEFINE_TEST_VARIANT3(fastmath_f16, arm_vlog_f16, 3, in_log, ref_log, 3);
+DEFINE_TEST_VARIANT3(fastmath_f16, arm_vlog_f16, 8, in_log, ref_log, 8);
+DEFINE_TEST_VARIANT3(fastmath_f16, arm_vlog_f16, 11, in_log, ref_log, 11);
 
 static void test_arm_vexp_f16(
 	const uint16_t *input1, const uint16_t *ref, size_t length)
@@ -187,12 +189,12 @@ static void test_arm_vexp_f16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_vexp_f16, all, in_exp, ref_exp, 52);
-DEFINE_TEST_VARIANT3(arm_vexp_f16, 3, in_exp, ref_exp, 3);
-DEFINE_TEST_VARIANT3(arm_vexp_f16, 8, in_exp, ref_exp, 8);
-DEFINE_TEST_VARIANT3(arm_vexp_f16, 11, in_exp, ref_exp, 11);
+DEFINE_TEST_VARIANT3(fastmath_f16, arm_vexp_f16, all, in_exp, ref_exp, 52);
+DEFINE_TEST_VARIANT3(fastmath_f16, arm_vexp_f16, 3, in_exp, ref_exp, 3);
+DEFINE_TEST_VARIANT3(fastmath_f16, arm_vexp_f16, 8, in_exp, ref_exp, 8);
+DEFINE_TEST_VARIANT3(fastmath_f16, arm_vexp_f16, 11, in_exp, ref_exp, 11);
 
-static void test_arm_vinverse_f16(void)
+ZTEST(fastmath_f16, test_arm_vinverse_f16)
 {
 	size_t length = ARRAY_SIZE(ref_vinverse);
 	float16_t *output;
@@ -217,27 +219,6 @@ static void test_arm_vinverse_f16(void)
 
 	/* Free output buffer */
 	free(output);
-}
-
-void test_fastmath_f16(void)
-{
-	ztest_test_suite(fastmath_f16,
-		/* NOTE: F16 sin and cos are not implemented for now */
-		/* ztest_unit_test(test_arm_cos_f16), */
-		/* ztest_unit_test(test_arm_sin_f16), */
-		ztest_unit_test(test_arm_sqrt_f16),
-		ztest_unit_test(test_arm_vlog_f16_all),
-		ztest_unit_test(test_arm_vlog_f16_3),
-		ztest_unit_test(test_arm_vlog_f16_8),
-		ztest_unit_test(test_arm_vlog_f16_11),
-		ztest_unit_test(test_arm_vexp_f16_all),
-		ztest_unit_test(test_arm_vexp_f16_3),
-		ztest_unit_test(test_arm_vexp_f16_8),
-		ztest_unit_test(test_arm_vexp_f16_11),
-		ztest_unit_test(test_arm_vinverse_f16)
-		);
-
-	ztest_run_test_suite(fastmath_f16);
 }
 
 /* TODO: Add inverse test */
