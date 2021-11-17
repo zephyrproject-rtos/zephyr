@@ -13,3 +13,7 @@ properties:
 
     label:
       required: false
+
+    mpu-attr:
+      required: false
+      type: int

@@ -361,6 +361,14 @@ config NOCACHE_MEMORY
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
 
+DT_CHOSEN_Z_NOCACHE_SRAM := zephyr,sram-no-cache
+
+config NOCACHE_SRAM_MEMORY_DEV_NAME
+	string "non-cacheable SRAM region"
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_NOCACHE_SRAM))" if HAS_DTS
+	help
+	  Memory region used as non-cacheable memory pool.
+
 menu "Interrupt Configuration"
 
 config DYNAMIC_INTERRUPTS

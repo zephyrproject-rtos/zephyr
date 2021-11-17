@@ -45,6 +45,13 @@
 #define __nocache
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#if defined(CONFIG_NOCACHE_SRAM_MEMORY_DEV_NAME)
+/* Do not use Z_GENERIC_SECTION */
+#define __nocache_sram __attribute((__section__(CONFIG_NOCACHE_SRAM_MEMORY_DEV_NAME)))
+#else
+#define __nocache_sram
+#endif /* CONFIG_NOCACHE_SRAM_MEMORY_DEV_NAME */
+
 #if defined(CONFIG_KERNEL_COHERENCE)
 #define __incoherent __in_section_unique(cached)
 #define __stackmem __incoherent
