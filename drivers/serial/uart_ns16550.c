@@ -33,6 +33,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <drivers/uart.h>
+#include <pm/pm.h>
 #include <sys/sys_io.h>
 #include <spinlock.h>
 
@@ -274,6 +275,10 @@ struct uart_ns16550_dev_data {
 #if UART_NS16550_DLF_ENABLED
 	uint8_t dlf;		/**< DLF value */
 #endif
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
+	bool tx_stream_on;
+#endif
 };
 
 #if defined(UART_REG_ADDR_INTERVAL)
@@ -295,6 +300,11 @@ static inline uint8_t reg_interval(const struct device *dev)
 }
 #else
 #define reg_interval(dev) DEFAULT_REG_INTERVAL
+#endif
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
+static const enum pm_state pm_states[] =
+	PM_STATE_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
 #endif
 
 static const struct uart_driver_api uart_ns16550_driver_api;
@@ -657,6 +667,21 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
+	struct uart_ns16550_dev_data *const dev_data = dev->data;
+
+	if (!dev_data->tx_stream_on) {
+		dev_data->tx_stream_on = true;
+		/*
+		 * Power state to be disabled. Some platforms have multiple
+		 * states and need to be given a constraint set according to
+		 * different states.
+		 */
+		for (size_t i = 0U; i < ARRAY_SIZE(pm_states); i++) {
+			pm_constraint_set(pm_states[i]);
+		}
+	}
+#endif
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_TBE);
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
@@ -675,6 +700,21 @@ static void uart_ns16550_irq_tx_disable(const struct device *dev)
 
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_TBE));
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
+	struct uart_ns16550_dev_data *const dev_data = dev->data;
+
+	if (dev_data->tx_stream_on) {
+		dev_data->tx_stream_on = false;
+		/*
+		 * Power state to be enabled. Some platforms have multiple
+		 * states and need to be given a constraint release according
+		 * to different states.
+		 */
+		for (size_t i = 0U; i < ARRAY_SIZE(pm_states); i++) {
+			pm_constraint_release(pm_states[i]);
+		}
+	}
+#endif
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 }
 
