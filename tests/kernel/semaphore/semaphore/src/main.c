@@ -27,19 +27,19 @@
 	int _act = k_sem_take((sem), (timeout)); \
 	int _exp = (exp); \
 	zassert_equal(_act, _exp, (str), _act, _exp); \
-} while (0)
+} while (false)
 
 #define expect_k_sem_init(sem, init, max, exp, str) do { \
 	int _act = k_sem_init((sem), (init), (max)); \
 	int _exp = (exp); \
 	zassert_equal(_act, _exp, (str), _act, _exp); \
-} while (0)
+} while (false)
 
 #define expect_k_sem_count_get(sem, exp, str) do { \
 	unsigned int _act = k_sem_count_get(sem); \
 	unsigned int _exp = (exp); \
 	zassert_equal(_act, _exp, (str), _act, _exp); \
-} while (0)
+} while (false)
 
 #define expect_k_sem_take_nomsg(sem, timeout, exp) \
 	expect_k_sem_take((sem), (timeout), (exp), "k_sem_take incorrect return value: %d != %d")

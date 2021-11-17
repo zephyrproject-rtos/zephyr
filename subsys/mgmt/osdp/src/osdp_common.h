@@ -35,7 +35,7 @@
 	do {                                                    \
 		TO_CP(p)->current_pd = TO_PD(p, i);             \
 		TO_CP(p)->pd_offset = i;                        \
-	} while (0)
+	} while (false)
 #define PD_MASK(ctx) \
 	(uint32_t)((1 << (TO_CP(ctx)->num_pd)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))

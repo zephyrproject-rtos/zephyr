@@ -73,32 +73,32 @@ extern "C" {
  * to take the alignment into consideration and copy 64-bit arguments
  * as 32-bit words.
  */
-#define Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY	1
+#define Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY	true
 #else
-#define Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY	0
+#define Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY	false
 #endif
 
-/** @brief Return 1 if argument is a pointer to char or wchar_t
+/** @brief Return true if argument is a pointer to char or wchar_t
  *
  * @param x argument.
  *
- * @return 1 if char * or wchar_t *, 0 otherwise.
+ * @return true if char * or wchar_t *, false otherwise.
  */
 #ifdef __cplusplus
 #define Z_CBPRINTF_IS_PCHAR(x) z_cbprintf_cxx_is_pchar(x)
 #else
 #define Z_CBPRINTF_IS_PCHAR(x) \
 	_Generic((x) + 0, \
-		char * : 1, \
-		const char * : 1, \
-		volatile char * : 1, \
-		const volatile char * : 1, \
-		wchar_t * : 1, \
-		const wchar_t * : 1, \
-		volatile wchar_t * : 1, \
-		const volatile wchar_t * : 1, \
+		char * : true, \
+		const char * : true, \
+		volatile char * : true, \
+		const volatile char * : true, \
+		wchar_t * : true, \
+		const wchar_t * : true, \
+		volatile wchar_t * : true, \
+		const volatile wchar_t * : true, \
 		default : \
-			0)
+			false)
 #endif
 
 /** @brief Calculate number of char * or wchar_t * arguments in the arguments.
@@ -200,7 +200,7 @@ extern "C" {
 			default : \
 				(const void **)buf) = arg; \
 	} \
-} while (0)
+} while (false)
 #endif
 
 /** @brief Return alignment needed for given argument.
@@ -266,7 +266,7 @@ do { \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg)) { \
+	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
 		_idx += sizeof(int); \
 		_align_offset += sizeof(int); \
 	} \
@@ -279,7 +279,7 @@ do { \
 	} \
 	_idx += _arg_size; \
 	_align_offset += _arg_size; \
-} while (0)
+} while (false)
 
 /** @brief Package single argument.
  *
@@ -373,7 +373,7 @@ do { \
 	_total_len = _pkg_len; \
 	if (str_idxs) {\
 		_total_len += _s_cnt; \
-		if (_pbuf) { \
+		if (_pbuf != NULL) { \
 			for (int i = 0; i < _s_cnt; i++) { \
 				_pbuf[_pkg_len + i] = _s_buffer[i]; \
 			} \
@@ -382,7 +382,7 @@ do { \
 	/* Store length */ \
 	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
-	if (_pbuf) { \
+	if (_pbuf != NULL) { \
 		union z_cbprintf_hdr hdr = { \
 			.desc = { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
@@ -393,7 +393,7 @@ do { \
 		*_len_loc = hdr; \
 	} \
 	_Pragma("GCC diagnostic pop") \
-} while (0)
+} while (false)
 
 #if Z_C_GENERIC
 #define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
@@ -410,7 +410,7 @@ do { \
 	} else { \
 		outlen = cbprintf_package(NULL, align_offset, flags, __VA_ARGS__); \
 	} \
-} while (0)
+} while (false)
 #endif /* Z_C_GENERIC */
 
 #ifdef __cplusplus

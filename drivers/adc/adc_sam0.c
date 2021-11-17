@@ -557,7 +557,7 @@ do {									\
 	adc->CALIB.reg = ADC_CALIB_BIASCOMP(comp) |			\
 			 ADC_CALIB_BIASR2R(r2r) |			\
 			 ADC_CALIB_BIASREFBUF(rbuf);			\
-} while (0)
+} while (false)
 
 #else
 
@@ -582,7 +582,7 @@ do {									\
 		      ADC_FUSES_BIASCAL_Msk) >> ADC_FUSES_BIASCAL_Pos;	\
 	adc->CALIB.reg = ADC_CALIB_BIAS_CAL(bias) |			\
 			 ADC_CALIB_LINEARITY_CAL(lin);			\
-} while (0)
+} while (false)
 
 #endif
 

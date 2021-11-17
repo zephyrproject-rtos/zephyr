@@ -360,7 +360,7 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 			LOG_ERR("%s result:%d", (c), ret);                     \
 			goto error;                                            \
 		}                                                              \
-	} while (0)
+	} while (false)
 
 #define SEND_AT_CMD_IGNORE_ERROR(c)                                            \
 	do {                                                                   \
@@ -368,7 +368,7 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 		if (ret < 0) {                                                 \
 			LOG_ERR("%s result:%d", (c), ret);                     \
 		}                                                              \
-	} while (0)
+	} while (false)
 
 #define SEND_AT_CMD_EXPECT_OK(c)                                               \
 	do {                                                                   \
@@ -378,7 +378,7 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 			LOG_ERR("%s result:%d", (c), ret);                     \
 			goto error;                                            \
 		}                                                              \
-	} while (0)
+	} while (false)
 
 /* Complex has "no_id_resp" set to true because the sending command
  * is the command used to process the respone
@@ -391,7 +391,7 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 			LOG_ERR("%s result:%d", (c), ret);                     \
 			goto error;                                            \
 		}                                                              \
-	} while (0)
+	} while (false)
 
 NET_BUF_POOL_DEFINE(mdm_recv_pool, CONFIG_MODEM_HL7800_RECV_BUF_CNT,
 		    CONFIG_MODEM_HL7800_RECV_BUF_SIZE, 0, NULL);
@@ -2784,7 +2784,7 @@ static bool on_cmd_polte_registration(struct net_buf **buf, uint16_t len)
 			break;
 		}
 		parsed = true;
-	} while (0);
+	} while (false);
 
 	if (parsed && data.user && data.password) {
 		data.status = 0;
@@ -2829,7 +2829,7 @@ static bool on_cmd_polte_locate_cmd_rsp(struct net_buf **buf, uint16_t len)
 		rsp[out_len] = 0;
 
 		data.status = (uint32_t)strtoul(rsp, NULL, 10);
-	} while (0);
+	} while (false);
 
 	event_handler(HL7800_EVENT_POLTE_LOCATE_STATUS, &data);
 
@@ -2926,7 +2926,7 @@ static bool on_cmd_polte_location(struct net_buf **buf, uint16_t len)
 		}
 
 		parsed = true;
-	} while (0);
+	} while (false);
 
 	if (!parsed) {
 		LOG_HEXDUMP_ERR(rsp, out_len, "Unable to parse PoLTE location");

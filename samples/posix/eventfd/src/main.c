@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 #define fatal(msg) \
-	do { perror(msg); exit(EXIT_FAILURE); } while (0)
+	do { perror(msg); exit(EXIT_FAILURE); } while (false)
 
 /* As Zephyr doesn't provide command-line args, emulate them. */
 char *input_argv[] = {"argv0", "1", "2", "3", "4"};

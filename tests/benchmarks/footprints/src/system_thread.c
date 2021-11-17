@@ -52,7 +52,7 @@ void thread_yield0(void *p1, void *p2, void *p3)
 void thread_yield1(void *p1, void *p2, void *p3)
 {
 	k_sem_give(&yield_sem);
-	while (1) {
+	while (true) {
 		k_yield();
 	}
 }

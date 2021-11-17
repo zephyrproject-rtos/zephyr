@@ -114,7 +114,7 @@ static void pinmux_enable_sysosc(void)
 	pinmux_pin_set(pinmux_dev, pin, func);
 }
 #else
-#define pinmux_enable_sysosc() do { } while (0)
+#define pinmux_enable_sysosc() do { } while (false)
 #endif
 
 static void syscon_peripheral_reset(struct lpc11u6x_syscon_regs *syscon,

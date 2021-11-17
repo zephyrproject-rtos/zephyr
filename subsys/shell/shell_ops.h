@@ -33,7 +33,7 @@ static inline void z_shell_raw_fprintf(const struct shell_fprintf *const ctx,
 									\
 		static const char cmd[] = _cmd_;			\
 		z_shell_raw_fprintf(_shell_->fprintf_ctx, "%s", cmd);	\
-	} while (0)
+	} while (false)
 
 /* Function sends VT100 command to clear the screen from cursor position to
  * end of the screen.
@@ -77,7 +77,7 @@ static inline void z_cursor_next_line_move(const struct shell *shell)
 						   ~_internal_.value);		\
 		}								\
 		_ret_ = (_internal_.flags._flag_ != 0);				\
-	} while (0)
+	} while (false)
 
 static inline bool z_flag_insert_mode_get(const struct shell *shell)
 {

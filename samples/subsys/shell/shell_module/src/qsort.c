@@ -34,6 +34,7 @@ static const char sccsid[] = "@(#)qsort.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #ifdef I_AM_QSORT_R
 typedef int		 cmp_t(void *, const void *, const void *);
@@ -65,7 +66,7 @@ swapfunc(char *a, char *b, size_t es)
 		if ((n) > 0) {			\
 			swapfunc(a, b, n);	\
 		}				\
-	} while (0)
+	} while (false)
 
 #ifdef I_AM_QSORT_R
 #define	CMP(t, x, y) (cmp((t), (x), (y)))

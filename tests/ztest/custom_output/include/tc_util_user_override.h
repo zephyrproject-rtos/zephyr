@@ -18,7 +18,7 @@
 #define TC_START(original)  do { \
 	static int count; \
 	printk("%d: Test [%s]", ++count, original); \
-} while (0)
+} while (false)
 
 /* Example: Change result string output formats. */
 #define TC_PASS_STR "(PASS)"
@@ -32,6 +32,6 @@
 	printk(" reported %s no. %d\n", \
 		TC_RESULT_TO_STR(result), \
 		result_keeper[result]); \
-} while (0)
+} while (false)
 
 #endif /* __TC_UTIL_USER_OVERRIDE_H__ */

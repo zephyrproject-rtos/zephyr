@@ -36,13 +36,13 @@
 	do {                                                                   \
 		bst_result = Failed;                                           \
 		bs_trace_error_time_line(msg "\n", ##__VA_ARGS__);             \
-	} while (0)
+	} while (false)
 
 #define PASS()                                                                 \
 	do {                                                                   \
 		bst_result = Passed;                                           \
 		bs_trace_info_time(1, "%s PASSED\n", __func__);                \
-	} while (0)
+	} while (false)
 
 #define ASSERT_OK(cond, ...)                                                   \
 	do {                                                                   \
@@ -52,7 +52,7 @@
 			bs_trace_error_time_line(                              \
 				#cond " failed with error %d\n", _err);        \
 		}                                                              \
-	} while (0)
+	} while (false)
 
 #define ASSERT_TRUE(cond, ...)                                                 \
 	do {                                                                   \
@@ -61,7 +61,7 @@
 			bs_trace_error_time_line(                              \
 				#cond " is false.", ##__VA_ARGS__);             \
 		}                                                              \
-	} while (0)
+	} while (false)
 
 #define ASSERT_FALSE(cond, ...)                                                \
 	do {                                                                   \
@@ -70,7 +70,7 @@
 			bs_trace_error_time_line(                              \
 				#cond " is true.", ##__VA_ARGS__);             \
 		}                                                              \
-	} while (0)
+	} while (false)
 
 #define ASSERT_EQUAL(expected, got)                                            \
 	do {                                                                   \
@@ -80,7 +80,7 @@
 				#expected " not equal to " #got ": %d != %d\n",\
 				(expected), (got));                            \
 		}                                                              \
-	} while (0)
+	} while (false)
 
 
 struct bt_mesh_test_cfg {

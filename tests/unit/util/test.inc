@@ -169,7 +169,7 @@ void test_UTIL_LISTIFY(void)
 #define INC(x, n, m)		\
 	do {			\
 		i += (x + n + m);\
-	} while (0);
+	} while (false);
 
 #define DEFINE(x, y) int a##x = x * y;
 #define MARK_UNUSED(x, _) ARG_UNUSED(a##x);

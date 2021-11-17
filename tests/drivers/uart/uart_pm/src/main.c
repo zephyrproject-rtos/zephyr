@@ -119,7 +119,7 @@ static void communication_verify(const struct device *dev, bool active)
 	int err = pm_device_state_get(dev, &power_state); \
 	zassert_equal(err, 0, "Unexpected err: %d", err); \
 	zassert_equal(power_state, exp_state, NULL); \
-} while (0)
+} while (false)
 
 static void state_set(const struct device *dev, enum pm_device_state state,
 		      int exp_err)

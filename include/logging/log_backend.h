@@ -136,7 +136,7 @@ static inline void log_backend_put_sync_string(
 {
 	__ASSERT_NO_MSG(backend != NULL);
 
-	if (backend->api->put_sync_string) {
+	if (backend->api->put_sync_string != NULL) {
 		backend->api->put_sync_string(backend, src_level,
 					      timestamp, fmt, ap);
 	}
@@ -160,7 +160,7 @@ static inline void log_backend_put_sync_hexdump(
 {
 	__ASSERT_NO_MSG(backend != NULL);
 
-	if (backend->api->put_sync_hexdump) {
+	if (backend->api->put_sync_hexdump != NULL) {
 		backend->api->put_sync_hexdump(backend, src_level, timestamp,
 					       metadata, data, len);
 	}

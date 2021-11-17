@@ -29,7 +29,7 @@
 	PRINT_STRING("|   size(B) |       time/packet (usec)       |        "\
 		  "  MB/sec                |\n", output_file);            \
 	PRINT_STRING(dashline, output_file);\
-	} while (0)
+	} while (false)
 
 #define  PRINT_1_TO_N()                                               \
 	PRINT_F(output_file,						\
@@ -62,7 +62,7 @@
 	PRINT_STRING("|   size(B) |       time/packet (nsec)       |        "\
 		  "  KB/sec                |\n", output_file);            \
 	PRINT_STRING(dashline, output_file); \
-	} while (0)
+	} while (false)
 
 #define  PRINT_1_TO_N()                                              \
 	PRINT_F(output_file,                                            \

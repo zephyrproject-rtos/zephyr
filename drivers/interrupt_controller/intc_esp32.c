@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(esp32_intc, CONFIG_LOG_DEFAULT_LEVEL);
 #ifdef CONFIG_INTC_ESP32_DECISIONS_LOG
 # define INTC_LOG(...) LOG_INF(__VA_ARGS__)
 #else
-# define INTC_LOG(...) do {} while (0)
+# define INTC_LOG(...) do {} while (false)
 #endif
 
 /* Typedef for C-callable interrupt handler function */

@@ -63,7 +63,7 @@
 		DEBUG_PORT->PIN_CNF[DEBUG_PIN_IDX9] = \
 			(GPIO_PIN_CNF_MCUSEL_NetworkMCU << \
 			 GPIO_PIN_CNF_MCUSEL_Pos); \
-	} while (0)
+	} while (false)
 #endif /* CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP */
 #elif defined(CONFIG_BOARD_NRF52840DK_NRF52840)
 #define DEBUG_PORT       NRF_P1
@@ -120,7 +120,7 @@
 	do { \
 		DEBUG_PORT->DIRSET = DEBUG_PIN_MASK; \
 		DEBUG_PORT->OUTCLR = DEBUG_PIN_MASK; \
-	} while (0)
+	} while (false)
 
 #define DEBUG_CPU_SLEEP(flag) \
 	do { \
@@ -131,7 +131,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN0; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN0; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_TICKER_ISR(flag) \
 	do { \
@@ -142,7 +142,7 @@
 			DEBUG_PORT->OUTSET = DEBUG_PIN1; \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN1; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_TICKER_TASK(flag) \
 	do { \
@@ -153,7 +153,7 @@
 			DEBUG_PORT->OUTSET = DEBUG_PIN1; \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN1; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_TICKER_JOB(flag) \
 	do { \
@@ -164,7 +164,7 @@
 			DEBUG_PORT->OUTSET = DEBUG_PIN2; \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN2; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_ISR(flag) \
 	do { \
@@ -175,7 +175,7 @@
 			DEBUG_PORT->OUTSET = DEBUG_PIN7; \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN7; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_XTAL(flag) \
 	do { \
@@ -186,7 +186,7 @@
 			DEBUG_PORT->OUTSET = DEBUG_PIN8; \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN8; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_ACTIVE(flag) \
 	do { \
@@ -197,7 +197,7 @@
 			DEBUG_PORT->OUTSET = DEBUG_PIN9; \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN9; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_CLOSE(flag) \
 	do { \
@@ -207,7 +207,7 @@
 		} else { \
 			DEBUG_PORT->OUTCLR = DEBUG_CLOSE_MASK; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_PREPARE_A(flag) \
 	do { \
@@ -218,7 +218,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN3; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN3; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_START_A(flag) \
 	do { \
@@ -229,7 +229,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN3; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN3; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_CLOSE_A(flag) \
 	do { \
@@ -239,7 +239,7 @@
 		} else { \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN3; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_PREPARE_S(flag) \
 	do { \
@@ -250,7 +250,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN4; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN4; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_START_S(flag) \
 	do { \
@@ -261,7 +261,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN4; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN4; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_CLOSE_S(flag) \
 	do { \
@@ -271,7 +271,7 @@
 		} else { \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN4; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_PREPARE_O(flag) \
 	do { \
@@ -282,7 +282,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN5; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN5; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_START_O(flag) \
 	do { \
@@ -293,7 +293,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN5; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN5; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_CLOSE_O(flag) \
 	do { \
@@ -303,7 +303,7 @@
 		} else { \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN5; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_PREPARE_M(flag) \
 	do { \
@@ -314,7 +314,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN6; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN6; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_START_M(flag) \
 	do { \
@@ -325,7 +325,7 @@
 			DEBUG_PORT->OUTCLR = DEBUG_PIN6; \
 			DEBUG_PORT->OUTSET = DEBUG_PIN6; \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_CLOSE_M(flag) \
 	do { \
@@ -335,7 +335,7 @@
 		} else { \
 			DEBUG_PORT->OUTCLR = DEBUG_PIN6; \
 		} \
-	} while (0)
+	} while (false)
 
 #else
 #define DEBUG_INIT()

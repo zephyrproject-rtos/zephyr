@@ -75,7 +75,7 @@ extern void test_time_conversions(void);
 			k_timer_stop(tmr);	 \
 			zassert_true(exp, NULL); \
 		}				 \
-	} while (0)
+	} while (false)
 
 static void init_timer_data(void)
 {

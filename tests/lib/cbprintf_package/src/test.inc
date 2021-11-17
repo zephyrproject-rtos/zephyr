@@ -92,7 +92,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 	zassert_equal(len, outlen, NULL); \
 	dump("static", pkg, len); \
 	unpack("static", &st_buf, pkg, len); \
-} while (0)
+} while (false)
 
 void test_cbprintf_package(void)
 {

@@ -60,7 +60,7 @@ void main(void)
 
 		memory_size_mb = (uint64_t)block_count * block_size;
 		printk("Memory Size(MB) %u\n", (uint32_t)(memory_size_mb >> 20));
-	} while (0);
+	} while (false);
 
 	mp.mnt_point = disk_mount_pt;
 

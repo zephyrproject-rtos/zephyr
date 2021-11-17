@@ -188,7 +188,7 @@ do {                                                                  \
 	mbedtls_printf("%9lu KiB/s,  %9lu ns/byte\n",                 \
 		       ii * BUFSIZE / 1024,                           \
 		       (unsigned long)(delta / (jj * BUFSIZE)));      \
-} while (0)
+} while (false)
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C) && defined(MBEDTLS_MEMORY_DEBUG)
 
@@ -240,7 +240,7 @@ do {                                                                  \
 	}                                                             \
 								      \
 	(void)k_work_cancel_delayable_sync(&mbedtls_alarm, &work_sync);\
-} while (0)
+} while (false)
 
 static int myrand(void *rng_state, unsigned char *output, size_t len)
 {

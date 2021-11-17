@@ -1931,7 +1931,7 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), \
 			    isr_handler, DEVICE_DT_GET(UARTE(idx)), 0); \
 		irq_enable(DT_IRQN(UARTE(idx)));			       \
-	} while (0)
+	} while (false)
 
 #define HWFC_CONFIG_CHECK(idx) \
 	BUILD_ASSERT( \

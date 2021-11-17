@@ -319,7 +319,7 @@ static int rawprf(const char *format, ...)
 		} \
 	} \
 	*rc = prf(sp_buf, _fmt, __VA_ARGS__); \
-} while (0)
+} while (false)
 
 #define TEST_PRF(rc, _fmt, ...) \
 	TEST_PRF2(rc, WRAP_FMT(_fmt), PASS_ARG(__VA_ARGS__))
