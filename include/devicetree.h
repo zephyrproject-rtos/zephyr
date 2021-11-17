@@ -2457,6 +2457,26 @@
 	DT_FOREACH_CHILD_VARGS(DT_DRV_INST(inst), fn, __VA_ARGS__)
 
 /**
+ * @brief Get a DT_DRV_COMPAT value's index into its enumeration values
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @return zero-based index of the property's value in its enum: list
+ */
+#define DT_INST_ENUM_IDX(inst, prop) \
+	DT_ENUM_IDX(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Like DT_INST_ENUM_IDX(), but with a fallback to a default enum index
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param default_idx_value a fallback index value to expand to
+ * @return zero-based index of the property's value in its enum if present,
+ *         default_idx_value ohterwise
+ */
+#define DT_INST_ENUM_IDX_OR(inst, prop, default_idx_value) \
+	DT_ENUM_IDX_OR(DT_DRV_INST(inst), prop, default_idx_value)
+
+/**
  * @brief Get a DT_DRV_COMPAT instance property
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
