@@ -183,11 +183,10 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_iso->num_bis = num_bis;
 
 	/* BN (Burst Count), Mandatory BN = 1 */
-	bn = (max_sdu + (lll_adv_iso->max_pdu - 1U)) / lll_adv_iso->max_pdu;
+	bn = ceiling_fraction(max_sdu, lll_adv_iso->max_pdu);
 	if (bn > PDU_BIG_BN_MAX) {
 		lll_adv_iso->bn = PDU_BIG_BN_MAX;
-		bn = ((bn + (PDU_BIG_BN_MAX - 1)) / PDU_BIG_BN_MAX) *
-		     PDU_BIG_BN_MAX;
+		bn = ceiling_fraction(bn, PDU_BIG_BN_MAX) * PDU_BIG_BN_MAX;
 	} else {
 		lll_adv_iso->bn = bn;
 	}

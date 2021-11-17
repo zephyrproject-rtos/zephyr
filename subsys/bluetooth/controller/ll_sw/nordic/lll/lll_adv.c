@@ -83,9 +83,9 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 					struct pdu_adv *ci);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#define PAYLOAD_BASED_FRAG_COUNT ((CONFIG_BT_CTLR_ADV_DATA_LEN_MAX + \
-				   PDU_AC_PAYLOAD_SIZE_MAX - 1) / \
-				  PDU_AC_PAYLOAD_SIZE_MAX)
+#define PAYLOAD_BASED_FRAG_COUNT \
+	ceiling_fraction(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
+			 PDU_AC_PAYLOAD_SIZE_MAX)
 #define PAYLOAD_FRAG_COUNT MAX(PAYLOAD_BASED_FRAG_COUNT, BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
 #define BT_CTLR_ADV_AUX_SET  CONFIG_BT_CTLR_ADV_AUX_SET
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
