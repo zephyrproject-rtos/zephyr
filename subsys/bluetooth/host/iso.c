@@ -1173,15 +1173,18 @@ static int cig_init_cis(struct bt_iso_cig *cig,
 		struct bt_iso_chan *cis = param->cis_channels[i];
 
 		if (cis->iso == NULL) {
+			struct bt_conn_iso *iso_conn;
+
 			cis->iso = iso_new();
 			if (cis->iso == NULL) {
 				BT_ERR("Unable to allocate CIS connection");
 				return -ENOMEM;
 			}
+			iso_conn = &cis->iso->iso;
 
-			cis->iso->iso.cig_id = cig->id;
-			cis->iso->iso.type = BT_ISO_CHAN_TYPE_CONNECTED;
-			cis->iso->iso.cis_id = cig->num_cis++;
+			iso_conn->cig_id = cig->id;
+			iso_conn->type = BT_ISO_CHAN_TYPE_CONNECTED;
+			iso_conn->cis_id = cig->num_cis++;
 
 			bt_iso_chan_add(cis->iso, cis);
 
@@ -1708,6 +1711,7 @@ static int big_init_bis(struct bt_iso_big *big,
 {
 	for (uint8_t i = 0; i < num_bis; i++) {
 		struct bt_iso_chan *bis = bis_channels[i];
+		struct bt_conn_iso *iso_conn;
 
 		bis->iso = iso_new();
 
@@ -1715,11 +1719,12 @@ static int big_init_bis(struct bt_iso_big *big,
 			BT_ERR("Unable to allocate BIS connection");
 			return -ENOMEM;
 		}
+		iso_conn = &bis->iso->iso;
 
-		bis->iso->iso.big_handle = big->handle;
-		bis->iso->iso.type = broadcaster ? BT_ISO_CHAN_TYPE_BROADCASTER
-						 : BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
-		bis->iso->iso.bis_id = bt_conn_index(bis->iso);
+		iso_conn->big_handle = big->handle;
+		iso_conn->type = broadcaster ? BT_ISO_CHAN_TYPE_BROADCASTER
+					     : BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
+		iso_conn->bis_id = bt_conn_index(bis->iso);
 
 		bt_iso_chan_add(bis->iso, bis);
 
