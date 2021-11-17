@@ -98,6 +98,14 @@ enum {
 	BT_ISO_DISCONNECT,
 };
 
+
+enum bt_iso_chan_type {
+	BT_ISO_CHAN_TYPE_NONE,
+	BT_ISO_CHAN_TYPE_CONNECTED,
+	BT_ISO_CHAN_TYPE_BROADCASTER,
+	BT_ISO_CHAN_TYPE_SYNC_RECEIVER
+};
+
 /** @brief ISO Channel structure. */
 struct bt_iso_chan {
 	/** Channel connection reference */
