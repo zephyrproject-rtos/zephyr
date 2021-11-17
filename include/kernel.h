@@ -359,7 +359,6 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
 					struct k_heap *heap)
 {
 	thread->resource_pool = heap;
-	SYS_PORT_TRACING_FUNC(k_thread, heap_assign, thread, heap);
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
