@@ -463,7 +463,7 @@ static struct spi_driver_api spi_b91_api = {
 	};									\
 										\
 	static struct spi_b91_cfg spi_b91_cfg_##inst = {			\
-		.peripheral_id = DT_ENUM_IDX(DT_DRV_INST(inst), peripheral_id),	\
+		.peripheral_id = DT_INST_ENUM_IDX(inst, peripheral_id),		\
 		.cs_pin[0] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs0_pin),	\
 		.cs_pin[1] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs1_pin),	\
 		.cs_pin[2] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs2_pin),	\

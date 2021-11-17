@@ -1014,9 +1014,9 @@ static int fdc2x1x_init(const struct device *dev)
 		.active_channel = DT_INST_PROP(n, active_channel),	   \
 		.deglitch = DT_INST_PROP(n, deglitch),			   \
 		.sensor_activate_sel =					   \
-			DT_ENUM_IDX(DT_DRV_INST(n), sensor_activate_sel),  \
-		.clk_src = DT_ENUM_IDX(DT_DRV_INST(n), ref_clk_src),	   \
-		.current_drv = DT_ENUM_IDX(DT_DRV_INST(n), current_drive), \
+			DT_INST_ENUM_IDX(n, sensor_activate_sel),	   \
+		.clk_src = DT_INST_ENUM_IDX(n, ref_clk_src),		   \
+		.current_drv = DT_INST_ENUM_IDX(n, current_drive),	   \
 		.output_gain = DT_INST_PROP(n, output_gain),		   \
 		.ch_cfg =       ch_cfg_##n,				   \
 		.num_channels = ARRAY_SIZE(fdc2x1x_sample_buf_##n),	   \
