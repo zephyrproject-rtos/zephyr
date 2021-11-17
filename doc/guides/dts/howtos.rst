@@ -199,10 +199,9 @@ See :ref:`missing-dt-binding` for troubleshooting.
 Set devicetree overlays
 ***********************
 
-You can set devicetree overlays that the C preprocessor must include in the
+You can set devicetree overlays that the build system must include in the
 build using one of the following methods, listed in order of priority. The
-first method detected by the C preprocessor will make it ignore all the
-later methods in the list.
+first method detected will make it ignore all the later methods in the list.
 
 1. Using the :makevar:`DTC_OVERLAY_FILE` CMake variable. You can use the CMake
    variable :makevar:`DTC_OVERLAY_FILE` to list the overlays, using spaces or
