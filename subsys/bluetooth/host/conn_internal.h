@@ -4,9 +4,12 @@
 
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <bluetooth/iso.h>
 
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
@@ -125,8 +128,8 @@ struct bt_conn_iso {
 		uint8_t			bis_id;
 	};
 
-	/** If true, this is a ISO for a BIS, else it is a ISO for a CIS */
-	bool is_bis;
+	/** Type of the ISO channel */
+	enum bt_iso_chan_type type;
 };
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);

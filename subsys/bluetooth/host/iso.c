@@ -307,18 +307,16 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 		out_path = &disabled_path;
 	}
 
-	if (iso->iso.is_bis) {
-		/* Only set one data path for BIS as per the spec */
-		if (tx_qos) {
-			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
-			return hci_le_setup_iso_data_path(iso, dir, in_path);
-
-		} else {
-			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
-			return hci_le_setup_iso_data_path(iso, dir, out_path);
-		}
-
-	} else {
+	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
+	    iso->iso.type == BT_ISO_CHAN_TYPE_BROADCASTER && tx_qos) {
+		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+		return hci_le_setup_iso_data_path(iso, dir, in_path);
+	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
+		   iso->iso.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
+		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+		return hci_le_setup_iso_data_path(iso, dir, out_path);
+	} else if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
+		   iso->iso.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 		/* Setup both directions for CIS*/
 		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
 		err = hci_le_setup_iso_data_path(iso, dir, in_path);
@@ -328,6 +326,9 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 
 		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
 		return hci_le_setup_iso_data_path(iso, dir, out_path);
+	} else {
+		__ASSERT(false, "Invalid iso.type: %u", iso->iso.type);
+		return -EINVAL;
 	}
 }
 
@@ -346,7 +347,8 @@ void bt_iso_connected(struct bt_conn *iso)
 	if (bt_iso_setup_data_path(iso)) {
 		BT_ERR("Unable to setup data path");
 #if defined(CONFIG_BT_ISO_BROADCAST)
-		if (iso->iso.is_bis) {
+		if (iso->iso.type == BT_ISO_CHAN_TYPE_BROADCASTER ||
+		    iso->iso.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
 			struct bt_iso_big *big;
 			int err;
 
@@ -356,11 +358,14 @@ void bt_iso_connected(struct bt_conn *iso)
 			if (err != 0) {
 				BT_ERR("Could not terminate BIG: %d", err);
 			}
-		} else if (IS_ENABLED(CONFIG_BT_ISO_UNICAST))
+		}
 #endif /* CONFIG_BT_ISO_BROADCAST */
-		{
+		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
+		    iso->iso.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 			bt_conn_disconnect(iso,
 					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		} else {
+			__ASSERT(false, "Invalid iso.type: %u", iso->iso.type);
 		}
 		return;
 	}
@@ -382,7 +387,10 @@ static void bt_iso_remove_data_path(struct bt_conn *iso)
 {
 	BT_DBG("%p", iso);
 
-	if (iso->iso.is_bis) {
+	if ((IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
+		iso->iso.type == BT_ISO_CHAN_TYPE_BROADCASTER) ||
+	    (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
+		iso->iso.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER)) {
 		struct bt_iso_chan *chan;
 		struct bt_iso_chan_io_qos *tx_qos;
 		uint8_t dir;
@@ -402,7 +410,8 @@ static void bt_iso_remove_data_path(struct bt_conn *iso)
 		}
 
 		(void)hci_le_remove_iso_data_path(iso, dir);
-	} else {
+	} else if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
+		   iso->iso.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 		/* Remove both directions for CIS*/
 
 		/* TODO: Check which has been setup first to avoid removing
@@ -412,6 +421,8 @@ static void bt_iso_remove_data_path(struct bt_conn *iso)
 						  BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
 		(void)hci_le_remove_iso_data_path(iso,
 						  BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	} else {
+		__ASSERT(false, "Invalid iso.type: %u", iso->iso.type);
 	}
 }
 
@@ -426,7 +437,8 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	/* The peripheral does not have the concept of a CIG, so once a CIS
 	 * disconnects it is completely freed by unref'ing it
 	 */
-	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) && !chan->iso->iso.is_bis) {
+	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
+	    chan->iso->iso.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 		bt_iso_cleanup_acl(chan->iso);
 
 		if (chan->iso->role == BT_HCI_ROLE_PERIPHERAL) {
@@ -1145,7 +1157,7 @@ static int cig_init_cis(struct bt_iso_cig *cig,
 			}
 
 			cis->iso->iso.cig_id = cig->id;
-			cis->iso->iso.is_bis = false;
+			cis->iso->iso.type = BT_ISO_CHAN_TYPE_CONNECTED;
 			cis->iso->iso.cis_id = cig->num_cis++;
 
 			bt_iso_chan_add(cis->iso, cis);
@@ -1682,7 +1694,8 @@ static int big_init_bis(struct bt_iso_big *big,
 		}
 
 		bis->iso->iso.big_handle = big->handle;
-		bis->iso->iso.is_bis = true;
+		bis->iso->iso.type = broadcaster ? BT_ISO_CHAN_TYPE_BROADCASTER
+						 : BT_ISO_CHAN_TYPE_SYNC_RECEIVER;
 		bis->iso->iso.bis_id = bt_conn_index(bis->iso);
 
 		bt_iso_chan_add(bis->iso, bis);
