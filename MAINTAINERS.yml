@@ -219,6 +219,7 @@ Build system:
     maintainers:
         - tejlmand
     collaborators:
+        - jeremybettis
         - nashif
         - SebastianBoe
     files:
@@ -1748,6 +1749,8 @@ ZTest:
     status: maintained
     maintainers:
         - nashif
+    collaborators:
+        - jeremybettis
     files:
         - subsys/testsuite/
         - tests/ztest/
