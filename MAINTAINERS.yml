@@ -1617,6 +1617,7 @@ Tracing:
         - nashif
     collaborators:
         - teburd
+        - tleksell-pe
     files:
         - subsys/tracing/
         - include/tracing/
