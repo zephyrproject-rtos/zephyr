@@ -14,13 +14,15 @@
  */
 
 /**
- * @brief SPI duplex mode
+ * @name SPI duplex mode
+ * @{
  *
  * Some controllers support half duplex transfer, which results in 3-wire usage.
  * By default, full duplex will prevail.
  */
 #define SPI_FULL_DUPLEX		(0U << 11)
 #define SPI_HALF_DUPLEX		(1U << 11)
+/** @} */
 
 /**
  * @}

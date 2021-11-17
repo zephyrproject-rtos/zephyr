@@ -30,15 +30,18 @@ extern "C" {
 #endif
 
 /**
- * @brief SPI operational mode
+ * @name SPI operational mode
+ * @{
  */
 #define SPI_OP_MODE_MASTER	0U
 #define SPI_OP_MODE_SLAVE	BIT(0)
 #define SPI_OP_MODE_MASK	0x1U
 #define SPI_OP_MODE_GET(_operation_) ((_operation_) & SPI_OP_MODE_MASK)
+/** @} */
 
 /**
- * @brief SPI Polarity & Phase Modes
+ * @name SPI Polarity & Phase Modes
+ * @{
  */
 
 /**
@@ -68,14 +71,19 @@ extern "C" {
 #define SPI_MODE_GET(_mode_)			\
 	((_mode_) & SPI_MODE_MASK)
 
+/** @} */
+
 /**
- * @brief SPI Transfer modes (host controller dependent)
+ * @name SPI Transfer modes (host controller dependent)
+ * @{
  */
 #define SPI_TRANSFER_MSB	(0U)
 #define SPI_TRANSFER_LSB	BIT(4)
+/** @} */
 
 /**
- * @brief SPI word size
+ * @name SPI word size
+ * @{
  */
 #define SPI_WORD_SIZE_SHIFT	(5U)
 #define SPI_WORD_SIZE_MASK	(0x3FU << SPI_WORD_SIZE_SHIFT)
@@ -84,9 +92,11 @@ extern "C" {
 
 #define SPI_WORD_SET(_word_size_)		\
 	((_word_size_) << SPI_WORD_SIZE_SHIFT)
+/** @} */
 
 /**
- * @brief Specific SPI devices control bits
+ * @name Specific SPI devices control bits
+ * @{
  */
 /* Requests - if possible - to keep CS asserted after the transaction */
 #define SPI_HOLD_ON_CS		BIT(12)
@@ -105,9 +115,11 @@ extern "C" {
  * the solution.
  */
 #define SPI_CS_ACTIVE_HIGH	BIT(14)
+/** @} */
 
 /**
- * @brief SPI MISO lines (if @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled)
+ * @name SPI MISO lines (if @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled)
+ * @{
  *
  * Some controllers support dual, quad or octal MISO lines connected to slaves.
  * Default is single, which is the case most of the time.
@@ -120,6 +132,7 @@ extern "C" {
 #define SPI_LINES_OCTAL		(3U << 16)
 
 #define SPI_LINES_MASK		(0x3U << 16)
+/** @} */
 
 /**
  * @brief SPI Chip Select control structure
