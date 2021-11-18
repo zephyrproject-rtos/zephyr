@@ -388,6 +388,32 @@ def dt_node_int_prop(kconf, name, path, prop, unit=None):
     if name == "dt_node_int_prop_hex":
         return hex(_node_int_prop(node, prop, unit))
 
+def dt_node_str_prop_equals(kconf, _, path, prop, val):
+    """
+    This function takes a 'path' and property name ('prop') looks for an EDT
+    node at that path. If it finds an EDT node, it will look to see if that
+    node has a property 'prop' of type string. If that 'prop' is equal to 'val'
+    it will return "y" otherwise return "n".
+    """
+
+    if doc_mode or edt is None:
+        return "n"
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return "n"
+
+    if prop not in node.props:
+        return "n"
+
+    if node.props[prop].type != "string":
+        return "n"
+
+    if node.props[prop].val == val:
+        return "y"
+
+    return "n"
 
 def dt_compat_enabled(kconf, _, compat):
     """
@@ -491,6 +517,7 @@ functions = {
         "dt_node_has_prop": (dt_node_has_prop, 2, 2),
         "dt_node_int_prop_int": (dt_node_int_prop, 2, 3),
         "dt_node_int_prop_hex": (dt_node_int_prop, 2, 3),
+        "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
