@@ -28,9 +28,6 @@ static struct bt_audio_ep srcs[CONFIG_BT_MAX_CONN][SRC_SIZE];
 #if BROADCAST_SRC_CNT > 0
 static struct bt_audio_ep broadcast_srcs[BROADCAST_SRC_CNT][BROADCAST_STREAM_CNT];
 #endif /* BROADCAST_SRC_CNT > 0 */
-#if BROADCAST_SNK_CNT > 0
-static struct bt_audio_ep broadcast_snks[BROADCAST_SNK_CNT][BROADCAST_SNK_STREAM_CNT];
-#endif /* BROADCAST_SNK_CNT > 0 */
 
 #if defined(CONFIG_BT_BAP)
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
@@ -227,19 +224,13 @@ struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint8_t dir,
 	return NULL;
 }
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SINK) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 struct bt_audio_ep *bt_audio_ep_broadcaster_new(uint8_t index, uint8_t dir)
 {
 	int i, size;
 	struct bt_audio_ep *cache = NULL;
 
 	switch (dir) {
-#if BROADCAST_SNK_CNT > 0
-	case BT_AUDIO_SINK:
-		cache = broadcast_snks[index];
-		size = ARRAY_SIZE(broadcast_snks[index]);
-		break;
-#endif /* BROADCAST_SNK_CNT > 0 */
 #if BROADCAST_SRC_CNT > 0
 	case BT_AUDIO_SOURCE:
 		cache = broadcast_srcs[index];
@@ -268,7 +259,7 @@ struct bt_audio_ep *bt_audio_ep_broadcaster_new(uint8_t index, uint8_t dir)
 
 	return NULL;
 }
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SINK || CONFIG_BT_AUDIO_BROADCAST_SOURCE*/
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE*/
 
 bool bt_audio_ep_is_snk(const struct bt_audio_ep *ep)
 {
@@ -1452,18 +1443,6 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 
 		ep_reset(ep);
 	}
-}
-
-bool bt_audio_ep_is_broadcast_snk(const struct bt_audio_ep *ep)
-{
-#if BROADCAST_SNK_CNT > 0
-	for (int i = 0; i < ARRAY_SIZE(broadcast_snks); i++) {
-		if (PART_OF_ARRAY(broadcast_snks[i], ep)) {
-			return true;
-		}
-	}
-#endif /* BROADCAST_SNK_CNT > 0 */
-	return false;
 }
 
 bool bt_audio_ep_is_broadcast_src(const struct bt_audio_ep *ep)

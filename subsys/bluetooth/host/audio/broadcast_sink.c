@@ -30,12 +30,114 @@
 #define BASE_BIS_DATA_MIN_SIZE    2 /* index and length */
 #define BROADCAST_SYNC_MIN_INDEX  (BIT(1))
 
-static struct bt_audio_broadcast_sink broadcast_sinks[BROADCAST_SNK_CNT];
+static struct bt_audio_ep broadcast_sink_eps
+	[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT][BROADCAST_SNK_STREAM_CNT];
+static struct bt_audio_broadcast_sink broadcast_sinks[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT];
 static struct bt_le_scan_cb broadcast_scan_cb;
 
 static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink);
+
+static void broadcast_sink_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
+{
+	uint8_t old_state;
+
+	old_state = ep->status.state;
+
+	BT_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id,
+	       bt_audio_ep_state_str(old_state),
+	       bt_audio_ep_state_str(state));
+
+
+	switch (old_state) {
+	case BT_AUDIO_EP_STATE_IDLE:
+		if (state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+			BT_DBG("Invalid broadcast sync endpoint state transition");
+			return;
+		}
+		break;
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+		if (state != BT_AUDIO_EP_STATE_IDLE &&
+		    state != BT_AUDIO_EP_STATE_STREAMING) {
+			BT_DBG("Invalid broadcast sync endpoint state transition");
+			return;
+		}
+		break;
+	case BT_AUDIO_EP_STATE_STREAMING:
+		if (state != BT_AUDIO_EP_STATE_IDLE) {
+			BT_DBG("Invalid broadcast sync endpoint state transition");
+			return;
+		}
+		break;
+	default:
+		BT_ERR("Invalid broadcast sync endpoint state: %s",
+		       bt_audio_ep_state_str(old_state));
+		return;
+	}
+
+	ep->status.state = state;
+
+	if (state == BT_AUDIO_EP_STATE_IDLE) {
+		struct bt_audio_stream *stream = ep->stream;
+
+		if (stream != NULL) {
+			stream->ep = NULL;
+			stream->codec = NULL;
+			ep->stream = NULL;
+		}
+	}
+}
+
+static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
+				    const struct bt_iso_recv_info *info,
+				    struct net_buf *buf)
+{
+	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_stream_ops *ops = ep->stream->ops;
+
+	BT_DBG("stream %p ep %p len %zu", chan, ep, net_buf_frags_len(buf));
+
+	if (ops != NULL && ops->recv != NULL) {
+		ops->recv(ep->stream, buf);
+	}
+}
+
+static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
+{
+	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_stream_ops *ops = ep->stream->ops;
+
+	BT_DBG("stream %p ep %p", chan, ep);
+
+	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_STREAMING);
+
+	if (ops != NULL && ops->connected != NULL) {
+		ops->connected(ep->stream);
+	}
+}
+
+static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
+					    uint8_t reason)
+{
+	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_stream *stream = ep->stream;
+	struct bt_audio_stream_ops *ops = stream->ops;
+
+	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
+
+	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_IDLE);
+
+	if (ops != NULL && ops->disconnected != NULL) {
+		ops->disconnected(stream, reason);
+	}
+}
+
+static struct bt_iso_chan_ops broadcast_sink_iso_ops = {
+	.recv		= broadcast_sink_iso_recv,
+	.connected	= broadcast_sink_iso_connected,
+	.disconnected	= broadcast_sink_iso_disconnected,
+};
 
 static struct bt_audio_broadcast_sink *broadcast_sink_syncing_get(void)
 {
@@ -643,6 +745,52 @@ int bt_audio_broadcast_sink_scan_stop(void)
 	return err;
 }
 
+bool bt_audio_ep_is_broadcast_snk(const struct bt_audio_ep *ep)
+{
+	for (int i = 0; i < ARRAY_SIZE(broadcast_sink_eps); i++) {
+		if (PART_OF_ARRAY(broadcast_sink_eps[i], ep)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void broadcast_sink_ep_init(struct bt_audio_ep *ep)
+{
+	BT_DBG("ep %p", ep);
+
+	(void)memset(ep, 0, sizeof(*ep));
+	ep->iso.ops = &broadcast_sink_iso_ops;
+	ep->iso.qos = &ep->iso_qos;
+	ep->iso.qos->rx = &ep->iso_rx;
+	ep->iso.qos->tx = &ep->iso_tx;
+}
+
+static struct bt_audio_ep *broadcast_sink_new_ep(uint8_t index)
+{
+	struct bt_audio_ep *cache = NULL;
+	size_t size;
+
+	cache = broadcast_sink_eps[index];
+	size = ARRAY_SIZE(broadcast_sink_eps[index]);
+
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_sink_eps[index]); i++) {
+		struct bt_audio_ep *ep = &cache[i];
+
+		/* If ep->stream is NULL the endpoint is unallocated */
+		if (ep->stream == NULL) {
+			/* Initialize - It is up to the caller to allocate the
+			 * stream pointer.
+			 */
+			broadcast_sink_ep_init(ep);
+			return ep;
+		}
+	}
+
+	return NULL;
+}
+
 static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 						struct bt_audio_stream *stream,
 						struct bt_codec *codec)
@@ -657,7 +805,7 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 		return -EALREADY;
 	}
 
-	ep = bt_audio_ep_broadcaster_new(index, BT_AUDIO_SINK);
+	ep = broadcast_sink_new_ep(index);
 	if (ep == NULL) {
 		BT_DBG("Could not allocate new broadcast endpoint");
 		return -ENOMEM;
@@ -800,7 +948,8 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		struct bt_audio_ep *ep = streams[i].ep;
 
 		ep->broadcast_sink = sink;
-		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+		broadcast_sink_set_ep_state(ep,
+					    BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 	}
 
 	return 0;
