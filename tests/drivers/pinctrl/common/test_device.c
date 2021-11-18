@@ -18,6 +18,15 @@ int test_device_init(const struct device *dev)
 	return 0;
 }
 
+#if !defined(CONFIG_PINCTRL_TEST_STORE_CUSTOM_REG)
+#define TEST_PINCTRL_CONFIG(inst)					\
+			PINCTRL_DT_INST_DEFINE(inst)
+#else
+#define TEST_PINCTRL_CONFIG(inst)					\
+			PINCTRL_DT_INST_CUSTOM_REG_DEFINE(inst,		\
+					DT_REG_ADDR(DT_DRV_INST(index))))
+#endif
+
 #define PINCTRL_DEVICE_INIT(inst)					\
 	PINCTRL_DT_INST_DEFINE(inst)					\
 									\

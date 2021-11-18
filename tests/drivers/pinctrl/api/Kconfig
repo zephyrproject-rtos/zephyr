@@ -11,3 +11,10 @@ config PINCTRL_TEST_STORE_REG
 	help
 	  This option should be selected by unit tests that want to store the
 	  register address of devices.
+
+config PINCTRL_TEST_STORE_CUSTOM_REG
+	bool "Store register address"
+	select PINCTRL_STORE_REG
+	help
+	  This option should be selected by unit tests that want to store the
+	  register address of devices, using a custom reg address
