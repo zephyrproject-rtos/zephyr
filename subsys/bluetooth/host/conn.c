@@ -46,7 +46,9 @@ struct tx_meta {
 #define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 K_FIFO_DEFINE(free_tx);
 
+#if defined(CONFIG_BT_CONN_TX)
 static void tx_complete_work(struct k_work *work);
+#endif /* CONFIG_BT_CONN_TX */
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
@@ -214,7 +216,9 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 #if defined(CONFIG_BT_CONN)
 	k_work_init_delayable(&conn->deferred_work, deferred_work);
 #endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_CONN_TX)
 	k_work_init(&conn->tx_complete_work, tx_complete_work);
+#endif /* CONFIG_BT_CONN_TX */
 
 	return conn;
 }
@@ -1196,6 +1200,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	return buf;
 }
 
+#if defined(CONFIG_BT_CONN_TX)
 static void tx_complete_work(struct k_work *work)
 {
 	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
@@ -1205,6 +1210,7 @@ static void tx_complete_work(struct k_work *work)
 
 	tx_notify(conn);
 }
+#endif /* CONFIG_BT_CONN_TX */
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)

@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_DISCONNECT_COMPLETE,
@@ -177,8 +178,9 @@ struct bt_conn {
 
 	/* Completed TX for which we need to call the callback */
 	sys_slist_t		tx_complete;
+#if defined(CONFIG_BT_CONN_TX)
 	struct k_work           tx_complete_work;
-
+#endif /* CONFIG_BT_CONN_TX */
 
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;

@@ -133,6 +133,12 @@ config BT_MAX_CONN
 	  Maximum number of simultaneous Bluetooth connections
 	  supported.
 
+config BT_CONN_TX
+	bool
+	default BT_CONN || BT_ISO_BROADCASTER
+	help
+	  Hidden configuration that is true if ACL or broadcast ISO is enabled
+
 if BT_CONN
 config BT_HCI_ACL_FLOW_CONTROL
 	bool "Controller to Host ACL flow control support"
