@@ -424,7 +424,7 @@ static const struct spi_driver_api spi_api = {
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_NODELABEL(spi##idx), ctx)	\
 		.hal = {	\
 			.hw = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
 		},	\
