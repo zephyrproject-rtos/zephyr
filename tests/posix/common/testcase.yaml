@@ -24,12 +24,14 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
       - CONFIG_THREAD_LOCAL_STORAGE=y
+      - CONFIG_MAIN_STACK_SIZE=1152
   portability.posix.common.tls.newlib:
     platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard ehl_crb
     filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
+      - CONFIG_MAIN_STACK_SIZE=1152
   portability.posix.common.nsim:
     platform_allow: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     extra_configs:
