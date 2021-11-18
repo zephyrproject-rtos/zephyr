@@ -63,11 +63,11 @@ static struct bt_mesh_adv *adv_alloc(int id)
 	return &adv_pool[id];
 }
 
-struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
-					     bt_mesh_adv_alloc_t get_id,
-					     enum bt_mesh_adv_type type,
-					     enum bt_mesh_adv_tag tag,
-					     uint8_t xmit, k_timeout_t timeout)
+static struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
+						    bt_mesh_adv_alloc_t get_id,
+						    enum bt_mesh_adv_type type,
+						    enum bt_mesh_adv_tag tag,
+						    uint8_t xmit, k_timeout_t timeout)
 {
 	struct bt_mesh_adv *adv;
 	struct net_buf *buf;
