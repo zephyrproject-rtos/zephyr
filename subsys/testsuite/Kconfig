@@ -87,6 +87,11 @@ config TEST_LOGGING_DEFAULTS
 	  logging configuration, or no logging at all, disable this
 	  in the project-level defconfig.
 
+config TEST_LOGGING_FLUSH_AFTER_TEST
+	bool "When enabled logs are flushed after each test case"
+	default y
+	depends on MULTITHREADING
+
 config TEST_ENABLE_USERSPACE
 	bool
 	depends on TEST_USERSPACE
