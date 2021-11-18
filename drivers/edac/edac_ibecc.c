@@ -198,6 +198,9 @@ static int inject_error_trigger(const struct device *dev)
 static int ecc_error_log_get(const struct device *dev, uint64_t *value)
 {
 	*value = ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
+	if (*value == 0) {
+		return -ENODATA;
+	}
 
 	return 0;
 }
@@ -214,6 +217,9 @@ static int ecc_error_log_clear(const struct device *dev)
 static int parity_error_log_get(const struct device *dev, uint64_t *value)
 {
 	*value = ibecc_read_reg64(dev, IBECC_PARITY_ERROR_LOG);
+	if (*value == 0) {
+		return -ENODATA;
+	}
 
 	return 0;
 }
