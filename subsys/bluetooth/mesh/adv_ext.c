@@ -22,7 +22,6 @@
 #include "adv.h"
 #include "net.h"
 #include "proxy.h"
-#include "pb_gatt_srv.h"
 
 /* Convert from ms to 0.625ms units */
 #define ADV_INT_FAST_MS    20
@@ -211,27 +210,6 @@ static int buf_send(struct ext_adv *adv, struct net_buf *buf)
 	return err;
 }
 
-#if defined(CONFIG_BT_MESH_GATT_SERVER)
-static void gatt_server_adv_send(struct ext_adv *adv)
-{
-	int err;
-
-	if (bt_mesh_is_provisioned()) {
-		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-			err = bt_mesh_proxy_adv_start();
-			BT_DBG("Proxy Advertising");
-		}
-	} else if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		err = bt_mesh_pb_gatt_adv_start();
-		BT_DBG("PB-GATT Advertising");
-	}
-
-	if (!err) {
-		atomic_set_bit(adv->flags, ADV_FLAG_PROXY);
-	}
-}
-#endif /* CONFIG_BT_MESH_GATT_SERVER */
-
 static void send_pending_adv(struct k_work *work)
 {
 	struct ext_adv *adv = CONTAINER_OF(work, struct ext_adv, work.work);
@@ -257,9 +235,13 @@ static void send_pending_adv(struct k_work *work)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) &&
-	    adv == BT_MESH_ADV_EXT_GATT_SEPARATE_INS) {
-		gatt_server_adv_send(adv);
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) ||
+	    adv != BT_MESH_ADV_EXT_GATT_SEPARATE_INS) {
+		return;
+	}
+
+	if (!bt_mesh_adv_gatt_send()) {
+		atomic_set_bit(adv->flags, ADV_FLAG_PROXY);
 	}
 }
 
@@ -268,7 +250,9 @@ static void send_pending_adv_gatt_handler(struct k_work *work)
 {
 	struct ext_adv *adv = CONTAINER_OF(work, struct ext_adv, work.work);
 
-	gatt_server_adv_send(adv);
+	if (!bt_mesh_adv_gatt_send()) {
+		atomic_set_bit(adv->flags, ADV_FLAG_PROXY);
+	}
 }
 #endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
 
