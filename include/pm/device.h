@@ -39,6 +39,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_WS_ENABLED,
 	/** Indicates if device runtime is enabled  */
 	PM_DEVICE_FLAG_RUNTIME_ENABLED,
+	/** Indicates if the device pm is locked.  */
+	PM_DEVICE_FLAG_STATE_LOCKED,
 };
 
 /** @endcond */
@@ -407,6 +409,42 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  * @retval false If the device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
+
+/**
+ * @brief Lock current device state.
+ *
+ * This function locks the current device power state. Once
+ * locked the device power state will not be changed by
+ * system power management or device runtime power
+ * management until unlocked.
+ *
+ * @see pm_device_state_unlock
+ *
+ * @param dev Device instance.
+ */
+void pm_device_state_lock(const struct device *dev);
+
+/**
+ * @brief Unlock the current device state.
+ *
+ * Unlocks a previously locked device pm.
+ *
+ * @see pm_device_state_lock
+ *
+ * @param dev Device instance.
+ */
+void pm_device_state_unlock(const struct device *dev);
+
+/**
+ * @brief Check if the device pm is locked.
+ *
+ * @param dev Device instance.
+ *
+ * @retval true If device is locked.
+ * @retval false If device is not locked.
+ */
+bool pm_device_state_is_locked(const struct device *dev);
+
 #else
 static inline void pm_device_busy_set(const struct device *dev) {}
 static inline void pm_device_busy_clear(const struct device *dev) {}
@@ -421,6 +459,12 @@ static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
 	return false;
 }
 static inline bool pm_device_wakeup_is_capable(const struct device *dev)
+{
+	return false;
+}
+static inline void pm_device_state_lock(const struct device *dev) {}
+static inline void pm_device_state_unlock(const struct device *dev) {}
+static inline bool pm_device_state_is_locked(const struct device *dev)
 {
 	return false;
 }
