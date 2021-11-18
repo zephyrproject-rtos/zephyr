@@ -85,7 +85,8 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
 
 	if (is_broadcast) {
-		if (bt_audio_ep_is_broadcast_src(ep)) {
+		if (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
+		    bt_audio_ep_is_broadcast_src(ep)) {
 			bt_audio_ep_set_state(ep,
 					      BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 		} else {
@@ -1407,8 +1408,10 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 
 bool bt_audio_ep_is_broadcast(const struct bt_audio_ep *ep)
 {
-	return bt_audio_ep_is_broadcast_src(ep) ||
-	       bt_audio_ep_is_broadcast_snk(ep);
+	return (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
+		bt_audio_ep_is_broadcast_src(ep)) ||
+	       (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK) &&
+		bt_audio_ep_is_broadcast_snk(ep));
 }
 
 void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_stream *stream)
