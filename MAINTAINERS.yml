@@ -1371,6 +1371,26 @@ State machine framework:
     labels:
         - "area: State Machine Framework"
 
+GD32 Platforms:
+    status: maintained
+    maintainers:
+        - nandojve
+        - gmarull
+    files:
+        - boards/arm/gd32*/
+        - drivers/*/*gd32*/
+        - drivers/*/*gd32*
+        - dts/arm/gigadevice/
+        - dts/bindings/*/*gd32*
+        - modules/hal_gigadevice/
+        - soc/arm/gigadevice/
+        - scripts/west_commands/*/*gd32*
+    labels:
+        - "platform: GD32"
+    description: >-
+        GigaDevice GD32 SOCs, dts files and related drivers. Starter and eval
+        boards.
+
 Synopsys Platforms:
     status: maintained
     maintainers:
