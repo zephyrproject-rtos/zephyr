@@ -72,6 +72,11 @@ source "subsys/net/l2/ethernet/Kconfig"
 
 source "subsys/net/l2/ppp/Kconfig"
 
+config NET_L2_PHY_IEEE802154
+	bool
+	help
+	  A common config for all IEEE 802.15.4 based L2 implementations.
+
 source "subsys/net/l2/ieee802154/Kconfig"
 
 source "subsys/net/l2/openthread/Kconfig"
