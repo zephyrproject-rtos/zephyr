@@ -523,7 +523,6 @@ static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	if (stream->ops != NULL && stream->ops->disabled != NULL) {
 		stream->ops->disabled(stream);
 	}
-	bt_audio_stream_stop(stream);
 }
 
 static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
