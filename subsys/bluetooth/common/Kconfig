@@ -6,7 +6,7 @@
 
 config BT_BUF_ACL_TX_SIZE
 	int "Maximum supported ACL size for outgoing data"
-	range 27 251
+	range 27 65535
 	default 27
 	help
 	  Maximum supported ACL size of data packets sent from the Host to the
@@ -17,7 +17,7 @@ config BT_BUF_ACL_TX_SIZE
 	  Controller.
 	  In a Host-only build the Host will read the maximum ACL size supported
 	  by the Controller and use the smallest value supported by both the
-	  Bost and the Controller.
+	  Host and the Controller.
 	  The Host supports sending of larger L2CAP PDUs than the ACL size and
 	  will fragment L2CAP PDUs into ACL data packets.
 	  The Controller will return this value in the HCI LE Read Buffer
@@ -26,8 +26,6 @@ config BT_BUF_ACL_TX_SIZE
 	  fragmentation before transmitting the packet(s) on air.
 	  If this value is less than the effective Link Layer transmission size
 	  then this will restrict the maximum Link Layer transmission size.
-	  Maximum is set to 251 due to implementation limitations (use of
-	  uint8_t for length field in PDU buffer structure).
 
 config BT_BUF_ACL_TX_COUNT
 	int "Number of outgoing ACL data buffers"
@@ -54,9 +52,9 @@ config BT_BUF_ACL_RX_SIZE
 	default 70 if BT_EATT
 	default 69 if BT_SMP
 	default 27
-	range 70 1300 if BT_EATT
-	range 69 1300 if BT_SMP
-	range 27 1300
+	range 70 65535 if BT_EATT
+	range 69 65535 if BT_SMP
+	range 27 65535
 	help
 	  Maximum support ACL size of data packets sent from the Controller to
 	  the Host. This value does not include the HCI ACL header.
