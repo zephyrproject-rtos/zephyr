@@ -1407,8 +1407,10 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 
 bool bt_audio_ep_is_broadcast(const struct bt_audio_ep *ep)
 {
-	return bt_audio_ep_is_broadcast_src(ep) ||
-	       bt_audio_ep_is_broadcast_snk(ep);
+	return (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
+		bt_audio_ep_is_broadcast_src(ep)) ||
+	       (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK) &&
+		bt_audio_ep_is_broadcast_snk(ep));
 }
 
 void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_stream *stream)
