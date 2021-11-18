@@ -8,8 +8,6 @@
 #include <ztest.h>
 #include "kconfig.h"
 
-/* Kconfig Cheats */
-
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 #include <sys/slist.h>
