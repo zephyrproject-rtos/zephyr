@@ -11,7 +11,19 @@
 
 #include "memc_mcux_flexspi.h"
 
-LOG_MODULE_DECLARE(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
+
+/*
+ * NOTE: If CONFIG_FLASH_MCUX_FLEXSPI_XIP is selected, Any external functions
+ * called while interacting with the flexspi MUST be relocated to SRAM or ITCM
+ * at runtime, so that the chip does not access the flexspi to read program
+ * instructions while it is being written to
+ */
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_XIP) && (CONFIG_MEMC_LOG_LEVEL > 0)
+#warning "Enabling memc driver logging and XIP mode simultaneously can cause \
+	read-while-write hazards. This configuration is not recommended."
+#endif
+
+LOG_MODULE_REGISTER(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
 
 enum {
 	READ_DATA,
