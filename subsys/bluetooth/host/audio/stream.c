@@ -109,12 +109,9 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 		return -EINVAL;
 	}
 
-	if (bt_audio_ep_is_broadcast_src(ep)) {
-		BT_DBG("Cannot use %s to reconfigure broadcast source streams",
+	if (bt_audio_ep_is_broadcast(ep)) {
+		BT_DBG("Cannot use %s to reconfigure broadcast streams",
 		       __func__);
-		return -EINVAL;
-	} else if (bt_audio_ep_is_broadcast_snk(ep)) {
-		BT_DBG("Cannot reconfigure broadcast sink streams");
 		return -EINVAL;
 	}
 
@@ -666,12 +663,8 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 		return -EINVAL;
 	}
 
-	if (bt_audio_ep_is_broadcast_src(stream->ep)) {
-		BT_DBG("Cannot use %s to start broadcast source streams",
-		       __func__);
-		return -EINVAL;
-	} else if (bt_audio_ep_is_broadcast_snk(stream->ep)) {
-		BT_DBG("Cannot start broadcast sink streams");
+	if (bt_audio_ep_is_broadcast(stream->ep)) {
+		BT_DBG("Cannot use %s to start broadcast streams", __func__);
 		return -EINVAL;
 	}
 
@@ -710,13 +703,8 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 
 	ep = stream->ep;
 
-	if (bt_audio_ep_is_broadcast_src(stream->ep)) {
-		BT_DBG("Cannot use %s to stop broadcast source streams",
-		       __func__);
-		return -EINVAL;
-	} else if (bt_audio_ep_is_broadcast_snk(stream->ep)) {
-		BT_DBG("Cannot use %s to stop broadcast sink streams",
-		       __func__);
+	if (bt_audio_ep_is_broadcast(ep)) {
+		BT_DBG("Cannot use %s to stop broadcast streams", __func__);
 		return -EINVAL;
 	}
 
@@ -765,12 +753,8 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 		BT_DBG("Invalid stream");
 		return -EINVAL;
 	}
-
-	if (bt_audio_ep_is_broadcast_src(stream->ep)) {
-		BT_DBG("Cannot release a broadcast source");
-		return -EINVAL;
-	} else if (bt_audio_ep_is_broadcast_snk(stream->ep)) {
-		BT_DBG("Cannot release a broadcast sink");
+	if (bt_audio_ep_is_broadcast(stream->ep)) {
+		BT_DBG("Cannot use %s to release broadcast streams", __func__);
 		return -EINVAL;
 	}
 
@@ -937,10 +921,12 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf)
 		return -EBADMSG;
 	}
 
-	if (bt_audio_ep_is_broadcast_snk(stream->ep)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK) &&
+	    bt_audio_ep_is_broadcast_snk(stream->ep)) {
 		BT_DBG("Cannot send on a broadcast sink stream");
 		return -EINVAL;
-	} else if (!bt_audio_ep_is_broadcast_src(stream->ep)) {
+	} else if (!(IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
+		     bt_audio_ep_is_broadcast_src(stream->ep))) {
 		switch (stream->ep->status.state) {
 		/* or 0x04 (Streaming) */
 		case BT_AUDIO_EP_STATE_STREAMING:
