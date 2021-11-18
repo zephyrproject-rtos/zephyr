@@ -26,6 +26,7 @@
 #include "host/ecc.h"
 #include "prov.h"
 #include "proxy.h"
+#include "pb_gatt_srv.h"
 
 /* Window and Interval are equal for continuous scanning */
 #define MESH_SCAN_INTERVAL    BT_MESH_ADV_SCAN_UNIT(BT_MESH_SCAN_INTERVAL_MS)
@@ -193,6 +194,21 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 	net_buf_put(&bt_mesh_adv_queue, net_buf_ref(buf));
 	bt_mesh_adv_buf_local_ready();
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
+}
+
+int bt_mesh_adv_gatt_send(void)
+{
+	if (bt_mesh_is_provisioned()) {
+		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+			BT_DBG("Proxy Advertising");
+			return bt_mesh_proxy_adv_start();
+		}
+	} else if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
+		BT_DBG("PB-GATT Advertising");
+		return bt_mesh_pb_gatt_adv_start();
+	}
+
+	return -ENOTSUP;
 }
 
 static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
