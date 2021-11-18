@@ -47,7 +47,7 @@ async fn main() -> io::Result<()> {
         .map_err(|err| io::Error::new(io::ErrorKind::InvalidInput, err))?;
     let acceptor = TlsAcceptor::from(Arc::new(config));
 
-    const PORT: &'static str = "0.0.0.0:8443";
+    const PORT: &'static str = "192.0.2.2:8443";
     let listener = TcpListener::bind(PORT).await?;
     println!("Listening on {}", PORT);
 

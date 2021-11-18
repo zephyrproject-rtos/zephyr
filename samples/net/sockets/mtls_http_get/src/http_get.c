@@ -56,11 +56,11 @@ void main(void)
 	int st, sock;
 
 	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
-			   ca_certificate, sizeof(ca_certificate));
-	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_SERVER_CERTIFICATE,
-			   self_certificate, sizeof(self_certificate));
-	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
-			   self_key, sizeof(self_key));
+			   ca_crt, ca_crt_len);
+	// tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	// 		   client_crt, client_crt_len);
+	// tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
+	// 		   client_key, client_key_len);
 
 	printf("Preparing HTTP GET request for https://" HTTP_HOST
 	       ":" HTTP_PORT HTTP_PATH "\n");

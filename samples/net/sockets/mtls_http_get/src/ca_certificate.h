@@ -13,8 +13,11 @@
  * certificate in PEM format, you can enable support for it in Kconfig.
  */
 
-static const unsigned char ca_certificate[] = "../server/ca.crt";
-static const unsigned char self_certificate[] = "../server/client.crt";
-static const unsigned char self_key[] = "../server/client.key";
+extern const unsigned char ca_crt[];
+extern const unsigned int ca_crt_len;
+extern const unsigned char client_crt[];
+extern const unsigned int client_crt_len;
+extern const unsigned char client_key[];
+extern const unsigned int client_key_len;
 
 #endif /* __CA_CERTIFICATE_H__ */
