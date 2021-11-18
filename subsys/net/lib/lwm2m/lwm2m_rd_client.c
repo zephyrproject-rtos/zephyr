@@ -888,10 +888,20 @@ static int sm_do_deregister(void)
 
 	LOG_INF("Deregister from '%s'", log_strdup(client.server_ep));
 
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
-		goto cleanup;
+	if (client.ctx->sock_fd > -1) {
+		ret = lwm2m_send_message(msg);
+		if (ret < 0) {
+			LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
+			goto cleanup;
+		}
+	} else {
+		/* Socket is not available so the deregistration message cannot be sent
+		 * so consider this a "successful" deregistration so that the LWM2M engine
+		 * can advance further and trigger disconnection callback. */
+		LOG_ERR("Socket is not available to send deregistration.");
+		lwm2m_reset_message(msg, true);
+		set_sm_state(ENGINE_DEREGISTERED);
+		return 0;
 	}
 
 	set_sm_state(ENGINE_DEREGISTER_SENT);
