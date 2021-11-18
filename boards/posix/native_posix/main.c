@@ -30,6 +30,8 @@
 #include "hw_models_top.h"
 #include <stdlib.h>
 #include <sys/util.h>
+#include <sys/__assert.h>
+#include <toolchain/common.h>
 #include "cmdline.h"
 
 void posix_exit(int exit_code)
@@ -49,11 +51,44 @@ void posix_exit(int exit_code)
 }
 
 /**
+ * @brief @ref native-task comparitor for use with @ref qsort
+ *
+ * @param a pointer to a @ref native_task
+ * @param b pointer to a @ref native_task
+ * @return -1, 0, or 1 if @a a is less-than, equal-to, or greater-than @a b
+ */
+static int compare_native_tasks(const void *a, const void *b)
+{
+	const struct native_task *aa = (const struct native_task *)a;
+	const struct native_task *bb = (const struct native_task *)b;
+
+	if (aa->native_level < bb->native_level) {
+		return -1;
+	} else if (aa->native_level > bb->native_level) {
+		return 1;
+	}
+
+	if (aa->priority < bb->priority) {
+		return -1;
+	} else if (aa->priority > bb->priority) {
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
  * This is the actual main for the Linux process,
  * the Zephyr application main is renamed something else thru a define.
  */
 int main(int argc, char *argv[])
 {
+	/* declare compatible _start[] and _end[] */
+	STRUCT_SECTION_FOREACH(native_task, it);
+
+	qsort(_native_task_list_start, (_native_task_list_end - _native_task_list_start),
+	      sizeof(struct native_task), compare_native_tasks);
+
 	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 
 	native_handle_cmd_line(argc, argv);

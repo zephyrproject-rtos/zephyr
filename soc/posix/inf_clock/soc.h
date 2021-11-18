@@ -15,6 +15,12 @@
 extern "C" {
 #endif
 
+struct native_task {
+	void (*task_function)(void);
+	int native_level;
+	int priority;
+};
+
 void posix_soc_clean_up(void);
 
 /**
@@ -42,11 +48,13 @@ void posix_soc_clean_up(void);
  * Note that for the PRE and ON_EXIT levels neither the Zephyr kernel or
  * any Zephyr thread are running.
  */
-#define NATIVE_TASK(fn, level, prio)	\
-	static void (*_CONCAT(__native_task_, fn)) __used	\
-	__attribute__((__section__(".native_" #level STRINGIFY(prio) "_task")))\
-	= fn
-
+#define NATIVE_TASK(fn, level, prio)                                                               \
+	BUILD_ASSERT(prio >= 0, "invalid native task priority");                                   \
+	STRUCT_SECTION_ITERABLE(native_task, fn##_task) = {                                        \
+		.task_function = fn,                                                               \
+		.native_level = _CONCAT(_CONCAT(_NATIVE_, level), _LEVEL),                         \
+		.priority = prio,                                                                  \
+	}
 
 #define _NATIVE_PRE_BOOT_1_LEVEL	0
 #define _NATIVE_PRE_BOOT_2_LEVEL	1

@@ -101,6 +101,10 @@
 		__app_shmem_regions_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+#if defined(CONFIG_ARCH_POSIX)
+	ITERABLE_SECTION_RAM(native_task, 4)
+#endif
+
 #if defined(CONFIG_NET_SOCKETS)
 	ITERABLE_SECTION_ROM(net_socket_register, 4)
 #endif

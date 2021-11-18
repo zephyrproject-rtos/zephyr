@@ -26,6 +26,7 @@
 
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <arch/posix/posix_soc_if.h>
 #include "posix_soc.h"
@@ -226,28 +227,10 @@ void posix_boot_cpu(void)
  */
 void run_native_tasks(int level)
 {
-	extern void (*__native_PRE_BOOT_1_tasks_start[])(void);
-	extern void (*__native_PRE_BOOT_2_tasks_start[])(void);
-	extern void (*__native_PRE_BOOT_3_tasks_start[])(void);
-	extern void (*__native_FIRST_SLEEP_tasks_start[])(void);
-	extern void (*__native_ON_EXIT_tasks_start[])(void);
-	extern void (*__native_tasks_end[])(void);
-
-	static void (**native_pre_tasks[])(void) = {
-		__native_PRE_BOOT_1_tasks_start,
-		__native_PRE_BOOT_2_tasks_start,
-		__native_PRE_BOOT_3_tasks_start,
-		__native_FIRST_SLEEP_tasks_start,
-		__native_ON_EXIT_tasks_start,
-		__native_tasks_end
-	};
-
-	void (**fptr)(void);
-
-	for (fptr = native_pre_tasks[level]; fptr < native_pre_tasks[level+1];
-		fptr++) {
-		if (*fptr) { /* LCOV_EXCL_BR_LINE */
-			(*fptr)();
+	STRUCT_SECTION_FOREACH(native_task, it)
+	{
+		if (it->native_level == level) {
+			it->task_function();
 		}
 	}
 }
