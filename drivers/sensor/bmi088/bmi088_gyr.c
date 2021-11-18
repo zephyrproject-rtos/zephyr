@@ -9,7 +9,7 @@
 
 #define DT_DRV_COMPAT bosch_bmi088
 
-#include "bmi088.h"
+#include "bmi088_gyr.h"
 
 #include <init.h>
 #include <drivers/sensor.h>
