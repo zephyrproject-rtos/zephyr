@@ -73,6 +73,8 @@ void bt_mesh_adv_buf_local_ready(void);
 
 void bt_mesh_adv_buf_relay_ready(void);
 
+int bt_mesh_adv_gatt_send(void);
+
 int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len);
