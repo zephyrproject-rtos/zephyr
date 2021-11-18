@@ -124,6 +124,9 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	lll->latency_event = 0U;
 	lll->window_widening_prepare_us = 0U;
 	lll->window_widening_event_us = 0U;
+	lll->ctrl = 0U;
+	lll->cssn_curr = 0U;
+	lll->cssn_next = 0U;
 
 	/* Initialize ULL and LLL headers */
 	ull_hdr_init(&sync_iso->ull);
