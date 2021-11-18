@@ -176,6 +176,7 @@
 			reg = <0x6001f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			label = "WDT_0";
 			status = "disabled";
 		};
@@ -185,6 +186,7 @@
 			reg = <0x60020048 0x20>;
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			label = "WDT_1";
 			status = "disabled";
 		};
