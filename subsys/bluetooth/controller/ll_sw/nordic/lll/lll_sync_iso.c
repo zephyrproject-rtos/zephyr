@@ -470,20 +470,23 @@ static void isr_rx(void *param)
 		if (!lll->payload[payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
-			struct node_rx_ftr *ftr;
+			struct node_rx_iso_meta *iso_meta;
 
 			ull_pdu_rx_alloc();
 
 			node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_PDU;
 
-			ftr = &(node_rx->hdr.rx_ftr);
-			ftr->param = lll;
-			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
-						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
-			ftr->ticks_anchor = radio_tmr_start_get();
-			ftr->radio_end_us = radio_tmr_end_get() -
-					    radio_rx_chain_delay_get(lll->phy,
-								     PHY_FLAGS_S8);
+			iso_meta = &node_rx->hdr.rx_iso_meta;
+			iso_meta->payload_number = (lll->payload_count +
+						    (lll->ptc_curr *
+						     lll->pto) - 1U) /
+						   lll->bn;
+			iso_meta->timestamp =
+				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+				radio_tmr_aa_restore() - addr_us_get(lll->phy) +
+				(ceiling_fraction(lll->ptc_curr, lll->bn) *
+				 lll->iso_interval * CONN_INT_UNIT_US);
+			iso_meta->status = 0U;
 
 			lll->payload[payload_index] = node_rx;
 		}
