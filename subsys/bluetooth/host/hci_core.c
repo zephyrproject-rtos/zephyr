@@ -362,7 +362,7 @@ uint8_t bt_get_phy(uint8_t hci_phy)
 	}
 }
 
-#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_CONN_TX)
 static void hci_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
@@ -422,7 +422,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 		bt_conn_unref(conn);
 	}
 }
-#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
+#endif /* CONFIG_BT_CONN_TX */
 
 #if defined(CONFIG_BT_CONN)
 static void hci_acl(struct net_buf *buf)
@@ -3339,11 +3339,11 @@ static const struct event_handler prio_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_DISCONN_COMPLETE, hci_disconn_complete_prio,
 		      sizeof(struct bt_hci_evt_disconn_complete)),
 #endif /* CONFIG_BT_CONN */
-#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_CONN_TX)
 	EVENT_HANDLER(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 		      hci_num_completed_packets,
 		      sizeof(struct bt_hci_evt_num_completed_packets)),
-#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
+#endif /* CONFIG_BT_CONN_TX */
 };
 
 void hci_event_prio(struct net_buf *buf)
