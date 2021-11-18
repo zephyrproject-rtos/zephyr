@@ -196,6 +196,7 @@ Bluetooth controller:
         - carlescufi
         - thoh-ot
         - kruithofa
+        - ppryga
     files:
         - subsys/bluetooth/controller/
     labels:
