@@ -229,7 +229,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		if (reserve < latency_pdu) {
 			lll_adv_iso->ptc = ((latency_pdu - reserve) /
 					    (lll_adv_iso->sub_interval *
-					     lll_adv_iso->bn)) *
+					     lll_adv_iso->bn *
+					     lll_adv_iso->num_bis)) *
 					   lll_adv_iso->bn;
 		} else {
 			lll_adv_iso->ptc = 0U;
@@ -247,7 +248,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		if (reserve < latency_pdu) {
 			lll_adv_iso->ptc = ((latency_pdu - reserve) /
 					    (lll_adv_iso->sub_interval *
-					     lll_adv_iso->bn)) *
+					     lll_adv_iso->bn *
+					     lll_adv_iso->num_bis)) *
 					   lll_adv_iso->bn;
 		} else {
 			lll_adv_iso->ptc = 0U;
