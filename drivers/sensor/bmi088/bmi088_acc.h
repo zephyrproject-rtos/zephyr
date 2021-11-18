@@ -10,7 +10,6 @@
 #include <drivers/spi.h>
 #include <sys/util.h>
 
-// acc register
 
 // read-only
 #define BMI088_REG_CHIPID    0x00
@@ -18,24 +17,22 @@
 #define BMI088_ACC_STATUS   0x03
 
 // write-only
-#define BMI088_SOFTRESET  0x7E
+#define BMI088_ACC_SOFTRESET  0x7E
 
 // read/write
 #define ACC_RANGE      0x41
 #define ACC_PWR_CTRL    0x7D
 
 //other defines
+#define BMI088_ACC_REG_READ BIT(7)  // Indicates a read operation; bit 7 is clear on write s
+#define BMI088_ACC_REG_MASK 0x7f // Mask lower 7 bits for register addresses
+#define BMI088_ACC_STATUS_MASK BIT(7) // Bit 7 is the
 
+#define BMI088_ACC_CHIP_ID 0x1E  // Reset value of BMI088_REG_CHIPID
 
-#define BMI088_REG_READ BIT(7)  // Indicates a read operation; bit 7 is clear on write s
-#define BMI088_REG_MASK 0x7f // Mask lower 7 bits for register addresses
-#define BMI088_STATUS_MASK BIT(7) // Bit 7 is the
+#define BMI088_ACC_SR_VAL   0xB6    // Value for triggering a Soft-Reset
 
-#define BMI088_CHIP_ID 0x1E  // Reset value of BMI088_REG_CHIPID
-
-#define BMI088_SR_VAL   0xB6    // Value for triggering a Soft-Reset
-
-#define BMI088_DEFAULT_RANGE    0x03    // Largest possible range for acc (+- 24g)
+#define BMI088_ACC_DEFAULT_RANGE    0x03    // Largest possible range for acc (+- 24g)
 
 #define ACC_NORMAL_MODE     0x04    // Value for switching to normal mode
 
@@ -45,13 +42,8 @@
 
 // end of default settings
 
-struct bmi088_cfg {
+struct bmi088_acc_cfg {
     struct spi_dt_spec bus;
-};
-
-struct bmi088_range {
-    uint16_t range;
-    uint8_t reg_val;
 };
 
 // Each sample has X, Y and Z, each with lsb and msb Bytes
@@ -59,16 +51,16 @@ struct bmi088_acc_sample {
     uint16_t acc[BMI088_AXES];
 };
 
-struct bmi088_data {
+struct bmi088_acc_data {
     const struct device *bus;
     struct bmi088_acc_sample sample;
 };
 
-static inline struct bmi088_data *to_data(const struct device *dev) {
+static inline struct bmi088_acc_data *to_data(const struct device *dev) {
     return dev->data;
 }
 
-static inline const struct bmi088_cfg *to_config(const struct device *dev) {
+static inline const struct bmi088_acc_cfg *to_config(const struct device *dev) {
     return dev->config;
 }
 
@@ -81,9 +73,9 @@ static inline const struct bmi088_cfg *to_config(const struct device *dev) {
  * @param len Number of bytes to read
  * @return 0 on success
  */
-int bmi088_read(const struct device *dev, uint8_t reg_addr, void *data, uint8_t len);
+int bmi088_acc_read(const struct device *dev, uint8_t reg_addr, void *data, uint8_t len);
 
-int bmi088_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte);
+int bmi088_acc_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte);
 
 /**
  * Write multiple bytes to the BMI088
@@ -94,9 +86,9 @@ int bmi088_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte);
  * @param len Number of bytes to write
  * @return 0 on success
  */
-int bmi088_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len);
+int bmi088_acc_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len);
 
-int bmi088_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte);
+int bmi088_acc_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte);
 
 /**
  * Update some bits in a BMI088 register without changing the other bits.
@@ -110,11 +102,11 @@ int bmi088_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte);
  * @param val Value to set the bits to
  * @return
  */
-int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val);
+int bmi088_acc_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val);
 
 
-struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale);
+struct sensor_value bmi088_acc_to_fixed_point(int16_t raw_val, uint16_t scale);
 
-struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3]);
+struct sensor_value bmi088_acc_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3]);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_ */
