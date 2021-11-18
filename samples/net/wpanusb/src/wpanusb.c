@@ -28,7 +28,11 @@ LOG_MODULE_REGISTER(wpanusb);
 #define WPANUSB_PROTOCOL	0
 
 /* Max packet size for endpoints */
+#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#define WPANUSB_BULK_EP_MPS		512
+#else
 #define WPANUSB_BULK_EP_MPS		64
+#endif
 
 #define WPANUSB_IN_EP_IDX		0
 
