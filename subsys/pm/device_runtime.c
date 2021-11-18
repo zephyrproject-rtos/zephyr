@@ -28,12 +28,17 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
  * @retval -ENOSTUP If runtime PM is not enabled for the device.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
+ * @retval -EPERM If the device pm onwership belongs to the application.
  * @retval -errno Other negative errno, result of the action callback.
  */
 static int runtime_suspend(const struct device *dev, bool async)
 {
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
+
+	if (pm_device_ownership_check(dev)) {
+		return -EPERM;
+	}
 
 	if (k_is_pre_kernel()) {
 		async = false;
@@ -104,6 +109,11 @@ int pm_device_runtime_get(const struct device *dev)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_get, dev);
 
+	if (pm_device_ownership_check(dev)) {
+		ret = -EPERM;
+		goto end;
+	}
+
 	if (!k_is_pre_kernel()) {
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
@@ -139,6 +149,7 @@ unlock:
 		k_mutex_unlock(&pm->lock);
 	}
 
+end:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_get, dev, ret);
 
 	return ret;
@@ -172,6 +183,10 @@ void pm_device_runtime_enable(const struct device *dev)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_enable, dev);
 
+	if (pm_device_ownership_check(dev)) {
+		goto end;
+	}
+
 	if (!k_is_pre_kernel()) {
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
@@ -194,6 +209,7 @@ unlock:
 		k_mutex_unlock(&pm->lock);
 	}
 
+end:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_enable, dev);
 }
 
@@ -203,6 +219,11 @@ int pm_device_runtime_disable(const struct device *dev)
 	struct pm_device *pm = dev->pm;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_disable, dev);
+
+	if (pm_device_ownership_check(dev)) {
+		ret = -EPERM;
+		goto end;
+	}
 
 	if (!k_is_pre_kernel()) {
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
@@ -237,6 +258,7 @@ unlock:
 		k_mutex_unlock(&pm->lock);
 	}
 
+end:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_disable, dev, ret);
 
 	return ret;

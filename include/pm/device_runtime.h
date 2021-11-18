@@ -42,6 +42,7 @@ void pm_device_runtime_enable(const struct device *dev);
  *
  * @retval 0 If the device runtime PM is disabled successfully.
  * @retval -ENOSYS If the functionality is not available.
+ * @retval -EPERM If the device pm onwership belongs to the application.
  * @retval -errno Other negative errno, result of resuming the device.
  */
 int pm_device_runtime_disable(const struct device *dev);
@@ -64,6 +65,7 @@ int pm_device_runtime_disable(const struct device *dev);
  * @retval 0 If the device has been resumed successfully.
  * @retval -ENOSTUP If runtime PM is not enabled for the device.
  * @retval -ENOSYS If the functionality is not available.
+ * @retval -EPERM If the device pm onwership belongs to the application.
  * @retval -errno Other negative errno, result of the PM action callback.
  */
 int pm_device_runtime_get(const struct device *dev);
@@ -85,6 +87,7 @@ int pm_device_runtime_get(const struct device *dev);
  * @retval -ENOSYS If the functionality is not available.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
+ * @retval -EPERM If the device pm onwership belongs to the application.
  * @retval -errno Other negative errno, result of the action callback.
  *
  * @see pm_device_runtime_put_async()
@@ -111,6 +114,7 @@ int pm_device_runtime_put(const struct device *dev);
  * @retval -ENOSYS If the functionality is not available.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
+ * @retval -EPERM If the device pm onwership belongs to the application.
  *
  * @see pm_device_runtime_put()
  */

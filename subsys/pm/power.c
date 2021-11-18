@@ -128,7 +128,8 @@ static int pm_suspend_devices(void)
 		 * runtime PM enabled.
 		 */
 		if (pm_device_is_busy(dev) || pm_device_wakeup_is_enabled(dev)
-				|| pm_device_runtime_is_enabled(dev)) {
+				|| pm_device_runtime_is_enabled(dev)
+				|| pm_device_ownership_check(dev)) {
 			continue;
 		}
 
