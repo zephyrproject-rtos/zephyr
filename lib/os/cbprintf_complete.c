@@ -317,10 +317,10 @@ struct conversion {
  */
 static size_t extract_decimal(const char **str)
 {
-	const char *sp = *str;
+	const unsigned char *sp = *str;
 	size_t val = 0;
 
-	while (isdigit((int)(unsigned char)*sp)) {
+	while (isdigit((int)*sp)) {
 		val = 10U * val + *sp++ - '0';
 	}
 	*str = sp;
@@ -895,7 +895,7 @@ static char *encode_float(double value,
 	/* Extract the non-negative offset exponent and fraction.  Record
 	 * whether the value is subnormal.
 	 */
-	char c = conv->specifier;
+	unsigned char c = conv->specifier;
 	int expo = (u.u64 >> FRACTION_BITS) & BIT_MASK(EXPONENT_BITS);
 	uint64_t fract = u.u64 & BIT64_MASK(FRACTION_BITS);
 	bool is_subnormal = (expo == 0) && (fract != 0);
@@ -905,7 +905,7 @@ static char *encode_float(double value,
 	 */
 	if (expo == BIT_MASK(EXPONENT_BITS)) {
 		if (fract == 0) {
-			if (isupper((unsigned char)c)) {
+			if (isupper(c)) {
 				*buf++ = 'I';
 				*buf++ = 'N';
 				*buf++ = 'F';
@@ -915,7 +915,7 @@ static char *encode_float(double value,
 				*buf++ = 'f';
 			}
 		} else {
-			if (isupper((unsigned char)c)) {
+			if (isupper(c)) {
 				*buf++ = 'N';
 				*buf++ = 'A';
 				*buf++ = 'N';
@@ -997,7 +997,7 @@ static char *encode_float(double value,
 		 * for a and X for A.
 		 */
 		struct conversion aconv = {
-			.specifier = isupper((unsigned char)c) ? 'X' : 'x',
+			.specifier = isupper(c) ? 'X' : 'x',
 		};
 		const char *spe = *bpe;
 		char *sp = bps + (spe - bps);
@@ -1763,7 +1763,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		}
 
 		if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT) && conv->pad_fp) {
-			const char *cp = bps;
+			const unsigned char *cp = bps;
 
 			if (conv->specifier_a) {
 				/* Only padding is pre_exp */
@@ -1771,7 +1771,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 					OUTC(*cp++);
 				}
 			} else {
-				while (isdigit((unsigned char)*cp)) {
+				while (isdigit(*cp)) {
 					OUTC(*cp++);
 				}
 
@@ -1791,7 +1791,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 						OUTC('0');
 					}
 				}
-				while (isdigit((unsigned char)*cp)) {
+				while (isdigit(*cp)) {
 					OUTC(*cp++);
 				}
 			}

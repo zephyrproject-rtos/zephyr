@@ -494,7 +494,7 @@ static inline void assert_region_page_aligned(void *addr, size_t size)
 __pinned_func
 static char get_entry_code(pentry_t value)
 {
-	char ret;
+	unsigned char ret;
 
 	if (value == 0U) {
 		/* Unmapped entry */
@@ -521,7 +521,7 @@ static char get_entry_code(pentry_t value)
 
 		if ((value & MMU_US) != 0U) {
 			/* Uppercase indicates user mode access */
-			ret = toupper((unsigned char)ret);
+			ret = toupper(ret);
 		}
 	}
 

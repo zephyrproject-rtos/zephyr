@@ -28,12 +28,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-int atoi(const char *s)
+int atoi(const char *str)
 {
 	int n = 0;
 	int neg = 0;
+	unsigned char *s = str;
 
-	while (isspace((unsigned char)*s)) {
+	while (isspace(*s)) {
 		s++;
 	}
 	switch (*s) {
@@ -51,7 +52,7 @@ int atoi(const char *s)
 		break;
 	}
 	/* Compute n as a negative number to avoid overflow on INT_MIN */
-	while (isdigit((unsigned char)*s)) {
+	while (isdigit(*s)) {
 		n = 10*n - (*s++ - '0');
 	}
 	return neg ? n : -n;
