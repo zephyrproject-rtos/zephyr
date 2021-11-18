@@ -241,3 +241,33 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 	return atomic_test_bit(&pm->flags,
 			       PM_DEVICE_FLAG_WS_CAPABLE);
 }
+
+void pm_device_state_lock(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	if (pm != NULL) {
+		atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_STATE_LOCKED);
+	}
+}
+
+void pm_device_state_unlock(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	if (pm != NULL) {
+		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_STATE_LOCKED);
+	}
+}
+
+bool pm_device_state_is_locked(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	if (pm == NULL) {
+		return false;
+	}
+
+	return atomic_test_bit(&pm->flags,
+			       PM_DEVICE_FLAG_STATE_LOCKED);
+}
