@@ -228,5 +228,5 @@ void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role)
 	bt_conn_unref(role->conn);
 	role->conn = NULL;
 
-	bt_mesh_adv_update();
+	bt_mesh_adv_gatt_update();
 }

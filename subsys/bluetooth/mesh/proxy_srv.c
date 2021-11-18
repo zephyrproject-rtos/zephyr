@@ -393,7 +393,7 @@ int bt_mesh_proxy_identity_enable(void)
 	}
 
 	if (bt_mesh_subnet_foreach(node_id_start)) {
-		bt_mesh_adv_update();
+		bt_mesh_adv_gatt_update();
 	}
 
 	return 0;
@@ -455,8 +455,8 @@ static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	memcpy(proxy_svc_data + 3, tmp + 8, 8);
 
-	err = bt_mesh_adv_start(&fast_adv_param, duration, node_id_ad,
-				ARRAY_SIZE(node_id_ad), NULL, 0);
+	err = bt_mesh_adv_gatt_start(&fast_adv_param, duration, node_id_ad,
+				     ARRAY_SIZE(node_id_ad), NULL, 0);
 	if (err) {
 		BT_WARN("Failed to advertise using Node ID (err %d)", err);
 		return err;
@@ -482,8 +482,8 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	memcpy(proxy_svc_data + 3, sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8);
 
-	err = bt_mesh_adv_start(&slow_adv_param, duration, net_id_ad,
-				ARRAY_SIZE(net_id_ad), NULL, 0);
+	err = bt_mesh_adv_gatt_start(&slow_adv_param, duration, net_id_ad,
+				     ARRAY_SIZE(net_id_ad), NULL, 0);
 	if (err) {
 		BT_WARN("Failed to advertise using Network ID (err %d)", err);
 		return err;
@@ -877,7 +877,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 
 	/* Try to re-enable advertising in case it's possible */
 	if (conn_count < CONFIG_BT_MAX_CONN) {
-		bt_mesh_adv_update();
+		bt_mesh_adv_gatt_update();
 	}
 }
 

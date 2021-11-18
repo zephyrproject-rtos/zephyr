@@ -57,7 +57,7 @@ struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout);
 
 struct net_buf *bt_mesh_adv_buf_relay_get(k_timeout_t timeout);
 
-void bt_mesh_adv_update(void);
+void bt_mesh_adv_gatt_update(void);
 
 void bt_mesh_adv_buf_get_cancel(void);
 
@@ -73,9 +73,9 @@ void bt_mesh_adv_buf_local_ready(void);
 
 void bt_mesh_adv_buf_relay_ready(void);
 
-int bt_mesh_adv_start(const struct bt_le_adv_param *param, int32_t duration,
-		      const struct bt_data *ad, size_t ad_len,
-		      const struct bt_data *sd, size_t sd_len);
+int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration,
+			   const struct bt_data *ad, size_t ad_len,
+			   const struct bt_data *sd, size_t sd_len);
 
 static inline void bt_mesh_adv_send_start(uint16_t duration, int err,
 					  struct bt_mesh_adv *adv)

@@ -303,7 +303,7 @@ static bool schedule_send(struct ext_adv *adv)
 	return true;
 }
 
-void bt_mesh_adv_update(void)
+void bt_mesh_adv_gatt_update(void)
 {
 	(void)schedule_send(BT_MESH_ADV_EXT_GATT_SEPARATE_INS);
 }
@@ -435,9 +435,9 @@ int bt_mesh_adv_enable(void)
 	return 0;
 }
 
-int bt_mesh_adv_start(const struct bt_le_adv_param *param, int32_t duration,
-		      const struct bt_data *ad, size_t ad_len,
-		      const struct bt_data *sd, size_t sd_len)
+int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration,
+			   const struct bt_data *ad, size_t ad_len,
+			   const struct bt_data *sd, size_t sd_len)
 {
 	struct ext_adv *adv = BT_MESH_ADV_EXT_GATT_SEPARATE_INS;
 	struct bt_le_ext_adv_start_param start = {
