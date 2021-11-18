@@ -135,7 +135,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 			while (!buf) {
 
 				/* Adv timeout may be set by a call from proxy
-				 * to bt_mesh_adv_start:
+				 * to bt_mesh_adv_gatt_start:
 				 */
 				adv_timeout = SYS_FOREVER_MS;
 				if (bt_mesh_is_provisioned()) {
@@ -182,7 +182,7 @@ void bt_mesh_adv_buf_relay_ready(void)
 	/* Will be handled automatically */
 }
 
-void bt_mesh_adv_update(void)
+void bt_mesh_adv_gatt_update(void)
 {
 	bt_mesh_adv_buf_get_cancel();
 }
@@ -202,9 +202,9 @@ int bt_mesh_adv_enable(void)
 	return 0;
 }
 
-int bt_mesh_adv_start(const struct bt_le_adv_param *param, int32_t duration,
-		      const struct bt_data *ad, size_t ad_len,
-		      const struct bt_data *sd, size_t sd_len)
+int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration,
+			   const struct bt_data *ad, size_t ad_len,
+			   const struct bt_data *sd, size_t sd_len)
 {
 	adv_timeout = duration;
 	return bt_le_adv_start(param, ad, ad_len, sd, sd_len);
