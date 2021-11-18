@@ -467,8 +467,6 @@ static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	if (stream->ops != NULL && stream->ops->enabled != NULL) {
 		stream->ops->enabled(stream);
 	}
-
-	(void)bt_audio_stream_start(stream);
 }
 
 static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
