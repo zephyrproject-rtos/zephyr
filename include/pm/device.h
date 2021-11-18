@@ -36,6 +36,11 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_WS_CAPABLE,
 	/** Indicates if the device is being used as wakeup source. */
 	PM_DEVICE_FLAG_WS_ENABLED,
+	/**
+	 * Indicates if the device power management ownership belongs to
+	 * the application.
+	 */
+	PM_DEVICE_FLAG_APP_OWNERSHIP,
 };
 
 /** @endcond */
@@ -261,6 +266,44 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  * @retval false If the device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
+
+/**
+ * @brief Take device power management ownership.
+ *
+ * This function transfer the power management ownership from the kernel
+ * (pm subsystem) to the application. If this operation successed, the power
+ * subsystem will not longer suspend / resume the device when the system goes
+ * to sleep nor allow device runtime operations.
+ *
+ * @note If the device is active this operation will fail.
+ *
+ * @param dev Device instance.
+ *
+ * @retval true If the application got the device pm ownership.
+ * @retval false If the application is in use by the system.
+ */
+bool pm_device_ownership_get(struct device *dev);
+
+/**
+ * @brief Transfer device power management ownership to the kernel.
+ *
+ * This operation transfers the device power management ownership from from
+ * the application to the kernel (power management subsystem).
+ *
+ * @param dev Device instance.
+ */
+void pm_device_ownership_put(struct device *dev);
+
+/**
+ * @brief Check if the device power management belongs to the application.
+ *
+ * @param dev Device instance.
+ *
+ * @retval true If the application owns the device pm
+ * @retval false If the device pm belongs to the kernel
+ */
+bool pm_device_ownership_check(const struct device *dev);
+
 #else
 static inline void pm_device_busy_set(const struct device *dev) {}
 static inline void pm_device_busy_clear(const struct device *dev) {}
@@ -275,6 +318,20 @@ static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
 	return false;
 }
 static inline bool pm_device_wakeup_is_capable(const struct device *dev)
+{
+	return false;
+}
+
+static inline bool pm_device_ownership_get(struct device *dev)
+{
+	return false;
+}
+
+static inline void pm_device_ownership_put(struct device *dev)
+{
+}
+
+static inline bool pm_device_ownership_check(const struct device *dev)
 {
 	return false;
 }

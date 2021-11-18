@@ -190,3 +190,32 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 	return atomic_test_bit(&pm->flags,
 			       PM_DEVICE_FLAG_WS_CAPABLE);
 }
+
+bool pm_device_ownership_get(struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	if (pm->state != PM_DEVICE_STATE_SUSPENDED) {
+		return false;
+	}
+
+	return atomic_test_and_set_bit(&pm->flags,
+			PM_DEVICE_FLAG_APP_OWNERSHIP);
+}
+
+void pm_device_ownership_put(struct device *dev)
+{
+	atomic_clear_bit(&(dev->pm->flags), PM_DEVICE_FLAG_APP_OWNERSHIP);
+}
+
+bool pm_device_ownership_check(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	if (pm->action_cb == NULL) {
+		return false;
+	}
+
+	return atomic_test_bit(&pm->flags,
+			       PM_DEVICE_FLAG_APP_OWNERSHIP);
+}
