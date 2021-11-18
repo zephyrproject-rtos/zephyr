@@ -298,6 +298,7 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @retval -EALREADY If device is already at the requested state.
  * @retval -EBUSY If device is changing its state.
  * @retval -ENOSYS If device does not support PM.
+ * @retval -EPERM If device has power state locked.
  * @retval Errno Other negative errno on failure.
  */
 __deprecated int pm_device_state_set(const struct device *dev,
@@ -417,6 +418,8 @@ bool pm_device_wakeup_is_capable(const struct device *dev);
  * locked the device power state will not be changed by
  * system power management or device runtime power
  * management until unlocked.
+ *
+ * @note The given device should not have device runtime enabled.
  *
  * @see pm_device_state_unlock
  *
