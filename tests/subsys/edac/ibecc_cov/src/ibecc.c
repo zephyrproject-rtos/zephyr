@@ -32,6 +32,18 @@ static void mock_sys_out8(uint8_t data, io_port_t port)
 
 static uint64_t mock_sys_read64(uint64_t addr)
 {
+#if defined(IBECC_ENABLED)
+	if (addr == IBECC_ECC_ERROR_LOG) {
+		TC_PRINT("Simulate sys_read64(IBECC_ECC_ERROR_LOG)=>1\n");
+		return 1;
+	}
+
+	if (addr == IBECC_PARITY_ERROR_LOG) {
+		TC_PRINT("Simulate sys_read64(IBECC_PARITY_ERROR_LOG)=>1\n");
+		return 1;
+	}
+#endif /* IBECC_ENABLED */
+
 	TC_PRINT("Simulate sys_read64(0x%llx)=>0\n", addr);
 
 	return 0;
@@ -87,6 +99,7 @@ static void test_static_functions(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_error error_data;
+	uint64_t log_data;
 	int ret;
 
 	TC_PRINT("Start testing static functions\n");
@@ -96,6 +109,20 @@ static void test_static_functions(void)
 	/* Catch failed PCIE probe case */
 	ret = edac_ibecc_init(dev);
 	zassert_equal(ret, -ENODEV, "");
+
+	ret = edac_ecc_error_log_get(dev, &log_data);
+	if (IS_ENABLED(IBECC_ENABLED)) {
+		zassert_equal(ret, 0, "");
+	} else {
+		zassert_equal(ret, -ENODATA, "");
+	}
+
+	ret = edac_parity_error_log_get(dev, &log_data);
+	if (IS_ENABLED(IBECC_ENABLED)) {
+		zassert_equal(ret, 0, "");
+	} else {
+		zassert_equal(ret, -ENODATA, "");
+	}
 
 	/* Catch passing zero errlog case */
 	parse_ecclog(dev, 0, &error_data);
