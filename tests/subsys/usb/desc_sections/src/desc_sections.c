@@ -33,7 +33,12 @@ struct usb_test_config {
 	struct usb_ep_descriptor if0_in2_ep;
 } __packed;
 
+#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#define TEST_BULK_EP_MPS		512
+#else
 #define TEST_BULK_EP_MPS		64
+#endif
+
 #define TEST_DESCRIPTOR_TABLE_SPAN	157
 
 #define INITIALIZER_IF							\
