@@ -6,6 +6,7 @@
 
 #include <device.h>
 #include <pm/device.h>
+#include <pm/device_runtime.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
@@ -33,6 +34,10 @@ int pm_device_state_set(const struct device *dev,
 
 	if (pm == NULL) {
 		return -ENOSYS;
+	}
+
+	if (pm_device_state_is_locked(dev)) {
+		return -EPERM;
 	}
 
 	switch (state) {
@@ -246,7 +251,7 @@ void pm_device_state_lock(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (pm != NULL) {
+	if ((pm != NULL) && !pm_device_runtime_is_enabled(dev)) {
 		atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_STATE_LOCKED);
 	}
 }

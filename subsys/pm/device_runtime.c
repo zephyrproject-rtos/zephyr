@@ -172,6 +172,10 @@ void pm_device_runtime_enable(const struct device *dev)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_enable, dev);
 
+	if (pm_device_state_is_locked(dev)) {
+		goto end;
+	}
+
 	if (!k_is_pre_kernel()) {
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
@@ -195,6 +199,7 @@ unlock:
 		k_mutex_unlock(&pm->lock);
 	}
 
+end:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_enable, dev);
 }
 
