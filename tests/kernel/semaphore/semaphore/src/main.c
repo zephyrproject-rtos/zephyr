@@ -1252,6 +1252,7 @@ static void thread_sem_reset_null(void *p1, void *p2, void *p3)
  *
  * @see k_sem_reset()
  */
+
 void test_sem_reset_null(void)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
