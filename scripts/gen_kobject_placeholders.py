@@ -85,7 +85,7 @@ def generate_linker_headers(obj):
             continue
 
         name = one_sect.name
-        if name in sections.keys():
+        if name in sections:
             # Need section alignment and size
             sections[name]['align'] = one_sect['sh_addralign']
             sections[name]['size'] = one_sect['sh_size']
