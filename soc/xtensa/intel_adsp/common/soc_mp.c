@@ -33,27 +33,14 @@ extern void z_sched_ipi(void);
 extern void z_smp_start_cpu(int id);
 extern void z_reinit_idle_thread(int i);
 
-/* ROM wake version parsed by ROM during core wake up. */
-#define IDC_ROM_WAKE_VERSION	0x2
-
-/* IDC message type. */
-#define IDC_TYPE_SHIFT		24
-#define IDC_TYPE_MASK		0x7f
-#define IDC_TYPE(x)		(((x) & IDC_TYPE_MASK) << IDC_TYPE_SHIFT)
-
-/* IDC message header. */
-#define IDC_HEADER_MASK		0xffffff
-#define IDC_HEADER(x)		((x) & IDC_HEADER_MASK)
-
-/* IDC message extension. */
-#define IDC_EXTENSION_MASK	0x3fffffff
-#define IDC_EXTENSION(x)	((x) & IDC_EXTENSION_MASK)
-
-/* IDC power up message. */
-#define IDC_MSG_POWER_UP	\
-	(IDC_TYPE(0x1) | IDC_HEADER(IDC_ROM_WAKE_VERSION))
-
-#define IDC_MSG_POWER_UP_EXT(x)	IDC_EXTENSION((x) >> 2)
+/* IDC power up message to the ROM firmware.  This isn't documented
+ * anywhere, it's basically just a magic number (except the high bit,
+ * which signals the hardware)
+ */
+#define IDC_MSG_POWER_UP				  \
+	(BIT(31) |     /* Latch interrupt in ITC write */ \
+	 (0x1 << 24) | /* "ROM control version" = 1 */	  \
+	 (0x2 << 0))   /* "Core wake version" = 2 */
 
 struct cpustart_rec {
 	uint32_t        cpu;
@@ -322,11 +309,15 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		CAVS_SHIM.clkctl |= BIT(16 + cpu_num);
 	}
 
-	/* Send power up message to the other core */
-	uint32_t ietc = IDC_MSG_POWER_UP_EXT((long) z_soc_mp_asm_entry);
+	/* Send power-up message to the other core.  Start address
+	 * gets passed via the IETC scratch register (only 30 bits
+	 * available, so it's sent shifted).  The write to ITC
+	 * triggers the interrupt, so that comes last.
+	 */
+	uint32_t ietc = ((long) z_soc_mp_asm_entry) >> 2;
 
 	IDC[curr_cpu].core[cpu_num].ietc = ietc;
-	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP | IPC_IDCITC_BUSY;
+	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP;
 
 #ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	/* Early DSPs have a ROM that actually receives the startup
