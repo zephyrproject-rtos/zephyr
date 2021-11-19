@@ -37,7 +37,7 @@ static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
 	NET_DBG("%p", entry);
 
 	if (pending) {
-		NET_DBG("Releasing pending pkt %p (ref %d)",
+		NET_DBG("Releasing pending pkt %p (ref %ld)",
 			entry->pending,
 			atomic_get(&entry->pending->atomic_ref) - 1);
 		net_pkt_unref(entry->pending);

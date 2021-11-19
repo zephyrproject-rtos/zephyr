@@ -151,7 +151,6 @@ ARM64 arch:
         - carlocaione
     collaborators:
         - npitre
-        - ioannisg
         - povergoing
     files:
         - arch/arm64/
@@ -197,6 +196,7 @@ Bluetooth controller:
         - carlescufi
         - thoh-ot
         - kruithofa
+        - ppryga
     files:
         - subsys/bluetooth/controller/
     labels:
@@ -278,7 +278,6 @@ CMSIS-DSP integration:
         - stephanosio
     collaborators:
         - galak
-        - ioannisg
     files:
         - modules/Kconfig.cmsis_dsp
         - tests/benchmarks/cmsis_dsp/
@@ -1049,7 +1048,6 @@ MAINTAINERS file:
     maintainers:
         - MaureenHelm
     collaborators:
-        - ioannisg
         - nashif
     files:
         - MAINTAINERS.yml
@@ -1501,7 +1499,7 @@ Microchip Platforms:
 nRF Platforms:
     status: maintained
     maintainers:
-        - ioannisg
+        - anangl
     files:
         - boards/arm/*nrf*/
         - drivers/*/*nrfx*.c
@@ -1607,7 +1605,7 @@ TF-M Integration:
     maintainers:
         - microbuilder
     collaborators:
-        - ioannisg
+        - SebastianBoe
     files:
         - samples/tfm_integration/
         - modules/trusted-firmware-m/
@@ -1620,6 +1618,7 @@ Tracing:
         - nashif
     collaborators:
         - teburd
+        - tleksell-pe
     files:
         - subsys/tracing/
         - include/tracing/
@@ -1650,7 +1649,6 @@ Userspace:
     maintainers:
         - dcpleung
     collaborators:
-        - ioannisg
         - enjiamai
     files:
         - doc/reference/usermode/kernelobjects.rst

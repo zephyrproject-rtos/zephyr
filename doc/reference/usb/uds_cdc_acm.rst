@@ -51,9 +51,6 @@ Console over CDC ACM UART
 With the CDC ACM UART node from above and ``zephyr,console`` property of the
 chosen node, we can describe that CDC ACM UART is to be used with the console.
 A similar overlay file is used by :ref:`cdc-acm-console`.
-If USB device support is enabled in the application, as in the console sample,
-:kconfig:`CONFIG_USB_UART_CONSOLE` must be enabled,
-which does nothing but change the initialization time of the console driver.
 
 .. code-block:: devicetree
 

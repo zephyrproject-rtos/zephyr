@@ -1,0 +1,11 @@
+# Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_ITE_IT8XXX2
+	bool "ITE IT8XXX2 UART driver"
+	help
+	  IT8XXX2 uses shared ns16550.c driver which does not
+	  provide a power management callback, so create driver
+	  to handle IT8XXX2 specific UART features. In addition
+	  to use pm_action_cb, we also need to make some setting
+	  at uart_it8xxx2_init.

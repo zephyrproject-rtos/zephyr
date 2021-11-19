@@ -106,19 +106,19 @@ zephyr_udc0: &usb {
 };
 
 &timers3 {
+	st,prescaler = <10000>;
 	status = "okay";
 	pwm3: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim3_ch1_pb4>;
 	};
 };
 
 &timers15 {
+	st,prescaler = <10000>;
 	status = "okay";
 	pwm15: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim15_ch1_pb14>;
 	};
 };

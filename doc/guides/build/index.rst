@@ -165,14 +165,23 @@ System call boilerplate
     :figclass: align-center
     :width: 80%
 
-First-pass binary
-+++++++++++++++++
+Intermediate binaries
++++++++++++++++++++++
 
-Compilation proper begins with the first-pass binary. Source files (C
+Compilation proper begins with the first intermediate binary. Source files (C
 and assembly) are collected from various subsystems (which ones is
 decided during the configuration phase), and compiled into archives
 (with reference to header files in the tree, as well as those
-generated during the configuration phase and the pre-build stage).
+generated during the configuration phase and the pre-build stage(s)).
+
+.. figure:: build-build-phase-2.svg
+    :align: center
+    :alt: Zephyr's build stage II
+    :figclass: align-center
+    :width: 80%
+
+The exact number of intermediate binaries is decided during the configuration
+phase.
 
 If memory protection is enabled, then:
 
@@ -189,26 +198,78 @@ the configuration process, into a *linker.cmd* file. The compiled
 archives are then linked with *ld* as specified in the
 *linker.cmd*.
 
-In some configurations, this is the final binary, and the next stage
-is skipped.
+Unfixed size binary
+   The unfixed size intermediate binary is produced when :ref:`usermode_api`
+   is enabled or :ref:`devicetree` is in use.
+   It produces a binary where sizes are not fixed and thus it may be used
+   by post-process steps that will impact the size of the final binary.
 
-.. figure:: build-build-phase-2.svg
+.. figure:: build-build-phase-3.svg
     :align: center
-    :alt: Zephyr's build stage II
+    :alt: Zephyr's build stage III
     :figclass: align-center
     :width: 80%
 
-Final binary
-++++++++++++
+Fixed size binary
+   The fixed size intermediate binary is produced when :ref:`usermode_api`
+   is enabled or when generated IRQ tables are used,
+   :kconfig:`CONFIG_GEN_ISR_TABLES`
+   It produces a binary where sizes are fixed and thus the size must not change
+   between the intermediate binary and the final binary.
 
-The binary from the previous stage is incomplete, with empty and/or
+.. figure:: build-build-phase-4.svg
+    :align: center
+    :alt: Zephyr's build stage IV
+    :figclass: align-center
+    :width: 80%
+
+Intermediate binaries post-processing
++++++++++++++++++++++++++++++++++++++
+
+The binaries from the previous stage are incomplete, with empty and/or
 placeholder sections that must be filled in by, essentially, reflection.
 
+To complete the build procedure the following scripts are executed on the
+intermediate binaries to produce the missing pieces needed for the final
+binary.
+
+When :ref:`usermode_api` is enabled:
+
+Partition alignment
+   The *gen_app_partitions.py* script scans the unfixed size binary and
+   generates an app shared memory aligned linker script snippet where the
+   partitions are sorted in descending order.
+
+.. figure:: build-postprocess-1.svg
+    :align: center
+    :alt: Zephyr's intermediate binary post-process I
+    :figclass: align-center
+    :width: 80%
+
+When :ref:`devicetree` is used:
+
 Device dependencies
-   The *gen_handles.py* script scans the first-pass binary to determine
+   The *gen_handles.py* script scans the unfixed size binary to determine
    relationships between devices that were recorded from devicetree data,
    and replaces the encoded relationships with values that are optimized to
    locate the devices actually present in the application.
+
+.. figure:: build-postprocess-2.svg
+    :align: center
+    :alt: Zephyr's intermediate binary post-process II
+    :figclass: align-center
+    :width: 80%
+
+When :kconfig:`CONFIG_GEN_ISR_TABLES` is enabled:
+   The *gen_isr_tables.py* script scant the fixed size binary and creates
+   an isr_tables.c source file with a hardware vector table and/or software
+   IRQ table.
+
+.. figure:: build-postprocess-3.svg
+    :align: center
+    :alt: Zephyr's intermediate binary post-process III
+    :figclass: align-center
+    :width: 80%
 
 When :ref:`usermode_api` is enabled:
 
@@ -219,15 +280,29 @@ Kernel object hashing
    table of those addresses, then that output is optimized by
    *process_gperf.py*, using known properties of our special case.
 
-Then, the link from the previous stage is repeated, this time with the
-missing pieces populated.
-
-.. figure:: build-build-phase-3.svg
+.. figure:: build-postprocess-4.svg
     :align: center
-    :alt: Zephyr's build stage III
+    :alt: Zephyr's intermediate binary post-process IV
     :figclass: align-center
     :width: 80%
 
+When no intermediate binary post-processing is required then the first
+intermediate binary will be directly used as the final binary.
+
+Final binary
+++++++++++++
+
+The binary from the previous stage is incomplete, with empty and/or
+placeholder sections that must be filled in by, essentially, reflection.
+
+The link from the previous stage is repeated, this time with the missing
+pieces populated.
+
+.. figure:: build-build-phase-5.svg
+    :align: center
+    :alt: Zephyr's build final stage
+    :figclass: align-center
+    :width: 80%
 
 Post processing
 +++++++++++++++
@@ -236,9 +311,9 @@ Finally, if necessary, the completed kernel is converted from *ELF* to
 the format expected by the loader and/or flash tool required by the
 target. This is accomplished in a straightforward manner with *objdump*.
 
-.. figure:: build-build-phase-4.svg
+.. figure:: build-build-phase-6.svg
     :align: center
-    :alt: Zephyr's build final stage
+    :alt: Zephyr's build final stage post-process
     :figclass: align-center
     :width: 80%
 

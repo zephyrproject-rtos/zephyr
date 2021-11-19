@@ -70,6 +70,12 @@
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
 
+/* Advertisement channel CRC init value */
+#define PDU_AC_CRC_IV          0x555555
+
+/* CRC polynomial */
+#define PDU_CRC_POLYNOMIAL     ((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16))
+
 /* Data channel minimum payload size and time */
 #define PDU_DC_PAYLOAD_SIZE_MIN 27
 #define PDU_DC_PAYLOAD_TIME_MIN 328
@@ -104,6 +110,13 @@
 #define EVENT_INSTANT_MAX         0xffff
 #define EVENT_INSTANT_LATENCY_MAX 0x7fff
 
+/* Channel Map Unused channels count minimum */
+#define CHM_USED_COUNT_MIN     2U
+
+/* Channel Map hop count minimum and maximum */
+#define CHM_HOP_COUNT_MIN      5U
+#define CHM_HOP_COUNT_MAX      16U
+
 /* Offset Units field encoding */
 #define OFFS_UNIT_BITS         13
 #define OFFS_UNIT_30_US        30
@@ -130,6 +143,14 @@
 
 /* Channel Map Size */
 #define PDU_CHANNEL_MAP_SIZE 5
+
+/* Advertising Data */
+#define PDU_ADV_DATA_HEADER_SIZE        2U
+#define PDU_ADV_DATA_HEADER_LEN_SIZE    1U
+#define PDU_ADV_DATA_HEADER_TYPE_SIZE   1U
+#define PDU_ADV_DATA_HEADER_LEN_OFFSET  0U
+#define PDU_ADV_DATA_HEADER_TYPE_OFFSET 1U
+#define PDU_ADV_DATA_HEADER_DATA_OFFSET 2U
 
 /*
  * Macros to return correct Data Channel PDU time
@@ -206,7 +227,41 @@
 
 #define PDU_AC_US(octets, phy, cs)   PDU_US((octets), 0, (phy), (cs))
 
-#define PKT_BIS_US(octets, mic, phy) PDU_MAX_US((octets), (mic), (phy))
+#define PDU_BIS_MAX_US(octets, enc, phy) PDU_MAX_US((octets), \
+						    ((enc) ? \
+						     (PDU_MIC_SIZE) : 0), \
+						    (phy))
+
+#define PDU_BIS_US(octets, enc, phy, s8) PDU_US((octets), \
+						((enc) ? (PDU_MIC_SIZE) : 0), \
+						(phy), (s8))
+
+/* TODO: verify if the following lines are correct */
+/* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
+ * index, directed adv report, and mesh channel and instant.
+ */
+#define PDU_AC_SIZE_RSSI 1
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+#define PDU_AC_SIZE_PRIV 1
+#else
+#define PDU_AC_SIZE_PRIV 0
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+#define PDU_AC_SIZE_SCFP 1
+#else
+#define PDU_AC_SIZE_SCFP 0
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#define PDU_AC_SIZE_MESH 5
+#else
+#define PDU_AC_SIZE_MESH 0
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#define PDU_AC_LL_SIZE_EXTRA (PDU_AC_SIZE_RSSI + \
+			      PDU_AC_SIZE_PRIV + \
+			      PDU_AC_SIZE_SCFP + \
+			      PDU_AC_SIZE_MESH)
+
 
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
@@ -479,10 +534,13 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_PHY_RSP = 0x17,
 	PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND = 0x18,
 	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
+	PDU_DATA_LLCTRL_TYPE_CTE_REQ = 0x1A,
+	PDU_DATA_LLCTRL_TYPE_CTE_RSP = 0x1B,
 	PDU_DATA_LLCTRL_TYPE_CIS_REQ = 0x1F,
 	PDU_DATA_LLCTRL_TYPE_CIS_RSP = 0x20,
 	PDU_DATA_LLCTRL_TYPE_CIS_IND = 0x21,
 	PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND = 0x22,
+	PDU_DATA_LLCTRL_TYPE_UNUSED = 0xFF
 };
 
 struct pdu_data_llctrl_conn_update_ind {
@@ -635,6 +693,24 @@ struct pdu_data_llctrl_min_used_chans_ind {
 	uint8_t min_used_chans;
 } __packed;
 
+struct pdu_data_llctrl_cte_req {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t min_cte_len_req : 5;
+	uint8_t rfu : 1;
+	uint8_t cte_type_req : 2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t cte_type_req : 2;
+	uint8_t rfu : 1;
+	uint8_t min_cte_len_req : 5;
+#else
+#error "Unsupported endianness"
+#endif
+} __packed;
+
+struct pdu_data_llctrl_cte_rsp {
+	/* no members */
+} __packed;
+
 struct pdu_data_llctrl_cis_req {
 	uint8_t cig_id;
 	uint8_t cis_id;
@@ -727,6 +803,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
+		struct pdu_data_llctrl_cte_req cte_req;
+		struct pdu_data_llctrl_cte_rsp cte_rsp;
 		struct pdu_data_llctrl_cis_req cis_req;
 		struct pdu_data_llctrl_cis_rsp cis_rsp;
 		struct pdu_data_llctrl_cis_ind cis_ind;
@@ -924,6 +1002,10 @@ struct pdu_big_info {
 	uint8_t chm_phy[PDU_CHANNEL_MAP_SIZE]; /* 37 bit chm; 3 bit phy */
 	uint8_t payload_count_framing[5]; /* 39 bit count; 1 bit framing */
 
-	uint8_t giv; /* encryption required */
-	uint16_t gskd; /* encryption required */
+	uint8_t giv[8]; /* encryption required */
+	uint8_t gskd[16]; /* encryption required */
 } __packed;
+#define PDU_BIG_INFO_CLEARTEXT_SIZE offsetof(struct pdu_big_info, giv)
+#define PDU_BIG_INFO_ENCRYPTED_SIZE sizeof(struct pdu_big_info)
+#define PDU_BIG_BN_MAX              0x07
+#define PDU_BIG_PAYLOAD_COUNT_MAX   28

@@ -310,7 +310,7 @@ static int cmd_shell_stats_show(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Lost logs: %u", shell->stats->log_lost_cnt);
+	shell_print(shell, "Lost logs: %lu", shell->stats->log_lost_cnt);
 
 	return 0;
 }

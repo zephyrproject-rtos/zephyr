@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 static bool post_ops_done = true;
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 static struct pm_state_info z_power_states[CONFIG_MP_NUM_CPUS];
+/* bitmask to check if a power state was forced. */
+static ATOMIC_DEFINE(z_power_states_forced, CONFIG_MP_NUM_CPUS);
 #ifdef CONFIG_PM_DEVICE
 static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_NUM_CPUS);
 #endif
@@ -242,53 +244,39 @@ void pm_system_resume(void)
 	}
 }
 
-void pm_power_state_force(struct pm_state_info info)
+bool pm_power_state_force(uint8_t cpu, struct pm_state_info info)
 {
-	uint8_t id = _current_cpu->id;
+	bool ret = false;
 
 	__ASSERT(info.state < PM_STATES_LEN,
 		 "Invalid power state %d!", info.state);
 
-	if (info.state == PM_STATE_ACTIVE) {
-		return;
+
+	if (!atomic_test_and_set_bit(z_power_states_forced, cpu)) {
+		z_power_states[cpu] = info;
+		ret = true;
 	}
 
-	(void)arch_irq_lock();
-	z_power_states[id] = info;
-
-#ifdef CONFIG_PM_DEVICE
-	if (z_power_states[id].state != PM_STATE_RUNTIME_IDLE) {
-		(void)atomic_sub(&z_cpus_active, 1);
-	}
-#endif
-
-	post_ops_done = false;
-	pm_state_notify(true);
-
-	k_sched_lock();
-	pm_start_timer();
-	/* Enter power state */
-	pm_state_set(info);
-	pm_stop_timer();
-
-	pm_system_resume();
-#ifdef CONFIG_PM_DEVICE
-	(void)atomic_add(&z_cpus_active, 1);
-#endif
-	k_sched_unlock();
+	return ret;
 }
 
 bool pm_system_suspend(int32_t ticks)
 {
+	bool ret = true;
 	uint8_t id = _current_cpu->id;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
-	z_power_states[id] = pm_policy_next_state(id, ticks);
+
+	if (!atomic_test_and_set_bit(z_power_states_forced, id)) {
+		z_power_states[id] = pm_policy_next_state(id, ticks);
+	}
+
 	if (z_power_states[id].state == PM_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
 		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				   z_power_states[id].state);
-		return false;
+		ret = false;
+		goto end;
 	}
 	post_ops_done = false;
 
@@ -320,7 +308,8 @@ bool pm_system_suspend(int32_t ticks)
 			(void)atomic_add(&z_cpus_active, 1);
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				_handle_device_abort(z_power_states[id]));
-			return false;
+			ret = false;
+			goto end;
 		}
 	}
 #endif
@@ -351,7 +340,10 @@ bool pm_system_suspend(int32_t ticks)
 	k_sched_unlock();
 	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				   z_power_states[id].state);
-	return true;
+
+end:
+	atomic_clear_bit(z_power_states_forced, id);
+	return ret;
 }
 
 void pm_notifier_register(struct pm_notifier *notifier)

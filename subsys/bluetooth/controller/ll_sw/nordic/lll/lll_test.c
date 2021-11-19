@@ -18,6 +18,8 @@
 
 #include "util/memq.h"
 
+#include "pdu.h"
+
 #include "lll.h"
 #include "lll_clock.h"
 #include "lll_internal.h"
@@ -104,8 +106,7 @@ static void isr_tx(void *param)
 
 	/* LE Test Packet Interval */
 	l = radio_tmr_end_get() - radio_tmr_ready_get();
-	i = ((l + 249 + (SCAN_INT_UNIT_US - 1)) / SCAN_INT_UNIT_US) *
-		SCAN_INT_UNIT_US;
+	i = ceiling_fraction((l + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
 	t = radio_tmr_end_get() - l + i;
 	t -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
 
@@ -166,7 +167,7 @@ static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 	int err;
 
 	if (started) {
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	/* start coarse timer */
@@ -195,7 +196,7 @@ static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 	radio_tx_power_max_set();
 	radio_freq_chan_set((chan << 1) + 2);
 	radio_aa_set((uint8_t *)&test_sync_word);
-	radio_crc_configure(0x65b, 0x555555);
+	radio_crc_configure(0x65b, PDU_AC_CRC_IV);
 	radio_pkt_configure(8, 255, (test_phy << 1));
 
 	return 0;
@@ -209,7 +210,7 @@ uint32_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy)
 	uint32_t err;
 
 	if ((type > 0x07) || !phy || (phy > 0x04)) {
-		return 1;
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	err = init(chan, phy, isr_tx);
@@ -285,7 +286,7 @@ uint32_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx)
 	uint32_t err;
 
 	if (!phy || (phy > 0x03)) {
-		return 1;
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	err = init(chan, phy, isr_rx);
@@ -312,7 +313,7 @@ uint32_t ll_test_end(uint16_t *num_rx)
 	uint8_t ack;
 
 	if (!started) {
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	/* Return packets Rx-ed/Completed */

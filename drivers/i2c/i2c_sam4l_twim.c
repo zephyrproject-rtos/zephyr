@@ -593,8 +593,6 @@ static const struct i2c_driver_api i2c_sam_twim_driver_api = {
 	.transfer = i2c_sam_twim_transfer,
 };
 
-#define DT_INST_ENUM_IDX(inst, prop) DT_ENUM_IDX(DT_DRV_INST(inst), prop)
-
 #define I2C_TWIM_SAM_SLEW_REGS(n)					\
 	.std_clk_slew_lim = DT_INST_ENUM_IDX(n, std_clk_slew_lim),	\
 	.std_clk_strength_low = DT_INST_ENUM_IDX(n, std_clk_strength_low),\

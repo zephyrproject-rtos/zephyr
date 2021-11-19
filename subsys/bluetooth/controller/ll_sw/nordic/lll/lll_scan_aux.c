@@ -47,6 +47,7 @@
 #define LOG_MODULE_NAME bt_ctlr_lll_scan_aux
 #include "common/log.h"
 #include <soc.h>
+#include <ull_scan_types.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -453,6 +454,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 #endif /* CONFIG_BT_CENTRAL */
 
+	/* Initialize scanning state */
+	lll->state = 0U;
+
+	/* Reset Tx/rx count */
+	trx_cnt = 0U;
+
 	/* Start setting up Radio h/w */
 	radio_reset();
 
@@ -472,8 +479,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	radio_aa_set((uint8_t *)&aa);
-	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
-			    0x555555);
+	radio_crc_configure(PDU_CRC_POLYNOMIAL,
+				PDU_AC_CRC_IV);
 
 	lll_chan_set(lll_aux->chan);
 
@@ -693,7 +700,6 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		irkmatch_ok = radio_ar_has_match();
 		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
-		phy_aux_flags_rx = radio_phy_flags_rx_get();
 	} else {
 		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready =
 			phy_aux_flags_rx = 0U;

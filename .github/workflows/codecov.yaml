@@ -7,6 +7,7 @@ on:
 jobs:
   codecov-prep:
     runs-on: ubuntu-latest
+    if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -98,7 +99,7 @@ jobs:
           name: Coverage Data (Subset ${{ matrix.platform }})
           path: coverage/reports/${{ matrix.platform }}.info
 
-  publish-coverage-results:
+  codecov-results:
     name: "Publish Coverage Results"
     needs: codecov
     runs-on: ubuntu-latest

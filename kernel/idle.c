@@ -48,7 +48,7 @@ static void pm_save_idle(void)
 #endif
 }
 
-void z_pm_save_idle_exit(int32_t ticks)
+void z_pm_save_idle_exit(void)
 {
 #ifdef CONFIG_PM
 	/* Some CPU low power states require notification at the ISR

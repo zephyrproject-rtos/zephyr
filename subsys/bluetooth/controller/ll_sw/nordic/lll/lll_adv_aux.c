@@ -26,6 +26,7 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_chan.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_adv_types.h"
 #include "lll_adv.h"
@@ -195,8 +196,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Access address and CRC */
 	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	radio_aa_set((uint8_t *)&aa);
-	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
-			    0x555555);
+	radio_crc_configure(PDU_CRC_POLYNOMIAL,
+					PDU_AC_CRC_IV);
 
 	/* Use channel idx in aux_ptr */
 	lll_chan_set(aux_ptr->chan_idx);

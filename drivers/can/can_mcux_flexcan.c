@@ -469,9 +469,9 @@ int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 	start_time = k_uptime_ticks();
 	config->base->CTRL1 &= ~CAN_CTRL1_BOFFREC_MASK;
 
-	if (timeout != K_NO_WAIT) {
+	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		while (mcux_flexcan_get_state(dev, NULL) == CAN_BUS_OFF) {
-			if (timeout != K_FOREVER &&
+			if (!K_TIMEOUT_EQ(timeout, K_FOREVER) &&
 			    k_uptime_ticks() - start_time >= timeout.ticks) {
 				ret = CAN_TIMEOUT;
 			}

@@ -40,9 +40,7 @@
 };
 
 &timers2 {
-	pwm {
-		st,prescaler = <10000>;
-	};
+	st,prescaler = <10000>;
 };
 
 &iwdg {

@@ -30,17 +30,6 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_FLASH_TIMEOUT	\
 	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
-#if defined(FLASH_NSSR_NSBSY)		/* For STM32L5x in non-secure mode */
-#define FLASH_SECURITY_NS
-#elif defined(FLASH_SECSR_SECBSY)	/* For STM32L5x in secured mode */
-#error Flash is not supported in secure mode
-#define FLASH_SECURITY_SEC
-#else
-#define FLASH_SECURITY_NA		/* For series which does not have
-					 *  secured or non-secured mode
-					 */
-#endif
-
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
 	/* Some SoCs (L0/L1) use an EEPROM under the hood. Distinguish
@@ -89,37 +78,11 @@ static inline void _flash_stm32_sem_give(const struct device *dev)
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(const struct device *dev)
 {
-	uint32_t const error =
-#if defined(FLASH_FLAG_PGAERR)
-		FLASH_FLAG_PGAERR |
-#endif
-#if defined(FLASH_FLAG_RDERR)
-		FLASH_FLAG_RDERR  |
-#endif
-#if defined(FLASH_FLAG_PGPERR)
-		FLASH_FLAG_PGPERR |
-#endif
-#if defined(FLASH_FLAG_PGSERR)
-		FLASH_FLAG_PGSERR |
-#endif
-#if defined(FLASH_FLAG_OPERR)
-		FLASH_FLAG_OPERR |
-#endif
-#if defined(FLASH_FLAG_PROGERR)
-		FLASH_FLAG_PROGERR |
-#endif
-#if defined(FLASH_FLAG_PGERR)
-		FLASH_FLAG_PGERR |
-#endif
-		FLASH_FLAG_WRPERR;
 
-#if defined(FLASH_SECURITY_NS)
-	if (FLASH_STM32_REGS(dev)->NSSR & error) {
-		LOG_DBG("Status: 0x%08x", FLASH_STM32_REGS(dev)->NSSR & error);
-#else /* FLASH_SECURITY_SEC | FLASH_SECURITY_NA */
-	if (FLASH_STM32_REGS(dev)->SR & error) {
-		LOG_DBG("Status: 0x%08x", FLASH_STM32_REGS(dev)->SR & error);
-#endif /* FLASH_SECURITY_NS */
+	if (FLASH_STM32_REGS(dev)->FLASH_STM32_SR & FLASH_STM32_SR_ERRORS) {
+		LOG_DBG("Status: 0x%08lx",
+			FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
+							FLASH_STM32_SR_ERRORS);
 		return -EIO;
 	}
 
@@ -131,21 +94,21 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 {
 	int64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
 	int rc;
+	uint32_t busy_flags;
 
 	rc = flash_stm32_check_status(dev);
 	if (rc < 0) {
 		return -EIO;
 	}
-#if defined(FLASH_SECURITY_NS)
-	while ((FLASH_STM32_REGS(dev)->NSSR & FLASH_FLAG_BSY)) {
-#else /* FLASH_SECURITY_SEC | FLASH_SECURITY_NA */
-#if defined(FLASH_SR_BSY1)
-	/* Applicable for STM32G0 series */
-	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY1)) {
-#else
-	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY)) {
+
+	busy_flags = FLASH_STM32_SR_BUSY;
+
+/* Some Series can't modify FLASH_CR reg while CFGBSY is set. Wait as well */
+#if defined(FLASH_STM32_SR_CFGBSY)
+	busy_flags |= FLASH_STM32_SR_CFGBSY;
 #endif
-#endif /* FLASH_SECURITY_NS */
+
+	while ((FLASH_STM32_REGS(dev)->FLASH_STM32_SR & busy_flags)) {
 		if (k_uptime_get() > timeout_time) {
 			LOG_ERR("Timeout! val: %d", STM32_FLASH_TIMEOUT);
 			return -EIO;

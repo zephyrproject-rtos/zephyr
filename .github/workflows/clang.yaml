@@ -23,6 +23,7 @@ jobs:
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
     outputs:
       report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
@@ -48,7 +49,7 @@ jobs:
           # So first retry to update, if that does not work, remove all modules
           # and start over. (Workaround until we implement more robust module
           # west caching).
-          west update 1> west.update.log || west update 1> west.update-2.log || ( rm -rf ../modules && west update)
+          west update 2>&1 1> west.log || west update 2>&1 1> west2.log || ( rm -rf ../modules && west update)
 
       - name: Check Environment
         run: |
@@ -56,6 +57,29 @@ jobs:
           ${CLANG_ROOT_DIR}/bin/clang --version
           gcc --version
           ls -la
+      - name: Prepare ccache timestamp/data
+        id: ccache_cache_timestamp
+        shell: cmake -P {0}
+        run: |
+          string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+          string(REPLACE "/" "_" repo ${{github.repository}})
+          string(REPLACE "-" "_" repo2 ${repo})
+          message("::set-output name=repo::${repo2}")
+      - name: use cache
+        id: cache-ccache
+        uses: nashif/action-s3-cache@master
+        with:
+          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-clang-${{ matrix.platform }}-ccache
+          path: /github/home/.ccache
+          aws-s3-bucket: ccache.zephyrproject.org
+          aws-access-key-id: ${{ secrets.CCACHE_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CCACHE_S3_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: ccache stats initial
+        run: |
+          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          ccache -M 10G -s
 
       - name: Run Tests with Twister
         id: twister
@@ -64,30 +88,31 @@ jobs:
           git config --global user.name "Zephyr Builder"
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
-          #
-          git rebase origin/main
-          commit_range="origin/${{github.base_ref}}..HEAD"
           # check if we need to run a full twister or not based on files changed
-          SC=$(./scripts/ci/what_changed.py --commits ${commit_range})
+          SC=$(./scripts/ci/what_changed.py --commits ${COMMIT_RANGE})
           # Get twister arguments based on the files changed
-          ./scripts/ci/get_twister_opt.py --commits ${commit_range}
+          ./scripts/ci/get_twister_opt.py --commits ${COMMIT_RANGE}
           if [ "$SC" = "full" ]; then
             # Full twister
-            ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} --retry-failed 2
             echo "::set-output name=report_needed::1";
+            ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} --retry-failed 2
           else
             # We can limit scope to just what has changed
             if [ -s modified_tests.args ]; then
               # we are working with one platform at a time
               sed -i '/--all/d' modified_tests.args
+              echo "::set-output name=report_needed::1";
               # Full twister but with options based on changes
               ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} +modified_tests.args --retry-failed 2
-              echo "::set-output name=report_needed::1";
             else
               # if nothing is run, skip reporting step
               echo "::set-output name=report_needed::0";
             fi
           fi
+
+      - name: ccache stats post
+        run: |
+          ccache -s
 
       - name: Upload Unit Test Results
         if: always() && steps.twister.outputs.report_needed != 0
@@ -96,7 +121,7 @@ jobs:
           name: Unit Test Results (Subset ${{ matrix.platform }})
           path: twister-out/twister.xml
 
-  publish-test-results:
+  clang-build-results:
     name: "Publish Unit Tests Results"
     needs: clang-build
     runs-on: ubuntu-20.04
