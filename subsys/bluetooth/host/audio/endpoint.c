@@ -48,21 +48,11 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 	struct bt_audio_stream_ops *ops = ep->stream->ops;
-	const bool is_broadcast = bt_audio_ep_is_broadcast(ep);
 
 	BT_DBG("stream %p ep %p type %u", chan, ep, ep != NULL ? ep->type : 0);
 
-	if (is_broadcast) {
-		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
-	}
-
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(ep->stream);
-	}
-
-	if (is_broadcast) {
-		/* No more actions for broadcast endpoints */
-		return;
 	}
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
@@ -79,28 +69,12 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	struct bt_audio_ep *ep = EP_ISO(chan);
 	struct bt_audio_stream *stream = ep->stream;
 	struct bt_audio_stream_ops *ops = stream->ops;
-	const bool is_broadcast = bt_audio_ep_is_broadcast(ep);
 	int err;
 
 	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
 
-	if (is_broadcast) {
-		if (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
-		    bt_audio_ep_is_broadcast_src(ep)) {
-			bt_audio_ep_set_state(ep,
-					      BT_AUDIO_EP_STATE_QOS_CONFIGURED);
-		} else {
-			bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
-		}
-	}
-
 	if (ops != NULL && ops->disconnected != NULL) {
 		ops->disconnected(stream, reason);
-	}
-
-	if (is_broadcast) {
-		/* No more actions for broadcast endpoints */
-		return;
 	}
 
 	if (ep->type != BT_AUDIO_EP_LOCAL) {
