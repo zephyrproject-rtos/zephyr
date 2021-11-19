@@ -21,7 +21,7 @@ import sys
 import argparse
 import os
 import re
-from distutils.version import LooseVersion
+from packaging import version
 
 # --- debug stuff ---
 
@@ -90,9 +90,9 @@ def process_line(line, fp):
 
     m = re.search("gperf version (.*) [*][/]$", line)
     if m:
-        v = LooseVersion(m.groups()[0])
-        v_lo = LooseVersion("3.0")
-        v_hi = LooseVersion("3.1")
+        v = version.parse(m.groups()[0])
+        v_lo = version.parse("3.0")
+        v_hi = version.parse("3.1")
         if (v < v_lo or v > v_hi):
             warn("gperf %s is not tested, versions %s through %s supported" %
                  (v, v_lo, v_hi))
