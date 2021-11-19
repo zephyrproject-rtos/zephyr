@@ -16,9 +16,36 @@
  * This is adapted from Linux equivalent st,stm32f429-pinctrl binding
  */
 
-#define PIN_NO(port, line)	(((port) - 'A') * 0x10 + (line))
-#define STM32F1_PINMUX(port, line, mode, remap) \
-			(((PIN_NO(port, line)) << 8) | (mode << 6) | (remap))
+/**
+ * @brief Pin configuration configuration bit field.
+ *
+ * Fields:
+ *
+ * - mode  [ 0 : 1 ]
+ * - line  [ 2 : 5 ]
+ * - port  [ 6 : 9 ]
+ * - remap [ 10 : 12 ]
+ *
+ * @param port Port ('A'..'K')
+ * @param line Pin (0..15)
+ * @param mode Pin mode (ANALOG, GPIO_IN, ALTERNATE).
+ * @param remap Pin remapping configuration (NO_REMAP, REMAP_1, ...)
+ */
+
+#define STM32_MODE_SHIFT  0U
+#define STM32_MODE_MASK   0x3U
+#define STM32_LINE_SHIFT  2U
+#define STM32_LINE_MASK   0xFU
+#define STM32_PORT_SHIFT  6U
+#define STM32_PORT_MASK   0xFU
+#define STM32_REMAP_SHIFT 10U
+#define STM32_REMAP_MASK  0x1FU
+
+#define STM32F1_PINMUX(port, line, mode, remap)				       \
+		(((((port) - 'A') & STM32_PORT_MASK) << STM32_PORT_SHIFT) |    \
+		(((line) & STM32_LINE_MASK) << STM32_LINE_SHIFT) |	       \
+		(((mode) & STM32_MODE_MASK) << STM32_MODE_SHIFT) |	       \
+		(((remap) & STM32_REMAP_MASK) << STM32_REMAP_SHIFT))
 
 /**
  * @brief Pin modes

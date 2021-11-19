@@ -37,26 +37,21 @@ struct soc_gpio_pinctrl {
  * value
  */
 #define STM32_DT_PINMUX_PORT(__pin) \
-	(((__pin) >> 12) & 0xf)
+	(((__pin) >> STM32_PORT_SHIFT) & STM32_PORT_MASK)
 
 /**
  * @brief helper to extract IO pin number from STM32_PINMUX() encoded
  * value
  */
 #define STM32_DT_PINMUX_LINE(__pin) \
-	(((__pin) >> 8) & 0xf)
+	(((__pin) >> STM32_LINE_SHIFT) & STM32_LINE_MASK)
 
 /**
  * @brief helper to extract IO pin func from STM32_PINMUX() encoded
  * value
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 #define STM32_DT_PINMUX_FUNC(__pin) \
-	(((__pin) >> 6) & 0x3)
-#else
-#define STM32_DT_PINMUX_FUNC(__pin) \
-	((__pin) & 0xff)
-#endif
+	(((__pin) >> STM32_MODE_SHIFT) & STM32_MODE_MASK)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 /**
@@ -64,7 +59,7 @@ struct soc_gpio_pinctrl {
  * value
  */
 #define STM32_DT_PINMUX_REMAP(__pin) \
-	((__pin) & 0x1fU)
+	(((__pin) >> STM32_REMAP_SHIFT) & STM32_REMAP_MASK)
 #endif
 
 /**
