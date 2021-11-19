@@ -77,10 +77,6 @@ struct espi_it8xxx2_data {
 #endif
 };
 
-/* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct espi_it8xxx2_config *)(dev)->config)
-#define DRV_DATA(dev) ((struct espi_it8xxx2_data *)(dev)->data)
-
 struct vw_channel_t {
 	uint8_t  vw_index;      /* VW index of signal */
 	uint8_t  level_mask;    /* level bit of signal */
@@ -149,7 +145,7 @@ static const struct ec2i_t pmc1_settings[] = {
 static void ec2i_it8xxx2_wait_status_cleared(const struct device *dev,
 						uint8_t mask)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct ec2i_regs *const ec2i = (struct ec2i_regs *)config->base_ec2i;
 
 	while (ec2i->IBCTL & mask) {
@@ -160,7 +156,7 @@ static void ec2i_it8xxx2_wait_status_cleared(const struct device *dev,
 static void ec2i_it8xxx2_write_pnpcfg(const struct device *dev,
 					enum ec2i_access sel, uint8_t data)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct ec2i_regs *const ec2i = (struct ec2i_regs *)config->base_ec2i;
 
 	/* bit0: EC to I-Bus access enabled. */
@@ -208,7 +204,7 @@ static void pnpcfg_it8xxx2_configure(const struct device *dev,
 
 static void pnpcfg_it8xxx2_init(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct ec2i_regs *const ec2i = (struct ec2i_regs *)config->base_ec2i;
 	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
 
@@ -229,8 +225,8 @@ static void pnpcfg_it8xxx2_init(const struct device *dev)
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 static void kbc_it8xxx2_ibf_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct kbc_regs *const kbc_reg = (struct kbc_regs *)config->base_kbc;
 	struct espi_event evt = {
 		ESPI_BUS_PERIPHERAL_NOTIFICATION,
@@ -256,8 +252,8 @@ static void kbc_it8xxx2_ibf_isr(const struct device *dev)
 
 static void kbc_it8xxx2_obe_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct kbc_regs *const kbc_reg = (struct kbc_regs *)config->base_kbc;
 	struct espi_event evt = {
 		ESPI_BUS_PERIPHERAL_NOTIFICATION,
@@ -279,7 +275,7 @@ static void kbc_it8xxx2_obe_isr(const struct device *dev)
 
 static void kbc_it8xxx2_init(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct kbc_regs *const kbc_reg = (struct kbc_regs *)config->base_kbc;
 
 	/* Disable KBC serirq IRQ */
@@ -311,8 +307,8 @@ static void kbc_it8xxx2_init(const struct device *dev)
 #ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
 static void pmc1_it8xxx2_ibf_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
 	struct espi_event evt = {
 		ESPI_BUS_PERIPHERAL_NOTIFICATION,
@@ -337,7 +333,7 @@ static void pmc1_it8xxx2_ibf_isr(const struct device *dev)
 
 static void pmc1_it8xxx2_init(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
 
 	/* Enable pmc1 input buffer full interrupt */
@@ -352,7 +348,7 @@ static void pmc1_it8xxx2_init(const struct device *dev)
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 static void port80_it8xxx2_isr(const struct device *dev)
 {
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
 	struct espi_event evt = {
 		ESPI_BUS_PERIPHERAL_NOTIFICATION,
@@ -420,7 +416,7 @@ static const struct vw_channel_t vw_channel_list[] = {
 static int espi_it8xxx2_configure(const struct device *dev,
 					struct espi_cfg *cfg)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 	uint8_t capcfg1 = 0;
@@ -463,7 +459,7 @@ static int espi_it8xxx2_configure(const struct device *dev,
 static bool espi_it8xxx2_channel_ready(const struct device *dev,
 					enum espi_channel ch)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 	bool sts = false;
@@ -491,7 +487,7 @@ static bool espi_it8xxx2_channel_ready(const struct device *dev,
 static int espi_vw_set_valid(const struct device *dev,
 			enum espi_vwire_signal signal, uint8_t valid)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_vw_regs *const vw_reg =
 		(struct espi_vw_regs *)config->base_espi_vw;
 	uint8_t vw_index = vw_channel_list[signal].vw_index;
@@ -513,7 +509,7 @@ static int espi_vw_set_valid(const struct device *dev,
 static int espi_it8xxx2_send_vwire(const struct device *dev,
 			enum espi_vwire_signal signal, uint8_t level)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_vw_regs *const vw_reg =
 		(struct espi_vw_regs *)config->base_espi_vw;
 	uint8_t vw_index = vw_channel_list[signal].vw_index;
@@ -535,7 +531,7 @@ static int espi_it8xxx2_send_vwire(const struct device *dev,
 static int espi_it8xxx2_receive_vwire(const struct device *dev,
 				  enum espi_vwire_signal signal, uint8_t *level)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_vw_regs *const vw_reg =
 		(struct espi_vw_regs *)config->base_espi_vw;
 	uint8_t vw_index = vw_channel_list[signal].vw_index;
@@ -559,7 +555,7 @@ static int espi_it8xxx2_receive_vwire(const struct device *dev,
 static int espi_it8xxx2_manage_callback(const struct device *dev,
 				    struct espi_callback *callback, bool set)
 {
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	struct espi_it8xxx2_data *const data = dev->data;
 
 	return espi_manage_callback(&data->callbacks, callback, set);
 }
@@ -568,7 +564,7 @@ static int espi_it8xxx2_read_lpc_request(const struct device *dev,
 				     enum lpc_peripheral_opcode op,
 				     uint32_t *data)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 
 	if (op >= E8042_START_OPCODE && op <= E8042_MAX_OPCODE) {
 		struct kbc_regs *const kbc_reg =
@@ -623,7 +619,7 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 				      enum lpc_peripheral_opcode op,
 				      uint32_t *data)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 
 	if (op >= E8042_START_OPCODE && op <= E8042_MAX_OPCODE) {
 		struct kbc_regs *const kbc_reg =
@@ -714,7 +710,7 @@ struct espi_oob_msg_packet {
 static int espi_it8xxx2_send_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 	struct espi_queue1_regs *const queue1_reg =
@@ -774,8 +770,8 @@ static int espi_it8xxx2_send_oob(const struct device *dev,
 static int espi_it8xxx2_receive_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 	struct espi_queue0_regs *const queue0_reg =
@@ -823,8 +819,8 @@ static int espi_it8xxx2_receive_oob(const struct device *dev,
 
 static void espi_it8xxx2_oob_init(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
@@ -858,7 +854,7 @@ static const struct espi_driver_api espi_it8xxx2_driver_api = {
 static void espi_it8xxx2_vw_notify_system_state(const struct device *dev,
 				enum espi_vwire_signal signal)
 {
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct espi_event evt = {ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0};
 	uint8_t level = 0;
 
@@ -1068,7 +1064,7 @@ static uint8_t vwidx_cached_flag[ARRAY_SIZE(vwidx_isr_list)];
 
 static void espi_it8xxx2_reset_vwidx_cache(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_vw_regs *const vw_reg =
 		(struct espi_vw_regs *)config->base_espi_vw;
 
@@ -1081,7 +1077,7 @@ static void espi_it8xxx2_reset_vwidx_cache(const struct device *dev)
 
 static void espi_it8xxx2_vw_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_vw_regs *const vw_reg =
 		(struct espi_vw_regs *)config->base_espi_vw;
 	uint8_t vwidx_updated = vw_reg->VWCTRL1;
@@ -1104,7 +1100,7 @@ static void espi_it8xxx2_vw_isr(const struct device *dev)
 static void espi_it8xxx2_ch_notify_system_state(const struct device *dev,
 						enum espi_channel ch, bool en)
 {
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct espi_event evt = {
 		.evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
 		.evt_details = ch,
@@ -1170,7 +1166,7 @@ static void espi_it8xxx2_flash_ch_en_isr(const struct device *dev, bool enable)
 
 static void espi_it8xxx2_put_pc_status_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
@@ -1187,7 +1183,7 @@ static void espi_it8xxx2_put_pc_status_isr(const struct device *dev)
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 static void espi_it8xxx2_upstream_channel_disable_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
@@ -1199,7 +1195,7 @@ static void espi_it8xxx2_upstream_channel_disable_isr(const struct device *dev)
 
 static void espi_it8xxx2_upstream_done_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
@@ -1211,8 +1207,8 @@ static void espi_it8xxx2_upstream_done_isr(const struct device *dev)
 
 static void espi_it8xxx2_put_oob_status_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
@@ -1240,7 +1236,7 @@ static const struct espi_isr_t espi_isr_list[] = {
 
 static void espi_it8xxx2_isr(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 	/* get espi interrupt events */
@@ -1292,7 +1288,7 @@ static void espi_it8xxx2_isr(const struct device *dev)
 
 void espi_it8xxx2_enable_pad_ctrl(const struct device *dev, bool enable)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
@@ -1308,7 +1304,7 @@ void espi_it8xxx2_enable_pad_ctrl(const struct device *dev, bool enable)
 void espi_it8xxx2_espi_reset_isr(const struct device *port,
 				struct gpio_callback *cb, uint32_t pins)
 {
-	struct espi_it8xxx2_data *const data = DRV_DATA(ESPI_IT8XXX2_SOC_DEV);
+	struct espi_it8xxx2_data *const data = ESPI_IT8XXX2_SOC_DEV->data;
 	struct espi_event evt = {ESPI_BUS_RESET, 0, 0};
 	bool espi_reset = gpio_pin_get(port, (find_msb_set(pins) - 1));
 
@@ -1361,7 +1357,7 @@ DEVICE_DT_INST_DEFINE(0, &espi_it8xxx2_init, NULL,
 
 static int espi_it8xxx2_init(const struct device *dev)
 {
-	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	const struct espi_it8xxx2_config *const config = dev->config;
 	struct espi_vw_regs *const vw_reg =
 		(struct espi_vw_regs *)config->base_espi_vw;
 	struct espi_slave_regs *const slave_reg =
