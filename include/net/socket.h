@@ -139,6 +139,12 @@ struct zsock_pollfd {
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MIN 8
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
 
+/** Socket option for preventing certificates from being copied to the mbedTLS
+ *  heap if possible. The option is only effective for DER certificates and is
+ *  ignored for PEM certificates.
+ */
+#define TLS_CERT_NOCOPY	       10
+
 /** @} */
 
 /* Valid values for TLS_PEER_VERIFY option */
@@ -149,6 +155,10 @@ struct zsock_pollfd {
 /* Valid values for TLS_DTLS_ROLE option */
 #define TLS_DTLS_ROLE_CLIENT 0 /**< Client role in a DTLS session. */
 #define TLS_DTLS_ROLE_SERVER 1 /**< Server role in a DTLS session. */
+
+/* Valid values for TLS_CERT_NOCOPY option */
+#define TLS_CERT_NOCOPY_NONE 0     /**< Cert duplicated in heap */
+#define TLS_CERT_NOCOPY_OPTIONAL 1 /**< Cert not copied in heap if DER */
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
