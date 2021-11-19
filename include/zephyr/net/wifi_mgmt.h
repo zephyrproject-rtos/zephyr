@@ -97,7 +97,7 @@ struct wifi_scan_result {
 };
 
 struct wifi_connect_req_params {
-	uint8_t *ssid;
+	const uint8_t *ssid;
 	uint8_t ssid_length; /* Max 32 */
 
 	uint8_t *psk;
