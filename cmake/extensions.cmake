@@ -21,6 +21,7 @@
 # 3.5. File system management
 # 4. Devicetree extensions
 # 4.1 dt_*
+# 4.2. *_if_dt_node
 # 5. Zephyr linker functions
 # 5.1. zephyr_linker*
 
@@ -3115,6 +3116,36 @@ function(dt_path_internal_exists var path)
     set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
+  endif()
+endfunction()
+
+# 4.2. *_if_dt_node
+#
+# This section is similar to the extensions named *_ifdef, except
+# actions are performed if the devicetree contains some node.
+# *_if_dt_node functions may be added as needed, or if they are likely
+# to be useful for user applications.
+
+# Add item(s) to a target's SOURCES list if a devicetree node exists.
+#
+# Example usage:
+#
+#   # If the devicetree alias "led0" refers to a node, this
+#   # adds "blink_led.c" to the sources list for the "app" target.
+#   target_sources_if_dt_node("led0" app PRIVATE blink_led.c)
+#
+#   # If the devicetree path "/soc/serial@4000" is a node, this
+#   # adds "uart.c" to the sources list for the "lib" target,
+#   target_sources_if_dt_node("/soc/serial@4000" lib PRIVATE uart.c)
+#
+# <path>    : Path to devicetree node to check
+# <target>  : Build system target whose sources to add to
+# <scope>   : Scope to add items to
+# <item>    : Item (or items) to add to the target
+function(target_sources_if_dt_node path target scope item)
+  dt_node_exists(check PATH "${path}")
+  if(${check})
+    target_sources(${target} ${scope} ${item} ${ARGN})
   endif()
 endfunction()
 
