@@ -538,26 +538,23 @@ static log_timestamp_t default_lf_get_timestamp(void)
 void log_core_init(void)
 {
 	uint32_t freq;
+	log_timestamp_get_t _timestamp_func;
 
 	panic_mode = false;
 	dropped_cnt = 0;
 
 	/* Set default timestamp. */
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
-		timestamp_func = default_lf_get_timestamp;
+		_timestamp_func = default_lf_get_timestamp;
 		freq = 1000U;
 	} else {
-		timestamp_func = default_get_timestamp;
+		_timestamp_func = default_get_timestamp;
 		freq = sys_clock_hw_cycles_per_sec();
 	}
 
-	log_output_timestamp_freq_set(freq);
+	log_set_timestamp_func(_timestamp_func, freq);
 
 	if (IS_ENABLED(CONFIG_LOG2)) {
-		log_set_timestamp_func(default_get_timestamp,
-			IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
-				CONFIG_SYS_CLOCK_TICKS_PER_SEC :
-			sys_clock_hw_cycles_per_sec());
 		if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
 			z_log_msg2_init();
 		}
