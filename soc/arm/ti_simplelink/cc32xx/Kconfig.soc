@@ -10,6 +10,10 @@ config SOC_CC3220SF
 	bool "CC3220SF"
 	select HAS_CC3220SDK
 
+config SOC_CC3235S
+	bool "CC3235S"
+	select HAS_CC3220SDK
+
 config SOC_CC3235SF
 	bool "CC3235SF"
 	select HAS_CC3220SDK

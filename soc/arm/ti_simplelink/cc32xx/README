@@ -8,3 +8,9 @@ Notes for CC32XXSF:
  * Text must start at 0x800 offset in flash.  The first 0x800 bytes are
    reserved for the flash header.
  * See CONFIG_ROM_START_OFFSET.
+
+Notes for CC32XXS:
+ * CC32XXS has no integrated flash Memory.
+ * TI bootloader takes first 16 KiB of the 256 KiB SRAM, so app must start at
+   0x20004000. The SRAM size must be set to 240 KiB or less. However, the first
+   16 KiB could be used in a NOLOAD section.
