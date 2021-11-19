@@ -137,7 +137,7 @@ static int i2c_gpio_init(const struct device *dev)
 
 	context->sda_gpio = device_get_binding(config->sda_gpio_name);
 	if (!context->sda_gpio) {
-		LOG_ERR("failed to get SCL GPIO device");
+		LOG_ERR("failed to get SDA GPIO device");
 		return -EINVAL;
 	}
 
