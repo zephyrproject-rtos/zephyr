@@ -54,6 +54,8 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 					uint32_t start_us);
 static int init_reset(void);
 static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle);
+static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
+			uint32_t latency_packing, uint32_t ctrl_spacing);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
@@ -218,43 +220,22 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	/* Based on packing requested, sequential or interleaved */
 	if (packing) {
-		uint32_t latency;
-		uint32_t reserve;
+		uint32_t latency_packing;
 
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
-		latency = lll_adv_iso->sub_interval * lll_adv_iso->nse *
-			   lll_adv_iso->num_bis;
-		reserve = latency + ctrl_spacing +
-			  (EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US);
-		if (reserve < latency_pdu) {
-			lll_adv_iso->ptc = ((latency_pdu - reserve) /
-					    (lll_adv_iso->sub_interval *
-					     lll_adv_iso->bn *
-					     lll_adv_iso->num_bis)) *
-					   lll_adv_iso->bn;
-		} else {
-			lll_adv_iso->ptc = 0U;
-		}
+		latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
+				  lll_adv_iso->num_bis;
+		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, latency_pdu,
+					    latency_packing, ctrl_spacing);
 		lll_adv_iso->nse += lll_adv_iso->ptc;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
 					    lll_adv_iso->nse;
 	} else {
-		uint32_t latency;
-		uint32_t reserve;
+		uint32_t latency_packing;
 
-		latency = lll_adv_iso->sub_interval * lll_adv_iso->nse;
-		reserve = latency + ctrl_spacing +
-			  (EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US);
-		if (reserve < latency_pdu) {
-			lll_adv_iso->ptc = ((latency_pdu - reserve) /
-					    (lll_adv_iso->sub_interval *
-					     lll_adv_iso->bn *
-					     lll_adv_iso->num_bis)) *
-					   lll_adv_iso->bn;
-		} else {
-			lll_adv_iso->ptc = 0U;
-		}
-
+		latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse;
+		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, latency_pdu,
+					    latency_packing, ctrl_spacing);
 		lll_adv_iso->nse += lll_adv_iso->ptc;
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
 					   lll_adv_iso->nse;
@@ -644,6 +625,22 @@ static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
 	}
 
 	return &ll_adv_iso[handle];
+}
+
+static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
+			uint32_t latency_packing, uint32_t ctrl_spacing)
+{
+	uint32_t reserve;
+
+	reserve = latency_packing + ctrl_spacing +
+		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	if (reserve < latency_pdu) {
+		return ((latency_pdu - reserve) / (lll->sub_interval * lll->bn *
+						   lll->num_bis)) *
+			lll->bn;
+	}
+
+	return 0U;
 }
 
 static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
