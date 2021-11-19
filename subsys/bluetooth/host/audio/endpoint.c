@@ -776,18 +776,8 @@ fail:
 	return err;
 }
 
-void bt_audio_ep_register_cb(struct bt_audio_ep *ep, struct bt_audio_ep_cb *cb)
-{
-	if (!ep) {
-		return;
-	}
-
-	sys_slist_append(&ep->cbs, &cb->node);
-}
-
 void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 {
-	struct bt_audio_ep_cb *cb, *tmp;
 	uint8_t old_state;
 
 	if (!ep) {
@@ -804,11 +794,6 @@ void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 
 	old_state = ep->status.state;
 	ep->status.state = state;
-
-	/* Notify callbacks */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ep->cbs, cb, tmp, node) {
-		cb->status_changed(ep, old_state, state);
-	}
 
 	if (!ep->stream || old_state == state) {
 		return;
