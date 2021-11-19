@@ -519,6 +519,7 @@ enum usdhc_xfer_data_type {
 
 #define USDHC_DAT3_PULL_DOWN 0U /*!< Data 3 pull down */
 #define USDHC_DAT3_PULL_UP 1U /*!< Data 3 pull up */
+#define USDHC_WAIT_IDLE_TIMEOUT 600U
 
 enum usdhc_adma_flag {
 	USDHC_ADMA_SINGLE_FLAG = 0U,
@@ -1789,8 +1790,13 @@ uint32_t usdhc_set_sd_clk(USDHC_Type *base, uint32_t src_clk_hz, uint32_t sd_clk
 	uint32_t sysctl = 0U;
 	uint32_t nearest_freq = 0U;
 
+
 	__ASSERT_NO_MSG(src_clk_hz != 0U);
-	__ASSERT_NO_MSG((sd_clk_hz != 0U) && (sd_clk_hz <= src_clk_hz));
+	__ASSERT_NO_MSG(sd_clk_hz != 0);
+
+	if (sd_clk_hz > src_clk_hz) {
+		sd_clk_hz = src_clk_hz;
+	}
 
 	/* calculate total divisor first */
 	total_div = src_clk_hz / sd_clk_hz;
@@ -2054,6 +2060,59 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 	return error;
 }
 
+static int usdhc_send_status(struct usdhc_priv *priv)
+{
+	int retry = 10, ret = -ETIMEDOUT;
+	struct usdhc_cmd *cmd = &priv->op_context.cmd;
+
+	usdhc_op_ctx_init(priv, true, SDHC_SEND_STATUS,
+		priv->card_info.relative_addr << 16U,
+		SDHC_RSP_TYPE_R1);
+	while (retry--) {
+		ret = usdhc_xfer(priv);
+		if (ret) {
+			LOG_DBG("Send CMD13 failed with host error %d", ret);
+			continue;
+		} else {
+			if (((cmd->response[0U] & SDHC_R1READY_FOR_DATA) != 0U) &&
+				(SD_R1_CURRENT_STATE(cmd->response[0U]) != SDMMC_R1_PROGRAM)) {
+				/* Card is idle */
+				ret = 0;
+			} else {
+				ret = -EBUSY;
+			}
+			break;
+		}
+	}
+	return ret;
+}
+
+static int usdhc_poll_card_status_busy(struct usdhc_priv *priv,
+			uint32_t timeout_ms)
+{
+	USDHC_Type *base = priv->config->base;
+	uint32_t timeout_us = timeout_ms * 1000;
+	int card_busy, ret = -ETIMEDOUT;
+
+	while (timeout_us) {
+		/* Check card status */
+		card_busy = (base->PRES_STATE & USDHC_DATA0_LINE_LEVEL_FLAG) !=
+						USDHC_DATA0_LINE_LEVEL_FLAG;
+		if (!card_busy) {
+			/* Send status to SD card and return from wait */
+			ret = usdhc_send_status(priv);
+			if (!ret) {
+				break;
+			}
+		} else {
+			/* Delay 125us to throttle the polling rate */
+			k_busy_wait(125);
+			timeout_us -= 125;
+		}
+	}
+	return ret;
+}
+
 static int usdhc_write_sector(void *bus_data, const uint8_t *buf, uint32_t sector,
 		     uint32_t count)
 {
@@ -2063,6 +2122,14 @@ static int usdhc_write_sector(void *bus_data, const uint8_t *buf, uint32_t secto
 
 	memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
 	memset((char *)data, 0, sizeof(struct usdhc_data));
+
+	if (sector + count > priv->card_info.sd_block_count) {
+		return -EIO;
+	}
+
+	if (usdhc_poll_card_status_busy(priv, USDHC_WAIT_IDLE_TIMEOUT)) {
+		return -ETIMEDOUT;
+	}
 
 	priv->op_context.cmd_only = 0;
 	cmd->index = SDHC_WRITE_MULTIPLE_BLOCK;
@@ -2092,6 +2159,14 @@ static int usdhc_read_sector(void *bus_data, uint8_t *buf, uint32_t sector,
 
 	memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
 	memset((char *)data, 0, sizeof(struct usdhc_data));
+
+	if (sector + count > priv->card_info.sd_block_count) {
+		return -EIO;
+	}
+
+	if (usdhc_poll_card_status_busy(priv, USDHC_WAIT_IDLE_TIMEOUT)) {
+		return -ETIMEDOUT;
+	}
 
 	priv->op_context.cmd_only = 0;
 	cmd->index = SDHC_READ_MULTIPLE_BLOCK;
