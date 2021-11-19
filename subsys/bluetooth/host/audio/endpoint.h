@@ -129,8 +129,6 @@ void bt_audio_ep_init(struct bt_audio_ep *ep, uint8_t type, uint16_t handle,
 
 struct bt_audio_ep *bt_audio_ep_find(struct bt_conn *conn, uint16_t handle);
 
-struct bt_audio_ep *bt_audio_ep_find_by_stream(struct bt_audio_stream *stream);
-
 struct bt_audio_ep *bt_audio_ep_alloc(struct bt_conn *conn, uint16_t handle);
 
 bool bt_audio_ep_is_snk(const struct bt_audio_ep *ep);

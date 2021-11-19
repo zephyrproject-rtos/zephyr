@@ -138,31 +138,6 @@ struct bt_audio_ep *bt_audio_ep_find(struct bt_conn *conn, uint16_t handle)
 	return NULL;
 }
 
-struct bt_audio_ep *bt_audio_ep_find_by_stream(struct bt_audio_stream *stream)
-{
-	int i, index;
-
-	index = bt_conn_index(stream->conn);
-
-	for (i = 0; i < SNK_SIZE; i++) {
-		struct bt_audio_ep *ep = &snks[index][i];
-
-		if (ep->stream == stream) {
-			return ep;
-		}
-	}
-
-	for (i = 0; i < SRC_SIZE; i++) {
-		struct bt_audio_ep *ep = &srcs[index][i];
-
-		if (ep->stream == stream) {
-			return ep;
-		}
-	}
-
-	return NULL;
-}
-
 struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint8_t dir,
 				    uint16_t handle)
 {
