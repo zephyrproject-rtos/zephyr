@@ -33,7 +33,7 @@ extern "C" {
 #define CONFIG_LOG_MAX_LEVEL 0U
 #endif
 
-#if !defined(CONFIG_LOG) || defined(CONFIG_LOG_MINIMAL)
+#if !defined(CONFIG_LOG) || defined(CONFIG_LOG_MODE_MINIMAL)
 #define CONFIG_LOG_DOMAIN_ID 0U
 #endif
 
@@ -299,7 +299,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
 		break; \
 	} \
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
+	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) { \
 		Z_LOG_TO_PRINTK(_level, __VA_ARGS__); \
 		break; \
 	} \
@@ -353,7 +353,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 						(_dsource)->filters : 0;\
 	\
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
+	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) { \
 		Z_LOG_TO_PRINTK(_level, "%s", _str); \
 		z_log_minimal_hexdump_print(_level, \
 					    (const char *)_data, _len);\
@@ -471,7 +471,7 @@ enum log_strdup_action {
 };
 
 #define Z_LOG_PRINTK(...) do { \
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL) || !IS_ENABLED(CONFIG_LOG2)) { \
+	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL) || !IS_ENABLED(CONFIG_LOG2)) { \
 		z_log_minimal_printk(__VA_ARGS__); \
 		break; \
 	} \
@@ -731,7 +731,7 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
 		break; \
 	} \
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
+	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) { \
 		Z_LOG_TO_VPRINTK(_level, _str, _valist); \
 		break; \
 	} \
@@ -778,7 +778,7 @@ static inline log_arg_t z_log_do_strdup(uint32_t msk, uint32_t idx,
 					log_arg_t param,
 					enum log_strdup_action action)
 {
-#ifndef CONFIG_LOG_MINIMAL
+#ifndef CONFIG_LOG_MODE_MINIMAL
 	char *z_log_strdup(const char *str);
 
 	if (msk & (1 << idx)) {
