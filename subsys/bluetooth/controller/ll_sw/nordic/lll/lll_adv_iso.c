@@ -242,27 +242,26 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	lll_chan_set(data_chan_use);
 
 	/* FIXME: get ISO data PDU */
-	if (0) {
-		pdu = (void *)radio_pkt_empty_get();
-		pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
-		pdu->len = 0U;
-	} else {
-		pdu = radio_pkt_scratch_get();
+	pdu = radio_pkt_scratch_get();
+	if (lll->bn_curr >= lll->bn) {
 		pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
-		pdu->len = LL_BIS_OCTETS_TX_MAX;
-
-		pdu->payload[0] = lll->bn_curr;
-		pdu->payload[1] = lll->irc_curr;
-		pdu->payload[2] = lll->ptc_curr;
-		pdu->payload[3] = lll->bis_curr;
-
-		pdu->payload[4] = lll->payload_count;
-		pdu->payload[5] = lll->payload_count >> 8;
-		pdu->payload[6] = lll->payload_count >> 16;
-		pdu->payload[7] = lll->payload_count >> 24;
-		pdu->payload[8] = lll->payload_count >> 32;
-
+	} else {
+		pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
 	}
+	pdu->len = LL_BIS_OCTETS_TX_MAX;
+
+	pdu->payload[0] = lll->bn_curr;
+	pdu->payload[1] = lll->irc_curr;
+	pdu->payload[2] = lll->ptc_curr;
+	pdu->payload[3] = lll->bis_curr;
+
+	pdu->payload[4] = lll->payload_count;
+	pdu->payload[5] = lll->payload_count >> 8;
+	pdu->payload[6] = lll->payload_count >> 16;
+	pdu->payload[7] = lll->payload_count >> 24;
+	pdu->payload[8] = lll->payload_count >> 32;
+
+	/* Initialize reserve bit */
 	pdu->rfu = 0U;
 
 	/* Handle control procedure */
@@ -451,14 +450,13 @@ static void isr_tx_common(void *param,
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 
 	/* FIXME: get ISO data PDU */
-	if (0) {
-		pdu = (void *)radio_pkt_empty_get();
-		pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
-		pdu->len = 0U;
-
-	} else if (!pdu) {
+	if (!pdu) {
 		pdu = radio_pkt_scratch_get();
-		pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
+		if (lll->bn_curr >= lll->bn && !(lll->ptc_curr % lll->bn)) {
+			pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
+		} else {
+			pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+		}
 		pdu->len = LL_BIS_OCTETS_TX_MAX;
 		pdu->cssn = lll->cssn;
 		pdu->cstf = 0U;
