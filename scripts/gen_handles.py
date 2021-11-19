@@ -31,7 +31,7 @@ import argparse
 import os
 import struct
 import pickle
-from distutils.version import LooseVersion
+from packaging import version
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -43,7 +43,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
                              'dts', 'python-devicetree', 'src'))
 from devicetree import edtlib  # pylint: disable=unused-import
 
-if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
+if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 scr = os.path.basename(sys.argv[0])
