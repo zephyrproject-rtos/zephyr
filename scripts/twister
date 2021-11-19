@@ -730,7 +730,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                              "--enable-coverage.")
 
     parser.add_argument("--coverage-platform", action="append", default=[],
-                        help="Plarforms to run coverage reports on. "
+                        help="Platforms to run coverage reports on. "
                              "This option may be used multiple times. "
                              "Default to what was selected with --platform.")
 
