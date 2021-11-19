@@ -700,6 +700,7 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		irkmatch_ok = radio_ar_has_match();
 		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
+		phy_aux_flags_rx = radio_phy_flags_rx_get();
 	} else {
 		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready =
 			phy_aux_flags_rx = 0U;
