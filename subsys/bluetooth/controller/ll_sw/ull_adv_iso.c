@@ -53,7 +53,7 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 					uint32_t ticks_offset,
 					uint32_t start_us);
 static int init_reset(void);
-static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle);
+static struct ll_adv_iso_set *adv_iso_get(uint8_t handle);
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
 			uint32_t latency_packing, uint32_t ctrl_spacing);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
@@ -96,7 +96,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	uint8_t err;
 	uint8_t bn;
 
-	adv_iso = ull_adv_iso_get(big_handle);
+	adv_iso = adv_iso_get(big_handle);
 
 	/* Already created */
 	if (!adv_iso || adv_iso->lll.adv) {
@@ -410,7 +410,7 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	uint8_t ter_idx;
 	uint8_t err;
 
-	adv_iso = ull_adv_iso_get(big_handle);
+	adv_iso = adv_iso_get(big_handle);
 	if (!adv_iso) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
@@ -618,7 +618,7 @@ static int init_reset(void)
 	return 0;
 }
 
-static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
+static struct ll_adv_iso_set *adv_iso_get(uint8_t handle)
 {
 	if (handle >= CONFIG_BT_CTLR_ADV_SET) {
 		return NULL;
