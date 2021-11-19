@@ -175,7 +175,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 
 #define CONN_TX_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				offsetof(struct pdu_data, lldata) + \
-				(CONFIG_BT_BUF_ACL_TX_SIZE + \
+				(LL_LENGTH_OCTETS_TX_MAX + \
 				BT_CTLR_USER_TX_BUFFER_OVERHEAD))
 
 /**
@@ -647,13 +647,13 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
 #if defined(CONFIG_BT_CTLR_PARAM_CHECK)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	uint16_t tx_time_max =
-			PDU_DC_MAX_US(CONFIG_BT_BUF_ACL_TX_SIZE, PHY_CODED);
+			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_CODED);
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
 	uint16_t tx_time_max =
-			PDU_DC_MAX_US(CONFIG_BT_BUF_ACL_TX_SIZE, PHY_1M);
+			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_1M);
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
-	if ((tx_octets > CONFIG_BT_BUF_ACL_TX_SIZE) ||
+	if ((tx_octets > LL_LENGTH_OCTETS_TX_MAX) ||
 	    (tx_time > tx_time_max)) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
