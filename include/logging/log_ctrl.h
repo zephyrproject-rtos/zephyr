@@ -189,7 +189,7 @@ uint32_t log_get_strdup_pool_utilization(void);
  */
 uint32_t log_get_strdup_longest_string(void);
 
-#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MINIMAL)
+#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_INIT() log_init()
 #define LOG_PANIC() log_panic()
