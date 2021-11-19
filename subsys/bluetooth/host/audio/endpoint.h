@@ -23,12 +23,6 @@
 #define BROADCAST_STREAM_CNT 0
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
-struct bt_audio_ep_cb {
-	sys_snode_t node;
-	void (*status_changed)(struct bt_audio_ep *ep, uint8_t old_state,
-			       uint8_t state);
-};
-
 #define BT_AUDIO_EP_LOCAL	0x00
 #define BT_AUDIO_EP_REMOTE	0x01
 
@@ -148,8 +142,6 @@ struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
 				    uint16_t handle);
 
 void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf);
-
-int bt_audio_ep_get_status(struct bt_audio_ep *ep, struct net_buf_simple *buf);
 
 void bt_audio_ep_register_cb(struct bt_audio_ep *ep, struct bt_audio_ep_cb *cb);
 
