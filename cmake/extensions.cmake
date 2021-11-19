@@ -2582,6 +2582,49 @@ function(dt_nodelabel var)
 endfunction()
 
 # Usage:
+#   dt_alias(<var> PROPERTY <prop>)
+#
+# Get a node path for an /aliases node property.
+#
+# Example usage:
+#
+#   # The full path to the 'led0' alias is returned in 'path'.
+#   dt_alias(path PROPERTY "led0")
+#
+#   # The variable 'path' will be left undefined for a nonexistent
+#   # alias "does-not-exist".
+#   dt_alias(path PROPERTY "does-not-exist")
+#
+# The node's path will be returned in the <var> parameter. The
+# variable will be left undefined if the alias does not exist.
+#
+# <var>           : Return variable where the node path will be stored
+# PROPERTY <prop> : The alias to check
+function(dt_alias var)
+  set(req_single_args "PROPERTY")
+  cmake_parse_arguments(DT_ALIAS "" "${req_single_args}" "" ${ARGN})
+
+  if(${ARGV0} IN_LIST req_single_args)
+    message(FATAL_ERROR "dt_alias(${ARGV0} ...) missing return parameter.")
+  endif()
+
+  foreach(arg ${req_single_args})
+    if(NOT DEFINED DT_ALIAS_${arg})
+      message(FATAL_ERROR "dt_alias(${ARGV0} ...) "
+                          "missing required argument: ${arg}"
+      )
+    endif()
+  endforeach()
+
+  get_target_property(${var} devicetree_target "DT_ALIAS|${DT_ALIAS_PROPERTY}")
+  if(${${var}} STREQUAL ${var}-NOTFOUND)
+    set(${var})
+  endif()
+
+  set(${var} ${${var}} PARENT_SCOPE)
+endfunction()
+
+# Usage:
 #   dt_node_exists(<var> PATH <path>)
 #
 # Tests whether a node with path <path> exists in the devicetree.
