@@ -1,0 +1,89 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    drdy-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        DRDY pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
+
+    drdy-int:
+      type: int
+      required: false
+      default: 1
+      enum:
+        - 1 # drdy is generated from INT1
+        - 2 # drdy is generated from INT2
+      description: |
+        Select DRDY pin number (1 or 2).
+
+        This number represents which of the two interrupt pins
+        (INT1 or INT2) the drdy line is attached to. This property is not
+        mandatory and if not present it defaults to 1 which is the
+        configuration at power-up.
+
+    range:
+      type: int
+      required: false
+      default: 0
+      description: Range in g. Default is power-up configuration.
+      enum:
+        - 0 # 2g    (0.061 mg/LSB)
+        - 1 # 16g   (0.488 mg/LSB)
+        - 2 # 4g    (0.122 mg/LSB)
+        - 3 # 8g    (0.244 mg/LSB)
+
+    odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+          Specify the default vibration sensor output data rate expressed in samples per second (Hz).
+          Default is power-up configuration.
+      enum:
+        - 0 # Power-Down
+        - 5 # 26k7 Hz
+
+    filter-type:
+      type: int
+      required: false
+      default: 0
+      description: |
+          Specify the default vibration sensor filter selections.
+          Default is power-up configuration.
+      enum:
+        - 0 # Low Pass filter (LP)
+        - 1 # High Pass Filter (HP)
+
+    filter-stages:
+      type: int
+      required: false
+      default: 1
+      description: |
+          Specify the default vibration sensor filter stage number (1 or 2).
+          Default is power-up configuration.
+      enum:
+        - 1 # LPF1 only
+        - 2 # LPF1 and LPF2
+
+    filter-config:
+      type: int
+      required: false
+      default: 0
+      description: |
+          Specify the default vibration sensor filter cutoff frequency.
+          Default is power-up configuration.
+      enum:
+        - 0 # Bandwidth ODR/4
+        - 1 # Bandwidth ODR/10
+        - 2 # Bandwidth ODR/20
+        - 3 # Bandwidth ODR/45
+        - 4 # Bandwidth ODR/100
+        - 5 # Bandwidth ODR/200
+        - 6 # Bandwidth ODR/400
+        - 7 # Bandwidth ODR/800
