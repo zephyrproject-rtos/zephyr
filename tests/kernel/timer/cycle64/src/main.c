@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ztest.h>
 #include <zephyr.h>
 
 static void swap64(uint64_t *a, uint64_t *b)
@@ -41,7 +42,7 @@ uint32_t timeout(uint64_t prev, uint64_t now)
 	return (uint32_t)next;
 }
 
-void main(void)
+static void test_32bit_wrap_around(void)
 {
 	enum {
 		CURR,
@@ -52,7 +53,7 @@ void main(void)
 	uint64_t now;
 	uint64_t c64[2];
 
-	printk("wrap-around should occur in %us\n",
+	printk("32-bit wrap-around should occur every %us\n",
 	       (uint32_t)(BIT64(32) / (uint32_t)sys_clock_hw_cycles_per_sec()));
 
 	printk("[ddd:hh:mm:ss.0ms]\n");
@@ -60,7 +61,7 @@ void main(void)
 	c64[CURR] = k_cycle_get_64();
 	msg(c64[CURR]);
 
-	for (i = 0; i < 3; ++i) {
+	for (i = 0; i < 2; ++i) {
 		k_sleep(Z_TIMEOUT_CYC(timeout(c64[CURR], k_cycle_get_64())));
 
 		now = k_cycle_get_64();
@@ -69,9 +70,15 @@ void main(void)
 
 		msg(c64[CURR]);
 
-		__ASSERT(((c64[CURR] - c64[PREV]) >> 32) == 1,
-			 "The 64-bit cycle counter did not increment!");
+		zassert_equal(((c64[CURR] - c64[PREV]) >> 32), 1,
+			 "The 64-bit cycle counter did not increment by 2^32");
 	}
+}
 
-	printk("SUCCESS\n");
+void test_main(void)
+{
+	ztest_test_suite(cycle64_tests,
+			 ztest_unit_test(test_32bit_wrap_around));
+
+	ztest_run_test_suite(cycle64_tests);
 }
