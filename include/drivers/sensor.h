@@ -272,6 +272,11 @@ enum sensor_attribute {
 	 * sensor takes a measurement.
 	 */
 	SENSOR_ATTR_SAMPLING_FREQUENCY,
+	/**
+	 * Sensor sampling period, i.e. how many seconds there are between
+	 * two subsequent measurements.
+	 */
+	SENSOR_ATTR_SAMPLING_PERIOD,
 	/** Lower threshold for trigger. */
 	SENSOR_ATTR_LOWER_THRESH,
 	/** Upper threshold for trigger. */
