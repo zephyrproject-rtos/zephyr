@@ -1123,6 +1123,18 @@ hawkBit:
     labels:
         - "area: hawkBit"
 
+"mgmt: updatehub":
+    status: maintained
+    maintainers:
+        - nandojve
+    files:
+        - subsys/mgmt/updatehub/
+        - samples/subsys/mgmt/updatehub/
+    labels:
+        - "area: updatehub"
+    description: >-
+        UpdateHub embedded Firmware Over-The-Air (FOTA) upgrade agent
+
 Native POSIX and POSIX arch:
     status: maintained
     maintainers:
