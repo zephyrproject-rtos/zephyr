@@ -6418,7 +6418,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	}
 
 	/* FIXME: Fill latency */
-	sys_put_le32(0, sep->latency);
+	sys_put_le24(0, sep->latency);
 
 	sep->nse = lll->nse;
 	sep->bn = lll->bn;
