@@ -1,0 +1,229 @@
+name: Run tests with twister
+
+on:
+  push:
+    branches:
+      - main
+  pull_request_target:
+    branches:
+      - main
+  schedule:
+    # Run at 00:00 on Saturday
+    - cron: '0 0 * * 6'
+
+jobs:
+  twister-build-prep:
+    runs-on: zephyr_runner
+    container:
+      image: zephyrprojectrtos/ci:v0.18.4
+      options: '--entrypoint /bin/bash'
+    outputs:
+      subset: ${{ steps.output-services.outputs.subset }}
+      size: ${{ steps.output-services.outputs.size }}
+    env:
+      MATRIX_SIZE: 10
+      DAILY_MATRIX_SIZE: 120
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
+      CLANG_ROOT_DIR: /usr/lib/llvm-12
+      TESTS_PER_BUILDER: 700
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
+
+      - name: checkout
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: west setup
+        if: github.event_name == 'pull_request_target'
+        run: |
+          west init -l . || true
+          west config --global update.narrow true
+          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update.log
+          west forall -c 'git reset --hard HEAD'
+
+      - name: Generate Test Plan with Twister
+        if: github.event_name == 'pull_request_target'
+        id: test-plan
+        run: |
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          # temporary until we have all PRs rebased on top of this commit.
+          git log -n 500 --oneline | grep -q "run twister using github action" || (
+            echo "Your branch is not up to date, you need to rebase on top of latest HEAD of main branch"
+            exit 1
+          )
+          ./scripts/ci/run_ci.sh -S -c -b ${{github.base_ref}} -r origin \
+                  -p ${{github.event.pull_request.number}} -R ${COMMIT_RANGE}
+          # remove all tests to be skipped
+          grep -v skipped test_file.txt > no_skipped.txt
+          # get number of tests
+          lines=$(wc -l < no_skipped.txt)
+          if [ "$lines" = 1 ]; then
+            # no tests, so we need 0 nodes
+            nodes=0
+          else
+            nodes=$(( ${lines} / ${TESTS_PER_BUILDER}))
+            if [ "${nodes}" = 0 ]; then
+              # for less than TESTS_PER_BUILDER, we take at least 1 node
+              nodes=1
+            fi
+          fi
+          echo "::set-output name=calculated_matrix_size::${nodes}";
+          rm test_file.txt no_skipped.txt
+
+      - name: Determine matrix size
+        id: output-services
+        run: |
+          if [ "${{github.event_name}}" = "pull_request_target" ]; then
+            if [ -n "${{steps.test-plan.outputs.calculated_matrix_size}}" ]; then
+              subset="[$(seq -s',' 1 ${{steps.test-plan.outputs.calculated_matrix_size}})]"
+            else
+              subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
+            fi
+            size=${{ steps.test-plan.outputs.calculated_matrix_size }}
+          elif [ "${{github.event_name}}" = "push" ]; then
+            subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
+            size=${MATRIX_SIZE}
+          else
+            subset="[$(seq -s',' 1 ${DAILY_MATRIX_SIZE})]"
+            size=${DAILY_MATRIX_SIZE}
+          fi
+          echo "::set-output name=subset::${subset}";
+          echo "::set-output name=size::${size}";
+
+
+  twister-build:
+    runs-on: zephyr_runner
+    needs: twister-build-prep
+    if: needs.twister-build-prep.outputs.size != 0
+    container:
+      image: zephyrprojectrtos/ci:v0.18.4
+      options: '--entrypoint /bin/bash'
+    strategy:
+      fail-fast: false
+      matrix:
+        subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
+    env:
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
+      CLANG_ROOT_DIR: /usr/lib/llvm-12
+      DAILY_OPTIONS: ' --inline-logs -M -N --build-only --all --retry-failed 3 -v '
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Update PATH for west
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: west setup
+        run: |
+          west init -l . || true
+          west config --global update.narrow true
+          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update.log
+          west forall -c 'git reset --hard HEAD'
+
+      - name: Check Environment
+        run: |
+          cmake --version
+          ${CLANG_ROOT_DIR}/bin/clang --version
+          gcc --version
+          ls -la
+          echo "github.ref: ${{ github.ref }}"
+          echo "github.base_ref: ${{ github.base_ref }}"
+          echo "github.ref_name: ${{ github.ref_name }}"
+
+      - name: Prepare ccache timestamp/data
+        id: ccache_cache_timestamp
+        shell: cmake -P {0}
+        run: |
+          string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+          string(REPLACE "/" "_" repo ${{github.repository}})
+          string(REPLACE "-" "_" repo2 ${repo})
+          message("::set-output name=repo::${repo2}")
+
+      - name: use cache
+        id: cache-ccache
+        uses: nashif/action-s3-cache@master
+        with:
+          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-${{github.event_name}}-${{ matrix.subset }}-ccache
+          path: /github/home/.ccache
+          aws-s3-bucket: ccache.zephyrproject.org
+          aws-access-key-id: ${{ secrets.CCACHE_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CCACHE_S3_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: ccache stats initial
+        run: |
+          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          ccache -M 10G -s
+
+      - if: github.event_name == 'push'
+        name: Run Tests with Twister (Push)
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          ./scripts/ci/run_ci.sh -c -b main -r origin -m ${{matrix.subset}} \
+                    -M ${{ strategy.job-total }}
+
+      - if: github.event_name == 'pull_request_target'
+        name: Run Tests with Twister (Pull Request)
+        run: |
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Builder"
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          ./scripts/ci/run_ci.sh -c -b ${{github.base_ref}} -r origin \
+                     -m ${{matrix.subset}} -M  ${{ strategy.job-total }} \
+                     -p ${{github.event.pull_request.number}} -R ${COMMIT_RANGE}
+
+      - if: github.event_name == 'schedule'
+        name: Run Tests with Twister (Daily)
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${DAILY_OPTIONS}
+
+      - name: ccache stats post
+        run: |
+          ccache -s
+
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Unit Test Results (Subset ${{ matrix.subset }})
+          path: twister-out/twister.xml
+
+  twister-test-results:
+    name: "Publish Unit Tests Results"
+    needs: twister-build
+    runs-on: ubuntu-latest
+      # the build-and-test job might be skipped, we don't need to run this job then
+    if: success() || failure()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          check_name: Unit Test Results
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          files: "**/twister.xml"
+          comment_mode: off
