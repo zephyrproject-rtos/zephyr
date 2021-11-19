@@ -24,11 +24,6 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <cavs-shim.h>
 #include <cavs-mem.h>
 
-#ifdef CONFIG_IPM_CAVS_IDC
-#include <drivers/ipm.h>
-#include <ipm/ipm_cavs_idc.h>
-#endif
-
 extern void z_sched_ipi(void);
 extern void z_smp_start_cpu(int id);
 extern void z_reinit_idle_thread(int i);
@@ -226,11 +221,6 @@ void z_mp_entry(void)
 	/* Interrupt must be enabled while running on current core */
 	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
 
-#ifdef CONFIG_IPM_CAVS_IDC
-	if (IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
-		cavs_idc_smp_init(NULL);
-	}
-#else
 	/* Unfortunately the interrupt controller doesn't understand
 	 * that each CPU has its own mask register (the timer has a
 	 * similar hook).  Needed only on hardware with ROMs that
@@ -249,7 +239,6 @@ void z_mp_entry(void)
 		k_busy_wait(10);
 	}
 	IDC[start_rec.cpu].busy_int = IDC_ALL_CORES;
-#endif
 
 	cpus_active[start_rec.cpu] = true;
 
@@ -350,29 +339,13 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	 * cause it to jump to ISR until the core is fully
 	 * initialized.  Wait for the startup IDC to arrive though.
 	 */
-# ifdef CONFIG_IPM_CAVS_IDC
-	uint32_t idc_reg = idc_read(IPC_IDCCTL, cpu_num);
-
-	idc_reg &= ~IPC_IDCCTL_IDCTBIE(0);
-	idc_write(IPC_IDCCTL, cpu_num, idc_reg);
-	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x00 +
-		      CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
-
-	k_busy_wait(100);
-
-	if (IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
-		cavs_idc_smp_init(NULL);
-	}
-# else
 	IDC[cpu_num].busy_int &= ~IDC_ALL_CORES;
 	k_busy_wait(100);
-# endif
 #endif
 }
 
 void arch_sched_ipi(void)
 {
-#ifndef CONFIG_IPM_CAVS_IDC
 	uint32_t curr = prid();
 
 	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
@@ -380,17 +353,6 @@ void arch_sched_ipi(void)
 			IDC[curr].core[c].itc = BIT(31);
 		}
 	}
-#else
-	/* Legacy implementation for cavs15 based on the 2-core-only
-	 * IPM driver.  To be replaced with the general one when
-	 * validated.
-	 */
-	const struct device *idcdev =
-		device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
-
-	ipm_send(idcdev, 0, IPM_CAVS_IDC_MSG_SCHED_IPI_ID,
-		 IPM_CAVS_IDC_MSG_SCHED_IPI_DATA, 0);
-#endif
 }
 
 void idc_isr(void *param)
@@ -412,20 +374,16 @@ void idc_isr(void *param)
 	}
 }
 
-#ifndef CONFIG_IPM_CAVS_IDC
 /* Fallback stub for external SOF code */
 int cavs_idc_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
 }
-#endif
 
 void soc_idc_init(void)
 {
-#ifndef CONFIG_IPM_CAVS_IDC
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(idc)), 0, idc_isr, NULL, 0);
-#endif
 
 	/* Every CPU should be able to receive an IDC interrupt from
 	 * every other CPU, but not to be back-interrupted when the
