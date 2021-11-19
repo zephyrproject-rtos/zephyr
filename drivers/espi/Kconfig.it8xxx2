@@ -21,6 +21,9 @@ config ESPI_PERIPHERAL_HOST_IO
 config ESPI_PERIPHERAL_DEBUG_PORT_80
 	default y
 
+config ESPI_FLASH_CHANNEL
+	default y
+
 config ESPI_IT8XXX2_PNPCFG_DEVICE_KBC_MOUSE
 	bool "ITE IT8XXX2 KBC mouse device"
 	help
