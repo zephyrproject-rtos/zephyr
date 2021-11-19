@@ -61,12 +61,14 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
 #define NODE_RX_STRUCT_OVERHEAD (NODE_RX_HEADER_SIZE)
 
-#define PDU_ADVERTIZE_SIZE (PDU_AC_LL_SIZE_MAX + PDU_AC_LL_SIZE_EXTRA)
+#define PDU_ADV_SIZE  MAX(PDU_AC_LL_SIZE_MAX, \
+			  (PDU_AC_LL_HEADER_SIZE + LL_EXT_OCTETS_RX_MAX))
+
 #define PDU_DATA_SIZE (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define PDU_RX_NODE_POOL_ELEMENT_SIZE                                                              \
 	MROUND(NODE_RX_STRUCT_OVERHEAD +                                                           \
-	       MAX(MAX(PDU_ADVERTIZE_SIZE, PDU_DATA_SIZE), PDU_RX_USER_PDU_OCTETS_MAX))
+	       MAX(MAX(PDU_ADV_SIZE, PDU_DATA_SIZE), PDU_RX_USER_PDU_OCTETS_MAX))
 
 /*
  * just a big number

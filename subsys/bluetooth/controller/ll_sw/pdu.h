@@ -236,33 +236,6 @@
 						((enc) ? (PDU_MIC_SIZE) : 0), \
 						(phy), (s8))
 
-/* TODO: verify if the following lines are correct */
-/* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
- * index, directed adv report, and mesh channel and instant.
- */
-#define PDU_AC_SIZE_RSSI 1
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-#define PDU_AC_SIZE_PRIV 1
-#else
-#define PDU_AC_SIZE_PRIV 0
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-#define PDU_AC_SIZE_SCFP 1
-#else
-#define PDU_AC_SIZE_SCFP 0
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-#if defined(CONFIG_BT_HCI_MESH_EXT)
-#define PDU_AC_SIZE_MESH 5
-#else
-#define PDU_AC_SIZE_MESH 0
-#endif /* CONFIG_BT_HCI_MESH_EXT */
-
-#define PDU_AC_LL_SIZE_EXTRA (PDU_AC_SIZE_RSSI + \
-			      PDU_AC_SIZE_PRIV + \
-			      PDU_AC_SIZE_SCFP + \
-			      PDU_AC_SIZE_MESH)
-
-
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
 	uint8_t data[PDU_AC_DATA_SIZE_MAX];
