@@ -330,8 +330,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		lll->payload[i] = NULL;
 	}
 
-	sync_iso->iso_interval = sys_le16_to_cpu(bi->iso_interval);
-	interval_us = sync_iso->iso_interval * CONN_INT_UNIT_US;
+	lll->iso_interval = sys_le16_to_cpu(bi->iso_interval);
+	interval_us = lll->iso_interval * CONN_INT_UNIT_US;
 
 	sync_iso->timeout_reload =
 		RADIO_SYNC_EVENTS((sync_iso->timeout * 10U * USEC_PER_MSEC),
