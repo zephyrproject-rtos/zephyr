@@ -242,20 +242,6 @@ static void set_up_clk_msis(void)
 
 	LL_RCC_MSIS_SetRange(STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
 
-	if (STM32_MSIS_RANGE < 4) {
-		/* MSI clock trimming for ranges 0 to 3 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_0);
-	} else if (STM32_MSIS_RANGE < 8) {
-		/* MSI clock trimming for ranges 4 to 7 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_1);
-	} else if (STM32_MSIS_RANGE < 12) {
-		/* MSI clock trimming for ranges 8 to 11 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_2);
-	} else {
-		/* MSI clock trimming for ranges 12 to 15 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_3);
-	}
-
 #if STM32_MSIS_PLL_MODE
 
 #if !STM32_LSE_CLOCK
