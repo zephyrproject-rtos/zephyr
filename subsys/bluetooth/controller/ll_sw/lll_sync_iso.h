@@ -10,6 +10,8 @@ struct lll_sync_iso {
 	uint8_t seed_access_addr[4];
 	uint8_t base_crc_init[2];
 
+	uint16_t iso_interval;
+
 	uint16_t latency_prepare;
 	uint16_t latency_event;
 	uint16_t data_chan_prn_s;
