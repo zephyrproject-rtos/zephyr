@@ -208,6 +208,7 @@ Bluetooth Mesh:
         - trond-snekvik
     collaborators:
         - jhedberg
+        - LingaoM
     files:
         - subsys/bluetooth/mesh/
         - include/bluetooth/mesh/
