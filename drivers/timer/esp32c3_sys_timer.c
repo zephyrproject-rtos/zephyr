@@ -52,7 +52,7 @@ static void sys_timer_isr(const void *arg)
 
 	uint32_t dticks = (uint32_t)((now - last_count) / CYC_PER_TICK);
 
-	last_count += dticks * CYC_PER_TICK;
+	last_count = now;
 
 	if (!TICKLESS) {
 		uint64_t next = last_count + CYC_PER_TICK;
@@ -132,17 +132,10 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return systimer_ll_get_counter_value_low(SYSTIMER_COUNTER_1);
+	return (uint32_t)systimer_alarm();
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t ret = systimer_ll_get_counter_value_low(SYSTIMER_COUNTER_1);
-
-	ret |= (uint64_t)systimer_ll_get_counter_value_high(SYSTIMER_COUNTER_1) << 32;
-
-	k_spin_unlock(&lock, key);
-
-	return ret;
+	return systimer_alarm();
 }
