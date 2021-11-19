@@ -24,8 +24,10 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <cavs-shim.h>
 #include <cavs-mem.h>
 
+#ifdef CONFIG_IPM_CAVS_IDC
 #include <drivers/ipm.h>
 #include <ipm/ipm_cavs_idc.h>
+#endif
 
 extern void z_sched_ipi(void);
 extern void z_smp_start_cpu(int id);
@@ -235,7 +237,7 @@ void z_mp_entry(void)
 	/* Interrupt must be enabled while running on current core */
 	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
 
-#ifdef CONFIG_SMP_BOOT_DELAY
+#if defined(CONFIG_SMP_BOOT_DELAY) && defined(CONFIG_IPM_CAVS_IDC)
 	cavs_idc_smp_init(NULL);
 #endif
 
@@ -350,7 +352,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 void arch_sched_ipi(void)
 {
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#ifndef CONFIG_IPM_CAVS_IDC
 	uint32_t curr = prid();
 
 	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
