@@ -1,0 +1,8 @@
+tests:
+  drivers.disk.usdhc:
+    filter: CONFIG_SDMMC_USDHC
+    tags: disk mcux
+    integration_platforms:
+      - mimxrt1060_evk
+      - mimxrt1050_evk
+      - mimxrt1064_evk
