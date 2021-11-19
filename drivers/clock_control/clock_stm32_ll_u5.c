@@ -487,6 +487,15 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
+	if (new_hclk_freq > MHZ(24)) {
+		/* when freq > 24MHz it is necessary to set voltage scaling
+		 * to range3
+		 */
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE3);
+		while (LL_PWR_IsActiveFlag_VOS() == 0) {
+		}
+	}
+
 	/* Set MSIS as SYSCLCK source */
 	set_up_clk_msis();
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
