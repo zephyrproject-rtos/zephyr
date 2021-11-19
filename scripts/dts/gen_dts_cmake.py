@@ -83,8 +83,9 @@ def main():
     # macros.bnf for C macros.
 
     cmake_props = []
-    for node in edt.chosen_nodes:
-        path = edt.chosen_nodes[node].path
+    chosen_nodes = edt.chosen_nodes
+    for node in chosen_nodes:
+        path = chosen_nodes[node].path
         cmake_props.append(f'"DT_CHOSEN|{node}" "{path}"')
 
     for node in edt.nodes:
