@@ -1,0 +1,13 @@
+identifier: cc3235s_launchxl
+name: SimpleLink Wi-Fi CC3235S LaunchPad development kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - netif:wifi
+  - i2c
+  - gpio
+  - adc
