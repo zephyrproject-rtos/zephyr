@@ -2650,6 +2650,7 @@ function(dt_node_has_status var)
   dt_node_exists(${var} PATH ${DT_NODE_PATH})
   if(NOT ${${var}})
     set(${var} FALSE PARENT_SCOPE)
+    return()
   endif()
 
   dt_prop(${var} PATH ${DT_NODE_PATH} PROPERTY status)
@@ -2926,7 +2927,8 @@ endfunction()
 #
 # Get a node path for a /chosen node property.
 #
-# the node path will be returned in the <value> parameter.
+# The node's path will be returned in the <var> parameter. The
+# variable will be left undefined if the chosen node does not exist.
 #
 # <var>           : Return variable where the node path will be stored
 # PROPERTY <prop> : Chosen property
@@ -2935,7 +2937,7 @@ function(dt_chosen var)
   cmake_parse_arguments(DT_CHOSEN "" "${req_single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
-    message(FATAL_ERROR "dt_has_chosen(${ARGV0} ...) missing return parameter.")
+    message(FATAL_ERROR "dt_chosen(${ARGV0} ...) missing return parameter.")
   endif()
 
   foreach(arg ${req_single_args})
