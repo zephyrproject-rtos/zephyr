@@ -78,6 +78,15 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 		}
 	}
 
+	if (tls_config->cert_nocopy != TLS_CERT_NOCOPY_NONE) {
+		ret = zsock_setsockopt(client->transport.tls.sock, SOL_TLS,
+				       TLS_CERT_NOCOPY, &tls_config->cert_nocopy,
+				       sizeof(tls_config->cert_nocopy));
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
 	size_t peer_addr_size = sizeof(struct sockaddr_in6);
 
 	if (broker->sa_family == AF_INET) {
