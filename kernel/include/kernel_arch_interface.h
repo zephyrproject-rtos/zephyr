@@ -540,7 +540,7 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
  * Early boot console output hook
  *
  * Definition of this function is optional. If implemented, any invocation
- * of printk() (or logging calls with CONFIG_LOG_MINIMAL which are backed by
+ * of printk() (or logging calls with CONFIG_LOG_MODE_MINIMAL which are backed by
  * printk) will default to sending characters to this function. It is
  * useful for early boot debugging before main serial or console drivers
  * come up.
