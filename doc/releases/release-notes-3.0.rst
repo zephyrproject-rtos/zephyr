@@ -287,6 +287,21 @@ USB
 Build and Infrastructure
 ************************
 
+* Build system
+
+  * New CMake extension functions:
+
+    * ``dt_alias()``
+    * ``target_sources_if_dt_node()``
+
+  * The following CMake extension functions now handle devicetree aliases:
+
+    * ``dt_node_exists()``
+    * ``dt_node_has_status()``
+    * ``dt_prop()``
+    * ``dt_num_regs()``
+    * ``dt_reg_addr()``
+    * ``dt_reg_size()``
 
 * Devicetree
 
