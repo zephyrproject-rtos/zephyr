@@ -99,12 +99,11 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
  *
  * @param *pinctrl pointer to soc_gpio_pinctrl list
  * @param list_size list size
- * @param base device base register value
  *
  * @return 0 value on success, -EINVAL otherwise
  */
 int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
-			   size_t list_size, uint32_t base);
+			   size_t list_size);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 #ifdef __cplusplus

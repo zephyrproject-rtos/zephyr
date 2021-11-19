@@ -8,6 +8,7 @@
 #define ZEPHYR_STM32_PINCTRLF1_H_
 
 #include <dt-bindings/pinctrl/stm32-pinctrl-common.h>
+#include <dt-bindings/pinctrl/stm32f1-afio.h>
 
 /* Adapted from Linux: include/dt-bindings/pinctrl/stm32-pinfunc.h */
 
@@ -24,7 +25,7 @@
  * - mode  [ 0 : 1 ]
  * - line  [ 2 : 5 ]
  * - port  [ 6 : 9 ]
- * - remap [ 10 : 12 ]
+ * - remap [ 10 : 19 ]
  *
  * @param port Port ('A'..'K')
  * @param line Pin (0..15)
@@ -39,7 +40,7 @@
 #define STM32_PORT_SHIFT  6U
 #define STM32_PORT_MASK   0xFU
 #define STM32_REMAP_SHIFT 10U
-#define STM32_REMAP_MASK  0x1FU
+#define STM32_REMAP_MASK  0x3FFU
 
 #define STM32F1_PINMUX(port, line, mode, remap)				       \
 		(((((port) - 'A') & STM32_PORT_MASK) << STM32_PORT_SHIFT) |    \
@@ -54,16 +55,6 @@
 #define ALTERNATE	0x0  /* Alternate function output */
 #define GPIO_IN		0x1  /* Input */
 #define ANALOG		0x2  /* Analog */
-
-/**
- * @brief Pin remapping configurations
- */
-
-#define NO_REMAP	0x0  /* No remapping */
-#define REMAP_1		0x1  /* Partial remapping 1 */
-#define REMAP_2		0x2  /* Partial remapping 2 */
-#define REMAP_3		0x3  /* Partial remapping 3 */
-#define REMAP_FULL	0x4  /* Full remapping */
 
 /**
  * @brief PIN configuration bitfield
