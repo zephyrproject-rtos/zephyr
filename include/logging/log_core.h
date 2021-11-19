@@ -298,13 +298,37 @@ static inline char z_log_minimal_level_to_char(int level)
 /*****************************************************************************/
 /****************** Macros for standard logging ******************************/
 /*****************************************************************************/
-#define Z_LOG2(_level, _source, _dsource, ...) do { \
+/** @internal
+ * @brief Generic logging macro.
+ *
+ * It checks against static levels (resolved at compile timer), runtime levels
+ * and modes and dispatch to relevant processing path.
+ *
+ * @param _level Log message severity level.
+ *
+ * @param _inst Set to 1 for instance specific log message. 0 otherwise.
+ *
+ * @param _source Pointer to static source descriptor object. NULL when runtime filtering
+ * is enabled.
+ *
+ * @param _dsource Pointer to dynamic source descriptor. NULL when runtime filtering
+ * is disabled.
+ *
+ * @param ... String with arguments.
+ */
+#define Z_LOG2(_level, _inst, _source, _dsource, ...) do { \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) { \
 		Z_LOG_TO_PRINTK(_level, __VA_ARGS__); \
 		break; \
+	} \
+	/* For instance logging check instance specific static level */ \
+	if (_inst & !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
+		if (_level > ((struct log_source_const_data *)_source)->level) { \
+			break; \
+		} \
 	} \
 	\
 	bool is_user_context = k_is_user_context(); \
@@ -334,10 +358,10 @@ static inline char z_log_minimal_level_to_char(int level)
 } while (false)
 
 #define Z_LOG(_level, ...) \
-	Z_LOG2(_level, __log_current_const_data, __log_current_dynamic_data, __VA_ARGS__)
+	Z_LOG2(_level, 0, __log_current_const_data, __log_current_dynamic_data, __VA_ARGS__)
 
 #define Z_LOG_INSTANCE(_level, _inst, ...) \
-	Z_LOG2(_level, \
+	Z_LOG2(_level, 1, \
 		COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, (NULL), (Z_LOG_INST(_inst))), \
 		(struct log_source_dynamic_data *)COND_CODE_1( \
 						CONFIG_LOG_RUNTIME_FILTERING, \
@@ -347,10 +371,38 @@ static inline char z_log_minimal_level_to_char(int level)
 /*****************************************************************************/
 /****************** Macros for hexdump logging *******************************/
 /*****************************************************************************/
-#define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) do { \
+/** @internal
+ * @brief Generic logging macro.
+ *
+ * It checks against static levels (resolved at compile timer), runtime levels
+ * and modes and dispatch to relevant processing path.
+ *
+ * @param _level Log message severity level.
+ *
+ * @param _inst Set to 1 for instance specific log message. 0 otherwise.
+ *
+ * @param _source Pointer to static source descriptor object. NULL when runtime filtering
+ * is enabled.
+ *
+ * @param _dsource Pointer to dynamic source descriptor. NULL when runtime filtering
+ * is disabled.
+ *
+ * @param _data Hexdump data;
+ *
+ * @param _len Hexdump data length.
+ *
+ * @param ... String.
+ */
+#define Z_LOG_HEXDUMP2(_level, _inst, _source, _dsource, _data, _len, ...) do { \
 	const char *_str = GET_ARG_N(1, __VA_ARGS__); \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) {	\
 		break; \
+	} \
+	/* For instance logging check instance specific static level */ \
+	if (_inst & !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
+		if (_level > ((struct log_source_const_data *)_source)->level) { \
+			break; \
+		} \
 	} \
 	bool is_user_context = k_is_user_context(); \
 	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
@@ -398,13 +450,13 @@ static inline char z_log_minimal_level_to_char(int level)
 } while (false)
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, ...) \
-	Z_LOG_HEXDUMP2(_level, \
+	Z_LOG_HEXDUMP2(_level, 0, \
 		      __log_current_const_data, \
 		      __log_current_dynamic_data, \
 		      _data, _length, __VA_ARGS__)
 
 #define Z_LOG_HEXDUMP_INSTANCE(_level, _inst, _data, _length, _str) \
-	Z_LOG_HEXDUMP2(_level, \
+	Z_LOG_HEXDUMP2(_level, 1, \
 		COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, (NULL), (Z_LOG_INST(_inst))), \
 		(struct log_source_dynamic_data *)COND_CODE_1( \
 						CONFIG_LOG_RUNTIME_FILTERING, \
