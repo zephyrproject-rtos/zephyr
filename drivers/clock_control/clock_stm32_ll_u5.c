@@ -483,8 +483,6 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	uint32_t old_hclk_freq;
 	uint32_t new_hclk_freq;
 
-	set_up_clk_msis();
-
 	old_hclk_freq = HAL_RCC_GetHCLKFreq();
 
 	/* Calculate new SystemCoreClock variable with MSI freq */
@@ -504,6 +502,7 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	}
 
 	/* Set MSIS as SYSCLCK source */
+	set_up_clk_msis();
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
 	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
