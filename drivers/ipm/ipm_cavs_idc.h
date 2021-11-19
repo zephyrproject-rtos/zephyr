@@ -62,4 +62,6 @@ static inline void idc_write(uint32_t reg, uint32_t core_id, uint32_t val)
 	*((volatile uint32_t*)(IPC_DSP_BASE(core_id) + reg)) = val;
 }
 
+int cavs_idc_smp_init(const struct device *dev);
+
 #endif /* ZEPHYR_DRIVERS_IPM_IPM_CAVS_IDC_H_ */
