@@ -20,7 +20,7 @@
 
 set -xe
 
-twister_options=" --inline-logs -M -N -v --integration"
+twister_options=" --clobber-output --inline-logs -M -N -v --integration"
 
 west_commands_results_file="./pytest_out/west_commands.xml"
 
@@ -99,9 +99,10 @@ function build_test_file() {
 		./scripts/zephyr_module.py --twister-out module_tests.args
 		./scripts/ci/get_twister_opt.py --commits ${commit_range}
 
-		if [ -s modified_tags.args ]; then
-			twister_exclude_tag_opt="+modified_tags.args"
-		fi
+		# disabled for now due to a bug
+		#if [ -s modified_tags.args ]; then
+		#	twister_exclude_tag_opt="+modified_tags.args"
+		#fi
 
 		if [ -s modified_boards.args ]; then
 			${twister} ${twister_options} ${twister_exclude_tag_opt} \
@@ -136,10 +137,23 @@ function build_test_file() {
 	tail -n +2 test_file_tests.txt > test_file_tests_in.txt
 	tail -n +2 test_file_boards.txt > test_file_boards_in.txt
 
+	echo -n "Full: "
+	wc -l test_file_full.txt
+	echo -n "Arch: "
+	wc -l test_file_archs.txt
+	echo -n "Tests: "
+	wc -l test_file_tests.txt
+	echo -n "Boards: "
+	wc -l test_file_boards.txt
+
+
 	echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" \
 		> test_file.txt
 	cat test_file_full_in.txt test_file_archs_in.txt test_file_tests_in.txt \
 		test_file_boards_in.txt >> test_file.txt
+
+	echo -n "Total: "
+	wc -l test_file.txt
 }
 
 function west_setup() {
@@ -155,7 +169,7 @@ function west_setup() {
 }
 
 
-while getopts ":p:m:b:r:M:cfslR:" opt; do
+while getopts ":p:m:b:r:M:cSfslR:" opt; do
 	case $opt in
 		c)
 			echo "Execute CI" >&2
@@ -190,6 +204,9 @@ while getopts ":p:m:b:r:M:cfslR:" opt; do
 			echo "Base Branch: $OPTARG" >&2
 			branch=$OPTARG
 			;;
+		S)
+			output_plan=1
+			;;
 		r)
 			echo "Remote: $OPTARG" >&2
 			remote=$OPTARG
@@ -215,9 +232,11 @@ if [ -n "$main_ci" ]; then
 		commit_range=$remote/${branch}..HEAD
 		echo "Commit range:" ${commit_range}
 	fi
+
 	if [ -n "$range" ]; then
 		commit_range=$range
 	fi
+
 	source zephyr-env.sh
 	twister="${ZEPHYR_BASE}/scripts/twister"
 
@@ -234,15 +253,15 @@ if [ -n "$main_ci" ]; then
 	fi
 
 	if [ -n "$pull_request_nr" ]; then
-		$short_git_log $remote/${branch}
-		# Now let's pray this script is being run from a
-		# different location
-# https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
-		git rebase $remote/${branch}
+		$short_git_log $commit_range
 	fi
 	$short_git_log
 
 	build_test_file
+
+	if [ -n "${output_plan}" ]; then
+		exit 0
+	fi
 
 	echo "+++ run twister"
 
