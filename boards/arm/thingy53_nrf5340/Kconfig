@@ -3,13 +3,6 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config THINGY53_MISO_WORKAROUND
-	bool "MISO workaround"
-	default SPI
-	help
-	  Workaround SPI bus MISO issues. The workaround sets dedicated pin
-	  high in order to avoid voltage drops on the SPI MISO line.
-
 config THINGY53_INIT_PRIORITY
 	int "Init priority"
 	default 79
