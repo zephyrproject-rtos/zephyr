@@ -42,6 +42,8 @@ extern void z_reinit_idle_thread(int i);
 	 (0x1 << 24) | /* "ROM control version" = 1 */	  \
 	 (0x2 << 0))   /* "Core wake version" = 2 */
 
+#define IDC_ALL_CORES (BIT(CONFIG_MP_NUM_CPUS) - 1)
+
 struct cpustart_rec {
 	uint32_t        cpu;
 	arch_cpustart_t	fn;
@@ -224,8 +226,29 @@ void z_mp_entry(void)
 	/* Interrupt must be enabled while running on current core */
 	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
 
-#if defined(CONFIG_SMP_BOOT_DELAY) && defined(CONFIG_IPM_CAVS_IDC)
-	cavs_idc_smp_init(NULL);
+#ifdef CONFIG_IPM_CAVS_IDC
+	if (IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
+		cavs_idc_smp_init(NULL);
+	}
+#else
+	/* Unfortunately the interrupt controller doesn't understand
+	 * that each CPU has its own mask register (the timer has a
+	 * similar hook).  Needed only on hardware with ROMs that
+	 * disable this; cAVS 2.5 starts with an unmasked hardware
+	 * default.
+	 */
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		CAVS_INTCTRL[start_rec.cpu].l2.clear = CAVS_L2_IDC;
+	}
+
+	/* Unmask IDC interrupts from this core to all others.  A
+	 * delay is needed following the write on older hardware, or
+	 * else the modification gets lost.  Voodoo.
+	 */
+	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		k_busy_wait(10);
+	}
+	IDC[start_rec.cpu].busy_int = IDC_ALL_CORES;
 #endif
 
 	cpus_active[start_rec.cpu] = true;
@@ -323,9 +346,11 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	/* Early DSPs have a ROM that actually receives the startup
 	 * IDC as an interrupt, and we don't want that to be confused
 	 * by IPIs sent by the OS elsewhere.  Mask the IDC interrupt
-	 * on other core so IPI won't cause them to jump to ISR until
-	 * the core is fully initialized.
+	 * on the new core so Zephyr IPIs from existing cores won't
+	 * cause it to jump to ISR until the core is fully
+	 * initialized.  Wait for the startup IDC to arrive though.
 	 */
+# ifdef CONFIG_IPM_CAVS_IDC
 	uint32_t idc_reg = idc_read(IPC_IDCCTL, cpu_num);
 
 	idc_reg &= ~IPC_IDCCTL_IDCTBIE(0);
@@ -335,9 +360,13 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	k_busy_wait(100);
 
-#ifdef CONFIG_SMP_BOOT_DELAY
-	cavs_idc_smp_init(NULL);
-#endif
+	if (IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
+		cavs_idc_smp_init(NULL);
+	}
+# else
+	IDC[cpu_num].busy_int &= ~IDC_ALL_CORES;
+	k_busy_wait(100);
+# endif
 #endif
 }
 
@@ -403,16 +432,13 @@ void soc_idc_init(void)
 	 * target core clears the busy bit.
 	 */
 	for (int core = 0; core < CONFIG_MP_NUM_CPUS; core++) {
-		uint32_t coremask = BIT(CONFIG_MP_NUM_CPUS) - 1;
-
-		IDC[core].busy_int |= coremask;
-		IDC[core].done_int &= ~coremask;
+		IDC[core].busy_int |= IDC_ALL_CORES;
+		IDC[core].done_int &= ~IDC_ALL_CORES;
 
 		/* Also unmask the IDC interrupt for every core in the
 		 * L2 mask register.
 		 */
 		CAVS_INTCTRL[core].l2.clear = CAVS_L2_IDC;
-
 	}
 
 	/* Clear out any existing pending interrupts that might be present */
