@@ -10,7 +10,7 @@
 #include <pm/policy.h>
 
 #include <logging/log.h>
-LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
+LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
 
 #define STATE_ACTIVE \
 	(struct pm_state_info){PM_STATE_ACTIVE, 0, 0}
