@@ -218,6 +218,22 @@ static int check_sw_isr(void *isr, uint32_t arg, int offset)
 }
 #endif
 
+/*
+ * Check priority value in interrpt priority table for static interrupt
+ * (interrupt connected via IRQ_CONNECT or IRQ_DIRECT_CONNECT macros). The
+ * priority in table must be equal to the value we've passed to
+ * IRQ_CONNECT / IRQ_DIRECT_CONNECT.
+ */
+#if defined(CONFIG_GEN_SW_ISR_TABLE) || defined(HAS_DIRECT_IRQS)
+static void check_static_irq_line_priority(uint32_t irq, uint8_t priority)
+{
+#ifdef CONFIG_GEN_IRQ_PRIORITY_TABLE
+	zassert_true(priority == _irq_priority_table[irq - CONFIG_GEN_IRQ_START_VECTOR],
+		"unexpected interrupt priority\n");
+#endif
+}
+#endif
+
 /**
  * @ingroup kernel_interrupt_tests
  * @brief test to validate direct interrupt
@@ -239,7 +255,9 @@ void test_build_time_direct_interrupt(void)
 	ztest_test_skip();
 #else
 	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, 0);
+	check_static_irq_line_priority(IRQ_LINE(ISR1_OFFSET), 0);
 	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, 0);
+	check_static_irq_line_priority(IRQ_LINE(ISR2_OFFSET), 0);
 	irq_enable(IRQ_LINE(ISR1_OFFSET));
 	irq_enable(IRQ_LINE(ISR2_OFFSET));
 	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
@@ -277,6 +295,7 @@ void test_build_time_interrupt(void)
 	TC_PRINT("_sw_isr_table at location %p\n", _sw_isr_table);
 
 	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, 0);
+	check_static_irq_line_priority(IRQ_LINE(ISR3_OFFSET), 1);
 	irq_enable(IRQ_LINE(ISR3_OFFSET));
 	TC_PRINT("isr3 isr=%p irq=%d param=%p\n", isr3, IRQ_LINE(ISR3_OFFSET),
 		 (void *)ISR3_ARG);
@@ -286,6 +305,7 @@ void test_build_time_interrupt(void)
 
 #ifdef ISR4_OFFSET
 	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), 1, isr4, ISR4_ARG, 0);
+	check_static_irq_line_priority(IRQ_LINE(ISR4_OFFSET), 1);
 	irq_enable(IRQ_LINE(ISR4_OFFSET));
 	TC_PRINT("isr4 isr=%p irq=%d param=%p\n", isr4, IRQ_LINE(ISR4_OFFSET),
 		 (void *)ISR4_ARG);
