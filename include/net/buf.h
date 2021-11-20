@@ -1049,6 +1049,9 @@ struct net_buf_pool {
 	}
 #endif /* CONFIG_NET_BUF_POOL_USAGE */
 
+#define _NET_BUF_ARRAY_DEFINE(_name, _count) \
+	static struct net_buf _net_buf_##_name[_count] __noinit
+
 extern const struct net_buf_data_alloc net_buf_heap_alloc;
 /** @endcond */
 
@@ -1079,11 +1082,11 @@ extern const struct net_buf_data_alloc net_buf_heap_alloc;
  * @param _destroy   Optional destroy callback when buffer is freed.
  */
 #define NET_BUF_POOL_HEAP_DEFINE(_name, _count, _destroy)                     \
-	static struct net_buf net_buf_##_name[_count] __noinit;               \
+	_NET_BUF_ARRAY_DEFINE(_name, _count);                                 \
 	static struct net_buf_pool _name __net_buf_align                      \
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_heap_alloc,          \
-					 net_buf_##_name, _count,             \
+					 _net_buf_##_name, _count,            \
 					 CONFIG_NET_BUF_USER_DATA_SIZE,       \
 					 _destroy)
 
@@ -1124,7 +1127,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
  * @param _destroy   Optional destroy callback when buffer is freed.
  */
 #define NET_BUF_POOL_FIXED_DEFINE(_name, _count, _data_size, _destroy)        \
-	static struct net_buf net_buf_##_name[_count] __noinit;               \
+	_NET_BUF_ARRAY_DEFINE(_name, _count);                                 \
 	static uint8_t __noinit net_buf_data_##_name[_count][_data_size];     \
 	static const struct net_buf_pool_fixed net_buf_fixed_##_name = {      \
 		.data_size = _data_size,                                      \
@@ -1137,7 +1140,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
 	static struct net_buf_pool _name __net_buf_align                      \
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_fixed_alloc_##_name, \
-					 net_buf_##_name, _count,            \
+					 _net_buf_##_name, _count,            \
 					 CONFIG_NET_BUF_USER_DATA_SIZE,       \
 					 _destroy)
 
@@ -1169,8 +1172,8 @@ extern const struct net_buf_data_cb net_buf_var_cb;
  * @param _destroy   Optional destroy callback when buffer is freed.
  */
 #define NET_BUF_POOL_VAR_DEFINE(_name, _count, _data_size, _destroy)          \
-	static struct net_buf _net_buf_##_name[_count] __noinit;              \
-	K_HEAP_DEFINE(net_buf_mem_pool_##_name, _data_size); \
+	_NET_BUF_ARRAY_DEFINE(_name, _count);                                 \
+	K_HEAP_DEFINE(net_buf_mem_pool_##_name, _data_size);                  \
 	static const struct net_buf_data_alloc net_buf_data_alloc_##_name = { \
 		.cb = &net_buf_var_cb,                                        \
 		.alloc_data = &net_buf_mem_pool_##_name,                      \
