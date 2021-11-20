@@ -159,9 +159,6 @@ void pm_system_resume(void)
 	 * For such CPU LPS states, do post operations and restores here.
 	 * The kernel scheduler will get control after the ISR finishes
 	 * and it may schedule another thread.
-	 *
-	 * Call pm_idle_exit_notification_disable() if this
-	 * notification is not required.
 	 */
 	if (!post_ops_done) {
 		uint8_t id = _current_cpu->id;
