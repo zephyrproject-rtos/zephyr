@@ -20,6 +20,20 @@
 #include <arch/cpu.h>
 #include <device.h>
 #include <init.h>
+#include <sw_isr_table.h>
+
+#if defined(CONFIG_ARC_SECURE_FIRMWARE)
+#define _ARC_IRQ_ADJUST_PRIO_S(prio)								\
+	((prio) < ARC_N_IRQ_START_LEVEL ? (prio) : (ARC_N_IRQ_START_LEVEL - 1))
+#define _ARC_IRQ_SET_SECURE(prio)	((prio) | _ARC_V2_IRQ_PRIORITY_SECURE)
+#define ARC_IRQ_PRIO_TO_HW(prio)	_ARC_IRQ_SET_SECURE(_ARC_IRQ_ADJUST_PRIO_S(prio))
+#elif defined(CONFIG_ARC_NORMAL_FIRMWARE)
+#define _ARC_IRQ_ADJUST_PRIO_N(prio)								\
+	((prio) < ARC_N_IRQ_START_LEVEL ? ARC_N_IRQ_START_LEVEL : (prio))
+#define ARC_IRQ_PRIO_TO_HW(prio)	_ARC_IRQ_ADJUST_PRIO_N(prio)
+#else
+#define ARC_IRQ_PRIO_TO_HW(prio)	(prio)
+#endif
 
 /*
  * @brief Initialize the interrupt unit device driver
@@ -42,17 +56,12 @@ static int arc_v2_irq_unit_init(const struct device *unused)
 	 * by IRQ auxiliary registers. For that reason we skip those
 	 * values in this loop.
 	 */
-	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
+	BUILD_ASSERT(CONFIG_GEN_IRQ_START_VECTOR == 16);
 
+	for (irq = CONFIG_GEN_IRQ_START_VECTOR; irq < CONFIG_NUM_IRQS; irq++) {
 		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
 		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
-			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1) |
-			 _ARC_V2_IRQ_PRIORITY_SECURE); /* lowest priority */
-#else
-		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
-			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1)); /* lowest priority */
-#endif
+			ARC_IRQ_PRIO_TO_HW(_irq_priority_table[irq - CONFIG_GEN_IRQ_START_VECTOR]));
 		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
 		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
 	}

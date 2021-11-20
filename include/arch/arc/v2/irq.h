@@ -40,18 +40,20 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 extern void _isr_wrapper(void);
 extern void z_irq_spurious(const void *unused);
 
+
+/* lowest priority */
+#define ARCH_DEFAULT_IRQ_PRIORITY	(CONFIG_NUM_IRQ_PRIO_LEVELS - 1)
+
 /* Z_ISR_DECLARE will populate the .intList section with the interrupt's
  * parameters, which will then be used by gen_irq_tables.py to create
- * the vector table and the software ISR table. This is all done at
- * build-time.
- *
- * We additionally set the priority in the interrupt controller at
- * runtime.
+ * the interrupt vector table, interrupt priority table and the software ISR table.
+ * This is all done at build-time.
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
-	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	z_irq_priority_set(irq_p, priority_p, flags_p); \
+	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p, priority_p); \
+	BUILD_ASSERT((priority_p >= 0) && (priority_p < CONFIG_NUM_IRQ_PRIO_LEVELS), \
+		"invalid priority " #priority_p " for irq " #irq_p); \
 }
 
 /**
@@ -77,14 +79,15 @@ extern void z_irq_spurious(const void *unused);
  */
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 { \
-	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
+	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL, priority_p); \
 	BUILD_ASSERT(priority_p || !IS_ENABLED(CONFIG_ARC_FIRQ) || \
 	(IS_ENABLED(CONFIG_ARC_FIRQ_STACK) && \
 	!IS_ENABLED(CONFIG_ARC_STACK_CHECKING)), \
 	"irq priority cannot be set to 0 when CONFIG_ARC_FIRQ_STACK" \
 	"is not configured or CONFIG_ARC_FIRQ_STACK " \
 	"and CONFIG_ARC_STACK_CHECKING are configured together"); \
-	z_irq_priority_set(irq_p, priority_p, flags_p); \
+	BUILD_ASSERT((priority_p >= 0) && (priority_p < CONFIG_NUM_IRQ_PRIO_LEVELS), \
+		"invalid priority " #priority_p " for irq " #irq_p); \
 }
 
 

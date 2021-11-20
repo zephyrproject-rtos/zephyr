@@ -246,6 +246,9 @@ config FAULT_DUMP
 config GEN_ISR_TABLES
 	default y
 
+config GEN_IRQ_PRIORITY_TABLE
+	default y
+
 config GEN_IRQ_START_VECTOR
 	default 16
 
