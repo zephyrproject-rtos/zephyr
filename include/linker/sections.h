@@ -36,6 +36,9 @@
 #define _IRQ_VECTOR_TABLE_SECTION_NAME	.gnu.linkonce.irq_vector_table
 #define _IRQ_VECTOR_TABLE_SECTION_SYMS	.gnu.linkonce.irq_vector_table*
 
+#define _IRQ_PRIO_TABLE_SECTION_NAME	.irq_priority_table
+#define _IRQ_PRIO_TABLE_SECTION_SYMS	.irq_priority_table*
+
 #define _SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.sw_isr_table
 #define _SW_ISR_TABLE_SECTION_SYMS	.gnu.linkonce.sw_isr_table*
 

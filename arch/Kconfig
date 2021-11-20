@@ -389,6 +389,16 @@ config GEN_IRQ_VECTOR_TABLE
 	  indexed by IRQ line. In the latter case, the vector table must be
 	  supplied by the application or architecture code.
 
+config GEN_IRQ_PRIORITY_TABLE
+	bool "Generate an interrupt priorities table"
+	depends on GEN_ISR_TABLES
+	help
+	  This option controls whether a platform using gen_isr_tables needs
+	  a interrupt priorities table created. This is an array with priorities
+	  of static interrupts connected via IRQ_CONNECT macro. The array has
+	  same size as IRQ_VECTOR_TABLE and it is sorted by interrupt line
+	  number.
+
 config GEN_SW_ISR_TABLE
 	bool "Generate a software ISR table"
 	default y

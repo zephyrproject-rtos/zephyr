@@ -64,3 +64,13 @@ struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
 				       (void *)&z_irq_spurious},
 };
 #endif
+
+#ifdef CONFIG_GEN_IRQ_PRIORITY_TABLE
+#ifndef ARCH_DEFAULT_IRQ_PRIORITY
+#error "Architecture must provide ARCH_DEFAULT_ISR_PRIORITY to use GEN_IRQ_PRIORITY_TABLE!"
+#endif
+
+uint8_t __irq_priority_table _irq_priority_table[IRQ_TABLE_SIZE] = {
+	[0 ...(IRQ_TABLE_SIZE - 1)] = 0x42,
+};
+#endif /* CONFIG_GEN_IRQ_PRIORITY_TABLE */

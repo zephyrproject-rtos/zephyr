@@ -53,7 +53,11 @@ struct _isr_list {
 	void *func;
 	/** Parameter for non-direct IRQs */
 	const void *param;
-};
+#ifdef CONFIG_GEN_IRQ_PRIORITY_TABLE
+	/** IRQ line priority */
+	uint8_t priority;
+#endif /* CONFIG_GEN_IRQ_PRIORITY_TABLE */
+} __packed __aligned(1);
 
 /** This interrupt gets put directly in the vector table */
 #define ISR_FLAG_DIRECT BIT(0)
@@ -65,10 +69,19 @@ struct _isr_list {
  * section. This gets consumed by gen_isr_tables.py which creates the vector
  * and/or SW ISR tables.
  */
+#ifdef CONFIG_GEN_IRQ_PRIORITY_TABLE
+#define Z_ISR_DECLARE(irq, flags, func, param, priority) \
+	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
+		__used _MK_ISR_NAME(func, __COUNTER__) = \
+			{irq, flags, (void *)&func, (const void *)param, priority}
+
+extern uint8_t _irq_priority_table[];
+#else
 #define Z_ISR_DECLARE(irq, flags, func, param) \
 	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
 		__used _MK_ISR_NAME(func, __COUNTER__) = \
 			{irq, flags, (void *)&func, (const void *)param}
+#endif /* CONFIG_GEN_IRQ_PRIORITY_TABLE */
 
 #define IRQ_TABLE_SIZE (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR)
 

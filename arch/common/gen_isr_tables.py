@@ -74,6 +74,8 @@ def read_intlist(intlist_path, syms):
         intlist_entry_fmt = prefix + "iiQQ"
     else:
         intlist_entry_fmt = prefix + "iiII"
+    if "CONFIG_GEN_IRQ_PRIORITY_TABLE" in syms:
+        intlist_entry_fmt = intlist_entry_fmt + "B"
 
     with open(intlist_path, "rb") as fp:
         intdata = fp.read()
@@ -91,12 +93,17 @@ def read_intlist(intlist_path, syms):
             struct.iter_unpack(intlist_entry_fmt, intdata)]
 
     debug("Configured interrupt routing")
-    debug("handler    irq flags param")
-    debug("--------------------------")
-
-    for irq in intlist["interrupts"]:
-        debug("{0:<10} {1:<3} {2:<3}   {3}".format(
-            hex(irq[2]), irq[0], irq[1], hex(irq[3])))
+    if "CONFIG_GEN_IRQ_PRIORITY_TABLE" in syms:
+        debug("handler    irq flags param      prio")
+        debug("------------------------------------")
+        for irq in intlist["interrupts"]:
+            debug("{0:<10} {1:<3} {2:<3}   {3:<10} {4}".format(
+                hex(irq[2]), irq[0], irq[1], hex(irq[3]), irq[4]))
+    else:
+        debug("handler    irq flags param")
+        debug("--------------------------")
+        for irq in intlist["interrupts"]:
+            debug("{0:<10} {1:<3} {2:<3}   {3}".format(hex(irq[2]), irq[0], irq[1], hex(irq[3])))
 
     return intlist
 
@@ -151,6 +158,17 @@ def write_source_file(fp, vt, swt, intlist, syms):
         fp.write("uintptr_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
         for i in range(nv):
             fp.write("\t{},\n".format(vt[i]))
+        fp.write("};\n")
+
+    if "CONFIG_GEN_IRQ_PRIORITY_TABLE" in syms:
+        offset = intlist["offset"]
+        fp.write("uint8_t __irq_priority_table _irq_priority_table[%d] = {\n" % nv)
+        for i in range(nv):
+            element = [prio for irq, *_, prio in intlist["interrupts"] if irq == i + offset]
+            if element:
+                fp.write("\t{0},\n".format(element[0]))
+            else:
+                fp.write("\tARCH_DEFAULT_IRQ_PRIORITY,\n")
         fp.write("};\n")
 
     if not swt:
@@ -254,7 +272,7 @@ def main():
             error("one or both of -s or -V needs to be specified on command line")
         swt = None
 
-    for irq, flags, func, param in intlist["interrupts"]:
+    for irq, flags, func, param, *_ in intlist["interrupts"]:
         if flags & ISR_FLAG_DIRECT:
             if param != 0:
                 error("Direct irq %d declared, but has non-NULL parameter"

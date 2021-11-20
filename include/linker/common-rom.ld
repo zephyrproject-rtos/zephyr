@@ -45,6 +45,13 @@
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
+#ifdef CONFIG_GEN_IRQ_PRIORITY_TABLE
+	SECTION_PROLOGUE(irq_priority_table,,)
+	{
+		*(_IRQ_PRIO_TABLE_SECTION_SYMS)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 	/* verify we don't have rogue .z_init_<something> initlevel sections */
 	SECTION_PROLOGUE(initlevel_error,,)
 	{
