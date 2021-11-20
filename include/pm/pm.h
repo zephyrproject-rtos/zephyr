@@ -103,6 +103,17 @@ void pm_notifier_register(struct pm_notifier *notifier);
 int pm_notifier_unregister(struct pm_notifier *notifier);
 
 /**
+ * @brief Gets the next power state that will be used.
+ *
+ * This function returns the next power state that will be used by the
+ * SoC.
+ *
+ * @param cpu CPU index.
+ * @return next pm_state_info that will be used
+ */
+const struct pm_state_info pm_power_state_next_get(uint8_t cpu);
+
+/**
  * @}
  */
 
@@ -172,17 +183,6 @@ bool pm_constraint_get(enum pm_state state);
  *	suspend operation.
  */
 void pm_power_state_set(struct pm_state_info info);
-
-/**
- * @brief Gets the next power state that will be used.
- *
- * This function returns the next power state that will be used by the
- * SoC.
- *
- * @param cpu CPU index.
- * @return next pm_state_info that will be used
- */
-const struct pm_state_info pm_power_state_next_get(uint8_t cpu);
 
 /**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
