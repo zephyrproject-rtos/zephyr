@@ -680,6 +680,21 @@ static void test_net_buf_byte_order(void)
 	net_buf_unref(buf);
 }
 
+static void test_net_buf_user_data(void)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	zassert_equal(CONFIG_NET_BUF_USER_DATA_SIZE, fixed_pool.user_data_size,
+		"Bad user_data_size");
+	zassert_equal(CONFIG_NET_BUF_USER_DATA_SIZE, buf->user_data_size,
+		"Bad user_data_size");
+
+	net_buf_unref(buf);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_net_buf,
@@ -692,7 +707,8 @@ void test_main(void)
 			 ztest_unit_test(test_net_buf_clone),
 			 ztest_unit_test(test_net_buf_fixed_pool),
 			 ztest_unit_test(test_net_buf_var_pool),
-			 ztest_unit_test(test_net_buf_byte_order)
+			 ztest_unit_test(test_net_buf_byte_order),
+			 ztest_unit_test(test_net_buf_user_data)
 			 );
 
 	ztest_run_test_suite(test_net_buf);
