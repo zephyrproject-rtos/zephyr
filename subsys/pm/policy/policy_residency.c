@@ -11,9 +11,8 @@
 #include <pm/policy.h>
 #include <sys/check.h>
 
-#define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
-LOG_MODULE_DECLARE(power);
+LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
 
 #if DT_NODE_EXISTS(DT_PATH(cpus))
 
