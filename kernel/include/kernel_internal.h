@@ -261,8 +261,7 @@ bool pm_system_suspend(int32_t ticks);
  * those cases, the ISR would be invoked immediately after the event wakes up
  * the CPU, before code following the CPU wait, gets a chance to execute. This
  * can be ignored if no operation needs to be done at the wake event
- * notification. Alternatively pm_idle_exit_notification_disable() can
- * be called in pm_system_suspend to disable this notification.
+ * notification.
  */
 void pm_system_resume(void);
 
