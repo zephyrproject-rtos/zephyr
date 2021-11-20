@@ -137,7 +137,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the SAM4L-EK board to your host computer using the USB debug port.
-Then build and flash the :ref:`hello_world` application.
+   Then build and flash the :ref:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
