@@ -17,6 +17,16 @@ extern uint32_t _irq_vector_table[];
 #define HAS_DIRECT_IRQS
 #endif
 
+/*
+ * ARC doesn't support dynamic interrupts on the SMP systems (systems with ARConnect)
+ * for common interrupts (interrupts shared between cores) for now due to current
+ * implementation limitation. Disable dynamic interrupts testing for such systems to avoid
+ * excessive complication of generic test.
+ */
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && !(defined(CONFIG_ARC) && defined(CONFIG_ARC_CONNECT))
+#define HAS_DYNAMIC_IRQS
+#endif
+
 #define ISR1_OFFSET	0
 #define ISR2_OFFSET	1
 
@@ -335,7 +345,7 @@ void test_build_time_interrupt(void)
 void test_run_time_interrupt(void)
 {
 
-#ifndef CONFIG_GEN_SW_ISR_TABLE
+#ifndef HAS_DYNAMIC_IRQS
 	ztest_test_skip();
 #else
 	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), 1, isr5,
