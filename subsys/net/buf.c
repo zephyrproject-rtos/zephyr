@@ -70,6 +70,7 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 	buf = &pool->__bufs[pool->buf_count - uninit_count];
 
 	buf->pool_id = pool_id(pool);
+	buf->user_data_size = pool->user_data_size;
 
 	return buf;
 }

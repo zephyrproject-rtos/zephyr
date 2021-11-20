@@ -934,6 +934,9 @@ struct net_buf {
 	/** Where the buffer should go when freed up. */
 	uint8_t pool_id;
 
+	/* Size of user data on this buffer */
+	uint8_t user_data_size;
+
 	/* Union for convenience access to the net_buf_simple members, also
 	 * preserving the old API.
 	 */
@@ -993,6 +996,9 @@ struct net_buf_pool {
 	/** Number of uninitialized buffers */
 	uint16_t uninit_count;
 
+	/* Size of user data allocated to this pool */
+	uint8_t user_data_size;
+
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	/** Amount of available buffers in the pool. */
 	atomic_t avail_count;
@@ -1016,28 +1022,30 @@ struct net_buf_pool {
 
 /** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-#define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy) \
-	{                                                                    \
-		.free = Z_LIFO_INITIALIZER(_pool.free),                      \
-		.lock = { },                                                 \
-		.buf_count = _count,                                         \
-		.uninit_count = _count,                                      \
-		.avail_count = ATOMIC_INIT(_count),                          \
-		.name = STRINGIFY(_pool),                                    \
-		.destroy = _destroy,                                         \
-		.alloc = _alloc,                                             \
-		.__bufs = _bufs,                                             \
+#define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
+	{                                                                          \
+		.free = Z_LIFO_INITIALIZER(_pool.free),                            \
+		.lock = { },                                                       \
+		.buf_count = _count,                                               \
+		.uninit_count = _count,                                            \
+		.user_data_size = _ud_size,                                        \
+		.avail_count = ATOMIC_INIT(_count),                                \
+		.name = STRINGIFY(_pool),                                          \
+		.destroy = _destroy,                                               \
+		.alloc = _alloc,                                                   \
+		.__bufs = _bufs,                                                   \
 	}
 #else
-#define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy)     \
-	{                                                                    \
-		.free = Z_LIFO_INITIALIZER(_pool.free),                      \
-		.lock = { },                                                 \
-		.buf_count = _count,                                         \
-		.uninit_count = _count,                                      \
-		.destroy = _destroy,                                         \
-		.alloc = _alloc,                                             \
-		.__bufs = _bufs,                                             \
+#define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
+	{                                                                          \
+		.free = Z_LIFO_INITIALIZER(_pool.free),                            \
+		.lock = { },                                                       \
+		.buf_count = _count,                                               \
+		.uninit_count = _count,                                            \
+		.user_data_size = _ud_size,                                        \
+		.destroy = _destroy,                                               \
+		.alloc = _alloc,                                                   \
+		.__bufs = _bufs,                                                   \
 	}
 #endif /* CONFIG_NET_BUF_POOL_USAGE */
 
@@ -1075,7 +1083,9 @@ extern const struct net_buf_data_alloc net_buf_heap_alloc;
 	static struct net_buf_pool _name __net_buf_align                      \
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_heap_alloc,          \
-					 net_buf_##_name, _count, _destroy)
+					 net_buf_##_name, _count,             \
+					 CONFIG_NET_BUF_USER_DATA_SIZE,       \
+					 _destroy)
 
 struct net_buf_pool_fixed {
 	size_t data_size;
@@ -1127,7 +1137,9 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
 	static struct net_buf_pool _name __net_buf_align                      \
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_fixed_alloc_##_name, \
-					 net_buf_##_name, _count, _destroy)
+					 net_buf_##_name, _count,            \
+					 CONFIG_NET_BUF_USER_DATA_SIZE,       \
+					 _destroy)
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct net_buf_data_cb net_buf_var_cb;
@@ -1166,7 +1178,9 @@ extern const struct net_buf_data_cb net_buf_var_cb;
 	static struct net_buf_pool _name __net_buf_align                      \
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_data_alloc_##_name,  \
-					 _net_buf_##_name, _count, _destroy)
+					 _net_buf_##_name, _count,            \
+					 CONFIG_NET_BUF_USER_DATA_SIZE,       \
+					 _destroy)
 
 /**
  * @def NET_BUF_POOL_DEFINE
