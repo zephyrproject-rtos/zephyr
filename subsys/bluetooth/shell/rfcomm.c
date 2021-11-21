@@ -33,7 +33,7 @@
 
 #define DATA_MTU 48
 
-NET_BUF_POOL_FIXED_DEFINE(pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(pool, 1, DATA_MTU, 8, NULL);
 
 static struct bt_sdp_attribute spp_attrs[] = {
 	BT_SDP_NEW_SERVICE,

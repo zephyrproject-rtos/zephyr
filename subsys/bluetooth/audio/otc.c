@@ -34,7 +34,7 @@
 #define OTS_CLIENT_INST_COUNT   1
 
 NET_BUF_POOL_FIXED_DEFINE(ots_c_read_queue, 1,
-			  sizeof(struct bt_gatt_read_params), NULL);
+			  sizeof(struct bt_gatt_read_params), 8, NULL);
 
 #define OTS_WORK(_w) CONTAINER_OF(_w, struct otc_instance_t, work)
 
@@ -49,7 +49,7 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan);
 #define CREDITS         10
 #define DATA_MTU        (BT_OTC_MAX_WRITE_SIZE * CREDITS)
 
-NET_BUF_POOL_FIXED_DEFINE(otc_l2cap_pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(otc_l2cap_pool, 1, DATA_MTU, 8, NULL);
 
 struct l2ch {
 	struct k_delayed_work recv_work;
