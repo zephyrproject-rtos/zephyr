@@ -15,10 +15,6 @@
 #include <sys/util.h>
 #include <zephyr.h>
 
-#ifndef CONFIG_NET_BUF_USER_DATA_SIZE
-#define CONFIG_NET_BUF_USER_DATA_SIZE 0
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1216,7 +1212,6 @@ extern const struct net_buf_data_cb net_buf_var_cb;
  * @param _destroy  Optional destroy callback when buffer is freed.
  */
 #define NET_BUF_POOL_DEFINE(_name, _count, _size, _ud_size, _destroy)        \
-	BUILD_ASSERT(_ud_size <= CONFIG_NET_BUF_USER_DATA_SIZE);             \
 	NET_BUF_POOL_FIXED_DEFINE(_name, _count, _size, _ud_size, _destroy)
 
 /**
