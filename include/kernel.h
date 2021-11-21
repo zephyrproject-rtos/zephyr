@@ -13,6 +13,8 @@
 #ifndef ZEPHYR_INCLUDE_KERNEL_H_
 #define ZEPHYR_INCLUDE_KERNEL_H_
 
+/* test */
+
 #if !defined(_ASMLANGUAGE)
 #include <kernel_includes.h>
 #include <errno.h>
