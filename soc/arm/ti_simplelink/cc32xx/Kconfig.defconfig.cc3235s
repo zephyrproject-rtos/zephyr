@@ -23,10 +23,12 @@ config ROM_START_OFFSET
 	default 0x0
 
 config BOOTLOADER_SRAM_SIZE
-	default 16
+	default 16 if !CC3235S_DEBUG
+	default 0  if CC3235S_DEBUG
 
 config SRAM_BASE_ADDRESS
-	default 0x20004000
+	default 0x20004000 if !CC3235S_DEBUG
+	default 0x20000000 if CC3235S_DEBUG
 
 if GPIO
 
