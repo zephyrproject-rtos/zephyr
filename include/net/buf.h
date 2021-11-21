@@ -1178,20 +1178,20 @@ extern const struct net_buf_data_cb net_buf_var_cb;
  * @param _name      Name of the pool variable.
  * @param _count     Number of buffers in the pool.
  * @param _data_size Total amount of memory available for data payloads.
+ * @param _ud_size   User data space to reserve per buffer.
  * @param _destroy   Optional destroy callback when buffer is freed.
  */
-#define NET_BUF_POOL_VAR_DEFINE(_name, _count, _data_size, _destroy)          \
-	_NET_BUF_ARRAY_DEFINE(_name, _count, CONFIG_NET_BUF_USER_DATA_SIZE);  \
-	K_HEAP_DEFINE(net_buf_mem_pool_##_name, _data_size);                  \
-	static const struct net_buf_data_alloc net_buf_data_alloc_##_name = { \
-		.cb = &net_buf_var_cb,                                        \
-		.alloc_data = &net_buf_mem_pool_##_name,                      \
-	};                                                                    \
-	static struct net_buf_pool _name __net_buf_align                      \
-			__in_section(_net_buf_pool, static, _name) =          \
-		NET_BUF_POOL_INITIALIZER(_name, &net_buf_data_alloc_##_name,  \
-					 _net_buf_##_name, _count,            \
-					 CONFIG_NET_BUF_USER_DATA_SIZE,       \
+#define NET_BUF_POOL_VAR_DEFINE(_name, _count, _data_size, _ud_size, _destroy) \
+	_NET_BUF_ARRAY_DEFINE(_name, _count, _ud_size);                        \
+	K_HEAP_DEFINE(net_buf_mem_pool_##_name, _data_size);                   \
+	static const struct net_buf_data_alloc net_buf_data_alloc_##_name = {  \
+		.cb = &net_buf_var_cb,                                         \
+		.alloc_data = &net_buf_mem_pool_##_name,                       \
+	};                                                                     \
+	static struct net_buf_pool _name __net_buf_align                       \
+			__in_section(_net_buf_pool, static, _name) =           \
+		NET_BUF_POOL_INITIALIZER(_name, &net_buf_data_alloc_##_name,   \
+					 _net_buf_##_name, _count, _ud_size,   \
 					 _destroy)
 
 /**
