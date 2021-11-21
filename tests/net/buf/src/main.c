@@ -17,6 +17,10 @@
 
 #define TEST_TIMEOUT K_SECONDS(1)
 
+#define USER_DATA_HEAP	4
+#define USER_DATA_FIXED	0
+#define USER_DATA_VAR	63
+
 struct bt_data {
 	void *hci_sync;
 
@@ -63,9 +67,9 @@ static void buf_destroy(struct net_buf *buf);
 static void fixed_destroy(struct net_buf *buf);
 static void var_destroy(struct net_buf *buf);
 
-NET_BUF_POOL_HEAP_DEFINE(bufs_pool, 10, 0, buf_destroy);
-NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, 128, 0, fixed_destroy);
-NET_BUF_POOL_VAR_DEFINE(var_pool, 10, 1024, 0, var_destroy);
+NET_BUF_POOL_HEAP_DEFINE(bufs_pool, 10, USER_DATA_HEAP, buf_destroy);
+NET_BUF_POOL_FIXED_DEFINE(fixed_pool, 10, 128, USER_DATA_FIXED, fixed_destroy);
+NET_BUF_POOL_VAR_DEFINE(var_pool, 10, 1024, USER_DATA_VAR, var_destroy);
 
 static void buf_destroy(struct net_buf *buf)
 {
@@ -684,12 +688,35 @@ static void test_net_buf_user_data(void)
 {
 	struct net_buf *buf;
 
+	/* Fixed Pool */
 	buf = net_buf_alloc(&fixed_pool, K_NO_WAIT);
 	zassert_not_null(buf, "Failed to get buffer");
 
-	zassert_equal(CONFIG_NET_BUF_USER_DATA_SIZE, fixed_pool.user_data_size,
+	zassert_equal(USER_DATA_FIXED, fixed_pool.user_data_size,
 		"Bad user_data_size");
-	zassert_equal(CONFIG_NET_BUF_USER_DATA_SIZE, buf->user_data_size,
+	zassert_equal(USER_DATA_FIXED, buf->user_data_size,
+		"Bad user_data_size");
+
+	net_buf_unref(buf);
+
+	/* Heap Pool */
+	buf = net_buf_alloc_len(&bufs_pool, 20, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	zassert_equal(USER_DATA_HEAP, bufs_pool.user_data_size,
+		"Bad user_data_size");
+	zassert_equal(USER_DATA_HEAP, buf->user_data_size,
+		"Bad user_data_size");
+
+	net_buf_unref(buf);
+
+	/* Var Pool */
+	buf = net_buf_alloc_len(&var_pool, 20, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	zassert_equal(USER_DATA_VAR, var_pool.user_data_size,
+		"Bad user_data_size");
+	zassert_equal(USER_DATA_VAR, buf->user_data_size,
 		"Bad user_data_size");
 
 	net_buf_unref(buf);
