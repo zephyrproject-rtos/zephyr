@@ -70,7 +70,7 @@ static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
 NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
-			  BT_L2CAP_BUF_SIZE(SDP_MTU), NULL);
+			  BT_L2CAP_BUF_SIZE(SDP_MTU), 8, NULL);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
 

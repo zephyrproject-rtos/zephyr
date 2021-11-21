@@ -73,7 +73,7 @@ struct bt_iso_chan iso_chan = {
 
 static struct bt_iso_cig *cig;
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8,
 			  NULL);
 
 static int iso_accept(const struct bt_iso_accept_info *info,
@@ -349,7 +349,7 @@ static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 
 #if defined(CONFIG_BT_ISO_BROADCASTER)
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
 static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {

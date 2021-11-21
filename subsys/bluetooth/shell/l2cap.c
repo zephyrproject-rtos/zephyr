@@ -39,8 +39,8 @@
 #define L2CAP_POLICY_16BYTE_KEY		0x02
 
 NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1,
-			  BT_L2CAP_SDU_BUF_SIZE(DATA_MTU), NULL);
-NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_MTU, NULL);
+			  BT_L2CAP_SDU_BUF_SIZE(DATA_MTU), 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_MTU, 8, NULL);
 
 static uint8_t l2cap_policy;
 static struct bt_conn *l2cap_allowlist[CONFIG_BT_MAX_CONN];
