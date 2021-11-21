@@ -35,7 +35,7 @@ zephyr_smp_alloc_rsp(const void *req, void *arg)
 		pool = net_buf_pool_get(req_nb->pool_id);
 		memcpy(net_buf_user_data(rsp_nb),
 		       net_buf_user_data((void *)req_nb),
-		       sizeof(req_nb->user_data));
+		       req_nb->user_data_size);
 	}
 
 	return rsp_nb;
