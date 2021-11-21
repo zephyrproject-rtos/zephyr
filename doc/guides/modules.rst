@@ -13,7 +13,7 @@ this page.
 To be classified as a candidate for being included in the default list of
 modules, an external project is required to have its own life-cycle outside
 the Zephyr Project, that is, reside in its own repository, and have its own
-contribution and maintenance workfow and release process. Zephyr modules
+contribution and maintenance workflow and release process. Zephyr modules
 should not contain code that is written exclusively for Zephyr. Instead,
 such code should be contributed to the main zephyr tree.
 
