@@ -940,7 +940,7 @@ void usb_audio_register(const struct device *dev,
 			    DUMMY_API)
 
 #define DEFINE_BUF_POOL(name, size) \
-	NET_BUF_POOL_FIXED_DEFINE(name, 5, size, net_buf_destroy)
+	NET_BUF_POOL_FIXED_DEFINE(name, 5, size, 4, net_buf_destroy)
 
 #define UNIDIR_DEVICE(dev, i, out_pool, in_size, it_type, ot_type, cb, addr) \
 	UTIL_EXPAND( \

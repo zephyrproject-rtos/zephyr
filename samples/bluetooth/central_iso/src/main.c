@@ -23,7 +23,7 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8,
 			  NULL);
 
 /**
