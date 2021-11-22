@@ -73,6 +73,57 @@ int pm_device_state_set(const struct device *dev,
 	return 0;
 }
 
+int pm_device_action_run(const struct device *dev,
+			enum pm_device_action action)
+{
+	int ret;
+	enum pm_device_state state;
+	struct pm_device *pm = dev->pm;
+
+	if (pm == NULL) {
+		return -ENOSYS;
+	}
+
+	switch (action) {
+	case PM_DEVICE_ACTION_FORCE_SUSPEND:
+		__fallthrough;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (pm->state == PM_DEVICE_STATE_SUSPENDED) {
+			return -EALREADY;
+		} else if (pm->state == PM_DEVICE_STATE_OFF) {
+			return -ENOTSUP;
+		}
+
+		state = PM_DEVICE_STATE_SUSPENDED;
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		if (pm->state == PM_DEVICE_STATE_ACTIVE) {
+			return -EALREADY;
+		}
+
+		state = PM_DEVICE_STATE_ACTIVE;
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		if (pm->state == PM_DEVICE_STATE_OFF) {
+			return -EALREADY;
+		}
+
+		state = PM_DEVICE_STATE_OFF;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = pm->action_cb(dev, action);
+	if (ret < 0) {
+		return ret;
+	}
+
+	pm->state = state;
+
+	return 0;
+}
+
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state)
 {
