@@ -293,6 +293,25 @@ int pm_device_state_set(const struct device *dev,
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state);
 
+/**
+ * @brief Run a pm action on a device.
+ *
+ * This function calls the device PM control callback so that the device does
+ * the necessary operations to execute the given action.
+ *
+ * @param dev Device instance.
+ * @param action Device pm action.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If requested state is not supported.
+ * @retval -EALREADY If device is already at the requested state.
+ * @retval -EBUSY If device is changing its state.
+ * @retval -ENOSYS If device does not support PM.
+ * @retval Errno Other negative errno on failure.
+ */
+int pm_device_action_run(const struct device *dev,
+		enum pm_device_action action);
+
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**
  * @brief Mark a device as busy.
