@@ -197,6 +197,8 @@ Bluetooth controller:
         - thoh-ot
         - kruithofa
         - ppryga
+        - mtpr-ot
+        - wopu-ot
     files:
         - subsys/bluetooth/controller/
     labels:
