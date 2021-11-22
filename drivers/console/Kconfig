@@ -34,7 +34,7 @@ config CONSOLE_HANDLER
 
 config CONSOLE_INIT_PRIORITY
 	int "Console init priority"
-	default 95 if USB_UART_CONSOLE || UART_MUX
+	default 95 if UART_MUX
 	default 60 if UART_CONSOLE || XTENSA_SIM_CONSOLE
 	default KERNEL_INIT_PRIORITY_DEFAULT
 	help
@@ -86,15 +86,6 @@ config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
 	help
 	  Fixed amount of time which unit is milliseconds to keep the UART
 	  console in use flag true.
-
-config USB_UART_CONSOLE
-	bool "Use USB port for console outputs"
-	select UART_CONSOLE
-	select USB_CDC_ACM
-	help
-	  Enable this option to use the USB CDC ACM class for console.
-	  As for the console driver, this option only changes the initialization
-	  level.
 
 config RAM_CONSOLE
 	bool "Use RAM console"

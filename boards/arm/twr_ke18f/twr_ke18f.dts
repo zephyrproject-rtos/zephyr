@@ -40,7 +40,7 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
-		zephyr,can-primary = &flexcan0;
+		zephyr,canbus = &flexcan0;
 	};
 
 	leds {

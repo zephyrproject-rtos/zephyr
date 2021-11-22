@@ -25,6 +25,9 @@
 #define SCAN_INT_UNIT_US 625U
 #define CONN_INT_UNIT_US 1250U
 
+/* Intervals after which connection or sync establishment is considered lost */
+#define CONN_ESTAB_COUNTDOWN 6U
+
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 #define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -140,6 +143,9 @@ enum done_result {
 	DONE_LATE
 };
 
+/* Forward declaration data type to store CTE IQ samples report related data */
+struct cte_conn_iq_report;
+
 struct ull_hdr {
 	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
 				* events
@@ -229,6 +235,7 @@ enum node_rx_type {
 	NODE_RX_TYPE_SYNC_LOST,
 	NODE_RX_TYPE_SYNC_CHM_COMPLETE,
 	NODE_RX_TYPE_SYNC_ISO,
+	NODE_RX_TYPE_SYNC_ISO_PDU,
 	NODE_RX_TYPE_SYNC_ISO_LOST,
 	NODE_RX_TYPE_EXT_ADV_TERMINATE,
 	NODE_RX_TYPE_BIG_COMPLETE,
@@ -276,6 +283,8 @@ struct node_rx_ftr {
 				*/
 		void *aux_ptr;
 		uint8_t aux_phy;
+		uint8_t aux_sched;
+		struct cte_conn_iq_report *iq_report;
 	};
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
@@ -325,6 +334,9 @@ struct node_rx_iso_meta {
 /* Define invalid/unassigned Controller LLL context handle */
 #define LLL_HANDLE_INVALID     0xFFFF
 
+/* Define invalid/unassigned Controller Advertising LLL context handle */
+#define LLL_ADV_HANDLE_INVALID 0xFF
+
 /* Header of node_rx_pdu */
 struct node_rx_hdr {
 	union {
@@ -371,6 +383,10 @@ enum {
 #if defined(CONFIG_BT_BROADCASTER)
 	EVENT_DONE_EXTRA_TYPE_ADV,
 	EVENT_DONE_EXTRA_TYPE_ADV_AUX,
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	EVENT_DONE_EXTRA_TYPE_ADV_ISO_COMPLETE,
+	EVENT_DONE_EXTRA_TYPE_ADV_ISO_TERMINATE,
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 
@@ -380,6 +396,11 @@ enum {
 	EVENT_DONE_EXTRA_TYPE_SCAN_AUX,
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	EVENT_DONE_EXTRA_TYPE_SYNC,
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB,
+	EVENT_DONE_EXTRA_TYPE_SYNC_ISO,
+	EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE,
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */

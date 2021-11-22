@@ -69,6 +69,10 @@ struct z_heap {
 	chunkid_t chunk0_hdr[2];
 	chunkid_t end_chunk;
 	uint32_t avail_buckets;
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	size_t free_bytes;
+	size_t allocated_bytes;
+#endif
 	struct z_heap_bucket buckets[0];
 };
 

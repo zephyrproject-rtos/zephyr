@@ -389,8 +389,7 @@ isn't a way
 to later get a device pointer by name. The same policies for initialization
 level and priority apply.
 
-For ``SYS_DEVICE_DEFINE()`` you can obtain pointers by name, see
-:ref:`power management <power_management_api>` section.
+For ``SYS_DEVICE_DEFINE()`` you can obtain pointers by name.
 
 :c:func:`SYS_INIT()`
    Run an initialization function at boot at specified priority.

@@ -88,7 +88,7 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 			       mdm_ctx->data_lac,
 			       mdm_ctx->data_cellid,
 #endif
-			       mdm_ctx->data_rssi);
+			       mdm_ctx->data_rssi ? *mdm_ctx->data_rssi : 0);
 		}
 	}
 
@@ -223,7 +223,7 @@ static int cmd_modem_info(const struct shell *shell, size_t argc, char *argv[])
 		      mdm_ctx->data_model,
 		      mdm_ctx->data_revision,
 		      mdm_ctx->data_imei,
-		      mdm_ctx->data_rssi);
+		      mdm_ctx->data_rssi ? *mdm_ctx->data_rssi : 0);
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "GSM 07.10 muxing : %s\n",

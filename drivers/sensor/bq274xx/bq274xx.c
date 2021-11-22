@@ -773,7 +773,10 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),   \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, bq274xx_pm_action,   \
+	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action);		       \
+									       \
+	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,		       \
+			    PM_DEVICE_DT_INST_REF(index),		       \
 			    &bq274xx_driver_##index,                           \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \

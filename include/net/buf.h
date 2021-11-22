@@ -964,9 +964,9 @@ struct net_buf {
 };
 
 struct net_buf_data_cb {
-	uint8_t * (*alloc)(struct net_buf *buf, size_t *size,
+	uint8_t * __must_check (*alloc)(struct net_buf *buf, size_t *size,
 			   k_timeout_t timeout);
-	uint8_t * (*ref)(struct net_buf *buf, uint8_t *data);
+	uint8_t * __must_check (*ref)(struct net_buf *buf, uint8_t *data);
 	void   (*unref)(struct net_buf *buf, uint8_t *data);
 };
 
@@ -1231,21 +1231,22 @@ int net_buf_id(struct net_buf *buf);
  * @return New buffer or NULL if out of buffers.
  */
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
-					  k_timeout_t timeout, const char *func,
-					  int line);
+struct net_buf * __must_check net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
+							k_timeout_t timeout,
+							const char *func,
+							int line);
 #define net_buf_alloc_fixed(_pool, _timeout) \
 	net_buf_alloc_fixed_debug(_pool, _timeout, __func__, __LINE__)
 #else
-struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool,
-				    k_timeout_t timeout);
+struct net_buf * __must_check net_buf_alloc_fixed(struct net_buf_pool *pool,
+						  k_timeout_t timeout);
 #endif
 
 /**
  * @copydetails net_buf_alloc_fixed
  */
-static inline struct net_buf *net_buf_alloc(struct net_buf_pool *pool,
-					    k_timeout_t timeout)
+static inline struct net_buf * __must_check net_buf_alloc(struct net_buf_pool *pool,
+							  k_timeout_t timeout)
 {
 	return net_buf_alloc_fixed(pool, timeout);
 }
@@ -1266,14 +1267,17 @@ static inline struct net_buf *net_buf_alloc(struct net_buf_pool *pool,
  * @return New buffer or NULL if out of buffers.
  */
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
-					k_timeout_t timeout, const char *func,
-					int line);
+struct net_buf * __must_check net_buf_alloc_len_debug(struct net_buf_pool *pool,
+						      size_t size,
+						      k_timeout_t timeout,
+						      const char *func,
+						      int line);
 #define net_buf_alloc_len(_pool, _size, _timeout) \
 	net_buf_alloc_len_debug(_pool, _size, _timeout, __func__, __LINE__)
 #else
-struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
-				  k_timeout_t timeout);
+struct net_buf * __must_check net_buf_alloc_len(struct net_buf_pool *pool,
+						size_t size,
+						k_timeout_t timeout);
 #endif
 
 /**
@@ -1296,17 +1300,17 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
  * @return New buffer or NULL if out of buffers.
  */
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_alloc_with_data_debug(struct net_buf_pool *pool,
-					      void *data, size_t size,
-					      k_timeout_t timeout,
-					      const char *func, int line);
+struct net_buf * __must_check net_buf_alloc_with_data_debug(struct net_buf_pool *pool,
+							    void *data, size_t size,
+							    k_timeout_t timeout,
+							    const char *func, int line);
 #define net_buf_alloc_with_data(_pool, _data_, _size, _timeout)		\
 	net_buf_alloc_with_data_debug(_pool, _data_, _size, _timeout,	\
 				      __func__, __LINE__)
 #else
-struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
-					void *data, size_t size,
-					k_timeout_t timeout);
+struct net_buf * __must_check net_buf_alloc_with_data(struct net_buf_pool *pool,
+						      void *data, size_t size,
+						      k_timeout_t timeout);
 #endif
 
 /**
@@ -1323,12 +1327,14 @@ struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
  * @return New buffer or NULL if the FIFO is empty.
  */
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_get_debug(struct k_fifo *fifo, k_timeout_t timeout,
-				  const char *func, int line);
+struct net_buf * __must_check net_buf_get_debug(struct k_fifo *fifo,
+						k_timeout_t timeout,
+						const char *func, int line);
 #define	net_buf_get(_fifo, _timeout) \
 	net_buf_get_debug(_fifo, _timeout, __func__, __LINE__)
 #else
-struct net_buf *net_buf_get(struct k_fifo *fifo, k_timeout_t timeout);
+struct net_buf * __must_check net_buf_get(struct k_fifo *fifo,
+					  k_timeout_t timeout);
 #endif
 
 /**
@@ -1387,7 +1393,7 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
  *
  * @return New buffer or NULL if the FIFO is empty.
  */
-struct net_buf *net_buf_slist_get(sys_slist_t *list);
+struct net_buf * __must_check net_buf_slist_get(sys_slist_t *list);
 
 /**
  * @brief Put a buffer to the end of a FIFO.
@@ -1422,7 +1428,7 @@ void net_buf_unref(struct net_buf *buf);
  *
  * @return the buffer newly referenced
  */
-struct net_buf *net_buf_ref(struct net_buf *buf);
+struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
 
 /**
  * @brief Clone buffer
@@ -1437,7 +1443,8 @@ struct net_buf *net_buf_ref(struct net_buf *buf);
  *
  * @return Cloned buffer or NULL if out of buffers.
  */
-struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout);
+struct net_buf * __must_check net_buf_clone(struct net_buf *buf,
+					    k_timeout_t timeout);
 
 /**
  * @brief Get a pointer to the user data of a buffer.
@@ -1446,7 +1453,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout);
  *
  * @return Pointer to the user data of the buffer.
  */
-static inline void *net_buf_user_data(const struct net_buf *buf)
+static inline void * __must_check net_buf_user_data(const struct net_buf *buf)
 {
 	return (void *)buf->user_data;
 }
@@ -2371,8 +2378,8 @@ size_t net_buf_linearize(void *dst, size_t dst_len,
  * @param user_data The user data given in net_buf_append_bytes call.
  * @return pointer to allocated net_buf or NULL on error.
  */
-typedef struct net_buf *(*net_buf_allocator_cb)(k_timeout_t timeout,
-						void *user_data);
+typedef struct net_buf * __must_check (*net_buf_allocator_cb)(k_timeout_t timeout,
+							      void *user_data);
 
 /**
  * @brief Append data to a list of net_buf

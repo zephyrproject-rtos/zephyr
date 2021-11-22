@@ -436,7 +436,7 @@ static inline bool att_chan_is_connected(struct bt_att_chan *chan)
 static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 			    bt_att_chan_sent_t cb)
 {
-	BT_DBG("chan %p flags %u code 0x%02x", chan, atomic_get(chan->flags),
+	BT_DBG("chan %p flags %lu code 0x%02x", chan, atomic_get(chan->flags),
 	       ((struct bt_att_hdr *)buf->data)->code);
 
 	return chan_send(chan, buf, cb);
@@ -2610,7 +2610,7 @@ static struct bt_att_chan *att_get_fixed_chan(struct bt_conn *conn)
 
 static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 {
-	BT_DBG("att %p chan %p flags %u", att, chan, atomic_get(chan->flags));
+	BT_DBG("att %p chan %p flags %lu", att, chan, atomic_get(chan->flags));
 
 	if (sys_slist_is_empty(&att->chans)) {
 		/* Init general queues when attaching the first channel */

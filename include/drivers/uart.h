@@ -366,11 +366,25 @@ __subsystem struct uart_driver_api {
 	int (*rx_buf_rsp)(const struct device *dev, uint8_t *buf, size_t len);
 	int (*rx_disable)(const struct device *dev);
 
+#ifdef CONFIG_UART_WIDE_DATA
+	int (*tx_u16)(const struct device *dev, const uint16_t *buf,
+		      size_t len, int32_t timeout);
+	int (*rx_enable_u16)(const struct device *dev, uint16_t *buf,
+			     size_t len, int32_t timeout);
+	int (*rx_buf_rsp_u16)(const struct device *dev, uint16_t *buf,
+			      size_t len);
+#endif
+
 #endif
 
 	/** Console I/O function */
 	int (*poll_in)(const struct device *dev, unsigned char *p_char);
 	void (*poll_out)(const struct device *dev, unsigned char out_char);
+
+#ifdef CONFIG_UART_WIDE_DATA
+	int (*poll_in_u16)(const struct device *dev, uint16_t *p_u16);
+	void (*poll_out_u16)(const struct device *dev, uint16_t out_u16);
+#endif
 
 	/** Console I/O function */
 	int (*err_check)(const struct device *dev);
@@ -386,9 +400,19 @@ __subsystem struct uart_driver_api {
 	int (*fifo_fill)(const struct device *dev, const uint8_t *tx_data,
 			 int len);
 
+#ifdef CONFIG_UART_WIDE_DATA
+	int (*fifo_fill_u16)(const struct device *dev, const uint16_t *tx_data,
+			     int len);
+#endif
+
 	/** Interrupt driven FIFO read function */
 	int (*fifo_read)(const struct device *dev, uint8_t *rx_data,
 			 const int size);
+
+#ifdef CONFIG_UART_WIDE_DATA
+	int (*fifo_read_u16)(const struct device *dev, uint16_t *rx_data,
+			     const int size);
+#endif
 
 	/** Interrupt driven transfer enabling function */
 	void (*irq_tx_enable)(const struct device *dev);
@@ -512,6 +536,40 @@ static inline int z_impl_uart_tx(const struct device *dev, const uint8_t *buf,
 }
 
 /**
+ * @brief Send given number of datum from buffer through UART.
+ *
+ * Function returns immediately and event handler,
+ * set using @ref uart_callback_set, is called after transfer is finished.
+ *
+ * @param dev     UART device structure.
+ * @param buf     Pointer to wide data transmit buffer.
+ * @param len     Length of wide data transmit buffer.
+ * @param timeout Timeout in milliseconds. Valid only if flow control is
+ *		  enabled. @ref SYS_FOREVER_MS disables timeout.
+ *
+ * @retval -ENOTSUP If API is not enabled.
+ * @retval -EBUSY   There is already an ongoing transfer.
+ * @retval 0	    If successful, negative errno code otherwise.
+ */
+__syscall int uart_tx_u16(const struct device *dev, const uint16_t *buf,
+			  size_t len, int32_t timeout);
+
+static inline int z_impl_uart_tx_u16(const struct device *dev,
+				     const uint16_t *buf,
+				     size_t len, int32_t timeout)
+
+{
+#if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_WIDE_DATA)
+	const struct uart_driver_api *api =
+			(const struct uart_driver_api *)dev->api;
+
+	return api->tx_u16(dev, buf, len, timeout);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/**
  * @brief Abort current TX transmission.
  *
  * @ref uart_event_type::UART_TX_DONE event will be generated with amount of
@@ -577,6 +635,44 @@ static inline int z_impl_uart_rx_enable(const struct device *dev,
 }
 
 /**
+ * @brief Start receiving wide data through UART.
+ *
+ * Function sets given buffer as first buffer for receiving and returns
+ * immediately. After that event handler, set using @ref uart_callback_set,
+ * is called with @ref uart_event_type::UART_RX_RDY or
+ * @ref uart_event_type::UART_RX_BUF_REQUEST events.
+ *
+ * @param dev     UART device structure.
+ * @param buf     Pointer to wide data receive buffer.
+ * @param len     Buffer length.
+ * @param timeout Inactivity period after receiving at least a byte which
+ *		  triggers  @ref uart_event_type::UART_RX_RDY event. Given in
+ *		  milliseconds. @ref SYS_FOREVER_MS disables timeout. See
+ *		  @ref uart_event_type for details.
+ *
+ * @retval -ENOTSUP If API is not enabled.
+ * @retval -EBUSY   RX already in progress.
+ * @retval 0	    If successful, negative errno code otherwise.
+ *
+ */
+__syscall int uart_rx_enable_u16(const struct device *dev, uint16_t *buf,
+				 size_t len, int32_t timeout);
+
+static inline int z_impl_uart_rx_enable_u16(const struct device *dev,
+					    uint16_t *buf, size_t len,
+					    int32_t timeout)
+{
+#if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_WIDE_DATA)
+	const struct uart_driver_api *api =
+				(const struct uart_driver_api *)dev->api;
+
+	return api->rx_enable_u16(dev, buf, len, timeout);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/**
  * @brief Provide receive buffer in response to
  * @ref uart_event_type::UART_RX_BUF_REQUEST event.
  *
@@ -605,6 +701,40 @@ static inline int uart_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 				(const struct uart_driver_api *)dev->api;
 
 	return api->rx_buf_rsp(dev, buf, len);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Provide wide data receive buffer in response to
+ * @ref uart_event_type::UART_RX_BUF_REQUEST event.
+ *
+ * Provide pointer to RX buffer, which will be used when current buffer is
+ * filled.
+ *
+ * @note Providing buffer that is already in usage by driver leads to
+ *       undefined behavior. Buffer can be reused when it has been released
+ *       by driver.
+ *
+ * @param dev UART device structure.
+ * @param buf Pointer to wide data receive buffer.
+ * @param len Buffer length.
+ *
+ * @retval -ENOTSUP If API is not enabled
+ * @retval -EBUSY   Next buffer already set.
+ * @retval -EACCES  Receiver is already disabled (function called too late?).
+ * @retval 0	    If successful, negative errno code otherwise.
+ *
+ */
+static inline int uart_rx_buf_rsp_u16(const struct device *dev, uint16_t *buf,
+				      size_t len)
+{
+#if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_WIDE_DATA)
+	const struct uart_driver_api *api =
+				(const struct uart_driver_api *)dev->api;
+
+	return api->rx_buf_rsp_u16(dev, buf, len);
 #else
 	return -ENOTSUP;
 #endif
@@ -690,6 +820,40 @@ static inline int z_impl_uart_poll_in(const struct device *dev,
 	return api->poll_in(dev, p_char);
 }
 
+
+/**
+ * @brief Poll the device for wide data input.
+ *
+ * @param dev UART device structure.
+ * @param p_u16 Pointer to 16-bit data.
+ *
+ * @retval 0  If data arrived.
+ * @retval -1 If no data was available to read (i.e., the UART
+ *            input buffer was empty).
+ *
+ * @retval -ENOTSUP If API is not enabled.
+ * @retval -ENOSYS  If the operation is not supported.
+ * @retval -EBUSY   If reception was enabled using uart_rx_enabled
+ */
+__syscall int uart_poll_in_u16(const struct device *dev, uint16_t *p_u16);
+
+static inline int z_impl_uart_poll_in_u16(const struct device *dev,
+					  uint16_t *p_u16)
+{
+#ifdef CONFIG_UART_WIDE_DATA
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->poll_in_u16 == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->poll_in_u16(dev, p_u16);
+#else
+	return -ENOTSUP;
+#endif
+}
+
 /**
  * @brief Output a character in polled mode.
  *
@@ -713,6 +877,32 @@ static inline void z_impl_uart_poll_out(const struct device *dev,
 		(const struct uart_driver_api *)dev->api;
 
 	api->poll_out(dev, out_char);
+}
+
+/**
+ * @brief Output wide data in polled mode.
+ *
+ * This routine checks if the transmitter is empty.
+ * When the transmitter is empty, it writes a datum to the data
+ * register.
+ *
+ * To send a datum when hardware flow control is enabled, the handshake
+ * signal CTS must be asserted.
+ *
+ * @param dev UART device structure.
+ * @param out_u16 Wide data to send.
+ */
+__syscall void uart_poll_out_u16(const struct device *dev, uint16_t out_u16);
+
+static inline void z_impl_uart_poll_out_u16(const struct device *dev,
+					    uint16_t out_u16)
+{
+#ifdef CONFIG_UART_WIDE_DATA
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	api->poll_out_u16(dev, out_u16);
+#endif
 }
 
 /**
@@ -810,6 +1000,44 @@ static inline int uart_fifo_fill(const struct device *dev,
 }
 
 /**
+ * @brief Fill FIFO with wide data.
+ *
+ * @details This function is expected to be called from UART
+ * interrupt handler (ISR), if uart_irq_tx_ready() returns true.
+ * Result of calling this function not from an ISR is undefined
+ * (hardware-dependent). Likewise, *not* calling this function
+ * from an ISR if uart_irq_tx_ready() returns true may lead to
+ * undefined behavior, e.g. infinite interrupt loops. It's
+ * mandatory to test return value of this function, as different
+ * hardware has different FIFO depth (oftentimes just 1).
+ *
+ * @param dev UART device structure.
+ * @param tx_data Wide data to transmit.
+ * @param size Number of datum to send.
+ *
+ * @return Number of datum sent.
+ * @retval -ENOSYS  if this function is not supported
+ * @retval -ENOTSUP if API is not enabled.
+ */
+static inline int uart_fifo_fill_u16(const struct device *dev,
+				     const uint16_t *tx_data,
+				     int size)
+{
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_UART_WIDE_DATA)
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->fifo_fill_u16 == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->fifo_fill_u16(dev, tx_data, size);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/**
  * @brief Read data from FIFO.
  *
  * @details This function is expected to be called from UART
@@ -845,6 +1073,48 @@ static inline int uart_fifo_read(const struct device *dev, uint8_t *rx_data,
 	}
 
 	return api->fifo_read(dev, rx_data, size);
+#endif
+
+	return -ENOTSUP;
+}
+
+/**
+ * @brief Read wide data from FIFO.
+ *
+ * @details This function is expected to be called from UART
+ * interrupt handler (ISR), if uart_irq_rx_ready() returns true.
+ * Result of calling this function not from an ISR is undefined
+ * (hardware-dependent). It's unspecified whether "RX ready"
+ * condition as returned by uart_irq_rx_ready() is level- or
+ * edge- triggered. That means that once uart_irq_rx_ready() is
+ * detected, uart_fifo_read() must be called until it reads all
+ * available data in the FIFO (i.e. until it returns less data
+ * than was requested).
+ *
+ * Note that the calling context only applies to physical UARTs and
+ * no to the virtual ones found in USB CDC ACM code.
+ *
+ * @param dev UART device structure.
+ * @param rx_data Wide data container.
+ * @param size Container size.
+ *
+ * @return Number of datum read.
+ * @retval -ENOSYS  if this function is not supported.
+ * @retval -ENOTSUP if API is not enabled.
+ */
+static inline int uart_fifo_read_u16(const struct device *dev,
+				     uint16_t *rx_data,
+				     const int size)
+{
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_UART_WIDE_DATA)
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->fifo_read_u16 == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->fifo_read_u16(dev, rx_data, size);
 #endif
 
 	return -ENOTSUP;

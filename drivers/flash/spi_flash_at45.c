@@ -669,7 +669,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	static const struct spi_flash_at45_config inst_##idx##_config = {    \
 		.bus = SPI_DT_SPEC_INST_GET(				     \
 			idx, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	     \
-			SPI_WORD_SET(8) | SPI_LINES_SINGLE, 0),		     \
+			SPI_WORD_SET(8), 0),				     \
 		IF_ENABLED(INST_HAS_RESET_GPIO(idx),			\
 			(.reset = &reset_##idx,))			\
 		IF_ENABLED(INST_HAS_WP_GPIO(idx),			\
@@ -699,8 +699,11 @@ static const struct flash_driver_api spi_flash_at45_api = {
 			"Page size specified for instance " #idx " of "	     \
 			"atmel,at45 is not compatible with its "	     \
 			"total size");))				     \
+									     \
+	PM_DEVICE_DT_INST_DEFINE(idx, spi_flash_at45_pm_action);	     \
+									     \
 	DEVICE_DT_INST_DEFINE(idx,					     \
-		      spi_flash_at45_init, spi_flash_at45_pm_action,	     \
+		      spi_flash_at45_init, PM_DEVICE_DT_INST_REF(idx),	     \
 		      &inst_##idx##_data, &inst_##idx##_config,		     \
 		      POST_KERNEL, CONFIG_SPI_FLASH_AT45_INIT_PRIORITY,      \
 		      &spi_flash_at45_api);

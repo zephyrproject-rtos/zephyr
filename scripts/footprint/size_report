@@ -18,7 +18,7 @@ import re
 from pathlib import Path
 import json
 
-from distutils.version import LooseVersion
+from packaging import version
 
 from colorama import init, Fore
 
@@ -34,7 +34,7 @@ from elftools.dwarf.descriptions import (
 from elftools.dwarf.locationlists import (
     LocationExpr, LocationParser)
 
-if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
+if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 

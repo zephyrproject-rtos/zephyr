@@ -18,40 +18,7 @@ BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 
 mkdir -p ${WORK_DIR}
 
-function compile(){
-  local app_root="${app_root:-${ZEPHYR_BASE}}"
-  local conf_file="${conf_file:-prj.conf}"
-  local cmake_args="${cmake_args:-"-DCONFIG_COVERAGE=y"}"
-  local ninja_args="${ninja_args:-""}"
-  local cc_flags="${cc_flags:-"-Werror"}"
-
-  local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
-  local exe_name=${exe_name//\//_}
-  local exe_name=${exe_name//./_}
-  local exe_name=${BSIM_OUT_PATH}/bin/$exe_name
-  local map_file_name=${exe_name}.Tsymbols
-
-  local this_dir=${WORK_DIR}/${app}/${conf_file}
-
-  echo "Building $exe_name"
-
-  # Set INCR_BUILD when calling to only do an incremental build
-  if [ ! -v INCR_BUILD ] || [ ! -d "${this_dir}" ]; then
-      [ -d "${this_dir}" ] && rm ${this_dir} -rf
-      mkdir -p ${this_dir} && cd ${this_dir}
-      cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
-        -DCONF_FILE=${conf_file} ${cmake_args} \
-        -DCMAKE_C_FLAGS="${cc_flags}" ${app_root}/${app} \
-        &> cmake.out || { cat cmake.out && return 0; }
-  else
-      cd ${this_dir}
-  fi
-  ninja ${ninja_args} &> ninja.out || { cat ninja.out && return 0; }
-  cp ${this_dir}/zephyr/zephyr.exe ${exe_name}
-
-  nm ${exe_name} | grep -v " [U|w] " | sort | cut -d" " -f1,3 > ${map_file_name}
-  sed -i "1i $(wc -l ${map_file_name} | cut -d" " -f1)" ${map_file_name}
-}
+source ${ZEPHYR_BASE}/tests/bluetooth/bsim_bt/compile.source
 
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split.conf \
 	compile
@@ -64,10 +31,17 @@ app=tests/bluetooth/bsim_bt/bsim_test_advx compile
 app=tests/bluetooth/bsim_bt/bsim_test_iso compile
 app=tests/bluetooth/bsim_bt/bsim_test_audio compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
+  conf_file=prj_dut_llcp.conf compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
+  conf_file=prj_tst_llcp.conf compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
   conf_file=prj_dut.conf compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
   conf_file=prj_tst.conf compile
-app=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app \
+  conf_file=prj.conf compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app \
+  conf_file=prj_llcp.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_file=prj_low_lat.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_file=prj_pst.conf compile

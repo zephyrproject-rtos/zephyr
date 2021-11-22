@@ -235,7 +235,7 @@ static const struct gpio_driver_api neorv32_gpio_driver_api = {
 			&neorv32_gpio_##n##_data,			\
 			&neorv32_gpio_##n##_config,			\
 			POST_KERNEL,					\
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+			CONFIG_GPIO_INIT_PRIORITY,			\
 			&neorv32_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NEORV32_GPIO_INIT)

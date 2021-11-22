@@ -368,8 +368,9 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 		.seq.values.p_raw = pwm_nrfx_##idx##_data.current,	      \
 		.seq.length = NRF_PWM_CHANNEL_COUNT			      \
 	};								      \
+	PM_DEVICE_DT_DEFINE(PWM(idx), pwm_nrfx_pm_action);		      \
 	DEVICE_DT_DEFINE(PWM(idx),					      \
-		      pwm_nrfx_init, pwm_nrfx_pm_action,		      \
+		      pwm_nrfx_init, PM_DEVICE_DT_REF(PWM(idx)),	      \
 		      &pwm_nrfx_##idx##_data,				      \
 		      &pwm_nrfx_##idx##config,				      \
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \

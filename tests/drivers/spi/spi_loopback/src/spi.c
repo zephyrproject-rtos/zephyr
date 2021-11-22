@@ -38,12 +38,27 @@ struct spi_cs_control spi_cs = {
 
 #define STACK_SIZE 512
 #define BUF_SIZE 17
+#define BUF2_SIZE 36
+
+#if CONFIG_NOCACHE_MEMORY
+static const char tx_data[] = "0123456789abcdef\0";
+static __aligned(32) char buffer_tx[BUF_SIZE] __used
+	__attribute__((__section__(".nocache")));
+static __aligned(32) char buffer_rx[BUF_SIZE] __used
+	__attribute__((__section__(".nocache")));
+static const char tx2_data[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static __aligned(32) char buffer2_tx[BUF2_SIZE] __used
+	__attribute__((__section__(".nocache")));
+static __aligned(32) char buffer2_rx[BUF2_SIZE] __used
+	__attribute__((__section__(".nocache")));
+#else
+/* this src memory shall be in RAM to support using as a DMA source pointer.*/
 uint8_t buffer_tx[] = "0123456789abcdef\0";
 uint8_t buffer_rx[BUF_SIZE] = {};
 
-#define BUF2_SIZE 36
 uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
 uint8_t buffer2_rx[BUF2_SIZE] = {};
+#endif
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
@@ -660,6 +675,13 @@ end:
 /*test case main entry*/
 void test_main(void)
 {
+#if CONFIG_NOCACHE_MEMORY
+	memset(buffer_tx, 0, sizeof(buffer_tx));
+	memcpy(buffer_tx, tx_data, sizeof(tx_data));
+	memset(buffer2_tx, 0, sizeof(buffer2_tx));
+	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
+#endif
+
 	ztest_test_suite(test_spi, ztest_unit_test(test_spi_loopback));
 	ztest_run_test_suite(test_spi);
 }

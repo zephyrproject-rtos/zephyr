@@ -403,7 +403,7 @@ static const struct ethphy_driver_api phy_mii_driver_api = {
 static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 	.phy_addr = DT_PROP(DT_DRV_INST(n), address),			 \
 	.fixed = IS_FIXED_LINK(n),					 \
-	.fixed_speed = DT_ENUM_IDX_OR(DT_DRV_INST(n), fixed_link, 0),	 \
+	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \
 			 DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), mdio)))\
 };

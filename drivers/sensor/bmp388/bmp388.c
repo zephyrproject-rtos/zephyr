@@ -710,20 +710,21 @@ static int bmp388_init(const struct device *dev)
 
 #define BMP388_INST(inst)						   \
 	static struct bmp388_data bmp388_data_##inst = {		   \
-		.odr = DT_ENUM_IDX(DT_DRV_INST(inst), odr),		   \
-		.osr_pressure = DT_ENUM_IDX(DT_DRV_INST(inst), osr_press), \
-		.osr_temp = DT_ENUM_IDX(DT_DRV_INST(inst), osr_temp),	   \
+		.odr = DT_INST_ENUM_IDX(inst, odr),			   \
+		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),	   \
+		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),		   \
 	};								   \
 	static const struct bmp388_config bmp388_config_##inst = {	   \
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		   \
 		BMP388_BUS_CFG(inst),					   \
 		BMP388_INT_CFG(inst)					   \
-		.iir_filter = DT_ENUM_IDX(DT_DRV_INST(inst), iir_filter),  \
+		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	   \
 	};								   \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		   \
 	DEVICE_DT_INST_DEFINE(						   \
 		inst,							   \
 		bmp388_init,						   \
-		bmp388_pm_action,					   \
+		PM_DEVICE_DT_INST_REF(inst),				   \
 		&bmp388_data_##inst,					   \
 		&bmp388_config_##inst,					   \
 		POST_KERNEL,						   \

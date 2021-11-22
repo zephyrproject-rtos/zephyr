@@ -37,8 +37,8 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "tcp_internal.h"
 #include "net_stats.h"
 
-#if IS_ENABLED(CONFIG_NET_TCP2)
-#include "tcp2.h"
+#if IS_ENABLED(CONFIG_NET_TCP)
+#include "tcp.h"
 #endif
 
 #ifndef EPFNOSUPPORT

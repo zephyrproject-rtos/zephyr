@@ -220,11 +220,6 @@ struct usb_association_descriptor {
 #define USB_SCD_RESERVED	BIT(7)
 #define USB_SCD_SELF_POWERED	BIT(6)
 #define USB_SCD_REMOTE_WAKEUP	BIT(5)
-#define USB_SCD_ATTRIBUTES	(USB_SCD_RESERVED |			      \
-				 COND_CODE_1(CONFIG_USB_SELF_POWERED,	      \
-					     (USB_SCD_SELF_POWERED), (0)) |   \
-				 COND_CODE_1(CONFIG_USB_DEVICE_REMOTE_WAKEUP, \
-					     (USB_SCD_REMOTE_WAKEUP), (0)))
 
 /** USB Defined Base Class Codes from https://www.usb.org/defined-class-codes */
 #define USB_BCC_AUDIO			0x01

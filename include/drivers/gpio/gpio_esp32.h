@@ -2,6 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <devicetree.h>
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_ESP32_H_
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_ESP32_H_
 

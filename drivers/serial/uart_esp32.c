@@ -551,7 +551,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx),				       \
 		    NULL,				       \
 		    &uart_esp32_data_##idx,				       \
 		    &uart_esp32_cfg_port_##idx,				       \
-		    POST_KERNEL,					       \
+		    PRE_KERNEL_2,					       \
 		    CONFIG_SERIAL_INIT_PRIORITY,			       \
 		    &uart_esp32_api);
 

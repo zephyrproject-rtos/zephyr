@@ -537,7 +537,8 @@ static int si7210_init(const struct device *dev)
 	static const struct si7210_config si7210_config_##inst = { \
 		.bus = I2C_DT_SPEC_INST_GET(inst), \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, si7210_init, si7210_pm_action, \
+	PM_DEVICE_DT_INST_DEFINE(inst, si7210_pm_action); \
+	DEVICE_DT_INST_DEFINE(inst, si7210_init, PM_DEVICE_DT_INST_REF(inst), \
 		&si7210_data_##inst, &si7210_config_##inst, POST_KERNEL, \
 		CONFIG_SENSOR_INIT_PRIORITY, &si7210_api_funcs);
 

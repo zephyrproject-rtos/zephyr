@@ -490,9 +490,9 @@ void test_main(void)
 	k_thread_system_pool_assign(k_current_get());
 
 	/* Run a thread that self-exits, triggering idle cleanup */
-	ztest_test_suite(userspace,
+	ztest_test_suite(userspace_thread_stack,
 			 ztest_1cpu_unit_test(test_stack_buffer),
 			 ztest_1cpu_unit_test(test_idle_stack)
 			 );
-	ztest_run_test_suite(userspace);
+	ztest_run_test_suite(userspace_thread_stack);
 }

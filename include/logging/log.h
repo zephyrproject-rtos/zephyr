@@ -289,7 +289,7 @@ static inline void log_printk(const char *fmt, va_list ap)
 char *z_log_strdup(const char *str);
 static inline char *log_strdup(const char *str)
 {
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL) || IS_ENABLED(CONFIG_LOG2)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL) || IS_ENABLED(CONFIG_LOG2)) {
 		return (char *)str;
 	}
 

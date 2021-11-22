@@ -439,6 +439,12 @@ uint32_t sys_clock_cycle_get_32(void)
 }
 
 __pinned_func
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return hpet_counter_get();
+}
+
+__pinned_func
 void sys_clock_idle_exit(void)
 {
 	uint32_t reg;

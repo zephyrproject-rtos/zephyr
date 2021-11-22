@@ -13,12 +13,6 @@ if GPIO_DW
 config GPIO_DW_SHARED_IRQ
 	bool
 
-config GPIO_DW_INIT_PRIORITY
-	int "Init priority"
-	default 60
-	help
-	  Device driver initialization priority.
-
 config GPIO_DW_CLOCK_GATE
 	bool "Enable clock gating"
 	select CLOCK_CONTROL

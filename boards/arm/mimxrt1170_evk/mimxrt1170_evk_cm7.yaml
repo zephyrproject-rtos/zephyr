@@ -20,3 +20,4 @@ supported:
   - can
   - spi
   - adc
+  - i2c

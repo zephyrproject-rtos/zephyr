@@ -7,6 +7,8 @@
 
 #include <sys/dlist.h>
 #include <toolchain.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <soc.h>
 
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_timer.h>
@@ -23,46 +25,102 @@
 
 #include "radio_internal.h"
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
-#if ((CONFIG_BT_CTLR_GPIO_PA_PIN) > 31)
-#define NRF_GPIO_PA     NRF_P1
-#define NRF_GPIO_PA_PIN ((CONFIG_BT_CTLR_GPIO_PA_PIN) - 32)
-#else
-#define NRF_GPIO_PA     NRF_P0
-#define NRF_GPIO_PA_PIN CONFIG_BT_CTLR_GPIO_PA_PIN
-#endif
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+/* Converts the GPIO controller in a FEM property's GPIO specification
+ * to its nRF register map pointer.
+ *
+ * Make sure to use NRF_DT_CHECK_GPIO_CTLR_IS_SOC to check the GPIO
+ * controller has the right compatible wherever you use this.
+ */
+#define NRF_FEM_GPIO(prop) \
+	((NRF_GPIO_Type *)DT_REG_ADDR(DT_GPIO_CTLR(FEM_NODE, prop)))
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-#if ((CONFIG_BT_CTLR_GPIO_LNA_PIN) > 31)
-#define NRF_GPIO_LNA     NRF_P1
-#define NRF_GPIO_LNA_PIN ((CONFIG_BT_CTLR_GPIO_LNA_PIN) - 32)
-#else
-#define NRF_GPIO_LNA     NRF_P0
-#define NRF_GPIO_LNA_PIN CONFIG_BT_CTLR_GPIO_LNA_PIN
-#endif
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+/* Converts GPIO specification to a PSEL value. */
+#define NRF_FEM_PSEL(prop) NRF_DT_GPIOS_TO_PSEL(FEM_NODE, prop)
 
-#if defined(CONFIG_BT_CTLR_GPIO_PDN_PIN)
-#if ((CONFIG_BT_CTLR_GPIO_PDN_PIN) > 31)
-#define NRF_GPIO_PDN     NRF_P1
-#define NRF_GPIO_PDN_PIN ((CONFIG_BT_CTLR_GPIO_PDN_PIN) - 32)
-#else
-#define NRF_GPIO_PDN     NRF_P0
-#define NRF_GPIO_PDN_PIN CONFIG_BT_CTLR_GPIO_PDN_PIN
-#endif
-#endif /* CONFIG_BT_CTLR_GPIO_PDN_PIN */
+/* Check if GPIO flags are active low. */
+#define ACTIVE_LOW(flags) ((flags) & GPIO_ACTIVE_LOW)
 
-#if defined(CONFIG_BT_CTLR_GPIO_CSN_PIN)
-#if ((CONFIG_BT_CTLR_GPIO_CSN_PIN) > 31)
-#define NRF_GPIO_CSN     NRF_P1
-#define NRF_GPIO_CSN_PIN ((CONFIG_BT_CTLR_GPIO_CSN_PIN) - 32)
-#else
-#define NRF_GPIO_CSN     NRF_P0
-#define NRF_GPIO_CSN_PIN CONFIG_BT_CTLR_GPIO_CSN_PIN
-#endif
-#endif /* CONFIG_BT_CTLR_GPIO_CSN_PIN */
+/* Check if GPIO flags contain unsupported values. */
+#define BAD_FLAGS(flags) ((flags) & ~GPIO_ACTIVE_LOW)
 
+/* GPIOTE OUTINIT setting for a pin's inactive level, from its
+ * devicetree flags.
+ */
+#define OUTINIT_INACTIVE(flags)			\
+	(ACTIVE_LOW(flags) ?				\
+	 GPIOTE_CONFIG_OUTINIT_High :			\
+	 GPIOTE_CONFIG_OUTINIT_Low)
+
+#if defined(FEM_NODE)
+BUILD_ASSERT(!HAL_RADIO_GPIO_PA_OFFSET_MISSING,
+	     "fem node " DT_NODE_PATH(FEM_NODE) " has property "
+	     HAL_RADIO_GPIO_PA_PROP_NAME " set, so you must also set "
+	     HAL_RADIO_GPIO_PA_OFFSET_PROP_NAME);
+
+BUILD_ASSERT(!HAL_RADIO_GPIO_LNA_OFFSET_MISSING,
+	     "fem node " DT_NODE_PATH(FEM_NODE) " has property "
+	     HAL_RADIO_GPIO_LNA_PROP_NAME " set, so you must also set "
+	     HAL_RADIO_GPIO_LNA_OFFSET_PROP_NAME);
+#endif	/* FEM_NODE */
+
+/*
+ * "Manual" conversions of devicetree values to register bits. We
+ * can't use the Zephyr GPIO API here, so we need this extra
+ * boilerplate.
+ */
+
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+#define NRF_GPIO_PA       NRF_FEM_GPIO(HAL_RADIO_GPIO_PA_PROP)
+#define NRF_GPIO_PA_PIN   DT_GPIO_PIN(FEM_NODE, HAL_RADIO_GPIO_PA_PROP)
+#define NRF_GPIO_PA_FLAGS DT_GPIO_FLAGS(FEM_NODE, HAL_RADIO_GPIO_PA_PROP)
+#define NRF_GPIO_PA_PSEL  NRF_FEM_PSEL(HAL_RADIO_GPIO_PA_PROP)
+NRF_DT_CHECK_GPIO_CTLR_IS_SOC(FEM_NODE, HAL_RADIO_GPIO_PA_PROP,
+			      HAL_RADIO_GPIO_PA_PROP_NAME);
+BUILD_ASSERT(!BAD_FLAGS(NRF_GPIO_PA_FLAGS),
+	     "fem node " DT_NODE_PATH(FEM_NODE) " has invalid GPIO flags in "
+	     HAL_RADIO_GPIO_PA_PROP_NAME
+	     "; only GPIO_ACTIVE_LOW or GPIO_ACTIVE_HIGH are supported");
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
+
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
+#define NRF_GPIO_LNA       NRF_FEM_GPIO(HAL_RADIO_GPIO_LNA_PROP)
+#define NRF_GPIO_LNA_PIN   DT_GPIO_PIN(FEM_NODE, HAL_RADIO_GPIO_LNA_PROP)
+#define NRF_GPIO_LNA_FLAGS DT_GPIO_FLAGS(FEM_NODE, HAL_RADIO_GPIO_LNA_PROP)
+#define NRF_GPIO_LNA_PSEL  NRF_FEM_PSEL(HAL_RADIO_GPIO_LNA_PROP)
+NRF_DT_CHECK_GPIO_CTLR_IS_SOC(FEM_NODE, HAL_RADIO_GPIO_LNA_PROP,
+			      HAL_RADIO_GPIO_LNA_PROP_NAME);
+BUILD_ASSERT(!BAD_FLAGS(NRF_GPIO_LNA_FLAGS),
+	     "fem node " DT_NODE_PATH(FEM_NODE) " has invalid GPIO flags in "
+	     HAL_RADIO_GPIO_LNA_PROP_NAME
+	     "; only GPIO_ACTIVE_LOW or GPIO_ACTIVE_HIGH are supported");
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
+
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
+
+#if DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios)
+#define NRF_GPIO_PDN        NRF_FEM_GPIO(pdn_gpios)
+#define NRF_GPIO_PDN_PIN    DT_GPIO_PIN(FEM_NODE, pdn_gpios)
+#define NRF_GPIO_PDN_FLAGS  DT_GPIO_FLAGS(FEM_NODE, pdn_gpios)
+#define NRF_GPIO_PDN_PSEL   NRF_FEM_PSEL(pdn_gpios)
+#define NRF_GPIO_PDN_OFFSET DT_PROP(FEM_NODE, pdn_settle_time_us)
+NRF_DT_CHECK_GPIO_CTLR_IS_SOC(FEM_NODE, pdn_gpios, "pdn-gpios");
+#endif	/* DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios) */
+
+/* CSN is special because it comes from the spi-if property. */
+#if defined(HAL_RADIO_FEM_NRF21540_HAS_CSN)
+#define NRF_GPIO_CSN_CTLR  DT_SPI_DEV_CS_GPIOS_CTLR(FEM_SPI_DEV_NODE)
+#define NRF_GPIO_CSN       ((NRF_GPIO_Type *)DT_REG_ADDR(NRF_GPIO_CSN_CTLR))
+#define NRF_GPIO_CSN_PIN   DT_SPI_DEV_CS_GPIOS_PIN(FEM_SPI_DEV_NODE)
+#define NRF_GPIO_CSN_FLAGS DT_SPI_DEV_CS_GPIOS_FLAGS(FEM_SPI_DEV_NODE)
+#define NRF_GPIO_CSN_PSEL  (NRF_GPIO_CSN_PIN + \
+			    (DT_PROP(NRF_GPIO_CSN_CTLR, port) << 5))
+BUILD_ASSERT(DT_NODE_HAS_COMPAT(NRF_GPIO_CSN_CTLR, nordic_nrf_gpio),
+	     "fem node " DT_NODE_PATH(FEM_NODE) " has a spi-if property, "
+	     " but the chip select pin is not on the SoC. Check cs-gpios in "
+	     DT_NODE_PATH(DT_BUS(FEM_SPI_DEV_NODE)));
+#endif	/* HAL_RADIO_FEM_NRF21540_HAS_CSN */
+
+#endif	/* HAL_RADIO_FEM_IS_NRF21540 */
 
 /* The following two constants are used in nrfx_glue.h for marking these PPI
  * channels and groups as occupied and thus unavailable to other modules.
@@ -105,38 +163,38 @@ void radio_isr_set(radio_isr_cb_t cb, void *param)
 
 void radio_setup(void)
 {
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	NRF_GPIO_PA->DIRSET = BIT(NRF_GPIO_PA_PIN);
-#if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
-	NRF_GPIO_PA->OUTSET = BIT(NRF_GPIO_PA_PIN);
-#else
-	NRF_GPIO_PA->OUTCLR = BIT(NRF_GPIO_PA_PIN);
-#endif
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+	if (ACTIVE_LOW(NRF_GPIO_PA_FLAGS)) {
+		NRF_GPIO_PA->OUTSET = BIT(NRF_GPIO_PA_PIN);
+	} else {
+		NRF_GPIO_PA->OUTCLR = BIT(NRF_GPIO_PA_PIN);
+	}
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	NRF_GPIO_LNA->DIRSET = BIT(NRF_GPIO_LNA_PIN);
 
 	radio_gpio_lna_off();
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
-#if defined(CONFIG_BT_CTLR_GPIO_PDN_PIN)
+#if defined(NRF_GPIO_PDN_PIN)
 	NRF_GPIO_PDN->DIRSET = BIT(NRF_GPIO_PDN_PIN);
-#if defined(CONFIG_BT_CTLR_GPIO_PDN_POL_INV)
-	NRF_GPIO_PDN->OUTSET = BIT(NRF_GPIO_PDN_PIN);
-#else
-	NRF_GPIO_PDN->OUTCLR = BIT(NRF_GPIO_PDN_PIN);
-#endif
-#endif /* CONFIG_BT_CTLR_GPIO_PDN_PIN */
+	if (ACTIVE_LOW(NRF_GPIO_PDN_FLAGS)) {
+		NRF_GPIO_PDN->OUTSET = BIT(NRF_GPIO_PDN_PIN);
+	} else {
+		NRF_GPIO_PDN->OUTCLR = BIT(NRF_GPIO_PDN_PIN);
+	}
+#endif /* NRF_GPIO_PDN_PIN */
 
-#if defined(CONFIG_BT_CTLR_GPIO_CSN_PIN)
+#if defined(NRF_GPIO_CSN_PIN)
 	NRF_GPIO_CSN->DIRSET = BIT(NRF_GPIO_CSN_PIN);
-#if defined(CONFIG_BT_CTLR_GPIO_CSN_POL_INV)
-	NRF_GPIO_CSN->OUTSET = BIT(NRF_GPIO_CSN_PIN);
-#else
-	NRF_GPIO_CSN->OUTCLR = BIT(NRF_GPIO_CSN_PIN);
-#endif
-#endif /* CONFIG_BT_CTLR_GPIO_CSN_PIN */
+	if (ACTIVE_LOW(NRF_GPIO_CSN_FLAGS)) {
+		NRF_GPIO_CSN->OUTSET = BIT(NRF_GPIO_CSN_PIN);
+	} else {
+		NRF_GPIO_CSN->OUTCLR = BIT(NRF_GPIO_CSN_PIN);
+	}
+#endif /* NRF_GPIO_CSN_PIN */
 
 	hal_radio_ram_prio_setup();
 }
@@ -160,10 +218,10 @@ void radio_reset(void)
 	hal_radio_sw_switch_ppi_group_setup();
 #endif
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	hal_palna_ppi_setup();
 #endif
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
 	hal_fem_ppi_setup();
 #endif
 }
@@ -1120,140 +1178,105 @@ uint32_t radio_tmr_sample_get(void)
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
-    defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || \
+	defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 void radio_gpio_pa_setup(void)
 {
-	/* NOTE: With GPIO Pins above 31, left shift of
-	 *       CONFIG_BT_CTLR_GPIO_PA_PIN by GPIOTE_CONFIG_PSEL_Pos will
-	 *       set the NRF_GPIOTE->CONFIG[n].PORT to 1 (P1 port).
-	 */
-	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] =
+	NRF_GPIOTE->CONFIG[HAL_PALNA_GPIOTE_CHAN] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
-		(CONFIG_BT_CTLR_GPIO_PA_PIN <<
+		(NRF_GPIO_PA_PSEL <<
 		 GPIOTE_CONFIG_PSEL_Pos) |
 		(GPIOTE_CONFIG_POLARITY_Toggle <<
 		 GPIOTE_CONFIG_POLARITY_Pos) |
-#if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
-		(GPIOTE_CONFIG_OUTINIT_High <<
+		(OUTINIT_INACTIVE(NRF_GPIO_PA_FLAGS) <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
-#else
-		(GPIOTE_CONFIG_OUTINIT_Low <<
-		 GPIOTE_CONFIG_OUTINIT_Pos);
-#endif
 
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
 	hal_pa_ppi_setup();
 	radio_gpio_pdn_setup();
 	radio_gpio_csn_setup();
 #endif
 }
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 void radio_gpio_lna_setup(void)
 {
-	/* NOTE: With GPIO Pins above 31, left shift of
-	 *       CONFIG_BT_CTLR_GPIO_LNA_PIN by GPIOTE_CONFIG_PSEL_Pos will
-	 *       set the NRF_GPIOTE->CONFIG[n].PORT to 1 (P1 port).
-	 */
-	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] =
+	NRF_GPIOTE->CONFIG[HAL_PALNA_GPIOTE_CHAN] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
-		(CONFIG_BT_CTLR_GPIO_LNA_PIN <<
+		(NRF_GPIO_LNA_PSEL <<
 		 GPIOTE_CONFIG_PSEL_Pos) |
 		(GPIOTE_CONFIG_POLARITY_Toggle <<
 		 GPIOTE_CONFIG_POLARITY_Pos) |
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
-		(GPIOTE_CONFIG_OUTINIT_High <<
+		(OUTINIT_INACTIVE(NRF_GPIO_LNA_FLAGS) <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
-#else
-		(GPIOTE_CONFIG_OUTINIT_Low <<
-		 GPIOTE_CONFIG_OUTINIT_Pos);
-#endif
 
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
 	hal_lna_ppi_setup();
 	radio_gpio_pdn_setup();
 	radio_gpio_csn_setup();
 #endif
 }
 
-#if defined(CONFIG_BT_CTLR_GPIO_PDN_PIN)
 void radio_gpio_pdn_setup(void)
 {
-	/* NOTE: With GPIO Pins above 31, left shift of
-	 *       CONFIG_BT_CTLR_GPIO_PA_PIN by GPIOTE_CONFIG_PSEL_Pos will
-	 *       set the NRF_GPIOTE->CONFIG[n].PORT to 1 (P1 port).
-	 */
-	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PDN_GPIOTE_CHAN] =
+	/* Note: the pdn-gpios property is optional. */
+#if defined(NRF_GPIO_PDN)
+	NRF_GPIOTE->CONFIG[HAL_PDN_GPIOTE_CHAN] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
-		(CONFIG_BT_CTLR_GPIO_PDN_PIN <<
+		(NRF_GPIO_PDN_PSEL <<
 		 GPIOTE_CONFIG_PSEL_Pos) |
 		(GPIOTE_CONFIG_POLARITY_Toggle <<
 		 GPIOTE_CONFIG_POLARITY_Pos) |
-#if defined(CONFIG_BT_CTLR_GPIO_PDN_POL_INV)
-		(GPIOTE_CONFIG_OUTINIT_High <<
+		(OUTINIT_INACTIVE(NRF_GPIO_PDN_FLAGS) <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
-#else
-		(GPIOTE_CONFIG_OUTINIT_Low <<
-		 GPIOTE_CONFIG_OUTINIT_Pos);
-#endif
+#endif /* NRF_GPIO_PDN_PIN */
 }
-#endif /* CONFIG_BT_CTLR_GPIO_PDN_PIN */
 
-#if defined(CONFIG_BT_CTLR_GPIO_CSN_PIN)
 void radio_gpio_csn_setup(void)
 {
-	/* NOTE: With GPIO Pins above 31, left shift of
-	 *       CONFIG_BT_CTLR_GPIO_PA_PIN by GPIOTE_CONFIG_PSEL_Pos will
-	 *       set the NRF_GPIOTE->CONFIG[n].PORT to 1 (P1 port).
-	 */
-	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_CSN_GPIOTE_CHAN] =
+	/* Note: the spi-if property is optional. */
+#if defined(NRF_GPIO_CSN_PIN)
+	NRF_GPIOTE->CONFIG[HAL_CSN_GPIOTE_CHAN] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
-		(CONFIG_BT_CTLR_GPIO_CSN_PIN <<
+		(NRF_GPIO_CSN_PSEL <<
 		 GPIOTE_CONFIG_PSEL_Pos) |
 		(GPIOTE_CONFIG_POLARITY_Toggle <<
 		 GPIOTE_CONFIG_POLARITY_Pos) |
-#if defined(CONFIG_BT_CTLR_GPIO_CSN_POL_INV)
-		(GPIOTE_CONFIG_OUTINIT_High <<
+		(OUTINIT_INACTIVE(NRF_GPIO_CSN_FLAGS) <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
-#else
-		(GPIOTE_CONFIG_OUTINIT_Low <<
-		 GPIOTE_CONFIG_OUTINIT_Pos);
-#endif
+#endif /* NRF_GPIO_CSN_PIN */
 }
-#endif /* CONFIG_BT_CTLR_GPIO_CSN_PIN */
 
 void radio_gpio_lna_on(void)
 {
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
-	NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
-#else
-	NRF_GPIO_LNA->OUTSET = BIT(NRF_GPIO_LNA_PIN);
-#endif
+	if (ACTIVE_LOW(NRF_GPIO_LNA_FLAGS)) {
+		NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
+	} else {
+		NRF_GPIO_LNA->OUTSET = BIT(NRF_GPIO_LNA_PIN);
+	}
 }
 
 void radio_gpio_lna_off(void)
 {
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
-	NRF_GPIO_LNA->OUTSET = BIT(NRF_GPIO_LNA_PIN);
-#else
-	NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
-#endif
+	if (ACTIVE_LOW(NRF_GPIO_LNA_FLAGS)) {
+		NRF_GPIO_LNA->OUTSET = BIT(NRF_GPIO_LNA_PIN);
+	} else {
+		NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
+	}
 }
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 void radio_gpio_pa_lna_enable(uint32_t trx_us)
 {
 	nrf_timer_cc_set(EVENT_TIMER, 2, trx_us);
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
-	nrf_timer_cc_set(EVENT_TIMER, 3, (trx_us -
-					  CONFIG_BT_CTLR_GPIO_PDN_CSN_OFFSET));
+#if defined(HAL_RADIO_FEM_IS_NRF21540) && DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios)
+	nrf_timer_cc_set(EVENT_TIMER, 3, (trx_us - NRF_GPIO_PDN_OFFSET));
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_ENABLE_PALNA_PPI) |
 					  BIT(HAL_DISABLE_PALNA_PPI) |
 					  BIT(HAL_ENABLE_FEM_PPI) |
@@ -1266,21 +1289,21 @@ void radio_gpio_pa_lna_enable(uint32_t trx_us)
 
 void radio_gpio_pa_lna_disable(void)
 {
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
 	hal_radio_nrf_ppi_channels_disable(BIT(HAL_ENABLE_PALNA_PPI) |
 					   BIT(HAL_DISABLE_PALNA_PPI) |
 					   BIT(HAL_ENABLE_FEM_PPI) |
 					   BIT(HAL_DISABLE_FEM_PPI));
-	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] = 0;
-	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PDN_GPIOTE_CHAN] = 0;
-	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_CSN_GPIOTE_CHAN] = 0;
+	NRF_GPIOTE->CONFIG[HAL_PALNA_GPIOTE_CHAN] = 0;
+	NRF_GPIOTE->CONFIG[HAL_PDN_GPIOTE_CHAN] = 0;
+	NRF_GPIOTE->CONFIG[HAL_CSN_GPIOTE_CHAN] = 0;
 #else
 	hal_radio_nrf_ppi_channels_disable(BIT(HAL_ENABLE_PALNA_PPI) |
 					   BIT(HAL_DISABLE_PALNA_PPI));
-	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] = 0;
+	NRF_GPIOTE->CONFIG[HAL_PALNA_GPIOTE_CHAN] = 0;
 #endif
 }
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 static uint8_t MALIGN(4) _ccm_scratch[(HAL_RADIO_PDU_LEN_MAX - 4) + 16];
 

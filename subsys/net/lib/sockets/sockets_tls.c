@@ -283,7 +283,7 @@ static int tls_init(const struct device *unused)
 
 #if !defined(CONFIG_ENTROPY_HAS_DRIVER)
 	NET_WARN("No entropy device on the system, "
-		 "TLS communication may be insecure!");
+		 "TLS communication is insecure!");
 #endif
 
 	(void)memset(tls_contexts, 0, sizeof(tls_contexts));

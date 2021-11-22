@@ -52,6 +52,20 @@ uint32_t sys_clock_cycle_get_32(void)
 	return timer_total;
 }
 
+uint64_t sys_clock_cycle_get_64(void)
+{
+	static struct k_spinlock lock;
+	uint64_t timer_total;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	litex_write8(UPDATE_TOTAL, TIMER_TOTAL_UPDATE);
+	timer_total = litex_read64(TIMER_TOTAL);
+
+	k_spin_unlock(&lock, key);
+
+	return timer_total;
+}
+
 /* tickless kernel is not supported */
 uint32_t sys_clock_elapsed(void)
 {

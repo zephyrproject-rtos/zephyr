@@ -242,8 +242,8 @@ static int shtcx_init(const struct device *dev)
 	{								       \
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		       \
 		.base_address = DT_INST_REG_ADDR(inst),			       \
-		.chip = DT_ENUM_IDX(DT_DRV_INST(inst), chip),		       \
-		.measure_mode = DT_ENUM_IDX(DT_DRV_INST(inst), measure_mode),  \
+		.chip = DT_INST_ENUM_IDX(inst, chip),			       \
+		.measure_mode = DT_INST_ENUM_IDX(inst, measure_mode),	       \
 		.clock_stretching = DT_INST_PROP(inst, clock_stretching)       \
 	}
 

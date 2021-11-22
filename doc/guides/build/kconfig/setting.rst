@@ -154,18 +154,26 @@ The application configuration can come from the sources below. By default,
    :file:`boards/<BOARD>_<build>.conf` is used.
 
 3. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
-   directory.
+   configuration directory.
 
 4. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
-   directory, the result of merging it with :file:`prj.conf` is used.
+   configuration directory, the result of merging it with :file:`prj.conf` is
+   used.
 
 5. Otherwise, if board revisions are used and
    :file:`boards/<BOARD>_<revision>.conf` exists in the application
-   directory, the result of merging it with :file:`prj.conf` and
+   configuration directory, the result of merging it with :file:`prj.conf` and
    :file:`boards/<BOARD>.conf` is used.
 
 6. Otherwise, :file:`prj.conf` is used if it exists in the application
-   directory
+   configuration directory
+
+All configuration files will be taken from the application's configuration
+directory except for files with an absolute path that are given with the
+``CONF_FILE`` argument.
+
+See :ref:`Application Configuration Directory <application-configuration-directory>`
+on how the application configuration directory is defined.
 
 If a symbol is assigned both in :file:`<BOARD>_defconfig` and in the
 application configuration, the value set in the application configuration takes

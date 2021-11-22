@@ -58,13 +58,13 @@ static void test_ibecc_api(void)
 	/* Error log API */
 
 	ret = edac_ecc_error_log_get(dev, &value);
-	zassert_equal(ret, 0, "edac_ecc_error_log_get failed");
+	zassert_equal(ret, -ENODATA, "edac_ecc_error_log_get failed");
 
 	ret = edac_ecc_error_log_clear(dev);
 	zassert_equal(ret, 0, "edac_ecc_error_log_clear failed");
 
 	ret = edac_parity_error_log_get(dev, &value);
-	zassert_equal(ret, 0, "edac_parity_error_log_get failed");
+	zassert_equal(ret, -ENODATA, "edac_parity_error_log_get failed");
 
 	ret = edac_parity_error_log_clear(dev);
 	zassert_equal(ret, 0, "edac_parity_error_log_clear failed");

@@ -130,6 +130,10 @@ struct _cpu {
 	uint8_t swap_ok;
 #endif
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	uint32_t usage0;
+#endif
+
 	/* Per CPU architecture specifics */
 	struct _cpu_arch arch;
 };
@@ -167,6 +171,11 @@ struct z_kernel {
 
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *threads; /* singly linked list of ALL threads */
+#endif
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	uint64_t all_thread_usage;
+	uint64_t idle_thread_usage;
 #endif
 };
 

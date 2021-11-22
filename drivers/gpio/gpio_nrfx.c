@@ -164,7 +164,7 @@ static int gpio_nrfx_config(const struct device *port,
 
 	switch (flags & (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK |
 			 GPIO_OPEN_DRAIN)) {
-	case GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH:
+	case GPIO_DS_DFLT:
 		drive = NRF_GPIO_PIN_S0S1;
 		break;
 	case GPIO_DS_DFLT_LOW | GPIO_DS_ALT_HIGH:
@@ -177,7 +177,7 @@ static int gpio_nrfx_config(const struct device *port,
 	case GPIO_DS_ALT_LOW | GPIO_DS_DFLT_HIGH:
 		drive = NRF_GPIO_PIN_H0S1;
 		break;
-	case GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH:
+	case GPIO_DS_ALT:
 		drive = NRF_GPIO_PIN_H0H1;
 		break;
 	case GPIO_DS_ALT_LOW | GPIO_OPEN_DRAIN:
@@ -597,7 +597,7 @@ static int gpio_nrfx_init(const struct device *port)
 			 &gpio_nrfx_p##id##_data,			\
 			 &gpio_nrfx_p##id##_cfg,			\
 			 POST_KERNEL,					\
-			 CONFIG_GPIO_NRF_INIT_PRIORITY,			\
+			 CONFIG_GPIO_INIT_PRIORITY,			\
 			 &gpio_nrfx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NRF_DEVICE)

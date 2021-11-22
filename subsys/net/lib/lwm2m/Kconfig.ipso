@@ -285,4 +285,51 @@ config LWM2M_IPSO_PUSH_BUTTON_VERSION_1_1
 
 endchoice
 
+config LWM2M_IPSO_CURRENT_SENSOR
+	bool "IPSO Current Sensor Support"
+	help
+	  This IPSO object should be used with a current sensor to
+	  report a current measurement. It also provides resources for
+	  minimum/maximum measured values and the minimum/maximum range
+	  that can be measured by the sensor.
+
+config LWM2M_IPSO_CURRENT_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Current Sensor object instances"
+	default 1
+	depends on LWM2M_IPSO_CURRENT_SENSOR
+	help
+	  This setting establishes the total count of IPSO Current
+	  Sensor instances available to the LWM2M client.
+
+choice
+	prompt "IPSO Current object version"
+	default LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_0
+	depends on LWM2M_IPSO_CURRENT_SENSOR
+	help
+	  Select which version of the IPSO Current object should be used.
+
+config LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_0
+	bool "IPSO Current object version 1.0"
+
+config LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_1
+	bool "IPSO Current object version 1.1"
+	help
+	  Adds timestamp and measurement quality
+
+endchoice
+
+config LWM2M_IPSO_FILLING_SENSOR
+	bool "IPSO Filling sensor Support"
+	help
+	  This IPSO object can be used with an ultrasonic sensor to
+	  report how full a container is.
+
+config LWM2M_IPSO_FILLING_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO filling sensor object instances"
+	default 1
+	depends on LWM2M_IPSO_FILLING_SENSOR
+	help
+	  This setting establishes the total count of IPSO filling
+	  sensor instances available to the LwM2M client.
+
 endif # LWM2M_LWM2M_IPSO_SUPPORT

@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2021, Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(112)>;
+		};
+
+		fmc: flash-controller@40023c00 {
+			compatible = "gd,gd32-flash-controller";
+			label = "FMC";
+			reg = <0x40023c00 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH0";
+			};
+		};
+
+		usart0: usart@40011000 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40011000 0x400>;
+			rcu-periph-clock = <0x1104>;
+			status = "disabled";
+			label = "USART0";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

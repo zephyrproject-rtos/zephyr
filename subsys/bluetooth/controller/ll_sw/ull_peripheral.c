@@ -30,10 +30,14 @@
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "lll_chan.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_peripheral.h"
 #include "lll_filter.h"
-#include "lll/lll_df_types.h"
+
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
 
 #include "ull_adv_types.h"
 #include "ull_conn_types.h"
@@ -45,6 +49,10 @@
 #include "ull_periph_internal.h"
 
 #include "ll.h"
+
+#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
+#include "ll_sw/ull_llcp.h"
+#endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_periph
@@ -141,8 +149,10 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 			       sizeof(lll->data_chan_map));
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
 	lll->interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
-	if ((lll->data_chan_count < 2) || (lll->data_chan_hop < 5) ||
-	    (lll->data_chan_hop > 16) || !lll->interval) {
+	if ((lll->data_chan_count < CHM_USED_COUNT_MIN) ||
+	    (lll->data_chan_hop < CHM_HOP_COUNT_MIN) ||
+	    (lll->data_chan_hop > CHM_HOP_COUNT_MAX) ||
+	    !lll->interval) {
 		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
@@ -172,12 +182,17 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		win_delay_us = WIN_DELAY_LEGACY;
 	}
 
+#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
+	/* Set LLCP as connection-wise connected */
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+
 	/* calculate the window widening */
 	conn->periph.sca = pdu_adv->connect_ind.sca;
 	lll->periph.window_widening_periodic_us =
-		(((lll_clock_ppm_local_get() +
-		   lll_clock_ppm_get(conn->periph.sca)) *
-		  conn_interval_us) + (1000000 - 1)) / 1000000U;
+		ceiling_fraction(((lll_clock_ppm_local_get() +
+				   lll_clock_ppm_get(conn->periph.sca)) *
+				  conn_interval_us), USEC_PER_SEC);
 	lll->periph.window_widening_max_us = (conn_interval_us >> 1) -
 					    EVENT_IFS_US;
 	lll->periph.window_size_event_us = pdu_adv->connect_ind.win_size *
@@ -313,8 +328,13 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	max_tx_time = lll->max_tx_time;
 	max_rx_time = lll->max_rx_time;
+#else
+	max_tx_time = lll->dle.local.max_tx_time;
+	max_rx_time = lll->dle.local.max_rx_time;
+#endif
 #else /* !CONFIG_BT_CTLR_PHY */
 	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
@@ -544,6 +564,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	if (error_code) {
 		if (conn->llcp_enc.refresh == 0U) {
 			if ((conn->llcp_req == conn->llcp_ack) ||
@@ -575,6 +596,25 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		conn->llcp.encryption.error_code = 0U;
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 	}
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+	/*
+	 * TODO: add info to the conn-structure
+	 * - refresh
+	 * - no procedure in progress
+	 * - procedure type
+	 * and use that info to decide if the cmd is allowed
+	 * or if we should terminate the connection
+	 * see BT 5.2 Vol. 6 part B chapter 5.1.3
+	 * see also ull_periph.c line 395-439
+	 *
+	 * TODO: the ull_cp_ltx_req* functions should return success/fail status
+	 */
+	if (error_code) {
+		ull_cp_ltk_req_neq_reply(conn);
+	} else {
+		ull_cp_ltk_req_reply(conn, ltk);
+	}
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	return 0;
 }
@@ -639,3 +679,24 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 
 	conn->periph.latency_cancel = 0U;
 }
+
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
+			      uint8_t const min_used_chans)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (!conn->lll.role) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	return ull_cp_min_used_chans(conn, phys, min_used_chans);
+}
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */

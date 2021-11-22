@@ -31,6 +31,7 @@ _names = [
     'dediprog',
     'dfu',
     'esp32',
+    'gd32isp',
     'hifive1',
     'intel_s1000',
     'jlink',

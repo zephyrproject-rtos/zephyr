@@ -74,6 +74,27 @@ config BT_CTLR_TIFS_HW_SUPPORT
 config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
 
+choice BT_LL_SW_LLCP_IMPL
+	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
+	default BT_LL_SW_LLCP_LEGACY
+	help
+	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+
+config BT_LL_SW_LLCP_LEGACY
+	bool "Legacy implementation"
+	help
+	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
+
+config BT_LL_SW_LLCP
+	bool "New implementation, replacing the legacy one [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+	  It is considered experimental because it is still under development and is not qualifiable yet.
+
+endchoice
+
+
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Controller's Co-Operative high priority Rx thread stack size.
 	int "High priority Rx thread stack size"
@@ -461,6 +482,49 @@ config BT_CTLR_LLCP_CONN
 	  more than this number of connections simultaneously may cause
 	  instabilities.
 
+if !BT_LL_SW_LLCP_LEGACY
+config BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	int
+	default 4
+	help
+	  The theoretical maximum number of tx ctrl buffers needed for any connection, is 4.
+	  two for active encryption procedure plus one for rejecting a remote request
+	  and one for a local terminate
+
+config BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be reserved per connection"
+	default BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	range 0 BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	help
+	  Set the number control buffers that is to be pre allocated per connection
+	  This defines the minimum number of buffers available for any connection
+	  Setting this to non zero will ensure a connection will always have access
+	  to buffer(s) for control procedure TX
+
+config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be available across all connections"
+	default 0
+	range 0 255
+	help
+	  Set the number control buffers that is to be available for tx.
+	  This defines the size of the pool of tx buffers available
+	  for control procedure tx. This pool is shared across all
+	  procedures/connections with allocation through a fifo queue.
+	  Configure between 0 and (4 - BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) * BT_CTLR_LLCP_CONN
+
+config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
+	int "Number of control procedure contexts to be available across all connections"
+	default BT_CTLR_LLCP_CONN
+	range 1 255
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handlign control procedures. This pool is shared across all
+	  connections (local vs remote initiate), with allocation through a queue
+
+endif #!BT_LL_SW_LLCP_LEGACY
+
+
 config BT_CTLR_LLID_DATA_START_EMPTY
 	bool "Handle zero length L2CAP start frame"
 	default y if BT_HCI_RAW
@@ -681,142 +745,6 @@ config BT_CTLR_USER_CPR_INTERVAL_MIN
 	  intervals down to a proprietary minimum value.
 
 endmenu
-
-comment "BLE Controller hardware configuration"
-
-menuconfig BT_CTLR_GPIO_PA
-	bool "Power Amplifier GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	help
-	  Enable GPIO interface to a Power Amplifier. This allows hardware
-	  designs using PA to let the Controller toggle their state based on
-	  radio activity.
-
-if BT_CTLR_GPIO_PA
-
-config BT_CTLR_GPIO_PA_PIN
-	int "Power Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to a Power Amplifier.
-
-config BT_CTLR_GPIO_PA_POL_INV
-	bool "Inverted polarity for the PA pin"
-	help
-	  Enable inverted polarity (active low) for the PA pin.
-
-config BT_CTLR_GPIO_PA_OFFSET
-	int "Time from PA ON to Tx ready"
-	default 5
-	range 0 15
-	help
-	  Time before Tx ready to turn on PA in micro seconds.
-
-endif # BT_CTLR_GPIO_PA
-
-menuconfig BT_CTLR_GPIO_LNA
-	bool "Low Noise Amplifier GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	help
-	  Enable GPIO interface to a Low Noise Amplifier. This allows hardware
-	  designs using LNAs to let the Controller toggle their state based on
-	  radio activity.
-
-if BT_CTLR_GPIO_LNA
-
-config BT_CTLR_GPIO_LNA_PIN
-	int "Low Noise Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to a Low Noise Amplifier.
-
-config BT_CTLR_GPIO_LNA_POL_INV
-	bool "Inverted polarity for the LNA pin"
-	help
-	  Enable inverted polarity (active low) for the LNA pin.
-
-config BT_CTLR_GPIO_LNA_OFFSET
-	int "Time from LNA ON to Rx ready"
-	default 5
-	range 0 15
-	help
-	  Time before Rx ready to turn on LNA in micro seconds.
-
-endif # BT_CTLR_GPIO_LNA
-
-menuconfig BT_CTLR_FEM_NRF21540
-	bool "nRF21540 GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	select BT_CTLR_GPIO_PA
-	select BT_CTLR_GPIO_LNA
-	help
-	  Enable PDN and CSN GPIO interface for the nRF21540. This allows
-	  hardware designs using the nRF21540 to let the controller toggle
-	  their state based on radio activity.
-
-if BT_CTLR_FEM_NRF21540
-
-config BT_CTLR_GPIO_PDN_PIN
-	int "FEM PDN pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to the PDN pin of the nRF21540 FEM.
-
-config BT_CTLR_GPIO_PDN_POL_INV
-	bool "Inverted polarity for the PDN pin"
-	help
-	  Enable inverted polarity (active low) for the PDN pin.
-
-config BT_CTLR_GPIO_CSN_PIN
-	int "FEM CSN pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to the CSN pin of the nRF21540 FEM.
-
-config BT_CTLR_GPIO_CSN_POL_INV
-	bool "Inverted polarity for the CSN pin"
-	default y
-	help
-	  Enable inverted polarity (active low) for the CSN pin.
-
-config BT_CTLR_GPIO_PDN_CSN_OFFSET
-	int "Time from PDN and CSN toggle to PA/LNA pin toggle"
-	range 0 20
-	help
-	  Time from PDN and CSN toggle to PA/LNA pin toggle in micro seconds.
-
-endif # BT_CTLR_FEM_NRF21540
-
-config BT_CTLR_PA_LNA_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
-	default 3 if PWM_NRF5_SW
-	default 0
-	help
-	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
-
-config BT_CTLR_PDN_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO FEM PDN GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && BT_CTLR_FEM_NRF21540
-	default 4 if PWM_NRF5_SW
-	default 1
-	help
-	  Select the nRF5 GPIOTE channel to use for FEM PDN GPIO pin toggle.
-
-config BT_CTLR_CSN_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO FEM CSN GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && BT_CTLR_FEM_NRF21540
-	default 5 if PWM_NRF5_SW
-	default 2
-	help
-	  Select the nRF5 GPIOTE channel to use for FEM CSN GPIO pin toggle.
 
 comment "BLE Controller debug configuration"
 

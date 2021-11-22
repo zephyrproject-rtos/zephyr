@@ -1,0 +1,164 @@
+name: Code Coverage with codecov
+
+on:
+  schedule:
+    - cron: '25 */3 * * 1-5'
+
+jobs:
+  codecov-prep:
+    runs-on: ubuntu-latest
+    if: github.repository == 'zephyrproject-rtos/zephyr'
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
+
+  codecov:
+    runs-on: zephyr_runner
+    needs: codecov-prep
+    container:
+      image: zephyrprojectrtos/ci:v0.18.4
+      options: '--entrypoint /bin/bash'
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ["native_posix", "qemu_x86", "unit_testing"]
+    env:
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
+      CLANG_ROOT_DIR: /usr/lib/llvm-12
+    steps:
+      - name: Update PATH for west
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: west setup
+        run: |
+          west init -l . || true
+          west update 1> west.update.log || west update 1> west.update-2.log
+
+      - name: Check Environment
+        run: |
+          cmake --version
+          ${CLANG_ROOT_DIR}/bin/clang --version
+          gcc --version
+          ls -la
+      - name: Prepare ccache keys
+        id: ccache_cache_prop
+        shell: cmake -P {0}
+        run: |
+          string(REPLACE "/" "_" repo ${{github.repository}})
+          string(REPLACE "-" "_" repo2 ${repo})
+          message("::set-output name=repo::${repo2}")
+
+      - name: use cache
+        id: cache-ccache
+        uses: nashif/action-s3-cache@master
+        with:
+          key: ${{ steps.ccache_cache_prop.outputs.repo }}-${{github.event_name}}-${{matrix.platform}}-codecov-ccache
+          path: /github/home/.ccache
+          aws-s3-bucket: ccache.zephyrproject.org
+          aws-access-key-id: ${{ secrets.CCACHE_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CCACHE_S3_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: ccache stats initial
+        run: |
+          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          ccache -M 10G -s
+
+      - name: Run Tests with Twister (Push)
+        continue-on-error: true
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          mkdir -p coverage/reports
+          ./scripts/twister -N -v --filter runnable -p ${{ matrix.platform }} --coverage -T tests
+
+      - name: Generate Coverage Report
+        run: |
+          mv twister-out/coverage.info lcov.pre.info
+          lcov -q --remove lcov.pre.info mylib.c --remove lcov.pre.info tests/\* \
+            --remove lcov.pre.info samples/\* --remove lcov.pre.info ext/\* \
+            --remove lcov.pre.info *generated*  \
+            -o coverage/reports/${{ matrix.platform }}.info --rc lcov_branch_coverage=1
+
+      - name: ccache stats post
+        run: |
+          ccache -s
+
+      - name: Upload Coverage Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Coverage Data (Subset ${{ matrix.platform }})
+          path: coverage/reports/${{ matrix.platform }}.info
+
+  codecov-results:
+    name: "Publish Coverage Results"
+    needs: codecov
+    runs-on: ubuntu-latest
+      # the codecov job might be skipped, we don't need to run this job then
+    if: success() || failure()
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: coverage/reports
+
+      - name: Move coverage files
+        run: |
+          mv ./coverage/reports/*/*.info ./coverage/reports
+          ls -la ./coverage/reports
+
+      - name: Generate list of coverage files
+        id: get-coverage-files
+        shell: cmake -P {0}
+        run: |
+          file(GLOB INPUT_FILES_LIST  "coverage/reports/*.info")
+          set(MERGELIST "")
+          set(FILELIST "")
+          foreach(ITEM ${INPUT_FILES_LIST})
+            get_filename_component(f ${ITEM} NAME)
+            if(FILELIST STREQUAL "")
+              set(FILELIST "${f}")
+            else()
+              set(FILELIST "${FILELIST},${f}")
+            endif()
+          endforeach()
+          foreach(ITEM ${INPUT_FILES_LIST})
+            get_filename_component(f ${ITEM} NAME)
+            if(MERGELIST STREQUAL "")
+              set(MERGELIST "-a ${f}")
+            else()
+              set(MERGELIST "${MERGELIST} -a ${f}")
+            endif()
+          endforeach()
+          message("::set-output name=mergefiles::${MERGELIST}")
+          message("::set-output name=covfiles::${FILELIST}")
+
+      - name: Merge coverage files
+        run: |
+          sudo apt-get install -y lcov
+          cd ./coverage/reports
+          lcov ${{ steps.get-coverage-files.outputs.mergefiles }} -o merged.info --rc lcov_branch_coverage=1
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./coverage/reports
+          env_vars: OS,PYTHON
+          fail_ci_if_error: false
+          verbose: true
+          files: merged.info
