@@ -253,11 +253,11 @@ bool pm_system_suspend(int32_t ticks)
 	 * sent the notification in pm_system_resume().
 	 */
 	k_sched_lock();
-	pm_start_timer();
+	pm_stats_start();
 	/* Enter power state */
 	pm_state_notify(true);
 	pm_state_set(z_power_states[id]);
-	pm_stop_timer();
+	pm_stats_stop();
 
 	/* Wake up sequence starts here */
 #if CONFIG_PM_DEVICE
