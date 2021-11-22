@@ -7,6 +7,7 @@ set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx)
 set(INC_DIR ${NRFX_DIR}/drivers/include)
 set(SRC_DIR ${NRFX_DIR}/drivers/src)
 set(MDK_DIR ${NRFX_DIR}/mdk)
+set(HELPERS_DIR ${NRFX_DIR}/helpers)
 
 zephyr_include_directories(${NRFX_DIR})
 zephyr_include_directories(${INC_DIR})
@@ -58,6 +59,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUNET ${MDK_DIR}/system_nrf5340
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF9160        ${MDK_DIR}/system_nrf9160.c)
 
 zephyr_library_sources(nrfx_glue.c)
+zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
 
 zephyr_library_sources_ifdef(CONFIG_NRFX_PRS     ${SRC_DIR}/prs/nrfx_prs.c)
 
