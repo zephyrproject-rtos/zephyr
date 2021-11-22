@@ -151,6 +151,22 @@ struct pm_device {
  */
 #define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_device__, dev_name)
 
+/**
+ * @brief Define device PM slot.
+ *
+ * This macro defines a pointer to a device in the z_pm_device_slots region.
+ * When invoked for each device with PM, it will effectively result in a device
+ * pointer array with the same size of the actual devices with PM enabled. This
+ * is used internally by the PM subsystem to keep track of suspended devices
+ * during system power transitions.
+ *
+ * @param dev_name Device name.
+ */
+#define Z_PM_DEVICE_DEFINE_SLOT(dev_name)				\
+	static const Z_DECL_ALIGN(struct device *)			\
+	_CONCAT(Z_PM_DEVICE_NAME(dev_name), slot) __used		\
+	__attribute__((__section__(".z_pm_device_slots")))
+
 #ifdef CONFIG_PM_DEVICE
 /**
  * Define device PM resources for the given node identifier.
@@ -160,6 +176,7 @@ struct pm_device {
  * @param pm_action_cb PM control callback.
  */
 #define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)		\
+	Z_PM_DEVICE_DEFINE_SLOT(dev_name);				\
 	static struct pm_device Z_PM_DEVICE_NAME(dev_name) =		\
 	Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_name), node_id,		\
 			 pm_action_cb)
