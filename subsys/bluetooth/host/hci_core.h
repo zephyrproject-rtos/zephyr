@@ -470,3 +470,8 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf);
 
 void bt_hci_le_df_connection_iq_report(struct net_buf *buf);
 void bt_hci_le_df_cte_req_failed(struct net_buf *buf);
+
+/** First thread that called bt_recv. NULL if not yet called.
+ *  Updated non-atomically; may be used only to compare to current thread id.
+ */
+extern k_tid_t bt_recv_thread_id;
