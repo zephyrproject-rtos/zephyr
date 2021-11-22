@@ -36,9 +36,11 @@ import sys
 import argparse
 import os
 import re
+import magic
 from collections import OrderedDict
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+import elftools.common.exceptions
 
 SZ = 'size'
 SRC = 'sources'
@@ -106,7 +108,11 @@ elf_part_size_regex = re.compile(r'z_data_smem_(.*)_part_size')
 
 def find_obj_file_partitions(filename, partitions):
     with open(filename, 'rb') as f:
-        full_lib = ELFFile(f)
+        try:
+            full_lib = ELFFile(f)
+        except elftools.common.exceptions.ELFError as e:
+            exit(f"Error: {filename}: {e}")
+
         if not full_lib:
             sys.exit("Error parsing file: " + filename)
 
@@ -136,12 +142,19 @@ def parse_obj_files(partitions):
         for filename in files:
             if re.match(r".*\.obj$", filename):
                 fullname = os.path.join(dirpath, filename)
-                find_obj_file_partitions(fullname, partitions)
+                fsize = os.path.getsize(fullname)
+                if fsize != 0:
+                    find_obj_file_partitions(fullname, partitions)
 
 
 def parse_elf_file(partitions):
     with open(args.elf, 'rb') as f:
-        elffile = ELFFile(f)
+        try:
+            elffile = ELFFile(f)
+        except elftools.common.exceptions.ELFError as e:
+            m = magic.from_file(filename)
+            print(m)
+            exit(f"Error: {args.elf}: {e}")
 
         symbol_tbls = [s for s in elffile.iter_sections()
                        if isinstance(s, SymbolTableSection)]
