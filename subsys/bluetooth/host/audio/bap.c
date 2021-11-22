@@ -49,10 +49,8 @@ static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 static struct bt_audio_ep snks[CONFIG_BT_MAX_CONN][SNK_SIZE];
 static struct bt_audio_ep srcs[CONFIG_BT_MAX_CONN][SRC_SIZE];
 
-#if defined(CONFIG_BT_BAP)
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_discover_params cp_disc[CONFIG_BT_MAX_CONN];
-#endif
 
 static void bap_ep_iso_recv(struct bt_iso_chan *chan,
 			    const struct bt_iso_recv_info *info,
@@ -803,7 +801,6 @@ void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 	}
 }
 
-#if defined(CONFIG_BT_BAP)
 static uint8_t cp_notify(struct bt_conn *conn,
 			 struct bt_gatt_subscribe_params *params,
 			 const void *data, uint16_t length)
@@ -1217,7 +1214,6 @@ int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 	return bt_gatt_write_without_response(conn, ep->cp_handle,
 					      buf->data, buf->len, false);
 }
-#endif /* CONFIG_BT_BAP */
 
 static void ep_reset(struct bt_audio_ep *ep)
 {
