@@ -316,9 +316,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	 * turn itself off when it gets to the WAITI instruction in
 	 * the idle thread.
 	 */
-	CAVS_SHIM.pwrctl |= BIT(cpu_num);
+	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(cpu_num);
 	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
-		CAVS_SHIM.clkctl |= BIT(16 + cpu_num);
+		CAVS_SHIM.clkctl |= CAVS_CLKCTL_TCPLCG(cpu_num);
 	}
 
 	/* Send power-up message to the other core.  Start address
@@ -429,7 +429,7 @@ int soc_relaunch_cpu(int id)
 		goto out;
 	}
 
-	if (CAVS_SHIM.pwrsts & BIT(id)) {
+	if (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -473,11 +473,11 @@ int soc_halt_cpu(int id)
 	 * be woken up by scheduler IPIs
 	 */
 	CAVS_INTCTRL[id].l2.set = CAVS_L2_IDC;
-	CAVS_SHIM.pwrctl &= ~BIT(id);
-	CAVS_SHIM.clkctl &= ~BIT(16 + id);
+	CAVS_SHIM.pwrctl &= ~CAVS_PWRCTL_TCPDSPPG(id);
+	CAVS_SHIM.clkctl &= ~CAVS_CLKCTL_TCPLCG(id);
 
 	/* Wait for the CPU to reach an idle state before returing */
-	while (CAVS_SHIM.pwrsts & BIT(id)) {
+	while (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id)) {
 	}
 
  out:

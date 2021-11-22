@@ -254,7 +254,7 @@ static void power_init(void)
 #endif
 
 	/* Disable power gating for first cores */
-	CAVS_SHIM.pwrctl |= SHIM_PWRCTL_TCPDSPPG(0);
+	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(0);
 
 #ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* On cAVS 1.8+, we must demand ownership of the timestamping
