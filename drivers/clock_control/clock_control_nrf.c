@@ -14,11 +14,6 @@
 #include <logging/log.h>
 #include <shell/shell.h>
 
-#if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
-	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-#include <hal/nrf_gpio.h>
-#endif
-
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_clock
