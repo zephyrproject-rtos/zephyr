@@ -52,11 +52,12 @@
  */
 #define SMF_CTX(o) ((struct smf_ctx *)o)
 
+#include <zephyr.h>
+
 #ifdef __cplusplus
 extern "C" {
-#endif
 
-#include <zephyr.h>
+#endif
 
 /**
  * @brief Function pointer that implements a portion of a state
