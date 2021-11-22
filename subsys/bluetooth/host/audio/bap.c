@@ -1887,9 +1887,16 @@ int bt_audio_discover(struct bt_conn *conn,
 		      struct bt_audio_discover_params *params)
 {
 	static bool conn_cb_registered;
+	uint8_t role;
 
 	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
+	}
+
+	role = conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
+		return -EINVAL;
 	}
 
 	if (params->type == BT_AUDIO_SINK) {
