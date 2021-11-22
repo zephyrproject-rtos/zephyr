@@ -64,6 +64,21 @@ struct bt_gatt_ots_object_state {
 	};
 };
 
+/** @brief Descriptor for OTS object initialization. */
+struct bt_ots_obj_metadata {
+	/* Object Name */
+	char                   *name;
+
+	/* Object Type */
+	struct bt_ots_obj_type type;
+
+	/* Object Size */
+	struct bt_ots_obj_size size;
+
+	/* Object Properties */
+	uint32_t               props;
+};
+
 struct bt_gatt_ots_object {
 	uint64_t id;
 	struct bt_ots_obj_metadata metadata;
@@ -89,6 +104,9 @@ struct bt_ots {
 	void *obj_manager;
 };
 
+int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
+			    const struct bt_ots_obj_add_param *param,
+			    struct bt_gatt_ots_object **obj);
 #ifdef __cplusplus
 }
 #endif
