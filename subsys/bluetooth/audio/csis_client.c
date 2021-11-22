@@ -87,18 +87,18 @@ static struct bt_csis_client_svc_inst *lookup_instance_by_handle(struct bt_conn 
 								 uint16_t handle)
 {
 	uint8_t conn_index;
-	struct bt_csis_client_inst *server_inst;
+	struct bt_csis_client_inst *client;
 
 	__ASSERT(conn, "NULL conn");
 	__ASSERT(handle > 0, "Handle cannot be 0");
 
 	conn_index = bt_conn_index(conn);
-	server_inst = &client_insts[conn_index];
+	client = &client_insts[conn_index];
 
-	for (int i = 0; i < ARRAY_SIZE(server_inst->csis_insts); i++) {
-		if (server_inst->csis_insts[i].start_handle <= handle &&
-		    server_inst->csis_insts[i].end_handle >= handle) {
-			return &server_inst->csis_insts[i];
+	for (int i = 0; i < ARRAY_SIZE(client->csis_insts); i++) {
+		if (client->csis_insts[i].start_handle <= handle &&
+		    client->csis_insts[i].end_handle >= handle) {
+			return &client->csis_insts[i];
 		}
 	}
 
@@ -109,7 +109,7 @@ static struct bt_csis_client_svc_inst *lookup_instance_by_index(struct bt_conn *
 								uint8_t idx)
 {
 	uint8_t conn_index;
-	struct bt_csis_client_inst *server_inst;
+	struct bt_csis_client_inst *client;
 
 	__ASSERT(conn, "NULL conn");
 	__ASSERT(idx < CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES,
@@ -117,8 +117,8 @@ static struct bt_csis_client_svc_inst *lookup_instance_by_index(struct bt_conn *
 		 CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES, idx);
 
 	conn_index = bt_conn_index(conn);
-	server_inst = &client_insts[conn_index];
-	return &server_inst->csis_insts[idx];
+	client = &client_insts[conn_index];
+	return &client->csis_insts[idx];
 }
 
 static struct bt_csis_client_svc_inst *lookup_instance_by_set(
@@ -191,11 +191,11 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 		if (length == sizeof(struct bt_csis_set_sirk)) {
 			struct bt_csis_set_sirk *sirk =
 				(struct bt_csis_set_sirk *)data;
-			struct bt_csis_client_inst *server;
+			struct bt_csis_client_inst *client;
 			struct bt_csis_set_sirk *dst_sirk;
 
-			server = &client_insts[bt_conn_index(conn)];
-			dst_sirk = &server->set_member->sets[csis_inst->idx].set_sirk;
+			client = &client_insts[bt_conn_index(conn)];
+			dst_sirk = &client->set_member->sets[csis_inst->idx].set_sirk;
 
 			BT_DBG("Set SIRK %sencrypted",
 			       sirk->type == BT_CSIS_SIRK_TYPE_PLAIN
@@ -256,11 +256,11 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 
 	if (csis_inst != NULL) {
 		if (length == sizeof(set_size)) {
-			struct bt_csis_client_inst *server;
+			struct bt_csis_client_inst *client;
 			struct bt_csis_client_set *set;
 
-			server = &client_insts[bt_conn_index(conn)];
-			set = &server->set_member->sets[csis_inst->idx];
+			client = &client_insts[bt_conn_index(conn)];
+			set = &client->set_member->sets[csis_inst->idx];
 
 			(void)memcpy(&set_size, data, length);
 			BT_DBG("Set size updated from %u to %u",
@@ -314,11 +314,11 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 			       csis_inst->idx, locked ? "locked" : "released");
 			if (csis_client_cbs != NULL &&
 			    csis_client_cbs->lock_changed != NULL) {
-				struct bt_csis_client_inst *server;
+				struct bt_csis_client_inst *client;
 				struct bt_csis_client_set *set;
 
-				server = &client_insts[bt_conn_index(conn)];
-				set = &server->set_member->sets[csis_inst->idx];
+				client = &client_insts[bt_conn_index(conn)];
+				set = &client->set_member->sets[csis_inst->idx];
 
 				csis_client_cbs->lock_changed(conn, set, locked);
 			}
@@ -449,19 +449,19 @@ static uint8_t discover_func(struct bt_conn *conn,
 			     struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_chrc *chrc;
-	struct bt_csis_client_inst *server = &client_insts[bt_conn_index(conn)];
+	struct bt_csis_client_inst *client = &client_insts[bt_conn_index(conn)];
 	struct bt_gatt_subscribe_params *sub_params = NULL;
 	void *notify_handler = NULL;
 
 	if (attr == NULL) {
 		BT_DBG("Setup complete for %u / %u",
-		       cur_inst->idx + 1, server->inst_count);
+		       cur_inst->idx + 1, client->inst_count);
 		(void)memset(params, 0, sizeof(*params));
 
-		if ((cur_inst->idx + 1) < server->inst_count) {
+		if ((cur_inst->idx + 1) < client->inst_count) {
 			int err;
 
-			cur_inst = &server->csis_insts[cur_inst->idx + 1];
+			cur_inst = &client->csis_insts[cur_inst->idx + 1];
 			discover_params.uuid = NULL;
 			discover_params.start_handle = cur_inst->start_handle;
 			discover_params.end_handle = cur_inst->end_handle;
@@ -476,7 +476,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 				if (csis_client_cbs != NULL &&
 				    csis_client_cbs->discover != NULL) {
 					csis_client_cbs->discover(conn, err,
-								  server->inst_count);
+								  client->inst_count);
 				}
 			}
 
@@ -485,7 +485,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			busy = false;
 			if (csis_client_cbs != NULL && csis_client_cbs->discover != NULL) {
 				csis_client_cbs->discover(conn, 0,
-							  server->inst_count);
+							  client->inst_count);
 			}
 		}
 		return BT_GATT_ITER_STOP;
@@ -494,7 +494,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 	BT_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 
 	if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC &&
-	    server->inst_count != 0) {
+	    client->inst_count != 0) {
 		chrc = (struct bt_gatt_chrc *)attr->user_data;
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_SIRK) == 0) {
 			BT_DBG("Set SIRK");
@@ -546,18 +546,18 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				     struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_service_val *prim_service;
-	struct bt_csis_client_inst *server = &client_insts[bt_conn_index(conn)];
+	struct bt_csis_client_inst *client = &client_insts[bt_conn_index(conn)];
 
 	if (attr == NULL ||
-	    server->inst_count == CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
+	    client->inst_count == CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
 		BT_DBG("Discover complete, found %u instances",
-		       server->inst_count);
+		       client->inst_count);
 		(void)memset(params, 0, sizeof(*params));
 
-		if (server->inst_count != 0) {
+		if (client->inst_count != 0) {
 			int err;
 
-			cur_inst = &server->csis_insts[0];
+			cur_inst = &client->csis_insts[0];
 			discover_params.uuid = NULL;
 			discover_params.start_handle = cur_inst->start_handle;
 			discover_params.end_handle = cur_inst->end_handle;
@@ -572,7 +572,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				if (csis_client_cbs != NULL &&
 				    csis_client_cbs->discover != 0) {
 					csis_client_cbs->discover(conn, err,
-								  server->inst_count);
+								  client->inst_count);
 				}
 			}
 		} else {
@@ -593,12 +593,12 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 		discover_params.start_handle = attr->handle + 1;
 
-		cur_inst = &server->csis_insts[server->inst_count];
-		cur_inst->idx = server->inst_count;
+		cur_inst = &client->csis_insts[client->inst_count];
+		cur_inst->idx = client->inst_count;
 		cur_inst->start_handle = attr->handle + 1;
 		cur_inst->end_handle = prim_service->end_handle;
 		cur_inst->conn = conn;
-		server->inst_count++;
+		client->inst_count++;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -638,7 +638,7 @@ static uint8_t csis_client_discover_sets_read_rank_cb(struct bt_conn *conn,
 						      const void *data,
 						      uint16_t length)
 {
-	struct bt_csis_client_inst *server = &client_insts[bt_conn_index(conn)];
+	struct bt_csis_client_inst *client = &client_insts[bt_conn_index(conn)];
 	int cb_err = err;
 
 	__ASSERT(cur_inst != NULL, "cur_inst must not be NULL");
@@ -651,9 +651,9 @@ static uint8_t csis_client_discover_sets_read_rank_cb(struct bt_conn *conn,
 		BT_HEXDUMP_DBG(data, length, "Data read");
 
 		if (length == 1) {
-			(void)memcpy(&server->csis_insts[cur_inst->idx].rank,
+			(void)memcpy(&client->csis_insts[cur_inst->idx].rank,
 				     data, length);
-			BT_DBG("%u", server->csis_insts[cur_inst->idx].rank);
+			BT_DBG("%u", client->csis_insts[cur_inst->idx].rank);
 		} else {
 			BT_DBG("Invalid length, continuing to next member");
 		}
@@ -663,8 +663,9 @@ static uint8_t csis_client_discover_sets_read_rank_cb(struct bt_conn *conn,
 
 	if (cb_err != 0) {
 		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, cb_err, server->inst_count,
-					      server->set_member->sets);
+			csis_client_cbs->sets(conn, cb_err,
+					      client->inst_count,
+					      client->set_member->sets);
 		}
 	}
 
@@ -677,7 +678,7 @@ static uint8_t csis_client_discover_sets_read_set_size_cb(struct bt_conn *conn,
 							  const void *data,
 							  uint16_t length)
 {
-	struct bt_csis_client_inst *server = &client_insts[bt_conn_index(conn)];
+	struct bt_csis_client_inst *client = &client_insts[bt_conn_index(conn)];
 	int cb_err = err;
 
 	__ASSERT(cur_inst != NULL, "cur_inst must not be NULL");
@@ -691,7 +692,7 @@ static uint8_t csis_client_discover_sets_read_set_size_cb(struct bt_conn *conn,
 
 		BT_HEXDUMP_DBG(data, length, "Data read");
 
-		set = &server->set_member->sets[cur_inst->idx];
+		set = &client->set_member->sets[cur_inst->idx];
 
 		if (length == sizeof(set->set_size)) {
 			(void)memcpy(&set->set_size, data, length);
@@ -705,8 +706,9 @@ static uint8_t csis_client_discover_sets_read_set_size_cb(struct bt_conn *conn,
 
 	if (cb_err != 0) {
 		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, cb_err, server->inst_count,
-					      server->set_member->sets);
+			csis_client_cbs->sets(conn, cb_err,
+					      client->inst_count,
+					      client->set_member->sets);
 		}
 	}
 
@@ -767,7 +769,7 @@ static uint8_t csis_client_discover_sets_read_set_sirk_cb(struct bt_conn *conn,
 							  const void *data,
 							  uint16_t length)
 {
-	struct bt_csis_client_inst *server = &client_insts[bt_conn_index(conn)];
+	struct bt_csis_client_inst *client = &client_insts[bt_conn_index(conn)];
 	int cb_err = err;
 
 	__ASSERT(cur_inst != NULL, "cur_inst must not be NULL");
@@ -779,7 +781,7 @@ static uint8_t csis_client_discover_sets_read_set_sirk_cb(struct bt_conn *conn,
 	} else if (data != NULL) {
 		BT_HEXDUMP_DBG(data, length, "Data read");
 
-		cb_err = parse_sirk(server->set_member, data, length);
+		cb_err = parse_sirk(client->set_member, data, length);
 
 		if (cb_err != 0) {
 			BT_DBG("Could not parse SIRK: %d", cb_err);
@@ -791,8 +793,9 @@ static uint8_t csis_client_discover_sets_read_set_sirk_cb(struct bt_conn *conn,
 
 	if (cb_err != 0) {
 		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, cb_err, server->inst_count,
-					      server->set_member->sets);
+			csis_client_cbs->sets(conn, cb_err,
+					      client->inst_count,
+					      client->set_member->sets);
 		}
 	}
 
@@ -813,7 +816,7 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 				 uint16_t size_handle, uint16_t rank_handle)
 {
 	int cb_err = 0;
-	struct bt_csis_client_inst *server = &client_insts[bt_conn_index(conn)];
+	struct bt_csis_client_inst *client = &client_insts[bt_conn_index(conn)];
 
 	if (size_handle != 0) {
 		cb_err = csis_client_read_set_size(
@@ -833,13 +836,13 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 		uint8_t next_idx = cur_inst->idx + 1;
 
 		cur_inst = NULL;
-		if (next_idx < server->inst_count) {
+		if (next_idx < client->inst_count) {
 			/* Read next */
 			cb_err = read_set_sirk(conn, next_idx);
 		} else if (csis_client_cbs != NULL &&
 			   csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, 0, server->inst_count,
-					      server->set_member->sets);
+			csis_client_cbs->sets(conn, 0, client->inst_count,
+					      client->set_member->sets);
 		}
 
 		return;
@@ -847,8 +850,9 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 
 	if (cb_err != 0) {
 		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, cb_err, server->inst_count,
-					      server->set_member->sets);
+			csis_client_cbs->sets(conn, cb_err,
+					      client->inst_count,
+					      client->set_member->sets);
 		}
 	} else {
 		busy = true;
@@ -1126,7 +1130,7 @@ void bt_csis_client_register_cb(struct bt_csis_client_cb *cb)
 int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 {
 	int err;
-	struct bt_csis_client_inst *server;
+	struct bt_csis_client_inst *client;
 
 	CHECKIF(member == NULL) {
 		BT_DBG("NULL member");
@@ -1142,13 +1146,11 @@ int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 		return -EBUSY;
 	}
 
-	server = &client_insts[bt_conn_index(member->conn)];
+	client = &client_insts[bt_conn_index(member->conn)];
 
-	memset(server, 0, sizeof(*server));
+	(void)memset(client, 0, sizeof(*client));
 
-	server->set_member = member;
-
-	server->inst_count = 0;
+	client->set_member = member;
 	/* Discover CSIS on peer, setup handles and notify */
 	(void)memset(&discover_params, 0, sizeof(discover_params));
 	(void)memcpy(&uuid, BT_UUID_CSIS, sizeof(uuid));
