@@ -13,19 +13,19 @@
 #include <stats/stats.h>
 #include <sys/printk.h>
 
-STATS_SECT_START(pm_cpu_stats)
+STATS_SECT_START(pm_stats)
 STATS_SECT_ENTRY32(state_count)
 STATS_SECT_ENTRY32(state_last_cycles)
 STATS_SECT_ENTRY32(state_total_cycles)
 STATS_SECT_END;
 
-STATS_NAME_START(pm_cpu_stats)
-STATS_NAME(pm_cpu_stats, state_count)
-STATS_NAME(pm_cpu_stats, state_last_cycles)
-STATS_NAME(pm_cpu_stats, state_total_cycles)
-STATS_NAME_END(pm_cpu_stats);
+STATS_NAME_START(pm_stats)
+STATS_NAME(pm_stats, state_count)
+STATS_NAME(pm_stats, state_last_cycles)
+STATS_NAME(pm_stats, state_total_cycles)
+STATS_NAME_END(pm_stats);
 
-static STATS_SECT_DECL(pm_cpu_stats) stats[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT];
+static STATS_SECT_DECL(pm_stats) stats[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT];
 
 #define PM_STAT_NAME_LEN sizeof("pm_cpu_XXX_state_X_stats")
 static char names[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT][PM_STAT_NAME_LEN];
