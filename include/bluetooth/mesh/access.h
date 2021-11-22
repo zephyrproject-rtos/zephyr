@@ -343,6 +343,29 @@ struct bt_mesh_model_op {
  */
 #define BT_MESH_PUB_TRANSMIT_INT(transmit) ((((transmit) >> 3) + 1) * 50)
 
+/** @def BT_MESH_PUB_MSG_TOTAL
+ *
+ * @brief Get total number of messages within one publication interval including initial
+ * publication.
+ *
+ * @param pub Model publication context.
+ *
+ * @return total number of messages.
+ */
+#define BT_MESH_PUB_MSG_TOTAL(pub) (BT_MESH_PUB_TRANSMIT_COUNT((pub)->retransmit) + 1)
+
+/** @def BT_MESH_PUB_MSG_NUM
+ *
+ * @brief Get message number within one publication interval.
+ *
+ * Meant to be used inside @ref bt_mesh_model_pub.update.
+ *
+ * @param pub Model publication context.
+ *
+ * @return message number starting from 1.
+ */
+#define BT_MESH_PUB_MSG_NUM(pub) (BT_MESH_PUB_TRANSMIT_COUNT((pub)->retransmit) + 1 - (pub)->count)
+
 /** Model publication context.
  *
  *  The context should primarily be created using the
@@ -356,7 +379,8 @@ struct bt_mesh_model_pub {
 	uint16_t key:12,        /**< Publish AppKey Index. */
 		 cred:1,        /**< Friendship Credentials Flag. */
 		 send_rel:1,    /**< Force reliable sending (segment acks) */
-		 fast_period:1; /**< Use FastPeriodDivisor */
+		 fast_period:1, /**< Use FastPeriodDivisor */
+		 retr_update:1; /**< Call update callback on every retransmission. */
 
 	uint8_t  ttl;          /**< Publish Time to Live. */
 	uint8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
@@ -385,6 +409,9 @@ struct bt_mesh_model_pub {
 	 *
 	 *  If the callback returns non-zero, the publication is skipped
 	 *  and will resume on the next periodic publishing interval.
+	 *
+	 *  When @ref bt_mesh_model_pub.retr_update is set to 1,
+	 *  the callback will be called on every retransmission.
 	 *
 	 *  @param mod The Model the Publication Context belogs to.
 	 *
@@ -571,6 +598,19 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
  *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_model_publish(struct bt_mesh_model *model);
+
+/** @brief Check if a message is being retransmitted.
+ *
+ * Meant to be used inside the @ref bt_mesh_model_pub.update callback.
+ *
+ * @param model Mesh Model that supports publication.
+ *
+ * @return true if this is a retransmission, false if this is a first publication.
+ */
+static inline bool bt_mesh_model_pub_is_retransmission(const struct bt_mesh_model *model)
+{
+	return model->pub->count != BT_MESH_PUB_TRANSMIT_COUNT(model->pub->retransmit);
+}
 
 /** @brief Get the element that a model belongs to.
  *

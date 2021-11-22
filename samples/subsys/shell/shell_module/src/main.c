@@ -345,7 +345,7 @@ void main(void)
 		login_init();
 	}
 
-#if defined(CONFIG_USB_UART_CONSOLE)
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
 	const struct device *dev;
 	uint32_t dtr = 0;
 

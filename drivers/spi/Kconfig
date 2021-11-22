@@ -26,6 +26,15 @@ config SPI_SLAVE
 	  Enables Driver SPI slave operations. Slave support depends
 	  on the driver and the hardware it runs on.
 
+config SPI_EXTENDED_MODES
+	bool "Enable extended modes [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enables extended operations in the SPI API. Currently, this
+	  enables the possibility to select the line mode (single/dual/
+	  quad/octal), though none of these mode are really supported as
+	  it would require more features exposed into the SPI buffer.
+
 config SPI_INIT_PRIORITY
 	int "Init priority"
 	default 70

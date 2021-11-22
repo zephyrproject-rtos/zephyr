@@ -18,6 +18,7 @@ User and Developer Guides
    device_mgmt/index
    dts/index
    pinctrl/index
+   pm/index
    emulator/index.rst
 
    modules.rst

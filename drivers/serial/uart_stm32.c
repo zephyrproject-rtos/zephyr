@@ -900,8 +900,13 @@ static void uart_stm32_isr(const struct device *dev)
 #endif
 	} else if (LL_USART_IsEnabledIT_RXNE(UartInstance) &&
 			LL_USART_IsActiveFlag_RXNE(UartInstance)) {
+#ifdef USART_SR_RXNE
+		/* clear the RXNE flag, because Rx data was not read */
+		LL_USART_ClearFlag_RXNE(UartInstance);
+#else
 		/* clear the RXNE by flushing the fifo, because Rx data was not read */
 		LL_USART_RequestRxDataFlush(UartInstance);
+#endif /* USART_SR_RXNE */
 	}
 
 	/* Clear errors */
@@ -1598,7 +1603,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits)		\
 	},								\
 	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
-	.parity = DT_ENUM_IDX_OR(DT_DRV_INST(index), parity, UART_CFG_PARITY_NONE),	\
+	.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	STM32_UART_POLL_IRQ_HANDLER_FUNC(index)				\
 	.pinctrl_list = uart_pins_##index,				\
 	.pinctrl_list_size = ARRAY_SIZE(uart_pins_##index),		\

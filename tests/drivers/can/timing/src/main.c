@@ -25,7 +25,7 @@
 #if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
 #define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
 #else
-#define CAN_DEVICE_NAME DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
+#define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
 #endif
 
 const struct device *can_dev;

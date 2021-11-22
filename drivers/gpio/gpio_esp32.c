@@ -140,11 +140,11 @@ static int gpio_esp32_config(const struct device *dev,
 		 * to either low or high states. Alternative drive strength is weak-only,
 		 * while any other intermediary combination is considered invalid.
 		 */
-		switch (flags & (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK)) {
-		case GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH:
+		switch (flags & GPIO_DS_MASK) {
+		case GPIO_DS_DFLT:
 			gpio_ll_set_drive_capability(cfg->gpio_base, io_pin, GPIO_DRIVE_CAP_3);
 			break;
-		case GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH:
+		case GPIO_DS_ALT:
 			gpio_ll_set_drive_capability(cfg->gpio_base, io_pin, GPIO_DRIVE_CAP_0);
 			break;
 		default:
@@ -418,7 +418,7 @@ static const struct gpio_driver_api gpio_esp32_driver_api = {
 			&gpio_data_##_id,					\
 			&gpio_config_##_id,					\
 			PRE_KERNEL_2,						\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+			CONFIG_GPIO_INIT_PRIORITY,				\
 			&gpio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP_SOC_GPIO_INIT);

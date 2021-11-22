@@ -157,6 +157,11 @@ static int spi_mcux_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > SPI_MAX_DATA_WIDTH) {
 		LOG_ERR("Word size %d is greater than %d",

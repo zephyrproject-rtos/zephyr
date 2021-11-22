@@ -354,15 +354,17 @@ static const struct vcnl4040_config vcnl4040_config = {
 	.gpio_flags = 0,
 #endif
 #endif
-	.led_i = DT_ENUM_IDX(DT_DRV_INST(0), led_current),
-	.led_dc = DT_ENUM_IDX(DT_DRV_INST(0), led_duty_cycle),
-	.als_it = DT_ENUM_IDX(DT_DRV_INST(0), als_it),
-	.proxy_it = DT_ENUM_IDX(DT_DRV_INST(0), proximity_it),
-	.proxy_type = DT_ENUM_IDX(DT_DRV_INST(0), proximity_trigger),
+	.led_i = DT_INST_ENUM_IDX(0, led_current),
+	.led_dc = DT_INST_ENUM_IDX(0, led_duty_cycle),
+	.als_it = DT_INST_ENUM_IDX(0, als_it),
+	.proxy_it = DT_INST_ENUM_IDX(0, proximity_it),
+	.proxy_type = DT_INST_ENUM_IDX(0, proximity_trigger),
 };
 
 static struct vcnl4040_data vcnl4040_data;
 
+PM_DEVICE_DT_INST_DEFINE(0, vcnl4040_pm_action);
+
 DEVICE_DT_INST_DEFINE(0, vcnl4040_init,
-	      vcnl4040_pm_action, &vcnl4040_data, &vcnl4040_config,
+	      PM_DEVICE_DT_INST_REF(0), &vcnl4040_data, &vcnl4040_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);

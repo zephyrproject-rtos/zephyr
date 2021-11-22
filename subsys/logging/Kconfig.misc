@@ -5,7 +5,7 @@ menu "Misc"
 
 config LOG_DOMAIN_ID
 	int "Domain ID"
-	depends on !LOG_MINIMAL
+	depends on !LOG_MODE_MINIMAL
 	default 0
 	range 0 7
 	help
@@ -14,7 +14,7 @@ config LOG_DOMAIN_ID
 config LOG_CMDS
 	bool "Enable shell commands"
 	depends on SHELL
-	depends on !LOG_FRONTEND && !LOG_MINIMAL
+	depends on !LOG_FRONTEND && !LOG_MODE_MINIMAL
 	default y if SHELL
 
 config LOG_TEST_CLEAR_MESSAGE_SPACE

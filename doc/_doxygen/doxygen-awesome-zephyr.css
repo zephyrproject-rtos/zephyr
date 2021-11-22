@@ -20,6 +20,9 @@ html {
 
     --link-color: #2980b9;
     --param-color: #b71c1c;
+
+    --side-nav-fixed-width: 300px;
+    --top-height: 220px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,12 +57,6 @@ html.dark-mode {
     --param-color: #ef9a9a;
 }
 
-@media screen and (min-width: 767px) {
-    #projectname, #projectbrief, #projectnumber {
-        color: var(--side-nav-foreground);
-    }
-}
-
 a:link, a:visited, a:hover, a:focus, a:active {
     color: var(--link-color) !important;
 }
@@ -70,4 +67,41 @@ a:link, a:visited, a:hover, a:focus, a:active {
 
 dl.section dd, dl.bug dd, dl.deprecated dd {
     margin-inline-start: revert;
+}
+
+/* adjust top and title to ~match Sphinx docs */
+#top {
+    background: var(--side-nav-background);
+}
+
+#titlearea {
+    padding-bottom: 0;
+}
+
+#titlearea table {
+    width: 100%;
+}
+
+#projectlogo img {
+    width: 200px;
+    height: 95px;
+    max-height: none !important;
+    padding-top: 12px;
+}
+
+#projectalign {
+    display: none;
+}
+
+@media screen and (min-width: 767px) {
+    #doc-content {
+        padding-top: calc(var(--top-height) - 180px);
+    }
+}
+
+/* style for re-injected version */
+#projectversion {
+    color: var(--side-nav-foreground);
+    padding-top: 25px;
+    text-align: center;
 }

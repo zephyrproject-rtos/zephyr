@@ -67,13 +67,13 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 5c2062876f86fbf3aa30f3e2539a88b56b8fd461
+      revision: c4a591c35385be59a41cde7efc85fe7660172979
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
         - hal
     - name: hal_gigadevice
-      revision: ce323de9655972a545cbdddda813c1576d85d5d1
+      revision: 749fdd4b9dc9dfc57daac1229a5a669109e14624
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -144,7 +144,7 @@ manifest:
       groups:
         - hal
     - name: libmetal
-      revision: 39d049d4ae68e6f6d595fce7de1dcfc1024fb4eb
+      revision: f237c9d420a51cc43bc37d744e41191ad613f348
       path: modules/hal/libmetal
       groups:
         - hal
@@ -163,16 +163,13 @@ manifest:
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
     - name: mbedtls
-      revision: bf66e18046a96e83b6ef3bb4bec0ae81bdcefc68
+      revision: 711fd5ea13a5e018cebe1ac1f79c22d897e8b34d
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: c61538748ead773ea75a551a7beee299228bdcaf
+      revision: 225b02468bf77806bdd5f503725256cb345970d2
       path: bootloader/mcuboot
-    - name: mcumgr
-      revision: c854c85ec75d624c47058bc4ac0ab9b12e2dd0e7
-      path: modules/lib/mcumgr
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
@@ -190,10 +187,10 @@ manifest:
       revision: a47e326ca772ddd14cc3b9d4ca30a9ab44ecca16
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
-      revision: 6010f0523cbc75f551d9256cf782f173177acdef
+      revision: cfd050ff38a9d028dc211690b2ec35971128e45e
       path: modules/lib/open-amp
     - name: openthread
-      revision: 15d9f0401eb458b35c82e327299969b8b745231f
+      revision: 69eb7030c5eb479e2d387408f7b3814c58963804
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -201,7 +198,7 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: b039018d0adcfe347119094ac29f0fc12b671187
+      revision: 500d77e0ac84ac2c969e0d4b2142cca192e893bc
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6
@@ -235,6 +232,9 @@ manifest:
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
+    - name: zscilib
+      path: modules/lib/zscilib
+      revision: 12bfe3f0a9fcbfe3edab7eabc9678b6c62875d34
 
   group-filter:
     - -ci

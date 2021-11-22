@@ -90,7 +90,11 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 		.bNumInterfaces = 0,
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
-		.bmAttributes = USB_SCD_ATTRIBUTES,
+		.bmAttributes = USB_SCD_RESERVED |
+				COND_CODE_1(CONFIG_USB_SELF_POWERED,
+					    (USB_SCD_SELF_POWERED), (0)) |
+				COND_CODE_1(CONFIG_USB_DEVICE_REMOTE_WAKEUP,
+					    (USB_SCD_REMOTE_WAKEUP), (0)),
 		.bMaxPower = CONFIG_USB_MAX_POWER,
 	},
 };

@@ -183,7 +183,7 @@ while getopts ":p:m:b:r:M:cfslR:" opt; do
 			matrix=$OPTARG
 			;;
 		M)
-			echo "Running a matrix of $OPTARG slaves" >&2
+			echo "Running a matrix of $OPTARG nodes" >&2
 			matrix_builds=$OPTARG
 			;;
 		b)

@@ -109,6 +109,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice();
 #endif
+		z_sched_usage_switch(new_thread);
 
 #ifdef CONFIG_SMP
 		_current_cpu->swap_ok = 0;

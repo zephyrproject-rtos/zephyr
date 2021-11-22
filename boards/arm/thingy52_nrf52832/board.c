@@ -42,8 +42,8 @@ static int pwr_ctrl_init(const struct device *dev)
  * constraints.
  */
 
-#if CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_GPIO_NRF_INIT_PRIORITY
-#error GPIO_NRF_INIT_PRIORITY must be lower than \
+#if CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_GPIO_INIT_PRIORITY
+#error GPIO_INIT_PRIORITY must be lower than \
 	BOARD_VDD_PWR_CTRL_INIT_PRIORITY
 #endif
 

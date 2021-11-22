@@ -36,12 +36,44 @@ Changes in this release
 
 * Replaced custom LwM2M :c:struct:`float32_value` type with a native double type.
 
-==========================
+* Added function for getting status of USB device remote wakeup feature.
 
-Removed APIs in this release
+* Added ``ranges`` and ``dma-ranges`` as invalid property to be used with DT_PROP_LEN()
+  along ``reg`` and ``interrupts``.
 
+Changes in this release
+=======================
 
-============================
+Removed APIs in this release:
+
+* The following Kconfig options related to radio front-end modules (FEMs) were
+  removed:
+
+  * ``CONFIG_BT_CTLR_GPIO_PA``
+  * ``CONFIG_BT_CTLR_GPIO_PA_PIN``
+  * ``CONFIG_BT_CTLR_GPIO_PA_POL_INV``
+  * ``CONFIG_BT_CTLR_GPIO_PA_OFFSET``
+  * ``CONFIG_BT_CTLR_GPIO_LNA``
+  * ``CONFIG_BT_CTLR_GPIO_LNA_PIN``
+  * ``CONFIG_BT_CTLR_GPIO_LNA_POL_INV``
+  * ``CONFIG_BT_CTLR_GPIO_LNA_OFFSET``
+  * ``CONFIG_BT_CTLR_FEM_NRF21540``
+  * ``CONFIG_BT_CTLR_GPIO_PDN_PIN``
+  * ``CONFIG_BT_CTLR_GPIO_PDN_POL_INV``
+  * ``CONFIG_BT_CTLR_GPIO_CSN_PIN``
+  * ``CONFIG_BT_CTLR_GPIO_CSN_POL_INV``
+  * ``CONFIG_BT_CTLR_GPIO_PDN_CSN_OFFSET``
+
+  This FEM configuration is hardware description, and was therefore moved to
+  :ref:`devicetree <dt-guide>`. See the :dtcompatible:`nordic,nrf-radio`
+  devicetree binding's ``fem`` property for information on what to do instead
+  on the Nordic open source controller.
+
+* Removed Kconfig option ``CONFIG_USB_UART_CONSOLE``.
+  Option ``CONFIG_USB_UART_CONSOLE`` was only relevant for console driver
+  when CDC ACM UART is used as backend. Since the behavior of the CDC ACM UART
+  is changed so that it more closely mimics the real UART controller,
+  option is no longer necessary.
 
 Stable API changes in this release
 ==================================

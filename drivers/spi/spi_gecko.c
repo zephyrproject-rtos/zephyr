@@ -57,6 +57,11 @@ static int spi_config(const struct device *dev,
 	const struct spi_gecko_config *gecko_config = dev->config;
 	struct spi_gecko_data *data = DEV_DATA(dev);
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
 		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
 		return -ENOTSUP;
@@ -72,7 +77,8 @@ static int spi_config(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Only supports single mode");
 		return -ENOTSUP;
 	}

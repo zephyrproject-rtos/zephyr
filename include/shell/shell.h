@@ -659,7 +659,7 @@ BUILD_ASSERT((sizeof(struct shell_backend_ctx_flags) == sizeof(uint32_t)),
  * @internal @brief Union for internal shell usage.
  */
 union shell_backend_cfg {
-	uint32_t value;
+	atomic_t value;
 	struct shell_backend_config_flags flags;
 };
 

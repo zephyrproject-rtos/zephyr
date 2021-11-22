@@ -276,6 +276,24 @@
 			interrupt-parent = <&intc>;
 		};
 
+		ite_uart1_wrapper: uartwrapper@f02720 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02720 0x0020>;
+			status = "disabled";
+			label = "UART1_WRAPPER";
+			port-num = <1>;
+			gpios = <&gpiob 0 0>;
+		};
+
+		ite_uart2_wrapper: uartwrapper@f02820 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02820 0x0020>;
+			status = "disabled";
+			label = "UART2_WRAPPER";
+			port-num = <2>;
+			gpios = <&gpioh 1 0>;
+		};
+
 		twd0: watchdog@f01f00 {
 			compatible = "ite,it8xxx2-watchdog";
 			reg = <0x00f01f00 0x0062>;
@@ -337,6 +355,7 @@
 				      IT8XXX2_IRQ_WU105 IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_WU106 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
+			wakeup-source;   /* WUI53 */
 			#gpio-cells = <2>;
 		};
 
@@ -463,6 +482,7 @@
 				IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH
 				0 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
+			wakeup-source;   /* WUI17 */
 			#gpio-cells = <2>;
 		};
 
@@ -569,6 +589,28 @@
 				0 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			#gpio-cells = <2>;
+		};
+
+		espi0: espi@f03100 {
+			compatible = "ite,it8xxx2-espi";
+			reg = <0x00f03100 0xd8    /* eSPI slave */
+			       0x00f03200 0x9a    /* eSPI VW */
+			       0x00f03300 0xd0    /* eSPI Queue 0 */
+			       0x00f03400 0xc0    /* eSPI Queue 1 */
+			       0x00f01200 6       /* EC2I bridge */
+			       0x00f01300 11      /* Host KBC */
+			       0x00f01500 0x100>; /* Host PMC */
+			interrupts = <IT8XXX2_IRQ_ESPI IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_ESPI_VW IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_KBC_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_KBC_OBE IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PMC1_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PCH_P80 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			label = "ESPI_0";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
 		};
 
 		spi0:spi@f02600  {

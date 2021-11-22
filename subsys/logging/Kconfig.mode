@@ -3,6 +3,7 @@
 
 choice LOG_MODE
 	prompt "Mode"
+	default LOG_MODE_MINIMAL if LOG_DEFAULT_MINIMAL
 	default LOG_MODE_DEFERRED
 
 config LOG_MODE_DEFERRED
@@ -71,7 +72,5 @@ config LOG_IMMEDIATE
 	default y if LOG_MODE_IMMEDIATE
 	default y if LOG2_MODE_IMMEDIATE
 
-config LOG_MINIMAL
+config LOG_DEFAULT_MINIMAL
 	bool
-	imply PRINTK
-	default y if LOG_MODE_MINIMAL

@@ -1,0 +1,26 @@
+# MCP23S17 GPIO configuration options
+
+# Copyright (c) 2021 metraTec GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_MICROCHIP_MCP23008 := microchip,mcp23008
+DT_COMPAT_MICROCHIP_MCP23017 := microchip,mcp23017
+
+menuconfig GPIO_MCP230XX
+	bool "MCP230XX I2C-based GPIO chip"
+	default $(dt_compat_enabled,$(DT_COMPAT_MICROCHIP_MCP23008)) || \
+			$(dt_compat_enabled,$(DT_COMPAT_MICROCHIP_MCP23017))
+	depends on I2C
+	help
+	  Enable driver for MCP230XX I2C-based GPIO chip.
+
+if GPIO_MCP230XX
+
+config GPIO_MCP230XX_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	help
+	  Device driver initialization priority.
+
+endif #GPIO_MCP230XX

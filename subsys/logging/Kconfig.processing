@@ -3,7 +3,7 @@
 
 menu "Processing"
 
-if !LOG_MINIMAL
+if !LOG_MODE_MINIMAL
 
 config LOG_PRINTK
 	bool "Process printk messages"
@@ -167,6 +167,6 @@ config LOG_SPEED
 	  If enabled, logging may take more code size to get faster logging.
 endif # LOG2
 
-endif # !LOG_MINIMAL
+endif # !LOG_MODE_MINIMAL
 
 endmenu

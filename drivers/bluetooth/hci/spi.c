@@ -130,8 +130,7 @@ static const struct device *spi_dev;
 
 static struct spi_config spi_conf = {
 	.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |
-		      SPI_LINES_SINGLE),
+	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),
 	.slave     = 0,
 	.cs        = NULL,
 };

@@ -16,6 +16,7 @@
 /* IRQ numbers of WUC */
 /* Group 0 of INTC */
 #define IT8XXX2_IRQ_WU20        1
+#define IT8XXX2_IRQ_KBC_OBE     2
 #define IT8XXX2_IRQ_WU23        6
 /* Group 1 */
 #define IT8XXX2_IRQ_WU26        12
@@ -25,6 +26,8 @@
 #define IT8XXX2_IRQ_WU24        17
 #define IT8XXX2_IRQ_WU22        21
 /* Group 3 */
+#define IT8XXX2_IRQ_KBC_IBF     24
+#define IT8XXX2_IRQ_PMC1_IBF    25
 #define IT8XXX2_IRQ_TIMER1      30
 #define IT8XXX2_IRQ_WU21        31
 /* Group 5 */
@@ -136,6 +139,9 @@
 #define IT8XXX2_IRQ_TIMER6      158
 #define IT8XXX2_IRQ_TIMER7      159
 /* Group 20 */
+#define IT8XXX2_IRQ_ESPI        162
+#define IT8XXX2_IRQ_ESPI_VW     163
+#define IT8XXX2_IRQ_PCH_P80     164
 #define IT8XXX2_IRQ_USBPD0      165
 #define IT8XXX2_IRQ_USBPD1      166
 /* Group 21 */

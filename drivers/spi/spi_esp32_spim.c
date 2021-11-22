@@ -195,18 +195,22 @@ static int spi_esp32_configure_pin(gpio_pin_t pin, int pin_sig,
 
 static inline spi_ll_io_mode_t spi_esp32_get_io_mode(uint16_t operation)
 {
-	switch (operation & SPI_LINES_MASK) {
-	case SPI_LINES_SINGLE:
-		return SPI_LL_IO_MODE_NORMAL;
-	case SPI_LINES_DUAL:
-		return SPI_LL_IO_MODE_DUAL;
-	case SPI_LINES_OCTAL:
-		return SPI_LL_IO_MODE_QIO;
-	case SPI_LINES_QUAD:
-		return SPI_LL_IO_MODE_QUAD;
-	default:
-		return SPI_LL_IO_MODE_NORMAL;
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
+		switch (operation & SPI_LINES_MASK) {
+		case SPI_LINES_SINGLE:
+			return SPI_LL_IO_MODE_NORMAL;
+		case SPI_LINES_DUAL:
+			return SPI_LL_IO_MODE_DUAL;
+		case SPI_LINES_OCTAL:
+			return SPI_LL_IO_MODE_QIO;
+		case SPI_LINES_QUAD:
+			return SPI_LL_IO_MODE_QUAD;
+		default:
+			break;
+		}
 	}
+
+	return SPI_LL_IO_MODE_NORMAL;
 }
 
 static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
@@ -230,6 +234,11 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	}
 
 	ctx->config = spi_cfg;
+
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
 
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
 		LOG_ERR("Slave mode not supported");
@@ -271,7 +280,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	spi_hal_timing_param_t timing_param = {
 		.half_duplex = hal_dev->half_duplex,
 		.no_compensate = hal_dev->no_compensate,
-		.clock_speed_hz = cfg->frequency,
+		.clock_speed_hz = spi_cfg->frequency,
 		.duty_cycle = cfg->duty_cycle == 0 ? 128 : cfg->duty_cycle,
 		.input_delay_ns = cfg->input_delay_ns,
 		.use_gpio = true
@@ -415,7 +424,7 @@ static const struct spi_driver_api spi_api = {
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_NODELABEL(spi##idx), ctx)	\
 		.hal = {	\
 			.hw = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
 		},	\
@@ -432,7 +441,6 @@ static const struct spi_driver_api spi_api = {
 		.spi = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
 			\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(spi##idx))),	\
-		.frequency = SPI_MASTER_FREQ_8M,\
 		.duty_cycle = 0, \
 		.input_delay_ns = 0, \
 		.irq_source = DT_IRQN(DT_NODELABEL(spi##idx)), \

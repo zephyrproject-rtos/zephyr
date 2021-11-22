@@ -630,13 +630,14 @@ static int gpio_stm32_init(const struct device *dev)
 		.pclken = { .bus = __bus, .enr = __cenr }		       \
 	};								       \
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
+	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);		       \
 	DEVICE_DT_DEFINE(__node,					       \
 			    gpio_stm32_init,				       \
-			    gpio_stm32_pm_action,			       \
+			    PM_DEVICE_DT_REF(__node),			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
 			    PRE_KERNEL_1,				       \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			    CONFIG_GPIO_INIT_PRIORITY,			       \
 			    &gpio_stm32_driver)
 
 #define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
@@ -717,6 +718,6 @@ static int gpio_stm32_afio_init(const struct device *dev)
 	return 0;
 }
 
-SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, NULL, PRE_KERNEL_1, 0);
+SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, PRE_KERNEL_1, 0);
 
 #endif /* CONFIG_SOC_SERIES_STM32F1X && !CONFIG_GPIO_STM32_SWJ_ENABLE */

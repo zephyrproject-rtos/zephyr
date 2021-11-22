@@ -150,6 +150,11 @@ static int xlnx_quadspi_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (spi_cfg->slave >= config->num_ss_bits) {
 		LOG_ERR("unsupported slave %d, num_ss_bits %d",
 			spi_cfg->slave, config->num_ss_bits);

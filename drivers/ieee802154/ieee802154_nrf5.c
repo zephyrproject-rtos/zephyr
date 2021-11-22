@@ -702,36 +702,36 @@ static void nrf5_iface_init(struct net_if *iface)
 #if defined(CONFIG_NRF_802154_ENCRYPTION)
 static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 {
-	nrf_802154_security_error_t err;
-	nrf_802154_key_t key;
-	uint8_t key_id_to_remove;
+	static nrf_802154_key_id_t stored_key_ids[NRF_802154_SECURITY_KEY_STORAGE_SIZE];
+	static uint8_t stored_ids[NRF_802154_SECURITY_KEY_STORAGE_SIZE];
+	uint8_t i;
 
-	__ASSERT(mac_keys, "Invalid argument.");
+	for (i = 0; i < NRF_802154_SECURITY_KEY_STORAGE_SIZE && stored_key_ids[i].p_key_id; i++) {
+		nrf_802154_security_key_remove(&stored_key_ids[i]);
+		stored_key_ids[i].p_key_id = NULL;
+	}
 
-	/* Remove old invalid key assuming that its index is first_valid_key_id - 1.
-	 * TODO: This is Thread specific assumption, need to be changed when RD will provided
-	 * API for removing all keys or handling this internally.
-	 */
-	key_id_to_remove = mac_keys->key_index == 1 ? 0x80 : mac_keys->key_index - 1;
-
-	key.id.mode = mac_keys->key_id_mode;
-	key.id.p_key_id = &key_id_to_remove;
-
-	nrf_802154_security_key_remove(&key.id);
-
+	i = 0;
 	for (struct ieee802154_key *keys = mac_keys; keys->key_value; keys++) {
-		key.value.p_cleartext_key = keys->key_value;
-		key.id.mode = keys->key_id_mode;
-		key.id.p_key_id = &(keys->key_index);
-		key.type = NRF_802154_KEY_CLEARTEXT;
-		key.frame_counter = 0;
-		key.use_global_frame_counter = !(keys->frame_counter_per_key);
+		nrf_802154_key_t key = {
+			.value.p_cleartext_key = keys->key_value,
+			.id.mode = keys->key_id_mode,
+			.id.p_key_id = &(keys->key_index),
+			.type = NRF_802154_KEY_CLEARTEXT,
+			.frame_counter = 0,
+			.use_global_frame_counter = !(keys->frame_counter_per_key),
+		};
 
-		nrf_802154_security_key_remove(&key.id);
-		err = nrf_802154_security_key_store(&key);
+		nrf_802154_security_error_t err = nrf_802154_security_key_store(&key);
 		__ASSERT(err == NRF_802154_SECURITY_ERROR_NONE ||
 				 err == NRF_802154_SECURITY_ERROR_ALREADY_PRESENT,
 			 "Storing key failed, err: %d", err);
+
+		__ASSERT(i < NRF_802154_SECURITY_KEY_STORAGE_SIZE, "Store buffer is full");
+		stored_ids[i] = *key.id.p_key_id;
+		stored_key_ids[i].mode = key.id.mode;
+		stored_key_ids[i].p_key_id = &stored_ids[i];
+		i++;
 	};
 }
 #endif /* CONFIG_NRF_802154_ENCRYPTION */
@@ -979,14 +979,17 @@ void nrf_802154_transmitted_raw(uint8_t *frame,
 	nrf5_data.tx_frame_is_secured = metadata->frame_props.is_secured;
 	nrf5_data.tx_frame_mac_hdr_rdy = metadata->frame_props.dynamic_data_is_set;
 	nrf5_data.ack_frame.psdu = metadata->data.transmitted.p_ack;
-	nrf5_data.ack_frame.rssi = metadata->data.transmitted.power;
-	nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
 
-#if !defined(CONFIG_NRF_802154_SER_HOST) && defined(CONFIG_NET_PKT_TIMESTAMP)
-	nrf5_data.ack_frame.time =
-		nrf_802154_first_symbol_timestamp_get(
-			metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
+	if (nrf5_data.ack_frame.psdu) {
+		nrf5_data.ack_frame.rssi = metadata->data.transmitted.power;
+		nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
+
+#if !IS_ENABLED(CONFIG_NRF_802154_SER_HOST) && IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
+		nrf5_data.ack_frame.time =
+			nrf_802154_first_symbol_timestamp_get(
+				metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
 #endif
+	}
 
 	k_sem_give(&nrf5_data.tx_wait);
 }

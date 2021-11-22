@@ -606,9 +606,7 @@ static int uart_console_init(const struct device *arg)
 
 /* UART console initializes after the UART device itself */
 SYS_INIT(uart_console_init,
-#if defined(CONFIG_USB_UART_CONSOLE)
-	 APPLICATION,
-#elif defined(CONFIG_EARLY_CONSOLE)
+#if defined(CONFIG_EARLY_CONSOLE)
 	 PRE_KERNEL_1,
 #else
 	 POST_KERNEL,

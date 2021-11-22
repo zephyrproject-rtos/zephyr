@@ -113,6 +113,8 @@ int dummy_init(const struct device *dev)
 	return 0;
 }
 
+PM_DEVICE_DEFINE(dummy_driver, dummy_device_pm_action);
+
 DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
-		    dummy_device_pm_action, NULL, NULL, APPLICATION,
+		    PM_DEVICE_REF(dummy_driver), NULL, NULL, APPLICATION,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);

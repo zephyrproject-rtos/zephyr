@@ -242,6 +242,11 @@ static void spi_b91_txrx(const struct device *dev, uint32_t len)
 static bool spi_b91_is_config_supported(const struct spi_config *config,
 					struct spi_b91_cfg *b91_config)
 {
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return false;
+	}
+
 	/* check for loop back */
 	if (config->operation & SPI_MODE_LOOP) {
 		LOG_ERR("Loop back mode not supported");
@@ -267,13 +272,16 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 	}
 
 	/* check for lines configuration */
-	if ((config->operation & SPI_LINES_MASK) == SPI_LINES_OCTAL) {
-		LOG_ERR("SPI lines Octal configuration is not supported");
-		return false;
-	} else if (((config->operation & SPI_LINES_MASK) == SPI_LINES_QUAD) &&
-		   (b91_config->peripheral_id == PSPI_MODULE)) {
-		LOG_ERR("SPI lines Quad configuration is not supported by PSPI");
-		return false;
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
+		if ((config->operation & SPI_LINES_MASK) == SPI_LINES_OCTAL) {
+			LOG_ERR("SPI lines Octal is not supported");
+			return false;
+		} else if (((config->operation & SPI_LINES_MASK) ==
+			    SPI_LINES_QUAD) &&
+			   (b91_config->peripheral_id == PSPI_MODULE)) {
+			LOG_ERR("SPI lines Quad is not supported by PSPI");
+			return false;
+		}
 	}
 
 	/* check for slave configuration */
@@ -326,12 +334,19 @@ static int spi_b91_config(const struct device *dev,
 	spi_master_config(b91_config->peripheral_id, SPI_NOMAL);
 
 	/* set lines configuration */
-	if ((config->operation & SPI_LINES_MASK) == SPI_LINES_SINGLE) {
-		spi_set_io_mode(b91_config->peripheral_id, SPI_SINGLE_MODE);
-	} else if ((config->operation & SPI_LINES_MASK) == SPI_LINES_DUAL) {
-		spi_set_io_mode(b91_config->peripheral_id, SPI_DUAL_MODE);
-	} else if ((config->operation & SPI_LINES_MASK) == SPI_LINES_QUAD) {
-		spi_set_io_mode(b91_config->peripheral_id, HSPI_QUAD_MODE);
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
+		uint32_t lines = config->operation & SPI_LINES_MASK;
+
+		if (lines == SPI_LINES_SINGLE) {
+			spi_set_io_mode(b91_config->peripheral_id,
+					SPI_SINGLE_MODE);
+		} else if (lines == SPI_LINES_DUAL) {
+			spi_set_io_mode(b91_config->peripheral_id,
+					SPI_DUAL_MODE);
+		} else if (lines == SPI_LINES_QUAD) {
+			spi_set_io_mode(b91_config->peripheral_id,
+					HSPI_QUAD_MODE);
+		}
 	}
 
 	/* get pinmux driver */
@@ -463,7 +478,7 @@ static struct spi_driver_api spi_b91_api = {
 	};									\
 										\
 	static struct spi_b91_cfg spi_b91_cfg_##inst = {			\
-		.peripheral_id = DT_ENUM_IDX(DT_DRV_INST(inst), peripheral_id),	\
+		.peripheral_id = DT_INST_ENUM_IDX(inst, peripheral_id),		\
 		.cs_pin[0] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs0_pin),	\
 		.cs_pin[1] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs1_pin),	\
 		.cs_pin[2] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs2_pin),	\

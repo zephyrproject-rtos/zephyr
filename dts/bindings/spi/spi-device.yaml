@@ -16,3 +16,16 @@ properties:
       description: Maximum clock frequency of device's SPI interface in Hz
     label:
       required: true
+    duplex:
+      type: int
+      required: false
+      description: |
+        Duplex mode, full or half. By default it's always full duplex thus 0
+        as this is, by far, the most common mode.
+        Use the macros not the actual enum value, here is the concordance
+        list (see dt-bindings/spi/spi.h)
+          0    SPI_FULL_DUPLEX
+          2048 SPI_HALF_DUPLEX
+      enum:
+        - 0
+        - 2048
