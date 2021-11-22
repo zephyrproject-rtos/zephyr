@@ -1,11 +1,12 @@
 # Copyright (c) 2019, Intel Corporation
+# Copyright (c) 2021, Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: Microchip XEC keyboard matrix controller
 
 compatible: "microchip,xec-kscan"
 
-include: kscan.yaml
+include: [kscan.yaml]
 
 properties:
     "#address-cells":
@@ -19,3 +20,21 @@ properties:
 
     interrupts:
       required: true
+
+    girqs:
+      type: array
+      required: false
+      description: Array of pairs of GIRQ number and bit position
+
+    pcrs:
+      type: array
+      required: false
+      description: ADC PCR register index and bit position
+
+girq-cells:
+    - girqnum
+    - bitpos
+
+pcr-cells:
+    - regidx
+    - bitpos
