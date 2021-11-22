@@ -57,6 +57,10 @@ jobs:
           git config --global user.name "Zephyr Bot"
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          git log -n 500 --oneline | grep -q "run twister using github action" || (
+            echo "Your branch is not up to date, you need to rebase on top of latest HEAD of main branch"
+            exit 1
+          )
           ./scripts/ci/run_ci.sh -S -c -b ${{github.base_ref}} -r origin \
                   -p ${{github.event.pull_request.number}} -R ${COMMIT_RANGE}
           # remove all tests to be skipped
