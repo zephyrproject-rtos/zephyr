@@ -86,6 +86,7 @@ static inline int uart_it8xxx2_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static int uart_it8xxx2_init(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
@@ -123,6 +124,7 @@ static int uart_it8xxx2_init(const struct device *dev)
 
 	return 0;
 }
+#endif
 
 #define UART_ITE_IT8XXX2_INIT(inst)                                            \
 	static const struct uart_it8xxx2_config uart_it8xxx2_cfg_##inst = {    \
