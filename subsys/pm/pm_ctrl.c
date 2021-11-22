@@ -13,15 +13,13 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
 
-#define PM_STATES_LEN (1 + PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
-
-static atomic_t power_state_disable_count[PM_STATES_LEN];
+static atomic_t power_state_disable_count[PM_STATE_COUNT];
 
 __weak void pm_constraint_set(enum pm_state state)
 {
 	atomic_val_t v;
 
-	__ASSERT(state < PM_STATES_LEN, "Invalid power state!");
+	__ASSERT(state < PM_STATE_COUNT, "Invalid power state!");
 	v = atomic_inc(&power_state_disable_count[state]);
 	__ASSERT(v < UINT_MAX, "Power state disable count overflowed!");
 
@@ -33,7 +31,7 @@ __weak void pm_constraint_release(enum pm_state state)
 {
 	atomic_val_t v;
 
-	__ASSERT(state < PM_STATES_LEN, "Invalid power state!");
+	__ASSERT(state < PM_STATE_COUNT, "Invalid power state!");
 	v = atomic_dec(&power_state_disable_count[state]);
 	__ASSERT(v > 0, "Power state disable count underflowed!");
 
@@ -43,7 +41,7 @@ __weak void pm_constraint_release(enum pm_state state)
 
 __weak bool pm_constraint_get(enum pm_state state)
 {
-	__ASSERT(state < PM_STATES_LEN, "Invalid power state!");
+	__ASSERT(state < PM_STATE_COUNT, "Invalid power state!");
 
 	return (atomic_get(&power_state_disable_count[state]) == 0);
 }
