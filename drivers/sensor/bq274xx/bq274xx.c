@@ -112,6 +112,34 @@ static int bq274xx_read_data_block(struct bq274xx_data *bq274xx, uint8_t offset,
 	return 0;
 }
 
+// function to read cmd-ctrl: 
+// - first write to cmd_sub_w
+// - then read from cmd_main_r
+static int bq27421_read_cmd_ctrl(struct bq27421_data *bq27421, uint16_t cmd_sub_w, 
+				uint16_t cmd_main_r, uint16_t *val)
+{
+	int status;
+	uint8_t i2c_data[2];
+
+	status = bq27421_control_reg_write(bq27421, cmd_sub_w);
+	if (status < 0) {
+		LOG_ERR("Unable to write control register: 0x%x", cmd_sub_w);
+		return -EIO;
+	}
+
+	status = i2c_burst_read(bq27421->i2c, DT_INST_REG_ADDR(0), cmd_main_r,
+				i2c_data, 2);
+	if (status < 0) {
+		LOG_ERR("Unable to read register: 0x%x", cmd_main_r);
+		return -EIO;
+	}
+
+	*val = (i2c_data[1] << 8) | i2c_data[0];
+
+	LOG_DBG("Ctrl 0x%x reading from 0x%x value is: 0x%x", cmd_sub_w, cmd_main_r, *val);
+	return 0;
+}
+
 static int bq274xx_get_device_type(struct bq274xx_data *bq274xx, uint16_t *val)
 {
 	int status;
@@ -373,7 +401,7 @@ static int bq274xx_gauge_init(const struct device *dev)
 	struct bq274xx_data *bq274xx = dev->data;
 	const struct bq274xx_config *const config = dev->config;
 	int status = 0;
-	uint16_t id;
+	uint16_t id, tmp_value16;
 
 #ifdef CONFIG_PM_DEVICE
 	if (!device_is_ready(config->int_gpios.port)) {
@@ -400,6 +428,15 @@ static int bq274xx_gauge_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	// get FW version
+	status = bq27421_read_cmd_ctrl(bq27421, BQ27421_CONTROL_FW_VERSION, 
+				BQ27421_COMMAND_CONTROL_LOW, &tmp_value16);
+	if (status < 0) {
+		LOG_ERR("Unable to get device FW");
+	} else {
+		LOG_DBG("Device FW: 0x%x", tmp_value16);
+	}
+	
 #ifdef CONFIG_BQ274XX_LAZY_CONFIGURE
 	bq274xx->lazy_loaded = false;
 #else
