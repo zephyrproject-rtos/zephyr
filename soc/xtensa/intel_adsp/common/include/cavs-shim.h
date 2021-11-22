@@ -126,7 +126,8 @@ struct cavs_win {
 #define CAVS15_CLKCTL_LMPCS           BIT(1)
 #define CAVS15_CLKCTL_HMPCS           BIT(0)
 
-#define SHIM_PWRCTL_TCPDSPPG(x) BIT(x)
+#define CAVS_PWRCTL_TCPDSPPG(x) BIT(x)
+#define CAVS_PWRSTS_PDSPPGS(x)  BIT(x)
 
 #ifdef SOC_SERIES_INTEL_CAVS_V25
 # define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0 | 3 << 16)
