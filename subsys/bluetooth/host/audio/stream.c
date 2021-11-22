@@ -80,7 +80,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 	} else {
 		int err;
 
-		err = bap_config(stream, codec);
+		err = bt_bap_config(stream, codec);
 		if (err != 0) {
 			BT_DBG("Failed to configure stream: %d", err);
 			return err;
@@ -136,7 +136,7 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 	} else {
 		int err;
 
-		err = bap_config(stream, codec);
+		err = bt_bap_config(stream, codec);
 		if (err) {
 			return err;
 		}
@@ -535,7 +535,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	err = bap_enable(stream, meta_count, meta);
+	err = bt_bap_enable(stream, meta_count, meta);
 	if (err != 0) {
 		BT_DBG("Failed to enable stream: %d", err);
 		return err;
@@ -587,7 +587,7 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	err = bap_metadata(stream, meta_count, meta);
+	err = bt_bap_metadata(stream, meta_count, meta);
 	if (err != 0) {
 		BT_DBG("Updating metadata failed: %d", err);
 		return err;
@@ -625,7 +625,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 		return -EBADMSG;
 	}
 
-	err = bap_disable(stream);
+	err = bt_bap_disable(stream);
 	if (err != 0) {
 		BT_DBG("Disabling stream failed: %d", err);
 		return err;
@@ -678,7 +678,7 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 		return -EBADMSG;
 	}
 
-	err = bap_start(stream);
+	err = bt_bap_start(stream);
 	if (err != 0) {
 		BT_DBG("Starting stream failed: %d", err);
 		return err;
@@ -718,7 +718,7 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 		return -EBADMSG;
 	}
 
-	err = bap_stop(stream);
+	err = bt_bap_stop(stream);
 	if (err != 0) {
 		BT_DBG("Stopping stream failed: %d", err);
 		return err;
@@ -776,7 +776,7 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 		return -EBADMSG;
 	}
 
-	err = bap_release(stream);
+	err = bt_bap_release(stream);
 	if (err != 0) {
 		BT_DBG("Stopping stream failed: %d", err);
 		return err;
