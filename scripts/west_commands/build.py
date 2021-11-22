@@ -19,10 +19,14 @@ from zephyr_ext_common import Forceable
 
 _ARG_SEPARATOR = '--'
 
+SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
+                    / pathlib.Path('share/sysbuild')
+
 BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [-n] [-o BUILD_OPT] [-f]
+           [--sysbuild | --no-sysbuild]
            [source_dir] -- [cmake_opt [cmake_opt ...]]
 '''
 
@@ -123,6 +127,13 @@ class Build(Forceable):
         group.add_argument('-n', '--just-print', '--dry-run', '--recon',
                             dest='dry_run', action='store_true',
                             help="just print build commands; don't run them")
+
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--sysbuild', action='store_true',
+                           help='''create multi domain build system''')
+        group.add_argument('--no-sysbuild', action='store_true',
+                           help='''do not create multi domain build system
+                                   (default)''')
 
         group = parser.add_argument_group('pristine builds',
                                           PRISTINE_DESCRIPTION)
@@ -357,9 +368,14 @@ class Build(Forceable):
             # CMake configuration phase.
             self.run_cmake = True
 
-        cached_app = self.cmake_cache.get('APPLICATION_SOURCE_DIR')
-        log.dbg('APPLICATION_SOURCE_DIR:', cached_app,
-                level=log.VERBOSE_EXTREME)
+        cached_proj = self.cmake_cache.get('APPLICATION_SOURCE_DIR')
+        cached_app = self.cmake_cache.get('APP_DIR')
+        # if APP_DIR is None but APPLICATION_SOURCE_DIR is set, that indicates
+        # an older build folder, this still requires pristine.
+        if cached_app is None and cached_proj:
+            cached_app = cached_proj
+
+        log.dbg('APP_DIR:', cached_app, level=log.VERBOSE_EXTREME)
         source_abs = (os.path.abspath(self.args.source_dir)
                       if self.args.source_dir else None)
         cached_abs = os.path.abspath(cached_app) if cached_app else None
@@ -445,6 +461,14 @@ class Build(Forceable):
         if user_args:
             cmake_opts.extend(shlex.split(user_args))
 
+        config_sysbuild = config_getboolean('sysbuild', False)
+        if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
+            cmake_opts.extend(['-S{}'.format(SYSBUILD_PROJ_DIR),
+                               '-DAPP_DIR={}'.format(self.source_dir)])
+        else:
+            # self.args.no_sysbuild == True or config sysbuild False
+            cmake_opts.extend(['-S{}'.format(self.source_dir)])
+
         # Invoke CMake from the current working directory using the
         # -S and -B options (officially introduced in CMake 3.13.0).
         # This is important because users expect invocations like this
@@ -453,7 +477,6 @@ class Build(Forceable):
         # west build -- -DOVERLAY_CONFIG=relative-path.conf
         final_cmake_args = ['-DWEST_PYTHON={}'.format(sys.executable),
                             '-B{}'.format(self.build_dir),
-                            '-S{}'.format(self.source_dir),
                             '-G{}'.format(config_get('generator',
                                                      DEFAULT_CMAKE_GENERATOR))]
         if cmake_opts:
