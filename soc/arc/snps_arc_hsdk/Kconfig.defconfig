@@ -47,4 +47,7 @@ config UART_NS16550_ACCESS_WORD_ONLY
 	default y
 	depends on UART_NS16550
 
+config ARC_HAS_ACCL_REGS
+	default y
+
 endif # ARC_HSDK
