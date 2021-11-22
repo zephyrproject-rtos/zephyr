@@ -49,6 +49,8 @@ int bt_audio_stream_config(struct bt_conn *conn,
 			   struct bt_audio_ep *ep,
 			   struct bt_codec *codec)
 {
+	uint8_t role;
+
 	BT_DBG("conn %p stream %p, ep %p codec %p codec id 0x%02x "
 	       "codec cid 0x%04x codec vid 0x%04x", conn, stream, ep,
 	       codec, codec ? codec->id : 0, codec ? codec->cid : 0,
@@ -56,6 +58,12 @@ int bt_audio_stream_config(struct bt_conn *conn,
 
 	CHECKIF(conn == NULL || stream == NULL || codec == NULL) {
 		BT_DBG("NULL value(s) supplied)");
+		return -EINVAL;
+	}
+
+	role = conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -94,11 +102,18 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 			     struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep;
+	uint8_t role;
 
 	BT_DBG("stream %p codec %p", stream, codec);
 
-	if (stream == NULL || stream->ep == NULL) {
-		BT_DBG("Invalid stream or endpoint");
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	role = stream->conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -106,12 +121,6 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 
 	if (codec == NULL) {
 		BT_DBG("NULL codec");
-		return -EINVAL;
-	}
-
-	if (bt_audio_ep_is_broadcast(ep)) {
-		BT_DBG("Cannot use %s to reconfigure broadcast streams",
-		       __func__);
 		return -EINVAL;
 	}
 
@@ -367,6 +376,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	struct bt_audio_ep *ep;
 	bool conn_stream_found;
 	bool cig_connected;
+	uint8_t role;
 	int err;
 
 	BT_DBG("conn %p group %p qos %p", conn, group, qos);
@@ -393,6 +403,12 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 	CHECKIF(!bt_audio_valid_qos(qos)) {
 		BT_DBG("Invalid QoS");
+		return -EINVAL;
+	}
+
+	role = conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -520,11 +536,19 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 int bt_audio_stream_enable(struct bt_audio_stream *stream,
 			   uint8_t meta_count, struct bt_codec_data *meta)
 {
+	uint8_t role;
 	int err;
 
 	BT_DBG("stream %p", stream);
 
-	if (stream == NULL || stream->ep == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	role = stream->conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -567,11 +591,19 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 			     uint8_t meta_count, struct bt_codec_data *meta)
 {
+	uint8_t role;
 	int err;
 
 	BT_DBG("stream %p metadata count %u", stream, meta_count);
 
-	if (stream == NULL || stream->ep == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	role = stream->conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -605,11 +637,19 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 
 int bt_audio_stream_disable(struct bt_audio_stream *stream)
 {
+	uint8_t role;
 	int err;
 
 	BT_DBG("stream %p", stream);
 
-	if (stream == NULL || stream->ep == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	role = stream->conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -654,17 +694,19 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 
 int bt_audio_stream_start(struct bt_audio_stream *stream)
 {
+	uint8_t role;
 	int err;
 
 	BT_DBG("stream %p", stream);
 
-	if (stream == NULL || stream->ep == NULL) {
-		BT_DBG("Invalid stream or endpoint");
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
 		return -EINVAL;
 	}
 
-	if (bt_audio_ep_is_broadcast(stream->ep)) {
-		BT_DBG("Cannot use %s to start broadcast streams", __func__);
+	role = stream->conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
@@ -694,19 +736,21 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 int bt_audio_stream_stop(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep;
+	uint8_t role;
 	int err;
 
-	if (stream == NULL || stream->ep == NULL) {
-		BT_DBG("Invalid stream or endpoint");
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	role = stream->conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
 	ep = stream->ep;
-
-	if (bt_audio_ep_is_broadcast(ep)) {
-		BT_DBG("Cannot use %s to stop broadcast streams", __func__);
-		return -EINVAL;
-	}
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x03 (Disabling) */
@@ -745,16 +789,19 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 
 int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 {
+	uint8_t role;
 	int err;
 
 	BT_DBG("stream %p cache %s", stream, cache ? "true" : "false");
 
-	CHECKIF(stream == NULL || stream->ep == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
 		BT_DBG("Invalid stream");
 		return -EINVAL;
 	}
-	if (bt_audio_ep_is_broadcast(stream->ep)) {
-		BT_DBG("Cannot use %s to release broadcast streams", __func__);
+
+	role = stream->conn->role;
+	if (role != BT_HCI_ROLE_CENTRAL) {
+		BT_DBG("Invalid conn role: %u, shall be central", role);
 		return -EINVAL;
 	}
 
