@@ -118,17 +118,6 @@ bool read_ERRFL(const AS5047P_handle h, as5047p_ERRFL_data_t *regData, bool veri
     return HANDLE_ERROR(error);
 }
 
-bool read_PROG(const AS5047P_handle h, as5047p_PROG_data_t *regData, bool verifyParity, bool checkForComError,
-               bool checkForSensorError) {
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    if (regData != nullptr) {
-        regData->raw = dev.read_PROG(&error, verifyParity, checkForComError, checkForSensorError).data.raw;
-    }
-
-    return HANDLE_ERROR(error);
-}
-
 bool read_DIAAGC(const AS5047P_handle h, as5047p_DIAAGC_data_t *regData, bool verifyParity, bool checkForComError,
                  bool checkForSensorError) {
     AS5047P dev(h);
@@ -140,83 +129,9 @@ bool read_DIAAGC(const AS5047P_handle h, as5047p_DIAAGC_data_t *regData, bool ve
     return HANDLE_ERROR(error);
 }
 
-bool read_MAG(const AS5047P_handle h, as5047p_MAG_data_t *regData, bool verifyParity, bool checkForComError,
-              bool checkForSensorError) {
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    if (regData != nullptr) {
-        regData->raw = dev.read_MAG(&error, verifyParity, checkForComError, checkForSensorError).data.raw;
-    }
-
-    return HANDLE_ERROR(error);
-}
-
-bool read_ANGLEUNC(const AS5047P_handle h, as5047p_ANGLEUNC_data_t *regData, bool verifyParity, bool checkForComError,
-                   bool checkForSensorError) {
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    if (regData != nullptr) {
-        regData->raw = dev.read_ANGLEUNC(&error, verifyParity, checkForComError, checkForSensorError).data.raw;
-    }
-
-    return HANDLE_ERROR(error);
-}
-
-bool read_ANGLECOM(const AS5047P_handle h, as5047p_ANGLECOM_data_t *regData, bool verifyParity, bool checkForComError,
-                   bool checkForSensorError) {
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    if (regData != nullptr) {
-        regData->raw = dev.read_ANGLECOM(&error, verifyParity, checkForComError, checkForSensorError).data.raw;
-    }
-
-    return HANDLE_ERROR(error);
-}
-
-// -------------------------------------------------------------
-
-// Write Volatile Registers ------------------------------------
-
-bool
-write_PROG(const AS5047P_handle h, const as5047p_PROG_data_t *regData, bool checkForComError, bool verifyWrittenReg) {
-    if (regData == nullptr) {
-        return false;
-    }
-    AS5047P_Types::PROG_t reg;
-    reg.data.raw = regData->raw;
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    bool res = dev.write_PROG(&reg, &error, checkForComError, verifyWrittenReg);
-    HANDLE_ERROR(error);
-
-    return res;
-}
-
 // -------------------------------------------------------------
 
 // Read Non-Volatile Registers ---------------------------------
-
-bool read_ZPOSM(const AS5047P_handle h, as5047p_ZPOSM_data_t *regData, bool verifyParity, bool checkForComError,
-                bool checkForSensorError) {
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    if (regData != nullptr) {
-        regData->raw = dev.read_ZPOSM(&error, verifyParity, checkForComError, checkForSensorError).data.raw;
-    }
-
-    return HANDLE_ERROR(error);
-}
-
-bool read_ZPOSL(const AS5047P_handle h, as5047p_ZPOSL_data_t *regData, bool verifyParity, bool checkForComError,
-                bool checkForSensorError) {
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    if (regData != nullptr) {
-        regData->raw = dev.read_ZPOSL(&error, verifyParity, checkForComError, checkForSensorError).data.raw;
-    }
-
-    return HANDLE_ERROR(error);
-}
 
 bool read_SETTINGS1(const AS5047P_handle h, as5047p_SETTINGS1_data_t *regData, bool verifyParity, bool checkForComError,
                     bool checkForSensorError) {
@@ -243,36 +158,6 @@ bool read_SETTINGS2(const AS5047P_handle h, as5047p_SETTINGS2_data_t *regData, b
 // -------------------------------------------------------------
 
 // Write Non-Volatile Registers --------------------------------
-
-bool
-write_ZPOSM(const AS5047P_handle h, const as5047p_ZPOSM_data_t *regData, bool checkForComError, bool verifyWrittenReg) {
-    if (regData == nullptr) {
-        return false;
-    }
-    AS5047P_Types::ZPOSM_t reg;
-    reg.data.raw = regData->raw;
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    bool res = dev.write_ZPOSM(&reg, &error, checkForComError, verifyWrittenReg);
-    HANDLE_ERROR(error);
-
-    return res;
-}
-
-bool
-write_ZPOSL(const AS5047P_handle h, const as5047p_ZPOSL_data_t *regData, bool checkForComError, bool verifyWrittenReg) {
-    if (regData == nullptr) {
-        return false;
-    }
-    AS5047P_Types::ZPOSL_t reg;
-    reg.data.raw = regData->raw;
-    AS5047P dev(h);
-    AS5047P_Types::ERROR_t error;
-    bool res = dev.write_ZPOSL(&reg, &error, checkForComError, verifyWrittenReg);
-    HANDLE_ERROR(error);
-
-    return res;
-}
 
 bool write_SETTINGS1(const AS5047P_handle h, const as5047p_SETTINGS1_data_t *regData, bool checkForComError,
                      bool verifyWittenReg) {

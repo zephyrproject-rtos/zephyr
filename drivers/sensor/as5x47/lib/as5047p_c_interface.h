@@ -82,17 +82,6 @@ bool readAngleDegree(AS5047P_handle h, float *angleOut, bool withDAEC,
  */
 bool read_ERRFL(AS5047P_handle h, as5047p_ERRFL_data_t *regData,
                 bool verifyParity, bool checkForComError, bool checkForSensorError);
-/**
- * Read the PROG register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param verifyParity Flag to activate the parity check on incoming data.
- * @param checkForComError Flag to activate communication error check.
- * @param checkForSensorError
- * @return true on success
- */
-bool read_PROG(AS5047P_handle h, as5047p_PROG_data_t *regData,
-               bool verifyParity, bool checkForComError, bool checkForSensorError);
 
 /**
  * Read the DIAAGC register.
@@ -106,83 +95,9 @@ bool read_PROG(AS5047P_handle h, as5047p_PROG_data_t *regData,
 bool read_DIAAGC(AS5047P_handle h, as5047p_DIAAGC_data_t *regData,
                  bool verifyParity, bool checkForComError, bool checkForSensorError);
 
-/**
- * Read the MAG register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param verifyParity Flag to activate the parity check on incoming data.
- * @param checkForComError Flag to activate communication error check.
- * @param checkForSensorError Flag to activate sensor error check.
- * @return true on success
- */
-bool read_MAG(AS5047P_handle h, as5047p_MAG_data_t *regData,
-              bool verifyParity, bool checkForComError, bool checkForSensorError);
-
-/**
- * Read the ANGLEUNC register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param verifyParity Flag to activate the parity check on incoming data.
- * @param checkForComError Flag to activate communication error check.
- * @param checkForSensorError Flag to activate sensor error check.
- * @return true on success
- */
-bool read_ANGLEUNC(AS5047P_handle h, as5047p_ANGLEUNC_data_t *regData,
-                   bool verifyParity, bool checkForComError, bool checkForSensorError);
-
-/**
- * Read the ANGLECOM register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param verifyParity Flag to activate the parity check on incoming data.
- * @param checkForComError Flag to activate communication error check.
- * @param checkForSensorError Flag to activate sensor error check.
- * @return true on success
- */
-bool read_ANGLECOM(AS5047P_handle h, as5047p_ANGLECOM_data_t *regData,
-                   bool verifyParity, bool checkForComError, bool checkForSensorError);
-
-// -------------------------------------------------------------
-
-// Write Volatile Registers ------------------------------------
-
-/**
- * Write into the PROG register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param checkForComError Flag to activate communication error check.
- * @param verifyWrittenReg Flag to activate a check of the written data in the register.
- * @return true on success
- */
-bool write_PROG(AS5047P_handle h, const as5047p_PROG_data_t *regData, bool checkForComError, bool verifyWrittenReg);
-
 // -------------------------------------------------------------
 
 // Read Non-Volatile Registers ---------------------------------
-
-/**
- * Read the ZPOSM register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param verifyParity Flag to activate the parity check on incoming data.
- * @param checkForComError Flag to activate communication error check.
- * @param checkForSensorError
- * @return true on success
- */
-bool read_ZPOSM(AS5047P_handle h, as5047p_ZPOSM_data_t *regData,
-                bool verifyParity, bool checkForComError, bool checkForSensorError);
-
-/**
- * Read the ZPOSL register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param verifyParity Flag to activate the parity check on incoming data.
- * @param checkForComError Flag to activate communication error check.
- * @param checkForSensorError Flag to activate sensor error check.
- * @return true on success
- */
-bool read_ZPOSL(AS5047P_handle h, as5047p_ZPOSL_data_t *regData,
-                bool verifyParity, bool checkForComError, bool checkForSensorError);
 
 /**
  * Read the SETTINGS1 register.
@@ -211,26 +126,6 @@ bool read_SETTINGS2(AS5047P_handle h, as5047p_SETTINGS2_data_t *regData,
 // -------------------------------------------------------------
 
 // Write Non-Volatile Registers --------------------------------
-
-/**
- * Write into the ZPOSM register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param checkForComError Flag to activate communication error check.
- * @param verifyWrittenReg Flag to activate a check of the written data in the register.
- * @return true on success
- */
-bool write_ZPOSM(AS5047P_handle h, const as5047p_ZPOSM_data_t *regData, bool checkForComError, bool verifyWrittenReg);
-
-/**
- * Write into the ZPOSL register.
- * @param h A Sensor instance.
- * @param regData The content of the register to write to the sensors register.
- * @param checkForComError Flag to activate communication error check.
- * @param verifyWrittenReg Flag to activate a check of the written data in the register.
- * @return true on success
- */
-bool write_ZPOSL(AS5047P_handle h, const as5047p_ZPOSL_data_t *regData, bool checkForComError, bool verifyWrittenReg);
 
 /**
  * Write into the SETTINGS1 register.
