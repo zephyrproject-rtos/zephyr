@@ -16,7 +16,7 @@ import textwrap
 import traceback
 
 from west import log
-from build_helpers import find_build_dir, is_zephyr_build, \
+from build_helpers import find_build_dir, is_zephyr_build, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError
 from west.configuration import config
@@ -104,6 +104,8 @@ def add_parser_common(command, parser_adder=None, parser=None):
                        help='override default runner from --build-dir')
     group.add_argument('--skip-rebuild', action='store_true',
                        help='do not refresh cmake dependencies first')
+    group.add_argument('--domain', action='append',
+                       help='execute runner only for given domain')
 
     group = parser.add_argument_group(
         'runner configuration',
@@ -145,7 +147,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
 
     return parser
 
-def do_run_common(command, user_args, user_runner_args):
+def do_run_common(command, user_args, user_runner_args, domains=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
@@ -153,12 +155,29 @@ def do_run_common(command, user_args, user_runner_args):
         dump_context(command, user_args, user_runner_args)
         return
 
-    command_name = command.name
     build_dir = get_build_dir(user_args)
-    cache = load_cmake_cache(build_dir, user_args)
-    board = cache['CACHED_BOARD']
     if not user_args.skip_rebuild:
         rebuild(command, build_dir, user_args)
+
+    if domains is None:
+        if user_args.domain is None:
+            # No domains are passed down and no domains specified by the user.
+            # So default domain will be used.
+            domains = [load_domains(build_dir).get_default_domain()]
+        else:
+            # No domains are passed down, but user has specified domains to use.
+            # Get the user specified domains.
+            domains = load_domains(build_dir).get_domains(user_args.domain)
+
+    for d in domains:
+        do_run_common_image(command, user_args, user_runner_args, d.build_dir)
+
+def do_run_common_image(command, user_args, user_runner_args, build_dir=None):
+    command_name = command.name
+    if build_dir is None:
+        build_dir = get_build_dir(user_args)
+    cache = load_cmake_cache(build_dir, user_args)
+    board = cache['CACHED_BOARD']
 
     # Load runners.yaml.
     yaml_path = runners_yaml_path(build_dir, board)
@@ -173,7 +192,9 @@ def do_run_common(command, user_args, user_runner_args):
     # Set up runner logging to delegate to west.log commands.
     logger = logging.getLogger('runners')
     logger.setLevel(LOG_LEVEL)
-    logger.addHandler(WestLogHandler())
+    if not logger.hasHandlers():
+        # Only add a runners log handler if none has been added already.
+        logger.addHandler(WestLogHandler())
 
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.

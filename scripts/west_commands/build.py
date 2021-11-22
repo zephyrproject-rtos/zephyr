@@ -12,7 +12,7 @@ import yaml
 from west import log
 from west.configuration import config
 from zcmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
-from build_helpers import is_zephyr_build, find_build_dir, \
+from build_helpers import is_zephyr_build, find_build_dir, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
 
 from zephyr_ext_common import Forceable
@@ -115,6 +115,9 @@ class Build(Forceable):
                            help='force a cmake run')
         group.add_argument('--cmake-only', action='store_true',
                            help="just run cmake; don't build (implies -c)")
+        group.add_argument('--domain', action='append',
+                           help='''execute build tool (make or ninja) only for
+                           given domain''')
         group.add_argument('-t', '--target',
                            help='''run build system target TARGET
                            (try "-t usage")''')
@@ -201,8 +204,9 @@ class Build(Forceable):
 
         self._sanity_check()
         self._update_cache()
+        self.domains = load_domains(self.build_dir)
 
-        self._run_build(args.target)
+        self._run_build(args.target, args.domain)
 
     def _find_board(self):
         board, origin = None, None
@@ -464,7 +468,7 @@ class Build(Forceable):
         config_sysbuild = config_getboolean('sysbuild', False)
         if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
             cmake_opts.extend(['-S{}'.format(SYSBUILD_PROJ_DIR),
-                               '-DAPP_DIR={}'.format(self.source_dir)])
+                               '-DAPP_DIR:PATH={}'.format(self.source_dir)])
         else:
             # self.args.no_sysbuild == True or config sysbuild False
             cmake_opts.extend(['-S{}'.format(self.source_dir)])
@@ -499,7 +503,7 @@ class Build(Forceable):
                       '-P', cache['ZEPHYR_BASE'] + '/cmake/pristine.cmake']
         run_cmake(cmake_args, cwd=self.build_dir, dry_run=self.args.dry_run)
 
-    def _run_build(self, target):
+    def _run_build(self, target, domain):
         if target:
             _banner('running target {}'.format(target))
         elif self.run_cmake:
@@ -511,8 +515,23 @@ class Build(Forceable):
         if self.args.verbose:
             self._append_verbose_args(extra_args,
                                       not bool(self.args.build_opt))
-        run_build(self.build_dir, extra_args=extra_args,
-                  dry_run=self.args.dry_run)
+
+        domains = load_domains(self.build_dir)
+        build_dir_list = []
+
+        if domain is None:
+            # If no domain is specified, we just build top build dir as that
+            # will build all domains.
+            build_dir_list = [domains.get_top_build_dir()]
+        else:
+            _banner('building domain(s): {}'.format(' '.join(domain)))
+            domain_list = domains.get_domains(domain)
+            for d in domain_list:
+                build_dir_list.append(d.build_dir)
+
+        for b in build_dir_list:
+            run_build(b, extra_args=extra_args,
+                      dry_run=self.args.dry_run)
 
     def _append_verbose_args(self, extra_args, add_dashes):
         # These hacks are only needed for CMake versions earlier than
