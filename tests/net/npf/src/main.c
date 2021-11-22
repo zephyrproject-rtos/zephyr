@@ -281,13 +281,39 @@ static void test_npf_eth_mac_address(void)
 	zassert_true(npf_remove_recv_rule(&accept_unmatched_dst_addr), "");
 }
 
+static NPF_ETH_SRC_ADDR_MASK_MATCH(matched_src_addr_mask, mac_address_list,
+				   0xff, 0xff, 0xff, 0xff, 0xff, 0x00);
+static NPF_RULE(accept_matched_src_addr_mask, NET_OK, matched_src_addr_mask);
+
+static void test_npf_eth_mac_addr_mask(void)
+{
+	struct net_pkt *pkt = build_test_pkt(NET_ETH_PTYPE_IP, 100, NULL);
+
+	/* test standard match rule from previous test */
+	npf_insert_recv_rule(&npf_default_drop);
+	npf_insert_recv_rule(&accept_matched_src_addr);
+	zassert_true(net_pkt_filter_recv_ok(pkt), "");
+
+	/* clobber one nibble of matching address from previous test */
+	mac_address_list[1].addr[5] = 0x00;
+	zassert_false(net_pkt_filter_recv_ok(pkt), "");
+
+	/* insert masked address match rule */
+	npf_insert_recv_rule(&accept_matched_src_addr_mask);
+	zassert_true(net_pkt_filter_recv_ok(pkt), "");
+
+	/* cleanup */
+	zassert_true(npf_remove_all_recv_rules(), "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_pkt_filter_test,
 			 ztest_unit_test(test_npf_iface),
 			 ztest_unit_test(test_npf_example1),
 			 ztest_unit_test(test_npf_example2),
-			 ztest_unit_test(test_npf_eth_mac_address));
+			 ztest_unit_test(test_npf_eth_mac_address),
+			 ztest_unit_test(test_npf_eth_mac_addr_mask));
 
 	ztest_run_test_suite(net_pkt_filter_test);
 }
