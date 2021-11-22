@@ -53,8 +53,10 @@ static int stm32u5_init(const struct device *arg)
 	/* At reset, system core clock is set to 4 MHz from MSIS */
 	SystemCoreClock = 4000000;
 
-	/* Enable PWR */
+	/* Enable Scale 1 to achieve 160MHz and 48MHz for MSIS*/
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	LL_AHB3_GRP1_DisableClock(LL_AHB3_GRP1_PERIPH_PWR);
 
 	/* Disable USB Type-C dead battery pull-down behavior */
 	LL_PWR_DisableUCPDDeadBattery();
