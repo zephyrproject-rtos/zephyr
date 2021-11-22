@@ -195,6 +195,41 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
  */
 #define NRFX_ATOMIC_FETCH_SUB(p_data, value)  atomic_sub(p_data, value)
 
+/**
+ * @brief Macro for running compare and swap on an atomic object.
+ *
+ * Value is updated to the new value only if it previously equaled old value.
+ *
+ * @param[in,out] p_data      Atomic memory pointer.
+ * @param[in]     old_value Expected old value.
+ * @param[in]     new_value   New value.
+ *
+ * @retval true If value was updated.
+ * @retval false If value was not updated because location was not equal to @p old_value.
+ */
+#define NRFX_ATOMIC_CAS(p_data, old_value, new_value) \
+	atomic_cas(p_data, old_value, new_value)
+
+/**
+ * @brief Macro for counting leading zeros.
+ *
+ * @param[in] value A word value.
+ *
+ * @return Number of leading 0-bits in @p value, starting at the most significant bit position.
+ *         If x is 0, the result is undefined.
+ */
+#define NRFX_CLZ(value) __builtin_clz(value)
+
+/**
+ * @brief Macro for counting trailing zeros.
+ *
+ * @param[in] value A word value.
+ *
+ * @return Number of trailing 0-bits in @p value, starting at the least significant bit position.
+ *         If x is 0, the result is undefined.
+ */
+#define NRFX_CTZ(value) __builtin_ctz(value)
+
 //------------------------------------------------------------------------------
 
 /**
