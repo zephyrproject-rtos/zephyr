@@ -36,9 +36,13 @@ ExternalZephyrProject_Add(
   SOURCE_DIR ${APP_DIR}
   MAIN_APP
 )
+list(APPEND IMAGES "${app_name}")
+set(DEFAULT_IMAGE "${app_name}")
 
 add_subdirectory(bootloader)
 
 # This allows for board and app specific images to be included.
 include(${BOARD_DIR}/sysbuild.cmake OPTIONAL)
 include(${APP_DIR}/sysbuild.cmake OPTIONAL)
+
+include(cmake/domains.cmake)
