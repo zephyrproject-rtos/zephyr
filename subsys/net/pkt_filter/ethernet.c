@@ -10,15 +10,29 @@ LOG_MODULE_REGISTER(npf_ethernet, CONFIG_NET_PKT_FILTER_LOG_LEVEL);
 #include <net/ethernet.h>
 #include <net/net_pkt_filter.h>
 
+static bool addr_mask_compare(struct net_eth_addr *addr1,
+			      struct net_eth_addr *addr2,
+			      struct net_eth_addr *mask)
+{
+	for (int i = 0; i < 6; i++) {
+		if ((addr1->addr[i] & mask->addr[i]) !=
+		    (addr2->addr[i] & mask->addr[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool addr_match(struct npf_test *test, struct net_eth_addr *pkt_addr)
 {
 	struct npf_test_eth_addr *test_eth_addr =
 			CONTAINER_OF(test, struct npf_test_eth_addr, test);
 	struct net_eth_addr *addr = test_eth_addr->addresses;
+	struct net_eth_addr *mask = &test_eth_addr->mask;
 	unsigned int nb_addr = test_eth_addr->nb_addresses;
 
 	while (nb_addr) {
-		if (memcmp(addr, pkt_addr, sizeof(struct net_eth_addr)) == 0) {
+		if (addr_mask_compare(addr, pkt_addr, mask)) {
 			return true;
 		}
 		addr++;
