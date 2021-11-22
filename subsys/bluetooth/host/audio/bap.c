@@ -21,6 +21,7 @@
 
 #include "endpoint.h"
 #include "pacs_internal.h"
+#include "bap_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BAP)
 #define LOG_MODULE_NAME bt_bap
@@ -51,6 +52,16 @@ static struct bt_audio_ep srcs[CONFIG_BT_MAX_CONN][SRC_SIZE];
 
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_discover_params cp_disc[CONFIG_BT_MAX_CONN];
+
+
+/* TODO: Move the functions to avoid these prototypes */
+static int bap_ep_set_metadata(struct bt_audio_ep *ep,
+			       struct net_buf_simple *buf,
+			       uint8_t len, struct bt_codec *codec);
+
+static int bap_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
+			    uint16_t vid, struct net_buf_simple *buf,
+			    uint8_t len, struct bt_codec *codec);
 
 static void bap_ep_iso_recv(struct bt_iso_chan *chan,
 			    const struct bt_iso_recv_info *info,
@@ -83,7 +94,7 @@ static void bap_ep_iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
-	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
+	bt_bap_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 }
 
 static void bap_ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -103,7 +114,7 @@ static void bap_ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		return;
 	}
 
-	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+	bt_bap_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 
 	err = bt_audio_stream_iso_listen(stream);
 	if (err != 0) {
@@ -117,8 +128,8 @@ static struct bt_iso_chan_ops bap_iso_ops = {
 	.disconnected	= bap_ep_iso_disconnected,
 };
 
-void bt_audio_ep_init(struct bt_audio_ep *ep, uint8_t type, uint16_t handle,
-		      uint8_t id)
+static void bap_en_init(struct bt_audio_ep *ep, uint8_t type, uint16_t handle,
+			uint8_t id)
 {
 	BT_DBG("ep %p type 0x%02x handle 0x%04x id 0x%02x", ep, type, handle,
 	       id);
@@ -133,7 +144,7 @@ void bt_audio_ep_init(struct bt_audio_ep *ep, uint8_t type, uint16_t handle,
 	ep->iso.qos->tx = &ep->iso_tx;
 }
 
-struct bt_audio_ep *bt_audio_ep_find(struct bt_conn *conn, uint16_t handle)
+static struct bt_audio_ep *bap_ep_find(struct bt_conn *conn, uint16_t handle)
 {
 	int i, index;
 
@@ -160,8 +171,8 @@ struct bt_audio_ep *bt_audio_ep_find(struct bt_conn *conn, uint16_t handle)
 	return NULL;
 }
 
-struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint8_t dir,
-				    uint16_t handle)
+static struct bt_audio_ep *bap_ep_new(struct bt_conn *conn, uint8_t dir,
+				      uint16_t handle)
 {
 	int i, index, size;
 	struct bt_audio_ep *cache;
@@ -185,7 +196,7 @@ struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint8_t dir,
 		struct bt_audio_ep *ep = &cache[i];
 
 		if (!ep->handle) {
-			bt_audio_ep_init(ep, BT_AUDIO_EP_REMOTE, handle, 0x00);
+			bap_en_init(ep, BT_AUDIO_EP_REMOTE, handle, 0x00);
 			return ep;
 		}
 	}
@@ -193,7 +204,7 @@ struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint8_t dir,
 	return NULL;
 }
 
-bool bt_audio_ep_is_snk(const struct bt_audio_ep *ep)
+static bool bap_ep_is_snk(const struct bt_audio_ep *ep)
 {
 #if SNK_SIZE > 0
 	for (int i = 0; i < ARRAY_SIZE(snks); i++) {
@@ -205,7 +216,7 @@ bool bt_audio_ep_is_snk(const struct bt_audio_ep *ep)
 	return false;
 }
 
-bool bt_audio_ep_is_src(const struct bt_audio_ep *ep)
+bool bt_bap_ep_is_src(const struct bt_audio_ep *ep)
 {
 #if SRC_SIZE > 0
 	for (int i = 0; i < ARRAY_SIZE(srcs); i++) {
@@ -217,20 +228,21 @@ bool bt_audio_ep_is_src(const struct bt_audio_ep *ep)
 	return false;
 }
 
-struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
-				    uint16_t handle)
+static struct bt_audio_ep *bap_ep_get(struct bt_conn *conn, uint8_t dir,
+				      uint16_t handle)
 {
 	struct bt_audio_ep *ep;
 
-	ep = bt_audio_ep_find(conn, handle);
+	ep = bap_ep_find(conn, handle);
 	if (ep || !handle) {
 		return ep;
 	}
 
-	return bt_audio_ep_new(conn, dir, handle);
+	return bap_ep_new(conn, dir, handle);
 }
 
-static void ep_idle(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static void bap_ep_idle_state(struct bt_audio_ep *ep,
+			      struct net_buf_simple *buf)
 {
 	struct bt_audio_stream *stream = ep->stream;
 
@@ -243,14 +255,15 @@ static void ep_idle(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	bt_audio_stream_reset(stream);
 }
 
-static void ep_qos_reset(struct bt_audio_ep *ep)
+static void bap_ep_qos_reset(struct bt_audio_ep *ep)
 {
 	ep->iso.qos = memset(&ep->iso_qos, 0, sizeof(ep->iso_qos));
 	ep->iso.qos->rx = memset(&ep->iso_rx, 0, sizeof(ep->iso_rx));
 	ep->iso.qos->tx = memset(&ep->iso_tx, 0, sizeof(ep->iso_tx));
 }
 
-static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static void bap_ep_config_state(struct bt_audio_ep *ep,
+				struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_config *cfg;
 	struct bt_codec_qos_pref *pref;
@@ -282,7 +295,7 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 
 	/* Reset any exiting QoS configuration */
-	ep_qos_reset(ep);
+	bap_ep_qos_reset(ep);
 
 	pref = &stream->ep->qos_pref;
 
@@ -298,11 +311,11 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	BT_DBG("dir 0x%02x unframed_supported 0x%02x phy 0x%02x rtn %u "
 	       "latency %u pd_min %u pd_max %u codec 0x%02x ",
-	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
+	       bap_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       pref->unframed_supported, pref->phy, pref->rtn, pref->latency,
 	       pref->pd_min, pref->pd_max, stream->codec->id);
 
-	bt_audio_ep_set_codec(ep, cfg->codec.id,
+	bap_ep_set_codec(ep, cfg->codec.id,
 			      sys_le16_to_cpu(cfg->codec.cid),
 			      sys_le16_to_cpu(cfg->codec.vid),
 			      buf, cfg->cc_len, NULL);
@@ -313,7 +326,7 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 }
 
-static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static void bap_ep_qos_state(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_qos *qos;
 	struct bt_audio_stream *stream;
@@ -345,7 +358,7 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
 	       "framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
-	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
+	       bap_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->cig_id, ep->cis_id, stream->codec->id,
 	       stream->qos->interval, stream->qos->framing,
 	       stream->qos->phy, stream->qos->rtn, stream->qos->latency,
@@ -362,7 +375,8 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 }
 
-static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static void bap_ep_enabling_state(struct bt_audio_ep *ep,
+				  struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_enable *enable;
 	struct bt_audio_stream *stream;
@@ -381,10 +395,10 @@ static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
-	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
+	       bap_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->cig_id, ep->cis_id);
 
-	bt_audio_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
+	bap_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
 
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->enabled != NULL) {
@@ -392,7 +406,8 @@ static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 }
 
-static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static void bap_ep_streaming_state(struct bt_audio_ep *ep,
+				   struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_enable *enable;
 	struct bt_audio_stream *stream;
@@ -411,7 +426,7 @@ static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
-	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
+	       bap_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->cig_id, ep->cis_id);
 
 	/* Notify upper layer */
@@ -420,7 +435,8 @@ static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 }
 
-static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static void bap_ep_disabling_state(struct bt_audio_ep *ep,
+				   struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_enable *enable;
 	struct bt_audio_stream *stream;
@@ -439,7 +455,7 @@ static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
-	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
+	       bap_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->cig_id, ep->cis_id);
 
 	/* Notify upper layer */
@@ -448,7 +464,8 @@ static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 }
 
-static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static void bap_ep_releasing_state(struct bt_audio_ep *ep,
+				   struct net_buf_simple *buf)
 {
 	struct bt_audio_stream *stream;
 
@@ -459,7 +476,7 @@ static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 
 	BT_DBG("dir 0x%02x",
-	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE);
+	       bap_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE);
 
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->stopped != NULL) {
@@ -474,7 +491,8 @@ static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	bt_audio_stream_disconnect(stream);
 }
 
-void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static void bap_ep_set_status(struct bt_audio_ep *ep,
+			      struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status *status;
 	uint8_t old_state;
@@ -493,7 +511,7 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	switch (status->state) {
 	case BT_AUDIO_EP_STATE_IDLE:
-		ep_idle(ep, buf);
+		bap_ep_idle_state(ep, buf);
 		break;
 	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		switch (old_state) {
@@ -511,7 +529,7 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 				bt_audio_ep_state_str(old_state),
 				bt_audio_ep_state_str(ep->status.state));
 		}
-		ep_config(ep, buf);
+		bap_ep_config_state(ep, buf);
 		break;
 	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		switch (old_state) {
@@ -525,7 +543,7 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 				bt_audio_ep_state_str(old_state),
 				bt_audio_ep_state_str(ep->status.state));
 		}
-		ep_qos(ep, buf);
+		bap_ep_qos_state(ep, buf);
 		break;
 	case BT_AUDIO_EP_STATE_ENABLING:
 		/* Valid only if ASE_State field = 0x02 (QoS Configured) */
@@ -534,7 +552,7 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 				bt_audio_ep_state_str(old_state),
 				bt_audio_ep_state_str(ep->status.state));
 		}
-		ep_enabling(ep, buf);
+		bap_ep_enabling_state(ep, buf);
 		break;
 	case BT_AUDIO_EP_STATE_STREAMING:
 		switch (old_state) {
@@ -548,7 +566,7 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 				bt_audio_ep_state_str(old_state),
 				bt_audio_ep_state_str(ep->status.state));
 		}
-		ep_streaming(ep, buf);
+		bap_ep_streaming_state(ep, buf);
 		break;
 	case BT_AUDIO_EP_STATE_DISABLING:
 		switch (old_state) {
@@ -562,7 +580,7 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 				bt_audio_ep_state_str(old_state),
 				bt_audio_ep_state_str(ep->status.state));
 		}
-		ep_disabling(ep, buf);
+		bap_ep_disabling_state(ep, buf);
 		break;
 	case BT_AUDIO_EP_STATE_RELEASING:
 		switch (old_state) {
@@ -582,13 +600,13 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 				bt_audio_ep_state_str(old_state),
 				bt_audio_ep_state_str(ep->status.state));
 		}
-		ep_releasing(ep, buf);
+		bap_ep_releasing_state(ep, buf);
 		break;
 	}
 }
 
-static void codec_data_add(struct net_buf_simple *buf, const char *prefix,
-			   uint8_t num, struct bt_codec_data *data)
+static void bap_codec_data_add(struct net_buf_simple *buf, const char *prefix,
+			       uint8_t num, struct bt_codec_data *data)
 {
 	struct bt_ascs_codec_config *cc;
 	int i;
@@ -607,7 +625,7 @@ static void codec_data_add(struct net_buf_simple *buf, const char *prefix,
 	}
 }
 
-static bool codec_config_store(struct bt_data *data, void *user_data)
+static bool bap_codec_config_store(struct bt_data *data, void *user_data)
 {
 	struct bt_codec *codec = user_data;
 	struct bt_codec_data *cdata;
@@ -642,9 +660,9 @@ static bool codec_config_store(struct bt_data *data, void *user_data)
 	return true;
 }
 
-int bt_audio_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
-			  uint16_t vid, struct net_buf_simple *buf,
-			  uint8_t len, struct bt_codec *codec)
+static int bap_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
+			    uint16_t vid, struct net_buf_simple *buf,
+			    uint8_t len, struct bt_codec *codec)
 {
 	struct net_buf_simple ad;
 
@@ -672,7 +690,7 @@ int bt_audio_ep_set_codec(struct bt_audio_ep *ep, uint8_t id, uint16_t cid,
 				      len);
 
 	/* Parse LTV entries */
-	bt_data_parse(&ad, codec_config_store, codec);
+	bt_data_parse(&ad, bap_codec_config_store, codec);
 
 	/* Check if all entries could be parsed */
 	if (ad.len) {
@@ -687,7 +705,7 @@ fail:
 	return -EINVAL;
 }
 
-static bool codec_metadata_store(struct bt_data *data, void *user_data)
+static bool bap_codec_metadata_store(struct bt_data *data, void *user_data)
 {
 	struct bt_codec *codec = user_data;
 	struct bt_codec_data *meta;
@@ -722,8 +740,9 @@ static bool codec_metadata_store(struct bt_data *data, void *user_data)
 	return true;
 }
 
-int bt_audio_ep_set_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-			     uint8_t len, struct bt_codec *codec)
+static int bap_ep_set_metadata(struct bt_audio_ep *ep,
+			       struct net_buf_simple *buf,
+			       uint8_t len, struct bt_codec *codec)
 {
 	struct net_buf_simple meta;
 	int err;
@@ -750,7 +769,7 @@ int bt_audio_ep_set_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 				      len);
 
 	/* Parse LTV entries */
-	bt_data_parse(&meta, codec_metadata_store, codec);
+	bt_data_parse(&meta, bap_codec_metadata_store, codec);
 
 	/* Check if all entries could be parsed */
 	if (meta.len) {
@@ -773,7 +792,7 @@ fail:
 	return err;
 }
 
-void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
+void bt_bap_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 {
 	uint8_t old_state;
 
@@ -801,9 +820,9 @@ void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 	}
 }
 
-static uint8_t cp_notify(struct bt_conn *conn,
-			 struct bt_gatt_subscribe_params *params,
-			 const void *data, uint16_t length)
+static uint8_t bap_cp_notify(struct bt_conn *conn,
+			     struct bt_gatt_subscribe_params *params,
+			     const void *data, uint16_t length)
 {
 	struct bt_ascs_cp_rsp *rsp;
 	int i;
@@ -847,9 +866,9 @@ static uint8_t cp_notify(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static uint8_t ep_notify(struct bt_conn *conn,
-			 struct bt_gatt_subscribe_params *params,
-			 const void *data, uint16_t length)
+static uint8_t bap_ep_notify(struct bt_conn *conn,
+			     struct bt_gatt_subscribe_params *params,
+			     const void *data, uint16_t length)
 {
 	struct net_buf_simple buf;
 	struct bt_audio_ep *ep;
@@ -871,12 +890,12 @@ static uint8_t ep_notify(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	bt_audio_ep_set_status(ep, &buf);
+	bap_ep_set_status(ep, &buf);
 
 	return BT_GATT_ITER_CONTINUE;
 }
 
-int bt_audio_ep_subscribe(struct bt_conn *conn, struct bt_audio_ep *ep)
+static int bap_ep_subscribe(struct bt_conn *conn, struct bt_audio_ep *ep)
 {
 	BT_DBG("ep %p handle 0x%02x", ep, ep->handle);
 
@@ -888,14 +907,14 @@ int bt_audio_ep_subscribe(struct bt_conn *conn, struct bt_audio_ep *ep)
 	ep->subscribe.ccc_handle = 0x0000;
 	ep->subscribe.end_handle = 0xffff;
 	ep->subscribe.disc_params = &ep->discover;
-	ep->subscribe.notify = ep_notify;
+	ep->subscribe.notify = bap_ep_notify;
 	ep->subscribe.value = BT_GATT_CCC_NOTIFY;
 	atomic_set_bit(ep->subscribe.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 	return bt_gatt_subscribe(conn, &ep->subscribe);
 }
 
-void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle)
+static void bap_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 {
 	int i, index;
 
@@ -908,7 +927,7 @@ void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		cp_subscribe[index].ccc_handle = 0x0000;
 		cp_subscribe[index].end_handle = 0xffff;
 		cp_subscribe[index].disc_params = &cp_disc[index];
-		cp_subscribe[index].notify = cp_notify;
+		cp_subscribe[index].notify = bap_cp_notify;
 		cp_subscribe[index].value = BT_GATT_CCC_NOTIFY;
 		atomic_set_bit(cp_subscribe[index].flags,
 			       BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
@@ -935,7 +954,7 @@ void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 
 NET_BUF_SIMPLE_DEFINE_STATIC(ep_buf, CONFIG_BT_L2CAP_TX_MTU);
 
-struct net_buf_simple *bt_audio_ep_create_pdu(uint8_t op)
+struct net_buf_simple *bt_bap_ep_create_pdu(uint8_t op)
 {
 	struct bt_ascs_ase_cp *hdr;
 
@@ -948,8 +967,8 @@ struct net_buf_simple *bt_audio_ep_create_pdu(uint8_t op)
 	return &ep_buf;
 }
 
-int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-		       struct bt_codec *codec)
+static int bap_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
+			 struct bt_codec *codec)
 {
 	struct bt_ascs_config *req;
 	uint8_t cc_len;
@@ -975,7 +994,7 @@ int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 	}
 
 	BT_DBG("id 0x%02x dir 0x%02x codec 0x%02x", ep->status.id,
-	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
+	       bap_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       codec->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
@@ -987,14 +1006,14 @@ int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 	req->codec.vid = codec->vid;
 
 	cc_len = buf->len;
-	codec_data_add(buf, "data", codec->data_count, codec->data);
+	bap_codec_data_add(buf, "data", codec->data_count, codec->data);
 	req->cc_len = buf->len - cc_len;
 
 	return 0;
 }
 
-int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-		    struct bt_codec_qos *qos)
+int bt_bap_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
+		  struct bt_codec_qos *qos)
 {
 	struct bt_ascs_qos *req;
 
@@ -1038,8 +1057,8 @@ int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 	return 0;
 }
 
-int bt_audio_ep_enable(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-		       uint8_t meta_count, struct bt_codec_data *meta)
+static int bap_ep_enable(struct bt_audio_ep *ep, struct net_buf_simple *buf,
+			 uint8_t meta_count, struct bt_codec_data *meta)
 {
 	struct bt_ascs_metadata *req;
 
@@ -1061,14 +1080,14 @@ int bt_audio_ep_enable(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 	req->ase = ep->status.id;
 
 	req->len = buf->len;
-	codec_data_add(buf, "meta", meta_count, meta);
+	bap_codec_data_add(buf, "meta", meta_count, meta);
 	req->len = buf->len - req->len;
 
 	return 0;
 }
 
-int bt_audio_ep_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-			 uint8_t meta_count, struct bt_codec_data *meta)
+static int bap_ep_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
+			   uint8_t meta_count, struct bt_codec_data *meta)
 {
 	struct bt_ascs_metadata *req;
 
@@ -1096,13 +1115,13 @@ int bt_audio_ep_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 	req->ase = ep->status.id;
 
 	req->len = buf->len;
-	codec_data_add(buf, "meta", meta_count, meta);
+	bap_codec_data_add(buf, "meta", meta_count, meta);
 	req->len = buf->len - req->len;
 
 	return 0;
 }
 
-int bt_audio_ep_start(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static int bap_ep_start(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	BT_DBG("ep %p buf %p", ep, buf);
 
@@ -1124,7 +1143,7 @@ int bt_audio_ep_start(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	return 0;
 }
 
-int bt_audio_ep_disable(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static int bap_ep_disable(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	BT_DBG("ep %p buf %p", ep, buf);
 
@@ -1151,7 +1170,7 @@ int bt_audio_ep_disable(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	return 0;
 }
 
-int bt_audio_ep_stop(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static int bap_ep_stop(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	BT_DBG("ep %p buf %p", ep, buf);
 
@@ -1173,7 +1192,7 @@ int bt_audio_ep_stop(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	return 0;
 }
 
-int bt_audio_ep_release(struct bt_audio_ep *ep, struct net_buf_simple *buf)
+static int bap_ep_release(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	BT_DBG("ep %p buf %p", ep, buf);
 
@@ -1206,8 +1225,8 @@ int bt_audio_ep_release(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	return 0;
 }
 
-int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
-		     struct net_buf_simple *buf)
+int bt_bap_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
+		   struct net_buf_simple *buf)
 {
 	BT_DBG("conn %p ep %p buf %p len %u", conn, ep, buf, buf->len);
 
@@ -1215,7 +1234,7 @@ int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 					      buf->data, buf->len, false);
 }
 
-static void ep_reset(struct bt_audio_ep *ep)
+static void bap_reset(struct bt_audio_ep *ep)
 {
 	BT_DBG("ep %p", ep);
 
@@ -1223,7 +1242,7 @@ static void ep_reset(struct bt_audio_ep *ep)
 	memset(ep, 0, offsetof(struct bt_audio_ep, subscribe));
 }
 
-void bt_audio_ep_reset(struct bt_conn *conn)
+static void bap_ep_reset(struct bt_conn *conn)
 {
 	int i, index;
 
@@ -1234,16 +1253,17 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 	for (i = 0; i < SNK_SIZE; i++) {
 		struct bt_audio_ep *ep = &snks[index][i];
 
-		ep_reset(ep);
+		bap_reset(ep);
 	}
 
 	for (i = 0; i < SRC_SIZE; i++) {
 		struct bt_audio_ep *ep = &srcs[index][i];
 
-		ep_reset(ep);
+		bap_reset(ep);
 	}
 }
 
+/* TODO: Move to stream.c or somewher else */
 bool bt_audio_ep_is_broadcast(const struct bt_audio_ep *ep)
 {
 	return (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
@@ -1252,7 +1272,7 @@ bool bt_audio_ep_is_broadcast(const struct bt_audio_ep *ep)
 		bt_audio_ep_is_broadcast_snk(ep));
 }
 
-void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_stream *stream)
+void bt_bap_ep_attach(struct bt_audio_ep *ep, struct bt_audio_stream *stream)
 {
 	BT_DBG("ep %p stream %p", ep, stream);
 
@@ -1273,7 +1293,7 @@ void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_stream *stream)
 	}
 }
 
-void bt_audio_ep_detach(struct bt_audio_ep *ep, struct bt_audio_stream *stream)
+void bt_bap_ep_detach(struct bt_audio_ep *ep, struct bt_audio_stream *stream)
 {
 	BT_DBG("ep %p stream %p", ep, stream);
 
@@ -1297,17 +1317,17 @@ int bt_bap_config(struct bt_audio_stream *stream, struct bt_codec *codec)
 	struct net_buf_simple *buf;
 	int err;
 
-	buf = bt_audio_ep_create_pdu(BT_ASCS_CONFIG_OP);
+	buf = bt_bap_ep_create_pdu(BT_ASCS_CONFIG_OP);
 
 	op = net_buf_simple_add(buf, sizeof(*op));
 	op->num_ases = 0x01;
 
-	err = bt_audio_ep_config(ep, buf, codec);
+	err = bap_ep_config(ep, buf, codec);
 	if (err) {
 		return err;
 	}
 
-	err = bt_audio_ep_send(stream->conn, ep, buf);
+	err = bt_bap_ep_send(stream->conn, ep, buf);
 	if (err) {
 		return err;
 	}
@@ -1325,17 +1345,17 @@ int bt_bap_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 
 	BT_DBG("stream %p", stream);
 
-	buf = bt_audio_ep_create_pdu(BT_ASCS_ENABLE_OP);
+	buf = bt_bap_ep_create_pdu(BT_ASCS_ENABLE_OP);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
 
-	err = bt_audio_ep_enable(ep, buf, meta_count, meta);
+	err = bap_ep_enable(ep, buf, meta_count, meta);
 	if (err) {
 		return err;
 	}
 
-	return bt_audio_ep_send(stream->conn, ep, buf);
+	return bt_bap_ep_send(stream->conn, ep, buf);
 }
 
 int bt_bap_metadata(struct bt_audio_stream *stream,
@@ -1348,17 +1368,17 @@ int bt_bap_metadata(struct bt_audio_stream *stream,
 
 	BT_DBG("stream %p", stream);
 
-	buf = bt_audio_ep_create_pdu(BT_ASCS_METADATA_OP);
+	buf = bt_bap_ep_create_pdu(BT_ASCS_METADATA_OP);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
 
-	err = bt_audio_ep_metadata(ep, buf, meta_count, meta);
+	err = bap_ep_metadata(ep, buf, meta_count, meta);
 	if (err) {
 		return err;
 	}
 
-	return bt_audio_ep_send(stream->conn, ep, buf);
+	return bt_bap_ep_send(stream->conn, ep, buf);
 }
 
 int bt_bap_start(struct bt_audio_stream *stream)
@@ -1370,7 +1390,7 @@ int bt_bap_start(struct bt_audio_stream *stream)
 
 	BT_DBG("stream %p", stream);
 
-	buf = bt_audio_ep_create_pdu(BT_ASCS_START_OP);
+	buf = bt_bap_ep_create_pdu(BT_ASCS_START_OP);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x00;
@@ -1393,14 +1413,14 @@ int bt_bap_start(struct bt_audio_stream *stream)
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
 	 */
-	if (bt_audio_ep_is_src(ep)) {
-		err = bt_audio_ep_start(ep, buf);
+	if (bt_bap_ep_is_src(ep)) {
+		err = bap_ep_start(ep, buf);
 		if (err) {
 			return err;
 		}
 		req->num_ases++;
 
-		return bt_audio_ep_send(stream->conn, ep, buf);
+		return bt_bap_ep_send(stream->conn, ep, buf);
 	}
 
 	return 0;
@@ -1415,17 +1435,17 @@ int bt_bap_disable(struct bt_audio_stream *stream)
 
 	BT_DBG("stream %p", stream);
 
-	buf = bt_audio_ep_create_pdu(BT_ASCS_DISABLE_OP);
+	buf = bt_bap_ep_create_pdu(BT_ASCS_DISABLE_OP);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
 
-	err = bt_audio_ep_disable(ep, buf);
+	err = bap_ep_disable(ep, buf);
 	if (err) {
 		return err;
 	}
 
-	return bt_audio_ep_send(stream->conn, ep, buf);
+	return bt_bap_ep_send(stream->conn, ep, buf);
 }
 
 int bt_bap_stop(struct bt_audio_stream *stream)
@@ -1437,7 +1457,7 @@ int bt_bap_stop(struct bt_audio_stream *stream)
 
 	BT_DBG("stream %p", stream);
 
-	buf = bt_audio_ep_create_pdu(BT_ASCS_STOP_OP);
+	buf = bt_bap_ep_create_pdu(BT_ASCS_STOP_OP);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x00;
@@ -1445,14 +1465,14 @@ int bt_bap_stop(struct bt_audio_stream *stream)
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
 	 */
-	if (bt_audio_ep_is_src(ep)) {
-		err = bt_audio_ep_stop(ep, buf);
+	if (bt_bap_ep_is_src(ep)) {
+		err = bap_ep_stop(ep, buf);
 		if (err) {
 			return err;
 		}
 		req->num_ases++;
 
-		return bt_audio_ep_send(stream->conn, ep, buf);
+		return bt_bap_ep_send(stream->conn, ep, buf);
 	}
 
 	return 0;
@@ -1471,7 +1491,7 @@ int bt_bap_release(struct bt_audio_stream *stream)
 		return -ENOTCONN;
 	}
 
-	buf = bt_audio_ep_create_pdu(BT_ASCS_RELEASE_OP);
+	buf = bt_bap_ep_create_pdu(BT_ASCS_RELEASE_OP);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
@@ -1481,7 +1501,7 @@ int bt_bap_release(struct bt_audio_stream *stream)
 	if (stream->ep->status.state == BT_AUDIO_EP_STATE_IDLE) {
 		bt_audio_stream_reset(stream);
 	} else {
-		err = bt_audio_ep_release(ep, buf);
+		err = bap_ep_release(ep, buf);
 		if (err) {
 			return err;
 		}
@@ -1492,12 +1512,12 @@ int bt_bap_release(struct bt_audio_stream *stream)
 		return 0;
 	}
 
-	return bt_audio_ep_send(stream->conn, ep, buf);
+	return bt_bap_ep_send(stream->conn, ep, buf);
 }
 
-static uint8_t cp_discover_func(struct bt_conn *conn,
-				const struct bt_gatt_attr *attr,
-				struct bt_gatt_discover_params *discover)
+static uint8_t bap_cp_discover_func(struct bt_conn *conn,
+				    const struct bt_gatt_attr *attr,
+				    struct bt_gatt_discover_params *discover)
 {
 	struct bt_audio_discover_params *params;
 	struct bt_gatt_chrc *chrc;
@@ -1518,21 +1538,21 @@ static uint8_t cp_discover_func(struct bt_conn *conn,
 	BT_DBG("conn %p attr %p handle 0x%04x", conn, attr, chrc->value_handle);
 
 	params->err = 0;
-	bt_audio_ep_set_cp(conn, chrc->value_handle);
+	bap_ep_set_cp(conn, chrc->value_handle);
 
 	params->func(conn, NULL, NULL, params);
 
 	return BT_GATT_ITER_STOP;
 }
 
-static int ase_cp_discover(struct bt_conn *conn,
-			   struct bt_audio_discover_params *params)
+static int bap_ase_cp_discover(struct bt_conn *conn,
+			       struct bt_audio_discover_params *params)
 {
 	BT_DBG("conn %p params %p", conn, params);
 
 	params->err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
 	params->discover.uuid = cp_uuid;
-	params->discover.func = cp_discover_func;
+	params->discover.func = bap_cp_discover_func;
 	params->discover.start_handle = 0x0001;
 	params->discover.end_handle = 0xffff;
 	params->discover.type = BT_GATT_DISCOVER_CHARACTERISTIC;
@@ -1540,9 +1560,9 @@ static int ase_cp_discover(struct bt_conn *conn,
 	return bt_gatt_discover(conn, &params->discover);
 }
 
-static uint8_t ase_read_func(struct bt_conn *conn, uint8_t err,
-			  struct bt_gatt_read_params *read,
-			  const void *data, uint16_t length)
+static uint8_t bap_ase_bap_read_func(struct bt_conn *conn, uint8_t err,
+				 struct bt_gatt_read_params *read,
+				 const void *data, uint16_t length)
 {
 	struct bt_audio_discover_params *params;
 	struct net_buf_simple buf;
@@ -1554,7 +1574,7 @@ static uint8_t ase_read_func(struct bt_conn *conn, uint8_t err,
 
 	if (err) {
 		if (err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND && params->num_eps) {
-			if (ase_cp_discover(conn, params) < 0) {
+			if (bap_ase_cp_discover(conn, params) < 0) {
 				BT_ERR("Unable to discover ASE Control Point");
 				err = BT_ATT_ERR_UNLIKELY;
 				goto fail;
@@ -1567,7 +1587,7 @@ static uint8_t ase_read_func(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (!data) {
-		if (params->num_eps && ase_cp_discover(conn, params) < 0) {
+		if (params->num_eps && bap_ase_cp_discover(conn, params) < 0) {
 			BT_ERR("Unable to discover ASE Control Point");
 			err = BT_ATT_ERR_UNLIKELY;
 			goto fail;
@@ -1584,11 +1604,11 @@ static uint8_t ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	ep = bt_audio_ep_get(conn, params->type, read->by_uuid.start_handle);
+	ep = bap_ep_get(conn, params->type, read->by_uuid.start_handle);
 	if (!ep) {
 		BT_WARN("No space left to parse ASE");
 		if (params->num_eps) {
-			if (ase_cp_discover(conn, params) < 0) {
+			if (bap_ase_cp_discover(conn, params) < 0) {
 				BT_ERR("Unable to discover ASE Control Point");
 				err = BT_ATT_ERR_UNLIKELY;
 				goto fail;
@@ -1598,8 +1618,8 @@ static uint8_t ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	bt_audio_ep_set_status(ep, &buf);
-	bt_audio_ep_subscribe(conn, ep);
+	bap_ep_set_status(ep, &buf);
+	bap_ep_subscribe(conn, ep);
 
 	params->func(conn, NULL, ep, params);
 
@@ -1612,12 +1632,12 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
-static int ase_discover(struct bt_conn *conn,
-			struct bt_audio_discover_params *params)
+static int bap_ase_discover(struct bt_conn *conn,
+			    struct bt_audio_discover_params *params)
 {
 	BT_DBG("conn %p params %p", conn, params);
 
-	params->read.func = ase_read_func;
+	params->read.func = bap_ase_bap_read_func;
 	params->read.handle_count = 0u;
 
 	if (params->type == BT_AUDIO_SINK) {
@@ -1634,9 +1654,9 @@ static int ase_discover(struct bt_conn *conn,
 	return bt_gatt_read(conn, &params->read);
 }
 
-static uint8_t pacs_context_read_func(struct bt_conn *conn, uint8_t err,
-				      struct bt_gatt_read_params *read,
-				      const void *data, uint16_t length)
+static uint8_t bap_pacs_context_bap_read_func(struct bt_conn *conn, uint8_t err,
+					  struct bt_gatt_read_params *read,
+					  const void *data, uint16_t length)
 {
 	struct bt_audio_discover_params *params;
 	struct net_buf_simple buf;
@@ -1680,7 +1700,7 @@ static uint8_t pacs_context_read_func(struct bt_conn *conn, uint8_t err,
 
 discover_ase:
 	/* Read ASE instances */
-	if (ase_discover(conn, params) < 0) {
+	if (bap_ase_discover(conn, params) < 0) {
 		BT_ERR("Unable to read ASE");
 		goto fail;
 	}
@@ -1692,12 +1712,12 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
-static int pacs_context_discover(struct bt_conn *conn,
-				 struct bt_audio_discover_params *params)
+static int bap_pacs_context_discover(struct bt_conn *conn,
+				     struct bt_audio_discover_params *params)
 {
 	BT_DBG("conn %p params %p", conn, params);
 
-	params->read.func = pacs_context_read_func;
+	params->read.func = bap_pacs_context_bap_read_func;
 	params->read.handle_count = 0u;
 	params->read.by_uuid.uuid = pacs_context_uuid;
 	params->read.by_uuid.start_handle = 0x0001;
@@ -1706,7 +1726,7 @@ static int pacs_context_discover(struct bt_conn *conn,
 	return bt_gatt_read(conn, &params->read);
 }
 
-static struct bap_pac *pac_alloc(struct bt_conn *conn, uint8_t type)
+static struct bap_pac *bap_pac_alloc(struct bt_conn *conn, uint8_t type)
 {
 	int i, index;
 
@@ -1724,9 +1744,9 @@ static struct bap_pac *pac_alloc(struct bt_conn *conn, uint8_t type)
 	return NULL;
 }
 
-static uint8_t read_func(struct bt_conn *conn, uint8_t err,
-			 struct bt_gatt_read_params *read,
-			 const void *data, uint16_t length)
+static uint8_t bap_read_func(struct bt_conn *conn, uint8_t err,
+			     struct bt_gatt_read_params *read,
+			     const void *data, uint16_t length)
 {
 	struct bt_audio_discover_params *params;
 	struct net_buf_simple buf;
@@ -1778,7 +1798,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 			break;
 		}
 
-		bpac = pac_alloc(conn, params->type);
+		bpac = bap_pac_alloc(conn, params->type);
 		if (!bpac) {
 			BT_WARN("No space left to parse PAC");
 			break;
@@ -1788,7 +1808,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 		bpac->codec.cid = sys_le16_to_cpu(pac->codec.cid);
 		bpac->codec.vid = sys_le16_to_cpu(pac->codec.vid);
 
-		if (bt_audio_ep_set_codec(NULL, pac->codec.id,
+		if (bap_ep_set_codec(NULL, pac->codec.id,
 					  sys_le16_to_cpu(pac->codec.cid),
 					  sys_le16_to_cpu(pac->codec.vid),
 					  &buf, pac->cc_len, &bpac->codec)) {
@@ -1804,7 +1824,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 			break;
 		}
 
-		if (bt_audio_ep_set_metadata(NULL, &buf, meta->len,
+		if (bap_ep_set_metadata(NULL, &buf, meta->len,
 					     &bpac->codec)) {
 			BT_ERR("Unable to parse Codec Metadata");
 			break;
@@ -1825,7 +1845,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 	}
 
 	/* Read PACS contexts */
-	if (pacs_context_discover(conn, params) < 0) {
+	if (bap_pacs_context_discover(conn, params) < 0) {
 		BT_ERR("Unable to read PACS context");
 		goto fail;
 	}
@@ -1837,7 +1857,7 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
-static void pac_reset(struct bt_conn *conn)
+static void bap_pac_reset(struct bt_conn *conn)
 {
 	int index = bt_conn_index(conn);
 	int i;
@@ -1855,8 +1875,8 @@ static void bap_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	BT_DBG("conn %p reason 0x%02x", conn, reason);
 
-	bt_audio_ep_reset(conn);
-	pac_reset(conn);
+	bap_ep_reset(conn);
+	bap_pac_reset(conn);
 }
 
 static struct bt_conn_cb conn_cbs = {
@@ -1880,7 +1900,7 @@ int bt_audio_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	params->read.func = read_func;
+	params->read.func = bap_read_func;
 	params->read.handle_count = 0u;
 
 	if (!params->read.by_uuid.start_handle) {

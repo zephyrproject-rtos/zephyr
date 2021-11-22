@@ -41,7 +41,7 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 	stream->conn = conn;
 	stream->codec = codec;
 
-	bt_audio_ep_attach(ep, stream);
+	bt_bap_ep_attach(ep, stream);
 }
 
 int bt_audio_stream_config(struct bt_conn *conn,
@@ -76,7 +76,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 	bt_audio_stream_attach(conn, stream, ep, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+		bt_bap_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 	} else {
 		int err;
 
@@ -132,7 +132,7 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 	bt_audio_stream_attach(stream->conn, stream, ep, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+		bt_bap_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 	} else {
 		int err;
 
@@ -477,7 +477,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	}
 
 	/* Generate the control point write */
-	buf = bt_audio_ep_create_pdu(BT_ASCS_QOS_OP);
+	buf = bt_bap_ep_create_pdu(BT_ASCS_QOS_OP);
 
 	op = net_buf_simple_add(buf, sizeof(*op));
 
@@ -491,7 +491,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 		op->num_ases++;
 
-		err = bt_audio_ep_qos(stream->ep, buf, qos);
+		err = bt_bap_ep_qos(stream->ep, buf, qos);
 		if (err) {
 			return err;
 		}
@@ -501,7 +501,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 		}
 	}
 
-	err = bt_audio_ep_send(conn, ep, buf);
+	err = bt_bap_ep_send(conn, ep, buf);
 	if (err != 0) {
 		BT_DBG("Could not send config QoS: %d", err);
 		return err;
@@ -510,7 +510,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
 		stream->qos = qos;
 
-		bt_audio_ep_set_state(stream->ep,
+		bt_bap_ep_set_state(stream->ep,
 				      BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 	}
 
@@ -545,13 +545,13 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 		return 0;
 	}
 
-	bt_audio_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_ENABLING);
+	bt_bap_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_ENABLING);
 
 	if (bt_audio_stream_enabling(stream)) {
 		return 0;
 	}
 
-	if (bt_audio_ep_is_src(stream->ep)) {
+	if (bt_bap_ep_is_src(stream->ep)) {
 		return 0;
 	}
 
@@ -598,7 +598,7 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 	}
 
 	/* Set the state to the same state to trigger the notifications */
-	bt_audio_ep_set_state(stream->ep, stream->ep->status.state);
+	bt_bap_ep_set_state(stream->ep, stream->ep->status.state);
 
 	return 0;
 }
@@ -635,9 +635,9 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 		return 0;
 	}
 
-	bt_audio_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_DISABLING);
+	bt_bap_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_DISABLING);
 
-	if (bt_audio_ep_is_src(stream->ep)) {
+	if (bt_bap_ep_is_src(stream->ep)) {
 		return 0;
 	}
 
@@ -685,7 +685,7 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 	}
 
 	if (stream->ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
+		bt_bap_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
 	}
 
 	return err;
@@ -737,7 +737,7 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 		return err;
 	}
 
-	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+	bt_bap_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 	bt_audio_stream_iso_listen(stream);
 
 	return err;
@@ -790,9 +790,9 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 	 * server.
 	 */
 	if (!cache) {
-		bt_audio_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_RELEASING);
+		bt_bap_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_RELEASING);
 	} else {
-		bt_audio_ep_set_state(stream->ep,
+		bt_bap_ep_set_state(stream->ep,
 				      BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 	}
 
@@ -805,7 +805,7 @@ void bt_audio_stream_detach(struct bt_audio_stream *stream)
 
 	BT_DBG("stream %p", stream);
 
-	bt_audio_ep_detach(stream->ep, stream);
+	bt_bap_ep_detach(stream->ep, stream);
 
 	stream->conn = NULL;
 	stream->codec = NULL;
