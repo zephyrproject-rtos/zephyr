@@ -54,8 +54,9 @@ static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_discover_params cp_disc[CONFIG_BT_MAX_CONN];
 #endif
 
-static void ep_iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
-			struct net_buf *buf)
+static void bap_ep_iso_recv(struct bt_iso_chan *chan,
+			    const struct bt_iso_recv_info *info,
+			    struct net_buf *buf)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 	struct bt_audio_stream_ops *ops = ep->stream->ops;
@@ -67,7 +68,7 @@ static void ep_iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info 
 	}
 }
 
-static void ep_iso_connected(struct bt_iso_chan *chan)
+static void bap_ep_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 	struct bt_audio_stream_ops *ops = ep->stream->ops;
@@ -87,7 +88,7 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 }
 
-static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
+static void bap_ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 	struct bt_audio_stream *stream = ep->stream;
@@ -112,10 +113,10 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	}
 }
 
-static struct bt_iso_chan_ops iso_ops = {
-	.recv		= ep_iso_recv,
-	.connected	= ep_iso_connected,
-	.disconnected	= ep_iso_disconnected,
+static struct bt_iso_chan_ops bap_iso_ops = {
+	.recv		= bap_ep_iso_recv,
+	.connected	= bap_ep_iso_connected,
+	.disconnected	= bap_ep_iso_disconnected,
 };
 
 void bt_audio_ep_init(struct bt_audio_ep *ep, uint8_t type, uint16_t handle,
@@ -128,7 +129,7 @@ void bt_audio_ep_init(struct bt_audio_ep *ep, uint8_t type, uint16_t handle,
 	ep->type = type;
 	ep->handle = handle;
 	ep->status.id = id;
-	ep->iso.ops = &iso_ops;
+	ep->iso.ops = &bap_iso_ops;
 	ep->iso.qos = &ep->iso_qos;
 	ep->iso.qos->rx = &ep->iso_rx;
 	ep->iso.qos->tx = &ep->iso_tx;
