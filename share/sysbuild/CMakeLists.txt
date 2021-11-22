@@ -30,6 +30,31 @@ set(IMAGES)
 get_filename_component(APP_DIR  ${APP_DIR} ABSOLUTE)
 get_filename_component(app_name ${APP_DIR} NAME)
 
+# Propagate bootloader and signing settings from this system to the MCUboot and
+# application image build systems.
+if(SB_CONFIG_BOOTLOADER_MCUBOOT)
+  set(${app_name}_CONFIG_BOOTLOADER_MCUBOOT y CACHE STRING
+      "MCUBOOT is enabled as bootloader" FORCE
+  )
+  set(${app_name}_CONFIG_MCUBOOT_SIGNATURE_KEY_FILE
+      \"${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
+      "Signature key file for signing" FORCE
+  )
+
+  # Set corresponding values in mcuboot
+  set(mcuboot_CONFIG_BOOT_SIGNATURE_TYPE_${SB_CONFIG_SIGNATURE_TYPE} y CACHE STRING
+      "MCUBOOT signature type" FORCE
+  )
+  set(mcuboot_CONFIG_BOOT_SIGNATURE_KEY_FILE
+      \"${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}\" CACHE STRING
+      "Signature key file for signing" FORCE
+  )
+else()
+  set(${app_name}_CONFIG_BOOTLOADER_MCUBOOT n CACHE STRING
+      "MCUBOOT is disabled as bootloader" FORCE
+  )
+endif()
+
 # This adds the primary application to the build.
 ExternalZephyrProject_Add(
   APPLICATION ${app_name}
