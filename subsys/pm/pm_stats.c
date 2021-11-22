@@ -52,12 +52,12 @@ static int pm_stats_init(const struct device *unused)
 
 SYS_INIT(pm_stats_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-void pm_start_timer(void)
+void pm_stats_start(void)
 {
 	pm_cpu_timings[_current_cpu->id].timer_start = k_cycle_get_32();
 }
 
-void pm_stop_timer(void)
+void pm_stats_stop(void)
 {
 	pm_cpu_timings[_current_cpu->id].timer_end = k_cycle_get_32();
 }
