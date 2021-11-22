@@ -1987,12 +1987,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
 	if (gatt_cf_notify_multi(conn)) {
-		int err;
-
-		err = gatt_notify_mult(conn, handle, params);
-		if (err && err != -ENOMEM) {
-			return err;
-		}
+		return gatt_notify_mult(conn, handle, params);
 	}
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
