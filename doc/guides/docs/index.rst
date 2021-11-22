@@ -151,7 +151,7 @@ Documentation presentation theme
 
 Sphinx supports easy customization of the generated documentation
 appearance through the use of themes. Replace the theme files and do
-another ``make htmldocs`` and the output layout and style is changed.
+another ``make html`` and the output layout and style is changed.
 The ``read-the-docs`` theme is installed as part of the
 :ref:`install_py_requirements` step you took in the getting started
 guide.
