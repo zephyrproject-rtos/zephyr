@@ -1753,9 +1753,7 @@ static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt,
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
-#if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
-
 static uint8_t check_cconn_params(bool ext, uint16_t scan_interval,
 				  uint16_t scan_window,
 				  uint16_t conn_interval_max,
@@ -2334,6 +2332,7 @@ static void le_reject_cis(struct net_buf *buf, struct net_buf **evt)
 
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 {
@@ -3904,7 +3903,6 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
-#if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN):
 		le_create_connection(cmd, evt);
@@ -4002,6 +4000,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_SET_HOST_FEATURE */
 
+#if defined(CONFIG_BT_CONN)
 	case BT_OCF(BT_HCI_OP_LE_READ_CHAN_MAP):
 		le_read_chan_map(cmd, evt);
 		break;
