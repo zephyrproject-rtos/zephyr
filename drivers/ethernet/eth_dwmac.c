@@ -487,13 +487,13 @@ static int dwmac_set_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		reg_val = REG_READ(MAC_PKT_FILTER);
 		if (config->promisc_mode &&
-		    !(reg_val & MAC_PKT_FILTER_RA)) {
+		    !(reg_val & MAC_PKT_FILTER_PR)) {
 			REG_WRITE(MAC_PKT_FILTER,
-				  reg_val | MAC_PKT_FILTER_RA);
+				  reg_val | MAC_PKT_FILTER_PR);
 		} else if (!config->promisc_mode &&
-			   (reg_val & MAC_PKT_FILTER_RA)) {
+			   (reg_val & MAC_PKT_FILTER_PR)) {
 			REG_WRITE(MAC_PKT_FILTER,
-				  reg_val & ~MAC_PKT_FILTER_RA);
+				  reg_val & ~MAC_PKT_FILTER_PR);
 		} else {
 			ret = -EALREADY;
 		}
