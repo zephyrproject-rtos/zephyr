@@ -17,7 +17,6 @@
 #include <pm/policy.h>
 #include <tracing/tracing.h>
 
-#define PM_STATES_LEN (1 + PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
@@ -67,13 +66,13 @@ STATS_NAME(pm_cpu_stats, state_total_cycles)
 STATS_NAME_END(pm_cpu_stats);
 
 #define PM_STAT_NAME_LEN sizeof("pm_cpu_XXX_state_X_stats")
-static char pm_cpu_stat_names[CONFIG_MP_NUM_CPUS][PM_STATES_LEN][PM_STAT_NAME_LEN];
-static struct stats_pm_cpu_stats pm_cpu_stats[CONFIG_MP_NUM_CPUS][PM_STATES_LEN];
+static char pm_cpu_stat_names[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT][PM_STAT_NAME_LEN];
+static struct stats_pm_cpu_stats pm_cpu_stats[CONFIG_MP_NUM_CPUS][PM_STATE_COUNT];
 
 static int pm_stats_init(const struct device *unused)
 {
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		for (int j = 0; j < PM_STATES_LEN; j++) {
+		for (int j = 0; j < PM_STATE_COUNT; j++) {
 			snprintk(pm_cpu_stat_names[i][j], PM_STAT_NAME_LEN,
 				 "pm_cpu_%03d_state_%1d_stats", i, j);
 			stats_init(&(pm_cpu_stats[i][j].s_hdr), STATS_SIZE_32, 3,
@@ -249,7 +248,7 @@ bool pm_power_state_force(uint8_t cpu, struct pm_state_info info)
 {
 	bool ret = false;
 
-	__ASSERT(info.state < PM_STATES_LEN,
+	__ASSERT(info.state < PM_STATE_COUNT,
 		 "Invalid power state %d!", info.state);
 
 
