@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_PM)
-  zephyr_sources(power.c pm_ctrl.c)
+  zephyr_sources(pm.c pm_ctrl.c)
   zephyr_sources_ifdef(CONFIG_PM_STATS pm_stats.c)
 endif()
 
