@@ -4626,9 +4626,8 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params)
 {
 	struct gatt_sub *sub;
-	struct bt_gatt_subscribe_params *tmp, *next;
+	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false, found = false;
-	sys_snode_t *prev = NULL;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params, "invalid parameters\n");
@@ -4643,19 +4642,10 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	}
 
 	/* Lookup existing subscriptions */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, tmp, next, node) {
-		/* Remove subscription */
+	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
 		if (params == tmp) {
 			found = true;
-			sys_slist_remove(&sub->list, prev, &tmp->node);
-			/* Attempt to cancel if write is pending */
-			if (atomic_test_bit(params->flags,
-			    BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
-				bt_gatt_cancel(conn, params);
-			}
 			continue;
-		} else {
-			prev = &tmp->node;
 		}
 
 		/* Check if there still remains any other subscription */
@@ -4668,6 +4658,23 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (!has_subscription) {
+		int err;
+
+		params->value = 0x0000;
+		err = gatt_write_ccc(conn, params);
+		if (err) {
+			return err;
+		}
+	}
+
+	sys_slist_find_and_remove(&sub->list, &params->node);
+
+	/* Attempt to cancel if write is pending */
+	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
+		bt_gatt_cancel(conn, params);
+	}
+
 	if (gatt_sub_is_empty(sub)) {
 		gatt_sub_free(sub);
 	}
@@ -4675,12 +4682,9 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	if (has_subscription) {
 		/* Notify with NULL data to complete unsubscribe */
 		params->notify(conn, params, NULL, 0);
-		return 0;
 	}
 
-	params->value = 0x0000;
-
-	return gatt_write_ccc(conn, params);
+	return 0;
 }
 
 void bt_gatt_cancel(struct bt_conn *conn, void *params)
