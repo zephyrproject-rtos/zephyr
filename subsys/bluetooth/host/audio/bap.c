@@ -1293,7 +1293,7 @@ void bt_audio_ep_detach(struct bt_audio_ep *ep, struct bt_audio_stream *stream)
 	stream->ep = NULL;
 }
 
-int bap_config(struct bt_audio_stream *stream, struct bt_codec *codec)
+int bt_bap_config(struct bt_audio_stream *stream, struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct bt_ascs_config_op *op;
@@ -1318,8 +1318,8 @@ int bap_config(struct bt_audio_stream *stream, struct bt_codec *codec)
 	return 0;
 }
 
-int bap_enable(struct bt_audio_stream *stream, uint8_t meta_count,
-	       struct bt_codec_data *meta)
+int bt_bap_enable(struct bt_audio_stream *stream, uint8_t meta_count,
+		  struct bt_codec_data *meta)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -1341,8 +1341,8 @@ int bap_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 	return bt_audio_ep_send(stream->conn, ep, buf);
 }
 
-int bap_metadata(struct bt_audio_stream *stream,
-		 uint8_t meta_count, struct bt_codec_data *meta)
+int bt_bap_metadata(struct bt_audio_stream *stream,
+		    uint8_t meta_count, struct bt_codec_data *meta)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -1364,7 +1364,7 @@ int bap_metadata(struct bt_audio_stream *stream,
 	return bt_audio_ep_send(stream->conn, ep, buf);
 }
 
-int bap_start(struct bt_audio_stream *stream)
+int bt_bap_start(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -1409,7 +1409,7 @@ int bap_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bap_disable(struct bt_audio_stream *stream)
+int bt_bap_disable(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -1431,7 +1431,7 @@ int bap_disable(struct bt_audio_stream *stream)
 	return bt_audio_ep_send(stream->conn, ep, buf);
 }
 
-int bap_stop(struct bt_audio_stream *stream)
+int bt_bap_stop(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -1461,7 +1461,7 @@ int bap_stop(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bap_release(struct bt_audio_stream *stream)
+int bt_bap_release(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
