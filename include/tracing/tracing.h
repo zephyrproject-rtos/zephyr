@@ -8,6 +8,8 @@
 
 #include <kernel.h>
 
+#include "tracking.h"
+
 #if defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
 #elif defined CONFIG_TRACING_CTF
