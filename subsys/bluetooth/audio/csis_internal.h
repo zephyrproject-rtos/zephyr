@@ -23,6 +23,29 @@ struct csis_pending_notifications {
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
 
+struct bt_csis_client_svc_inst {
+	uint8_t rank;
+	uint8_t set_lock;
+
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint16_t set_sirk_handle;
+	uint16_t set_size_handle;
+	uint16_t set_lock_handle;
+	uint16_t rank_handle;
+
+	uint8_t idx;
+	struct bt_gatt_subscribe_params sirk_sub_params;
+	struct bt_gatt_discover_params sirk_sub_disc_params;
+	struct bt_gatt_subscribe_params size_sub_params;
+	struct bt_gatt_discover_params size_sub_disc_params;
+	struct bt_gatt_subscribe_params lock_sub_params;
+	struct bt_gatt_discover_params lock_sub_disc_params;
+
+	struct bt_conn *conn;
+};
+
+/* TODO: Rename to bt_csis_svc_inst */
 struct bt_csis_server {
 	struct bt_csis_set_sirk set_sirk;
 	uint8_t psri[BT_CSIS_PSRI_SIZE];
@@ -46,8 +69,13 @@ struct bt_csis_server {
 };
 
 struct bt_csis {
+	bool client_instance;
 	union {
+#if defined(CONFIG_BT_CSIS)
 		struct bt_csis_server srv;
-		/* TODO: Add cli */
+#endif /* CONFIG_BT_CSIS */
+#if defined(CONFIG_BT_CSIS_CLIENT)
+		struct bt_csis_client_svc_inst cli;
+#endif /* CONFIG_BT_CSIS_CLIENT */
 	};
 };
