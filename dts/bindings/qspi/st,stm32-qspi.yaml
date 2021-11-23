@@ -29,6 +29,12 @@ properties:
     interrupts:
       required: true
 
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
+
     dmas:
       description: |
         Optional DMA channel specifier. If DMA should be used, specifier should
