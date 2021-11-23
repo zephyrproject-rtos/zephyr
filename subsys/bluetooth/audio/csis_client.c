@@ -321,7 +321,7 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 				client = &client_insts[bt_conn_index(conn)];
 				set = &client->set_member->sets[csis_inst->cli.idx];
 
-				csis_client_cbs->lock_changed(conn, set, locked);
+				csis_client_cbs->lock_changed(set, locked);
 			}
 		} else {
 			BT_DBG("Invalid length %u", length);
