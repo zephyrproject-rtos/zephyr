@@ -383,6 +383,7 @@ static void isr_rx(void *param)
 	uint8_t rssi_ready;
 	uint8_t new_burst;
 	uint8_t trx_done;
+	uint8_t bis_idx;
 	uint8_t skipped;
 	uint8_t crc_ok;
 	uint32_t hcto;
@@ -397,6 +398,9 @@ static void isr_rx(void *param)
 
 		/* initialize LLL context reference */
 		lll = param;
+
+		/* BIS index */
+		bis_idx = lll->bis_curr - 1U;
 
 		goto isr_rx_done;
 	}
@@ -417,6 +421,9 @@ static void isr_rx(void *param)
 
 	/* initialize LLL context reference */
 	lll = param;
+
+	/* BIS index */
+	bis_idx = lll->bis_curr - 1U;
 
 	/* Check CRC and generate ISO Data PDU */
 	if (crc_ok) {
@@ -467,7 +474,7 @@ static void isr_rx(void *param)
 			payload_index -= lll->payload_count_max;
 		}
 
-		if (!lll->payload[payload_index] &&
+		if (!lll->payload[bis_idx][payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
 			struct node_rx_iso_meta *iso_meta;
@@ -475,6 +482,7 @@ static void isr_rx(void *param)
 			ull_pdu_rx_alloc();
 
 			node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_PDU;
+			node_rx->hdr.handle = lll->stream_handle[bis_idx];
 
 			iso_meta = &node_rx->hdr.rx_iso_meta;
 			iso_meta->payload_number = (lll->payload_count +
@@ -488,7 +496,7 @@ static void isr_rx(void *param)
 				 lll->iso_interval * CONN_INT_UNIT_US);
 			iso_meta->status = 0U;
 
-			lll->payload[payload_index] = node_rx;
+			lll->payload[bis_idx][payload_index] = node_rx;
 		}
 	}
 
@@ -507,7 +515,7 @@ isr_rx_find_subevent:
 			payload_index -= lll->payload_count_max;
 		}
 
-		if (!lll->payload[payload_index]) {
+		if (!lll->payload[bis_idx][payload_index]) {
 			bis = lll->bis_curr;
 
 			/* Receive the (bn_curr)th Rx PDU of bis_curr */
@@ -527,7 +535,7 @@ isr_rx_find_subevent:
 				payload_index -= lll->payload_count_max;
 			}
 
-			if (!lll->payload[payload_index]) {
+			if (!lll->payload[bis_idx][payload_index]) {
 				bis = lll->bis_curr;
 
 				goto isr_rx_next_subevent;
@@ -581,20 +589,28 @@ isr_rx_find_subevent:
 
 	/* Enqueue PDUs to ULL */
 	node_rx = NULL;
-	bn = lll->bn;
-	while (bn--) {
-		if (lll->payload[lll->payload_tail]) {
-			node_rx = lll->payload[lll->payload_tail];
-			lll->payload[lll->payload_tail] = NULL;
-			ull_rx_put(node_rx->hdr.link, node_rx);
-		}
+	payload_index = lll->payload_tail;
+	for (bis_idx = 0U; bis_idx < lll->num_bis; bis_idx++) {
+		uint8_t payload_tail;
 
-		payload_index = lll->payload_tail + 1U;
-		if (payload_index >= lll->payload_count_max) {
-			payload_index = 0U;
+		payload_tail = lll->payload_tail;
+		bn = lll->bn;
+		while (bn--) {
+			if (lll->payload[bis_idx][payload_tail]) {
+				node_rx = lll->payload[bis_idx][payload_tail];
+				lll->payload[bis_idx][payload_tail] = NULL;
+
+				ull_rx_put(node_rx->hdr.link, node_rx);
+			}
+
+			payload_index = payload_tail + 1U;
+			if (payload_index >= lll->payload_count_max) {
+				payload_index = 0U;
+			}
+			payload_tail = payload_index;
 		}
-		lll->payload_tail = payload_index;
 	}
+	lll->payload_tail = payload_index;
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	if (node_rx) {
