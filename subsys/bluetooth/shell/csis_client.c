@@ -79,7 +79,8 @@ static struct bt_conn_cb conn_callbacks = {
 	.connected = connected_cb,
 };
 
-static void csis_discover_cb(struct bt_conn *conn, int err, uint8_t set_count)
+static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
+			     uint8_t set_count)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "discover failed (%d)", err);
@@ -92,7 +93,7 @@ static void csis_discover_cb(struct bt_conn *conn, int err, uint8_t set_count)
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(set_members); i++) {
-		if (set_members[i].conn == conn) {
+		if (&set_members[i] == member) {
 			shell_print(ctx_shell, "Found %u sets on member[%u]",
 				    set_count, i);
 		}
