@@ -362,8 +362,10 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->payload_count_max = PDU_BIG_PAYLOAD_COUNT_MAX;
 	lll->payload_head = 0U;
 	lll->payload_tail = 0U;
-	for (int i = 0U; i < PDU_BIG_PAYLOAD_COUNT_MAX; i++) {
-		lll->payload[i] = NULL;
+	for (int i = 0; i < CONFIG_BT_CTLR_SYNC_ISO_STREAM_MAX; i++) {
+		for (int j = 0; j < PDU_BIG_PAYLOAD_COUNT_MAX; j++) {
+			lll->payload[i][j] = NULL;
+		}
 	}
 
 	lll->iso_interval = sys_le16_to_cpu(bi->iso_interval);
