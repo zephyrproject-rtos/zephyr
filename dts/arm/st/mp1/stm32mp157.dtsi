@@ -171,6 +171,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x100>;
 			interrupts = <35 5>;
 			label = "SPI_1";
+			status = "disabled";
 		};
 
 		spi2: spi@4000b000 {
@@ -181,6 +182,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x800>;
 			interrupts = <36 5>;
 			label = "SPI_2";
+			status = "disabled";
 		};
 
 		spi3: spi@4000c000 {
@@ -191,6 +193,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x1000>;
 			interrupts = <51 5>;
 			label = "SPI_3";
+			status = "disabled";
 		};
 
 		spi4: spi@44005000 {
@@ -201,6 +204,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x200>;
 			interrupts = <84 5>;
 			label = "SPI_4";
+			status = "disabled";
 		};
 
 		spi5: spi@44009000 {
@@ -211,6 +215,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x400>;
 			interrupts = <85 5>;
 			label = "SPI_5";
+			status = "disabled";
 		};
 
 		usart2: serial@4000e000 {
