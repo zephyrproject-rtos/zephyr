@@ -319,7 +319,7 @@ void test_power_state_trans(void)
  *    pm_action_cb
  *
  * @see pm_device_runtime_get(), pm_device_runtime_put_async(),
- *      pm_device_state_set(), pm_device_state_get()
+ *      pm_device_action_run(), pm_device_state_get()
  *
  * @ingroup power_tests
  */
