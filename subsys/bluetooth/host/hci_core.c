@@ -2964,7 +2964,8 @@ static int le_init(void)
 
 #if IS_ENABLED(CONFIG_BT_DF)
 	if (BT_FEAT_LE_CONNECTIONLESS_CTE_TX(bt_dev.le.features) ||
-	    BT_FEAT_LE_CONNECTIONLESS_CTE_RX(bt_dev.le.features)) {
+	    BT_FEAT_LE_CONNECTIONLESS_CTE_RX(bt_dev.le.features) ||
+	    BT_FEAT_LE_RX_CTE(bt_dev.le.features)) {
 		err = le_df_init();
 		if (err) {
 			return err;

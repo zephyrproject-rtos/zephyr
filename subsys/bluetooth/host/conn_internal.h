@@ -43,6 +43,8 @@ enum {
 	 * is only needed for controllers with BT_QUIRK_NO_AUTO_DLE. */
 	BT_CONN_AUTO_DATA_LEN_COMPLETE,
 
+	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
+
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
 };
@@ -161,6 +163,11 @@ struct bt_conn {
 	bt_security_t		required_sec_level;
 	uint8_t			encrypt;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+	/** Accepted CTE type */
+	uint8_t cte_type;
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
