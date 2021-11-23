@@ -354,8 +354,6 @@
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 0
 #define SW_SWITCH_TIMER_EVTS_COMP_S2_BASE 2
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-
-#define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 static inline void hal_radio_reset(void)
