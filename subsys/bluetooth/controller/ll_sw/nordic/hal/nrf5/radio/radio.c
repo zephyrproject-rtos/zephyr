@@ -122,12 +122,6 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(NRF_GPIO_CSN_CTLR, nordic_nrf_gpio),
 
 #endif	/* HAL_RADIO_FEM_IS_NRF21540 */
 
-/* The following two constants are used in nrfx_glue.h for marking these PPI
- * channels and groups as occupied and thus unavailable to other modules.
- */
-const uint32_t z_bt_ctlr_used_nrf_ppi_channels = HAL_USED_PPI_CHANNELS;
-const uint32_t z_bt_ctlr_used_nrf_ppi_groups   = HAL_USED_PPI_GROUPS;
-
 static radio_isr_cb_t isr_cb;
 static void           *isr_cb_param;
 
