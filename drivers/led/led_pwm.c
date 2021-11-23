@@ -125,7 +125,8 @@ static int led_pwm_pm_action(const struct device *dev,
 		enum pm_device_state state;
 		const struct led_pwm *led_pwm = &config->led[i];
 
-		LOG_DBG("Switching PWM %p to state %" PRIu32, led_pwm->dev, state);
+		LOG_DBG("PWM %p running pm action %" PRIu32, led_pwm->dev,
+				action);
 
 		/* NOTE: temporary solution, deserves proper fix */
 		switch (action) {
