@@ -13,26 +13,16 @@
 #include <errno.h>
 #include <kernel.h>
 #include <soc.h>
-#include <soc_dt.h>
 #include <stdlib.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_ite_it8xxx2, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_CTRX_MIN	100
-#define PWM_FREQ	EC_FREQ
+#define PWM_EC_FREQ	MHZ(8)
 #define PCSSG_MASK	0x3
 
 /* Device config */
-struct pwm_alt_cfg {
-	/* Pinmux control device structure */
-	const struct device *pinctrls;
-	/* GPIO pin */
-	uint8_t pin;
-	/* Alternate function */
-	uint8_t alt_fun;
-};
-
 struct pwm_it8xxx2_cfg {
 	/* PWM channel duty cycle register */
 	uintptr_t reg_dcr;
@@ -45,16 +35,28 @@ struct pwm_it8xxx2_cfg {
 	/* PWM channel */
 	int channel;
 	/* PWM prescaler control register base */
-	struct pwm_it8xxx2_regs *base;
+	uintptr_t base;
 	/* Select PWM prescaler that output to PWM channel */
 	int prs_sel;
-	/* PWM alternate configuration list */
-	const struct pwm_alt_cfg *alt_list;
+	/* Pinmux control device structure */
+	const struct device *pinctrls;
+	/* GPIO pin */
+	uint8_t pin;
+	/* Alternate function */
+	uint8_t alt_fun;
 };
+
+/* Driver convenience defines */
+#define DRV_CONFIG(dev)		((const struct pwm_it8xxx2_cfg * const)(dev)->config)
+#define DRV_REG(dev)		(struct pwm_it8xxx2_regs *)(DRV_CONFIG(dev)->base)
+#define DEV_PINMUX(inst)	\
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DT_NODELABEL(pinctrl_pwm##inst), pinctrls, 0))
+#define DEV_PIN(inst)		DT_PHA(DT_INST_PINCTRL_0(inst, 0), pinctrls, pin)
+#define DEV_ALT_FUN(inst)	DT_PHA(DT_INST_PINCTRL_0(inst, 0), pinctrls, alt_func)
 
 static void pwm_enable(const struct device *dev, int enabled)
 {
-	const struct pwm_it8xxx2_cfg *config = dev->config;
+	const struct pwm_it8xxx2_cfg *config = DRV_CONFIG(dev);
 	volatile uint8_t *reg_pcsgr = (uint8_t *)config->reg_pcsgr;
 	int ch = config->channel;
 
@@ -69,15 +71,15 @@ static void pwm_enable(const struct device *dev, int enabled)
 static int pwm_it8xxx2_get_cycles_per_sec(const struct device *dev,
 					     uint32_t pwm, uint64_t *cycles)
 {
-	const struct pwm_it8xxx2_cfg *config = dev->config;
-	struct pwm_it8xxx2_regs *const inst = config->base;
+	const struct pwm_it8xxx2_cfg *config = DRV_CONFIG(dev);
+	struct pwm_it8xxx2_regs *const inst = DRV_REG(dev);
 	int prs_sel = config->prs_sel;
 
 	ARG_UNUSED(pwm);
 
 	/* Get clock source cycles per second that output to prescaler */
 	if ((inst->PCFSR) & BIT(prs_sel))
-		*cycles = (uint64_t) PWM_FREQ;
+		*cycles = (uint64_t) PWM_EC_FREQ;
 	else
 		*cycles = (uint64_t) 32768;
 
@@ -88,8 +90,8 @@ static int pwm_it8xxx2_pin_set(const struct device *dev,
 				uint32_t pwm, uint32_t period_cycles,
 				uint32_t pulse_cycles, pwm_flags_t flags)
 {
-	const struct pwm_it8xxx2_cfg *config = dev->config;
-	struct pwm_it8xxx2_regs *const inst = config->base;
+	const struct pwm_it8xxx2_cfg *config = DRV_CONFIG(dev);
+	struct pwm_it8xxx2_regs *const inst = DRV_REG(dev);
 	volatile uint8_t *reg_dcr = (uint8_t *)config->reg_dcr;
 	volatile uint8_t *reg_pwmpol = (uint8_t *)config->reg_pwmpol;
 	int ch = config->channel;
@@ -189,8 +191,8 @@ static int pwm_it8xxx2_pin_set(const struct device *dev,
 
 static int pwm_it8xxx2_init(const struct device *dev)
 {
-	const struct pwm_it8xxx2_cfg *config = dev->config;
-	struct pwm_it8xxx2_regs *const inst = config->base;
+	const struct pwm_it8xxx2_cfg *config = DRV_CONFIG(dev);
+	struct pwm_it8xxx2_regs *const inst = DRV_REG(dev);
 	volatile uint8_t *reg_pcssg = (uint8_t *)config->reg_pcssg;
 	int ch = config->channel;
 	int prs_sel = config->prs_sel;
@@ -224,9 +226,8 @@ static int pwm_it8xxx2_init(const struct device *dev)
 	inst->ZTIER |= IT8XXX2_PWM_PCCE;
 
 	/* Set alternate mode of PWM pin */
-	pinmux_pin_set(config->alt_list->pinctrls,
-		       config->alt_list->pin,
-		       config->alt_list->alt_fun);
+	pinmux_pin_set(config->pinctrls, config->pin, config->alt_fun);
+
 	return 0;
 }
 
@@ -237,19 +238,17 @@ static const struct pwm_driver_api pwm_it8xxx2_api = {
 
 /* Device Instance */
 #define PWM_IT8XXX2_INIT(inst)								\
-	static const struct pwm_alt_cfg							\
-		pwm_alt_##inst[DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0)] =			\
-			IT8XXX2_DT_ALT_ITEMS_LIST(inst);				\
-											\
 	static const struct pwm_it8xxx2_cfg pwm_it8xxx2_cfg_##inst = {			\
 		.reg_dcr = DT_INST_REG_ADDR_BY_IDX(inst, 0),				\
 		.reg_pcssg = DT_INST_REG_ADDR_BY_IDX(inst, 1),				\
 		.reg_pcsgr = DT_INST_REG_ADDR_BY_IDX(inst, 2),				\
 		.reg_pwmpol = DT_INST_REG_ADDR_BY_IDX(inst, 3),				\
 		.channel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), channel),		\
-		.base = (struct pwm_it8xxx2_regs *) DT_REG_ADDR(DT_NODELABEL(prs)),	\
+		.base = DT_REG_ADDR(DT_NODELABEL(prs)),					\
 		.prs_sel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), prescaler_cx),	\
-		.alt_list = pwm_alt_##inst,						\
+		.pinctrls = DEV_PINMUX(inst),						\
+		.pin = DEV_PIN(inst),							\
+		.alt_fun = DEV_ALT_FUN(inst),						\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(inst,							\
