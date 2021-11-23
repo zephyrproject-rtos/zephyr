@@ -59,7 +59,8 @@ struct lll_sync_iso {
 	uint8_t stream_count;
 	uint16_t stream_handle[BT_CTLR_SYNC_ISO_STREAM_MAX];
 
-	struct node_rx_pdu *payload[PDU_BIG_PAYLOAD_COUNT_MAX];
+	struct node_rx_pdu *payload[BT_CTLR_SYNC_ISO_STREAM_MAX]
+				   [PDU_BIG_PAYLOAD_COUNT_MAX];
 	uint8_t payload_count_max;
 	uint8_t payload_head;
 	uint8_t payload_tail;
