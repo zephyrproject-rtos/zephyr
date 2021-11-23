@@ -44,7 +44,10 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static inline struct ll_sync_iso_set *sync_iso_acquire(void);
+static struct ll_sync_iso_set *sync_iso_get(uint8_t handle);
+static uint8_t sync_iso_handle_get(struct ll_sync_iso_set *sync);
+static struct stream *sync_iso_stream_acquire(void);
+static uint16_t sync_iso_stream_handle_get(struct lll_sync_iso_stream *stream);
 static void timeout_cleanup(struct ll_sync_iso_set *sync_iso);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
@@ -59,7 +62,9 @@ static memq_link_t link_lll_prepare;
 static struct mayfly mfy_lll_prepare = {0U, 0U, &link_lll_prepare, NULL, NULL};
 
 static struct ll_sync_iso_set ll_sync_iso[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
-static void *sync_iso_free;
+static struct lll_sync_iso_stream
+			stream_pool[CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT];
+static void *stream_free;
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint8_t encryption, uint8_t *bcode, uint8_t mse,
@@ -78,6 +83,18 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	sync_iso = sync_iso_get(big_handle);
+	if (sync_iso->sync) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* TODO: Check parameters */
+
+	/* Check if free BISes available */
+	if (mem_free_count_get(stream_free) < num_bis) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
 	link_sync_estab = ll_rx_link_alloc();
 	if (!link_sync_estab) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -92,15 +109,6 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 	node_rx = ll_rx_alloc();
 	if (!node_rx) {
-		ll_rx_link_release(link_sync_lost);
-		ll_rx_link_release(link_sync_estab);
-
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	sync_iso = sync_iso_acquire();
-	if (!sync_iso) {
-		ll_rx_release(node_rx);
 		ll_rx_link_release(link_sync_lost);
 		ll_rx_link_release(link_sync_estab);
 
@@ -128,6 +136,18 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	lll->cssn_curr = 0U;
 	lll->cssn_next = 0U;
 
+	/* TODO: Implement usage of MSE to limit listening to subevents */
+
+	/* Allocate streams */
+	lll->stream_count = num_bis;
+	for (uint8_t i = 0U; i < num_bis; i++) {
+		struct lll_sync_iso_stream *stream;
+
+		stream = (void *)sync_iso_stream_acquire();
+		stream->big_handle = big_handle;
+		lll->stream_handle[i] = sync_iso_stream_handle_get(stream);
+	}
+
 	/* Initialize ULL and LLL headers */
 	ull_hdr_init(&sync_iso->ull);
 	lll_hdr_init(lll, sync_iso);
@@ -147,7 +167,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 	struct ll_sync_set *sync;
 	int err;
 
-	sync_iso = ull_sync_iso_get(big_handle);
+	sync_iso = sync_iso_get(big_handle);
 	if (!sync_iso) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
@@ -160,7 +180,8 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 		sync->iso.sync_iso = NULL;
-		sync_iso->sync = NULL;
+
+		ull_sync_iso_stream_release(sync_iso);
 
 		node_rx = (void *)sync->iso.node_rx_estab;
 		link_sync_estab = node_rx->hdr.link;
@@ -197,10 +218,10 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	ull_sync_iso_stream_release(sync_iso);
+
 	link_sync_lost = sync_iso->node_rx_lost.hdr.link;
 	ll_rx_link_release(link_sync_lost);
-
-	ull_sync_iso_release(sync_iso);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -229,29 +250,44 @@ int ull_sync_iso_reset(void)
 	return 0;
 }
 
-struct ll_sync_iso_set *ull_sync_iso_get(uint8_t handle)
+uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll)
 {
-	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) {
+	return sync_iso_handle_get(HDR_LLL2ULL(lll));
+}
+
+struct ll_sync_iso_set *ull_sync_iso_by_stream_get(uint16_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT) {
 		return NULL;
 	}
 
-	return &ll_sync_iso[handle];
+	return sync_iso_get(stream_pool[handle].big_handle);
 }
 
-uint8_t ull_sync_iso_handle_get(struct ll_sync_iso_set *sync)
+struct lll_sync_iso_stream *ull_sync_iso_stream_get(uint16_t handle)
 {
-	return mem_index_get(sync, ll_sync_iso,
-			     sizeof(struct ll_sync_iso_set));
+	if (handle >= CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT) {
+		return NULL;
+	}
+
+	return &stream_pool[handle];
 }
 
-uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll)
+void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 {
-	return ull_sync_handle_get(HDR_LLL2ULL(lll));
-}
+	struct lll_sync_iso *lll;
 
-void ull_sync_iso_release(struct ll_sync_iso_set *sync_iso)
-{
-	mem_release(sync_iso, &sync_iso_free);
+	lll = &sync_iso->lll;
+	while (lll->stream_count--) {
+		struct lll_sync_iso_stream *stream;
+		uint16_t handle;
+
+		handle = lll->stream_handle[lll->stream_count];
+		stream = ull_sync_iso_stream_get(handle);
+		mem_release(stream, &stream_free);
+	}
+
+	sync_iso->sync = NULL;
 }
 
 void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
@@ -389,7 +425,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	/* setup to use ISO create prepare function until sync established */
 	mfy_lll_prepare.fp = lll_sync_iso_create_prepare;
 
-	handle = ull_sync_iso_handle_get(sync_iso);
+	handle = sync_iso_handle_get(sync_iso);
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			   (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
 			   ftr->ticks_anchor - ticks_slot_offset,
@@ -421,7 +457,7 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 	/* Prepare BIG Sync Established */
 	rx = (void *)sync_iso->sync->iso.node_rx_estab;
 	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
+	rx->hdr.handle = sync_iso_handle_get(sync_iso);
 	rx->hdr.rx_ftr.param = sync_iso;
 
 	se = (void *)rx->pdu;
@@ -502,7 +538,7 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 
 	/* Update Sync ticker instance */
 	if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
-		uint8_t handle = ull_sync_iso_handle_get(sync_iso);
+		uint8_t handle = sync_iso_handle_get(sync_iso);
 		uint32_t ticker_status;
 
 		/* Call to ticker_update can fail under the race
@@ -540,13 +576,13 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 
 	/* Populate the Sync Lost which will be enqueued in disabled_cb */
 	rx = (void *)&sync_iso->node_rx_lost;
-	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
+	rx->hdr.handle = sync_iso_handle_get(sync_iso);
 	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
 	rx->hdr.rx_ftr.param = sync_iso;
 	*((uint8_t *)rx->pdu) = lll->term_reason;
 
 	/* Stop Sync ISO Ticker */
-	handle = ull_sync_iso_handle_get(sync_iso);
+	handle = sync_iso_handle_get(sync_iso);
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
 			  ticker_stop_op_cb, (void *)sync_iso);
@@ -556,17 +592,38 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 
 static int init_reset(void)
 {
-	/* Initialize sync pool. */
-	mem_init(ll_sync_iso, sizeof(struct ll_sync_iso_set),
-		 sizeof(ll_sync_iso) / sizeof(struct ll_sync_iso_set),
-		 &sync_iso_free);
+	/* Add initializations common to power up initialization and HCI reset
+	 * initializations.
+	 */
+
+	mem_init((void *)stream_pool, sizeof(struct lll_sync_iso_stream),
+		 CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT, &stream_free);
 
 	return 0;
 }
 
-static inline struct ll_sync_iso_set *sync_iso_acquire(void)
+static struct ll_sync_iso_set *sync_iso_get(uint8_t handle)
 {
-	return mem_acquire(&sync_iso_free);
+	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) {
+		return NULL;
+	}
+
+	return &ll_sync_iso[handle];
+}
+
+static uint8_t sync_iso_handle_get(struct ll_sync_iso_set *sync)
+{
+	return mem_index_get(sync, ll_sync_iso, sizeof(*sync));
+}
+
+static struct stream *sync_iso_stream_acquire(void)
+{
+	return mem_acquire(&stream_free);
+}
+
+static uint16_t sync_iso_stream_handle_get(struct lll_sync_iso_stream *stream)
+{
+	return mem_index_get(stream, stream_pool, sizeof(*stream));
 }
 
 static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
@@ -577,13 +634,13 @@ static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 
 	/* Populate the Sync Lost which will be enqueued in disabled_cb */
 	rx = (void *)&sync_iso->node_rx_lost;
-	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
+	rx->hdr.handle = sync_iso_handle_get(sync_iso);
 	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
 	rx->hdr.rx_ftr.param = sync_iso;
 	*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
 
 	/* Stop Sync ISO Ticker */
-	handle = ull_sync_iso_handle_get(sync_iso);
+	handle = sync_iso_handle_get(sync_iso);
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
 			  ticker_stop_op_cb, (void *)sync_iso);
