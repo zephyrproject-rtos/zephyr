@@ -47,25 +47,6 @@ static void csis_client_lock_set_cb(int err)
 	set_locked = true;
 }
 
-static void csis_client_discover_members_cb(int err, uint8_t set_size,
-					       uint8_t members_found)
-{
-	printk("Discovered %u/%u set members\n", members_found, set_size);
-
-	if (err != 0) {
-		FAIL("Discover members failed (%d)\n", err);
-		return;
-	}
-
-	if (set_size != members_found) {
-		FAIL("Discover members only found %u/%u devices\n",
-		     members_found, set_size);
-		return;
-	}
-
-	members_discovered = true;
-}
-
 static void csis_client_discover_sets_cb(struct bt_conn *conn, int err,
 					 uint8_t set_count,
 					 struct bt_csis_client_set *sets)
@@ -133,7 +114,6 @@ static struct bt_conn_cb conn_callbacks = {
 static struct bt_csis_client_cb cbs = {
 	.lock_set = csis_client_lock_set_cb,
 	.release_set = csis_client_lock_release_cb,
-	.members = csis_client_discover_members_cb,
 	.sets = csis_client_discover_sets_cb,
 	.discover = csis_discover_cb,
 	.lock_changed = csis_lock_changed_cb,

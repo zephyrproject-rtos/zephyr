@@ -148,27 +148,6 @@ static void csis_client_release_set_cb(int err)
 	shell_print(ctx_shell, "Set released");
 }
 
-static void csis_client_lock_cb(struct bt_conn *conn, int err, uint8_t inst_idx)
-{
-	if (err != 0) {
-		shell_error(ctx_shell, "Device (index 0x%02x) lock failed (%d)",
-			    inst_idx, err);
-	}
-
-	shell_print(ctx_shell, "Device (index 0x%02x) locked", inst_idx);
-}
-
-static void csis_client_release_cb(struct bt_conn *conn, int err,
-				   uint8_t inst_idx)
-{
-	if (err != 0) {
-		shell_error(ctx_shell, "Device (index 0x%02x) release "
-			    "failed (%d)", inst_idx, err);
-	}
-
-	shell_print(ctx_shell, "Device (index 0x%02x) released", inst_idx);
-}
-
 static void csis_client_lock_get_cb(struct bt_conn *conn, int err,
 				    uint8_t inst_idx, bool locked)
 {
@@ -186,8 +165,6 @@ static struct bt_csis_client_cb cbs = {
 	.release_set = csis_client_release_set_cb,
 	.sets = csis_client_discover_sets_cb,
 	.discover = csis_discover_cb,
-	.lock = csis_client_lock_cb,
-	.release = csis_client_release_cb,
 	.lock_read = csis_client_lock_get_cb
 };
 
