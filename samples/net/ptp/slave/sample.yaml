@@ -1,0 +1,10 @@
+common:
+  harness: net
+  tags: net ptp
+sample:
+  description: Test PTP slave functionality
+  name: PTP slave app
+tests:
+  sample.net.ptp.slave:
+    platform_allow: frdm_k64f sam_e70_xplained nucleo_f767zi nucleo_h743zi nucleo_h745zi_q_m7
+    depends_on: netif
