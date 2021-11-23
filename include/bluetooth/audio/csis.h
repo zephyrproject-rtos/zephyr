@@ -242,14 +242,12 @@ typedef void (*bt_csis_client_lock_set_cb)(int err);
 /**
  * @brief Callback when the lock value on a set of a connected device changes.
  *
- * @param conn    Connection of the CSIS server.
  * @param set     The set that was changed.
  * @param locked  Whether the lock is locked or release.
  *
  * @return int Return 0 on success, or an errno value on error.
  */
-typedef void (*bt_csis_client_lock_changed_cb)(struct bt_conn *conn,
-					       struct bt_csis_client_set *set,
+typedef void (*bt_csis_client_lock_changed_cb)(struct bt_csis_client_set *set,
 					       bool locked);
 
 /**
