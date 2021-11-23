@@ -237,6 +237,12 @@ void ull_adv_iso_done_complete(struct node_rx_event_done *done);
 /* helper function to handle adv ISO done BIG terminate events */
 void ull_adv_iso_done_terminate(struct node_rx_event_done *done);
 
+/* helper function to return adv_iso instance */
+struct ll_adv_iso_set *ull_adv_iso_by_stream_get(uint16_t handle);
+
+/* helper function to release stream instances */
+void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso);
+
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* helper function to release unused DF configuration memory */
 void ull_df_adv_cfg_release(struct lll_df_adv_cfg *df_adv_cfg);
