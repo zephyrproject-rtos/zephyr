@@ -292,14 +292,15 @@ void bt_csis_client_register_cb(struct bt_csis_client_cb *cb);
 
 /**
  * @brief Read the lock value of a specific device and instance.
- *
- * @param conn      Pointer to the connection to the device.
- * @param inst_idx  Index of the CSIS index of the peer device (as it may have
- *                  multiple CSIS instances).
+
+ * @param members   Member to get the lock value from
+ * @param set       Pointer to the specific set of the @p member to get the
+ *                  lock value from.
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_lock_get(struct bt_conn *conn, uint8_t inst_idx);
+int bt_csis_client_lock_get(struct bt_csis_client_set_member *member,
+			    const struct bt_csis_client_set *set);
 
 /**
  * @brief Lock an array of set members

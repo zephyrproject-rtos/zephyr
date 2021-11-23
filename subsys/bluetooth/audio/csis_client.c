@@ -1195,25 +1195,23 @@ int bt_csis_client_discover_sets(struct bt_csis_client_set_member *member)
 	return err;
 }
 
-int bt_csis_client_lock_get(struct bt_conn *conn, uint8_t inst_idx)
+int bt_csis_client_lock_get(struct bt_csis_client_set_member *member,
+			    const struct bt_csis_client_set *set)
 {
 	int err;
 
-	if (inst_idx >= CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
-		BT_DBG("Invalid index %u", inst_idx);
-		return -EINVAL;
-	} else if (busy) {
+	if (busy) {
 		BT_DBG("csis_client busy");
 		return -EBUSY;
 	} else if (cur_inst != NULL) {
-		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
+		if (cur_inst != set->csis) {
 			BT_DBG("csis_client busy with current instance");
 			return -EBUSY;
 		}
 	} else {
-		cur_inst = lookup_instance_by_index(conn, inst_idx);
+		cur_inst = set->csis;
 		if (cur_inst == NULL) {
-			BT_DBG("Inst not found");
+			BT_DBG("set->csis is NULL");
 			return -EINVAL;
 		}
 	}
@@ -1229,7 +1227,7 @@ int bt_csis_client_lock_get(struct bt_conn *conn, uint8_t inst_idx)
 	read_params.single.handle = cur_inst->cli.set_lock_handle;
 	read_params.single.offset = 0U;
 
-	err = bt_gatt_read(conn, &read_params);
+	err = bt_gatt_read(member->conn, &read_params);
 
 	if (err != 0) {
 		cur_inst = NULL;
