@@ -7,7 +7,7 @@
  * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi088-ds001.pdf
  */
 
-#define DT_DRV_COMPAT bosch_bmi088
+#define DT_DRV_COMPAT bosch_bmi088_acc
 
 #include "bmi088_acc.h"
 
@@ -43,13 +43,13 @@ static int bmi088_acc_transceive(const struct device *dev, uint8_t reg, bool wri
     const struct bmi088_acc_cfg *cfg = to_config(dev);
     const struct spi_buf tx_buf[3] = {
             {
-                    // Always send dummy byte
-                    .buf = NULL,
+                    // Always send register address first
+                    .buf = &reg,
                     .len = 1
             },
             {
-                    // Always send register address first
-                    .buf = &reg,
+                    // Always send dummy byte
+                    .buf = NULL,
                     .len = 1
             },
             {
@@ -124,9 +124,8 @@ int bmi088_acc_reg_field_update(const struct device *dev, uint8_t reg_addr,
  * @param raw_val Raw sensor value
  * @param scale Value to scale the raw_val
  */
- // TODO: Evtl anpassen für scale (resolved?)
 struct sensor_value bmi088_acc_to_fixed_point(int16_t raw_val, uint16_t scale) {
-    int32_t converted_val = raw_val / scale;        // see bmi088_channel_get
+    int32_t converted_val = raw_val * scale;        // see bmi088_channel_get
 
     LOG_INF("Conversion: input %d scale %d converted %ld", raw_val, scale, converted_val);
     struct sensor_value val = {
@@ -165,6 +164,7 @@ static int bmi088_acc_attr_set(const struct device *dev, enum sensor_channel cha
 
 /**
  * API function to retrieve a measurement from the sensor.
+ * It is assumed that the data is ready
  *
  * @param dev Sensor device pointer
  * @param chan Channel to fetch. Only SENSOR_CHAN_ALL and ACCEL_XYZ is supported.
@@ -175,14 +175,6 @@ static int bmi088_acc_sample_fetch(const struct device *dev, enum sensor_channel
     struct bmi088_acc_data *data = to_data(dev);
 
     __ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_ACCEL_XYZ, "channel is not valid");
-
-    uint8_t status = 0;
-    while ((status & BMI088_ACC_STATUS_MASK) == 0) {
-
-        if (bmi088_acc_byte_read(dev, BMI088_ACC_STATUS, &status) < 0) {
-            return -EIO;
-        }
-    }
 
     if (bmi088_acc_read(dev, RATE_X_LSB, data->sample.acc, BMI088_SAMPLE_SIZE) < 0) {
         return -EIO;
@@ -210,13 +202,8 @@ static int bmi088_acc_sample_fetch(const struct device *dev, enum sensor_channel
  */
 static int bmi088_acc_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
 
-    uint8_t range_value = 0;
-    // reading ACC_RANGE for calculation of the scale below
-    if (bmi088_acc_byte_read(dev, ACC_RANGE, &range_value) < 1) {
-        return -EIO;
-    }
     // scale for converting sensor output to mg (Datasheet 5.3.4)
-    const uint16_t scale = (32768 * 1000 * pow(2,(range_value + 1)) * 1.5);
+    const uint16_t scale = (uint16_t)((1/32768) * 1000 * pow(2,(0x03 + 1)) * 1.5);
 
 
     switch (chan) {

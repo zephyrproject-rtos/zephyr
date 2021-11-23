@@ -7,7 +7,7 @@
  * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi088-ds001.pdf
  */
 
-#define DT_DRV_COMPAT bosch_bmi088
+#define DT_DRV_COMPAT bosch_bmi088_gyr
 
 #include "bmi088_gyr.h"
 
