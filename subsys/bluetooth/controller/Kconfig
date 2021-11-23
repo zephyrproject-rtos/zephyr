@@ -621,6 +621,22 @@ config BT_CTLR_ADV_ISO_PDU_LEN_MAX
 	help
 	  Maximum Broadcast Isochronous Channel PDU Length.
 
+config BT_CTLR_SYNC_ISO_STREAM_MAX
+	int "Maximum supported ISO Synchronized Receiver Streams per Broadcast ISO group"
+	depends on BT_CTLR_SYNC_ISO
+	range 1 31
+	help
+	  Maximum supported ISO Synchronized Receiver Streams per Broadcast ISO
+	  group.
+
+config BT_CTLR_SYNC_ISO_STREAM_COUNT
+	int "Maximum ISO Synchronized Receiver Streams"
+	depends on BT_CTLR_SYNC_ISO
+	range BT_CTLR_SYNC_ISO_STREAM_MAX 64
+	help
+	  Maximum ISO Synchronized Receiver Streams supported in the the
+	  Controller across all Broadcast ISO groups.
+
 config BT_CTLR_SYNC_ISO_PDU_LEN_MAX
 	int "Maximum Synchronized Isochronous Channel PDU Length"
 	depends on BT_CTLR_SYNC_ISO

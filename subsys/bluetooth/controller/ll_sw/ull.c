@@ -1492,9 +1492,7 @@ void ll_rx_mem_release(void **node_rx)
 			struct ll_sync_iso_set *sync_iso =
 				(void *)rx_free->rx_ftr.param;
 
-			sync_iso->timeout_reload = 0U;
-
-			ull_sync_iso_release(sync_iso);
+			ull_sync_iso_stream_release(sync_iso);
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */

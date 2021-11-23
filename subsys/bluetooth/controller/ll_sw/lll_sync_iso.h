@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+struct lll_sync_iso_stream {
+	uint8_t big_handle;
+	void *rfi;
+};
+
 struct lll_sync_iso {
 	struct lll_hdr hdr;
 
@@ -50,6 +55,9 @@ struct lll_sync_iso {
 
 	uint8_t ctrl_chan_use;
 	uint16_t ctrl_instant;
+
+	uint8_t stream_count;
+	uint16_t stream_handle[BT_CTLR_SYNC_ISO_STREAM_MAX];
 
 	struct node_rx_pdu *payload[PDU_BIG_PAYLOAD_COUNT_MAX];
 	uint8_t payload_count_max;
