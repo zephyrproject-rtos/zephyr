@@ -62,7 +62,7 @@ static int pm_suspend_devices(void)
 			continue;
 		}
 
-		ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
+		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 		/* ignore devices not supporting or already at the given state */
 		if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
 			continue;
@@ -84,8 +84,8 @@ static int pm_suspend_devices(void)
 static void pm_resume_devices(void)
 {
 	for (int i = (num_susp - 1); i >= 0; i--) {
-		pm_device_state_set(__pm_device_slots_start[i],
-				    PM_DEVICE_STATE_ACTIVE);
+		pm_device_action_run(__pm_device_slots_start[i],
+				    PM_DEVICE_ACTION_RESUME);
 	}
 
 	num_susp = 0;

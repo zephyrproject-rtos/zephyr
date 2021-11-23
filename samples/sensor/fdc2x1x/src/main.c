@@ -34,16 +34,16 @@ static void trigger_handler(const struct device *dev,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static void pm_info(enum pm_device_state state, int status)
+static void pm_info(enum pm_device_action action, int status)
 {
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		printk("Enter ACTIVE_STATE ");
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		printk("Enter SUSPEND_STATE ");
 		break;
-	case PM_DEVICE_STATE_OFF:
+	case PM_DEVICE_ACTION_TURN_OFF:
 		printk("Enter OFF_STATE ");
 		break;
 	default:
@@ -91,20 +91,20 @@ void main(void)
 
 #ifdef CONFIG_PM_DEVICE
 	/* Testing the power modes */
-	enum pm_device_state p_state;
+	enum pm_device_action p_action;
 	int ret;
 
-	p_state = PM_DEVICE_STATE_SUSPENDED;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	p_action = PM_DEVICE_ACTION_SUSPEND;
+	ret = pm_device_action_run(dev, p_action);
+	pm_info(p_action, ret);
 
-	p_state = PM_DEVICE_STATE_OFF;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	p_action = PM_DEVICE_ACTION_TURN_OFF;
+	ret = pm_device_action_run(dev, p_action);
+	pm_info(p_action, ret);
 
-	p_state = PM_DEVICE_STATE_ACTIVE;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	p_action = PM_DEVICE_ACTION_RESUME;
+	ret = pm_device_action_run(dev, p_action);
+	pm_info(p_action, ret);
 #endif
 
 	while (1) {
@@ -132,13 +132,13 @@ void main(void)
 
 
 #ifdef CONFIG_PM_DEVICE
-		p_state = PM_DEVICE_STATE_OFF;
-		ret = pm_device_state_set(dev, p_state);
-		pm_info(p_state, ret);
+		p_action = PM_DEVICE_ACTION_TURN_OFF;
+		ret = pm_device_action_run(dev, p_action);
+		pm_info(p_action, ret);
 		k_sleep(K_MSEC(2000));
-		p_state = PM_DEVICE_STATE_ACTIVE;
-		ret = pm_device_state_set(dev, p_state);
-		pm_info(p_state, ret);
+		p_action = PM_DEVICE_ACTION_RESUME;
+		ret = pm_device_action_run(dev, p_action);
+		pm_info(p_action, ret);
 #elif CONFIG_FDC2X1X_TRIGGER_NONE
 		k_sleep(K_MSEC(100));
 #endif
