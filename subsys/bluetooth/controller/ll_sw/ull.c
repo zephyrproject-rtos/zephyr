@@ -61,10 +61,10 @@
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
 #include "ull_central_internal.h"
+#include "ull_iso_types.h"
 #include "ull_conn_internal.h"
 #include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
-#include "ull_iso_types.h"
 #include "ull_central_iso_internal.h"
 
 #include "ull_conn_iso_internal.h"
@@ -1490,7 +1490,7 @@ void ll_rx_mem_release(void **node_rx)
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_TERMINATE:
 		{
 			if (IS_ACL_HANDLE(rx_free->handle)) {
@@ -1509,7 +1509,7 @@ void ll_rx_mem_release(void **node_rx)
 			}
 		}
 		break;
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_CONN_ISO */
 
 		case NODE_RX_TYPE_EVENT_DONE:
 		default:
@@ -2543,7 +2543,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		struct node_rx_pdu *rx_pdu = (struct node_rx_pdu *)rx;
 		struct ll_conn_iso_stream *cis =
 			ll_conn_iso_stream_get(rx_pdu->hdr.handle);
-		struct ll_iso_datapath *dp = cis->datapath_out;
+		struct ll_iso_datapath *dp = cis->hdr.datapath_out;
 		isoal_sink_handle_t sink = dp->sink_hdl;
 
 		if (dp->path_id != BT_HCI_DATAPATH_ID_HCI) {
@@ -2553,7 +2553,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 			 */
 			struct isoal_pdu_rx pckt_meta = {
 				.meta = &rx_pdu->hdr.rx_iso_meta,
-				.pdu  = (union isoal_pdu *) &rx_pdu->pdu[0]
+				.pdu  = (struct pdu_iso *) &rx_pdu->pdu[0]
 			};
 
 			/* Pass the ISO PDU through ISO-AL */
