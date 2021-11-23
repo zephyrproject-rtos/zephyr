@@ -372,8 +372,10 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 	/* Set the R/W bit to R */
 	addr |= BIT(0);
 
-	/* write restart command and address */
-	i2c_esp32_write_addr(dev, addr);
+	if (msg->flags & I2C_MSG_RESTART) {
+		/* write restart command and address */
+		i2c_esp32_write_addr(dev, addr);
+	}
 
 	while (msg->len) {
 		rd_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : (msg->len - 1);
@@ -456,8 +458,10 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 		.op_code = I2C_LL_CMD_END,
 	};
 
-	/* write restart command and address */
-	i2c_esp32_write_addr(dev, addr);
+	if (msg->flags & I2C_MSG_RESTART) {
+		/* write restart command and address */
+		i2c_esp32_write_addr(dev, addr);
+	}
 
 	for (;;) {
 		wr_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : msg->len;
@@ -465,13 +469,12 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 		msg->buf += wr_filled;
 		msg->len -= wr_filled;
 		cmd.byte_num = wr_filled;
-
 		if (wr_filled > 0) {
 			i2c_hal_write_txfifo(&data->hal, write_pr, wr_filled);
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
 		}
 
-		if (msg->len == 0 || (msg->flags & I2C_MSG_STOP)) {
+		if (msg->len == 0 && (msg->flags & I2C_MSG_STOP)) {
 			cmd = (i2c_hw_cmd_t) {
 				.op_code = I2C_LL_CMD_STOP,
 				.ack_en = false,
@@ -506,6 +509,7 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	struct i2c_msg *current, *next;
 	int ret = 0;
 
 	k_sem_take(&data->transfer_sem, K_FOREVER);
@@ -518,7 +522,32 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	addr &= BIT_MASK(data->dev_config & I2C_ADDR_10_BITS ? 10 : 7);
 	addr <<= 1;
 
-	for (; num_msgs > 0; num_msgs--, msgs++) {
+	current = msgs;
+
+	/* add restart flag on first message to send start event */
+	current->flags |= I2C_MSG_RESTART;
+
+	for (int k = 1; k <= num_msgs; k++, current++) {
+		if (k < num_msgs) {
+			next = current + 1;
+
+			/* different messages should require restart event */
+			if ((current->flags & I2C_MSG_RW_MASK) != (next->flags & I2C_MSG_RW_MASK)) {
+				if (!(next->flags & I2C_MSG_RESTART)) {
+					ret = -EINVAL;
+					break;
+				}
+			}
+
+			/* check if there is any stop event in the middle of the transaction */
+			if (current->flags & I2C_MSG_STOP) {
+				ret = -EINVAL;
+				break;
+			}
+		} else {
+			/* make sure last message contains stop event */
+			current->flags |= I2C_MSG_STOP;
+		}
 
 		if (data->status == I2C_STATUS_TIMEOUT || i2c_hal_is_bus_busy(&data->hal)) {
 			i2c_hw_fsm_reset(dev);
@@ -532,10 +561,10 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 		i2c_hal_disable_intr_mask(&data->hal, I2C_LL_INTR_MASK);
 		i2c_hal_clr_intsts_mask(&data->hal, I2C_LL_INTR_MASK);
 
-		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-			ret = i2c_esp32_read_msg(dev, msgs, addr);
+		if ((current->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+			ret = i2c_esp32_read_msg(dev, current, addr);
 		} else {
-			ret = i2c_esp32_write_msg(dev, msgs, addr);
+			ret = i2c_esp32_write_msg(dev, current, addr);
 		}
 
 		if (ret < 0) {
