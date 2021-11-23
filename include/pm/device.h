@@ -263,6 +263,8 @@ const char *pm_device_state_str(enum pm_device_state state);
 /**
  * @brief Set the power state of a device.
  *
+ * @deprecated Use pm_device_action_run() instead.
+ *
  * This function calls the device PM control callback so that the device does
  * the necessary operations to put the device into the given state.
  *
@@ -278,7 +280,7 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @retval -ENOSYS If device does not support PM.
  * @retval Errno Other negative errno on failure.
  */
-int pm_device_state_set(const struct device *dev,
+__deprecated int pm_device_state_set(const struct device *dev,
 			enum pm_device_state state);
 
 /**
