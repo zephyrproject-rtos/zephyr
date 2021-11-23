@@ -176,14 +176,6 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-&timers2 {
-	status = "okay";
-
-	pwm {
-		status = "okay";
-	};
-};
-
 &rtc {
 	status = "okay";
 };
