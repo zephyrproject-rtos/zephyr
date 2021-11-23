@@ -218,25 +218,24 @@ typedef void (*bt_csis_client_discover_cb)(struct bt_csis_client_set_member *mem
  * @brief Initialise the csis_client instance for a connection. This will do a
  * discovery on the device and prepare the instance for following commands.
  *
- * @param member Pointer to a set member struct to store discovery results in
+ * @param member Pointer to a set member struct to store discovery results in.
  *
  * @return int Return 0 on success, or an errno value on error.
  */
 int bt_csis_client_discover(struct bt_csis_client_set_member *member);
 
-typedef void (*bt_csis_client_discover_sets_cb)(struct bt_conn *conn,
-						int err, uint8_t set_count,
-						struct bt_csis_client_set *sets);
+typedef void (*bt_csis_client_discover_sets_cb)(struct bt_csis_client_set_member *member,
+						int err, uint8_t set_count);
 
 /**
  * @brief Reads CSIS characteristics from a device, to find more information
  * about the set(s) that the device is part of.
  *
- * @param conn The connection to the device to read CSIS characteristics
+ * @param member Pointer to a set member struct to store discovery results in.
  *
  * @return int Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_discover_sets(struct bt_conn *conn);
+int bt_csis_client_discover_sets(struct bt_csis_client_set_member *member);
 
 typedef void (*bt_csis_client_lock_set_cb)(int err);
 

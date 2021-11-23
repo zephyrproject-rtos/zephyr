@@ -47,9 +47,9 @@ static void csis_client_lock_set_cb(int err)
 	set_locked = true;
 }
 
-static void csis_client_discover_sets_cb(struct bt_conn *conn, int err,
-					 uint8_t set_count,
-					 struct bt_csis_client_set *sets)
+static void csis_client_discover_sets_cb(struct bt_csis_client_set_member *member,
+					 int err,
+					 uint8_t set_count)
 {
 	printk("%s\n", __func__);
 
@@ -58,13 +58,7 @@ static void csis_client_discover_sets_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	for (uint8_t i = 0; i < set_count; i++) {
-		printk("Set %u: size %d\n", i, sets[i].set_size);
-		memcpy(&set_members[bt_conn_index(conn)].sets[i], &sets[i],
-		       sizeof(sets[i]));
-	}
-
-	set = sets;
+	set = &member->sets[0];
 	sets_discovered = true;
 }
 
@@ -242,7 +236,7 @@ static void test_main(void)
 
 	WAIT_FOR(discovered);
 
-	err = bt_csis_client_discover_sets(set_members[0].conn);
+	err = bt_csis_client_discover_sets(&set_members[0]);
 	if (err != 0) {
 		FAIL("Failed to do CSIS client discovery sets (%d)\n", err);
 		return;
@@ -303,7 +297,7 @@ static void test_main(void)
 
 		sets_discovered = false;
 		printk("Doing sets discovery on member[%u]", i);
-		err = bt_csis_client_discover_sets(set_members[i].conn);
+		err = bt_csis_client_discover_sets(&set_members[i]);
 		if (err != 0) {
 			FAIL("Failed to do CSIS client discovery sets (%d)\n", err);
 			return;
