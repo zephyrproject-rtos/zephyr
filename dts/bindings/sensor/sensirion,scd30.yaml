@@ -1,0 +1,19 @@
+# Copyright (c) 2021, Advanced Climate Systems
+# SPDX-License-Identifier: Apache-2.0
+description: Sensirion SCD30 C02 Sensor
+
+compatible: "sensirion,scd30"
+
+include: i2c-device.yaml
+
+properties:
+    label:
+      required: true
+    sample-period:
+      type: int
+      required: false
+      default: 2
+      description: |
+        The initial sample period in seconds. The sensor will be
+        configured with this value on start up. This values must
+        be in the rang [2; 1800]. This value be changed at run time.

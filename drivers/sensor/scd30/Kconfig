@@ -1,0 +1,8 @@
+# Sensirion SCD30 CO2 sensor configuration options
+
+# Copyright (c) 2021 Advanced Climate Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config SCD30
+	bool "Sensirion SCD30 CO2 Sensor"
+	depends on I2C
