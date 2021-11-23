@@ -123,6 +123,18 @@
 			label = "I2C_0";
 		};
 
+		spi0: spi@40013000 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40013000 0x400>;
+			interrupts = <54 0>;
+			interrupt-parent = <&eclic>;
+			rcu-periph-clock = <0x60c>;
+			status = "disabled";
+			label = "SPI_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		afio: afio@40010000 {
 			compatible = "gd,gd32-afio";
 			reg = <0x40010000 0x400>;
