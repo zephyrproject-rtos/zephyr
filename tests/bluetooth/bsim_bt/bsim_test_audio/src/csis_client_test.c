@@ -75,8 +75,7 @@ static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 	discovered = true;
 }
 
-static void csis_lock_changed_cb(struct bt_conn *conn,
-				 struct bt_csis_client_set *set,
+static void csis_lock_changed_cb(struct bt_csis_client_set *set,
 				 bool locked)
 {
 	printk("Set %p %s\n", set, locked ? "locked" : "released");
