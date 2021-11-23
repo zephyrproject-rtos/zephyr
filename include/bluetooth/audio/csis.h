@@ -202,6 +202,7 @@ struct bt_csis_client_set {
 	struct bt_csis_set_sirk set_sirk;
 	uint8_t set_size;
 	uint8_t rank;
+	struct bt_csis *csis;
 };
 
 struct bt_csis_client_set_member {
@@ -210,8 +211,8 @@ struct bt_csis_client_set_member {
 	struct bt_csis_client_set sets[BT_CSIS_CLIENT_MAX_CSIS_INSTANCES];
 };
 
-typedef void (*bt_csis_client_discover_cb)(struct bt_conn *conn, int err,
-					   uint8_t set_count);
+typedef void (*bt_csis_client_discover_cb)(struct bt_csis_client_set_member *member,
+					   int err, uint8_t set_count);
 
 /**
  * @brief Initialise the csis_client instance for a connection. This will do a
@@ -221,8 +222,7 @@ typedef void (*bt_csis_client_discover_cb)(struct bt_conn *conn, int err,
  *
  * @return int Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_discover(struct bt_csis_client_set_member *member,
-			    struct bt_csis *csis[BT_CSIS_CLIENT_MAX_CSIS_INSTANCES]);
+int bt_csis_client_discover(struct bt_csis_client_set_member *member);
 
 typedef void (*bt_csis_client_discover_sets_cb)(struct bt_conn *conn,
 						int err, uint8_t set_count,

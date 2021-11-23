@@ -87,7 +87,8 @@ static void csis_client_discover_sets_cb(struct bt_conn *conn, int err,
 	sets_discovered = true;
 }
 
-static void csis_discover_cb(struct bt_conn *conn, int err, uint8_t set_count)
+static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
+			     uint8_t set_count)
 {
 	printk("%s\n", __func__);
 
