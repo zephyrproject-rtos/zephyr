@@ -249,6 +249,7 @@ static int bmi088_acc_init(const struct device *dev) {
 
     k_busy_wait(1000);
 
+
     uint8_t val = 0U;
     // Dummy read to enable SPI
     if (bmi088_acc_byte_read(dev, BMI088_REG_CHIPID, &val) < 0) {

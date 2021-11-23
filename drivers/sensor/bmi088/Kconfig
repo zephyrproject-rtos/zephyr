@@ -8,4 +8,3 @@ menuconfig BMI088
 	help
 	  Enable Bosch BMI088 inertial measurement unit that provides acceleration
 	  and angular rate measurements.
-
