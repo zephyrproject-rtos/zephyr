@@ -122,25 +122,12 @@ static int led_pwm_pm_action(const struct device *dev,
 	/* switch all underlying PWM devices to the new state */
 	for (size_t i = 0; i < config->num_leds; i++) {
 		int err;
-		enum pm_device_state state;
 		const struct led_pwm *led_pwm = &config->led[i];
 
 		LOG_DBG("PWM %p running pm action %" PRIu32, led_pwm->dev,
 				action);
 
-		/* NOTE: temporary solution, deserves proper fix */
-		switch (action) {
-		case PM_DEVICE_ACTION_RESUME:
-			state = PM_DEVICE_STATE_ACTIVE;
-			break;
-		case PM_DEVICE_ACTION_SUSPEND:
-			state = PM_DEVICE_STATE_SUSPENDED;
-			break;
-		default:
-			return -ENOTSUP;
-		}
-
-		err = pm_device_state_set(led_pwm->dev, state);
+		err = pm_device_action_run(led_pwm->dev, action);
 		if (err && (err != -EALREADY)) {
 			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
 		}
