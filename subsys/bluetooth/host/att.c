@@ -2441,7 +2441,8 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (!handler) {
 		BT_WARN("Unhandled ATT code 0x%02x", hdr->code);
-		if (att_op_get_type(hdr->code) != ATT_COMMAND) {
+		if (att_op_get_type(hdr->code) != ATT_COMMAND &&
+		    att_op_get_type(hdr->code) != ATT_INDICATION) {
 			send_err_rsp(att_chan, hdr->code, 0,
 				     BT_ATT_ERR_NOT_SUPPORTED);
 		}
