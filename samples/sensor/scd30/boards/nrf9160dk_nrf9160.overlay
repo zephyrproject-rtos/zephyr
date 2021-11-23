@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 Advanced Climate Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c2 {
+    status = "okay";
+
+    scd30_0@61 {
+		compatible = "sensirion,scd30";
+		reg = <0x61>;
+		label = "SCD30_0";
+		sample-period = <30>;
+	};
+};
