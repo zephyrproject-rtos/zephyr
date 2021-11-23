@@ -146,17 +146,33 @@ struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
 
 	return process_events(events, ARRAY_SIZE(events));
 }
-#endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
 
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
+static struct net_buf *bt_mesh_adv_buf_relay_get(k_timeout_t timeout)
+{
+	return net_buf_get(&bt_mesh_relay_queue, timeout);
+}
+
+struct net_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout)
+{
+	if (tag & BT_MESH_LOCAL_ADV) {
+		return bt_mesh_adv_buf_get(timeout);
+	} else if (tag & BT_MESH_RELAY_ADV) {
+		return bt_mesh_adv_buf_relay_get(timeout);
+	} else {
+		return NULL;
+	}
+}
+#else /* !CONFIG_BT_MESH_RELAY_ADV_SETS */
 struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
 {
 	return net_buf_get(&bt_mesh_adv_queue, timeout);
 }
 
-struct net_buf *bt_mesh_adv_buf_relay_get(k_timeout_t timeout)
+struct net_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout)
 {
-	return net_buf_get(&bt_mesh_relay_queue, timeout);
+	ARG_UNUSED(tag);
+
+	return bt_mesh_adv_buf_get(timeout);
 }
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
 
