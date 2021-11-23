@@ -3,7 +3,7 @@
 
 description: BMI088 inertial measurement unit
 
-compatible: "bosch,bmi088"
+compatible: "bosch,bmi088-acc"
 
 include: spi-device.yaml
 
