@@ -137,16 +137,16 @@ static void csis_client_release_set_cb(int err)
 	shell_print(ctx_shell, "Set released");
 }
 
-static void csis_client_lock_get_cb(struct bt_conn *conn, int err,
-				    uint8_t inst_idx, bool locked)
+static void csis_client_lock_get_cb(struct bt_csis_client_set *set, int err,
+				    bool locked)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Device (index 0x%02x) lock get "
-			    "failed (%d)", inst_idx, err);
+		shell_error(ctx_shell, "Device (set %p) lock get "
+			    "failed (%d)", set, err);
 	}
 
-	shell_print(ctx_shell, "Device (index 0x%02x) lock value %d",
-		    inst_idx, locked);
+	shell_print(ctx_shell, "Device (set %p) lock value %d",
+		    set, locked);
 }
 
 static struct bt_csis_client_cb cbs = {

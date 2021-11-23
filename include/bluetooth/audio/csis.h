@@ -253,13 +253,12 @@ typedef void (*bt_csis_client_lock_changed_cb)(struct bt_csis_client_set *set,
 /**
  * @brief Callback when the lock value is read on a device.
  *
- * @param conn      Connection of the CSIS server.
+ * @param set       The set that was read.
  * @param err       Error value. 0 on success, GATT error or errno on fail.
- * @param inst_idx  The index of the CSIS service.
  * @param locked    Whether the lock is locked or release.
  */
-typedef void (*bt_csis_client_lock_read_cb)(struct bt_conn *conn, int err,
-					    uint8_t inst_idx, bool locked);
+typedef void (*bt_csis_client_lock_read_cb)(struct bt_csis_client_set *set,
+					    int err, bool locked);
 
 struct bt_csis_client_cb {
 	/* Set callbacks */
