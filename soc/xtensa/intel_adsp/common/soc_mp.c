@@ -39,6 +39,8 @@ extern void z_reinit_idle_thread(int i);
 
 #define IDC_ALL_CORES (BIT(CONFIG_MP_NUM_CPUS) - 1)
 
+#define CAVS15_ROM_IDC_DELAY 500
+
 struct cpustart_rec {
 	uint32_t        cpu;
 	arch_cpustart_t	fn;
@@ -263,6 +265,18 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	uint32_t vecbase, curr_cpu = prid();
+
+	__ASSERT_NO_MSG(!cpus_active[cpu_num]);
+
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	/* On the older hardware, core power is managed by the host
+	 * and aren't able to poll for anything to know it's
+	 * available.  Need a delay here so that the hardware and ROM
+	 * firmware can complete initialization and be waiting for the
+	 * IDC we're about to send.
+	 */
+	k_busy_wait(CAVS15_ROM_IDC_DELAY);
+#endif
 
 #ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	/* On cAVS v2.5, MP startup works differently.  The core has
