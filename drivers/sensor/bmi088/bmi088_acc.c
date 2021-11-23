@@ -18,14 +18,13 @@
 #include <sys/__assert.h>
 #include <devicetree.h>
 #include <logging/log.h>
-#include <math.h>
 
 #include "../lib/libc/minimal/include/math.h"
 
-LOG_MODULE_REGISTER(BMI088, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(BMI088_ACC, CONFIG_SENSOR_LOG_LEVEL);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#error "BMI088 driver enabled without any devices"
+#error "BMI088 accelerometer driver enabled without any devices"
 #endif
 
 /**
@@ -61,7 +60,7 @@ static int bmi088_acc_transceive(const struct device *dev, uint8_t reg, bool wri
     const struct spi_buf_set tx = {
             .buffers = tx_buf,
             // If the buffer is a null pointer, only use the first TX (register address)
-            .count = buf ? 3 : 2        // If *buf points to null, only send dummy byte and register address
+            .count = buf ? 3 : 1        // If *buf points to null, only send register address
     };
 
 
@@ -294,7 +293,7 @@ static const struct sensor_driver_api bmi088_acc_api = {
 };
 
 
-#define BMI088_DEVICE_INIT(inst) \
+#define BMI088_ACC_DEVICE_INIT(inst) \
     static struct bmi088_acc_data bmi088_acc_data_##inst;               \
     static const struct bmi088_acc_cfg bmi088_acc_cfg_##inst = {           \
         .bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
@@ -305,4 +304,4 @@ static const struct sensor_driver_api bmi088_acc_api = {
                   &bmi088_acc_api);
 
 
-DT_INST_FOREACH_STATUS_OKAY(BMI088_DEVICE_INIT)
+DT_INST_FOREACH_STATUS_OKAY(BMI088_ACC_DEVICE_INIT)

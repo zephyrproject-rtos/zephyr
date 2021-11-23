@@ -21,10 +21,10 @@
 
 #include "../lib/libc/minimal/include/math.h"
 
-LOG_MODULE_REGISTER(BMI088, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(BMI088_GYR, CONFIG_SENSOR_LOG_LEVEL);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#error "BMI088 driver enabled without any devices"
+#error "BMI088 gyroscope driver enabled without any devices"
 #endif
 
 /**
@@ -258,7 +258,7 @@ static const struct sensor_driver_api bmi088_gyr_api = {
 };
 
 
-#define BMI088_DEVICE_INIT(inst) \
+#define BMI088_GYR_DEVICE_INIT(inst) \
     static struct bmi088_gyr_data bmi088_gyr_data_##inst;               \
     static const struct bmi088_gyr_cfg bmi088_gyr_cfg_##inst = {           \
         .bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
@@ -269,4 +269,4 @@ static const struct sensor_driver_api bmi088_gyr_api = {
                   &bmi088_gyr_api);
 
 
-DT_INST_FOREACH_STATUS_OKAY(BMI088_DEVICE_INIT)
+DT_INST_FOREACH_STATUS_OKAY(BMI088_GYR_DEVICE_INIT)

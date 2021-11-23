@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_
-#define ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_BMI088_GYR_H_
+#define ZEPHYR_DRIVERS_SENSOR_BMI088_GYR_H_
 
 #include <drivers/sensor.h>
 #include <drivers/spi.h>
@@ -107,4 +107,4 @@ struct sensor_value bmi088_gyr_to_fixed_point(int16_t raw_val, uint16_t scale);
 
 struct sensor_value bmi088_gyr_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3]);
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_GYR_H_ */
