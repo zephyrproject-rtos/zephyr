@@ -102,7 +102,7 @@ int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy)
 
 	if (gatt_proxy == BT_MESH_FEATURE_DISABLED &&
 	    !bt_mesh_subnet_find(node_id_is_running, NULL)) {
-		bt_mesh_adv_update();
+		bt_mesh_adv_gatt_update();
 	}
 
 	bt_mesh_hb_feature_changed(BT_MESH_FEAT_PROXY);
