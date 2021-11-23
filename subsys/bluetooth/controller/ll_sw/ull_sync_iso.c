@@ -34,6 +34,7 @@
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
+#include "ull_iso_internal.h"
 #include "ull_sync_iso_internal.h"
 
 #include "ll.h"
@@ -145,6 +146,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 		stream = (void *)sync_iso_stream_acquire();
 		stream->big_handle = big_handle;
+		stream->dp = NULL;
 		lll->stream_handle[i] = sync_iso_stream_handle_get(stream);
 	}
 
@@ -280,10 +282,17 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 	lll = &sync_iso->lll;
 	while (lll->stream_count--) {
 		struct lll_sync_iso_stream *stream;
+		struct ll_iso_datapath *dp;
 		uint16_t handle;
 
 		handle = lll->stream_handle[lll->stream_count];
 		stream = ull_sync_iso_stream_get(handle);
+
+		dp = stream->dp;
+		if (dp) {
+			ull_iso_datapath_release(dp);
+		}
+
 		mem_release(stream, &stream_free);
 	}
 

@@ -10,6 +10,7 @@
 #include "hal/cpu.h"
 #include "hal/ccm.h"
 
+#include "util/util.h"
 #include "util/memq.h"
 #include "util/mem.h"
 #include "util/mfifo.h"
@@ -17,27 +18,47 @@
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll_conn.h" /* for `struct lll_tx` */
+#include "lll_sync.h"
+#include "lll_sync_iso.h"
+#include "lll_conn.h"
+#include "lll_conn_iso.h"
+
+#include "isoal.h"
+
+#include "ull_sync_types.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+
+#include "ull_conn_internal.h"
+#include "ull_sync_iso_internal.h"
+#include "ull_conn_iso_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_iso
 #include "common/log.h"
 #include "hal/debug.h"
 
-#include "lll_conn_iso.h"
-#include "ull_conn_iso_types.h"
-#include "isoal.h"
-#include "ull_iso_types.h"
-#include "ull_conn_internal.h"
-#include "ull_conn_iso_internal.h"
-
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
-/* Allocate data path pools for RX/TX directions for each stream */
-static struct ll_iso_datapath datapath_pool[2*CONFIG_BT_CTLR_CONN_ISO_STREAMS];
-static void *datapath_free;
-#endif
+#define BT_CTLR_CONN_ISO_STREAMS CONFIG_BT_CTLR_CONN_ISO_STREAMS
+#else /* !CONFIG_BT_CTLR_CONN_ISO_STREAMS */
+#define BT_CTLR_CONN_ISO_STREAMS 0
+#endif /* !CONFIG_BT_CTLR_CONN_ISO_STREAMS */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT)
+#define BT_CTLR_SYNC_ISO_STREAMS (CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT)
+#else /* !CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT */
+#define BT_CTLR_SYNC_ISO_STREAMS 0
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT */
 
 static int init_reset(void);
+
+/* Allocate data path pools for RX/TX directions for each stream */
+#define BT_CTLR_ISO_STREAMS ((2 * (BT_CTLR_CONN_ISO_STREAMS)) + \
+			     BT_CTLR_SYNC_ISO_STREAMS)
+#if BT_CTLR_ISO_STREAMS
+static struct ll_iso_datapath datapath_pool[BT_CTLR_ISO_STREAMS];
+#endif
+static void *datapath_free;
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 static MFIFO_DEFINE(iso_tx, sizeof(struct lll_tx),
@@ -228,6 +249,71 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	}
 #endif
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	struct lll_sync_iso_stream *stream;
+	struct ll_sync_iso_set *sync_iso;
+	isoal_sink_handle_t sink_handle;
+	struct lll_sync_iso *lll_iso;
+	struct ll_iso_datapath *dp;
+	uint16_t stream_handle;
+	uint32_t sdu_interval;
+	uint16_t iso_interval;
+	uint8_t burst_number;
+	int err;
+
+	if (path_dir != BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
+		/* FIXME: workaround to succeed datapath setup for ISO
+		 *        broadcaster until Tx datapath is implemented, in the
+		 *        future.
+		 */
+		return BT_HCI_ERR_SUCCESS;
+	}
+
+	if (handle < BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+	stream_handle = handle - BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE;
+
+	stream = ull_sync_iso_stream_get(stream_handle);
+	if (stream->dp) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Allocate and configure datapath */
+	dp = mem_acquire(&datapath_free);
+	if (!dp) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	dp->path_dir      = path_dir;
+	dp->path_id       = path_id;
+	dp->coding_format = coding_format;
+	dp->company_id    = company_id;
+
+	/* TODO dp->sync_delay    = controller_delay; ?*/
+
+	sync_iso = ull_sync_iso_by_stream_get(stream_handle);
+	lll_iso = &sync_iso->lll;
+
+	burst_number = lll_iso->bn;
+	sdu_interval = lll_iso->sdu_interval;
+	iso_interval = lll_iso->iso_interval;
+
+	err = isoal_sink_create(&sink_handle, handle, burst_number,
+				sdu_interval, iso_interval, sink_sdu_alloc_hci,
+				sink_sdu_emit_hci, sink_sdu_write_hci);
+	if (err) {
+		mem_release(dp, &datapath_free);
+
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	dp->sink_hdl = sink_handle;
+	stream->dp = dp;
+
+	isoal_sink_enable(sink_handle);
+#endif
+
 	return 0;
 }
 
@@ -259,6 +345,21 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	struct lll_sync_iso_stream *stream;
+
+	if (path_dir != BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	stream = ull_sync_iso_stream_get(handle);
+	dp = stream->dp;
+	if (dp) {
+		stream->dp = NULL;
+		mem_release(dp, &datapath_free);
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 	if (!dp) {
 		/* Datapath was not previously set up */
@@ -336,6 +437,36 @@ uint8_t ll_iso_test_end(uint16_t handle, uint32_t *received_cnt,
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+void *ll_iso_tx_mem_acquire(void)
+{
+	return mem_acquire(&mem_iso_tx.free);
+}
+
+void ll_iso_tx_mem_release(void *node_tx)
+{
+	mem_release(node_tx, &mem_iso_tx.free);
+}
+
+int ll_iso_tx_mem_enqueue(uint16_t handle, void *node_tx)
+{
+	struct lll_tx *tx;
+	uint8_t idx;
+
+	idx = MFIFO_ENQUEUE_GET(iso_tx, (void **) &tx);
+	if (!tx) {
+		return -ENOBUFS;
+	}
+
+	tx->handle = handle;
+	tx->node = node_tx;
+
+	MFIFO_ENQUEUE(iso_tx, idx);
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
 int ull_iso_init(void)
 {
 	int err;
@@ -365,35 +496,10 @@ int ull_iso_reset(void)
 	return 0;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-void *ll_iso_tx_mem_acquire(void)
+void ull_iso_datapath_release(struct ll_iso_datapath *dp)
 {
-	return mem_acquire(&mem_iso_tx.free);
+	mem_release(dp, &datapath_free);
 }
-
-void ll_iso_tx_mem_release(void *tx)
-{
-	mem_release(tx, &mem_iso_tx.free);
-}
-
-int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx)
-{
-	struct lll_tx *lll_tx;
-	uint8_t idx;
-
-	idx = MFIFO_ENQUEUE_GET(iso_tx, (void **) &lll_tx);
-	if (!lll_tx) {
-		return -ENOBUFS;
-	}
-
-	lll_tx->handle = handle;
-	lll_tx->node = tx;
-
-	MFIFO_ENQUEUE(iso_tx, idx);
-
-	return 0;
-}
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 static int init_reset(void)
 {
@@ -403,7 +509,7 @@ static int init_reset(void)
 		 CONFIG_BT_CTLR_ISO_TX_BUFFERS, &mem_iso_tx.free);
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+#if BT_CTLR_ISO_STREAMS
 	/* Initialize ISO Datapath pool */
 	mem_init(datapath_pool, sizeof(struct ll_iso_datapath),
 		 sizeof(datapath_pool) / sizeof(struct ll_iso_datapath), &datapath_free);
