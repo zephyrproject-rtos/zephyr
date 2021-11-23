@@ -150,7 +150,7 @@ int bmi088_acc_reg_field_update(const struct device *dev, uint8_t reg_addr,
 struct sensor_value bmi088_acc_to_fixed_point(int16_t raw_val) {
 
     double fraction_of_max = raw_val / 32768.0;       // see bmi088_channel_get
-    double maximum_gs = pow(2,0x03)*3;
+    double maximum_gs = pow(2,BMI088_ACC_DEFAULT_RANGE)*3;
     double gs = fraction_of_max * maximum_gs;
     double m_per_second = gs * 9.81;
 
@@ -227,12 +227,6 @@ static int bmi088_acc_sample_fetch(const struct device *dev, enum sensor_channel
  * @return 0 on success, -ENOTSUP on unsupported channel
  */
 static int bmi088_acc_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
-
-    // scale for converting sensor output to mg (Datasheet 5.3.4)
-    // const double scale = (1000 * (1<<(0x03 + 1)) * 1.5);
-
-
-
     switch (chan) {
         case SENSOR_CHAN_ACCEL_X:
         case SENSOR_CHAN_ACCEL_Y:
@@ -323,7 +317,7 @@ static int bmi088_acc_init(const struct device *dev) {
     if (bmi088_acc_byte_read(dev, ACC_RANGE, &test) < 0){
         return -EIO;
     }
-     if (test != 0x03) {
+     if (test != BMI088_ACC_DEFAULT_RANGE) {
          LOG_ERR("Unexpected Range read (0x%x)!", test);
          return -ENODEV;
      }
