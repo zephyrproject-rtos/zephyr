@@ -607,6 +607,17 @@ config BT_HOST_CCM
 	  controller's AES encryption functions if available, or BT_HOST_CRYPTO
 	  otherwise.
 
+config BT_PER_ADV_SYNC_BUF_SIZE
+	int "Maximum periodic advertising report size"
+	depends on BT_PER_ADV_SYNC
+	range 0 1650
+	default 0
+	help
+	  Maximum size of a fragmented periodic advertising report. If the periodic
+	  advertising report provided by the controller is fragmented and larger
+	  than this buffer size, then the data will be discarded.
+	  Unfragmented reports are forwarded as they are received.
+
 if BT_DEBUG
 config BT_DEBUG_SETTINGS
 	bool "Bluetooth storage debug"
