@@ -6516,8 +6516,14 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	sep->max_pdu = sys_cpu_to_le16(lll->max_pdu);
 	sep->num_bis = lll->num_bis;
 
-	/* FIXME: Connection handle list of all BISes in the BIG */
-	sep->handle[0] = sys_cpu_to_le16(0);
+	/* Connection handle list of all BISes in the BIG */
+	for (uint8_t i = 0U; i < lll->num_bis; i++) {
+		uint16_t handle;
+
+		handle = BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE +
+			 lll->stream_handle[i];
+		sep->handle[i] = sys_cpu_to_le16(handle);
+	}
 }
 
 static void le_big_terminate(struct pdu_data *pdu,

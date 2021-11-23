@@ -4,6 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+struct lll_adv_iso_stream {
+	uint8_t big_handle;
+
+	/* FIXME: rfi placed here to make a minimum size of 8 octets, for use
+	 *        with mem interface, remove with adding other required members
+	 *        in this structure.
+	 */
+	void *rfi;
+};
+
 struct lll_adv_iso {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
@@ -55,6 +65,8 @@ struct lll_adv_iso {
 	uint8_t  ctrl_chan_use;
 	uint8_t  ctrl_expire;
 	uint16_t ctrl_instant;
+
+	uint16_t stream_handle[BT_CTLR_ADV_ISO_STREAM_MAX];
 };
 
 struct lll_adv_sync {
