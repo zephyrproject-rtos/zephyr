@@ -16,3 +16,7 @@ properties:
       required: true
     clock-names:
       required: true
+    pinctrl-0:
+      required: true
+    pinctrl-names:
+      required: true

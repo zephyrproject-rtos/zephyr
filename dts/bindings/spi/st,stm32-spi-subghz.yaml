@@ -5,7 +5,13 @@ description: STM32 SUBGHZ SPI controller
 
 compatible: "st,stm32-spi-subghz"
 
-include: st,stm32-spi-common.yaml
+include:
+
+include:
+  - name: st,stm32-spi-common.yaml
+    property-blocklist:
+      - pinctrl-0
+      - pinctrl-names
 
 properties:
     use-subghzspi-nss:
