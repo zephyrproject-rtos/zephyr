@@ -71,9 +71,6 @@ static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_relay[CONFIG_BT_MESH_RELAY_A
 		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 	}
 };
-#define BT_MESH_RELAY_ADV_INS			(adv_relay)
-#else /* !CONFIG_BT_MESH_RELAY_ADV_SETS */
-#define BT_MESH_RELAY_ADV_INS			(&adv_main)
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
 
 #if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
@@ -82,17 +79,30 @@ static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_gatt) = {
 	.tag = BT_MESH_PROXY_ADV,
 	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 };
-#define BT_MESH_ADV_EXT_GATT_SEPARATE_INS	(&adv_gatt)
-#elif defined(CONFIG_BT_MESH_GATT_SERVER)
+#else /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
 #define BT_MESH_ADV_COUNT			(1 + CONFIG_BT_MESH_RELAY_ADV_SETS)
-#define BT_MESH_ADV_EXT_GATT_SEPARATE_INS	(&adv_main)
-#else /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
-#define BT_MESH_ADV_COUNT			(1 + CONFIG_BT_MESH_RELAY_ADV_SETS)
-#define BT_MESH_ADV_EXT_GATT_SEPARATE_INS	(struct bt_mesh_ext_adv)NULL
 #endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
 
 BUILD_ASSERT(CONFIG_BT_EXT_ADV_MAX_ADV_SET >= BT_MESH_ADV_COUNT,
 	     "Insufficient adv instances");
+
+static inline struct bt_mesh_ext_adv *relay_adv_get(void)
+{
+#if CONFIG_BT_MESH_RELAY_ADV_SETS
+	return adv_relay;
+#else /* !CONFIG_BT_MESH_RELAY_ADV_SETS */
+	return &adv_main;
+#endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
+}
+
+static inline struct bt_mesh_ext_adv *gatt_adv_get(void)
+{
+#if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
+	return &adv_gatt;
+#else /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
+	return &adv_main;
+#endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
+}
 
 static int adv_start(struct bt_mesh_ext_adv *adv,
 		     const struct bt_le_adv_param *param,
@@ -251,7 +261,7 @@ static bool schedule_send(struct bt_mesh_ext_adv *adv)
 
 void bt_mesh_adv_gatt_update(void)
 {
-	(void)schedule_send(BT_MESH_ADV_EXT_GATT_SEPARATE_INS);
+	(void)schedule_send(gatt_adv_get());
 }
 
 void bt_mesh_adv_buf_local_ready(void)
@@ -327,7 +337,7 @@ static void adv_sent(struct bt_le_ext_adv *instance,
 static void connected(struct bt_le_ext_adv *instance,
 		      struct bt_le_ext_adv_connected_info *info)
 {
-	struct bt_mesh_ext_adv *adv = BT_MESH_ADV_EXT_GATT_SEPARATE_INS;
+	struct bt_mesh_ext_adv *adv = gatt_adv_get();
 
 	if (atomic_test_and_clear_bit(adv->flags, ADV_FLAG_PROXY)) {
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
@@ -369,7 +379,7 @@ int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len)
 {
-	struct bt_mesh_ext_adv *adv = BT_MESH_ADV_EXT_GATT_SEPARATE_INS;
+	struct bt_mesh_ext_adv *adv = gatt_adv_get();
 	struct bt_le_ext_adv_start_param start = {
 		/* Timeout is set in 10 ms steps, with 0 indicating "forever" */
 		.timeout = (duration == SYS_FOREVER_MS) ? 0 : (duration / 10),
