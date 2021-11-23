@@ -604,13 +604,27 @@ struct bt_le_per_adv_sync *bt_hci_get_per_adv_sync(uint16_t handle)
 	return NULL;
 }
 
+void bt_hci_le_per_adv_report_recv(struct bt_le_per_adv_sync *per_adv_sync,
+				   struct net_buf_simple *buf,
+				   const struct bt_le_per_adv_sync_recv_info *info)
+{
+	struct net_buf_simple_state state;
+	struct bt_le_per_adv_sync_cb *listener;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		if (listener->recv) {
+			net_buf_simple_save(buf, &state);
+			listener->recv(per_adv_sync, info, buf);
+			net_buf_simple_restore(buf, &state);
+		}
+	}
+}
+
 void bt_hci_le_per_adv_report(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_per_advertising_report *evt;
 	struct bt_le_per_adv_sync *per_adv_sync;
 	struct bt_le_per_adv_sync_recv_info info;
-	struct bt_le_per_adv_sync_cb *listener;
-	struct net_buf_simple_state state;
 
 	if (buf->len < sizeof(*evt)) {
 		BT_ERR("Unexpected end of buffer");
@@ -639,23 +653,41 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 	info.addr = &per_adv_sync->addr;
 	info.sid = per_adv_sync->sid;
 
-	if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
-		/* Handling of incomplete reports is currently not
-		 * handled in the host. The remaining advertising
-		 * reports may therefore contain partial data.
-		 */
-		BT_WARN("Incomplete per adv report");
-	}
+	if (!per_adv_sync->report_truncated) {
+#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+		if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE &&
+		    per_adv_sync->reassembly.len == 0) {
+			/* We have not received any partial data before.
+			 * This buffer can be forwarded without an extra copy.
+			 */
+			bt_hci_le_per_adv_report_recv(per_adv_sync, &buf->b, &info);
+		} else {
+			if (net_buf_simple_tailroom(&per_adv_sync->reassembly) < evt->length) {
+				/* The buffer is too small for the entire report. Drop it */
+				BT_WARN("Buffer is too small to reassemble the report. "
+					"Use CONFIG_BT_PER_ADV_SYNC_BUF_SIZE to change "
+					"the buffer size.");
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
-		if (listener->recv) {
-			net_buf_simple_save(&buf->b, &state);
-
-			buf->len = evt->length;
-			listener->recv(per_adv_sync, &info, &buf->b);
-
-			net_buf_simple_restore(&buf->b, &state);
+				per_adv_sync->report_truncated = true;
+				net_buf_simple_reset(&per_adv_sync->reassembly);
+				return;
+			}
+			net_buf_simple_add_mem(&per_adv_sync->reassembly, buf->data, evt->length);
+			if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+				bt_hci_le_per_adv_report_recv(per_adv_sync,
+							      &per_adv_sync->reassembly, &info);
+				net_buf_simple_reset(&per_adv_sync->reassembly);
+			}
 		}
+#else /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
+		if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+			bt_hci_le_per_adv_report_recv(per_adv_sync, &buf->b, &info);
+		} else {
+			per_adv_sync->report_truncated = true;
+		}
+#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
+	} else if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+		per_adv_sync->report_truncated = false;
 	}
 }
 
@@ -751,6 +783,14 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		}
 		return;
 	}
+
+	pending_per_adv_sync->report_truncated = false;
+#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+	net_buf_simple_init_with_data(&pending_per_adv_sync->reassembly,
+				      pending_per_adv_sync->reassembly_data,
+				      CONFIG_BT_PER_ADV_SYNC_BUF_SIZE);
+	net_buf_simple_reset(&pending_per_adv_sync->reassembly);
+#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
 
 	atomic_set_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
 
