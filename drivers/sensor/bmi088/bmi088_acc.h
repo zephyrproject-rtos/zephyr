@@ -14,7 +14,6 @@
 // read-only
 #define BMI088_REG_CHIPID    0x00
 #define RATE_X_LSB      0x12
-#define BMI088_ACC_STATUS   0x03
 
 // write-only
 #define BMI088_ACC_SOFTRESET  0x7E
@@ -48,7 +47,7 @@ struct bmi088_acc_cfg {
 
 // Each sample has X, Y and Z, each with lsb and msb Bytes
 struct bmi088_acc_sample {
-    uint16_t acc[BMI088_AXES];
+    int16_t acc[BMI088_AXES];
 };
 
 struct bmi088_acc_data {
@@ -105,8 +104,8 @@ int bmi088_acc_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t by
 int bmi088_acc_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val);
 
 
-struct sensor_value bmi088_acc_to_fixed_point(int16_t raw_val, uint16_t scale);
+struct sensor_value bmi088_acc_to_fixed_point(int16_t raw_val);
 
-struct sensor_value bmi088_acc_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3]);
+struct sensor_value bmi088_acc_channel_convert(enum sensor_channel chan, int16_t raw_xyz[3]);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_ACC_H_ */

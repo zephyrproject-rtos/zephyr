@@ -18,6 +18,7 @@
 #include <sys/__assert.h>
 #include <devicetree.h>
 #include <logging/log.h>
+#include <math.h>
 
 #include "../lib/libc/minimal/include/math.h"
 
@@ -27,19 +28,24 @@ LOG_MODULE_REGISTER(BMI088_ACC, CONFIG_SENSOR_LOG_LEVEL);
 #error "BMI088 accelerometer driver enabled without any devices"
 #endif
 
+
+
+bool bmi088_acc_bus_ready_spi(const struct device *dev) {
+    return spi_is_ready(&to_config(dev)->bus);
+}
 /**
- * Send/receive data to/from the BMI088
+ * receive data from the BMI088
  *
  * @param dev Sensor device pointer
  * @param reg (Start) register address, for writing the MSb should be 0, for reading 1
- * @param write True for write-only, False for read-only
- * @param buf Out-parameter if reading, In-parameter if writing
+ * @param buf Out-parameter if reading
  * @param length Length of buf
  * @return 0 on success
  */
- // TODO: Dummy byte in SPI read operations on acc (resolved?)
-static int bmi088_acc_transceive(const struct device *dev, uint8_t reg, bool write, void *buf, size_t length) {
+int bmi088_acc_read(const struct device *dev, uint8_t reg, void *buf, uint8_t length) {
     const struct bmi088_acc_cfg *cfg = to_config(dev);
+    reg = reg | BMI088_ACC_REG_READ;
+    uint8_t dummy_receive;
     const struct spi_buf tx_buf[3] = {
             {
                     // Always send register address first
@@ -48,7 +54,7 @@ static int bmi088_acc_transceive(const struct device *dev, uint8_t reg, bool wri
             },
             {
                     // Always send dummy byte
-                    .buf = NULL,
+                    .buf = &dummy_receive,
                     .len = 1
             },
             {
@@ -64,10 +70,6 @@ static int bmi088_acc_transceive(const struct device *dev, uint8_t reg, bool wri
     };
 
 
-    if (write) {
-        // Write-only: No RX buffer necessary
-        return spi_write_dt(&cfg->bus, &tx);
-    } else {
         // If we want to read, use the same buffers for that purpose.
         // No useful data will be written to reg, as we dont receive anything while we still send the address
         // Whatever data is in the buffer will be sent out. The sensor will ignore that data if the address was a
@@ -78,24 +80,47 @@ static int bmi088_acc_transceive(const struct device *dev, uint8_t reg, bool wri
         };
 
         return spi_transceive_dt(&cfg->bus, &tx, &rx);
-    }
-}
 
-bool bmi088_acc_bus_ready_spi(const struct device *dev) {
-    return spi_is_ready(&to_config(dev)->bus);
-}
-
-int bmi088_acc_read(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len) {
-    return bmi088_acc_transceive(dev, reg_addr | BMI088_ACC_REG_READ, false, buf, len);
 }
 
 int bmi088_acc_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte) {
     return bmi088_acc_read(dev, reg_addr, byte, 1);
 }
 
-int bmi088_acc_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len) {
+/**
+ * send data to the BMI088
+ *
+ * @param dev Sensor device pointer
+ * @param reg (Start) register address, for writing the MSb should be 0, for reading 1
+ * @param buf In-parameter if writing
+ * @param length Length of buf
+ * @return 0 on success
+ */
+int bmi088_acc_write(const struct device *dev, uint8_t reg, void *buf, uint8_t length) {
+    reg &= BMI088_ACC_REG_MASK;
+    const struct bmi088_acc_cfg *cfg = to_config(dev);
+    uint8_t dummy_receive;
+    const struct spi_buf tx_buf[2] = {
+            {
+                    // Always send register address first
+                    .buf = &reg,
+                    .len = 1
+            },
+            {
+                    // Then send whatever data there is to send
+                    .buf = buf,
+                    .len = length
+            }
+    };
+    const struct spi_buf_set tx = {
+            .buffers = tx_buf,
+            // If the buffer is a null pointer, only use the first TX (register address)
+            .count = buf ? 2 : 1        // If *buf points to null, only send register address
+    };
 
-    return bmi088_acc_transceive(dev, reg_addr & BMI088_ACC_REG_MASK, true, buf, len);
+        // Write-only: No RX buffer necessary
+        return spi_write_dt(&cfg->bus, &tx);
+
 }
 
 int bmi088_acc_byte_write(const struct device *dev, uint8_t reg_addr,
@@ -103,7 +128,6 @@ int bmi088_acc_byte_write(const struct device *dev, uint8_t reg_addr,
     return bmi088_acc_write(dev, reg_addr & BMI088_ACC_REG_MASK, &byte, 1);
 }
 
-// TODO: Check the warning
 int bmi088_acc_reg_field_update(const struct device *dev, uint8_t reg_addr,
                             uint8_t pos, uint8_t mask, uint8_t val) {
 
@@ -123,13 +147,17 @@ int bmi088_acc_reg_field_update(const struct device *dev, uint8_t reg_addr,
  * @param raw_val Raw sensor value
  * @param scale Value to scale the raw_val
  */
-struct sensor_value bmi088_acc_to_fixed_point(int16_t raw_val, uint16_t scale) {
-    int32_t converted_val = raw_val * scale;        // see bmi088_channel_get
+struct sensor_value bmi088_acc_to_fixed_point(int16_t raw_val) {
 
-    LOG_INF("Conversion: input %d scale %d converted %ld", raw_val, scale, converted_val);
-    struct sensor_value val = {
-            .val1=converted_val / 1000000,
-            .val2=converted_val % 1000000};
+    double fraction_of_max = raw_val / 32768.0;       // see bmi088_channel_get
+    double maximum_gs = pow(2,0x03)*3;
+    double gs = fraction_of_max * maximum_gs;
+    double m_per_second = gs * 9.81;
+
+
+    struct sensor_value val = {};
+    sensor_value_from_double(&val, m_per_second);
+
     return val;
 }
 
@@ -141,14 +169,14 @@ struct sensor_value bmi088_acc_to_fixed_point(int16_t raw_val, uint16_t scale) {
  * @param raw_xyz array for storing X, Y, Z channel raw value of the sensor
  * @return
  */
-struct sensor_value bmi088_acc_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3]) {
+struct sensor_value bmi088_acc_channel_convert(enum sensor_channel chan, int16_t raw_xyz[3]) {
     switch (chan) {
         case SENSOR_CHAN_ACCEL_X:
-            return bmi088_acc_to_fixed_point(raw_xyz[0], scale);
+            return bmi088_acc_to_fixed_point(raw_xyz[0]);
         case SENSOR_CHAN_ACCEL_Y:
-            return bmi088_acc_to_fixed_point(raw_xyz[1], scale);
+            return bmi088_acc_to_fixed_point(raw_xyz[1]);
         case SENSOR_CHAN_ACCEL_Z:
-            return bmi088_acc_to_fixed_point(raw_xyz[2], scale);
+            return bmi088_acc_to_fixed_point(raw_xyz[2]);
         default:
             LOG_ERR("Channels not supported !");
             struct sensor_value empty = {0};
@@ -169,7 +197,6 @@ static int bmi088_acc_attr_set(const struct device *dev, enum sensor_channel cha
  * @param chan Channel to fetch. Only SENSOR_CHAN_ALL and ACCEL_XYZ is supported.
  * @return 0 on success
  */
-// TODO: check (5.3.3)
 static int bmi088_acc_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     struct bmi088_acc_data *data = to_data(dev);
 
@@ -202,7 +229,8 @@ static int bmi088_acc_sample_fetch(const struct device *dev, enum sensor_channel
 static int bmi088_acc_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
 
     // scale for converting sensor output to mg (Datasheet 5.3.4)
-    const uint16_t scale = (uint16_t)((1/32768) * 1000 * pow(2,(0x03 + 1)) * 1.5);
+    // const double scale = (1000 * (1<<(0x03 + 1)) * 1.5);
+
 
 
     switch (chan) {
@@ -210,14 +238,14 @@ static int bmi088_acc_channel_get(const struct device *dev, enum sensor_channel 
         case SENSOR_CHAN_ACCEL_Y:
         case SENSOR_CHAN_ACCEL_Z: {
             struct bmi088_acc_data *data = to_data(dev);
-            *val = bmi088_acc_channel_convert(chan, scale, data->sample.acc);
+            *val = bmi088_acc_channel_convert(chan, data->sample.acc);
             return 0;
         }
         case SENSOR_CHAN_ACCEL_XYZ: {
             struct bmi088_acc_data *data = to_data(dev);
-            val[0] = bmi088_acc_channel_convert(SENSOR_CHAN_ACCEL_X, scale, data->sample.acc);
-            val[1] = bmi088_acc_channel_convert(SENSOR_CHAN_ACCEL_Y, scale, data->sample.acc);
-            val[2] = bmi088_acc_channel_convert(SENSOR_CHAN_ACCEL_Z, scale, data->sample.acc);
+            val[0] = bmi088_acc_channel_convert(SENSOR_CHAN_ACCEL_X, data->sample.acc);
+            val[1] = bmi088_acc_channel_convert(SENSOR_CHAN_ACCEL_Y, data->sample.acc);
+            val[2] = bmi088_acc_channel_convert(SENSOR_CHAN_ACCEL_Z, data->sample.acc);
             return 0;
         }
         default:
@@ -232,7 +260,6 @@ static int bmi088_acc_channel_get(const struct device *dev, enum sensor_channel 
  * @param dev Sensor device pointer
  * @return 0 on success
  */
- // TODO: Acc initialization (resolved?)
 static int bmi088_acc_init(const struct device *dev) {
     LOG_DBG("Initializing BMI088 ACC device at %p", dev);
 
@@ -241,48 +268,67 @@ static int bmi088_acc_init(const struct device *dev) {
         return -EINVAL;
     }
 
+     uint8_t val = 0U;
+     // Dummy read to enable SPI
+     if (bmi088_acc_byte_read(dev, BMI088_REG_CHIPID, &val) < 0) {
+         LOG_ERR("Failed to read chip id.");
+         return -EIO;
+     }
+     LOG_DBG("Acc in SPI mode");
+
     // reboot the chip: Softreset 0x7E
     if (bmi088_acc_byte_write(dev, BMI088_ACC_SOFTRESET, BMI088_ACC_SR_VAL) < 0) {
-        LOG_DBG("Cannot reboot chip.");
+        LOG_ERR("Cannot reboot chip.");
         return -EIO;
     }
 
     k_busy_wait(1000);
 
 
-    uint8_t val = 0U;
-    // Dummy read to enable SPI
-    if (bmi088_acc_byte_read(dev, BMI088_REG_CHIPID, &val) < 0) {
-        LOG_DBG("Failed to read chip id.");
-        return -EIO;
-    }
-    LOG_DBG("Acc in SPI mode");
+     uint8_t value = 0U;
+     // Dummy read to enable SPI
+     if (bmi088_acc_byte_read(dev, BMI088_REG_CHIPID, &value) < 0) {
+         LOG_ERR("Failed to switch to spi mode.");
+         return -EIO;
+     }
+     LOG_DBG("Acc in SPI mode");
 
     // Read chip ID value
     if (bmi088_acc_byte_read(dev, BMI088_REG_CHIPID, &val) < 0) {
-        LOG_DBG("Failed to read chip id.");
+        LOG_ERR("Failed to read chip id.");
         return -EIO;
     }
     // check if the chip ID is correct
     if (val != BMI088_ACC_CHIP_ID) {
-        LOG_DBG("Unsupported chip detected (0x%x)!", val);
+        LOG_ERR("Unsupported chip detected (0x%x)!", val);
         return -ENODEV;
     }
     LOG_DBG("Chip successfully detected");
 
-    // Set default acc range, For now: always use the largest range
-    if (bmi088_acc_reg_field_update(dev, ACC_RANGE,0, BIT(0) | BIT(1) ,BMI088_ACC_DEFAULT_RANGE) < 0) {
-        LOG_DBG("Cannot set default range for accelerometer.");
-        return -EIO;
-    }
-
-    // Switch acc to normal mode
-    if (bmi088_acc_byte_write(dev, ACC_PWR_CTRL, ACC_NORMAL_MODE) < 0) {
-        LOG_DBG("Cannot switch power mode to normal");
-        return -EIO;
-    }
+     // Switch acc to normal mode
+     if (bmi088_acc_byte_write(dev, ACC_PWR_CTRL, ACC_NORMAL_MODE) < 0) {
+         LOG_ERR("Cannot switch power mode to normal");
+         return -EIO;
+     }
 
      k_busy_wait(50000);     // wait 50ms for acc to switch power mode
+
+    // Set default acc range, For now: always use the largest range
+    if (bmi088_acc_reg_field_update(dev, ACC_RANGE,0, 0b11 ,BMI088_ACC_DEFAULT_RANGE) < 0) {
+        LOG_ERR("Cannot set default range for accelerometer.");
+        return -EIO;
+    }
+
+    uint8_t test;
+    if (bmi088_acc_byte_read(dev, ACC_RANGE, &test) < 0){
+        return -EIO;
+    }
+     if (test != 0x03) {
+         LOG_ERR("Unexpected Range read (0x%x)!", test);
+         return -ENODEV;
+     }
+
+
 
     return 0;
 }
