@@ -38,11 +38,11 @@
 #include "ll_sw/lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "ll_sw/lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_conn.h"
 #include "ll_sw/lll_conn_iso.h"
-#include "lll/lll_df_types.h"
 
 #include "ll_sw/isoal.h"
 
@@ -6448,7 +6448,16 @@ static void le_sync_iso_pdu(struct pdu_data *pdu,
 			    struct node_rx_pdu *node_rx,
 			    struct net_buf *buf)
 {
-	/* FIXME: integrate with ISOAL interface */
+	/* If HCI datapath pass to ISO AL here */
+	const struct lll_sync_iso_stream *stream;
+	struct isoal_pdu_rx isoal_rx;
+	isoal_status_t err;
+
+	stream = ull_sync_iso_stream_get(node_rx->hdr.handle);
+	isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
+	isoal_rx.pdu = (void *)node_rx->pdu;
+	err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
+	LL_ASSERT(err == ISOAL_STATUS_OK || err == ISOAL_STATUS_ERR_SDU_ALLOC);
 }
 
 static void le_big_sync_lost(struct pdu_data *pdu,

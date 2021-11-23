@@ -6,7 +6,7 @@
 
 struct lll_sync_iso_stream {
 	uint8_t big_handle;
-	void *rfi;
+	struct ll_iso_datapath *dp;
 };
 
 struct lll_sync_iso {
