@@ -14,6 +14,12 @@ properties:
     reg:
         required: true
 
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
+
     cd-gpios:
         type: phandle-array
         required: false

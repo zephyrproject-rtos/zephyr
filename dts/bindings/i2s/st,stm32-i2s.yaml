@@ -19,3 +19,9 @@ properties:
 
     dma-names:
       required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
