@@ -74,6 +74,7 @@ Here's a quick summary of resources to help you find your way around:
   tracked separately at https://zephyrprojectsec.atlassian.net.
 * **Zephyr Project Website**: https://zephyrproject.org
 
+
 .. _Discord Invite: https://chat.zephyrproject.org
 .. _supported boards: http://docs.zephyrproject.org/latest/boards/index.html
 .. _Zephyr Documentation: http://docs.zephyrproject.org
