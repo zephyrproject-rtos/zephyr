@@ -100,9 +100,9 @@ static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 	}
 }
 
-static void csis_client_discover_sets_cb(struct bt_conn *conn, int err,
-					 uint8_t set_count,
-					 struct bt_csis_client_set *sets)
+static void csis_client_discover_sets_cb(struct bt_csis_client_set_member *member,
+					 int err,
+					 uint8_t set_count)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Discover sets failed (%d)", err);
@@ -110,21 +110,10 @@ static void csis_client_discover_sets_cb(struct bt_conn *conn, int err,
 	}
 
 	for (uint8_t i = 0; i < set_count; i++) {
+		struct bt_csis_client_set *set = &member->sets[i];
+
 		shell_print(ctx_shell, "Set size %d (pointer: %p)",
-			    sets[i].set_size, &sets[i]);
-	}
-
-	for (size_t i = 0; i < ARRAY_SIZE(set_members); i++) {
-		struct bt_csis_client_set_member *member;
-
-		member = &set_members[i];
-
-		if (member->conn == conn) {
-			for (uint8_t j = 0; j < set_count; j++) {
-				(void)memcpy(&member->sets[j], &sets[j],
-					     sizeof(sets[j]));
-			}
-		}
+			    set[i].set_size, &set[i]);
 	}
 }
 
@@ -302,7 +291,7 @@ static int cmd_csis_client_discover_sets(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csis_client_discover_sets(set_members[member_index].conn);
+	err = bt_csis_client_discover_sets(&set_members[member_index]);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
