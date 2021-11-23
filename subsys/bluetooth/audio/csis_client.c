@@ -68,7 +68,7 @@ static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_csis_client_cb *csis_client_cbs;
 static struct bt_csis_client_inst client_insts[CONFIG_BT_MAX_CONN];
 
-static int read_set_sirk(struct bt_conn *conn, uint8_t inst_idx);
+static int read_set_sirk(struct bt_csis *csis);
 static int csis_client_read_set_size(struct bt_conn *conn, uint8_t inst_idx,
 				     bt_gatt_read_func_t cb);
 
@@ -353,34 +353,27 @@ static int csis_client_write_set_lock(struct bt_csis *inst,
 	return bt_gatt_write(inst->cli.conn, &write_params);
 }
 
-static int read_set_sirk(struct bt_conn *conn, uint8_t inst_idx)
+static int read_set_sirk(struct bt_csis *csis)
 {
-	if (inst_idx >= CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
-		return -EINVAL;
-	} else if (cur_inst != NULL) {
-		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
+	if (cur_inst != NULL) {
+		if (cur_inst != csis) {
 			return -EBUSY;
 		}
 	} else {
-		cur_inst = lookup_instance_by_index(conn, inst_idx);
-		if (cur_inst == NULL) {
-			BT_DBG("Inst not found");
-			return -EINVAL;
-		}
+		cur_inst = csis;
 	}
 
-	if (cur_inst->cli.set_sirk_handle == 0) {
+	if (csis->cli.set_sirk_handle == 0) {
 		BT_DBG("Handle not set");
-		cur_inst = NULL;
 		return -EINVAL;
 	}
 
 	read_params.func = csis_client_discover_sets_read_set_sirk_cb;
 	read_params.handle_count = 1;
-	read_params.single.handle = cur_inst->cli.set_sirk_handle;
+	read_params.single.handle = csis->cli.set_sirk_handle;
 	read_params.single.offset = 0U;
 
-	return bt_gatt_read(conn, &read_params);
+	return bt_gatt_read(csis->cli.conn, &read_params);
 }
 
 static int csis_client_read_set_size(struct bt_conn *conn, uint8_t inst_idx,
@@ -666,9 +659,8 @@ static uint8_t csis_client_discover_sets_read_rank_cb(struct bt_conn *conn,
 
 	if (cb_err != 0) {
 		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, cb_err,
-					      client->inst_count,
-					      client->set_member->sets);
+			csis_client_cbs->sets(client->set_member, cb_err,
+					      client->inst_count);
 		}
 	}
 
@@ -709,9 +701,8 @@ static uint8_t csis_client_discover_sets_read_set_size_cb(struct bt_conn *conn,
 
 	if (cb_err != 0) {
 		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, cb_err,
-					      client->inst_count,
-					      client->set_member->sets);
+			csis_client_cbs->sets(client->set_member, cb_err,
+					      client->inst_count);
 		}
 	}
 
@@ -797,9 +788,8 @@ static uint8_t csis_client_discover_sets_read_set_sirk_cb(struct bt_conn *conn,
 
 	if (cb_err != 0) {
 		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, cb_err,
-					      client->inst_count,
-					      client->set_member->sets);
+			csis_client_cbs->sets(client->set_member, cb_err,
+					      client->inst_count);
 		}
 	}
 
@@ -841,12 +831,14 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 
 		cur_inst = NULL;
 		if (next_idx < client->inst_count) {
+			cur_inst = lookup_instance_by_index(conn, next_idx);
+
 			/* Read next */
-			cb_err = read_set_sirk(conn, next_idx);
+			cb_err = read_set_sirk(cur_inst);
 		} else if (csis_client_cbs != NULL &&
 			   csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, 0, client->inst_count,
-					      client->set_member->sets);
+			csis_client_cbs->sets(client->set_member, 0,
+					      client->inst_count);
 		}
 
 		return;
@@ -854,9 +846,8 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 
 	if (cb_err != 0) {
 		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(conn, cb_err,
-					      client->inst_count,
-					      client->set_member->sets);
+			csis_client_cbs->sets(client->set_member, cb_err,
+					      client->inst_count);
 		}
 	} else {
 		busy = true;
@@ -1177,19 +1168,24 @@ int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 	return err;
 }
 
-int bt_csis_client_discover_sets(struct bt_conn *conn)
+int bt_csis_client_discover_sets(struct bt_csis_client_set_member *member)
 {
 	int err;
 
-	if (conn == NULL) {
-		BT_DBG("Not connected");
-		return -ENOTCONN;
+	CHECKIF(member == NULL) {
+		BT_DBG("member is NULL");
+		return -EINVAL;
+	}
+
+	if (member->conn == NULL) {
+		BT_DBG("member->conn is NULL");
+		return -EINVAL;
 	} else if (busy) {
 		return -EBUSY;
 	}
 
 	/* Start reading values and call CB when done */
-	err = read_set_sirk(conn, 0);
+	err = read_set_sirk(member->sets[0].csis);
 	if (err == 0) {
 		busy = true;
 	}
