@@ -109,6 +109,17 @@ struct bt_df_per_adv_sync_iq_samples_report {
 	struct bt_hci_le_iq_sample const *sample;
 };
 
+struct bt_df_conn_cte_rx_param {
+	/* Bitmap with allowed CTE types (@ref bt_df_cte_type). */
+	uint8_t cte_type;
+	/** Antenna switching slots (@ref bt_df_antenna_switching_slot). */
+	uint8_t slot_durations;
+	/** Length of antenna switch pattern. */
+	uint8_t num_ant_ids;
+	/** Antenna switch pattern. */
+	const uint8_t *ant_ids;
+};
+
 /**
  * @brief Set or update the Constant Tone Extension parameters for periodic advertising set.
  *
@@ -164,5 +175,24 @@ int bt_df_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync,
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_df_per_adv_sync_cte_rx_disable(struct bt_le_per_adv_sync *sync);
+
+/**
+ * @brief Enable receive and sampling of Constant Tone Extension for the connection object.
+ *
+ * @param conn   Connection object.
+ * @param params CTE receive and sampling parameters.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_conn_cte_rx_enable(struct bt_conn *conn, const struct bt_df_conn_cte_rx_param *params);
+
+/**
+ * @brief Disable receive and sampling of Constant Tone Extension for the connection object.
+ *
+ * @param conn   Connection object.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_conn_cte_rx_disable(struct bt_conn *conn);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_DF_H_ */
