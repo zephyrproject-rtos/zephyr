@@ -8,6 +8,7 @@
 #include <posix/time.h>
 #include <posix/sys/time.h>
 #include <syscall_handler.h>
+#include <spinlock.h>
 
 /*
  * `k_uptime_get` returns a timestamp based on an always increasing
@@ -17,6 +18,7 @@
  * set from a real time clock, if such hardware is present.
  */
 static struct timespec rt_clock_base;
+static struct k_spinlock rt_clock_base_lock;
 
 /**
  * @brief Get clock time specified by clock_id.
@@ -27,6 +29,7 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
 	uint64_t elapsed_nsecs;
 	struct timespec base;
+	k_spinlock_key_t key;
 
 	switch (clock_id) {
 	case CLOCK_MONOTONIC:
@@ -35,7 +38,9 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 		break;
 
 	case CLOCK_REALTIME:
+		key = k_spin_lock(&rt_clock_base_lock);
 		base = rt_clock_base;
+		k_spin_unlock(&rt_clock_base_lock, key);
 		break;
 
 	default:
@@ -77,6 +82,7 @@ int z_vrfy_clock_gettime(clockid_t clock_id, struct timespec *ts)
 int clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
 	struct timespec base;
+	k_spinlock_key_t key;
 
 	if (clock_id != CLOCK_REALTIME) {
 		errno = EINVAL;
@@ -90,7 +96,9 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 	base.tv_sec = delta / NSEC_PER_SEC;
 	base.tv_nsec = delta % NSEC_PER_SEC;
 
+	key = k_spin_lock(&rt_clock_base_lock);
 	rt_clock_base = base;
+	k_spin_unlock(&rt_clock_base_lock, key);
 
 	return 0;
 }
