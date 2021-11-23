@@ -246,7 +246,8 @@ static const char *phy2str(uint8_t phy)
 static void iso_recv(struct bt_iso_chan *chan,
 		     const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
-	printk("Incoming data channel %p len %u\n", chan, buf->len);
+	printk("Incoming data channel %p len %u, flags %u, sn %u, ts %u\n",
+		chan, buf->len, info->flags, info->sn, info->ts);
 }
 
 static bool volatile is_iso_connected;
