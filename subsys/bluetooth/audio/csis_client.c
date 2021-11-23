@@ -476,7 +476,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 				busy = false;
 				if (csis_client_cbs != NULL &&
 				    csis_client_cbs->discover != NULL) {
-					csis_client_cbs->discover(conn, err,
+					csis_client_cbs->discover(client->set_member, err,
 								  client->inst_count);
 				}
 			}
@@ -485,7 +485,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			cur_inst = NULL;
 			busy = false;
 			if (csis_client_cbs != NULL && csis_client_cbs->discover != NULL) {
-				csis_client_cbs->discover(conn, 0,
+				csis_client_cbs->discover(client->set_member, 0,
 							  client->inst_count);
 			}
 		}
@@ -572,7 +572,8 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				cur_inst = NULL;
 				if (csis_client_cbs != NULL &&
 				    csis_client_cbs->discover != 0) {
-					csis_client_cbs->discover(conn, err,
+					csis_client_cbs->discover(client->set_member,
+								  err,
 								  client->inst_count);
 				}
 			}
@@ -581,7 +582,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 			cur_inst = NULL;
 			if (csis_client_cbs != NULL &&
 			    csis_client_cbs->discover != NULL) {
-				csis_client_cbs->discover(conn, 0, 0);
+				csis_client_cbs->discover(client->set_member, 0, 0);
 			}
 		}
 
@@ -1167,6 +1168,9 @@ int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 
 	err = bt_gatt_discover(member->conn, &discover_params);
 	if (err == 0) {
+		for (size_t i = 0; i < ARRAY_SIZE(member->sets); i++) {
+			member->sets[i].csis = &client->csis_insts[i];
+		}
 		busy = true;
 	}
 
