@@ -595,9 +595,23 @@ config BT_CTLR_ADV_ISO_SET
 	int "LE Isochronous Channel advertising sets"
 	depends on BT_CTLR_ADV_ISO
 	range 1 32
-	default 1
 	help
 	  Maximum supported advertising sets.
+
+config BT_CTLR_ADV_ISO_STREAM_MAX
+	int "Maximum supported Broadcast ISO Streams per Broadcast ISO group"
+	depends on BT_CTLR_ADV_ISO
+	range 1 31
+	help
+	  Maximum supported Broadcast ISO Streams per Broadcast ISO group.
+
+config BT_CTLR_ADV_ISO_STREAM_COUNT
+	int "Maximum Broadcast ISO Streams"
+	depends on BT_CTLR_ADV_ISO
+	range BT_CTLR_ADV_ISO_STREAM_MAX 64
+	help
+	  Maximum Broadcast ISO Streams supported in the the Controller across
+	  all Broadcast ISO groups.
 
 config BT_CTLR_ADV_ISO_PDU_LEN_MAX
 	int "Maximum Broadcast Isochronous Channel PDU Length"
