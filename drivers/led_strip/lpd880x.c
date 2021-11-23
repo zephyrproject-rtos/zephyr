@@ -32,8 +32,7 @@ LOG_MODULE_REGISTER(lpd880x);
  */
 #define LPD880X_SPI_OPERATION (SPI_OP_MODE_MASTER | \
 			       SPI_TRANSFER_MSB |   \
-			       SPI_WORD_SET(8) |    \
-			       SPI_LINES_SINGLE)
+			       SPI_WORD_SET(8))
 
 struct lpd880x_config {
 	struct spi_dt_spec bus;

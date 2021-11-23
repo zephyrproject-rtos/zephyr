@@ -46,6 +46,11 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
+config SYS_HEAP_RUNTIME_STATS
+	bool "System heap runtime statistics"
+	help
+	  Gather system heap runtime statistics.
+
 choice
 	prompt "Supported heap sizes"
 	depends on !64BIT

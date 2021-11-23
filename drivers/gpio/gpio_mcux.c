@@ -98,12 +98,12 @@ static int gpio_mcux_configure(const struct device *dev,
 
 #if defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH
 	/* Determine the drive strength */
-	switch (flags & (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK)) {
-	case GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH:
+	switch (flags & GPIO_DS_MASK) {
+	case GPIO_DS_DFLT:
 		/* Default is low drive strength */
 		mask |= PORT_PCR_DSE_MASK;
 		break;
-	case GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH:
+	case GPIO_DS_ALT:
 		/* Alternate is high drive strength */
 		pcr |= PORT_PCR_DSE_MASK;
 		break;
@@ -304,7 +304,7 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 			    &gpio_mcux_port## n ##_data,		\
 			    &gpio_mcux_port## n##_config,		\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_mcux_driver_api);			\
 									\
 	static int gpio_mcux_port## n ##_init(const struct device *dev)	\

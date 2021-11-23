@@ -9,6 +9,7 @@
 #include <kernel.h>
 #include <logging/log_backend.h>
 #include <logging/log_msg.h>
+#include <logging/log_internal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -189,7 +190,27 @@ uint32_t log_get_strdup_pool_utilization(void);
  */
 uint32_t log_get_strdup_longest_string(void);
 
-#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MINIMAL)
+/**
+ * @brief Check if there is pending data to be processed by the logging subsystem.
+ *
+ * Function can be used to determine if all logs have been flushed. Function
+ * returns false when deferred mode is not enabled.
+ *
+ * @retval true There is pending data.
+ * @retval false No pending data to process.
+ */
+static inline bool log_data_pending(void)
+{
+	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
+		return z_log_msg2_pending();
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		return log_msg_mem_get_used() > 0;
+	}
+
+	return false;
+}
+
+#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_INIT() log_init()
 #define LOG_PANIC() log_panic()

@@ -59,6 +59,11 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	/* Slave mode has not been implemented */
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
 		LOG_ERR("Slave mode is not supported");
@@ -76,7 +81,8 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Multiple lines are not supported");
 		return -EINVAL;
 	}
@@ -288,9 +294,11 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #endif
 
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
-	DEVICE_DT_INST_DEFINE(n,						    \
+	PM_DEVICE_DT_INST_DEFINE(n, spi_cc13xx_cc26xx_pm_action);	    \
+									    \
+	DEVICE_DT_INST_DEFINE(n,					    \
 		spi_cc13xx_cc26xx_init_##n,				    \
-		spi_cc13xx_cc26xx_pm_action,				    \
+		PM_DEVICE_DT_INST_REF(n),				    \
 		&spi_cc13xx_cc26xx_data_##n, &spi_cc13xx_cc26xx_config_##n, \
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			    \
 		&spi_cc13xx_cc26xx_driver_api)

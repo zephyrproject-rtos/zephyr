@@ -10,6 +10,7 @@
 #include <toolchain.h>
 
 #include <sys/util.h>
+#include <sys/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -153,10 +154,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif
 
 	radio_aa_set(lll->access_addr);
-	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
-			    (((uint32_t)lll->crc_init[2] << 16) |
-			     ((uint32_t)lll->crc_init[1] << 8) |
-			     ((uint32_t)lll->crc_init[0])));
+	radio_crc_configure(PDU_CRC_POLYNOMIAL,
+					sys_get_le24(lll->crc_init));
 	lll_chan_set(data_chan_use);
 
 	/* setup the radio tx packet buffer */
@@ -185,22 +184,22 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_tx_ready_delay_get(lll->phy_tx,
 							  lll->phy_flags) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_tx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
-#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	ARG_UNUSED(remainder_us);
-#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)

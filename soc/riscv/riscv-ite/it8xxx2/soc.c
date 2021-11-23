@@ -10,6 +10,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
+#include "soc_espi.h"
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
@@ -105,18 +106,16 @@ static void chip_configure_pll(const struct pll_config_t *pll)
 		((IT8XXX2_ECPM_SCDCR3 & 0xf) != pll->div_ec)) {
 #ifdef CONFIG_ESPI
 		/*
-		 * TODO: implement me
 		 * We have to disable eSPI pad before changing
 		 * PLL sequence or sequence will fail if CS# pin is low.
 		 */
+		espi_it8xxx2_enable_pad_ctrl(ESPI_IT8XXX2_SOC_DEV, false);
 #endif
 		/* Run change PLL sequence */
 		chip_run_pll_sequence(pll);
 #ifdef CONFIG_ESPI
-		/*
-		 * TODO: implement me
-		 * Enable eSPI pad after changing PLL sequence
-		 */
+		/* Enable eSPI pad after changing PLL sequence */
+		espi_it8xxx2_enable_pad_ctrl(ESPI_IT8XXX2_SOC_DEV, true);
 #endif
 	}
 }

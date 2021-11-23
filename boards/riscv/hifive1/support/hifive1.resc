@@ -1,0 +1,20 @@
+:description: This script is prepared to run Zephyr on SiFive-FE310 board.
+:name: SiFive-FE310
+
+$name?="SiFive-FE310"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription @platforms/cpus/sifive-fe310.repl
+
+sysbus Tag <0x10008000 4> "PRCI_HFROSCCFG" 0xFFFFFFFF
+sysbus Tag <0x10008008 4> "PRCI_PLLCFG" 0xFFFFFFFF
+cpu PerformanceInMips 320
+
+showAnalyzer uart0
+
+macro reset
+"""
+    sysbus LoadELF $bin
+"""
+runMacro $reset

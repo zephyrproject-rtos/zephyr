@@ -153,6 +153,11 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)arm_arch_timer_count();
 }
 
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return arm_arch_timer_count();
+}
+
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
 void arch_busy_wait(uint32_t usec_to_wait)
 {

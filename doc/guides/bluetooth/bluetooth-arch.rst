@@ -408,8 +408,11 @@ Bluetooth Low Energy Controller
 Hardware Requirements
 =====================
 
-The Bluetooth Low Energy Controller implementation requires the following hardware
-peripherals.
+Nordic Semiconductor
+--------------------
+
+The Nordic Semiconductor Bluetooth Low Energy Controller implementation
+requires the following hardware peripherals.
 
 #. Clock
 

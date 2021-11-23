@@ -31,10 +31,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   set(STEERING_FILE_ARG)
   set(STEERING_C_ARG)
 
-  if("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_PREBUILT")
-    set(PASS 1)
-  elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL")
-    set(PASS 2)
+  if("LINKER_ZEPHYR_FINAL" IN_LIST "${linker_pass_define}")
     set(STEERING_FILE ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.steer)
     set(STEERING_C ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.c)
     set(STEERING_FILE_ARG "-DSTEERING_FILE=${STEERING_FILE}")
@@ -46,7 +43,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
            ${STEERING_FILE}
            ${STEERING_C}
     COMMAND ${CMAKE_COMMAND}
-      -DPASS=${PASS}
+      -DPASS="${linker_pass_define}"
       -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
       -DGROUPS="$<TARGET_PROPERTY:linker,GROUPS>"
       -DSECTIONS="$<TARGET_PROPERTY:linker,SECTIONS>"
@@ -58,7 +55,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       -P ${ZEPHYR_BASE}/cmake/linker/armlink/scatter_script.cmake
   )
 
-  if("${PASS}" EQUAL 2)
+  if("LINKER_ZEPHYR_FINAL" IN_LIST "${linker_pass_define}")
     add_library(armlink_steering OBJECT ${STEERING_C})
     target_link_libraries(armlink_steering PRIVATE zephyr_interface)
   endif()

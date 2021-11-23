@@ -28,7 +28,7 @@ API Reference
    networking/index.rst
    peripherals/index.rst
    pinctrl/index.rst
-   power_management/index.rst
+   pm/index.rst
    random/index.rst
    resource_management/index.rst
    shell/index.rst

@@ -779,26 +779,34 @@ static int lsm6dsl_init_chip(const struct device *dev)
 
 static int lsm6dsl_init(const struct device *dev)
 {
+	int ret;
 	const struct lsm6dsl_config * const config = dev->config;
 
-	config->bus_init(dev);
+	ret = config->bus_init(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize sensor bus");
+		return ret;
+	}
 
-	if (lsm6dsl_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
-		return -EIO;
+	ret = lsm6dsl_init_chip(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize chip");
+		return ret;
 	}
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
-	if (lsm6dsl_init_interrupt(dev) < 0) {
+	ret = lsm6dsl_init_interrupt(dev);
+	if (ret < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
-		return -EIO;
+		return ret;
 	}
 #endif
 
 #ifdef CONFIG_LSM6DSL_SENSORHUB
-	if (lsm6dsl_shub_init_external_chip(dev) < 0) {
-		LOG_DBG("failed to initialize external chip");
-		return -EIO;
+	ret = lsm6dsl_shub_init_external_chip(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize external chip");
+		return ret;
 	}
 #endif
 

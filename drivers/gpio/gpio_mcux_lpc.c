@@ -395,7 +395,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n, NULL,				\
 		    &gpio_mcux_lpc_data_##n,						\
 		    &gpio_mcux_lpc_config_##n, POST_KERNEL,				\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,				\
+		    CONFIG_GPIO_INIT_PRIORITY,						\
 		    &gpio_mcux_lpc_driver_api);						\
 											\
 	static int lpc_gpio_init_##n(const struct device *dev)				\

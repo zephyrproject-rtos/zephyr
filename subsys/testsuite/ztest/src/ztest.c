@@ -11,6 +11,7 @@
 #include <sys/libc-hooks.h>
 #endif
 #include <sys/reboot.h>
+#include <logging/log_ctrl.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
@@ -368,14 +369,21 @@ static int run_test(struct unit_test *test)
 		}
 		k_thread_start(&ztest_thread);
 		k_thread_join(&ztest_thread, K_FOREVER);
+
 	} else {
 		test_result = 1;
 		run_test_functions(test);
 	}
 
+
 	phase = TEST_PHASE_TEARDOWN;
 	test->teardown();
 	phase = TEST_PHASE_FRAMEWORK;
+
+	/* Flush all logs in case deferred mode is used. */
+	while (IS_ENABLED(CONFIG_TEST_LOGGING_FLUSH_AFTER_TEST) && log_data_pending()) {
+		k_msleep(100);
+	}
 
 	if (test_result == -1) {
 		ret = TC_FAIL;

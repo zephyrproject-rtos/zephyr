@@ -502,9 +502,11 @@ static int uart_npcx_pm_action(const struct device *dev,
 		.baud_rate = DT_INST_PROP(inst, current_speed)                 \
 	};                                                                     \
 									       \
+	PM_DEVICE_DT_INST_DEFINE(inst, uart_npcx_pm_action);		       \
+									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
 			&uart_npcx_init,                                       \
-			uart_npcx_pm_action,				       \
+			PM_DEVICE_DT_INST_REF(inst),			       \
 			&uart_npcx_data_##inst, &uart_npcx_cfg_##inst,         \
 			PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	       \
 			&uart_npcx_driver_api);                                \

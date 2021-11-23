@@ -16,18 +16,61 @@ config ITE_IT8XXX2_INTC
 config RISCV_GP
 	default y
 
+config ITE_IT8XXX2_TIMER
+	default y
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 32768
 
+config UART_NS16550
+	default y
+	depends on SERIAL
+
 config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	default y
+	depends on UART_NS16550
+
+config UART_ITE_IT8XXX2
 	default y
 	depends on UART_NS16550
 
 config RISCV_HAS_CPU_IDLE
 	default y
+
+config PINMUX_ITE_IT8XXX2
+	default y
+	depends on PINMUX
+
+config WDT_ITE_IT8XXX2
+	default y
+	depends on WATCHDOG
+
+config KSCAN_ITE_IT8XXX2
+	default y
+	depends on KSCAN
+
+config GPIO_ITE_IT8XXX2
+	default y
+	depends on GPIO
+
+config I2C_ITE_IT8XXX2
+	default y
+	depends on I2C
+
+config ADC_ITE_IT8XXX2
+	default y
+	depends on ADC
+
+config SOC_FLASH_ITE_IT8XXX2
+	default y
+	depends on FLASH
+
+config PWM_ITE_IT8XXX2
+	default y
+	depends on PWM
 
 if ITE_IT8XXX2_INTC
 config NUM_IRQS

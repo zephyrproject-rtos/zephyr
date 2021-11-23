@@ -44,7 +44,7 @@ static void work_handler(struct k_work *work)
 
 	while (true) {
 		if (ctx.write) {
-			LOG_DBG("ctx.m: %u", ctx.m);
+			LOG_DBG("ctx.m: %lu", atomic_get(&ctx.m));
 			if (atomic_get(&ctx.m)
 				< CONFIG_NET_SOCKETPAIR_BUFFER_SIZE) {
 				continue;
@@ -106,7 +106,7 @@ void test_socketpair_write_block(void)
 				res);
 
 			atomic_inc(&ctx.m);
-			LOG_DBG("have written %u bytes", ctx.m);
+			LOG_DBG("have written %lu bytes", atomic_get(&ctx.m));
 		}
 
 		/* try to write one more byte */

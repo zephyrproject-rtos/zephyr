@@ -426,13 +426,12 @@ static int loapic_pm_action(const struct device *dev,
 
 	return ret;
 }
+#endif /* CONFIG_PM_DEVICE */
 
-SYS_DEVICE_DEFINE("loapic", loapic_init, loapic_pm_action, PRE_KERNEL_1,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#else
-SYS_INIT(loapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif   /* CONFIG_PM_DEVICE */
+PM_DEVICE_DEFINE(loapic, loapic_pm_action);
 
+DEVICE_DEFINE(loapic, "loapic", loapic_init, PM_DEVICE_REF(loapic), NULL, NULL,
+	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
 extern void z_loapic_spurious_handler(void);

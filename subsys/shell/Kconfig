@@ -15,7 +15,7 @@ if SHELL
 module = SHELL
 module-str = Shell
 source "subsys/logging/Kconfig.template.log_config"
-source "subsys/shell/Kconfig.backends"
+source "subsys/shell/backends/Kconfig.backends"
 
 config SHELL_MINIMAL
 	bool "Default config to reduce flash and memory requirements"
@@ -224,7 +224,7 @@ config SHELL_CMD_ROOT
 
 config SHELL_LOG_BACKEND
 	bool "Enable shell log backend"
-	depends on LOG && !LOG_MINIMAL
+	depends on LOG && !LOG_MODE_MINIMAL
 	default y if LOG
 	help
 	  When enabled, backend will use the shell for logging.

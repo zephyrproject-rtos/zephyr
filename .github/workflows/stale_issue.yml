@@ -19,5 +19,5 @@ jobs:
         stale-issue-label: 'Stale'
         stale-pr-label: 'Stale'
         exempt-pr-labels: 'Blocked,In progress'
-        exempt-issue-labels: 'In progress,Enhancement,Feature,Feature Request,RFC,Meta'
+        exempt-issue-labels: 'In progress,Enhancement,Feature,Feature Request,RFC,Meta,Process'
         operations-per-run: 400

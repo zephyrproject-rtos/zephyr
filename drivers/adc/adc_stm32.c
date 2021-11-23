@@ -17,6 +17,9 @@
 #include <init.h>
 #include <soc.h>
 #include <stm32_ll_adc.h>
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#include <stm32_ll_pwr.h>
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -91,6 +94,9 @@ static const uint32_t table_resolution[] = {
 	RES(8),
 	RES(10),
 	RES(12),
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	RES(14),
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #else
 	RES(8),
 	RES(10),
@@ -212,6 +218,18 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(387, S_5),
 	SMP_TIME(810, S_5),
 };
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+static const uint16_t acq_time_tbl[8] = {5, 6, 12, 20, 36, 68, 391, 814};
+static const uint32_t table_samp_time[] = {
+	SMP_TIME(5,),
+	SMP_TIME(6,   S),
+	SMP_TIME(12,  S),
+	SMP_TIME(20,  S),
+	SMP_TIME(36,  S),
+	SMP_TIME(68,  S),
+	SMP_TIME(391, S_5),
+	SMP_TIME(814, S),
+};
 #endif
 
 /* Bugfix for STM32G4 HAL */
@@ -281,6 +299,7 @@ static void adc_stm32_start_conversion(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_REG_StartConversion(adc);
 #else
@@ -311,6 +330,8 @@ static void adc_stm32_calib(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_StartCalibration(adc);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, LL_ADC_SINGLE_ENDED);
 #endif
@@ -325,6 +346,7 @@ static void adc_stm32_calib(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 
@@ -367,6 +389,14 @@ static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shi
 #endif /* ADC_VER_V5_V90*/
 	MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC_CFGR2_OVSR),
 		(shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc == ADC1) {
+		/* the LL function expects a value from 1 to 1024 */
+		LL_ADC_ConfigOverSamplingRatioShift(adc, (1 << ratio), shift);
+	} else {
+		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
+		LL_ADC_ConfigOverSamplingRatioShift(adc, stm32_adc_ratio_table[ratio], shift);
+	}
 #else /* CONFIG_SOC_SERIES_STM32H7X */
 	LL_ADC_ConfigOverSamplingRatioShift(adc, stm32_adc_ratio_table[ratio], shift);
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
@@ -401,6 +431,11 @@ static int start_read(const struct device *dev,
 	case 12:
 		resolution = table_resolution[3];
 		break;
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	case 14:
+		resolution = table_resolution[4];
+		break;
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #else
 	case 8:
 		resolution = table_resolution[0];
@@ -496,6 +531,7 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 
@@ -527,8 +563,8 @@ static int start_read(const struct device *dev,
 	case 8:
 		adc_stm32_oversampling(adc, 8, LL_ADC_OVS_SHIFT_RIGHT_8);
 		break;
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/* stm32 H7 ADC1 & 2 have oversampling ratio from 1..1024 */
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+	/* stm32 U5, H7 ADC1 & 2 have oversampling ratio from 1..1024 */
 	case 9:
 		adc_stm32_oversampling(adc, 9, LL_ADC_OVS_SHIFT_RIGHT_9);
 		break;
@@ -573,6 +609,7 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_EnableIT_EOC(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
@@ -808,14 +845,19 @@ static int adc_stm32_init(const struct device *dev)
 		LOG_ERR("ADC pinctrl setup failed (%d)", err);
 		return err;
 	}
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	/* Enable the independent analog supply */
+	LL_PWR_EnableVDDA();
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X)
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
-	 * L4, WB, G4 and H7 series STM32 needs to be awaken from deep sleep
+	 * L4, WB, G4, H7 and U5 series STM32 needs to be awaken from deep sleep
 	 * mode, and restore its calibration parameters if there are some
 	 * previously stored calibration parameters.
 	 */
@@ -833,6 +875,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_EnableInternalRegulator(adc);
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
@@ -851,7 +894,8 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			      LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(CONFIG_SOC_SERIES_STM32L1X)
+#elif defined(CONFIG_SOC_SERIES_STM32L1X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			LL_ADC_CLOCK_ASYNC_DIV4);
 #endif
@@ -877,6 +921,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	if (LL_ADC_IsActiveFlag_ADRDY(adc)) {
 		LL_ADC_ClearFlag_ADRDY(adc);
@@ -899,6 +944,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	/*
 	 * ADC modules on these series have to wait for some cycles to be

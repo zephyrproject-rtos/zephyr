@@ -21,7 +21,6 @@
 struct spi_esp32_config {
 	spi_dev_t *spi;
 	const struct device *clock_dev;
-	int frequency;
 	int duty_cycle;
 	int input_delay_ns;
 	int irq_source;

@@ -25,7 +25,18 @@ static bool is_shell_initialized;
 
 static int ot_console_cb(void *context, const char *format, va_list arg)
 {
+	char prompt_check[4];
+
 	ARG_UNUSED(context);
+
+	/* A temporary workaround to avoid printing OT prompt in Zehyr shell.
+	 * Eventually, OT should add an option which would allow to disable
+	 * prompt on the CLI output.
+	 */
+	vsnprintf(prompt_check, sizeof(prompt_check), format, arg);
+	if (strcmp(prompt_check, "> ") == 0) {
+		return 0;
+	}
 
 	if (shell_p == NULL) {
 		return 0;

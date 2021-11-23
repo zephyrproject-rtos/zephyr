@@ -317,7 +317,7 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 			    &gpio_litex_data_##n, \
 			    &gpio_litex_cfg_##n, \
 			    POST_KERNEL, \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			    CONFIG_GPIO_INIT_PRIORITY, \
 			    &gpio_litex_driver_api \
 			   ); \
 \

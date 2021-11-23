@@ -56,7 +56,7 @@ void rf2xx_iface_phy_tx_start(const struct device *dev)
 uint8_t rf2xx_iface_reg_read(const struct device *dev,
 			     uint8_t addr)
 {
-	const struct rf2xx_context *ctx = dev->data;
+	const struct rf2xx_config *conf = dev->config;
 	uint8_t status;
 	uint8_t regval = 0;
 
@@ -85,7 +85,7 @@ uint8_t rf2xx_iface_reg_read(const struct device *dev,
 		.count = 2
 	};
 
-	if (spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx) != 0) {
+	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
 		LOG_ERR("Failed to exec rf2xx_reg_read CMD at address %d",
 			addr);
 	}
@@ -100,7 +100,7 @@ void rf2xx_iface_reg_write(const struct device *dev,
 			   uint8_t addr,
 			   uint8_t data)
 {
-	const struct rf2xx_context *ctx = dev->data;
+	const struct rf2xx_config *conf = dev->config;
 	uint8_t status;
 
 	addr |= RF2XX_RF_CMD_REG_W;
@@ -128,7 +128,7 @@ void rf2xx_iface_reg_write(const struct device *dev,
 		.count = 1
 	};
 
-	if (spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx) != 0) {
+	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
 		LOG_ERR("Failed to exec rf2xx_reg_write at address %d",
 			addr);
 	}
@@ -171,7 +171,7 @@ void rf2xx_iface_frame_read(const struct device *dev,
 			    uint8_t *data,
 			    uint8_t length)
 {
-	const struct rf2xx_context *ctx = dev->data;
+	const struct rf2xx_config *conf = dev->config;
 	uint8_t cmd = RF2XX_RF_CMD_FRAME_R;
 
 	const struct spi_buf tx_buf = {
@@ -191,7 +191,7 @@ void rf2xx_iface_frame_read(const struct device *dev,
 		.count = 1
 	};
 
-	if (spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx) != 0) {
+	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
 		LOG_ERR("Failed to exec rf2xx_frame_read PHR");
 	}
 
@@ -203,7 +203,7 @@ void rf2xx_iface_frame_write(const struct device *dev,
 			     uint8_t *data,
 			     uint8_t length)
 {
-	const struct rf2xx_context *ctx = dev->data;
+	const struct rf2xx_config *conf = dev->config;
 	uint8_t cmd = RF2XX_RF_CMD_FRAME_W;
 	uint8_t status;
 	uint8_t phr;
@@ -242,7 +242,7 @@ void rf2xx_iface_frame_write(const struct device *dev,
 		.count = 1
 	};
 
-	if (spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx) != 0) {
+	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
 		LOG_ERR("Failed to exec rf2xx_frame_write");
 	}
 
@@ -255,7 +255,7 @@ void rf2xx_iface_sram_read(const struct device *dev,
 			    uint8_t *data,
 			    uint8_t length)
 {
-	const struct rf2xx_context *ctx = dev->data;
+	const struct rf2xx_config *conf = dev->config;
 	uint8_t cmd = RF2XX_RF_CMD_SRAM_R;
 	uint8_t status[2];
 
@@ -288,7 +288,7 @@ void rf2xx_iface_sram_read(const struct device *dev,
 		.count = 2
 	};
 
-	if (spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx) != 0) {
+	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
 		LOG_ERR("Failed to exec rf2xx_sram_read");
 	}
 

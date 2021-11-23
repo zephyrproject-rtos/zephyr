@@ -60,13 +60,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
 			interrupts = <30 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_4";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_4";
 				#pwm-cells = <3>;
 			};
@@ -78,13 +78,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000008>;
 			interrupts = <50 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_5";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_5";
 				#pwm-cells = <3>;
 			};
@@ -96,13 +96,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000040>;
 			interrupts = <43 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_12";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_12";
 				#pwm-cells = <3>;
 			};
@@ -114,13 +114,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000080>;
 			interrupts = <44 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_13";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_13";
 				#pwm-cells = <3>;
 			};
@@ -132,13 +132,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
 			interrupts = <45 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_14";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_14";
 				#pwm-cells = <3>;
 			};
@@ -150,13 +150,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000200>;
 			interrupts = <27 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_18";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_18";
 				#pwm-cells = <3>;
 			};
@@ -168,13 +168,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00080000>;
 			interrupts = <78 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_19";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_19";
 				#pwm-cells = <3>;
 			};

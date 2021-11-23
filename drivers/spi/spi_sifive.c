@@ -32,6 +32,10 @@ int spi_config(const struct device *dev, uint32_t frequency,
 	uint32_t div;
 	uint32_t fmt_len;
 
+	if (operation & SPI_HALF_DUPLEX) {
+		return -ENOTSUP;
+	}
+
 	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_MASTER) {
 		return -ENOTSUP;
 	}
@@ -76,7 +80,8 @@ int spi_config(const struct device *dev, uint32_t frequency,
 	fmt_len &= SF_FMT_LEN_MASK;
 	sys_set_mask(SPI_REG(dev, REG_FMT), SF_FMT_LEN_MASK, fmt_len);
 
-	if ((operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		return -ENOTSUP;
 	}
 	/* Set single line operation */

@@ -115,6 +115,14 @@
 			<5 &adc 7>;    /* A5 = P0.31 = AIN7 */
 	};
 
+	nrf_radio_fem: fem {
+		compatible = "generic-fem-two-ctrl-pins";
+		ctx-gpios = <&gpio1 5 0>;
+		ctx-settle-time-us = <1>;
+		crx-gpios = <&gpio1 6 0>;
+		crx-settle-time-us = <1>;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
@@ -128,6 +136,10 @@
 		sw3 = &button3;
 		bootloader-led0 = &led0;
 	};
+};
+
+&radio {
+	fem = <&nrf_radio_fem>;
 };
 
 &adc {

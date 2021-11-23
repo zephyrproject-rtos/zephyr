@@ -12,6 +12,31 @@ description: |
 
     This binding is not relevant to the nRF91x baseband radio.
 
+    Front-End Module (FEM) support
+    ------------------------------
+
+    External front-end modules are range extenders used for boosting
+    the link robustness and link budget of wireless SoCs. If your
+    system includes an external FEM, set it up in the devicetree using
+    this binding's 'fem' property, like this example:
+
+      &radio {
+              fem = <&nrf_radio_fem>;
+      };
+
+      nrf_radio_fem: my-fem {
+              compatible = "...";
+              ....
+      };
+
+    Currently supported "compatible" properties for the FEM node are:
+
+      - generic-fem-two-ctrl-pins
+      - nordic,nrf21540-fem
+
+    Refer to the bindings for these compatibles for more information
+    about how to configure the FEM.
+
     Direction Finding Extension
     ---------------------------
 
@@ -91,6 +116,16 @@ properties:
 
     interrupts:
       required: true
+
+    fem:
+      type: phandle
+      description: |
+        Phandle linking the RADIO node to its external front-end module.
+
+    coex:
+      type: phandle
+      description: |
+        Phandle linking the RADIO node to the external radio coexistence arbitrator.
 
     dfe-supported:
       type: boolean

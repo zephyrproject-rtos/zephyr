@@ -241,3 +241,19 @@ unlock:
 
 	return ret;
 }
+
+bool pm_device_runtime_is_enabled(const struct device *dev)
+{
+	bool ret = false;
+	struct pm_device *pm = dev->pm;
+
+	if (!k_is_pre_kernel()) {
+		(void)k_mutex_lock(&pm->lock, K_FOREVER);
+		ret = pm->enable;
+		(void)k_mutex_unlock(&pm->lock);
+	} else {
+		ret = pm->enable;
+	}
+
+	return ret;
+}

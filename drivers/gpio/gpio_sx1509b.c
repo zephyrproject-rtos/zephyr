@@ -313,7 +313,7 @@ static int sx1509b_config(const struct device *dev,
 	 * Until something more general is available reject any
 	 * attempt to set a non-default drive strength.
 	 */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
+	if ((flags & GPIO_DS_ALT) != 0) {
 		return -ENOTSUP;
 	}
 
@@ -786,5 +786,5 @@ static struct sx1509b_drv_data sx1509b_drvdata = {
 
 DEVICE_DT_INST_DEFINE(0, sx1509b_init, NULL,
 		 &sx1509b_drvdata, &sx1509b_cfg,
-		 POST_KERNEL, CONFIG_GPIO_SX1509B_INIT_PRIORITY,
+		 POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 		 &api_table);

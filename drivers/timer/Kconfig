@@ -7,6 +7,12 @@
 
 menu "Timer Drivers"
 
+config TIMER_HAS_64BIT_CYCLE_COUNTER
+	bool
+	help
+	  When this option is true, the k_cycle_get_64() call is
+	  available to provide values from a 64-bit cycle counter.
+
 menuconfig APIC_TIMER
 	bool "New local APIC timer"
 	depends on X86
@@ -34,6 +40,7 @@ config APIC_TIMER_IRQ
 
 config APIC_TIMER_TSC
 	bool "Use invariant TSC for sys_clock_cycle_get_32()"
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  If your CPU supports invariant TSC, and you know the ratio of the
 	  TSC frequency to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC (the local APIC
@@ -84,6 +91,7 @@ config HPET_TIMER
 	select LOAPIC if X86
 	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This option selects High Precision Event Timer (HPET) as a
 	  system timer.
@@ -110,6 +118,7 @@ config ARM_ARCH_TIMER
 	depends on GIC
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This module implements a kernel device driver for the ARM architected
 	  timer which provides per-cpu timers attached to a GIC to deliver its
@@ -220,6 +229,7 @@ config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This module implements a kernel device driver for the generic RISCV machine
 	  timer driver. It provides the standard "system clock driver" interfaces.
@@ -238,6 +248,7 @@ config LITEX_TIMER
 	bool "LiteX Timer"
 	default y
 	depends on SOC_RISCV32_LITEX_VEXRISCV
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This module implements a kernel device driver for LiteX Timer.
 
@@ -246,6 +257,7 @@ config NATIVE_POSIX_TIMER
 	default y
 	depends on BOARD_NATIVE_POSIX
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This module implements a kernel device driver for the native_posix HW timer
 	  model
@@ -264,6 +276,7 @@ config ESP32C3_SYS_TIMER
 	depends on SOC_ESP32C3
 	default y
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This option enables the system timer driver for the Espressif ESP32C3
 	  and provides the standard "system clock driver" interface.
@@ -303,6 +316,7 @@ config CC13X2_CC26X2_RTC_TIMER
 	bool "TI SimpleLink CC13x2/CC26x2 RTC timer"
 	depends on SOC_SERIES_CC13X2_CC26X2
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This module implements a kernel device driver for the TI SimpleLink
 	  CC13X2_CC26X2 series Real Time Counter and provides the standard
@@ -339,6 +353,7 @@ config CAVS_TIMER
 	bool "CAVS DSP Wall Clock Timer on Intel SoC"
 	depends on CAVS_ICTL
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  The DSP wall clock timer is a timer driven directly by
 	  external oscillator and is external to the CPU core(s).
@@ -359,6 +374,7 @@ config NPCX_ITIM_TIMER
 	default y
 	depends on SOC_FAMILY_NPCX
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This module implements a kernel device driver for the Nuvoton NPCX
 	  series internal 64/32-bit timers and provides the standard "system
@@ -413,6 +429,7 @@ config MCUX_OS_TIMER
 	depends on HAS_MCUX_OS_TIMER
 	default $(dt_compat_enabled,$(DT_COMPAT_NXP_OS_TIMER))
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.
