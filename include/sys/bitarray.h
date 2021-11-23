@@ -33,6 +33,27 @@ struct sys_bitarray {
 typedef struct sys_bitarray sys_bitarray_t;
 
 /**
+ * @def _SYS_BITARRAY_DEFINE
+ *
+ * @brief Create a bitarray object.
+ *
+ * @param name Name of the bitarray object.
+ * @param total_bits Total number of bits in this bitarray object.
+ * @param sba_mod Modifier to the bitarray variables.
+ */
+#define _SYS_BITARRAY_DEFINE(name, total_bits, sba_mod)			\
+	sba_mod uint32_t _sys_bitarray_bundles_##name			\
+		[(((total_bits + 8 - 1) / 8) + sizeof(uint32_t) - 1)	\
+		 / sizeof(uint32_t)] = {0U};				\
+	sba_mod sys_bitarray_t name = {					\
+		.num_bits = total_bits,					\
+		.num_bundles = (((total_bits + 8 - 1) / 8)		\
+				+ sizeof(uint32_t) - 1)			\
+			       / sizeof(uint32_t),			\
+		.bundles = _sys_bitarray_bundles_##name,		\
+	}
+
+/**
  * @def SYS_BITARRAY_DEFINE
  *
  * @brief Create a bitarray object.
@@ -41,16 +62,18 @@ typedef struct sys_bitarray sys_bitarray_t;
  * @param total_bits Total number of bits in this bitarray object.
  */
 #define SYS_BITARRAY_DEFINE(name, total_bits)				\
-	uint32_t _sys_bitarray_bundles_##name				\
-		[(((total_bits + 8 - 1) / 8) + sizeof(uint32_t) - 1)	\
-		 / sizeof(uint32_t)] = {0U};				\
-	sys_bitarray_t name = {						\
-		.num_bits = total_bits,					\
-		.num_bundles = (((total_bits + 8 - 1) / 8)		\
-				+ sizeof(uint32_t) - 1)			\
-			       / sizeof(uint32_t),			\
-		.bundles = _sys_bitarray_bundles_##name,		\
-	}
+	_SYS_BITARRAY_DEFINE(name, total_bits,)
+
+/**
+ * @def SYS_BITARRAY_DEFINE_STATIC
+ *
+ * @brief Create a static bitarray object.
+ *
+ * @param name Name of the bitarray object.
+ * @param total_bits Total number of bits in this bitarray object.
+ */
+#define SYS_BITARRAY_DEFINE_STATIC(name, total_bits)			\
+	_SYS_BITARRAY_DEFINE(name, total_bits, static)
 
 /**
  * Set a bit in a bit array
