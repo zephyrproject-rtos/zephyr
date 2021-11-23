@@ -38,23 +38,30 @@
 #include "ll_sw/lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "ll_sw/lll_scan.h"
-#include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_conn.h"
 #include "ll_sw/lll_conn_iso.h"
+#include "lll/lll_df_types.h"
+
+#include "ll_sw/isoal.h"
 
 #include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
 #include "ll_sw/ull_sync_types.h"
+#include "ll_sw/ull_conn_types.h"
+#include "ll_sw/ull_iso_types.h"
+#include "ll_sw/ull_conn_iso_types.h"
+#include "ll_sw/ull_df_types.h"
+
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_tx_queue.h"
 #endif
+
+#include "ll_sw/ull_adv_internal.h"
 #include "ll_sw/ull_sync_internal.h"
-#include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_conn_internal.h"
-#include "ll_sw/ull_conn_iso_types.h"
-#include "ll_sw/ull_df_types.h"
+#include "ll_sw/ull_sync_iso_internal.h"
 #include "ll_sw/ull_df_internal.h"
 
 #include "ll.h"
@@ -6425,10 +6432,16 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	sep->irc = lll->irc;
 	sep->max_pdu = sys_cpu_to_le16(lll->max_pdu);
 	sep->iso_interval = sys_cpu_to_le16(lll->iso_interval);
-	sep->num_bis = lll->num_bis;
+	sep->num_bis = lll->stream_count;
 
-	/* FIXME: Connection handle list of all BISes in the BIG */
-	sep->handle[0] = sys_cpu_to_le16(0);
+	/* Connection handle list of all BISes synchronized in the BIG */
+	for (uint8_t i = 0U; i < lll->stream_count; i++) {
+		uint16_t handle;
+
+		handle = BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE +
+			 lll->stream_handle[i];
+		sep->handle[i] = sys_cpu_to_le16(handle);
+	}
 }
 
 static void le_sync_iso_pdu(struct pdu_data *pdu,
