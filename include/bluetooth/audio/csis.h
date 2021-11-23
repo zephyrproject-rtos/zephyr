@@ -238,18 +238,6 @@ typedef void (*bt_csis_client_discover_sets_cb)(struct bt_conn *conn,
  */
 int bt_csis_client_discover_sets(struct bt_conn *conn);
 
-typedef void (*bt_csis_client_discover_members_cb)(int err, uint8_t set_size,
-						   uint8_t members_found);
-
-/**
- * @brief Start scanning for all devices that are part of a set.
- *
- * @param set The set to find devices for
- *
- * @return int Return 0 on success, or an errno value on error.
- */
-int bt_csis_client_discover_members(struct bt_csis_client_set *set);
-
 typedef void (*bt_csis_client_lock_set_cb)(int err);
 
 /**
@@ -276,39 +264,16 @@ typedef void (*bt_csis_client_lock_changed_cb)(struct bt_conn *conn,
 typedef void (*bt_csis_client_lock_read_cb)(struct bt_conn *conn, int err,
 					    uint8_t inst_idx, bool locked);
 
-/**
- * @brief Callback when the lock value is written to a device.
- *
- * @param conn      Connection of the CSIS server.
- * @param err       Error value. 0 on success, GATT error or errno on fail.
- * @param inst_idx  The index of the CSIS service.
- */
-typedef void (*bt_csis_client_lock_cb)(struct bt_conn *conn, int err,
-				       uint8_t inst_idx);
-
-/**
- * @brief Callback when the release value is written to a device.
- *
- * @param conn      Connection of the CSIS server.
- * @param err       Error value. 0 on success, GATT error or errno on fail.
- * @param inst_idx  The index of the CSIS service.
- */
-typedef void (*bt_csis_client_release_cb)(struct bt_conn *conn, int err,
-					  uint8_t inst_idx);
-
 struct bt_csis_client_cb {
 	/* Set callbacks */
 	bt_csis_client_lock_set_cb             lock_set;
 	bt_csis_client_lock_set_cb             release_set;
-	bt_csis_client_discover_members_cb     members;
 	bt_csis_client_discover_sets_cb        sets;
 	bt_csis_client_lock_changed_cb         lock_changed;
 
 	/* Device specific callbacks */
 	bt_csis_client_discover_cb             discover;
 	bt_csis_client_lock_read_cb            lock_read;
-	bt_csis_client_lock_cb                 lock;
-	bt_csis_client_release_cb              release;
 };
 
 /**
@@ -321,22 +286,6 @@ struct bt_csis_client_cb {
  */
 bool bt_csis_client_is_set_member(uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE],
 				  struct bt_data *data);
-
-/**
- * @brief Lock the set
- *
- * Connect to and set the lock for all devices in a set.
- *
- * @return Return 0 on success, or an errno value on error.
- */
-int bt_csis_client_lock_set(void);
-
-/**
- * @brief Connect to and release the lock for all devices in a set
- *
- * @return int Return 0 on success, or an errno value on error.
- */
-int bt_csis_client_release_set(void);
 
 /**
  * @brief Registers callbacks for csis_client.
