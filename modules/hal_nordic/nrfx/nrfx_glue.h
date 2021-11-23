@@ -272,38 +272,57 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 				   NRFX_PPI_GROUPS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines GPIOTE channels that are reserved for use outside of the nrfx library. */
-#define NRFX_GPIOTE_CHANNELS_USED 0
+#define NRFX_GPIOTE_CHANNELS_USED NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR
 
 #if defined(CONFIG_BT_CTLR)
-extern const uint32_t z_bt_ctlr_used_nrf_ppi_channels;
-extern const uint32_t z_bt_ctlr_used_nrf_ppi_groups;
-#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR   z_bt_ctlr_used_nrf_ppi_channels
-#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR     z_bt_ctlr_used_nrf_ppi_groups
+#include <../subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/radio/radio_nrf5_resources.h>
+
+#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    BT_CTLR_USED_PPI_CHANNELS
+#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR      BT_CTLR_USED_PPI_GROUPS
+#define NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR BT_CTLR_USED_GPIOTE_CHANNELS
 #else
-#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR   0
-#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR     0
+#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    0
+#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR      0
+#define NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR 0
 #endif
 
 #if defined(CONFIG_NRF_802154_RADIO_DRIVER)
-extern const uint32_t g_nrf_802154_used_nrf_ppi_channels;
-extern const uint32_t g_nrf_802154_used_nrf_ppi_groups;
-#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   g_nrf_802154_used_nrf_ppi_channels
-#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     g_nrf_802154_used_nrf_ppi_groups
+#if defined(NRF52_SERIES)
+#include <../src/nrf_802154_peripherals_nrf52.h>
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_PPI_CHANNELS_USED_MASK
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_PPI_GROUPS_USED_MASK
+#elif defined(NRF53_SERIES)
+#include <../src/nrf_802154_peripherals_nrf53.h>
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
 #else
+#error Unsupported chip family
+#endif
+#else // CONFIG_NRF_802154_RADIO_DRIVER
 #define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   0
 #define NRFX_PPI_GROUPS_USED_BY_802154_DRV     0
-#endif
+#endif // CONFIG_NRF_802154_RADIO_DRIVER
 
-#if defined(CONFIG_NRF_802154_RADIO_DRIVER) && \
-	!defined(CONFIG_NRF_802154_SL_OPENSOURCE)
-extern const uint32_t z_mpsl_used_nrf_ppi_channels;
-extern const uint32_t z_mpsl_used_nrf_ppi_groups;
-#define NRFX_PPI_CHANNELS_USED_BY_MPSL   z_mpsl_used_nrf_ppi_channels
-#define NRFX_PPI_GROUPS_USED_BY_MPSL     z_mpsl_used_nrf_ppi_groups
+#if defined(CONFIG_NRF_802154_RADIO_DRIVER) && !defined(CONFIG_NRF_802154_SL_OPENSOURCE)
+#include <mpsl.h>
+#define NRFX_PPI_CHANNELS_USED_BY_MPSL   MPSL_RESERVED_PPI_CHANNELS
+#define NRFX_PPI_GROUPS_USED_BY_MPSL     0
 #else
 #define NRFX_PPI_CHANNELS_USED_BY_MPSL   0
 #define NRFX_PPI_GROUPS_USED_BY_MPSL     0
 #endif
+
+#if NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL
+BUILD_ASSERT(
+	(NRFX_PPI_CHANNELS_USED_BY_802154_DRV & NRFX_PPI_CHANNELS_USED_BY_MPSL) == 0,
+	"PPI channels used by the IEEE802.15.4 radio driver overlap with those "
+	"assigned to the MPSL.");
+
+BUILD_ASSERT(
+	(NRFX_PPI_GROUPS_USED_BY_802154_DRV & NRFX_PPI_GROUPS_USED_BY_MPSL) == 0,
+	"PPI groups used by the IEEE802.15.4 radio driver overlap with those "
+	"assigned to the MPSL.");
+#endif // NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL
 
 /** @brief Bitmask that defines EGU instances that are reserved for use outside of the nrfx library. */
 #define NRFX_EGUS_USED            0
