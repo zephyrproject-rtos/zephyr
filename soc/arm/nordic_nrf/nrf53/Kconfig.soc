@@ -144,7 +144,7 @@ config SOC_DCDC_NRF53X_HV
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
-if !TRUSTED_EXECUTION_NONSECURE
+if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 
 config SOC_ENABLE_LFXO
 	bool "Enable LFXO"
@@ -206,14 +206,14 @@ config SOC_HFXO_CAP_INT_VALUE_X2
 	  capacitance value for the two capacitors. Set it to 14 to get 7.0 pF
 	  for each capacitor, 15 to get 7.5 pF, and so on.
 
-endif # !TRUSTED_EXECUTION_NONSECURE
+endif # !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 
 endif # SOC_NRF5340_CPUAPP
 
 
 config NRF_ENABLE_CACHE
 	bool "Enable cache"
-	depends on (SOC_NRF5340_CPUAPP && !TRUSTED_EXECUTION_NONSECURE) \
+	depends on (SOC_NRF5340_CPUAPP && (!TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM)) \
 			|| SOC_NRF5340_CPUNET
 	default y
 	help
@@ -222,6 +222,10 @@ config NRF_ENABLE_CACHE
 
 	  Instruction cache only (I-Cache) is available in nRF5340
 	  CPUNET (Network MCU).
+
+config BUILD_WITH_TFM
+	# TF-M nRF53 platform enables the cache unconditionally.
+	select NRF_ENABLE_CACHE if SOC_NRF5340_CPUAPP
 
 config NRF53_SYNC_RTC
 	bool "Enable RTC clock synchronization"
