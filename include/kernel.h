@@ -10,6 +10,8 @@
  * @brief Public kernel APIs.
  */
 
+/* test me */
+
 #ifndef ZEPHYR_INCLUDE_KERNEL_H_
 #define ZEPHYR_INCLUDE_KERNEL_H_
 
