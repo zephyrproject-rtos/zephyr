@@ -24,26 +24,30 @@ jobs:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
     outputs:
       report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.6.0
-        with:
-          access_token: ${{ github.token }}
-      - name: Update PATH for west
+      - name: Cleanup
         run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: checkout
+          # hotfix, until we have a better way to deal with existing data
+          rm -rf zephyr zephyr-testing
+      - name: Checkout
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: west setup
+      - name: Environment Setup
         run: |
+          pip3 install GitPython
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          git rebase origin/${BASE_REF}
+          git log  --pretty=oneline | head -n 10
           west init -l . || true
+          west config --global update.narrow true
           # In some cases modules are left in a state where they can't be
           # updated (i.e. when we cancel a job and the builder is killed),
           # So first retry to update, if that does not work, remove all modules
@@ -57,6 +61,7 @@ jobs:
           ${CLANG_ROOT_DIR}/bin/clang --version
           gcc --version
           ls -la
+
       - name: Prepare ccache timestamp/data
         id: ccache_cache_timestamp
         shell: cmake -P {0}
@@ -84,30 +89,20 @@ jobs:
       - name: Run Tests with Twister
         id: twister
         run: |
-          git config --global user.email "bot@zephyrproject.org"
-          git config --global user.name "Zephyr Builder"
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
+
           # check if we need to run a full twister or not based on files changed
-          SC=$(./scripts/ci/what_changed.py --commits ${COMMIT_RANGE})
-          # Get twister arguments based on the files changed
-          ./scripts/ci/get_twister_opt.py --commits ${COMMIT_RANGE}
-          if [ "$SC" = "full" ]; then
-            # Full twister
+          python3 ./scripts/ci/test_plan.py --platform ${{ matrix.platform }} -c origin/${BASE_REF}..
+
+          # We can limit scope to just what has changed
+          if [ -s testplan.csv ]; then
             echo "::set-output name=report_needed::1";
-            ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} --retry-failed 2
+            # Full twister but with options based on changes
+            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2
           else
-            # We can limit scope to just what has changed
-            if [ -s modified_tests.args ]; then
-              # we are working with one platform at a time
-              sed -i '/--all/d' modified_tests.args
-              echo "::set-output name=report_needed::1";
-              # Full twister but with options based on changes
-              ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} +modified_tests.args --retry-failed 2
-            else
-              # if nothing is run, skip reporting step
-              echo "::set-output name=report_needed::0";
-            fi
+            # if nothing is run, skip reporting step
+            echo "::set-output name=report_needed::0";
           fi
 
       - name: ccache stats post
