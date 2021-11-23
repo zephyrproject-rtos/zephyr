@@ -959,7 +959,7 @@ static void csis_client_write_restore_cb(struct bt_conn *conn, uint8_t err,
 		active_members_reset();
 		if (csis_client_cbs != NULL &&
 		    csis_client_cbs->release_set != NULL) {
-			csis_client_cbs->release_set(err != 0);
+			csis_client_cbs->release_set(err);
 		}
 		return;
 	}
@@ -1026,7 +1026,7 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 		active_members_reset();
 		if (csis_client_cbs != NULL &&
 		    csis_client_cbs->lock_set != NULL) {
-			csis_client_cbs->lock_set(err != 0);
+			csis_client_cbs->lock_set(err);
 		}
 		return;
 	}
@@ -1083,7 +1083,7 @@ static void csis_client_write_release_cb(struct bt_conn *conn, uint8_t err,
 		active_members_reset();
 		if (csis_client_cbs != NULL &&
 		    csis_client_cbs->release_set != NULL) {
-			csis_client_cbs->release_set(err != 0);
+			csis_client_cbs->release_set(err);
 		}
 		return;
 	}
