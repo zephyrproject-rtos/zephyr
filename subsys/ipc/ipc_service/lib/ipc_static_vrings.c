@@ -9,8 +9,6 @@
 
 #define SHM_DEVICE_NAME		"sram0.shm"
 
-#define VRING_ALIGNMENT		(4) /* Alignment of vring buffer */
-
 #define RPMSG_VQ_0		(0) /* TX virtqueue queue index */
 #define RPMSG_VQ_1		(1) /* RX virtqueue queue index */
 

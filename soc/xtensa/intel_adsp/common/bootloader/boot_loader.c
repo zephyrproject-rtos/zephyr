@@ -6,17 +6,28 @@
  * Author: Liam Girdwood <liam.r.girdwood@linux.intel.com>
  */
 
+/* Older (GCC 4.2-based) XCC variants need a fixup file. */
+#if defined(__XCC__) && (__GNUC__ == 4)
+#include <toolchain/xcc_missing_defs.h>
+#endif
+
+#include <autoconf.h> /* not built by zephyr */
+#include <devicetree.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <cavs/version.h>
 
-#include <soc/platform.h>
-#include <soc/memory.h>
-#include <soc/shim.h>
 #include <adsp/io.h>
 #include <soc.h>
 #include <arch/xtensa/cache.h>
+#include <cavs-shim.h>
+#include <cavs-mem.h>
+#include "platform.h"
 #include "manifest.h"
+
+#define LPSRAM_MASK(x) 0x00000003
+#define SRAM_BANK_SIZE (64 * 1024)
+#define HOST_PAGE_SIZE 4096
 
 #if CONFIG_SOC_INTEL_S1000
 #define MANIFEST_BASE	BOOT_LDR_MANIFEST_BASE
@@ -148,7 +159,7 @@ static uint32_t get_fw_size_in_use(void)
 			if (mod->segment[i].flags.r.type
 				== SOF_MAN_SEGMENT_BSS) {
 				fw_size_in_use = mod->segment[i].v_base_addr
-				- HP_SRAM_BASE
+				- L2_SRAM_BASE
 				+ (mod->segment[i].flags.r.length
 				* HOST_PAGE_SIZE);
 			}
@@ -191,7 +202,7 @@ static int32_t hp_sram_pm_banks(uint32_t banks)
 	uint32_t ebb_mask0, ebb_mask1, ebb_avail_mask0, ebb_avail_mask1;
 	uint32_t total_banks_count = PLATFORM_HPSRAM_EBB_COUNT;
 
-	shim_write(SHIM_LDOCTL, SHIM_LDOCTL_HPSRAM_LDO_ON);
+	CAVS_SHIM.ldoctl = SHIM_LDOCTL_HPSRAM_LDO_ON;
 
 	/* add some delay before touch power register */
 	idelay(delay_count);
@@ -221,31 +232,31 @@ static int32_t hp_sram_pm_banks(uint32_t banks)
 	}
 
 	/* HSPGCTL, HSRMCTL use reverse logic - 0 means EBB is power gated */
-	io_reg_write(HSPGCTL0, (~ebb_mask0) & ebb_avail_mask0);
-	io_reg_write(HSRMCTL0, (~ebb_mask0) & ebb_avail_mask0);
-	io_reg_write(HSPGCTL1, (~ebb_mask1) & ebb_avail_mask1);
-	io_reg_write(HSRMCTL1, (~ebb_mask1) & ebb_avail_mask1);
+	CAVS_L2LM.hspgctl0 = (~ebb_mask0) & ebb_avail_mask0;
+	CAVS_L2LM.hsrmctl0 = (~ebb_mask0) & ebb_avail_mask0;
+	CAVS_L2LM.hspgctl1 = (~ebb_mask1) & ebb_avail_mask1;
+	CAVS_L2LM.hsrmctl1 = (~ebb_mask1) & ebb_avail_mask1;
 
 	/* query the power status of first part of HP memory */
 	/* to check whether it has been powered up. A few    */
 	/* cycles are needed for it to be powered up         */
-	status = io_reg_read(HSPGISTS0);
+	status = CAVS_L2LM.hspgists0;
 	while (status != ((~ebb_mask0) & ebb_avail_mask0)) {
 		idelay(delay_count);
-		status = io_reg_read(HSPGISTS0);
+		status = CAVS_L2LM.hspgists0;
 	}
 	/* query the power status of second part of HP memory */
 	/* and do as above code                               */
 
-	status = io_reg_read(HSPGISTS1);
+	status = CAVS_L2LM.hspgists1;
 	while (status != ((~ebb_mask1) & ebb_avail_mask1)) {
 		idelay(delay_count);
-		status = io_reg_read(HSPGISTS1);
+		status = CAVS_L2LM.hspgists1;
 	}
 	/* add some delay before touch power register */
 	idelay(delay_count);
 
-	shim_write(SHIM_LDOCTL, SHIM_LDOCTL_HPSRAM_LDO_BYPASS);
+	CAVS_SHIM.ldoctl = SHIM_LDOCTL_HPSRAM_LDO_BYPASS;
 
 	return 0;
 }
@@ -272,7 +283,7 @@ static int32_t hp_sram_power_off_unused_banks(uint32_t memory_size)
 
 static int32_t hp_sram_init(void)
 {
-	return hp_sram_power_on_memory(HP_SRAM_SIZE);
+	return hp_sram_power_on_memory(L2_SRAM_SIZE);
 }
 
 #else
@@ -293,19 +304,17 @@ static uint32_t hp_sram_init(void)
 
 static int32_t lp_sram_init(void)
 {
-	uint32_t status;
-	uint32_t lspgctl_value;
+	uint32_t status = 0;
 	uint32_t timeout_counter, delay_count = 256;
 
 	timeout_counter = delay_count;
 
-	shim_write(SHIM_LDOCTL, SHIM_LDOCTL_LPSRAM_LDO_ON);
+	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_ON;
 
 	/* add some delay before writing power registers */
 	idelay(delay_count);
 
-	lspgctl_value = io_reg_read(LSPGISTS);
-	io_reg_write(LSPGCTL, lspgctl_value & ~LPSRAM_MASK(0));
+	CAVS_SHIM.lspgctl = CAVS_SHIM.lspgists & ~LPSRAM_MASK(0);
 
 	/* add some delay before checking the status */
 	idelay(delay_count);
@@ -313,16 +322,15 @@ static int32_t lp_sram_init(void)
 	/* query the power status of first part of LP memory */
 	/* to check whether it has been powered up. A few    */
 	/* cycles are needed for it to be powered up         */
-	status = io_reg_read(LSPGISTS);
-	while (status) {
+	while (CAVS_SHIM.lspgists) {
 		if (!timeout_counter--) {
+			status = 1;
 			break;
 		}
 		idelay(delay_count);
-		status = io_reg_read(LSPGISTS);
 	}
 
-	shim_write(SHIM_LDOCTL, SHIM_LDOCTL_LPSRAM_LDO_BYPASS);
+	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
 
 	return status;
 }

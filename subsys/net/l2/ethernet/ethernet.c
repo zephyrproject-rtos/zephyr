@@ -941,7 +941,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 		return -EPERM;
 	}
 
-	if (tag == NET_VLAN_TAG_UNSPEC) {
+	if (tag >= NET_VLAN_TAG_UNSPEC) {
 		return -EBADF;
 	}
 

@@ -12,6 +12,47 @@ config SOC_FAMILY
 	string
 	default "intel_adsp"
 
+config HP_SRAM_RESERVE
+	int "Bytes to reserve at start of HP-SRAM"
+	default 65536
+	help
+	  Bytes to reserve at the start of HP-SRAM.  Zephyr will not
+	  place any symbols here, though the host windows have
+	  addresses here.  The SOF application also makes direct use
+	  of this region, so be very careful changing this value.
+
+config ADSP_WIN0_OFFSET
+	int "Byte offset of host window zero"
+	default 16384
+	help
+	  Offset of the first host shared memory window (used for the
+	  "firmware status register" at boot) within the reserved
+	  region at the start of HP-SRAM.
+
+config ADSP_WIN3_OFFSET
+	int "Byte offset of host window three"
+	default 40960
+	help
+	  Offset of the fourth host shared memory window (used for
+	  printk/log output) within the reserved region at the start
+	  of HP-SRAM.
+
+config IMR_MANIFEST_ADDR
+	hex "Address of boot manifest struct within IMR memory"
+	default 0xb0032000
+	help
+	  Address where the rimage manifest struct is placed upon
+	  boot.  Must be synchronized between Zephyr's linkage, the
+	  hardware, ROM and rimage configuration.  Don't touch except
+	  with great care.
+
+config IMR_DATA_ADDR
+	hex "Address of bootloader .data section within IMR memory"
+	default 0xb0039000
+	help
+	  Location to place .data contents in IMR memory during
+	  bootloader linkage.
+
 # Select SoC Part No. and configuration options
 source "soc/xtensa/intel_adsp/*/Kconfig.soc"
 

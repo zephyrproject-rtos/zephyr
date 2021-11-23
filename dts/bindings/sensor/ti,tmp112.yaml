@@ -8,3 +8,17 @@ description: |
 compatible: "ti,tmp112"
 
 include: i2c-device.yaml
+
+properties:
+  conversion-rate:
+    description: Conversion rate in mHz (milli-Hertz)
+    type: int
+    default: 4000
+    enum:
+      - 250
+      - 1000
+      - 4000
+      - 8000
+  extended-mode:
+    description: When true use 13-bit data format allowing measuring temperature up to 128°C
+    type: boolean

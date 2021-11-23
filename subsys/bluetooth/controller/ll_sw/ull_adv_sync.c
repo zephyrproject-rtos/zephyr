@@ -1194,11 +1194,10 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	/* Get Adv data from function parameters */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
-		ad_data = hdr_data;
-		ad_len = *ad_data;
-		++ad_data;
+		ad_len = *(uint8_t *)hdr_data;
+		hdr_data = (uint8_t *)hdr_data + sizeof(ad_len);
 
-		ad_data = (void *)sys_get_le32(ad_data);
+		(void)memcpy(&ad_data, hdr_data, sizeof(ad_data));
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
 		ad_len = ter_pdu_prev->len - ter_len_prev;
 		ad_data = ter_dptr_prev;

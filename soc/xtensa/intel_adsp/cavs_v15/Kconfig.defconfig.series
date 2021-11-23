@@ -15,6 +15,21 @@ config SOC
 	string
 	default "intel_apl_adsp" if SOC_INTEL_CAVS_V15
 
+config HP_SRAM_RESERVE
+	default 32768
+
+config ADSP_WIN0_OFFSET
+	default 24576
+
+config ADSP_WIN3_OFFSET
+	default 0
+
+config IMR_MANIFEST_ADDR
+	default 0xb0004000
+
+config IMR_DATA_ADDR
+	default 0xb0002000
+
 config SMP
 	default y
 

@@ -553,6 +553,7 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 	int32_t remaining = SYS_FOREVER_MS;
 	int subnet_count;
 	int err = -EBUSY;
+	bool planned = false;
 
 	BT_DBG("");
 
@@ -585,29 +586,44 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		}
 	}
 
-	if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING) {
-		uint32_t active = k_uptime_get_32() - sub->node_id_start;
+	for (int i = 0; i < subnet_count; i++) {
 
-		if (active < NODE_ID_TIMEOUT) {
-			remaining = NODE_ID_TIMEOUT - active;
-			BT_DBG("Node ID active for %u ms, %d ms remaining",
-			       active, remaining);
-			err = node_id_adv(sub, remaining);
-		} else {
-			bt_mesh_proxy_identity_stop(sub);
-			BT_DBG("Node ID stopped");
+		if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING) {
+			uint32_t active = k_uptime_get_32() - sub->node_id_start;
+
+			if (active < NODE_ID_TIMEOUT) {
+				remaining = NODE_ID_TIMEOUT - active;
+				BT_DBG("Node ID active for %u ms, %d ms remaining",
+				       active, remaining);
+				err = node_id_adv(sub, remaining);
+				planned = true;
+			} else {
+				bt_mesh_proxy_identity_stop(sub);
+				BT_DBG("Node ID stopped");
+			}
 		}
+
+		/* Mesh Profile Specification v1.0.1, section 7.2.2.2.1
+		 * A node that does not support the Proxy feature or
+		 * has the GATT Proxy state disabled shall not advertise with Network ID.
+		 */
+		if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED &&
+		    bt_mesh_gatt_proxy_get() == BT_MESH_FEATURE_ENABLED) {
+			err = net_id_adv(sub, remaining);
+			planned = true;
+		}
+
+		beacon_sub = bt_mesh_subnet_next(sub);
+
+		if (planned) {
+			BT_DBG("Advertising %d ms for net_idx 0x%04x", remaining, sub->net_idx);
+			return err;
+		}
+
+		sub = beacon_sub;
 	}
 
-	if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED) {
-		err = net_id_adv(sub, remaining);
-	}
-
-	BT_DBG("Advertising %d ms for net_idx 0x%04x", remaining, sub->net_idx);
-
-	beacon_sub = bt_mesh_subnet_next(beacon_sub);
-
-	return err;
+	return 0;
 }
 
 static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)

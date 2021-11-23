@@ -10,7 +10,7 @@
 #include <xtensa/hal.h>
 #include <init.h>
 
-#include <soc/shim.h>
+#include <cavs-shim.h>
 #include <cavs-idc.h>
 #include "soc.h"
 
@@ -21,6 +21,21 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc);
+
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+# define SHIM_GPDMA_BASE_OFFSET   0x6500
+# define SHIM_GPDMA_BASE(x)       (SHIM_GPDMA_BASE_OFFSET + (x) * 0x100)
+# define SHIM_GPDMA_CLKCTL(x)     (SHIM_GPDMA_BASE(x) + 0x4)
+# define SHIM_CLKCTL_LPGPDMAFDCGB BIT(0)
+
+# define DSP_INIT_LPGPDMA(x)	  (0x71A60 + (2*x))
+# define LPGPDMA_CTLOSEL_FLAG	  BIT(15)
+# define LPGPDMA_CHOSEL_FLAG	  0xFF
+
+# define DSP_INIT_GENO	          0x71A6C
+# define GENO_MDIVOSEL		  BIT(1)
+# define GENO_DIOPTOSEL           BIT(2)
+#endif
 
 #define CAVS_INTC_NODE(n) DT_INST(n, intel_cavs_intc)
 
@@ -192,14 +207,9 @@ irq_connect_out:
 }
 #endif
 
-static inline void soc_set_power_and_clock(void)
+static void power_init_v15(void)
 {
-	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
-		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
-
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
-	/*
-	 * HP domain clocked by PLL
+	/* HP domain clocked by PLL
 	 * LP domain clocked by PLL
 	 * DSP Core 0 PLL Clock Select divide by 1
 	 * DSP Core 1 PLL Clock Select divide by 1
@@ -210,65 +220,42 @@ static inline void soc_set_power_and_clock(void)
 	 * Disable Tensilica Core Prevent Local Clock Gating (Core 1)
 	 *   - Disabling "prevent clock gating" means allowing clock gating
 	 */
-	dsp_shim_regs->clkctl =
-		SHIM_CLKCTL_HDCS_PLL |
-		SHIM_CLKCTL_LDCS_PLL |
-		SHIM_CLKCTL_DPCS_DIV1(0) |
-		SHIM_CLKCTL_DPCS_DIV1(1) |
-		SHIM_CLKCTL_HPMPCS_DIV2 |
-		SHIM_CLKCTL_LPMPCS_DIV4 |
-		SHIM_CLKCTL_TCPAPLLS_DIS |
-		SHIM_CLKCTL_TCPLCG_DIS(0) |
-		SHIM_CLKCTL_TCPLCG_DIS(1);
+	CAVS_SHIM.clkctl = CAVS15_CLKCTL_LMPCS;
 
 	/* Rewrite the low power sequencing control bits */
-	dsp_shim_regs->lpsctl = dsp_shim_regs->lpsctl;
-#endif /* CONFIG_SOC_SERIES_INTEL_CAVS_V15 */
+	CAVS_SHIM.lpsctl = CAVS_SHIM.lpsctl;
+}
 
-#if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V18) || \
-	defined(CONFIG_SOC_SERIES_INTEL_CAVS_V20) || \
-	defined(CONFIG_SOC_SERIES_INTEL_CAVS_V25)
-
-	/*
-	 * Request HP ring oscillator and
+static void power_init(void)
+{
+	/* Request HP ring oscillator and
 	 * wait for status to indicate it's ready.
 	 */
-	dsp_shim_regs->clkctl |= SHIM_CLKCTL_RHROSCC;
-	while ((dsp_shim_regs->clkctl & SHIM_CLKCTL_RHROSCC) !=
-	       SHIM_CLKCTL_RHROSCC) {
+	CAVS_SHIM.clkctl |= CAVS_CLKCTL_RHROSCC;
+	while ((CAVS_SHIM.clkctl & CAVS_CLKCTL_RHROSCC) != CAVS_CLKCTL_RHROSCC) {
 		k_busy_wait(10);
 	}
 
-	/*
-	 * Request HP Ring Oscillator
+	/* Request HP Ring Oscillator
 	 * Select HP Ring Oscillator
 	 * High Power Domain PLL Clock Select device by 2
 	 * Low Power Domain PLL Clock Select device by 4
 	 * Disable Tensilica Core(s) Prevent Local Clock Gating
 	 *   - Disabling "prevent clock gating" means allowing clock gating
 	 */
-	dsp_shim_regs->clkctl =
-		SHIM_CLKCTL_RHROSCC |
-		SHIM_CLKCTL_OCS_HP_RING |
-		SHIM_CLKCTL_HMCS_DIV2 |
-		SHIM_CLKCTL_LMCS_DIV4 |
-		SHIM_CLKCTL_TCPLCG_DIS_ALL;
+	CAVS_SHIM.clkctl = (CAVS_CLKCTL_RHROSCC |
+			    CAVS_CLKCTL_OCS |
+			    CAVS_CLKCTL_LMCS);
 
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* Prevent LP GPDMA 0 & 1 clock gating */
 	sys_write32(SHIM_CLKCTL_LPGPDMAFDCGB, SHIM_GPDMA_CLKCTL(0));
 	sys_write32(SHIM_CLKCTL_LPGPDMAFDCGB, SHIM_GPDMA_CLKCTL(1));
+#endif
 
 	/* Disable power gating for first cores */
-	dsp_shim_regs->pwrctl |= SHIM_PWRCTL_TCPDSPPG(0);
+	CAVS_SHIM.pwrctl |= SHIM_PWRCTL_TCPDSPPG(0);
 
-#endif /* CONFIG_SOC_SERIES_INTEL_CAVS_V18 ||
-	* CONFIG_SOC_SERIES_INTEL_CAVS_V20 ||
-	* CONFIG_SOC_SERIES_INTEL_CAVS_V25
-	*/
-}
-
-static int soc_init(const struct device *dev)
-{
 #ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* On cAVS 1.8+, we must demand ownership of the timestamping
 	 * and clock generator registers.  Lacking the former will
@@ -281,13 +268,17 @@ static int soc_init(const struct device *dev)
 	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
 		    DSP_INIT_LPGPDMA(1));
 #endif
+}
 
-	soc_set_power_and_clock();
+static int soc_init(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		power_init_v15();
+	} else {
+		power_init();
+	}
 
-#if CONFIG_MP_NUM_CPUS > 1
 	soc_idc_init();
-#endif
-
 	return 0;
 }
 

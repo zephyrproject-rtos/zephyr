@@ -5,7 +5,7 @@
  */
 #include <zephyr.h>
 #include <adsp/cache.h>
-#include <soc/shim.h>
+#include <cavs-mem.h>
 
 /* Simple output driver for the trace window of an ADSP device used
  * for communication with the host processor as a shared memory
@@ -21,6 +21,9 @@
  * 0x9xxxxxxx and not the L1-cached mapping of the same memory at
  * 0xBxxxxxxx.
  */
+
+#define SRAM_TRACE_BASE HP_SRAM_WIN3_BASE
+#define SRAM_TRACE_SIZE HP_SRAM_WIN3_SIZE
 
 #define SLOT_SIZE 64
 #define SLOT_MAGIC 0x55aa

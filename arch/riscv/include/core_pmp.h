@@ -94,8 +94,12 @@ void z_riscv_configure_user_allowed_stack(struct k_thread *thread);
  * @param addr   Start address of the memory area.
  * @param size   Size of the memory area.
  * @param flags  Pemissions: PMP_R, PMP_W, PMP_X, PMP_L
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOSPC if no free PMP entry
  */
-void z_riscv_pmp_add_dynamic(struct k_thread *thread,
+int z_riscv_pmp_add_dynamic(struct k_thread *thread,
 			ulong_t addr,
 			ulong_t size,
 			unsigned char flags);

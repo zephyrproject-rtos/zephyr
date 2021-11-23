@@ -124,7 +124,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 5c8275071ec1cf160bfe8c18bbd9330a7d714dc8
+      revision: 6fc9b5f7e0229ef64a882e37213266d346ebfadb
       path: modules/hal/stm32
       groups:
         - hal
@@ -218,7 +218,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 400f58ff53eb1dea5234925e96c5279154515cc7
+      revision: 7c88781953ce7146878bd8bd724e175fdbc298c5
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
