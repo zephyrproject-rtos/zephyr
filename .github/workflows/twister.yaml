@@ -30,34 +30,41 @@ jobs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
     env:
-      MATRIX_SIZE: 10
+      MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 120
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
     steps:
-      - name: checkout
+      - name: Cleanup
+        run: |
+          # hotfix, until we have a better way to deal with existing data
+          rm -rf zephyr zephyr-testing
+
+      - name: Checkout
         if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: west setup
+      - name: Environment Setup
         if: github.event_name == 'pull_request_target'
         run: |
+          pip3 install GitPython
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          git rebase origin/${BASE_REF}
+          git log  --pretty=oneline | head -n 10
           west init -l . || true
-          west config --global update.narrow true
-          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update.log
-          west forall -c 'git reset --hard HEAD'
+          # no need for west update here
 
       - name: Generate Test Plan with Twister
         if: github.event_name == 'pull_request_target'
         id: test-plan
         run: |
-          git config --global user.email "bot@zephyrproject.org"
-          git config --global user.name "Zephyr Bot"
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           # temporary until we have all PRs rebased on top of this commit.
@@ -65,12 +72,10 @@ jobs:
             echo "Your branch is not up to date, you need to rebase on top of latest HEAD of main branch"
             exit 1
           )
-          ./scripts/ci/run_ci.sh -S -c -b ${{github.base_ref}} -r origin \
-                  -p ${{github.event.pull_request.number}} -R ${COMMIT_RANGE}
-          # remove all tests to be skipped
-          grep -v skipped test_file.txt > no_skipped.txt
+          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
+
           # get number of tests
-          lines=$(wc -l < no_skipped.txt)
+          lines=$(wc -l < testplan.csv)
           if [ "$lines" = 1 ]; then
             # no tests, so we need 0 nodes
             nodes=0
@@ -82,7 +87,7 @@ jobs:
             fi
           fi
           echo "::set-output name=calculated_matrix_size::${nodes}";
-          rm test_file.txt no_skipped.txt
+          rm -f testplan.csv
 
       - name: Determine matrix size
         id: output-services
@@ -97,7 +102,7 @@ jobs:
           elif [ "${{github.event_name}}" = "push" ]; then
             subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
             size=${MATRIX_SIZE}
-          else
+          elif [ "${{github.event_name}}" = "schedule" ]; then
             subset="[$(seq -s',' 1 ${DAILY_MATRIX_SIZE})]"
             size=${DAILY_MATRIX_SIZE}
           fi
@@ -119,21 +124,35 @@ jobs:
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
-      DAILY_OPTIONS: ' --inline-logs -M -N --build-only --all --retry-failed 3 -v '
+      TWISTER_COMMON: ' --inline-logs -v -N -M --retry-failed 3 '
+      DAILY_OPTIONS: ' -M --build-only --all '
+      PR_OPTIONS: ' --clobber-output --integration '
+      PUSH_OPTIONS: ' --clobber-output -M '
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
     steps:
-      - name: Update PATH for west
+      - name: Cleanup
         run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # hotfix, until we have a better way to deal with existing data
+          rm -rf zephyr zephyr-testing
 
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: west setup
+      - name: Environment Setup
         run: |
+          pip3 install GitPython
+          if [ "${{github.event_name}}" = "pull_request_target" ]; then
+            git config --global user.email "bot@zephyrproject.org"
+            git config --global user.name "Zephyr Builder"
+            git rebase origin/${BASE_REF}
+            git log  --pretty=oneline | head -n 10
+          fi
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
           west init -l . || true
           west config --global update.narrow true
           west update 2>&1 1> west.update.log || west update 2>&1 1> west.update.log
@@ -179,26 +198,22 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          ./scripts/ci/run_ci.sh -c -b main -r origin -m ${{matrix.subset}} \
-                    -M ${{ strategy.job-total }}
+          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${TWISTER_COMMON} ${PUSH_OPTIONS}
 
       - if: github.event_name == 'pull_request_target'
         name: Run Tests with Twister (Pull Request)
         run: |
-          git config --global user.email "bot@zephyrproject.org"
-          git config --global user.name "Zephyr Builder"
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          ./scripts/ci/run_ci.sh -c -b ${{github.base_ref}} -r origin \
-                     -m ${{matrix.subset}} -M  ${{ strategy.job-total }} \
-                     -p ${{github.event.pull_request.number}} -R ${COMMIT_RANGE}
+          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
+          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.csv ${TWISTER_COMMON} ${PR_OPTIONS}
 
       - if: github.event_name == 'schedule'
         name: Run Tests with Twister (Daily)
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${DAILY_OPTIONS}
+          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${TWISTER_COMMON} ${DAILY_OPTIONS}
 
       - name: ccache stats post
         run: |
@@ -210,6 +225,11 @@ jobs:
         with:
           name: Unit Test Results (Subset ${{ matrix.subset }})
           path: twister-out/twister.xml
+
+      - name: Cleanup
+        if: always()
+        run: |
+          git clean -dxf
 
   twister-test-results:
     name: "Publish Unit Tests Results"
