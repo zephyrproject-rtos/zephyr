@@ -858,9 +858,10 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 					struct bt_gatt_read_params *params,
 					const void *data, uint16_t length)
 {
+	struct bt_csis_client_inst *client;
+	struct bt_csis_client_set *set;
 	uint8_t value = 0;
 	int cb_err = err;
-	uint8_t idx = cur_inst->cli.idx;
 
 	busy = false;
 
@@ -889,10 +890,12 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 		}
 	}
 
+	client = &client_insts[bt_conn_index(conn)];
+	set = &client->set_member->sets[cur_inst->cli.idx];
 	cur_inst = NULL;
 
 	if (csis_client_cbs != NULL && csis_client_cbs->lock_read != NULL) {
-		csis_client_cbs->lock_read(conn, cb_err, idx,
+		csis_client_cbs->lock_read(set, cb_err,
 					   value == BT_CSIS_LOCK_VALUE ? true : false);
 	}
 	return BT_GATT_ITER_STOP;
