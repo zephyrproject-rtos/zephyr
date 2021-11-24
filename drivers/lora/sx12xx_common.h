@@ -16,9 +16,9 @@
 int __sx12xx_configure_pin(const struct device * *dev, const char *controller,
 			   gpio_pin_t pin, gpio_flags_t flags);
 
-#define sx12xx_configure_pin(_name, _flags)				\
+#define sx12xx_configure_pin(_data, _name, _flags)			\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(0, _name##_gpios),		\
-		    (__sx12xx_configure_pin(&dev_data._name,		\
+		    (__sx12xx_configure_pin(&(_data)->_name,		\
 				DT_INST_GPIO_LABEL(0, _name##_gpios),	\
 				DT_INST_GPIO_PIN(0, _name##_gpios),	\
 				DT_INST_GPIO_FLAGS(0, _name##_gpios) |	\

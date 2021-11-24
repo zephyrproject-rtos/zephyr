@@ -560,22 +560,22 @@ static int sx127x_antenna_configure(void)
 {
 	int ret;
 
-	ret = sx12xx_configure_pin(antenna_enable, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(&dev_data, antenna_enable, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
 
-	ret = sx12xx_configure_pin(rfi_enable, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(&dev_data, rfi_enable, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
 
-	ret = sx12xx_configure_pin(rfo_enable, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(&dev_data, rfo_enable, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
 
-	ret = sx12xx_configure_pin(pa_boost_enable, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(&dev_data, pa_boost_enable, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
@@ -617,13 +617,13 @@ static int sx127x_lora_init(const struct device *dev)
 	dev_data.spi_cfg.cs = &spi_cs;
 #endif
 
-	ret = sx12xx_configure_pin(tcxo_power, GPIO_OUTPUT_INACTIVE);
+	ret = sx12xx_configure_pin(&dev_data, tcxo_power, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
 
 	/* Setup Reset gpio and perform soft reset */
-	ret = sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE);
+	ret = sx12xx_configure_pin(&dev_data, reset, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
 	}
