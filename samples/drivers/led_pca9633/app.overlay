@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-&i2c1 {
+&arduino_i2c {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 
