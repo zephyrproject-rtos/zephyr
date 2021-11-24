@@ -47,12 +47,12 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
   #define TIME_CONSTEXPR
 #endif
 
-static TIME_CONSTEXPR inline int sys_clock_hw_cycles_per_sec(void)
+static TIME_CONSTEXPR inline unsigned int sys_clock_hw_cycles_per_sec(void)
 {
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 	return sys_clock_hw_cycles_per_sec_runtime_get();
 #else
-	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	return (unsigned int)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #endif
 }
 
@@ -89,7 +89,7 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 		return result32 ? ((uint32_t)t) : t;
 	}
 
-	uint64_t off = 0;
+	uint32_t off = 0;
 
 	if (!mul_ratio) {
 		uint32_t rdivisor = div_ratio ? (from_hz / to_hz) : from_hz;
@@ -110,21 +110,26 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 	if (div_ratio) {
 		t += off;
 		if (result32 && (t < BIT64(32))) {
-			return ((uint32_t)t) / (from_hz / to_hz);
+			uint32_t t0 = (uint32_t)t / (from_hz / to_hz);
+
+			return t0;
 		} else {
 			return t / ((uint64_t)from_hz / to_hz);
 		}
 	} else if (mul_ratio) {
 		if (result32) {
-			return ((uint32_t)t) * (to_hz / from_hz);
+			uint32_t t0 = (uint32_t)t * (to_hz / from_hz);
+
+			return t0;
 		} else {
 			return t * ((uint64_t)to_hz / from_hz);
 		}
 	} else {
+		t = (t * to_hz + off) / from_hz;
 		if (result32) {
-			return (uint32_t)((t * to_hz + off) / from_hz);
+			return (uint32_t)t;
 		} else {
-			return (t * to_hz + off) / from_hz;
+			return t;
 		}
 	}
 }
@@ -215,7 +220,7 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 static TIME_CONSTEXPR inline uint32_t k_ms_to_cyc_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false, false);
 }
 
 /** @brief Convert milliseconds to hardware cycles
@@ -243,7 +248,7 @@ static TIME_CONSTEXPR inline uint64_t k_ms_to_cyc_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ms_to_cyc_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false, true);
 }
 
 /** @brief Convert milliseconds to hardware cycles
@@ -271,7 +276,7 @@ static TIME_CONSTEXPR inline uint64_t k_ms_to_cyc_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ms_to_cyc_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, true, false);
 }
 
 /** @brief Convert milliseconds to hardware cycles
@@ -299,7 +304,7 @@ static TIME_CONSTEXPR inline uint64_t k_ms_to_cyc_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ms_to_ticks_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, false, false);
 }
 
 /** @brief Convert milliseconds to ticks
@@ -327,7 +332,7 @@ static TIME_CONSTEXPR inline uint64_t k_ms_to_ticks_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ms_to_ticks_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, false, true);
 }
 
 /** @brief Convert milliseconds to ticks
@@ -355,7 +360,7 @@ static TIME_CONSTEXPR inline uint64_t k_ms_to_ticks_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ms_to_ticks_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ms, Z_HZ_ticks, true, true, true, false);
 }
 
 /** @brief Convert milliseconds to ticks
@@ -383,7 +388,7 @@ static TIME_CONSTEXPR inline uint64_t k_ms_to_ticks_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_us_to_cyc_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false, false);
 }
 
 /** @brief Convert microseconds to hardware cycles
@@ -411,7 +416,7 @@ static TIME_CONSTEXPR inline uint64_t k_us_to_cyc_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_us_to_cyc_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false, true);
 }
 
 /** @brief Convert microseconds to hardware cycles
@@ -439,7 +444,7 @@ static TIME_CONSTEXPR inline uint64_t k_us_to_cyc_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_us_to_cyc_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, true, false);
 }
 
 /** @brief Convert microseconds to hardware cycles
@@ -467,7 +472,7 @@ static TIME_CONSTEXPR inline uint64_t k_us_to_cyc_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_us_to_ticks_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, false, false);
 }
 
 /** @brief Convert microseconds to ticks
@@ -495,7 +500,7 @@ static TIME_CONSTEXPR inline uint64_t k_us_to_ticks_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_us_to_ticks_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, false, true);
 }
 
 /** @brief Convert microseconds to ticks
@@ -523,7 +528,7 @@ static TIME_CONSTEXPR inline uint64_t k_us_to_ticks_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_us_to_ticks_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_us, Z_HZ_ticks, true, true, true, false);
 }
 
 /** @brief Convert microseconds to ticks
@@ -551,7 +556,7 @@ static TIME_CONSTEXPR inline uint64_t k_us_to_ticks_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ns_to_cyc_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false, false);
 }
 
 /** @brief Convert nanoseconds to hardware cycles
@@ -579,7 +584,7 @@ static TIME_CONSTEXPR inline uint64_t k_ns_to_cyc_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ns_to_cyc_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false, true);
 }
 
 /** @brief Convert nanoseconds to hardware cycles
@@ -607,7 +612,7 @@ static TIME_CONSTEXPR inline uint64_t k_ns_to_cyc_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ns_to_cyc_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, true, false);
 }
 
 /** @brief Convert nanoseconds to hardware cycles
@@ -635,7 +640,7 @@ static TIME_CONSTEXPR inline uint64_t k_ns_to_cyc_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ns_to_ticks_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, false, false);
 }
 
 /** @brief Convert nanoseconds to ticks
@@ -663,7 +668,7 @@ static TIME_CONSTEXPR inline uint64_t k_ns_to_ticks_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ns_to_ticks_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, false, true);
 }
 
 /** @brief Convert nanoseconds to ticks
@@ -691,7 +696,7 @@ static TIME_CONSTEXPR inline uint64_t k_ns_to_ticks_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ns_to_ticks_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ns, Z_HZ_ticks, true, true, true, false);
 }
 
 /** @brief Convert nanoseconds to ticks
@@ -719,7 +724,7 @@ static TIME_CONSTEXPR inline uint64_t k_ns_to_ticks_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ms_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false, false);
 }
 
 /** @brief Convert hardware cycles to milliseconds
@@ -747,7 +752,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ms_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ms_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false, true);
 }
 
 /** @brief Convert hardware cycles to milliseconds
@@ -775,7 +780,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ms_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ms_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, true, false);
 }
 
 /** @brief Convert hardware cycles to milliseconds
@@ -803,7 +808,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ms_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_us_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false, false);
 }
 
 /** @brief Convert hardware cycles to microseconds
@@ -831,7 +836,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_us_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_us_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false, true);
 }
 
 /** @brief Convert hardware cycles to microseconds
@@ -859,7 +864,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_us_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_us_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, true, false);
 }
 
 /** @brief Convert hardware cycles to microseconds
@@ -887,7 +892,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_us_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ns_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false, false);
 }
 
 /** @brief Convert hardware cycles to nanoseconds
@@ -915,7 +920,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ns_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ns_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false, true);
 }
 
 /** @brief Convert hardware cycles to nanoseconds
@@ -943,7 +948,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ns_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ns_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, true, false);
 }
 
 /** @brief Convert hardware cycles to nanoseconds
@@ -971,7 +976,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ns_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ticks_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false, false);
 }
 
 /** @brief Convert hardware cycles to ticks
@@ -999,7 +1004,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ticks_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ticks_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false, true);
 }
 
 /** @brief Convert hardware cycles to ticks
@@ -1027,7 +1032,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ticks_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_cyc_to_ticks_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, true, false);
 }
 
 /** @brief Convert hardware cycles to ticks
@@ -1055,7 +1060,7 @@ static TIME_CONSTEXPR inline uint64_t k_cyc_to_ticks_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_ms_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, false, false);
 }
 
 /** @brief Convert ticks to milliseconds
@@ -1083,7 +1088,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_ms_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_ms_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, false, true);
 }
 
 /** @brief Convert ticks to milliseconds
@@ -1111,7 +1116,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_ms_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_ms_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_ms, true, true, true, false);
 }
 
 /** @brief Convert ticks to milliseconds
@@ -1139,7 +1144,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_ms_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_us_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, false, false);
 }
 
 /** @brief Convert ticks to microseconds
@@ -1167,7 +1172,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_us_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_us_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, false, true);
 }
 
 /** @brief Convert ticks to microseconds
@@ -1195,7 +1200,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_us_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_us_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_us, true, true, true, false);
 }
 
 /** @brief Convert ticks to microseconds
@@ -1223,7 +1228,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_us_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_ns_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, false, false);
 }
 
 /** @brief Convert ticks to nanoseconds
@@ -1251,7 +1256,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_ns_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_ns_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, false, true);
 }
 
 /** @brief Convert ticks to nanoseconds
@@ -1279,7 +1284,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_ns_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_ns_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_ns, true, true, true, false);
 }
 
 /** @brief Convert ticks to nanoseconds
@@ -1307,7 +1312,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_ns_ceil64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_cyc_floor32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false, false);
 }
 
 /** @brief Convert ticks to hardware cycles
@@ -1335,7 +1340,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_cyc_floor64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_cyc_near32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false, true);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false, true);
 }
 
 /** @brief Convert ticks to hardware cycles
@@ -1363,7 +1368,7 @@ static TIME_CONSTEXPR inline uint64_t k_ticks_to_cyc_near64(uint64_t t)
 static TIME_CONSTEXPR inline uint32_t k_ticks_to_cyc_ceil32(uint32_t t)
 {
 	/* Generated.  Do not edit.  See above. */
-	return z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, true, false);
+	return (uint32_t)z_tmcvt(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, true, false);
 }
 
 /** @brief Convert ticks to hardware cycles

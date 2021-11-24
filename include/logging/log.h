@@ -322,7 +322,7 @@ static inline char *log_strdup(const char *str)
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
 		.name = STRINGIFY(_name),				     \
-		.level = (_level)						     \
+		.level = (uint8_t)(_level)						     \
 	}
 
 #define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)				\

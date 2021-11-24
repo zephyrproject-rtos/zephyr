@@ -154,11 +154,11 @@ enum uart_event_type {
  */
 enum uart_rx_stop_reason {
 	/** @brief Overrun error */
-	UART_ERROR_OVERRUN = (1 << 0),
+	UART_ERROR_OVERRUN = (1U << 0),
 	/** @brief Parity error */
-	UART_ERROR_PARITY  = (1 << 1),
+	UART_ERROR_PARITY  = (1U << 1),
 	/** @brief Framing error */
-	UART_ERROR_FRAMING = (1 << 2),
+	UART_ERROR_FRAMING = (1U << 2),
 	/**
 	 * @brief Break interrupt
 	 *
@@ -166,7 +166,7 @@ enum uart_rx_stop_reason {
 	 * is held at a logic '0' state for longer than the sum of
 	 * start time + data bits + parity + stop bits.
 	 */
-	UART_BREAK = (1 << 3),
+	UART_BREAK = (1U << 3),
 	/**
 	 * @brief Collision error
 	 *
@@ -176,7 +176,7 @@ enum uart_rx_stop_reason {
 	 * RS-485 half-duplex. This error is only valid on UARTs that
 	 * support collision checking.
 	 */
-	UART_ERROR_COLLISION = (1 << 4),
+	UART_ERROR_COLLISION = (1U << 4),
 };
 
 /** @brief UART TX event data. */

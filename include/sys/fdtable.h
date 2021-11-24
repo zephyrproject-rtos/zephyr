@@ -119,7 +119,7 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
  * @param ... Variadic arguments to ioctl
  */
 static inline int z_fdtable_call_ioctl(const struct fd_op_vtable *vtable, void *obj,
-				       unsigned long request, ...)
+				       unsigned int request, ...)
 {
 	va_list args;
 	int res;

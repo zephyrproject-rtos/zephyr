@@ -241,9 +241,9 @@ static inline const struct log_backend *log_backend_get(uint32_t idx)
  *
  * @return Number of backends.
  */
-static inline int log_backend_count_get(void)
+static inline unsigned int log_backend_count_get(void)
 {
-	return __log_backends_end - __log_backends_start;
+	return (unsigned int)(__log_backends_end - __log_backends_start);
 }
 
 /**

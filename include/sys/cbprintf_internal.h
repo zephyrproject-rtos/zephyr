@@ -24,14 +24,14 @@
 
 #if defined(__i386__)
 /* there are no gaps on the stack */
-#define VA_STACK_ALIGN(type)	1
+#define VA_STACK_ALIGN(type)	1U
 #elif defined(__sparc__)
 /* there are no gaps on the stack */
-#define VA_STACK_ALIGN(type)	1
+#define VA_STACK_ALIGN(type)	1U
 #elif defined(__x86_64__)
-#define VA_STACK_MIN_ALIGN	8
+#define VA_STACK_MIN_ALIGN	8U
 #elif defined(__aarch64__)
-#define VA_STACK_MIN_ALIGN	8
+#define VA_STACK_MIN_ALIGN	8U
 #elif defined(__riscv)
 #define VA_STACK_MIN_ALIGN	(__riscv_xlen / 8)
 #endif
@@ -41,7 +41,7 @@
  */
 
 #ifndef VA_STACK_MIN_ALIGN
-#define VA_STACK_MIN_ALIGN	1
+#define VA_STACK_MIN_ALIGN	1U
 #endif
 
 #ifndef VA_STACK_ALIGN
@@ -78,27 +78,27 @@ extern "C" {
 #define Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY	false
 #endif
 
-/** @brief Return true if argument is a pointer to char or wchar_t
+/** @brief Return 1 if argument is a pointer to char or wchar_t
  *
  * @param x argument.
  *
- * @return true if char * or wchar_t *, false otherwise.
+ * @return 1 if char * or wchar_t *, 0 otherwise.
  */
 #ifdef __cplusplus
 #define Z_CBPRINTF_IS_PCHAR(x) z_cbprintf_cxx_is_pchar(x)
 #else
 #define Z_CBPRINTF_IS_PCHAR(x) \
-	_Generic((x) + 0, \
-		char * : true, \
-		const char * : true, \
-		volatile char * : true, \
-		const volatile char * : true, \
-		wchar_t * : true, \
-		const wchar_t * : true, \
-		volatile wchar_t * : true, \
-		const volatile wchar_t * : true, \
+	_Generic((x), \
+		char * : 1, \
+		const char * : 1, \
+		volatile char * : 1, \
+		const volatile char * : 1, \
+		wchar_t * : 1, \
+		const wchar_t * : 1, \
+		volatile wchar_t * : 1, \
+		const volatile wchar_t * : 1, \
 		default : \
-			false)
+			0)
 #endif
 
 /** @brief Calculate number of char * or wchar_t * arguments in the arguments.
@@ -120,15 +120,15 @@ extern "C" {
  *
  * @param ... String with arguments (fmt, ...).
  *
- * @retval 1 if string must be packaged at runtime.
- * @retval 0 if string can be statically packaged.
+ * @retval true if string must be packaged at runtime.
+ * @retval false if string can be statically packaged.
  */
 #if Z_C_GENERIC
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) ({\
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
-	int _rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
-			(0), \
+	bool _rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+			(false), \
 			(((Z_CBPRINTF_HAS_PCHAR_ARGS(__VA_ARGS__) - (skip)) > 0))); \
 	_Pragma("GCC diagnostic pop")\
 	_rv; \
@@ -149,8 +149,9 @@ extern "C" {
 #ifdef __cplusplus
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
+#define Z_PROMOTE(v) ((__typeof__((v) + 0))(v))
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
-	__auto_type _v = (v) + 0; \
+	__auto_type _v = Z_PROMOTE(v); \
 	size_t _arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
@@ -170,20 +171,20 @@ extern "C" {
 #define Z_CBPRINTF_STORE_ARG(buf, arg) z_cbprintf_cxx_store_arg(buf, arg)
 #else
 #define Z_CBPRINTF_STORE_ARG(buf, arg) do { \
+	__auto_type _v = Z_PROMOTE(arg); \
 	if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) { \
 		/* If required, copy arguments by word to avoid unaligned access.*/ \
-		__auto_type _v = (arg) + 0; \
-		double _d = _Generic((arg) + 0, \
-				float : (arg) + 0, \
+		double _d = _Generic(_v, \
+				float : _v, \
 				default : \
 					0.0); \
 		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
 		size_t _wsize = arg_size / sizeof(int); \
 		z_cbprintf_wcpy((int *)(buf), \
-			      (int *) _Generic((arg) + 0, float : &_d, default : &_v), \
+			      (int *) _Generic(_v, float : &_d, default : &_v), \
 			      _wsize); \
 	} else { \
-		*_Generic((arg) + 0, \
+		*_Generic(_v, \
 			char : (int *)(buf), \
 			unsigned char: (int *)(buf), \
 			short : (int *)(buf), \
@@ -198,7 +199,7 @@ extern "C" {
 			double : (double *)(buf), \
 			long double : (long double *)(buf), \
 			default : \
-				(const void **)(buf)) = (arg); \
+				(const void **)(buf)) = _v; \
 	} \
 } while (false)
 #endif
@@ -213,14 +214,14 @@ extern "C" {
 #define Z_CBPRINTF_ALIGNMENT(_arg) z_cbprintf_cxx_alignment(_arg)
 #else
 #define Z_CBPRINTF_ALIGNMENT(_arg) \
-	MAX(_Generic((_arg) + 0, \
+	MAX(_Generic((_arg), \
 		float : VA_STACK_ALIGN(double), \
 		double : VA_STACK_ALIGN(double), \
 		long double : VA_STACK_ALIGN(long double), \
 		long long : VA_STACK_ALIGN(long long), \
 		unsigned long long : VA_STACK_ALIGN(long long), \
 		default : \
-			__alignof__((_arg) + 0)), VA_STACK_MIN_ALIGN)
+			__alignof__(Z_PROMOTE(_arg))), VA_STACK_MIN_ALIGN)
 #endif
 
 /** @brief Detect long double variable as a constant expression.
@@ -231,17 +232,17 @@ extern "C" {
  *
  * @param x Argument.
  *
- * @return 1 if @p x is a long double, 0 otherwise.
+ * @return true if @p x is a long double, false otherwise.
  */
 #ifdef __cplusplus
 #if defined(__x86_64__) || defined(__riscv) || defined(__aarch64__)
-#define Z_CBPRINTF_IS_LONGDOUBLE(x) 0
+#define Z_CBPRINTF_IS_LONGDOUBLE(x) false
 #else
 #define Z_CBPRINTF_IS_LONGDOUBLE(x) z_cbprintf_cxx_is_longdouble(x)
 #endif
 #else
 #define Z_CBPRINTF_IS_LONGDOUBLE(x) \
-	_Generic((x) + 0, long double : 1, default : 0)
+	_Generic((x), long double : true, default : false)
 #endif
 
 /** @brief Safely package arguments to a buffer.
@@ -270,11 +271,11 @@ do { \
 		(_idx) += sizeof(int); \
 		(_align_offset) += sizeof(int); \
 	} \
-	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
+	size_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
 	if (Z_CBPRINTF_IS_PCHAR(_arg) != 0) { \
-		(_s_buf)[(_s_idx)++] = (_idx) / sizeof(int); \
+		(_s_buf)[(_s_idx)++] = (uint16_t)((_idx) / sizeof(int)); \
 	} \
-	if ((_buf) != NULL && (_idx) < (int)(_max)) { \
+	if ((_buf) != NULL && (_idx) < (_max)) { \
 		Z_CBPRINTF_STORE_ARG(&(_buf)[(_idx)], _arg); \
 	} \
 	(_idx) += (_arg_size); \
@@ -351,14 +352,14 @@ do { \
 	IF_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT, \
 		(__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
 			  "Buffer must be aligned.");)) \
-	bool str_idxs = (_flags) & CBPRINTF_PACKAGE_ADD_STRING_IDXS; \
+	bool str_idxs = ((_flags) & CBPRINTF_PACKAGE_ADD_STRING_IDXS) != 0; \
 	uint8_t *_pbuf = (buf); \
 	uint8_t _s_cnt = 0; \
 	uint16_t _s_buffer[16]; \
-	size_t _pmax = ((buf) != NULL) ? (_inlen) : INT32_MAX; \
-	int _pkg_len = 0; \
-	int _total_len = 0; \
-	int _pkg_offset = (_align_offset); \
+	size_t _pmax = ((buf) != NULL) ? (size_t)(_inlen) : (size_t)INT32_MAX; \
+	size_t _pkg_len = 0; \
+	size_t _total_len = 0; \
+	size_t _pkg_offset = (_align_offset); \
 	union z_cbprintf_hdr *_len_loc; \
 	/* package starts with string address and field with length */ \
 	if (_pmax < sizeof(union z_cbprintf_hdr)) { \
@@ -374,13 +375,14 @@ do { \
 	if (str_idxs) {\
 		_total_len += _s_cnt; \
 		if (_pbuf != NULL) { \
-			for (int i = 0; i < _s_cnt; i++) { \
-				_pbuf[_pkg_len + i] = _s_buffer[i]; \
+			for (uint8_t i = 0; i < _s_cnt; i++) { \
+			     /*? CHECKME: Suspicious cast */ \
+				_pbuf[_pkg_len + i] = (uint8_t)_s_buffer[i]; \
 			} \
 		} \
 	} \
 	/* Store length */ \
-	(_outlen) = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
+	(_outlen) = (_total_len > _pmax) ? -ENOSPC : (int)_total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf != NULL) { \
 		union z_cbprintf_hdr hdr = { \

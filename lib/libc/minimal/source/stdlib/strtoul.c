@@ -35,6 +35,7 @@
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 /*
@@ -47,18 +48,19 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 {
 	register const char *s = nptr;
 	register unsigned long acc;
-	register int c;
+	register char c;
 	register unsigned long cutoff;
-	register int neg = 0, any, cutlim;
+	register int any, cutlim;
+	register bool neg = false;
 
 	/*
 	 * See strtol for comments as to the logic used.
 	 */
 	do {
 		c = *s++;
-	} while (isspace((unsigned char)c));
+	} while (isspace((int)(unsigned char)c));
 	if (c == '-') {
-		neg = 1;
+		neg = true;
 		c = *s++;
 	} else if (c == '+') {
 		c = *s++;
@@ -75,35 +77,38 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 		base = c == '0' ? 8 : 10;
 	}
 
-	cutoff = (unsigned long)ULONG_MAX / (unsigned long)base;
-	cutlim = (unsigned long)ULONG_MAX % (unsigned long)base;
+	cutoff = ULONG_MAX / (unsigned long)base;
+	cutlim = (int)(unsigned long)(ULONG_MAX % (unsigned long)base);
 	for (acc = 0, any = 0;; c = *s++) {
-		if (isdigit((unsigned char)c)) {
-			c = (char)c - '0';
-		} else if (isalpha((unsigned char)c)) {
-			c = (char)c - (isupper(c) ? 'A' : 'a') + 10;
+		int digit;
+
+		if (isdigit((int)(unsigned char)c)) {
+			digit = c - '0';
+		} else if (isalpha((int)(unsigned char)c)) {
+			digit = c - (isupper((int)(unsigned char)c) ? 'A' : 'a') + 10;
 		} else {
 			break;
 		}
-		if (c >= base) {
+		if (digit >= base) {
 			break;
 		}
-		if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim)) {
+		if (any < 0 || acc > cutoff || (acc == cutoff && digit > cutlim)) {
 			any = -1;
 		} else {
 			any = 1;
-			acc *= base;
-			acc += c;
+			acc *= (unsigned long)base;
+			acc += (unsigned long)digit;
 		}
 	}
-	if (any < 0) {
-		acc = ULONG_MAX;
-		errno = ERANGE;
-	} else if (neg != 0) {
-		acc = -acc;
-	}
 	if (endptr != NULL) {
-		*endptr = (char *)(any ? s - 1 : nptr);
+		*endptr = (char *)(any != 0 ? s - 1 : nptr);
+	}
+	if (any < 0) {
+		errno = ERANGE;
+		return ULONG_MAX;
+	}
+	if (neg) {
+		return 0UL - acc;
 	}
 	return acc;
 }

@@ -21,8 +21,8 @@
  * together.
  */
 static mm_reg_t mmio;
-#define IN(reg)       (sys_read32(mmio + (reg) * 4) & 0xff)
-#define OUT(reg, val) sys_write32((val) & 0xff, mmio + (reg) * 4)
+#define IN(reg)       (sys_read32(mmio + (reg) * 4U) & 0xffU)
+#define OUT(reg, val) sys_write32((uint32_t)(val) & 0xffU, mmio + (reg) * 4U)
 #elif defined(X86_SOC_EARLY_SERIAL_MMIO8_ADDR)
 /* Still other devices use a MMIO region containing packed byte
  * registers
@@ -49,21 +49,21 @@ static mm_reg_t mmio;
 #define REG_BRDH 0x01  /* Baud rate divisor (MSB)  */
 
 #define IER_DISABLE     0x00
-#define LCR_8N1         (BIT(0) | BIT(1))
-#define LCR_DLAB_SELECT BIT(7)
-#define MCR_DTR         BIT(0)
-#define MCR_RTS         BIT(1)
-#define LSR_THRE        BIT(5)
+#define LCR_8N1         (BIT32(0) | BIT32(1))
+#define LCR_DLAB_SELECT BIT32(7)
+#define MCR_DTR         BIT32(0)
+#define MCR_RTS         BIT32(1)
+#define LSR_THRE        BIT32(5)
 
 #define FCR_FIFO    BIT(0)  /* enable XMIT and RCVR FIFO */
 #define FCR_RCVRCLR BIT(1)  /* clear RCVR FIFO           */
 #define FCR_XMITCLR BIT(2)  /* clear XMIT FIFO           */
-#define FCR_FIFO_1  0       /* 1 byte in RCVR FIFO       */
+#define FCR_FIFO_1  0x00U   /* 1 byte in RCVR FIFO       */
 
 static bool early_serial_init_done;
 static uint32_t suppressed_chars;
 
-static void serout(int c)
+static void serout(uint8_t c)
 {
 	while ((IN(REG_LSR) & LSR_THRE) == 0) {
 	}
@@ -77,10 +77,10 @@ int arch_printk_char_out(int c)
 		return c;
 	}
 
-	if (c == '\n') {
-		serout('\r');
+	if (c == (int)'\n') {
+		serout((uint8_t)'\r');
 	}
-	serout(c);
+	serout((uint8_t)c);
 	return c;
 }
 
@@ -100,8 +100,8 @@ void z_x86_early_serial_init(void)
 
 	OUT(REG_IER, IER_DISABLE);     /* Disable interrupts */
 	OUT(REG_LCR, LCR_DLAB_SELECT); /* DLAB select */
-	OUT(REG_BRDL, 1);              /* Baud divisor = 1 */
-	OUT(REG_BRDH, 0);
+	OUT(REG_BRDL, 1U);              /* Baud divisor = 1 */
+	OUT(REG_BRDH, 0U);
 	OUT(REG_LCR, LCR_8N1);         /* LCR = 8n1 + DLAB off */
 	OUT(REG_MCR, MCR_DTR | MCR_RTS);
 

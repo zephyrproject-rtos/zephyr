@@ -181,10 +181,10 @@ char *strtok_r(char *str, const char *sep, char **state)
 {
 	char *start, *end;
 
-	start = str ? str : *state;
+	start = str != NULL ? str : *state;
 
 	/* skip leading delimiters */
-	while (*start && strchr(sep, *start)) {
+	while (*start != '\0' && strchr(sep, *start) != NULL) {
 		start++;
 	}
 
@@ -195,7 +195,7 @@ char *strtok_r(char *str, const char *sep, char **state)
 
 	/* look for token chars */
 	end = start;
-	while (*end && !strchr(sep, *end)) {
+	while (*end != '\0' && strchr(sep, *end) == NULL) {
 		end++;
 	}
 
@@ -241,7 +241,7 @@ int memcmp(const void *m1, const void *m2, size_t n)
 	const char *c1 = m1;
 	const char *c2 = m2;
 
-	if (!n) {
+	if (n == 0) {
 		return 0;
 	}
 

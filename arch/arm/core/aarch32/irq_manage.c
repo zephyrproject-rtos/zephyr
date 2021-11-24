@@ -88,7 +88,7 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	__ASSERT(prio <= (BIT(NUM_IRQ_PRIO_BITS) - 1),
 		 "invalid priority %d for %d irq! values must be less than %lu\n",
 		 prio - _IRQ_PRIO_OFFSET, irq,
-		 BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
+		 (unsigned long)BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 

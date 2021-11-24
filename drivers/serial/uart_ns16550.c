@@ -90,14 +90,14 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 /* equates for FIFO control register */
 
-#define FCR_FIFO 0x01    /* enable XMIT and RCVR FIFO */
-#define FCR_RCVRCLR 0x02 /* clear RCVR FIFO */
-#define FCR_XMITCLR 0x04 /* clear XMIT FIFO */
+#define FCR_FIFO 0x01U    /* enable XMIT and RCVR FIFO */
+#define FCR_RCVRCLR 0x02U /* clear RCVR FIFO */
+#define FCR_XMITCLR 0x04U /* clear XMIT FIFO */
 
 /* equates for Apollo Lake clock control register (PRV_CLOCK_PARAMS) */
 
-#define PCP_UPDATE 0x80000000 /* update clock */
-#define PCP_EN 0x00000001     /* enable clock output */
+#define PCP_UPDATE 0x80000000U /* update clock */
+#define PCP_EN 0x00000001U     /* enable clock output */
 
 /*
  * Per PC16550D (Literature Number: SNLS378B):
@@ -127,66 +127,66 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
  * TXRDY pin will go low active. This pin will become inactive
  * when the XMIT FIFO is completely full.
  */
-#define FCR_MODE0 0x00 /* set receiver in mode 0 */
-#define FCR_MODE1 0x08 /* set receiver in mode 1 */
+#define FCR_MODE0 0x00U /* set receiver in mode 0 */
+#define FCR_MODE1 0x08U /* set receiver in mode 1 */
 
 /* RCVR FIFO interrupt levels: trigger interrupt with this bytes in FIFO */
-#define FCR_FIFO_1 0x00  /* 1 byte in RCVR FIFO */
-#define FCR_FIFO_4 0x40  /* 4 bytes in RCVR FIFO */
-#define FCR_FIFO_8 0x80  /* 8 bytes in RCVR FIFO */
-#define FCR_FIFO_14 0xC0 /* 14 bytes in RCVR FIFO */
+#define FCR_FIFO_1 0x00U  /* 1 byte in RCVR FIFO */
+#define FCR_FIFO_4 0x40U  /* 4 bytes in RCVR FIFO */
+#define FCR_FIFO_8 0x80U  /* 8 bytes in RCVR FIFO */
+#define FCR_FIFO_14 0xC0U /* 14 bytes in RCVR FIFO */
 
 /*
  * UART NS16750 supports 64 bytes FIFO, which can be enabled
  * via the FCR register
  */
-#define FCR_FIFO_64 0x20 /* Enable 64 bytes FIFO */
+#define FCR_FIFO_64 0x20U /* Enable 64 bytes FIFO */
 
 /* constants for line control register */
 
-#define LCR_CS5 0x00   /* 5 bits data size */
-#define LCR_CS6 0x01   /* 6 bits data size */
-#define LCR_CS7 0x02   /* 7 bits data size */
-#define LCR_CS8 0x03   /* 8 bits data size */
-#define LCR_2_STB 0x04 /* 2 stop bits */
-#define LCR_1_STB 0x00 /* 1 stop bit */
-#define LCR_PEN 0x08   /* parity enable */
-#define LCR_PDIS 0x00  /* parity disable */
-#define LCR_EPS 0x10   /* even parity select */
-#define LCR_SP 0x20    /* stick parity select */
-#define LCR_SBRK 0x40  /* break control bit */
-#define LCR_DLAB 0x80  /* divisor latch access enable */
+#define LCR_CS5 0x00U   /* 5 bits data size */
+#define LCR_CS6 0x01U   /* 6 bits data size */
+#define LCR_CS7 0x02U   /* 7 bits data size */
+#define LCR_CS8 0x03U   /* 8 bits data size */
+#define LCR_2_STB 0x04U /* 2 stop bits */
+#define LCR_1_STB 0x00U /* 1 stop bit */
+#define LCR_PEN 0x08U   /* parity enable */
+#define LCR_PDIS 0x00U  /* parity disable */
+#define LCR_EPS 0x10U   /* even parity select */
+#define LCR_SP 0x20U    /* stick parity select */
+#define LCR_SBRK 0x40U  /* break control bit */
+#define LCR_DLAB 0x80U  /* divisor latch access enable */
 
 /* constants for the modem control register */
 
-#define MCR_DTR 0x01  /* dtr output */
-#define MCR_RTS 0x02  /* rts output */
-#define MCR_OUT1 0x04 /* output #1 */
-#define MCR_OUT2 0x08 /* output #2 */
-#define MCR_LOOP 0x10 /* loop back */
-#define MCR_AFCE 0x20 /* auto flow control enable */
+#define MCR_DTR 0x01U  /* dtr output */
+#define MCR_RTS 0x02U  /* rts output */
+#define MCR_OUT1 0x04U /* output #1 */
+#define MCR_OUT2 0x08U /* output #2 */
+#define MCR_LOOP 0x10U /* loop back */
+#define MCR_AFCE 0x20U /* auto flow control enable */
 
 /* constants for line status register */
 
-#define LSR_RXRDY 0x01 /* receiver data available */
-#define LSR_OE 0x02    /* overrun error */
-#define LSR_PE 0x04    /* parity error */
-#define LSR_FE 0x08    /* framing error */
-#define LSR_BI 0x10    /* break interrupt */
-#define LSR_EOB_MASK 0x1E /* Error or Break mask */
-#define LSR_THRE 0x20  /* transmit holding register empty */
-#define LSR_TEMT 0x40  /* transmitter empty */
+#define LSR_RXRDY 0x01U /* receiver data available */
+#define LSR_OE 0x02U    /* overrun error */
+#define LSR_PE 0x04U    /* parity error */
+#define LSR_FE 0x08U    /* framing error */
+#define LSR_BI 0x10U    /* break interrupt */
+#define LSR_EOB_MASK 0x1EU /* Error or Break mask */
+#define LSR_THRE 0x20U  /* transmit holding register empty */
+#define LSR_TEMT 0x40U  /* transmitter empty */
 
 /* constants for modem status register */
 
-#define MSR_DCTS 0x01 /* cts change */
-#define MSR_DDSR 0x02 /* dsr change */
-#define MSR_DRI 0x04  /* ring change */
-#define MSR_DDCD 0x08 /* data carrier change */
-#define MSR_CTS 0x10  /* complement of cts */
-#define MSR_DSR 0x20  /* complement of dsr */
-#define MSR_RI 0x40   /* complement of ring signal */
-#define MSR_DCD 0x80  /* complement of dcd */
+#define MSR_DCTS 0x01U /* cts change */
+#define MSR_DDSR 0x02U /* dsr change */
+#define MSR_DRI 0x04U  /* ring change */
+#define MSR_DDCD 0x08U /* data carrier change */
+#define MSR_CTS 0x10U  /* complement of cts */
+#define MSR_DSR 0x20U  /* complement of dsr */
+#define MSR_RI 0x40U   /* complement of ring signal */
+#define MSR_DCD 0x80U  /* complement of dcd */
 
 /* convenience defines */
 
@@ -277,9 +277,9 @@ struct uart_ns16550_dev_data {
 #if defined(UART_REG_ADDR_INTERVAL)
 #define DEFAULT_REG_INTERVAL UART_REG_ADDR_INTERVAL
 #elif defined(UART_NS16550_ACCESS_IOPORT)
-#define DEFAULT_REG_INTERVAL 1
+#define DEFAULT_REG_INTERVAL 1U
 #else
-#define DEFAULT_REG_INTERVAL 4
+#define DEFAULT_REG_INTERVAL 4U
 #endif
 
 #if UART_NS16550_REG_INTERVAL_ENABLED
@@ -324,8 +324,8 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate)
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = INBYTE(LCR(dev));
 		OUTBYTE(LCR(dev), LCR_DLAB | lcr_cache);
-		OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
-		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
+		OUTBYTE(BRDL(dev), (uint8_t)(divisor & 0xff));
+		OUTBYTE(BRDH(dev), (uint8_t)((divisor >> 8) & 0xff));
 
 		/* restore the DLAB to access the baud rate divisor registers */
 		OUTBYTE(LCR(dev), lcr_cache);
@@ -396,16 +396,16 @@ static int uart_ns16550_configure(const struct device *dev,
 	struct uart_config uart_cfg;
 
 	switch (cfg->data_bits) {
-	case UART_CFG_DATA_BITS_5:
+	case (uint8_t)UART_CFG_DATA_BITS_5:
 		uart_cfg.data_bits = LCR_CS5;
 		break;
-	case UART_CFG_DATA_BITS_6:
+	case (uint8_t)UART_CFG_DATA_BITS_6:
 		uart_cfg.data_bits = LCR_CS6;
 		break;
-	case UART_CFG_DATA_BITS_7:
+	case (uint8_t)UART_CFG_DATA_BITS_7:
 		uart_cfg.data_bits = LCR_CS7;
 		break;
-	case UART_CFG_DATA_BITS_8:
+	case (uint8_t)UART_CFG_DATA_BITS_8:
 		uart_cfg.data_bits = LCR_CS8;
 		break;
 	default:
@@ -414,10 +414,10 @@ static int uart_ns16550_configure(const struct device *dev,
 	}
 
 	switch (cfg->stop_bits) {
-	case UART_CFG_STOP_BITS_1:
+	case (uint8_t)UART_CFG_STOP_BITS_1:
 		uart_cfg.stop_bits = LCR_1_STB;
 		break;
-	case UART_CFG_STOP_BITS_2:
+	case (uint8_t)UART_CFG_STOP_BITS_2:
 		uart_cfg.stop_bits = LCR_2_STB;
 		break;
 	default:
@@ -426,10 +426,10 @@ static int uart_ns16550_configure(const struct device *dev,
 	}
 
 	switch (cfg->parity) {
-	case UART_CFG_PARITY_NONE:
+	case (uint8_t)UART_CFG_PARITY_NONE:
 		uart_cfg.parity = LCR_PDIS;
 		break;
-	case UART_CFG_PARITY_EVEN:
+	case (uint8_t)UART_CFG_PARITY_EVEN:
 		uart_cfg.parity = LCR_EPS;
 		break;
 	default:
@@ -576,11 +576,11 @@ static void uart_ns16550_poll_out(const struct device *dev,
 static int uart_ns16550_err_check(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
-	int check = (INBYTE(LSR(dev)) & LSR_EOB_MASK);
+	uint8_t check = (INBYTE(LSR(dev)) & LSR_EOB_MASK);
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
-
-	return check >> 1;
+	check >>= 1;
+	return (int)check;
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
@@ -1054,8 +1054,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_CONFIG_PCIE0(n)
 #define DEV_CONFIG_PCIE1(n)              \
 	.pcie = true,                    \
-	.pcie_bdf = DT_INST_REG_ADDR(n), \
-	.pcie_id = DT_INST_REG_SIZE(n),
+	.pcie_bdf = (uint32_t)DT_INST_REG_ADDR(n), \
+	.pcie_id = (uint32_t)DT_INST_REG_SIZE(n),
 #define DEV_CONFIG_PCIE_INIT(n) \
 	_CONCAT(DEV_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
@@ -1074,18 +1074,18 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
 	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {  \
 		DEV_CONFIG_REG_INIT(n)                                               \
-		.sys_clk_freq = DT_INST_PROP(n, clock_frequency),                    \
+		.sys_clk_freq = (uint32_t)DT_INST_PROP(n, clock_frequency),          \
 		DEV_CONFIG_IRQ_FUNC_INIT(n)                                          \
 		DEV_CONFIG_PCP_INIT(n)                                               \
 		DEV_CONFIG_REG_INT_INIT(n)                                           \
 		DEV_CONFIG_PCIE_INIT(n)                                              \
 	};                                                                           \
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
-		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \
-		.uart_config.parity = UART_CFG_PARITY_NONE,                          \
-		.uart_config.stop_bits = UART_CFG_STOP_BITS_1,                       \
-		.uart_config.data_bits = UART_CFG_DATA_BITS_8,                       \
-		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                      \
+		.uart_config.baudrate = (uint32_t)DT_INST_PROP_OR(n, current_speed, 0),  \
+		.uart_config.parity = (uint8_t)UART_CFG_PARITY_NONE,                          \
+		.uart_config.stop_bits = (uint8_t)UART_CFG_STOP_BITS_1,                       \
+		.uart_config.data_bits = (uint8_t)UART_CFG_DATA_BITS_8,                       \
+		.uart_config.flow_ctrl = (uint8_t)DEV_DATA_FLOW_CTRL(n),                      \
 		DEV_DATA_DLF_INIT(n)                                                 \
 	};                                                                           \
 	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \

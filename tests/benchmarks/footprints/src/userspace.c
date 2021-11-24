@@ -85,6 +85,7 @@ void user_thread_creation(void)
 
 void syscall_overhead_user_thread(void *p1, void *p2, void *p3)
 {
+	/*? BUG HERE? Dead store, possibly removed by the compiler */
 	int val = dummy_syscall();
 
 	val |= 0xFF;

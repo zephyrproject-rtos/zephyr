@@ -8,7 +8,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#define ACPI_RSDP_SIGNATURE 0x2052545020445352 /* == "RSD PTR " */
+#define ACPI_RSDP_SIGNATURE 0x2052545020445352ULL /* == "RSD PTR " */
 
 /* Root System Description Pointer */
 struct acpi_rsdp {
@@ -90,7 +90,7 @@ struct acpi_cpu {
 	uint8_t flags;   /* see ACPI_CPU_FLAGS_* below */
 } __packed;
 
-#define ACPI_CPU_FLAGS_ENABLED 0x01
+#define ACPI_CPU_FLAGS_ENABLED 0x01U
 
 /* Generic DMA Remapping entry structure part */
 struct acpi_dmar_entry {

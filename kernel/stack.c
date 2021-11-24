@@ -76,7 +76,7 @@ int k_stack_cleanup(struct k_stack *stack)
 	if ((stack->flags & K_STACK_FLAG_ALLOC) != (uint8_t)0) {
 		k_free(stack->base);
 		stack->base = NULL;
-		stack->flags &= ~K_STACK_FLAG_ALLOC;
+		stack->flags &= (uint8_t)~K_STACK_FLAG_ALLOC;
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, 0);

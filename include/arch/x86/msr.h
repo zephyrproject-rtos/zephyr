@@ -10,19 +10,19 @@
  * Model specific registers (MSR).  Access with z_x86_msr_read/write().
  */
 
-#define X86_TIME_STAMP_COUNTER_MSR	0x00000010
+#define X86_TIME_STAMP_COUNTER_MSR	0x00000010U
 
-#define X86_SPEC_CTRL_MSR		0x00000048
+#define X86_SPEC_CTRL_MSR		0x00000048U
 #define X86_SPEC_CTRL_MSR_IBRS		BIT(0)
 #define X86_SPEC_CTRL_MSR_SSBD		BIT(2)
 
-#define X86_APIC_BASE_MSR		0x0000001b
+#define X86_APIC_BASE_MSR		0x0000001bU
 #define X86_APIC_BASE_MSR_X2APIC	BIT(10)
 
-#define X86_MTRR_DEF_TYPE_MSR		0x000002ff
+#define X86_MTRR_DEF_TYPE_MSR		0x000002ffU
 #define X86_MTRR_DEF_TYPE_MSR_ENABLE	BIT(11)
 
-#define X86_X2APIC_BASE_MSR		0x00000800 /* .. thru 0x00000BFF */
+#define X86_X2APIC_BASE_MSR		0x00000800U /* .. thru 0x00000BFF */
 
 #define X86_EFER_MSR			0xC0000080U
 #define X86_EFER_MSR_SCE		BIT(0)
@@ -57,8 +57,8 @@ extern "C" {
 
 static inline void z_x86_msr_write(unsigned int msr, uint64_t data)
 {
-	uint32_t high = data >> 32;
-	uint32_t low = data & 0xFFFFFFFFU;
+	uint32_t high = (uint32_t)(data >> 32);
+	uint32_t low = (uint32_t)(data & 0xFFFFFFFFU);
 
 	__asm__ volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }

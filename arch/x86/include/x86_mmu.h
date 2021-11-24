@@ -89,7 +89,7 @@ void z_x86_dump_mmu_flags(pentry_t *ptables, void *virt);
  * @param ptables Toplevel pointer to page tables
  * @param virt Virtual address to lookup
  */
-void z_x86_pentry_get(int *paging_level, pentry_t *val, pentry_t *ptables,
+void z_x86_pentry_get(unsigned int *paging_level, pentry_t *val, pentry_t *ptables,
 		      void *virt);
 
 /**

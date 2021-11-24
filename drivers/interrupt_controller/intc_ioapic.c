@@ -83,7 +83,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
  * In either case, regardless how many CPUs in the system, 0xff implies that
  * it's intended to deliver to all possible 8 local APICs.
  */
-#define DEFAULT_RTE_DEST	(0xFF << 24)
+#define DEFAULT_RTE_DEST	(0xFFUL << 24)
 
 static __pinned_bss uint32_t ioapic_rtes;
 
@@ -107,8 +107,8 @@ __pinned_bss
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
 #endif
 
-static uint32_t __IoApicGet(int32_t offset);
-static void __IoApicSet(int32_t offset, uint32_t value);
+static uint32_t __IoApicGet(uint32_t offset);
+static void __IoApicSet(uint32_t offset, uint32_t value);
 static void ioApicRedSetHi(unsigned int irq, uint32_t upper32);
 static void ioApicRedSetLo(unsigned int irq, uint32_t lower32);
 static uint32_t ioApicRedGetLo(unsigned int irq);
@@ -141,7 +141,7 @@ int ioapic_init(const struct device *unused)
 			IOAPIC_MRE_MASK) >> IOAPIC_MRE_POS) + 1;
 
 #ifdef CONFIG_IOAPIC_MASK_RTE
-	int32_t ix;	/* redirection table index */
+	uint32_t ix;	/* redirection table index */
 	uint32_t rteValue; /* value to copy into redirection table entry */
 
 	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
@@ -380,7 +380,7 @@ void z_ioapic_int_vec_set(unsigned int irq, unsigned int vector)
  * @return register value
  */
 __pinned_func
-static uint32_t __IoApicGet(int32_t offset)
+static uint32_t __IoApicGet(uint32_t offset)
 {
 	uint32_t value; /* value */
 	unsigned int key;	/* interrupt lock level */
@@ -389,7 +389,7 @@ static uint32_t __IoApicGet(int32_t offset)
 
 	key = irq_lock();
 
-	*((volatile uint32_t *) (IOAPIC_REG + IOAPIC_IND)) = (char)offset;
+	*((volatile uint32_t *) (IOAPIC_REG + IOAPIC_IND)) = (uint8_t)offset;
 	value = *((volatile uint32_t *)(IOAPIC_REG + IOAPIC_DATA));
 
 	irq_unlock(key);
@@ -408,7 +408,7 @@ static uint32_t __IoApicGet(int32_t offset)
  * @return N/A
  */
 __pinned_func
-static void __IoApicSet(int32_t offset, uint32_t value)
+static void __IoApicSet(uint32_t offset, uint32_t value)
 {
 	unsigned int key; /* interrupt lock level */
 
@@ -416,7 +416,7 @@ static void __IoApicSet(int32_t offset, uint32_t value)
 
 	key = irq_lock();
 
-	*(volatile uint32_t *)(IOAPIC_REG + IOAPIC_IND) = (char)offset;
+	*(volatile uint32_t *)(IOAPIC_REG + IOAPIC_IND) = (uint8_t)offset;
 	*((volatile uint32_t *)(IOAPIC_REG + IOAPIC_DATA)) = value;
 
 	irq_unlock(key);
@@ -434,7 +434,7 @@ static void __IoApicSet(int32_t offset, uint32_t value)
 __pinned_func
 static uint32_t ioApicRedGetLo(unsigned int irq)
 {
-	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
+	uint32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
 
 	return __IoApicGet(offset);
 }
@@ -452,7 +452,7 @@ static uint32_t ioApicRedGetLo(unsigned int irq)
 __pinned_func
 static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
 {
-	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
+	uint32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
 
 	__IoApicSet(offset, lower32);
 }
@@ -470,7 +470,7 @@ static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
 __pinned_func
 static void ioApicRedSetHi(unsigned int irq, uint32_t upper32)
 {
-	int32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
+	uint32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
 
 	__IoApicSet(offset, upper32);
 }

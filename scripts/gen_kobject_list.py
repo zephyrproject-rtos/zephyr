@@ -845,7 +845,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
             val = "\\x%02x" % byte
             fp.write(val)
 
-        flags = "0"
+        flags = "0U"
         if initialized:
             flags += " | K_OBJ_FLAG_INITIALIZED"
         if is_driver:
@@ -856,7 +856,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         else:
             tname = "unused"
 
-        fp.write("\", {0}, %s, %s, { .%s = %s }\n" % (obj_type, flags,
+        fp.write("\", {0}, (uint8_t)%s, %s, { .%s = %s }\n" % (obj_type, flags,
 		tname, str(ko.data)))
 
         if obj_type == "K_OBJ_THREAD":

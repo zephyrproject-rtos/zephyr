@@ -192,11 +192,13 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
  * package. MSB bit is set if string is read-only so effectively 7 bits are
  * used for index, which should be enough.
  */
-#define CBPRINTF_STR_POS_RO_FLAG BIT(7)
-#define CBPRINTF_STR_POS_MASK BIT_MASK(7)
+#define CBPRINTF_STR_POS_RO_FLAG ((uint8_t)BIT(7))
+#define CBPRINTF_STR_POS_MASK ((uint8_t)BIT_MASK(7))
 
-	char *buf = packaged, *buf0 = buf;
-	unsigned int align, size, i, s_idx = 0, s_rw_cnt = 0, s_ro_cnt = 0;
+	uint8_t *buf = packaged, *buf0 = buf;
+	size_t align, size;
+	unsigned int i, s_idx = 0;
+	uint8_t s_rw_cnt = 0, s_ro_cnt = 0;
 	uint8_t str_ptr_pos[16];
 	const char *s;
 	bool parsing = false;
@@ -229,13 +231,14 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * In this case, incoming len argument indicates the anticipated
 	 * buffer "misalignment" offset.
 	 */
-	if (!buf0) {
+	if (buf0 == NULL) {
 #if defined(__xtensa__)
 		if (len % CBPRINTF_PACKAGE_ALIGNMENT) {
 			return -EFAULT;
 		}
 #endif
 		buf += len % CBPRINTF_PACKAGE_ALIGNMENT;
+		/*? BUG HERE? What is the aim of that? */
 		len = -(len % CBPRINTF_PACKAGE_ALIGNMENT);
 	}
 
@@ -243,7 +246,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * Otherwise we must ensure we can store at least
 	 * thepointer to the format string itself.
 	 */
-	if (buf0 && buf - buf0 + sizeof(char *) > len) {
+	if ((buf0 != NULL) && ((size_t)(buf - buf0) + sizeof(char *) > len)) {
 		return -ENOSPC;
 	}
 
@@ -366,7 +369,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			buf = (void *) ROUND_UP(buf, align);
 			if (buf0 != NULL) {
 				/* make sure it fits */
-				if (buf - buf0 + size > len) {
+				if ((size_t)(buf - buf0) + size > len) {
 					return -ENOSPC;
 				}
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
@@ -391,7 +394,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		buf = (void *) ROUND_UP(buf, align);
 
 		/* make sure the data fits */
-		if (buf0 && buf - buf0 + size > len) {
+		if ((buf0 != NULL) && ((size_t)(buf - buf0) + size > len)) {
 			return -ENOSPC;
 		}
 
@@ -407,7 +410,7 @@ process_string:
 			 * string indexes is requested.
 			 */
 			bool is_ro = ptr_in_rodata(s);
-			bool str_idxs = flags & CBPRINTF_PACKAGE_ADD_STRING_IDXS;
+			bool str_idxs = (flags & CBPRINTF_PACKAGE_ADD_STRING_IDXS) != 0;
 			bool need_ro = is_ro && str_idxs;
 
 			if (ptr_in_rodata(s) && !str_idxs) {
@@ -423,14 +426,14 @@ process_string:
 					return -EINVAL;
 				}
 
-				if ((buf - buf0) > CBPRINTF_STR_POS_MASK) {
+				if ((size_t)(buf - buf0) > CBPRINTF_STR_POS_MASK) {
 					__ASSERT(false, "String with too many arguments");
 					return -EINVAL;
 				}
 
 				/* Add marking to identify if read only string. */
 				uint8_t ro_flag = need_ro ?
-						  CBPRINTF_STR_POS_RO_FLAG : 0;
+						  CBPRINTF_STR_POS_RO_FLAG : 0U;
 
 				if (ro_flag != 0U) {
 					s_ro_cnt++;
@@ -440,7 +443,7 @@ process_string:
 
 				/* Use same multiple as the arg list size. */
 				str_ptr_pos[s_idx++] = ro_flag |
-						       (buf - buf0) / sizeof(int);
+					(uint8_t)((size_t)(buf - buf0) / sizeof(int));
 			} else {
 				if (!is_ro) {
 					/*
@@ -483,7 +486,7 @@ process_string:
 			}
 			buf += sizeof(long long);
 		} else {
-			__ASSERT(false, "unexpected size %u", size);
+			__ASSERT(false, "unexpected size %zu", size);
 			return -EINVAL;
 		}
 	}
@@ -494,7 +497,7 @@ process_string:
 	 * worth of va_list, or about 127 arguments on a 64-bit system
 	 * (twice that on 32-bit systems). That ought to be good enough.
 	 */
-	if ((buf - buf0) / sizeof(int) > 255) {
+	if ((size_t)(buf - buf0) / sizeof(int) > 255) {
 		__ASSERT(false, "too many format args");
 		return -EINVAL;
 	}
@@ -503,7 +506,8 @@ process_string:
 	 * If all we wanted was to count required buffer size
 	 * then we have it now.
 	 */
-	if (!buf0) {
+	if (buf0 == NULL) {
+		/*? BUG HERE: a null pointer is subtracted */
 		return len + buf - buf0;
 	}
 
@@ -511,21 +515,21 @@ process_string:
 	*(char **)buf0 = NULL;
 
 	/* Record end of argument list and number of appended strings. */
-	buf0[0] = (buf - buf0) / sizeof(int);
+	buf0[0] = (uint8_t)((size_t)(buf - buf0) / sizeof(int));
 	buf0[1] = s_rw_cnt;
 	buf0[2] = s_ro_cnt;
 
 	/* Store strings pointer locations of read only strings. */
 	if (s_ro_cnt != 0U) {
 		for (i = 0; i < s_idx; i++) {
-			if (!(str_ptr_pos[i] & CBPRINTF_STR_POS_RO_FLAG)) {
+			if ((str_ptr_pos[i] & CBPRINTF_STR_POS_RO_FLAG) == 0) {
 				continue;
 			}
 
 			uint8_t pos = str_ptr_pos[i] & CBPRINTF_STR_POS_MASK;
 
 			/* make sure it fits */
-			if (buf - buf0 + 1 > len) {
+			if ((size_t)(buf - buf0) + 1 > len) {
 				return -ENOSPC;
 			}
 			/* store the pointer position prefix */
@@ -547,7 +551,7 @@ process_string:
 		/* find the string length including terminating '\0' */
 		size = strlen(s) + 1;
 		/* make sure it fits */
-		if (buf - buf0 + 1 + size > len) {
+		if ((size_t)(buf - buf0) + 1 + size > len) {
 			return -ENOSPC;
 		}
 		/* store the pointer position prefix */
@@ -562,7 +566,7 @@ process_string:
 	 * TODO: explore leveraging same mechanism to remove alignment padding
 	 */
 
-	return buf - buf0;
+	return (int)(buf - buf0);
 
 #undef CBPRINTF_STR_POS_RO_FLAG
 #undef CBPRINTF_STR_POS_MASK
@@ -583,14 +587,15 @@ int cbprintf_package(void *packaged, size_t len, uint32_t flags,
 int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 {
 	char *buf = packaged, *fmt, *s, **ps;
-	unsigned int i, args_size, s_nbr, ros_nbr, s_idx;
+	uint8_t s_idx, s_nbr, ros_nbr;
+	unsigned int args_size;
 
-	if (!buf) {
+	if (buf == NULL) {
 		return -EINVAL;
 	}
 
 	/* Retrieve the size of the arg list and number of strings. */
-	args_size = ((uint8_t *)buf)[0] * sizeof(int);
+	args_size = (unsigned int)(((uint8_t *)buf)[0] * sizeof(int));
 	s_nbr     = ((uint8_t *)buf)[1];
 	ros_nbr   = ((uint8_t *)buf)[2];
 
@@ -600,7 +605,7 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 	/*
 	 * Patch in string pointers.
 	 */
-	for (i = 0; i < s_nbr; i++) {
+	for (uint8_t i = 0; i < s_nbr; i++) {
 		/* Locate pointer location for this string */
 		s_idx = *(uint8_t *)s++;
 		ps = (char **)(buf + s_idx * sizeof(int));
@@ -627,27 +632,28 @@ int cbprintf_fsc_package(void *in_packaged,
 {
 	uint8_t *buf = in_packaged, *out = packaged;
 	char **ps;
-	unsigned int args_size, s_nbr, ros_nbr, s_idx;
+	uint8_t s_idx, s_nbr, ros_nbr;
+	size_t args_size;
 	size_t out_len;
 	size_t slen;
 
-	if (!buf) {
+	if (buf == NULL) {
 		return -EINVAL;
 	}
 
-	if (packaged && (len < in_len)) {
+	if ((packaged != NULL) && (len < in_len)) {
 		return -ENOSPC;
 	}
 
 	/* Retrieve the size of the arg list and number of strings. */
-	args_size = buf[0] * sizeof(int);
+	args_size = (buf[0] * sizeof(int));
 	s_nbr     = buf[1];
 	ros_nbr   = buf[2];
 
 	out_len = in_len;
 
 	if (packaged != NULL) {
-		unsigned int rw_strs_len = in_len - (args_size + ros_nbr);
+		size_t rw_strs_len = in_len - (args_size + ros_nbr);
 
 		memcpy(out, buf, args_size);
 		out[1] = s_nbr + ros_nbr;
@@ -659,7 +665,7 @@ int cbprintf_fsc_package(void *in_packaged,
 		out += rw_strs_len;
 	}
 
-	for (unsigned int i = 0; i < ros_nbr; i++) {
+	for (uint8_t i = 0; i < ros_nbr; i++) {
 		/* Get string address location */
 		s_idx = buf[args_size + i];
 		ps = (char **)(buf + s_idx * sizeof(int));
@@ -679,5 +685,5 @@ int cbprintf_fsc_package(void *in_packaged,
 		}
 	}
 
-	return out_len;
+	return (int)out_len;
 }

@@ -59,20 +59,20 @@ static void remove_timeout(struct _timeout *t)
 	sys_dlist_remove(&t->node);
 }
 
-static int32_t elapsed(void)
+static k_ticks_t elapsed(void)
 {
-	return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
+	return announce_remaining == 0 ? (k_ticks_t)sys_clock_elapsed() : 0;
 }
 
 static int32_t next_timeout(void)
 {
 	struct _timeout *to = first();
-	int32_t ticks_elapsed = elapsed();
-	int32_t ret = to == NULL ? MAX_WAIT
-		: CLAMP(to->dticks - ticks_elapsed, 0, MAX_WAIT);
+	k_ticks_t ticks_elapsed = elapsed();
+	int32_t ret = (int32_t)(to == NULL ? MAX_WAIT
+		: CLAMP(to->dticks - ticks_elapsed, 0, MAX_WAIT));
 
 #ifdef CONFIG_TIMESLICING
-	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {
+	if ((_current_cpu->slice_ticks != 0) && (_current_cpu->slice_ticks < ret)) {
 		ret = _current_cpu->slice_ticks;
 	}
 #endif
@@ -98,6 +98,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 
 		if ((IS_ENABLED(CONFIG_TIMEOUT_64BIT)) &&
 		    Z_TICK_ABS(timeout.ticks) >= 0) {
+		    /*? What is the intention here? int64_t = int64_t - uint64_t */
 			k_ticks_t ticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
 			to->dticks = MAX(1, ticks);
@@ -190,6 +191,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 	k_ticks_t ticks = 0;
 
 	LOCKED(&timeout_lock) {
+		/*? What is the intention here? int64_t = uint64_t + int64_t */
 		ticks = curr_tick + timeout_rem(timeout);
 	}
 
@@ -242,6 +244,7 @@ void sys_clock_announce(int32_t ticks)
 
 	while (first() != NULL && first()->dticks <= announce_remaining) {
 		struct _timeout *t = first();
+		/*? What is the intention here? int = int64_t */
 		int dt = t->dticks;
 
 		curr_tick += dt;
@@ -273,6 +276,7 @@ int64_t sys_clock_tick_get(void)
 	LOCKED(&timeout_lock) {
 		t = curr_tick + sys_clock_elapsed();
 	}
+	/*? What is the intention here? int64_t = uint64_t */
 	return t;
 }
 
@@ -350,14 +354,17 @@ uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		return UINT64_MAX;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+	    /*? What is the intention here? uint64_t = int64_t */
 		return sys_clock_tick_get();
 	} else {
 
 		dt = timeout.ticks;
 
 		if ((IS_ENABLED(CONFIG_TIMEOUT_64BIT)) && Z_TICK_ABS(dt) >= 0) {
+			/*? What is the intention here? uint64_t = int64_t */
 			return Z_TICK_ABS(dt);
 		}
+	    /*? What is the intention here? uint64_t = int64_t */
 		return sys_clock_tick_get() + MAX(1, dt);
 	}
 }

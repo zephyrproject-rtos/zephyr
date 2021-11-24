@@ -78,7 +78,7 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 
 	while (reg != 0U) {
 		data = pcie_conf_read(bdf, reg);
-		if (!data || data == 0xffffffffU) {
+		if ((data == 0U) || (data == 0xffffffffU)) {
 			return 0;
 		}
 
@@ -182,18 +182,16 @@ bool pcie_probe_mbar(pcie_bdf_t bdf,
  */
 #define IRQ_LIST_INITIALIZED 0
 
-static ATOMIC_DEFINE(irq_reserved, CONFIG_MAX_IRQ_LINES);
+static ATOMIC_DEFINE(irq_reserved, (unsigned int)CONFIG_MAX_IRQ_LINES);
 
 static unsigned int irq_alloc(void)
 {
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(irq_reserved); i++) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(irq_reserved); i++) {
 		unsigned int fz, irq;
 
-		while ((fz = find_lsb_set(~atomic_get(&irq_reserved[i]))) != 0U) {
-			irq = (fz - 1) + (i * sizeof(atomic_val_t) * 8);
-			if (irq >= CONFIG_MAX_IRQ_LINES) {
+		while ((fz = find_lsb_set(~(uint32_t)atomic_get(&irq_reserved[i]))) != 0U) {
+			irq = (fz - 1U) + (i * (unsigned int)sizeof(atomic_val_t) * 8U);
+			if (irq >= (unsigned int)CONFIG_MAX_IRQ_LINES) {
 				break;
 			}
 
@@ -235,7 +233,7 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 	irq = PCIE_CONF_INTR_IRQ(data);
 
-	if (irq == PCIE_CONF_INTR_IRQ_NONE || irq >= CONFIG_MAX_IRQ_LINES ||
+	if (irq == PCIE_CONF_INTR_IRQ_NONE || irq >= (unsigned int)CONFIG_MAX_IRQ_LINES ||
 	    irq_is_reserved(irq)) {
 
 		irq = irq_alloc();
@@ -272,7 +270,7 @@ void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 
 pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
 {
-	int bus, dev, func;
+	unsigned int bus, dev, func;
 
 	for (bus = 0; bus <= PCIE_MAX_BUS; bus++) {
 		for (dev = 0; dev <= PCIE_MAX_DEV; dev++) {

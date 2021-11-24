@@ -103,7 +103,7 @@ void z_page_frames_dump(void)
 	printk("Physical memory from 0x%lx to 0x%lx\n",
 	       Z_PHYS_RAM_START, Z_PHYS_RAM_END);
 
-	for (int i = 0; i < Z_NUM_PAGE_FRAMES; i++) {
+	for (size_t i = 0; i < Z_NUM_PAGE_FRAMES; i++) {
 		struct z_page_frame *pf = &z_page_frames[i];
 
 		page_frame_dump(pf);
@@ -180,7 +180,7 @@ void z_page_frames_dump(void)
  * done in reverse from highest address.
  */
 SYS_BITARRAY_DEFINE(virt_region_bitmap,
-		    CONFIG_KERNEL_VM_SIZE / CONFIG_MMU_PAGE_SIZE);
+		    (size_t)(CONFIG_KERNEL_VM_SIZE / CONFIG_MMU_PAGE_SIZE));
 
 static bool virt_region_inited;
 
@@ -490,7 +490,7 @@ void *k_mem_map(size_t size, uint32_t flags)
 	/* Need extra for the guard pages (before and after) which we
 	 * won't map.
 	 */
-	total_size = size + CONFIG_MMU_PAGE_SIZE * 2;
+	total_size = size + CONFIG_MMU_PAGE_SIZE * 2U;
 
 	dst = virt_region_alloc(total_size);
 	if (dst == NULL) {
@@ -660,7 +660,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	key = k_spin_lock(&z_mm_lock);
 	/* Obtain an appropriately sized chunk of virtual memory */
 	dest_addr = virt_region_alloc(aligned_size);
-	if (!dest_addr) {
+	if (dest_addr == NULL) {
 		goto fail;
 	}
 

@@ -64,7 +64,8 @@ SYS_INIT(statics_init, POST_KERNEL, 0);
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 			k_timeout_t timeout)
 {
-	int64_t now, end = sys_clock_timeout_end_calc(timeout);
+	int64_t now;
+	int64_t end = (int64_t)sys_clock_timeout_end_calc(timeout);
 	void *ret = NULL;
 	k_spinlock_key_t key = k_spin_lock(&h->lock);
 

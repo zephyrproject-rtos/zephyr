@@ -33,19 +33,7 @@
 static inline uint32_t k_array_index_sanitize(uint32_t index, uint32_t array_size)
 {
 #ifdef CONFIG_BOUNDS_CHECK_BYPASS_MITIGATION
-	int32_t signed_index = index, signed_array_size = array_size;
-
-	/* Take the difference between index and max.
-	 * A proper value will result in a negative result. We also AND in
-	 * the complement of index, so that we automatically reject any large
-	 * indexes which would wrap around the difference calculation.
-	 *
-	 * Sign-extend just the sign bit to produce a mask of all 1s (accept)
-	 * or all 0s (truncate).
-	 */
-	uint32_t mask = ((signed_index - signed_array_size) & ~signed_index) >> 31;
-
-	return index & mask;
+	return index < array_size ? index : 0U;
 #else
 	ARG_UNUSED(array_size);
 

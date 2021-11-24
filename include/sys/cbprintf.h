@@ -59,8 +59,8 @@ extern "C" {
 		16 : MAX(sizeof(double), sizeof(long long)))
 #else
 #define CBPRINTF_PACKAGE_ALIGNMENT \
-	(((IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE))) ? \
-		sizeof(long double) : MAX(sizeof(double), sizeof(long long)))
+	((unsigned int)((IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)) ? \
+		sizeof(long double) : MAX(sizeof(double), sizeof(long long))))
 #endif
 
 /**@defgroup CBPRINTF_PACKAGE_FLAGS Package flags.

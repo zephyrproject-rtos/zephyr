@@ -42,13 +42,12 @@ typedef struct sys_bitarray sys_bitarray_t;
  */
 #define SYS_BITARRAY_DEFINE(name, total_bits)				\
 	uint32_t _sys_bitarray_bundles_##name				\
-		[((((total_bits) + 8 - 1) / 8) + sizeof(uint32_t) - 1)	\
+		[((((size_t)(total_bits) + 8 - 1) / 8) + sizeof(uint32_t) - 1)	\
 		 / sizeof(uint32_t)] = {0};				\
 	sys_bitarray_t name = {						\
-		.num_bits = (total_bits),					\
-		.num_bundles = ((((total_bits) + 8 - 1) / 8)		\
-				+ sizeof(uint32_t) - 1)			\
-			       / sizeof(uint32_t),			\
+		.num_bits = (uint32_t)(total_bits),					\
+		.num_bundles = (uint32_t)(sizeof(_sys_bitarray_bundles_##name) \
+			/ sizeof(uint32_t)),			\
 		.bundles = _sys_bitarray_bundles_##name,		\
 	}
 

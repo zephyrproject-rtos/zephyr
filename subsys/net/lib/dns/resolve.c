@@ -426,7 +426,7 @@ static inline void invoke_query_callback(int status,
  */
 static void release_query(struct dns_pending_query *pending_query)
 {
-	int busy = k_work_cancel_delayable(&pending_query->timer);
+	unsigned int busy = k_work_cancel_delayable(&pending_query->timer);
 
 	/* If the work item is no longer pending we're done. */
 	if (busy == 0) {

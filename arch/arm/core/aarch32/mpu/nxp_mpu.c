@@ -536,7 +536,7 @@ static inline int is_user_accessible_region(uint32_t r_index, int write)
 /**
  * @brief validate the given buffer is user accessible or not
  */
-int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
+int arm_core_mpu_buffer_validate(void *addr, size_t size, bool write)
 {
 	uint8_t r_index;
 

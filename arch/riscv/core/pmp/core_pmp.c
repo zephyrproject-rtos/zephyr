@@ -328,7 +328,7 @@ void z_riscv_pmp_add_dynamic(struct k_thread *thread,
 	}
 }
 
-int arch_buffer_validate(void *addr, size_t size, int write)
+int arch_buffer_validate(void *addr, size_t size, bool write)
 {
 	uint32_t index, i;
 	ulong_t pmp_type, pmp_addr_start, pmp_addr_stop;

@@ -270,7 +270,7 @@ static inline int is_enabled_region(uint32_t index)
  * in case the fast address range check fails.
  *
  */
-static inline int mpu_buffer_validate(void *addr, size_t size, int write)
+static inline int mpu_buffer_validate(void *addr, size_t size, bool write)
 {
 	uint32_t _addr = (uint32_t)addr;
 	uint32_t _size = (uint32_t)size;

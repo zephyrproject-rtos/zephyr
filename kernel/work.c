@@ -21,23 +21,23 @@
 static inline void flag_clear(uint32_t *flagp,
 			      uint32_t bit)
 {
-	*flagp &= ~BIT(bit);
+	*flagp &= ~BIT32(bit);
 }
 
 static inline void flag_set(uint32_t *flagp,
 			    uint32_t bit)
 {
-	*flagp |= BIT(bit);
+	*flagp |= BIT32(bit);
 }
 
 static inline bool flag_test(const uint32_t *flagp,
 			     uint32_t bit)
 {
-	return (*flagp & BIT(bit)) != 0U;
+	return (*flagp & BIT32(bit)) != 0U;
 }
 
 static inline bool flag_test_and_clear(uint32_t *flagp,
-				       int bit)
+				       uint32_t bit)
 {
 	bool ret = flag_test(flagp, bit);
 
@@ -142,15 +142,15 @@ void k_work_init(struct k_work *work,
 	SYS_PORT_TRACING_OBJ_INIT(k_work, work);
 }
 
-static inline int work_busy_get_locked(const struct k_work *work)
+static inline unsigned int work_busy_get_locked(const struct k_work *work)
 {
 	return flags_get(&work->flags) & K_WORK_MASK;
 }
 
-int k_work_busy_get(const struct k_work *work)
+unsigned int k_work_busy_get(const struct k_work *work)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	int ret = work_busy_get_locked(work);
+	unsigned int ret = work_busy_get_locked(work);
 
 	k_spin_unlock(&lock, key);
 
@@ -469,7 +469,7 @@ bool k_work_flush(struct k_work *work,
  *
  * @return k_busy_wait() captured under lock
  */
-static int cancel_async_locked(struct k_work *work)
+static unsigned int cancel_async_locked(struct k_work *work)
 {
 	/* If we haven't already started canceling, do it now. */
 	if (!flag_test(&work->flags, K_WORK_CANCELING_BIT)) {
@@ -480,7 +480,7 @@ static int cancel_async_locked(struct k_work *work)
 	/* If it's still busy after it's been dequeued, then flag it
 	 * as canceling.
 	 */
-	int ret = work_busy_get_locked(work);
+	unsigned int ret = work_busy_get_locked(work);
 
 	if (ret != 0) {
 		flag_set(&work->flags, K_WORK_CANCELING_BIT);
@@ -521,7 +521,7 @@ static bool cancel_sync_locked(struct k_work *work,
 	return ret;
 }
 
-int k_work_cancel(struct k_work *work)
+unsigned int k_work_cancel(struct k_work *work)
 {
 	__ASSERT_NO_MSG(work != NULL);
 	__ASSERT_NO_MSG(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
@@ -529,7 +529,7 @@ int k_work_cancel(struct k_work *work)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel, work);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	int ret = cancel_async_locked(work);
+	unsigned int ret = cancel_async_locked(work);
 
 	k_spin_unlock(&lock, key);
 
@@ -827,15 +827,15 @@ void k_work_init_delayable(struct k_work_delayable *dwork,
 	SYS_PORT_TRACING_OBJ_INIT(k_work_delayable, dwork);
 }
 
-static inline int work_delayable_busy_get_locked(const struct k_work_delayable *dwork)
+static inline unsigned int work_delayable_busy_get_locked(const struct k_work_delayable *dwork)
 {
-	return atomic_get(&dwork->work.flags) & K_WORK_MASK;
+	return (unsigned int)atomic_get(&dwork->work.flags) & K_WORK_MASK;
 }
 
-int k_work_delayable_busy_get(const struct k_work_delayable *dwork)
+unsigned int k_work_delayable_busy_get(const struct k_work_delayable *dwork)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	int ret = work_delayable_busy_get_locked(dwork);
+	unsigned int ret = work_delayable_busy_get_locked(dwork);
 
 	k_spin_unlock(&lock, key);
 	return ret;
@@ -921,7 +921,7 @@ static inline bool unschedule_locked(struct k_work_delayable *dwork)
  *
  * @return k_work_busy_get() flags
  */
-static int cancel_delayable_async_locked(struct k_work_delayable *dwork)
+static unsigned int cancel_delayable_async_locked(struct k_work_delayable *dwork)
 {
 	(void)unschedule_locked(dwork);
 
@@ -1000,14 +1000,14 @@ int k_work_reschedule(struct k_work_delayable *dwork,
 	return ret;
 }
 
-int k_work_cancel_delayable(struct k_work_delayable *dwork)
+unsigned int k_work_cancel_delayable(struct k_work_delayable *dwork)
 {
 	__ASSERT_NO_MSG(dwork != NULL);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_delayable, dwork);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	int ret = cancel_delayable_async_locked(dwork);
+	unsigned int ret = cancel_delayable_async_locked(dwork);
 
 	k_spin_unlock(&lock, key);
 

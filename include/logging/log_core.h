@@ -107,7 +107,7 @@ extern "C" {
  *  @param _addr Address of the element.
  */
 #define LOG_CONST_ID_GET(_addr) \
-	COND_CODE_1(CONFIG_LOG, ((__log_level ? log_const_source_id(_addr) : 0)), (0))
+	COND_CODE_1(CONFIG_LOG, ((__log_level != 0 ? log_const_source_id(_addr) : 0U)), (0U))
 
 /**
  * @def LOG_CURRENT_MODULE_ID
@@ -120,7 +120,7 @@ extern "C" {
  * @def LOG_CURRENT_DYNAMIC_DATA_ADDR
  * @brief Macro for getting address of dynamic structure of current module.
  */
-#define LOG_CURRENT_DYNAMIC_DATA_ADDR()	(__log_level ? \
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR()	(__log_level != 0 ? \
 	__log_current_dynamic_data : (struct log_source_dynamic_data *)0U)
 
 /** @brief Macro for getting ID of the element of the section.
@@ -128,7 +128,7 @@ extern "C" {
  *  @param _addr Address of the element.
  */
 #define LOG_DYNAMIC_ID_GET(_addr) \
-	COND_CODE_1(CONFIG_LOG, ((__log_level ? log_dynamic_source_id(_addr) : 0)), (0))
+	COND_CODE_1(CONFIG_LOG, ((__log_level != 0 ? log_dynamic_source_id(_addr) : 0U)), (0U))
 
 /* Set of defines that are set to 1 if function name prefix is enabled for given level. */
 #define Z_LOG_FUNC_PREFIX_0U 0
@@ -236,11 +236,11 @@ extern "C" {
 #define _LOG_INTERNAL_LONG(_src_level, _str, ...)		  \
 	do {							  \
 		log_arg_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};\
-		log_n((_str), args, ARRAY_SIZE(args), (_src_level));  \
+		log_n((_str), args, (uint32_t)ARRAY_SIZE(args), (_src_level));  \
 	} while (false)
 
 #define Z_LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
-	((_level) <= Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
+	((_level) <= (uint8_t)Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
 
 #define Z_LOG_CONST_LEVEL_CHECK(_level)					    \
 	((IS_ENABLED(CONFIG_LOG)) &&					    \
@@ -255,7 +255,7 @@ extern "C" {
 /*****************************************************************************/
 /****************** Defiinitions used by minimal logging *********************/
 /*****************************************************************************/
-void z_log_minimal_hexdump_print(int level, const void *data, size_t size);
+void z_log_minimal_hexdump_print(unsigned int level, const void *data, size_t size);
 void z_log_minimal_vprintk(const char *fmt, va_list ap);
 void z_log_minimal_printk(const char *fmt, ...);
 
@@ -271,7 +271,7 @@ void z_log_minimal_printk(const char *fmt, ...);
 	z_log_minimal_printk("\n"); \
 } while (false)
 
-static inline char z_log_minimal_level_to_char(int level)
+static inline char z_log_minimal_level_to_char(unsigned int level)
 {
 	switch (level) {
 	case LOG_LEVEL_ERR:
@@ -303,18 +303,18 @@ static inline char z_log_minimal_level_to_char(int level)
 	\
 	bool is_user_context = k_is_user_context(); \
 	uint32_t filters = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-						(_dsource)->filters : 0;\
+						(_dsource)->filters : 0U;\
 	if ((IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) && !is_user_context && \
 	    (_level) > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
-		int _mode; \
+		enum z_log_msg2_mode _mode; \
 		void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 			(void *)(_dsource) : (void *)(_source); \
 		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 				  CONFIG_LOG_DOMAIN_ID, _src, _level, NULL,\
-				  0, __VA_ARGS__); \
+				  0U, __VA_ARGS__); \
 	} else { \
 		Z_LOG_INTERNAL(is_user_context,	_level, \
 				_source, _dsource, __VA_ARGS__);\
@@ -348,7 +348,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	} \
 	bool is_user_context = k_is_user_context(); \
 	uint32_t filters = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-						(_dsource)->filters : 0;\
+						(_dsource)->filters : 0U;\
 	\
 	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
 		Z_LOG_TO_PRINTK(_level, "%s", _str); \
@@ -361,7 +361,7 @@ static inline char z_log_minimal_level_to_char(int level)
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
-		int mode; \
+		enum z_log_msg2_mode mode; \
 		void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 			(void *)(_dsource) : (void *)(_source); \
 		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
@@ -383,11 +383,11 @@ static inline char z_log_minimal_level_to_char(int level)
 	}; \
 	if (is_user_context) { \
 		log_hexdump_from_user(src_level, _str, \
-				      (const char *)(_data), (_len)); \
+				      (const char *)(_data), (uint32_t)(_len)); \
 	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
-		log_hexdump_sync(src_level, _str, (const char *)(_data), (_len)); \
+		log_hexdump_sync(src_level, _str, (const char *)(_data), (uint32_t)(_len)); \
 	} else { \
-		log_hexdump(_str, (const char *)(_data), (_len), src_level); \
+		log_hexdump(_str, (const char *)(_data), (uint32_t)(_len), src_level); \
 	} \
 } while (false)
 
@@ -419,7 +419,7 @@ static inline char z_log_minimal_level_to_char(int level)
 #define LOG_FILTERS_NUM_OF_SLOTS (32 / LOG_FILTER_SLOT_SIZE)
 
 /** @brief Slot mask. */
-#define LOG_FILTER_SLOT_MASK (BIT(LOG_FILTER_SLOT_SIZE) - 1U)
+#define LOG_FILTER_SLOT_MASK (BIT32(LOG_FILTER_SLOT_SIZE) - 1U)
 
 /** @brief Bit offset of a slot.
  *
@@ -472,13 +472,13 @@ enum log_strdup_action {
 		z_log_minimal_printk(__VA_ARGS__); \
 		break; \
 	} \
-	int _mode; \
+	enum z_log_msg2_mode _mode; \
 	if (0) {\
 		z_log_printf_arg_checker(__VA_ARGS__); \
 	} \
 	Z_LOG_MSG2_CREATE(!(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 			  CONFIG_LOG_DOMAIN_ID, NULL, \
-			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
+			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0U, __VA_ARGS__);\
 } while (false)
 
 
@@ -509,15 +509,15 @@ static inline uint8_t log_compiled_level_get(uint32_t source_id)
  *
  * @return Source ID.
  */
-static inline uint32_t log_const_source_id(
+static inline uint16_t log_const_source_id(
 				const struct log_source_const_data *data)
 {
-	return ((uint8_t *)data - (uint8_t *)__log_const_start)/
-			sizeof(struct log_source_const_data);
+	return (uint16_t)((size_t)((uint8_t *)data - (uint8_t *)__log_const_start) /
+			sizeof(struct log_source_const_data));
 }
 
 /** @brief Get number of registered sources. */
-static inline uint32_t log_sources_count(void)
+static inline uint16_t log_sources_count(void)
 {
 	return log_const_source_id(__log_const_end);
 }
@@ -552,10 +552,10 @@ static inline uint32_t *log_dynamic_filters_get(uint32_t source_id)
  *
  * @return Source ID.
  */
-static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
+static inline uint16_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 {
-	return ((uint8_t *)data - (uint8_t *)__log_dynamic_start)/
-			sizeof(struct log_source_dynamic_data);
+	return (uint16_t)((size_t)((uint8_t *)data - (uint8_t *)__log_dynamic_start)/
+			sizeof(struct log_source_dynamic_data));
 }
 
 /* Initialize runtime filters */

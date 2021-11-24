@@ -18,7 +18,7 @@ struct emitter {
 static int sprintf_out(int c, struct emitter *p)
 {
 	if (p->len > 1) { /* need to reserve a byte for EOS */
-		*(p->ptr) = c;
+		*(p->ptr) = (char)c;
 		p->ptr += 1;
 		p->len -= 1;
 	}
@@ -45,7 +45,7 @@ int snprintf(char *_MLIBC_RESTRICT str, size_t len,
 	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 	va_end(vargs);
 
-	*(p.ptr) = 0;
+	*(p.ptr) = '\0';
 	return r;
 }
 
@@ -63,7 +63,7 @@ int sprintf(char *_MLIBC_RESTRICT str, const char *_MLIBC_RESTRICT format, ...)
 	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 	va_end(vargs);
 
-	*(p.ptr) = 0;
+	*(p.ptr) = '\0';
 	return r;
 }
 
@@ -83,7 +83,7 @@ int vsnprintf(char *_MLIBC_RESTRICT str, size_t len,
 
 	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 
-	*(p.ptr) = 0;
+	*(p.ptr) = '\0';
 	return r;
 }
 
@@ -98,6 +98,6 @@ int vsprintf(char *_MLIBC_RESTRICT str, const char *_MLIBC_RESTRICT format,
 
 	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 
-	*(p.ptr) = 0;
+	*(p.ptr) = '\0';
 	return r;
 }
