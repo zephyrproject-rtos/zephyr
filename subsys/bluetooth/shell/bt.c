@@ -747,6 +747,16 @@ static int cmd_name(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_appearance(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc == 1) {
+		shell_print(sh, "Bluetooth Appearance: 0x%04x", bt_get_appearance());
+		return 0;
+	}
+
+	return 0;
+}
+
 static int cmd_id_create(const struct shell *sh, size_t argc, char *argv[])
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
@@ -3245,6 +3255,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(id-show, NULL, HELP_NONE, cmd_id_show, 1, 0),
 	SHELL_CMD_ARG(id-select, NULL, "<id>", cmd_id_select, 2, 0),
 	SHELL_CMD_ARG(name, NULL, "[name]", cmd_name, 1, 1),
+	SHELL_CMD_ARG(appearance, NULL, HELP_NONE, cmd_appearance, 1, 0),
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
 		      "<value: on, passive, off> [filter: dups, nodups] [fal]"
