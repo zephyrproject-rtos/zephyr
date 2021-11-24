@@ -27,6 +27,7 @@ static bool leave_idle;
 static bool idle_entered;
 static bool testing_device_runtime;
 static bool testing_device_order;
+static bool testing_device_lock;
 
 static const struct device *device_dummy;
 static struct dummy_driver_api *api;
@@ -142,10 +143,25 @@ DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_init,
 
 void pm_power_state_set(struct pm_state_info info)
 {
+	enum pm_device_state device_power_state;
+
 	/* If testing device order this function does not need to anything */
 	if (testing_device_order) {
 		return;
 	}
+
+	if (testing_device_lock) {
+		pm_device_state_get(device_a, &device_power_state);
+
+		/*
+		 * If the device has its state locked the device has
+		 * to be ACTIVE
+		 */
+		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
+				NULL);
+		return;
+	}
+
 
 	/* at this point, notify_pm_state_entry() implemented in
 	 * this file has been called and set_pm should have been set
@@ -154,7 +170,6 @@ void pm_power_state_set(struct pm_state_info info)
 		     "Notification to enter suspend was not sent to the App");
 
 	/* this function is called after devices enter low power state */
-	enum pm_device_state device_power_state;
 	pm_device_state_get(device_dummy, &device_power_state);
 
 	if (testing_device_runtime) {
@@ -394,6 +409,21 @@ void test_busy(void)
 	zassert_false(busy, NULL);
 }
 
+void test_device_state_lock(void)
+{
+	pm_device_state_lock((struct device *)device_a);
+	zassert_true(pm_device_state_is_locked(device_a), NULL);
+
+	testing_device_lock = true;
+	enter_low_power = true;
+
+	k_sleep(SLEEP_TIMEOUT);
+
+	pm_device_state_unlock((struct device *)device_a);
+
+	testing_device_lock = false;
+}
+
 void test_main(void)
 {
 	device_dummy = device_get_binding(DUMMY_DRIVER_NAME);
@@ -403,6 +433,7 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_power_idle),
 			 ztest_1cpu_unit_test(test_power_state_trans),
 			 ztest_1cpu_unit_test(test_device_order),
+			 ztest_1cpu_unit_test(test_device_state_lock),
 			 ztest_1cpu_unit_test(test_power_state_notification),
 			 ztest_1cpu_unit_test(test_busy));
 	ztest_run_test_suite(power_management_test);
