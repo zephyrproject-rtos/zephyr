@@ -4,6 +4,16 @@
 config ZEPHYR_HAL_GIGADEVICE_MODULE
 	bool
 
+config GD32_HAS_AF_PINMUX
+	bool
+	help
+	  This option should be selected if the series use an AF pinmux model.
+
+config GD32_HAS_AFIO_PINMUX
+	bool
+	help
+	  This option should be selected if the series use an AFIO pinmux model.
+
 config HAS_GD32_HAL
 	bool
 	select HAS_CMSIS_CORE if SOC_FAMILY_GD32_ARM

@@ -12,6 +12,7 @@ config OPENTHREAD_SECURITY_INTERNAL
 menuconfig NET_L2_OPENTHREAD
 	bool "OpenThread L2"
 	depends on NETWORKING
+	select NET_L2_PHY_IEEE802154
 
 	select SETTINGS
 	select FLASH

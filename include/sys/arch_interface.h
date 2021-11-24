@@ -581,8 +581,13 @@ int arch_mem_domain_init(struct k_mem_domain *domain);
  * thread is not already a member of this domain.
  *
  * @param thread Thread which needs to be configured.
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOSPC if running out of space in internal structures
+ *                    (e.g. translation tables)
  */
-void arch_mem_domain_thread_add(struct k_thread *thread);
+int arch_mem_domain_thread_add(struct k_thread *thread);
 
 /**
  * @brief Remove a thread from a memory domain (arch-specific)
@@ -594,8 +599,11 @@ void arch_mem_domain_thread_add(struct k_thread *thread);
  * is being removed from.
  *
  * @param thread Thread being removed from its memory domain
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
  */
-void arch_mem_domain_thread_remove(struct k_thread *thread);
+int arch_mem_domain_thread_remove(struct k_thread *thread);
 
 /**
  * @brief Remove a partition from the memory domain (arch-specific)
@@ -609,9 +617,13 @@ void arch_mem_domain_thread_remove(struct k_thread *thread);
  *
  * @param domain The memory domain structure
  * @param partition_id The partition index that needs to be deleted
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOENT if no matching partition found
  */
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      uint32_t partition_id);
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				     uint32_t partition_id);
 
 /**
  * @brief Add a partition to the memory domain
@@ -621,9 +633,12 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
  *
  * @param domain The memory domain structure
  * @param partition_id The partition that needs to be added
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
  */
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				   uint32_t partition_id);
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				  uint32_t partition_id);
 #endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 /**

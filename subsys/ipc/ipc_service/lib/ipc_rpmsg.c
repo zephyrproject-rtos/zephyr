@@ -26,6 +26,12 @@ static void ns_bind_cb(struct rpmsg_device *rdev, const char *name, uint32_t des
 		ept = &instance->endpoint[i];
 
 		if (strcmp(name, ept->name) == 0) {
+			/*
+			 * The destination address is 'dest' so ns_bind_cb() is
+			 * *NOT* called on the REMOTE side. The bound_cb()
+			 * function will eventually take care of notifying the
+			 * REMOTE side if needed.
+			 */
 			err = rpmsg_create_ept(&ept->ep, rdev, name, RPMSG_ADDR_ANY,
 					       dest, instance->cb, rpmsg_service_unbind);
 			if (err != 0) {
@@ -52,6 +58,10 @@ int ipc_rpmsg_register_ept(struct ipc_rpmsg_instance *instance, unsigned int rol
 	rdev = rpmsg_virtio_get_rpmsg_device(&instance->rvdev);
 
 	if (role == RPMSG_REMOTE) {
+		/*
+		 * The destination address is RPMSG_ADDR_ANY, this will trigger
+		 * the ns_bind_cb() callback function on the HOST side.
+		 */
 		return rpmsg_create_ept(&ept->ep, rdev, ept->name, RPMSG_ADDR_ANY,
 					RPMSG_ADDR_ANY, instance->cb, rpmsg_service_unbind);
 	}

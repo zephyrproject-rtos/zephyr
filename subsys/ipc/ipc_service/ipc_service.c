@@ -14,6 +14,30 @@
 
 LOG_MODULE_REGISTER(ipc_service, CONFIG_IPC_SERVICE_LOG_LEVEL);
 
+int ipc_service_open_instance(const struct device *instance)
+{
+	const struct ipc_service_backend *backend;
+
+	if (!instance) {
+		LOG_ERR("Invalid instance");
+		return -EINVAL;
+	}
+
+	backend = (const struct ipc_service_backend *) instance->api;
+
+	if (!backend) {
+		LOG_ERR("Invalid backend configuration");
+		return -EIO;
+	}
+
+	if (!backend->open_instance) {
+		/* maybe not needed on backend */
+		return 0;
+	}
+
+	return backend->open_instance(instance);
+}
+
 int ipc_service_register_endpoint(const struct device *instance,
 				  struct ipc_ept *ept,
 				  const struct ipc_ept_cfg *cfg)
@@ -42,6 +66,11 @@ int ipc_service_register_endpoint(const struct device *instance,
 int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len)
 {
 	const struct ipc_service_backend *backend;
+
+	if (!ept) {
+		LOG_ERR("Invalid endpoint");
+		return -EINVAL;
+	}
 
 	backend = ept->instance->api;
 

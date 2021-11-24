@@ -103,7 +103,9 @@ enum pm_state {
 	 *
 	 * @note This state is correlated with ACPI G2/S5 state
 	 */
-	PM_STATE_SOFT_OFF
+	PM_STATE_SOFT_OFF,
+	/** Number of power management states (internal use) */
+	PM_STATE_COUNT,
 };
 
 /**

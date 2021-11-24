@@ -51,6 +51,34 @@ LOG_MODULE_REGISTER(uart_stm32);
 #define UART_STRUCT(dev)					\
 	((USART_TypeDef *)(DEV_CFG(dev))->uconf.base)
 
+#if HAS_LPUART_1
+#ifdef USART_PRESC_PRESCALER
+uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint16_t presc_idx,
+			const uint32_t baud_rate)
+{
+	uint64_t lpuartdiv;
+
+	lpuartdiv = clock_rate / LPUART_PRESCALER_TAB[presc_idx];
+	lpuartdiv *= LPUART_LPUARTDIV_FREQ_MUL;
+	lpuartdiv += baud_rate / 2;
+	lpuartdiv /= baud_rate;
+
+	return (uint32_t)lpuartdiv;
+}
+#else
+uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate)
+{
+	uint64_t lpuartdiv;
+
+	lpuartdiv = clock_rate * LPUART_LPUARTDIV_FREQ_MUL;
+	lpuartdiv += baud_rate / 2;
+	lpuartdiv /= baud_rate;
+
+	return (uint32_t)lpuartdiv;
+}
+#endif /* USART_PRESC_PRESCALER */
+#endif /* HAS_LPUART_1 */
+
 #define TIMEOUT 1000
 
 #ifdef CONFIG_PM
@@ -92,13 +120,39 @@ static inline void uart_stm32_set_baudrate(const struct device *dev,
 		return;
 	}
 
-
 #if HAS_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance)) {
+		uint32_t lpuartdiv;
+#ifdef USART_PRESC_PRESCALER
+		uint8_t presc_idx;
+		uint32_t presc_val;
+
+		for (presc_idx = 0; presc_idx < ARRAY_SIZE(LPUART_PRESCALER_TAB); presc_idx++) {
+			lpuartdiv = lpuartdiv_calc(clock_rate, presc_idx, baud_rate);
+			if (lpuartdiv >= LPUART_BRR_MIN_VALUE && lpuartdiv <= LPUART_BRR_MASK) {
+				break;
+			}
+		}
+
+		if (presc_idx == ARRAY_SIZE(LPUART_PRESCALER_TAB)) {
+			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
+			return;
+		}
+
+		presc_val = presc_idx << USART_PRESC_PRESCALER_Pos;
+
+		LL_LPUART_SetPrescaler(UartInstance, presc_val);
+#else
+		lpuartdiv = lpuartdiv_calc(clock_rate, baud_rate);
+		if (lpuartdiv < LPUART_BRR_MIN_VALUE || lpuartdiv > LPUART_BRR_MASK) {
+			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
+			return;
+		}
+#endif /* USART_PRESC_PRESCALER */
 		LL_LPUART_SetBaudRate(UartInstance,
 				      clock_rate,
 #ifdef USART_PRESC_PRESCALER
-				      LL_USART_PRESCALER_DIV1,
+				      presc_val,
 #endif
 				      baud_rate);
 	} else {
@@ -473,13 +527,19 @@ static void uart_stm32_poll_out(const struct device *dev,
 					unsigned char c)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	/* Wait for TXE flag to be raised */
-	while (!LL_USART_IsActiveFlag_TXE(UartInstance)) {
+	while (1) {
+		if (atomic_cas(&data->tx_lock, 0, 1)) {
+			if (LL_USART_IsActiveFlag_TXE(UartInstance)) {
+				break;
+			}
+			atomic_set(&data->tx_lock, 0);
+		}
 	}
 
 #ifdef CONFIG_PM
-	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	if (!data->tx_poll_stream_on) {
 		data->tx_poll_stream_on = true;
@@ -497,6 +557,7 @@ static void uart_stm32_poll_out(const struct device *dev,
 #endif /* CONFIG_PM */
 
 	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
+	atomic_set(&data->tx_lock, 0);
 }
 
 static int uart_stm32_err_check(const struct device *dev)
@@ -593,10 +654,12 @@ static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data,
 static void uart_stm32_irq_tx_enable(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-#ifdef CONFIG_PM
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
+	while (atomic_cas(&data->tx_lock, 0, 1) == false) {
+	}
+
+#ifdef CONFIG_PM
 	data->tx_poll_stream_on = false;
 	uart_stm32_pm_constraint_set(dev);
 #endif
@@ -606,8 +669,11 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 static void uart_stm32_irq_tx_disable(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	LL_USART_DisableIT_TC(UartInstance);
+
+	atomic_set(&data->tx_lock, 0);
 
 #ifdef CONFIG_PM
 	uart_stm32_pm_constraint_release(dev);

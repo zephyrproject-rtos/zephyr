@@ -441,7 +441,8 @@ static struct {
 #define LINK_RX_POOL_SIZE                                                      \
 	(sizeof(memq_link_t) *                                                 \
 	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET +                    \
-	  (BT_CTLR_SCAN_SYNC_SET * 2) + (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +      \
+	  (BT_CTLR_ADV_ISO_SET * 2) + (BT_CTLR_SCAN_SYNC_SET * 2) +            \
+	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +                                    \
 	  (IQ_REPORT_CNT)))
 static struct {
 	uint8_t quota_pdu; /* Number of un-utilized buffers */

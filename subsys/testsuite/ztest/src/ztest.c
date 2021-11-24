@@ -509,17 +509,29 @@ int main(void)
 void main(void)
 {
 #ifdef CONFIG_USERSPACE
+	int ret;
+
 	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
 	 * macros. Any variables that user code may reference need to be
 	 * placed in this partition if no other memory domain configuration
 	 * is made.
 	 */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &ztest_mem_partition);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &ztest_mem_partition);
+	if (ret != 0) {
+		PRINT("ERROR: failed to add ztest_mem_partition to mem domain (%d)\n",
+		      ret);
+		k_oops();
+	}
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	/* Allow access to malloc() memory */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &z_malloc_partition);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &z_malloc_partition);
+	if (ret != 0) {
+		PRINT("ERROR: failed to add z_malloc_partition to mem domain (%d)\n",
+		      ret);
+		k_oops();
+	}
 #endif
 #endif /* CONFIG_USERSPACE */
 

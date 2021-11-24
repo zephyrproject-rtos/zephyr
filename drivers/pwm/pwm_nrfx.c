@@ -271,6 +271,14 @@ static const struct pwm_driver_api pwm_nrfx_drv_api_funcs = {
 static int pwm_nrfx_init(const struct device *dev)
 {
 	const struct pwm_nrfx_config *config = dev->config;
+	struct pwm_nrfx_data *data = dev->data;
+
+	for (size_t i = 0; i < ARRAY_SIZE(data->current); i++) {
+		bool inverted = config->initial_config.output_pins[i] & NRFX_PWM_PIN_INVERTED;
+		uint16_t value = (inverted)?(PWM_NRFX_CH_VALUE_INVERTED):(PWM_NRFX_CH_VALUE_NORMAL);
+
+		data->current[i] = value;
+	};
 
 	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
 					  &config->initial_config,
@@ -333,23 +341,12 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 	(PWM_NRFX_CH_PIN(dev_idx, ch_idx) |				      \
 	 (PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) ? NRFX_PWM_PIN_INVERTED : 0))
 
-#define PWM_NRFX_DEFAULT_VALUE(dev_idx, ch_idx)				      \
-	(PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) ?			      \
-	 PWM_NRFX_CH_VALUE_INVERTED : PWM_NRFX_CH_VALUE_NORMAL)
-
 #define PWM_NRFX_COUNT_MODE(dev_idx)                                          \
 	(PWM_PROP(dev_idx, center_aligned) ?				      \
 	 NRF_PWM_MODE_UP_AND_DOWN : NRF_PWM_MODE_UP)
 
 #define PWM_NRFX_DEVICE(idx)						      \
-	static struct pwm_nrfx_data pwm_nrfx_##idx##_data = {		      \
-		.current = {						      \
-			PWM_NRFX_DEFAULT_VALUE(idx, 0),			      \
-			PWM_NRFX_DEFAULT_VALUE(idx, 1),			      \
-			PWM_NRFX_DEFAULT_VALUE(idx, 2),			      \
-			PWM_NRFX_DEFAULT_VALUE(idx, 3),			      \
-		}							      \
-	};								      \
+	static struct pwm_nrfx_data pwm_nrfx_##idx##_data;		      \
 	static const struct pwm_nrfx_config pwm_nrfx_##idx##config = {	      \
 		.pwm = NRFX_PWM_INSTANCE(idx),				      \
 		.initial_config = {					      \

@@ -49,10 +49,121 @@
 		usart0: usart@40013800 {
 			compatible = "gd,gd32-usart";
 			reg = <0x40013800 0x400>;
+			interrupts = <37 0>;
 			rcu-periph-clock = <0x60e>;
 			status = "disabled";
-			label = "usart_0";
+			label = "USART_0";
 		};
+
+		usart1: usart@40004400 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004400 0x400>;
+			interrupts = <38 0>;
+			rcu-periph-clock = <0x712>;
+			status = "disabled";
+			label = "USART_1";
+		};
+
+		usart2: usart@40004800 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004800 0x400>;
+			interrupts = <39 0>;
+			rcu-periph-clock = <0x713>;
+			status = "disabled";
+			label = "USART_2";
+		};
+
+		uart3: usart@40004C00 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004C00 0x400>;
+			interrupts = <52 0>;
+			rcu-periph-clock = <0x714>;
+			status = "disabled";
+			label = "USART_3";
+		};
+
+		uart4: usart@40005000 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40005000 0x400>;
+			interrupts = <53 0>;
+			rcu-periph-clock = <0x715>;
+			status = "disabled";
+			label = "USART_4";
+		};
+
+		afio: afio@40010000 {
+			compatible = "gd,gd32-afio";
+			reg = <0x40010000 0x400>;
+			rcu-periph-clock = <0x600>;
+			status = "okay";
+			label = "AFIO";
+		};
+
+		pinctrl: pin-controller@40010800 {
+			compatible = "gd,gd32-pinctrl-afio";
+			reg = <0x40010800 0x1c00>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+			label = "PINCTRL";
+
+			gpioa: gpio@40010800 {
+				compatible = "gd,gd32-gpio";
+				reg = <0x40010800 0x400>;
+				rcu-periph-clock = <0x602>;
+				status = "disabled";
+				label = "GPIOA";
+			};
+
+			gpiob: gpio@40010c00 {
+				compatible = "gd,gd32-gpio";
+				reg = <0x40010c00 0x400>;
+				rcu-periph-clock = <0x603>;
+				status = "disabled";
+				label = "GPIOB";
+			};
+
+			gpioc: gpio@40011000 {
+				compatible = "gd,gd32-gpio";
+				reg = <0x40011000 0x400>;
+				rcu-periph-clock = <0x604>;
+				status = "disabled";
+				label = "GPIOC";
+			};
+
+			gpiod: gpio@40011400 {
+				compatible = "gd,gd32-gpio";
+				reg = <0x40011400 0x400>;
+				rcu-periph-clock = <0x605>;
+				status = "disabled";
+				label = "GPIOD";
+			};
+
+			gpioe: gpio@40011800 {
+				compatible = "gd,gd32-gpio";
+				reg = <0x40011800 0x400>;
+				rcu-periph-clock = <0x606>;
+				status = "disabled";
+				label = "GPIOE";
+			};
+
+			gpiof: gpio@40011c00 {
+				compatible = "gd,gd32-gpio";
+				reg = <0x40011c00 0x400>;
+				rcu-periph-clock = <0x607>;
+				status = "disabled";
+				label = "GPIOF";
+			};
+
+			gpiog: gpio@40012000 {
+				compatible = "gd,gd32-gpio";
+				reg = <0x40012000 0x400>;
+				rcu-periph-clock = <0x608>;
+				status = "disabled";
+				label = "GPIOG";
+			};
+		};
+
 	};
 };
 

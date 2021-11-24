@@ -789,14 +789,16 @@ static void uart_sam0_irq_tx_enable(const struct device *dev)
 {
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
 
-	regs->INTENSET.reg = SERCOM_USART_INTENSET_DRE;
+	regs->INTENSET.reg = SERCOM_USART_INTENSET_DRE
+			   | SERCOM_USART_INTENSET_TXC;
 }
 
 static void uart_sam0_irq_tx_disable(const struct device *dev)
 {
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
 
-	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_DRE;
+	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_DRE
+			   | SERCOM_USART_INTENCLR_TXC;
 }
 
 static int uart_sam0_irq_tx_ready(const struct device *dev)
@@ -804,6 +806,13 @@ static int uart_sam0_irq_tx_ready(const struct device *dev)
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
 
 	return (regs->INTFLAG.bit.DRE != 0) && (regs->INTENSET.bit.DRE != 0);
+}
+
+static int uart_sam0_irq_tx_complete(const struct device *dev)
+{
+	SercomUsart * const regs = DEV_CFG(dev)->regs;
+
+	return (regs->INTFLAG.bit.TXC != 0) && (regs->INTENSET.bit.TXC != 0);
 }
 
 static void uart_sam0_irq_rx_enable(const struct device *dev)
@@ -880,7 +889,7 @@ static int uart_sam0_irq_update(const struct device *dev)
 			   |	SERCOM_USART_INTENCLR_CTSIC
 			   |	SERCOM_USART_INTENCLR_RXS;
 #else
-	regs->INTFLAG.reg |=	SERCOM_USART_INTENCLR_RXS;
+	regs->INTFLAG.reg =	SERCOM_USART_INTENCLR_RXS;
 #endif
 	return 1;
 }
@@ -1141,6 +1150,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 	.irq_tx_enable = uart_sam0_irq_tx_enable,
 	.irq_tx_disable = uart_sam0_irq_tx_disable,
 	.irq_tx_ready = uart_sam0_irq_tx_ready,
+	.irq_tx_complete = uart_sam0_irq_tx_complete,
 	.irq_rx_enable = uart_sam0_irq_rx_enable,
 	.irq_rx_disable = uart_sam0_irq_rx_disable,
 	.irq_rx_ready = uart_sam0_irq_rx_ready,

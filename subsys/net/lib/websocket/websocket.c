@@ -518,6 +518,46 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	return 0;
 }
 
+#if !defined(CONFIG_NET_TEST)
+static int sendmsg_all(int sock, const struct msghdr *message, int flags)
+{
+	int ret, i;
+	size_t offset = 0;
+	size_t total_len = 0;
+
+	for (i = 0; i < message->msg_iovlen; i++) {
+		total_len += message->msg_iov[i].iov_len;
+	}
+
+	while (offset < total_len) {
+		ret = zsock_sendmsg(sock, message, flags);
+		if (ret < 0) {
+			return -errno;
+		}
+
+		offset += ret;
+		if (offset >= total_len) {
+			break;
+		}
+
+		/* Update msghdr for the next iteration. */
+		for (i = 0; i < message->msg_iovlen; i++) {
+			if (ret < message->msg_iov[i].iov_len) {
+				message->msg_iov[i].iov_len -= ret;
+				message->msg_iov[i].iov_base =
+					(uint8_t *)message->msg_iov[i].iov_base + ret;
+				break;
+			}
+
+			ret -= message->msg_iov[i].iov_len;
+			message->msg_iov[i].iov_len = 0;
+		}
+	}
+
+	return total_len;
+}
+#endif /* !defined(CONFIG_NET_TEST) */
+
 static int websocket_prepare_and_send(struct websocket_context *ctx,
 				      uint8_t *header, size_t header_len,
 				      uint8_t *payload, size_t payload_len,
@@ -553,8 +593,8 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 		tout = K_MSEC(timeout);
 	}
 
-	return sendmsg(ctx->real_sock, &msg,
-		       K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
+	return sendmsg_all(ctx->real_sock, &msg,
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
 #endif /* CONFIG_NET_TEST */
 }
 

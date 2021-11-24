@@ -49,6 +49,7 @@ static void isr_rx(void *param);
  *        connections too.
  */
 static uint8_t trx_cnt;
+static uint8_t crc_ok_anchor;
 
 int lll_sync_iso_init(void)
 {
@@ -223,6 +224,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Initialize trx chain count */
 	trx_cnt = 0U;
 
+	/* Initialize anchor point CRC ok flag */
+	crc_ok_anchor = 0U;
+
 	/* Calculate the Access Address for the BIS event */
 	util_bis_aa_le32(lll->bis_curr, lll->seed_access_addr, access_addr);
 	data_chan_id = lll_chan_id(access_addr);
@@ -387,26 +391,32 @@ static void isr_rx(void *param)
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
-	if (trx_done) {
-		crc_ok = radio_crc_is_valid();
-		rssi_ready = radio_rssi_is_ready();
-		trx_cnt++;
-	} else {
-		crc_ok = 0U;
-		rssi_ready = 0U;
+	if (!trx_done) {
+		/* Clear radio rx status and events */
+		lll_isr_rx_status_reset();
+
+		/* initialize LLL context reference */
+		lll = param;
+
+		goto isr_rx_done;
+	}
+
+	crc_ok = radio_crc_is_valid();
+	rssi_ready = radio_rssi_is_ready();
+	trx_cnt++;
+
+	/* Save the AA captured for the first anchor point sync */
+	if (!radio_tmr_aa_restore()) {
+		crc_ok_anchor = crc_ok;
+		radio_tmr_aa_save(radio_tmr_aa_get());
+		radio_tmr_ready_save(radio_tmr_ready_get());
 	}
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
 
+	/* initialize LLL context reference */
 	lll = param;
-
-	/* No Rx */
-	if (!trx_done) {
-		/* TODO: Combine the early exit with above if-then-else block
-		 */
-		goto isr_rx_done;
-	}
 
 	/* Check CRC and generate ISO Data PDU */
 	if (crc_ok) {
@@ -460,32 +470,29 @@ static void isr_rx(void *param)
 		if (!lll->payload[payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
-			struct node_rx_ftr *ftr;
+			struct node_rx_iso_meta *iso_meta;
 
 			ull_pdu_rx_alloc();
 
 			node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_PDU;
 
-			ftr = &(node_rx->hdr.rx_ftr);
-			ftr->param = lll;
-			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
-						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
-			ftr->ticks_anchor = radio_tmr_start_get();
-			ftr->radio_end_us = radio_tmr_end_get() -
-					    radio_rx_chain_delay_get(lll->phy,
-								     PHY_FLAGS_S8);
+			iso_meta = &node_rx->hdr.rx_iso_meta;
+			iso_meta->payload_number = (lll->payload_count +
+						    (lll->ptc_curr *
+						     lll->pto) - 1U) /
+						   lll->bn;
+			iso_meta->timestamp =
+				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+				radio_tmr_aa_restore() - addr_us_get(lll->phy) +
+				(ceiling_fraction(lll->ptc_curr, lll->bn) *
+				 lll->iso_interval * CONN_INT_UNIT_US);
+			iso_meta->status = 0U;
 
 			lll->payload[payload_index] = node_rx;
 		}
 	}
 
 isr_rx_done:
-	/* Save the AA captured for the first anchor point sync */
-	if (!radio_tmr_aa_restore() && trx_cnt) {
-		radio_tmr_aa_save(radio_tmr_aa_get());
-		radio_tmr_ready_save(radio_tmr_ready_get());
-	}
-
 	new_burst = 0U;
 	skipped = 0U;
 
@@ -609,7 +616,7 @@ isr_rx_find_subevent:
 	/* Calculate and place the drift information in done event */
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
 	e->trx_cnt = trx_cnt;
-	e->crc_valid = crc_ok;
+	e->crc_valid = crc_ok_anchor;
 
 	if (trx_cnt) {
 		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);

@@ -29,4 +29,6 @@ config PINCTRL_DYNAMIC
 	  runtime. This can be useful, for example, to change the pins assigned to a
 	  peripheral at early boot stages depending on a certain input.
 
+source "drivers/pinctrl/Kconfig.gd32"
+
 endif # PINCTRL

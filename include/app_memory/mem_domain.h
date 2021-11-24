@@ -121,9 +121,13 @@ struct k_mem_partition;
  * @param num_parts The number of array items of "parts" parameter.
  * @param parts An array of pointers to the memory partitions. Can be NULL
  *              if num_parts is zero.
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOMEM if insufficient memory
  */
-extern void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
-			      struct k_mem_partition *parts[]);
+extern int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
+			     struct k_mem_partition *parts[]);
 
 /**
  * @brief Add a memory partition into a memory domain.
@@ -147,8 +151,12 @@ extern void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
  *
  * @param domain The memory domain to be added a memory partition.
  * @param part The memory partition to be added
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOSPC if no free partition slots available
  */
-extern void k_mem_domain_add_partition(struct k_mem_domain *domain,
+extern int k_mem_domain_add_partition(struct k_mem_domain *domain,
 				      struct k_mem_partition *part);
 
 /**
@@ -158,8 +166,12 @@ extern void k_mem_domain_add_partition(struct k_mem_domain *domain,
  *
  * @param domain The memory domain to be removed a memory partition.
  * @param part The memory partition to be removed
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOENT if no matching partition found
  */
-extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
+extern int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 					 struct k_mem_partition *part);
 
 /**
@@ -171,9 +183,10 @@ extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
  * @param domain The memory domain that the thread is going to be added into.
  * @param thread ID of thread going to be added into the memory domain.
  *
+ * @return 0 if successful, fails otherwise.
  */
-extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
-				    k_tid_t thread);
+extern int k_mem_domain_add_thread(struct k_mem_domain *domain,
+				   k_tid_t thread);
 
 #ifdef __cplusplus
 }
