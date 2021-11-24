@@ -5,9 +5,9 @@
 #
 
 description: |
-    This is a representation of the Microchip MCP23017 I2C Gpio Expander.
+    This is a representation of the Microchip MCP230xx I2C Gpio Expander.
 
-compatible: "microchip,mcp23017"
+compatible: "microchip,mcp230xx"
 
 include: [gpio-controller.yaml, i2c-device.yaml]
 
@@ -16,7 +16,10 @@ properties:
       required: true
 
     ngpios:
-      const: 16
+      type: int
+      enum:
+        - 8
+        - 16
       required: true
       description: |
         Number of gpios supported by the chip.
