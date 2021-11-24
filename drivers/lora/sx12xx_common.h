@@ -13,17 +13,10 @@
 #include <drivers/lora.h>
 #include <device.h>
 
-int __sx12xx_configure_pin(const struct device * *dev, const char *controller,
-			   gpio_pin_t pin, gpio_flags_t flags);
-
-#define sx12xx_configure_pin(_data, _name, _flags)			\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(0, _name##_gpios),		\
-		    (__sx12xx_configure_pin(&(_data)->_name,		\
-				DT_INST_GPIO_LABEL(0, _name##_gpios),	\
-				DT_INST_GPIO_PIN(0, _name##_gpios),	\
-				DT_INST_GPIO_FLAGS(0, _name##_gpios) |	\
-						      _flags)),		\
-		    (0))
+static inline int sx12xx_configure_pin(const struct gpio_dt_spec *pin, gpio_flags_t flags)
+{
+	return pin->port ? gpio_pin_configure_dt(pin, flags) : 0;
+}
 
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len);

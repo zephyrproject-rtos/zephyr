@@ -39,27 +39,6 @@ static struct sx12xx_data {
 	struct sx12xx_rx_params rx_params;
 } dev_data;
 
-int __sx12xx_configure_pin(const struct device **dev, const char *controller,
-			   gpio_pin_t pin, gpio_flags_t flags)
-{
-	int err;
-
-	*dev = device_get_binding(controller);
-	if (!(*dev)) {
-		LOG_ERR("Cannot get pointer to %s device", controller);
-		return -EIO;
-	}
-
-	err = gpio_pin_configure(*dev, pin, flags);
-	if (err) {
-		LOG_ERR("Cannot configure gpio %s %d: %d", controller, pin,
-			err);
-		return err;
-	}
-
-	return 0;
-}
-
 /**
  * @brief Attempt to acquire the modem for operations
  *

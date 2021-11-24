@@ -209,10 +209,10 @@ void SX126xWriteBuffer(uint8_t offset, uint8_t *buffer, uint8_t size)
 void SX126xAntSwOn(void)
 {
 #if HAVE_GPIO_ANTENNA_ENABLE
-	struct sx126x_data *data = sx162x->data;
+	const struct sx126x_config *cfg = sx162x->config;
 
 	LOG_DBG("Enabling antenna switch");
-	gpio_pin_set(data->antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 1);
+	gpio_pin_set_dt(&cfg->antenna_enable, 1);
 #else
 	LOG_DBG("No antenna switch configured");
 #endif
@@ -221,10 +221,10 @@ void SX126xAntSwOn(void)
 void SX126xAntSwOff(void)
 {
 #if HAVE_GPIO_ANTENNA_ENABLE
-	struct sx126x_data *data = sx162x->data;
+	const struct sx126x_config *cfg = sx162x->config;
 
 	LOG_DBG("Disabling antenna switch");
-	gpio_pin_set(data->antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 0);
+	gpio_pin_set_dt(&cfg->antenna_enable, 0);
 #else
 	LOG_DBG("No antenna switch configured");
 #endif
@@ -233,18 +233,18 @@ void SX126xAntSwOff(void)
 static void sx126x_set_tx_enable(int value)
 {
 #if HAVE_GPIO_TX_ENABLE
-	struct sx126x_data *data = sx162x->data;
+	const struct sx126x_config *cfg = sx162x->config;
 
-	gpio_pin_set(data->tx_enable, GPIO_TX_ENABLE_PIN, value);
+	gpio_pin_set_dt(&cfg->tx_enable, value);
 #endif
 }
 
 static void sx126x_set_rx_enable(int value)
 {
 #if HAVE_GPIO_RX_ENABLE
-	struct sx126x_data *data = sx162x->data;
+	const struct sx126x_config *cfg = sx162x->config;
 
-	gpio_pin_set(data->rx_enable, GPIO_RX_ENABLE_PIN, value);
+	gpio_pin_set_dt(&cfg->rx_enable, value);
 #endif
 }
 
@@ -433,9 +433,9 @@ static int sx126x_lora_init(const struct device *dev)
 
 	LOG_DBG("Initializing %s", dev->name);
 
-	if (sx12xx_configure_pin(data, antenna_enable, GPIO_OUTPUT_INACTIVE) ||
-	    sx12xx_configure_pin(data, rx_enable, GPIO_OUTPUT_INACTIVE) ||
-	    sx12xx_configure_pin(data, tx_enable, GPIO_OUTPUT_INACTIVE)) {
+	if (sx12xx_configure_pin(&cfg->antenna_enable, GPIO_OUTPUT_INACTIVE) ||
+	    sx12xx_configure_pin(&cfg->rx_enable, GPIO_OUTPUT_INACTIVE) ||
+	    sx12xx_configure_pin(&cfg->tx_enable, GPIO_OUTPUT_INACTIVE)) {
 		return -EIO;
 	}
 
@@ -471,7 +471,10 @@ static const struct lora_driver_api sx126x_lora_api = {
 };
 
 static const struct sx126x_config sx126x_0_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0)
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+	.antenna_enable = GPIO_DT_SPEC_INST_GET_OR(0, antenna_enable_gpios, {0}),
+	.tx_enable = GPIO_DT_SPEC_INST_GET_OR(0, tx_enable_gpios, {0}),
+	.rx_enable = GPIO_DT_SPEC_INST_GET_OR(0, rx_enable_gpios, {0})
 };
 
 static struct sx126x_data sx126x_0_data;
