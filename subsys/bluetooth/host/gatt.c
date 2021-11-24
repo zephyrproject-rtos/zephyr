@@ -78,8 +78,6 @@ struct gatt_sub {
 static struct gatt_sub subscriptions[SUB_MAX];
 static sys_slist_t callback_list;
 
-static const uint16_t gap_appearance = CONFIG_BT_DEVICE_APPEARANCE;
-
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static sys_slist_t db;
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
@@ -125,7 +123,7 @@ static ssize_t read_appearance(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
-	uint16_t appearance = sys_cpu_to_le16(gap_appearance);
+	uint16_t appearance = sys_cpu_to_le16(bt_get_appearance());
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
 				 sizeof(appearance));
