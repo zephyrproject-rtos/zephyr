@@ -124,7 +124,7 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csis_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csis_client_is_set_member(set->set_sirk.value, data)) {
+	if (bt_csis_client_is_set_member(set->set_sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
