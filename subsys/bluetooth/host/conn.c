@@ -19,6 +19,7 @@
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/direction.h>
 #include <bluetooth/conn.h>
 #include <drivers/bluetooth/hci_driver.h>
 #include <bluetooth/att.h>
@@ -38,6 +39,7 @@
 #include "att_internal.h"
 #include "gatt_internal.h"
 #include "iso_internal.h"
+#include "direction_internal.h"
 
 struct tx_meta {
 	struct bt_conn_tx *tx;
@@ -2920,5 +2922,34 @@ int bt_conn_init(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+void bt_hci_le_df_connection_iq_report(struct net_buf *buf)
+{
+	struct bt_df_conn_iq_samples_report iq_report;
+	struct bt_conn *conn;
+	struct bt_conn_cb *cb;
+	int err;
+
+	err = hci_df_prepare_connection_iq_report(buf, &iq_report, &conn);
+	if (err) {
+		BT_ERR("Prepare CTE conn IQ report failed %d", err);
+		return;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->cte_report_cb) {
+			cb->cte_report_cb(conn, &iq_report);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->cte_report_cb) {
+			cb->cte_report_cb(conn, &iq_report);
+		}
+	}
+}
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 #endif /* CONFIG_BT_CONN */
