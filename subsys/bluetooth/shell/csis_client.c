@@ -26,12 +26,13 @@ static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
 static struct bt_csis_client_set_member set_members[CONFIG_BT_MAX_CONN];
 struct bt_csis_client_set *cur_set;
+static bt_addr_le_t addr_found[CONFIG_BT_MAX_CONN];
 const struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
 
 static bool is_discovered(const bt_addr_le_t *addr)
 {
 	for (int i = 0; i < members_found; i++) {
-		if (bt_addr_le_cmp(addr, &set_members[i].addr) == 0) {
+		if (bt_addr_le_cmp(addr, &addr_found[i]) == 0) {
 			return true;
 		}
 	}
@@ -58,14 +59,14 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	if (members_found == 0) {
 		shell_print(ctx_shell, "Assuming member[0] connected");
 		set_members[0].conn = conn;
-		bt_addr_le_copy(&set_members[0].addr, bt_conn_get_dst(conn));
+		bt_addr_le_copy(&addr_found[0], bt_conn_get_dst(conn));
 		members_found = 1;
 		return;
 	}
 
 	for (uint8_t i = 0; i < members_found; i++) {
 		if (bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &set_members[i].addr) == 0) {
+				   &addr_found[i]) == 0) {
 			set_members[i].conn = conn;
 			shell_print(ctx_shell, "Member[%u] connected", i);
 			return;
@@ -173,7 +174,7 @@ static bool csis_found(struct bt_data *data, void *user_data)
 			return false;
 		}
 
-		bt_addr_le_copy(&set_members[members_found++].addr, addr);
+		bt_addr_le_copy(&addr_found[members_found++], addr);
 
 		shell_print(ctx_shell, "Found member (%u / %u)",
 			    members_found, cur_set->set_size);
