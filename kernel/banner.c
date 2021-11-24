@@ -27,10 +27,10 @@ void boot_banner(void)
 	static const unsigned int boot_delay;
 #endif
 
-	if (boot_delay > 0 && (IS_ENABLED(CONFIG_MULTITHREADING))) {
+	if (boot_delay > 0U && (IS_ENABLED(CONFIG_MULTITHREADING))) {
 		printk("***** delaying boot " STRINGIFY(
 			CONFIG_BOOT_DELAY) "ms (per build configuration) *****\n");
-		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
+		k_busy_wait((uint32_t)CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 	}
 
 #if defined(CONFIG_BOOT_BANNER)

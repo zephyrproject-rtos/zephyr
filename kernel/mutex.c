@@ -83,9 +83,9 @@ static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 	if (mutex->owner->base.prio != new_prio) {
 
 		LOG_DBG("%p (ready (y/n): %c) prio changed to %d (was %d)",
-			mutex->owner, z_is_thread_ready(mutex->owner) ?
-			'y' : 'n',
-			new_prio, mutex->owner->base.prio);
+			mutex->owner, (int)(z_is_thread_ready(mutex->owner) ?
+			'y' : 'n'),
+			new_prio, (int)mutex->owner->base.prio);
 
 		return z_set_prio(mutex->owner, new_prio);
 	}
@@ -148,7 +148,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	LOG_DBG("on mutex %p got_mutex value: %d", mutex, got_mutex);
 
 	LOG_DBG("%p got mutex %p (y/n): %c", _current, mutex,
-		got_mutex ? 'y' : 'n');
+		(int)(got_mutex != 0 ? 'y' : 'n'));
 
 	if (got_mutex == 0) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
@@ -245,7 +245,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	mutex->owner = new_owner;
 
 	LOG_DBG("new owner of mutex %p: %p (prio: %d)",
-		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
+		mutex, new_owner, new_owner != NULL ? new_owner->base.prio : -1000);
 
 	if (new_owner != NULL) {
 		/*

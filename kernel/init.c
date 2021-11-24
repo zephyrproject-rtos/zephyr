@@ -86,7 +86,7 @@ extern void idle(void *unused1, void *unused2, void *unused3);
 __boot_func
 void z_bss_zero(void)
 {
-	(void)memset(__bss_start, 0, __bss_end - __bss_start);
+	(void)memset(__bss_start, 0, (size_t)(__bss_end - __bss_start));
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
 	(void)memset(&__ccm_bss_start, 0,
 		     ((uint32_t) &__ccm_bss_end - (uint32_t) &__ccm_bss_start));
@@ -217,7 +217,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	main();
 
 	/* Mark nonessenrial since main() has no more work to do */
-	z_main_thread.base.user_options &= ~K_ESSENTIAL;
+	z_main_thread.base.user_options &= (uint8_t)~K_ESSENTIAL;
 
 #ifdef CONFIG_COVERAGE_DUMP
 	/* Dump coverage data once the main() has exited. */
@@ -299,7 +299,7 @@ static char *prepare_multithreading(void)
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		init_idle_thread(i);
 		_kernel.cpus[i].idle_thread = &z_idle_threads[i];
-		_kernel.cpus[i].id = i;
+		_kernel.cpus[i].id = (uint8_t)i;
 		_kernel.cpus[i].irq_stack =
 			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
 			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));

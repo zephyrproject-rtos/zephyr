@@ -57,7 +57,7 @@ static inline int32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack,
 					      uint32_t num_entries)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_STACK));
-	Z_OOPS(Z_SYSCALL_VERIFY(num_entries > 0));
+	Z_OOPS(Z_SYSCALL_VERIFY(num_entries > 0U));
 	return z_impl_k_stack_alloc_init(stack, num_entries);
 }
 #include <syscalls/k_stack_alloc_init_mrsh.c>
@@ -76,7 +76,7 @@ int k_stack_cleanup(struct k_stack *stack)
 	if ((stack->flags & K_STACK_FLAG_ALLOC) != (uint8_t)0) {
 		k_free(stack->base);
 		stack->base = NULL;
-		stack->flags &= ~K_STACK_FLAG_ALLOC;
+		stack->flags &= (uint8_t)~K_STACK_FLAG_ALLOC;
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, 0);

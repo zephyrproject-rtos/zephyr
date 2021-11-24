@@ -41,12 +41,12 @@ extern "C" {
  * @brief Unsigned integer with bit position @p n set (signed in
  * assembly language).
  */
-#define BIT(n)  (1UL << (n))
+#define BIT(n)  ((uint32_t)1U << (unsigned int)(n))
 #endif
 #endif
 
 /** @brief 64-bit unsigned integer with bit position @p _n set. */
-#define BIT64(_n) (1ULL << (_n))
+#define BIT64(_n) ((uint64_t)1U << (unsigned int)(_n))
 
 /**
  * @brief Set or clear a bit depending on a boolean value
@@ -65,13 +65,13 @@ extern "C" {
  * @brief Bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,
  * or 0 if @p n is 0.
  */
-#define BIT_MASK(n) (BIT(n) - 1UL)
+#define BIT_MASK(n) (BIT(n) - 1U)
 
 /**
  * @brief 64-bit bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,
  * or 0 if @p n is 0.
  */
-#define BIT64_MASK(n) (BIT64(n) - 1ULL)
+#define BIT64_MASK(n) (BIT64(n) - 1U)
 
 /**
  * @brief Check for macro definition in compiler-visible expressions

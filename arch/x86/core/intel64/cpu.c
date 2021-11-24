@@ -45,9 +45,9 @@ struct x86_tss64 tss0 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist6 = (uint64_t) z_x86_nmi_stack + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.ist7 = (uint64_t) z_x86_exception_stack + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.iomapb = 0xFFFF,
+	.ist6 = (uint64_t) z_x86_nmi_stack + (uint64_t)CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) z_x86_exception_stack + (uint64_t)CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.iomapb = 0xFFFFU,
 	.cpu = &(_kernel.cpus[0])
 };
 
@@ -57,9 +57,9 @@ struct x86_tss64 tss1 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack1 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist6 = (uint64_t) z_x86_nmi_stack1 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.ist7 = (uint64_t) z_x86_exception_stack1 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.iomapb = 0xFFFF,
+	.ist6 = (uint64_t) z_x86_nmi_stack1 + (uint64_t)CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) z_x86_exception_stack1 + (uint64_t)CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.iomapb = 0xFFFFU,
 	.cpu = &(_kernel.cpus[1])
 };
 #endif
@@ -70,9 +70,9 @@ struct x86_tss64 tss2 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack2 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist6 = (uint64_t) z_x86_nmi_stack2 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.ist7 = (uint64_t) z_x86_exception_stack2 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.iomapb = 0xFFFF,
+	.ist6 = (uint64_t) z_x86_nmi_stack2 + (uint64_t)CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) z_x86_exception_stack2 + (uint64_t)CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.iomapb = 0xFFFFU,
 	.cpu = &(_kernel.cpus[2])
 };
 #endif
@@ -83,9 +83,9 @@ struct x86_tss64 tss3 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack3 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist6 = (uint64_t) z_x86_nmi_stack3 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.ist7 = (uint64_t) z_x86_exception_stack3 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.iomapb = 0xFFFF,
+	.ist6 = (uint64_t) z_x86_nmi_stack3 + (uint64_t)CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) z_x86_exception_stack3 + (uint64_t)CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.iomapb = 0xFFFFU,
 	.cpu = &(_kernel.cpus[3])
 };
 #endif
@@ -128,7 +128,7 @@ struct x86_cpuboot x86_cpuboot[] = {
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
+	uint8_t vector = (uint8_t)(((uintptr_t)x86_ap_start) >> 12);
 	uint8_t apic_id;
 
 	if (IS_ENABLED(CONFIG_ACPI)) {
@@ -143,8 +143,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	apic_id = x86_cpu_loapics[cpu_num];
 
-	x86_cpuboot[cpu_num].sp = (uint64_t) Z_KERNEL_STACK_BUFFER(stack) + sz;
-	x86_cpuboot[cpu_num].stack_size = sz;
+	x86_cpuboot[cpu_num].sp = (uint64_t) Z_KERNEL_STACK_BUFFER(stack) + (size_t)sz;
+	x86_cpuboot[cpu_num].stack_size = (size_t)sz;
 	x86_cpuboot[cpu_num].fn = fn;
 	x86_cpuboot[cpu_num].arg = arg;
 

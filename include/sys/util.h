@@ -59,7 +59,7 @@ extern "C" {
 	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
 
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
-#define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
+#define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[(cond) ? 1 : -1]) - 1)
 
 #if defined(__cplusplus)
 
@@ -90,7 +90,7 @@ extern "C" {
  * In C, passing a pointer as @p array causes a compile error.
  */
 #define ARRAY_SIZE(array) \
-	((long) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
+	((size_t)IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0])))
 
 #endif /* __cplusplus */
 
@@ -136,15 +136,15 @@ extern "C" {
  *        which must be a power of 2.
  */
 #define ROUND_UP(x, align)                                   \
-	(((unsigned long)(x) + ((unsigned long)(align) - 1)) & \
-	 ~((unsigned long)(align) - 1))
+	(((unsigned long)(x) + ((unsigned long)(align) - 1U)) & \
+	 ~((unsigned long)(align) - 1U))
 
 /**
  * @brief Value of @p x rounded down to the previous multiple of @p
  *        align, which must be a power of 2.
  */
 #define ROUND_DOWN(x, align)                                 \
-	((unsigned long)(x) & ~((unsigned long)(align) - 1))
+	((unsigned long)(x) & ~((unsigned long)(align) - 1U))
 
 /** @brief Value of @p x rounded up to the next word boundary. */
 #define WB_UP(x) ROUND_UP(x, sizeof(void *))
@@ -156,7 +156,7 @@ extern "C" {
  * @brief Ceiling function applied to @p numerator / @p divider as a fraction.
  */
 #define ceiling_fraction(numerator, divider) \
-	(((numerator) + ((divider) - 1)) / (divider))
+	(((numerator) + ((divider) - (__typeof__(divider))1)) / (divider))
 
 /**
  * @def MAX
@@ -207,20 +207,10 @@ static inline bool is_power_of_two(unsigned int x)
  */
 static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
 {
-	int64_t sign_ext;
-
-	if (shift == 0U) {
-		return value;
-	}
-
-	/* extract sign bit */
-	sign_ext = (value >> 63) & 1;
-
-	/* make all bits of sign_ext be the same as the value's sign bit */
-	sign_ext = -sign_ext;
-
-	/* shift value and fill opened bit positions with sign bit */
-	return (value >> shift) | (sign_ext << (64 - shift));
+    uint64_t uvalue = (uint64_t)value;
+	/* Ensure to preserve sign bit */
+    uvalue = value < 0 ? ~(~uvalue >> shift) : uvalue >> shift;
+    return (int64_t) uvalue;
 }
 
 /**
@@ -294,7 +284,7 @@ size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen);
  */
 static inline uint8_t bcd2bin(uint8_t bcd)
 {
-	return ((10 * (bcd >> 4)) + (bcd & 0x0F));
+	return ((10U * (bcd >> 4)) + (bcd & 0x0FU));
 }
 
 /**
@@ -306,7 +296,7 @@ static inline uint8_t bcd2bin(uint8_t bcd)
  */
 static inline uint8_t bin2bcd(uint8_t bin)
 {
-	return (((bin / 10) << 4) | (bin % 10));
+	return (((bin / 10U) << 4) | (bin % 10U));
 }
 
 /**

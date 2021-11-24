@@ -375,7 +375,7 @@ static inline bool check_query_active(struct dns_pending_query *pending_query,
 		ret = true;
 		if (reclaim_if_available
 		    && pending_query->query == NULL
-		    && k_work_delayable_busy_get(&pending_query->timer) == 0) {
+		    && k_work_delayable_busy_get(&pending_query->timer) == 0U) {
 			pending_query->cb = NULL;
 			ret = false;
 		}
@@ -426,10 +426,10 @@ static inline void invoke_query_callback(int status,
  */
 static void release_query(struct dns_pending_query *pending_query)
 {
-	int busy = k_work_cancel_delayable(&pending_query->timer);
+	unsigned int busy = k_work_cancel_delayable(&pending_query->timer);
 
 	/* If the work item is no longer pending we're done. */
-	if (busy == 0) {
+	if (busy == 0U) {
 		/* All done. */
 		pending_query->cb = NULL;
 	} else {

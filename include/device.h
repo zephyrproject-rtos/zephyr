@@ -61,7 +61,7 @@ typedef int16_t device_handle_t;
 /** @brief Flag value used to identify an unknown device. */
 #define DEVICE_HANDLE_NULL 0
 
-#define Z_DEVICE_MAX_NAME_LEN	48
+#define Z_DEVICE_MAX_NAME_LEN	48U
 
 /**
  * @def DEVICE_NAME_GET
@@ -429,7 +429,7 @@ device_from_handle(device_handle_t dev_handle)
 	extern const struct device __device_start[];
 	extern const struct device __device_end[];
 	const struct device *dev = NULL;
-	size_t numdev = __device_end - __device_start;
+	size_t numdev = (size_t)(__device_end - __device_start);
 
 	if ((dev_handle > 0) && ((size_t)dev_handle <= numdev)) {
 		dev = &__device_start[dev_handle - 1];
@@ -749,7 +749,7 @@ static inline bool device_is_ready(const struct device *dev)
  * means the alignment directives in the linker scripts and in
  * `gen_handles.py` must be updated.
  */
-BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
+BUILD_ASSERT(sizeof(device_handle_t) == 2U, "fix the linker scripts");
 #define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
 	extern const device_handle_t					\
 		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\

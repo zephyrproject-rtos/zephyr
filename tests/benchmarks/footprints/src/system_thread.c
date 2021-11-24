@@ -18,7 +18,7 @@
 
 #define STACK_SIZE	512
 
-K_SEM_DEFINE(yield_sem, 0, 1);
+K_SEM_DEFINE(yield_sem, 0U, 1U);
 
 void test_thread_entry(void *p, void *p1, void *p2)
 {

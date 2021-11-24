@@ -21,7 +21,7 @@ struct sys_notify;
  * Flag value that overwrites the method field when the operation has
  * completed.
  */
-#define SYS_NOTIFY_METHOD_COMPLETED 0
+#define SYS_NOTIFY_METHOD_COMPLETED 0U
 
 /*
  * Indicates that no notification will be provided.
@@ -31,21 +31,21 @@ struct sys_notify;
  *
  * See sys_notify_init_spinwait().
  */
-#define SYS_NOTIFY_METHOD_SPINWAIT 1
+#define SYS_NOTIFY_METHOD_SPINWAIT 1U
 
 /*
  * Select notification through @ref k_poll signal
  *
  * See sys_notify_init_signal().
  */
-#define SYS_NOTIFY_METHOD_SIGNAL 2
+#define SYS_NOTIFY_METHOD_SIGNAL 2U
 
 /*
  * Select notification through a user-provided callback.
  *
  * See sys_notify_init_callback().
  */
-#define SYS_NOTIFY_METHOD_CALLBACK 3
+#define SYS_NOTIFY_METHOD_CALLBACK 3U
 
 #define SYS_NOTIFY_METHOD_MASK 0x03U
 #define SYS_NOTIFY_METHOD_POS 0

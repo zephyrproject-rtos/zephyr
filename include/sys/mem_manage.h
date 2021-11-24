@@ -15,16 +15,16 @@
  */
 
 /** No caching. Most drivers want this. */
-#define K_MEM_CACHE_NONE	2
+#define K_MEM_CACHE_NONE	2U
 
 /** Write-through caching. Used by certain drivers. */
-#define K_MEM_CACHE_WT		1
+#define K_MEM_CACHE_WT		1U
 
 /** Full write-back caching. Any RAM mapped wants this. */
-#define K_MEM_CACHE_WB		0
+#define K_MEM_CACHE_WB		0U
 
 /** Reserved bits for cache modes in k_map() flags argument */
-#define K_MEM_CACHE_MASK	(BIT(3) - 1)
+#define K_MEM_CACHE_MASK	(BIT(3) - 1U)
 
 /*
  * Region permission attributes. Default is read-only, no user, no exec
@@ -64,9 +64,6 @@
 #define Z_MEM_VM_OFFSET	0
 #endif
 
-#define Z_MEM_PHYS_ADDR(virt)	((virt) - Z_MEM_VM_OFFSET)
-#define Z_MEM_VIRT_ADDR(phys)	((phys) + Z_MEM_VM_OFFSET)
-
 #if Z_MEM_VM_OFFSET != 0
 #define Z_VM_KERNEL 1
 #ifdef CONFIG_XIP
@@ -74,7 +71,12 @@
 #endif
 #endif
 
-#ifndef _ASMLANGUAGE
+#ifdef _ASMLANGUAGE
+#define Z_MEM_PHYS_ADDR(virt)	((virt) - Z_MEM_VM_OFFSET)
+#define Z_MEM_VIRT_ADDR(phys)	((phys) + Z_MEM_VM_OFFSET)
+#else
+#define Z_MEM_PHYS_ADDR(virt)	((virt) - (uintptr_t)Z_MEM_VM_OFFSET)
+#define Z_MEM_VIRT_ADDR(phys)	((phys) + (uintptr_t)Z_MEM_VM_OFFSET)
 #include <stdint.h>
 #include <stddef.h>
 #include <inttypes.h>

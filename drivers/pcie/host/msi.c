@@ -248,7 +248,7 @@ static void enable_msi(pcie_bdf_t bdf,
 	}
 
 	/* Generating MME field (1 counts as a power of 2) */
-	for (mme = 0; n_vector > 1; mme++) {
+	for (mme = 0; n_vector > 1U; mme++) {
 		n_vector >>= 1;
 	}
 

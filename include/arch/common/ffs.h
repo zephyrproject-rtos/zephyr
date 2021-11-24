@@ -30,11 +30,11 @@ extern "C" {
 
 static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 {
-	if (op == 0) {
-		return 0;
+	if (op == 0U) {
+		return 0U;
 	}
 
-	return 32 - __builtin_clz(op);
+	return 32U - (unsigned int)__builtin_clz(op);
 }
 
 
@@ -53,7 +53,7 @@ static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
 #ifdef CONFIG_TOOLCHAIN_HAS_BUILTIN_FFS
-	return __builtin_ffs(op);
+	return (unsigned int)__builtin_ffs((int)op);
 
 #else
 	/*

@@ -45,10 +45,8 @@ int fputc(int c, FILE *stream)
 
 int fputs(const char *_MLIBC_RESTRICT s, FILE *_MLIBC_RESTRICT stream)
 {
-	int len = strlen(s);
-	int ret;
-
-	ret = fwrite(s, 1, len, stream);
+	size_t len = strlen(s);
+	size_t ret = fwrite(s, 1, len, stream);
 
 	return len == ret ? 0 : EOF;
 }
@@ -61,8 +59,8 @@ size_t z_impl_zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 	const unsigned char *p;
 
 	if ((stream != stdout && stream != stderr) ||
-	    (nitems == 0) || (size == 0)) {
-		return 0;
+	    (nitems == 0U) || (size == 0U)) {
+		return 0U;
 	}
 
 	p = ptr;
@@ -74,10 +72,10 @@ size_t z_impl_zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 				goto done;
 			}
 			j--;
-		} while (j > 0);
+		} while (j > 0U);
 
 		i--;
-	} while (i > 0);
+	} while (i > 0U);
 
 done:
 	return (nitems - i);

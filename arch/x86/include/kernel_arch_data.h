@@ -34,8 +34,8 @@
 #define IV_VIRT_EXCEPTION 20
 #define IV_SECURITY_EXCEPTION 30
 
-#define IV_IRQS 32		/* start of vectors available for IRQs */
-#define IV_NR_VECTORS 256	/* total number of vectors */
+#define IV_IRQS 32U		/* start of vectors available for IRQs */
+#define IV_NR_VECTORS 256U	/* total number of vectors */
 
 /*
  * EFLAGS/RFLAGS definitions. (RFLAGS is just zero-extended EFLAGS.)

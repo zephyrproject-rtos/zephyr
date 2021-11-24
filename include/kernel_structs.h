@@ -123,7 +123,7 @@ struct _cpu {
 
 #ifdef CONFIG_SMP
 	/* True when _current is allowed to context switch */
-	uint8_t swap_ok;
+	bool swap_ok;
 #endif
 
 	/* Per CPU architecture specifics */

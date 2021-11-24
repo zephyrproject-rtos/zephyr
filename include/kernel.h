@@ -1498,7 +1498,7 @@ static inline k_ticks_t z_impl_k_timer_remaining_ticks(
  */
 static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
 {
-	return k_ticks_to_ms_floor32(k_timer_remaining_ticks(timer));
+	return k_ticks_to_ms_floor32((uint32_t)k_timer_remaining_ticks(timer));
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
@@ -1576,7 +1576,7 @@ __syscall int64_t k_uptime_ticks(void);
  */
 static inline int64_t k_uptime_get(void)
 {
-	return k_ticks_to_ms_floor64(k_uptime_ticks());
+	return (int64_t)k_ticks_to_ms_floor64((uint64_t)k_uptime_ticks());
 }
 
 /**
@@ -2560,7 +2560,7 @@ struct k_mutex {
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
 	.owner = NULL, \
-	.lock_count = 0, \
+	.lock_count = 0U, \
 	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
 	}
 
@@ -2862,7 +2862,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
 	STRUCT_SECTION_ITERABLE(k_sem, name) = \
 		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
-	BUILD_ASSERT(((count_limit) != 0) && \
+	BUILD_ASSERT(((count_limit) != 0U) && \
 		     ((initial_count) <= (count_limit)) && \
 			 ((count_limit) <= K_SEM_MAX_LIMIT));
 
@@ -2923,7 +2923,7 @@ void k_work_init(struct k_work *work,
  * @return a mask of flags K_WORK_DELAYED, K_WORK_QUEUED,
  * K_WORK_RUNNING, and K_WORK_CANCELING.
  */
-int k_work_busy_get(const struct k_work *work);
+unsigned int k_work_busy_get(const struct k_work *work);
 
 /** @brief Test whether a work item is currently pending.
  *
@@ -3019,7 +3019,7 @@ bool k_work_flush(struct k_work *work,
  * @return the k_work_busy_get() status indicating the state of the item after all
  * cancellation steps performed by this call are completed.
  */
-int k_work_cancel(struct k_work *work);
+unsigned int k_work_cancel(struct k_work *work);
 
 /** @brief Cancel a work item and wait for it to complete.
  *
@@ -3181,7 +3181,7 @@ k_work_delayable_from_work(struct k_work *work);
  * K_WORK_CANCELING.  A zero return value indicates the work item appears to
  * be idle.
  */
-int k_work_delayable_busy_get(const struct k_work_delayable *dwork);
+unsigned int k_work_delayable_busy_get(const struct k_work_delayable *dwork);
 
 /** @brief Test whether a delayed work item is currently pending.
  *
@@ -3378,7 +3378,7 @@ bool k_work_flush_delayable(struct k_work_delayable *dwork,
  * @return the k_work_delayable_busy_get() status indicating the state of the
  * item after all cancellation steps performed by this call are completed.
  */
-int k_work_cancel_delayable(struct k_work_delayable *dwork);
+unsigned int k_work_cancel_delayable(struct k_work_delayable *dwork);
 
 /** @brief Cancel delayable work and wait.
  *
@@ -3411,7 +3411,6 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork);
 bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 				  struct k_work_sync *sync);
 
-enum {
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -3423,64 +3422,62 @@ enum {
 	/* Bits that represent the work item states.  At least nine of the
 	 * combinations are distinct valid stable states.
 	 */
-	K_WORK_RUNNING_BIT = 0,
-	K_WORK_CANCELING_BIT = 1,
-	K_WORK_QUEUED_BIT = 2,
-	K_WORK_DELAYED_BIT = 3,
+#define K_WORK_RUNNING_BIT 0U
+#define K_WORK_CANCELING_BIT 1U
+#define K_WORK_QUEUED_BIT 2U
+#define K_WORK_DELAYED_BIT 3U
 
-	K_WORK_MASK = BIT(K_WORK_DELAYED_BIT) | BIT(K_WORK_QUEUED_BIT)
-		| BIT(K_WORK_RUNNING_BIT) | BIT(K_WORK_CANCELING_BIT),
+#define K_WORK_MASK (BIT(K_WORK_DELAYED_BIT) | BIT(K_WORK_QUEUED_BIT) | BIT(K_WORK_RUNNING_BIT) | BIT(K_WORK_CANCELING_BIT))
 
-	/* Static work flags */
-	K_WORK_DELAYABLE_BIT = 8,
-	K_WORK_DELAYABLE = BIT(K_WORK_DELAYABLE_BIT),
+/* Static work flags */
+#define K_WORK_DELAYABLE_BIT 8U
+#define K_WORK_DELAYABLE BIT(K_WORK_DELAYABLE_BIT)
 
-	/* Dynamic work queue flags */
-	K_WORK_QUEUE_STARTED_BIT = 0,
-	K_WORK_QUEUE_STARTED = BIT(K_WORK_QUEUE_STARTED_BIT),
-	K_WORK_QUEUE_BUSY_BIT = 1,
-	K_WORK_QUEUE_BUSY = BIT(K_WORK_QUEUE_BUSY_BIT),
-	K_WORK_QUEUE_DRAIN_BIT = 2,
-	K_WORK_QUEUE_DRAIN = BIT(K_WORK_QUEUE_DRAIN_BIT),
-	K_WORK_QUEUE_PLUGGED_BIT = 3,
-	K_WORK_QUEUE_PLUGGED = BIT(K_WORK_QUEUE_PLUGGED_BIT),
+/* Dynamic work queue flags */
+#define K_WORK_QUEUE_STARTED_BIT 0U
+#define K_WORK_QUEUE_STARTED BIT(K_WORK_QUEUE_STARTED_BIT)
+#define K_WORK_QUEUE_BUSY_BIT 1U
+#define K_WORK_QUEUE_BUSY BIT(K_WORK_QUEUE_BUSY_BIT)
+#define K_WORK_QUEUE_DRAIN_BIT 2U
+#define K_WORK_QUEUE_DRAIN BIT(K_WORK_QUEUE_DRAIN_BIT)
+#define K_WORK_QUEUE_PLUGGED_BIT 3U
+#define K_WORK_QUEUE_PLUGGED BIT(K_WORK_QUEUE_PLUGGED_BIT)
 
-	/* Static work queue flags */
-	K_WORK_QUEUE_NO_YIELD_BIT = 8,
-	K_WORK_QUEUE_NO_YIELD = BIT(K_WORK_QUEUE_NO_YIELD_BIT),
+/* Static work queue flags */
+#define K_WORK_QUEUE_NO_YIELD_BIT 8U
+#define K_WORK_QUEUE_NO_YIELD BIT(K_WORK_QUEUE_NO_YIELD_BIT)
 
 /**
  * INTERNAL_HIDDEN @endcond
  */
-	/* Transient work flags */
+/* Transient work flags */
 
-	/** @brief Flag indicating a work item that is running under a work
-	 * queue thread.
-	 *
-	 * Accessed via k_work_busy_get().  May co-occur with other flags.
-	 */
-	K_WORK_RUNNING = BIT(K_WORK_RUNNING_BIT),
+/** @brief Flag indicating a work item that is running under a work
+ * queue thread.
+ *
+ * Accessed via k_work_busy_get().  May co-occur with other flags.
+ */
+#define K_WORK_RUNNING BIT(K_WORK_RUNNING_BIT)
 
-	/** @brief Flag indicating a work item that is being canceled.
-	 *
-	 * Accessed via k_work_busy_get().  May co-occur with other flags.
-	 */
-	K_WORK_CANCELING = BIT(K_WORK_CANCELING_BIT),
+/** @brief Flag indicating a work item that is being canceled.
+ *
+ * Accessed via k_work_busy_get().  May co-occur with other flags.
+ */
+#define K_WORK_CANCELING BIT(K_WORK_CANCELING_BIT)
 
-	/** @brief Flag indicating a work item that has been submitted to a
-	 * queue but has not started running.
-	 *
-	 * Accessed via k_work_busy_get().  May co-occur with other flags.
-	 */
-	K_WORK_QUEUED = BIT(K_WORK_QUEUED_BIT),
+/** @brief Flag indicating a work item that has been submitted to a
+ * queue but has not started running.
+ *
+ * Accessed via k_work_busy_get().  May co-occur with other flags.
+ */
+#define K_WORK_QUEUED BIT(K_WORK_QUEUED_BIT)
 
-	/** @brief Flag indicating a delayed work item that is scheduled for
-	 * submission to a queue.
-	 *
-	 * Accessed via k_work_busy_get().  May co-occur with other flags.
-	 */
-	K_WORK_DELAYED = BIT(K_WORK_DELAYED_BIT),
-};
+/** @brief Flag indicating a delayed work item that is scheduled for
+ * submission to a queue.
+ *
+ * Accessed via k_work_busy_get().  May co-occur with other flags.
+ */
+#define K_WORK_DELAYED BIT(K_WORK_DELAYED_BIT)
 
 /** @brief A structure used to submit work. */
 struct k_work {
@@ -3655,7 +3652,7 @@ struct k_work_q {
 
 static inline bool k_work_is_pending(const struct k_work *work)
 {
-	return k_work_busy_get(work) != 0;
+	return k_work_busy_get(work) != 0U;
 }
 
 static inline struct k_work_delayable *
@@ -3667,7 +3664,7 @@ k_work_delayable_from_work(struct k_work *work)
 static inline bool k_work_delayable_is_pending(
 	const struct k_work_delayable *dwork)
 {
-	return k_work_delayable_busy_get(dwork) != 0;
+	return k_work_delayable_busy_get(dwork) != 0U;
 }
 
 static inline k_ticks_t k_work_delayable_expires_get(
@@ -3744,7 +3741,7 @@ __deprecated
 static inline int k_delayed_work_cancel(struct k_delayed_work *work)
 {
 	bool pending = k_work_delayable_is_pending(&work->work);
-	int rc = k_work_cancel_delayable(&work->work);
+	unsigned int rc = k_work_cancel_delayable(&work->work);
 
 	/* Old return value rules:
 	 *
@@ -3775,7 +3772,7 @@ static inline int k_delayed_work_cancel(struct k_delayed_work *work)
 	 * didn't hit a race condition).
 	 */
 	if (pending) {
-		return (rc == 0) ? 0 : -EINVAL;
+		return (rc == 0U) ? 0 : -EINVAL;
 	}
 
 	return -EALREADY;
@@ -3793,7 +3790,7 @@ static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 	k_ticks_t rem = k_work_delayable_remaining_get(&work->work);
 
 	/* Probably should be ceil32, but was floor32 */
-	return k_ticks_to_ms_floor32(rem);
+	return (int32_t)k_ticks_to_ms_floor32((uint32_t)rem);
 }
 
 __deprecated
@@ -5029,7 +5026,7 @@ void k_heap_free(struct k_heap *h, void *mem);
 /* Hand-calculated minimum heap sizes needed to return a successful
  * 1-byte allocation.  See details in lib/os/heap.[ch]
  */
-#define Z_HEAP_MIN_SIZE (sizeof(void *) > 4 ? 56 : 44)
+#define Z_HEAP_MIN_SIZE (sizeof(void *) > 4U ? 56U : 44U)
 
 /**
  * @brief Define a static k_heap in the specified linker section
@@ -5054,7 +5051,7 @@ void k_heap_free(struct k_heap *h, void *mem);
 	STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
 		.heap = {					\
 			.init_mem = kheap_##name,		\
-			.init_bytes = MAX(bytes, Z_HEAP_MIN_SIZE), \
+			.init_bytes = (size_t)MAX(bytes, Z_HEAP_MIN_SIZE), \
 		 },						\
 	}
 
@@ -5218,14 +5215,14 @@ enum _poll_states_bits {
 	_POLL_NUM_STATES
 };
 
-#define Z_POLL_STATE_BIT(state) (1U << ((state) - 1U))
+#define Z_POLL_STATE_BIT(state) (1U << ((unsigned int)(state) - 1U))
 
 #define _POLL_EVENT_NUM_UNUSED_BITS \
-	(32 - (0 \
-	       + 8 /* tag */ \
-	       + _POLL_NUM_TYPES \
-	       + _POLL_NUM_STATES \
-	       + 1 /* modes */ \
+	(32U - (0U \
+	       + 8U /* tag */ \
+	       + (unsigned int)_POLL_NUM_TYPES \
+	       + (unsigned int)_POLL_NUM_STATES \
+	       + 1U /* modes */ \
 	      ))
 
 /* end of polling API - PRIVATE */
@@ -5256,7 +5253,7 @@ enum k_poll_modes {
 };
 
 /* public - values for k_poll_event.state bitfield */
-#define K_POLL_STATE_NOT_READY 0
+#define K_POLL_STATE_NOT_READY 0U
 #define K_POLL_STATE_SIGNALED Z_POLL_STATE_BIT(_POLL_STATE_SIGNALED)
 #define K_POLL_STATE_SEM_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)

@@ -151,7 +151,7 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0U) {
 		k_free(pipe->buffer);
 		pipe->buffer = NULL;
-		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
+		pipe->flags &= (uint8_t)~K_PIPE_FLAG_ALLOC;
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, 0);

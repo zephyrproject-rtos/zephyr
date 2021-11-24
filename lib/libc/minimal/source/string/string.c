@@ -43,14 +43,14 @@ char *strncpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s, size_t n)
 {
 	char *dest = d;
 
-	while ((n > 0) && *s != '\0') {
+	while ((n > 0U) && *s != '\0') {
 		*d = *s;
 		s++;
 		d++;
 		n--;
 	}
 
-	while (n > 0) {
+	while (n > 0U) {
 		*d = '\0';
 		d++;
 		n--;
@@ -161,13 +161,13 @@ int strcmp(const char *s1, const char *s2)
 
 int strncmp(const char *s1, const char *s2, size_t n)
 {
-	while ((n > 0) && (*s1 == *s2) && (*s1 != '\0')) {
+	while ((n > 0U) && (*s1 == *s2) && (*s1 != '\0')) {
 		s1++;
 		s2++;
 		n--;
 	}
 
-	return (n == 0) ? 0 : (*s1 - *s2);
+	return (n == 0U) ? 0 : (*s1 - *s2);
 }
 
 /**
@@ -181,10 +181,10 @@ char *strtok_r(char *str, const char *sep, char **state)
 {
 	char *start, *end;
 
-	start = str ? str : *state;
+	start = str != NULL ? str : *state;
 
 	/* skip leading delimiters */
-	while (*start && strchr(sep, *start)) {
+	while (*start != '\0' && strchr(sep, *start) != NULL) {
 		start++;
 	}
 
@@ -195,7 +195,7 @@ char *strtok_r(char *str, const char *sep, char **state)
 
 	/* look for token chars */
 	end = start;
-	while (*end && !strchr(sep, *end)) {
+	while (*end != '\0' && strchr(sep, *end) == NULL) {
 		end++;
 	}
 
@@ -222,7 +222,7 @@ char *strncat(char *_MLIBC_RESTRICT dest, const char *_MLIBC_RESTRICT src,
 	size_t len = strlen(dest);
 
 	dest += len;
-	while ((n-- > 0) && (*src != '\0')) {
+	while ((n-- > 0U) && (*src != '\0')) {
 		*dest++ = *src++;
 	}
 	*dest = '\0';
@@ -241,11 +241,11 @@ int memcmp(const void *m1, const void *m2, size_t n)
 	const char *c1 = m1;
 	const char *c2 = m2;
 
-	if (!n) {
+	if (n == 0U) {
 		return 0;
 	}
 
-	while ((--n > 0) && (*c1 == *c2)) {
+	while ((--n > 0U) && (*c1 == *c2)) {
 		c1++;
 		c2++;
 	}
@@ -271,13 +271,13 @@ void *memmove(void *d, const void *s, size_t n)
 		 * Copy backwards to prevent the premature corruption of <src>.
 		 */
 
-		while (n > 0) {
+		while (n > 0U) {
 			n--;
 			dest[n] = src[n];
 		}
 	} else {
 		/* It is safe to perform a forward-copy */
-		while (n > 0) {
+		while (n > 0U) {
 			*dest = *src;
 			dest++;
 			src++;
@@ -334,7 +334,7 @@ void *memcpy(void *_MLIBC_RESTRICT d, const void *_MLIBC_RESTRICT s, size_t n)
 
 	/* do byte-sized copying until finished */
 
-	while (n > 0) {
+	while (n > 0U) {
 		*(d_byte++) = *(s_byte++);
 		n--;
 	}
@@ -386,7 +386,7 @@ void *memset(void *buf, int c, size_t n)
 	d_byte = (unsigned char *)d_word;
 #endif
 
-	while (n > 0) {
+	while (n > 0U) {
 		*(d_byte++) = c_byte;
 		n--;
 	}
@@ -403,7 +403,7 @@ void *memset(void *buf, int c, size_t n)
 
 void *memchr(const void *s, int c, size_t n)
 {
-	if (n != 0) {
+	if (n != 0U) {
 		const unsigned char *p = s;
 
 		do {
@@ -411,7 +411,7 @@ void *memchr(const void *s, int c, size_t n)
 				return ((void *)(p - 1));
 			}
 
-		} while (--n != 0);
+		} while (--n != 0U);
 	}
 
 	return NULL;

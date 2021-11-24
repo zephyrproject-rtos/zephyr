@@ -511,7 +511,7 @@ static void verify_cancelled(void)
 			count++;
 		}
 
-		if (k_work_delayable_busy_get(&ctx->queries[i].timer) != 0) {
+		if (k_work_delayable_busy_get(&ctx->queries[i].timer) != 0U) {
 			timer_not_stopped++;
 		}
 	}

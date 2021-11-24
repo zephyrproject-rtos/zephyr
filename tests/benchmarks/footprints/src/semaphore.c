@@ -12,7 +12,7 @@
 
 #define STACK_SIZE	512
 
-K_SEM_DEFINE(semaphore0, 0, 1);
+K_SEM_DEFINE(semaphore0, 0U, 1U);
 
 void thread_fn(void *p1, void *p2, void *p3)
 {

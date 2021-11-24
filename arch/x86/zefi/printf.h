@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /* Tiny, but not-as-primitive-as-it-looks implementation of something
  * like s/n/printf().  Handles %d, %x, %p, %c and %s only, allows a
@@ -16,21 +17,21 @@
 
 struct _pfr {
 	char *buf;
-	int len;
-	int idx;
+	size_t len;
+	size_t idx;
 };
 
 /* Set this function pointer to something that generates output */
 static void (*z_putchar)(int c);
 
-static void pc(struct _pfr *r, int c)
+static void pc(struct _pfr *r, char c)
 {
 	if (r->buf != NULL) {
 		if (r->idx <= r->len) {
 			r->buf[r->idx] = c;
 		}
 	} else {
-		z_putchar(c);
+		z_putchar((int)c);
 	}
 	r->idx++;
 }
@@ -42,11 +43,11 @@ static void prdec(struct _pfr *r, long v)
 		v = -v;
 	}
 
-	char digs[11 * sizeof(long)/4];
-	int i = sizeof(digs) - 1;
+	char digs[11U * sizeof(long) / 4u];
+	size_t i = sizeof(digs) - 1U;
 
-	digs[i--] = 0;
-	while (v || i == 9) {
+	digs[i--] = '\0';
+	while ((v != 0) || (i == 9U)) {
 		digs[i--] = '0' + (v % 10);
 		v /= 10;
 	}
@@ -58,12 +59,12 @@ static void prdec(struct _pfr *r, long v)
 
 static void endrec(struct _pfr *r)
 {
-	if (r->buf && r->idx < r->len) {
-		r->buf[r->idx] = 0;
+	if ((r->buf != NULL) && (r->idx < r->len)) {
+		r->buf[r->idx] = '\0';
 	}
 }
 
-static int vpf(struct _pfr *r, const char *f, va_list ap)
+static size_t vpf(struct _pfr *r, const char *f, va_list ap)
 {
 	for (/**/; *f != '\0'; f++) {
 		bool islong = false;
@@ -74,7 +75,7 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 		}
 
 		if (f[1] == 'l') {
-			islong = sizeof(long) > 4;
+			islong = sizeof(long) > 4U;
 			f++;
 		}
 
@@ -90,13 +91,13 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 		}
 
 		switch (*(++f)) {
-		case 0:
+		case '\0':
 			return r->idx;
 		case '%':
 			pc(r, '%');
 			break;
 		case 'c':
-			pc(r, va_arg(ap, int));
+			pc(r, (char)va_arg(ap, int));
 			break;
 		case 's': {
 			char *s = va_arg(ap, char *);
@@ -108,16 +109,20 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 		case 'p':
 			pc(r, '0');
 			pc(r, 'x'); /* fall through... */
-			islong = sizeof(long) > 4;
+			islong = sizeof(long) > 4U;
 		case 'x': {
-			int sig = 0;
+			bool sig = false;
 			unsigned long v = islong ? va_arg(ap, unsigned long)
 				: va_arg(ap, unsigned int);
-			for (int i = 2*sizeof(long) - 1; i >= 0; i--) {
-				int d = (v >> (i*4)) & 0xf;
+		    size_t i = 2U * sizeof(v);
+			while (i > 0U) {
+				--i;
+				uint8_t d = (uint8_t)((v >> (i * 4U)) & 0x0fU);
 
-				sig += !!d;
-				if (sig || i == 0)
+				if (d != 0U) {
+					sig = true;
+				}
+				if (sig || i == 0U)
 					pc(r, "0123456789abcdef"[d]);
 			}
 			break;
@@ -137,10 +142,10 @@ static int vpf(struct _pfr *r, const char *f, va_list ap)
 #define CALL_VPF(rec)				\
 	va_list ap;				\
 	va_start(ap, f);			\
-	ret = vpf(&r, f, ap);			\
+	ret = (int)vpf(&r, f, ap);			\
 	va_end(ap);
 
-static inline int snprintf(char *buf, unsigned long len, const char *f, ...)
+static inline int snprintf(char *buf, size_t len, const char *f, ...)
 {
 	int ret = 0;
 	struct _pfr r = { .buf = buf, .len = len };
@@ -152,7 +157,7 @@ static inline int snprintf(char *buf, unsigned long len, const char *f, ...)
 static inline int sprintf(char *buf, const char *f, ...)
 {
 	int ret = 0;
-	struct _pfr r = { .buf = buf, .len = 0x7fffffff };
+	struct _pfr r = { .buf = buf, .len = 0x7fffffffU };
 
 	CALL_VPF(&r);
 	return ret;

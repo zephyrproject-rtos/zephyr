@@ -20,7 +20,7 @@
 
 #define STACK_SIZE	512
 
-K_SEM_DEFINE(test_sema, 1, 10);
+K_SEM_DEFINE(test_sema, 1U, 10U);
 
 struct k_thread my_thread_user;
 
@@ -46,7 +46,7 @@ static inline int z_vrfy_validation_overhead_syscall(void)
 
 	bool status_1 = Z_SYSCALL_OBJ(&test_sema, K_OBJ_SEM);
 
-	return status_0 || status_1;
+	return (status_0 || status_1) ? 1 : 0;
 }
 #include <syscalls/validation_overhead_syscall_mrsh.c>
 
@@ -85,6 +85,7 @@ void user_thread_creation(void)
 
 void syscall_overhead_user_thread(void *p1, void *p2, void *p3)
 {
+	/*? BUG HERE? Dead store, possibly removed by the compiler */
 	int val = dummy_syscall();
 
 	val |= 0xFF;

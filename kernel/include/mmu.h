@@ -166,7 +166,7 @@ extern struct z_page_frame z_page_frames[Z_NUM_PAGE_FRAMES];
 
 static inline uintptr_t z_page_frame_to_phys(struct z_page_frame *pf)
 {
-	return (uintptr_t)((pf - z_page_frames) * CONFIG_MMU_PAGE_SIZE) +
+	return ((uintptr_t)(pf - z_page_frames) * (size_t)CONFIG_MMU_PAGE_SIZE) +
 			Z_PHYS_RAM_START;
 }
 
@@ -188,7 +188,7 @@ static inline struct z_page_frame *z_phys_to_page_frame(uintptr_t phys)
 		 "0x%lx not an SRAM physical address", phys);
 
 	return &z_page_frames[(phys - Z_PHYS_RAM_START) /
-			      CONFIG_MMU_PAGE_SIZE];
+			      (size_t)CONFIG_MMU_PAGE_SIZE];
 }
 
 static inline void z_mem_assert_virtual_region(uint8_t *addr, size_t size)
@@ -215,7 +215,7 @@ extern size_t z_free_page_count;
 #define Z_PAGE_FRAME_FOREACH(_phys, _pageframe) \
 	for ((_phys) = Z_PHYS_RAM_START, (_pageframe) = z_page_frames; \
 	     (_phys) < Z_PHYS_RAM_END; \
-	     (_phys) += CONFIG_MMU_PAGE_SIZE, (_pageframe)++)
+	     (_phys) += (size_t)CONFIG_MMU_PAGE_SIZE, (_pageframe)++)
 
 #ifdef CONFIG_DEMAND_PAGING
 /* We reserve a virtual page as a scratch area for page-ins/outs at the end

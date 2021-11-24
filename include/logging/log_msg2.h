@@ -41,7 +41,7 @@ typedef uint32_t log_timestamp_t;
  * @{
  */
 
-#define Z_LOG_MSG2_LOG 0
+#define Z_LOG_MSG2_LOG 0U
 
 #define LOG_MSG2_GENERIC_HDR \
 	MPSC_PBUF_HDR;\
@@ -124,14 +124,14 @@ enum z_log_msg2_mode {
 
 #define Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, _dlen) \
 { \
-	.valid = 0, \
-	.busy = 0, \
+	.valid = 0U, \
+	.busy = 0U, \
 	.type = Z_LOG_MSG2_LOG, \
 	.domain = (_domain_id), \
 	.level = (_level), \
-	.package_len = (_plen), \
-	.data_len = (_dlen), \
-	.reserved = 0, \
+	.package_len = (uint16_t)(_plen), \
+	.data_len = (uint16_t)(_dlen), \
+	.reserved = 0U, \
 }
 
 /* Messages are aligned to alignment required by cbprintf package. */
@@ -190,24 +190,24 @@ enum z_log_msg2_mode {
 	(sizeof(struct log_msg2_hdr) + (pkg_len) + (data_len))
 
 #define Z_LOG_MSG2_ALIGNED_WLEN(pkg_len, data_len) \
-	ceiling_fraction(ROUND_UP(Z_LOG_MSG2_LEN(pkg_len, data_len), \
+	((unsigned int)ceiling_fraction(ROUND_UP(Z_LOG_MSG2_LEN(pkg_len, data_len), \
 				  Z_LOG_MSG2_ALIGNMENT), \
-			 sizeof(uint32_t))
+			 sizeof(uint32_t)))
 
 #define Z_LOG_MSG2_SYNC(_domain_id, _source, _level, _data, _dlen, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-				0, __VA_ARGS__); \
+				0U, __VA_ARGS__); \
 	struct log_msg2 *_msg; \
 	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, _dlen)); \
-	if (_plen) {\
+	if (_plen != 0) {\
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
 					Z_LOG_MSG2_ALIGN_OFFSET, \
-					0, __VA_ARGS__); \
+					0U, __VA_ARGS__); \
 	} \
 	struct log_msg2_desc _desc = \
 		     Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
-			   (uint32_t)_plen, _dlen); \
+			   _plen, _dlen); \
 	z_log_msg2_finalize(_msg, _source, _desc, _data); \
 } while (false)
 
@@ -217,19 +217,20 @@ do { \
 	if ((GET_ARG_N(1, __VA_ARGS__)) == NULL) { \
 		_plen = 0; \
 	} else { \
-		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-					0, __VA_ARGS__); \
+		CBPRINTF_STATIC_PACKAGE(NULL, 0U, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
+					0U, __VA_ARGS__); \
 	} \
 	struct log_msg2 *_msg; \
-	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
+	/*? What about negative _plen? */ \
+	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN((unsigned int)_plen, 0U)); \
 	if (_plen != 0) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
 					_plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-					0, __VA_ARGS__);\
+					0U, __VA_ARGS__);\
 	} \
 	struct log_msg2_desc _desc = \
 		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
-					   (uint32_t)_plen, _dlen); \
+					   _plen, _dlen); \
 	LOG_MSG2_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
 	z_log_msg2_static_create((void *)(_source), _desc, _msg->data, (_data)); \
@@ -239,17 +240,17 @@ do { \
 #define Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, _level, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-				0, __VA_ARGS__); \
+				0U, __VA_ARGS__); \
 	size_t _msg_wlen = Z_LOG_MSG2_ALIGNED_WLEN(_plen, 0); \
 	struct log_msg2 *_msg = z_log_msg2_alloc(_msg_wlen); \
 	struct log_msg2_desc _desc = \
-		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, (uint32_t)_plen, 0); \
+		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, 0); \
 	LOG_MSG2_DBG("creating message zero copy: package len: %d, msg: %p\n", \
 			_plen, _msg); \
 	if (_msg) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
 					Z_LOG_MSG2_ALIGN_OFFSET, \
-					0, __VA_ARGS__); \
+					0U, __VA_ARGS__); \
 	} \
 	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
 } while (false)
@@ -381,7 +382,7 @@ do { \
 					  (_level), (uint8_t *)(_data), (_dlen),\
 					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 		(_mode) = Z_LOG_MSG2_MODE_RUNTIME; \
-	} else if ((IS_ENABLED(CONFIG_LOG_SPEED)) && (_try_0cpy) && ((_dlen) == 0)) {\
+	} else if ((IS_ENABLED(CONFIG_LOG_SPEED)) && (_try_0cpy) && ((_dlen) == 0U)) {\
 		LOG_MSG2_DBG("create zero-copy message\n");\
 		Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, \
 					_level, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \

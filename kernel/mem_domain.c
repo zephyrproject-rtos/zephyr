@@ -139,7 +139,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 void k_mem_domain_add_partition(struct k_mem_domain *domain,
 				struct k_mem_partition *part)
 {
-	int p_idx;
+	uint8_t p_idx;
 	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(domain != NULL);
@@ -148,7 +148,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 
 	key = k_spin_lock(&z_mem_domain_lock);
 
-	for (p_idx = 0; p_idx < max_partitions; p_idx++) {
+	for (p_idx = 0U; p_idx < max_partitions; p_idx++) {
 		/* A zero-sized partition denotes it's a free partition */
 		if (domain->partitions[p_idx].size == 0U) {
 			break;
@@ -176,7 +176,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 				  struct k_mem_partition *part)
 {
-	int p_idx;
+	uint8_t p_idx;
 	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(domain != NULL);
@@ -185,7 +185,7 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	key = k_spin_lock(&z_mem_domain_lock);
 
 	/* find a partition that matches the given start and size */
-	for (p_idx = 0; p_idx < max_partitions; p_idx++) {
+	for (p_idx = 0U; p_idx < max_partitions; p_idx++) {
 		if (domain->partitions[p_idx].start == part->start &&
 		    domain->partitions[p_idx].size == part->size) {
 			break;
@@ -271,7 +271,7 @@ static int init_mem_domain_module(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	max_partitions = arch_mem_domain_max_partitions_get();
+	max_partitions = (uint8_t)arch_mem_domain_max_partitions_get();
 	/*
 	 * max_partitions must be less than or equal to
 	 * CONFIG_MAX_DOMAIN_PARTITIONS, or would encounter array index

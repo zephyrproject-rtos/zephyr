@@ -21,7 +21,7 @@
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
 	uint64_t ns;
-	uint64_t us;
+	int64_t us;
 	const bool update_rmtp = rmtp != NULL;
 
 	if (rqtp == NULL) {
@@ -30,7 +30,7 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 	}
 
 	if (rqtp->tv_sec < 0 || rqtp->tv_nsec < 0
-		|| rqtp->tv_nsec >= NSEC_PER_SEC) {
+		|| rqtp->tv_nsec >= (long)NSEC_PER_SEC) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -39,19 +39,20 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 		goto do_rmtp_update;
 	}
 
-	if (unlikely(rqtp->tv_sec >= ULLONG_MAX / NSEC_PER_SEC)) {
+	if (unlikely((unsigned long long)rqtp->tv_sec >= ULLONG_MAX / NSEC_PER_SEC)) {
 		/* If a user passes this in, we could be here a while, but
 		 * at least it's technically correct-ish
 		 */
-		ns = rqtp->tv_nsec + NSEC_PER_SEC
-			+ k_sleep(K_SECONDS(rqtp->tv_sec - 1)) * NSEC_PER_MSEC;
+		ns = (uint64_t)rqtp->tv_nsec + NSEC_PER_SEC
+			+ (uint64_t)k_sleep(K_SECONDS(((uint64_t)rqtp->tv_sec - 1U))) * NSEC_PER_MSEC;
 	} else {
-		ns = rqtp->tv_sec * NSEC_PER_SEC + rqtp->tv_nsec;
+		ns = (uint64_t)rqtp->tv_sec * NSEC_PER_SEC + (uint64_t)rqtp->tv_nsec;
 	}
 
 	/* TODO: improve upper bound when hr timers are available */
-	us = ceiling_fraction(ns, NSEC_PER_USEC);
+	us = (int64_t)(uint64_t)ceiling_fraction(ns, NSEC_PER_USEC);
 	do {
+		/*? What's the aim here? int64_t is passed as int32_t */
 		us = k_usleep(us);
 	} while (us != 0);
 

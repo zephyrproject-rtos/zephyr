@@ -104,7 +104,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
 		k_free(msgq->buffer_start);
-		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
+		msgq->flags &= (uint8_t)~K_MSGQ_FLAG_ALLOC;
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, 0);

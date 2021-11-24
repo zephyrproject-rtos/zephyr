@@ -75,7 +75,7 @@ static int z_fd_unref(int fd)
 	 */
 	do {
 		old_rc = atomic_get(&fdtable[fd].refcount);
-		if (!old_rc) {
+		if (old_rc == 0) {
 			return 0;
 		}
 	} while (!atomic_cas(&fdtable[fd].refcount, old_rc, old_rc - 1));
@@ -94,8 +94,8 @@ static int _find_fd_entry(void)
 {
 	int fd;
 
-	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (!atomic_get(&fdtable[fd].refcount)) {
+	for (fd = 0; fd < (int)ARRAY_SIZE(fdtable); fd++) {
+		if (atomic_get(&fdtable[fd].refcount) == 0) {
 			return fd;
 		}
 	}
@@ -106,14 +106,14 @@ static int _find_fd_entry(void)
 
 static int _check_fd(int fd)
 {
-	if (fd < 0 || fd >= ARRAY_SIZE(fdtable)) {
+	if (fd < 0 || fd >= (int)ARRAY_SIZE(fdtable)) {
 		errno = EBADF;
 		return -1;
 	}
+	uint32_t ufd = (uint32_t)fd;
+	ufd = k_array_index_sanitize(ufd, (uint32_t)ARRAY_SIZE(fdtable));
 
-	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
-
-	if (!atomic_get(&fdtable[fd].refcount)) {
+	if (atomic_get(&fdtable[ufd].refcount) == 0) {
 		errno = EBADF;
 		return -1;
 	}
@@ -198,7 +198,7 @@ void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 	 * for something. For BSD sockets, the lock is used with condition
 	 * variables to avoid keeping the lock for a long period of time.
 	 */
-	if (vtable && vtable->ioctl) {
+	if ((vtable != NULL) && (vtable->ioctl != NULL)) {
 		(void)z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK,
 					   &fdtable[fd].lock);
 	}

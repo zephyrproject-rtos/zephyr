@@ -36,7 +36,7 @@ void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread);
 
 struct _priq_rb {
 	struct rbtree tree;
-	int next_order_key;
+	uint32_t next_order_key;
 };
 
 void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *thread);

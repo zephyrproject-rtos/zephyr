@@ -29,14 +29,14 @@ void *bsearch(const void *key, const void *array, size_t count, size_t size,
 	const char *pivot;
 
 	while (low < high) {
-		index = low + (high - low) / 2;
+		index = low + (high - low) / 2U;
 		pivot = (const char *)array + index * size;
 		result = cmp(key, pivot);
 
 		if (result == 0) {
 			return (void *)pivot;
 		} else if (result > 0) {
-			low = index + 1;
+			low = index + 1U;
 		} else {
 			high = index;
 

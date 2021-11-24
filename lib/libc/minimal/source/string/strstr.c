@@ -48,12 +48,12 @@ strstr(const char *s, const char *find)
 	size_t len;
 
 	c = *find++;
-	if (c != 0) {
+	if (c != '\0') {
 		len = strlen(find);
 		do {
 			do {
 				sc = *s++;
-				if (sc == 0) {
+				if (sc == '\0') {
 					return NULL;
 				}
 			} while (sc != c);

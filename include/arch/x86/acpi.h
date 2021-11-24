@@ -8,7 +8,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#define ACPI_RSDP_SIGNATURE 0x2052545020445352 /* == "RSD PTR " */
+#define ACPI_RSDP_SIGNATURE 0x2052545020445352ULL /* == "RSD PTR " */
 
 /* Root System Description Pointer */
 struct acpi_rsdp {
@@ -72,7 +72,7 @@ struct acpi_madt_entry {
 	uint8_t length;
 } __packed;
 
-#define ACPI_MADT_ENTRY_CPU 0
+#define ACPI_MADT_ENTRY_CPU 0U
 
 struct acpi_madt {
 	struct acpi_sdt sdt;
@@ -90,7 +90,7 @@ struct acpi_cpu {
 	uint8_t flags;   /* see ACPI_CPU_FLAGS_* below */
 } __packed;
 
-#define ACPI_CPU_FLAGS_ENABLED 0x01
+#define ACPI_CPU_FLAGS_ENABLED 0x01U
 
 /* Generic DMA Remapping entry structure part */
 struct acpi_dmar_entry {
@@ -98,12 +98,12 @@ struct acpi_dmar_entry {
 	uint16_t length;
 } __packed;
 
-#define ACPI_DMAR_TYPE_DRHD 0 /* DMA Remapping Hardware Unit Definition */
-#define ACPI_DMAR_TYPE_RMRR 1 /* Do not care atm (legacy usage) */
-#define ACPI_DMAR_TYPE_ATSR 2 /* Do not care atm (PCIE ATS support) */
-#define ACPI_DMAR_TYPE_RHSA 3 /* Do not care atm (NUMA specific ) */
-#define ACPI_DMAR_TYPE_ANDD 4 /* Do not care atm (ACPI DSDT related) */
-#define ACPI_DMAR_TYPE_SACT 5 /* Do not care atm */
+#define ACPI_DMAR_TYPE_DRHD 0U /* DMA Remapping Hardware Unit Definition */
+#define ACPI_DMAR_TYPE_RMRR 1U /* Do not care atm (legacy usage) */
+#define ACPI_DMAR_TYPE_ATSR 2U /* Do not care atm (PCIE ATS support) */
+#define ACPI_DMAR_TYPE_RHSA 3U /* Do not care atm (NUMA specific ) */
+#define ACPI_DMAR_TYPE_ANDD 4U /* Do not care atm (ACPI DSDT related) */
+#define ACPI_DMAR_TYPE_SACT 5U /* Do not care atm */
 
 /* PCI Device/Function Pair (forming the BDF, with start_bus_num below) */
 struct acpi_dmar_dev_path {
@@ -111,7 +111,7 @@ struct acpi_dmar_dev_path {
 	uint8_t function;
 } __packed;
 
-#define ACPI_DMAR_DEV_PATH_SIZE			2
+#define ACPI_DMAR_DEV_PATH_SIZE			2U
 
 /* DMA Remapping Device Scope */
 struct acpi_dmar_dev_scope {
@@ -123,13 +123,13 @@ struct acpi_dmar_dev_scope {
 	struct acpi_dmar_dev_path path[]; /* One is at least always found */
 } __packed;
 
-#define ACPI_DMAR_DEV_SCOPE_MIN_SIZE		6
+#define ACPI_DMAR_DEV_SCOPE_MIN_SIZE		6U
 
-#define ACPI_DRHD_DEV_SCOPE_PCI_EPD		0x01
-#define ACPI_DRHD_DEV_SCOPE_PCI_SUB_H		0x02
-#define ACPI_DRHD_DEV_SCOPE_IOAPIC		0x03
-#define ACPI_DRHD_DEV_SCOPE_MSI_CAP_HPET	0x04
-#define ACPI_DRHD_DEV_SCOPE_NAMESPACE_DEV	0x05
+#define ACPI_DRHD_DEV_SCOPE_PCI_EPD		0x01U
+#define ACPI_DRHD_DEV_SCOPE_PCI_SUB_H		0x02U
+#define ACPI_DRHD_DEV_SCOPE_IOAPIC		0x03U
+#define ACPI_DRHD_DEV_SCOPE_MSI_CAP_HPET	0x04U
+#define ACPI_DRHD_DEV_SCOPE_NAMESPACE_DEV	0x05U
 
 struct acpi_drhd {
 	struct acpi_dmar_entry entry;
@@ -140,7 +140,7 @@ struct acpi_drhd {
 	struct acpi_dmar_dev_scope device_scope[];
 } __packed;
 
-#define ACPI_DRHD_MIN_SIZE			16
+#define ACPI_DRHD_MIN_SIZE			16U
 
 #define ACPI_DRHD_FLAG_INCLUDE_PCI_ALL		BIT(0)
 

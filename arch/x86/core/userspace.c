@@ -103,7 +103,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * that pushes 8 bytes) the stack must be MISALIGNED by
 	 * exactly 8 bytes.
 	 */
-	stack_end -= 8;
+	stack_end -= 8U;
 #endif
 
 #if defined(CONFIG_DEMAND_PAGING) && \

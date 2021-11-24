@@ -60,15 +60,15 @@ static const char *thread_name_get(struct k_thread *thread)
 static const char *reason_to_str(unsigned int reason)
 {
 	switch (reason) {
-	case K_ERR_CPU_EXCEPTION:
+	case (unsigned int)K_ERR_CPU_EXCEPTION:
 		return "CPU exception";
-	case K_ERR_SPURIOUS_IRQ:
+	case (unsigned int)K_ERR_SPURIOUS_IRQ:
 		return "Unhandled interrupt";
-	case K_ERR_STACK_CHK_FAIL:
+	case (unsigned int)K_ERR_STACK_CHK_FAIL:
 		return "Stack overflow";
-	case K_ERR_KERNEL_OOPS:
+	case (unsigned int)K_ERR_KERNEL_OOPS:
 		return "Kernel oops";
-	case K_ERR_KERNEL_PANIC:
+	case (unsigned int)K_ERR_KERNEL_PANIC:
 		return "Kernel panic";
 	default:
 		return "Unknown error";
@@ -82,12 +82,12 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 }
 /* LCOV_EXCL_STOP */
 
-static inline int get_cpu(void)
+static inline uint8_t get_cpu(void)
 {
 #if defined(CONFIG_SMP)
 	return arch_curr_cpu()->id;
 #else
-	return 0;
+	return 0U;
 #endif
 }
 
@@ -105,7 +105,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * change it without also updating twister
 	 */
 	LOG_ERR(">>> ZEPHYR FATAL ERROR %d: %s on CPU %d", reason,
-		reason_to_str(reason), get_cpu());
+		reason_to_str(reason), (int)get_cpu());
 
 	/* FIXME: This doesn't seem to work as expected on all arches.
 	 * Need a reliable way to determine whether the fault happened when

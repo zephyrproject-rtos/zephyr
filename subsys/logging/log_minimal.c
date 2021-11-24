@@ -39,9 +39,9 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 
 	for (size_t i = 0U; i < HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i < length) {
-			unsigned char c = data[i];
+			char c = data[i];
 
-			printk("%c", isprint((int)c) != 0 ? c : '.');
+			printk("%c", isprint((int)(unsigned char)c) != 0 ? c : '.');
 		} else {
 			printk(" ");
 		}
@@ -49,7 +49,7 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 	printk("\n");
 }
 
-void z_log_minimal_hexdump_print(int level, const void *data, size_t size)
+void z_log_minimal_hexdump_print(unsigned int level, const void *data, size_t size)
 {
 	const char *data_buffer = (const char *)data;
 	while (size > 0U) {

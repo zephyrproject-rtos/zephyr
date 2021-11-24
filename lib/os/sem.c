@@ -22,7 +22,7 @@ static inline atomic_t bounded_dec(atomic_t *val, atomic_t minimum)
 		}
 
 		new_value = old_value - 1;
-	} while (atomic_cas(val, old_value, new_value) == 0);
+	} while (!atomic_cas(val, old_value, new_value));
 
 	return old_value;
 }
@@ -40,7 +40,7 @@ static inline atomic_t bounded_inc(atomic_t *val, atomic_t minimum,
 
 		new_value = old_value < minimum ?
 			    minimum + 1 : old_value + 1;
-	} while (atomic_cas(val, old_value, new_value) == 0U);
+	} while (!atomic_cas(val, old_value, new_value));
 
 	return old_value;
 }
@@ -48,13 +48,13 @@ static inline atomic_t bounded_inc(atomic_t *val, atomic_t minimum,
 int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
 		 unsigned int limit)
 {
-	if (sem == NULL || limit == SYS_SEM_MINIMUM ||
-	    initial_count > limit || limit > INT_MAX) {
+	if (sem == NULL || limit == (unsigned int)SYS_SEM_MINIMUM ||
+	    initial_count > limit || limit > (unsigned int)INT_MAX) {
 		return -EINVAL;
 	}
 
-	atomic_set(&sem->futex.val, initial_count);
-	sem->limit = limit;
+	atomic_set(&sem->futex.val, (int)initial_count);
+	sem->limit = (int)limit;
 
 	return 0;
 }
@@ -103,7 +103,7 @@ unsigned int sys_sem_count_get(struct sys_sem *sem)
 {
 	int value = atomic_get(&sem->futex.val);
 
-	return value > SYS_SEM_MINIMUM ? value : SYS_SEM_MINIMUM;
+	return (unsigned int)(value > SYS_SEM_MINIMUM ? value : SYS_SEM_MINIMUM);
 }
 #else
 int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,

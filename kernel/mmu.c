@@ -103,7 +103,7 @@ void z_page_frames_dump(void)
 	printk("Physical memory from 0x%lx to 0x%lx\n",
 	       Z_PHYS_RAM_START, Z_PHYS_RAM_END);
 
-	for (int i = 0; i < Z_NUM_PAGE_FRAMES; i++) {
+	for (size_t i = 0U; i < Z_NUM_PAGE_FRAMES; i++) {
 		struct z_page_frame *pf = &z_page_frames[i];
 
 		page_frame_dump(pf);
@@ -180,7 +180,7 @@ void z_page_frames_dump(void)
  * done in reverse from highest address.
  */
 SYS_BITARRAY_DEFINE(virt_region_bitmap,
-		    CONFIG_KERNEL_VM_SIZE / CONFIG_MMU_PAGE_SIZE);
+		    (size_t)(CONFIG_KERNEL_VM_SIZE / CONFIG_MMU_PAGE_SIZE));
 
 static bool virt_region_inited;
 
@@ -190,13 +190,13 @@ static bool virt_region_inited;
 static inline uintptr_t virt_from_bitmap_offset(size_t offset, size_t size)
 {
 	return POINTER_TO_UINT(Z_VIRT_RAM_END)
-	       - (offset * CONFIG_MMU_PAGE_SIZE) - size;
+	       - (offset * (size_t)CONFIG_MMU_PAGE_SIZE) - size;
 }
 
 static inline size_t virt_to_bitmap_offset(void *vaddr, size_t size)
 {
 	return (POINTER_TO_UINT(Z_VIRT_RAM_END)
-		- POINTER_TO_UINT(vaddr) - size) / CONFIG_MMU_PAGE_SIZE;
+		- POINTER_TO_UINT(vaddr) - size) / (size_t)CONFIG_MMU_PAGE_SIZE;
 }
 
 static void virt_region_init(void)
@@ -219,7 +219,7 @@ static void virt_region_init(void)
 	num_bits = POINTER_TO_UINT(Z_FREE_VM_START)
 		   - POINTER_TO_UINT(Z_VIRT_RAM_START);
 	offset = virt_to_bitmap_offset(Z_VIRT_RAM_START, num_bits);
-	num_bits /= CONFIG_MMU_PAGE_SIZE;
+	num_bits /= (size_t)CONFIG_MMU_PAGE_SIZE;
 	(void)sys_bitarray_set_region(&virt_region_bitmap,
 				      num_bits, offset);
 
@@ -237,7 +237,7 @@ static void *virt_region_alloc(size_t size)
 		virt_region_init();
 	}
 
-	num_bits = size / CONFIG_MMU_PAGE_SIZE;
+	num_bits = size / (size_t)CONFIG_MMU_PAGE_SIZE;
 	ret = sys_bitarray_alloc(&virt_region_bitmap, num_bits, &offset);
 	if (ret != 0) {
 		LOG_ERR("insufficient virtual address space (requested %zu)",
@@ -278,7 +278,7 @@ static void virt_region_free(void *vaddr, size_t size)
 	}
 
 	offset = virt_to_bitmap_offset(vaddr, size);
-	num_bits = size / CONFIG_MMU_PAGE_SIZE;
+	num_bits = size / (size_t)CONFIG_MMU_PAGE_SIZE;
 	(void)sys_bitarray_free(&virt_region_bitmap, num_bits, offset);
 }
 
@@ -490,7 +490,7 @@ void *k_mem_map(size_t size, uint32_t flags)
 	/* Need extra for the guard pages (before and after) which we
 	 * won't map.
 	 */
-	total_size = size + CONFIG_MMU_PAGE_SIZE * 2;
+	total_size = size + (size_t)CONFIG_MMU_PAGE_SIZE * 2U;
 
 	dst = virt_region_alloc(total_size);
 	if (dst == NULL) {
@@ -541,7 +541,7 @@ void k_mem_unmap(void *addr, size_t size)
 	 * for two guard pages.
 	 */
 	pos = (uint8_t *)addr - CONFIG_MMU_PAGE_SIZE;
-	z_mem_assert_virtual_region(pos, size + (CONFIG_MMU_PAGE_SIZE * 2));
+	z_mem_assert_virtual_region(pos, size + ((size_t)CONFIG_MMU_PAGE_SIZE * 2U));
 
 	key = k_spin_lock(&z_mm_lock);
 
@@ -609,7 +609,7 @@ void k_mem_unmap(void *addr, size_t size)
 	 * region. So we also need to free them from the bitmap.
 	 */
 	pos = (uint8_t *)addr - CONFIG_MMU_PAGE_SIZE;
-	total_size = size + CONFIG_MMU_PAGE_SIZE * 2;
+	total_size = size + (size_t)CONFIG_MMU_PAGE_SIZE * 2U;
 	virt_region_free(pos, total_size);
 
 out:
@@ -660,7 +660,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	key = k_spin_lock(&z_mm_lock);
 	/* Obtain an appropriately sized chunk of virtual memory */
 	dest_addr = virt_region_alloc(aligned_size);
-	if (!dest_addr) {
+	if (dest_addr == NULL) {
 		goto fail;
 	}
 

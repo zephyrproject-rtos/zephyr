@@ -216,10 +216,10 @@ static ALWAYS_INLINE int sys_test_and_clear_bit(mem_addr_t addr,
  * at build time and defined via the linker script. On Intel64, it's an array.
  */
 
-extern unsigned char _irq_to_interrupt_vector[];
+extern uint8_t _irq_to_interrupt_vector[];
 
 #define Z_IRQ_TO_INTERRUPT_VECTOR(irq) \
-	((unsigned int) _irq_to_interrupt_vector[(irq)])
+	(_irq_to_interrupt_vector[(irq)])
 
 
 #endif /* _ASMLANGUAGE */
@@ -257,7 +257,7 @@ static inline uint32_t arch_k_cycle_get_32(void)
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
-	return (key & 0x200) != 0;
+	return (key & 0x200U) != 0U;
 }
 
 /**

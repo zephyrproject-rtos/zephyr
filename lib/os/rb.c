@@ -47,7 +47,7 @@ static void set_child(struct rbnode *n, uint8_t side, void *val)
 static enum rb_color get_color(struct rbnode *n)
 {
 	CHECK(n);
-	return ((uintptr_t)n->children[0]) & 1UL;
+	return (((uintptr_t)n->children[0]) & 1U) == 0U ? RED : BLACK;
 }
 
 static bool is_black(struct rbnode *n)
@@ -76,16 +76,16 @@ static void set_color(struct rbnode *n, enum rb_color color)
  * contain at least tree->max_depth entries!  Returns the number of
  * entries pushed onto the stack.
  */
-static int find_and_stack(struct rbtree *tree, struct rbnode *node,
+static unsigned int find_and_stack(struct rbtree *tree, struct rbnode *node,
 			  struct rbnode **stack)
 {
-	int sz = 0;
+	unsigned int sz = 0U;
 
 	stack[sz++] = tree->root;
 
-	while (stack[sz - 1] != node) {
-		uint8_t side = tree->lessthan_fn(node, stack[sz - 1]) ? 0U : 1U;
-		struct rbnode *ch = get_child(stack[sz - 1], side);
+	while (stack[sz - 1U] != node) {
+		uint8_t side = tree->lessthan_fn(node, stack[sz - 1U]) ? 0U : 1U;
+		struct rbnode *ch = get_child(stack[sz - 1U], side);
 
 		if (ch != NULL) {
 			stack[sz++] = ch;
@@ -125,18 +125,18 @@ static uint8_t get_side(struct rbnode *parent, struct rbnode *child)
  * a b            b c
  *
  */
-static void rotate(struct rbnode **stack, int stacksz)
+static void rotate(struct rbnode **stack, unsigned int stacksz)
 {
-	CHECK(stacksz >= 2);
+	CHECK(stacksz >= 2U);
 
-	struct rbnode *parent = stack[stacksz - 2];
-	struct rbnode *child = stack[stacksz - 1];
+	struct rbnode *parent = stack[stacksz - 2U];
+	struct rbnode *child = stack[stacksz - 1U];
 	uint8_t side = get_side(parent, child);
 	struct rbnode *a = get_child(child, side);
 	struct rbnode *b = get_child(child, (side == 0U) ? 1U : 0U);
 
-	if (stacksz >= 3) {
-		struct rbnode *grandparent = stack[stacksz - 3];
+	if (stacksz >= 3U) {
+		struct rbnode *grandparent = stack[stacksz - 3U];
 
 		set_child(grandparent, get_side(grandparent, parent), child);
 	}
@@ -144,19 +144,19 @@ static void rotate(struct rbnode **stack, int stacksz)
 	set_child(child, side, a);
 	set_child(child, (side == 0U) ? 1U : 0U, parent);
 	set_child(parent, side, b);
-	stack[stacksz - 2] = child;
-	stack[stacksz - 1] = parent;
+	stack[stacksz - 2U] = child;
+	stack[stacksz - 1U] = parent;
 }
 
 /* The node at the top of the provided stack is red, and its parent is
  * too.  Iteratively fix the tree so it becomes a valid red black tree
  * again
  */
-static void fix_extra_red(struct rbnode **stack, int stacksz)
+static void fix_extra_red(struct rbnode **stack, unsigned int stacksz)
 {
-	while (stacksz > 1) {
-		struct rbnode *node = stack[stacksz - 1];
-		struct rbnode *parent = stack[stacksz - 2];
+	while (stacksz > 1U) {
+		struct rbnode *node = stack[stacksz - 1U];
+		struct rbnode *parent = stack[stacksz - 2U];
 
 		/* Correct child colors are a precondition of the loop */
 		CHECK((get_child(node, 0U) == NULL) ||
@@ -171,9 +171,9 @@ static void fix_extra_red(struct rbnode **stack, int stacksz)
 		/* We are guaranteed to have a grandparent if our
 		 * parent is red, as red nodes cannot be the root
 		 */
-		CHECK(stacksz >= 2);
+		CHECK(stacksz >= 2U);
 
-		struct rbnode *grandparent = stack[stacksz - 3];
+		struct rbnode *grandparent = stack[stacksz - 3U];
 		uint8_t side = get_side(grandparent, parent);
 		struct rbnode *aunt = get_child(grandparent,
 						(side == 0U) ? 1U : 0U);
@@ -187,7 +187,7 @@ static void fix_extra_red(struct rbnode **stack, int stacksz)
 			 * have a red parent, so continue iterating
 			 * from there.
 			 */
-			stacksz -= 2;
+			stacksz -= 2U;
 			continue;
 		}
 
@@ -199,13 +199,13 @@ static void fix_extra_red(struct rbnode **stack, int stacksz)
 
 		if (parent_side != side) {
 			rotate(stack, stacksz);
-			node = stack[stacksz - 1];
+			node = stack[stacksz - 1U];
 		}
 
 		/* Rotate the grandparent with parent, swapping colors */
-		rotate(stack, stacksz - 1);
-		set_color(stack[stacksz - 3], BLACK);
-		set_color(stack[stacksz - 2], RED);
+		rotate(stack, stacksz - 1U);
+		set_color(stack[stacksz - 3U], BLACK);
+		set_color(stack[stacksz - 2U], RED);
 		return;
 	}
 
@@ -222,7 +222,7 @@ void rb_insert(struct rbtree *tree, struct rbnode *node)
 
 	if (tree->root == NULL) {
 		tree->root = node;
-		tree->max_depth = 1;
+		tree->max_depth = 1U;
 		set_color(node, BLACK);
 		return;
 	}
@@ -230,12 +230,12 @@ void rb_insert(struct rbtree *tree, struct rbnode *node)
 #ifdef CONFIG_MISRA_SANE
 	struct rbnode **stack = &tree->iter_stack[0];
 #else
-	struct rbnode *stack[tree->max_depth + 1];
+	struct rbnode *stack[tree->max_depth + 1U];
 #endif
 
-	int stacksz = find_and_stack(tree, node, stack);
+	unsigned int stacksz = find_and_stack(tree, node, stack);
 
-	struct rbnode *parent = stack[stacksz - 1];
+	struct rbnode *parent = stack[stacksz - 1U];
 
 	uint8_t side = tree->lessthan_fn(node, parent) ? 0U : 1U;
 
@@ -264,14 +264,14 @@ void rb_insert(struct rbtree *tree, struct rbnode *node)
  * then clean it up (replace it with a simple NULL child in the
  * parent) when finished.
  */
-static void fix_missing_black(struct rbnode **stack, int stacksz,
+static void fix_missing_black(struct rbnode **stack, unsigned int stacksz,
 			      struct rbnode *null_node)
 {
 	/* Loop upward until we reach the root */
-	while (stacksz > 1) {
+	while (stacksz > 1U) {
 		struct rbnode *c0, *c1, *inner, *outer;
-		struct rbnode *n = stack[stacksz - 1];
-		struct rbnode *parent = stack[stacksz - 2];
+		struct rbnode *n = stack[stacksz - 1U];
+		struct rbnode *parent = stack[stacksz - 2U];
 		uint8_t n_side = get_side(parent, n);
 		struct rbnode *sib = get_child(parent,
 					       (n_side == 0U) ? 1U : 0U);
@@ -284,13 +284,13 @@ static void fix_missing_black(struct rbnode **stack, int stacksz,
 		 * tree)
 		 */
 		if (!is_black(sib)) {
-			stack[stacksz - 1] = sib;
+			stack[stacksz - 1U] = sib;
 			rotate(stack, stacksz);
 			set_color(parent, RED);
 			set_color(sib, BLACK);
 			stack[stacksz++] = n;
 
-			parent = stack[stacksz - 2];
+			parent = stack[stacksz - 2U];
 			sib = get_child(parent, (n_side == 0U) ? 1U : 0U);
 		}
 
@@ -333,7 +333,7 @@ static void fix_missing_black(struct rbnode **stack, int stacksz,
 		if (!((outer != NULL) && is_red(outer))) {
 			inner = get_child(sib, n_side);
 
-			stack[stacksz - 1] = sib;
+			stack[stacksz - 1U] = sib;
 			stack[stacksz++] = inner;
 			rotate(stack, stacksz);
 			set_color(sib, RED);
@@ -342,9 +342,9 @@ static void fix_missing_black(struct rbnode **stack, int stacksz,
 			/* Restore stack state to have N on the top
 			 * and make sib reflect the new sibling
 			 */
-			sib = stack[stacksz - 2];
+			sib = stack[stacksz - 2U];
 			outer = get_child(sib, (n_side == 0U) ? 1U : 0U);
-			stack[stacksz - 2] = n;
+			stack[stacksz - 2U] = n;
 			stacksz--;
 		}
 
@@ -356,7 +356,7 @@ static void fix_missing_black(struct rbnode **stack, int stacksz,
 		set_color(sib, get_color(parent));
 		set_color(parent, BLACK);
 		set_color(outer, BLACK);
-		stack[stacksz - 1] = sib;
+		stack[stacksz - 1U] = sib;
 		rotate(stack, stacksz);
 		if (n == null_node) {
 			set_child(parent, n_side, NULL);
@@ -371,12 +371,12 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 #ifdef CONFIG_MISRA_SANE
 	struct rbnode **stack = &tree->iter_stack[0];
 #else
-	struct rbnode *stack[tree->max_depth + 1];
+	struct rbnode *stack[tree->max_depth + 1U];
 #endif
 
-	int stacksz = find_and_stack(tree, node, stack);
+	unsigned int stacksz = find_and_stack(tree, node, stack);
 
-	if (node != stack[stacksz - 1]) {
+	if (node != stack[stacksz - 1U]) {
 		return;
 	}
 
@@ -386,18 +386,18 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 	 * that one
 	 */
 	if ((get_child(node, 0U) != NULL) && (get_child(node, 1U) != NULL)) {
-		int stacksz0 = stacksz;
+		unsigned int stacksz0 = stacksz;
 		struct rbnode *hiparent, *loparent;
 		struct rbnode *node2 = get_child(node, 0U);
 
-		hiparent = (stacksz > 1) ? stack[stacksz - 2] : NULL;
+		hiparent = (stacksz > 1U) ? stack[stacksz - 2U] : NULL;
 		stack[stacksz++] = node2;
 		while (get_child(node2, 1U) != NULL) {
 			node2 = get_child(node2, 1U);
 			stack[stacksz++] = node2;
 		}
 
-		loparent = stack[stacksz - 2];
+		loparent = stack[stacksz - 2U];
 
 		/* Now swap the position of node/node2 in the tree.
 		 * Design note: this is a spot where being an
@@ -434,9 +434,9 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 		set_child(node2, 1U, get_child(node, 1U));
 		set_child(node, 1U, NULL);
 
-		tmp = stack[stacksz0 - 1];
-		stack[stacksz0 - 1] = stack[stacksz - 1];
-		stack[stacksz - 1] = tmp;
+		tmp = stack[stacksz0 - 1U];
+		stack[stacksz0 - 1U] = stack[stacksz - 1U];
+		stack[stacksz - 1U] = tmp;
 
 		enum rb_color ctmp = get_color(node);
 
@@ -454,17 +454,17 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 	}
 
 	/* Removing the root */
-	if (stacksz < 2) {
+	if (stacksz < 2U) {
 		tree->root = child;
 		if (child != NULL) {
 			set_color(child, BLACK);
 		} else {
-			tree->max_depth = 0;
+			tree->max_depth = 0U;
 		}
 		return;
 	}
 
-	struct rbnode *parent = stack[stacksz - 2];
+	struct rbnode *parent = stack[stacksz - 2U];
 
 	/* Special case: if the node to be removed is childless, then
 	 * we leave it in place while we do the missing black
@@ -510,7 +510,7 @@ struct rbnode *z_rb_child(struct rbnode *node, uint8_t side)
 	return get_child(node, side);
 }
 
-int z_rb_is_black(struct rbnode *node)
+bool z_rb_is_black(struct rbnode *node)
 {
 	return is_black(node);
 }
@@ -520,7 +520,7 @@ bool rb_contains(struct rbtree *tree, struct rbnode *node)
 	struct rbnode *n = tree->root;
 
 	while ((n != NULL) && (n != node)) {
-		n = get_child(n, tree->lessthan_fn(n, node));
+		n = get_child(n, tree->lessthan_fn(n, node) ? 1U : 0U);
 	}
 
 	return n == node;

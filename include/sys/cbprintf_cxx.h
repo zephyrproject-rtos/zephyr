@@ -138,18 +138,18 @@ static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, T arg)
 }
 
 /* C++ version for long double detection. */
-static inline int z_cbprintf_cxx_is_longdouble(long double arg)
+static inline bool z_cbprintf_cxx_is_longdouble(long double arg)
 {
 	ARG_UNUSED(arg);
-	return 1;
+	return true;
 }
 
 template < typename T >
-static inline int z_cbprintf_cxx_is_longdouble(T arg)
+static inline bool z_cbprintf_cxx_is_longdouble(T arg)
 {
 	ARG_UNUSED(arg);
 
-	return 0;
+	return false;
 }
 
 /* C++ version for caluculating argument alignment. */

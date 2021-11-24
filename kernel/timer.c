@@ -207,7 +207,7 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 				result = *(volatile uint32_t *)&timer->status;
 				timer->status = 0U;
 				k_spin_unlock(&lock, key);
-				if (result > 0) {
+				if (result > 0U) {
 					break;
 				}
 			} else {

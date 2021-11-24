@@ -10,9 +10,9 @@
 
 #include "footprint.h"
 
-#define DURATION	100
-#define PERIOD		50
-#define EXPIRE_TIMES	4
+#define DURATION	100U
+#define PERIOD		50U
+#define EXPIRE_TIMES	4U
 
 struct timer_data {
 	uint32_t expire_cnt;
@@ -46,9 +46,9 @@ static void timer_expire(struct k_timer *timer)
 	tdata.expire_cnt++;
 }
 
-static void busy_wait_ms(int32_t ms)
+static void busy_wait_ms(uint32_t ms)
 {
-	k_busy_wait(ms*1000);
+	k_busy_wait(ms*1000U);
 }
 
 static void thread_fn(void *arg1, void *arg2, void *arg3)
@@ -60,7 +60,7 @@ static void thread_fn(void *arg1, void *arg2, void *arg3)
 	init_timer_data();
 	k_timer_start(&timer0, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
-	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
+	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2U);
 	k_timer_stop(&timer0);
 
 	init_timer_data();
@@ -70,10 +70,10 @@ static void thread_fn(void *arg1, void *arg2, void *arg3)
 	 * the initial timeout request gets cancelled and new
 	 * one will get added.
 	 */
-	busy_wait_ms(DURATION / 2);
+	busy_wait_ms(DURATION / 2U);
 	k_timer_start(&timer0, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
-	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
+	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2U);
 
 	k_timer_stop(&timer0);
 }

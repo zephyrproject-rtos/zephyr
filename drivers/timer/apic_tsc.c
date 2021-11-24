@@ -10,8 +10,8 @@
 #define IA32_TSC_DEADLINE_MSR 0x6e0
 #define IA32_TSC_ADJUST_MSR   0x03b
 
-#define CYC_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
-		      / (uint64_t) CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYC_PER_TICK ((uint64_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
+		      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 struct apic_timer_lvt {
 	uint8_t vector   : 8;
@@ -37,11 +37,11 @@ static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ticks = (rdtsc() - last_announce) / CYC_PER_TICK;
+	uint32_t ticks = (uint32_t)((rdtsc() - last_announce) / CYC_PER_TICK);
 
 	last_announce += ticks * CYC_PER_TICK;
 	k_spin_unlock(&lock, key);
-	sys_clock_announce(ticks);
+	sys_clock_announce((int32_t)ticks);
 
 	if (!(IS_ENABLED(CONFIG_TICKLESS_KERNEL))) {
 		sys_clock_set_timeout(1, false);
@@ -62,9 +62,10 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	uint64_t now = rdtsc();
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t expires = now + MAX(ticks - 1, 0) * CYC_PER_TICK;
+	const int32_t ticks0 = MAX(ticks - 1, 0);
+	uint64_t expires = now + (uint64_t)ticks0 * CYC_PER_TICK;
 
-	expires = last_announce + (((expires - last_announce + CYC_PER_TICK - 1)
+	expires = last_announce + (((expires - last_announce + CYC_PER_TICK - 1U)
 				    / CYC_PER_TICK) * CYC_PER_TICK);
 
 	/* The second condition is to catch the wraparound.
@@ -86,7 +87,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 uint32_t sys_clock_elapsed(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = (rdtsc() - last_announce) / CYC_PER_TICK;
+	uint32_t ret = (uint32_t)((rdtsc() - last_announce) / CYC_PER_TICK);
 
 	k_spin_unlock(&lock, key);
 	return ret;
@@ -172,7 +173,7 @@ int sys_clock_driver_init(const struct device *dev)
 	/* Timer interrupt number is runtime-fetched, so can't use
 	 * static IRQ_CONNECT()
 	 */
-	irq_connect_dynamic(timer_irq(), CONFIG_APIC_TIMER_IRQ_PRIORITY, isr, 0, 0);
+	irq_connect_dynamic(timer_irq(), CONFIG_APIC_TIMER_IRQ_PRIORITY, isr, NULL, 0U);
 
 	lvt_reg.val = x86_read_loapic(LOAPIC_TIMER);
 	lvt_reg.lvt.mode = TSC_DEADLINE;

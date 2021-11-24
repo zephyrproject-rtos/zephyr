@@ -27,7 +27,7 @@ static inline bool arch_is_in_isr(void)
 	bool ret;
 
 	__asm__ volatile ("pushf; cli");
-	ret = arch_curr_cpu()->nested != 0;
+	ret = arch_curr_cpu()->nested != 0U;
 	__asm__ volatile ("popf");
 	return ret;
 #else
