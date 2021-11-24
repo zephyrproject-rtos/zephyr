@@ -229,8 +229,7 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 /** @brief Bitmask that defines PPI channels that are reserved for use outside of the nrfx library. */
 #define NRFX_PPI_CHANNELS_USED    (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR |    \
 				   NRFX_PPI_CHANNELS_USED_BY_802154_DRV | \
-				   NRFX_PPI_CHANNELS_USED_BY_MPSL |       \
-				   NRFX_PPI_CHANNELS_USED_BY_PWM_SW)
+				   NRFX_PPI_CHANNELS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines PPI groups that are reserved for use outside of the nrfx library. */
 #define NRFX_PPI_GROUPS_USED      (NRFX_PPI_GROUPS_USED_BY_BT_CTLR |    \
@@ -238,7 +237,7 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 				   NRFX_PPI_GROUPS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines GPIOTE channels that are reserved for use outside of the nrfx library. */
-#define NRFX_GPIOTE_CHANNELS_USED NRFX_GPIOTE_CHANNELS_USED_BY_PWM_SW
+#define NRFX_GPIOTE_CHANNELS_USED 0
 
 #if defined(CONFIG_BT_CTLR)
 extern const uint32_t z_bt_ctlr_used_nrf_ppi_channels;
@@ -269,25 +268,6 @@ extern const uint32_t z_mpsl_used_nrf_ppi_groups;
 #else
 #define NRFX_PPI_CHANNELS_USED_BY_MPSL   0
 #define NRFX_PPI_GROUPS_USED_BY_MPSL     0
-#endif
-
-#if defined(CONFIG_PWM_NRF5_SW)
-#define PWM_NRF5_SW_NODE DT_INST(0, nordic_nrf_sw_pwm)
-#define PWM_NRF5_SW_GENERATOR_NODE DT_PHANDLE(PWM_NRF5_SW_NODE, generator)
-#if DT_NODE_HAS_COMPAT(PWM_NRF5_SW_GENERATOR_NODE, nordic_nrf_rtc)
-#define PWM_NRF5_SW_PPI_CHANNELS_PER_PIN	3
-#else
-#define PWM_NRF5_SW_PPI_CHANNELS_PER_PIN	2
-#endif /* DT_NODE_HAS_COMPAT(PWM_NRF5_SW_GENERATOR_NODE, nordic_nrf_rtc) */
-#define NRFX_PPI_CHANNELS_USED_BY_PWM_SW \
-    (BIT_MASK(DT_PROP(PWM_NRF5_SW_NODE, channel_count) *	\
-	      PWM_NRF5_SW_PPI_CHANNELS_PER_PIN)			\
-         << DT_PROP(PWM_NRF5_SW_NODE, ppi_base))
-#define NRFX_GPIOTE_CHANNELS_USED_BY_PWM_SW \
-    DT_PROP(PWM_NRF5_SW_NODE, channel_count)
-#else
-#define NRFX_PPI_CHANNELS_USED_BY_PWM_SW    0
-#define NRFX_GPIOTE_CHANNELS_USED_BY_PWM_SW 0
 #endif
 
 /** @brief Bitmask that defines EGU instances that are reserved for use outside of the nrfx library. */
