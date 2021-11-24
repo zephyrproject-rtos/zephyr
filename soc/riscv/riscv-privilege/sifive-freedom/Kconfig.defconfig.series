@@ -20,6 +20,10 @@ config RISCV_HAS_PLIC
 config RISCV_GP
 	default y
 
+config CPU_HAS_CUSTOM_FIXED_SOC_PMP_REGIONS
+	default y if SOC_RISCV_SIFIVE_FREEDOM && XIP
+	default n
+
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 12
 
