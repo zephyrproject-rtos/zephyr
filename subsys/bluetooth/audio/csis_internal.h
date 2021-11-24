@@ -9,6 +9,15 @@
 
 #include <bluetooth/audio/csis.h>
 
+
+#define BT_CSIS_SIRK_TYPE_ENCRYPTED             0x00
+#define BT_CSIS_SIRK_TYPE_PLAIN                 0x01
+
+#define BT_CSIS_RELEASE_VALUE                   0x01
+#define BT_CSIS_LOCK_VALUE                      0x02
+
+#define BT_CSIS_PSRI_SIZE                       6
+
 struct csis_pending_notifications {
 	bt_addr_le_t addr;
 	bool pending;
