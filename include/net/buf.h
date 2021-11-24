@@ -1089,8 +1089,7 @@ extern const struct net_buf_data_alloc net_buf_heap_alloc;
  */
 #define NET_BUF_POOL_HEAP_DEFINE(_name, _count, _ud_size, _destroy)          \
 	_NET_BUF_ARRAY_DEFINE(_name, _count, _ud_size);                      \
-	static struct net_buf_pool _name __net_buf_align                     \
-			__in_section(_net_buf_pool, static, _name) =         \
+	static STRUCT_SECTION_ITERABLE(net_buf_pool, _name) =                \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_heap_alloc,         \
 					 _net_buf_##_name, _count, _ud_size, \
 					 _destroy)
@@ -1143,8 +1142,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
 		.cb = &net_buf_fixed_cb,                                       \
 		.alloc_data = (void *)&net_buf_fixed_##_name,                  \
 	};                                                                     \
-	static struct net_buf_pool _name __net_buf_align                       \
-			__in_section(_net_buf_pool, static, _name) =           \
+	static STRUCT_SECTION_ITERABLE(net_buf_pool, _name) =                  \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_fixed_alloc_##_name,  \
 					 _net_buf_##_name, _count, _ud_size,   \
 					 _destroy)
@@ -1184,8 +1182,7 @@ extern const struct net_buf_data_cb net_buf_var_cb;
 		.cb = &net_buf_var_cb,                                         \
 		.alloc_data = &net_buf_mem_pool_##_name,                       \
 	};                                                                     \
-	static struct net_buf_pool _name __net_buf_align                       \
-			__in_section(_net_buf_pool, static, _name) =           \
+	static STRUCT_SECTION_ITERABLE(net_buf_pool, _name) =                  \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_data_alloc_##_name,   \
 					 _net_buf_##_name, _count, _ud_size,   \
 					 _destroy)
