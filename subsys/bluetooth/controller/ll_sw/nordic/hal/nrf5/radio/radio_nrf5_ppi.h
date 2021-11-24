@@ -709,11 +709,6 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 #define HAL_USED_PPI_CHANNELS_6 0
 #endif
 
-BUILD_ASSERT(
-	(HAL_USED_PPI_CHANNELS & NRFX_PPI_CHANNELS_USED_BY_PWM_SW) == 0,
-	"PPI channels used by the Bluetooth controller overlap with those "
-	"assigned to the pwm_nrf5_sw driver.");
-
 #if defined(SW_SWITCH_TIMER_TASK_GROUP_BASE)
 #define HAL_USED_PPI_GROUPS \
 	(BIT(SW_SWITCH_TIMER_TASK_GROUP_BASE) | \

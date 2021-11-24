@@ -50,15 +50,9 @@
 
 #include <nrf_peripherals.h>
 
-#if defined(CONFIG_PWM_NRF5_SW)
-#define HAL_PALNA_GPIOTE_CHAN 3
-#define HAL_PDN_GPIOTE_CHAN 4
-#define HAL_CSN_GPIOTE_CHAN 5
-#else
 #define HAL_PALNA_GPIOTE_CHAN 0
 #define HAL_PDN_GPIOTE_CHAN 1
 #define HAL_CSN_GPIOTE_CHAN 2
-#endif
 
 /* This has to come before the ppi/dppi includes below. */
 #include "radio_nrf5_fem.h"
