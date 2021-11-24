@@ -325,7 +325,7 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  *
  * @param expr Boolean expression to verify, a false result will trigger an
  *             oops. A stringified version of this expression will be printed.
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 #define Z_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
 
@@ -343,7 +343,7 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @param size Size of the memory area
  * @param write If the thread should be able to write to this memory, not just
  *		read it
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
 	Z_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)(ptr), (size), (write)) \
@@ -363,10 +363,10 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  *
  * @param ptr Memory area to examine
  * @param size Size of the memory area
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 #define Z_SYSCALL_MEMORY_READ(ptr, size) \
-	Z_SYSCALL_MEMORY(ptr, size, 0)
+	Z_SYSCALL_MEMORY(ptr, size, false)
 
 /**
  * @brief Runtime check that a user thread has write permission to a memory area
@@ -379,10 +379,10 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  *
  * @param ptr Memory area to examine
  * @param size Size of the memory area
- * @param 0 on success, nonzero on failure
+ * @param false on success, true on failure
  */
 #define Z_SYSCALL_MEMORY_WRITE(ptr, size) \
-	Z_SYSCALL_MEMORY(ptr, size, 1)
+	Z_SYSCALL_MEMORY(ptr, size, true)
 
 #define Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
@@ -405,10 +405,10 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @param ptr Memory area to examine
  * @param nmemb Number of elements in the array
  * @param size Size of each array element
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 #define Z_SYSCALL_MEMORY_ARRAY_READ(ptr, nmemb, size) \
-	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 0)
+	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, false)
 
 /**
  * @brief Validate user thread has read/write permission for sized array
@@ -420,10 +420,10 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @param ptr Memory area to examine
  * @param nmemb Number of elements in the array
  * @param size Size of each array element
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 #define Z_SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
-	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
+	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, true)
 
 static inline int z_obj_validation_check(struct z_object *ko,
 					 const void *obj,
@@ -459,7 +459,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
  * @param ptr Untrusted device instance object pointer
  * @param api_struct Name of the driver API struct (e.g. gpio_driver_api)
  * @param op Driver operation (e.g. manage_callback)
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 #define Z_SYSCALL_DRIVER_OP(ptr, api_name, op) \
 	({ \
@@ -487,7 +487,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
  * @param _device Untrusted device pointer
  * @param _dtype Expected kernel object type for the provided device pointer
  * @param _api Expected driver API structure memory address
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 #define Z_SYSCALL_SPECIFIC_DRIVER(_device, _dtype, _api) \
 	({ \
@@ -506,7 +506,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
  *
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 #define Z_SYSCALL_OBJ(ptr, type) \
 	Z_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_TRUE)
@@ -519,7 +519,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
  *
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 
 #define Z_SYSCALL_OBJ_INIT(ptr, type) \
@@ -535,7 +535,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
  *
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
- * @return 0 on success, nonzero on failure
+ * @return false on success, true on failure
  */
 
 #define Z_SYSCALL_OBJ_NEVER_INIT(ptr, type) \

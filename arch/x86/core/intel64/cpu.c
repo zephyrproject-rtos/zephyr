@@ -128,7 +128,7 @@ struct x86_cpuboot x86_cpuboot[] = {
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
+	uint8_t vector = (uint8_t)(((uintptr_t)x86_ap_start) >> 12);
 	uint8_t apic_id;
 
 	if (IS_ENABLED(CONFIG_ACPI)) {
@@ -143,8 +143,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	apic_id = x86_cpu_loapics[cpu_num];
 
-	x86_cpuboot[cpu_num].sp = (uint64_t) Z_KERNEL_STACK_BUFFER(stack) + sz;
-	x86_cpuboot[cpu_num].stack_size = sz;
+	x86_cpuboot[cpu_num].sp = (uint64_t) Z_KERNEL_STACK_BUFFER(stack) + (size_t)sz;
+	x86_cpuboot[cpu_num].stack_size = (size_t)sz;
 	x86_cpuboot[cpu_num].fn = fn;
 	x86_cpuboot[cpu_num].arg = arg;
 

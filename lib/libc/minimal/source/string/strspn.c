@@ -16,7 +16,7 @@ size_t strspn(const char *s,
 		++s;
 	}
 
-	return s - ins;
+	return (size_t)(s - ins);
 }
 
 size_t strcspn(const char *s,
@@ -28,5 +28,5 @@ size_t strcspn(const char *s,
 		++s;
 	}
 
-	return s - ins;
+	return (size_t)(s - ins);
 }

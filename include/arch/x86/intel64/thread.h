@@ -6,29 +6,29 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_INTEL64_THREAD_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_INTEL64_THREAD_H_
 
-#define X86_THREAD_FLAG_ALL 0x01 /* _thread_arch.flags: entire state saved */
+#define X86_THREAD_FLAG_ALL 0x01U /* _thread_arch.flags: entire state saved */
 
 /*
  * GDT selectors - these must agree with the GDT layout in locore.S.
  */
 
-#define X86_KERNEL_CS_32	0x08	/* 32-bit kernel code */
-#define X86_KERNEL_DS_32	0x10	/* 32-bit kernel data */
-#define X86_KERNEL_CS		0x18	/* 64-bit kernel code */
-#define X86_KERNEL_DS		0x20	/* 64-bit kernel data */
-#define X86_USER_CS_32		0x28	/* 32-bit user data (unused) */
-#define X86_USER_DS		0x30	/* 64-bit user mode data */
-#define X86_USER_CS		0x38	/* 64-bit user mode code */
+#define X86_KERNEL_CS_32	0x08U	/* 32-bit kernel code */
+#define X86_KERNEL_DS_32	0x10U	/* 32-bit kernel data */
+#define X86_KERNEL_CS		0x18U	/* 64-bit kernel code */
+#define X86_KERNEL_DS		0x20U	/* 64-bit kernel data */
+#define X86_USER_CS_32		0x28U	/* 32-bit user data (unused) */
+#define X86_USER_DS		0x30U	/* 64-bit user mode data */
+#define X86_USER_CS		0x38U	/* 64-bit user mode code */
 
 /* Value programmed into bits 63:32 of STAR MSR with proper segment
  * descriptors for implementing user mode with syscall/sysret
  */
-#define X86_STAR_UPPER		((X86_USER_CS_32 << 16) | X86_KERNEL_CS)
+#define X86_STAR_UPPER		(((uint32_t)X86_USER_CS_32 << 16) | X86_KERNEL_CS)
 
-#define X86_KERNEL_CPU0_TR	0x40	/* 64-bit task state segment */
-#define X86_KERNEL_CPU1_TR	0x50	/* 64-bit task state segment */
-#define X86_KERNEL_CPU2_TR	0x60	/* 64-bit task state segment */
-#define X86_KERNEL_CPU3_TR	0x70	/* 64-bit task state segment */
+#define X86_KERNEL_CPU0_TR	0x40U	/* 64-bit task state segment */
+#define X86_KERNEL_CPU1_TR	0x50U	/* 64-bit task state segment */
+#define X86_KERNEL_CPU2_TR	0x60U	/* 64-bit task state segment */
+#define X86_KERNEL_CPU3_TR	0x70U	/* 64-bit task state segment */
 
 /*
  * Some SSE definitions. Ideally these will ultimately be shared with 32-bit.

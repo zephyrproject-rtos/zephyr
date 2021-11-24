@@ -25,20 +25,21 @@
 
 /* From: http://fossies.org/dox/musl-1.0.5/atoi_8c_source.html */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <ctype.h>
 
 int atoi(const char *s)
 {
 	int n = 0;
-	int neg = 0;
+	bool neg = false;
 
-	while (isspace((unsigned char)*s)) {
+	while (isspace((int)(unsigned char)*s)) {
 		s++;
 	}
 	switch (*s) {
 	case '-':
-		neg = 1;
+		neg = true;
 		s++;
 		break;	/* artifact to quiet coverity warning */
 	case '+':
@@ -51,7 +52,7 @@ int atoi(const char *s)
 		break;
 	}
 	/* Compute n as a negative number to avoid overflow on INT_MIN */
-	while (isdigit((unsigned char)*s)) {
+	while (isdigit((int)(unsigned char)*s)) {
 		n = 10*n - (*s++ - '0');
 	}
 	return neg ? n : -n;

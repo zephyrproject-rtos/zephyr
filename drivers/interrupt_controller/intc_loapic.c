@@ -24,8 +24,8 @@
 
 /* Local APIC Version Register Bits */
 
-#define LOAPIC_VERSION_MASK 0x000000ff /* LO APIC Version mask */
-#define LOAPIC_MAXLVT_MASK 0x00ff0000  /* LO APIC Max LVT mask */
+#define LOAPIC_VERSION_MASK 0x000000ffU /* LO APIC Version mask */
+#define LOAPIC_MAXLVT_MASK 0x00ff0000U  /* LO APIC Max LVT mask */
 #define LOAPIC_PENTIUM4 0x00000014     /* LO APIC in Pentium4 */
 #define LOAPIC_LVT_PENTIUM4 5	  /* LO APIC LVT - Pentium4 */
 #define LOAPIC_LVT_P6 4		       /* LO APIC LVT - P6 */
@@ -33,24 +33,24 @@
 
 /* Local APIC Vector Table Bits */
 
-#define LOAPIC_VECTOR 0x000000ff /* vectorNo */
-#define LOAPIC_MODE 0x00000700   /* delivery mode */
-#define LOAPIC_FIXED 0x00000000  /* delivery mode: FIXED */
-#define LOAPIC_SMI 0x00000200    /* delivery mode: SMI */
-#define LOAPIC_NMI 0x00000400    /* delivery mode: NMI */
-#define LOAPIC_EXT 0x00000700    /* delivery mode: ExtINT */
-#define LOAPIC_IDLE 0x00000000   /* delivery status: Idle */
-#define LOAPIC_PEND 0x00001000   /* delivery status: Pend */
-#define LOAPIC_HIGH 0x00000000   /* polarity: High */
-#define LOAPIC_LOW 0x00002000    /* polarity: Low */
-#define LOAPIC_REMOTE 0x00004000 /* remote IRR */
-#define LOAPIC_EDGE 0x00000000   /* trigger mode: Edge */
-#define LOAPIC_LEVEL 0x00008000  /* trigger mode: Level */
+#define LOAPIC_VECTOR 0x000000ffU /* vectorNo */
+#define LOAPIC_MODE 0x00000700U   /* delivery mode */
+#define LOAPIC_FIXED 0x00000000U  /* delivery mode: FIXED */
+#define LOAPIC_SMI 0x00000200U    /* delivery mode: SMI */
+#define LOAPIC_NMI 0x00000400U    /* delivery mode: NMI */
+#define LOAPIC_EXT 0x00000700U    /* delivery mode: ExtINT */
+#define LOAPIC_IDLE 0x00000000U   /* delivery status: Idle */
+#define LOAPIC_PEND 0x00001000U   /* delivery status: Pend */
+#define LOAPIC_HIGH 0x00000000U   /* polarity: High */
+#define LOAPIC_LOW 0x00002000U    /* polarity: Low */
+#define LOAPIC_REMOTE 0x00004000U /* remote IRR */
+#define LOAPIC_EDGE 0x00000000U   /* trigger mode: Edge */
+#define LOAPIC_LEVEL 0x00008000U  /* trigger mode: Level */
 
 /* Local APIC Spurious-Interrupt Register Bits */
 
-#define LOAPIC_ENABLE 0x100	/* APIC Enabled */
-#define LOAPIC_FOCUS_DISABLE 0x200 /* Focus Processor Checking */
+#define LOAPIC_ENABLE 0x100U	/* APIC Enabled */
+#define LOAPIC_FOCUS_DISABLE 0x200U /* Focus Processor Checking */
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR_ID == -1
 #define LOAPIC_SPURIOUS_VECTOR_ID (CONFIG_IDT_NUM_VECTORS - 1)
@@ -85,7 +85,7 @@ void send_eoi(void)
 __pinned_func
 void z_loapic_enable(unsigned char cpu_number)
 {
-	int32_t loApicMaxLvt; /* local APIC Max LVT */
+	uint32_t loApicMaxLvt; /* local APIC Max LVT */
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
 	device_map(&z_loapic_regs, CONFIG_LOAPIC_BASE_ADDRESS, 0x1000,
@@ -328,15 +328,17 @@ void z_loapic_irq_disable(unsigned int irq)
 __pinned_func
 int z_irq_controller_isr_vector_get(void)
 {
-	int pReg, block;
+	uint32_t pReg;
 
 	/* Block 0 bits never lit up as these are all exception or reserved
 	 * vectors
 	 */
-	for (block = 7; likely(block > 0); block--) {
-		pReg = x86_read_loapic(LOAPIC_ISR + (block * 0x10));
+	for (unsigned int block = 7; likely(block > 0); block--) {
+		pReg = x86_read_loapic(LOAPIC_ISR + (block * 0x10U));
 		if (pReg != 0) {
-			return (block * 32) + (find_msb_set(pReg) - 1);
+			const unsigned int uvector = (block * 32) + (find_msb_set(pReg) - 1);
+
+			return (int)uvector;
 		}
 
 	}

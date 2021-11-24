@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define CTYPE_CHAR(c) ((int)(unsigned char)(c))
+
 static inline int isupper(int a)
 {
 	return (int)(((unsigned)(a)-(unsigned)'A') < 26U);

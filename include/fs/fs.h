@@ -57,15 +57,15 @@ enum {
 };
 
 /** Flag prevents formatting device if requested file system not found */
-#define FS_MOUNT_FLAG_NO_FORMAT BIT(0)
+#define FS_MOUNT_FLAG_NO_FORMAT 0x01U
 /** Flag makes mounted file system read-only */
-#define FS_MOUNT_FLAG_READ_ONLY BIT(1)
+#define FS_MOUNT_FLAG_READ_ONLY 0x02U
 /** Flag used in pre-defined mount structures that are to be mounted
  * on startup.
  *
  * This flag has no impact in user-defined mount structures.
  */
-#define FS_MOUNT_FLAG_AUTOMOUNT BIT(2)
+#define FS_MOUNT_FLAG_AUTOMOUNT 0X04U
 
 
 /**

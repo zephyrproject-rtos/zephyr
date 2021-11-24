@@ -15,9 +15,9 @@
 BUILD_ASSERT((ONOFF_FLAG_ERROR | ONOFF_FLAG_ONOFF | ONOFF_FLAG_TRANSITION)
 	     < BIT(3));
 
-#define ONOFF_FLAG_PROCESSING BIT(3)
-#define ONOFF_FLAG_COMPLETE BIT(4)
-#define ONOFF_FLAG_RECHECK BIT(5)
+#define ONOFF_FLAG_PROCESSING BIT16(3)
+#define ONOFF_FLAG_COMPLETE BIT16(4)
+#define ONOFF_FLAG_RECHECK BIT16(5)
 
 /* These symbols in the ONOFF_FLAGS namespace identify bits in
  * onoff_manager::flags that indicate the state of the machine.  The
@@ -115,8 +115,8 @@ enum event_type {
 static void set_state(struct onoff_manager *mgr,
 		      uint32_t state)
 {
-	mgr->flags = (state & ONOFF_STATE_MASK)
-		     | (mgr->flags & ~ONOFF_STATE_MASK);
+	mgr->flags = (uint16_t)(state & ONOFF_STATE_MASK)
+		     | (mgr->flags & (uint16_t)~ONOFF_STATE_MASK);
 }
 
 static int validate_args(const struct onoff_manager *mgr,
@@ -195,7 +195,7 @@ static void notify_all(struct onoff_manager *mgr,
 }
 
 static void process_event(struct onoff_manager *mgr,
-			  int evt,
+			  enum event_type evt,
 			  k_spinlock_key_t key);
 
 static void transition_complete(struct onoff_manager *mgr,
@@ -208,10 +208,10 @@ static void transition_complete(struct onoff_manager *mgr,
 }
 
 /* Detect whether static state requires a transition. */
-static int process_recheck(struct onoff_manager *mgr)
+static enum event_type process_recheck(struct onoff_manager *mgr)
 {
-	int evt = EVT_NOP;
-	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
+	enum event_type evt = EVT_NOP;
+	uint16_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	if ((state == ONOFF_STATE_OFF)
 	    && !sys_slist_is_empty(&mgr->clients)) {
@@ -238,7 +238,7 @@ static void process_complete(struct onoff_manager *mgr,
 			     sys_slist_t *clients,
 			     int res)
 {
-	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint16_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	if (res < 0) {
 		/* Enter ERROR state and notify all clients. */
@@ -296,11 +296,11 @@ static void process_complete(struct onoff_manager *mgr,
  * regions.
  */
 static void process_event(struct onoff_manager *mgr,
-			  int evt,
+			  enum event_type evt,
 			  k_spinlock_key_t key)
 {
 	sys_slist_t clients;
-	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint16_t state = mgr->flags & ONOFF_STATE_MASK;
 	int res = 0;
 	bool processing = ((mgr->flags & ONOFF_FLAG_PROCESSING) != 0);
 
@@ -375,7 +375,7 @@ static void process_event(struct onoff_manager *mgr,
 		if (do_monitors
 		    || !sys_slist_is_empty(&clients)
 		    || (transit != NULL)) {
-			uint32_t flags = mgr->flags | ONOFF_FLAG_PROCESSING;
+			uint16_t flags = mgr->flags | ONOFF_FLAG_PROCESSING;
 
 			mgr->flags = flags;
 			state = flags & ONOFF_STATE_MASK;
@@ -395,7 +395,7 @@ static void process_event(struct onoff_manager *mgr,
 			}
 
 			key = k_spin_lock(&mgr->lock);
-			mgr->flags &= ~ONOFF_FLAG_PROCESSING;
+			mgr->flags &= (uint16_t)~ONOFF_FLAG_PROCESSING;
 			state = mgr->flags & ONOFF_STATE_MASK;
 		}
 
@@ -403,10 +403,10 @@ static void process_event(struct onoff_manager *mgr,
 		 * over recheck.
 		 */
 		if ((mgr->flags & ONOFF_FLAG_COMPLETE) != 0) {
-			mgr->flags &= ~ONOFF_FLAG_COMPLETE;
+			mgr->flags &= (uint16_t)~ONOFF_FLAG_COMPLETE;
 			evt = EVT_COMPLETE;
 		} else if ((mgr->flags & ONOFF_FLAG_RECHECK) != 0) {
-			mgr->flags &= ~ONOFF_FLAG_RECHECK;
+			mgr->flags &= (uint16_t)~ONOFF_FLAG_RECHECK;
 			evt = EVT_RECHECK;
 		} else {
 			;
@@ -432,7 +432,7 @@ int onoff_request(struct onoff_manager *mgr,
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint16_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	/* Reject if this would overflow the reference count. */
 	if (mgr->refs == SERVICE_REFS_MAX) {
@@ -440,7 +440,7 @@ int onoff_request(struct onoff_manager *mgr,
 		goto out;
 	}
 
-	rv = state;
+	rv = (int)state;
 	if (state == ONOFF_STATE_ON) {
 		/* Increment reference count, notify in exit */
 		notify = true;
@@ -481,8 +481,8 @@ int onoff_release(struct onoff_manager *mgr)
 	bool stop = false;      /* trigger a stop transition */
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
-	int rv = state;
+	uint16_t state = mgr->flags & ONOFF_STATE_MASK;
+	int rv = (int)state;
 
 	if (state != ONOFF_STATE_ON) {
 		if (state == ONOFF_STATE_ERROR) {
@@ -523,9 +523,9 @@ int onoff_reset(struct onoff_manager *mgr,
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint16_t state = mgr->flags & ONOFF_STATE_MASK;
 
-	rv = state;
+	rv = (int)state;
 
 	if ((state & ONOFF_FLAG_ERROR) == 0) {
 		rv = -EALREADY;
@@ -552,13 +552,13 @@ int onoff_cancel(struct onoff_manager *mgr,
 
 	int rv = -EALREADY;
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
+	uint16_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	if (sys_slist_find_and_remove(&mgr->clients, &cli->node)) {
 		__ASSERT_NO_MSG((state == ONOFF_STATE_TO_ON)
 				|| (state == ONOFF_STATE_TO_OFF)
 				|| (state == ONOFF_STATE_RESETTING));
-		rv = state;
+		rv = (int)state;
 	}
 
 	k_spin_unlock(&mgr->lock, key);

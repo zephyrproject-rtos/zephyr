@@ -170,7 +170,7 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 
 static inline bool arch_is_user_context(void)
 {
-	int cs;
+	uint32_t cs;
 
 	__asm__ volatile ("mov %%cs, %[cs_val]" : [cs_val] "=r" (cs));
 

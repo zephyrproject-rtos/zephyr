@@ -17,7 +17,7 @@ static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 	struct z_object *obj;
 
 	obj = z_object_find(futex);
-	if (obj == NULL || obj->type != K_OBJ_FUTEX) {
+	if (obj == NULL || obj->type != (uint8_t)K_OBJ_FUTEX) {
 		return NULL;
 	}
 
@@ -27,7 +27,7 @@ static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	k_spinlock_key_t key;
-	unsigned int woken = 0U;
+	int woken = 0;
 	struct k_thread *thread;
 	struct z_futex_data *futex_data;
 
@@ -45,7 +45,7 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 			arch_thread_return_value_set(thread, 0);
 			z_ready_thread(thread);
 		}
-	} while (thread && wake_all);
+	} while (thread != NULL && wake_all);
 
 	z_reschedule(&futex_data->lock, key);
 
@@ -54,7 +54,7 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 
 static inline int z_vrfy_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
-	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
+	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex))) {
 		return -EACCES;
 	}
 
@@ -92,7 +92,7 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected,
 				      k_timeout_t timeout)
 {
-	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
+	if (Z_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex))) {
 		return -EACCES;
 	}
 

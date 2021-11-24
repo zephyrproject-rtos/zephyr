@@ -85,10 +85,10 @@ static int console_out(int c)
 
 #endif  /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
 
-	if ('\n' == c) {
-		uart_poll_out(uart_console_dev, '\r');
+	if ((int)'\n' == c) {
+		uart_poll_out(uart_console_dev, (unsigned char)'\r');
 	}
-	uart_poll_out(uart_console_dev, c);
+	uart_poll_out(uart_console_dev, (unsigned char)c);
 
 	return c;
 }

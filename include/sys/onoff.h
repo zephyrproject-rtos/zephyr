@@ -27,12 +27,12 @@ extern "C" {
  *
  * Error states are cleared using onoff_reset().
  */
-#define ONOFF_FLAG_ERROR BIT(0)
+#define ONOFF_FLAG_ERROR BIT16(0)
 
 /** @internal */
-#define ONOFF_FLAG_ONOFF BIT(1)
+#define ONOFF_FLAG_ONOFF BIT16(1)
 /** @internal */
-#define ONOFF_FLAG_TRANSITION BIT(2)
+#define ONOFF_FLAG_TRANSITION BIT16(2)
 
 /**
  * @brief Mask used to isolate bits defining the service state.

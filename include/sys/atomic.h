@@ -20,6 +20,7 @@ extern "C" {
 
 typedef int atomic_t;
 typedef atomic_t atomic_val_t;
+typedef unsigned int atomic_bits_t;
 typedef void *atomic_ptr_t;
 typedef atomic_ptr_t atomic_ptr_val_t;
 
@@ -75,8 +76,8 @@ typedef atomic_ptr_t atomic_ptr_val_t;
  * @cond INTERNAL_HIDDEN
  */
 
-#define ATOMIC_BITS (sizeof(atomic_val_t) * 8)
-#define ATOMIC_MASK(bit) (1U << ((uint32_t)(bit) & (ATOMIC_BITS - 1U)))
+#define ATOMIC_BITS (sizeof(atomic_bits_t) * 8)
+#define ATOMIC_MASK(bit) ((atomic_bits_t)1 << ((uint32_t)(bit) & (ATOMIC_BITS - 1U)))
 #define ATOMIC_ELEM(addr, bit) ((addr) + ((bit) / ATOMIC_BITS))
 
 /**
@@ -124,11 +125,11 @@ typedef atomic_ptr_t atomic_ptr_val_t;
  *
  * @return true if the bit was set, false if it wasn't.
  */
-static inline bool atomic_test_bit(const atomic_t *target, int bit)
+static inline bool atomic_test_bit(const atomic_t *target, unsigned int bit)
 {
-	atomic_val_t val = atomic_get(ATOMIC_ELEM(target, bit));
+	atomic_bits_t val = (atomic_bits_t)atomic_get(ATOMIC_ELEM(target, bit));
 
-	return (1 & (val >> (bit & (ATOMIC_BITS - 1)))) != 0;
+	return (1U & (val >> (bit & (ATOMIC_BITS - 1)))) != 0;
 }
 
 /**
@@ -142,14 +143,15 @@ static inline bool atomic_test_bit(const atomic_t *target, int bit)
  *
  * @return true if the bit was set, false if it wasn't.
  */
-static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
+static inline bool atomic_test_and_clear_bit(atomic_t *target, unsigned int bit)
 {
-	atomic_val_t mask = ATOMIC_MASK(bit);
+	atomic_bits_t mask = ATOMIC_MASK(bit);
+	atomic_bits_t nmask = ~mask;
 	atomic_val_t old;
 
-	old = atomic_and(ATOMIC_ELEM(target, bit), ~mask);
+	old = atomic_and(ATOMIC_ELEM(target, bit), (atomic_val_t)nmask);
 
-	return (old & mask) != 0;
+	return ((atomic_bits_t)old & mask) != 0;
 }
 
 /**
@@ -163,14 +165,14 @@ static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
  *
  * @return true if the bit was set, false if it wasn't.
  */
-static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
+static inline bool atomic_test_and_set_bit(atomic_t *target, unsigned int bit)
 {
-	atomic_val_t mask = ATOMIC_MASK(bit);
+	atomic_bits_t mask = ATOMIC_MASK(bit);
 	atomic_val_t old;
 
-	old = atomic_or(ATOMIC_ELEM(target, bit), mask);
+	old = atomic_or(ATOMIC_ELEM(target, bit), (atomic_val_t)mask);
 
-	return (old & mask) != 0;
+	return ((atomic_bits_t)old & mask) != 0;
 }
 
 /**
@@ -184,11 +186,11 @@ static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
  *
  * @return N/A
  */
-static inline void atomic_clear_bit(atomic_t *target, int bit)
+static inline void atomic_clear_bit(atomic_t *target, unsigned int bit)
 {
-	atomic_val_t mask = ATOMIC_MASK(bit);
+	atomic_bits_t nmask = ~ATOMIC_MASK(bit);
 
-	(void)atomic_and(ATOMIC_ELEM(target, bit), ~mask);
+	(void)atomic_and(ATOMIC_ELEM(target, bit), (atomic_val_t)nmask);
 }
 
 /**
@@ -202,11 +204,11 @@ static inline void atomic_clear_bit(atomic_t *target, int bit)
  *
  * @return N/A
  */
-static inline void atomic_set_bit(atomic_t *target, int bit)
+static inline void atomic_set_bit(atomic_t *target, unsigned int bit)
 {
-	atomic_val_t mask = ATOMIC_MASK(bit);
+	atomic_bits_t mask = ATOMIC_MASK(bit);
 
-	(void)atomic_or(ATOMIC_ELEM(target, bit), mask);
+	(void)atomic_or(ATOMIC_ELEM(target, bit), (atomic_val_t)mask);
 }
 
 /**
@@ -221,14 +223,14 @@ static inline void atomic_set_bit(atomic_t *target, int bit)
  *
  * @return N/A
  */
-static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
+static inline void atomic_set_bit_to(atomic_t *target, unsigned int bit, bool val)
 {
-	atomic_val_t mask = ATOMIC_MASK(bit);
-
 	if (val) {
-		(void)atomic_or(ATOMIC_ELEM(target, bit), mask);
+		atomic_bits_t mask = ATOMIC_MASK(bit);
+		(void)atomic_or(ATOMIC_ELEM(target, bit), (atomic_val_t)mask);
 	} else {
-		(void)atomic_and(ATOMIC_ELEM(target, bit), ~mask);
+		atomic_bits_t nmask = ~ATOMIC_MASK(bit);
+		(void)atomic_and(ATOMIC_ELEM(target, bit), (atomic_val_t)nmask);
 	}
 }
 

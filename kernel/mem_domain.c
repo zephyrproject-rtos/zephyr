@@ -139,7 +139,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 void k_mem_domain_add_partition(struct k_mem_domain *domain,
 				struct k_mem_partition *part)
 {
-	int p_idx;
+	uint8_t p_idx;
 	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(domain != NULL);
@@ -176,7 +176,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 				  struct k_mem_partition *part)
 {
-	int p_idx;
+	uint8_t p_idx;
 	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(domain != NULL);
@@ -271,7 +271,7 @@ static int init_mem_domain_module(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	max_partitions = arch_mem_domain_max_partitions_get();
+	max_partitions = (uint8_t)arch_mem_domain_max_partitions_get();
 	/*
 	 * max_partitions must be less than or equal to
 	 * CONFIG_MAX_DOMAIN_PARTITIONS, or would encounter array index

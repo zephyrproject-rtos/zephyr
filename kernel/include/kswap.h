@@ -58,7 +58,7 @@ static inline void wait_for_switch(struct k_thread *thread)
  * Note that is_spinlock is a compile-time construct which will be
  * optimized out when this function is expanded.
  */
-static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
+static ALWAYS_INLINE int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
 					  bool is_spinlock)
 {
@@ -111,7 +111,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif
 
 #ifdef CONFIG_SMP
-		_current_cpu->swap_ok = 0;
+		_current_cpu->swap_ok = false;
 		new_thread->base.cpu = arch_curr_cpu()->id;
 
 		if (!is_spinlock) {

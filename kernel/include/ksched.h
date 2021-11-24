@@ -84,7 +84,7 @@ static inline bool z_is_idle_thread_object(struct k_thread *thread)
 {
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_SMP
-	return thread->base.is_idle;
+	return thread->base.is_idle != 0;
 #else
 	return thread == &z_idle_threads[0];
 #endif
@@ -119,7 +119,7 @@ static inline bool z_is_thread_timeout_active(struct k_thread *thread)
 
 static inline bool z_is_thread_ready(struct k_thread *thread)
 {
-	return !((z_is_thread_prevented_from_running(thread)) != 0U ||
+	return !(z_is_thread_prevented_from_running(thread) ||
 		 z_is_thread_timeout_active(thread));
 }
 
@@ -147,14 +147,14 @@ static inline void z_mark_thread_as_suspended(struct k_thread *thread)
 
 static inline void z_mark_thread_as_not_suspended(struct k_thread *thread)
 {
-	thread->base.thread_state &= ~_THREAD_SUSPENDED;
+	thread->base.thread_state &= (uint8_t)~_THREAD_SUSPENDED;
 
 	SYS_PORT_TRACING_FUNC(k_thread, sched_resume, thread);
 }
 
 static inline void z_mark_thread_as_started(struct k_thread *thread)
 {
-	thread->base.thread_state &= ~_THREAD_PRESTART;
+	thread->base.thread_state &= (uint8_t)~_THREAD_PRESTART;
 }
 
 static inline void z_mark_thread_as_pending(struct k_thread *thread)
@@ -164,18 +164,18 @@ static inline void z_mark_thread_as_pending(struct k_thread *thread)
 
 static inline void z_mark_thread_as_not_pending(struct k_thread *thread)
 {
-	thread->base.thread_state &= ~_THREAD_PENDING;
+	thread->base.thread_state &= (uint8_t)~_THREAD_PENDING;
 }
 
-static inline void z_set_thread_states(struct k_thread *thread, uint32_t states)
+static inline void z_set_thread_states(struct k_thread *thread, uint8_t states)
 {
 	thread->base.thread_state |= states;
 }
 
 static inline void z_reset_thread_states(struct k_thread *thread,
-					uint32_t states)
+					uint8_t states)
 {
-	thread->base.thread_state &= ~states;
+	thread->base.thread_state &= (uint8_t)~states;
 }
 
 static inline bool z_is_under_prio_ceiling(int prio)

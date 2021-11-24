@@ -121,7 +121,7 @@ extern void z_thread_monitor_exit(struct k_thread *thread);
  * z_swap() is in use it's a simple inline provided by the kernel.
  */
 static ALWAYS_INLINE void
-arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+arch_thread_return_value_set(struct k_thread *thread, int value)
 {
 	thread->swap_retval = value;
 }
@@ -129,7 +129,7 @@ arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 
 static ALWAYS_INLINE void
 z_thread_return_value_set_with_data(struct k_thread *thread,
-				   unsigned int value,
+				   int value,
 				   void *data)
 {
 	arch_thread_return_value_set(thread, value);

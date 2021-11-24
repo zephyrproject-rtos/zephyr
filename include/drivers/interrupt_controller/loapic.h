@@ -40,13 +40,13 @@
 #define LOAPIC_TIMER_CCR 0x390    /* Timer Current Count Reg */
 #define LOAPIC_TIMER_CONFIG 0x3e0 /* Timer Divide Config Reg */
 
-#define LOAPIC_ICR_BUSY		0x00001000	/* delivery status: 1 = busy */
+#define LOAPIC_ICR_BUSY		0x00001000U	/* delivery status: 1 = busy */
 
 #define LOAPIC_ICR_IPI_OTHERS	0x000C4000U	/* normal IPI to other CPUs */
 #define LOAPIC_ICR_IPI_INIT	0x00004500U
 #define LOAPIC_ICR_IPI_STARTUP	0x00004600U
 
-#define LOAPIC_LVT_MASKED 0x00010000   /* mask */
+#define LOAPIC_LVT_MASKED 0x00010000U   /* mask */
 
 #ifndef _ASMLANGUAGE
 
@@ -105,7 +105,7 @@ static inline uint32_t x86_read_xapic(unsigned int reg)
 static inline uint32_t x86_read_loapic(unsigned int reg)
 {
 #ifdef CONFIG_X2APIC
-	return x86_read_x2apic(reg);
+	return (uint32_t)x86_read_x2apic(reg);
 #else
 	return x86_read_xapic(reg);
 #endif

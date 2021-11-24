@@ -82,7 +82,7 @@ void z_sys_init_run_level(int32_t level)
 				if (rc > UINT8_MAX) {
 					rc = UINT8_MAX;
 				}
-				dev->state->init_res = rc;
+				dev->state->init_res = (uint8_t)rc;
 			}
 			dev->state->initialized = true;
 		}
@@ -146,7 +146,7 @@ static inline int z_vrfy_device_usable_check(const struct device *dev)
 size_t z_device_get_all_static(struct device const **devices)
 {
 	*devices = __device_start;
-	return __device_end - __device_start;
+	return (size_t)(__device_end - __device_start);
 }
 
 bool z_device_ready(const struct device *dev)
@@ -181,5 +181,5 @@ int device_required_foreach(const struct device *dev,
 		}
 	}
 
-	return handle_count;
+	return (int)handle_count;
 }

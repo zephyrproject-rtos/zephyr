@@ -260,8 +260,8 @@ static struct dyn_obj *dyn_object_find(void *obj)
 static bool thread_idx_alloc(uintptr_t *tidx)
 {
 	int i;
-	int idx;
-	int base;
+	size_t idx;
+	uintptr_t base;
 
 	base = 0;
 	for (i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
@@ -271,7 +271,7 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 			*tidx = base + (idx - 1);
 
 			sys_bitfield_clear_bit((mem_addr_t)_thread_idx_map,
-					       *tidx);
+					       (unsigned int)*tidx);
 
 			/* Clear permission from all objects */
 			z_object_wordlist_foreach(clear_perms_cb,
@@ -301,7 +301,7 @@ static void thread_idx_free(uintptr_t tidx)
 	/* To prevent leaked permission when index is recycled */
 	z_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
 
-	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
+	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, (unsigned int)tidx);
 }
 
 struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
@@ -315,7 +315,7 @@ struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
 	}
 
 	dyn->kobj.name = &dyn->data;
-	dyn->kobj.type = K_OBJ_ANY;
+	dyn->kobj.type = (uint8_t)K_OBJ_ANY;
 	dyn->kobj.flags = 0;
 	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
@@ -363,10 +363,10 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	if (zo == NULL) {
 		return NULL;
 	}
-	zo->type = otype;
+	zo->type = (uint8_t)otype;
 
 	if (otype == K_OBJ_THREAD) {
-		zo->data.thread_id = tidx;
+		zo->data.thread_id = (unsigned int)tidx;
 	}
 
 	/* The allocating thread implicitly gets permission on kernel objects
@@ -398,7 +398,7 @@ void k_object_free(void *obj)
 		rb_remove(&obj_rb_tree, &dyn->node);
 		sys_dlist_remove(&dyn->dobj_list);
 
-		if (dyn->kobj.type == K_OBJ_THREAD) {
+		if (dyn->kobj.type == (uint8_t)K_OBJ_THREAD) {
 			thread_idx_free(dyn->kobj.data.thread_id);
 		}
 	}
@@ -446,7 +446,7 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
-static unsigned int thread_index_get(struct k_thread *thread)
+static int thread_index_get(struct k_thread *thread)
 {
 	struct z_object *ko;
 
@@ -456,14 +456,14 @@ static unsigned int thread_index_get(struct k_thread *thread)
 		return -1;
 	}
 
-	return ko->data.thread_id;
+	return (int)ko->data.thread_id;
 }
 
 static void unref_check(struct z_object *ko, uintptr_t index)
 {
 	k_spinlock_key_t key = k_spin_lock(&obj_lock);
 
-	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
+	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, (unsigned int)index);
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 	struct dyn_obj *dyn =
@@ -485,13 +485,13 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	 * specifically needs to happen depends on the object type.
 	 */
 	switch (ko->type) {
-	case K_OBJ_PIPE:
+	case (uint8_t)K_OBJ_PIPE:
 		k_pipe_cleanup((struct k_pipe *)ko->name);
 		break;
-	case K_OBJ_MSGQ:
+	case (uint8_t)K_OBJ_MSGQ:
 		k_msgq_cleanup((struct k_msgq *)ko->name);
 		break;
-	case K_OBJ_STACK:
+	case (uint8_t)K_OBJ_STACK:
 		k_stack_cleanup((struct k_stack *)ko->name);
 		break;
 	default:
@@ -511,9 +511,9 @@ static void wordlist_cb(struct z_object *ko, void *ctx_ptr)
 {
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
 
-	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_id) &&
+	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, (unsigned int)ctx->parent_id) != 0 &&
 				  (struct k_thread *)ko->name != ctx->parent) {
-		sys_bitfield_set_bit((mem_addr_t)&ko->perms, ctx->child_id);
+		sys_bitfield_set_bit((mem_addr_t)&ko->perms, (unsigned int)ctx->child_id);
 	}
 }
 
@@ -535,7 +535,7 @@ void z_thread_perms_set(struct z_object *ko, struct k_thread *thread)
 	int index = thread_index_get(thread);
 
 	if (index != -1) {
-		sys_bitfield_set_bit((mem_addr_t)&ko->perms, index);
+		sys_bitfield_set_bit((mem_addr_t)&ko->perms, (unsigned int)index);
 	}
 }
 
@@ -544,8 +544,8 @@ void z_thread_perms_clear(struct z_object *ko, struct k_thread *thread)
 	int index = thread_index_get(thread);
 
 	if (index != -1) {
-		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
-		unref_check(ko, index);
+		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, (unsigned int)index);
+		unref_check(ko, (uintptr_t)index);
 	}
 }
 
@@ -558,10 +558,10 @@ static void clear_perms_cb(struct z_object *ko, void *ctx_ptr)
 
 void z_thread_perms_all_clear(struct k_thread *thread)
 {
-	uintptr_t index = thread_index_get(thread);
+	int index = thread_index_get(thread);
 
-	if ((int)index != -1) {
-		z_object_wordlist_foreach(clear_perms_cb, (void *)index);
+	if (index != -1) {
+		z_object_wordlist_foreach(clear_perms_cb, (void *)(uintptr_t)index);
 	}
 }
 
@@ -575,7 +575,7 @@ static int thread_perms_test(struct z_object *ko)
 
 	index = thread_index_get(_current);
 	if (index != -1) {
-		return sys_bitfield_test_bit((mem_addr_t)&ko->perms, index);
+		return sys_bitfield_test_bit((mem_addr_t)&ko->perms, (unsigned int)index);
 	}
 	return 0;
 }
@@ -585,8 +585,8 @@ static void dump_permission_error(struct z_object *ko)
 	int index = thread_index_get(_current);
 	LOG_ERR("thread %p (%d) does not have permission on %s %p",
 		_current, index,
-		otype_to_str(ko->type), ko->name);
-	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
+		otype_to_str((enum k_objects)ko->type), ko->name);
+	LOG_HEXDUMP_ERR(&ko->perms, sizeof(ko->perms), "permission bitmap");
 }
 
 void z_dump_object_error(int retval, const void *obj, struct z_object *ko,
@@ -599,7 +599,7 @@ void z_dump_object_error(int retval, const void *obj, struct z_object *ko,
 			LOG_ERR("address is not a known kernel object");
 		} else {
 			LOG_ERR("address is actually a %s",
-				otype_to_str(ko->type));
+				otype_to_str((enum k_objects)ko->type));
 		}
 		break;
 	case -EPERM:
@@ -653,7 +653,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
 	if (unlikely((ko == NULL) ||
-		(otype != K_OBJ_ANY && ko->type != otype))) {
+		(otype != K_OBJ_ANY && ko->type != (uint8_t)otype))) {
 		return -EBADF;
 	}
 
@@ -728,7 +728,7 @@ void z_object_uninit(const void *obj)
 		return;
 	}
 
-	ko->flags &= ~K_OBJ_FLAG_INITIALIZED;
+	ko->flags &= (uint8_t)~K_OBJ_FLAG_INITIALIZED;
 }
 
 /*

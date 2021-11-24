@@ -45,8 +45,14 @@ extern "C" {
 #endif
 #endif
 
-/** @brief 64-bit unsigned integer with bit position @p _n set. */
-#define BIT64(_n) (1ULL << (_n))
+/** @brief 16-bit unsigned integer with bit position @p n set. */
+#define BIT16(n) ((uint16_t)BIT(n))
+
+/** @brief 32-bit unsigned integer with bit position @p n set. */
+#define BIT32(n) ((uint32_t)BIT(n))
+
+/** @brief 64-bit unsigned integer with bit position @p n set. */
+#define BIT64(n) (1ULL << (n))
 
 /**
  * @brief Set or clear a bit depending on a boolean value

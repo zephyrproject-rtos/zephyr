@@ -15,7 +15,7 @@ static bool check_sum(struct acpi_sdt *t)
 {
 	uint8_t sum = 0U, *p = (uint8_t *)t;
 
-	for (int i = 0; i < t->length; i++) {
+	for (uint32_t i = 0; i < t->length; i++) {
 		sum += p[i];
 	}
 
@@ -49,7 +49,7 @@ static void find_rsdp(void)
 	 * first megabyte and are directly accessible.
 	 */
 	bda_seg = 0x040e + zero_page_base;
-	search_phys = (long)(((int)*(uint16_t *)bda_seg) << 4);
+	search_phys = ((uintptr_t)*(uint16_t *)bda_seg) << 4;
 
 	/* Unmap after use */
 	z_phys_unmap(zero_page_base, 4096);
@@ -62,7 +62,7 @@ static void find_rsdp(void)
 		search_length = 1024;
 		z_phys_map((uint8_t **)&search, search_phys, search_length, 0);
 
-		for (int i = 0; i < 1024/8; i++) {
+		for (size_t i = 0; i < 1024/8; i++) {
 			if (search[i] == ACPI_RSDP_SIGNATURE) {
 				rsdp_phys = search_phys + i * 8;
 				rsdp = (void *)&search[i];
@@ -81,7 +81,7 @@ static void find_rsdp(void)
 	z_phys_map((uint8_t **)&search, search_phys, search_length, 0);
 
 	rsdp_phys = 0U;
-	for (int i = 0; i < 128*1024/8; i++) {
+	for (size_t i = 0; i < 128*1024/8; i++) {
 		if (search[i] == ACPI_RSDP_SIGNATURE) {
 			rsdp_phys = search_phys + i * 8;
 			rsdp = (void *)&search[i];
@@ -133,7 +133,7 @@ void *z_acpi_find_table(uint32_t signature)
 
 	find_rsdp();
 
-	if (!rsdp) {
+	if (rsdp == NULL) {
 		return NULL;
 	}
 
@@ -150,7 +150,7 @@ void *z_acpi_find_table(uint32_t signature)
 			uint32_t *end = (uint32_t *)((char *)rsdt + rsdt->sdt.length);
 
 			for (uint32_t *tp = &rsdt->table_ptrs[0]; tp < end; tp++) {
-				t_phys = (long)*tp;
+				t_phys = (uintptr_t)*tp;
 				z_phys_map(&mapped_tbl, t_phys, sizeof(*t), 0);
 				t = (void *)mapped_tbl;
 
@@ -187,7 +187,7 @@ void *z_acpi_find_table(uint32_t signature)
 			uint64_t *end = (uint64_t *)((char *)xsdt + xsdt->sdt.length);
 
 			for (uint64_t *tp = &xsdt->table_ptrs[0]; tp < end; tp++) {
-				t_phys = (long)*tp;
+				t_phys = (uintptr_t)*tp;
 				z_phys_map(&mapped_tbl, t_phys, sizeof(*t), 0);
 				t = (void *)mapped_tbl;
 
@@ -229,7 +229,7 @@ struct acpi_cpu *z_acpi_get_cpu(int n)
 	uintptr_t base = POINTER_TO_UINT(madt);
 	uintptr_t offset;
 
-	if (!madt) {
+	if (madt == NULL) {
 		return NULL;
 	}
 

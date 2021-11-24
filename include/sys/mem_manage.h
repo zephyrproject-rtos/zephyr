@@ -31,13 +31,13 @@
  */
 
 /** Region will have read/write access (and not read-only) */
-#define K_MEM_PERM_RW		BIT(3)
+#define K_MEM_PERM_RW		BIT32(3)
 
 /** Region will be executable (normally forbidden) */
-#define K_MEM_PERM_EXEC		BIT(4)
+#define K_MEM_PERM_EXEC		BIT32(4)
 
 /** Region will be accessible to user mode (normally supervisor-only) */
-#define K_MEM_PERM_USER		BIT(5)
+#define K_MEM_PERM_USER		BIT32(5)
 
 /*
  * This is the offset to subtract from a virtual address mapped in the

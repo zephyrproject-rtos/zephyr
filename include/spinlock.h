@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 struct z_spinlock_key {
-	int key;
+	unsigned int key;
 };
 
 /**

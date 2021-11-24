@@ -45,10 +45,8 @@ int fputc(int c, FILE *stream)
 
 int fputs(const char *_MLIBC_RESTRICT s, FILE *_MLIBC_RESTRICT stream)
 {
-	int len = strlen(s);
-	int ret;
-
-	ret = fwrite(s, 1, len, stream);
+	size_t len = strlen(s);
+	size_t ret = fwrite(s, 1, len, stream);
 
 	return len == ret ? 0 : EOF;
 }

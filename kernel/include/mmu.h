@@ -166,7 +166,7 @@ extern struct z_page_frame z_page_frames[Z_NUM_PAGE_FRAMES];
 
 static inline uintptr_t z_page_frame_to_phys(struct z_page_frame *pf)
 {
-	return (uintptr_t)((pf - z_page_frames) * CONFIG_MMU_PAGE_SIZE) +
+	return ((uintptr_t)(pf - z_page_frames) * CONFIG_MMU_PAGE_SIZE) +
 			Z_PHYS_RAM_START;
 }
 

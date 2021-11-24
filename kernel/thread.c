@@ -119,7 +119,7 @@ void z_thread_essential_set(void)
  */
 void z_thread_essential_clear(void)
 {
-	_current->base.user_options &= ~K_ESSENTIAL;
+	_current->base.user_options &= (uint8_t)~K_ESSENTIAL;
 }
 
 /*
@@ -218,7 +218,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 	char name[CONFIG_THREAD_MAX_NAME_LEN];
 
 	if (thread != NULL) {
-		if (Z_SYSCALL_OBJ(thread, K_OBJ_THREAD) != 0) {
+		if (Z_SYSCALL_OBJ(thread, K_OBJ_THREAD)) {
 			return -EINVAL;
 		}
 	}
@@ -301,15 +301,15 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
 	 */
-	if (thread == NULL || ko->type != K_OBJ_THREAD ||
+	if (thread == NULL || ko->type != (uint8_t)K_OBJ_THREAD ||
 	    (ko->flags & K_OBJ_FLAG_INITIALIZED) == 0) {
 		return -EINVAL;
 	}
-	if (Z_SYSCALL_MEMORY_WRITE(buf, size) != 0) {
+	if (Z_SYSCALL_MEMORY_WRITE(buf, size)) {
 		return -EFAULT;
 	}
 	len = strlen(thread->name);
-	if (len + 1 > size) {
+	if (len + 1U > size) {
 		return -ENOSPC;
 	}
 
@@ -683,8 +683,8 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	/* User threads may only create other user threads and they can't
 	 * be marked as essential
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY(options & K_USER));
-	Z_OOPS(Z_SYSCALL_VERIFY(!(options & K_ESSENTIAL)));
+	Z_OOPS(Z_SYSCALL_VERIFY((options & K_USER) != 0));
+	Z_OOPS(Z_SYSCALL_VERIFY((options & K_ESSENTIAL) == 0));
 
 	/* Check validity of prio argument; must be the same or worse priority
 	 * than the caller
@@ -771,7 +771,7 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 	thread_base->user_options = (uint8_t)options;
 	thread_base->thread_state = (uint8_t)initial_state;
 
-	thread_base->prio = priority;
+	thread_base->prio = (int8_t)priority;
 
 	thread_base->sched_locked = 0U;
 

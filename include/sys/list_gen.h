@@ -29,7 +29,7 @@
 		     (__sns) = sys_ ## __lname ## _peek_next(__sn))
 
 #define Z_GENLIST_CONTAINER(__ln, __cn, __n)				\
-	((__ln) ? CONTAINER_OF((__ln), __typeof__(*(__cn)), __n) : NULL)
+	(((__ln) != NULL) ? CONTAINER_OF((__ln), __typeof__(*(__cn)), __n) : NULL)
 
 #define Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn, __n)		\
 	Z_GENLIST_CONTAINER(sys_ ## __lname ## _peek_head(__l), __cn, __n)
@@ -38,7 +38,7 @@
 	Z_GENLIST_CONTAINER(sys_ ## __lname ## _peek_tail(__l), __cn, __n)
 
 #define Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n)		\
-	((__cn) ? Z_GENLIST_CONTAINER(					\
+	(((__cn) != NULL) ? Z_GENLIST_CONTAINER(					\
 			sys_ ## __lname ## _peek_next(&((__cn)->__n)),	\
 			__cn, __n) : NULL)
 

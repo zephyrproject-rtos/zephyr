@@ -58,8 +58,8 @@ struct z_device_mmio_rom {
 
 #define Z_DEVICE_MMIO_ROM_INITIALIZER(node_id) \
 	{ \
-		.phys_addr = DT_REG_ADDR(node_id), \
-		.size = DT_REG_SIZE(node_id) \
+		.phys_addr = (uintptr_t)DT_REG_ADDR(node_id), \
+		.size = (size_t)DT_REG_SIZE(node_id) \
 	}
 
 /**

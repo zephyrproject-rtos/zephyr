@@ -269,7 +269,7 @@ static inline sys_sfnode_t *sys_sflist_peek_tail(sys_sflist_t *list)
  */
 static inline uint8_t sys_sfnode_flags_get(sys_sfnode_t *node)
 {
-	return node->next_and_flags & SYS_SFLIST_FLAGS_MASK;
+	return (uint8_t)(node->next_and_flags & SYS_SFLIST_FLAGS_MASK);
 }
 
 /**
