@@ -52,13 +52,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1272) +
 
 #define GPIO_TCXO_POWER_PIN	DT_INST_GPIO_PIN(0, tcxo_power_gpios)
 
-#if DT_INST_NODE_HAS_PROP(0, tcxo_power_startup_delay_ms)
-#define TCXO_POWER_STARTUP_DELAY_MS			\
-	DT_INST_PROP(0, tcxo_power_startup_delay_ms)
-#else
-#define TCXO_POWER_STARTUP_DELAY_MS		0
-#endif
-
 /*
  * Those macros must be in sync with 'power-amplifier-output' dts property.
  */
@@ -80,17 +73,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1272) +
 BUILD_ASSERT(0, "None of rfo-enable-gpios, pa-boost-enable-gpios and "
 	     "power-amplifier-output has been specified. "
 	     "Look at semtech,sx127x-base.yaml to fix that.");
-#endif
-
-#define SX127X_PADAC_20DBM_ON (RF_PADAC_20DBM_ON)
-#define SX127X_PADAC_20DBM_OFF (RF_PADAC_20DBM_OFF)
-#define SX127X_PADAC_20DBM_MASK (~RF_PADAC_20DBM_MASK)
-
-#define SX127X_PACONFIG_PASELECT_PABOOST (RF_PACONFIG_PASELECT_PABOOST)
-#define SX127X_PACONFIG_OUTPUTPOWER_MASK (~RF_PACONFIG_OUTPUTPOWER_MASK)
-
-#ifdef RF_PACONFIG_MAX_POWER_MASK
-#define SX127X_PACONFIG_MAX_POWER_SHIFT 4
 #endif
 
 extern DioIrqHandler *DioIrq[];
@@ -166,7 +148,7 @@ bool SX127X_FUNC(CheckRfFrequency)(uint32_t frequency)
 
 uint32_t SX127X_FUNC(GetBoardTcxoWakeupTime)(void)
 {
-	return TCXO_POWER_STARTUP_DELAY_MS;
+	return DT_INST_PROP_OR(0, tcxo_power_startup_delay_ms, 0);
 }
 
 static inline void sx127x_antenna_enable(int val)
@@ -404,37 +386,37 @@ void SX127X_FUNC(SetRfTxPower)(int8_t power)
 		return;
 	}
 
-	pa_dac &= ~SX127X_PADAC_20DBM_MASK;
+	pa_dac &= RF_PADAC_20DBM_MASK;
 
 	if (SX127X_PA_OUTPUT(power) == SX127X_PA_BOOST) {
 		power = clamp_int8(power, 2, 20);
 
-		pa_config |= SX127X_PACONFIG_PASELECT_PABOOST;
+		pa_config |= RF_PACONFIG_PASELECT_PABOOST;
 		if (power > 17) {
-			pa_dac |= SX127X_PADAC_20DBM_ON;
-			pa_config |= (power - 5) & SX127X_PACONFIG_OUTPUTPOWER_MASK;
+			pa_dac |= RF_PADAC_20DBM_ON;
+			pa_config |= (power - 5) & ~RF_PACONFIG_OUTPUTPOWER_MASK;
 		} else {
-			pa_dac |= SX127X_PADAC_20DBM_OFF;
-			pa_config |= (power - 2) & SX127X_PACONFIG_OUTPUTPOWER_MASK;
+			pa_dac |= RF_PADAC_20DBM_OFF;
+			pa_config |= (power - 2) & ~RF_PACONFIG_OUTPUTPOWER_MASK;
 		}
 	} else {
-#ifdef SX127X_PACONFIG_MAX_POWER_SHIFT
+#ifdef RF_PACONFIG_MAX_POWER_MASK
 		power = clamp_int8(power, -4, 15);
 
-		pa_dac |= SX127X_PADAC_20DBM_OFF;
+		pa_dac |= RF_PADAC_20DBM_OFF;
 		if (power > 0) {
 			/* Set the power range to 0 -- 10.8+0.6*7 dBm */
-			pa_config |= 7 << SX127X_PACONFIG_MAX_POWER_SHIFT;
-			pa_config |= power & SX127X_PACONFIG_OUTPUTPOWER_MASK;
+			pa_config |= 7 << 4;
+			pa_config |= power & ~RF_PACONFIG_OUTPUTPOWER_MASK;
 		} else {
 			/* Set the power range to -4.2 -- 10.8+0.6*0 dBm */
-			pa_config |= (power + 4) & SX127X_PACONFIG_OUTPUTPOWER_MASK;
+			pa_config |= (power + 4) & ~RF_PACONFIG_OUTPUTPOWER_MASK;
 		}
 #else
 		power = clamp_int8(power, -1, 14);
 
-		pa_dac |= SX127X_PADAC_20DBM_OFF;
-		pa_config |= (power + 1) & SX127X_PACONFIG_OUTPUTPOWER_MASK;
+		pa_dac |= RF_PADAC_20DBM_OFF;
+		pa_config |= (power + 1) & ~RF_PACONFIG_OUTPUTPOWER_MASK;
 #endif
 	}
 
