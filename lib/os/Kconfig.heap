@@ -103,4 +103,18 @@ config SHARED_MULTI_HEAP
 	  different capabilities / attributes (cacheable, non-cacheable,
 	  etc...) defined in the DT.
 
+config SYS_MEM_BLOCKS
+	bool "(Yet Another) Memory Blocks Allocator"
+	help
+	  This enables support for memory block allocator where:
+	  () All memory blocks have a single fixed size.
+	  () Multiple blocks can be allocated or freed at the same time.
+	  () A group of blocks allocated together may not be contiguous.
+	     This is useful for operations such as scatter-gather DMA
+	     transfers.
+	  () Bookkeeping of allocated blocks is done outside of
+	     the associated buffer (unlike memory slab). This allows
+	     the buffer to reside in memory regions where these can be
+	     powered down to conserve energy.
+
 endmenu
