@@ -139,8 +139,7 @@ static int cmd_adc_ch_id(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	adc->channel_config.channel_id = (uint8_t)strtol(argv[1], NULL, 10);
-	retval = adc_channel_setup(adc_dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+//	retval = adc_channel_setup(adc_dev, &adc->channel_config);
 
 	return retval;
 }
@@ -151,7 +150,6 @@ static int cmd_adc_ch_neg(const struct shell *shell, size_t argc, char **argv)
 	/* -2: index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-2]);
 	const struct device *adc_dev;
-	int retval = 0;
 
 	adc_dev = device_get_binding(adc->device_label);
 	if (adc_dev == NULL) {
@@ -165,10 +163,9 @@ static int cmd_adc_ch_neg(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	adc->channel_config.input_negative = (uint8_t)strtol(argv[1], NULL, 10);
-	retval = adc_channel_setup(adc_dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+//	retval = adc_channel_setup(adc_dev, &adc->channel_config);
 
-	return retval;
+	return 0;
 #else
 	return -EINVAL;
 #endif
@@ -180,7 +177,6 @@ static int cmd_adc_ch_pos(const struct shell *shell, size_t argc, char **argv)
 	/* -2: index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-2]);
 	const struct device *adc_dev;
-	int retval = 0;
 
 	adc_dev = device_get_binding(adc->device_label);
 	if (adc_dev == NULL) {
@@ -194,10 +190,8 @@ static int cmd_adc_ch_pos(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	adc->channel_config.input_positive = (uint8_t)strtol(argv[1], NULL, 10);
-	retval = adc_channel_setup(adc_dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
-
-	return retval;
+	//retval = adc_channel_setup(adc_dev, &adc->channel_config);
+	return 0;
 #else
 	return -EINVAL;
 #endif
@@ -210,7 +204,6 @@ static int cmd_adc_gain(const struct shell *shell, size_t argc, char **argv,
 	struct adc_hdl *adc = get_adc(argv[-2]);
 	enum adc_gain gain = (enum adc_gain)data;
 	const struct device *adc_dev;
-	int retval = -EINVAL;
 
 	adc_dev = device_get_binding(adc->device_label);
 	if (adc_dev == NULL) {
@@ -223,10 +216,9 @@ static int cmd_adc_gain(const struct shell *shell, size_t argc, char **argv,
 						   : strlen(argv[0]);
 	memcpy(chosen_gain, argv[0], len);
 	chosen_gain[len] = '\0';
-	retval = adc_channel_setup(adc_dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+//	retval = adc_channel_setup(adc_dev, &adc->channel_config);
 
-	return retval;
+	return 0;
 }
 
 static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
@@ -235,7 +227,6 @@ static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
 	struct adc_hdl *adc = get_adc(argv[-1]);
 	const struct device *adc_dev;
 	uint16_t acq_time;
-	int retval;
 
 	adc_dev = device_get_binding(adc->device_label);
 	if (adc_dev == NULL) {
@@ -262,17 +253,15 @@ static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
 		adc->channel_config.acquisition_time =
 			ADC_ACQ_TIME_DEFAULT;
 	}
-	retval = adc_channel_setup(adc_dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+//	retval = adc_channel_setup(adc_dev, &adc->channel_config);
 
-	return retval;
+	return 0;
 }
 static int cmd_adc_reso(const struct shell *shell, size_t argc, char **argv)
 {
 	/* -1 index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-1]);
 	const struct device *adc_dev;
-	int retval;
 
 	adc_dev = device_get_binding(adc->device_label);
 	if (adc_dev == NULL) {
@@ -286,9 +275,9 @@ static int cmd_adc_reso(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	adc->resolution = (uint8_t)strtol(argv[1], NULL, 10);
-	retval = adc_channel_setup(adc_dev, &adc->channel_config);
+//	retval = adc_channel_setup(adc_dev, &adc->channel_config);
 
-	return retval;
+	return 0;
 }
 
 static int cmd_adc_ref(const struct shell *shell, size_t argc, char **argv,
@@ -298,7 +287,6 @@ static int cmd_adc_ref(const struct shell *shell, size_t argc, char **argv,
 	struct adc_hdl *adc = get_adc(argv[-2]);
 	enum adc_reference reference = (enum adc_reference)data;
 	const struct device *adc_dev;
-	int retval = -EINVAL;
 
 	adc_dev = device_get_binding(adc->device_label);
 	if (adc_dev == NULL) {
@@ -312,10 +300,9 @@ static int cmd_adc_ref(const struct shell *shell, size_t argc, char **argv,
 	chosen_reference[len] = '\0';
 
 	adc->channel_config.reference = reference;
-	retval = adc_channel_setup(adc_dev, &adc->channel_config);
-	LOG_DBG("Channel setup returned %i\n", retval);
+//	retval = adc_channel_setup(adc_dev, &adc->channel_config);
 
-	return retval;
+	return 0;
 }
 
 #define BUFFER_SIZE 1
@@ -370,6 +357,24 @@ static int cmd_adc_print(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_adc_save(const struct shell *shell, size_t argc, char **argv)
+{
+	/* -1 index of ADC label name */
+	struct adc_hdl *adc = get_adc(argv[-1]);
+	const struct device *adc_dev;
+	int retval;
+
+	adc_dev = device_get_binding(adc->device_label);
+	if (adc_dev == NULL) {
+		shell_error(shell, "ADC device not found");
+		return -ENODEV;
+	}
+
+	retval = adc_channel_setup(adc_dev, &adc->channel_config);
+
+	return retval;
+}
+
 SHELL_SUBCMD_DICT_SET_CREATE(sub_ref_cmds, cmd_adc_ref,
 	(VDD_1, ADC_REF_VDD_1),
 	(VDD_1_2, ADC_REF_VDD_1_2),
@@ -415,6 +420,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
 	SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 0),
 	SHELL_CMD(reference, &sub_ref_cmds, CMD_HELP_REF, NULL),
 	SHELL_CMD_ARG(resolution, NULL, CMD_HELP_RES, cmd_adc_reso, 2, 0),
+	SHELL_CMD_ARG(save, NULL, "Write channel config", cmd_adc_save, 2, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

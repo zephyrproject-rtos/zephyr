@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
-#include <hal/nrf_saadc.h>
+#include <nrfx_saadc.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
@@ -16,8 +16,10 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc);
 
 struct driver_data {
 	struct adc_context ctx;
+	const struct device *dev;
 
-	uint8_t positive_inputs[SAADC_CH_NUM];
+	bool configured[SAADC_CH_NUM];
+	const nrfx_saadc_evt_t *event;
 };
 
 static struct driver_data m_data = {
@@ -26,46 +28,107 @@ static struct driver_data m_data = {
 	ADC_CONTEXT_INIT_SYNC(m_data, ctx),
 };
 
+/* Forward declaration */
+static void irq_nrfx_event_handler(nrfx_saadc_evt_t const *event);
+
+/* return number of initialized channelse. This is workaround for nrfx API
+ * which force to configure all active channels at once.
+ */
+static uint8_t channels_cnt_get(uint32_t channel_mask)
+{
+	uint8_t cnt = 0;
+
+	for (uint8_t i = 0; i < SAADC_CH_NUM; i++) {
+		if (!(channel_mask & BIT(i))) {
+			continue;
+		}
+		if (m_data.configured[i]) {
+			cnt++;
+		}
+	}
+
+	return cnt;
+}
+
+static int pin_assign(const struct adc_channel_cfg *channel_cfg,
+		      nrfx_saadc_channel_t *drv_cfg)
+{
+	nrf_saadc_input_t analog_pin = channel_cfg->input_positive;
+
+	if (analog_pin > NRF_SAADC_INPUT_VDD) {
+		LOG_ERR("Invalid analog positive pin number: %d", analog_pin);
+		return -EINVAL;
+	} else if (analog_pin == NRF_SAADC_INPUT_DISABLED) {
+		LOG_ERR("Analog positive pin not configured.");
+		return -EINVAL;
+	}
+	drv_cfg->pin_p = analog_pin;
+
+	if (channel_cfg->differential) {
+		analog_pin = channel_cfg->input_negative;
+		if (analog_pin > NRF_SAADC_INPUT_VDD) {
+			LOG_ERR("Invalid analog negative pin number: %d",
+				analog_pin);
+			return -EINVAL;
+		} else if (analog_pin == NRF_SAADC_INPUT_DISABLED) {
+			LOG_ERR("Analog negative pin not configured.");
+			return -EINVAL;
+		}
+		drv_cfg->pin_n = analog_pin;
+	}
+
+	return 0;
+}
 
 /* Implementation of the ADC driver API function: adc_channel_setup. */
 static int adc_nrfx_channel_setup(const struct device *dev,
 				  const struct adc_channel_cfg *channel_cfg)
 {
-	nrf_saadc_channel_config_t config = {
-		.resistor_p = NRF_SAADC_RESISTOR_DISABLED,
-		.resistor_n = NRF_SAADC_RESISTOR_DISABLED,
-		.burst      = NRF_SAADC_BURST_DISABLED,
-	};
 	uint8_t channel_id = channel_cfg->channel_id;
+	nrf_saadc_channel_config_t *ch_cfg;
+	nrfx_saadc_channel_t cfg;
+	int err;
 
 	if (channel_id >= SAADC_CH_NUM) {
 		return -EINVAL;
 	}
 
+	ch_cfg = &cfg.channel_config;
+
+	err = pin_assign(channel_cfg, &cfg);
+	if (err != 0) {
+		return -EINVAL;
+	}
+
+	cfg.channel_index = channel_cfg->channel_id;
+	ch_cfg->resistor_p = NRF_SAADC_RESISTOR_DISABLED;
+	ch_cfg->resistor_n = NRF_SAADC_RESISTOR_DISABLED;
+	ch_cfg->burst = NRF_SAADC_BURST_DISABLED;
+
 	switch (channel_cfg->gain) {
 	case ADC_GAIN_1_6:
-		config.gain = NRF_SAADC_GAIN1_6;
+		ch_cfg->gain = NRF_SAADC_GAIN1_6;
 		break;
 	case ADC_GAIN_1_5:
-		config.gain = NRF_SAADC_GAIN1_5;
+		ch_cfg->gain = NRF_SAADC_GAIN1_5;
 		break;
 	case ADC_GAIN_1_4:
-		config.gain = NRF_SAADC_GAIN1_4;
+		ch_cfg->gain = NRF_SAADC_GAIN1_4;
 		break;
 	case ADC_GAIN_1_3:
-		config.gain = NRF_SAADC_GAIN1_3;
+		ch_cfg->gain = NRF_SAADC_GAIN1_3;
 		break;
 	case ADC_GAIN_1_2:
-		config.gain = NRF_SAADC_GAIN1_2;
+		ch_cfg->gain = NRF_SAADC_GAIN1_2;
 		break;
 	case ADC_GAIN_1:
-		config.gain = NRF_SAADC_GAIN1;
+		ch_cfg->gain = NRF_SAADC_GAIN1;
 		break;
 	case ADC_GAIN_2:
-		config.gain = NRF_SAADC_GAIN2;
+		ch_cfg->gain = NRF_SAADC_GAIN2;
 		break;
 	case ADC_GAIN_4:
-		config.gain = NRF_SAADC_GAIN4;
+		ch_cfg->gain = NRF_SAADC_GAIN4;
 		break;
 	default:
 		LOG_ERR("Selected ADC gain is not valid");
@@ -74,10 +137,10 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 
 	switch (channel_cfg->reference) {
 	case ADC_REF_INTERNAL:
-		config.reference = NRF_SAADC_REFERENCE_INTERNAL;
+		ch_cfg->reference = NRF_SAADC_REFERENCE_INTERNAL;
 		break;
 	case ADC_REF_VDD_1_4:
-		config.reference = NRF_SAADC_REFERENCE_VDD4;
+		ch_cfg->reference = NRF_SAADC_REFERENCE_VDD4;
 		break;
 	default:
 		LOG_ERR("Selected ADC reference is not valid");
@@ -86,94 +149,85 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 
 	switch (channel_cfg->acquisition_time) {
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 3):
-		config.acq_time = NRF_SAADC_ACQTIME_3US;
+		ch_cfg->acq_time = NRF_SAADC_ACQTIME_3US;
 		break;
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 5):
-		config.acq_time = NRF_SAADC_ACQTIME_5US;
+		ch_cfg->acq_time = NRF_SAADC_ACQTIME_5US;
 		break;
 	case ADC_ACQ_TIME_DEFAULT:
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10):
-		config.acq_time = NRF_SAADC_ACQTIME_10US;
+		ch_cfg->acq_time = NRF_SAADC_ACQTIME_10US;
 		break;
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 15):
-		config.acq_time = NRF_SAADC_ACQTIME_15US;
+		ch_cfg->acq_time = NRF_SAADC_ACQTIME_15US;
 		break;
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20):
-		config.acq_time = NRF_SAADC_ACQTIME_20US;
+		ch_cfg->acq_time = NRF_SAADC_ACQTIME_20US;
 		break;
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40):
-		config.acq_time = NRF_SAADC_ACQTIME_40US;
+		ch_cfg->acq_time = NRF_SAADC_ACQTIME_40US;
 		break;
 	default:
 		LOG_ERR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 
-	config.mode = (channel_cfg->differential ?
+	ch_cfg->mode = (channel_cfg->differential ?
 		NRF_SAADC_MODE_DIFFERENTIAL : NRF_SAADC_MODE_SINGLE_ENDED);
 
-	/* Keep the channel disabled in hardware (set positive input to
-	 * NRF_SAADC_INPUT_DISABLED) until it is selected to be included
-	 * in a sampling sequence.
-	 */
-
-	nrf_saadc_channel_init(NRF_SAADC, channel_id, &config);
-	nrf_saadc_channel_input_set(NRF_SAADC,
-				    channel_id,
-				    NRF_SAADC_INPUT_DISABLED,
-				    channel_cfg->input_negative);
-
-	/* Store the positive input selection in a dedicated array,
-	 * to get it later when the channel is selected for a sampling
-	 * and to mark the channel as configured (ready to be selected).
-	 */
-	m_data.positive_inputs[channel_id] = channel_cfg->input_positive;
+	nrfx_saadc_channel_config(&cfg);
+	/* Mark channel as configured (reaady to be slected) for a sampling. */
+	m_data.configured[channel_id] = true;
 
 	return 0;
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	nrf_saadc_enable(NRF_SAADC);
+	nrfx_err_t err;
 
-	if (ctx->sequence.calibrate) {
-		nrf_saadc_task_trigger(NRF_SAADC,
-				       NRF_SAADC_TASK_CALIBRATEOFFSET);
-	} else {
-		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_START);
-		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_SAMPLE);
+	err = nrfx_saadc_mode_trigger();
+
+	if (err != NRFX_SUCCESS) {
+		LOG_ERR("Cannot start sampling: %d", err);
 	}
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 					      bool repeat)
 {
+	nrf_saadc_value_t *buffer;
+	uint32_t buffer_size;
+
 	ARG_UNUSED(ctx);
 
-	if (!repeat) {
-		nrf_saadc_buffer_pointer_set(
-			NRF_SAADC,
-			nrf_saadc_buffer_pointer_get(NRF_SAADC) +
-			nrf_saadc_amount_get(NRF_SAADC));
+	if (repeat) {
+		buffer = m_data.event->data.done.p_buffer;
+		buffer_size = m_data.event->data.done.size;
+	} else {
+		buffer = m_data.event->data.done.p_buffer +
+			 m_data.event->data.done.size;
+		buffer_size = m_data.event->data.done.size;
 	}
+
+	nrfx_saadc_buffer_set(buffer, buffer_size);
 }
 
-static int set_resolution(const struct adc_sequence *sequence)
+static int get_resolution(const struct adc_sequence *sequence,
+			  nrf_saadc_resolution_t *resolution)
 {
-	nrf_saadc_resolution_t nrf_resolution;
-
 	switch (sequence->resolution) {
 	case  8:
-		nrf_resolution = NRF_SAADC_RESOLUTION_8BIT;
+		*resolution = NRF_SAADC_RESOLUTION_8BIT;
 		break;
 	case 10:
-		nrf_resolution = NRF_SAADC_RESOLUTION_10BIT;
+		*resolution = NRF_SAADC_RESOLUTION_10BIT;
 		break;
 	case 12:
-		nrf_resolution = NRF_SAADC_RESOLUTION_12BIT;
+		*resolution = NRF_SAADC_RESOLUTION_12BIT;
 		break;
 	case 14:
-		nrf_resolution = NRF_SAADC_RESOLUTION_14BIT;
+		*resolution = NRF_SAADC_RESOLUTION_14BIT;
 		break;
 	default:
 		LOG_ERR("ADC resolution value %d is not valid",
@@ -181,15 +235,13 @@ static int set_resolution(const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	nrf_saadc_resolution_set(NRF_SAADC, nrf_resolution);
 	return 0;
 }
 
-static int set_oversampling(const struct adc_sequence *sequence,
-			    uint8_t active_channels)
+static int get_oversampling(const struct adc_sequence *sequence,
+			    uint8_t active_channels,
+			    nrf_saadc_oversample_t *oversampling)
 {
-	nrf_saadc_oversample_t nrf_oversampling;
-
 	if ((active_channels > 1) && (sequence->oversampling > 0)) {
 		LOG_ERR(
 			"Oversampling is supported for single channel only");
@@ -198,31 +250,31 @@ static int set_oversampling(const struct adc_sequence *sequence,
 
 	switch (sequence->oversampling) {
 	case 0:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_DISABLED;
+		*oversampling = NRF_SAADC_OVERSAMPLE_DISABLED;
 		break;
 	case 1:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_2X;
+		*oversampling = NRF_SAADC_OVERSAMPLE_2X;
 		break;
 	case 2:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_4X;
+		*oversampling = NRF_SAADC_OVERSAMPLE_4X;
 		break;
 	case 3:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_8X;
+		*oversampling = NRF_SAADC_OVERSAMPLE_8X;
 		break;
 	case 4:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_16X;
+		*oversampling = NRF_SAADC_OVERSAMPLE_16X;
 		break;
 	case 5:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_32X;
+		*oversampling = NRF_SAADC_OVERSAMPLE_32X;
 		break;
 	case 6:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_64X;
+		*oversampling = NRF_SAADC_OVERSAMPLE_64X;
 		break;
 	case 7:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_128X;
+		*oversampling = NRF_SAADC_OVERSAMPLE_128X;
 		break;
 	case 8:
-		nrf_oversampling = NRF_SAADC_OVERSAMPLE_256X;
+		*oversampling = NRF_SAADC_OVERSAMPLE_256X;
 		break;
 	default:
 		LOG_ERR("Oversampling value %d is not valid",
@@ -230,14 +282,13 @@ static int set_oversampling(const struct adc_sequence *sequence,
 		return -EINVAL;
 	}
 
-	nrf_saadc_oversample_set(NRF_SAADC, nrf_oversampling);
 	return 0;
 }
 
 static int check_buffer_size(const struct adc_sequence *sequence,
 			     uint8_t active_channels)
 {
-	size_t needed_buffer_size;
+	uint32_t needed_buffer_size;
 
 	needed_buffer_size = active_channels * sizeof(nrf_saadc_value_t);
 	if (sequence->options) {
@@ -256,10 +307,12 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
-	int error;
 	uint32_t selected_channels = sequence->channels;
-	uint8_t active_channels;
-	uint8_t channel_id;
+	nrf_saadc_oversample_t oversampling;
+	nrf_saadc_resolution_t resolution;
+	nrfx_err_t nrfx_err;
+	int channels_cnt;
+	int error;
 
 	/* Signal an error if channel selection is invalid (no channels or
 	 * a non-existing one is selected).
@@ -270,66 +323,39 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-	active_channels = 0U;
+	/* Prepare configuration array for nrfx driver */
+	channels_cnt = channels_cnt_get(selected_channels);
+	if (channels_cnt == 0) {
+		LOG_ERR("No channel configured");
+		return -EINVAL;
+	}
 
-	/* Enable only the channels selected for the pointed sequence.
-	 * Disable all the rest.
+	error = get_resolution(sequence, &resolution);
+	if (error) {
+		return error;
+	}
+
+	error = get_oversampling(sequence, channels_cnt, &oversampling);
+	if (error) {
+		return -EINVAL;
+	}
+
+	nrfx_err = nrfx_saadc_simple_mode_set(sequence->channels,
+					      resolution,
+					      oversampling,
+					      irq_nrfx_event_handler);
+	if (nrfx_err != NRFX_SUCCESS) {
+		return -EINVAL;
+	}
+
+	error = check_buffer_size(sequence, channels_cnt);
+	if (error) {
+		return error;
+	}
+	/* Function needs buffer pointer and number of samples not buffer
+	 * size.
 	 */
-	channel_id = 0U;
-	do {
-		if (selected_channels & BIT(channel_id)) {
-			/* Signal an error if a selected channel has not been
-			 * configured yet.
-			 */
-			if (m_data.positive_inputs[channel_id] == 0U) {
-				LOG_ERR("Channel %u not configured",
-					    channel_id);
-				return -EINVAL;
-			}
-			/* When oversampling is used, the burst mode needs to
-			 * be activated. Unfortunately, this mode cannot be
-			 * activated permanently in the channel setup, because
-			 * then the multiple channel sampling fails (the END
-			 * event is not generated) after switching to a single
-			 * channel sampling and back. Thus, when oversampling
-			 * is not used (hence, the multiple channel sampling is
-			 * possible), the burst mode have to be deactivated.
-			 */
-			nrf_saadc_burst_set(NRF_SAADC, channel_id,
-				(sequence->oversampling != 0U ?
-					NRF_SAADC_BURST_ENABLED :
-					NRF_SAADC_BURST_DISABLED));
-			nrf_saadc_channel_pos_input_set(
-				NRF_SAADC,
-				channel_id,
-				m_data.positive_inputs[channel_id]);
-			++active_channels;
-		} else {
-			nrf_saadc_channel_pos_input_set(
-				NRF_SAADC,
-				channel_id,
-				NRF_SAADC_INPUT_DISABLED);
-		}
-	} while (++channel_id < SAADC_CH_NUM);
-
-	error = set_resolution(sequence);
-	if (error) {
-		return error;
-	}
-
-	error = set_oversampling(sequence, active_channels);
-	if (error) {
-		return error;
-	}
-
-	error = check_buffer_size(sequence, active_channels);
-	if (error) {
-		return error;
-	}
-
-	nrf_saadc_buffer_init(NRF_SAADC,
-			      (nrf_saadc_value_t *)sequence->buffer,
-			      active_channels);
+	nrfx_saadc_buffer_set(sequence->buffer, channels_cnt);
 
 	adc_context_start_read(&m_data.ctx, sequence);
 
@@ -368,38 +394,42 @@ static int adc_nrfx_read_async(const struct device *dev,
 
 static void saadc_irq_handler(const struct device *dev)
 {
-	if (nrf_saadc_event_check(NRF_SAADC, NRF_SAADC_EVENT_END)) {
-		nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_END);
+	nrfx_saadc_evt_type_t event;
+	nrfx_err_t err;
 
-		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_STOP);
-		nrf_saadc_disable(NRF_SAADC);
+	event = m_data.event->type;
 
+	if (event == NRFX_SAADC_EVT_DONE) {
 		adc_context_on_sampling_done(&m_data.ctx, dev);
-	} else if (nrf_saadc_event_check(NRF_SAADC,
-					 NRF_SAADC_EVENT_CALIBRATEDONE)) {
-		nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_CALIBRATEDONE);
+	} else if (event == NRFX_SAADC_EVT_CALIBRATEDONE) {
+		err = nrfx_saadc_mode_trigger();
+		if (err != NRFX_SUCCESS) {
+			LOG_ERR("Cannot start sampling: %d", err);
+		}
 
-		/*
-		 * The workaround for Nordic nRF52832 anomalies 86 and
-		 * 178 is an explicit STOP after CALIBRATEOFFSET
-		 * before issuing START.
-		 */
-		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_STOP);
-		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_START);
-		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_SAMPLE);
 	}
+}
+
+static void irq_nrfx_event_handler(nrfx_saadc_evt_t const *event)
+{
+	m_data.event = event;
+	saadc_irq_handler(m_data.dev);
 }
 
 static int init_saadc(const struct device *dev)
 {
-	nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_END);
-	nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_CALIBRATEDONE);
-	nrf_saadc_int_enable(NRF_SAADC,
-			     NRF_SAADC_INT_END | NRF_SAADC_INT_CALIBRATEDONE);
-	NRFX_IRQ_ENABLE(DT_INST_IRQN(0));
+	nrfx_err_t err;
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    saadc_irq_handler, DEVICE_DT_INST_GET(0), 0);
+	err = nrfx_saadc_init(DT_INST_IRQ(0, priority));
+	if (err != NRFX_SUCCESS) {
+		return -EIO;
+	}
+
+	m_data.dev = dev;
+
+	IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SAADC),
+		    DT_INST_IRQ(0, priority),
+		    nrfx_isr, nrfx_saadc_irq_handler, 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
 
@@ -429,11 +459,11 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 		     "multiple instances not supported");		\
 	DEVICE_DT_INST_DEFINE(0,					\
 			    init_saadc,					\
-			    NULL,					\
+			    device_pm_control_nop,			\
 			    NULL,					\
 			    NULL,					\
 			    POST_KERNEL,				\
-			    CONFIG_ADC_INIT_PRIORITY,			\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &adc_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAADC_INIT)
