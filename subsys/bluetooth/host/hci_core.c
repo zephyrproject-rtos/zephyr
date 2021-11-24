@@ -3673,6 +3673,11 @@ const char *bt_get_name(void)
 #endif
 }
 
+uint16_t bt_get_appearance(void)
+{
+	return CONFIG_BT_DEVICE_APPEARANCE;
+}
+
 bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP)) {

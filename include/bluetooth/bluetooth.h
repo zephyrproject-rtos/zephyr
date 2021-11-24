@@ -170,6 +170,18 @@ int bt_set_name(const char *name);
 const char *bt_get_name(void);
 
 /**
+ * @brief Get local Bluetooth appearance
+ *
+ * Bluetooth Appearance is a description of the external appearance of a device
+ * in terms of an Appearance Value.
+ *
+ * @see https://specificationrefs.bluetooth.com/assigned-values/Appearance%20Values.pdf
+ *
+ * @returns Appearance Value of local Bluetooth host.
+ */
+uint16_t bt_get_appearance(void);
+
+/**
  * @brief Get the currently configured identities.
  *
  * Returns an array of the currently configured identity addresses. To
