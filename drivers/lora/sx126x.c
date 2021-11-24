@@ -24,9 +24,9 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 	     "Multiple SX126x instances in DT");
 
 
-static struct sx126x_data dev_data;
-
 void SX126xWaitOnBusy(void);
+
+static const struct device *const sx162x = DEVICE_DT_GET(DT_DRV_INST(0));
 
 #define MODE(m) [MODE_##m] = #m
 static const char *const mode_names[] = {
@@ -56,6 +56,7 @@ static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 				 size_t req_len, void *data_tx, void *data_rx,
 				 size_t data_len)
 {
+	const struct sx126x_config *cfg = sx162x->config;
 	int ret;
 
 	const struct spi_buf tx_buf[] = {
@@ -94,10 +95,9 @@ static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 	SX126xCheckDeviceReady();
 
 	if (!req_rx && !data_rx) {
-		ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+		ret = spi_write_dt(&cfg->bus, &tx);
 	} else {
-		ret = spi_transceive(dev_data.spi, &dev_data.spi_cfg,
-				     &tx, &rx);
+		ret = spi_transceive_dt(&cfg->bus, &tx, &rx);
 	}
 
 	if (ret < 0) {
@@ -209,8 +209,10 @@ void SX126xWriteBuffer(uint8_t offset, uint8_t *buffer, uint8_t size)
 void SX126xAntSwOn(void)
 {
 #if HAVE_GPIO_ANTENNA_ENABLE
+	struct sx126x_data *data = sx162x->data;
+
 	LOG_DBG("Enabling antenna switch");
-	gpio_pin_set(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 1);
+	gpio_pin_set(data->antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 1);
 #else
 	LOG_DBG("No antenna switch configured");
 #endif
@@ -219,8 +221,10 @@ void SX126xAntSwOn(void)
 void SX126xAntSwOff(void)
 {
 #if HAVE_GPIO_ANTENNA_ENABLE
+	struct sx126x_data *data = sx162x->data;
+
 	LOG_DBG("Disabling antenna switch");
-	gpio_pin_set(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 0);
+	gpio_pin_set(data->antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 0);
 #else
 	LOG_DBG("No antenna switch configured");
 #endif
@@ -229,27 +233,35 @@ void SX126xAntSwOff(void)
 static void sx126x_set_tx_enable(int value)
 {
 #if HAVE_GPIO_TX_ENABLE
-	gpio_pin_set(dev_data.tx_enable, GPIO_TX_ENABLE_PIN, value);
+	struct sx126x_data *data = sx162x->data;
+
+	gpio_pin_set(data->tx_enable, GPIO_TX_ENABLE_PIN, value);
 #endif
 }
 
 static void sx126x_set_rx_enable(int value)
 {
 #if HAVE_GPIO_RX_ENABLE
-	gpio_pin_set(dev_data.rx_enable, GPIO_RX_ENABLE_PIN, value);
+	struct sx126x_data *data = sx162x->data;
+
+	gpio_pin_set(data->rx_enable, GPIO_RX_ENABLE_PIN, value);
 #endif
 }
 
 RadioOperatingModes_t SX126xGetOperatingMode(void)
 {
-	return dev_data.mode;
+	struct sx126x_data *data = sx162x->data;
+
+	return data->mode;
 }
 
 void SX126xSetOperatingMode(RadioOperatingModes_t mode)
 {
+	struct sx126x_data *data = sx162x->data;
+
 	LOG_DBG("SetOperatingMode: %s (%i)", sx126x_mode_name(mode), mode);
 
-	dev_data.mode = mode;
+	data->mode = mode;
 
 	/* To avoid inadvertently putting the RF switch in an
 	 * undefined state, first disable the port we don't want to
@@ -270,7 +282,7 @@ void SX126xSetOperatingMode(RadioOperatingModes_t mode)
 
 	case MODE_SLEEP:
 		/* Additionally disable the DIO1 interrupt to save power */
-		sx126x_dio1_irq_disable(&dev_data);
+		sx126x_dio1_irq_disable(data);
 		__fallthrough;
 	default:
 		sx126x_set_rx_enable(0);
@@ -291,8 +303,10 @@ uint8_t SX126xGetDeviceId(void)
 
 void SX126xIoIrqInit(DioIrqHandler dioIrq)
 {
+	struct sx126x_data *data = sx162x->data;
+
 	LOG_DBG("Configuring DIO IRQ callback");
-	dev_data.radio_dio_irq = dioIrq;
+	data->radio_dio_irq = dioIrq;
 }
 
 void SX126xIoTcxoInit(void)
@@ -321,12 +335,14 @@ void SX126xIoRfSwitchInit(void)
 
 void SX126xReset(void)
 {
+	struct sx126x_data *data = sx162x->data;
+
 	LOG_DBG("Resetting radio");
 
-	sx126x_reset(&dev_data);
+	sx126x_reset(data);
 
 	/* Device transitions to standby on reset */
-	dev_data.mode = MODE_STDBY_RC;
+	data->mode = MODE_STDBY_RC;
 }
 
 void SX126xSetRfTxPower(int8_t power)
@@ -337,17 +353,21 @@ void SX126xSetRfTxPower(int8_t power)
 
 void SX126xWaitOnBusy(void)
 {
-	while (sx126x_is_busy(&dev_data)) {
+	struct sx126x_data *data = sx162x->data;
+
+	while (sx126x_is_busy(data)) {
 		k_sleep(K_MSEC(1));
 	}
 }
 
 void SX126xWakeup(void)
 {
+	const struct sx126x_config *cfg = sx162x->config;
+	struct sx126x_data *data = sx162x->data;
 	int ret;
 
 	/* Reenable DIO1 when waking up */
-	sx126x_dio1_irq_enable(&dev_data);
+	sx126x_dio1_irq_enable(data);
 
 	uint8_t req[] = { RADIO_GET_STATUS, 0 };
 	const struct spi_buf tx_buf = {
@@ -361,7 +381,7 @@ void SX126xWakeup(void)
 	};
 
 	LOG_DBG("Sending GET_STATUS");
-	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+	ret = spi_write_dt(&cfg->bus, &tx);
 	if (ret < 0) {
 		LOG_ERR("SPI transaction failed: %i", ret);
 		return;
@@ -374,46 +394,52 @@ void SX126xWakeup(void)
 	 * All edges on the SS SPI pin will transition the modem to
 	 * standby mode (via startup)
 	 */
-	dev_data.mode = MODE_STDBY_RC;
+	data->mode = MODE_STDBY_RC;
 }
 
 uint32_t SX126xGetDio1PinState(void)
 {
-	return sx126x_get_dio1_pin_state(&dev_data);
+	struct sx126x_data *data = sx162x->data;
+
+	return sx126x_get_dio1_pin_state(data);
 }
 
 static void sx126x_dio1_irq_work_handler(struct k_work *work)
 {
+	struct sx126x_data *data = sx162x->data;
+
 	LOG_DBG("Processing DIO1 interrupt");
-	if (!dev_data.radio_dio_irq) {
+	if (!data->radio_dio_irq) {
 		LOG_WRN("DIO1 interrupt without valid HAL IRQ callback.");
 		return;
 	}
 
-	dev_data.radio_dio_irq(NULL);
+	data->radio_dio_irq(NULL);
 	if (Radio.IrqProcess) {
 		Radio.IrqProcess();
 	}
 
 	/* Re-enable the interrupt if we are not in sleep mode */
-	if (dev_data.mode != MODE_SLEEP) {
-		sx126x_dio1_irq_enable(&dev_data);
+	if (data->mode != MODE_SLEEP) {
+		sx126x_dio1_irq_enable(data);
 	}
 }
 
 static int sx126x_lora_init(const struct device *dev)
 {
+	const struct sx126x_config *cfg = dev->config;
+	struct sx126x_data *data = dev->data;
 	int ret;
 
-	LOG_DBG("Initializing %s", DT_INST_LABEL(0));
+	LOG_DBG("Initializing %s", dev->name);
 
-	if (sx12xx_configure_pin(&dev_data, antenna_enable, GPIO_OUTPUT_INACTIVE) ||
-	    sx12xx_configure_pin(&dev_data, rx_enable, GPIO_OUTPUT_INACTIVE) ||
-	    sx12xx_configure_pin(&dev_data, tx_enable, GPIO_OUTPUT_INACTIVE)) {
+	if (sx12xx_configure_pin(data, antenna_enable, GPIO_OUTPUT_INACTIVE) ||
+	    sx12xx_configure_pin(data, rx_enable, GPIO_OUTPUT_INACTIVE) ||
+	    sx12xx_configure_pin(data, tx_enable, GPIO_OUTPUT_INACTIVE)) {
 		return -EIO;
 	}
 
-	k_work_init(&dev_data.dio1_irq_work, sx126x_dio1_irq_work_handler);
+	k_work_init(&data->dio1_irq_work, sx126x_dio1_irq_work_handler);
 
 	ret = sx126x_variant_init(dev);
 	if (ret) {
@@ -421,30 +447,10 @@ static int sx126x_lora_init(const struct device *dev)
 		return ret;
 	}
 
-	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!dev_data.spi) {
-		LOG_ERR("Cannot get pointer to %s device",
-			DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!spi_is_ready(&cfg->bus)) {
+		LOG_ERR("SPI bus %s not ready", cfg->bus.bus->name);
+		return -ENODEV;
 	}
-
-#if HAVE_GPIO_CS
-	dev_data.spi_cs.gpio_dev = device_get_binding(GPIO_CS_LABEL);
-	if (!dev_data.spi_cs.gpio_dev) {
-		LOG_ERR("Cannot get pointer to %s device", GPIO_CS_LABEL);
-		return -EIO;
-	}
-
-	dev_data.spi_cs.gpio_pin = GPIO_CS_PIN;
-	dev_data.spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
-	dev_data.spi_cs.delay = 0U;
-
-	dev_data.spi_cfg.cs = &dev_data.spi_cs;
-#endif
-	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
-
 
 	ret = sx12xx_init(dev);
 	if (ret < 0) {
@@ -464,6 +470,12 @@ static const struct lora_driver_api sx126x_lora_api = {
 	.test_cw = sx12xx_lora_test_cw,
 };
 
-DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, NULL, &dev_data,
-		      NULL, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
+static const struct sx126x_config sx126x_0_config = {
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0)
+};
+
+static struct sx126x_data sx126x_0_data;
+
+DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, NULL, &sx126x_0_data,
+		      &sx126x_0_config, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
 		      &sx126x_lora_api);
