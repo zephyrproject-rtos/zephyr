@@ -35,6 +35,7 @@ jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
     - name: checkout
@@ -102,6 +103,7 @@ jobs:
     name: "Documentation Build (PDF)"
     runs-on: ubuntu-latest
     container: texlive/texlive:latest
+    timeout-minutes: 30
 
     steps:
     - name: checkout
