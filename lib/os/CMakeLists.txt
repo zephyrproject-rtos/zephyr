@@ -49,6 +49,8 @@ zephyr_sources_ifdef(CONFIG_HEAP_LISTENER heap_listener.c)
 
 zephyr_sources_ifdef(CONFIG_UTF8 utf8.c)
 
+zephyr_sources_ifdef(CONFIG_SYS_MEM_BLOCKS mem_blocks.c)
+
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
