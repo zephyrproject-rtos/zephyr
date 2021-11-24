@@ -12,7 +12,7 @@ config SOC_SERIES
 config NUM_IRQS
 	default 112
 
-config UART_XMC4XXX
+config UART_XMC
 	default y
 	depends on SERIAL
 

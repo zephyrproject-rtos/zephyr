@@ -3,10 +3,10 @@
 # Author: Parthiban Nallathambi <parthiban@linumiz.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config UART_XMC4XXX
-	depends on SOC_SERIES_XMC_4XXX
-	bool "XMC4XX UART driver"
+config UART_XMC
+	depends on SOC_SERIES_XMC_1XXX || SOC_SERIES_XMC_4XXX
+	bool "XMC UART driver"
 	select SERIAL_HAS_DRIVER
 	depends on SOC_FAMILY_XMC && HAS_XMCLIB_UART
 	help
-	  This option enables the XMC4XX UART driver, for UART_0.
+	  This option enables the XMC UART driver, for UART_0.

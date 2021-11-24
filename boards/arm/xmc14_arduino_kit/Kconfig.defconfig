@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2021 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+if BOARD_XMC14_ARDUINO_KIT
+
+config BOARD
+	default "xmc14_arduino_kit"
+
+endif # BOARD_XMC14_ARDUINO_KIT

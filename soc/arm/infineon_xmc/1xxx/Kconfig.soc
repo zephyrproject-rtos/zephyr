@@ -1,0 +1,30 @@
+# XMC 1xxx MCU line
+#
+# Copyright (c) 2021 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "XMC 1xxx MCU Selection"
+	depends on SOC_SERIES_XMC_1XXX
+
+config SOC_XMC1400
+	bool "SOC_XMC1400"
+	select HAS_XMCLIB
+
+endchoice
+
+if SOC_SERIES_XMC_1XXX
+
+config SOC_PART_NUMBER_T038X0200
+	bool
+
+config SOC_PART_NUMBER_XMC_1XXX
+	string
+	default "T038x0200" if SOC_PART_NUMBER_T038X0200
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+endif # SOC_SERIES_XMC_1XXX

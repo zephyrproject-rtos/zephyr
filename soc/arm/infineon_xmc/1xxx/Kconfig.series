@@ -1,0 +1,15 @@
+# XMC1xxx MCU series
+#
+# Copyright (c) 2021 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_XMC_1XXX
+	bool "XMC 1xxx Series MCU"
+	select ARM
+	select CPU_CORTEX_M0
+	select SOC_FAMILY_XMC
+	select CPU_HAS_FPU
+	select HAS_XMCLIB_UART
+	help
+	  Enable support for XMC 1xxx MCU series

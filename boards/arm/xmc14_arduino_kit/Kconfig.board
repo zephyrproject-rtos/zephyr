@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2021 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+config BOARD_XMC14_ARDUINO_KIT
+	bool "Infineon xmc14 Arduino Kit"
+	depends on SOC_SERIES_XMC_1XXX
+	select SOC_PART_NUMBER_F100X0200

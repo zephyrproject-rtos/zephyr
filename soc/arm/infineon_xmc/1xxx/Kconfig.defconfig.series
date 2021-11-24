@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# XMC 1xxx series configuration options
+# Copyright (c) 2021 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+if SOC_SERIES_XMC_1XXX
+
+config SOC_SERIES
+	default "1xxx"
+
+config NUM_IRQS
+	default 31
+
+config UART_XMC
+	default y
+	depends on SERIAL
+
+source "soc/arm/infineon_xmc/1xxx/Kconfig.defconfig.xmc*"
+
+endif # SOC_SERIES_XMC_1XXX

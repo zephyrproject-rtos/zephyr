@@ -1,22 +1,22 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (c) 2020 Linumiz
+ * Copyright (c) 2021 Linumiz
  * Author: Parthiban Nallathambi <parthiban@linumiz.com>
  *
  */
 
 /dts-v1/;
 
-#include <infineon/xmc4500.dtsi>
+#include <infineon/xmc1400.dtsi>
 
 / {
-	model = "Infineon XMC4500 Relax Kit";
-	compatible = "infineon,xm4500-relax-kit", "infineon,xmc4500",
-						"infineon,xmc4xxx";
+	model = "Infineon XMC1400 Arduino Kit";
+	compatible = "infineon,xm1400-arduino-kit", "infineon,xmc1400",
+						"infineon,xmc1xxx";
 
 	chosen {
-		zephyr,sram = &dsram1;
+		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &usic1ch1;
 		zephyr,shell-uart = &usic1ch1;
@@ -24,7 +24,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <120000000>;
+	clock-frequency = <48000000>;
 };
 
 &usic1ch0 {

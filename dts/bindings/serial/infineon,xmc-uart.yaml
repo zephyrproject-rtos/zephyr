@@ -1,6 +1,6 @@
-description: INFINEON XMC4XXX UART
+description: INFINEON XMC UART
 
-compatible: "infineon,xmc4xxx-uart"
+compatible: "infineon,xmc-uart"
 
 include: uart-controller.yaml
 

@@ -1,0 +1,18 @@
+# Infineon XMC1400 arduino kit platform configuration options
+#
+# Copyright (c) 2021 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_XMC1400
+
+config SOC
+	default "XMC1400"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+config NUM_IRQS
+	default 31
+
+endif # SOC_XMC1400

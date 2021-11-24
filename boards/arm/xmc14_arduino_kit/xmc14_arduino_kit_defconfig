@@ -1,13 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
-# Copyright (c) 2020 Linumiz
+# Copyright (c) 2021 Linumiz
 # Author: Parthiban Nallathambi <parthiban@linumiz.com>
 
-CONFIG_BOARD_XMC45_RELAX_KIT=y
-CONFIG_SOC_SERIES_XMC_4XXX=y
-CONFIG_SOC_XMC4500=y
-CONFIG_CORTEX_M_SYSTICK=y
-CONFIG_ARM_MPU=y
+CONFIG_BOARD_XMC14_ARDUINO_KIT=y
+CONFIG_SOC_SERIES_XMC_1XXX=y
+CONFIG_SOC_XMC1400=y
 
 # enable uart driver
 CONFIG_SERIAL=y
