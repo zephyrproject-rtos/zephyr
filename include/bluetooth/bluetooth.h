@@ -182,6 +182,22 @@ const char *bt_get_name(void);
 uint16_t bt_get_appearance(void);
 
 /**
+ * @brief Set local Bluetooth appearance
+ *
+ * Automatically preserves the new appearance across reboots if
+ * @kconfig{CONFIG_BT_SETTINGS} is enabled.
+ *
+ * This symbol is linkable if @kconfig{CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC} is
+ * enabled.
+ *
+ * @param new_appearance Appearance Value
+ *
+ * @retval 0 Success.
+ * @retval other Persistent storage failed. Appearance was not updated.
+ */
+int bt_set_appearance(uint16_t new_appearance);
+
+/**
  * @brief Get the currently configured identities.
  *
  * Returns an array of the currently configured identity addresses. To
