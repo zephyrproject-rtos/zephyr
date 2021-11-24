@@ -201,7 +201,6 @@ struct bt_csis_client_set {
 
 struct bt_csis_client_set_member {
 	struct bt_conn *conn;
-	bt_addr_le_t addr;
 	struct bt_csis_client_set sets[BT_CSIS_CLIENT_MAX_CSIS_INSTANCES];
 };
 

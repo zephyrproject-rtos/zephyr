@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifdef CONFIG_BT_CSIS_CLIENT
+#include <bluetooth/addr.h>
 #include <bluetooth/audio/csis.h>
 #include "common.h"
 
@@ -19,6 +20,7 @@ static struct bt_csis_client_set *set;
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
+static bt_addr_le_t addr_found[CONFIG_BT_MAX_CONN];
 static struct bt_csis_client_set_member set_members[CONFIG_BT_MAX_CONN];
 
 static void csis_client_lock_set_cb(int err);
@@ -115,7 +117,7 @@ static struct bt_csis_client_cb cbs = {
 static bool is_discovered(const bt_addr_le_t *addr)
 {
 	for (int i = 0; i < members_found; i++) {
-		if (bt_addr_le_cmp(addr, &set_members[i].addr) == 0) {
+		if (bt_addr_le_cmp(addr, &addr_found[i]) == 0) {
 			return true;
 		}
 	}
@@ -137,7 +139,7 @@ static bool csis_found(struct bt_data *data, void *user_data)
 			return false;
 		}
 
-		bt_addr_le_copy(&set_members[members_found++].addr, addr);
+		bt_addr_le_copy(&addr_found[members_found++], addr);
 
 		printk("Found member (%u / %u)\n",
 		       members_found, set->set_size);
@@ -157,7 +159,7 @@ static void csis_client_scan_recv(const struct bt_le_scan_recv_info *info,
 		if (set == NULL) {
 			/* Scanning for the first device */
 			if (members_found == 0) {
-				bt_addr_le_copy(&set_members[members_found++].addr,
+				bt_addr_le_copy(&addr_found[members_found++],
 						info->addr);
 			}
 		} else { /* Scanning for set members */
@@ -214,8 +216,8 @@ static void test_main(void)
 		return;
 	}
 
-	bt_addr_le_to_str(&set_members[0].addr, addr, sizeof(addr));
-	err = bt_conn_le_create(&set_members[0].addr, BT_CONN_LE_CREATE_CONN,
+	bt_addr_le_to_str(&addr_found[0], addr, sizeof(addr));
+	err = bt_conn_le_create(&addr_found[0], BT_CONN_LE_CREATE_CONN,
 				BT_LE_CONN_PARAM_DEFAULT, &set_members[0].conn);
 	if (err != 0) {
 		FAIL("Failed to connect to %s: %d\n", err);
@@ -266,11 +268,11 @@ static void test_main(void)
 	}
 
 	for (uint8_t i = 1; i < members_found; i++) {
-		bt_addr_le_to_str(&set_members[i].addr, addr, sizeof(addr));
+		bt_addr_le_to_str(&addr_found[i], addr, sizeof(addr));
 
 		is_connected = false;
 		printk("Connecting to member[%d] (%s)", i, addr);
-		err = bt_conn_le_create(&set_members[i].addr,
+		err = bt_conn_le_create(&addr_found[i],
 					BT_CONN_LE_CREATE_CONN,
 					BT_LE_CONN_PARAM_DEFAULT,
 					&set_members[i].conn);
