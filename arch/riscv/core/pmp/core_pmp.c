@@ -434,7 +434,7 @@ int arch_mem_domain_max_partitions_get(void)
 }
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				     uint32_t  partition_id)
+				     uint32_t partition_id)
 {
 	sys_dnode_t *node, *next_node;
 	uint32_t index, i, num;
@@ -444,6 +444,18 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	ulong_t size = (ulong_t) domain->partitions[partition_id].size;
 	ulong_t start = (ulong_t) domain->partitions[partition_id].start;
 	int ret = 0;
+
+	node = sys_dlist_peek_head(&domain->mem_domain_q);
+	if (!node) {
+		/*
+		 * No thread use this memory domain currently, so there isn't
+		 * any user PMP region translated from this memory partition.
+		 *
+		 * We could do nothing and just successfully return.
+		 */
+
+		return 0;
+	}
 
 	if (size == 4) {
 		pmp_type = PMP_NA4;
@@ -463,14 +475,11 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 		num = 1U;
 	}
 
-	node = sys_dlist_peek_head(&domain->mem_domain_q);
-	if (!node) {
-		ret = -ENOENT;
-		goto out;
-	}
-
+	/*
+	 * Find the user PMP region translated from removed
+	 * memory partition.
+	 */
 	thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
-
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
 	for (index = PMP_REGION_NUM_FOR_U_THREAD;
 		index < CONFIG_PMP_SLOT;
@@ -487,6 +496,11 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 		goto out;
 	}
 
+	/*
+	 * Remove the user PMP region translated from removed
+	 * memory partition. The removal affects all threads
+	 * using this memory domain.
+	 */
 #if !defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT) || defined(CONFIG_PMP_STACK_GUARD)
 	if (pmp_type == PMP_TOR) {
 		index--;
