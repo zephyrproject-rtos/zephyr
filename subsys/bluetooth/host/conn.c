@@ -880,6 +880,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * running.
 		 */
 		switch (old_state) {
+		case BT_CONN_CONNECTED:
+		case BT_CONN_DISCONNECT:
 		case BT_CONN_DISCONNECT_COMPLETE:
 			tx_notify(conn);
 
@@ -936,8 +938,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			 */
 			bt_conn_unref(conn);
 			break;
-		case BT_CONN_CONNECTED:
-		case BT_CONN_DISCONNECT:
 		case BT_CONN_DISCONNECTED:
 			/* Cannot happen. */
 			BT_WARN("Invalid (%u) old state", state);
