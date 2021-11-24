@@ -23,21 +23,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 	     DT_NUM_INST_STATUS_OKAY(st_stm32wl_subghz_radio) <= 1,
 	     "Multiple SX126x instances in DT");
 
-#define DIO2_TX_ENABLE DT_INST_PROP(0, dio2_tx_enable)
-
-#define HAVE_DIO3_TCXO		DT_INST_NODE_HAS_PROP(0, dio3_tcxo_voltage)
-#if HAVE_DIO3_TCXO
-#define TCXO_DIO3_VOLTAGE	DT_INST_PROP(0, dio3_tcxo_voltage)
-#endif
-
-#if DT_INST_NODE_HAS_PROP(0, tcxo_power_startup_delay_ms)
-#define TCXO_POWER_STARTUP_DELAY_MS			\
-	DT_INST_PROP(0, tcxo_power_startup_delay_ms)
-#else
-#define TCXO_POWER_STARTUP_DELAY_MS	0
-#endif
-
-#define SX126X_CALIBRATION_ALL 0x7f
 
 static struct sx126x_data dev_data;
 
@@ -296,7 +281,7 @@ void SX126xSetOperatingMode(RadioOperatingModes_t mode)
 
 uint32_t SX126xGetBoardTcxoWakeupTime(void)
 {
-	return TCXO_POWER_STARTUP_DELAY_MS;
+	return DT_INST_PROP_OR(0, tcxo_power_startup_delay_ms, 0);
 }
 
 uint8_t SX126xGetDeviceId(void)
@@ -312,16 +297,16 @@ void SX126xIoIrqInit(DioIrqHandler dioIrq)
 
 void SX126xIoTcxoInit(void)
 {
-#if HAVE_DIO3_TCXO
+#if DT_INST_NODE_HAS_PROP(0, dio3_tcxo_voltage)
 	CalibrationParams_t cal = {
-		.Value = SX126X_CALIBRATION_ALL,
+		.Value = 0x7F, /* Calibrate all */
 	};
 
 	LOG_DBG("TCXO on DIO3");
 
 	/* Delay in units of 15.625 us (1/64 ms) */
-	SX126xSetDio3AsTcxoCtrl(TCXO_DIO3_VOLTAGE,
-				TCXO_POWER_STARTUP_DELAY_MS << 6);
+	SX126xSetDio3AsTcxoCtrl(DT_INST_PROP(0, dio3_tcxo_voltage),
+				DT_INST_PROP_OR(0, tcxo_power_startup_delay_ms, 0) << 6);
 	SX126xCalibrate(cal);
 #else
 	LOG_DBG("No TCXO configured");
@@ -331,7 +316,7 @@ void SX126xIoTcxoInit(void)
 void SX126xIoRfSwitchInit(void)
 {
 	LOG_DBG("Configuring DIO2");
-	SX126xSetDio2AsRfSwitchCtrl(DIO2_TX_ENABLE);
+	SX126xSetDio2AsRfSwitchCtrl(DT_INST_PROP(0, dio2_tx_enable));
 }
 
 void SX126xReset(void)
