@@ -36,6 +36,9 @@
 
 struct sx126x_config {
 	struct spi_dt_spec bus;
+	struct gpio_dt_spec reset;
+	struct gpio_dt_spec busy;
+	struct gpio_dt_spec dio1;
 	struct gpio_dt_spec antenna_enable;
 	struct gpio_dt_spec tx_enable;
 	struct gpio_dt_spec rx_enable;
@@ -48,15 +51,15 @@ struct sx126x_data {
 	RadioOperatingModes_t mode;
 };
 
-void sx126x_reset(struct sx126x_data *dev_data);
+void sx126x_reset(const struct device *dev);
 
-bool sx126x_is_busy(struct sx126x_data *dev_data);
+bool sx126x_is_busy(const struct device *dev);
 
-uint32_t sx126x_get_dio1_pin_state(struct sx126x_data *dev_data);
+uint32_t sx126x_get_dio1_pin_state(const struct device *dev);
 
-void sx126x_dio1_irq_enable(struct sx126x_data *dev_data);
+void sx126x_dio1_irq_enable(const struct device *dev);
 
-void sx126x_dio1_irq_disable(struct sx126x_data *dev_data);
+void sx126x_dio1_irq_disable(const struct device *dev);
 
 int sx126x_variant_init(const struct device *dev);
 

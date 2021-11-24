@@ -282,7 +282,7 @@ void SX126xSetOperatingMode(RadioOperatingModes_t mode)
 
 	case MODE_SLEEP:
 		/* Additionally disable the DIO1 interrupt to save power */
-		sx126x_dio1_irq_disable(data);
+		sx126x_dio1_irq_disable(sx162x);
 		__fallthrough;
 	default:
 		sx126x_set_rx_enable(0);
@@ -339,7 +339,7 @@ void SX126xReset(void)
 
 	LOG_DBG("Resetting radio");
 
-	sx126x_reset(data);
+	sx126x_reset(sx162x);
 
 	/* Device transitions to standby on reset */
 	data->mode = MODE_STDBY_RC;
@@ -353,9 +353,7 @@ void SX126xSetRfTxPower(int8_t power)
 
 void SX126xWaitOnBusy(void)
 {
-	struct sx126x_data *data = sx162x->data;
-
-	while (sx126x_is_busy(data)) {
+	while (sx126x_is_busy(sx162x)) {
 		k_sleep(K_MSEC(1));
 	}
 }
@@ -367,7 +365,7 @@ void SX126xWakeup(void)
 	int ret;
 
 	/* Reenable DIO1 when waking up */
-	sx126x_dio1_irq_enable(data);
+	sx126x_dio1_irq_enable(sx162x);
 
 	uint8_t req[] = { RADIO_GET_STATUS, 0 };
 	const struct spi_buf tx_buf = {
@@ -399,9 +397,7 @@ void SX126xWakeup(void)
 
 uint32_t SX126xGetDio1PinState(void)
 {
-	struct sx126x_data *data = sx162x->data;
-
-	return sx126x_get_dio1_pin_state(data);
+	return sx126x_get_dio1_pin_state(sx162x);
 }
 
 static void sx126x_dio1_irq_work_handler(struct k_work *work)
@@ -421,7 +417,7 @@ static void sx126x_dio1_irq_work_handler(struct k_work *work)
 
 	/* Re-enable the interrupt if we are not in sleep mode */
 	if (data->mode != MODE_SLEEP) {
-		sx126x_dio1_irq_enable(data);
+		sx126x_dio1_irq_enable(sx162x);
 	}
 }
 
@@ -472,6 +468,9 @@ static const struct lora_driver_api sx126x_lora_api = {
 
 static const struct sx126x_config sx126x_0_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, {0}),
+	.busy = GPIO_DT_SPEC_INST_GET_OR(0, busy_gpios, {0}),
+	.dio1 = GPIO_DT_SPEC_INST_GET_OR(0, dio1_gpios, {0}),
 	.antenna_enable = GPIO_DT_SPEC_INST_GET_OR(0, antenna_enable_gpios, {0}),
 	.tx_enable = GPIO_DT_SPEC_INST_GET_OR(0, tx_enable_gpios, {0}),
 	.rx_enable = GPIO_DT_SPEC_INST_GET_OR(0, rx_enable_gpios, {0})

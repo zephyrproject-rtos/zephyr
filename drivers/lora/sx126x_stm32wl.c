@@ -15,7 +15,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(sx126x, CONFIG_LORA_LOG_LEVEL);
 
-void sx126x_reset(struct sx126x_data *dev_data)
+void sx126x_reset(const struct device *dev)
 {
 	LL_RCC_RF_EnableReset();
 	k_sleep(K_MSEC(20));
@@ -23,23 +23,23 @@ void sx126x_reset(struct sx126x_data *dev_data)
 	k_sleep(K_MSEC(10));
 }
 
-bool sx126x_is_busy(struct sx126x_data *dev_data)
+bool sx126x_is_busy(const struct device *dev)
 {
 	return LL_PWR_IsActiveFlag_RFBUSYS();
 }
 
-uint32_t sx126x_get_dio1_pin_state(struct sx126x_data *dev_data)
+uint32_t sx126x_get_dio1_pin_state(const struct device *dev)
 {
 	return 0;
 }
 
-void sx126x_dio1_irq_enable(struct sx126x_data *dev_data)
+void sx126x_dio1_irq_enable(const struct device *dev)
 {
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 }
 
-void sx126x_dio1_irq_disable(struct sx126x_data *dev_data)
+void sx126x_dio1_irq_disable(const struct device *dev)
 {
 	irq_disable(DT_INST_IRQN(0));
 }
