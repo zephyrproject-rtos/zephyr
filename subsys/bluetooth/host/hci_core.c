@@ -2225,6 +2225,10 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT, bt_hci_le_df_connectionless_iq_report,
 		      sizeof(struct bt_hci_evt_le_connectionless_iq_report)),
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTION_IQ_REPORT, bt_hci_le_df_connection_iq_report,
+		      sizeof(struct bt_hci_evt_le_connection_iq_report)),
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 };
 
 static void hci_le_meta_event(struct net_buf *buf)

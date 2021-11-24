@@ -542,6 +542,55 @@ static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 
 	return err;
 }
+
+int hci_df_prepare_connection_iq_report(struct net_buf *buf,
+					 struct bt_df_conn_iq_samples_report *report,
+					 struct bt_conn **conn_to_report)
+{
+	struct bt_hci_evt_le_connection_iq_report *evt;
+	struct bt_conn *conn;
+
+	if (buf->len < sizeof(*evt)) {
+		BT_ERR("Unexpected end of buffer");
+		return -EINVAL;
+	}
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+
+	if (!conn) {
+		BT_ERR("Unknown conn handle 0x%04X for iq samples report",
+		       sys_le16_to_cpu(evt->conn_handle));
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_ENABLED)) {
+		BT_ERR("Received conn CTE report when CTE receive disabled");
+		return -EINVAL;
+	}
+
+	if (!(conn->cte_type & BIT(evt->cte_type))) {
+		BT_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
+		return -EINVAL;
+	}
+
+	report->chan_idx = evt->data_chan_idx;
+	report->rx_phy = evt->rx_phy;
+	report->chan_idx = evt->data_chan_idx;
+	report->rssi = evt->rssi;
+	report->rssi_ant_id = evt->rssi_ant_id;
+	report->cte_type = BIT(evt->cte_type);
+	report->packet_status = evt->packet_status;
+	report->slot_durations = evt->slot_durations;
+	report->conn_evt_counter = sys_le16_to_cpu(evt->conn_evt_counter);
+	report->sample_count = evt->sample_count;
+	report->sample = evt->sample;
+
+	*conn_to_report = conn;
+
+	return 0;
+}
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 /* @brief Function initializes Direction Finding in Host
