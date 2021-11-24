@@ -20,74 +20,14 @@ LOG_MODULE_REGISTER(sx127x, CONFIG_LORA_LOG_LEVEL);
 #include <sx1272/sx1272.h>
 
 #define DT_DRV_COMPAT semtech_sx1272
-
-#define SX127xCheckRfFrequency SX1272CheckRfFrequency
-#define SX127xGetBoardTcxoWakeupTime SX1272GetBoardTcxoWakeupTime
-#define SX127xSetAntSwLowPower SX1272SetAntSwLowPower
-#define SX127xSetBoardTcxo SX1272SetBoardTcxo
-#define SX127xSetAntSw SX1272SetAntSw
-#define SX127xReset SX1272Reset
-#define SX127xIoIrqInit SX1272IoIrqInit
-#define SX127xWriteBuffer SX1272WriteBuffer
-#define SX127xReadBuffer SX1272ReadBuffer
-#define SX127xSetRfTxPower SX1272SetRfTxPower
-#define SX127xGetDio1PinState SX1272GetDio1PinState
-#define SX127xInit SX1272Init
-#define SX127xGetStatus SX1272GetStatus
-#define SX127xSetModem SX1272SetModem
-#define SX127xSetChannel SX1272SetChannel
-#define SX127xIsChannelFree SX1272IsChannelFree
-#define SX127xRandom SX1272Random
-#define SX127xSetRxConfig SX1272SetRxConfig
-#define SX127xSetTxConfig SX1272SetTxConfig
-#define SX127xGetTimeOnAir SX1272GetTimeOnAir
-#define SX127xSend SX1272Send
-#define SX127xSetSleep SX1272SetSleep
-#define SX127xSetStby SX1272SetStby
-#define SX127xSetRx SX1272SetRx
-#define SX127xWrite SX1272Write
-#define SX127xRead SX1272Read
-#define SX127xSetMaxPayloadLength SX1272SetMaxPayloadLength
-#define SX127xSetPublicNetwork SX1272SetPublicNetwork
-#define SX127xGetWakeupTime SX1272GetWakeupTime
-#define SX127xSetTxContinuousWave SX1272SetTxContinuousWave
+#define SX127X_FUNC(func) SX1272##func
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1276)
 
 #include <sx1276/sx1276.h>
 
 #define DT_DRV_COMPAT semtech_sx1276
-
-#define SX127xCheckRfFrequency SX1276CheckRfFrequency
-#define SX127xGetBoardTcxoWakeupTime SX1276GetBoardTcxoWakeupTime
-#define SX127xSetAntSwLowPower SX1276SetAntSwLowPower
-#define SX127xSetBoardTcxo SX1276SetBoardTcxo
-#define SX127xSetAntSw SX1276SetAntSw
-#define SX127xReset SX1276Reset
-#define SX127xIoIrqInit SX1276IoIrqInit
-#define SX127xWriteBuffer SX1276WriteBuffer
-#define SX127xReadBuffer SX1276ReadBuffer
-#define SX127xSetRfTxPower SX1276SetRfTxPower
-#define SX127xGetDio1PinState SX1276GetDio1PinState
-#define SX127xInit SX1276Init
-#define SX127xGetStatus SX1276GetStatus
-#define SX127xSetModem SX1276SetModem
-#define SX127xSetChannel SX1276SetChannel
-#define SX127xIsChannelFree SX1276IsChannelFree
-#define SX127xRandom SX1276Random
-#define SX127xSetRxConfig SX1276SetRxConfig
-#define SX127xSetTxConfig SX1276SetTxConfig
-#define SX127xGetTimeOnAir SX1276GetTimeOnAir
-#define SX127xSend SX1276Send
-#define SX127xSetSleep SX1276SetSleep
-#define SX127xSetStby SX1276SetStby
-#define SX127xSetRx SX1276SetRx
-#define SX127xWrite SX1276Write
-#define SX127xRead SX1276Read
-#define SX127xSetMaxPayloadLength SX1276SetMaxPayloadLength
-#define SX127xSetPublicNetwork SX1276SetPublicNetwork
-#define SX127xGetWakeupTime SX1276GetWakeupTime
-#define SX127xSetTxContinuousWave SX1276SetTxContinuousWave
+#define SX127X_FUNC(func) SX1276##func
 
 #else
 #error No SX127x instance in device tree.
@@ -218,13 +158,13 @@ static int8_t clamp_int8(int8_t x, int8_t min, int8_t max)
 	}
 }
 
-bool SX127xCheckRfFrequency(uint32_t frequency)
+bool SX127X_FUNC(CheckRfFrequency)(uint32_t frequency)
 {
 	/* TODO */
 	return true;
 }
 
-uint32_t SX127xGetBoardTcxoWakeupTime(void)
+uint32_t SX127X_FUNC(GetBoardTcxoWakeupTime)(void)
 {
 	return TCXO_POWER_STARTUP_DELAY_MS;
 }
@@ -257,7 +197,7 @@ static inline void sx127x_pa_boost_enable(int val)
 #endif
 }
 
-void SX127xSetAntSwLowPower(bool low_power)
+void SX127X_FUNC(SetAntSwLowPower)(bool low_power)
 {
 	if (low_power) {
 		/* force inactive (low power) state of all antenna paths */
@@ -273,7 +213,7 @@ void SX127xSetAntSwLowPower(bool low_power)
 	}
 }
 
-void SX127xSetBoardTcxo(uint8_t state)
+void SX127X_FUNC(SetBoardTcxo)(uint8_t state)
 {
 #if DT_INST_NODE_HAS_PROP(0, tcxo_power_gpios)
 	bool enable = state;
@@ -296,7 +236,7 @@ void SX127xSetBoardTcxo(uint8_t state)
 #endif
 }
 
-void SX127xSetAntSw(uint8_t opMode)
+void SX127X_FUNC(SetAntSw)(uint8_t opMode)
 {
 	switch (opMode) {
 	case RFLR_OPMODE_TRANSMITTER:
@@ -318,9 +258,9 @@ void SX127xSetAntSw(uint8_t opMode)
 	}
 }
 
-void SX127xReset(void)
+void SX127X_FUNC(Reset)(void)
 {
-	SX127xSetBoardTcxo(true);
+	SX127X_FUNC(SetBoardTcxo)(true);
 
 	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 1);
 
@@ -353,7 +293,7 @@ static void sx127x_irq_callback(const struct device *dev,
 	}
 }
 
-void SX127xIoIrqInit(DioIrqHandler **irqHandlers)
+void SX127X_FUNC(IoIrqInit)(DioIrqHandler **irqHandlers)
 {
 	unsigned int i;
 	static struct gpio_callback callbacks[SX127X_MAX_DIO];
@@ -432,7 +372,7 @@ int sx127x_write(uint8_t reg_addr, uint8_t *data, uint8_t len)
 	return sx127x_transceive(reg_addr | BIT(7), true, data, len);
 }
 
-void SX127xWriteBuffer(uint32_t addr, uint8_t *buffer, uint8_t size)
+void SX127X_FUNC(WriteBuffer)(uint32_t addr, uint8_t *buffer, uint8_t size)
 {
 	int ret;
 
@@ -442,7 +382,7 @@ void SX127xWriteBuffer(uint32_t addr, uint8_t *buffer, uint8_t size)
 	}
 }
 
-void SX127xReadBuffer(uint32_t addr, uint8_t *buffer, uint8_t size)
+void SX127X_FUNC(ReadBuffer)(uint32_t addr, uint8_t *buffer, uint8_t size)
 {
 	int ret;
 
@@ -452,7 +392,7 @@ void SX127xReadBuffer(uint32_t addr, uint8_t *buffer, uint8_t size)
 	}
 }
 
-void SX127xSetRfTxPower(int8_t power)
+void SX127X_FUNC(SetRfTxPower)(int8_t power)
 {
 	int ret;
 	uint8_t pa_config = 0;
@@ -516,7 +456,7 @@ void SX127xSetRfTxPower(int8_t power)
 	}
 }
 
-uint32_t SX127xGetDio1PinState(void)
+uint32_t SX127X_FUNC(GetDio1PinState)(void)
 {
 #if SX127X_DIO_GPIO_LEN(0) >= 2
 	if (gpio_pin_get(dev_data.dio_dev[1], sx127x_dios[1].pin) > 0) {
@@ -529,31 +469,31 @@ uint32_t SX127xGetDio1PinState(void)
 
 /* Initialize Radio driver callbacks */
 const struct Radio_s Radio = {
-	.Init = SX127xInit,
-	.GetStatus = SX127xGetStatus,
-	.SetModem = SX127xSetModem,
-	.SetChannel = SX127xSetChannel,
-	.IsChannelFree = SX127xIsChannelFree,
-	.Random = SX127xRandom,
-	.SetRxConfig = SX127xSetRxConfig,
-	.SetTxConfig = SX127xSetTxConfig,
-	.CheckRfFrequency = SX127xCheckRfFrequency,
-	.TimeOnAir = SX127xGetTimeOnAir,
-	.Send = SX127xSend,
-	.Sleep = SX127xSetSleep,
-	.Standby = SX127xSetStby,
-	.Rx = SX127xSetRx,
-	.Write = SX127xWrite,
-	.Read = SX127xRead,
-	.WriteBuffer = SX127xWriteBuffer,
-	.ReadBuffer = SX127xReadBuffer,
-	.SetMaxPayloadLength = SX127xSetMaxPayloadLength,
-	.SetPublicNetwork = SX127xSetPublicNetwork,
-	.GetWakeupTime = SX127xGetWakeupTime,
+	.Init = SX127X_FUNC(Init),
+	.GetStatus = SX127X_FUNC(GetStatus),
+	.SetModem = SX127X_FUNC(SetModem),
+	.SetChannel = SX127X_FUNC(SetChannel),
+	.IsChannelFree = SX127X_FUNC(IsChannelFree),
+	.Random = SX127X_FUNC(Random),
+	.SetRxConfig = SX127X_FUNC(SetRxConfig),
+	.SetTxConfig = SX127X_FUNC(SetTxConfig),
+	.CheckRfFrequency = SX127X_FUNC(CheckRfFrequency),
+	.TimeOnAir = SX127X_FUNC(GetTimeOnAir),
+	.Send = SX127X_FUNC(Send),
+	.Sleep = SX127X_FUNC(SetSleep),
+	.Standby = SX127X_FUNC(SetStby),
+	.Rx = SX127X_FUNC(SetRx),
+	.Write = SX127X_FUNC(Write),
+	.Read = SX127X_FUNC(Read),
+	.WriteBuffer = SX127X_FUNC(WriteBuffer),
+	.ReadBuffer = SX127X_FUNC(ReadBuffer),
+	.SetMaxPayloadLength = SX127X_FUNC(SetMaxPayloadLength),
+	.SetPublicNetwork = SX127X_FUNC(SetPublicNetwork),
+	.GetWakeupTime = SX127X_FUNC(GetWakeupTime),
 	.IrqProcess = NULL,
 	.RxBoosted = NULL,
 	.SetRxDutyCycle = NULL,
-	.SetTxContinuousWave = SX127xSetTxContinuousWave,
+	.SetTxContinuousWave = SX127X_FUNC(SetTxContinuousWave),
 };
 
 static int sx127x_antenna_configure(void)
