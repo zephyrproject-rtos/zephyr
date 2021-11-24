@@ -139,8 +139,8 @@ static struct bt_csis *lookup_instance_by_set(
 }
 
 static int sirk_decrypt(struct bt_conn *conn,
-			const struct bt_csis_set_sirk *enc_sirk,
-			struct bt_csis_set_sirk *out_sirk)
+			const uint8_t *enc_sirk,
+			uint8_t *out_sirk)
 {
 	int err;
 	uint8_t *k;
@@ -165,7 +165,7 @@ static int sirk_decrypt(struct bt_conn *conn,
 		k = conn->le.keys->ltk.val;
 	}
 
-	err = bt_csis_sdf(k, enc_sirk->value, out_sirk->value);
+	err = bt_csis_sdf(k, enc_sirk, out_sirk);
 
 	return err;
 }
@@ -192,10 +192,10 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 			struct bt_csis_set_sirk *sirk =
 				(struct bt_csis_set_sirk *)data;
 			struct bt_csis_client_inst *client;
-			struct bt_csis_set_sirk *dst_sirk;
+			uint8_t *dst_sirk;
 
 			client = &client_insts[bt_conn_index(conn)];
-			dst_sirk = &client->set_member->sets[csis_inst->cli.idx].set_sirk;
+			dst_sirk = client->set_member->sets[csis_inst->cli.idx].set_sirk;
 
 			BT_DBG("Set SIRK %sencrypted",
 			       sirk->type == BT_CSIS_SIRK_TYPE_PLAIN
@@ -209,7 +209,7 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 					BT_HEXDUMP_DBG(sirk->value,
 						       sizeof(*sirk),
 						       "Encrypted Set SIRK");
-					err = sirk_decrypt(conn, sirk,
+					err = sirk_decrypt(conn, sirk->value,
 							   dst_sirk);
 					if (err != 0) {
 						BT_ERR("Could not decrypt "
@@ -220,10 +220,10 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 					return BT_GATT_ITER_CONTINUE;
 				}
 			} else {
-				(void)memcpy(dst_sirk, data, length);
+				(void)memcpy(dst_sirk, sirk->value, sizeof(sirk->value));
 			}
 
-			BT_HEXDUMP_DBG(dst_sirk->value, sizeof(dst_sirk->value),
+			BT_HEXDUMP_DBG(dst_sirk, BT_CSIS_SET_SIRK_SIZE,
 				       "Set SIRK");
 
 			/* TODO: Notify app */
@@ -712,11 +712,11 @@ static uint8_t csis_client_discover_sets_read_set_size_cb(struct bt_conn *conn,
 static int parse_sirk(struct bt_csis_client_set_member *member,
 		      const void *data, uint16_t length)
 {
-	struct bt_csis_set_sirk *set_sirk;
+	uint8_t *set_sirk;
 
-	set_sirk = &member->sets[cur_inst->cli.idx].set_sirk;
+	set_sirk = member->sets[cur_inst->cli.idx].set_sirk;
 
-	if (length == sizeof(*set_sirk)) {
+	if (length == sizeof(struct bt_csis_set_sirk)) {
 		struct bt_csis_set_sirk *sirk =
 			(struct bt_csis_set_sirk *)data;
 
@@ -729,7 +729,7 @@ static int parse_sirk(struct bt_csis_client_set_member *member,
 
 				BT_HEXDUMP_DBG(sirk->value, sizeof(sirk->value),
 					       "Encrypted Set SIRK");
-				err = sirk_decrypt(member->conn, sirk,
+				err = sirk_decrypt(member->conn, sirk->value,
 						   set_sirk);
 				if (err != 0) {
 					BT_ERR("Could not decrypt "
@@ -742,11 +742,11 @@ static int parse_sirk(struct bt_csis_client_set_member *member,
 				return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
 			}
 		} else {
-			(void)memcpy(set_sirk, data, length);
+			(void)memcpy(set_sirk, sirk->value, sizeof(sirk->value));
 		}
 
 		if (set_sirk != NULL) {
-			BT_HEXDUMP_DBG(set_sirk->value, sizeof(set_sirk->value),
+			BT_HEXDUMP_DBG(set_sirk, BT_CSIS_SET_SIRK_SIZE,
 				       "Set SIRK");
 		}
 	} else {

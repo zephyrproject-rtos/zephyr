@@ -23,6 +23,11 @@ struct csis_pending_notifications {
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
 
+struct bt_csis_set_sirk {
+	uint8_t type;
+	uint8_t value[BT_CSIS_SET_SIRK_SIZE];
+} __packed;
+
 struct bt_csis_client_svc_inst {
 	uint8_t rank;
 	uint8_t set_lock;

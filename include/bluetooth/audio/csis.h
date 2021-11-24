@@ -192,13 +192,8 @@ int bt_csis_advertise(struct bt_csis *csis, bool enable);
  */
 int bt_csis_lock(struct bt_csis *csis, bool lock, bool force);
 
-struct bt_csis_set_sirk {
-	uint8_t type;
-	uint8_t value[BT_CSIS_SET_SIRK_SIZE];
-} __packed;
-
 struct bt_csis_client_set {
-	struct bt_csis_set_sirk set_sirk;
+	uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE];
 	uint8_t set_size;
 	uint8_t rank;
 	struct bt_csis *csis;
