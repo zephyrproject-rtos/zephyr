@@ -42,6 +42,11 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING
 zephyr_library_compile_definitions_ifdef(CONFIG_NRF_TRACE_PORT
                                  ENABLE_TRACE)
 
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP
+                                 NRF_SKIP_FICR_NS_COPY_TO_RAM)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160
+                                 NRF_SKIP_FICR_NS_COPY_TO_RAM)
+
 # Connect Kconfig compilation option for Non-Secure software with option required by MDK/nrfx
 zephyr_compile_definitions_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE NRF_TRUSTZONE_NONSECURE)
 zephyr_compile_definitions_ifdef(CONFIG_LOG_BACKEND_SWO ENABLE_SWO)
