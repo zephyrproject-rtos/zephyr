@@ -129,17 +129,6 @@ static struct sx127x_data {
 	struct k_work dio_work[SX127X_MAX_DIO];
 } dev_data;
 
-static int8_t clamp_int8(int8_t x, int8_t min, int8_t max)
-{
-	if (x < min) {
-		return min;
-	} else if (x > max) {
-		return max;
-	} else {
-		return x;
-	}
-}
-
 bool SX127X_FUNC(CheckRfFrequency)(uint32_t frequency)
 {
 	/* TODO */
@@ -389,7 +378,7 @@ void SX127X_FUNC(SetRfTxPower)(int8_t power)
 	pa_dac &= RF_PADAC_20DBM_MASK;
 
 	if (SX127X_PA_OUTPUT(power) == SX127X_PA_BOOST) {
-		power = clamp_int8(power, 2, 20);
+		power = CLAMP(power, 2, 20);
 
 		pa_config |= RF_PACONFIG_PASELECT_PABOOST;
 		if (power > 17) {
@@ -401,7 +390,7 @@ void SX127X_FUNC(SetRfTxPower)(int8_t power)
 		}
 	} else {
 #ifdef RF_PACONFIG_MAX_POWER_MASK
-		power = clamp_int8(power, -4, 15);
+		power = CLAMP(power, -4, 15);
 
 		pa_dac |= RF_PADAC_20DBM_OFF;
 		if (power > 0) {
@@ -413,7 +402,7 @@ void SX127X_FUNC(SetRfTxPower)(int8_t power)
 			pa_config |= (power + 4) & ~RF_PACONFIG_OUTPUTPOWER_MASK;
 		}
 #else
-		power = clamp_int8(power, -1, 14);
+		power = CLAMP(power, -1, 14);
 
 		pa_dac |= RF_PADAC_20DBM_OFF;
 		pa_config |= (power + 1) & ~RF_PACONFIG_OUTPUTPOWER_MASK;
