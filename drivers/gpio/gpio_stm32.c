@@ -609,6 +609,7 @@ static int gpio_stm32_pm_action(const struct device *dev,
 static int gpio_stm32_init(const struct device *dev)
 {
 	struct gpio_stm32_data *data = dev->data;
+	int ret;
 
 	data->dev = dev;
 
@@ -619,12 +620,16 @@ static int gpio_stm32_init(const struct device *dev)
 	LL_PWR_EnableVddIO2();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif
+	/* enable port clock (if runtime PM is not enabled) */
+	ret = gpio_stm32_clock_request(dev, !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
+	if (ret < 0) {
+		return ret;
+	}
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	return pm_device_runtime_enable(dev);
-#else
-	return gpio_stm32_clock_request(dev, true);
-#endif
+	pm_device_runtime_init_suspended(dev);
+	(void)pm_device_runtime_enable(dev);
+
+	return 0;
 }
 
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
