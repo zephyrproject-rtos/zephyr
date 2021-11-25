@@ -334,16 +334,6 @@ void radio_df_reset(void)
 	radio_df_ant_switch_pattern_clear();
 }
 
-void radio_switch_complete_and_phy_end_disable(void)
-{
-#if defined(CONFIG_BT_CTLR_TIFS_HW)
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
-#else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE);
-	hal_radio_sw_switch_disable();
-#endif /* CONFIG_BT_CTLR_TIFS_HW */
-}
-
 void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 					      uint8_t phy_next, uint8_t flags_next)
 {
