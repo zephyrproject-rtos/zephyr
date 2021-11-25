@@ -230,11 +230,6 @@ jobs:
           name: Unit Test Results (Subset ${{ matrix.subset }})
           path: twister-out/twister.xml
 
-      - name: Cleanup
-        if: always()
-        run: |
-          git clean -dxf
-
   twister-test-results:
     name: "Publish Unit Tests Results"
     needs: twister-build
