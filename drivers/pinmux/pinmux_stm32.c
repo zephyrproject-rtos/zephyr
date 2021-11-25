@@ -92,7 +92,7 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
 static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 {
 	const struct device *port_device;
-	int ret = 0;
+	int ret;
 
 	if (STM32_PORT(pin) >= STM32_PORTS_MAX) {
 		return -EINVAL;
@@ -104,20 +104,14 @@ static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = pm_device_runtime_get(port_device);
-	if (ret != 0) {
+	if (ret < 0) {
 		return ret;
 	}
-#endif
 
 	gpio_stm32_configure(port_device, STM32_PIN(pin), func, altf);
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = pm_device_runtime_put(port_device);
-#endif
-
-	return ret;
+	return pm_device_runtime_put(port_device);
 }
 
 /**
