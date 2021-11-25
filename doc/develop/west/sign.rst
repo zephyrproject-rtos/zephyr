@@ -26,8 +26,8 @@ from the :file:`zephyrproject` workspace you created in the
 
 .. code-block:: console
 
-   west build -b YOUR_BOARD -s bootloader/mcuboot/boot/zephyr -d build-mcuboot
-   west build -b YOUR_BOARD -s zephyr/samples/hello_world -d build-hello-signed -- \
+   west build -b YOUR_BOARD bootloader/mcuboot/boot/zephyr -d build-mcuboot
+   west build -b YOUR_BOARD zephyr/samples/hello_world -d build-hello-signed -- \
         -DCONFIG_BOOTLOADER_MCUBOOT=y \
         -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-rsa-2048.pem\"
 

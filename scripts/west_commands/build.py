@@ -100,8 +100,6 @@ class Build(Forceable):
 
         parser.add_argument('-b', '--board',
                         help='board to build for with optional board revision')
-        # Hidden option for backwards compatibility
-        parser.add_argument('-s', '--source-dir', help=argparse.SUPPRESS)
         parser.add_argument('-d', '--build-dir',
                             help='build directory to create or use')
         self.add_force_arg(parser)
@@ -137,17 +135,10 @@ class Build(Forceable):
         self.config_board = config_get('board', None)
         log.dbg('args: {} remainder: {}'.format(args, remainder),
                 level=log.VERBOSE_EXTREME)
-        # Store legacy -s option locally
-        source_dir = self.args.source_dir
         self._parse_remainder(remainder)
         # Parse testcase.yaml or sample.yaml files for additional options.
         if self.args.test_item:
             self._parse_test_item()
-        if source_dir:
-            if self.args.source_dir:
-                log.die("source directory specified twice:({} and {})".format(
-                                            source_dir, self.args.source_dir))
-            self.args.source_dir = source_dir
         log.dbg('source_dir: {} cmake_opts: {}'.format(self.args.source_dir,
                                                        self.args.cmake_opts),
                 level=log.VERBOSE_EXTREME)
