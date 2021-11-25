@@ -5865,7 +5865,11 @@ no_ext_hdr:
 			/* Detect the scan response in the list of node_rx */
 			if (node_rx_curr->hdr.rx_ftr.scan_rsp) {
 				node_rx_scan_data = node_rx_curr;
-				sec_phy_scan = sec_phy_curr;
+				if (sec_phy_curr) {
+					sec_phy_scan = sec_phy_curr;
+				} else {
+					sec_phy_scan = sec_phy;
+				}
 				scan_data_len = data_len_curr;
 				scan_data = data_curr;
 			}
