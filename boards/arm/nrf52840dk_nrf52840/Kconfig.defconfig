@@ -11,4 +11,7 @@ config BOARD
 config BT_CTLR
 	default BT
 
+config USE_DT_CODE_PARTITION
+	default y
+
 endif # BOARD_NRF52840DK_NRF52840
