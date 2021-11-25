@@ -627,6 +627,7 @@ __comp_west_build()
 
 	local build_args_opts="
 		--board -b
+		--snippet -s
 		--build-dir -d
 		--target -t
 		--pristine -p
