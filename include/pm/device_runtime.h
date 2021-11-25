@@ -131,6 +131,25 @@ int pm_device_runtime_put_async(const struct device *dev);
  */
 bool pm_device_runtime_is_enabled(const struct device *dev);
 
+/**
+ * @brief Initialize a device state to #PM_DEVICE_STATE_SUSPENDED.
+ *
+ * By default device state is initialized to #PM_DEVICE_STATE_ACTIVE. In
+ * general, this makes sense because the device initialization function will
+ * resume and configure a device, leaving it operational. However, when device
+ * runtime PM is enabled, the device may not be resumed and the init function
+ * will just enable device runtime PM. If that is the case, this function can be
+ * used to set the initial device state to #PM_DEVICE_STATE_SUSPENDED.
+ *
+ * @param dev Device instance.
+ */
+static inline void pm_device_runtime_init_suspended(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	pm->state = PM_DEVICE_STATE_SUSPENDED;
+}
+
 #else
 static inline int pm_device_runtime_enable(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_runtime_disable(const struct device *dev) { return -ENOSYS; }
@@ -138,6 +157,7 @@ static inline int pm_device_runtime_get(const struct device *dev) { return 0; }
 static inline int pm_device_runtime_put(const struct device *dev) { return 0; }
 static inline int pm_device_runtime_put_async(const struct device *dev) { return 0; }
 static inline bool pm_device_runtime_is_enabled(const struct device *dev) { return false; }
+static inline void pm_device_runtime_init_suspended(const struct device *dev) { }
 #endif
 
 /** @} */
