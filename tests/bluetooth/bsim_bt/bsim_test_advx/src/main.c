@@ -701,7 +701,7 @@ static void test_advx_main(void)
 	}
 
 	printk("enabling periodic...");
-	err = ll_adv_sync_enable(handle, 1);
+	err = ll_adv_sync_enable(handle, BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE);
 	if (err) {
 		goto exit;
 	}
@@ -795,7 +795,9 @@ static void test_advx_main(void)
 	k_sleep(K_MSEC(1000));
 
 	printk("enabling periodic...");
-	err = ll_adv_sync_enable(handle, 1);
+	err = ll_adv_sync_enable(handle,
+				 (BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE |
+				  BT_HCI_LE_SET_PER_ADV_ENABLE_ADI));
 	if (err) {
 		goto exit;
 	}
@@ -972,7 +974,7 @@ static void test_advx_main(void)
 	printk("success.\n");
 
 	printk("enabling periodic...");
-	err = ll_adv_sync_enable(handle, 1);
+	err = ll_adv_sync_enable(handle, BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE);
 	if (err) {
 		goto exit;
 	}
