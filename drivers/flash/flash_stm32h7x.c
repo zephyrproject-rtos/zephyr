@@ -449,6 +449,11 @@ static void flash_stm32h7_flush_caches(const struct device *dev,
 				       off_t offset, size_t len)
 {
 	ARG_UNUSED(dev);
+
+	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
+		return; /* Cache not enabled */
+	}
+
 	SCB_InvalidateDCache_by_Addr((uint32_t *)(CONFIG_FLASH_BASE_ADDRESS
 						  + offset), len);
 }
