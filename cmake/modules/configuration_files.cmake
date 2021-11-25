@@ -73,6 +73,24 @@ elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj.conf)
   set(CONF_FILE_INCLUDE_FRAGMENTS true)
 endif()
 
+# Append any .conf files from snippets
+if(DEFINED SNIPPETS)
+  message(STATUS "Snippets: ${SNIPPETS}")
+  # Convert from space-separated snippets into snippet list
+  string(REPLACE " " ";" SNIPPETS_RAW_LIST "${SNIPPETS}")
+  # Search for (optional) ${SNIPPET}.conf files
+  foreach(SNIPPET IN LISTS SNIPPETS_RAW_LIST)
+    # Application level board snippets have precedence
+    if(EXISTS ${APPLICATION_SOURCE_DIR}/boards/${BOARD}/snippets/${SNIPPET}.conf)
+      string(APPEND CONF_FILE " ${APPLICATION_SOURCE_DIR}/boards/${BOARD}/snippets/${SNIPPET}.conf")
+      set(CONF_FILE_INCLUDE_FRAGMENTS true)
+    elseif(EXISTS ${BOARD_DIR}/snippets/${SNIPPET}.conf)
+      string(APPEND CONF_FILE " ${BOARD_DIR}/snippets/${SNIPPET}.conf")
+      set(CONF_FILE_INCLUDE_FRAGMENTS true)
+    endif()
+  endforeach()
+endif()
+
 if(CONF_FILE_INCLUDE_FRAGMENTS)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE BUILD ${CONF_FILE_BUILD_TYPE})
 endif()
@@ -107,6 +125,22 @@ build the application using the DT configuration settings specified in an \
 alternate .overlay file using this parameter. These settings will override the \
 settings in the board's .dts file. Multiple files may be listed, e.g. \
 DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
+
+if(DEFINED SNIPPETS)
+  # Search for (required) ${SNIPPET}.overlay and (optional) ${SNIPPET}.cmake files
+  foreach(SNIPPET IN LISTS SNIPPETS_RAW_LIST)
+    # Application level board snippets have precedence
+    if(EXISTS ${APPLICATION_SOURCE_DIR}/boards/${BOARD}/snippets/${SNIPPET}.overlay)
+      string(APPEND DTC_OVERLAY_FILE " ${APPLICATION_SOURCE_DIR}/boards/${BOARD}/snippets/${SNIPPET}.overlay")
+      include(${APPLICATION_SOURCE_DIR}/boards/${BOARD}/snippets/${SNIPPET}.cmake OPTIONAL NO_POLICY_SCOPE)
+    elseif(EXISTS ${BOARD_DIR}/snippets/${SNIPPET}.overlay)
+      string(APPEND DTC_OVERLAY_FILE " ${BOARD_DIR}/snippets/${SNIPPET}.overlay")
+      include(${BOARD_DIR}/snippets/${SNIPPET}.cmake OPTIONAL NO_POLICY_SCOPE)
+    else()
+      message(FATAL_ERROR "Snippet ${SNIPPET} does not exist in ${APPLICATION_SOURCE_DIR}/boards/${BOARD}/snippets or ${BOARD_DIR}/snippets")
+    endif()
+  endforeach()
+endif()
 
 # The DTC_OVERLAY_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
