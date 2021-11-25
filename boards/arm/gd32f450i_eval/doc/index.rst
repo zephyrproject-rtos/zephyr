@@ -59,6 +59,12 @@ The board configuration supports the following hardware features:
    * - Peripheral
      - Kconfig option
      - Devicetree compatible
+   * - EXTI
+     - :kconfig:`CONFIG_GD32_EXTI`
+     - :dtcompatible:`gd,gd32-exti`
+   * - GPIO
+     - :kconfig:`CONFIG_GPIO`
+     - :dtcompatible:`gd,gd32-gpio`
    * - NVIC
      - N/A
      - :dtcompatible:`arm,v7m-nvic`
