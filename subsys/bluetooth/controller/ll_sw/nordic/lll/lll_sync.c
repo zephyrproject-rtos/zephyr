@@ -173,13 +173,9 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  lll_aux->chan, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
-
-		radio_switch_complete_and_phy_end_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-	{
-		radio_switch_complete_and_disable();
 	}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	radio_switch_complete_and_disable();
 }
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
@@ -281,14 +277,13 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  chan_idx, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
-
-		radio_switch_complete_and_phy_end_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	{
 		radio_df_cte_inline_set_enabled(false);
-		radio_switch_complete_and_disable();
 	}
+
+	radio_switch_complete_and_disable();
 
 	/* RSSI enable must be called after radio_switch_XXX function because it clears
 	 * RADIO->SHORTS register, thus disables all other shortcuts.
@@ -342,13 +337,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  chan_idx, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
-
-		radio_switch_complete_and_phy_end_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-	{
-		radio_switch_complete_and_disable();
 	}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+	radio_switch_complete_and_disable();
 
 	/* RSSI enable must be called after radio_switch_XXX function because it clears
 	 * RADIO->SHORTS register, thus disables all other shortcuts.
@@ -549,13 +541,9 @@ static void isr_aux_setup(void *param)
 	if (cfg->is_enabled && is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD);
-
-		radio_switch_complete_and_phy_end_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-	{
-		radio_switch_complete_and_disable();
 	}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	radio_switch_complete_and_disable();
 
 	/* Setup radio rx on micro second offset. Note that radio_end_us stores
 	 * PDU start time in this case.
