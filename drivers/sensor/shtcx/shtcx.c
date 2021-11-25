@@ -27,10 +27,10 @@ static const uint16_t measure_cmd[2][2] = {
 
 /* measure_wait_us[shtcx_chip][MEASURE_MODE] */
 static const uint16_t measure_wait_us[2][2] = {
-	/* shtc3: 12.1ms, 0.8ms */
-	{ 1210, 800 }, /* shtc3 */
 	/* shtc1: 14.4ms, 0.94ms */
 	{ 14400, 940 }, /* shtc1 */
+	/* shtc3: 12.1ms, 0.8ms */
+	{ 1210, 800 }, /* shtc3 */
 };
 
 /*
@@ -176,7 +176,7 @@ static int shtcx_channel_get(const struct device *dev,
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		shtcx_temperature_from_raw(data->sample.temp, val);
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
-		shtcx_humidity_from_raw(data->sample.temp, val);
+		shtcx_humidity_from_raw(data->sample.humidity, val);
 	} else {
 		return -ENOTSUP;
 	}
