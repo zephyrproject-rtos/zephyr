@@ -36,13 +36,13 @@ static void test_api_setup(void)
 {
 	int ret;
 
-	/* make sure API is not usable (runtime PM disabled) */
+	/* check API always returns 0 when runtime PM is disabled */
 	ret = pm_device_runtime_get(dev);
-	zassert_equal(ret, -ENOTSUP, NULL);
+	zassert_equal(ret, 0, NULL);
 	ret = pm_device_runtime_put(dev);
-	zassert_equal(ret, -ENOTSUP, NULL);
+	zassert_equal(ret, 0, NULL);
 	ret = pm_device_runtime_put_async(dev);
-	zassert_equal(ret, -ENOTSUP, NULL);
+	zassert_equal(ret, 0, NULL);
 
 	/* enable runtime PM */
 	ret = pm_device_runtime_enable(dev);
