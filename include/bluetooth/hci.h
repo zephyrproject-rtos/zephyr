@@ -1375,6 +1375,9 @@ struct bt_hci_cp_le_set_per_adv_data {
 	uint8_t  data[251];
 } __packed;
 
+#define BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE     BIT(0)
+#define BT_HCI_LE_SET_PER_ADV_ENABLE_ADI        BIT(1)
+
 #define BT_HCI_OP_LE_SET_PER_ADV_ENABLE         BT_OP(BT_OGF_LE, 0x0040)
 struct bt_hci_cp_le_set_per_adv_enable {
 	uint8_t  enable;
