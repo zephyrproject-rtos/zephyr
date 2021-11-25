@@ -8,5 +8,6 @@ Device Management
 
     mcumgr.rst
     mcumgr_backporting.rst
+    smp_protocol.rst
     dfu.rst
     ota.rst

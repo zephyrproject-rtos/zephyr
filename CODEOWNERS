@@ -188,6 +188,8 @@
 /CMakeLists.txt                           @tejlmand @nashif
 /doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
+/doc/guides/device_mgmt/smp_protocol.rst  @de-nordic
+/doc/guides/device_mgmt/smp_groups/       @de-nordic
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
 /doc/guides/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
