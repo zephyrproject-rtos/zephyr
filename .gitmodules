@@ -1,0 +1,3 @@
+[submodule "drivers/sensor/as5x47/lib/AS5047P"]
+	path = drivers/sensor/as5x47/lib/AS5047P
+	url = https://github.com/teamspatzenhirn/AS5047P.git
