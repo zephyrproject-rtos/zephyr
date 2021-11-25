@@ -114,7 +114,8 @@ static inline uint32_t stm32_pinval_get(int pin)
 /**
  * @brief Configure the hardware.
  */
-void gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
+static void gpio_stm32_configure_raw(const struct device *dev, int pin,
+				     int conf, int altf)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -221,6 +222,20 @@ void gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 #endif  /* CONFIG_SOC_SERIES_STM32F1X */
 
+}
+
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
+{
+	int ret;
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	gpio_stm32_configure_raw(dev, pin, conf, altf);
+
+	return pm_device_runtime_put(dev);
 }
 
 /**
@@ -477,7 +492,7 @@ static int gpio_stm32_config(const struct device *dev,
 		}
 	}
 
-	gpio_stm32_configure(dev, pin, pincfg, 0);
+	gpio_stm32_configure_raw(dev, pin, pincfg, 0);
 
 	/* Release clock only if configuration doesn't require bank writes */
 	if ((flags & GPIO_OUTPUT) == 0) {
