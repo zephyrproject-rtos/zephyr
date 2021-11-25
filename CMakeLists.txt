@@ -1479,12 +1479,14 @@ endif()
 
 # Cleanup intermediate files
 if(CONFIG_CLEANUP_INTERMEDIATE_FILES)
+  foreach(index RANGE ${ZEPHYR_CURRENT_LINKER_PASS})
+    # Those files can be very large in some cases, delete them as we do not need them.
     list(APPEND
       post_build_commands
       COMMAND
-      # This file can be very large in some cases, delete it as we do not need it.
-      ${CMAKE_COMMAND} -E remove ${ZEPHYR_LINK_STAGE_EXECUTABLE}.elf
+      ${CMAKE_COMMAND} -E remove zephyr_pre${index}.elf
       )
+  endforeach()
 endif()
 
 if(CONFIG_BUILD_OUTPUT_S19)
