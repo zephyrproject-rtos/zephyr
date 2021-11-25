@@ -201,16 +201,6 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 #endif /* CONFIG_SPI_ASYNC */
 }
 
-static inline
-gpio_dt_flags_t spi_context_cs_active_level(struct spi_context *ctx)
-{
-	if (ctx->config->operation & SPI_CS_ACTIVE_HIGH) {
-		return GPIO_ACTIVE_HIGH;
-	}
-
-	return GPIO_ACTIVE_LOW;
-}
-
 static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 {
 	int ret;
@@ -222,11 +212,6 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 				cs_gpio->port->name, cs_gpio->pin);
 			return -ENODEV;
 		}
-
-		/* Validate CS active levels are equivalent */
-		__ASSERT(spi_context_cs_active_level(ctx) ==
-			 (cs_gpio->dt_flags & GPIO_ACTIVE_LOW),
-			 "Devicetree and spi_context CS levels are not equal");
 
 		ret = gpio_pin_configure_dt(cs_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
