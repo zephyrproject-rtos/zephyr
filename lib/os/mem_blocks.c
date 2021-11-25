@@ -5,6 +5,7 @@
  */
 
 #include <zephyr.h>
+#include <sys/__assert.h>
 #include <sys/check.h>
 #include <sys/mem_blocks.h>
 #include <sys/util.h>
@@ -136,6 +137,108 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 		if (r != 0) {
 			ret = r;
 		}
+	}
+
+out:
+	return ret;
+}
+
+void sys_multi_mem_blocks_init(sys_multi_mem_blocks_t *group,
+			       sys_multi_mem_blocks_choice_fn_t choice_fn)
+{
+	group->num_allocators = 0;
+	group->choice_fn = choice_fn;
+}
+
+void sys_multi_mem_blocks_add_allocator(sys_multi_mem_blocks_t *group,
+					sys_mem_blocks_t *alloc)
+{
+	__ASSERT_NO_MSG(group->num_allocators < ARRAY_SIZE(group->allocators));
+
+	group->allocators[group->num_allocators++] = alloc;
+}
+
+int sys_multi_mem_blocks_alloc(sys_multi_mem_blocks_t *group,
+			       void *cfg, size_t count,
+			       void **out_blocks,
+			       size_t *blk_size)
+{
+	sys_mem_blocks_t *allocator;
+	int ret = 0;
+
+	if ((group == NULL) || (out_blocks == NULL)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (count == 0) {
+		if (blk_size != NULL) {
+			*blk_size = 0;
+		}
+		goto out;
+	}
+
+	allocator = group->choice_fn(group, cfg);
+	if (allocator == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (count > allocator->num_blocks) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = sys_mem_blocks_alloc(allocator, count, out_blocks);
+
+	if ((ret == 0) && (blk_size != NULL)) {
+		*blk_size = BIT(allocator->blk_sz_shift);
+	}
+
+out:
+	return ret;
+}
+
+int sys_multi_mem_blocks_free(sys_multi_mem_blocks_t *group,
+			      size_t count, void **in_blocks)
+{
+	int i;
+	int ret = 0;
+	sys_mem_blocks_t *allocator = NULL;
+
+	if ((group == NULL) || (in_blocks == NULL)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (count == 0) {
+		goto out;
+	}
+
+	for (i = 0; i < group->num_allocators; i++) {
+		/*
+		 * Find out which allocator the allocated blocks
+		 * belong to.
+		 */
+
+		uint8_t *start, *end;
+		sys_mem_blocks_t *one_alloc;
+
+		one_alloc = group->allocators[i];
+		start = one_alloc->buffer;
+		end = start + (BIT(one_alloc->blk_sz_shift) * one_alloc->num_blocks);
+
+		if (((uint8_t *)in_blocks[0] >= start) &&
+		    ((uint8_t *)in_blocks[0] < end)) {
+			allocator = one_alloc;
+			break;
+		}
+	}
+
+	if (allocator != NULL) {
+		ret = sys_mem_blocks_free(allocator, count, in_blocks);
+	} else {
+		ret = -EINVAL;
 	}
 
 out:

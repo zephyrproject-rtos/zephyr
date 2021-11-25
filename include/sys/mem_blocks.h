@@ -24,6 +24,8 @@ extern "C" {
 #include <math/ilog2.h>
 #include <sys/bitarray.h>
 
+#define MAX_MULTI_ALLOCATORS 8
+
 /**
  * @defgroup mem_blocks_apis Memory Blocks APIs
  * @{
@@ -35,11 +37,44 @@ extern "C" {
 struct sys_mem_blocks;
 
 /**
+ * @brief Multi Memory Blocks Allocator
+ */
+struct sys_multi_mem_blocks;
+
+/**
  * @typedef sys_mem_blocks_t
  *
  * @brief Memory Blocks Allocator
  */
 typedef struct sys_mem_blocks sys_mem_blocks_t;
+
+/**
+ * @typedef sys_multi_mem_blocks_t
+ *
+ * @brief Multi Memory Blocks Allocator
+ */
+typedef struct sys_multi_mem_blocks sys_multi_mem_blocks_t;
+
+/**
+ * @brief Multi memory blocks allocator choice function
+ *
+ * This is a user-provided functions whose responsibility is selecting
+ * a specific memory blocks allocator based on the opaque cfg value,
+ * which is specified by the user as an argument to
+ * sys_multi_mem_blocks_alloc(). The callback returns a pointer to
+ * the chosen allocator where the allocation is performed.
+ *
+ * NULL may be returned, which will cause the
+ * allocation to fail and a -EINVAL reported to the calling code.
+ *
+ * @param group Multi memory blocks allocator structure.
+ * @param cfg   An opaque user-provided value. It may be interpreted in
+ *              any way by the application.
+ *
+ * @return A pointer to the chosen allocator, or NULL if none is chosen.
+ */
+typedef sys_mem_blocks_t *(*sys_multi_mem_blocks_choice_fn_t)
+	(struct sys_multi_mem_blocks *group, void *cfg);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -58,6 +93,13 @@ struct sys_mem_blocks {
 	/* Bitmap of allocated blocks */
 	sys_bitarray_t *bitmap;
 
+};
+
+struct sys_multi_mem_blocks {
+	/* Number of allocators in this group */
+	int num_allocators;
+	sys_multi_mem_blocks_choice_fn_t choice_fn;
+	sys_mem_blocks_t *allocators[MAX_MULTI_ALLOCATORS];
 };
 
 /**
@@ -192,6 +234,76 @@ int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
  */
 int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 			void **in_blocks);
+
+/**
+ * @brief Initialize multi memory blocks allocator group
+ *
+ * Initialize a sys_multi_mem_block struct with the specified choice
+ * function. Note that individual allocator must be added later with
+ * sys_multi_mem_blocks_add_allocator.
+ *
+ * @param group     Multi memory blocks allocator structure.
+ * @param choice_fn A sys_multi_mem_blocks_choice_fn_t callback used to
+ *                  select the allocator to be used at allocation time
+ */
+void sys_multi_mem_blocks_init(sys_multi_mem_blocks_t *group,
+			       sys_multi_mem_blocks_choice_fn_t choice_fn);
+
+/**
+ * @brief Add an allocator to an allocator group
+ *
+ * This adds a known allocator to an existing multi memory blocks
+ * allocator group.
+ *
+ * @param group Multi memory blocks allocator structure.
+ * @param alloc Allocator to add
+ */
+void sys_multi_mem_blocks_add_allocator(sys_multi_mem_blocks_t *group,
+					sys_mem_blocks_t *alloc);
+
+/**
+ * @brief Allocate memory from multi memory blocks allocator group
+ *
+ * Just as for sys_mem_blocks_alloc(), allocates multiple blocks of
+ * memory. Takes an opaque configuration pointer passed to the choice
+ * function, which is used by integration code to choose an allocator.
+ *
+ * @param[in]  group      Multi memory blocks allocator structure.
+ * @param[in]  cfg        Opaque configuration parameter,
+ *                        as for sys_multi_mem_blocks_choice_fn_t
+ * @param[in]  count      Number of blocks to allocate
+ * @param[out] out_blocks Output array to be populated by pointers to
+ *                        the memory blocks. It must have at least
+ *                        @p count elements.
+ * @param[out] blk_size   If not NULL, output the block size of
+ *                        the chosen allocator.
+ *
+ * @retval 0       Successful
+ * @retval -EINVAL Invalid argument supplied, or no allocator chosen.
+ * @retval -ENOMEM Not enough blocks for allocation.
+ */
+int sys_multi_mem_blocks_alloc(sys_multi_mem_blocks_t *group,
+			       void *cfg, size_t count,
+			       void **out_blocks,
+			       size_t *blk_size);
+
+/**
+ * @brief Free memory allocated from multi memory blocks allocator group
+ *
+ * Free previous allocated memory blocks from sys_multi_mem_blocks_alloc().
+ *
+ * Note that all blocks in @p in_blocks must be from the same allocator.
+ *
+ * @param[in] group     Multi memory blocks allocator structure.
+ * @param[in] count     Number of blocks to free.
+ * @param[in] in_blocks Input array of pointers to the memory blocks.
+ *
+ * @retval 0       Successful
+ * @retval -EINVAL Invalid argument supplied, or no allocator chosen.
+ * @retval -EFAULT Invalid pointer(s) supplied.
+ */
+int sys_multi_mem_blocks_free(sys_multi_mem_blocks_t *group,
+			      size_t count, void **in_blocks);
 
 /** @} */
 
