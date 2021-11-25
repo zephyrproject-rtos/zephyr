@@ -452,7 +452,7 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-	int err = 0;
+	int err;
 	int pincfg;
 
 	/* figure out if we can map the requested GPIO
@@ -460,16 +460,14 @@ static int gpio_stm32_config(const struct device *dev,
 	 */
 	err = gpio_stm32_flags_to_conf(flags, &pincfg);
 	if (err != 0) {
-		goto exit;
+		return err;
 	}
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
 	/* Enable device clock before configuration (requires bank writes) */
 	err = pm_device_runtime_get(dev);
 	if (err < 0) {
 		return err;
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 	if ((flags & GPIO_OUTPUT) != 0) {
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
@@ -481,8 +479,6 @@ static int gpio_stm32_config(const struct device *dev,
 
 	gpio_stm32_configure(dev, pin, pincfg, 0);
 
-	/* Device released */
-#ifdef CONFIG_PM_DEVICE_RUNTIME
 	/* Release clock only if configuration doesn't require bank writes */
 	if ((flags & GPIO_OUTPUT) == 0) {
 		err = pm_device_runtime_put_async(dev);
@@ -490,10 +486,8 @@ static int gpio_stm32_config(const struct device *dev,
 			return err;
 		}
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
-exit:
-	return err;
+	return 0;
 }
 
 static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
