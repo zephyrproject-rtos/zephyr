@@ -54,9 +54,6 @@ uint8_t radio_df_pdu_antenna_switch_pattern_get(void);
 /* Resets Direction Finding radio configuration */
 void radio_df_reset(void);
 
-/* Completes switching and enables shortcut between PHYEND and DISABLE events */
-void radio_switch_complete_and_phy_end_disable(void);
-
 /* Completes switching and enables shortcut between PHYEND and TXEN events */
 void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 					      uint8_t phy_next, uint8_t flags_next);
