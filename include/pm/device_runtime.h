@@ -65,9 +65,8 @@ int pm_device_runtime_disable(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval 0 If the device has been resumed successfully.
- * @retval -ENOSTUP If runtime PM is not enabled for the device.
- * @retval -ENOSYS If the functionality is not available.
+ * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
+ * available this function will be a no-op and will also return 0.
  * @retval -errno Other negative errno, result of the PM action callback.
  */
 int pm_device_runtime_get(const struct device *dev);
@@ -84,9 +83,8 @@ int pm_device_runtime_get(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval 0 If device has been suspended successfully.
- * @retval -ENOSTUP If runtime PM is not enabled for the device.
- * @retval -ENOSYS If the functionality is not available.
+ * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
+ * available this function will be a no-op and will also return 0.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
  * @retval -errno Other negative errno, result of the action callback.
@@ -110,9 +108,8 @@ int pm_device_runtime_put(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval 0 If device has queued for suspend.
- * @retval -ENOSTUP If runtime PM is not enabled for the device.
- * @retval -ENOSYS If the functionality is not available.
+ * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
+ * available this function will be a no-op and will also return 0.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
  *
@@ -137,9 +134,9 @@ bool pm_device_runtime_is_enabled(const struct device *dev);
 #else
 static inline int pm_device_runtime_enable(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_runtime_disable(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_runtime_get(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_runtime_put(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_runtime_put_async(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_runtime_get(const struct device *dev) { return 0; }
+static inline int pm_device_runtime_put(const struct device *dev) { return 0; }
+static inline int pm_device_runtime_put_async(const struct device *dev) { return 0; }
 static inline bool pm_device_runtime_is_enabled(const struct device *dev) { return false; }
 #endif
 
