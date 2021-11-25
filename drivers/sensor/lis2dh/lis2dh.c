@@ -191,11 +191,6 @@ static int lis2dh_freq_to_odr_val(uint16_t freq)
 {
 	size_t i;
 
-	/* An ODR of 0 Hz is not allowed */
-	if (freq == 0U) {
-		return -EINVAL;
-	}
-
 	for (i = 0; i < ARRAY_SIZE(lis2dh_odr_map); i++) {
 		if (freq == lis2dh_odr_map[i]) {
 			return i;
