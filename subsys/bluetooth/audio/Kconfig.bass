@@ -55,4 +55,39 @@ config BT_DEBUG_BASS
 
 endif # BT_BASS
 
+##################### Broadcast Audio Scan Client #####################
+
+config BT_BASS_CLIENT
+	bool "Broadcast Audio Scan Service client"
+	select BT_OBSERVER
+	select BT_EXT_ADV
+	select BT_PER_ADV_SYNC
+	select BT_ISO_SYNC_RECEIVER
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	help
+	  This option enables support for the Broadcast Audio Scan Service
+	  client.
+
+if BT_BASS_CLIENT
+
+config BT_BASS_CLIENT_RECV_STATE_COUNT
+	int "Broadcast Audio Scan Service Client Max Receive State Count"
+	default 1
+	range 1 255
+	help
+	  Sets the number of maximum receive stat characteristics that will be
+	  discovered and ready to use. Each characteristic may hold information
+	  to sync to a periodic advertise or a broadcast isochronous stream.
+
+############### DEBUG ###############
+
+config BT_DEBUG_BASS_CLIENT
+	bool "Broadcast Audio Scan Service client debug"
+	help
+	  Use this option to enable Broadcast Audio Scan Service client
+	  debug logs for the Bluetooth Audio functionality.
+
+endif # BT_BASS_CLIENT
+
 endif # BT_AUDIO
