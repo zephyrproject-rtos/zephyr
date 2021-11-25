@@ -7,14 +7,14 @@
 #include <logging/log.h>
 #include <AS5047P/src/AS5047P.h>
 
-LOG_MODULE_REGISTER(as5047p_c_interface, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(as5047p_c_interface, LOG_LEVEL_WRN);
 
 /**
  * Log error.
- * @param error
- * @param functionName
- * @param description
- * @return
+ * @param error Reference to an error object.
+ * @param functionName The name of the function calling the error handler.
+ * @param description Additional description.
+ * @return True if error object contains no error information, else false.
  */
 static bool handleError(const AS5047P_Types::ERROR_t &error, const char *functionName, const char *description) {
     if (!error.noError()) {
