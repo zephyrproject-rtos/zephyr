@@ -238,8 +238,10 @@ struct gpio_stm32_data {
  * @param pin IO pin
  * @param conf GPIO mode
  * @param altf Alternate function
+ *
+ * @return 0 on success, negative errno code on failure
  */
-void gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf);
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf);
 
 /**
  * @brief Enable / disable GPIO port clock.
