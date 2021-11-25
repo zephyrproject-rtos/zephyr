@@ -415,7 +415,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
-						  0, 0, NULL);
+						  0U, 0U, NULL);
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
@@ -472,7 +472,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
-						  ULL_ADV_PDU_HDR_FIELD_AD_DATA, 0, NULL);
+						  0U, 0U, NULL);
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
@@ -515,11 +515,14 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 {
+	void *extra_data_prev, *extra_data;
+	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
 	uint8_t sync_got_enabled;
 	struct ll_adv_set *adv;
 	uint8_t pri_idx;
+	uint8_t ter_idx;
 	uint8_t err;
 
 	adv = ull_adv_is_created_get(handle);
@@ -532,14 +535,16 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO: Add Periodic Advertising ADI Support feature */
-	if (enable > 1U) {
+	if ((enable > (BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE |
+		       BT_HCI_LE_SET_PER_ADV_ENABLE_ADI)) ||
+	    (!IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) &&
+	     (enable > BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE))) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	sync = HDR_LLL2ULL(lll_sync);
 
-	if (!enable) {
+	if (!(enable & BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE)) {
 		if (!sync->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
@@ -565,6 +570,42 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		 */
 	} else {
 		sync_got_enabled = 1U;
+	}
+
+	/* Add/Remove ADI */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		uint16_t hdr_add_fields;
+		uint16_t hdr_rem_fields;
+
+		if (enable & BT_HCI_LE_SET_PER_ADV_ENABLE_ADI) {
+			hdr_add_fields = ULL_ADV_PDU_HDR_FIELD_ADI;
+			hdr_rem_fields = 0U;
+		} else {
+			hdr_add_fields = 0U;
+			hdr_rem_fields = ULL_ADV_PDU_HDR_FIELD_ADI;
+		}
+
+		err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+					     &pdu_prev, &pdu, &extra_data_prev,
+					     &extra_data, &ter_idx);
+		if (err) {
+			return err;
+		}
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+		if (extra_data) {
+			ull_adv_sync_extra_data_set_clear(extra_data_prev,
+							  extra_data, 0U, 0U,
+							  NULL);
+		}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+						 hdr_add_fields, hdr_rem_fields,
+						 NULL);
+		if (err) {
+			return err;
+		}
 	}
 
 	if (adv->is_enabled && !sync->is_started) {
@@ -643,6 +684,10 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 			aux->is_started = 1U;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		lll_adv_sync_data_enqueue(lll_sync, ter_idx);
 	}
 
 	if (sync_got_enabled) {
@@ -1110,11 +1155,17 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADI) ||
+		    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_ADI) &&
+		     ter_hdr_prev.adi)) {
+			ter_hdr.adi = 1U;
+		}
+		if (ter_hdr.adi) {
+			ter_dptr += sizeof(struct pdu_adv_adi);
+		}
 		if (ter_hdr_prev.adi) {
 			ter_dptr_prev += sizeof(struct pdu_adv_adi);
 		}
-		ter_hdr.adi = 1U;
-		ter_dptr += sizeof(struct pdu_adv_adi);
 	}
 
 	/* AuxPtr - will be added if AUX_CHAIN_IND is required */
@@ -1259,25 +1310,27 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
-		struct pdu_adv_adi *adi;
-		struct ll_adv_set *adv;
-		uint16_t did;
-
 		if (ter_hdr_prev.adi) {
 			ter_dptr_prev -= sizeof(struct pdu_adv_adi);
 		}
 
-		ter_dptr -= sizeof(struct pdu_adv_adi);
-		adi = (void *)ter_dptr;
+		if (ter_hdr.adi) {
+			struct pdu_adv_adi *adi;
+			struct ll_adv_set *adv;
+			uint16_t did;
 
-		adv = HDR_LLL2ULL(lll_sync->adv);
+			ter_dptr -= sizeof(struct pdu_adv_adi);
+			adi = (void *)ter_dptr;
 
-		adi->sid = adv->sid;
+			adv = HDR_LLL2ULL(lll_sync->adv);
 
-		/* The DID for a specific SID shall be unique.
-		 */
-		did = ull_adv_aux_did_next_unique_get(adv->sid);
-		adi->did = sys_cpu_to_le16(did);
+			adi->sid = adv->sid;
+
+			/* The DID for a specific SID shall be unique.
+			 */
+			did = ull_adv_aux_did_next_unique_get(adv->sid);
+			adi->did = sys_cpu_to_le16(did);
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
