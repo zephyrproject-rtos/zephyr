@@ -75,7 +75,11 @@ jobs:
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
 
           # get number of tests
-          lines=$(wc -l < testplan.csv)
+          if [ -s testplan.csv ]; then
+            lines=$(wc -l < testplan.csv)
+          else
+            lines=1
+          fi
           if [ "$lines" = 1 ]; then
             # no tests, so we need 0 nodes
             nodes=0
