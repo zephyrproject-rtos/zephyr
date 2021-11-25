@@ -241,7 +241,7 @@ int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
 /**
  * @brief GPIO port clock handling
  */
-int gpio_stm32_clock_request(const struct device *dev, bool on)
+static int gpio_stm32_clock_request(const struct device *dev, bool on)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	int ret = 0;
