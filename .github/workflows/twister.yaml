@@ -30,7 +30,8 @@ jobs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
     env:
-      MATRIX_SIZE: 15
+      MATRIX_SIZE: 10
+      PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 120
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
@@ -85,7 +86,9 @@ jobs:
             nodes=0
           else
             nodes=$(( ${lines} / ${TESTS_PER_BUILDER}))
-            if [ "${nodes}" = 0 ]; then
+            if [ ${nodes} -gt 4 -a ${nodes} -lt 10 ]; then
+              nodes=${MATRIX_SIZE}
+            elif [ "${nodes}" = 0 ]; then
               # for less than TESTS_PER_BUILDER, we take at least 1 node
               nodes=1
             fi
@@ -104,7 +107,7 @@ jobs:
             fi
             size=${{ steps.test-plan.outputs.calculated_matrix_size }}
           elif [ "${{github.event_name}}" = "push" ]; then
-            subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
+            subset="[$(seq -s',' 1 ${PUSH_MATRIX_SIZE})]"
             size=${MATRIX_SIZE}
           elif [ "${{github.event_name}}" = "schedule" ]; then
             subset="[$(seq -s',' 1 ${DAILY_MATRIX_SIZE})]"
