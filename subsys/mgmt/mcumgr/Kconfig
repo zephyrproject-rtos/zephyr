@@ -239,6 +239,21 @@ config OS_MGMT_TASKSTAT
 	bool "Support for taskstat command"
 	default y
 
+if OS_MGMT_TASKSTAT
+
+config OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
+	bool "Send only data gathered by Zephyr"
+	default y
+	help
+	  Response will not include fields the Zephyr does not collect statistic for.
+	  Enable this if your client software is able to process "taskstat" response
+	  that would be missing "runtime", "cswcnt", "last_checkin" and "next_checkin"
+	  map entries for each listed task.
+	  Enabling this option will slightly reduce code size.
+
+endif
+
+
 config OS_MGMT_ECHO
 	bool "Support for echo command"
 	default y
