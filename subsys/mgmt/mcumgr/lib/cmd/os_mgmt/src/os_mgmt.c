@@ -79,6 +79,7 @@ os_mgmt_taskstat_encode_one(struct CborEncoder *encoder, const struct os_mgmt_ta
 	err |= cbor_encode_uint(&task_map, task_info->oti_stkusage);
 	err |= cbor_encode_text_stringz(&task_map, "stksiz");
 	err |= cbor_encode_uint(&task_map, task_info->oti_stksize);
+#ifndef CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
 	err |= cbor_encode_text_stringz(&task_map, "cswcnt");
 	err |= cbor_encode_uint(&task_map, task_info->oti_cswcnt);
 	err |= cbor_encode_text_stringz(&task_map, "runtime");
@@ -87,6 +88,7 @@ os_mgmt_taskstat_encode_one(struct CborEncoder *encoder, const struct os_mgmt_ta
 	err |= cbor_encode_uint(&task_map, task_info->oti_last_checkin);
 	err |= cbor_encode_text_stringz(&task_map, "next_checkin");
 	err |= cbor_encode_uint(&task_map, task_info->oti_next_checkin);
+#endif
 	err |= cbor_encoder_close_container(encoder, &task_map);
 
 	if (err != 0) {
