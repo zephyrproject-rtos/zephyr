@@ -6,8 +6,8 @@
 
 #include <zephyr.h>
 #include <ztest.h>
-#include <device.h>
 #include <pm/pm.h>
+#include <pm/device.h>
 
 #define DEV_NAME DT_NODELABEL(gpio0)
 

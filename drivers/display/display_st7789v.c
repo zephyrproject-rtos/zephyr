@@ -15,6 +15,7 @@
 #include <device.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
+#include <pm/device.h>
 #include <sys/byteorder.h>
 #include <drivers/display.h>
 

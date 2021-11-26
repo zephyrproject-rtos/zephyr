@@ -8,6 +8,7 @@
 
 #include <zephyr.h>
 #include <linker/sections.h>
+#include <pm/device.h>
 #include <ztest.h>
 #include <random/rand32.h>
 

@@ -5,6 +5,7 @@
  */
 
 #include <drivers/sensor.h>
+#include <pm/device.h>
 
 #include <nrfx_qdec.h>
 #include <hal/nrf_gpio.h>

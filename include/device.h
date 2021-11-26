@@ -28,7 +28,6 @@
 
 #include <init.h>
 #include <linker/sections.h>
-#include <pm/device.h>
 #include <sys/device_mmio.h>
 #include <sys/util.h>
 
@@ -361,6 +360,8 @@ struct device_state {
 	 */
 	bool initialized : 1;
 };
+
+struct pm_device;
 
 /**
  * @brief Runtime device structure (in ROM) per driver instance

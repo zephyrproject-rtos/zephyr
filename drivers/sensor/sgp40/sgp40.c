@@ -11,6 +11,7 @@
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <logging/log.h>
+#include <pm/device.h>
 #include <sys/byteorder.h>
 #include <sys/crc.h>
 

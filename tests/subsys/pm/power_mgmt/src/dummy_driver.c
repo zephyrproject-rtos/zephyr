@@ -6,6 +6,7 @@
 
 #include <sys/printk.h>
 #include <zephyr/types.h>
+#include <pm/device.h>
 #include <pm/device_runtime.h>
 #include "dummy_driver.h"
 

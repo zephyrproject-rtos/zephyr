@@ -9,6 +9,7 @@
 #include <device.h>
 #include <init.h>
 #include <pm/pm.h>
+#include <pm/device.h>
 #include "retained.h"
 #include <hal/nrf_gpio.h>
 

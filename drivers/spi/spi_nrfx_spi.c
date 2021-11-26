@@ -5,6 +5,7 @@
  */
 
 #include <drivers/spi.h>
+#include <pm/device.h>
 #include <nrfx_spi.h>
 
 #define LOG_DOMAIN "spi_nrfx_spi"

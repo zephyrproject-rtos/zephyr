@@ -13,6 +13,7 @@
 #include <drivers/i2c.h>
 #include <kernel.h>
 #include <init.h>
+#include <pm/device.h>
 #include <arch/cpu.h>
 #include <string.h>
 

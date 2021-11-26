@@ -14,6 +14,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <drivers/uart.h>
+#include <pm/device.h>
 
 #include <logging/log.h>
 
