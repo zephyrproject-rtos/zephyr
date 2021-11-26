@@ -211,6 +211,7 @@ Bluetooth Mesh:
     collaborators:
         - jhedberg
         - LingaoM
+        - alxelax
     files:
         - subsys/bluetooth/mesh/
         - include/bluetooth/mesh/
