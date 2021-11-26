@@ -328,4 +328,411 @@ void bt_tbs_register_cb(struct bt_tbs_cb *cbs);
 void bt_tbs_dbg_print_calls(void);
 #endif /* defined(CONFIG_BT_DEBUG_TBS) */
 
+struct bt_tbs_client_call_state {
+	uint8_t index;
+	uint8_t state;
+	uint8_t flags;
+} __packed;
+
+struct bt_tbs_client_call {
+	struct bt_tbs_client_call_state call_info;
+	char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+} __packed;
+
+/**
+ * @brief Callback function for ccp_discover.
+ *
+ * @param conn          The connection that was used to discover CCP for a
+ *                      device.
+ * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
+ *                      GATT error or errno value.
+ * @param tbs_count     Number of TBS instances on peer device.
+ * @param gtbs_found    Whether or not the server has a Generic TBS instance.
+ */
+typedef void (*bt_tbs_client_discover_cb)(struct bt_conn *conn, int err,
+					  uint8_t tbs_count, bool gtbs_found);
+
+/**
+ * @brief Callback function for writing values to peer device.
+ *
+ * @param conn          The connection used in the function.
+ * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
+ *                      GATT error or errno value.
+ * @param inst_index    The index of the TBS instance that was updated.
+ */
+typedef void (*bt_tbs_client_write_value_cb)(struct bt_conn *conn, int err,
+					     uint8_t inst_index);
+
+/**
+ * @brief Callback function for the CCP call control functions.
+ *
+ * @param conn          The connection used in the function.
+ * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
+ *                      GATT error or errno value.
+ * @param inst_index    The index of the TBS instance that was updated.
+ * @param call_index    The call index. For #bt_tbs_client_originate_call this will
+ *                      always be 0, and does not reflect the actual call index.
+ */
+typedef void (*bt_tbs_client_cp_cb)(struct bt_conn *conn, int err,
+				    uint8_t inst_index, uint8_t call_index);
+
+/**
+ * @brief Callback function for functions that read a string value.
+ *
+ * @param conn          The connection used in the function.
+ * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
+ *                      GATT error or errno value.
+ * @param inst_index    The index of the TBS instance that was updated.
+ * @param value         The Null-terminated string value. The value is not kept
+ *                      by the client, so must be copied to be saved.
+ */
+typedef void (*bt_tbs_client_read_string_cb)(struct bt_conn *conn, int err,
+					     uint8_t inst_index,
+					     const char *value);
+
+/**
+ * @brief Callback function for functions that read an integer value.
+ *
+ * @param conn          The connection used in the function.
+ * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
+ *                      GATT error or errno value.
+ * @param inst_index    The index of the TBS instance that was updated.
+ * @param value         The integer value.
+ */
+typedef void (*bt_tbs_client_read_value_cb)(struct bt_conn *conn, int err,
+					    uint8_t inst_index, uint32_t value);
+
+/**
+ * @brief Callback function for ccp_read_termination_reason.
+ *
+ * @param conn          The connection used in the function.
+ * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
+ *                      GATT error or errno value.
+ * @param inst_index    The index of the TBS instance that was updated.
+ * @param call_index    The call index.
+ * @param reason        The termination reason.
+ */
+typedef void (*bt_tbs_client_termination_reason_cb)(struct bt_conn *conn,
+						    int err, uint8_t inst_index,
+						    uint8_t call_index,
+						    uint8_t reason);
+
+/**
+ * @brief Callback function for ccp_read_current_calls.
+ *
+ * @param conn          The connection used in the function.
+ * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
+ *                      GATT error or errno value.
+ * @param inst_index    The index of the TBS instance that was updated.
+ * @param call_count    Number of calls read.
+ * @param calls         Array of calls. The array is not kept by
+ *                      the client, so must be copied to be saved.
+ */
+typedef void (*bt_tbs_client_current_calls_cb)(struct bt_conn *conn, int err,
+					       uint8_t inst_index,
+					       uint8_t call_count,
+					       const struct bt_tbs_client_call *calls);
+
+/**
+ * @brief Callback function for ccp_read_call_state.
+ *
+ * @param conn          The connection used in the function.
+ * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
+ *                      GATT error or errno value.
+ * @param inst_index    The index of the TBS instance that was updated.
+ * @param call_count    Number of call states read.
+ * @param call_states   Array of call states. The array is not kept by
+ *                      the client, so must be copied to be saved.
+ */
+typedef void (*bt_tbs_client_call_states_cb)(struct bt_conn *conn, int err,
+					     uint8_t inst_index,
+					     uint8_t call_count,
+					     const struct bt_tbs_client_call_state *call_states);
+
+struct bt_tbs_client_cb {
+	bt_tbs_client_discover_cb            discover;
+	bt_tbs_client_cp_cb                  originate_call;
+	bt_tbs_client_cp_cb                  terminate_call;
+	bt_tbs_client_cp_cb                  hold_call;
+	bt_tbs_client_cp_cb                  accept_call;
+	bt_tbs_client_cp_cb                  retrieve_call;
+	bt_tbs_client_cp_cb                  join_calls;
+
+	bt_tbs_client_read_string_cb         bearer_provider_name;
+	bt_tbs_client_read_string_cb         bearer_uci;
+	bt_tbs_client_read_value_cb          technology;
+	bt_tbs_client_read_string_cb         uri_list;
+	bt_tbs_client_read_value_cb          signal_strength;
+	bt_tbs_client_read_value_cb          signal_interval;
+	bt_tbs_client_current_calls_cb       current_calls;
+	bt_tbs_client_read_value_cb          ccid;
+	bt_tbs_client_read_value_cb          status_flags;
+	bt_tbs_client_read_string_cb         call_uri;
+	bt_tbs_client_call_states_cb         call_state;
+	bt_tbs_client_read_value_cb          optional_opcodes;
+	bt_tbs_client_termination_reason_cb  termination_reason;
+	bt_tbs_client_read_string_cb         remote_uri;
+	bt_tbs_client_read_string_cb         friendly_name;
+};
+
+/**
+ * @brief Discover TBS for a connection. This will start a GATT
+ * discover and setup handles and subscriptions.
+ *
+ * @param conn          The connection to discover TBS for.
+ * @param subscribe     Whether to subscribe to all handles.
+ *
+ * @return int          0 on success, GATT error value on fail.
+ */
+int bt_tbs_client_discover(struct bt_conn *conn, bool subscribe);
+
+/**
+ * @brief Set the outgoing URI for a TBS instance on the peer device.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ * @param uri           The Null-terminated URI string.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_set_outgoing_uri(struct bt_conn *conn, uint8_t inst_index,
+				   const char *uri);
+
+/**
+ * @brief Set the signal strength reporting interval for a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ * @param interval      The interval to write (0-255 seconds).
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_set_signal_strength_interval(struct bt_conn *conn,
+					       uint8_t inst_index,
+					       uint8_t interval);
+
+/**
+ * @brief Request to originate a call.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ * @param uri           The URI of the callee.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
+				 const char *uri);
+
+/**
+ * @brief Request to terminate a call
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ * @param call_index    The call index to terminate.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_terminate_call(struct bt_conn *conn, uint8_t inst_index,
+				 uint8_t call_index);
+
+/**
+ * @brief Request to hold a call
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ * @param call_index    The call index to place on hold.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_hold_call(struct bt_conn *conn, uint8_t inst_index,
+			    uint8_t call_index);
+
+/**
+ * @brief Accept an incoming call
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ * @param call_index    The call index to accept.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_accept_call(struct bt_conn *conn, uint8_t inst_index,
+			      uint8_t call_index);
+
+/**
+ * @brief Retrieve call from (local) hold.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ * @param call_index    The call index to retrieve.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_retrieve_call(struct bt_conn *conn, uint8_t inst_index,
+				uint8_t call_index);
+
+/**
+ * @brief Join multiple calls.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ * @param call_indexes  Array of call indexes.
+ * @param count         Number of call indexes in the call_indexes array.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_join_calls(struct bt_conn *conn, uint8_t inst_index,
+			     const uint8_t *call_indexes, uint8_t count);
+
+/**
+ * @brief Read the bearer provider name of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_bearer_provider_name(struct bt_conn *conn,
+					    uint8_t inst_index);
+
+/**
+ * @brief Read the UCI of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_bearer_uci(struct bt_conn *conn, uint8_t inst_index);
+
+/**
+ * @brief Read the technology of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_technology(struct bt_conn *conn, uint8_t inst_index);
+
+
+/**
+ * @brief Read the URI schemes list of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return int          0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_uri_list(struct bt_conn *conn, uint8_t inst_index);
+
+/**
+ * @brief Read the current signal strength of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_signal_strength(struct bt_conn *conn,
+				       uint8_t inst_index);
+
+/**
+ * @brief Read the signal strength reporting interval of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_signal_interval(struct bt_conn *conn,
+				       uint8_t inst_index);
+
+/**
+ * @brief Read the list of current calls of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_current_calls(struct bt_conn *conn, uint8_t inst_index);
+
+/**
+ * @brief Read the content ID of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_ccid(struct bt_conn *conn, uint8_t inst_index);
+
+/**
+ * @brief Read the feature and status value of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_status_flags(struct bt_conn *conn, uint8_t inst_index);
+
+/**
+ * @brief Read the call target URI of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_call_uri(struct bt_conn *conn, uint8_t inst_index);
+
+/**
+ * @brief Read the states of the current calls of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_call_state(struct bt_conn *conn, uint8_t inst_index);
+
+/**
+ * @brief Read the remote URI of a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_remote_uri(struct bt_conn *conn, uint8_t inst_index);
+
+/**
+ * @brief Read the friendly name of a call for a TBS instance.
+ *
+ * @param conn          The connection to the TBS server.
+ * @param inst_index    The index of the TBS instance.
+ *
+ * @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_friendly_name(struct bt_conn *conn, uint8_t inst_index);
+
+/** @brief Read the supported opcode of a TBS instance.
+ *
+ *  @param conn          The connection to the TBS server.
+ *  @param inst_index    The index of the TBS instance.
+ *
+ *  @return              int 0 on success, errno value on fail.
+ */
+int bt_tbs_client_read_optional_opcodes(struct bt_conn *conn,
+					uint8_t inst_index);
+
+/**
+ * @brief Register the callbacks for CCP.
+ *
+ * @param cbs Pointer to the callback structure.
+ */
+void bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs);
+
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TBS_H_ */
