@@ -4,11 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	chosen {
+		zephyr,display = &ls0xx;
+	};
+};
+
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_HIGH>; /* D10 */
 
-	ls0xx@0 {
+	ls0xx: ls0xx@0 {
 		compatible = "sharp,ls0xx";
 		label = "LS0XX";
 		spi-max-frequency = <2000000>;
