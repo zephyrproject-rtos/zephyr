@@ -101,6 +101,8 @@ struct bt_df_per_adv_sync_iq_samples_report {
 	uint8_t slot_durations;
 	/** Status of received PDU with CTE (@ref bt_df_packet_status). */
 	uint8_t packet_status;
+	/** Value of the paEventCounter of the AUX_SYNC_IND PDU. */
+	uint16_t per_evt_counter;
 	/** Number of IQ samples in report. */
 	uint8_t sample_count;
 	/** Pinter to IQ samples data. */
