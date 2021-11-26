@@ -381,6 +381,7 @@ static void isr_rx(void *param)
 	uint8_t payload_index;
 	uint8_t crc_init[3];
 	uint8_t rssi_ready;
+	uint32_t start_us;
 	uint8_t new_burst;
 	uint8_t trx_done;
 	uint8_t bis_idx;
@@ -711,7 +712,8 @@ isr_rx_next_subevent:
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= (EVENT_CLOCK_JITTER_US << 1);
 
-		radio_tmr_start_us(0, hcto);
+		start_us = hcto;
+		radio_tmr_start_us(0, start_us);
 
 		/* Add 4 us + 4 us, as radio was setup to listen 4 us early */
 		hcto += (EVENT_CLOCK_JITTER_US << 2);
@@ -721,7 +723,8 @@ isr_rx_next_subevent:
 		 */
 		hcto += radio_tmr_ready_restore();
 
-		radio_tmr_start_us(0U, hcto);
+		start_us = hcto;
+		radio_tmr_start_us(0U, start_us);
 
 		hcto += ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
 			  lll->window_widening_event_us) << 1) +
@@ -744,7 +747,7 @@ isr_rx_next_subevent:
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 
-	radio_gpio_pa_lna_enable(remainder_us +
+	radio_gpio_pa_lna_enable(start_us +
 				 radio_rx_ready_delay_get(lll->phy,
 							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
