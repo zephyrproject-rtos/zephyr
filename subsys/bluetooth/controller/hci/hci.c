@@ -5608,6 +5608,16 @@ static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
 
 		node_rx_data = node_rx_data->hdr.rx_ftr.extra;
 		if (node_rx_data) {
+			if (*data_len) {
+				ext_adv_pdu_frag(evt_type, phy, *sec_phy,
+						 adv_addr_type, adv_addr,
+						 direct_addr_type, direct_addr,
+						 rl_idx, tx_pwr, rssi,
+						 interval_le16, adi,
+						 data_len_max, &data_len_total,
+						 data_len, data, buf, evt_buf);
+			}
+
 			*data_len = ext_adv_data_get(node_rx_data, sec_phy,
 						     data);
 		}
