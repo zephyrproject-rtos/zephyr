@@ -5562,7 +5562,7 @@ static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 			     int8_t tx_pwr, int8_t rssi, uint16_t interval_le16,
 			     const struct pdu_adv_adi *adi,
 			     uint8_t data_len_max,
-			     uint8_t *const data_len_total,
+			     uint16_t *const data_len_total,
 			     uint8_t *const data_len,
 			     const uint8_t **const data, struct net_buf *buf,
 			     struct net_buf **const evt_buf)
@@ -5592,7 +5592,7 @@ static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
 			      int8_t tx_pwr, int8_t rssi,
 			      uint16_t interval_le16,
 			      const struct pdu_adv_adi *adi,
-			      uint8_t data_len_max, uint8_t data_len_total,
+			      uint8_t data_len_max, uint16_t data_len_total,
 			      uint8_t *const data_len,
 			      const uint8_t **const data, struct net_buf *buf,
 			      struct net_buf **const evt_buf)
@@ -5632,9 +5632,9 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	struct node_rx_pdu *node_rx_scan_data = NULL;
 	struct node_rx_pdu *node_rx_data = NULL;
 	const struct pdu_adv_adi *adi = NULL;
+	uint16_t scan_data_len_total = 0U;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
-	uint8_t scan_data_len_total = 0U;
 	const uint8_t *scan_data = NULL;
 	uint8_t scan_data_status = 0U;
 	uint8_t direct_addr_type = 0U;
