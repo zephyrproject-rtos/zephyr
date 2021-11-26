@@ -372,8 +372,10 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 	/* Set the R/W bit to R */
 	addr |= BIT(0);
 
-	/* write restart command and address */
-	i2c_esp32_write_addr(dev, addr);
+	if (msg->flags & I2C_MSG_RESTART) {
+		/* write restart command and address */
+		i2c_esp32_write_addr(dev, addr);
+	}
 
 	while (msg->len) {
 		rd_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : (msg->len - 1);
@@ -456,8 +458,10 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 		.op_code = I2C_LL_CMD_END,
 	};
 
-	/* write restart command and address */
-	i2c_esp32_write_addr(dev, addr);
+	if (msg->flags & I2C_MSG_RESTART) {
+		/* write restart command and address */
+		i2c_esp32_write_addr(dev, addr);
+	}
 
 	for (;;) {
 		wr_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : msg->len;
@@ -471,13 +475,12 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
 		}
 
-		if (msg->len == 0 || (msg->flags & I2C_MSG_STOP)) {
+		if (msg->len == 0 && (msg->flags & I2C_MSG_STOP)) {
 			cmd = (i2c_hw_cmd_t) {
 				.op_code = I2C_LL_CMD_STOP,
 				.ack_en = false,
 				.byte_num = 0
 			};
-
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
 		} else {
 			i2c_hal_write_cmd_reg(&data->hal, hw_end_cmd, data->cmd_idx++);
@@ -506,13 +509,49 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	struct i2c_msg *current, *next;
 	int ret = 0;
-
-	k_sem_take(&data->transfer_sem, K_FOREVER);
 
 	if (!num_msgs) {
 		return 0;
 	}
+
+	/* Check for validity of all messages before transfer */
+	current = msgs;
+
+	/* Add restart flag on first message to send start event */
+	current->flags |= I2C_MSG_RESTART;
+
+	for (int k = 1; k <= num_msgs; k++) {
+		if (k < num_msgs) {
+			next = current + 1;
+
+			/* messages of different direction require restart event */
+			if ((current->flags & I2C_MSG_RW_MASK) != (next->flags & I2C_MSG_RW_MASK)) {
+				if (!(next->flags & I2C_MSG_RESTART)) {
+					ret = -EINVAL;
+					break;
+				}
+			}
+
+			/* check if there is any stop event in the middle of the transaction */
+			if (current->flags & I2C_MSG_STOP) {
+				ret = -EINVAL;
+				break;
+			}
+		} else {
+			/* make sure the last message contains stop event */
+			current->flags |= I2C_MSG_STOP;
+		}
+
+		current++;
+	}
+
+	if (ret) {
+		return ret;
+	}
+
+	k_sem_take(&data->transfer_sem, K_FOREVER);
 
 	/* Mask out unused address bits, and make room for R/W bit */
 	addr &= BIT_MASK(data->dev_config & I2C_ADDR_10_BITS ? 10 : 7);
