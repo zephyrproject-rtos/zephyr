@@ -54,6 +54,10 @@ zephyr_library_sources_ifdef(
   tbs.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_TBS_CLIENT
+  tbs_client.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_MPL
   mpl.c
   )

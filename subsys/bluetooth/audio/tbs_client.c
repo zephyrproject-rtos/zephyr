@@ -1,6 +1,7 @@
 /*  Bluetooth TBS - Telephone Bearer Service - Client
  *
  * Copyright (c) 2020 Bose Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
