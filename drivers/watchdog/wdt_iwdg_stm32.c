@@ -19,7 +19,11 @@
 #include "wdt_iwdg_stm32.h"
 
 #define IWDG_PRESCALER_MIN	(4U)
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#define IWDG_PRESCALER_MAX	(1024U)
+#else
 #define IWDG_PRESCALER_MAX	(256U)
+#endif	/* CONFIG_SOC_SERIES_STM32U5X */
 
 #define IWDG_RELOAD_MIN		(0x0000U)
 #define IWDG_RELOAD_MAX		(0x0FFFU)
@@ -39,7 +43,7 @@
 
 /*
  * Status register needs 5 LSI clock cycles divided by prescaler to be updated.
- * With highest prescaler (256) and considering clock variation, we will wait
+ * With highest prescaler (256 or 1024 for STM32U5) and considering clock variation, we will wait
  * maximum 6 cycles (48 ms at 32 kHz) for register update.
  */
 #define IWDG_SR_UPDATE_TIMEOUT	(6U * IWDG_PRESCALER_MAX * \
