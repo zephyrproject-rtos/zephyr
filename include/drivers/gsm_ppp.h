@@ -14,6 +14,21 @@
 struct modem_context;
 
 /**
+ * @brief Application specific modem pre-setup code.
+ *
+ * This function is a NOP by default, but weakly linked so that it can be
+ * explicitly implemented by the application if they chose, but gets optimized
+ * out if they don't (similar to how we do with main()). This is called before
+ * the general modem setup, just before the modem AT probing starts.
+ *
+ * @param context pointer to modem info.
+ * @param sem_response semaphore to be passed to modem_cmd_send.
+ * @return 0 in case of success, negative value in case of error.
+ */
+int __weak gsm_ppp_application_pre_setup(struct modem_context *context,
+					 struct k_sem *sem);
+
+/**
  * @brief Application specific modem setup code.
  *
  * This function is a NOP by default, but weakly linked so that it can be
