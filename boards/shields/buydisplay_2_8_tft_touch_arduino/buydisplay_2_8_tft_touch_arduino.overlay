@@ -6,11 +6,17 @@
 
 #include <dt-bindings/display/ili9xxx.h>
 
+/ {
+	chosen {
+		zephyr,display = &ili9340;
+	};
+};
+
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
 
-	ili9340@0 {
+	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
 		label = "DISPLAY";
 		spi-max-frequency = <25000000>;

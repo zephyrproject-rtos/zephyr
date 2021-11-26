@@ -28,6 +28,7 @@
 		zephyr,flash-controller = &s26ks512s0;
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &lcdif;
 	};
 
 	sdram0: memory@80000000 {
