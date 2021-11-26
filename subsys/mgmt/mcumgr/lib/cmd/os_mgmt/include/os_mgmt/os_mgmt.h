@@ -29,10 +29,12 @@ struct os_mgmt_task_info {
 	uint8_t oti_state;
 	uint16_t oti_stkusage;
 	uint16_t oti_stksize;
+#ifndef CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
 	uint32_t oti_cswcnt;
 	uint32_t oti_runtime;
 	uint32_t oti_last_checkin;
 	uint32_t oti_next_checkin;
+#endif
 
 	char oti_name[OS_MGMT_TASK_NAME_LEN];
 };
