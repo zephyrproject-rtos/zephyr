@@ -2057,6 +2057,13 @@ static int init_reset(void)
 	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
 		lll_adv_data_init(&ll_adv[handle].lll.adv_data);
 		lll_adv_data_init(&ll_adv[handle].lll.scan_rsp);
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+		/* Pointer to DF configuration must be cleared on reset. In other case it will point
+		 * to a memory pool address that should be released. It may be used by the pool
+		 * itself. In such situation it may cause error.
+		 */
+		ll_adv[handle].df_cfg = NULL;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	}
 
 	/* Make sure that set #0 is initialized with empty legacy PDUs. This is
