@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Common fields for display controllers
+
+include: base.yaml
+
+properties:
+    height:
+      type: int
+      required: true
+      description: |
+        Height of the panel driven by the controller, with the units in pixels.
+
+    width:
+      type: int
+      required: true
+      description: |
+        Width of the panel driven by the controller, with the units in pixels.
+
+    label:
+      required: true
