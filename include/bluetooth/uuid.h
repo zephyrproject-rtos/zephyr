@@ -473,6 +473,24 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GMCS \
 	BT_UUID_DECLARE_16(BT_UUID_GMCS_VAL)
+/** @def BT_UUID_TBS_VAL
+ *  @brief Telephone Bearer Service value
+ */
+#define BT_UUID_TBS_VAL 0x184B
+/** @def BT_UUID_TBS
+ *  @brief Telephone Bearer Service
+ */
+#define BT_UUID_TBS \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_VAL)
+/** @def BT_UUID_GTBS_VAL
+ *  @brief Generic Telephone Bearer Service value
+ */
+#define BT_UUID_GTBS_VAL 0x184C
+/** @def BT_UUID_GTBS
+ *  @brief Generic Telephone Bearer Service
+ */
+#define BT_UUID_GTBS \
+	BT_UUID_DECLARE_16(BT_UUID_GTBS_VAL)
 /** @def BT_UUID_MICS_VAL
  *  @brief Microphone Input Control Service value
  */
@@ -1826,6 +1844,69 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_OTS_TYPE_GROUP \
 	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_GROUP_VAL)
+/** @def BT_UUID_TBS_PROVIDER_NAME_VAL
+ *  @brief Bearer Provider Name value
+ */
+#define BT_UUID_TBS_PROVIDER_NAME_VAL 0x2BB3
+/** @def BT_UUID_TBS_PROVIDER_NAME
+ *  @brief Bearer Provider Name
+ */
+#define BT_UUID_TBS_PROVIDER_NAME \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_PROVIDER_NAME_VAL)
+/** @def BT_UUID_TBS_UCI_VAL
+ *  @brief Bearer UCI value
+ */
+#define BT_UUID_TBS_UCI_VAL 0x2BB4
+/** @def BT_UUID_TBS_UCI
+ *  @brief Bearer UCI
+ */
+#define BT_UUID_TBS_UCI \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_UCI_VAL)
+/** @def BT_UUID_TBS_TECHNOLOGY_VAL
+ *  @brief Bearer Technology value
+ */
+#define BT_UUID_TBS_TECHNOLOGY_VAL 0x2BB5
+/** @def BT_UUID_TBS_TECHNOLOGY
+ *  @brief Bearer Technology
+ */
+#define BT_UUID_TBS_TECHNOLOGY \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_TECHNOLOGY_VAL)
+/** @def BT_UUID_TBS_URI_LIST_VAL
+ *  @brief Bearer URI Prefixes Supported List value
+ */
+#define BT_UUID_TBS_URI_LIST_VAL 0x2BB6
+/** @def BT_UUID_TBS_URI_LIST
+ *  @brief Bearer URI Prefixes Supported List
+ */
+#define BT_UUID_TBS_URI_LIST \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_URI_LIST_VAL)
+/** @def BT_UUID_TBS_SIGNAL_STRENGTH_VAL
+ *  @brief Bearer Signal Strength value
+ */
+#define BT_UUID_TBS_SIGNAL_STRENGTH_VAL 0x2BB7
+/** @def BT_UUID_TBS_SIGNAL_STRENGTH
+ *  @brief Bearer Signal Strength
+ */
+#define BT_UUID_TBS_SIGNAL_STRENGTH \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_SIGNAL_STRENGTH_VAL)
+/** @def BT_UUID_TBS_SIGNAL_INTERVAL_VAL
+ *  @brief Bearer Signal Strength Reporting Interval value
+ */
+#define BT_UUID_TBS_SIGNAL_INTERVAL_VAL 0x2BB8
+/** @def BT_UUID_TBS_SIGNAL_INTERVAL
+ *  @brief Bearer Signal Strength Reporting Interval
+ */
+#define BT_UUID_TBS_SIGNAL_INTERVAL \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_SIGNAL_INTERVAL_VAL)
+/** @def BT_UUID_TBS_LIST_CURRENT_CALLS_VAL
+ *  @brief Bearer List Current Calls value
+ */
+#define BT_UUID_TBS_LIST_CURRENT_CALLS_VAL 0x2BB9
+/** @def BT_UUID_TBS_LIST_CURRENT_CALLS
+ *  @brief Bearer List Current Calls
+ */
+#define BT_UUID_TBS_LIST_CURRENT_CALLS \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_LIST_CURRENT_CALLS_VAL)
 /** @def BT_UUID_CCID_VAL
  *  @brief Content Control ID value
  */
@@ -1835,6 +1916,78 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_CCID \
 	BT_UUID_DECLARE_16(BT_UUID_CCID_VAL)
+/** @def BT_UUID_TBS_STATUS_FLAGS_VAL
+ *  @brief Status flags value
+ */
+#define BT_UUID_TBS_STATUS_FLAGS_VAL 0x2BBB
+/** @def BT_UUID_TBS_STATUS_FLAGS
+ *  @brief Status flags
+ */
+#define BT_UUID_TBS_STATUS_FLAGS \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_STATUS_FLAGS_VAL)
+/** @def BT_UUID_TBS_INCOMING_URI_VAL
+ *  @brief Incoming Call Target Caller ID value
+ */
+#define BT_UUID_TBS_INCOMING_URI_VAL 0x2BBC
+/** @def BT_UUID_TBS_INCOMING_URI
+ *  @brief Incoming Call Target Caller ID
+ */
+#define BT_UUID_TBS_INCOMING_URI \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_INCOMING_URI_VAL)
+/** @def BT_UUID_TBS_CALL_STATE_VAL
+ *  @brief Call State value
+ */
+#define BT_UUID_TBS_CALL_STATE_VAL 0x2BBD
+/** @def BT_UUID_TBS_CALL_STATE
+ *  @brief Call State
+ */
+#define BT_UUID_TBS_CALL_STATE \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_CALL_STATE_VAL)
+/** @def BT_UUID_TBS_CALL_CONTROL_POINT_VAL
+ *  @brief Call Control Point value
+ */
+#define BT_UUID_TBS_CALL_CONTROL_POINT_VAL 0x2BBE
+/** @def BT_UUID_TBS_CALL_CONTROL_POINT
+ *  @brief Call Control Point
+ */
+#define BT_UUID_TBS_CALL_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_CALL_CONTROL_POINT_VAL)
+/** @def BT_UUID_TBS_OPTIONAL_OPCODES_VAL
+ *  @brief Optional Opcodes value
+ */
+#define BT_UUID_TBS_OPTIONAL_OPCODES_VAL 0x2BBF
+/** @def BT_UUID_TBS_OPTIONAL_OPCODES
+ *  @brief Optional Opcodes
+ */
+#define BT_UUID_TBS_OPTIONAL_OPCODES \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_OPTIONAL_OPCODES_VAL)
+/** BT_UUID_TBS_TERMINATE_REASON_VAL
+ *  @brief Terminate reason value
+ */
+#define BT_UUID_TBS_TERMINATE_REASON_VAL 0x2BC0
+/** BT_UUID_TBS_TERMINATE_REASON
+ *  @brief Terminate reason
+ */
+#define BT_UUID_TBS_TERMINATE_REASON \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_TERMINATE_REASON_VAL)
+/** @def BT_UUID_TBS_INCOMING_CALL_VAL
+ *  @brief Incoming Call value
+ */
+#define BT_UUID_TBS_INCOMING_CALL_VAL 0x2BC1
+/** @def BT_UUID_TBS_INCOMING_CALL
+ *  @brief Incoming Call
+ */
+#define BT_UUID_TBS_INCOMING_CALL \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_INCOMING_CALL_VAL)
+/** @def BT_UUID_TBS_FRIENDLY_NAME_VAL
+ *  @brief Incoming Call Friendly name value
+ */
+#define BT_UUID_TBS_FRIENDLY_NAME_VAL 0x2BC2
+/** @def BT_UUID_TBS_FRIENDLY_NAME
+ *  @brief Incoming Call Friendly name
+ */
+#define BT_UUID_TBS_FRIENDLY_NAME \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_FRIENDLY_NAME_VAL)
 /** @def BT_UUID_MICS_MUTE_VAL
  *  @brief Microphone Input Control Service Mute value
  */
