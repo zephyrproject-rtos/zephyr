@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay relies on initial board configuration.
+ *          For clarity, nodes are over written instead of deleted.
+ *          Any change to board configuration has impact on this file.
+ */
+
+/*
+ * Warning: HSE is not implmeneed on the board, hence:
+ *          This configuration is only available for build
+ */
+
+&clk_lse {
+	status = "disabled";			/* LSE disabled */
+};
+
+&clk_msis {					/* MSI disabled */
+	status = "disabled";
+	/delete-property/ msi-range;
+	/delete-property/ msi-pll-mode;
+};
+
+&clk_hse {					/* HSE enabled */
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(16)>;	/* HSE clk freq 16MHz */
+	hse-bypass;
+};
+
+&pll1 {
+	div-m = <4>;				/* Update PLL config */
+	mul-n = <40>;
+	div-q = <2>;
+	div-r = <1>;
+	clocks = <&clk_hse>;			/* PLL src HSE */
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
