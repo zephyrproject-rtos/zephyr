@@ -840,6 +840,17 @@
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
+
+		quadspi: quadspi@52005000 {
+			compatible = "st,stm32-qspi";
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			reg = <0x52005000 0x34>;
+			interrupts = <92 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>;
+			status = "disabled";
+			label = "QUADSPI";
+		};
 	};
 };
 
