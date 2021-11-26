@@ -171,6 +171,8 @@ static int wwdg_stm32_setup(const struct device *dev, uint8_t options)
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_WWDG1_STOP);
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_WWDG1_STOP);
 #else
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_WWDG_STOP);
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
