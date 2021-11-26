@@ -211,6 +211,21 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 	.get_rate = stm32_clock_control_get_subsys_rate,
 };
 
+static void set_regu_voltage(uint32_t hclk_freq)
+{
+	if (hclk_freq < MHZ(25)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE4);
+	} else if (hclk_freq < MHZ(55)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE3);
+	} else if (hclk_freq < MHZ(110)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+	} else {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	}
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
+}
+
 /*
  * Unconditionally switch the system clock source to HSI.
  */
@@ -310,9 +325,7 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 				     STM32_PLL_N_MULTIPLIER,
 				     STM32_PLL_R_DIVISOR);
 
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
-	while (LL_PWR_IsActiveFlag_VOS() == 0) {
-	}
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 55) {
 		/*
@@ -364,6 +377,8 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	LL_RCC_HSE_Disable();
 
 #elif STM32_PLL_SRC_HSI
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
 	/* Switch to PLL with HSI as clock source */
 	LL_PLL_ConfigSystemClock_HSI(&s_PLLInitStruct, &s_ClkInitStruct);
 
@@ -373,6 +388,8 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 
 #elif STM32_PLL_SRC_HSE
 	int hse_bypass;
+
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	if (IS_ENABLED(STM32_HSE_BYPASS)) {
 		hse_bypass = LL_UTILS_HSEBYPASS_ON;
@@ -487,14 +504,7 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
-	if (new_hclk_freq > MHZ(24)) {
-		/* when freq > 24MHz it is necessary to set voltage scaling
-		 * to range3
-		 */
-		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE3);
-		while (LL_PWR_IsActiveFlag_VOS() == 0) {
-		}
-	}
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	/* Set MSIS as SYSCLCK source */
 	set_up_clk_msis();
