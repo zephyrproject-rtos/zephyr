@@ -76,14 +76,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	case PM_STATE_SOFT_OFF:
 		set_mode_shutdown(info.substate_id);
 		break;
-	/* Following states are not supported */
-	case PM_STATE_RUNTIME_IDLE:
-		__fallthrough;
-	case PM_STATE_ACTIVE:
-		__fallthrough;
-	case PM_STATE_SUSPEND_TO_RAM:
-		__fallthrough;
-	case PM_STATE_SUSPEND_TO_DISK:
+	default:
 		LOG_DBG("Unsupported power state %u", info.state);
 		return;
 	}
