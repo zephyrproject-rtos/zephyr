@@ -351,6 +351,7 @@ void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 	report->cte_type = BIT(evt->cte_type);
 	report->packet_status = evt->packet_status;
 	report->slot_durations = evt->slot_durations;
+	report->per_evt_counter = sys_le16_to_cpu(evt->per_evt_counter);
 	report->sample_count = evt->sample_count;
 	report->sample = &evt->sample[0];
 
