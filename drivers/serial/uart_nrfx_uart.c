@@ -9,6 +9,7 @@
  */
 
 #include <drivers/uart.h>
+#include <pm/device.h>
 #include <hal/nrf_uart.h>
 
 #ifdef CONFIG_PINCTRL

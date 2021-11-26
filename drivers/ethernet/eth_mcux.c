@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
+#include <pm/device.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 #include <drivers/ptp_clock.h>

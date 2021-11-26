@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <kernel_internal.h>
+#include <pm/device.h>
 #include <random/rand32.h>
 #include <stdlib.h>
 #include <stdio.h>

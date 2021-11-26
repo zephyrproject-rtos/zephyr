@@ -6,6 +6,7 @@
 
 #include <drivers/flash.h>
 #include <drivers/spi.h>
+#include <pm/device.h>
 #include <sys/byteorder.h>
 #include <logging/log.h>
 

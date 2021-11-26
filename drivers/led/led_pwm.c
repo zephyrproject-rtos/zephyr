@@ -14,6 +14,7 @@
 #include <drivers/led.h>
 #include <drivers/pwm.h>
 #include <device.h>
+#include <pm/device.h>
 #include <zephyr.h>
 #include <sys/math_extras.h>
 

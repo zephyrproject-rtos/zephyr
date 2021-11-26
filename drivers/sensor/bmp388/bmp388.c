@@ -14,6 +14,7 @@
 #include <sys/byteorder.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
+#include <pm/device.h>
 
 #include "bmp388.h"
 

@@ -58,6 +58,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <device.h>
+#include <pm/device.h>
 #include <string.h>
 
 #include <drivers/interrupt_controller/ioapic.h> /* public API declarations */

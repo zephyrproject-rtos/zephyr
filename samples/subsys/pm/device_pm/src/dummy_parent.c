@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <pm/device.h>
 #include <pm/device_runtime.h>
 #include <sys/printk.h>
 #include "dummy_parent.h"

@@ -9,6 +9,7 @@
 #include <drivers/i2c.h>
 #include <init.h>
 #include <drivers/sensor.h>
+#include <pm/device.h>
 #include <sys/__assert.h>
 #include <string.h>
 #include <sys/byteorder.h>
