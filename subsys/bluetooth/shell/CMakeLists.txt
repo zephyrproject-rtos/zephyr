@@ -50,6 +50,10 @@ zephyr_library_sources_ifdef(
   csis_client.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_TBS
+  tbs.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_MPL
   mpl.c
   )
