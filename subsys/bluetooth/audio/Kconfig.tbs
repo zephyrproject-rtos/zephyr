@@ -151,4 +151,62 @@ config BT_DEBUG_TBS
 
 endif # BT_TBS
 
+
+##################### Call Control Client #####################
+
+config BT_TBS_CLIENT
+	bool "Telephone Bearer Service client"
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	help
+	  This option enables support for Telephone Bearer Service client.
+
+if BT_TBS_CLIENT
+
+config BT_TBS_CLIENT_GTBS
+	bool "Telephone Bearer Service client GTBS support"
+	default y
+	help
+	  This option enables support for the generic TBS for the
+	  Call Control client.
+
+config BT_TBS_CLIENT_MAX_CALLS
+	int "Maximum Number Of Calls Supported"
+	default 1
+	help
+	  Sets the maximum number of calls the client supports per TBS instance.
+
+config BT_TBS_CLIENT_MAX_TBS_INSTANCES
+	int "Maximum number of TBS instances to setup"
+	default 1
+	range 1 3
+	help
+	  Sets the maximum number of Telephone Bearer Service (TBS)
+	  instances to setup and use.
+
+config BT_TBS_CLIENT_MAX_URI_LENGTH
+	int "The maximum length of the call URI supported"
+	default 30
+	range 4 253
+	help
+	  Sets the maximum length of the call URI supported. Note that if this
+	  value is lower than a call URI, the call request will be rejected.
+
+config BT_TBS_CLIENT_MAX_PROVIDER_NAME_LENGTH
+	int "The maximum length of the bearer provider name"
+	default 30
+	range 0 512
+	help
+	  Sets the maximum length of the bearer provider name.
+
+############# DEBUG #############
+
+config BT_DEBUG_TBS_CLIENT
+	bool "Telephone Bearer Service client debug"
+	help
+	  Use this option to enable Telephone Bearer Service client debug logs
+	  for the Bluetooth Audio functionality.
+
+endif # BT_TBS_CLIENT
+
 endif # BT_AUDIO
