@@ -14,6 +14,7 @@
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
 #include <drivers/sensor.h>
+#include <pm/device.h>
 #include <string.h>
 #include <logging/log.h>
 #include "lis2mdl.h"

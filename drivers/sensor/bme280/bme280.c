@@ -12,6 +12,7 @@
 #include <drivers/sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>
+#include <pm/device.h>
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
 

@@ -9,7 +9,7 @@
  */
 
 #include <drivers/uart.h>
-
+#include <pm/device.h>
 #include <hal/nrf_uarte.h>
 #include <nrfx_timer.h>
 #include <sys/util.h>

@@ -9,6 +9,7 @@
 #include <device.h>
 #include <drivers/syscon.h>
 #include <drivers/entropy.h>
+#include <pm/device.h>
 #include <sys/sys_io.h>
 
 #include <logging/log.h>

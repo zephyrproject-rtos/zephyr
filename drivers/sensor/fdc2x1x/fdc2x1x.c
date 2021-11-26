@@ -9,6 +9,7 @@
 #define DT_DRV_COMPAT ti_fdc2x1x
 
 #include <device.h>
+#include <pm/device.h>
 #include <sys/util.h>
 #include <logging/log.h>
 #include <math.h>

@@ -5,6 +5,7 @@
  */
 
 #include <drivers/spi.h>
+#include <pm/device.h>
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 #include <nrfx_gpiote.h>
 #include <nrfx_ppi.h>

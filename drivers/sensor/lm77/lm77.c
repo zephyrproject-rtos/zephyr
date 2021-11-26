@@ -11,6 +11,7 @@
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
 #include <logging/log.h>
+#include <pm/device.h>
 #include <sys/byteorder.h>
 
 LOG_MODULE_REGISTER(lm77, CONFIG_SENSOR_LOG_LEVEL);

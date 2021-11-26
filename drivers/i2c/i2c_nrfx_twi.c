@@ -7,6 +7,7 @@
 
 #include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <pm/device.h>
 #include <nrfx_twi.h>
 
 #include <logging/log.h>

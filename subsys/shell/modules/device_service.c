@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <device.h>
+#include <pm/device.h>
 #include <sys/arch_interface.h>
 
 extern const struct device __device_PRE_KERNEL_1_start[];

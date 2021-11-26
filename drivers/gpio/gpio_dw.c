@@ -13,6 +13,7 @@
 #include "gpio_dw.h"
 #include "gpio_utils.h"
 
+#include <pm/device.h>
 #include <soc.h>
 #include <sys/sys_io.h>
 #include <init.h>

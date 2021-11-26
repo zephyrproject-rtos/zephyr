@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <drivers/flash.h>
 #include <init.h>
+#include <pm/device.h>
 #include <string.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);

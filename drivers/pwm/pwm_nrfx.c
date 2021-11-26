@@ -5,6 +5,7 @@
  */
 #include <nrfx_pwm.h>
 #include <drivers/pwm.h>
+#include <pm/device.h>
 #include <hal/nrf_gpio.h>
 #include <stdbool.h>
 

@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT vishay_vcnl4040
 
 #include "vcnl4040.h"
+#include <pm/device.h>
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
