@@ -80,6 +80,20 @@ if(WEST OR ZEPHYR_MODULES)
     endforeach()
   endif()
 
+  if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
+    file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
+         ENCODING UTF-8)
+
+    set(ZEPHYR_MODULE_NAMES)
+    foreach(module ${ZEPHYR_MODULES_TXT})
+      # Match "<name>":"<path>" for each line of file, each corresponding to
+      # one module. The use of quotes is required due to CMake not supporting
+      # lazy regexes (it supports greedy only).
+      string(REGEX REPLACE "\"(.*)\":\".*\":\".*\"" "\\1" module_name ${module})
+      list(APPEND ZEPHYR_MODULE_NAMES ${module_name})
+    endforeach()
+  endif()
+
   foreach(root ${MODULE_EXT_ROOT})
     if(NOT EXISTS ${root})
       message(FATAL_ERROR "No `modules.cmake` found in module root `${root}`.")
@@ -88,11 +102,7 @@ if(WEST OR ZEPHYR_MODULES)
     include(${root}/modules/modules.cmake)
   endforeach()
 
-  if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
-    file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
-         ENCODING UTF-8)
-    set(ZEPHYR_MODULE_NAMES)
-
+  if(DEFINED ZEPHYR_MODULES_TXT)
     foreach(module ${ZEPHYR_MODULES_TXT})
       # Match "<name>":"<path>" for each line of file, each corresponding to
       # one module. The use of quotes is required due to CMake not supporting
@@ -101,8 +111,6 @@ if(WEST OR ZEPHYR_MODULES)
       string(REGEX REPLACE "\"(.*)\":\".*\":\".*\"" "\\1" module_name ${module})
       string(REGEX REPLACE "\".*\":\"(.*)\":\".*\"" "\\1" module_path ${module})
       string(REGEX REPLACE "\".*\":\".*\":\"(.*)\"" "\\1" cmake_path ${module})
-
-      list(APPEND ZEPHYR_MODULE_NAMES ${module_name})
 
       zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
       if(NOT ${MODULE_NAME_UPPER} STREQUAL CURRENT)
