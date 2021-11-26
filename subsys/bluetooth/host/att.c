@@ -3066,7 +3066,6 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 
 	att = att_get(conn);
 	if (!att) {
-		net_buf_unref(buf);
 		return -ENOTCONN;
 	}
 

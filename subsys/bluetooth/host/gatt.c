@@ -1966,6 +1966,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 {
 	struct net_buf *buf;
 	struct bt_att_notify *nfy;
+	int err;
 
 #if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2350:
@@ -2006,7 +2007,12 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 	net_buf_add(buf, params->len);
 	memcpy(nfy->value, params->data, params->len);
 
-	return bt_att_send(conn, buf, params->func, params->user_data);
+	err = bt_att_send(conn, buf, params->func, params->user_data);
+	if (err) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
@@ -4145,6 +4151,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	struct net_buf *buf;
 	struct bt_att_write_cmd *cmd;
 	size_t write;
+	int err;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(handle, "invalid parameters\n");
@@ -4184,7 +4191,12 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
-	return bt_att_send(conn, buf, func, user_data);
+	err = bt_att_send(conn, buf, func, user_data);
+	if (err) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 static int gatt_exec_encode(struct net_buf *buf, size_t len, void *user_data)
