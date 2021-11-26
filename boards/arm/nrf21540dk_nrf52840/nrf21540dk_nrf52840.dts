@@ -233,6 +233,10 @@ fem_spi: &spi3 {
 	};
 };
 
+&radio {
+	fem = <&nrf_radio_fem>;
+};
+
 &flash0 {
 
 	partitions {
