@@ -118,7 +118,6 @@ jobs:
           echo "::set-output name=subset::${subset}";
           echo "::set-output name=size::${size}";
 
-
   twister-build:
     runs-on: zephyr_runner
     needs: twister-build-prep
@@ -214,6 +213,7 @@ jobs:
       - if: github.event_name == 'pull_request_target'
         name: Run Tests with Twister (Pull Request)
         run: |
+          rm -f testplan.csv
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
@@ -235,7 +235,10 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Subset ${{ matrix.subset }})
-          path: twister-out/twister.xml
+          if-no-files-found: ignore
+          path: |
+            twister-out/twister.xml
+            testplan.csv
 
   twister-test-results:
     name: "Publish Unit Tests Results"
