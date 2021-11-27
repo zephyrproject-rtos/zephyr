@@ -149,10 +149,10 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_hardenconfig
   ${ZEPHYR_BASE}/scripts/kconfig/hardenconfig.py
   )
 
+set_ifndef(KCONFIG_TARGETS menuconfig guiconfig hardenconfig)
+
 foreach(kconfig_target
-    menuconfig
-    guiconfig
-    hardenconfig
+    ${KCONFIG_TARGETS}
     ${EXTRA_KCONFIG_TARGETS}
     )
   add_custom_target(
