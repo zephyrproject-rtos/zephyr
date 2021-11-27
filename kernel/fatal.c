@@ -18,6 +18,7 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* LCOV_EXCL_START */
+#if !(defined(__APPLE__) && defined(__MACH__))
 FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)
 {
 	ARG_UNUSED(reason);
@@ -31,6 +32,7 @@ FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)
 		/* Spin endlessly */
 	}
 }
+#endif /* !(defined(__APPLE__) && defined(__MACH__)) */
 /* LCOV_EXCL_STOP */
 
 /* LCOV_EXCL_START */

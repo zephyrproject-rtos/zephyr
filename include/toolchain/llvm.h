@@ -11,5 +11,7 @@
 #define __no_optimization __attribute__((optnone))
 #include <toolchain/gcc.h>
 
+#undef __weak
+#define __weak
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_LLVM_H_ */

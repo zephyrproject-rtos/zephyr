@@ -18,7 +18,6 @@ target_link_libraries(kernel INTERFACE ${libkernel})
 else()
 
 list(APPEND kernel_files
-  main_weak.c
   banner.c
   device.c
   errno.c
@@ -29,6 +28,12 @@ list(APPEND kernel_files
   thread.c
   version.c
   )
+
+if (NOT (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin" AND CONFIG_ARCH_POSIX))
+list(APPEND kernel_files
+  main_weak.c
+  )
+endif()
 
 if(CONFIG_MULTITHREADING)
 list(APPEND kernel_files

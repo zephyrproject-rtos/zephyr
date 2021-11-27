@@ -728,7 +728,7 @@ static inline bool device_is_ready(const struct device *dev)
  */
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+	__z_section(".z_devstate");
 
 /* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.
@@ -781,8 +781,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
 	const device_handle_t						\
 	__aligned(sizeof(device_handle_t))				\
-	__attribute__((__weak__,					\
-		       __section__(".__device_handles_pass1")))		\
+	__weak \
+	__z_section(".__device_handles_pass1")		\
 	Z_DEVICE_HANDLE_NAME(node_id, dev_name)[] = {			\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
 			DT_DEP_ORD(node_id),				\
@@ -809,7 +809,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
+		__z_section(".z_device_" #level STRINGIFY(prio)"_") = { \
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
