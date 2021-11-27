@@ -43,7 +43,7 @@ static void isr(const void *arg)
 	k_spin_unlock(&lock, key);
 	sys_clock_announce(ticks);
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+	if (!(IS_ENABLED(CONFIG_TICKLESS_KERNEL))) {
 		sys_clock_set_timeout(1, false);
 	}
 }
@@ -189,7 +189,7 @@ int sys_clock_driver_init(const struct device *dev)
 	last_announce = rdtsc();
 	irq_enable(timer_irq());
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+	if (!(IS_ENABLED(CONFIG_TICKLESS_KERNEL))) {
 		sys_clock_set_timeout(1, false);
 	}
 

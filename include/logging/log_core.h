@@ -35,13 +35,13 @@ extern "C" {
 #endif
 
 #define LOG_FUNCTION_PREFIX_MASK \
-	(((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) << \
+	(((uint32_t)(IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR)) << \
 	  LOG_LEVEL_ERR) | \
-	 ((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN) << \
+	 ((uint32_t)(IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN)) << \
 	  LOG_LEVEL_WRN) | \
-	 ((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF) << \
+	 ((uint32_t)(IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF)) << \
 	  LOG_LEVEL_INF) | \
-	 ((uint32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG) << LOG_LEVEL_DBG))
+	 ((uint32_t)(IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG)) << LOG_LEVEL_DBG))
 
 /** @brief Macro for returning local level value if defined or default.
  *
@@ -51,7 +51,7 @@ extern "C" {
 	Z_LOG_RESOLVED_LEVEL1(_level, _default)
 
 #define Z_LOG_RESOLVED_LEVEL1(_level, _default) \
-	__COND_CODE(_LOG_XXXX##_level, (_level), (_default))
+	__COND_CODE(_LOG_XXXX##_level, ((_level)), ((_default)))
 
 #define _LOG_XXXX0  _LOG_YYYY,
 #define _LOG_XXXX0U _LOG_YYYY,
@@ -195,9 +195,9 @@ extern "C" {
 
 #define Z_LOG_INTERNAL2(is_user_context, _src_level, ...) do { \
 	if (is_user_context) { \
-		log_from_user(_src_level, __VA_ARGS__); \
+		log_from_user((_src_level), __VA_ARGS__); \
 	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
-		log_string_sync(_src_level, __VA_ARGS__); \
+		log_string_sync((_src_level), __VA_ARGS__); \
 	} else { \
 		Z_LOG_INTERNAL_X(Z_LOG_NARGS_POSTFIX(__VA_ARGS__), \
 					_src_level, __VA_ARGS__); \
@@ -206,10 +206,10 @@ extern "C" {
 
 #define Z_LOG_INTERNAL(is_user_context, _level, _source, _dsource, ...) do { \
 	uint16_t src_id = \
-		IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
+		(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 		LOG_DYNAMIC_ID_GET(_dsource) : LOG_CONST_ID_GET(_source); \
 	struct log_msg_ids src_level = { \
-		.level = _level, \
+		.level = (_level), \
 		.domain_id = CONFIG_LOG_DOMAIN_ID, \
 		.source_id = src_id \
 	}; \
@@ -218,16 +218,16 @@ extern "C" {
 } while (false)
 
 #define _LOG_INTERNAL_0(_src_level, _str) \
-	log_0(_str, _src_level)
+	log_0((_str), (_src_level))
 
 #define _LOG_INTERNAL_1(_src_level, _str, _arg0) \
-	log_1(_str, (log_arg_t)(_arg0), _src_level)
+	log_1((_str), (log_arg_t)(_arg0), (_src_level))
 
 #define _LOG_INTERNAL_2(_src_level, _str, _arg0, _arg1)	\
-	log_2(_str, (log_arg_t)(_arg0), (log_arg_t)(_arg1), _src_level)
+	log_2((_str), (log_arg_t)(_arg0), (log_arg_t)(_arg1), (_src_level))
 
 #define _LOG_INTERNAL_3(_src_level, _str, _arg0, _arg1, _arg2) \
-	log_3(_str, (log_arg_t)(_arg0), (log_arg_t)(_arg1), (log_arg_t)(_arg2), _src_level)
+	log_3((_str), (log_arg_t)(_arg0), (log_arg_t)(_arg1), (log_arg_t)(_arg2), (_src_level))
 
 #define __LOG_ARG_CAST(_x) (log_arg_t)(_x)
 
@@ -236,19 +236,19 @@ extern "C" {
 #define _LOG_INTERNAL_LONG(_src_level, _str, ...)		  \
 	do {							  \
 		log_arg_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};\
-		log_n(_str, args, ARRAY_SIZE(args), _src_level);  \
+		log_n((_str), args, ARRAY_SIZE(args), (_src_level));  \
 	} while (false)
 
 #define Z_LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
-	(_level <= Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
+	((_level) <= Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
 
 #define Z_LOG_CONST_LEVEL_CHECK(_level)					    \
-	(IS_ENABLED(CONFIG_LOG) &&					    \
+	((IS_ENABLED(CONFIG_LOG)) &&					    \
 	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
 	||								    \
-	((IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) == false) &&		    \
-	(_level <= __log_level) &&					    \
-	(_level <= CONFIG_LOG_MAX_LEVEL)				    \
+	(!(IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL)) &&		    \
+	((_level) <= __log_level) &&					    \
+	((_level) <= CONFIG_LOG_MAX_LEVEL)				    \
 	)								    \
 	))
 
@@ -302,16 +302,16 @@ static inline char z_log_minimal_level_to_char(int level)
 	} \
 	\
 	bool is_user_context = k_is_user_context(); \
-	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
+	uint32_t filters = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 						(_dsource)->filters : 0;\
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
-	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
+	if ((IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) && !is_user_context && \
+	    (_level) > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
 		int _mode; \
-		void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
-			(void *)_dsource : (void *)_source; \
+		void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
+			(void *)(_dsource) : (void *)(_source); \
 		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 				  CONFIG_LOG_DOMAIN_ID, _src, _level, NULL,\
 				  0, __VA_ARGS__); \
@@ -342,28 +342,28 @@ static inline char z_log_minimal_level_to_char(int level)
 /****************** Macros for hexdump logging *******************************/
 /*****************************************************************************/
 #define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) do { \
-	const char *_str = GET_ARG_N(1, __VA_ARGS__); \
+	const char *_str = (GET_ARG_N(1, __VA_ARGS__)); \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) {	\
 		break; \
 	} \
 	bool is_user_context = k_is_user_context(); \
-	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
+	uint32_t filters = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 						(_dsource)->filters : 0;\
 	\
 	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
 		Z_LOG_TO_PRINTK(_level, "%s", _str); \
-		z_log_minimal_hexdump_print(_level, \
-					    (const char *)_data, _len);\
+		z_log_minimal_hexdump_print((_level), \
+					    (const char *)(_data), (_len));\
 		break; \
 	} \
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
-	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
+	if ((IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) && !is_user_context && \
+	    (_level) > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
 		int mode; \
-		void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
-			(void *)_dsource : (void *)_source; \
+		void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
+			(void *)(_dsource) : (void *)(_source); \
 		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
 				  CONFIG_LOG_DOMAIN_ID, _src, _level, \
 				  _data, _len, \
@@ -374,20 +374,20 @@ static inline char z_log_minimal_level_to_char(int level)
 		break; \
 	} \
 	uint16_t src_id = \
-		IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
+		(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 		LOG_DYNAMIC_ID_GET(_dsource) : LOG_CONST_ID_GET(_source);\
 	struct log_msg_ids src_level = { \
-		.level = _level, \
+		.level = (_level), \
 		.domain_id = CONFIG_LOG_DOMAIN_ID, \
 		.source_id = src_id, \
 	}; \
 	if (is_user_context) { \
 		log_hexdump_from_user(src_level, _str, \
-				      (const char *)_data, _len); \
+				      (const char *)(_data), (_len)); \
 	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
-		log_hexdump_sync(src_level, _str, (const char *)_data, _len); \
+		log_hexdump_sync(src_level, _str, (const char *)(_data), (_len)); \
 	} else { \
-		log_hexdump(_str, (const char *)_data, _len, src_level); \
+		log_hexdump(_str, (const char *)(_data), (_len), src_level); \
 	} \
 } while (false)
 
@@ -450,7 +450,7 @@ static inline char z_log_minimal_level_to_char(int level)
  * two other backends are set for ERR, returned level is INF.
  */
 #define Z_LOG_RUNTIME_FILTER(_filter) \
-	LOG_FILTER_SLOT_GET(&_filter, LOG_FILTER_AGGR_SLOT_IDX)
+	LOG_FILTER_SLOT_GET(&(_filter), LOG_FILTER_AGGR_SLOT_IDX)
 
 /** @brief Log level value used to indicate log entry that should not be
  *	   formatted (raw string).
@@ -468,7 +468,7 @@ enum log_strdup_action {
 };
 
 #define Z_LOG_PRINTK(...) do { \
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL) || !IS_ENABLED(CONFIG_LOG2)) { \
+	if ((IS_ENABLED(CONFIG_LOG_MINIMAL)) || !(IS_ENABLED(CONFIG_LOG2))) { \
 		z_log_minimal_printk(__VA_ARGS__); \
 		break; \
 	} \
@@ -476,7 +476,7 @@ enum log_strdup_action {
 	if (0) {\
 		z_log_printf_arg_checker(__VA_ARGS__); \
 	} \
-	Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
+	Z_LOG_MSG2_CREATE(!(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 			  CONFIG_LOG_DOMAIN_ID, NULL, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (false)
@@ -821,9 +821,9 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 	} \
 	\
 	bool is_user_context = k_is_user_context(); \
-	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
+	uint32_t filters = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 						_dsource->filters : 0;\
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
+	if ((IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) && !is_user_context && \
 	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
@@ -833,7 +833,7 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 		break; \
 	} \
 	uint16_t _id = \
-		IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
+		(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 		LOG_DYNAMIC_ID_GET(_dsource) : LOG_CONST_ID_GET(_source);\
 	struct log_msg_ids src_level = { \
 		.level = _level, \

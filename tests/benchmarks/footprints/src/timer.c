@@ -97,7 +97,7 @@ void run_timer(void)
 
 	k_mem_domain_add_thread(&footprint_mem_domain, tid);
 
-	k_thread_access_grant(tid, &timer0);
+	k_thread_access_grant(tid, (&timer0));
 	k_thread_start(tid);
 
 	k_thread_join(tid, K_FOREVER);

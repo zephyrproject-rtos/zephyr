@@ -153,7 +153,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_ERR(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, (_str))
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -166,7 +166,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_WRN(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, (_str))
 
 /**
  * @brief Writes an INFO level message to the log.
@@ -178,7 +178,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_INF(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, (_str))
 
 /**
  * @brief Writes a DEBUG level message to the log.
@@ -190,7 +190,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_DBG(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, (_str))
 
 /**
  * @brief Writes an ERROR hexdump message associated with the instance to the
@@ -289,7 +289,7 @@ static inline void log_printk(const char *fmt, va_list ap)
 char *z_log_strdup(const char *str);
 static inline char *log_strdup(const char *str)
 {
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL) || IS_ENABLED(CONFIG_LOG2)) {
+	if ((IS_ENABLED(CONFIG_LOG_MINIMAL)) || (IS_ENABLED(CONFIG_LOG2))) {
 		return (char *)str;
 	}
 
@@ -322,7 +322,7 @@ static inline char *log_strdup(const char *str)
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
 		.name = STRINGIFY(_name),				     \
-		.level = _level						     \
+		.level = (_level)						     \
 	}
 
 #define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)				\
@@ -415,19 +415,19 @@ static inline char *log_strdup(const char *str)
 									      \
 	static const struct log_source_const_data *			      \
 		__log_current_const_data __unused =			      \
-			_LOG_LEVEL_RESOLVE(__VA_ARGS__) ?		      \
+			(_LOG_LEVEL_RESOLVE(__VA_ARGS__)) != 0 ?		      \
 			&LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)) :     \
 			NULL;						      \
 									      \
 	static struct log_source_dynamic_data *				      \
 		__log_current_dynamic_data __unused =			      \
-			(_LOG_LEVEL_RESOLVE(__VA_ARGS__) &&		      \
-			IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ?	      \
+			(((_LOG_LEVEL_RESOLVE(__VA_ARGS__)) != 0) &&		      \
+			(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING))) ?	      \
 			&LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__)) :   \
 			NULL;						      \
 									      \
 	static const uint32_t __log_level __unused =			      \
-					_LOG_LEVEL_RESOLVE(__VA_ARGS__)
+					(_LOG_LEVEL_RESOLVE(__VA_ARGS__))
 
 /**
  * @brief Macro for setting log level in the file or function where instance

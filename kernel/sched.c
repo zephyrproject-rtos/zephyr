@@ -138,7 +138,7 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 	 * context switching.  Platforms with atomic swap can never
 	 * hit this.
 	 */
-	if (IS_ENABLED(CONFIG_SWAP_NONATOMIC)
+	if ((IS_ENABLED(CONFIG_SWAP_NONATOMIC))
 	    && z_is_thread_timeout_active(thread)) {
 		return true;
 	}
@@ -192,7 +192,7 @@ ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
  */
 static inline bool should_queue_thread(struct k_thread *th)
 {
-	return !IS_ENABLED(CONFIG_SMP) || th != _current;
+	return !(IS_ENABLED(CONFIG_SMP)) || th != _current;
 }
 
 static ALWAYS_INLINE void queue_thread(void *pq,
@@ -362,7 +362,7 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 	LOCKED(&sched_spinlock) {
 		_current_cpu->slice_ticks = 0;
 		slice_time = k_ms_to_ticks_ceil32(slice);
-		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && slice > 0) {
+		if ((IS_ENABLED(CONFIG_TICKLESS_KERNEL)) && slice > 0) {
 			/* It's not possible to reliably set a 1-tick
 			 * timeout if ticks aren't regular.
 			 */
@@ -762,7 +762,7 @@ bool z_set_prio(struct k_thread *thread, int prio)
 
 		if (need_sched) {
 			/* Don't requeue on SMP if it's the running thread */
-			if (!IS_ENABLED(CONFIG_SMP) || z_is_thread_queued(thread)) {
+			if (!(IS_ENABLED(CONFIG_SMP)) || z_is_thread_queued(thread)) {
 				dequeue_thread(&_kernel.ready_q.runq, thread);
 				thread->base.prio = prio;
 				queue_thread(&_kernel.ready_q.runq, thread);
@@ -892,7 +892,7 @@ void *z_get_next_switch_handle(void *interrupted)
 	LOCKED(&sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
-		if (IS_ENABLED(CONFIG_SMP)) {
+		if ((IS_ENABLED(CONFIG_SMP))) {
 			old_thread->switch_handle = NULL;
 		}
 		new_thread = next_up();
@@ -930,7 +930,7 @@ void *z_get_next_switch_handle(void *interrupted)
 		}
 		old_thread->switch_handle = interrupted;
 		ret = new_thread->switch_handle;
-		if (IS_ENABLED(CONFIG_SMP)) {
+		if ((IS_ENABLED(CONFIG_SMP))) {
 			/* Active threads MUST have a null here */
 			new_thread->switch_handle = NULL;
 		}
@@ -1188,7 +1188,7 @@ void z_impl_k_yield(void)
 
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
-	if (!IS_ENABLED(CONFIG_SMP) ||
+	if (!(IS_ENABLED(CONFIG_SMP)) ||
 	    z_is_thread_queued(_current)) {
 		dequeue_thread(&_kernel.ready_q.runq,
 			       _current);

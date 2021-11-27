@@ -46,7 +46,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		timer->expiry_fn(timer);
 	}
 
-	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if (!(IS_ENABLED(CONFIG_MULTITHREADING))) {
 		k_spin_unlock(&lock, key);
 		return;
 	}
@@ -76,7 +76,7 @@ void k_timer_init(struct k_timer *timer,
 	timer->stop_fn = stop_fn;
 	timer->status = 0U;
 
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if ((IS_ENABLED(CONFIG_MULTITHREADING))) {
 		z_waitq_init(&timer->wait_q);
 	}
 
@@ -153,7 +153,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 		timer->stop_fn(timer);
 	}
 
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if ((IS_ENABLED(CONFIG_MULTITHREADING))) {
 		struct k_thread *pending_thread = z_unpend1_no_timeout(&timer->wait_q);
 
 		if (pending_thread != NULL) {
@@ -197,7 +197,7 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 	__ASSERT(!arch_is_in_isr(), "");
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, status_sync, timer);
 
-	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if (!(IS_ENABLED(CONFIG_MULTITHREADING))) {
 		uint32_t result;
 
 		do {

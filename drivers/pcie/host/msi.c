@@ -285,7 +285,7 @@ bool pcie_msi_enable(pcie_bdf_t bdf,
 		return false;
 	}
 
-	if (!msi && IS_ENABLED(CONFIG_PCIE_MSI_X)) {
+	if (!msi && (IS_ENABLED(CONFIG_PCIE_MSI_X))) {
 		enable_msix(bdf, vectors, n_vector, base, irq);
 	} else {
 		enable_msi(bdf, vectors, n_vector, base, irq);

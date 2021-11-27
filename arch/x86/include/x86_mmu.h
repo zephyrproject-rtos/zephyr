@@ -209,7 +209,7 @@ extern pentry_t z_x86_kernel_ptables[];
 static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 {
 #if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
-	if (!IS_ENABLED(CONFIG_X86_KPTI) ||
+	if (!(IS_ENABLED(CONFIG_X86_KPTI)) ||
 	    (thread->base.user_options & K_USER) != 0U) {
 		/* If KPTI is enabled, supervisor threads always use
 		 * the kernel's page tables and not the page tables associated

@@ -24,7 +24,7 @@ static int k_sys_work_q_init(const struct device *dev)
 	ARG_UNUSED(dev);
 	struct k_work_queue_config cfg = {
 		.name = "sysworkq",
-		.no_yield = IS_ENABLED(CONFIG_SYSTEM_WORKQUEUE_NO_YIELD),
+		.no_yield = (IS_ENABLED(CONFIG_SYSTEM_WORKQUEUE_NO_YIELD)),
 	};
 
 	k_work_queue_start(&k_sys_work_q,

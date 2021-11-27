@@ -791,7 +791,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
-		.name = drv_name,					\
+		.name = (drv_name),					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
 		.state = &Z_DEVICE_STATE_NAME(dev_name),		\
