@@ -18,9 +18,10 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device, boot_address, part_table_address,
                  app_address, baud=921600, flash_size='detect',
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
-                 bootloader_bin=None, partition_table_bin=None, app_bin=None):
+                 bootloader_bin=None, partition_table_bin=None):
         super().__init__(cfg)
         self.elf = cfg.elf_file
+        self.app_bin = cfg.bin_file
         self.device = device
         self.boot_address = boot_address
         self.part_table_address = part_table_address
@@ -32,7 +33,6 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         self.espidf = espidf
         self.bootloader_bin = bootloader_bin
         self.partition_table_bin = partition_table_bin
-        self.app_bin = app_bin
 
     @classmethod
     def name(cls):
@@ -72,8 +72,6 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='Bootloader image to flash')
         parser.add_argument('--esp-flash-partition_table',
                             help='Partition table to flash')
-        parser.add_argument('--esp-flash-app',
-                            help='App to flash')
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -86,19 +84,14 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         return Esp32BinaryRunner(
             cfg, args.esp_device, boot_address=args.esp_boot_address,
             part_table_address=args.esp_partition_table_address,
-            app_address=args.esp_app_address,baud=args.esp_baud_rate,
+            app_address=args.esp_app_address, baud=args.esp_baud_rate,
             flash_size=args.esp_flash_size, flash_freq=args.esp_flash_freq,
             flash_mode=args.esp_flash_mode, espidf=espidf,
             bootloader_bin=args.esp_flash_bootloader,
-            partition_table_bin=args.esp_flash_partition_table,
-            app_bin=args.esp_flash_app)
+            partition_table_bin=args.esp_flash_partition_table)
 
     def do_run(self, command, **kwargs):
         self.require(self.espidf)
-        if self.app_bin:
-            bin_name = self.app_bin
-        else:
-            bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
 
         cmd_flash = [self.espidf, '--chip', 'auto']
         if self.device is not None:
@@ -116,12 +109,12 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
         if self.bootloader_bin:
             cmd_flash.extend([self.boot_address, self.bootloader_bin])
-            if self.partition_table_bin:
-                cmd_flash.extend([self.part_table_address, self.partition_table_bin])
-            cmd_flash.extend([self.app_address, bin_name])
+            cmd_flash.extend([self.part_table_address, self.partition_table_bin])
+            cmd_flash.extend([self.app_address, self.app_bin])
         else:
-            cmd_flash.extend([self.boot_address, bin_name])
+            cmd_flash.extend([self.app_address, self.app_bin])
 
         self.logger.info("Flashing esp32 chip on {} ({}bps)".
                          format(self.device, self.baud))
+        print(cmd_flash)
         self.check_call(cmd_flash)
