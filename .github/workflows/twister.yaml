@@ -21,6 +21,7 @@ jobs:
           access_token: ${{ github.token }}
 
   twister-build-prep:
+
     runs-on: zephyr_runner
     needs: twister-build-cleanup
     container:
@@ -34,7 +35,7 @@ jobs:
     env:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
-      DAILY_MATRIX_SIZE: 120
+      DAILY_MATRIX_SIZE: 80
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       TESTS_PER_BUILDER: 700
