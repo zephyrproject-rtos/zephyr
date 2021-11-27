@@ -26,6 +26,8 @@ jobs:
     container:
       image: zephyrprojectrtos/ci:v0.21.0
       options: '--entrypoint /bin/bash'
+      volumes:
+        - /home/runners/zephyrproject:/github/cache/zephyrproject
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
@@ -124,6 +126,8 @@ jobs:
     container:
       image: zephyrprojectrtos/ci:v0.21.0
       options: '--entrypoint /bin/bash'
+      volumes:
+        - /home/runners/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
@@ -162,7 +166,7 @@ jobs:
 
           west init -l . || true
           west config --global update.narrow true
-          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update.log
+          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
 
       - name: Check Environment
