@@ -150,7 +150,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_KERNEL_PINNED_STACK_ARRAY_EXTERN(sym, nmemb, size) \
 	extern struct z_thread_stack_element \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+		sym[(nmemb)][Z_KERNEL_STACK_LEN(size)]
 
 /**
  * @def Z_KERNEL_STACK_DEFINE_IN
@@ -189,7 +189,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, lsect) \
 	struct z_thread_stack_element lsect \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+		sym[(nmemb)][Z_KERNEL_STACK_LEN(size)]
 
 /**
  * @def K_KERNEL_STACK_DEFINE

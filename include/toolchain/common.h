@@ -231,9 +231,12 @@
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
 #define STRUCT_SECTION_FOREACH(struct_type, iterator) \
+	STRUCT_SECTION_FOREACH_(struct_type, iterator, (iterator))
+
+#define STRUCT_SECTION_FOREACH_(struct_type, iterator_name, iterator) \
 	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
 	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
-	for (struct struct_type *iterator = \
+	for (struct struct_type *iterator_name = \
 			_CONCAT(_##struct_type, _list_start); \
 	     ({ __ASSERT(iterator <= _CONCAT(_##struct_type, _list_end), \
 			 "unexpected list end location"); \

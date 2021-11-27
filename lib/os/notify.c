@@ -76,7 +76,7 @@ sys_notify_generic_callback sys_notify_finalize(struct sys_notify *notify,
 	compiler_barrier();
 	notify->flags = SYS_NOTIFY_METHOD_COMPLETED;
 
-	if (IS_ENABLED(CONFIG_POLL) && (sig != NULL)) {
+	if ((IS_ENABLED(CONFIG_POLL)) && (sig != NULL)) {
 		k_poll_signal_raise(sig, res);
 	}
 

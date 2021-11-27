@@ -127,10 +127,10 @@ enum z_log_msg2_mode {
 	.valid = 0, \
 	.busy = 0, \
 	.type = Z_LOG_MSG2_LOG, \
-	.domain = _domain_id, \
-	.level = _level, \
-	.package_len = _plen, \
-	.data_len = _dlen, \
+	.domain = (_domain_id), \
+	.level = (_level), \
+	.package_len = (_plen), \
+	.data_len = (_dlen), \
 	.reserved = 0, \
 }
 
@@ -141,11 +141,11 @@ enum z_log_msg2_mode {
 #define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
 	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
 	long double _ld_buf[ceiling_fraction(len, sizeof(long double))]; \
-	ptr = (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) ? \
+	(ptr) = (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) ? \
 			(struct log_msg2 *)_ld_buf : (struct log_msg2 *)_ll_buf; \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
-		memset(ptr, 0, len); \
+		memset((ptr), 0, (len)); \
 	}
 #else /* Z_LOG_MSG2_USE_VLA */
 /* When VLA cannot be used we need to trick compiler a bit and create multiple
@@ -187,7 +187,7 @@ enum z_log_msg2_mode {
 	sizeof(struct log_msg2_hdr)
 
 #define Z_LOG_MSG2_LEN(pkg_len, data_len) \
-	(sizeof(struct log_msg2_hdr) + pkg_len + (data_len))
+	(sizeof(struct log_msg2_hdr) + (pkg_len) + (data_len))
 
 #define Z_LOG_MSG2_ALIGNED_WLEN(pkg_len, data_len) \
 	ceiling_fraction(ROUND_UP(Z_LOG_MSG2_LEN(pkg_len, data_len), \
@@ -214,7 +214,7 @@ enum z_log_msg2_mode {
 #define Z_LOG_MSG2_STACK_CREATE(_domain_id, _source, _level, _data, _dlen, ...)\
 do { \
 	int _plen; \
-	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
+	if ((GET_ARG_N(1, __VA_ARGS__)) == NULL) { \
 		_plen = 0; \
 	} else { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
@@ -232,7 +232,7 @@ do { \
 					   (uint32_t)_plen, _dlen); \
 	LOG_MSG2_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
-	z_log_msg2_static_create((void *)_source, _desc, _msg->data, _data); \
+	z_log_msg2_static_create((void *)(_source), _desc, _msg->data, (_data)); \
 } while (false)
 
 #if CONFIG_LOG_SPEED
@@ -377,22 +377,22 @@ do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
 	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, __VA_ARGS__)) { \
 		LOG_MSG2_DBG("create runtime message\n");\
-		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
-					  _level, (uint8_t *)_data, _dlen,\
+		z_log_msg2_runtime_create((_domain_id), (void *)(_source), \
+					  (_level), (uint8_t *)(_data), (_dlen),\
 					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
-		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
-	} else if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0)) {\
+		(_mode) = Z_LOG_MSG2_MODE_RUNTIME; \
+	} else if ((IS_ENABLED(CONFIG_LOG_SPEED)) && (_try_0cpy) && ((_dlen) == 0)) {\
 		LOG_MSG2_DBG("create zero-copy message\n");\
 		Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, \
 					_level, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG2_MODE_ZERO_COPY; \
+		(_mode) = Z_LOG_MSG2_MODE_ZERO_COPY; \
 	} else { \
 		LOG_MSG2_DBG("create on stack message\n");\
 		Z_LOG_MSG2_STACK_CREATE(_domain_id, _source, _level, _data, \
 					_dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG2_MODE_FROM_STACK; \
+		(_mode) = Z_LOG_MSG2_MODE_FROM_STACK; \
 	} \
-	(void)_mode; \
+	(void)(_mode); \
 } while (false)
 #endif /* CONFIG_LOG2_ALWAYS_RUNTIME */
 

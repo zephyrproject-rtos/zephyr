@@ -129,7 +129,7 @@ extern "C" {
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
 	int _rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
 			(0), \
-			(((Z_CBPRINTF_HAS_PCHAR_ARGS(__VA_ARGS__) - skip) > 0))); \
+			(((Z_CBPRINTF_HAS_PCHAR_ARGS(__VA_ARGS__) - (skip)) > 0))); \
 	_Pragma("GCC diagnostic pop")\
 	_rv; \
 })
@@ -179,26 +179,26 @@ extern "C" {
 					0.0); \
 		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
 		size_t _wsize = arg_size / sizeof(int); \
-		z_cbprintf_wcpy((int *)buf, \
+		z_cbprintf_wcpy((int *)(buf), \
 			      (int *) _Generic((arg) + 0, float : &_d, default : &_v), \
 			      _wsize); \
 	} else { \
 		*_Generic((arg) + 0, \
-			char : (int *)buf, \
-			unsigned char: (int *)buf, \
-			short : (int *)buf, \
-			unsigned short : (int *)buf, \
-			int : (int *)buf, \
-			unsigned int : (unsigned int *)buf, \
-			long : (long *)buf, \
-			unsigned long : (unsigned long *)buf, \
-			long long : (long long *)buf, \
-			unsigned long long : (unsigned long long *)buf, \
-			float : (double *)buf, \
-			double : (double *)buf, \
-			long double : (long double *)buf, \
+			char : (int *)(buf), \
+			unsigned char: (int *)(buf), \
+			short : (int *)(buf), \
+			unsigned short : (int *)(buf), \
+			int : (int *)(buf), \
+			unsigned int : (unsigned int *)(buf), \
+			long : (long *)(buf), \
+			unsigned long : (unsigned long *)(buf), \
+			long long : (long long *)(buf), \
+			unsigned long long : (unsigned long long *)(buf), \
+			float : (double *)(buf), \
+			double : (double *)(buf), \
+			long double : (long double *)(buf), \
 			default : \
-				(const void **)buf) = arg; \
+				(const void **)(buf)) = (arg); \
 	} \
 } while (false)
 #endif
@@ -264,21 +264,21 @@ extern "C" {
 do { \
 	BUILD_ASSERT(!((sizeof(double) < VA_STACK_ALIGN(long double)) && \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
-			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
+			!(IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE))),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
-		_idx += sizeof(int); \
-		_align_offset += sizeof(int); \
+	while ((_align_offset) % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
+		(_idx) += sizeof(int); \
+		(_align_offset) += sizeof(int); \
 	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
-	if (Z_CBPRINTF_IS_PCHAR(_arg)) { \
-		_s_buf[_s_idx++] = _idx / sizeof(int); \
+	if (Z_CBPRINTF_IS_PCHAR(_arg) != 0) { \
+		(_s_buf)[(_s_idx)++] = (_idx) / sizeof(int); \
 	} \
-	if (_buf && _idx < (int)_max) { \
-		Z_CBPRINTF_STORE_ARG(&_buf[_idx], _arg); \
+	if ((_buf) != NULL && (_idx) < (int)(_max)) { \
+		Z_CBPRINTF_STORE_ARG(&(_buf)[(_idx)], _arg); \
 	} \
-	_idx += _arg_size; \
-	_align_offset += _arg_size; \
+	(_idx) += (_arg_size); \
+	(_align_offset) += (_arg_size); \
 } while (false)
 
 /** @brief Package single argument.
@@ -342,27 +342,27 @@ do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
 	Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
-	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
-		     (IS_ENABLED(CONFIG_XTENSA) && \
-		      !(_align_offset % CBPRINTF_PACKAGE_ALIGNMENT)), \
+	BUILD_ASSERT(!(IS_ENABLED(CONFIG_XTENSA)) || \
+		     ((IS_ENABLED(CONFIG_XTENSA)) && \
+		      ((_align_offset) % CBPRINTF_PACKAGE_ALIGNMENT) == 0U), \
 			"Xtensa requires aligned package."); \
-	BUILD_ASSERT((_align_offset % sizeof(int)) == 0, \
+	BUILD_ASSERT(((_align_offset) % sizeof(int)) == 0, \
 			"Alignment offset must be multiply of a word."); \
 	IF_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT, \
 		(__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
 			  "Buffer must be aligned.");)) \
-	bool str_idxs = _flags & CBPRINTF_PACKAGE_ADD_STRING_IDXS; \
-	uint8_t *_pbuf = buf; \
+	bool str_idxs = (_flags) & CBPRINTF_PACKAGE_ADD_STRING_IDXS; \
+	uint8_t *_pbuf = (buf); \
 	uint8_t _s_cnt = 0; \
 	uint16_t _s_buffer[16]; \
-	size_t _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
+	size_t _pmax = ((buf) != NULL) ? (_inlen) : INT32_MAX; \
 	int _pkg_len = 0; \
 	int _total_len = 0; \
-	int _pkg_offset = _align_offset; \
+	int _pkg_offset = (_align_offset); \
 	union z_cbprintf_hdr *_len_loc; \
 	/* package starts with string address and field with length */ \
 	if (_pmax < sizeof(union z_cbprintf_hdr)) { \
-		_outlen = -ENOSPC; \
+		(_outlen) = -ENOSPC; \
 		break; \
 	} \
 	_len_loc = (union z_cbprintf_hdr *)_pbuf; \
@@ -380,7 +380,7 @@ do { \
 		} \
 	} \
 	/* Store length */ \
-	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
+	(_outlen) = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf != NULL) { \
 		union z_cbprintf_hdr hdr = { \

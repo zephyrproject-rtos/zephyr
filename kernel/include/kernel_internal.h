@@ -221,8 +221,8 @@ void z_mem_manage_boot_finish(void);
 
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
-			!__i.key;					\
-			k_spin_unlock(lck, __key), __i.key = 1)
+			__i.key == 0;					\
+			k_spin_unlock((lck), __key), __i.key = 1)
 
 #ifdef CONFIG_PM
 

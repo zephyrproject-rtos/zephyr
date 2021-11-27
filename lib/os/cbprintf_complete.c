@@ -534,7 +534,7 @@ int_conv:
 		 */
 		if (conv->specifier == 'c') {
 			unsupported = (conv->length_mod != LENGTH_NONE);
-		} else if (!IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
+		} else if (!(IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL))) {
 			/* Disable conversion that might produce truncated
 			 * results with buffers sized for 32 bits.
 			 */
@@ -570,7 +570,7 @@ int_conv:
 		conv->specifier_cat = SPECIFIER_FP;
 
 		/* Don't support if disabled */
-		if (!IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
+		if (!(IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT))) {
 			unsupported = true;
 			break;
 		}
@@ -579,7 +579,7 @@ int_conv:
 		conv->specifier_a = (conv->specifier == 'a')
 			|| (conv->specifier == 'A');
 		if (conv->specifier_a
-		    && !IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
+		    && !(IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT))) {
 			unsupported = true;
 			break;
 		}
@@ -939,8 +939,8 @@ static char *encode_float(double value,
 	}
 
 	/* Handle converting to the hex representation. */
-	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)
-	    && (IS_ENABLED(CONFIG_CBPRINTF_FP_ALWAYS_A)
+	if ((IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT))
+	    && ((IS_ENABLED(CONFIG_CBPRINTF_FP_ALWAYS_A))
 		|| conv->specifier_a)) {
 		*buf++ = '0';
 		*buf++ = 'x';
@@ -1360,7 +1360,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
  */
 
 #define OUTS(_sp, _ep) do { \
-	int rc = outs(out, ctx, _sp, _ep); \
+	int rc = outs(out, ctx, (_sp), (_ep)); \
 	\
 	if (rc < 0) {	    \
 		return rc; \
@@ -1437,7 +1437,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		conv->pad0_pre_exp = 0;
 
 		/* FP conversion requires knowing the precision. */
-		if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)
+		if ((IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT))
 		    && (conv->specifier_cat == SPECIFIER_FP)
 		    && !conv->prec_present) {
 			if (conv->specifier_a) {
@@ -1762,7 +1762,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			OUTC(sign);
 		}
 
-		if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT) && conv->pad_fp) {
+		if ((IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) && conv->pad_fp) {
 			const char *cp = bps;
 
 			if (conv->specifier_a) {

@@ -123,7 +123,7 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 	size = pcie_conf_read(bdf, reg);
 	pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
 
-	if (IS_ENABLED(CONFIG_64BIT) && PCIE_CONF_BAR_64(phys_addr)) {
+	if ((IS_ENABLED(CONFIG_64BIT)) && PCIE_CONF_BAR_64(phys_addr)) {
 		reg++;
 		phys_addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
 

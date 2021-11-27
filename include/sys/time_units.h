@@ -202,7 +202,7 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 #define Z_HZ_ns 1000000000
 #define Z_HZ_cyc sys_clock_hw_cycles_per_sec()
 #define Z_HZ_ticks CONFIG_SYS_CLOCK_TICKS_PER_SEC
-#define Z_CCYC (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
+#define Z_CCYC (!(IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)))
 
 /** @brief Convert milliseconds to hardware cycles
  *

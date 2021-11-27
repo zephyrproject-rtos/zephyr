@@ -324,7 +324,7 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * @param ... list of kernel object pointers
  */
 #define k_thread_access_grant(thread, ...) \
-	FOR_EACH_FIXED_ARG(k_object_access_grant, (;), thread, __VA_ARGS__)
+	FOR_EACH_FIXED_ARG((k_object_access_grant), (;), (thread), __VA_ARGS__)
 
 /**
  * @brief Assign a resource memory pool to a thread
@@ -2398,10 +2398,10 @@ struct k_stack {
 
 #define Z_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
 	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
-	.base = stack_buffer, \
-	.next = stack_buffer, \
-	.top = stack_buffer + stack_num_entries, \
+	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q),	\
+	.base = (stack_buffer), \
+	.next = (stack_buffer), \
+	.top = (stack_buffer) + (stack_num_entries), \
 	}
 
 /**
@@ -2509,7 +2509,7 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
  */
 #define K_STACK_DEFINE(name, stack_num_entries)                \
 	stack_data_t __noinit                                  \
-		_k_stack_buf_##name[stack_num_entries];        \
+		_k_stack_buf_##name[(stack_num_entries)];        \
 	STRUCT_SECTION_ITERABLE(k_stack, name) =               \
 		Z_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
@@ -2558,7 +2558,7 @@ struct k_mutex {
  */
 #define Z_MUTEX_INITIALIZER(obj) \
 	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
 	.owner = NULL, \
 	.lock_count = 0, \
 	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
@@ -2738,9 +2738,9 @@ struct k_sem {
 
 #define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
 	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.count = initial_count, \
-	.limit = count_limit, \
+	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
+	.count = (initial_count), \
+	.limit = (count_limit), \
 	_POLL_EVENT_OBJ_INIT(obj) \
 	}
 
@@ -3507,7 +3507,7 @@ struct k_work {
 };
 
 #define Z_WORK_INITIALIZER(work_handler) { \
-	.handler = work_handler, \
+	.handler = (work_handler), \
 }
 
 /** @brief A structure used to submit work after a delay. */
@@ -3524,7 +3524,7 @@ struct k_work_delayable {
 
 #define Z_WORK_DELAYABLE_INITIALIZER(work_handler) { \
 	.work = { \
-		.handler = work_handler, \
+		.handler = (work_handler), \
 		.flags = K_WORK_DELAYABLE, \
 	}, \
 }
@@ -3858,7 +3858,7 @@ struct k_work_user {
 #define Z_WORK_USER_INITIALIZER(work_handler) \
 	{ \
 	._reserved = NULL, \
-	.handler = work_handler, \
+	.handler = (work_handler), \
 	.flags = 0 \
 	}
 

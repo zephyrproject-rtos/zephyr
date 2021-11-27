@@ -18,7 +18,7 @@ static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 
 static struct k_spinlock timeout_lock;
 
-#define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
+#define MAX_WAIT ((IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE)) \
 		  ? K_TICKS_FOREVER : INT_MAX)
 
 /* Cycles left to process in the currently-executing sys_clock_announce() */
@@ -96,7 +96,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 	LOCKED(&timeout_lock) {
 		struct _timeout *t;
 
-		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) &&
+		if ((IS_ENABLED(CONFIG_TIMEOUT_64BIT)) &&
 		    Z_TICK_ABS(timeout.ticks) >= 0) {
 			k_ticks_t ticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
@@ -224,7 +224,7 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 		 * exit and so can't get the timeslicing clamp folded
 		 * in.
 		 */
-		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
+		if (!imminent && (sooner || (IS_ENABLED(CONFIG_SMP)))) {
 			sys_clock_set_timeout(MIN(ticks, next_to), is_idle);
 		}
 	}
@@ -355,7 +355,7 @@ uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 
 		dt = timeout.ticks;
 
-		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
+		if ((IS_ENABLED(CONFIG_TIMEOUT_64BIT)) && Z_TICK_ABS(dt) >= 0) {
 			return Z_TICK_ABS(dt);
 		}
 		return sys_clock_tick_get() + MAX(1, dt);

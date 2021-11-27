@@ -220,8 +220,8 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #else
 #define INBYTE(x) sys_read8(x)
 #define INWORD(x) sys_read32(x)
-#define OUTBYTE(x, d) sys_write8(d, x)
-#define OUTWORD(x, d) sys_write32(d, x)
+#define OUTBYTE(x, d) sys_write8((d), (x))
+#define OUTWORD(x, d) sys_write32((d), (x))
 #endif /* UART_NS16550_ACCESS_IOPORT */
 
 #ifdef CONFIG_UART_NS16550_ACCESS_WORD_ONLY

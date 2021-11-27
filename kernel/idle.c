@@ -78,8 +78,8 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * a fallback configuration for new platform
 		 * bringup.
 		 */
-		if (IS_ENABLED(CONFIG_SMP) &&
-		    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
+		if ((IS_ENABLED(CONFIG_SMP)) &&
+		    !(IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED))) {
 			k_busy_wait(100);
 			k_yield();
 			continue;

@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <sys/cbprintf.h>
 
-#define DESC(d) ((void *)d)
+#define DESC(d) ((void *)(d))
 
 int fprintf(FILE *_MLIBC_RESTRICT stream, const char *_MLIBC_RESTRICT format, ...)
 {

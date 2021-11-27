@@ -98,7 +98,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * appropriate.
 	 */
 	unsigned int key = arch_irq_lock();
-	struct k_thread *thread = IS_ENABLED(CONFIG_MULTITHREADING) ?
+	struct k_thread *thread = (IS_ENABLED(CONFIG_MULTITHREADING)) ?
 			k_current_get() : NULL;
 
 	/* twister looks for the "ZEPHYR FATAL ERROR" string, don't
@@ -139,7 +139,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * Note that k_thread_abort() returns on some architectures but
 	 * not others; e.g. on ARC, x86_64, Xtensa with ASM2, ARM
 	 */
-	if (!IS_ENABLED(CONFIG_TEST)) {
+	if (!(IS_ENABLED(CONFIG_TEST))) {
 		__ASSERT(reason != K_ERR_KERNEL_PANIC,
 			 "Attempted to recover from a kernel panic condition");
 		/* FIXME: #17656 */
