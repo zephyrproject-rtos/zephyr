@@ -346,7 +346,7 @@ void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 	}
 
 	report->chan_idx = evt->chan_idx;
-	report->rssi = evt->rssi;
+	report->rssi = sys_le16_to_cpu(evt->rssi);
 	report->rssi_ant_id = evt->rssi_ant_id;
 	report->cte_type = BIT(evt->cte_type);
 	report->packet_status = evt->packet_status;
