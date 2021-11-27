@@ -237,7 +237,7 @@ bool pm_system_suspend(int32_t ticks)
 			z_power_states[id].state = PM_STATE_ACTIVE;
 			(void)atomic_add(&z_cpus_active, 1);
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
-				_handle_device_abort(z_power_states[id]));
+						   z_power_states[id].state);
 			ret = false;
 			goto end;
 		}
