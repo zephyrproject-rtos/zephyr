@@ -5,7 +5,6 @@
 # A script to generate twister options based on modified files.
 
 import re, os
-import sh
 import argparse
 import glob
 import yaml
@@ -14,7 +13,7 @@ import fnmatch
 import subprocess
 import csv
 import logging
-from git import Git, Repo
+from git import Repo
 
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
@@ -106,10 +105,10 @@ class Filters:
         if integration:
             cmd.append("--integration")
 
-        p = subprocess.call(cmd)
+        _ = subprocess.call(cmd)
         with open(fname, newline='') as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=',')
-            header = next(csv_reader)
+            _ = next(csv_reader)
             for e in csv_reader:
                 self.all_tests.append(e)
         if os.path.exists(fname):
@@ -191,7 +190,7 @@ class Filters:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
             else:
-                 _options.append("--all")
+                _options.append("--all")
             self.get_plan(_options)
 
     def find_tags(self):
