@@ -7,4 +7,3 @@ zephyr_library_compile_definitions_ifdef(
   )
 
 zephyr_library_sources_ifdef(CONFIG_NET_L2_CANBUS_RAW canbus_raw.c)
-zephyr_library_sources_ifdef(CONFIG_NET_L2_CANBUS 6locan.c)

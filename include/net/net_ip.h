@@ -1248,8 +1248,7 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 		/* The generated IPv6 shall not toggle the
 		 * Universal/Local bit. RFC 6282 ch 3.2.2
 		 */
-		if (lladdr->type == NET_LINK_IEEE802154 ||
-		    lladdr->type == NET_LINK_CANBUS) {
+		if (lladdr->type == NET_LINK_IEEE802154) {
 			UNALIGNED_PUT(0, &addr->s6_addr32[2]);
 			addr->s6_addr[11] = 0xff;
 			addr->s6_addr[12] = 0xfe;

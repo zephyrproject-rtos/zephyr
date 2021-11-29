@@ -41,9 +41,6 @@ extern "C" {
  */
 
 struct net_context;
-struct canbus_net_isotp_tx_ctx;
-struct canbus_net_isotp_rx_ctx;
-
 
 /* buffer cursor used in net_pkt */
 struct net_pkt_cursor {
@@ -261,12 +258,6 @@ struct net_pkt {
 	uint32_t ieee802154_ack_fc; /* Frame counter set in the ACK */
 	uint8_t ieee802154_ack_keyid; /* Key index set in the ACK */
 #endif
-#endif
-#if defined(CONFIG_NET_L2_CANBUS)
-	union {
-		struct canbus_isotp_tx_ctx *canbus_tx_ctx;
-		struct canbus_isotp_rx_ctx *canbus_rx_ctx;
-	};
 #endif
 	/* @endcond */
 };
