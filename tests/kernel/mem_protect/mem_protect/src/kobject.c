@@ -1256,6 +1256,7 @@ void test_alloc_kobjects(void)
 	struct k_poll_signal *polls;
 	struct k_timer *timer;
 	struct k_mutex *mutex;
+	struct k_condvar *condvar;
 	void *ko;
 
 	/* allocate kernel object */
@@ -1286,6 +1287,8 @@ void test_alloc_kobjects(void)
 	zassert_not_null(timer, "alloc obj (0x%lx)\n", (uintptr_t)timer);
 	mutex = k_object_alloc(K_OBJ_MUTEX);
 	zassert_not_null(mutex, "alloc obj (0x%lx)\n", (uintptr_t)mutex);
+	condvar = k_object_alloc(K_OBJ_CONDVAR);
+	zassert_not_null(condvar, "alloc obj (0x%lx)\n", (uintptr_t)condvar);
 
 	k_object_release((void *)mslab);
 	k_object_release((void *)polls);
