@@ -96,7 +96,8 @@ class Filters:
         self.find_tags()
         self.find_excludes()
         self.find_tests()
-        self.find_archs()
+        if not self.platforms:
+            self.find_archs()
         self.find_boards()
 
     def get_plan(self, options, integration=False):
@@ -105,6 +106,7 @@ class Filters:
         if integration:
             cmd.append("--integration")
 
+        logging.info(" ".join(cmd))
         _ = subprocess.call(cmd)
         with open(fname, newline='') as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=',')
@@ -138,7 +140,13 @@ class Filters:
 
         if _options:
             logging.info(f'Potential architecture filters...')
-            self.get_plan(_options, True)
+            if self.platforms:
+                for platform in self.platforms:
+                    _options.extend(["-p", platform])
+
+                self.get_plan(_options, True)
+            else:
+                self.get_plan(_options, False)
 
     def find_boards(self):
         boards = set()
@@ -255,8 +263,11 @@ class Filters:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
 
-            _options.extend(self.tag_options)
-            self.get_plan(_options, True)
+                _options.extend(self.tag_options)
+                self.get_plan(_options)
+            else:
+                _options.extend(self.tag_options)
+                self.get_plan(_options, True)
         else:
             logging.info(f'No twister needed or partial twister run only...')
 
