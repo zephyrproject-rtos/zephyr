@@ -13,10 +13,6 @@ config LS0XX
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	string "Display device name"
-	default "LS0XX"
-
 config LVGL_HOR_RES_MAX
 	int "Horizantal resolution"
 	default 128
