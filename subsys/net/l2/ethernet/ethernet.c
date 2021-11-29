@@ -21,9 +21,6 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #endif
 
 #include <syscall_handler.h>
-#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
-#include <net/can.h>
-#endif
 
 #include "arp.h"
 #include "eth_stats.h"
@@ -291,12 +288,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			       net_pkt_lladdr_src(pkt),
 			       net_pkt_lladdr_dst(pkt));
 	}
-
-#if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
-	if (net_canbus_translate_eth_frame(iface, pkt) == NET_OK) {
-		return NET_OK;
-	}
-#endif
 
 	if (!net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr) &&
 	    !net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr) &&
