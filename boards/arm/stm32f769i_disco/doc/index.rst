@@ -118,6 +118,8 @@ The Zephyr stm32f769i_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | QSPI NOR  | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
+| FMC       | on-chip    | memc (SDRAM)                        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
