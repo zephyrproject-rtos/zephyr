@@ -64,7 +64,6 @@ NET_BUF_VARIABLE_DATA_SIZE,n,experimental
 NET_CONNECTION_MANAGER,n,experimental
 NET_GPTP,n,experimental
 NET_IPV4_AUTO,n,experimental
-NET_L2_CANBUS,n,experimental
 NET_L2_IEEE802154_SECURITY,n,experimental
 NET_L2_PPP,n,experimental
 NET_L2_PTP,n,experimental

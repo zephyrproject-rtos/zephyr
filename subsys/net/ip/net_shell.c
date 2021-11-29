@@ -220,16 +220,6 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 	}
 #endif
 
-#ifdef CONFIG_NET_L2_CANBUS
-	if (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS)) {
-		if (extra) {
-			*extra = "======";
-		}
-
-		return "CANBUS";
-	}
-#endif
-
 #ifdef CONFIG_NET_L2_CANBUS_RAW
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)) {
 		if (extra) {
@@ -1445,11 +1435,6 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 			 net_sprint_ipv4_addr(
 				 &net_sin(&conn->remote_addr)->sin_addr),
 			 ntohs(net_sin(&conn->remote_addr)->sin_port));
-	} else
-#endif
-#ifdef CONFIG_NET_L2_CANBUS
-	if (conn->local_addr.sa_family == AF_CAN) {
-		snprintk(addr_local, sizeof(addr_local), "-");
 	} else
 #endif
 	if (conn->local_addr.sa_family == AF_UNSPEC) {
