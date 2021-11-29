@@ -130,6 +130,7 @@
 /boards/arm/quick_feather/                @kowalewskijan @kgugala
 /boards/arm/rak4631_nrf52840/             @gpaquet85
 /boards/arm/rak5010_nrf52840/             @gpaquet85
+/boards/arm/rpi_pico/                     @yonsch
 /boards/arm/ronoth_lodev/                 @NorthernDean
 /boards/arm/xmc45_relax_kit/              @parthitce
 /boards/arm/sam4e_xpro/                   @nandojve
