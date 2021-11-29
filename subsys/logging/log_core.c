@@ -846,6 +846,7 @@ uint32_t z_vrfy_log_buffered_cnt(void)
 void z_log_dropped(void)
 {
 	atomic_inc(&dropped_cnt);
+	atomic_dec(&buffered_cnt);
 }
 
 uint32_t z_log_dropped_read_and_clear(void)
