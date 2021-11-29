@@ -4143,17 +4143,6 @@ sub process {
 			}
 		}
 
-# check for new typedefs, only function parameters and sparse annotations
-# make sense.
-		if ($line =~ /\btypedef\s/ &&
-		    $line !~ /\btypedef\s+$Type\s*\(\s*\*?$Ident\s*\)\s*\(/ &&
-		    $line !~ /\btypedef\s+$Type\s+$Ident\s*\(/ &&
-		    $line !~ /\b$typeTypedefs\b/ &&
-		    $line !~ /\b__bitwise\b/) {
-			WARN("NEW_TYPEDEFS",
-			     "do not add new typedefs\n" . $herecurr);
-		}
-
 # * goes on variable not on type
 		# (char*[ const])
 		while ($line =~ m{(\($NonptrType(\s*(?:$Modifier\b\s*|\*\s*)+)\))}g) {
