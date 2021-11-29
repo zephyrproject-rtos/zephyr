@@ -388,7 +388,7 @@ static int get_large_coap_msgs(void)
 	return 0;
 }
 
-static int send_obs_reply_ack(uint16_t id, uint8_t *token, uint8_t tkl)
+static int send_obs_reply_ack(uint16_t id)
 {
 	struct coap_packet request;
 	uint8_t *data;
@@ -400,7 +400,7 @@ static int send_obs_reply_ack(uint16_t id, uint8_t *token, uint8_t tkl)
 	}
 
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
-			     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token, 0, id);
+			     COAP_VERSION_1, COAP_TYPE_ACK, 0, NULL, 0, id);
 	if (r < 0) {
 		LOG_ERR("Failed to init CoAP message");
 		goto end;
@@ -419,10 +419,8 @@ static int process_obs_coap_reply(void)
 {
 	struct coap_packet reply;
 	uint16_t id;
-	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint8_t *data;
 	uint8_t type;
-	uint8_t tkl;
 	int rcvd;
 	int ret;
 
@@ -457,14 +455,13 @@ static int process_obs_coap_reply(void)
 		goto end;
 	}
 
-	tkl = coap_header_get_token(&reply, token);
 	id = coap_header_get_id(&reply);
 
 	type = coap_header_get_type(&reply);
 	if (type == COAP_TYPE_ACK) {
 		ret = 0;
 	} else if (type == COAP_TYPE_CON) {
-		ret = send_obs_reply_ack(id, token, tkl);
+		ret = send_obs_reply_ack(id);
 	}
 end:
 	k_free(data);
