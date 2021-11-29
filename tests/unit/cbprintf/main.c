@@ -294,7 +294,7 @@ static int rawprf(const char *format, ...)
 #define TEST_PRF2(rc, _fmt, ...) do { \
 	char _buf[512]; \
 	char *sp_buf = NULL; /* static package buffer */\
-	if (USE_PACKAGED && !CBPRINTF_MUST_RUNTIME_PACKAGE(0, _fmt, __VA_ARGS__)) { \
+	if (USE_PACKAGED && !CBPRINTF_MUST_RUNTIME_PACKAGE(0, 0, _fmt, __VA_ARGS__)) { \
 		int rv = 0; \
 		size_t _len; \
 		struct out_buffer package_buf = { \
