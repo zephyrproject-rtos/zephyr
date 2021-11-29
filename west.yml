@@ -113,6 +113,11 @@ manifest:
       repo-path: hal_quicklogic
       groups:
         - hal
+    - name: hal_rpi_pico
+      path: modules/hal/rpi_pico
+      revision: 191f5ba46fda49523cdaaef27583d1c875ba2c36
+      groups:
+        - hal
     - name: hal_silabs
       revision: be39d4eebeddac6e18e9c0c3ba1b31ad1e82eaed
       path: modules/hal/silabs
