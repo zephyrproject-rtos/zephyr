@@ -284,6 +284,10 @@ def parse_args():
             help="This is a pull request")
     parser.add_argument('-p', '--platform', action="append",
             help="Limit this for a platform or a list of platforms.")
+    parser.add_argument('-t', '--tests_per_builder', default=700, type=int,
+            help="Number of tests per builder")
+    parser.add_argument('-n', '--default-matrix', default=10, type=int,
+            help="Number of tests per builder")
 
     return parser.parse_args()
 
@@ -317,6 +321,18 @@ if __name__ == "__main__":
             dup_free_set.add(tuple(x))
 
     logging.info(f'Total tests to be run: {len(dup_free)}')
+    with open(".testplan", "w") as tp:
+        total_tests = len(dup_free)
+        nodes = round(total_tests / args.tests_per_builder)
+        if total_tests % args.tests_per_builder != total_tests:
+            nodes = nodes + 1
+
+        if nodes > 5:
+            nodes = args.default_matrix
+
+        tp.write(f"TWISTER_TESTS={total_tests}\n")
+        tp.write(f"TWISTER_NODES={nodes}\n")
+
     header = ['test', 'arch', 'platform', 'status', 'extra_args', 'handler',
             'handler_time', 'ram_size', 'rom_size']
 
