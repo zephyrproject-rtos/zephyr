@@ -380,8 +380,10 @@ static int run_test(struct unit_test *test)
 	test->teardown();
 	phase = TEST_PHASE_FRAMEWORK;
 
-	/* Flush all logs in case deferred mode is used. */
-	while (IS_ENABLED(CONFIG_TEST_LOGGING_FLUSH_AFTER_TEST) && log_data_pending()) {
+	/* Flush all logs in case deferred mode and default logging thread are used. */
+	while (IS_ENABLED(CONFIG_TEST_LOGGING_FLUSH_AFTER_TEST) &&
+	       IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) &&
+	       log_data_pending()) {
 		k_msleep(100);
 	}
 
