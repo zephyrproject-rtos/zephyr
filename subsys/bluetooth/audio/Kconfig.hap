@@ -1,0 +1,139 @@
+# Bluetooth Audio - Hearing Access Profile options
+#
+# Copyright (c) 2021 Codecoup
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BT_AUDIO
+
+config BT_HAP
+	bool "Hearing Access Profile support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables support for Hearing Access Profile.
+
+if BT_HAP
+
+config BT_HAP_ROLE_HA
+	bool "Hearing Aid Role support"
+	depends on !BT_HAP_ROLE_HAUC && !BT_HAP_ROLE_HARC && !BT_HAP_ROLE_IAC
+	help
+	  This option enables support for Hearing Aid role.
+
+if BT_HAP_ROLE_HA
+
+choice BT_HAS_HA_TYPE
+	prompt "Hearing Aid Type selection"
+	help
+	  Select the Hearing Aid Type to compile.
+
+config BT_HAS_HA_TYPE_MONAURAL
+	bool "Monaural Hearing Aid"
+
+config BT_HAS_HA_TYPE_BINAURAL
+	bool "Binaural Hearing Aid"
+
+config BT_HAS_HA_TYPE_BANDED
+	bool "Banded Hearing Aid"
+
+endchoice # BT_HAS_HA_TYPE
+
+config BT_HAS_HA_CONFIGURABLE_PRESETS
+	bool "Preset configuration support"
+	default y
+	help
+	  Enabling this option allows remote HAS clients to control the active
+	  preset.
+
+config BT_HAS_HA_DYNAMIC_PRESETS_SUPPORT
+	bool "Dynamic preset records support"
+	help
+	  This option enables adding/removing presets at runtime.
+
+config BT_HAS_HA_IDENTICAL_PRESET_RECORDS
+	bool "Identical preset records in Binaural Hearing Aid Set"
+	depends on BT_HAS_HA_TYPE_BINAURAL
+	help
+	  Set if the list of preset records is identical the list of preset records
+	  on the other member in the Binaural Hearing Aid Set.
+	  This option sets Independent Presets field in Hearing Aid Features to 0b0.
+
+config BT_HAS_HA_ACTIVE_PRESET_SYNC_SUPPORT
+	bool "Active preset synchronization support"
+	depends on BT_HAS_HA_TYPE_BINAURAL && BT_HAS_HA_IDENTICAL_PRESET_RECORDS
+	help
+	  Set if there is support for active preset changes relay to the other member
+	  in the Binaural Hearing Aid Set.
+
+endif # BT_HAP_ROLE_HA
+
+config BT_HAP_ROLE_HAUC
+	bool "Hearing Aid Unicast Client Role support"
+	help
+	  This option enables support for Hearing Aid Unicast Client role.
+
+config BT_HAP_ROLE_HARC
+	bool "Hearing Aid Remote Controller Role support"
+	help
+	  This option enables support for Hearing Aid Remote Controller role.
+
+if BT_HAP_ROLE_HARC
+
+config BT_HAP_HARC_AUTO_READ_ACTIVE_PRESET
+	bool "Support to automatic read of active preset record"
+	default y
+	help
+	  This option enables support for automatic read of active preset record
+	  after received notification about active preset change.
+
+config BT_HAP_HARC_PRESET_CACHE_SIZE
+	int "Preset record cache size"
+	default 3
+	range 0 10
+	help
+	  Size of the cache used to store the list of preset records for each bonded
+	  Hearing Aid. Setting this to 0 disables Set Active Preset by Index and
+	  Write Preset Name procedure support.
+
+config BT_HAP_HARC_MAX_HA
+	int "Maximum number of bonded Hearing Audio devices"
+	default 2
+	help
+	  Maximum number of bonded Hearing Audio devices
+
+endif # BT_HAP_ROLE_HARC
+
+config BT_HAP_ROLE_IAC
+	bool "Immediate Alert Client Role support"
+	select BT_IAS_CLIENT
+	help
+	  This option enables support for Immediate Alert Client role.
+
+config BT_DEBUG_HAP
+	bool "Hearing Access Profile debug"
+	help
+	  This option enables Hearing Access Profile debug logs.
+
+config BT_HAS_SERVER
+	bool # Hidden
+	default y if BT_HAP_ROLE_HA
+	help
+	  This hidden option enables Hearing Access Service server support.
+
+config BT_HAS_CLIENT
+	bool # Hidden
+	select BT_GATT_CLIENT
+	default y if BT_HAP_ROLE_HARC
+	help
+	  This hidden option enables Hearing Access Service client support.
+
+config BT_DEBUG_HAS
+	bool # Hidden
+	default y if BT_DEBUG_HAP
+	help
+	  This hidden option enables enables Hearing Access Service debug logs.
+
+endif # BT_HAP
+
+endif # BT_AUDIO
