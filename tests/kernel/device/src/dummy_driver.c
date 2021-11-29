@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <device.h>
+#include <pm/device.h>
 
 
 #define DUMMY_DRIVER_NAME	"dummy_driver"
