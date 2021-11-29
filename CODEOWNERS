@@ -491,6 +491,7 @@
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @mmahadevan108 @dleach02
 /dts/bindings/*/openisa*                  @dleach02
+/dts/bindings/*/raspberrypi*pico*         @yonsch
 /dts/bindings/*/st*                       @erwango
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda
