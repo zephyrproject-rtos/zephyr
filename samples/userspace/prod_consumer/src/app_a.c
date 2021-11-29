@@ -10,7 +10,7 @@
 #include <logging/log.h>
 
 #include "sample_driver.h"
-#include "main.h"
+#include "app_shared.h"
 #include "app_a.h"
 #include "app_syscall.h"
 
