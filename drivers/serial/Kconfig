@@ -159,6 +159,8 @@ source "drivers/serial/Kconfig.pl011"
 
 source "drivers/serial/Kconfig.rv32m1_lpuart"
 
+source "drivers/serial/Kconfig.rpi_pico"
+
 source "drivers/serial/Kconfig.litex"
 
 source "drivers/serial/Kconfig.rtt"
