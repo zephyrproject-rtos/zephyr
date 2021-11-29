@@ -56,8 +56,8 @@ static void unpack(const char *desc, struct out_buffer *buf,
 		      compare_buf, buf->buf);
 }
 
-#define TEST_PACKAGING(fmt, ...) do { \
-	int must_runtime = CBPRINTF_MUST_RUNTIME_PACKAGE(0, 0, fmt, __VA_ARGS__); \
+#define TEST_PACKAGING(flags, fmt, ...) do { \
+	int must_runtime = CBPRINTF_MUST_RUNTIME_PACKAGE(0, flags, fmt, __VA_ARGS__); \
 	zassert_equal(must_runtime, !Z_C_GENERIC, NULL); \
 	snprintfcb(compare_buf, sizeof(compare_buf), fmt, __VA_ARGS__); \
 	printk("-----------------------------------------\n"); \
@@ -108,28 +108,47 @@ void test_cbprintf_package(void)
 	unsigned long ul = 0xaabbaabb;
 	unsigned long long ull = 0xaabbaabbaabb;
 	void *vp = NULL;
-
+	static const char *str = "test";
+	char *pstr = (char *)str;
+	int rv;
 
 	/* tests to exercize different element alignments */
-	TEST_PACKAGING("test long %x %lx %x", 0xb1b2b3b4, li, 0xe4e3e2e1);
-	TEST_PACKAGING("test long long %x %llx %x", 0xb1b2b3b4, lli, 0xe4e3e2e1);
+	TEST_PACKAGING(0, "test long %x %lx %x", 0xb1b2b3b4, li, 0xe4e3e2e1);
+	TEST_PACKAGING(0, "test long long %x %llx %x", 0xb1b2b3b4, lli, 0xe4e3e2e1);
 
 	/* tests with varied elements */
-	TEST_PACKAGING("test %d %hd %hhd", i, s, sc);
-	TEST_PACKAGING("test %ld %llx %hhu %hu %u", li, lli, uc, us, ui);
-	TEST_PACKAGING("test %lu %llu", ul, ull);
-	TEST_PACKAGING("test %c %p", c, vp);
+	TEST_PACKAGING(0, "test %d %hd %hhd", i, s, sc);
+	TEST_PACKAGING(0, "test %ld %llx %hhu %hu %u", li, lli, uc, us, ui);
+	TEST_PACKAGING(0, "test %lu %llu", ul, ull);
+	TEST_PACKAGING(0, "test %c %p", c, vp);
+
+	/* Runtime packaging is still possible when const strings are used. */
+	TEST_PACKAGING(CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR,
+			"test %s %s", str, (const char *)pstr);
+
+	/* When flag is set but argument is char * runtime packaging must be used. */
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR,
+					   "test %s %s", str, pstr);
+	zassert_true(rv != 0, "Unexpected value %d", rv);
+
+	/* When const char * are used but flag is not used then runtime packaging must be used. */
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, 0, "test %s %s", str, (const char *)pstr);
+	zassert_true(rv != 0, "Unexpected value %d", rv);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR,
+					   "test %s", (char *)str);
+	zassert_true(rv != 0, "Unexpected value %d", rv);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		float f = -1.234f;
 		double d = 1.2333;
 
-		TEST_PACKAGING("test double %x %f %x", 0xb1b2b3b4, d, 0xe4e3e2e1);
-		TEST_PACKAGING("test %f %a", (double)f, d);
+		TEST_PACKAGING(0, "test double %x %f %x", 0xb1b2b3b4, d, 0xe4e3e2e1);
+		TEST_PACKAGING(0, "test %f %a", (double)f, d);
 #if CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
 		long double ld = 1.2333;
 
-		TEST_PACKAGING("test %Lf", ld);
+		TEST_PACKAGING(0, "test %Lf", ld);
 #endif
 	}
 }
