@@ -54,6 +54,15 @@ module = PM_DEVICE
 module-str = Device Power Management
 source "subsys/logging/Kconfig.template.log_config"
 
+config PM_DEVICE_POWER_DOMAIN
+	bool "Enable power domain"
+	depends on PM_DEVICE
+	default y
+	help
+	  Enable support for Power Domain. With power domain enabled,
+	  devices that depend on a domain will be notified when this
+	  domain is suspended or resumed.
+
 config PM_DEVICE_RUNTIME
 	bool "Runtime Device Power Management"
 	help
