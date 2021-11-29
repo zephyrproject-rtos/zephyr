@@ -9,6 +9,7 @@
 #include <init.h>
 #include <ztest.h>
 #include <sys/printk.h>
+#include <pm/device.h>
 #include <pm/device_runtime.h>
 #include <linker/sections.h>
 #include "abstract_driver.h"
