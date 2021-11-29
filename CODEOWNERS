@@ -357,20 +357,26 @@
 /drivers/spi/*b91*                        @yurvyn
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
 /drivers/spi/*esp32*                      @glaubermaroto
-/drivers/timer/apic_timer.c               @dcpleung @nashif
+/drivers/timer/*apic*                     @dcpleung @nashif
 /drivers/timer/apic_tsc.c                 @andyross
-/drivers/timer/arm_arch_timer.c           @carlocaione
-/drivers/timer/cortex_m_systick.c         @anangl
-/drivers/timer/altera_avalon_timer_hal.c  @nashif
-/drivers/timer/riscv_machine_timer.c      @kgugala @pgielda
-/drivers/timer/ite_it8xxx2_timer.c        @ite
-/drivers/timer/xlnx_psttc_timer*          @wjliang @stephanosio
-/drivers/timer/cc13x2_cc26x2_rtc_timer.c  @vanti
-/drivers/timer/cavs_timer.c               @dcpleung
-/drivers/timer/stm32_lptim_timer.c        @FRASTM
-/drivers/timer/leon_gptimer.c             @martin-aberg
-/drivers/timer/rcar_cmt_timer.c           @julien-massot
-/drivers/timer/esp32c3_sys_timer.c        @uLipe
+/drivers/timer/*arm_arch*                 @carlocaione
+/drivers/timer/*cortex_m_systick*         @anangl
+/drivers/timer/*altera_avalon*            @nashif
+/drivers/timer/*riscv_machine*            @kgugala @pgielda
+/drivers/timer/*ite_it8xxx2*              @ite
+/drivers/timer/*xlnx_psttc*               @wjliang @stephanosio
+/drivers/timer/*cc13x2_cc26x2_rtc*        @vanti
+/drivers/timer/*cavs*                     @dcpleung
+/drivers/timer/*stm32_lptim*              @FRASTM
+/drivers/timer/*leon_gptimer*             @martin-aberg
+/drivers/timer/*rcar_cmt*                 @julien-massot
+/drivers/timer/*esp32c3_sys*              @uLipe
+/drivers/timer/*sam0_rtc*                 @bendiscz
+/drivers/timer/*arcv2*                    @ruuddw
+/drivers/timer/*xtensa*                   @dcpleung
+/drivers/timer/*rv32m1_lptmr*             @mbolivar
+/drivers/timer/*nrf_rtc*                  @anangl
+/drivers/timer/*hpet*                     @dcpleung
 /drivers/usb/                             @jfischer-no
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/video/                           @loicpoulain
