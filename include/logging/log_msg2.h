@@ -358,7 +358,7 @@ do {\
 			  _level, _data, _dlen, ...) \
 do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
-	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, __VA_ARGS__)) { \
+	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, 0, __VA_ARGS__)) { \
 		LOG_MSG2_DBG("create runtime message\n");\
 		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
 					  _level, (uint8_t *)_data, _dlen,\
@@ -375,7 +375,7 @@ do { \
 			  _level, _data, _dlen, ...) \
 do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
-	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, __VA_ARGS__)) { \
+	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, 0, __VA_ARGS__)) { \
 		LOG_MSG2_DBG("create runtime message\n");\
 		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
 					  _level, (uint8_t *)_data, _dlen,\
