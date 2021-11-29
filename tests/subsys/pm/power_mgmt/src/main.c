@@ -366,6 +366,32 @@ void test_device_order(void)
 	testing_device_order = false;
 }
 
+/**
+ * @brief Test the device busy APIs.
+ */
+void test_busy(void)
+{
+	bool busy;
+
+	busy = pm_device_is_any_busy();
+	zassert_false(busy, NULL);
+
+	pm_device_busy_set(device_dummy);
+
+	busy = pm_device_is_any_busy();
+	zassert_true(busy, NULL);
+
+	busy = pm_device_is_busy(device_dummy);
+	zassert_true(busy, NULL);
+
+	pm_device_busy_clear(device_dummy);
+
+	busy = pm_device_is_any_busy();
+	zassert_false(busy, NULL);
+
+	busy = pm_device_is_busy(device_dummy);
+	zassert_false(busy, NULL);
+}
 
 void test_main(void)
 {
@@ -376,7 +402,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_power_idle),
 			 ztest_1cpu_unit_test(test_power_state_trans),
 			 ztest_1cpu_unit_test(test_device_order),
-			 ztest_1cpu_unit_test(test_power_state_notification));
+			 ztest_1cpu_unit_test(test_power_state_notification),
+			 ztest_1cpu_unit_test(test_busy));
 	ztest_run_test_suite(power_management_test);
 	pm_notifier_unregister(&notifier);
 }
