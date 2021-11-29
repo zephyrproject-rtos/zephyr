@@ -122,6 +122,9 @@ class Build(Forceable):
         group.add_argument('-n', '--just-print', '--dry-run', '--recon',
                             dest='dry_run', action='store_true',
                             help="just print build commands; don't run them")
+        group.add_argument('--save-temps',
+                            dest='save_temps', action='store_true',
+                            help="save temporary objects created by compiler")
 
         group = parser.add_argument_group('pristine builds',
                                           PRISTINE_DESCRIPTION)
@@ -152,6 +155,12 @@ class Build(Forceable):
                 level=log.VERBOSE_EXTREME)
         self._sanity_precheck()
         self._setup_build_dir()
+
+        if self.args.save_temps:
+            if self.args.cmake_opts:
+                self.args.cmake_opts.append("-DCOMPILER_SAVE_TEMPS=ON")
+            else:
+                self.args.cmake_opts = ["-DCOMPILER_SAVE_TEMPS=ON"]
 
         if args.pristine is not None:
             pristine = args.pristine

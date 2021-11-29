@@ -198,6 +198,12 @@ endif()
 # Apply the final optimization flag(s)
 zephyr_compile_options(${OPTIMIZATION_FLAG})
 
+# Save temporary objects if needed
+option(COMPILER_SAVE_TEMPS "Save temporary objects" OFF)
+if(COMPILER_SAVE_TEMPS)
+  zephyr_compile_options(-save-temps=obj)
+endif()
+
 # @Intent: Obtain compiler specific flags related to C++ that are not influenced by kconfig
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,required>>)
 
