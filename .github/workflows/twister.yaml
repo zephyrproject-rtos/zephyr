@@ -76,39 +76,26 @@ jobs:
             echo "Your branch is not up to date, you need to rebase on top of latest HEAD of main branch"
             exit 1
           )
-          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
+          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request -t $TESTS_PER_BUILDER
+          if [ -s .testplan ]; then
+            cat .testplan >> $GITHUB_ENV
+          else
+            echo "TWISTER_NODES=${MATRIX_SIZE}" >> $GITHUB_ENV
+          fi
 
-          # get number of tests
-          if [ -s testplan.csv ]; then
-            lines=$(wc -l < testplan.csv)
-          else
-            lines=1
-          fi
-          if [ "$lines" = 1 ]; then
-            # no tests, so we need 0 nodes
-            nodes=0
-          else
-            nodes=$(( ${lines} / ${TESTS_PER_BUILDER}))
-            if [ ${nodes} -gt 4 -a ${nodes} -lt 10 ]; then
-              nodes=${MATRIX_SIZE}
-            elif [ "${nodes}" = 0 ]; then
-              # for less than TESTS_PER_BUILDER, we take at least 1 node
-              nodes=1
-            fi
-          fi
-          echo "::set-output name=calculated_matrix_size::${nodes}";
-          rm -f testplan.csv
+
+          rm -f testplan.csv .testplan
 
       - name: Determine matrix size
         id: output-services
         run: |
           if [ "${{github.event_name}}" = "pull_request_target" ]; then
-            if [ -n "${{steps.test-plan.outputs.calculated_matrix_size}}" ]; then
-              subset="[$(seq -s',' 1 ${{steps.test-plan.outputs.calculated_matrix_size}})]"
+            if [ -n "${TWISTER_NODES}" ]; then
+              subset="[$(seq -s',' 1 ${TWISTER_NODES})]"
             else
               subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
             fi
-            size=${{ steps.test-plan.outputs.calculated_matrix_size }}
+            size=${TWISTER_NODES}
           elif [ "${{github.event_name}}" = "push" ]; then
             subset="[$(seq -s',' 1 ${PUSH_MATRIX_SIZE})]"
             size=${MATRIX_SIZE}
