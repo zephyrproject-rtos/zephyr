@@ -245,7 +245,6 @@ static inline bool arch_is_in_isr(void);
  * @{
  */
 
-#ifdef CONFIG_MMU
 /**
  * Map physical memory into the virtual address space
  *
@@ -335,7 +334,6 @@ void arch_mem_unmap(void *addr, size_t size);
  */
 int arch_page_phys_get(void *virt, uintptr_t *phys);
 
-#ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
 /**
  * Update page frame database with reserved pages
  *
@@ -347,9 +345,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys);
  * early system initialization with mm_lock held.
  */
 void arch_reserved_pages_update(void);
-#endif /* ARCH_HAS_RESERVED_PAGE_FRAMES */
 
-#ifdef CONFIG_DEMAND_PAGING
 /**
  * Update all page tables for a paged-out data page
  *
@@ -526,8 +522,7 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
  */
 uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
 			     bool clear_accessed);
-#endif /* CONFIG_DEMAND_PAGING */
-#endif /* CONFIG_MMU */
+
 /** @} */
 
 /**
