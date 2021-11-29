@@ -110,14 +110,16 @@ struct pm_device {
 	/** Event conditional var to listen to the sync request events */
 	struct k_condvar condvar;
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+	/** Power Domain it belongs */
+	const struct device *domain;
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 	/* Device PM status flags. */
 	atomic_t flags;
 	/** Device power state */
 	enum pm_device_state state;
 	/** Device PM action callback */
 	pm_device_action_cb_t action_cb;
-	/** Power Domain it belongs */
-	const struct device *domain;
 };
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
@@ -127,6 +129,14 @@ struct pm_device {
 #else
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
+
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+#define	Z_PM_DEVICE_POWER_DOMAIN_INIT(_node_id)			\
+	.domain = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(_node_id,	\
+				   power_domain)),
+#else
+#define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj)
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
 /**
  * @brief Utility macro to initialize #pm_device.
@@ -147,7 +157,7 @@ struct pm_device {
 				DT_NODE_EXISTS(node_id),		\
 				(DT_PROP_OR(node_id, wakeup_source, 0)),\
 				(0)) << PM_DEVICE_FLAG_WS_CAPABLE),	\
-		.domain = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, power_domain))\
+		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			\
 	}
 
 /**
