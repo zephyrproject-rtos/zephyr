@@ -107,4 +107,10 @@
 		status = "disabled";
 	};
 
+	smc: smc {
+		compatible = "arm,sip-svc";
+		method = "smc";
+		label = "smc";
+		status = "disabled";
+	};
 };
