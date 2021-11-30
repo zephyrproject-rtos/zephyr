@@ -578,6 +578,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "faster compilation since builds will be incremental.")
 
     parser.add_argument(
+        "--no-skipped-report", action="store_true",
+        help="""Do not report skipped test cases in junit output. [Experimental]
+        """)
+
+    parser.add_argument(
         "-O", "--outdir",
         default=os.path.join(os.getcwd(), "twister-out"),
         help="Output directory for logs and binaries. "
@@ -1359,7 +1364,8 @@ def main():
                        options.release,
                        options.only_failed,
                        options.platform_reports,
-                       options.json_report
+                       options.json_report,
+                       not options.no_skipped_report
                        )
 
     # FIXME: remove later
