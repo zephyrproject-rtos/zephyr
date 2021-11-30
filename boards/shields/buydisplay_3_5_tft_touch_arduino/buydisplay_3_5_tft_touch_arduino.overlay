@@ -18,6 +18,8 @@
 		cmd-data-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; /* D7 */
 		reset-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+		width = <320>;
+		height = <480>;
 		rotation = <0>;
 		frmctr1 = [a0 11];
 		pwctrl1 = [17 15];
