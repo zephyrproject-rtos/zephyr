@@ -39,7 +39,7 @@ words=wip
 
 [max-line-length-with-exceptions]
 # B1 = body-max-line-length
-line-length=72
+line-length=75
 
 [body-min-length]
 min-length=3
