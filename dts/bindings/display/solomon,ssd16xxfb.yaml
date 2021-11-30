@@ -5,19 +5,9 @@ description: SSD16XX 250x150 EPD display controller
 
 compatible: "solomon,ssd16xxfb"
 
-include: spi-device.yaml
+include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-    height:
-      type: int
-      required: true
-      description: Height in pixel of the panel driven by the controller
-
-    width:
-      type: int
-      required: true
-      description: Width in pixel of the panel driven by the controller
-
     pp-height-bits:
       type: int
       required: true

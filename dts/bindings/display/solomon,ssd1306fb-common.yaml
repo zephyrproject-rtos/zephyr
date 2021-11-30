@@ -1,17 +1,9 @@
 # Copyright (c) 2018, Phytec Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
+include: display-controller.yaml
+
 properties:
-    height:
-      type: int
-      required: true
-      description: Height in pixel of the panel driven by the controller
-
-    width:
-      type: int
-      required: true
-      description: Width in pixel of the panel driven by the controller
-
     segment-offset:
       type: int
       required: true

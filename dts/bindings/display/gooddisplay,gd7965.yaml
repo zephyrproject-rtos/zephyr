@@ -5,19 +5,9 @@ description: GD7965 EPD display controller
 
 compatible: "gooddisplay,gd7965"
 
-include: spi-device.yaml
+include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-    height:
-      type: int
-      required: true
-      description: Height in pixel of the panel driven by the controller
-
-    width:
-      type: int
-      required: true
-      description: Width in pixel of the panel driven by the controller
-
     reset-gpios:
       type: phandle-array
       required: true
