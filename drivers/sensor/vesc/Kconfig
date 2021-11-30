@@ -1,0 +1,7 @@
+# VESC BLDC Motor Controller
+
+menuconfig VESC
+    bool "VESC BLDC Motor Controller"
+    depends on UART
+    help
+        Enable VESC BLDC Motor Controller driver
