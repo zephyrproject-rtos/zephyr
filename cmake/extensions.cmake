@@ -835,7 +835,7 @@ endfunction()
 # This section provides a function for revision checking.
 
 # Usage:
-#   board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>
+#   board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>
 #                        [EXACT]
 #                        [DEFAULT_REVISION <revision>]
 #                        [HIGHEST_REVISION <revision>]
@@ -851,8 +851,9 @@ endfunction()
 # When `EXACT` is not specified, this function will set the Zephyr build system
 # variable `ACTIVE_BOARD_REVISION` with the selected revision.
 #
-# FORMAT <LETTER | MAJOR.MINOR.PATCH>: Specify the revision format.
+# FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>: Specify the revision format.
 #         LETTER:             Revision format is a single letter from A - Z.
+#         NUMBER:             Revision format is a single integer number.
 #         MAJOR.MINOR.PATCH:  Revision format is three numbers, separated by `.`,
 #                             `x.y.z`. Trailing zeroes may be omitted on the
 #                             command line, which means:
@@ -905,6 +906,8 @@ function(board_check_revision)
   if(DEFINED BOARD_REV_HIGHEST_REVISION)
     if(((BOARD_REV_FORMAT STREQUAL LETTER) AND
         (BOARD_REVISION STRGREATER BOARD_REV_HIGHEST_REVISION)) OR
+       ((BOARD_REV_FORMAT STREQUAL NUMBER) AND
+       (BOARD_REVISION GREATER BOARD_REV_HIGHEST_REVISION)) OR
        ((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
         (BOARD_REVISION VERSION_GREATER BOARD_REV_HIGHEST_REVISION))
     )
@@ -916,6 +919,8 @@ function(board_check_revision)
 
   if(BOARD_REV_FORMAT STREQUAL LETTER)
     set(revision_regex "([A-Z])")
+  elseif(BOARD_REV_FORMAT STREQUAL NUMBER)
+    set(revision_regex "([0-9]+)")
   elseif(BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$")
     set(revision_regex "((0|[1-9][0-9]*)(\.[0-9]+)(\.[0-9]+))")
     # We allow loose <board>@<revision> typing on command line.
@@ -932,7 +937,7 @@ function(board_check_revision)
     endif()
   else()
     message(FATAL_ERROR "Invalid format specified for \
-    `board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>)`")
+    `board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>)`")
   endif()
 
   if(NOT (BOARD_REVISION MATCHES "^${revision_regex}$"))
@@ -969,6 +974,11 @@ function(board_check_revision)
       elseif((BOARD_REV_FORMAT STREQUAL LETTER) AND
              (${BOARD_REVISION} STRGREATER ${TEST_REVISION}) AND
              (${TEST_REVISION} STRGREATER "${ACTIVE_BOARD_REVISION}")
+      )
+        set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
+      elseif((BOARD_REV_FORMAT STREQUAL NUMBER) AND
+             (${BOARD_REVISION} GREATER ${TEST_REVISION}) AND
+             (${TEST_REVISION} GREATER "${ACTIVE_BOARD_REVISION}")
       )
         set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
       endif()
