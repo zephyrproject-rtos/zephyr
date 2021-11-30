@@ -5,6 +5,7 @@
 
 config ZEPHYR_MBEDTLS_MODULE
 	bool
+
 config MBEDTLS_PROMPTLESS
 	bool
 	help
@@ -12,7 +13,6 @@ config MBEDTLS_PROMPTLESS
 	  This symbol may be used internally in a Kconfig tree to hide the
 	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
 	  dependent sub-configurations and thus prevent stuck symbol behavior.
-
 
 menuconfig MBEDTLS
 	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
@@ -233,3 +233,6 @@ config APP_LINK_WITH_MBEDTLS
 	  issues for 'app'.
 
 endif # MBEDTLS
+
+# Add PSA configurations
+rsource "Kconfig.psa"
