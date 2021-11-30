@@ -13,7 +13,6 @@ config MBEDTLS_PROMPTLESS
 	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
 	  dependent sub-configurations and thus preven stuck symbol behavior.
 
-
 menuconfig MBEDTLS
 	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
 	help
@@ -166,5 +165,8 @@ config APP_LINK_WITH_MBEDTLS
 	  Add MBEDTLS header files to the 'app' include path. It may be
 	  disabled if the include paths for MBEDTLS are causing aliasing
 	  issues for 'app'.
+
+# Add PSA configurations
+rsource "Kconfig.psa"
 
 endif # MBEDTLS
