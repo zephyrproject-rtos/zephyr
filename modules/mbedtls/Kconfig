@@ -5,6 +5,7 @@
 
 config ZEPHYR_MBEDTLS_MODULE
 	bool
+
 config MBEDTLS_PROMPTLESS
 	bool
 	help
