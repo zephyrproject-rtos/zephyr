@@ -1153,7 +1153,7 @@ void sys_trace_idle(void);
  * @param head First ll-node
  * @param tail Last ll-node
  */
-#define sys_port_trace_k_fifo_alloc_put_list_enter(fifo, head, tail)
+#define sys_port_trace_k_fifo_put_list_enter(fifo, head, tail)
 
 /**
  * @brief Trace FIFO Queue put list exit
@@ -1161,7 +1161,7 @@ void sys_trace_idle(void);
  * @param head First ll-node
  * @param tail Last ll-node
  */
-#define sys_port_trace_k_fifo_alloc_put_list_exit(fifo, head, tail)
+#define sys_port_trace_k_fifo_put_list_exit(fifo, head, tail)
 
 /**
  * @brief Trace FIFO Queue put slist entry
