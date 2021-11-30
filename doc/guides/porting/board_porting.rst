@@ -538,9 +538,10 @@ When the user builds for board ``plank@<revision>``:
   application for the board.
 
 Currently, ``<revision>`` can be either a numeric ``MAJOR.MINOR.PATCH`` style
-revision like ``1.5.0``, or single letter like ``A``, ``B``, etc. Zephyr
-provides a CMake board extension function, ``board_check_revision()``, to make
-it easy to match either style from :file:`revision.cmake`.
+revision like ``1.5.0``, an integer number like ``1``, or single letter like
+``A``, ``B``, etc. Zephyr provides a CMake board extension function,
+``board_check_revision()``, to make it easy to match either style from
+:file:`revision.cmake`.
 
 Valid board revisions may be specified as arguments to the
 ``board_check_revision()`` function, like:
@@ -560,8 +561,8 @@ Valid board revisions may be specified as arguments to the
 The following sections describe how to support these styles of revision
 numbers.
 
-Numeric revisions
-=================
+MAJOR.MINOR.PATCH revisions
+===========================
 
 Let's say you want to add support for revisions ``0.5.0``, ``1.0.0``, and
 ``1.5.0`` of the ``plank`` board with both Kconfig fragments and devicetree
@@ -583,8 +584,8 @@ additional files in the board directory:
 Notice how the board files have changed periods (".") in the revision number to
 underscores ("_").
 
-Fuzzy numeric revision matching
-===============================
+Fuzzy revision matching
+-----------------------
 
 To support "fuzzy" ``MAJOR.MINOR.PATCH`` revision matching for the ``plank``
 board, use the following code in :file:`revision.cmake`:
@@ -614,8 +615,8 @@ You may use ``0.0.0`` as a minimum revision to build for by creating the file
 revision lower than ``0.5.0``, for example if the user builds for
 ``plank@0.1.0``.
 
-Exact numeric revision matching
-===============================
+Exact revision matching
+-----------------------
 
 Alternatively, the ``EXACT`` keyword can be given to ``board_check_revision()``
 in :file:`revision.cmake` to allow exact matches only, like this:
@@ -655,12 +656,36 @@ And add the following to :file:`revision.cmake`:
 
    board_check_revision(FORMAT LETTER)
 
+Number revision matching
+========================
+
+Let's say instead that you need to support revisions ``1``, ``2``, and ``3`` of
+the ``plank`` board. Create the following additional files in the board
+directory:
+
+.. code-block:: none
+
+   boards/<ARCH>/plank
+   ├── plank_1.conf
+   ├── plank_1.overlay
+   ├── plank_2.conf
+   ├── plank_2.overlay
+   ├── plank_3.conf
+   ├── plank_3.overlay
+   └── revision.cmake
+
+And add the following to :file:`revision.cmake`:
+
+.. code-block:: cmake
+
+   board_check_revision(FORMAT NUMBER)
+
 board_check_revision() details
 ==============================
 
 .. code-block:: cmake
 
-   board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>
+   board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>
                         [EXACT]
                         [DEFAULT_REVISION <revision>]
                         [HIGHEST_REVISION <revision>]
@@ -670,6 +695,7 @@ board_check_revision() details
 This function supports the following arguments:
 
 * ``FORMAT LETTER``: matches single letter revisions from ``A`` to ``Z`` only
+* ``FORMAT NUMBER``: matches integer revisions
 * ``FORMAT MAJOR.MINOR.PATCH``: matches exactly three digits. The command line
   allows for loose typing, that is ``-DBOARD=<board>@1`` and
   ``-DBOARD=<board>@1.0`` will be handled as ``-DBOARD=<board>@1.0.0``.
