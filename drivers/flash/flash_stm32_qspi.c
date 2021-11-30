@@ -20,6 +20,10 @@
 #include <drivers/dma.h>
 #include <drivers/dma/dma_stm32.h>
 
+#define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
+#if STM32_QSPI_RESET_GPIO
+#include <drivers/gpio.h>
+#endif
 #include <stm32_ll_dma.h>
 
 #include "spi_nor.h"
@@ -64,6 +68,9 @@ struct flash_stm32_qspi_config {
 	size_t flash_size;
 	uint32_t max_frequency;
 	const struct pinctrl_dev_config *pcfg;
+#if STM32_QSPI_RESET_GPIO
+	const struct gpio_dt_spec reset;
+#endif
 };
 
 struct flash_stm32_qspi_data {
@@ -642,6 +649,18 @@ static int spi_nor_process_bfp(const struct device *dev,
 	return 0;
 }
 
+#if STM32_QSPI_RESET_GPIO
+static void flash_stm32_qspi_gpio_reset(const struct device *dev)
+{
+	const struct flash_stm32_qspi_config *dev_cfg = DEV_CFG(dev);
+
+	/* Generate RESETn pulse for the flash memory */
+	gpio_pin_configure_dt(&dev_cfg->reset, GPIO_OUTPUT_ACTIVE);
+	k_msleep(DT_INST_PROP(0, reset_gpios_duration));
+	gpio_pin_set_dt(&dev_cfg->reset, 0);
+}
+#endif
+
 static int flash_stm32_qspi_init(const struct device *dev)
 {
 	const struct flash_stm32_qspi_config *dev_cfg = DEV_CFG(dev);
@@ -657,6 +676,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		return ret;
 	}
 
+#if STM32_QSPI_RESET_GPIO
+	flash_stm32_qspi_gpio_reset(dev);
+#endif
 #if STM32_QSPI_USE_DMA
 	/*
 	 * DMA configuration
@@ -877,6 +899,9 @@ static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 	.flash_size = DT_INST_PROP(0, size) / 8U,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
+#if STM32_QSPI_RESET_GPIO
+	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#endif
 };
 
 static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
