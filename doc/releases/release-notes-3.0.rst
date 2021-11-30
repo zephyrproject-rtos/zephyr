@@ -111,6 +111,9 @@ Bluetooth
 
 * Host
 
+  * The :kconfig:`CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE` is enabled by default.
+    Storing CCC right after it's written reduces risk of inconsistency of CCC values between bonded peers.
+
 * Mesh
 
 * Bluetooth LE split software Controller
