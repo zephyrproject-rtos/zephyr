@@ -49,6 +49,11 @@
 			#interrupt-cells = <3>;
 		};
 
+		shim: shim@71f00 {
+			compatible = "intel,cavs-shim";
+			reg = <0x71f00 0x100>;
+		};
+
 		cavs0: cavs@78800  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78800 0x10>;
