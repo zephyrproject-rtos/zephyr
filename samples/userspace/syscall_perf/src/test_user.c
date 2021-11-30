@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <stdio.h>
 
-#include "main.h"
+#include "csr.h"
 
 /*
  * 0xC00 is CSR cycle

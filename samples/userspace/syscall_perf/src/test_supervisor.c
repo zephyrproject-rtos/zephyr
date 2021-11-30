@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <stdio.h>
 
-#include "main.h"
+#include "csr.h"
 
 /*
  * 0xB00 is CSR mcycle

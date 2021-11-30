@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef CSR_H
+#define CSR_H
 
 #include <kernel.h>
 
@@ -17,4 +17,4 @@
 	__v;							\
 })
 
-#endif  /* MAIN_H */
+#endif  /* CSR_H */

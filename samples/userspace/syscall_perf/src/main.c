@@ -7,8 +7,15 @@
 #include <zephyr.h>
 #include <stdio.h>
 
-#include "main.h"
 #include "thread_def.h"
+
+#define THREAD_STACKSIZE        2048
+
+struct k_thread user_thread;
+K_THREAD_STACK_DEFINE(user_stack, THREAD_STACKSIZE);
+
+struct k_thread supervisor_thread;
+K_THREAD_STACK_DEFINE(supervisor_stack, THREAD_STACKSIZE);
 
 void main(void)
 {
