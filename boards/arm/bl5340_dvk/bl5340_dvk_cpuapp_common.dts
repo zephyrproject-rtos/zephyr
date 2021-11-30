@@ -203,6 +203,8 @@
 		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		rotation = <270>;
+		width = <240>;
+		height = <320>;
 	};
 };
 

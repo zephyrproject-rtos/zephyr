@@ -18,6 +18,8 @@
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		width = <320>;
+		height = <240>;
 		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
 		rotation = <90>;
 		frmctr1 = [00 18];
