@@ -238,11 +238,11 @@ mainline code until the security issues have been addressed.
 Issues and Bug Tracking
 ***********************
 
-The Zephyr project shall have an issue tracking system (such as JIRA_)
+The Zephyr project shall have an issue tracking system (such as GitHub_)
 that can be used to record and track defects that are found in the
 system.
 
-.. _JIRA: https://www.atlassian.com/software/jira
+.. _GitHub: https://www.github.com
 
 Because security issues are often sensitive, this issue tracking
 system shall have a field to indicate a security issue.  Setting this
