@@ -85,6 +85,11 @@ struct flash_stm32_qspi_data {
 	uint16_t page_size;
 	int cmd_status;
 	struct stream dma;
+	/*
+	 * If set addressed operations should use 32-bit rather than
+	 * 24-bit addresses.
+	 */
+	bool flag_access_32bit: 1;
 };
 
 #define DEV_NAME(dev) ((dev)->name)
@@ -105,6 +110,19 @@ static inline void qspi_unlock_thread(const struct device *dev)
 	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
 
 	k_sem_give(&dev_data->sem);
+}
+
+static inline void qspi_set_address_size(const struct device *dev,
+					 QSPI_CommandTypeDef *cmd)
+{
+	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
+
+	if (dev_data->flag_access_32bit) {
+		cmd->AddressSize = QSPI_ADDRESS_32_BITS;
+		return;
+	}
+
+	cmd->AddressSize = QSPI_ADDRESS_24_BITS;
 }
 
 /*
@@ -253,12 +271,12 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_READ,
 		.Address = addr,
-		.AddressSize = QSPI_ADDRESS_24_BITS,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 		.AddressMode = QSPI_ADDRESS_1_LINE,
 		.DataMode = QSPI_DATA_1_LINE,
 	};
 
+	qspi_set_address_size(dev, &cmd);
 	qspi_lock_thread(dev);
 
 	ret = qspi_read_access(dev, &cmd, data, size);
@@ -304,12 +322,12 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 
 	QSPI_CommandTypeDef cmd_pp = {
 		.Instruction = SPI_NOR_CMD_PP,
-		.AddressSize = QSPI_ADDRESS_24_BITS,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 		.AddressMode = QSPI_ADDRESS_1_LINE,
 		.DataMode = QSPI_DATA_1_LINE,
 	};
 
+	qspi_set_address_size(dev, &cmd_pp);
 	qspi_lock_thread(dev);
 
 	while (size > 0) {
@@ -373,11 +391,11 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 
 	QSPI_CommandTypeDef cmd_erase = {
 		.Instruction = 0,
-		.AddressSize = QSPI_ADDRESS_24_BITS,
 		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 		.AddressMode = QSPI_ADDRESS_1_LINE,
 	};
 
+	qspi_set_address_size(dev, &cmd_erase);
 	qspi_lock_thread(dev);
 
 	while ((size > 0) && (ret == 0)) {
@@ -615,6 +633,38 @@ static int setup_pages_layout(const struct device *dev)
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+static int qspi_program_addr_4b(const struct device *dev)
+{
+	uint8_t reg;
+	int ret;
+
+	/* Program the flash memory to use 4 bytes addressing */
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_4BA,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+	};
+
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret) {
+		return ret;
+	}
+
+	/*
+	 * Read control register to verify if 4byte addressing mode
+	 * is enabled.
+	 */
+	cmd.Instruction = SPI_NOR_CMD_RDCR;
+	cmd.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+	cmd.DataMode = QSPI_DATA_1_LINE;
+
+	ret = qspi_read_access(dev, &cmd, &reg, sizeof(reg));
+	if (!ret && !(reg & SPI_NOR_4BYTE_BIT)) {
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
 static int spi_nor_process_bfp(const struct device *dev,
 			       const struct jesd216_param_header *php,
 			       const struct jesd216_bfp *bfp)
@@ -623,6 +673,8 @@ static int spi_nor_process_bfp(const struct device *dev,
 	struct flash_stm32_qspi_data *data = DEV_DATA(dev);
 	struct jesd216_erase_type *etp = data->erase_types;
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
+	uint8_t addr_mode;
+	int rc;
 
 	if (flash_size != dev_cfg->flash_size) {
 		LOG_ERR("Unexpected flash size: %u", flash_size);
@@ -646,6 +698,31 @@ static int spi_nor_process_bfp(const struct device *dev,
 
 	LOG_DBG("Page size %u bytes", data->page_size);
 	LOG_DBG("Flash size %u bytes", flash_size);
+
+	addr_mode = jesd216_bfp_addrbytes(bfp);
+	if (addr_mode == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B4B) {
+		struct jesd216_bfp_dw16 dw16;
+
+		if (jesd216_bfp_decode_dw16(php, bfp, &dw16) == 0) {
+			/*
+			 * According to JESD216, the bit0 of dw16.enter_4ba
+			 * portion of flash description register 16 indicates
+			 * if it is enough to use 0xB7 instruction without
+			 * write enable to switch to 4 bytes addressing mode.
+			 */
+			if (dw16.enter_4ba & 0x1) {
+				rc = qspi_program_addr_4b(dev);
+				if (rc == 0) {
+					data->flag_access_32bit = true;
+					LOG_INF("Flash - address mode: 4B");
+				} else {
+					LOG_ERR("Unable to enter 4B mode: %d\n", rc);
+					return rc;
+				}
+			}
+		}
+	}
+
 	return 0;
 }
 
