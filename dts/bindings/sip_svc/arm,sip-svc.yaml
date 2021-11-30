@@ -1,0 +1,20 @@
+# Copyright (c) 2021, Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Arm SiP Services
+
+compatible: "arm,sip-svc"
+
+include: base.yaml
+
+properties:
+  label:
+    required: true
+
+  method:
+    type: string
+    required: true
+    description: The method of calling the secure firmware.
+    enum:
+      - smc
+      - hvc
