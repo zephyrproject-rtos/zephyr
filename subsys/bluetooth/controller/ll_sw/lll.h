@@ -310,7 +310,6 @@ struct node_rx_ftr {
 				*/
 		void *aux_ptr;
 		uint8_t aux_phy;
-		uint8_t aux_sched;
 		struct cte_conn_iq_report *iq_report;
 	};
 	uint32_t ticks_anchor;

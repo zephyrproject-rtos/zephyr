@@ -423,12 +423,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_aux = p->param;
 	lll = ull_scan_aux_lll_parent_get(lll_aux, &is_lll_scan);
 
-	/* Initialize scanning state */
-	lll_aux->state = 0U;
-
-	/* Reset Tx/rx count */
-	trx_cnt = 0U;
-
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* Check if this aux scan is for periodic advertising train */
 	if (!is_lll_scan) {
@@ -456,7 +450,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CENTRAL */
 
 	/* Initialize scanning state */
-	lll->state = 0U;
+	lll_aux->state = 0U;
 
 	/* Reset Tx/rx count */
 	trx_cnt = 0U;
