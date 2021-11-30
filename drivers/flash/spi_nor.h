@@ -15,6 +15,9 @@
 #define SPI_NOR_WIP_BIT         BIT(0)  /* Write in progress */
 #define SPI_NOR_WEL_BIT         BIT(1)  /* Write enable latch */
 
+/* Control register bits */
+#define SPI_NOR_4BYTE_BIT       BIT(5)  /* 4B addressing */
+
 /* Flash opcodes */
 #define SPI_NOR_CMD_WRSR        0x01    /* Write status register */
 #define SPI_NOR_CMD_RDSR        0x05    /* Read status register */
@@ -22,6 +25,7 @@
 #define SPI_NOR_CMD_WREN        0x06    /* Write enable */
 #define SPI_NOR_CMD_WRDI        0x04    /* Write disable */
 #define SPI_NOR_CMD_PP          0x02    /* Page program */
+#define SPI_NOR_CMD_RDCR        0x15    /* Read control register */
 #define SPI_NOR_CMD_SE          0x20    /* Sector erase */
 #define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
