@@ -296,23 +296,6 @@ test_i2c_si7210: si7010@30 {
 	reg = <0x30>;
 };
 
-test_i2c_ssd1306fb: ssd1306fb@26 {
-	compatible = "solomon,ssd1306fb";
-	label = "SSD1306FB";
-	reg = <0x26>;
-	height = <0>;
-	width = <0>;
-	segment-offset = <0>;
-	page-offset = <0>;
-	display-offset = <0>;
-	multiplex-ratio = <0>;
-	/* segment-remap; */
-	/* com-invdir; */
-	/* com-sequential; */
-	prechargep = <0>;
-	reset-gpios = <&test_gpio 0 0>;
-};
-
 test_i2c_hts221: hts221@27 {
 	compatible = "st,hts221";
 	label = "HTS221";
