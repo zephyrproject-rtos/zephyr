@@ -96,15 +96,6 @@ test_spi_gd7965: gd7965@a {
 	tcon = <0>;
 };
 
-test_spi_ili9340: ili9340@b {
-	compatible = "ilitek,ili9340";
-	label = "ILI9340";
-	reg = <0xb>;
-	spi-max-frequency = <0>;
-	reset-gpios = <&test_gpio 0 0>;
-	cmd-data-gpios = <&test_gpio 0 0>;
-};
-
 test_spi_eswifi: eswifi@c {
 	compatible = "inventek,eswifi";
 	label = "ESWIFI";
@@ -170,53 +161,6 @@ test_spi_sx1276: sx1276@14 {
 	reset-gpios = <&test_gpio 0 0>;
 	dio-gpios = <&test_gpio 0 0>;
 	power-amplifier-output = "rfo";
-};
-
-test_spi_st7789v: st7789v@15 {
-	compatible = "sitronix,st7789v";
-	label = "ST7789V";
-	reg = <0x15>;
-	spi-max-frequency = <0>;
-	reset-gpios = <&test_gpio 0 0>;
-	cmd-data-gpios = <&test_gpio 0 0>;
-	height = <0>;
-	width = <0>;
-	x-offset = <0>;
-	y-offset = <0>;
-	vcom = <0>;
-	gctrl = <0>;
-	mdac = <0>;
-	lcm = <0>;
-	colmod = <0>;
-	gamma = <0>;
-	porch-param = [];
-	cmd2en-param = [];
-	pwctrl1-param = [];
-	pvgam-param = [];
-	nvgam-param = [];
-	ram-param = [];
-	rgb-param = [];
-};
-
-test_spi_ssd16xxfb: ssd16xxfb@16 {
-	compatible = "solomon,ssd16xxfb";
-	label = "SSD16XXFB";
-	reg = <0x16>;
-	spi-max-frequency = <0>;
-	height = <0>;
-	width = <0>;
-	pp-height-bits = <0>;
-	pp-width-bits = <0>;
-	gdv = [];
-	sdv = [];
-	vcom = <0>;
-	border-waveform = <0>;
-	/* orientation-flipped; */
-	reset-gpios = <&test_gpio 0 0>;
-	dc-gpios = <&test_gpio 0 0>;
-	busy-gpios = <&test_gpio 0 0>;
-	lut-initial = [];
-	lut-default = [];
 };
 
 test_spi_iis2dlpc: iis2dlpc@17 {
