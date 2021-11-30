@@ -51,12 +51,11 @@ static inline struct ll_sync_iso_set *
 	sync_iso_create_get(struct ll_sync_set *sync);
 static void last_disabled_cb(void *param);
 static void done_disabled_cb(void *param);
-static void flush(struct ll_scan_aux_set *aux);
+static void flush(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
-static void ticker_op_aux_failure(void *param);
 
 static struct ll_scan_aux_set ll_scan_aux_pool[CONFIG_BT_CTLR_SCAN_AUX_SET];
 static void *scan_aux_free;
@@ -456,12 +455,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	if (lll) {
 		lll->lll_aux = NULL;
 	} else {
-		LL_ASSERT(sync_lll);
-		/* XXX: keep lll_aux for now since node scheduled from ULL has
-		 *      sync_lll as ftr->param and we still need to restore
-		 *      lll_aux somehow.
-		 */
-		/* sync_lll->lll_aux = NULL; */
+		LL_ASSERT(sync_lll &&
+			  (!sync_lll->lll_aux || sync_lll->lll_aux == lll_aux));
+		sync_lll->lll_aux = lll_aux;
 	}
 
 	/* Determine the window size */
@@ -735,6 +731,39 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 	ll_rx_sched();
 }
 
+int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, flush};
+	uint8_t aux_handle;
+	uint32_t ret;
+	int err;
+
+	/* Stop any ULL scheduling of auxiliary PDU scan */
+	aux_handle = aux_handle_get(aux);
+	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_AUX_BASE + aux_handle,
+					aux, &aux->lll);
+	if (err && (err != -EALREADY)) {
+		return err;
+	}
+
+	/* Abort LLL event if ULL scheduling not used or already in prepare */
+	if (err == -EALREADY) {
+		ret = ull_disable(&aux->lll);
+		if (ret) {
+			return -EBUSY;
+		}
+	}
+
+	/* Release auxiliary context in ULL execution context */
+	mfy.param = aux;
+	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH,
+			     0, &mfy);
+	LL_ASSERT(!ret);
+
+	return 0;
+}
+
 static int init_reset(void)
 {
 	/* Initialize adv aux pool. */
@@ -806,11 +835,13 @@ static void done_disabled_cb(void *param)
 	flush(aux);
 }
 
-static void flush(struct ll_scan_aux_set *aux)
+static void flush(void *param)
 {
+	struct ll_scan_aux_set *aux;
 	struct node_rx_hdr *rx;
 
 	/* Nodes are enqueued only in scan context so need to send them now */
+	aux = param;
 	rx = aux->rx_head;
 	if (rx) {
 		struct lll_scan *lll;
@@ -824,6 +855,7 @@ static void flush(struct ll_scan_aux_set *aux)
 		struct lll_sync *lll;
 
 		lll = aux->parent;
+		LL_ASSERT(lll->lll_aux);
 		lll->lll_aux = NULL;
 	}
 
@@ -866,7 +898,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, ticker_op_aux_failure};
+	static struct mayfly mfy = {0, 0, &link, NULL, flush};
 	uint32_t ret;
 
 	if (status == TICKER_STATUS_SUCCESS) {
@@ -878,9 +910,4 @@ static void ticker_op_cb(uint32_t status, void *param)
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
 			     0, &mfy);
 	LL_ASSERT(!ret);
-}
-
-static void ticker_op_aux_failure(void *param)
-{
-	flush(param);
 }

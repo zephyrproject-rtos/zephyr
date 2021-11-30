@@ -924,7 +924,7 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 static void isr_done(void *param)
 {
 	lll_isr_status_reset();
-	isr_rx_done_cleanup(param, ((trx_cnt > 1U) ? 1U : 0U), false);
+	isr_rx_done_cleanup(param, ((trx_cnt) ? 1U : 0U), false);
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)

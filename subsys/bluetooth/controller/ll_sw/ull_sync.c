@@ -323,6 +323,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 
 uint8_t ll_sync_terminate(uint16_t handle)
 {
+	struct lll_scan_aux *lll_aux;
 	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
 	int err;
@@ -337,6 +338,17 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	LL_ASSERT(err == 0 || err == -EALREADY);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll_aux = sync->lll.lll_aux;
+	if (lll_aux) {
+		struct ll_scan_aux_set *aux;
+
+		aux = HDR_LLL2ULL(lll_aux);
+		err = ull_scan_aux_stop(aux);
+		if (err) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	link_sync_lost = sync->node_rx_lost.hdr.link;
