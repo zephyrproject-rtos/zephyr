@@ -3,4 +3,4 @@
 	url = https://github.com/teamspatzenhirn/AS5047P.git
 [submodule "drivers/sensor/vesc/lib/VESC-Lib"]
 	path = drivers/sensor/vesc/lib/VESC-Lib
-	url = git@github.com:teamspatzenhirn/VESC-Lib.git
+	url = https://github.com/teamspatzenhirn/VESC-Lib.git
