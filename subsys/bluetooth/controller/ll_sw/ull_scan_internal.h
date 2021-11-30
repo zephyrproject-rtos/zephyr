@@ -85,3 +85,6 @@ struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux);
 
 /* Helper function to flush and release incomplete auxiliary PDU chaining */
 void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx);
+
+/* Helper function to stop auxiliary scan context */
+int ull_scan_aux_stop(struct ll_scan_aux_set *aux);
