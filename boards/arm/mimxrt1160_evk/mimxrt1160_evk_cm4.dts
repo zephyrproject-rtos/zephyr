@@ -36,3 +36,7 @@
 &lpi2c1 {
 	status = "okay";
 };
+
+&edma_lpsr0 {
+	status = "okay";
+};
