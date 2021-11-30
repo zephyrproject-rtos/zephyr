@@ -12,6 +12,7 @@
 #include <drivers/clock_control.h>
 #include <kernel.h>
 #include <pm/device.h>
+#include <pm/pm.h>
 #include <soc.h>
 #include "soc_miwu.h"
 #include "soc_power.h"
@@ -40,6 +41,9 @@ struct uart_npcx_data {
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
 #endif
+#ifdef CONFIG_PM
+	atomic_t pm_constraint_on;
+#endif
 };
 
 /* Driver convenience defines */
@@ -51,6 +55,26 @@ struct uart_npcx_data {
 
 #define HAL_INSTANCE(dev) \
 	(struct uart_reg *)(DRV_CONFIG(dev)->uconf.base)
+
+#if defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
+static void uart_npcx_pm_constraint_set(const struct device *dev)
+{
+	struct uart_npcx_data *data = DRV_DATA(dev);
+
+	if (atomic_set(&data->pm_constraint_on, 1) == 0) {
+		pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+	}
+}
+
+static void uart_npcx_pm_constraint_release(const struct device *dev)
+{
+	struct uart_npcx_data *data = DRV_DATA(dev);
+
+	if (atomic_clear(&data->pm_constraint_on) == 1) {
+		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+	}
+}
+#endif /* defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN) */
 
 /* UART local functions */
 static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate,
@@ -98,7 +122,7 @@ static void uart_npcx_dis_all_tx_interrupts(const struct device *dev)
 	/* Disable all Tx interrupts */
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_LVL_EN) |
 				BIT(NPCX_UFTCTL_TEMPTY_EN) |
-				BIT(NPCX_UFTCTL_NXMIPEN));
+				BIT(NPCX_UFTCTL_NXMIP_EN));
 }
 
 static void uart_npcx_clear_rx_fifo(const struct device *dev)
@@ -121,7 +145,13 @@ static int uart_npcx_fifo_fill(const struct device *dev,
 	/* If Tx FIFO is still ready to send */
 	while ((size - tx_bytes > 0) && uart_npcx_tx_fifo_ready(dev)) {
 		/* Put a character into Tx FIFO */
+#ifdef CONFIG_PM
+		uart_npcx_pm_constraint_set(dev);
 		inst->UTBUF = tx_data[tx_bytes++];
+		inst->UFTCTL |= BIT(NPCX_UFTCTL_NXMIP_EN);
+#else
+		inst->UTBUF = tx_data[tx_bytes++];
+#endif /* CONFIG_PM */
 	}
 
 	return tx_bytes;
@@ -238,6 +268,15 @@ static void uart_npcx_isr(const struct device *dev)
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);
 	}
+#ifdef CONFIG_PM
+	struct uart_reg *const inst = HAL_INSTANCE(dev);
+
+	if (IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_NXMIP_EN) &&
+	    IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP)) {
+		uart_npcx_pm_constraint_release(dev);
+		inst->UFTCTL &= ~BIT(NPCX_UFTCTL_NXMIP_EN);
+	}
+#endif /* CONFIG_PM */
 }
 
 /*
@@ -426,40 +465,6 @@ static int uart_npcx_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
-static inline bool uart_npcx_device_is_transmitting(const struct device *dev)
-{
-	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
-		/* The transmitted transaction is completed? */
-		return !uart_npcx_irq_tx_complete(dev);
-	}
-
-	/* No need for polling mode */
-	return 0;
-}
-
-static int uart_npcx_pm_action(const struct device *dev,
-			       enum pm_device_action action)
-{
-	/* If next device power state is SUSPEND power state */
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		/*
-		 * If uart device is busy with transmitting, the driver will
-		 * stay in while loop and wait for the transaction is completed.
-		 */
-		while (uart_npcx_device_is_transmitting(dev)) {
-			continue;
-		}
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_PM_DEVICE */
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst) \
 	static void uart_npcx_irq_config_##inst(const struct device *dev)
@@ -502,11 +507,9 @@ static int uart_npcx_pm_action(const struct device *dev,
 		.baud_rate = DT_INST_PROP(inst, current_speed)                 \
 	};                                                                     \
 									       \
-	PM_DEVICE_DT_INST_DEFINE(inst, uart_npcx_pm_action);		       \
-									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
 			&uart_npcx_init,                                       \
-			PM_DEVICE_DT_INST_REF(inst),			       \
+			NULL,				                       \
 			&uart_npcx_data_##inst, &uart_npcx_cfg_##inst,         \
 			PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	       \
 			&uart_npcx_driver_api);                                \
