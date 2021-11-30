@@ -19,4 +19,9 @@
 #define PIN_SWO { gpioPortA, 3, gpioModePushPull, 1 }
 #endif  /* CONFIG_LOG_BACKEND_SWO */
 
+#ifdef CONFIG_TRACING_ETM
+#define PIN_TRACEDATA0 {gpioPortA, 3, gpioModePushPull, 0}
+#define PIN_TRACECLK {gpioPortA, 4, gpioModePushPull, 0}
+#endif /* CONFIG_TRACING_ETM */
+
 #endif  /* ZEPHYR_SOC_ARM_SILABS_EXX32_EFR32MG21_SOC_PINMAP_H_ */

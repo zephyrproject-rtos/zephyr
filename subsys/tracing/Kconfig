@@ -53,6 +53,11 @@ config TRACING_CTF
 	help
 	  Enable tracing to a Common Trace Format stream.
 
+config TRACING_ETM
+	bool "Tracing via ARM Embedded Trace Macrocell"
+	help
+	  Enable the ARM Embedded Trace Macrocell.
+
 config TRACING_TEST
 	bool "Tracing for test usage"
 	select TRACING_CORE

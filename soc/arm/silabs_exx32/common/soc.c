@@ -125,7 +125,8 @@ static ALWAYS_INLINE void clock_init(void)
 		CMU_ClockEnable(cmuClock_HFPER, true);
 #endif /* _SILICON_LABS_32B_SERIES_2 */
 
-#if defined(CONFIG_GPIO_GECKO) || defined(CONFIG_LOG_BACKEND_SWO)
+#if defined(CONFIG_GPIO_GECKO) || defined(CONFIG_LOG_BACKEND_SWO) || \
+defined(CONFIG_TRACING_ETM)
 	CMU_ClockEnable(cmuClock_GPIO, true);
 #endif
 }
@@ -175,6 +176,36 @@ static void swo_init(void)
 }
 #endif /* CONFIG_LOG_BACKEND_SWO */
 
+#ifdef CONFIG_TRACING_ETM
+static void etm_init(void)
+{
+	struct soc_gpio_pin pin_etm_clk = PIN_TRACECLK;
+	struct soc_gpio_pin pin_etm_data0 = PIN_TRACEDATA0;
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
+	/* Select HCLK as the ETM clock */;
+	CMU_ClockEnable(cmuClock_HCLK, true);
+	CMU_ClockDivSet(cmuClock_HCLK, 1);
+	CMU_ClockSelectSet(cmuClock_TRACECLK, cmuSelect_HCLK);
+
+	soc_gpio_configure(&pin_etm_clk);
+	soc_gpio_configure(&pin_etm_data0);
+
+	GPIO->TRACEROUTEPEN = GPIO_TRACEROUTEPEN_TRACECLKPEN |
+		GPIO_TRACEROUTEPEN_TRACEDATA0PEN;
+
+	/* Additional settings to counter for incomplete trace initialization
+	 * in debugger tools.
+	 */
+
+	/* Recommended to be set according to D1.2.36 of ArmV8-M ARM. */
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	/* Set TPIU formatting to Parallel Trace Port mode. */
+	TPI->SPPR = 0;
+#endif /* _SILICON_LABS_32B_SERIES_2 */
+}
+#endif /* CONFIG_TRACING_ETM */
+
 /**
  * @brief Perform basic hardware initialization
  *
@@ -212,6 +243,10 @@ static int silabs_exx32_init(const struct device *arg)
 	/* Configure SWO debug output */
 	swo_init();
 #endif
+
+#ifdef CONFIG_TRACING_ETM
+	etm_init();
+#endif /* CONFIG_TRACING_ETM */
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
