@@ -6156,7 +6156,6 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    (!(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) &&
 	     !(le_event_mask & BT_EVT_MASK_LE_BIGINFO_ADV_REPORT))) {
-		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 		return;
 	}
 
@@ -6228,10 +6227,6 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 		aux_ptr = (void *)ptr;
 		if (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED) {
-			struct node_rx_ftr *ftr;
-
-			ftr = &node_rx->hdr.rx_ftr;
-			node_rx_extra_list_release(ftr->extra);
 			return;
 		}
 
