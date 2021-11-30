@@ -24,7 +24,9 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
+#endif
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
 #include "usb_dc_mcux.h"
