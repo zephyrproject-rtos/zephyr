@@ -227,7 +227,6 @@ SECTIONS
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 #include <linker/common-noinit.ld>
-#include <linker/cplusplus-ram.ld>
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
@@ -271,6 +270,7 @@ SECTIONS
 
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
+#include <linker/cplusplus-ram.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
