@@ -12,3 +12,876 @@ config PSA_WANT_ALG_SHA_256
 	bool "SHA-256 hash algorithm through PSA"
 
 endif # MBEDTLS_PSA_CRYPTO_CLIENT
+
+menu "PSA RNG support"
+
+config PSA_WANT_GENERATE_RANDOM
+	bool
+	prompt "PSA RNG support"
+	help
+	  Provide random number generator (RNG) support.
+
+config PSA_WANT_ALG_CTR_DRBG
+	bool
+	prompt "PSA RNG using CTR-DRBG as PRNG"
+	help
+	  Provide random number generator (RNG) using CTR-DRBG as the
+	  pseudo-random number generator (PRNG), seeded by a true random
+	  number generator (TRNG).
+
+config PSA_WANT_ALG_HMAC_DRBG
+	bool
+	prompt "PSA RNG using HMAC-DRBG as PRNG"
+	help
+	  Provide random number generator (RNG) using HMAC-DRBG as the
+	  pseudo-random number generator (PRNG), seeded by a true random
+	  number generator (TRNG).
+
+endmenu # RNG support
+
+menu "PSA key type support"
+
+config PSA_HAS_KEY_SUPPORT
+	bool
+	default y
+		depends on PSA_WANT_KEY_TYPE_DERIVE		|| \
+		   PSA_WANT_KEY_TYPE_HMAC			|| \
+		   PSA_WANT_KEY_TYPE_RAW_DATA			|| \
+		   PSA_WANT_KEY_TYPE_PASSWORD			|| \
+		   PSA_WANT_KEY_TYPE_PASSWORD_HASH		|| \
+		   PSA_WANT_KEY_TYPE_PEPPER             	|| \
+		   PSA_WANT_KEY_TYPE_AES 			|| \
+		   PSA_WANT_KEY_TYPE_ARIA               	|| \
+		   PSA_WANT_KEY_TYPE_DES                	|| \
+		   PSA_WANT_KEY_TYPE_CAMELLIA           	|| \
+		   PSA_WANT_KEY_TYPE_SM4                	|| \
+		   PSA_WANT_KEY_TYPE_ARC4               	|| \
+		   PSA_WANT_KEY_TYPE_CHACHA20			|| \
+		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE	|| \
+		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT	|| \
+		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT	|| \
+		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE	|| \
+		   PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY		|| \
+		   PSA_WANT_KEY_TYPE_RSA_KEY_PAIR		|| \
+		   PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY     	|| \
+		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR        	|| \
+		   PSA_WANT_KEY_TYPE_DH_PUBLIC_KEY
+
+config PSA_WANT_KEY_TYPE_DERIVE
+	bool "PSA derive key type support"
+	help
+	  This key type is for high-entropy secrets only.
+	  For low-entropy secrets, password key type should be used instead.
+
+config PSA_WANT_KEY_TYPE_RAW_DATA
+	bool "PSA raw data key type support"
+	help
+	  A "key" of this type cannot be used for any cryptographic operation.
+	  Applications can use this type to store arbitrary data in the keystore.
+
+config PSA_WANT_KEY_TYPE_HMAC
+	bool "PSA HMAC key type support"
+	help
+	  HMAC key.
+
+config PSA_WANT_KEY_TYPE_PASSWORD
+	bool "PSA password key type support"
+	help
+	  A low-entropy secret for password hashing or key derivation.
+
+config PSA_WANT_KEY_TYPE_PASSWORD_HASH
+	bool "PSA password hash key type support"
+	help
+	  A secret value that can be used to verify a password hash.
+
+config PSA_WANT_KEY_TYPE_PEPPER
+	bool "PSA pepper key type support"
+	help
+	  A secret value that can be used when computing a password hash.
+
+config PSA_WANT_KEY_TYPE_AES
+	bool "PSA AES key type support"
+	help
+	  Key for cipher, AEAD or MAC algorithm based on the AES block cipher.
+
+config PSA_WANT_KEY_TYPE_ARIA
+	bool "PSA ARIA key type support"
+
+config PSA_WANT_KEY_TYPE_DES
+	bool "PSA DES key type support (weak)"
+	help
+	  Warning: Single DES and 2-key 3DES are weak and strongly deprecated
+	  and are only recommended for decrypting legacy data.
+	  3-key 3DES is weak and deprecated and is only recommended for use in
+	  legacy protocols.
+
+config PSA_WANT_KEY_TYPE_CAMELLIA
+	bool "PSA CAMELLIA key type support"
+
+config PSA_WANT_KEY_TYPE_SM4
+	bool "PSA SM4 key type support"
+
+config PSA_WANT_KEY_TYPE_ARC4
+	bool "PSA ARC4 key type support (weak)"
+	help
+	  Warning: The ARC4 cipher is weak and deprecated and is only
+	  recommended for use in legacy protocols.
+
+config PSA_WANT_KEY_TYPE_CHACHA20
+	bool "PSA ChaCha20 key type support"
+	default y
+	depends on PSA_WANT_ALG_CHACHA20_POLY1305 || \
+		   PSA_WANT_ALG_STREAM_CIPHER
+	help
+	  Key for the ChaCha20 stream cipher or the ChaCha20-Poly1305 AEAD algorithm.
+
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR
+	bool "PSA ECC key pair support"
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	select DEPRECATED
+	help
+	  DEPRECATED: This configuration will be removed in a future release,
+	  please use the individual options for import, export, generate,
+	  derive and public key instead.
+
+	  Elliptic curve key pair: both the private and public key.
+
+
+config PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	bool "PSA ECC public key support"
+	help
+	  Elliptic curve public key.
+
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	bool "PSA ECC import key pair support"
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	help
+	  Elliptic curve key pair: import for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	bool "PSA ECC export key pair support"
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	help
+	  Elliptic curve key pair: export for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	bool "PSA ECC generate key pair support"
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	help
+	  Elliptic curve key pair: generate for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	bool "PSA ECC derive key pair support"
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	help
+	  Elliptic curve key pair: key derivation support.
+
+config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT || \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT || \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE || \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+	bool "PSA RSA key pair type support"
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	help
+	  RSA key pair: both the private and public key.
+
+config PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	bool "PSA RSA public key support"
+	help
+	  RSA public key.
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
+	bool "PSA RSA key pair import key"
+	default y if PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	help
+	  RSA key pair: import key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT
+	bool "PSA RSA key pair export key"
+	default y if PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	help
+	  RSA key pair: export key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+	bool "PSA RSA key pair generate key"
+	default y if PSA_WANT_KEY_TYPE_RSA_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	help
+	  RSA key pair: key generation for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT || \
+		PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT || \
+		PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+
+config PSA_WANT_KEY_TYPE_DH_KEY_PAIR
+	bool "PSA DH key pair type support"
+	select PSA_WANT_KEY_TYPE_DH_PUBLIC_KEY
+	help
+	  Finite-field Diffie-Hellman key pair: both the private key and public key.
+
+config PSA_WANT_KEY_TYPE_DH_PUBLIC_KEY
+	bool "PSA DH public key support"
+	help
+	  Finite-field Diffie-Hellman public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_IMPORT
+	bool "SPAKE2P key pair import support"
+	default y if PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	help
+	  SPAKE2P key pair: import key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_EXPORT
+	bool "SPAKE2P key pair export support"
+	default y if PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	help
+	  SPAKE2P key pair: export key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_DERIVE
+	bool "SPAKE2P key pair derive support"
+	default y if PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	help
+	  SPAKE2P key pair: derive key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_IMPORT || \
+		PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_EXPORT    || \
+		PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR_DERIVE
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_KEY_PAIR
+	bool "SPAKE2P key pair support"
+	select PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	help
+	  SPAKE2P key pair: both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SPAKE2P_PUBLIC_KEY
+	bool "SPAKE2P public key support"
+	help
+	  SPAKE2P public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_IMPORT
+	bool "SRP key pair import support"
+	default y if PSA_WANT_KEY_TYPE_SRP_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SRP_PUBLIC_KEY
+	help
+	  SRP key pair: import key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_EXPORT
+	bool "SRP key pair export support"
+	default y if PSA_WANT_KEY_TYPE_SRP_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SRP_PUBLIC_KEY
+	help
+	  SRP key pair: export key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_DERIVE
+	bool "SRP key pair derive support"
+	default y if PSA_WANT_KEY_TYPE_SRP_KEY_PAIR
+	select PSA_WANT_KEY_TYPE_SRP_PUBLIC_KEY
+	help
+	  SRP key pair: derive key for both the private and public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_BASIC
+	bool
+	default y
+	depends on PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_IMPORT || \
+		PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_EXPORT || \
+		PSA_WANT_KEY_TYPE_SRP_KEY_PAIR_DERIVE
+
+config PSA_WANT_KEY_TYPE_SRP_PUBLIC_KEY
+	bool "SRP public key support"
+	help
+	  SRP public key.
+
+config PSA_WANT_KEY_TYPE_SRP_KEY_PAIR
+	bool "SRP public key support"
+	help
+	  SRP public key.
+
+endmenu # PSA Key type support
+
+menu "PSA AEAD support"
+
+config PSA_HAS_AEAD_SUPPORT
+	bool
+	default y
+	depends on PSA_WANT_ALG_CCM || \
+		   PSA_WANT_ALG_GCM || \
+		   PSA_WANT_ALG_CHACHA20_POLY1305
+	help
+	  Prompt-less configuration that states that AEAD is supported.
+
+config PSA_WANT_ALG_CCM
+	bool
+	prompt "PSA CCM support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_GCM
+	bool
+	prompt "PSA GCM support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_CHACHA20_POLY1305
+	bool
+	prompt "PSA ChaCha20-Poly1305 support" if !PSA_PROMPTLESS
+
+endmenu # PSA AEAD support
+
+
+menu "PSA MAC support"
+
+config PSA_HAS_MAC_SUPPORT
+	bool
+	default y
+	depends on PSA_WANT_ALG_CBC_MAC	|| \
+		   PSA_WANT_ALG_CMAC	|| \
+		   PSA_WANT_ALG_HMAC
+	help
+	  Prompt-less configuration that states that MAC is supported.
+
+config PSA_WANT_ALG_CBC_MAC
+	bool
+	prompt "PSA CBC-MAC support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_CMAC
+	bool
+	prompt "PSA CMAC support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_HMAC
+	bool
+	prompt "PSA HMAC support" if !PSA_PROMPTLESS
+
+endmenu # PSA MAC support
+
+
+menu "PSA Hash support"
+
+config PSA_HAS_HASH_SUPPORT
+	bool
+	default y
+	depends on PSA_WANT_ALG_SHA_1		|| \
+		   PSA_WANT_ALG_SHA_224		|| \
+		   PSA_WANT_ALG_SHA_256		|| \
+		   PSA_WANT_ALG_SHA_384		|| \
+		   PSA_WANT_ALG_SHA_512		|| \
+		   PSA_WANT_ALG_SHA_512_224     || \
+		   PSA_WANT_ALG_SHA_512_256     || \
+		   PSA_WANT_ALG_SHA3_224        || \
+		   PSA_WANT_ALG_SHA3_256        || \
+		   PSA_WANT_ALG_SHA3_384        || \
+		   PSA_WANT_ALG_SHA3_512        || \
+		   PSA_WANT_ALG_SM3             || \
+		   PSA_WANT_ALG_SHAKE256_512    || \
+		   PSA_WANT_ALG_RIPEMD160	|| \
+		   PSA_WANT_ALG_MD2             || \
+		   PSA_WANT_ALG_MD4             || \
+		   PSA_WANT_ALG_MD5
+	help
+	  Prompt-less configuration that states that hash is supported.
+
+config PSA_WANT_ALG_SHA_1
+	bool
+	prompt "PSA SHA-1 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The SHA-1 hash is weak and deprecated and is only recommended
+	  for use in legacy protocols.
+
+config PSA_WANT_ALG_SHA_224
+	bool
+	prompt "PSA SHA-224 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA_384
+	bool
+	prompt "PSA SHA-384 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA_512
+	bool
+	prompt "PSA SHA-512 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA_512_224
+	bool
+	prompt "PSA SHA-512/224 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA_512_256
+	bool
+	prompt "PSA SHA-512/256 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA3_224
+	bool
+	prompt "PSA SHA3-224 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA3_256
+	bool
+	prompt "PSA SHA3-256 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA3_384
+	bool
+	prompt "PSA SHA3-384 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA3_512
+	bool
+	prompt "PSA SHA3-512 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SM3
+	bool
+	prompt "PSA SM3 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHAKE256_512
+	bool
+	prompt "PSA SHAKE256 512 bits support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_RIPEMD160
+	bool
+	prompt "PSA RIPEMD-160 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_MD2
+	bool
+	prompt "PSA MD2 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The MD2 hash is weak and deprecated and is only recommended
+	  for use in legacy protocols.
+
+config PSA_WANT_ALG_MD4
+	bool
+	prompt "PSA MD4 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The MD4 hash is weak and deprecated and is only recommended
+	  for use in legacy protocols.
+
+config PSA_WANT_ALG_MD5
+	bool
+	prompt "PSA MD5 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The MD5 hash is weak and deprecated and is only recommended
+	  for use in legacy protocols.
+
+endmenu # PSA Hash support
+
+menu "PSA Cipher support"
+
+config PSA_HAS_CIPHER_SUPPORT
+	bool
+	default y
+	depends on PSA_WANT_ALG_ECB_NO_PADDING	|| \
+		   PSA_WANT_ALG_CBC_NO_PADDING	|| \
+		   PSA_WANT_ALG_CBC_PKCS7	|| \
+		   PSA_WANT_ALG_CCM_STAR_NO_TAG || \
+		   PSA_WANT_ALG_CFB 		|| \
+		   PSA_WANT_ALG_CTR		|| \
+		   PSA_WANT_ALG_OFB		|| \
+		   PSA_WANT_ALG_XTS             || \
+		   PSA_WANT_ALG_STREAM_CIPHER
+	help
+	  Prompt-less configuration that states that cipher is supported.
+
+config PSA_WANT_ALG_ECB_NO_PADDING
+	bool
+	prompt "PSA ECB block cipher mode support (with no padding)" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_CBC_NO_PADDING
+	bool
+	prompt "PSA CBC block cipher mode support (with no padding)" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_CBC_PKCS7
+	bool
+	prompt "PSA CBC block cipher mode support (with PKCS#7 padding)" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_CFB
+	bool
+	prompt "PSA stream cipher using CFB block cipher mode support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_CTR
+	bool
+	prompt "PSA stream cipher using CTR block cipher mode support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_OFB
+	bool
+	prompt "PSA stream cipher using OFB block cipher mode support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_XTS
+	bool
+	prompt "PSA XTS block cipher mode support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_CCM_STAR_NO_TAG
+	bool
+	prompt "PSA CCM* with no tag support" if !PSA_PROMPTLESS
+	help
+	  Unauthenticated version of CCM. Uses the cipher API instead of the AEAD API.
+
+config PSA_WANT_ALG_STREAM_CIPHER
+	bool
+	prompt "PSA stream cipher support" if !PSA_PROMPTLESS
+
+endmenu # PSA Cipher Support
+
+menu "PSA Key agreement support"
+
+config PSA_HAS_KEY_AGREEMENT
+	bool
+	default y
+	depends on PSA_WANT_ALG_ECDH || PSA_WANT_ALG_FFDH
+	help
+	  Promt-less configuration that states that key agreement is supported.
+
+config PSA_WANT_ALG_ECDH
+	bool
+	prompt "PSA ECDH support" if !PSA_PROMPTLESS
+
+
+config PSA_WANT_ALG_FFDH
+	bool
+	prompt "PSA FFDH support" if !PSA_PROMPTLESS
+
+endmenu # PSA Key agreement support
+
+menu "PSA Key derivation support"
+
+config PSA_HAS_KEY_DERIVATION
+	bool
+	default y
+	depends on PSA_WANT_ALG_HKDF 		|| \
+		   PSA_WANT_ALG_HKDF_EXPAND     || \
+		   PSA_WANT_ALG_HKDF_EXTRACT    || \
+		   PSA_WANT_ALG_PBKDF2_HMAC	|| \
+		   PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128 || \
+		   PSA_WANT_ALG_TLS12_PRF	|| \
+		   PSA_WANT_ALG_TLS12_PSK_TO_MS || \
+		   PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
+	help
+	  Prompt-less configuration that states that key derivation is supported.
+
+config PSA_WANT_ALG_HKDF
+	bool
+	prompt "PSA HKDF support" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_HMAC
+
+config PSA_WANT_ALG_HKDF_EXTRACT
+	bool
+	prompt "PSA HKDF extract support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_HKDF_EXPAND
+	bool
+	prompt "PSA HKDF expand support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_PBKDF2_HMAC
+	bool
+	prompt "PSA PBKDF2 HMAC support" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_HMAC
+
+config PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128
+	bool
+	prompt "PSA PBKDF2-AES-CMAC-PRF-128 support" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_CMAC
+
+config PSA_WANT_ALG_SP800_108_COUNTER_HMAC
+	bool
+	prompt "Add PSA SP800-108r1 CTR HMAC KBKDF support"
+	depends on PSA_WANT_ALG_HMAC
+
+config PSA_WANT_ALG_SP800_108_COUNTER_CMAC
+	bool
+	prompt "Add PSA SP800-108r1 CTR CMAC KBKDF support"
+	depends on PSA_WANT_ALG_CMAC
+
+config PSA_WANT_ALG_TLS12_PRF
+	bool
+	prompt "PSA PRF support (TLS1.2)" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_HMAC
+
+config PSA_WANT_ALG_TLS12_PSK_TO_MS
+	bool
+	prompt "PSA TLS 1.2 PSK to MS support" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_HMAC
+
+config PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
+	bool
+	prompt "PSA TLS 1.2 EC J-PAKE to PMS support" if !PSA_PROMPTLESS
+	depends on PSA_WANT_ALG_SHA_256
+
+endmenu # PSA Key derivation support
+
+
+menu "PSA Asymmetric support"
+
+config PSA_HAS_ASYM_ENCRYPT_SUPPORT
+	bool
+	default y
+	depends on PSA_WANT_ALG_RSA_OAEP || \
+		   PSA_WANT_ALG_RSA_PKCS1V15_CRYPT
+	help
+	  Prompt-less configuration that states that asymmetric encryption
+	  is supported.
+
+
+config PSA_HAS_ASYM_SIGN_SUPPORT
+	bool
+	default y
+	depends on PSA_WANT_ALG_DETERMINISTIC_ECDSA	|| \
+		   PSA_WANT_ALG_ECDSA 			|| \
+		   PSA_WANT_ALG_ECDSA_ANY		|| \
+		   PSA_WANT_ALG_PURE_EDDSA              || \
+		   PSA_WANT_ALG_ED25519PH               || \
+		   PSA_WANT_ALG_ED448PH                 || \
+		   PSA_WANT_ALG_RSA_PKCS1V15_SIGN	|| \
+		   PSA_WANT_ALG_RSA_PKCS1V15_SIGN_RAW   || \
+		   PSA_WANT_ALG_RSA_PSS                 || \
+		   PSA_WANT_ALG_RSA_PSS_ANY_SALT
+	help
+	  Prompt-less configuration that states that asymmetric signing
+	  is supported.
+
+config PSA_WANT_ALG_ECDSA
+	bool
+	prompt "PSA ECDSA support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_ECDSA_ANY
+	bool
+	prompt "PSA ECDSA support, without hashing" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_DETERMINISTIC_ECDSA
+	bool
+	prompt "PSA ECDSA support (deterministic mode)" if !PSA_PROMPTLESS
+
+menu "Elliptic Curve type support"
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_160
+	bool
+	prompt "PSA ECC BrainpoolP160r1 support (weak)"  if !PSA_PROMPTLESS
+	help
+	  Warning: The 160-bit curve brainpoolP160r1 is weak and deprecated and
+	  is only recommended for use in legacy protocols.
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_192
+	bool
+	prompt "PSA ECC BrainpoolP192r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_224
+	bool
+	prompt "PSA ECC BrainpoolP224r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_256
+	bool
+	prompt "PSA ECC BrainpoolP256r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_320
+	bool
+	prompt "PSA ECC BrainpoolP320r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_384
+	bool
+	prompt "PSA ECC BrainpoolP384r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_512
+	bool
+	prompt "PSA ECC BrainpoolP512r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_MONTGOMERY_255
+	bool
+	prompt "PSA ECC Curve25519 (X25519) support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_MONTGOMERY_448
+	bool
+	prompt "PSA ECC Curve448 (X448) support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_TWISTED_EDWARDS_255
+	bool
+	prompt "PSA ECC Edwards25519 (Ed25519) support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_TWISTED_EDWARDS_448
+	bool
+	prompt "PSA ECC Edwards448 (Ed448) support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_K1_192
+	bool
+	prompt "PSA ECC secp192k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_K1_224
+	bool
+	prompt "PSA ECC secp224k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_K1_256
+	bool
+	prompt "PSA ECC secp256k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_R1_192
+	bool
+	prompt "PSA ECC secp192r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_R1_224
+	bool
+	prompt "PSA ECC secp224r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_R1_256
+	bool
+	prompt "PSA ECC secp256r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_R1_384
+	bool
+	prompt "PSA ECC secp384r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_R1_521
+	bool
+	prompt "PSA ECC secp521r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_R2_160
+	bool
+	prompt "PSA ECC secp160r2 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: his family of curves is weak and deprecated.
+
+config PSA_WANT_ECC_SECT_K1_163
+	bool
+	prompt "PSA ECC sect163k1 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The 163-bit curve sect163k1 is weak and deprecated and is
+	  only recommended for use in legacy protocols.
+
+config PSA_WANT_ECC_SECT_K1_233
+	bool
+	prompt "PSA ECC sect233k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_K1_239
+	bool
+	prompt "PSA ECC sect239k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_K1_283
+	bool
+	prompt "PSA ECC sect283k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_K1_409
+	bool
+	prompt "PSA ECC sect409k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_K1_571
+	bool
+	prompt "PSA ECC sect571k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R1_163
+	bool
+	prompt "PSA ECC sect163r1 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The 163-bit curve sect163r1 is weak and deprecated and is
+	  only recommended for use in legacy protocols.
+
+config PSA_WANT_ECC_SECT_R1_233
+	bool
+	prompt "PSA ECC sect233r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R1_283
+	bool
+	prompt "PSA ECC sect283r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R1_409
+	bool
+	prompt "PSA ECC sect409r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R1_571
+	bool
+	prompt "PSA ECC sect571r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R2_163
+	bool
+	prompt "PSA ECC sect163r2 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The 163-bit curve sect163r2 is weak and deprecated and is
+	  only recommended for use in legacy protocols.
+
+config PSA_WANT_ECC_FRP_V1_256
+	bool
+	prompt "PSA ECC FRP256v1 support" if !PSA_PROMPTLESS
+
+endmenu # Elliptic Curve type support
+
+config PSA_WANT_ALG_RSA_OAEP
+	bool
+	prompt "PSA  RSA OAEP asymmetric encryption support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_RSA_PKCS1V15_CRYPT
+	bool
+	prompt "PSA RSA PKCS#1 v1.5 asymmetric encryption support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_RSA_PKCS1V15_SIGN
+	bool
+	prompt "PSA RSA PKCS#1 v1.5 message signature support, with hashing" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_RSA_PKCS1V15_SIGN_RAW
+	bool
+	prompt "PSA RSA raw PKCS#1 v1.5 message signature support, without hashing)" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_RSA_PSS
+	bool
+	prompt "PSA RSA PSS message signature support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_RSA_PSS_ANY_SALT
+	bool
+	prompt "PSA RSA PSS message signature support, any salt length" if !PSA_PROMPTLESS
+
+endmenu # PSA Asymmetric support
+
+config PSA_WANT_ALG_JPAKE
+	bool
+	prompt "PSA EC J-PAKE support" if !PSA_PROMPTLESS
+	select EXPERIMENTAL if !NET_L2_OPENTHREAD
+
+config PSA_WANT_ALG_SPAKE2P_HMAC
+	bool
+	prompt "PSA SPAKE2+ HMAC support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SPAKE2P_CMAC
+	bool
+	prompt "PSA SPAKE2+ CMAC support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SPAKE2P_MATTER
+	bool
+	prompt "PSA SPAKE2+ MATTER support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SRP_6
+	bool
+	prompt "PSA SRP-6 support" if !PSA_PROMPTLESS
+	select EXPERIMENTAL
+
+config PSA_WANT_ALG_SRP_PASSWORD_HASH
+	bool
+	prompt "PSA SRP password hash support" if !PSA_PROMPTLESS
+	select EXPERIMENTAL
+
+config PSA_HAS_PAKE_SUPPORT
+	bool
+	default y
+	depends on PSA_WANT_ALG_JPAKE			|| \
+		   PSA_WANT_ALG_SPAKE2P_HMAC		|| \
+		   PSA_WANT_ALG_SPAKE2P_CMAC		|| \
+		   PSA_WANT_ALG_SPAKE2P_MATTER 		|| \
+		   PSA_WANT_ALG_SRP_6 			|| \
+		   PSA_WANT_ALG_SRP_PASSWORD_HASH
+	help
+	  Prompt-less configuration that states that PAKE is supported.
+
+config PSA_WANT_ALG_PURE_EDDSA
+	bool
+	prompt "PSA PURE_EDDSA support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_ED25519PH
+	bool
+	prompt "PSA ED25519PH support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_ED448PH
+	bool
+	prompt "PSA ED448PH support" if !PSA_PROMPTLESS
