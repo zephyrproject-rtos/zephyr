@@ -12,6 +12,8 @@ description: |
                 reg = <0>;
                 qspi-max-frequency = <80000000>;
                 size = <0x4000000>;
+                reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+                reset-gpios-duration = <1>;
                 status = "okay";
         };
 
@@ -33,3 +35,11 @@ properties:
     size:
       required: true
       description: Flash Memory size in bits
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: RESETn pin
+    reset-gpios-duration:
+      type: int
+      required: false
+      description: The duration (in ms) for the flash memory reset pulse
