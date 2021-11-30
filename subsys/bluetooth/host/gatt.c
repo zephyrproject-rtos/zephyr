@@ -2487,6 +2487,16 @@ static void sc_restore_rsp(struct bt_conn *conn,
 		BT_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
 	}
 #endif
+
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	if (!err) {
+		struct gatt_sc_cfg *sc_cfg = find_sc_cfg(conn->id, &conn->le.dst);
+
+		if (sc_cfg) {
+			sc_reset(sc_cfg);
+		}
+	}
+#endif
 }
 
 static struct bt_gatt_indicate_params sc_restore_params[CONFIG_BT_MAX_CONN];
@@ -2522,9 +2532,6 @@ static void sc_restore(struct bt_conn *conn)
 	if (bt_gatt_indicate(conn, &sc_restore_params[index])) {
 		BT_ERR("SC restore indication failed");
 	}
-
-	/* Reset config data */
-	sc_reset(cfg);
 }
 
 struct conn_data {
