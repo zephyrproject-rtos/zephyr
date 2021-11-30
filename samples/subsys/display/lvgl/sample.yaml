@@ -43,7 +43,6 @@ tests:
     extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
       - CONFIG_DUMMY_DISPLAY=y
-      - CONFIG_DUMMY_DISPLAY_DEV_NAME="DISPLAY"
       - CONFIG_KSCAN=n
       - CONFIG_SDL_DISPLAY=n
     tags: samples display gui
