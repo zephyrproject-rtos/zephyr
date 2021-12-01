@@ -6371,7 +6371,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	uint8_t cte_type = BT_HCI_LE_NO_CTE;
 	struct pdu_adv_com_ext_adv *p;
 	struct pdu_adv_ext_hdr *h;
-	uint8_t data_status = 0U;
+	uint16_t data_len_total;
 	struct net_buf *evt_buf;
 	uint8_t data_len = 0U;
 	uint8_t acad_len = 0U;
@@ -6538,13 +6538,20 @@ no_ext_hdr:
 	data_len_max = ADV_REPORT_EVT_MAX_LEN -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
 		       sizeof(struct bt_hci_evt_le_per_advertising_report);
+	data_len_total = node_rx->hdr.rx_ftr.aux_data_len;
 
 	evt_buf = buf;
 
-	if ((le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) && accept) {
+	if ((le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) && accept &&
+	    ((data_len_total - data_len) < CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
+
+		data_len = MIN(data_len, (CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX +
+					  data_len - data_len_total));
+
 		do {
 			struct bt_hci_evt_le_per_advertising_report *sep;
 			uint8_t data_len_frag;
+			uint8_t data_status;
 
 			data_len_frag = MIN(data_len, data_len_max);
 
@@ -6553,17 +6560,30 @@ no_ext_hdr:
 				       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
 				       sizeof(*sep) + data_len_frag);
 
+			sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+			sep->tx_power = tx_pwr;
+			sep->rssi = rssi;
+			sep->cte_type = cte_type;
+			sep->length = data_len_frag;
 			memcpy(&sep->data[0], data, data_len_frag);
+
 			data += data_len_frag;
 			data_len -= data_len_frag;
 
 			if (data_len > 0) {
 				/* Some data left in PDU, mark as partial data. */
 				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
-			} else if (!aux_ptr) {
+
+				evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+				net_buf_frag_add(buf, evt_buf);
+
+				tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
+			} else if (!aux_ptr &&
+				   (data_len_total <= CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
 				/* No data left, no AuxPtr, mark as complete data. */
 				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
-			} else if (ftr->aux_w4next) {
+			} else if (ftr->aux_sched &&
+				   (data_len_total < CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
 				/* No data left, but have AuxPtr and scheduled aux scan,
 				 * mark as partial data.
 				 */
@@ -6575,22 +6595,7 @@ no_ext_hdr:
 				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 			}
 
-			sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
-			/* TODO: use actual TX power only on 1st report, subsequent
-			 *       reports can use 0x7F
-			 */
-			sep->tx_power = tx_pwr;
-			sep->rssi = rssi;
-			sep->cte_type = cte_type;
 			sep->data_status = data_status;
-			sep->length = data_len_frag;
-
-			if (data_len > 0) {
-				evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-				net_buf_frag_add(buf, evt_buf);
-
-				tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
-			}
 		} while (data_len > 0);
 
 		evt_buf = NULL;
