@@ -1082,6 +1082,7 @@ int coap_next_block_for_option(const struct coap_packet *cpkt,
 			       enum coap_option_num option)
 {
 	int block;
+	uint16_t block_len;
 
 	if (option != COAP_OPTION_BLOCK1 && option != COAP_OPTION_BLOCK2) {
 		return -EINVAL;
@@ -1093,11 +1094,17 @@ int coap_next_block_for_option(const struct coap_packet *cpkt,
 		return block;
 	}
 
+	coap_packet_get_payload(cpkt, &block_len);
+	/* Check that the package does not exceed the expected size ONLY */
+	if ((ctx->total_size > 0) &&
+	    (ctx->total_size < (ctx->current + block_len))) {
+		return -EMSGSIZE;
+	}
+	ctx->current += block_len;
+
 	if (!GET_MORE(block)) {
 		return 0;
 	}
-
-	ctx->current += coap_block_size_to_bytes(ctx->block_size);
 
 	return (int)ctx->current;
 }
