@@ -41,7 +41,7 @@ static int runtime_suspend(const struct device *dev, bool async)
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
 
-	if (!pm->enable) {
+	if ((pm->flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) == 0U) {
 		ret = -ENOTSUP;
 		goto unlock;
 	}
@@ -108,7 +108,7 @@ int pm_device_runtime_get(const struct device *dev)
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
 
-	if (!pm->enable) {
+	if ((pm->flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) == 0U) {
 		ret = -ENOTSUP;
 		goto unlock;
 	}
@@ -176,7 +176,7 @@ void pm_device_runtime_enable(const struct device *dev)
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
 
-	if (pm->enable) {
+	if ((pm->flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) != 0U) {
 		goto unlock;
 	}
 
@@ -187,7 +187,7 @@ void pm_device_runtime_enable(const struct device *dev)
 		k_work_init_delayable(&pm->work, runtime_suspend_work);
 	}
 
-	pm->enable = true;
+	atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
 
 unlock:
 	if (!k_is_pre_kernel()) {
@@ -208,7 +208,7 @@ int pm_device_runtime_disable(const struct device *dev)
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	}
 
-	if (!pm->enable) {
+	if ((pm->flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED)) == 0U) {
 		goto unlock;
 	}
 
@@ -230,7 +230,7 @@ int pm_device_runtime_disable(const struct device *dev)
 		pm->state = PM_DEVICE_STATE_ACTIVE;
 	}
 
-	pm->enable = false;
+	atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
 
 unlock:
 	if (!k_is_pre_kernel()) {
@@ -244,16 +244,7 @@ unlock:
 
 bool pm_device_runtime_is_enabled(const struct device *dev)
 {
-	bool ret = false;
 	struct pm_device *pm = dev->pm;
 
-	if (!k_is_pre_kernel()) {
-		(void)k_mutex_lock(&pm->lock, K_FOREVER);
-		ret = pm->enable;
-		(void)k_mutex_unlock(&pm->lock);
-	} else {
-		ret = pm->enable;
-	}
-
-	return ret;
+	return atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
 }

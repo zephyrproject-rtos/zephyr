@@ -37,6 +37,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_WS_CAPABLE,
 	/** Indicates if the device is being used as wakeup source. */
 	PM_DEVICE_FLAG_WS_ENABLED,
+	/** Indicates if device runtime is enabled  */
+	PM_DEVICE_FLAG_RUNTIME_ENABLED,
 };
 
 /** @endcond */
@@ -99,8 +101,6 @@ struct pm_device {
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
 	struct k_mutex lock;
-	/** Device pm enable flag */
-	bool enable : 1;
 	/** Device usage count */
 	uint32_t usage;
 	/** Work object for asynchronous calls */
