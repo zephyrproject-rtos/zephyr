@@ -826,8 +826,8 @@ function(board_finalize_runner_args runner)
 endfunction()
 
 function(board_set_rimage_target target)
-  zephyr_check_cache(RIMAGE_TARGET)
   set(RIMAGE_TARGET ${target} CACHE STRING "rimage target")
+  zephyr_check_cache(RIMAGE_TARGET)
 endfunction()
 
 # Zephyr board revision:
