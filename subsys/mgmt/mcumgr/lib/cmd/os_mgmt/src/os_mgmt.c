@@ -131,6 +131,14 @@ os_mgmt_taskstat_encode_unsupported(struct CborEncoder *thread_map)
 	return err;
 }
 
+static inline int
+os_mgmt_taskstat_encode_priority(struct CborEncoder *thread_map, const struct k_thread *thread)
+{
+	return IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_SIGNED_PRIORITY) ?
+		cbor_encode_int(thread_map, (int)thread->base.prio) :
+		cbor_encode_uint(thread_map, (unsigned int)thread->base.prio & 0xff);
+}
+
 /**
  * Encodes a single taskstat entry.
  */
@@ -150,7 +158,7 @@ os_mgmt_taskstat_encode_one(struct CborEncoder *encoder, int idx, const struct k
 	err |= cbor_encoder_create_map(encoder, &thread_map, CborIndefiniteLength);
 
 	err |= cbor_encode_text_stringz(&thread_map, "prio");
-	err |= cbor_encode_uint(&thread_map, (unsigned int)thread->base.prio & 0xff);
+	err |= os_mgmt_taskstat_encode_priority(&thread_map, thread);
 
 	err |= cbor_encode_text_stringz(&thread_map, "tid");
 	err |= cbor_encode_uint(&thread_map, idx);
