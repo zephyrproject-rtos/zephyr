@@ -1169,7 +1169,7 @@ static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
 
 DEVICE_DT_INST_DEFINE(0, &flash_stm32_qspi_init, NULL,
 		      &flash_stm32_qspi_dev_data, &flash_stm32_qspi_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		      &flash_stm32_qspi_driver_api);
 
 static void flash_stm32_qspi_irq_config_func(const struct device *dev)

@@ -626,5 +626,5 @@ static struct flash_it8xxx2_dev_data flash_it8xxx2_data;
 DEVICE_DT_INST_DEFINE(0, flash_it8xxx2_init, NULL,
 		      &flash_it8xxx2_data, NULL,
 		      PRE_KERNEL_1,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		      CONFIG_FLASH_INIT_PRIORITY,
 		      &flash_it8xxx2_api);

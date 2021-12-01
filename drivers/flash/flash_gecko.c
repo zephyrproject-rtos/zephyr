@@ -225,4 +225,4 @@ static struct flash_gecko_data flash_gecko_0_data;
 
 DEVICE_DT_INST_DEFINE(0, flash_gecko_init, NULL,
 		    &flash_gecko_0_data, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_gecko_driver_api);
+		    CONFIG_FLASH_INIT_PRIORITY, &flash_gecko_driver_api);
