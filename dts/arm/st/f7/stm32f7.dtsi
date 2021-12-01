@@ -10,6 +10,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/memory-controller/stm32-fmc-sdram.h>
 #include <freq.h>
 
 / {
@@ -73,6 +74,22 @@
 	};
 
 	soc {
+		fmc: memory-controller@a0000000 {
+			compatible = "st,stm32-fmc";
+			reg = <0xa0000000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
+			label = "STM32_FMC";
+			status = "disabled";
+
+			sdram: sdram {
+				compatible = "st,stm32-fmc-sdram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				label = "STM32_FMC_SDRAM";
+				status = "disabled";
+			};
+		};
+
 		flash: flash-controller@40023c00 {
 			compatible = "st,stm32-flash-controller", "st,stm32f7-flash-controller";
 			label = "FLASH_CTRL";
