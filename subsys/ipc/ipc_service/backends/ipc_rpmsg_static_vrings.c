@@ -276,12 +276,12 @@ static int mbox_init(const struct device *instance)
 
 	k_work_init(&data->mbox_work, mbox_callback_process);
 
-	err = mbox_register_callback(&conf->mbox_rx, mbox_callback, data);
+	err = mbox_set_enabled(&conf->mbox_rx, true);
 	if (err != 0) {
 		return err;
 	}
 
-	return mbox_set_enabled(&conf->mbox_rx, 1);
+	return mbox_register_callback(&conf->mbox_rx, mbox_callback, data);
 }
 
 static struct ipc_rpmsg_ept *register_ept_on_host(struct ipc_rpmsg_instance *rpmsg_inst,
