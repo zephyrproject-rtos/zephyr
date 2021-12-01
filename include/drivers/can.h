@@ -860,7 +860,7 @@ static inline int can_configure(const struct device *dev, enum can_mode mode,
 				uint32_t bitrate)
 {
 	if (bitrate > 0) {
-		int err = can_set_bitrate(dev, bitrate, 0);
+		int err = can_set_bitrate(dev, bitrate, bitrate);
 		if (err != 0) {
 			return err;
 		}
@@ -868,7 +868,6 @@ static inline int can_configure(const struct device *dev, enum can_mode mode,
 
 	return can_set_mode(dev, mode);
 }
-
 
 /**
  * @brief Get current state
