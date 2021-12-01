@@ -166,8 +166,9 @@ struct pm_state_info {
  * @param node_id A node identifier with compatible zephyr,power-state
  * @return macro function to construct a pm_state_info
  */
-#define Z_PM_STATE_INFO_DT_ITEMS_LISTIFY_FUNC(child, node_id) \
-	PM_STATE_INFO_DT_ITEM_BY_IDX(node_id, child)
+#define Z_PM_STATE_INFO_DT_ITEMS_LISTIFY_FUNC(child, node_id)		       \
+	PM_STATE_INFO_DT_ITEM(DT_PHANDLE_BY_IDX(node_id, cpu_power_states,     \
+						child))
 
 /**
  * @brief Macro function to construct enum pm_state item in UTIL_LISTIFY
@@ -178,40 +179,32 @@ struct pm_state_info {
  * @return macro function to construct a pm_state enum
  */
 #define Z_PM_STATE_DT_ITEMS_LISTIFY_FUNC(child, node_id) \
-	PM_STATE_DT_ITEM_BY_IDX(node_id, child)
+	PM_STATE_DT_ITEM(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, child))
 
 /** @endcond */
 
 /**
- * @brief Construct a pm_state_info from 'cpu-power-states' property at index 'i'
+ * @brief Construct a pm_state_info from a DT node identifier.
  *
  * @param node_id A node identifier with compatible zephyr,power-state
- * @param i index into cpu-power-states property
- * @return pm_state_info item from 'cpu-power-states' property at index 'i'
+ * @return pm_state_info item for the given node.
  */
-#define PM_STATE_INFO_DT_ITEM_BY_IDX(node_id, i)                    \
-	{                                                           \
-		.state = DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,	\
-			cpu_power_states, i), power_state_name),    \
-		.substate_id = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
-			cpu_power_states, i, substate_id, 0),   \
-		.min_residency_us = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
-				cpu_power_states, i, min_residency_us, 0),\
-		.exit_latency_us = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
-				cpu_power_states, i, exit_latency_us, 0),\
+#define PM_STATE_INFO_DT_ITEM(node_id)					       \
+	{								       \
+		.state = DT_ENUM_IDX(node_id, power_state_name),	       \
+		.substate_id = DT_PROP_OR(node_id, substate_id, 0),	       \
+		.min_residency_us = DT_PROP_OR(node_id, min_residency_us, 0),  \
+		.exit_latency_us = DT_PROP_OR(node_id, exit_latency_us, 0),    \
 	},
 
 /**
- * @brief Construct a pm_state enum from 'cpu-power-states' property
- *        at index 'i'
+ * @brief Construct a pm_state enum from a DT node identifier.
  *
  * @param node_id A node identifier with compatible zephyr,power-state
- * @param i index into cpu-power-states property
- * @return pm_state item from 'cpu-power-states' property at index 'i'
+ * @return pm_state item for the given node.
  */
-#define PM_STATE_DT_ITEM_BY_IDX(node_id, i)			\
-	DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,			\
-		      cpu_power_states, i), power_state_name),
+#define PM_STATE_DT_ITEM(node_id) \
+	DT_ENUM_IDX(node_id, power_state_name),
 
 /**
  * @brief Length of 'cpu-power-states' property
