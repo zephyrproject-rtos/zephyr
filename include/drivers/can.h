@@ -856,8 +856,8 @@ static inline int can_set_bitrate(const struct device *dev,
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to configure device.
  */
-static inline int can_configure(const struct device *dev, enum can_mode mode,
-				uint32_t bitrate)
+__deprecated static inline int can_configure(const struct device *dev, enum can_mode mode,
+					     uint32_t bitrate)
 {
 	if (bitrate > 0) {
 		int err = can_set_bitrate(dev, bitrate, 0);
