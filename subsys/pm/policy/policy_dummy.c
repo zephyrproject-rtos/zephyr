@@ -16,7 +16,7 @@ LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
 	(struct pm_state_info){PM_STATE_ACTIVE, 0, 0}
 
 static const struct pm_state_info pm_dummy_states[] =
-	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
+	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
 
 struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
