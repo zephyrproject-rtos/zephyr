@@ -14,6 +14,22 @@
 
 #define TOTAL_THREADS_WAITING (5)
 
+/**
+ * @brief Tests for the Semaphore kernel object
+ * @defgroup kernel_semaphore_tests Semaphore
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
+/**
+ * @brief Moudle test cases of kernel semaphore
+ * @defgroup semaphore_module_tests Semaphore Module Tests
+ * @ingroup kernel_semaphore_tests
+ * @{
+ * @}
+ */
+
 /******************************************************************************/
 /* Kobject declaration */
 K_SEM_DEFINE(simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
@@ -97,19 +113,12 @@ static void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 	k_sem_give(&simple_sem);
 }
 
-
-/**
- * @ingroup kernel_semaphore_tests
- * @{
- */
-
-
 /**
  * @brief Test semaphore defined at compile time
  * @details
  * - Get the semaphore count.
  * - Verify the semaphore count equals to initialized value.
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  * @see k_sem_count_get()
  */
 void test_k_sem_define(void)
@@ -126,7 +135,7 @@ void test_k_sem_define(void)
  * - Initialize a semaphore with valid count and max limit.
  * - Initialize a semaphore with invalid max limit.
  * - Initialize a semaphore with invalid count.
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  */
 void test_k_sem_init(void)
 {
@@ -228,7 +237,7 @@ void test_sem_count_get(void)
  * - Give the semaphore from a thread
  * - Get the semaphore's count
  * - Verify whether the semaphore's count as expected
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  * @see k_sem_give()
  */
 void test_sem_give_from_thread(void)
@@ -296,7 +305,7 @@ void test_sem_take_no_wait_fails(void)
  * @details
  * - Reset the semaphore's count to zero, let it unavailable.
  * - Take an unavailable semaphore and wait it until timeout.
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  * @see k_sem_take()
  */
 void test_sem_take_timeout_fails(void)
@@ -319,7 +328,7 @@ void test_sem_take_timeout_fails(void)
  * - Create a new thread, it will give semaphore.
  * - Reset the semaphore's count to zero.
  * - Take semaphore and wait it given by other threads in specified timeout.
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  * @see k_sem_take()
  */
 void test_sem_take_timeout(void)
@@ -355,7 +364,7 @@ void test_sem_take_timeout(void)
  * - Create a new thread, it will give semaphore.
  * - Reset the semaphore's count to zero.
  * - Take semaphore, wait it given by other thread forever until it's available.
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  * @see k_sem_take()
  */
 void test_sem_take_timeout_forever(void)
@@ -384,7 +393,7 @@ void test_sem_take_timeout_forever(void)
 
 /**
  * @brief Test semaphore take operation by multiple threads
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  * @see k_sem_take()
  */
 void test_sem_take_multiple(void)
@@ -527,7 +536,7 @@ void test_sem_take_multiple(void)
  * - Take the semaphore by a thread and verify the semaphore's count is
  *   as expected.
  * - Verify the max times a semaphore can be taken.
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  * @see k_sem_count_get(), k_sem_give()
  */
 void test_k_sem_correct_count_limit(void)
@@ -575,7 +584,7 @@ void test_k_sem_correct_count_limit(void)
 
 /**
  * @brief Test multiple semaphore take and give with wait
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_module_tests
  * @see k_sem_take(), k_sem_give()
  */
 void test_sem_multiple_threads_wait(void)
@@ -619,11 +628,7 @@ void test_sem_multiple_threads_wait(void)
 	}
 }
 
-/**
- * @}
- */
-
-/* ztest main entry*/
+/* ztest main entry */
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(),

@@ -23,13 +23,6 @@ struct k_sem usage_sem, sync_sem, limit_sem;
 static ZTEST_DMEM int flag;
 static ZTEST_DMEM int count;
 
-/**
- * @defgroup kernel_sys_sem_tests Semaphore
- * @ingroup all_tests
- * @{
- * @}
- */
-
 static void sem_thread_give(void *p1, void *p2, void *p3)
 {
 	flag = 1;
@@ -59,7 +52,7 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  * - Use semphore normally
  * - Use semaphore with different priority threads
  *
- * @ingroup kernel_sys_sem_tests
+ * @ingroup semaphore_integration_tests
  */
 void test_multiple_thread_sem_usage(void)
 {
@@ -145,7 +138,7 @@ static void multi_thread_sem_take(void *p1, void *p2, void *p3)
  * - Verify more than max count about semaphore can reach.
  * - Take sem by multiple threads and verify if sem count is correct.
  *
- * @ingroup kernel_sys_sem_tests
+ * @ingroup semaphore_integration_tests
  */
 void test_multi_thread_sem_limit(void)
 {

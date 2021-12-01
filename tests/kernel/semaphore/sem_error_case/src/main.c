@@ -14,6 +14,14 @@ static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_sem uninit_sem;
 
+/**
+ * @brief Fault injection test cases of semaphore
+ * @defgroup semaphore_negative_tests Semaphore Fault Injection Tests
+ * @ingroup kernel_semaphore_tests
+ * @{
+ * @}
+ */
+
 static void sem_thread_give_uninit(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
@@ -29,7 +37,7 @@ static void sem_thread_give_uninit(void *p1, void *p2, void *p3)
  *
  * @details Create a thread and use a uninitialized semaphore
  *
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_negative_tests
  *
  * @see k_sem_give()
  */
@@ -59,7 +67,7 @@ static void thread_sem_give_null(void *p1, void *p2, void *p3)
  *
  * @details Create a thread and set k_sem_give() input to NULL
  *
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_negative_tests
  *
  * @see k_sem_give()
  */
@@ -88,7 +96,7 @@ static void thread_sem_init_null(void *p1, void *p2, void *p3)
  *
  * @details Create a thread and set k_sem_init() input to NULL
  *
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_negative_tests
  *
  * @see k_sem_init()
  */
@@ -117,7 +125,7 @@ static void thread_sem_take_null(void *p1, void *p2, void *p3)
  *
  * @details Create a thread and set k_sem_take() input to NULL
  *
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_negative_tests
  *
  * @see k_sem_take()
  */
@@ -146,7 +154,7 @@ static void thread_sem_reset_null(void *p1, void *p2, void *p3)
  *
  * @details Create a thread and set k_sem_reset() input to NULL
  *
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_negative_tests
  *
  * @see k_sem_reset()
  */
@@ -175,7 +183,7 @@ static void thread_sem_count_get_null(void *p1, void *p2, void *p3)
  *
  * @details Create a thread and set k_sem_count_get() input to NULL
  *
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_negative_tests
  *
  * @see k_sem_count_get()
  */

@@ -29,6 +29,14 @@
 #define stack_1 multi_stack_give[TOTAL_THREADS_WAITING]
 #define stack_2 multi_stack_give[TOTAL_THREADS_WAITING+1]
 
+/**
+ * @brief Integration test cases of semaphore
+ * @defgroup semaphore_integration_tests Semaphore Integration Tests
+ * @ingroup kernel_semaphore_tests
+ * @{
+ * @}
+ */
+
 /* global variable for mutual exclusion test */
 uint32_t critical_var;
 
@@ -48,6 +56,7 @@ static struct k_sem sema;
 K_PIPE_DEFINE(timeout_info_pipe,
 	      sizeof(struct timeout_info) * TOTAL_THREADS_WAITING, 2);
 
+/* comes from sys_sem.c */
 extern struct k_sem usage_sem, sync_sem, limit_sem;
 
 extern struct k_thread multi_tid_give[STACK_NUMS];
@@ -110,12 +119,8 @@ static void sem_take_timeout_isr_helper(void *p1, void *p2, void *p3)
 }
 
 /**
- * @ingroup kernel_semaphore_tests
- * @{
- */
-
-/**
  * @brief Test synchronization of threads with semaphore
+ * @ingroup semaphore_integration_tests
  * @see k_sem_init(), #K_SEM_DEFINE(x)
  */
 void test_sem_thread2thread(void)
@@ -131,6 +136,7 @@ void test_sem_thread2thread(void)
 
 /**
  * @brief Test synchronization between thread and irq
+ * @ingroup semaphore_integration_tests
  * @see k_sem_init(), #K_SEM_DEFINE(x)
  */
 void test_sem_thread2isr(void)
@@ -152,7 +158,7 @@ void test_sem_thread2isr(void)
  * - Give the semaphore from an ISR
  * - Get the semaphore's count
  * - Verify whether the semaphore's count as expected
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_integration_tests
  * @see k_sem_give()
  */
 void test_sem_give_from_isr(void)
@@ -174,6 +180,7 @@ void test_sem_give_from_isr(void)
 
 /**
  * @brief Test k_sem_take() with timeout in ISR context
+ * @ingroup semaphore_integration_tests
  * @see k_sem_take()
  */
 void test_sem_take_timeout_isr(void)
@@ -197,6 +204,7 @@ void test_sem_take_timeout_isr(void)
 
 /**
  * @brief Test semaphore give and take and its count from ISR
+ * @ingroup semaphore_integration_tests
  * @see k_sem_give()
  */
 void test_sem_give_take_from_isr(void)
@@ -219,12 +227,8 @@ void test_sem_give_take_from_isr(void)
 }
 
 /**
- * @}
- */
-
-/**
  * @brief Test semaphore timeout period
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_integration_tests
  * @see k_sem_take(), k_sem_give(), k_sem_reset()
  */
 void test_sem_measure_timeouts(void)
@@ -282,7 +286,7 @@ static void sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
 
 /**
  * @brief Test timeout of semaphore from thread
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_integration_tests
  * @see k_sem_give(), k_sem_reset(), k_sem_take()
  */
 void test_sem_measure_timeout_from_thread(void)
@@ -342,7 +346,7 @@ static void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
 
 /**
  * @brief Test multiple semaphore take with timeouts
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_integration_tests
  * @see k_sem_take(), k_sem_reset()
  */
 void test_sem_multiple_take_and_timeouts(void)
@@ -406,7 +410,7 @@ static void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
 
 /**
  * @brief Test sequence of multiple semaphore timeouts
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_integration_tests
  * @see k_sem_take(), k_sem_reset()
  */
 void test_sem_multi_take_timeout_diff_sem(void)
@@ -494,7 +498,7 @@ static void sem_queue_mutual_exclusion2(void *p1, void *p2, void *p3)
  * Made two threads, with two functions which use common variable.
  * That variable is a critical section and can't be changed by two threads
  * at the same time.
- * @ingroup kernel_semaphore_tests
+ * @ingroup semaphore_integration_tests
  */
 void test_sem_queue_mutual_exclusion(void)
 {
@@ -552,6 +556,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_sem_multiple_take_and_timeouts),
 			 ztest_unit_test(test_sem_multi_take_timeout_diff_sem),
 			 ztest_1cpu_unit_test(test_sem_queue_mutual_exclusion),
+
+			 /* following test cases comes from sys_sem.c */
 			 ztest_1cpu_user_unit_test(test_multiple_thread_sem_usage),
 			 ztest_1cpu_user_unit_test(test_multi_thread_sem_limit));
 	ztest_run_test_suite(test_kernel_sys_sem);
