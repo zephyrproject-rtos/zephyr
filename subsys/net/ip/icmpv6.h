@@ -69,6 +69,26 @@ struct net_icmpv6_nd_opt_6co {
 	uint8_t prefix[NET_IPV6_ADDR_SIZE];
 } __packed;
 
+/* RFC 4191, ch. 2.3 */
+struct net_icmpv6_nd_opt_route_info {
+	uint8_t prefix_len;
+	struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		uint8_t reserved_2 :3;
+		uint8_t prf        :2;
+		uint8_t reserved_1 :3;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+		uint8_t reserved_1 :3;
+		uint8_t prf        :2;
+		uint8_t reserved_2 :3;
+#endif
+	} flags;
+	uint32_t route_lifetime;
+	/* Variable-legnth prefix field follows, can be 0, 8 or 16 bytes
+	 * depending on the option length.
+	 */
+} __packed;
+
 struct net_icmpv6_echo_req {
 	uint16_t identifier;
 	uint16_t sequence;
