@@ -36,7 +36,7 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 				 &client->transport.proxy.addr,
 				 client->transport.proxy.addrlen);
 		if (ret < 0) {
-			return -errno;
+			goto error;
 		}
 	}
 #endif
@@ -52,12 +52,15 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 	ret = zsock_connect(client->transport.tcp.sock, client->broker,
 			    peer_addr_size);
 	if (ret < 0) {
-		(void) zsock_close(client->transport.tcp.sock);
-		return -errno;
+		goto error;
 	}
 
 	MQTT_TRC("Connect completed");
 	return 0;
+
+error:
+	(void)zsock_close(client->transport.tcp.sock);
+	return -errno;
 }
 
 int mqtt_client_tcp_write(struct mqtt_client *client, const uint8_t *data,
