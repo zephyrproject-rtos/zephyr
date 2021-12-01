@@ -14,6 +14,7 @@
 /* Status register bits */
 #define SPI_NOR_WIP_BIT         BIT(0)  /* Write in progress */
 #define SPI_NOR_WEL_BIT         BIT(1)  /* Write enable latch */
+#define SPI_NOR_QE_BIT          BIT(6)  /* Enable quad mode */
 
 /* Control register bits */
 #define SPI_NOR_4BYTE_BIT       BIT(5)  /* 4B addressing */
