@@ -204,12 +204,13 @@ struct pm_state_info {
 	DT_ENUM_IDX(node_id, power_state_name)
 
 /**
- * @brief Length of 'cpu-power-states' property
+ * @brief Obtain number of CPU power states supported by the given CPU node
+ * identifier.
  *
- * @param node_id A node identifier with compatible zephyr,power-state
- * @return length of 'cpu-power-states' property
+ * @param node_id A CPU node identifier.
+ * @return Number of supported CPU power states.
  */
-#define PM_STATE_DT_ITEMS_LEN(node_id) \
+#define DT_NUM_CPU_POWER_STATES(node_id) \
 	DT_PROP_LEN_OR(node_id, cpu_power_states, 0)
 
 /**
@@ -257,7 +258,7 @@ struct pm_state_info {
  */
 #define PM_STATE_INFO_LIST_FROM_DT_CPU(node_id)				       \
 	{								       \
-		UTIL_LISTIFY(PM_STATE_DT_ITEMS_LEN(node_id),		       \
+		UTIL_LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),		       \
 			     Z_PM_STATE_INFO_FROM_DT_CPU, node_id)   \
 	}
 
@@ -305,7 +306,7 @@ struct pm_state_info {
  */
 #define PM_STATE_LIST_FROM_DT_CPU(node_id)				       \
 	{								       \
-		UTIL_LISTIFY(PM_STATE_DT_ITEMS_LEN(node_id),		       \
+		UTIL_LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),		       \
 			     Z_PM_STATE_FROM_DT_CPU, node_id)		       \
 	}
 
