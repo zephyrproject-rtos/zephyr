@@ -244,7 +244,7 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 
 	canopen_detach_all_rx_filters(CANmodule);
 
-	err = can_configure(CANmodule->dev, CAN_SILENT_MODE, 0);
+	err = can_set_mode(CANmodule->dev, CAN_SILENT_MODE);
 	if (err) {
 		LOG_ERR("failed to disable CAN interface (err %d)", err);
 	}
