@@ -304,7 +304,7 @@ static inline uint8_t reg_interval(const struct device *dev)
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
 static const enum pm_state pm_states[] =
-	PM_STATE_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
+	PM_STATE_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
 #endif
 
 static const struct uart_driver_api uart_ns16550_driver_api;

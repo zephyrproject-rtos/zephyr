@@ -21,7 +21,7 @@ static enum pm_state wrong_states[] = {PM_STATE_SUSPEND_TO_DISK,
 void test_power_states(void)
 {
 	enum pm_state dts_states[] =
-		PM_STATE_DT_ITEMS_LIST(DT_NODELABEL(power_states));
+		PM_STATE_LIST_FROM_DT_CPU(DT_NODELABEL(power_states));
 	struct pm_state_info dts_infos[] =
 		PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(power_states));
 	uint32_t dts_states_len =
