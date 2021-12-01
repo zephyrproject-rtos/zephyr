@@ -218,17 +218,17 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 7c88781953ce7146878bd8bd724e175fdbc298c5
+      revision: 2cc2948a0e698ca96a730ab2a341af0f734d5992
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
     - name: tf-m-tests
-      revision: 93dad5cb3cfc2e2d82de61d1b2781f84881ce839
+      revision: 52814181f0fde6d1422fac204d42cde30c62e40e
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - tee
     - name: psa-arch-tests
-      revision: 077b8e5cd5fe9e27718a499b004e79bfca2d2e89
+      revision: 186cba2543dff73d0cda5509d26f02a0b39ee66e
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
