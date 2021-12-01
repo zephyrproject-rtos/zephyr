@@ -68,11 +68,12 @@ os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder,
 	CborError err = 0;
 
 #ifdef CONFIG_THREAD_NAME
-	err |= cbor_encode_text_stringz(encoder, thread->name);
+	err |= cbor_encode_text_string(encoder, thread->name,
+			strnlen(thread->name, CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN - 1));
 #else
-	char thread_name[OS_MGMT_TASK_NAME_LEN];
+	char thread_name[CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN];
 
-	thread_name[OS_MGMT_TASK_NAME_LEN - 1] = 0;
+	thread_name[sizeof(thread_name) - 1] = 0;
 	ll_to_s((int)thread->base.prio, sizeof(thread_name) - 1, thread_name);
 	err |= cbor_encode_text_stringz(encoder, thread_name);
 #endif /* CONFIG_THREAD_NAME */
