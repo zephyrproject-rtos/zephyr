@@ -265,8 +265,17 @@ config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
 	  signed integer, and this number regulates how many digits will be used;
 	  in such case this value should also take into account possible '-'
 	  sign.
-endif
 
+config OS_MGMT_TASKSTAT_SIGNED_PRIORITY
+	bool "Enable signed priorities"
+	help
+	  Zephyr uses int8_t as thread priorities, but in taskstat response it encodes
+	  them as unsigned.  Enabling this option will use signed int for priorities in
+	  responses, which is more natural for Zephyr.
+	  Enable this option only if your client software is able to properly decode
+	  and accept signed integers as priorities.
+
+endif
 
 config OS_MGMT_ECHO
 	bool "Support for echo command"
