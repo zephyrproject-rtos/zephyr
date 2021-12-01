@@ -22,7 +22,7 @@ static const struct pm_state_info *pm_min_residency[] = {
 	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATES)
 };
 
-#define CPU_STATES_SIZE(n) PM_STATE_DT_ITEMS_LEN(n),
+#define CPU_STATES_SIZE(n) DT_NUM_CPU_POWER_STATES(n),
 
 static int pm_min_residency_sizes[] = {
 	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATES_SIZE)
