@@ -864,6 +864,47 @@ __syscall void k_thread_resume(k_tid_t thread);
  */
 extern void k_sched_time_slice_set(int32_t slice, int prio);
 
+/**
+ * @brief Set thread time slice
+ *
+ * As for k_sched_time_slice_set, but (when
+ * CONFIG_TIMESLICE_PER_THREAD=y) sets the timeslice for a specific
+ * thread.  When non-zero, this timeslice will take precedence over
+ * the global value.
+ *
+ * When such a thread's timeslice expires, the configured callback
+ * will be called before the thread is removed/re-added to the run
+ * queue.  This callback will occur in interrupt context, and the
+ * specified thread is guaranteed to have been preempted by the
+ * currently-executing ISR.  Such a callback is free to, for example,
+ * modify the thread priority or slice time for future execution,
+ * suspend the thread, etc...
+ *
+ * @note Unlike the older API, the time slice parameter here is
+ * specified in ticks, not milliseconds.  Ticks have always been the
+ * internal unit, and not all platforms have integer conversions
+ * between the two.
+ *
+ * @note Threads with a non-zero slice time set will be timesliced
+ * always, even if they are higher priority than the maximum timeslice
+ * priority set via k_sched_time_slice_set().
+ *
+ * @note The callback notification for slice expiration happens, as it
+ * must, while the thread is still "current", and thus it happens
+ * before any registered timeouts at this tick.  This has the somewhat
+ * confusing side effect that the tick time (c.f. k_uptime_get()) does
+ * not yet reflect the expired ticks.  Applications wishing to make
+ * fine-grained timing decisions within this callback should use the
+ * cycle API, or derived facilities like k_thread_runtime_stats_get().
+ *
+ * @param th A valid, initialized thread
+ * @param slice_ticks Maximum timeslice, in ticks
+ * @param expired Callback function called on slice expiration
+ * @param data Parameter for the expiration handler
+ */
+void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
+			     k_thread_timeslice_fn_t expired, void *data);
+
 /** @} */
 
 /**

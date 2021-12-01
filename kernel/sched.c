@@ -381,8 +381,20 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 
 #ifdef CONFIG_TIMESLICING
 
-static int slice_time;
+static int slice_ticks;
 static int slice_max_prio;
+
+static inline int slice_time(struct k_thread *curr)
+{
+	int ret = slice_ticks;
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	if (curr->base.slice_ticks != 0) {
+		ret = curr->base.slice_ticks;
+	}
+#endif
+	return ret;
+}
 
 #ifdef CONFIG_SWAP_NONATOMIC
 /* If z_swap() isn't atomic, then it's possible for a timer interrupt
@@ -393,15 +405,15 @@ static int slice_max_prio;
 static struct k_thread *pending_current;
 #endif
 
-void z_reset_time_slice(void)
+void z_reset_time_slice(struct k_thread *curr)
 {
 	/* Add the elapsed time since the last announced tick to the
 	 * slice count, as we'll see those "expired" ticks arrive in a
 	 * FUTURE z_time_slice() call.
 	 */
-	if (slice_time != 0) {
-		_current_cpu->slice_ticks = slice_time + sys_clock_elapsed();
-		z_set_timeout_expiry(slice_time, false);
+	if (slice_time(curr) != 0) {
+		_current_cpu->slice_ticks = slice_time(curr) + sys_clock_elapsed();
+		z_set_timeout_expiry(slice_time(curr), false);
 	}
 }
 
@@ -409,24 +421,61 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
 		_current_cpu->slice_ticks = 0;
-		slice_time = k_ms_to_ticks_ceil32(slice);
+		slice_ticks = k_ms_to_ticks_ceil32(slice);
 		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && slice > 0) {
 			/* It's not possible to reliably set a 1-tick
 			 * timeout if ticks aren't regular.
 			 */
-			slice_time = MAX(2, slice_time);
+			slice_ticks = MAX(2, slice_ticks);
 		}
 		slice_max_prio = prio;
-		z_reset_time_slice();
+		z_reset_time_slice(_current);
 	}
 }
 
-static inline int sliceable(struct k_thread *thread)
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
+			     k_thread_timeslice_fn_t expired, void *data)
 {
-	return is_preempt(thread)
+	LOCKED(&sched_spinlock) {
+		th->base.slice_ticks = slice_ticks;
+		th->base.slice_expired = expired;
+		th->base.slice_data = data;
+	}
+}
+#endif
+
+static inline bool sliceable(struct k_thread *thread)
+{
+	bool ret = is_preempt(thread)
 		&& !z_is_thread_prevented_from_running(thread)
 		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
 		&& !z_is_idle_thread_object(thread);
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	ret |= thread->base.slice_ticks != 0;
+#endif
+
+	return ret;
+}
+
+static k_spinlock_key_t slice_expired_locked(k_spinlock_key_t sched_lock_key)
+{
+	struct k_thread *curr = _current;
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	if (curr->base.slice_expired) {
+		k_spin_unlock(&sched_spinlock, sched_lock_key);
+		curr->base.slice_expired(curr, curr->base.slice_data);
+		sched_lock_key = k_spin_lock(&sched_spinlock);
+	}
+#endif
+	if (!z_is_thread_prevented_from_running(curr)) {
+		move_thread_to_end_of_prio_q(curr);
+	}
+	z_reset_time_slice(curr);
+
+	return sched_lock_key;
 }
 
 /* Called out of each timer interrupt */
@@ -443,17 +492,22 @@ void z_time_slice(int ticks)
 
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == _current) {
-		z_reset_time_slice();
+		z_reset_time_slice(_current);
 		k_spin_unlock(&sched_spinlock, key);
 		return;
 	}
 	pending_current = NULL;
 #endif
 
-	if (slice_time && sliceable(_current)) {
+	if (slice_time(_current) && sliceable(_current)) {
 		if (ticks >= _current_cpu->slice_ticks) {
-			move_thread_to_end_of_prio_q(_current);
-			z_reset_time_slice();
+			/* Note: this will (if so enabled) internally
+			 * drop and reacquire the scheduler lock
+			 * around the callback!  Don't put anything
+			 * after this line that requires
+			 * synchronization.
+			 */
+			key = slice_expired_locked(key);
 		} else {
 			_current_cpu->slice_ticks -= ticks;
 		}
@@ -490,7 +544,7 @@ static void update_cache(int preempt_ok)
 	if (should_preempt(thread, preempt_ok)) {
 #ifdef CONFIG_TIMESLICING
 		if (thread != _current) {
-			z_reset_time_slice();
+			z_reset_time_slice(thread);
 		}
 #endif
 		update_metairq_preempt(thread);
@@ -952,11 +1006,12 @@ void *z_get_next_switch_handle(void *interrupted)
 			wait_for_switch(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
-#ifdef CONFIG_TIMESLICING
-			z_reset_time_slice();
-#endif
 			_current_cpu->swap_ok = 0;
 			set_current(new_thread);
+
+#ifdef CONFIG_TIMESLICING
+			z_reset_time_slice(new_thread);
+#endif
 
 #ifdef CONFIG_SPIN_VALIDATE
 			/* Changed _current!  Update the spinlock

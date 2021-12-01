@@ -779,6 +779,11 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 	thread_base->is_idle = 0;
 #endif
 
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	thread_base->slice_ticks = 0;
+	thread_base->slice_expired = NULL;
+#endif
+
 	/* swap_data does not need to be initialized */
 
 	z_init_thread_timeout(thread_base);

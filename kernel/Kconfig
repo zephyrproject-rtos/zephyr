@@ -500,6 +500,14 @@ config TIMESLICE_PRIORITY
 	  takes effect; threads having a higher priority than this ceiling are
 	  not subject to time slicing.
 
+config TIMESLICE_PER_THREAD
+	bool "Support per-thread timeslice values"
+	depends on TIMESLICING
+	help
+	  When set, this enables an API for setting timeslice values on
+	  a per-thread basis, with an application callback invoked when
+	  a thread reaches the end of its timeslice.
+
 config POLL
 	bool "Async I/O Framework"
 	help
