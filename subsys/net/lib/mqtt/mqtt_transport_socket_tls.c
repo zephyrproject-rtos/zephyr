@@ -39,7 +39,7 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 				 &client->transport.proxy.addr,
 				 client->transport.proxy.addrlen);
 		if (ret < 0) {
-			return -errno;
+			goto error;
 		}
 	}
 #endif
