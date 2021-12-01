@@ -243,6 +243,8 @@ struct _timeout {
 #endif
 };
 
+typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
+
 #ifdef __cplusplus
 }
 #endif
