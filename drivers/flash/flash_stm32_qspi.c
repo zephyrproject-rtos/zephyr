@@ -90,6 +90,10 @@ struct flash_stm32_qspi_data {
 	 * 24-bit addresses.
 	 */
 	bool flag_access_32bit: 1;
+	/*
+	 * If set IO operations will be perfromed on SIO[0123] pins
+	 */
+	bool flag_quad_io_en: 1;
 };
 
 #define DEV_NAME(dev) ((dev)->name)
@@ -665,6 +669,101 @@ static int qspi_program_addr_4b(const struct device *dev)
 	return ret;
 }
 
+static int qspi_read_status_register(const struct device *dev, uint8_t *reg)
+{
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_RDSR,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.DataMode = QSPI_DATA_1_LINE,
+	};
+
+	return qspi_read_access(dev, &cmd, reg, sizeof(*reg));
+}
+
+static int qspi_write_status_register(const struct device *dev, uint8_t reg)
+{
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_WRSR,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.DataMode = QSPI_DATA_1_LINE,
+	};
+
+	return qspi_write_access(dev, &cmd, &reg, sizeof(reg));
+}
+
+static int qspi_write_enable(const struct device *dev)
+{
+	uint8_t reg;
+	int ret;
+
+	QSPI_CommandTypeDef cmd_write_en = {
+		.Instruction = SPI_NOR_CMD_WREN,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+	};
+
+	ret = qspi_send_cmd(dev, &cmd_write_en);
+	if (ret) {
+		return ret;
+	}
+
+	do {
+		ret = qspi_read_status_register(dev, &reg);
+	} while (!ret && !(reg & SPI_NOR_WEL_BIT));
+
+	return ret;
+}
+
+static int qspi_program_quad_io(const struct device *dev)
+{
+	struct flash_stm32_qspi_data *data = DEV_DATA(dev);
+	uint8_t reg;
+	int ret;
+
+	/* Check if QE bit setting is required */
+	ret = qspi_read_status_register(dev, &reg);
+	if (ret) {
+		return ret;
+	}
+
+	/* Quit early when QE bit is already set */
+	if (reg & SPI_NOR_QE_BIT) {
+		goto out;
+	}
+
+	ret = qspi_write_enable(dev);
+	if (ret) {
+		return ret;
+	}
+
+	reg |= SPI_NOR_QE_BIT;
+	ret = qspi_write_status_register(dev, reg);
+	if (ret) {
+		return ret;
+	}
+
+	ret = qspi_wait_until_ready(dev);
+	if (ret) {
+		return ret;
+	}
+
+	ret = qspi_read_status_register(dev, &reg);
+	if (ret) {
+		return ret;
+	}
+
+	/* Check if QE bit programming is finished */
+	if (!(reg & SPI_NOR_QE_BIT)) {
+		LOG_ERR("Quad Enable [QE] bit in status reg not set");
+		return -EIO;
+	}
+
+ out:
+	LOG_INF("Flash - QUAD mode enabled [SR:0x%02x]", reg);
+	data->flag_quad_io_en = true;
+
+	return ret;
+}
+
 static int spi_nor_process_bfp(const struct device *dev,
 			       const struct jesd216_param_header *php,
 			       const struct jesd216_bfp *bfp)
@@ -722,6 +821,8 @@ static int spi_nor_process_bfp(const struct device *dev,
 			}
 		}
 	}
+
+	qspi_program_quad_io(dev);
 
 	return 0;
 }
