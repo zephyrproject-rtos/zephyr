@@ -1,6 +1,6 @@
 # Wio Terminal  board configuration
 
-# Copyright (c) 2021 Szymon Duchniewicz 
+# Copyright (c) 2021 Szymon Duchniewicz
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD

@@ -124,7 +124,7 @@ The Wio Terminal ships with a the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 
 Additionally, if :code:`CONFIG_USB_CDC_ACM` is enabled then the bootloader
-will be entered automatically when you run :code:`west flash`. (Note: The board may not enter bootloader after the first `west flash` call)
+will be entered automatically when you run :code:`west flash`. (Note: The board may not enter bootloader after the first code:`west flash` call)
 
 Flashing
 ========
@@ -133,7 +133,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal 
+      :board: wio_terminal
       :goals: build
       :compact:
 
@@ -143,11 +143,11 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal 
+      :board: wio_terminal
       :goals: flash
       :compact:
 
-   You should see the blue (user) LED flashing whenever you press the 
+   You should see the blue (user) LED flashing whenever you press the
    third (counting from the top left) user button at the top of the
    Wio Terminal.
 
@@ -163,14 +163,14 @@ debugged using a SWD probe such as the Segger J-Link.
 
 #. Connect the board to the probe by connecting the :code:`SWCLK`,
    :code:`SWDIO`, :code:`RESET`, :code:`GND`, and :code:`3V3` pins on the
-   Wio Terminal to the :code:`SWCLK`, :code:`SWDIO`, :code:`RESET`, 
+   Wio Terminal to the :code:`SWCLK`, :code:`SWDIO`, :code:`RESET`,
    :code:`GND`, and :code:`VTref` pins on the `J-Link`_.
 
 #. Flash the image:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal 
+      :board: wio_terminal
       :goals: flash -r openocd
       :compact:
 
@@ -178,7 +178,7 @@ debugged using a SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
-      :board: wio_terminal 
+      :board: wio_terminal
       :goals: debug
       :compact:
 
@@ -188,7 +188,7 @@ References
 .. target-notes::
 
 .. _Wio Terminal Getting started guide:
-   https://wiki.seeedstudio.com/Wio-Terminal-Getting-Started/ 
+   https://wiki.seeedstudio.com/Wio-Terminal-Getting-Started/
 
 .. _pinouts:
     https://wiki.seeedstudio.com/Wio-Terminal-Getting-Started/#pinout-diagram

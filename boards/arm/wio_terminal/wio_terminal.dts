@@ -12,42 +12,42 @@
 	compatible = "seeed,wio-terminal";
 
 	chosen {
-		zephyr,console = &sercom2;
-		zephyr,shell-uart = &sercom2;
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,code-partition = &code_partition;
+	zephyr,console = &sercom2;
+	zephyr,shell-uart = &sercom2;
+	zephyr,sram = &sram0;
+	zephyr,flash = &flash0;
+	zephyr,code-partition = &code_partition;
 	};
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		led0 = &led0;
-        sw0 = &user_button_0;
-        sw1 = &user_button_1;
-        sw2 = &user_button_2;
+	led0 = &led0;
+	sw0 = &user_button_0;
+	sw1 = &user_button_1;
+	sw2 = &user_button_2;
 	};
 
 	leds {
-		compatible = "gpio-leds";
-		led0: led_0 {
-			gpios = <&porta 15 0>;
-			label = "LED";
-		};
-    gpio_keys {
-        compatible = "gpio-keys";
-        user_button_0: button_0 {
-        label = "User Button 0";
-        gpios = <&portc 26 1>;
-        };
-        user_button_1: button_1 {
-        label = "User Button 1";
-        gpios = <&portc 27 1>;
-        };
-        user_button_2: button_2 {
-        label = "User Button 2";
-        gpios = <&portc 28 1>;
-        };
-    };
+	compatible = "gpio-leds";
+	led0: led_0 {
+	gpios = <&porta 15 0>;
+	label = "LED";
+	};
+	gpio_keys {
+	compatible = "gpio-keys";
+	user_button_0: button_0 {
+	label = "User Button 0";
+	gpios = <&portc 26 1>;
+	};
+	user_button_1: button_1 {
+	label = "User Button 1";
+	gpios = <&portc 27 1>;
+	};
+	user_button_2: button_2 {
+	label = "User Button 2";
+	gpios = <&portc 28 1>;
+	};
+	};
 	};
 };
 
@@ -59,9 +59,9 @@
 	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
-	rxpo = <1>; 
+	rxpo = <1>;
 	txpo = <0>;
-    pinctrl-0 = <&pb27c_sercom2_pad1 &pb26c_sercom2_pad0>;
+	pinctrl-0 = <&pb27c_sercom2_pad1 &pb26c_sercom2_pad0>;
 };
 
 
@@ -72,25 +72,25 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+	compatible = "fixed-partitions";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
-		boot_partition: partition@0 {
-			label = "uf2";
-			reg = <0x00000000 DT_SIZE_K(16)>;
-			read-only;
-		};
+	boot_partition: partition@0 {
+	label = "uf2";
+	reg = <0x00000000 DT_SIZE_K(16)>;
+	read-only;
+	};
 
-		code_partition: partition@4000 {
-			label = "code";
-			reg = <0x4000 DT_SIZE_K(512-16)>;
-			read-only;
-		};
+	code_partition: partition@4000 {
+	label = "code";
+	reg = <0x4000 DT_SIZE_K(512-16)>;
+	read-only;
+	};
 	};
 };
 
 zephyr_udc0: &usb0 {
-    compatible = "atmel,sam0-usb";
+	compatible = "atmel,sam0-usb";
 	status = "okay";
 };
