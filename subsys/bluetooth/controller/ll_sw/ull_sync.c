@@ -477,6 +477,9 @@ void ull_sync_release(struct ll_sync_set *sync)
 	/* Mark sync context not sync established */
 	sync->timeout_reload = 0U;
 
+	/* reset accumulated data len */
+	sync->data_len = 0U;
+
 	mem_release(sync, &sync_free);
 }
 

@@ -327,21 +327,24 @@ struct node_rx_ftr {
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+	uint8_t  phy_flags:1;
+	uint8_t  scan_req:1;
+	uint8_t  scan_rsp:1;
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t  direct_resolved:1;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	uint8_t  aux_lll_sched:1;
-	uint8_t  aux_w4next:1;
-	uint8_t  aux_failed:1;
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	uint8_t  sync_status:2;
 	uint8_t  sync_rx_enabled:1;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
-	uint8_t  phy_flags:1;
-	uint8_t  scan_req:1;
-	uint8_t  scan_rsp:1;
+	uint8_t  aux_sched:1;
+	uint8_t  aux_lll_sched:1;
+	uint8_t  aux_failed:1;
+
+	uint16_t aux_data_len;
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
