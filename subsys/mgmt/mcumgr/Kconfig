@@ -251,6 +251,26 @@ config OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
 	  map entries for each listed task.
 	  Enabling this option will slightly reduce code size.
 
+choice OS_MGMT_TASKSTAT_THREAD_NAME_CHOICE
+	prompt "Characteristic used as thread name in taskstat"
+	default OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME if THREAD_NAME
+	default OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+	help
+	  Select what will serve as thread name in "taskstat" response.
+	  By default taskstat responses use thread priority, when THREAD_NAME is disabled,
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
+		bool "Thread name"
+		depends on THREAD_NAME
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_IDX_FOR_NAME
+		bool "Thread index"
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+		bool "Thread priority"
+
+endchoice
+
 config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
 	int "Length of thread name to return in response"
 	default THREAD_MAX_NAME_LEN if THREAD_NAME
