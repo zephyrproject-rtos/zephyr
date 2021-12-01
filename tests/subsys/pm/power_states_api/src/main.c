@@ -25,7 +25,7 @@ void test_power_states(void)
 	struct pm_state_info dts_infos[] =
 		PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(power_states));
 	uint32_t dts_states_len =
-		PM_STATE_DT_ITEMS_LEN(DT_NODELABEL(power_states));
+		DT_NUM_CPU_POWER_STATES(DT_NODELABEL(power_states));
 
 	zassert_true(ARRAY_SIZE(states) == dts_states_len,
 		     "Invalid number of pm states");

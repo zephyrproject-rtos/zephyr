@@ -50,7 +50,7 @@ struct pm_counter pm_counters[SLP_STATES_SUPPORTED];
 
 static const struct pm_state_info residency_info[] =
 	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
-static size_t residency_info_len = PM_STATE_DT_ITEMS_LEN(DT_NODELABEL(cpu0));
+static size_t residency_info_len = DT_NUM_CPU_POWER_STATES(DT_NODELABEL(cpu0));
 
 
 /* Instrumentation to measure latency and track entry exit via gpios
