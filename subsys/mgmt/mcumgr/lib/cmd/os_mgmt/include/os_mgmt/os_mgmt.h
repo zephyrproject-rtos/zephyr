@@ -21,8 +21,6 @@ extern "C" {
 #define OS_MGMT_ID_DATETIME_STR		4
 #define OS_MGMT_ID_RESET		5
 
-#define OS_MGMT_TASK_NAME_LEN		32
-
 /**
  * @brief Registers the OS management command handler group.
  */
