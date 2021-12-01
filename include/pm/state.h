@@ -256,7 +256,7 @@ struct pm_state_info {
  *	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
  * @endcode
  *
- * @param node_id A node identifier with compatible zephyr,power-state
+ * @param node_id A CPU node identifier.
  * @return an array of struct pm_state_info.
  */
 #define PM_STATE_INFO_DT_ITEMS_LIST(node_id)				       \
@@ -305,7 +305,7 @@ struct pm_state_info {
  * const enum pm_state states[] = PM_STATE_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
  * @endcode
  *
- * @param node_id A node identifier with compatible zephyr,power-state
+ * @param node_id A CPU node identifier.
  * @return an array of enum pm_state items.
  */
 #define PM_STATE_DT_ITEMS_LIST(node_id)					       \
