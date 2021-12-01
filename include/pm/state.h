@@ -159,16 +159,14 @@ struct pm_state_info {
 /** @cond INTERNAL_HIDDEN */
 
 /**
- * @brief Macro function to construct enum pm_state item in UTIL_LISTIFY
- * extension.
+ * @brief Helper macro to initialize an entry of a struct pm_state_info array
+ * when using UTIL_LISTIFY in PM_STATE_INFO_LIST_FROM_DT_CPU.
  *
- * @param child child index in UTIL_LISTIFY extension.
+ * @param i UTIL_LISTIFY entry index.
  * @param node_id A node identifier with compatible zephyr,power-state
- * @return macro function to construct a pm_state_info
  */
-#define Z_PM_STATE_INFO_DT_ITEMS_LISTIFY_FUNC(child, node_id)		       \
-	PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states,     \
-						child)),
+#define Z_PM_STATE_INFO_FROM_DT_CPU(i, node_id) \
+	PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),
 
 /**
  * @brief Macro function to construct enum pm_state item in UTIL_LISTIFY
@@ -216,8 +214,8 @@ struct pm_state_info {
 	DT_PROP_LEN_OR(node_id, cpu_power_states, 0)
 
 /**
- * @brief Macro function to construct a list of 'pm_state_info' items by
- * UTIL_LISTIFY func
+ * @brief Initialize an array of struct pm_state_info with information from all
+ * the states present in the given CPU node identifier.
  *
  * Example devicetree fragment:
  *
@@ -253,16 +251,15 @@ struct pm_state_info {
  *
  * @code{.c}
  * const struct pm_state_info states[] =
- *	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
+ *	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
  * @endcode
  *
  * @param node_id A CPU node identifier.
- * @return an array of struct pm_state_info.
  */
-#define PM_STATE_INFO_DT_ITEMS_LIST(node_id)				       \
+#define PM_STATE_INFO_LIST_FROM_DT_CPU(node_id)				       \
 	{								       \
 		UTIL_LISTIFY(PM_STATE_DT_ITEMS_LEN(node_id),		       \
-			     Z_PM_STATE_INFO_DT_ITEMS_LISTIFY_FUNC, node_id)   \
+			     Z_PM_STATE_INFO_FROM_DT_CPU, node_id)   \
 	}
 
 /**
