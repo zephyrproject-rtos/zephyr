@@ -31,9 +31,11 @@ set(TFM_CRYPTO_MODULES
 
 if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_IPC)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_PSA_API=ON)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=OFF)
     # PSA API awareness for the Non-Secure application
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=ON)
   endif()
   if (CONFIG_TFM_REGRESSION_S)
     list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
