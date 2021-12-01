@@ -352,18 +352,20 @@ void test_kobject_release_from_user(void)
 	k_thread_join(&child_thread, K_FOREVER);
 }
 
-/* @brief Test release kernel a invaild kobject
+/**
+ * @brief Test release and access grant an invaild kobject
  *
- * @details Validate release kernel objects with NULL parameter.
+ * @details Validate release and access grant an invalid kernel object.
  *
- * @see k_object_release()
+ * @see k_object_release(), k_object_access_all_grant()
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_kobject_release_null(void)
+void test_kobject_invalid(void)
 {
 	int dummy = 0;
 
+	k_object_access_all_grant(&dummy);
 	k_object_release(&dummy);
 }
 
