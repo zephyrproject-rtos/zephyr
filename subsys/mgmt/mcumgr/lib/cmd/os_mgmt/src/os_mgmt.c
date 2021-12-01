@@ -61,25 +61,57 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 #endif
 
 #if CONFIG_OS_MGMT_TASKSTAT
+
+#if defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME)
 static inline CborError
-os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder,
+os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder, int idx,
 				    const struct k_thread *thread)
 {
 	CborError err = 0;
 
-#ifdef CONFIG_THREAD_NAME
-	err |= cbor_encode_text_string(encoder, thread->name,
-			strnlen(thread->name, CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN - 1));
-#else
+	ARG_UNUSED(idx);
+
+	err = cbor_encode_text_string(encoder, thread->name, strnlen(thread->name,
+				      CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN - 1));
+	return err;
+}
+
+#elif defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME)
+static inline CborError
+os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder, int idx,
+				    const struct k_thread *thread)
+{
+	CborError err = 0;
 	char thread_name[CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN];
+
+	ARG_UNUSED(idx);
 
 	thread_name[sizeof(thread_name) - 1] = 0;
 	ll_to_s((int)thread->base.prio, sizeof(thread_name) - 1, thread_name);
-	err |= cbor_encode_text_stringz(encoder, thread_name);
-#endif /* CONFIG_THREAD_NAME */
 
+	err = cbor_encode_text_stringz(encoder, thread_name);
 	return err;
 }
+
+#elif defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_IDX_FOR_NAME)
+static inline CborError
+os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder, int idx,
+				    const struct k_thread *thread)
+{
+	CborError err = 0;
+	char thread_name[CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN];
+
+	ARG_UNUSED(thread);
+
+	thread_name[sizeof(thread_name) - 1] = 0;
+	ll_to_s(idx, sizeof(thread_name) - 1, thread_name);
+
+	err = cbor_encode_text_stringz(encoder, thread_name);
+	return err;
+}
+#else
+#error Unsupported option for taskstat thread name
+#endif
 
 static inline CborError
 os_mgmt_taskstat_encode_stack_info(struct CborEncoder *thread_map,
@@ -154,7 +186,7 @@ os_mgmt_taskstat_encode_one(struct CborEncoder *encoder, int idx, const struct k
 	 * Threads are sent as map where thread name is key and value is map
 	 * of thread parameters
 	 */
-	err |= os_mgmt_taskstat_encode_thread_name(encoder, thread);
+	err |= os_mgmt_taskstat_encode_thread_name(encoder, idx, thread);
 	err |= cbor_encoder_create_map(encoder, &thread_map, CborIndefiniteLength);
 
 	err |= cbor_encode_text_stringz(&thread_map, "prio");
