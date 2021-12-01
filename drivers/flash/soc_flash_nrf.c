@@ -280,7 +280,7 @@ static int nrf_flash_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, nrf_flash_init, NULL,
 		 NULL, NULL,
-		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		 &flash_nrf_api);
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
