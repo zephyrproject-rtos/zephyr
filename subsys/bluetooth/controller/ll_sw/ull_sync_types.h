@@ -74,6 +74,8 @@ struct ll_sync_set {
 		struct ll_sync_iso_set *volatile sync_iso;
 	} iso;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
+	uint16_t data_len;
 };
 
 struct node_rx_sync {
