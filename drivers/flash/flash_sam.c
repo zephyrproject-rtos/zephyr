@@ -385,5 +385,5 @@ static struct flash_sam_dev_data flash_sam_data;
 
 DEVICE_DT_INST_DEFINE(0, flash_sam_init, NULL,
 		    &flash_sam_data, &flash_sam_cfg,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		    &flash_sam_api);
