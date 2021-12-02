@@ -18,13 +18,13 @@ struct lll_sync {
 	uint8_t crc_init[3];
 
 	uint8_t phy:3;
-	uint8_t is_rx_enabled:1;
 	/* Bitmask providing not allowed types of CTE. */
 	uint8_t cte_type:5;
 	/* The member is required for filtering by CTE type. If filtering policy is disabled then
 	 * synchronization is terminated for periodic advertisements with wrong CTE type.
 	 */
 	uint8_t filter_policy:1;
+	uint8_t is_rx_enabled:1;
 	uint8_t is_aux_sched:1;
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)

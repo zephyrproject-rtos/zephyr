@@ -29,6 +29,8 @@ struct ll_sync_set {
 	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
 	*/
 
+	uint8_t rx_enable:1;
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	uint8_t nodups:1;
 #endif
