@@ -585,12 +585,6 @@ The above command will result in twister building tests for the platforms
 defined in the hardware map and subsequently flashing and running the tests
 on those platforms.
 
-.. note::
-
-  Currently only boards with support for both pyocd and nrfjprog are supported
-  with the hardware map features. Boards that require other runners to flash the
-  Zephyr binary are still work in progress.
-
 Fixtures
 +++++++++
 
