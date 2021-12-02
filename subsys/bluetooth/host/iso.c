@@ -55,6 +55,8 @@ static void bt_iso_remove_data_path(struct bt_conn *iso);
 #endif /* CONFIG_BT_ISO_CENTRAL */
 #if defined(CONFIG_BT_ISO_PERIPHERAL)
 static struct bt_iso_server *iso_server;
+
+static struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
 #endif /* CONFIG_BT_ISO_PERIPHERAL */
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
@@ -923,7 +925,7 @@ static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 	return 0;
 }
 
-int hci_le_reject_cis(uint16_t handle, uint8_t reason)
+static int hci_le_reject_cis(uint16_t handle, uint8_t reason)
 {
 	struct bt_hci_cp_le_reject_cis *cp;
 	struct net_buf *buf;
@@ -946,7 +948,7 @@ int hci_le_reject_cis(uint16_t handle, uint8_t reason)
 	return 0;
 }
 
-int hci_le_accept_cis(uint16_t handle)
+static int hci_le_accept_cis(uint16_t handle)
 {
 	struct bt_hci_cp_le_accept_cis *cp;
 	struct net_buf *buf;
@@ -1035,7 +1037,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	}
 }
 
-struct bt_conn *bt_conn_add_iso(struct bt_conn *acl)
+static struct bt_conn *bt_conn_add_iso(struct bt_conn *acl)
 {
 	struct bt_conn *iso = iso_new();
 
