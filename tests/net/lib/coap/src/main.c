@@ -439,7 +439,7 @@ static void test_match_path_uri(void)
 	zassert_false(r, "Matching %s failed", uri);
 }
 
-#define BLOCK_WISE_TRANSFER_SIZE_GET 128
+#define BLOCK_WISE_TRANSFER_SIZE_GET 150
 
 static void prepare_block1_request(struct coap_packet *req,
 				   struct coap_block_context *req_ctx,
@@ -450,6 +450,7 @@ static void prepare_block1_request(struct coap_packet *req,
 	uint8_t *data = data_buf[0];
 	bool first;
 	int r;
+	int block_max_size = coap_block_size_to_bytes(COAP_BLOCK_64);
 
 	/* Request Context */
 	if (req_ctx->total_size == 0) {
@@ -477,8 +478,18 @@ static void prepare_block1_request(struct coap_packet *req,
 	r = coap_packet_append_payload_marker(req);
 	zassert_equal(r, 0, "Unable to append payload marker");
 
-	r = coap_packet_append_payload(req, payload,
-				       coap_block_size_to_bytes(COAP_BLOCK_32));
+	remainder = req_ctx->total_size - req_ctx->current;
+	if (remainder >= block_max_size) {
+		r = coap_packet_append_payload(req, payload, block_max_size);
+	} else {
+		r = coap_packet_append_payload(req, payload, remainder);
+	}
+	remainder = req_ctx->total_size - req_ctx->current;
+	if (remainder >= block_max_size) {
+		r = coap_packet_append_payload(req, payload, block_max_size);
+	} else {
+		r = coap_packet_append_payload(req, payload, remainder);
+	}
 	zassert_equal(r, 0, "Unable to append payload");
 
 	*more = coap_next_block(req, req_ctx);
@@ -574,7 +585,7 @@ static void test_block1_size(void)
 	}
 }
 
-#define BLOCK2_WISE_TRANSFER_SIZE_GET 256
+#define BLOCK2_WISE_TRANSFER_SIZE_GET 300
 
 static void prepare_block2_request(struct coap_packet *req,
 				   struct coap_block_context *req_ctx,
@@ -614,6 +625,8 @@ static void prepare_block2_response(struct coap_packet *rsp,
 	uint8_t tkl;
 	bool first;
 	int r;
+	int block_max_size = coap_block_size_to_bytes(COAP_BLOCK_64);
+	int remainder;
 
 	if (rsp_ctx->total_size == 0) {
 		first = true;
@@ -642,8 +655,12 @@ static void prepare_block2_response(struct coap_packet *rsp,
 	r = coap_packet_append_payload_marker(rsp);
 	zassert_equal(r, 0, "Unable to append payload marker");
 
-	r = coap_packet_append_payload(rsp, payload,
-				       coap_block_size_to_bytes(COAP_BLOCK_64));
+	remainder = rsp_ctx->total_size - rsp_ctx->current;
+	if (remainder >= block_max_size) {
+		r = coap_packet_append_payload(rsp, payload, block_max_size);
+	} else {
+		r = coap_packet_append_payload(rsp, payload, remainder);
+	}
 	zassert_equal(r, 0, "Unable to append payload");
 
 	*more = coap_next_block(rsp, rsp_ctx);
@@ -652,6 +669,11 @@ static void prepare_block2_response(struct coap_packet *rsp,
 static void verify_block2_request(struct coap_block_context *req_ctx,
 				 uint8_t iter)
 {
+	int block_max_size = coap_block_size_to_bytes(COAP_BLOCK_64);
+	int iter_max = BLOCK2_WISE_TRANSFER_SIZE_GET +
+		       (BLOCK2_WISE_TRANSFER_SIZE_GET % block_max_size) == 0 ?
+		       0 : 1;
+	if (iter < iter_max) {
 	zassert_equal(req_ctx->block_size, COAP_BLOCK_64,
 		      "req:%d,Couldn't get block size", iter);
 	zassert_equal(req_ctx->current,
@@ -667,17 +689,21 @@ static void verify_block2_response(struct coap_block_context *rsp_ctx,
 	zassert_equal(rsp_ctx->block_size, COAP_BLOCK_64,
 		      "rsp:%d,Couldn't get block size", iter);
 
-	/* In last iteration "current" field not updated */
-	if (iter < 4) {
+	/* In last iteration "current" must match "total_size" */
+	int block_max_size = coap_block_size_to_bytes(COAP_BLOCK_64);
+	int iter_max = BLOCK2_WISE_TRANSFER_SIZE_GET +
+		       (BLOCK2_WISE_TRANSFER_SIZE_GET % block_max_size) == 0 ?
+		       0 : 1;
+	if (iter < iter_max) {
 		zassert_equal(
 			rsp_ctx->current,
-			coap_block_size_to_bytes(COAP_BLOCK_64) * iter,
+			block_max_size * iter,
 			"req:%d,Couldn't get the current block position", iter);
 	} else {
 		zassert_equal(
 			rsp_ctx->current,
-			coap_block_size_to_bytes(COAP_BLOCK_64) * (iter - 1U),
-			"req:%d,Couldn't get the current block position", iter);
+			rsp_ctx->total_size,
+			"req:%d,Current block position does not match total size", iter);
 	}
 
 	zassert_equal(rsp_ctx->total_size, BLOCK2_WISE_TRANSFER_SIZE_GET,
