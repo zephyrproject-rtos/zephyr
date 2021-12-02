@@ -193,7 +193,7 @@ def kconfig_snippet(meta, path, kconfig_file=None):
     name = meta['name']
     name_sanitized = meta['name-sanitized']
 
-    snippet = (f'menu "{name} ({path})"',
+    snippet = (f'menu "{name} ({path.as_posix()})"',
                f'osource "{kconfig_file.resolve().as_posix()}"' if kconfig_file
                else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"',
                f'config ZEPHYR_{name_sanitized.upper()}_MODULE',
