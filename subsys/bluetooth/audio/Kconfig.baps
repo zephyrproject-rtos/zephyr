@@ -17,6 +17,7 @@ config BT_AUDIO_UNICAST_SERVER
 	select EXPERIMENTAL
 	select BT_PERIPHERAL
 	select BT_AUDIO_UNICAST
+	select BT_ISO_PERIPHERAL
 	select BT_GATT_DYNAMIC_DB
 	select BT_GATT_CACHING
 	select BT_PACS
@@ -29,6 +30,7 @@ config BT_AUDIO_UNICAST_CLIENT
 	bool "Bluetooth Unicast Audio Client Support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select BT_AUDIO_UNICAST
+	select BT_ISO_CENTRAL
 	select BT_CENTRAL
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
