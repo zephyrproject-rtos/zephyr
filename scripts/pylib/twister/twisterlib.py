@@ -4258,35 +4258,41 @@ class HardwareMap:
         # use existing map
         self.detected.sort(key=lambda x: x.serial or '')
         if os.path.exists(hwm_file):
-            with open(hwm_file, 'r') as yaml_file:
-                hwm = yaml.load(yaml_file, Loader=SafeLoader)
-                if hwm:
-                    hwm.sort(key=lambda x: x['serial'] or '')
+            try:
+                with open(hwm_file, 'r') as yaml_file:
+                    hwm = yaml.load(yaml_file, Loader=SafeLoader)
+                    if hwm:
+                        hwm.sort(key=lambda x: x['serial'] or '')
 
-                    # disconnect everything
-                    for h in hwm:
-                        h['connected'] = False
-                        h['serial'] = None
-
-                    for _detected in self.detected:
+                        # disconnect everything
                         for h in hwm:
-                            if _detected.id == h['id'] and _detected.product == h['product'] and not _detected.match:
-                                h['connected'] = True
-                                h['serial'] = _detected.serial
-                                _detected.match = True
+                            h['connected'] = False
+                            h['serial'] = None
 
-                new_duts = list(filter(lambda d: not d.match, self.detected))
-                new = []
-                for d in new_duts:
-                    new.append(d.to_dict())
+                        for _detected in self.detected:
+                            for h in hwm:
+                                if _detected.id == h['id'] and _detected.product == h['product'] and not _detected.match:
+                                    h['connected'] = True
+                                    h['serial'] = _detected.serial
+                                    _detected.match = True
 
-                if hwm:
-                    hwm = hwm + new
-                else:
-                    hwm = new
+                    new_duts = list(filter(lambda d: not d.match, self.detected))
+                    new = []
+                    for d in new_duts:
+                        new.append(d.to_dict())
 
-            with open(hwm_file, 'w') as yaml_file:
-                yaml.dump(hwm, yaml_file, Dumper=Dumper, default_flow_style=False)
+                    if hwm:
+                        hwm = hwm + new
+                    else:
+                        hwm = new
+            except IOError:
+                logger.error("Can't open {}".format(hwm_file))
+
+            try:
+                with open(hwm_file, 'w') as yaml_file:
+                    yaml.dump(hwm, yaml_file, Dumper=Dumper, default_flow_style=False)
+            except IOError:
+                logger.error("Can't open {}".format(hwm_file))
 
             self.load(hwm_file)
             logger.info("Registered devices:")
