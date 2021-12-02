@@ -123,6 +123,7 @@ static int i2c_esp32_config_pin(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	int ret = 0;
 
 	if (config->index >= SOC_I2C_NUM) {
 		LOG_ERR("Invalid I2C peripheral number");
@@ -130,18 +131,18 @@ static int i2c_esp32_config_pin(const struct device *dev)
 	}
 
 	gpio_pin_set(data->sda_gpio, config->sda.pin, 1);
-	gpio_pin_configure(data->sda_gpio, config->sda.pin,
+	ret = gpio_pin_configure(data->sda_gpio, config->sda.pin,
 			GPIO_PULL_UP | GPIO_OPEN_DRAIN | GPIO_OUTPUT | GPIO_INPUT);
 	esp_rom_gpio_matrix_out(config->sda.pin, config->sda.sig_out, 0, 0);
 	esp_rom_gpio_matrix_in(config->sda.pin, config->sda.sig_in, 0);
 
 	gpio_pin_set(data->scl_gpio, config->scl.pin, 1);
-	gpio_pin_configure(data->scl_gpio, config->scl.pin,
+	ret |= gpio_pin_configure(data->scl_gpio, config->scl.pin,
 			GPIO_PULL_UP | GPIO_OPEN_DRAIN | GPIO_OUTPUT | GPIO_INPUT);
 	esp_rom_gpio_matrix_out(config->scl.pin, config->scl.sig_out, 0, 0);
 	esp_rom_gpio_matrix_in(config->scl.pin, config->scl.sig_in, 0);
 
-	return 0;
+	return ret;
 }
 
 /* Some slave device will die by accident and keep the SDA in low level,
@@ -274,8 +275,6 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 
 	i2c_hal_set_bus_timing(&data->hal, config->bitrate, i2c_get_clk_src(config->bitrate));
 	i2c_hal_update_config(&data->hal);
-
-	irq_enable(data->irq_line);
 
 	return 0;
 }
@@ -473,6 +472,7 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 		if (wr_filled > 0) {
 			i2c_hal_write_txfifo(&data->hal, write_pr, wr_filled);
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+			i2c_hal_write_cmd_reg(&data->hal, hw_end_cmd, data->cmd_idx++);
 		}
 
 		if (msg->len == 0 && (msg->flags & I2C_MSG_STOP)) {
@@ -482,8 +482,6 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 				.byte_num = 0
 			};
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
-		} else {
-			i2c_hal_write_cmd_reg(&data->hal, hw_end_cmd, data->cmd_idx++);
 		}
 
 		i2c_hal_enable_master_tx_it(&data->hal);
@@ -651,7 +649,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
-	data->irq_line = esp_intr_alloc(config->irq_source, 0, i2c_esp32_isr, (void *)dev, NULL);
+	esp_intr_alloc(config->irq_source, 0, i2c_esp32_isr, (void *)dev, NULL);
 
 	return i2c_esp32_configure(dev, config->default_config);
 }
