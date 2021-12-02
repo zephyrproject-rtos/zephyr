@@ -95,4 +95,6 @@ source "drivers/spi/Kconfig.psoc6"
 
 source "drivers/spi/Kconfig.npcx_fiu"
 
+source "drivers/spi/Kconfig.bitbang"
+
 endif # SPI
