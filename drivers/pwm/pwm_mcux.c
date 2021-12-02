@@ -8,9 +8,9 @@
 
 #include <errno.h>
 #include <drivers/pwm.h>
+#include <drivers/clock_control.h>
 #include <soc.h>
 #include <fsl_pwm.h>
-#include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
@@ -21,7 +21,8 @@ LOG_MODULE_REGISTER(pwm_mcux);
 struct pwm_mcux_config {
 	PWM_Type *base;
 	uint8_t index;
-	clock_name_t clock_source;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	pwm_clock_prescale_t prescale;
 	pwm_mode_t mode;
 };
@@ -75,7 +76,11 @@ static int mcux_pwm_pin_set(const struct device *dev, uint32_t pwm,
 
 		LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
 
-		clock_freq = CLOCK_GetFreq(config->clock_source);
+		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				&clock_freq)) {
+			return -EINVAL;
+		}
+
 		pwm_freq = (clock_freq >> config->prescale) / period_cycles;
 
 		if (pwm_freq == 0) {
@@ -112,8 +117,13 @@ static int mcux_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 				       uint64_t *cycles)
 {
 	const struct pwm_mcux_config *config = dev->config;
+	uint32_t clock_freq;
 
-	*cycles = CLOCK_GetFreq(config->clock_source) >> config->prescale;
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+			&clock_freq)) {
+		return -EINVAL;
+	}
+	*cycles = clock_freq >> config->prescale;
 
 	return 0;
 }
@@ -124,10 +134,12 @@ static int pwm_mcux_init(const struct device *dev)
 	struct pwm_mcux_data *data = dev->data;
 	pwm_config_t pwm_config;
 	status_t status;
+	int i;
 
 	PWM_GetDefaultConfig(&pwm_config);
 	pwm_config.prescale = config->prescale;
 	pwm_config.reloadLogic = kPWM_ReloadPwmFullCycle;
+	pwm_config.clockSource = kPWM_BusClock;
 
 	status = PWM_Init(config->base, config->index, &pwm_config);
 	if (status != kStatus_Success) {
@@ -136,8 +148,9 @@ static int pwm_mcux_init(const struct device *dev)
 	}
 
 	/* Disable fault sources */
-	((PWM_Type *)config->base)->SM[config->index].DISMAP[0] = 0x0000;
-	((PWM_Type *)config->base)->SM[config->index].DISMAP[1] = 0x0000;
+	for (i = 0; i < FSL_FEATURE_PWM_FAULT_CH_COUNT; i++) {
+		((PWM_Type *)config->base)->SM[config->index].DISMAP[i] = 0x0000;
+	}
 
 	data->channel[0].pwmChannel = kPWM_PwmA;
 	data->channel[0].level = kPWM_HighTrue;
@@ -160,7 +173,8 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 		.index = DT_INST_PROP(n, index),			  \
 		.mode = kPWM_EdgeAligned,				  \
 		.prescale = kPWM_Prescale_Divide_128,			  \
-		.clock_source = kCLOCK_IpgClk,				  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	};								  \
 									  \
 	DEVICE_DT_INST_DEFINE(n,					  \

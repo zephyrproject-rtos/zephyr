@@ -102,6 +102,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
+#ifdef CONFIG_PWM_MCUX
+	case IMX_CCM_PWM_CLK:
+		*rate = CLOCK_GetIpgFreq();
+		break;
+#endif
+
 #ifdef CONFIG_UART_MCUX_IUART
 	case IMX_CCM_UART_CLK:
 		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
