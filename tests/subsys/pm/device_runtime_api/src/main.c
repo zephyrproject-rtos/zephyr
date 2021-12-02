@@ -35,6 +35,7 @@ static void get_runner(void *arg1, void *arg2, void *arg3)
 static void test_api_setup(void)
 {
 	int ret;
+	enum pm_device_state state;
 
 	/* check API always returns 0 when runtime PM is disabled */
 	ret = pm_device_runtime_get(dev);
@@ -45,6 +46,13 @@ static void test_api_setup(void)
 	zassert_equal(ret, 0, NULL);
 
 	/* enable runtime PM */
+	ret = pm_device_runtime_enable(dev);
+	zassert_equal(ret, 0, NULL);
+
+	(void)pm_device_state_get(dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
+
+	/* enabling again should succeed (no-op) */
 	ret = pm_device_runtime_enable(dev);
 	zassert_equal(ret, 0, NULL);
 }

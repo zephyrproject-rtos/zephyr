@@ -25,6 +25,9 @@ extern "C" {
 /**
  * @brief Enable device runtime PM
  *
+ * This function will enable runtime PM on the given device. If the device is
+ * in #PM_DEVICE_STATE_ACTIVE state, the device will be suspended.
+ *
  * @funcprops \pre_kernel_ok
  *
  * @param dev Device instance.
@@ -32,6 +35,9 @@ extern "C" {
  * @retval 0 If the device runtime PM is enabled successfully.
  * @retval -EPERM If device has power state locked.
  * @retval -ENOSYS If the functionality is not available.
+ * @retval -errno Other negative errno, result of suspending the device.
+ *
+ * @see pm_device_runtime_init_suspended()
  */
 int pm_device_runtime_enable(const struct device *dev);
 
