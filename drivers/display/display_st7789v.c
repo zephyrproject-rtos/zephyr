@@ -294,8 +294,8 @@ static int st7789v_set_orientation(const struct device *dev,
 	st7789v_set_lcd_margins(data, x_offset, y_offset);
 	st7789v_transmit(data, ST7789V_CMD_MADCTL, &tx_data, 1U);
 	data->orientation = orientation;
-
 	LOG_DBG("Changing orientation to: '%d'", data->orientation);
+	
 	return 0;
 }
 
