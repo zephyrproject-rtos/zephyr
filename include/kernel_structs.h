@@ -180,9 +180,12 @@ extern struct z_kernel _kernel;
  * another SMP CPU.
  */
 bool z_smp_cpu_mobile(void);
+/* PMCS ToDo: removed cpu mobile for the moment as it creates circular reference in SMP...
+ *#define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
+ *			arch_curr_cpu(); })
+ */
+#define _current_cpu (arch_curr_cpu())
 
-#define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
-			arch_curr_cpu(); })
 #define _current z_current_get()
 
 #else
