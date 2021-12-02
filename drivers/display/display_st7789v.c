@@ -53,6 +53,7 @@ struct st7789v_data {
 	uint16_t width;
 	uint16_t x_offset;
 	uint16_t y_offset;
+	enum display_orientation orientation;
 };
 
 #ifdef CONFIG_ST7789V_RGB565
@@ -234,7 +235,7 @@ static void st7789v_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
 #endif
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->current_orientation = data->orientation;
 }
 
 static int st7789v_set_pixel_format(const struct device *dev,
@@ -254,11 +255,48 @@ static int st7789v_set_pixel_format(const struct device *dev,
 static int st7789v_set_orientation(const struct device *dev,
 			    const enum display_orientation orientation)
 {
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
+	struct st7789v_data *data = (struct st7789v_data *)dev->data;
+	uint8_t tx_data = 0;
+	uint16_t x_offset = 0;
+	uint16_t y_offset = 0;
+
+	switch (orientation)
+	{
+	case DISPLAY_ORIENTATION_NORMAL:
+		tx_data |= ST7789V_MADCTL_MV_NORMAL_MODE;
+		x_offset = data->x_offset;
+		y_offset = data->y_offset;
+		break;
+
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		tx_data |= (ST7789V_MADCTL_MY_BOTTOM_TO_TOP | ST7789V_MADCTL_MV_REVERSE_MODE);
+		x_offset = data->y_offset;
+		y_offset = data->x_offset;
+		break;
+
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		tx_data |= (ST7789V_MADCTL_MY_BOTTOM_TO_TOP | ST7789V_MADCTL_MX_RIGHT_TO_LEFT);
+		x_offset = data->x_offset;
+		y_offset = data->y_offset;
+		break;
+
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		tx_data |= (ST7789V_MADCTL_MX_RIGHT_TO_LEFT | ST7789V_MADCTL_MV_REVERSE_MODE);
+		x_offset = data->y_offset;
+		y_offset = data->x_offset;	
+		break;
+
+	default:
+		LOG_ERR("Error changing display orientation");
+		return -ENOTSUP;
 	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
+
+	st7789v_set_lcd_margins(data, x_offset, y_offset);
+	st7789v_transmit(data, ST7789V_CMD_MADCTL, &tx_data, 1U);
+	data->orientation = orientation;
+
+	LOG_DBG("Changing orientation to: '%d'", data->orientation);
+	return 0;
 }
 
 static void st7789v_lcd_init(struct st7789v_data *data)
