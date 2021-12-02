@@ -71,6 +71,11 @@ static int mimxrt1160_evk_init(const struct device *dev)
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_LPSR_04_LPI2C5_SDA, 0x20U);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_LPSR_05_LPI2C5_SCL, 0x20U);
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexpwm1_pwm2), okay) && CONFIG_PWM
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_04_FLEXPWM1_PWM2_A, 0U);
+#endif
+
 	return 0;
 }
 
