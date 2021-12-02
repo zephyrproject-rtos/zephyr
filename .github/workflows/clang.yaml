@@ -85,7 +85,7 @@ jobs:
 
       - name: ccache stats initial
         run: |
-          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          test -d github/home/.ccache && rm -rf /github/home/.ccache && mv github/home/.ccache /github/home/.ccache
           ccache -M 10G -s
 
       - name: Run Tests with Twister
