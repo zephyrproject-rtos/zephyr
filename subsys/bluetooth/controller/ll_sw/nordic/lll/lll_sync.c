@@ -619,6 +619,7 @@ static void isr_aux_setup(void *param)
 static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t rssi_ready,
 		  enum sync_status status)
 {
+	uint8_t sched = 0U;
 	int err;
 
 	/* Check CRC and generate Periodic Advertising Report */
@@ -626,7 +627,8 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 		struct node_rx_pdu *node_rx;
 
 		node_rx = ull_pdu_rx_alloc_peek(3);
-		if (node_rx) {
+		if (node_rx &&
+		    (lll->is_rx_enabled || (node_type == NODE_RX_TYPE_SYNC))) {
 			struct node_rx_ftr *ftr;
 			struct pdu_adv *pdu;
 
@@ -660,23 +662,29 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 
 			ull_rx_put(node_rx->hdr.link, node_rx);
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-			(void)create_iq_report(lll, rssi_ready,
-					       BT_HCI_LE_CTE_CRC_OK);
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-
-			ull_rx_sched();
+			sched = 1U;
 		} else {
 			err = 0;
 		}
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+		(void)create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
+		sched = 1U;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 	} else {
 #if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
 		err = create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
 		if (!err) {
-			ull_rx_sched();
+			sched = 1U;
 		}
 #endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
+
 		err = 0;
+	}
+
+	if (sched) {
+		ull_rx_sched();
 	}
 
 	return err;
