@@ -67,6 +67,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
+#ifdef CONFIG_PWM_MCUX
+	case IMX_CCM_PWM_CLK:
+		clock_root = kCLOCK_Root_Bus;
+		break;
+#endif
+
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
 	case IMX_CCM_CAN1_CLK:
 		clock_root = kCLOCK_Root_Can1 + instance;
