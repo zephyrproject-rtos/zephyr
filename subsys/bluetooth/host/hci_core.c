@@ -2226,8 +2226,10 @@ static const struct event_handler meta_events[] = {
 #if defined(CONFIG_BT_ISO_UNICAST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_ESTABLISHED, hci_le_cis_established,
 		      sizeof(struct bt_hci_evt_le_cis_established)),
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_REQ, hci_le_cis_req,
 		      sizeof(struct bt_hci_evt_le_cis_req)),
+#endif /* (CONFIG_BT_ISO_PERIPHERAL) */
 #endif /* (CONFIG_BT_ISO_UNICAST) */
 #if defined(CONFIG_BT_ISO_BROADCASTER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_COMPLETE,

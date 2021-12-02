@@ -47,12 +47,15 @@ NET_BUF_POOL_FIXED_DEFINE(iso_frag_pool, CONFIG_BT_ISO_TX_FRAG_COUNT,
 struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 
 /* TODO: Allow more than one server? */
-#if defined(CONFIG_BT_ISO_UNICAST)
+#if defined(CONFIG_BT_ISO_CENTRAL)
 struct bt_iso_cig cigs[CONFIG_BT_ISO_MAX_CIG];
-static struct bt_iso_server *iso_server;
 
 static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan);
-#endif /* CONFIG_BT_ISO_UNICAST */
+#endif /* CONFIG_BT_ISO_CENTRAL */
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
+static struct bt_iso_server *iso_server;
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
+
 #if defined(CONFIG_BT_ISO_BROADCAST)
 struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 
@@ -216,6 +219,7 @@ static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
 	return err;
 }
 
+#if defined(CONFIG_BT_ISO_CENTRAL)
 static int hci_le_remove_iso_data_path(struct bt_conn *iso, uint8_t dir)
 {
 	struct bt_hci_cp_le_remove_iso_path *cp;
@@ -246,6 +250,7 @@ static int hci_le_remove_iso_data_path(struct bt_conn *iso, uint8_t dir)
 
 	return err;
 }
+#endif /* CONFIG_BT_ISO_CENTRAL */
 
 static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 {
@@ -388,10 +393,14 @@ void bt_iso_connected(struct bt_conn *iso)
 	}
 }
 
+#if defined(CONFIG_BT_ISO_CENTRAL)
 static void bt_iso_remove_data_path(struct bt_conn *iso)
 {
 	BT_DBG("%p", iso);
 
+	/* TODO: Removing the ISO data path is never used for broadcast:
+	 * Remove the following broadcast implementation?
+	 */
 	if ((IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
 		iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER) ||
 	    (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
@@ -431,6 +440,7 @@ static void bt_iso_remove_data_path(struct bt_conn *iso)
 			 iso->iso.info.type);
 	}
 }
+#endif /* CONFIG_BT_ISO_CENTRAL */
 
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
@@ -450,14 +460,13 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		if (chan->iso->role == BT_HCI_ROLE_PERIPHERAL) {
 			bt_conn_unref(chan->iso);
 			chan->iso = NULL;
+#if defined(CONFIG_BT_ISO_CENTRAL)
 		} else {
 			/* ISO data paths are automatically removed when the
 			 * peripheral disconnects, so we only need to
 			 * move it for the central
 			 */
 			bt_iso_remove_data_path(chan->iso);
-
-#if defined(CONFIG_BT_ISO_UNICAST)
 			bool is_chan_connected;
 			struct bt_iso_cig *cig;
 			struct bt_iso_chan *cis_chan;
@@ -478,7 +487,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			if (!is_chan_connected) {
 				cig->state = BT_ISO_CIG_STATE_INACTIVE;
 			}
-#endif /* CONFIG_BT_ISO_UNICAST */
+#endif /* CONFIG_BT_ISO_CENTRAL */
 		}
 	}
 
@@ -779,6 +788,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 	return bt_conn_send_cb(iso_conn, buf, bt_iso_send_cb, NULL);
 }
 
+#if defined(CONFIG_BT_ISO_CENTRAL) || defined(CONFIG_BT_ISO_BROADCASTER)
 static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 			      bool is_tx)
 {
@@ -798,9 +808,11 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 
 	return true;
 }
+#endif /* CONFIG_BT_ISO_CENTRAL || CONFIG_BT_ISO_BROADCASTER */
 #endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
 
 #if defined(CONFIG_BT_ISO_UNICAST)
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
 static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 {
 	struct bt_iso_accept_info accept_info;
@@ -834,7 +846,9 @@ static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 
 	return 0;
 }
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
 
+#if defined(CONFIG_BT_ISO_CENTRAL)
 static bool valid_chan_qos(const struct bt_iso_chan_qos *qos)
 {
 	if (qos->rx != NULL) {
@@ -856,6 +870,7 @@ static bool valid_chan_qos(const struct bt_iso_chan_qos *qos)
 
 	return true;
 }
+#endif /* CONFIG_BT_ISO_CENTRAL */
 
 void bt_iso_cleanup_acl(struct bt_conn *iso)
 {
@@ -961,6 +976,7 @@ void hci_le_cis_established(struct net_buf *buf)
 	bt_conn_unref(iso);
 }
 
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
 int hci_le_reject_cis(uint16_t handle, uint8_t reason)
 {
 	struct bt_hci_cp_le_reject_cis *cp;
@@ -1072,7 +1088,9 @@ void hci_le_cis_req(struct net_buf *buf)
 		return;
 	}
 }
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
 
+#if defined(CONFIG_BT_ISO_CENTRAL)
 static int hci_le_remove_cig(uint8_t cig_id)
 {
 	struct bt_hci_cp_le_remove_cig *req;
@@ -1091,7 +1109,9 @@ static int hci_le_remove_cig(uint8_t cig_id)
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_REMOVE_CIG, buf, NULL);
 }
+#endif /* CONFIG_BT_ISO_CENTRAL */
 
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
 struct bt_conn *bt_conn_add_iso(struct bt_conn *acl)
 {
 	struct bt_conn *iso = iso_new();
@@ -1105,7 +1125,9 @@ struct bt_conn *bt_conn_add_iso(struct bt_conn *acl)
 
 	return iso;
 }
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
 
+#if defined(CONFIG_BT_ISO_CENTRAL)
 static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 					     const struct bt_iso_cig_param *param)
 {
@@ -1641,6 +1663,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 
 	return 0;
 }
+#endif /* CONFIG_BT_ISO_CENTRAL */
 
 int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 {
@@ -1662,6 +1685,7 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 	return bt_conn_disconnect(chan->iso, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
 int bt_iso_server_register(struct bt_iso_server *server)
 {
 	CHECKIF(!server) {
@@ -1695,6 +1719,7 @@ int bt_iso_server_register(struct bt_iso_server *server)
 
 	return 0;
 }
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
