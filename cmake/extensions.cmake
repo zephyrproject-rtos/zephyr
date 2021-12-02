@@ -3000,6 +3000,77 @@ function(dt_chosen var)
   endif()
 endfunction()
 
+# Internal helper. Canonicalizes a path 'path' into the output
+# variable 'var'. This resolves aliases, if any. Child nodes may be
+# accessed via alias as well. 'var' is left undefined if the path does
+# not refer to an existing node.
+#
+# Example devicetree:
+#
+#   / {
+#           foo {
+#                   my-label: bar {
+#                           baz {};
+#                   };
+#           };
+#           aliases {
+#                   my-alias = &my-label;
+#           };
+#   };
+#
+# Example usage:
+#
+#   dt_path_internal(ret "/foo/bar")     # sets ret to "/foo/bar"
+#   dt_path_internal(ret "my-alias")     # sets ret to "/foo/bar"
+#   dt_path_internal(ret "my-alias/baz") # sets ret to "/foo/bar/baz"
+#   dt_path_internal(ret "/blub")        # ret is undefined
+function(dt_path_internal var path)
+  string(FIND "${path}" "/" slash_index)
+
+  if("${slash_index}" EQUAL 0)
+    # If the string starts with a slash, it should be an existing
+    # canonical path.
+    dt_path_internal_exists(check "${path}")
+    if (check)
+      set(${var} "${path}" PARENT_SCOPE)
+      return()
+    endif()
+  else()
+    # Otherwise, try to expand a leading alias.
+    string(SUBSTRING "${path}" 0 "${slash_index}" alias_name)
+    dt_alias(alias_path PROPERTY "${alias_name}")
+
+    # If there is a leading alias, append the rest of the string
+    # onto it and see if that's an existing node.
+    if (DEFINED alias_path)
+      set(rest)
+      if (NOT "${slash_index}" EQUAL -1)
+        string(SUBSTRING "${path}" "${slash_index}" -1 rest)
+      endif()
+      dt_path_internal_exists(expanded_path_exists "${alias_path}${rest}")
+      if (expanded_path_exists)
+        set(${var} "${alias_path}${rest}" PARENT_SCOPE)
+        return()
+      endif()
+    endif()
+  endif()
+
+  # Failed search; ensure return variable is undefined.
+  set(${var} PARENT_SCOPE)
+endfunction()
+
+# Internal helper. Set 'var' to TRUE if a canonical path 'path' refers
+# to an existing node. Set it to FALSE otherwise. See
+# dt_path_internal for a definition and examples of 'canonical' paths.
+function(dt_path_internal_exists var path)
+  get_target_property(path_prop devicetree_target "DT_NODE|${path}")
+  if (path_prop)
+    set(${var} TRUE PARENT_SCOPE)
+  else()
+    set(${var} FALSE PARENT_SCOPE)
+  endif()
+endfunction()
+
 ########################################################
 # 5. Zephyr linker function
 ########################################################
