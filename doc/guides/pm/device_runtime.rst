@@ -142,23 +142,28 @@ special synchronization is required.
 
 To enable device runtime power management on a device, the driver needs to call
 :c:func:`pm_device_runtime_enable` at initialization time. Note that this
-function will put the device into the :c:enumerator:`PM_DEVICE_STATE_SUSPENDED`
-state. In case this does not reflect the actual device state, the init function
-must perform the necessary operations to suspend the device.
+function will suspend the device if its state is
+:c:enumerator:`PM_DEVICE_STATE_ACTIVE`. In case the device is physically
+suspended, the init function should call
+:c:func:`pm_device_runtime_init_suspended` before calling
+:c:func:`pm_device_runtime_enable`.
 
 .. code-block:: c
 
     /* device driver initialization function */
     static int mydev_init(const struct device *dev)
     {
+        int ret;
         ...
-        /* make sure the device physically is suspended */
+
+        /* OPTIONAL: mark device as suspended if it is physically suspended */
+        pm_device_runtime_init_suspended(dev);
+
         /* enable device runtime power management */
         ret = pm_device_runtime_enable(dev);
-        if (ret < 0) {
-                return ret;
+        if ((ret < 0) && (ret != -ENOSYS)) {
+            return ret;
         }
-        ...
     }
 
 Assuming an example device driver that implements an ``operation`` API call, the

@@ -188,6 +188,14 @@ int pm_device_runtime_enable(const struct device *dev)
 		pm->dev = dev;
 		k_work_init_delayable(&pm->work, runtime_suspend_work);
 	}
+
+	if (pm->state == PM_DEVICE_STATE_ACTIVE) {
+		ret = pm->action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
+		if (ret < 0) {
+			goto unlock;
+		}
+	}
+
 	pm->state = PM_DEVICE_STATE_SUSPENDED;
 	pm->usage = 0U;
 
