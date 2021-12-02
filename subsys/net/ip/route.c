@@ -624,6 +624,10 @@ int net_route_foreach(net_route_cb_t cb, void *user_data)
 			continue;
 		}
 
+		if (!nbr->ref) {
+			continue;
+		}
+
 		route = net_route_data(nbr);
 		if (!route) {
 			continue;
