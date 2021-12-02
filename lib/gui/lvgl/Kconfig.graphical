@@ -22,6 +22,26 @@ config LVGL_VER_RES_MAX
 	help
 	  Vertical screen resolution in pixels
 
+choice LVGL_DISPLAY_ROTATION
+	prompt "Rotation Screen"
+	default LVGL_DISPLAY_ROTATION_NORMAL
+	help
+	  Rotation screen 0, 90, 180, 270 degrees
+
+	config LVGL_DISPLAY_ROTATION_NORMAL
+		bool "Normal"
+
+	config LVGL_DISPLAY_ROTATION_90
+		bool "Rotation 90 degrees"
+
+	config LVGL_DISPLAY_ROTATION_180
+		bool "Rotation 180 degrees"
+
+	config LVGL_DISPLAY_ROTATION_270
+		bool "Rotation 270 degrees"
+		
+endchoice	  
+
 choice LVGL_COLOR_DEPTH
 	prompt "Color Depth"
 	default LVGL_COLOR_DEPTH_32

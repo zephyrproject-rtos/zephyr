@@ -93,16 +93,20 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 
 	display_get_capabilities(display_dev, &cap);
 
-	if (cap.x_resolution <= CONFIG_LVGL_HOR_RES_MAX) {
+	if (cap.current_orientation == DISPLAY_ORIENTATION_NORMAL ||
+		cap.current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {	
 		disp_drv->hor_res = cap.x_resolution;
+		disp_drv->ver_res = cap.y_resolution;	
 	} else {
+		disp_drv->hor_res = cap.y_resolution;
+		disp_drv->ver_res = cap.x_resolution;	
+	}
+
+	if (cap.x_resolution > CONFIG_LVGL_HOR_RES_MAX) {
 		LOG_ERR("Horizontal resolution is larger than maximum");
 		err = -ENOTSUP;
 	}
-
-	if (cap.y_resolution <= CONFIG_LVGL_VER_RES_MAX) {
-		disp_drv->ver_res = cap.y_resolution;
-	} else {
+	if (cap.y_resolution > CONFIG_LVGL_VER_RES_MAX) {
 		LOG_ERR("Vertical resolution is larger than maximum");
 		err = -ENOTSUP;
 	}
@@ -130,8 +134,23 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 
 	display_get_capabilities(display_dev, &cap);
 
-	disp_drv->hor_res = cap.x_resolution;
-	disp_drv->ver_res = cap.y_resolution;
+	if (cap.current_orientation == DISPLAY_ORIENTATION_NORMAL ||
+		cap.current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {	
+		disp_drv->hor_res = cap.x_resolution;
+		disp_drv->ver_res = cap.y_resolution;	
+	} else {
+		disp_drv->hor_res = cap.y_resolution;
+		disp_drv->ver_res = cap.x_resolution;	
+	}
+
+	if (cap.x_resolution > CONFIG_LVGL_HOR_RES_MAX) {
+		LOG_ERR("Horizontal resolution is larger than maximum");
+		err = -ENOTSUP;
+	}
+	if (cap.y_resolution > CONFIG_LVGL_VER_RES_MAX) {
+		LOG_ERR("Vertical resolution is larger than maximum");
+		err = -ENOTSUP;
+	}
 
 	buf_nbr_pixels = (CONFIG_LVGL_VDB_SIZE * disp_drv->hor_res *
 			disp_drv->ver_res) / 100;
@@ -326,6 +345,16 @@ static int lvgl_init(const struct device *dev)
 		LOG_ERR("Display device not found.");
 		return -ENODEV;
 	}
+
+#ifdef CONFIG_LVGL_DISPLAY_ROTATION_NORMAL	
+	display_set_orientation(display_dev, DISPLAY_ORIENTATION_NORMAL);
+#elif CONFIG_LVGL_DISPLAY_ROTATION_90
+	display_set_orientation(display_dev, DISPLAY_ORIENTATION_ROTATED_90);
+#elif CONFIG_LVGL_DISPLAY_ROTATION_180
+	display_set_orientation(display_dev, DISPLAY_ORIENTATION_ROTATED_180);
+#elif CONFIG_LVGL_DISPLAY_ROTATION_270
+	display_set_orientation(display_dev, DISPLAY_ORIENTATION_ROTATED_270);		
+#endif
 
 #if CONFIG_LVGL_LOG_LEVEL != 0
 	lv_log_register_print_cb(lvgl_log);
