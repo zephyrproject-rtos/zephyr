@@ -117,6 +117,7 @@ static inline CborError
 os_mgmt_taskstat_encode_stack_info(struct CborEncoder *thread_map,
 				   const struct k_thread *thread)
 {
+#ifdef CONFIG_OS_MGMT_TASKSTAT_STACK_INFO
 	ssize_t stack_size = 0;
 	ssize_t stack_used = 0;
 	CborError err = 0;
@@ -140,6 +141,9 @@ os_mgmt_taskstat_encode_stack_info(struct CborEncoder *thread_map,
 	err |= cbor_encode_uint(thread_map, stack_used);
 
 	return err;
+#else
+	return 0;
+#endif /* CONFIG_OS_MGMT_TASKSTAT_STACK_INFO */
 }
 
 static inline CborError
