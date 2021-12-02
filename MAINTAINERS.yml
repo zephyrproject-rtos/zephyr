@@ -1604,6 +1604,24 @@ nRF Platforms:
     labels:
         - "platform: nRF"
 
+Renesas R-Car Platforms:
+    status: maintained
+    maintainers:
+        - aaillet
+    collaborators:
+        - pmarzin
+    files:
+        - boards/arm/rcar_*/
+        - drivers/*/*rcar*
+        - dts/arm/renesas/
+        - dts/bindings/*/*rcar*
+        - soc/arm/renesas_rcar/
+    labels:
+        - "platform: Renesas R-Car"
+    description: >-
+        Renesas R-Car SOCs, dts files and related drivers. Renesas boards based
+        on R-Car SOCs.
+
 STM32 Platforms:
     status: maintained
     maintainers:

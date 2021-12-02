@@ -57,7 +57,7 @@
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/arm/xilinx_zynq7000/                 @ibirnbaum
 /soc/arm/xilinx_zynqmp/                   @stephanosio
-/soc/arm/renesas_rcar/                    @julien-massot
+/soc/arm/renesas_rcar/                    @aaillet @pmarzin
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
 /soc/arm64/                               @carlocaione
 /soc/arm64/qemu_cortex_a53/               @carlocaione
@@ -147,7 +147,7 @@
 /boards/arm/stm32*_disco/                 @erwango @ABOSTM @FRASTM
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
-/boards/arm/rcar_h3ulcb/                  @julien-massot
+/boards/arm/rcar_h3ulcb/                  @aaillet @pmarzin
 /boards/arm/ubx_bmd345eval_nrf52840/      @Navin-Sankar @brec-u-blox
 /boards/common/                           @mbolivar-nordic
 /boards/deprecated.cmake                  @tejlmand
@@ -218,11 +218,11 @@
 /drivers/syscon/                          @carlocaione @yperess
 /drivers/can/                             @alexanderwachter @henrikbrixandersen
 /drivers/can/*mcp2515*                    @karstenkoenig
-/drivers/can/*rcar*                       @julien-massot
+/drivers/can/*rcar*                       @aaillet @pmarzin
 /drivers/clock_control/*agilex*           @siclim
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx @glaubermaroto
-/drivers/clock_control/*rcar*             @julien-massot
+/drivers/clock_control/*rcar*             @aaillet
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
@@ -265,7 +265,7 @@
 /drivers/gpio/*nct38xx*                   @MulinChao @WealianLiao @ChiHuaL
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
-/drivers/gpio/*rcar*                      @julien-massot
+/drivers/gpio/*rcar*                      @aaillet
 /drivers/gpio/*esp32*                     @glaubermaroto
 /drivers/gpio/*rpi_pico*                  @yonsch
 /drivers/hwinfo/                          @alexanderwachter
@@ -394,7 +394,7 @@
 /drivers/timer/*stm32_lptim*              @FRASTM
 /drivers/timer/*leon_gptimer*             @martin-aberg
 /drivers/timer/*mips_cp0*                 @frantony
-/drivers/timer/*rcar_cmt*                 @julien-massot
+/drivers/timer/*rcar_cmt*                 @aaillet
 /drivers/timer/*esp32c3_sys*              @uLipe
 /drivers/timer/*sam0_rtc*                 @bendiscz
 /drivers/timer/*arcv2*                    @ruuddw
@@ -473,7 +473,7 @@
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
-/dts/arm/renesas/                         @julien-massot
+/dts/arm/renesas/                         @aaillet @pmarzin
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung
