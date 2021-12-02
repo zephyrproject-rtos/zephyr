@@ -10,6 +10,14 @@ tests:
     harness: ztest
     harness_config:
       fixture: gpio_loopback
+  drivers.uart.uart_async_api.nrf_uart:
+    tags: drivers
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC
+    harness: ztest
+    platform_allow: nrf52840dk_nrf52840
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf_uart.overlay"
   drivers.uart.uart_async_api.rtt:
     tags: drivers
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_HAS_SEGGER_RTT
