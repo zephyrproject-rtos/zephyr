@@ -316,6 +316,15 @@ static void pa_recv_cb(struct bt_le_per_adv_sync *sync,
 	is_sync_recv = true;
 }
 
+static void
+pa_state_changed_cb(struct bt_le_per_adv_sync *sync,
+		    const struct bt_le_per_adv_sync_state_info *info)
+{
+	printk("PER_ADV_SYNC[%u]: state changed, receive %s.\n",
+	       bt_le_per_adv_sync_get_index(sync),
+	       info->recv_enabled ? "enabled" : "disabled");
+}
+
 static bool volatile is_big_info;
 
 static void pa_biginfo_cb(struct bt_le_per_adv_sync *sync,
@@ -348,6 +357,7 @@ static struct bt_le_per_adv_sync_cb sync_cb = {
 	.synced = pa_sync_cb,
 	.term = pa_terminated_cb,
 	.recv = pa_recv_cb,
+	.state_changed = pa_state_changed_cb,
 	.biginfo = pa_biginfo_cb,
 };
 
@@ -454,7 +464,8 @@ static void test_iso_recv_main(void)
 	printk("Creating Periodic Advertising Sync...");
 	is_sync = false;
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
-	sync_create_param.options = 0;
+	sync_create_param.options =
+		BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
@@ -623,6 +634,14 @@ static void test_iso_recv_main(void)
 	if (is_iso_disconnected != BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
 		FAIL("Remote Host Terminate Failed.\n");
 	}
+
+	printk("Periodic sync receive enable...\n");
+	err = bt_le_per_adv_sync_recv_enable(sync);
+	if (err) {
+		printk("failed (err %d)\n", err);
+		return;
+	}
+	printk("receive enabled.\n");
 
 	uint8_t check_countdown = 3;
 
