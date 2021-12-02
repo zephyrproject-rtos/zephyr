@@ -179,6 +179,10 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	sync->node_rx_sync_estab = node_rx;
 	sync->node_rx_lost.hdr.link = link_sync_lost;
 
+	/* Reporting initially enabled/disabled */
+	sync->rx_enable =
+		!(options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED);
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	sync->nodups = (options &
 			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE) ?
@@ -218,6 +222,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Initialize sync LLL context */
 	lll_sync = &sync->lll;
+	lll_sync->is_rx_enabled = sync->rx_enable;
 	lll_sync->skip_prepare = 0U;
 	lll_sync->skip_event = 0U;
 	lll_sync->window_widening_prepare_us = 0U;
@@ -226,10 +231,6 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->cte_type = sync_cte_type;
 	lll_sync->filter_policy = scan->per_scan.filter_policy;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
-
-	/* Reporting initially enabled/disabled */
-	lll_sync->is_rx_enabled =
-		!(options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	ull_df_sync_cfg_init(&lll_sync->df_cfg);
@@ -362,7 +363,6 @@ uint8_t ll_sync_terminate(uint16_t handle)
 uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable)
 {
 	struct ll_sync_set *sync;
-	struct lll_sync *lll;
 
 	sync = ull_sync_is_enabled_get(handle);
 	if (!sync) {
@@ -370,10 +370,8 @@ uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable)
 	}
 
 	/* Reporting enabled/disabled */
-	lll = &sync->lll;
-	lll->is_rx_enabled = (enable &
-			      BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_ENABLE) ?
-			      1U : 0U;
+	sync->rx_enable = (enable & BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_ENABLE) ?
+			  1U : 0U;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	sync->nodups = (enable &
@@ -735,7 +733,6 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	struct lll_sync *lll;
 
 	ftr = &rx->rx_ftr;
-	lll = ftr->param;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 	enum sync_status sync_status;
@@ -744,6 +741,8 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	sync_status = ftr->sync_status;
 #else
 	struct pdu_cte_info *rx_cte_info;
+
+	lll = ftr->param;
 
 	rx_cte_info = pdu_cte_info_get((struct pdu_adv *)((struct node_rx_pdu *)rx)->pdu);
 	if (rx_cte_info != NULL) {
@@ -767,6 +766,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		/* Set the sync handle corresponding to the LLL context passed in the node rx
 		 * footer field.
 		 */
+		lll = ftr->param;
 		ull_sync = HDR_LLL2ULL(lll);
 
 		/* Prepare and dispatch sync notification */
@@ -808,13 +808,11 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		/* Switch sync event prepare function to one reposnsible for regular PDUs receive */
 		mfy_lll_prepare.fp = lll_sync_prepare;
 
-		if (lll->is_rx_enabled) {
-			/* Change node type to appropriately handle periodic
-			 * advertising PDU report.
-			 */
-			rx->type = NODE_RX_TYPE_SYNC_REPORT;
-			ull_scan_aux_setup(link, rx);
-		}
+		/* Change node type to appropriately handle periodic
+		 * advertising PDU report.
+		 */
+		rx->type = NODE_RX_TYPE_SYNC_REPORT;
+		ull_scan_aux_setup(link, rx);
 	}
 }
 
@@ -1101,6 +1099,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_O(1);
 
 	lll = &sync->lll;
+
+	/* Commit receive enable changed value */
+	lll->is_rx_enabled = sync->rx_enable;
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync->ull);

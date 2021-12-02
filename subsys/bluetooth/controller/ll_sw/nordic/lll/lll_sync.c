@@ -627,8 +627,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 		struct node_rx_pdu *node_rx;
 
 		node_rx = ull_pdu_rx_alloc_peek(3);
-		if (node_rx &&
-		    (lll->is_rx_enabled || (node_type == NODE_RX_TYPE_SYNC))) {
+		if (node_rx) {
 			struct node_rx_ftr *ftr;
 			struct pdu_adv *pdu;
 
@@ -646,6 +645,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 					    radio_rx_chain_delay_get(lll->phy,
 								     1);
 			ftr->sync_status = status;
+			ftr->sync_rx_enabled = lll->is_rx_enabled;
 
 			pdu = (void *)node_rx->pdu;
 
