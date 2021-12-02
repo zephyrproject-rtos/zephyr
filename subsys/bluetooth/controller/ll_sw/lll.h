@@ -334,7 +334,8 @@ struct node_rx_ftr {
 	uint8_t  aux_w4next:1;
 	uint8_t  aux_failed:1;
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	uint8_t sync_status:2;
+	uint8_t  sync_status:2;
+	uint8_t  sync_rx_enabled:1;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	uint8_t  phy_flags:1;
