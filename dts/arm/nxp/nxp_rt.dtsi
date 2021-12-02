@@ -379,6 +379,7 @@
 				label = "FLEXPWM1_PWM0";
 				interrupts = <102 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -388,6 +389,7 @@
 				label = "FLEXPWM1_PWM1";
 				interrupts = <103 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -397,6 +399,7 @@
 				label = "FLEXPWM1_PWM2";
 				interrupts = <104 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -406,6 +409,7 @@
 				label = "FLEXPWM1_PWM3";
 				interrupts = <105 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 		};
@@ -421,6 +425,7 @@
 				label = "FLEXPWM2_PWM0";
 				interrupts = <137 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -430,6 +435,7 @@
 				label = "FLEXPWM2_PWM1";
 				interrupts = <138 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -439,6 +445,7 @@
 				label = "FLEXPWM2_PWM2";
 				interrupts = <139 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -448,6 +455,7 @@
 				label = "FLEXPWM2_PWM3";
 				interrupts = <140 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 		};
@@ -463,6 +471,7 @@
 				label = "FLEXPWM3_PWM0";
 				interrupts = <142 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -472,6 +481,7 @@
 				label = "FLEXPWM3_PWM1";
 				interrupts = <143 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -481,6 +491,7 @@
 				label = "FLEXPWM3_PWM2";
 				interrupts = <144 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -490,6 +501,7 @@
 				label = "FLEXPWM3_PWM3";
 				interrupts = <145 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 		};
@@ -505,6 +517,7 @@
 				label = "FLEXPWM4_PWM0";
 				interrupts = <147 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -514,6 +527,7 @@
 				label = "FLEXPWM4_PWM1";
 				interrupts = <148 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -523,6 +537,7 @@
 				label = "FLEXPWM4_PWM2";
 				interrupts = <149 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -532,6 +547,7 @@
 				label = "FLEXPWM4_PWM3";
 				interrupts = <150 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 		};
