@@ -35,12 +35,6 @@ endchoice
 config LVGL_BITS_PER_PIXEL
 	default 1
 
-config LVGL_HOR_RES_MAX
-	default 250
-
-config LVGL_VER_RES_MAX
-	default 120
-
 config LVGL_DPI
 	default 130
 
