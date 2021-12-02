@@ -480,6 +480,21 @@ static int spi_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	/* configure the frame format Motorola (default) or TI */
+	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
+#ifdef LL_SPI_PROTOCOL_TI
+		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_TI);
+#else
+		LOG_ERR("Frame Format TI not supported");
+		/* on stm32F1 or some stm32L1 (cat1,2) without SPI_CR2_FRF */
+		return -ENOTSUP;
+#endif
+#if defined(LL_SPI_PROTOCOL_MOTOROLA) && defined(SPI_CR2_FRF)
+	} else {
+		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
+#endif
+}
+
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			(clock_control_subsys_t) &cfg->pclken, &clock) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate");
@@ -559,11 +574,6 @@ static int spi_stm32_configure(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	ll_func_set_fifo_threshold_8bit(spi);
-#endif
-
-#if !defined(CONFIG_SOC_SERIES_STM32F1X) \
-	&& (!defined(CONFIG_SOC_SERIES_STM32L1X) || defined(SPI_CR2_FRF))
-	LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
 #endif
 
 	/* At this point, it's mandatory to set this on the context! */
