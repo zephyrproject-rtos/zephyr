@@ -21,3 +21,4 @@ supported:
   - spi
   - adc
   - i2c
+  - pwm
