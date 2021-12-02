@@ -3551,6 +3551,22 @@ static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
 
 	status = ll_sync_recv_enable(handle, cmd->enable);
 
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
+	if (!status) {
+		if (cmd->enable &
+		    BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE) {
+			if (!dup_scan || (dup_count < 0)) {
+				dup_count = 0;
+				dup_curr = 0U;
+			} else {
+				/* FIXME: Invalidate dup_ext_adv_mode array entries */
+			}
+		} else if (!dup_scan) {
+			dup_count = DUP_FILTER_DISABLED;
+		}
+	}
+#endif
+
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
 }
