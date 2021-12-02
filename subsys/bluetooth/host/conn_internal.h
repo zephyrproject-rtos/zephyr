@@ -275,9 +275,6 @@ struct bt_iso_create_param {
 
 int bt_conn_iso_init(void);
 
-/* Add a new ISO connection */
-struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
-
 /* Cleanup ISO references */
 void bt_iso_cleanup_acl(struct bt_conn *iso_conn);
 
