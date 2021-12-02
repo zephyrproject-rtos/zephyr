@@ -2530,8 +2530,16 @@ endfunction()
 #
 # The following methods are for retrieving devicetree information in CMake.
 #
-# Note: In CMake we refer to the nodes using the node's path, therefore there
-# is no dt_path(...) function for obtaining a node identifier.
+# Notes:
+#
+# - In CMake, we refer to the nodes using the node's path, therefore
+#   there is no dt_path(...) function for obtaining a node identifier
+#   like there is in the C devicetree.h API.
+#
+# - As another difference from the C API, you can generally use an
+#   alias at the beginning of a path interchangeably with the full
+#   path to the aliased node in these functions. The usage comments
+#   will make this clear in each case.
 
 # Usage:
 #   dt_nodelabel(<var> NODELABEL <label>)
@@ -2629,6 +2637,12 @@ endfunction()
 #
 # Tests whether a node with path <path> exists in the devicetree.
 #
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
+#
 # The result of the check, either TRUE or FALSE, will be returned in
 # the <var> parameter.
 #
@@ -2650,10 +2664,9 @@ function(dt_node_exists var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_NODE|${DT_NODE_PATH}")
-
-  if(${var})
-    set(${var} ${${var}} PARENT_SCOPE)
+  dt_path_internal(canonical "${DT_NODE_PATH}")
+  if (DEFINED canonical)
+    set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
   endif()
@@ -2667,6 +2680,12 @@ endfunction()
 # - has a status property matching the <status> argument
 #   (a missing status or an “ok” status is treated as if it
 #    were “okay” instead)
+#
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
 #
 # The result of the check, either TRUE or FALSE, will be returned in
 # the <var> parameter.
@@ -2690,13 +2709,13 @@ function(dt_node_has_status var)
     endif()
   endforeach()
 
-  dt_node_exists(${var} PATH ${DT_NODE_PATH})
-  if(NOT ${${var}})
+  dt_path_internal(canonical ${DT_NODE_PATH})
+  if(NOT DEFINED canonical)
     set(${var} FALSE PARENT_SCOPE)
     return()
   endif()
 
-  dt_prop(${var} PATH ${DT_NODE_PATH} PROPERTY status)
+  dt_prop(${var} PATH ${canonical} PROPERTY status)
 
   if(NOT DEFINED ${var} OR "${${var}}" STREQUAL ok)
     set(${var} okay)
@@ -2715,6 +2734,12 @@ endfunction()
 #
 # Get a devicetree property value. The value will be returned in the
 # <var> parameter.
+#
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
 #
 # This function currently only supports properties with the following
 # devicetree binding types: string, int, boolean, array, uint8-array,
@@ -2770,8 +2795,9 @@ function(dt_prop var)
     endif()
   endforeach()
 
+  dt_path_internal(canonical "${DT_PROP_PATH}")
   get_property(exists TARGET devicetree_target
-      PROPERTY "DT_PROP|${DT_PROP_PATH}|${DT_PROP_PROPERTY}"
+      PROPERTY "DT_PROP|${canonical}|${DT_PROP_PROPERTY}"
       SET
   )
 
@@ -2781,7 +2807,7 @@ function(dt_prop var)
   endif()
 
   get_target_property(val devicetree_target
-      "DT_PROP|${DT_PROP_PATH}|${DT_PROP_PROPERTY}"
+      "DT_PROP|${canonical}|${DT_PROP_PROPERTY}"
   )
 
   if(DEFINED DT_PROP_INDEX)
@@ -2801,6 +2827,12 @@ endfunction()
 #
 # The value will be returned in the <var> parameter.
 #
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
+#
 # <var>          : Return variable where the property value will be stored
 # PATH <path>    : Node path
 function(dt_num_regs var)
@@ -2819,7 +2851,8 @@ function(dt_num_regs var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_REG|${DT_REG_PATH}|NUM")
+  dt_path_internal(canonical "${DT_REG_PATH}")
+  get_target_property(${var} devicetree_target "DT_REG|${canonical}|NUM")
 
   set(${var} ${${var}} PARENT_SCOPE)
 endfunction()
@@ -2831,6 +2864,12 @@ endfunction()
 # If <idx> is omitted, then the value at index 0 will be returned.
 #
 # The value will be returned in the <var> parameter.
+#
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
 #
 # Results can be:
 # - The base address of the register block
@@ -2861,7 +2900,8 @@ function(dt_reg_addr var)
     set(DT_REG_INDEX 0)
   endif()
 
-  get_target_property(${var}_list devicetree_target "DT_REG|${DT_REG_PATH}|ADDR")
+  dt_path_internal(canonical "${DT_REG_PATH}")
+  get_target_property(${var}_list devicetree_target "DT_REG|${canonical}|ADDR")
 
   list(GET ${var}_list ${DT_REG_INDEX} ${var})
 
@@ -2879,6 +2919,12 @@ endfunction()
 # If INDEX is omitted, then the value at index 0 will be returned.
 #
 # The value will be returned in the <value> parameter.
+#
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
 #
 # <var>          : Return variable where the size value will be stored
 # PATH <path>    : Node path
@@ -2904,7 +2950,8 @@ function(dt_reg_size var)
     set(DT_REG_INDEX 0)
   endif()
 
-  get_target_property(${var}_list devicetree_target "DT_REG|${DT_REG_PATH}|SIZE")
+  dt_path_internal(canonical "${DT_REG_PATH}")
+  get_target_property(${var}_list devicetree_target "DT_REG|${canonical}|SIZE")
 
   list(GET ${var}_list ${DT_REG_INDEX} ${var})
 
