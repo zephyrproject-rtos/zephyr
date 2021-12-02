@@ -90,6 +90,8 @@ endforeach()
 # A list of common environment settings used when invoking Kconfig during CMake
 # configure time or menuconfig and related build target.
 string(REPLACE ";" "\\\;" SHIELD_AS_LIST_ESCAPED "${SHIELD_AS_LIST}")
+# cmake commands are escaped differently
+string(REPLACE ";" "\\;" SHIELD_AS_LIST_ESCAPED_COMMAND "${SHIELD_AS_LIST}")
 
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
@@ -251,7 +253,7 @@ endif()
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E env
   ${COMMON_KCONFIG_ENV_SETTINGS}
-  SHIELD_AS_LIST=${SHIELD_AS_LIST_ESCAPED}
+  SHIELD_AS_LIST=${SHIELD_AS_LIST_ESCAPED_COMMAND}
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
   --zephyr-base=${ZEPHYR_BASE}
