@@ -109,6 +109,8 @@ features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1160_evk/mimxrt1160_evk_cm7_defconfig``
@@ -151,6 +153,8 @@ The MIMXRT1160 SoC has six pairs of pinmux/gpio controllers.
 | GPIO_LPSR_05  | LPI2C5_SCL      | i2c                       |
 +---------------+-----------------+---------------------------+
 | GPIO_LPSR_04  | LPI2C5_SDA      | i2c                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_04    | FLEXPWM1_PWM2   | pwm                       |
 +---------------+-----------------+---------------------------+
 
 System Clock
