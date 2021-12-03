@@ -13,6 +13,7 @@
 #include <soc/soc.h>
 #include <hal/gpio_ll.h>
 #include <esp_attr.h>
+#include <hal/rtc_io_hal.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -48,6 +49,10 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define ISR_HANDLER intr_handler_t
 #endif
 
+#ifndef SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT 0
+#endif
+
 struct gpio_esp32_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config drv_cfg;
@@ -62,6 +67,15 @@ struct gpio_esp32_data {
 	const struct device *pinmux;
 	sys_slist_t cb;
 };
+
+static inline bool rtc_gpio_is_valid_gpio(uint32_t gpio_num)
+{
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+	return (gpio_num < SOC_GPIO_PIN_COUNT && rtc_io_num_map[gpio_num] >= 0);
+#else
+	return false;
+#endif
+}
 
 static inline bool gpio_pin_is_valid(uint32_t pin)
 {
@@ -96,6 +110,12 @@ static int gpio_esp32_config(const struct device *dev,
 	}
 
 	key = irq_lock();
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+	if (rtc_gpio_is_valid_gpio(io_pin)) {
+		rtcio_hal_function_select(rtc_io_num_map[io_pin], RTCIO_FUNC_DIGITAL);
+	}
+#endif
 
 	/* Set pin function as GPIO */
 	ret = pinmux_pin_set(data->pinmux, io_pin, PIN_FUNC_GPIO);
@@ -142,10 +162,28 @@ static int gpio_esp32_config(const struct device *dev,
 		 */
 		switch (flags & GPIO_DS_MASK) {
 		case GPIO_DS_DFLT:
-			gpio_ll_set_drive_capability(cfg->gpio_base, io_pin, GPIO_DRIVE_CAP_3);
+			if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+				gpio_ll_set_drive_capability(cfg->gpio_base,
+						io_pin,
+						GPIO_DRIVE_CAP_3);
+			} else {
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+				rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
+						GPIO_DRIVE_CAP_3);
+#endif
+			}
 			break;
 		case GPIO_DS_ALT:
-			gpio_ll_set_drive_capability(cfg->gpio_base, io_pin, GPIO_DRIVE_CAP_0);
+			if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+				gpio_ll_set_drive_capability(cfg->gpio_base,
+						io_pin,
+						GPIO_DRIVE_CAP_0);
+			} else {
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+				rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
+						GPIO_DRIVE_CAP_0);
+#endif
+			}
 			break;
 		default:
 			ret = -EINVAL;
