@@ -31,12 +31,15 @@ void main(void)
 	mbox_init_channel(&tx_channel, dev, TX_ID);
 	mbox_init_channel(&rx_channel, dev, RX_ID);
 
+	if (mbox_register_callback(&rx_channel, callback, NULL)) {
+		printk("mbox_register_callback() error\n");
+		return;
+	}
+
 	if (mbox_set_enabled(&rx_channel, 1)) {
 		printk("mbox_set_enable() error\n");
 		return;
 	}
-
-	mbox_register_callback(&rx_channel, callback, NULL);
 
 	while (1) {
 		k_sleep(K_MSEC(2000));
