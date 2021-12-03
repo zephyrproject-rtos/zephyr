@@ -349,8 +349,13 @@ uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
 				       const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct bt_otc_internal_instance_t *inst =
-		lookup_inst_by_handle(handle);
+	struct bt_otc_internal_instance_t *inst;
+
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	inst = lookup_inst_by_handle(handle);
 
 	/* TODO: Can we somehow avoid exposing this
 	 * callback via the public API?
