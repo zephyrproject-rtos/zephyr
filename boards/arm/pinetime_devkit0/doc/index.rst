@@ -164,6 +164,8 @@ Unlocking the device is a one-time action that is needed to enable to debug
 port and provide full access to the device. This will erase all existing
 software from the internal flash.
 
+**Note: PineTime watches shipped after 20 Sep 2020 do not require unlocking. They are shipped unlocked.**
+
 .. code-block:: console
 
    $ nrfjprog -f NRF52 --recover
