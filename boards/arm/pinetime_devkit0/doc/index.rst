@@ -30,15 +30,15 @@ Hardware
 
 The PineTime is based on a Nordic NRF52832 chip and features:
 
-- 64 MHz Cortex-M4 with FPU
-- 64KB SRAM
-- 512KB on board Flash
-- 1.3 inches (33mm), 240x240 pixels display with ST7789 driver
-- 170-180mAh LiPo battery
-- XT25F32B 32Mb (4MB) SPI NOR Flash
-- CST816S Capacitive Touch
+- CPU: 64 MHz Cortex-M4 with FPU
+- RAM: 64KB SRAM
+- Flash: 512KB on board flash with additional 4MB SPI NOR XT25F32B
+- Display: 1.3 inches (33mm), 240x240 pixels display with ST7789 driver
+- Touchscreen: CST816S Capacitive Touch
+- Battery: 170-180mAh 3.8V LiPo
 - BMA421 Triaxial Acceleration Sensor
 - HRS3300 PPG Heart Rate Sensor
+- Vibration motor
 
 PineTime schematics
 ========================
