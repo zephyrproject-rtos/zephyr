@@ -6,7 +6,6 @@
 
 config BT_ISO
 	bool
-	select EXPERIMENTAL
 
 # TODO: Split between client (central) and server (peripheral)
 config BT_ISO_UNICAST
@@ -21,6 +20,7 @@ config BT_ISO_PERIPHERAL
 	bool "Bluetooth Isochronous Channel Unicast Peripheral Support [EXPERIMENTAL]"
 	select BT_PERIPHERAL
 	select BT_ISO_UNICAST
+	select EXPERIMENTAL
 	help
 	  This option enables support for Bluetooth Unicast
 	  Isochronous channels for the peripheral role.
@@ -29,6 +29,7 @@ config BT_ISO_CENTRAL
 	bool "Bluetooth Isochronous Channel Unicast Central Support [EXPERIMENTAL]"
 	select BT_CENTRAL
 	select BT_ISO_UNICAST
+	select EXPERIMENTAL
 	help
 	  This option enables support for Bluetooth Broadcast
 	  Isochronous channels for the central role.
@@ -43,6 +44,7 @@ config BT_ISO_BROADCASTER
 	select BT_ISO_BROADCAST
 	select BT_BROADCASTER
 	select BT_PER_ADV
+	select EXPERIMENTAL
 	help
 	  This option enables support for the Bluetooth Isochronous Broadcaster.
 
@@ -51,6 +53,7 @@ config BT_ISO_SYNC_RECEIVER
 	select BT_ISO_BROADCAST
 	select BT_OBSERVER
 	select BT_PER_ADV_SYNC
+	select EXPERIMENTAL
 	help
 	  This option enables support for the Bluetooth Isochronous
 	  Synchronized Receiver.
