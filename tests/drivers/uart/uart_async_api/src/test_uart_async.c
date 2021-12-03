@@ -68,7 +68,9 @@ void test_single_read_setup(void)
 void test_single_read(void)
 {
 	uint8_t rx_buf[10] = {0};
-	uint8_t tx_buf[5] = "test";
+
+	/* Check also if sending from read only memory (e.g. flash) works. */
+	static const uint8_t tx_buf[5] = "test";
 
 	zassert_not_equal(memcmp(tx_buf, rx_buf, 5), 0,
 			  "Initial buffer check failed");
