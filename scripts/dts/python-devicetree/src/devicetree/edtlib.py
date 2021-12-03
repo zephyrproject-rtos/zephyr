@@ -201,7 +201,10 @@ class EDT:
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
 
-        self._dt = DT(dts)
+        try:
+            self._dt = DT(dts)
+        except DTError as e:
+            raise EDTError(e) from e
         _check_dt(self._dt)
 
         self._init_compat2binding()
