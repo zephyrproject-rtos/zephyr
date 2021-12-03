@@ -2328,7 +2328,8 @@ static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len)
 				      &prefix_buf,
 				      prefix_len,
 				      (struct in6_addr *)NET_IPV6_HDR(pkt)->src,
-				      route_lifetime);
+				      route_lifetime,
+				      preference);
 		if (route == NULL) {
 			NET_DBG("Failed to add route");
 		}
