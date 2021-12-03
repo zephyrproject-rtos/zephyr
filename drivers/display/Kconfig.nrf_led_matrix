@@ -1,0 +1,19 @@
+# Copyright (c) 2021, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_NRF_LED_MATRIX
+	bool "LED matrix driven by GPIOs"
+	depends on SOC_FAMILY_NRF
+	select NRFX_GPIOTE
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	help
+	  Enable driver for a LED matrix with rows and columns driven by
+	  GPIOs. The matrix is refreshed pixel by pixel (only one LED is
+	  turned on in particular time slots) and each pixel can have one
+	  of 256 levels of brightness (0 means off completely).
+	  Assignment of GPIOs to rows and columns and the mapping of those
+	  to pixels are specified in properties of a "nordic,nrf-led-matrix"
+	  compatible node in devicetree.
+	  The driver uses one TIMER instance and, depending on what is set
+	  in devicetree, one PWM instance or one PPI channel and one GPIOTE
+	  channel.

@@ -1,0 +1,65 @@
+# Copyright (c) 2021, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic LED matrix driven by nRF SoC GPIOs
+
+compatible: "nordic,nrf-led-matrix"
+
+include: display-controller.yaml
+
+properties:
+    row-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        Array of GPIOs to be used as rows of the matrix.
+
+    col-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        Array of GPIOs to be used as columns of the matrix.
+
+    pixel-mapping:
+      type: uint8-array
+      required: true
+      description: |
+        Array of bytes that specify which rows and columns of the matrix
+        control its particular pixels, line by line. Each byte in this
+        array corresponds to one pixel of the matrix and specifies the row
+        index in the high nibble and the column index in the low nibble.
+
+        For example, the following snippet (from the bbc_microbit board DTS):
+
+          width = <5>;
+          height = <5>;
+          pixel-mapping = [00 13 01 14 02
+                           23 24 25 26 27
+                           ...
+
+        specifies that:
+        - pixel (0,0) is controlled by row 0 and column 0
+        - pixel (1,0) is controlled by row 1 and column 3
+        - pixel (0,1) is controlled by row 2 and column 3
+        - pixel (1,1) is controlled by row 2 and column 4
+        and so on.
+
+    refresh-frequency:
+      type: int
+      required: true
+      description: |
+        Frequency of refreshing the matrix, in Hz.
+
+    timer:
+      type: phandle
+      required: true
+      description: |
+        Reference to a TIMER instance for controlling refreshing of the matrix.
+
+    pwm:
+      type: phandle
+      required: false
+      description: |
+        Reference to a PWM instance for generating pulse signals on column
+        GPIOs. If not provided, one PPI and one GPIOTE channel are allocated
+        and used instead for generating those pulses.
