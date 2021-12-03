@@ -363,7 +363,8 @@ static void test_route_add(void)
 {
 	entry = net_route_add(my_iface,
 			      &dest_addr, 128,
-			      &peer_addr);
+			      &peer_addr,
+			      NET_ROUTE_PREFERENCE_LOW);
 
 	zassert_not_null(entry, "Route add failed");
 }
@@ -374,7 +375,8 @@ static void test_route_update(void)
 
 	update_entry = net_route_add(my_iface,
 				     &dest_addr, 128,
-				     &peer_addr);
+				     &peer_addr,
+				     NET_ROUTE_PREFERENCE_LOW);
 	zassert_equal_ptr(update_entry, entry,
 			  "Route add again failed");
 }
@@ -456,7 +458,8 @@ static void test_route_add_many(void)
 		    net_sprint_ipv6_addr(&dest_addresses[i]));
 		test_routes[i] = net_route_add(my_iface,
 					  &dest_addresses[i], 128,
-					  &peer_addr);
+					  &peer_addr,
+					  NET_ROUTE_PREFERENCE_LOW);
 		zassert_not_null(test_routes[i], "Route add failed");
 		}
 }

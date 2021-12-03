@@ -308,11 +308,25 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 	return found;
 }
 
+static inline bool route_preference_is_lower(uint8_t old, uint8_t new)
+{
+	if (new == NET_ROUTE_PREFERENCE_RESERVED || (new & 0xfc) != 0) {
+		return true;
+	}
+
+	/* Transform valid preference values into comparable integers */
+	old = (old + 1) & 0x3;
+	new = (new + 1) & 0x3;
+
+	return new < old;
+}
+
 struct net_route_entry *net_route_add(struct net_if *iface,
 				      struct in6_addr *addr,
 				      uint8_t prefix_len,
 				      struct in6_addr *nexthop,
-				      uint32_t lifetime)
+				      uint32_t lifetime,
+				      uint8_t preference)
 {
 	struct net_linkaddr_storage *nexthop_lladdr;
 	struct net_nbr *nbr, *nbr_nexthop, *tmp;
@@ -359,7 +373,14 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 			/* Reset lifetime timer. */
 			net_route_update_lifetime(route, lifetime);
 
+			route->preference = preference;
+
 			return route;
+		}
+
+		if (route_preference_is_lower(route->preference, preference)) {
+			NET_DBG("No changes, ignoring route with lower preference");
+			return NULL;
 		}
 
 		NET_DBG("Old route to %s found",
@@ -418,6 +439,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 	route = net_route_data(nbr);
 	route->iface = iface;
+	route->preference = preference;
 
 	net_route_update_lifetime(route, lifetime);
 
