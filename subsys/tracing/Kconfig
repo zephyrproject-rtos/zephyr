@@ -17,6 +17,34 @@ config TRACING
 
 if TRACING
 
+choice
+	prompt "Tracing mode"
+	default SOFTWARE_TRACING
+
+config HARDWARE_TRACING
+	bool "Hardware Tracing"
+	help
+		Enable tracing using the hardware capabilities
+
+config SOFTWARE_TRACING
+	bool "Software Tracing"
+	help
+		Enable tracing using the software capabilities
+
+endchoice # Tracing Mode
+
+if HARDWARE_TRACING
+
+config TRACING_ETM
+	bool "Tracing via ARM Embedded Trace Macrocell"
+	depends on HAS_ARM_ETM
+	help
+	  Enable the ARM Embedded Trace Macrocell.
+
+endif # Hardware Tracing
+
+if SOFTWARE_TRACING
+
 config TRACING_CORE
 	bool
 	help
@@ -52,11 +80,6 @@ config TRACING_CTF
 	select TRACING_CORE
 	help
 	  Enable tracing to a Common Trace Format stream.
-
-config TRACING_ETM
-	bool "Tracing via ARM Embedded Trace Macrocell"
-	help
-	  Enable the ARM Embedded Trace Macrocell.
 
 config TRACING_TEST
 	bool "Tracing for test usage"
@@ -320,6 +343,8 @@ config TRACING_EVENT
 
 endmenu  # Tracing Configuration
 
-endif
+endif  # Software Tracing
+
+endif  # Tracing Support
 
 source "subsys/tracing/sysview/Kconfig"

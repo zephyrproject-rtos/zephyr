@@ -56,6 +56,11 @@ config NRF_SPU_RAM_REGION_SIZE
 	  RAM region size for the NRF_SPU peripheral
 endif
 
+config HAS_ARM_ETM
+	bool
+	help
+	  When enabled, indicates that SoC supports Embedded Trace Macrocell (ETM)
+
 config HAS_SWO
 	bool
 	help
