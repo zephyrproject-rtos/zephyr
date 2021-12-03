@@ -324,6 +324,54 @@ struct adc_sequence {
 	bool calibrate;
 };
 
+enum adc_threshold_assert_mode {
+	ADC_THR_ASSERT_MODE_NONE,
+	ADC_THR_ASSERT_MODE_RISE,
+	ADC_THR_ASSERT_MODE_FALL,
+	ADC_THR_ASSERT_MODE_MAX,
+};
+
+/**
+ * @brief Structure used to configure threshold interruption.
+ */
+struct adc_threshold_cfg {
+	/**
+	 * ADC channel.
+	 * This is the ADC channel that will be actively used to measure.
+	 */
+	uint8_t channel_id;
+
+	/**
+	 * Threshold identifier.
+	 * This number is used to identify threshold being configured,
+	 * values are ranged:
+	 *   0 .. MAX thresholds supported.
+	 * Single ADC channel can support multiple thresholds, and one threshold
+	 * is associated with a single ADC channel and assertion value.
+	 */
+	uint8_t threshold_id;
+
+	/**
+	 * Threshold assert value
+	 * Establish the threshold assertion value in mV.
+	 */
+	uint16_t assert_value;
+
+	/**
+	 * Threshold operation mode
+	 * Determines relation between measured value and assertion threshold
+	 * value. Example:
+	 * ADC_THR_MODE_RISE (ADC measured value > threshold assertion value)
+	 * ADC_THR_MODE_FALL (ADC measured value <= threshold assertion value)
+	 */
+	enum adc_threshold_assert_mode assert_mode;
+
+	/**
+	 * Interruption callback
+	 * Pointer to function to be called when threshold is asserted.
+	 */
+	void (*adc_threshold_cb)(void);
+};
 
 /**
  * @brief Type definition of ADC API function for configuring a channel.
@@ -349,6 +397,31 @@ typedef int (*adc_api_read_async)(const struct device *dev,
 				  struct k_poll_signal *async);
 
 /**
+ * @brief Type definition of ADC API function for configuring adc threshold
+ *        interruption.
+ * See adc_api_config_threshold_irq() for argument descriptions.
+ */
+typedef int (*adc_api_config_threshold_irq)(const struct device *dev,
+					    const struct adc_threshold_cfg
+					    *threshold_cfg);
+
+/**
+ * @brief Type definition of ADC API function for enabling adc threshold
+ *        interruption.
+ * See adc_api_enable_threshold_irq() for argument descriptions.
+ */
+typedef int (*adc_api_enable_threshold_irq)(const struct device *dev,
+				     const uint8_t threshold_id);
+
+/**
+ * @brief Type definition of ADC API function for disabling adc threshold
+ *        interruption.
+ * See adc_api_disable_threshold_irq() for argument descriptions.
+ */
+typedef int (*adc_api_disable_threshold_irq)(const struct device *dev,
+				      const uint8_t threshold_id);
+
+/**
  * @brief ADC driver API
  *
  * This is the mandatory API any ADC driver needs to expose.
@@ -359,6 +432,12 @@ __subsystem struct adc_driver_api {
 #ifdef CONFIG_ADC_ASYNC
 	adc_api_read_async    read_async;
 #endif
+#ifdef CONFIG_ADC_THRESHOLD_IRQ
+	adc_api_config_threshold_irq   config_threshold_irq;
+	adc_api_enable_threshold_irq   enable_threshold_irq;
+	adc_api_disable_threshold_irq  disable_threshold_irq;
+ #endif
+
 	uint16_t ref_internal;	/* mV */
 };
 
@@ -472,6 +551,97 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
 
 	return api->ref_internal;
 }
+
+/**
+ * @brief Configure ADC threshold interruptions.
+ *
+ * @note This function is available only if @kconfig{CONFIG_ADC_THRESHOLD_IRQ}
+ * is selected.
+ *
+ * Allows user to configure ADC threshold interruption.
+ *
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @theshold_cfg    Pointer to structure used to configure ADC threshold
+ *                  interruption parameters. Error is returned if NULL.
+ *
+ * @returns 0 on success, negative error code otherwise.
+ *          Once threshold is successfully configured, it can be enabled using
+ *          adc_enable_threshold_irq.
+ */
+__syscall int adc_config_threshold_irq(const struct device *dev,
+				       const struct adc_threshold_cfg *theshold_cfg);
+
+#ifdef CONFIG_ADC_THRESHOLD_IRQ
+static inline int z_impl_adc_config_threshold_irq(const struct device *dev,
+						  const struct adc_threshold_cfg
+						  *theshold_cfg)
+{
+	const struct adc_driver_api *api =
+				(const struct adc_driver_api *)dev->api;
+
+	return api->config_threshold_irq(dev, theshold_cfg);
+}
+#endif /* CONFIG_ADC_THRESHOLD_IRQ */
+
+/**
+ * @brief Enable ADC threshold interruptions.
+ *
+ * @note This function is available only if @kconfig{CONFIG_ADC_THRESHOLD_IRQ}
+ * is selected.
+ *
+ * Upon successful ADC Threshold interruption configuration, this function is
+ * used to enable interrruption.
+ *
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @threshold_id    Threshold identifier previously passed to function
+ *                  adc_config_threshold_irq using theshold_cfg->threshold_id.
+ *
+ * @returns 0 on success, negative error code otherwise.
+ *          Upon successful execution, function passed to the function
+ *          adc_config_threshold_irq will be invoked when threshold conditions
+ *          are met.
+ */
+__syscall int adc_enable_threshold_irq(const struct device *dev,
+				       const uint8_t threshold_id);
+
+#ifdef CONFIG_ADC_THRESHOLD_IRQ
+static inline int z_impl_adc_enable_threshold_irq(const struct device *dev,
+						  const uint8_t threshold_id)
+{
+	const struct adc_driver_api *api =
+				(const struct adc_driver_api *)dev->api;
+
+	return api->enable_threshold_irq(dev, threshold_id);
+}
+#endif /* CONFIG_ADC_THRESHOLD_IRQ */
+
+/**
+ * @brief Disable ADC threshold interruptions.
+ *
+ * @note This function is available only if @kconfig{CONFIG_ADC_THRESHOLD_IRQ}
+ * is selected.
+ *
+ * Disables previously configured ADC threshold interrutpion.
+ *
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @threshold_id    Threshold identifier previously passed to function
+ *                  adc_config_threshold_irq using theshold_cfg->threshold_id.
+ *
+ * @returns 0 on success, negative error code otherwise.
+ */
+__syscall int adc_disable_threshold_irq(const struct device *dev,
+				       const uint8_t threshold_id);
+
+#ifdef CONFIG_ADC_THRESHOLD_IRQ
+static inline int z_impl_adc_disable_threshold_irq(const struct device *dev,
+						   const uint8_t threshold_id)
+{
+	const struct adc_driver_api *api =
+				(const struct adc_driver_api *)dev->api;
+
+	return api->disable_threshold_irq(dev, threshold_id);
+}
+#endif /* CONFIG_ADC_THRESHOLD_IRQ */
 
 /**
  * @}

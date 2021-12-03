@@ -18,6 +18,10 @@ properties:
         type: phandles
         required: true
         description: configurations of pinmux controllers
+    threshold-count:
+        type: int
+        required: true
+        description: the number of adc threshold detector
 
 io-channel-cells:
     - input

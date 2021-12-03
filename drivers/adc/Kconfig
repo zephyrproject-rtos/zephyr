@@ -40,6 +40,11 @@ config ADC_INIT_PRIORITY
 	help
 	  ADC driver device initialization priority.
 
+config ADC_THRESHOLD_IRQ
+	bool "Enable threshold interruption support"
+	help
+	  This option enables the threshold interruption API calls.
+
 module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"
