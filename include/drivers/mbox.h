@@ -405,7 +405,21 @@ static inline int z_impl_mbox_mtu_get(const struct device *dev)
 }
 
 /**
- * @brief Enable interrupts and callbacks for inbound channels.
+ * @brief Enable (disable) interrupts and callbacks for inbound channels.
+ *
+ * Enable interrupt for the channel when the parameter 'enable' is set to true.
+ * Disable it otherwise.
+ *
+ * Immediately after calling this function with 'enable' set to true, the
+ * channel is considered enabled and ready to receive signal and messages (even
+ * already pending), so the user must take care of installing a proper callback
+ * (if needed) using @a mbox_register_callback() on the channel before enabling
+ * it. For this reason it is recommended that all the channels are disabled at
+ * probe time.
+ *
+ * Enabling a channel for which there is no installed callback is considered
+ * undefined behavior (in general the driver must take care of gracefully
+ * handling spurious interrupts with no installed callback).
  *
  * @param channel Channel instance pointer.
  * @param enable Set to 0 to disable and to nonzero to enable.
