@@ -40,10 +40,12 @@ The PineTime is based on a Nordic NRF52832 chip and features:
 - BMA421 Triaxial Acceleration Sensor
 - HRS3300 PPG Heart Rate Sensor
 
-PineTime Port Assignment
+PineTime schematics
 ========================
 
-See `PineTime schematics`_
+The `PineTime schematics`_ are available on the pine64 website. Below
+is an overview of the NRF52 port assignment.
+
 +----------------------+---------------------------------+-----------+
 | NRF52 pins           | Function                        | Direction |
 +======================+=================================+===========+
