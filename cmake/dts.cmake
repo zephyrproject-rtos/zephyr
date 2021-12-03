@@ -183,50 +183,6 @@ if(SUPPORTS_DTS)
     )
 
   #
-  # Run the C devicetree compiler on *.dts.pre.tmp, just to catch any
-  # warnings/errors from it. dtlib and edtlib parse the devicetree files
-  # themselves, so we don't rely on the C compiler otherwise.
-  #
-
-  if(DTC)
-  set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
-  check_dtc_flag("-Wunique_unit_address_if_enabled" check)
-  if (check)
-    set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
-  endif()
-  set(DTC_NO_WARN_UNIT_ADDR "")
-  check_dtc_flag("-Wno-unique_unit_address" check)
-  if (check)
-    set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
-  endif()
-  set(VALID_EXTRA_DTC_FLAGS "")
-  foreach(extra_opt ${EXTRA_DTC_FLAGS})
-    check_dtc_flag(${extra_opt} check)
-    if (check)
-      list(APPEND VALID_EXTRA_DTC_FLAGS ${extra_opt})
-    endif()
-  endforeach()
-  set(EXTRA_DTC_FLAGS ${VALID_EXTRA_DTC_FLAGS})
-  execute_process(
-    COMMAND ${DTC}
-    -O dts
-    -o - # Write output to stdout, which we discard below
-    -b 0
-    -E unit_address_vs_reg
-    ${DTC_NO_WARN_UNIT_ADDR}
-    ${DTC_WARN_UNIT_ADDR_IF_ENABLED}
-    ${EXTRA_DTC_FLAGS} # User settable
-    ${BOARD}.dts.pre.tmp
-    OUTPUT_QUIET # Discard stdout
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    RESULT_VARIABLE ret
-    )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
-  endif()
-  endif(DTC)
-
-  #
   # Run gen_defines.py to create a header file, zephyr.dts, and edt.pickle.
   #
 
@@ -269,6 +225,49 @@ if(SUPPORTS_DTS)
     include(${DTS_CMAKE})
   endif()
 
+  #
+  # Run the C devicetree compiler on *.dts.pre.tmp, just to catch any
+  # warnings/errors from it. dtlib and edtlib parse the devicetree files
+  # themselves, so we don't rely on the C compiler otherwise.
+  #
+
+  if(DTC)
+  set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
+  check_dtc_flag("-Wunique_unit_address_if_enabled" check)
+  if (check)
+    set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
+  endif()
+  set(DTC_NO_WARN_UNIT_ADDR "")
+  check_dtc_flag("-Wno-unique_unit_address" check)
+  if (check)
+    set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
+  endif()
+  set(VALID_EXTRA_DTC_FLAGS "")
+  foreach(extra_opt ${EXTRA_DTC_FLAGS})
+    check_dtc_flag(${extra_opt} check)
+    if (check)
+      list(APPEND VALID_EXTRA_DTC_FLAGS ${extra_opt})
+    endif()
+  endforeach()
+  set(EXTRA_DTC_FLAGS ${VALID_EXTRA_DTC_FLAGS})
+  execute_process(
+    COMMAND ${DTC}
+    -O dts
+    -o - # Write output to stdout, which we discard below
+    -b 0
+    -E unit_address_vs_reg
+    ${DTC_NO_WARN_UNIT_ADDR}
+    ${DTC_WARN_UNIT_ADDR_IF_ENABLED}
+    ${EXTRA_DTC_FLAGS} # User settable
+    ${BOARD}.dts.pre.tmp
+    OUTPUT_QUIET # Discard stdout
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
+  endif(DTC)
 else()
   file(WRITE ${DEVICETREE_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
   file(WRITE ${DEVICE_EXTERN_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
