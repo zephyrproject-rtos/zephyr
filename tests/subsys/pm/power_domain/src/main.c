@@ -8,14 +8,15 @@
 #include <pm/device.h>
 #include <pm/device_runtime.h>
 
-static int testing_domain_on_notitication;
-static int testing_domain_off_notitication;
+#define NUMBER_OF_DEVICES 3
 
 #define TEST_DOMAIN DT_NODELABEL(test_domain)
 #define TEST_DEVA DT_NODELABEL(test_dev_a)
 #define TEST_DEVB DT_NODELABEL(test_dev_b)
 
-static const struct device *domain, *deva, *devb;
+static const struct device *domain, *deva, *devb, *devc;
+static int testing_domain_on_notitication;
+static int testing_domain_off_notitication;
 
 static int dev_init(const struct device *dev)
 {
@@ -106,6 +107,11 @@ PM_DEVICE_DT_DEFINE(TEST_DEVB, devb_pm_action);
 DEVICE_DT_DEFINE(TEST_DEVB, dev_init, PM_DEVICE_DT_GET(TEST_DEVB),
 		 NULL, NULL, POST_KERNEL, 30, NULL);
 
+PM_DEVICE_DEFINE(devc, deva_pm_action);
+DEVICE_DEFINE(devc, "devc", dev_init, PM_DEVICE_GET(devc),
+	      NULL, NULL,
+	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+
 /**
  * @brief Test the power domain behavior
  *
@@ -122,14 +128,23 @@ static void test_power_domain_device_runtime(void)
 	domain = DEVICE_DT_GET(TEST_DOMAIN);
 	deva = DEVICE_DT_GET(TEST_DEVA);
 	devb = DEVICE_DT_GET(TEST_DEVB);
+	devc = DEVICE_GET(devc);
 
 	pm_device_init_suspended(domain);
 	pm_device_init_suspended(deva);
 	pm_device_init_suspended(devb);
+	pm_device_init_suspended(devc);
 
 	pm_device_runtime_enable(domain);
 	pm_device_runtime_enable(deva);
 	pm_device_runtime_enable(devb);
+	pm_device_runtime_enable(devc);
+
+	ret = pm_device_power_domain_remove(devc, domain);
+	zassert_equal(ret, -ENOENT, NULL);
+
+	ret = pm_device_power_domain_add(devc, domain);
+	zassert_equal(ret, 0, NULL);
 
 	/* At this point all devices should be SUSPENDED */
 	pm_device_state_get(domain, &state);
@@ -141,6 +156,9 @@ static void test_power_domain_device_runtime(void)
 	pm_device_state_get(devb, &state);
 	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
 
+	pm_device_state_get(devc, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
+
 	/* Now test if "get" a device will resume the domain */
 	ret = pm_device_runtime_get(deva);
 	zassert_equal(ret, 0, NULL);
@@ -150,6 +168,9 @@ static void test_power_domain_device_runtime(void)
 
 	pm_device_state_get(domain, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE, NULL);
+
+	ret = pm_device_runtime_get(devc);
+	zassert_equal(ret, 0, NULL);
 
 	ret = pm_device_runtime_get(devb);
 	zassert_equal(ret, 0, NULL);
@@ -171,6 +192,9 @@ static void test_power_domain_device_runtime(void)
 	ret = pm_device_runtime_put(devb);
 	zassert_equal(ret, 0, NULL);
 
+	ret = pm_device_runtime_put(devc);
+	zassert_equal(ret, 0, NULL);
+
 	pm_device_state_get(domain, &state);
 	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
 
@@ -190,17 +214,20 @@ static void test_power_domain_device_runtime(void)
 	 */
 
 	/* Three devices has to get the notification */
-	testing_domain_on_notitication = 2;
+	testing_domain_on_notitication = NUMBER_OF_DEVICES;
 	ret = pm_device_runtime_get(domain);
 	zassert_equal(ret, 0, NULL);
 
 	zassert_equal(testing_domain_on_notitication, 0, NULL);
 
-	testing_domain_off_notitication = 2;
+	testing_domain_off_notitication = NUMBER_OF_DEVICES;
 	ret = pm_device_runtime_put(domain);
 	zassert_equal(ret, 0, NULL);
 
 	zassert_equal(testing_domain_off_notitication, 0, NULL);
+
+	ret = pm_device_power_domain_remove(devc, domain);
+	zassert_equal(ret, 0, NULL);
 }
 
 void test_main(void)
