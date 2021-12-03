@@ -74,7 +74,11 @@ struct uarte_async_cb {
 
 	const uint8_t *tx_buf;
 	volatile size_t tx_size;
-	uint8_t *pend_tx_buf;
+	const uint8_t *xfer_buf;
+	size_t xfer_len;
+
+	uint8_t tx_cache[CONFIG_UART_ASYNC_TX_CACHE_SIZE];
+	size_t tx_cache_offset;
 
 	struct k_timer tx_timeout_timer;
 
@@ -100,6 +104,7 @@ struct uarte_async_cb {
 	uint8_t rx_flush_cnt;
 	bool rx_enabled;
 	bool hw_rx_counting;
+	bool pending_tx;
 	/* Flag to ensure that RX timeout won't be executed during ENDRX ISR */
 	volatile bool is_in_irq;
 };
@@ -735,16 +740,50 @@ static int uarte_nrfx_init(const struct device *dev)
 	return 0;
 }
 
+/* Attempt to start TX (asynchronous transfer). If hardware is not ready, then pending
+ * flag is set. When current poll_out is completed, pending transfer is started.
+ * Function must be called with interrupts locked.
+ */
+static void start_tx_locked(const struct device *dev, struct uarte_nrfx_data *data)
+{
+	if (!is_tx_ready(dev)) {
+		/* Active poll out, postpone until it is completed. */
+		data->async->pending_tx = true;
+	} else {
+		data->async->pending_tx = false;
+		data->async->tx_amount = -1;
+		tx_start(dev, data->async->xfer_buf, data->async->xfer_len);
+	}
+}
+
+/* Setup cache buffer (used for sending data outside of RAM memory).
+ * During setup data is copied to cache buffer and transfer length is set.
+ *
+ * @return True if cache was set, false if no more data to put in cache.
+ */
+static bool setup_tx_cache(struct uarte_nrfx_data *data)
+{
+	size_t remaining = data->async->tx_size - data->async->tx_cache_offset;
+
+	if (!remaining) {
+		return false;
+	}
+
+	size_t len = MIN(remaining, sizeof(data->async->tx_cache));
+
+	data->async->xfer_len = len;
+	data->async->xfer_buf = data->async->tx_cache;
+	memcpy(data->async->tx_cache, &data->async->tx_buf[data->async->tx_cache_offset], len);
+
+	return true;
+}
+
 static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 			 size_t len,
 			 int32_t timeout)
 {
 	struct uarte_nrfx_data *data = dev->data;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-
-	if (!nrfx_is_in_ram(buf)) {
-		return -ENOTSUP;
-	}
 
 	int key = irq_lock();
 
@@ -754,16 +793,18 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 	}
 
 	data->async->tx_size = len;
+	data->async->tx_buf = buf;
 	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 
-	if (!is_tx_ready(dev)) {
-		/* Active poll out, postpone until it is completed. */
-		data->async->pend_tx_buf = (uint8_t *)buf;
+	if (nrfx_is_in_ram(buf)) {
+		data->async->xfer_buf = buf;
+		data->async->xfer_len = len;
 	} else {
-		data->async->tx_buf = buf;
-		data->async->tx_amount = -1;
-		tx_start(dev, buf, len);
+		data->async->tx_cache_offset = 0;
+		(void)setup_tx_cache(data);
 	}
+
+	start_tx_locked(dev, data);
 
 	irq_unlock(key);
 
@@ -783,6 +824,8 @@ static int uarte_nrfx_tx_abort(const struct device *dev)
 	if (data->async->tx_buf == NULL) {
 		return -EFAULT;
 	}
+
+	data->async->pending_tx = false;
 	k_timer_stop(&data->async->tx_timeout_timer);
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
 
@@ -1315,34 +1358,49 @@ static void txstopped_isr(const struct device *dev)
 	}
 
 	if (!data->async->tx_buf) {
-		/* If there is a pending tx request, it means that uart_tx()
-		 * was called when there was ongoing uart_poll_out. Handling
-		 * TXSTOPPED interrupt means that uart_poll_out has completed.
-		 */
-		if (data->async->pend_tx_buf) {
-			key = irq_lock();
-
-			if (nrf_uarte_event_check(uarte,
-						NRF_UARTE_EVENT_TXSTOPPED)) {
-				data->async->tx_buf = data->async->pend_tx_buf;
-				data->async->pend_tx_buf = NULL;
-				data->async->tx_amount = -1;
-				tx_start(dev, data->async->tx_buf,
-					 data->async->tx_size);
-			}
-
-			irq_unlock(key);
-		}
 		return;
 	}
-
-	k_timer_stop(&data->async->tx_timeout_timer);
 
 	key = irq_lock();
 	size_t amount = (data->async->tx_amount >= 0) ?
 			data->async->tx_amount : nrf_uarte_tx_amount_get(uarte);
 
 	irq_unlock(key);
+
+	/* If there is a pending tx request, it means that uart_tx()
+	 * was called when there was ongoing uart_poll_out. Handling
+	 * TXSTOPPED interrupt means that uart_poll_out has completed.
+	 */
+	if (data->async->pending_tx) {
+		key = irq_lock();
+		start_tx_locked(dev, data);
+		irq_unlock(key);
+		return;
+	}
+
+	/* Cache buffer is used because tx_buf wasn't in RAM. */
+	if (data->async->tx_buf != data->async->xfer_buf) {
+		/* In that case setup next chunk. If that was the last chunk
+		 * fall back to reporting TX_DONE.
+		 */
+		if (amount == data->async->xfer_len) {
+			data->async->tx_cache_offset += amount;
+			if (setup_tx_cache(data)) {
+				key = irq_lock();
+				start_tx_locked(dev, data);
+				irq_unlock(key);
+				return;
+			}
+
+			/* Amount is already included in tx_cache_offset. */
+			amount = data->async->tx_cache_offset;
+		} else {
+			/* TX was aborted, include tx_cache_offset in amount. */
+			amount += data->async->tx_cache_offset;
+		}
+	}
+
+	k_timer_stop(&data->async->tx_timeout_timer);
 
 	struct uart_event evt = {
 		.data.tx.buf = data->async->tx_buf,
