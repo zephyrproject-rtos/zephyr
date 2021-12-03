@@ -180,7 +180,7 @@
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
 /doc/guides/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
-/doc/guides/dts/                          @galak @mbolivar-nordic
+/doc/guides/build/dts/                    @galak @mbolivar-nordic
 /doc/reference/bluetooth/                 @alwa-nordic @jhedberg @Vudentz
 /doc/reference/devicetree/                @galak @mbolivar-nordic
 /doc/reference/networking/can*            @alexanderwachter

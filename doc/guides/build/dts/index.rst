@@ -1,7 +1,9 @@
 .. _dt-guide:
 
-Devicetree Guide
-################
+Devicetree
+##########
+
+Zephyr uses devicetree to describe hardware and set its initial configuration.
 
 This is a high-level guide to devicetree as it is used for Zephyr development.
 See :ref:`devicetree` for reference material.
@@ -15,4 +17,3 @@ See :ref:`devicetree` for reference material.
    api-usage.rst
    howtos.rst
    troubleshooting.rst
-   dt-vs-kconfig.rst

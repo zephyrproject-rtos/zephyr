@@ -364,7 +364,7 @@ Devicetree:
         - dts/common/
         - tests/lib/devicetree/
         - dts/bindings/test/
-        - doc/guides/dts/
+        - doc/guides/build/dts/
         - include/devicetree/
     labels:
         - "area: Devicetree"

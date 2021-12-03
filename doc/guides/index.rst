@@ -16,7 +16,6 @@ User and Developer Guides
    flash_debug/index
    debug_tools/index
    device_mgmt/index
-   dts/index
    pinctrl/index
    pm/index
    emulator/index.rst
