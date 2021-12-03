@@ -5034,6 +5034,13 @@ static inline bool is_dup_or_update(struct dup_entry *dup, uint8_t adv_type,
 			if (adv_set->adi.did != adi->did) {
 				/* report different DID */
 				adv_set->adi.did = adi->did;
+				/* set new data status */
+				if (data_status ==
+				    BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+					adv_set->data_cmplt = 1U;
+				} else {
+					adv_set->data_cmplt = 0U;
+				}
 				return false;
 			} else if (!adv_set->data_cmplt &&
 				   (data_status ==
