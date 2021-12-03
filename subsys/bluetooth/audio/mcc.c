@@ -911,6 +911,10 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 {
 	uint16_t handle = params->value_handle;
 
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	BT_DBG("Notification, handle: %d", handle);
 
 	if (data) {
