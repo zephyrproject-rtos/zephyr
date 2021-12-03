@@ -60,7 +60,13 @@ static uint8_t mute_notify_handler(struct bt_conn *conn,
 				   const void *data, uint16_t length)
 {
 	uint8_t *mute_val;
-	struct bt_mics *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics *mics_inst;
+
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	if (data != NULL) {
 		if (length == sizeof(*mute_val)) {
