@@ -504,7 +504,7 @@ process_string:
 	 * then we have it now.
 	 */
 	if (!buf0) {
-		return len + buf - buf0;
+		return len + (uintptr_t)buf;
 	}
 
 	/* Clear our buffer header. We made room for it initially. */
