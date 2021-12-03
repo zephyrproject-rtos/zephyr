@@ -150,7 +150,7 @@ static uint32_t dup_curr;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 /* Helper function to reset non-periodic advertising entries in filter table */
-static void dup_ext_adv_reset(int count);
+static void dup_ext_adv_reset(void);
 /* Flag for advertising reports be filtered for duplicates. */
 static bool dup_scan;
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
@@ -1688,7 +1688,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 			dup_curr = 0U;
 		} else if (!dup_scan) {
 			dup_scan = true;
-			dup_ext_adv_reset(dup_count);
+			dup_ext_adv_reset();
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 
 		} else {
@@ -3477,7 +3477,7 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 			dup_curr = 0U;
 		} else if (!dup_scan) {
 			dup_scan = true;
-			dup_ext_adv_reset(dup_count);
+			dup_ext_adv_reset();
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 
 		} else {
@@ -4981,11 +4981,11 @@ static void dup_ext_adv_mode_reset(struct dup_ext_adv_mode *dup_adv_mode)
 }
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
-static void dup_ext_adv_reset(int count)
+static void dup_ext_adv_reset(void)
 {
 	int i;
 
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < dup_count; i++) {
 		struct dup_entry *dup;
 
 		dup = &dup_filter[i];
