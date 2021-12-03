@@ -49,7 +49,13 @@ uint8_t vocs_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 				   const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct bt_vocs *inst = lookup_vocs_by_handle(conn, handle);
+	struct bt_vocs *inst;
+
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	inst = lookup_vocs_by_handle(conn, handle);
 
 	if (!inst) {
 		BT_DBG("Instance not found");
