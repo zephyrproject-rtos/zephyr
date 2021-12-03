@@ -51,9 +51,15 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 				   const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct bt_aics *inst = lookup_aics_by_handle(conn, handle);
+	struct bt_aics *inst;
 	struct bt_aics_state *state;
 	uint8_t *status;
+
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	inst = lookup_aics_by_handle(conn, handle);
 
 	if (!inst) {
 		BT_DBG("Instance not found");
