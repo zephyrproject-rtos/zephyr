@@ -38,6 +38,12 @@ LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
  */
 static sys_slist_t routes;
 
+/* Track currently active route lifetime timers */
+static sys_slist_t active_route_lifetime_timers;
+
+/* Timer that manages expired route entires. */
+static struct k_work_delayable route_lifetime_timer;
+
 static void net_route_nexthop_remove(struct net_nbr *nbr)
 {
 	NET_DBG("Nexthop %p removed", nbr);
@@ -305,7 +311,8 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 struct net_route_entry *net_route_add(struct net_if *iface,
 				      struct in6_addr *addr,
 				      uint8_t prefix_len,
-				      struct in6_addr *nexthop)
+				      struct in6_addr *nexthop,
+				      uint32_t lifetime)
 {
 	struct net_linkaddr_storage *nexthop_lladdr;
 	struct net_nbr *nbr, *nbr_nexthop, *tmp;
@@ -348,6 +355,10 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 		nexthop_addr = net_route_get_nexthop(route);
 		if (nexthop_addr && net_ipv6_addr_cmp(nexthop, nexthop_addr)) {
 			NET_DBG("No changes, return old route %p", route);
+
+			/* Reset lifetime timer. */
+			net_route_update_lifetime(route, lifetime);
+
 			return route;
 		}
 
@@ -408,6 +419,8 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 	route = net_route_data(nbr);
 	route->iface = iface;
 
+	net_route_update_lifetime(route, lifetime);
+
 	sys_slist_prepend(&routes, &route->node);
 
 	tmp = nbr_nexthop_get(iface, nexthop);
@@ -436,6 +449,76 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 	return route;
 }
 
+static void route_expired(struct net_route_entry *route)
+{
+	NET_DBG("Route to %s expired",
+		log_strdup(net_sprint_ipv6_addr(&route->addr)));
+
+	sys_slist_find_and_remove(&active_route_lifetime_timers,
+				  &route->lifetime.node);
+
+	net_route_del(route);
+}
+
+static void route_lifetime_timeout(struct k_work *work)
+{
+	uint32_t next_update = UINT32_MAX;
+	uint32_t current_time = k_uptime_get_32();
+	struct net_route_entry *current, *next;
+
+	ARG_UNUSED(work);
+
+	/* TODO mutex protection */
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_route_lifetime_timers,
+					  current, next, lifetime.node) {
+		struct net_timeout *timeout = &current->lifetime;
+		uint32_t this_update = net_timeout_evaluate(timeout,
+							    current_time);
+
+		if (this_update == 0U) {
+			route_expired(current);
+			continue;
+		}
+
+		if (this_update < next_update) {
+			next_update = this_update;
+		}
+	}
+
+	if (next_update != UINT32_MAX) {
+		k_work_reschedule(&route_lifetime_timer, K_MSEC(next_update));
+	}
+}
+
+void net_route_update_lifetime(struct net_route_entry *route, uint32_t lifetime)
+{
+	NET_DBG("Updating route lifetime of %s to %u secs",
+		log_strdup(net_sprint_ipv6_addr(&route->addr)),
+		lifetime);
+
+	if (!route) {
+		return;
+	}
+
+	if (lifetime == NET_IPV6_ND_INFINITE_LIFETIME) {
+		route->is_infinite = true;
+
+		(void)sys_slist_find_and_remove(&active_route_lifetime_timers,
+						&route->lifetime.node);
+	} else {
+		route->is_infinite = false;
+
+		net_timeout_set(&route->lifetime, lifetime, k_uptime_get_32());
+
+		(void)sys_slist_find_and_remove(&active_route_lifetime_timers,
+						&route->lifetime.node);
+		sys_slist_append(&active_route_lifetime_timers,
+				 &route->lifetime.node);
+		k_work_reschedule(&route_lifetime_timer, K_NO_WAIT);
+	}
+}
+
 int net_route_del(struct net_route_entry *route)
 {
 	struct net_nbr *nbr;
@@ -460,6 +543,15 @@ int net_route_del(struct net_route_entry *route)
 #else
 	net_mgmt_event_notify(NET_EVENT_IPV6_ROUTE_DEL, route->iface);
 #endif
+
+	if (!route->is_infinite) {
+		sys_slist_find_and_remove(&active_route_lifetime_timers,
+					  &route->lifetime.node);
+
+		if (sys_slist_is_empty(&active_route_lifetime_timers)) {
+			k_work_cancel_delayable(&route_lifetime_timer);
+		}
+	}
 
 	sys_slist_find_and_remove(&routes, &route->node);
 
@@ -927,4 +1019,6 @@ void net_route_init(void)
 
 	NET_DBG("Allocated %d nexthop entries (%zu bytes)",
 		CONFIG_NET_MAX_NEXTHOPS, sizeof(net_route_nexthop_pool));
+
+	k_work_init_delayable(&route_lifetime_timer, route_lifetime_timeout);
 }
