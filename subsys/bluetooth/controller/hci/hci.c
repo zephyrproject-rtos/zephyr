@@ -6381,20 +6381,23 @@ no_ext_hdr:
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT) &&
 		   adi) {
 		const struct ll_sync_set *sync = HDR_LLL2ULL(ftr->param);
+		uint8_t data_status;
 
-		/* FIXME: Use correct data status else chain PDU report will
-		 *        be filtered out.
-		 */
+		data_status = (aux_ptr) ?
+			      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL :
+			      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
+
 		accept = ftr->sync_rx_enabled &&
 			 (!sync->nodups ||
 			  !dup_found(PDU_ADV_TYPE_EXT_IND,
 				     sync->peer_id_addr_type,
 				     sync->peer_id_addr,
 				     DUP_EXT_ADV_MODE_PERIODIC,
-				     adi, 0U));
+				     adi, data_status));
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 &&
 	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
 	*/
+
 	} else {
 		accept = ftr->sync_rx_enabled;
 	}
