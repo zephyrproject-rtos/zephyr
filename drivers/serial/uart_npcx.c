@@ -32,6 +32,13 @@ struct uart_npcx_config {
 	const struct npcx_alt *alts_list;
 };
 
+enum uart_pm_constraint_flag {
+	UART_PM_CONSTRAINT_TX_FLAG,
+	UART_PM_CONSTRAINT_RX_FLAG,
+
+	UART_PM_CONSTRAINT_FLAG_COUNT,
+};
+
 /* Driver data */
 struct uart_npcx_data {
 	/* Baud rate */
@@ -42,7 +49,10 @@ struct uart_npcx_data {
 	void *user_data;
 #endif
 #ifdef CONFIG_PM
-	atomic_t pm_constraint_on;
+	ATOMIC_DEFINE(pm_constraint_flag, UART_PM_CONSTRAINT_FLAG_COUNT);
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	struct k_work_delayable rx_refresh_timeout_work;
+#endif
 #endif
 };
 
@@ -57,20 +67,18 @@ struct uart_npcx_data {
 	(struct uart_reg *)(DRV_CONFIG(dev)->uconf.base)
 
 #if defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
-static void uart_npcx_pm_constraint_set(const struct device *dev)
+static void uart_npcx_pm_constraint_set(struct uart_npcx_data *data,
+					enum uart_pm_constraint_flag flag)
 {
-	struct uart_npcx_data *data = DRV_DATA(dev);
-
-	if (atomic_set(&data->pm_constraint_on, 1) == 0) {
+	if (atomic_test_and_set_bit(data->pm_constraint_flag, flag) == 0) {
 		pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
 	}
 }
 
-static void uart_npcx_pm_constraint_release(const struct device *dev)
+static void uart_npcx_pm_constraint_rel(struct uart_npcx_data *data,
+					enum uart_pm_constraint_flag flag)
 {
-	struct uart_npcx_data *data = DRV_DATA(dev);
-
-	if (atomic_clear(&data->pm_constraint_on) == 1) {
+	if (atomic_test_and_clear_bit(data->pm_constraint_flag, flag) == 1) {
 		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
 	}
 }
@@ -146,7 +154,9 @@ static int uart_npcx_fifo_fill(const struct device *dev,
 	while ((size - tx_bytes > 0) && uart_npcx_tx_fifo_ready(dev)) {
 		/* Put a character into Tx FIFO */
 #ifdef CONFIG_PM
-		uart_npcx_pm_constraint_set(dev);
+		struct uart_npcx_data *data = DRV_DATA(dev);
+
+		uart_npcx_pm_constraint_set(data, UART_PM_CONSTRAINT_TX_FLAG);
 		inst->UTBUF = tx_data[tx_bytes++];
 		inst->UFTCTL |= BIT(NPCX_UFTCTL_NXMIP_EN);
 #else
@@ -259,11 +269,19 @@ static void uart_npcx_isr(const struct device *dev)
 {
 	struct uart_npcx_data *data = DRV_DATA(dev);
 
-	/* Refresh console expired time if got UART Rx event */
-	if (IS_ENABLED(CONFIG_UART_CONSOLE_INPUT_EXPIRED) &&
-		       uart_npcx_irq_rx_ready(dev)) {
-		npcx_power_console_is_in_use_refresh();
+	/*
+	 * Set pm constraint to prevent the system enter suspend state within
+	 * the CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT period.
+	 */
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	if (uart_npcx_irq_rx_ready(dev)) {
+		k_timeout_t delay =
+			K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
+
+		uart_npcx_pm_constraint_set(data, UART_PM_CONSTRAINT_RX_FLAG);
+		k_work_reschedule(&data->rx_refresh_timeout_work, delay);
 	}
+#endif
 
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);
@@ -273,7 +291,7 @@ static void uart_npcx_isr(const struct device *dev)
 
 	if (IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_NXMIP_EN) &&
 	    IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP)) {
-		uart_npcx_pm_constraint_release(dev);
+		uart_npcx_pm_constraint_rel(data, UART_PM_CONSTRAINT_TX_FLAG);
 		inst->UFTCTL &= ~BIT(NPCX_UFTCTL_NXMIP_EN);
 	}
 #endif /* CONFIG_PM */
@@ -353,10 +371,17 @@ static int uart_npcx_err_check(const struct device *dev)
 static __unused void uart_npcx_rx_wk_isr(const struct device *dev,
 						struct npcx_wui *wui)
 {
-	/* Refresh console expired time if got UART Rx wake-up event */
-	if (IS_ENABLED(CONFIG_UART_CONSOLE_INPUT_EXPIRED)) {
-		npcx_power_console_is_in_use_refresh();
-	}
+	/*
+	 * Set pm constraint to prevent the system enter suspend state within
+	 * the CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT period.
+	 */
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	struct uart_npcx_data *data = DRV_DATA(dev);
+	k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
+
+	uart_npcx_pm_constraint_set(data, UART_PM_CONSTRAINT_RX_FLAG);
+	k_work_reschedule(&data->rx_refresh_timeout_work, delay);
+#endif
 
 	/*
 	 * Disable MIWU CR_SIN interrupt to avoid the other redundant interrupts
@@ -364,6 +389,16 @@ static __unused void uart_npcx_rx_wk_isr(const struct device *dev,
 	 */
 	npcx_uart_disable_access_interrupt();
 }
+
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+static void uart_npcx_rx_refresh_timeout(struct k_work *work)
+{
+	struct uart_npcx_data *data = CONTAINER_OF(work, struct uart_npcx_data,
+						   rx_refresh_timeout_work);
+
+	uart_npcx_pm_constraint_rel(data, UART_PM_CONSTRAINT_RX_FLAG);
+}
+#endif
 
 /* UART driver registration */
 static const struct uart_driver_api uart_npcx_driver_api = {
@@ -457,6 +492,11 @@ static int uart_npcx_init(const struct device *dev)
 		 */
 		npcx_miwu_interrupt_configure(&config->uart_rx_wui,
 				NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
+
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+		k_work_init_delayable(&data->rx_refresh_timeout_work,
+				      uart_npcx_rx_refresh_timeout);
+#endif
 	}
 
 	/* Configure pin-mux for uart device */
