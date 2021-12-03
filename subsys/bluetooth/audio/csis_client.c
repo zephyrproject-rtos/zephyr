@@ -186,6 +186,10 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	csis_inst = lookup_instance_by_handle(conn, handle);
 
 	if (csis_inst != NULL) {
@@ -254,6 +258,10 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	csis_inst = lookup_instance_by_handle(conn, handle);
 
 	if (csis_inst != NULL) {
@@ -295,6 +303,10 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 		params->value_handle = 0U;
 
 		return BT_GATT_ITER_STOP;
+	}
+
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
 	}
 
 	csis_inst = lookup_instance_by_handle(conn, handle);
