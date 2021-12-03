@@ -3550,7 +3550,9 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 			dup_count = 0;
 			dup_curr = 0U;
 		} else {
-			/* FIXME: Invalidate dup_ext_adv_mode array entries */
+			/* NOTE: Invalidate dup_ext_adv_mode array entries is
+			 *       done when sync is established.
+			 */
 		}
 	} else if (!dup_scan) {
 		dup_count = DUP_FILTER_DISABLED;
@@ -3632,7 +3634,10 @@ static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
 				dup_count = 0;
 				dup_curr = 0U;
 			} else {
-				/* FIXME: Invalidate dup_ext_adv_mode array entries */
+				/* NOTE: Invalidate dup_ext_adv_mode array
+				 *       entries is done when sync is
+				 *       established.
+				 */
 			}
 		} else if (!dup_scan) {
 			dup_count = DUP_FILTER_DISABLED;
@@ -4993,6 +4998,42 @@ static void dup_ext_adv_reset(void)
 		dup_ext_adv_mode_reset(dup->adv_mode);
 	}
 }
+
+static void dup_periodic_adv_reset(uint8_t addr_type, const uint8_t *addr,
+				   uint8_t sid)
+{
+	int addr_idx;
+
+	for (addr_idx = 0; addr_idx < dup_count; addr_idx++) {
+		struct dup_ext_adv_mode *dup_mode;
+		struct dup_entry *dup;
+		int set_idx;
+
+		dup = &dup_filter[addr_idx];
+		if (memcmp(addr, &dup->addr.a.val[0],
+			   sizeof(bt_addr_t)) ||
+		    (addr_type != dup->addr.type)) {
+			continue;
+		}
+
+		dup_mode = &dup->adv_mode[DUP_EXT_ADV_MODE_PERIODIC];
+		for (set_idx = 0; set_idx < dup_mode->set_count; set_idx++) {
+			struct dup_ext_adv_set *adv_set;
+
+			adv_set = &dup_mode->set[set_idx];
+			if (adv_set->adi.sid != sid) {
+				continue;
+			}
+
+			/* reset data complete state */
+			adv_set->data_cmplt = 0U;
+
+			return;
+		}
+
+		return;
+	}
+}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -6212,9 +6253,13 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 		return;
 	}
 
-	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
-
 	scan = node_rx->hdr.rx_ftr.param;
+
+	dup_periodic_adv_reset(scan->per_scan.adv_addr_type,
+			       scan->per_scan.adv_addr,
+			       scan->per_scan.sid);
+
+	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
 	/* Resolved address, if private, has been populated in ULL */
 	sep->adv_addr.type = scan->per_scan.adv_addr_type;
