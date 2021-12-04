@@ -420,7 +420,7 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n, gpio_xec_port_init_##n, NULL,		\
 		&gpio_xec_port_data_##n, &xec_gpio_config_##n,		\
-		POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,			\
+		PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,			\
 		&gpio_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_GPIO_PORT)
