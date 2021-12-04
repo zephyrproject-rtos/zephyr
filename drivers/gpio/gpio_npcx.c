@@ -335,7 +335,7 @@ int gpio_npcx_init(const struct device *dev)
 			    NULL,					       \
 			    &gpio_npcx_data_##inst,                            \
 			    &gpio_npcx_cfg_##inst,                             \
-			    POST_KERNEL,                                       \
+			    PRE_KERNEL_1,                                       \
 			    CONFIG_GPIO_INIT_PRIORITY,                         \
 			    &gpio_npcx_driver);
 
