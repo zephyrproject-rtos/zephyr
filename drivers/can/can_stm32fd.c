@@ -100,7 +100,7 @@ enum can_state can_stm32fd_get_state(const struct device *dev,
 
 int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 		     k_timeout_t timeout, can_tx_callback_t callback,
-		     void *callback_arg)
+		     void *user_data)
 {
 	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
@@ -108,7 +108,7 @@ int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
 	return can_mcan_send(mcan_cfg, mcan_data, msg_ram, frame, timeout,
-			     callback, callback_arg);
+			     callback, user_data);
 }
 
 int can_stm32fd_attach_isr(const struct device *dev, can_rx_callback_t isr,
