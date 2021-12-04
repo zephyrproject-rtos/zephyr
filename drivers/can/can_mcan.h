@@ -217,7 +217,7 @@ int can_mcan_send(const struct can_mcan_config *cfg, struct can_mcan_data *data,
 		  struct can_mcan_msg_sram *msg_ram,
 		  const struct zcan_frame *frame,
 		  k_timeout_t timeout, can_tx_callback_t callback,
-		  void *callback_arg);
+		  void *user_data);
 
 int can_mcan_attach_isr(struct can_mcan_data *data,
 			struct can_mcan_msg_sram *msg_ram,

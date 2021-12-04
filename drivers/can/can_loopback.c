@@ -81,7 +81,7 @@ void tx_thread(void *data_arg, void *arg2, void *arg3)
 int can_loopback_send(const struct device *dev,
 		      const struct zcan_frame *frame,
 		      k_timeout_t timeout, can_tx_callback_t callback,
-		      void *callback_arg)
+		      void *user_data)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
 	int ret;
@@ -105,7 +105,7 @@ int can_loopback_send(const struct device *dev,
 
 	loopback_frame.frame = *frame;
 	loopback_frame.cb = callback;
-	loopback_frame.cb_arg = callback_arg;
+	loopback_frame.cb_arg = user_data;
 	loopback_frame.tx_compl = &tx_sem;
 
 	if (!callback) {
