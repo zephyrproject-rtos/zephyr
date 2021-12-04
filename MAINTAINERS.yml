@@ -1071,7 +1071,7 @@ Kernel:
         - dcpleung
         - peter-mitsis
     files:
-        - doc/reference/kernel/
+        - doc/kernel/
         - include/kernel*.h
         - kernel/
         - tests/kernel/
