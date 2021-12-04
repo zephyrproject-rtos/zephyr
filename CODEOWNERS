@@ -812,5 +812,5 @@ scripts/gen_image_info.py                 @tejlmand
 /tests/subsys/shell/                      @jakub-uC @nordic-krch
 # Get all docs reviewed
 *.rst                                     @nashif
-/doc/reference/kernel/                    @andyross @nashif
+/doc/kernel/                              @andyross @nashif
 *posix*.rst                               @aescolar @daor-oti

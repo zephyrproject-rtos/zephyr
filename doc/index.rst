@@ -107,6 +107,7 @@ Sections
    development_process/index.rst
    guides/build/index.rst
    application/index.rst
+   kernel/index.rst
    reference/index.rst
    guides/index.rst
    security/index.rst
