@@ -36,4 +36,7 @@ config NUM_IRQS
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,flash0@8000000)
 
+config PINCTRL
+	default y
+
 endif # GD32VF103
