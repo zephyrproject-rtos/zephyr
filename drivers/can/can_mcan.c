@@ -626,7 +626,7 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 		  struct can_mcan_msg_sram *msg_ram,
 		  const struct zcan_frame *frame,
 		  k_timeout_t timeout,
-		  can_tx_callback_t callback, void *callback_arg)
+		  can_tx_callback_t callback, void *user_data)
 {
 	struct can_mcan_reg  *can = cfg->can;
 	size_t data_length = can_dlc_to_bytes(frame->dlc);
@@ -704,7 +704,7 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 	}
 
 	data->tx_fin_cb[put_idx] = callback;
-	data->tx_fin_cb_arg[put_idx] = callback_arg;
+	data->tx_fin_cb_arg[put_idx] = user_data;
 
 	can->txbar = (1U << put_idx);
 

@@ -63,22 +63,22 @@ static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
 }
 
 static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
-				    struct zcan_frame *msg)
+				    struct zcan_frame *frame)
 {
 	if (mbox->RIR & CAN_RI0R_IDE) {
-		msg->id = mbox->RIR >> CAN_RI0R_EXID_Pos;
-		msg->id_type = CAN_EXTENDED_IDENTIFIER;
+		frame->id = mbox->RIR >> CAN_RI0R_EXID_Pos;
+		frame->id_type = CAN_EXTENDED_IDENTIFIER;
 	} else {
-		msg->id =  mbox->RIR >> CAN_RI0R_STID_Pos;
-		msg->id_type = CAN_STANDARD_IDENTIFIER;
+		frame->id =  mbox->RIR >> CAN_RI0R_STID_Pos;
+		frame->id_type = CAN_STANDARD_IDENTIFIER;
 	}
 
-	msg->rtr = mbox->RIR & CAN_RI0R_RTR ? CAN_REMOTEREQUEST : CAN_DATAFRAME;
-	msg->dlc = mbox->RDTR & (CAN_RDT0R_DLC >> CAN_RDT0R_DLC_Pos);
-	msg->data_32[0] = mbox->RDLR;
-	msg->data_32[1] = mbox->RDHR;
+	frame->rtr = mbox->RIR & CAN_RI0R_RTR ? CAN_REMOTEREQUEST : CAN_DATAFRAME;
+	frame->dlc = mbox->RDTR & (CAN_RDT0R_DLC >> CAN_RDT0R_DLC_Pos);
+	frame->data_32[0] = mbox->RDLR;
+	frame->data_32[1] = mbox->RDHR;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
-	msg->timestamp = ((mbox->RDTR & CAN_RDT0R_TIME) >> CAN_RDT0R_TIME_Pos);
+	frame->timestamp = ((mbox->RDTR & CAN_RDT0R_TIME) >> CAN_RDT0R_TIME_Pos);
 #endif
 }
 
@@ -87,7 +87,7 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 {
 	CAN_FIFOMailBox_TypeDef *mbox;
 	int filter_match_index;
-	struct zcan_frame msg;
+	struct zcan_frame frame;
 	can_rx_callback_t callback;
 
 	while (can->RF0R & CAN_RF0R_FMP0) {
@@ -100,12 +100,12 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 		}
 
 		LOG_DBG("Message on filter index %d", filter_match_index);
-		can_stm32_get_msg_fifo(mbox, &msg);
+		can_stm32_get_msg_fifo(mbox, &frame);
 
 		callback = data->rx_cb[filter_match_index];
 
 		if (callback) {
-			callback(&msg, data->cb_arg[filter_match_index]);
+			callback(&frame, data->cb_arg[filter_match_index]);
 		}
 
 		/* Release message */
@@ -606,9 +606,9 @@ done:
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 
-int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
+int can_stm32_send(const struct device *dev, const struct zcan_frame *frame,
 		   k_timeout_t timeout, can_tx_callback_t callback,
-		   void *callback_arg)
+		   void *user_data)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -621,16 +621,16 @@ int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
 		    "Id: 0x%x, "
 		    "ID type: %s, "
 		    "Remote Frame: %s"
-		    , msg->dlc, dev->name
-		    , msg->id
-		    , msg->id_type == CAN_STANDARD_IDENTIFIER ?
+		    , frame->dlc, dev->name
+		    , frame->id
+		    , frame->id_type == CAN_STANDARD_IDENTIFIER ?
 		    "standard" : "extended"
-		    , msg->rtr == CAN_DATAFRAME ? "no" : "yes");
+		    , frame->rtr == CAN_DATAFRAME ? "no" : "yes");
 
-	__ASSERT(msg->dlc == 0U || msg->data != NULL, "Dataptr is null");
+	__ASSERT(frame->dlc == 0U || frame->data != NULL, "Dataptr is null");
 
-	if (msg->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+	if (frame->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return CAN_TX_EINVAL;
 	}
 
@@ -665,28 +665,28 @@ int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
 	}
 
 	mb->tx_callback = callback;
-	mb->callback_arg = callback_arg;
+	mb->callback_arg = user_data;
 	k_sem_reset(&mb->tx_int_sem);
 
 	/* mailbox identifier register setup */
 	mailbox->TIR &= CAN_TI0R_TXRQ;
 
-	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {
-		mailbox->TIR |= (msg->id << CAN_TI0R_STID_Pos);
+	if (frame->id_type == CAN_STANDARD_IDENTIFIER) {
+		mailbox->TIR |= (frame->id << CAN_TI0R_STID_Pos);
 	} else {
-		mailbox->TIR |= (msg->id << CAN_TI0R_EXID_Pos)
+		mailbox->TIR |= (frame->id << CAN_TI0R_EXID_Pos)
 				| CAN_TI0R_IDE;
 	}
 
-	if (msg->rtr == CAN_REMOTEREQUEST) {
+	if (frame->rtr == CAN_REMOTEREQUEST) {
 		mailbox->TIR |= CAN_TI1R_RTR;
 	}
 
 	mailbox->TDTR = (mailbox->TDTR & ~CAN_TDT1R_DLC) |
-			((msg->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
+			((frame->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
 
-	mailbox->TDLR = msg->data_32[0];
-	mailbox->TDHR = msg->data_32[1];
+	mailbox->TDLR = frame->data_32[0];
+	mailbox->TDHR = frame->data_32[1];
 
 	mailbox->TIR |= CAN_TI0R_TXRQ;
 	k_mutex_unlock(&data->inst_mutex);

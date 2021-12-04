@@ -316,9 +316,9 @@ static int mcux_get_tx_alloc(struct mcux_flexcan_data *data)
 }
 
 static int mcux_flexcan_send(const struct device *dev,
-			     const struct zcan_frame *msg,
+			     const struct zcan_frame *frame,
 			     k_timeout_t timeout,
-			     can_tx_callback_t callback_isr, void *callback_arg)
+			     can_tx_callback_t callback, void *user_data)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
@@ -326,8 +326,8 @@ static int mcux_flexcan_send(const struct device *dev,
 	status_t status;
 	int alloc;
 
-	if (msg->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+	if (frame->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return CAN_TX_EINVAL;
 	}
 
@@ -346,9 +346,9 @@ static int mcux_flexcan_send(const struct device *dev,
 		}
 	}
 
-	mcux_flexcan_copy_zframe_to_frame(msg, &data->tx_cbs[alloc].frame);
-	data->tx_cbs[alloc].function = callback_isr;
-	data->tx_cbs[alloc].arg = callback_arg;
+	mcux_flexcan_copy_zframe_to_frame(frame, &data->tx_cbs[alloc].frame);
+	data->tx_cbs[alloc].function = callback;
+	data->tx_cbs[alloc].arg = user_data;
 	xfer.frame = &data->tx_cbs[alloc].frame;
 	xfer.mbIdx = ALLOC_IDX_TO_TXMB_IDX(alloc);
 	FLEXCAN_SetTxMbConfig(config->base, xfer.mbIdx, true);
@@ -358,7 +358,7 @@ static int mcux_flexcan_send(const struct device *dev,
 		return CAN_TX_ERR;
 	}
 
-	if (callback_isr == NULL) {
+	if (callback == NULL) {
 		k_sem_take(&data->tx_cbs[alloc].done, K_FOREVER);
 		return data->tx_cbs[alloc].status;
 	}
@@ -368,7 +368,7 @@ static int mcux_flexcan_send(const struct device *dev,
 
 static int mcux_flexcan_attach_isr(const struct device *dev,
 				   can_rx_callback_t isr,
-				   void *callback_arg,
+				   void *user_data,
 				   const struct zcan_filter *filter)
 {
 	const struct mcux_flexcan_config *config = dev->config;
@@ -399,7 +399,7 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 					      &data->rx_cbs[alloc].mb_config,
 					      &mask);
 
-	data->rx_cbs[alloc].arg = callback_arg;
+	data->rx_cbs[alloc].arg = user_data;
 	data->rx_cbs[alloc].function = isr;
 
 	FLEXCAN_SetRxIndividualMask(config->base, ALLOC_IDX_TO_RXMB_IDX(alloc),
