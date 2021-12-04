@@ -476,6 +476,16 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 		   !memcmp(addr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
 		/* Address matched */
 		scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+
+	/* Check identity address with explicitly supplied address */
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) &&
+		   (rl_idx < ll_rl_size_get())) {
+		ll_rl_id_addr_get(rl_idx, &addr_type, addr);
+		if ((addr_type == scan->per_scan.adv_addr_type) &&
+		    !memcmp(addr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
+			/* Identity address matched */
+			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+		}
 	}
 }
 
