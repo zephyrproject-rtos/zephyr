@@ -89,6 +89,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	memq_link_t *link;
 	uint16_t timeout;
 	uint8_t chan_sel;
+	void *node;
 
 	adv = ((struct lll_adv *)ftr->param)->hdr.parent;
 	conn = lll->hdr.parent;
@@ -232,7 +233,14 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		chan_sel = pdu_adv->chan_sel;
 	}
 
-	cc = (void *)pdu_adv;
+	/* Check for pdu field being aligned before populating connection
+	 * complete event.
+	 */
+	node = pdu_adv;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cc));
+
+	/* Populate the fields required for connection complete event */
+	cc = node;
 	cc->status = 0U;
 	cc->role = 1U;
 
