@@ -807,6 +807,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	struct ll_conn *conn;
 	memq_link_t *link;
 	uint8_t chan_sel;
+	void *node;
 
 	/* Get reference to Tx-ed CONNECT_IND PDU */
 	pdu_tx = (void *)((struct node_rx_pdu *)rx)->pdu;
@@ -820,8 +821,14 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* This is the chan sel bit from the received adv pdu */
 	chan_sel = pdu_tx->chan_sel;
 
+	/* Check for pdu field being aligned before populating connection
+	 * complete event.
+	 */
+	node = pdu_tx;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cc));
+
 	/* Populate the fields required for connection complete event */
-	cc = (void *)pdu_tx;
+	cc = node;
 	cc->status = 0U;
 	cc->role = 0U;
 

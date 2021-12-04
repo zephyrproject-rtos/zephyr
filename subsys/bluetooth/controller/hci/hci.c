@@ -3728,16 +3728,23 @@ static void le_cis_request(struct pdu_data *pdu_data,
 {
 	struct bt_hci_evt_le_cis_req *sep;
 	struct node_rx_conn_iso_req *req;
+	void *node;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_CIS_REQ)) {
 		return;
 	}
 
-	req = (void *)pdu_data;
-
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CIS_REQ, sizeof(*sep));
 	sep->acl_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+
+	/* Check for pdu field being aligned before accessing CIS established
+	 * event.
+	 */
+	node = pdu_data;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_conn_iso_estab));
+
+	req = node;
 	sep->cis_handle = sys_cpu_to_le16(req->cis_handle);
 	sep->cig_id = req->cig_id;
 	sep->cis_id = req->cis_id;
@@ -3757,6 +3764,7 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	bool is_central;
+	void *node;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_CIS_ESTABLISHED)) {
@@ -3769,10 +3777,16 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	is_central = cig->lll.role == BT_CONN_ROLE_CENTRAL;
 	lll_cis_c = is_central ? &lll_cis->tx : &lll_cis->rx;
 	lll_cis_p = is_central ? &lll_cis->rx : &lll_cis->tx;
-	est = (void *)pdu_data;
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CIS_ESTABLISHED, sizeof(*sep));
 
+	/* Check for pdu field being aligned before accessing CIS established
+	 * event.
+	 */
+	node = pdu_data;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_conn_iso_estab));
+
+	est = node;
 	sep->status = est->status;
 	sep->conn_handle = sys_cpu_to_le16(est->cis_handle);
 	sys_put_le24(cig->sync_delay, sep->cig_sync_delay);
@@ -6063,6 +6077,7 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 	struct bt_hci_evt_le_per_adv_sync_established *sep;
 	struct ll_scan_set *scan;
 	struct node_rx_sync *se;
+	void *node;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADV_SYNC_ESTABLISHED)) {
@@ -6072,7 +6087,13 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED,
 		       sizeof(*sep));
 
-	se = (void *)pdu_data;
+	/* Check for pdu field being aligned before accessing sync established
+	 * event.
+	 */
+	node = pdu_data;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_sync));
+
+	se = node;
 	sep->status = se->status;
 
 	if (se->status == BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
@@ -6403,6 +6424,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	struct node_rx_sync_iso *se;
 	struct lll_sync_iso *lll;
 	size_t evt_size;
+	void *node;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_BIG_SYNC_ESTABLISHED)) {
@@ -6417,7 +6439,13 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED, evt_size);
 	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
-	se = (void *)pdu;
+	/* Check for pdu field being aligned before accessing ISO sync
+	 * established event.
+	 */
+	node = pdu;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_sync_iso));
+
+	se = node;
 	sep->status = se->status;
 	if (sep->status) {
 		return;
@@ -6612,9 +6640,19 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 			     struct net_buf *buf)
 {
-	struct node_rx_cc *cc = (void *)pdu_data;
 	struct bt_hci_evt_le_conn_complete *lecc;
-	uint8_t status = cc->status;
+	struct node_rx_cc *cc;
+	uint8_t status;
+	void *node;
+
+	/* Check for pdu field being aligned before accessing connection
+	 * complete event.
+	 */
+	node = pdu_data;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cc));
+
+	cc = node;
+	status = cc->status;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (!status) {
@@ -6731,6 +6769,7 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_conn_update_complete *sep;
 	struct node_rx_cu *cu;
+	void *node;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_CONN_UPDATE_COMPLETE)) {
@@ -6739,7 +6778,13 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE, sizeof(*sep));
 
-	cu = (void *)pdu_data;
+	/* Check for pdu field being aligned before accessing connection
+	 * update complete event.
+	 */
+	node = pdu_data;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cu));
+
+	cu = node;
 	sep->status = cu->status;
 	sep->handle = sys_cpu_to_le16(handle);
 	sep->interval = sys_cpu_to_le16(cu->interval);

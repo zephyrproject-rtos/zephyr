@@ -2852,6 +2852,7 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 
 	{
 		uint32_t retval;
+		void *win_offs;
 
 		/* calculate window offset that places the connection in the
 		 * next available slot after existing centrals.
@@ -2870,8 +2871,12 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 		}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-		conn->llcp.conn_upd.pdu_win_offset = (uint16_t *)
-			&pdu_ctrl_tx->llctrl.conn_update_ind.win_offset;
+		win_offs = &pdu_ctrl_tx->llctrl.conn_update_ind.win_offset;
+		/* No need to check alignment here since the pointer that gets
+		 * stored is never derreferenced directly, only passed
+		 * to memcpy().
+		 */
+		conn->llcp.conn_upd.pdu_win_offset = win_offs;
 
 		mfy_sched_offset->fp = fp_mfy_select_or_use;
 		mfy_sched_offset->param = (void *)conn;
@@ -3737,6 +3742,7 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 		static struct mayfly s_mfy_sched_offset = {0, 0, &s_link, NULL,
 			ull_sched_mfy_free_win_offset_calc};
 		uint32_t retval;
+		void *win_offs;
 
 		conn->llcp_conn_param.ticks_ref = ticks_at_expire;
 
@@ -3752,7 +3758,12 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 		}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-		conn->llcp_conn_param.pdu_win_offset0 = (uint16_t *)&p->offset0;
+		win_offs = &p->offset0;
+		/* No need to check alignment here since the pointer that gets
+		 * stored is never derreferenced directly, only passed
+		 * to memcpy().
+		 */
+		conn->llcp_conn_param.pdu_win_offset0 = win_offs;
 
 		s_mfy_sched_offset.param = (void *)conn;
 
@@ -5177,6 +5188,7 @@ static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
 	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
 	struct node_rx_cu *cu;
 	struct lll_conn *lll;
+	void *node;
 
 	/* Unsupported remote feature */
 	lll = &conn->lll;
@@ -5228,8 +5240,14 @@ static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
 	/* generate conn update complete event with error code */
 	rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
 
+	/* check for pdu field being aligned before populating
+	 * connection update complete event.
+	 */
+	node = pdu_rx;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cu));
+
 	/* prepare connection update complete structure */
-	cu = (void *)pdu_rx;
+	cu = node;
 	cu->status = rej_ext_ind->error_code;
 	cu->interval = lll->interval;
 	cu->latency = lll->latency;
@@ -6006,6 +6024,7 @@ static uint8_t cis_req_recv(struct ll_conn *conn, memq_link_t *link,
 	struct node_rx_conn_iso_req *conn_iso_req;
 	uint16_t cis_handle;
 	uint8_t err;
+	void *node;
 
 	conn->llcp_cis.cig_id = req->cig_id;
 	conn->llcp_cis.framed = req->framed;
@@ -6028,7 +6047,13 @@ static uint8_t cis_req_recv(struct ll_conn *conn, memq_link_t *link,
 
 	(*rx)->hdr.type = NODE_RX_TYPE_CIS_REQUEST;
 
-	conn_iso_req = (void *)pdu;
+	/* check for pdu field being aligned before populating ISO
+	 * connection request event.
+	 */
+	node = pdu;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_conn_iso_req));
+
+	conn_iso_req = node;
 	conn_iso_req->cig_id = req->cig_id;
 	conn_iso_req->cis_id = req->cis_id;
 	conn_iso_req->cis_handle = sys_le16_to_cpu(cis_handle);
@@ -7014,6 +7039,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			    PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ)) {
 			struct lll_conn *lll = &conn->lll;
 			struct node_rx_cu *cu;
+			void *node;
 
 			/* Mark CPR as unsupported */
 			conn->llcp_conn_param.disabled = 1U;
@@ -7061,8 +7087,14 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			/* generate conn upd complete event with error code */
 			(*rx)->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
 
+			/* check for pdu field being aligned before populating
+			 * connection update complete event.
+			 */
+			node = pdu_rx;
+			LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cu));
+
 			/* prepare connection update complete structure */
-			cu = (void *)pdu_rx;
+			cu = node;
 			cu->status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 			cu->interval = lll->interval;
 			cu->latency = lll->latency;
