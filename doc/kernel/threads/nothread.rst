@@ -1,7 +1,7 @@
 .. _nothread:
 
-Zephyr Without Threads
-######################
+Operation without Threads
+#########################
 
 Thread support is not necessary in some applications:
 
@@ -9,7 +9,7 @@ Thread support is not necessary in some applications:
 * Simple event-driven applications
 * Examples intended to demonstrate core functionality
 
-Thread support can be disabled in Zephyr by setting
+Thread support can be disabled by setting
 :kconfig:option:`CONFIG_MULTITHREADING` to ``n``.  Since this configuration has
 a significant impact on Zephyr's functionality and testing of it has
 been limited, there are conditions on what can be expected to work in
