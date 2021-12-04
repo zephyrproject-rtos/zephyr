@@ -596,7 +596,7 @@ DEVICE_DT_INST_DEFINE(inst,                                        \
 		NULL,                                              \
 		&gpio_ite_data_##inst,                             \
 		&gpio_ite_cfg_##inst,                              \
-		POST_KERNEL,                                       \
+		PRE_KERNEL_1,                                       \
 		CONFIG_GPIO_INIT_PRIORITY,                         \
 		&gpio_ite_driver_api);
 
@@ -624,4 +624,4 @@ static int gpio_it8xxx2_init_set(const struct device *arg)
 
 	return 0;
 }
-SYS_INIT(gpio_it8xxx2_init_set, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY);
+SYS_INIT(gpio_it8xxx2_init_set, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY);
