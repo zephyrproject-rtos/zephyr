@@ -60,6 +60,7 @@ jobs:
           pip3 install GitPython
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
           west init -l . || true
@@ -148,6 +149,7 @@ jobs:
           if [ "${{github.event_name}}" = "pull_request_target" ]; then
             git config --global user.email "bot@zephyrproject.org"
             git config --global user.name "Zephyr Builder"
+            rm -fr ".git/rebase-apply"
             git rebase origin/${BASE_REF}
             git log  --pretty=oneline | head -n 10
           fi
