@@ -1,7 +1,7 @@
 .. _kernel_api:
 
-Kernel Services
-###############
+The Zephyr Kernel
+#################
 
 The Zephyr kernel lies at the heart of every Zephyr application. It provides
 a low footprint, high performance, multi-threaded execution environment
