@@ -313,6 +313,8 @@ Build and Infrastructure
 
 * Devicetree
 
+  * Support for the devicetree compatible ``ti,ina23x`` has been removed.
+    Instead, use :dtcompatible:`ti,ina230` or :dtcompatible:`ti,ina237`.
 
 * West (extensions)
 
