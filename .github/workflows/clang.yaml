@@ -46,6 +46,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
           west init -l . || true
