@@ -323,7 +323,11 @@ if __name__ == "__main__":
     logging.info(f'Total tests to be run: {len(dup_free)}')
     with open(".testplan", "w") as tp:
         total_tests = len(dup_free)
-        nodes = round(total_tests / args.tests_per_builder)
+        if total_tests and total_tests < args.tests_per_builder:
+            nodes = 1
+        else:
+            nodes = round(total_tests / args.tests_per_builder)
+
         if total_tests % args.tests_per_builder != total_tests:
             nodes = nodes + 1
 
@@ -332,6 +336,7 @@ if __name__ == "__main__":
 
         tp.write(f"TWISTER_TESTS={total_tests}\n")
         tp.write(f"TWISTER_NODES={nodes}\n")
+        logging.info(f'Total nodes to launch: {nodes}')
 
     header = ['test', 'arch', 'platform', 'status', 'extra_args', 'handler',
             'handler_time', 'ram_size', 'rom_size']
