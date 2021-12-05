@@ -99,7 +99,7 @@ jobs:
           elif [ "${{github.event_name}}" = "push" ]; then
             subset="[$(seq -s',' 1 ${PUSH_MATRIX_SIZE})]"
             size=${MATRIX_SIZE}
-          elif [ "${{github.event_name}}" = "schedule" && "${{github.repository}}" = "zephyrproject-rtos/zephyr" ]; then
+          elif [ "${{github.event_name}}" = "schedule" -a "${{github.repository}}" = "zephyrproject-rtos/zephyr" ]; then
             subset="[$(seq -s',' 1 ${DAILY_MATRIX_SIZE})]"
             size=${DAILY_MATRIX_SIZE}
           else
