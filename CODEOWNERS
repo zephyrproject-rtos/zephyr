@@ -320,6 +320,7 @@
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
 /drivers/sensor/hts*/                     @avisconti
+/drivers/sensor/ina23*/                   @bbilas
 /drivers/sensor/lis*/                     @avisconti
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
@@ -480,6 +481,7 @@
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
 /dts/posix/                               @aescolar @vanwinkeljan @daor-oti
 /dts/bindings/sensor/*bme680*             @BoschSensortec
+/dts/bindings/sensor/*ina23*              @bbilas
 /dts/bindings/sensor/st*                  @avisconti
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
