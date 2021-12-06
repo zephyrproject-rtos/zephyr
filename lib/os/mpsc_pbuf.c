@@ -96,18 +96,6 @@ static inline uint32_t idx_inc(struct mpsc_pbuf_buffer *buffer,
 	return (i >= buffer->size) ? i - buffer->size : i;
 }
 
-static inline uint32_t idx_dec(struct mpsc_pbuf_buffer *buffer,
-				uint32_t idx, uint32_t val)
-{
-	uint32_t i = idx - val;
-
-	if (buffer->flags & MPSC_PBUF_SIZE_POW2) {
-		return idx & (buffer->size - 1);
-	}
-
-	return (i >= buffer->size) ? i + buffer->size : i;
-}
-
 static inline uint32_t get_skip(union mpsc_pbuf_generic *item)
 {
 	if (item->hdr.busy && !item->hdr.valid) {

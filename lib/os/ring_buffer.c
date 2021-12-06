@@ -168,18 +168,6 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 	return 0;
 }
 
-/** @brief Wraps index if it exceeds the limit.
- *
- * @param val  Value
- * @param max  Max.
- *
- * @return value % max.
- */
-static inline uint32_t wrap(uint32_t val, uint32_t max)
-{
-	return val >= max ? (val - max) : val;
-}
-
 uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 {
 	uint32_t space, trail_size, allocated, tmp_trail_mod;
