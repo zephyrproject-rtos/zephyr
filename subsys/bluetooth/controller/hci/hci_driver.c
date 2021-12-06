@@ -31,6 +31,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_hci_driver
 #include "common/log.h"
+#include "hal/debug.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -44,20 +45,23 @@
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
 #include "lll/lll_df_types.h"
+#include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_conn.h"
+#include "ll_sw/lll_conn_iso.h"
+
+#include "ll_sw/isoal.h"
+
+#include "ll_sw/ull_iso_types.h"
+#include "ll_sw/ull_conn_iso_types.h"
+
+#include "ll_sw/ull_iso_internal.h"
+#include "ll_sw/ull_sync_iso_internal.h"
+#include "ll_sw/ull_conn_internal.h"
+#include "ll_sw/ull_conn_iso_internal.h"
+
 #include "ll.h"
 
-#include "isoal.h"
-#include "ull_iso_types.h"
-#include "lll_conn_iso.h"
-#include "ull_conn_iso_types.h"
-#include "ull_iso_internal.h"
-#include "ull_conn_internal.h"
-#include "ull_conn_iso_internal.h"
-
 #include "hci_internal.h"
-
-#include "hal/debug.h"
 
 static K_SEM_DEFINE(sem_prio_recv, 0, K_SEM_MAX_LIMIT);
 static K_FIFO_DEFINE(recv_fifo);
@@ -325,17 +329,15 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 #endif
 #if defined(CONFIG_BT_CTLR_ISO)
 	case HCI_CLASS_ISO_DATA: {
-#if defined(CONFIG_BT_CTLR_CONN_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 		uint8_t handle = node_rx->hdr.handle;
 		struct ll_iso_stream_hdr *hdr = NULL;
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
 		if (IS_CIS_HANDLE(handle)) {
 			struct ll_conn_iso_stream *cis =
 				ll_conn_iso_stream_get(handle);
 			hdr = &cis->hdr;
 		}
-#endif
 
 		struct ll_iso_datapath *dp = hdr->datapath_out;
 		isoal_sink_handle_t sink = dp->sink_hdl;
@@ -353,10 +355,23 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
 		}
-#endif
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		const struct lll_sync_iso_stream *stream;
+		struct isoal_pdu_rx isoal_rx;
+		isoal_status_t err;
+
+		stream = ull_sync_iso_stream_get(node_rx->hdr.handle);
+		isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
+		isoal_rx.pdu = (void *)node_rx->pdu;
+		err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
+		LL_ASSERT(err == ISOAL_STATUS_OK ||
+			  err == ISOAL_STATUS_ERR_SDU_ALLOC);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 		break;
 	}
-#endif
+#endif /* CONFIG_BT_CTLR_ISO */
 
 	default:
 		LL_ASSERT(0);

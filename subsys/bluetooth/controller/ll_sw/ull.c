@@ -1139,7 +1139,6 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC_ISO:
-	case NODE_RX_TYPE_SYNC_ISO_PDU:
 	case NODE_RX_TYPE_SYNC_ISO_LOST:
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
@@ -1330,9 +1329,6 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		case NODE_RX_TYPE_SYNC_REPORT:
-#if defined(CONFIG_BT_CTLR_SYNC_ISO)
-		case NODE_RX_TYPE_SYNC_ISO_PDU:
-#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -2495,9 +2491,6 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
-#if defined(CONFIG_BT_CTLR_SYNC_ISO)
-	case NODE_RX_TYPE_SYNC_ISO_PDU:
-#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
