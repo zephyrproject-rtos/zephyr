@@ -281,7 +281,7 @@ static void b91_rf_rx_isr(void)
 
 		/* handle acknowledge packet if enabled */
 		if ((length == (B91_ACK_FRAME_LEN + B91_FCS_LENGTH)) &&
-		    (payload[B91_FRAME_TYPE_OFFSET] == B91_ACK_TYPE)) {
+		    ((payload[B91_FRAME_TYPE_OFFSET] & B91_FRAME_TYPE_MASK) == B91_ACK_TYPE)) {
 			if (data.ack_handler_en) {
 				b91_handle_ack();
 			}
@@ -309,6 +309,7 @@ static void b91_rf_rx_isr(void)
 		/* update packet data */
 		if (net_pkt_write(pkt, payload, length)) {
 			LOG_ERR("Failed to write to a packet.");
+			net_pkt_unref(pkt);
 			goto exit;
 		}
 
@@ -347,6 +348,8 @@ static void b91_rf_isr(void)
 		b91_rf_rx_isr();
 	} else if (rf_get_irq_status(FLD_RF_IRQ_TX)) {
 		b91_rf_tx_isr();
+	} else {
+		rf_clr_irq_status(FLD_RF_IRQ_ALL);
 	}
 }
 
@@ -375,6 +378,7 @@ static int b91_init(const struct device *dev)
 	/* init data variables */
 	data.is_started = true;
 	data.ack_handler_en = false;
+	data.current_channel = 0;
 
 	return 0;
 }
@@ -427,7 +431,11 @@ static int b91_set_channel(const struct device *dev, uint16_t channel)
 		return -EINVAL;
 	}
 
-	rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(channel));
+	if (data.current_channel != channel) {
+		data.current_channel = channel;
+		rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(channel));
+		rf_set_rxmode();
+	}
 
 	return 0;
 }
