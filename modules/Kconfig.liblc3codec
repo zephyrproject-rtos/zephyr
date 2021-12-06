@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Bose Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config LIBLC3CODEC
+	bool "liblc3codec Support"
+	depends on CPLUSPLUS
+	depends on LIB_CPLUSPLUS
+	help
+	  This option enables the EHIMA liblc3codec library for Bluetooth LE Audio
