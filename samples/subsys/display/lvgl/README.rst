@@ -49,7 +49,7 @@ Building and Running
 Example building for :ref:`nrf52840dk_nrf52840`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/display/lvgl
+   :zephyr-app: samples/subsys/display/lvgl
    :board: nrf52840dk_nrf52840
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build flash
@@ -57,9 +57,12 @@ Example building for :ref:`nrf52840dk_nrf52840`:
 Example building for :ref:`native_posix`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/display/lvgl
+   :zephyr-app: samples/subsys/display/lvgl
    :board: native_posix
-   :goals: build flash
+   :goals: build run
+
+Alternatively, if building from a 64-bit host machine, the previous target
+board argument may also be replaced by ``native_posix_64``.
 
 References
 **********
