@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2021, YuLong Yao <feilongphone@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <gigadevice/gd32e10x/gd32e103vbt6.dtsi>
+#include "gd32e103v_eval-pinctrl.dtsi"
+
+/ {
+	model = "GigaDevice gd32e103v Evaluation Kit";
+	compatible = "gd,gd32e103v";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+	};
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};
