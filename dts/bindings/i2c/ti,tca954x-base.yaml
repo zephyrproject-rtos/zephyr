@@ -18,6 +18,7 @@ description: |
           label = "i2c_mux";
           #address-cells = <1>;
           #size-cells = <0>;
+          reset-gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
 
           mux_i2c@0 {
               compatible: "ti,tca9546a-channel"
@@ -45,6 +46,13 @@ description: |
       };
 
 include: [i2c-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      GPIO connected to the controller RESET pin. This pin is active-low.
 
 child-binding:
   description: TCA954x I2C switch channel node
