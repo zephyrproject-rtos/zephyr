@@ -33,7 +33,10 @@
 #define SPI_NOR_CMD_RDPD        0xAB    /* Release from Deep Power Down */
 #define SPI_NOR_CMD_CFGREG2     0x72    /* Read config register 2 */
 #define SPI_NOR_OCMD_RDSR       0x05FA  /* Octal Read status register */
-#define SPI_NOR_OCMD_WREN       0x06F9  /* Octal Write enable */
+#define SPI_NOR_OCMD_RDSR       0x05FA  /* Octal Read status register */
+#define SPI_NOR_OCMD_DTR_RD     0xEE11  /* Octal IO DTR read command */
+#define SPI_NOR_OCMD_RD     0xEC13 /* Octal IO read command */
+#define SPI_NOR_OCMD_PAGE_PRG       0x12ED  /* Octal Page Prog*/
 
 /* Page, sector, and block size are standard, not configurable. */
 #define SPI_NOR_PAGE_SIZE    0x0100U
@@ -50,10 +53,10 @@
 #define SPI_NOR_AUTO_POLLING_INTERVAL       0x10
 
 /* Memory registers address */
-#define SPI_NOR_REG2_ADDR1    0x0000000
+#define SPI_NOR_REG2_ADDR1         0x0000000
 #define SPI_NOR_CR2_STR_OPI_EN          0x01
-
-#define SPI_NOR_REG2_ADDR3           0x00000300
+#define SPI_NOR_CR2_DTR_OPI_EN          0x02
+#define SPI_NOR_REG2_ADDR3        0x00000300
 #define SPI_NOR_CR2_DUMMY_CYCLES_66MHZ      0x07
 
 /* Test whether offset is aligned to a given number of bits. */
