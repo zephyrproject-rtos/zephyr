@@ -276,12 +276,12 @@ void z_requeue_current(struct k_thread *curr)
 		runq_add(curr);
 	}
 }
-#endif
 
 static inline bool is_aborting(struct k_thread *thread)
 {
 	return (thread->base.thread_state & _THREAD_ABORTING) != 0U;
 }
+#endif
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
@@ -916,6 +916,7 @@ struct k_thread *z_swap_next_thread(void)
 #endif
 }
 
+#ifdef CONFIG_USE_SWITCH
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
@@ -923,7 +924,6 @@ static inline void set_current(struct k_thread *new_thread)
 	_current_cpu->current = new_thread;
 }
 
-#ifdef CONFIG_USE_SWITCH
 void *z_get_next_switch_handle(void *interrupted)
 {
 	z_check_stack_sentinel();
