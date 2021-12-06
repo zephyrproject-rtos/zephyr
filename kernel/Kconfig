@@ -919,3 +919,5 @@ config THREAD_LOCAL_STORAGE
 	  This option enables thread local storage (TLS) support in kernel.
 
 endmenu
+
+rsource "Kconfig.vm"
