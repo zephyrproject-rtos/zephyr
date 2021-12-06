@@ -2070,8 +2070,7 @@
 	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM_VARGS)(fn, __VA_ARGS__)
 
 /**
- * @brief Call "fn" on all nodes with compatible DT_DRV_COMPAT
- *        and status "okay"
+ * @brief Invokes "fn" for each status "okay" node of a compatible.
  *
  * This macro expands to:
  *
