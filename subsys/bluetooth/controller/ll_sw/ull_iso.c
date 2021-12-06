@@ -277,7 +277,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	sync_iso = ull_sync_iso_by_stream_get(stream_handle);
 	lll_iso = &sync_iso->lll;
 
-	role = 1; /* FIXME: Set role from LLL struct */
+	role = 1U; /* FIXME: Set role from LLL struct */
 	burst_number = lll_iso->bn;
 	sdu_interval = lll_iso->sdu_interval;
 	iso_interval = lll_iso->iso_interval;
@@ -306,14 +306,22 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 						sdu_alloc, sdu_emit, sdu_write,
 						&sink_handle);
 		} else {
+			ull_iso_datapath_release(dp);
+
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
 
 	if (!err) {
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		stream->dp = dp;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
 		dp->sink_hdl = sink_handle;
 		isoal_sink_enable(sink_handle);
 	} else {
+		ull_iso_datapath_release(dp);
+
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -322,15 +330,16 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
+	struct ll_iso_datapath *dp;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	struct ll_conn_iso_stream *cis = NULL;
 	struct ll_iso_stream_hdr *hdr = NULL;
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	if (IS_CIS_HANDLE(handle)) {
 		cis = ll_conn_iso_stream_get(handle);
 		hdr = &cis->hdr;
 	}
-#endif
 
 	/* If the Host issues this command with a Connection_Handle that does not exist
 	 * or is not for a CIS or a BIS, the Controller shall return the error code Unknown
@@ -340,37 +349,42 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	struct ll_iso_datapath *dp;
-
 	if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
 		dp = hdr->datapath_in;
 		if (dp) {
 			hdr->datapath_in = NULL;
-			mem_release(dp, &datapath_free);
+			ull_iso_datapath_release(dp);
 		}
 	} else if (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
 		dp = hdr->datapath_out;
 		if (dp) {
 			hdr->datapath_out = NULL;
-			mem_release(dp, &datapath_free);
+			ull_iso_datapath_release(dp);
 		}
 	} else {
 		/* Reserved for future use */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	struct lll_sync_iso_stream *stream;
+	uint16_t stream_handle;
 
 	if (path_dir != BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	stream = ull_sync_iso_stream_get(handle);
+	if (handle < BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+	stream_handle = handle - BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE;
+
+	stream = ull_sync_iso_stream_get(stream_handle);
 	dp = stream->dp;
 	if (dp) {
 		stream->dp = NULL;
-		mem_release(dp, &datapath_free);
+		ull_iso_datapath_release(dp);
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
