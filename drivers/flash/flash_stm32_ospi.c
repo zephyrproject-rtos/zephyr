@@ -14,7 +14,7 @@
 #include <arch/common/ffs.h>
 #include <sys/util.h>
 #include <soc.h>
-#include <pinmux/pinmux_stm32.h>
+#include <drivers/pinctrl.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <drivers/flash.h>
@@ -66,8 +66,7 @@ struct flash_stm32_ospi_config {
 	size_t flash_size;
 	uint32_t max_frequency;
 	int data_mode;
-	const struct soc_gpio_pinctrl *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct flash_stm32_ospi_data {
@@ -745,9 +744,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	int ret;
 
 	/* Signals configuration */
-	ret = stm32_dt_pinctrl_configure(dev_cfg->pinctrl_list,
-					 dev_cfg->pinctrl_list_size,
-					 (uint32_t)dev_cfg->regs);
+	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("OSPI pinctrl setup failed (%d)", ret);
 		return ret;
@@ -1014,10 +1011,9 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 static void flash_stm32_ospi_irq_config_func(const struct device *dev);
 
-static const struct soc_gpio_pinctrl ospi_pins[] =
-					ST_STM32_DT_PINCTRL(octospi, 0);
-
 #define STM32_OSPI_NODE DT_PARENT(DT_DRV_INST(0))
+
+PINCTRL_DT_DEFINE(STM32_OSPI_NODE)
 
 static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 	.regs = (OCTOSPI_TypeDef *)DT_REG_ADDR(STM32_OSPI_NODE),
@@ -1029,8 +1025,7 @@ static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 	.flash_size = DT_INST_PROP(0, size) / 8U,
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
 	.data_mode = DT_INST_PROP(0, data_mode),
-	.pinctrl_list = ospi_pins,
-	.pinctrl_list_size = ARRAY_SIZE(ospi_pins),
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_OSPI_NODE),
 };
 
 static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {

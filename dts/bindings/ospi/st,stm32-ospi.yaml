@@ -20,7 +20,7 @@ description: |
 
 compatible: "st,stm32-ospi"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 bus: ospi
 

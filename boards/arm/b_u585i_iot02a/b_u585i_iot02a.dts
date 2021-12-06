@@ -92,3 +92,43 @@ zephyr_udc0: &usbotg_fs {
 &iwdg1 {
 	status = "okay";
 };
+
+&octospi2 {
+	pinctrl-0 = <&octospi2_clk_pf4 &octospi2_ncs_pi5 &octospi2_dqs_pf12
+		     &octospi2_io0_pf0 &octospi2_io1_pf1
+		     &octospi2_io2_pf2 &octospi2_io3_pf3
+		     &octospi2_io4_ph9 &octospi2_io5_ph10
+		     &octospi2_io6_ph11 &octospi2_io7_ph12>;
+	pinctrl-names = "default";
+/*	dmas = <&dma1 5 5 0x0000>;
+	dma-names = "tx_rx";*/
+
+	status = "okay";
+
+	mx25lm51245: ospi-nor-flash@0 {
+		compatible = "st,stm32-ospi-nor";
+		label = "MX25LM51245";
+		reg = <0>;
+		ospi-max-frequency = <50000000>;
+		data-mode = <1>;
+		size = <0x20000000>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 0x000d8000>;
+				};
+
+			storage_partition: partition@d8000 {
+				label = "storage";
+				reg = <0x000d8000 DT_SIZE_M(7)>;
+			};
+		};
+	};
+};
+
