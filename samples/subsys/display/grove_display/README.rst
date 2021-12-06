@@ -41,7 +41,7 @@ shield interface. For example, it can be run on the FRDM K64F board as
 described below:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/display/grove_display
+   :zephyr-app: samples/subsys/display/grove_display
    :board: frdm_k64f
    :goals: flash
    :compact:
