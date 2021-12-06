@@ -15,21 +15,19 @@
 		#size-cells = <0>;
 
 		ch0: mux_i2c@0 {
+			compatible = "ti,tca9546a-channel";
 			label = "mux_dw_0";
 			reg = <0>;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "ti,tca9546a-channel";
 		};
 
 		ch1: mux_i2c@1 {
+			compatible = "ti,tca9546a-channel";
 			label = "mux_dw_1";
 			reg = <1>;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "ti,tca9546a-channel";
         };
 	};
 };

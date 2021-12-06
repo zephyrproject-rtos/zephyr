@@ -31,7 +31,7 @@
  * This test verifies various assert macros provided by ztest.
  *
  */
-static void test_tca9546a(void)
+static void test_tca954x(void)
 {
 	uint8_t buff[1];
 
@@ -48,7 +48,7 @@ static void test_tca9546a(void)
 void test_main(void)
 {
 	ztest_test_suite(framework_tests,
-			 ztest_unit_test(test_tca9546a)
+			 ztest_unit_test(test_tca954x)
 			 );
 
 	ztest_run_test_suite(framework_tests);
