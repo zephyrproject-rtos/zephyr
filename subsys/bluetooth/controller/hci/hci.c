@@ -6444,22 +6444,6 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	}
 }
 
-static void le_sync_iso_pdu(struct pdu_data *pdu,
-			    struct node_rx_pdu *node_rx,
-			    struct net_buf *buf)
-{
-	/* If HCI datapath pass to ISO AL here */
-	const struct lll_sync_iso_stream *stream;
-	struct isoal_pdu_rx isoal_rx;
-	isoal_status_t err;
-
-	stream = ull_sync_iso_stream_get(node_rx->hdr.handle);
-	isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
-	isoal_rx.pdu = (void *)node_rx->pdu;
-	err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
-	LL_ASSERT(err == ISOAL_STATUS_OK || err == ISOAL_STATUS_ERR_SDU_ALLOC);
-}
-
 static void le_big_sync_lost(struct pdu_data *pdu,
 			     struct node_rx_pdu *node_rx,
 			     struct net_buf *buf)
@@ -6921,10 +6905,6 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	case NODE_RX_TYPE_SYNC_ISO:
 		le_big_sync_established(pdu_data, node_rx, buf);
-		break;
-
-	case NODE_RX_TYPE_SYNC_ISO_PDU:
-		le_sync_iso_pdu(pdu_data, node_rx, buf);
 		break;
 
 	case NODE_RX_TYPE_SYNC_ISO_LOST:
@@ -7418,7 +7398,6 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 			__fallthrough;
 		case NODE_RX_TYPE_SYNC_ISO:
-		case NODE_RX_TYPE_SYNC_ISO_PDU:
 		case NODE_RX_TYPE_SYNC_ISO_LOST:
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
@@ -7460,10 +7439,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_CTLR_PHY */
 			return HCI_CLASS_EVT_CONNECTION;
 #endif /* CONFIG_BT_CONN */
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_ISO_PDU:
 			return HCI_CLASS_ISO_DATA;
-#endif
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if CONFIG_BT_CTLR_USER_EVT_RANGE > 0
 		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:

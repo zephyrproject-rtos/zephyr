@@ -481,7 +481,7 @@ static void isr_rx(void *param)
 
 			ull_pdu_rx_alloc();
 
-			node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_PDU;
+			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 			node_rx->hdr.handle = lll->stream_handle[bis_idx];
 
 			iso_meta = &node_rx->hdr.rx_iso_meta;
