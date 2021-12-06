@@ -22,9 +22,8 @@ config SOC_MIMXRT1011
 	select HAS_MCUX_GPT
 	select HAS_MCUX_TRNG
 	select CPU_HAS_ARM_MPU
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
-	select INIT_ENET_PLL
+	select HAS_ENET_PLL
+	select USE_ENET_PLL_AS_ARM_CLK
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -46,9 +45,8 @@ config SOC_MIMXRT1015
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
-	select INIT_ENET_PLL
+	select HAS_ENET_PLL
+	select USE_ENET_PLL_AS_ARM_CLK
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -72,9 +70,8 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
-	select INIT_ENET_PLL
+	select HAS_ENET_PLL
+	select USE_ENET_PLL_AS_ARM_CLK
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -100,9 +97,8 @@ config SOC_MIMXRT1024
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
-	select INIT_ENET_PLL
+	select HAS_ENET_PLL
+	select USE_ENET_PLL_AS_ARM_CLK
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -128,9 +124,6 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -157,11 +150,8 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
-	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select HAS_VIDEO_PLL
+	select HAS_ENET_PLL
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -188,9 +178,6 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -218,11 +205,8 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
-	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select HAS_VIDEO_PLL
+	select HAS_ENET_PLL
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -253,11 +237,8 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
-	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
-	select INIT_ENET_PLL if NET_L2_ETHERNET
+	select HAS_VIDEO_PLL
+	select HAS_ENET_PLL
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
@@ -283,9 +264,8 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_FLEXSPI
 	select HAS_MCUX_FLEXCAN
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET
-	select INIT_VIDEO_PLL
+	select HAS_ENET_PLL
+	select HAS_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select ADJUST_DCDC
@@ -310,9 +290,8 @@ config SOC_MIMXRT1176_CM4
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET
-	select INIT_VIDEO_PLL
+	select HAS_ENET_PLL
+	select HAS_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_PWM
 	select HAS_MCUX_USDHC1
@@ -336,9 +315,8 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_GPT
 	select HAS_MCUX_FLEXCAN
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET
-	select INIT_VIDEO_PLL
+	select HAS_ENET_PLL
+	select HAS_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select ADJUST_DCDC
@@ -347,7 +325,6 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_PWM
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
-
 
 config SOC_MIMXRT1166_CM4
 	bool "SOC_MIMXRT1166_CM4"
@@ -364,9 +341,8 @@ config SOC_MIMXRT1166_CM4
 	select HAS_MCUX_FLEXSPI
 	select HAS_MCUX_GPT
 	select CPU_HAS_ARM_MPU
-	select INIT_ARM_PLL
-	select INIT_ENET_PLL if NET_L2_ETHERNET
-	select INIT_VIDEO_PLL
+	select HAS_ENET_PLL
+	select HAS_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_PWM
 	select HAS_MCUX_USDHC1
@@ -566,24 +542,14 @@ config INIT_ENET_PLL
 	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
 	  for MIMXRT1021").
 
-config HAS_ARM_DIV
-	bool "Has the divider for ARM"
-	default y
+config HAS_VIDEO_PLL
+	bool "SoC has a dedicated Video PLL"
 
-config ARM_DIV
-	int "ARM clock divider"
-	range 0 7
-	default 0
+config HAS_ENET_PLL
+	bool "SoC has a dedicated Ethernet PLL"
 
-config AHB_DIV
-	int "AHB clock divider"
-	range 0 7
-	default 0
-
-config IPG_DIV
-	int "IPG clock divider"
-	range 0 3
-	default 0
+config USE_ENET_PLL_AS_ARM_CLK
+	bool "On some RT10XX SoC's the ENET PLL is used as ARM Reference clock"
 
 config ADJUST_DCDC
 	bool "Adjust internal DCDC output"
