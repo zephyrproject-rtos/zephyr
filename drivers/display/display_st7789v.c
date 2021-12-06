@@ -61,43 +61,51 @@ struct st7789v_data {
 #define ST7789V_PIXEL_SIZE 3u
 #endif
 
-static void st7789v_set_lcd_margins(struct st7789v_data *data,
-			     uint16_t x_offset, uint16_t y_offset)
+static void st7789v_set_lcd_margins(const struct device *dev,
+				    uint16_t x_offset, uint16_t y_offset)
 {
+	struct st7789v_data *data = dev->data;
+
 	data->x_offset = x_offset;
 	data->y_offset = y_offset;
 }
 
-static void st7789v_set_cmd(struct st7789v_data *data, int is_cmd)
+static void st7789v_set_cmd(const struct device *dev, int is_cmd)
 {
+	struct st7789v_data *data = dev->data;
+
 	gpio_pin_set(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN, is_cmd);
 }
 
-static void st7789v_transmit(struct st7789v_data *data, uint8_t cmd,
-		uint8_t *tx_data, size_t tx_count)
+static void st7789v_transmit(const struct device *dev, uint8_t cmd,
+			     uint8_t *tx_data, size_t tx_count)
 {
+	struct st7789v_data *data = dev->data;
+
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
-	st7789v_set_cmd(data, 1);
+	st7789v_set_cmd(dev, 1);
 	spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 
 	if (tx_data != NULL) {
 		tx_buf.buf = tx_data;
 		tx_buf.len = tx_count;
-		st7789v_set_cmd(data, 0);
+		st7789v_set_cmd(dev, 0);
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 	}
 }
 
-static void st7789v_exit_sleep(struct st7789v_data *data)
+static void st7789v_exit_sleep(const struct device *dev)
 {
-	st7789v_transmit(data, ST7789V_CMD_SLEEP_OUT, NULL, 0);
+	st7789v_transmit(dev, ST7789V_CMD_SLEEP_OUT, NULL, 0);
 	k_sleep(K_MSEC(120));
 }
 
-static void st7789v_reset_display(struct st7789v_data *data)
+static void st7789v_reset_display(const struct device *dev)
 {
+	struct st7789v_data *data = dev->data;
+
 	LOG_DBG("Resetting display");
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	k_sleep(K_MSEC(1));
@@ -113,17 +121,13 @@ static void st7789v_reset_display(struct st7789v_data *data)
 
 static int st7789v_blanking_on(const struct device *dev)
 {
-	struct st7789v_data *data = dev->data;
-
-	st7789v_transmit(data, ST7789V_CMD_DISP_OFF, NULL, 0);
+	st7789v_transmit(dev, ST7789V_CMD_DISP_OFF, NULL, 0);
 	return 0;
 }
 
 static int st7789v_blanking_off(const struct device *dev)
 {
-	struct st7789v_data *data = dev->data;
-
-	st7789v_transmit(data, ST7789V_CMD_DISP_ON, NULL, 0);
+	st7789v_transmit(dev, ST7789V_CMD_DISP_ON, NULL, 0);
 	return 0;
 }
 
@@ -136,9 +140,10 @@ static int st7789v_read(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static void st7789v_set_mem_area(struct st7789v_data *data, const uint16_t x,
+static void st7789v_set_mem_area(const struct device *dev, const uint16_t x,
 				 const uint16_t y, const uint16_t w, const uint16_t h)
 {
+	struct st7789v_data *data = dev->data;
 	uint16_t spi_data[2];
 
 	uint16_t ram_x = x + data->x_offset;
@@ -146,11 +151,11 @@ static void st7789v_set_mem_area(struct st7789v_data *data, const uint16_t x,
 
 	spi_data[0] = sys_cpu_to_be16(ram_x);
 	spi_data[1] = sys_cpu_to_be16(ram_x + w - 1);
-	st7789v_transmit(data, ST7789V_CMD_CASET, (uint8_t *)&spi_data[0], 4);
+	st7789v_transmit(dev, ST7789V_CMD_CASET, (uint8_t *)&spi_data[0], 4);
 
 	spi_data[0] = sys_cpu_to_be16(ram_y);
 	spi_data[1] = sys_cpu_to_be16(ram_y + h - 1);
-	st7789v_transmit(data, ST7789V_CMD_RASET, (uint8_t *)&spi_data[0], 4);
+	st7789v_transmit(dev, ST7789V_CMD_RASET, (uint8_t *)&spi_data[0], 4);
 }
 
 static int st7789v_write(const struct device *dev,
@@ -172,8 +177,8 @@ static int st7789v_write(const struct device *dev,
 			"Input buffer to small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
-			desc->width, desc->height, x, y);
-	st7789v_set_mem_area(data, x, y, desc->width, desc->height);
+		desc->width, desc->height, x, y);
+	st7789v_set_mem_area(dev, x, y, desc->width, desc->height);
 
 	if (desc->pitch > desc->width) {
 		write_h = 1U;
@@ -183,7 +188,7 @@ static int st7789v_write(const struct device *dev,
 		nbr_of_writes = 1U;
 	}
 
-	st7789v_transmit(data, ST7789V_CMD_RAMWR,
+	st7789v_transmit(dev, ST7789V_CMD_RAMWR,
 			 (void *) write_data_start,
 			 desc->width * ST7789V_PIXEL_SIZE * write_h);
 
@@ -261,74 +266,75 @@ static int st7789v_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static void st7789v_lcd_init(struct st7789v_data *data)
+static void st7789v_lcd_init(const struct device *dev)
 {
+	struct st7789v_data *data = dev->data;
 	uint8_t tmp;
 
-	st7789v_set_lcd_margins(data, data->x_offset,
+	st7789v_set_lcd_margins(dev, data->x_offset,
 				data->y_offset);
 
-	st7789v_transmit(data, ST7789V_CMD_CMD2EN, st7789v_cmd2en_param,
+	st7789v_transmit(dev, ST7789V_CMD_CMD2EN, st7789v_cmd2en_param,
 			 sizeof(st7789v_cmd2en_param));
 
-	st7789v_transmit(data, ST7789V_CMD_PORCTRL, st7789v_porch_param,
+	st7789v_transmit(dev, ST7789V_CMD_PORCTRL, st7789v_porch_param,
 			 sizeof(st7789v_porch_param));
 
 	/* Digital Gamma Enable, default disabled */
 	tmp = 0x00;
-	st7789v_transmit(data, ST7789V_CMD_DGMEN, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_DGMEN, &tmp, 1);
 
 	/* Frame Rate Control in Normal Mode, default value */
 	tmp = 0x0f;
-	st7789v_transmit(data, ST7789V_CMD_FRCTRL2, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_FRCTRL2, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, gctrl);
-	st7789v_transmit(data, ST7789V_CMD_GCTRL, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_GCTRL, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, vcom);
-	st7789v_transmit(data, ST7789V_CMD_VCOMS, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_VCOMS, &tmp, 1);
 
 #if (DT_INST_NODE_HAS_PROP(0, vrhs) && \
 	DT_INST_NODE_HAS_PROP(0, vdvs))
 	tmp = 0x01;
-	st7789v_transmit(data, ST7789V_CMD_VDVVRHEN, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_VDVVRHEN, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, vrhs);
-	st7789v_transmit(data, ST7789V_CMD_VRH, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_VRH, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, vdvs);
-	st7789v_transmit(data, ST7789V_CMD_VDS, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_VDS, &tmp, 1);
 #endif
 
-	st7789v_transmit(data, ST7789V_CMD_PWCTRL1, st7789v_pwctrl1_param,
+	st7789v_transmit(dev, ST7789V_CMD_PWCTRL1, st7789v_pwctrl1_param,
 			 sizeof(st7789v_pwctrl1_param));
 
 	/* Memory Data Access Control */
 	tmp = DT_INST_PROP(0, mdac);
-	st7789v_transmit(data, ST7789V_CMD_MADCTL, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_MADCTL, &tmp, 1);
 
 	/* Interface Pixel Format */
 	tmp = DT_INST_PROP(0, colmod);
-	st7789v_transmit(data, ST7789V_CMD_COLMOD, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_COLMOD, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, lcm);
-	st7789v_transmit(data, ST7789V_CMD_LCMCTRL, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_LCMCTRL, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, gamma);
-	st7789v_transmit(data, ST7789V_CMD_GAMSET, &tmp, 1);
+	st7789v_transmit(dev, ST7789V_CMD_GAMSET, &tmp, 1);
 
-	st7789v_transmit(data, ST7789V_CMD_INV_ON, NULL, 0);
+	st7789v_transmit(dev, ST7789V_CMD_INV_ON, NULL, 0);
 
-	st7789v_transmit(data, ST7789V_CMD_PVGAMCTRL, st7789v_pvgam_param,
+	st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL, st7789v_pvgam_param,
 			 sizeof(st7789v_pvgam_param));
 
-	st7789v_transmit(data, ST7789V_CMD_NVGAMCTRL, st7789v_nvgam_param,
+	st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL, st7789v_nvgam_param,
 			 sizeof(st7789v_nvgam_param));
 
-	st7789v_transmit(data, ST7789V_CMD_RAMCTRL, st7789v_ram_param,
+	st7789v_transmit(dev, ST7789V_CMD_RAMCTRL, st7789v_ram_param,
 			 sizeof(st7789v_ram_param));
 
-	st7789v_transmit(data, ST7789V_CMD_RGBCTRL, st7789v_rgb_param,
+	st7789v_transmit(dev, ST7789V_CMD_RGBCTRL, st7789v_rgb_param,
 			 sizeof(st7789v_rgb_param));
 }
 
@@ -385,13 +391,13 @@ static int st7789v_init(const struct device *dev)
 		return -EIO;
 	}
 
-	st7789v_reset_display(data);
+	st7789v_reset_display(dev);
 
 	st7789v_blanking_on(dev);
 
-	st7789v_lcd_init(data);
+	st7789v_lcd_init(dev);
 
-	st7789v_exit_sleep(data);
+	st7789v_exit_sleep(dev);
 
 	return 0;
 }
@@ -400,15 +406,14 @@ static int st7789v_init(const struct device *dev)
 static int st7789v_pm_action(const struct device *dev,
 			     enum pm_device_action action)
 {
-	struct st7789v_data *data = dev->data;
 	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		st7789v_exit_sleep(data);
+		st7789v_exit_sleep(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
+		st7789v_transmit(dev, ST7789V_CMD_SLEEP_IN, NULL, 0);
 		break;
 	default:
 		ret = -ENOTSUP;
