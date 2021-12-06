@@ -1,0 +1,19 @@
+# Copyright (c) 2020 Innoseis BV
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_TCA954X
+	bool "I2C addressable switch"
+	help
+	  Enable TCA954x series I2C bus switch
+
+if I2C_TCA954X
+
+config I2C_TCA954X_ROOT_INIT_PRIO
+	int "TCA954x root driver init priority"
+	default I2C_INIT_PRIORITY
+
+config I2C_TCA954X_CHANNEL_INIT_PRIO
+	int "TCA954x channel driver init priority"
+	default I2C_INIT_PRIORITY
+
+endif
