@@ -196,3 +196,11 @@ const struct i2c_driver_api tca954x_api_funcs = {
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_tca9546a
 DT_INST_FOREACH_STATUS_OKAY(TCA9546A_INIT)
+
+/*
+ * TCA9548A: 8 channels
+ */
+#define TCA9548A_INIT(n) TCA954x_ROOT_DEFINE(9548, n, 8)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_tca9548a
+DT_INST_FOREACH_STATUS_OKAY(TCA9548A_INIT)
