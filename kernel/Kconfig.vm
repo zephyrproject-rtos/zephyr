@@ -4,20 +4,12 @@
 
 menu "Virtual Memory Support"
 
-menuconfig MMU
-	bool "Enable MMU features"
-	depends on CPU_HAS_MMU
+config KERNEL_VM_SUPPORT
+	bool
 	help
-	  This option is enabled when the CPU's memory management unit is active
-	  and the arch_mem_map() API is available.
+	  Hidden option to enable virtual memory Kconfigs.
 
-if MMU
-config MMU_PAGE_SIZE
-	hex "Size of smallest granularity MMU page"
-	default 0x1000
-	help
-	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
-	  support multiple page sizes, put the smallest one here.
+if KERNEL_VM_SUPPORT
 
 DT_CHOSEN_Z_SRAM := zephyr,sram
 
@@ -87,6 +79,24 @@ config KERNEL_VM_SIZE
 	  will want to use a 64-bit build of Zephyr, there are no plans to
 	  implement a notion of "high" memory in Zephyr to work around physical
 	  RAM size larger than the defined bounds of the virtual address space.
+
+endif # KERNEL_VM_SUPPORT
+
+menuconfig MMU
+	bool "Enable MMU features"
+	depends on CPU_HAS_MMU
+	select KERNEL_VM_SUPPORT
+	help
+	  This option is enabled when the CPU's memory management unit is active
+	  and the arch_mem_map() API is available.
+
+if MMU
+config MMU_PAGE_SIZE
+	hex "Size of smallest granularity MMU page"
+	default 0x1000
+	help
+	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
+	  support multiple page sizes, put the smallest one here.
 
 menuconfig DEMAND_PAGING
 	bool "Enable demand paging [EXPERIMENTAL]"
