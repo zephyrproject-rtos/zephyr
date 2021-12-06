@@ -20,6 +20,11 @@ void main(void)
 		printk("Display device not ready\n");
 	}
 
+	if (display_set_pixel_format(display, PIXEL_FORMAT_MONO10) != 0) {
+		printk("Failed to set required pixel format\n");
+		return;
+	}
+
 	err = cfb_framebuffer_init(display);
 	if (err) {
 		printk("Could not initialize framebuffer (err %d)\n", err);
