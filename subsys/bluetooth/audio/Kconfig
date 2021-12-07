@@ -37,5 +37,6 @@ rsource "Kconfig.bass"
 rsource "Kconfig.has"
 rsource "Kconfig.mpl"
 rsource "Kconfig.mctl"
+rsource "Kconfig.cap"
 
 endif # BT_AUDIO
