@@ -87,20 +87,13 @@ static inline bool gpio_pin_is_output_capable(uint32_t pin)
 	return ((BIT(pin) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0);
 }
 
-static inline int gpio_get_pin_offset(const struct device *dev)
-{
-	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
-
-	return ((cfg->gpio_port) ? 32 : 0);
-}
-
 static int gpio_esp32_config(const struct device *dev,
 			     gpio_pin_t pin,
 			     gpio_flags_t flags)
 {
 	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
 	struct gpio_esp32_data *data = dev->data;
-	uint32_t io_pin = pin + gpio_get_pin_offset(dev);
+	uint32_t io_pin = (uint32_t) pin;
 	uint32_t key;
 	int ret = 0;
 
@@ -338,7 +331,7 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 					      enum gpio_int_trig trig)
 {
 	struct gpio_esp32_config *const cfg = DEV_CFG(port);
-	uint32_t io_pin = pin + gpio_get_pin_offset(port);
+	uint32_t io_pin = (uint32_t) pin;
 	int intr_trig_mode = convert_int_type(mode, trig);
 	uint32_t key;
 
