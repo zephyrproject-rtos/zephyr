@@ -255,9 +255,7 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	struct k_thread *thread = NULL;
 
-	if (head != NULL) {
-		thread = z_unpend_first_thread(&queue->wait_q);
-	}
+	thread = z_unpend_first_thread(&queue->wait_q);
 
 	while ((head != NULL) && (thread != NULL)) {
 		prepare_thread_to_run(thread, head);
