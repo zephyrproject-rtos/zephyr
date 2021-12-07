@@ -4,16 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-struct node_tx_iso {
-	union {
-		void        *next;
-		memq_link_t *link;
-	};
-
-	uint64_t payload_number : 39; /* cisPayloadNumber */
-	uint8_t  pdu[];
-};
-
 struct lll_conn_iso_stream_rxtx {
 	uint8_t phy;            /* PHY */
 	uint8_t burst_number;   /* Burst number (BN) */

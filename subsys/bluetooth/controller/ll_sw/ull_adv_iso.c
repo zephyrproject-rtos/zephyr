@@ -49,7 +49,6 @@
 static int init_reset(void);
 static struct ll_adv_iso_set *adv_iso_get(uint8_t handle);
 static struct stream *adv_iso_stream_acquire(void);
-static struct lll_adv_iso_stream *adv_iso_stream_get(uint16_t handle);
 static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream);
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
 			uint32_t latency_packing, uint32_t ctrl_spacing);
@@ -204,6 +203,16 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 		stream = (void *)adv_iso_stream_acquire();
 		stream->big_handle = big_handle;
+
+		if (!stream->link_tx_free) {
+			stream->link_tx_free = &stream->link_tx;
+		}
+		memq_init(stream->link_tx_free, &stream->memq_tx.head,
+			  &stream->memq_tx.tail);
+		stream->link_tx_free = NULL;
+
+		stream->pkt_seq_num = 0U;
+
 		lll_adv_iso->stream_handle[i] =
 			adv_iso_stream_handle_get(stream);
 	}
@@ -675,6 +684,20 @@ struct ll_adv_iso_set *ull_adv_iso_by_stream_get(uint16_t handle)
 	return adv_iso_get(stream_pool[handle].big_handle);
 }
 
+struct lll_adv_iso_stream *ull_adv_iso_stream_get(uint16_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT) {
+		return NULL;
+	}
+
+	return &stream_pool[handle];
+}
+
+struct lll_adv_iso_stream *ull_adv_iso_lll_stream_get(uint16_t handle)
+{
+	return ull_adv_iso_stream_get(handle);
+}
+
 void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
 {
 	struct lll_adv_iso *lll;
@@ -682,10 +705,18 @@ void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
 	lll = &adv_iso->lll;
 	while (lll->num_bis--) {
 		struct lll_adv_iso_stream *stream;
+		memq_link_t *link;
 		uint16_t handle;
 
 		handle = lll->stream_handle[lll->num_bis];
-		stream = adv_iso_stream_get(handle);
+		stream = ull_adv_iso_stream_get(handle);
+
+		LL_ASSERT(!stream->link_tx_free);
+		link = memq_deinit(&stream->memq_tx.head,
+				   &stream->memq_tx.tail);
+		LL_ASSERT(link);
+		stream->link_tx_free = link;
+
 		mem_release(stream, &stream_free);
 	}
 
@@ -716,15 +747,6 @@ static struct ll_adv_iso_set *adv_iso_get(uint8_t handle)
 static struct stream *adv_iso_stream_acquire(void)
 {
 	return mem_acquire(&stream_free);
-}
-
-static struct lll_adv_iso_stream *adv_iso_stream_get(uint16_t handle)
-{
-	if (handle >= CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT) {
-		return NULL;
-	}
-
-	return &stream_pool[handle];
 }
 
 static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream)
