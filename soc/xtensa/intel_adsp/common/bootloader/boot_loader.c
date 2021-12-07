@@ -29,17 +29,11 @@
 #define SRAM_BANK_SIZE (64 * 1024)
 #define HOST_PAGE_SIZE 4096
 
-#if CONFIG_SOC_INTEL_S1000
-#define MANIFEST_BASE	BOOT_LDR_MANIFEST_BASE
-#else
 #define MANIFEST_BASE	IMR_BOOT_LDR_MANIFEST_BASE
-#endif
 
 extern void __start(void);
 
-#if !defined(CONFIG_SOC_INTEL_S1000)
 #define MANIFEST_SEGMENT_COUNT 3
-#undef UNUSED_MEMORY_CALCULATION_HAS_BEEN_FIXED
 
 static inline void idelay(int n)
 {
@@ -132,43 +126,7 @@ static void parse_module(struct sof_man_fw_header *hdr,
 	}
 }
 
-/* On Sue Creek the boot loader is attached separately, no need to skip it */
-#if CONFIG_SOC_INTEL_S1000
-#define MAN_SKIP_ENTRIES 0
-#else
 #define MAN_SKIP_ENTRIES 1
-#endif
-
-#ifdef UNUSED_MEMORY_CALCULATION_HAS_BEEN_FIXED
-static uint32_t get_fw_size_in_use(void)
-{
-	struct sof_man_fw_desc *desc =
-		(struct sof_man_fw_desc *)MANIFEST_BASE;
-	struct sof_man_fw_header *hdr = &desc->header;
-	struct sof_man_module *mod;
-	uint32_t fw_size_in_use = 0xffffffff;
-	int i;
-
-	/* Calculate fw size passed in BASEFW module in MANIFEST */
-	for (i = MAN_SKIP_ENTRIES; i < hdr->num_module_entries; i++) {
-		mod = desc->man_module + i;
-
-		if (strcmp((char *)mod->name, "BASEFW"))
-			continue;
-		for (i = 0; i < MANIFEST_SEGMENT_COUNT; i++) {
-			if (mod->segment[i].flags.r.type
-				== SOF_MAN_SEGMENT_BSS) {
-				fw_size_in_use = mod->segment[i].v_base_addr
-				- L2_SRAM_BASE
-				+ (mod->segment[i].flags.r.length
-				* HOST_PAGE_SIZE);
-			}
-		}
-	}
-
-	return fw_size_in_use;
-}
-#endif
 
 /* parse FW manifest and copy modules */
 static void parse_manifest(void)
@@ -189,7 +147,6 @@ static void parse_manifest(void)
 		parse_module(hdr, mod);
 	}
 }
-#endif
 
 #if CAVS_VERSION >= CAVS_VERSION_1_8
 /* function powers up a number of memory banks provided as an argument and
@@ -273,27 +230,12 @@ static uint32_t hp_sram_power_on_memory(uint32_t memory_size)
 	return hp_sram_pm_banks(ebb_in_use);
 }
 
-#ifdef UNUSED_MEMORY_CALCULATION_HAS_BEEN_FIXED
-static int32_t hp_sram_power_off_unused_banks(uint32_t memory_size)
-{
-	/* keep enabled only memory banks used by FW */
-	return hp_sram_power_on_memory(memory_size);
-}
-#endif
-
 static int32_t hp_sram_init(void)
 {
 	return hp_sram_power_on_memory(L2_SRAM_SIZE);
 }
 
 #else
-
-#ifdef UNUSED_MEMORY_CALCULATION_HAS_BEEN_FIXED
-static int32_t hp_sram_power_off_unused_banks(uint32_t memory_size)
-{
-	return 0;
-}
-#endif
 
 static uint32_t hp_sram_init(void)
 {
@@ -354,14 +296,9 @@ void boot_master_core(void)
 		return;
 	}
 
-#if !defined(CONFIG_SOC_INTEL_S1000)
 	/* parse manifest and copy modules */
 	parse_manifest();
 
-#ifdef UNUSED_MEMORY_CALCULATION_HAS_BEEN_FIXED
-	hp_sram_power_off_unused_banks(get_fw_size_in_use());
-#endif
-#endif
 	/* now call SOF entry */
 	__start();
 }
