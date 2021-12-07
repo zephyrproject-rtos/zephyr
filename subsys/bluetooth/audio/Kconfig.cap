@@ -1,0 +1,40 @@
+# Bluetooth Audio - Common Audio Profile (CAP) options
+#
+# Copyright (c) 2021 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BT_AUDIO
+
+config BT_CAS
+	bool "Common Audio Service Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables support for Common Audio Service.
+
+config BT_DEBUG_CAS
+	bool "Common Audio Service debug"
+	depends on BT_CAS
+	help
+	  Use this option to enable Common Audio Service debug logs for the
+	  Bluetooth Audio functionality.
+
+config BT_CAP_ACCEPTOR
+	bool "Common Audio Profile Acceptor Role Support [EXPERIMENTAL]"
+	#TODO: Depend on BT_AUDIO_UNICAST_SERVER || BT_AUDIO_BROADCAST_SINK
+	depends on BT_AUDIO_UNICAST || BT_AUDIO_BROADCAST
+	select EXPERIMENTAL
+	select BT_CAS
+	select BT_CSIS if BT_AUDIO_UNICAST
+	#TODO: Replace BT_AUDIO_UNICAST with BT_AUDIO_UNICAST_SERVER
+	#TODO: Select BASS/Scan delegator if BT_AUDIO_BROADCAST_SINK
+
+config BT_DEBUG_CAP_ACCEPTOR
+	bool "Common Audio Profile Acceptor debug"
+	depends on BT_CAP_ACCEPTOR
+	help
+	  Use this option to enable CAP Acceptor debug logs for the
+	  Bluetooth Audio functionality.
+
+endif # BT_AUDIO

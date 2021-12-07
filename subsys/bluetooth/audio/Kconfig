@@ -33,5 +33,6 @@ rsource "Kconfig.mics"
 rsource "Kconfig.csis"
 rsource "Kconfig.otc"
 rsource "Kconfig.mcs"
+rsource "Kconfig.cap"
 
 endif # BT_AUDIO
