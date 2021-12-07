@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 EPAM Systems
+
+if SOC_XENVM
+
+menu "Xen drivers"
+
+config XEN_GRANT_TABLE
+	bool "Xen grant table driver"
+	depends on HEAP_MEM_POOL_SIZE > 0
+	default y
+	help
+	  Xen grant table driver. Please note that driver uses dynamic memory
+	  allocation with k_malloc(), so CONFIG_HEAP_MEM_POOL_SIZE should be
+	  >= number of pages, that you want to alloc and grant or foreign frames
+	  that you want to map.
+
+config XEN_GRANT_TABLE_INIT_PRIORITY
+	int "Grant table driver init priority"
+	depends on XEN_GRANT_TABLE
+	default 50
+
+endmenu
+
+endif # SOC_XENVM
