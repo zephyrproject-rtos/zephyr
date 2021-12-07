@@ -50,6 +50,12 @@
 		label = "sysmgr";
 	};
 
+	rstmgr: rstmgr@ffd11000 {
+		compatible = "syscon";
+		reg = <0xffd11000 0x1000>;
+		label = "rstmgr";
+	};
+
 	clock: clock@ffd10000 {
 		compatible = "intel,agilex-clock";
 		reg = <0xffd10000 0x1000>;
