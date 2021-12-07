@@ -232,7 +232,7 @@ static void can_rcar_tx_done(const struct device *dev)
 
 	data->tx_unsent--;
 	if (tx_cb->cb != NULL) {
-		tx_cb->cb(CAN_TX_OK, tx_cb->cb_arg);
+		tx_cb->cb(0, tx_cb->cb_arg);
 	} else {
 		k_sem_give(&tx_cb->sem);
 	}
@@ -494,7 +494,7 @@ static int can_rcar_leave_sleep_mode(const struct can_rcar_cfg *config)
 			return 0;
 		}
 	}
-	return CAN_TIMEOUT;
+	return -EAGAIN;
 }
 
 static int can_rcar_enter_reset_mode(const struct can_rcar_cfg *config, bool force)
@@ -514,7 +514,7 @@ static int can_rcar_enter_reset_mode(const struct can_rcar_cfg *config, bool for
 			return 0;
 		}
 	}
-	return CAN_TIMEOUT;
+	return -EAGAIN;
 }
 
 static int can_rcar_enter_halt_mode(const struct can_rcar_cfg *config)
@@ -532,7 +532,7 @@ static int can_rcar_enter_halt_mode(const struct can_rcar_cfg *config)
 		}
 	}
 
-	return CAN_TIMEOUT;
+	return -EAGAIN;
 }
 
 static int can_rcar_enter_operation_mode(const struct can_rcar_cfg *config)
@@ -552,7 +552,7 @@ static int can_rcar_enter_operation_mode(const struct can_rcar_cfg *config)
 	}
 
 	if (i == MAX_STR_READS) {
-		return CAN_TIMEOUT;
+		return -EAGAIN;
 	}
 
 	/* Enable Rx and Tx FIFO */
@@ -688,7 +688,7 @@ int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 	}
 
 	if (k_mutex_lock(&data->inst_mutex, K_FOREVER)) {
-		return CAN_TIMEOUT;
+		return -EAGAIN;
 	}
 
 	start_time = k_uptime_ticks();
@@ -700,7 +700,7 @@ int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 
 		if (!K_TIMEOUT_EQ(timeout, K_FOREVER) &&
 		    k_uptime_ticks() - start_time >= timeout.ticks) {
-			ret = CAN_TIMEOUT;
+			ret = -EAGAIN;
 			goto done;
 		}
 	}
@@ -736,12 +736,12 @@ int can_rcar_send(const struct device *dev, const struct zcan_frame *frame,
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)",
 			frame->dlc, CAN_MAX_DLC);
-		return CAN_TX_EINVAL;
+		return -EINVAL;
 	}
 
 	/* Wait for a slot into the tx FIFO */
 	if (k_sem_take(&data->tx_sem, timeout) != 0) {
-		return CAN_TIMEOUT;
+		return -EAGAIN;
 	}
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
@@ -788,7 +788,7 @@ int can_rcar_send(const struct device *dev, const struct zcan_frame *frame,
 		k_sem_take(&tx_cb->sem, K_FOREVER);
 	}
 
-	return CAN_TX_OK;
+	return 0;
 }
 
 static inline int can_rcar_attach(const struct device *dev,
@@ -809,7 +809,7 @@ static inline int can_rcar_attach(const struct device *dev,
 		}
 	}
 
-	return CAN_NO_FREE_FILTER;
+	return -ENOSPC;
 }
 
 int can_rcar_attach_isr(const struct device *dev, can_rx_callback_t isr,

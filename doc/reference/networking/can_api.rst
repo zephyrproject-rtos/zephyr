@@ -164,7 +164,7 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
   can_dev = device_get_binding("CAN_0");
 
   ret = can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);
-  if (ret != CAN_TX_OK) {
+  if (ret != 0) {
           LOG_ERR("Sending failed [%d]", ret);
   }
 

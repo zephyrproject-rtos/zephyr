@@ -730,7 +730,7 @@ static inline int canbus_send_cf(struct net_pkt *pkt)
 	net_pkt_read(pkt, &frame.data[1], len);
 	ret = api->send(net_can_dev, &frame, canbus_tx_frame_isr,
 			pkt, K_NO_WAIT);
-	if (ret == CAN_TX_OK) {
+	if (ret == 0) {
 		ctx->sn++;
 		ctx->rem_len -= len;
 		ctx->act_block_nr--;
@@ -760,7 +760,7 @@ static void canbus_tx_work(struct net_pkt *pkt)
 				break;
 			}
 
-			if (ret < 0 && ret != CAN_TIMEOUT) {
+			if (ret < 0 && ret != -EAGAIN) {
 				NET_ERR("Failed to send CF. CTX: %p", ctx);
 				canbus_tx_report_err(pkt);
 				break;
@@ -939,7 +939,7 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 	pkt->canbus_tx_ctx->rem_len -= NET_CAN_DL - index;
 
 	ret = api->send(net_can_dev, &frame, NULL, NULL, K_FOREVER);
-	if (ret != CAN_TX_OK) {
+	if (ret != 0) {
 		NET_ERR("Sending FF failed [%d]. CTX: %p",
 			ret, pkt->canbus_tx_ctx);
 	}
@@ -977,7 +977,7 @@ static inline int canbus_send_single_frame(struct net_pkt *pkt, size_t len,
 	canbus_set_frame_datalength(&frame, len + index);
 
 	ret = api->send(net_can_dev, &frame, NULL, NULL, K_FOREVER);
-	if (ret != CAN_TX_OK) {
+	if (ret != 0) {
 		NET_ERR("Sending SF failed [%d]", ret);
 		return -EIO;
 	}
@@ -1018,7 +1018,7 @@ static int canbus_send_multiple_frames(struct net_pkt *pkt, size_t len,
 	tx_ctx->tx_backlog = 0;
 
 	ret = canbus_send_ff(pkt, len, mcast, dest_addr);
-	if (ret != CAN_TX_OK) {
+	if (ret != 0) {
 		NET_ERR("Failed to send FF [%d]", ret);
 		canbus_tx_report_err(pkt);
 		return -EIO;
@@ -1520,7 +1520,7 @@ static inline int canbus_send_dad_request(const struct device *net_can_dev,
 					 sys_rand32_get() & CAN_NET_IF_ADDR_MASK);
 
 	ret = api->send(net_can_dev, &frame, NULL, NULL, K_FOREVER);
-	if (ret != CAN_TX_OK) {
+	if (ret != 0) {
 		NET_ERR("Sending DAD request failed [%d]", ret);
 		return -EIO;
 	}
@@ -1535,7 +1535,7 @@ static void canbus_send_dad_resp_cb(uint32_t err_flags, void *cb_arg)
 
 	if (err_flags) {
 		NET_ERR("Failed to send dad response [%u]", err_flags);
-		if (err_flags != CAN_TX_BUS_OFF &&
+		if (err_flags != -ENETDOWN &&
 		    fail_cnt < NET_CAN_DAD_SEND_RETRY) {
 			k_work_submit_to_queue(&net_canbus_workq, work);
 		}
@@ -1565,7 +1565,7 @@ static inline void canbus_send_dad_response(struct k_work *item)
 
 	ret = api->send(net_can_dev, &frame, canbus_send_dad_resp_cb, item,
 			K_FOREVER);
-	if (ret != CAN_TX_OK) {
+	if (ret != 0) {
 		NET_ERR("Sending SF failed [%d]", ret);
 	} else {
 		NET_INFO("DAD response sent");
@@ -1605,7 +1605,7 @@ int canbus_attach_dad_resp_filter(const struct device *net_can_dev,
 
 	filter_id = api->attach_filter(net_can_dev, canbus_dad_resp_cb,
 				       dad_sem, &filter);
-	if (filter_id == CAN_NO_FREE_FILTER) {
+	if (filter_id == -ENOSPC) {
 		NET_ERR("Can't attach dad response filter");
 	}
 
@@ -1636,7 +1636,7 @@ static inline int canbus_attach_dad_filter(const struct device *net_can_dev,
 
 	filter_id = api->attach_filter(net_can_dev, canbus_dad_request_cb,
 				       dad_work, &filter);
-	if (filter_id == CAN_NO_FREE_FILTER) {
+	if (filter_id == -ENOSPC) {
 		NET_ERR("Can't attach dad filter");
 	}
 

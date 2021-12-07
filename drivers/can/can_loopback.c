@@ -73,7 +73,7 @@ void tx_thread(void *data_arg, void *arg2, void *arg3)
 		if (!frame.cb) {
 			k_sem_give(frame.tx_compl);
 		} else {
-			frame.cb(CAN_TX_OK, frame.cb_arg);
+			frame.cb(0, frame.cb_arg);
 		}
 	}
 }
@@ -96,7 +96,7 @@ int can_loopback_send(const struct device *dev,
 
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
-		return CAN_TX_EINVAL;
+		return -EINVAL;
 	}
 
 	if (!data->loopback) {
@@ -118,7 +118,7 @@ int can_loopback_send(const struct device *dev,
 		k_sem_take(&tx_sem, K_FOREVER);
 	}
 
-	return  ret ? CAN_TIMEOUT : CAN_TX_OK;
+	return  ret ? -EAGAIN : 0;
 }
 
 
@@ -130,7 +130,7 @@ static inline int get_free_filter(struct can_loopback_filter *filters)
 		}
 	}
 
-	return CAN_NO_FREE_FILTER;
+	return -ENOSPC;
 }
 
 int can_loopback_attach_isr(const struct device *dev, can_rx_callback_t isr,
