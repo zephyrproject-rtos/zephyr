@@ -485,9 +485,9 @@ static void isr_rx(void *param)
 			node_rx->hdr.handle = lll->stream_handle[bis_idx];
 
 			iso_meta = &node_rx->hdr.rx_iso_meta;
-			iso_meta->payload_number = (lll->payload_count +
-						    (lll->ptc_curr *
-						     lll->pto) - 1U) /
+			iso_meta->payload_number = lll->payload_count +
+						   (lll->bn_curr - 1U) +
+						   (lll->ptc_curr * lll->pto) -
 						   lll->bn;
 			iso_meta->timestamp =
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
