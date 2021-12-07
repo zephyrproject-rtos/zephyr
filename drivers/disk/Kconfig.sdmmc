@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 DT_STM32_SDMMC_HAS_DMA := $(dt_nodelabel_has_prop,sdmmc,dmas)
+DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
+DT_COMPAT_ZEPHYR_MMC := zephyr,sdmmc-disk
+DT_COMPAT_SNPS_DW_SDMMC := snps,designware-sdmmc
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
@@ -66,6 +69,12 @@ config SDMMC_STM32_CLOCK_CHECK
 	  Enable SDMMC clock 48MHz configuration runtime check.
 	  In specific cases, this check might provide wrong verdict and should
 	  be disabled.
+
+config SDMMC_DW
+	bool "SNPS DW SDMMC"
+	default $(dt_compat_enabled,$(DT_COMPAT_SNPS_DW_SDMMC))
+	help
+	  File system on sdmmc accessed through snps dw sdmmc.
 
 module = SDMMC
 module-str = sdmmc
