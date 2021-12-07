@@ -13,7 +13,16 @@
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_CYC INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
-#define MIN_DELAY 1000
+
+/*
+ * Calculates the minimum delay to be about 1/8th of a tick down to a minimum
+ * of two cycles. According to the spec, this minimum delay *should* not be
+ * needed as the timer comparator is supposed to trigger the interrupt if the
+ * comparison register is less than the timer register; however, what hardware
+ * implements is a different matter.
+ */
+
+#define MIN_DELAY ((CYC_PER_TICK + 15) >> 3)
 
 #define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 
