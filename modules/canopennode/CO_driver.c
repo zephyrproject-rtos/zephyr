@@ -70,10 +70,10 @@ static void canopen_detach_all_rx_filters(CO_CANmodule_t *CANmodule)
 	}
 
 	for (i = 0U; i < CANmodule->rx_size; i++) {
-		if (CANmodule->rx_array[i].filter_id != CAN_NO_FREE_FILTER) {
+		if (CANmodule->rx_array[i].filter_id != -ENOSPC) {
 			can_detach(CANmodule->dev,
 				   CANmodule->rx_array[i].filter_id);
-			CANmodule->rx_array[i].filter_id = CAN_NO_FREE_FILTER;
+			CANmodule->rx_array[i].filter_id = -ENOSPC;
 		}
 	}
 }
@@ -103,7 +103,7 @@ static void canopen_tx_isr_callback(uint32_t error_flags, void *arg)
 		return;
 	}
 
-	if (error_flags == CAN_TX_OK) {
+	if (error_flags == 0) {
 		CANmodule->first_tx_msg = false;
 	}
 
@@ -133,9 +133,9 @@ static void canopen_tx_retry(struct k_work *item)
 
 			err = can_send(CANmodule->dev, &msg, K_NO_WAIT,
 				       canopen_tx_isr_callback, CANmodule);
-			if (err == CAN_TIMEOUT) {
+			if (err == -EAGAIN) {
 				break;
-			} else if (err != CAN_TX_OK) {
+			} else if (err != 0) {
 				LOG_ERR("failed to send CAN frame (err %d)",
 					err);
 				CO_errorReport(CANmodule->em,
@@ -210,7 +210,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 	for (i = 0U; i < rxSize; i++) {
 		rxArray[i].ident = 0U;
 		rxArray[i].pFunct = NULL;
-		rxArray[i].filter_id = CAN_NO_FREE_FILTER;
+		rxArray[i].filter_id = -ENOSPC;
 	}
 
 	for (i = 0U; i < txSize; i++) {
@@ -284,14 +284,14 @@ CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
 	filter.rtr = (rtr ? 1 : 0);
 	filter.rtr_mask = 1;
 
-	if (buffer->filter_id != CAN_NO_FREE_FILTER) {
+	if (buffer->filter_id != -ENOSPC) {
 		can_detach(CANmodule->dev, buffer->filter_id);
 	}
 
 	buffer->filter_id = can_attach_isr(CANmodule->dev,
 					   canopen_rx_isr_callback,
 					   buffer, &filter);
-	if (buffer->filter_id == CAN_NO_FREE_FILTER) {
+	if (buffer->filter_id == -ENOSPC) {
 		LOG_ERR("failed to attach CAN rx isr, no free filter");
 		CO_errorReport(CANmodule->em, CO_EM_MEMORY_ALLOCATION_ERROR,
 			       CO_EMC_SOFTWARE_INTERNAL, 0);
@@ -357,9 +357,9 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
 
 	err = can_send(CANmodule->dev, &msg, K_NO_WAIT, canopen_tx_isr_callback,
 		       CANmodule);
-	if (err == CAN_TIMEOUT) {
+	if (err == -EAGAIN) {
 		buffer->bufferFull = true;
-	} else if (err != CAN_TX_OK) {
+	} else if (err != 0) {
 		LOG_ERR("failed to send CAN frame (err %d)", err);
 		CO_errorReport(CANmodule->em, CO_EM_GENERIC_SOFTWARE_ERROR,
 			       CO_EMC_COMMUNICATION, 0);

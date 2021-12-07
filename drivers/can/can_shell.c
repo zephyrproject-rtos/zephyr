@@ -371,7 +371,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	ret = can_attach_workq(can_dev, &k_sys_work_q, &work, print_frame,
 			       (void *)shell, &filter);
 	if (ret < 0) {
-		if (ret == CAN_NO_FREE_FILTER) {
+		if (ret == -ENOSPC) {
 			shell_error(shell, "Can't attach, no free filter left");
 		} else {
 			shell_error(shell, "Failed to attach filter [%d]", ret);

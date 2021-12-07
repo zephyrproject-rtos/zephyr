@@ -470,11 +470,11 @@ static int mcp2515_send(const struct device *dev,
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)",
 			frame->dlc, CAN_MAX_DLC);
-		return CAN_TX_EINVAL;
+		return -EINVAL;
 	}
 
 	if (k_sem_take(&dev_data->tx_sem, timeout) != 0) {
-		return CAN_TIMEOUT;
+		return -EAGAIN;
 	}
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
@@ -491,7 +491,7 @@ static int mcp2515_send(const struct device *dev,
 
 	if (tx_idx == MCP2515_TX_CNT) {
 		LOG_WRN("no free tx slot available");
-		return CAN_TX_ERR;
+		return -EIO;
 	}
 
 	dev_data->tx_cb[tx_idx].cb = callback;
@@ -545,7 +545,7 @@ static int mcp2515_attach_isr(const struct device *dev,
 		dev_data->cb_arg[filter_idx] = cb_arg;
 
 	} else {
-		filter_idx = CAN_NO_FREE_FILTER;
+		filter_idx = -ENOSPC;
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
