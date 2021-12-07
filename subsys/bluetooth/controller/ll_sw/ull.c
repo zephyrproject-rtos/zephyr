@@ -854,6 +854,13 @@ ll_rx_get_again:
 
 	*node_rx = NULL;
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	cmplt = ull_iso_tx_ack_get(handle);
+	if (cmplt) {
+		return cmplt;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
 	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, (void **)&rx);
 	if (link) {
 #if defined(CONFIG_BT_CONN)
