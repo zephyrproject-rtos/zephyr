@@ -31,6 +31,44 @@
 
 #include "xen.h"
 
+#define XENMEM_populate_physmap		6
+
+struct xen_memory_reservation {
+
+	/*
+	 * XENMEM_increase_reservation:
+	 *   OUT: MFN (*not* GMFN) bases of extents that were allocated
+	 * XENMEM_decrease_reservation:
+	 *   IN:  GMFN bases of extents to free
+	 * XENMEM_populate_physmap:
+	 *   IN:  GPFN bases of extents to populate with memory
+	 *   OUT: GMFN bases of extents that were allocated
+	 *   (NB. This command also updates the mach_to_phys translation table)
+	 * XENMEM_claim_pages:
+	 *   IN: must be zero
+	 */
+	XEN_GUEST_HANDLE(xen_pfn_t) extent_start;
+
+	/* Number of extents, and size/alignment of each (2^extent_order pages). */
+	xen_ulong_t	nr_extents;
+	unsigned int	extent_order;
+
+#if __XEN_INTERFACE_VERSION__ >= 0x00030209
+	/* XENMEMF flags. */
+	unsigned int	mem_flags;
+#else
+	unsigned int	address_bits;
+#endif
+
+	/*
+	 * Domain whose reservation is being changed.
+	 * Unprivileged domains can specify only DOMID_SELF.
+	 */
+	domid_t		domid;
+};
+typedef struct xen_memory_reservation xen_memory_reservation_t;
+DEFINE_XEN_GUEST_HANDLE(xen_memory_reservation_t);
+
 #define XENMAPSPACE_shared_info		0	/* shared info page */
 #define XENMAPSPACE_grant_table		1	/* grant table page */
 #define XENMAPSPACE_gmfn		2	/* GMFN */
@@ -72,5 +110,21 @@ struct xen_add_to_physmap {
 };
 typedef struct xen_add_to_physmap xen_add_to_physmap_t;
 DEFINE_XEN_GUEST_HANDLE(xen_add_to_physmap_t);
+
+/*
+ * Unmaps the page appearing at a particular GPFN from the specified guest's
+ * physical address space (translated guests only).
+ * arg == addr of xen_remove_from_physmap_t.
+ */
+#define XENMEM_remove_from_physmap	15
+struct xen_remove_from_physmap {
+	/* Which domain to change the mapping for. */
+	domid_t domid;
+
+	/* GPFN of the current mapping of the page. */
+	xen_pfn_t gpfn;
+};
+typedef struct xen_remove_from_physmap xen_remove_from_physmap_t;
+DEFINE_XEN_GUEST_HANDLE(xen_remove_from_physmap_t);
 
 #endif /* __XEN_PUBLIC_MEMORY_H__ */
