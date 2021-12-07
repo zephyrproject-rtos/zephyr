@@ -42,30 +42,6 @@ static inline void idelay(int n)
 	}
 }
 
-/* generic string compare cloned into the bootloader to
- * compact code and make it more readable
- */
-int strcmp(const char *s1, const char *s2)
-{
-	while (*s1 != 0 && *s2 != 0) {
-		if (*s1 < *s2)
-			return -1;
-		if (*s1 > *s2)
-			return 1;
-		s1++;
-		s2++;
-	}
-
-	/* did both string end */
-	if (*s1 != 0)
-		return 1;
-	if (*s2 != 0)
-		return -1;
-
-	/* match */
-	return 0;
-}
-
 /* memcopy used by boot loader */
 static inline void bmemcpy(void *dest, void *src, size_t bytes)
 {
@@ -148,12 +124,12 @@ static void parse_manifest(void)
 	}
 }
 
-#if CAVS_VERSION >= CAVS_VERSION_1_8
 /* function powers up a number of memory banks provided as an argument and
  * gates remaining memory banks
  */
-static int32_t hp_sram_pm_banks(uint32_t banks)
+static void hp_sram_pm_banks(uint32_t banks)
 {
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	int delay_count = 256;
 	uint32_t status;
 	uint32_t ebb_mask0, ebb_mask1, ebb_avail_mask0, ebb_avail_mask1;
@@ -214,11 +190,10 @@ static int32_t hp_sram_pm_banks(uint32_t banks)
 	idelay(delay_count);
 
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_HPSRAM_LDO_BYPASS;
-
-	return 0;
+#endif
 }
 
-static uint32_t hp_sram_power_on_memory(uint32_t memory_size)
+static void hp_sram_init(uint32_t memory_size)
 {
 	uint32_t ebb_in_use;
 
@@ -227,24 +202,10 @@ static uint32_t hp_sram_power_on_memory(uint32_t memory_size)
 	 */
 	ebb_in_use = ceiling_fraction(memory_size, SRAM_BANK_SIZE);
 
-	return hp_sram_pm_banks(ebb_in_use);
+	hp_sram_pm_banks(ebb_in_use);
 }
 
-static int32_t hp_sram_init(void)
-{
-	return hp_sram_power_on_memory(L2_SRAM_SIZE);
-}
-
-#else
-
-static uint32_t hp_sram_init(void)
-{
-	return 0;
-}
-
-#endif
-
-static int32_t lp_sram_init(void)
+static void lp_sram_init(void)
 {
 	uint32_t status = 0;
 	uint32_t timeout_counter, delay_count = 256;
@@ -273,30 +234,12 @@ static int32_t lp_sram_init(void)
 	}
 
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
-
-	return status;
 }
 
-/* boot master core */
 void boot_master_core(void)
 {
-	int32_t result;
-
-
-	/* init the HPSRAM */
-	result = hp_sram_init();
-	if (result < 0) {
-		return;
-	}
-
-	/* init the LPSRAM */
-
-	result = lp_sram_init();
-	if (result < 0) {
-		return;
-	}
-
-	/* parse manifest and copy modules */
+	hp_sram_init(L2_SRAM_SIZE);
+	lp_sram_init();
 	parse_manifest();
 
 	/* now call SOF entry */
