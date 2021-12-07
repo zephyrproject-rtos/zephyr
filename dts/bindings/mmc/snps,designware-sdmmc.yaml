@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys Designware SDMMC Controller node
+
+compatible: "snps,designware-sdmmc"
+
+include: mmc.yaml
+
+properties:
+    clock-frequency:
+      type: int
+      required: true
+      description: clock frequency information for DW SDMMC Controller
+    label:
+      required: true
+    reg:
+      required: true

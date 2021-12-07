@@ -95,4 +95,16 @@
 		label = "uart_0";
 		status = "disabled";
 	};
+
+	sdmmc: sdmmc@ff808000 {
+		compatible = "snps,designware-sdmmc";
+		reg = <0xff808000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <50000000>;
+		label = "sdmmc";
+		status = "disabled";
+	};
+
 };
