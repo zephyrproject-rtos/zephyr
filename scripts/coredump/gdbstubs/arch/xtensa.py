@@ -117,10 +117,18 @@ class GdbStub_Xtensa(GdbStub):
     def map_registers(self, tu):
         i = 2
         for r in self.xtensaSoc.RegNum:
-            if r == self.xtensaSoc.RegNum.EXCCAUSE:
-                self.exception_code = tu[i]
             regNum = r.value
-            self.registers[regNum] = tu[i]
+            # Dummy WINDOWBASE and WINDOWSTART to enable GDB
+            # without dumping them and all AR registers;
+            # avoids interfering with interrupts / exceptions
+            if r == self.xtensaSoc.RegNum.WINDOWBASE:
+                self.registers[regNum] = 0
+            elif r == self.xtensaSoc.RegNum.WINDOWSTART:
+                self.registers[regNum] = 1
+            else:
+                if r == self.xtensaSoc.RegNum.EXCCAUSE:
+                    self.exception_code = tu[i]
+                self.registers[regNum] = tu[i]
             i += 1
 
 
@@ -166,15 +174,9 @@ class GdbStub_Xtensa(GdbStub):
 
 
     def handle_register_single_read_packet(self, pkt):
-        # TODO: TEST FOR ESP32
-        idx = int(pkt[1:].decode('ascii'), 16)
-
-        if idx in self.registers:
-            bval = struct.pack(self.reg_fmt, self.registers[idx])
-            reply_pkt = binascii.hexlify(bval)
-            self.put_gdb_packet(reply_pkt)
-        else:
-            self.put_gdb_packet(b'x' * 8)
+        # Mark registers as "<unavailable>". 'p' packets are not sent for the registers
+        # currently handled in this file so we can safely reply "xxxxxxxx" here.
+        self.put_gdb_packet(b'x' * 8)
 
 # The following classes map registers to their index (idx) on
 # a specific SOC. Since SOCs can have different numbers of
@@ -184,7 +186,11 @@ class GdbStub_Xtensa(GdbStub):
 # WARNING: IF YOU CHANGE THE ORDER OF THE REGISTERS IN ONE
 # SOC's MAPPING, YOU MUST CHANGE THE ORDER TO MATCH IN THE OTHERS
 # AND IN arch/xtensa/core/coredump.c's xtensa_arch_block.r.
-# See this file's map_registers function.
+# See map_registers.
+
+# For the same reason, even though the WINDOWBASE and WINDOWSTART
+# values are dummied by this script, they have to be last in the
+# mapping below.
 
 # sdk-ng -> overlays/xtensa_sample_controller/gdb/gdb/xtensa-config.c
 class XtensaSoc_SampleController:
@@ -219,12 +225,18 @@ class XtensaSoc_SampleController:
         A14 = 103
         A15 = 104
         # LBEG, LEND, and LCOUNT not on sample_controller
+        WINDOWBASE = 34
+        WINDOWSTART = 35
 
 # espressif xtensa-overlays -> xtensa_esp32/gdb/gdb/xtensa-config.c
 class XtensaSoc_ESP32:
     ARCH_DATA_BLK_STRUCT = '<BHIIIIIIIIIIIIIIIIIIIIIIIII'
 
-    # Maximum index register that can be sent in group packet is 104
+    # Maximum index register that can be sent in a group packet is
+    # 104, which prevents us from sending An registers directly.
+    # We get around this by assigning each An in the dump to ARn
+    # and setting WINDOWBASE to 0 and WINDOWSTART to 1; ESP32 GDB
+    # will recalculate the corresponding An
     SOC_GDB_GPKT_BIN_SIZE = 420
 
     class RegNum(Enum):
@@ -234,22 +246,24 @@ class XtensaSoc_ESP32:
         SAR = 68
         PS = 73
         SCOMPARE1 = 76
-        A0 = 157
-        A1 = 158
-        A2 = 159
-        A3 = 160
-        A4 = 161
-        A5 = 162
-        A6 = 163
-        A7 = 164
-        A8 = 165
-        A9 = 166
-        A10 = 167
-        A11 = 168
-        A12 = 169
-        A13 = 170
-        A14 = 171
-        A15 = 172
+        AR0 = 1
+        AR1 = 2
+        AR2 = 3
+        AR3 = 4
+        AR4 = 5
+        AR5 = 6
+        AR6 = 7
+        AR7 = 8
+        AR8 = 9
+        AR9 = 10
+        AR10 = 11
+        AR11 = 12
+        AR12 = 13
+        AR13 = 14
+        AR14 = 15
+        AR15 = 16
         LBEG = 65
         LEND = 66
         LCOUNT = 67
+        WINDOWBASE = 69
+        WINDOWSTART = 70
