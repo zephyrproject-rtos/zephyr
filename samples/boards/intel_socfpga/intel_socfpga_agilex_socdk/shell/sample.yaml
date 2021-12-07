@@ -1,0 +1,12 @@
+sample:
+  description: Shell sample, this is to provide command line interface for Intel SoC FPGA Agilex boards.
+  name: shell
+common:
+    tags: introduction
+    integration_platforms:
+      - intel_socfpga_agilex_socdk
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "shell"
