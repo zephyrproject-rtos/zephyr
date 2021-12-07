@@ -87,7 +87,6 @@ in detail in next section.
 
 Most of Xen-specific features are not supported at the moment. This includes:
 * XenBus (under development)
-* Xen grant tables (under development)
 * Xen PV drivers
 
 Now only following features are supported:
@@ -95,6 +94,7 @@ Now only following features are supported:
 * Xen event channels
 * Xen PV console (2 versions: regular ring buffer based for DomU and consoleio for Dom0)
 * Xen early console_io interface (mainly for debug purposes - requires debug version of Xen)
+* Xen grant tables (granting access for own grants and map/unmap foreign grants)
 
 Building and Running
 ********************
