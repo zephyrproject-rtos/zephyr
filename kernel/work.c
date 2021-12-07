@@ -586,6 +586,7 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		struct k_work *work = NULL;
 		k_work_handler_t handler = NULL;
 		k_spinlock_key_t key = k_spin_lock(&lock);
+		bool yield;
 
 		/* Check for and prepare any new work. */
 		node = sys_slist_get(&queue->pending);
@@ -644,34 +645,30 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 
 		k_spin_unlock(&lock, key);
 
-		if (work != NULL) {
-			bool yield;
+		__ASSERT_NO_MSG(handler != NULL);
+		handler(work);
 
-			__ASSERT_NO_MSG(handler != NULL);
-			handler(work);
+		/* Mark the work item as no longer running and deal
+		 * with any cancellation issued while it was running.
+		 * Clear the BUSY flag and optionally yield to prevent
+		 * starving other threads.
+		 */
+		key = k_spin_lock(&lock);
 
-			/* Mark the work item as no longer running and deal
-			 * with any cancellation issued while it was running.
-			 * Clear the BUSY flag and optionally yield to prevent
-			 * starving other threads.
-			 */
-			key = k_spin_lock(&lock);
+		flag_clear(&work->flags, K_WORK_RUNNING_BIT);
+		if (flag_test(&work->flags, K_WORK_CANCELING_BIT)) {
+			finalize_cancel_locked(work);
+		}
 
-			flag_clear(&work->flags, K_WORK_RUNNING_BIT);
-			if (flag_test(&work->flags, K_WORK_CANCELING_BIT)) {
-				finalize_cancel_locked(work);
-			}
+		flag_clear(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
+		yield = !flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT);
+		k_spin_unlock(&lock, key);
 
-			flag_clear(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
-			yield = !flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT);
-			k_spin_unlock(&lock, key);
-
-			/* Optionally yield to prevent the work queue from
-			 * starving other threads.
-			 */
-			if (yield) {
-				k_yield();
-			}
+		/* Optionally yield to prevent the work queue from
+		 * starving other threads.
+		 */
+		if (yield) {
+			k_yield();
 		}
 	}
 }
