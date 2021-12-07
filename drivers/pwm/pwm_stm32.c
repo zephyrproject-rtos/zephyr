@@ -311,7 +311,7 @@ static int init_capture_channel(const struct device *dev, uint32_t pwm,
 
 	LL_TIM_IC_StructInit(&ic);
 	ic.ICPrescaler = TIM_ICPSC_DIV1;
-	ic.ICFilter = LL_TIM_IC_FILTER_FDIV1;
+	ic.ICFilter = LL_TIM_IC_FILTER_FDIV1_N8;
 
 	if (channel == LL_TIM_CHANNEL_CH1) {
 		if (pwm == 1u) {
