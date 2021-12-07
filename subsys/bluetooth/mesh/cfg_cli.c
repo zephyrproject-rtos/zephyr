@@ -43,22 +43,22 @@ static int comp_data_status(struct bt_mesh_model *model,
 			    struct net_buf_simple *buf)
 {
 	struct comp_data *param;
-	uint8_t status;
+	uint8_t page;
 	size_t to_copy;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 	       bt_hex(buf->data, buf->len));
 
-	status = net_buf_simple_pull_u8(buf);
+	page = net_buf_simple_pull_u8(buf);
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_DEV_COMP_DATA_STATUS, ctx->addr,
 				      (void **)&param)) {
 		if (param->page) {
-			*(param->page) = net_buf_simple_pull_u8(buf);
+			*(param->page) = page;
 		}
 
-		to_copy  = MIN(net_buf_simple_tailroom(param->comp), buf->len);
+		to_copy = MIN(net_buf_simple_tailroom(param->comp), buf->len);
 		net_buf_simple_add_mem(param->comp, buf->data, to_copy);
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
