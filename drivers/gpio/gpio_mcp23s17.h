@@ -47,7 +47,7 @@ extern "C" {
 
 /** Configuration data */
 struct mcp23s17_config {
-	/* gpio_driver_data needs to be first */
+	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 
 	struct spi_dt_spec bus;
@@ -56,7 +56,7 @@ struct mcp23s17_config {
 /** Runtime driver data */
 struct mcp23s17_drv_data {
 	/* gpio_driver_data needs to be first */
-	struct gpio_driver_config data;
+	struct gpio_driver_data data;
 
 	struct k_sem lock;
 
