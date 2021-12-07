@@ -15,6 +15,11 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_NODELABEL(sysmgr)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
 
+	MMU_REGION_FLAT_ENTRY("RESET_MANAGER",
+			      DT_REG_ADDR(DT_NODELABEL(rstmgr)),
+			      DT_REG_SIZE(DT_NODELABEL(rstmgr)),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
+
 	MMU_REGION_FLAT_ENTRY("CLOCK",
 			      DT_REG_ADDR(DT_NODELABEL(clock)),
 			      DT_REG_SIZE(DT_NODELABEL(clock)),
