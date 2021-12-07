@@ -11,9 +11,6 @@ config SOC
 config IRQ_OFFLOAD_INTNUM
 	default 7
 
-config SMP
-	default n
-
 if SMP
 
 config SCHED_IPI_SUPPORTED
