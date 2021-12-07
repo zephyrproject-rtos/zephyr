@@ -303,6 +303,7 @@
 /drivers/memc/                            @gmarull
 /drivers/misc/                            @tejlmand
 /drivers/misc/ft8xx/                      @hubertmis
+/drivers/mm/                              @dcpleung
 /drivers/modem/hl7800.c                   @LairdCP/zephyr
 /drivers/modem/simcom-sim7080.c           @lgehreke
 /drivers/modem/simcom-sim7080.h           @lgehreke

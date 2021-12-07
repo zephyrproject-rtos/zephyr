@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MM_DRV
+	bool "Memory Management Drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select KERNEL_VM_SUPPORT
+	help
+	  Include Memory Management drivers in system config
+
+if MM_DRV
+
+config MM_DRV_PAGE_SIZE
+	hex "Memory Page Size"
+	default 0x1000
+	help
+	  Size of memory pages.
+
+endif # MM_DRV
