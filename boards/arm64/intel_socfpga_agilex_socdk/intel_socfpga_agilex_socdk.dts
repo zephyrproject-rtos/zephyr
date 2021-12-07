@@ -37,3 +37,7 @@
 		status = "okay";
 	};
 };
+
+&sdmmc {
+	status = "okay";
+};
