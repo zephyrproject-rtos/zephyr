@@ -174,11 +174,11 @@ static int disk_dw_sdmmc_init(const struct device *dev)
 	static struct dw_sdmmc_priv dw_sdmmc_priv_##inst = {		\
 		.params = {						\
 			.bus_width = MMC_BUS_WIDTH_4,			\
-			.clk_rate = DT_INST_PROP(0, clock_frequency),	\
+			.clk_rate = DT_INST_PROP(inst, clock_frequency),	\
 			.desc_base = (uintptr_t) &dw_desc,		\
 			.desc_size = EMMC_DESC_SIZE,			\
 			.flags = 0,					\
-			.reg_base = DT_INST_REG_ADDR(0),		\
+			.reg_base = DT_INST_REG_ADDR(inst),		\
 		},							\
 		.info = {						\
 			.mmc_dev_type = MMC_IS_SD,			\

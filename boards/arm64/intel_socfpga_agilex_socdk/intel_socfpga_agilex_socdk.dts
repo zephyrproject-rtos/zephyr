@@ -27,3 +27,7 @@
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&sdmmc {
+	status = "okay";
+};
