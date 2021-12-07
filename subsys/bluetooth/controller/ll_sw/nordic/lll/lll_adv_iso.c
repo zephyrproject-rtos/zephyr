@@ -27,10 +27,10 @@
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
 #include "lll_adv_iso.h"
+#include "lll_iso_tx.h"
 
 #include "lll_internal.h"
-#include "lll_adv_internal.h"
-#include "lll_tim_internal.h"
+#include "lll_adv_iso_internal.h"
 
 #include "ll_feat.h"
 
@@ -38,6 +38,8 @@
 #define LOG_MODULE_NAME bt_ctlr_lll_adv_iso
 #include "common/log.h"
 #include "hal/debug.h"
+
+#define TEST_WITH_DUMMY_PDU 0
 
 static int init_reset(void);
 static void prepare(void *param);
@@ -241,7 +243,53 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
 
-	/* FIXME: get ISO data PDU */
+	/* Get ISO data PDU */
+#if !TEST_WITH_DUMMY_PDU
+	struct lll_adv_iso_stream *stream;
+	uint64_t payload_count;
+	uint16_t stream_handle;
+	uint16_t handle;
+	struct node_tx_iso *tx;
+	memq_link_t *link;
+
+	stream_handle = lll->stream_handle[lll->bis_curr - 1U];
+	handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+	stream = ull_adv_iso_lll_stream_get(stream_handle);
+	LL_ASSERT(stream);
+
+	payload_count = lll->payload_count - lll->bn;
+
+	do {
+		link = memq_peek(stream->memq_tx.head, stream->memq_tx.tail,
+				 (void **)&tx);
+		if (link) {
+			if (tx->payload_count < payload_count) {
+				memq_dequeue(stream->memq_tx.tail,
+					     &stream->memq_tx.head, NULL);
+
+				tx->next = link;
+				ull_iso_lll_ack_enqueue(handle, tx);
+			} else if (tx->payload_count >= lll->payload_count) {
+				link = NULL;
+			} else {
+				if (tx->payload_count != payload_count) {
+					link = NULL;
+				}
+
+				break;
+			}
+		}
+	} while (link);
+
+	if (!link) {
+		pdu = radio_pkt_empty_get();
+		pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+		pdu->len = 0U;
+	} else {
+		pdu = (void *)tx->pdu;
+	}
+
+#else /* TEST_WITH_DUMMY_PDU */
 	pdu = radio_pkt_scratch_get();
 	if (lll->bn_curr >= lll->bn) {
 		pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
@@ -260,6 +308,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	pdu->payload[6] = lll->payload_count >> 16;
 	pdu->payload[7] = lll->payload_count >> 24;
 	pdu->payload[8] = lll->payload_count >> 32;
+#endif /* TEST_WITH_DUMMY_PDU */
 
 	/* Initialize reserve bit */
 	pdu->rfu = 0U;
@@ -474,8 +523,45 @@ static void isr_tx_common(void *param,
 	radio_aa_set(access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 
-	/* FIXME: get ISO data PDU */
+	/* Get ISO data PDU, not control subevent */
 	if (!pdu) {
+#if !TEST_WITH_DUMMY_PDU
+		struct lll_adv_iso_stream *stream;
+		uint64_t payload_count;
+		uint16_t stream_handle;
+		struct node_tx_iso *tx;
+		uint8_t payload_index;
+		memq_link_t *link;
+
+		stream_handle = lll->stream_handle[lll->bis_curr - 1U];
+		stream = ull_adv_iso_lll_stream_get(stream_handle);
+		LL_ASSERT(stream);
+
+		payload_index = (lll->bn_curr - 1U) +
+				(lll->ptc_curr * lll->pto);
+		payload_count = lll->payload_count + payload_index - lll->bn;
+
+		link = memq_peek_n(stream->memq_tx.head, stream->memq_tx.tail,
+				   payload_index, (void **)&tx);
+		if (!link || (tx->payload_count != payload_count)) {
+			payload_index = 0U;
+			do {
+				link = memq_peek_n(stream->memq_tx.head,
+						   stream->memq_tx.tail,
+						   payload_index, (void **)&tx);
+				payload_index++;
+			} while (link &&
+				 (tx->payload_count < payload_count));
+		}
+		if (!link || (tx->payload_count != payload_count)) {
+			pdu = radio_pkt_empty_get();
+			pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+			pdu->len = 0U;
+		} else {
+			pdu = (void *)tx->pdu;
+		}
+
+#else /* TEST_WITH_DUMMY_PDU */
 		pdu = radio_pkt_scratch_get();
 		if (lll->bn_curr >= lll->bn && !(lll->ptc_curr % lll->bn)) {
 			pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
@@ -490,6 +576,7 @@ static void isr_tx_common(void *param,
 		pdu->payload[1] = lll->irc_curr;
 		pdu->payload[2] = lll->ptc_curr;
 		pdu->payload[3] = lll->bis_curr;
+#endif /* TEST_WITH_DUMMY_PDU */
 
 		/* Calculate the radio channel to use for ISO event */
 		data_chan_use =
@@ -506,6 +593,7 @@ static void isr_tx_common(void *param,
 
 	radio_pkt_tx_set(pdu);
 
+	/* Control subevent, then complete subevent and close radio use */
 	if (!bis) {
 		radio_switch_complete_and_disable();
 
@@ -513,9 +601,11 @@ static void isr_tx_common(void *param,
 	} else {
 		uint16_t iss_us;
 
+		/* Calculate next subevent start based on previous PDU length */
 		iss_us = lll->sub_interval -
 			 PDU_BIS_US(pdu->len, lll->enc, lll->phy,
 				    lll->phy_flags);
+
 		radio_tmr_tifs_set(iss_us);
 		radio_switch_complete_and_b2b_tx(lll->phy, lll->phy_flags,
 						 lll->phy, lll->phy_flags);

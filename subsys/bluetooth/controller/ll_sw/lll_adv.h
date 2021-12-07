@@ -5,13 +5,16 @@
  */
 
 struct lll_adv_iso_stream {
+	/* Associated BIG Handle */
 	uint8_t big_handle;
 
-	/* FIXME: rfi placed here to make a minimum size of 8 octets, for use
-	 *        with mem interface, remove with adding other required members
-	 *        in this structure.
-	 */
-	void *rfi;
+	/* Transmission queue */
+	MEMQ_DECLARE(tx);
+	memq_link_t link_tx;
+	memq_link_t *link_tx_free;
+
+	/* Downstream last packet sequence number */
+	uint16_t pkt_seq_num;
 };
 
 struct lll_adv_iso {

@@ -254,7 +254,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 		/* While there are completed rx nodes */
 		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO) || \
+	defined(CONFIG_BT_CTLR_CONN_ISO)
 
 			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 					     false, K_FOREVER);
@@ -262,7 +263,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			BT_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
 			bt_recv_prio(buf);
 			k_yield();
-#endif
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 		}
 
 		if (node_rx) {
@@ -658,6 +659,22 @@ static int acl_handle(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+static int iso_handle(struct net_buf *buf)
+{
+	struct net_buf *evt;
+	int err;
+
+	err = hci_iso_handle(buf, &evt);
+	if (evt) {
+		BT_DBG("Replying with event of %u bytes", evt->len);
+		bt_recv_prio(evt);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
 static int hci_driver_send(struct net_buf *buf)
 {
 	uint8_t type;
@@ -680,6 +697,11 @@ static int hci_driver_send(struct net_buf *buf)
 	case BT_BUF_CMD:
 		err = cmd_handle(buf);
 		break;
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	case BT_BUF_ISO_OUT:
+		err = iso_handle(buf);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 	default:
 		BT_ERR("Unknown HCI type %u", type);
 		return -EINVAL;

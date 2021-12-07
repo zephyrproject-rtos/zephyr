@@ -262,6 +262,9 @@ void ull_adv_iso_done_terminate(struct node_rx_event_done *done);
 /* helper function to return adv_iso instance */
 struct ll_adv_iso_set *ull_adv_iso_by_stream_get(uint16_t handle);
 
+/* helper function to return adv_iso stream instance */
+struct lll_adv_iso_stream *ull_adv_iso_stream_get(uint16_t handle);
+
 /* helper function to release stream instances */
 void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso);
 
