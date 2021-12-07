@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: INTEL Audio DSP TLB Memory Mapper
+
+compatible: "intel,adsp-tlb"
+
+include: mm_drv.yaml
+
+properties:
+    reg:
+        required: true
