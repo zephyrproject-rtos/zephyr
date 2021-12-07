@@ -5,6 +5,7 @@
 DT_COMPAT_ZEPHYR_MMC_SPI_SLOT := zephyr,mmc-spi-slot
 DT_COMPAT_NXP_USDHC := nxp,imx-usdhc
 DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
+DT_COMPAT_SNPS_DW_SDMMC := snps,designware-sdmmc
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
@@ -63,6 +64,12 @@ config SDMMC_STM32_HWFC
 	help
 	  Enable SDMMC Hardware Flow Control to avoid FIFO underrun (TX mode) and
 	  overrun (RX mode) errors.
+
+config SDMMC_DW
+	bool "SNPS DW SDMMC"
+	default $(dt_compat_enabled,$(DT_COMPAT_SNPS_DW_SDMMC))
+	help
+	  File system on sdmmc accessed through snps dw sdmmc.
 
 module = SDMMC
 module-str = sdmmc
