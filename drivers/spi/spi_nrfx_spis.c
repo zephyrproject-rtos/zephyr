@@ -201,10 +201,6 @@ static int spi_nrfx_release(const struct device *dev,
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 
-	if (!spi_context_configured(&dev_data->ctx, spi_cfg)) {
-		return -EINVAL;
-	}
-
 	spi_context_unlock_unconditionally(&dev_data->ctx);
 
 	return 0;
