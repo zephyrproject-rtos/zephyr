@@ -250,7 +250,7 @@ static void send_frame_series(struct frame_desired *frames, size_t length,
 		frame.dlc = desired->length;
 		memcpy(frame.data, desired->data, desired->length);
 		ret = can_send(can_dev, &frame, K_MSEC(500), NULL, NULL);
-		zassert_equal(ret, CAN_TX_OK, "Sending msg %d failed.", i);
+		zassert_equal(ret, 0, "Sending msg %d failed.", i);
 		desired++;
 	}
 }
@@ -298,7 +298,7 @@ static int attach_msgq(uint32_t id, uint32_t mask)
 	};
 
 	filter_id = can_attach_msgq(can_dev, &frame_msgq, &filter);
-	zassert_not_equal(filter_id, CAN_NO_FREE_FILTER, "Filter full");
+	zassert_not_equal(filter_id, -ENOSPC, "Filter full");
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 

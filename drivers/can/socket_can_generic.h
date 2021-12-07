@@ -95,7 +95,7 @@ static inline int socket_can_setsockopt(const struct device *dev, void *obj,
 
 	ret = can_attach_msgq(socket_context->can_dev, socket_context->msgq,
 			      optval);
-	if (ret == CAN_NO_FREE_FILTER) {
+	if (ret == -ENOSPC) {
 		errno = ENOSPC;
 		return -1;
 	}
