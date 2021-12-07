@@ -591,7 +591,7 @@ void test_k_busy_wait(void)
 
 	/* execution_cycles increases correctly */
 	dt = test_stats.execution_cycles - cycles;
-	zassert_true(dt >= k_cyc_to_us_floor64(100), NULL);
+	zassert_true(dt >= k_us_to_cyc_floor64(100), NULL);
 }
 
 static void tp_entry(void *p1, void *p2, void *p3)
