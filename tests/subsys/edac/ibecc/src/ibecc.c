@@ -256,7 +256,7 @@ static int check_values(void *p1, void *p2, void *p3)
 	return 0;
 }
 
-static void test_ibecc_error_inject_test_cor(void)
+static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 {
 	int ret;
 
@@ -264,40 +264,30 @@ static void test_ibecc_error_inject_test_cor(void)
 	zassert_equal(ret, 0, "Error setting notification callback");
 
 	/* Test injecting correctable error at address TEST_ADDRESS1 */
-	test_inject(TEST_ADDRESS1, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_COR);
+	test_inject(addr, mask, type);
 
 #if defined(CONFIG_USERSPACE)
 	k_thread_user_mode_enter((k_thread_entry_t)check_values,
-				 (void *)TEST_ADDRESS1,
-				 (void *)EDAC_ERROR_TYPE_DRAM_COR,
+				 (void *)addr,
+				 (void *)type,
 				 NULL);
 #else
-	check_values((void *)TEST_ADDRESS1, (void *)EDAC_ERROR_TYPE_DRAM_COR,
-		     NULL);
+	check_values((void *)addr, (void *)type, NULL);
 #endif
+}
+
+static void test_ibecc_error_inject_test_cor(void)
+{
+	ibecc_error_inject_test(TEST_ADDRESS1, TEST_ADDRESS_MASK,
+				EDAC_ERROR_TYPE_DRAM_COR);
 }
 
 static void test_ibecc_error_inject_test_uc(void)
 {
-	int ret;
-
-	ret = edac_notify_callback_set(dev, callback);
-	zassert_equal(ret, 0, "Error setting notification callback");
-
-	/* Test injecting uncorrectable error at address TEST_ADDRESS2 */
-	test_inject(TEST_ADDRESS2, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_UC);
-
-#if defined(CONFIG_USERSPACE)
-	k_thread_user_mode_enter((k_thread_entry_t)check_values,
-				 (void *)TEST_ADDRESS2,
-				 (void *)EDAC_ERROR_TYPE_DRAM_UC,
-				 NULL);
-#else
-	check_values((void *)TEST_ADDRESS2, (void *)EDAC_ERROR_TYPE_DRAM_UC,
-		     NULL);
-#endif
+	ibecc_error_inject_test(TEST_ADDRESS2, TEST_ADDRESS_MASK,
+				EDAC_ERROR_TYPE_DRAM_UC);
 }
-#else
+#else /* CONFIG_EDAC_ERROR_INJECT */
 static void test_ibecc_error_inject_test_cor(void)
 {
 	ztest_test_skip();
