@@ -103,6 +103,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		static uint8_t frame[512];
 		struct net_buf *buf;
+		size_t buf_tailroom;
+		size_t buf_add_len;
 		ssize_t len;
 
 		if (!uc_ready()) {
@@ -131,7 +133,16 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
-		net_buf_add_mem(buf, &frame[1], len - 1);
+		buf_tailroom = net_buf_tailroom(buf);
+		buf_add_len = len - 1;
+		if (buf_tailroom < buf_add_len) {
+			BT_ERR("Not enough space in buffer %zu/%zu",
+			       buf_add_len, buf_tailroom);
+			net_buf_unref(buf);
+			continue;
+		}
+
+		net_buf_add_mem(buf, &frame[1], buf_add_len);
 
 		BT_DBG("Calling bt_recv(%p)", buf);
 

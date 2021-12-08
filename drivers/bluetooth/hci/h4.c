@@ -281,6 +281,8 @@ static inline void read_payload(void)
 	int read;
 
 	if (!rx.buf) {
+		size_t buf_tailroom;
+
 		rx.buf = get_rx(K_NO_WAIT);
 		if (!rx.buf) {
 			if (rx.discardable) {
@@ -297,8 +299,10 @@ static inline void read_payload(void)
 
 		BT_DBG("Allocated rx.buf %p", rx.buf);
 
-		if (rx.remaining > net_buf_tailroom(rx.buf)) {
-			BT_ERR("Not enough space in buffer");
+		buf_tailroom = net_buf_tailroom(rx.buf);
+		if (buf_tailroom < rx.remaining) {
+			BT_ERR("Not enough space in buffer %u/%zu",
+			       rx.remaining, buf_tailroom);
 			rx.discard = rx.remaining;
 			reset_rx();
 			return;
