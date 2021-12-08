@@ -128,6 +128,20 @@
 			#io-channel-cells = <1>;
 		};
 
+		exti: interrupt-controller@40013c00 {
+			compatible = "gd,gd32-exti";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x40013c00 0x400>;
+			num-lines = <23>;
+			interrupts = <6 0>, <7 0>, <8 0>, <9 0>, <10 0>, <23 0>,
+				     <40 0>;
+			interrupt-names = "line0", "line1", "line2", "line3",
+					  "line4", "line5-9", "line10-15";
+			status = "okay";
+			label = "EXTI";
+		};
+
 		pinctrl: pin-controller@40020000 {
 			compatible = "gd,gd32-pinctrl-af";
 			reg = <0x40020000 0x2400>;
