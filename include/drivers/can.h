@@ -88,13 +88,13 @@ extern "C" {
  * @brief Defines the mode of the CAN controller
  */
 enum can_mode {
-	/* Normal mode. */
+	/** Normal mode. */
 	CAN_NORMAL_MODE,
-	/* Controller is not allowed to send dominant bits. */
+	/** Controller is not allowed to send dominant bits. */
 	CAN_SILENT_MODE,
-	/* Controller is in loopback mode (receives own frames). */
+	/** Controller is in loopback mode (receives own frames). */
 	CAN_LOOPBACK_MODE,
-	/* Combination of loopback and silent modes. */
+	/** Combination of loopback and silent modes. */
 	CAN_SILENT_LOOPBACK_MODE
 };
 
