@@ -362,6 +362,8 @@
 /drivers/disk/sdmmc_spi.c                 @JunYangNXP
 /drivers/disk/usdhc.c                     @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
+/drivers/disk/sdmmc_dw.c                  @ngboonkhai
+/drivers/disk/mmc_*ll.*                   @ngboonkhai
 /drivers/net/                             @rlubos @tbursztyka
 /drivers/ptp_clock/                       @tbursztyka
 /drivers/spi/                             @tbursztyka
