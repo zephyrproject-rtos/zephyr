@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <kernel.h>
 #include <soc.h>
 #include <stm32_ll_spi.h>
+#include <stm32_ll_rcc.h>
 #include <errno.h>
 #include <drivers/spi.h>
 #include <drivers/pinctrl.h>
@@ -827,6 +828,7 @@ static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
 	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi  __attribute__((unused)) = cfg->spi;
 	int err;
 
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -834,6 +836,17 @@ static int spi_stm32_init(const struct device *dev)
 		LOG_ERR("Could not enable SPI clock");
 		return -EIO;
 	}
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	if (spi == SPI1 || spi == SPI2 || spi == SPI3) {
+		/* SPI 1, 2, and 3 defaults clock source to PLL1
+		 * where the drivers expects the PCLK. Other sources
+		 * than the PCLK cannot be used as they are not defined
+		 * in `stm32_clock.h`, and thus not selectable in the DTS.
+		 */
+		LL_RCC_SetSPIClockSource(LL_RCC_SPI123_CLKSOURCE_CLKP);
+	}
+#endif
 
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
