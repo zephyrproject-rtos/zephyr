@@ -471,7 +471,7 @@ union bmi160_sample {
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 		uint16_t acc[BMI160_AXES];
 #endif
-	} __packed;
+	};
 };
 
 struct bmi160_scale {
