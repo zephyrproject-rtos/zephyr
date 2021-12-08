@@ -429,6 +429,8 @@
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
+/drivers/disk/sdmmc_dw.c                  @ngboonkhai
+/drivers/disk/mmc_*ll.*                   @ngboonkhai
 /drivers/net/                             @rlubos @tbursztyka
 /drivers/ptp_clock/                       @tbursztyka
 /drivers/spi/                             @tbursztyka
