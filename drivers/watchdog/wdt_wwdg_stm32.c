@@ -282,6 +282,13 @@ static int wwdg_stm32_init(const struct device *dev)
 
 	wwdg_stm32_irq_config(dev);
 
+#ifdef CONFIG_DEBUG
+	/* Freeze the IWDG when MCU is halt in debug mode */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
+	LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_WWDG_STOP);
+	LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
+#endif /* CONFIG_DEBUG */
+
 	return clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
 }
 
