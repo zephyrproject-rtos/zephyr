@@ -114,6 +114,9 @@ static inline int preempt_counter(void)
 	return atomic_get(&preempt_ctr);
 }
 
+static K_THREAD_STACK_DEFINE(invalid_test_stack, STACK_SIZE);
+static struct k_work_q invalid_test_queue;
+
 static atomic_t system_ctr;
 static inline int system_counter(void)
 {
@@ -243,6 +246,20 @@ static void test_queue_start(void)
 		zassert_true(tn != cfg.name, NULL);
 		zassert_true(tn != NULL, NULL);
 		zassert_equal(strcmp(tn, cfg.name), 0, NULL);
+	}
+
+	cfg.name = NULL;
+	zassert_equal(invalid_test_queue.flags, 0, NULL);
+	k_work_queue_start(&invalid_test_queue, invalid_test_stack, STACK_SIZE,
+			    PREEMPT_PRIORITY, &cfg);
+	zassert_equal(invalid_test_queue.flags, K_WORK_QUEUE_STARTED, NULL);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *tn = k_thread_name_get(&invalid_test_queue.thread);
+
+		zassert_true(tn != cfg.name, NULL);
+		zassert_true(tn != NULL, NULL);
+		zassert_equal(strcmp(tn, ""), 0, NULL);
 	}
 
 	cfg.name = "wq.coophi";
