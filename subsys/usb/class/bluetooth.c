@@ -404,7 +404,7 @@ static void bluetooth_interface_config(struct usb_desc_header *head,
 	bluetooth_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 
-USBD_CFG_DATA_DEFINE(primary, hci) struct usb_cfg_data bluetooth_config = {
+USBD_DEFINE_CFG_DATA(bluetooth_config) = {
 	.usb_device_description = NULL,
 	.interface_config = bluetooth_interface_config,
 	.interface_descriptor = &bluetooth_cfg.if0,
