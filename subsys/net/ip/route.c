@@ -66,6 +66,13 @@ static inline struct net_nbr *get_nexthop_nbr(struct net_nbr *start, int idx)
 			((sizeof(struct net_nbr) + start->size) * idx));
 }
 
+static void release_nexthop_route(struct net_route_nexthop *route_nexthop)
+{
+	struct net_nbr *nbr = CONTAINER_OF(route_nexthop, struct net_nbr, __nbr);
+
+	net_nbr_unref(nbr);
+}
+
 static struct net_nbr *get_nexthop_route(void)
 {
 	int i;
@@ -469,6 +476,7 @@ int net_route_del(struct net_route_entry *route)
 		}
 
 		nbr_nexthop_put(nexthop_route->nbr);
+		release_nexthop_route(nexthop_route);
 	}
 
 	nbr_free(nbr);
