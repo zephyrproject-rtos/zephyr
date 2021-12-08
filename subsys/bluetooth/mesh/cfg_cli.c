@@ -752,7 +752,10 @@ static int hb_pub_status(struct bt_mesh_model *model,
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_HEARTBEAT_PUB_STATUS,
 				      ctx->addr, (void **)&param)) {
-		*param->status = status;
+		if (param->status) {
+			*param->status = status;
+		}
+
 		if (param->pub) {
 			*param->pub = pub;
 		}
