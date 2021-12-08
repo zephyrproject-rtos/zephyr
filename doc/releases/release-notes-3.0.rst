@@ -75,6 +75,11 @@ Removed APIs in this release:
   is changed so that it more closely mimics the real UART controller,
   option is no longer necessary.
 
+Deprecated in this release:
+
+* :c:macro:`USBD_CFG_DATA_DEFINE` is deprecated in favor of utilizing
+  :c:macro:`USBD_DEFINE_CFG_DATA`
+
 Stable API changes in this release
 ==================================
 
