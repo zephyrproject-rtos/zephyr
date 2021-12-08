@@ -292,6 +292,11 @@ void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
 {
 
 }
+
+void imxrt_usdhc_dat3_pull(bool pullup)
+{
+
+}
 #endif
 
 /**
