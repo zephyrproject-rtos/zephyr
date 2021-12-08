@@ -2393,8 +2393,7 @@ static int cmd_fault_clear_unack(const struct shell *shell, size_t argc,
 
 	cid = strtoul(argv[1], NULL, 0);
 
-	err = bt_mesh_health_fault_clear(net.dst, net.app_idx, cid,
-					 NULL, NULL, NULL);
+	err = bt_mesh_health_fault_clear_unack(net.dst, net.app_idx, cid);
 	if (err) {
 		shell_error(shell, "Health Fault Clear Unacknowledged failed "
 			    "(err %d)", err);
@@ -2445,8 +2444,7 @@ static int cmd_fault_test_unack(const struct shell *shell, size_t argc,
 	cid = strtoul(argv[1], NULL, 0);
 	test_id = strtoul(argv[2], NULL, 0);
 
-	err = bt_mesh_health_fault_test(net.dst, net.app_idx, cid,
-				 test_id, NULL, NULL);
+	err = bt_mesh_health_fault_test_unack(net.dst, net.app_idx, cid, test_id);
 	if (err) {
 		shell_error(shell, "Health Fault Test Unacknowledged failed "
 			    "(err %d)", err);
@@ -2507,7 +2505,7 @@ static int cmd_period_set_unack(const struct shell *shell, size_t argc,
 
 	divisor = strtoul(argv[1], NULL, 0);
 
-	err = bt_mesh_health_period_set(net.dst, net.app_idx, divisor, NULL);
+	err = bt_mesh_health_period_set_unack(net.dst, net.app_idx, divisor);
 	if (err) {
 		shell_print(shell, "Failed to send Health Period Set (err %d)",
 			    err);
@@ -2571,8 +2569,7 @@ static int cmd_attention_set_unack(const struct shell *shell, size_t argc,
 
 	attention = strtoul(argv[1], NULL, 0);
 
-	err = bt_mesh_health_attention_set(net.dst, net.app_idx, attention,
-				 NULL);
+	err = bt_mesh_health_attention_set_unack(net.dst, net.app_idx, attention);
 	if (err) {
 		shell_error(shell, "Failed to send Health Attention Set "
 			    "(err %d)", err);
