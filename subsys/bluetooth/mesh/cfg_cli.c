@@ -708,7 +708,10 @@ static int hb_sub_status(struct bt_mesh_model *model,
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_HEARTBEAT_SUB_STATUS,
 				      ctx->addr, (void **)&param)) {
-		*param->status = status;
+		if (param->status) {
+			*param->status = status;
+		}
+
 		if (param->sub) {
 			*param->sub = sub;
 		}
