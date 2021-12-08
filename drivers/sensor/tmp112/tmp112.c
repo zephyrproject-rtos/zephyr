@@ -21,13 +21,11 @@ LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 static int tmp112_reg_read(const struct tmp112_config *cfg,
 			   uint8_t reg, uint16_t *val)
 {
-	uint8_t buf[sizeof(val)];
-
-	if (i2c_burst_read_dt(&cfg->bus, reg, buf, sizeof(buf)) < 0) {
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, sizeof(*val)) < 0) {
 		return -EIO;
 	}
 
-	*val = sys_get_be16(buf);
+	*val = sys_be16_to_cpu(*val);
 
 	return 0;
 }
