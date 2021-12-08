@@ -1158,7 +1158,7 @@ static void netusb_interface_config(struct usb_desc_header *head,
 	rndis_cfg.iad.bFirstInterface = bInterfaceNumber;
 }
 
-USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {
+USBD_DEFINE_CFG_DATA(rndis_config) = {
 	.usb_device_description = NULL,
 	.interface_config = netusb_interface_config,
 	.interface_descriptor = &rndis_cfg.if0,

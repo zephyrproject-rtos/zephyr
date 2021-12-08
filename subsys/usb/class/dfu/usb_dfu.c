@@ -761,7 +761,7 @@ static void dfu_interface_config(struct usb_desc_header *head,
 }
 
 /* Configuration of the DFU Device send to the USB Driver */
-USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
+USBD_DEFINE_CFG_DATA(dfu_config) = {
 	.usb_device_description = NULL,
 	.interface_config = dfu_interface_config,
 	.interface_descriptor = &dfu_cfg.if0,
@@ -777,7 +777,7 @@ USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
  * Dummy configuration, this is necessary to configure DFU mode descriptor
  * which is an alternative (secondary) device descriptor.
  */
-USBD_CFG_DATA_DEFINE(secondary, dfu) struct usb_cfg_data dfu_mode_config = {
+USBD_DEFINE_CFG_DATA(dfu_mode_config) = {
 	.usb_device_description = NULL,
 	.interface_config = NULL,
 	.interface_descriptor = &dfu_mode_desc.sec_dfu_cfg.if0,

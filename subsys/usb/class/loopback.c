@@ -167,7 +167,7 @@ static void loopback_interface_config(struct usb_desc_header *head,
 }
 
 /* usb.rst device config data start */
-USBD_CFG_DATA_DEFINE(primary, loopback) struct usb_cfg_data loopback_config = {
+USBD_DEFINE_CFG_DATA(loopback_config) = {
 	.usb_device_description = NULL,
 	.interface_config = loopback_interface_config,
 	.interface_descriptor = &loopback_cfg.if0,

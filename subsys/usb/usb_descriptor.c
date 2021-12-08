@@ -36,8 +36,6 @@ LOG_MODULE_REGISTER(usb_descriptor);
 /* Linker-defined symbols bound the USB descriptor structs */
 extern struct usb_desc_header __usb_descriptor_start[];
 extern struct usb_desc_header __usb_descriptor_end[];
-extern struct usb_cfg_data __usb_data_start[];
-extern struct usb_cfg_data __usb_data_end[];
 
 /* Structure representing the global USB description */
 struct common_descriptor {
@@ -286,11 +284,9 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
  */
 static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 {
-	size_t length = (__usb_data_end - __usb_data_start);
-
-	for (size_t i = 0; i < length; i++) {
-		if (__usb_data_start[i].interface_descriptor == iface) {
-			return &__usb_data_start[i];
+	STRUCT_SECTION_FOREACH(usb_cfg_data, cfg_data) {
+		if (cfg_data->interface_descriptor == iface) {
+			return cfg_data;
 		}
 	}
 

@@ -1070,8 +1070,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		},							\
 	};								\
 									\
-	USBD_CFG_DATA_DEFINE(primary, cdc_acm)				\
-	struct usb_cfg_data cdc_acm_config_##x = {			\
+	USBD_DEFINE_CFG_DATA(cdc_acm_config_##x) = {			\
 		.usb_device_description = NULL,				\
 		.interface_config = cdc_interface_config,		\
 		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\

@@ -623,8 +623,7 @@ static void hid_interface_config(struct usb_desc_header *head,
 }
 
 #define DEFINE_HID_CFG_DATA(x, _)					\
-	USBD_CFG_DATA_DEFINE(primary, hid)				\
-	struct usb_cfg_data hid_config_##x = {				\
+	USBD_DEFINE_CFG_DATA(hid_config_##x) = {			\
 		.usb_device_description = NULL,				\
 		.interface_config = hid_interface_config,		\
 		.interface_descriptor = &hid_cfg_##x.if0,		\
