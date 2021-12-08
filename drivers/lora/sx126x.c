@@ -109,10 +109,9 @@ static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 	SX126xCheckDeviceReady();
 
 	if (!req_rx && !data_rx) {
-		ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+		ret = spi_write_dt(&dev_data.spi, &tx);
 	} else {
-		ret = spi_transceive(dev_data.spi, &dev_data.spi_cfg,
-				     &tx, &rx);
+		ret = spi_transceive_dt(&dev_data.spi, &tx, &rx);
 	}
 
 	if (ret < 0) {
@@ -376,7 +375,7 @@ void SX126xWakeup(void)
 	};
 
 	LOG_DBG("Sending GET_STATUS");
-	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+	ret = spi_write_dt(&dev_data.spi, &tx);
 	if (ret < 0) {
 		LOG_ERR("SPI transaction failed: %i", ret);
 		return;
@@ -433,30 +432,9 @@ static int sx126x_lora_init(const struct device *dev)
 		return ret;
 	}
 
-	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!dev_data.spi) {
-		LOG_ERR("Cannot get pointer to %s device",
-			DT_INST_BUS_LABEL(0));
-		return -EINVAL;
-	}
-
-#if HAVE_GPIO_CS
-	dev_data.spi_cs.gpio_dev = device_get_binding(GPIO_CS_LABEL);
-	if (!dev_data.spi_cs.gpio_dev) {
-		LOG_ERR("Cannot get pointer to %s device", GPIO_CS_LABEL);
-		return -EIO;
-	}
-
-	dev_data.spi_cs.gpio_pin = GPIO_CS_PIN;
-	dev_data.spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
-	dev_data.spi_cs.delay = 0U;
-
-	dev_data.spi_cfg.cs = &dev_data.spi_cs;
-#endif
-	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
-
+	dev_data.spi = (struct spi_dt_spec) SPI_DT_SPEC_INST_GET(0,
+					SPI_WORD_SET(8) | SPI_TRANSFER_MSB,
+					0U);
 
 	ret = sx12xx_init(dev);
 	if (ret < 0) {
