@@ -19,8 +19,6 @@ typedef void (*tap_fetch_t)(const struct device *dev);
 int icm42605_tap_fetch(const struct device *dev);
 
 struct icm42605_data {
-	const struct device *spi;
-
 	uint8_t fifo_data[HARDWARE_FIFO_SIZE];
 
 	int16_t accel_x;
@@ -63,16 +61,10 @@ struct icm42605_data {
 	struct k_thread thread;
 	struct k_sem gpio_sem;
 #endif
-
-	struct spi_cs_control spi_cs;
-	struct spi_config spi_cfg;
 };
 
 struct icm42605_config {
-	const char *spi_label;
-	uint16_t spi_addr;
-	uint32_t frequency;
-	uint32_t slave;
+	struct spi_dt_spec spi;
 	uint8_t int_pin;
 	uint8_t int_flags;
 	const char *int_label;
