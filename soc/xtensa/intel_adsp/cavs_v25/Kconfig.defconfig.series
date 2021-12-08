@@ -15,8 +15,9 @@ config SOC
 	string
 	default "intel_cavs_25"
 
+# Hardware has four cores, limited to two pending test fixes
 config MP_NUM_CPUS
-	default 4
+	default 2
 
 config SMP
        default y
