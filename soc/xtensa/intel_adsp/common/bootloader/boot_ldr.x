@@ -1,5 +1,5 @@
 OUTPUT_ARCH(xtensa)
-ENTRY(boot_entry)
+ENTRY(rom_entry)
 
 #include <autoconf.h> /* Not a "zephyr" file, need this explicitly */
 #include <cavs-mem.h>
@@ -44,7 +44,13 @@ SECTIONS {
     KEEP (*(.ResetHandler.text))
   } >imr :imr_phdr
 
-  .rodata : {
+  /* The data sections come last.  This is because rimage seems to
+   * want this page-aligned or it will throw an error, not sure why
+   * since all the ROM cares about is a contiguous region.  And it's
+   * particularly infuriating as it precludes linker .rodata next to
+   * .text.
+   */
+  .rodata : ALIGN(4096) {
     *(.rodata)
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
@@ -72,6 +78,21 @@ SECTIONS {
     *(.gnu.version_d)
   } >imr :imr_phdr
 
+  .data : {
+    *(.data)
+    *(.data.*)
+    *(.gnu.linkonce.d.*)
+    KEEP(*(.gnu.linkonce.d.*personality*))
+    *(.data1)
+    *(.sdata)
+    *(.sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.sdata2)
+    *(.sdata2.*)
+    *(.gnu.linkonce.s2.*)
+    KEEP(*(.jcr))
+  } >imr :imr_phdr
+
   /* Note that bootloader ".bss" goes into the ELF program header as
    * real data, that way we can be sure the ROM loader has cleared the
    * memory.
@@ -90,25 +111,6 @@ SECTIONS {
     *(.bss.*)
     *(.gnu.linkonce.b.*)
     *(COMMON)
-  } >imr :imr_phdr
-
-  /* The .data section comes last.  This is because rimage seems to
-   * want this page-aligned or it will throw an error, not sure why
-   * since all the ROM cares about is a contiguous region.
-   */
-  .data : ALIGN(4096) {
-    *(.data)
-    *(.data.*)
-    *(.gnu.linkonce.d.*)
-    KEEP(*(.gnu.linkonce.d.*personality*))
-    *(.data1)
-    *(.sdata)
-    *(.sdata.*)
-    *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
-    *(.gnu.linkonce.s2.*)
-    KEEP(*(.jcr))
   } >imr :imr_phdr
 
   .comment 0 : { *(.comment) }
