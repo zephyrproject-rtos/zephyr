@@ -29,6 +29,8 @@
 			   &alta_no_peci_en
 			   &altd_npsl_in1_sl
 			   &altd_npsl_in2_sl
+			   &altd_psl_in3_sl
+			   &altd_psl_in4_sl
 			   &alt7_no_ksi0_sl
 			   &alt7_no_ksi1_sl
 			   &alt7_no_ksi2_sl
