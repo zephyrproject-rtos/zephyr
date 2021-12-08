@@ -57,6 +57,7 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 	bool discardable = false;
 	struct bt_hci_evt_hdr hdr;
 	struct net_buf *buf;
+	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
 		BT_ERR("Not enough data for event header");
@@ -86,6 +87,15 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
+
+	buf_tailroom = net_buf_tailroom(buf);
+	if (buf_tailroom < remaining) {
+		BT_ERR("Not enough space in buffer %zu/%zu",
+		       remaining, buf_tailroom);
+		net_buf_unref(buf);
+		continue;
+	}
+
 	net_buf_add_mem(buf, data, remaining);
 
 	return buf;
@@ -95,6 +105,7 @@ static struct net_buf *bt_esp_acl_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
+	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
 		BT_ERR("Not enough data for ACL header");
@@ -119,6 +130,14 @@ static struct net_buf *bt_esp_acl_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
+	buf_tailroom = net_buf_tailroom(buf);
+	if (buf_tailroom < remaining) {
+		BT_ERR("Not enough space in buffer %zu/%zu",
+		       remaining, buf_tailroom);
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	BT_DBG("len %u", remaining);
 	net_buf_add_mem(buf, data, remaining);
 
@@ -129,6 +148,7 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_iso_hdr hdr;
 	struct net_buf *buf;
+	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
 		BT_ERR("Not enough data for ISO header");
@@ -149,6 +169,14 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
 		BT_ERR("ISO payload length is not correct");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	buf_tailroom = net_buf_tailroom(buf);
+	if (buf_tailroom < remaining) {
+		BT_ERR("Not enough space in buffer %zu/%zu",
+		       remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
