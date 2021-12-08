@@ -13,10 +13,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 #include <kernel.h>
 #include <errno.h>
 #include <sys/util.h>
-#include <drivers/spi.h>
 #include <net/ethernet.h>
 #include <linker/sections.h>
-#include <drivers/spi.h>
 
 #if defined(CONFIG_DSA_SPI)
 #include <drivers/spi.h>
