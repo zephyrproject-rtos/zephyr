@@ -420,8 +420,8 @@ static int cmd_csis_client_lock_get(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csis_client_lock_get(&set_members[member_index],
-				      &set_members[member_index].sets[idx]);
+	err = bt_csis_client_get_lock_state(&set_members[member_index],
+					    &set_members[member_index].sets[idx]);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}

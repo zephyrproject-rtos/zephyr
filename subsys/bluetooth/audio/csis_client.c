@@ -1195,8 +1195,8 @@ int bt_csis_client_discover_sets(struct bt_csis_client_set_member *member)
 	return err;
 }
 
-int bt_csis_client_lock_get(struct bt_csis_client_set_member *member,
-			    const struct bt_csis_client_set *set)
+int bt_csis_client_get_lock_state(struct bt_csis_client_set_member *member,
+				  const struct bt_csis_client_set *set)
 {
 	int err;
 

@@ -346,8 +346,8 @@ void bt_csis_client_register_cb(struct bt_csis_client_cb *cb);
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_lock_get(struct bt_csis_client_set_member *member,
-			    const struct bt_csis_client_set *set);
+int bt_csis_client_get_lock_state(struct bt_csis_client_set_member *member,
+				  const struct bt_csis_client_set *set);
 
 /**
  * @brief Lock an array of set members
