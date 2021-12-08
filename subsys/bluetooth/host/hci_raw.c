@@ -38,7 +38,6 @@ static uint8_t raw_mode = BT_HCI_RAW_MODE_H4;
 static uint8_t raw_mode;
 #endif
 
-#define BT_BUF_RX_COUNT MAX(CONFIG_BT_BUF_EVT_RX_COUNT, CONFIG_BT_BUF_ACL_RX_COUNT)
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT,
 			  BT_BUF_RX_SIZE, 8, NULL);
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
