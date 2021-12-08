@@ -179,6 +179,13 @@ static int iwdg_stm32_init(const struct device *dev)
 	iwdg_stm32_install_timeout(dev, &config);
 #endif
 
+#ifdef CONFIG_DEBUG
+	/* Freeze the IWDG when MCU is halt in debug mode */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
+	LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
+	LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
+#endif /* CONFIG_DEBUG */
+
 	/*
 	 * The ST production value for the option bytes where WDG_SW bit is
 	 * present is 0x00FF55AA, namely the Software watchdog mode is
