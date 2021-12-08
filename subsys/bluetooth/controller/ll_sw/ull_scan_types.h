@@ -46,4 +46,8 @@ struct ll_scan_aux_set {
 	struct node_rx_hdr *rx_last;
 
 	uint16_t data_len;
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	struct node_rx_hdr *rx_incomplete;
+#endif
 };

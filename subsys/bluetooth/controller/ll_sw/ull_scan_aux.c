@@ -53,11 +53,21 @@ static inline struct ll_sync_iso_set *
 static void last_disabled_cb(void *param);
 static void done_disabled_cb(void *param);
 static void flush(void *param);
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+static void rx_release_put(struct node_rx_hdr *rx);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
+/* Auxiliary context pool used for reception of PDUs at aux offsets, common for
+ * both Extended Advertising and Periodic Advertising.
+ * Increasing the count allows simultaneous reception of interleaved chain PDUs
+ * from multiple advertisers.
+ */
 static struct ll_scan_aux_set ll_scan_aux_pool[CONFIG_BT_CTLR_SCAN_AUX_SET];
 static void *scan_aux_free;
 
@@ -87,6 +97,7 @@ int ull_scan_aux_reset(void)
 
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 {
+	struct node_rx_hdr *rx_incomplete;
 	struct ll_sync_iso_set *sync_iso;
 	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
@@ -125,6 +136,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		aux = NULL;
 		sync_lll = NULL;
 		sync_iso = NULL;
+		rx_incomplete = NULL;
 		lll = ftr->param;
 		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
@@ -135,6 +147,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		aux = NULL;
 		sync_lll = NULL;
 		sync_iso = NULL;
+		rx_incomplete = NULL;
 		lll = ftr->param;
 		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
@@ -142,6 +155,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		break;
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 		sync_iso = NULL;
+		rx_incomplete = NULL;
 		if (ull_scan_aux_is_valid_get(HDR_LLL2ULL(ftr->param))) {
 			sync_lll = NULL;
 
@@ -263,6 +277,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			scan = NULL;
 			sync = NULL;
 			phy =  sync_lll->phy;
+
+			/* backup extra node_rx supplied for generating
+			 * incomplete report
+			 */
+			rx_incomplete = ftr->extra;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 		}
@@ -447,6 +466,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 				sync = HDR_LLL2ULL(sync_lll);
 				ftr->aux_data_len = sync->data_len + data_len;
 				sync->data_len = 0U;
+
 			}
 
 			goto ull_scan_aux_rx_flush;
@@ -461,12 +481,15 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		lll_hdr_init(lll_aux, aux);
 
 		aux->parent = lll ? (void *)lll : (void *)sync_lll;
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		aux->rx_incomplete = rx_incomplete;
+		rx_incomplete = NULL;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 	} else {
 		aux->data_len += data_len;
 	}
-
-	/* AUX_ADV_IND/AUX_CHAIN_IND PDU reception is being setup */
-	ftr->aux_sched = 1U;
 
 	/* In sync context we can dispatch rx immediately, in scan context we
 	 * enqueue rx in aux context and will flush them after scan is complete.
@@ -480,8 +503,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		sync->data_len += data_len;
 		ftr->aux_data_len = sync->data_len;
 
-		ll_rx_put(link, rx);
-		ll_rx_sched();
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	} else {
 		if (aux->rx_last) {
@@ -504,10 +525,18 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	 * with a valid context.
 	 */
 	if (ftr->aux_lll_sched) {
+		/* AUX_ADV_IND/AUX_CHAIN_IND PDU reception is being setup */
+		ftr->aux_sched = 1U;
+
 		if (0) {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		} else if (sync_lll) {
 			sync_lll->lll_aux = lll_aux;
+
+			/* In sync context, dispatch immediately */
+			ll_rx_put(link, rx);
+			ll_rx_sched();
+
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 		} else {
 			lll->lll_aux = lll_aux;
@@ -528,6 +557,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		LL_ASSERT(sync_lll &&
 			  (!sync_lll->lll_aux || sync_lll->lll_aux == lll_aux));
 		sync_lll->lll_aux = lll_aux;
+
+		aux->rx_head = rx;
 	}
 
 	/* Determine the window size */
@@ -666,6 +697,13 @@ ull_scan_aux_rx_flush:
 	}
 
 	ll_rx_put(link, rx);
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	if (rx_incomplete) {
+		rx_release_put(rx_incomplete);
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 	ll_rx_sched();
 }
 
@@ -765,6 +803,8 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		struct lll_sync *lll;
 
 		sync = param_ull;
+
+		/* reset data len total */
 		sync->data_len = 0U;
 
 		lll = rx->rx_ftr.param;
@@ -917,29 +957,110 @@ static void done_disabled_cb(void *param)
 static void flush(void *param)
 {
 	struct ll_scan_aux_set *aux;
+	struct ll_scan_set *scan;
 	struct node_rx_hdr *rx;
+	struct lll_scan *lll;
+	bool sched = false;
 
-	/* Nodes are enqueued only in scan context so need to send them now */
 	aux = param;
 	rx = aux->rx_head;
 	if (rx) {
-		struct lll_scan *lll;
-
-		lll = aux->parent;
-		lll->lll_aux = NULL;
-
 		ll_rx_put(rx->link, rx);
-		ll_rx_sched();
-	} else {
-		struct lll_sync *lll;
+		sched = true;
+	}
 
-		lll = aux->parent;
-		LL_ASSERT(lll->lll_aux);
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	if (aux->rx_incomplete) {
+		rx_release_put(aux->rx_incomplete);
+		sched = true;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+	if (sched) {
+		ll_rx_sched();
+	}
+
+	lll = aux->parent;
+	scan = HDR_LLL2ULL(lll);
+	scan = ull_scan_is_valid_get(scan);
+	if (scan) {
 		lll->lll_aux = NULL;
+	} else {
+		struct lll_sync *sync_lll;
+
+		sync_lll = aux->parent;
+
+		LL_ASSERT(sync_lll->lll_aux);
+		sync_lll->lll_aux = NULL;
 	}
 
 	aux_release(aux);
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+static void rx_release_put(struct node_rx_hdr *rx)
+{
+	rx->type = NODE_RX_TYPE_RELEASE;
+
+	ll_rx_put(rx->link, rx);
+}
+
+static void aux_sync_partial(void *param)
+{
+	struct ll_scan_aux_set *aux;
+	struct node_rx_hdr *rx;
+
+	aux = param;
+	rx = aux->rx_head;
+	aux->rx_head = NULL;
+
+	rx->rx_ftr.aux_sched = 1U;
+
+	ll_rx_put(rx->link, rx);
+	ll_rx_sched();
+}
+
+static void aux_sync_incomplete(void *param)
+{
+	struct ll_scan_aux_set *aux;
+
+	aux = param;
+	if (!aux->rx_head) {
+		struct ll_sync_set *sync;
+		struct node_rx_hdr *rx;
+		struct lll_sync *lll;
+
+		/* get reference to sync context */
+		lll = aux->parent;
+		sync = HDR_LLL2ULL(lll);
+
+		/* reset data len total */
+		sync->data_len = 0U;
+
+		/* pick extra node rx stored in aux context */
+		rx = aux->rx_incomplete;
+		LL_ASSERT(rx);
+		aux->rx_incomplete = NULL;
+
+		/* prepare sync report with failure */
+		rx->type = NODE_RX_TYPE_SYNC_REPORT;
+		rx->handle = ull_sync_handle_get(sync);
+
+		/* flag chain reception failure */
+		rx->rx_ftr.aux_failed = 1U;
+
+		/* Dequeue will try releasing list of node rx,
+		 * set the extra pointer to NULL.
+		 */
+		rx->rx_ftr.extra = NULL;
+
+		/* add to rx list, will be flushed */
+		aux->rx_head = rx;
+	}
+
+	flush(aux);
+}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
@@ -977,11 +1098,44 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, flush};
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+	struct ll_sync_set *sync;
 	uint32_t ret;
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC)) {
+		struct ll_scan_aux_set *aux;
+		struct lll_sync *sync_lll;
+
+		aux = param;
+		sync_lll = aux->parent;
+		sync = HDR_LLL2ULL(sync_lll);
+		sync = ull_sync_is_valid_get(sync);
+	} else {
+		sync = NULL;
+	}
+
 	if (status == TICKER_STATUS_SUCCESS) {
-		return;
+		if (0) {
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		} else if (sync) {
+			mfy.fp = aux_sync_partial;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+		} else {
+			return;
+		}
+	} else {
+		if (0) {
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		} else if (sync) {
+			mfy.fp = aux_sync_incomplete;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+		} else {
+			mfy.fp = flush;
+		}
 	}
 
 	mfy.param = param;

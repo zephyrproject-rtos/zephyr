@@ -606,7 +606,13 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 	if (crc_ok) {
 		struct node_rx_pdu *node_rx;
 
-		node_rx = ull_pdu_rx_alloc_peek(3);
+		/* Verify if there are free RX buffers for:
+		 * - reporting just received PDU
+		 * - allocating an extra node_rx for periodic report incomplete
+		 * - a buffer for receiving data in a connection
+		 * - a buffer for receiving empty PDU
+		 */
+		node_rx = ull_pdu_rx_alloc_peek(4);
 		if (node_rx) {
 			struct node_rx_ftr *ftr;
 			struct pdu_adv *pdu;
@@ -626,6 +632,10 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 								     1);
 			ftr->sync_status = status;
 			ftr->sync_rx_enabled = lll->is_rx_enabled;
+
+			if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
+				ftr->extra = ull_pdu_rx_alloc();
+			}
 
 			pdu = (void *)node_rx->pdu;
 
