@@ -85,40 +85,6 @@ extern "C" {
 /** @} */
 
 /**
- * @name CAN specific error codes
- *
- * The `CAN_TX_*` error codes are used for CAN specific error return codes from
- * @a can_send() and for `error_flags` values in @a can_tx_callback_t().
- *
- * `CAN_NO_FREE_FILTER` is returned by `can_attach_*()` if no free filters are
- * available. `CAN_TIMEOUT` indicates that @a can_recover() timed out.
- *
- * @warning These definitions are deprecated. Use the corresponding errno
- * definitions instead.
- *
- * @{
- */
-
-/** Transmitted successfully. */
-#define CAN_TX_OK          (0)          __DEPRECATED_MACRO
-/** General transmit error. */
-#define CAN_TX_ERR         (-EIO)       __DEPRECATED_MACRO
-/** Bus arbitration lost during transmission. */
-#define CAN_TX_ARB_LOST    (-EBUSY)     __DEPRECATED_MACRO
-/** CAN controller is in bus off state. */
-#define CAN_TX_BUS_OFF     (-ENETDOWN)  __DEPRECATED_MACRO
-/** Unknown error. */
-#define CAN_TX_UNKNOWN     (CAN_TX_ERR) __DEPRECATED_MACRO
-/** Invalid parameter. */
-#define CAN_TX_EINVAL      (-EINVAL)    __DEPRECATED_MACRO
-/** No free filters available. */
-#define CAN_NO_FREE_FILTER (-ENOSPC)    __DEPRECATED_MACRO
-/** Operation timed out. */
-#define CAN_TIMEOUT        (-EAGAIN)    __DEPRECATED_MACRO
-
-/** @} */
-
-/**
  * @brief Defines the mode of the CAN controller
  */
 enum can_mode {
@@ -648,34 +614,6 @@ static inline int can_set_bitrate(const struct device *dev,
 #endif /* !CONFIG_CAN_FD_MODE */
 }
 
-/**
- * @brief Configure operation of a host controller.
- *
- * @warning This function is deprecated. Use @a can_set_bitrate() and @a
- * can_set_mode() instead.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param mode Operation mode.
- * @param bitrate bus-speed in Baud/s.
- *
- * @retval 0 If successful.
- * @retval -EIO General input/output error, failed to configure device.
- */
-__deprecated static inline int can_configure(const struct device *dev, enum can_mode mode,
-					     uint32_t bitrate)
-{
-	int err;
-
-	if (bitrate > 0) {
-		err = can_set_bitrate(dev, bitrate, bitrate);
-		if (err != 0) {
-			return err;
-		}
-	}
-
-	return can_set_mode(dev, mode);
-}
-
 /** @} */
 
 /**
@@ -1161,6 +1099,75 @@ static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
 }
 
 /** @} */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ * Deprecated APIs
+ */
+
+/**
+ * @name CAN specific error codes
+ *
+ * The `CAN_TX_*` error codes are used for CAN specific error return codes from
+ * @a can_send() and for `error_flags` values in @a can_tx_callback_t().
+ *
+ * `CAN_NO_FREE_FILTER` is returned by `can_attach_*()` if no free filters are
+ * available. `CAN_TIMEOUT` indicates that @a can_recover() timed out.
+ *
+ * @warning These definitions are deprecated. Use the corresponding errno
+ * definitions instead.
+ *
+ * @{
+ */
+
+/** Transmitted successfully. */
+#define CAN_TX_OK          (0)          __DEPRECATED_MACRO
+/** General transmit error. */
+#define CAN_TX_ERR         (-EIO)       __DEPRECATED_MACRO
+/** Bus arbitration lost during transmission. */
+#define CAN_TX_ARB_LOST    (-EBUSY)     __DEPRECATED_MACRO
+/** CAN controller is in bus off state. */
+#define CAN_TX_BUS_OFF     (-ENETDOWN)  __DEPRECATED_MACRO
+/** Unknown error. */
+#define CAN_TX_UNKNOWN     (CAN_TX_ERR) __DEPRECATED_MACRO
+/** Invalid parameter. */
+#define CAN_TX_EINVAL      (-EINVAL)    __DEPRECATED_MACRO
+/** No free filters available. */
+#define CAN_NO_FREE_FILTER (-ENOSPC)    __DEPRECATED_MACRO
+/** Operation timed out. */
+#define CAN_TIMEOUT        (-EAGAIN)    __DEPRECATED_MACRO
+
+/** @} */
+
+/**
+ * @brief Configure operation of a host controller.
+ *
+ * @warning This function is deprecated. Use @a can_set_bitrate() and @a
+ * can_set_mode() instead.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param mode Operation mode.
+ * @param bitrate bus-speed in Baud/s.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error, failed to configure device.
+ */
+__deprecated static inline int can_configure(const struct device *dev, enum can_mode mode,
+					     uint32_t bitrate)
+{
+	int err;
+
+	if (bitrate > 0) {
+		err = can_set_bitrate(dev, bitrate, bitrate);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	return can_set_mode(dev, mode);
+}
+
+/** @endcond */
 
 /**
  * @}
