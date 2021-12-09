@@ -337,7 +337,7 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 static int csis_client_write_set_lock(struct bt_csis *inst,
 				      bool lock, bt_gatt_write_func_t cb)
 {
-	if (inst->cli.rank_handle == 0) {
+	if (inst->cli.set_lock_handle == 0) {
 		BT_DBG("Handle not set");
 		cur_inst = NULL;
 		return -EINVAL;
