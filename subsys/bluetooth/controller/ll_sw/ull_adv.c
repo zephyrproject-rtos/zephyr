@@ -34,9 +34,9 @@
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_filter.h"
-#include "lll/lll_df_types.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ll_sw/ull_tx_queue.h"
