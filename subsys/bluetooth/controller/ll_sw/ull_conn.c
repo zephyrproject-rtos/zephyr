@@ -2058,7 +2058,7 @@ void ull_pdu_data_init(struct pdu_data *pdu_tx)
 {
 	LL_ASSERT(pdu_tx);
 
-	pdu_tx->cp = PDU_DATA_CTE_PRESENT_BIT_DISABLED;
+	pdu_tx->cp = false;
 	pdu_tx->rfu = 0U;
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
 	pdu_tx->resv = 0U;
