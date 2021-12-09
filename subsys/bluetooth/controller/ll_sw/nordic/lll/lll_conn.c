@@ -860,7 +860,7 @@ static void empty_tx_init(void)
 
 	p = (void *)radio_pkt_empty_get();
 	p->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
-	p->cp = PDU_DATA_CTE_PRESENT_BIT_DISABLED;
+	p->cp = false;
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
 	p->resv = 0U;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */

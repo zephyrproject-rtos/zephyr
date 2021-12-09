@@ -102,7 +102,7 @@ config BT_CTLR_DF_CONN_CTE_REQ
 
 config BT_CTLR_DF_CONN_CTE_RSP
 	bool "Enable Connection CTE Response feature"
-	depends on BT_CTLR_DF_CTE_TX && BT_CONN
+	depends on BT_CTLR_DF_CONN_CTE_TX
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Response feature
 	  in controller.
@@ -123,6 +123,14 @@ config BT_CTLR_DF_SCAN_CTE_RX
 	help
 	  Enable support for Bluetooth v5.1 connectionless CTE reception
 	  in controller.
+
+config BT_CTLR_DF_CONN_CTE_TX
+	bool "Enable Connection based CTE Transmitter"
+	depends on BT_CTLR_DF_CTE_TX && BT_CONN
+	default y
+	help
+	  Enable transmission of Constant Tone Extension in
+	  direction finding connected mode.
 
 config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
 	bool "Enable sampling of CTE for PDUs with bad CRC"

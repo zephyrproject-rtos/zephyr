@@ -233,11 +233,9 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
-	if ((cte_type == BT_HCI_LE_AOD_CTE_1US ||
-	     cte_type == BT_HCI_LE_AOD_CTE_2US) &&
-	    (num_ant_ids < LLL_DF_MIN_ANT_PATTERN_LEN ||
-	     num_ant_ids > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN ||
-	     !ant_ids)) {
+	if ((cte_type == BT_HCI_LE_AOD_CTE_1US || cte_type == BT_HCI_LE_AOD_CTE_2US) &&
+	    (num_ant_ids < BT_HCI_LE_CTE_LEN_MIN ||
+	     num_ant_ids > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids)) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
@@ -961,7 +959,7 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-#if defined CONFIG_BT_CTLR_DF_CONN_CTE_RSP
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 /* @brief Function sets CTE transmission parameters for a connection.
  *
  * @param handle             Connection handle.
@@ -973,22 +971,56 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
  * @return Status of command completion.
  */
 uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t switch_pattern_len,
-				     uint8_t *ant_id)
+				     const uint8_t *ant_ids)
 {
-	if (cte_types & BT_HCI_LE_AOD_CTE_RSP_1US || cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
-		if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
+	struct lll_df_conn_tx_cfg *df_tx_cfg;
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	df_tx_cfg = &conn->lll.df_tx_cfg;
+
+	if (df_tx_cfg->cte_rsp_en) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Bits other than representing AoA, AoD 1us, AoD 2us are RFU */
+	if (cte_types == 0U ||
+	    ((cte_types & (~(uint8_t)(BT_HCI_LE_AOA_CTE_RSP | BT_HCI_LE_AOD_CTE_RSP_1US |
+				      BT_HCI_LE_AOD_CTE_RSP_2US))) != 0U)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
+		if (cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
 
-		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
-		    switch_pattern_len > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX || !ant_id) {
+		if ((cte_types & BT_HCI_LE_AOD_CTE_RSP_1US) &&
+		    !IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
 	}
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	/* Check antenna switching pattern only whether CTE TX in AoD mode is allowed */
+	if (((cte_types & BT_HCI_LE_AOD_CTE_RSP_1US) || (cte_types & BT_HCI_LE_AOD_CTE_RSP_2US)) &&
+	    (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+	     switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	(void)memcpy(df_tx_cfg->ant_ids, ant_ids, switch_pattern_len);
+	df_tx_cfg->ant_sw_len = switch_pattern_len;
+
+	df_tx_cfg->cte_types_allowed = cte_types;
+	df_tx_cfg->state = DF_CTE_CONN_TX_PARAMS_SET;
+
+	return BT_HCI_ERR_SUCCESS;
 }
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /* @brief Function sets CTE reception parameters for a connection.
