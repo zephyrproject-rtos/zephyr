@@ -285,6 +285,7 @@
 			label = "UART1_WRAPPER";
 			port-num = <1>;
 			gpios = <&gpiob 0 0>;
+			uart-dev = <&uart1>;
 		};
 
 		ite_uart2_wrapper: uartwrapper@f02820 {
@@ -294,6 +295,7 @@
 			label = "UART2_WRAPPER";
 			port-num = <2>;
 			gpios = <&gpioh 1 0>;
+			uart-dev = <&uart2>;
 		};
 
 		twd0: watchdog@f01f00 {
