@@ -2525,6 +2525,10 @@ int bt_mesh_cfg_lpn_timeout_get(uint16_t net_idx, uint16_t addr,
 	};
 	int err;
 
+	if (!polltimeout) {
+		return -EINVAL;
+	}
+
 	err = cli_prepare(&param, OP_LPN_TIMEOUT_STATUS, addr);
 	if (err) {
 		return err;
