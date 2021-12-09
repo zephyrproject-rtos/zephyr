@@ -12,7 +12,6 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 set_source_files_properties(adsp.c PROPERTIES COMPILE_FLAGS -std=gnu99)
 zephyr_library_sources(adsp.c)
 
-zephyr_library_sources(main_entry.S)
 zephyr_library_sources(soc.c)
 zephyr_library_sources(soc_mp.c)
 zephyr_library_sources(trace_out.c)

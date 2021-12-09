@@ -113,8 +113,21 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * local CPU!  We need external transactions on the shared
 	 * bus.
 	 */
-	reg = 0x15;
+	reg = CONFIG_MP_NUM_CPUS == 1 ? 0 : 0x15;
 	__asm__ volatile("wsr %0, ATOMCTL" :: "r"(reg));
+
+	/* Initialize interrupts to "disabled" */
+	reg = 0;
+	__asm__ volatile("wsr %0, INTENABLE" :: "r"(reg));
+
+	/* Finally VECBASE.  Note that on core 0 startup, we're still
+	 * running in IMR and the vectors at this address won't be
+	 * copied into HP-SRAM until later.  That's OK, as interrupts
+	 * are still disabled at this stage and will remain so
+	 * consistently until Zephyr switches into the main thread.
+	 */
+	reg = XCHAL_VECBASE_RESET_PADDR_SRAM;
+	__asm__ volatile("wsr %0, VECBASE" :: "r"(reg));
 }
 
 #endif /* __INTEL_ADSP_CPU_INIT_H */
