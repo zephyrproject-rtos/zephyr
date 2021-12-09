@@ -103,7 +103,7 @@ Regardless of the mode of integration, external source code that is integrated
 in Zephyr requires regular ongoing maintenance. The submitter of the proposal to
 integrate external source code must therefore commit to maintain the integration
 of such code for the foreseeable future.
-This may require adding an entry in the :file:`MAINTAINERS.yaml` as part of the
+This may require adding an entry in the :file:`MAINTAINERS.yml` as part of the
 process.
 
 .. _external-src-process:
