@@ -1063,6 +1063,10 @@ int bt_mesh_cfg_krp_set(uint16_t net_idx, uint16_t addr, uint16_t key_net_idx,
 	};
 	int err;
 
+	if (!status || !phase) {
+		return -EINVAL;
+	}
+
 	err = cli_prepare(&param, OP_KRP_STATUS, addr);
 	if (err) {
 		return err;
