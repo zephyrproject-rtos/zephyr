@@ -31,7 +31,7 @@ struct ll_scan_set {
 		 * cancelling sync create, hence the volatile keyword.
 		 */
 		struct ll_sync_set *volatile sync;
-	} per_scan;
+	} periodic;
 #endif
 };
 

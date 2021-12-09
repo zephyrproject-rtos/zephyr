@@ -621,7 +621,7 @@ uint32_t ull_scan_is_enabled(uint8_t handle)
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		scan = ull_scan_set_get(handle);
 
-		return scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U;
+		return scan->periodic.sync ? ULL_SCAN_IS_SYNC : 0U;
 #else
 		return 0U;
 #endif
@@ -632,7 +632,7 @@ uint32_t ull_scan_is_enabled(uint8_t handle)
 		(scan->lll.conn ? ULL_SCAN_IS_INITIATOR : 0U) |
 #endif
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-		(scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U) |
+		(scan->periodic.sync ? ULL_SCAN_IS_SYNC : 0U) |
 #endif
 		0U);
 }

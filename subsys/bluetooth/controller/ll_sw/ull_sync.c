@@ -102,7 +102,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	struct ll_sync_set *sync;
 
 	scan = ull_scan_set_get(SCAN_HANDLE_1M);
-	if (!scan || scan->per_scan.sync) {
+	if (!scan || scan->periodic.sync) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -116,7 +116,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-		if (!scan_coded || scan_coded->per_scan.sync) {
+		if (!scan_coded || scan_coded->periodic.sync) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
@@ -152,26 +152,26 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	scan->per_scan.state = LL_SYNC_STATE_IDLE;
-	scan->per_scan.filter_policy =
+	scan->periodic.state = LL_SYNC_STATE_IDLE;
+	scan->periodic.filter_policy =
 		options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-		scan_coded->per_scan.state = LL_SYNC_STATE_IDLE;
-		scan_coded->per_scan.filter_policy =
-			scan->per_scan.filter_policy;
+		scan_coded->periodic.state = LL_SYNC_STATE_IDLE;
+		scan_coded->periodic.filter_policy =
+			scan->periodic.filter_policy;
 	}
 
-	if (!scan->per_scan.filter_policy) {
-		scan->per_scan.sid = sid;
-		scan->per_scan.adv_addr_type = adv_addr_type;
-		memcpy(scan->per_scan.adv_addr, adv_addr, BDADDR_SIZE);
+	if (!scan->periodic.filter_policy) {
+		scan->periodic.sid = sid;
+		scan->periodic.adv_addr_type = adv_addr_type;
+		(void)memcpy(scan->periodic.adv_addr, adv_addr, BDADDR_SIZE);
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-			scan_coded->per_scan.sid = scan->per_scan.sid;
-			scan_coded->per_scan.adv_addr_type =
-				scan->per_scan.adv_addr_type;
-			memcpy(scan_coded->per_scan.adv_addr,
-			       scan->per_scan.adv_addr, BDADDR_SIZE);
+			scan_coded->periodic.sid = scan->periodic.sid;
+			scan_coded->periodic.adv_addr_type =
+				scan->periodic.adv_addr_type;
+			(void)memcpy(scan_coded->periodic.adv_addr,
+				     scan->periodic.adv_addr, BDADDR_SIZE);
 		}
 	}
 
@@ -230,7 +230,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->window_widening_event_us = 0U;
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 	lll_sync->cte_type = sync_cte_type;
-	lll_sync->filter_policy = scan->per_scan.filter_policy;
+	lll_sync->filter_policy = scan->periodic.filter_policy;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
@@ -242,9 +242,9 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_hdr_init(lll_sync, sync);
 
 	/* Enable scanner to create sync */
-	scan->per_scan.sync = sync;
+	scan->periodic.sync = sync;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-		scan_coded->per_scan.sync = sync;
+		scan_coded->periodic.sync = sync;
 	}
 
 	return 0;
@@ -261,13 +261,13 @@ uint8_t ll_sync_create_cancel(void **rx)
 	struct node_rx_sync *se;
 
 	scan = ull_scan_set_get(SCAN_HANDLE_1M);
-	if (!scan || !scan->per_scan.sync) {
+	if (!scan || !scan->periodic.sync) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-		if (!scan_coded || !scan_coded->per_scan.sync) {
+		if (!scan_coded || !scan_coded->periodic.sync) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
@@ -275,15 +275,15 @@ uint8_t ll_sync_create_cancel(void **rx)
 	/* Check for race condition where in sync is established when sync
 	 * context was set to NULL.
 	 *
-	 * Setting `scan->per_scan.sync` to NULL represents cancellation
+	 * Setting `scan->periodic.sync` to NULL represents cancellation
 	 * requested in the thread context. Checking `sync->timeout_reload`
 	 * confirms if synchronization was established before
-	 * `scan->per_scan.sync` was set to NULL.
+	 * `scan->periodic.sync` was set to NULL.
 	 */
-	sync = scan->per_scan.sync;
-	scan->per_scan.sync = NULL;
+	sync = scan->periodic.sync;
+	scan->periodic.sync = NULL;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-		scan_coded->per_scan.sync = NULL;
+		scan_coded->periodic.sync = NULL;
 	}
 	cpu_dmb();
 	if (!sync || sync->timeout_reload) {
@@ -485,59 +485,59 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 {
 	/* Check if Periodic Advertiser list to be used */
 	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST) &&
-	    scan->per_scan.filter_policy) {
+	    scan->periodic.filter_policy) {
 		/* Check in Periodic Advertiser List */
 		if (ull_filter_ull_pal_addr_match(addr_type, addr)) {
 			/* Remember the address, to check with
 			 * SID in Sync Info
 			 */
-			scan->per_scan.adv_addr_type = addr_type;
-			(void)memcpy(scan->per_scan.adv_addr, addr,
+			scan->periodic.adv_addr_type = addr_type;
+			(void)memcpy(scan->periodic.adv_addr, addr,
 				     BDADDR_SIZE);
 
 			/* Address matched */
-			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 
 		/* Check in Resolving List */
 		} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) &&
 			   ull_filter_ull_pal_listed(rl_idx, &addr_type,
-						     scan->per_scan.adv_addr)) {
+						     scan->periodic.adv_addr)) {
 			/* Remember the address, to check with the
 			 * SID in Sync Info
 			 */
-			scan->per_scan.adv_addr_type = addr_type;
+			scan->periodic.adv_addr_type = addr_type;
 
 			/* Address matched */
-			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
 
 	/* Check with explicitly supplied address */
-	} else if ((addr_type == scan->per_scan.adv_addr_type) &&
-		   !memcmp(addr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
+	} else if ((addr_type == scan->periodic.adv_addr_type) &&
+		   !memcmp(addr, scan->periodic.adv_addr, BDADDR_SIZE)) {
 		/* Address matched */
-		scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+		scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 
 	/* Check identity address with explicitly supplied address */
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) &&
 		   (rl_idx < ll_rl_size_get())) {
 		ll_rl_id_addr_get(rl_idx, &addr_type, addr);
-		if ((addr_type == scan->per_scan.adv_addr_type) &&
-		    !memcmp(addr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
+		if ((addr_type == scan->periodic.adv_addr_type) &&
+		    !memcmp(addr, scan->periodic.adv_addr, BDADDR_SIZE)) {
 			/* Identity address matched */
-			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
 	}
 }
 
 bool ull_sync_setup_sid_match(struct ll_scan_set *scan, uint8_t sid)
 {
-	return (scan->per_scan.state == LL_SYNC_STATE_ADDR_MATCH) &&
+	return (scan->periodic.state == LL_SYNC_STATE_ADDR_MATCH) &&
 		((IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST) &&
-		  scan->per_scan.filter_policy &&
-		  ull_filter_ull_pal_match(scan->per_scan.adv_addr_type,
-					   scan->per_scan.adv_addr, sid)) ||
-		 (!scan->per_scan.filter_policy &&
-		  (sid == scan->per_scan.sid)));
+		  scan->periodic.filter_policy &&
+		  ull_filter_ull_pal_match(scan->periodic.adv_addr_type,
+					   scan->periodic.adv_addr, sid)) ||
+		 (!scan->periodic.filter_policy &&
+		  (sid == scan->periodic.sid)));
 }
 
 void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
@@ -562,7 +562,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	uint8_t sca;
 
 	/* Populate the LLL context */
-	sync = scan->per_scan.sync;
+	sync = scan->periodic.sync;
 	lll = &sync->lll;
 
 	/* Copy channel map from sca_chm field in sync_info structure, and
@@ -588,8 +588,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	/* Remember the peer address.
 	 * NOTE: Peer identity address is copied here when privacy is enable.
 	 */
-	sync->peer_id_addr_type = scan->per_scan.adv_addr_type;
-	(void)memcpy(sync->peer_id_addr, scan->per_scan.adv_addr,
+	sync->peer_id_addr_type = scan->periodic.adv_addr_type;
+	(void)memcpy(sync->peer_id_addr, scan->periodic.adv_addr,
 		     sizeof(sync->peer_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC ||
 	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
@@ -633,7 +633,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	}
 
 	/* Set the state to sync create */
-	scan->per_scan.state = LL_SYNC_STATE_CREATED;
+	scan->periodic.state = LL_SYNC_STATE_CREATED;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		struct ll_scan_set *scan_1m;
 
@@ -642,9 +642,9 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 			struct ll_scan_set *scan_coded;
 
 			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-			scan_coded->per_scan.state = LL_SYNC_STATE_CREATED;
+			scan_coded->periodic.state = LL_SYNC_STATE_CREATED;
 		} else {
-			scan_1m->per_scan.state = LL_SYNC_STATE_CREATED;
+			scan_1m->periodic.state = LL_SYNC_STATE_CREATED;
 		}
 	}
 
@@ -719,7 +719,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 void ull_sync_setup_complete(struct ll_scan_set *scan)
 {
 	/* Remove the sync context from being associated with scan contexts */
-	scan->per_scan.sync = NULL;
+	scan->periodic.sync = NULL;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		struct ll_scan_set *scan_1m;
 
@@ -728,9 +728,9 @@ void ull_sync_setup_complete(struct ll_scan_set *scan)
 			struct ll_scan_set *scan_coded;
 
 			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-			scan_coded->per_scan.sync = NULL;
+			scan_coded->periodic.sync = NULL;
 		} else {
-			scan_1m->per_scan.sync = NULL;
+			scan_1m->periodic.sync = NULL;
 		}
 	}
 }
