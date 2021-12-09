@@ -3316,9 +3316,9 @@ macro(zephyr_linker_memory_ifdef feature_toggle)
 endmacro()
 
 # Usage:
-#   zephyr_linker_dts_memory(NAME <name> PATH <path> FLAGS <flags>)
-#   zephyr_linker_dts_memory(NAME <name> NODELABEL <nodelabel> FLAGS <flags>)
-#   zephyr_linker_dts_memory(NAME <name> CHOSEN <prop> FLAGS <flags>)
+#   zephyr_linker_dts_memory(PATH <path> FLAGS <flags>)
+#   zephyr_linker_dts_memory(NODELABEL <nodelabel> FLAGS <flags>)
+#   zephyr_linker_dts_memory(CHOSEN <prop> FLAGS <flags>)
 #
 # Zephyr linker devicetree memory.
 # This function specifies a memory region for the platform in use based on its
@@ -3329,7 +3329,6 @@ endmacro()
 #
 # Only one of PATH, NODELABEL, and CHOSEN parameters may be given.
 #
-# NAME <name>      : Name of the memory region, for example FLASH.
 # PATH <path>      : Devicetree node identifier.
 # NODELABEL <label>: Node label
 # CHOSEN <prop>    : Chosen property, add memory section described by the
@@ -3342,7 +3341,7 @@ endmacro()
 #                  The flags r and x, or w and x may be combined like: rx, wx.
 #
 function(zephyr_linker_dts_memory)
-  set(single_args "CHOSEN;FLAGS;NAME;PATH;NODELABEL")
+  set(single_args "CHOSEN;FLAGS;PATH;NODELABEL")
   cmake_parse_arguments(DTS_MEMORY "" "${single_args}" "" ${ARGN})
 
   if(DTS_MEMORY_UNPARSED_ARGUMENTS)
