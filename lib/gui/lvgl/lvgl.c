@@ -20,9 +20,14 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(lvgl);
 
+static lv_disp_drv_t disp_drv;
+#ifdef CONFIG_LVGL_POINTER_KSCAN
+static lv_indev_drv_t indev_drv;
+#endif /* CONFIG_LVGL_POINTER_KSCAN */
+
 #ifdef CONFIG_LVGL_BUFFER_ALLOC_STATIC
 
-static lv_disp_buf_t disp_buf;
+static lv_disp_draw_buf_t disp_buf;
 
 #define BUFFER_SIZE (CONFIG_LVGL_BITS_PER_PIXEL * ((CONFIG_LVGL_VDB_SIZE * \
 			CONFIG_LVGL_HOR_RES_MAX * CONFIG_LVGL_VER_RES_MAX) / 100) / 8)
@@ -41,43 +46,34 @@ static uint8_t buf1[BUFFER_SIZE] __aligned(4);
 #endif /* CONFIG_LVGL_BUFFER_ALLOC_STATIC */
 
 #if CONFIG_LVGL_LOG_LEVEL != 0
-static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
-		const char *func, const char *dsc)
+/*
+ * In LVGLv8 the signature of the logging callback has changes and it no longer
+ * takes the log level as an integer argument. Instead, the log level is now
+ * already part of the buffer passed to the logging callback. It's not optimal
+ * but we need to live with it and parse the buffer manually to determine the
+ * level and then truncate the string we actually pass to the logging framework.
+ */
+static void lvgl_log(const char *buf)
 {
-	/* Convert LVGL log level to Zephyr log level
+	/*
+	 * This is ugly and should be done in a loop or something but as it
+	 * turned out, Z_LOG()'s first argument (that specifies the log level)
+	 * cannot be an l-value...
 	 *
-	 * LVGL log level mapping:
-	 * * LV_LOG_LEVEL_TRACE 0
-	 * * LV_LOG_LEVEL_INFO  1
-	 * * LV_LOG_LEVEL_WARN  2
-	 * * LV_LOG_LEVEL_ERROR 3
-	 * * LV_LOG_LEVEL_NUM  4
-	 *
-	 * Zephyr log level mapping:
-	 * *  LOG_LEVEL_NONE 0
-	 * * LOG_LEVEL_ERR 1
-	 * * LOG_LEVEL_WRN 2
-	 * * LOG_LEVEL_INF 3
-	 * * LOG_LEVEL_DBG 4
+	 * We also assume lvgl is sane and always supplies the level string.
 	 */
-	char *dupdsc = log_strdup(dsc);
-
-	ARG_UNUSED(file);
-	ARG_UNUSED(line);
-	ARG_UNUSED(func);
-
-	switch (level) {
-	case LV_LOG_LEVEL_TRACE:
-		Z_LOG(LOG_LEVEL_DBG, "%s", dupdsc);
+	switch (buf[1]) {
+	case 'E':
+		LOG_ERR("%s", log_strdup(buf + strlen("[Error] ")));
 		break;
-	case LV_LOG_LEVEL_INFO:
-		Z_LOG(LOG_LEVEL_INF, "%s", dupdsc);
+	case 'W':
+		LOG_WRN("%s", log_strdup(buf + strlen("Warn] ")));
 		break;
-	case LV_LOG_LEVEL_WARN:
-		Z_LOG(LOG_LEVEL_WRN, "%s", dupdsc);
+	case 'I':
+		LOG_INF("%s", log_strdup(buf + strlen("[Info] ")));
 		break;
-	case LV_LOG_LEVEL_ERROR:
-		Z_LOG(LOG_LEVEL_ERR, "%s", dupdsc);
+	case 'T':
+		LOG_DBG("%s", log_strdup(buf + strlen("[Trace] ")));
 		break;
 	}
 }
@@ -107,11 +103,11 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 		err = -ENOTSUP;
 	}
 
-	disp_drv->buffer = &disp_buf;
+	disp_drv->draw_buf = &disp_buf;
 #ifdef CONFIG_LVGL_DOUBLE_VDB
-	lv_disp_buf_init(disp_drv->buffer, &buf0, &buf1, NBR_PIXELS_IN_BUFFER);
+	lv_disp_draw_buf_init(disp_drv->draw_buf, &buf0, &buf1, NBR_PIXELS_IN_BUFFER);
 #else
-	lv_disp_buf_init(disp_drv->buffer, &buf0, NULL, NBR_PIXELS_IN_BUFFER);
+	lv_disp_draw_buf_init(disp_drv->draw_buf, &buf0, NULL, NBR_PIXELS_IN_BUFFER);
 #endif /* CONFIG_LVGL_DOUBLE_VDB  */
 
 	return err;
@@ -174,15 +170,15 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 	}
 #endif
 
-	disp_drv->buffer = LV_MEM_CUSTOM_ALLOC(sizeof(lv_disp_buf_t));
-	if (disp_drv->buffer == NULL) {
+	disp_drv->draw_buf = LV_MEM_CUSTOM_ALLOC(sizeof(lv_disp_draw_buf_t));
+	if (disp_drv->draw_buf == NULL) {
 		LV_MEM_CUSTOM_FREE(buf0);
 		LV_MEM_CUSTOM_FREE(buf1);
 		LOG_ERR("Failed to allocate memory to store rendering buffers");
 		return -ENOMEM;
 	}
 
-	lv_disp_buf_init(disp_drv->buffer, buf0, buf1, buf_nbr_pixels);
+	lv_disp_draw_buf_init(disp_drv->draw_buf, buf0, buf1, buf_nbr_pixels);
 	return 0;
 }
 #endif /* CONFIG_LVGL_BUFFER_ALLOC_STATIC */
@@ -206,7 +202,7 @@ static void lvgl_pointer_kscan_callback(const struct device *dev,
 	}
 }
 
-static bool lvgl_pointer_kscan_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
+static void lvgl_pointer_kscan_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
 	lv_disp_t *disp;
 	const struct device *disp_dev;
@@ -226,7 +222,7 @@ static bool lvgl_pointer_kscan_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
 	prev = curr;
 
 	disp = lv_disp_get_default();
-	disp_dev = disp->driver.user_data;
+	disp_dev = disp->driver->user_data;
 
 	display_get_capabilities(disp_dev, &cap);
 
@@ -278,15 +274,13 @@ static bool lvgl_pointer_kscan_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
 set_and_release:
 	*data = prev;
 
-	return k_msgq_num_used_get(&kscan_msgq) > 0;
+	k_msgq_num_used_get(&kscan_msgq);
 }
 
 static int lvgl_pointer_kscan_init(void)
 {
 	const struct device *kscan_dev =
 		device_get_binding(CONFIG_LVGL_POINTER_KSCAN_DEV_NAME);
-
-	lv_indev_drv_t indev_drv;
 
 	if (kscan_dev == NULL) {
 		LOG_ERR("Keyboard scan device not found.");
@@ -320,7 +314,6 @@ static int lvgl_init(const struct device *dev)
 	const struct device *display_dev =
 		device_get_binding(CONFIG_LVGL_DISPLAY_DEV_NAME);
 	int err = 0;
-	lv_disp_drv_t disp_drv;
 
 	if (display_dev == NULL) {
 		LOG_ERR("Display device not found.");

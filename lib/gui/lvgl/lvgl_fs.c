@@ -7,6 +7,7 @@
 #include <lvgl.h>
 #include <zephyr.h>
 #include <fs/fs.h>
+#include <stdlib.h>
 #include "lvgl_fs.h"
 
 static bool lvgl_fs_ready(struct _lv_fs_drv_t *drv)
@@ -48,11 +49,12 @@ static lv_fs_res_t errno_to_lv_fs_res(int err)
 	}
 }
 
-static lv_fs_res_t lvgl_fs_open(struct _lv_fs_drv_t *drv, void *file,
-		const char *path, lv_fs_mode_t mode)
+static void *lvgl_fs_open(struct _lv_fs_drv_t *drv, const char *path,
+			  lv_fs_mode_t mode)
 {
 	int err;
 	int zmode = FS_O_CREATE;
+	void *file;
 
 	/* LVGL is passing absolute paths without the root slash add it back
 	 * by decrementing the path pointer.
@@ -62,8 +64,15 @@ static lv_fs_res_t lvgl_fs_open(struct _lv_fs_drv_t *drv, void *file,
 	zmode |= (mode & LV_FS_MODE_WR) ? FS_O_WRITE : 0;
 	zmode |= (mode & LV_FS_MODE_RD) ? FS_O_READ : 0;
 
+	file = malloc(sizeof(struct fs_file_t));
+	if (!file)
+		return NULL;
+
 	err = fs_open((struct fs_file_t *)file, path, zmode);
-	return errno_to_lv_fs_res(err);
+	if (err)
+		return NULL;
+
+	return file;
 }
 
 static lv_fs_res_t lvgl_fs_close(struct _lv_fs_drv_t *drv, void *file)
@@ -71,19 +80,6 @@ static lv_fs_res_t lvgl_fs_close(struct _lv_fs_drv_t *drv, void *file)
 	int err;
 
 	err = fs_close((struct fs_file_t *)file);
-	return errno_to_lv_fs_res(err);
-}
-
-static lv_fs_res_t lvgl_fs_remove(struct _lv_fs_drv_t *drv, const char *path)
-{
-	int err;
-
-	/* LVGL is passing absolute paths without the root slash add it back
-	 * by decrementing the path pointer.
-	 */
-	path--;
-
-	err = fs_unlink(path);
 	return errno_to_lv_fs_res(err);
 }
 
@@ -128,7 +124,8 @@ static lv_fs_res_t lvgl_fs_write(struct _lv_fs_drv_t *drv, void *file,
 	return errno_to_lv_fs_res(err);
 }
 
-static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file, uint32_t pos)
+static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file,
+				uint32_t pos, lv_fs_whence_t whence)
 {
 	int err;
 
@@ -143,70 +140,9 @@ static lv_fs_res_t lvgl_fs_tell(struct _lv_fs_drv_t *drv, void *file,
 	return LV_FS_RES_OK;
 }
 
-static lv_fs_res_t lvgl_fs_trunc(struct _lv_fs_drv_t *drv, void *file)
+static void *lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, const char *path)
 {
-	int err;
-	off_t length;
-
-	length = fs_tell((struct fs_file_t *) file);
-	++length;
-	err = fs_truncate((struct fs_file_t *)file, length);
-	return errno_to_lv_fs_res(err);
-}
-
-static lv_fs_res_t lvgl_fs_size(struct _lv_fs_drv_t *drv, void *file,
-		uint32_t *fsize)
-{
-	int err;
-	off_t org_pos;
-
-	/* LVGL does not provided path but pointer to file struct as such
-	 * we can not use fs_stat, instead use a combination of fs_tell and
-	 * fs_seek to get the files size.
-	 */
-
-	org_pos = fs_tell((struct fs_file_t *) file);
-
-	err = fs_seek((struct fs_file_t *) file, 0, FS_SEEK_END);
-	if (err != 0) {
-		*fsize = 0U;
-		return errno_to_lv_fs_res(err);
-	}
-
-	*fsize = fs_tell((struct fs_file_t *) file) + 1;
-
-	err = fs_seek((struct fs_file_t *) file, org_pos, FS_SEEK_SET);
-
-	return errno_to_lv_fs_res(err);
-}
-
-static lv_fs_res_t lvgl_fs_rename(struct _lv_fs_drv_t *drv, const char *from,
-		const char *to)
-{
-	int err;
-
-	/* LVGL is passing absolute paths without the root slash add it back
-	 * by decrementing the path pointer.
-	 */
-	from--;
-	to--;
-
-	err = fs_rename(from, to);
-	return errno_to_lv_fs_res(err);
-}
-
-static lv_fs_res_t lvgl_fs_free(struct _lv_fs_drv_t *drv, uint32_t *total_p,
-		uint32_t *free_p)
-{
-	/* We have no easy way of telling the total file system size.
-	 * Zephyr can only return this information per mount point.
-	 */
-	return LV_FS_RES_NOT_IMP;
-}
-
-static lv_fs_res_t lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, void *dir,
-		const char *path)
-{
+	void *dir;
 	int err;
 
 	/* LVGL is passing absolute paths without the root slash add it back
@@ -214,9 +150,16 @@ static lv_fs_res_t lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, void *dir,
 	 */
 	path--;
 
+	dir = malloc(sizeof(struct fs_dir_t));
+	if (!dir)
+		return NULL;
+
 	fs_dir_t_init((struct fs_dir_t *)dir);
 	err = fs_opendir((struct fs_dir_t *)dir, path);
-	return errno_to_lv_fs_res(err);
+	if (err)
+		return NULL;
+
+	return dir;
 }
 
 static lv_fs_res_t lvgl_fs_dir_read(struct _lv_fs_drv_t *drv, void *dir,
@@ -233,16 +176,16 @@ static lv_fs_res_t lvgl_fs_dir_close(struct _lv_fs_drv_t *drv, void *dir)
 	int err;
 
 	err = fs_closedir((struct fs_dir_t *)dir);
+	free(dir);
 	return errno_to_lv_fs_res(err);
 }
 
+static lv_fs_drv_t fs_drv;
+
 void lvgl_fs_init(void)
 {
-	lv_fs_drv_t fs_drv;
 	lv_fs_drv_init(&fs_drv);
 
-	fs_drv.file_size = sizeof(struct fs_file_t);
-	fs_drv.rddir_size = sizeof(struct fs_dir_t);
 	/* LVGL uses letter based mount points, just pass the root slash as a
 	 * letter. Note that LVGL will remove the drive letter, or in this case
 	 * the root slash, from the path passed via the FS callbacks.
@@ -254,15 +197,10 @@ void lvgl_fs_init(void)
 
 	fs_drv.open_cb = lvgl_fs_open;
 	fs_drv.close_cb = lvgl_fs_close;
-	fs_drv.remove_cb = lvgl_fs_remove;
 	fs_drv.read_cb = lvgl_fs_read;
 	fs_drv.write_cb = lvgl_fs_write;
 	fs_drv.seek_cb = lvgl_fs_seek;
 	fs_drv.tell_cb = lvgl_fs_tell;
-	fs_drv.trunc_cb = lvgl_fs_trunc;
-	fs_drv.size_cb = lvgl_fs_size;
-	fs_drv.rename_cb = lvgl_fs_rename;
-	fs_drv.free_space_cb = lvgl_fs_free;
 
 	fs_drv.dir_open_cb = lvgl_fs_dir_open;
 	fs_drv.dir_read_cb = lvgl_fs_dir_read;

@@ -138,22 +138,10 @@ config LVGL_USE_LABEL
 
 if LVGL_USE_LABEL
 
-config LVGL_LABEL_DEF_SCROLL_SPEED
-	int "Label scroll speed"
-	default 25
-	help
-	  Scroll speed in pixels per second if scroll mode is enabled for a label
-
 config LVGL_LABEL_TEXT_SEL
 	bool "Enable label text selection"
 	help
 	  Enable label text selection
-
-config LVGL_LABEL_WAIT_CHAR_COUNT
-	int "Waiting period for label animation"
-	default 3
-	help
-	  Waiting period at beginning/end of the label animation cycle
 
 config LVGL_LABEL_LONG_TXT_HINT
 	bool "Enable long text hint for labels"
