@@ -1387,14 +1387,18 @@ GD32 Platforms:
     maintainers:
         - nandojve
         - gmarull
+    collaborators:
+        - soburi
     files:
         - boards/arm/gd32*/
+        - boards/riscv/longan_nano/
         - drivers/*/*gd32*/
         - drivers/*/*gd32*
-        - dts/arm/gigadevice/
+        - dts/*/gigadevice/
         - dts/bindings/*/*gd32*
         - modules/hal_gigadevice/
         - soc/arm/gigadevice/
+        - soc/riscv/riscv-privilege/gd32vf103/
         - scripts/west_commands/*/*gd32*
     labels:
         - "platform: GD32"
