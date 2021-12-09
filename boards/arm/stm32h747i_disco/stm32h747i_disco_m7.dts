@@ -22,6 +22,7 @@
 	};
 
 	sdram2: sdram@d0000000 {
+		compatible = "mmio-sram";
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "SDRAM2";
