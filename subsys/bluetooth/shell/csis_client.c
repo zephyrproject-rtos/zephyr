@@ -138,8 +138,8 @@ static void csis_client_release_set_cb(int err)
 	shell_print(ctx_shell, "Set released");
 }
 
-static void csis_client_lock_get_cb(struct bt_csis_client_set *set, int err,
-				    bool locked)
+static void csis_client_lock_state_read_cb(const struct bt_csis_client_set *set,
+					   int err, bool locked)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Device (set %p) lock get "
@@ -155,7 +155,7 @@ static struct bt_csis_client_cb cbs = {
 	.release_set = csis_client_release_set_cb,
 	.sets = csis_client_discover_sets_cb,
 	.discover = csis_discover_cb,
-	.lock_read = csis_client_lock_get_cb
+	.lock_state_read = csis_client_lock_state_read_cb
 };
 
 static bool csis_found(struct bt_data *data, void *user_data)
@@ -400,6 +400,7 @@ static int cmd_csis_client_lock_get(const struct shell *sh, size_t argc,
 	int err;
 	long idx = 0;
 	long member_index = 0;
+	const struct bt_csis_client_set_member *lock_member[1];
 
 	if (argc > 1) {
 		member_index = strtol(argv[1], NULL, 0);
@@ -420,8 +421,11 @@ static int cmd_csis_client_lock_get(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csis_client_get_lock_state(&set_members[member_index],
-					    &set_members[member_index].sets[idx]);
+	lock_member[0] = &set_members[member_index];
+
+	err = bt_csis_client_get_lock_state(lock_member,
+					    ARRAY_SIZE(lock_member),
+					    cur_set);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
