@@ -978,6 +978,10 @@ static int set_state_u8(uint16_t net_idx, uint16_t addr, uint32_t op, uint32_t r
 		return err;
 	}
 
+	if (!val) {
+		return -EINVAL;
+	}
+
 	bt_mesh_model_msg_init(&msg, op);
 	net_buf_simple_add_u8(&msg, new_val);
 
