@@ -11,15 +11,29 @@
 #include <drivers/uart.h>
 #include <kernel.h>
 #include <pm/device.h>
+#include <pm/pm.h>
+#include <pm/policy.h>
 #include <soc.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart_ite_it8xxx2, LOG_LEVEL_ERR);
 
+#if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
+static struct uart_it8xxx2_data *uart_console_data;
+#endif
+
 struct uart_it8xxx2_config {
 	uint8_t port;
 	/* GPIO cells */
 	struct gpio_dt_spec gpio_wui;
+	/* UART handle */
+	const struct device *uart_dev;
+};
+
+struct uart_it8xxx2_data {
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	struct k_work_delayable rx_refresh_timeout_work;
+#endif
 };
 
 enum uart_port_num {
@@ -28,9 +42,6 @@ enum uart_port_num {
 };
 
 #ifdef CONFIG_PM_DEVICE
-__weak void uart1_wui_isr_late(void) { }
-__weak void uart2_wui_isr_late(void) { }
-
 void uart1_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 		   uint32_t pins)
 {
@@ -38,9 +49,17 @@ void uart1_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1),
 					   GPIO_INT_DISABLE);
 
-	if (uart1_wui_isr_late) {
-		uart1_wui_isr_late();
-	}
+	/* Refresh console expired time if got UART Rx wake-up event */
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
+
+	/*
+	 * The pm state of it8xxx2 chip only supports standby, so here we
+	 * can directly set the constraint for standby.
+	 */
+	pm_constraint_set(PM_STATE_STANDBY);
+	k_work_reschedule(&uart_console_data->rx_refresh_timeout_work, delay);
+#endif
 }
 
 void uart2_wui_isr(const struct device *gpio, struct gpio_callback *cb,
@@ -50,9 +69,17 @@ void uart2_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1),
 					   GPIO_INT_DISABLE);
 
-	if (uart2_wui_isr_late) {
-		uart2_wui_isr_late();
-	}
+	/* Refresh console expired time if got UART Rx wake-up event */
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+	k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
+
+	/*
+	 * The pm state of it8xxx2 chip only supports standby, so here we
+	 * can directly set the constraint for standby.
+	 */
+	pm_constraint_set(PM_STATE_STANDBY);
+	k_work_reschedule(&uart_console_data->rx_refresh_timeout_work, delay);
+#endif
 }
 
 static inline int uart_it8xxx2_pm_action(const struct device *dev,
@@ -84,40 +111,64 @@ static inline int uart_it8xxx2_pm_action(const struct device *dev,
 
 	return 0;
 }
+
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+static void uart_it8xxx2_rx_refresh_timeout(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	pm_constraint_release(PM_STATE_STANDBY);
+}
+#endif
 #endif /* CONFIG_PM_DEVICE */
+
 
 static int uart_it8xxx2_init(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
 	const struct uart_it8xxx2_config *const config = dev->config;
+	const struct device *uart_console_dev =
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	int ret = 0;
 
 	/*
-	 * When the system enters deep doze, all clocks are gated only the
-	 * 32.768k clock is active. We need to wakeup EC by configuring
-	 * UART Rx interrupt as a wakeup source. When the interrupt of UART
-	 * Rx falling, EC will be woken.
+	 * If the UART is used as a console device, we need to configure
+	 * UART Rx interrupt as wakeup source and initialize a delayable
+	 * work for console expired time.
 	 */
-	if (config->port == UART1) {
-		static struct gpio_callback uart1_wui_cb;
+	if (config->uart_dev == uart_console_dev) {
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+		uart_console_data = dev->data;
+		k_work_init_delayable(&uart_console_data->rx_refresh_timeout_work,
+				      uart_it8xxx2_rx_refresh_timeout);
+#endif
+		/*
+		 * When the system enters deep doze, all clocks are gated only the
+		 * 32.768k clock is active. We need to wakeup EC by configuring
+		 * UART Rx interrupt as a wakeup source. When the interrupt of UART
+		 * Rx falling, EC will be woken.
+		 */
+		if (config->port == UART1) {
+			static struct gpio_callback uart1_wui_cb;
 
-		gpio_init_callback(&uart1_wui_cb, uart1_wui_isr,
-				   BIT(config->gpio_wui.pin));
+			gpio_init_callback(&uart1_wui_cb, uart1_wui_isr,
+					   BIT(config->gpio_wui.pin));
 
-		ret = gpio_add_callback(config->gpio_wui.port, &uart1_wui_cb);
-	} else if (config->port == UART2) {
-		static struct gpio_callback uart2_wui_cb;
+			ret = gpio_add_callback(config->gpio_wui.port, &uart1_wui_cb);
+		} else if (config->port == UART2) {
+			static struct gpio_callback uart2_wui_cb;
 
-		gpio_init_callback(&uart2_wui_cb, uart2_wui_isr,
-				   BIT(config->gpio_wui.pin));
+			gpio_init_callback(&uart2_wui_cb, uart2_wui_isr,
+					   BIT(config->gpio_wui.pin));
 
-		ret = gpio_add_callback(config->gpio_wui.port, &uart2_wui_cb);
-	}
+			ret = gpio_add_callback(config->gpio_wui.port, &uart2_wui_cb);
+		}
 
-	if (ret < 0) {
-		LOG_ERR("Failed to add UART%d callback (err %d)",
-			config->port, ret);
-		return ret;
+		if (ret < 0) {
+			LOG_ERR("Failed to add UART%d callback (err %d)",
+				config->port, ret);
+			return ret;
+		}
 	}
 #endif /* CONFIG_PM_DEVICE */
 
@@ -128,11 +179,16 @@ static int uart_it8xxx2_init(const struct device *dev)
 	static const struct uart_it8xxx2_config uart_it8xxx2_cfg_##inst = {    \
 		.port = DT_INST_PROP(inst, port_num),                          \
 		.gpio_wui = GPIO_DT_SPEC_INST_GET(inst, gpios),                \
+		.uart_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, uart_dev)),    \
 	};                                                                     \
+									       \
+	static struct uart_it8xxx2_data uart_it8xxx2_data_##inst;              \
+									       \
 	PM_DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_pm_action);                \
 	DEVICE_DT_INST_DEFINE(inst, &uart_it8xxx2_init,                        \
 			      PM_DEVICE_DT_INST_REF(inst),                     \
-			      NULL, &uart_it8xxx2_cfg_##inst,                  \
+			      &uart_it8xxx2_data_##inst,                       \
+			      &uart_it8xxx2_cfg_##inst,                        \
 			      PRE_KERNEL_1,                                    \
 			      CONFIG_SERIAL_INIT_PRIORITY,                     \
 			      NULL);
