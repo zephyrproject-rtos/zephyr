@@ -191,6 +191,110 @@ see the following message in the terminal:
 
     Hello World! mimxrt1010_evk
 
+MCUXpresso Config Tool
+======================
+
+A ``mimxrt1010_evk.mex`` file is included. This file was used to generate the clock
+initialization code and can be used as a starting point to tweak the clock configuration.
+This could be useful for different boards that are based on i.MX RT1010.
+
+NOTE: The MCUXpresso Config Tool currently generates a ``.c`` file with the clock configuration.
+Considering options on leveraging this tool in the future to generate a devicetree compatible file.
+
+Clock Configuration at Platform Initialization
+==============================================
+
+Below is the clock configuration at platform initialization.
+
+- On-chip 24MHz oscillator is enabled
+
+- Clock sources
+
++----------------------------+-----------------+
+| Name                       | Frequency       |
++============================+=================+
+| RTC Oscillator             | 32.768 kHz      |
++----------------------------+-----------------+
+| 24MHz clock source         | 24 MHz          |
++----------------------------+-----------------+
+| 1MHz clock                 | 1 MHz           |
++----------------------------+-----------------+
+| SAI1 MCLK                  | Inactive        |
++----------------------------+-----------------+
+| SAI3 MCLK                  | Inactive        |
++----------------------------+-----------------+
+| SPDIF_CLK_EXT              | Inactive        |
++----------------------------+-----------------+
+| SPDIF_SRCLK                | 1 MHz           |
++----------------------------+-----------------+
+| SPDIF_OUTCLK               | 1 MHz           |
++----------------------------+-----------------+
+
+- Clock outputs
+
++----------------------------+-----------------+
+| Name                       | Frequency       |
++============================+=================+
+| CORE_CLK_ROOT              | 500 MHz         |
++----------------------------+-----------------+
+| IPG_CLK_ROOT               | 125 MHz         |
++----------------------------+-----------------+
+| PERCLK_CLK_ROOT            | 62.5 MHz        |
++----------------------------+-----------------+
+| FLEXSPI_CLK_ROOT           | 90 MHz          |
++----------------------------+-----------------+
+| SPDIF0_CLK_ROOT            | 30 MHz          |
++----------------------------+-----------------+
+| FLEXIO1_CLK_ROOT           | 30 MHz          |
++----------------------------+-----------------+
+| SAI1_CLK_ROOT              | 41.53 MHz       |
++----------------------------+-----------------+
+| SAI3_CLK_ROOT              | 41.53 MHz       |
++----------------------------+-----------------+
+| LPI2C_CLK_ROOT             | 10 MHz          |
++----------------------------+-----------------+
+| UART_CLK_ROOT              | 80 MHz          |
++----------------------------+-----------------+
+| ADC_ALT_CLK                | 40 MHz          |
++----------------------------+-----------------+
+| LPSPI_CLK_ROOT             | 90 MHz          |
++----------------------------+-----------------+
+| TRACE_CLK_ROOT             | 99 MHz          |
++----------------------------+-----------------+
+| CKIL_SYNC_CLK_ROOT         | 32.768 kHz      |
++----------------------------+-----------------+
+| Clock 1M output            | 1 MHz           |
++----------------------------+-----------------+
+| Clock 24MHz output         | 24 MHz          |
++----------------------------+-----------------+
+| CLKO1_CLK                  | Inactive        |
++----------------------------+-----------------+
+| CLKO2_CLK                  | Inactive        |
++----------------------------+-----------------+
+| ENET_500M_CLK              | 500 MHz         |
++----------------------------+-----------------+
+| USBPHY PLL clock           | 480 MHz         |
++----------------------------+-----------------+
+| GPT1 high frequency clock  | 62.5 MHz        |
++----------------------------+-----------------+
+| GPT2 high frequency clock  | 62.5 MHz        |
++----------------------------+-----------------+
+| SAI1 MCLK 1                | 41.53 MHz       |
++----------------------------+-----------------+
+| SAI1 MCLK 2                | 41.53 MHz       |
++----------------------------+-----------------+
+| SAI1 MCLK 3                | 30 MHz          |
++----------------------------+-----------------+
+| SAI3 MCLK 1                | 41.53 MHz       |
++----------------------------+-----------------+
+| SAI3 MCLK 2                | Inactive        |
++----------------------------+-----------------+
+| SAI3 MCLK 3                | 30 MHz          |
++----------------------------+-----------------+
+| SPDIF0_EXTCLK              | Inactive        |
++----------------------------+-----------------+
+| MQS MCLK                   | 41.53 MHz       |
++----------------------------+-----------------+
 
 .. _MIMXRT1010-EVK Website:
    https://www.nxp.com/MIMXRT1010-EVK
