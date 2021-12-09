@@ -69,6 +69,53 @@ this contributing and review process for imported components.
 
       ../LICENSING.rst
 
+Binary blobs
+============
+
+Any contributions to the Zephyr project must be in source code form.
+Contributions which depend on proprietary, binary components, such as
+proprietary libraries, are not allowed. Such components are generally referred
+to as *binary blobs*.
+
+Any code which has a hard dependency on a binary blob may be removed from the
+zephyr repository or any of the :ref:`modules` referenced from
+:zephyr_file:`zephyr/west.yml`. (This does not apply to situations such as open
+source drivers communicating with proprietary firmware over well-defined
+interfaces, e.g. a Bluetooth host implementation communicating over HCI with a
+proprietary controller via UART.)
+
+You may submit partial support for a platform in source code form. For example,
+you can submit support for an SoC, along with drivers for a base subset of its
+peripherals (such as GPIO, UART, etc.), while omitting drivers for other
+components for which no open source support is available.
+
+Users can obtain the binary blobs directly from you in various ways. Here is a
+list of potential options for your reference:
+
+1. Create a custom :ref:`west manifest <west>` repository for a Zephyr-based
+   downstream software distribution. Include your binary blobs in a separate
+   Git repository under your control, that is included as a zephyr module
+   described in your west manifest file.
+
+   Your users can then run ``west init -m <YOUR_MANIFEST_REPOSITORY_URL>``
+   instead of plain ``west init`` in order to initialize a west workspace that
+   includes your module. The build system will automatically include it like
+   any other module.
+
+2. Create a custom west manifest file which refers to your module, and ask your
+   users to place this file into the :zephyr_file:`submanifests` directory
+   within the zephyr repository in their local workspaces. After the next time
+   your users run ``west update``, the build system will automatically include
+   your module when they build applications.
+
+3. Distribute your binary blob as a standalone Zephyr module in a .zip file and
+   instruct your users to add it to the build using the
+   :makevar:`ZEPHYR_EXTRA_MODULES` CMake variable every time they generate a
+   build system.
+
+You are of course free to develop your own means of distributing blobs and
+integrating them into the zephyr build system.
+
 .. _copyrights:
 
 Copyrights Notices
