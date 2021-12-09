@@ -112,12 +112,6 @@ config LVGL_ANTIALIAS
 	help
 	  Enable anti-aliasing
 
-config LVGL_DISP_DEF_REFR_PERIOD
-	int "Screen refresh period"
-	default 30
-	help
-	  Screen refresh period in milliseconds
-
 config LVGL_DPI
 	int "DPI"
 	default 130
