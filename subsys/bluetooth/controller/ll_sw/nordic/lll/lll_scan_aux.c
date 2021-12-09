@@ -429,16 +429,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_aux = p->param;
 	lll = ull_scan_aux_lll_parent_get(lll_aux, &is_lll_scan);
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* Check if this aux scan is for periodic advertising train */
-	if (!is_lll_scan) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && !is_lll_scan) {
 		lll_sync_aux_prepare_cb((void *)lll, lll_aux);
 
 		lll = NULL;
 
 		goto sync_aux_prepare_done;
 	}
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Check if stopped (on connection establishment race between
@@ -519,9 +517,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 				       (uint8_t *)fal->bdaddr);
 	}
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 sync_aux_prepare_done:
-#endif
 	/* Calculate event timings, coarse and fine */
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll_aux);
