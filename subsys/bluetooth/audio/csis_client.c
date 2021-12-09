@@ -1275,11 +1275,6 @@ static int verify_members_and_get_inst(const struct bt_csis_client_set_member **
 			return -EINVAL;
 		}
 
-		if (inst->cli.set_lock_handle == 0) {
-			BT_DBG("Member[%d] lock handle not set", i);
-			return -EINVAL;
-		}
-
 		if (*out_inst == NULL ||
 		    (lowest_rank && inst->cli.rank < (*out_inst)->cli.rank) ||
 		    (!lowest_rank && inst->cli.rank > (*out_inst)->cli.rank)) {
