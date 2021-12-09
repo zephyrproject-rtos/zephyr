@@ -6343,17 +6343,17 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 
 	scan = node_rx->hdr.rx_ftr.param;
 
-	dup_periodic_adv_reset(scan->per_scan.adv_addr_type,
-			       scan->per_scan.adv_addr,
-			       scan->per_scan.sid);
+	dup_periodic_adv_reset(scan->periodic.adv_addr_type,
+			       scan->periodic.adv_addr,
+			       scan->periodic.sid);
 
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
 	/* Resolved address, if private, has been populated in ULL */
-	sep->adv_addr.type = scan->per_scan.adv_addr_type;
-	memcpy(&sep->adv_addr.a.val[0], scan->per_scan.adv_addr, BDADDR_SIZE);
+	sep->adv_addr.type = scan->periodic.adv_addr_type;
+	(void)memcpy(sep->adv_addr.a.val, scan->periodic.adv_addr, BDADDR_SIZE);
 
-	sep->sid = scan->per_scan.sid;
+	sep->sid = scan->periodic.sid;
 	sep->phy = find_lsb_set(se->phy);
 	sep->interval = sys_cpu_to_le16(se->interval);
 	sep->clock_accuracy = se->sca;
