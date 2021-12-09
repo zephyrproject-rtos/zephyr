@@ -8,7 +8,7 @@
 #include <lvgl.h>
 #include "lvgl_display.h"
 
-void lvgl_flush_cb_32bit(struct _disp_drv_t *disp_drv,
+void lvgl_flush_cb_32bit(lv_disp_drv_t *disp_drv,
 		const lv_area_t *area, lv_color_t *color_p)
 {
 	const struct device *display_dev = (const struct device *)disp_drv->user_data;
@@ -26,7 +26,7 @@ void lvgl_flush_cb_32bit(struct _disp_drv_t *disp_drv,
 }
 
 #ifndef CONFIG_LVGL_COLOR_DEPTH_32
-void lvgl_set_px_cb_32bit(struct _disp_drv_t *disp_drv,
+void lvgl_set_px_cb_32bit(lv_disp_drv_t *disp_drv,
 		uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
 		lv_color_t color, lv_opa_t opa)
 {
