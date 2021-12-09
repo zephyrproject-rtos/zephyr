@@ -1434,7 +1434,7 @@ void ll_rx_mem_release(void **node_rx)
 				/* pick the sync context before scan context
 				 * is cleanup of sync context association.
 				 */
-				sync = scan->per_scan.sync;
+				sync = scan->periodic.sync;
 
 				ull_sync_setup_complete(scan);
 
