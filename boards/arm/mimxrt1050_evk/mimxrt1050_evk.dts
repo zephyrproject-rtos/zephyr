@@ -227,3 +227,7 @@ zephyr_udc0: &usb1 {
 &wdog0 {
 	status = "okay";
 };
+
+&edma0 {
+	status = "okay";
+};
