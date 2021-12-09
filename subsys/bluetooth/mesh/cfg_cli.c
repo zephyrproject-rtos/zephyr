@@ -1732,6 +1732,10 @@ static int mod_member_list_get(uint32_t op, uint32_t expect_op, uint16_t net_idx
 	};
 	int err;
 
+	if (!status || !apps || !app_cnt) {
+		return -EINVAL;
+	}
+
 	err = cli_prepare(&param, expect_op, addr);
 	if (err) {
 		return err;
