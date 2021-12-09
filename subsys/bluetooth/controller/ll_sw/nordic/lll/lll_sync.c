@@ -656,6 +656,8 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 			ull_rx_put(node_rx->hdr.link, node_rx);
 
 			sched = true;
+		} else if (node_type == NODE_RX_TYPE_EXT_AUX_REPORT) {
+			err = -ENOMEM;
 		} else {
 			err = 0;
 		}
@@ -834,6 +836,7 @@ static void isr_rx_aux_chain(void *param)
 		lll_isr_status_reset();
 
 		crc_ok =  0U;
+		err = 0;
 
 		goto isr_rx_aux_chain_done;
 	}
@@ -854,6 +857,9 @@ static void isr_rx_aux_chain(void *param)
 	if (!trx_done) {
 		/* TODO: Combine the early exit with above if-then-else block
 		 */
+
+		err = 0;
+
 		goto isr_rx_aux_chain_done;
 	}
 
@@ -869,7 +875,7 @@ static void isr_rx_aux_chain(void *param)
 	}
 
 isr_rx_aux_chain_done:
-	if (!crc_ok) {
+	if (!crc_ok || err) {
 		struct node_rx_pdu *node_rx;
 
 		node_rx = ull_pdu_rx_alloc();
