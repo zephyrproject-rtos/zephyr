@@ -5,6 +5,7 @@
 #
 
 zephyr_library()
-zephyr_library_sources(pinmux.c)
+zephyr_library_sources(pinmux.c clock_config.c)
 zephyr_sources_ifdef(CONFIG_BOOT_FLEXSPI_NOR flexspi_nor_config.c)
 zephyr_sources_ifdef(CONFIG_DEVICE_CONFIGURATION_DATA mmswiftio_sdram_ini_dcd.c)
+zephyr_include_directories(.)
