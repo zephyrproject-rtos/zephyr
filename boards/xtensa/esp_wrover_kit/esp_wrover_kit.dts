@@ -21,6 +21,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
+		zephyr,display = &ili9341;
 	};
 };
 
@@ -68,10 +69,23 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	miso-pin = <19>;
+	miso-pin = <25>;
 	mosi-pin = <23>;
-	sclk-pin = <18>;
-	csel-pin = <5>;
+	sclk-pin = <19>;
+	csel-pin = <22>;
+
+	ili9341: ili9341@0 {
+		compatible = "ilitek,ili9341";
+		label = "DISPLAY";
+		spi-max-frequency = <25000000>;
+		reg = <0>;
+		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		pixel-format = <0>;
+		rotation = <0>;
+		width = <240>;
+		height = <320>;
+	};
 };
 
 &timer0 {

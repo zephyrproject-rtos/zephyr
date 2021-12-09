@@ -22,6 +22,10 @@ for Arduino connectors, for example:
 - :ref:`buydisplay_2_8_tft_touch_arduino` and :ref:`nrf52840dk_nrf52840`
 - :ref:`ssd1306_128_shield` and :ref:`frdm_k64f`
 
+or a board with an integrated display:
+
+- :ref:`esp_wrover_kit`
+
 or a simulated display environment in a native Posix application:
 
 - :ref:`native_posix`
