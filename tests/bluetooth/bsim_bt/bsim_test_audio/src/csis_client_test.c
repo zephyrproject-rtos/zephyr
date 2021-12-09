@@ -16,6 +16,8 @@ static volatile bool sets_discovered;
 static volatile bool members_discovered;
 static volatile bool set_locked;
 static volatile bool set_unlocked;
+static volatile bool set_read_locked;
+static volatile bool set_read_unlocked;
 static struct bt_csis_client_set *set;
 
 static uint8_t members_found;
@@ -83,6 +85,24 @@ static void csis_lock_changed_cb(struct bt_csis_client_set *set,
 	printk("Set %p %s\n", set, locked ? "locked" : "released");
 }
 
+
+static void csis_client_lock_state_read_cb(const struct bt_csis_client_set *set,
+					   int err, bool locked)
+{
+	printk("%s\n", __func__);
+
+	if (err != 0) {
+		FAIL("read lock state failed (%d)\n", err);
+		return;
+	}
+
+	if (locked) {
+		set_read_locked = true;
+	} else {
+		set_read_unlocked = true;
+	}
+}
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -112,6 +132,7 @@ static struct bt_csis_client_cb cbs = {
 	.sets = csis_client_discover_sets_cb,
 	.discover = csis_discover_cb,
 	.lock_changed = csis_lock_changed_cb,
+	.lock_state_read = csis_client_lock_state_read_cb,
 };
 
 static bool is_discovered(const bt_addr_le_t *addr)
@@ -176,6 +197,33 @@ static void discover_members_timer_handler(struct k_work *work)
 {
 	FAIL("Could not find all members (%u / %u)\n",
 	     members_found, set->set_size);
+}
+
+static void read_set_lock_state(const struct bt_csis_client_set_member **members,
+				uint8_t count, bool expect_locked)
+{
+	int err;
+
+	printk("Reading set state, expecting %s\n",
+	       expect_locked ? "locked" : "unlocked");
+
+	if (expect_locked) {
+		set_read_locked = false;
+	} else {
+		set_read_unlocked = false;
+	}
+
+	err = bt_csis_client_get_lock_state(members, count, set);
+	if (err != 0) {
+		FAIL("Failed to do CSIS client read lock state (%d)", err);
+		return;
+	}
+
+	if (expect_locked) {
+		WAIT_FOR(set_read_locked);
+	} else {
+		WAIT_FOR(set_read_unlocked);
+	}
 }
 
 static void test_main(void)
@@ -311,6 +359,8 @@ static void test_main(void)
 		locked_members[i] = &set_members[i];
 	}
 
+	read_set_lock_state(locked_members, connected_member_count, false);
+
 	printk("Locking set\n");
 	err = bt_csis_client_lock(locked_members, connected_member_count, set);
 	if (err != 0) {
@@ -319,6 +369,8 @@ static void test_main(void)
 	}
 
 	WAIT_FOR(set_locked);
+
+	read_set_lock_state(locked_members, connected_member_count, true);
 
 	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
 
@@ -331,6 +383,8 @@ static void test_main(void)
 	}
 
 	WAIT_FOR(set_unlocked);
+
+	read_set_lock_state(locked_members, connected_member_count, false);
 
 	/* Lock and unlock again */
 	set_locked = false;
