@@ -297,15 +297,20 @@ typedef void (*bt_csis_client_lock_changed_cb)(struct bt_csis_client_set *set,
 					       bool locked);
 
 /**
- * @typedef bt_csis_client_lock_read_cb
- * @brief Callback when the lock value is read on a device.
+ * @typedef bt_csis_client_lock_state_read_cb
+ * @brief Callback for bt_csis_client_get_lock_state()
+ *
+ * If any of the set members supplied to bt_csis_client_get_lock_state() is
+ * in the locked state, this will be called with @p locked true. If any
+ * set member is in the locked state, the remaining (if any) won't be read.
+ * Likewise, if any error occurs, the procedure will also be aborted.
  *
  * @param set       The set that was read.
  * @param err       Error value. 0 on success, GATT error or errno on fail.
  * @param locked    Whether the lock is locked or release.
  */
-typedef void (*bt_csis_client_lock_read_cb)(struct bt_csis_client_set *set,
-					    int err, bool locked);
+typedef void (*bt_csis_client_lock_state_read_cb)(const struct bt_csis_client_set *set,
+						  int err, bool locked);
 
 struct bt_csis_client_cb {
 	/* Set callbacks */
@@ -316,7 +321,7 @@ struct bt_csis_client_cb {
 
 	/* Device specific callbacks */
 	bt_csis_client_discover_cb             discover;
-	bt_csis_client_lock_read_cb            lock_read;
+	bt_csis_client_lock_state_read_cb      lock_state_read;
 };
 
 /**
@@ -338,15 +343,20 @@ bool bt_csis_client_is_set_member(uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE],
 void bt_csis_client_register_cb(struct bt_csis_client_cb *cb);
 
 /**
- * @brief Read the lock value of a specific device and instance.
-
- * @param member    Member to get the lock value from
- * @param set       Pointer to the specific set of the @p member to get the
- *                  lock value from.
+ * @brief Check if an array of set members are unlocked
+ *
+ * This will read the set lock value on all members and respond with a single
+ * state.
+ *
+ * @param members   Array of set members to check lock state for.
+ * @param count     Number of set members in @p members.
+ * @param set       Pointer to the specified set, as a member may be part of
+ *                  multiple sets.
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_get_lock_state(struct bt_csis_client_set_member *member,
+int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **members,
+				  uint8_t count,
 				  const struct bt_csis_client_set *set);
 
 /**
