@@ -68,7 +68,7 @@ extern "C" {
  * inside usb data section in the RAM.
  */
 #define USBD_CFG_DATA_DEFINE(p, name) \
-	static __in_section(usb, data_##p, name) __used
+	static __in_section(usb, data_##p, name) __used __aligned(4)
 
 /*************************************************************************
  *  USB configuration
