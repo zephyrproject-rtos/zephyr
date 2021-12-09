@@ -1313,6 +1313,10 @@ int bt_mesh_cfg_net_key_get(uint16_t net_idx, uint16_t addr, uint16_t *keys,
 	};
 	int err;
 
+	if (!keys || !key_cnt) {
+		return -EINVAL;
+	}
+
 	err = cli_prepare(&param, OP_NET_KEY_LIST, addr);
 	if (err) {
 		return err;
