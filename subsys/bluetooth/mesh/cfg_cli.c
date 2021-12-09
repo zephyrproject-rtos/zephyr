@@ -1173,6 +1173,10 @@ int bt_mesh_cfg_relay_set(uint16_t net_idx, uint16_t addr, uint8_t new_relay,
 	};
 	int err;
 
+	if (!status || !transmit) {
+		return -EINVAL;
+	}
+
 	err = cli_prepare(&param, OP_RELAY_STATUS, addr);
 	if (err) {
 		return err;
