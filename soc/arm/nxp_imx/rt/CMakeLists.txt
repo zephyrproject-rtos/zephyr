@@ -22,7 +22,12 @@ if(CONFIG_DEVICE_CONFIGURATION_DATA)
 endif()
 
 if(CONFIG_PM)
-zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMX_RT11XX power_rt11xx.c)
+  zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMX_RT11XX power_rt11xx.c)
+endif()
+
+if (CONFIG_PM AND CONFIG_SOC_SERIES_IMX_RT10XX)
+  zephyr_sources(power_rt10xx.c)
+  zephyr_code_relocate(power_rt10xx.c ITCM_TEXT)
 endif()
 
 zephyr_linker_section_configure(
