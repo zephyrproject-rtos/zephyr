@@ -35,8 +35,8 @@ synchronization.
    threads/system_threads.rst
    threads/workqueue.rst
    threads/nothread.rst
-   other/interrupts.rst
-   other/polling.rst
+   interrupts.rst
+   polling.rst
    synchronization/semaphores.rst
    synchronization/mutexes.rst
    synchronization/condvar.rst
