@@ -23,15 +23,7 @@ target_include_directories(boot_module PUBLIC
   )
 
 add_executable(bootloader
-  boot_entry.S
-  ${ARCH_DIR}/${ARCH}/core/startup/memctl_default.S
-  ${ARCH_DIR}/${ARCH}/core/startup/memerror-vector.S
   boot_loader.c
-  start_address.S
-  )
-
-target_sources_ifdef(CONFIG_RESET_VECTOR_IN_BOOTLOADER bootloader PRIVATE
-  ${ARCH_DIR}/${ARCH}/core/startup/reset-vector.S
   )
 
 add_dependencies(bootloader ${SYSCALL_LIST_H_TARGET})
@@ -72,9 +64,6 @@ add_custom_command(TARGET bootloader
  )
 
 set_source_files_properties(boot_entry.S PROPERTIES COMPILE_FLAGS "-DASSEMBLY -D_ASMLANGUAGE")
-if(CONFIG_RESET_VECTOR_IN_BOOTLOADER)
-  set_source_files_properties(${ARCH_DIR}/${ARCH}/core/startup/reset-vector.S PROPERTIES COMPILE_FLAGS -DBOOTLOADER)
-endif()
 
 target_compile_options(bootloader PUBLIC
   -fno-inline-functions

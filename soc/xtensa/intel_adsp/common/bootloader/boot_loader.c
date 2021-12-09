@@ -22,6 +22,7 @@
 #include <arch/xtensa/cache.h>
 #include <cavs-shim.h>
 #include <cavs-mem.h>
+#include <cpu_init.h>
 #include "platform.h"
 #include "manifest.h"
 
@@ -31,9 +32,34 @@
 
 #define MANIFEST_BASE	IMR_BOOT_LDR_MANIFEST_BASE
 
-extern void __start(void);
-
 #define MANIFEST_SEGMENT_COUNT 3
+
+/* Initial/true entry point.  Does nothing but jump to
+ * z_boot_asm_entry (which cannot be here, because it needs to be able
+ * to reference immediates which must link before it)
+ */
+__asm__(".pushsection .boot_entry.text, \"ax\" \n\t"
+	".global rom_entry             \n\t"
+	"rom_entry:                    \n\t"
+	"  j z_boot_asm_entry          \n\t"
+	".popsection                   \n\t");
+
+/* Entry stub.  Sets up register windows and stack such that we can
+ * enter C code successfully, and calls boot_master_core()
+ */
+#define STRINGIFY_MACRO(x) Z_STRINGIFY(x)
+#define IMRSTACK STRINGIFY_MACRO(MANIFEST_BASE)
+__asm__(".align 4                   \n\t"
+	"z_boot_asm_entry:          \n\t"
+	"  movi  a0, 0x4002f        \n\t"
+	"  wsr   a0, PS             \n\t"
+	"  movi  a0, 0              \n\t"
+	"  wsr   a0, WINDOWBASE     \n\t"
+	"  movi  a0, 1              \n\t"
+	"  wsr   a0, WINDOWSTART    \n\t"
+	"  rsync                    \n\t"
+	"  movi  a1, " IMRSTACK    "\n\t"
+	"  call4 boot_master_core   \n\t");
 
 static inline void idelay(int n)
 {
@@ -43,7 +69,7 @@ static inline void idelay(int n)
 }
 
 /* memcopy used by boot loader */
-static inline void bmemcpy(void *dest, void *src, size_t bytes)
+static ALWAYS_INLINE void bmemcpy(void *dest, void *src, size_t bytes)
 {
 	uint32_t *d = dest;
 	uint32_t *s = src;
@@ -203,6 +229,8 @@ static void hp_sram_init(uint32_t memory_size)
 	ebb_in_use = ceiling_fraction(memory_size, SRAM_BANK_SIZE);
 
 	hp_sram_pm_banks(ebb_in_use);
+
+	bbzero((void *)L2_SRAM_BASE, L2_SRAM_SIZE);
 }
 
 static void lp_sram_init(void)
@@ -236,12 +264,52 @@ static void lp_sram_init(void)
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
 }
 
+static void win0_setup(void)
+{
+	/* Software protocol: "firmware entered" has the value 5 */
+	*(uint32_t *)HP_SRAM_WIN0_BASE = 5;
+
+	CAVS_WIN[0].dmwlo = HP_SRAM_WIN0_SIZE | 0x7;
+	CAVS_WIN[0].dmwba = (HP_SRAM_WIN0_BASE | CAVS_DMWBA_READONLY
+			     | CAVS_DMWBA_ENABLE);
+}
+
 void boot_master_core(void)
 {
+	cpu_early_init();
+
+	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		/* FIXME: L2 cache control PCFG register */
+		*(uint32_t *)0x1508 = 0;
+	}
+
+	/* reset memory hole */
+	CAVS_SHIM.l2mecs = 0;
+
 	hp_sram_init(L2_SRAM_SIZE);
+	win0_setup();
 	lp_sram_init();
 	parse_manifest();
 
-	/* now call SOF entry */
-	__start();
+	/* Jump into Zephyr entry in HP-SRAM (contra the name, this is
+	 * actually in the middle of the image, after the window
+	 * memory and vectors).  This has its own assembly stub for
+	 * historical reasons, but the CPU is now fully initialized.
+	 * Once we unify the links, we can just call z_cstart() here
+	 * directly.
+	 */
+	void (*zephyr_entry)(void) = (void *)RAM_BASE;
+
+	zephyr_entry();
+
+	/* This is a workaround for a gcc bug (in 10.3.0 as of Zephyr
+	 * SDK 0.13.1).  If zephyr_entry is not used in some way other
+	 * than that function call, then the emitted assembly points
+	 * to an incorrect literal with a garbage value.  (The emitted
+	 * l32r/callx8 instructions are correct, but the literal
+	 * offset is wrong; presumably it got optimized out
+	 * incorrectly.) Obviously this instruction will never
+	 * execute, but it does need to be here.
+	 */
+	__asm__ volatile("mov a0, %0" :: "r"(zephyr_entry));
 }
