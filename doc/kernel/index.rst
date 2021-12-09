@@ -119,7 +119,6 @@ These pages cover other kernel services.
 .. toctree::
    :maxdepth: 1
 
-   other/cpu_idle.rst
    other/atomic.rst
    other/float.rst
    other/cxx_support.rst
