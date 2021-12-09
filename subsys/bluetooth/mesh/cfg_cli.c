@@ -944,6 +944,10 @@ static int get_state_u8(uint16_t net_idx, uint16_t addr, uint32_t op, uint32_t r
 	};
 	int err;
 
+	if (!val) {
+		return -EINVAL;
+	}
+
 	err = cli_prepare(val, rsp, addr);
 	if (err) {
 		return err;
