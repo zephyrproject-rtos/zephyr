@@ -914,6 +914,10 @@ int bt_mesh_cfg_comp_data_get(uint16_t net_idx, uint16_t addr, uint8_t page,
 	};
 	int err;
 
+	if (!rsp || !comp) {
+		return -EINVAL;
+	}
+
 	err = cli_prepare(&param, OP_DEV_COMP_DATA_STATUS, addr);
 	if (err) {
 		return err;
