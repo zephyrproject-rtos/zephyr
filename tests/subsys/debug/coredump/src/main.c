@@ -10,7 +10,10 @@
 
 void func_3(uint32_t *addr)
 {
-#if defined(CONFIG_BOARD_M2GL025_MIV) || defined(CONFIG_BOARD_HIFIVE1)
+#if defined(CONFIG_BOARD_M2GL025_MIV) || \
+	defined(CONFIG_BOARD_HIFIVE1) || \
+	defined(CONFIG_BOARD_LONGAN_NANO) || \
+	defined(CONFIG_BOARD_LONGAN_NANO_LITE)
 	ARG_UNUSED(addr);
 	/* Call coredump() directly so Renode doesn't pause execution */
 	z_arch_esf_t esf;
