@@ -98,7 +98,7 @@ class Filters:
         self.find_tests()
         if not self.platforms:
             self.find_archs()
-        self.find_boards()
+            self.find_boards()
 
     def get_plan(self, options, integration=False):
         fname = "_test_plan_partial.csv"
