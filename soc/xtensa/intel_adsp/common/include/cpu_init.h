@@ -4,6 +4,8 @@
 #ifndef __INTEL_ADSP_CPU_INIT_H
 #define __INTEL_ADSP_CPU_INIT_H
 
+#include <xtensa/config/core-isa.h>
+
 #define CxL1CCAP (*(volatile uint32_t *)0x9F080080)
 #define CxL1CCFG (*(volatile uint32_t *)0x9F080084)
 #define CxL1PCFG (*(volatile uint32_t *)0x9F080088)
@@ -11,6 +13,39 @@
 /* "Data/Instruction Cache Memory Way Count" fields */
 #define CxL1CCAP_DCMWC ((CxL1CCAP >> 16) & 7)
 #define CxL1CCAP_ICMWC ((CxL1CCAP >> 20) & 7)
+
+/* Utilities to generate an unwrapped code sequence to set the RPO TLB
+ * registers.  Pass the 8 region attributes as arguments, e.g.:
+ *
+ *     SET_RPO_TLB(2, 15, 15, 15, 2, 4, 15, 15);
+ *
+ * Note that cAVS 1.5 has the "translation" option that we don't use,
+ * but still need to put an identity mapping in the high bits.  Also
+ * per spec changing the current code region requires that WITLB be
+ * followed by an ISYNC and that both instructions live in the same
+ * cache line (two 3-byte instructions fit in an 8-byte aligned
+ * region, so that's guaranteed not to cross a caceh line boundary).
+ */
+#define SET_ONE_TLB(region, att) do {					\
+	uint32_t addr = region * 0x20000000U, attr = att;		\
+	if (XCHAL_HAVE_XLT_CACHEATTR) {					\
+		attr |= addr; /* RPO with translation */		\
+	}								\
+	if (region != (L2_SRAM_BASE >> 29)) {				\
+		__asm__ volatile("wdtlb %0, %1; witlb %0, %1"		\
+				 :: "r"(attr), "r"(addr));		\
+	} else {							\
+		__asm__ volatile("wdtlb %0, %1"				\
+				 :: "r"(attr), "r"(addr));		\
+		__asm__ volatile("j 1f; .align 8; 1:");			\
+		__asm__ volatile("witlb %0, %1; isync"			\
+				 :: "r"(attr), "r"(addr));		\
+	}								\
+} while (0)
+
+#define SET_RPO_TLB(...) do {				\
+	FOR_EACH_IDX(SET_ONE_TLB, (;), __VA_ARGS__);	\
+} while (0)
 
 /* Low-level CPU initialization.  Call this immediately after entering
  * C code to initialize the cache, protection and synchronization
@@ -71,16 +106,7 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * hardware register), but it generates significantly larger
 	 * code.
 	 */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
-		/* Already set up by the ROM on older hardware. */
-		const uint8_t attribs[] = { 2, 15, 15, 15, 2, 4, 15, 15 };
-
-		for (int region = 0; region < 8; region++) {
-			reg = 0x20000000 * region;
-			__asm__ volatile("wdtlb %0, %1"
-					 :: "r"(attribs[region]), "r"(reg));
-		}
-	}
+	SET_RPO_TLB(2, 15, 15, 15, 2, 4, 15, 15);
 
 	/* Initialize ATOMCTL: Hardware defaults for S32C1I use
 	 * "internal" operations, meaning they are atomic only WRT the
