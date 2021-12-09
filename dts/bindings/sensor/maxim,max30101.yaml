@@ -1,4 +1,6 @@
 # Copyright (c) 2018, NXP
+# Copyright (c) 2021, Silvano Cortesi
+# Copyright (c) 2021, ETH Zürich
 # SPDX-License-Identifier: Apache-2.0
 
 description: MAX30101 heart rate sensor
@@ -6,3 +8,243 @@ description: MAX30101 heart rate sensor
 compatible: "maxim,max30101"
 
 include: i2c-device.yaml
+
+properties:
+    smp-ave:
+      type: int
+      required: false
+      default: 0
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+       - 4
+       - 5
+       - 6
+       - 7
+      description: |
+        To reduce the amount of data throughput, adjacent samples (in each
+        individual channel) can be averaged and decimated on the chip by
+        setting this register. Set to 0 for no averaging.
+        0 = 1 sample (no averaging)
+        1 = 2 samples
+        2 = 4 samples
+        3 = 8 samples
+        4 = 16 samples
+        5 = 32 samples
+        6 = 32 samples
+        7 = 32 samples
+        Default: 0, same as after Power Reset
+    fifo-a-full:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Set the trigger for the FIFO_A_FULL interrupt (e.g. if set to 2,
+        then the flag is set when the 30th word is written to the FIFO).
+        Range: 0-15, Default: 0, same as after Power Reset
+    fifo-rollover-en:
+      type: boolean
+      required: false
+      description: |
+        Controls the behavior of the FIFO when the FIFO becomes completely
+        filled with data. If set, the FIFO address rolls over to zero and the
+        FIFO continues to fill with new data. If not set, then the FIFO is
+        not updated until FIFO_DATA is read or the WRITE/READ pointer
+        positions are changed.
+    led-mode:
+      type: int
+      required: false
+      default: 2
+      enum:
+       - 2
+       - 3
+       - 7
+      description: |
+        Set the operation mode of the MAX30101.
+        2 = heart rate mode, only red led
+        3 = spo2 mode, red and ir led
+        7 = multi led mode, leds according configuration of slots
+        Default: 2, sufficient for heart rate recognition
+    led1-pa:
+      type: int
+      required: false
+      default: 0xff
+      description: |
+        Set the pulse amplitude to control the LED1 (red) current. The actual
+        measured LED current for each part can vary significantly due to the
+        trimming methodology.
+        0x00 = 0.0 mA
+        0x01 = 0.2 mA
+        0x02 = 0.4 mA
+        0x0f = 3.1 mA
+        0xff = 50.0 mA
+        Default: 0xff, full brightness for data quailty
+    led2-pa:
+      type: int
+      required: false
+      default: 0xff
+      description: |
+        Set the pulse amplitude to control the LED2 (IR) current. The actual
+        measured LED current for each part can vary significantly due to the
+        trimming methodology.
+        0x00 = 0.0 mA
+        0x01 = 0.2 mA
+        0x02 = 0.4 mA
+        0x0f = 3.1 mA
+        0xff = 50.0 mA
+        Default: 0xff, full brightness for data quailty
+    led3-pa:
+      type: int
+      required: false
+      default: 0xff
+      description: |
+        Set the pulse amplitude to control the LED3 (green) current. The actual
+        measured LED current for each part can vary significantly due to the
+        trimming methodology.
+        0x00 = 0.0 mA
+        0x01 = 0.2 mA
+        0x02 = 0.4 mA
+        0x0f = 3.1 mA
+        0xff = 50.0 mA
+        Default: 0xff, full brightness for data quailty
+    adc-rge:
+      type: int
+      required: false
+      default: 2
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+       - 4
+       - 5
+       - 6
+       - 7
+      description: |
+        Set the ADC's full-scale range.
+        0 = 7.81 pA/LSB
+        1 = 15.63 pA/LSB
+        2 = 31.25 pA/LSB
+        3 = 62.5 pA/LSB
+        Default: 2, compromise between saturation and resolution
+    smp-rate-ctrl:
+      type: int
+      required: false
+      default: 0
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+       - 4
+       - 5
+       - 6
+       - 7
+      description: |
+        Set the effective sampling rate with one sample consisting of one
+        pulse/conversion per active LED channel. In SpO2 mode, these means
+        one IR pulse/conversion and one red pulse/conversion per sample
+        period.
+        0 = 50 Hz
+        1 = 100 Hz
+        2 = 200 Hz
+        3 = 400 Hz
+        4 = 800 Hz
+        5 = 1000 Hz
+        6 = 1600 Hz
+        7 = 3200 Hz
+        Default: 0, same as after Power Reset
+    led-slot1:
+      type: int
+      required: false
+      default: 0
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+       - 4
+       - 5
+       - 6
+      description: |
+        Set which LED and pulse amplitude are active in time slot 1.
+        0 = None (disabled)
+        1 = LED1 (red), LED1_PA
+        2 = LED2 (IR), LED2_PA
+        3 = LED3 (green), LED3_PA
+        4 = None (disabled)
+        5 = LED1 (red), PILOT_PA
+        6 = LED2 (IR), PILOT_PA
+        7 = LED3 (green), PILOT_PA
+        Default: 1, as needed by heart rate mode
+    led-slot2:
+      type: int
+      required: false
+      default: 0
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+       - 4
+       - 5
+       - 6
+      description: |
+        Set which LED and pulse amplitude are active in time slot 2.
+        0 = None (disabled)
+        1 = LED1 (red), LED1_PA
+        2 = LED2 (IR), LED2_PA
+        3 = LED3 (green), LED3_PA
+        4 = None (disabled)
+        5 = LED1 (red), PILOT_PA
+        6 = LED2 (IR), PILOT_PA
+        7 = LED3 (green), PILOT_PA
+        Default: 1, as needed by SpO2 mode
+    led-slot3:
+      type: int
+      required: false
+      default: 0
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+       - 4
+       - 5
+       - 6
+      description: |
+        Set which LED and pulse amplitude are active in time slot 3.
+        0 = None (disabled)
+        1 = LED1 (red), LED1_PA
+        2 = LED2 (IR), LED2_PA
+        3 = LED3 (green), LED3_PA
+        4 = None (disabled)
+        5 = LED1 (red), PILOT_PA
+        6 = LED2 (IR), PILOT_PA
+        7 = LED3 (green), PILOT_PA
+        Default: 0, needs configuration when needed in multi-led mode
+    led-slot4:
+      type: int
+      required: false
+      default: 0
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+       - 4
+       - 5
+       - 6
+      description: |
+        Set which LED and pulse amplitude are active in time slot 4.
+        0 = None (disabled)
+        1 = LED1 (red), LED1_PA
+        2 = LED2 (IR), LED2_PA
+        3 = LED3 (green), LED3_PA
+        4 = None (disabled)
+        5 = LED1 (red), PILOT_PA
+        6 = LED2 (IR), PILOT_PA
+        7 = LED3 (green), PILOT_PA
+        Default: 0, needs configuration when needed in multi-led mode
