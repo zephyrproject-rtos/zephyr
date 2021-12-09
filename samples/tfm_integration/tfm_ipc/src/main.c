@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 
 #include "tfm_api.h"
 #include "tfm_ns_interface.h"
