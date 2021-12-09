@@ -129,6 +129,13 @@
 			#io-channel-cells = <1>;
 		};
 
+		syscfg: syscfg@40013800 {
+			compatible = "gd,gd32-syscfg";
+			reg = <0x40013800 0x400>;
+			rcu-periph-clock = <0x110e>;
+			label = "SYSCFG";
+		};
+
 		exti: interrupt-controller@40013c00 {
 			compatible = "gd,gd32-exti";
 			interrupt-controller;
