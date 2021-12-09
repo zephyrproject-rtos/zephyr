@@ -46,7 +46,6 @@ struct cpustart_rec {
 	uint32_t        cpu;
 	arch_cpustart_t	fn;
 	void            *arg;
-	uint32_t        vecbase;
 };
 
 static struct cpustart_rec start_rec;
@@ -97,8 +96,6 @@ BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
 
 void z_mp_entry(void)
 {
-	uint32_t reg;
-
 	cpu_early_init();
 
 	/* We don't know what the boot ROM (on pre-2.5 DSPs) might
@@ -113,15 +110,6 @@ void z_mp_entry(void)
 	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
 		z_xtensa_cache_flush_inv_all();
 	}
-
-	/* Copy over VECBASE from the main CPU for an initial value
-	 * (will need to revisit this if we ever allow a user API to
-	 * change interrupt vectors at runtime).
-	 */
-	reg = 0;
-	__asm__ volatile("wsr %0, INTENABLE" : : "r"(reg));
-	__asm__ volatile("wsr %0, VECBASE" : : "r"(start_rec.vecbase));
-	__asm__ volatile("rsync");
 
 	/* Set up the CPU pointer. */
 	_cpu_t *cpu = &_kernel.cpus[start_rec.cpu];
@@ -174,7 +162,7 @@ static ALWAYS_INLINE uint32_t prid(void)
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	uint32_t vecbase, curr_cpu = prid();
+	uint32_t curr_cpu = prid();
 
 	__ASSERT_NO_MSG(!cpus_active[cpu_num]);
 
@@ -221,12 +209,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	lpsram[1] = z_soc_mp_asm_entry;
 #endif
 
-	__asm__ volatile("rsr %0, VECBASE\n\t" : "=r"(vecbase));
-
 	start_rec.cpu = cpu_num;
 	start_rec.fn = fn;
 	start_rec.arg = arg;
-	start_rec.vecbase = vecbase;
 
 	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 

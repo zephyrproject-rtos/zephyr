@@ -364,9 +364,6 @@ SECTIONS
     _stext = .;
     _text_start = ABSOLUTE(.);
     KEEP(*(.MainEntry.text))
-    *(.MainEntry.literal)
-    KEEP (*(.ResetVector.text))
-    *(.ResetVector.literal)
     *(.entry.text)
     *(.init.literal)
     *(.iram0.text)
