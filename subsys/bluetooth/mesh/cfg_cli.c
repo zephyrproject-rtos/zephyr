@@ -1497,6 +1497,10 @@ int bt_mesh_cfg_app_key_get(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 	};
 	int err;
 
+	if (!status || !keys || !key_cnt) {
+		return -EINVAL;
+	}
+
 	err = cli_prepare(&param, OP_APP_KEY_LIST, addr);
 	if (err) {
 		return err;
