@@ -3,6 +3,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+zephyr_compile_definitions(
+  XIP_EXTERNAL_FLASH
+  SKIP_SYSCLK_INIT
+)
+
 zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMX_RT11XX soc_rt11xx.c)
 zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMX_RT10XX soc_rt10xx.c)
 
