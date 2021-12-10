@@ -26,6 +26,11 @@ OUTPUT_ARCH(xtensa)
 PROVIDE(__memctl_default = 0x00000000);
 PROVIDE(_MemErrorHandler = 0x00000000);
 
+/* Offset of the entry point from the manifest start in IMR.  Magic
+ * number must be synchronized with the module and rimage configuration!
+ */
+#define ENTRY_POINT_OFF 0x6000
+
 #define LP_SRAM_REGION lpram
 
 /* DSP RAM regions (all of them) are mapped twice on the DSP: once in
@@ -57,6 +62,9 @@ PROVIDE(_MemErrorHandler = 0x00000000);
 
 MEMORY
 {
+  modules :
+        org = 0x10000,
+        len = 0x10000
   vector_memory_lit :
 	org = XCHAL_MEMERROR_VECTOR_PADDR + MEM_ERROR_LIT_SIZE,
         len = MEM_ERROR_LIT_SIZE
@@ -120,6 +128,9 @@ MEMORY
   vector_double_text :
 	org = XCHAL_DOUBLEEXC_VECTOR_PADDR_SRAM,
         len = MEM_VECT_TEXT_SIZE
+  imr :
+        org = CONFIG_IMR_MANIFEST_ADDR + ENTRY_POINT_OFF,
+        len = 0x100000
   ram :
 	org = RAM_BASE,
 	len = RAM_SIZE
@@ -171,6 +182,7 @@ PHDRS
   vector_user_text_phdr PT_LOAD;
   vector_double_lit_phdr PT_LOAD;
   vector_double_text_phdr PT_LOAD;
+  imr_phdr PT_LOAD;
   ram_phdr PT_LOAD;
 #ifdef CONFIG_KERNEL_COHERENCE
   ucram_phdr PT_LOAD;
@@ -178,6 +190,7 @@ PHDRS
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
   metadata_entries_phdr PT_NOTE;
+  module_phdr PT_NOTE;
 }
 _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_SRAM);
@@ -229,8 +242,28 @@ EXTERN(ext_man_cavs_config)
 
 SECTIONS
 {
-
 #include <linker/rel-sections.ld>
+
+  /* Boot loader code in IMR memory */
+  .imr : {
+    /* Entry point MUST be here per external configuration */
+    KEEP (*(.boot_entry.text))
+    *(.imr .imr.*)
+  } >imr :imr_phdr
+
+  /* Boot loader data.  Note that rimage seems to want this
+   * page-aligned or it will throw an error, not sure why since all
+   * the ROM cares about is a contiguous region.  And it's
+   * particularly infuriating as it precludes linker .rodata next to
+   * .text.
+   */
+  .imrdata : ALIGN(4096) {
+    *(.imrdata .imrdata.*)
+  } >imr :imr_phdr
+
+  /* rimage module manifest headers */
+  .module.boot : { KEEP(*(.module.boot)) } >modules :module_phdr
+  .module.main : { KEEP(*(.module.main)) } >modules :module_phdr
 
  .MemoryExceptionVector.literal : ALIGN(4)
   {

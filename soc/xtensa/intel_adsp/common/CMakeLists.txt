@@ -15,16 +15,38 @@ zephyr_library_sources(adsp.c)
 zephyr_library_sources(soc.c)
 zephyr_library_sources(soc_mp.c)
 zephyr_library_sources(trace_out.c)
+zephyr_library_sources(rimage_modules.c)
+zephyr_library_sources(bootloader/boot_loader.c)
 
 zephyr_library_link_libraries(INTEL_ADSP_COMMON)
 
 target_include_directories(INTEL_ADSP_COMMON INTERFACE include)
 target_link_libraries(INTEL_ADSP_COMMON INTERFACE intel_adsp_common)
 
-# Common CAVS code
-if(CONFIG_SOC_SERIES_INTEL_CAVS_V15 OR
-   CONFIG_SOC_SERIES_INTEL_CAVS_V18 OR
-   CONFIG_SOC_SERIES_INTEL_CAVS_V20 OR
-   CONFIG_SOC_SERIES_INTEL_CAVS_V25)
-	include(bootloader.cmake)
-endif()
+set(ELF_FIX ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/fix_elf_addrs.py)
+set(KERNEL_REMAPPED ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}-remapped.elf)
+
+# Generate rimage modules from the base kernel ELF file
+add_custom_target(
+  gen_modules ALL
+  DEPENDS ${ZEPHYR_FINAL_EXECUTABLE}
+
+  # Remap uncached section addresses so they appear contiguous
+  COMMAND ${CMAKE_COMMAND} -E
+      copy ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}.elf ${KERNEL_REMAPPED}
+
+  COMMAND ${ELF_FIX} ${CMAKE_OBJCOPY} ${KERNEL_REMAPPED}
+
+  # Extract modules for rimage
+  COMMAND ${CMAKE_OBJCOPY}
+      --only-section .imr*
+      --only-section .module.boot
+      --rename-section .module.boot=.module
+      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/boot.mod
+
+  COMMAND ${CMAKE_OBJCOPY}
+      --remove-section .imr*
+      --remove-section .module.boot
+      --rename-section .module.main=.module
+      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/main.mod
+)
