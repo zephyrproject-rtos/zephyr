@@ -387,8 +387,8 @@ static int gsm_mux_send_data_msg(struct gsm_mux *mux, bool cmd,
 		hdr[3] = (size << 1) | EA;
 		pos = 4;
 	} else {
-		hdr[3] = (size >> 7);
-		hdr[4] = (size & 127) << 1;
+		hdr[3] = (size & 127) << 1;
+		hdr[4] = (size >> 7);
 		pos = 5;
 	}
 
