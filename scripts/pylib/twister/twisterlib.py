@@ -2768,6 +2768,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.testcases = {}
         self.quarantine = {}
         self.platforms = []
+        self.platform_names = []
         self.selected_platforms = []
         self.filtered_platforms = []
         self.default_platforms = []
@@ -3010,6 +3011,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                     logger.error("E: %s: can't load: %s" % (file, e))
                     self.load_errors += 1
 
+        self.platform_names = [p.name for p in self.platforms]
+
     def get_all_tests(self):
         tests = []
         for _, tc in self.testcases.items():
@@ -3129,7 +3132,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         quarantine_list = []
         for quar_dict in quarantine_yaml:
             if quar_dict['platforms'][0] == "all":
-                plat = [p.name for p in self.platforms]
+                plat = self.platform_names
             else:
                 plat = quar_dict['platforms']
             comment = quar_dict.get('comment', "NA")
@@ -3215,6 +3218,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             emulation_platforms = True
 
         if platform_filter:
+            self.verify_platforms_existence(platform_filter, f"platform_filter")
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
         elif emu_filter:
             platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
@@ -3232,6 +3236,8 @@ class TestSuite(DisablePyTestCollectionMixin):
             if tc.build_on_all and not platform_filter:
                 platform_scope = self.platforms
             elif tc.integration_platforms and self.integration:
+                self.verify_platforms_existence(
+                    tc.integration_platforms, f"{tc_name} - integration_platforms")
                 platform_scope = list(filter(lambda item: item.name in tc.integration_platforms, \
                                          self.platforms))
             else:
@@ -3242,6 +3248,8 @@ class TestSuite(DisablePyTestCollectionMixin):
             # If there isn't any overlap between the platform_allow list and the platform_scope
             # we set the scope to the platform_allow list
             if tc.platform_allow and not platform_filter and not integration:
+                self.verify_platforms_existence(
+                    tc.platform_allow, f"{tc_name} - platform_allow")
                 a = set(platform_scope)
                 b = set(filter(lambda item: item.name in tc.platform_allow, self.platforms))
                 c = a.intersection(b)
@@ -3853,6 +3861,19 @@ class TestSuite(DisablePyTestCollectionMixin):
                 if case == identifier:
                     results.append(tc)
         return results
+
+    def verify_platforms_existence(self, platform_names_to_verify, log_info=""):
+        """
+        Verify if platform name (passed by --platform option, or in yaml file
+        as platform_allow or integration_platforms options) is correct. If not -
+        log error.
+        """
+        for platform in platform_names_to_verify:
+            if platform in self.platform_names:
+                break
+            else:
+                logger.error(f"{log_info} - unrecognized platform - {platform}")
+
 
 class CoverageTool:
     """ Base class for every supported coverage tool
