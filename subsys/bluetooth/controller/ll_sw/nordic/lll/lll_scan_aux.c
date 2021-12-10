@@ -135,6 +135,11 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 
 	/* Get reference to extended header */
 	pri_com_hdr = (void *)&pdu->adv_ext_ind;
+	if (!pdu->len || !pri_com_hdr->ext_hdr_len) {
+		return 0U;
+	}
+
+	/* Get reference to flags and contents */
 	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
 	pri_dptr = pri_hdr->data;
 
