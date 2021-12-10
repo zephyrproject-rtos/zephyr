@@ -33,7 +33,7 @@ The sample can be built and flashed as follows:
    west flash
 
 If using another supported Espressif board, replace the board argument in the above
-command with your own board (e.g., `esp32s2_saola` board).
+command with your own board (e.g., :ref:`esp32s2_saola` board).
 
 Sample Output
 =============
