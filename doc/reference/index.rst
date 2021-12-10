@@ -10,6 +10,7 @@ API Reference
    audio/index.rst
    misc/notify.rst
    bluetooth/index.rst
+   canbus/index.rst
    crypto/index.rst
    devicetree/index.rst
    drivers/index.rst
