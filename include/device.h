@@ -876,10 +876,18 @@ __deprecated static inline int device_usable_check(const struct device *dev)
  * `gen_handles.py` must be updated.
  */
 BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
+#ifdef __cplusplus
+/* TODO: Workaround for GCC bug 83271.
+ * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=83271
+ */
+#define DEVICE_HANDLE_DEFINITION_TYPE extern const device_handle_t
+#else
+#define DEVICE_HANDLE_DEFINITION_TYPE const device_handle_t
+#endif
 #define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
 	extern const device_handle_t					\
 		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
-	const device_handle_t						\
+	DEVICE_HANDLE_DEFINITION_TYPE						\
 	__aligned(sizeof(device_handle_t))				\
 	__attribute__((__weak__,					\
 		       __section__(".__device_handles_pass1")))		\
