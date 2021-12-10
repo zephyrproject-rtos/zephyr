@@ -3376,7 +3376,7 @@ function(zephyr_linker_dts_memory)
 
   dt_reg_addr(addr PATH ${DTS_MEMORY_PATH})
   dt_reg_size(size PATH ${DTS_MEMORY_PATH})
-  dt_prop(name PATH ${DTS_MEMORY_PATH} PROPERTY "memory-region")
+  dt_prop(name PATH ${DTS_MEMORY_PATH} PROPERTY "zephyr,memory-region")
   if (NOT DEFINED name)
     # Fallback to the node path
     set(name ${DTS_MEMORY_PATH})
