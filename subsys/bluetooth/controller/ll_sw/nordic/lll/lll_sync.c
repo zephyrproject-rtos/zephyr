@@ -152,7 +152,8 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 #endif
 
 	radio_phy_set(lll_aux->phy, 1);
-	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll_aux->phy << 1));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, LL_EXT_OCTETS_RX_MAX,
+			    RADIO_PKT_CONF_PHY(lll_aux->phy));
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
@@ -402,7 +403,8 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	radio_phy_set(lll->phy, 1);
-	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll->phy << 1));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, LL_EXT_OCTETS_RX_MAX,
+			    RADIO_PKT_CONF_PHY(lll->phy));
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
 					sys_get_le24(lll->crc_init));
@@ -541,7 +543,8 @@ static void isr_aux_setup(void *param)
 
 	/* Setup radio for auxiliary PDU scan */
 	radio_phy_set(phy_aux, 1);
-	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (phy_aux << 1));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, LL_EXT_OCTETS_RX_MAX,
+			    RADIO_PKT_CONF_PHY(phy_aux));
 
 	lll_chan_set(aux_ptr->chan_idx);
 
