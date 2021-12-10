@@ -62,7 +62,7 @@ _region_min_align = CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE;
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 _region_min_align = CONFIG_MMU_PAGE_SIZE;
 #else
-/* If building without MPU support, use default 4-byte alignment. */
+/* If building without MPU/MMU support, use default 4-byte alignment. */
 _region_min_align = 4;
 #endif
 
@@ -151,10 +151,9 @@ SECTIONS
          */
         *(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
 
+        __text_region_end = .;
+        . = ALIGN(_region_min_align);
     } GROUP_LINK_IN(ROMABLE_REGION)
-
-    __text_region_end = .;
-    . = ALIGN(_region_min_align);
 
 #if defined (CONFIG_CPLUSPLUS)
     SECTION_PROLOGUE(.ARM.extab,,)
@@ -181,8 +180,11 @@ SECTIONS
         __exidx_end = .;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
-    . = ALIGN(_region_min_align);
-    __rodata_region_start = .;
+    SECTION_PROLOGUE(rodata_start,,)
+    {
+        . = ALIGN(_region_min_align);
+        __rodata_region_start = .;
+    } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
