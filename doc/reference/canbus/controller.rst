@@ -1,7 +1,7 @@
 .. _can_api:
 
-Controller Area Network (CAN)
-#############################
+CAN Controller API
+##################
 
 .. contents::
     :local:
@@ -39,7 +39,7 @@ This structure is called a wired-AND.
    CAN RX is high, at least for a short time. This is also necessary for
    loopback mode.
 
-.. image:: can_transceiver.svg
+.. image:: transceiver.svg
    :width: 70%
    :align: center
    :alt: CAN Transceiver
@@ -47,7 +47,7 @@ This structure is called a wired-AND.
 
 The bit-timing as defined in ISO 11898-1:2003 looks as following:
 
-.. image:: can_timing.svg
+.. image:: timing.svg
    :width: 40%
    :align: center
    :alt: CAN Timing
