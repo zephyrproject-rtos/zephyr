@@ -471,7 +471,7 @@ Documentation:
         - samples/drivers/can/
         - tests/drivers/can/
         - samples/subsys/canbus/
-        - doc/reference/networking/can_api.rst
+        - doc/reference/canbus/
         - modules/canopennode/
         - samples/modules/canopennode/
     labels:
