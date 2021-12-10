@@ -30,6 +30,7 @@
 #include "lll_conn.h"
 
 #include "lll_internal.h"
+#include "lll_df_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
@@ -500,7 +501,9 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	if (0) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	} else if (lll->enc_rx) {
-		radio_pkt_configure(8, (max_rx_octets + 4), (phy << 1) | 0x01);
+		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, (max_rx_octets + PDU_MIC_SIZE),
+				    RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC, phy,
+							 RADIO_PKT_CONF_CTE_DISABLED));
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
 	defined(HAL_RADIO_PDU_LEN_MAX) && \
@@ -516,7 +519,9 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 #endif
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} else {
-		radio_pkt_configure(8, max_rx_octets, (phy << 1) | 0x01);
+		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, max_rx_octets,
+				    RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC, phy,
+							 RADIO_PKT_CONF_CTE_DISABLED));
 
 		radio_pkt_rx_set(node_rx->pdu);
 	}
@@ -550,14 +555,17 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 	if (0) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	} else if (lll->enc_tx) {
-		radio_pkt_configure(8, (max_tx_octets + 4U),
-				    (phy << 1) | 0x01);
+		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, (max_tx_octets + PDU_MIC_SIZE),
+				    RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC, phy,
+							 RADIO_PKT_CONF_CTE_DISABLED));
 
 		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&lll->ccm_tx,
 						      pdu_data_tx));
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} else {
-		radio_pkt_configure(8, max_tx_octets, (phy << 1) | 0x01);
+		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, max_tx_octets,
+				    RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_DC, phy,
+							 RADIO_PKT_CONF_CTE_DISABLED));
 
 		radio_pkt_tx_set(pdu_data_tx);
 	}

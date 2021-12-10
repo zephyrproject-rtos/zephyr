@@ -288,7 +288,8 @@ void radio_aa_set(uint8_t *aa)
 
 void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 {
-	uint8_t dc = flags & 0x01; /* Adv or Data channel */
+	const uint8_t pdu_type = RADIO_PKT_CONF_PDU_TYPE_GET(flags); /* Adv or Data channel */
+	uint8_t bits_s1;
 	uint32_t extra;
 	uint8_t phy;
 
@@ -298,14 +299,16 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	extra = 0U;
 
 	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
-	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) && dc) {
+	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) &&
+	    pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
 		bits_len = 5U;
+		bits_s1 = 3U;
 	}
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
 	defined(CONFIG_SOC_SERIES_NRF53X)
 	extra = 0U;
 
-	phy = (flags >> 1) & 0x07; /* phy */
+	phy = RADIO_PKT_CONF_PHY_GET(flags);
 	switch (phy) {
 	case PHY_1M:
 	default:
@@ -334,31 +337,34 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	/* To use same Data Channel PDU structure with nRF5 specific overhead
 	 * byte, include the S1 field in radio packet configuration.
 	 */
-	if (dc) {
+	if (pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
 		extra |= (RADIO_PCNF0_S1INCL_Include <<
 			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
+#if defined(CONFIG_BT_CTLR_DF)
+		if (RADIO_PKT_CONF_CTE_GET(flags) == RADIO_PKT_CONF_CTE_ENABLED) {
+			bits_s1 = 8U;
+		} else
+#endif /* CONFIG_BT_CTLR_DF */
+		{
+			bits_s1 = 0U;
+		}
+	} else {
+		bits_s1 = 0U;
 	}
 #endif /* CONFIG_SOC_COMPATIBLE_NRF52X */
 
-	NRF_RADIO->PCNF0 = (((1UL) << RADIO_PCNF0_S0LEN_Pos) &
-			    RADIO_PCNF0_S0LEN_Msk) |
-			   ((((uint32_t)bits_len) << RADIO_PCNF0_LFLEN_Pos) &
-			    RADIO_PCNF0_LFLEN_Msk) |
-			   ((((uint32_t)8-bits_len) << RADIO_PCNF0_S1LEN_Pos) &
-			    RADIO_PCNF0_S1LEN_Msk) |
-			   extra;
+	NRF_RADIO->PCNF0 =
+		(((1UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) |
+		((((uint32_t)bits_len) << RADIO_PCNF0_LFLEN_Pos) & RADIO_PCNF0_LFLEN_Msk) |
+		((((uint32_t)bits_s1) << RADIO_PCNF0_S1LEN_Pos) & RADIO_PCNF0_S1LEN_Msk) | extra;
 
 	NRF_RADIO->PCNF1 &= ~(RADIO_PCNF1_MAXLEN_Msk | RADIO_PCNF1_STATLEN_Msk |
 			      RADIO_PCNF1_BALEN_Msk | RADIO_PCNF1_ENDIAN_Msk);
-	NRF_RADIO->PCNF1 |= ((((uint32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) &
-			     RADIO_PCNF1_MAXLEN_Msk) |
-			    (((0UL) << RADIO_PCNF1_STATLEN_Pos) &
-			     RADIO_PCNF1_STATLEN_Msk) |
-			    (((3UL) << RADIO_PCNF1_BALEN_Pos) &
-			     RADIO_PCNF1_BALEN_Msk) |
-			    (((RADIO_PCNF1_ENDIAN_Little) <<
-			      RADIO_PCNF1_ENDIAN_Pos) &
-			     RADIO_PCNF1_ENDIAN_Msk);
+	NRF_RADIO->PCNF1 |=
+		((((uint32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) & RADIO_PCNF1_MAXLEN_Msk) |
+		(((0UL) << RADIO_PCNF1_STATLEN_Pos) & RADIO_PCNF1_STATLEN_Msk) |
+		(((3UL) << RADIO_PCNF1_BALEN_Pos) & RADIO_PCNF1_BALEN_Msk) |
+		(((RADIO_PCNF1_ENDIAN_Little) << RADIO_PCNF1_ENDIAN_Pos) & RADIO_PCNF1_ENDIAN_Msk);
 }
 
 void radio_pkt_rx_set(void *rx_packet)

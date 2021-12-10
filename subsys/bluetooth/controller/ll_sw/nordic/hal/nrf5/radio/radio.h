@@ -5,6 +5,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Set of macros related with Radio packet configuration flags */
+/* PDU type, 1 bit field*/
+#define RADIO_PKT_CONF_PDU_TYPE_POS (0U)
+#define RADIO_PKT_CONF_PDU_TYPE_MSK BIT(RADIO_PKT_CONF_PDU_TYPE_POS)
+#define RADIO_PKT_CONF_PDU_TYPE_AC (0U)
+#define RADIO_PKT_CONF_PDU_TYPE_DC (1U)
+/* PHY type, two bit field */
+#define RADIO_PKT_CONF_PHY_POS (1U)
+#define RADIO_PKT_CONF_PHY_MSK (BIT_MASK(2U) << RADIO_PKT_CONF_PHY_POS)
+#define RADIO_PKT_CONF_PHY_LEGACY (0U)
+#define RADIO_PKT_CONF_PHY_1M (1U)
+#define RADIO_PKT_CONF_PHY_2M (2U)
+#define RADIO_PKT_CONF_PHY_CODED (3U)
+/* CTE enabled, 1 bit field */
+#define RADIO_PKT_CONF_CTE_POS (3U)
+#define RADIO_PKT_CONF_CTE_MSK BIT(RADIO_PKT_CONF_PDU_TYPE_POS)
+#define RADIO_PKT_CONF_CTE_DISABLED (0U)
+#define RADIO_PKT_CONF_CTE_ENABLED (1U)
+
+/* Macro to define length of the BLE packet length field in bits */
+#define RADIO_PKT_CONF_LENGTH_8BIT (8U)
+
+/* Helper macro to create bitfield with PDU type only*/
+#define RADIO_PKT_CONF_PDU_TYPE(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_PDU_TYPE_POS))
+/* Helper macro to get PDU type from radio packet configuration bitfield */
+#define RADIO_PKT_CONF_PDU_TYPE_GET(flags)                                                         \
+	((uint8_t)(((flags) >> RADIO_PKT_CONF_PDU_TYPE_POS) & RADIO_PKT_CONF_PDU_TYPE_MSK))
+/* Helper macro to create bitfield with PHY type only */
+#define RADIO_PKT_CONF_PHY(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_PHY_POS))
+/* Helper macro to get PHY type from radio packet configuration bitfield */
+#define RADIO_PKT_CONF_PHY_GET(flags)                                                              \
+	((uint8_t)((((flags) >> RADIO_PKT_CONF_PHY_POS)) & RADIO_PKT_CONF_PHY_MSK))
+/* Helper macro to create bitfield with CTE type only */
+#define RADIO_PKT_CONF_CTE(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_CTE_POS))
+/* Helper macro to get CTE enable field value from radion packet configuration bitfield */
+#define RADIO_PKT_CONF_CTE_GET(flags)                                                              \
+	((uint8_t)((((flags) >> RADIO_PKT_CONF_CTE_POS)) & RADIO_PKT_CONF_CTE_MSK))
+/* Helper macro to create a radio packet configure bitfield */
+#define RADIO_PKT_CONF_FLAGS(pdu, phy, cte)                                                        \
+	(RADIO_PKT_CONF_PDU_TYPE((pdu)) | RADIO_PKT_CONF_PHY((phy)) | RADIO_PKT_CONF_CTE((cte)))
+
 typedef void (*radio_isr_cb_t) (void *param);
 
 void isr_radio(void);
