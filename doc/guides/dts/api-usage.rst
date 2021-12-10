@@ -379,7 +379,7 @@ generated C header which is put into every application build directory:
 :ref:`devicetree_unfixed.h <dt-outputs>`. This file contains macros with
 devicetree data.
 
-These macros have tricky naming conventions which the `devicetree_api` API
+These macros have tricky naming conventions which the :ref:`devicetree_api` API
 abstracts away. They should be considered an implementation detail, but it's
 useful to understand them since they will frequently be seen in compiler error
 messages.
