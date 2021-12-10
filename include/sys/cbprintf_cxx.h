@@ -11,6 +11,7 @@
 /* C++ version for detecting a pointer to a string. */
 static inline int z_cbprintf_cxx_is_pchar(char *, bool const_as_fixed)
 {
+	ARG_UNUSED(const_as_fixed);
 	return 1;
 }
 
