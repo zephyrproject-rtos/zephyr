@@ -702,6 +702,7 @@
 /subsys/lorawan/                          @Mani-Sadhasivam
 /subsys/mgmt/ec_host_cmd/                 @jettr
 /subsys/mgmt/mcumgr/                      @carlescufi @nvlsianpu
+/subsys/mgmt/mcumgr/lib/                  @de-nordic
 /subsys/mgmt/hawkbit/                     @Navin-Sankar
 /subsys/mgmt/mcumgr/smp_udp.c             @aunsbjerg
 /subsys/mgmt/updatehub/                   @nandojve @otavio
