@@ -20,7 +20,7 @@ BUILD_ASSERT(Z_IS_POW2(XCHAL_DCACHE_LINESIZE));
 BUILD_ASSERT(Z_IS_POW2(Z_DCACHE_MAX));
 #endif
 
-static inline void z_xtensa_cache_flush(void *addr, size_t bytes)
+static ALWAYS_INLINE void z_xtensa_cache_flush(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -34,7 +34,7 @@ static inline void z_xtensa_cache_flush(void *addr, size_t bytes)
 #endif
 }
 
-static inline void z_xtensa_cache_flush_inv(void *addr, size_t bytes)
+static ALWAYS_INLINE void z_xtensa_cache_flush_inv(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -48,7 +48,7 @@ static inline void z_xtensa_cache_flush_inv(void *addr, size_t bytes)
 #endif
 }
 
-static inline void z_xtensa_cache_inv(void *addr, size_t bytes)
+static ALWAYS_INLINE void z_xtensa_cache_inv(void *addr, size_t bytes)
 {
 #if XCHAL_DCACHE_SIZE
 	size_t step = XCHAL_DCACHE_LINESIZE;
@@ -62,17 +62,17 @@ static inline void z_xtensa_cache_inv(void *addr, size_t bytes)
 #endif
 }
 
-static inline void z_xtensa_cache_inv_all(void)
+static ALWAYS_INLINE void z_xtensa_cache_inv_all(void)
 {
 	z_xtensa_cache_inv(NULL, Z_DCACHE_MAX);
 }
 
-static inline void z_xtensa_cache_flush_all(void)
+static ALWAYS_INLINE void z_xtensa_cache_flush_all(void)
 {
 	z_xtensa_cache_flush(NULL, Z_DCACHE_MAX);
 }
 
-static inline void z_xtensa_cache_flush_inv_all(void)
+static ALWAYS_INLINE void z_xtensa_cache_flush_inv_all(void)
 {
 	z_xtensa_cache_flush_inv(NULL, Z_DCACHE_MAX);
 }
