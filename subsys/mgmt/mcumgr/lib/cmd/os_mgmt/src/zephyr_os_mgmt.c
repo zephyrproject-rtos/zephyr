@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <debug/object_tracing.h>
 #include <kernel_structs.h>
 #include <mgmt/mgmt.h>
