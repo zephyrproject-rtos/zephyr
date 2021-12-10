@@ -72,9 +72,12 @@
 #define DSP_WCT_CS_TA(x)			BIT(x)
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
+/* Attribute macros to place code and data into IMR memory */
+#define __imr __in_section_unique(imr)
+#define __imrdata __in_section_unique(imrdata)
+
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
-
 
 #endif /* __INC_SOC_H */
