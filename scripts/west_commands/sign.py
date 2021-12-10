@@ -423,8 +423,8 @@ class RimageSigner(Signer):
             out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
             out_tmp = str(b / 'zephyr' / 'zephyr.rix')
         else:
-            bootloader = str(b / 'zephyr' / 'bootloader.elf.mod')
-            kernel = str(b / 'zephyr' / 'zephyr.elf.mod')
+            bootloader = str(b / 'zephyr' / 'boot.mod')
+            kernel = str(b / 'zephyr' / 'main.mod')
             out_bin = str(b / 'zephyr' / 'zephyr.ri')
             out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
             out_tmp = str(b / 'zephyr' / 'zephyr.rix')
