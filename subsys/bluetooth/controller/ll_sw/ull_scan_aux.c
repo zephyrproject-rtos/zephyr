@@ -279,8 +279,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
 	p = (void *)&pdu->adv_ext_ind;
-	if (!p->ext_hdr_len) {
-		data_len = pdu->len - PDU_AC_EXT_HEADER_SIZE_MIN;
+	if (!pdu->len || !p->ext_hdr_len) {
+		if (pdu->len) {
+			data_len = pdu->len - PDU_AC_EXT_HEADER_SIZE_MIN;
+		} else {
+			data_len = 0U;
+		}
+
 		if (sync_lll) {
 			struct ll_sync_set *sync;
 
