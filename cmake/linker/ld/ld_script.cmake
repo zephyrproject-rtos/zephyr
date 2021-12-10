@@ -33,7 +33,7 @@ function(system_to_string)
     if(DEFINED size)
       set(size ", LENGTH = (${size})")
     endif()
-    set(memory_region "  ${name} ${flags} ${start}${size}")
+    set(memory_region "  \"${name}\" ${flags} ${start}${size}")
 
     set(${STRING_STRING} "${${STRING_STRING}}${memory_region}\n")
   endforeach()
