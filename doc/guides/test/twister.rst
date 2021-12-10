@@ -611,7 +611,7 @@ Fixtures are defined in the hardware map file as a list::
         runner: pyocd
         serial: /dev/ttyACM9
 
-When running `twister` with ``--device-testing``, the configured fixture
+When running ``twister`` with ``--device-testing``, the configured fixture
 in the hardware map file will be matched to testcases requesting the same fixtures
 and these tests will be executed on the boards that provide this fixture.
 
