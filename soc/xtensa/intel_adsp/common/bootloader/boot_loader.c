@@ -26,6 +26,25 @@
 #include "platform.h"
 #include "manifest.h"
 
+/* Important note about linkage:
+ *
+ * The C code here, starting from boot_core0(), is running entirely in
+ * IMR memory.  The sram banks are not initialized yet and the Zephyr
+ * code is not yet copied there.  No use of this memory is legal until
+ * after parse_manifest() returns.  This means that all symbols in
+ * this file must be flagged "__imr" or "__imrdata" (or be guaranteed
+ * to inline via ALWAYS_INLINE, normal gcc "inline" is only a hint)!
+ *
+ * There's a similar note with Xtensa register windows: the Zephyr
+ * exception handles for window overflow are not present in IMR.
+ * While on existing systems, we start running with a VECBASE pointing
+ * to ROM handlers (that seem to work), it seems unsafe to rely on
+ * that.  It's not possible to hit an overflow until at least four
+ * nested function calls, so this is mostly theoretical.  Nonetheless
+ * care should be taken here to make sure the function tree remains
+ * shallow until SRAM initialization is finished.
+ */
+
 #define LPSRAM_MASK(x) 0x00000003
 #define SRAM_BANK_SIZE (64 * 1024)
 #define HOST_PAGE_SIZE 4096
@@ -45,11 +64,12 @@ __asm__(".pushsection .boot_entry.text, \"ax\" \n\t"
 	".popsection                   \n\t");
 
 /* Entry stub.  Sets up register windows and stack such that we can
- * enter C code successfully, and calls boot_master_core()
+ * enter C code successfully, and calls boot_core0()
  */
 #define STRINGIFY_MACRO(x) Z_STRINGIFY(x)
 #define IMRSTACK STRINGIFY_MACRO(MANIFEST_BASE)
-__asm__(".align 4                   \n\t"
+__asm__(".section .imr.z_boot_asm_entry, \"x\" \n\t"
+	".align 4                   \n\t"
 	"z_boot_asm_entry:          \n\t"
 	"  movi  a0, 0x4002f        \n\t"
 	"  wsr   a0, PS             \n\t"
@@ -59,9 +79,9 @@ __asm__(".align 4                   \n\t"
 	"  wsr   a0, WINDOWSTART    \n\t"
 	"  rsync                    \n\t"
 	"  movi  a1, " IMRSTACK    "\n\t"
-	"  call4 boot_master_core   \n\t");
+	"  call4 boot_core0   \n\t");
 
-static inline void idelay(int n)
+static ALWAYS_INLINE void idelay(int n)
 {
 	while (n--) {
 		__asm__ volatile("nop");
@@ -83,7 +103,7 @@ static ALWAYS_INLINE void bmemcpy(void *dest, void *src, size_t bytes)
 }
 
 /* bzero used by bootloader */
-static inline void bbzero(void *dest, size_t bytes)
+static ALWAYS_INLINE void bbzero(void *dest, size_t bytes)
 {
 	uint32_t *d = dest;
 	int i;
@@ -94,8 +114,8 @@ static inline void bbzero(void *dest, size_t bytes)
 	z_xtensa_cache_flush(dest, bytes);
 }
 
-static void parse_module(struct sof_man_fw_header *hdr,
-	struct sof_man_module *mod)
+static __imr void parse_module(struct sof_man_fw_header *hdr,
+			       struct sof_man_module *mod)
 {
 	int i;
 	uint32_t bias;
@@ -131,7 +151,7 @@ static void parse_module(struct sof_man_fw_header *hdr,
 #define MAN_SKIP_ENTRIES 1
 
 /* parse FW manifest and copy modules */
-static void parse_manifest(void)
+static __imr void parse_manifest(void)
 {
 	struct sof_man_fw_desc *desc =
 		(struct sof_man_fw_desc *)MANIFEST_BASE;
@@ -153,7 +173,7 @@ static void parse_manifest(void)
 /* function powers up a number of memory banks provided as an argument and
  * gates remaining memory banks
  */
-static void hp_sram_pm_banks(uint32_t banks)
+static __imr void hp_sram_pm_banks(uint32_t banks)
 {
 #ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	int delay_count = 256;
@@ -219,7 +239,7 @@ static void hp_sram_pm_banks(uint32_t banks)
 #endif
 }
 
-static void hp_sram_init(uint32_t memory_size)
+static __imr void hp_sram_init(uint32_t memory_size)
 {
 	uint32_t ebb_in_use;
 
@@ -233,7 +253,7 @@ static void hp_sram_init(uint32_t memory_size)
 	bbzero((void *)L2_SRAM_BASE, L2_SRAM_SIZE);
 }
 
-static void lp_sram_init(void)
+static __imr void lp_sram_init(void)
 {
 	uint32_t status = 0;
 	uint32_t timeout_counter, delay_count = 256;
@@ -264,7 +284,7 @@ static void lp_sram_init(void)
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
 }
 
-static void win0_setup(void)
+static __imr void win0_setup(void)
 {
 	/* Software protocol: "firmware entered" has the value 5 */
 	*(uint32_t *)HP_SRAM_WIN0_BASE = 5;
@@ -274,7 +294,7 @@ static void win0_setup(void)
 			     | CAVS_DMWBA_ENABLE);
 }
 
-void boot_master_core(void)
+__imr void boot_core0(void)
 {
 	cpu_early_init();
 

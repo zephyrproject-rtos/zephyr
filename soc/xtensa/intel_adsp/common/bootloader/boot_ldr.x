@@ -30,18 +30,7 @@ SECTIONS {
   .text : {
     /* Entry point MUST be here per external configuration */
     KEEP (*(.boot_entry.text))
-
-    *(.boot_entry.literal)
-    *(.literal .literal.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
-    *(.entry.text)
-    *(.init.literal)
-    KEEP(*(.init))
-    *( .text .text.*)
-    *(.fini.literal)
-    KEEP(*(.fini))
-    *(.gnu.version)
-    KEEP (*(.ResetVector.text))
-    KEEP (*(.ResetHandler.text))
+    *(.imr .imr.*)
   } >imr :imr_phdr
 
   /* The data sections come last.  This is because rimage seems to
@@ -51,66 +40,7 @@ SECTIONS {
    * .text.
    */
   .rodata : ALIGN(4096) {
-    *(.rodata)
-    *(.rodata.*)
-    *(.gnu.linkonce.r.*)
-    *(.rodata1)
-    __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
-    KEEP (*(.xt_except_table))
-    KEEP (*(.gcc_except_table))
-    *(.gnu.linkonce.e.*)
-    *(.gnu.version_r)
-    KEEP (*(.eh_frame))
-    KEEP (*crtbegin.o(.ctors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
-    KEEP (*(SORT(.ctors.*)))
-    KEEP (*(.ctors))
-    KEEP (*crtbegin.o(.dtors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
-    KEEP (*(SORT(.dtors.*)))
-    KEEP (*(.dtors))
-    __XT_EXCEPTION_DESCS__ = ABSOLUTE(.);
-    *(.xt_except_desc)
-    *(.gnu.linkonce.h.*)
-    __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
-    *(.xt_except_desc_end)
-    *(.dynamic)
-    *(.gnu.version_d)
-  } >imr :imr_phdr
-
-  .data : {
-    *(.data)
-    *(.data.*)
-    *(.gnu.linkonce.d.*)
-    KEEP(*(.gnu.linkonce.d.*personality*))
-    *(.data1)
-    *(.sdata)
-    *(.sdata.*)
-    *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
-    *(.gnu.linkonce.s2.*)
-    KEEP(*(.jcr))
-  } >imr :imr_phdr
-
-  /* Note that bootloader ".bss" goes into the ELF program header as
-   * real data, that way we can be sure the ROM loader has cleared the
-   * memory.
-   */
-  .bss : ALIGN(8) {
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-    *(.bss)
-    *(.bss.*)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
+    *(.imrdata .imrdata.*)
   } >imr :imr_phdr
 
   .comment 0 : { *(.comment) }
