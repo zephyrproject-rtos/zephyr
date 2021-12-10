@@ -634,7 +634,10 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 								isr_aux_setup,
 								lll);
 			if (ftr->aux_lll_sched) {
-				lll->is_aux_sched = 1U;
+				if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
+					lll->is_aux_sched = 1U;
+				}
+
 				err = -EBUSY;
 			} else {
 				err = 0;
