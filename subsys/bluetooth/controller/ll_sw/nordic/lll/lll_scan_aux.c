@@ -1477,7 +1477,7 @@ isr_rx_do_close:
 
 		radio_isr_set(lll_scan_isr_resume, lll);
 	} else {
-		radio_isr_set(isr_done, lll_aux);
+		radio_isr_set(isr_done, NULL);
 	}
 
 	radio_disable();
