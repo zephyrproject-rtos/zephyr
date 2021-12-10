@@ -315,7 +315,7 @@ union z_cbprintf_hdr {
  * if argument is a stirng literal. Suppression is added here instead of
  * the macro which generates the warning to not slow down the compiler.
  */
-#if __clang__ == 1
+#ifdef __clang__
 #define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
 	_Pragma("GCC diagnostic ignored \"-Wsizeof-array-decay\"")
 #else
