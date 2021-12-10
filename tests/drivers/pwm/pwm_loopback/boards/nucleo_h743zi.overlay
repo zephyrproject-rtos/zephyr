@@ -10,7 +10,7 @@
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
 		/* first index must be a 32-Bit timer */
-		pwms = <&pwm2 2 0 PWM_POLARITY_NORMAL>,
+		pwms = <&pwm2 4 0 PWM_POLARITY_NORMAL>,
 			<&pwm5 1 0 PWM_POLARITY_NORMAL>;
 	};
 };
@@ -20,7 +20,7 @@
 	status = "okay";
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch2_pa1>; /* CN11 PIN30 */
+		pinctrl-0 = <&tim2_ch4_pa3>; /* CN9 PIN1 A0 */
 		pinctrl-names = "default";
 	};
 };
