@@ -94,7 +94,7 @@ __asm__(".align 4                   \n\t"
 	"  call4 z_mp_entry         \n\t");
 BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
 
-void z_mp_entry(void)
+__imr void z_mp_entry(void)
 {
 	cpu_early_init();
 
@@ -283,13 +283,13 @@ void idc_isr(void *param)
 }
 
 /* Fallback stub for external SOF code */
-int cavs_idc_smp_init(const struct device *dev)
+__imr int cavs_idc_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
 }
 
-void soc_idc_init(void)
+__imr void soc_idc_init(void)
 {
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(idc)), 0, idc_isr, NULL, 0);
 
@@ -327,7 +327,7 @@ void soc_idc_init(void)
  *
  * @param id CPU to start, in the range [1:CONFIG_MP_NUM_CPUS)
  */
-int soc_relaunch_cpu(int id)
+__imr int soc_relaunch_cpu(int id)
 {
 	int ret = 0;
 	k_spinlock_key_t k = k_spin_lock(&mplock);
@@ -368,7 +368,7 @@ int soc_relaunch_cpu(int id)
  * @param id CPU to halt, not current cpu or cpu 0
  * @return 0 on success, -EINVAL on error
  */
-int soc_halt_cpu(int id)
+__imr int soc_halt_cpu(int id)
 {
 	int ret = 0;
 	k_spinlock_key_t k = k_spin_lock(&mplock);
