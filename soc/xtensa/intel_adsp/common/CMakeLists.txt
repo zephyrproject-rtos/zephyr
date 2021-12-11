@@ -16,7 +16,7 @@ zephyr_library_sources(soc.c)
 zephyr_library_sources(soc_mp.c)
 zephyr_library_sources(trace_out.c)
 zephyr_library_sources(rimage_modules.c)
-zephyr_library_sources(bootloader/boot_loader.c)
+zephyr_library_sources(boot.c)
 
 zephyr_library_link_libraries(INTEL_ADSP_COMMON)
 
