@@ -407,7 +407,6 @@ SECTIONS
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
-    . = ALIGN(4096);
   } >ram :ram_phdr
 
   .rodata : ALIGN(4096)
