@@ -301,25 +301,7 @@ __imr void boot_core0(void)
 	lp_sram_init();
 	parse_manifest();
 
-	/* Jump into Zephyr entry in HP-SRAM (contra the name, this is
-	 * actually in the middle of the image, after the window
-	 * memory and vectors).  This has its own assembly stub for
-	 * historical reasons, but the CPU is now fully initialized.
-	 * Once we unify the links, we can just call z_cstart() here
-	 * directly.
-	 */
-	void (*zephyr_entry)(void) = (void *)RAM_BASE;
-
-	zephyr_entry();
-
-	/* This is a workaround for a gcc bug (in 10.3.0 as of Zephyr
-	 * SDK 0.13.1).  If zephyr_entry is not used in some way other
-	 * than that function call, then the emitted assembly points
-	 * to an incorrect literal with a garbage value.  (The emitted
-	 * l32r/callx8 instructions are correct, but the literal
-	 * offset is wrong; presumably it got optimized out
-	 * incorrectly.) Obviously this instruction will never
-	 * execute, but it does need to be here.
-	 */
-	__asm__ volatile("mov a0, %0" :: "r"(zephyr_entry));
+	/* Zephyr! */
+	extern FUNC_NORETURN void z_cstart(void);
+	z_cstart();
 }
