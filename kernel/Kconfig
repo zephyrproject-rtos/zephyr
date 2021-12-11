@@ -839,6 +839,7 @@ config MP_NUM_CPUS
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
 
+	help
 config SCHED_IPI_SUPPORTED
 	bool
 	help
