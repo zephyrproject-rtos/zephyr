@@ -236,6 +236,15 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		}
 #endif
 		buf += len % CBPRINTF_PACKAGE_ALIGNMENT;
+		/*
+		 * The space to store the data is represented by both
+		 * the displacement of the buf pointer compared to buf0 (NULL
+		 * in this case) as well as the extra data to be appended.
+		 * When only figuring out the needed space, we reuse the
+		 * len variable to count the size of to-be-appended data,
+		 * subtracting any initial misalignment offset from
+		 * the total.
+		 */
 		len = -(len % CBPRINTF_PACKAGE_ALIGNMENT);
 	}
 
@@ -504,6 +513,10 @@ process_string:
 	 * then we have it now.
 	 */
 	if (!buf0) {
+		/*
+		 * Yes we subtract the NULL ptr. Nicer than a cast.
+		 * https://github.com/zephyrproject-rtos/zephyr/issues/40866
+		 */
 		return len + buf - buf0;
 	}
 
