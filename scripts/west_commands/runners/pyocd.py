@@ -24,7 +24,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  pyocd_config=None,
-                 daparg=None, frequency=None, tool_opt=None):
+                 daparg=None, frequency=None, tool_opt=None, semihosting=False):
         super().__init__(cfg)
 
         default = path.join(cfg.board_dir, 'support', 'pyocd.yaml')
@@ -45,6 +45,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.hex_name = cfg.hex_file
         self.bin_name = cfg.bin_file
         self.elf_name = cfg.elf_file
+        self.semihosting_args = ['-S'] if semihosting else []
 
         pyocd_config_args = []
 
@@ -118,6 +119,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--tool-opt',
                             help='''Additional options for pyocd Commander,
                             e.g. \'--script=user.py\' ''')
+        parser.add_argument('--semihosting', default=False, action='store_true',
+                            help='if given, pyOCD enables ARM semihosting on the telnet port')
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -131,7 +134,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             dev_id=args.dev_id, daparg=args.daparg,
             frequency=args.frequency,
-            tool_opt=args.tool_opt)
+            tool_opt=args.tool_opt,
+            semihosting=args.semihosting)
 
         daparg = os.environ.get('PYOCD_DAPARG')
         if not ret.daparg_args and daparg:
@@ -195,7 +199,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                       self.target_args +
                       self.board_args +
                       self.frequency_args +
-                      self.tool_opt_args)
+                      self.tool_opt_args +
+                      self.semihosting_args)
 
         if command == 'debugserver':
             self.log_gdbserver_message()
