@@ -20,8 +20,8 @@
 			DT_ATMEL_PORT(sercom0, pad3, a, 11, c, pinmux-enable);
 			DT_ATMEL_PORT(sercom1, pad0, a,  0, d, pinmux-enable);
 			DT_ATMEL_PORT(sercom1, pad1, a,  1, d, pinmux-enable);
-			DT_ATMEL_PORT(sercom1, pad0, a, 30, d, pinmux-enable);
-			DT_ATMEL_PORT(sercom1, pad1, a, 31, d, pinmux-enable);
+			DT_ATMEL_PORT(sercom1, pad2, a, 30, d, pinmux-enable);
+			DT_ATMEL_PORT(sercom1, pad3, a, 31, d, pinmux-enable);
 			DT_ATMEL_PORT(sercom1, pad0, a, 16, c, pinmux-enable);
 			DT_ATMEL_PORT(sercom1, pad1, a, 17, c, pinmux-enable);
 			DT_ATMEL_PORT(sercom1, pad2, a, 18, c, pinmux-enable);
