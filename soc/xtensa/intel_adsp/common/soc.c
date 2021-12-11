@@ -37,15 +37,6 @@ LOG_MODULE_REGISTER(soc);
 # define GENO_DIOPTOSEL           BIT(2)
 #endif
 
-/* Entry stub.  Lives at a fixed address and called as a no-argument C
- * function out of the bootloader.  Does nothing but jump straight to
- * z_cstart(), which will implement the ABI entry
- */
-__asm__(".section .MainEntry.text, \"x\"  \n\t"
-	".global _MainEntry               \n\t"
-	"_MainEntry:                      \n\t"
-	"  j z_cstart");
-
 #define CAVS_INTC_NODE(n) DT_INST(n, intel_cavs_intc)
 
 void z_soc_irq_enable(uint32_t irq)
