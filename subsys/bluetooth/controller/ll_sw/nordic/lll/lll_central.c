@@ -14,6 +14,7 @@
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/radio_df.h"
 #include "hal/ticker.h"
 
 #include "util/util.h"
@@ -30,6 +31,7 @@
 #include "lll_chan.h"
 
 #include "lll_internal.h"
+#include "lll_df_internal.h"
 #include "lll_tim_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -94,6 +96,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct lll_conn *lll;
 	struct ull_hdr *ull;
 	uint32_t remainder;
+	uint8_t cte_len;
 
 	DEBUG_RADIO_START_M(1);
 
@@ -147,6 +150,18 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	if (pdu_data_tx->cp) {
+		lll_df_conn_cte_tx_enable(&lll->df_tx_cfg);
+
+		cte_len = CTE_LEN_US(pdu_data_tx->cte_info.time);
+	} else
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+	{
+		cte_len = 0U;
+	}
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
 #else
@@ -158,18 +173,26 @@ static int prepare_cb(struct lll_prepare_param *p)
 					sys_get_le24(lll->crc_init));
 	lll_chan_set(data_chan_use);
 
-	/* setup the radio tx packet buffer */
 	lll_conn_tx_pkt_set(lll, pdu_data_tx);
 
 	radio_isr_set(lll_conn_isr_tx, lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	/* TODO: Remove TIFS extension from IFS when EVETNS_END is switched to EVENTS_PHYEND */
+	radio_tmr_tifs_set(EVENT_IFS_US + cte_len);
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+#if defined(CONFIG_BT_CTLR_PHY)
+	radio_switch_complete_phyend_and_rx(lll->phy_rx);
+#else /* !CONFIG_BT_CTLR_PHY */
+	radio_switch_complete_phyend_and_rx(0);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#else
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(lll->phy_rx);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_switch_complete_and_rx(0);
 #endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
