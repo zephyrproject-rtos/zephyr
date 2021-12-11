@@ -1,4 +1,4 @@
-#include "bootloader/manifest.h"
+#include <manifest.h>
 #include <cavs-mem.h>
 
 /* These data structures define "module manifest" headers.  They

@@ -1,17 +1,7 @@
-/*
- * Copyright(c) 2016 Intel Corporation. All rights reserved.
- *
+/* Copyright(c) 2021 Intel Corporation. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
- *
- * Author: Liam Girdwood <liam.r.girdwood@linux.intel.com>
  */
 
-/* Older (GCC 4.2-based) XCC variants need a fixup file. */
-#if defined(__XCC__) && (__GNUC__ == 4)
-#include <toolchain/xcc_missing_defs.h>
-#endif
-
-#include <autoconf.h> /* not built by zephyr */
 #include <devicetree.h>
 #include <stddef.h>
 #include <stdint.h>
