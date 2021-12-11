@@ -839,8 +839,17 @@ config MP_NUM_CPUS
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
 
+config SMP_BASE_CPU
+	int "Starting CPU number"
+	default 0
 	help
-config SCHED_IPI_SUPPORTED
+	  This option sets the starting cpu id for the SMP core.
+	  For RISC-V systems such as MPFS and FU540 this would be set to 1 to
+	  skip the E51 hart 0 as it is not usable in SMP configurations.
+	  This can also be used in conjunction with MP_NUM_CPUS to select a 
+	  subset of available CPUs to use for Zephyr.
+		
+  config SCHED_IPI_SUPPORTED
 	bool
 	help
 	  True if the architecture supports a call to
