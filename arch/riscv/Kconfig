@@ -124,6 +124,70 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQS
 	int
 
+config HAS_MONITOR_HART
+	bool "Does SOC have monitor hart with different capabilities to application harts"
+	default n
+	help
+	  SOC has monitor hart such as the e51 on MPFS and FU540 which has different
+	  capabilities to the other harts in the SOC. This may be important for SMP
+	  setups where the monitor hart may not be suitable for inclusion in the SMP
+	  operation.
+	  
+config MONITOR_HART_ID
+	int "Hart id for monitor hart"
+	default 0
+	help
+	  If the SOC has monitor hart such as the e51 on MPFS and FU540 this is
+	  the mhartid value for the monitor hart.
+	  
+config MONITOR_HART_SUPERVISOR
+	bool "Monitor hart supports supervisor mode"
+	default n
+	help
+	  If the SOC has monitor hart, this flag indicates if it supports supervisor
+	  mode. Many monitor harts such as the e51 on MPFS and FU540 do not support
+	  supervisor mode.
+	  
+config SUPERVISOR_MODE_CAPABLE
+	bool "Indicates that supervisor mode is available"
+	default y
+	help
+	  Indicates supervisor mode is supported by the device. This may mean we need
+	  to implement supervisor specific code even if Zephyr is not using this mode.
+	  Please note, not all harts on a device might support supervisor mode so this
+	  is not a carte blanche.
+
+config NO_SUPERVISOR_DELEGATION
+	bool "For harts which support supervisor mode, force clearing of delegation bits"
+	default y
+	help
+	  Force clearing of supervisor delegation bits on start up to avoid unexpected
+	  exceptions.
+
+config SET_SUPERVISOR_HANDLER
+	bool "Set up a dummy handler to catch unexpected supervisor traps"
+	default n
+	help
+	  Setup a dummy trap handler for supervisor exceptions. This may be required for 
+	  system stability to avoid unexpected behaviour if a supervisor trap triggers.
+
+config HART_TO_USE
+	int "Select single hart to run Zephyr on, or start up hart in SMP mode"
+	range 0 4
+	default 0
+	help
+	  For non SMP setups this indicates which hart we are running Zephyr on. For SMP
+	  setups this indicates which hart will take care of system startup.
+	  
+config CLEAR_PMP_REGS
+	bool "Do we need to clear the PMP registers on startup"
+	default n
+	help
+	  Typically, on RISC-V setups, the PMP registers are left with random values
+	  on power up. The values are supposed to be benign but sometimes there can be
+	  issues. If the registers are not set to valid values by the bootloader or other
+	  agent, then zeroing them can help with system stability.
+	  
 menuconfig RISCV_PMP
 	bool "RISC-V PMP Support"
 	default n
