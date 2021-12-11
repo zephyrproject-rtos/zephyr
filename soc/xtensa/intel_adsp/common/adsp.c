@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(sof);
  * Sets up the host windows so that the host can see the memory
  * content on the DSP SRAM.
  */
-static void prepare_host_windows(void)
+static __imr void prepare_host_windows(void)
 {
 	/* window0, for fw status */
 	CAVS_WIN[0].dmwlo = HP_SRAM_WIN0_SIZE | 0x7;
@@ -49,7 +49,7 @@ static void prepare_host_windows(void)
 	SOC_DCACHE_FLUSH((void *)HP_SRAM_WIN3_BASE, HP_SRAM_WIN3_SIZE);
 }
 
-static int adsp_init(const struct device *dev)
+static __imr int adsp_init(const struct device *dev)
 {
 	prepare_host_windows();
 
