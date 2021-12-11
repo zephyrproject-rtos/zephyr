@@ -13,7 +13,6 @@
 #include <cavs-shim.h>
 #include <cavs-mem.h>
 #include <cpu_init.h>
-#include "platform.h"
 #include "manifest.h"
 
 /* Important note about linkage:
@@ -34,6 +33,34 @@
  * care should be taken here to make sure the function tree remains
  * shallow until SRAM initialization is finished.
  */
+
+/* Various cAVS platform dependencies needed by the bootloader code.
+ * These probably want to migrate to devicetree.
+ */
+
+#if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V25)
+#define PLATFORM_RESET_MHE_AT_BOOT
+#define PLATFORM_MEM_INIT_AT_BOOT
+#define PLATFORM_HPSRAM_EBB_COUNT 30
+#define EBB_SEGMENT_SIZE          32
+
+#elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V20)
+#define PLATFORM_RESET_MHE_AT_BOOT
+#define PLATFORM_MEM_INIT_AT_BOOT
+#define PLATFORM_HPSRAM_EBB_COUNT 47
+#define EBB_SEGMENT_SIZE          32
+
+#elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V18)
+#define PLATFORM_RESET_MHE_AT_BOOT
+#define PLATFORM_MEM_INIT_AT_BOOT
+#define PLATFORM_HPSRAM_EBB_COUNT 47
+#define EBB_SEGMENT_SIZE          32
+
+#elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
+#define PLATFORM_RESET_MHE_AT_BOOT
+#define PLATFORM_DISABLE_L2CACHE_AT_BOOT
+
+#endif
 
 #define LPSRAM_MASK(x) 0x00000003
 #define SRAM_BANK_SIZE (64 * 1024)
