@@ -40,7 +40,7 @@ struct ll_sync_set {
 	/* Member used to notify event done handler to terminate sync scanning.
 	 * Used only when no HW support for parsing PDU for CTEInfo.
 	 */
-	uint8_t sync_term:1;
+	uint8_t is_term:1;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 
 	uint8_t sync_expire:3; /* countdown of 6 before fail to establish */
