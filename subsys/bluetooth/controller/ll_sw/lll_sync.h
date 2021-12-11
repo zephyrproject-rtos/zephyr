@@ -51,7 +51,7 @@ struct lll_sync {
 	uint32_t window_size_event_us;
 
 	/* used to store lll_aux when chain is being scanned */
-	struct lll_scan_aux *lll_aux;
+	struct lll_scan_aux *volatile lll_aux;
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	struct lll_df_sync df_cfg;

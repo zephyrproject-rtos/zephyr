@@ -937,6 +937,9 @@ static void isr_done(void *param)
 
 	lll_isr_status_reset();
 
+	/* Generate incomplete data status and release aux context when
+	 * sync event is using LLL scheduling.
+	 */
 	lll = param;
 
 	/* LLL scheduling used for chain PDU reception is aborted/preempted */
