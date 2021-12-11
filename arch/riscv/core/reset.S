@@ -71,6 +71,7 @@ not_monitor_hart:
 #endif	/* CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR */
 #endif	/* CONFIG_SMP */
 
+#if defined(CONFIG_CLEAR_PMP_REGS)
     /*
      * Temporary step, zeroise PMPs in case random values cause issues...
      *
@@ -96,7 +97,7 @@ not_monitor_hart:
     csrw pmpaddr13,0
     csrw pmpaddr14,0
     csrw pmpaddr15,0
-#endif
+#endif /* CONFIG_CLEAR_PMP_REGS */
     /*
      * This will boot master core which is lowest numbered, just halt other cores.
      *
