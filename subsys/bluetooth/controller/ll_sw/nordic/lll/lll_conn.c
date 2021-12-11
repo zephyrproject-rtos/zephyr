@@ -607,10 +607,6 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		}
 
 		p->rfu = 0U;
-
-#if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-		p->resv = 0U;
-#endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 	}
 
 	*pdu_data_tx = p;
@@ -864,4 +860,8 @@ static void empty_tx_init(void)
 
 	p = (void *)radio_pkt_empty_get();
 	p->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
+	p->cp = PDU_DATA_CTE_PRESENT_BIT_DISABLED;
+#if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
+	p->resv = 0U;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 }

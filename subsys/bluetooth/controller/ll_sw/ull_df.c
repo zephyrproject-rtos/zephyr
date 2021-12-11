@@ -1032,7 +1032,6 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 			}
 		}
 
-
 		df_rx_params->state = DF_CTE_SAMPLING_ENABLED;
 		df_rx_params->slot_durations = slot_durations;
 		memcpy(df_rx_params->ant_ids, ant_ids, switch_pattern_len);
