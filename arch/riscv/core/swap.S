@@ -44,19 +44,19 @@ SECTION_FUNC(exception.other, arch_swap)
 	 * _thread_offset_to_swap_return_value). Normally, it should be -EAGAIN,
 	 * unless someone has previously called arch_thread_return_value_set(..).
 	 */
-#if defined(CONFIG_BOARD_HART_TO_USE) && (CONFIG_BOARD_HART_TO_USE != 0)
+#if CONFIG_HART_TO_USE != 0
 	csrr t0, mhartid
 	li t1, ___cpu_t_SIZEOF
 	mul t1,t1,t0
 	la t0, _kernel
 	add t0, t0, t1
 	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
-#else
+#else /* CONFIG_HART_TO_USE != 0 */
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-#endif
+#endif /* CONFIG_HART_TO_USE != 0 */
 	/* Load return value of arch_swap function in temp register t2 */
 	lw t2, _thread_offset_to_swap_return_value(t1)
 
