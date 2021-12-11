@@ -44,7 +44,7 @@
 		};
 	};
 
-	gpio_keys {
+	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
 			label = "Push button switch 0";
