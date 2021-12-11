@@ -396,7 +396,6 @@ SECTIONS
   {
     _stext = .;
     _text_start = ABSOLUTE(.);
-    KEEP(*(.MainEntry.text))
     *(.entry.text)
     *(.init.literal)
     *(.iram0.text)
