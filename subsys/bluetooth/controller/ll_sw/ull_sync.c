@@ -792,7 +792,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 
 #if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 		/* Notify done event handler to terminate sync scan if required. */
-		ull_sync->sync_term = sync_status == SYNC_STAT_TERM;
+		ull_sync->is_term = (sync_status == SYNC_STAT_TERM);
 #endif /* !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 #else
 		se->status = BT_HCI_ERR_SUCCESS;
@@ -846,7 +846,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 #if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	if (done->extra.sync_term) {
 #else
-	if (sync->sync_term) {
+	if (sync->is_term) {
 #endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 		/* Stop periodic advertising scan ticker */
 		sync_ticker_cleanup(sync, NULL);
