@@ -120,5 +120,10 @@
 			interrupts = <8 0 0>;
 			interrupt-parent = <&cavs0>;
 		};
+
+		tlb: tlb@3000 {
+			compatible = "intel,adsp-tlb";
+			reg = <0x3000 0x1000>;
+		};
 	};
 };
