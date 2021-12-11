@@ -113,3 +113,11 @@ properties:
       type: uint8-array
       required: true
       description: RGB Interface Control Parameter
+
+    backlight-led:
+      type: phandle
+      required: false
+      description: |
+        For panels whose backlight is controlled by an external backlight
+        LED, this property contains a phandle that references the
+        LED.
