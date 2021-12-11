@@ -207,7 +207,7 @@ irq_connect_out:
 }
 #endif
 
-static void power_init_v15(void)
+static __imr void power_init_v15(void)
 {
 	/* HP domain clocked by PLL
 	 * LP domain clocked by PLL
@@ -226,7 +226,7 @@ static void power_init_v15(void)
 	CAVS_SHIM.lpsctl = CAVS_SHIM.lpsctl;
 }
 
-static void power_init(void)
+static __imr void power_init(void)
 {
 	/* Request HP ring oscillator and
 	 * wait for status to indicate it's ready.
@@ -270,7 +270,7 @@ static void power_init(void)
 #endif
 }
 
-static int soc_init(const struct device *dev)
+static __imr int soc_init(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
 		power_init_v15();
