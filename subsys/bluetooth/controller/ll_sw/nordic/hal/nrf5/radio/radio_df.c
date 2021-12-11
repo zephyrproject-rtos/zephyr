@@ -363,6 +363,23 @@ void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_cu
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
+void radio_switch_complete_phyend_and_rx(uint8_t phy_rx)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_RXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk;
+
+	/* NOTE: As Tx chain delays are negligible constant values (~1 us)
+	 *       across nRF5x radios, sw_switch assumes the 1M chain delay for
+	 *       calculations.
+	 */
+	sw_switch(SW_SWITCH_TX, SW_SWITCH_RX, SW_SWITCH_PHY_1M, SW_SWITCH_FLAGS_DONTCARE, phy_rx,
+		  SW_SWITCH_FLAGS_DONTCARE);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
 void radio_df_iq_data_packet_set(uint8_t *buffer, size_t len)
 {
 	nrf_radio_dfe_buffer_set(NRF_RADIO, (uint32_t *)buffer, len);
