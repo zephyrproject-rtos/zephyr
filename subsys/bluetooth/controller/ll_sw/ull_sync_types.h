@@ -43,6 +43,7 @@ struct ll_sync_set {
 	uint8_t is_term:1;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 
+	uint8_t is_stop:1; /* sync terminate requested */
 	uint8_t sync_expire:3; /* countdown of 6 before fail to establish */
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)

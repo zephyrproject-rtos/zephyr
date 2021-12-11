@@ -52,11 +52,8 @@ static inline struct ll_sync_iso_set *
 	sync_iso_create_get(struct ll_sync_set *sync);
 static void done_disabled_cb(void *param);
 static void flush(void *param);
-
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 static void rx_release_put(struct node_rx_hdr *rx);
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-
+static void aux_sync_incomplete(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
@@ -557,10 +554,23 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || lll) {
 		lll->lll_aux = NULL;
 	} else {
+		struct ll_sync_set *sync;
+
 		LL_ASSERT(sync_lll &&
 			  (!sync_lll->lll_aux || sync_lll->lll_aux == lll_aux));
+
+		/* Do not ULL schedule if sync terminate requested */
+		sync = HDR_LLL2ULL(sync_lll);
+		if (unlikely(sync->is_stop)) {
+			goto ull_scan_aux_rx_flush;
+		}
+
+		/* Associate the auxiliary context with sync context */
 		sync_lll->lll_aux = lll_aux;
 
+		/* Backup the node rx to be dispatch on successfully ULL
+		 * scheduling setup.
+		 */
 		aux->rx_head = rx;
 	}
 
@@ -663,6 +673,7 @@ ull_scan_aux_rx_flush:
 
 	if (aux) {
 		struct ull_hdr *hdr;
+		uint8_t ref;
 
 		/* Enqueue last rx in aux context if possible, otherwise send
 		 * immediately since we are in sync context.
@@ -687,12 +698,17 @@ ull_scan_aux_rx_flush:
 		 * ull_hdr before done event was processed.
 		 */
 		hdr = &aux->ull;
-		LL_ASSERT(ull_ref_get(hdr) < 2);
-		if (ull_ref_get(hdr) == 0) {
+		ref = ull_ref_get(hdr);
+		if (ref == 0) {
 			flush(aux);
 		} else {
-			LL_ASSERT(!hdr->disabled_cb);
+			/* A specific single shot scheduled aux context cannot
+			 * overlap, i.e. ULL reference count shall be less than
+			 * 2.
+			 */
+			LL_ASSERT(ref < 2);
 
+			LL_ASSERT(!hdr->disabled_cb);
 			hdr->disabled_param = aux;
 			hdr->disabled_cb = done_disabled_cb;
 		}
@@ -702,11 +718,9 @@ ull_scan_aux_rx_flush:
 
 	ll_rx_put(link, rx);
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	if (rx_incomplete) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && rx_incomplete) {
 		rx_release_put(rx_incomplete);
 	}
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	ll_rx_sched();
 }
@@ -727,7 +741,7 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 		LL_ASSERT(ull_sync_is_valid_get(sync));
 		hdr = &sync->ull;
 
-		if (!sync->lll.lll_aux) {
+		if (unlikely(sync->is_stop) || !sync->lll.lll_aux) {
 			return;
 		}
 
@@ -832,21 +846,61 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 
 	if (lll_aux) {
 		struct ll_scan_aux_set *aux;
+		struct ll_scan_set *scan;
+		struct lll_scan *lll;
 		struct ull_hdr *hdr;
+		uint8_t is_stop;
 
 		aux = HDR_LLL2ULL(lll_aux);
-		hdr = &aux->ull;
-
-		LL_ASSERT(ull_ref_get(hdr) < 2);
-
-		/* Flush from here of from done event, if one is pending */
-		if (ull_ref_get(hdr) == 0) {
-			flush(aux);
+		lll = aux->parent;
+		scan = HDR_LLL2ULL(lll);
+		scan = ull_scan_is_valid_get(scan);
+		if (scan) {
+			is_stop = 0U;
 		} else {
-			LL_ASSERT(!hdr->disabled_cb);
+			struct lll_sync *sync_lll;
+			struct ll_sync_set *sync;
 
-			hdr->disabled_param = aux;
-			hdr->disabled_cb = done_disabled_cb;
+			sync_lll = (void *)lll;
+			sync = HDR_LLL2ULL(sync_lll);
+			is_stop = sync->is_stop;
+		}
+
+		if (!is_stop) {
+			uint8_t ref;
+
+			/* Flush from here or from done event, if one is
+			 * pending.
+			 */
+			hdr = &aux->ull;
+			ref = ull_ref_get(hdr);
+			if (ref == 0) {
+				flush(aux);
+			} else {
+				/* A specific single shot scheduled aux context
+				 * cannot overlap, i.e. ULL reference count
+				 * shall be less than 2.
+				 */
+				LL_ASSERT(ref < 2);
+
+				LL_ASSERT(!hdr->disabled_cb);
+				hdr->disabled_param = aux;
+				hdr->disabled_cb = done_disabled_cb;
+			}
+		} else {
+			/* Sync terminate requested, enqueue node rx that will
+			 * be flushed by the disabled_cb setup by the
+			 * terminate.
+			 */
+			rx->link = link;
+			if (aux->rx_last) {
+				aux->rx_last->rx_ftr.extra = rx;
+			} else {
+				aux->rx_head = rx;
+			}
+			aux->rx_last = rx;
+
+			return;
 		}
 	}
 
@@ -857,7 +911,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, flush};
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
 	uint8_t aux_handle;
 	uint32_t ret;
 	int err;
@@ -876,6 +930,11 @@ int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 		if (ret) {
 			return -EBUSY;
 		}
+
+		mfy.fp = flush;
+	} else {
+		/* ULL scheduling stopped before prepare */
+		mfy.fp = aux_sync_incomplete;
 	}
 
 	/* Release auxiliary context in ULL execution context */
@@ -970,17 +1029,18 @@ static void flush(void *param)
 		lll->lll_aux = NULL;
 	} else {
 		struct lll_sync *sync_lll;
+		struct ll_sync_set *sync;
 
 		sync_lll = aux->parent;
+		sync = HDR_LLL2ULL(sync_lll);
 
-		LL_ASSERT(sync_lll->lll_aux);
+		LL_ASSERT(sync->is_stop || sync_lll->lll_aux);
 		sync_lll->lll_aux = NULL;
 	}
 
 	aux_release(aux);
 }
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 static void rx_release_put(struct node_rx_hdr *rx)
 {
 	rx->type = NODE_RX_TYPE_RELEASE;
@@ -1005,9 +1065,14 @@ static void aux_sync_partial(void *param)
 
 static void aux_sync_incomplete(void *param)
 {
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	struct ll_scan_aux_set *aux;
 
 	aux = param;
+
+	/* ULL scheduling succeeded hence no backup node rx present, use the
+	 * extra node rx reserved for incomplete data status generation.
+	 */
 	if (!aux->rx_head) {
 		struct ll_sync_set *sync;
 		struct node_rx_hdr *rx;
@@ -1042,8 +1107,8 @@ static void aux_sync_incomplete(void *param)
 	}
 
 	flush(aux);
-}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+}
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
@@ -1098,24 +1163,14 @@ static void ticker_op_cb(uint32_t status, void *param)
 	}
 
 	if (status == TICKER_STATUS_SUCCESS) {
-		if (0) {
-
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-		} else if (sync) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync) {
 			mfy.fp = aux_sync_partial;
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-
 		} else {
 			return;
 		}
 	} else {
-		if (0) {
-
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-		} else if (sync) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync) {
 			mfy.fp = aux_sync_incomplete;
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-
 		} else {
 			mfy.fp = flush;
 		}
