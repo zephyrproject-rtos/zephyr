@@ -641,6 +641,8 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num,
 
 		pdu_data_tx = (void *)tx->pdu;
 
+		ull_pdu_data_init(pdu_data_tx);
+
 		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
 
 		if (!conn->lll.enc_rx && !conn->lll.enc_tx) {
