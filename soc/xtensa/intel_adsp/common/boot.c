@@ -241,6 +241,8 @@ static __imr void hp_sram_init(uint32_t memory_size)
 	hp_sram_pm_banks(ebb_in_use);
 
 	bbzero((void *)L2_SRAM_BASE, L2_SRAM_SIZE);
+
+	z_xtensa_cache_flush_all();
 }
 
 static __imr void lp_sram_init(void)
@@ -274,13 +276,19 @@ static __imr void lp_sram_init(void)
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
 }
 
-static __imr void win0_setup(void)
+static __imr void win_setup(void)
 {
+	uint32_t *win0 = z_soc_uncached_ptr((void *)HP_SRAM_WIN0_BASE);
+
 	/* Software protocol: "firmware entered" has the value 5 */
-	*(uint32_t *)HP_SRAM_WIN0_BASE = 5;
+	win0[0] = 5;
 
 	CAVS_WIN[0].dmwlo = HP_SRAM_WIN0_SIZE | 0x7;
 	CAVS_WIN[0].dmwba = (HP_SRAM_WIN0_BASE | CAVS_DMWBA_READONLY
+			     | CAVS_DMWBA_ENABLE);
+
+	CAVS_WIN[3].dmwlo = HP_SRAM_WIN3_SIZE | 0x7;
+	CAVS_WIN[3].dmwba = (HP_SRAM_WIN3_BASE | CAVS_DMWBA_READONLY
 			     | CAVS_DMWBA_ENABLE);
 }
 
@@ -297,7 +305,7 @@ __imr void boot_core0(void)
 	CAVS_SHIM.l2mecs = 0;
 
 	hp_sram_init(L2_SRAM_SIZE);
-	win0_setup();
+	win_setup();
 	lp_sram_init();
 	parse_manifest();
 
