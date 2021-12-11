@@ -46,8 +46,8 @@ ENTRY(rom_entry);
 #define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
 #define SEGSTART_UNCACHED (ALIGN(64) & 0xdfffffff) /* == ~0x20000000 */
 #else
-#define SEGSTART_CACHED   /**/
-#define SEGSTART_UNCACHED /**/
+#define SEGSTART_CACHED   .
+#define SEGSTART_UNCACHED .
 #define ucram ram
 #define ucram_phdr ram_phdr
 #endif
@@ -56,8 +56,7 @@ ENTRY(rom_entry);
 #define IDT_BASE 0xe0000000
 #define IDT_SIZE 0x2000
 
-MEMORY
-{
+MEMORY {
   vector_memory_lit :
 	org = XCHAL_MEMERROR_VECTOR_PADDR + MEM_ERROR_LIT_SIZE,
         len = MEM_ERROR_LIT_SIZE
@@ -142,10 +141,8 @@ MEMORY
 	len = LP_SRAM_SIZE
 }
 
-_EXT_MAN_ALIGN_ = 16;
+SECTIONS {
 
-SECTIONS
-{
   /* Boot loader code in IMR memory */
   .imr : {
     /* Entry point MUST be here per external configuration */
@@ -163,137 +160,114 @@ SECTIONS
     *(.imrdata .imrdata.*)
   } >imr
 
- .MemoryExceptionVector.literal : ALIGN(4)
-  {
-    _MemoryExceptionVector_literal_start = ABSOLUTE(.);
+ .MemoryExceptionVector.literal : {
+    _MemoryExceptionVector_literal_start = .;
     KEEP (*(.MemoryExceptionVector.literal))
-    _MemoryExceptionVector_literal_end = ABSOLUTE(.);
+    _MemoryExceptionVector_literal_end = .;
   } >vector_memory_lit
-  .MemoryExceptionVector.text : ALIGN(4)
-  {
-    _MemoryExceptionVector_text_start = ABSOLUTE(.);
+  .MemoryExceptionVector.text : {
+    _MemoryExceptionVector_text_start = .;
     KEEP (*(.MemoryExceptionVector.text))
-    _MemoryExceptionVector_text_end = ABSOLUTE(.);
+    _MemoryExceptionVector_text_end = .;
   } >vector_memory_text
-   .WindowVectors.text : ALIGN(4)
-  {
-    _WindowVectors_text_start = ABSOLUTE(.);
+   .WindowVectors.text : {
+    _WindowVectors_text_start = .;
     KEEP (*(.WindowVectors.text))
-    _WindowVectors_text_end = ABSOLUTE(.);
+    _WindowVectors_text_end = .;
   } >vector_base_text
-  .Level2InterruptVector.literal : ALIGN(4)
-  {
-    _Level2InterruptVector_literal_start = ABSOLUTE(.);
+  .Level2InterruptVector.literal : {
+    _Level2InterruptVector_literal_start = .;
     *(.Level2InterruptVector.literal)
-    _Level2InterruptVector_literal_end = ABSOLUTE(.);
+    _Level2InterruptVector_literal_end = .;
   } >vector_int2_lit
-  .Level2InterruptVector.text : ALIGN(4)
-  {
-    _Level2InterruptVector_text_start = ABSOLUTE(.);
+  .Level2InterruptVector.text : {
+    _Level2InterruptVector_text_start = .;
     KEEP (*(.Level2InterruptVector.text))
-    _Level2InterruptVector_text_end = ABSOLUTE(.);
+    _Level2InterruptVector_text_end = .;
   } >vector_int2_text
-  .Level3InterruptVector.literal : ALIGN(4)
-  {
-    _Level3InterruptVector_literal_start = ABSOLUTE(.);
+  .Level3InterruptVector.literal : {
+    _Level3InterruptVector_literal_start = .;
     *(.Level3InterruptVector.literal)
-    _Level3InterruptVector_literal_end = ABSOLUTE(.);
+    _Level3InterruptVector_literal_end = .;
   } >vector_int3_lit
-  .Level3InterruptVector.text : ALIGN(4)
-  {
-    _Level3InterruptVector_text_start = ABSOLUTE(.);
+  .Level3InterruptVector.text : {
+    _Level3InterruptVector_text_start = .;
     KEEP (*(.Level3InterruptVector.text))
-    _Level3InterruptVector_text_end = ABSOLUTE(.);
+    _Level3InterruptVector_text_end = .;
   } >vector_int3_text
-  .Level4InterruptVector.literal : ALIGN(4)
-  {
-    _Level4InterruptVector_literal_start = ABSOLUTE(.);
+  .Level4InterruptVector.literal : {
+    _Level4InterruptVector_literal_start = .;
     *(.Level4InterruptVector.literal)
-    _Level4InterruptVector_literal_end = ABSOLUTE(.);
+    _Level4InterruptVector_literal_end = .;
   } >vector_int4_lit
-  .Level4InterruptVector.text : ALIGN(4)
-  {
-    _Level4InterruptVector_text_start = ABSOLUTE(.);
+  .Level4InterruptVector.text : {
+    _Level4InterruptVector_text_start = .;
     KEEP (*(.Level4InterruptVector.text))
-    _Level4InterruptVector_text_end = ABSOLUTE(.);
+    _Level4InterruptVector_text_end = .;
   } >vector_int4_text
-  .Level5InterruptVector.literal : ALIGN(4)
-  {
-    _Level5InterruptVector_literal_start = ABSOLUTE(.);
+  .Level5InterruptVector.literal : {
+    _Level5InterruptVector_literal_start = .;
     *(.Level5InterruptVector.literal)
-    _Level5InterruptVector_literal_end = ABSOLUTE(.);
+    _Level5InterruptVector_literal_end = .;
   } >vector_int5_lit
-  .Level5InterruptVector.text : ALIGN(4)
-  {
-    _Level5InterruptVector_text_start = ABSOLUTE(.);
+  .Level5InterruptVector.text : {
+    _Level5InterruptVector_text_start = .;
     KEEP (*(.Level5InterruptVector.text))
-    _Level5InterruptVector_text_end = ABSOLUTE(.);
+    _Level5InterruptVector_text_end = .;
   } >vector_int5_text
-  .DebugExceptionVector.literal : ALIGN(4)
-  {
-    _DebugExceptionVector_literal_start = ABSOLUTE(.);
+  .DebugExceptionVector.literal : {
+    _DebugExceptionVector_literal_start = .;
     *(.DebugExceptionVector.literal)
-    _DebugExceptionVector_literal_end = ABSOLUTE(.);
+    _DebugExceptionVector_literal_end = .;
   } >vector_int6_lit
-  .DebugExceptionVector.text : ALIGN(4)
-  {
-    _DebugExceptionVector_text_start = ABSOLUTE(.);
+  .DebugExceptionVector.text : {
+    _DebugExceptionVector_text_start = .;
     KEEP (*(.DebugExceptionVector.text))
-    _DebugExceptionVector_text_end = ABSOLUTE(.);
+    _DebugExceptionVector_text_end = .;
   } >vector_int6_text
-  .NMIExceptionVector.literal : ALIGN(4)
-  {
-    _NMIExceptionVector_literal_start = ABSOLUTE(.);
+  .NMIExceptionVector.literal : {
+    _NMIExceptionVector_literal_start = .;
     *(.NMIExceptionVector.literal)
-    _NMIExceptionVector_literal_end = ABSOLUTE(.);
+    _NMIExceptionVector_literal_end = .;
   } >vector_int7_lit
-  .NMIExceptionVector.text : ALIGN(4)
-  {
-    _NMIExceptionVector_text_start = ABSOLUTE(.);
+  .NMIExceptionVector.text : {
+    _NMIExceptionVector_text_start = .;
     KEEP (*(.NMIExceptionVector.text))
-    _NMIExceptionVector_text_end = ABSOLUTE(.);
+    _NMIExceptionVector_text_end = .;
   } >vector_int7_text
-  .KernelExceptionVector.literal : ALIGN(4)
-  {
-    _KernelExceptionVector_literal_start = ABSOLUTE(.);
+  .KernelExceptionVector.literal : {
+    _KernelExceptionVector_literal_start = .;
     *(.KernelExceptionVector.literal)
-    _KernelExceptionVector_literal_end = ABSOLUTE(.);
+    _KernelExceptionVector_literal_end = .;
   } >vector_kernel_lit
-  .KernelExceptionVector.text : ALIGN(4)
-  {
-    _KernelExceptionVector_text_start = ABSOLUTE(.);
+  .KernelExceptionVector.text : {
+    _KernelExceptionVector_text_start = .;
     KEEP (*(.KernelExceptionVector.text))
-    _KernelExceptionVector_text_end = ABSOLUTE(.);
+    _KernelExceptionVector_text_end = .;
   } >vector_kernel_text
-  .UserExceptionVector.literal : ALIGN(4)
-  {
-    _UserExceptionVector_literal_start = ABSOLUTE(.);
+  .UserExceptionVector.literal : {
+    _UserExceptionVector_literal_start = .;
     *(.UserExceptionVector.literal)
-    _UserExceptionVector_literal_end = ABSOLUTE(.);
+    _UserExceptionVector_literal_end = .;
   } >vector_user_lit
-  .UserExceptionVector.text : ALIGN(4)
-  {
-    _UserExceptionVector_text_start = ABSOLUTE(.);
+  .UserExceptionVector.text : {
+    _UserExceptionVector_text_start = .;
     KEEP (*(.UserExceptionVector.text))
-    _UserExceptionVector_text_end = ABSOLUTE(.);
+    _UserExceptionVector_text_end = .;
   } >vector_user_text
-  .DoubleExceptionVector.literal : ALIGN(4)
-  {
-    _DoubleExceptionVector_literal_start = ABSOLUTE(.);
+  .DoubleExceptionVector.literal : {
+    _DoubleExceptionVector_literal_start = .;
     *(.DoubleExceptionVector.literal)
-    _DoubleExceptionVector_literal_end = ABSOLUTE(.);
+    _DoubleExceptionVector_literal_end = .;
   } >vector_double_lit
-  .DoubleExceptionVector.text : ALIGN(4)
-  {
-    _DoubleExceptionVector_text_start = ABSOLUTE(.);
+  .DoubleExceptionVector.text : {
+    _DoubleExceptionVector_text_start = .;
     KEEP (*(.DoubleExceptionVector.text))
-    _DoubleExceptionVector_text_end = ABSOLUTE(.);
+    _DoubleExceptionVector_text_end = .;
   } >vector_double_text
 
-  .text : ALIGN(4)
-  {
-    _stext = .;
-    _text_start = ABSOLUTE(.);
+  .text : {
+    _text_start = .;
     *(.entry.text)
     *(.init.literal)
     *(.iram0.text)
@@ -303,18 +277,17 @@ SECTIONS
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
-    _text_end = ABSOLUTE(.);
-    _etext = .;
+    _text_end = .;
   } >ram
 
   .rodata : ALIGN(4096)
   {
-    _rodata_start = ABSOLUTE(.);
+    _rodata_start = .;
     *(.rodata)
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     *(.rodata1)
-    __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
+    __XT_EXCEPTION_TABLE__ = .;
     KEEP (*(.xt_except_table))
     KEEP (*(.gcc_except_table .gcc_except_table.*))
     *(.gnu.linkonce.e.*)
@@ -328,47 +301,42 @@ SECTIONS
     KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
     KEEP (*(SORT(.dtors.*)))
     KEEP (*(.dtors))
-    __XT_EXCEPTION_DESCS__ = ABSOLUTE(.);
+    __XT_EXCEPTION_DESCS__ = .;
     *(.xt_except_desc)
     *(.gnu.linkonce.h.*)
-    __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
+    __XT_EXCEPTION_DESCS_END__ = .;
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    . = ALIGN(4);
-    _bss_table_start = ABSOLUTE(.);
+    _bss_table_start = .;
     LONG(_bss_start)
     LONG(_bss_end)
-    _bss_table_end = ABSOLUTE(.);
-    _rodata_end = ABSOLUTE(.);
+    _bss_table_end = .;
+    _rodata_end = .;
   } >ram
 
-  .module_init : ALIGN(4)
-  {
-    _module_init_start = ABSOLUTE(.);
+  .module_init : {
+    _module_init_start = .;
     *(*.module_init)
-    _module_init_end = ABSOLUTE(.);
+    _module_init_end = .;
   } >ram
 
 #define RAMABLE_REGION ram
 #define ROMABLE_REGION ram
 #include <linker/common-rom.ld>
 
-  .fw_ready : ALIGN(4)
-  {
+  .fw_ready : {
     KEEP(*(".fw_ready"));
     KEEP (*(.fw_ready_metadata))
   } >ram
 
-  .noinit SEGSTART_UNCACHED : ALIGN(4)
-  {
+  .noinit SEGSTART_UNCACHED : {
     *(.noinit)
     *(.noinit.*)
   } >ucram
 
-  .data SEGSTART_UNCACHED : ALIGN(4)
-  {
-    _data_start = ABSOLUTE(.);
+  .data SEGSTART_UNCACHED : {
+    _data_start = .;
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -381,29 +349,23 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
-    . = ALIGN(4096);
     *(.gna_model)
-    _data_end = ABSOLUTE(.);
-    . = ALIGN(4096);
+    _data_end = .;
   } >ucram
 
-  .lit4 SEGSTART_CACHED : ALIGN(4)
-  {
-    _lit4_start = ABSOLUTE(.);
+  .lit4 SEGSTART_CACHED : {
+    _lit4_start = .;
     *(*.lit4)
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
-    _lit4_end = ABSOLUTE(.);
+    _lit4_end = .;
   } >ram
 
-#ifdef CONFIG_KERNEL_COHERENCE
 /* These values need to change in our scheme, where the common-ram
  * sections need to be linked in safe/uncached memory but common-rom
  * wants to use the cache
  */
-  . = SEGSTART_UNCACHED;
-#endif
-
+. = SEGSTART_UNCACHED;
 #undef RAMABLE_REGION
 #undef ROMABLE_REGION
 #define RAMABLE_REGION ucram
@@ -411,22 +373,26 @@ SECTIONS
 
 #include <linker/common-ram.ld>
 
-  .tm_clone_table :
-  {
+  .tm_clone_table : {
     *(.tm_clone_table)
   } >ram
 
   /* This section is cached.  By default it contains only declared
   * thread stacks, but applications can put symbols here too.
   */
-  .cached SEGSTART_CACHED :
-  {
+  .cached SEGSTART_CACHED : {
     *(.cached .cached.*)
   } >ram
 
+  /* Rimage requires 4k alignment between "DATA" and "BSS", can't do
+   * this in the section declaration below because we're also changing
+   * cacheability and that leaves a gap in the image large enough for
+   * binutils to decide to warn about (no way to turn that off, it
+   * seems, --warn-section-align is on by default)
+   */
   . = ALIGN(4096);
 
-  .bss SEGSTART_UNCACHED (NOLOAD) : ALIGN(4096)
+  .bss SEGSTART_UNCACHED (NOLOAD) :
   {
     _bss_start = .;
     *(.dynsbss)
@@ -446,100 +412,28 @@ SECTIONS
     _bss_end = .;
   } >ucram
 
-#ifdef CONFIG_KERNEL_COHERENCE
+  /* Heap start and end markers.  Mostly unused, though newlib likes them */
   . = SEGSTART_UNCACHED;
-#endif
   _end = ALIGN(8);
-  PROVIDE(end = ALIGN(8));
-
-  /* Re-adjust to the upper mapping for the final symbols below */
-#ifdef CONFIG_KERNEL_COHERENCE
-  . = SEGSTART_CACHED;
-#endif
-  __stack = L2_SRAM_BASE + L2_SRAM_SIZE;
-
-#ifdef CONFIG_KERNEL_COHERENCE
-  . = SEGSTART_UNCACHED;
-#endif
-
-  /* dma buffers */
-  .lpbuf (NOLOAD): ALIGN(4)
-  {
-    _dma_buf_start = ABSOLUTE(.);
-    *(.dma_buffers)
-    _dma_buf_end = ABSOLUTE(.);
-  } >lpram
-
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
-#ifdef CONFIG_KERNEL_COHERENCE
   . = SEGSTART_UNCACHED;
-#endif
   _heap_sentry = .;
 
+  /* dma buffers */
+  .lpbuf (NOLOAD): {
+    _dma_buf_start = .;
+    *(.dma_buffers)
+    _dma_buf_end = .;
+  } >lpram
 
   /* Non-loadable sections below.  Back to cached memory so
    * the cache remap script doesn't try to move them around needlessly.
    */
-#ifdef CONFIG_KERNEL_COHERENCE
   . = SEGSTART_CACHED;
-#endif
 
   /* rimage module manifest headers */
   .module.boot : { KEEP(*(.module.boot)) }
   .module.main : { KEEP(*(.module.main)) }
-
-  .comment : { *(.comment) }
-  .debug : { *(.debug) }
-  .line : { *(.line) }
-  .debug_srcinfo : { *(.debug_srcinfo) }
-  .debug_sfnames : { *(.debug_sfnames) }
-  .debug_aranges : { *(.debug_aranges) }
-  .debug_pubnames : { *(.debug_pubnames) }
-  .debug_info : { *(.debug_info) }
-  .debug_abbrev : { *(.debug_abbrev) }
-  .debug_line : { *(.debug_line) }
-  .debug_frame : { *(.debug_frame) }
-  .debug_str : { *(.debug_str) }
-  .debug_loc : { *(.debug_loc) }
-  .debug_macinfo : { *(.debug_macinfo) }
-  .debug_weaknames : { *(.debug_weaknames) }
-  .debug_funcnames : { *(.debug_funcnames) }
-  .debug_typenames : { *(.debug_typenames) }
-  .debug_varnames : { *(.debug_varnames) }
-  .debug_ranges : { *(.debug_ranges) }
-  .xtensa.info : { *(.xtensa.info) }
-  .xt.insn :
-  {
-    KEEP (*(.xt.insn))
-    KEEP (*(.gnu.linkonce.x.*))
-  }
-  .xt.prop :
-  {
-    KEEP (*(.xt.prop))
-    KEEP (*(.xt.prop.*))
-    KEEP (*(.gnu.linkonce.prop.*))
-  }
-  .xt.lit :
-  {
-    KEEP (*(.xt.lit))
-    KEEP (*(.xt.lit.*))
-    KEEP (*(.gnu.linkonce.p.*))
-  }
-  .xt.profile_range :
-  {
-    KEEP (*(.xt.profile_range))
-    KEEP (*(.gnu.linkonce.profile_range.*))
-  }
-  .xt.profile_ranges :
-  {
-    KEEP (*(.xt.profile_ranges))
-    KEEP (*(.gnu.linkonce.xt.profile_ranges.*))
-  }
-  .xt.profile_files :
-  {
-    KEEP (*(.xt.profile_files))
-    KEEP (*(.gnu.linkonce.xt.profile_files.*))
-  }
 
  .static_uuid_entries : {
     *(*.static_uuids)
@@ -559,9 +453,38 @@ SECTIONS
    * sounds like a struct should be declared packed somewhere...)
    */
   .fw_metadata : ALIGN(16) {
-    . = .;
     KEEP (*(.fw_metadata))
     . = ALIGN(16);
+  }
+
+#include <linker/debug-sections.ld>
+
+  .xtensa.info 0 : { *(.xtensa.info) }
+  .xt.insn 0 : {
+    KEEP (*(.xt.insn))
+    KEEP (*(.gnu.linkonce.x.*))
+  }
+  .xt.prop 0 : {
+    KEEP (*(.xt.prop))
+    KEEP (*(.xt.prop.*))
+    KEEP (*(.gnu.linkonce.prop.*))
+  }
+  .xt.lit 0 : {
+    KEEP (*(.xt.lit))
+    KEEP (*(.xt.lit.*))
+    KEEP (*(.gnu.linkonce.p.*))
+  }
+  .xt.profile_range 0 : {
+    KEEP (*(.xt.profile_range))
+    KEEP (*(.gnu.linkonce.profile_range.*))
+  }
+  .xt.profile_ranges 0 : {
+    KEEP (*(.xt.profile_ranges))
+    KEEP (*(.gnu.linkonce.xt.profile_ranges.*))
+  }
+  .xt.profile_files 0 : {
+    KEEP (*(.xt.profile_files))
+    KEEP (*(.gnu.linkonce.xt.profile_files.*))
   }
 
 #ifdef CONFIG_GEN_ISR_TABLES
