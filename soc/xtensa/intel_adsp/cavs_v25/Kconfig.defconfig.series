@@ -70,4 +70,11 @@ config LOG_BACKEND_ADSP
 
 endif # LOG
 
+if KERNEL_VM_SUPPORT
+
+config KERNEL_VM_SIZE
+	default 0x800000
+
+endif
+
 endif # SOC_SERIES_INTEL_CAVS_V25
