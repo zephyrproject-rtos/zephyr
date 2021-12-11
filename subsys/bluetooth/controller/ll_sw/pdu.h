@@ -388,7 +388,7 @@ struct pdu_cte_info {
 #else
 #error "Unsupported endianness"
 #endif
-};
+} __packed;
 
 struct pdu_adv_sync_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -809,9 +809,11 @@ struct pdu_data {
 	uint8_t nesn:1;
 	uint8_t sn:1;
 	uint8_t md:1;
-	uint8_t rfu:3;
+	uint8_t cp:1;
+	uint8_t rfu:2;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu:3;
+	uint8_t rfu:2;
+	uint8_t cp:1;
 	uint8_t md:1;
 	uint8_t sn:1;
 	uint8_t nesn:1;
@@ -824,7 +826,10 @@ struct pdu_data {
 
 #if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-	uint8_t resv:8; /* TODO: remove nRF specific code */
+	union {
+		uint8_t resv; /* TODO: remove nRF specific code */
+		struct pdu_cte_info cte_info; /* BT 5.1 Core spec. CTEInfo storage */
+	};
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 #endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
 
