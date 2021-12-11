@@ -5,7 +5,6 @@
 #include <devicetree.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <cavs/version.h>
 
 #include <adsp/io.h>
 #include <soc.h>

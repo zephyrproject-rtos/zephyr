@@ -7,8 +7,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include <cavs/version.h>
-
 #include <sys/sys_io.h>
 
 #include <adsp/cache.h>
