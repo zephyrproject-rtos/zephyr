@@ -6,7 +6,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <adsp/io.h>
 #include <soc.h>
 #include <arch/xtensa/cache.h>
 #include <cavs-shim.h>
