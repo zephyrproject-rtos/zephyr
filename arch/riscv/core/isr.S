@@ -630,7 +630,7 @@ skip_load_fp_caller_saved:
 	SOC_ERET
 #else /* CONFIG_USE_SWITCH */
 
-#define LOAD_CALLER_SAVED(reg) \
+#define LOAD_CALLEE_SAVED(reg) \
 	DO_CALLEE_SAVED(RV_OP_LOADREG, reg)
 
 #define DO_CALLER_SAVED(op) \
@@ -657,7 +657,7 @@ skip_load_fp_caller_saved:
 	addi sp, sp, -__z_arch_esf_t_SIZEOF	;\
 	DO_CALLER_SAVED(RV_OP_STOREREG)		;
 
-#define LOAD_CALLEE_SAVED() \
+#define LOAD_CALLER_SAVED() \
 	DO_CALLER_SAVED(RV_OP_LOADREG)		;\
 	addi sp, sp, __z_arch_esf_t_SIZEOF	;
 
