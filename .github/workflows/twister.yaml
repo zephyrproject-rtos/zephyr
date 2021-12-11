@@ -72,11 +72,6 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          # temporary until we have all PRs rebased on top of this commit.
-          git log -n 500 --oneline | grep -q "run twister using github action" || (
-            echo "Your branch is not up to date, you need to rebase on top of latest HEAD of main branch"
-            exit 1
-          )
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request -t $TESTS_PER_BUILDER
           if [ -s .testplan ]; then
             cat .testplan >> $GITHUB_ENV
@@ -157,7 +152,7 @@ jobs:
 
           west init -l . || true
           west config --global update.narrow true
-          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules && west update --path-cache /github/cache/zephyrproject)
+          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
 
       - name: Check Environment

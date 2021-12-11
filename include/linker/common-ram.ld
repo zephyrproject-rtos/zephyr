@@ -122,13 +122,7 @@
 		__usb_descriptor_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(usb_data,,SUBALIGN(1))
-	{
-		__usb_data_start = .;
-		*(".usb.data")
-		KEEP(*(SORT_BY_NAME(".usb.data*")))
-		__usb_data_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_RAM(usb_cfg_data, 4)
 #endif /* CONFIG_USB_DEVICE_STACK */
 
 #if defined(CONFIG_USB_DEVICE_BOS)

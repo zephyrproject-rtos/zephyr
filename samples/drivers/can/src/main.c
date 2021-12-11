@@ -218,7 +218,7 @@ void main(void)
 
 	ret = can_attach_workq(can_dev, &k_sys_work_q, &rx_work, change_led,
 			       NULL, &change_led_filter);
-	if (ret == CAN_NO_FREE_FILTER) {
+	if (ret == -ENOSPC) {
 		printk("Error, no filter available!\n");
 		return;
 	}

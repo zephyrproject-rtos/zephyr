@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_DISCONNECT_COMPLETE,
@@ -41,6 +42,8 @@ enum {
 	/* Auto-initiated Data Length done. Auto-initiated Data Length Update
 	 * is only needed for controllers with BT_QUIRK_NO_AUTO_DLE. */
 	BT_CONN_AUTO_DATA_LEN_COMPLETE,
+
+	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -161,6 +164,11 @@ struct bt_conn {
 	uint8_t			encrypt;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+	/** Accepted CTE type */
+	uint8_t cte_type;
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
@@ -177,8 +185,9 @@ struct bt_conn {
 
 	/* Completed TX for which we need to call the callback */
 	sys_slist_t		tx_complete;
+#if defined(CONFIG_BT_CONN_TX)
 	struct k_work           tx_complete_work;
-
+#endif /* CONFIG_BT_CONN_TX */
 
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;

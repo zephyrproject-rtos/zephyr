@@ -37,6 +37,9 @@ jobs:
     name: "Documentation Build (HTML)"
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: doc-build-html-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
     - name: checkout
@@ -74,7 +77,7 @@ jobs:
           DOC_TAG="development"
         fi
 
-        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -j auto -t publish" make -C doc html
+        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -t publish" make -C doc html
 
     - name: compress-docs
       run: |
@@ -91,6 +94,9 @@ jobs:
     runs-on: ubuntu-latest
     container: texlive/texlive:latest
     timeout-minutes: 30
+    concurrency:
+      group: doc-build-pdf-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
     - name: checkout

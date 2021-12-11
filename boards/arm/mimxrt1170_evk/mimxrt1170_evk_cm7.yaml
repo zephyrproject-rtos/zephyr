@@ -22,3 +22,4 @@ supported:
   - adc
   - i2c
   - pwm
+  - dma

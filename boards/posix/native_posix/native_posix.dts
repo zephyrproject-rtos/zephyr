@@ -21,6 +21,7 @@
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flashcontroller0;
 		zephyr,ec-host-interface = &hcp;
+		zephyr,display = &sdl_dc;
 	};
 
 	aliases {
@@ -175,5 +176,12 @@
 	zephyr_udc0: udc0 {
 		compatible = "zephyr,native-posix-udc";
 		label = "USBD";
+	};
+
+	sdl_dc: sdl_dc {
+		compatible = "zephyr,sdl-dc";
+		label = "SDL display controller";
+		height = <240>;
+		width = <320>;
 	};
 };

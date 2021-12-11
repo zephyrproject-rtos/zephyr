@@ -1,0 +1,22 @@
+# Copyright (c) 2021, NXP
+# SPDX -License-Identifier: Apache-2.0
+
+DT_COMPAT_PMIC_REG := regulator-pmic
+
+config REGULATOR_PMIC
+	bool "PMIC Regulator Driver"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_PMIC_REG))
+	default $(dt_compat_enabled,$(DT_COMPAT_PMIC_REG))
+	select I2C
+	help
+	  Enable the pmic regulator driver
+
+config PMIC_REGULATOR_INIT_PRIORITY
+	int "Regulator Init priority"
+	depends on REGULATOR_PMIC
+	default 75
+	help
+	  I2C based regulator init priority.
+	  Must be greater than KERNEL_INIT_PRIORITY_DEVICE so I2C is initialized,
+	  and less than SDMMC_INIT_PRIORITY, since the SDMMC driver uses an I2C
+	  PMIC regulator

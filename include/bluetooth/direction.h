@@ -109,6 +109,39 @@ struct bt_df_per_adv_sync_iq_samples_report {
 	struct bt_hci_le_iq_sample const *sample;
 };
 
+struct bt_df_conn_cte_rx_param {
+	/* Bitmap with allowed CTE types (@ref bt_df_cte_type). */
+	uint8_t cte_type;
+	/** Antenna switching slots (@ref bt_df_antenna_switching_slot). */
+	uint8_t slot_durations;
+	/** Length of antenna switch pattern. */
+	uint8_t num_ant_ids;
+	/** Antenna switch pattern. */
+	const uint8_t *ant_ids;
+};
+
+struct bt_df_conn_iq_samples_report {
+	/** PHY that was used to receive PDU with CTE that was sampled. */
+	uint8_t rx_phy;
+	/** Channel index used to receive PDU with CTE that was sampled. */
+	uint8_t chan_idx;
+	/** The RSSI of the PDU with CTE (excluding CTE). */
+	int16_t rssi;
+	/** Id of antenna used to measure the RSSI. */
+	uint8_t rssi_ant_id;
+	/** Type of CTE (@ref bt_df_cte_type). */
+	uint8_t cte_type;
+	/** Duration of slots when received CTE type is AoA (@ref bt_df_antenna_switching_slot). */
+	uint8_t slot_durations;
+	/** Status of received PDU with CTE (@ref bt_df_packet_status). */
+	uint8_t packet_status;
+	/** Value of connection event counter when the CTE was received and sampled. */
+	uint16_t conn_evt_counter;
+	/** Number of IQ samples in report. */
+	uint8_t sample_count;
+	/** Pinter to IQ samples data. */
+	struct bt_hci_le_iq_sample const *sample;
+};
 /**
  * @brief Set or update the Constant Tone Extension parameters for periodic advertising set.
  *
@@ -164,5 +197,24 @@ int bt_df_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync,
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_df_per_adv_sync_cte_rx_disable(struct bt_le_per_adv_sync *sync);
+
+/**
+ * @brief Enable receive and sampling of Constant Tone Extension for the connection object.
+ *
+ * @param conn   Connection object.
+ * @param params CTE receive and sampling parameters.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_conn_cte_rx_enable(struct bt_conn *conn, const struct bt_df_conn_cte_rx_param *params);
+
+/**
+ * @brief Disable receive and sampling of Constant Tone Extension for the connection object.
+ *
+ * @param conn   Connection object.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_conn_cte_rx_disable(struct bt_conn *conn);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_DF_H_ */

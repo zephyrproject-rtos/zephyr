@@ -30,15 +30,6 @@ endif # KSCAN
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "ILI9340"
-
-config LVGL_HOR_RES_MAX
-	default 320
-
-config LVGL_VER_RES_MAX
-	default 240
-
 config LVGL_VDB_SIZE
 	default 64
 

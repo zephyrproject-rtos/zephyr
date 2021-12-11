@@ -75,6 +75,11 @@ Removed APIs in this release:
   is changed so that it more closely mimics the real UART controller,
   option is no longer necessary.
 
+Deprecated in this release:
+
+* :c:macro:`USBD_CFG_DATA_DEFINE` is deprecated in favor of utilizing
+  :c:macro:`USBD_DEFINE_CFG_DATA`
+
 Stable API changes in this release
 ==================================
 
@@ -287,6 +292,21 @@ USB
 Build and Infrastructure
 ************************
 
+* Build system
+
+  * New CMake extension functions:
+
+    * ``dt_alias()``
+    * ``target_sources_if_dt_node()``
+
+  * The following CMake extension functions now handle devicetree aliases:
+
+    * ``dt_node_exists()``
+    * ``dt_node_has_status()``
+    * ``dt_prop()``
+    * ``dt_num_regs()``
+    * ``dt_reg_addr()``
+    * ``dt_reg_size()``
 
 * Devicetree
 

@@ -120,7 +120,7 @@ static void can_work_isr_put(struct zcan_frame *frame, void *arg)
 
 	ret = can_work_buffer_put(frame, &work->buf);
 	if (ret) {
-		LOG_ERR("Workq buffer overflow. Msg ID: 0x%x", frame->id);
+		LOG_ERR("Workq buffer overflow. Frame ID: 0x%x", frame->id);
 		return;
 	}
 
@@ -129,7 +129,7 @@ static void can_work_isr_put(struct zcan_frame *frame, void *arg)
 
 int can_attach_workq(const struct device *dev, struct k_work_q *work_q,
 			    struct zcan_work *work,
-			    can_rx_callback_t callback, void *callback_arg,
+			    can_rx_callback_t callback, void *user_data,
 			    const struct zcan_filter *filter)
 {
 	const struct can_driver_api *api = dev->api;
@@ -137,7 +137,7 @@ int can_attach_workq(const struct device *dev, struct k_work_q *work_q,
 	k_work_init(&work->work_item, can_work_handler);
 	work->work_queue = work_q;
 	work->cb = callback;
-	work->cb_arg = callback_arg;
+	work->cb_arg = user_data;
 	can_work_buffer_init(&work->buf);
 
 	return api->attach_isr(dev, can_work_isr_put, work, filter);

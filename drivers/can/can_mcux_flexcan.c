@@ -316,9 +316,9 @@ static int mcux_get_tx_alloc(struct mcux_flexcan_data *data)
 }
 
 static int mcux_flexcan_send(const struct device *dev,
-			     const struct zcan_frame *msg,
+			     const struct zcan_frame *frame,
 			     k_timeout_t timeout,
-			     can_tx_callback_t callback_isr, void *callback_arg)
+			     can_tx_callback_t callback, void *user_data)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
@@ -326,9 +326,9 @@ static int mcux_flexcan_send(const struct device *dev,
 	status_t status;
 	int alloc;
 
-	if (msg->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
-		return CAN_TX_EINVAL;
+	if (frame->dlc > CAN_MAX_DLC) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
+		return -EINVAL;
 	}
 
 	while (true) {
@@ -342,33 +342,33 @@ static int mcux_flexcan_send(const struct device *dev,
 		}
 
 		if (k_sem_take(&data->tx_allocs_sem, timeout) != 0) {
-			return CAN_TIMEOUT;
+			return -EAGAIN;
 		}
 	}
 
-	mcux_flexcan_copy_zframe_to_frame(msg, &data->tx_cbs[alloc].frame);
-	data->tx_cbs[alloc].function = callback_isr;
-	data->tx_cbs[alloc].arg = callback_arg;
+	mcux_flexcan_copy_zframe_to_frame(frame, &data->tx_cbs[alloc].frame);
+	data->tx_cbs[alloc].function = callback;
+	data->tx_cbs[alloc].arg = user_data;
 	xfer.frame = &data->tx_cbs[alloc].frame;
 	xfer.mbIdx = ALLOC_IDX_TO_TXMB_IDX(alloc);
 	FLEXCAN_SetTxMbConfig(config->base, xfer.mbIdx, true);
 	status = FLEXCAN_TransferSendNonBlocking(config->base, &data->handle,
 						 &xfer);
 	if (status != kStatus_Success) {
-		return CAN_TX_ERR;
+		return -EIO;
 	}
 
-	if (callback_isr == NULL) {
+	if (callback == NULL) {
 		k_sem_take(&data->tx_cbs[alloc].done, K_FOREVER);
 		return data->tx_cbs[alloc].status;
 	}
 
-	return CAN_TX_OK;
+	return 0;
 }
 
 static int mcux_flexcan_attach_isr(const struct device *dev,
 				   can_rx_callback_t isr,
-				   void *callback_arg,
+				   void *user_data,
 				   const struct zcan_filter *filter)
 {
 	const struct mcux_flexcan_config *config = dev->config;
@@ -376,7 +376,7 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 	flexcan_mb_transfer_t xfer;
 	status_t status;
 	uint32_t mask;
-	int alloc = CAN_NO_FREE_FILTER;
+	int alloc = -ENOSPC;
 	int i;
 
 	__ASSERT_NO_MSG(isr);
@@ -391,7 +391,7 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 		}
 	}
 
-	if (alloc == CAN_NO_FREE_FILTER) {
+	if (alloc == -ENOSPC) {
 		return alloc;
 	}
 
@@ -399,7 +399,7 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 					      &data->rx_cbs[alloc].mb_config,
 					      &mask);
 
-	data->rx_cbs[alloc].arg = callback_arg;
+	data->rx_cbs[alloc].arg = user_data;
 	data->rx_cbs[alloc].function = isr;
 
 	FLEXCAN_SetRxIndividualMask(config->base, ALLOC_IDX_TO_RXMB_IDX(alloc),
@@ -414,7 +414,7 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 	if (status != kStatus_Success) {
 		LOG_ERR("Failed to start rx for filter id %d (err = %d)",
 			alloc, status);
-		alloc = CAN_NO_FREE_FILTER;
+		alloc = -ENOSPC;
 	}
 
 	k_mutex_unlock(&data->rx_mutex);
@@ -473,7 +473,7 @@ int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 		while (mcux_flexcan_get_state(dev, NULL) == CAN_BUS_OFF) {
 			if (!K_TIMEOUT_EQ(timeout, K_FOREVER) &&
 			    k_uptime_ticks() - start_time >= timeout.ticks) {
-				ret = CAN_TIMEOUT;
+				ret = -EAGAIN;
 			}
 		}
 	}
@@ -518,7 +518,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	can_tx_callback_t function;
-	int status = CAN_TX_OK;
+	int status = 0;
 	void *arg;
 	int alloc;
 	enum can_state state;
@@ -526,14 +526,14 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 
 	if (error & CAN_ESR1_FLTCONF(2)) {
 		LOG_DBG("Tx bus off (error 0x%08llx)", error);
-		status = CAN_TX_BUS_OFF;
+		status = -ENETDOWN;
 	} else if ((error & kFLEXCAN_Bit0Error) ||
 		   (error & kFLEXCAN_Bit1Error)) {
 		LOG_DBG("TX arbitration lost (error 0x%08llx)", error);
-		status = CAN_TX_ARB_LOST;
+		status = -EBUSY;
 	} else if (error & kFLEXCAN_AckError) {
 		LOG_DBG("TX no ACK received (error 0x%08llx)", error);
-		status = CAN_TX_ERR;
+		status = -EIO;
 	} else if (error & kFLEXCAN_StuffingError) {
 		LOG_DBG("RX stuffing error (error 0x%08llx)", error);
 	} else if (error & kFLEXCAN_FormError) {
@@ -552,7 +552,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 		}
 	}
 
-	if (status == CAN_TX_OK) {
+	if (status == 0) {
 		/*
 		 * Error/status is not TX related. No further action
 		 * required.
@@ -605,9 +605,9 @@ static inline void mcux_flexcan_transfer_tx_idle(const struct device *dev,
 
 	if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
 		if (function != NULL) {
-			function(CAN_TX_OK, arg);
+			function(0, arg);
 		} else {
-			data->tx_cbs[alloc].status = CAN_TX_OK;
+			data->tx_cbs[alloc].status = 0;
 			k_sem_give(&data->tx_cbs[alloc].done);
 		}
 		k_sem_give(&data->tx_allocs_sem);

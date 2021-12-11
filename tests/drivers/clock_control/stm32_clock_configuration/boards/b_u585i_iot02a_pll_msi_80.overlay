@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay relies on initial board configuration.
+ *          For clarity, nodes are over written instead of deleted.
+ *          Any change to board configuration has impact on this file.
+ */
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>;
+	msi-pll-mode;
+};
+
+&pll1 {
+	div-m = <2>;				/* Update PLL config */
+	mul-n = <40>;
+	div-q = <2>;
+	div-r = <1>;
+	clocks = <&clk_msis>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(80)>;	/* clck freq 80MHz */
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};

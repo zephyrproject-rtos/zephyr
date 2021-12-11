@@ -215,7 +215,7 @@ static struct usb_ep_cfg_data webusb_ep_data[] = {
 	}
 };
 
-USBD_CFG_DATA_DEFINE(primary, webusb) struct usb_cfg_data webusb_config = {
+USBD_DEFINE_CFG_DATA(webusb_config) = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &webusb_desc.if0,
 	.cb_usb_status = webusb_dev_status_cb,

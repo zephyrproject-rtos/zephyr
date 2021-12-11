@@ -630,6 +630,11 @@ These are created in your application's build directory.
    Don't include the header files directly. :ref:`dt-from-c` explains
    what to do instead.
 
+:file:`<build>/zephyr/zephyr.dts.pre`
+   The preprocessed DTS source. This is an intermediate output file, which is
+   input to :file:`gen_defines.py` and used to create :file:`zephyr.dts` and
+   :file:`devicetree_unfixed.h`.
+
 :file:`<build>/zephyr/include/generated/devicetree_unfixed.h`
    The generated macros and additional comments describing the devicetree.
    Included by ``devicetree.h``.
@@ -639,10 +644,7 @@ These are created in your application's build directory.
    Included by ``devicetree.h``.
 
 :file:`<build>/zephyr/zephyr.dts`
-   The final merged devicetree. This file is output by :file:`gen_defines.py`
-   as a debugging aid, and is unused otherwise.
-
-:file:`<build>/zephyr/<BOARD>.dts.pre.tmp`
-   The preprocessed and concatenated DTS sources and overlays. This is an
-   intermediate output file, which is used to create :file:`zephyr.dts`
-   and :file:`devicetree_unfixed.h`.
+   The final merged devicetree. This file is output by :file:`gen_defines.py`.
+   It is useful for debugging any issues. If the devicetree compiler ``dtc`` is
+   installed, it is also run on this file, to catch any additional warnings or
+   errors.

@@ -573,6 +573,11 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		LFS_VERSION_MAJOR, LFS_VERSION_MINOR,
 		LFS_DISK_VERSION_MAJOR, LFS_DISK_VERSION_MINOR);
 
+	if (mountp->flags & FS_MOUNT_FLAG_USE_DISK_ACCESS) {
+		LOG_DBG("LittleFS does not support Disk Access API");
+		return -ENOTSUP;
+	}
+
 	if (fs->area) {
 		return -EBUSY;
 	}

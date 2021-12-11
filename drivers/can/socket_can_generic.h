@@ -95,7 +95,7 @@ static inline int socket_can_setsockopt(const struct device *dev, void *obj,
 
 	ret = can_attach_msgq(socket_context->can_dev, socket_context->msgq,
 			      optval);
-	if (ret == CAN_NO_FREE_FILTER) {
+	if (ret == -ENOSPC) {
 		errno = ENOSPC;
 		return -1;
 	}
@@ -123,18 +123,18 @@ static inline void rx_thread(void *ctx, void *unused1, void *unused2)
 {
 	struct socket_can_context *socket_context = ctx;
 	struct net_pkt *pkt;
-	struct zcan_frame msg;
+	struct zcan_frame frame;
 	int ret;
 
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
 	while (1) {
-		k_msgq_get((struct k_msgq *)socket_context->msgq, &msg,
+		k_msgq_get((struct k_msgq *)socket_context->msgq, &frame,
 			   K_FOREVER);
 
 		pkt = net_pkt_rx_alloc_with_buffer(socket_context->iface,
-						   sizeof(msg),
+						   sizeof(frame),
 						   AF_CAN, 0,
 						   BUF_ALLOC_TIMEOUT);
 		if (!pkt) {
@@ -142,7 +142,7 @@ static inline void rx_thread(void *ctx, void *unused1, void *unused2)
 			continue;
 		}
 
-		if (net_pkt_write(pkt, (void *)&msg, sizeof(msg))) {
+		if (net_pkt_write(pkt, (void *)&frame, sizeof(frame))) {
 			LOG_ERR("Failed to append RX data");
 			net_pkt_unref(pkt);
 			continue;

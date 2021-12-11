@@ -52,11 +52,13 @@
 			itcm: itcm@0 {
 				compatible = "nxp,imx-itcm";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				zephyr,memory-region = "ITCM";
 			};
 
 			dtcm: dtcm@20000000 {
 				compatible = "nxp,imx-dtcm";
 				reg = <0x20000000 DT_SIZE_K(128)>;
+				zephyr,memory-region = "DTCM";
 			};
 
 			ocram: ocram@20200000 {
@@ -122,6 +124,18 @@
 			label = "CCM";
 
 			#clock-cells = <3>;
+		};
+
+		snvs: snvs@400d4000 {
+			compatible = "nxp,imx-snvs";
+			reg = <0x400d4000 0x4000>;
+			label = "SNVS";
+
+			snvs_rtc: rtc {
+				compatible = "nxp,imx-snvs-rtc";
+				label = "SNVS_RTC";
+				interrupts = <46 0>;
+			};
 		};
 
 		gpio1: gpio@401b8000 {

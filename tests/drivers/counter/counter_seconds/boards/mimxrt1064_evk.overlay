@@ -1,0 +1,13 @@
+/* Copyright (c) 2021 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc-0 = &snvs_rtc;
+	};
+};
+
+&snvs_rtc {
+	status = "okay";
+};

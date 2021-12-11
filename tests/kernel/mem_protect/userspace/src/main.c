@@ -844,11 +844,29 @@ void test_bad_syscall(void)
 
 static struct k_sem recycle_sem;
 
-
+/**
+ * @brief Test recycle object
+ *
+ * @details Test recycle valid/invalid kernel object, see if
+ * perms_count changes as expected.
+ *
+ * @see z_object_recycle(), z_object_find()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_object_recycle(void)
 {
 	struct z_object *ko;
 	int perms_count = 0;
+	int dummy = 0;
+
+	/* Validate recycle invalid objects, after recycling this invalid
+	 * object, perms_count should finally still be 1.
+	 */
+	ko = z_object_find(&dummy);
+	zassert_true(ko == NULL, "not an invalid object");
+
+	z_object_recycle(&dummy);
 
 	ko = z_object_find(&recycle_sem);
 	(void)memset(ko->perms, 0xFF, sizeof(ko->perms));
@@ -994,16 +1012,18 @@ void test_main(void)
 
 #if defined(CONFIG_ARM64)
 	struct z_arm64_thread_stack_header *hdr;
+	void *vhdr = ((struct z_arm64_thread_stack_header *)ztest_thread_stack);
 
-	hdr = ((struct z_arm64_thread_stack_header *)ztest_thread_stack);
+	hdr = vhdr;
 	priv_stack_ptr = (((char *)&hdr->privilege_stack) +
 			  (sizeof(hdr->privilege_stack) - 1));
 #elif defined(CONFIG_ARM)
 	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
 #elif defined(CONFIG_X86)
 	struct z_x86_thread_stack_header *hdr;
+	void *vhdr = ((struct z_x86_thread_stack_header *)ztest_thread_stack);
 
-	hdr = ((struct z_x86_thread_stack_header *)ztest_thread_stack);
+	hdr = vhdr;
 	priv_stack_ptr = (((char *)&hdr->privilege_stack) +
 			  (sizeof(hdr->privilege_stack) - 1));
 #elif defined(CONFIG_RISCV)

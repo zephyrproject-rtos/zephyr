@@ -11,4 +11,14 @@ config BOARD
 config BT_CTLR
 	default BT
 
+if DISPLAY
+
+config SPI
+	default y
+
+config ST7789V
+	default y
+
+endif # DISPLAY
+
 endif # BOARD_PINETIME_DEVKIT0

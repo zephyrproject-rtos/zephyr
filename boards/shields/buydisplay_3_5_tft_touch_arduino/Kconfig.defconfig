@@ -27,15 +27,6 @@ endif # KSCAN
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "DISPLAY"
-
-config LVGL_HOR_RES_MAX
-	default 320
-
-config LVGL_VER_RES_MAX
-	default 480
-
 config LVGL_VDB_SIZE
 	default 32
 

@@ -205,8 +205,8 @@ Using RAM backend
 
 For devices that do not have available I/O for tracing such as USB or UART but have
 enough RAM to collect trace datas, the ram backend can be enabled with configuration
-`CONFIG_TRACING_BACKEND_RAM`.
-Adjust `CONFIG_RAM_TRACING_BUFFER_SIZE` to be able to record enough traces for your needs.
+:kconfig:`CONFIG_TRACING_BACKEND_RAM`.
+Adjust :kconfig:`CONFIG_RAM_TRACING_BUFFER_SIZE` to be able to record enough traces for your needs.
 Then thanks to a runtime debugger such as gdb this buffer can be fetched from the target
 to an host computer::
 

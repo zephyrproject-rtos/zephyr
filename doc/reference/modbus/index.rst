@@ -25,13 +25,13 @@ More information about Modbus and Modbus RTU can be found on the website
 Samples
 *******
 
-`modbus-rtu-server-sample` and `modbus-rtu-client-sample` give
+:ref:`modbus-rtu-server-sample` and :ref:`modbus-rtu-client-sample` give
 the possibility to try out RTU server and RTU client implementation with
 an evaluation board.
 
-`modbus-tcp-server-sample` is a simple Modbus TCP server.
+:ref:`modbus-tcp-server-sample` is a simple Modbus TCP server.
 
-`modbus-gateway-sample` is an example how to build a TCP to serial line
+:ref:`modbus-gateway-sample` is an example how to build a TCP to serial line
 gateway with Zephyr OS.
 
 API Reference

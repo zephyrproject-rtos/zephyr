@@ -67,7 +67,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: c4a591c35385be59a41cde7efc85fe7660172979
+      revision: bd2e2d8dcdc19defdb1bf6e07fb94f62bc99c925
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -98,7 +98,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: fd8b79c40172e8aab808a3957978d49f46b01d87
+      revision: 66db7c2a57ec1adfd3574169346ed3af9bf17c0b
       path: modules/hal/nxp
       groups:
         - hal
@@ -163,7 +163,7 @@ manifest:
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
     - name: mbedtls
-      revision: 711fd5ea13a5e018cebe1ac1f79c22d897e8b34d
+      revision: 3e3e58a92de76069730c63e0d524f40fea948a61
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -190,7 +190,7 @@ manifest:
       revision: cfd050ff38a9d028dc211690b2ec35971128e45e
       path: modules/lib/open-amp
     - name: openthread
-      revision: 69eb7030c5eb479e2d387408f7b3814c58963804
+      revision: 41bc49da49736fbdfdfa231f7b2311f29dcc4979
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6

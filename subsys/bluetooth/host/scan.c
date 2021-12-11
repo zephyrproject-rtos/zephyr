@@ -1374,8 +1374,7 @@ static int bt_le_set_per_adv_recv_enable(
 	cp->enable = enable ? 1 : 0;
 
 	bt_hci_cmd_state_set_init(buf, &state, per_adv_sync->flags,
-				  BT_PER_ADV_SYNC_RECV_DISABLED,
-				  enable);
+				  BT_PER_ADV_SYNC_RECV_DISABLED, !enable);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE,
 				   buf, NULL);

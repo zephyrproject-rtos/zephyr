@@ -24,6 +24,7 @@
 			ti_ccfg_partition: partition@57fa8 {
 				label = "ti_ccfg";
 				reg = <0x57fa8 88>;
+				zephyr,memory-region = "FLASH_CCFG";
 			};
 		};
 	};

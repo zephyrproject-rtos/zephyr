@@ -36,5 +36,13 @@ properties:
         When the external SD card circuit does not support 1.8V, add this
         property to disable 1.8v card voltage of SD card controller.
 
+    detect-dat3:
+      type: boolean
+      required: false
+      description: |
+        Enable the host to detect an SD card via the DAT3 line of the SD card
+        connection. Requires the board to define a function to pull DAT3 low or
+        high using pullup/pulldown resistors.
+
     label:
       required: true

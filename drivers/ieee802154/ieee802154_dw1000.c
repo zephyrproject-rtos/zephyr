@@ -632,7 +632,7 @@ static void dwt_gpio_callback(const struct device *dev,
 	struct dwt_context *ctx = CONTAINER_OF(cb, struct dwt_context, gpio_cb);
 
 	LOG_DBG("IRQ callback triggered %p", ctx);
-	k_work_submit(&ctx->irq_cb_work);
+	k_work_submit_to_queue(&dwt_work_queue, &ctx->irq_cb_work);
 }
 
 static enum ieee802154_hw_caps dwt_get_capabilities(const struct device *dev)

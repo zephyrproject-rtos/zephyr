@@ -248,7 +248,7 @@ MAINTAINERS File
 
 Generic guidelines for deciding and filling in the Maintainers' list
 
-* The :zephyr_file:`MAINTAINERS.yaml` file shall replace the
+* The :zephyr_file:`MAINTAINERS.yml` file shall replace the
   :zephyr_file:`CODEOWNERS` file and will be used for both setting assignees and
   reviewers.
 * We should keep the granularity of code maintainership at a manageable level

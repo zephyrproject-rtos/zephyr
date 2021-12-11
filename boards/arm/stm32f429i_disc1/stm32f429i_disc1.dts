@@ -18,11 +18,14 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
+		zephyr,display = &ili9340;
 	};
 
 	sdram2: sdram@d0000000 {
+		compatible = "mmio-sram";
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM2";
 	};
 
 	leds {
@@ -111,12 +114,14 @@
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
-	ili9340@0 {
+	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
 		label = "DISPLAY";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
+		width = <240>;
+		height = <320>;
 	};
 };
 

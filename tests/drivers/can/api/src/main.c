@@ -339,9 +339,9 @@ static void send_test_msg(const struct device *can_dev,
 	int ret;
 
 	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL, NULL);
-	zassert_not_equal(ret, CAN_TX_ARB_LOST,
+	zassert_not_equal(ret, -EBUSY,
 			  "Arbitration though in loopback mode");
-	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
+	zassert_equal(ret, 0, "Can't send a message. Err: %d", ret);
 }
 
 static void send_test_msg_nowait(const struct device *can_dev,
@@ -351,9 +351,9 @@ static void send_test_msg_nowait(const struct device *can_dev,
 	int ret;
 	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, cb,
 			(struct zcan_frame *)msg);
-	zassert_not_equal(ret, CAN_TX_ARB_LOST,
+	zassert_not_equal(ret, -EBUSY,
 			  "Arbitration though in loopback mode");
-	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
+	zassert_equal(ret, 0, "Can't send a message. Err: %d", ret);
 }
 
 static inline int attach_msgq(const struct device *can_dev,
@@ -362,7 +362,7 @@ static inline int attach_msgq(const struct device *can_dev,
 	int filter_id;
 
 	filter_id = can_attach_msgq(can_dev, &can_msgq, filter);
-	zassert_not_equal(filter_id, CAN_NO_FREE_FILTER,
+	zassert_not_equal(filter_id, -ENOSPC,
 			  "Filter full even for a single one");
 	zassert_true((filter_id >= 0), "Negative filter number");
 
@@ -379,7 +379,7 @@ static inline int attach_workq(const struct device *can_dev,
 	filter_id  = can_attach_workq(can_dev, &k_sys_work_q, work, cb,
 				     (void *)filter, filter);
 
-	zassert_not_equal(filter_id, CAN_NO_FREE_FILTER,
+	zassert_not_equal(filter_id, -ENOSPC,
 			  "Filter full even for a single one");
 	zassert_true((filter_id >= 0), "Negative filter number");
 
@@ -395,7 +395,7 @@ static inline int attach_isr(const struct device *can_dev,
 	k_sem_reset(&rx_isr_sem);
 
 	filter_id = can_attach_isr(can_dev, isr, (void *)filter, filter);
-	zassert_not_equal(filter_id, CAN_NO_FREE_FILTER,
+	zassert_not_equal(filter_id, -ENOSPC,
 			  "Filter full even for a single one");
 	zassert_true((filter_id >= 0), "Negative filter number");
 
@@ -713,7 +713,7 @@ static void test_send_receive_wrong_id(void)
 }
 
 /*
- * Check if a call with dlc > CAN_MAX_DLC returns CAN_TX_EINVAL
+ * Check if a call with dlc > CAN_MAX_DLC returns -EINVAL
  */
 static void test_send_invalid_dlc(void)
 {
@@ -723,8 +723,8 @@ static void test_send_invalid_dlc(void)
 	frame.dlc = CAN_MAX_DLC + 1;
 
 	ret = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, tx_std_isr_1, NULL);
-	zassert_equal(ret, CAN_TX_EINVAL,
-		      "ret [%d] not equal to %d", ret, CAN_TX_EINVAL);
+	zassert_equal(ret, -EINVAL,
+		      "ret [%d] not equal to %d", ret, -EINVAL);
 }
 
 void test_main(void)

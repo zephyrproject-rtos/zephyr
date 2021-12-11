@@ -58,8 +58,8 @@ l2_cache_pref:
 	.word SHIM_L2_PREF_CFG
 #endif
 
-sof_stack_base:
-	.word L2_SRAM_BASE + L2_SRAM_SIZE
+imr_stack_base:
+	.word CONFIG_IMR_MANIFEST_ADDR
 
 wnd0_base:
 	.word DT_REG_ADDR(DT_NODELABEL(win))
@@ -184,7 +184,7 @@ boot_init:
 #endif
 
 	/* reprogram stack to the area defined by main FW */
-	l32r	a3, sof_stack_base
+	l32r	a3, imr_stack_base
 	mov	sp, a3
 
 	/* set status register to 0x00000005 in wnd0 */
