@@ -68,6 +68,9 @@ The board configuration supports the following hardware features:
    * - NVIC
      - N/A
      - :dtcompatible:`arm,v7m-nvic`
+   * - PWM
+     - :kconfig:`CONFIG_PWM`
+     - :dtcompatible:`gd,gd32-pwm`
    * - SYSTICK
      - N/A
      - N/A
