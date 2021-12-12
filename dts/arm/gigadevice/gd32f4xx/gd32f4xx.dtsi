@@ -7,6 +7,8 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 
+#include <dt-bindings/pwm/pwm.h>
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -246,6 +248,262 @@
 				rcu-periph-clock = <0xc08>;
 				status = "disabled";
 				label = "GPIOI";
+			};
+		};
+
+		timer0: timer@40010000 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40010000 0x400>;
+			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
+			rcu-periph-clock = <0x1100>;
+			rcu-periph-reset = <0x900>;
+			is-advanced;
+			channels = <4>;
+			status = "disabled";
+			label = "TIMER_0";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_0";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer1: timer@40000000 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40000000 0x400>;
+			interrupts = <28 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1000>;
+			rcu-periph-reset = <0x800>;
+			is-32bit;
+			channels = <4>;
+			status = "disabled";
+			label = "TIMER_1";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_1";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer2: timer@40000400 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40000400 0x400>;
+			interrupts = <29 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1001>;
+			rcu-periph-reset = <0x801>;
+			channels = <4>;
+			status = "disabled";
+			label = "TIMER_2";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_2";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer3: timer@40000800 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40000800 0x400>;
+			interrupts = <30 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1002>;
+			rcu-periph-reset = <0x802>;
+			channels = <4>;
+			status = "disabled";
+			label = "TIMER_3";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_3";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer4: timer@40000c00 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40000c00 0x400>;
+			interrupts = <50 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1003>;
+			rcu-periph-reset = <0x803>;
+			is-32bit;
+			channels = <4>;
+			status = "disabled";
+			label = "TIMER_4";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_4";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer5: timer@40001000 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40001000 0x400>;
+			interrupts = <54 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1004>;
+			rcu-periph-reset = <0x804>;
+			channels = <0>;
+			status = "disabled";
+			label = "TIMER_5";
+		};
+
+		timer6: timer@40001400 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40001400 0x400>;
+			interrupts = <55 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1005>;
+			rcu-periph-reset = <0x805>;
+			channels = <0>;
+			status = "disabled";
+			label = "TIMER_6";
+		};
+
+		timer7: timer@40010400 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40010400 0x400>;
+			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
+			rcu-periph-clock = <0x1101>;
+			rcu-periph-reset = <0x901>;
+			is-advanced;
+			channels = <4>;
+			status = "disabled";
+			label = "TIMER_7";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_7";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer8: timer@40014000 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40014000 0x400>;
+			interrupts = <24 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1110>;
+			rcu-periph-reset = <0x910>;
+			channels = <2>;
+			status = "disabled";
+			label = "TIMER_8";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_8";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer9: timer@40014400 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40014400 0x400>;
+			interrupts = <25 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1111>;
+			rcu-periph-reset = <0x911>;
+			channels = <1>;
+			status = "disabled";
+			label = "TIMER_9";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_9";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer10: timer@40014800 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40014800 0x400>;
+			interrupts = <26 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1112>;
+			rcu-periph-reset = <0x912>;
+			channels = <1>;
+			status = "disabled";
+			label = "TIMER_10";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_10";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer11: timer@40001800 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40001800 0x400>;
+			interrupts = <43 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1006>;
+			rcu-periph-reset = <0x806>;
+			channels = <2>;
+			status = "disabled";
+			label = "TIMER_11";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_11";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer12: timer@40001c00 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40001c00 0x400>;
+			interrupts = <44 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1007>;
+			rcu-periph-reset = <0x802>;
+			channels = <1>;
+			status = "disabled";
+			label = "TIMER_12";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_12";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timer13: timer@40002000 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40002000 0x400>;
+			interrupts = <45 0>;
+			interrupt-names = "global";
+			rcu-periph-clock = <0x1008>;
+			rcu-periph-reset = <0x808>;
+			channels = <1>;
+			status = "disabled";
+			label = "TIMER_13";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				status = "disabled";
+				label = "PWM_13";
+				#pwm-cells = <2>;
 			};
 		};
 	};
