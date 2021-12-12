@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi2 {
+	status = "okay";
+	miso-pin = <2>;
+	mosi-pin = <15>;
+	sclk-pin = <14>;
+	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,mmc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		label = "SDHC";
+		spi-max-frequency = <400000>;
+        };
+};
