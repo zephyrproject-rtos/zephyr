@@ -878,6 +878,9 @@ isr_rx_aux_chain_done:
 	if (!crc_ok || err) {
 		struct node_rx_pdu *node_rx;
 
+		/* Generate message to release aux context and flag the report
+		 * generated thereafter by HCI as incomplete.
+		 */
 		node_rx = ull_pdu_rx_alloc();
 		LL_ASSERT(node_rx);
 
@@ -930,7 +933,33 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 
 static void isr_done(void *param)
 {
+	struct lll_sync *lll;
+
 	lll_isr_status_reset();
+
+	lll = param;
+
+	/* LLL scheduling used for chain PDU reception is aborted/preempted */
+	if (lll->is_aux_sched) {
+		struct node_rx_pdu *node_rx;
+
+		lll->is_aux_sched = 0U;
+
+		/* Generate message to release aux context and flag the report
+		 * generated thereafter by HCI as incomplete.
+		 */
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll;
+		node_rx->hdr.rx_ftr.aux_failed = 1U;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+	}
+
 	isr_rx_done_cleanup(param, ((trx_cnt) ? 1U : 0U), false);
 }
 
