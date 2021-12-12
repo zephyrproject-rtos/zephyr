@@ -345,7 +345,6 @@ Artificially long but functional example:
              "use with the --device-serial option.")
 
     run_group_option.add_argument("--generate-hardware-map",
-                        required="--generate-hardware-map" in sys.argv,
                         help="""Probe serial devices connected to this platform
                         and create a hardware map file to be used with
                         --device-testing
