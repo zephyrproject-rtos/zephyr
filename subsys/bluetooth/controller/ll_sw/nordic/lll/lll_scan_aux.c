@@ -622,11 +622,38 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 static void isr_done(void *param)
 {
-	struct event_done_extra *e;
+	struct lll_sync *lll;
+	uint8_t is_lll_scan;
 
 	lll_isr_status_reset();
 
-	if (!trx_cnt) {
+	if (param) {
+		lll = ull_scan_aux_lll_parent_get(param, &is_lll_scan);
+	} else {
+		lll = NULL;
+	}
+
+	/* Check if this aux scan is for periodic advertising train */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && lll && !is_lll_scan) {
+		struct node_rx_pdu *node_rx;
+
+		/* Generate message to release aux context and flag the report
+		 * generated thereafter by HCI as incomplete.
+		 */
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll;
+		node_rx->hdr.rx_ftr.aux_failed = 1U;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+
+	} else if (!trx_cnt) {
+		struct event_done_extra *e;
+
 		e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 		LL_ASSERT(e);
 	}
