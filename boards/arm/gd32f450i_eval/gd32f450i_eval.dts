@@ -51,10 +51,20 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/* NOTE: bridge TIMER1_CH2 (PB10) and LED1 (PE2) */
+		pwm_led: pwm_led {
+			pwms = <&pwm1 2 PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
 		led1 = &led2;
 		sw0 = &user_key;
+		pwm-led0 = &pwm_led;
 	};
 };
 
@@ -89,4 +99,14 @@
 	status = "okay";
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
+};
+
+&timer1 {
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm1_default>;
+		pinctrl-names = "default";
+	};
 };
