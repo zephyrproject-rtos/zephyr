@@ -23,3 +23,6 @@ choice BT_HCI_BUS_TYPE
 endchoice
 
 endif # BT
+
+config DISK_DRIVER_SDMMC
+	default y
