@@ -149,10 +149,7 @@ static __imr void parse_module(struct sof_man_fw_header *hdr,
 				HOST_PAGE_SIZE);
 			break;
 		case SOF_MAN_SEGMENT_BSS:
-			/* copy from IMR to SRAM */
-			bbzero((void *)mod->segment[i].v_base_addr,
-			       mod->segment[i].flags.r.length *
-			       HOST_PAGE_SIZE);
+			/* already bbzero'd by sram init */
 			break;
 		default:
 			/* ignore */
@@ -264,8 +261,6 @@ static __imr void hp_sram_init(uint32_t memory_size)
 	hp_sram_pm_banks(ebb_in_use);
 
 	bbzero((void *)L2_SRAM_BASE, L2_SRAM_SIZE);
-
-	z_xtensa_cache_flush_all();
 }
 
 static __imr void lp_sram_init(void)
@@ -297,6 +292,7 @@ static __imr void lp_sram_init(void)
 	}
 
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
+	bbzero((void *)LP_SRAM_BASE, LP_SRAM_SIZE);
 }
 
 static __imr void win_setup(void)
@@ -331,6 +327,7 @@ __imr void boot_core0(void)
 	win_setup();
 	lp_sram_init();
 	parse_manifest();
+	z_xtensa_cache_flush_all();
 
 	/* Zephyr! */
 	extern FUNC_NORETURN void z_cstart(void);
