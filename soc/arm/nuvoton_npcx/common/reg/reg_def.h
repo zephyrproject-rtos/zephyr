@@ -488,13 +488,7 @@ struct adc_reg {
 	volatile uint16_t ASCADD;
 	/* 0x008: ADC Scan Channels Select */
 	volatile uint16_t ADCCS;
-	volatile uint8_t reserved1[10];
-	/* 0x014: Threshold Control 1 */
-	volatile uint16_t THRCTL1;
-	/* 0x016: Threshold Control 2 */
-	volatile uint16_t THRCTL2;
-	/* 0x018: Threshold Control 3 */
-	volatile uint16_t THRCTL3;
+	volatile uint8_t reserved1[16];
 	/* 0x01A:  Threshold Status */
 	volatile uint16_t THRCTS;
 	volatile uint8_t reserved2[4];
@@ -505,16 +499,20 @@ struct adc_reg {
 	volatile uint8_t reserved3[2];
 	/* 0x026: Internal register 3 for ADC Speed */
 	volatile uint16_t MEAST;
-	volatile uint8_t reserved4[18];
-	/* 0x03A: Deassertion Threshold Control 1 Word */
-	volatile uint16_t THR_DCTL1;
-	/* 0x03C: Deassertion Threshold Control 2 Word */
-	volatile uint16_t THR_DCTL2;
-	/* 0x03E: Deassertion Threshold Control 3 Word */
-	volatile uint16_t THR_DCTL3;
-	/* 0x040 - 52: Data Buffer of Channel 0 - 9 */
-	volatile uint16_t CHNDAT[10];
 };
+
+static inline uint32_t npcx_thrctl_offset(uint32_t ctl_no)
+{
+	return DT_PROP(DT_INST(0, nuvoton_npcx_adc), threshold_reg_offset) + (ctl_no - 1) * 2;
+}
+
+static inline uint32_t npcx_chndat_offset(uint32_t ch)
+{
+	return 0x40 + ch * 2;
+}
+
+#define THRCTL(base, ctl_no) (*(volatile uint16_t *)((base) + npcx_thrctl_offset(ctl_no)))
+#define CHNDAT(base, ch) (*(volatile uint16_t *)((base) + npcx_chndat_offset(ch)))
 
 /* ADC register fields */
 #define NPCX_ATCTL_SCLKDIV_FIELD              FIELD(0, 6)

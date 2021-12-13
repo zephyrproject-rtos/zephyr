@@ -93,8 +93,9 @@ static void adc_npcx_isr(void *arg)
 		/* Get result for each ADC selected channel */
 		while (data->channels) {
 			channel = find_lsb_set(data->channels) - 1;
-			result = GET_FIELD(inst->CHNDAT[channel],
-					NPCX_CHNDAT_CHDAT_FIELD);
+			result = GET_FIELD(CHNDAT(DRV_CONFIG((const struct device *)arg)->base,
+						  channel),
+					   NPCX_CHNDAT_CHDAT_FIELD);
 			/*
 			 * Save ADC result and adc_npcx_validate_buffer_size()
 			 * already ensures that the buffer has enough space for
