@@ -223,6 +223,7 @@
 				     &altf_adc9_sl    /* ADC9 - PINF0 */
 				     &altf_adc10_sl   /* ADC10 - PINE0 */
 				     &altf_adc11_sl>; /* ADC11 - PINC7 */
+			threshold-reg-offset = <0x60>;
 		};
 	};
 
