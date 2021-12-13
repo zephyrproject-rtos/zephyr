@@ -658,6 +658,7 @@ ull_scan_aux_rx_flush:
 		 */
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || aux->rx_last) {
 			aux->rx_last->rx_ftr.extra = rx;
+			aux->rx_last = rx;
 		} else {
 			LL_ASSERT(sync_lll);
 
