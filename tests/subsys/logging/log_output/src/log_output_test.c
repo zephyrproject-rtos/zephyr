@@ -108,7 +108,7 @@ void test_log_output_string(void)
 	struct log_msg_ids src_level = {
 		.level = LOG_LEVEL_DBG,
 		.source_id = log_const_source_id(
-				&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME)),
+				&Z_LOG_ITEM_CONST_DATA(LOG_MODULE_NAME)),
 		.domain_id = CONFIG_LOG_DOMAIN_ID,
 	};
 
