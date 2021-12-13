@@ -2523,8 +2523,9 @@ static inline uint8_t disable(uint8_t handle)
 {
 	uint32_t volatile ret_cb;
 	struct ll_adv_set *adv;
-	void *mark;
 	uint32_t ret;
+	void *mark;
+	int err;
 
 	adv = ull_adv_is_enabled_get(handle);
 	if (!adv) {
@@ -2585,8 +2586,8 @@ static inline uint8_t disable(uint8_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ret = ull_disable(&adv->lll);
-	LL_ASSERT(!ret);
+	err = ull_disable(&adv->lll);
+	LL_ASSERT(!err || (err == -EALREADY));
 
 	mark = ull_disable_unmark(adv);
 	LL_ASSERT(mark == adv);
@@ -2596,13 +2597,12 @@ static inline uint8_t disable(uint8_t handle)
 
 	if (lll_aux) {
 		struct ll_adv_aux_set *aux;
-		uint8_t err;
 
 		aux = HDR_LLL2ULL(lll_aux);
 
 		err = ull_adv_aux_stop(aux);
-		if (err) {
-			return err;
+		if (err && (err != -EALREADY)) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
