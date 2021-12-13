@@ -25,6 +25,8 @@ extern "C" {
  * The OLCP result code has the value "1" for success.
  * Elsewhere in the le-audio host stack, "0" is used for no error.
  *
+ * TODO: Update to also convert the non-SUCCESS values
+ * TODO: The macro is called OLCP, but uses OACP success value
  * OTS does not use the value "0".
  */
 #define OLCP_RESULT_TO_ERROR(RESULT) \
