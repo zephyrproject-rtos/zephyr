@@ -1,7 +1,7 @@
 .. _can_api:
 
-CAN Controller API
-##################
+CAN Controller
+##############
 
 .. contents::
     :local:

@@ -1,7 +1,7 @@
 .. _udc_api:
 
-USB device controller driver API
-################################
+USB device controller driver
+############################
 
 The USB Device Controller Driver Layer implements the low level control routines
 to deal directly with the hardware. All device controller drivers should
