@@ -190,11 +190,11 @@ static size_t obj_align_get(enum k_objects otype)
 #ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
 		ret = ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT;
 #else
-		ret = sizeof(void *);
+		ret = __alignof(struct dyn_obj);
 #endif
 		break;
 	default:
-		ret = sizeof(void *);
+		ret = __alignof(struct dyn_obj);
 		break;
 	}
 
@@ -466,15 +466,16 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
+	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
+		/* skip unref check for static kernel object */
+		goto out;
+	}
+
 	void *vko = ko;
 
 	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
-	/* TODO: check why this assert hits */
-	/*__ASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");*/
 
-	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
-		goto out;
-	}
+	__ASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");
 
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		if (ko->perms[i] != 0U) {
