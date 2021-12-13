@@ -11,6 +11,8 @@ struct ll_scan_set {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	uint16_t duration_lazy;
 	struct node_rx_hdr *node_rx_scan_term;
+
+	uint8_t is_stop:1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	uint8_t is_enabled:1;
