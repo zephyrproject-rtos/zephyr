@@ -171,9 +171,11 @@ static int lps22hh_init_chip(const struct device *dev)
 
 	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
 
-	ret = lps22hh_set_odr_raw(dev, CONFIG_LPS22HH_SAMPLING_RATE);
+	/* set sensor default odr */
+	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
+	ret = lps22hh_set_odr_raw(dev, cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to set sampling rate", dev->name);
+		LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		return ret;
 	}
 
@@ -237,6 +239,7 @@ static int lps22hh_init(const struct device *dev)
 					   LPS22HH_SPI_OPERATION,	\
 					   0),				\
 		},							\
+		.odr = DT_INST_PROP(inst, odr),				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(LPS22HH_CFG_IRQ(inst)), ())			\
 	}
@@ -258,6 +261,7 @@ static int lps22hh_init(const struct device *dev)
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
+		.odr = DT_INST_PROP(inst, odr),				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(LPS22HH_CFG_IRQ(inst)), ())			\
 	}
