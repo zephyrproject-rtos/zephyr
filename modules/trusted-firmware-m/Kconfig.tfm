@@ -139,6 +139,33 @@ config TFM_ISOLATION_LEVEL
 	  As isolation levels 2 and 3 require PSA_API (TFM_IPC) support,
 	  force level 1 when TFM_IPC is not enabled.
 
+config TFM_ITS_NUM_ASSETS_OVERRIDE
+	bool "Override maximum number of Internal Trusted Storage assets"
+	help
+	  Override the platform's default maximum number of assets to be stored in
+	  Internal Trusted Storage (ITS) with TFM_ITS_NUM_ASSETS.
+
+config TFM_ITS_NUM_ASSETS
+	int "Maximum number of Internal Trusted Storage assets"
+	depends on TFM_ITS_NUM_ASSETS_OVERRIDE
+	default 0
+	help
+	  Maximum number of assets to be stored in Internal Trusted Storage (ITS).
+
+config TFM_ITS_MAX_ASSET_SIZE_OVERRIDE
+	bool "Override maximum Internal Trusted Storage asset size"
+	help
+	  Override the platform's default maximum size of a single asset to be
+	  stored in Internal Trusted Storage (ITS) with TFM_ITS_MAX_ASSET_SIZE.
+
+config TFM_ITS_MAX_ASSET_SIZE
+	int "Maximum Internal Trusted Storage asset size"
+	depends on TFM_ITS_MAX_ASSET_SIZE_OVERRIDE
+	default 0
+	help
+	  Maximum size (in bytes) of a single asset to be stored in Internal Trusted
+	  Storage (ITS).
+
 config TFM_BL2
 	bool "Add MCUboot to TFM"
 	default y
