@@ -23,7 +23,7 @@
 #include "../host/conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
 
 #include "ots.h"
-#include "ots_internal.h"
+#include "otc_internal.h"
 #include "otc.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_OTC)
