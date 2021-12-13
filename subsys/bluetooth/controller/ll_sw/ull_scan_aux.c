@@ -635,6 +635,7 @@ ull_scan_aux_rx_flush:
 		 */
 		if (aux->rx_last) {
 			aux->rx_last->rx_ftr.extra = rx;
+			aux->rx_last = rx;
 		} else {
 			LL_ASSERT(sync_lll);
 
