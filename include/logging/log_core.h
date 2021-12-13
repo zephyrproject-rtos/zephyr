@@ -563,7 +563,7 @@ extern struct log_source_dynamic_data __log_dynamic_end[];
 #define LOG_ITEM_DYNAMIC_DATA(_name) UTIL_CAT(log_dynamic_, _name)
 
 #define LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst) \
-	LOG_ITEM_DYNAMIC_DATA(LOG_INSTANCE_FULL_NAME(_module_name, _inst))
+	LOG_ITEM_DYNAMIC_DATA(Z_LOG_INSTANCE_FULL_NAME(_module_name, _inst))
 
 /** @brief Get index of the log source based on the address of the dynamic data
  *         associated with the source.
