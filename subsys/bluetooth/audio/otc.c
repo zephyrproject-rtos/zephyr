@@ -22,7 +22,7 @@
 
 #include "../host/conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
 
-#include "ots.h"
+#include <bluetooth/services/ots.h>
 #include "otc_internal.h"
 #include "otc.h"
 
