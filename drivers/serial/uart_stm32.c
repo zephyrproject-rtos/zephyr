@@ -543,10 +543,6 @@ static void uart_stm32_poll_out(const struct device *dev,
 			}
 			irq_unlock(key);
 		}
-		if (!k_is_in_isr()) {
-			/* yield execution to another thread of the same or higher priority. */
-			k_yield();
-		}
 	}
 
 #ifdef CONFIG_PM
