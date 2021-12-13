@@ -5,3 +5,8 @@ common:
   tags: net mqtt cloud
   harness: net
   filter: TOOLCHAIN_HAS_NEWLIB == 1
+  extra_args: USE_DUMMY_KEY=1
+tests:
+  sample.net.cloud.google_iot_mqtt:
+    depends_on: netif
+    platform_allow: frdm_k64f qemu_x86
