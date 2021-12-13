@@ -58,8 +58,10 @@ static int comp_data_status(struct bt_mesh_model *model,
 			*(param->page) = page;
 		}
 
-		to_copy = MIN(net_buf_simple_tailroom(param->comp), buf->len);
-		net_buf_simple_add_mem(param->comp, buf->data, to_copy);
+		if (param->comp) {
+			to_copy = MIN(net_buf_simple_tailroom(param->comp), buf->len);
+			net_buf_simple_add_mem(param->comp, buf->data, to_copy);
+		}
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
@@ -265,22 +267,25 @@ static int net_key_list(struct bt_mesh_model *model,
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NET_KEY_LIST, ctx->addr,
 				      (void **)&param)) {
 
-		for (i = 0; i < *param->key_cnt && buf->len >= 3; i += 2) {
-			key_idx_unpack(buf, &param->keys[i],
-				       &param->keys[i + 1]);
-		}
+		if (param->keys && param->key_cnt) {
 
-		if (i < *param->key_cnt && buf->len >= 2) {
-			param->keys[i++] =
-				net_buf_simple_pull_le16(buf) & 0xfff;
-		}
+			for (i = 0; i < *param->key_cnt && buf->len >= 3; i += 2) {
+				key_idx_unpack(buf, &param->keys[i],
+						&param->keys[i + 1]);
+			}
 
-		if (buf->len > 0) {
-			BT_ERR("The message size for the application opcode is incorrect.");
-			return -EMSGSIZE;
-		}
+			if (i < *param->key_cnt && buf->len >= 2) {
+				param->keys[i++] =
+					net_buf_simple_pull_le16(buf) & 0xfff;
+			}
 
-		*param->key_cnt = i;
+			if (buf->len > 0) {
+				BT_ERR("The message size for the application opcode is incorrect.");
+				return -EMSGSIZE;
+			}
+
+			*param->key_cnt = i;
+		}
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
@@ -378,17 +383,21 @@ static int app_key_list(struct bt_mesh_model *model,
 			return -ENOENT;
 		}
 
-		for (i = 0; i < *param->key_cnt && buf->len >= 3; i += 2) {
-			key_idx_unpack(buf, &param->keys[i],
-				       &param->keys[i + 1]);
+		if (param->keys && param->key_cnt) {
+
+			for (i = 0; i < *param->key_cnt && buf->len >= 3; i += 2) {
+				key_idx_unpack(buf, &param->keys[i],
+						&param->keys[i + 1]);
+			}
+
+			if (buf->len > 0U) {
+				BT_ERR("The message size for the application opcode is incorrect.");
+				return -EMSGSIZE;
+			}
+
+			*param->key_cnt = i;
 		}
 
-		if (buf->len > 0U) {
-			BT_ERR("The message size for the application opcode is incorrect.");
-			return -EMSGSIZE;
-		}
-
-		*param->key_cnt = i;
 		if (param->status) {
 			*param->status = status;
 		}
@@ -487,8 +496,9 @@ static int mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, op, ctx->addr,
 				      (void **)&param)) {
+
 		if (param->elem_addr != elem_addr || param->mod_id != mod_id ||
-		    (vnd && param->cid != cid)) {
+				(vnd && param->cid != cid)) {
 			BT_WARN("Model Member List parameters did not match");
 			return -ENOENT;
 		}
@@ -498,11 +508,15 @@ static int mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
 			return -EMSGSIZE;
 		}
 
-		for (i = 0; i < *param->member_cnt && buf->len; i++) {
-			param->members[i] = net_buf_simple_pull_le16(buf);
+		if (param->member_cnt && param->members) {
+
+			for (i = 0; i < *param->member_cnt && buf->len; i++) {
+				param->members[i] = net_buf_simple_pull_le16(buf);
+			}
+
+			*param->member_cnt = i;
 		}
 
-		*param->member_cnt = i;
 		if (param->status) {
 			*param->status = status;
 		}
