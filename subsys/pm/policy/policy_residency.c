@@ -14,22 +14,22 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
 
-#if DT_NODE_EXISTS(DT_PATH(cpus))
-
 #define NUM_CPU_STATES(n) DT_NUM_CPU_POWER_STATES(n),
 #define CPU_STATES(n) (struct pm_state_info[])PM_STATE_INFO_LIST_FROM_DT_CPU(n),
 
+/** CPU power states information for each CPU */
 static const struct pm_state_info *cpus_states[] = {
-	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATES)
+	COND_CODE_1(DT_NODE_EXISTS(DT_PATH(cpus)),
+		    (DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATES)),
+		    ())
 };
 
+/** Number of states for each CPU */
 static const uint8_t states_per_cpu[] = {
-	DT_FOREACH_CHILD(DT_PATH(cpus), NUM_CPU_STATES)
+	COND_CODE_1(DT_NODE_EXISTS(DT_PATH(cpus)),
+		    (DT_FOREACH_CHILD(DT_PATH(cpus), NUM_CPU_STATES)),
+		    ())
 };
-#else
-static const struct pm_state_info *cpus_states[CONFIG_MP_NUM_CPUS] = {};
-static int states_per_cpu[CONFIG_MP_NUM_CPUS] = {};
-#endif	/* DT_NODE_EXISTS(DT_PATH(cpus)) */
 
 struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
