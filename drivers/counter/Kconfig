@@ -36,6 +36,8 @@ source "drivers/counter/Kconfig.imx_epit"
 
 source "drivers/counter/Kconfig.stm32_rtc"
 
+source "drivers/counter/Kconfig.stm32_timer"
+
 source "drivers/counter/Kconfig.sam"
 
 source "drivers/counter/Kconfig.sam0"
