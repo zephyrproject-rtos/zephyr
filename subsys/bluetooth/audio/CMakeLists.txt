@@ -32,8 +32,6 @@ if (CONFIG_BT_CSIS OR CONFIG_BT_CSIS_CLIENT)
 	zephyr_library_sources(csis_crypto.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_BT_OTC otc.c)
-
 zephyr_library_sources_ifdef(CONFIG_BT_MCC mcc.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MCS mcs.c)

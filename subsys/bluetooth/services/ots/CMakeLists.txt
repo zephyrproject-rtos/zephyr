@@ -9,3 +9,5 @@ zephyr_sources_ifdef(
   ots_olcp.c)
 
   zephyr_library_sources_ifdef(CONFIG_BT_OTS_DIR_LIST_OBJ ots_dir_list.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_OTC otc.c)
