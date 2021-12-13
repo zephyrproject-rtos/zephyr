@@ -1,6 +1,6 @@
 .. _modbus:
 
-MODBUS
+Modbus
 ######
 
 Modbus is an industrial messaging protocol. The protocol is specified
