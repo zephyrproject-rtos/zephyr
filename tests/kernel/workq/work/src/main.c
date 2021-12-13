@@ -541,6 +541,11 @@ static void test_1cpu_queued_cancel_sync(void)
 	reset_counters();
 	k_work_init(&work, rel_handler);
 
+	/* Cancel an unqueued work item should not affect the work
+	 * and return false.
+	 */
+	zassert_false(k_work_cancel_sync(&work, &work_sync), NULL);
+
 	/* Submit to the cooperative queue. */
 	rc = k_work_submit_to_queue(&coophi_queue, &work);
 	zassert_equal(rc, 1, NULL);
@@ -587,6 +592,11 @@ static void test_1cpu_delayed_cancel_sync(void)
 	/* Reset state and use the blocking handler */
 	reset_counters();
 	k_work_init_delayable(&dwork, rel_handler);
+
+	/* Cancel an unqueued delayable work item should not affect the work
+	 * and return false.
+	 */
+	zassert_false(k_work_cancel_delayable_sync(&dwork, &work_sync), NULL);
 
 	/* Submit to the cooperative queue. */
 	rc = k_work_schedule_for_queue(&coophi_queue, &dwork, K_MSEC(DELAY_MS));
