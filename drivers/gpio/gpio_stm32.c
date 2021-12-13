@@ -481,7 +481,7 @@ static int gpio_stm32_config(const struct device *dev,
 
 	/* Release clock only if configuration doesn't require bank writes */
 	if ((flags & GPIO_OUTPUT) == 0) {
-		err = pm_device_runtime_put_async(dev);
+		err = pm_device_runtime_put(dev);
 		if (err < 0) {
 			return err;
 		}
