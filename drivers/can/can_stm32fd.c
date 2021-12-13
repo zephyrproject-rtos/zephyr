@@ -49,10 +49,18 @@ int can_stm32fd_get_max_filters(const struct device *dev, enum can_ide id_type)
 
 void can_stm32fd_clock_enable(void)
 {
+/* There are different naming for clock source RCC_CCIPR_FDCANSEL_1
+ * in files stm32h7xx_ll_rcc.h and stm32g4xx_ll_rcc.h
+ */
+#if defined(LL_RCC_FDCAN_CLKSOURCE_PLL2Q)
+	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PLL2Q);
+	__HAL_RCC_FDCAN_CLK_ENABLE();
+#else
 	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
 	__HAL_RCC_FDCAN_CLK_ENABLE();
 
 	FDCAN_CONFIG->CKDIV = CONFIG_CAN_STM32_CLOCK_DIVISOR >> 1;
+#endif
 }
 
 void can_stm32fd_register_state_change_isr(const struct device *dev,
