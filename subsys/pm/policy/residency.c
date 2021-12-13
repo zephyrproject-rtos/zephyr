@@ -5,11 +5,12 @@
  */
 
 #include <devicetree.h>
-#include <zephyr.h>
-#include <kernel.h>
 #include <pm/pm.h>
 #include <pm/policy.h>
+#include <sys_clock.h>
 #include <sys/check.h>
+#include <sys/time_units.h>
+#include <sys/util.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);

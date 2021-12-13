@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_PM_POLICY_H_
 #define ZEPHYR_INCLUDE_PM_POLICY_H_
 
+#include <stdint.h>
 #include <pm/state.h>
 
 #ifdef __cplusplus
