@@ -552,6 +552,14 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	/* Switching to ULL scheduling to receive auxiliary PDUs */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || lll) {
+		/* Do not ULL schedule if scan disable requested */
+		if (unlikely(scan->is_stop)) {
+			goto ull_scan_aux_rx_flush;
+		}
+
+		/* Remove auxiliary context association with scan context so
+		 * that LLL can differentiate it to being ULL scheduling.
+		 */
 		lll->lll_aux = NULL;
 	} else {
 		struct ll_sync_set *sync;
@@ -747,13 +755,36 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 
 		aux = HDR_LLL2ULL(sync->lll.lll_aux);
 	} else {
+		struct ll_scan_set *scan;
+
+		scan = HDR_LLL2ULL(aux->parent);
+		LL_ASSERT(ull_scan_is_valid_get(scan));
+
+		/* Auxiliary context will be flushed by ull_scan_aux_stop() */
+		if (unlikely(scan->is_stop)) {
+			return;
+		}
+
 		/* Setup the disabled callback to flush the auxiliary PDUs */
 		hdr = &aux->ull;
 	}
 
-	LL_ASSERT(!hdr->disabled_cb);
-	hdr->disabled_param = aux;
-	hdr->disabled_cb = done_disabled_cb;
+	if (ull_ref_get(hdr) == 0U) {
+		flush(aux);
+	} else {
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = aux;
+		hdr->disabled_cb = done_disabled_cb;
+	}
+}
+
+struct ll_scan_aux_set *ull_scan_aux_set_get(uint8_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_SCAN_AUX_SET) {
+		return NULL;
+	}
+
+	return &ll_scan_aux_pool[handle];
 }
 
 uint8_t ull_scan_aux_lll_handle_get(struct lll_scan_aux *lll)
@@ -856,7 +887,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		scan = HDR_LLL2ULL(lll);
 		scan = ull_scan_is_valid_get(scan);
 		if (scan) {
-			is_stop = 0U;
+			is_stop = scan->is_stop;
 		} else {
 			struct lll_sync *sync_lll;
 			struct ll_sync_set *sync;
@@ -926,15 +957,37 @@ int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 
 	/* Abort LLL event if ULL scheduling not used or already in prepare */
 	if (err == -EALREADY) {
-		ret = ull_disable(&aux->lll);
-		if (ret) {
-			return -EBUSY;
+		err = ull_disable(&aux->lll);
+		if (err) {
+			return err;
 		}
 
 		mfy.fp = flush;
+
+	} else if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC)) {
+		/* ULL scan auxiliary PDU reception scheduling stopped
+		 * before prepare.
+		 */
+		mfy.fp = flush;
+
 	} else {
-		/* ULL scheduling stopped before prepare */
-		mfy.fp = aux_sync_incomplete;
+		struct ll_scan_set *scan;
+		struct lll_scan *lll;
+
+		lll = aux->parent;
+		scan = HDR_LLL2ULL(lll);
+		scan = ull_scan_is_valid_get(scan);
+		if (scan) {
+			/* ULL scan auxiliary PDU reception scheduling stopped
+			 * before prepare.
+			 */
+			mfy.fp = flush;
+		} else {
+			/* ULL sync chain reception scheduling stopped before
+			 * prepare.
+			 */
+			mfy.fp = aux_sync_incomplete;
+		}
 	}
 
 	/* Release auxiliary context in ULL execution context */
@@ -963,6 +1016,16 @@ static inline struct ll_scan_aux_set *aux_acquire(void)
 
 static inline void aux_release(struct ll_scan_aux_set *aux)
 {
+	/* Debug check that parent was assigned when allocated for reception of
+	 * auxiliary channel PDUs.
+	 */
+	LL_ASSERT(aux->parent);
+
+	/* Clear the parent so that when scan is being disabled then this
+	 * auxiliary context shall not associate itself from being disable.
+	 */
+	aux->parent = NULL;
+
 	mem_release(aux, &scan_aux_free);
 }
 
