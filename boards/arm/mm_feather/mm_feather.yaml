@@ -19,7 +19,6 @@ supported:
   - sdhc
   - gpio
   - i2c
-  - dma
   - uart
   - pwm
   - spi
