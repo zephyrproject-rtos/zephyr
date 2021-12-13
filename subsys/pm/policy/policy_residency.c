@@ -23,7 +23,7 @@ static const struct pm_state_info *cpus_states[] = {
 	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATES)
 };
 
-static int states_per_cpu[] = {
+static const uint8_t states_per_cpu[] = {
 	DT_FOREACH_CHILD(DT_PATH(cpus), NUM_CPU_STATES)
 };
 #else
