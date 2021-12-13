@@ -11,13 +11,6 @@ config PM_POLICY_RESIDENCY
 	help
 	  Select this option for PM policy based on CPU residencies.
 
-config PM_POLICY_DUMMY
-	bool "Dummy PM Policy for testing purposes"
-	help
-	  Dummy PM Policy which simply returns next PM state in a loop.
-
-	  This policy is used for testing purposes only.
-
 config PM_POLICY_APP
 	bool "Application PM Policy"
 	help
