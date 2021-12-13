@@ -145,7 +145,7 @@ struct bt_csis_register_param {
 void *bt_csis_svc_decl_get(const struct bt_csis *csis);
 
 /**
- * @brief Register the Coordinated Set Identification Service.
+ * @brief Register a Coordinated Set Identification Service instance.
  *
  * This will register and enable the service and make it discoverable by
  * clients.
@@ -162,14 +162,14 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 		     struct bt_csis **csis);
 
 /**
- * @brief Print the sirk to the debug output
+ * @brief Print the SIRK to the debug output
  *
  * @param csis   Pointer to the Coordinated Set Identification Service.
  */
 void bt_csis_print_sirk(const struct bt_csis *csis);
 
 /**
- * @brief Starts advertising the PRSI value.
+ * @brief Starts advertising the Resolveable Set Identifier value.
  *
  * This cannot be used with other connectable advertising sets.
  *
@@ -181,7 +181,7 @@ void bt_csis_print_sirk(const struct bt_csis *csis);
 int bt_csis_advertise(struct bt_csis *csis, bool enable);
 
 /**
- * @brief Locks the sets on the server.
+ * @brief Locks a specific Coordinated Set Identification Service instance on the server.
  *
  * @param csis    Pointer to the Coordinated Set Identification Service.
  * @param lock    If true lock the set, if false release the set.
