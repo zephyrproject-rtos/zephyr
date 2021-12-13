@@ -33,37 +33,30 @@ static int states_per_cpu[CONFIG_MP_NUM_CPUS] = {};
 
 struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
-	int i;
-
 	CHECKIF(cpu >= ARRAY_SIZE(states_per_cpu)) {
 		goto error;
 	}
 
-	i = states_per_cpu[cpu];
-	const struct pm_state_info *states = (const struct pm_state_info *)
-		cpus_states[cpu];
-
-	for (i = i - 1; i >= 0; i--) {
+	for (int16_t i = (int16_t)states_per_cpu[cpu] - 1; i >= 0; i--) {
+		const struct pm_state_info *state = (&cpus_states[cpu])[i];
 		uint32_t min_residency, exit_latency;
 
-		if (!pm_constraint_get(states[i].state)) {
+		if (!pm_constraint_get(state->state)) {
 			continue;
 		}
 
-		min_residency = k_us_to_ticks_ceil32(
-			    states[i].min_residency_us);
-		exit_latency = k_us_to_ticks_ceil32(
-			    states[i].exit_latency_us);
+		min_residency = k_us_to_ticks_ceil32(state->min_residency_us);
+		exit_latency = k_us_to_ticks_ceil32(state->exit_latency_us);
 		__ASSERT(min_residency > exit_latency,
-				"min_residency_us < exit_latency_us");
+			 "min_residency_us < exit_latency_us");
 
 		if ((ticks == K_TICKS_FOREVER) ||
 		    (ticks >= (min_residency + exit_latency))) {
 			LOG_DBG("Selected power state %d "
 				"(ticks: %d, min_residency: %u) to cpu %d",
-				states[i].state, ticks,
-				states[i].min_residency_us, cpu);
-			return states[i];
+				state->state, ticks, state->min_residency_us,
+				cpu);
+			return *state;
 		}
 	}
 
