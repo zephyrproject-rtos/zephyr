@@ -917,6 +917,10 @@ static void test_1cpu_plugged_drain(void)
 	/* Unplug the queue */
 	rc = k_work_queue_unplug(&coophi_queue);
 	zassert_equal(rc, 0, NULL);
+
+	/* Unplug the unplugged queue should not affect the queue */
+	rc = k_work_queue_unplug(&coophi_queue);
+	zassert_equal(rc, -EALREADY, NULL);
 	zassert_equal(coophi_queue.flags,
 		      K_WORK_QUEUE_STARTED | K_WORK_QUEUE_NO_YIELD,
 		      NULL);
