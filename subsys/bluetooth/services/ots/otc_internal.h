@@ -12,7 +12,7 @@
 
 /* TODO: Temporarily here - clean up, and move alongside the Object Transfer Service */
 
-#include "otc.h"
+#include <bluetooth/services/otc.h>
 
 #ifdef __cplusplus
 extern "C" {

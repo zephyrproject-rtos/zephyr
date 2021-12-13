@@ -7,10 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_OTC_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_OTC_H_
-
-/* TODO: Temporarily here - clean up, and move alongside the Object Transfer Service */
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_
 
 #include <stdbool.h>
 #include <zephyr/types.h>
@@ -557,4 +555,4 @@ void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_OTC_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_ */
