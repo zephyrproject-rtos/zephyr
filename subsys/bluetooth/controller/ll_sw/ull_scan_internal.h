@@ -80,6 +80,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx);
 /* Helper to clean up auxiliary channel scanning */
 void ull_scan_aux_done(struct node_rx_event_done *done);
 
+/* Return the scan aux set instance given the handle */
+struct ll_scan_aux_set *ull_scan_aux_set_get(uint8_t handle);
+
 /* Helper function to check and return if a valid aux scan context */
 struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux);
 
