@@ -129,6 +129,19 @@ config FS_FATFS_MAX_SS
 	range 512 4096
 	default 512
 
+config FS_FATFS_WINDOW_ALIGNMENT
+	int "Memory alignment for the member \"win\" in FATFS"
+	default 1
+	help
+	  Specifies alignment, in bytes of FAT FS window buffer that is
+	  used for device's read/write operations. MMC controllers may
+	  require read/write buffer to start at memory address with
+	  specific alignment, for example 16 or 512 bytes, the value
+	  provided here is used as such alignment. Note that the window
+	  buffer is internal element of FATFS structure, which means
+	  that, in worst scenario, value provided here may cause FATFS
+	  structure to have size of twice the value
+
 endmenu
 
 endif # FAT_FILESYSTEM_ELM
