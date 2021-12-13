@@ -725,3 +725,9 @@ test_i2c_ina237: ina237@52 {
 	adc-config = <0>;
 	rshunt = <0>;
 };
+
+test_i2c_max31875: max31875@53 {
+	compatible = "maxim,max31875";
+	label = "MAX31875";
+	reg = <0x53>;
+};
