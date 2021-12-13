@@ -6,8 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* TODO: Temporarily here - clean up, and move alongside the Object Transfer Service */
-
 #include <zephyr.h>
 #include <zephyr/types.h>
 
@@ -20,11 +18,11 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/l2cap.h>
 
-#include "../host/conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
+#include "../../host/conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
 
 #include <bluetooth/services/ots.h>
+#include <bluetooth/services/otc.h>
 #include "otc_internal.h"
-#include "otc.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_OTC)
 #define LOG_MODULE_NAME bt_otc

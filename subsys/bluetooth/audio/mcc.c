@@ -20,8 +20,8 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio/mcc.h>
 
-#include "otc.h"
-#include "otc_internal.h"
+#include <bluetooth/services/otc.h>
+#include "../services/ots/otc_internal.h"
 
 /* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
 /* Debug output of 48 bit Object ID value */
