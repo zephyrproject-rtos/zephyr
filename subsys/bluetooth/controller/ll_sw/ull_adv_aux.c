@@ -1073,7 +1073,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	return ret;
 }
 
-uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
+int ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 {
 	uint8_t aux_handle;
 	int err;
@@ -1084,7 +1084,7 @@ uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 					aux, &aux->lll);
 	LL_ASSERT(err == 0 || err == -EALREADY);
 	if (err) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		return err;
 	}
 
 	aux->is_started = 0U;
