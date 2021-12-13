@@ -23,23 +23,23 @@ static const struct pm_state_info *pm_min_residency[] = {
 	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATES)
 };
 
-static int pm_min_residency_sizes[] = {
+static int states_per_cpu[] = {
 	DT_FOREACH_CHILD(DT_PATH(cpus), NUM_CPU_STATES)
 };
 #else
 static const struct pm_state_info *pm_min_residency[CONFIG_MP_NUM_CPUS] = {};
-static int pm_min_residency_sizes[CONFIG_MP_NUM_CPUS] = {};
+static int states_per_cpu[CONFIG_MP_NUM_CPUS] = {};
 #endif	/* DT_NODE_EXISTS(DT_PATH(cpus)) */
 
 struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	int i;
 
-	CHECKIF(cpu >= ARRAY_SIZE(pm_min_residency_sizes)) {
+	CHECKIF(cpu >= ARRAY_SIZE(states_per_cpu)) {
 		goto error;
 	}
 
-	i = pm_min_residency_sizes[cpu];
+	i = states_per_cpu[cpu];
 	const struct pm_state_info *states = (const struct pm_state_info *)
 		pm_min_residency[cpu];
 
