@@ -4,7 +4,8 @@ API Reference
 #############
 
 .. toctree::
-   :maxdepth: 1
+   :titlesonly:
+   :maxdepth: 2
 
    api/index.rst
    audio/index.rst
