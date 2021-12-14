@@ -612,9 +612,7 @@ static int gpio_stm32_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	pm_device_runtime_enable(dev);
-
-	return 0;
+	return pm_device_runtime_enable(dev);
 #else
 	return gpio_stm32_clock_request(dev, true);
 #endif

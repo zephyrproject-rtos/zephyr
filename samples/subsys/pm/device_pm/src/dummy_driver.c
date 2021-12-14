@@ -109,9 +109,7 @@ int dummy_init(const struct device *dev)
 		printk("parent not found\n");
 	}
 
-	pm_device_runtime_enable(dev);
-
-	return 0;
+	return pm_device_runtime_enable(dev);
 }
 
 PM_DEVICE_DEFINE(dummy_driver, dummy_device_pm_action);
