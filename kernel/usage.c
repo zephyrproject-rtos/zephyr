@@ -63,14 +63,27 @@ void z_sched_usage_stop(void)
 	k_spin_unlock(&usage_lock, k);
 }
 
-uint64_t z_sched_thread_usage(struct k_thread *thread)
+void z_sched_thread_usage(struct k_thread *thread,
+			  struct k_thread_runtime_stats *stats)
 {
-	k_spinlock_key_t k = k_spin_lock(&usage_lock);
-	uint32_t u0 = _current_cpu->usage0, now = usage_now();
-	uint64_t ret = thread->base.usage;
+	uint32_t  u0;
+	uint32_t  now;
+	struct _cpu *cpu;
+	k_spinlock_key_t  key;
 
-	if (u0 != 0) {
+	cpu = _current_cpu;
+	key = k_spin_lock(&usage_lock);
+
+	u0 = cpu->usage0;
+	now = usage_now();
+
+	if ((u0 != 0) && (thread == cpu->current)) {
 		uint32_t dt = now - u0;
+
+		/*
+		 * Update the thread's usage stats if it is the current thread
+		 * running on the current core.
+		 */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 		if (z_is_idle_thread_object(thread)) {
@@ -80,11 +93,11 @@ uint64_t z_sched_thread_usage(struct k_thread *thread)
 		}
 #endif
 
-		ret += dt;
-		thread->base.usage = ret;
-		_current_cpu->usage0 = now;
+		thread->base.usage += dt;
+		cpu->usage0 = now;
 	}
 
-	k_spin_unlock(&usage_lock, k);
-	return ret;
+	stats->execution_cycles = thread->base.usage;
+
+	k_spin_unlock(&usage_lock, key);
 }
