@@ -112,6 +112,26 @@ struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
+void llcp_lr_pause(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
+	if (ctx) {
+		ctx->pause = 1;
+	}
+}
+
+void llcp_lr_resume(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
+	if (ctx) {
+		ctx->pause = 0;
+	}
+}
+
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {

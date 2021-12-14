@@ -188,6 +188,27 @@ struct proc_ctx *llcp_rr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
+void llcp_rr_pause(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
+	if (ctx) {
+		ctx->pause = 1;
+	}
+}
+
+void llcp_rr_resume(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
+	if (ctx) {
+		ctx->pause = 0;
+	}
+}
+
+
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
@@ -373,7 +394,7 @@ static void rr_act_reject(struct ll_conn *conn)
 
 	LL_ASSERT(ctx != NULL);
 
-	if (!llcp_tx_alloc_peek(conn, ctx)) {
+	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_REJECT);
 	} else {
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
