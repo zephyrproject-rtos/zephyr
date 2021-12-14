@@ -106,10 +106,6 @@ struct lll_adv_sync {
 	 */
 	uint8_t cte_started:1;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	int8_t tx_pwr_lvl;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
 struct lll_adv_aux {
@@ -130,10 +126,6 @@ struct lll_adv_aux {
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
 	struct pdu_adv     *last_pdu;
 #endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
-
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	int8_t tx_pwr_lvl;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
 struct lll_adv {
