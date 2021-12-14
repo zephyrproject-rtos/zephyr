@@ -393,6 +393,8 @@
 			reg = <0x420c0800 0x400>;
 			interrupts = <94 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			health-test-magic = <0x17590abc>;
+			health-test-config = <0xa2b3>;
 			status = "disabled";
 			label = "RNG";
 		};
