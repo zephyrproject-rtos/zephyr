@@ -66,6 +66,8 @@ The board configuration supports the following hardware features:
 | NVIC      | on-chip    | nested vectored       |
 |           |            | interrupt controller  |
 +-----------+------------+-----------------------+
+| PWM       | on-chip    | PWM                   |
++-----------+------------+-----------------------+
 | SYSTICK   | on-chip    | system clock          |
 +-----------+------------+-----------------------+
 | UART      | on-chip    | serial port-polling   |
