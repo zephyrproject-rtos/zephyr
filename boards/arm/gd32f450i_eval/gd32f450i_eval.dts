@@ -26,3 +26,9 @@
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
 };
+
+&dac {
+	status = "okay";
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
+};
