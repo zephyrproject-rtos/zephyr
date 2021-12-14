@@ -118,6 +118,16 @@
 			label = "USART_7";
 		};
 
+		dac: dac@40007400 {
+			compatible = "gd,gd32-dac";
+			reg = <0x40007400 0x400>;
+			rcu-periph-clock = <0x101d>;
+			num-channels = <2>;
+			label = "DAC";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		pinctrl: pin-controller@40020000 {
 			compatible = "gd,gd32-pinctrl-af";
 			reg = <0x40020000 0x2400>;
