@@ -84,12 +84,17 @@ static lwm2m_engine_execute_cb_t update_cb;
 extern int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri);
 #endif
 
-uint8_t lwm2m_firmware_get_update_state(uint16_t obj_inst_id)
+uint8_t lwm2m_firmware_get_update_state_inst(uint16_t obj_inst_id)
 {
 	return update_state[obj_inst_id];
 }
 
-void lwm2m_firmware_set_update_state(uint16_t obj_inst_id, uint8_t state)
+uint8_t lwm2m_firmware_get_update_state(void)
+{
+	return lwm2m_firmware_get_update_state_inst(0);
+}
+
+void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 {
 	bool error = false;
 	char path[sizeof("5/65535/5")];
@@ -131,12 +136,22 @@ void lwm2m_firmware_set_update_state(uint16_t obj_inst_id, uint8_t state)
 	LOG_DBG("Update state = %d", state);
 }
 
-uint8_t lwm2m_firmware_get_update_result(uint16_t obj_inst_id)
+void lwm2m_firmware_set_update_state(uint8_t state)
+{
+	lwm2m_firmware_set_update_state_inst(0, state);
+}
+
+uint8_t lwm2m_firmware_get_update_result_inst(uint16_t obj_inst_id)
 {
 	return update_result[obj_inst_id];
 }
 
-void lwm2m_firmware_set_update_result(uint16_t obj_inst_id, uint8_t result)
+uint8_t lwm2m_firmware_get_update_result(void)
+{
+	return lwm2m_firmware_get_update_result_inst(0);
+}
+
+void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result)
 {
 	uint8_t state;
 	bool error = false;
@@ -145,7 +160,7 @@ void lwm2m_firmware_set_update_result(uint16_t obj_inst_id, uint8_t result)
 	/* Check LWM2M SPEC appendix E.6.1 */
 	switch (result) {
 	case RESULT_DEFAULT:
-		lwm2m_firmware_set_update_state(obj_inst_id, STATE_IDLE);
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
 		break;
 	case RESULT_SUCCESS:
 		if (update_state[obj_inst_id] != STATE_UPDATING) {
@@ -153,7 +168,7 @@ void lwm2m_firmware_set_update_result(uint16_t obj_inst_id, uint8_t result)
 			state = update_state[obj_inst_id];
 		}
 
-		lwm2m_firmware_set_update_state(obj_inst_id, STATE_IDLE);
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
 		break;
 	case RESULT_NO_STORAGE:
 	case RESULT_OUT_OF_MEM:
@@ -166,7 +181,7 @@ void lwm2m_firmware_set_update_result(uint16_t obj_inst_id, uint8_t result)
 			state = update_state[obj_inst_id];
 		}
 
-		lwm2m_firmware_set_update_state(obj_inst_id, STATE_IDLE);
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
 		break;
 	case RESULT_INTEGRITY_FAILED:
 		if (update_state[obj_inst_id] != STATE_DOWNLOADING &&
@@ -175,7 +190,7 @@ void lwm2m_firmware_set_update_result(uint16_t obj_inst_id, uint8_t result)
 			state = update_state[obj_inst_id];
 		}
 
-		lwm2m_firmware_set_update_state(obj_inst_id, STATE_IDLE);
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
 		break;
 	case RESULT_UPDATE_FAILED:
 		if (update_state[obj_inst_id] != STATE_DOWNLOADING &&
@@ -184,7 +199,7 @@ void lwm2m_firmware_set_update_result(uint16_t obj_inst_id, uint8_t result)
 			state = update_state[obj_inst_id];
 		}
 
-		lwm2m_firmware_set_update_state(obj_inst_id, STATE_IDLE);
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
 		break;
 	default:
 		LOG_ERR("Unhandled result: %u", result);
@@ -203,6 +218,11 @@ void lwm2m_firmware_set_update_result(uint16_t obj_inst_id, uint8_t result)
 	LOG_DBG("Update result = %d", result);
 }
 
+void lwm2m_firmware_set_update_result(uint8_t result)
+{
+	lwm2m_firmware_set_update_result_inst(0, result);
+}
+
 static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 			    uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
 			    bool last_block, size_t total_size)
@@ -210,16 +230,16 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	uint8_t state;
 	int ret;
 
-	state = lwm2m_firmware_get_update_state(obj_inst_id);
+	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
 	if (state == STATE_IDLE) {
 		/* TODO: setup timer to check download status,
 		 * make sure it fail after timeout
 		 */
-		lwm2m_firmware_set_update_state(obj_inst_id, STATE_DOWNLOADING);
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
 	} else if (state != STATE_DOWNLOADING) {
 		if (data_len == 0U && state == STATE_DOWNLOADED) {
 			/* reset to state idle and result default */
-			lwm2m_firmware_set_update_result(obj_inst_id, RESULT_DEFAULT);
+			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
 			return 0;
 		}
 
@@ -232,23 +252,23 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 				  last_block, total_size) : 0;
 	if (ret >= 0) {
 		if (last_block) {
-			lwm2m_firmware_set_update_state(obj_inst_id, STATE_DOWNLOADED);
+			lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADED);
 		}
 
 		return 0;
 	} else if (ret == -ENOMEM) {
-		lwm2m_firmware_set_update_result(obj_inst_id, RESULT_OUT_OF_MEM);
+		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_OUT_OF_MEM);
 	} else if (ret == -ENOSPC) {
-		lwm2m_firmware_set_update_result(obj_inst_id, RESULT_NO_STORAGE);
+		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_NO_STORAGE);
 		/* Response 4.13 (RFC7959, section 2.9.3) */
 		/* TODO: should include size1 option to indicate max size */
 		ret = -EFBIG;
 	} else if (ret == -EFAULT) {
-		lwm2m_firmware_set_update_result(obj_inst_id, RESULT_INTEGRITY_FAILED);
+		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_INTEGRITY_FAILED);
 	} else if (ret == -ENOMSG) {
-		lwm2m_firmware_set_update_result(obj_inst_id, RESULT_UNSUP_FW);
+		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_UNSUP_FW);
 	} else {
-		lwm2m_firmware_set_update_result(obj_inst_id, RESULT_UPDATE_FAILED);
+		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_UPDATE_FAILED);
 	}
 
 	return ret;
@@ -261,17 +281,17 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	LOG_DBG("PACKAGE_URI WRITE: %s", log_strdup(package_uri[obj_inst_id]));
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-	uint8_t state = lwm2m_firmware_get_update_state(obj_inst_id);
+	uint8_t state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
 
 	if (state == STATE_IDLE) {
-		lwm2m_firmware_set_update_result(obj_inst_id, RESULT_DEFAULT);
+		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
 
 		if (data_len > 0) {
 			lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
 		}
 	} else if (state == STATE_DOWNLOADED && data_len == 0U) {
 		/* reset to state idle and result default */
-		lwm2m_firmware_set_update_result(obj_inst_id, RESULT_DEFAULT);
+		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
 	}
 
 	return 0;
@@ -307,20 +327,20 @@ static int firmware_update_cb(uint16_t obj_inst_id,
 	uint8_t state;
 	int ret;
 
-	state = lwm2m_firmware_get_update_state(obj_inst_id);
+	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
 	if (state != STATE_DOWNLOADED) {
 		LOG_ERR("State other than downloaded: %d", state);
 		return -EPERM;
 	}
 
-	lwm2m_firmware_set_update_state(obj_inst_id, STATE_UPDATING);
+	lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_UPDATING);
 
 	callback = lwm2m_firmware_get_update_cb();
 	if (callback) {
 		ret = callback(obj_inst_id, args, args_len);
 		if (ret < 0) {
 			LOG_ERR("Failed to update firmware: %d", ret);
-			lwm2m_firmware_set_update_result(obj_inst_id,
+			lwm2m_firmware_set_update_result_inst(obj_inst_id,
 				ret == -EINVAL ? RESULT_INTEGRITY_FAILED :
 						 RESULT_UPDATE_FAILED);
 			return 0;
