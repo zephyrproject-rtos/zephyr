@@ -56,6 +56,13 @@ ENTRY(rom_entry);
 #define IDT_BASE 0xe0000000
 #define IDT_SIZE 0x2000
 
+/* rimage module sections are C struct data, and thus flagged ALLOC.
+ * The xcc linker demands they be in a declared memory region even if
+ * the enclosing output section is (NOLOAD).  Put them here.
+ */
+#define NOLOAD_BASE 0x20000
+#define NOLOAD_SIZE 0x100000
+
 MEMORY {
   vector_memory_lit :
 	org = XCHAL_MEMERROR_VECTOR_PADDR + MEM_ERROR_LIT_SIZE,
@@ -139,6 +146,9 @@ MEMORY {
   lpram :
 	org = LP_SRAM_BASE,
 	len = LP_SRAM_SIZE
+  noload :
+        org = NOLOAD_BASE,
+        len = NOLOAD_SIZE
 }
 
 SECTIONS {
@@ -432,30 +442,29 @@ SECTIONS {
   . = SEGSTART_CACHED;
 
   /* rimage module manifest headers */
-  .module.boot : { KEEP(*(.module.boot)) }
-  .module.main : { KEEP(*(.module.main)) }
+  .module.boot : { KEEP(*(.module.boot)) } >noload
+  .module.main : { KEEP(*(.module.main)) } >noload
 
  .static_uuid_entries : {
     *(*.static_uuids)
-  }
+  } >noload
 
   .static_log_entries : {
     *(*.static_log*)
-  }
+  } >noload
 
   /* This is the "extended manifest" data (mostly versioning stuff)
    * emitted by SOF and inspected by the kernel driver.  It doesn't
    * appear directly in the image, but rimage will parse and repack
    * this into the output file header, so requires this be present
-   * even if empty.  Assignment to "." forces this section to be
-   * created.  Alignment and padding to 16 bytes is required,
+   * even if empty.  Alignment and padding to 16 bytes is required,
    * otherwise rimage will complain about the size being wrong (which
    * sounds like a struct should be declared packed somewhere...)
    */
   .fw_metadata : ALIGN(16) {
     KEEP (*(.fw_metadata))
     . = ALIGN(16);
-  }
+  } >noload
 
 #include <linker/debug-sections.ld>
 
