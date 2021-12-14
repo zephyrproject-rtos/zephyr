@@ -91,7 +91,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 2048 if (RISCV && 64BIT)
 	default 2048 if LOG_BACKEND_FS
 	default 1152 if LOG_BACKEND_NET
-	default 1024 if NO_OPTIMIZATIONS
+	default 4096 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
 	default 768
 	help
