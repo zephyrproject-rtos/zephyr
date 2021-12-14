@@ -100,6 +100,12 @@ static __imr void power_init(void)
 #endif
 }
 
+#if !DT_NODE_EXISTS(DT_NODELABEL(cavs0)) || CONFIG_MP_NUM_CPUS == 1
+void soc_idc_init(void) {}
+void arch_sched_ipi(void) {}
+#endif
+
+
 static __imr int soc_init(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
@@ -109,6 +115,7 @@ static __imr int soc_init(const struct device *dev)
 	}
 
 	soc_idc_init();
+
 	return 0;
 }
 
