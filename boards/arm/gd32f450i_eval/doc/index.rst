@@ -68,6 +68,9 @@ The board configuration supports the following hardware features:
    * - USART
      - :kconfig:`CONFIG_SERIAL`
      - :dtcompatible:`gd,gd32-usart`
+   * - DAC
+     - :kconfig:`CONFIG_DAC`
+     - :dtcompatible:`gd,gd32-dac`
 
 Serial Port
 ===========
