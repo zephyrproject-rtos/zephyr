@@ -472,8 +472,16 @@ struct ll_conn {
  * and/or needs to be properly integrated in the control procedures
  */
 	union {
+		struct {
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t  is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
+		} common;
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t  is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t  latency_cancel:1;
 			uint8_t  sca:3;
 			uint32_t force;
@@ -483,6 +491,9 @@ struct ll_conn {
 
 #if defined(CONFIG_BT_CENTRAL)
 		struct {
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t  is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t terminate_ack:1;
 		} central;
 #endif /* CONFIG_BT_CENTRAL */
