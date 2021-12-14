@@ -264,7 +264,7 @@ Build system:
         - CMakeLists.txt
         - scripts/zephyr_module.py
         - share/
-        - doc/guides/build/
+        - doc/build/
         - doc/guides/modules.rst
     labels:
         - "area: Build System"
@@ -1053,7 +1053,7 @@ Kconfig:
         - nashif
     files:
         - scripts/kconfig/
-        - doc/guides/build/kconfig/
+        - doc/build/kconfig/
     labels:
         - "area: Kconfig"
     description: >-

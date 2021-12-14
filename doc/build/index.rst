@@ -338,7 +338,7 @@ The following is a detailed description of the scripts used during the build pro
 :zephyr_file:`scripts/gen_syscalls.py`
 --------------------------------------
 
-.. include:: ../../../scripts/gen_syscalls.py
+.. include:: ../../scripts/gen_syscalls.py
    :start-after: """
    :end-before: """
 
@@ -347,7 +347,7 @@ The following is a detailed description of the scripts used during the build pro
 :zephyr_file:`scripts/gen_handles.py`
 --------------------------------------
 
-.. include:: ../../../scripts/gen_handles.py
+.. include:: ../../scripts/gen_handles.py
    :start-after: """
    :end-before: """
 
@@ -356,7 +356,7 @@ The following is a detailed description of the scripts used during the build pro
 :zephyr_file:`scripts/gen_kobject_list.py`
 ------------------------------------------
 
-.. include:: ../../../scripts/gen_kobject_list.py
+.. include:: ../../scripts/gen_kobject_list.py
    :start-after: """
    :end-before: """
 
@@ -365,7 +365,7 @@ The following is a detailed description of the scripts used during the build pro
 :zephyr_file:`scripts/gen_offset_header.py`
 -------------------------------------------
 
-.. include:: ../../../scripts/gen_offset_header.py
+.. include:: ../../scripts/gen_offset_header.py
    :start-after: """
    :end-before: """
 
@@ -375,7 +375,7 @@ The following is a detailed description of the scripts used during the build pro
 ----------------------------------------
 
 
-.. include:: ../../../scripts/parse_syscalls.py
+.. include:: ../../scripts/parse_syscalls.py
    :start-after: """
    :end-before: """
 
@@ -384,7 +384,7 @@ The following is a detailed description of the scripts used during the build pro
 :zephyr_file:`arch/x86/gen_idt.py`
 ----------------------------------
 
-.. include:: ../../../arch/x86/gen_idt.py
+.. include:: ../../arch/x86/gen_idt.py
    :start-after: """
    :end-before: """
 
@@ -393,7 +393,7 @@ The following is a detailed description of the scripts used during the build pro
 :zephyr_file:`arch/x86/gen_gdt.py`
 ----------------------------------
 
-.. include:: ../../../arch/x86/gen_gdt.py
+.. include:: ../../arch/x86/gen_gdt.py
    :start-after: """
    :end-before: """
 
@@ -402,7 +402,7 @@ The following is a detailed description of the scripts used during the build pro
 :zephyr_file:`scripts/gen_relocate_app.py`
 -------------------------------------------
 
-.. include:: ../../../scripts/gen_relocate_app.py
+.. include:: ../../scripts/gen_relocate_app.py
    :start-after: """
    :end-before: """
 
@@ -411,14 +411,14 @@ The following is a detailed description of the scripts used during the build pro
 :zephyr_file:`scripts/process_gperf.py`
 ---------------------------------------
 
-.. include:: ../../../scripts/process_gperf.py
+.. include:: ../../scripts/process_gperf.py
    :start-after: """
    :end-before: """
 
 :zephyr_file:`scripts/gen_app_partitions.py`
 --------------------------------------------
 
-.. include:: ../../../scripts/gen_app_partitions.py
+.. include:: ../../scripts/gen_app_partitions.py
    :start-after: """
    :end-before: """
 
