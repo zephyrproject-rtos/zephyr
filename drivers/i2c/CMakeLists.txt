@@ -34,7 +34,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_NPCX		i2c_npcx_controller.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NPCX		i2c_npcx_port.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_DW		i2c_dw.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RCAR		i2c_rcar.c)
-zephyr_library_sources_ifdef(CONFIG_I2C_TCA9546A	i2c_tca9546a.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_TCA954X		i2c_tca954x.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XEC_V2		i2c_mchp_xec_v2.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1

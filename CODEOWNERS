@@ -183,7 +183,7 @@
 /doc/guides/dts/                          @galak @mbolivar-nordic
 /doc/reference/bluetooth/                 @alwa-nordic @jhedberg @Vudentz
 /doc/reference/devicetree/                @galak @mbolivar-nordic
-/doc/reference/networking/can*            @alexanderwachter
+/doc/reference/canbus/                    @alexanderwachter
 /doc/security/                            @ceolin @d3zd3z
 /drivers/debug/                           @nashif
 /drivers/*/*sam4l*                        @nandojve
@@ -387,7 +387,7 @@
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
 /drivers/i2c/i2c_dw*                      @dcpleung
-/drivers/i2c/*tca9546a*                   @kurddt
+/drivers/i2c/*tca954x*                    @kurddt
 /drivers/*/*xec*                          @franciscomunoz @albertofloyd @scottwcpg
 /drivers/watchdog/*gecko*                 @oanerer
 /drivers/watchdog/*sifive*                @katsuster

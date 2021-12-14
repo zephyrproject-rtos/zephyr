@@ -75,13 +75,13 @@
 			#size-cells = <1>;
 		};
 
-		gpt1: gpt@400ec000 {
-			compatible = "nxp,imx-gpt";
+		/* GPT1 is used for the hardware timer, not as a standard counter */
+		gpt_hw_timer: gpt@400ec000 {
+			compatible = "nxp,gpt-hw-timer";
 			reg = <0x400ec000 0x4000>;
 			interrupts = <119 0>;
-			gptfreq = <24000000>;
-			clocks = <&ccm IMX_CCM_GPT_CLK 0x40 0>;
-			label = "GPT1";
+			label = "GPT_HW_TIMER";
+			status = "disabled";
 		};
 
 		gpt2: gpt@400f0000 {
@@ -822,4 +822,12 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <4>;
+};
+
+&systick {
+	/*
+	 * RT11xx relies by default on the GPT Timer for system clock
+	 * implementation, so the SysTick node should not be enabled.
+	 */
+	status = "disabled";
 };

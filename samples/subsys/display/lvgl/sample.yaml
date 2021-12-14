@@ -39,7 +39,7 @@ tests:
     tags: shield
   sample.display.dummy:
     build_only: true
-    platform_allow: native_posix
+    platform_allow: native_posix native_posix_64
     extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
       - CONFIG_DUMMY_DISPLAY=y

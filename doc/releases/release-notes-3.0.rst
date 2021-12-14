@@ -111,6 +111,9 @@ Bluetooth
 
 * Host
 
+  * The :kconfig:`CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE` is enabled by default.
+    Storing CCC right after it's written reduces risk of inconsistency of CCC values between bonded peers.
+
 * Mesh
 
 * Bluetooth LE split software Controller
@@ -353,6 +356,21 @@ Libraries / Subsystems
 HALs
 ****
 
+MCUboot
+*******
+
+* Fixed serial recovery skipping on nrf5340.
+* Fixed issue which caused that progressive's erase feature was off although was selected by Kconfig (introduced by #42c985cead).
+* Added check of reset address in incoming image validation phase, see ``CONFIG_MCUBOOT_VERIFY_IMG_ADDRESS``.
+* Allow image header bigger than 1 KB for encrypted images.
+* Support Mbed TLS 3.0.
+* stm32: watchdog support.
+* many documentation improvements.
+* Fixed deadlock on cryptolib selectors in Kconfig.
+* Fixed support for single application slot with serial recovery.
+* Added various hooks to be able to change how image data is accessed, see ``CONFIG_BOOT_IMAGE_ACCESS_HOOKS``.
+* Added custom commands support in serila recovery (PERUSER_MGMT_GROUP): storage erase ``CONFIG_BOOT_MGMT_CUSTOM_STORAGE_ERASE``, custo image status ``CONFIG_BOOT_MGMT_CUSTOM_IMG_LIST``.
+* Added support for direct image upload, see ``CONFIG_MCUBOOT_SERIAL_DIRECT_IMAGE_UPLOAD`` in serial recovery.
 
 Trusted Firmware-m
 ******************

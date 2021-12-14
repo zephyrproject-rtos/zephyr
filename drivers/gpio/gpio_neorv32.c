@@ -234,7 +234,7 @@ static const struct gpio_driver_api neorv32_gpio_driver_api = {
 			NULL,						\
 			&neorv32_gpio_##n##_data,			\
 			&neorv32_gpio_##n##_config,			\
-			POST_KERNEL,					\
+			PRE_KERNEL_2,					\
 			CONFIG_GPIO_INIT_PRIORITY,			\
 			&neorv32_gpio_driver_api);
 

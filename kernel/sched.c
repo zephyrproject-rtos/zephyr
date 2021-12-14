@@ -54,6 +54,11 @@ struct k_spinlock sched_spinlock;
 static void update_cache(int preempt_ok);
 static void end_thread(struct k_thread *thread);
 
+static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
+					struct k_thread *thread);
+static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
+					   struct k_thread *thread);
+
 static inline int is_preempt(struct k_thread *thread)
 {
 	/* explanation in kernel_struct.h */
@@ -173,7 +178,8 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 }
 #endif
 
-ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
+static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
+					  struct k_thread *thread)
 {
 	struct k_thread *t;
 
@@ -276,12 +282,12 @@ void z_requeue_current(struct k_thread *curr)
 		runq_add(curr);
 	}
 }
-#endif
 
 static inline bool is_aborting(struct k_thread *thread)
 {
 	return (thread->base.thread_state & _THREAD_ABORTING) != 0U;
 }
+#endif
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
@@ -916,6 +922,7 @@ struct k_thread *z_swap_next_thread(void)
 #endif
 }
 
+#ifdef CONFIG_USE_SWITCH
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
@@ -923,7 +930,6 @@ static inline void set_current(struct k_thread *new_thread)
 	_current_cpu->current = new_thread;
 }
 
-#ifdef CONFIG_USE_SWITCH
 void *z_get_next_switch_handle(void *interrupted)
 {
 	z_check_stack_sentinel();
@@ -1077,7 +1083,8 @@ struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
 # endif
 #endif
 
-ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
+static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
+					struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
@@ -1085,7 +1092,8 @@ ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
 	pq->bitmask |= BIT(priority_bit);
 }
 
-ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread)
+static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
+					   struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 

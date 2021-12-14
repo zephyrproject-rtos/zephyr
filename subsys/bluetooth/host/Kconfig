@@ -151,14 +151,11 @@ config BT_SETTINGS_CCC_LAZY_LOADING
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
 	depends on BT_CONN
+	default y
 	help
 	  Store Client Configuration Characteristic value right after it has
-	  been updated.
-
-	  By default, CCC is only stored on disconnection.
-	  Choosing this option is safer for battery-powered devices or devices
-	  that expect to be reset suddenly. However, it requires additional
-	  workqueue stack space.
+	  been updated. If the option is disabled, the CCC is only stored on
+	  disconnection.
 
 config BT_SETTINGS_USE_PRINTK
 	bool "Use snprintk to encode Bluetooth settings key strings"

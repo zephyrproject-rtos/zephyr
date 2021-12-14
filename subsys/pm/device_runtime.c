@@ -183,9 +183,10 @@ void pm_device_runtime_enable(const struct device *dev)
 	/* lazy init of PM fields */
 	if (pm->dev == NULL) {
 		pm->dev = dev;
-		pm->state = PM_DEVICE_STATE_SUSPENDED;
 		k_work_init_delayable(&pm->work, runtime_suspend_work);
 	}
+	pm->state = PM_DEVICE_STATE_SUSPENDED;
+	pm->usage = 0U;
 
 	atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
 

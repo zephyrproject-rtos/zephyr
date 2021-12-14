@@ -60,6 +60,10 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 #define IT8XXX2_ESPI_INPUT_PAD_GATING          BIT(6)
 
+#define IT8XXX2_ESPI_FLASH_MAX_PAYLOAD_SIZE    64
+#define IT8XXX2_ESPI_PUT_FLASH_TAG_MASK        GENMASK(7, 4)
+#define IT8XXX2_ESPI_PUT_FLASH_LEN_MASK        GENMASK(6, 0)
+
 struct espi_it8xxx2_config {
 	uintptr_t base_espi_slave;
 	uintptr_t base_espi_vw;
@@ -74,6 +78,13 @@ struct espi_it8xxx2_data {
 	sys_slist_t callbacks;
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	struct k_sem oob_upstream_go;
+#endif
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+	struct k_sem flash_upstream_go;
+	uint8_t put_flash_cycle_type;
+	uint8_t put_flash_tag;
+	uint8_t put_flash_len;
+	uint8_t flash_buf[IT8XXX2_ESPI_FLASH_MAX_PAYLOAD_SIZE];
 #endif
 };
 
@@ -834,6 +845,236 @@ static void espi_it8xxx2_oob_init(const struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+#define ESPI_FLASH_TAG                      0x01
+#define ESPI_FLASH_READ_TIMEOUT_MS          200
+#define ESPI_FLASH_WRITE_TIMEOUT_MS         500
+#define ESPI_FLASH_ERASE_TIMEOUT_MS         1000
+
+/* Successful completion without data */
+#define ESPI_IT8XXX2_PUT_FLASH_C_SCWOD      0
+/* Successful completion with data */
+#define ESPI_IT8XXX2_PUT_FLASH_C_SCWD       4
+
+enum espi_flash_cycle_type {
+	IT8XXX2_ESPI_CYCLE_TYPE_FLASH_READ = 0x08,
+	IT8XXX2_ESPI_CYCLE_TYPE_FLASH_WRITE = 0x09,
+	IT8XXX2_ESPI_CYCLE_TYPE_FLASH_ERASE = 0x0A,
+};
+
+static int espi_it8xxx2_flash_trans(const struct device *dev,
+				struct espi_flash_packet *pckt,
+				enum espi_flash_cycle_type tran)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+	struct espi_queue1_regs *const queue1_reg =
+		(struct espi_queue1_regs *)config->base_espi_queue1;
+
+	if (!(slave_reg->CH_FLASH_CAPCFG3 & IT8XXX2_ESPI_FC_READY_MASK)) {
+		LOG_ERR("%s: Flash channel isn't ready (tran:%d)",
+			__func__, tran);
+		return -EIO;
+	}
+
+	if (slave_reg->ESUCTRL0 & IT8XXX2_ESPI_UPSTREAM_BUSY) {
+		LOG_ERR("%s: Upstream busy (tran:%d)", __func__, tran);
+		return -EIO;
+	}
+
+	if (pckt->len > IT8XXX2_ESPI_FLASH_MAX_PAYLOAD_SIZE) {
+		LOG_ERR("%s: Invalid size request (tran:%d)", __func__, tran);
+		return -EINVAL;
+	}
+
+	/* Set cycle type */
+	slave_reg->ESUCTRL1 = tran;
+	/* Set tag and length[11:8] */
+	slave_reg->ESUCTRL2 = (ESPI_FLASH_TAG << 4);
+	/*
+	 * Set length [7:0]
+	 * Note: for erasing, the least significant 3 bit of the length field
+	 * specifies the size of the block to be erased:
+	 * 001b: 4 Kbytes
+	 * 010b: 64Kbytes
+	 * 100b: 128 Kbytes
+	 * 101b: 256 Kbytes
+	 */
+	slave_reg->ESUCTRL3 = pckt->len;
+	/* Set flash address */
+	queue1_reg->UPSTREAM_DATA[0] = (pckt->flash_addr >> 24) & 0xff;
+	queue1_reg->UPSTREAM_DATA[1] = (pckt->flash_addr >> 16) & 0xff;
+	queue1_reg->UPSTREAM_DATA[2] = (pckt->flash_addr >> 8) & 0xff;
+	queue1_reg->UPSTREAM_DATA[3] = pckt->flash_addr & 0xff;
+
+	return 0;
+}
+
+static int espi_it8xxx2_flash_read(const struct device *dev,
+					struct espi_flash_packet *pckt)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+	int ret;
+
+	ret = espi_it8xxx2_flash_trans(dev, pckt,
+					IT8XXX2_ESPI_CYCLE_TYPE_FLASH_READ);
+	if (ret) {
+		return ret;
+	}
+
+	/* Set upstream enable */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_ENABLE;
+	/* Set upstream go */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_GO;
+
+	/* Wait until upstream done or timeout */
+	ret = k_sem_take(&data->flash_upstream_go,
+			K_MSEC(ESPI_FLASH_READ_TIMEOUT_MS));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s: Timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	if (data->put_flash_cycle_type != ESPI_IT8XXX2_PUT_FLASH_C_SCWD) {
+		LOG_ERR("%s: Unsuccessful completion", __func__);
+		return -EIO;
+	}
+
+	memcpy(pckt->buf, data->flash_buf, pckt->len);
+
+	LOG_INF("%s: read (%d) bytes from flash over espi", __func__,
+		data->put_flash_len);
+
+	return 0;
+}
+
+static int espi_it8xxx2_flash_write(const struct device *dev,
+					struct espi_flash_packet *pckt)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+	struct espi_queue1_regs *const queue1_reg =
+		(struct espi_queue1_regs *)config->base_espi_queue1;
+	int ret;
+
+	ret = espi_it8xxx2_flash_trans(dev, pckt,
+					IT8XXX2_ESPI_CYCLE_TYPE_FLASH_WRITE);
+	if (ret) {
+		return ret;
+	}
+
+	/* Set data byte */
+	for (int i = 0; i < pckt->len; i++) {
+		queue1_reg->UPSTREAM_DATA[4 + i] = pckt->buf[i];
+	}
+
+	/* Set upstream enable */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_ENABLE;
+	/* Set upstream go */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_GO;
+
+	/* Wait until upstream done or timeout */
+	ret = k_sem_take(&data->flash_upstream_go,
+			K_MSEC(ESPI_FLASH_WRITE_TIMEOUT_MS));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s: Timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	if (data->put_flash_cycle_type != ESPI_IT8XXX2_PUT_FLASH_C_SCWOD) {
+		LOG_ERR("%s: Unsuccessful completion", __func__);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int espi_it8xxx2_flash_erase(const struct device *dev,
+					struct espi_flash_packet *pckt)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+	int ret;
+
+	ret = espi_it8xxx2_flash_trans(dev, pckt,
+					IT8XXX2_ESPI_CYCLE_TYPE_FLASH_ERASE);
+	if (ret) {
+		return ret;
+	}
+
+	/* Set upstream enable */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_ENABLE;
+	/* Set upstream go */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_GO;
+
+	/* Wait until upstream done or timeout */
+	ret = k_sem_take(&data->flash_upstream_go,
+			K_MSEC(ESPI_FLASH_ERASE_TIMEOUT_MS));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s: Timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	if (data->put_flash_cycle_type != ESPI_IT8XXX2_PUT_FLASH_C_SCWOD) {
+		LOG_ERR("%s: Unsuccessful completion", __func__);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static void espi_it8xxx2_flash_upstream_done_isr(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+	struct espi_queue1_regs *const queue1_reg =
+		(struct espi_queue1_regs *)config->base_espi_queue1;
+
+	data->put_flash_cycle_type = slave_reg->ESUCTRL6;
+	data->put_flash_tag = slave_reg->ESUCTRL7 &
+				IT8XXX2_ESPI_PUT_FLASH_TAG_MASK;
+	data->put_flash_len = slave_reg->ESUCTRL8 &
+				IT8XXX2_ESPI_PUT_FLASH_LEN_MASK;
+
+	if (slave_reg->ESUCTRL1 == IT8XXX2_ESPI_CYCLE_TYPE_FLASH_READ) {
+		if (data->put_flash_len > IT8XXX2_ESPI_FLASH_MAX_PAYLOAD_SIZE) {
+			LOG_ERR("%s: Invalid size (%d)", __func__,
+							data->put_flash_len);
+		} else {
+			for (int i = 0; i < data->put_flash_len; i++) {
+				data->flash_buf[i] =
+					queue1_reg->UPSTREAM_DATA[i];
+			}
+		}
+	}
+
+	k_sem_give(&data->flash_upstream_go);
+}
+
+static void espi_it8xxx2_flash_init(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_it8xxx2_data *const data = dev->data;
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+
+	k_sem_init(&data->flash_upstream_go, 0, 1);
+
+	/* Upstream interrupt enable */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_INTERRUPT_ENABLE;
+}
+#endif /* CONFIG_ESPI_FLASH_CHANNEL */
+
 /* eSPI driver registration */
 static int espi_it8xxx2_init(const struct device *dev);
 
@@ -848,6 +1089,11 @@ static const struct espi_driver_api espi_it8xxx2_driver_api = {
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	.send_oob = espi_it8xxx2_send_oob,
 	.receive_oob = espi_it8xxx2_receive_oob,
+#endif
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+	.flash_read = espi_it8xxx2_flash_read,
+	.flash_write = espi_it8xxx2_flash_write,
+	.flash_erase = espi_it8xxx2_flash_erase,
 #endif
 };
 
@@ -1193,18 +1439,6 @@ static void espi_it8xxx2_upstream_channel_disable_isr(const struct device *dev)
 	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_CHANNEL_DISABLE;
 }
 
-static void espi_it8xxx2_upstream_done_isr(const struct device *dev)
-{
-	const struct espi_it8xxx2_config *const config = dev->config;
-	struct espi_slave_regs *const slave_reg =
-		(struct espi_slave_regs *)config->base_espi_slave;
-
-	/* write-1 to clear this bit */
-	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_DONE;
-	/* upstream disable */
-	slave_reg->ESUCTRL0 &= ~IT8XXX2_ESPI_UPSTREAM_ENABLE;
-}
-
 static void espi_it8xxx2_put_oob_status_isr(const struct device *dev)
 {
 	const struct espi_it8xxx2_config *const config = dev->config;
@@ -1216,6 +1450,27 @@ static void espi_it8xxx2_put_oob_status_isr(const struct device *dev)
 	slave_reg->ESOCTRL0 |= IT8XXX2_ESPI_PUT_OOB_STATUS;
 
 	k_sem_give(&data->oob_upstream_go);
+}
+#endif
+
+#if defined(CONFIG_ESPI_OOB_CHANNEL) || defined(CONFIG_ESPI_FLASH_CHANNEL)
+static void espi_it8xxx2_upstream_done_isr(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = dev->config;
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+	/* cycle type is flash read, write, or erase */
+	if (slave_reg->ESUCTRL1 != IT8XXX2_ESPI_CYCLE_TYPE_OOB) {
+		espi_it8xxx2_flash_upstream_done_isr(dev);
+	}
+#endif
+
+	/* write-1 to clear this bit */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_DONE;
+	/* upstream disable */
+	slave_reg->ESUCTRL0 &= ~IT8XXX2_ESPI_UPSTREAM_ENABLE;
 }
 #endif
 
@@ -1241,7 +1496,7 @@ static void espi_it8xxx2_isr(const struct device *dev)
 		(struct espi_slave_regs *)config->base_espi_slave;
 	/* get espi interrupt events */
 	uint8_t espi_event = slave_reg->ESGCTRL0;
-#ifdef CONFIG_ESPI_OOB_CHANNEL
+#if defined(CONFIG_ESPI_OOB_CHANNEL) || defined(CONFIG_ESPI_FLASH_CHANNEL)
 	uint8_t espi_upstream = slave_reg->ESUCTRL0;
 #endif
 
@@ -1274,14 +1529,17 @@ static void espi_it8xxx2_isr(const struct device *dev)
 		espi_it8xxx2_upstream_channel_disable_isr(dev);
 	}
 
-	/* The eSPI upstream transaction is done. */
-	if (espi_upstream & IT8XXX2_ESPI_UPSTREAM_DONE) {
-		espi_it8xxx2_upstream_done_isr(dev);
-	}
-
 	/* The eSPI slave has received a PUT_OOB message. */
 	if (slave_reg->ESOCTRL0 & IT8XXX2_ESPI_PUT_OOB_STATUS) {
 		espi_it8xxx2_put_oob_status_isr(dev);
+	}
+#endif
+
+	/* eSPI oob and flash channels use the same interrupt of upstream. */
+#if defined(CONFIG_ESPI_OOB_CHANNEL) || defined(CONFIG_ESPI_FLASH_CHANNEL)
+	/* The eSPI upstream transaction is done. */
+	if (espi_upstream & IT8XXX2_ESPI_UPSTREAM_DONE) {
+		espi_it8xxx2_upstream_done_isr(dev);
 	}
 #endif
 }
@@ -1396,6 +1654,10 @@ static int espi_it8xxx2_init(const struct device *dev)
 
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	espi_it8xxx2_oob_init(dev);
+#endif
+
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+	espi_it8xxx2_flash_init(dev);
 #endif
 
 	/* Enable espi interrupt */

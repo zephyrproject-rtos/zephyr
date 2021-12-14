@@ -73,7 +73,7 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 749fdd4b9dc9dfc57daac1229a5a669109e14624
+      revision: 2eafc9d95b623757df0027dd08ed1b693d3bb770
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -124,7 +124,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 6fc9b5f7e0229ef64a882e37213266d346ebfadb
+      revision: 5ca535df5874d1f9ab931265a2b1f691b76df9ce
       path: modules/hal/stm32
       groups:
         - hal
@@ -168,7 +168,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 225b02468bf77806bdd5f503725256cb345970d2
+      revision: 33906b472a6c0ed4e2ca3520eb4eed1db40c6018
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t

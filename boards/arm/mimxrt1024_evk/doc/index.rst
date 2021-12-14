@@ -99,6 +99,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1024_evk/mimxrt1024_evk_defconfig``
@@ -161,8 +163,8 @@ The MIMXRT1024 SoC has five pairs of pinmux/gpio controllers.
 System Clock
 ============
 
-The MIMXRT1024 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 500 MHz core clock.
+The MIMXRT1024 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========

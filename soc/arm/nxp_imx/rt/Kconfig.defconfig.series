@@ -69,6 +69,13 @@ endchoice
 
 endif
 
+# set the tick per sec as a divider of the GPT clock source
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if MCUX_GPT_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if MCUX_GPT_TIMER
+
 if COUNTER
 
 config COUNTER_MCUX_GPT
@@ -190,6 +197,17 @@ config TEST_EXTRA_STACKSIZE
 	int
 	default 1024
 endif # MBEDTLS
+
+if MCUX_GPT_TIMER
+
+# set the tick per sec as a divider of the GPT clock source
+config SYS_CLOCK_TICKS_PER_SEC
+	default 8192
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32786
+
+endif #MCUX_GPT_TIMER
 
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 

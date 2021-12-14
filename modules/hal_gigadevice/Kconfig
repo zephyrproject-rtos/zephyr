@@ -35,6 +35,11 @@ config USE_GD32_CAN
 	help
 	  Enable GD32 Controller Area Network (CAN) HAL module driver
 
+config USE_GD32_CEC
+	bool
+	help
+	  Enable GD32 Consumer Electronics Control (CEC) HAL module driver
+
 config USE_GD32_CMP
 	bool
 	help
@@ -190,6 +195,11 @@ config USE_GD32_TRNG
 	bool
 	help
 	  Enable GD32 True Random Number Generator (TRNG) HAL module driver
+
+config USE_GD32_TSI
+	bool
+	help
+	  Enable GD32 Touch Sensing Interface (TSI) HAL module driver
 
 config USE_GD32_USART
 	bool

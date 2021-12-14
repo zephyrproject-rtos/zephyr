@@ -4,4 +4,5 @@ sample:
 tests:
   sample.drivers.led.pca9633:
     depends_on: arduino_i2c
+    build_only: true
     tags: LED

@@ -19,7 +19,6 @@ LOG_MODULE_DECLARE(net_google_iot_mqtt, LOG_LEVEL_DBG);
 #include <net/mqtt.h>
 
 #include <mbedtls/platform.h>
-#include <mbedtls/net.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
