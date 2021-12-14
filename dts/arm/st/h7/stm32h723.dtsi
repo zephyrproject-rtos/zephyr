@@ -35,6 +35,11 @@
 		dmamux1: dmamux@40020800 {
 			dma-requests= <129>;
 		};
+
+		rng: rng@48021800 {
+			health-test-magic = <0x17590abc>;
+			health-test-config = <0xaa74>;
+		};
 	};
 
 	/* DTCM memory directly coppled to CPU */
