@@ -23,6 +23,21 @@ config LWM2M_DTLS_SUPPORT
 	select NET_SOCKETS_SOCKOPT_TLS
 	select NET_SOCKETS_ENABLE_DTLS
 
+choice
+	prompt "LwM2M Server object version"
+	default LWM2M_SERVER_OBJECT_VERSION_1_0
+	help
+	  Select which version of the Server object should be used.
+
+config LWM2M_SERVER_OBJECT_VERSION_1_0
+	bool "Server object version 1.0"
+
+config LWM2M_SERVER_OBJECT_VERSION_1_1
+	bool "Server object version 1.1 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endchoice
+
 config LWM2M_DNS_SUPPORT
 	bool "Enable DNS support in the LWM2M client"
 	default y if DNS_RESOLVER
