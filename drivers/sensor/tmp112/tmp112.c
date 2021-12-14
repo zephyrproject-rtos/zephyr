@@ -53,7 +53,7 @@ static int tmp112_update_config(const struct device *dev, uint16_t mask,
 
 	rc = tmp112_reg_write(dev->config, TMP112_REG_CONFIG, new_val);
 	if (rc == 0) {
-		data->config_reg = val;
+		data->config_reg = new_val;
 	}
 
 	return rc;
