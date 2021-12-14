@@ -67,4 +67,5 @@ K_THREAD_DEFINE(test_thread_id, STACK_SIZE, test_thread, NULL, NULL, NULL, K_PRI
 
 void main(void)
 {
+	k_thread_join(test_thread_id, K_FOREVER);
 }
