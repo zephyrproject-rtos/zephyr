@@ -34,12 +34,13 @@ void main(void)
 	struct test_frame frame = { 0 };
 	const uint8_t data[DATA_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
 					0x05, 0x06, 0x07, 0x08 };
-	struct log_msg_ids src_level = {
-		.level = LOG_LEVEL_INTERNAL_RAW_STRING,
-		.source_id = 0, /* not used as level indicates raw string. */
-		.domain_id = 0, /* not used as level indicates raw string. */
-	};
-
+	#ifndef CONFIG_LOG2
+		struct log_msg_ids src_level = {
+			.level = LOG_LEVEL_INTERNAL_RAW_STRING,
+			.source_id = 0, /* not used as level indicates raw string. */
+			.domain_id = 0, /* not used as level indicates raw string. */
+		};
+	#endif
 
 	/* standard print */
 	LOG_ERR("Error message example.");
@@ -67,6 +68,9 @@ void main(void)
 	/* raw string */
 	printk("hello sys-t on board %s\n", CONFIG_BOARD);
 
-	/* log output string */
-	log_string_sync(src_level, "%s", "log string sync");
+	#ifndef CONFIG_LOG2
+		/* log output string */
+		log_string_sync(src_level, "%s", "log string sync");
+	#endif
+
 }
