@@ -59,10 +59,20 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/* NOTE: bridge TIMER0_CH0 (PA8) and LED2 (PF0) */
+		pwm_led: pwm_led {
+			pwms = <&pwm0 0 PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	aliases {
 		led0 = &led2;
 		led1 = &led3;
 		sw0 = &user_key1;
+		pwm-led0 = &pwm_led;
 	};
 };
 
@@ -83,4 +93,15 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "okay";
+	prescaler = <256>;
+
+	pwm0: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm0_default>;
+		pinctrl-names = "default";
+	};
 };
