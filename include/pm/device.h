@@ -172,7 +172,7 @@ struct pm_device {
 /**
  * Define device PM resources for the given node identifier.
  *
- * @param node_id Node identifier (DT_NODE_INVALID if not a DT device).
+ * @param node_id Node identifier (DT_INVALID_NODE if not a DT device).
  * @param dev_name Device name.
  * @param pm_action_cb PM control callback.
  */
