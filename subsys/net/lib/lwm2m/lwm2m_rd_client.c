@@ -112,8 +112,8 @@ struct lwm2m_rd_client_info {
 	char server_ep[CLIENT_EP_LEN];
 
 	lwm2m_ctx_event_cb_t event_cb;
-
 	bool use_bootstrap : 1;
+
 	bool trigger_update : 1;
 	bool update_objects : 1;
 } client;
@@ -330,6 +330,24 @@ static void do_bootstrap_reg_timeout_cb(struct lwm2m_message *msg)
 }
 #endif
 
+int engine_trigger_bootstrap(void)
+{
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	if (!sm_is_registered()) {
+		/* Bootstrap is not possible to trig */
+		LOG_WRN("Cannot trigger bootstrap from state %u", client.engine_state);
+		return -EPERM;
+	}
+
+	LOG_INF("Server Initiated Bootstrap");
+	client.use_bootstrap = true;
+	client.engine_state = ENGINE_INIT;
+
+	return 0;
+#else
+	return -EPERM;
+#endif
+}
 static int do_registration_reply_cb(const struct coap_packet *response,
 				    struct coap_reply *reply,
 				    const struct sockaddr *from)
@@ -682,6 +700,7 @@ static int sm_bootstrap_trans_done(void)
 
 	/* reset security object instance */
 	client.ctx->sec_obj_inst = -1;
+	client.use_bootstrap = false;
 
 	set_sm_state(ENGINE_DO_REGISTRATION);
 
