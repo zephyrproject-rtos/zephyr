@@ -54,7 +54,7 @@ SECTION_FUNC(exception.other, arch_swap)
 	addi a0, t2, 0
 
 	/* Return */
-	jalr x0, ra
+	ret
 
 
 /*

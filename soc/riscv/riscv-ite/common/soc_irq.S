@@ -57,4 +57,4 @@ SECTION_FUNC(exception.other, __soc_is_irq)
 
 not_interrupt:
 	/* return */
-	jalr x0, ra
+	ret
