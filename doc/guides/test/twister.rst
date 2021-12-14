@@ -561,14 +561,14 @@ this example we are using a reel_board and an nrf52840dk_nrf52840::
     product: DAPLink CMSIS-DAP
     runner: pyocd
     serial: /dev/cu.usbmodem146114202
-    baud: '9600'
+    baud: 9600
   - connected: true
     id: 000683759358
     platform: nrf52840dk_nrf52840
     product: J-Link
     runner: nrfjprog
     serial: /dev/cu.usbmodem0006837593581
-    baud: '9600'
+    baud: 9600
 
 The baud entry is only needed if not running at 115200.
 
