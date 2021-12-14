@@ -29,7 +29,7 @@ sequence:
         required: true
       "serial":
         type: str
-        required: false
+        required: true
       "baud":
         type: int
         required: false
