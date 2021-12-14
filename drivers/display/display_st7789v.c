@@ -15,6 +15,7 @@
 #include <device.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
+#include <drivers/led.h>
 #include <pm/device.h>
 #include <sys/byteorder.h>
 #include <drivers/display.h>
@@ -37,6 +38,8 @@ struct st7789v_config {
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	struct gpio_dt_spec reset_gpio;
 #endif
+	const struct device *backlight_dev;
+	uint32_t backlight_led;
 };
 
 struct st7789v_data {
@@ -206,7 +209,13 @@ static void *st7789v_get_framebuffer(const struct device *dev)
 static int st7789v_set_brightness(const struct device *dev,
 			   const uint8_t brightness)
 {
-	return -ENOTSUP;
+	const struct st7789v_config *config = dev->config;
+
+	if (config->backlight_dev) {
+		return led_set_brightness(config->backlight_dev, config->backlight_led, brightness);
+	} else {
+		return -ENOTSUP;
+	}
 }
 
 static int st7789v_set_contrast(const struct device *dev,
@@ -351,6 +360,18 @@ static int st7789v_init(const struct device *dev)
 	}
 #endif
 
+	if (config->backlight_dev) {
+		if (!device_is_ready(config->backlight_dev)) {
+			LOG_ERR("Could not get led device for display backlight");
+			return -ENODEV;
+		}
+
+		if (led_on(config->backlight_dev, config->backlight_led)) {
+			LOG_ERR("Couldn't power on display backlight led");
+			return -EIO;
+		}
+	}
+
 	if (!device_is_ready(config->cmd_data_gpio.port)) {
 		LOG_ERR("Reset GPIO device not ready");
 		return -ENODEV;
@@ -412,6 +433,10 @@ static const struct st7789v_config st7789v_config = {
 	.cmd_data_gpio = GPIO_DT_SPEC_INST_GET(0, cmd_data_gpios),
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#endif
+#if DT_INST_NODE_HAS_PROP(0, backlight_led)
+	.backlight_dev = DEVICE_DT_GET_OR_NULL(DT_PARENT(DT_INST_PHANDLE(0, backlight_led))),
+	.backlight_led = DT_NODE_CHILD_IDX(DT_INST_PHANDLE(0, backlight_led)),
 #endif
 };
 
