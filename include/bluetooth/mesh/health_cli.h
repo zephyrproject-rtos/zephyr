@@ -112,6 +112,14 @@ int bt_mesh_health_cli_set(struct bt_mesh_model *model);
 
 /** @brief Get the registered fault state for the given Company ID.
  *
+ *  This method can be used asynchronously by setting @p test_id
+ *  and ( @p faults or @p fault_count ) as NULL This way the method
+ *  will not wait for response and will return immediately after
+ *  sending the command.
+ *
+ *  To process the response arguments of an async method, register
+ *  the @c fault_status callback in @c bt_mesh_health_cli struct.
+ *
  *  @see bt_mesh_health_faults
  *
  *  @param addr        Target node element address.
@@ -128,6 +136,14 @@ int bt_mesh_health_fault_get(uint16_t addr, uint16_t app_idx, uint16_t cid,
 			     size_t *fault_count);
 
 /** @brief Clear the registered faults for the given Company ID.
+ *
+ *  This method can be used asynchronously by setting @p test_id
+ *  and ( @p faults or @p fault_count ) as NULL This way the method
+ *  will not wait for response and will return immediately after
+ *  sending the command.
+ *
+ *  To process the response arguments of an async method, register
+ *  the @c fault_status callback in @c bt_mesh_health_cli struct.
  *
  *  @see bt_mesh_health_faults
  *
@@ -158,6 +174,13 @@ int bt_mesh_health_fault_clear_unack(uint16_t addr, uint16_t app_idx,
 				     uint16_t cid);
 
 /** @brief Invoke a self-test procedure for the given Company ID.
+ *
+ *  This method can be used asynchronously by setting @p faults
+ *  or @p fault_count as NULL This way the method will not wait
+ *  for response and will return immediately after sending the command.
+ *
+ *  To process the response arguments of an async method, register
+ *  the @c fault_status callback in @c bt_mesh_health_cli struct.
  *
  *  @param addr        Target node element address.
  *  @param app_idx     Application index to encrypt with.
@@ -194,6 +217,13 @@ int bt_mesh_health_fault_test_unack(uint16_t addr, uint16_t app_idx,
  *  Health fast period divisor is 5, the Health server will publish with an
  *  interval of 500 ms when a fault is registered.
  *
+ *  This method can be used asynchronously by setting @p divisor
+ *  as NULL. This way the method will not wait for response and will
+ *  return immediately after sending the command.
+ *
+ *  To process the response arguments of an async method, register
+ *  the @c period_status callback in @c bt_mesh_health_cli struct.
+ *
  *  @param addr    Target node element address.
  *  @param app_idx Application index to encrypt with.
  *  @param divisor Health period divisor response buffer.
@@ -212,6 +242,13 @@ int bt_mesh_health_period_get(uint16_t addr, uint16_t app_idx,
  *  Health server is configured to publish with a period of 16 seconds, and the
  *  Health fast period divisor is 5, the Health server will publish with an
  *  interval of 500 ms when a fault is registered.
+ *
+ *  This method can be used asynchronously by setting @p updated_divisor
+ *  as NULL. This way the method will not wait for response and will
+ *  return immediately after sending the command.
+ *
+ *  To process the response arguments of an async method, register
+ *  the @c period_status callback in @c bt_mesh_health_cli struct.
  *
  *  @param addr            Target node element address.
  *  @param app_idx         Application index to encrypt with.
@@ -238,6 +275,13 @@ int bt_mesh_health_period_set_unack(uint16_t addr, uint16_t app_idx,
 
 /** @brief Get the current attention timer value.
  *
+ *  This method can be used asynchronously by setting @p attention
+ *  as NULL. This way the method will not wait for response and will
+ *  return immediately after sending the command.
+ *
+ *  To process the response arguments of an async method, register
+ *  the @c attention_status callback in @c bt_mesh_health_cli struct.
+ *
  *  @param addr      Target node element address.
  *  @param app_idx   Application index to encrypt with.
  *  @param attention Attention timer response buffer, measured in seconds.
@@ -248,6 +292,13 @@ int bt_mesh_health_attention_get(uint16_t addr, uint16_t app_idx,
 				 uint8_t *attention);
 
 /** @brief Set the attention timer.
+ *
+ *  This method can be used asynchronously by setting @p updated_attention
+ *  as NULL. This way the method will not wait for response and will
+ *  return immediately after sending the command.
+ *
+ *  To process the response arguments of an async method, register
+ *  the @c attention_status callback in @c bt_mesh_health_cli struct.
  *
  *  @param addr              Target node element address.
  *  @param app_idx           Application index to encrypt with.
