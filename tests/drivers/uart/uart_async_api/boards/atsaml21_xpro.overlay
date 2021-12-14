@@ -1,0 +1,29 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2021 Argentum Systems Ltd.
+ */
+
+&dmac {
+	status = "okay";
+};
+
+&sercom1 {
+	/* internally loop-back Tx and Rx on PAD0 */
+	rxpo = <0>;
+	txpo = <0>;
+
+	/* configure DMA channels for async operation */
+	dmas = <&dmac 0 0x03>, <&dmac 1 0x04>;
+	dma-names = "rx", "tx";
+};
+
+&sercom3 {
+	/* configure DMA channels for async operation */
+	dmas = <&dmac 10 0x07>, <&dmac 11 0x08>;
+	dma-names = "rx", "tx";
+};
+
+&sercom4 {
+	status = "disabled";
+};
