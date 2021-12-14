@@ -295,6 +295,7 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_ENET
+	select HAS_MCUX_GPC
 
 config SOC_MIMXRT1176_CM4
 	bool "SOC_MIMXRT1176_CM4"
@@ -319,6 +320,7 @@ config SOC_MIMXRT1176_CM4
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_ENET
+	select HAS_MCUX_GPC
 
 config SOC_MIMXRT1166_CM7
 	bool "SOC_MIMXRT1166_CM7"
@@ -350,6 +352,7 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_ENET
+	select HAS_MCUX_GPC
 
 
 config SOC_MIMXRT1166_CM4
@@ -375,6 +378,7 @@ config SOC_MIMXRT1166_CM4
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_ENET
+	select HAS_MCUX_GPC
 
 endchoice
 
@@ -597,6 +601,9 @@ config BYPASS_LDO_LPSR
 
 config ADJUST_LDO
 	bool "Adjust LDO setting"
+
+config PM_MCUX_GPC
+	bool "MCUX general power controller driver"
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Enable the boot header"
