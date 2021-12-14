@@ -28,8 +28,12 @@ extern "C" {
  * @funcprops \pre_kernel_ok
  *
  * @param dev Device instance.
+ *
+ * @retval 0 If the device runtime PM is enabled successfully.
+ * @retval -EPERM If device has power state locked.
+ * @retval -ENOSYS If the functionality is not available.
  */
-void pm_device_runtime_enable(const struct device *dev);
+int pm_device_runtime_enable(const struct device *dev);
 
 /**
  * @brief Disable device runtime PM
@@ -131,7 +135,7 @@ int pm_device_runtime_put_async(const struct device *dev);
 bool pm_device_runtime_is_enabled(const struct device *dev);
 
 #else
-static inline void pm_device_runtime_enable(const struct device *dev) { }
+static inline int pm_device_runtime_enable(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_runtime_disable(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_runtime_get(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_runtime_put(const struct device *dev) { return -ENOSYS; }

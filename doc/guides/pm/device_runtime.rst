@@ -154,7 +154,10 @@ must perform the necessary operations to suspend the device.
         ...
         /* make sure the device physically is suspended */
         /* enable device runtime power management */
-        pm_device_runtime_enable(dev);
+        ret = pm_device_runtime_enable(dev);
+        if (ret < 0) {
+                return ret;
+        }
         ...
     }
 
