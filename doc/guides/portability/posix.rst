@@ -308,9 +308,9 @@ This is implemented as part of the minimal C library available in Zephyr.
     strtok_r(),+
     strtol(),+
     strtold(),
-    strtoll(),
+    strtoll(),+
     strtoul(),+
-    strtoull(),
+    strtoull(),+
     strtoumax(),
     strxfrm(),
     time(),+
