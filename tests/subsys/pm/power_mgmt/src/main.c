@@ -304,7 +304,8 @@ void test_power_state_trans(void)
 	k_sleep(SLEEP_TIMEOUT);
 	zassert_true(leave_idle, NULL);
 
-	pm_device_runtime_enable(device_dummy);
+	ret = pm_device_runtime_enable(device_dummy);
+	zassert_true(ret == 0, "Failed to enable device runtime PM");
 
 	pm_notifier_unregister(&notifier);
 }
