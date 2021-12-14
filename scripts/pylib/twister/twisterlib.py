@@ -4273,6 +4273,7 @@ class HardwareMap:
                             s_dev.runner = runner
 
                 s_dev.connected = True
+                s_dev.lock = None
                 self.detected.append(s_dev)
             else:
                 logger.warning("Unsupported device (%s): %s" % (d.manufacturer, d))
