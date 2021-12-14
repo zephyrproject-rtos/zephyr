@@ -185,6 +185,11 @@ Bluetooth:
         - subsys/bluetooth/shell/
         - subsys/bluetooth/audio/
         - tests/bluetooth/
+    files-exclude:
+        - include/bluetooth/mesh/
+        - subsys/bluetooth/controller/
+        - subsys/bluetooth/mesh/
+        - samples/bluetooth/mesh/
     labels:
         - "area: Bluetooth"
 
@@ -203,6 +208,7 @@ Bluetooth controller:
         - subsys/bluetooth/controller/
     labels:
         - "area: Bluetooth Controller"
+        - "area: Bluetooth"
 
 Bluetooth Mesh:
     status: maintained
@@ -219,6 +225,7 @@ Bluetooth Mesh:
         - tests/bluetooth/mesh*/
     labels:
         - "area: Bluetooth Mesh"
+        - "area: Bluetooth"
 
 Build system:
     status: maintained
