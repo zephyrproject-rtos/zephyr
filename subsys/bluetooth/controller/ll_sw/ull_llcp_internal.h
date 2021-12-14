@@ -415,6 +415,8 @@ void llcp_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
  * LLCP Local Request
  */
 struct proc_ctx *llcp_lr_peek(struct ll_conn *conn);
+void llcp_lr_pause(struct ll_conn *conn);
+void llcp_lr_resume(struct ll_conn *conn);
 void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
@@ -431,6 +433,8 @@ void llcp_lr_abort(struct ll_conn *conn);
 void llcp_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat);
 bool llcp_rr_get_collision(struct ll_conn *conn);
 struct proc_ctx *llcp_rr_peek(struct ll_conn *conn);
+void llcp_rr_pause(struct ll_conn *conn);
+void llcp_rr_resume(struct ll_conn *conn);
 void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_rr_init(struct ll_conn *conn);

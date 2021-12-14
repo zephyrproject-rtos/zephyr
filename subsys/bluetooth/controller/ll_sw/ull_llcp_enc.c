@@ -250,6 +250,10 @@ static void lp_enc_send_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		/* Wait for the LL_ENC_RSP */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 		ctx->state = LP_ENC_STATE_WAIT_RX_ENC_RSP;
+
+		/* Pause possibly ongoing remote procedure */
+		llcp_rr_pause(conn);
+
 	}
 }
 
@@ -410,6 +414,9 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ll_conn *conn, struct proc_ct
 		ctx->data.enc.error = (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND) ?
 						    pdu->llctrl.reject_ind.error_code :
 						    pdu->llctrl.reject_ext_ind.error_code;
+		/* Resume possibly paused remote procedure */
+		llcp_rr_resume(conn);
+
 		lp_enc_complete(conn, ctx, evt, param);
 		break;
 	default:
@@ -441,6 +448,10 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
 		ctx->data.enc.error = BT_HCI_ERR_SUCCESS;
+
+		/* Resume possibly paused remote procedure */
+		llcp_rr_resume(conn);
+
 		lp_enc_complete(conn, ctx, evt, param);
 		break;
 	default:
@@ -817,6 +828,8 @@ static void rp_enc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, u
 		llcp_tx_resume_data(conn);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
+		/* Resume possibly paused local procedure */
+		llcp_lr_resume(conn);
 	}
 }
 
@@ -834,6 +847,9 @@ static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 		llcp_tx_resume_data(conn);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
+
+		/* Resume possibly paused local procedure */
+		llcp_lr_resume(conn);
 
 		/* Tx Encryption enabled */
 		conn->lll.enc_tx = 1U;
@@ -898,6 +914,10 @@ static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *
 		llcp_tx_flush(conn);
 		/* Pause Rx data */
 		ull_conn_pause_rx_data(conn);
+
+		/* Pause possibly paused local procedure */
+		llcp_lr_pause(conn);
+
 		rp_enc_store_m(conn, ctx, param);
 		rp_enc_send_enc_rsp(conn, ctx, evt, param);
 		break;
