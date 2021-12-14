@@ -385,7 +385,11 @@ void z_sched_usage_stop(void);
 
 void z_sched_usage_start(struct k_thread *thread);
 
-uint64_t z_sched_thread_usage(struct k_thread *thread);
+/**
+ * @brief Retrieves thread cycle usage data for specified thread
+ */
+void z_sched_thread_usage(struct k_thread *thread,
+			  struct k_thread_runtime_stats *stats);
 
 static inline void z_sched_usage_switch(struct k_thread *thread)
 {
