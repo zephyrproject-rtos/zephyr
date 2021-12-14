@@ -120,8 +120,6 @@ function(toolchain_ld_link_elf)
   )
 endfunction(toolchain_ld_link_elf)
 
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_base.cmake)
-#include(${ZEPHYR_BASE}/cmake/linker/ld/target_baremetal.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)
