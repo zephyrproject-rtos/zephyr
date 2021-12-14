@@ -64,12 +64,6 @@ ENTRY(rom_entry);
 #define NOLOAD_SIZE 0x100000
 
 MEMORY {
-  vector_memory_lit :
-	org = XCHAL_MEMERROR_VECTOR_PADDR + MEM_ERROR_LIT_SIZE,
-        len = MEM_ERROR_LIT_SIZE
-  vector_memory_text :
-	org = XCHAL_MEMERROR_VECTOR_PADDR,
-        len = MEM_ERROR_TEXT_SIZE
   vector_base_text :
 	org = XCHAL_VECBASE_RESET_PADDR_SRAM,
         len = MEM_VECBASE_LIT_SIZE
@@ -170,16 +164,6 @@ SECTIONS {
     *(.imrdata .imrdata.*)
   } >imr
 
- .MemoryExceptionVector.literal : {
-    _MemoryExceptionVector_literal_start = .;
-    KEEP (*(.MemoryExceptionVector.literal))
-    _MemoryExceptionVector_literal_end = .;
-  } >vector_memory_lit
-  .MemoryExceptionVector.text : {
-    _MemoryExceptionVector_text_start = .;
-    KEEP (*(.MemoryExceptionVector.text))
-    _MemoryExceptionVector_text_end = .;
-  } >vector_memory_text
    .WindowVectors.text : {
     _WindowVectors_text_start = .;
     KEEP (*(.WindowVectors.text))
