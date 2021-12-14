@@ -86,9 +86,6 @@ static void *sync_free;
 static struct k_sem sem_ticker_cb;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-static memq_link_t link_lll_prepare;
-static struct mayfly mfy_lll_prepare = { 0, 0, &link_lll_prepare, NULL, lll_sync_prepare };
-
 uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 			    uint8_t *adv_addr, uint16_t skip,
 			    uint16_t sync_timeout, uint8_t sync_cte_type)
@@ -720,7 +717,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	}
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
-	mfy_lll_prepare.fp = lll_sync_create_prepare;
+	sync->lll_sync_prepare = lll_sync_create_prepare;
 
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			   (TICKER_ID_SCAN_SYNC_BASE + sync_handle),
@@ -758,12 +755,14 @@ void ull_sync_setup_complete(struct ll_scan_set *scan)
 void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	struct node_rx_pdu *rx_establ;
-	struct ll_sync_set *ull_sync;
+	struct ll_sync_set *sync;
 	struct node_rx_ftr *ftr;
 	struct node_rx_sync *se;
 	struct lll_sync *lll;
 
 	ftr = &rx->rx_ftr;
+	lll = ftr->param;
+	sync = HDR_LLL2ULL(lll);
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 	enum sync_status sync_status;
@@ -772,8 +771,6 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	sync_status = ftr->sync_status;
 #else
 	struct pdu_cte_info *rx_cte_info;
-
-	lll = ftr->param;
 
 	rx_cte_info = pdu_cte_info_get((struct pdu_adv *)((struct node_rx_pdu *)rx)->pdu);
 	if (rx_cte_info != NULL) {
@@ -794,15 +791,10 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	if (1) {
 #endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
-		/* Set the sync handle corresponding to the LLL context passed in the node rx
-		 * footer field.
-		 */
-		lll = ftr->param;
-		ull_sync = HDR_LLL2ULL(lll);
-
 		/* Prepare and dispatch sync notification */
-		rx_establ = (void *)ull_sync->node_rx_sync_estab;
+		rx_establ = (void *)sync->node_rx_sync_estab;
 		rx_establ->hdr.type = NODE_RX_TYPE_SYNC;
+		rx_establ->hdr.handle = ull_sync_handle_get(sync);
 		se = (void *)rx_establ->pdu;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
@@ -812,7 +804,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 
 #if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 		/* Notify done event handler to terminate sync scan if required. */
-		ull_sync->is_term = (sync_status == SYNC_STAT_TERM);
+		sync->is_term = (sync_status == SYNC_STAT_TERM);
 #endif /* !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 #else
 		se->status = BT_HCI_ERR_SUCCESS;
@@ -836,8 +828,9 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 
 	if (1) {
 #endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+
 		/* Switch sync event prepare function to one reposnsible for regular PDUs receive */
-		mfy_lll_prepare.fp = lll_sync_prepare;
+		sync->lll_sync_prepare = lll_sync_prepare;
 
 		/* Change node type to appropriately handle periodic
 		 * advertising PDU report.
@@ -1128,6 +1121,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
 {
+	static memq_link_t link_lll_prepare;
+	static struct mayfly mfy_lll_prepare = {
+		0, 0, &link_lll_prepare, NULL, NULL};
 	static struct lll_prepare_param p;
 	struct ll_sync_set *sync = param;
 	struct lll_sync *lll;
@@ -1152,9 +1148,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.force = force;
 	p.param = lll;
 	mfy_lll_prepare.param = &p;
+	mfy_lll_prepare.fp = sync->lll_sync_prepare;
 
 	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0, &mfy_lll_prepare);
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
+			     &mfy_lll_prepare);
 	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_PREPARE_O(1);
@@ -1235,8 +1233,16 @@ static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
 
 static void sync_lost(void *param)
 {
-	struct ll_sync_set *sync = param;
+	struct ll_sync_set *sync;
 	struct node_rx_pdu *rx;
+
+	/* sync established was not generated yet, no free node rx */
+	sync = param;
+	if (sync->lll_sync_prepare != lll_sync_prepare) {
+		sync_expire(param);
+
+		return;
+	}
 
 	/* Generate Periodic advertising sync lost */
 	rx = (void *)&sync->node_rx_lost;
