@@ -124,12 +124,13 @@
 
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>, <&gpio0 25 GPIO_ACTIVE_LOW>;
 
-	/* Macronix MX25L CMOS Flash Memory */
-	mx25l: mx25l@0 {
-		compatible = "mxicy,cmos-mx25l";
+	xtx: xt25fb32@0 {
+		compatible = "xtx,xt25fb32", "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <8000000>; /* 8MHz */
-		label = "CMOS MX25L";
+		label = "XT25";
+		jedec-id = [0b 40 16];
+		size = <0x3200000>;
 	};
 
 	/* Sitronix ST7789V LCD */
