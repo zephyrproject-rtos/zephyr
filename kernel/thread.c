@@ -1026,10 +1026,10 @@ int k_thread_runtime_stats_get(k_tid_t thread,
 		return -EINVAL;
 	}
 
-	*stats = (k_thread_runtime_stats_t) {};
-
 #ifdef CONFIG_SCHED_THREAD_USAGE
-	stats->execution_cycles = z_sched_thread_usage(thread);
+	z_sched_thread_usage(thread, stats);
+#else
+	*stats = (k_thread_runtime_stats_t) {};
 #endif
 
 	return 0;
