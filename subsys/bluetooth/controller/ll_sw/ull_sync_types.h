@@ -21,6 +21,8 @@ struct ll_sync_set {
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */
 	uint16_t timeout_expire;
 
+	void (*lll_sync_prepare)(void *param);
+
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC) || \
 	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	uint8_t peer_id_addr[BDADDR_SIZE];
