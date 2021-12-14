@@ -145,12 +145,6 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 	/* Start setting up Radio h/w */
 	radio_reset();
 
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll_aux->tx_pwr_lvl);
-#else
-	radio_tx_power_set(RADIO_TXP_DEFAULT);
-#endif
-
 	radio_phy_set(lll_aux->phy, 1);
 	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll_aux->phy << 1));
 
@@ -394,12 +388,6 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 
 	/* Start setting up Radio h/w */
 	radio_reset();
-
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll->tx_pwr_lvl);
-#else
-	radio_tx_power_set(RADIO_TXP_DEFAULT);
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	radio_phy_set(lll->phy, 1);
 	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll->phy << 1));

@@ -163,7 +163,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Start setting up of Radio h/w */
 	radio_reset();
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll->tx_pwr_lvl);
+	radio_tx_power_set(lll->adv->tx_pwr_lvl);
 #else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif

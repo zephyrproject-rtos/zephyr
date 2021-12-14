@@ -68,10 +68,6 @@ struct lll_scan_aux {
 
 	uint32_t window_size_us;
 
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	int8_t tx_pwr_lvl;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-
 #if defined(CONFIG_BT_CENTRAL)
 	struct node_rx_pdu *node_conn_rx;
 #endif /* CONFIG_BT_CENTRAL */
