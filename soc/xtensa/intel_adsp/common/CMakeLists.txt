@@ -22,6 +22,7 @@ target_link_libraries(INTEL_ADSP_COMMON INTERFACE intel_adsp_common)
 
 set(ELF_FIX ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/fix_elf_addrs.py)
 set(KERNEL_REMAPPED ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}-remapped.elf)
+set(EXTMAN ${CMAKE_BINARY_DIR}/zephyr/extman.bin)
 
 # Generate rimage modules from the base kernel ELF file.  Note the
 # warning squashing on the objcopy steps.  Binutils has a misfeature
@@ -40,6 +41,13 @@ add_custom_target(
   gen_modules ALL
   DEPENDS ${ZEPHYR_FINAL_EXECUTABLE}
 
+  # The .fw_metadata section may not be present (xcc's older linker
+  # will remove it if empty).  Extract it here (which will create an
+  # empty file if not present) and add it back when we generate the
+  # main.mod file below.
+  COMMAND ${CMAKE_OBJCOPY} -O binary --only-section=.fw_metadata
+      ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}.elf ${EXTMAN}
+
   # Remap uncached section addresses so they appear contiguous
   COMMAND ${CMAKE_COMMAND} -E
       copy ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}.elf ${KERNEL_REMAPPED}
@@ -48,19 +56,29 @@ add_custom_target(
 
   # Extract modules for rimage
   COMMAND ${CMAKE_OBJCOPY}
-      --only-section .imr*
+      --only-section .imr
+      --only-section .imrdata
       --only-section .module.boot
       --set-section-flags .module.boot=noload,readonly
       --rename-section .module.boot=.module
       ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/boot.mod 2>/dev/null
 
+  # Remove .fw_metadata here...
   COMMAND ${CMAKE_OBJCOPY}
-      --remove-section .imr*
+      --remove-section .imr
+      --remove-section .imrdata
       --remove-section .module.boot
+      --remove-section .fw_metadata
       --set-section-flags .module.main=noload,readonly
       --set-section-flags .static_uuid_entries=noload,readonly
       --set-section-flags .static_log_entries=noload,readonly
-      --set-section-flags .fw_metadata=noload,readonly
       --rename-section .module.main=.module
-      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>/dev/null
+      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/main.mod
+
+  # ...and copy it back in
+  COMMAND ${CMAKE_OBJCOPY}
+      --add-section .fw_metadata=${EXTMAN}
+      --set-section-flags .fw_metadata=noload,readonly
+      ${CMAKE_BINARY_DIR}/zephyr/main.mod
+      ${CMAKE_BINARY_DIR}/zephyr/main.mod
 )
