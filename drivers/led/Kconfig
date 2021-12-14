@@ -16,7 +16,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config LED_INIT_PRIORITY
 	int "LED initialization priority"
-	default 90
+	default 80
 	help
 	  System initialization priority for LED drivers.
 

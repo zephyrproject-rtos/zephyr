@@ -427,3 +427,8 @@ PM_DEVICE_DT_INST_DEFINE(0, st7789v_pm_action);
 DEVICE_DT_INST_DEFINE(0, &st7789v_init, PM_DEVICE_DT_INST_GET(0), &st7789v_data,
 		      &st7789v_config, POST_KERNEL,
 		      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);
+
+#if CONFIG_LED
+BUILD_ASSERT(CONFIG_DISPLAY_INIT_PRIORITY > CONFIG_LED_INIT_PRIORITY,
+	     "ST7789v driver must be initialized after LED driver");
+#endif
