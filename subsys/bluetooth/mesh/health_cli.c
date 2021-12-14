@@ -66,13 +66,15 @@ static int health_fault_status(struct bt_mesh_model *model,
 			*param->test_id = test_id;
 		}
 
-		if (buf->len > *param->fault_count) {
-			BT_WARN("Got more faults than there's space for");
-		} else {
-			*param->fault_count = buf->len;
-		}
+		if (param->faults && param->fault_count) {
+			if (buf->len > *param->fault_count) {
+				BT_WARN("Got more faults than there's space for");
+			} else {
+				*param->fault_count = buf->len;
+			}
 
-		memcpy(param->faults, buf->data, *param->fault_count);
+			memcpy(param->faults, buf->data, *param->fault_count);
+		}
 
 		bt_mesh_msg_ack_ctx_rx(&health_cli->ack_ctx);
 	}
@@ -131,7 +133,9 @@ static int health_period_status(struct bt_mesh_model *model,
 	if (bt_mesh_msg_ack_ctx_match(&health_cli->ack_ctx,
 				      OP_HEALTH_PERIOD_STATUS, ctx->addr,
 				      (void **)&param)) {
-		*param->divisor = divisor;
+		if (param->divisor) {
+			*param->divisor = divisor;
+		}
 
 		bt_mesh_msg_ack_ctx_rx(&health_cli->ack_ctx);
 	}
@@ -213,6 +217,11 @@ int bt_mesh_health_attention_get(uint16_t addr, uint16_t app_idx, uint8_t *atten
 		BT_ERR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&health_cli->ack_ctx);
 		return err;
+	}
+
+	if (!attention) {
+		bt_mesh_msg_ack_ctx_clear(&health_cli->ack_ctx);
+		return 0;
 	}
 
 	return bt_mesh_msg_ack_ctx_wait(&health_cli->ack_ctx, K_MSEC(msg_timeout));
@@ -310,6 +319,11 @@ int bt_mesh_health_period_get(uint16_t addr, uint16_t app_idx, uint8_t *divisor)
 		BT_ERR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&health_cli->ack_ctx);
 		return err;
+	}
+
+	if (!divisor) {
+		bt_mesh_msg_ack_ctx_clear(&health_cli->ack_ctx);
+		return 0;
 	}
 
 	return bt_mesh_msg_ack_ctx_wait(&health_cli->ack_ctx,
@@ -418,7 +432,7 @@ int bt_mesh_health_fault_test(uint16_t addr, uint16_t app_idx, uint16_t cid,
 		return err;
 	}
 
-	if (!faults) {
+	if (!faults || !fault_count) {
 		bt_mesh_msg_ack_ctx_clear(&health_cli->ack_ctx);
 		return 0;
 	}
@@ -490,7 +504,7 @@ int bt_mesh_health_fault_clear(uint16_t addr, uint16_t app_idx, uint16_t cid,
 		return err;
 	}
 
-	if (!test_id) {
+	if (!test_id && (!faults || !fault_count)) {
 		bt_mesh_msg_ack_ctx_clear(&health_cli->ack_ctx);
 		return 0;
 	}
@@ -559,6 +573,11 @@ int bt_mesh_health_fault_get(uint16_t addr, uint16_t app_idx, uint16_t cid,
 		BT_ERR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&health_cli->ack_ctx);
 		return err;
+	}
+
+	if (!test_id && (!faults || !fault_count)) {
+		bt_mesh_msg_ack_ctx_clear(&health_cli->ack_ctx);
+		return 0;
 	}
 
 	return bt_mesh_msg_ack_ctx_wait(&health_cli->ack_ctx, K_MSEC(msg_timeout));
