@@ -81,7 +81,7 @@ void z_soc_mp_asm_entry(void);
 __asm__(".align 4                   \n\t"
 	".global z_soc_mp_asm_entry \n\t"
 	"z_soc_mp_asm_entry:        \n\t"
-	"  movi  a0, 0x40025        \n\t" /* WOE | UM | INTLEVEL(5) */
+	"  movi  a0, 0x4002f        \n\t" /* WOE | UM | INTLEVEL(max) */
 	"  wsr   a0, PS             \n\t"
 	"  movi  a0, 0              \n\t"
 	"  wsr   a0, WINDOWBASE     \n\t"
@@ -91,7 +91,6 @@ __asm__(".align 4                   \n\t"
 	"  movi  a1, z_mp_stack_top \n\t"
 	"  l32i  a1, a1, 0          \n\t"
 	"  call4 z_mp_entry         \n\t");
-BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
 
 __imr void z_mp_entry(void)
 {
