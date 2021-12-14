@@ -15,6 +15,8 @@ zephyr_library_sources(trace_out.c)
 zephyr_library_sources(rimage_modules.c)
 zephyr_library_sources(boot.c)
 
+zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq-cavs.c)
+
 zephyr_library_link_libraries(INTEL_ADSP_COMMON)
 
 target_include_directories(INTEL_ADSP_COMMON INTERFACE include)
