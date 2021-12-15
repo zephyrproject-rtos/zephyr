@@ -103,17 +103,24 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		 * so it won't increase RAM/ROM usage too much on 32-bit
 		 * targets.
 		 */
-#ifdef CONFIG_64BIT
-		shell_print(shell, "\tTotal execution cycles: %" PRIu64 " (%u %%)",
-			    (uint64_t)rt_stats_thread.execution_cycles,
-			    pcnt);
-#else
 		shell_print(shell, "\tTotal execution cycles: %u (%u %%)",
 			    (uint32_t)rt_stats_thread.execution_cycles,
 			    pcnt);
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+		shell_print(shell, "\tCurrent execution cycles: %u",
+			    (uint32_t)rt_stats_thread.current_cycles);
+		shell_print(shell, "\tPeak execution cycles: %u",
+			    (uint32_t)rt_stats_thread.peak_cycles);
+		shell_print(shell, "\tAverage execution cycles: %u",
+			    (uint32_t)rt_stats_thread.average_cycles);
 #endif
 	} else {
 		shell_print(shell, "\tTotal execution cycles: ? (? %%)");
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+		shell_print(shell, "\tCurrent execution cycles: ?");
+		shell_print(shell, "\tPeak execution cycles: ?");
+		shell_print(shell, "\tAverage execution cycles: ?");
+#endif
 	}
 #endif
 
