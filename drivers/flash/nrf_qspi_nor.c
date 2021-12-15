@@ -67,7 +67,7 @@ BUILD_ASSERT(DT_INST_PROP(0, cpol) == DT_INST_PROP(0, cpha),
 	     "Invalid combination of \"cpol\" and \"cpha\" properties.");
 
 /* for accessing devicetree properties of the bus node */
-#define QSPI_NODE DT_BUS(DT_DRV_INST(0))
+#define QSPI_NODE DT_INST_BUS(0)
 #define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
 #define QSPI_PROP_LEN(prop) DT_PROP_LEN(QSPI_NODE, prop)
 
