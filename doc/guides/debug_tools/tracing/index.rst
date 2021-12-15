@@ -471,3 +471,8 @@ Object tracking
 ===============
 
 .. doxygengroup:: subsys_tracing_object_tracking
+
+Syscalls
+========
+
+.. doxygengroup:: subsys_tracing_apis_syscall
