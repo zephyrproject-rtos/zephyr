@@ -215,6 +215,7 @@
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
 /drivers/counter/counter_cmos.c           @dcpleung
+/drivers/counter/counter_ll_stm32_timer.c @kentjhall
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
 /drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @dcpleung
