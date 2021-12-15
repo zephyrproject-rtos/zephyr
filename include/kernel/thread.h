@@ -11,6 +11,8 @@
 #include <sys/mem_manage.h>
 #endif
 
+#include <kernel/stats.h>
+
 /**
  * @typedef k_thread_entry_t
  * @brief Thread entry point function type.
@@ -118,7 +120,7 @@ struct _thread_base {
 #endif
 
 #ifdef CONFIG_SCHED_THREAD_USAGE
-	uint64_t usage;
+	struct k_cycle_stats  usage;   /* Track thread usage statistics */
 #endif
 };
 
@@ -172,6 +174,26 @@ struct _thread_userspace_local_data {
 typedef struct k_thread_runtime_stats {
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	uint64_t execution_cycles;
+	/*
+	 * In the context of thread statistics, [execution_cycles] is the same
+	 * as the total # of non-idle cycles. In the context of CPU statistics,
+	 * it refers to the sum of non-idle + idle cycles.
+	 */
+#endif
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	uint64_t current_cycles;      /* current # of non-idle cycles */
+	uint64_t peak_cycles;         /* peak # of non-idle cycles */
+	uint64_t total_cycles;        /* total # of non-idle cycles */
+	uint64_t average_cycles;      /* average # of non-idle cycles */
+
+	/*
+	 * This field is always zero for individual threads. It only comes
+	 * into play when gathering statistics for the CPU. In that case it
+	 * represents the total number of cycles spent idling.
+	 */
+
+	uint64_t idle_cycles;
 #endif
 }  k_thread_runtime_stats_t;
 

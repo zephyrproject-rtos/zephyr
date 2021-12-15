@@ -388,6 +388,17 @@ config SCHED_THREAD_USAGE
 	help
 	  Collect thread runtime info at context switch time
 
+config SCHED_THREAD_USAGE_ANALYSIS
+	bool "Analyze the collected thread runtime usage statistics"
+	default n
+	depends on SCHED_THREAD_USAGE
+	select INSTRUMENT_THREAD_SWITCHING if !USE_SWITCH
+	help
+	  Collect additional timing information related to thread scheduling
+	  for analysis purposes. This includes the total time that a thread
+	  has been scheduled, the longest time for which it was scheduled and
+	  others.
+
 config SCHED_THREAD_USAGE_ALL
 	bool "Collect total system runtime usage"
 	default y if SCHED_THREAD_USAGE
