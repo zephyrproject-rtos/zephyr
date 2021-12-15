@@ -69,7 +69,7 @@ struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	}
 
 	for (int16_t i = (int16_t)states_per_cpu[cpu] - 1; i >= 0; i--) {
-		const struct pm_state_info *state = (&cpus_states[cpu])[i];
+		const struct pm_state_info *state = &((cpus_states[cpu])[i]);
 		uint32_t min_residency, exit_latency;
 
 		if (!pm_constraint_get(state->state)) {
