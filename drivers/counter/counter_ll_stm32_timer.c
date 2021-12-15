@@ -561,7 +561,7 @@ void counter_stm32_irq_handler(const struct device *dev)
 	}
 }
 
-#define TIMER(idx)              DT_PARENT(DT_DRV_INST(idx))
+#define TIMER(idx)              DT_INST_PARENT(idx)
 
 /** TIMx instance from DT */
 #define TIM(idx) ((TIM_TypeDef *)DT_REG_ADDR(TIMER(idx)))
