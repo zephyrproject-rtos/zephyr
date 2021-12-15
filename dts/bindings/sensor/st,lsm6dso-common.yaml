@@ -27,6 +27,18 @@ properties:
         mandatory and if not present it defaults to 1 which is the
         configuration at power-up.
 
+    accel-pm:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the accelerometer power mode.
+        Default is power-up configuration.
+      enum:
+        - 0 # High Performance mode (default)
+        - 1 # Low/Normal Power mode
+        - 2 # Ultra Low Power mode
+
     accel-range:
       type: int
       required: false
@@ -58,6 +70,17 @@ properties:
         - 8  # 1667Hz
         - 9  # 3333Hz
         - 10 # 6667Hz
+
+    gyro-pm:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the gyrometer power mode.
+        Default is power-up configuration.
+      enum:
+        - 0 # High Performance mode (default)
+        - 1 # Low/Normal Power mode
 
     gyro-range:
       type: int
