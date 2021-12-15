@@ -758,7 +758,7 @@ static const struct counter_driver_api mcp7940n_api = {
 		},									\
 		.i2c_dev = DEVICE_DT_GET(DT_INST_BUS(index)),				\
 		.addr = DT_INST_REG_ADDR(index),					\
-		.int_gpios =  GPIO_DT_SPEC_GET_OR(DT_DRV_INST(index), int_gpios, {0}),	\
+		.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),		\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(index, mcp7940n_init, NULL,				\
