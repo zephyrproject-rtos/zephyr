@@ -265,7 +265,6 @@ static __imr void hp_sram_init(uint32_t memory_size)
 
 static __imr void lp_sram_init(void)
 {
-	uint32_t status = 0;
 	uint32_t timeout_counter, delay_count = 256;
 
 	timeout_counter = delay_count;
@@ -283,11 +282,7 @@ static __imr void lp_sram_init(void)
 	/* query the power status of first part of LP memory */
 	/* to check whether it has been powered up. A few    */
 	/* cycles are needed for it to be powered up         */
-	while (CAVS_SHIM.lspgists) {
-		if (!timeout_counter--) {
-			status = 1;
-			break;
-		}
+	while (CAVS_SHIM.lspgists && timeout_counter--) {
 		idelay(delay_count);
 	}
 
