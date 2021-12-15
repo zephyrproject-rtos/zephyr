@@ -73,12 +73,12 @@ add_custom_target(
       --set-section-flags .static_uuid_entries=noload,readonly
       --set-section-flags .static_log_entries=noload,readonly
       --rename-section .module.main=.module
-      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/main.mod
+      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>/dev/null
 
   # ...and copy it back in
   COMMAND ${CMAKE_OBJCOPY}
       --add-section .fw_metadata=${EXTMAN}
       --set-section-flags .fw_metadata=noload,readonly
       ${CMAKE_BINARY_DIR}/zephyr/main.mod
-      ${CMAKE_BINARY_DIR}/zephyr/main.mod
+      ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>/dev/null
 )
