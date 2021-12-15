@@ -16,6 +16,7 @@ tests:
     sample.ipc.rpmsg_service.nrf:
         platform_allow: nrf5340dk_nrf5340_cpuapp bl5340_dvk_cpuapp
         integration_platforms:
-          - nrf5340dk_nrf5340_cpuapp bl5340_dvk_cpuapp
+          - nrf5340dk_nrf5340_cpuapp
+          - bl5340_dvk_cpuapp
         tags: ipm
         build_only: true
