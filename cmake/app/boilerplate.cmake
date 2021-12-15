@@ -144,14 +144,6 @@ include(${ZEPHYR_BASE}/cmake/python.cmake)
 include(${ZEPHYR_BASE}/cmake/west.cmake)
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 
-if(ZEPHYR_EXTRA_MODULES)
-  # ZEPHYR_EXTRA_MODULES has either been specified on the cmake CLI or is
-  # already in the CMakeCache.txt. This has precedence over the environment
-  # variable ZEPHYR_EXTRA_MODULES
-elseif(DEFINED ENV{ZEPHYR_EXTRA_MODULES})
-  set(ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_EXTRA_MODULES})
-endif()
-
 # 'MODULE_EXT_ROOT' is a prioritized list of directories where module glue code
 # may be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
 # For module roots, later entries may overrule module settings already defined
@@ -164,8 +156,6 @@ list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
 # Those may contain additional DTS, BOARD, SOC, ARCH ROOTs.
 # Also create the Kconfig binary dir for generated Kconf files.
 #
-set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
-file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
