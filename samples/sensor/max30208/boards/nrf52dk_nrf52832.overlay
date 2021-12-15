@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2021, Silvano Cortesi
+ * Copyright (c) 2021, ETH Zürich
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	max30208@50 {
+		compatible = "maxim,max30208";
+		reg = <0x50>;
+		label = "MAX30208";
+		int-gpios = <&gpio0 22 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		fifo-a-full = <2>;
+		gpio0-mode = <3>;
+		status = "okay";
+	};
+};

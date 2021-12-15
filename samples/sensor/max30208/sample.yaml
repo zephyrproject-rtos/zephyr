@@ -1,0 +1,9 @@
+sample:
+  description: Demonstration of the MAX30208 sensor driver
+  name: MAX30208 sample
+tests:
+  sample.sensor.max30208:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c
+    filter: dt_compat_enabled("maxim,max30208")
