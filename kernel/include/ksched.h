@@ -386,6 +386,11 @@ void z_sched_usage_stop(void);
 void z_sched_usage_start(struct k_thread *thread);
 
 /**
+ * @brief Retrieves CPU cycle usage data for specified core
+ */
+void z_sched_cpu_usage(uint8_t core_id, struct k_thread_runtime_stats *stats);
+
+/**
  * @brief Retrieves thread cycle usage data for specified thread
  */
 void z_sched_thread_usage(struct k_thread *thread,

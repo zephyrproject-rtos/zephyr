@@ -174,6 +174,7 @@ struct _thread_userspace_local_data {
 typedef struct k_thread_runtime_stats {
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	uint64_t execution_cycles;
+	uint64_t total_cycles;        /* total # of non-idle cycles */
 	/*
 	 * In the context of thread statistics, [execution_cycles] is the same
 	 * as the total # of non-idle cycles. In the context of CPU statistics,
@@ -182,11 +183,19 @@ typedef struct k_thread_runtime_stats {
 #endif
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	/*
+	 * For threads, the following fields refer to the time spent executing
+	 * as bounded by when the thread was scheduled in and scheduled out.
+	 * For CPUs, the same fields refer to the time spent executing
+	 * non-idle threads as bounded by the idle thread(s).
+	 */
+
 	uint64_t current_cycles;      /* current # of non-idle cycles */
 	uint64_t peak_cycles;         /* peak # of non-idle cycles */
-	uint64_t total_cycles;        /* total # of non-idle cycles */
 	uint64_t average_cycles;      /* average # of non-idle cycles */
+#endif
 
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	/*
 	 * This field is always zero for individual threads. It only comes
 	 * into play when gathering statistics for the CPU. In that case it
