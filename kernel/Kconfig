@@ -406,6 +406,14 @@ config SCHED_THREAD_USAGE_ALL
 	help
 	  Maintain a sum of all non-idle thread cycle usage.
 
+config SCHED_THREAD_USAGE_AUTO_ENABLE
+	bool "Automatically enable runtime usage statistics"
+	default y
+	depends on SCHED_THREAD_USAGE
+	help
+	  When set, this option automatically enables the gathering of both
+	  the thread and CPU usage statistics.
+
 endif # THREAD_RUNTIME_STATS
 
 endmenu
