@@ -767,7 +767,7 @@ class DeviceHandler(Handler):
                         command_extra_args.append("--board-id")
                         command_extra_args.append(board_id)
                     elif runner == "nrfjprog":
-                        command_extra_args.append("--snr")
+                        command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
                     elif runner == "openocd" and product == "STM32 STLink":
                         command_extra_args.append("--cmd-pre-init")
