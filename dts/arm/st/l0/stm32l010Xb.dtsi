@@ -31,7 +31,6 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_22";
 				#pwm-cells = <3>;
 			};
