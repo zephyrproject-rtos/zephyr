@@ -42,13 +42,18 @@ release:
 * :github:`39523` - task watchdog crash/asset on NRF52840 - need to reorder task_wdt_feed() in task_wdt_add()
 * :github:`39541` - can: mcux_flexcan: wrong timing calculation
 * :github:`39575` - k_mutex_lock and k_sem_take with K_FOREVER return -EAGAIN value
+* :github:`39594` - Possible bug or undocumented behaviour of spi_write
+* :github:`39609` - spi: slave: division by zero in timeout calculation
+* :github:`39687` - sensor: qdec_nrfx: PM callback has incorrect signature
 * :github:`39704` - Using OpenThread makes the system unresponsive after 49.7 days
 * :github:`39817` - drivers: pwm: nxp: (potentially) Incorrect return value on API function
 * :github:`39851` - [Coverity CID: 240242] Dereference after null check in tests/bluetooth/tester/src/l2cap.c
+* :github:`39882` - Bluetooth Host qualification on 2.7 branch
 * :github:`40133` - mimxrt1060-evk flash shell command causes shell deadlock
 * :github:`40244` - hci_spi sample cannot be built for nrf51dk_nrf51422 and 96b_carbon_nrf51
 * :github:`40290` - CAN_STM32: Build error with CONFIG_CAN_AUTO_BUS_OFF_RECOVERY=n
 * :github:`40844` - gen_app_partitions scans object files unrelated to current image
+* :github:`41237` - drivers: ieee802154_dw1000: use dedicated workqueue
 
 .. _zephyr_2.7.0:
 
