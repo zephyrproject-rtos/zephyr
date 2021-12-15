@@ -161,13 +161,13 @@ struct i2c_ctrl_data {
 
 /* Recommended I2C timing values are based on 15 MHz */
 static const struct npcx_i2c_timing_cfg npcx_15m_speed_confs[] = {
-	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 0, .k1 = 75, .k2 = 0},
+	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 15, .k1 = 76, .k2 = 0},
 	[NPCX_I2C_BUS_SPEED_400KHZ] = {.HLDT = 7, .k1 = 24, .k2 = 18,},
 	[NPCX_I2C_BUS_SPEED_1MHZ] = {.HLDT  = 7, .k1 = 14, .k2 = 10,},
 };
 
 static const struct npcx_i2c_timing_cfg npcx_20m_speed_confs[] = {
-	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 0, .k1 = 100, .k2 = 0},
+	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 15, .k1 = 102, .k2 = 0},
 	[NPCX_I2C_BUS_SPEED_400KHZ] = {.HLDT = 7, .k1 = 32, .k2 = 22},
 	[NPCX_I2C_BUS_SPEED_1MHZ] = {.HLDT  = 7, .k1 = 16, .k2 = 10},
 };
@@ -349,11 +349,13 @@ static void i2c_ctrl_config_bus_freq(const struct device *dev,
 	if (bus_freq == NPCX_I2C_BUS_SPEED_100KHZ) {
 		/* Enable 'Normal' Mode */
 		inst->SMBCTL3 &= ~(BIT(NPCX_SMBCTL3_400K));
-		/* Set freq of SCL */
+		/* Set freq of SCL. For 100KHz, only k1 is used.  */
 		SET_FIELD(inst->SMBCTL2, NPCX_SMBCTL2_SCLFRQ0_6_FIELD,
 				bus_cfg.k1/2 & 0x7f);
 		SET_FIELD(inst->SMBCTL3, NPCX_SMBCTL3_SCLFRQ7_8_FIELD,
-				bus_cfg.k2/2 >> 7);
+				bus_cfg.k1/2 >> 7);
+		SET_FIELD(inst->SMBCTL4, NPCX_SMBCTL4_HLDT_FIELD,
+				bus_cfg.HLDT);
 	} else {
 		/* Enable 'Fast' Mode for 400K or higher freq. */
 		inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_400K);
