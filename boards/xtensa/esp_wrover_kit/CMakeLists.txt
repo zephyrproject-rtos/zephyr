@@ -63,3 +63,8 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
   board_finalize_runner_args(esp32 "--esp-app-address=0x10000")
 
 endif()
+
+if(CONFIG_PINMUX_ESP32)
+  zephyr_library()
+  zephyr_library_sources(board_init.c)
+endif()
