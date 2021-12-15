@@ -1,0 +1,20 @@
+# Copyright (c) 2021, Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: MPU region
+
+compatible: "mpu-region"
+
+include: [base.yaml, mem-region.yaml]
+
+properties:
+  zephyr,memory-region:
+    required: true
+
+  zephyr,memory-region-mpu:
+    type: string
+    required: true
+    description: |
+      Signify that this node should result in a dedicated MPU region. The
+      region address and size are taken from the <reg> property, while the MPU
+      attribute is the value of this property.
