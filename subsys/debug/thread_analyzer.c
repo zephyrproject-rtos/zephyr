@@ -46,6 +46,20 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 		info->stack_size - info->stack_used, info->stack_used,
 		info->stack_size, pcnt,
 		info->utilization);
+
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	THREAD_ANALYZER_PRINT(
+		THREAD_ANALYZER_FMT("      : Total CPU cycles used: %llu"),
+		info->usage.total_cycles);
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	THREAD_ANALYZER_PRINT(
+		THREAD_ANALYZER_FMT(
+			"         - Current Frame: %llu; Longest Frame: %llu; Average Frame: %llu"),
+		info->usage.current_cycles, info->usage.peak_cycles,
+		info->usage.average_cycles);
+#endif
+#endif
 #else
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT(
@@ -61,7 +75,6 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	struct k_thread *thread = (struct k_thread *)cthread;
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	k_thread_runtime_stats_t rt_stats_all;
-	k_thread_runtime_stats_t rt_stats_thread;
 	int ret;
 #endif
 	size_t size = thread->stack_info.size;
@@ -97,7 +110,7 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	ret = 0;
 
-	if (k_thread_runtime_stats_get(thread, &rt_stats_thread) != 0) {
+	if (k_thread_runtime_stats_get(thread, &info.usage) != 0) {
 		ret++;
 	}
 
@@ -105,7 +118,7 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 		ret++;
 	}
 	if (ret == 0) {
-		info.utilization = (rt_stats_thread.execution_cycles * 100U) /
+		info.utilization = (info.usage.execution_cycles * 100U) /
 			rt_stats_all.execution_cycles;
 	}
 #endif
