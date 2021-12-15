@@ -36,7 +36,6 @@ NET_BUF_POOL_FIXED_DEFINE(ots_c_read_queue, 1,
 
 #define OTS_WORK(_w) CONTAINER_OF(_w, struct otc_instance_t, work)
 
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan);
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf);
 static void l2cap_sent(struct bt_l2cap_chan *chan);
@@ -66,12 +65,6 @@ struct dirlisting_record_t {
 };
 
 /* L2CAP CoC*/
-static struct bt_l2cap_server ots_l2cap_coc = {
-	.accept     = l2cap_accept,
-	.psm        = OTS_L2CAP_PSM,
-	.sec_level  = BT_SECURITY_L1,
-};
-
 static struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf      = l2cap_alloc_buf,
 	.recv           = l2cap_recv,
@@ -385,8 +378,6 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
 
 int bt_otc_register(struct bt_otc_instance_t *otc_inst)
 {
-	static bool l2cap_registered;
-
 	for (int i = 0; i < ARRAY_SIZE(otc_insts); i++) {
 
 		if (otc_insts[i].otc_inst) {
@@ -394,22 +385,6 @@ int bt_otc_register(struct bt_otc_instance_t *otc_inst)
 		}
 
 		BT_DBG("%u", i);
-
-		if (!l2cap_registered) {
-			int err = bt_l2cap_server_register(&ots_l2cap_coc);
-
-			if (err < 0 && err != -EADDRINUSE) {
-				BT_ERR("Unable to register OTS_psm (0x%4x)",
-				ots_l2cap_coc.psm);
-				return -ENOEXEC;
-			}
-
-			BT_DBG("L2CAP psm 0x%4x sec_level %u registered",
-			ots_l2cap_coc.psm, ots_l2cap_coc.sec_level);
-
-			l2cap_registered = true;
-		}
-
 		otc_insts[i].otc_inst = otc_inst;
 
 		return 0;
@@ -1608,20 +1583,6 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("L2CAP CoC Buffer alloc requested");
 	return net_buf_alloc(&otc_l2cap_pool, K_FOREVER);
-}
-
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
-{
-	BT_DBG("Incoming conn %p", conn);
-
-	if (l2ch_chan.ch.chan.conn) {
-		BT_DBG("No channels available");
-		return -ENOMEM;
-	}
-
-	*chan = &l2ch_chan.ch.chan;
-
-	return 0;
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
