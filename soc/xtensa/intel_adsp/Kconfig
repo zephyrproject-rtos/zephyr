@@ -53,6 +53,14 @@ config IMR_DATA_ADDR
 	  Location to place .data contents in IMR memory during
 	  bootloader linkage.
 
+config ADSP_TRACE_SIMCALL
+	bool "Emit SIMCALL output in addition to window tracing"
+	help
+	  When true, the trace_out layer will also use a SIMCALL
+	  instruction to emit the passed data to the standard output
+	  of an enclosing simulator process.  All window contents will
+	  remain identical.
+
 # Select SoC Part No. and configuration options
 source "soc/xtensa/intel_adsp/*/Kconfig.soc"
 
