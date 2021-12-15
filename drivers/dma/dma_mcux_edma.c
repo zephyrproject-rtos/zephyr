@@ -441,13 +441,13 @@ static int dma_mcux_edma_init(const struct device *dev)
 	return 0;
 }
 
-#define IRQ_CONFIG(node_id, idx, fn)					\
-	IF_ENABLED(DT_IRQ_HAS_IDX(node_id, idx), (			\
-		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),		\
-		DT_IRQ_BY_IDX(node_id, idx, priority),			\
+#define IRQ_CONFIG(n, idx, fn)						\
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, idx), (			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),		\
+		DT_INST_IRQ_BY_IDX(n, idx, priority),			\
 		fn,							\
-		DEVICE_DT_GET(node_id), 0);				\
-		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));		\
+		DEVICE_DT_INST_GET(n), 0);				\
+		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));		\
 		))
 
 #define DMA_MCUX_EDMA_CONFIG_FUNC(n)					\
@@ -455,41 +455,24 @@ static int dma_mcux_edma_init(const struct device *dev)
 	{								\
 		ARG_UNUSED(dev);					\
 									\
-		IRQ_CONFIG(DT_DRV_INST(n), 0,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 1,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 2,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 3,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 4,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 5,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 6,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 7,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 8,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 9,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 10,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 11,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 12,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 13,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 14,				\
-			dma_mcux_edma_irq_handler);			\
-		IRQ_CONFIG(DT_DRV_INST(n), 15,				\
-			dma_mcux_edma_irq_handler);			\
+		IRQ_CONFIG(n, 0, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 1, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 2, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 3, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 4, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 5, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 6, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 7, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 8, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 9, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 10, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 11, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 12, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 13, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 14, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 15, dma_mcux_edma_irq_handler);		\
 									\
-		IRQ_CONFIG(DT_DRV_INST(n), 16,				\
-			dma_mcux_edma_error_irq_handler);		\
+		IRQ_CONFIG(n, 16, dma_mcux_edma_error_irq_handler);	\
 									\
 		LOG_DBG("install irq done");				\
 	}
