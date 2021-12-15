@@ -471,7 +471,7 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				/* Run remote procedure */
 				rr_act_run(conn);
 				rr_set_state(conn, RR_STATE_TERMINATE);
-			} else if (incompat == INCOMPAT_NO_COLLISION) {
+			} else if (!with_instant || incompat == INCOMPAT_NO_COLLISION) {
 				/* No collision
 				 * => Run procedure
 				 *
