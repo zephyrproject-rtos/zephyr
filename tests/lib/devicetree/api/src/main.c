@@ -1639,11 +1639,20 @@ static void test_clocks(void)
 		      25000000, "");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_spi_device
 static void test_parent(void)
 {
 	/* The label of a child node's parent is the label of the parent. */
 	zassert_true(!strcmp(DT_LABEL(DT_PARENT(TEST_SPI_DEV_0)),
 			     DT_LABEL(TEST_SPI_BUS_0)), "");
+
+	/*
+	 * The parent's label for the first instance of vnd,spi-device,
+	 * child of TEST_SPI, is the same as TEST_SPI.
+	 */
+	zassert_true(!strcmp(DT_LABEL(DT_INST_PARENT(0)),
+			     DT_LABEL(TEST_SPI)), "");
 	/*
 	 * We should be able to use DT_PARENT() even with nodes, like /test,
 	 * that have no matching compatible.
