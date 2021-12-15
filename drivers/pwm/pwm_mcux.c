@@ -169,7 +169,7 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 	static struct pwm_mcux_data pwm_mcux_data_ ## n;		  \
 									  \
 	static const struct pwm_mcux_config pwm_mcux_config_ ## n = {     \
-		.base = (void *)DT_REG_ADDR(DT_PARENT(DT_DRV_INST(n))),   \
+		.base = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),		  \
 		.index = DT_INST_PROP(n, index),			  \
 		.mode = kPWM_EdgeAligned,				  \
 		.prescale = kPWM_Prescale_Divide_128,			  \

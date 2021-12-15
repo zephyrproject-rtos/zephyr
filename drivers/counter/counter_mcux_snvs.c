@@ -322,7 +322,7 @@ static struct mcux_snvs_config mcux_snvs_config_0 = {
 		.channels = MCUX_SNVS_NUM_CHANNELS,
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 	},
-	.base = (SNVS_Type *)DT_REG_ADDR(DT_PARENT(DT_DRV_INST(0))),
+	.base = (SNVS_Type *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.irq_config_func = mcux_snvs_irq_config_0,
 };
 
