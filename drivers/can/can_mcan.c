@@ -693,7 +693,9 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 		tx_hdr.ext_id = frame->id;
 	}
 
-	msg_ram->tx_buffer[put_idx].hdr = tx_hdr;
+	BUILD_ASSERT(sizeof msg_ram->tx_buffer[put_idx].hdr == sizeof tx_hdr);
+	// we need word-aligned copying
+	memcpy32(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof msg_ram->tx_buffer[put_idx].hdr);
 
 	for (src = frame->data_32,
 		dst = msg_ram->tx_buffer[put_idx].data_32,
@@ -758,7 +760,10 @@ int can_mcan_attach_std(struct can_mcan_data *data,
 	filter_element.sfce = filter_nr & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
-	msg_ram->std_filt[filter_nr] = filter_element;
+	BUILD_ASSERT(sizeof msg_ram->std_filt[filter_nr] == sizeof filter_element);
+	// we need word-aligned copying
+	// discard volatile quanifier, we have the mutex
+	memcpy32((void *)&msg_ram->std_filt[filter_nr], &filter_element, sizeof msg_ram->std_filt[filter_nr]);
 
 	k_mutex_unlock(&data->inst_mutex);
 
