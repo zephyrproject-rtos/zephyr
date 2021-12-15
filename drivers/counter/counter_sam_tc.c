@@ -359,7 +359,7 @@ static const struct counter_driver_api counter_sam_driver_api = {
 		DT_INST_PROP_OR(n, reg_cmr, COUNTER_SAM_TC_CMR(n))
 
 #define COUNTER_SAM_TC_INPUT_FREQUENCY(n)	\
-		COND_CODE_1(DT_PROP(DT_DRV_INST(n), nodivclk), \
+		COND_CODE_1(DT_INST_PROP(n, nodivclk), \
 			    (SOC_ATMEL_SAM_MCK_FREQ_HZ), \
 			    (sam_tc_input_freq_table[COUNTER_SAM_TC_REG_CMR(n) \
 						     & TC_CMR_TCCLKS_Msk]))
