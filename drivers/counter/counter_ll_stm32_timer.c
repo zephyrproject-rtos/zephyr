@@ -580,7 +580,7 @@ void counter_stm32_irq_handler(const struct device *dev)
 		IRQ_CONNECT(DT_IRQN(TIMER(idx)),				  \
 			    DT_IRQ(TIMER(idx), priority),			  \
 			    counter_stm32_irq_handler,				  \
-			    DEVICE_DT_GET(DT_DRV_INST(idx)),			  \
+			    DEVICE_DT_INST_GET(idx),				  \
 			    0);							  \
 		irq_enable(DT_IRQN(TIMER(idx)));				  \
 	}									  \
