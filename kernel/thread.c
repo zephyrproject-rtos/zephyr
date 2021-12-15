@@ -601,6 +601,12 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	new_thread->resource_pool = _current->resource_pool;
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	new_thread->base.usage = (struct k_cycle_stats) {};
+	new_thread->base.usage.track_usage =
+		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#endif
+
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 
 	return stack_ptr;

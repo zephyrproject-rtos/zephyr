@@ -303,6 +303,10 @@ static char *prepare_multithreading(void)
 		_kernel.cpus[i].irq_stack =
 			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
 			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+		_kernel.cpus[i].usage.track_usage =
+			CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#endif
 	}
 
 	return stack_ptr;
