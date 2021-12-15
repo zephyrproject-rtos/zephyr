@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-include(${ZEPHYR_BASE}/cmake/toolchain/zephyr/host-tools.cmake)
+if(ZEPHYR_SDK_HOST_TOOLS)
+  include(${ZEPHYR_BASE}/cmake/toolchain/zephyr/host-tools.cmake)
+endif()
 
 # dtc is an optional dependency
 find_program(
