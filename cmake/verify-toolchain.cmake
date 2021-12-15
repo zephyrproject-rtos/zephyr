@@ -90,10 +90,6 @@ if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
   if (NOT Zephyr-sdk_CONSIDERED_VERSIONS)
     set(error_msg "ZEPHYR_TOOLCHAIN_VARIANT not specified and no Zephyr SDK is installed.\n")
     string(APPEND error_msg "Please set ZEPHYR_TOOLCHAIN_VARIANT to the toolchain to use or install the Zephyr SDK.")
-
-    if(NOT ZEPHYR_TOOLCHAIN_VARIANT AND NOT ZEPHYR_SDK_INSTALL_DIR)
-      set(error_note "Note: If you are using Zephyr SDK 0.11.1 or 0.11.2, remember to set ZEPHYR_SDK_INSTALL_DIR and ZEPHYR_TOOLCHAIN_VARIANT")
-    endif()
   else()
     #  Note: When CMake mimimun version becomes >= 3.17, change this loop into:
     #    foreach(version config IN ZIP_LISTS Zephyr-sdk_CONSIDERED_VERSIONS Zephyr-sdk_CONSIDERED_CONFIGS)
@@ -116,9 +112,15 @@ if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
   message(FATAL_ERROR "${error_msg}
 The Zephyr SDK can be downloaded from:
 https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}/zephyr-sdk-${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}-setup.run
-${error_note}
 ")
 
+endif()
+
+if(DEFINED ZEPHYR_SDK_INSTALL_DIR)
+  # Cache the Zephyr SDK install dir.
+  set(ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
+  # Use the Zephyr SDK host-tools.
+  set(ZEPHYR_SDK_HOST_TOOLS TRUE)
 endif()
 
 if(CMAKE_SCRIPT_MODE_FILE)
