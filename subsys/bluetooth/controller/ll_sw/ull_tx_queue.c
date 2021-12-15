@@ -15,15 +15,19 @@ void ull_tx_q_init(struct ull_tx_q *queue)
 
 void ull_tx_q_pause_data(struct ull_tx_q *queue)
 {
-	queue->pause_data = 1U;
+	queue->pause_data++;
 }
 
 void ull_tx_q_resume_data(struct ull_tx_q *queue)
 {
-	queue->pause_data = 0U;
+	if (queue->pause_data > 0) {
+		queue->pause_data--;
+	}
 
-	/* move all paused data to the tail of tx list */
-	sys_slist_merge_slist(&queue->tx_list, &queue->data_list);
+	/* move all paused data to the tail of tx list, only if not empty and no longer paused */
+	if (!queue->pause_data &&  !sys_slist_is_empty(&queue->data_list)) {
+		sys_slist_merge_slist(&queue->tx_list, &queue->data_list);
+	}
 }
 
 void ull_tx_q_enqueue_data(struct ull_tx_q *queue, struct node_tx *tx)
