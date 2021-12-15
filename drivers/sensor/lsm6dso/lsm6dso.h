@@ -50,8 +50,10 @@ struct lsm6dso_config {
 		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;
+	uint8_t accel_pm;
 	uint8_t accel_odr;
 	uint8_t accel_range;
+	uint8_t gyro_pm;
 	uint8_t gyro_odr;
 	uint8_t gyro_range;
 #ifdef CONFIG_LSM6DSO_TRIGGER
