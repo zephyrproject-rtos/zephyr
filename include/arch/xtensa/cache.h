@@ -6,6 +6,7 @@
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_CACHE_H_
 
 #include <xtensa/config/core-isa.h>
+#include <toolchain.h>
 #include <sys/util.h>
 
 #ifdef __cplusplus
