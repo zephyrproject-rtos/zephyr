@@ -363,6 +363,13 @@ endif
 
 endmenu
 
+config MCUMGR_SMP_REASSEMBLY_BT
+	bool "Enable packet reassembly in Bluetooth SMP transport"
+	select MCUMGR_SMP_REASSEMBLY
+	help
+	  When enabled, the SMP BT transport will buffer and reassemble received
+	  packet fragments before passing it for further processing.
+
 config MCUMGR_SMP_BT
 	bool "Bluetooth mcumgr SMP transport"
 	select BT
