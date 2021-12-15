@@ -723,7 +723,7 @@
 			interrupts = <44 0>, <45 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
-			clk-source = <2>;
+			clk-source = <0>;
 			label = "CAN_1";
 			sjw = <1>;
 			sample-point = <875>;
@@ -738,7 +738,7 @@
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 18>;
-			clk-source = <2>;
+			clk-source = <0>;
 			label = "CAN_2";
 			sjw = <1>;
 			sample-point = <875>;
@@ -753,7 +753,7 @@
 			interrupts = <48 0>, <49 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN3_CLK 0x84 6>;
-			clk-source = <2>;
+			clk-source = <0>;
 			label = "CAN_3";
 			sjw = <1>;
 			sample-point = <875>;
