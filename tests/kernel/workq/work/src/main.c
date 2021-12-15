@@ -44,6 +44,7 @@ static struct k_sem rel_sem;
  * if a test fails.
  */
 static struct k_work work;
+static struct k_work work1;
 static struct k_work_delayable dwork;
 
 /* Work synchronization objects must be in cache-coherent memory,
@@ -414,7 +415,8 @@ static void test_1cpu_reentrant_queue(void)
 	zassert_equal(coophi_counter(), 2, NULL);
 }
 
-/* Single CPU submit a work item and wait for flush before it gets started.
+/* Single CPU submit two work items and wait for flush in order
+ * before they get started.
  */
 static void test_1cpu_queued_flush(void)
 {
@@ -423,8 +425,11 @@ static void test_1cpu_queued_flush(void)
 	/* Reset state and use the delaying handler */
 	reset_counters();
 	k_work_init(&work, delay_handler);
+	k_work_init(&work1, delay_handler);
 
 	/* Submit to the cooperative queue. */
+	rc = k_work_submit_to_queue(&coophi_queue, &work1);
+	zassert_equal(rc, 1, NULL);
 	rc = k_work_submit_to_queue(&coophi_queue, &work);
 	zassert_equal(rc, 1, NULL);
 	zassert_equal(coophi_counter(), 0, NULL);
@@ -433,16 +438,20 @@ static void test_1cpu_queued_flush(void)
 	 * This should wait.
 	 */
 	zassert_equal(k_work_busy_get(&work), K_WORK_QUEUED, NULL);
+	zassert_equal(k_work_busy_get(&work1), K_WORK_QUEUED, NULL);
 	zassert_true(k_work_flush(&work, &work_sync), NULL);
+	zassert_false(k_work_flush(&work1, &work_sync), NULL);
 
 	/* Verify completion. */
-	zassert_equal(coophi_counter(), 1, NULL);
+	zassert_equal(coophi_counter(), 2, NULL);
 	zassert_true(!k_work_is_pending(&work), NULL);
+	zassert_true(!k_work_is_pending(&work1), NULL);
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);
 	zassert_equal(rc, 0, NULL);
 
 	/* After completion flush should be a no-op */
 	zassert_false(k_work_flush(&work, &work_sync), NULL);
+	zassert_false(k_work_flush(&work1, &work_sync), NULL);
 }
 
 /* Single CPU submit a work item and wait for flush after it's started.
