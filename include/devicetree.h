@@ -326,6 +326,13 @@
 #define DT_PARENT(node_id) UTIL_CAT(node_id, _PARENT)
 
 /**
+ * @brief Get a DT_DRV_COMPAT parent's node identifier
+ * @param inst instance number
+ * @return a node identifier for the instance's parent
+ */
+#define DT_INST_PARENT(inst) DT_PARENT(DT_DRV_INST(inst))
+
+/**
  * @brief Get a node identifier for a grandparent node
  *
  * Example devicetree fragment:
