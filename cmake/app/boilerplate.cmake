@@ -127,11 +127,6 @@ file(TO_CMAKE_PATH "${ZEPHYR_BASE}" PROJECT_SOURCE_DIR)
 
 set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
 
-set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
-# Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
-
-
 #
 # Import more CMake functions and macros
 #
