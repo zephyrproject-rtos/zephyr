@@ -111,7 +111,7 @@ static const struct ps2_driver_api ps2_channel_npcx_driver_api = {
 		.channel_id = DT_INST_PROP(inst, channel),                     \
 		.alts_size = ARRAY_SIZE(ps2_channel_alts##inst),               \
 		.alts_list = ps2_channel_alts##inst,                           \
-		.ps2_ctrl = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),       \
+		.ps2_ctrl = DEVICE_DT_GET(DT_INST_PARENT(inst)),               \
 	};                                                                     \
 									       \
 	DEVICE_DT_INST_DEFINE(inst, ps2_npcx_channel_init, NULL, NULL,         \

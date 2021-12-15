@@ -102,8 +102,7 @@ static int pwm_gecko_init(const struct device *dev)
 
 #define PWM_GECKO_INIT(index)							\
 	static const struct pwm_gecko_config pwm_gecko_config_##index = {	\
-		.timer = (TIMER_TypeDef *)DT_REG_ADDR(                          \
-			DT_PARENT(DT_DRV_INST(index))),				\
+		.timer = (TIMER_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),	\
 		.clock = CLOCK_TIMER(index),					\
 		.prescaler = DT_INST_PROP(index, prescaler),			\
 		.prescale_enum = (TIMER_Prescale_TypeDef)			\

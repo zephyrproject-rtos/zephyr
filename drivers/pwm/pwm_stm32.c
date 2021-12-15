@@ -633,10 +633,10 @@ static int pwm_stm32_init(const struct device *dev)
 #define IRQ_CONFIG_FUNC(index)                                                 \
 static void pwm_stm32_irq_config_func_##index(const struct device *dev)        \
 {                                                                              \
-	IRQ_CONNECT(DT_IRQN(DT_PARENT(DT_DRV_INST(index))),                    \
-			DT_IRQ(DT_PARENT(DT_DRV_INST(index)), priority),       \
+	IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(index)),                            \
+			DT_IRQ(DT_INST_PARENT(index), priority),               \
 			pwm_stm32_isr, DEVICE_DT_INST_GET(index), 0);          \
-	irq_enable(DT_IRQN(DT_PARENT(DT_DRV_INST(index))));                    \
+	irq_enable(DT_IRQN(DT_INST_PARENT(index)));                            \
 }
 #define CAPTURE_INIT(index)                                                    \
 	.irq_config_func = pwm_stm32_irq_config_func_##index
@@ -647,8 +647,8 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)        \
 
 #define DT_INST_CLK(index, inst)                                               \
 	{                                                                      \
-		.bus = DT_CLOCKS_CELL(DT_PARENT(DT_DRV_INST(index)), bus),     \
-		.enr = DT_CLOCKS_CELL(DT_PARENT(DT_DRV_INST(index)), bits)     \
+		.bus = DT_CLOCKS_CELL(DT_INST_PARENT(index), bus),             \
+		.enr = DT_CLOCKS_CELL(DT_INST_PARENT(index), bits)             \
 	}
 
 /* Print warning if any pwm node has 'st,prescaler' property */
@@ -665,13 +665,11 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 	PINCTRL_DT_INST_DEFINE(index)					       \
 									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
-		.timer = (TIM_TypeDef *)DT_REG_ADDR(                           \
-			DT_PARENT(DT_DRV_INST(index))),                        \
+		.timer = (TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),    \
 		/* For compatibility reason, use pwm st_prescaler property  */ \
 		/* if exist, otherwise use parent (timers) property         */ \
 		.prescaler = DT_PROP_OR(DT_DRV_INST(index), st_prescaler,      \
-			(DT_PROP(DT_PARENT(DT_DRV_INST(index)),                \
-				 st_prescaler))),                              \
+			(DT_PROP(DT_INST_PARENT(index), st_prescaler))),       \
 		.pclken = DT_INST_CLK(index, timer),                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
 		CAPTURE_INIT(index)					       \
