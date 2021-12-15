@@ -363,6 +363,21 @@ static inline uint8_t bin2bcd(uint8_t bin)
  */
 uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 
+/**
+ * @brief Like memcpy, but will copy by words if both addressses are a multiple of 4
+ *
+ * This is intended to be used when a word-size copy is required, but it also works as
+ * an efficent version of regular memcpy.
+ *
+ * @param dest Destination address
+ * @param src  Source address
+ * @param n    number of bytes to copy
+ *
+ * @return destination pointer
+ *
+ */
+void *memcpy32(void *restrict dest, const void *restrict src, size_t n);
+
 #ifdef __cplusplus
 }
 #endif
