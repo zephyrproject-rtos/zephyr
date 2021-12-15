@@ -367,10 +367,18 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
-	/* Configure CAN3 using OSC_RC_400M */
-	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc400M;
-	rootCfg.div = 5;
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay)
+	/* Configure CAN1 using Osc48MDiv2 */
+	rootCfg.mux = kCLOCK_CAN1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Can1, &rootCfg);
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan3), okay)
+	/* Configure CAN1 using Osc48MDiv2 */
+	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Can3, &rootCfg);
+#endif
 #endif
 
 #ifdef CONFIG_COUNTER_MCUX_GPT
