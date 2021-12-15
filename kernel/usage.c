@@ -9,6 +9,7 @@
 #include <timing/timing.h>
 #include <ksched.h>
 #include <spinlock.h>
+#include <sys/check.h>
 
 /* Need one of these for this to work */
 #if !defined(CONFIG_USE_SWITCH) && !defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
@@ -31,26 +32,29 @@ static uint32_t usage_now(void)
 	return (now == 0) ? 1 : now;
 }
 
-/**
- * Update the usage statistics for the specified CPU and thread
- */
-static void sched_update_usage(struct _cpu *cpu, struct k_thread *thread,
-			       uint32_t cycles)
-{
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	if (!z_is_idle_thread_object(thread)) {
+static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
+{
+	if (!cpu->usage.track_usage) {
+		return;
+	}
+
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-		cpu->usage.current += cycles;
+	cpu->usage.current += cycles;
 
-		if (cpu->usage.longest < cpu->usage.current) {
-			cpu->usage.longest = cpu->usage.current;
-		}
-#endif
-
-		cpu->usage.total += cycles;
+	if (cpu->usage.longest < cpu->usage.current) {
+		cpu->usage.longest = cpu->usage.current;
 	}
 #endif
 
+	cpu->usage.total += cycles;
+}
+#else
+#define sched_cpu_update_usage(cpu, cycles)   do { } while (0)
+#endif
+
+static void sched_thread_update_usage(struct k_thread *thread, uint32_t cycles)
+{
 	thread->base.usage.total += cycles;
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
@@ -69,10 +73,12 @@ void z_sched_usage_start(struct k_thread *thread)
 
 	key = k_spin_lock(&usage_lock);
 
-	_current_cpu->usage0 = usage_now();
+	_current_cpu->usage0 = usage_now();   /* Always update */
 
-	thread->base.usage.num_windows++;
-	thread->base.usage.current = 0;
+	if (thread->base.usage.track_usage) {
+		thread->base.usage.num_windows++;
+		thread->base.usage.current = 0;
+	}
 
 	k_spin_unlock(&usage_lock, key);
 #else
@@ -92,9 +98,13 @@ void z_sched_usage_stop(void)
 	uint32_t u0 = cpu->usage0;
 
 	if (u0 != 0) {
-		uint32_t dt = usage_now() - u0;
+		uint32_t cycles = usage_now() - u0;
 
-		sched_update_usage(cpu, cpu->current, dt);
+		if (cpu->current->base.usage.track_usage) {
+			sched_thread_update_usage(cpu->current, cycles);
+		}
+
+		sched_cpu_update_usage(cpu, cycles);
 	}
 
 	cpu->usage0 = 0;
@@ -102,25 +112,30 @@ void z_sched_usage_stop(void)
 }
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-void z_sched_cpu_usage(uint8_t core_id, struct k_thread_runtime_stats *stats)
+void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 {
 	k_spinlock_key_t  key;
 	struct _cpu *cpu;
-	uint32_t  now;
-	uint32_t  u0;
 
 	cpu = _current_cpu;
 	key = k_spin_lock(&usage_lock);
 
-	u0 = cpu->usage0;
-	now = usage_now();
+	if (&_kernel.cpus[cpu_id] == cpu) {
+		uint32_t  now = usage_now();
+		uint32_t cycles = now - cpu->usage0;
 
-	if ((u0 != 0) && (&_kernel.cpus[core_id] == cpu)) {
-		uint32_t dt = now - u0;
+		/*
+		 * Getting stats for the current CPU. Update both its
+		 * current thread stats and the CPU stats as the CPU's
+		 * [usage0] field will also get updated. This keeps all
+		 * that information up-to-date.
+		 */
 
-		/* It is safe to update the CPU's usage stats */
+		if (cpu->current->base.usage.track_usage) {
+			sched_thread_update_usage(cpu->current, cycles);
+		}
 
-		sched_update_usage(cpu, cpu->current, dt);
+		sched_cpu_update_usage(cpu, cycles);
 
 		cpu->usage0 = now;
 	}
@@ -139,7 +154,7 @@ void z_sched_cpu_usage(uint8_t core_id, struct k_thread_runtime_stats *stats)
 #endif
 
 	stats->idle_cycles =
-		_kernel.cpus[core_id].idle_thread->base.usage.total;
+		_kernel.cpus[cpu_id].idle_thread->base.usage.total;
 
 	stats->execution_cycles = stats->total_cycles + stats->idle_cycles;
 
@@ -150,26 +165,28 @@ void z_sched_cpu_usage(uint8_t core_id, struct k_thread_runtime_stats *stats)
 void z_sched_thread_usage(struct k_thread *thread,
 			  struct k_thread_runtime_stats *stats)
 {
-	uint32_t  u0;
-	uint32_t  now;
 	struct _cpu *cpu;
 	k_spinlock_key_t  key;
 
 	cpu = _current_cpu;
 	key = k_spin_lock(&usage_lock);
 
-	u0 = cpu->usage0;
-	now = usage_now();
-
-	if ((u0 != 0) && (thread == cpu->current)) {
-		uint32_t dt = now - u0;
+	if (thread == cpu->current) {
+		uint32_t now = usage_now();
+		uint32_t cycles = now - cpu->usage0;
 
 		/*
-		 * Update the thread's usage stats if it is the current thread
-		 * running on the current core.
+		 * Getting stats for the current thread. Update both the
+		 * current thread stats and its CPU stats as the CPU's
+		 * [usage0] field will also get updated. This keeps all
+		 * that information up-to-date.
 		 */
 
-		sched_update_usage(cpu, thread, dt);
+		if (thread->base.usage.track_usage) {
+			sched_thread_update_usage(thread, cycles);
+		}
+
+		sched_cpu_update_usage(cpu, cycles);
 
 		cpu->usage0 = now;
 	}
@@ -198,3 +215,117 @@ void z_sched_thread_usage(struct k_thread *thread,
 
 	k_spin_unlock(&usage_lock, key);
 }
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+int k_thread_runtime_stats_enable(k_tid_t  thread)
+{
+	k_spinlock_key_t  key;
+
+	CHECKIF(thread == NULL) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&usage_lock);
+
+	if (!thread->base.usage.track_usage) {
+		thread->base.usage.track_usage = true;
+		thread->base.usage.num_windows++;
+		thread->base.usage.current = 0;
+	}
+
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+}
+
+int k_thread_runtime_stats_disable(k_tid_t  thread)
+{
+	struct _cpu *cpu = _current_cpu;
+	k_spinlock_key_t key;
+
+	CHECKIF(thread == NULL) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&usage_lock);
+	if (thread->base.usage.track_usage) {
+		thread->base.usage.track_usage = false;
+
+		if (thread == cpu->current) {
+			uint32_t cycles = usage_now() - cpu->usage0;
+
+			sched_thread_update_usage(thread, cycles);
+			sched_cpu_update_usage(cpu, cycles);
+		}
+	}
+
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+void k_sys_runtime_stats_enable(void)
+{
+	k_spinlock_key_t  key;
+
+	key = k_spin_lock(&usage_lock);
+
+	if (_current_cpu->usage.track_usage) {
+
+		/*
+		 * Usage tracking is already enabled on the current CPU
+		 * and thus on all other CPUs (if applicable). There is
+		 * nothing left to do.
+		 */
+
+		k_spin_unlock(&usage_lock, key);
+		return;
+	}
+
+	/* Enable gathering of runtime stats on each CPU */
+
+	for (uint8_t i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		_kernel.cpus[i].usage.track_usage = true;
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+		_kernel.cpus[i].usage.num_windows++;
+		_kernel.cpus[i].usage.current = 0;
+#endif
+	}
+
+	k_spin_unlock(&usage_lock, key);
+}
+
+void k_sys_runtime_stats_disable(void)
+{
+	struct _cpu *cpu;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&usage_lock);
+
+	if (!_current_cpu->usage.track_usage) {
+
+		/*
+		 * Usage tracking is already disabled on the current CPU
+		 * and thus on all other CPUs (if applicable). There is
+		 * nothing left to do.
+		 */
+
+		k_spin_unlock(&usage_lock, key);
+		return;
+	}
+
+	uint32_t now = usage_now();
+
+	for (uint8_t i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		cpu = &_kernel.cpus[i];
+		if (cpu->usage0 != 0) {
+			sched_cpu_update_usage(cpu, now - cpu->usage0);
+		}
+		cpu->usage.track_usage = false;
+	}
+
+	k_spin_unlock(&usage_lock, key);
+}
+#endif

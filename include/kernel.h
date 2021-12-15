@@ -5903,6 +5903,50 @@ int k_thread_runtime_stats_get(k_tid_t thread,
  */
 int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
 
+/**
+ * @brief Enable gathering of runtime statistics for specified thread
+ *
+ * This routine enables the gathering of runtime statistics for the specified
+ * thread.
+ *
+ * @param thread ID of thread
+ * @return -EINVAL if invalid thread ID, otherwise 0
+ */
+extern int k_thread_runtime_stats_enable(k_tid_t thread);
+
+/**
+ * @brief Disable gathering of runtime statistics for specified thread
+ *
+ * This routine disables the gathering of runtime statistics for the specified
+ * thread.
+ *
+ * @param thread ID of thread
+ * @return -EINVAL if invalid thread ID, otherwise 0
+ */
+extern int k_thread_runtime_stats_disable(k_tid_t thread);
+
+/**
+ * @brief Enable gathering of system runtime statistics
+ *
+ * This routine enables the gathering of system runtime statistics. Note that
+ * it does not affect the gathering of similar statistics for individual
+ * threads.
+ *
+ * @return N/A
+ */
+extern void k_sys_runtime_stats_enable(void);
+
+/**
+ * @brief Disable gathering of system runtime statistics
+ *
+ * This routine disables the gathering of system runtime statistics. Note that
+ * it does not affect the gathering of similar statistics for individual
+ * threads.
+ *
+ * @return N/A
+ */
+extern void k_sys_runtime_stats_disable(void);
+
 #ifdef __cplusplus
 }
 #endif
