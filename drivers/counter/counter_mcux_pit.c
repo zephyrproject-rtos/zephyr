@@ -143,7 +143,7 @@ static int mcux_pit_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	uint32_t ticks = alarm_cfg->ticks;
 
-	if (chan_id != DT_PROP(DT_DRV_INST(0), pit_channel)) {
+	if (chan_id != DT_INST_PROP(0, pit_channel)) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
@@ -167,7 +167,7 @@ static int mcux_pit_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	const struct mcux_pit_config *config = dev->config;
 	struct mcux_pit_data *data = dev->data;
 
-	if (chan_id != DT_PROP(DT_DRV_INST(0), pit_channel)) {
+	if (chan_id != DT_INST_PROP(0, pit_channel)) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
@@ -193,7 +193,7 @@ static int mcux_pit_init(const struct device *dev)
 	config->irq_config_func(dev);
 
 	PIT_SetTimerPeriod(config->base, config->pit_channel,
-			   USEC_TO_COUNT(DT_PROP(DT_DRV_INST(0), pit_period),
+			   USEC_TO_COUNT(DT_INST_PROP(0, pit_period),
 					 CLOCK_GetFreq(kCLOCK_BusClk)));
 
 	return 0;
@@ -225,10 +225,10 @@ static const struct mcux_pit_config mcux_pit_config_0 = {
 	.info = {
 		.max_top_value = UINT32_MAX,
 		.channels = 1,
-		.freq = DT_PROP(DT_DRV_INST(0), clock_frequency),
+		.freq = DT_INST_PROP(0, clock_frequency),
 	},
 	.base = (PIT_Type *)DT_INST_REG_ADDR(0),
-	.pit_channel = DT_PROP(DT_DRV_INST(0), pit_channel),
+	.pit_channel = DT_INST_PROP(0, pit_channel),
 	.irq_config_func = mcux_pit_irq_config_0,
 };
 
