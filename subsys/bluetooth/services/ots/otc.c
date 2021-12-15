@@ -1,7 +1,7 @@
 /** @file
  *  @brief Bluetooth Object Transfer Client
  *
- * Copyright (c) 2020 - 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include <bluetooth/services/ots.h>
 #include <bluetooth/services/otc.h>
 #include "otc_internal.h"
+#include "ots_l2cap_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_OTC)
 #define LOG_MODULE_NAME bt_otc
@@ -31,43 +32,11 @@
 /* TODO: KConfig options */
 #define OTS_CLIENT_INST_COUNT   1
 
-static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan);
-static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf);
-static void l2cap_sent(struct bt_l2cap_chan *chan);
-static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status);
-static void l2cap_connected(struct bt_l2cap_chan *chan);
-static void l2cap_disconnected(struct bt_l2cap_chan *chan);
-
-#define CREDITS         10
-#define DATA_MTU        (BT_OTC_MAX_WRITE_SIZE * CREDITS)
-
-NET_BUF_POOL_FIXED_DEFINE(otc_l2cap_pool, 1, DATA_MTU, 8, NULL);
-
-struct l2ch {
-	struct k_delayed_work recv_work;
-	struct bt_l2cap_le_chan ch;
-};
-
 struct dirlisting_record_t {
 	uint16_t                      len;
 	uint8_t                       flags;
 	uint8_t                       name_len;
 	struct bt_otc_obj_metadata    metadata;
-};
-
-/* L2CAP CoC*/
-static struct bt_l2cap_chan_ops l2cap_ops = {
-	.alloc_buf      = l2cap_alloc_buf,
-	.recv           = l2cap_recv,
-	.sent           = l2cap_sent,
-	.status         = l2cap_status,
-	.connected      = l2cap_connected,
-	.disconnected   = l2cap_disconnected,
-};
-
-static struct l2ch l2ch_chan = {
-	.ch.chan.ops    = &l2cap_ops,
-	.ch.rx.mtu      = DATA_MTU,
 };
 
 /**@brief String literals for the OACP result codes. Used for logging output.*/
@@ -125,6 +94,7 @@ static const char * const lit_olcp_result[] = {
 
 struct bt_otc_internal_instance_t {
 	struct bt_otc_instance_t *otc_inst;
+	struct bt_gatt_ots_l2cap l2cap_ctx;
 	bool busy;
 	/** Bitfield that is used to determine how much metadata to read */
 	uint8_t metadata_to_read;
@@ -150,6 +120,81 @@ static void read_next_metadata(struct bt_conn *conn,
 static int read_attr(struct bt_conn *conn,
 		    struct bt_otc_internal_instance_t *inst,
 		    uint16_t handle, bt_gatt_read_func_t cb);
+
+/* L2CAP callbacks */
+static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
+		    struct bt_conn *conn)
+{
+	/* Not doing any writes yet */
+	BT_ERR("Unexpected call, context: %p, conn: %p", l2cap_ctx, conn);
+}
+
+static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
+		       struct bt_conn *conn, struct net_buf *buf)
+{
+	uint32_t offset = cur_inst->rcvd_size;
+	bool is_complete = false;
+	struct bt_otc_obj_metadata *cur_object =
+		&cur_inst->otc_inst->cur_object;
+	int cb_ret;
+
+	BT_DBG("Incoming L2CAP data, context: %p, conn: %p, len: %u, offset: %u",
+	       l2cap_ctx, conn, buf->len, offset);
+
+	cur_inst->rcvd_size += buf->len;
+
+	if (cur_inst->rcvd_size >= cur_object->current_size) {
+		is_complete = true;
+	}
+
+	if (cur_inst->rcvd_size > cur_object->current_size) {
+		BT_WARN("Received %u but expected maximum %u",
+			cur_inst->rcvd_size, cur_object->current_size);
+	}
+
+
+	cb_ret = cur_inst->otc_inst->cb->content_cb(conn, offset,
+						    buf->len, buf->data,
+						    is_complete, 0);
+
+	if (is_complete) {
+		uint32_t rcv_size = cur_object->current_size;
+		int err;
+
+		BT_DBG("Received the whole object (%u bytes). "
+		       "Disconnecting L2CAP CoC", rcv_size);
+		err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
+		if (err < 0) {
+			BT_WARN("Disconnecting L2CAP returned error %d", err);
+		}
+
+		cur_inst = NULL;
+	} else if (cb_ret == BT_OTC_STOP) {
+		uint32_t rcv_size = cur_object->current_size;
+		int err;
+
+		BT_DBG("Stopped receiving after%u bytes. "
+		       "Disconnecting L2CAP CoC", rcv_size);
+		err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
+
+		if (err < 0) {
+			BT_WARN("Disconnecting L2CAP returned error %d", err);
+		}
+
+		cur_inst = NULL;
+
+	}
+
+	return 0;
+}
+
+static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
+		   struct bt_conn *conn)
+{
+	BT_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, conn);
+}
+/* End L2CAP callbacks */
+
 
 static void print_oacp_response(enum bt_ots_oacp_proc_type req_opcode,
 				enum bt_ots_oacp_res_code result_code)
@@ -370,16 +415,23 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
 int bt_otc_register(struct bt_otc_instance_t *otc_inst)
 {
 	for (int i = 0; i < ARRAY_SIZE(otc_insts); i++) {
+		int err;
 
 		if (otc_insts[i].otc_inst) {
 			continue;
 		}
 
 		BT_DBG("%u", i);
-		otc_insts[i].otc_inst = otc_inst;
+		err = bt_gatt_ots_l2cap_register(&otc_insts[i].l2cap_ctx);
+		if (err) {
+			BT_WARN("Could not register L2CAP context");
+			return err;
+		}
 
+		otc_insts[i].otc_inst = otc_inst;
 		return 0;
 	}
+
 	return -ENOMEM;
 }
 
@@ -1034,38 +1086,13 @@ static void write_oacp_cp_cb(struct bt_conn *conn, uint8_t err,
 	inst->busy = false;
 }
 
-
-static int bt_otc_connect(struct bt_conn *conn)
-{
-	int err;
-
-	if (!conn) {
-		BT_WARN("Invalid Connection");
-		return -ENOTCONN;
-	} else if (l2ch_chan.ch.chan.conn) {
-		BT_INFO("Channel already in use");
-		return -ENOEXEC;
-	}
-
-	BT_INFO("Connecting L2CAP Connection Oriented Channel .........");
-	err = bt_l2cap_chan_connect(conn, &l2ch_chan.ch.chan, OTS_L2CAP_PSM);
-
-	if (err < 0) {
-		BT_WARN("Unable to connect to psm %u (err %u)",
-				OTS_L2CAP_PSM, err);
-	} else {
-		BT_INFO("L2CAP connection pending");
-	}
-
-	return err;
-}
-
 static int oacp_read(struct bt_conn *conn,
 		     struct bt_otc_internal_instance_t *inst)
 {
 	int err;
 	uint32_t offset = 0;
 	uint32_t length;
+	struct bt_gatt_ots_l2cap *l2cap;
 
 	if (!inst->otc_inst->oacp_handle) {
 		BT_DBG("Handle not set");
@@ -1079,11 +1106,16 @@ static int oacp_read(struct bt_conn *conn,
 	/* TODO: How do we ensure that the L2CAP is connected in time for the
 	 * transfer?
 	 */
-	err = bt_otc_connect(conn);
 
-	if (err && err != -ENOEXEC) {
-		return -ENOTCONN;
+	err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
+	if (err) {
+		BT_DBG("Could not connect l2cap: %d", err);
+		return err;
 	}
+
+	l2cap->tx_done = tx_done;
+	l2cap->rx_done = rx_done;
+	l2cap->closed  = chan_closed;
 
 	net_buf_simple_reset(&otc_tx_buf);
 
@@ -1508,92 +1540,4 @@ void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
 			BT_INFO(" - write permitted");
 		}
 	}
-}
-
-static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
-{
-	uint32_t offset = cur_inst->rcvd_size;
-	bool is_complete = false;
-	struct bt_otc_obj_metadata *cur_object =
-		&cur_inst->otc_inst->cur_object;
-	int cb_ret;
-
-	BT_DBG("Incoming data channel: %p, len: %u", chan, buf->len);
-	BT_DBG("Offset: %d", offset);
-
-	cur_inst->rcvd_size += buf->len;
-
-	if (cur_inst->rcvd_size >= cur_object->current_size) {
-		is_complete = true;
-	}
-
-	if (cur_inst->rcvd_size > cur_object->current_size) {
-		BT_WARN("Received %u but expected maximum %u",
-			cur_inst->rcvd_size, cur_object->current_size);
-	}
-
-
-	cb_ret = cur_inst->otc_inst->cb->content_cb(chan->conn, offset,
-						    buf->len, buf->data,
-						    is_complete, 0);
-
-	if (is_complete) {
-		uint32_t rcv_size = cur_object->current_size;
-		int err;
-
-		BT_DBG("Received the whole object (%u bytes). "
-		       "Disconnecting L2CAP CoC", rcv_size);
-		err = bt_l2cap_chan_disconnect(&l2ch_chan.ch.chan);
-
-		if (err < 0) {
-			BT_WARN("bt_l2cap_chan_disconnect returned error %d",
-				err);
-		}
-
-		cur_inst = NULL;
-	} else if (cb_ret == BT_OTC_STOP) {
-		uint32_t rcv_size = cur_object->current_size;
-		int err;
-
-		BT_DBG("Stopped receiving after%u bytes. "
-		       "Disconnecting L2CAP CoC", rcv_size);
-		err = bt_l2cap_chan_disconnect(&l2ch_chan.ch.chan);
-
-		if (err < 0) {
-			BT_WARN("bt_l2cap_chan_disconnect returned error %d",
-				err);
-		}
-
-		cur_inst = NULL;
-
-	}
-	return 0;
-}
-
-static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
-{
-	BT_DBG("L2CAP CoC Buffer alloc requested");
-	return net_buf_alloc(&otc_l2cap_pool, K_FOREVER);
-}
-
-static void l2cap_connected(struct bt_l2cap_chan *chan)
-{
-	BT_INFO("Channel %p connected", chan);
-}
-
-static void l2cap_disconnected(struct bt_l2cap_chan *chan)
-{
-	BT_INFO("Channel %p disconnected", chan);
-}
-
-static void l2cap_sent(struct bt_l2cap_chan *chan)
-{
-	BT_DBG("Outgoing data ...");
-}
-
-static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
-{
-	int credits = atomic_get(&l2ch_chan.ch.tx.credits);
-
-	BT_DBG("Channel %p status %lu, credits %d", chan, *status, credits);
 }
