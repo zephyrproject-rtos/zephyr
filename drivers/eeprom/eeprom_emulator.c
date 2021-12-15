@@ -729,7 +729,7 @@ static const struct eeprom_driver_api eeprom_emu_api = {
 	.size = eeprom_emu_size,
 };
 
-#define EEPROM_PARTITION(n) DT_PHANDLE_BY_IDX(DT_DRV_INST(n), partition, 0)
+#define EEPROM_PARTITION(n) DT_INST_PHANDLE_BY_IDX(n, partition, 0)
 
 #define PART_WBS(part) \
 	DT_PROP(COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(part), soc_nv_flash),\
