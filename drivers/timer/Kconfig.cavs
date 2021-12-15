@@ -5,7 +5,6 @@
 
 config CAVS_TIMER
 	bool "CAVS DSP Wall Clock Timer on Intel SoC"
-	depends on CAVS_ICTL
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
