@@ -330,6 +330,7 @@ int pm_device_state_get(const struct device *dev,
  * @retval -EALREADY If device is already at the requested state.
  * @retval -EBUSY If device is changing its state.
  * @retval -ENOSYS If device does not support PM.
+ * @retval -EPERM If device has power state locked.
  * @retval Errno Other negative errno on failure.
  */
 int pm_device_action_run(const struct device *dev,

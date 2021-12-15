@@ -89,6 +89,10 @@ int pm_device_action_run(const struct device *dev,
 		return -ENOSYS;
 	}
 
+	if (pm_device_state_is_locked(dev)) {
+		return -EPERM;
+	}
+
 	switch (action) {
 	case PM_DEVICE_ACTION_FORCE_SUSPEND:
 		__fallthrough;
