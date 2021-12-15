@@ -25,6 +25,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &led_matrix;
 	};
 
 	gpio_keys {
@@ -40,7 +41,7 @@
 		};
 	};
 
-	led_matrix {
+	led_matrix: led_matrix {
 		compatible = "nordic,nrf-led-matrix";
 		status = "okay";
 		label = "LED_MATRIX";
