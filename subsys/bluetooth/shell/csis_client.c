@@ -101,23 +101,6 @@ static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 	}
 }
 
-static void csis_client_discover_sets_cb(struct bt_csis_client_set_member *member,
-					 int err,
-					 uint8_t set_count)
-{
-	if (err != 0) {
-		shell_error(ctx_shell, "Discover sets failed (%d)", err);
-		return;
-	}
-
-	for (uint8_t i = 0; i < set_count; i++) {
-		struct bt_csis_client_csis_inst *inst = &member->insts[i];
-
-		shell_print(ctx_shell, "Set size %d (pointer: %p)",
-			    inst[i].info.set_size, &inst[i]);
-	}
-}
-
 static void csis_client_lock_set_cb(int err)
 {
 	if (err != 0) {
@@ -157,7 +140,6 @@ static void csis_client_lock_state_read_cb(const struct bt_csis_client_set_info 
 static struct bt_csis_client_cb cbs = {
 	.lock_set = csis_client_lock_set_cb,
 	.release_set = csis_client_release_set_cb,
-	.sets = csis_client_discover_sets_cb,
 	.discover = csis_discover_cb,
 	.lock_state_read = csis_client_lock_state_read_cb
 };
@@ -273,30 +255,6 @@ static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 
 	shell_print(sh, "Discovering for member[%u]", (uint8_t)member_index);
 	err = bt_csis_client_discover(&set_members[member_index]);
-	if (err != 0) {
-		shell_error(sh, "Fail: %d", err);
-	}
-
-	return err;
-}
-
-static int cmd_csis_client_discover_sets(const struct shell *sh, size_t argc,
-					 char *argv[])
-{
-	int err;
-	long member_index = 0;
-
-	if (argc > 1) {
-		member_index = strtol(argv[1], NULL, 0);
-
-		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
-			shell_error(sh, "Invalid member_index %ld",
-				    member_index);
-			return -ENOEXEC;
-		}
-	}
-
-	err = bt_csis_client_discover_sets(&set_members[member_index]);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -520,9 +478,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csis_client_cmds,
 	SHELL_CMD_ARG(discover, NULL,
 		      "Run discover for CSIS on peer device [member_index]",
 		      cmd_csis_client_discover, 1, 1),
-	SHELL_CMD_ARG(discover_sets, NULL,
-		      "Read all set values on connected device [member_index]",
-		      cmd_csis_client_discover_sets, 1, 1),
 	SHELL_CMD_ARG(discover_members, NULL,
 		      "Scan for set members <set_pointer>",
 		      cmd_csis_client_discover_members, 2, 0),

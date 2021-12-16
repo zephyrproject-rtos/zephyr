@@ -441,6 +441,25 @@ static int csis_client_read_rank(struct bt_conn *conn, uint8_t inst_idx,
 	return bt_gatt_read(conn, &read_params);
 }
 
+static int csis_client_discover_sets(struct bt_csis_client_set_member *member)
+{
+	int err;
+
+	if (member->conn == NULL) {
+		BT_DBG("member->conn is NULL");
+		return -EINVAL;
+	} else if (busy) {
+		return -EBUSY;
+	}
+
+	/* Start reading values and call CB when done */
+	err = read_set_sirk(member->insts[0].csis);
+	if (err == 0) {
+		busy = true;
+	}
+	return err;
+}
+
 static uint8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
@@ -478,11 +497,20 @@ static uint8_t discover_func(struct bt_conn *conn,
 			}
 
 		} else {
+			int err;
+
 			cur_inst = NULL;
 			busy = false;
-			if (csis_client_cbs != NULL && csis_client_cbs->discover != NULL) {
-				csis_client_cbs->discover(client->set_member, 0,
-							  client->inst_count);
+			err = csis_client_discover_sets(client->set_member);
+			if (err != 0) {
+				BT_DBG("Discover sets failed (err %d)", err);
+				cur_inst = NULL;
+				busy = false;
+				if (csis_client_cbs != NULL &&
+				    csis_client_cbs->discover != NULL) {
+					csis_client_cbs->discover(client->set_member, err,
+								  client->inst_count);
+				}
 			}
 		}
 		return BT_GATT_ITER_STOP;
@@ -661,9 +689,10 @@ static uint8_t csis_client_discover_insts_read_rank_cb(struct bt_conn *conn,
 	}
 
 	if (cb_err != 0) {
-		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(client->set_member, cb_err,
-					      client->inst_count);
+		if (csis_client_cbs != NULL &&
+		    csis_client_cbs->discover != NULL) {
+			csis_client_cbs->discover(client->set_member, cb_err,
+						  client->inst_count);
 		}
 	}
 
@@ -703,9 +732,10 @@ static uint8_t csis_client_discover_insts_read_set_size_cb(struct bt_conn *conn,
 	}
 
 	if (cb_err != 0) {
-		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(client->set_member, cb_err,
-					      client->inst_count);
+		if (csis_client_cbs != NULL &&
+		    csis_client_cbs->discover != NULL) {
+			csis_client_cbs->discover(client->set_member, cb_err,
+						  client->inst_count);
 		}
 	}
 
@@ -790,9 +820,10 @@ static uint8_t csis_client_discover_insts_read_set_sirk_cb(struct bt_conn *conn,
 	}
 
 	if (cb_err != 0) {
-		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(client->set_member, cb_err,
-					      client->inst_count);
+		if (csis_client_cbs != NULL &&
+		    csis_client_cbs->discover != NULL) {
+			csis_client_cbs->discover(client->set_member, cb_err,
+						  client->inst_count);
 		}
 	}
 
@@ -839,18 +870,19 @@ static void discover_insts_resume(struct bt_conn *conn, uint16_t sirk_handle,
 			/* Read next */
 			cb_err = read_set_sirk(cur_inst);
 		} else if (csis_client_cbs != NULL &&
-			   csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(client->set_member, 0,
-					      client->inst_count);
+			   csis_client_cbs->discover != NULL) {
+			csis_client_cbs->discover(client->set_member, 0,
+						  client->inst_count);
 		}
 
 		return;
 	}
 
 	if (cb_err != 0) {
-		if (csis_client_cbs != NULL && csis_client_cbs->sets != NULL) {
-			csis_client_cbs->sets(client->set_member, cb_err,
-					      client->inst_count);
+		if (csis_client_cbs != NULL &&
+		    csis_client_cbs->discover != NULL) {
+			csis_client_cbs->discover(client->set_member, cb_err,
+						  client->inst_count);
 		}
 	} else {
 		busy = true;
@@ -1239,30 +1271,6 @@ int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 		busy = true;
 	}
 
-	return err;
-}
-
-int bt_csis_client_discover_sets(struct bt_csis_client_set_member *member)
-{
-	int err;
-
-	CHECKIF(member == NULL) {
-		BT_DBG("member is NULL");
-		return -EINVAL;
-	}
-
-	if (member->conn == NULL) {
-		BT_DBG("member->conn is NULL");
-		return -EINVAL;
-	} else if (busy) {
-		return -EBUSY;
-	}
-
-	/* Start reading values and call CB when done */
-	err = read_set_sirk(member->insts[0].csis);
-	if (err == 0) {
-		busy = true;
-	}
 	return err;
 }
 
