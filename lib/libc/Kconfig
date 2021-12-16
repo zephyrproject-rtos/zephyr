@@ -110,6 +110,13 @@ config NEWLIB_LIBC_FLOAT_SCANF
 	  Build with floating point scanf enabled. This will increase the size of
 	  the image.
 
+config NEWLIB_LIBC_HEAP_LISTENER
+	bool "Notify heap listeners of newlib libc heap events"
+	select HEAP_LISTENER
+	help
+	  Notify registered heap listeners upon certain events related to the newlib
+	  libc heap usage, such as the heap resize.
+
 endif # NEWLIB_LIBC
 
 if MINIMAL_LIBC
