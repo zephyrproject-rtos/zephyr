@@ -1459,6 +1459,7 @@ struct peci_it8xxx2_regs {
 /* Shared Memory Flash Interface Bridge (SMFI) registers */
 
 #ifndef __ASSEMBLER__
+/* TODO: rename flash_it8xxx2_regs to smfi_regs */
 struct flash_it8xxx2_regs {
 	volatile uint8_t reserved1[59];
 	/* 0x3B: EC-Indirect memory address 0 */
@@ -1477,9 +1478,21 @@ struct flash_it8xxx2_regs {
 	volatile uint8_t SMFI_SCAR0M;
 	/* 0x42: Scratch SRAM 0 address high byte */
 	volatile uint8_t SMFI_SCAR0H;
-	volatile uint8_t reserved2[95];
+	volatile uint8_t reserved1_1[23];
+	/* 0x5A: Host RAM Window Control */
+	volatile uint8_t SMFI_HRAMWC;
+	/* 0x5B: Host RAM Window 0 Base Address [11:4] */
+	volatile uint8_t SMFI_HRAMW0BA;
+	/* 0x5C: Host RAM Window 1 Base Address [11:4] */
+	volatile uint8_t SMFI_HRAMW1BA;
+	/* 0x5D: Host RAM Window 0 Access Allow Size */
+	volatile uint8_t SMFI_HRAMW0AAS;
+	/* 0x5E: Host RAM Window 1 Access Allow Size */
+	volatile uint8_t SMFI_HRAMW1AAS;
+	volatile uint8_t reserved2[67];
 	/* 0xA2: Flash control 6 */
 	volatile uint8_t SMFI_FLHCTRL6R;
+	volatile uint8_t reserved3[46];
 };
 #endif /* !__ASSEMBLER__ */
 
@@ -1493,6 +1506,16 @@ struct flash_it8xxx2_regs {
 #define IT8XXX2_SMFI_SC0A19 BIT(7)
 /* Scratch SRAM enable */
 #define IT8XXX2_SMFI_SCAR0H_ENABLE BIT(3)
+
+/* H2RAM Path Select. 1b: H2RAM through LPC IO cycle. */
+#define SMFI_H2RAMPS           BIT(4)
+/* H2RAM Window 1 Enable */
+#define SMFI_H2RAMW1E          BIT(1)
+/* H2RAM Window 0 Enable */
+#define SMFI_H2RAMW0E          BIT(0)
+
+/* Host RAM Window x Write Protect Enable (All protected) */
+#define SMFI_HRAMWXWPE_ALL     (BIT(5) | BIT(4))
 
 /* --- GPIO --- */
 #define IT8XXX2_GPIO_BASE  0x00F01600
@@ -2105,8 +2128,30 @@ struct pmc_regs {
 	volatile uint8_t PM1IE;
 	/* 0x09-0x0f: Reserved1 */
 	volatile uint8_t reserved1[7];
-	/* 0x10-0xff: Reserved2 */
-	volatile uint8_t reserved2[0xf0];
+	/* 0x10: Host Interface PM Channel 2 Status */
+	volatile uint8_t PM2STS;
+	/* 0x11: Host Interface PM Channel 2 Data Out Port */
+	volatile uint8_t PM2DO;
+	/* 0x12: Host Interface PM Channel 2 Data Out Port with SCI# */
+	volatile uint8_t PM2DOSCI;
+	/* 0x13: Host Interface PM Channel 2 Data Out Port with SMI# */
+	volatile uint8_t PM2DOSMI;
+	/* 0x14: Host Interface PM Channel 2 Data In Port */
+	volatile uint8_t PM2DI;
+	/* 0x15: Host Interface PM Channel 2 Data In Port with SCI# */
+	volatile uint8_t PM2DISCI;
+	/* 0x16: Host Interface PM Channel 2 Control */
+	volatile uint8_t PM2CTL;
+	/* 0x17: Host Interface PM Channel 2 Interrupt Control */
+	volatile uint8_t PM2IC;
+	/* 0x18: Host Interface PM Channel 2 Interrupt Enable */
+	volatile uint8_t PM2IE;
+	/* 0x19: Mailbox Control */
+	volatile uint8_t MBXCTRL;
+	/* 0x1a-0x1f: Reserved2 */
+	volatile uint8_t reserved2[6];
+	/* 0x20-0xff: Reserved3 */
+	volatile uint8_t reserved3[0xe0];
 };
 
 /* Input Buffer Full Interrupt Enable */
@@ -2119,6 +2164,24 @@ struct pmc_regs {
 #define PMC_PM1STS_GPF      BIT(2)
 /* A2 Address (A2) */
 #define PMC_PM1STS_A2_ADDR  BIT(3)
+
+/* PMC2 Input Buffer Full Interrupt Enable */
+#define PMC_PM2CTL_IBFIE    BIT(0)
+/* General Purpose Flag */
+#define PMC_PM2STS_GPF      BIT(2)
+
+/*
+ * Dedicated Interrupt
+ * 0b:
+ * INT3: PMC Output Buffer Empty Int
+ * INT25: PMC Input Buffer Full Int
+ * 1b:
+ * INT3: PMC1 Output Buffer Empty Int
+ * INT25: PMC1 Input Buffer Full Int
+ * INT26: PMC2 Output Buffer Empty Int
+ * INT27: PMC2 Input Buffer Full Int
+ */
+#define PMC_MBXCTRL_DINT    BIT(5)
 
 /*
  * eSPI slave registers
