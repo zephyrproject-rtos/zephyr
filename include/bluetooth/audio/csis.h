@@ -193,13 +193,8 @@ int bt_csis_advertise(struct bt_csis *csis, bool enable);
  */
 int bt_csis_lock(struct bt_csis *csis, bool lock, bool force);
 
-/**
- * @brief Struct representing a coordinated set instance on a remote device
- *
- * The values in this struct will be populated during discovery of sets
- * (bt_csis_client_discover_sets()).
- */
-struct bt_csis_client_set {
+/** Information about a specific set */
+struct bt_csis_client_set_info {
 	/**
 	 * @brief The 16 octet set Set Identity Resolving Key (SIRK)
 	 *
@@ -221,6 +216,16 @@ struct bt_csis_client_set {
 	 * Will be 0 if not exposed by the server.
 	 */
 	uint8_t rank;
+};
+
+/**
+ * @brief Struct representing a coordinated set instance on a remote device
+ *
+ * The values in this struct will be populated during discovery of sets
+ * (bt_csis_client_discover_sets()).
+ */
+struct bt_csis_client_set {
+	struct bt_csis_client_set_info info;
 
 	/** Internally used pointer value */
 	struct bt_csis *csis;
@@ -305,11 +310,11 @@ typedef void (*bt_csis_client_lock_changed_cb)(struct bt_csis_client_set *set,
  * set member is in the locked state, the remaining (if any) won't be read.
  * Likewise, if any error occurs, the procedure will also be aborted.
  *
- * @param set       The set that was read.
+ * @param set_info  Pointer to the a specific set_info struct.
  * @param err       Error value. 0 on success, GATT error or errno on fail.
  * @param locked    Whether the lock is locked or release.
  */
-typedef void (*bt_csis_client_lock_state_read_cb)(const struct bt_csis_client_set *set,
+typedef void (*bt_csis_client_lock_state_read_cb)(const struct bt_csis_client_set_info *set_info,
 						  int err, bool locked);
 
 struct bt_csis_client_cb {
@@ -350,14 +355,14 @@ void bt_csis_client_register_cb(struct bt_csis_client_cb *cb);
  *
  * @param members   Array of set members to check lock state for.
  * @param count     Number of set members in @p members.
- * @param set       Pointer to the specified set, as a member may be part of
- *                  multiple sets.
+ * @param set_info  Pointer to the a specific set_info struct, as a member may
+ *                  be part of multiple sets.
  *
  * @return Return 0 on success, or an errno value on error.
  */
 int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **members,
 				  uint8_t count,
-				  const struct bt_csis_client_set *set);
+				  const struct bt_csis_client_set_info *set_info);
 
 /**
  * @brief Lock an array of set members
@@ -368,13 +373,14 @@ int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **membe
  *
  * @param members   Array of set members to lock.
  * @param count     Number of set members in @p members.
- * @param set       Pointer to the specified set, as a member may be part of
- *                  multiple sets.
+ * @param set_info  Pointer to the a specific set_info struct, as a member may
+ *                  be part of multiple sets.
  *
  * @return Return 0 on success, or an errno value on error.
  */
 int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
-			uint8_t count, const struct bt_csis_client_set *set);
+			uint8_t count,
+			const struct bt_csis_client_set_info *set_info);
 
 /**
  * @brief Release an array of set members
@@ -383,13 +389,14 @@ int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
  *
  * @param members   Array of set members to lock.
  * @param count     Number of set members in @p members.
- * @param set       Pointer to the specified set, as a member may be part of
- *                  multiple sets.
+ * @param set_info  Pointer to the a specific set_info struct, as a member may
+ *                  be part of multiple sets.
  *
  * @return Return 0 on success, or an errno value on error.
  */
 int bt_csis_client_release(const struct bt_csis_client_set_member **members,
-			   uint8_t count, const struct bt_csis_client_set *set);
+			   uint8_t count,
+			   const struct bt_csis_client_set_info *set_info);
 
 
 #ifdef __cplusplus

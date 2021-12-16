@@ -51,7 +51,7 @@ static bool busy;
 
 static struct active_members {
 	const struct bt_csis_client_set_member **members;
-	const struct bt_csis_client_set *set;
+	const struct bt_csis_client_set_info *info;
 	uint8_t members_count;
 	uint8_t members_handled;
 	uint8_t members_restored;
@@ -122,16 +122,17 @@ static struct bt_csis *lookup_instance_by_index(struct bt_conn *conn,
 	return &client->csis_insts[idx];
 }
 
-static struct bt_csis *lookup_instance_by_set(
-	const struct bt_csis_client_set_member *member,
-	const struct bt_csis_client_set *set)
+static struct bt_csis *lookup_instance_by_set_info(const struct bt_csis_client_set_member *member,
+						   const struct bt_csis_client_set_info *set_info)
 {
 	for (int i = 0; i < ARRAY_SIZE(member->sets); i++) {
-		const struct bt_csis_client_set *member_set;
+		const struct bt_csis_client_set_info *member_set_info;
 
-		member_set = &member->sets[i];
-		if (member_set->set_size == set->set_size &&
-		    memcmp(&member_set->set_sirk, &set->set_sirk, sizeof(set->set_sirk)) == 0) {
+		member_set_info = &member->sets[i].info;
+		if (member_set_info->set_size == set_info->set_size &&
+		    memcmp(&member_set_info->set_sirk,
+			   &set_info->set_sirk,
+			   sizeof(set_info->set_sirk)) == 0) {
 			return lookup_instance_by_index(member->conn, i);
 		}
 	}
@@ -196,7 +197,7 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 			uint8_t *dst_sirk;
 
 			client = &client_insts[bt_conn_index(conn)];
-			dst_sirk = client->set_member->sets[csis_inst->cli.idx].set_sirk;
+			dst_sirk = client->set_member->sets[csis_inst->cli.idx].info.set_sirk;
 
 			BT_DBG("Set SIRK %sencrypted",
 			       sirk->type == BT_CSIS_SIRK_TYPE_PLAIN
@@ -258,15 +259,16 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 	if (csis_inst != NULL) {
 		if (length == sizeof(set_size)) {
 			struct bt_csis_client_inst *client;
-			struct bt_csis_client_set *set;
+			struct bt_csis_client_set_info *set_info;
 
 			client = &client_insts[bt_conn_index(conn)];
-			set = &client->set_member->sets[csis_inst->cli.idx];
+			set_info = &client->set_member->sets[csis_inst->cli.idx].info;
 
 			(void)memcpy(&set_size, data, length);
 			BT_DBG("Set size updated from %u to %u",
-			       set->set_size, set_size);
-			set->set_size = set_size;
+			       set_info->set_size, set_size);
+
+			set_info->set_size = set_size;
 			/* TODO: Notify app */
 		} else {
 			BT_DBG("Invalid length %u", length);
@@ -684,15 +686,15 @@ static uint8_t csis_client_discover_sets_read_set_size_cb(struct bt_conn *conn,
 	if (err != 0) {
 		BT_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
-		struct bt_csis_client_set *set;
+		struct bt_csis_client_set_info *set_info;
 
 		BT_HEXDUMP_DBG(data, length, "Data read");
 
-		set = &client->set_member->sets[cur_inst->cli.idx];
+		set_info = &client->set_member->sets[cur_inst->cli.idx].info;
 
-		if (length == sizeof(set->set_size)) {
-			(void)memcpy(&set->set_size, data, length);
-			BT_DBG("%u", set->set_size);
+		if (length == sizeof(set_info->set_size)) {
+			(void)memcpy(&set_info->set_size, data, length);
+			BT_DBG("%u", set_info->set_size);
 		} else {
 			BT_DBG("Invalid length");
 		}
@@ -715,7 +717,7 @@ static int parse_sirk(struct bt_csis_client_set_member *member,
 {
 	uint8_t *set_sirk;
 
-	set_sirk = member->sets[cur_inst->cli.idx].set_sirk;
+	set_sirk = member->sets[cur_inst->cli.idx].info.set_sirk;
 
 	if (length == sizeof(struct bt_csis_set_sirk)) {
 		struct bt_csis_set_sirk *sirk =
@@ -855,15 +857,15 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 	}
 }
 
-static struct bt_csis *get_next_inst_lower_rank(
-	uint8_t rank, const struct bt_csis_client_set *set)
+static struct bt_csis *get_next_inst_lower_rank(uint8_t rank,
+						const struct bt_csis_client_set_info *set_info)
 {
 	struct bt_csis *next = NULL;
 
 	for (int i = 0; i < active.members_count; i++) {
 		struct bt_csis *inst;
 
-		inst = lookup_instance_by_set(active.members[i], set);
+		inst = lookup_instance_by_set_info(active.members[i], set_info);
 
 		__ASSERT(inst != NULL, "CSIS instance was NULL");
 
@@ -879,15 +881,15 @@ static struct bt_csis *get_next_inst_lower_rank(
 	return next;
 }
 
-static struct bt_csis *get_next_inst_higher_rank(
-	uint8_t rank, const struct bt_csis_client_set *set)
+static struct bt_csis *get_next_inst_higher_rank(uint8_t rank,
+						 const struct bt_csis_client_set_info *set_info)
 {
 	struct bt_csis *next = NULL;
 
 	for (int i = 0; i < active.members_count; i++) {
 		struct bt_csis *inst;
 
-		inst = lookup_instance_by_set(active.members[i], set);
+		inst = lookup_instance_by_set_info(active.members[i], set_info);
 
 		__ASSERT(inst != NULL, "CSIS instance was NULL");
 
@@ -925,7 +927,8 @@ static void csis_client_write_restore_cb(struct bt_conn *conn, uint8_t err,
 	if (active.members_restored < active.members_handled) {
 		int csis_client_err;
 
-		cur_inst = get_next_inst_lower_rank(cur_inst->cli.rank, active.set);
+		cur_inst = get_next_inst_lower_rank(cur_inst->cli.rank,
+						    active.info);
 
 		csis_client_err = csis_client_write_set_lock(cur_inst, false,
 							     csis_client_write_restore_cb);
@@ -962,7 +965,7 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 
 			active.members_restored = 0;
 			cur_inst = get_next_inst_lower_rank(cur_inst->cli.rank,
-							    active.set);
+							    active.info);
 
 			csis_client_err = csis_client_write_set_lock(cur_inst,
 								     false,
@@ -994,7 +997,7 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 		struct bt_csis *prev_inst = cur_inst;
 
 		cur_inst = get_next_inst_higher_rank(cur_inst->cli.rank,
-						     active.set);
+						     active.info);
 
 		csis_client_err = csis_client_write_set_lock(cur_inst, true,
 							     csis_client_write_lock_cb);
@@ -1050,7 +1053,7 @@ static void csis_client_write_release_cb(struct bt_conn *conn, uint8_t err,
 		int csis_client_err;
 
 		cur_inst = get_next_inst_lower_rank(cur_inst->cli.rank,
-						    active.set);
+						    active.info);
 
 		csis_client_err = csis_client_write_set_lock(cur_inst, false,
 							     csis_client_write_release_cb);
@@ -1079,7 +1082,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 					struct bt_gatt_read_params *params,
 					const void *data, uint16_t length)
 {
-	const struct bt_csis_client_set *set = active.set;
+	const struct bt_csis_client_set_info *set_info = active.info;
 	uint8_t value = 0;
 
 	busy = false;
@@ -1090,7 +1093,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 		active_members_reset();
 		if (csis_client_cbs != NULL &&
 		    csis_client_cbs->lock_state_read != NULL) {
-			csis_client_cbs->lock_state_read(set, err, false);
+			csis_client_cbs->lock_state_read(set_info, err, false);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -1107,7 +1110,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 		if (csis_client_cbs != NULL &&
 		    csis_client_cbs->lock_state_read != NULL) {
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
-			csis_client_cbs->lock_state_read(set, err, false);
+			csis_client_cbs->lock_state_read(set_info, err, false);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -1122,7 +1125,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 		if (csis_client_cbs != NULL &&
 		    csis_client_cbs->lock_state_read != NULL) {
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
-			csis_client_cbs->lock_state_read(set, err, false);
+			csis_client_cbs->lock_state_read(set_info, err, false);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -1136,7 +1139,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 		active_members_reset();
 		if (csis_client_cbs != NULL &&
 		    csis_client_cbs->lock_state_read != NULL) {
-			csis_client_cbs->lock_state_read(set, 0, true);
+			csis_client_cbs->lock_state_read(set_info, 0, true);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -1146,7 +1149,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 		int csis_client_err;
 
 		cur_inst = get_next_inst_higher_rank(cur_inst->cli.rank,
-						     active.set);
+						     active.info);
 
 		csis_client_err = csis_client_read_set_lock(cur_inst);
 		if (csis_client_err == 0) {
@@ -1158,7 +1161,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 			active_members_reset();
 			if (csis_client_cbs != NULL &&
 			    csis_client_cbs->lock_state_read != NULL) {
-				csis_client_cbs->lock_state_read(set, err,
+				csis_client_cbs->lock_state_read(set_info, err,
 								 false);
 			}
 		}
@@ -1166,7 +1169,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 		active_members_reset();
 		if (csis_client_cbs != NULL &&
 		    csis_client_cbs->lock_state_read != NULL) {
-			csis_client_cbs->lock_state_read(set, 0, false);
+			csis_client_cbs->lock_state_read(set_info, 0, false);
 		}
 	}
 
@@ -1265,7 +1268,7 @@ int bt_csis_client_discover_sets(struct bt_csis_client_set_member *member)
 
 static int verify_members_and_get_inst(const struct bt_csis_client_set_member **members,
 				       uint8_t count,
-				       const struct bt_csis_client_set *set,
+				       const struct bt_csis_client_set_info *set_info,
 				       bool lowest_rank,
 				       struct bt_csis **out_inst)
 {
@@ -1293,9 +1296,9 @@ static int verify_members_and_get_inst(const struct bt_csis_client_set_member **
 			return -ENOTCONN;
 		}
 
-		inst = lookup_instance_by_set(member, set);
+		inst = lookup_instance_by_set_info(member, set_info);
 		if (inst == NULL) {
-			BT_DBG("Member[%d] could not find matching instance for the set",
+			BT_DBG("Member[%d] could not find matching instance for the set_info",
 			       i);
 			return -EINVAL;
 		}
@@ -1312,7 +1315,7 @@ static int verify_members_and_get_inst(const struct bt_csis_client_set_member **
 
 int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **members,
 				   uint8_t count,
-				   const struct bt_csis_client_set *set)
+				   const struct bt_csis_client_set_info *set_info)
 {
 	int err;
 
@@ -1322,7 +1325,7 @@ int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **membe
 	}
 
 	cur_inst = NULL;
-	err = verify_members_and_get_inst(members, count, set, true, &cur_inst);
+	err = verify_members_and_get_inst(members, count, set_info, true, &cur_inst);
 	if (err != 0) {
 		BT_DBG("Could not verify members: %d", err);
 		return err;
@@ -1333,7 +1336,7 @@ int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **membe
 		busy = true;
 		active.members = members;
 		active.members_count = count;
-		active.set = set;
+		active.info = set_info;
 	} else {
 		cur_inst = NULL;
 	}
@@ -1342,7 +1345,8 @@ int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **membe
 }
 
 int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
-			uint8_t count, const struct bt_csis_client_set *set)
+			uint8_t count,
+			const struct bt_csis_client_set_info *set_info)
 {
 	int err;
 
@@ -1352,7 +1356,7 @@ int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
 	}
 
 	cur_inst = NULL;
-	err = verify_members_and_get_inst(members, count, set, true, &cur_inst);
+	err = verify_members_and_get_inst(members, count, set_info, true, &cur_inst);
 	if (err != 0) {
 		BT_DBG("Could not verify members: %d", err);
 		return err;
@@ -1364,14 +1368,15 @@ int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
 		busy = true;
 		active.members = members;
 		active.members_count = count;
-		active.set = set;
+		active.info = set_info;
 	}
 
 	return err;
 }
 
 int bt_csis_client_release(const struct bt_csis_client_set_member **members,
-			   uint8_t count, const struct bt_csis_client_set *set)
+			   uint8_t count,
+			   const struct bt_csis_client_set_info *set_info)
 {
 	int err;
 
@@ -1381,7 +1386,7 @@ int bt_csis_client_release(const struct bt_csis_client_set_member **members,
 	}
 
 	cur_inst = NULL;
-	err = verify_members_and_get_inst(members, count, set, false,
+	err = verify_members_and_get_inst(members, count, set_info, false,
 					  &cur_inst);
 	if (err != 0) {
 		BT_DBG("Could not verify members: %d", err);
@@ -1394,7 +1399,7 @@ int bt_csis_client_release(const struct bt_csis_client_set_member **members,
 		busy = true;
 		active.members = members;
 		active.members_count = count;
-		active.set = set;
+		active.info = set_info;
 	}
 
 	return err;

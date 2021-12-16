@@ -114,7 +114,7 @@ static void csis_client_discover_sets_cb(struct bt_csis_client_set_member *membe
 		struct bt_csis_client_set *set = &member->sets[i];
 
 		shell_print(ctx_shell, "Set size %d (pointer: %p)",
-			    set[i].set_size, &set[i]);
+			    set[i].info.set_size, &set[i]);
 	}
 }
 
@@ -138,9 +138,13 @@ static void csis_client_release_set_cb(int err)
 	shell_print(ctx_shell, "Set released");
 }
 
-static void csis_client_lock_state_read_cb(const struct bt_csis_client_set *set,
+static void csis_client_lock_state_read_cb(const struct bt_csis_client_set_info *set_info,
 					   int err, bool locked)
 {
+	struct bt_csis_client_set *set = CONTAINER_OF(set_info,
+						      struct bt_csis_client_set,
+						      info);
+
 	if (err != 0) {
 		shell_error(ctx_shell, "Device (set %p) lock get "
 			    "failed (%d)", set, err);
@@ -160,7 +164,7 @@ static struct bt_csis_client_cb cbs = {
 
 static bool csis_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csis_client_is_set_member(cur_set->set_sirk, data)) {
+	if (bt_csis_client_is_set_member(cur_set->info.set_sirk, data)) {
 		bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
@@ -177,9 +181,9 @@ static bool csis_found(struct bt_data *data, void *user_data)
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
 		shell_print(ctx_shell, "Found member (%u / %u)",
-			    members_found, cur_set->set_size);
+			    members_found, cur_set->info.set_size);
 
-		if (members_found == cur_set->set_size) {
+		if (members_found == cur_set->info.set_size) {
 			int err;
 
 			(void)k_work_cancel_delayable(&discover_members_timer);
@@ -219,7 +223,7 @@ static void discover_members_timer_handler(struct k_work *work)
 	int err;
 
 	shell_error(ctx_shell, "Could not find all members (%u / %u)",
-		    members_found, cur_set->set_size);
+		    members_found, cur_set->info.set_size);
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
@@ -312,14 +316,14 @@ static int cmd_csis_client_discover_members(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 
-	if (cur_set->set_size > CONFIG_BT_MAX_CONN) {
+	if (cur_set->info.set_size > CONFIG_BT_MAX_CONN) {
 		/*
 		 * TODO Handle case where set size is larger than
 		 * number of possible connections
 		 */
 		shell_error(sh,
 			    "Set size (%u) larger than max connections (%u)",
-			    cur_set->set_size, CONFIG_BT_MAX_CONN);
+			    cur_set->info.set_size, CONFIG_BT_MAX_CONN);
 		return -EINVAL;
 	}
 
@@ -361,7 +365,7 @@ static int cmd_csis_client_lock_set(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csis_client_lock(locked_members, conn_count, cur_set);
+	err = bt_csis_client_lock(locked_members, conn_count, &cur_set->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -386,7 +390,7 @@ static int cmd_csis_client_release_set(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_csis_client_release(locked_members, conn_count, cur_set);
+	err = bt_csis_client_release(locked_members, conn_count, &cur_set->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -425,7 +429,7 @@ static int cmd_csis_client_lock_get(const struct shell *sh, size_t argc,
 
 	err = bt_csis_client_get_lock_state(lock_member,
 					    ARRAY_SIZE(lock_member),
-					    cur_set);
+					    &cur_set->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -457,7 +461,7 @@ static int cmd_csis_client_lock(const struct shell *sh, size_t argc,
 
 	lock_member[0] = &set_members[member_index];
 
-	err = bt_csis_client_lock(lock_member, 1, cur_set);
+	err = bt_csis_client_lock(lock_member, 1, &cur_set->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -489,7 +493,7 @@ static int cmd_csis_client_release(const struct shell *sh, size_t argc,
 
 	lock_member[0] = &set_members[member_index];
 
-	err = bt_csis_client_release(lock_member, 1, cur_set);
+	err = bt_csis_client_release(lock_member, 1, &cur_set->info);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
