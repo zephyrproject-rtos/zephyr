@@ -71,25 +71,13 @@ include(${ZEPHYR_BASE}/cmake/python.cmake)
 include(${ZEPHYR_BASE}/cmake/west.cmake)
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 
-# 'MODULE_EXT_ROOT' is a prioritized list of directories where module glue code
-# may be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
-# For module roots, later entries may overrule module settings already defined
-# by processed module roots, hence first in list means lowest priority.
-zephyr_file(APPLICATION_ROOT MODULE_EXT_ROOT)
-list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
-
+include(${ZEPHYR_BASE}/cmake/root.cmake)
 #
 # Find Zephyr modules.
 # Those may contain additional DTS, BOARD, SOC, ARCH ROOTs.
 # Also create the Kconfig binary dir for generated Kconf files.
 #
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
-
-zephyr_file(APPLICATION_ROOT BOARD_ROOT)
-
-zephyr_file(APPLICATION_ROOT SOC_ROOT)
-
-zephyr_file(APPLICATION_ROOT ARCH_ROOT)
 
 include(${ZEPHYR_BASE}/cmake/boards.cmake)
 include(${ZEPHYR_BASE}/cmake/shields.cmake)
