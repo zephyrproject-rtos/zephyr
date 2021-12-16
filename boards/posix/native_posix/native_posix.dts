@@ -22,6 +22,7 @@
 		zephyr,flash-controller = &flashcontroller0;
 		zephyr,ec-host-interface = &hcp;
 		zephyr,display = &sdl_dc;
+		zephyr,canbus = &can_loopback0;
 	};
 
 	aliases {
@@ -183,5 +184,14 @@
 		label = "SDL display controller";
 		height = <240>;
 		width = <320>;
+	};
+
+	can_loopback0: can_loopback0 {
+		status = "disabled";
+		compatible = "zephyr,can-loopback";
+		label = "CAN_LOOPBACK_0";
+		sjw = <1>;
+		sample-point = <875>;
+		bus-speed = <125000>;
 	};
 };
