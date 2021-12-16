@@ -180,10 +180,7 @@ zephyr_linker_sources(SECTIONS)
 zephyr_file(APPLICATION_ROOT BOARD_ROOT)
 list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
-# 'SOC_ROOT' is a prioritized list of directories where socs may be
-# found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
 zephyr_file(APPLICATION_ROOT SOC_ROOT)
-list(APPEND SOC_ROOT ${ZEPHYR_BASE})
 
 # 'ARCH_ROOT' is a prioritized list of directories where archs may be
 # found. It always includes ${ZEPHYR_BASE} at the lowest priority.
@@ -526,11 +523,7 @@ zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
 include(${ZEPHYR_BASE}/cmake/generic_toolchain.cmake)
 include(${ZEPHYR_BASE}/cmake/dts.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
-
-set(SOC_NAME   ${CONFIG_SOC})
-set(SOC_SERIES ${CONFIG_SOC_SERIES})
-set(SOC_TOOLCHAIN_NAME ${CONFIG_SOC_TOOLCHAIN_NAME})
-set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
+include(${ZEPHYR_BASE}/cmake/soc.cmake)
 
 # For the gen_app_partitions.py to work correctly, we must ensure that
 # all targets exports their compile commands to fetch object files.
@@ -539,37 +532,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE CACHE BOOL
     "Export CMake compile commands. Used by gen_app_partitions.py script"
     FORCE
 )
-
-if("${SOC_SERIES}" STREQUAL "")
-  set(SOC_PATH ${SOC_NAME})
-else()
-  set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
-endif()
-
-# Use SOC to search for a 'CMakeLists.txt' file.
-# e.g. zephyr/soc/xtensa/intel_adsp/CMakeLists.txt.
-foreach(root ${SOC_ROOT})
-  # Check that the root looks reasonable.
-  if(NOT IS_DIRECTORY "${root}/soc")
-    message(WARNING "SOC_ROOT element without a 'soc' subdirectory:
-${root}
-Hints:
-  - if your SoC family directory is '/foo/bar/soc/<ARCH>/my_soc_family', then add '/foo/bar' to SOC_ROOT, not the entire SoC family path
-  - if in doubt, use absolute paths")
-  endif()
-
-  if(EXISTS ${root}/soc/${ARCH}/${SOC_PATH})
-    set(SOC_DIR ${root}/soc)
-    break()
-  endif()
-endforeach()
-
-if(NOT SOC_DIR)
-  message(FATAL_ERROR "Could not find SOC=${SOC_NAME} for BOARD=${BOARD}, \
-please check your installation. SOC roots searched: \n\
-${SOC_ROOT}")
-endif()
-
 include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
