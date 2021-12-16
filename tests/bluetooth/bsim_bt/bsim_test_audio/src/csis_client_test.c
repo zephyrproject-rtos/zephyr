@@ -12,7 +12,6 @@
 extern enum bst_result_t bst_result;
 static volatile bool is_connected;
 static volatile bool discovered;
-static volatile bool sets_discovered;
 static volatile bool members_discovered;
 static volatile bool set_locked;
 static volatile bool set_unlocked;
@@ -51,21 +50,6 @@ static void csis_client_lock_set_cb(int err)
 	set_locked = true;
 }
 
-static void csis_client_discover_sets_cb(struct bt_csis_client_set_member *member,
-					 int err,
-					 uint8_t set_count)
-{
-	printk("%s\n", __func__);
-
-	if (err != 0) {
-		FAIL("Discover sets failed (%d)\n", err);
-		return;
-	}
-
-	inst = &member->insts[0];
-	sets_discovered = true;
-}
-
 static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 			     uint8_t set_count)
 {
@@ -76,6 +60,7 @@ static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 		return;
 	}
 
+	inst = &member->insts[0];
 	discovered = true;
 }
 
@@ -129,7 +114,6 @@ static struct bt_conn_cb conn_callbacks = {
 static struct bt_csis_client_cb cbs = {
 	.lock_set = csis_client_lock_set_cb,
 	.release_set = csis_client_lock_release_cb,
-	.sets = csis_client_discover_sets_cb,
 	.discover = csis_discover_cb,
 	.lock_changed = csis_lock_changed_cb,
 	.lock_state_read = csis_client_lock_state_read_cb,
@@ -285,14 +269,6 @@ static void test_main(void)
 
 	WAIT_FOR(discovered);
 
-	err = bt_csis_client_discover_sets(&set_members[0]);
-	if (err != 0) {
-		FAIL("Failed to do CSIS client discovery sets (%d)\n", err);
-		return;
-	}
-
-	WAIT_FOR(sets_discovered);
-
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
 		FAIL("Could not start scan: %d", err);
@@ -343,16 +319,6 @@ static void test_main(void)
 		}
 
 		WAIT_FOR(discovered);
-
-		sets_discovered = false;
-		printk("Doing sets discovery on member[%u]", i);
-		err = bt_csis_client_discover_sets(&set_members[i]);
-		if (err != 0) {
-			FAIL("Failed to do CSIS client discovery sets (%d)\n", err);
-			return;
-		}
-
-		WAIT_FOR(sets_discovered);
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
