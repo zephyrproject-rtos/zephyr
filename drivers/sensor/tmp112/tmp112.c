@@ -202,7 +202,7 @@ int tmp112_init(const struct device *dev)
 	static struct tmp112_data tmp112_data_##inst;			    \
 	static const struct tmp112_config tmp112_config_##inst = {	    \
 		.bus = I2C_DT_SPEC_INST_GET(inst),			    \
-		.cr = DT_ENUM_IDX(DT_DRV_INST(inst), conversion_rate),	    \
+		.cr = DT_INST_ENUM_IDX(inst, conversion_rate),		    \
 		.extended_mode = DT_INST_PROP(inst, extended_mode),	    \
 	};								    \
 									    \
