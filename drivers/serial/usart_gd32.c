@@ -317,8 +317,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 		.reg = DT_INST_REG_ADDR(n),					\
 		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.parity = DT_ENUM_IDX_OR(DT_DRV_INST(n), parity,		\
-					 UART_CFG_PARITY_NONE),			\
+		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
 		 GD32_USART_IRQ_HANDLER_FUNC_INIT(n)				\
 	};									\
 	DEVICE_DT_INST_DEFINE(n, &usart_gd32_init,				\
