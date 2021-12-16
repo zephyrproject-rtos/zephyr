@@ -671,7 +671,7 @@
 /subsys/bluetooth/                        @alwa-nordic @jhedberg @Vudentz
 /subsys/bluetooth/audio/                  @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
-/subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @alwa-nordic @Vudentz
+/subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @alwa-nordic @Vudentz @LingaoM
 /subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @vanwinkeljan
 /subsys/debug/                            @nashif
