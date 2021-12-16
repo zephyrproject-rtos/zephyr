@@ -28,6 +28,7 @@
 /* Group 3 */
 #define IT8XXX2_IRQ_KBC_IBF     24
 #define IT8XXX2_IRQ_PMC1_IBF    25
+#define IT8XXX2_IRQ_PMC2_IBF    27
 #define IT8XXX2_IRQ_TIMER1      30
 #define IT8XXX2_IRQ_WU21        31
 /* Group 5 */
