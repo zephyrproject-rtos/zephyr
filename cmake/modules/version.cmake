@@ -26,6 +26,11 @@
 # See also: independent and more dynamic ``BUILD_VERSION`` in
 # ``git.cmake``.
 
+# Note: version.cmake is loaded multiple times by ZephyrConfigVersion.cmake to
+# determine this Zephyr package version and thus the correct Zephyr CMake
+# package to load.
+# Therefore `version.cmake` should not use include_guard(GLOBAL).
+# The final load of `version.cmake` will setup correct build version values.
 
 include(${ZEPHYR_BASE}/cmake/hex.cmake)
 file(READ ${ZEPHYR_BASE}/VERSION ver)

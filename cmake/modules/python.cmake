@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+include_guard(GLOBAL)
+
 # On Windows, instruct Python to output UTF-8 even when not
 # interacting with a terminal. This is required since Python scripts
 # are invoked by CMake code and, on Windows, standard I/O encoding defaults

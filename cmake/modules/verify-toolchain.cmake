@@ -15,6 +15,8 @@
 # it takes the following arguments:
 # FORMAT=json: Print the output as a json formatted string, useful for Python
 
+include_guard(GLOBAL)
+
 # This is the minimum required Zephyr-SDK version which supports CMake package
 set(TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION 0.13.1)
 

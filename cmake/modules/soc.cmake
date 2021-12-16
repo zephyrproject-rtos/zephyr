@@ -25,6 +25,10 @@
 # Variables set by this module and not mentioned above are considered internal
 # use only and may be removed, renamed, or re-purposed without prior notice.
 
+include_guard(GLOBAL)
+
+include(kconfig)
+
 # 'SOC_ROOT' is a prioritized list of directories where socs may be
 # found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
 list(APPEND SOC_ROOT ${ZEPHYR_BASE})
