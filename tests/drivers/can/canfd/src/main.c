@@ -101,10 +101,6 @@ const struct zcan_filter test_std_filter_2 = {
 	.id_mask = CAN_STD_ID_MASK
 };
 
-
-struct zcan_work can_work_1;
-struct zcan_work can_work_2;
-
 static inline void check_msg(const struct zcan_frame *msg1,
 			     const struct zcan_frame *msg2)
 {
@@ -169,34 +165,6 @@ static void rx_std_isr_fd_2(struct zcan_frame *msg, void *arg)
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_std_cb_1(struct zcan_frame *msg, void *arg)
-{
-	check_msg(msg, &test_std_msg_1);
-	zassert_equal_ptr(arg, &test_std_filter_1, "arg does not match");
-	k_sem_give(&rx_cb_sem);
-}
-
-static void rx_std_cb_2(struct zcan_frame *msg, void *arg)
-{
-	check_msg(msg, &test_std_msg_2);
-	zassert_equal_ptr(arg, &test_std_filter_2, "arg does not match");
-	k_sem_give(&rx_cb_sem);
-}
-
-static void rx_std_fd_cb_1(struct zcan_frame *msg, void *arg)
-{
-	check_msg(msg, &test_std_msg_fd_1);
-	zassert_equal_ptr(arg, &test_std_filter_1, "arg does not match");
-	k_sem_give(&rx_cb_sem);
-}
-
-static void rx_std_fd_cb_2(struct zcan_frame *msg, void *arg)
-{
-	check_msg(msg, &test_std_msg_fd_2);
-	zassert_equal_ptr(arg, &test_std_filter_2, "arg does not match");
-	k_sem_give(&rx_cb_sem);
-}
-
 static void send_test_msg(const struct device *can_dev,
 			  const struct zcan_frame *msg)
 {
@@ -227,23 +195,6 @@ static inline int attach_msgq(const struct device *can_dev,
 	int filter_id;
 
 	filter_id = can_attach_msgq(can_dev, &can_msgq, filter);
-	zassert_not_equal(filter_id, -ENOSPC,
-			  "Filter full even for a single one");
-	zassert_true((filter_id >= 0), "Negative filter number");
-
-	return filter_id;
-}
-
-static inline int attach_workq(const struct device *can_dev,
-			      const struct zcan_filter *filter,
-			      struct zcan_work *work,
-			      can_rx_callback_t cb)
-{
-	int filter_id;
-
-	filter_id  = can_attach_workq(can_dev, &k_sys_work_q, work, cb,
-				     (void *)filter, filter);
-
 	zassert_not_equal(filter_id, -ENOSPC,
 			  "Filter full even for a single one");
 	zassert_true((filter_id >= 0), "Negative filter number");
@@ -312,31 +263,6 @@ static void send_receive(const struct zcan_filter *filter1,
 	zassert_equal(ret, 0, "Missing TX callback");
 	can_detach(can_dev, filter_id_1);
 	can_detach(can_dev, filter_id_2);
-
-	if (msg1->fd) {
-		filter_id_1 = attach_workq(can_dev, filter1, &can_work_1,
-					   rx_std_fd_cb_1);
-	} else {
-		filter_id_1 = attach_workq(can_dev, filter1, &can_work_1,
-					   rx_std_cb_1);
-	}
-
-	if (msg2->fd) {
-		filter_id_2 = attach_workq(can_dev, filter2, &can_work_2,
-					   rx_std_fd_cb_2);
-	} else {
-		filter_id_2 = attach_workq(can_dev, filter2, &can_work_2,
-					   rx_std_cb_2);
-	}
-
-	send_test_msg(can_dev, msg1);
-	send_test_msg(can_dev, msg2);
-	ret = k_sem_take(&rx_cb_sem, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(ret, 0, "Receiving timeout");
-	ret = k_sem_take(&rx_cb_sem, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(ret, 0, "Receiving timeout");
-	can_detach(can_dev, filter_id_2);
-	can_detach(can_dev, filter_id_1);
 }
 
 /*
