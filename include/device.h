@@ -35,11 +35,20 @@
 extern "C" {
 #endif
 
-/** @brief Type used to represent devices and functions.
+/**
+ * @brief Type used to represent a "handle" for a device.
+ *
+ * Every struct device has an associated handle. You can get a pointer
+ * to a device structure from its handle and vice versa, but the
+ * handle uses less space than a pointer. The device.h API mainly uses
+ * handles to store lists of multiple devices in a compact way.
  *
  * The extreme values and zero have special significance. Negative
  * values identify functionality that does not correspond to a Zephyr
  * device, such as the system clock or a SYS_INIT() function.
+ *
+ * @see device_handle_get()
+ * @see device_from_handle()
  */
 typedef int16_t device_handle_t;
 
@@ -65,17 +74,24 @@ typedef int16_t device_handle_t;
 /**
  * @def DEVICE_NAME_GET
  *
- * @brief Expands to the full name of a global device object
+ * @brief Expands to the name of a global device object.
  *
  * @details Return the full name of a device object symbol created by
  * DEVICE_DEFINE(), using the dev_name provided to DEVICE_DEFINE().
+ * This is the name of the global variable storing the device
+ * structure, not a pointer to the string in the device's @p name
+ * field.
  *
- * It is meant to be used for declaring extern symbols pointing on device
+ * It is meant to be used for declaring extern symbols pointing to device
  * objects before using the DEVICE_GET macro to get the device object.
  *
- * @param name The same as dev_name provided to DEVICE_DEFINE()
+ * This macro is normally only useful within device driver source
+ * code. In other situations, you are probably looking for
+ * device_get_binding().
  *
- * @return The expanded name of the device object created by DEVICE_DEFINE()
+ * @param name The same @p dev_name token given to DEVICE_DEFINE()
+ *
+ * @return The full name of the device object defined by DEVICE_DEFINE()
  */
 #define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
 
@@ -84,9 +100,16 @@ typedef int16_t device_handle_t;
  *
  * @brief Run an initialization function at boot at specified priority.
  *
- * @details Invokes DEVICE_DEFINE() with no power management support
- * (@p pm_device), no API (@p api_ptr), and a device name derived from
- * the @p init_fn name (@p dev_name).
+ * @details This macro allows you to use the device infrastructure to
+ * run a function at boot time. It is equivalent to
+ * <tt>DEVICE_DEFINE(dev_name, drv_name, init_fn, NULL, NULL, NULL,
+ * level, prio, NULL)</tt>, where @p dev_name is derived from @p init_fn.
+ *
+ * @param drv_name A string name for the pseudo-device.
+ * @param init_fn Pointer to the function which should run at boot time.
+ * @param level Initialization level to run the function in.
+ * @param prio Function's priority within its initialization level.
+ * @see DEVICE_DEFINE()
  */
 #define SYS_DEVICE_DEFINE(drv_name, init_fn, level, prio)		\
 	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn, NULL,	\
@@ -120,37 +143,45 @@ typedef int16_t device_handle_t;
 /**
  * @def DEVICE_DEFINE
  *
- * @brief Create device object and set it up for boot time initialization.
+ * @brief Create a device object and set it up for boot time initialization.
  *
- * @details This macro defines a device object that is automatically
- * configured by the kernel during system initialization. Note that
- * devices set up with this macro will not be accessible from user mode
- * since the API is not specified;
+ * @details This macro defines a <tt>struct device</tt> that is
+ * automatically configured by the kernel during system
+ * initialization. This macro should only be used when the device is
+ * not being allocated from a devicetree node. If you are allocating a
+ * device from a devicetree node, use DEVICE_DT_DEFINE() or
+ * DEVICE_DT_INST_DEFINE() instead.
  *
- * @param dev_name Device name. This must be less than Z_DEVICE_MAX_NAME_LEN
- * characters (including terminating NUL) in order to be looked up from user
- * mode with device_get_binding().
+ * @param dev_name A unique token which is used in the name of the
+ * global device structure as a C identifier.
  *
- * @param drv_name The name this instance of the driver exposes to
- * the system.
+ * @param drv_name A string name for the device, which will be stored
+ * in the device structure's @p name field. This name can be used to
+ * look up the device with device_get_binding(). This must be less
+ * than Z_DEVICE_MAX_NAME_LEN characters (including terminating NUL)
+ * in order to be looked up from user mode.
  *
- * @param init_fn Address to the init function of the driver.
+ * @param init_fn Pointer to the device's initialization function,
+ * which will be run by the kernel during system initialization.
  *
- * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param pm_device Pointer to the device's power management
+ * resources, a <tt>struct pm_device</tt>, which will be stored in the
+ * device structure's @p pm field. Use NULL if the device does not use
+ * PM.
  *
- * @param data_ptr Pointer to the device's private data.
+ * @param data_ptr Pointer to the device's private mutable data, which
+ * will be stored in the device structure's @p data field.
  *
- * @param cfg_ptr The address to the structure containing the
- * configuration information for this instance of the driver.
+ * @param cfg_ptr Pointer to the device's private constant data, which
+ * will be stored in the device structure's @p config field.
  *
- * @param level The initialization level. See SYS_INIT() for
+ * @param level The device's initialization level. See SYS_INIT() for
  * details.
  *
- * @param prio Priority within the selected initialization level. See
- * SYS_INIT() for details.
+ * @param prio The device's priority within its initialization level.
+ * See SYS_INIT() for details.
  *
- * @param api_ptr Provides an initial pointer to the API function struct
- * used by the driver. Can be NULL.
+ * @param api_ptr Pointer to the device's API structure. Can be NULL.
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_device,		\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
@@ -165,12 +196,13 @@ typedef int16_t device_handle_t;
  *
  * @brief Return a string name for a devicetree node.
  *
- * @details This macro returns a string literal usable as a device name
- * from a devicetree node. If the node has a "label" property, its value is
- * returned. Otherwise, the node's full "node-name@@unit-address" name is
- * returned.
+ * @details This macro returns a string literal usable as a device's
+ * @p name field from a devicetree node identifier.
  *
  * @param node_id The devicetree node identifier.
+ *
+ * @return The value of the node's "label" property, if it has one.
+ * Otherwise, the node's full name in "node-name@@unit-address" form.
  */
 #define DEVICE_DT_NAME(node_id) \
 	DT_PROP_OR(node_id, label, DT_NODE_FULL_NAME(node_id))
@@ -178,38 +210,45 @@ typedef int16_t device_handle_t;
 /**
  * @def DEVICE_DT_DEFINE
  *
- * @brief Like DEVICE_DEFINE but taking metadata from a devicetree node.
+ * @brief Create a device object from a devicetree node identifier and
+ * set it up for boot time initialization.
  *
- * @details This macro defines a device object that is automatically
- * configured by the kernel during system initialization. The device
- * object name is derived from the node identifier (encoding the
- * devicetree path to the node), and the driver name is from the @p
- * label property of the devicetree node.
+ * @details This macro defines a <tt>struct device</tt> that is
+ * automatically configured by the kernel during system
+ * initialization. The global device object's name as a C identifier
+ * is derived from the node's dependency ordinal. The device
+ * structure's @p name field is set to
+ * <tt>DEVICE_DT_NAME(node_id)</tt>.
  *
- * The device is declared with extern visibility, so device objects
- * defined through this API can be obtained directly through
- * DEVICE_DT_GET() using @p node_id. Before using the pointer the
- * referenced object should be checked using device_is_ready().
+ * The device is declared with extern visibility, so a pointer to a
+ * global device object can be obtained with
+ * <tt>DEVICE_DT_GET(node_id)</tt> from any source file that includes
+ * device.h. Before using the pointer, the referenced object should be
+ * checked using device_is_ready().
  *
  * @param node_id The devicetree node identifier.
  *
- * @param init_fn Address to the init function of the driver.
+ * @param init_fn Pointer to the device's initialization function,
+ * which will be run by the kernel during system initialization.
  *
- * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param pm_device Pointer to the device's power management
+ * resources, a <tt>struct pm_device</tt>, which will be stored in the
+ * device structure's @p pm field. Use NULL if the device does not use
+ * PM.
  *
- * @param data_ptr Pointer to the device's private data.
+ * @param data_ptr Pointer to the device's private mutable data, which
+ * will be stored in the device structure's @p data field.
  *
- * @param cfg_ptr The address to the structure containing the
- * configuration information for this instance of the driver.
+ * @param cfg_ptr Pointer to the device's private constant data, which
+ * will be stored in the device structure's @p config field.
  *
- * @param level The initialization level. See SYS_INIT() for
+ * @param level The device's initialization level. See SYS_INIT() for
  * details.
  *
- * @param prio Priority within the selected initialization level. See
- * SYS_INIT() for details.
+ * @param prio The device's priority within its initialization level.
+ * See SYS_INIT() for details.
  *
- * @param api_ptr Provides an initial pointer to the API function struct
- * used by the driver. Can be NULL.
+ * @param api_ptr Pointer to the device's API structure. Can be NULL.
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
 			 data_ptr, cfg_ptr, level, prio,		\
@@ -226,10 +265,11 @@ typedef int16_t device_handle_t;
 /**
  * @def DEVICE_DT_INST_DEFINE
  *
- * @brief Like DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT compatible
+ * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a
+ * DT_DRV_COMPAT compatible instead of a node identifier.
  *
- * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to DEVICE_DT_DEFINE.
+ * @param inst instance number. The @p node_id argument to
+ * DEVICE_DT_DEFINE is set to <tt>DT_DRV_INST(inst)</tt>.
  *
  * @param ... other parameters as expected by DEVICE_DT_DEFINE.
  */
@@ -239,51 +279,61 @@ typedef int16_t device_handle_t;
 /**
  * @def DEVICE_DT_NAME_GET
  *
- * @brief The name of the struct device object for @p node_id
+ * @brief The name of the global device object for @p node_id
  *
- * @details Return the full name of a device object symbol created by
- * DEVICE_DT_DEFINE(), using the dev_name derived from @p node_id
+ * @details Returns the name of the global device structure as a C
+ * identifier. The device must be allocated using DEVICE_DT_DEFINE()
+ * or DEVICE_DT_INST_DEFINE() for this to work.
  *
- * It is meant to be used for declaring extern symbols pointing on device
- * objects before using the DEVICE_DT_GET macro to get the device object.
+ * This macro is normally only useful within device driver source
+ * code. In other situations, you are probably looking for
+ * DEVICE_DT_GET().
  *
- * @param node_id The same as node_id provided to DEVICE_DT_DEFINE()
+ * @param node_id Devicetree node identifier
  *
- * @return The expanded name of the device object created by
- * DEVICE_DT_DEFINE()
+ * @return The name of the device object as a C identifier
  */
 #define DEVICE_DT_NAME_GET(node_id) DEVICE_NAME_GET(Z_DEVICE_DT_DEV_NAME(node_id))
 
 /**
  * @def DEVICE_DT_GET
  *
- * @brief Obtain a pointer to a device object by @p node_id
+ * @brief Get a <tt>const struct device*</tt> from a devicetree node
+ * identifier
  *
- * @details Return the address of a device object created by
- * DEVICE_DT_INIT(), using the dev_name derived from @p node_id
+ * @details Returns a pointer to a device object created from a
+ * devicetree node, if any device was allocated by a driver.
  *
- * @param node_id The same as node_id provided to DEVICE_DT_DEFINE()
+ * If no such device was allocated, this will fail at linker time. If
+ * you get an error that looks like <tt>undefined reference to
+ * __device_dts_ord_<N></tt>, that is what happened. Check to make
+ * sure your device driver is being compiled, usually by enabling the
+ * Kconfig options it requires.
  *
- * @return A pointer to the device object created by DEVICE_DT_DEFINE()
+ * @param node_id A devicetree node identifier
+ * @return A pointer to the device object created for that node
  */
 #define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
 
 /** @def DEVICE_DT_INST_GET
  *
- * @brief Obtain a pointer to a device object for an instance of a
+ * @brief Get a <tt>const struct device*</tt> for an instance of a
  *        DT_DRV_COMPAT compatible
  *
- * @param inst instance number
+ * @details This is equivalent to <tt>DEVICE_DT_GET(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @return A pointer to the device object created for that instance
  */
 #define DEVICE_DT_INST_GET(inst) DEVICE_DT_GET(DT_DRV_INST(inst))
 
 /**
  * @def DEVICE_DT_GET_ANY
  *
- * @brief Obtain a pointer to a device object by devicetree compatible
+ * @brief Get a <tt>const struct device*</tt> from a devicetree compatible
  *
- * If any enabled devicetree node has the given compatible and a
- * device object was created from it, this returns that device.
+ * If an enabled devicetree node has the given compatible and a device
+ * object was created from it, this returns a pointer to that device.
  *
  * If there no such devices, this returns NULL.
  *
@@ -303,12 +353,13 @@ typedef int16_t device_handle_t;
 /**
  * @def DEVICE_DT_GET_ONE
  *
- * @brief Obtain a pointer to a device object by devicetree compatible
+ * @brief Get a <tt>const struct device*</tt> from a devicetree compatible
  *
- * If any enabled devicetree node has the given compatible and a
- * device object was created from it, this returns that device.
+ * @details If an enabled devicetree node has the given compatible and
+ * a device object was created from it, this returns a pointer to that
+ * device.
  *
- * If there no such devices, this throws a compilation error.
+ * If there no such devices, this will fail at compile time.
  *
  * If there are multiple, this returns an arbitrary one.
  *
@@ -328,9 +379,14 @@ typedef int16_t device_handle_t;
  *
  * @brief Utility macro to obtain an optional reference to a device.
  *
- * @param node_id Node identifier.
+ * @details If the node identifier refers to a node with status
+ * "okay", this returns <tt>DEVICE_DT_GET(node_id)</tt>. Otherwise, it
+ * returns NULL.
  *
- * @return Pointer to a device if it exists, NULL otherwise.
+ * @param node_id devicetree node identifier
+ *
+ * @return a <tt>const struct device*</tt> for the node identifier,
+ * which may be NULL.
  */
 #define DEVICE_DT_GET_OR_NULL(node_id)					\
 	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),			\
@@ -483,22 +539,31 @@ device_from_handle(device_handle_t dev_handle)
  *
  * @return A non-negative number to allow walking to continue, and a negative
  * error code to case the iteration to stop.
+ *
+ * @see device_required_foreach()
+ * @see device_supported_foreach()
  */
 typedef int (*device_visitor_callback_t)(const struct device *dev, void *context);
 
 /**
- * @brief Get the set of handles for devicetree dependencies of this device.
+ * @brief Get the device handles for devicetree dependencies of this device.
  *
- * These are the device dependencies inferred from devicetree.
+ * This function returns a pointer to an array of device handles. The
+ * length of the array is stored in the @p count parameter.
+ *
+ * The array contains a handle for each device that @p dev requires
+ * directly, as determined from the devicetree. This does not include
+ * transitive dependencies; you must recursively determine those.
  *
  * @param dev the device for which dependencies are desired.
  *
- * @param count pointer to a place to store the number of devices provided at
- * the returned pointer. The value is not set if the call returns a null
- * pointer. The value may be set to zero.
+ * @param count pointer to where this function should store the length
+ * of the returned array. No value is stored if the call returns a
+ * null pointer. The value may be set to zero if the device has no
+ * devicetree dependencies.
  *
  * @return a pointer to a sequence of @p *count device handles, or a null
- * pointer if @p dh does not provide dependency information.
+ * pointer if @p dev does not have any dependency data.
  */
 static inline const device_handle_t *
 device_required_handles_get(const struct device *dev,
@@ -522,17 +587,23 @@ device_required_handles_get(const struct device *dev,
 /**
  * @brief Get the set of handles that this device supports.
  *
- * The set of supported devices is inferred from devicetree, and does not
- * include any software constructs that may depend on the device.
+ * This function returns a pointer to an array of device handles. The
+ * length of the array is stored in the @p count parameter.
+ *
+ * The array contains a handle for each device that @p dev "supports"
+ * -- that is, devices that require @p dev directly -- as determined
+ * from the devicetree. This does not include transitive dependencies;
+ * you must recursively determine those.
  *
  * @param dev the device for which supports are desired.
  *
- * @param count pointer to a place to store the number of devices provided at
- * the returned pointer. The value is not set if the call returns a null
- * pointer. The value may be set to zero.
+ * @param count pointer to where this function should store the length
+ * of the returned array. No value is stored if the call returns a
+ * null pointer. The value may be set to zero if nothing in the
+ * devicetree depends on @p dev.
  *
  * @return a pointer to a sequence of @p *count device handles, or a null
- * pointer if @p dh does not provide dependency information.
+ * pointer if @p dev does not have any dependency data.
  */
 static inline const device_handle_t *
 device_supported_handles_get(const struct device *dev,
@@ -634,17 +705,26 @@ int device_supported_foreach(const struct device *dev,
 			     void *context);
 
 /**
- * @brief Retrieve the device structure for a driver by name
+ * @brief Get a <tt>const struct device*</tt> from its @p name field
  *
- * @details Device objects are created via the DEVICE_DEFINE() macro and
- * placed in memory by the linker. If a driver needs to bind to another driver
- * it can use this function to retrieve the device structure of the lower level
- * driver by the name the driver exposes to the system.
+ * @details This function iterates through the devices on the system.
+ * If a device with the given @p name field is found, and that device
+ * initialized successfully at boot time, this function returns a
+ * pointer to the device.
  *
- * @param name device name to search for. A null pointer, or a pointer to an
- * empty string, will cause NULL to be returned.
+ * If no device has the given name, this function returns NULL.
  *
- * @return pointer to device structure; NULL if not found or cannot be used.
+ * This function also returns NULL when a device is found, but it
+ * failed to initialize successfully at boot time. (To troubleshoot
+ * this case, set a breakpoint on your device driver's initialization
+ * function.)
+ *
+ * @param name device name to search for. A null pointer, or a pointer
+ * to an empty string, will cause NULL to be returned.
+ *
+ * @return pointer to device structure with the given name; NULL if
+ * the device is not found or if the device with that name's
+ * initialization function failed.
  */
 __syscall const struct device *device_get_binding(const char *name);
 
@@ -723,7 +803,7 @@ static inline bool device_is_ready(const struct device *dev)
  * @}
  */
 
-/** Synthesize the name of the object that holds device ordinal and
+/* Synthesize the name of the object that holds device ordinal and
  * dependency data. If the object doesn't come from a devicetree
  * node, use dev_name.
  */
@@ -736,9 +816,9 @@ static inline bool device_is_ready(const struct device *dev)
 #define Z_DEVICE_EXTRA_HANDLES(...)				\
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
-/**
- * @brief Utility macro to define and initialize the device state.
-
+/*
+ * Utility macro to define and initialize the device state.
+ *
  * @param node_id Devicetree node id of the device.
  * @param dev_name Device name.
  */
