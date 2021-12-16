@@ -44,12 +44,7 @@
 #define TEST_CAN_EXT_MASK_ID_2 0x1555556A
 #define TEST_CAN_EXT_MASK      0x1FFFFFF0
 
-
-#if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
-#define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
-#else
 #define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
-#endif
 
 CAN_DEFINE_MSGQ(can_msgq, 5);
 struct k_sem rx_isr_sem;
