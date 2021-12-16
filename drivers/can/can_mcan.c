@@ -23,6 +23,8 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 #define MCAN_MAX_DLC CAN_MAX_DLC
 #endif
 
+typedef uint32_t __may_alias u32;
+
 static int can_exit_sleep_mode(struct can_mcan_reg *can)
 {
 	uint32_t start_time;
@@ -386,8 +388,8 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	}
 
 	/* No memset because only aligned ptr are allowed */
-	for (uint32_t *ptr = (uint32_t *)msg_ram;
-	     ptr < (uint32_t *)msg_ram +
+	for (uint32_t *ptr = (u32 *)msg_ram;
+	     ptr < (u32 *)msg_ram +
 		   sizeof(struct can_mcan_msg_sram) / sizeof(uint32_t);
 	     ptr++) {
 		*ptr = 0;
