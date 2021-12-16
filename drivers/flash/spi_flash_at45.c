@@ -641,20 +641,20 @@ static const struct flash_driver_api spi_flash_at45_api = {
 };
 
 #define INST_HAS_RESET_GPIO(idx) \
-	DT_NODE_HAS_PROP(DT_DRV_INST(idx), reset_gpios)
+	DT_INST_NODE_HAS_PROP(idx, reset_gpios)
 
 #define INST_RESET_GPIO_SPEC(idx)					\
 	IF_ENABLED(INST_HAS_RESET_GPIO(idx),				\
 		(static const struct gpio_dt_spec reset_##idx =	\
-		GPIO_DT_SPEC_GET(DT_DRV_INST(idx), reset_gpios);))
+		GPIO_DT_SPEC_INST_GET(idx, reset_gpios);))
 
 #define INST_HAS_WP_GPIO(idx) \
-	DT_NODE_HAS_PROP(DT_DRV_INST(idx), wp_gpios)
+	DT_INST_NODE_HAS_PROP(idx, wp_gpios)
 
 #define INST_WP_GPIO_SPEC(idx)						\
 	IF_ENABLED(INST_HAS_WP_GPIO(idx),				\
 		(static const struct gpio_dt_spec wp_##idx =		\
-		GPIO_DT_SPEC_GET(DT_DRV_INST(idx), wp_gpios);))
+		GPIO_DT_SPEC_INST_GET(idx, wp_gpios);))
 
 #define SPI_FLASH_AT45_INST(idx)					     \
 	enum {								     \
