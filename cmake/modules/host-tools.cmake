@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+include_guard(GLOBAL)
+
 if(ZEPHYR_SDK_HOST_TOOLS)
   include(${ZEPHYR_BASE}/cmake/toolchain/zephyr/host-tools.cmake)
 endif()

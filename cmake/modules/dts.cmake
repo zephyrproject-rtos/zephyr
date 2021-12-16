@@ -1,5 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
+include_guard(GLOBAL)
+
+include(extensions)
+include(python)
+include(boards)
+include(generic_toolchain)
+
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
 # Zephyr code can configure itself based on a KConfig'uration with the

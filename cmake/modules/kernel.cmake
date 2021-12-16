@@ -19,9 +19,11 @@
 # Important libraries:
 # - app: This is the main application library where the application can add
 #        source files that must be included when building Zephyr
-#
-# CMake module dependencies:
-# - All Zephyr CMake modules are required for this CMake module to work correctly
+
+include_guard(GLOBAL)
+
+# As this module is not intended for direct loading, but should be loaded through
+# find_package(Zephyr) then it won't be loading any Zephyr CMake modules by itself.
 
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
@@ -208,8 +210,8 @@ add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 
 # Link 'app' with the Zephyr interface libraries.
 #
-# NB: This must be done in boilerplate.cmake because 'app' can only be
-# modified in the CMakeLists.txt file that created it. And it must be
+# NB: This must be done here because 'app' can only be modified in the
+# CMakeLists.txt file that created it. And it must be
 # done after 'add_subdirectory(${ZEPHYR_BASE} ${__build_dir})'
 # because interface libraries are defined while processing that
 # subdirectory.
