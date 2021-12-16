@@ -31,11 +31,6 @@
 /* TODO: KConfig options */
 #define OTS_CLIENT_INST_COUNT   1
 
-NET_BUF_POOL_FIXED_DEFINE(ots_c_read_queue, 1,
-			  sizeof(struct bt_gatt_read_params), 8, NULL);
-
-#define OTS_WORK(_w) CONTAINER_OF(_w, struct otc_instance_t, work)
-
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan);
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf);
 static void l2cap_sent(struct bt_l2cap_chan *chan);
@@ -52,10 +47,6 @@ struct l2ch {
 	struct k_delayed_work recv_work;
 	struct bt_l2cap_le_chan ch;
 };
-
-#define L2CH_CHAN(_chan) CONTAINER_OF(_chan, struct l2ch, ch.chan)
-#define L2CH_WORK(_work) CONTAINER_OF(_work, struct l2ch, recv_work)
-#define L2CAP_CHAN(_chan) _chan->ch.chan
 
 struct dirlisting_record_t {
 	uint16_t                      len;
