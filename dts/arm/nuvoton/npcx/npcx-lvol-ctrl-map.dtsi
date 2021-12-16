@@ -113,8 +113,8 @@
 		lvol_ioe4: lvol46 {
 			lvols = <&scfg 0x0e 4 4 6>;
 		};
-		lvol_ioe6: lvol47 {
-			lvols = <&scfg 0x0e 6 4 7>;
+		lvol_ioe3: lvol47 {
+			lvols = <&scfg 0x0e 3 4 7>;
 		};
 
 		/* Low-Voltage IO Control 5 */
