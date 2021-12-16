@@ -49,11 +49,7 @@
 #define BS_TIMEOUT_UPPER_MS   1100
 #define BS_TIMEOUT_LOWER_MS   1000
 
-#if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
-#define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
-#else
 #define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
-#endif
 
 /*
  * @addtogroup t_can

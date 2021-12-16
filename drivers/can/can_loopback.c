@@ -1,31 +1,45 @@
 /*
+ * Copyright (c) 2021 Vestas Wind Systems A/S
  * Copyright (c) 2018 Alexander Wachter
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <kernel.h>
+#define DT_DRV_COMPAT zephyr_can_loopback
+
 #include <stdbool.h>
+#include <string.h>
+
 #include <drivers/can.h>
-#include "can_loopback.h"
-
+#include <kernel.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
-K_KERNEL_STACK_DEFINE(tx_thread_stack,
-		      CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
-struct k_thread tx_thread_data;
+LOG_MODULE_REGISTER(can_loopback, CONFIG_CAN_LOG_LEVEL);
 
-struct can_looppback_frame {
+struct can_loopback_frame {
 	struct zcan_frame frame;
 	can_tx_callback_t cb;
 	void *cb_arg;
 	struct k_sem *tx_compl;
 };
 
-K_MSGQ_DEFINE(tx_msgq, sizeof(struct can_looppback_frame),
-	      CONFIG_CAN_LOOPBACK_TX_MSGQ_SIZE, 4);
+struct can_loopback_filter {
+	can_rx_callback_t rx_cb;
+	void *cb_arg;
+	struct zcan_filter filter;
+};
+
+struct can_loopback_data {
+	struct can_loopback_filter filters[CONFIG_CAN_MAX_FILTER];
+	struct k_mutex mtx;
+	bool loopback;
+	struct k_msgq tx_msgq;
+	char msgq_buffer[CONFIG_CAN_LOOPBACK_TX_MSGQ_SIZE * sizeof(struct can_loopback_frame)];
+	struct k_thread tx_thread_data;
+
+	K_KERNEL_STACK_MEMBER(tx_thread_stack,
+		      CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
+};
 
 static void dispatch_frame(const struct zcan_frame *frame,
 			   struct can_loopback_filter *filter)
@@ -52,12 +66,12 @@ void tx_thread(void *data_arg, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
-	struct can_looppback_frame frame;
+	struct can_loopback_frame frame;
 	struct can_loopback_filter *filter;
 	struct can_loopback_data *data = (struct can_loopback_data *)data_arg;
 
 	while (1) {
-		k_msgq_get(&tx_msgq, &frame, K_FOREVER);
+		k_msgq_get(&data->tx_msgq, &frame, K_FOREVER);
 		k_mutex_lock(&data->mtx, K_FOREVER);
 
 		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
@@ -83,9 +97,9 @@ int can_loopback_send(const struct device *dev,
 		      k_timeout_t timeout, can_tx_callback_t callback,
 		      void *user_data)
 {
-	struct can_loopback_data *data = DEV_DATA(dev);
+	struct can_loopback_data *data = dev->data;
 	int ret;
-	struct can_looppback_frame loopback_frame;
+	struct can_loopback_frame loopback_frame;
 	struct k_sem tx_sem;
 
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
@@ -112,7 +126,7 @@ int can_loopback_send(const struct device *dev,
 		k_sem_init(&tx_sem, 0, 1);
 	}
 
-	ret = k_msgq_put(&tx_msgq, &loopback_frame, timeout);
+	ret = k_msgq_put(&data->tx_msgq, &loopback_frame, timeout);
 
 	if (!callback) {
 		k_sem_take(&tx_sem, K_FOREVER);
@@ -137,7 +151,7 @@ int can_loopback_attach_isr(const struct device *dev, can_rx_callback_t isr,
 			    void *cb_arg,
 			    const struct zcan_filter *filter)
 {
-	struct can_loopback_data *data = DEV_DATA(dev);
+	struct can_loopback_data *data = dev->data;
 	struct can_loopback_filter *loopback_filter;
 	int filter_id;
 
@@ -173,7 +187,7 @@ int can_loopback_attach_isr(const struct device *dev, can_rx_callback_t isr,
 
 void can_loopback_detach(const struct device *dev, int filter_id)
 {
-	struct can_loopback_data *data = DEV_DATA(dev);
+	struct can_loopback_data *data = dev->data;
 
 	LOG_DBG("Detach filter ID: %d", filter_id);
 	k_mutex_lock(&data->mtx, K_FOREVER);
@@ -183,7 +197,7 @@ void can_loopback_detach(const struct device *dev, int filter_id)
 
 int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
 {
-	struct can_loopback_data *data = DEV_DATA(dev);
+	struct can_loopback_data *data = dev->data;
 
 	data->loopback = mode == CAN_LOOPBACK_MODE ? 1 : 0;
 	return 0;
@@ -243,7 +257,7 @@ int can_loopback_get_max_filters(const struct device *dev, enum can_ide id_type)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static const struct can_driver_api can_api_funcs = {
+static const struct can_driver_api can_loopback_driver_api = {
 	.set_mode = can_loopback_set_mode,
 	.set_timing = can_loopback_set_timing,
 	.send = can_loopback_send,
@@ -274,7 +288,7 @@ static const struct can_driver_api can_api_funcs = {
 
 static int can_loopback_init(const struct device *dev)
 {
-	struct can_loopback_data *data = DEV_DATA(dev);
+	struct can_loopback_data *data = dev->data;
 	k_tid_t tx_tid;
 
 	k_mutex_init(&data->mtx);
@@ -283,8 +297,11 @@ static int can_loopback_init(const struct device *dev)
 		data->filters[i].rx_cb = NULL;
 	}
 
-	tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
-				 K_KERNEL_STACK_SIZEOF(tx_thread_stack),
+	k_msgq_init(&data->tx_msgq, data->msgq_buffer, sizeof(struct can_loopback_frame),
+		    CONFIG_CAN_LOOPBACK_TX_MSGQ_SIZE);
+
+	tx_tid = k_thread_create(&data->tx_thread_data, data->tx_thread_stack,
+				 K_KERNEL_STACK_SIZEOF(data->tx_thread_stack),
 				 tx_thread, data, NULL, NULL,
 				 CONFIG_CAN_LOOPBACK_TX_THREAD_PRIORITY,
 				 0, K_NO_WAIT);
@@ -298,46 +315,50 @@ static int can_loopback_init(const struct device *dev)
 	return 0;
 }
 
-static struct can_loopback_data can_loopback_dev_data_1;
+#define CAN_LOOPBACK_INIT(inst)						\
+	static struct can_loopback_data can_loopback_dev_data_##inst;	\
+									\
+	DEVICE_DT_INST_DEFINE(inst, &can_loopback_init, NULL,		\
+			      &can_loopback_dev_data_##inst, NULL,	\
+			      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
+			      &can_loopback_driver_api);
 
-DEVICE_DEFINE(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
-		    &can_loopback_init, NULL,
-		    &can_loopback_dev_data_1, NULL,
-		    POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,
-		    &can_api_funcs);
-
+DT_INST_FOREACH_STATUS_OKAY(CAN_LOOPBACK_INIT)
 
 #if defined(CONFIG_NET_SOCKETS_CAN)
-
 #include "socket_can_generic.h"
 
-static struct socket_can_context socket_can_context_1;
+#define CAN_LOOPBACK_SOCKET_CAN(inst)						\
+	static struct socket_can_context socket_can_context_##inst;		\
+										\
+	static int socket_can_init_##inst(const struct device *dev)		\
+	{									\
+		const struct device *can_dev = DEVICE_DT_INST_GET(inst);	\
+		struct socket_can_context *socket_context = dev->data;		\
+										\
+		LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",	\
+			dev, dev->name, can_dev, can_dev->name);		\
+										\
+		socket_context->can_dev = can_dev;				\
+		socket_context->msgq = &socket_can_msgq;			\
+										\
+		socket_context->rx_tid =					\
+			k_thread_create(&socket_context->rx_thread_data,	\
+					rx_thread_stack,			\
+					K_KERNEL_STACK_SIZEOF(rx_thread_stack),	\
+					rx_thread, socket_context, NULL, NULL,	\
+					RX_THREAD_PRIORITY, 0, K_NO_WAIT);	\
+										\
+		return 0;							\
+	}									\
+										\
+	NET_DEVICE_INIT(socket_can_loopback_##inst, SOCKET_CAN_NAME_##inst,	\
+			socket_can_init_##inst, NULL,				\
+			&socket_can_context_##inst, NULL,			\
+			CONFIG_CAN_INIT_PRIORITY, &socket_can_api,		\
+			CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2),	\
+			CAN_MTU);
 
-static int socket_can_init_1(const struct device *dev)
-{
-	const struct device *can_dev = DEVICE_GET(can_loopback_1);
-	struct socket_can_context *socket_context = dev->data;
-
-	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->name, can_dev, can_dev->name);
-
-	socket_context->can_dev = can_dev;
-	socket_context->msgq = &socket_can_msgq;
-
-	socket_context->rx_tid =
-		k_thread_create(&socket_context->rx_thread_data,
-				rx_thread_stack,
-				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-				rx_thread, socket_context, NULL, NULL,
-				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
-
-	return 0;
-}
-
-NET_DEVICE_INIT(socket_can_loopback_1, SOCKET_CAN_NAME_1, socket_can_init_1,
-		NULL, &socket_can_context_1, NULL,
-		CONFIG_CAN_INIT_PRIORITY,
-		&socket_can_api,
-		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
+DT_INST_FOREACH_STATUS_OKAY(CAN_LOOPBACK_SOCKET_CAN)
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
