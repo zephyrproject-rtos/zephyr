@@ -707,8 +707,8 @@
 			label = "I2C_3";
 			port-num = <3>;
 			gpio-dev = <&gpioh>;
-			pinctrl-0 = <&pinctrl_i2c_clk3    /* GPH1 */
-				     &pinctrl_i2c_data3>; /* GPH2 */
+			pinctrl-0 = <&pinctrl_i2c_clk3_gph1    /* GPH1 */
+				     &pinctrl_i2c_data3_gph2>; /* GPH2 */
 		};
 		i2c4: i2c@f03500 {
 			compatible = "ite,it8xxx2-i2c";
