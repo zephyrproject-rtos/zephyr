@@ -95,11 +95,17 @@
 		pinctrl_i2c_data2: i2c_data2 {
 			pinctrls = <&pinmuxf 7 IT8XXX2_PINMUX_FUNC_1>;
 		};
-		pinctrl_i2c_clk3: i2c_clk3 {
+		pinctrl_i2c_clk3_gph1: i2c_clk3_gph1 {
 			pinctrls = <&pinmuxh 1 IT8XXX2_PINMUX_FUNC_3>;
 		};
-		pinctrl_i2c_data3: i2c_data3 {
+		pinctrl_i2c_data3_gph2: i2c_data3_gph2 {
 			pinctrls = <&pinmuxh 2 IT8XXX2_PINMUX_FUNC_3>;
+		};
+		pinctrl_i2c_clk3_gpf2: i2c_clk3_gpf2 {
+			pinctrls = <&pinmuxf 2 IT8XXX2_PINMUX_FUNC_4>;
+		};
+		pinctrl_i2c_data3_gpf3: i2c_data3_gpf3 {
+			pinctrls = <&pinmuxf 3 IT8XXX2_PINMUX_FUNC_4>;
 		};
 		pinctrl_i2c_clk4: i2c_clk4 {
 			pinctrls = <&pinmuxe 0 IT8XXX2_PINMUX_FUNC_3>;

@@ -162,10 +162,18 @@ static int pinmux_it8xxx2_init(const struct device *dev)
 	IT8XXX2_GPIO_GCR &= ~(BIT(1) | BIT(2));
 
 	/*
-	 * TODO: If SMBUS3 swaps from H group to F group, we have to
+	 * If SMBUS3 swaps from H group to F group, we have to
 	 * set SMB3PSEL = 1 in PMER3 register.
 	 */
+	if (DEVICE_DT_GET(DT_PHANDLE(DT_NODELABEL(i2c3), gpio_dev)) ==
+	    DEVICE_DT_GET(DT_NODELABEL(gpiof))) {
 
+		struct gctrl_it8xxx2_regs *const gctrl_base =
+			(struct gctrl_it8xxx2_regs *)
+				DT_REG_ADDR(DT_NODELABEL(gctrl));
+
+			gctrl_base->GCTRL_PMER3 |= IT8XXX2_GCTRL_SMB3PSEL;
+	}
 	/*
 	 * TODO: If UART2 swaps from bit2:1 to bit6:5 in H group, we
 	 * have to set UART1PSEL = 1 in UART1PMR register.

@@ -148,22 +148,6 @@ enum i2c_reset_cause {
 #define I2C_LINE_SDA_HIGH BIT(1)
 #define I2C_LINE_IDLE (I2C_LINE_SCL_HIGH | I2C_LINE_SDA_HIGH)
 
-struct i2c_pin {
-	volatile uint8_t *mirror_clk;
-	volatile uint8_t *mirror_data;
-	uint8_t clk_mask;
-	uint8_t data_mask;
-};
-
-static const struct i2c_pin i2c_pin_regs[] = {
-	{ &GPDMRB, &GPDMRB,	0x08, 0x10},
-	{ &GPDMRC, &GPDMRC,	0x02, 0x04},
-	{ &GPDMRF, &GPDMRF,	0x40, 0x80},
-	{ &GPDMRH, &GPDMRH,	0x02, 0x04},
-	{ &GPDMRE, &GPDMRE,	0x01, 0x80},
-	{ &GPDMRA, &GPDMRA,	0x10, 0x20},
-};
-
 static int i2c_parsing_return_value(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
@@ -201,12 +185,11 @@ static int i2c_get_line_levels(const struct device *dev)
 		return IT83XX_SMB_SMBPCTL(base) & 0x03;
 	}
 
-	if (*i2c_pin_regs[config->port].mirror_clk &
-					i2c_pin_regs[config->port].clk_mask) {
+	if (IT83XX_I2C_TOS(base) & IT8XXX2_I2C_SCL_IN) {
 		pin_sts |= I2C_LINE_SCL_HIGH;
 	}
-	if (*i2c_pin_regs[config->port].mirror_data &
-					i2c_pin_regs[config->port].data_mask) {
+
+	if (IT83XX_I2C_TOS(base) & IT8XXX2_I2C_SDA_IN) {
 		pin_sts |= I2C_LINE_SDA_HIGH;
 	}
 
@@ -905,8 +888,6 @@ static int i2c_it8xxx2_init(const struct device *dev)
 		break;
 	case DT_REG_ADDR(DT_NODELABEL(i2c3)):
 		offset = CGC_OFFSET_SMBD;
-		/* Enable SMBus D channel */
-		GCR2 |= SMB3E;
 		break;
 	case DT_REG_ADDR(DT_NODELABEL(i2c4)):
 		offset = CGC_OFFSET_SMBE;
