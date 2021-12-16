@@ -207,9 +207,9 @@ Receiving
 Frames are only received when they match a filter.
 The following code snippets show how to receive frames by attaching filters.
 
-Here we have an example for a receiving callback.
-It is used for :c:func:`can_attach_isr` or :c:func:`can_attach_workq`.
-The argument arg is passed when the filter is attached.
+Here we have an example for a receiving callback as used for
+:c:func:`can_attach_isr`. The argument arg is passed when the filter is
+attached.
 
 .. code-block:: C
 
@@ -241,38 +241,6 @@ The filter for this example is configured to match the identifier 0x123 exactly.
   can_dev = device_get_binding("CAN_0");
 
   filter_id = can_attach_isr(can_dev, rx_callback_function, callback_arg, &my_filter);
-  if (filter_id < 0) {
-    LOG_ERR("Unable to attach isr [%d]", filter_id);
-  }
-
-This example shows how to attach a callback from a work-queue.
-In contrast to the :c:func:`can_attach_isr` function, here the callback is called from the
-work-queue provided. In this case, it is the system work queue. Blocking is
-generally allowed in the callback but could result in a frame backlog when it is
-not limited. For the reason of a backlog, a ring-buffer is applied for every
-attached filter. The size of this buffer can be adjusted in Kconfig.
-This function is not yet callable from userspace context but will be in the
-future.
-
-The filter for this example is configured to match a filter range from
-0x120 to x12f.
-
-.. code-block:: C
-
-  const struct zcan_filter my_filter = {
-          .id_type = CAN_STANDARD_IDENTIFIER,
-          .rtr = CAN_DATAFRAME,
-          .id = 0x120,
-          .rtr_mask = 1,
-          .id_mask = 0x7F0
-  };
-  struct zcan_work rx_work;
-  int filter_id;
-  const struct device *can_dev;
-
-  can_dev = device_get_binding("CAN_0");
-
-  filter_id = can_attach_workq(can_dev, &k_sys_work_q, &rx_work, callback_arg, callback_arg, &my_filter);
   if (filter_id < 0) {
     LOG_ERR("Unable to attach isr [%d]", filter_id);
   }

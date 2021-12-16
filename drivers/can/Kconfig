@@ -70,7 +70,7 @@ config CAN_INIT_PRIORITY
 	  so that it can start before the networking sub-system.
 
 config CAN_WORKQ_FRAMES_BUF_CNT
-	int "Work queue buffer frame count"
+	int "Work queue buffer frame count (DEPRECATED)"
 	default 4
 	range 1 65534
 	help
