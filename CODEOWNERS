@@ -628,6 +628,7 @@
 /samples/basic/servo_motor/boards/*microbit* @jhe
 /samples/bluetooth/                       @jhedberg @Vudentz @alwa-nordic
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
+/samples/boards/intel_socfpga/intel_socfpga_agilex_socdk/shell/* @ngboonkhai
 /samples/subsys/display/                  @vanwinkeljan
 /samples/compression/                     @Navin-Sankar
 /samples/drivers/can/                     @alexanderwachter
