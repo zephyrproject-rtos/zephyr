@@ -252,8 +252,8 @@ static int json_next_token(struct lwm2m_input_context *in,
 	return (cont == 0U);
 }
 
-static size_t put_begin(struct lwm2m_output_context *out,
-			struct lwm2m_obj_path *path)
+static int put_begin(struct lwm2m_output_context *out,
+		     struct lwm2m_obj_path *path)
 {
 	int len = -1;
 
@@ -281,8 +281,8 @@ static size_t put_begin(struct lwm2m_output_context *out,
 	return (size_t)len;
 }
 
-static size_t put_end(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path)
+static int put_end(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path)
 {
 	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), "]}", 2) < 0) {
 		/* TODO: Generate error? */
@@ -292,8 +292,8 @@ static size_t put_end(struct lwm2m_output_context *out,
 	return 2;
 }
 
-static size_t put_begin_ri(struct lwm2m_output_context *out,
-			   struct lwm2m_obj_path *path)
+static int put_begin_ri(struct lwm2m_output_context *out,
+			struct lwm2m_obj_path *path)
 {
 	struct json_out_formatter_data *fd;
 
@@ -306,8 +306,8 @@ static size_t put_begin_ri(struct lwm2m_output_context *out,
 	return 0;
 }
 
-static size_t put_end_ri(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path)
+static int put_end_ri(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path)
 {
 	struct json_out_formatter_data *fd;
 
@@ -320,8 +320,7 @@ static size_t put_end_ri(struct lwm2m_output_context *out,
 	return 0;
 }
 
-static size_t put_char(struct lwm2m_output_context *out,
-		       char c)
+static int put_char(struct lwm2m_output_context *out, char c)
 {
 	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), &c, sizeof(c)) < 0) {
 		/* TODO: Generate error? */
@@ -331,9 +330,8 @@ static size_t put_char(struct lwm2m_output_context *out,
 	return 1;
 }
 
-static size_t put_json_prefix(struct lwm2m_output_context *out,
-			      struct lwm2m_obj_path *path,
-			      const char *format)
+static int put_json_prefix(struct lwm2m_output_context *out,
+			   struct lwm2m_obj_path *path, const char *format)
 {
 	struct json_out_formatter_data *fd;
 	char *sep;
@@ -383,7 +381,7 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_json_postfix(struct lwm2m_output_context *out)
+static int put_json_postfix(struct lwm2m_output_context *out)
 {
 	struct json_out_formatter_data *fd;
 
@@ -401,8 +399,8 @@ static size_t put_json_postfix(struct lwm2m_output_context *out)
 	return 1;
 }
 
-static size_t put_s32(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int32_t value)
+static int put_s32(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int32_t value)
 {
 	int len;
 
@@ -413,20 +411,20 @@ static size_t put_s32(struct lwm2m_output_context *out,
 	return (size_t)len;
 }
 
-static size_t put_s16(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int16_t value)
+static int put_s16(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int16_t value)
 {
 	return put_s32(out, path, (int32_t)value);
 }
 
-static size_t put_s8(struct lwm2m_output_context *out,
-		     struct lwm2m_obj_path *path, int8_t value)
+static int put_s8(struct lwm2m_output_context *out, struct lwm2m_obj_path *path,
+		  int8_t value)
 {
 	return put_s32(out, path, (int32_t)value);
 }
 
-static size_t put_s64(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int64_t value)
+static int put_s64(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int64_t value)
 {
 	int len;
 
@@ -436,9 +434,8 @@ static size_t put_s64(struct lwm2m_output_context *out,
 	return (size_t)len;
 }
 
-static size_t put_string(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path,
-			 char *buf, size_t buflen)
+static int put_string(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path, char *buf, size_t buflen)
 {
 	size_t i;
 	size_t len = 0;
@@ -491,9 +488,8 @@ static size_t put_string(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_float(struct lwm2m_output_context *out,
-			struct lwm2m_obj_path *path,
-			double *value)
+static int put_float(struct lwm2m_output_context *out,
+		     struct lwm2m_obj_path *path, double *value)
 {
 	size_t len;
 
@@ -503,9 +499,8 @@ static size_t put_float(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_bool(struct lwm2m_output_context *out,
-		       struct lwm2m_obj_path *path,
-		       bool value)
+static int put_bool(struct lwm2m_output_context *out,
+		    struct lwm2m_obj_path *path, bool value)
 {
 	size_t len;
 
@@ -515,9 +510,8 @@ static size_t put_bool(struct lwm2m_output_context *out,
 	return (size_t)len;
 }
 
-static size_t put_objlnk(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path,
-			 struct lwm2m_objlnk *value)
+static int put_objlnk(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path, struct lwm2m_objlnk *value)
 {
 	size_t len;
 
@@ -529,8 +523,8 @@ static size_t put_objlnk(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t read_int(struct lwm2m_input_context *in,
-		       int64_t *value, bool accept_sign)
+static int read_int(struct lwm2m_input_context *in, int64_t *value,
+		    bool accept_sign)
 {
 	struct json_in_formatter_data *fd;
 	uint8_t *buf;
@@ -568,12 +562,12 @@ static size_t read_int(struct lwm2m_input_context *in,
 	return i;
 }
 
-static size_t get_s64(struct lwm2m_input_context *in, int64_t *value)
+static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
 	return read_int(in, value, true);
 }
 
-static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
+static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 {
 	int64_t tmp = 0;
 	size_t len = 0;
@@ -586,8 +580,8 @@ static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
 	return len;
 }
 
-static size_t get_string(struct lwm2m_input_context *in,
-			 uint8_t *buf, size_t buflen)
+static int get_string(struct lwm2m_input_context *in, uint8_t *buf,
+		      size_t buflen)
 {
 	struct json_in_formatter_data *fd;
 	int ret;
@@ -612,8 +606,7 @@ static size_t get_string(struct lwm2m_input_context *in,
 	return fd->value_len;
 }
 
-static size_t get_float(struct lwm2m_input_context *in,
-			double *value)
+static int get_float(struct lwm2m_input_context *in, double *value)
 {
 	struct json_in_formatter_data *fd;
 
@@ -659,7 +652,7 @@ static size_t get_float(struct lwm2m_input_context *in,
 	return len;
 }
 
-static size_t get_bool(struct lwm2m_input_context *in, bool *value)
+static int get_bool(struct lwm2m_input_context *in, bool *value)
 {
 	struct json_in_formatter_data *fd;
 
@@ -679,17 +672,16 @@ static size_t get_bool(struct lwm2m_input_context *in, bool *value)
 	return fd->value_len;
 }
 
-static size_t get_opaque(struct lwm2m_input_context *in,
-			 uint8_t *value, size_t buflen,
-			 struct lwm2m_opaque_context *opaque,
-			 bool *last_block)
+static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
+		      size_t buflen, struct lwm2m_opaque_context *opaque,
+		      bool *last_block)
 {
 	/* TODO */
 	return 0;
 }
 
-static size_t get_objlnk(struct lwm2m_input_context *in,
-			 struct lwm2m_objlnk *value)
+static int get_objlnk(struct lwm2m_input_context *in,
+		      struct lwm2m_objlnk *value)
 {
 	int64_t tmp;
 	size_t len;

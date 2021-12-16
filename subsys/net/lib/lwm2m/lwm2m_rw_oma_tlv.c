@@ -159,9 +159,9 @@ static int oma_tlv_put_u8(struct lwm2m_output_context *out,
 	return 0;
 }
 
-static size_t oma_tlv_put(const struct oma_tlv *tlv,
-			  struct lwm2m_output_context *out,
-			  uint8_t *value, bool insert)
+static int oma_tlv_put(const struct oma_tlv *tlv,
+		       struct lwm2m_output_context *out, uint8_t *value,
+		       bool insert)
 {
 	size_t pos;
 	int ret, i;
@@ -229,9 +229,8 @@ static size_t oma_tlv_put(const struct oma_tlv *tlv,
 	return pos + tlv->length;
 }
 
-static size_t oma_tlv_get(struct oma_tlv *tlv,
-			  struct lwm2m_input_context *in,
-			  bool dont_advance)
+static int oma_tlv_get(struct oma_tlv *tlv, struct lwm2m_input_context *in,
+		       bool dont_advance)
 {
 	uint8_t len_type;
 	uint8_t len_pos = 1U;
@@ -299,8 +298,8 @@ error:
 	return 0;
 }
 
-static size_t put_begin_tlv(struct lwm2m_output_context *out, uint16_t *mark_pos,
-			    uint8_t *writer_flags, int writer_flag)
+static int put_begin_tlv(struct lwm2m_output_context *out, uint16_t *mark_pos,
+			 uint8_t *writer_flags, int writer_flag)
 {
 	/* set flags */
 	*writer_flags |= writer_flag;
@@ -313,9 +312,9 @@ static size_t put_begin_tlv(struct lwm2m_output_context *out, uint16_t *mark_pos
 	return 0;
 }
 
-static size_t put_end_tlv(struct lwm2m_output_context *out, uint16_t mark_pos,
-			  uint8_t *writer_flags, uint8_t writer_flag,
-			  int tlv_type, int tlv_id)
+static int put_end_tlv(struct lwm2m_output_context *out, uint16_t mark_pos,
+		       uint8_t *writer_flags, uint8_t writer_flag, int tlv_type,
+		       int tlv_id)
 {
 	struct tlv_out_formatter_data *fd;
 	struct oma_tlv tlv;
@@ -340,8 +339,8 @@ static size_t put_end_tlv(struct lwm2m_output_context *out, uint16_t mark_pos,
 	return len;
 }
 
-static size_t put_begin_oi(struct lwm2m_output_context *out,
-			   struct lwm2m_obj_path *path)
+static int put_begin_oi(struct lwm2m_output_context *out,
+			struct lwm2m_obj_path *path)
 {
 	struct tlv_out_formatter_data *fd;
 
@@ -353,8 +352,8 @@ static size_t put_begin_oi(struct lwm2m_output_context *out,
 	return put_begin_tlv(out, &fd->mark_pos_oi, &fd->writer_flags, 0);
 }
 
-static size_t put_end_oi(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path)
+static int put_end_oi(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path)
 {
 	struct tlv_out_formatter_data *fd;
 
@@ -367,8 +366,8 @@ static size_t put_end_oi(struct lwm2m_output_context *out,
 			   OMA_TLV_TYPE_OBJECT_INSTANCE, path->obj_inst_id);
 }
 
-static size_t put_begin_ri(struct lwm2m_output_context *out,
-			   struct lwm2m_obj_path *path)
+static int put_begin_ri(struct lwm2m_output_context *out,
+			struct lwm2m_obj_path *path)
 {
 	struct tlv_out_formatter_data *fd;
 
@@ -381,8 +380,8 @@ static size_t put_begin_ri(struct lwm2m_output_context *out,
 			     WRITER_RESOURCE_INSTANCE);
 }
 
-static size_t put_end_ri(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path)
+static int put_end_ri(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path)
 {
 	struct tlv_out_formatter_data *fd;
 
@@ -396,8 +395,8 @@ static size_t put_end_ri(struct lwm2m_output_context *out,
 			   OMA_TLV_TYPE_MULTI_RESOURCE, path->res_id);
 }
 
-static size_t put_s8(struct lwm2m_output_context *out,
-		     struct lwm2m_obj_path *path, int8_t value)
+static int put_s8(struct lwm2m_output_context *out, struct lwm2m_obj_path *path,
+		  int8_t value)
 {
 	struct tlv_out_formatter_data *fd;
 	size_t len;
@@ -415,8 +414,8 @@ static size_t put_s8(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_s16(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int16_t value)
+static int put_s16(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int16_t value)
 {
 	struct tlv_out_formatter_data *fd;
 	size_t len;
@@ -440,8 +439,8 @@ static size_t put_s16(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_s32(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int32_t value)
+static int put_s32(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int32_t value)
 {
 	struct tlv_out_formatter_data *fd;
 	size_t len;
@@ -466,8 +465,8 @@ static size_t put_s32(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_s64(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int64_t value)
+static int put_s64(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int64_t value)
 {
 	struct tlv_out_formatter_data *fd;
 	size_t len;
@@ -491,9 +490,8 @@ static size_t put_s64(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_string(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path,
-			 char *buf, size_t buflen)
+static int put_string(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path, char *buf, size_t buflen)
 {
 	struct tlv_out_formatter_data *fd;
 	size_t len;
@@ -510,9 +508,8 @@ static size_t put_string(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_float(struct lwm2m_output_context *out,
-			     struct lwm2m_obj_path *path,
-			     double *value)
+static int put_float(struct lwm2m_output_context *out,
+		     struct lwm2m_obj_path *path, double *value)
 {
 	struct tlv_out_formatter_data *fd;
 	size_t len;
@@ -537,32 +534,30 @@ static size_t put_float(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_bool(struct lwm2m_output_context *out,
-		       struct lwm2m_obj_path *path, bool value)
+static int put_bool(struct lwm2m_output_context *out,
+		    struct lwm2m_obj_path *path, bool value)
 {
 	int8_t value_s8 = (value != 0 ? 1 : 0);
 
 	return put_s8(out, path, value_s8);
 }
 
-static size_t put_opaque(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path,
-			 char *buf, size_t buflen)
+static int put_opaque(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path, char *buf, size_t buflen)
 {
 	return put_string(out, path, buf, buflen);
 }
 
-static size_t put_objlnk(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path,
-			 struct lwm2m_objlnk *value)
+static int put_objlnk(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path, struct lwm2m_objlnk *value)
 {
 	int32_t value_s32 = (value->obj_id << 16) | value->obj_inst;
 
 	return put_s32(out, path, value_s32);
 }
 
-static size_t get_number(struct lwm2m_input_context *in, int64_t *value,
-			 uint8_t max_len)
+static int get_number(struct lwm2m_input_context *in, int64_t *value,
+		      uint8_t max_len)
 {
 	struct oma_tlv tlv;
 	size_t size = oma_tlv_get(&tlv, in, false);
@@ -603,12 +598,12 @@ static size_t get_number(struct lwm2m_input_context *in, int64_t *value,
 	return size;
 }
 
-static size_t get_s64(struct lwm2m_input_context *in, int64_t *value)
+static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
 	return get_number(in, value, 8);
 }
 
-static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
+static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 {
 	int64_t temp;
 	size_t size;
@@ -622,8 +617,8 @@ static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
 	return size;
 }
 
-static size_t get_string(struct lwm2m_input_context *in,
-			 uint8_t *buf, size_t buflen)
+static int get_string(struct lwm2m_input_context *in, uint8_t *buf,
+		      size_t buflen)
 {
 	struct oma_tlv tlv;
 	size_t size = oma_tlv_get(&tlv, in, false);
@@ -647,8 +642,7 @@ static size_t get_string(struct lwm2m_input_context *in,
 }
 
 /* convert float to fixpoint */
-static size_t get_float(struct lwm2m_input_context *in,
-			double *value)
+static int get_float(struct lwm2m_input_context *in, double *value)
 {
 	struct oma_tlv tlv;
 	size_t size = oma_tlv_get(&tlv, in, false);
@@ -694,7 +688,7 @@ static size_t get_float(struct lwm2m_input_context *in,
 	return size;
 }
 
-static size_t get_bool(struct lwm2m_input_context *in, bool *value)
+static int get_bool(struct lwm2m_input_context *in, bool *value)
 {
 	int64_t temp;
 	size_t size;
@@ -708,10 +702,9 @@ static size_t get_bool(struct lwm2m_input_context *in, bool *value)
 	return size;
 }
 
-static size_t get_opaque(struct lwm2m_input_context *in,
-			 uint8_t *value, size_t buflen,
-			 struct lwm2m_opaque_context *opaque,
-			 bool *last_block)
+static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
+		      size_t buflen, struct lwm2m_opaque_context *opaque,
+		      bool *last_block)
 {
 	struct oma_tlv tlv;
 	size_t size;
@@ -728,8 +721,8 @@ static size_t get_opaque(struct lwm2m_input_context *in,
 					    opaque, last_block);
 }
 
-static size_t get_objlnk(struct lwm2m_input_context *in,
-			 struct lwm2m_objlnk *value)
+static int get_objlnk(struct lwm2m_input_context *in,
+		      struct lwm2m_objlnk *value)
 {
 	int32_t value_s32;
 	size_t size;
