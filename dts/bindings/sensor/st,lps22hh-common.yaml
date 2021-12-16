@@ -18,7 +18,7 @@ properties:
       default: 0
       description: |
           Specify the default output data rate expressed in samples per second (Hz).
-          Default is power-down mode
+          The default is the power-on reset value.
       enum:
         - 0  # Power-Down
         - 1  # 1Hz
