@@ -94,6 +94,20 @@
 		status = "disabled";
 	};
 
+	/* This periph setting is for setting the MMU region
+	 * to cover the following register map due to
+	 * MMU requirement of 4K alignment
+	 * Uart		<0xffC02000 0x100>
+	 * I2C		<0xffc02800 0x200>
+	 * I2C EMAC	<0xffc02a00 0x300>
+	 * Timer SP	<0xffc03000 0x200>
+	 */
+	periph: periph@ffc02000 {
+		compatible = "syscon";
+		reg = <0xffc02000 0x2000>;
+		label = "periph";
+	};
+
 	mem0: memory@10000000 {
 		device_type = "memory";
 		reg = <0x10000000 0x200000>;
