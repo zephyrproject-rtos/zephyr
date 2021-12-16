@@ -53,12 +53,9 @@ RING_BUF_ITEM_DECLARE_POW2(ring_buf1, 8);
 #define DATA_MAX_SIZE 3
 #define POW 2
 extern void test_ringbuffer_concurrent(void);
-extern void test_ringbuffer_shpsc(void);
-extern void test_ringbuffer_spshc(void);
-extern void test_ringbuffer_cpy_shpsc(void);
-extern void test_ringbuffer_cpy_spshc(void);
-extern void test_ringbuffer_item_shpsc(void);
-extern void test_ringbuffer_item_spshc(void);
+extern void test_ringbuffer_zerocpy_stress(void);
+extern void test_ringbuffer_cpy_stress(void);
+extern void test_ringbuffer_item_stress(void);
 /**
  * @brief Test APIs of ring buffer
  *
@@ -1058,12 +1055,9 @@ void test_main(void)
 		       ztest_unit_test(test_reset),
 		       ztest_unit_test(test_ringbuffer_performance),
 		       ztest_unit_test(test_ringbuffer_concurrent),
-		       ztest_unit_test(test_ringbuffer_shpsc),
-		       ztest_unit_test(test_ringbuffer_spshc),
-		       ztest_unit_test(test_ringbuffer_cpy_shpsc),
-		       ztest_unit_test(test_ringbuffer_cpy_spshc),
-		       ztest_unit_test(test_ringbuffer_item_shpsc),
-		       ztest_unit_test(test_ringbuffer_item_spshc)
+		       ztest_unit_test(test_ringbuffer_zerocpy_stress),
+		       ztest_unit_test(test_ringbuffer_cpy_stress),
+		       ztest_unit_test(test_ringbuffer_item_stress)
 		);
 	ztest_run_test_suite(test_ringbuffer_api);
 }
