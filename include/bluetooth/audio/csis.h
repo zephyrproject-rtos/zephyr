@@ -224,7 +224,7 @@ struct bt_csis_client_set_info {
  * The values in this struct will be populated during discovery of sets
  * (bt_csis_client_discover_sets()).
  */
-struct bt_csis_client_set {
+struct bt_csis_client_csis_inst {
 	struct bt_csis_client_set_info info;
 
 	/** Internally used pointer value */
@@ -235,8 +235,8 @@ struct bt_csis_client_set {
 struct bt_csis_client_set_member {
 	/** Connection pointer to the remote device, populated by the user */
 	struct bt_conn *conn;
-	/** Array of sets for the remote device */
-	struct bt_csis_client_set sets[BT_CSIS_CLIENT_MAX_CSIS_INSTANCES];
+	/** Array of Coordinated Set Identification Service instances for the remote device */
+	struct bt_csis_client_csis_inst insts[BT_CSIS_CLIENT_MAX_CSIS_INSTANCES];
 };
 
 /**
@@ -293,12 +293,13 @@ typedef void (*bt_csis_client_lock_set_cb)(int err);
  * @typedef bt_csis_client_lock_changed_cb
  * @brief Callback when the lock value on a set of a connected device changes.
  *
- * @param set     The set that was changed.
+ * @param inst    The Coordinated Set Identification Service instance that was
+ *                changed.
  * @param locked  Whether the lock is locked or release.
  *
  * @return int Return 0 on success, or an errno value on error.
  */
-typedef void (*bt_csis_client_lock_changed_cb)(struct bt_csis_client_set *set,
+typedef void (*bt_csis_client_lock_changed_cb)(struct bt_csis_client_csis_inst *inst,
 					       bool locked);
 
 /**
