@@ -40,6 +40,32 @@
 		};
 	};
 
+	led_matrix {
+		compatible = "nordic,nrf-led-matrix";
+		status = "okay";
+		label = "LED_MATRIX";
+		width = <5>;
+		height = <5>;
+		pixel-mapping = [00 13 01 14 02
+				 23 24 25 26 27
+				 11 08 12 28 10
+				 07 06 05 04 03
+				 22 16 20 15 21];
+		row-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 14 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		col-gpios = <&gpio0  4 GPIO_ACTIVE_LOW>,
+			    <&gpio0  5 GPIO_ACTIVE_LOW>,
+			    <&gpio0  6 GPIO_ACTIVE_LOW>,
+			    <&gpio0  7 GPIO_ACTIVE_LOW>,
+			    <&gpio0  8 GPIO_ACTIVE_LOW>,
+			    <&gpio0  9 GPIO_ACTIVE_LOW>,
+			    <&gpio0 10 GPIO_ACTIVE_LOW>,
+			    <&gpio0 11 GPIO_ACTIVE_LOW>,
+			    <&gpio0 12 GPIO_ACTIVE_LOW>;
+		refresh-frequency = <50>;
+		timer = <&timer2>;
+	};
 };
 
 &gpiote {
