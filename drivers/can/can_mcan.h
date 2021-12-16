@@ -56,7 +56,7 @@ struct can_mcan_rx_fifo {
 		volatile uint8_t  data[64];
 		volatile uint32_t data_32[16];
 	};
-} __packed;
+} __packed __aligned(4);
 
 struct can_mcan_mm {
 	volatile uint8_t idx : 5;
@@ -92,7 +92,7 @@ struct can_mcan_tx_buffer {
 		volatile uint8_t  data[64];
 		volatile uint32_t data_32[16];
 	};
-} __packed;
+} __packed __aligned(4);
 
 #define CAN_MCAN_TE_TX    0x1 /* TX event */
 #define CAN_MCAN_TE_TXC   0x2 /* TX event in spite of cancellation */
@@ -153,7 +153,7 @@ struct can_mcan_msg_sram {
 	volatile struct can_mcan_rx_fifo rx_buffer[NUM_RX_BUF_ELEMENTS];
 	volatile struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_BUF_ELEMENTS];
 	volatile struct can_mcan_tx_buffer tx_buffer[NUM_TX_BUF_ELEMENTS];
-} __packed;
+} __packed __aligned(4);
 
 struct can_mcan_data {
 	struct k_mutex inst_mutex;
