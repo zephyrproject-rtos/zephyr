@@ -176,7 +176,7 @@ static int lora_conf_set(const struct shell *shell, const char *param,
 			modem_config.bandwidth = BW_500_KHZ;
 			break;
 		default:
-			shell_error(shell, "Invalid bandwidth: %s", lval);
+			shell_error(shell, "Invalid bandwidth: %ld", lval);
 			return -EINVAL;
 		}
 	} else if (!strcmp("sf", param)) {
