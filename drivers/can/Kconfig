@@ -27,6 +27,7 @@ config CAN_SHELL
 	bool "Enable CAN Shell"
 	default y
 	depends on SHELL
+	select POLL
 	help
 	  Enable CAN Shell for testing.
 

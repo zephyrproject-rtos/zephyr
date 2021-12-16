@@ -10,7 +10,14 @@
 #include <zephyr/types.h>
 #include <stdlib.h>
 
-static struct zcan_work work;
+CAN_DEFINE_MSGQ(msgq, 4);
+const struct shell *msgq_shell;
+static struct k_work_poll msgq_work;
+static struct k_poll_event msgq_events[1] = {
+	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&msgq, 0)
+};
 
 static inline int read_config_options(const struct shell *shell, int pos,
 				      char **argv, bool *silent, bool *loopback)
@@ -185,25 +192,39 @@ static inline int read_data(const struct shell *shell, int pos, char **argv,
 	return i;
 }
 
-static void print_frame(struct zcan_frame *frame, void *arg)
+static void print_frame(struct zcan_frame *frame, const struct shell *sh)
 {
-	const struct shell *shell = (const struct shell *)arg;
-
-	shell_fprintf(shell, SHELL_NORMAL, "|0x%-8x|%s|%s|%d|",
+	shell_fprintf(sh, SHELL_NORMAL, "|0x%-8x|%s|%s|%d|",
 		      frame->id,
 		      frame->id_type == CAN_STANDARD_IDENTIFIER ? "std" : "ext",
 		      frame->rtr ? "RTR" : "   ", frame->dlc);
 
 	for (int i = 0; i < CAN_MAX_DLEN; i++) {
 		if (i < frame->dlc) {
-			shell_fprintf(shell, SHELL_NORMAL, " 0x%02x",
+			shell_fprintf(sh, SHELL_NORMAL, " 0x%02x",
 				      frame->data[i]);
 		} else {
-			shell_fprintf(shell, SHELL_NORMAL, "     ");
+			shell_fprintf(sh, SHELL_NORMAL, "     ");
 		}
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "|\n");
+	shell_fprintf(sh, SHELL_NORMAL, "|\n");
+}
+
+static void msgq_triggered_work_handler(struct k_work *work)
+{
+	struct zcan_frame frame;
+	int ret;
+
+	while (k_msgq_get(&msgq, &frame, K_NO_WAIT) == 0) {
+		print_frame(&frame, msgq_shell);
+	}
+
+	ret = k_work_poll_submit(&msgq_work, msgq_events,
+				 ARRAY_SIZE(msgq_events), K_FOREVER);
+	if (ret != 0) {
+		shell_error(msgq_shell, "Failed to resubmit msgq polling [%d]", ret);
+	}
 }
 
 static int cmd_config(const struct shell *shell, size_t argc, char **argv)
@@ -368,8 +389,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 		    filter.id, ext ? "extended" : "standard", filter.id_mask,
 		    filter.rtr_mask);
 
-	ret = can_attach_workq(can_dev, &k_sys_work_q, &work, print_frame,
-			       (void *)shell, &filter);
+	ret = can_attach_msgq(can_dev, &msgq, &filter);
 	if (ret < 0) {
 		if (ret == -ENOSPC) {
 			shell_error(shell, "Can't attach, no free filter left");
@@ -381,6 +401,17 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "Filter ID: %d", ret);
+
+	if (msgq_shell == NULL) {
+		msgq_shell = shell;
+		k_work_poll_init(&msgq_work, msgq_triggered_work_handler);
+	}
+
+	ret = k_work_poll_submit(&msgq_work, msgq_events,
+				 ARRAY_SIZE(msgq_events), K_FOREVER);
+	if (ret != 0) {
+		shell_error(shell, "Failed to submit msgq polling [%d]", ret);
+	}
 
 	return 0;
 }
@@ -397,8 +428,6 @@ static int cmd_detach(const struct shell *shell, size_t argc, char **argv)
 			    argv[1]);
 		return -EINVAL;
 	}
-
-
 
 	id = strtol(argv[2], &end_ptr, 0);
 	if (*end_ptr != '\0') {
