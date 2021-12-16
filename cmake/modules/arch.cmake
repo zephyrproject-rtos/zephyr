@@ -23,6 +23,8 @@
 # Variables set by this module and not mentioned above are considered internal
 # use only and may be removed, renamed, or re-purposed without prior notice.
 
+include_guard(GLOBAL)
+
 # 'ARCH_ROOT' is a prioritized list of directories where archs may be
 # found. It always includes ${ZEPHYR_BASE} at the lowest priority.
 list(APPEND ARCH_ROOT ${ZEPHYR_BASE})

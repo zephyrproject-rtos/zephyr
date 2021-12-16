@@ -3053,7 +3053,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     @staticmethod
     def get_toolchain():
-        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
+        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/modules/verify-toolchain.cmake')
         result = CMake.run_cmake_script([toolchain_script, "FORMAT=json"])
 
         try:
