@@ -74,12 +74,6 @@ extern "C" {
 #endif
 #endif /* CONFIG_CANFD_MAX_DLC */
 
-/**
- * Allow including drivers/can.h even if CONFIG_CAN is not selected.
- */
-#ifndef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
-#define CONFIG_CAN_WORKQ_FRAMES_BUF_CNT 4
-#endif
 /** @endcond */
 
 /** @} */
@@ -292,30 +286,6 @@ typedef void (*can_state_change_isr_t)(enum can_state state, struct can_bus_err_
  *
  * For internal driver use only, skip these in public documentation.
  */
-
-/**
- * @brief CAN frame buffer structure
- *
- * Used internally by @a zcan_work struct
- */
-struct can_frame_buffer {
-	struct zcan_frame buf[CONFIG_CAN_WORKQ_FRAMES_BUF_CNT];
-	uint16_t head;
-	uint16_t tail;
-};
-
-/**
- * @brief CAN work structure
- *
- * Used to attach a work queue to a filter.
- */
-struct zcan_work {
-	struct k_work work_item;
-	struct k_work_q *work_queue;
-	struct can_frame_buffer buf;
-	can_rx_callback_t cb;
-	void *cb_arg;
-};
 
 /**
  * @typedef can_set_timing_t
@@ -742,37 +712,6 @@ static inline int can_attach_isr(const struct device *dev, can_rx_callback_t cal
 }
 
 /**
- * @brief Attach a CAN work queue with a given CAN filter
- *
- * Attach a work queue to CAN identifiers specified by a filter. Whenever a
- * frame matching the filter is received by the CAN controller, the frame is
- * pushed to the buffer of the @a zcan_work structure and the work element is
- * put in the workqueue.
- *
- * If a frame matches more than one attached filter, the priority of the match
- * is hardware dependent.
- *
- * The same CAN work queue can be attached to more than one filter.
- *
- * @note The work queue must be initialized before and the caller must have
- * appropriate permissions on it.
- *
- * @param dev       Pointer to the device structure for the driver instance.
- * @param work_q    Pointer to the already initialized @a zcan_work queue.
- * @param work      Pointer to a @a zcan_work structure, which will be initialized.
- * @param callback  This function is called by the work queue whenever a frame
- *                  matching the filter is received.
- * @param user_data User data to pass to callback function.
- * @param filter    Pointer to a @a zcan_filter structure defining the filter.
- *
- * @retval filter_id on success.
- * @retval -ENOSPC if there are no free filters.
- */
-int can_attach_workq(const struct device *dev, struct k_work_q  *work_q,
-		     struct zcan_work *work, can_rx_callback_t callback, void *user_data,
-		     const struct zcan_filter *filter);
-
-/**
  * @brief Statically define and initialize a CAN RX message queue.
  *
  * The message queue's ring buffer contains space for @a size CAN frames.
@@ -809,10 +748,10 @@ __syscall int can_attach_msgq(const struct device *dev, struct k_msgq *msg_q,
 			      const struct zcan_filter *filter);
 
 /**
- * @brief Detach an ISR, CAN work queue, or CAN message queue RX filter
+ * @brief Detach an ISR or CAN message queue RX filter
  *
  * This routine detaches an CAN RX filter based on the filter ID returned by @a
- * can_attach_isr(), @a can_attach_workq(), or @a can_attach_msgq().
+ * can_attach_isr() or @a can_attach_msgq().
  *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param filter_id Filter ID
@@ -1166,6 +1105,73 @@ __deprecated static inline int can_configure(const struct device *dev, enum can_
 
 	return can_set_mode(dev, mode);
 }
+
+/**
+ * Allow including drivers/can.h even if CONFIG_CAN is not selected.
+ */
+#ifndef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
+#define CONFIG_CAN_WORKQ_FRAMES_BUF_CNT 4
+#endif
+
+/**
+ * @brief CAN frame buffer structure
+ *
+ * Used internally by @a zcan_work struct
+ */
+struct can_frame_buffer {
+	struct zcan_frame buf[CONFIG_CAN_WORKQ_FRAMES_BUF_CNT];
+	uint16_t head;
+	uint16_t tail;
+};
+
+/**
+ * @brief CAN work structure
+ *
+ * Used to attach a work queue to a filter.
+ */
+struct zcan_work {
+	struct k_work work_item;
+	struct k_work_q *work_queue;
+	struct can_frame_buffer buf;
+	can_rx_callback_t cb;
+	void *cb_arg;
+};
+
+/**
+ * @brief Attach a CAN work queue with a given CAN filter
+ *
+ * Attach a work queue to CAN identifiers specified by a filter. Whenever a
+ * frame matching the filter is received by the CAN controller, the frame is
+ * pushed to the buffer of the @a zcan_work structure and the work element is
+ * put in the workqueue.
+ *
+ * If a frame matches more than one attached filter, the priority of the match
+ * is hardware dependent.
+ *
+ * The same CAN work queue can be attached to more than one filter.
+ *
+ * @see @a can_detach()
+ *
+ * @note The work queue must be initialized before and the caller must have
+ * appropriate permissions on it.
+ *
+ * @warning This function is deprecated. Use @a can_attach_msgq() along with @a
+ * k_work_poll_submit() instead.
+ *
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @param work_q    Pointer to the already initialized @a zcan_work queue.
+ * @param work      Pointer to a @a zcan_work structure, which will be initialized.
+ * @param callback  This function is called by the work queue whenever a frame
+ *                  matching the filter is received.
+ * @param user_data User data to pass to callback function.
+ * @param filter    Pointer to a @a zcan_filter structure defining the filter.
+ *
+ * @retval filter_id on success.
+ * @retval -ENOSPC if there are no free filters.
+ */
+__deprecated int can_attach_workq(const struct device *dev, struct k_work_q  *work_q,
+				  struct zcan_work *work, can_rx_callback_t callback,
+				  void *user_data, const struct zcan_filter *filter);
 
 /** @endcond */
 
