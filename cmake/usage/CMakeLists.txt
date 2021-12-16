@@ -1,15 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-include (${ZEPHYR_BASE}/cmake/shields.cmake)
-include (${ZEPHYR_BASE}/cmake/boards.cmake)
-
-# shields.cmake and boards.cmake can be run with cmake -P for printing
-# help output on user error when settings BOARD or SHIELD, and
-# add_custom_target() is not available in script mode, so we place
-# them in here.
-add_custom_target(shields ${sorted_shield_cmds} USES_TERMINAL)
-add_custom_target(boards ${list_boards_commands} USES_TERMINAL)
-
 add_custom_target(
   usage
   ${CMAKE_COMMAND}
