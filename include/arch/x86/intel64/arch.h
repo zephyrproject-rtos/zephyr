@@ -147,6 +147,6 @@ struct x86_ssf {
 /*
  * Thread object needs to be 16-byte aligned.
  */
-#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	16
+#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	16
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */

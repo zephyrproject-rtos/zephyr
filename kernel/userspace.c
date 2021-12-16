@@ -124,8 +124,8 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
  * the maximum alignment needed for all kernel objects
  * (hence the following DYN_OBJ_DATA_ALIGN).
  */
-#ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
-#define DYN_OBJ_DATA_ALIGN_K_THREAD	(ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT)
+#ifdef ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT
+#define DYN_OBJ_DATA_ALIGN_K_THREAD	(ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT)
 #else
 #define DYN_OBJ_DATA_ALIGN_K_THREAD	(sizeof(void *))
 #endif
@@ -187,8 +187,8 @@ static size_t obj_align_get(enum k_objects otype)
 
 	switch (otype) {
 	case K_OBJ_THREAD:
-#ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
-		ret = ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT;
+#ifdef ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT
+		ret = ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT;
 #else
 		ret = __alignof(struct dyn_obj);
 #endif

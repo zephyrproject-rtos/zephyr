@@ -435,13 +435,13 @@ extern struct task_state_segment _main_tss;
  */
 #if defined(CONFIG_EAGER_FPU_SHARING) || defined(CONFIG_LAZY_FPU_SHARING)
 #ifdef CONFIG_SSE
-#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	16
+#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	16
 #else
-#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
+#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
 #endif
 #else
 /* No special alignment requirements, simply align on pointer size. */
-#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
+#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
 #endif /* CONFIG_*_FP_SHARING */
 
 
