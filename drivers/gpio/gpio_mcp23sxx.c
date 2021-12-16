@@ -122,8 +122,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 	};                                                                                    \
 	static struct mcp23xxx_config mcp23sxx_##inst##_config = {                            \
 		.config = {					                              \
-			.port_pin_mask =			                              \
-				GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_DRV_INST(n)),              \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),                  \
 		},						                              \
 		.bus = {                                                                      \
 			.spi = SPI_DT_SPEC_INST_GET(n,                                        \
