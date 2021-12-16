@@ -5,9 +5,8 @@
  */
 
 /*
- * Warning: This overlay relies on initial board configuration.
- *          For clarity, nodes are over written instead of deleted.
- *          Any change to board configuration has impact on this file.
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
  */
 
 &clk_lse {
@@ -21,17 +20,17 @@
 };
 
 &pll1 {
-	div-m = <2>;				/* Update PLL config */
-	mul-n = <40>;
+	div-m = <1>;
+	mul-n = <80>;
 	div-q = <2>;
-	div-r = <1>;
+	div-r = <2>;
 	clocks = <&clk_msis>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll1>;
-	clock-frequency = <DT_FREQ_M(80)>;	/* clck freq 80MHz */
+	clock-frequency = <DT_FREQ_M(160)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
