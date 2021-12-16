@@ -222,7 +222,7 @@ struct bt_csis_client_set_info {
  * @brief Struct representing a coordinated set instance on a remote device
  *
  * The values in this struct will be populated during discovery of sets
- * (bt_csis_client_discover_sets()).
+ * (bt_csis_client_discover()).
  */
 struct bt_csis_client_csis_inst {
 	struct bt_csis_client_set_info info;
@@ -259,27 +259,6 @@ typedef void (*bt_csis_client_discover_cb)(struct bt_csis_client_set_member *mem
  * @return int Return 0 on success, or an errno value on error.
  */
 int bt_csis_client_discover(struct bt_csis_client_set_member *member);
-
-/**
- * @typedef bt_csis_client_discover_sets_cb
- * @brief Callback for discovering sets and their content.
- *
- * @param member    Pointer to the set member.
- * @param err       0 on success, or an errno value on error.
- * @param set_count Number of sets on the member.
- */
-typedef void (*bt_csis_client_discover_sets_cb)(struct bt_csis_client_set_member *member,
-						int err, uint8_t set_count);
-
-/**
- * @brief Reads CSIS characteristics from a device, to find more information
- * about the set(s) that the device is part of.
- *
- * @param member Pointer to a set member struct to store discovery results in.
- *
- * @return int Return 0 on success, or an errno value on error.
- */
-int bt_csis_client_discover_sets(struct bt_csis_client_set_member *member);
 
 /**
  * @typedef bt_csis_client_lock_set_cb
@@ -322,7 +301,6 @@ struct bt_csis_client_cb {
 	/* Set callbacks */
 	bt_csis_client_lock_set_cb             lock_set;
 	bt_csis_client_lock_set_cb             release_set;
-	bt_csis_client_discover_sets_cb        sets;
 	bt_csis_client_lock_changed_cb         lock_changed;
 
 	/* Device specific callbacks */
