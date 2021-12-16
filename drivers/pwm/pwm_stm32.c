@@ -668,7 +668,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),    \
 		/* For compatibility reason, use pwm st_prescaler property  */ \
 		/* if exist, otherwise use parent (timers) property         */ \
-		.prescaler = DT_PROP_OR(DT_DRV_INST(index), st_prescaler,      \
+		.prescaler = DT_INST_PROP_OR(index, st_prescaler,              \
 			(DT_PROP(DT_INST_PARENT(index), st_prescaler))),       \
 		.pclken = DT_INST_CLK(index, timer),                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
