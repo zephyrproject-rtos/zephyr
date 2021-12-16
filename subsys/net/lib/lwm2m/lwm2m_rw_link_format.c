@@ -49,8 +49,8 @@ struct link_format_out_formatter_data {
 	bool is_first : 1;
 };
 
-static size_t put_begin(struct lwm2m_output_context *out,
-			struct lwm2m_obj_path *path)
+static int put_begin(struct lwm2m_output_context *out,
+		     struct lwm2m_obj_path *path)
 {
 	char init_string[MAX(sizeof(ENABLER_VERSION), sizeof(REG_PREFACE))] = "";
 	struct link_format_out_formatter_data *fd;
@@ -448,8 +448,8 @@ static int put_res_corelink(struct lwm2m_output_context *out,
 	return len;
 }
 
-static ssize_t put_corelink(struct lwm2m_output_context *out,
-			    const struct lwm2m_obj_path *path)
+static int put_corelink(struct lwm2m_output_context *out,
+			const struct lwm2m_obj_path *path)
 {
 	struct link_format_out_formatter_data *fd;
 	ssize_t len = 0;
