@@ -820,7 +820,7 @@ void uart_nrfx_isr(const struct device *uart)
 
 static void rx_timeout(struct k_timer *timer)
 {
-	rx_rdy_evt(DEVICE_DT_GET(DT_DRV_INST(0)));
+	rx_rdy_evt(DEVICE_DT_INST_GET(0));
 }
 
 #if HW_FLOW_CONTROL_AVAILABLE
@@ -837,7 +837,7 @@ static void tx_timeout(struct k_timer *timer)
 	evt.data.tx.len = uart0_cb.tx_buffer_length;
 	uart0_cb.tx_buffer_length = 0;
 	uart0_cb.tx_counter = 0;
-	user_callback(DEVICE_DT_GET(DT_DRV_INST(0)), &evt);
+	user_callback(DEVICE_DT_INST_GET(0), &evt);
 }
 #endif
 
@@ -1093,7 +1093,7 @@ static int uart_nrfx_init(const struct device *dev)
 	IRQ_CONNECT(IRQN,
 		    IRQ_PRIO,
 		    uart_nrfx_isr,
-		    DEVICE_DT_GET(DT_DRV_INST(0)),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(IRQN);
 #endif
