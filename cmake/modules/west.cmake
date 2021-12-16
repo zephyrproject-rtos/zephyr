@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+include_guard(GLOBAL)
+
+include(python)
+
 # west is an optional dependency. We need to run west using the same
 # Python interpreter as everything else, though, so we play some extra
 # tricks.

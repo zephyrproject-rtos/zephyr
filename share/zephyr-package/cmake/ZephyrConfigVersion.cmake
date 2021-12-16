@@ -56,7 +56,7 @@ if((DEFINED ZEPHYR_BASE) OR (DEFINED ENV_ZEPHYR_BASE))
     # We are the Zephyr to be used
 
     set(NO_PRINT_VERSION True)
-    include(${ZEPHYR_BASE}/cmake/version.cmake)
+    include(${ZEPHYR_BASE}/cmake/modules/version.cmake)
     # Zephyr uses project version, but CMake package uses PACKAGE_VERSION
     set(PACKAGE_VERSION ${PROJECT_VERSION})
     check_zephyr_version()
@@ -93,7 +93,7 @@ set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR})
 # Tell version.cmake to not print as printing version for all Zephyr installations being tested
 # will lead to confusion on which is being used.
 set(NO_PRINT_VERSION True)
-include(${ZEPHYR_BASE}/cmake/version.cmake)
+include(${ZEPHYR_BASE}/cmake/modules/version.cmake)
 # Zephyr uses project version, but CMake package uses PACKAGE_VERSION
 set(PACKAGE_VERSION ${PROJECT_VERSION})
 set(ZEPHYR_BASE)

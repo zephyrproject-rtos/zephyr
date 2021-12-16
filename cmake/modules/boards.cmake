@@ -42,6 +42,11 @@
 # Variables set by this module and not mentioned above are considered internal
 # use only and may be removed, renamed, or re-purposed without prior notice.
 
+include_guard(GLOBAL)
+
+include(python)
+include(extensions)
+
 # Check that BOARD has been provided, and that it has not changed.
 # If user tries to change the BOARD, the BOARD value is reset to the BOARD_CACHED value.
 zephyr_check_cache(BOARD REQUIRED)

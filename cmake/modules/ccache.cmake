@@ -3,6 +3,8 @@
 # Use ccache if it is installed, unless the user explicitly disables
 # it by setting USE_CCACHE=0.
 
+include_guard(GLOBAL)
+
 if(USE_CCACHE STREQUAL "0")
 else()
   find_program(CCACHE_FOUND ccache)

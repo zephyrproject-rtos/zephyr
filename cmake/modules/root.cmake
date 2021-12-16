@@ -17,6 +17,10 @@
 # any relative path to absolute path and update the root list.
 # If a root is undefined it will still be undefined when this module has loaded.
 
+include_guard(GLOBAL)
+
+include(extensions)
+
 # Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT MODULE_EXT_ROOT)
 

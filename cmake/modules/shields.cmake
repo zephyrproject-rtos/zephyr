@@ -22,6 +22,10 @@
 # Variables set by this module and not mentioned above are considered internal
 # use only and may be removed, renamed, or re-purposed without prior notice.
 
+include_guard(GLOBAL)
+
+include(extensions)
+
 # Check that SHIELD has not changed.
 zephyr_check_cache(SHIELD WATCH)
 

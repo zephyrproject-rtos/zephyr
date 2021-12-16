@@ -20,6 +20,10 @@
 # Variables set by this module and not mentioned above are considered internal
 # use only and may be removed, renamed, or re-purposed without prior notice.
 
+include_guard(GLOBAL)
+
+include(extensions)
+
 if(DEFINED APPLICATION_CONFIG_DIR)
   string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
   if(NOT IS_ABSOLUTE ${APPLICATION_CONFIG_DIR})
