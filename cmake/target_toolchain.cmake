@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Prevent CMake from testing the toolchain
+set(CMAKE_C_COMPILER_FORCED   1)
+set(CMAKE_CXX_COMPILER_FORCED 1)
+
 # No official documentation exists for the "Generic" value, except their wiki.
 #
 # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/CrossCompiling:
