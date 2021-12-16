@@ -85,13 +85,13 @@ static int mcp230xx_bus_is_ready(const struct device *dev)
 	static struct mcp23xxx_config mcp230xx_##inst##_config = {     \
 		.config = {					       \
 			.port_pin_mask =			       \
-				GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_DRV_INST(n)), \
+				GPIO_PORT_PIN_MASK_FROM_DT_INST(n),    \
 		},						       \
 		.bus =  \
 	{                                                                                          \
-		.i2c = I2C_DT_SPEC_GET(DT_DRV_INST(n))                                  \
+		.i2c = I2C_DT_SPEC_INST_GET(n)                                          \
 	}, \
-		.ngpios =  DT_PROP(DT_DRV_INST(n), ngpios),		       \
+		.ngpios =  DT_INST_PROP(n, ngpios),			       \
 		.read_fn = mcp230xx_read_port_regs,              \
 		.write_fn = mcp230xx_write_port_regs,              \
 		.bus_fn = mcp230xx_bus_is_ready              \
