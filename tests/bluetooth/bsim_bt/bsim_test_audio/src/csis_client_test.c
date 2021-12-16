@@ -86,7 +86,7 @@ static void csis_lock_changed_cb(struct bt_csis_client_set *set,
 }
 
 
-static void csis_client_lock_state_read_cb(const struct bt_csis_client_set *set,
+static void csis_client_lock_state_read_cb(const struct bt_csis_client_set_info *set_info,
 					   int err, bool locked)
 {
 	printk("%s\n", __func__);
@@ -147,7 +147,7 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csis_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csis_client_is_set_member(set->set_sirk, data)) {
+	if (bt_csis_client_is_set_member(set->info.set_sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
@@ -163,7 +163,7 @@ static bool csis_found(struct bt_data *data, void *user_data)
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
 		printk("Found member (%u / %u)\n",
-		       members_found, set->set_size);
+		       members_found, set->info.set_size);
 
 		/* Stop parsing */
 		return false;
@@ -196,7 +196,7 @@ static struct bt_le_scan_cb csis_client_scan_callbacks = {
 static void discover_members_timer_handler(struct k_work *work)
 {
 	FAIL("Could not find all members (%u / %u)\n",
-	     members_found, set->set_size);
+	     members_found, set->info.set_size);
 }
 
 static void read_set_lock_state(const struct bt_csis_client_set_member **members,
@@ -213,7 +213,7 @@ static void read_set_lock_state(const struct bt_csis_client_set_member **members
 		set_read_unlocked = false;
 	}
 
-	err = bt_csis_client_get_lock_state(members, count, set);
+	err = bt_csis_client_get_lock_state(members, count, &set->info);
 	if (err != 0) {
 		FAIL("Failed to do CSIS client read lock state (%d)", err);
 		return;
@@ -306,7 +306,7 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR(members_found == set->set_size);
+	WAIT_FOR(members_found == set->info.set_size);
 
 	(void)k_work_cancel_delayable(&discover_members_timer);
 	err = bt_le_scan_stop();
@@ -362,7 +362,8 @@ static void test_main(void)
 	read_set_lock_state(locked_members, connected_member_count, false);
 
 	printk("Locking set\n");
-	err = bt_csis_client_lock(locked_members, connected_member_count, set);
+	err = bt_csis_client_lock(locked_members, connected_member_count,
+				  &set->info);
 	if (err != 0) {
 		FAIL("Failed to do CSIS client lock (%d)", err);
 		return;
@@ -376,7 +377,7 @@ static void test_main(void)
 
 	printk("Releasing set\n");
 	err = bt_csis_client_release(locked_members, connected_member_count,
-				     set);
+				     &set->info);
 	if (err != 0) {
 		FAIL("Failed to do CSIS client release (%d)", err);
 		return;
@@ -391,7 +392,8 @@ static void test_main(void)
 	set_unlocked = false;
 
 	printk("Locking set\n");
-	err = bt_csis_client_lock(locked_members, connected_member_count, set);
+	err = bt_csis_client_lock(locked_members, connected_member_count,
+				  &set->info);
 	if (err != 0) {
 		FAIL("Failed to do CSIS client lock (%d)", err);
 		return;
@@ -403,7 +405,7 @@ static void test_main(void)
 
 	printk("Releasing set\n");
 	err = bt_csis_client_release(locked_members, connected_member_count,
-				     set);
+				     &set->info);
 	if (err != 0) {
 		FAIL("Failed to do CSIS client release (%d)", err);
 		return;
