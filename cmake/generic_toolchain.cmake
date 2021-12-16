@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Prevent CMake from testing the toolchain
+set(CMAKE_C_COMPILER_FORCED   1)
+set(CMAKE_CXX_COMPILER_FORCED 1)
+
 if(NOT TOOLCHAIN_ROOT)
   if(DEFINED ENV{TOOLCHAIN_ROOT})
     # Support for out-of-tree toolchain
