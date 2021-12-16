@@ -477,10 +477,6 @@ if(NOT DEFINED USER_CACHE_DIR)
 endif()
 message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
 
-# Prevent CMake from testing the toolchain
-set(CMAKE_C_COMPILER_FORCED   1)
-set(CMAKE_CXX_COMPILER_FORCED 1)
-
 include(${ZEPHYR_BASE}/cmake/verify-toolchain.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 
