@@ -542,7 +542,9 @@ Documentation:
         - "area: DAC"
 
 "Drivers: DMA":
-    status: orphaned
+    status: maintained
+    maintainers:
+        - teburd
     files:
         - drivers/dma/
         - tests/drivers/dma/
@@ -638,7 +640,9 @@ Documentation:
         - "area: HWINFO"
 
 "Drivers: I2C":
-    status: orphaned
+    status: maintained
+    maintainers:
+        - teburd
     files:
         - drivers/i2c/
         - dts/bindings/i2c/
