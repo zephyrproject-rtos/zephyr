@@ -44,12 +44,10 @@
 #define TEST_CAN_EXT_MASK_ID_2 0x1555556A
 #define TEST_CAN_EXT_MASK      0x1FFFFFF0
 
-#define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
-
 CAN_MSGQ_DEFINE(can_msgq, 5);
 struct k_sem rx_isr_sem;
 struct k_sem tx_cb_sem;
-const struct device *can_dev;
+const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 const struct zcan_frame test_std_msg_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
@@ -605,8 +603,7 @@ void test_main(void)
 {
 	k_sem_init(&rx_isr_sem, 0, 2);
 	k_sem_init(&tx_cb_sem, 0, 2);
-	can_dev = device_get_binding(CAN_DEVICE_NAME);
-	zassert_not_null(can_dev, "Device not found");
+	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
 	ztest_test_suite(can_driver,
 			 ztest_unit_test(test_set_loopback),
