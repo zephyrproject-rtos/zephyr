@@ -80,22 +80,21 @@ int plain_text_put_format(struct lwm2m_output_context *out, const char *format,
 			  ...)
 {
 	va_list vargs;
-	int n;
+	int n, ret;
 
 	va_start(vargs, format);
 	n = vsnprintk(pt_buffer, sizeof(pt_buffer), format, vargs);
 	va_end(vargs);
-	if (n < 0) {
-		/* TODO: generate an error? */
-		return 0;
+	if (n < 0 || n >= sizeof(pt_buffer)) {
+		return -EINVAL;
 	}
 
-	n = strlen(pt_buffer);
-	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, n) < 0) {
-		return 0;
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, n);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return (size_t)n;
+	return n;
 }
 
 static int put_s32(struct lwm2m_output_context *out,
@@ -125,25 +124,30 @@ static int put_s64(struct lwm2m_output_context *out,
 int plain_text_put_float(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path, double *value)
 {
-	int len = lwm2m_ftoa(value, pt_buffer, sizeof(pt_buffer), 15);
+	int len, ret;
 
+	len = lwm2m_ftoa(value, pt_buffer, sizeof(pt_buffer), 15);
 	if (len < 0 || len >= sizeof(pt_buffer)) {
 		LOG_ERR("Failed to encode float value");
-		return 0;
+		return -EINVAL;
 	}
 
-	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, len) < 0) {
-		return 0;
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, len);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return (size_t)len;
+	return len;
 }
 
 static int put_string(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path, char *buf, size_t buflen)
 {
-	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, buflen) < 0) {
-		return 0;
+	int ret;
+
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, buflen);
+	if (ret < 0) {
+		return ret;
 	}
 
 	return buflen;
@@ -172,6 +176,11 @@ static int plain_text_read_int(struct lwm2m_input_context *in, int64_t *value,
 	int i = 0;
 	bool neg = false;
 	uint8_t tmp;
+
+	if (in->offset >= in->in_cpkt->offset) {
+		/* No remaining data in the payload. */
+		return -ENODATA;
+	}
 
 	/* initialize values to 0 */
 	*value = 0;
@@ -228,7 +237,7 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *value,
 	coap_packet_get_payload(in->in_cpkt, &in_len);
 
 	if (in_len > buflen) {
-		/* TODO: generate warning? */
+		LOG_ERR("Buffer too small to accommodate string, truncating");
 		in_len = buflen - 1;
 	}
 
@@ -247,7 +256,12 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 	size_t i = 0, len = 0;
 	bool has_dot = false;
 	uint8_t tmp, buf[24];
+	int ret;
 
+	if (in->offset >= in->in_cpkt->offset) {
+		/* No remaining data in the payload. */
+		return -ENODATA;
+	}
 
 	while (in->offset < in->in_cpkt->offset) {
 		if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt),
@@ -278,8 +292,10 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 
 	buf[i] = '\0';
 
-	if (lwm2m_atof(buf, value) != 0) {
+	ret = lwm2m_atof(buf, value);
+	if (ret != 0) {
 		LOG_ERR("Failed to parse float value");
+		return -EBADMSG;
 	}
 
 	return len;
@@ -288,17 +304,24 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 static int get_bool(struct lwm2m_input_context *in, bool *value)
 {
 	uint8_t tmp;
+	int ret;
 
-	if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt), &in->offset) < 0) {
-		return 0;
+	if (in->offset >= in->in_cpkt->offset) {
+		/* No remaining data in the payload. */
+		return -ENODATA;
 	}
 
-	if (tmp == '1' || tmp == '0') {
-		*value = (tmp == '1') ? true : false;
-		return 1;
+	ret = buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt), &in->offset);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return 0;
+	if (tmp != '1' && tmp != '0') {
+		return -EBADMSG;
+	}
+
+	*value = (tmp == '1') ? true : false;
+	return sizeof(uint8_t);
 }
 
 static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
@@ -309,6 +332,10 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
 
 	if (opaque->remaining == 0) {
 		coap_packet_get_payload(in->in_cpkt, &in_len);
+
+		if (in_len == 0) {
+			return -ENODATA;
+		}
 
 		if (in->block_ctx != NULL) {
 			uint32_t block_num =
@@ -344,19 +371,29 @@ static int get_objlnk(struct lwm2m_input_context *in,
 		      struct lwm2m_objlnk *value)
 {
 	int64_t tmp;
-	size_t len;
+	int len, total_len;
 
 	len = plain_text_read_int(in, &tmp, false);
+	if (len <= 0) {
+		return -ENODATA;
+	}
+
+	total_len = len;
 	value->obj_id = (uint16_t)tmp;
 
 	/* Skip ':' delimeter. */
+	total_len++;
 	in->offset++;
-	len++;
 
-	len += plain_text_read_int(in, &tmp, false);
+	len = plain_text_read_int(in, &tmp, false);
+	if (len <= 0) {
+		return -ENODATA;
+	}
+
+	total_len += len;
 	value->obj_inst = (uint16_t)tmp;
 
-	return len;
+	return total_len;
 }
 
 const struct lwm2m_writer plain_text_writer = {
