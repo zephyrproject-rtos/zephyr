@@ -85,6 +85,14 @@ struct zephyr_smp_transport {
 	zephyr_smp_transport_get_mtu_fn *zst_get_mtu;
 	zephyr_smp_transport_ud_copy_fn *zst_ud_copy;
 	zephyr_smp_transport_ud_free_fn *zst_ud_free;
+
+#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
+	/* Packet reassembly internal data, API access only */
+	struct {
+		struct net_buf *current;	/* net_buf used for reassembly */
+		uint16_t expected;		/* expected bytes to come */
+	} __reassembly;
+#endif
 };
 
 /**
