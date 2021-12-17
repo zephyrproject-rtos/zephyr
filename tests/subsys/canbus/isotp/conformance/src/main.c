@@ -49,8 +49,6 @@
 #define BS_TIMEOUT_UPPER_MS   1100
 #define BS_TIMEOUT_LOWER_MS   1000
 
-#define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
-
 /*
  * @addtogroup t_can
  * @{
@@ -120,7 +118,7 @@ const struct isotp_msg_id tx_addr_fixed = {
 	.use_fixed_addr = 1
 };
 
-const struct device *can_dev;
+const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
 uint8_t data_buf[128];
@@ -969,8 +967,7 @@ void test_main(void)
 	zassert_true(sizeof(random_data) >= sizeof(data_buf) * 2 + 10,
 		     "Test data size to small");
 
-	can_dev = device_get_binding(CAN_DEVICE_NAME);
-	zassert_not_null(can_dev, "CAN device not not found");
+	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
 	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 	zassert_equal(ret, 0, "Failed to set loopback mode [%d]", ret);
