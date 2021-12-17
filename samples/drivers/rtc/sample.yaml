@@ -1,0 +1,13 @@
+sample:
+  name: DACRTC driver sample
+tests:
+  sample.drivers.rtc:
+    tags: RTC
+    platform_allow: |
+      nucleo_u575zi_q b_u585i_iot02a
+    depends_on: rtc
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "rtc."
