@@ -20,6 +20,7 @@ struct gpio_nrfx_cfg {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	NRF_GPIO_Type *port;
+	uint32_t edge_sense;
 	uint8_t port_num;
 };
 
@@ -249,8 +250,10 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 		.trigger = get_trigger(mode, trig),
 	};
 
-	/* Use GPIOTE IN event (if enabled) for edge on input pin. */
-	if (IS_ENABLED(CONFIG_GPIO_NRF_INT_EDGE_USING_GPIOTE) &&
+	/* If edge mode is to be used and pin is not configured to use sense for
+	 * edge use IN event.
+	 */
+	if (!(BIT(pin) & get_port_cfg(port)->edge_sense) &&
 	    (mode == GPIO_INT_MODE_EDGE) &&
 	    (nrf_gpio_pin_dir_get(abs_pin) == NRF_GPIO_PIN_DIR_INPUT)) {
 		uint8_t ch;
@@ -360,9 +363,6 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
  * DT_INST APIs here without wider changes.
  */
 
-#define GPIO_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(GPIO(idx), prop)
-#define GPIO_PROP(idx, prop) DT_PROP(GPIO(idx), prop)
-
 #define GPIO_NRF_DEVICE(id)						\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
 		.common = {						\
@@ -370,7 +370,8 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 			GPIO_PORT_PIN_MASK_FROM_DT_INST(id),		\
 		},							\
 		.port = (NRF_GPIO_Type *)DT_INST_REG_ADDR(id),		\
-		.port_num = DT_INST_PROP(id, port)			\
+		.port_num = DT_INST_PROP(id, port),			\
+		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0)	\
 	};								\
 									\
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
