@@ -14,15 +14,9 @@ config LVGL_BITS_PER_PIXEL
 
 choice
 	prompt "Memory pool"
-	default LVGL_MEM_POOL_HEAP_KERNEL
+	default LVGL_MEM_POOL_SYS_HEAP
 	help
 	  Memory pool to use for lvgl allocated objects
-
-	config LVGL_MEM_POOL_HEAP_KERNEL
-		bool "Kernel Heap"
-		depends on HEAP_MEM_POOL_SIZE != 0
-		help
-		  Use k_malloc and k_free to allocate objects on the kernel heap
 
 	config LVGL_MEM_POOL_HEAP_LIB_C
 	  bool "C library Heap"
@@ -30,20 +24,14 @@ choice
 	  help
 		Use C library malloc and free to allocate objects on the C library heap
 
-	config LVGL_MEM_POOL_KERNEL
-		bool "Kernel space lvgl pool"
-		help
-		  Use a dedicated memory pool in kernel space to allocate lvgl objects
-		  on
-
-	config LVGL_MEM_POOL_USER
+	config LVGL_MEM_POOL_SYS_HEAP
 		bool "User space lvgl pool"
 		help
-		  Use a dedicated memory pool in user space to allocate lvgl objects on
+		  Use a dedicated memory pool from a private sys heap.
 
 endchoice
 
-if LVGL_MEM_POOL_KERNEL || LVGL_MEM_POOL_USER
+if LVGL_MEM_POOL_SYS_HEAP
 
 config LVGL_MEM_POOL_MIN_SIZE
 	int "Minimum memory pool block size"
