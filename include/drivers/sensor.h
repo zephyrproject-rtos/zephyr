@@ -674,6 +674,29 @@ static inline void sensor_value_from_double(struct sensor_value *val, double inp
 }
 
 /**
+ * @brief Helper function for converting struct sensor_value to float.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @return The converted value.
+ */
+static inline float sensor_value_to_float(const struct sensor_value *val)
+{
+	return (float)val->val1 + (float)val->val2 / 1000000;
+}
+
+/**
+ * @brief Helper function for converting float to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param inp The converted value.
+ */
+static inline void sensor_value_from_float(struct sensor_value *val, float inp)
+{
+	val->val1 = (int32_t) inp;
+	val->val2 = (int32_t)(inp * 1000000) % 1000000;
+}
+
+/**
  * @}
  */
 
