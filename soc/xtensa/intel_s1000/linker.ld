@@ -412,6 +412,9 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
+    _trace_ctx_start = ABSOLUTE(.);
+    *(.trace_ctx)
+    _trace_ctx_end = ABSOLUTE(.);
     . = ALIGN(4096);
     *(.gna_model)
     _data_end = ABSOLUTE(.);
