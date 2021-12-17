@@ -11,6 +11,7 @@
 #include "mgmt/mcumgr/buf.h"
 #include "smp/smp.h"
 #include "mgmt/mcumgr/smp.h"
+#include "smp_reassembly.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
@@ -292,6 +293,10 @@ zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 		.zst_ud_copy = ud_copy_func,
 		.zst_ud_free = ud_free_func,
 	};
+
+#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
+	zephyr_smp_reassembly_init(zst);
+#endif
 
 	k_work_init(&zst->zst_work, zephyr_smp_handle_reqs);
 	k_fifo_init(&zst->zst_fifo);

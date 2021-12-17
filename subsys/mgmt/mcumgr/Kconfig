@@ -571,6 +571,11 @@ config MCUMGR_SMP_UDP_MTU
 
 endif # MCUMGR_SMP_UDP
 
+config MCUMGR_SMP_REASSEMBLY
+	bool
+	help
+	  Enable structures and functions needed for packet reassembly by SMP backend.
+
 config MCUMGR_BUF_COUNT
 	int "Number of mcumgr buffers"
 	default 2 if MCUMGR_SMP_UDP
