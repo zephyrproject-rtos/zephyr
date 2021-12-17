@@ -113,7 +113,7 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * local CPU!  We need external transactions on the shared
 	 * bus.
 	 */
-	reg = CONFIG_MP_NUM_CPUS == 1 ? 0 : 0x15;
+	reg = 0x15;
 	__asm__ volatile("wsr %0, ATOMCTL" :: "r"(reg));
 
 	/* Initialize interrupts to "disabled" */
