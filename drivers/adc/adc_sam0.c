@@ -387,7 +387,15 @@ static int start_read(const struct device *dev,
 
 	wait_synchronization(adc);
 
-	if (sequence->channels != 1U) {
+	if ((sequence->channels == 0)
+		|| ((sequence->channels & (sequence->channels - 1)) != 0)) {
+		/* The caller is expected to identify a single input channel, which will
+		 * typically be the positive input, though no check is made for this...
+		 *
+		 * While ensuring that the channels bitfield matches the positive input
+		 * might be sensible, this will likely break users before this revision
+		 * was put in place.
+		 */
 		LOG_ERR("Channel scanning is not supported");
 		return -ENOTSUP;
 	}
