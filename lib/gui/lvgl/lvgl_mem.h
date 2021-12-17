@@ -15,6 +15,8 @@ extern "C" {
 
 void *lvgl_malloc(size_t size);
 
+void *lvgl_realloc(void *ptr, size_t size);
+
 void lvgl_free(void *ptr);
 
 #ifdef __cplusplus
