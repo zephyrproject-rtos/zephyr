@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_SYS_UTIL_H_
 
 #include <sys/util_macro.h>
+#include <toolchain.h>
 
 /* needs to be outside _ASMLANGUAGE so 'true' and 'false' can turn
  * into '1' and '0' for asm or linker scripts
@@ -402,6 +403,26 @@ char *utf8_trunc(char *utf8_str);
  * return Pointer to the @p dst
  */
 char *utf8_lcpy(char *dst, const char *src, size_t n);
+
+/**
+ * @brief Copy src to dest word-wise
+ *
+ * This function copies src to dest 32 bits at a time.
+ * If one calls this function without src and dst being aligned
+ * on a 4-byte boundary or if n is not a multiple of 4, it will
+ * do nothing and return NULL.
+ *
+ * NOTE: This function uses __ASSERT to enforce the requirements
+ * of each parameter given below.
+ *
+ * @param dest Destination address (must be aligned to a 4-byte boundary)
+ * @param src  Source address (must be aligned to a 4-byte boundary)
+ * @param n    number of bytes to copy (must be a multiple of 4)
+ *
+ * @return destination pointer or NULL on error
+ *
+ */
+void *memcpy32(volatile void *ZRESTRICT dest, const volatile void *ZRESTRICT src, size_t n);
 
 #ifdef __cplusplus
 }
