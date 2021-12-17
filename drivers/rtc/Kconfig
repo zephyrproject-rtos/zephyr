@@ -1,0 +1,21 @@
+# RTC driver configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# RTC drivers
+#
+menuconfig RTC
+	bool "RTC drivers"
+	help
+	  Enable RTC (Real Time Clock) driver configuration.
+
+if RTC
+
+module = RTC
+module-str = RTC
+
+source "drivers/rtc/Kconfig.stm32"
+
+endif # RTC

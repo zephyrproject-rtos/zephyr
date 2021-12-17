@@ -1,0 +1,16 @@
+# Copyright (c) 2021 LACROIX Group
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_STM32
+	bool "Enable support for rtc driver"
+	select USE_STM32_HAL_RTC
+	select USE_STM32_HAL_RTC_EX
+	select USE_STM32_HAL_RCC
+	select USE_STM32_HAL_RCC_EX
+	select USE_STM32_LL_RTC
+	select USE_STM32_HAL_PWR
+	select USE_STM32_HAL_PWR_EX
+	select USE_STM32_HAL_CORTEX
+
+	
+# Todo: remove USE_STM32_LL_RCC & USE_STM32_HAL_RCC_EX for the final server
