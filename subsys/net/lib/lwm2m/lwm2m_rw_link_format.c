@@ -60,7 +60,7 @@ static int put_begin(struct lwm2m_output_context *out,
 
 	fd = engine_get_out_user_data(out);
 	if (fd == NULL) {
-		return 0;
+		return -EINVAL;
 	}
 
 	switch (fd->mode) {
@@ -85,7 +85,7 @@ static int put_begin(struct lwm2m_output_context *out,
 	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), init_string,
 			 strlen(init_string));
 	if (ret < 0) {
-		return 0;
+		return ret;
 	}
 
 	fd->is_first = false;
@@ -452,7 +452,7 @@ static int put_corelink(struct lwm2m_output_context *out,
 			const struct lwm2m_obj_path *path)
 {
 	struct link_format_out_formatter_data *fd;
-	ssize_t len = 0;
+	int len = 0;
 	int ret;
 
 	fd = engine_get_out_user_data(out);
