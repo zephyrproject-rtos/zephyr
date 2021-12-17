@@ -13,8 +13,12 @@
 macro(include_boilerplate location)
   list(PREPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/cmake/modules)
   if(ZEPHYR_UNITTEST)
+    message(WARNING "The ZephyrUnittest CMake package has been deprecated.\n"
+                    "ZephyrUnittest has been replaced with Zephyr CMake module 'unittest' \n"
+                    "and can be loaded as: 'find_package(Zephyr COMPONENTS unittest)'"
+    )
     set(ZephyrUnittest_FOUND True)
-    set(BOILERPLATE_FILE ${ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
+    set(Zephyr_FIND_COMPONENTS unittest)
   else()
     set(Zephyr_FOUND True)
   endif()
@@ -36,10 +40,7 @@ macro(include_boilerplate location)
 
   if(NOT NO_BOILERPLATE)
     list(LENGTH Zephyr_FIND_COMPONENTS components_length)
-    if(DEFINED BOILERPLATE_FILE)
-      message("Including boilerplate (${location}): ${BOILERPLATE_FILE}")
-      include(${BOILERPLATE_FILE} NO_POLICY_SCOPE)
-    elseif(components_length EQUAL 0)
+    if(components_length EQUAL 0)
       message("Loading Zephyr default modules (${location}).")
       include(zephyr_default NO_POLICY_SCOPE)
     else()
