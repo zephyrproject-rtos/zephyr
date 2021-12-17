@@ -177,7 +177,6 @@ dismissed following the criteria below:
   structural changes such as:
 
   - Split the PR
-  - Split the commits
   - Can you fix this unrelated code that happens to appear in the diff
   - Can you fix unrelated issues
   - Etc.
