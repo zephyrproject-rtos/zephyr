@@ -39,22 +39,6 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 #define CACHE_CLEAN(addr, size)
 #endif /* CONFIG_HAS_CMSIS_CORE_M */
 
-static void memcpy32_volatile(volatile void *dst_, const volatile void *src_,
-			      size_t len)
-{
-	volatile uint32_t *dst = dst_;
-	const volatile uint32_t *src = src_;
-
-	__ASSERT(len % 4 == 0, "len must be a multiple of 4!");
-	len /= sizeof(uint32_t);
-
-	while (len--) {
-		*dst = *src;
-		++dst;
-		++src;
-	}
-}
-
 static void memset32_volatile(volatile void *dst_, uint32_t val, size_t len)
 {
 	volatile uint32_t *dst = dst_;
@@ -754,8 +738,9 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 		tx_hdr.ext_id = frame->id;
 	}
 
-	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
-	memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
+	BUILD_ASSERT(sizeof(msg_ram->tx_buffer[put_idx].hdr) == sizeof(tx_hdr));
+	memcpy32(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
+	memcpy32(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
 			  ROUND_UP(data_length, 4));
 	CACHE_CLEAN(&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr));
 	CACHE_CLEAN(&msg_ram->tx_buffer[put_idx].data_32, ROUND_UP(data_length, 4));
@@ -815,7 +800,8 @@ int can_mcan_add_rx_filter_std(struct can_mcan_data *data,
 	filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
+	BUILD_ASSERT(sizeof(msg_ram->std_filt[filter_nr]) == sizeof(filter_element));
+	memcpy32(&msg_ram->std_filt[filter_id], &filter_element,
 			 sizeof(struct can_mcan_std_filter));
 	CACHE_CLEAN(&msg_ram->std_filt[filter_nr],
 		    sizeof(struct can_mcan_std_filter));

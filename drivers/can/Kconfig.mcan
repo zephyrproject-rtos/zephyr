@@ -7,6 +7,7 @@ config CAN_MCAN
 	bool
 	select CAN_HAS_CANFD
 	select CAN_HAS_RX_TIMESTAMP
+	select MEMCPY32
 	help
 	  Enable Bosch m_can driver.
 	  This driver supports the Bosch m_can IP. This IP is built into the
