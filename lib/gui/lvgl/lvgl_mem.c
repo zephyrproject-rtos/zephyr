@@ -30,6 +30,18 @@ void *lvgl_malloc(size_t size)
 	return ret;
 }
 
+void *lvgl_realloc(void *ptr, size_t size)
+{
+	k_spinlock_key_t key;
+	void *ret;
+
+	key = k_spin_lock(&lvgl_heap_lock);
+	ret = sys_heap_realloc(&lvgl_heap, ptr, size);
+	k_spin_unlock(&lvgl_heap_lock, key);
+
+	return ret;
+}
+
 void lvgl_free(void *ptr)
 {
 	k_spinlock_key_t key;
