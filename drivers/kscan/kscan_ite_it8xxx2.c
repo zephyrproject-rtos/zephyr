@@ -59,7 +59,7 @@ struct kscan_alt_cfg {
 
 struct kscan_it8xxx2_config {
 	/* Keyboard scan controller base address */
-	uintptr_t base;
+	struct kscan_it8xxx2_regs *base;
 	/* Keyboard scan input (KSI) wake-up irq */
 	int irq;
 	/* KSI[7:0] wake-up input source configuration list */
@@ -99,14 +99,10 @@ struct kscan_it8xxx2_data {
 	K_KERNEL_STACK_MEMBER(thread_stack, TASK_STACK_SIZE);
 };
 
-/* Driver convenience defines */
-#define DRV_CONFIG(dev)	((const struct kscan_it8xxx2_config *)(dev)->config)
-#define DRV_DATA(dev)	((struct kscan_it8xxx2_data *)(dev)->data)
-#define DRV_REG(dev)	(struct kscan_it8xxx2_regs *)(DRV_CONFIG(dev)->base)
-
 static void drive_keyboard_column(const struct device *dev, int col)
 {
-	struct kscan_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct kscan_it8xxx2_config *const config = dev->config;
+	struct kscan_it8xxx2_regs *const inst = config->base;
 	int mask;
 
 	/* Tri-state all outputs */
@@ -129,7 +125,8 @@ static void drive_keyboard_column(const struct device *dev, int col)
 
 static uint8_t read_keyboard_row(const struct device *dev)
 {
-	struct kscan_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct kscan_it8xxx2_config *const config = dev->config;
+	struct kscan_it8xxx2_regs *const inst = config->base;
 
 	/* Bits are active-low, so toggle it (return 1 means key pressed) */
 	return (inst->KBS_KSI ^ 0xff);
@@ -199,8 +196,8 @@ static bool read_keyboard_matrix(const struct device *dev, uint8_t *new_state)
 
 static void keyboard_raw_interrupt(const struct device *dev)
 {
-	const struct kscan_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
+	const struct kscan_it8xxx2_config *const config = dev->config;
+	struct kscan_it8xxx2_data *data = dev->data;
 
 	/*
 	 * W/C wakeup interrupt status of KSI[7:0] pins
@@ -220,8 +217,8 @@ static void keyboard_raw_interrupt(const struct device *dev)
 
 void keyboard_raw_enable_interrupt(const struct device *dev, int enable)
 {
-	const struct kscan_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
+	const struct kscan_it8xxx2_config *const config = dev->config;
+	struct kscan_it8xxx2_data *data = dev->data;
 
 	if (enable) {
 		/*
@@ -244,7 +241,7 @@ void keyboard_raw_enable_interrupt(const struct device *dev, int enable)
 
 static bool check_key_events(const struct device *dev)
 {
-	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
+	struct kscan_it8xxx2_data *data = dev->data;
 	uint8_t matrix_new_state[CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE] = {0U};
 	bool key_pressed = false;
 	uint32_t cycles_now  = k_cycle_get_32();
@@ -366,7 +363,7 @@ static bool poll_expired(uint32_t start_cycles, int32_t *timeout)
 
 void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 {
-	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
+	struct kscan_it8xxx2_data *data = dev->data;
 	int32_t local_poll_timeout = data->poll_timeout;
 	uint32_t current_cycles;
 	uint32_t cycles_delta;
@@ -429,9 +426,9 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 
 static int kscan_it8xxx2_init(const struct device *dev)
 {
-	const struct kscan_it8xxx2_config *const config = DRV_CONFIG(dev);
-	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
-	struct kscan_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct kscan_it8xxx2_config *const config = dev->config;
+	struct kscan_it8xxx2_data *data = dev->data;
+	struct kscan_it8xxx2_regs *const inst = config->base;
 
 	/* Disable wakeup and interrupt of KSI pins before configuring */
 	keyboard_raw_enable_interrupt(dev, 0);
@@ -540,7 +537,7 @@ static int kscan_it8xxx2_init(const struct device *dev)
 static int kscan_it8xxx2_configure(const struct device *dev,
 					kscan_callback_t callback)
 {
-	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
+	struct kscan_it8xxx2_data *data = dev->data;
 
 	if (!callback) {
 		return -EINVAL;
@@ -554,7 +551,7 @@ static int kscan_it8xxx2_configure(const struct device *dev,
 
 static int kscan_it8xxx2_disable_callback(const struct device *dev)
 {
-	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
+	struct kscan_it8xxx2_data *data = dev->data;
 
 	/* Disable keyboard scan loop */
 	atomic_set(&data->enable_scan, 0);
@@ -564,7 +561,7 @@ static int kscan_it8xxx2_disable_callback(const struct device *dev)
 
 static int kscan_it8xxx2_enable_callback(const struct device *dev)
 {
-	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
+	struct kscan_it8xxx2_data *data = dev->data;
 
 	/* Enable keyboard scan loop */
 	atomic_set(&data->enable_scan, 1);
@@ -585,7 +582,7 @@ static const struct kscan_alt_cfg kscan_alt_0[DT_INST_NUM_PINCTRLS_BY_IDX(0, 0)]
 		IT8XXX2_DT_ALT_ITEMS_LIST(0);
 
 static const struct kscan_it8xxx2_config kscan_it8xxx2_cfg_0 = {
-	.base = DT_INST_REG_ADDR_BY_IDX(0, 0),
+	.base = (struct kscan_it8xxx2_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.irq = DT_INST_IRQN(0),
 	.wuc_map_list = kscan_wuc_0,
 	.gpio_dev = DEVICE_DT_GET(DT_INST_PHANDLE_BY_IDX(0, gpio_dev, 0)),
