@@ -16,15 +16,27 @@
 
 static char lvgl_heap_mem[HEAP_BYTES] __aligned(8);
 static struct sys_heap lvgl_heap;
+static struct k_spinlock lvgl_heap_lock;
 
 void *lvgl_malloc(size_t size)
 {
-	return sys_heap_alloc(&lvgl_heap, size);
+	k_spinlock_key_t key;
+	void *ret;
+
+	key = k_spin_lock(&lvgl_heap_lock);
+	ret = sys_heap_alloc(&lvgl_heap, size);
+	k_spin_unlock(&lvgl_heap_lock, key);
+
+	return ret;
 }
 
 void lvgl_free(void *ptr)
 {
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&lvgl_heap_lock);
 	sys_heap_free(&lvgl_heap, ptr);
+	k_spin_unlock(&lvgl_heap_lock, key);
 }
 
 static int lvgl_heap_init(const struct device *unused)
