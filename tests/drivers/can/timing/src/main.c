@@ -22,9 +22,7 @@
  * @}
  */
 
-#define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
-
-const struct device *can_dev;
+const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 struct timing_samples {
 	uint32_t bitrate;
@@ -124,8 +122,7 @@ static void test_verify_algo(void)
 
 void test_main(void)
 {
-	can_dev = device_get_binding(CAN_DEVICE_NAME);
-	zassert_not_null(can_dev, "Device not found");
+	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
 	ztest_test_suite(can_timing,
 			 ztest_unit_test(test_verify_algo));
