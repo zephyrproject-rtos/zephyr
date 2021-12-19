@@ -6,8 +6,12 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
+#include "mailbox.h"
 
 void main(void)
 {
+	/* Enable SDM mailbox client shell commands */
+	mailbox_init();
+
 	printk("%s: Starting Shell...\n", CONFIG_BOARD);
 }
