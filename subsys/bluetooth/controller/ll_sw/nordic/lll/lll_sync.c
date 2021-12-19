@@ -49,6 +49,7 @@ static void prepare(void *param);
 static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx);
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t rssi_ready,
 		  enum sync_status status);
@@ -98,7 +99,7 @@ void lll_sync_create_prepare(void *param)
 	prepare(param);
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, abort_cb, create_prepare_cb, 0, param);
+	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -109,7 +110,7 @@ void lll_sync_prepare(void *param)
 	prepare(param);
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, param);
+	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -452,6 +453,32 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 
 	DEBUG_RADIO_START_O(1);
 
+	return 0;
+}
+
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
+{
+	/* Sync context shall not resume when being preempted, i.e. they
+	 * shall not use -EAGAIN as return value.
+	 */
+	ARG_UNUSED(resume_cb);
+
+	/* Different radio event overlap */
+	if (next != curr) {
+		struct lll_scan *lll;
+
+		lll = ull_scan_lll_is_valid_get(next);
+		if (!lll) {
+			/* Abort current event as next event is not a scan
+			 * event.
+			 */
+			return -ECANCELED;
+		}
+	}
+
+	/* Do not abort if current periodic sync event overlaps next interval
+	 * or next event is a scan event.
+	 */
 	return 0;
 }
 

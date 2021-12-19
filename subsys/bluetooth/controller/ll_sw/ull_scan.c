@@ -625,6 +625,19 @@ struct ll_scan_set *ull_scan_is_valid_get(struct ll_scan_set *scan)
 	return scan;
 }
 
+struct lll_scan *ull_scan_lll_is_valid_get(struct lll_scan *lll)
+{
+	struct ll_scan_set *scan;
+
+	scan = HDR_LLL2ULL(lll);
+	scan = ull_scan_is_valid_get(scan);
+	if (scan) {
+		return &scan->lll;
+	}
+
+	return NULL;
+}
+
 struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle)
 {
 	struct ll_scan_set *scan;
