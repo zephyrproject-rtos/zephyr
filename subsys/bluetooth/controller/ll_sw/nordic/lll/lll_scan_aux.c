@@ -53,6 +53,7 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_done(void *param);
 static void isr_rx_ull_schedule(void *param);
@@ -110,7 +111,7 @@ void lll_scan_aux_prepare(void *param)
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
-	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, param);
+	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -594,6 +595,32 @@ sync_aux_prepare_done:
 	DEBUG_RADIO_START_O(1);
 
 	return 0;
+}
+
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
+{
+	struct lll_scan *lll;
+
+	/* Auxiliary context shall not resume when being preempted, i.e. they
+	 * shall not use -EAGAIN as return value.
+	 */
+	ARG_UNUSED(resume_cb);
+
+	/* Auxiliary event shall not overlap as they are not periodically
+	 * scheduled.
+	 */
+	LL_ASSERT(next != curr);
+
+	lll = ull_scan_lll_is_valid_get(next);
+	if (lll) {
+		/* Next event is scan context, let the current auxiliary scan
+		 * continue.
+		 */
+		return 0;
+	}
+
+	/* Yield current auxiliary event to other than scan events */
+	return -ECANCELED;
 }
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
