@@ -428,6 +428,7 @@
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
 /drivers/xen/                             @lorc @firscity
+/drivers/sip_svc/                         @siclim
 /dts/arc/                                 @abrodkin @ruuddw @iriszzw @evgeniy-paltsev
 /dts/arm/acsip/                           @NorthernDean
 /dts/arm/atmel/sam4e*                     @nandojve
@@ -531,6 +532,7 @@
 /include/drivers/led.h                    @Mani-Sadhasivam
 /include/drivers/led_strip.h              @mbolivar-nordic
 /include/drivers/sensor.h                 @MaureenHelm
+/include/drivers/sip_svc/                 @siclim
 /include/drivers/spi.h                    @tbursztyka
 /include/drivers/lora.h                   @Mani-Sadhasivam
 /include/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
