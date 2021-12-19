@@ -48,7 +48,7 @@ struct can_mcan_rx_fifo_hdr {
 	volatile uint32_t res  :  2; /* Reserved */
 	volatile uint32_t fidx :  7; /* Filter Index */
 	volatile uint32_t anmf :  1; /* Accepted non-matching frame */
-} __packed;
+} __packed __aligned(4);
 
 struct can_mcan_rx_fifo {
 	struct can_mcan_rx_fifo_hdr hdr;
@@ -56,7 +56,7 @@ struct can_mcan_rx_fifo {
 		volatile uint8_t  data[64];
 		volatile uint32_t data_32[16];
 	};
-} __packed;
+} __packed __aligned(4);
 
 struct can_mcan_mm {
 	volatile uint8_t idx : 5;
@@ -84,7 +84,7 @@ struct can_mcan_tx_buffer_hdr {
 	volatile uint8_t res2 :  1; /* Reserved */
 	volatile uint8_t efc  :  1; /* Event FIFO control (Store Tx events) */
 	struct can_mcan_mm mm; /* Message marker */
-} __packed;
+} __packed __aligned(4);
 
 struct can_mcan_tx_buffer {
 	struct can_mcan_tx_buffer_hdr hdr;
@@ -92,7 +92,7 @@ struct can_mcan_tx_buffer {
 		volatile uint8_t  data[64];
 		volatile uint32_t data_32[16];
 	};
-} __packed;
+} __packed __aligned(4);
 
 #define CAN_MCAN_TE_TX    0x1 /* TX event */
 #define CAN_MCAN_TE_TXC   0x2 /* TX event in spite of cancellation */
@@ -109,7 +109,7 @@ struct can_mcan_tx_event_fifo {
 	volatile uint8_t fdf   :  1; /* FD Format */
 	volatile uint8_t et    :  2; /* Event type */
 	struct can_mcan_mm mm; /* Message marker */
-} __packed;
+} __packed __aligned(4);
 
 #define CAN_MCAN_FCE_DISABLE    0x0
 #define CAN_MCAN_FCE_FIFO0      0x1
@@ -130,7 +130,7 @@ struct can_mcan_std_filter {
 	volatile uint32_t id1  : 11;
 	volatile uint32_t sfce :  3; /* Filter config */
 	volatile uint32_t sft  :  2; /* Filter type */
-} __packed;
+} __packed __aligned(4);
 
 #define CAN_MCAN_EFT_RANGE_XIDAM 0x0
 #define CAN_MCAN_EFT_DUAL        0x1
@@ -143,7 +143,7 @@ struct can_mcan_ext_filter {
 	volatile uint32_t id2  : 29; /* ID2 for dual or range, mask otherwise */
 	volatile uint32_t res  :  1;
 	volatile uint32_t eft   : 2; /* Filter type */
-} __packed;
+} __packed __aligned(4);
 
 struct can_mcan_msg_sram {
 	volatile struct can_mcan_std_filter std_filt[NUM_STD_FILTER_ELEMENTS];
@@ -153,7 +153,7 @@ struct can_mcan_msg_sram {
 	volatile struct can_mcan_rx_fifo rx_buffer[NUM_RX_BUF_ELEMENTS];
 	volatile struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_BUF_ELEMENTS];
 	volatile struct can_mcan_tx_buffer tx_buffer[NUM_TX_BUF_ELEMENTS];
-} __packed;
+} __packed __aligned(4);
 
 struct can_mcan_data {
 	struct k_mutex inst_mutex;
