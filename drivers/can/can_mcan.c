@@ -23,6 +23,34 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 #define MCAN_MAX_DLC CAN_MAX_DLC
 #endif
 
+static void memcpy32_volatile(volatile void *dst_, const volatile void *src_,
+			      size_t len)
+{
+	volatile uint32_t *dst = dst_;
+	const volatile uint32_t *src = src_;
+
+	__ASSERT(len % 4 == 0, "len must be a multiple of 4!");
+	len /= sizeof(uint32_t);
+
+	while (len--) {
+		*dst = *src;
+		++dst;
+		++src;
+	}
+}
+
+static void memset32_volatile(volatile void *dst_, uint32_t val, size_t len)
+{
+	volatile uint32_t *dst = dst_;
+
+	__ASSERT(len % 4 == 0, "len must be a multiple of 4!");
+	len /= sizeof(uint32_t);
+
+	while (len--) {
+		*dst++ = val;
+	}
+}
+
 static int can_exit_sleep_mode(struct can_mcan_reg *can)
 {
 	uint32_t start_time;
@@ -386,12 +414,7 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	}
 
 	/* No memset because only aligned ptr are allowed */
-	for (uint32_t *ptr = (uint32_t *)msg_ram;
-	     ptr < (uint32_t *)msg_ram +
-		   sizeof(struct can_mcan_msg_sram) / sizeof(uint32_t);
-	     ptr++) {
-		*ptr = 0;
-	}
+	memset32_volatile(msg_ram, 0, sizeof(struct can_mcan_msg_sram));
 
 	return 0;
 }
@@ -483,7 +506,6 @@ static void can_mcan_get_message(struct can_mcan_data *data,
 	uint32_t get_idx, filt_idx;
 	struct zcan_frame frame;
 	can_rx_callback_t cb;
-	volatile uint32_t *src, *dst, *end;
 	int data_length;
 	void *cb_arg;
 	struct can_mcan_rx_fifo_hdr hdr;
@@ -491,7 +513,8 @@ static void can_mcan_get_message(struct can_mcan_data *data,
 	while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
 		get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >>
 			   CAN_MCAN_RXF0S_F0GI_POS;
-		hdr = fifo[get_idx].hdr;
+		memcpy32_volatile(&hdr, &fifo[get_idx].hdr,
+				  sizeof(struct can_mcan_rx_fifo_hdr));
 
 		if (hdr.xtd) {
 			frame.id = hdr.ext_id;
@@ -522,13 +545,8 @@ static void can_mcan_get_message(struct can_mcan_data *data,
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
 			/* data needs to be written in 32 bit blocks!*/
-			for (src = fifo[get_idx].data_32,
-			     dst = frame.data_32,
-			     end = dst + CAN_DIV_CEIL(data_length, sizeof(uint32_t));
-			     dst < end;
-			     src++, dst++) {
-				*dst = *src;
-			}
+			memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
+					  ROUND_UP(data_length, sizeof(uint32_t)));
 
 			if (frame.id_type == CAN_STANDARD_IDENTIFIER) {
 				LOG_DBG("Frame on filter %d, ID: 0x%x",
@@ -644,8 +662,6 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 	uint32_t put_idx;
 	int ret;
 	struct can_mcan_mm mm;
-	volatile uint32_t *dst, *end;
-	const uint32_t *src;
 
 	LOG_DBG("Sending %d bytes. Id: 0x%x, ID type: %s %s %s %s",
 		data_length, frame->id,
@@ -693,15 +709,9 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 		tx_hdr.ext_id = frame->id;
 	}
 
-	msg_ram->tx_buffer[put_idx].hdr = tx_hdr;
-
-	for (src = frame->data_32,
-		dst = msg_ram->tx_buffer[put_idx].data_32,
-		end = dst + CAN_DIV_CEIL(data_length, sizeof(uint32_t));
-		dst < end;
-		src++, dst++) {
-		*dst = *src;
-	}
+	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
+	memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
+			  ROUND_UP(data_length, 4));
 
 	data->tx_fin_cb[put_idx] = callback;
 	data->tx_fin_cb_arg[put_idx] = user_data;
@@ -758,7 +768,8 @@ int can_mcan_attach_std(struct can_mcan_data *data,
 	filter_element.sfce = filter_nr & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
-	msg_ram->std_filt[filter_nr] = filter_element;
+	memcpy32_volatile(&msg_ram->std_filt[filter_nr], &filter_element,
+			 sizeof(struct can_mcan_std_filter));
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -817,7 +828,8 @@ static int can_mcan_attach_ext(struct can_mcan_data *data,
 	filter_element.efce = filter_nr & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
-	msg_ram->ext_filt[filter_nr] = filter_element;
+	memcpy32_volatile(&msg_ram->ext_filt[filter_nr], &filter_element,
+			  sizeof(struct can_mcan_ext_filter));
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -871,9 +883,6 @@ int can_mcan_attach_isr(struct can_mcan_data *data,
 void can_mcan_detach(struct can_mcan_data *data,
 		     struct can_mcan_msg_sram *msg_ram, int filter_nr)
 {
-	const struct can_mcan_ext_filter ext_filter = {0};
-	const struct can_mcan_std_filter std_filter = {0};
-
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	if (filter_nr >= NUM_STD_FILTER_DATA) {
 		filter_nr -= NUM_STD_FILTER_DATA;
@@ -882,10 +891,12 @@ void can_mcan_detach(struct can_mcan_data *data,
 			return;
 		}
 
-		msg_ram->ext_filt[filter_nr] = ext_filter;
+		memset32_volatile(&msg_ram->ext_filt[filter_nr], 0,
+				  sizeof(struct can_mcan_ext_filter));
 		data->rx_cb_ext[filter_nr] = NULL;
 	} else {
-		msg_ram->std_filt[filter_nr] = std_filter;
+		memset32_volatile(&msg_ram->std_filt[filter_nr], 0,
+				  sizeof(struct can_mcan_std_filter));
 		data->rx_cb_std[filter_nr] = NULL;
 	}
 
