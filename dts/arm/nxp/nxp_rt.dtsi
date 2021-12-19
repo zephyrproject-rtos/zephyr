@@ -675,8 +675,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		flexcan2: can@401d4000 {
@@ -690,8 +688,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		flexcan3: can@401d8000 {
@@ -705,8 +701,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		wdog0: wdog@400b8000 {

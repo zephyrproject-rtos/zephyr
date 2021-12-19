@@ -94,8 +94,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 916>,
 				<&cpg CPG_CORE CPG_CORE_CLK_CANFD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			bus-speed = <125000>;
 			sjw = <1>;
 			prop-seg = <8>;
