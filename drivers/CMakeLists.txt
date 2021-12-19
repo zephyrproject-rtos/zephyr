@@ -8,6 +8,9 @@ add_subdirectory(pcie)
 add_subdirectory(disk)
 add_subdirectory(usb)
 
+
+
+
 add_subdirectory_ifdef(CONFIG_ADC adc)
 add_subdirectory_ifdef(CONFIG_CLOCK_CONTROL clock_control)
 add_subdirectory_ifdef(CONFIG_COUNTER counter)
@@ -66,3 +69,4 @@ add_subdirectory_ifdef(CONFIG_PINCTRL pinctrl)
 add_subdirectory_ifdef(CONFIG_MBOX             mbox)
 add_subdirectory_ifdef(CONFIG_BOARD_XENVM xen)
 add_subdirectory_ifdef(CONFIG_MM_DRV           mm)
+add_subdirectory_ifdef(CONFIG_ARM_SIP_SVC      sip_svc)

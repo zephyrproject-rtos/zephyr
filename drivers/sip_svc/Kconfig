@@ -1,0 +1,84 @@
+# Arm SiP services driver configuration options
+
+# Copyright (c) 2021, Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ARM_SIP_SVC
+	bool "Arm SiP services drivers"
+	help
+	  Enable Arm SiP services drivers configuration
+
+if ARM_SIP_SVC
+
+module = ARM_SIP_SVC
+module-str = arm_sip_svc
+
+config ARM_SIP_SVC_HAS_DRIVER
+	bool
+
+config ARM_SIP_SVC_THREAD_STACK_SIZE
+	int "Arm SiP services driver thread stack size"
+	default 1024
+	depends on ARM_SIP_SVC_HAS_DRIVER
+	help
+	  Stack size of the Arm SiP services driver.
+	  The thread calls the callbacks of the requestor
+	  when operation done.
+
+config ARM_SIP_SVC_THREAD_PRIORITY
+	int "Arm SiP services driver thread priority"
+	default 2
+	depends on ARM_SIP_SVC_HAS_DRIVER
+	help
+	  Priority of the Arm SiP services driver.
+	  The thread calls the callbacks of the requestor
+	  when operation done.
+
+config ARM_SIP_SVC_MSGQ_DEPTH
+	int "Arm SiP services driver request message queue depth"
+	default 16
+	depends on ARM_SIP_SVC_HAS_DRIVER
+
+config ARM_SIP_SVC_MAX_CLIENT_COUNT
+	int "Arm SiP services driver maximun clients"
+	default 8
+	depends on ARM_SIP_SVC_HAS_DRIVER
+
+config ARM_SIP_SVC_MAX_TRANSACTION_COUNT
+	int "Arm SiP services driver transaction id pool size"
+	default 64
+	depends on ARM_SIP_SVC_HAS_DRIVER
+
+config ARM_SIP_SVC_MAX_LL_JOB_COUNT
+	int "Arm SiP services driver maximun transactions to secure monitor firmware"
+	default 16
+	depends on ARM_SIP_SVC_HAS_DRIVER
+
+config ARM_SIP_SVC_MAX_ASYNC_RESP_SIZE
+	int "Arm SiP services driver maximun asynchronous response size in byte"
+	default 4096
+	depends on ARM_SIP_SVC_HAS_DRIVER
+
+config ARM_SIP_SVC_OPEN_WDT_TIMEOUT_MS
+	int "Arm SiP services driver opened channel watchdog timer duration in ms"
+	default 10000
+	depends on ARM_SIP_SVC_HAS_DRIVER
+
+config ARM_SIP_SVC_SHELL
+	bool "Enable Arm SiP services shell"
+	depends on ARM_SIP_SVC_HAS_DRIVER
+	depends on SHELL
+	help
+	  Enable Arm SiP services shell support.
+
+config ARM_SIP_SVC_ARM64
+	bool "Support for the Arm SiP services"
+	depends on ARM64
+	depends on HAS_ARM_SMCCC
+	select ARM_SIP_SVC_HAS_DRIVER
+	default $(dt_compat_enabled,$(DT_COMPAT_ARM_SIP_SVC))
+	help
+	  Say Y here if you want Zephyr to communicate with system firmware
+	  implementing the platform-specifics services via Arm SMC.
+
+endif
