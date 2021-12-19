@@ -23,6 +23,22 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 #define MCAN_MAX_DLC CAN_MAX_DLC
 #endif
 
+#if CONFIG_HAS_CMSIS_CORE_M
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
+
+#if __DCACHE_PRESENT == 1
+#define CACHE_INVALIDATE(addr, size) SCB_InvalidateDCache_by_Addr((addr), (size))
+#define CACHE_CLEAN(addr, size) SCB_CleanDCache_by_Addr((addr), (size))
+#else
+#define CACHE_INVALIDATE(addr, size)
+#define CACHE_CLEAN(addr, size) __DSB()
+#endif /* __DCACHE_PRESENT == 1 */
+
+#else /* CONFIG_HAS_CMSIS_CORE_M */
+#define CACHE_INVALIDATE(addr, size)
+#define CACHE_CLEAN(addr, size)
+#endif /* CONFIG_HAS_CMSIS_CORE_M */
+
 static void memcpy32_volatile(volatile void *dst_, const volatile void *src_,
 			      size_t len)
 {
@@ -407,14 +423,14 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	/* Interrupt on every TX fifo element*/
 	can->txbtie = CAN_MCAN_TXBTIE_TIE;
 
+	memset32_volatile(msg_ram, 0, sizeof(struct can_mcan_msg_sram));
+	CACHE_CLEAN(msg_ram, sizeof(struct can_mcan_msg_sram));
+
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
 		return -EIO;
 	}
-
-	/* No memset because only aligned ptr are allowed */
-	memset32_volatile(msg_ram, 0, sizeof(struct can_mcan_msg_sram));
 
 	return 0;
 }
@@ -443,6 +459,8 @@ static void can_mcan_tc_event_handler(struct can_mcan_reg *can,
 	while (can->txefs & CAN_MCAN_TXEFS_EFFL) {
 		event_idx = (can->txefs & CAN_MCAN_TXEFS_EFGI) >>
 			    CAN_MCAN_TXEFS_EFGI_POS;
+		CACHE_INVALIDATE(&msg_ram->tx_event_fifo[event_idx],
+				 sizeof(struct can_mcan_tx_event_fifo));
 		tx_event = &msg_ram->tx_event_fifo[event_idx];
 		tx_idx = tx_event->mm.idx;
 		/* Acknowledge TX event */
@@ -513,6 +531,9 @@ static void can_mcan_get_message(struct can_mcan_data *data,
 	while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
 		get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >>
 			   CAN_MCAN_RXF0S_F0GI_POS;
+
+		CACHE_INVALIDATE(&fifo[get_idx].hdr,
+				 sizeof(struct can_mcan_rx_fifo_hdr));
 		memcpy32_volatile(&hdr, &fifo[get_idx].hdr,
 				  sizeof(struct can_mcan_rx_fifo_hdr));
 
@@ -545,6 +566,8 @@ static void can_mcan_get_message(struct can_mcan_data *data,
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
 			/* data needs to be written in 32 bit blocks!*/
+			CACHE_INVALIDATE(fifo[get_idx].data_32,
+					 ROUND_UP(data_length, sizeof(uint32_t)));
 			memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
 					  ROUND_UP(data_length, sizeof(uint32_t)));
 
@@ -712,6 +735,8 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
 	memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
 			  ROUND_UP(data_length, 4));
+	CACHE_CLEAN(&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr));
+	CACHE_CLEAN(&msg_ram->tx_buffer[put_idx].data_32, ROUND_UP(data_length, 4));
 
 	data->tx_fin_cb[put_idx] = callback;
 	data->tx_fin_cb_arg[put_idx] = user_data;
@@ -770,6 +795,8 @@ int can_mcan_attach_std(struct can_mcan_data *data,
 
 	memcpy32_volatile(&msg_ram->std_filt[filter_nr], &filter_element,
 			 sizeof(struct can_mcan_std_filter));
+	CACHE_CLEAN(&msg_ram->std_filt[filter_nr],
+		    sizeof(struct can_mcan_std_filter));
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -830,6 +857,8 @@ static int can_mcan_attach_ext(struct can_mcan_data *data,
 
 	memcpy32_volatile(&msg_ram->ext_filt[filter_nr], &filter_element,
 			  sizeof(struct can_mcan_ext_filter));
+	CACHE_CLEAN(&msg_ram->ext_filt[filter_nr],
+		    sizeof(struct can_mcan_ext_filter));
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -893,10 +922,14 @@ void can_mcan_detach(struct can_mcan_data *data,
 
 		memset32_volatile(&msg_ram->ext_filt[filter_nr], 0,
 				  sizeof(struct can_mcan_ext_filter));
+		CACHE_CLEAN(&msg_ram->ext_filt[filter_nr],
+			    sizeof(struct can_mcan_ext_filter));
 		data->rx_cb_ext[filter_nr] = NULL;
 	} else {
 		memset32_volatile(&msg_ram->std_filt[filter_nr], 0,
 				  sizeof(struct can_mcan_std_filter));
+		CACHE_CLEAN(&msg_ram->std_filt[filter_nr],
+			    sizeof(struct can_mcan_std_filter));
 		data->rx_cb_std[filter_nr] = NULL;
 	}
 
