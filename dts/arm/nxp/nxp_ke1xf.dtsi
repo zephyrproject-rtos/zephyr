@@ -416,8 +416,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		flexcan1: can@40025000 {
@@ -432,8 +430,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		porta: pinmux@40049000 {

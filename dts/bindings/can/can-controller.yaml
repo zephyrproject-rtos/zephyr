@@ -5,12 +5,6 @@ include: base.yaml
 bus: can
 
 properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      required: true
-      const: 0
     label:
       required: true
     bus-speed:
