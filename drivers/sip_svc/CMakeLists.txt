@@ -9,4 +9,5 @@ if(CONFIG_ARM_SIP_SVC)
   zephyr_library_sources(sip_svc.c)
 
   zephyr_library_sources_ifdef(CONFIG_ARM_SIP_SVC_SHELL sip_svc_shell.c)
+  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_AGILEX sip_svc_intel_socfpga.c)
 endif()
