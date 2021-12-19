@@ -425,6 +425,7 @@
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
 /drivers/xen/                             @lorc @firscity
+/drivers/sip_svc/                         @siclim
 /dts/arc/                                 @abrodkin @ruuddw @iriszzw @evgeniy-paltsev
 /dts/arm/acsip/                           @NorthernDean
 /dts/arm/atmel/sam4e*                     @nandojve
@@ -532,6 +533,7 @@
 /include/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
 /include/drivers/pm_cpu_ops.h             @carlocaione
 /include/drivers/pm_cpu_ops/              @carlocaione
+/include/drivers/sip_svc/                 @siclim
 /include/app_memory/                      @dcpleung
 /include/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
 /include/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
