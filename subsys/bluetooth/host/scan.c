@@ -401,7 +401,7 @@ failed:
 #endif /* CONFIG_BT_CENTRAL */
 
 /* Convert Legacy adv report evt_type field to adv props */
-static uint8_t get_adv_props(uint8_t evt_type)
+static uint8_t get_adv_props_legacy(uint8_t evt_type)
 {
 	switch (evt_type) {
 	case BT_GAP_ADV_TYPE_ADV_IND:
@@ -546,6 +546,17 @@ static uint8_t get_adv_type(uint8_t evt_type)
 	}
 }
 
+/* Convert extended adv report evt_type field to adv props */
+static uint16_t get_adv_props_extended(uint16_t evt_type)
+{
+	/* Converts from BT_HCI_LE_ADV_EVT_TYPE_* to BT_GAP_ADV_PROP_*
+	 * The first 4 bits are the same (conn, scan, direct, scan_rsp).
+	 * Bit 4 must be flipped as the meaning of 1 is opposite (legacy -> extended)
+	 * The rest of the bits are zeroed out.
+	 */
+	return (evt_type ^ BT_HCI_LE_ADV_EVT_TYPE_LEGACY) & BIT_MASK(5);
+}
+
 static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const *const evt,
 				struct bt_le_scan_recv_info *const scan_info)
 {
@@ -556,9 +567,7 @@ static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const 
 	scan_info->sid = evt->sid;
 	scan_info->interval = sys_le16_to_cpu(evt->interval);
 	scan_info->adv_type = get_adv_type(evt->evt_type);
-	/* Convert "Legacy" property to Extended property. */
-	scan_info->adv_props = evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY;
-	scan_info->adv_props &= BIT_MASK(5);
+	scan_info->adv_props = get_adv_props_extended(evt->evt_type);
 }
 
 void bt_hci_le_adv_ext_report(struct net_buf *buf)
@@ -1112,7 +1121,7 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 		adv_info.interval = 0U;
 
 		adv_info.adv_type = evt->evt_type;
-		adv_info.adv_props = get_adv_props(evt->evt_type);
+		adv_info.adv_props = get_adv_props_legacy(evt->evt_type);
 
 		le_adv_recv(&evt->addr, &adv_info, &buf->b, evt->length);
 
