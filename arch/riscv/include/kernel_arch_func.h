@@ -45,7 +45,15 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 
 static inline bool arch_is_in_isr(void)
 {
+#ifdef CONFIG_SMP
+	unsigned int key = arch_irq_lock();
+	bool ret = arch_curr_cpu()->nested != 0U;
+
+	arch_irq_unlock(key);
+	return ret;
+#else
 	return _kernel.cpus[0].nested != 0U;
+#endif
 }
 
 extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,
