@@ -378,7 +378,7 @@ static void isr_tx_chain(void *param)
 	 */
 	radio_tmr_end_capture();
 
-#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		/* PA/LNA enable is overwriting packet end used in ISR
 		 * profiling, hence back it up for later use.
@@ -386,12 +386,14 @@ static void isr_tx_chain(void *param)
 		lll_prof_radio_end_backup();
 	}
 
-	radio_gpio_lna_setup();
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_B2B_MAFS_US -
-				 4 - radio_tx_chain_delay_get(lll->phy_s,
-							      lll->phy_flags) -
-				 HAL_RADIO_GPIO_LNA_OFFSET);
-#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
+	radio_gpio_pa_setup();
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+				 EVENT_B2B_MAFS_US -
+				 (EVENT_CLOCK_JITTER_US << 1U) -
+				 radio_tx_chain_delay_get(lll->phy_s,
+							  lll->phy_flags) -
+				 HAL_RADIO_GPIO_PA_OFFSET);
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
