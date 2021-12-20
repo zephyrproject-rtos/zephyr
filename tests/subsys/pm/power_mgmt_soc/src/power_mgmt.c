@@ -14,8 +14,6 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(pwrmgmt_test);
 
-#define SLP_STATES_SUPPORTED      (PM_STATE_SOFT_OFF + 1)
-
 /* Thread properties */
 #undef TASK_STACK_SIZE
 #define TASK_STACK_SIZE           1024ul
@@ -49,7 +47,7 @@ struct pm_counter {
 static int64_t trigger_time;
 static bool checks_enabled;
 /* Track entry/exit to sleep */
-struct pm_counter pm_counters[SLP_STATES_SUPPORTED];
+struct pm_counter pm_counters[PM_STATE_COUNT];
 
 static const struct pm_state_info residency_info[] =
 	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
@@ -98,7 +96,7 @@ static struct pm_notifier notifier = {
 
 static void pm_check_counters(uint8_t cycles)
 {
-	for (int i = 0; i < SLP_STATES_SUPPORTED; i++) {
+	for (int i = 0; i < PM_STATE_COUNT; i++) {
 
 		LOG_INF("PM state[%d] entry counter %d\n", i,
 			pm_counters[i].entry_cnt);
@@ -116,7 +114,7 @@ static void pm_check_counters(uint8_t cycles)
 
 static void pm_reset_counters(void)
 {
-	for (int i = 0; i < SLP_STATES_SUPPORTED; i++) {
+	for (int i = 0; i < PM_STATE_COUNT; i++) {
 		pm_counters[i].entry_cnt = 0;
 		pm_counters[i].exit_cnt = 0;
 	}
