@@ -46,8 +46,18 @@ extern "C" {
 		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */	\
 	} while (false)
 #else
+/*
+ * Raise an illegal instruction exception so that mepc will hold expected value in
+ * exception handler, and generated coredump can reconstruct the failing stack.
+ * Store reason_p in register t6, marker in t5
+ */
+#define ARCH_EXCEPT_MARKER 0x00DEAD00
 #define ARCH_EXCEPT(reason_p)	do {			\
-		z_impl_user_fault(reason_p);		\
+		__asm__ volatile("addi t5, %[marker], 0"	\
+			: : [marker] "r" (ARCH_EXCEPT_MARKER));	\
+		__asm__ volatile("addi t6, %[reason], 0"	\
+			: : [reason] "r" (reason_p));	\
+		__asm__ volatile("unimp");		\
 	} while (false)
 #endif
 

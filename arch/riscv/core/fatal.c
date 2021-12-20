@@ -119,7 +119,15 @@ void _Fault(z_arch_esf_t *esf)
 	LOG_ERR("  mtval: %lx", mtval);
 #endif
 
-	z_riscv_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	unsigned int reason = K_ERR_CPU_EXCEPTION;
+
+#if !defined(CONFIG_USERSPACE)
+	if (esf->t5 == ARCH_EXCEPT_MARKER) {
+		reason = esf->t6;
+	}
+#endif
+
+	z_riscv_fatal_error(reason, esf);
 }
 
 #ifdef CONFIG_USERSPACE
