@@ -5,7 +5,6 @@
  */
 
 #include <zephyr.h>
-#include <lvgl.h>
 #include "img.h"
 
 static const uint8_t img_data[] = {
