@@ -37,6 +37,10 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define _priq_run_add		z_priq_mq_add
 #define _priq_run_remove	z_priq_mq_remove
 #define _priq_run_best		z_priq_mq_best
+static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
+					struct k_thread *thread);
+static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
+					   struct k_thread *thread);
 #endif
 
 #if defined(CONFIG_WAITQ_SCALABLE)
@@ -54,10 +58,6 @@ struct k_spinlock sched_spinlock;
 static void update_cache(int preempt_ok);
 static void end_thread(struct k_thread *thread);
 
-static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
-					struct k_thread *thread);
-static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
-					   struct k_thread *thread);
 
 static inline int is_preempt(struct k_thread *thread)
 {
@@ -1081,7 +1081,6 @@ struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
 # if (K_LOWEST_THREAD_PRIO - K_HIGHEST_THREAD_PRIO) > 31
 # error Too many priorities for multiqueue scheduler (max 32)
 # endif
-#endif
 
 static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
 					struct k_thread *thread)
@@ -1102,6 +1101,7 @@ static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
 		pq->bitmask &= ~BIT(priority_bit);
 	}
 }
+#endif
 
 struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
 {
