@@ -33,7 +33,7 @@ config ARM
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
-	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M
+	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
 	help
 	  ARM architecture
 

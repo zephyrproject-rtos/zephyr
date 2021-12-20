@@ -186,7 +186,7 @@ out_fp_endif:
     adds r4, r2, r4
     ldr r0, [r4]
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
     /* Store TLS pointer in the "Process ID" register.
      * This register is used as a base pointer to all
      * thread variables with offsets added by toolchain.
