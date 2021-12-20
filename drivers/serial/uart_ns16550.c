@@ -302,11 +302,6 @@ static inline uint8_t reg_interval(const struct device *dev)
 #define reg_interval(dev) DEFAULT_REG_INTERVAL
 #endif
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
-static const enum pm_state pm_states[] =
-	PM_STATE_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
-#endif
-
 static const struct uart_driver_api uart_ns16550_driver_api;
 
 static inline uintptr_t get_port(const struct device *dev)
@@ -672,13 +667,18 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 
 	if (!dev_data->tx_stream_on) {
 		dev_data->tx_stream_on = true;
+		uint8_t num_cpu_states;
+		const struct pm_state_info *cpu_states;
+
+		num_cpu_states = pm_state_cpu_get_all(0U, &cpu_states);
+
 		/*
 		 * Power state to be disabled. Some platforms have multiple
 		 * states and need to be given a constraint set according to
 		 * different states.
 		 */
-		for (size_t i = 0U; i < ARRAY_SIZE(pm_states); i++) {
-			pm_constraint_set(pm_states[i]);
+		for (uint8_t i = 0U; i < num_cpu_states; i++) {
+			pm_constraint_set(cpu_states[i].state);
 		}
 	}
 #endif
@@ -705,13 +705,18 @@ static void uart_ns16550_irq_tx_disable(const struct device *dev)
 
 	if (dev_data->tx_stream_on) {
 		dev_data->tx_stream_on = false;
+		uint8_t num_cpu_states;
+		const struct pm_state_info *cpu_states;
+
+		num_cpu_states = pm_state_cpu_get_all(0U, &cpu_states);
+
 		/*
 		 * Power state to be enabled. Some platforms have multiple
 		 * states and need to be given a constraint release according
 		 * to different states.
 		 */
-		for (size_t i = 0U; i < ARRAY_SIZE(pm_states); i++) {
-			pm_constraint_release(pm_states[i]);
+		for (uint8_t i = 0U; i < num_cpu_states; i++) {
+			pm_constraint_release(cpu_states[i].state);
 		}
 	}
 #endif
