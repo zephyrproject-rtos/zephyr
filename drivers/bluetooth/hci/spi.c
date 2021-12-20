@@ -370,8 +370,7 @@ static void bt_spi_rx_thread(void)
 					continue;
 				default:
 					if (rxmsg[1] == BT_HCI_EVT_LE_META_EVENT &&
-					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
-					     rxmsg[3] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
 						discardable = true;
 						timeout = K_NO_WAIT;
 					}
