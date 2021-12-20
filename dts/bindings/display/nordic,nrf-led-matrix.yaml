@@ -61,5 +61,22 @@ properties:
       required: false
       description: |
         Reference to a PWM instance for generating pulse signals on column
-        GPIOs. If not provided, one PPI and one GPIOTE channel are allocated
-        and used instead for generating those pulses.
+        GPIOs. If not provided, GPIOTE and PPI channels are allocated and
+        used instead for generating those pulses.
+
+    pixel-group-size:
+      type: int
+      required: true
+      description: |
+        This value specifies the maximum number of LEDs in one row that can
+        be lit simultaneously.
+        If set to 1, only a single LED is turned on in a particular time slot.
+        Bigger values increase the maximum achievable brightness of the LEDs
+        and lower the CPU load by decreasing the frequency of execution of
+        the timer interrupt handler.
+        In case GPIOTE and PPI channels are used for generating the pixel pulse
+        signals, the number of channels that need to be allocated is equal to
+        this value.
+        If GPIOTE and PPI channels are used, the upper limit for the value is
+        defined by the number of CC channels in the used timer minus one.
+        If PWM is used, the upper limit is the number of PWM channels.

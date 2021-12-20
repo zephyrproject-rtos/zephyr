@@ -15,25 +15,48 @@
 #ifdef PPI_PRESENT
 #include <nrfx_ppi.h>
 #endif
+#include <nrf_peripherals.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(nrf_led_matrix, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define MATRIX_NODE  DT_INST(0, nordic_nrf_led_matrix)
 #define TIMER_NODE   DT_PHANDLE(MATRIX_NODE, timer)
 #define USE_PWM      DT_NODE_HAS_PROP(MATRIX_NODE, pwm)
+#define PWM_NODE     DT_PHANDLE(MATRIX_NODE, pwm)
 #define ROW_COUNT    DT_PROP_LEN(MATRIX_NODE, row_gpios)
 #define COL_COUNT    DT_PROP_LEN(MATRIX_NODE, col_gpios)
+#define GROUP_SIZE   DT_PROP(MATRIX_NODE, pixel_group_size)
+#if (GROUP_SIZE > DT_PROP(TIMER_NODE, cc_num) - 1) || \
+    (USE_PWM && GROUP_SIZE > PWM0_CH_NUM)
+#error "Invalid pixel-group-size configured."
+#endif
 
 #define X_PIXELS     DT_PROP(MATRIX_NODE, width)
 #define Y_PIXELS     DT_PROP(MATRIX_NODE, height)
 #define PIXEL_COUNT  DT_PROP_LEN(MATRIX_NODE, pixel_mapping)
-BUILD_ASSERT(PIXEL_COUNT == (X_PIXELS * Y_PIXELS),
-	     "Invalid length of pixel-mapping");
+#if (PIXEL_COUNT != (X_PIXELS * Y_PIXELS))
+#error "Invalid length of pixel-mapping."
+#endif
 
 #define PIXEL_MAPPING(idx)  DT_PROP_BY_IDX(MATRIX_NODE, pixel_mapping, idx)
+
+#define GET_DT_ROW_IDX(pixel_idx) \
+	_GET_ROW_IDX(PIXEL_MAPPING(pixel_idx))
+#define GET_ROW_IDX(dev_config, pixel_idx) \
+	_GET_ROW_IDX(dev_config->pixel_mapping[pixel_idx])
+#define _GET_ROW_IDX(byte)  (byte >> 4)
+
+#define GET_DT_COL_IDX(pixel_idx) \
+	_GET_COL_IDX(PIXEL_MAPPING(pixel_idx))
+#define GET_COL_IDX(dev_config, pixel_idx) \
+	_GET_COL_IDX(dev_config->pixel_mapping[pixel_idx])
+#define _GET_COL_IDX(byte)  (byte & 0xF)
+
 #define CHECK_PIXEL(node_id, pha, idx) \
-	BUILD_ASSERT((PIXEL_MAPPING(idx) >> 4) < ROW_COUNT, \
-		     "Invalid row index in pixel-mapping["#idx"]"); \
-	BUILD_ASSERT((PIXEL_MAPPING(idx) & 0xF) < COL_COUNT, \
-		     "Invalid column index in pixel-mapping["#idx"]");
+	BUILD_ASSERT(GET_DT_ROW_IDX(idx) < ROW_COUNT, \
+		     "Invalid row index in pixel-mapping["#idx"]."); \
+	BUILD_ASSERT(GET_DT_COL_IDX(idx) < COL_COUNT, \
+		     "Invalid column index in pixel-mapping["#idx"].");
 DT_FOREACH_PROP_ELEM(MATRIX_NODE, pixel_mapping, CHECK_PIXEL)
 
 #define REFRESH_FREQUENCY  DT_PROP(MATRIX_NODE, refresh_frequency)
@@ -42,16 +65,22 @@ DT_FOREACH_PROP_ELEM(MATRIX_NODE, pixel_mapping, CHECK_PIXEL)
 #define PWM_CLK_CONFIG     NRF_PWM_CLK_16MHz
 #define BRIGHTNESS_MAX     255
 
-#define QUANTUM  (BASE_FREQUENCY / (REFRESH_FREQUENCY * PIXEL_COUNT * \
-				    BRIGHTNESS_MAX))
+#define QUANTUM  (BASE_FREQUENCY / (REFRESH_FREQUENCY * BRIGHTNESS_MAX * \
+				    PIXEL_COUNT * GROUP_SIZE))
 #define PIXEL_PERIOD  (BRIGHTNESS_MAX * QUANTUM)
-BUILD_ASSERT(PIXEL_PERIOD <= BIT_MASK(16));
-#if USE_PWM
-BUILD_ASSERT(PIXEL_PERIOD <= PWM_COUNTERTOP_COUNTERTOP_Msk);
+#if (PIXEL_PERIOD > BIT_MASK(16)) || \
+    (USE_PWM && PIXEL_PERIOD > PWM_COUNTERTOP_COUNTERTOP_Msk)
+#error "Invalid pixel period. Change refresh-frequency or pixel-group-size."
 #endif
 
 #define ACTIVE_LOW_MASK  0x80
 #define PSEL_MASK        0x7F
+
+#if (GROUP_SIZE > 1)
+#define ITERATION_COUNT  ROW_COUNT * COL_COUNT
+#else
+#define ITERATION_COUNT  PIXEL_COUNT
+#endif
 
 struct display_drv_config {
 	NRF_TIMER_Type *timer;
@@ -61,16 +90,20 @@ struct display_drv_config {
 	uint8_t rows[ROW_COUNT];
 	uint8_t cols[COL_COUNT];
 	uint8_t pixel_mapping[PIXEL_COUNT];
+#if (GROUP_SIZE > 1)
+	uint8_t refresh_order[ITERATION_COUNT];
+#endif
 };
 
 struct display_drv_data {
 #if USE_PWM
-	uint16_t seq;
+	uint16_t seq[PWM0_CH_NUM];
 #else
-	uint8_t gpiote_ch;
+	uint8_t gpiote_ch[GROUP_SIZE];
 #endif
-	uint8_t pixel_idx;
 	uint8_t framebuf[PIXEL_COUNT];
+	uint8_t iteration;
+	uint8_t prev_row_idx;
 	uint8_t brightness;
 	bool    blanking;
 };
@@ -111,7 +144,7 @@ static int api_blanking_off(const struct device *dev)
 	const struct display_drv_config *dev_config = dev->config;
 
 	if (dev_data->blanking) {
-		dev_data->pixel_idx = PIXEL_COUNT - 1;
+		dev_data->iteration = ITERATION_COUNT - 1;
 
 		nrf_timer_task_trigger(dev_config->timer, NRF_TIMER_TASK_CLEAR);
 		nrf_timer_task_trigger(dev_config->timer, NRF_TIMER_TASK_START);
@@ -264,57 +297,32 @@ const struct display_driver_api driver_api = {
 	.set_orientation = api_set_orientation,
 };
 
-static void timer_irq_handler(void *arg)
+static void prepare_pixel_pulse(const struct device *dev,
+				uint8_t pixel_idx,
+				uint8_t channel_idx)
 {
-	const struct device *dev = arg;
 	struct display_drv_data *dev_data = dev->data;
 	const struct display_drv_config *dev_config = dev->config;
-	uint8_t prev_row_idx, pixel_mapping, row_pin_info, col_pin_info;
-	uint16_t pulse;
 
-	/* The timer is automagically stopped and cleared by shortcuts
-	 * on the same event (COMPARE0) that generates this interrupt.
-	 * But the event itself needs to be cleared here.
-	 */
-	nrf_timer_event_clear(dev_config->timer, NRF_TIMER_EVENT_COMPARE0);
+	uint8_t col_idx = GET_COL_IDX(dev_config, pixel_idx);
+	uint8_t col_pin_info = dev_config->cols[col_idx];
+	uint8_t col_psel = (col_pin_info & PSEL_MASK);
+	bool col_active_low = (col_pin_info & ACTIVE_LOW_MASK);
+	uint16_t pulse = dev_data->framebuf[pixel_idx] * QUANTUM;
 
-	/* Disable the row that contains the previously handled pixel. */
-	prev_row_idx = dev_config->pixel_mapping[dev_data->pixel_idx] >> 4;
-	set_pin(dev_config->rows[prev_row_idx], false);
-	/* Disconnect that pixel column pin from the peripheral driving it. */
 #if USE_PWM
-	nrf_pwm_disable(dev_config->pwm);
-#else
-	NRF_GPIOTE->CONFIG[dev_data->gpiote_ch] = 0;
-#endif
-
-	/* Switch to the next pixel. */
-	++dev_data->pixel_idx;
-	if (dev_data->pixel_idx >= PIXEL_COUNT) {
-		dev_data->pixel_idx = 0;
-	}
-	pixel_mapping = dev_config->pixel_mapping[dev_data->pixel_idx];
-	row_pin_info = dev_config->rows[pixel_mapping >> 4];
-	col_pin_info = dev_config->cols[pixel_mapping & 0xF];
-
-	/* Prepare the low pulse on the column pin for the current pixel. */
-	pulse = dev_data->framebuf[dev_data->pixel_idx] * QUANTUM;
-#if USE_PWM
-	dev_config->pwm->PSEL.OUT[0] = col_pin_info & PSEL_MASK;
-	dev_data->seq = pulse
-		      | ((col_pin_info & ACTIVE_LOW_MASK) ? 0 : BIT(15));
-	nrf_pwm_enable(dev_config->pwm);
-	nrf_pwm_task_trigger(dev_config->pwm, NRF_PWM_TASK_SEQSTART0);
+	dev_config->pwm->PSEL.OUT[channel_idx] = col_psel;
+	dev_data->seq[channel_idx] = pulse | (col_active_low ? 0 : BIT(15));
 #else
 	uint32_t gpiote_cfg = GPIOTE_CONFIG_MODE_Task
-		| ((col_pin_info & PSEL_MASK) << GPIOTE_CONFIG_PSEL_Pos);
+			    | (col_psel << GPIOTE_CONFIG_PSEL_Pos);
 
-	if (col_pin_info & ACTIVE_LOW_MASK) {
+	if (col_active_low) {
 		gpiote_cfg |= (GPIOTE_CONFIG_POLARITY_LoToHi
 			       << GPIOTE_CONFIG_POLARITY_Pos)
-			      /* If there should be no pulse at all for a given
-			       * pixel, its column GPIO needs to be configured
-			       * as initially inactive.
+			      /* If there should be no pulse at all for
+			       * a given pixel, its column GPIO needs
+			       * to be configured as initially inactive.
 			       */
 			   |  ((pulse == 0 ? GPIOTE_CONFIG_OUTINIT_High
 					   : GPIOTE_CONFIG_OUTINIT_Low)
@@ -326,12 +334,90 @@ static void timer_irq_handler(void *arg)
 					   : GPIOTE_CONFIG_OUTINIT_High)
 			       << GPIOTE_CONFIG_OUTINIT_Pos);
 	}
-	nrf_timer_cc_set(dev_config->timer, 1, pulse);
-	NRF_GPIOTE->CONFIG[dev_data->gpiote_ch] = gpiote_cfg;
+
+	/* First timer channel is used for timing the period of pulses. */
+	nrf_timer_cc_set(dev_config->timer, 1 + channel_idx, pulse);
+	NRF_GPIOTE->CONFIG[dev_data->gpiote_ch[channel_idx]] = gpiote_cfg;
+#endif /* USE_PWM */
+}
+
+
+static void timer_irq_handler(void *arg)
+{
+	const struct device *dev = arg;
+	struct display_drv_data *dev_data = dev->data;
+	const struct display_drv_config *dev_config = dev->config;
+	uint8_t iteration = dev_data->iteration;
+	uint8_t pixel_idx;
+	uint8_t row_idx;
+
+	/* The timer is automagically stopped and cleared by shortcuts
+	 * on the same event (COMPARE0) that generates this interrupt.
+	 * But the event itself needs to be cleared here.
+	 */
+	nrf_timer_event_clear(dev_config->timer, NRF_TIMER_EVENT_COMPARE0);
+
+	/* Disable the row that was enabled in the previous iteration. */
+	set_pin(dev_config->rows[dev_data->prev_row_idx], false);
+	/* Disconnect used column pins from the peripheral that drove them. */
+#if USE_PWM
+	nrf_pwm_disable(dev_config->pwm);
+	for (int i = 0; i < GROUP_SIZE; ++i) {
+		dev_config->pwm->PSEL.OUT[i] = NRF_PWM_PIN_NOT_CONNECTED;
+	}
+#else
+	for (int i = 0; i < GROUP_SIZE; ++i) {
+		NRF_GPIOTE->CONFIG[dev_data->gpiote_ch[i]] = 0;
+	}
 #endif
 
-	/* Enable the row drive for the current pixel and restart the timer. */
-	set_pin(row_pin_info, true);
+	for (int i = 0; i < GROUP_SIZE; ++i) {
+#if (GROUP_SIZE > 1)
+		do {
+			++iteration;
+			if (iteration >= ITERATION_COUNT) {
+				iteration = 0;
+			}
+
+			pixel_idx = dev_config->refresh_order[iteration];
+		} while (pixel_idx >= PIXEL_COUNT);
+#else
+		++iteration;
+		if (iteration >= ITERATION_COUNT) {
+			iteration = 0;
+		}
+
+		pixel_idx = iteration;
+#endif /* (GROUP_SIZE > 1) */
+
+		if (i == 0) {
+			row_idx = GET_ROW_IDX(dev_config, pixel_idx);
+		} else {
+			/* If the next pixel is in a different row, it cannot
+			 * be lit within this group.
+			 */
+			if (row_idx != GET_ROW_IDX(dev_config, pixel_idx)) {
+				break;
+			}
+		}
+
+		dev_data->iteration = iteration;
+
+		prepare_pixel_pulse(dev, pixel_idx, i);
+	}
+
+	/* Enable the row drive for the current pixel. */
+	set_pin(dev_config->rows[row_idx], true);
+
+	dev_data->prev_row_idx = row_idx;
+
+#if USE_PWM
+	/* Now that all the channels are configured, the PWM can be started. */
+	nrf_pwm_enable(dev_config->pwm);
+	nrf_pwm_task_trigger(dev_config->pwm, NRF_PWM_TASK_SEQSTART0);
+#endif
+
+	/* Restart the timer. */
 	nrf_timer_task_trigger(dev_config->timer, NRF_TIMER_TASK_START);
 }
 
@@ -348,15 +434,15 @@ static int instance_init(const struct device *dev)
 		NRF_PWM_PIN_NOT_CONNECTED,
 	};
 	nrf_pwm_sequence_t sequence = {
-		.values.p_raw = &dev_data->seq,
-		.length = 1,
+		.values.p_raw = dev_data->seq,
+		.length = PWM0_CH_NUM,
 	};
 
 	nrf_pwm_pins_set(dev_config->pwm, out_psels);
 	nrf_pwm_configure(dev_config->pwm,
 		PWM_CLK_CONFIG, NRF_PWM_MODE_UP, PIXEL_PERIOD);
 	nrf_pwm_decoder_set(dev_config->pwm,
-		NRF_PWM_LOAD_COMMON, NRF_PWM_STEP_TRIGGERED);
+		NRF_PWM_LOAD_INDIVIDUAL, NRF_PWM_STEP_TRIGGERED);
 	nrf_pwm_sequence_set(dev_config->pwm, 0, &sequence);
 	nrf_pwm_loop_set(dev_config->pwm, 0);
 	nrf_pwm_shorts_set(dev_config->pwm, NRF_PWM_SHORT_SEQEND0_STOP_MASK);
@@ -364,23 +450,36 @@ static int instance_init(const struct device *dev)
 	nrfx_err_t err;
 	nrf_ppi_channel_t ppi_ch;
 
-	err = nrfx_ppi_channel_alloc(&ppi_ch);
-	if (err != NRFX_SUCCESS) {
-		return -ENOMEM;
-	}
+	for (int i = 0; i < GROUP_SIZE; ++i) {
+		uint8_t *gpiote_ch = &dev_data->gpiote_ch[i];
 
-	err = nrfx_gpiote_channel_alloc(&dev_data->gpiote_ch);
-	if (err != NRFX_SUCCESS) {
-		nrfx_ppi_channel_free(ppi_ch);
-		return -ENOMEM;
-	}
+		err = nrfx_ppi_channel_alloc(&ppi_ch);
+		if (err != NRFX_SUCCESS) {
+			LOG_ERR("Failed to allocate PPI channel.");
+			/* Do not bother with freeing resources allocated
+			 * so far. The application needs to be reconfigured
+			 * anyway.
+			 */
+			return -ENOMEM;
+		}
 
-	nrf_ppi_channel_endpoint_setup(NRF_PPI, ppi_ch,
-		nrf_timer_event_address_get(dev_config->timer,
-			nrf_timer_compare_event_get(1)),
-		nrf_gpiote_event_address_get(NRF_GPIOTE,
-			nrf_gpiote_out_task_get(dev_data->gpiote_ch)));
-	nrf_ppi_channel_enable(NRF_PPI, ppi_ch);
+		err = nrfx_gpiote_channel_alloc(gpiote_ch);
+		if (err != NRFX_SUCCESS) {
+			LOG_ERR("Failed to allocate GPIOTE channel.");
+			/* Do not bother with freeing resources allocated
+			 * so far. The application needs to be reconfigured
+			 * anyway.
+			 */
+			return -ENOMEM;
+		}
+
+		nrf_ppi_channel_endpoint_setup(NRF_PPI, ppi_ch,
+			nrf_timer_event_address_get(dev_config->timer,
+				nrf_timer_compare_event_get(1 + i)),
+			nrf_gpiote_event_address_get(NRF_GPIOTE,
+				nrf_gpiote_out_task_get(*gpiote_ch)));
+		nrf_ppi_channel_enable(NRF_PPI, ppi_ch);
+	}
 #endif /* USE_PWM */
 
 	for (uint8_t i = 0; i < ROW_COUNT; ++i) {
@@ -391,7 +490,7 @@ static int instance_init(const struct device *dev)
 			     NRF_GPIO_PIN_DIR_OUTPUT,
 			     NRF_GPIO_PIN_INPUT_DISCONNECT,
 			     NRF_GPIO_PIN_NOPULL,
-			     NRF_GPIO_PIN_S0S1,
+			     NRF_GPIO_PIN_H0H1,
 			     NRF_GPIO_PIN_NOSENSE);
 	}
 
@@ -434,14 +533,30 @@ static struct display_drv_data instance_data = {
 	 ((DT_GPIO_FLAGS_BY_IDX(node_id, pha, idx) & GPIO_ACTIVE_LOW) ? \
 		ACTIVE_LOW_MASK : 0)),
 
+#define ADD_FF(i, _) 0xFF,
+#define FILL_ROW_WITH_FF(node_id, pha, idx)  UTIL_LISTIFY(COL_COUNT, ADD_FF)
+#define GET_PIXEL_ORDINAL(node_id, pha, idx) \
+	[GET_DT_ROW_IDX(idx) * COL_COUNT + \
+	 GET_DT_COL_IDX(idx)] = idx,
+
 static const struct display_drv_config instance_config = {
 	.timer = (NRF_TIMER_Type *)DT_REG_ADDR(TIMER_NODE),
 #if USE_PWM
-	.pwm = (NRF_PWM_Type *)DT_REG_ADDR(DT_PHANDLE(MATRIX_NODE, pwm)),
+	.pwm = (NRF_PWM_Type *)DT_REG_ADDR(PWM_NODE),
 #endif
 	.rows = { DT_FOREACH_PROP_ELEM(MATRIX_NODE, row_gpios, GET_PIN_INFO) },
 	.cols = { DT_FOREACH_PROP_ELEM(MATRIX_NODE, col_gpios, GET_PIN_INFO) },
 	.pixel_mapping = DT_PROP(MATRIX_NODE, pixel_mapping),
+#if (GROUP_SIZE > 1)
+	/* The whole array is by default filled with FFs, then the elements
+	 * for the actually used row/columns pairs are overwritten (using
+	 * designators) with the proper ordinal values for pixels.
+	 */
+	.refresh_order = { DT_FOREACH_PROP_ELEM(MATRIX_NODE, row_gpios,
+						FILL_ROW_WITH_FF)
+			   DT_FOREACH_PROP_ELEM(MATRIX_NODE, pixel_mapping,
+						GET_PIXEL_ORDINAL) },
+#endif
 };
 
 DEVICE_DT_DEFINE(MATRIX_NODE,
