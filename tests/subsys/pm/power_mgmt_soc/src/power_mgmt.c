@@ -59,7 +59,6 @@ static void pm_latency_check(void)
 	latency = k_uptime_delta(&trigger_time);
 	secs = (int)(latency / SEC_TO_MSEC);
 	msecs = (int)(latency % SEC_TO_MSEC);
-	LOG_INF("PM sleep entry latency %d.%03d seconds", secs, msecs);
 
 	zassert_false(secs > 0, "Sleep entry latency is too high");
 
