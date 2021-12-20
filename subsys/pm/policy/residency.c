@@ -12,7 +12,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
 
-struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	uint8_t num_cpu_states;
 	const struct pm_state_info *cpu_states;
@@ -36,10 +36,10 @@ struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 				"(ticks: %d, min_residency: %u) to cpu %d",
 				state->state, ticks, state->min_residency_us,
 				cpu);
-			return *state;
+			return state;
 		}
 	}
 
 	LOG_DBG("No suitable power state found for cpu: %d!", cpu);
-	return (struct pm_state_info){PM_STATE_ACTIVE, 0, 0};
+	return NULL;
 }
