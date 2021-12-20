@@ -86,7 +86,7 @@ static struct bt_iso_chan_qos iso_qos = {
 	.rx = &iso_rx_qos,
 };
 
-static struct bt_iso_cig_create_param cig_create_param = {
+static struct bt_iso_cig_param cig_create_param = {
 	.interval = DEFAULT_CIS_INTERVAL_US, /* in microseconds */
 	.latency = DEFAULT_CIS_LATENCY_MS, /* milliseconds */
 	.sca = BT_GAP_SCA_UNKNOWN,

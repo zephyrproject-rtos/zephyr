@@ -17,6 +17,8 @@
 
 #include "ipc_rpmsg_static_vrings_mi.h"
 
+#define MI_BACKEND_DRIVER_NAME "MI_BACKEND"
+
 LOG_MODULE_REGISTER(ipc_rpmsg_multi_instance, CONFIG_IPC_SERVICE_LOG_LEVEL);
 
 #define WQ_STACK_SIZE	CONFIG_IPC_SERVICE_BACKEND_RPMSG_MI_WQ_STACK_SIZE
@@ -74,9 +76,14 @@ struct {
 
 static struct rpmsg_mi_instance instance[NUM_INSTANCES];
 
-static int send(struct ipc_ept *ept, const void *data, size_t len)
+static int send(const struct device *instance, void *token,
+		const void *data, size_t len)
 {
-	return rpmsg_send(&ept->ep, data, len);
+	struct ipc_rpmsg_ept *rpmsg_ept;
+
+	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	return rpmsg_send(&rpmsg_ept->ep, data, len);
 }
 
 static struct rpmsg_mi_instance *get_available_instance(const struct ipc_ept_cfg *cfg)
@@ -90,7 +97,7 @@ static struct rpmsg_mi_instance *get_available_instance(const struct ipc_ept_cfg
 	return NULL;
 }
 
-static struct ipc_ept *get_available_ept_slot(struct ipc_rpmsg_instance *rpmsg_instance)
+static struct ipc_rpmsg_ept *get_available_ept_slot(struct ipc_rpmsg_instance *rpmsg_instance)
 {
 	for (size_t i = 0; i < NUM_ENDPOINTS; i++) {
 		if (rpmsg_instance->endpoint[i].name == NULL) {
@@ -168,7 +175,7 @@ static void shm_configure(struct rpmsg_mi_instance *instance)
 	instance->vr.shm_size = shm_local_size;
 }
 
-static void bound_cb(struct ipc_ept *ept)
+static void bound_cb(struct ipc_rpmsg_ept *ept)
 {
 	/* Notify the remote site that binding has occurred */
 	rpmsg_send(&ept->ep, (uint8_t *)"", 0);
@@ -180,9 +187,9 @@ static void bound_cb(struct ipc_ept *ept)
 
 static int ept_cb(struct rpmsg_endpoint *ep, void *data, size_t len, uint32_t src, void *priv)
 {
-	struct ipc_ept *ept;
+	struct ipc_rpmsg_ept *ept;
 
-	ept = (struct ipc_ept *) priv;
+	ept = (struct ipc_rpmsg_ept *) priv;
 
 	if (len == 0) {
 		if (!ept->bound) {
@@ -239,14 +246,18 @@ static int init_instance(struct rpmsg_mi_instance *instance)
 	return 0;
 }
 
-static int register_ept(struct ipc_ept **r_ept, const struct ipc_ept_cfg *cfg)
+static int register_ept(const struct device *dev,
+			void **token,
+			const struct ipc_ept_cfg *cfg)
 {
 	struct ipc_rpmsg_instance *rpmsg_instance;
 	struct rpmsg_mi_instance *instance;
-	struct ipc_ept *ept;
+	struct ipc_rpmsg_ept *rpmsg_ept;
 	int err;
 
-	if (!cfg || !r_ept) {
+	ARG_UNUSED(dev);
+
+	if (!cfg || !token) {
 		return -EINVAL;
 	}
 
@@ -283,29 +294,28 @@ static int register_ept(struct ipc_ept **r_ept, const struct ipc_ept_cfg *cfg)
 		instance->is_initialized = true;
 	}
 
-	ept = get_available_ept_slot(rpmsg_instance);
-	if (ept == NULL) {
+	rpmsg_ept = get_available_ept_slot(rpmsg_instance);
+	if (rpmsg_ept == NULL) {
 		return -ENODEV;
 	}
 
-	ept->name = cfg->name;
-	ept->cb = &cfg->cb;
-	ept->priv = cfg->priv;
-	ept->bound = false;
-	ept->ep.priv = ept;
+	rpmsg_ept->name = cfg->name;
+	rpmsg_ept->cb = &cfg->cb;
+	rpmsg_ept->priv = cfg->priv;
+	rpmsg_ept->bound = false;
+	rpmsg_ept->ep.priv = rpmsg_ept;
 
-	err = ipc_rpmsg_register_ept(rpmsg_instance, instance->role, ept);
+	err = ipc_rpmsg_register_ept(rpmsg_instance, instance->role, rpmsg_ept);
 	if (err != 0) {
 		return err;
 	}
 
-	*r_ept = ept;
+	(*token) = rpmsg_ept;
 
 	return 0;
 }
 
-const static struct ipc_service_backend backend = {
-	.name = "RPMSG backend - static VRINGs (multi-instance)",
+const static struct ipc_service_backend backend_ops = {
 	.send = send,
 	.register_endpoint = register_ept,
 };
@@ -321,6 +331,9 @@ static int backend_init(const struct device *dev)
 				   VIRTIO_DEV_MASTER : VIRTIO_DEV_SLAVE;
 	}
 
-	return ipc_service_register_backend(&backend);
+	return 0;
 }
-SYS_INIT(backend_init, POST_KERNEL, CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY);
+
+DEVICE_DEFINE(mi_backend, MI_BACKEND_DRIVER_NAME, &backend_init, NULL, NULL,
+	      NULL, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      &backend_ops);

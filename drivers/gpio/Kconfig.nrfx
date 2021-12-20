@@ -11,12 +11,6 @@ menuconfig GPIO_NRFX
 
 if GPIO_NRFX
 
-config GPIO_NRF_INIT_PRIORITY
-	int "nRF GPIO initialization priority"
-	default 40
-	help
-	  Initialization priority for nRF GPIO.
-
 choice
 	prompt "nRF GPIO edge interrupts mechanism"
 	default GPIO_NRF_INT_EDGE_USING_GPIOTE

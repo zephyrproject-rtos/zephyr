@@ -1454,14 +1454,14 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 #endif /* CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
-struct tcp2_detail_info {
+struct tcp_detail_info {
 	int printed_send_queue_header;
 	int printed_details;
 	int count;
 };
 #endif
 
-#if defined(CONFIG_NET_TCP2) && \
+#if defined(CONFIG_NET_TCP) && \
 	(defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE))
 static void tcp_cb(struct tcp *conn, void *user_data)
 {
@@ -1485,7 +1485,7 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
 	const struct shell *shell = data->shell;
-	struct tcp2_detail_info *details = data->user_data;
+	struct tcp_detail_info *details = data->user_data;
 	struct net_pkt *pkt;
 	sys_snode_t *node;
 
@@ -1496,7 +1496,7 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 			details->printed_details = true;
 		}
 
-		PR("%p   %d    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n",
+		PR("%p   %ld    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n",
 		   conn, atomic_get(&conn->ref_count), conn->recv_win,
 		   conn->send_win, conn->send_data_total, conn->unacked_len,
 		   conn->in_retransmission, conn->in_connect, conn->in_close,
@@ -1524,12 +1524,12 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 			struct net_buf *frag = pkt->frags;
 
 			if (!details->printed_send_queue_header) {
-				PR("%p[%d/%zd]", pkt,
+				PR("%p[%ld/%zd]", pkt,
 				   atomic_get(&pkt->atomic_ref),
 				   net_pkt_get_len(pkt));
 				details->printed_send_queue_header = true;
 			} else {
-				PR("                %p[%d/%zd]",
+				PR("                %p[%ld/%zd]",
 				   pkt, atomic_get(&pkt->atomic_ref),
 				   net_pkt_get_len(pkt));
 			}
@@ -1554,7 +1554,7 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 	details->printed_send_queue_header = true;
 }
 #endif /* CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG */
-#endif /* TCP2 */
+#endif /* TCP */
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
@@ -1630,7 +1630,7 @@ static void allocs_cb(struct net_pkt *pkt,
 
 	if (func_alloc) {
 		if (in_use) {
-			PR("%p/%d\t%5s\t%5s\t%s():%d\n",
+			PR("%p/%ld\t%5s\t%5s\t%s():%d\n",
 			   pkt, atomic_get(&pkt->atomic_ref), str,
 			   net_pkt_slab2str(pkt->slab),
 			   func_alloc, line_alloc);
@@ -2040,18 +2040,18 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 	} else {
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 		/* Print information about pending packets */
-		struct tcp2_detail_info details;
+		struct tcp_detail_info details;
 
 		count = 0;
 
-		if (IS_ENABLED(CONFIG_NET_TCP2)) {
+		if (IS_ENABLED(CONFIG_NET_TCP)) {
 			memset(&details, 0, sizeof(details));
 			user_data.user_data = &details;
 		}
 
 		net_tcp_foreach(tcp_sent_list_cb, &user_data);
 
-		if (IS_ENABLED(CONFIG_NET_TCP2)) {
+		if (IS_ENABLED(CONFIG_NET_TCP)) {
 			if (details.count == 0) {
 				PR("No active connections.\n");
 			}
@@ -3632,8 +3632,7 @@ static void context_info(struct net_context *context, void *user_data)
 		}
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-		PR("%p\t%d\t%d\tEDATA (%s)\n",
-		   pool, pool->buf_count,
+		PR("%p\t%d\t%ld\tEDATA (%s)\n", pool, pool->buf_count,
 		   atomic_get(&pool->avail_count), pool->name);
 #else
 		PR("%p\t%d\tEDATA\n", pool, pool->buf_count);
@@ -3671,13 +3670,11 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 	PR("%p\t%d\t%u\tTX\n",
 	       tx, tx->num_blocks, k_mem_slab_num_free_get(tx));
 
-	PR("%p\t%d\t%d\tRX DATA (%s)\n",
-	       rx_data, rx_data->buf_count,
-	       atomic_get(&rx_data->avail_count), rx_data->name);
+	PR("%p\t%d\t%ld\tRX DATA (%s)\n	", rx_data, rx_data->buf_count,
+	   atomic_get(&rx_data->avail_count), rx_data->name);
 
-	PR("%p\t%d\t%d\tTX DATA (%s)\n",
-	       tx_data, tx_data->buf_count,
-	       atomic_get(&tx_data->avail_count), tx_data->name);
+	PR("%p\t%d\t%ld\tTX DATA (%s)\n", tx_data, tx_data->buf_count,
+	   atomic_get(&tx_data->avail_count), tx_data->name);
 #else
 	PR("Address\t\tTotal\tName\n");
 
@@ -4241,14 +4238,14 @@ static void net_pkt_buffer_info(const struct shell *shell, struct net_pkt *pkt)
 	struct net_buf *buf = pkt->buffer;
 
 	PR("net_pkt %p buffer chain:\n", pkt);
-	PR("%p[%d]", pkt, atomic_get(&pkt->atomic_ref));
+	PR("%p[%ld]", pkt, atomic_get(&pkt->atomic_ref));
 
 	if (buf) {
 		PR("->");
 	}
 
 	while (buf) {
-		PR("%p[%d/%u (%u/%u)]", buf, atomic_get(&pkt->atomic_ref),
+		PR("%p[%ld/%u (%u/%u)]", buf, atomic_get(&pkt->atomic_ref),
 		   buf->len, net_buf_max_len(buf), buf->size);
 
 		buf = buf->frags;

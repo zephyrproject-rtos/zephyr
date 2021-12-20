@@ -10,6 +10,22 @@ config ESPI_XEC_V2
 	help
 	  Enable the Microchip XEC ESPI driver for MEC172x series.
 
+config ESPI_XEC_PERIPHERAL_ACPI_SHD_MEM_SIZE
+	int "Host I/O peripheral port size for shared memory in MEC172X series"
+	depends on ESPI_XEC_V2 || ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 256
+	help
+	  This is the port size used by the Host and EC to communicate over
+	  the shared memory region to return the ACPI response data.
+
+config ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE
+	int "Host I/O peripheral port size for ec host command in MEC172X series"
+	depends on ESPI_XEC_V2 || ESPI_PERIPHERAL_EC_HOST_CMD
+	default 256
+	help
+	  This is the port size used by the Host and EC to communicate over
+	  the shared memory region to return the host command parameter data.
+
 if ESPI_XEC_V2
 
 config ESPI_OOB_CHANNEL

@@ -17,6 +17,9 @@ config I2C
 config EEPROM_AT24
 	default y
 
+config EEPROM_INIT_PRIORITY
+	default 75
+
 endif # EEPROM
 
 endif # SHIELD_X_NUCLEO_EEPRMA2

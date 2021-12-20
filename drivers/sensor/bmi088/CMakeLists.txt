@@ -2,4 +2,5 @@
 
 zephyr_library()
 
-zephyr_library_sources(bmi088.c)
+zephyr_library_sources(bmi088_gyr.c)
+zephyr_library_sources(bmi088_acc.c)

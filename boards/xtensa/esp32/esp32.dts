@@ -69,13 +69,13 @@
 
 &i2c0 {
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-pin = <21>;
 	scl-pin = <22>;
 };
 
 &i2c1 {
-	clock-frequency = <I2C_BITRATE_FAST>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-pin = <18>;
 	scl-pin = <5>;
 };

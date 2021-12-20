@@ -41,3 +41,7 @@
 	SECTION_PROLOGUE(.debug_ranges, 0,)    { *(.debug_ranges) }
 	/* DWARF Extension. */
 	SECTION_PROLOGUE(.debug_macro, 0,)     { *(.debug_macro) }
+	/* DWARF 5 */
+	SECTION_PROLOGUE(.debug_line_str, 0,)  { *(.debug_line_str) }
+	SECTION_PROLOGUE(.debug_loclists, 0,)  { *(.debug_loclists) }
+	SECTION_PROLOGUE(.debug_rnglists, 0,)  { *(.debug_rnglists) }

@@ -151,7 +151,6 @@ ARM64 arch:
         - carlocaione
     collaborators:
         - npitre
-        - ioannisg
         - povergoing
     files:
         - arch/arm64/
@@ -168,7 +167,7 @@ Bluetooth:
     maintainers:
         - jhedberg
     collaborators:
-        - joerchan
+        - alwa-nordic
         - Vudentz
         - Thalley
         - asbjornsabo
@@ -197,6 +196,7 @@ Bluetooth controller:
         - carlescufi
         - thoh-ot
         - kruithofa
+        - ppryga
     files:
         - subsys/bluetooth/controller/
     labels:
@@ -208,6 +208,7 @@ Bluetooth Mesh:
         - trond-snekvik
     collaborators:
         - jhedberg
+        - LingaoM
     files:
         - subsys/bluetooth/mesh/
         - include/bluetooth/mesh/
@@ -220,7 +221,9 @@ Build system:
     maintainers:
         - tejlmand
     collaborators:
+        - jeremybettis
         - nashif
+        - SebastianBoe
     files:
         - cmake/
         - CMakeLists.txt
@@ -277,7 +280,6 @@ CMSIS-DSP integration:
         - stephanosio
     collaborators:
         - galak
-        - ioannisg
     files:
         - modules/Kconfig.cmsis_dsp
         - tests/benchmarks/cmsis_dsp/
@@ -436,6 +438,7 @@ Documentation:
         - lyakh
         - lgirdwood
         - mengxianglinx
+        - marc-hb
     files:
         - drivers/audio/
         - include/audio/
@@ -894,6 +897,7 @@ Documentation:
     status: orphaned
     collaborators:
         - katsuster
+        - martinjaeger
     files:
         - doc/reference/peripherals/watchdog.rst
         - drivers/watchdog/
@@ -1046,7 +1050,6 @@ MAINTAINERS file:
     maintainers:
         - MaureenHelm
     collaborators:
-        - ioannisg
         - nashif
     files:
         - MAINTAINERS.yml
@@ -1072,6 +1075,8 @@ MCU Manager:
     status: maintained
     maintainers:
         - de-nordic
+    collaborators:
+        - lairdjm
     files:
         - subsys/mgmt/mcumgr/
         - include/mgmt/mcumgr/
@@ -1366,6 +1371,26 @@ State machine framework:
     labels:
         - "area: State Machine Framework"
 
+GD32 Platforms:
+    status: maintained
+    maintainers:
+        - nandojve
+        - gmarull
+    files:
+        - boards/arm/gd32*/
+        - drivers/*/*gd32*/
+        - drivers/*/*gd32*
+        - dts/arm/gigadevice/
+        - dts/bindings/*/*gd32*
+        - modules/hal_gigadevice/
+        - soc/arm/gigadevice/
+        - scripts/west_commands/*/*gd32*
+    labels:
+        - "platform: GD32"
+    description: >-
+        GigaDevice GD32 SOCs, dts files and related drivers. Starter and eval
+        boards.
+
 Synopsys Platforms:
     status: maintained
     maintainers:
@@ -1496,7 +1521,7 @@ Microchip Platforms:
 nRF Platforms:
     status: maintained
     maintainers:
-        - ioannisg
+        - anangl
     files:
         - boards/arm/*nrf*/
         - drivers/*/*nrfx*.c
@@ -1537,7 +1562,7 @@ Espressif Platforms:
     maintainers:
         - sylvioalves
         - glaubermaroto
-        - ulipe
+        - uLipe
     files:
         - drivers/*/*esp32*.c
         - boards/xtensa/esp32*/
@@ -1586,12 +1611,23 @@ Storage:
     labels:
         - "area: Storage"
 
+Task Watchdog:
+    status: maintained
+    maintainers:
+        - martinjaeger
+    files:
+        - include/task_wdt/
+        - samples/subsys/task_wdt/
+        - subsys/task_wdt/
+    labels:
+        - "area: Task Watchdog"
+
 TF-M Integration:
     status: maintained
     maintainers:
         - microbuilder
     collaborators:
-        - ioannisg
+        - SebastianBoe
     files:
         - samples/tfm_integration/
         - modules/trusted-firmware-m/
@@ -1604,6 +1640,7 @@ Tracing:
         - nashif
     collaborators:
         - teburd
+        - tleksell-pe
     files:
         - subsys/tracing/
         - include/tracing/
@@ -1634,7 +1671,6 @@ Userspace:
     maintainers:
         - dcpleung
     collaborators:
-        - ioannisg
         - enjiamai
     files:
         - doc/reference/usermode/kernelobjects.rst
@@ -1735,6 +1771,8 @@ ZTest:
     status: maintained
     maintainers:
         - nashif
+    collaborators:
+        - jeremybettis
     files:
         - subsys/testsuite/
         - tests/ztest/

@@ -825,6 +825,11 @@ function(board_finalize_runner_args runner)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_RUNNERS ${runner})
 endfunction()
 
+function(board_set_rimage_target target)
+  zephyr_check_cache(RIMAGE_TARGET)
+  set(RIMAGE_TARGET ${target} CACHE STRING "rimage target")
+endfunction()
+
 # Zephyr board revision:
 #
 # This section provides a function for revision checking.
@@ -3256,7 +3261,7 @@ endfunction()
 #                         [ADDRESS <address>] [ALIGN <alignment>]
 #                         [SUBALIGN <alignment>] [FLAGS <flags>]
 #                         [HIDDEN] [NOINPUT] [NOINIT]
-#                         [PASS <no> [<no>...]
+#                         [PASS [NOT] <name>]
 #   )
 #
 # Zephyr linker output section.
@@ -3311,11 +3316,14 @@ endfunction()
 # NOINPUT             : No default input sections will be defined, to setup input
 #                       sections for section <name>, the corresponding
 #                       `zephyr_linker_section_configure()` must be used.
-# PASS <no> [<no> ..] : Linker pass iteration where this section should be active.
+# PASS [NOT] <name>   : Linker pass iteration where this section should be active.
 #                       Default a section will be present during all linker passes
-#                       But in cases a section shall only be present at a specific
+#                       but in cases a section shall only be present at a specific
 #                       pass, this argument can be used. For example to only have
-#                       this section present on the first linker pass, use `PASS 1`.
+#                       this section present on the `TEST` linker pass, use `PASS TEST`.
+#                       It is possible to negate <name>, such as `PASS NOT <name>`.
+#                       For example, `PASS NOT TEST` means the call is effective
+#                       on all but the `TEST` linker pass iteration.
 #
 # Note: VMA and LMA are mutual exclusive with GROUP
 #
@@ -3349,6 +3357,17 @@ function(zephyr_linker_section)
       if(NOT (${KERNEL_MEM_VM_OFFSET} EQUAL 0))
         set(SECTION_VMA ${SECTION_KVMA})
         set(SECTION_KVMA)
+      endif()
+    endif()
+  endif()
+
+  if(DEFINED SECTION_PASS)
+    list(LENGTH SECTION_PASS pass_length)
+    if(${pass_length} GREATER 1)
+      list(GET SECTION_PASS 0 pass_elem_0)
+      if((NOT (${pass_elem_0} STREQUAL "NOT")) OR (${pass_length} GREATER 2))
+        message(FATAL_ERROR "zephyr_linker_section(PASS takes maximum "
+          "a single argument of the form: '<pass name>' or 'NOT <pass_name>'.")
       endif()
     endif()
   endif()
@@ -3513,7 +3532,7 @@ endfunction()
 
 # Usage:
 #   zephyr_linker_section_configure(SECTION <section> [ALIGN <alignment>]
-#                                   [PASS <no>] [PRIO <no>] [SORT <sort>]
+#                                   [PASS [NOT] <name>] [PRIO <no>] [SORT <sort>]
 #                                   [ANY] [FIRST] [KEEP]
 #   )
 #
@@ -3542,18 +3561,20 @@ endfunction()
 #                       you may use `PRIO 50`, `PRIO 20` and so on.
 #                       To ensure an input section is at the end, it is advised
 #                       to use `PRIO 200` and above.
-# PASS <no>           : The call should only be considered for linker pass number <no>.
-#                       For example, `PASS 1` means the call is only effective
-#                       on first linker pass iteration. `PASS 2` on second iteration,
-#                       and so on.
+# PASS [NOT] <name>   : The call should only be considered for linker pass where
+#                       <name> is defined. It is possible to negate <name>, such
+#                       as `PASS NOT <name>.
+#                       For example, `PASS TEST` means the call is only effective
+#                       on the `TEST` linker pass iteration. `PASS NOT TEST` on
+#                       all iterations the are not `TEST`.
 # FLAGS <flags>       : Special section flags such as "+RO", +XO, "+ZI".
 # ANY                 : ANY section flag in scatter file.
 #                       The FLAGS and ANY arguments only has effect for scatter files.
 #
 function(zephyr_linker_section_configure)
   set(options     "ANY;FIRST;KEEP")
-  set(single_args "ALIGN;OFFSET;PASS;PRIO;SECTION;SORT")
-  set(multi_args  "FLAGS;INPUT;SYMBOLS")
+  set(single_args "ALIGN;OFFSET;PRIO;SECTION;SORT")
+  set(multi_args  "FLAGS;INPUT;PASS;SYMBOLS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
   if(SECTION_UNPARSED_ARGUMENTS)
@@ -3565,6 +3586,17 @@ function(zephyr_linker_section_configure)
     if(${symbols_count} GREATER 2)
       message(FATAL_ERROR "zephyr_linker_section_configure(SYMBOLS [start_sym [end_sym]]) takes maximum two symbol names (start and end).")
 
+    endif()
+  endif()
+
+  if(DEFINED SECTION_PASS)
+    list(LENGTH SECTION_PASS pass_length)
+    if(${pass_length} GREATER 1)
+      list(GET SECTION_PASS 0 pass_elem_0)
+      if((NOT (${pass_elem_0} STREQUAL "NOT")) OR (${pass_length} GREATER 2))
+        message(FATAL_ERROR "zephyr_linker_section_configure(PASS takes maximum "
+          "a single argument of the form: '<pass name>' or 'NOT <pass_name>'.")
+      endif()
     endif()
   endif()
 

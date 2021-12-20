@@ -986,6 +986,31 @@ General rules
   In particular, if you use the ``default:`` feature, you must justify the
   value in the property's description.
 
+- There are two ways to write property ``description:`` strings that are always
+  OK.
+
+  If your description is short, it's fine to use this style:
+
+  .. code-block:: yaml
+
+     description: my short string
+
+  If your description is long or spans multiple lines, you must use this
+  style:
+
+  .. code-block:: yaml
+
+     description: |
+       My very long string
+       goes here.
+       Look at all these lines!
+
+  This ``|`` style prevents YAML parsers from removing the newlines in
+  multi-line descriptions. This in turn makes these long strings
+  display propertly in the :ref:`devicetree_binding_index`.
+
+  Do not use any other style for long or multi-line strings.
+
 Vendor prefixes
 ===============
 

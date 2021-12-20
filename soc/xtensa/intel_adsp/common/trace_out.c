@@ -11,8 +11,8 @@
  * for communication with the host processor as a shared memory
  * region.  The protocol uses an array of 64-byte "slots", each of
  * which is prefixed by a 16 bit magic number followed by a sequential
- * ID number.  The remaining bytes are a (potentially nul-terminated)
- * string containing output data.
+ * ID number starting from 1.  The remaining bytes are a (potentially
+ * nul-terminated) string containing output data.
  *
  * IMPORTANT NOTE on cache coherence: the shared memory window is in
  * HP-SRAM.  Each DSP core has an L1 cache that is incoherent (!) from

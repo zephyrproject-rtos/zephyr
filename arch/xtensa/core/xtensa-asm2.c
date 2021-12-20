@@ -136,6 +136,13 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 	return val & mask;
 }
 
+static ALWAYS_INLINE void usage_stop(void)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	z_sched_usage_stop();
+#endif
+}
+
 /* The wrapper code lives here instead of in the python script that
  * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
  * ugly.
@@ -147,6 +154,7 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 __unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 {							   \
 	uint32_t irqs, intenable, m;			   \
+	usage_stop();					   \
 	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs)); \
 	__asm__ volatile("rsr.intenable %0" : "=r"(intenable)); \
 	irqs &= intenable;					\

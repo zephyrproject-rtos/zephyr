@@ -269,12 +269,12 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
 		"Unable to get active state to device");
 
 	/* enable automatic runtime PM and check its status */
-	pm_device_enable(dev);
+	pm_device_runtime_enable(dev);
 	zassert_not_null((dev->pm), "No device pm");
 	zassert_true((dev->pm->enable), "Pm is not enable");
 
 	/* disable automatic runtime PM and check its status */
-	pm_device_disable(dev);
+	pm_device_runtime_disable(dev);
 	zassert_false((dev->pm->enable), "Pm shall not be enable");
 }
 

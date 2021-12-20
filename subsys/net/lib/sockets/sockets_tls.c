@@ -283,7 +283,7 @@ static int tls_init(const struct device *unused)
 
 #if !defined(CONFIG_ENTROPY_HAS_DRIVER)
 	NET_WARN("No entropy device on the system, "
-		 "TLS communication may be insecure!");
+		 "TLS communication is insecure!");
 #endif
 
 	(void)memset(tls_contexts, 0, sizeof(tls_contexts));
@@ -2088,6 +2088,8 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 
 		/* Treat any other error as fatal. */
 		return -EIO;
+	} else if (ret == 0 && ctx->type == SOCK_STREAM) {
+		return -ENOTCONN;
 	}
 
 	return mbedtls_ssl_get_bytes_avail(&ctx->ssl);

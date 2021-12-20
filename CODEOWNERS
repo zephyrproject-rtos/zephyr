@@ -16,7 +16,7 @@
 /.github/				  @nashif
 /.github/workflows/                       @galak @nashif
 /.buildkite/				  @galak
-/MAINTAINERS.yml                          @ioannisg @MaureenHelm
+/MAINTAINERS.yml                          @MaureenHelm
 /arch/arc/                                @abrodkin @ruuddw @evgeniy-paltsev
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
@@ -42,7 +42,7 @@
 /soc/arm/gigadevice/                      @nandojve
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @mmahadevan108 @dleach02
-/soc/arm/nordic_nrf/                      @ioannisg
+/soc/arm/nordic_nrf/                      @anangl
 /soc/arm/nuvoton_npcx/                    @MulinChao @WealianLiao @ChiHuaL
 /soc/arm/nuvoton_numicro/                 @ssekar15
 /soc/arm/quicklogic_eos_s3/               @kowalewskijan @kgugala
@@ -72,7 +72,7 @@
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda
 /soc/riscv/openisa*/                      @dleach02
-/soc/riscv/riscv-privilege/andes_v5/      @cwshu @Teng-Shih-Wei
+/soc/riscv/riscv-privilege/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
 /soc/riscv/riscv-privilege/neorv32/       @henrikbrixandersen
 /soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
@@ -115,12 +115,12 @@
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
 /boards/arm/npcx7m6fb_evb/                @MulinChao @WealianLiao @ChiHuaL
-/boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
+/boards/arm/nrf*/                         @carlescufi @lemrey
 /boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
 /boards/arm/nucleo_f401re/                @idlethread
 /boards/arm/nuvoton_pfm_m487/             @ssekar15
 /boards/arm/qemu_cortex_r*/               @stephanosio
-/boards/arm/qemu_cortex_m*/               @ioannisg
+/boards/arm/qemu_cortex_m*/               @ioannisg @stephanosio
 /boards/arm/quick_feather/                @kowalewskijan @kgugala
 /boards/arm/rak4631_nrf52840/             @gpaquet85
 /boards/arm/rak5010_nrf52840/             @gpaquet85
@@ -151,7 +151,7 @@
 /boards/riscv/                            @kgugala @pgielda
 /boards/riscv/rv32m1_vega/                @dleach02
 /boards/riscv/beaglev_starlight_jh7100/   @rajnesh-kanwal
-/boards/riscv/adp_xc7k_ae350/             @cwshu @Teng-Shih-Wei
+/boards/riscv/adp_xc7k_ae350/             @cwshu @kevinwang821020 @jimmyzhe
 /boards/riscv/neorv32/                    @henrikbrixandersen
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
@@ -179,9 +179,9 @@
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
-/doc/guides/bluetooth/                    @joerchan @jhedberg @Vudentz
+/doc/guides/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
 /doc/guides/dts/                          @galak @mbolivar-nordic
-/doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
+/doc/reference/bluetooth/                 @alwa-nordic @jhedberg @Vudentz
 /doc/reference/devicetree/                @galak @mbolivar-nordic
 /doc/reference/networking/can*            @alexanderwachter
 /doc/security/                            @ceolin @d3zd3z
@@ -195,13 +195,13 @@
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
 /drivers/*/*npcx*                         @MulinChao @WealianLiao @ChiHuaL
-/drivers/*/*andes*                        @cwshu @Teng-Shih-Wei
+/drivers/*/*andes*                        @cwshu @kevinwang821020 @jimmyzhe
 /drivers/*/*neorv32*                      @henrikbrixandersen
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/audio/*nrfx*                     @anangl
 /drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
-/drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
+/drivers/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
 /drivers/cache/                           @carlocaione
 /drivers/syscon/                          @carlocaione @yperess
 /drivers/can/                             @alexanderwachter
@@ -248,6 +248,7 @@
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @yurvyn
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
+/drivers/gpio/*nct38xx*                   @MulinChao @WealianLiao @ChiHuaL
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
 /drivers/gpio/*rcar*                      @julien-massot
@@ -274,12 +275,12 @@
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
 /drivers/interrupt_controller/*esp32*     @glaubermaroto
 /drivers/ipm/ipm_mhu*                     @karl-zh
-/drivers/ipm/Kconfig.nrfx                 @masz-nordic @ioannisg
-/drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic @ioannisg
+/drivers/ipm/Kconfig.nrfx                 @masz-nordic
+/drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic
 /drivers/ipm/ipm_intel_adsp.c             @finikorg
 /drivers/ipm/ipm_cavs_idc*                @dcpleung
-/drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic @ioannisg
-/drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
+/drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic
+/drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/ipm/ipm_stm32_hsem.c             @cameled
 /drivers/kscan/                           @VenkatKotakonda @franciscomunoz @scottwcpg
@@ -342,10 +343,10 @@
 /drivers/serial/*rcar*                    @aaillet
 /drivers/serial/Kconfig.test              @str4t0m
 /drivers/serial/serial_test.c             @str4t0m
-/drivers/serial/*esp32c3*                 @uLipe
-/drivers/serial/*esp32s2*                 @glaubermaroto
 /drivers/serial/Kconfig.xen               @lorc @firscity
 /drivers/serial/uart_hvc_xen.c            @lorc @firscity
+/drivers/serial/Kconfig.it8xxx2           @GTLin08
+/drivers/serial/uart_ite_it8xxx2.c        @GTLin08
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_spi.c                 @JunYangNXP
@@ -360,7 +361,7 @@
 /drivers/timer/apic_timer.c               @dcpleung @nashif
 /drivers/timer/apic_tsc.c                 @andyross
 /drivers/timer/arm_arch_timer.c           @carlocaione
-/drivers/timer/cortex_m_systick.c         @ioannisg
+/drivers/timer/cortex_m_systick.c         @anangl
 /drivers/timer/altera_avalon_timer_hal.c  @nashif
 /drivers/timer/riscv_machine_timer.c      @kgugala @pgielda
 /drivers/timer/ite_it8xxx2_timer.c        @ite
@@ -387,6 +388,7 @@
 /drivers/watchdog/*cc32xx*                @pavlohamov
 /drivers/watchdog/wdt_ite_it8xxx2.c       @RuibinChang
 /drivers/watchdog/Kconfig.it8xxx2         @RuibinChang
+/drivers/watchdog/wdt_counter.c           @nordic-krch
 /drivers/wifi/                            @rlubos @tbursztyka @pfalcon
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
@@ -415,7 +417,7 @@
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
-/dts/arm/nordic/                          @ioannisg @carlescufi
+/dts/arm/nordic/                          @anangl @carlescufi
 /dts/arm/nuvoton/                         @ssekar15 @MulinChao @WealianLiao @ChiHuaL
 /dts/arm/nxp/                             @mmahadevan108 @dleach02
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
@@ -435,7 +437,7 @@
 /dts/riscv/rv32m1*                        @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/riscv/starfive/                      @rajnesh-kanwal
-/dts/riscv/andes_v5*                      @cwshu @Teng-Shih-Wei
+/dts/riscv/andes_v5*                      @cwshu @kevinwang821020 @jimmyzhe
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
@@ -465,7 +467,7 @@
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
-/dts/bindings/*/andes*                    @cwshu @Teng-Shih-Wei
+/dts/bindings/*/andes*                    @cwshu @kevinwang821020 @jimmyzhe
 /dts/bindings/*/neorv32*                  @henrikbrixandersen
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
@@ -481,7 +483,7 @@
 /include/drivers/dac.h                    @martinjaeger
 /include/drivers/display.h                @vanwinkeljan
 /include/drivers/espi.h                   @albertofloyd @franciscomunoz @scottwcpg
-/include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
+/include/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
 /include/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
 /include/drivers/i2c_emul.h               @sjg20
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
@@ -516,8 +518,8 @@
 /include/arch/xtensa/                     @andyross @dcpleung
 /include/arch/sparc/                      @martin-aberg
 /include/sys/atomic.h                     @andyross
-/include/bluetooth/                       @joerchan @jhedberg @Vudentz
-/include/bluetooth/audio/                 @joerchan @jhedberg @Vudentz @Thalley @asbjornsabo
+/include/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
+/include/bluetooth/audio/                 @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
 /include/cache.h                          @carlocaione @andyross
 /include/canbus/                          @alexanderwachter
 /include/tracing/                         @nashif
@@ -579,13 +581,13 @@
 /modules/canopennode/                     @henrikbrixandersen
 /modules/mbedtls/                         @ceolin @d3zd3z
 /modules/hal_gigadevice/                  @nandojve
-/modules/trusted-firmware-m/              @ioannisg @microbuilder
+/modules/trusted-firmware-m/              @microbuilder
 /kernel/device.c                          @andyross @nashif
 /kernel/idle.c                            @andyross @nashif
 /samples/                                 @nashif
 /samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/boards/*microbit* @jhe
-/samples/bluetooth/                       @jhedberg @Vudentz @joerchan
+/samples/bluetooth/                       @jhedberg @Vudentz @alwa-nordic
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/subsys/display/                  @vanwinkeljan
 /samples/compression/                     @Navin-Sankar
@@ -614,7 +616,7 @@
 /samples/subsys/mgmt/osdp/                @sidcha
 /samples/subsys/usb/                      @jfischer-no
 /samples/subsys/pm/                       @nashif @ceolin
-/samples/tfm_integration/                 @ioannisg @microbuilder
+/samples/tfm_integration/                 @microbuilder
 /samples/userspace/                       @dcpleung @nashif
 /scripts/release/bug_bash.py              @cfriedt
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
@@ -646,6 +648,8 @@
 /scripts/twister                          @nashif
 /scripts/series-push-hook.sh              @erwango
 /scripts/west_commands/                   @mbolivar-nordic
+/scripts/west_commands/runners/gd32isp.py @mbolivar-nordic @nandojve
+/scripts/west_commands/tests/test_gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west-commands.yml                @mbolivar-nordic
 /scripts/zephyr_module.py                 @tejlmand
 /scripts/uf2conv.py                       @petejohanson
@@ -653,10 +657,10 @@
 /scripts/valgrind.supp                    @aescolar @daor-oti
 /share/zephyr-package/                    @tejlmand
 /share/zephyrunittest-package/            @tejlmand
-/subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
-/subsys/bluetooth/audio/                  @joerchan @jhedberg @Vudentz @Thalley @asbjornsabo
+/subsys/bluetooth/                        @alwa-nordic @jhedberg @Vudentz
+/subsys/bluetooth/audio/                  @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
-/subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
+/subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @alwa-nordic @Vudentz
 /subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @vanwinkeljan
 /subsys/debug/                            @nashif
@@ -674,7 +678,7 @@
 /subsys/fs/fcb/                           @nvlsianpu
 /subsys/fs/fuse_fs_access.c               @vanwinkeljan
 /subsys/fs/nvs/                           @Laczen
-/subsys/ipc/                              @ioannisg
+/subsys/ipc/                              @carlocaione
 /subsys/logging/                          @nordic-krch
 /subsys/logging/log_backend_net.c         @nordic-krch @rlubos
 /subsys/lorawan/                          @Mani-Sadhasivam
@@ -715,10 +719,10 @@
 /tests/benchmarks/cmsis_dsp/              @stephanosio
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
-/tests/bluetooth/                         @joerchan @jhedberg @Vudentz
-/tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar @wopu-ot
-/tests/bluetooth/bsim_bt/bsim_test_audio/ @joerchan @jhedberg @Vudentz @aescolar @wopu-ot @Thalley @asbjornsabo
-/tests/bluetooth/tester/                  @joerchan @jhedberg @Vudentz @sjanc
+/tests/bluetooth/                         @alwa-nordic @jhedberg @Vudentz
+/tests/bluetooth/bsim_bt/                 @alwa-nordic @jhedberg @Vudentz @aescolar @wopu-ot
+/tests/bluetooth/bsim_bt/bsim_test_audio/ @alwa-nordic @jhedberg @Vudentz @aescolar @wopu-ot @Thalley @asbjornsabo
+/tests/bluetooth/tester/                  @alwa-nordic @jhedberg @Vudentz @sjanc
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin @d3zd3z

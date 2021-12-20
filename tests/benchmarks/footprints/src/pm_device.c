@@ -21,15 +21,17 @@ static int dummy_init(const struct device *dev)
 	return 0;
 }
 
-static int dummy_device_pm_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int dummy_device_pm_action(const struct device *dev,
+				  enum pm_device_action action)
 {
 	return 0;
 }
 
 /* Define a driver with and without power management enabled */
+PM_DEVICE_DEFINE(dummy_pm_driver, dummy_device_pm_action);
+
 DEVICE_DEFINE(dummy_pm_driver, DUMMY_PM_DRIVER_NAME, &dummy_init,
-		    dummy_device_pm_ctrl, NULL, NULL, APPLICATION,
+		    PM_DEVICE_REF(dummy_pm_driver), NULL, NULL, APPLICATION,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
@@ -48,12 +50,12 @@ void run_pm_device(void)
 		return;
 	}
 
-	if (pm_device_get(dev)) {
+	if (pm_device_runtime_get(dev)) {
 		printk("\n PM device runtime get failed\n");
 		return;
 	}
 
-	if (pm_device_put(dev)) {
+	if (pm_device_runtime_put(dev)) {
 		printk("\n PM device runtime put failed\n");
 		return;
 	}

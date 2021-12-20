@@ -56,14 +56,6 @@ a fixed machine-specific setting. Usually, such settings should be handled via
 
 In particular, avoid adding new Kconfig options of the following types:
 
-Options enabling individual devices
-===================================
-
-Existing examples like :kconfig:`CONFIG_I2C_0` and :kconfig:`CONFIG_I2C_1` were
-introduced before Zephyr supported devicetree, and new cases are discouraged.
-See :ref:`dt-create-devices` for details on how to do this with devicetree
-instead.
-
 Options that specify a device in the system by name
 ===================================================
 

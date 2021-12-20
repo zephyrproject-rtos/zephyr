@@ -168,7 +168,7 @@ void _arch_isr_direct_pm(void)
 	|| defined(CONFIG_ARMV7_A)
 	unsigned int key;
 
-	/* irq_lock() does what we wan for this CPU */
+	/* irq_lock() does what we want for this CPU */
 	key = irq_lock();
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Lock all interrupts. irq_lock() will on this CPU only disable those
@@ -181,10 +181,8 @@ void _arch_isr_direct_pm(void)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 	if (_kernel.idle) {
-		int32_t idle_val = _kernel.idle;
-
 		_kernel.idle = 0;
-		z_pm_save_idle_exit(idle_val);
+		z_pm_save_idle_exit();
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \

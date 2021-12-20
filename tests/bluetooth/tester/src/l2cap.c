@@ -133,6 +133,8 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 		}
 	}
 
+	chan->in_use = false;
+
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DISCONNECTED,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
@@ -342,22 +344,22 @@ void disconnect_eatt_chans(uint8_t *data, uint16_t len)
 	if (!conn) {
 		LOG_ERR("Unknown connection");
 		status = BTP_STATUS_FAILED;
-		goto rsp;
+		goto failed;
 	}
 
 	for (int i = 0; i < cmd->count; i++) {
 		err = bt_eatt_disconnect_one(conn);
 		if (err) {
 			status = BTP_STATUS_FAILED;
-			goto rsp;
+			goto unref;
 		}
 	}
 
 	status = BTP_STATUS_SUCCESS;
 
-rsp:
+unref:
 	bt_conn_unref(conn);
-
+failed:
 	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT_EATT_CHANS,
 		   CONTROLLER_INDEX, status);
 }

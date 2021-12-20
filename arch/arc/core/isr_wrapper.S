@@ -249,8 +249,6 @@ rirq_path:
 #if defined(CONFIG_PM)
 	clri r0 /* do not interrupt exiting tickless idle operations */
 	MOVR r1, _kernel
-	/* z_kernel.idle is 32 bit despite of platform bittnes */
-	ld_s r3, [r1, _kernel_offset_to_idle] /* requested idle duration */
 	breq r3, 0, _skip_pm_save_idle_exit
 
 	st 0, [r1, _kernel_offset_to_idle] /* zero idle duration */
@@ -275,6 +273,10 @@ SECTION_FUNC(TEXT, _isr_demux)
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 	PUSHR r58
 	PUSHR r59
+#endif
+
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	bl z_sched_usage_stop
 #endif
 
 #ifdef CONFIG_TRACING_ISR

@@ -211,6 +211,11 @@ static void device_periodic_service(struct k_work *work)
 	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
 }
 
+int lwm2m_update_device_service_period(uint32_t period_ms)
+{
+	return lwm2m_engine_update_service_period(device_periodic_service, period_ms);
+}
+
 static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 {
 	int i = 0, j = 0;

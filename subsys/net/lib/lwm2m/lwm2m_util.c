@@ -347,7 +347,7 @@ int lwm2m_atof(const char *input, double *out)
 
 	errno = 0;
 	val = strtol(buf, &end, 10);
-	if (errno || *end || val < INT_MIN) {
+	if (errno || *end) {
 		return -EINVAL;
 	}
 

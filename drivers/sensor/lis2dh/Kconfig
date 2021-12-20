@@ -138,4 +138,19 @@ config LIS2DH_ODR_9_LOW
 
 endchoice
 
+config LIS2DH_BLOCK_DATA_UPDATE
+	bool "Output registers not updated until MSB and LSB read"
+
+config LIS2DH_MEASURE_TEMPERATURE
+	bool "Enable temperature measurements"
+	select LIS2DH_BLOCK_DATA_UPDATE
+	help
+	  The temperature sensor is most suitable for measuring
+	  relative temperature. For example, it is X degrees C
+	  cooler or warmer.
+	  Each chip has an offset.  This offset must be applied
+	  to the result. The offset can be obtained by comparing the
+	  the reported temperature to a reference.
+	  This option does not apply to the LSM330DLHC.
+
 endif # LIS2DH

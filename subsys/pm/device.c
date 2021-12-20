@@ -31,12 +31,8 @@ int pm_device_state_set(const struct device *dev,
 	enum pm_device_action action;
 	struct pm_device *pm = dev->pm;
 
-	if (pm->action_cb == NULL) {
+	if (pm == NULL) {
 		return -ENOSYS;
-	}
-
-	if (atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
-		return -EBUSY;
 	}
 
 	switch (state) {
@@ -82,7 +78,7 @@ int pm_device_state_get(const struct device *dev,
 {
 	struct pm_device *pm = dev->pm;
 
-	if (pm->action_cb == NULL) {
+	if (pm == NULL) {
 		return -ENOSYS;
 	}
 
@@ -101,7 +97,7 @@ bool pm_device_is_any_busy(void)
 	for (const struct device *dev = devs; dev < (devs + devc); dev++) {
 		struct pm_device *pm = dev->pm;
 
-		if (pm->action_cb == NULL) {
+		if (pm == NULL) {
 			continue;
 		}
 
@@ -117,7 +113,7 @@ bool pm_device_is_busy(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (pm->action_cb == NULL) {
+	if (pm == NULL) {
 		return false;
 	}
 
@@ -128,7 +124,7 @@ void pm_device_busy_set(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (pm->action_cb == NULL) {
+	if (pm == NULL) {
 		return;
 	}
 
@@ -139,7 +135,7 @@ void pm_device_busy_clear(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (pm->action_cb == NULL) {
+	if (pm == NULL) {
 		return;
 	}
 
@@ -151,21 +147,21 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 	atomic_val_t flags, new_flags;
 	struct pm_device *pm = dev->pm;
 
-	if (pm->action_cb == NULL) {
+	if (pm == NULL) {
 		return false;
 	}
 
 	flags =	atomic_get(&pm->flags);
 
-	if ((flags & BIT(PM_DEVICE_FLAGS_WS_CAPABLE)) == 0U) {
+	if ((flags & BIT(PM_DEVICE_FLAG_WS_CAPABLE)) == 0U) {
 		return false;
 	}
 
 	if (enable) {
 		new_flags = flags |
-			BIT(PM_DEVICE_FLAGS_WS_ENABLED);
+			BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	} else {
-		new_flags = flags & ~BIT(PM_DEVICE_FLAGS_WS_ENABLED);
+		new_flags = flags & ~BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	}
 
 	return atomic_cas(&pm->flags, flags, new_flags);
@@ -175,22 +171,22 @@ bool pm_device_wakeup_is_enabled(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (pm->action_cb == NULL) {
+	if (pm == NULL) {
 		return false;
 	}
 
 	return atomic_test_bit(&pm->flags,
-			       PM_DEVICE_FLAGS_WS_ENABLED);
+			       PM_DEVICE_FLAG_WS_ENABLED);
 }
 
 bool pm_device_wakeup_is_capable(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (pm->action_cb == NULL) {
+	if (pm == NULL) {
 		return false;
 	}
 
 	return atomic_test_bit(&pm->flags,
-			       PM_DEVICE_FLAGS_WS_CAPABLE);
+			       PM_DEVICE_FLAG_WS_CAPABLE);
 }

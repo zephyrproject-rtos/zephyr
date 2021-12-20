@@ -1039,8 +1039,17 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 		},
 	};
 
+	struct ieee802154_key clear_keys[] = {
+		{
+			.key_value = NULL,
+		},
+	};
+
+	/* aKeyId in range: (1, 0x80) means valid keys
+	 * aKeyId == 0 is used only to clear keys for stack reset in RCP
+	 */
 	struct ieee802154_config config = {
-		.mac_keys = keys
+		.mac_keys = aKeyId == 0 ? clear_keys : keys,
 	};
 
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_MAC_KEYS,

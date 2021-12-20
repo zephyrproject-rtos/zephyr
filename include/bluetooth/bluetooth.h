@@ -1153,6 +1153,9 @@ struct bt_le_per_adv_sync_term_info {
 
 	/** Advertiser SID */
 	uint8_t sid;
+
+	/** Cause of periodic advertising termination */
+	uint8_t reason;
 };
 
 struct bt_le_per_adv_sync_recv_info {
@@ -1276,17 +1279,20 @@ enum {
 	 */
 	BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED = BIT(1),
 
+	/** Filter duplicate Periodic Advertising reports */
+	BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE = BIT(2),
+
 	/** Sync with Angle of Arrival (AoA) constant tone extension */
-	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOA = BIT(2),
+	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOA = BIT(3),
 
 	/** Sync with Angle of Departure (AoD) 1 us constant tone extension */
-	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_1US = BIT(3),
+	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_1US = BIT(4),
 
 	/** Sync with Angle of Departure (AoD) 2 us constant tone extension */
-	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_2US = BIT(4),
+	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_2US = BIT(5),
 
 	/** Do not sync to packets without a constant tone extension */
-	BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT = BIT(5),
+	BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT = BIT(6),
 };
 
 struct bt_le_per_adv_sync_param {

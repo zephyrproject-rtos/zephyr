@@ -23,6 +23,8 @@
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
+#define LPUART0SRC_OSCERCLK     (1)
+
 #define TIMESRC_OSCERCLK        (2)
 
 #define RUNM_HSRUN              (3)
@@ -100,6 +102,10 @@ static ALWAYS_INLINE void clock_init(void)
 				      CONFIG_MCG_FCRDIV);
 
 	CLOCK_SetSimConfig(&simConfig);
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
+#endif
 
 #if CONFIG_ETH_MCUX
 	CLOCK_SetEnetTime0Clock(TIMESRC_OSCERCLK);

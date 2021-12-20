@@ -27,6 +27,7 @@ config SOC_NRF9160
 	select HAS_HW_NRF_PWM1
 	select HAS_HW_NRF_PWM2
 	select HAS_HW_NRF_PWM3
+	select HAS_HW_NRF_REGULATORS
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
 	select HAS_HW_NRF_SAADC
@@ -54,6 +55,7 @@ config SOC_NRF9160
 	select HAS_HW_NRF_UARTE1
 	select HAS_HW_NRF_UARTE2
 	select HAS_HW_NRF_UARTE3
+	select HAS_HW_NRF_VMC
 	select HAS_HW_NRF_WDT
 
 choice

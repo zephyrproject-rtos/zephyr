@@ -1,0 +1,7 @@
+# AMS AS5x47 rotary position sensor
+
+menuconfig AS5X47
+    bool "AMS AS5x47 rotary position sensor"
+    depends on SPI
+    help
+        Enable AMS AS5x47 rotary position sensor driver

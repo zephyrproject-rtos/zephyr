@@ -9,6 +9,6 @@ config UART_ESP32
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select GPIO_ESP32
-	depends on SOC_ESP32 || SOC_ESP32S2
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
-	  Enable the ESP32 UART using ROM routines.
+	  Enable the ESP32 UART.

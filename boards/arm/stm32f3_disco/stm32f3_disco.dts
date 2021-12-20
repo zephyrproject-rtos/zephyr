@@ -17,7 +17,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,can-primary = &can1;
+		zephyr,canbus = &can1;
 	};
 
 	leds {
@@ -182,10 +182,10 @@ zephyr_udc0: &usb {
 };
 
 &timers1 {
+	st,prescaler = <10000>;
 	status = "okay";
 	pwm1: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pa8>;
 	};
 };

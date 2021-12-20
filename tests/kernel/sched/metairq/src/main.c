@@ -139,7 +139,7 @@ K_THREAD_DEFINE(coop_thread2_id, 1024,
 		coop_thread2, 0, 0, 0,
 		K_PRIO_COOP(2), 0, 0);
 
-void test_preempt(void)
+void test_preempt_metairq(void)
 {
 	/* Kick off meta-IRQ */
 	k_sem_give(&metairq_sem);
@@ -152,7 +152,7 @@ void test_preempt(void)
 
 void test_main(void)
 {
-	ztest_test_suite(suite_preempt,
-			 ztest_unit_test(test_preempt));
-	ztest_run_test_suite(suite_preempt);
+	ztest_test_suite(suite_preempt_metairq,
+			 ztest_unit_test(test_preempt_metairq));
+	ztest_run_test_suite(suite_preempt_metairq);
 }

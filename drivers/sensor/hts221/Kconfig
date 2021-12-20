@@ -3,9 +3,11 @@
 
 menuconfig HTS221
 	bool "HTS221 temperature and humidity sensor"
-	depends on I2C
+	depends on I2C || SPI
+	select HAS_STMEMSC
+	select USE_STDC_HTS221
 	help
-	  Enable driver for HTS221 I2C-based temperature and humidity sensor.
+	  Enable driver for HTS221 I2C/SPI-based temperature and humidity sensor.
 
 if HTS221
 

@@ -27,6 +27,11 @@ static inline uint32_t arch_k_cycle_get_32(void)
 	return 0;
 }
 
+static inline uint64_t arch_k_cycle_get_64(void)
+{
+	return 0;
+}
+
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	return 0;

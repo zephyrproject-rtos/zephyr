@@ -138,6 +138,7 @@ static void qmspi_set_signalling_mode(QMSPI_Type *regs, uint32_t smode)
  */
 static uint32_t qmspi_config_get_lines(const struct spi_config *config)
 {
+#ifdef CONFIG_SPI_EXTENDED_MODES
 	uint32_t qlines;
 
 	switch (config->operation & SPI_LINES_MASK) {
@@ -159,6 +160,9 @@ static uint32_t qmspi_config_get_lines(const struct spi_config *config)
 	}
 
 	return qlines;
+#else
+	return MCHP_QMSPI_C_IFM_1X;
+#endif
 }
 
 /*
@@ -175,6 +179,10 @@ static int qmspi_configure(const struct device *dev,
 
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
+	}
+
+	if (config->operation & SPI_HALF_DUPLEX) {
+		return -ENOTSUP;
 	}
 
 	if (config->operation & (SPI_TRANSFER_LSB | SPI_OP_MODE_SLAVE
@@ -220,9 +228,6 @@ static int qmspi_configure(const struct device *dev,
 	regs->CSTM = cfg->cs_timing;
 
 	data->ctx.config = config;
-
-	/* Add driver specific data to SPI context structure */
-	spi_context_cs_configure(&data->ctx);
 
 	regs->MODE |= MCHP_QMSPI_M_ACTIVATE;
 
@@ -616,6 +621,7 @@ static int qmspi_release(const struct device *dev,
  */
 static int qmspi_init(const struct device *dev)
 {
+	int err;
 	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *data = dev->data;
 	QMSPI_Type *regs = cfg->regs;
@@ -629,6 +635,11 @@ static int qmspi_init(const struct device *dev)
 
 	MCHP_GIRQ_BLK_CLREN(cfg->girq);
 	NVIC_ClearPendingIRQ(cfg->girq_nvic_direct);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -671,7 +682,8 @@ static const struct spi_qmspi_config spi_qmspi_0_config = {
 
 static struct spi_qmspi_data spi_qmspi_0_dev_data = {
 	SPI_CONTEXT_INIT_LOCK(spi_qmspi_0_dev_data, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_qmspi_0_dev_data, ctx)
+	SPI_CONTEXT_INIT_SYNC(spi_qmspi_0_dev_data, ctx),
+	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(0), ctx)
 };
 
 DEVICE_DT_INST_DEFINE(0,

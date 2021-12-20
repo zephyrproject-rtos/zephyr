@@ -38,6 +38,10 @@ static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 		set_next_free_chunk(h, first, second);
 		set_prev_free_chunk(h, second, first);
 	}
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	h->free_bytes -= chunksz_to_bytes(h, chunk_size(h, c));
+#endif
 }
 
 static void free_list_remove(struct z_heap *h, chunkid_t c)
@@ -72,6 +76,10 @@ static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
 		set_next_free_chunk(h, first, c);
 		set_prev_free_chunk(h, second, c);
 	}
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	h->free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+#endif
 }
 
 static void free_list_add(struct z_heap *h, chunkid_t c)
@@ -164,6 +172,9 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		 mem);
 
 	set_chunk_used(h, c, false);
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	h->allocated_bytes -= chunksz_to_bytes(h, chunk_size(h, c));
+#endif
 	free_chunk(h, c);
 }
 
@@ -251,6 +262,9 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	}
 
 	set_chunk_used(h, c, true);
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	h->allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+#endif
 	return chunk_mem(h, c);
 }
 
@@ -318,6 +332,9 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	}
 
 	set_chunk_used(h, c, true);
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	h->allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+#endif
 	return mem;
 }
 
@@ -353,6 +370,10 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 		return ptr;
 	} else if (chunk_size(h, c) > chunks_need) {
 		/* Shrink in place, split off and free unused suffix */
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+		h->allocated_bytes -=
+			(chunk_size(h, c) - chunks_need) * CHUNK_UNIT;
+#endif
 		split_chunks(h, c, c + chunks_need);
 		set_chunk_used(h, c, true);
 		free_chunk(h, c + chunks_need);
@@ -360,7 +381,11 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	} else if (!chunk_used(h, rc) &&
 		   (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
 		/* Expand: split the right chunk and append */
-		chunkid_t split_size = chunks_need - chunk_size(h, c);
+		chunksz_t split_size = chunks_need - chunk_size(h, c);
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+		h->allocated_bytes += split_size * CHUNK_UNIT;
+#endif
 
 		free_list_remove(h, rc);
 
@@ -414,6 +439,11 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	heap->heap = h;
 	h->end_chunk = heap_sz;
 	h->avail_buckets = 0;
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	h->free_bytes = 0;
+	h->allocated_bytes = 0;
+#endif
 
 	int nb_buckets = bucket_idx(h, heap_sz) + 1;
 	chunksz_t chunk0_size = chunksz(sizeof(struct z_heap) +

@@ -217,7 +217,8 @@ static int ina219_channel_get(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int ina219_pm_ctrl(const struct device *dev, enum pm_device_action action)
+static int ina219_pm_action(const struct device *dev,
+			    enum pm_device_action action)
 {
 	uint16_t reg_val;
 
@@ -301,9 +302,11 @@ static const struct sensor_driver_api ina219_api = {
 		.mode = INA219_MODE_NORMAL			\
 	};							\
 								\
+	PM_DEVICE_DT_INST_DEFINE(n, ina219_pm_action);		\
+								\
 	DEVICE_DT_INST_DEFINE(n,				\
 			      ina219_init,			\
-			      ina219_pm_ctrl,\
+			      PM_DEVICE_DT_INST_REF(n),		\
 			      &ina219_data_##n,			\
 			      &ina219_config_##n,		\
 			      POST_KERNEL,			\

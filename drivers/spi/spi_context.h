@@ -27,6 +27,8 @@ enum spi_ctx_runtime_op_mode {
 struct spi_context {
 	const struct spi_config *config;
 	const struct spi_config *owner;
+	const struct gpio_dt_spec *cs_gpios;
+	size_t num_cs_gpios;
 
 	struct k_sem lock;
 	struct k_sem sync;
@@ -56,6 +58,20 @@ struct spi_context {
 
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
 	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
+
+#define SPI_CONTEXT_CS_GPIO_SPEC_ELEM(_node_id, _prop, _idx)		\
+	GPIO_DT_SPEC_GET_BY_IDX(_node_id, _prop, _idx),
+
+#define SPI_CONTEXT_CS_GPIOS_FOREACH_ELEM(_node_id)				\
+	DT_FOREACH_PROP_ELEM(_node_id, cs_gpios,				\
+				SPI_CONTEXT_CS_GPIO_SPEC_ELEM)
+
+#define SPI_CONTEXT_CS_GPIOS_INITIALIZE(_node_id, _ctx_name)				\
+	._ctx_name.cs_gpios = (const struct gpio_dt_spec []) {				\
+		COND_CODE_1(DT_SPI_HAS_CS_GPIOS(_node_id),				\
+			    (SPI_CONTEXT_CS_GPIOS_FOREACH_ELEM(_node_id)), ({0}))	\
+	},										\
+	._ctx_name.num_cs_gpios = DT_PROP_LEN_OR(_node_id, cs_gpios, 0),
 
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  const struct spi_config *config)
@@ -112,22 +128,34 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
 	int status = 0;
-	uint32_t timeout_ms;
+	k_timeout_t timeout;
 
-	timeout_ms = MAX(ctx->tx_len, ctx->rx_len) * 8 * 1000 /
-		     ctx->config->frequency;
-	timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
+	/* Do not use any timeout in the slave mode, as in this case it is not
+	 * known when the transfer will actually start and what the frequency
+	 * will be.
+	 */
+	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(ctx)) {
+		timeout = K_FOREVER;
+	} else {
+		uint32_t timeout_ms;
+
+		timeout_ms = MAX(ctx->tx_len, ctx->rx_len) * 8 * 1000 /
+			     ctx->config->frequency;
+		timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
+
+		timeout = K_MSEC(timeout_ms);
+	}
 
 #ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous) {
-		if (k_sem_take(&ctx->sync, K_MSEC(timeout_ms))) {
+		if (k_sem_take(&ctx->sync, timeout)) {
 			LOG_ERR("Timeout waiting for transfer complete");
 			return -ETIMEDOUT;
 		}
 		status = ctx->sync_status;
 	}
 #else
-	if (k_sem_take(&ctx->sync, K_MSEC(timeout_ms))) {
+	if (k_sem_take(&ctx->sync, timeout)) {
 		LOG_ERR("Timeout waiting for transfer complete");
 		return -ETIMEDOUT;
 	}
@@ -183,23 +211,27 @@ gpio_dt_flags_t spi_context_cs_active_level(struct spi_context *ctx)
 	return GPIO_ACTIVE_LOW;
 }
 
-static inline int spi_context_cs_configure(struct spi_context *ctx)
+static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 {
 	int ret;
+	const struct gpio_dt_spec *cs_gpio;
 
-	if (ctx->config->cs && ctx->config->cs->gpio.port) {
+	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
+		if (!device_is_ready(cs_gpio->port)) {
+			LOG_ERR("CS GPIO port %s pin %d is not ready",
+				cs_gpio->port->name, cs_gpio->pin);
+			return -ENODEV;
+		}
+
 		/* Validate CS active levels are equivalent */
 		__ASSERT(spi_context_cs_active_level(ctx) ==
-			 (ctx->config->cs->gpio.dt_flags & GPIO_ACTIVE_LOW),
+			 (cs_gpio->dt_flags & GPIO_ACTIVE_LOW),
 			 "Devicetree and spi_context CS levels are not equal");
-		ret = gpio_pin_configure_dt(&ctx->config->cs->gpio,
-				      GPIO_OUTPUT_INACTIVE);
+
+		ret = gpio_pin_configure_dt(cs_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure 'cs' gpio: %d", ret);
 			return ret;
 		}
-	} else {
-		LOG_INF("CS control inhibited (no GPIO device)");
 	}
 
 	return 0;
@@ -240,6 +272,25 @@ static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 	}
 }
 
+static inline void *spi_context_get_next_buf(const struct spi_buf **current,
+					     size_t *count,
+					     size_t *buf_len,
+					     uint8_t dfs)
+{
+	/* This loop skips zero-length buffers in the set, if any. */
+	while (*count) {
+		if (((*current)->len / dfs) != 0) {
+			*buf_len = (*current)->len / dfs;
+			return (*current)->buf;
+		}
+		++(*current);
+		--(*count);
+	}
+
+	*buf_len = 0;
+	return NULL;
+}
+
 static inline
 void spi_context_buffers_setup(struct spi_context *ctx,
 			       const struct spi_buf_set *tx_bufs,
@@ -248,29 +299,17 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 {
 	LOG_DBG("tx_bufs %p - rx_bufs %p - %u", tx_bufs, rx_bufs, dfs);
 
-	if (tx_bufs) {
-		ctx->current_tx = tx_bufs->buffers;
-		ctx->tx_count = tx_bufs->count;
-		ctx->tx_buf = (const uint8_t *)ctx->current_tx->buf;
-		ctx->tx_len = ctx->current_tx->len / dfs;
-	} else {
-		ctx->current_tx = NULL;
-		ctx->tx_count = 0;
-		ctx->tx_buf = NULL;
-		ctx->tx_len = 0;
-	}
+	ctx->current_tx = tx_bufs ? tx_bufs->buffers : NULL;
+	ctx->tx_count = ctx->current_tx ? tx_bufs->count : 0;
+	ctx->tx_buf = (const uint8_t *)
+		spi_context_get_next_buf(&ctx->current_tx, &ctx->tx_count,
+					 &ctx->tx_len, dfs);
 
-	if (rx_bufs) {
-		ctx->current_rx = rx_bufs->buffers;
-		ctx->rx_count = rx_bufs->count;
-		ctx->rx_buf = (uint8_t *)ctx->current_rx->buf;
-		ctx->rx_len = ctx->current_rx->len / dfs;
-	} else {
-		ctx->current_rx = NULL;
-		ctx->rx_count = 0;
-		ctx->rx_buf = NULL;
-		ctx->rx_len = 0;
-	}
+	ctx->current_rx = rx_bufs ? rx_bufs->buffers : NULL;
+	ctx->rx_count = ctx->current_rx ? rx_bufs->count : 0;
+	ctx->rx_buf = (uint8_t *)
+		spi_context_get_next_buf(&ctx->current_rx, &ctx->rx_count,
+					 &ctx->rx_len, dfs);
 
 	ctx->sync_status = 0;
 
@@ -279,10 +318,10 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 #endif /* CONFIG_SPI_SLAVE */
 
 	LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
-		    " tx buf/len %p/%zu, rx buf/len %p/%zu",
-		    ctx->current_tx, ctx->tx_count,
-		    ctx->current_rx, ctx->rx_count,
-		    ctx->tx_buf, ctx->tx_len, ctx->rx_buf, ctx->rx_len);
+		" tx buf/len %p/%zu, rx buf/len %p/%zu",
+		ctx->current_tx, ctx->tx_count,
+		ctx->current_rx, ctx->rx_count,
+		ctx->tx_buf, ctx->tx_len, ctx->rx_buf, ctx->rx_len);
 }
 
 static ALWAYS_INLINE
@@ -299,14 +338,13 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 
 	ctx->tx_len -= len;
 	if (!ctx->tx_len) {
-		ctx->tx_count--;
-		if (ctx->tx_count) {
-			ctx->current_tx++;
-			ctx->tx_buf = (const uint8_t *)ctx->current_tx->buf;
-			ctx->tx_len = ctx->current_tx->len / dfs;
-		} else {
-			ctx->tx_buf = NULL;
-		}
+		/* Current buffer is done. Get the next one to be processed. */
+		++ctx->current_tx;
+		--ctx->tx_count;
+		ctx->tx_buf = (const uint8_t *)
+			spi_context_get_next_buf(&ctx->current_tx,
+						 &ctx->tx_count,
+						 &ctx->tx_len, dfs);
 	} else if (ctx->tx_buf) {
 		ctx->tx_buf += dfs * len;
 	}
@@ -347,14 +385,13 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 
 	ctx->rx_len -= len;
 	if (!ctx->rx_len) {
-		ctx->rx_count--;
-		if (ctx->rx_count) {
-			ctx->current_rx++;
-			ctx->rx_buf = (uint8_t *)ctx->current_rx->buf;
-			ctx->rx_len = ctx->current_rx->len / dfs;
-		} else {
-			ctx->rx_buf = NULL;
-		}
+		/* Current buffer is done. Get the next one to be processed. */
+		++ctx->current_rx;
+		--ctx->rx_count;
+		ctx->rx_buf = (uint8_t *)
+			spi_context_get_next_buf(&ctx->current_rx,
+						 &ctx->rx_count,
+						 &ctx->rx_len, dfs);
 	} else if (ctx->rx_buf) {
 		ctx->rx_buf += dfs * len;
 	}

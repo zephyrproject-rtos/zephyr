@@ -216,6 +216,11 @@ static int spi_psoc6_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > SPI_MAX_DATA_WIDTH) {
 		LOG_ERR("Word size %d is greater than %d",
@@ -253,7 +258,6 @@ static int spi_psoc6_configure(const struct device *dev,
 		data->cfg.oversample = spi_psoc6_get_freqdiv(spi_cfg->frequency);
 
 		data->ctx.config = spi_cfg;
-		spi_context_cs_configure(&data->ctx);
 	} else {
 		/* Slave mode is not implemented yet. */
 		return -ENOTSUP;
@@ -367,7 +371,9 @@ static int spi_psoc6_release(const struct device *dev,
 
 static int spi_psoc6_init(const struct device *dev)
 {
+	int err;
 	const struct spi_psoc6_config *config = dev->config;
+	struct spi_psoc6_data *data = dev->data;
 
 	soc_gpio_list_configure(config->pins, config->num_pins);
 
@@ -382,6 +388,11 @@ static int spi_psoc6_init(const struct device *dev)
 #ifdef CONFIG_SPI_ASYNC
 	config->irq_config_func(dev);
 #endif
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	return spi_psoc6_release(dev, NULL);
 }
@@ -406,6 +417,7 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_psoc6_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 	DEVICE_DT_INST_DEFINE(n, &spi_psoc6_init, NULL,			\
 			      &spi_psoc6_dev_data_##n,			\

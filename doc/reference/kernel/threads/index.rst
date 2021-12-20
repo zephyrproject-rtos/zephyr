@@ -326,7 +326,7 @@ The following thread options are supported.
     SSE registers. Also see :c:macro:`K_FP_REGS`.
 
     By default, the kernel does not attempt to save and restore the contents
-    of this register when scheduling the thread.
+    of these registers when scheduling the thread.
 
 :c:macro:`K_FP_REGS`
     This option indicate that the thread uses the CPU's floating point

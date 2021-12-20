@@ -8,6 +8,10 @@ if SOC_MK64F12
 config SOC
 	default "mk64f12"
 
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 86
+
 config ADC_MCUX_ADC16
 	default y
 	depends on ADC

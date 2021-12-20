@@ -24,14 +24,12 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
-			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
-			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 	};
@@ -61,7 +59,6 @@
 			reg = <0x3ff48000 0x0D8>;
 			label = "RTC";
 			xtal-freq = <ESP32_CLK_XTAL_40M>;
-			xtal-div = <0>;
 			#clock-cells = <1>;
 			status = "ok";
 		};
@@ -117,6 +114,15 @@
 		pinmux: pinmux@3ff49000 {
 			compatible = "espressif,esp32-pinmux";
 			reg = <0x3ff49000 0x94>;
+		};
+
+		ledc0: ledc@3ff59000 {
+			compatible = "espressif,esp32-ledc";
+			pwm-controller;
+			#pwm-cells = <3>;
+			reg = <0x3ff59000 0x800>;
+			label = "LEDC_0";
+			status = "disabled";
 		};
 
 		gpio0: gpio@3ff44000 {

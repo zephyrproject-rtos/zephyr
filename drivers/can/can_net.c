@@ -377,10 +377,8 @@ static struct net_can_api net_can_api_inst = {
 
 static int net_can_init(const struct device *dev)
 {
-	const struct device *can_dev;
+	const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	struct net_can_context *ctx = dev->data;
-
-	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
 
 	ctx->recv_filter_id = CAN_NET_FILTER_NOT_SET;
 #ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
@@ -388,10 +386,9 @@ static int net_can_init(const struct device *dev)
 	ctx->all_mcast_filter_id = CAN_NET_FILTER_NOT_SET;
 #endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 
-	if (!can_dev) {
-		NET_ERR("Can't get binding to CAN device %s",
-			DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
-		return -EIO;
+	if (!device_is_ready(can_dev)) {
+		NET_ERR("CAN device not ready");
+		return -ENODEV;
 	}
 
 	NET_DBG("Init net CAN device %p (%s) for dev %p (%s)",

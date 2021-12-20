@@ -186,7 +186,8 @@ static int sgp40_channel_get(const struct device *dev,
 
 
 #ifdef CONFIG_PM_DEVICE
-static int sgp40_pm_ctrl(const struct device *dev, enum pm_device_action action)
+static int sgp40_pm_action(const struct device *dev,
+			   enum pm_device_action action)
 {
 	uint16_t cmd;
 
@@ -254,9 +255,11 @@ static const struct sensor_driver_api sgp40_api = {
 		.selftest = DT_INST_PROP(n, enable_selftest),	\
 	};							\
 								\
+	PM_DEVICE_DT_INST_DEFINE(n, sgp40_pm_action);		\
+								\
 	DEVICE_DT_INST_DEFINE(n,				\
 			      sgp40_init,			\
-			      sgp40_pm_ctrl,\
+			      PM_DEVICE_DT_INST_REF(n),	\
 			      &sgp40_data_##n,			\
 			      &sgp40_config_##n,		\
 			      POST_KERNEL,			\

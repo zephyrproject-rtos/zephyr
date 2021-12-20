@@ -83,6 +83,12 @@ config PPP_CLIENT_CLIENTSERVER
 	  This is only necessary if a ppp connection should be
 	  established with a Microsoft Windows PC.
 
+config PPP_NET_IF_NO_AUTO_START
+	bool "Disable PPP interface auto-start"
+	help
+	  This option allows user to disable autostarting of the PPP interface
+	  immediately after initialization.
+
 module = NET_PPP
 module-dep = LOG
 module-str = Log level for ppp driver

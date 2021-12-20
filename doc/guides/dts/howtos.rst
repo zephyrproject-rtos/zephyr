@@ -201,27 +201,32 @@ Set devicetree overlays
 
 Devicetree overlays are explained in :ref:`devicetree-intro`. The CMake
 variable :makevar:`DTC_OVERLAY_FILE` contains a space- or semicolon-separated
-list of overlays. If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they
-are included in that order by the C preprocessor.
+list of overlay files to use. If :makevar:`DTC_OVERLAY_FILE` specifies multiple
+files, they are included in that order by the C preprocessor.
 
-Here are some ways to set it:
+You can set :makevar:`DTC_OVERLAY_FILE` to contain exactly the files you want
+to use. Here is an :ref:`example <west-building-dtc-overlay-file>` using
+``using west build``.
 
-1. on the cmake build command line
-   (``-DDTC_OVERLAY_FILE="file1.overlay;file2.overlay"``)
-#. with the CMake ``set()`` command in the application ``CMakeLists.txt``,
-   before including zephyr's :file:`boilerplate.cmake` file
-#. create a ``boards/<BOARD>_<revision>.overlay`` file in the application
-   folder for the current board revision. This requires that the board supports
-   multiple revisions, see :ref:`porting_board_revisions`.
-   The ``boards/<BOARD>_<revision>.overlay`` file will be merged with
-   ``boards/<BOARD>.overlay`` if this file also exists.
-#. create a ``boards/<BOARD>.overlay`` file in the application
-   folder, for the current board
-#. create a ``<BOARD>.overlay`` file in the application folder
-#. create an ``app.overlay`` file in the application folder
+If you don't set :makevar:`DTC_OVERLAY_FILE`, the build system will follow
+these steps, looking for files in your application source directory to use
+as devicetree overlays:
 
-Here is an example :ref:`using west build <west-building-dtc-overlay-file>`.
-However you set the value, it is saved in the CMake cache between builds.
+#. If the file :file:`boards/<BOARD>.overlay` exists, it will be used.
+#. If the current board has :ref:`multiple revisions <porting_board_revisions>`
+   and :file:`boards/<BOARD>_<revision>.overlay` exists, it will be used.
+   This file will be used in addition to :file:`boards/<BOARD>.overlay`
+   if both exist.
+#. If one or more files have been found in the previous steps, the build system
+   stops looking and just uses those files.
+#. Otherwise, if :file:`<BOARD>.overlay` exists, it will be used, and the build
+   system will stop looking for more files.
+#. Otherwise, if :file:`app.overlay` exists, it will be used.
+
+Using :ref:`shields` will also add devicetree overlay files.
+
+The :makevar:`DTC_OVERLAY_FILE` value is stored in the CMake cache and used
+in successive builds.
 
 The :ref:`build system <build_overview>` prints all the devicetree overlays it
 finds in the configuration phase, like this:
@@ -352,17 +357,6 @@ Write device drivers using devicetree APIs
 ``struct device`` for each ``status = "okay"`` devicetree node with a
 particular :ref:`compatible <dt-important-props>` (or related set of
 compatibles) supported by the driver.
-
-.. note::
-
-  Historically, Zephyr has used Kconfig options like :kconfig:`CONFIG_I2C_0` and
-  :kconfig:`CONFIG_I2C_1` to enable driver support for individual devices of
-  some type. For example, if ``CONFIG_I2C_1=y``, the SoC's I2C peripheral
-  driver would create a ``struct device`` for "I2C bus controller number 1".
-
-  This style predates support for devicetree in Zephyr and its use is now
-  discouraged. Existing device drivers may be made "devicetree-aware"
-  in future releases.
 
 Writing a devicetree-aware driver begins by defining a :ref:`devicetree binding
 <dt-bindings>` for the devices supported by the driver. Use existing bindings

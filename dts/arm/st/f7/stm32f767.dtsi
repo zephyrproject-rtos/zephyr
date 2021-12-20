@@ -86,6 +86,7 @@
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40011c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
+			interrupts = <103 0>;
 			status = "disabled";
 			label = "SDMMC_2";
 		};

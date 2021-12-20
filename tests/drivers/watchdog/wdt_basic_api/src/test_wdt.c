@@ -91,6 +91,10 @@
 #define WDT_NODE DT_INST(0, nuvoton_npcx_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc32xx_watchdog)
 #define WDT_NODE DT_INST(0, ti_cc32xx_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_wdog)
+#define WDT_NODE DT_INST(0, nxp_imx_wdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_counter_watchdog)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
 #endif
 
 #ifdef WDT_NODE

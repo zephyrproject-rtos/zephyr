@@ -38,6 +38,9 @@ void main(void)
 	crp_test();
 	crp_test_rng();
 
+	/* Generate Certificate Signing Request using Mbed TLS */
+	crp_generate_csr();
+
 	/* Dump any queued log messages, and wait for system events. */
 	al_dump_log();
 }

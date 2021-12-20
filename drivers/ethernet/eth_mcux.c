@@ -183,8 +183,8 @@ static int ts_tx_rd, ts_tx_wr;
 static void eth_mcux_phy_enter_reset(struct eth_context *context);
 void eth_mcux_phy_stop(struct eth_context *context);
 
-static int eth_mcux_device_pm_control(const struct device *dev,
-				      enum pm_device_action action)
+static int eth_mcux_device_pm_action(const struct device *dev,
+				     enum pm_device_action action)
 {
 	struct eth_context *eth_ctx = (struct eth_context *)dev->data;
 	int ret = 0;
@@ -230,11 +230,6 @@ out:
 
 	return ret;
 }
-
-#define ETH_MCUX_PM_FUNC eth_mcux_device_pm_control
-
-#else
-#define ETH_MCUX_PM_FUNC NULL
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 #if ETH_MCUX_FIXED_LINK
@@ -1393,9 +1388,11 @@ static void eth_mcux_err_isr(const struct device *dev)
 		ETH_MCUX_PTP_FRAMEINFO(n)				\
 	};								\
 									\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n,					\
+	PM_DEVICE_DT_INST_DEFINE(n, eth_mcux_device_pm_action);		\
+									\
+	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
 			    eth_init,					\
-			    ETH_MCUX_PM_FUNC,				\
+			    PM_DEVICE_DT_INST_REF(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
 			    CONFIG_ETH_INIT_PRIORITY,			\
@@ -1456,7 +1453,8 @@ static int ptp_clock_mcux_adjust(const struct device *dev, int increment)
 
 	ARG_UNUSED(dev);
 
-	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
+	if ((increment <= (int32_t)(-NSEC_PER_SEC)) ||
+			(increment >= (int32_t)NSEC_PER_SEC)) {
 		ret = -EINVAL;
 	} else {
 		key = irq_lock();

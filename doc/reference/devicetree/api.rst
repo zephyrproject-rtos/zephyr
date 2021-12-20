@@ -46,13 +46,30 @@ Property access
 ===============
 
 The following general-purpose macros can be used to access node properties.
-There are special-purpose APIs for accessing the :ref:`devicetree-reg-property`
-and :ref:`devicetree-interrupts-property`.
+There are special-purpose APIs for accessing the :ref:`devicetree-ranges-property`,
+:ref:`devicetree-reg-property` and :ref:`devicetree-interrupts-property`.
 
 Property values can be read using these macros even if the node is disabled,
 as long as it has a matching binding.
 
 .. doxygengroup:: devicetree-generic-prop
+
+.. _devicetree-ranges-property:
+
+``ranges`` property
+===================
+
+Use these APIs instead of :ref:`devicetree-property-access` to access the
+``ranges`` property. Because this property's semantics are defined by the
+devicetree specification, these macros can be used even for nodes without
+matching bindings. However, they take on special semantics when the node's
+binding indicates it is a PCIe bus node, as defined in the
+`PCI Bus Binding to: IEEE Std 1275-1994 Standard for Boot (Initialization Configuration) Firmware`_
+
+.. _PCI Bus Binding to\: IEEE Std 1275-1994 Standard for Boot (Initialization Configuration) Firmware:
+    https://www.openfirmware.info/data/docs/bus.pci.pdf
+
+.. doxygengroup:: devicetree-ranges-prop
 
 .. _devicetree-reg-property:
 
@@ -341,8 +358,8 @@ device.
      - Sets UART device used for the Bluetooth monitor logging
    * - zephyr,bt-uart
      - Sets UART device used by Bluetooth
-   * - zephyr,can-primary
-     - Sets the primary CAN controller
+   * - zephyr,canbus
+     - Sets the default CAN controller
    * - zephyr,ccm
      - Core-Coupled Memory node on some STM32 SoCs
    * - zephyr,code-partition

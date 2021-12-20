@@ -32,6 +32,10 @@ int spi_config(const struct device *dev, uint32_t frequency,
 	uint32_t div;
 	uint32_t fmt_len;
 
+	if (operation & SPI_HALF_DUPLEX) {
+		return -ENOTSUP;
+	}
+
 	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_MASTER) {
 		return -ENOTSUP;
 	}
@@ -76,7 +80,8 @@ int spi_config(const struct device *dev, uint32_t frequency,
 	fmt_len &= SF_FMT_LEN_MASK;
 	sys_set_mask(SPI_REG(dev, REG_FMT), SF_FMT_LEN_MASK, fmt_len);
 
-	if ((operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		return -ENOTSUP;
 	}
 	/* Set single line operation */
@@ -153,8 +158,14 @@ void spi_sifive_xfer(const struct device *dev, const bool hw_cs_control)
 
 int spi_sifive_init(const struct device *dev)
 {
+	int err;
 	/* Disable SPI Flash mode */
 	sys_clear_bit(SPI_REG(dev, REG_FCTRL), SF_FCTRL_EN);
+
+	err = spi_context_cs_configure_all(&SPI_DATA(dev)->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	/* Make sure the context is unlocked */
 	spi_context_unlock_unconditionally(&SPI_DATA(dev)->ctx);
@@ -188,7 +199,6 @@ int spi_sifive_transceive(const struct device *dev,
 		 * If the user has requested manual GPIO control, ask the
 		 * context for control and disable HW control
 		 */
-		spi_context_cs_configure(&SPI_DATA(dev)->ctx);
 		sys_write32(SF_CSMODE_OFF, SPI_REG(dev, REG_CSMODE));
 	} else {
 		/*
@@ -245,6 +255,7 @@ static struct spi_driver_api spi_sifive_api = {
 	static struct spi_sifive_data spi_sifive_data_##n = { \
 		SPI_CONTEXT_INIT_LOCK(spi_sifive_data_##n, ctx), \
 		SPI_CONTEXT_INIT_SYNC(spi_sifive_data_##n, ctx), \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	}; \
 	static struct spi_sifive_cfg spi_sifive_cfg_##n = { \
 		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \

@@ -61,6 +61,11 @@ static int spi_sam_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
 		/* Slave mode is not implemented. */
 		return -ENOTSUP;
@@ -103,7 +108,6 @@ static int spi_sam_configure(const struct device *dev,
 	regs->SPI_CR = SPI_CR_SPIEN; /* Enable SPI */
 
 	data->ctx.config = config;
-	spi_context_cs_configure(&data->ctx);
 
 	return 0;
 }
@@ -429,12 +433,18 @@ static int spi_sam_release(const struct device *dev,
 
 static int spi_sam_init(const struct device *dev)
 {
+	int err;
 	const struct spi_sam_config *cfg = dev->config;
 	struct spi_sam_data *data = dev->data;
 
 	soc_pmc_peripheral_enable(cfg->periph_id);
 
 	soc_gpio_list_configure(cfg->pins, cfg->num_pins);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -466,6 +476,7 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	static struct spi_sam_data spi_sam_dev_data_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, NULL,			\
 			    &spi_sam_dev_data_##n,			\

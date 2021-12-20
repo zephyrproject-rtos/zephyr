@@ -1831,8 +1831,8 @@ static void wait_for_tx_stopped(const struct device *dev)
 }
 
 
-static int uarte_nrfx_pm_control(const struct device *dev,
-				 enum pm_device_action action)
+static int uarte_nrfx_pm_action(const struct device *dev,
+				enum pm_device_action action)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 #if defined(CONFIG_UART_ASYNC_API) || defined(UARTE_INTERRUPT_DRIVEN)
@@ -1997,9 +1997,12 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 			dev,						       \
 			IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN));     \
 	}								       \
+									       \
+	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action);		       \
+									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
 		      uarte_##idx##_init,				       \
-		      uarte_nrfx_pm_control,				       \
+		      PM_DEVICE_DT_REF(UARTE(idx)),			       \
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
 		      PRE_KERNEL_1,					       \

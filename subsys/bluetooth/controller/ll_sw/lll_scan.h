@@ -77,6 +77,13 @@ struct lll_scan_aux {
 #endif /* CONFIG_BT_CENTRAL */
 };
 
+
+/* Define to check if filter is enabled and in addition if it is Extended Scan
+ * Filtering.
+ */
+#define SCAN_FP_FILTER BIT(0)
+#define SCAN_FP_EXT    BIT(1)
+
 int lll_scan_init(void);
 int lll_scan_reset(void);
 

@@ -14,6 +14,7 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/iso.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_hci_raw

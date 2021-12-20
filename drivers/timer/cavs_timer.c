@@ -182,6 +182,11 @@ uint32_t sys_clock_cycle_get_32(void)
 	return count32();
 }
 
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return count();
+}
+
 /* Runs on secondary cores */
 void smp_timer_init(void)
 {

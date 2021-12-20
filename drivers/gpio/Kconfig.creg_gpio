@@ -6,18 +6,8 @@
 # Workaround for not being able to have commas in macro arguments
 DT_COMPAT_SNPS_CREG_GPIO := snps,creg-gpio
 
-menuconfig GPIO_SNPS_CREG
+config GPIO_SNPS_CREG
 	bool "SNPS CREG GPIO"
 	default $(dt_compat_enabled,$(DT_COMPAT_SNPS_CREG_GPIO))
 	help
 	  Enable driver for SNPS CREG GPIO.
-
-if GPIO_SNPS_CREG
-
-config GPIO_SNPS_CREG_INIT_PRIORITY
-	int "Init priority"
-	default 70
-	help
-	  Device driver initialization priority.
-
-endif # GPIO_SNPS_CREG
