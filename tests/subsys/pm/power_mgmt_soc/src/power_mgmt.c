@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
-#include <zephyr.h>
+#include <kernel.h>
 #include <ztest.h>
-#include <device.h>
-#include <soc.h>
 #include <pm/pm.h>
 #include <logging/log.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
