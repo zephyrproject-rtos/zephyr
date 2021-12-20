@@ -961,6 +961,8 @@ static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 		return err;
 	}
 
+	chan->required_sec_level = iso_server->sec_level;
+
 	bt_iso_chan_add(iso, chan);
 	bt_iso_chan_set_state(chan, BT_ISO_STATE_CONNECTING);
 
@@ -1012,12 +1014,26 @@ static int hci_le_accept_cis(uint16_t handle)
 	return 0;
 }
 
+static uint8_t iso_server_check_security(struct bt_conn *conn)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN_DISABLE_SECURITY)) {
+		return BT_HCI_ERR_SUCCESS;
+	}
+
+	if (conn->sec_level >= iso_server->sec_level) {
+		return BT_HCI_ERR_SUCCESS;
+	}
+
+	return BT_HCI_ERR_INSUFFICIENT_SECURITY;
+}
+
 void hci_le_cis_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_cis_req *evt = (void *)buf->data;
 	uint16_t acl_handle = sys_le16_to_cpu(evt->acl_handle);
 	uint16_t cis_handle = sys_le16_to_cpu(evt->cis_handle);
 	struct bt_conn *acl, *iso;
+	uint8_t sec_err;
 	int err;
 
 	BT_DBG("acl_handle %u cis_handle %u cig_id %u cis %u",
@@ -1037,6 +1053,16 @@ void hci_le_cis_req(struct net_buf *buf)
 	if (!acl) {
 		BT_ERR("Invalid ACL handle %u", acl_handle);
 		hci_le_reject_cis(cis_handle, BT_HCI_ERR_UNKNOWN_CONN_ID);
+		return;
+	}
+
+	sec_err = iso_server_check_security(acl);
+	if (sec_err != BT_HCI_ERR_SUCCESS) {
+		BT_DBG("Insufficient security %u", sec_err);
+		err = hci_le_reject_cis(cis_handle, sec_err);
+		if (err != 0) {
+			BT_ERR("Failed to reject CIS");
+		}
 		return;
 	}
 
