@@ -32,14 +32,9 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 
 		if ((ticks == K_TICKS_FOREVER) ||
 		    (ticks >= (min_residency + exit_latency))) {
-			LOG_DBG("Selected power state %d "
-				"(ticks: %d, min_residency: %u) to cpu %d",
-				state->state, ticks, state->min_residency_us,
-				cpu);
 			return state;
 		}
 	}
 
-	LOG_DBG("No suitable power state found for cpu: %d!", cpu);
 	return NULL;
 }
