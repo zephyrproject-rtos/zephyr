@@ -5,12 +5,11 @@
  */
 #include <ztest.h>
 #include <drivers/timer/nrf_rtc_timer.h>
-#include <hal/nrf_rtc.h>
 #include <hal/nrf_timer.h>
 #include <irq.h>
 
 struct test_data {
-	uint64_t target_time;
+	uint32_t cc_val;
 	uint32_t window;
 	uint32_t delay;
 	int err;
@@ -54,33 +53,18 @@ static void stop_zli_timer0(void)
 	nrf_timer_task_trigger(NRF_TIMER0, NRF_TIMER_TASK_STOP);
 }
 
-static void inject_overflow(void)
-{
-	/* Bump overflow counter by 100. */
-	uint32_t overflow_count = 100;
-
-	while (overflow_count--) {
-		nrf_rtc_task_trigger(NRF_RTC1, NRF_RTC_TASK_TRIGGER_OVERFLOW);
-		/* Wait for RTC counter to reach overflow from 0xFFFFF0 and
-		 * get handled.
-		 */
-		k_busy_wait(1000);
-	}
-}
-
-static void timeout_handler(int32_t id, uint64_t expire_time, void *user_data)
+static void timeout_handler(int32_t id, uint32_t cc_value, void *user_data)
 {
 	struct test_data *data = user_data;
-	uint64_t now = z_nrf_rtc_timer_read();
-	uint64_t diff = (now - expire_time);
+	uint32_t now = z_nrf_rtc_timer_read();
+	uint32_t diff = (now - cc_value) & 0x00FFFFFF;
 
 	zassert_true(diff <= data->delay,
-		"Handler called in wrong time (%llu), set time: %llu, "
-		"got time: %llu",
-		now, data->target_time, expire_time);
+		"Handler called in wrong time (%d), set cc: %d, got cc: %d",
+		now, data->cc_val, cc_value);
 
-	if ((expire_time >= data->target_time) &&
-	    (expire_time <= (data->target_time + data->window))) {
+	if ((cc_value >= data->cc_val) &&
+	    (cc_value <= (data->cc_val + data->window))) {
 		data->err = 0;
 	}
 	timeout_handler_cnt++;
@@ -88,15 +72,15 @@ static void timeout_handler(int32_t id, uint64_t expire_time, void *user_data)
 
 static void test_timeout(int32_t chan, k_timeout_t t, bool ext_window)
 {
-	int64_t ticks = z_nrf_rtc_timer_get_ticks(t);
+	int32_t cc_val = z_nrf_rtc_timer_get_ticks(t);
 	struct test_data test_data = {
-		.target_time = ticks,
+		.cc_val = cc_val,
 		.window = ext_window ? 100 : (Z_TICK_ABS(t.ticks) ? 0 : 32),
 		.delay = ext_window ? 100 : 2,
 		.err = -EINVAL
 	};
 
-	z_nrf_rtc_timer_set(chan, (uint64_t)ticks, timeout_handler, &test_data);
+	z_nrf_rtc_timer_compare_set(chan, cc_val, timeout_handler, &test_data);
 
 	/* wait additional arbitrary time. */
 	k_busy_wait(1000);
@@ -146,10 +130,10 @@ static void test_z_nrf_rtc_timer_compare_evt_address_get(void)
 
 static void test_int_disable_enabled(void)
 {
-	uint64_t now = z_nrf_rtc_timer_read();
-	uint64_t t = 1000;
+	uint32_t now = z_nrf_rtc_timer_read();
+	uint32_t t = 1000;
 	struct test_data data = {
-		.target_time = now + t,
+		.cc_val = now + t,
 		.window = 1000,
 		.delay = 2000,
 		.err = -EINVAL
@@ -160,7 +144,7 @@ static void test_int_disable_enabled(void)
 	chan = z_nrf_rtc_timer_chan_alloc();
 	zassert_true(chan >= 0, "Failed to allocate RTC channel.");
 
-	z_nrf_rtc_timer_set(chan, data.target_time, timeout_handler, &data);
+	z_nrf_rtc_timer_compare_set(chan, data.cc_val, timeout_handler, &data);
 
 	zassert_equal(data.err, -EINVAL, "Unexpected err: %d", data.err);
 	key = z_nrf_rtc_timer_compare_int_lock(chan);
@@ -179,7 +163,7 @@ static void test_int_disable_enabled(void)
 static void test_get_ticks(void)
 {
 	k_timeout_t t = K_MSEC(1);
-	uint64_t exp_ticks = z_nrf_rtc_timer_read() + t.ticks;
+	uint32_t exp_ticks = z_nrf_rtc_timer_read() + t.ticks;
 	int ticks;
 
 	/* Relative 1ms from now timeout converted to RTC */
@@ -202,21 +186,20 @@ static void test_get_ticks(void)
 		     "Unexpected result %d (expected: %d)", ticks, exp_ticks);
 
 	/* too far in the future */
-	t = Z_TIMEOUT_TICKS(sys_clock_tick_get() + 0x01000001);
+	t = Z_TIMEOUT_TICKS(sys_clock_tick_get() + 0x00800001);
 	ticks = z_nrf_rtc_timer_get_ticks(t);
 	zassert_equal(ticks, -EINVAL, "Unexpected ticks: %d", ticks);
 }
 
 
-static void sched_handler(int32_t id, uint64_t expire_time, void *user_data)
+static void sched_handler(int32_t id, uint32_t cc_val, void *user_data)
 {
 	int64_t now = sys_clock_tick_get();
 	int rtc_ticks_now =
 	     z_nrf_rtc_timer_get_ticks(Z_TIMEOUT_TICKS(Z_TICK_ABS(now)));
 	uint64_t *evt_uptime_us = user_data;
 
-	*evt_uptime_us =
-	    k_ticks_to_us_floor64(now - (rtc_ticks_now - expire_time));
+	*evt_uptime_us = k_ticks_to_us_floor64(now - (rtc_ticks_now - cc_val));
 }
 
 static void test_absolute_scheduling(void)
@@ -225,7 +208,7 @@ static void test_absolute_scheduling(void)
 	int64_t now_us = k_ticks_to_us_floor64(sys_clock_tick_get());
 	uint64_t target_us = now_us + 5678;
 	uint64_t evt_uptime_us;
-	uint64_t rtc_ticks;
+	int rtc_ticks;
 	int32_t chan;
 
 	chan = z_nrf_rtc_timer_chan_alloc();
@@ -233,9 +216,10 @@ static void test_absolute_scheduling(void)
 
 	/* schedule event in 5678us from now */
 	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(K_USEC(target_us).ticks));
-	rtc_ticks = (uint64_t)z_nrf_rtc_timer_get_ticks(t);
+	rtc_ticks = z_nrf_rtc_timer_get_ticks(t);
 
-	z_nrf_rtc_timer_set(chan, rtc_ticks, sched_handler, &evt_uptime_us);
+	z_nrf_rtc_timer_compare_set(chan, rtc_ticks,
+				  sched_handler, &evt_uptime_us);
 
 	k_busy_wait(5678);
 
@@ -246,9 +230,10 @@ static void test_absolute_scheduling(void)
 	/* schedule event now. */
 	now_us = k_ticks_to_us_floor64(sys_clock_tick_get());
 	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(K_USEC(now_us).ticks));
-	rtc_ticks = (uint64_t)z_nrf_rtc_timer_get_ticks(t);
+	rtc_ticks = z_nrf_rtc_timer_get_ticks(t);
 
-	z_nrf_rtc_timer_set(chan, rtc_ticks, sched_handler, &evt_uptime_us);
+	z_nrf_rtc_timer_compare_set(chan, rtc_ticks,
+				  sched_handler, &evt_uptime_us);
 
 	k_busy_wait(200);
 
@@ -304,7 +289,7 @@ static void test_stress(void)
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
-static void test_resetting_cc(void)
+static void test_reseting_cc(void)
 {
 	uint32_t start = k_uptime_get_32();
 	uint32_t test_time = 1000;
@@ -317,18 +302,19 @@ static void test_resetting_cc(void)
 	timeout_handler_cnt = 0;
 
 	do {
-		uint64_t now = z_nrf_rtc_timer_read();
+		uint32_t now = z_nrf_rtc_timer_read();
 		struct test_data test_data = {
-			.target_time = now + 5,
+			.cc_val = now + 5,
 			.window = 0,
 			.delay = 0,
 			.err = -EINVAL
 		};
 
-		/* Set timer but expect that it will never expire because
+		/* Set compare but expect that it will never expire because
 		 * it will be later on reset.
 		 */
-		z_nrf_rtc_timer_set(chan, now + 2, timeout_handler, &test_data);
+		z_nrf_rtc_timer_compare_set(chan, now + 2,
+					    timeout_handler, &test_data);
 
 		/* Arbitrary variable delay to reset CC before expiring first
 		 * request but very close.
@@ -336,7 +322,8 @@ static void test_resetting_cc(void)
 		k_busy_wait(i);
 		i = (i + 1) % 20;
 
-		z_nrf_rtc_timer_set(chan, now + 5, timeout_handler, &test_data);
+		z_nrf_rtc_timer_compare_set(chan, now + 5,
+					    timeout_handler, &test_data);
 		k_busy_wait((5 + 1)*31);
 		cnt++;
 	} while ((k_uptime_get_32() - start) < test_time);
@@ -344,86 +331,6 @@ static void test_resetting_cc(void)
 	zassert_equal(timeout_handler_cnt, cnt,
 		      "Unexpected timeout count %d (exp: %d)",
 		      timeout_handler_cnt, cnt);
-	z_nrf_rtc_timer_chan_free(chan);
-}
-
-static void overflow_sched_handler(int32_t id, uint64_t expire_time,
-				   void *user_data)
-{
-	uint64_t now = z_nrf_rtc_timer_read();
-	uint64_t *evt_uptime = user_data;
-
-	*evt_uptime = now - expire_time;
-}
-
-/* This test is to be executed as the last, due to interference in overflow
- * counter, resulting in nRF RTC timer ticks and kernel ticks desynchronization.
- */
-static void test_overflow(void)
-{
-	PRINT("RTC ticks before overflow injection: %u\r\n",
-	      (uint32_t)z_nrf_rtc_timer_read());
-
-	inject_overflow();
-
-	PRINT("RTC ticks after overflow injection: %u\r\n",
-	      (uint32_t)z_nrf_rtc_timer_read());
-
-	uint64_t now;
-	uint64_t target_time;
-	uint64_t evt_uptime;
-	int32_t chan;
-
-	chan = z_nrf_rtc_timer_chan_alloc();
-	zassert_true(chan >= 0, "Failed to allocate RTC channel.");
-
-	/* Schedule event in 5 ticks from now. */
-	evt_uptime = UINT64_MAX;
-	now = z_nrf_rtc_timer_read();
-	target_time = now + 5;
-	z_nrf_rtc_timer_set(chan, target_time, overflow_sched_handler,
-			    &evt_uptime);
-
-	k_busy_wait(k_ticks_to_us_floor64(5 + 1));
-
-	PRINT("RTC event scheduled at %llu ticks for %llu ticks,"
-	      "event occurred at %llu ticks (uptime)\n",
-	      now, target_time, evt_uptime);
-	zassert_not_equal(UINT64_MAX, evt_uptime,
-			  "Expired timer shall overwrite evt_uptime");
-
-	/* Schedule event now. */
-	evt_uptime = UINT64_MAX;
-	now = z_nrf_rtc_timer_read();
-	target_time = now;
-
-	z_nrf_rtc_timer_set(chan, target_time, overflow_sched_handler,
-			    &evt_uptime);
-
-	k_busy_wait(200);
-
-	zassert_not_equal(UINT64_MAX, evt_uptime,
-			  "Expired timer shall overwrite evt_uptime");
-	PRINT("RTC event scheduled at %llu ticks for %llu ticks,"
-	      "event occurred at %llu ticks (uptime)\n",
-	      now, target_time, evt_uptime);
-
-	/* Schedule event far in the past. */
-	evt_uptime = UINT64_MAX;
-	now = z_nrf_rtc_timer_read();
-	target_time = now - 2 * NRF_RTC_TIMER_MAX_SCHEDULE_SPAN;
-
-	z_nrf_rtc_timer_set(chan, target_time, overflow_sched_handler,
-			    &evt_uptime);
-
-	k_busy_wait(200);
-
-	zassert_not_equal(UINT64_MAX, evt_uptime,
-			  "Expired timer shall overwrite evt_uptime");
-	PRINT("RTC event scheduled at %llu ticks for %llu ticks,"
-	      "event occurred at %llu ticks (uptime)\n",
-	      now, target_time, evt_uptime);
-
 	z_nrf_rtc_timer_chan_free(chan);
 }
 
@@ -439,8 +346,7 @@ void test_main(void)
 		ztest_unit_test(test_absolute_scheduling),
 		ztest_unit_test(test_alloc_free),
 		ztest_unit_test(test_stress),
-		ztest_unit_test(test_resetting_cc),
-		ztest_unit_test(test_overflow)
+		ztest_unit_test(test_reseting_cc)
 			 );
 	ztest_run_test_suite(test_nrf_rtc_timer);
 }
