@@ -1,0 +1,9 @@
+# Leuze ODSL8 distance sensor configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ODSL8
+	bool "Leuze ODSL8 distance sensor"
+	help
+	  Enable Leuze ODSL8 distance sensor
+
