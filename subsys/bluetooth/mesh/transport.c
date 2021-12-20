@@ -128,10 +128,17 @@ static struct seg_rx {
 				 ctl:1,
 				 in_use:1,
 				 obo:1;
-	uint8_t                     ttl;
+	uint32_t                    ttl: 8,
+				 szmic:1,
+				 new_key:1,
+				 friend_cred:1,
+				 net_if:2,
+				 recv_rssi:8,
+				 _rfu:11;
+
 	uint32_t                    block;
 	uint32_t                    last;
-	struct k_work_delayable  ack;
+	struct k_work_delayable  work;
 } seg_rx[CONFIG_BT_MESH_RX_SEG_MSG_COUNT];
 
 K_MEM_SLAB_DEFINE(segs, BT_MESH_APP_SEG_SDU_MAX, CONFIG_BT_MESH_SEG_BUFS, 4);
@@ -1095,7 +1102,7 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 	/* If this fails, the handler will exit early on the next execution, as
 	 * it checks rx->in_use.
 	 */
-	(void)k_work_cancel_delayable(&rx->ack);
+	(void)k_work_cancel_delayable(&rx->work);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && rx->obo &&
 	    rx->block != BLOCK_COMPLETE(rx->seg_n)) {
@@ -1127,18 +1134,52 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 	}
 }
 
-static void seg_ack(struct k_work *work)
+static void seg_handler(struct k_work *work)
 {
-	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
+	NET_BUF_SIMPLE_DEFINE(seg_buf, BT_MESH_RX_SDU_MAX);
+	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, work);
 	int32_t timeout;
 
-	if (!rx->in_use || rx->block == BLOCK_COMPLETE(rx->seg_n)) {
+	if (!rx->in_use) {
 		/* Cancellation of this timer may have failed. If it fails as
 		 * part of seg_reset, in_use will be false.
 		 * If it fails as part of the processing of a fully received
 		 * SDU, the ack is already being sent from the receive handler,
 		 * and the timer based ack sending can be ignored.
 		 */
+
+		return;
+	} else if (rx->block == BLOCK_COMPLETE(rx->seg_n)) {
+		struct net_buf_simple sdu;
+		struct bt_mesh_net_rx net_rx = {
+			.sub = rx->sub,
+			.ctx = {
+				.net_idx = rx->sub->net_idx,
+				.addr = rx->src,
+				.recv_dst = rx->dst,
+				.recv_ttl = rx->ttl,
+				.recv_rssi = rx->recv_rssi,
+			},
+			.net_if = rx->net_if,
+			.old_iv = (uint32_t)(rx->seq_auth >> 24) != bt_mesh.iv_index,
+			.new_key = rx->new_key,
+			.friend_cred = rx->friend_cred,
+			.seq = rx->seq_auth & BIT_MASK(24),
+			.local_match = !(rx->obo),
+			.friend_match = rx->obo,
+		};
+
+		/* Decrypting in place to avoid creating two assembly buffers.
+		 * We'll reassemble the buffer from the segments before each
+		 * decryption attempt.
+		 */
+		net_buf_simple_init(&seg_buf, 0);
+		net_buf_simple_init_with_data(
+			&sdu, seg_buf.data, rx->len - APP_MIC_LEN(rx->szmic));
+
+		(void)sdu_recv(&net_rx, rx->hdr, rx->szmic, &seg_buf, &sdu, rx);
+
+		seg_rx_reset(rx, false);
 		return;
 	}
 
@@ -1159,7 +1200,7 @@ static void seg_ack(struct k_work *work)
 		 rx->block, rx->obo);
 
 	timeout = ack_timeout(rx);
-	k_work_schedule(&rx->ack, K_MSEC(timeout));
+	k_work_schedule(&rx->work, K_MSEC(timeout));
 }
 
 static inline bool sdu_len_is_ok(bool ctl, uint8_t seg_n)
@@ -1465,7 +1506,7 @@ found_rx:
 	if (!bt_mesh_lpn_established()) {
 		int32_t timeout = ack_timeout(rx);
 		/* Should only start ack timer if it isn't running already: */
-		k_work_schedule(&rx->ack, K_MSEC(timeout));
+		k_work_schedule(&rx->work, K_MSEC(timeout));
 	}
 
 	/* Allocated segment here */
@@ -1504,7 +1545,7 @@ found_rx:
 	/* If this fails, the work handler will either exit early because the
 	 * block is fully received, or rx->in_use is false.
 	 */
-	(void)k_work_cancel_delayable(&rx->ack);
+	(void)k_work_cancel_delayable(&rx->work);
 	send_ack(net_rx->sub, net_rx->ctx.recv_dst, net_rx->ctx.addr,
 		 net_rx->ctx.send_ttl, seq_auth, rx->block, rx->obo);
 
@@ -1516,18 +1557,14 @@ found_rx:
 		BT_ERR("Too short SDU + MIC");
 		err = -EINVAL;
 	} else {
-		NET_BUF_SIMPLE_DEFINE_STATIC(seg_buf, BT_MESH_RX_SDU_MAX);
-		struct net_buf_simple sdu;
+		rx->szmic = ASZMIC(hdr);
+		rx->new_key = net_rx->new_key;
+		rx->recv_rssi = net_rx->ctx.recv_rssi;
+		rx->friend_cred = net_rx->friend_cred;
+		rx->net_if = net_rx->net_if;
 
-		/* Decrypting in place to avoid creating two assembly buffers.
-		 * We'll reassemble the buffer from the segments before each
-		 * decryption attempt.
-		 */
-		net_buf_simple_init(&seg_buf, 0);
-		net_buf_simple_init_with_data(
-			&sdu, seg_buf.data, rx->len - APP_MIC_LEN(ASZMIC(hdr)));
-
-		err = sdu_recv(net_rx, *hdr, ASZMIC(hdr), &seg_buf, &sdu, rx);
+		k_work_submit(&rx->work.work);
+		return 0;
 	}
 
 	seg_rx_reset(rx, false);
@@ -1664,7 +1701,7 @@ void bt_mesh_trans_init(void)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
-		k_work_init_delayable(&seg_rx[i].ack, seg_ack);
+		k_work_init_delayable(&seg_rx[i].work, seg_handler);
 	}
 }
 
