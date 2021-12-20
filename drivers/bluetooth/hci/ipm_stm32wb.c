@@ -181,8 +181,7 @@ static void bt_ipm_rx_thread(void)
 			default:
 				mev = (void *)&hcievt->evtserial.evt.payload;
 				if (hcievt->evtserial.evt.evtcode == BT_HCI_EVT_LE_META_EVENT &&
-				    (mev->subevent == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
-				     mev->subevent == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+				    (mev->subevent == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
 					discardable = true;
 					timeout = K_NO_WAIT;
 				}
