@@ -24,6 +24,10 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #define IT8XXX2_ADC_VREF_VOL 3000
 /* ADC channels disabled */
 #define IT8XXX2_ADC_CHANNEL_DISABLED 0x1F
+/* ADC sample time delay (Unit:us) */
+#define IT8XXX2_ADC_SAMPLE_TIME_US 200
+/* Wait next clock rising (Clock source 32.768K) */
+#define IT8XXX2_WAIT_NEXT_CLOCK_TIME_US 31
 
 /* List of ADC channels. */
 enum chip_adc_channel {
@@ -40,6 +44,7 @@ enum chip_adc_channel {
 
 struct adc_it8xxx2_data {
 	struct adc_context ctx;
+	struct k_sem sem;
 	/* Channel ID */
 	uint32_t ch;
 	/* Save ADC result to the buffer. */
@@ -100,20 +105,6 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static void adc_enable_measurement(uint32_t ch)
-{
-	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
-
-	/* Select and enable a voltage channel input for measurement */
-	adc_regs->VCH0CTL = (IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_INTDVEN) + ch;
-
-	/* Enable adc interrupt */
-	irq_enable(DT_INST_IRQN(0));
-
-	/* ADC module enable */
-	adc_regs->ADCCFG |= IT8XXX2_ADC_ADCEN;
-}
-
 static void adc_disable_measurement(void)
 {
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
@@ -129,6 +120,89 @@ static void adc_disable_measurement(void)
 
 	/* disable adc interrupt */
 	irq_disable(DT_INST_IRQN(0));
+}
+
+/* Get result for each ADC selected channel. */
+static void adc_it8xxx2_get_sample(const struct device *dev)
+{
+	struct adc_it8xxx2_data *data = dev->data;
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+
+	if (adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL) {
+		/* Read adc raw data of msb and lsb */
+		*data->buffer++ = adc_regs->VCH0DATM << 8 | adc_regs->VCH0DATL;
+	} else {
+		LOG_WRN("ADC failed to read (regs=%x, ch=%d)",
+			adc_regs->ADCDVSTS, data->ch);
+	}
+
+	adc_disable_measurement();
+}
+
+static void adc_poll_valid_data(void)
+{
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	int valid = 0;
+
+	/*
+	 * If the polling waits for a valid data longer than
+	 * the sampling time limit, the program will return.
+	 */
+	for (int i = 0U; i < (IT8XXX2_ADC_SAMPLE_TIME_US /
+	     IT8XXX2_WAIT_NEXT_CLOCK_TIME_US); i++) {
+		/* Wait next clock time (1/32.768K~=30.5us) */
+		k_busy_wait(IT8XXX2_WAIT_NEXT_CLOCK_TIME_US);
+
+		if (adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL) {
+			valid = 1;
+			break;
+		}
+	}
+
+	if (valid) {
+		adc_it8xxx2_get_sample(dev);
+	} else {
+		LOG_ERR("Sampling timeout.");
+		return;
+	}
+}
+
+static void adc_enable_measurement(uint32_t ch)
+{
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	struct adc_it8xxx2_data *data = dev->data;
+
+	/* Select and enable a voltage channel input for measurement */
+	adc_regs->VCH0CTL = (IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_INTDVEN) + ch;
+
+	/* ADC module enable */
+	adc_regs->ADCCFG |= IT8XXX2_ADC_ADCEN;
+
+	/*
+	 * In the sampling process, it is possible to read multiple channels
+	 * at a time. The ADC sampling of it8xxx2 needs to read each channel
+	 * in sequence, so it needs to wait for an interrupt to read data in
+	 * the loop through k_sem_take(). But k_timer_start() is used in the
+	 * interval test in test_adc.c, so we need to use polling wait instead
+	 * of k_sem_take() to wait, otherwise it will cause kernel panic.
+	 *
+	 * k_is_in_isr() can determine whether to use polling or k_sem_take()
+	 * at present.
+	 */
+	if (k_is_in_isr()) {
+		/* polling wait for a valid data */
+		adc_poll_valid_data();
+	} else {
+		/* Enable adc interrupt */
+		irq_enable(DT_INST_IRQN(0));
+		/* Wait for an interrupt to read data valid. */
+		if (k_sem_take(&data->sem, K_MSEC(1))) {
+			LOG_ERR("ADC interrupt is not fired.");
+			return;
+		}
+	}
 }
 
 static int check_buffer_size(const struct adc_sequence *sequence,
@@ -167,6 +241,8 @@ static int adc_it8xxx2_start_read(const struct device *dev,
 	}
 	LOG_DBG("Configure resolution=%d", sequence->resolution);
 
+	data->buffer = sequence->buffer;
+
 	adc_context_start_read(&data->ctx, sequence);
 
 	return adc_context_wait_for_completion(&data->ctx);
@@ -176,40 +252,59 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_it8xxx2_data *data =
 		CONTAINER_OF(ctx, struct adc_it8xxx2_data, ctx);
+	uint32_t channels = ctx->sequence.channels;
+	uint8_t channel_count = 0;
 
 	data->repeat_buffer = data->buffer;
 
-	adc_enable_measurement(data->ch);
+	/*
+	 * The ADC sampling of it8xxx2 needs to read each channel
+	 * in sequence.
+	 */
+	while (channels) {
+		data->ch = find_lsb_set(channels) - 1;
+		channels &= ~BIT(data->ch);
+
+		adc_enable_measurement(data->ch);
+
+		channel_count++;
+	}
+
+	if (check_buffer_size(&ctx->sequence, channel_count)) {
+		return;
+	}
+
+	adc_context_on_sampling_done(&data->ctx, DEVICE_DT_INST_GET(0));
 }
 
 static int adc_it8xxx2_read(const struct device *dev,
 			    const struct adc_sequence *sequence)
 {
 	struct adc_it8xxx2_data *data = dev->data;
-	uint32_t channel_mask = sequence->channels;
-	uint8_t channel_count = 0;
-	int err = 0;
+	int err;
 
-	data->buffer = sequence->buffer;
-
-	while (channel_mask) {
-		adc_context_lock(&data->ctx, false, NULL);
-		data->ch = find_lsb_set(channel_mask) - 1;
-
-		err = adc_it8xxx2_start_read(dev, sequence);
-		if (err) {
-			return err;
-		}
-
-		channel_mask &= ~BIT(data->ch);
-		channel_count++;
-		adc_context_release(&data->ctx, err);
-	}
-
-	err = check_buffer_size(sequence, channel_count);
+	adc_context_lock(&data->ctx, false, NULL);
+	err = adc_it8xxx2_start_read(dev, sequence);
+	adc_context_release(&data->ctx, err);
 
 	return err;
 }
+
+#ifdef CONFIG_ADC_ASYNC
+static int adc_it8xxx2_read_async(const struct device *dev,
+				  const struct adc_sequence *sequence,
+				  struct k_poll_signal *async)
+{
+	struct adc_it8xxx2_data *data = dev->data;
+	int err;
+
+	adc_context_lock(&data->ctx, true, async);
+	err = adc_it8xxx2_start_read(dev, sequence);
+	adc_context_release(&data->ctx, err);
+
+	return err;
+}
+#endif /* CONFIG_ADC_ASYNC */
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 					      bool repeat_sampling)
@@ -222,28 +317,6 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-/* Get result for each ADC selected channel. */
-static void adc_it8xxx2_get_sample(const struct device *dev)
-{
-	struct adc_it8xxx2_data *data = dev->data;
-	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
-	bool valid = false;
-
-	if (adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL) {
-		/* Read adc raw data of msb and lsb */
-		*data->buffer++ = adc_regs->VCH0DATM << 8 | adc_regs->VCH0DATL;
-
-		valid = 1;
-	}
-
-	if (!valid) {
-		LOG_WRN("ADC failed to read (regs=%x, ch=%d)",
-			adc_regs->ADCDVSTS, data->ch);
-	}
-
-	adc_disable_measurement();
-}
-
 static void adc_it8xxx2_isr(const void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -253,12 +326,15 @@ static void adc_it8xxx2_isr(const void *arg)
 
 	adc_it8xxx2_get_sample(dev);
 
-	adc_context_on_sampling_done(&data->ctx, dev);
+	k_sem_give(&data->sem);
 }
 
 static const struct adc_driver_api api_it8xxx2_driver_api = {
 	.channel_setup = adc_it8xxx2_channel_setup,
 	.read = adc_it8xxx2_read,
+#ifdef CONFIG_ADC_ASYNC
+	.read_async = adc_it8xxx2_read_async,
+#endif
 	.ref_internal = IT8XXX2_ADC_VREF_VOL,
 };
 
@@ -313,6 +389,7 @@ static int adc_it8xxx2_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    adc_it8xxx2_isr, DEVICE_DT_INST_GET(0), 0);
 
+	k_sem_init(&data->sem, 0, 1);
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
