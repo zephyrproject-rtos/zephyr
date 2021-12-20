@@ -65,6 +65,7 @@
 		refresh-frequency = <50>;
 		timer = <&timer4>;
 		pwm = <&pwm0>;
+		pixel-group-size = <4>;
 	};
 
 	edge_connector: connector {
