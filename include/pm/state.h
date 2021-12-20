@@ -310,6 +310,17 @@ struct pm_state_info {
 			     Z_PM_STATE_FROM_DT_CPU, node_id)		       \
 	}
 
+
+/**
+ * Obtain information about all supported states by a CPU.
+ *
+ * @param cpu CPU index.
+ * @param states Where to store the list of supported states.
+ *
+ * @return Number of supported states.
+ */
+uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
+
 /**
  * @}
  */
