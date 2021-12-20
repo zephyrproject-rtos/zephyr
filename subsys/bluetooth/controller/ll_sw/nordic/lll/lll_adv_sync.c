@@ -217,6 +217,26 @@ static int prepare_cb(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1, ticks_at_start, remainder);
 
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	/* capture end of AUX_SYNC_IND/AUX_CHAIN_IND PDU, used for calculating
+	 * next PDU timestamp.
+	 *
+	 * In Periodic Advertising without chaining there is no need for LLL to
+	 * get the end time from radio, hence there is no call to
+	 * radio_tmr_end_capture() to capture the radio end time.
+	 *
+	 * With chaining the sw_switch used PPI/DPPI for back to back Tx, no
+	 * radio end time capture is needed there either.
+	 *
+	 * For PA LNA (and ISR profiling), the radio end time is required to
+	 * setup the GPIOTE using radio_gpio_pa_lna_enable which needs call to
+	 * radio_tmr_tifs_base_get(), both PA/LNA and ISR profiling call
+	 * radio_tmr_end_get().
+	 */
+	radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
 
@@ -361,12 +381,15 @@ static void isr_tx(void *param)
 		lll_prof_cputime_capture();
 	}
 
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	/* capture end of AUX_SYNC_IND/AUX_CHAIN_IND PDU, used for calculating
 	 * next PDU timestamp.
 	 */
 	radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
-#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		/* PA/LNA enable is overwriting packet end used in ISR
 		 * profiling, hence back it up for later use.
@@ -374,13 +397,13 @@ static void isr_tx(void *param)
 		lll_prof_radio_end_backup();
 	}
 
-	radio_gpio_lna_setup();
+	radio_gpio_pa_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 				 EVENT_SYNC_B2B_MAFS_US -
 				 (EVENT_CLOCK_JITTER_US << 1) + cte_len_us -
 				 radio_tx_chain_delay_get(lll->phy_s, 0) -
-				 HAL_RADIO_GPIO_LNA_OFFSET);
-#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
+				 HAL_RADIO_GPIO_PA_OFFSET);
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
