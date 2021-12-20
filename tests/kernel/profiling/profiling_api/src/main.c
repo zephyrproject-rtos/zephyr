@@ -23,7 +23,7 @@ static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
 }
 
 /* Our PM policy handler */
-struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	static bool test_flag;
 
@@ -37,7 +37,7 @@ struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 		test_flag = true;
 	}
 
-	return (struct pm_state_info){PM_STATE_ACTIVE, 0, 0};
+	return NULL;
 }
 
 /*work handler*/

@@ -60,9 +60,9 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 	irq_unlock(0);
 }
 
-struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
 {
-	struct pm_state_info info = {};
+	static struct pm_state_info info = {};
 	int32_t msecs = k_ticks_to_ms_floor64(ticks);
 
 	if (msecs < ACTIVE_MSEC) {
@@ -81,7 +81,7 @@ struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
 
 	state_testing[_current_cpu->id] = info.state;
 
-	return info;
+	return &info;
 }
 
 /*

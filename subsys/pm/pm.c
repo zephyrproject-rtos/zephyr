@@ -194,7 +194,12 @@ bool pm_system_suspend(int32_t ticks)
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
 
 	if (!atomic_test_and_set_bit(z_power_states_forced, id)) {
-		z_power_states[id] = pm_policy_next_state(id, ticks);
+		const struct pm_state_info *info;
+
+		info = pm_policy_next_state(id, ticks);
+		if (info != NULL) {
+			z_power_states[id] = *info;
+		}
 	}
 
 	if (z_power_states[id].state == PM_STATE_ACTIVE) {

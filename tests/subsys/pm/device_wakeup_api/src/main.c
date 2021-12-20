@@ -57,16 +57,20 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 	irq_unlock(0);
 }
 
-struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
+	static const struct pm_state_info state = {
+		.state = PM_STATE_SUSPEND_TO_RAM
+	};
+
 	ARG_UNUSED(cpu);
 
 	while (sleep_count < 3) {
 		sleep_count++;
-		return (struct pm_state_info){PM_STATE_SUSPEND_TO_RAM, 0, 0, 0};
+		return &state;
 	}
 
-	return (struct pm_state_info){PM_STATE_ACTIVE, 0, 0, 0};
+	return NULL;
 }
 
 void test_wakeup_device_api(void)

@@ -198,9 +198,9 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 }
 
 /* Our PM policy handler */
-struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
-	struct pm_state_info info = {};
+	static struct pm_state_info info;
 
 	ARG_UNUSED(cpu);
 
@@ -219,7 +219,7 @@ struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
 		 */
 		info.state = PM_STATE_ACTIVE;
 	}
-	return info;
+	return &info;
 }
 
 /* implement in application, called by idle thread */
