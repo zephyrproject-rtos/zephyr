@@ -1317,6 +1317,7 @@ Twister:
         - PerMac
         - enjiamai
         - hakehuang
+        - gopiotr
     files:
         - scripts/twister
         - scripts/pylib/twister/
