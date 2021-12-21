@@ -586,6 +586,16 @@ static int uart_stm32_err_check(const struct device *dev)
 		err |= UART_ERROR_FRAMING;
 	}
 
+#if !defined(CONFIG_SOC_SERIES_STM32F0X) || defined(USART_LIN_SUPPORT)
+	if (LL_USART_IsActiveFlag_LBD(UartInstance)) {
+		err |= UART_BREAK;
+	}
+
+	if (err & UART_BREAK) {
+		LL_USART_ClearFlag_LBD(UartInstance);
+	}
+#endif
+
 	if (err & UART_ERROR_OVERRUN) {
 		LL_USART_ClearFlag_ORE(UartInstance);
 	}
@@ -597,7 +607,6 @@ static int uart_stm32_err_check(const struct device *dev)
 	if (err & UART_ERROR_FRAMING) {
 		LL_USART_ClearFlag_FE(UartInstance);
 	}
-
 	/* Clear noise error as well,
 	 * it is not represented by the errors enum
 	 */
