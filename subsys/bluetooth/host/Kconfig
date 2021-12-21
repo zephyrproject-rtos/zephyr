@@ -250,14 +250,6 @@ config BT_REMOTE_INFO
 	  established and the application will be notified when this information
 	  is available through the remote_version_available connection callback.
 
-config BT_REMOTE_VERSION
-	bool "Enable remote version information"
-	depends on BT_REMOTE_INFO
-	help
-	  Enable this to get access to the remote version through
-	  the remote_version_available callback. The host will automatically ask
-	  the remote device after the connection has been established.
-
 config BT_SMP
 	bool "Security Manager Protocol support"
 	select TINYCRYPT
