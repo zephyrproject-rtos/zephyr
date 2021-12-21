@@ -14,7 +14,7 @@
 #define HEAP_BYTES (CONFIG_LVGL_MEM_POOL_MAX_SIZE * \
 		    CONFIG_LVGL_MEM_POOL_NUMBER_BLOCKS)
 
-static char lvgl_heap_mem[HEAP_BYTES];
+static char lvgl_heap_mem[HEAP_BYTES] __aligned(8);
 static struct sys_heap lvgl_heap;
 
 void *lvgl_malloc(size_t size)
