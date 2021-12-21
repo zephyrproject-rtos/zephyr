@@ -8,6 +8,9 @@
 #include <pm/state.h>
 #include <toolchain.h>
 
+BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
+	     "cpus node not defined in Devicetree");
+
 /**
  * Check CPU power state consistency.
  *
@@ -34,25 +37,19 @@
 		     CHECK_POWER_STATE_CONSISTENCY, node_id)		       \
 
 /* Check that all power states are consistent */
-COND_CODE_1(DT_NODE_EXISTS(DT_PATH(cpus)),
-	    (DT_FOREACH_CHILD(DT_PATH(cpus), CHECK_POWER_STATES_CONSISTENCY)),
-	    ())
+DT_FOREACH_CHILD(DT_PATH(cpus), CHECK_POWER_STATES_CONSISTENCY)
 
 #define NUM_CPU_STATES(n) DT_NUM_CPU_POWER_STATES(n),
 #define CPU_STATES(n) (struct pm_state_info[])PM_STATE_INFO_LIST_FROM_DT_CPU(n),
 
 /** CPU power states information for each CPU */
 static const struct pm_state_info *cpus_states[] = {
-	COND_CODE_1(DT_NODE_EXISTS(DT_PATH(cpus)),
-		    (DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATES)),
-		    ())
+	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_STATES)
 };
 
 /** Number of states for each CPU */
 static const uint8_t states_per_cpu[] = {
-	COND_CODE_1(DT_NODE_EXISTS(DT_PATH(cpus)),
-		    (DT_FOREACH_CHILD(DT_PATH(cpus), NUM_CPU_STATES)),
-		    ())
+	DT_FOREACH_CHILD(DT_PATH(cpus), NUM_CPU_STATES)
 };
 
 uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states)
