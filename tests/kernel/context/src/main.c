@@ -328,16 +328,19 @@ static void _test_kernel_cpu_idle(int atomic)
 	int tms, tms2;
 	int i;
 
-	/* Align to ticks so the first iteration sleeps long enough
-	 * (k_timer_start() rounds its duration argument down, not up,
-	 * to a tick boundary)
-	 */
-	 k_usleep(1);
-
 	/* Set up a time to trigger events to exit idle mode */
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
 
 	for (i = 0; i < 5; i++) { /* Repeat the test five times */
+		/* Align to ticks before starting the timer.
+		 * (k_timer_start() rounds its duration argument down, not up,
+		 * to a tick boundary)
+		 * This timer operates under the assumption that the interrupt set
+		 * to wake the cpu from idle will be no sooner than 1 millsecond in
+		 * the future. Ensure we are a tick boundary each time, so that the
+		 * system timer does not choose to fire an interrupt sooner.
+		 */
+		k_usleep(1);
 		k_timer_start(&idle_timer, K_MSEC(1), K_NO_WAIT);
 		tms = k_uptime_get_32();
 		if (atomic) {
