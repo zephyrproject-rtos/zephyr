@@ -33,9 +33,12 @@ static int tmp112_reg_read(const struct tmp112_config *cfg,
 static int tmp112_reg_write(const struct tmp112_config *cfg,
 			    uint8_t reg, uint16_t val)
 {
-	uint16_t val_be = sys_cpu_to_be16(val);
+	uint8_t buf[3];
 
-	return i2c_burst_write_dt(&cfg->bus, reg, (uint8_t *)&val_be, 2);
+	buf[0] = reg;
+	sys_put_be16(val, &buf[1]);
+
+	return i2c_write_dt(&cfg->bus, buf, sizeof(buf));
 }
 
 static uint16_t set_config_flags(struct tmp112_data *data, uint16_t mask,
