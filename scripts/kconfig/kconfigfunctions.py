@@ -415,6 +415,27 @@ def dt_node_str_prop_equals(kconf, _, path, prop, val):
 
     return "n"
 
+def dt_node_array_prop_len(kconf, _, label, prop):
+    """
+    This function takes a 'label' and looks for an EDT node for that label. If
+    it finds an EDT node, it will look to see if that node has a property
+    by the name of 'prop'.  If the 'prop' exists and is an array type it will
+    return the length of its array as a string integer value, or 0 if the
+    property does not exist.
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    try:
+        node = edt.label2node.get(label)
+    except edtlib.EDTError:
+        return "0"
+
+    if node and (prop in node.props) and (node.props[prop].type == "array"):
+        return str(len(node.props[prop].val))
+
+    return "0"
+
 def dt_compat_enabled(kconf, _, compat):
     """
     This function takes a 'compat' and returns "y" if we find a status "okay"
@@ -518,6 +539,7 @@ functions = {
         "dt_node_int_prop_int": (dt_node_int_prop, 2, 3),
         "dt_node_int_prop_hex": (dt_node_int_prop, 2, 3),
         "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
+        "dt_node_array_prop_len": (dt_node_array_prop_len, 2, 2),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
