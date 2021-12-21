@@ -94,6 +94,8 @@ extern "C" {
 enum bt_iso_state {
 	/** Channel disconnected */
 	BT_ISO_STATE_DISCONNECTED,
+	/** Channel is pending ACL encryption before connecting */
+	BT_ISO_STATE_ENCRYPT_PENDING,
 	/** Channel in connecting state */
 	BT_ISO_STATE_CONNECTING,
 	/** Channel ready for upper layer traffic on it */
@@ -119,6 +121,13 @@ struct bt_iso_chan {
 	/** Channel QoS reference */
 	struct bt_iso_chan_qos		*qos;
 	enum bt_iso_state		state;
+	/** @brief The required security level of the channel
+	 *
+	 * This value can be set as the central before connecting a CIS
+	 * with bt_iso_chan_connect().
+	 * The value is overwritten to @ref bt_iso_server::sec_level for the
+	 * peripheral once a channel has been accepted.
+	 */
 	bt_security_t			required_sec_level;
 	/** Node used internally by the stack */
 	sys_snode_t node;
@@ -435,7 +444,7 @@ struct bt_iso_chan_ops {
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  channel is disconnected, including when a connection gets
-	 *  rejected.
+	 *  rejected or when setting security fails.
 	 *
 	 *  @param chan   The channel that has been Disconnected
 	 *  @param reason BT_HCI_ERR_* reason for the disconnection.

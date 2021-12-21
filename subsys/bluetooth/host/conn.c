@@ -2008,6 +2008,9 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 
 	reset_pairing(conn);
 	bt_l2cap_security_changed(conn, hci_err);
+	if (IS_ENABLED(CONFIG_BT_ISO_CENTRAL)) {
+		bt_iso_security_changed(conn, hci_err);
+	}
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->security_changed) {
