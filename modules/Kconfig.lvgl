@@ -1,0 +1,7 @@
+# Copyright (c) 2022 Huawei Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config LVGL
+	bool "LittlevGL GUI library"
+	help
+	  This option enables the LittlevGL GUI library.
