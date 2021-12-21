@@ -71,14 +71,16 @@ struct stmpe1600_drvdata {
 
 static int write_reg16(const struct stmpe1600_config * const config, uint8_t reg, uint16_t value)
 {
-	uint16_t transfer_data = sys_cpu_to_le16(value);
+	uint8_t buf[3];
 	int ret;
 
 	LOG_DBG("STMPE1600[0x%02X]: write REG[0x%02X..0x%02X] = %04x",
 		config->i2c_slave_addr, reg, reg + 1, value);
 
-	ret = i2c_burst_write(config->i2c_bus, config->i2c_slave_addr, reg,
-			      (uint8_t *)&transfer_data, sizeof(transfer_data));
+	buf[0] = reg;
+	sys_put_le16(value, &buf[1]);
+
+	ret = i2c_write(config->i2c_bus, buf, sizeof(buf), config->i2c_slave_addr);
 
 	if (ret != 0) {
 		LOG_ERR("STMPE1600[0x%02X]: write error REG[0x%02X..0x%02X]: %d",
