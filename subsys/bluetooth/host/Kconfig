@@ -248,7 +248,7 @@ config BT_REMOTE_INFO
 	  Enable application access to the remote information available in the
 	  stack. The remote information is retrieved once a connection has been
 	  established and the application will be notified when this information
-	  is available through the remote_version_available connection callback.
+	  is available through the remote_info_available connection callback.
 
 config BT_SMP
 	bool "Security Manager Protocol support"
