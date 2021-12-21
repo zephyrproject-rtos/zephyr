@@ -1184,7 +1184,7 @@ static int uart_nrfx_pm_action(const struct device *dev,
 				return ret;
 			}
 #else
-			uart_nrfx_pins_configure(dev, false);
+			uart_nrfx_pins_configure(dev, true);
 #endif /* CONFIG_PINCTRL */
 		}
 		break;
