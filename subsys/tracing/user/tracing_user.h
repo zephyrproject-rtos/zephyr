@@ -80,6 +80,7 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_work_cancel_sync_blocking(work, sync)
 #define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret)
 
+#define sys_port_trace_k_work_queue_init(queue)
 #define sys_port_trace_k_work_queue_start_enter(queue)
 #define sys_port_trace_k_work_queue_start_exit(queue)
 #define sys_port_trace_k_work_queue_drain_enter(queue)
@@ -304,6 +305,20 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_thread_abort_exit(thread)
 #define sys_port_trace_k_thread_abort_enter(thread)
 #define sys_port_trace_k_thread_resume_exit(thread)
+
+#define sys_port_trace_pm_system_suspend_enter(ticks)
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)
+
+#define sys_port_trace_pm_device_runtime_get_enter(dev)
+#define sys_port_trace_pm_device_runtime_get_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_enter(dev)
+#define sys_port_trace_pm_device_runtime_put_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev)
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_enable_enter(dev)
+#define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_disable_enter(dev)
+#define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
 #ifdef __cplusplus
 }
