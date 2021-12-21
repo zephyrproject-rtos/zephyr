@@ -159,8 +159,8 @@ config BT_REMOTE_VERSION
 	default y if BT_HCI_RAW
 	help
 	  Enable this to get access to the remote version in the Controller and
-	  in the Host through bt_conn_get_info(). The fields in question can
-	  be then found in the bt_conn_info struct.
+	  in the Host through bt_conn_get_remote_info(). The fields in question
+	  can then be found in the bt_conn_remote_info struct.
 
 config BT_PHY_UPDATE
 	bool "PHY Update"
