@@ -76,3 +76,6 @@ tests:
     tags: pwm_xlnx_axi_timer
     extra_configs:
       - CONFIG_PWM_XLNX_AXI_TIMER=y
+  drivers.pwm.build.test:
+    platform_allow: qemu_cortex_m3
+    tags: pwm_test
