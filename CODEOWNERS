@@ -732,6 +732,7 @@
 /subsys/storage/                          @nvlsianpu
 /subsys/task_wdt/                         @martinjaeger
 /subsys/testsuite/                        @nashif
+/subsys/testsuite/ztest/*/ztress*         @nordic-krch
 /subsys/timing/                           @nashif @dcpleung
 /subsys/usb/                              @jfischer-no
 /subsys/usb/class/dfu/usb_dfu.c           @nvlsianpu
