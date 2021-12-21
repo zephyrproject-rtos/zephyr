@@ -106,6 +106,9 @@ void bt_iso_connected(struct bt_conn *iso);
 /* Notify ISO channels of a disconnect event */
 void bt_iso_disconnected(struct bt_conn *iso);
 
+/* Notify ISO connected channels of security changed */
+void bt_iso_security_changed(struct bt_conn *acl, uint8_t hci_status);
+
 /* Allocate ISO PDU */
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *bt_iso_create_pdu_timeout_debug(struct net_buf_pool *pool,
