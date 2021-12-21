@@ -1097,7 +1097,10 @@ int lwm2m_register_payload_handler(struct lwm2m_message *msg)
 	struct lwm2m_engine_obj_inst *obj_inst;
 	int ret;
 
-	engine_put_begin(&msg->out, NULL);
+	ret = engine_put_begin(&msg->out, NULL);
+	if (ret < 0) {
+		return ret;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
 		/* Security obj MUST NOT be part of registration message */
@@ -2228,6 +2231,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	uint16_t res_inst_id_tmp = 0U;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
+	int ret = 0;
 
 	if (!obj_inst || !res || !obj_field || !msg) {
 		return -EINVAL;
@@ -2248,7 +2252,11 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			return -ENOENT;
 		}
 
-		engine_put_begin_ri(&msg->out, &msg->path);
+		ret = engine_put_begin_ri(&msg->out, &msg->path);
+		if (ret < 0) {
+			return ret;
+		}
+
 		res_inst_id_tmp = msg->path.res_inst_id;
 	}
 
@@ -2282,66 +2290,66 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		switch (obj_field->data_type) {
 
 		case LWM2M_RES_TYPE_OPAQUE:
-			engine_put_opaque(&msg->out, &msg->path,
-					  (uint8_t *)data_ptr,
-					  data_len);
+			ret = engine_put_opaque(&msg->out, &msg->path,
+						(uint8_t *)data_ptr,
+						data_len);
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
-			engine_put_string(&msg->out, &msg->path,
-					  (uint8_t *)data_ptr,
-					  strlen((uint8_t *)data_ptr));
+			ret = engine_put_string(&msg->out, &msg->path,
+						(uint8_t *)data_ptr,
+						strlen((uint8_t *)data_ptr));
 			break;
 
 		case LWM2M_RES_TYPE_U32:
 		case LWM2M_RES_TYPE_TIME:
-			engine_put_s64(&msg->out, &msg->path,
-				       (int64_t)*(uint32_t *)data_ptr);
+			ret = engine_put_s64(&msg->out, &msg->path,
+					     (int64_t)*(uint32_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U16:
-			engine_put_s32(&msg->out, &msg->path,
-				       (int32_t)*(uint16_t *)data_ptr);
+			ret = engine_put_s32(&msg->out, &msg->path,
+					     (int32_t)*(uint16_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U8:
-			engine_put_s16(&msg->out, &msg->path,
-				       (int16_t)*(uint8_t *)data_ptr);
+			ret = engine_put_s16(&msg->out, &msg->path,
+					     (int16_t)*(uint8_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S64:
-			engine_put_s64(&msg->out, &msg->path,
-				       *(int64_t *)data_ptr);
+			ret = engine_put_s64(&msg->out, &msg->path,
+					     *(int64_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S32:
-			engine_put_s32(&msg->out, &msg->path,
-				       *(int32_t *)data_ptr);
+			ret = engine_put_s32(&msg->out, &msg->path,
+					     *(int32_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S16:
-			engine_put_s16(&msg->out, &msg->path,
-				       *(int16_t *)data_ptr);
+			ret = engine_put_s16(&msg->out, &msg->path,
+					     *(int16_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S8:
-			engine_put_s8(&msg->out, &msg->path,
-				      *(int8_t *)data_ptr);
+			ret = engine_put_s8(&msg->out, &msg->path,
+					    *(int8_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_BOOL:
-			engine_put_bool(&msg->out, &msg->path,
-					*(bool *)data_ptr);
+			ret = engine_put_bool(&msg->out, &msg->path,
+					      *(bool *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_FLOAT:
-			engine_put_float(&msg->out, &msg->path,
-					 (double *)data_ptr);
+			ret = engine_put_float(&msg->out, &msg->path,
+					       (double *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
-			engine_put_objlnk(&msg->out, &msg->path,
-					  (struct lwm2m_objlnk *)data_ptr);
+			ret = engine_put_objlnk(&msg->out, &msg->path,
+						(struct lwm2m_objlnk *)data_ptr);
 			break;
 
 		default:
@@ -2352,8 +2360,16 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		}
 	}
 
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (res->multi_res_inst) {
-		engine_put_end_ri(&msg->out, &msg->path);
+		ret = engine_put_end_ri(&msg->out, &msg->path);
+		if (ret < 0) {
+			return ret;
+		}
+
 		msg->path.res_inst_id = res_inst_id_tmp;
 	}
 
@@ -2397,7 +2413,7 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 				      struct lwm2m_message *msg,
 				      void *data_ptr, size_t data_len)
 {
-	size_t len = 1;
+	int len = 1;
 	bool last_pkt_block = false;
 	int ret = 0;
 	bool last_block = true;
@@ -2432,9 +2448,8 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 		len = engine_get_opaque(&msg->in, write_buf,
 					MIN(data_len, write_buf_len),
 					&opaque_ctx, &last_pkt_block);
-		if (len == 0) {
-			/* ignore empty content and continue */
-			return 0;
+		if (len <= 0) {
+			return len;
 		}
 
 #if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
@@ -2545,72 +2560,93 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			ret = lwm2m_write_handler_opaque(obj_inst, res,
 							 res_inst, msg,
 							 data_ptr, data_len);
-			if (ret < 0) {
-				return ret;
-			}
-
 			len = ret;
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
-			engine_get_string(&msg->in, write_buf, write_buf_len);
+			ret = engine_get_string(&msg->in, write_buf,
+						write_buf_len);
+			if (ret < 0) {
+				break;
+			}
+
 			len = strlen((char *)write_buf);
 			break;
 
 		case LWM2M_RES_TYPE_U32:
 		case LWM2M_RES_TYPE_TIME:
-			engine_get_s64(&msg->in, &temp64);
+			ret = engine_get_s64(&msg->in, &temp64);
+			if (ret < 0) {
+				break;
+			}
+
 			*(uint32_t *)write_buf = temp64;
 			len = 4;
 			break;
 
 		case LWM2M_RES_TYPE_U16:
-			engine_get_s32(&msg->in, &temp32);
+			ret = engine_get_s32(&msg->in, &temp32);
+			if (ret < 0) {
+				break;
+			}
+
 			*(uint16_t *)write_buf = temp32;
 			len = 2;
 			break;
 
 		case LWM2M_RES_TYPE_U8:
-			engine_get_s32(&msg->in, &temp32);
+			ret = engine_get_s32(&msg->in, &temp32);
+			if (ret < 0) {
+				break;
+			}
+
 			*(uint8_t *)write_buf = temp32;
 			len = 1;
 			break;
 
 		case LWM2M_RES_TYPE_S64:
-			engine_get_s64(&msg->in, (int64_t *)write_buf);
+			ret = engine_get_s64(&msg->in, (int64_t *)write_buf);
 			len = 8;
 			break;
 
 		case LWM2M_RES_TYPE_S32:
-			engine_get_s32(&msg->in, (int32_t *)write_buf);
+			ret = engine_get_s32(&msg->in, (int32_t *)write_buf);
 			len = 4;
 			break;
 
 		case LWM2M_RES_TYPE_S16:
-			engine_get_s32(&msg->in, &temp32);
+			ret = engine_get_s32(&msg->in, &temp32);
+			if (ret < 0) {
+				break;
+			}
+
 			*(int16_t *)write_buf = temp32;
 			len = 2;
 			break;
 
 		case LWM2M_RES_TYPE_S8:
-			engine_get_s32(&msg->in, &temp32);
+			ret = engine_get_s32(&msg->in, &temp32);
+			if (ret < 0) {
+				break;
+			}
+
 			*(int8_t *)write_buf = temp32;
 			len = 1;
 			break;
 
 		case LWM2M_RES_TYPE_BOOL:
-			engine_get_bool(&msg->in, (bool *)write_buf);
+			ret = engine_get_bool(&msg->in, (bool *)write_buf);
 			len = 1;
 			break;
 
 		case LWM2M_RES_TYPE_FLOAT:
-			engine_get_float(&msg->in, (double *)write_buf);
+			ret = engine_get_float(&msg->in, (double *)write_buf);
 			len = sizeof(double);
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
-			engine_get_objlnk(&msg->in,
-					  (struct lwm2m_objlnk *)write_buf);
+			ret = engine_get_objlnk(&msg->in,
+						(struct lwm2m_objlnk *)write_buf);
 			len = sizeof(struct lwm2m_objlnk);
 			break;
 
@@ -2619,6 +2655,10 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 				obj_field->data_type);
 			return -EINVAL;
 
+		}
+
+		if (ret < 0) {
+			return ret;
 		}
 	} else {
 		return -ENOENT;
@@ -3126,7 +3166,10 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 
 	/* store original path values so we can change them during processing */
 	memcpy(&temp_path, &msg->path, sizeof(temp_path));
-	engine_put_begin(&msg->out, &msg->path);
+	ret = engine_put_begin(&msg->out, &msg->path);
+	if (ret < 0) {
+		return ret;
+	}
 
 	while (obj_inst) {
 		if (!obj_inst->resources || obj_inst->resource_count == 0U) {
@@ -3138,7 +3181,10 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 
 		if (msg->path.level <= 1U) {
 			/* start instance formatting */
-			engine_put_begin_oi(&msg->out, &msg->path);
+			ret = engine_put_begin_oi(&msg->out, &msg->path);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		for (index = 0; index < obj_inst->resource_count; index++) {
@@ -3164,12 +3210,20 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 				ret = -EPERM;
 			} else {
 				/* start resource formatting */
-				engine_put_begin_r(&msg->out, &msg->path);
+				ret = engine_put_begin_r(&msg->out, &msg->path);
+				if (ret < 0) {
+					return ret;
+				}
 
 				/* perform read operation on this resource */
 				ret = lwm2m_read_handler(obj_inst, res,
 							 obj_field, msg);
-				if (ret < 0) {
+				if (ret == -ENOMEM) {
+					/* No point continuing if there's no
+					 * memory left in a message.
+					 */
+					return ret;
+				} else if (ret < 0) {
 					/* ignore errors unless single read */
 					if (msg->path.level > 2 &&
 					    !LWM2M_HAS_PERM(obj_field,
@@ -3181,7 +3235,10 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 				}
 
 				/* end resource formatting */
-				engine_put_end_r(&msg->out, &msg->path);
+				ret = engine_put_end_r(&msg->out, &msg->path);
+				if (ret < 0) {
+					return ret;
+				}
 			}
 
 			/* on single read break if errors */
@@ -3196,7 +3253,10 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 move_forward:
 		if (msg->path.level <= 1U) {
 			/* end instance formatting */
-			engine_put_end_oi(&msg->out, &msg->path);
+			ret = engine_put_end_oi(&msg->out, &msg->path);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		if (msg->path.level <= 1U) {
@@ -3208,7 +3268,10 @@ move_forward:
 		}
 	}
 
-	engine_put_end(&msg->out, &msg->path);
+	ret = engine_put_end(&msg->out, &msg->path);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* restore original path values */
 	memcpy(&msg->path, &temp_path, sizeof(temp_path));
@@ -3258,7 +3321,10 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 	 * Add required prefix for bootstrap discovery (5.2.7.3).
 	 * For device management discovery, `engine_put_begin()` adds nothing.
 	 */
-	engine_put_begin(&msg->out, &msg->path);
+	ret = engine_put_begin(&msg->out, &msg->path);
+	if (ret < 0) {
+		return ret;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
 		/* Skip unrelated objects */
