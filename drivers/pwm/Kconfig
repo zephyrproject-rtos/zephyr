@@ -71,4 +71,6 @@ source "drivers/pwm/Kconfig.gecko"
 
 source "drivers/pwm/Kconfig.gd32"
 
+source "drivers/pwm/Kconfig.test"
+
 endif # PWM
