@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2021 Argentum Systems Ltd.
+ */
+
+/ {
+	zephyr,user {
+		/* EXT-1, pin 3 ADC(+) */
+		io-channels = <&adc 8>;
+	};
+};
