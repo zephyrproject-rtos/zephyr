@@ -5,6 +5,7 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
 #include <it8xxx2.dtsi>
 #include <it8xxx2-alts-map.dtsi>
 
@@ -21,6 +22,18 @@
 		zephyr,flash-controller = &flashctrl;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,keyboard-scan = &kscan0;
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
 	};
 };
 &adc0 {
