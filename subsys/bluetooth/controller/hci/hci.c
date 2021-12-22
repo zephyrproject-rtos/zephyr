@@ -1679,7 +1679,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 		if (0) {
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
-		} else if (dup_count <= DUP_FILTER_DISABLED) {
+		} else if (dup_count == DUP_FILTER_DISABLED) {
 			dup_scan = true;
 
 			/* All entries reset */
@@ -3396,7 +3396,7 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 		if (0) {
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
-		} else if (dup_count < 0) {
+		} else if (dup_count == DUP_FILTER_DISABLED) {
 			dup_scan = true;
 
 			/* All entries reset */
@@ -3473,7 +3473,7 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	/* Initialize duplicate filtering */
 	if (cmd->options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE) {
-		if (!dup_scan || (dup_count < 0)) {
+		if (!dup_scan || (dup_count == DUP_FILTER_DISABLED)) {
 			dup_count = 0;
 			dup_curr = 0U;
 		} else {
@@ -3555,7 +3555,7 @@ static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
 	if (!status) {
 		if (cmd->enable &
 		    BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE) {
-			if (!dup_scan || (dup_count < 0)) {
+			if (!dup_scan || (dup_count == DUP_FILTER_DISABLED)) {
 				dup_count = 0;
 				dup_curr = 0U;
 			} else {
