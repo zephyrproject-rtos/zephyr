@@ -110,7 +110,6 @@ void main(void)
 	}
 	printk("success\n");
 
-#if 0
 	printk("Update CTE params...");
 	err = bt_df_set_adv_cte_tx_param(adv_set, &cte_params);
 	if (err) {
@@ -118,7 +117,6 @@ void main(void)
 		return;
 	}
 	printk("success\n");
-#endif
 
 	printk("Periodic advertising params set...");
 	err = bt_le_per_adv_set_param(adv_set, &per_adv_param);
@@ -128,7 +126,6 @@ void main(void)
 	}
 	printk("success\n");
 
-#if 0
 	printk("Enable CTE...");
 	err = bt_df_adv_cte_tx_enable(adv_set);
 	if (err) {
@@ -136,7 +133,6 @@ void main(void)
 		return;
 	}
 	printk("success\n");
-#endif
 
 	printk("Periodic advertising enable...");
 	err = bt_le_per_adv_start(adv_set);
