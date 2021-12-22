@@ -150,10 +150,12 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
+	scan->periodic.cancelled = 0U;
 	scan->periodic.state = LL_SYNC_STATE_IDLE;
 	scan->periodic.filter_policy =
 		options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		scan_coded->periodic.cancelled = 0U;
 		scan_coded->periodic.state = LL_SYNC_STATE_IDLE;
 		scan_coded->periodic.filter_policy =
 			scan->periodic.filter_policy;
@@ -271,22 +273,31 @@ uint8_t ll_sync_create_cancel(void **rx)
 	}
 
 	/* Check for race condition where in sync is established when sync
-	 * context was set to NULL.
+	 * create cancel is invoked.
 	 *
-	 * Setting `scan->periodic.sync` to NULL represents cancellation
-	 * requested in the thread context. Checking `sync->timeout_reload`
-	 * confirms if synchronization was established before
-	 * `scan->periodic.sync` was set to NULL.
+	 * Setting `scan->periodic.cancelled` to represent cancellation
+	 * requested in the thread context. Checking `scan->periodic.sync` for
+	 * NULL confirms if synchronization was established before
+	 * `scan->periodic.cancelled` was set to 1U.
 	 */
-	sync = scan->periodic.sync;
-	scan->periodic.sync = NULL;
+	scan->periodic.cancelled = 1U;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-		scan_coded->periodic.sync = NULL;
+		scan_coded->periodic.cancelled = 1U;
 	}
 	cpu_dmb();
+	sync = scan->periodic.sync;
 	if (!sync || sync->timeout_reload) {
+		/* FIXME: sync establishment in progress looking for first
+		 *        AUX_SYNC_IND. Cleanup by stopping ticker and disabling
+		 *        LLL events.
+		 */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	/* It is safe to remove association with scanner as cancelled flag is
+	 * set and sync has not been established.
+	 */
+	scan->periodic.sync = NULL;
 
 	/* Mark the sync context as sync create cancelled */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)) {
