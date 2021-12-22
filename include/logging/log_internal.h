@@ -95,6 +95,12 @@ void z_log_msg2_free(union log_msg2_generic *msg);
  */
 bool z_log_msg2_pending(void);
 
+/** @brief Get tag.
+ *
+ * @return Tag. Null if feature is disabled.
+ */
+const char *z_log_get_tag(void);
+
 #ifdef __cplusplus
 }
 #endif

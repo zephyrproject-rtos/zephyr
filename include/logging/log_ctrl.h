@@ -210,6 +210,17 @@ static inline bool log_data_pending(void)
 	return false;
 }
 
+/**
+ * @brief Configure tag used to prefix each message.
+ *
+ * @param tag Tag.
+ *
+ * @retval 0 on successful operation.
+ * @retval -ENOTSUP if feature is disabled.
+ * @retval -ENOMEM if string is longer than the buffer capacity. Tag will be trimmed.
+ */
+int log_set_tag(const char *tag);
+
 #if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_INIT() log_init()
