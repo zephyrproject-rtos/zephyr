@@ -272,14 +272,17 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	struct lll_df_sync_cfg *cfg;
 
 	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-	if (cfg->is_enabled) {
+	if (false) {
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	} else if (cfg->is_enabled) {
+
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  chan_idx, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
-	} else
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-	{
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_DF_SUPPORT)) {
 		radio_df_cte_inline_set_enabled(false);
 	}
 
