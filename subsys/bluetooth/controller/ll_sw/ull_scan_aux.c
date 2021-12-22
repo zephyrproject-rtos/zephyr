@@ -905,7 +905,7 @@ static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux)
 static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan)
 {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	return scan->periodic.sync;
+	return (!scan->periodic.cancelled) ? scan->periodic.sync : NULL;
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
 	return NULL;
 #endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
