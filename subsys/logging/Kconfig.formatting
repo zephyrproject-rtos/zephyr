@@ -63,7 +63,22 @@ if LOG_BACKEND_SHOW_COLOR
 config LOG_INFO_COLOR_GREEN
 	bool "Use green color for info level logs"
 
-endif
+endif # LOG_BACKEND_SHOW_COLOR
+
+config LOG_TAG_MAX_LEN
+	int "Tag max length"
+	default 0
+	range 0 64
+	help
+	  Setting non-zero value enables option to specify a tag which is
+	  prepended to each log message. Tag can be changed at runtime.
+
+config LOG_TAG_DEFAULT
+	string "Default tag"
+	depends on LOG_TAG_MAX_LEN > 0
+	default ""
+	help
+	  Initial tag.
 
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Enable timestamp formatting in the backend"
