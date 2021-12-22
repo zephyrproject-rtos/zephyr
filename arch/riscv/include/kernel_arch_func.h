@@ -34,11 +34,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif
 }
 
-static ALWAYS_INLINE void
-arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
-{
-	thread->arch.swap_return_value = value;
-}
+void arch_switch(void *switch_to, void **switched_from);
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf);
