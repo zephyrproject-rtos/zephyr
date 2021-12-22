@@ -115,4 +115,6 @@ source "drivers/gpio/Kconfig.neorv32"
 
 source "drivers/gpio/Kconfig.nct38xx"
 
+source "drivers/gpio/Kconfig.test"
+
 endif # GPIO
