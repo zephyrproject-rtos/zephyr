@@ -374,8 +374,7 @@ uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable)
 			  1U : 0U;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
-	sync->nodups = (enable &
-			BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE) ?
+	sync->nodups = (enable & BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE) ?
 		       1U : 0U;
 #endif
 
