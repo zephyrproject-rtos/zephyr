@@ -5,4 +5,4 @@ tests:
     # will mostly likely be the fastest.
     integration_platforms:
       - native_posix
-    platform_exclude: hsdk hsdk_2cores
+    platform_exclude: hsdk hsdk_2cores thingy52_nrf52832
