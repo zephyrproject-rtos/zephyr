@@ -566,6 +566,13 @@ config BT_DF_CONNECTION_CTE_TX
 	  Enable support for transmission of Constant Tone Extension in
 	  connection mode.
 
+config BT_DF_CONNECTION_CTE_REQ
+	bool "Enable support for CTE request procedure in connection mode"
+	depends on BT_DF_CONNECTION_CTE_RX
+	help
+	  Enable support for request of Constant Tone Extension in connection
+	  mode.
+
 config BT_DF_CONNECTION_CTE_RSP
 	bool "Enable support for CTE request procedure in connection mode"
 	depends on BT_DF_CONNECTION_CTE_TX
