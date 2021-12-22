@@ -121,6 +121,7 @@ struct bt_iso_chan {
 	/** Channel QoS reference */
 	struct bt_iso_chan_qos		*qos;
 	enum bt_iso_state		state;
+#if defined(CONFIG_BT_SMP)
 	/** @brief The required security level of the channel
 	 *
 	 * This value can be set as the central before connecting a CIS
@@ -129,6 +130,7 @@ struct bt_iso_chan {
 	 * peripheral once a channel has been accepted.
 	 */
 	bt_security_t			required_sec_level;
+#endif /* CONFIG_BT_SMP */
 	/** Node used internally by the stack */
 	sys_snode_t node;
 };
@@ -503,8 +505,10 @@ struct bt_iso_accept_info {
 
 /** @brief ISO Server structure. */
 struct bt_iso_server {
+#if defined(CONFIG_BT_SMP)
 	/** Required minimum security level */
 	bt_security_t		sec_level;
+#endif /* CONFIG_BT_SMP */
 
 	/** @brief Server accept callback
 	 *
