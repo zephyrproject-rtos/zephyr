@@ -60,6 +60,16 @@ static void xoshiro128_init_state(void)
 	rc = entropy_get_entropy(entropy_driver, (uint8_t *)&state, sizeof(state));
 	if (rc == 0) {
 		initialized = true;
+	} else {
+		/* Entropy device failed or is not yet ready.
+		 * Reseed the PRNG state with pseudo-random data until it can
+		 * be properly seeded. This may be needed if random numbers are
+		 * requested before the backing entropy device has been enabled.
+		 */
+		state[0] = k_cycle_get_32();
+		state[1] = k_cycle_get_32() ^ 0x9b64c2b0;
+		state[2] = k_cycle_get_32() ^ 0x86d3d2d4;
+		state[3] = k_cycle_get_32() ^ 0xa00ae278;
 	}
 }
 
