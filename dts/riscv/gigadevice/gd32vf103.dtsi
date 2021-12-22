@@ -95,6 +95,16 @@
 			label = "UART_2";
 		};
 
+		dac: dac@40007400 {
+			compatible = "gd,gd32-dac";
+			reg = <0x40007400 0x400>;
+			rcu-periph-clock = <0x71d>;
+			num-channels = <2>;
+			label = "DAC";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		afio: afio@40010000 {
 			compatible = "gd,gd32-afio";
 			reg = <0x40010000 0x400>;
