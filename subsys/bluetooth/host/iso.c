@@ -442,15 +442,16 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 #if defined(CONFIG_BT_ISO_UNICAST)
 			bool is_chan_connected;
 			struct bt_iso_cig *cig;
+			struct bt_iso_chan *cis_chan;
 
 			/* Update CIG state */
 			cig = get_cig(chan);
 			__ASSERT(cig != NULL, "CIG was NULL");
 
 			is_chan_connected = false;
-			SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, chan, node) {
-				if (chan->state == BT_ISO_CONNECTED ||
-				chan->state == BT_ISO_CONNECT) {
+			SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis_chan, node) {
+				if (cis_chan->state == BT_ISO_CONNECTED ||
+				    cis_chan->state == BT_ISO_CONNECT) {
 					is_chan_connected = true;
 					break;
 				}
