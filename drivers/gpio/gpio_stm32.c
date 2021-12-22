@@ -730,6 +730,6 @@ static int gpio_stm32_afio_init(const struct device *dev)
 	return 0;
 }
 
-SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, PRE_KERNEL_1, 0);
+SYS_INIT(gpio_stm32_afio_init, PRE_KERNEL_1, 0);
 
 #endif /* CONFIG_SOC_SERIES_STM32F1X && !CONFIG_GPIO_STM32_SWJ_ENABLE */
