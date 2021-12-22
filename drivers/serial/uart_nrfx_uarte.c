@@ -853,6 +853,10 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		return -ENOTSUP;
 	}
 
+	if (data->async->rx_enabled) {
+		return -EBUSY;
+	}
+
 	data->async->rx_timeout = timeout;
 	/* Set minimum interval to 3 RTC ticks. 3 is used due to RTC limitation
 	 * which cannot set timeout for next tick. Assuming delay in processing
