@@ -571,7 +571,6 @@ void *radio_pkt_decrypt_get(void)
 #endif
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-
 static uint8_t sw_tifs_toggle;
 /**
  * @brief Implementation of Radio operation software switch.
@@ -651,11 +650,11 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1);
 			}
 
-			hal_radio_sw_switch_phyend_delay_compensation_config_set(phyend_delay_cc,
-										 radio_enable_ppi);
+			hal_radio_sw_switch_phyend_delay_compensation_config_set(radio_enable_ppi,
+										 phyend_delay_cc);
 		} else {
-			hal_radio_sw_switch_phyend_delay_compensation_config_clear(
-				radio_enable_ppi);
+			hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi,
+										   phyend_delay_cc);
 		}
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
@@ -698,13 +697,22 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 
 		} else if (dir_curr == SW_SWITCH_RX) {
 			/* Switching to TX after RX on LE 1M/2M PHY.
-			 * Software switch group's disable PPI needs to be
-			 * configured to defaults for non CODED PHY, hence
-			 * the call to clean up is executed every time for
-			 * RX direction.
+			 *
+			 * NOTE: PHYEND delay compensation and switching between Coded S2 and S8 PHY
+			 *       may not happen at once. PHYEND delay may not happen when Code PHY
+			 *       is used. Both functionalities use the same EVENTS_COMPARE channels,
+			 *       hence when PHYEND delay is applied, coded config clear may not be
+			 *       called.
+			 *
+			 * TODO: This has to be refactored. It is temporarily implemented this way
+			 *       because the code is very fragile and hard to debug.
 			 */
-			hal_radio_sw_switch_coded_config_clear(ppi_en,
-				ppi_dis, cc, sw_tifs_toggle);
+			if (end_evt_delay_en != END_EVT_DELAY_ENABLED) {
+				hal_radio_sw_switch_coded_config_clear(ppi_en, ppi_dis, cc,
+								       sw_tifs_toggle);
+			}
+
+			hal_radio_sw_switch_disable_group_clear(ppi_dis, cc, sw_tifs_toggle);
 		}
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -720,7 +728,8 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		hal_radio_rxen_on_sw_switch(ppi);
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
-		hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi);
+		hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi,
+									   phyend_delay_cc);
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -733,6 +742,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 
 			hal_radio_sw_switch_coded_config_clear(ppi_en,
 				ppi_dis, cc, sw_tifs_toggle);
+			hal_radio_sw_switch_disable_group_clear(ppi_dis, cc, sw_tifs_toggle);
 		}
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -743,27 +753,27 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 				 (SW_SWITCH_TIMER->CC[cc] - delay));
 	} else {
 		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
-#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
-		nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1);
-#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 	}
 
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
 				BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) || \
-	defined(CONFIG_SOC_SERIES_NRF53X)
-	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End
-	 *       for End time capture and sw_switch DPPI channel toggling hence
-	 *       always need to capture End time. Or when using single event
-	 *       timer since the timer is cleared on Radio End, we always need
-	 *       to capture the Radio End time-stamp.
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* NOTE: For single timer configuration nRF5340 shares the DPPI channel being
+	 *       triggered by Radio End for End time capture and sw_switch DPPI channel toggling
+	 *       hence always need to capture End time. Or when using single event timer since
+	 *       the timer is cleared on Radio End, we always need to capture the Radio End
+	 *       time-stamp.
 	 */
 	hal_radio_end_time_capture_ppi_config();
 #if !defined(CONFIG_SOC_SERIES_NRF53X)
+	/* The function is not called for nRF5340 single timer configuration because
+	 * HAL_SW_SWITCH_TIMER_CLEAR_PPI is equal to HAL_RADIO_END_TIME_CAPTURE_PPI,
+	 * so channel is already enabled.
+	 */
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
 #endif /* !CONFIG_SOC_SERIES_NRF53X */
-#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	sw_tifs_toggle += 1U;
 	sw_tifs_toggle &= 1U;
@@ -942,6 +952,9 @@ void radio_tmr_status_reset(void)
 			BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
 			BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI) |
 			BIT(HAL_RADIO_END_TIME_CAPTURE_PPI) |
+#if defined(DPPI_PRESENT)
+			BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
+#endif /* DPPI_PRESENT */
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI) |
@@ -1208,16 +1221,19 @@ uint32_t radio_tmr_ready_restore(void)
 
 void radio_tmr_end_capture(void)
 {
-	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End
-	 *       for End time capture and sw_switch DPPI channel toggling hence
-	 *       always need to capture End time. Hence, the below code is
-	 *       present in hal_sw_switch_timer_clear_ppi_config() and
-	 *	 sw_switch().
+	/* NOTE: nRF5340 for single timer configuration shares the DPPI channel being triggered
+	 *       by Radio End for End time capture and sw_switch DPPI channel toggling hence
+	 *       always need to capture End time. Hence, the below code is present in
+	 *       hal_sw_switch_timer_clear_ppi_config() and sw_switch(). There is no need to
+	 *       configure the channel again in this function.
 	 */
-#if defined(CONFIG_BT_CTLR_TIFS_HW) || !defined(CONFIG_SOC_SERIES_NRF53X)
+#if !defined(CONFIG_SOC_SERIES_NRF53X) ||                                                          \
+	(defined(CONFIG_SOC_SERIES_NRF53X) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER))
 	hal_radio_end_time_capture_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* CONFIG_BT_CTLR_TIFS_HW || !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_SERIES_NRF53X ||
+	* (CONFIG_SOC_SERIES_NRF53X && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 }
 
 uint32_t radio_tmr_end_get(void)

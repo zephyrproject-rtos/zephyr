@@ -242,26 +242,37 @@ static inline void hal_fem_ppi_setup(void)
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
+
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#define NRF_RADIO_PUBLISH_PDU_END_EVT PUBLISH_PHYEND
+/* Wrappenr for EVENTS_END event name used by nRFX API */
+#define NRFX_RADIO_TXRX_END_EVENT NRF_RADIO_EVENT_PHYEND
+#else
+#define NRF_RADIO_PUBLISH_PDU_END_EVT PUBLISH_END
+#define NRFX_RADIO_TXRX_END_EVENT NRF_RADIO_EVENT_END
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
 /* DPPI setup used for SW-based auto-switching during TIFS. */
 
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
  *
- * Note: we do not need an additional PPI, since we have already set up
- * a PPI to publish RADIO END event.
+ * Note: In case of HW TIFS support or single timer configuration we do not need
+ * an additional PPI, since we have already set up a PPI to publish RADIO END
+ * event. In other case separate PPI is used because packet end is marked by
+ * PHYEND event while last bit or CRC is marked by END event.
  */
 static inline void hal_sw_switch_timer_clear_ppi_config(void)
 {
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_END, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
+	nrf_radio_publish_set(NRF_RADIO, NRFX_RADIO_TXRX_END_EVENT, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
 	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
 				NRF_TIMER_TASK_CLEAR, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
 
-	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End,
-	 *       for End time capture and sw_switch DPPI channel toggling, hence
-	 *       always need to capture End time.
+	/* NOTE: nRF5340 may share the DPPI channel being triggered by Radio End,
+	 *       for End time capture and sw_switch DPPI channel toggling.
+	 *       The channel must be always enabled when software switch is used.
 	 */
-	nrf_dppi_channels_enable(NRF_DPPIC,
-				 BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI));
 }
 
 /* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
@@ -312,8 +323,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * Note: we do not need an additional PPI, since we have already set up
  * a PPI to publish RADIO END event.
  */
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT \
-	(NRF_RADIO->PUBLISH_END)
+#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT (NRF_RADIO->NRF_RADIO_PUBLISH_PDU_END_EVT)
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
 	(((HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI << \
 		RADIO_PUBLISH_END_CHIDX_Pos) \
@@ -394,6 +404,39 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 		TIMER_SUBSCRIBE_CAPTURE_EN_Pos) \
 		& TIMER_SUBSCRIBE_CAPTURE_EN_Msk))
 
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+/* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing PHYEND delay compensation
+ * for SW_SWITCH_TIMER-based TIFS auto-switch. 'index' must be 0 or 1.
+ */
+#define SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_EVTS_COMP(index) \
+	(SW_SWITCH_TIMER_EVTS_COMP_PHYEND_DELAY_COMPENSATION_BASE + (index))
+#define HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI(index) \
+	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index)
+/* Cancel the SW switch timer running considering PHYEND delay compensation timing:
+ * wire the RADIO EVENTS_CTEPRESENT event to SW_SWITCH_TIMER TASKS_CAPTURE task.
+ */
+#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI 16
+#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_EVT \
+	NRF_RADIO->PUBLISH_CTEPRESENT
+
+#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_EVT \
+	(((HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI \
+	   << RADIO_PUBLISH_CTEPRESENT_CHIDX_Pos) & \
+	  RADIO_PUBLISH_CTEPRESENT_CHIDX_Msk) | \
+	 ((RADIO_PUBLISH_CTEPRESENT_EN_Enabled << RADIO_PUBLISH_CTEPRESENT_EN_Pos) & \
+	  RADIO_PUBLISH_CTEPRESENT_EN_Msk))
+
+#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(cc_reg) \
+	SW_SWITCH_TIMER->SUBSCRIBE_CAPTURE[cc_reg]
+
+#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK \
+	(((HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI \
+	   << TIMER_SUBSCRIBE_CAPTURE_CHIDX_Pos) & \
+	  TIMER_SUBSCRIBE_CAPTURE_CHIDX_Msk) | \
+	 ((TIMER_SUBSCRIBE_CAPTURE_EN_Enabled << TIMER_SUBSCRIBE_CAPTURE_EN_Pos) & \
+	  TIMER_SUBSCRIBE_CAPTURE_EN_Msk))
+
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
 static inline void hal_radio_sw_switch_setup(
 		uint8_t compare_reg,
@@ -513,7 +556,11 @@ static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
 	 */
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(
 		SW_SWITCH_TIMER_S2_EVTS_COMP(group_index)) = 0;
+}
 
+static inline void hal_radio_sw_switch_disable_group_clear(uint8_t ppi_dis, uint8_t cc_reg,
+							   uint8_t group_index)
+{
 	/* Wire the Group[group_index] task disable to the default
 	 * SW Switch Timer EVENTS_COMPARE.
 	 */
@@ -590,6 +637,84 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
 				HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1));
 }
+
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+/**
+ * @brief Setup additional EVENTS_COMPARE to compensate EVENTS_PHYEND delay.
+ *
+ * When EVENTS_PHYEND event is used to mark actual end of PDU, CTEINLINE is enabled but received
+ * PDU does not include CTE after CRC, the EVENTS_PHYEND will be generated with a short delay.
+ * That influences maintenance of TISF by software switch. To compensate the delay additional
+ * EVENTS_COMPARE events is set with TIFS value subtracted by the delay. This EVENT_COMPARE
+ * event will timeout before regular EVENTS_COMPARE and start radio switching procedure.
+ * In case there is a CTEInfo in the received PDU, an EVENTS_CTEPRESENT will be generated by
+ * Radio peripheral. The EVENTS_CTEPRESENT event is wired to cancel EVENTS_COMPARE setup for
+ * handling delayed EVENTS_PHYEND.
+ *
+ * Disable of the group of PPIs responsbile for handling of software based switch is done by
+ * timeout of regular EVENTS_PHYEND event. The EVENTS_PHYEND delay is short enough (16 us) that
+ * the same EVENT COMPARE may be used to trigger disable task for the sotfware switch group.
+ * In case the EVENTS_COMPARE for delayed EVENTS_PHYEND event timeouts, the group will be disabled
+ * within the Radio TX rampup period.
+ *
+ * CTEINLINE is enabled only for reception of PDUs that may include Constant Tone Extension.
+ * Delayed PHYEND event may occur only at end of received PDU, hence next task that is
+ * triggered by compensated EVENTS_COMPARE is Radio TASKS_TXEN.
+ *
+ * @param phyend_delay_cc  Index of EVENTS_COMPARE event to be set for delayed EVENTS_PHYEND event
+ * @param radio_enable_ppi Index of PPI to wire EVENTS_PHYEND event to Radio enable TX task.
+ */
+static inline void
+hal_radio_sw_switch_phyend_delay_compensation_config_set(uint8_t radio_enable_ppi,
+							 uint8_t phyend_delay_cc)
+{
+	/* Wire EVENTS_COMPARE[<phyend_delay_cc_offs>] event to Radio TASKS_TXEN */
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(phyend_delay_cc) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(radio_enable_ppi);
+
+	/* The Radio Enable Task is already subscribed to the channel.
+	 * There is no need to call channel enable again here.
+	 */
+
+	/* Wire Radio CTEPRESENT event to cancel EVENTS_COMPARE[<cc_offs>] timer */
+	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_EVT =
+		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_EVT;
+	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(phyend_delay_cc) =
+		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK;
+
+	/*  Enable CTEPRESENT event to disable EVENTS_COMPARE[<cc_offs>] PPI channel */
+	nrf_dppi_channels_enable(NRF_DPPIC,
+				 BIT(HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI));
+}
+
+/**
+ * @brief Clear additional EVENTS_COMAPRE responsible for compensation EVENTS_PHYEND delay.
+ *
+ * Disables PPI responsible for cancel of EVENTS_COMPARE set for delayed EVENTS_PHYEND.
+ * Removes wiring of delayed EVENTS_COMPARE event to enable Radio TX task.
+ *
+ * @param phyend_delay_cc  Index of EVENTS_COMPARE event to be cleared
+ * @param radio_enable_ppi Index of PPI to wire EVENTS_PHYEND event to Radio enable TX task.
+ */
+static inline void
+hal_radio_sw_switch_phyend_delay_compensation_config_clear(uint8_t radio_enable_ppi,
+							   uint8_t phyend_delay_cc)
+{
+	/* Invalidate PPI used for compensation of delayed EVETNS_PHYEND.
+	 *
+	 * Note: we do not un-subscribe the Radio enable task because
+	 * we use the same PPI for both SW Switch Timer compare events.
+	 */
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(phyend_delay_cc) = NRF_PPI_NONE;
+
+	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(phyend_delay_cc) =
+		NRF_PPI_NONE;
+
+	/* Disable CTEPRESENT event to disable EVENTS_COMPARE[<phyend_delay_cc_offs>] PPI channel */
+	nrf_dppi_channels_disable(NRF_DPPIC,
+				  BIT(HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI));
+}
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
