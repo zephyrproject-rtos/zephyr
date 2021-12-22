@@ -100,20 +100,15 @@ typedef int16_t device_handle_t;
  *
  * @brief Run an initialization function at boot at specified priority.
  *
- * @details This macro allows you to use the device infrastructure to
- * run a function at boot time. It is equivalent to
- * <tt>DEVICE_DEFINE(dev_name, drv_name, init_fn, NULL, NULL, NULL,
- * level, prio, NULL)</tt>, where @p dev_name is derived from @p init_fn.
+ * @deprecated Use SYS_INIT() instead.
  *
- * @param drv_name A string name for the pseudo-device.
+ * @param drv_name A string name for the pseudo-device (unused).
  * @param init_fn Pointer to the function which should run at boot time.
  * @param level Initialization level to run the function in.
  * @param prio Function's priority within its initialization level.
- * @see DEVICE_DEFINE()
  */
 #define SYS_DEVICE_DEFINE(drv_name, init_fn, level, prio)		\
-	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn, NULL,	\
-		      NULL, NULL, level, prio, NULL)
+	__DEPRECATED_MACRO SYS_INIT(init_fn, level, prio)
 
 /* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
  * so synthesize a unique dev_name from the devicetree node.
