@@ -5,6 +5,7 @@
  */
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 /* global variables that may be used to imitate real radio behaviour */
 static uint32_t g_iq_samples_amount;
@@ -18,7 +19,7 @@ uint8_t radio_df_ant_num_get(void)
 	return 0;
 }
 
-void radio_df_cte_inline_set(uint8_t enable)
+void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 {
 }
 
@@ -116,4 +117,9 @@ void ut_radio_df_pdu_antenna_switch_pattern_set(uint8_t pattern)
 uint8_t radio_df_pdu_antenna_switch_pattern_get(void)
 {
 	return g_pdu_switch_pattern;
+}
+
+bool radio_df_cte_ready(void)
+{
+	return true;
 }
