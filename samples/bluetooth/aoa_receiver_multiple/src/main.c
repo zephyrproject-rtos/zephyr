@@ -52,12 +52,12 @@ static int create_sync(const bt_addr_le_t *per_addr, uint8_t per_sid,
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 			struct net_buf_simple *buf);
 static void sync_cb(struct bt_le_per_adv_sync *sync,
-		    struct bt_le_per_adv_sync_synced_info *info);
+			struct bt_le_per_adv_sync_synced_info *info);
 static void term_cb(struct bt_le_per_adv_sync *sync,
-		    const struct bt_le_per_adv_sync_term_info *info);
+			const struct bt_le_per_adv_sync_term_info *info);
 static void recv_cb(struct bt_le_per_adv_sync *sync,
-		    const struct bt_le_per_adv_sync_recv_info *info,
-		    struct net_buf_simple *buf);
+			const struct bt_le_per_adv_sync_recv_info *info,
+			struct net_buf_simple *buf);
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 			struct net_buf_simple *buf);
 static void cte_recv_cb(struct bt_le_per_adv_sync *sync,
@@ -125,29 +125,28 @@ static bool data_cb(struct bt_data *data, void *user_data)
 }
 
 static void sync_cb(struct bt_le_per_adv_sync *sync,
-		    struct bt_le_per_adv_sync_synced_info *info)
+			struct bt_le_per_adv_sync_synced_info *info)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	printk("(%d) PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
-	       "Interval 0x%04x (%u ms), PHY %s\n",
-		   k_uptime_get_32(),
-	       bt_le_per_adv_sync_get_index(sync), le_addr,
-	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
+	//printk("(%d) PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+	//       "Interval 0x%04x (%u ms), PHY %s\n",
+	//	   k_uptime_get_32(),
+	//       bt_le_per_adv_sync_get_index(sync), le_addr,
+	//       info->interval, info->interval * 5 / 4, phy2str(info->phy));
 
 	uint8_t device_index = bt_le_per_adv_sync_get_index(sync);
 	is_syncing = false;
 	sync_devices[device_index].is_synced = true;
 	k_work_cancel_delayable(&sync_devices[device_index].sync_timeout_timer);
 
-#if 0
 	int err = enable_cte_rx(&sync_devices[device_index]);
 	if (err) {
 		err = bt_le_per_adv_sync_delete(sync_devices[device_index].sync);
 		if (err) {
-			printk("Failed cancel sync\n");
+			printk("sync_cb: Failed cancel sync\n");
 		}
 		printk("Clear device index: %d\n", device_index);
 		memset(&sync_devices[device_index].per_addr, 0, sizeof(bt_addr_le_t));
@@ -155,21 +154,34 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 		sync_devices[device_index].is_used = false;
 		sync_devices[device_index].is_synced = false;
 	}
-#endif
 }
 
 static void term_cb(struct bt_le_per_adv_sync *sync,
-		    const struct bt_le_per_adv_sync_term_info *info)
+			const struct bt_le_per_adv_sync_term_info *info)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	printk("(%d) PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
-			k_uptime_get_32(),
-	       bt_le_per_adv_sync_get_index(sync), le_addr);
+	//printk("(%d) PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
+	//		k_uptime_get_32(),
+	//       bt_le_per_adv_sync_get_index(sync), le_addr);
 	uint8_t device_index = bt_le_per_adv_sync_get_index(sync);
-	printk("Clear device index: %d\n", device_index);
+
+	if (sync_devices[device_index].is_synced) {
+		printk("Device was synced: ");
+	} else if (sync_devices[device_index].is_used) {
+		printk("___Device not synced cancel sync tmo\n");
+		printk("info->reason: %d\n", info->reason);
+		is_syncing = false;
+		int err = k_work_cancel_delayable(&sync_devices[device_index].sync_timeout_timer);
+		if (err) {
+			printk("Failed k_work_cancel_delayable: %d\n", err);
+		}
+	} else {
+		printk("Device unknown state: ");
+	}
+	printk("term_cb: clear device index: %d\n", device_index);
 	memset(&sync_devices[device_index].per_addr, 0, sizeof(bt_addr_le_t));
 	sync_devices[device_index].sync = NULL;
 	sync_devices[device_index].is_used = false;
@@ -177,9 +189,10 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 }
 
 static void recv_cb(struct bt_le_per_adv_sync *sync,
-		    const struct bt_le_per_adv_sync_recv_info *info,
-		    struct net_buf_simple *buf)
+			const struct bt_le_per_adv_sync_recv_info *info,
+			struct net_buf_simple *buf)
 {
+	/*
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char data_str[129];
 
@@ -188,13 +201,14 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 
 	printk("(%d) PER_ADV_SYNC[%u]:\n",
 		   k_uptime_get_32(),
-	       bt_le_per_adv_sync_get_index(sync));
+		   bt_le_per_adv_sync_get_index(sync));
 
 	printk("(%d) PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
-	       "RSSI %i, CTE %s, data length %u, data: %s\n",
+		   "RSSI %i, CTE %s, data length %u, data: %s\n",
 		   k_uptime_get_32(),
-	       bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
-	       info->rssi, cte_type2str(info->cte_type), buf->len, data_str);
+		   bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
+		   info->rssi, cte_type2str(info->cte_type), buf->len, data_str);
+	*/
 }
 
 static void cte_recv_cb(struct bt_le_per_adv_sync *sync,
@@ -206,7 +220,7 @@ static void cte_recv_cb(struct bt_le_per_adv_sync *sync,
 }
 
 static void scan_recv(const struct bt_le_scan_recv_info *info,
-		      struct net_buf_simple *buf)
+			  struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
@@ -223,17 +237,19 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	}
 	no_spam_counter++;
 	// To much spam removed below
+	/*
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s C:%u S:%u "
-	       "D:%u SR:%u E:%u Prim: %s, Secn: %s, Interval: 0x%04x (%u ms), "
-	       "SID: %u\n",
-	       le_addr, info->adv_type, info->tx_power, info->rssi, name,
-	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
-	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
-	       info->interval, info->interval * 5 / 4, info->sid);
+		   "D:%u SR:%u E:%u Prim: %s, Secn: %s, Interval: 0x%04x (%u ms), "
+		   "SID: %u\n",
+		   le_addr, info->adv_type, info->tx_power, info->rssi, name,
+		   (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
+		   (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
+		   (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
+		   (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
+		   (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
+		   phy2str(info->primary_phy), phy2str(info->secondary_phy),
+		   info->interval, info->interval * 5 / 4, info->sid);
+	*/
 	if (info->interval != 0 && !is_syncing) {
 		// Do not try to sync with device we already synced with.
 		// Could probably also use bt_le_per_adv_sync_lookup_addr(...) or similar
@@ -335,9 +351,9 @@ static int scan_enable(void)
 	int err;
 	struct bt_le_scan_param param = {
 		.type       = BT_LE_SCAN_TYPE_ACTIVE,
-		.options    = BT_LE_SCAN_OPT_NONE, //BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+		.options    = BT_LE_SCAN_OPT_NONE, //Don't do BT_LE_SCAN_OPT_FILTER_DUPLICATE,
 		.interval   = 200U,
-		.window     = BT_GAP_SCAN_FAST_WINDOW,
+		.window     = 100U,
 		.timeout    = 0U,
 	};
 
@@ -373,20 +389,20 @@ static void scan_disable(void)
 static void sync_create_timeout(struct k_work *work)
 {
 	int err;
-    struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-    device_t *device = CONTAINER_OF(dwork, device_t, sync_timeout_timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	device_t *device = CONTAINER_OF(dwork, device_t, sync_timeout_timer);
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(&device->per_addr, le_addr, sizeof(le_addr));
 	is_syncing = false;
 	if (!device->is_synced) {
-    	printk("(%d) sync_create_timeout for %s\n", k_uptime_get_32(), le_addr);
+		printk("(%d) sync_create_timeout for %s\n", k_uptime_get_32(), le_addr);
 		err = bt_le_per_adv_sync_delete(device->sync);
-        if (err) {
-            printk("Failed cancel sync: %d\n", err);
-        } else {
-            printk("Sync deleted\n");
-        }
+		if (err) {
+			printk("sync_create_timeout: Failed cancel sync: %d\n", err);
+		} else {
+			printk("Sync deleted\n");
+		}
 		// Cleanup
 		if (!err) {
 			memset(&device->per_addr, 0, sizeof(bt_addr_le_t));
@@ -404,16 +420,18 @@ void print_stats()
 {
 	for (int i = 0; i < CONFIG_BT_PER_ADV_SYNC_MAX; i++) {
 		printk("%d\t", i);
-    }
+	}
 	printk("\n");
-    for (int i = 0; i < CONFIG_BT_PER_ADV_SYNC_MAX; i++) {
-		if (sync_devices[i].is_used) {
+	for (int i = 0; i < CONFIG_BT_PER_ADV_SYNC_MAX; i++) {
+		if (sync_devices[i].is_synced) {
 			printk("%d\t", sync_devices[i].num_cte);
+		} else if (sync_devices[i].is_used) {
+			printk("sync...\t");
 		} else {
 			printk("-\t");
 		}
 		sync_devices[i].num_cte = 0;
-    }
+	}
 	printk("\n");
 	printk("------------------------------------------------------------------------------------\n");
 }
@@ -427,8 +445,8 @@ void main(void)
 	memset(sync_devices, 0, sizeof(sync_devices));
 
 	for (int i = 0; i < CONFIG_BT_PER_ADV_SYNC_MAX; i++) {
-        k_work_init_delayable(&sync_devices[i].sync_timeout_timer, sync_create_timeout);
-    }
+		k_work_init_delayable(&sync_devices[i].sync_timeout_timer, sync_create_timeout);
+	}
 
 	printk("Bluetooth initialization...");
 
@@ -446,7 +464,5 @@ void main(void)
 	while(true) {
 		k_msleep(1000);
 		print_stats();
-		//scan_disable();
-		//scan_enable();
 	}
 }
