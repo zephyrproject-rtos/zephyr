@@ -58,3 +58,6 @@ tests:
     platform_allow: mec15xxevb_assy6853
     tags: adc_xec
     extra_args: "CONFIG_ADC_XEC=y"
+  drivers.adc.test.build:
+    platform_allow: qemu_cortex_m3
+    tags: adc_test
