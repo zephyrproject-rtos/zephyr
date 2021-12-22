@@ -238,7 +238,7 @@ static struct net_nbr *nbr_nexthop_get(struct net_if *iface,
 
 	NET_ASSERT(nbr->idx != NET_NBR_LLADDR_UNKNOWN,
 		   "Nexthop %s not in neighbor cache!",
-		   log_strdup(net_sprint_ipv6_addr(addr)));
+		   net_sprint_ipv6_addr(addr));
 
 	net_nbr_ref(nbr);
 
