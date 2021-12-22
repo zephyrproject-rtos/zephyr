@@ -126,6 +126,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 	thread->callee_saved.sp = (ulong_t)stack_init;
+	thread->switch_handle = thread;
 }
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
