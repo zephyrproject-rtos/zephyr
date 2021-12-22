@@ -89,7 +89,8 @@ void main(void)
 
 	// I'm powering on all tags at once so to simulate a real world case where the tags
 	// are not transmitting at the same time start advertise after a random delay.
-	uint32_t adv_start_delay = (sys_rand32_get() % (1000 + 1 - 1) + 1);
+	//uint32_t adv_start_delay = (sys_rand32_get() % (1000 + 1 - 1) + 1);
+	uint32_t adv_start_delay = 1;
 	printk("Start adv delay: %d\n", adv_start_delay);
 	k_sleep(K_MSEC(adv_start_delay));
 
