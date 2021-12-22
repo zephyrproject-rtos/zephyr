@@ -18,17 +18,17 @@ tests:
   sample.kernel.philosopher:
     tags: introduction
   sample.kernel.philosopher.same_prio:
-    extra_args: "-DSAME_PRIO=1"
+    extra_args: SAME_PRIO=1
   sample.kernel.philosopher.static:
-    extra_args: "-DSTATIC_OBJS=1"
+    extra_args: STATIC_OBJS=1
   sample.kernel.philosopher.semaphores:
-    extra_args: "-DFORKS=SEMAPHORES"
+    extra_args: FORKS=SEMAPHORES
   sample.kernel.philosopher.stacks:
-    extra_args: "-DFORKS=STACKS"
+    extra_args: FORKS=STACKS
   sample.kernel.philosopher.fifos:
-    extra_args: "-DFORKS=FIFOS"
+    extra_args: FORKS=FIFOS
   sample.kernel.philosopher.lifos:
-    extra_args: "-DFORKS=LIFOS"
+    extra_args: FORKS=LIFOS
   sample.kernel.philosopher.preempt_only:
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=6
