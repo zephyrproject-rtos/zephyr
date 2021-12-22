@@ -203,10 +203,10 @@ config BT_CTLR_DF_DEBUG_ENABLE
 
 config BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE
 	bool
-	depends on BT_CTLR_DF_CTE_RX && BT_CONN && (SOC_NRF52811 || SOC_NRF52820 || SOC_NRF52833)
+	depends on BT_CTLR_DF_CTE_RX && BT_CONN && (SOC_NRF52811 || SOC_NRF52820 || SOC_NRF52833 || SOC_NRF5340_CPUNET)
 	default y
 	help
-	  SOCs nRF52811, nRF52820, nRF52833 generate PHYEND event delayed when
+	  SOCs nRF52811, nRF52820, nRF52833, nRF5340 generate PHYEND event delayed when
 	  CTEINLINECTRLEN is enabled and received PDU does not have CTEInfo field. The option
 	  enables workaround for the delay to maintain inter frame spacing (IFS) for connection
 	  events.
