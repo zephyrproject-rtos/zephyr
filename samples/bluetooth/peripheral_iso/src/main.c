@@ -141,7 +141,9 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 }
 
 static struct bt_iso_server iso_server = {
+#if defined(CONFIG_BT_SMP)
 	.sec_level = BT_SECURITY_L1,
+#endif /* CONFIG_BT_SMP */
 	.accept = iso_accept,
 };
 

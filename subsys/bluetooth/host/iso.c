@@ -927,12 +927,14 @@ int bt_iso_server_register(struct bt_iso_server *server)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_SMP)
 	if (server->sec_level > BT_SECURITY_L3) {
 		return -EINVAL;
 	} else if (server->sec_level < BT_SECURITY_L1) {
 		/* Level 0 is only applicable for BR/EDR */
 		server->sec_level = BT_SECURITY_L1;
 	}
+#endif /* CONFIG_BT_SMP */
 
 	BT_DBG("%p", server);
 
@@ -969,7 +971,9 @@ static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 		return err;
 	}
 
+#if defined(CONFIG_BT_SMP)
 	chan->required_sec_level = iso_server->sec_level;
+#endif /* CONFIG_BT_SMP */
 
 	bt_iso_chan_add(iso, chan);
 	bt_iso_chan_set_state(chan, BT_ISO_STATE_CONNECTING);
@@ -1028,11 +1032,15 @@ static uint8_t iso_server_check_security(struct bt_conn *conn)
 		return BT_HCI_ERR_SUCCESS;
 	}
 
+#if defined(CONFIG_BT_SMP)
 	if (conn->sec_level >= iso_server->sec_level) {
 		return BT_HCI_ERR_SUCCESS;
 	}
 
 	return BT_HCI_ERR_INSUFFICIENT_SECURITY;
+#else
+	return BT_HCI_ERR_SUCCESS;
+#endif /* CONFIG_BT_SMP */
 }
 
 void hci_le_cis_req(struct net_buf *buf)
@@ -1815,6 +1823,7 @@ static int hci_le_create_cis(const struct bt_iso_connect_param *param,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CIS, buf, NULL);
 }
 
+#if defined(CONFIG_BT_SMP)
 static int iso_chan_connect_security(const struct bt_iso_connect_param *param,
 				     size_t count)
 {
@@ -1863,6 +1872,7 @@ static int iso_chan_connect_security(const struct bt_iso_connect_param *param,
 
 	return 0;
 }
+#endif /* CONFIG_BT_SMP */
 
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 {
@@ -1913,6 +1923,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 		}
 	}
 
+#if defined(CONFIG_BT_SMP)
 	/* Check for and initiate security for all channels that have
 	 * requested encryption if the ACL link is not already secured
 	 */
@@ -1921,6 +1932,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 		BT_DBG("Failed to initate security for all CIS: %d", err);
 		return err;
 	}
+#endif /* CONFIG_BT_SMP */
 
 	err = hci_le_create_cis(param, count);
 	if (err == -ECANCELED) {
