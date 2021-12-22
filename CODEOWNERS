@@ -249,6 +249,7 @@
 /drivers/eeprom/                          @henrikbrixandersen
 /drivers/eeprom/eeprom_stm32.c            @KwonTae-young
 /drivers/entropy/*b91*                    @yurvyn
+/drivers/entropy/*bt_hci*                 @JordanYates
 /drivers/entropy/*rv32m1*                 @dleach02
 /drivers/entropy/*gecko*                  @chrta
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
