@@ -26,8 +26,6 @@ uint8_t radio_df_ant_num_get(void);
 void radio_df_mode_set_aoa(void);
 /* Sets Direction Finding AOD mode. */
 void radio_df_mode_set_aod(void);
-/* Sets inline configuration enabled or disabled for receive of CTE. */
-void radio_df_cte_inline_set(uint8_t eanble);
 
 /* Configure CTE transmission with 2us antenna switching for AoD. */
 void radio_df_cte_tx_aod_2us_set(uint8_t cte_len);
