@@ -3682,6 +3682,10 @@ int bt_disable(void)
 	return 0;
 }
 
+bool bt_is_ready(void)
+{
+	return atomic_test_bit(bt_dev.flags, BT_DEV_READY);
+}
 
 #define DEVICE_NAME_LEN (sizeof(CONFIG_BT_DEVICE_NAME) - 1)
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
