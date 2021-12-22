@@ -37,18 +37,6 @@ LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
 #define REG_PREFACE		""
 #endif
 
-enum link_format_mode {
-	LINK_FORMAT_MODE_DISCOVERY,
-	LINK_FORMAT_MODE_BOOTSTRAP_DISCOVERY,
-	LINK_FORMAT_MODE_REGISTER,
-};
-
-struct link_format_out_formatter_data {
-	uint8_t request_level;
-	uint8_t mode;
-	bool is_first : 1;
-};
-
 static int put_begin(struct lwm2m_output_context *out,
 		     struct lwm2m_obj_path *path)
 {
