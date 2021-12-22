@@ -429,7 +429,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 			.fmt = FM_FAT | FM_SFD,	/* Any suitable FAT */
 			.n_fat = 1,		/* One FAT fs table */
 			.align = 0,		/* Get sector size via diskio query */
-			.n_root = 512,		/* Max 512 root directory entries */
+			.n_root = CONFIG_FS_FATFS_MAX_ROOT_ENTRIES,
 			.au_size = 0		/* Auto calculate cluster size */
 		};
 
