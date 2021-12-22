@@ -152,6 +152,16 @@ BUILD_ASSERT(((INST_0_QER == JESD216_DW15_QER_NONE)
 	      || (INST_0_QER == JESD216_DW15_QER_S1B6)),
 	     "Driver only supports NONE or S1B6 for quad-enable-requirements");
 
+#define INST_0_4BA DT_INST_PROP_OR(0, enter_4byte_addr, 0)
+#if (INST_0_4BA != 0)
+BUILD_ASSERT(((INST_0_4BA & 0x03) != 0),
+	     "Driver only supports command (0xB7) for entering 4 byte addressing mode");
+BUILD_ASSERT(DT_INST_PROP(0, address_size_32),
+	    "After entering 4 byte addressing mode, 4 byte addressing is expected");
+#endif
+
+
+
 #if NRF52_ERRATA_122_PRESENT
 #include <hal/nrf_gpio.h>
 static int anomaly_122_init(const struct device *dev);
@@ -675,7 +685,24 @@ static int qspi_nrfx_configure(const struct device *dev)
 		}
 	}
 
-	return 0;
+	if (INST_0_4BA != 0) {
+		struct qspi_cmd cmd = {
+			.op_code = SPI_NOR_CMD_4BA,
+		};
+
+		/* Call will send write enable before instruction if that
+		 * requirement is encoded in INST_0_4BA.
+		 */
+		ret = qspi_send_cmd(dev, &cmd, (INST_0_4BA & 0x02));
+
+		if (ret < 0) {
+			LOG_ERR("E4BA cmd issue failed: %d.", ret);
+		} else {
+			LOG_DBG("E4BA cmd issued.");
+		}
+	}
+
+	return ret;
 }
 
 static int qspi_read_jedec_id(const struct device *dev,
