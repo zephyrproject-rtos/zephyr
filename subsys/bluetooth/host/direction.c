@@ -69,6 +69,21 @@ static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 					 const struct bt_df_conn_cte_rx_param *params);
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
+static uint8_t get_hci_cte_type(enum bt_df_cte_type type)
+{
+	switch (type) {
+	case BT_DF_CTE_TYPE_AOA:
+		return BT_HCI_LE_AOA_CTE;
+	case BT_DF_CTE_TYPE_AOD_1US:
+		return BT_HCI_LE_AOD_CTE_1US;
+	case BT_DF_CTE_TYPE_AOD_2US:
+		return BT_HCI_LE_AOD_CTE_2US;
+	default:
+		BT_ERR("Wrong CTE type");
+		return BT_HCI_LE_NO_CTE;
+	}
+}
+
 static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
 				    const struct bt_df_adv_cte_tx_param *params)
 {
@@ -564,6 +579,11 @@ static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 		err = -EIO;
 	} else {
 		conn->cte_type = (enable ? params->cte_type : 0);
+		/* This flag is set once for connection object. It is never cleared because CTE RX
+		 * params must be set at least once for connection object to successfully execute
+		 * CTE REQ procedure.
+		 */
+		atomic_set_bit(conn->flags, BT_CONN_CTE_RX_PARAMS_SET);
 	}
 
 	net_buf_unref(rsp);
@@ -620,6 +640,78 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 	return 0;
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
+static bool valid_cte_req_params(const struct bt_conn *conn, uint8_t cte_type,
+				    uint8_t cte_length)
+{
+	if (!(conn->cte_type & cte_type)) {
+		return false;
+	}
+
+	if (cte_length < BT_HCI_LE_CTE_LEN_MIN || cte_length > BT_HCI_LE_CTE_LEN_MAX) {
+		return false;
+	}
+
+	return true;
+}
+
+static void prepare_conn_cte_req_enable_cmd_params(struct net_buf *buf, const struct bt_conn *conn,
+						   const struct bt_df_conn_cte_req_params *params,
+						   bool enable)
+{
+	struct bt_hci_cp_le_conn_cte_req_enable *cp;
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->enable = enable ? 1 : 0;
+
+	if (enable) {
+		cp->cte_request_interval = params->interval;
+		cp->requested_cte_length = params->cte_length;
+		cp->requested_cte_type = get_hci_cte_type(params->cte_type);
+	}
+}
+
+static int hci_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
+					  const struct bt_df_conn_cte_req_params *params)
+{
+	struct bt_hci_cp_le_conn_cte_req_enable *rp;
+	struct bt_hci_cmd_state_set state;
+	struct net_buf *buf, *rsp;
+	int err;
+
+	if (enable && !valid_cte_req_params(conn, params->cte_length, params->cte_type)) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE,
+				sizeof(struct bt_hci_cp_le_conn_cte_req_enable));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	prepare_conn_cte_req_enable_cmd_params(buf, conn, params, enable);
+
+	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_REQ_ENABLED, enable);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	if (conn->handle != sys_le16_to_cpu(rp->handle)) {
+		err = -EIO;
+	}
+
+	net_buf_unref(rsp);
+
+	return err;
+}
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RSP)
 static void prepare_conn_cte_rsp_enable_cmd_params(struct net_buf *buf, const struct bt_conn *conn,
@@ -865,6 +957,51 @@ int bt_df_set_conn_cte_tx_param(struct bt_conn *conn, const struct bt_df_conn_ct
 }
 
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_TX */
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
+static int bt_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
+					 const struct bt_df_conn_cte_req_params *params)
+{
+	if (!BT_FEAT_LE_CONNECTION_CTE_REQ(bt_dev.le.features)) {
+		BT_WARN("Constant Tone Extensions request procedure is not supported");
+		return -ENOTSUP;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		BT_ERR("not connected!");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_PARAMS_SET)) {
+		BT_ERR("Can't start CTE requres procedure before CTE RX params setup");
+		return -EINVAL;
+	}
+
+	return hci_df_set_conn_cte_req_enable(conn, enable, params);
+}
+
+int bt_df_conn_cte_req_enable(struct bt_conn *conn, const struct bt_df_conn_cte_req_params *params)
+{
+	CHECKIF(!conn) {
+		return -EINVAL;
+	}
+
+	CHECKIF(!params) {
+		return -EINVAL;
+	}
+
+	return bt_df_set_conn_cte_req_enable(conn, true, params);
+}
+
+int bt_df_conn_cte_req_disable(struct bt_conn *conn)
+{
+	CHECKIF(!conn) {
+		return -EINVAL;
+	}
+
+	return bt_df_set_conn_cte_req_enable(conn, false, NULL);
+}
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RSP)
 static int bt_df_set_conn_cte_rsp_enable(struct bt_conn *conn, bool enable)

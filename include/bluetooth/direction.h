@@ -13,12 +13,16 @@ enum bt_df_cte_type {
 	BT_DF_CTE_TYPE_NONE = 0,
 	/** Angle of Arrival mode. Antenna switching done on receiver site. */
 	BT_DF_CTE_TYPE_AOA = BIT(0),
-	/** Angle of Departure mode with 1 us antenna switching slots.
-	 *  Antenna switching done on transmitter site.
+	/**
+	 * @brief Angle of Departure mode with 1 us antenna switching slots.
+	 *
+	 * Antenna switching done on transmitter site.
 	 */
 	BT_DF_CTE_TYPE_AOD_1US = BIT(1),
-	/** Angle of Departure mode with 2 us antenna switching slots.
-	 *  Antenna switching done on transmitter site.
+	/**
+	 * @brief Angle of Departure mode with 2 us antenna switching slots.
+	 *
+	 * Antenna switching done on transmitter site.
 	 */
 	BT_DF_CTE_TYPE_AOD_2US = BIT(2),
 	/** Convenience value that collects all possible CTE types in one entry. */
@@ -155,6 +159,25 @@ struct bt_df_conn_cte_tx_param {
 	const uint8_t *ant_ids;
 };
 
+struct bt_df_conn_cte_req_params {
+	/**
+	 * @brief Requested interval for initiating the CTE Request procedure.
+	 *
+	 * Value 0x0 means, run the procedure once. Other values are intervals in number of
+	 * connection events, to run the command periodically.
+	 */
+	uint8_t interval;
+	/** Requested length of the CTE in 8 us units. */
+	uint8_t cte_length;
+	/**
+	 * @brief Requested type of the CTE.
+	 *
+	 * Allowed values are defined by @ref bt_df_cte_type, except BT_DF_CTE_TYPE_NONE and
+	 * BT_DF_CTE_TYPE_ALL.
+	 */
+	uint8_t cte_type;
+};
+
 /**
  * @brief Set or update the Constant Tone Extension parameters for periodic advertising set.
  *
@@ -245,6 +268,29 @@ int bt_df_conn_cte_rx_disable(struct bt_conn *conn);
  * @return Zero in case of success, other value in case of failure.
  */
 int bt_df_set_conn_cte_tx_param(struct bt_conn *conn, const struct bt_df_conn_cte_tx_param *params);
+
+/**
+ * @brief Enable Constant Tone Extension request procedure for a connection.
+ *
+ * The function is available if @kconfig{CONFIG_BT_DF_CONNECTION_CTE_REQ} is enabled.
+ *
+ * @param conn   Connection object.
+ * @param params CTE receive and sampling parameters.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_conn_cte_req_enable(struct bt_conn *conn, const struct bt_df_conn_cte_req_params *params);
+
+/**
+ * @brief Disable Constant Tone Extension request procedure for a connection.
+ *
+ * The function is available if @kconfig{CONFIG_BT_DF_CONNECTION_CTE_REQ} is enabled.
+ *
+ * @param conn   Connection object.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_conn_cte_req_disable(struct bt_conn *conn);
 
 /**
  * @brief Enable Constant Tone Extension response procedure for a connection.
