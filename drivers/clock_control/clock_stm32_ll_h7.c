@@ -561,6 +561,48 @@ static int set_up_pll3(void)
 }
 
 __unused
+static void set_up_hse(void)
+{
+#if defined(STM32_SYSCLK_SRC_HSE) || defined(STM32_PLL_SRC_HSE)
+	if (IS_ENABLED(STM32_HSE_BYPASS)) {
+		LL_RCC_HSE_EnableBypass();
+	} else {
+		LL_RCC_HSE_DisableBypass();
+	}
+
+	/* Enable HSE oscillator */
+	LL_RCC_HSE_Enable();
+	while (LL_RCC_HSE_IsReady() != 1) {
+	}
+#endif /* STM32_*_SRC_HSE */
+}
+
+__unused
+static void set_up_hsi(void)
+{
+#if defined(STM32_SYSCLK_SRC_HSI) || defined(STM32_PLL_SRC_HSI)
+	/* Enable HSI oscillator */
+	LL_RCC_HSI_Enable();
+	while (LL_RCC_HSI_IsReady() != 1) {
+	}
+
+	/* HSI divider configuration */
+	LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
+#endif /* STM32_*_SRC_HSI */
+}
+
+__unused
+static void set_up_csi(void)
+{
+#if defined(STM32_SYSCLK_SRC_CSI) || defined(STM32_PLL_SRC_CSI)
+	/* Enable CSI oscillator */
+	LL_RCC_CSI_Enable();
+	while (LL_RCC_CSI_IsReady() != 1) {
+	}
+#endif /* STM32_*_SRC_CSI */
+}
+
+__unused
 static int config_src_sysclk_pll(void)
 {
 #if defined(STM32_SYSCLK_SRC_PLL)
@@ -571,38 +613,22 @@ static int config_src_sysclk_pll(void)
 	/* Configure PLL source */
 	/* Can be HSE , HSI 64Mhz/HSIDIV, CSI 4MHz*/
 	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
-		if (IS_ENABLED(STM32_HSE_BYPASS)) {
-			LL_RCC_HSE_EnableBypass();
-		} else {
-			LL_RCC_HSE_DisableBypass();
-		}
-
-		/* Enable HSE oscillator */
-		LL_RCC_HSE_Enable();
-		while (LL_RCC_HSE_IsReady() != 1) {
-		}
+		set_up_hse();
 
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSE);
 	} else if (IS_ENABLED(STM32_PLL_SRC_CSI)) {
-		/* Support for CSI oscillator */
-		LL_RCC_CSI_Enable();
-		while (LL_RCC_CSI_IsReady() != 1) {
-		}
+		set_up_csi();
 
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_CSI);
 	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
-		/* Enable HSI oscillator */
-		LL_RCC_HSI_Enable();
-		while (LL_RCC_HSI_IsReady() != 1) {
-		}
-
-		/* HSI divider configuration */
-		LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
+		set_up_hsi();
 
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSI);
+	} else {
+		return -ENOTSUP;
 	}
 
 	r = get_vco_input_range(STM32_PLL_M_DIVISOR, &vco_input_range);
@@ -649,69 +675,13 @@ static int config_src_sysclk_pll(void)
 	return 0;
 }
 
-__unused
-static void config_src_sysclk_hse(void)
-{
-#ifdef STM32_SYSCLK_SRC_HSE
-	/* Enable HSE oscillator */
-	LL_RCC_HSE_Enable();
-	while (LL_RCC_HSE_IsReady() != 1) {
-	}
-
-	/* Set sysclk source to HSE */
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
-	}
-#endif /* STM32_SYSCLK_SRC_HSE */
-}
-
-__unused
-static void config_src_sysclk_hsi(void)
-{
-#ifdef STM32_SYSCLK_SRC_HSI
-	/* Enable HSI oscillator */
-	LL_RCC_HSI_Enable();
-	while (LL_RCC_HSI_IsReady() != 1) {
-	}
-
-	/* HSI divider configuration */
-	LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
-
-	/* Set sysclk source to HSI */
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
-	}
-#endif /* STM32_SYSCLK_SRC_HSI */
-}
-
-__unused
-static void config_src_sysclk_csi(void)
-{
-#ifdef STM32_SYSCLK_SRC_CSI
-	/* Enable CSI oscillator */
-	LL_RCC_CSI_Enable();
-	while (LL_RCC_CSI_IsReady() != 1) {
-	}
-
-	/* Set sysclk source to CSI */
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_CSI);
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_CSI) {
-	}
-#endif /* STM32_SYSCLK_SRC_CSI */
-}
-
+#if defined(CONFIG_CPU_CORTEX_M7)
 static int stm32_clock_control_init(const struct device *dev)
 {
-#if defined(STM32_SYSCLK_SRC_PLL) || defined(STM32_PLL3_ENABLE)
-
-#endif
-
-	ARG_UNUSED(dev);
-
-#if !defined(CONFIG_CPU_CORTEX_M4)
-
 	uint32_t old_hclk_freq = 0;
 	uint32_t new_hclk_freq = 0;
+
+	ARG_UNUSED(dev);
 
 	/* HW semaphore Clock enable */
 #if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) || \
@@ -749,6 +719,9 @@ static int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_SetAPB3Prescaler(apb3_prescaler(STM32_D1PPRE));
 	LL_RCC_SetAPB4Prescaler(apb4_prescaler(STM32_D3PPRE));
 
+	/* Init PLL source to None */
+	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_NONE);
+
 	if (IS_ENABLED(STM32_SYSCLK_SRC_PLL)) {
 		int r = config_src_sysclk_pll();
 
@@ -756,11 +729,31 @@ static int stm32_clock_control_init(const struct device *dev)
 			return r;
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
-		config_src_sysclk_hse();
+		set_up_hse();
+
+		/* Set sysclk source to HSE */
+		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
+		while (LL_RCC_GetSysClkSource() !=
+					LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
+		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
-		config_src_sysclk_hsi();
+		set_up_hsi();
+
+		/* Set sysclk source to HSI */
+		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+		while (LL_RCC_GetSysClkSource() !=
+					LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_CSI)) {
-		config_src_sysclk_csi();
+		set_up_csi();
+
+		/* Set sysclk source to CSI */
+		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_CSI);
+		while (LL_RCC_GetSysClkSource() !=
+					LL_RCC_SYS_CLKSOURCE_STATUS_CSI) {
+		}
+	} else {
+		return -ENOTSUP;
 	}
 
 	/* Set FLASH latency */
@@ -797,7 +790,7 @@ static int stm32_clock_control_init(const struct device *dev)
 
 	return 0;
 }
-#endif /* !CONFIG_CPU_CORTEX_M4 */
+#endif /* CONFIG_CPU_CORTEX_M7 */
 
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
