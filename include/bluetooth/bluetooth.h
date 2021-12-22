@@ -157,6 +157,13 @@ int bt_enable(bt_ready_cb_t cb);
 int bt_disable(void);
 
 /**
+ * @brief Check if Bluetooth is ready
+ *
+ * @return true when Bluetooth is ready, false otherwise
+ */
+bool bt_is_ready(void);
+
+/**
  * @brief Set Bluetooth Device Name
  *
  * Set Bluetooth GAP Device Name.
