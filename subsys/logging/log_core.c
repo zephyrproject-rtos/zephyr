@@ -109,6 +109,14 @@ static const struct mpsc_pbuf_buffer_config mpsc_config = {
 		MPSC_PBUF_MODE_OVERWRITE : 0
 };
 
+/* Check that default tag can fit in tag buffer. */
+COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, (),
+	(BUILD_ASSERT(sizeof(CONFIG_LOG_TAG_DEFAULT) <= CONFIG_LOG_TAG_MAX_LEN + 1,
+		      "Default string longer than tag capacity")));
+
+static char tag[CONFIG_LOG_TAG_MAX_LEN + 1] =
+	COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, ({}), (CONFIG_LOG_TAG_DEFAULT));
+
 bool log_is_strdup(const void *buf);
 static void msg_process(union log_msgs msg, bool bypass);
 
@@ -1213,6 +1221,35 @@ void z_log_msg2_free(union log_msg2_generic *msg)
 bool z_log_msg2_pending(void)
 {
 	return mpsc_pbuf_is_pending(&log_buffer);
+}
+
+const char *z_log_get_tag(void)
+{
+	return CONFIG_LOG_TAG_MAX_LEN > 0 ? tag : NULL;
+}
+
+int log_set_tag(const char *str)
+{
+	if (CONFIG_LOG_TAG_MAX_LEN == 0) {
+		return -ENOTSUP;
+	}
+
+	if (str == NULL) {
+		return -EINVAL;
+	}
+
+	size_t len = strlen(str);
+	size_t cpy_len = MIN(len, CONFIG_LOG_TAG_MAX_LEN);
+
+	memcpy(tag, str, cpy_len);
+	tag[cpy_len] = '\0';
+
+	if (cpy_len < len) {
+		tag[cpy_len - 1] = '~';
+		return -ENOMEM;
+	}
+
+	return 0;
 }
 
 static void log_process_thread_timer_expiry_fn(struct k_timer *timer)
