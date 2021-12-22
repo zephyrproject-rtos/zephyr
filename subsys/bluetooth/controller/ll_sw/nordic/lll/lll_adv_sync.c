@@ -354,7 +354,7 @@ static void isr_tx(void *param)
 		radio_isr_set(isr_tx, lll_sync);
 		switch_radio_complete_and_b2b_tx(lll_sync, lll->phy_s);
 	} else {
-		radio_isr_set(isr_done, lll);
+		radio_isr_set(isr_done, lll_sync);
 		switch_radio_complete_and_phy_end_disable(lll_sync);
 	}
 
