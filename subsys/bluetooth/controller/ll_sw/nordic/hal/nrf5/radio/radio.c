@@ -469,10 +469,10 @@ void radio_status_reset(void)
 	 */
 	NRF_RADIO->EVENTS_READY = 0;
 	NRF_RADIO->EVENTS_END = 0;
-#if defined(CONFIG_BT_CTLR_DF_SUPPORT)
+#if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 	/* Clear it only for SoCs supporting DF extension */
 	NRF_RADIO->EVENTS_PHYEND = 0;
-#endif /* CONFIG_BT_CTLR_DF_SUPPORT */
+#endif /* CONFIG_BT_CTLR_DF_SUPPORT && !CONFIG_ZTEST */
 	NRF_RADIO->EVENTS_DISABLED = 0;
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 	NRF_RADIO->EVENTS_CTEPRESENT = 0;
@@ -1644,6 +1644,7 @@ void radio_ar_resolve(const uint8_t *addr)
 
 }
 
+#if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 /* @brief Function configures CTE inline register to start sampling of CTE
  *        according to information parsed from CTEInfo field of received PDU.
  *
@@ -1678,3 +1679,4 @@ void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 
 	nrf_radio_cteinline_configure(NRF_RADIO, &inline_conf);
 }
+#endif /* CONFIG_BT_CTLR_DF_SUPPORT && !CONFIG_ZTEST */
