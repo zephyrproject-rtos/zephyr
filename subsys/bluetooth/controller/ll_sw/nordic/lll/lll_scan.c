@@ -1015,6 +1015,8 @@ static void isr_done_cleanup(void *param)
 	if (lll->is_aux_sched) {
 		struct node_rx_pdu *node_rx;
 
+		lll->is_aux_sched = 0U;
+
 		node_rx = ull_pdu_rx_alloc();
 		LL_ASSERT(node_rx);
 
