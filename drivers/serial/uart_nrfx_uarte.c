@@ -1983,7 +1983,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(UARTE(idx))))	       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(UARTE(idx));))	       \
 	static struct uarte_nrfx_data uarte_##idx##_data = {		       \
 		UARTE_CONFIG(idx),					       \
 		IF_ENABLED(CONFIG_UART_##idx##_ASYNC,			       \

@@ -234,7 +234,7 @@ static void config_can_##inst##_irq(void)                                      \
 
 #define CAN_STM32FD_CFG_INST(inst)                                             \
 									       \
-PINCTRL_DT_INST_DEFINE(inst)						       \
+PINCTRL_DT_INST_DEFINE(inst);						       \
 									       \
 static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 	.msg_sram = (struct can_mcan_msg_sram *)                               \
@@ -266,7 +266,7 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 
 #define CAN_STM32FD_CFG_INST(inst)                                             \
 									       \
-PINCTRL_DT_INST_DEFINE(inst)						       \
+PINCTRL_DT_INST_DEFINE(inst);						       \
 									       \
 static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 	.msg_sram = (struct can_mcan_msg_sram *)                               \

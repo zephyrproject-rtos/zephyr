@@ -1131,7 +1131,7 @@ static const struct can_driver_api can_api_funcs = {
 
 static void config_can_1_irq(CAN_TypeDef *can);
 
-PINCTRL_DT_DEFINE(DT_NODELABEL(can1))
+PINCTRL_DT_DEFINE(DT_NODELABEL(can1));
 
 static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
@@ -1227,7 +1227,7 @@ NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 
 static void config_can_2_irq(CAN_TypeDef *can);
 
-PINCTRL_DT_DEFINE(DT_NODELABEL(can2))
+PINCTRL_DT_DEFINE(DT_NODELABEL(can2));
 
 static const struct can_stm32_config can_stm32_cfg_2 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can2)),

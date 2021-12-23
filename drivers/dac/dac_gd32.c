@@ -150,7 +150,7 @@ static int dac_gd32_init(const struct device *dev)
 	return 0;
 }
 
-PINCTRL_DT_INST_DEFINE(0)
+PINCTRL_DT_INST_DEFINE(0);
 
 static struct dac_gd32_data dac_gd32_data_0;
 
