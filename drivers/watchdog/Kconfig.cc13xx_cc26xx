@@ -1,0 +1,21 @@
+# Copyright (c) 2021 Florin Stancu <niflostancu@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_TI_CC13XX_CC26XX_WDG := ti,cc13xx-cc26xx-watchdog
+
+config WDT_CC13XX_CC26XX
+	bool "Watchdog Driver for CC13xx / CC26xx family of MCUs"
+	default $(dt_compat_enabled,$(DT_COMPAT_TI_CC13XX_CC26XX_WDG))
+	depends on SOC_SERIES_CC13X2_CC26X2
+	depends on SOC_FAMILY_TISIMPLELINK
+	help
+	  Enable watchdog for CC13xx / CC26xx family of MCUs
+
+config WDT_CC13XX_CC26XX_INITIAL_TIMEOUT
+	int "Value for WDT timeout in ms"
+	depends on WDT_CC13XX_CC26XX
+	default 2000
+	range 1 2863311
+	help
+	  Max value depends on system frequency (WDT uses fixed 32 scaler).
+	  48 Mhz: 0xFFFFFFFF / (48^9 / 32 / 1000) ms
