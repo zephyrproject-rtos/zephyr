@@ -308,7 +308,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define GD32_USART_INIT(n)							\
-	PINCTRL_DT_INST_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);						\
 	GD32_USART_IRQ_HANDLER(n)						\
 	static struct gd32_usart_data usart_gd32_data_##n = {			\
 		.baud_rate = DT_INST_PROP(n, current_speed),			\

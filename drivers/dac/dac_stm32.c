@@ -144,7 +144,7 @@ static const struct dac_driver_api api_stm32_driver_api = {
 
 #define STM32_DAC_INIT(index)						\
 									\
-PINCTRL_DT_INST_DEFINE(index)						\
+PINCTRL_DT_INST_DEFINE(index);						\
 									\
 static const struct dac_stm32_cfg dac_stm32_cfg_##index = {		\
 	.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),			\

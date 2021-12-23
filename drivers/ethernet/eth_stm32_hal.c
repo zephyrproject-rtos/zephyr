@@ -1085,7 +1085,7 @@ static void eth0_irq_config(void)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-PINCTRL_DT_INST_DEFINE(0)
+PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,

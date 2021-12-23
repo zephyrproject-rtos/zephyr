@@ -1688,7 +1688,7 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #define STM32_UART_INIT(index)						\
 STM32_UART_IRQ_HANDLER_DECL(index)					\
 									\
-PINCTRL_DT_INST_DEFINE(index)						\
+PINCTRL_DT_INST_DEFINE(index);						\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\

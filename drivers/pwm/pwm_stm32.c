@@ -662,7 +662,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
 	IRQ_CONFIG_FUNC(index)						       \
 									       \
-	PINCTRL_DT_INST_DEFINE(index)					       \
+	PINCTRL_DT_INST_DEFINE(index);					       \
 									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),    \

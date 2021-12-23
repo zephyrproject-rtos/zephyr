@@ -240,7 +240,7 @@ struct pinctrl_dev_config {
 	Z_PINCTRL_STATES_DEFINE(node_id)				       \
 	Z_PINCTRL_DEV_CONFIG_CONST Z_PINCTRL_DEV_CONFIG_STATIC		       \
 	struct pinctrl_dev_config Z_PINCTRL_DEV_CONFIG_NAME(node_id) =	       \
-	Z_PINCTRL_DEV_CONFIG_INIT(node_id);
+	Z_PINCTRL_DEV_CONFIG_INIT(node_id)
 
 /**
  * @brief Define all pin control information for the given compatible index.
