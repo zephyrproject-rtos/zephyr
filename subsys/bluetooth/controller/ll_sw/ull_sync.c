@@ -370,6 +370,9 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	link_sync_lost = sync->node_rx_lost.hdr.link;
 	ll_rx_link_release(link_sync_lost);
 
+	/* Mark sync context not sync established */
+	sync->timeout_reload = 0U;
+
 	ull_sync_release(sync);
 
 	return 0;
@@ -487,9 +490,6 @@ void ull_sync_release(struct ll_sync_set *sync)
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)) {
 		sync->timeout = 0U;
 	}
-
-	/* Mark sync context not sync established */
-	sync->timeout_reload = 0U;
 
 	/* reset accumulated data len */
 	sync->data_len = 0U;
@@ -853,8 +853,8 @@ void ull_sync_done(struct node_rx_event_done *done)
 	/* Get reference to ULL context */
 	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
 
-	/* Do nothing if local terminate requested */
-	if (unlikely(sync->is_stop)) {
+	/* Do nothing if local terminate requested or sync lost */
+	if (unlikely(sync->is_stop || !sync->timeout_reload)) {
 		return;
 	}
 
@@ -1115,6 +1115,9 @@ static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_op
 			  TICKER_ID_SCAN_SYNC_BASE + sync_handle, stop_op_cb, (void *)sync);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
+
+	/* Mark sync context not sync established */
+	sync->timeout_reload = 0U;
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
