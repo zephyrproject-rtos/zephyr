@@ -473,7 +473,7 @@ The example below contains a complete example of a device driver that uses the
 
     #define MYDEV_DEFINE(i)                                                    \
         /* Define all pinctrl configuration for instance "i" */                \
-        PINCTRL_DT_INST_DEFINE(i)                                              \
+        PINCTRL_DT_INST_DEFINE(i);                                             \
         ...                                                                    \
         static const struct mydev_config mydev_config_##i = {                  \
             ...                                                                \
@@ -484,7 +484,7 @@ The example below contains a complete example of a device driver that uses the
         ...                                                                    \
                                                                                \
         DEVICE_DT_INST_DEFINE(i, mydev_init, NULL, &mydev_data##i,             \
-                              &mydev_config##i, ...)
+                              &mydev_config##i, ...);
 
     DT_INST_FOREACH_STATUS_OKAY(MYDEV_DEFINE)
 

@@ -894,7 +894,7 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 									\
 static void i2s_stm32_irq_config_func_##index(const struct device *dev);\
 									\
-PINCTRL_DT_DEFINE(DT_NODELABEL(i2s##index))				\
+PINCTRL_DT_DEFINE(DT_NODELABEL(i2s##index));				\
 									\
 static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 	.i2s = (SPI_TypeDef *) DT_REG_ADDR(DT_NODELABEL(i2s##index)),	\

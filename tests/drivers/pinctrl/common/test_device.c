@@ -19,7 +19,7 @@ int test_device_init(const struct device *dev)
 }
 
 #define PINCTRL_DEVICE_INIT(inst)					\
-	PINCTRL_DT_INST_DEFINE(inst)					\
+	PINCTRL_DT_INST_DEFINE(inst);					\
 									\
 	DEVICE_DT_INST_DEFINE(inst, test_device_init, NULL, NULL, NULL,	\
 			      POST_KERNEL,				\

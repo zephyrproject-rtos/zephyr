@@ -859,7 +859,7 @@ static void flash_stm32_qspi_irq_config_func(const struct device *dev);
 
 #define STM32_QSPI_NODE DT_INST_PARENT(0)
 
-PINCTRL_DT_DEFINE(STM32_QSPI_NODE)
+PINCTRL_DT_DEFINE(STM32_QSPI_NODE);
 
 static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 	.regs = (QUADSPI_TypeDef *)DT_REG_ADDR(STM32_QSPI_NODE),

@@ -1050,7 +1050,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 									\
 static void adc_stm32_cfg_func_##index(void);				\
 									\
-PINCTRL_DT_INST_DEFINE(index)						\
+PINCTRL_DT_INST_DEFINE(index);						\
 									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
