@@ -789,9 +789,11 @@ static inline int z_impl_device_usable_check(const struct device *dev)
  * @retval false if the device is not ready for use or if a NULL device pointer
  * is passed as argument.
  */
-static inline bool device_is_ready(const struct device *dev)
+__syscall bool device_is_ready(const struct device *dev);
+
+static inline bool z_impl_device_is_ready(const struct device *dev)
 {
-	return device_usable_check(dev) == 0;
+	return z_device_is_ready(dev);
 }
 
 /**
