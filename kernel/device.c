@@ -134,14 +134,6 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 }
 #include <syscalls/device_get_binding_mrsh.c>
 
-static inline int z_vrfy_device_usable_check(const struct device *dev)
-{
-	Z_OOPS(Z_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
-
-	return z_impl_device_usable_check(dev);
-}
-#include <syscalls/device_usable_check_mrsh.c>
-
 static inline bool z_vrfy_device_is_ready(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
