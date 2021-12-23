@@ -473,30 +473,36 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 			i2c_hal_write_txfifo(&data->hal, write_pr, wr_filled);
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
 			i2c_hal_write_cmd_reg(&data->hal, hw_end_cmd, data->cmd_idx++);
+
+			i2c_hal_enable_master_tx_it(&data->hal);
+
+			ret = i2c_esp32_transmit(dev);
+			if (ret < 0) {
+				LOG_ERR("I2C transfer error: %d", ret);
+				return ret;
+			}
+
+			data->cmd_idx = 0;
 		}
 
-		if (msg->len == 0 && (msg->flags & I2C_MSG_STOP)) {
-			cmd = (i2c_hw_cmd_t) {
-				.op_code = I2C_LL_CMD_STOP,
-				.ack_en = false,
-				.byte_num = 0
-			};
-			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+		if (msg->len == 0) {
+			break;
 		}
+	}
 
+	/* add stop command in a new transmission */
+	if (msg->len == 0 && (msg->flags & I2C_MSG_STOP)) {
+		cmd = (i2c_hw_cmd_t) {
+			.op_code = I2C_LL_CMD_STOP,
+			.ack_en = false,
+			.byte_num = 0
+		};
+		i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx);
 		i2c_hal_enable_master_tx_it(&data->hal);
-
 		ret = i2c_esp32_transmit(dev);
 		if (ret < 0) {
 			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
-		}
-
-		/* reset fifo write pointer */
-		data->cmd_idx = 0;
-
-		if (msg->len == 0) {
-			break;
 		}
 	}
 
