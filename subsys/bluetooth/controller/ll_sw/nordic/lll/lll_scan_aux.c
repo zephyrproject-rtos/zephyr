@@ -850,6 +850,8 @@ isr_rx_do_close:
 		 * context or auxiliary PDU reception by aux context
 		 */
 		if (lll->is_aux_sched) {
+			lll->is_aux_sched = 0U;
+
 			/* Go back to resuming primary channel scanning */
 			radio_isr_set(lll_scan_isr_resume, lll);
 		} else {
@@ -1214,11 +1216,6 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			ftr->param = lll;
 			ftr->scan_rsp = lll->lll_aux->state;
 
-			/* Auxiliary PDU received by LLL scheduling by scan
-			 * context.
-			 */
-			lll->is_aux_sched = 1U;
-
 			/* Further auxiliary PDU reception will be chain PDUs */
 			lll->lll_aux->is_chain_sched = 1U;
 		} else {
@@ -1266,17 +1263,21 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		ull_rx_sched();
 
-		/* Increase trx count so as to not generate done extra event
-		 * as a valid Auxiliary PDU node rx is being reported to ULL.
-		 */
-		trx_cnt++;
-
 		/* Next aux scan is scheduled from LLL, we already handled radio
 		 * disable so prevent caller from doing it again.
 		 */
 		if (ftr->aux_lll_sched) {
+			if (!lll_aux) {
+				lll->is_aux_sched = 1U;
+			}
+
 			return 0;
 		}
+
+		/* Increase trx count so as to not generate done extra event
+		 * as a valid Auxiliary PDU node rx is being reported to ULL.
+		 */
+		trx_cnt++;
 
 		return -ECANCELED;
 	}
