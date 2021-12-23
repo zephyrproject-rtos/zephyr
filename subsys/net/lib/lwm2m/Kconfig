@@ -24,6 +24,21 @@ config LWM2M_DTLS_SUPPORT
 	select NET_SOCKETS_ENABLE_DTLS
 
 choice
+	prompt "LwM2M Security object version"
+	default LWM2M_SECURITY_OBJECT_VERSION_1_0
+	help
+	  Select which version of the security object should be used.
+
+config LWM2M_SECURITY_OBJECT_VERSION_1_0
+	bool "Security object version 1.0"
+
+config LWM2M_SECURITY_OBJECT_VERSION_1_1
+	bool "Security object version 1.1 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endchoice
+
+choice
 	prompt "LwM2M Server object version"
 	default LWM2M_SERVER_OBJECT_VERSION_1_0
 	help
@@ -214,6 +229,16 @@ config LWM2M_SECURITY_KEY_SIZE
 	help
 	  This setting establishes the size of the key (pre-shared / public)
 	  resources in the security object instances.
+
+config LWM2M_SECURITY_DTLS_TLS_CIPHERSUITE_MAX
+	int "Maximum # of DTLS/TLS ciphersuite resource instances"
+	default 5
+	range 0 20
+	depends on LWM2M_SECURITY_OBJECT_VERSION_1_1
+	help
+	  This setting sets the maximum number of the resource instances of
+	  a security object defined in LWM2M version 1.1. Affects the resource
+	  0/X/16, where X is the object instance number.
 
 config LWM2M_SERVER_DEFAULT_PMIN
 	int "Default server record PMIN"
