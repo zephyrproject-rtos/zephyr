@@ -141,6 +141,14 @@ static inline int z_vrfy_device_usable_check(const struct device *dev)
 	return z_impl_device_usable_check(dev);
 }
 #include <syscalls/device_usable_check_mrsh.c>
+
+static inline bool z_vrfy_device_is_ready(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_is_ready(dev);
+}
+#include <syscalls/device_is_ready_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 size_t z_device_get_all_static(struct device const **devices)
