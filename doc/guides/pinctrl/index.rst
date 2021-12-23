@@ -272,14 +272,14 @@ particular state are enclosed in a single Devicetree node.
     &pinctrl {
         /* Node with pin configuration for default state */
         periph0_default: periph0_default {
-            pins1 {
+            group1 {
                 /* Mappings: PERIPH0_SIGA -> PX0, PERIPH0_SIGC -> PZ1 */
                 pinmux = <PERIPH0_SIGA_PX0>, <PERIPH0_SIGC_PZ1>;
                 /* Pins PX0 and PZ1 have pull-up enabled */
                 bias-pull-up;
             };
             ...
-            pinsN {
+            groupN {
                 /* Mappings: PERIPH0_SIGB -> PY7 */
                 pinmux = <PERIPH0_SIGB_PY7>;
             };
