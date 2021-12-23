@@ -8,6 +8,10 @@ if  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 config BOARD
 	default "nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
+config ENTROPY_BT_HCI
+	default y if BT_HCI
+	depends on ENTROPY_GENERATOR
+
 # By default, if we build for a Non-Secure version of the board,
 # force building with TF-M as the Secure Execution Environment.
 
