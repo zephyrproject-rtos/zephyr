@@ -733,11 +733,19 @@ __syscall const struct device *device_get_binding(const char *name);
  */
 size_t z_device_get_all_static(const struct device * *devices);
 
-/** @brief Determine whether a device has been successfully initialized.
+/**
+ * @brief Verify that a device is ready for use.
+ *
+ * This is the implementation underlying device_is_ready(), without the overhead
+ * of a syscall wrapper.
  *
  * @param dev pointer to the device in question.
  *
- * @return true if and only if the device is available for use.
+ * @retval true If the device is ready for use.
+ * @retval false If the device is not ready for use or if a NULL device pointer
+ * is passed as argument.
+ *
+ * @see device_is_ready()
  */
 bool z_device_is_ready(const struct device *dev);
 
@@ -748,13 +756,12 @@ bool z_device_is_ready(const struct device *dev);
  *
  * This can be used with device pointers captured from DEVICE_DT_GET(), which
  * does not include the readiness checks of device_get_binding(). At minimum
- * this means that the device has been successfully initialized, but it may
- * take on further conditions (e.g. is not powered down).
+ * this means that the device has been successfully initialized.
  *
  * @param dev pointer to the device in question.
  *
- * @retval true if the device is ready for use.
- * @retval false if the device is not ready for use or if a NULL device pointer
+ * @retval true If the device is ready for use.
+ * @retval false If the device is not ready for use or if a NULL device pointer
  * is passed as argument.
  */
 __syscall bool device_is_ready(const struct device *dev);
