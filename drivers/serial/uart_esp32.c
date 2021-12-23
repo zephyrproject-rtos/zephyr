@@ -103,7 +103,8 @@ static int uart_esp32_poll_in(const struct device *dev, unsigned char *p_char)
 	}
 
 	uart_hal_read_rxfifo(&DEV_CFG(dev)->hal, p_char, &inout_rd_len);
-	return inout_rd_len;
+
+	return 0;
 }
 
 static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
@@ -354,6 +355,10 @@ static int uart_esp32_fifo_fill(const struct device *dev,
 				const uint8_t *tx_data, int len)
 {
 	uint32_t written = 0;
+
+	if (len < 0) {
+		return 0;
+	}
 
 	uart_hal_write_txfifo(&DEV_CFG(dev)->hal, tx_data, len, &written);
 	return written;
