@@ -11,6 +11,7 @@ function compile(){
   local cmake_args="${cmake_args:-"-DCONFIG_COVERAGE=y \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"}"
   local ninja_args="${ninja_args:-""}"
+  local cc_flags="${cc_flags:-"-Werror"}"
 
   local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
   local exe_name=${exe_name//\//_}
@@ -27,7 +28,8 @@ function compile(){
       [ -d "${this_dir}" ] && rm ${this_dir} -rf
       mkdir -p ${this_dir} && cd ${this_dir}
       cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
-            -DCONF_FILE=${conf_file} -DOVERLAY_CONFIG=${conf_overlay} ${cmake_args} ${app_root}/${app} \
+            -DCONF_FILE=${conf_file} -DOVERLAY_CONFIG=${conf_overlay} \
+            ${cmake_args} -DCMAKE_C_FLAGS="${cc_flags}" ${app_root}/${app} \
             &> cmake.out || { cat cmake.out && return 0; }
   else
       cd ${this_dir}
