@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <bluetooth/bluetooth.h>
 #include <drivers/entropy.h>
 #include <ztest.h>
 
@@ -21,8 +22,8 @@
  * @}
  */
 
-#define BUFFER_LENGTH 10
-#define RECHECK_RANDOM_ENTROPY 0x10
+#define BUFFER_LENGTH           10
+#define RECHECK_RANDOM_ENTROPY  0x10
 
 static int random_entropy(const struct device *dev, char *buffer, char num)
 {
@@ -104,6 +105,10 @@ static void test_entropy_get_entropy(void)
 
 void test_main(void)
 {
+#ifdef CONFIG_BT
+	bt_enable(NULL);
+#endif /* CONFIG_BT */
+
 	ztest_test_suite(entropy_api,
 			 ztest_unit_test(test_entropy_get_entropy));
 	ztest_run_test_suite(entropy_api);
