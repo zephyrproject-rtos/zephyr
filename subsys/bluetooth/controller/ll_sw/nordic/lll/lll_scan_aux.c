@@ -796,7 +796,7 @@ isr_rx_do_close:
 		radio_isr_set(isr_done, NULL);
 	} else {
 		/* Send message to flush Auxiliary PDU list */
-		if (err != -ECANCELED) {
+		if (lll->is_aux_sched && err != -ECANCELED) {
 			struct node_rx_pdu *node_rx;
 
 			node_rx = ull_pdu_rx_alloc();
