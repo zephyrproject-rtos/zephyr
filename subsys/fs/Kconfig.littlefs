@@ -89,4 +89,24 @@ config FS_LITTLEFS_FC_HEAP_SIZE
 	  support up to FS_LITTLE_FS_NUM_FILES blocks of
 	  FS_LITTLEFS_CACHE_SIZE bytes.
 
+config LFS_READONLY
+	bool "Enable readonly little fs"
+	default 0
+	help
+	  Enable readonly littlefs
+
+config LFS_CFG
+	bool "Enable little fs custom config"
+	default 0
+	help
+	  Enable lfs custom config file. This flag will allow CUSTOM_LFS_CONFIG_FILE.
+
+config CUSTOM_LFS_CONFIG_FILE
+	string "Custom LFS configuration file" if LFS_CFG
+	default "littlefs_util.h"
+	help
+	  Allow user defined input file for the LFS_CONFIG setting. The default config
+	  file can be tweaked with Kconfig to optimize resources with lfs library.
+	  You can specify the actual configuration file using the LFS_CONFIG.
+
 endif # FILE_SYSTEM_LITTLEFS
