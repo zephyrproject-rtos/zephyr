@@ -739,7 +739,7 @@ size_t z_device_get_all_static(const struct device * *devices);
  *
  * @return true if and only if the device is available for use.
  */
-bool z_device_ready(const struct device *dev);
+bool z_device_is_ready(const struct device *dev);
 
 /** @brief Determine whether a device is ready for use
  *
@@ -752,7 +752,7 @@ bool z_device_ready(const struct device *dev);
  */
 static inline int z_device_usable_check(const struct device *dev)
 {
-	return z_device_ready(dev) ? 0 : -ENODEV;
+	return z_device_is_ready(dev) ? 0 : -ENODEV;
 }
 
 /** @brief Determine whether a device is ready for use.

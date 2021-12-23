@@ -106,13 +106,13 @@ const struct device *z_impl_device_get_binding(const char *name)
 	 * performed. Reserve string comparisons for a fallback.
 	 */
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if (z_device_ready(dev) && (dev->name == name)) {
+		if (z_device_is_ready(dev) && (dev->name == name)) {
 			return dev;
 		}
 	}
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if (z_device_ready(dev) && (strcmp(name, dev->name) == 0)) {
+		if (z_device_is_ready(dev) && (strcmp(name, dev->name) == 0)) {
 			return dev;
 		}
 	}
@@ -149,7 +149,7 @@ size_t z_device_get_all_static(struct device const **devices)
 	return __device_end - __device_start;
 }
 
-bool z_device_ready(const struct device *dev)
+bool z_device_is_ready(const struct device *dev)
 {
 	/*
 	 * if an invalid device pointer is passed as argument, this call
