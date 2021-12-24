@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1875,6 +1875,24 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_HGRST		BIT(3)
 /* bit[2] = 1: Enable global reset. */
 #define IT8XXX2_GCTRL_GRST		BIT(2)
+
+/**
+ *
+ * (22xxh) Battery-backed SRAM (BRAM) registers
+ *
+ */
+#ifndef __ASSEMBLER__
+/* Battery backed RAM indices. */
+#define BRAM_MAGIC_FIELD_OFFSET 0xbc
+enum bram_indices {
+
+	/* This field is used to indicate BRAM is valid or not. */
+	BRAM_IDX_VALID_FLAGS0 = BRAM_MAGIC_FIELD_OFFSET,
+	BRAM_IDX_VALID_FLAGS1,
+	BRAM_IDX_VALID_FLAGS2,
+	BRAM_IDX_VALID_FLAGS3
+};
+#endif /* !__ASSEMBLER__ */
 
 #ifndef __ASSEMBLER__
 /*
