@@ -2,7 +2,7 @@ description: Kinetis LPUART
 
 compatible: "nxp,kinetis-lpuart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
