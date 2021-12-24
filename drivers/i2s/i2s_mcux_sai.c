@@ -16,8 +16,8 @@
 #include <device.h>
 #include <init.h>
 #include <drivers/dma.h>
-
 #include <drivers/i2s.h>
+#include <drivers/pinctrl.h>
 #include <drivers/clock_control.h>
 #include <dt-bindings/clock/imx_ccm.h>
 #include <soc.h>
@@ -78,6 +78,7 @@ struct i2s_mcux_config {
 	uint32_t tx_channel;
 	clock_control_subsys_t clk_sub_sys;
 	const struct device *ccm_dev;
+	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_connect)(const struct device *dev);
 	bool rx_sync_mode;
 	bool tx_sync_mode;
@@ -328,7 +329,6 @@ static void enable_mclk_direction(const struct device *dev, bool dir)
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	uint32_t offset = dev_cfg->mclk_pin_offset;
 	uint32_t mask = dev_cfg->mclk_pin_mask;
-	uint32_t value = 0;
 	uint32_t *gpr =  (uint32_t *)DT_REG_ADDR(DT_NODELABEL(iomuxcgpr)) + offset;
 
 	if (dir) {
@@ -336,7 +336,18 @@ static void enable_mclk_direction(const struct device *dev, bool dir)
 	} else {
 		*gpr &= ~mask;
 	}
+}
 
+static void mcux_rt_sai_pin_init(void)
+{
+	int err;
+	uint8_t state = 0;
+
+	err = pinctrl_apply_state(dev_cfg->pinctrl, state);
+	if (err < 0) {
+		LOG_ERR("mclk pinctrl setup failed (%d)", err);
+		return err;
+	}
 }
 
 static void get_mclk_rate(const struct device *dev, uint32_t *mclk)
@@ -1034,6 +1045,9 @@ static int i2s_mcux_initialize(const struct device *dev)
 	/* register ISR */
 	dev_cfg->irq_connect(dev);
 
+	/* pinctrl */
+	mcux_rt_sai_pin_init();
+
 	/*clock configuration*/
 	audio_clock_settings(dev);
 
@@ -1085,6 +1099,8 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 #define I2S_MCUX_INIT(i2s_id)						\
 	static void i2s_irq_connect_##i2s_id(const struct device *dev); \
 									\
+	PINCTRL_DT_INST_DEFINE(i2s_id)					\
+									\
 	static const struct i2s_mcux_config i2s_##i2s_id##_config = {	\
 		.base = (I2S_Type *)DT_INST_REG_ADDR(i2s_id),		\
 		.clk_src =						\
@@ -1116,6 +1132,7 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 		.clk_sub_sys =	(clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),	\
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),	\
+		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(i2s_id),	\
 		.irq_connect = i2s_irq_connect_##i2s_id,		\
 		.tx_sync_mode =						\
 			   DT_INST_PROP(i2s_id, nxp_tx_sync_mode),	\
