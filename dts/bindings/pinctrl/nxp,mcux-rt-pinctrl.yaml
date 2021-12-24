@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  The node has the 'pinctrl' node label set in MCUX RT SoC's devicetree,
-   
+  The node has the 'pinctrl' node label set in MCUX RT SoC's devicetree
 
 compatible: "nxp,mcux-rt-pinctrl"
 
@@ -12,7 +11,7 @@ include:
     - name: pincfg-node-group.yaml
       child-binding:
         property-allowlist:
-          drive-open-drain
+          - drive-open-drain
 
 properties:
     reg:
@@ -39,6 +38,11 @@ child-binding:
         description: |
           An array of pins sharing the same group properties. The pins should
           be defined using pre-defined macros.
+      nxp,mcux_input:
+        required: false
+        type: boolean
+        description: |
+          Force input on
       nxp,mcux_hys:
         required: false
         type: boolean
