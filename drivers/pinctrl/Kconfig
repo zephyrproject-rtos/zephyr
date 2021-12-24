@@ -32,5 +32,6 @@ config PINCTRL_DYNAMIC
 source "drivers/pinctrl/Kconfig.gd32"
 source "drivers/pinctrl/Kconfig.nrf"
 source "drivers/pinctrl/Kconfig.stm32"
+source "drivers/pinctrl/Kconfig.mcux"
 
 endif # PINCTRL
