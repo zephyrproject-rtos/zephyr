@@ -229,6 +229,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_I2S
+	select PINCTRL
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
