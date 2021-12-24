@@ -13,10 +13,16 @@
 #include <device.h>
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#endif
 
 struct mcux_lpuart_config {
 	LPUART_Type *base;
 	const struct device *clock_dev;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pinctrl;
+#endif
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
@@ -353,6 +359,10 @@ static int mcux_lpuart_init(const struct device *dev)
 	const struct mcux_lpuart_config *config = dev->config;
 	struct mcux_lpuart_data *data = dev->data;
 	struct uart_config *uart_api_config = &data->uart_config;
+#ifdef CONFIG_PINCTRL
+	int err;
+	uint8_t state = 0;
+#endif
 
 	uart_api_config->baudrate = config->baud_rate;
 	uart_api_config->parity = UART_CFG_PARITY_NONE;
@@ -362,6 +372,12 @@ static int mcux_lpuart_init(const struct device *dev)
 
 	/* set initial configuration */
 	mcux_lpuart_configure_init(dev, uart_api_config);
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(config->pinctrl, state);
+	if (err < 0) {
+		return err;
+	}
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -425,6 +441,44 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 	LPUART_MCUX_DECLARE_CFG(n, LPUART_MCUX_IRQ_CFG_FUNC_INIT)
 #endif
 
+#if CONFIG_PINCTRL
+
+#define LPUART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)			\
+static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
+	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),			\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+	.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+	.baud_rate = DT_INST_PROP(n, current_speed),			\
+	.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?	\
+		UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,\
+	IRQ_FUNC_INIT							\
+}
+
+#define LPUART_MCUX_INIT(n)						\
+									\
+	static struct mcux_lpuart_data mcux_lpuart_##n##_data;		\
+									\
+	PINCTRL_DT_INST_DEFINE(n)					\
+									\
+	static const struct mcux_lpuart_config mcux_lpuart_##n##_config;\
+									\
+	DEVICE_DT_INST_DEFINE(n,					\
+			    &mcux_lpuart_init,				\
+			    NULL,					\
+			    &mcux_lpuart_##n##_data,			\
+			    &mcux_lpuart_##n##_config,			\
+			    PRE_KERNEL_1,				\
+			    CONFIG_SERIAL_INIT_PRIORITY,		\
+			    &mcux_lpuart_driver_api);			\
+									\
+	LPUART_MCUX_CONFIG_FUNC(n)					\
+									\
+	LPUART_MCUX_INIT_CFG(n);
+
+DT_INST_FOREACH_STATUS_OKAY(LPUART_MCUX_INIT)
+#else
+
 #define LPUART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)			\
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),			\
@@ -456,3 +510,4 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
 	LPUART_MCUX_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(LPUART_MCUX_INIT)
+#endif
