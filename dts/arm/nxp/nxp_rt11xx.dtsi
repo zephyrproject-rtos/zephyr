@@ -319,8 +319,26 @@
 		};
 
 		iomuxc: iomuxc@400e8000 {
+			compatible = "nxp,imx-iomuxc";
 			reg = <0x400e8000 0x4000>;
-			label = "PINMUX_0";
+			status = "okay";
+			pinctrl: pinctrl {
+				status = "okay";
+				compatible = "nxp,mcux-rt-pinctrl";
+			};
+		};
+
+		iomuxc_lpsr: iomuxc_lpsr@40c08000 {
+			compatible = "nxp,mcux-rt-pinctrl";
+			reg = <0x40c08000 0x4000>;
+			status = "disabled";
+		};
+
+		iomuxc_lpsr_gpr: iomuxc_lpsr_gpr@40c08000 {
+			compatible = "nxp,imx-gpr";
+			reg = <0x40c08000 0x4000>;
+			label = "IOMUX_GPR";
+			#pinmux-cells = <2>;
 		};
 
 		lcdif: display-controller@40804000 {
@@ -896,8 +914,8 @@
 		};
 
 		iomuxcgpr: iomuxcgpr@400e4000 {
-			compatible = "nxp,imx-pinmux";
-			reg = <0x400E4000 0x4000>;
+			compatible = "nxp,imx-gpr";
+			reg = <0x400e4000 0x4000>;
 			label = "IOMUX_GPR";
 			#pinmux-cells = <2>;
 		};
