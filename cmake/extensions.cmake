@@ -2256,6 +2256,14 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
                         BUILD ${FILE_BUILD}
     )
     list(APPEND filename_list ${filename})
+
+    if(DEFINED BOARD_ALIAS)
+      zephyr_build_string(filename
+                          BOARD ${BOARD_ALIAS}
+                          BUILD ${FILE_BUILD}
+      )
+      list(APPEND filename_list ${filename})
+    endif()
     list(REMOVE_DUPLICATES filename_list)
 
     if(FILE_DTS)
