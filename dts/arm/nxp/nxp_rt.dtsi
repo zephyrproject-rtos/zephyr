@@ -232,8 +232,13 @@
 		};
 
 		iomuxc: iomuxc@401f8000 {
+			compatible = "nxp,imx-iomuxc";
 			reg = <0x401f8000 0x4000>;
-			label = "PINMUX_0";
+			status = "okay";
+			pinctrl: pinctrl {
+				status = "okay";
+				compatible = "nxp,mcux-rt-pinctrl";
+			};
 		};
 
 		lcdif: display-controller@402b8000 {
@@ -730,7 +735,7 @@
 		};
 
 		iomuxcgpr: iomuxcgpr@400ac000 {
-			compatible = "nxp,imx-pinmux";
+			compatible = "nxp,imx-gpr";
 			reg = <0x400AC000 0x4000>;
 			label = "IOMUX_GPR";
 			#pinmux-cells = <2>;
