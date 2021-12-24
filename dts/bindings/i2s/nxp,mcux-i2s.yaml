@@ -5,7 +5,7 @@ description: NXP mcux SAI-I2S controller
 
 compatible: "nxp,mcux-i2s"
 
-include: [i2s-controller.yaml]
+include: [i2s-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
