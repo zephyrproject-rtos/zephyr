@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2021, NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/mcux_rt-pinctrl.h>
+
+&pinctrl {
+	sai1_default: sai1_default {
+		IOMUXC_GPIO_AD_B1_09_SAI1_MCLK {
+			pinmux = <0x401F8120 0x3 0x401F858C 0x1 0x401F8310>;
+			nxp,mcux_input;
+			nxp,mcux_dse = <6>;
+			nxp,mcux_speed = <2>;
+			nxp,mcux_pke;
+		};
+		IOMUXC_GPIO_AD_B1_12_SAI1_RX_DATA00 {
+			pinmux = <0x401F812C 0x3 0x401F8594 0x1 0x401F831C>;
+			nxp,mcux_input;
+			nxp,mcux_dse = <6>;
+			nxp,mcux_speed = <2>;
+			nxp,mcux_pke;
+		};
+		IOMUXC_GPIO_AD_B1_13_SAI1_TX_DATA00 {
+			pinmux = <0x401F8130 0x3 0 0 0x401F8320>;
+			nxp,mcux_input;
+			nxp,mcux_dse = <6>;
+			nxp,mcux_speed = <2>;
+			nxp,mcux_pke;
+		};
+		IOMUXC_GPIO_AD_B1_14_SAI1_TX_BCLK {
+			pinmux = <0x401F8134 0x3 0x401F85A8 0x1 0x401F8324>;
+			nxp,mcux_input;
+			nxp,mcux_dse = <6>;
+			nxp,mcux_speed = <2>;
+			nxp,mcux_pke;
+		};
+		IOMUXC_GPIO_AD_B1_15_SAI1_TX_SYNC {
+			pinmux = <0x401F8138 0x3 0x401F85AC 0x1 0x401F8328>;
+			nxp,mcux_input;
+			nxp,mcux_dse = <6>;
+			nxp,mcux_speed = <2>;
+			nxp,mcux_pke;
+		};
+	};
+	lpuart1_default: lpuart1_default {
+		IOMUXC_GPIO_AD_B0_12_LPUART1_TX {
+			pinmux = <0x401F80EC 0x2 0 0 0x401F82DC>;
+			nxp,mcux_speed = <2>;
+			nxp,mcux_dse = <6>;
+			nxp,mcux_pke;
+		};
+		IOMUXC_GPIO_AD_B0_13_LPUART1_RX {
+			pinmux = <0x401F80F0 0x2 0 0 0x401F82E0>;
+			nxp,mcux_speed = <2>;
+			nxp,mcux_dse = <6>;
+			nxp,mcux_pke;
+		};
+	};
+	status = "okay";
+};
