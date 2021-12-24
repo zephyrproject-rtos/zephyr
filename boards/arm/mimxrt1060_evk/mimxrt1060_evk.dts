@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt1060.dtsi>
+#include "mimxrt1060_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP MIMXRT1060-EVK board";
@@ -175,6 +176,9 @@ arduino_serial: &lpuart3 {};
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&lpuart1_default>;
+	pinctrl-1 = <&lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &enet {
@@ -229,11 +233,17 @@ zephyr_udc0: &usb1 {
 
 &sai1 {
 	status = "okay";
+	pinctrl-0 = <&sai1_default>;
+	pinctrl-names = "default";
 };
 
 /* Enable GPT for use as a hardware timer. This disables Cortex Systick.
  * to use systick, change this node from "gpt_hw_timer" to "systick"
  */
 &gpt_hw_timer {
+	status = "okay";
+};
+
+&iomuxcgpr {
 	status = "okay";
 };
