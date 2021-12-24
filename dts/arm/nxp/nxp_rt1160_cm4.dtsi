@@ -71,6 +71,13 @@
 				<16 0>;
 		};
 
+		iomuxcgpr_lpsr: iomuxcgpr@40c08000 {
+			compatible = "nxp,imx-gpr";
+			reg = <0x40c94000 0x4000>;
+			label = "IOMUX_GPR";
+			#pinmux-cells = <2>;
+		};
+
 	};
 
 };
