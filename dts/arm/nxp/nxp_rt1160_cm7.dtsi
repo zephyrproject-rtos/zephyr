@@ -90,6 +90,13 @@
 			nxp,tx-dma-channel = <7>;
 			nxp,rx-dma-channel = <8>;
 		};
+
+		iomuxcgpr: iomuxcgpr@40c94000 {
+			compatible = "nxp,imx-gpr";
+			reg = <0x40c94000 0x4000>;
+			label = "IOMUX_GPR";
+			#pinmux-cells = <2>;
+		};
 	};
 };
 
