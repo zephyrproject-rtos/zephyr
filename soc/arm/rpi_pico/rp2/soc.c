@@ -15,11 +15,14 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/logging/log.h>
 
 #include <hardware/regs/resets.h>
 #include <hardware/clocks.h>
 #include <hardware/resets.h>
+
+#include <pico/bootrom.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void z_arm_nmi_init(void);
@@ -29,6 +32,17 @@ extern void z_arm_nmi_init(void);
 #endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
+/* Overrides the weak ARM implementation:
+   Set general purpose retention register and reboot */
+void sys_arch_reboot(int type)
+{
+	if (type != 0) {
+		reset_usb_boot(0,0);
+	} else {
+		NVIC_SystemReset();
+	}
+}
 
 static int rp2040_init(const struct device *arg)
 {

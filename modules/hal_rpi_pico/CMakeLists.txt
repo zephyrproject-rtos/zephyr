@@ -75,6 +75,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2040_dir}/hardware_structs/include
     ${common_dir}/pico_base/include
     ${rp2_common_dir}/pico_platform/include
+    ${rp2_common_dir}/pico_bootrom/include
     ${CMAKE_CURRENT_LIST_DIR}
   )
 
