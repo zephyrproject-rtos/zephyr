@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 # Copyright(c) 2021 Intel Corporation. All rights reserved.
-import ctypes
-import mmap
-import os
+
 import struct
-import subprocess
 import sys
 import time
+from cavs_fw_common import *
 
 # Intel Audio DSP firmware loader.  No dependencies on anything
 # outside this file beyond Python3 builtins.  Assumes the host system
@@ -15,11 +13,11 @@ import time
 # the box on Ubuntu 18.04 and 20.04.  Run as root with the firmware
 # file as the single argument.
 
-FW_FILE = sys.argv[2] if sys.argv[1] == "-f" else sys.argv[1]
+logging.basicConfig()
+log = logging.getLogger("cavs-fw")
+log.setLevel(logging.INFO)
 
-PAGESZ = 4096
-HUGEPAGESZ = 2 * 1024 * 1024
-HUGEPAGE_FILE = "/dev/hugepages/cavs-fw-dma.tmp"
+FW_FILE = sys.argv[2] if sys.argv[1] == "-f" else sys.argv[1]
 
 HDA_PPCTL__GPROCEN       = 1 << 30
 HDA_SD_CTL__TRAFFIC_PRIO = 1 << 18
@@ -33,7 +31,8 @@ def main():
     if magic == b'XMan':
         fw_bytes = fw_bytes[sz:len(fw_bytes)]
 
-    (hda, sd, dsp) = map_regs() # Device register mappings
+    (hda, sd, dsp, hda_ostream_id, cavs15) = map_regs() # Device register mappings
+    log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
 
     # Turn on HDA "global processing enable" first, which actually
     # means "enable access to the ADSP registers in PCI BAR 4" (!)
@@ -106,7 +105,7 @@ def main():
         if alive: break
         time.sleep(0.01)
     if not alive:
-        print(f"Load failed?  FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
+        log.warning(f"Load failed?  FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
 
     # Turn DMA off and reset the stream.  If this doesn't happen the
     # hardware continues streaming out of our now-stale page and can
@@ -114,142 +113,11 @@ def main():
     sd.CTL &= ~HDA_SD_CTL__START
     sd.CTL |= 1
 
-def map_regs():
-    # List cribbed from kernel SOF driver.  Not all tested!
-    for id in ["119a", "5a98", "1a98", "3198", "9dc8",
-               "a348", "34C8", "38c8", "4dc8", "02c8",
-               "06c8", "a3f0", "a0c8", "4b55", "4b58"]:
-        p = runx(f"grep -il PCI_ID=8086:{id} /sys/bus/pci/devices/*/uevent")
-        if p:
-            pcidir = os.path.dirname(p)
-            break
+    time.sleep(1)
 
-    # Disengage runtime power management so the kernel doesn't put it to sleep
-    with open(pcidir + b"/power/control", "w") as ctrl:
-        ctrl.write("on")
-
-    # Make sure PCI memory space access and busmastering are enabled.
-    # Also disable interrupts so as not to confuse the kernel.
-    with open(pcidir + b"/config", "wb+") as cfg:
-        cfg.seek(4)
-        cfg.write(b'\x06\x04')
-
-    hdamem = bar_map(pcidir, 0)
-
-    # Standard HD Audio Registers
-    hda = Regs(hdamem)
-    hda.GCAP    = 0x0000
-    hda.GCTL    = 0x0008
-    hda.SPBFCTL = 0x0704
-    hda.PPCTL   = 0x0804
-
-    global hda_ostream_id
-    hda_ostream_id = (hda.GCAP >> 8) & 0x0f # number of input streams
-    hda.SD_SPIB = 0x0708 + (8 * hda_ostream_id)
-
-    hda.freeze()
-
-    # Standard HD Audio Stream Descriptor
-    sd = Regs(hdamem + 0x0080 + (hda_ostream_id * 0x20))
-    sd.CTL  = 0x00
-    sd.LPIB = 0x04
-    sd.CBL  = 0x08
-    sd.LVI  = 0x0c
-    sd.FMT  = 0x12
-    sd.BDPL = 0x18
-    sd.BDPU = 0x1c
-    sd.freeze()
-
-    # Intel Audio DSP Registers
-    dsp = Regs(bar_map(pcidir, 4))
-    dsp.ADSPCS         = 0x00004
-    dsp.HIPCI          = 0x00048
-    dsp.SRAM_FW_STATUS = 0x80000 # Start of first SRAM window
-    dsp.freeze()
-
-    return (hda, sd, dsp)
-
-def setup_dma_mem(fw_bytes):
-    (mem, phys_addr) = map_phys_mem()
-    mem[0:len(fw_bytes)] = fw_bytes
-
-    # HDA requires at least two buffers be defined, but we don't care
-    # about boundaries because it's all a contiguous region. Place a
-    # vestigial 128-byte (minimum size and alignment) buffer after the
-    # main one, and put the 4-entry BDL list into the final 128 bytes
-    # of the page.
-    buf0_len = HUGEPAGESZ - 2 * 128
-    buf1_len = 128
-    bdl_off = buf0_len + buf1_len
-    mem[bdl_off:bdl_off + 32] = struct.pack("<QQQQ",
-                                            phys_addr, buf0_len,
-                                            phys_addr + buf0_len, buf1_len)
-    return (phys_addr + bdl_off, 2)
-
-global_mmaps = [] # protect mmap mappings from garbage collection!
-
-# Maps 2M of contiguous memory using a single page from hugetlbfs,
-# then locates its physical address for use as a DMA buffer.
-def map_phys_mem():
-    # Ensure the kernel has enough budget for one new page
-    free = int(runx("awk '/HugePages_Free/ {print $2}' /proc/meminfo"))
-    if free == 0:
-        tot = 1 + int(runx("awk '/HugePages_Total/ {print $2}' /proc/meminfo"))
-        os.system(f"echo {tot} > /proc/sys/vm/nr_hugepages")
-
-    hugef = open(HUGEPAGE_FILE, "w+")
-    hugef.truncate(HUGEPAGESZ)
-    mem = mmap.mmap(hugef.fileno(), HUGEPAGESZ)
-    global_mmaps.append(mem)
-    os.unlink(HUGEPAGE_FILE)
-
-    mem[0] = 0 # Fault the page in so it occupuies real memory!
-
-    # Find the local process address of the mapping, then use that to
-    # extract the physical address from the kernel's pagemap
-    # interface.
-    vaddr = ctypes.addressof(ctypes.c_int.from_buffer(mem))
-    vpagenum = vaddr >> 12
-    pagemap = open("/proc/self/pagemap", "rb")
-    pagemap.seek(vpagenum * 8)
-    pent = pagemap.read(8)
-
-    # The PFN in a pagemap entry is the bottom 54 (?!) bits
-    paddr = (struct.unpack("Q", pent)[0] & ((1 << 54) - 1)) * PAGESZ
-    pagemap.close()
-
-    return (mem, paddr)
-
-# Maps a PCI BAR and returns the in-process address
-def bar_map(pcidir, barnum):
-    f = open(pcidir.decode() + "/resource" + str(barnum), "r+")
-    mm = mmap.mmap(f.fileno(), os.fstat(f.fileno()).st_size)
-    global_mmaps.append(mm)
-    return ctypes.addressof(ctypes.c_int.from_buffer(mm))
-
-# Syntactic sugar to make register block definition & use look nice.
-# Instantiate from a base address, assign offsets to (uint32) named
-# registers as fields, call freeze(), then the field acts as a direct
-# alias for the register!
-class Regs:
-    def __init__(self, base_addr):
-        vars(self)["base_addr"] = base_addr
-        vars(self)["ptrs"] = {}
-        vars(self)["frozen"] = False
-    def freeze(self):
-        vars(self)["frozen"] = True
-    def __setattr__(self, name, val):
-        if not self.frozen and name not in self.ptrs:
-            addr = self.base_addr + val
-            self.ptrs[name] = ctypes.c_uint32.from_address(addr)
-        else:
-            self.ptrs[name].value = val
-    def __getattr__(self, name):
-        return self.ptrs[name].value
-
-def runx(cmd):
-    return subprocess.Popen(["sh", "-c", cmd],
-                            stdout=subprocess.PIPE).stdout.read()
+    log.info(f"ADSPCS = 0x{dsp.ADSPCS:x}")
+    log.info(f"cAVS v15 firmware load complete, {ncores(dsp)} cores active")
 
 if __name__ == "__main__":
+    log.info("cAVS firmware loader v15")
     main()
