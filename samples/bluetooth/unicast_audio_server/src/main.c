@@ -18,6 +18,17 @@
 
 #define MAX_PAC 1
 
+#define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
+				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
+				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
+				 BT_AUDIO_CONTEXT_TYPE_GAME | \
+				 BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL)
+
+#define AVAILABLE_SOURCE_CONTEXT (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
+				  BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
+				  BT_AUDIO_CONTEXT_TYPE_MEDIA | \
+				  BT_AUDIO_CONTEXT_TYPE_GAME)
+
 /* Mandatory support preset by both client and server */
 static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
@@ -25,10 +36,22 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, NULL);
 static struct bt_conn *default_conn;
 static struct bt_audio_stream streams[MAX_PAC];
 
+
+static uint8_t unicast_server_addata[] = {
+	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
+	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
+	(((AVAILABLE_SINK_CONTEXT) >>  0) & 0xFF),
+	(((AVAILABLE_SINK_CONTEXT) >>  8) & 0xFF),
+	(((AVAILABLE_SOURCE_CONTEXT) >>  0) & 0xFF),
+	(((AVAILABLE_SOURCE_CONTEXT) >>  8) & 0xFF),
+	0x00, /* Metadata length */
+};
+
 /* TODO: Expand with BAP data */
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
+	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
 
 void print_hex(const uint8_t *ptr, size_t len)
@@ -245,6 +268,7 @@ static struct bt_audio_capability caps[] = {
 
 void main(void)
 {
+	struct bt_le_ext_adv *adv;
 	int err;
 
 	err = bt_enable(NULL);
@@ -263,9 +287,22 @@ void main(void)
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err != 0) {
-		printk("Advertising failed to start (err %d)\n", err);
+	/* Create a non-connectable non-scannable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &adv);
+	if (err) {
+		printk("Failed to create advertising set (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Failed to set advertising data (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err) {
+		printk("Failed to start advertising set (err %d)\n", err);
 		return;
 	}
 
