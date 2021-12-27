@@ -142,6 +142,18 @@ struct bt_df_conn_iq_samples_report {
 	/** Pinter to IQ samples data. */
 	struct bt_hci_le_iq_sample const *sample;
 };
+/** Constant Tone Extension parameters for CTE transmission in connected mode. */
+struct bt_df_conn_cte_tx_param {
+	/**
+	 * Bitfield with allowed CTE types (@ref bt_df_cte_type. All enum members may be used except
+	 * BT_DF_CTE_TYPE_NONE).
+	 */
+	uint8_t cte_types;
+	/** Number of antenna switch pattern. */
+	uint8_t num_ant_ids;
+	/** Antenna switch pattern. */
+	const uint8_t *ant_ids;
+};
 
 /**
  * @brief Set or update the Constant Tone Extension parameters for periodic advertising set.
@@ -217,6 +229,22 @@ int bt_df_conn_cte_rx_enable(struct bt_conn *conn, const struct bt_df_conn_cte_r
  * @return Zero in case of success, other value in case of failure.
  */
 int bt_df_conn_cte_rx_disable(struct bt_conn *conn);
+
+/**
+ * @brief Set Constant Tone Extension transmission parameters for a connection.
+ *
+ * The function is available if @kconfig{CONFIG_BT_DF_CONNECTION_CTE_TX} is enabled.
+ *
+ * @note If neither BT_DF_CTE_TYPE_AOD_1US or BT_DF_CTE_TYPE_AOD_2US are set
+ * in the bitfield, then the bt_df_conn_cte_tx_param.num_ant_ids and
+ * bt_df_conn_cte_tx_param.ant_ids parameters will be ignored.
+ *
+ * @param conn   Connection object.
+ * @param params CTE transmission parameters.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_set_conn_cte_tx_param(struct bt_conn *conn, const struct bt_df_conn_cte_tx_param *params);
 
 /**
  * @brief Enable Constant Tone Extension response procedure for a connection.

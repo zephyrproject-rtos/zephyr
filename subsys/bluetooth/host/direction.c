@@ -389,62 +389,90 @@ void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 }
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
-/* @brief Function sets CTE parameters for connection object
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_TX)
+static bool validate_conn_cte_tx_params(const struct bt_df_conn_cte_tx_param *params)
+{
+	if (!(params->cte_types & BT_DF_CTE_TYPE_ALL)) {
+		return false;
+	}
+
+	/* If AoD is not enabled, ant_ids are ignored by controller:
+	 * BT Core spec 5.2 Vol 4, Part E sec. 7.8.84.
+	 */
+	if ((params->cte_types & BT_DF_CTE_TYPE_AOD_1US ||
+	     params->cte_types & BT_DF_CTE_TYPE_AOD_1US) &&
+	    (params->num_ant_ids < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+	     params->num_ant_ids > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX || !params->ant_ids ||
+	     !BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_dev.le.features))) {
+		return false;
+	}
+
+	return true;
+}
+
+static void prepare_conn_cte_tx_params_cmd(struct net_buf *buf, const struct bt_conn *conn,
+					   const struct bt_df_conn_cte_tx_param *params)
+{
+	struct bt_hci_cp_le_set_conn_cte_tx_params *cp;
+	uint8_t *ant_ids;
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->cte_types = params->cte_types;
+
+	if (params->cte_types & (BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US)) {
+		cp->switch_pattern_len = params->num_ant_ids;
+
+		ant_ids = net_buf_add(buf, cp->switch_pattern_len);
+		(void)memcpy(ant_ids, params->ant_ids, cp->switch_pattern_len);
+	} else {
+		cp->switch_pattern_len = 0U;
+	}
+}
+
+/**
+ * @brief Function sets CTE parameters for connection object
  *
- * @param[in] cte_types         Allowed response CTE types
- * @param[in] num_ant_id        Number of available antenna identification
- *                              patterns in @p ant_id array.
- * @param[in] ant_id            Array with antenna identification patterns.
+ * @param conn   Connection object
+ * @param params CTE transmission parameters.
  *
  * @return Zero in case of success, other value in case of failure.
  */
-static int hci_df_set_conn_cte_tx_param(struct bt_conn *conn, uint8_t cte_types,
-					uint8_t num_ant_id, uint8_t *ant_id)
+static int hci_df_set_conn_cte_tx_param(struct bt_conn *conn,
+					const struct bt_df_conn_cte_tx_param *params)
 {
-	__ASSERT_NO_MSG(conn);
-	__ASSERT_NO_MSG(cte_types != 0);
-
-	struct bt_hci_cp_le_set_conn_cte_tx_params *cp;
 	struct bt_hci_rp_le_set_conn_cte_tx_params *rp;
+	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf, *rsp;
+	uint8_t num_ant_ids;
 	int err;
 
 	/* If AoD is not enabled, ant_ids are ignored by controller:
 	 * BT Core spec 5.2 Vol 4, Part E sec. 7.8.84.
 	 */
-	if (cte_types & BT_HCI_LE_AOD_CTE_RSP_1US ||
-	    cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
-
-		if (num_ant_id < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
-		    num_ant_id > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX ||
-		    !ant_id) {
-			return -EINVAL;
-		}
-		__ASSERT_NO_MSG((sizeof(*cp) + num_ant_id) <  UINT8_MAX);
+	if (!validate_conn_cte_tx_params(params)) {
+		return -EINVAL;
 	}
 
+	num_ant_ids = ((params->cte_types & (BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US)) ?
+				params->num_ant_ids : 0);
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS,
-				sizeof(*cp) + num_ant_id);
+				sizeof(struct bt_hci_cp_le_set_conn_cte_tx_params) + num_ant_ids);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	cp->handle = sys_cpu_to_le16(conn->handle);
-	cp->cte_types = cte_types;
+	prepare_conn_cte_tx_params_cmd(buf, conn, params);
 
-	if (num_ant_id) {
-		uint8_t *dest_ant_id = net_buf_add(buf, num_ant_id);
+	/* CTE transmission parameters must be set only once for connection lifetime, hence the
+	 * flag BT_CONN_CTE_TX_PARAMS_SET is always set to true and never set to false.
+	 */
+	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_TX_PARAMS_SET, true);
 
-		memcpy(dest_ant_id, ant_id, num_ant_id);
-		cp->switch_pattern_len = num_ant_id;
-	} else {
-		cp->switch_pattern_len = 0;
-	}
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS,
-				   buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS, buf, &rsp);
 	if (err) {
 		return err;
 	}
@@ -458,7 +486,7 @@ static int hci_df_set_conn_cte_tx_param(struct bt_conn *conn, uint8_t cte_types,
 
 	return err;
 }
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_TX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
 static void prepare_conn_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_conn *conn,
@@ -811,6 +839,32 @@ int bt_df_conn_cte_rx_disable(struct bt_conn *conn)
 	return bt_df_set_conn_cte_rx_enable(conn, false, NULL);
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_TX)
+int bt_df_set_conn_cte_tx_param(struct bt_conn *conn, const struct bt_df_conn_cte_tx_param *params)
+{
+	CHECKIF(!conn) {
+		return -EINVAL;
+	}
+
+	CHECKIF(!params) {
+		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		BT_ERR("not connected!");
+		return -ENOTCONN;
+	}
+
+	if (atomic_test_bit(conn->flags, BT_CONN_CTE_RSP_ENABLED)) {
+		BT_WARN("CTE response procedure is enabled");
+		return -EINVAL;
+	}
+
+	return hci_df_set_conn_cte_tx_param(conn, params);
+}
+
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_TX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RSP)
 static int bt_df_set_conn_cte_rsp_enable(struct bt_conn *conn, bool enable)
