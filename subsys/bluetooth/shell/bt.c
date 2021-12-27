@@ -13,9 +13,11 @@
 
 #include <errno.h>
 #include <zephyr/types.h>
+#include <ctype.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/printk.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
@@ -85,6 +87,47 @@ static const char *phy2str(uint8_t phy)
 #endif
 
 #if defined(CONFIG_BT_OBSERVER)
+static struct bt_scan_filter {
+	char name[NAME_LEN];
+	bool name_set;
+	char addr[18]; /* fits xx:xx:xx:xx:xx:xx\0 */
+	bool addr_set;
+} scan_filter;
+
+
+/**
+ * @brief Compares two strings without case sensitivy
+ *
+ * @param substr The substring
+ * @param str The string to find the substring in
+ *
+ * @return true if @substr is a substring of @p, else false
+ */
+static bool is_substring(const char *substr, const char *str)
+{
+	const size_t str_len = strlen(str);
+	const size_t sub_str_len = strlen(substr);
+
+	if (sub_str_len > str_len) {
+		return false;
+	}
+
+	for (size_t pos = 0; pos < str_len; pos++) {
+		if (tolower(substr[0]) == tolower(str[pos])) {
+			if (pos + sub_str_len > str_len) {
+				shell_print(ctx_shell, "length fail");
+				return false;
+			}
+
+			if (strncasecmp(substr, &str[pos], sub_str_len) == 0) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 static bool data_cb(struct bt_data *data, void *user_data)
 {
 	char *name = user_data;
@@ -99,7 +142,6 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
-
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
@@ -111,6 +153,15 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	bt_data_parse(buf, data_cb, name);
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	if (scan_filter.name_set && !is_substring(scan_filter.name, name)) {
+		return;
+	}
+
+	if (scan_filter.addr_set && !is_substring(scan_filter.addr, le_addr)) {
+		return;
+	}
+
 	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s "
 		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
 		    "Interval: 0x%04x (%u ms), SID: 0x%x",
@@ -938,6 +989,81 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_scan_filter_set_name(const struct shell *sh, size_t argc,
+				    char *argv[])
+{
+	const char *name_arg = argv[1];
+
+	if (strlen(name_arg) >= sizeof(scan_filter.name)) {
+		shell_error(ctx_shell, "Name is too long (max %zu): %s\n",
+			    sizeof(scan_filter.name), name_arg);
+		return -ENOEXEC;
+	}
+
+	strcpy(scan_filter.name, name_arg);
+	scan_filter.name_set = true;
+
+	return 0;
+}
+
+static int cmd_scan_filter_set_addr(const struct shell *sh, size_t argc,
+				    char *argv[])
+{
+	const char *addr_arg = argv[1];
+
+	/* Validate length */
+	if (strlen(addr_arg) > sizeof(scan_filter.addr)) {
+		shell_error(ctx_shell, "Invalid address string: %s\n",
+			    addr_arg);
+		return -ENOEXEC;
+	}
+
+	/* Validate input to check if valid (subset of) BT address */
+	for (size_t i = 0; i < strlen(addr_arg); i++) {
+		const char c = addr_arg[i];
+		uint8_t tmp;
+
+		if (c != ':' && char2hex(c, &tmp) < 0) {
+			shell_error(ctx_shell,
+					"Invalid address string: %s\n",
+					addr_arg);
+			return -ENOEXEC;
+		}
+	}
+
+	strcpy(scan_filter.addr, addr_arg);
+	scan_filter.addr_set = true;
+
+	return 0;
+}
+
+static int cmd_scan_filter_clear_all(const struct shell *sh, size_t argc,
+				     char *argv[])
+{
+	(void)memset(&scan_filter, 0, sizeof(scan_filter));
+
+	return 0;
+}
+
+static int cmd_scan_filter_clear_name(const struct shell *sh, size_t argc,
+				      char *argv[])
+{
+	(void)memset(scan_filter.name, 0, sizeof(scan_filter.name));
+	scan_filter.name_set = false;
+
+	return 0;
+}
+
+static int cmd_scan_filter_clear_addr(const struct shell *sh, size_t argc,
+				      char *argv[])
+{
+	(void)memset(scan_filter.addr, 0, sizeof(scan_filter.addr));
+	scan_filter.addr_set = false;
+
+	return 0;
+}
+
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -3092,6 +3218,21 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 #define EXT_ADV_SCAN_OPT ""
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
+#if defined(CONFIG_BT_OBSERVER)
+SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_set_cmds,
+	SHELL_CMD_ARG(name, NULL, "<name>", cmd_scan_filter_set_name, 2, 0),
+	SHELL_CMD_ARG(addr, NULL, "<addr>", cmd_scan_filter_set_addr, 2, 0),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_clear_cmds,
+	SHELL_CMD_ARG(all, NULL, "", cmd_scan_filter_clear_all, 1, 0),
+	SHELL_CMD_ARG(name, NULL, "", cmd_scan_filter_clear_name, 1, 0),
+	SHELL_CMD_ARG(addr, NULL, "", cmd_scan_filter_clear_addr, 1, 0),
+	SHELL_SUBCMD_SET_END
+);
+#endif /* CONFIG_BT_OBSERVER */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(init, NULL, "[no-settings-load], [sync]",
 		      cmd_init, 1, 2),
@@ -3112,6 +3253,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      "<value: on, passive, off> [filter: dups, nodups] [fal]"
 		      EXT_ADV_SCAN_OPT,
 		      cmd_scan, 2, 4),
+	SHELL_CMD_ARG(scan-filter-set, &bt_scan_filter_set_cmds,
+		      "Scan filter set commands",
+		      NULL, 1, 0),
+	SHELL_CMD_ARG(scan-filter-clear, &bt_scan_filter_clear_cmds,
+		      "Scan filter clear commands",
+		      NULL, 1, 0),
 #endif /* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
