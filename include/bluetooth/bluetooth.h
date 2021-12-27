@@ -520,6 +520,37 @@ enum {
 	 * @note Requires @ref BT_LE_ADV_OPT_USE_NAME
 	 */
 	BT_LE_ADV_OPT_FORCE_NAME_IN_AD = BIT(18),
+
+	/**
+	 * @brief Advertise GATT service UUIDs.
+	 *
+	 * Include the registered GATT service UUIDs automatically when
+	 * advertising. The UUIDs will be placed in the advertising data if
+	 * possible, otherwise they will be moved to the scan response data.
+	 * The list of UUIDs will be truncated if not all UUIDs fit in the
+	 * advertising or scan response data. The GATT service UUIDs will
+	 * take precedence over the GAP device name if
+	 * @ref BT_LE_ADV_OPT_USE_NAME is also supplied. Similarly 16-bit UUIDs
+	 * will take precedence over 32-bit UUIDs, and 32-bit UUIDs will
+	 * take precedence over 128-bit UUIDs.
+	 * Given the size requirements of this, it is recommended to only
+	 * use this option with @ref BT_LE_ADV_OPT_EXT_ADV.
+	 *
+	 * If a GATT service is unregistered or registered during adverising,
+	 * advertising must be restarted for the new list of UUIDs to take
+	 * effect.
+	 *
+	 * The application can set the UUID itself by including e.g. the
+	 * following in the advertising data. The example here is for the
+	 * Heart Rate Service (HRS), and multiple UUIDs can be listed at once.
+	 * @code
+	 * BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_HRS_VAL))
+	 * @endcode
+	 *
+	 * If the application supplies registered GATT UUIDs while this option
+	 * is added, the UUIDs will be duplicated in the advertising data.
+	 */
+	BT_LE_ADV_OPT_GATT_UUIDS = BIT(19),
 };
 
 /** LE Advertising Parameters. */
