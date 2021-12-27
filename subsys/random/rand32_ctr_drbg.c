@@ -30,6 +30,7 @@ static K_SEM_DEFINE(state_sem, 1, 1);
 
 static const struct device *entropy_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 static const unsigned char drbg_seed[] = CONFIG_CS_CTR_DRBG_PERSONALIZATION;
+static bool ctr_initialised;
 
 #if defined(CONFIG_MBEDTLS)
 
@@ -92,7 +93,7 @@ static int ctr_drbg_initialize(void)
 	}
 
 #endif
-
+	ctr_initialised = true;
 	return 0;
 }
 
@@ -102,7 +103,7 @@ int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 	int ret;
 	unsigned int key = irq_lock();
 
-	if (unlikely(!entropy_dev)) {
+	if (unlikely(!ctr_initialised)) {
 		ret = ctr_drbg_initialize();
 		if (ret != 0) {
 			ret = -EIO;
