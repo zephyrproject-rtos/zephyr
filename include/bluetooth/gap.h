@@ -50,6 +50,7 @@ extern "C" {
 #define BT_DATA_LE_SC_CONFIRM_VALUE     0x22 /* LE SC Confirmation Value */
 #define BT_DATA_LE_SC_RANDOM_VALUE      0x23 /* LE SC Random Value */
 #define BT_DATA_URI                     0x24 /* URI */
+#define BT_DATA_LE_SUPPORTED_FEATURES   0x27 /* LE Supported Features */
 #define BT_DATA_CHANNEL_MAP_UPDATE_IND  0x28 /* Channel Map Update Indication */
 #define BT_DATA_MESH_PROV               0x29 /* Mesh Provisioning PDU */
 #define BT_DATA_MESH_MESSAGE            0x2a /* Mesh Networking PDU */
@@ -188,6 +189,137 @@ enum {
 	BT_GAP_SCA_21_30 = 6,
 	BT_GAP_SCA_0_20 = 7,
 };
+
+/**
+ * @brief Encode 40 least significant bits of 64-bit LE Supported Features into array values
+ *        in little-endian format.
+ *
+ * Helper macro to encode 40 least significant bits of 64-bit LE Supported Features value into
+ * advertising data. The number of bits that are encoded is a number of LE Supported Features
+ * defined by BT 5.3 Core specification.
+ *
+ * Example of how to encode the `0x000000DFF00DF00D` into advertising data.
+ *
+ * @code
+ * BT_DATA_BYTES(BT_DATA_LE_SUPPORTED_FEATURES, BT_LE_SUPP_FEAT_40_ENCODE(0x000000DFF00DF00D))
+ * @endcode
+ *
+ * @param w64 LE Supported Features value (64-bits)
+ *
+ * @return The comma separated values for LE Supported Features value that
+ *         may be used directly as an argument for @ref BT_DATA_BYTES.
+ */
+#define BT_LE_SUPP_FEAT_40_ENCODE(w64) \
+	(((w64) >> 0) & 0xFF),  \
+	(((w64) >> 8) & 0xFF),  \
+	(((w64) >> 16) & 0xFF), \
+	(((w64) >> 24) & 0xFF), \
+	(((w64) >> 32) & 0xFF)
+
+/** @brief Encode 4 least significant bytes of 64-bit LE Supported Features into
+ *         4 bytes long array of values in little-endian format.
+ *
+ *  Helper macro to encode 64-bit LE Supported Features value into advertising
+ *  data. The macro encodes 4 least significant bytes into advertising data.
+ *  Other 4 bytes are not encoded.
+ *
+ *  Example of how to encode the `0x000000DFF00DF00D` into advertising data.
+ *
+ *  @code
+ *  BT_DATA_BYTES(BT_DATA_LE_SUPPORTED_FEATURES, BT_LE_SUPP_FEAT_32_ENCODE(0x000000DFF00DF00D))
+ *  @endcode
+ *
+ * @param w64 LE Supported Features value (64-bits)
+ *
+ * @return The comma separated values for LE Supported Features value that
+ *         may be used directly as an argument for @ref BT_DATA_BYTES.
+ */
+#define BT_LE_SUPP_FEAT_32_ENCODE(w64) \
+	(((w64) >> 0) & 0xFF),  \
+	(((w64) >> 8) & 0xFF),  \
+	(((w64) >> 16) & 0xFF), \
+	(((w64) >> 24) & 0xFF)
+
+/**
+ * @brief Encode 3 least significant bytes of 64-bit LE Supported Features into
+ *        3 bytes long array of values in little-endian format.
+ *
+ * Helper macro to encode 64-bit LE Supported Features value into advertising
+ * data. The macro encodes 3 least significant bytes into advertising data.
+ * Other 5 bytes are not encoded.
+ *
+ * Example of how to encode the `0x000000DFF00DF00D` into advertising data.
+ *
+ * @code
+ * BT_DATA_BYTES(BT_DATA_LE_SUPPORTED_FEATURES, BT_LE_SUPP_FEAT_24_ENCODE(0x000000DFF00DF00D))
+ * @endcode
+ *
+ * @param w64 LE Supported Features value (64-bits)
+ *
+ * @return The comma separated values for LE Supported Features value that
+ *         may be used directly as an argument for @ref BT_DATA_BYTES.
+ */
+#define BT_LE_SUPP_FEAT_24_ENCODE(w64) \
+	(((w64) >> 0) & 0xFF),  \
+	(((w64) >> 8) & 0xFF),  \
+	(((w64) >> 16) & 0xFF),
+
+/**
+ * @brief Encode 2 least significant bytes of 64-bit LE Supported Features into
+ *        2 bytes long array of values in little-endian format.
+ *
+ * Helper macro to encode 64-bit LE Supported Features value into advertising
+ * data. The macro encodes 3 least significant bytes into advertising data.
+ * Other 6 bytes are not encoded.
+ *
+ * Example of how to encode the `0x000000DFF00DF00D` into advertising data.
+ *
+ * @code
+ * BT_DATA_BYTES(BT_DATA_LE_SUPPORTED_FEATURES, BT_LE_SUPP_FEAT_16_ENCODE(0x000000DFF00DF00D))
+ * @endcode
+ *
+ * @param w64 LE Supported Features value (64-bits)
+ *
+ * @return The comma separated values for LE Supported Features value that
+ *         may be used directly as an argument for @ref BT_DATA_BYTES.
+ */
+#define BT_LE_SUPP_FEAT_16_ENCODE(w64) \
+	(((w64) >> 0) & 0xFF),  \
+	(((w64) >> 8) & 0xFF),
+
+/**
+ * @brief Encode the least significant byte of 64-bit LE Supported Features into
+ *        single byte long array.
+ *
+ * Helper macro to encode 64-bit LE Supported Features value into advertising
+ * data. The macro encodes the least significant byte into advertising data.
+ * Other 7 bytes are not encoded.
+ *
+ * Example of how to encode the `0x000000DFF00DF00D` into advertising data.
+ *
+ * @code
+ * BT_DATA_BYTES(BT_DATA_LE_SUPPORTED_FEATURES, BT_LE_SUPP_FEAT_8_ENCODE(0x000000DFF00DF00D))
+ * @endcode
+ *
+ * @param w64 LE Supported Features value (64-bits)
+ *
+ * @return The value of least significant byte of LE Supported Features value
+ *         that may be used directly as an argument for @ref BT_DATA_BYTES.
+ */
+#define BT_LE_SUPP_FEAT_8_ENCODE(w64) \
+	(((w64) >> 0) & 0xFF)
+
+/**
+ * @brief Validate wheather LE Supported Features value does not use bits that are reserved for
+ *        future use.
+ *
+ * Helper macro to check if @p w64 has zeros as bits 40-63. The macro is compliant with BT 5.3
+ * Core Specifiaction where bits 0-40 has assigned values. In case of invalid value, build time
+ * error is reported.
+ */
+#define BT_LE_SUPP_FEAT_VALIDATE(w64) \
+	BUILD_ASSERT(!((w64) & (~BIT64_MASK(40))), \
+		     "RFU bit in LE Supported Features are not zeros.")
 
 /**
  * @}
