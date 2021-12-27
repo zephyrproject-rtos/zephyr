@@ -246,6 +246,22 @@ config LWM2M_CONN_MON_OBJ_SUPPORT
 	help
 	  Include support for LWM2M Connectivity Monitoring Object (ID 4)
 
+choice
+	prompt "LwM2M Connectivity Monitor object version"
+	default LWM2M_CONNMON_OBJECT_VERSION_1_0
+	depends on LWM2M_CONN_MON_OBJ_SUPPORT
+	help
+	  Select Which version of the Connectivity Monitor object should be used.
+
+config LWM2M_CONNMON_OBJECT_VERSION_1_0
+	bool "Connectivity monitor object version 1.0"
+
+config LWM2M_CONNMON_OBJECT_VERSION_1_2
+	bool "Connectivity monitor object version 1.2 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endchoice
+
 config LWM2M_CONN_MON_BEARER_MAX
 	int "Maximum # of available network bearer resource instances"
 	depends on LWM2M_CONN_MON_OBJ_SUPPORT
