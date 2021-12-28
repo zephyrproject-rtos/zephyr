@@ -2794,19 +2794,21 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 	}
 
 	lll = iq_report->hdr.rx_ftr.param;
+	sync = HDR_LLL2ULL(lll);
 
 	/* TX LL thread has higher priority than RX thread. It may happen that
-	 * host succefully disables CTE sampling in the meantime.
-	 * It should be verified here, to avoid reporint IQ samples after
-	 * the functionality was disabled.
+	 * host successfully disables CTE sampling in the meantime.
+	 * It should be verified here, to avoid reporting IQ samples after
+	 * the functionality was disabled or if sync was lost.
 	 */
-	if (ull_df_sync_cfg_is_not_enabled(&lll->df_cfg)) {
-		/* Dropp further processing of the event. */
+	if (ull_df_sync_cfg_is_not_enabled(&lll->df_cfg) ||
+	    !sync->timeout_reload) {
+		/* Drop further processing of the event. */
 		return;
 	}
 
 	/* If there are no IQ samples due to insufficient resources
-	 * HCI event should inform about it by store single octet with
+	 * HCI event should inform about it by storing single octet with
 	 * special I_sample and Q_sample data.
 	 */
 	samples_cnt = (!iq_report->sample_count ? 1 : iq_report->sample_count);
@@ -2820,8 +2822,6 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 	/* Get the sync handle corresponding to the LLL context passed in the
 	 * node rx footer field.
 	 */
-	sync = HDR_LLL2ULL(lll);
-
 	sep->sync_handle = sys_cpu_to_le16(ull_sync_handle_get(sync));
 	sep->rssi = sys_cpu_to_le16(rssi);
 	sep->rssi_ant_id = iq_report->rssi_ant_id;
