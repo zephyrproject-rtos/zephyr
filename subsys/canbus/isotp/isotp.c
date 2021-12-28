@@ -76,7 +76,7 @@ static inline void receive_report_error(struct isotp_recv_ctx *ctx, int err)
 	ctx->error_nr = err;
 }
 
-void receive_can_tx_isr(int error, void *arg)
+static void receive_can_tx(int error, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
 
@@ -146,7 +146,7 @@ static void receive_send_fc(struct isotp_recv_ctx *ctx, uint8_t fs)
 #endif
 
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
-		       receive_can_tx_isr, ctx);
+		       receive_can_tx, ctx);
 	if (ret) {
 		LOG_ERR("Can't send FC, (%d)", ret);
 		receive_report_error(ctx, ISOTP_N_TIMEOUT_A);
@@ -525,7 +525,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 	}
 }
 
-static void receive_can_rx_isr(struct zcan_frame *frame, void *arg)
+static void receive_can_rx(struct zcan_frame *frame, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
 
@@ -574,8 +574,8 @@ static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
 		.id_mask = mask
 	};
 
-	ctx->filter_id = can_attach_isr(ctx->can_dev, receive_can_rx_isr, ctx,
-					&filter);
+	ctx->filter_id = can_add_rx_filter(ctx->can_dev, receive_can_rx, ctx,
+					   &filter);
 	if (ctx->filter_id < 0) {
 		LOG_ERR("Error attaching FF filter [%d]", ctx->filter_id);
 		return ISOTP_NO_FREE_FILTER;
@@ -637,7 +637,7 @@ void isotp_unbind(struct isotp_recv_ctx *ctx)
 	struct net_buf *buf;
 
 	if (ctx->filter_id >= 0 && ctx->can_dev) {
-		can_detach(ctx->can_dev, ctx->filter_id);
+		can_remove_rx_filter(ctx->can_dev, ctx->filter_id);
 	}
 
 	z_abort_timeout(&ctx->timeout);
@@ -723,7 +723,7 @@ static inline void send_report_error(struct isotp_send_ctx *ctx, uint32_t err)
 	ctx->error_nr = err;
 }
 
-static void send_can_tx_isr(int error, void *arg)
+static void send_can_tx_cb(int error, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 
@@ -814,7 +814,7 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 	}
 }
 
-static void send_can_rx_isr(struct zcan_frame *frame, void *arg)
+static void send_can_rx_cb(struct zcan_frame *frame, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 
@@ -887,7 +887,7 @@ static inline int send_sf(struct isotp_send_ctx *ctx)
 
 	ctx->state = ISOTP_TX_SEND_SF;
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
-		       send_can_tx_isr, ctx);
+		       send_can_tx_cb, ctx);
 	return ret;
 }
 
@@ -929,7 +929,7 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 	memcpy(&frame.data[index], data, ISOTP_CAN_DL - index);
 
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
-		       send_can_tx_isr, ctx);
+		       send_can_tx_cb, ctx);
 	return ret;
 }
 
@@ -968,7 +968,7 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 #endif
 
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
-		       send_can_tx_isr, ctx);
+		       send_can_tx_cb, ctx);
 	if (ret == 0) {
 		ctx->sn++;
 		pull_data_ctx(ctx, len);
@@ -1084,7 +1084,7 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 		__fallthrough;
 	case ISOTP_TX_WAIT_FIN:
 		if (ctx->filter_id >= 0) {
-			can_detach(ctx->can_dev, ctx->filter_id);
+			can_remove_rx_filter(ctx->can_dev, ctx->filter_id);
 		}
 
 		LOG_DBG("SM finish");
@@ -1123,8 +1123,8 @@ static inline int attach_fc_filter(struct isotp_send_ctx *ctx)
 		.id_mask = CAN_EXT_ID_MASK
 	};
 
-	ctx->filter_id = can_attach_isr(ctx->can_dev, send_can_rx_isr, ctx,
-					&filter);
+	ctx->filter_id = can_add_rx_filter(ctx->can_dev, send_can_rx_cb, ctx,
+					   &filter);
 	if (ctx->filter_id < 0) {
 		LOG_ERR("Error attaching FC filter [%d]", ctx->filter_id);
 		return ISOTP_NO_FREE_FILTER;

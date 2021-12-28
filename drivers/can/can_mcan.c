@@ -440,11 +440,12 @@ static void can_mcan_state_change_handler(const struct can_mcan_config *cfg,
 {
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
+	const can_state_change_callback_t cb = data->state_change_cb;
 
 	state = can_mcan_get_state(cfg, &err_cnt);
 
-	if (data->state_change_isr) {
-		data->state_change_isr(state, err_cnt);
+	if (cb != NULL) {
+		cb(state, err_cnt);
 	}
 }
 
@@ -769,55 +770,55 @@ static int can_mcan_get_free_std(volatile struct can_mcan_std_filter *filters)
  * Dual mode gets tricky, because we can only activate both filters.
  * If one of the IDs is not used anymore, we would need to mark it as unused.
  */
-int can_mcan_attach_std(struct can_mcan_data *data,
-			struct can_mcan_msg_sram *msg_ram,
-			can_rx_callback_t isr, void *cb_arg,
-			const struct zcan_filter *filter)
+int can_mcan_add_rx_filter_std(struct can_mcan_data *data,
+			       struct can_mcan_msg_sram *msg_ram,
+			       can_rx_callback_t callback, void *user_data,
+			       const struct zcan_filter *filter)
 {
 	struct can_mcan_std_filter filter_element = {
 		.id1 = filter->id,
 		.id2 = filter->id_mask,
 		.sft = CAN_MCAN_SFT_MASKED
 	};
-	int filter_nr;
+	int filter_id;
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	filter_nr = can_mcan_get_free_std(msg_ram->std_filt);
+	filter_id = can_mcan_get_free_std(msg_ram->std_filt);
 
-	if (filter_nr == -ENOSPC) {
+	if (filter_id == -ENOSPC) {
 		LOG_INF("No free standard id filter left");
 		return -ENOSPC;
 	}
 
 	/* TODO propper fifo balancing */
-	filter_element.sfce = filter_nr & 0x01 ? CAN_MCAN_FCE_FIFO1 :
+	filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->std_filt[filter_nr], &filter_element,
+	memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
 			 sizeof(struct can_mcan_std_filter));
 	CACHE_CLEAN(&msg_ram->std_filt[filter_nr],
 		    sizeof(struct can_mcan_std_filter));
 
 	k_mutex_unlock(&data->inst_mutex);
 
-	LOG_DBG("Attached std filter at %d", filter_nr);
+	LOG_DBG("Attached std filter at %d", filter_id);
 
 	if (filter->rtr) {
-		data->std_filt_rtr |= (1U << filter_nr);
+		data->std_filt_rtr |= (1U << filter_id);
 	} else {
-		data->std_filt_rtr &= ~(1U << filter_nr);
+		data->std_filt_rtr &= ~(1U << filter_id);
 	}
 
 	if (filter->rtr_mask) {
-		data->std_filt_rtr_mask |= (1U << filter_nr);
+		data->std_filt_rtr_mask |= (1U << filter_id);
 	} else {
-		data->std_filt_rtr_mask &= ~(1U << filter_nr);
+		data->std_filt_rtr_mask &= ~(1U << filter_id);
 	}
 
-	data->rx_cb_std[filter_nr] = isr;
-	data->cb_arg_std[filter_nr] = cb_arg;
+	data->rx_cb_std[filter_id] = callback;
+	data->cb_arg_std[filter_id] = user_data;
 
-	return filter_nr;
+	return filter_id;
 }
 
 static int can_mcan_get_free_ext(volatile struct can_mcan_ext_filter *filters)
@@ -831,106 +832,104 @@ static int can_mcan_get_free_ext(volatile struct can_mcan_ext_filter *filters)
 	return -ENOSPC;
 }
 
-static int can_mcan_attach_ext(struct can_mcan_data *data,
-			       struct can_mcan_msg_sram *msg_ram,
-			       can_rx_callback_t isr, void *cb_arg,
-			       const struct zcan_filter *filter)
+static int can_mcan_add_rx_filter_ext(struct can_mcan_data *data,
+				      struct can_mcan_msg_sram *msg_ram,
+				      can_rx_callback_t callback, void *user_data,
+				      const struct zcan_filter *filter)
 {
 	struct can_mcan_ext_filter filter_element = {
 		.id2 = filter->id_mask,
 		.id1 = filter->id,
 		.eft = CAN_MCAN_EFT_MASKED
 	};
-	int filter_nr;
+	int filter_id;
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	filter_nr = can_mcan_get_free_ext(msg_ram->ext_filt);
+	filter_id = can_mcan_get_free_ext(msg_ram->ext_filt);
 
-	if (filter_nr == -ENOSPC) {
-		LOG_INF("No free extender id filter left");
+	if (filter_id == -ENOSPC) {
+		LOG_INF("No free extended id filter left");
 		return -ENOSPC;
 	}
 
 	/* TODO propper fifo balancing */
-	filter_element.efce = filter_nr & 0x01 ? CAN_MCAN_FCE_FIFO1 :
+	filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->ext_filt[filter_nr], &filter_element,
+	memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
 			  sizeof(struct can_mcan_ext_filter));
 	CACHE_CLEAN(&msg_ram->ext_filt[filter_nr],
 		    sizeof(struct can_mcan_ext_filter));
 
 	k_mutex_unlock(&data->inst_mutex);
 
-	LOG_DBG("Attached ext filter at %d", filter_nr);
+	LOG_DBG("Attached ext filter at %d", filter_id);
 
 	if (filter->rtr) {
-		data->ext_filt_rtr |= (1U << filter_nr);
+		data->ext_filt_rtr |= (1U << filter_id);
 	} else {
-		data->ext_filt_rtr &= ~(1U << filter_nr);
+		data->ext_filt_rtr &= ~(1U << filter_id);
 	}
 
 	if (filter->rtr_mask) {
-		data->ext_filt_rtr_mask |= (1U << filter_nr);
+		data->ext_filt_rtr_mask |= (1U << filter_id);
 	} else {
-		data->ext_filt_rtr_mask &= ~(1U << filter_nr);
+		data->ext_filt_rtr_mask &= ~(1U << filter_id);
 	}
 
-	data->rx_cb_ext[filter_nr] = isr;
-	data->cb_arg_ext[filter_nr] = cb_arg;
+	data->rx_cb_ext[filter_id] = callback;
+	data->cb_arg_ext[filter_id] = user_data;
 
-	return filter_nr;
+	return filter_id;
 }
 
-int can_mcan_attach_isr(struct can_mcan_data *data,
-			struct can_mcan_msg_sram *msg_ram,
-			can_rx_callback_t isr, void *cb_arg,
-			const struct zcan_filter *filter)
+int can_mcan_add_rx_filter(struct can_mcan_data *data,
+			   struct can_mcan_msg_sram *msg_ram,
+			   can_rx_callback_t callback, void *user_data,
+			   const struct zcan_filter *filter)
 {
-	int filter_nr;
+	int filter_id;
 
-	if (!isr) {
+	if (callback == NULL) {
 		return -EINVAL;
 	}
 
 	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
-		filter_nr = can_mcan_attach_std(data, msg_ram, isr, cb_arg,
-						filter);
+		filter_id = can_mcan_add_rx_filter_std(data, msg_ram, callback,
+						       user_data, filter);
 	} else {
-		filter_nr = can_mcan_attach_ext(data, msg_ram, isr, cb_arg,
-						filter);
-		filter_nr += NUM_STD_FILTER_DATA;
+		filter_id = can_mcan_add_rx_filter_ext(data, msg_ram, callback,
+						       user_data, filter);
+		filter_id += NUM_STD_FILTER_DATA;
 	}
 
-	if (filter_nr == -ENOSPC) {
+	if (filter_id == -ENOSPC) {
 		LOG_INF("No free filter left");
 	}
 
-	return filter_nr;
+	return filter_id;
 }
 
-void can_mcan_detach(struct can_mcan_data *data,
-		     struct can_mcan_msg_sram *msg_ram, int filter_nr)
+void can_mcan_remove_rx_filter(struct can_mcan_data *data,
+			       struct can_mcan_msg_sram *msg_ram, int filter_id)
 {
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	if (filter_nr >= NUM_STD_FILTER_DATA) {
-		filter_nr -= NUM_STD_FILTER_DATA;
-		if (filter_nr >= NUM_STD_FILTER_DATA) {
+	if (filter_id >= NUM_STD_FILTER_DATA) {
+		filter_id -= NUM_STD_FILTER_DATA;
+		if (filter_id >= NUM_STD_FILTER_DATA) {
 			LOG_ERR("Wrong filter id");
 			return;
 		}
 
-		memset32_volatile(&msg_ram->ext_filt[filter_nr], 0,
+		memset32_volatile(&msg_ram->ext_filt[filter_id], 0,
 				  sizeof(struct can_mcan_ext_filter));
-		CACHE_CLEAN(&msg_ram->ext_filt[filter_nr],
+		CACHE_CLEAN(&msg_ram->ext_filt[filter_id],
 			    sizeof(struct can_mcan_ext_filter));
-		data->rx_cb_ext[filter_nr] = NULL;
 	} else {
-		memset32_volatile(&msg_ram->std_filt[filter_nr], 0,
+		memset32_volatile(&msg_ram->std_filt[filter_id], 0,
 				  sizeof(struct can_mcan_std_filter));
-		CACHE_CLEAN(&msg_ram->std_filt[filter_nr],
+		CACHE_CLEAN(&msg_ram->std_filt[filter_id],
 			    sizeof(struct can_mcan_std_filter));
-		data->rx_cb_std[filter_nr] = NULL;
 	}
 
 	k_mutex_unlock(&data->inst_mutex);
