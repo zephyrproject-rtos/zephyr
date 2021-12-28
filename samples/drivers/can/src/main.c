@@ -44,13 +44,13 @@ static struct k_poll_event change_led_events[1] = {
 					&change_led_msgq, 0)
 };
 
-void tx_irq_callback(uint32_t error_flags, void *arg)
+void tx_irq_callback(int error, void *arg)
 {
 	char *sender = (char *)arg;
 
-	if (error_flags) {
+	if (error != 0) {
 		printk("Callback! error-code: %d\nSender: %s\n",
-		       error_flags, sender);
+		       error, sender);
 	}
 }
 

@@ -181,7 +181,7 @@ static inline void check_msg(const struct zcan_frame *msg1,
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
-static void tx_std_isr_1(uint32_t error_flags, void *arg)
+static void tx_std_isr_1(int error, void *arg)
 {
 	const struct zcan_frame *msg = (const struct zcan_frame *)arg;
 
@@ -190,7 +190,7 @@ static void tx_std_isr_1(uint32_t error_flags, void *arg)
 	zassert_equal(msg->id, TEST_CAN_STD_ID_1, "Arg does not match");
 }
 
-static void tx_std_isr_2(uint32_t error_flags, void *arg)
+static void tx_std_isr_2(int error, void *arg)
 {
 	const struct zcan_frame *msg = (const struct zcan_frame *)arg;
 
@@ -199,7 +199,7 @@ static void tx_std_isr_2(uint32_t error_flags, void *arg)
 	zassert_equal(msg->id, TEST_CAN_STD_ID_2, "Arg does not match");
 }
 
-static void tx_ext_isr_1(uint32_t error_flags, void *arg)
+static void tx_ext_isr_1(int error, void *arg)
 {
 	const struct zcan_frame *msg = (const struct zcan_frame *)arg;
 
@@ -208,7 +208,7 @@ static void tx_ext_isr_1(uint32_t error_flags, void *arg)
 	zassert_equal(msg->id, TEST_CAN_EXT_ID_1, "Arg does not match");
 }
 
-static void tx_ext_isr_2(uint32_t error_flags, void *arg)
+static void tx_ext_isr_2(int error, void *arg)
 {
 	const struct zcan_frame *msg = (const struct zcan_frame *)arg;
 
