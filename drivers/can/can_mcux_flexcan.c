@@ -116,7 +116,7 @@ struct mcux_flexcan_data {
 	struct k_sem tx_allocs_sem;
 	struct mcux_flexcan_tx_callback tx_cbs[MCUX_FLEXCAN_MAX_TX];
 	enum can_state state;
-	can_state_change_isr_t state_change_isr;
+	can_state_change_callback_t state_change_cb;
 	struct can_timing timing;
 };
 
@@ -366,10 +366,10 @@ static int mcux_flexcan_send(const struct device *dev,
 	return 0;
 }
 
-static int mcux_flexcan_attach_isr(const struct device *dev,
-				   can_rx_callback_t isr,
-				   void *user_data,
-				   const struct zcan_filter *filter)
+static int mcux_flexcan_add_rx_filter(const struct device *dev,
+				      can_rx_callback_t callback,
+				      void *user_data,
+				      const struct zcan_filter *filter)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
@@ -379,7 +379,7 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 	int alloc = -ENOSPC;
 	int i;
 
-	__ASSERT_NO_MSG(isr);
+	__ASSERT_NO_MSG(callback);
 
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
@@ -400,7 +400,7 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 					      &mask);
 
 	data->rx_cbs[alloc].arg = user_data;
-	data->rx_cbs[alloc].function = isr;
+	data->rx_cbs[alloc].function = callback;
 
 	FLEXCAN_SetRxIndividualMask(config->base, ALLOC_IDX_TO_RXMB_IDX(alloc),
 				    mask);
@@ -422,12 +422,12 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 	return alloc;
 }
 
-static void mcux_flexcan_register_state_change_isr(const struct device *dev,
-						   can_state_change_isr_t isr)
+static void mcux_flexcan_set_state_change_callback(const struct device *dev,
+						   can_state_change_callback_t callback)
 {
 	struct mcux_flexcan_data *data = dev->data;
 
-	data->state_change_isr = isr;
+	data->state_change_cb = callback;
 }
 
 static enum can_state mcux_flexcan_get_state(const struct device *dev,
@@ -484,7 +484,7 @@ int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
-static void mcux_flexcan_detach(const struct device *dev, int filter_id)
+static void mcux_flexcan_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
@@ -517,6 +517,8 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
+	const can_state_change_callback_t cb = data->state_change_cb;
+
 	can_tx_callback_t function;
 	int status = 0;
 	void *arg;
@@ -547,8 +549,9 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 	state = mcux_flexcan_get_state(dev, &err_cnt);
 	if (data->state != state) {
 		data->state = state;
-		if (data->state_change_isr) {
-			data->state_change_isr(state, err_cnt);
+
+		if (cb) {
+			cb(state, err_cnt);
 		}
 	}
 
@@ -746,13 +749,13 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 	.set_mode = mcux_flexcan_set_mode,
 	.set_timing = mcux_flexcan_set_timing,
 	.send = mcux_flexcan_send,
-	.attach_isr = mcux_flexcan_attach_isr,
-	.detach = mcux_flexcan_detach,
+	.add_rx_filter = mcux_flexcan_add_rx_filter,
+	.remove_rx_filter = mcux_flexcan_remove_rx_filter,
 	.get_state = mcux_flexcan_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = mcux_flexcan_recover,
 #endif
-	.register_state_change_isr = mcux_flexcan_register_state_change_isr,
+	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
 	/*

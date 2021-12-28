@@ -22,7 +22,7 @@
 #define BUF_ALLOC_TIMEOUT K_MSEC(50)
 
 /* TODO: make msgq size configurable */
-CAN_DEFINE_MSGQ(socket_can_msgq, 5);
+CAN_MSGQ_DEFINE(socket_can_msgq, 5);
 K_KERNEL_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 
 struct socket_can_context {
@@ -93,8 +93,8 @@ static inline int socket_can_setsockopt(const struct device *dev, void *obj,
 
 	__ASSERT_NO_MSG(optlen == sizeof(struct zcan_filter));
 
-	ret = can_attach_msgq(socket_context->can_dev, socket_context->msgq,
-			      optval);
+	ret = can_add_rx_filter_msgq(socket_context->can_dev, socket_context->msgq,
+				     optval);
 	if (ret == -ENOSPC) {
 		errno = ENOSPC;
 		return -1;
@@ -109,7 +109,7 @@ static inline void socket_can_close(const struct device *dev, int filter_id)
 {
 	struct socket_can_context *socket_context = dev->data;
 
-	can_detach(socket_context->can_dev, filter_id);
+	can_remove_rx_filter(socket_context->can_dev, filter_id);
 }
 
 static struct canbus_api socket_can_api = {

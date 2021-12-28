@@ -205,24 +205,24 @@ Receiving
 *********
 
 Frames are only received when they match a filter.
-The following code snippets show how to receive frames by attaching filters.
+The following code snippets show how to receive frames by adding filters.
 
 Here we have an example for a receiving callback as used for
-:c:func:`can_attach_isr`. The argument arg is passed when the filter is
-attached.
+:c:func:`can_add_rx_filter`. The user data argument is passed when the filter is
+added.
 
 .. code-block:: C
 
-  void rx_callback_function(struct zcan_frame *frame, void *arg)
+  void rx_callback_function(struct zcan_frame *frame, void *user_data)
   {
           ... do something with the frame ...
   }
 
-The following snippet shows how to attach a filter with an interrupt callback.
+The following snippet shows how to add a filter with a callback function.
 It is the most efficient but also the most critical way to receive messages.
 The callback function is called from an interrupt context, which means that the
 callback function should be as short as possible and must not block.
-Attaching ISRs is not allowed from userspace context.
+Adding callback functions is not allowed from userspace context.
 
 The filter for this example is configured to match the identifier 0x123 exactly.
 
@@ -240,15 +240,15 @@ The filter for this example is configured to match the identifier 0x123 exactly.
 
   can_dev = device_get_binding("CAN_0");
 
-  filter_id = can_attach_isr(can_dev, rx_callback_function, callback_arg, &my_filter);
+  filter_id = can_add_rx_filter(can_dev, rx_callback_function, callback_arg, &my_filter);
   if (filter_id < 0) {
-    LOG_ERR("Unable to attach isr [%d]", filter_id);
+    LOG_ERR("Unable to add rx filter [%d]", filter_id);
   }
 
-Here an example for :c:func:`can_attach_msgq` is shown. With this function, it
-is possible to receive frames synchronously. This function can be called from
-userspace context.
-The size of the message queue should be as big as the expected backlog.
+Here an example for :c:func:`can_add_rx_filter_msgq` is shown. With this
+function, it is possible to receive frames synchronously. This function can be
+called from userspace context.  The size of the message queue should be as big
+as the expected backlog.
 
 The filter for this example is configured to match the extended identifier
 0x1234567 exactly.
@@ -262,16 +262,16 @@ The filter for this example is configured to match the extended identifier
           .rtr_mask = 1,
           .id_mask = CAN_EXT_ID_MASK
   };
-  CAN_DEFINE_MSGQ(my_can_msgq, 2);
+  CAN_MSGQ_DEFINE(my_can_msgq, 2);
   struct zcan_frame rx_frame;
   int filter_id;
   const struct device *can_dev;
 
   can_dev = device_get_binding("CAN_0");
 
-  filter_id = can_attach_msgq(can_dev, &my_can_msgq, &my_filter);
+  filter_id = can_add_rx_filter_msgq(can_dev, &my_can_msgq, &my_filter);
   if (filter_id < 0) {
-    LOG_ERR("Unable to attach isr [%d]", filter_id);
+    LOG_ERR("Unable to add rx msgq [%d]", filter_id);
     return;
   }
 
@@ -280,11 +280,11 @@ The filter for this example is configured to match the extended identifier
     ... do something with the frame ...
   }
 
-:c:func:`can_detach` removes the given filter.
+:c:func:`can_remove_rx_filter` removes the given filter.
 
 .. code-block:: C
 
-  can_detach(can_dev, filter_id);
+  can_remove_rx_filter(can_dev, filter_id);
 
 Setting the bitrate
 *******************

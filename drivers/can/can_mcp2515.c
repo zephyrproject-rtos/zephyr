@@ -518,83 +518,83 @@ static int mcp2515_send(const struct device *dev,
 	return 0;
 }
 
-static int mcp2515_attach_isr(const struct device *dev,
-			      can_rx_callback_t rx_cb,
-			      void *cb_arg,
-			      const struct zcan_filter *filter)
+static int mcp2515_add_rx_filter(const struct device *dev,
+				 can_rx_callback_t rx_cb,
+				 void *cb_arg,
+				 const struct zcan_filter *filter)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
-	int filter_idx = 0;
+	int filter_id = 0;
 
 	__ASSERT(rx_cb != NULL, "response_ptr can not be null");
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 	/* find free filter */
-	while ((BIT(filter_idx) & dev_data->filter_usage)
-	       && (filter_idx < CONFIG_CAN_MAX_FILTER)) {
-		filter_idx++;
+	while ((BIT(filter_id) & dev_data->filter_usage)
+	       && (filter_id < CONFIG_CAN_MAX_FILTER)) {
+		filter_id++;
 	}
 
 	/* setup filter */
-	if (filter_idx < CONFIG_CAN_MAX_FILTER) {
-		dev_data->filter_usage |= BIT(filter_idx);
+	if (filter_id < CONFIG_CAN_MAX_FILTER) {
+		dev_data->filter_usage |= BIT(filter_id);
 
-		dev_data->filter[filter_idx] = *filter;
-		dev_data->rx_cb[filter_idx] = rx_cb;
-		dev_data->cb_arg[filter_idx] = cb_arg;
+		dev_data->filter[filter_id] = *filter;
+		dev_data->rx_cb[filter_id] = rx_cb;
+		dev_data->cb_arg[filter_id] = cb_arg;
 
 	} else {
-		filter_idx = -ENOSPC;
+		filter_id = -ENOSPC;
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
 
-	return filter_idx;
+	return filter_id;
 }
 
-static void mcp2515_detach(const struct device *dev, int filter_nr)
+static void mcp2515_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
-	dev_data->filter_usage &= ~BIT(filter_nr);
+	dev_data->filter_usage &= ~BIT(filter_id);
 	k_mutex_unlock(&dev_data->mutex);
 }
 
-static void mcp2515_register_state_change_isr(const struct device *dev,
-						can_state_change_isr_t isr)
+static void mcp2515_set_state_change_callback(const struct device *dev,
+					      can_state_change_callback_t cb)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
-	dev_data->state_change_isr = isr;
+	dev_data->state_change_cb = cb;
 }
 
 static void mcp2515_rx_filter(const struct device *dev,
 			      struct zcan_frame *frame)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
-	uint8_t filter_idx = 0U;
+	uint8_t filter_id = 0U;
 	can_rx_callback_t callback;
 	struct zcan_frame tmp_frame;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	for (; filter_idx < CONFIG_CAN_MAX_FILTER; filter_idx++) {
-		if (!(BIT(filter_idx) & dev_data->filter_usage)) {
+	for (; filter_id < CONFIG_CAN_MAX_FILTER; filter_id++) {
+		if (!(BIT(filter_id) & dev_data->filter_usage)) {
 			continue; /* filter slot empty */
 		}
 
 		if (!can_utils_filter_match(frame,
-					    &dev_data->filter[filter_idx])) {
+					    &dev_data->filter[filter_id])) {
 			continue; /* filter did not match */
 		}
 
-		callback = dev_data->rx_cb[filter_idx];
+		callback = dev_data->rx_cb[filter_id];
 		/*Make a temporary copy in case the user modifies the message*/
 		tmp_frame = *frame;
 
-		callback(&tmp_frame, dev_data->cb_arg[filter_idx]);
+		callback(&tmp_frame, dev_data->cb_arg[filter_id]);
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
@@ -672,15 +672,15 @@ static enum can_state mcp2515_get_state(const struct device *dev,
 static void mcp2515_handle_errors(const struct device *dev)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
-	can_state_change_isr_t state_change_isr = dev_data->state_change_isr;
+	can_state_change_callback_t state_change_cb = dev_data->state_change_cb;
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
 
-	state = mcp2515_get_state(dev, state_change_isr ? &err_cnt : NULL);
+	state = mcp2515_get_state(dev, state_change_cb ? &err_cnt : NULL);
 
-	if (state_change_isr && dev_data->old_state != state) {
+	if (state_change_cb && dev_data->old_state != state) {
 		dev_data->old_state = state;
-		state_change_isr(state, err_cnt);
+		state_change_cb(state, err_cnt);
 	}
 }
 
@@ -783,13 +783,13 @@ static const struct can_driver_api can_api_funcs = {
 	.set_timing = mcp2515_set_timing,
 	.set_mode = mcp2515_set_mode,
 	.send = mcp2515_send,
-	.attach_isr = mcp2515_attach_isr,
-	.detach = mcp2515_detach,
+	.add_rx_filter = mcp2515_add_rx_filter,
+	.remove_rx_filter = mcp2515_remove_rx_filter,
 	.get_state = mcp2515_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = mcp2515_recover,
 #endif
-	.register_state_change_isr = mcp2515_register_state_change_isr,
+	.set_state_change_callback = mcp2515_set_state_change_callback,
 	.get_core_clock = mcp2515_get_core_clock,
 	.get_max_filters = mcp2515_get_max_filters,
 	.timing_min = {

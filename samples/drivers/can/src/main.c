@@ -35,8 +35,8 @@ struct k_work state_change_work;
 enum can_state current_state;
 struct can_bus_err_cnt current_err_cnt;
 
-CAN_DEFINE_MSGQ(change_led_msgq, 2);
-CAN_DEFINE_MSGQ(counter_msgq, 2);
+CAN_MSGQ_DEFINE(change_led_msgq, 2);
+CAN_MSGQ_DEFINE(counter_msgq, 2);
 
 static struct k_poll_event change_led_events[1] = {
 	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
@@ -69,7 +69,7 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	struct zcan_frame msg;
 	int filter_id;
 
-	filter_id = can_attach_msgq(can_dev, &counter_msgq, &filter);
+	filter_id = can_add_rx_filter_msgq(can_dev, &counter_msgq, &filter);
 	printk("Counter filter id: %d\n", filter_id);
 
 	while (1) {
@@ -165,7 +165,7 @@ void state_change_work_handler(struct k_work *work)
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 }
 
-void state_change_isr(enum can_state state, struct can_bus_err_cnt err_cnt)
+void state_change_callback(enum can_state state, struct can_bus_err_cnt err_cnt)
 {
 	current_state = state;
 	current_err_cnt = err_cnt;
@@ -224,7 +224,7 @@ void main(void)
 	k_work_init(&state_change_work, state_change_work_handler);
 	k_work_poll_init(&change_led_work, change_led_work_handler);
 
-	ret = can_attach_msgq(can_dev, &change_led_msgq, &change_led_filter);
+	ret = can_add_rx_filter_msgq(can_dev, &change_led_msgq, &change_led_filter);
 	if (ret == -ENOSPC) {
 		printk("Error, no filter available!\n");
 		return;
@@ -257,7 +257,7 @@ void main(void)
 		printk("ERROR spawning poll_state_thread\n");
 	}
 
-	can_register_state_change_isr(can_dev, state_change_isr);
+	can_set_state_change_callback(can_dev, state_change_callback);
 
 	printk("Finished init.\n");
 
