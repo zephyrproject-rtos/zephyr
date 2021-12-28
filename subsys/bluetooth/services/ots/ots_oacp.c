@@ -298,11 +298,14 @@ static enum bt_gatt_ots_oacp_res_code oacp_proc_validate(
 	}
 };
 
-static enum bt_gatt_ots_oacp_res_code oacp_command_decode(
-	const uint8_t *buf, uint16_t len,
-	struct bt_gatt_ots_oacp_proc *proc)
+static int oacp_command_decode(const uint8_t *buf, uint16_t len,
+			       struct bt_gatt_ots_oacp_proc *proc)
 {
 	struct net_buf_simple net_buf;
+
+	if (len < OACP_PROC_TYPE_SIZE) {
+		return -ENODATA;
+	}
 
 	net_buf_simple_init_with_data(&net_buf, (void *) buf, len);
 
@@ -310,90 +313,81 @@ static enum bt_gatt_ots_oacp_res_code oacp_command_decode(
 	switch (proc->type) {
 #if defined(CONFIG_BT_OTS_OACP_CREATE_SUPPORT)
 	case BT_GATT_OTS_OACP_PROC_CREATE:
+		if (net_buf.len < BT_GATT_OTS_OACP_CREATE_GENERIC_PARAMS_SIZE) {
+			return -EBADMSG;
+		}
 		proc->create_params.size = net_buf_simple_pull_le32(&net_buf);
-		bt_uuid_create(&proc->create_params.type.uuid, net_buf.data,
-			       net_buf.len);
+		if (!bt_uuid_create(&proc->create_params.type.uuid, net_buf.data,
+				    net_buf.len)) {
+			return -EBADMSG;
+		}
 		net_buf_simple_pull_mem(&net_buf, net_buf.len);
-		return BT_GATT_OTS_OACP_RES_SUCCESS;
+
+		/* Only 16-bit and 128-bit UUIDs are supported */
+		switch (proc->create_params.type.uuid.type) {
+		case BT_UUID_TYPE_16:
+		case BT_UUID_TYPE_128:
+			return 0;
+		default:
+			break;
+		}
+
+		return -EBADMSG;
 #endif
 #if defined(CONFIG_BT_OTS_OACP_DELETE_SUPPORT)
 	case BT_GATT_OTS_OACP_PROC_DELETE:
-		return BT_GATT_OTS_OACP_RES_SUCCESS;
+		if (net_buf.len != 0) {
+			return -EBADMSG;
+		}
+
+		return 0;
 #endif
 	case BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC:
+		if (net_buf.len != BT_GATT_OTS_OACP_CS_CALC_PARAMS_SIZE) {
+			return -EBADMSG;
+		}
 		proc->cs_calc_params.offset =
 			net_buf_simple_pull_le32(&net_buf);
 		proc->cs_calc_params.len =
 			net_buf_simple_pull_le32(&net_buf);
-		break;
+
+		return 0;
 	case BT_GATT_OTS_OACP_PROC_EXECUTE:
-		break;
+		if (net_buf.len != 0) {
+			return -EBADMSG;
+		}
+
+		return 0;
 	case BT_GATT_OTS_OACP_PROC_READ:
+		if (net_buf.len != BT_GATT_OTS_OACP_READ_PARAMS_SIZE) {
+			return -EBADMSG;
+		}
 		proc->read_params.offset =
 			net_buf_simple_pull_le32(&net_buf);
 		proc->read_params.len =
 			net_buf_simple_pull_le32(&net_buf);
-		return BT_GATT_OTS_OACP_RES_SUCCESS;
+
+		return 0;
 #if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
 	case BT_GATT_OTS_OACP_PROC_WRITE:
+		if (net_buf.len != BT_GATT_OTS_OACP_WRITE_PARAMS_SIZE) {
+			return -EBADMSG;
+		}
 		proc->write_params.offset =
 			net_buf_simple_pull_le32(&net_buf);
 		proc->write_params.len =
 			net_buf_simple_pull_le32(&net_buf);
 		proc->write_params.mode =
 			net_buf_simple_pull_u8(&net_buf);
-		return BT_GATT_OTS_OACP_RES_SUCCESS;
+
+		return 0;
 #endif
 	case BT_GATT_OTS_OACP_PROC_ABORT:
 	default:
 		break;
 	}
 
-	LOG_WRN("OACP unsupported procedure type");
-	return BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
-}
-
-static bool oacp_command_len_verify(struct bt_gatt_ots_oacp_proc *proc,
-				    uint16_t len)
-{
-	uint16_t ref_len = OACP_PROC_TYPE_SIZE;
-
-	switch (proc->type) {
-	case BT_GATT_OTS_OACP_PROC_CREATE:
-	{
-		struct bt_ots_obj_type *type = &proc->create_params.type;
-
-		switch (type->uuid.type) {
-		case BT_UUID_TYPE_16:
-			ref_len += BT_GATT_OTS_OACP_CREATE_UUID16_PARAMS_SIZE;
-			break;
-		case BT_UUID_TYPE_128:
-			ref_len += BT_GATT_OTS_OACP_CREATE_UUID128_PARAMS_SIZE;
-			break;
-		default:
-			return false;
-		}
-	} break;
-	case BT_GATT_OTS_OACP_PROC_DELETE:
-		break;
-	case BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC:
-		ref_len += BT_GATT_OTS_OACP_CS_CALC_PARAMS_SIZE;
-		break;
-	case BT_GATT_OTS_OACP_PROC_EXECUTE:
-		break;
-	case BT_GATT_OTS_OACP_PROC_READ:
-		ref_len += BT_GATT_OTS_OACP_READ_PARAMS_SIZE;
-		break;
-	case BT_GATT_OTS_OACP_PROC_WRITE:
-		ref_len += BT_GATT_OTS_OACP_WRITE_PARAMS_SIZE;
-		break;
-	case BT_GATT_OTS_OACP_PROC_ABORT:
-		break;
-	default:
-		return true;
-	}
-
-	return (len == ref_len);
+	return -ENOTSUP;
 }
 
 static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -617,6 +611,7 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
 				   uint16_t offset, uint8_t flags)
 {
 	enum bt_gatt_ots_oacp_res_code oacp_status;
+	int decode_status;
 	struct bt_gatt_ots_oacp_proc oacp_proc;
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
 
@@ -632,20 +627,28 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	oacp_status = oacp_command_decode(buf, len, &oacp_proc);
-
-	if (!oacp_command_len_verify(&oacp_proc, len)) {
+	decode_status = oacp_command_decode(buf, len, &oacp_proc);
+	switch (decode_status) {
+	case 0:
+		oacp_status = oacp_proc_validate(conn, ots, &oacp_proc);
+		if (oacp_status != BT_GATT_OTS_OACP_RES_SUCCESS) {
+			LOG_WRN("OACP Write error status: 0x%02X", oacp_status);
+		}
+		break;
+	case -ENOTSUP:
+		oacp_status = BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
+		LOG_WRN("OACP unsupported procedure type: 0x%02X", oacp_proc.type);
+		break;
+	case -EBADMSG:
 		LOG_ERR("Invalid length of OACP Write Request for 0x%02X "
 			"Op Code", oacp_proc.type);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
-	if (oacp_status == BT_GATT_OTS_OACP_RES_SUCCESS) {
-		oacp_status = oacp_proc_validate(conn, ots, &oacp_proc);
-	}
-
-	if (oacp_status != BT_GATT_OTS_OACP_RES_SUCCESS) {
-		LOG_WRN("OACP Write error status: 0x%02X", oacp_status);
+	case -ENODATA:
+		LOG_ERR("Invalid length of OACP Write Request");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	default:
+		LOG_ERR("Invalid return code from oacp_command_decode: %d", decode_status);
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
 	oacp_ind_send(attr, oacp_proc.type, oacp_status);
