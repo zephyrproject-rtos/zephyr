@@ -24,6 +24,7 @@ zephyr_sources(
   heap-validate.c
   bitarray.c
   multi_heap.c
+  utf8.c
   )
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)

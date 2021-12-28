@@ -363,6 +363,32 @@ static inline uint8_t bin2bcd(uint8_t bin)
  */
 uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 
+/**
+ * @brief Properly truncate a NULL-terminated UTF-8 string
+ *
+ * Take a NULL-terminated UTF-8 string and ensure that if the string has been
+ * truncated (by setting the NULL terminator) earlier by other means, that
+ * the string ends with a properly formatted UTF-8 character (1-4 bytes).
+ *
+ * @htmlonly
+ * Example:
+ *      char test_str[] = "€€€";
+ *      char trunc_utf8[8];
+ *
+ *      printf("Original : %s\n", test_str); // €€€
+ *      strncpy(trunc_utf8, test_str, sizeof(trunc_utf8));
+ *      trunc_utf8[sizeof(trunc_utf8) - 1] = '\0';
+ *      printf("Bad      : %s\n", trunc_utf8); // €€�
+ *      utf8_trunc(trunc_utf8);
+ *      printf("Truncated: %s\n", trunc_utf8); // €€
+ * @endhtmlonly
+ *
+ * @param utf8_str NULL-terminated string
+ *
+ *  @return Pointer to the @p utf8_str
+ */
+char *utf8_trunc(char *utf8_str);
+
 #ifdef __cplusplus
 }
 #endif
