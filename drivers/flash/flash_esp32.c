@@ -20,6 +20,7 @@
 #include <hal/spi_flash_hal.h>
 #include <soc/spi_struct.h>
 #include <spi_flash_defs.h>
+#include <esp_flash_encrypt.h>
 
 #include <kernel.h>
 #include <device.h>
@@ -81,8 +82,14 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 
 static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
+	int ret = 0;
+
 	flash_esp32_sem_take(dev);
-	int ret = spi_flash_read(address, buffer, length);
+	if (!esp_flash_encryption_enabled()) {
+		ret = spi_flash_read(address, buffer, length);
+	} else {
+		ret = spi_flash_read_encrypted(address, buffer, length);
+	}
 	flash_esp32_sem_give(dev);
 	return ret;
 }
@@ -92,8 +99,14 @@ static int flash_esp32_write(const struct device *dev,
 			     const void *buffer,
 			     size_t length)
 {
+	int ret = 0;
+
 	flash_esp32_sem_take(dev);
-	int ret = spi_flash_write(address, buffer, length);
+	if (!esp_flash_encryption_enabled()) {
+		ret = spi_flash_write(address, buffer, length);
+	} else {
+		ret = spi_flash_write_encrypted(address, buffer, length);
+	}
 	flash_esp32_sem_give(dev);
 	return ret;
 }
