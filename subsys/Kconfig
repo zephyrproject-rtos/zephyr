@@ -20,7 +20,7 @@ source "subsys/disk/Kconfig"
 
 source "subsys/emul/Kconfig"
 
-source "subsys/event_manager/Kconfig"
+source "subsys/app_event_manager/Kconfig"
 
 source "subsys/fb/Kconfig"
 

@@ -4,51 +4,94 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig EVENT_MANAGER
+menuconfig APP_EVENT_MANAGER
 	bool
-	prompt "Event Manager"
-	depends on LINKER_ORPHAN_SECTION_PLACE
+	prompt "Application Event Manager"
 	help
-	  Enable Event Manager.
-	  Note that Event Manager uses orphan sections to handle its
+	  Enable Application Event Manager.
+	  Note that Application Event Manager uses orphan sections to handle its
 	  data structures.
 
-if EVENT_MANAGER
+if APP_EVENT_MANAGER
 
-config EVENT_MANAGER_SHOW_EVENTS
+config APP_EVENT_MANAGER_SHOW_EVENTS
 	bool "Show events"
 	depends on LOG
 	default y
 	help
 	  This option controls if events are printed to console.
 
-config EVENT_MANAGER_SHOW_EVENT_HANDLERS
+config APP_EVENT_MANAGER_SHOW_EVENT_HANDLERS
 	bool "Show event handlers"
-	depends on EVENT_MANAGER_SHOW_EVENTS
+	depends on APP_EVENT_MANAGER_SHOW_EVENTS
 	help
 	  This option controls if event handlers are printed to console.
 
-module = EVENT_MANAGER
-module-str = Event Manager
+config APP_EVENT_MANAGER_TRACE_EVENT_DATA
+	bool "Enables tracing information"
+	help
+	  This option allows to gather information about events for tracing purposes.
+
+module = APP_EVENT_MANAGER
+module-str = Application Event Manager
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
 
-config EVENT_MANAGER_EVENT_LOG_BUF_LEN
+config APP_EVENT_MANAGER_EVENT_LOG_BUF_LEN
 	int "Length of buffer for processing event message"
+	depends on APP_EVENT_MANAGER_USE_DEPRECATED_LOG_FUN
 	default 128
 	range 2 1024
+	help
+	  This option is only needed for deprecated event logging approach.
 
-config EVENT_MANAGER_LOG_EVENT_TYPE
+config APP_EVENT_MANAGER_USE_DEPRECATED_LOG_FUN
+	bool "Allow using both logging functions current and deprecated one."
+	help
+	  This option is only needed for deprecated event logging approach.
+
+config APP_EVENT_MANAGER_LOG_EVENT_TYPE
 	bool "Include event type in the event log output"
 	default y
 
-config EVENT_MANAGER_MAX_EVENT_CNT
+config APP_EVENT_MANAGER_MAX_EVENT_CNT
 	int "Maximum number of event types"
 	default 32
 	help
-	  Maximum number of declared event types in Event Manager.
+	  Maximum number of declared event types in Application Event Manager.
 
-config EVENT_MANAGER_PROFILER_TRACER
-	bool "Create void pointer for each event type, which can be used for profiling"
-	default n
+config APP_EVENT_MANAGER_PROVIDE_EVENT_SIZE
+	bool "Provide information about the event size"
+	help
+	  This option enables the information about event size.
+	  This would require to store more information with event type
+	  and should be enabled only if such an information is required.
 
-endif # EVENT_MANAGER
+config APP_EVENT_MANAGER_POSTINIT_HOOK
+	bool "Enable postinit hook"
+	help
+	  Enable postinit hooks support.
+	  This option is here for optimisation purposes.
+	  When postinit hook is not in use the related code may be removed.
+
+config APP_EVENT_MANAGER_SUBMIT_HOOKS
+	bool "Enable event submit hooks"
+	help
+	  Enable event submit hooks support.
+	  This option is here for optimisation purposes.
+	  When submit hook is not in use the related code may be removed.
+
+config APP_EVENT_MANAGER_PREPROCESS_HOOKS
+	bool "Enable event preprocess hooks"
+	help
+	  Enable event preprocess hooks support.
+	  This option is here for optimisation purposes.
+	  When preprocess hook is not in use the related code may be removed.
+
+config APP_EVENT_MANAGER_POSTPROCESS_HOOKS
+	bool "Enable event postprocess hooks"
+	help
+	  Enable event postprocess hooks support.
+	  This option is here for optimisation purposes.
+	  When postprocess hook is not in use the related code may be removed.
+
+endif # APP_EVENT_MANAGER
