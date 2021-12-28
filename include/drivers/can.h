@@ -257,11 +257,11 @@ struct can_timing {
  * @typedef can_tx_callback_t
  * @brief Defines the application callback handler function signature
  *
- * @param error_flags Status of the performed send operation. See the list of
- *                    return values for @a can_send() for value descriptions.
- * @param user_data   User data provided when the frame was sent.
+ * @param error     Status of the performed send operation. See the list of
+ *                  return values for @a can_send() for value descriptions.
+ * @param user_data User data provided when the frame was sent.
  */
-typedef void (*can_tx_callback_t)(uint32_t error_flags, void *user_data);
+typedef void (*can_tx_callback_t)(int error, void *user_data);
 
 /**
  * @typedef can_rx_callback_t
