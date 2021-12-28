@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2020 Michael Pollind
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #include <init.h>
 #include <sensor.h>
@@ -18,7 +19,6 @@
 #include <spi.h>
 #endif
 
-
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(ICM20948);
 
@@ -27,8 +27,7 @@ static inline int icm20948_set_accel_fs(struct device *dev, enum icm20948_accel_
 	struct icm20948_data *data = (struct icm20948_data *)dev->driver_data;
 
 	/* set default fullscale range for gyro */
-	if (data->hw_tf->update_reg(data, ICM20948_REG_GYRO_CONFIG_1,
-				    ICM20948_ACCEL_MASK,
+	if (data->hw_tf->update_reg(data, ICM20948_REG_GYRO_CONFIG_1, ICM20948_ACCEL_MASK,
 				    accel_fs)) {
 		LOG_DBG("failed to set acceleromter full-scale");
 		return -EIO;
@@ -42,8 +41,7 @@ static inline int icm20948_set_gyro_fs(struct device *dev, enum icm20948_gyro_fs
 	struct icm20948_data *data = (struct icm20948_data *)dev->driver_data;
 
 	/* set default fullscale range for acc */
-	if (data->hw_tf->update_reg(data, ICM20948_REG_ACCEL_CONFIG,
-				    ICM20948_ACCEL_MASK,
+	if (data->hw_tf->update_reg(data, ICM20948_REG_ACCEL_CONFIG, ICM20948_ACCEL_MASK,
 				    gyro_fs)) {
 		return -EIO;
 	}
@@ -64,7 +62,6 @@ static int icm20948_accel_range_set(struct device *dev, s32_t range)
 };
 #endif
 
-
 #ifdef CONFIG_ICM20948_GYRO_RANGE_RUNTIME
 static const u16_t icm20948_gyro_fs_map[] = { 250, 500, 1000, 2000 };
 static int icm20948_gyro_range_set(struct device *dev, s32_t range)
@@ -78,11 +75,8 @@ static int icm20948_gyro_range_set(struct device *dev, s32_t range)
 }
 #endif
 
-
-
 static int icm20948_accel_config(struct device *dev, enum sensor_channel chan,
-				 enum sensor_attribute attr,
-				 const struct sensor_value *val)
+				 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef CONFIG_ICM20948_ACCEL_RANGE_RUNTIME
@@ -96,8 +90,7 @@ static int icm20948_accel_config(struct device *dev, enum sensor_channel chan,
 }
 
 static int icm20948_gyro_config(struct device *dev, enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+				enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef CONFIG_ICM20948_GYRO_RANGE_RUNTIME
@@ -111,8 +104,7 @@ static int icm20948_gyro_config(struct device *dev, enum sensor_channel chan,
 }
 
 static int icm20948_attr_set(struct device *dev, enum sensor_channel chan,
-			     enum sensor_attribute attr,
-			     const struct sensor_value *val)
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_GYRO_X:
@@ -142,7 +134,6 @@ static inline void icm20948_accel_convert(struct sensor_value *val, int raw_val,
 	val->val2 = (((s32_t)(dval * 1000)) % 1000) * 1000;
 }
 
-
 static inline void icm20948_gyro_convert(struct sensor_value *val, int raw_val,
 					 enum icm20948_gyro_fs sensitivity)
 {
@@ -152,7 +143,6 @@ static inline void icm20948_gyro_convert(struct sensor_value *val, int raw_val,
 	val->val1 = (s32_t)dval;
 	val->val2 = (((s32_t)(dval * 1000)) % 1000) * 1000;
 }
-
 
 static int icm20948_channel_get(struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
@@ -197,8 +187,6 @@ static int icm20948_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-
-
 static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct icm20948_data *data = dev->driver_data;
@@ -217,29 +205,26 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 		};
 	} buf2 __aligned(2);
 
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ: {
-		if (data->hw_tf->read_data(data, ICM20948_REG_ACCEL_XOUT_H_SH,
-					   buf.raw, sizeof(buf))) {
+		if (data->hw_tf->read_data(data, ICM20948_REG_ACCEL_XOUT_H_SH, buf.raw,
+					   sizeof(buf))) {
 			LOG_DBG("Failed to fetch raw data samples from accel");
 			return -EIO;
 		}
 		data->acc[0] = sys_be16_to_cpu(buf.axis[0]);
 		data->acc[1] = sys_be16_to_cpu(buf.axis[1]);
 		data->acc[2] = sys_be16_to_cpu(buf.axis[2]);
-	}
-	break;
+	} break;
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ: {
-
-		if (data->hw_tf->read_data(data, ICM20948_REG_GYRO_XOUT_H_SH,
-					   buf.raw, sizeof(buf))) {
+		if (data->hw_tf->read_data(data, ICM20948_REG_GYRO_XOUT_H_SH, buf.raw,
+					   sizeof(buf))) {
 			LOG_DBG("Failed to fetch raw data samples from gyro");
 			return -EIO;
 		}
@@ -247,8 +232,7 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 		data->gyro[1] = sys_be16_to_cpu(buf.axis[1]);
 		data->gyro[2] = sys_be16_to_cpu(buf.axis[2]);
 		return 0;
-	}
-	break;
+	} break;
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		data->temp = sys_be16_to_cpu(buf2.temp);
 		break;
@@ -262,8 +246,7 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 		if (icm20948_sample_fetch(dev, SENSOR_CHAN_AMBIENT_TEMP)) {
 			return -EIO;
 		}
-	}
-	break;
+	} break;
 	default:
 		return -ENOTSUP;
 	}
@@ -281,13 +264,13 @@ int icm20948_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	#if defined(DT_TDK_ICM20948_BUS_SPI)
+#if defined(DT_TDK_ICM20948_BUS_SPI)
 	icm20948_spi_init(dev);
-	#elif defined(DT_TDK_ICM20948_BUS_I2C)
+#elif defined(DT_TDK_ICM20948_BUS_I2C)
 	icm20948_i2c_init(dev);
-	#else
-	#error "BUS MACRO NOT DEFINED IN DTS"
-	#endif
+#else
+#error "BUS MACRO NOT DEFINED IN DTS"
+#endif
 
 	u8_t tmp;
 
@@ -306,8 +289,7 @@ int icm20948_init(struct device *dev)
 	icm20948_set_accel_fs(dev, ICM20948_ACCEL_FS_DEFAULT);
 
 	/* set default fullscale range for gyro */
-	if (data->hw_tf->update_reg(data, ICM20948_REG_GYRO_CONFIG_1,
-				    ICM20948_GYRO_MASK,
+	if (data->hw_tf->update_reg(data, ICM20948_REG_GYRO_CONFIG_1, ICM20948_GYRO_MASK,
 				    ICM20948_GYRO_FS_DEFAULT)) {
 		return -EIO;
 	}
@@ -323,12 +305,9 @@ int icm20948_init(struct device *dev)
 
 struct icm20948_data icm20948_data;
 
-static const struct sensor_driver_api icm20948_driver_api = {
-	.attr_set = icm20948_attr_set,
-	.sample_fetch = icm20948_sample_fetch,
-	.channel_get = icm20948_channel_get
-};
+static const struct sensor_driver_api icm20948_driver_api = { .attr_set = icm20948_attr_set,
+							      .sample_fetch = icm20948_sample_fetch,
+							      .channel_get = icm20948_channel_get };
 
-DEVICE_AND_API_INIT(icm20948, DT_TDK_ICM20948_0_LABEL, icm20948_init,
-		    &icm20948_data, NULL, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &icm20948_driver_api);
+DEVICE_AND_API_INIT(icm20948, DT_TDK_ICM20948_0_LABEL, icm20948_init, &icm20948_data, NULL,
+		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &icm20948_driver_api);

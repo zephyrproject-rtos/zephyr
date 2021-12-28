@@ -1,7 +1,8 @@
 /*
+ * Copyright (c) 2020 Michael Pollind
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #include <string.h>
 #include "icm20948.h"
@@ -56,8 +57,7 @@ icm20948_raw_read(struct icm20948_data *data, u8_t reg_addr, u8_t *value,
 	return 0;
 }
 
-static int icm20948_raw_write(struct lis2dw12_data *data, u8_t reg_addr,
-			      u8_t *value, u8_t len)
+static int icm20948_raw_write(struct lis2dw12_data *data, u8_t reg_addr, u8_t *value, u8_t len)
 {
 	struct spi_config *spi_cfg = &icm20948_spi_config;
 	u8_t buffer_tx[1] = { reg_addr & ~ICM20948_SPI_READ };
@@ -82,21 +82,19 @@ static int icm20948_raw_write(struct lis2dw12_data *data, u8_t reg_addr,
 	return 0;
 }
 
-static inline int icm20948_change_bank(struct icm20948_data *data,
-				       u16_t reg_bank_addr)
+static inline int icm20948_change_bank(struct icm20948_data *data, u16_t reg_bank_addr)
 {
 	u8_t bank = (u8_t)(reg_bank_addr >> 7);
 
 	if (bank != data->bank) {
 		u8_t tmp_val = (bank << 4);
-		return icm20948_raw_write(data, ICM20948_REG_BANK_SEL, &tmp_val,
-					  1);
+		return icm20948_raw_write(data, ICM20948_REG_BANK_SEL, &tmp_val, 1);
 	}
 	return 0;
 }
 
-static int icm20948_spi_read_data(struct lis2dw12_data *data,
-				  u16_t reg_bank_addr, u8_t *value, u8_t len)
+static int icm20948_spi_read_data(struct lis2dw12_data *data, u16_t reg_bank_addr, u8_t *value,
+				  u8_t len)
 {
 	if (icm20948_change_bank(data, reg_bank_addr)) {
 		return -EIO;
@@ -104,8 +102,8 @@ static int icm20948_spi_read_data(struct lis2dw12_data *data,
 	return icm20948_raw_read(data, reg_addr, value, len);
 }
 
-static int icm20948_spi_write_data(struct lis2dw12_data *data,
-				   u16_t reg_bank_addr, u8_t *value, u8_t len)
+static int icm20948_spi_write_data(struct lis2dw12_data *data, u16_t reg_bank_addr, u8_t *value,
+				   u8_t len)
 {
 	if (icm20948_change_bank(data, reg_bank_addr)) {
 		return -EIO;
@@ -113,8 +111,7 @@ static int icm20948_spi_write_data(struct lis2dw12_data *data,
 	return icm20948_raw_write(data, reg_addr, value, len);
 }
 
-static int icm20948_spi_read_reg(struct lis2dw12_data *data,
-				 u16_t reg_bank_addr, u8_t *value)
+static int icm20948_spi_read_reg(struct lis2dw12_data *data, u16_t reg_bank_addr, u8_t *value)
 {
 	if (icm20948_change_bank(data, reg_bank_addr)) {
 		return -EIO;
@@ -122,8 +119,7 @@ static int icm20948_spi_read_reg(struct lis2dw12_data *data,
 	return icm20948_raw_read(data, reg_addr, value, 1);
 }
 
-static int icm20948_spi_write_reg(struct lis2dw12_data *data,
-				  u16_t reg_bank_addr, u8_t value)
+static int icm20948_spi_write_reg(struct lis2dw12_data *data, u16_t reg_bank_addr, u8_t value)
 {
 	if (icm20948_change_bank(data, reg_bank_addr)) {
 		return -EIO;
@@ -133,8 +129,8 @@ static int icm20948_spi_write_reg(struct lis2dw12_data *data,
 	return icm20948_raw_write(data, reg_addr, &tmp_val, 1);
 }
 
-static int icm20948_spi_update_reg(struct lis2dw12_data *data,
-				   u16_t reg_bank_addr, u8_t mask, u8_t value)
+static int icm20948_spi_update_reg(struct lis2dw12_data *data, u16_t reg_bank_addr, u8_t mask,
+				   u8_t value)
 {
 	if (icm20948_change_bank(data, reg_bank_addr)) {
 		return -EIO;
@@ -160,9 +156,8 @@ int icm20948_spi_init(struct device *dev)
 	struct icm20948_data *data = dev->driver_data;
 
 	data->hw_tf = &icm20948_spi_transfer_fn;
-#if define (DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
-	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER);
+#if define(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
+	data->cs_ctrl.gpio_dev = device_get_binding(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER);
 	if (!data->cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
@@ -173,8 +168,7 @@ int icm20948_spi_init(struct device *dev)
 
 	icm20948_spi_config.cs = &data->cs_ctrl;
 
-	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER,
+	LOG_DBG("SPI GPIO CS configured on %s:%u", DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER,
 		DT_TDK_ICM20948_0_CS_GPIO_PIN);
 #endif
 	return 0;

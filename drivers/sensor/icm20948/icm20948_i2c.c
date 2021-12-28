@@ -1,6 +1,9 @@
 /*
+ * Copyright (c) 2020 Michael Pollind
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 
 #include <string.h>
 #include <i2c.h>
