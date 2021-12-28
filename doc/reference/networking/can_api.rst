@@ -177,12 +177,12 @@ occurred. It does not block until the message is sent like the example above.
 
 .. code-block:: C
 
-  void tx_irq_callback(uint32_t error_flags, void *arg)
+  void tx_irq_callback(int error, void *arg)
   {
           char *sender = (char *)arg;
 
-          if (error_flags) {
-                  LOG_ERR("Sendig failed [%d]\nSender: %s\n", error_flags, sender);
+          if (error != 0) {
+                  LOG_ERR("Sendig failed [%d]\nSender: %s\n", error, sender);
           }
   }
 

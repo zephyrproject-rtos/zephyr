@@ -87,12 +87,12 @@ static inline void receive_report_error(struct isotp_recv_ctx *ctx, int err)
 	ctx->error_nr = err;
 }
 
-void receive_can_tx_isr(uint32_t err_flags, void *arg)
+void receive_can_tx_isr(int error, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
 
-	if (err_flags) {
-		LOG_ERR("Error sending FC frame (%d)", err_flags);
+	if (error != 0) {
+		LOG_ERR("Error sending FC frame (%d)", error);
 		receive_report_error(ctx, ISOTP_N_ERROR);
 		k_work_submit(&ctx->work);
 	}
@@ -756,7 +756,7 @@ static inline void send_report_error(struct isotp_send_ctx *ctx, uint32_t err)
 	ctx->error_nr = err;
 }
 
-static void send_can_tx_isr(uint32_t err_flags, void *arg)
+static void send_can_tx_isr(int error, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 

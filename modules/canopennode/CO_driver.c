@@ -94,7 +94,7 @@ static void canopen_rx_isr_callback(struct zcan_frame *msg, void *arg)
 	buffer->pFunct(buffer->object, &rxMsg);
 }
 
-static void canopen_tx_isr_callback(uint32_t error_flags, void *arg)
+static void canopen_tx_isr_callback(int error, void *arg)
 {
 	CO_CANmodule_t *CANmodule = arg;
 
@@ -103,7 +103,7 @@ static void canopen_tx_isr_callback(uint32_t error_flags, void *arg)
 		return;
 	}
 
-	if (error_flags == CAN_TX_OK) {
+	if (error == CAN_TX_OK) {
 		CANmodule->first_tx_msg = false;
 	}
 

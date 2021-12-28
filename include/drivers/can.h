@@ -302,10 +302,10 @@ struct can_timing {
  * @typedef can_tx_callback_t
  * @brief Define the application callback handler function signature
  *
- * @param error_flags status of the performed send operation
+ * @param error status of the performed send operation
  * @param arg argument that was passed when the message was sent
  */
-typedef void (*can_tx_callback_t)(uint32_t error_flags, void *arg);
+typedef void (*can_tx_callback_t)(int error, void *arg);
 
 /**
  * @typedef can_rx_callback_t
