@@ -166,7 +166,7 @@ struct can_mcan_data {
 	can_rx_callback_t rx_cb_ext[NUM_EXT_FILTER_DATA];
 	void *cb_arg_std[NUM_STD_FILTER_DATA];
 	void *cb_arg_ext[NUM_EXT_FILTER_DATA];
-	can_state_change_isr_t state_change_isr;
+	can_state_change_callback_t state_change_cb;
 	uint32_t std_filt_rtr;
 	uint32_t std_filt_rtr_mask;
 	uint8_t ext_filt_rtr;
@@ -219,13 +219,13 @@ int can_mcan_send(const struct can_mcan_config *cfg, struct can_mcan_data *data,
 		  k_timeout_t timeout, can_tx_callback_t callback,
 		  void *user_data);
 
-int can_mcan_attach_isr(struct can_mcan_data *data,
-			struct can_mcan_msg_sram *msg_ram,
-			can_rx_callback_t isr, void *cb_arg,
-			const struct zcan_filter *filter);
+int can_mcan_add_rx_filter(struct can_mcan_data *data,
+			   struct can_mcan_msg_sram *msg_ram,
+			   can_rx_callback_t callback, void *user_data,
+			   const struct zcan_filter *filter);
 
-void can_mcan_detach(struct can_mcan_data *data,
-		     struct can_mcan_msg_sram *msg_ram, int filter_nr);
+void can_mcan_remove_rx_filter(struct can_mcan_data *data,
+			       struct can_mcan_msg_sram *msg_ram, int filter_id);
 
 enum can_state can_mcan_get_state(const struct can_mcan_config *cfg,
 				  struct can_bus_err_cnt *err_cnt);

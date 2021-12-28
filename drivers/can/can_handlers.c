@@ -55,9 +55,9 @@ static inline int z_vrfy_can_send(const struct device *dev,
 }
 #include <syscalls/can_send_mrsh.c>
 
-static inline int z_vrfy_can_attach_msgq(const struct device *dev,
-					 struct k_msgq *msgq,
-					 const struct zcan_filter *filter)
+static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
+						struct k_msgq *msgq,
+						const struct zcan_filter *filter)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
@@ -65,20 +65,20 @@ static inline int z_vrfy_can_attach_msgq(const struct device *dev,
 				     sizeof(struct zcan_filter)));
 	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
 
-	return z_impl_can_attach_msgq((const struct device *)dev,
-				      (struct k_msgq *)msgq,
-				      (const struct zcan_filter *) filter);
+	return z_impl_can_add_rx_filter_msgq((const struct device *)dev,
+					     (struct k_msgq *)msgq,
+					     (const struct zcan_filter *)filter);
 }
-#include <syscalls/can_attach_msgq_mrsh.c>
+#include <syscalls/can_add_rx_filter_msgq_mrsh.c>
 
-static inline void z_vrfy_can_detach(const struct device *dev, int filter_id)
+static inline void z_vrfy_can_remove_rx_filter(const struct device *dev, int filter_id)
 {
 
-	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, detach));
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, remove_rx_filter));
 
-	z_impl_can_detach((const struct device *)dev, (int)filter_id);
+	z_impl_can_remove_rx_filter((const struct device *)dev, (int)filter_id);
 }
-#include <syscalls/can_detach_mrsh.c>
+#include <syscalls/can_remove_rx_filter_mrsh.c>
 
 static inline
 enum can_state z_vrfy_can_get_state(const struct device *dev,

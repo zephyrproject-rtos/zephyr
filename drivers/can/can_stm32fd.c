@@ -55,12 +55,12 @@ void can_stm32fd_clock_enable(void)
 	FDCAN_CONFIG->CKDIV = CONFIG_CAN_STM32_CLOCK_DIVISOR >> 1;
 }
 
-void can_stm32fd_register_state_change_isr(const struct device *dev,
-					   can_state_change_isr_t isr)
+void can_stm32fd_set_state_change_callback(const struct device *dev,
+					   can_state_change_callback_t cb)
 {
 	struct can_stm32fd_data *data = DEV_DATA(dev);
 
-	data->mcan_data.state_change_isr = isr;
+	data->mcan_data.state_change_cb = cb;
 }
 
 static int can_stm32fd_init(const struct device *dev)
@@ -111,23 +111,23 @@ int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 			     callback, user_data);
 }
 
-int can_stm32fd_attach_isr(const struct device *dev, can_rx_callback_t isr,
-			   void *cb_arg, const struct zcan_filter *filter)
+int can_stm32fd_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+			      void *user_data, const struct zcan_filter *filter)
 {
 	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
 	struct can_mcan_data *mcan_data = &DEV_DATA(dev)->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
-	return can_mcan_attach_isr(mcan_data, msg_ram, isr, cb_arg, filter);
+	return can_mcan_add_rx_filter(mcan_data, msg_ram, callback, user_data, filter);
 }
 
-void can_stm32fd_detach(const struct device *dev, int filter_nr)
+void can_stm32fd_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
 	struct can_mcan_data *mcan_data = &DEV_DATA(dev)->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
-	can_mcan_detach(mcan_data, msg_ram, filter_nr);
+	can_mcan_remove_rx_filter(mcan_data, msg_ram, filter_id);
 }
 
 int can_stm32fd_set_mode(const struct device *dev, enum can_mode mode)
@@ -175,15 +175,15 @@ static const struct can_driver_api can_api_funcs = {
 	.set_mode = can_stm32fd_set_mode,
 	.set_timing = can_stm32fd_set_timing,
 	.send = can_stm32fd_send,
-	.attach_isr = can_stm32fd_attach_isr,
-	.detach = can_stm32fd_detach,
+	.add_rx_filter = can_stm32fd_add_rx_filter,
+	.remove_rx_filter = can_stm32fd_remove_rx_filter,
 	.get_state = can_stm32fd_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = can_mcan_recover,
 #endif
 	.get_core_clock = can_stm32fd_get_core_clock,
 	.get_max_filters = can_stm32fd_get_max_filters,
-	.register_state_change_isr = can_stm32fd_register_state_change_isr,
+	.set_state_change_callback = can_stm32fd_set_state_change_callback,
 	.timing_min = {
 		.sjw = 0x7f,
 		.prop_seg = 0x00,

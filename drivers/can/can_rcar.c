@@ -198,7 +198,7 @@ struct can_rcar_data {
 	can_rx_callback_t rx_callback[CONFIG_CAN_RCAR_MAX_FILTER];
 	void *rx_callback_arg[CONFIG_CAN_RCAR_MAX_FILTER];
 	struct zcan_filter filter[CONFIG_CAN_RCAR_MAX_FILTER];
-	can_state_change_isr_t state_change_isr;
+	can_state_change_callback_t state_change_cb;
 	enum can_state state;
 };
 
@@ -250,6 +250,7 @@ static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 {
 	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const can_state_change_callback_t cb = data->state_change_cb;
 	struct can_bus_err_cnt err_cnt;
 
 	if (data->state == newstate) {
@@ -260,11 +261,11 @@ static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 
 	data->state = newstate;
 
-	if (data->state_change_isr == NULL) {
+	if (cb == NULL) {
 		return;
 	}
 	can_rcar_get_error_count(config, &err_cnt);
-	data->state_change_isr(newstate, err_cnt);
+	cb(newstate, err_cnt);
 }
 
 static void can_rcar_error(const struct device *dev)
@@ -655,12 +656,12 @@ unlock:
 	return ret;
 }
 
-static void can_rcar_register_state_change_isr(const struct device *dev,
-					       can_state_change_isr_t isr)
+static void can_rcar_set_state_change_callback(const struct device *dev,
+					       can_state_change_callback_t cb)
 {
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
 
-	data->state_change_isr = isr;
+	data->state_change_cb = cb;
 }
 
 static enum can_state can_rcar_get_state(const struct device *dev,
@@ -791,10 +792,10 @@ int can_rcar_send(const struct device *dev, const struct zcan_frame *frame,
 	return 0;
 }
 
-static inline int can_rcar_attach(const struct device *dev,
-				  can_rx_callback_t cb,
-				  void *cb_arg,
-				  const struct zcan_filter *filter)
+static inline int can_rcar_add_rx_filter_unlocked(const struct device *dev,
+						  can_rx_callback_t cb,
+						  void *cb_arg,
+						  const struct zcan_filter *filter)
 {
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
 	int i;
@@ -812,30 +813,29 @@ static inline int can_rcar_attach(const struct device *dev,
 	return -ENOSPC;
 }
 
-int can_rcar_attach_isr(const struct device *dev, can_rx_callback_t isr,
-			void *cb_arg,
-			const struct zcan_filter *filter)
+int can_rcar_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
+			   void *cb_arg, const struct zcan_filter *filter)
 {
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
-	int filter_nr;
+	int filter_id;
 
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
-	filter_nr = can_rcar_attach(dev, isr, cb_arg, filter);
+	filter_id = can_rcar_add_rx_filter_unlocked(dev, cb, cb_arg, filter);
 	k_mutex_unlock(&data->rx_mutex);
-	return filter_nr;
+	return filter_id;
 }
 
-void can_rcar_detach(const struct device *dev, int filter_nr)
+void can_rcar_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
 
-	if (filter_nr >= CONFIG_CAN_RCAR_MAX_FILTER) {
+	if (filter_id >= CONFIG_CAN_RCAR_MAX_FILTER) {
 		return;
 	}
 
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 	compiler_barrier();
-	data->rx_callback[filter_nr] = NULL;
+	data->rx_callback[filter_id] = NULL;
 	k_mutex_unlock(&data->rx_mutex);
 }
 
@@ -861,7 +861,7 @@ static int can_rcar_init(const struct device *dev)
 
 	memset(data->rx_callback, 0, sizeof(data->rx_callback));
 	data->state = CAN_ERROR_ACTIVE;
-	data->state_change_isr = NULL;
+	data->state_change_cb = NULL;
 
 	/* reset the registers */
 	ret = clock_control_off(config->clock_dev,
@@ -992,13 +992,13 @@ static const struct can_driver_api can_rcar_driver_api = {
 	.set_mode = can_rcar_set_mode,
 	.set_timing = can_rcar_set_timing,
 	.send = can_rcar_send,
-	.attach_isr = can_rcar_attach_isr,
-	.detach = can_rcar_detach,
+	.add_rx_filter = can_rcar_add_rx_filter,
+	.remove_rx_filter = can_rcar_remove_rx_filter,
 	.get_state = can_rcar_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = can_rcar_recover,
 #endif
-	.register_state_change_isr = can_rcar_register_state_change_isr,
+	.set_state_change_callback = can_rcar_set_state_change_callback,
 	.get_core_clock = can_rcar_get_core_clock,
 	.get_max_filters = can_rcar_get_max_filters,
 	.timing_min = {

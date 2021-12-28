@@ -10,7 +10,7 @@
 #include <zephyr/types.h>
 #include <stdlib.h>
 
-CAN_DEFINE_MSGQ(msgq, 4);
+CAN_MSGQ_DEFINE(msgq, 4);
 const struct shell *msgq_shell;
 static struct k_work_poll msgq_work;
 static struct k_poll_event msgq_events[1] = {
@@ -389,7 +389,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 		    filter.id, ext ? "extended" : "standard", filter.id_mask,
 		    filter.rtr_mask);
 
-	ret = can_attach_msgq(can_dev, &msgq, &filter);
+	ret = can_add_rx_filter_msgq(can_dev, &msgq, &filter);
 	if (ret < 0) {
 		if (ret == -ENOSPC) {
 			shell_error(shell, "Can't attach, no free filter left");
@@ -439,7 +439,7 @@ static int cmd_detach(const struct shell *shell, size_t argc, char **argv)
 		shell_error(shell, "filter_id must not be negative");
 	}
 
-	can_detach(can_dev, (int)id);
+	can_remove_rx_filter(can_dev, (int)id);
 
 	return 0;
 }

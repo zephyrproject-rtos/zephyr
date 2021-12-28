@@ -273,13 +273,13 @@ typedef void (*can_tx_callback_t)(int error, void *user_data);
 typedef void (*can_rx_callback_t)(struct zcan_frame *frame, void *user_data);
 
 /**
- * @typedef can_state_change_isr_t
- * @brief Defines the state change Interrupt Service Routine (ISR) handler function signature
+ * @typedef can_state_change_callback_t
+ * @brief Defines the state change callback handler function signature
  *
  * @param state   State of the CAN controller.
  * @param err_cnt CAN controller error counter values.
  */
-typedef void (*can_state_change_isr_t)(enum can_state state, struct can_bus_err_cnt err_cnt);
+typedef void (*can_state_change_callback_t)(enum can_state state, struct can_bus_err_cnt err_cnt);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -310,25 +310,25 @@ typedef int (*can_set_mode_t)(const struct device *dev, enum can_mode mode);
  */
 typedef int (*can_send_t)(const struct device *dev,
 			  const struct zcan_frame *frame,
-			  k_timeout_t timeout, can_tx_callback_t callback_isr,
+			  k_timeout_t timeout, can_tx_callback_t callback,
 			  void *user_data);
 
 /**
- * @typedef can_attach_isr_t
- * @brief Callback API upon attaching an RX filter ISR
- * See @a can_attach_isr() for argument description
+ * @typedef can_add_rx_filter_t
+ * @brief Callback API upon adding an RX filter
+ * See @a can_add_rx_callback() for argument description
  */
-typedef int (*can_attach_isr_t)(const struct device *dev,
-				can_rx_callback_t isr,
-				void *user_data,
-				const struct zcan_filter *filter);
+typedef int (*can_add_rx_filter_t)(const struct device *dev,
+				   can_rx_callback_t callback,
+				   void *user_data,
+				   const struct zcan_filter *filter);
 
 /**
- * @typedef can_detach_t
- * @brief Callback API upon detaching an RX filter
- * See @a can_detach() for argument description
+ * @typedef can_remove_rx_filter_t
+ * @brief Callback API upon removing an RX filter
+ * See @a can_remove_rx_filter() for argument description
  */
-typedef void (*can_detach_t)(const struct device *dev, int filter_id);
+typedef void (*can_remove_rx_filter_t)(const struct device *dev, int filter_id);
 
 /**
  * @typedef can_recover_t
@@ -339,19 +339,19 @@ typedef int (*can_recover_t)(const struct device *dev, k_timeout_t timeout);
 
 /**
  * @typedef can_get_state_t
- * @brief Callback API upon get the CAN controller state
+ * @brief Callback API upon getting the CAN controller state
  * See @a can_get_state() for argument description
  */
 typedef enum can_state (*can_get_state_t)(const struct device *dev,
 					  struct can_bus_err_cnt *err_cnt);
 
 /**
- * @typedef can_register_state_change_isr_t
- * @brief Callback API upon registering a state change ISR
- * See @a can_register_state_change_isr() for argument description
+ * @typedef can_set_state_change_callback_t
+ * @brief Callback API upon setting a state change callback
+ * See @a can_set_state_change_callback() for argument description
  */
-typedef void(*can_register_state_change_isr_t)(const struct device *dev,
-					       can_state_change_isr_t isr);
+typedef void(*can_set_state_change_callback_t)(const struct device *dev,
+					       can_state_change_callback_t callback);
 
 /**
  * @typedef can_get_core_clock_t
@@ -371,13 +371,13 @@ __subsystem struct can_driver_api {
 	can_set_mode_t set_mode;
 	can_set_timing_t set_timing;
 	can_send_t send;
-	can_attach_isr_t attach_isr;
-	can_detach_t detach;
+	can_add_rx_filter_t add_rx_filter;
+	can_remove_rx_filter_t remove_rx_filter;
 #if !defined(CONFIG_CAN_AUTO_BUS_OFF_RECOVERY) || defined(__DOXYGEN__)
 	can_recover_t recover;
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	can_get_state_t get_state;
-	can_register_state_change_isr_t register_state_change_isr;
+	can_set_state_change_callback_t set_state_change_callback;
 	can_get_core_clock_t get_core_clock;
 	can_get_max_filters_t get_max_filters;
 	/* Min values for the timing registers */
@@ -683,16 +683,16 @@ static inline int can_write(const struct device *dev, const uint8_t *data, uint8
  */
 
 /**
- * @brief Attach a callback function with a given CAN filter
+ * @brief Add a callback function for a given CAN filter
  *
- * Attach a callback to CAN identifiers specified by a filter. Whenever a frame
- * matching the filter is received by the CAN controller, the callback function
- * is called in interrupt context.
+ * Add a callback to CAN identifiers specified by a filter. When a recevied CAN
+ * frame matching the filter is received by the CAN controller, the callback
+ * function is called in interrupt context.
  *
  * If a frame matches more than one attached filter, the priority of the match
  * is hardware dependent.
  *
- * The same callback function can be attached to more than one filter.
+ * The same callback function can be used for multiple filters.
  *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param callback  This function is called by the CAN controller driver whenever
@@ -703,66 +703,67 @@ static inline int can_write(const struct device *dev, const uint8_t *data, uint8
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
  */
-static inline int can_attach_isr(const struct device *dev, can_rx_callback_t callback,
-				 void *user_data, const struct zcan_filter *filter)
+static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+				    void *user_data, const struct zcan_filter *filter)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->attach_isr(dev, callback, user_data, filter);
+	return api->add_rx_filter(dev, callback, user_data, filter);
 }
 
 /**
  * @brief Statically define and initialize a CAN RX message queue.
  *
- * The message queue's ring buffer contains space for @a size CAN frames.
+ * The message queue's ring buffer contains space for @a max_frames CAN frames.
  *
- * @param name Name of the message queue.
- * @param size Number of CAN frames.
+ * @see can_add_rx_filter_msgq()
+ *
+ * @param name       Name of the message queue.
+ * @param max_frames Maximum number of CAN frames that can be queued.
  */
-#define CAN_DEFINE_MSGQ(name, size) \
-	K_MSGQ_DEFINE(name, sizeof(struct zcan_frame), size, 4)
+#define CAN_MSGQ_DEFINE(name, max_frames) \
+	K_MSGQ_DEFINE(name, sizeof(struct zcan_frame), max_frames, 4)
 
 /**
- * @brief Attach a message queue with a given filter
+ * @brief Wrapper function for adding a message queue for a given filter
  *
- * Attach a message queue to CAN identifiers specified by a filter. Whenever a
- * frame matching the filter is received by the CAN controller, the frame is
- * pushed to the message queue.
+ * Wrapper function for @a can_add_rx_filter() which puts received CAN frames
+ * matching the filter in a message queue instead of calling a callback.
  *
  * If a frame matches more than one attached filter, the priority of the match
  * is hardware dependent.
  *
- * A message queue can be attached to more than one filter.
+ * The same message queue can be used for multiple filters.
  *
- * @note The message queue must me initialized before, and the caller must have
- * appropriate permissions on it.
+ * @note The message queue must be initialized before calling this function and
+ * the caller must have appropriate permissions on it.
  *
  * @param dev    Pointer to the device structure for the driver instance.
- * @param msg_q  Pointer to the already initialized @a k_msgq struct.
+ * @param msgq   Pointer to the already initialized @a k_msgq struct.
  * @param filter Pointer to a @a zcan_filter structure defining the filter.
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
  */
-__syscall int can_attach_msgq(const struct device *dev, struct k_msgq *msg_q,
-			      const struct zcan_filter *filter);
+__syscall int can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
+				     const struct zcan_filter *filter);
 
 /**
- * @brief Detach an ISR or CAN message queue RX filter
+ * @brief Remove a CAN RX filter
  *
- * This routine detaches an CAN RX filter based on the filter ID returned by @a
- * can_attach_isr() or @a can_attach_msgq().
+ * This routine removes a CAN RX filter based on the filter ID returned by @a
+ * can_add_rx_filter() or @a can_add_rx_filter_msgq().
  *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param filter_id Filter ID
  */
-__syscall void can_detach(const struct device *dev, int filter_id);
+__syscall void can_remove_rx_filter(const struct device *dev, int filter_id);
 
-static inline void z_impl_can_detach(const struct device *dev, int filter_id)
+static inline void z_impl_can_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->detach(dev, filter_id);
+	return api->remove_rx_filter(dev, filter_id);
 }
 
 /**
@@ -852,20 +853,23 @@ static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeo
 #endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 /**
- * @brief Register an ISR callback for the CAN controller state change interrupt
+ * @brief Set a callback for CAN controller state change events
+ *
+ * Set the callback for CAN controller state change events. The callback
+ * function will be called in interrupt context.
  *
  * Only one callback can be registered per controller. Calling this function
  * again overrides any previously registered callback.
  *
- * @param dev Pointer to the device structure for the driver instance.
- * @param isr ISR callback function.
+ * @param dev      Pointer to the device structure for the driver instance.
+ * @param callback Callback function.
  */
-static inline void can_register_state_change_isr(const struct device *dev,
-						 can_state_change_isr_t isr)
+static inline void can_set_state_change_callback(const struct device *dev,
+						 can_state_change_callback_t callback)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->register_state_change_isr(dev, isr);
+	return api->set_state_change_callback(dev, callback);
 }
 
 /** @} */
@@ -1050,7 +1054,7 @@ static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
  * The `CAN_TX_*` error codes are used for CAN specific error return codes from
  * @a can_send() and for `error_flags` values in @a can_tx_callback_t().
  *
- * `CAN_NO_FREE_FILTER` is returned by `can_attach_*()` if no free filters are
+ * `CAN_NO_FREE_FILTER` is returned by `can_add_rx_*()` if no free filters are
  * available. `CAN_TIMEOUT` indicates that @a can_recover() timed out.
  *
  * @warning These definitions are deprecated. Use the corresponding errno
@@ -1150,13 +1154,13 @@ struct zcan_work {
  *
  * The same CAN work queue can be attached to more than one filter.
  *
- * @see @a can_detach()
+ * @see @a can_remove_rx_filter()
  *
  * @note The work queue must be initialized before and the caller must have
  * appropriate permissions on it.
  *
- * @warning This function is deprecated. Use @a can_attach_msgq() along with @a
- * k_work_poll_submit() instead.
+ * @warning This function is deprecated. Use @a can_add_rx_filter_msgq() along
+ * with @a k_work_poll_submit() instead.
  *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param work_q    Pointer to the already initialized @a zcan_work queue.
@@ -1172,6 +1176,46 @@ struct zcan_work {
 __deprecated int can_attach_workq(const struct device *dev, struct k_work_q  *work_q,
 				  struct zcan_work *work, can_rx_callback_t callback,
 				  void *user_data, const struct zcan_filter *filter);
+
+/**
+ * @see can_add_rx_filter()
+ */
+__deprecated static inline int can_attach_isr(const struct device *dev, can_rx_callback_t isr,
+					      void *user_data, const struct zcan_filter *filter)
+{
+	return can_add_rx_filter(dev, isr, user_data, filter);
+}
+
+/**
+ * @see CAN_MSGQ_DEFINE()
+ */
+#define CAN_DEFINE_MSGQ(name, size) CAN_MSGQ_DEFINE(name, size) __DEPRECATED_MACRO
+
+/**
+ * @see can_add_rx_filter_msgq()
+ */
+__deprecated static inline int can_attach_msgq(const struct device *dev, struct k_msgq *msg_q,
+					       const struct zcan_filter *filter)
+{
+	return can_add_rx_filter_msgq(dev, msg_q, filter);
+}
+
+/**
+ * @see can_remove_rx_filter()
+ */
+__deprecated static inline void can_detach(const struct device *dev, int filter_id)
+{
+	can_remove_rx_filter(dev, filter_id);
+}
+
+/**
+ * @see can_set_state_change_callback()
+ */
+__deprecated static inline void can_register_state_change_isr(const struct device *dev,
+							      can_state_change_callback_t isr)
+{
+	can_set_state_change_callback(dev, isr);
+}
 
 /** @endcond */
 
