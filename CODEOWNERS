@@ -205,6 +205,7 @@
 /drivers/audio/*nrfx*                     @anangl
 /drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
 /drivers/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
+/drivers/bluetooth/hci/hci_esp32.c        @sylvioalves
 /drivers/cache/                           @carlocaione
 /drivers/syscon/                          @carlocaione @yperess
 /drivers/can/                             @alexanderwachter
