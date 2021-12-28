@@ -61,7 +61,12 @@ enum bt_df_packet_status {
 struct bt_df_adv_cte_tx_param {
 	/** Length of CTE in 8us units. */
 	uint8_t  cte_len;
-	/** CTE Type: AoA, AoD 1us slots, AoD 2us slots. */
+	/**
+	 * @brief CTE type.
+	 *
+	 * Allowed values are defined by @ref bt_df_cte_type, except BT_DF_CTE_TYPE_NONE and
+	 * BT_DF_CTE_TYPE_ALL.
+	 */
 	uint8_t  cte_type;
 	/** Number of CTE to transmit in each periodic adv interval. */
 	uint8_t  cte_count;
@@ -80,8 +85,12 @@ struct bt_df_adv_cte_tx_param {
  * for correctness.
  */
 struct bt_df_per_adv_sync_cte_rx_param {
-	/* Bitmap with allowed CTE types (@ref bt_df_cte_type). */
-	uint8_t cte_type;
+	/**
+	 * @brief Bitfield with allowed CTE types.
+	 *
+	 *  Allowed values are defined by @ref bt_df_cte_type, except BT_DF_CTE_TYPE_NONE.
+	 */
+	uint8_t cte_types;
 	/** Antenna switching slots (@ref bt_df_antenna_switching_slot). */
 	uint8_t slot_durations;
 	/** Max number of CTEs to receive. Min is 1, max is 10, 0 means receive continuously. */
@@ -114,8 +123,12 @@ struct bt_df_per_adv_sync_iq_samples_report {
 };
 
 struct bt_df_conn_cte_rx_param {
-	/* Bitmap with allowed CTE types (@ref bt_df_cte_type). */
-	uint8_t cte_type;
+	/**
+	 * @brief Bitfield with allowed CTE types.
+	 *
+	 *  Allowed values are defined by @ref bt_df_cte_type, except BT_DF_CTE_TYPE_NONE.
+	 */
+	uint8_t cte_types;
 	/** Antenna switching slots (@ref bt_df_antenna_switching_slot). */
 	uint8_t slot_durations;
 	/** Length of antenna switch pattern. */

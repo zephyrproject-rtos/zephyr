@@ -47,7 +47,7 @@ const static uint8_t df_dummy_switch_pattern[BT_HCI_LE_SWITCH_PATTERN_LEN_MIN] =
 #define DF_SAMPLING_ANTENNA_NUMBER_MIN 0x2
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX) || defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-static bool validate_cte_rx_common_params(uint8_t cte_type, uint8_t slot_durations,
+static bool validate_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations,
 					  uint8_t num_ant_ids, const uint8_t *ant_ids);
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX || CONFIG_BT_DF_CONNECTION_CTE_RX */
 
@@ -93,14 +93,13 @@ static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
 	/* If AoD is not enabled, ant_ids are ignored by controller:
 	 * BT Core spec 5.2 Vol 4, Part E sec. 7.8.80.
 	 */
-	if (params->cte_type == BT_HCI_LE_AOD_CTE_1US ||
-	    params->cte_type == BT_HCI_LE_AOD_CTE_2US) {
-
+	if (params->cte_type == BT_DF_CTE_TYPE_AOD_1US ||
+	    params->cte_type == BT_DF_CTE_TYPE_AOD_2US) {
 		if (!BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_dev.le.features)) {
 			return -EINVAL;
 		}
 
-		if (params->cte_type == BT_HCI_LE_AOD_CTE_1US &&
+		if (params->cte_type == BT_DF_CTE_TYPE_AOD_1US &&
 		    !DF_AOD_TX_1US_SUPPORT(df_ant_info.switch_sample_rates)) {
 			return -EINVAL;
 		}
@@ -110,7 +109,7 @@ static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
 		    !params->ant_ids) {
 			return -EINVAL;
 		}
-	} else if (params->cte_type != BT_HCI_LE_AOA_CTE) {
+	} else if (params->cte_type != BT_DF_CTE_TYPE_AOA) {
 		return -EINVAL;
 	}
 
@@ -133,7 +132,7 @@ static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = adv->handle;
 	cp->cte_len = params->cte_len;
-	cp->cte_type = params->cte_type;
+	cp->cte_type = get_hci_cte_type(params->cte_type);
 	cp->cte_count = params->cte_count;
 
 	if (params->num_ant_ids) {
@@ -230,14 +229,14 @@ static int hci_df_set_adv_cte_tx_enable(struct bt_le_ext_adv *adv,
 }
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX) || defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-static bool validate_cte_rx_common_params(uint8_t cte_type, uint8_t slot_durations,
+static bool validate_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations,
 					  uint8_t num_ant_ids, const uint8_t *ant_ids)
 {
-	if (!(cte_type & (BT_DF_CTE_TYPE_AOA | BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US))) {
+	if (!(cte_types & BT_DF_CTE_TYPE_ALL)) {
 		return false;
 	}
 
-	if (cte_type & BT_DF_CTE_TYPE_AOA) {
+	if (cte_types & BT_DF_CTE_TYPE_AOA) {
 		if (df_ant_info.num_ant < DF_SAMPLING_ANTENNA_NUMBER_MIN ||
 		    !BT_FEAT_LE_ANT_SWITCH_RX_AOA(bt_dev.le.features)) {
 			return false;
@@ -266,8 +265,8 @@ static bool validate_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_par
 		return false;
 	}
 
-	if (params->cte_type & BT_DF_CTE_TYPE_AOA) {
-		return validate_cte_rx_common_params(params->cte_type, params->slot_durations,
+	if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
+		return validate_cte_rx_common_params(params->cte_types, params->slot_durations,
 						     params->num_ant_ids, params->ant_ids);
 	}
 
@@ -293,7 +292,7 @@ prepare_cl_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_le_per_adv_sy
 
 		cp->max_sampled_cte = params->max_cte_count;
 
-		if (params->cte_type & BT_DF_CTE_TYPE_AOA) {
+		if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
 			cp->slot_durations = params->slot_durations;
 			cp->switch_pattern_len = params->num_ant_ids;
 			ant_ids = params->ant_ids;
@@ -350,7 +349,7 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 	if (sync->handle != sys_le16_to_cpu(rp->sync_handle)) {
 		err = -EIO;
 	} else {
-		sync->cte_type = (enable ? params->cte_type : 0);
+		sync->cte_types = (enable ? params->cte_types : 0);
 	}
 
 	net_buf_unref(rsp);
@@ -385,7 +384,7 @@ void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 		return;
 	}
 
-	if (!(per_adv_sync->cte_type & BIT(evt->cte_type))) {
+	if (!(per_adv_sync->cte_types & BIT(evt->cte_type))) {
 		BT_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
 		return;
 	}
@@ -520,7 +519,7 @@ static void prepare_conn_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt
 	if (enable) {
 		uint8_t *dest_ant_ids;
 
-		if (params->cte_type & BT_DF_CTE_TYPE_AOA) {
+		if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
 			cp->slot_durations = params->slot_durations;
 			cp->switch_pattern_len = params->num_ant_ids;
 			ant_ids = params->ant_ids;
@@ -549,7 +548,7 @@ static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 	int err;
 
 	if (enable) {
-		if (!validate_cte_rx_common_params(params->cte_type, params->slot_durations,
+		if (!validate_cte_rx_common_params(params->cte_types, params->slot_durations,
 						   params->num_ant_ids, params->ant_ids)) {
 			return -EINVAL;
 		}
@@ -578,7 +577,7 @@ static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 	if (conn->handle != sys_le16_to_cpu(rp->handle)) {
 		err = -EIO;
 	} else {
-		conn->cte_type = (enable ? params->cte_type : 0);
+		conn->cte_types = (enable ? params->cte_types : 0);
 		/* This flag is set once for connection object. It is never cleared because CTE RX
 		 * params must be set at least once for connection object to successfully execute
 		 * CTE REQ procedure.
@@ -618,7 +617,7 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 		return -EINVAL;
 	}
 
-	if (!(conn->cte_type & BIT(evt->cte_type))) {
+	if (!(conn->cte_types & BIT(evt->cte_type))) {
 		BT_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
 		return -EINVAL;
 	}
@@ -645,7 +644,7 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 static bool valid_cte_req_params(const struct bt_conn *conn, uint8_t cte_type,
 				    uint8_t cte_length)
 {
-	if (!(conn->cte_type & cte_type)) {
+	if (!(conn->cte_types & cte_type)) {
 		return false;
 	}
 
