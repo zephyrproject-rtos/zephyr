@@ -198,8 +198,12 @@ struct bt_le_per_adv_sync {
 	uint8_t phy;
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
-	/** Accepted CTE type */
-	uint8_t cte_type;
+	/**
+	 * @brief Bitfield with allowed CTE types.
+	 *
+	 *  Allowed values are defined by @ref bt_df_cte_type, except BT_DF_CTE_TYPE_NONE.
+	 */
+	uint8_t cte_types;
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
 #if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
