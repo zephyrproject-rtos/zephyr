@@ -371,6 +371,7 @@
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
+/drivers/sensor/grow_r502a/               @DineshDK03
 /drivers/sensor/hts*/                     @avisconti
 /drivers/sensor/ina23*/                   @bbilas
 /drivers/sensor/lis*/                     @avisconti
