@@ -93,7 +93,7 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 		BT_ERR("Not enough space in buffer %zu/%zu",
 		       remaining, buf_tailroom);
 		net_buf_unref(buf);
-		continue;
+		return NULL;
 	}
 
 	net_buf_add_mem(buf, data, remaining);
