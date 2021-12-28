@@ -56,7 +56,7 @@ static const uint8_t reg_demand[] = {2, 1, 4, 2};
 static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
 {
 	if (mb->tx_callback) {
-		mb->tx_callback(mb->error_flags, mb->callback_arg);
+		mb->tx_callback(mb->error, mb->callback_arg);
 	} else  {
 		k_sem_give(&mb->tx_int_sem);
 	}
@@ -151,7 +151,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 	bus_off = can->ESR & CAN_ESR_BOFF;
 
 	if ((can->TSR & CAN_TSR_RQCP0) | bus_off) {
-		data->mb0.error_flags =
+		data->mb0.error =
 				can->TSR & CAN_TSR_TXOK0 ? 0  :
 				can->TSR & CAN_TSR_TERR0 ? -EIO :
 				can->TSR & CAN_TSR_ALST0 ? -EBUSY :
@@ -163,7 +163,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP1) | bus_off) {
-		data->mb1.error_flags =
+		data->mb1.error =
 				can->TSR & CAN_TSR_TXOK1 ? 0  :
 				can->TSR & CAN_TSR_TERR1 ? -EIO :
 				can->TSR & CAN_TSR_ALST1 ? -EBUSY :
@@ -175,7 +175,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP2) | bus_off) {
-		data->mb2.error_flags =
+		data->mb2.error =
 				can->TSR & CAN_TSR_TXOK2 ? 0  :
 				can->TSR & CAN_TSR_TERR2 ? -EIO :
 				can->TSR & CAN_TSR_ALST2 ? -EBUSY :
@@ -693,7 +693,7 @@ int can_stm32_send(const struct device *dev, const struct zcan_frame *frame,
 
 	if (callback == NULL) {
 		k_sem_take(&mb->tx_int_sem, K_FOREVER);
-		return mb->error_flags;
+		return mb->error;
 	}
 
 	return 0;
