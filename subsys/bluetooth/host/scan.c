@@ -1092,7 +1092,11 @@ void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf)
 	struct bt_le_per_adv_sync *per_adv_sync;
 	struct bt_le_per_adv_sync_cb *listener;
 
+	per_adv_sync = NULL;
 	hci_df_prepare_connectionless_iq_report(buf, &cte_report, &per_adv_sync);
+	if (!per_adv_sync) {
+		return;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
 		if (listener->cte_report_cb) {
