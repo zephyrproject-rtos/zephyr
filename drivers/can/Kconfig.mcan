@@ -10,7 +10,8 @@ config CAN_MCAN
 	help
 	  Enable Bosch m_can driver.
 	  This driver supports the Bosch m_can IP. This IP is built into the
-	  STM32G4, STM32G0 and the Microchip SAM controllers with CAN-FD.
+	  STM32G4, STM32G0, STM32H7, and the Microchip SAM controllers with
+	  CAN-FD.
 
 if CAN_MCAN
 
