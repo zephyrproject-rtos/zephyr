@@ -141,6 +141,8 @@ __imr void z_mp_entry(void)
 
 	cpus_active[start_rec.cpu] = true;
 
+	dummy_dspload();
+
 	start_rec.fn(start_rec.arg);
 	__ASSERT(false, "arch_start_cpu() handler should never return");
 }

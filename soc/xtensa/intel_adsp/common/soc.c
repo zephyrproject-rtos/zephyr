@@ -270,6 +270,39 @@ static __imr void power_init(void)
 #endif
 }
 
+static int dummy_state = 0;
+
+void dummy_dspload(void)
+{
+	int n, m;
+	unsigned d;
+	int32_t foo[32]; /* algo data kept on stack */
+	uint32_t key; /* for irq_lock() */
+	uint32_t prid;
+
+	/* get core we are running on */
+	__asm__ volatile("rsr %0, PRID" : "=r"(prid));
+
+	/* ensure loop is not optimized away, done outside the measurement */
+	foo[0] = dummy_state;
+
+	/* boot fails on core1 if irqs are disabled here */
+	//key = irq_lock();
+
+	d = xthal_get_ccount();
+	for (m = 1; m < 32; m++)
+		for (n = 0; n < 512; n++)
+			foo[m] += foo[m - 1] * n;
+
+	d = xthal_get_ccount() - d;
+	//irq_unlock(key);
+
+	/* ensure loop is not optimized away, outside measurement loop */
+	dummy_state = foo[31];
+
+	printk("%s: dummy_dspload exec took %u cycles (CCOUNT on %u)\n", __func__, d, prid);
+}
+
 static __imr int soc_init(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
@@ -279,6 +312,7 @@ static __imr int soc_init(const struct device *dev)
 	}
 
 	soc_idc_init();
+	dummy_dspload();
 	return 0;
 }
 
