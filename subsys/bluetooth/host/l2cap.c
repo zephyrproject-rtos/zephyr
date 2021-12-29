@@ -2359,7 +2359,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	}
 
 	err = chan->chan.ops->recv(&chan->chan, buf);
-	if (err) {
+	if (err < 0) {
 		if (err != -EINPROGRESS) {
 			BT_ERR("err %d", err);
 			bt_l2cap_chan_disconnect(&chan->chan);
