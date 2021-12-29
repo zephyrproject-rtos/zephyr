@@ -1397,6 +1397,7 @@ GD32 Platforms:
         - soburi
     files:
         - boards/arm/gd32*/
+        - boards/riscv/gd32*/
         - boards/riscv/longan_nano/
         - drivers/*/*gd32*/
         - drivers/*/*gd32*
