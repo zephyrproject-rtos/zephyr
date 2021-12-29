@@ -2052,8 +2052,6 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 
 /**
  * @brief Initialize pdu_data members that are read only in lower link layer.
- *        Fields that are modified after static initialization are only
- *        re-initialized.
  *
  * @param pdu_tx Pointer to pdu_data object to be initialized
  */
