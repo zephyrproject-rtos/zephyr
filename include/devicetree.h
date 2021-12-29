@@ -769,6 +769,32 @@
 	DT_CAT4(node_id, _P_, prop, _STRING_TOKEN)
 
 /**
+ * @brief Like DT_STRING_TOKEN(), but with a fallback to default_value
+ *
+ * If the value exists, this expands to DT_STRING_TOKEN(node_id, prop).
+ * The default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value or default_value
+ */
+#define DT_STRING_TOKEN_OR_DEFAULT(node_id, prop, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_TOKEN(node_id, prop)), default_value)
+
+/**
+ * @brief Does a DT_DRV_COMPAT instance have string token?
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value or default_value
+ */
+#define DT_INST_STRING_TOKEN_OR_DEFAULT(inst, prop, default_value) \
+	DT_STRING_TOKEN_OR_DEFAULT(DT_DRV_INST(inst), prop, default_value)
+/**
  * @brief Like DT_STRING_TOKEN(), but uppercased.
  *
  * This removes "the quotes and capitalize" from string-valued properties, and

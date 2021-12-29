@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Comparator will continuously monitor signal through ADC channel and compare
+    its result with defined threshold value. When comparison criterion is met,
+    event will be triggered.
+
+include: base.yaml
+
+properties:
+    io-channels:
+      type: phandle-array
+      required: true
+      description: |
+        ADC channel that will perform measurement.

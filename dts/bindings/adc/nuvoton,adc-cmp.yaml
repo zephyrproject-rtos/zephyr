@@ -1,0 +1,26 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This will perform signal comparision with threshold established.
+
+compatible: "nuvoton,adc-cmp"
+
+include : adc-comparator.yaml
+
+properties:
+    threshold-mv:
+      type: int
+      required: false
+      description: |
+        Value in millivolts present on ADC data as threshold assert.
+
+    comparison:
+      type: string
+      required: false
+      description: |
+        Determines the condition to be met between ADC data and
+        threshold assert value that will trigger comparator event.
+      enum:
+        - ADC_CMP_NPCX_GREATER
+        - ADC_CMP_NPCX_LESS_OR_EQUAL
