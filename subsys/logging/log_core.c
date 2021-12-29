@@ -817,7 +817,9 @@ bool z_impl_log_process(bool bypass)
 
 	msg = get_msg();
 	if (msg.msg) {
-		atomic_dec(&buffered_cnt);
+		if (!bypass) {
+			atomic_dec(&buffered_cnt);
+		}
 		msg_process(msg, bypass);
 	}
 
