@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/timer/riscv-machine-timer.h>
 
 / {
