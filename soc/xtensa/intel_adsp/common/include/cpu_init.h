@@ -82,7 +82,7 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * Also set bit 0 to enable the LOOP extension instruction
 	 * fetch buffer.
 	 */
-#ifdef XCHAL_HAVE_ICACHE_DYN_ENABLE
+#if XCHAL_USE_MEMCTL
 	reg = 0xffffff01;
 	__asm__ volatile("wsr %0, MEMCTL; rsync" :: "r"(reg));
 #endif
