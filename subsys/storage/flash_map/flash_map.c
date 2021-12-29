@@ -93,7 +93,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 	return rc;
 }
 
-uint8_t flash_area_align(const struct flash_area *fa)
+uint32_t flash_area_align(const struct flash_area *fa)
 {
 	const struct device *dev;
 
