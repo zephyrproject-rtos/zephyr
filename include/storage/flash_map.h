@@ -191,7 +191,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
  *
  * @return Alignment restriction for flash writes in [B].
  */
-uint8_t flash_area_align(const struct flash_area *fa);
+uint32_t flash_area_align(const struct flash_area *fa);
 
 /**
  * Retrieve info about sectors within the area.
