@@ -22,6 +22,10 @@ properties:
         type: int
         required: true
         description: the offset of threshold detector register address
+    threshold-count:
+        type: int
+        required: true
+        description: the number of threshold detectors adc supports
 
 io-channel-cells:
     - input
