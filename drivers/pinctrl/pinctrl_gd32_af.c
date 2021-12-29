@@ -94,8 +94,6 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	gpio_mode_set(port, mode, GD32_PUPD_GET(pin), pin_num);
 	gpio_output_options_set(port, GD32_OTYPE_GET(pin),
 				GD32_OSPEED_GET(pin), pin_num);
-
-	rcu_periph_clock_disable(rcu);
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
