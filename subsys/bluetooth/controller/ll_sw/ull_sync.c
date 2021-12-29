@@ -360,6 +360,17 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	return 0;
 }
 
+/* @brief Link Layer interface function corresponding to HCI LE Set Periodic
+ *        Advertising Receive Enable command.
+ *
+ * @param[in] handle Sync_Handle identifying the periodic advertising
+ *                   train. Range: 0x0000 to 0x0EFF.
+ * @param[in] enable Bit number 0 - Reporting Enabled.
+ *                   Bit number 1 - Duplicate filtering enabled.
+ *                   All other bits - Reserved for future use.
+ *
+ * @return HCI error codes as documented in Bluetooth Core Specification v5.3.
+ */
 uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable)
 {
 	struct ll_sync_set *sync;
