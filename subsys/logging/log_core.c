@@ -226,16 +226,17 @@ static void detect_missed_strdup(struct log_msg *msg)
 
 static void z_log_msg_post_finalize(void)
 {
-	atomic_inc(&buffered_cnt);
+	atomic_val_t cnt = atomic_inc(&buffered_cnt);
+
 	if (panic_mode) {
 		unsigned int key = irq_lock();
 		(void)log_process(false);
 		irq_unlock(key);
-	} else if (proc_tid != NULL && buffered_cnt == 1) {
+	} else if (proc_tid != NULL && cnt == 0) {
 		k_timer_start(&log_process_thread_timer,
 			K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS), K_NO_WAIT);
 	} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-		if ((buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
+		if ((cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
 		    (proc_tid != NULL)) {
 			k_timer_stop(&log_process_thread_timer);
 			k_sem_give(&log_process_thread_sem);
