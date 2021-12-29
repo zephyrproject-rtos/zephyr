@@ -556,6 +556,16 @@ from os.path import dirname, exists, expandvars, islink, join, realpath
 
 VERSION = (14, 1, 0)
 
+# Bump the recursion limit from 1k to 5k. The limit was observed to be
+# broken in NCS when gen_kconfig_rest.py was executed. Specifically,
+# the function expr_str would indirectly invoke itself many times. It
+# appeared that the expression that was too large was one that
+# contained configs from many different SoC's. Perhaps SoC's should be
+# moved into Zephyr modules in the future to reduce the size of the
+# Kconfig tree. Or perhaps there is another optimization that could be
+# done so we don't get thousands of recursions.
+sys.setrecursionlimit(5000)
+
 
 # File layout:
 #
