@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 
 #include <dt-bindings/pwm/pwm.h>
 
@@ -129,6 +130,45 @@
 			label = "DAC";
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		i2c0: i2c@40005400 {
+			compatible = "gd,gd32-i2c";
+			reg = <0x40005400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <31 0>, <32 0>;
+			interrupt-names = "event", "error";
+			rcu-periph-clock = <0x1015>;
+			status = "disabled";
+			label = "I2C_0";
+		};
+
+		i2c1: i2c@40005800 {
+			compatible = "gd,gd32-i2c";
+			reg = <0x40005800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			rcu-periph-clock = <0x1016>;
+			status = "disabled";
+			label = "I2C_1";
+		};
+
+		i2c2: i2c@40005c00 {
+			compatible = "gd,gd32-i2c";
+			reg = <0x40005c00 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <72 0>, <73 0>;
+			interrupt-names = "event", "error";
+			rcu-periph-clock = <0x1017>;
+			status = "disabled";
+			label = "I2C_2";
 		};
 
 		syscfg: syscfg@40013800 {
