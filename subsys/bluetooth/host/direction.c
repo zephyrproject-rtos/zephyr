@@ -791,12 +791,11 @@ static int bt_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 
 int bt_df_conn_cte_rx_enable(struct bt_conn *conn, const struct bt_df_conn_cte_rx_param *params)
 {
-	CHECKIF(!conn)
-	{
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
-	CHECKIF(!params)
-	{
+
+	CHECKIF(!params) {
 		return -EINVAL;
 	}
 
@@ -805,8 +804,7 @@ int bt_df_conn_cte_rx_enable(struct bt_conn *conn, const struct bt_df_conn_cte_r
 
 int bt_df_conn_cte_rx_disable(struct bt_conn *conn)
 {
-	CHECKIF(!conn)
-	{
+	CHECKIF(!conn) {
 		return -EINVAL;
 	}
 
