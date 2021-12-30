@@ -14,6 +14,15 @@ properties:
     interrupts:
       required: true
 
+    wucctrl:
+      type: phandles
+      description: |
+        Configure wakeup controller, this controller is used to set that
+        when the interrupt is triggered in EC low power mode, it can wakeup
+        EC or not. Via this controller, we set the wakeup trigger edge,
+        enable, disable, and clear wakeup status for the specific pin which
+        may be gpio pins or alternate pins.
+
     gpio-dev:
         type: phandle
         required: true
