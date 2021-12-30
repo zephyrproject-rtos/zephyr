@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <sys/__assert.h>
 
 #define ASCII_CHAR 0x7F
 #define SEQUENCE_FIRST_MASK 0xC0
@@ -56,4 +57,18 @@ char *utf8_trunc(char *utf8_str)
 	*last_byte_p = '\0';
 
 	return utf8_str;
+}
+
+char *utf8_lcpy(char *dst, const char *src, size_t n)
+{
+	__ASSERT(n > 0, "n shall not be 0");
+
+	strncpy(dst, src, n - 1);
+	dst[n - 1] = '\0';
+
+	if (n != 1) {
+		utf8_trunc(dst);
+	}
+
+	return dst;
 }

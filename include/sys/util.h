@@ -389,6 +389,20 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  */
 char *utf8_trunc(char *utf8_str);
 
+/**
+ * @brief Copies a UTF-8 encoded string from @p src to @p dst
+ *
+ * The resulting @p dst will always be NULL terminated, and the @p dst string
+ * will always be properly UTF-8 truncated.
+ *
+ * @param dst The destination of the UTF-8 string.
+ * @param src The source string
+ * @param n   The size of the @p dst buffer. Shall not be 0.
+ *
+ * return Pointer to the @p dst
+ */
+char *utf8_lcpy(char *dst, const char *src, size_t n);
+
 #ifdef __cplusplus
 }
 #endif
