@@ -23,4 +23,11 @@
 			pinmux = <TIMER1_CH2_PB10>;
 		};
 	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SCL_PB6>, <I2C0_SDA_PB7>;
+			drive-open-drain;
+		};
+	};
 };
