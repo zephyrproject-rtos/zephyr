@@ -268,6 +268,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 * passed in the node rx footer field.
 			 */
 			sync_lll = ftr->param;
+			LL_ASSERT(!sync_lll->lll_aux);
+
 			ull_sync = HDR_LLL2ULL(sync_lll);
 			rx->handle = ull_sync_handle_get(ull_sync);
 
