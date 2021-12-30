@@ -593,6 +593,52 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RSP)
+static void prepare_conn_cte_rsp_enable_cmd_params(struct net_buf *buf, const struct bt_conn *conn,
+						   bool enable)
+{
+	struct bt_hci_cp_le_conn_cte_rsp_enable *cp;
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->enable = enable ? 1U : 0U;
+}
+
+static int hci_df_set_conn_cte_rsp_enable(struct bt_conn *conn, bool enable)
+{
+	struct bt_hci_rp_le_conn_cte_rsp_enable *rp;
+	struct bt_hci_cmd_state_set state;
+	struct net_buf *buf, *rsp;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_CTE_RSP_ENABLE,
+				sizeof(struct bt_hci_cp_le_conn_cte_rsp_enable));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	prepare_conn_cte_rsp_enable_cmd_params(buf, conn, enable);
+
+	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_RSP_ENABLED, enable);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_RSP_ENABLE, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	if (conn->handle != sys_le16_to_cpu(rp->handle)) {
+		err = -EIO;
+	}
+
+	net_buf_unref(rsp);
+
+	return err;
+}
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RSP */
+
 /* @brief Function initializes Direction Finding in Host
  *
  * @return Zero in case of success, other value in case of failure.
@@ -767,3 +813,39 @@ int bt_df_conn_cte_rx_disable(struct bt_conn *conn)
 	return bt_df_set_conn_cte_rx_enable(conn, false, NULL);
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RSP)
+static int bt_df_set_conn_cte_rsp_enable(struct bt_conn *conn, bool enable)
+{
+	CHECKIF(!conn) {
+		return -EINVAL;
+	}
+
+	if (!BT_FEAT_LE_CONNECTION_CTE_RESP(bt_dev.le.features)) {
+		BT_WARN("CTE response procedure is not supported");
+		return -ENOTSUP;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		BT_ERR("not connected");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_TX_PARAMS_SET)) {
+		BT_ERR("Can't start CTE response procedure before CTE TX params setup");
+		return -EINVAL;
+	}
+
+	return hci_df_set_conn_cte_rsp_enable(conn, enable);
+}
+
+int bt_df_conn_cte_rsp_enable(struct bt_conn *conn)
+{
+	return bt_df_set_conn_cte_rsp_enable(conn, true);
+}
+
+int bt_df_conn_cte_rsp_disable(struct bt_conn *conn)
+{
+	return bt_df_set_conn_cte_rsp_enable(conn, false);
+}
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RSP */

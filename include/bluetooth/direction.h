@@ -142,6 +142,7 @@ struct bt_df_conn_iq_samples_report {
 	/** Pinter to IQ samples data. */
 	struct bt_hci_le_iq_sample const *sample;
 };
+
 /**
  * @brief Set or update the Constant Tone Extension parameters for periodic advertising set.
  *
@@ -216,5 +217,27 @@ int bt_df_conn_cte_rx_enable(struct bt_conn *conn, const struct bt_df_conn_cte_r
  * @return Zero in case of success, other value in case of failure.
  */
 int bt_df_conn_cte_rx_disable(struct bt_conn *conn);
+
+/**
+ * @brief Enable Constant Tone Extension response procedure for a connection.
+ *
+ * The function is available if @kconfig{CONFIG_BT_DF_CONNECTION_CTE_RSP} is enabled.
+ *
+ * @param conn   Connection object.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_conn_cte_rsp_enable(struct bt_conn *conn);
+
+/**
+ * @brief Disable Constant Tone Extension response procedure for a connection.
+ *
+ * The function is available if @kconfig{CONFIG_BT_DF_CONNECTION_CTE_RSP} is enabled.
+ *
+ * @param conn   Connection object.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int bt_df_conn_cte_rsp_disable(struct bt_conn *conn);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_DF_H_ */
