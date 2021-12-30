@@ -51,8 +51,8 @@ def test_csv_report(class_testsuite, instances_fixture, tmpdir):
     assert os.stat(filename).st_size != 0
 
     mydict = {'test': [], 'arch' : [], 'platform' : [], 'status': [],
-              'extra_args': [], 'handler': [], 'handler_time': [],
-              'ram_size': [], 'rom_size': []}
+              'extra_args': [], 'extra_bin_args': [], 'handler': [],
+              'handler_time': [], 'ram_size': [], 'rom_size': []}
 
     with open(filename, "r") as file:
         csv_reader = csv.reader(file)
@@ -66,6 +66,8 @@ def test_csv_report(class_testsuite, instances_fixture, tmpdir):
         mydict["status"].append(instance_status)
         args = " ".join(instance.testcase.extra_args)
         mydict["extra_args"].append(args)
+        bin_args = " ".join(instance.testcase.extra_bin_args)
+        mydict["extra_bin_args"].append(bin_args)
         mydict["handler"].append(instance.platform.simulation)
         mydict["handler_time"].append(instance.metrics.get("handler_time", ""))
         mydict["ram_size"].append(instance.metrics.get("ram_size", '0'))

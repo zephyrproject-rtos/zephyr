@@ -392,6 +392,7 @@ class Handler:
         self.type_str = type_str
 
         self.binary = None
+        self.extra_bin_args = []
         self.pid_fn = None
         self.call_make_run = False
 
@@ -536,7 +537,7 @@ class BinaryHandler(Handler):
         elif self.call_west_flash:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
         else:
-            command = [self.binary]
+            command = [self.binary] + self.extra_bin_args
 
         run_valgrind = False
         if self.valgrind and shutil.which("valgrind"):
@@ -1660,6 +1661,7 @@ class TestCase(DisablePyTestCollectionMixin):
         self.type = None
         self.tags = set()
         self.extra_args = None
+        self.extra_bin_args = None
         self.extra_configs = None
         self.arch_allow = None
         self.arch_exclude = None
@@ -2327,6 +2329,7 @@ class ProjectBuilder(FilterBuilder):
         self.ubsan = kwargs.get('ubsan', False)
         self.valgrind = kwargs.get('valgrind', False)
         self.extra_args = kwargs.get('extra_args', [])
+        self.extra_bin_args = kwargs.get('extra_bin_args', [])
         self.device_testing = kwargs.get('device_testing', False)
         self.cmake_only = kwargs.get('cmake_only', False)
         self.cleanup = kwargs.get('cleanup', False)
@@ -2425,6 +2428,8 @@ class ProjectBuilder(FilterBuilder):
             instance.handler.args = args
             instance.handler.generator_cmd = self.generator_cmd
             instance.handler.generator = self.generator
+        if isinstance(instance.handler, BinaryHandler):
+            instance.handler.extra_bin_args = self.extra_bin_args + self.testcase.extra_bin_args
 
     def process(self, pipeline, done, message, lock, results):
         op = message.get('op')
@@ -2706,6 +2711,7 @@ class TestSuite(DisablePyTestCollectionMixin):
     testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "type": {"type": "str", "default": "integration"},
                        "extra_args": {"type": "list"},
+                       "extra_bin_args": {"type": "list"},
                        "extra_configs": {"type": "list"},
                        "build_only": {"type": "bool", "default": False},
                        "build_on_all": {"type": "bool", "default": False},
@@ -2756,6 +2762,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.enable_asan = False
         self.enable_valgrind = False
         self.extra_args = []
+        self.extra_bin_args = []
         self.inline_logs = False
         self.enable_sizes_report = False
         self.west_flash = None
@@ -3075,6 +3082,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tc.type = tc_dict["type"]
                         tc.tags = tc_dict["tags"]
                         tc.extra_args = tc_dict["extra_args"]
+                        tc.extra_bin_args = tc_dict["extra_bin_args"]
                         tc.extra_configs = tc_dict["extra_configs"]
                         tc.arch_allow = tc_dict["arch_allow"]
                         tc.arch_exclude = tc_dict["arch_exclude"]
@@ -3487,6 +3495,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     ubsan=self.enable_ubsan,
                                     coverage=self.enable_coverage,
                                     extra_args=self.extra_args,
+                                    extra_bin_args=self.extra_bin_args,
                                     device_testing=self.device_testing,
                                     cmake_only=self.cmake_only,
                                     cleanup=self.cleanup,
@@ -3766,7 +3775,7 @@ class TestSuite(DisablePyTestCollectionMixin):
     def csv_report(self, filename):
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "status",
-                          "extra_args", "handler", "handler_time", "ram_size",
+                          "extra_args", "extra_bin_args", "handler", "handler_time", "ram_size",
                           "rom_size"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
@@ -3775,6 +3784,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                            "arch": instance.platform.arch,
                            "platform": instance.platform.name,
                            "extra_args": " ".join(instance.testcase.extra_args),
+                           "extra_bin_args": " ".join(instance.testcase.extra_bin_args),
                            "handler": instance.platform.simulation}
 
                 rowdict["status"] = instance.status

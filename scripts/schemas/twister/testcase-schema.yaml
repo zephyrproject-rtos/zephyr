@@ -155,6 +155,9 @@ mapping:
           "extra_args":
             type: str
             required: false
+          "extra_bin_args":
+            type: str
+            required: false
           "extra_configs":
             type: seq
             required: false

@@ -40,6 +40,9 @@ pairs:
     Extra cache entries to pass to CMake when building or running the
     test case.
 
+  extra_bin_args: <list of extra arguments for the test binary>
+    Extra arguments to pass to the test binary.
+
   extra_configs: <list of extra configurations>
     Extra configuration options to be merged with a master prj.conf
     when building or running the test case.
@@ -551,6 +554,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="""Force testing on selected platforms,
         even if they are excluded in the test configuration (testcase.yaml)."""
     )
+    parser.add_argument(
+        "--extra-bin-args", action="append", default=[],
+        help="Extra arguments to pass to the test binary."
+    )
 
     parser.add_argument(
         "-l", "--all", action="store_true",
@@ -914,6 +921,7 @@ def main():
     suite.inline_logs = options.inline_logs
     suite.enable_size_report = options.enable_size_report
     suite.extra_args = options.extra_args
+    suite.extra_bin_args = options.extra_bin_args
     suite.west_flash = options.west_flash
     suite.west_runner = options.west_runner
     suite.verbose = VERBOSE
