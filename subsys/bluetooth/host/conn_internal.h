@@ -44,6 +44,8 @@ enum {
 	BT_CONN_AUTO_DATA_LEN_COMPLETE,
 
 	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
+	BT_CONN_CTE_TX_PARAMS_SET,       /* CTE transmission parameters are set */
+	BT_CONN_CTE_RSP_ENABLED,         /* CTE response procedure is enabled */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
