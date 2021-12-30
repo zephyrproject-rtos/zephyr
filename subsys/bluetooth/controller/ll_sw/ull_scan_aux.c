@@ -459,6 +459,17 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	if (!aux) {
 		aux = aux_acquire();
 		if (!aux) {
+			/* As LLL scheduling has been used and will fail due to
+			 * non-allocation of aux context, a sync report with
+			 * aux_failed flag set will be generated. Let the
+			 * current sync report be set as partial, and the
+			 * sync report corresponding to ull_scan_aux_release
+			 * have the incomplete data status.
+			 */
+			if (ftr->aux_lll_sched) {
+				ftr->aux_sched = 1U;
+			}
+
 			if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
 			    sync_lll) {
 				struct ll_sync_set *sync;
