@@ -502,7 +502,6 @@ static void host_num_completed_packets(struct net_buf *buf,
 	struct bt_hci_cp_host_num_completed_packets *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t count = 0U;
-	int i;
 
 	/* special case, no event returned except for error conditions */
 	if (hci_hbuf_total <= 0) {
@@ -516,7 +515,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 	}
 
 	/* leave *evt == NULL so no event is generated */
-	for (i = 0; i < cmd->num_handles; i++) {
+	for (uint8_t i = 0; i < cmd->num_handles; i++) {
 		uint16_t h = sys_le16_to_cpu(cmd->h[i].handle);
 		uint16_t c = sys_le16_to_cpu(cmd->h[i].count);
 
@@ -4988,9 +4987,7 @@ static void dup_ext_adv_mode_reset(struct dup_ext_adv_mode *dup_adv_mode)
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 static void dup_ext_adv_reset(void)
 {
-	int i;
-
-	for (i = 0; i < dup_count; i++) {
+	for (int32_t i = 0; i < dup_count; i++) {
 		struct dup_entry *dup;
 
 		dup = &dup_filter[i];
@@ -5002,22 +4999,19 @@ static void dup_ext_adv_reset(void)
 static void dup_periodic_adv_reset(uint8_t addr_type, const uint8_t *addr,
 				   uint8_t sid)
 {
-	int addr_idx;
-
-	for (addr_idx = 0; addr_idx < dup_count; addr_idx++) {
+	for (int32_t addr_idx = 0; addr_idx < dup_count; addr_idx++) {
 		struct dup_ext_adv_mode *dup_mode;
 		struct dup_entry *dup;
-		int set_idx;
 
 		dup = &dup_filter[addr_idx];
-		if (memcmp(addr, &dup->addr.a.val[0],
-			   sizeof(bt_addr_t)) ||
+		if (memcmp(addr, dup->addr.a.val, sizeof(bt_addr_t)) ||
 		    (addr_type != dup->addr.type)) {
 			continue;
 		}
 
 		dup_mode = &dup->adv_mode[DUP_EXT_ADV_MODE_PERIODIC];
-		for (set_idx = 0; set_idx < dup_mode->set_count; set_idx++) {
+		for (uint16_t set_idx = 0; set_idx < dup_mode->set_count;
+		     set_idx++) {
 			struct dup_ext_adv_set *adv_set;
 
 			adv_set = &dup_mode->set[set_idx];
@@ -5076,12 +5070,12 @@ static inline bool is_dup_or_update(struct dup_entry *dup, uint8_t adv_type,
 				/* report different DID */
 				adv_set->adi.did = adi->did;
 				/* set new data status */
-				if (data_status ==
-				    BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+				if (data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
 					adv_set->data_cmplt = 1U;
 				} else {
 					adv_set->data_cmplt = 0U;
 				}
+
 				return false;
 			} else if (!adv_set->data_cmplt &&
 				   (data_status ==
@@ -5114,7 +5108,6 @@ static bool dup_found(uint8_t adv_type, uint8_t addr_type, const uint8_t *addr,
 	/* check for duplicate filtering */
 	if (dup_count >= 0) {
 		struct dup_entry *dup;
-		int i;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		__ASSERT((adv_mode < ARRAY_SIZE(dup_filter[0].adv_mode)),
@@ -5122,7 +5115,7 @@ static bool dup_found(uint8_t adv_type, uint8_t addr_type, const uint8_t *addr,
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 		/* find for existing entry and update if changed */
-		for (i = 0; i < dup_count; i++) {
+		for (int32_t i = 0; i < dup_count; i++) {
 			dup = &dup_filter[i];
 			if (memcmp(addr, &dup->addr.a.val[0],
 				   sizeof(bt_addr_t)) ||
@@ -5222,10 +5215,9 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 static inline bool scan_filter_apply(uint8_t filter, uint8_t *data, uint8_t len)
 {
 	struct scan_filter *f = &scan_filters[filter];
-	int i;
 
 	/* No patterns means filter out all advertising packets */
-	for (i = 0; i < f->count; i++) {
+	for (uint8_t i = 0; i < f->count; i++) {
 		/* Require at least the length of the pattern */
 		if (len >= f->lengths[i] &&
 		    !memcmp(data, f->patterns[i], f->lengths[i])) {
