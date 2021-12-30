@@ -30,6 +30,7 @@ extern const int _k_neg_eagain;
  * On ARMv6-M, the intlock key is represented by the PRIMASK register,
  * as BASEPRI is not available.
  */
+#if !defined(CONFIG_USE_SWITCH)
 int arch_swap(unsigned int key)
 {
 	/* store off key and return value */
@@ -52,3 +53,4 @@ int arch_swap(unsigned int key)
 	 */
 	return _current->arch.swap_return_value;
 }
+#endif /* !CONFIG_USE_SWITCH */

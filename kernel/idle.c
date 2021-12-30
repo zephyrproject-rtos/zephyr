@@ -87,7 +87,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 #endif
 
 #if !defined(CONFIG_PREEMPT_ENABLED)
-# if !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC)
+# if !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC) || defined(CONFIG_ARM)
 		/* A legacy mess: the idle thread is by definition
 		 * preemptible as far as the modern scheduler is
 		 * concerned, but older platforms use
