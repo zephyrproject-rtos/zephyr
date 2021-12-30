@@ -7,8 +7,10 @@
 
 #include <device.h>
 #include <drivers/gpio.h>
+#include <drivers/interrupt_controller/wuc_ite_it8xxx2.h>
 #include <drivers/kscan.h>
 #include <drivers/pinmux.h>
+#include <dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <errno.h>
 #include <kernel.h>
 #include <soc.h>
@@ -19,6 +21,7 @@
 #define LOG_LEVEL CONFIG_KSCAN_LOG_LEVEL
 LOG_MODULE_REGISTER(kscan_ite_it8xxx2);
 
+#define KEYBOARD_KSI_PIN_COUNT		IT8XXX2_DT_INST_WUCCTRL_LEN(0)
 #define KEYBOARD_COLUMN_DRIVE_ALL	-2
 #define KEYBOARD_COLUMN_DRIVE_NONE	-1
 /* Free run timer counts transform to micro-seconds (clock source is 32768Hz) */
@@ -38,6 +41,13 @@ enum kscan_pin_func {
 	KSO17,
 };
 
+struct kscan_wuc_map_cfg {
+	/* WUC control device structure */
+	const struct device *wucs;
+	/* WUC pin mask */
+	uint8_t mask;
+};
+
 struct kscan_alt_cfg {
 	/* Pinmux control device structure */
 	const struct device *pinctrls;
@@ -50,14 +60,10 @@ struct kscan_alt_cfg {
 struct kscan_it8xxx2_config {
 	/* Keyboard scan controller base address */
 	uintptr_t base;
-	/* KSI[7:0] wake-up edge mode register */
-	uintptr_t reg_wuemr3;
-	/* KSI[7:0] wake-up edge sense register */
-	uintptr_t reg_wuesr3;
-	/* KSI[7:0] wake-up enable register */
-	uintptr_t reg_wuenr3;
 	/* Keyboard scan input (KSI) wake-up irq */
 	int irq;
+	/* KSI[7:0] wake-up input source configuration list */
+	const struct kscan_wuc_map_cfg *wuc_map_list;
 	/* GPIO control device structure */
 	const struct device *gpio_dev;
 	/* Keyboard scan alternate configuration list */
@@ -87,6 +93,8 @@ struct kscan_it8xxx2_data {
 	kscan_callback_t callback;
 	struct k_thread thread;
 	atomic_t enable_scan;
+	/* KSI[7:0] wake-up interrupt status mask */
+	uint8_t ksi_pin_mask;
 
 	K_KERNEL_STACK_MEMBER(thread_stack, TASK_STACK_SIZE);
 };
@@ -192,11 +200,16 @@ static bool read_keyboard_matrix(const struct device *dev, uint8_t *new_state)
 static void keyboard_raw_interrupt(const struct device *dev)
 {
 	const struct kscan_it8xxx2_config *const config = DRV_CONFIG(dev);
-	volatile uint8_t *reg_wuesr3 = (uint8_t *)config->reg_wuesr3;
 	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
 
-	/* W/C wakeup interrupt status of KSI[0:7] pins */
-	*reg_wuesr3 = 0xFF;
+	/*
+	 * W/C wakeup interrupt status of KSI[7:0] pins
+	 *
+	 * NOTE: We want to clear the status as soon as possible,
+	 *       so clear KSI[7:0] pins at a time.
+	 */
+	it8xxx2_wuc_clear_status(config->wuc_map_list[0].wucs,
+				 data->ksi_pin_mask);
 
 	/* W/C interrupt status of KSI[7:0] pins */
 	ite_intc_isr_clear(config->irq);
@@ -208,11 +221,17 @@ static void keyboard_raw_interrupt(const struct device *dev)
 void keyboard_raw_enable_interrupt(const struct device *dev, int enable)
 {
 	const struct kscan_it8xxx2_config *const config = DRV_CONFIG(dev);
-	volatile uint8_t *reg_wuesr3 = (uint8_t *)config->reg_wuesr3;
+	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
 
 	if (enable) {
-		/* W/C wakeup interrupt status of KSI[0:7] pins */
-		*reg_wuesr3 = 0xFF;
+		/*
+		 * W/C wakeup interrupt status of KSI[7:0] pins
+		 *
+		 * NOTE: We want to clear the status as soon as possible,
+		 *       so clear KSI[7:0] pins at a time.
+		 */
+		it8xxx2_wuc_clear_status(config->wuc_map_list[0].wucs,
+					 data->ksi_pin_mask);
 
 		/* W/C interrupt status of KSI[7:0] pins */
 		ite_intc_isr_clear(config->irq);
@@ -411,9 +430,6 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 static int kscan_it8xxx2_init(const struct device *dev)
 {
 	const struct kscan_it8xxx2_config *const config = DRV_CONFIG(dev);
-	volatile uint8_t *reg_wuemr3 = (uint8_t *)config->reg_wuemr3;
-	volatile uint8_t *reg_wuesr3 = (uint8_t *)config->reg_wuesr3;
-	volatile uint8_t *reg_wuenr3 = (uint8_t *)config->reg_wuenr3;
 	struct kscan_it8xxx2_data *data = DRV_DATA(dev);
 	struct kscan_it8xxx2_regs *const inst = DRV_REG(dev);
 
@@ -462,17 +478,32 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	inst->KBS_KSOH2 = 0x00;
 #endif
 
-	/* Select wakeup interrupt falling-edge triggered of KSI[7:0] pins */
-	*reg_wuemr3 = 0xFF;
+	for (int i = 0; i < KEYBOARD_KSI_PIN_COUNT; i++) {
+		/* Select wakeup interrupt falling-edge triggered of KSI[7:0] pins */
+		it8xxx2_wuc_set_polarity(config->wuc_map_list[i].wucs,
+					 config->wuc_map_list[i].mask,
+					 WUC_TYPE_EDGE_FALLING);
+		/* W/C wakeup interrupt status of KSI[7:0] pins */
+		it8xxx2_wuc_clear_status(config->wuc_map_list[i].wucs,
+					 config->wuc_map_list[i].mask);
+		/* Enable wakeup interrupt of KSI[7:0] pins */
+		it8xxx2_wuc_enable(config->wuc_map_list[i].wucs,
+				   config->wuc_map_list[i].mask);
 
-	/* W/C wakeup interrupt status of KSI[7:0] pins */
-	*reg_wuesr3 = 0xFF;
+		/*
+		 * We want to clear KSI[7:0] pins status at a time when wakeup
+		 * interrupt fire, so gather the KSI[7:0] pin mask value here.
+		 */
+		if (IS_ENABLED(CONFIG_LOG)) {
+			if (config->wuc_map_list[i].wucs != config->wuc_map_list[0].wucs) {
+				LOG_ERR("KSI%d pin isn't in the same wuc node!", i);
+			}
+		}
+		data->ksi_pin_mask |= config->wuc_map_list[i].mask;
+	}
 
 	/* W/C interrupt status of KSI[7:0] pins */
 	ite_intc_isr_clear(config->irq);
-
-	/* Enable wakeup interrupt of KSI[7:0] pins */
-	*reg_wuenr3 = 0xFF;
 
 	/* Kconfig.it8xxx2 time figures are transformed from msec to usec */
 	data->deb_time_press =
@@ -547,15 +578,16 @@ static const struct kscan_driver_api kscan_it8xxx2_driver_api = {
 	.enable_callback = kscan_it8xxx2_enable_callback,
 };
 
+static const struct kscan_wuc_map_cfg kscan_wuc_0[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] =
+		IT8XXX2_DT_WUC_ITEMS_LIST(0);
+
 static const struct kscan_alt_cfg kscan_alt_0[DT_INST_NUM_PINCTRLS_BY_IDX(0, 0)] =
 		IT8XXX2_DT_ALT_ITEMS_LIST(0);
 
 static const struct kscan_it8xxx2_config kscan_it8xxx2_cfg_0 = {
 	.base = DT_INST_REG_ADDR_BY_IDX(0, 0),
-	.reg_wuemr3 = DT_INST_REG_ADDR_BY_IDX(0, 1),
-	.reg_wuesr3 = DT_INST_REG_ADDR_BY_IDX(0, 2),
-	.reg_wuenr3 = DT_INST_REG_ADDR_BY_IDX(0, 3),
 	.irq = DT_INST_IRQN(0),
+	.wuc_map_list = kscan_wuc_0,
 	.gpio_dev = DEVICE_DT_GET(DT_INST_PHANDLE_BY_IDX(0, gpio_dev, 0)),
 	.alt_list = kscan_alt_0,
 };
