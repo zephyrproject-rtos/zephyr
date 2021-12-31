@@ -38,6 +38,31 @@ config MPSC_PBUF
 	  storing variable length packets in a circular way and operate directly
 	  on the buffer memory.
 
+config SHARED_MULTI_HEAP
+	bool "Shared multi-heap manager"
+	help
+	  Enable support for a shared multi-heap manager that uses the
+	  multi-heap allocator to manage a set of reserved memory regions with
+	  different capabilities / attributes (cacheable, non-cacheable,
+	  etc...) defined in the DT.
+
+config WINSTREAM
+	bool "Lockless shared memory window byte stream"
+	help
+	  Winstream is a byte stream IPC for use in shared memory
+	  "windows", generally for transmit to non-Zephyr contexts that
+	  can't share Zephyr APIs or data structures.
+
+if WINSTREAM
+config WINSTREAM_STDLIB_MEMCOPY
+	bool "Use standard memcpy() in winstream"
+	help
+	  The sys_winstream utility is sometimes used in early boot
+	  environments before the standard library is usable.  By
+	  default it uses a simple internal bytewise memcpy().  Set
+	  this to use the one from the standard library.
+endif
+
 if MPSC_PBUF
 config MPSC_CLEAR_ALLOCATED
 	bool "Clear allocated packet"
