@@ -18,6 +18,8 @@
 #include "tracing_test.h"
 #elif defined CONFIG_TRACING_USER
 #include "tracing_user.h"
+#elif defined CONFIG_TRACING_EXTERNAL
+#include "tracing_external.h"
 #else
 /**
  * @brief Tracing

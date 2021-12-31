@@ -1,0 +1,10 @@
+# Zephyr module config for external tracing.
+# The real Kconfig for the module is located externally,
+# this file is to ensure ZEPHYR_EXTERNALTRACING_MODULE is defined also when the
+# module is unavailable.
+
+# Copyright (c) 2021 Jon Lamb <jon@auxon.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_EXTERNALTRACING_MODULE
+	bool

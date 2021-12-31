@@ -65,6 +65,12 @@ config TRACING_USER
 	help
 	  Use user-defined functions for tracing task switching and irqs
 
+config TRACING_EXTERNAL
+	bool "External tracing support"
+	depends on ZEPHYR_EXTERNALTRACING_MODULE
+	help
+	  Enable external tracing module support.
+
 endchoice
 
 
