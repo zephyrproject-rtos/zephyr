@@ -66,6 +66,8 @@
 
 #define MANIFEST_SEGMENT_COUNT 3
 
+extern void soc_trace_init(void);
+
 /* Initial/true entry point.  Does nothing but jump to
  * z_boot_asm_entry (which cannot be here, because it needs to be able
  * to reference immediates which must link before it)
@@ -324,6 +326,7 @@ __imr void boot_core0(void)
 	win_setup();
 	lp_sram_init();
 	parse_manifest();
+	soc_trace_init();
 	z_xtensa_cache_flush_all();
 
 	/* Zephyr! */
