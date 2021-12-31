@@ -6,15 +6,37 @@ NXP RDDRONE-FMUK66
 Overview
 ********
 
-The RDDRONE FMUK66 is an drone control board with commonly used peripheral
-connectors and a Kinetis K66 on board.
+RDDRONE FMUK66 is primarily designed as an autonomous drone 
+"Flight Management Unit" control board which incorporates DroneCode standard
+common peripheral connectors. The MCU onboard is a Kinetis K66. 
 
-- Comes with a J-Link Edu Mini for programming and UART console.
+The FMUK66 hardware includes an onboard IMU (Intertial measurement units),
+ports for off-the-shelf GPS modules with integrated arming swtiches, 
+LEDs and enunciators, SDCARD for logging, CAN ports, PWM ports, 
+100BaseT1 "2-wire" Ethernet, and SE050 Secure Element. 
+
+Note that historically this board is supported by another RTOS, NuttX, 
+and the PX4 flight stack running on top, and can fly Multicopters, VTOL and 
+traditional aircraft, ground based rovers and water going vessels. 
+The intention here is to have a functional port to Zephyr RTOS so that
+experimentation and development of flight/Vehicle stacks can also begin 
+with Zephyr.
+The FMUK66 hardware is suitable for use in other mobile robotics applications,
+or as hardware where where CAN, T1 Ethernet, or Secure development is needed.
+
+- The RDDRONE-FMUK66 kit comes with a J-Link Edu Mini for programming and UART
+ console as well as a power distribution and measuring module as well as a GPS.
+
 
 .. image:: ./rddrone_fmuk66.jpg
    :width: 720px
    :align: center
    :alt: RDDRONE-FMUK66
+   
+Development kits incorporating RDDRONE-FMUK66
+********
+- NXP KIT-HGDRONEK66 is a complete quadcopter drone incorporating RDDRONE-FMUK66
+- NXP BUGGY3-KIT is a complete "RC CAR" buggy chassis incorporating RDDRONE-FMUK66
 
 Hardware
 ********
@@ -31,6 +53,9 @@ Hardware
 - Connector for PWM servo/motor controls
 - Connector for UART GPS/GLONASS
 - SDHC
+- SE050 Secure Element (RevE)
+- TJA1042 Dual CAN Phy 
+- TJA1100 100BaseT1 "2 wire automotive" ethernet
 
 For more information about the K64F SoC and FRDM-K64F board:
 
