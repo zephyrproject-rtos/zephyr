@@ -405,8 +405,8 @@ static void uart_esp32_irq_rx_disable(const struct device *dev)
 
 static int uart_esp32_irq_tx_complete(const struct device *dev)
 {
-	/* check if TX FIFO is empty */
-	return (uart_hal_get_txfifo_len(&DEV_CFG(dev)->hal) == UART_LL_FIFO_DEF_LEN ? 1 : 0);
+	/* check if TX is idle so we are sure the last byte was sent */
+	return (uart_hal_is_tx_idle(&DEV_CFG(dev)->hal));
 }
 
 static int uart_esp32_irq_rx_ready(const struct device *dev)
