@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2021 Jonathan Hahn
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	 aliases {
+		single-line-uart1 = &usart2;
+		single-line-uart2 = &uart4;
+	};
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2>;
+	single-wire;
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pc10>;
+	single-wire;
+};
