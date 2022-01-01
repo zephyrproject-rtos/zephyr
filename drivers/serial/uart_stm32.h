@@ -23,6 +23,8 @@ struct uart_stm32_config {
 	bool hw_flow_control;
 	/* initial parity, 0 for none, 1 for odd, 2 for even */
 	int  parity;
+	/* switch to enable single wire / half duplex feature */
+	bool single_wire;
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_PM) \
 	&& !defined(CONFIG_UART_INTERRUPT_DRIVEN) \
