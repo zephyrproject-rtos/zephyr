@@ -746,7 +746,6 @@ ull_scan_aux_rx_flush:
 void ull_scan_aux_done(struct node_rx_event_done *done)
 {
 	struct ll_scan_aux_set *aux;
-	struct ull_hdr *hdr;
 
 	/* Get reference to ULL context */
 	aux = CONTAINER_OF(done->param, struct ll_scan_aux_set, ull);
@@ -757,8 +756,8 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 
 		sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
 		LL_ASSERT(ull_sync_is_valid_get(sync));
-		hdr = &sync->ull;
 
+		/* Auxiliary context will be flushed by ull_scan_aux_stop() */
 		if (unlikely(sync->is_stop) || !sync->lll.lll_aux) {
 			return;
 		}
@@ -778,18 +777,9 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 		if (unlikely(scan->is_stop)) {
 			return;
 		}
-
-		/* Setup the disabled callback to flush the auxiliary PDUs */
-		hdr = &aux->ull;
 	}
 
-	if (ull_ref_get(hdr) == 0U) {
-		flush(aux);
-	} else {
-		LL_ASSERT(!hdr->disabled_cb);
-		hdr->disabled_param = aux;
-		hdr->disabled_cb = done_disabled_cb;
-	}
+	flush(aux);
 }
 
 struct ll_scan_aux_set *ull_scan_aux_set_get(uint8_t handle)
