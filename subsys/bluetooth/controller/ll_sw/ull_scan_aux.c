@@ -247,8 +247,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			rx->type = NODE_RX_TYPE_SYNC_REPORT;
 			rx->handle = ull_sync_handle_get(sync);
 
-			sync_lll = &sync->lll;
-
 			/* Check if we need to create BIG sync */
 			sync_iso = sync_iso_create_get(sync);
 
