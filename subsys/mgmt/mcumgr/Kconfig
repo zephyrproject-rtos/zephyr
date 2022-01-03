@@ -237,7 +237,7 @@ config OS_MGMT_RESET_MS
 
 config OS_MGMT_TASKSTAT
 	bool "Support for taskstat command"
-	default y
+	depends on THREAD_MONITOR
 
 if OS_MGMT_TASKSTAT
 
