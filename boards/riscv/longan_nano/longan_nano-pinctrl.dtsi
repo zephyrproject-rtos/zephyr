@@ -11,4 +11,10 @@
 			pinmux = <USART0_TX_PA9_NORMP>, <USART0_RX_PA10_NORMP>;
 		};
 	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <DAC_OUT0_PA4>;
+		};
+	};
 };
