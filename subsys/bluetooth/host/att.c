@@ -1666,6 +1666,8 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* Set command flag if not a request */
 	if (!data->req) {
 		flags |= BT_GATT_WRITE_FLAG_CMD;
+	} else if (data->req == BT_ATT_OP_EXEC_WRITE_REQ) {
+		flags |= BT_GATT_WRITE_FLAG_EXECUTE;
 	}
 
 	/* Write attribute value */
