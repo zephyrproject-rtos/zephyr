@@ -7,38 +7,38 @@
 #include <init.h>
 #include <errno.h>
 #include <lorawan/lorawan.h>
-#include <zephyr.h>
 
 #include "lw_priv.h"
 
 #include <LoRaMac.h>
 #include <Region.h>
+#include "nvm/lorawan_nvm.h"
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LORAMAC_REGION_UNKNOWN),
 	     "Unknown region specified for LoRaWAN in Kconfig");
 
 #ifdef CONFIG_LORAMAC_REGION_AS923
-	#define LORAWAN_REGION LORAMAC_REGION_AS923
+#define LORAWAN_REGION LORAMAC_REGION_AS923
 #elif CONFIG_LORAMAC_REGION_AU915
-	#define LORAWAN_REGION LORAMAC_REGION_AU915
+#define LORAWAN_REGION LORAMAC_REGION_AU915
 #elif CONFIG_LORAMAC_REGION_CN470
-	#define LORAWAN_REGION LORAMAC_REGION_CN470
+#define LORAWAN_REGION LORAMAC_REGION_CN470
 #elif CONFIG_LORAMAC_REGION_CN779
-	#define LORAWAN_REGION LORAMAC_REGION_CN779
+#define LORAWAN_REGION LORAMAC_REGION_CN779
 #elif CONFIG_LORAMAC_REGION_EU433
-	#define LORAWAN_REGION LORAMAC_REGION_EU433
+#define LORAWAN_REGION LORAMAC_REGION_EU433
 #elif CONFIG_LORAMAC_REGION_EU868
-	#define LORAWAN_REGION LORAMAC_REGION_EU868
+#define LORAWAN_REGION LORAMAC_REGION_EU868
 #elif CONFIG_LORAMAC_REGION_KR920
-	#define LORAWAN_REGION LORAMAC_REGION_KR920
+#define LORAWAN_REGION LORAMAC_REGION_KR920
 #elif CONFIG_LORAMAC_REGION_IN865
-	#define LORAWAN_REGION LORAMAC_REGION_IN865
+#define LORAWAN_REGION LORAMAC_REGION_IN865
 #elif CONFIG_LORAMAC_REGION_US915
-	#define LORAWAN_REGION LORAMAC_REGION_US915
+#define LORAWAN_REGION LORAMAC_REGION_US915
 #elif CONFIG_LORAMAC_REGION_RU864
-	#define LORAWAN_REGION LORAMAC_REGION_RU864
+#define LORAWAN_REGION LORAMAC_REGION_RU864
 #else
-	#error "At least one LoRaWAN region should be selected"
+#error "At least one LoRaWAN region should be selected"
 #endif
 
 /* Use version 1.0.3.0 for ABP */
@@ -212,13 +212,17 @@ static LoRaMacStatus_t lorawan_join_otaa(
 	mlme_req.Req.Join.Datarate = default_datarate;
 	mlme_req.Req.Join.NetworkActivation = ACTIVATION_TYPE_OTAA;
 
-	/* Retrieve the NVM context to store device nonce */
-	mib_req.Type = MIB_NVM_CTXS;
-	if (LoRaMacMibGetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
-		LOG_ERR("Could not get NVM context");
-		return -EINVAL;
+	if (IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
+		/* Retrieve the NVM context to store device nonce */
+		mib_req.Type = MIB_NVM_CTXS;
+		if (LoRaMacMibGetRequestConfirm(&mib_req) !=
+			LORAMAC_STATUS_OK) {
+			LOG_ERR("Could not get NVM context");
+			return -EINVAL;
+		}
+		mib_req.Param.Contexts->Crypto.DevNonce =
+			join_cfg->otaa.dev_nonce;
 	}
-	mib_req.Param.Contexts->Crypto.DevNonce = join_cfg->otaa.dev_nonce;
 
 	mib_req.Type = MIB_DEV_EUI;
 	mib_req.Param.DevEui = join_cfg->dev_eui;
@@ -414,7 +418,7 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 	LoRaMacTxInfo_t txInfo;
 
 	/* QueryTxPossible cannot fail */
-	(void)LoRaMacQueryTxPossible(0, &txInfo);
+	(void) LoRaMacQueryTxPossible(0, &txInfo);
 
 	*max_next_payload_size = txInfo.MaxPossibleApplicationDataSize;
 	*max_payload_size = txInfo.CurrentPossiblePayloadSize;
@@ -456,7 +460,8 @@ int lorawan_set_conf_msg_tries(uint8_t tries)
 	return 0;
 }
 
-int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, enum lorawan_message_type type)
+int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
+		 enum lorawan_message_type type)
 {
 	LoRaMacStatus_t status;
 	McpsReq_t mcpsReq;
@@ -584,6 +589,8 @@ int lorawan_start(void)
 
 static int lorawan_init(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	LoRaMacStatus_t status;
 
 	sys_slist_init(&dl_callbacks);
@@ -594,7 +601,13 @@ static int lorawan_init(const struct device *dev)
 	macPrimitives.MacMlmeIndication = MlmeIndication;
 	macCallbacks.GetBatteryLevel = getBatteryLevelLocal;
 	macCallbacks.GetTemperatureLevel = NULL;
-	macCallbacks.NvmDataChange = NULL;
+
+	if (IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
+		macCallbacks.NvmDataChange = NULL;
+	} else {
+		macCallbacks.NvmDataChange = lorawan_nvm_data_mgmt_event;
+	}
+
 	macCallbacks.MacProcessNotify = OnMacProcessNotify;
 
 	status = LoRaMacInitialization(&macPrimitives, &macCallbacks,
@@ -605,9 +618,13 @@ static int lorawan_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (!IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
+		lorawan_nvm_init();
+		lorawan_nvm_data_restore();
+	}
+
 	LOG_DBG("LoRaMAC Initialized");
 
 	return 0;
 }
-
 SYS_INIT(lorawan_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
