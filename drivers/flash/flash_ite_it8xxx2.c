@@ -594,12 +594,31 @@ static int flash_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+static const struct flash_pages_layout dev_layout = {
+	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) /
+			DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+};
+
+static void flash_it8xxx2_pages_layout(const struct device *dev,
+				       const struct flash_pages_layout **layout,
+				       size_t *layout_size)
+{
+	*layout = &dev_layout;
+	*layout_size = 1;
+}
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
 static const struct flash_driver_api flash_it8xxx2_api = {
 	.write_protection = flash_it8xxx2_write_protection,
 	.erase = flash_it8xxx2_erase,
 	.write = flash_it8xxx2_write,
 	.read = flash_it8xxx2_read,
 	.get_parameters = flash_it8xxx2_get_parameters,
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	.page_layout = flash_it8xxx2_pages_layout,
+#endif
 };
 
 static struct flash_it8xxx2_dev_data flash_it8xxx2_data;
