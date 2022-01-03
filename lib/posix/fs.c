@@ -290,6 +290,11 @@ struct dirent *readdir(DIR *dirp)
 		return NULL;
 	}
 
+	if (fdirent.name[0] == 0) {
+		/* assume end-of-dir, leave errno untouched */
+		return NULL;
+	}
+
 	rc = strlen(fdirent.name);
 	rc = (rc < MAX_FILE_NAME) ? rc : (MAX_FILE_NAME - 1);
 	(void)memcpy(pdirent.d_name, fdirent.name, rc);
