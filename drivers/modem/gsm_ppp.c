@@ -1051,6 +1051,10 @@ void gsm_ppp_stop(const struct device *dev)
 {
 	struct gsm_modem *gsm = dev->data;
 	struct net_if *iface = gsm->iface;
+	struct k_work_sync work_sync;
+
+	(void)k_work_cancel_delayable_sync(&gsm->gsm_configure_work, &work_sync);
+	(void)k_work_cancel_delayable_sync(&gsm->rssi_work_handle, &work_sync);
 
 	net_if_l2(iface)->enable(iface, false);
 
