@@ -20,7 +20,7 @@ static K_TIMER_DEFINE(zephyr_os_mgmt_reset_timer, zephyr_os_mgmt_reset_cb, NULL)
 
 K_WORK_DEFINE(zephyr_os_mgmt_reset_work, zephyr_os_mgmt_reset_work_handler);
 
-#ifdef CONFIG_THREAD_MONITOR
+#ifdef CONFIG_OS_MGMT_TASKSTAT
 static const struct k_thread *
 zephyr_os_mgmt_task_at(int idx)
 {
@@ -76,7 +76,7 @@ os_mgmt_impl_task_info(int idx, struct os_mgmt_task_info *out_info)
 
 	return 0;
 }
-#endif /* CONFIG_THREAD_MONITOR */
+#endif /* CONFIG_OS_MGMT_TASKSTAT */
 
 static void
 zephyr_os_mgmt_reset_work_handler(struct k_work *work)
