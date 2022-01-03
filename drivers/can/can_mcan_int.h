@@ -1381,7 +1381,7 @@
 
 /***************  Bit definition for CAN_MCAN_TXEFC register  *****************/
 /* Event FIFO Watermark */
-#define CAN_MCAN_TXEFC_EFSA_POS      (0U)
+#define CAN_MCAN_TXEFC_EFSA_POS      (2U)
 #define CAN_MCAN_TXEFC_EFSA_MSK      (0x3FFFUL << CAN_MCAN_TXEFC_EFSA_POS)
 #define CAN_MCAN_TXEFC_EFSA          CAN_MCAN_TXEFC_EFSA_MSK
 /* Event FIFO Size */
