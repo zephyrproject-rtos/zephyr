@@ -13,8 +13,6 @@
 
 #include <fsl_common.h>
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #endif /* !_ASMLANGUAGE */
 

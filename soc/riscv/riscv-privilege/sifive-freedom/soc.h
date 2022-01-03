@@ -12,7 +12,6 @@
 #define __RISCV_SIFIVE_FREEDOM_SOC_H_
 
 #include <soc_common.h>
-#include <devicetree.h>
 
 #if defined(CONFIG_SOC_RISCV_SIFIVE_FREEDOM)
 

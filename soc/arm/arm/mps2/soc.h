@@ -16,7 +16,6 @@
 
 #endif
 
-#include <devicetree.h>
 #include <soc_registers.h>
 
 extern void wakeup_cpu1(void);
