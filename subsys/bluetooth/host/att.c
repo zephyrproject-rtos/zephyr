@@ -1882,17 +1882,98 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 	struct net_buf *buf;
 	uint8_t err = 0U;
 
-	while ((buf = net_buf_slist_get(&chan->att->prep_queue))) {
-		struct bt_attr_data *data = net_buf_user_data(buf);
+	/* The following code will iterate on all prepare writes in the
+	 * prep_queue, and reassemble those that share the same handle.
+	 * Once a handle has been ressembled, it is sent to the upper layers,
+	 * and the next handle is processed
+	 */
+	while (!sys_slist_is_empty(&chan->att->prep_queue)) {
+		struct net_buf *entry, *next;
+		struct bt_attr_data *data;
+		sys_snode_t *prev = NULL;
+		uint16_t handle;
 
-		BT_DBG("buf %p handle 0x%04x offset %u", buf, data->handle,
-		       data->offset);
+		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
+					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
+						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_MTU));
+
+		buf = net_buf_slist_get(&chan->att->prep_queue);
+		data = net_buf_user_data(buf);
+		handle = data->handle;
+
+		BT_DBG("buf %p handle 0x%04x offset %u",
+		       buf, handle, data->offset);
+
+		net_buf_simple_reset(&reassembled_data);
+		net_buf_simple_add_mem(&reassembled_data, buf->data, buf->len);
+
+		prev = NULL;
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&chan->att->prep_queue, entry, next, node) {
+			struct bt_attr_data *tmp_data = net_buf_user_data(entry);
+
+			BT_DBG("entry %p handle 0x%04x, offset %u",
+			       entry, tmp_data->handle, tmp_data->offset);
+
+			if (tmp_data->handle == handle) {
+				if (tmp_data->offset == 0) {
+					/* Multiple writes to the same handle
+					 * can occur in a prepare write queue.
+					 * If the offset is 0, that should mean
+					 * that it's a new write to the same
+					 * handle, and we break to process the
+					 * first write.
+					 */
+
+					BT_DBG("tmp_data->offset == 0");
+					break;
+				}
+
+				if (tmp_data->offset != reassembled_data.len + data->offset) {
+					/* We require that the offset is
+					 * increasing properly to avoid badly
+					 * reassembled buffers
+					 */
+
+					BT_DBG("Bad offset %u (%u, %u)",
+					       tmp_data->offset,
+					       reassembled_data.len,
+					       data->offset);
+
+					send_err_rsp(chan,
+						     BT_ATT_OP_EXEC_WRITE_REQ,
+						     handle,
+						     BT_ATT_ERR_INVALID_OFFSET);
+
+					return 0;
+
+				}
+
+				if (reassembled_data.len + entry->len > reassembled_data.size) {
+					/* Respond here since handle is set */
+					send_err_rsp(chan,
+						     BT_ATT_OP_EXEC_WRITE_REQ,
+						     handle,
+						     BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+
+					return 0;
+				}
+
+				net_buf_simple_add_mem(&reassembled_data,
+						       entry->data, entry->len);
+				sys_slist_remove(&chan->att->prep_queue, prev,
+						 &entry->node);
+				net_buf_unref(entry);
+			} else {
+				prev = &entry->node;
+			}
+		}
 
 		/* Just discard the data if an error was set */
 		if (!err && flags == BT_ATT_FLAG_EXEC) {
 			err = att_write_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, 0,
-					    data->handle, data->offset,
-					    buf->data, buf->len);
+					    handle, data->offset,
+					    reassembled_data.data,
+					    reassembled_data.len);
 			if (err) {
 				/* Respond here since handle is set */
 				send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
