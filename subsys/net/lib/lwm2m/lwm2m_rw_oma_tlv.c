@@ -87,14 +87,6 @@ struct oma_tlv {
 	uint32_t length;
 };
 
-struct tlv_out_formatter_data {
-	/* offset position storage */
-	uint16_t mark_pos;
-	uint16_t mark_pos_oi;
-	uint16_t mark_pos_ri;
-	uint8_t writer_flags;
-};
-
 static uint8_t get_len_type(const struct oma_tlv *tlv)
 {
 	if (tlv->length < 8) {
