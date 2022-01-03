@@ -1878,6 +1878,59 @@ static uint8_t att_prepare_write_req(struct bt_att_chan *chan, struct net_buf *b
 }
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
+static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
+				     sys_slist_t *list,
+				     struct net_buf_simple *buf)
+{
+	struct net_buf *entry, *next;
+	sys_snode_t *prev;
+
+	prev = NULL;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, entry, next, node) {
+		struct bt_attr_data *tmp_data = net_buf_user_data(entry);
+
+		BT_DBG("entry %p handle 0x%04x, offset %u",
+			entry, tmp_data->handle, tmp_data->offset);
+
+		if (tmp_data->handle == handle) {
+			if (tmp_data->offset == 0) {
+				/* Multiple writes to the same handle can occur
+				 * in a prepare write queue. If the offset is 0,
+				 * that should mean that it's a new write to the
+				 * same handle, and we break to process the
+				 * first write.
+				 */
+
+				BT_DBG("tmp_data->offset == 0");
+				break;
+			}
+
+			if (tmp_data->offset != buf->len + offset) {
+				/* We require that the offset is increasing
+				 * properly to avoid badly reassembled buffers
+				 */
+
+				BT_DBG("Bad offset %u (%u, %u)",
+					tmp_data->offset, buf->len, offset);
+
+				return BT_ATT_ERR_INVALID_OFFSET;
+			}
+
+			if (buf->len + entry->len > buf->size) {
+				return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+			}
+
+			net_buf_simple_add_mem(buf, entry->data, entry->len);
+			sys_slist_remove(list, prev, &entry->node);
+			net_buf_unref(entry);
+		} else {
+			prev = &entry->node;
+		}
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+
 static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 {
 	struct bt_conn *conn = chan->chan.chan.conn;
@@ -1890,9 +1943,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 	 * and the next handle is processed
 	 */
 	while (!sys_slist_is_empty(&chan->att->prep_queue)) {
-		struct net_buf *entry, *next;
 		struct bt_attr_data *data;
-		sys_snode_t *prev = NULL;
 		uint16_t handle;
 
 		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
@@ -1909,65 +1960,13 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		net_buf_simple_reset(&reassembled_data);
 		net_buf_simple_add_mem(&reassembled_data, buf->data, buf->len);
 
-		prev = NULL;
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&chan->att->prep_queue, entry, next, node) {
-			struct bt_attr_data *tmp_data = net_buf_user_data(entry);
-
-			BT_DBG("entry %p handle 0x%04x, offset %u",
-			       entry, tmp_data->handle, tmp_data->offset);
-
-			if (tmp_data->handle == handle) {
-				if (tmp_data->offset == 0) {
-					/* Multiple writes to the same handle
-					 * can occur in a prepare write queue.
-					 * If the offset is 0, that should mean
-					 * that it's a new write to the same
-					 * handle, and we break to process the
-					 * first write.
-					 */
-
-					BT_DBG("tmp_data->offset == 0");
-					break;
-				}
-
-				if (tmp_data->offset != reassembled_data.len + data->offset) {
-					/* We require that the offset is
-					 * increasing properly to avoid badly
-					 * reassembled buffers
-					 */
-
-					BT_DBG("Bad offset %u (%u, %u)",
-					       tmp_data->offset,
-					       reassembled_data.len,
-					       data->offset);
-
-					send_err_rsp(chan,
-						     BT_ATT_OP_EXEC_WRITE_REQ,
-						     handle,
-						     BT_ATT_ERR_INVALID_OFFSET);
-
-					return 0;
-
-				}
-
-				if (reassembled_data.len + entry->len > reassembled_data.size) {
-					/* Respond here since handle is set */
-					send_err_rsp(chan,
-						     BT_ATT_OP_EXEC_WRITE_REQ,
-						     handle,
-						     BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-
-					return 0;
-				}
-
-				net_buf_simple_add_mem(&reassembled_data,
-						       entry->data, entry->len);
-				sys_slist_remove(&chan->att->prep_queue, prev,
-						 &entry->node);
-				net_buf_unref(entry);
-			} else {
-				prev = &entry->node;
-			}
+		err = exec_write_reassemble(handle, data->offset,
+					    &chan->att->prep_queue,
+					    &reassembled_data);
+		if (err != BT_ATT_ERR_SUCCESS) {
+			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
+				     handle, err);
+			return 0;
 		}
 
 		/* Just discard the data if an error was set */
