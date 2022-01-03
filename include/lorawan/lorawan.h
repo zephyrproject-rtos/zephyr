@@ -182,6 +182,16 @@ void lorawan_register_dr_changed_callback(void (*dr_cb)(enum lorawan_datarate));
  */
 int lorawan_join(const struct lorawan_join_config *config);
 
+
+/**
+ * Initialize the LoRaWAN stack.
+ *
+ * Must be called before any other lorawan_xxx() functions
+ *
+ * @return 0 if successful, negative errno code if failure
+ */
+int lorawan_init(void);
+
 /**
  * @brief Start the LoRaWAN stack
  *

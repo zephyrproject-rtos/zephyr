@@ -1,0 +1,8 @@
+# LoRaWAN Secure Element settings configuration options
+
+# Copyright (c) 2021 Intellinium <giuliano.franchetto@intellinium.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LORAWAN_SE_SETTINGS_USE_ENCRYPTED
+	bool "Encrypt keys stored in settings"
+	default n

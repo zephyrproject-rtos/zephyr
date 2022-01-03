@@ -1,13 +1,13 @@
 # LoRaWAN configuration options
 
 # Copyright (c) 2020 Manivannan Sadhasivam <mani@kernel.org>
+# Copyright (c) 2021 Intellinium <giuliano.franchetto@intellinium.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig LORAWAN
 	bool "LoRaWAN support [EXPERIMENTAL]"
 	depends on LORA
 	select HAS_SEMTECH_LORAMAC
-	select HAS_SEMTECH_SOFT_SE
 	select EXPERIMENTAL
 	help
 	  This option enables LoRaWAN support.
@@ -65,5 +65,7 @@ config LORAMAC_REGION_RU864
 	bool "Russia 864MHz Frequency band"
 
 endchoice
+
+rsource "se/Kconfig"
 
 endif # LORAWAN

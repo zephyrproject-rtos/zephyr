@@ -1,0 +1,38 @@
+# LoRaWAN Secure Element configuration options
+
+# Copyright (c) 2021 Intellinium <giuliano.franchetto@intellinium.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LORAWAN_SE_HAS_OWN_NVM
+	bool
+
+choice LORAWAN_SE
+	bool "LoRaWAN Secure element backend"
+	default LORAWAN_SE_SETTINGS if SETTINGS
+	default LORAWAN_SE_SOFT
+
+config LORAWAN_SE_SOFT
+	bool "Software secure element backend"
+
+config LORAWAN_SE_SETTINGS
+	bool "nRFx series Key management secure element backend"
+	select MBEDTLS
+	depends on SETTINGS
+	help
+	  This option also links mbedTLS to manage all the
+	  cryptographic operations.
+
+endchoice
+
+config LORAWAN_SE_GENERATE_DEVEUI
+	bool "Generate devEUI automatically using hardware information"
+	select HWINFO
+	help
+	  The devEUI will be generated using the unique
+	  identifier of the board.
+	  If this option is enabled, the devEUI shall never be
+	  updated.
+
+if (LORAWAN_SE_SETTINGS)
+rsource "settings-se/Kconfig"
+endif

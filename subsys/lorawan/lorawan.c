@@ -576,7 +576,7 @@ int lorawan_start(void)
 	return 0;
 }
 
-static int lorawan_init(const struct device *dev)
+int lorawan_init(void)
 {
 	LoRaMacStatus_t status;
 
@@ -591,6 +591,7 @@ static int lorawan_init(const struct device *dev)
 	macCallbacks.NvmDataChange = NULL;
 	macCallbacks.MacProcessNotify = OnMacProcessNotify;
 
+
 	status = LoRaMacInitialization(&macPrimitives, &macCallbacks,
 				       LORAWAN_REGION);
 	if (status != LORAMAC_STATUS_OK) {
@@ -603,5 +604,3 @@ static int lorawan_init(const struct device *dev)
 
 	return 0;
 }
-
-SYS_INIT(lorawan_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
