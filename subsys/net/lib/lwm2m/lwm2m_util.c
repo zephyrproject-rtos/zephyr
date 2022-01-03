@@ -355,6 +355,7 @@ int lwm2m_atof(const char *input, double *out)
 	val2 = 0;
 
 	if (!pos) {
+		*out = (double)val1;
 		return 0;
 	}
 
