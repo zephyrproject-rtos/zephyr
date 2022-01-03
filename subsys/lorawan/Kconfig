@@ -68,4 +68,6 @@ endchoice
 
 rsource "se/Kconfig"
 
+rsource "nvm/Kconfig"
+
 endif # LORAWAN

@@ -576,6 +576,10 @@ int lorawan_start(void)
 	return 0;
 }
 
+#if !defined(CONFIG_LORAWAN_NVM_NONE)
+#include "nvm/lorawan_nvm.h"
+#endif
+
 int lorawan_init(void)
 {
 	LoRaMacStatus_t status;
@@ -588,7 +592,11 @@ int lorawan_init(void)
 	macPrimitives.MacMlmeIndication = MlmeIndication;
 	macCallbacks.GetBatteryLevel = getBatteryLevelLocal;
 	macCallbacks.GetTemperatureLevel = NULL;
+#if !defined(CONFIG_LORAWAN_NVM_NONE)
+	macCallbacks.NvmDataChange = lorawan_nvm_data_mgmt_event;
+#else
 	macCallbacks.NvmDataChange = NULL;
+#endif
 	macCallbacks.MacProcessNotify = OnMacProcessNotify;
 
 
@@ -599,6 +607,11 @@ int lorawan_init(void)
 			lorawan_status2str(status));
 		return -EINVAL;
 	}
+
+#if !defined(CONFIG_LORAWAN_NVM_NONE)
+	lorawan_nvm_data_restore();
+#endif
+
 
 	LOG_DBG("LoRaMAC Initialized");
 

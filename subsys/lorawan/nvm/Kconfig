@@ -1,0 +1,22 @@
+# LoRaWAN Non Volatile Memory configuration options
+
+# Copyright (c) 2021 Intellinium <giuliano.franchetto@intellinium.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice LORAWAN_NVM
+	bool "LoRaWAN NVM backend"
+	default LORAWAN_NVM_SETTINGS if SETTINGS
+	default LORAWAN_NVM_NONE
+
+config LORAWAN_NVM_NONE
+	bool "No NVM backend for LoRaWAN"
+	help
+	  This configuration should only be used during testing as all
+	  the join request using OTAA will fail because of anti-replay
+	  protection
+
+config LORAWAN_NVM_SETTINGS
+	bool "Settings based NVM"
+	depends on SETTINGS
+
+endchoice
