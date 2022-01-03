@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # GATT regression tests based on the EDTTool
-SIMULATION_ID="edtt_gatt"
+SIMULATION_ID="edtt_gatt_llcp"
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
 CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
