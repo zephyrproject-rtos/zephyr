@@ -574,12 +574,14 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 static void rssi_handler(struct k_work *work)
 {
 	int ret;
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem, rssi_work_handle);
 #if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
-	ret = modem_cmd_send_nolock(&gsm.context.iface, &gsm.context.cmd_handler,
-		&read_rssi_cmd, 1, "AT+CESQ", &gsm.sem_response, GSM_CMD_SETUP_TIMEOUT);
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&read_rssi_cmd, 1, "AT+CESQ", &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 #else
-	ret = modem_cmd_send_nolock(&gsm.context.iface, &gsm.context.cmd_handler,
-		&read_rssi_cmd, 1, "AT+CSQ", &gsm.sem_response, GSM_CMD_SETUP_TIMEOUT);
+	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+		&read_rssi_cmd, 1, "AT+CSQ", &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 #endif
 
 	if (ret < 0) {
@@ -588,9 +590,9 @@ static void rssi_handler(struct k_work *work)
 
 #if defined(CONFIG_GSM_MUX)
 #if defined(CONFIG_MODEM_CELL_INFO)
-	(void)gsm_query_cellinfo(&gsm);
+	(void)gsm_query_cellinfo(gsm);
 #endif
-	(void)gsm_work_reschedule(&gsm.rssi_work_handle,
+	(void)gsm_work_reschedule(&gsm->rssi_work_handle,
 				  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 #endif
 
@@ -864,7 +866,8 @@ static int mux_attach(const struct device *mux, const struct device *uart,
 
 static void mux_setup(struct k_work *work)
 {
-	struct gsm_modem *gsm = CONTAINER_OF(work, struct gsm_modem,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem,
 					     gsm_configure_work);
 	const struct device *uart = DEVICE_DT_GET(GSM_UART_NODE);
 	int ret;
@@ -967,7 +970,8 @@ fail:
 
 static void gsm_configure(struct k_work *work)
 {
-	struct gsm_modem *gsm = CONTAINER_OF(work, struct gsm_modem,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem,
 					     gsm_configure_work);
 	int ret = -1;
 
