@@ -146,8 +146,13 @@ static void set_sm_state(uint8_t sm_state)
 	if (client.engine_state == ENGINE_UPDATE_SENT &&
 	    sm_state == ENGINE_REGISTRATION_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE;
+		client.ctx->conn_status = LWM2M_CLIENT_CONNECTED;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
+		client.ctx->conn_status = LWM2M_CLIENT_CONNECTED;
+
+		lwm2m_engine_clear_observers(client.ctx);
+
 	} else if (sm_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
 		event = LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF;
 	} else if ((sm_state == ENGINE_INIT ||
@@ -204,6 +209,8 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 		} else {
 			/* TODO: unknown timeout state */
 		}
+
+		client.ctx->conn_status = LWM2M_CLIENT_OFFLINE;
 	}
 
 	set_sm_state(sm_state);
@@ -229,6 +236,8 @@ static void sm_handle_failure_state(enum sm_engine_state sm_state)
 	} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
 	}
+
+	client.ctx->conn_status = LWM2M_CLIENT_OFFLINE;
 
 	set_sm_state(sm_state);
 
@@ -1091,6 +1100,7 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 	client.ctx->observe_cb = observe_cb;
 	client.event_cb = event_cb;
 	client.use_bootstrap = flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP;
+	client.ctx->conn_status = LWM2M_CLIENT_CONNECTED;
 
 	set_sm_state(ENGINE_INIT);
 	strncpy(client.ep_name, ep_name, CLIENT_EP_LEN - 1);

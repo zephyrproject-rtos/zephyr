@@ -103,6 +103,67 @@ typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_
 				   void *user_data);
 
 /**
+ * @brief Structure for keeping track of notification payload and bookeeping
+ * information
+ *
+ */
+struct lwm2m_notif {
+	struct lwm2m_obj_path path;
+
+	uint8_t payload[CONFIG_LWM2M_COAP_MAX_MSG_SIZE];
+	uint16_t size;
+};
+
+/**
+ * @brief API call for popping a single notification from NVS
+ *
+ * Pop function will retrieve a single LWM2M notification from underlying
+ * user storage.
+ *
+ * @param[out] notif Pointer to location where notification will be copied
+ *
+ * @return returns a negative error code (errno.h) indicating
+ *         reason of failure or 0 for success.
+ */
+typedef int (*lwm2m_notif_pop_t)(struct lwm2m_notif *notif);
+
+/**
+ * @brief API call for pushing a single notification to NVS
+ *
+ * Push function will push a single LWM2M notification from underlying
+ * user storage.
+ *
+ * @param[in] notif Pointer to notification message to be stored
+ *
+ * @return returns a negative error code (errno.h) indicating
+ *         reason of failure or 0 for success.
+ */
+typedef int (*lwm2m_notif_push_t)(struct lwm2m_notif *notif);
+
+/**
+ * @brief API call for checking if there are any notifications left
+ *
+ * @return true in case there are no notifications left
+ *         false in case there are more notifications
+ */
+typedef bool (*lwm2m_notif_is_empty_t)(void);
+
+struct lwm2m_notif_api {
+	lwm2m_notif_pop_t pop;
+	lwm2m_notif_push_t push;
+	lwm2m_notif_is_empty_t is_empty;
+};
+
+/**
+ * @brief LwM2M connection status
+ */
+enum lwm2m_ctx_conn_status {
+	LWM2M_CLIENT_CONNECTED,
+	LWM2M_CLIENT_DISABLED,
+	LWM2M_CLIENT_OFFLINE,
+};
+
+/**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
  */
@@ -172,6 +233,12 @@ struct lwm2m_ctx {
 	 */
 	lwm2m_observe_cb_t observe_cb;
 
+	const struct lwm2m_notif_api *notif_api;
+
+	struct k_work_delayable send_stored_notif_work;
+
+	enum lwm2m_ctx_conn_status conn_status;
+
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
 	 *  copied into the actual resource buffer.
@@ -179,6 +246,16 @@ struct lwm2m_ctx {
 	uint8_t validate_buf[CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE];
 };
 
+/**
+ * @brief Start resending notifications from storage medium
+ *
+ * Function uses system workqueue to resend notifications previously
+ * stored using notifications storing API
+ *
+ * @param client_ctx LwM2M context
+ * @return 0 for success or negative in case of error
+ */
+int lwm2m_resend_notifications(struct lwm2m_ctx *client_ctx);
 
 /**
  * @brief Asynchronous callback to get a resource buffer and length.

@@ -58,6 +58,7 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
 
 int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id);
 int lwm2m_notify_observer_path(struct lwm2m_obj_path *path);
+void lwm2m_engine_clear_observers(struct lwm2m_ctx *client_ctx);
 
 void lwm2m_register_obj(struct lwm2m_engine_obj *obj);
 void lwm2m_unregister_obj(struct lwm2m_engine_obj *obj);

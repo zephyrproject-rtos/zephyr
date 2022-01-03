@@ -17,6 +17,13 @@ module-dep = LOG
 module-str = Log level for LWM2M library
 source "subsys/net/Kconfig.template.log_config.net"
 
+config LWM2M_NOTIF_STORING_SUPPORT
+	bool "Enable notification storing when Disabled or Offline"
+	help
+	  If true, LWM2M engine will use general API for storing and
+	  retrieving notifications from non-volatile storage. It's up to
+	  user to provide API implementation
+
 config LWM2M_DTLS_SUPPORT
 	bool "Enable DTLS support in the LwM2M client"
 	select TLS_CREDENTIALS

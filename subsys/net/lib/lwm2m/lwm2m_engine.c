@@ -92,6 +92,8 @@ struct notification_attrs {
 	uint8_t flags;
 };
 
+static void send_stored_notif_work_fn(struct k_work *work);
+
 static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 
 #define MAX_PERIODIC_SERVICE	10
@@ -573,6 +575,21 @@ static int engine_remove_observer_by_token(struct lwm2m_ctx *ctx, const uint8_t 
 	return 0;
 }
 
+void lwm2m_engine_clear_observers(struct lwm2m_ctx *client_ctx)
+{
+	sys_snode_t *obs_node;
+	struct observe_node *obs;
+
+	LOG_DBG("Clearing all observers");
+
+	/* Remove observes for this context */
+	while (!sys_slist_is_empty(&client_ctx->observer)) {
+		obs_node = sys_slist_get_not_empty(&client_ctx->observer);
+		obs = SYS_SLIST_CONTAINER(obs_node, obs, node);
+		remove_observer_from_list(client_ctx, NULL, obs);
+	}
+}
+
 #if defined(CONFIG_LOG)
 char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
 {
@@ -1001,6 +1018,9 @@ cleanup:
 
 int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
+	/* TODO: Add mutex here because buffered notifs will be sent from
+	 * system workqueue context
+	 */
 	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 	return 0;
 }
@@ -1039,6 +1059,11 @@ static int lwm2m_send_message(struct lwm2m_message *msg)
 	}
 
 	return 0;
+}
+
+int lwm2m_resend_notifications(struct lwm2m_ctx *client_ctx)
+{
+	return k_work_reschedule(&client_ctx->send_stored_notif_work, K_NO_WAIT);
 }
 
 int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
@@ -4155,15 +4180,55 @@ static int32_t retransmit_request(struct lwm2m_ctx *client_ctx,
 				continue;
 			}
 
+			/* Print observer path for which notifications is being
+			 * retransmitted
+			 */
+			struct coap_option obs_opt;
+
+			if (coap_find_options(&msg->cpkt, COAP_OPTION_OBSERVE, &obs_opt, 1)) {
+				LOG_DBG("Resending notif for: %d/%d/%d  %p", msg->path.obj_id,
+					msg->path.obj_inst_id, msg->path.res_id, msg);
+			}
+
 			lwm2m_send_message_async(msg);
 			break;
 		}
+
 		if (remaining < next_retransmission) {
 			next_retransmission = remaining;
 		}
 	}
 
 	return next_retransmission;
+}
+
+static int lwm2m_store_notification(struct lwm2m_message *msg)
+{
+	struct lwm2m_notif notif;
+
+	/*
+	 * Underlying CoAP packet structure contains payload which is located
+	 * after header and option bytes. Payload is always prefixed by payload
+	 * marker byte (0xFF).
+	 *
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |   Header + Token
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |   Options (if any) ...
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 * |1 1 1 1 1 1 1 1| Payload
+	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 */
+
+	/* Store notification observer path */
+	memcpy(&notif.path, &msg->path, sizeof(notif.path));
+
+	/* Parse and store payload and its size */
+	const uint8_t *payload = coap_packet_get_payload(&msg->cpkt, &notif.size);
+
+	memcpy(notif.payload, payload, notif.size);
+
+	return msg->ctx->notif_api->push(&notif);
 }
 
 static void notify_message_timeout_cb(struct lwm2m_message *msg)
@@ -4177,7 +4242,15 @@ static void notify_message_timeout_cb(struct lwm2m_message *msg)
 		}
 	}
 
-	LOG_ERR("Notify Message Timed Out : %p", msg);
+	LOG_WRN("Notify Message Timed Out : %p", msg);
+
+	int err = lwm2m_store_notification(msg);
+
+	if (err) {
+		LOG_ERR("Error storing notification: %d", err);
+	} else {
+		LOG_INF("Message stored to storage medium");
+	}
 }
 
 static int notify_message_reply_cb(const struct coap_packet *response,
@@ -4232,7 +4305,8 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 static int generate_notify_message(struct lwm2m_ctx *ctx,
 				   struct observe_node *obs,
 				   bool manual_trigger,
-				   void *user_data)
+				   void *user_data,
+				   struct lwm2m_notif *notif)
 {
 	struct lwm2m_message *msg;
 	struct lwm2m_engine_obj_inst *obj_inst;
@@ -4295,23 +4369,108 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 		goto cleanup;
 	}
 
-	/* set the output writer */
-	select_writer(&msg->out, obs->format);
+	if (notif) {
+		/* We need to add content format manually here because it's usually
+		 * added in the do_read_op
+		 */
+		ret = coap_append_option_int(msg->out.out_cpkt,
+						COAP_OPTION_CONTENT_FORMAT,
+						obs->format);
+		if (ret < 0) {
+			LOG_ERR("Error setting response content-format: %d", ret);
+			return ret;
+		}
 
-	ret = do_read_op(msg, obs->format);
-	if (ret < 0) {
-		LOG_ERR("error in multi-format read (err:%d)", ret);
-		goto cleanup;
+		ret = coap_packet_append_payload_marker(msg->out.out_cpkt);
+		if (ret < 0) {
+			LOG_ERR("Error appending payload marker: %d", ret);
+			return ret;
+		}
+
+		ret = coap_packet_append_payload(&msg->cpkt, notif->payload, notif->size);
+		if (ret < 0) {
+			LOG_ERR("Error appending payload: %d", ret);
+			return ret;
+		}
+	} else {
+		/* set the output writer */
+		select_writer(&msg->out, obs->format);
+
+		ret = do_read_op(msg, obs->format);
+		if (ret < 0) {
+			LOG_ERR("error in multi-format read (err:%d)", ret);
+			goto cleanup;
+		}
 	}
 
-	lwm2m_send_message_async(msg);
+	if (ctx->conn_status == LWM2M_CLIENT_CONNECTED) {
+		lwm2m_send_message_async(msg);
+		LOG_DBG("NOTIFY MSG: SENT");
+	} else {
+		int err = lwm2m_store_notification(msg);
+		if (err)	{
+			LOG_ERR("Error storing notification: %d", err);
+		} else {
+			LOG_INF("Message stored to storage medium");
+		}
+		lwm2m_reset_message(msg, true);
+	}
 
-	LOG_DBG("NOTIFY MSG: SENT");
 	return 0;
 
 cleanup:
 	lwm2m_reset_message(msg, true);
 	return ret;
+}
+
+static void send_stored_notif_work_fn(struct k_work *work)
+{
+	int ret = 0;
+	struct lwm2m_ctx *ctx = CONTAINER_OF(work, struct lwm2m_ctx,
+		send_stored_notif_work);
+	struct lwm2m_notif notif;
+	struct observe_node *obs;
+
+	if (!ctx->notif_api->is_empty()) {
+		ret = ctx->notif_api->pop(&notif);
+
+		if (ret) {
+			LOG_WRN("Failed to pop notification, ret: %d", ret);
+		} else {
+			LOG_INF("Send stored notification");
+
+			/* extract this to function (also refactor notify_observer) */
+			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->observer, obs, node) {
+				if (obs->path.obj_id == notif.path.obj_id &&
+					obs->path.obj_inst_id == notif.path.obj_inst_id &&
+					(obs->path.level < 3 ||
+					obs->path.res_id == notif.path.res_id)) {
+
+						ret = generate_notify_message(ctx, obs, true, NULL, &notif);
+
+						if (ret) {
+							LOG_ERR("Failed to generate stored notification");
+							ctx->notif_api->push(&notif);
+
+							LOG_INF("Rescheduling work in 1 second");
+							k_work_reschedule(
+								k_work_delayable_from_work(work), K_SECONDS(1));
+						} else {
+							k_work_reschedule(
+								k_work_delayable_from_work(work), K_NO_WAIT);
+						}
+				}
+			}
+
+			/* If work has not been queued up to this point, queue it */
+			if (!(k_work_busy_get(work) & (K_WORK_QUEUED | K_WORK_DELAYED))) {
+				k_work_reschedule(
+						k_work_delayable_from_work(work), K_NO_WAIT);
+			}
+		}
+	} else {
+		LOG_INF("No notifications stored.. Skipping");
+	}
 }
 
 static int32_t engine_next_service_timeout_ms(uint32_t max_timeout,
@@ -4402,27 +4561,23 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 {
 	int sock_fd = client_ctx->sock_fd;
 	struct lwm2m_message *msg;
-	sys_snode_t *obs_node;
-	struct observe_node *obs;
 	size_t i;
 
-	/* Remove observes for this context */
-	while (!sys_slist_is_empty(&client_ctx->observer)) {
-		obs_node = sys_slist_get_not_empty(&client_ctx->observer);
-		obs = SYS_SLIST_CONTAINER(obs_node, obs, node);
-		remove_observer_from_list(client_ctx, NULL, obs);
-	}
+	if (client_ctx->conn_status == LWM2M_CLIENT_CONNECTED) {
+		lwm2m_engine_clear_observers(client_ctx);
 
-	for (i = 0, msg = messages; i < ARRAY_SIZE(messages); i++, msg++) {
-		if (msg->ctx == client_ctx) {
-			lwm2m_reset_message(msg, true);
+		for (i = 0, msg = messages; i < ARRAY_SIZE(messages); i++, msg++) {
+			if (msg->ctx == client_ctx) {
+				lwm2m_reset_message(msg, true);
+			}
 		}
+
+		coap_pendings_clear(client_ctx->pendings,
+					CONFIG_LWM2M_ENGINE_MAX_PENDING);
+		coap_replies_clear(client_ctx->replies,
+				CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	}
 
-	coap_pendings_clear(client_ctx->pendings,
-			    CONFIG_LWM2M_ENGINE_MAX_PENDING);
-	coap_replies_clear(client_ctx->replies,
-			   CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 
 	lwm2m_socket_del(client_ctx);
 	client_ctx->sock_fd = -1;
@@ -4435,8 +4590,12 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 {
-	sys_slist_init(&client_ctx->pending_sends);
-	sys_slist_init(&client_ctx->observer);
+	if (client_ctx->conn_status == LWM2M_CLIENT_CONNECTED) {
+		sys_slist_init(&client_ctx->pending_sends);
+		sys_slist_init(&client_ctx->observer);
+		k_work_init_delayable(&client_ctx->send_stored_notif_work,
+			send_stored_notif_work_fn);
+	}
 }
 
 /* LwM2M Socket Integration */
@@ -4510,7 +4669,7 @@ static void check_notifications(struct lwm2m_ctx *ctx,
 		if (!manual_notify && !automatic_notify) {
 			continue;
 		}
-		rc = generate_notify_message(ctx, obs, manual_notify, NULL);
+		rc = generate_notify_message(ctx, obs, manual_notify, NULL, NULL);
 		if (rc == -ENOMEM) {
 			/* no memory/messages available, retry later */
 			return;

@@ -442,6 +442,10 @@ static void rd_client_event(struct lwm2m_ctx *client,
 
 	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
 		LOG_DBG("Registration update complete");
+
+#if defined(CONFIG_LWM2M_NOTIF_STORING_SUPPORT)
+		lwm2m_resend_notifications(client);
+#endif
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE:
@@ -491,6 +495,169 @@ static void observe_cb(enum lwm2m_observe_event event,
 	}
 }
 
+#if defined(CONFIG_LWM2M_NOTIF_STORING_SUPPORT)
+
+/* -------------------------------------------------------------------- */
+/* --------------------- FLASH CIRCULAR BUFFER------------------------- */
+/* -------------------------------------------------------------------- */
+
+#include <fs/fcb.h>
+
+#define NUMBER_OF_SECTORS			(16u)
+
+static struct flash_sector fcb_area[NUMBER_OF_SECTORS];
+static struct fcb fc_buffer;
+
+void print_entry_info(struct fcb_entry *loc)
+{
+	LOG_DBG(
+		"Data offset: %d, elem offset: %d, elem size: %d, \
+sector [0x%08lx,0x%08lx]\n",
+		loc->fe_data_off,
+		loc->fe_elem_off,
+		loc->fe_data_len,
+		loc->fe_sector->fs_off,
+		loc->fe_sector->fs_off + loc->fe_sector->fs_size);
+}
+
+int append_data(void *data, size_t len)
+{
+	int rc;
+	struct fcb_entry loc;
+
+append:
+	rc = fcb_append(&fc_buffer, len, &loc);
+	if (rc)	{
+		if (rc == -ENOSPC) {
+			LOG_WRN("FCB is full. Rotating...");
+			fcb_rotate(&fc_buffer);
+			goto append;
+		} else {
+			LOG_ERR("fcb_append failed, error: %d\n", rc);
+		}
+	} else {
+		rc = flash_area_write(fc_buffer.fap, FCB_ENTRY_FA_DATA_OFF(loc), data, len);
+		if (rc)	{
+			LOG_ERR("flash_area_write failed, error: %d\n", rc);
+		} else {
+			LOG_DBG("Entry appended into flash");
+			loc.fe_data_len = len;
+			print_entry_info(&loc);
+		}
+	}
+
+	rc = fcb_append_finish(&fc_buffer, &loc);
+	if (rc) {
+		LOG_ERR("fcb_append_finish failed, error: %d\n", rc);
+	}
+
+	return rc;
+}
+
+int read_next_entry(void *data, size_t *size)
+{
+	int rc;
+	static struct fcb_entry loc;
+
+	rc = fcb_getnext(&fc_buffer, &loc);
+	if (rc) {
+		LOG_WRN("Failed to get next entry, error: %d\n", rc);
+
+		/* clear FCB in case this was the last entry - ENOTSUP is returned in
+		 * case next entry can not be read which is safe to assume there are no
+		 * more entries left
+		 */
+		if (rc == -ENOTSUP) {
+			int ret = fcb_clear(&fc_buffer);
+
+			if (ret) {
+				LOG_WRN("Failed to clear FCB, err: %d", ret);
+			} else {
+				LOG_WRN("Cleared FCB");
+			}
+		}
+	} else {
+		rc = flash_area_read(fc_buffer.fap, FCB_ENTRY_FA_DATA_OFF(loc),
+				data, loc.fe_data_len);
+		if (rc)	{
+			LOG_ERR("flash_area_write failed, error: %d\n", rc);
+		} else {
+			LOG_DBG("Entry read from flash");
+			print_entry_info(&loc);
+			*size = loc.fe_data_len;
+		}
+	}
+
+	return rc;
+}
+
+BUILD_ASSERT(FLASH_AREA_LABEL_EXISTS(lwm2m_notif_storage),
+	"Flash must contain partition for storing lwm2m notifications");
+
+int fcb_setup(void)
+{
+#if FLASH_AREA_ID(lwm2m_notif_storage)
+	int rc;
+	uint32_t cnt = ARRAY_SIZE(fcb_area);
+
+
+	rc = flash_area_get_sectors(FLASH_AREA_ID(lwm2m_notif_storage), &cnt,
+			fcb_area);
+	if (rc == -ENODEV) {
+		LOG_ERR("Failed to get flash sectors, error: %d\n", rc);
+	} else if (rc != 0 && rc != -ENOMEM) {
+		k_panic();
+	} else {
+		fc_buffer.f_magic = 0xABCD4321;
+		fc_buffer.f_version = 1;
+		fc_buffer.f_scratch_cnt = 1;
+		fc_buffer.f_sectors = fcb_area;
+		fc_buffer.f_sector_cnt = cnt;
+
+		rc = fcb_init(FLASH_AREA_ID(lwm2m_notif_storage), &fc_buffer);
+
+		if (rc) {
+			LOG_ERR("Failed to initialise FCB, error: %d\n", rc);
+		}
+	}
+
+	return rc;
+
+#else
+	return -EIO;
+#endif
+}
+
+/* -------------------------------------------------------------------- */
+
+int lwm2m_notif_push(struct lwm2m_notif *notif)
+{
+	return append_data(notif, sizeof(notif->path) + notif->size);
+}
+
+int lwm2m_notif_pop(struct lwm2m_notif *notif)
+{
+	size_t size = 0;
+	int rc = read_next_entry(notif, &size);
+
+	notif->size = size - sizeof(notif->path);
+
+	return rc;
+}
+
+bool lwm2m_notif_is_empty(void)
+{
+	return fcb_is_empty(&fc_buffer);
+}
+
+const struct lwm2m_notif_api notif_api = {
+	.push = lwm2m_notif_push,
+	.pop = lwm2m_notif_pop,
+	.is_empty = lwm2m_notif_is_empty
+};
+
+#endif
+
 void main(void)
 {
 	uint32_t flags = IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) ?
@@ -501,6 +668,13 @@ void main(void)
 
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
+#if defined(CONFIG_LWM2M_NOTIF_STORING_SUPPORT)
+	ret = fcb_setup();
+	if (ret < 0) {
+		LOG_ERR("Failed to setup FCB, err: %d", ret);
+	}
+#endif
+
 	ret = lwm2m_setup();
 	if (ret < 0) {
 		LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
@@ -510,6 +684,10 @@ void main(void)
 	(void)memset(&client, 0x0, sizeof(client));
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	client.tls_tag = TLS_TAG;
+#endif
+
+#if defined(CONFIG_LWM2M_NOTIF_STORING_SUPPORT)
+	client.notif_api = &notif_api;
 #endif
 
 #if defined(CONFIG_HWINFO)
