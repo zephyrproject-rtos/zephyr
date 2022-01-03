@@ -63,6 +63,7 @@
 		led2 = &green_led_3;
 		led3 = &red_led_4;
 		sw0 = &user_button;
+		kscan0 = &touch_controller;
 	};
 };
 
@@ -111,6 +112,20 @@ arduino_serial: &usart6 {};
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	touch_controller: ft6202@2a {
+		compatible = "focaltech,ft5336";
+		reg = <0x2a>;
+		label = "FT6202";
+		int-gpios = <&gpioi 13 0>;
+	};
 };
 
 &spi2 {
