@@ -13,8 +13,6 @@
 
 #include <zephyr/types.h>
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #if defined(CONFIG_SOC_PART_NUMBER_SAME51J18A)
 #include <same51j18a.h>

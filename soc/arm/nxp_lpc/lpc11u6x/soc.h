@@ -18,8 +18,6 @@
 #ifndef _ASMLANGUAGE
 #include <sys/util.h>
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #endif /* !_ASMLANGUAGE */
 

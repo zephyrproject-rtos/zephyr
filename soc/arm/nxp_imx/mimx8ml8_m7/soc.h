@@ -13,8 +13,6 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #include <fsl_device_registers.h>
 
