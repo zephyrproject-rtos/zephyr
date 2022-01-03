@@ -189,6 +189,26 @@ The sample can be built and executed for the
 
 Bridge the JP23 to DAC with the jumper cap, then DAC output will available on JP7.
 
+Building and Running for Longan Nano and Longan Nano Lite
+=========================================================
+The sample can be built and executed for the
+:ref:`longan_nano` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: longan_nano
+   :goals: build flash
+   :compact:
+
+also can run for the
+:ref: `longan_nano_lite` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: longan_nano_lite
+   :goals: build flash
+   :compact:
+
 Sample output
 =============
 
