@@ -80,6 +80,11 @@ static struct gsm_modem {
 
 	struct net_if *iface;
 
+	struct k_thread rx_thread;
+	struct k_work_q workq;
+	struct k_work_delayable rssi_work_handle;
+	struct gsm_ppp_modem_info minfo;
+
 	int rssi_retries;
 	int attach_retries;
 	bool mux_enabled : 1;
@@ -99,14 +104,9 @@ NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
 K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
 K_THREAD_STACK_DEFINE(gsm_workq_stack, GSM_WORKQ_STACK_SIZE);
 
-struct k_thread gsm_rx_thread;
-static struct k_work_q gsm_workq;
-static struct k_work_delayable rssi_work_handle;
-static struct gsm_ppp_modem_info minfo;
-
 static inline int gsm_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
-	return k_work_reschedule_for_queue(&gsm_workq, dwork, delay);
+	return k_work_reschedule_for_queue(&gsm.workq, dwork, delay);
 }
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
@@ -217,11 +217,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(minfo.mdm_manufacturer,
-				    sizeof(minfo.mdm_manufacturer) - 1,
+	out_len = net_buf_linearize(gsm.minfo.mdm_manufacturer,
+				    sizeof(gsm.minfo.mdm_manufacturer) - 1,
 				    data->rx_buf, 0, len);
-	minfo.mdm_manufacturer[out_len] = '\0';
-	LOG_INF("Manufacturer: %s", log_strdup(minfo.mdm_manufacturer));
+	gsm.minfo.mdm_manufacturer[out_len] = '\0';
+	LOG_INF("Manufacturer: %s", log_strdup(gsm.minfo.mdm_manufacturer));
 
 	return 0;
 }
@@ -231,11 +231,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(minfo.mdm_model,
-				    sizeof(minfo.mdm_model) - 1,
+	out_len = net_buf_linearize(gsm.minfo.mdm_model,
+				    sizeof(gsm.minfo.mdm_model) - 1,
 				    data->rx_buf, 0, len);
-	minfo.mdm_model[out_len] = '\0';
-	LOG_INF("Model: %s", log_strdup(minfo.mdm_model));
+	gsm.minfo.mdm_model[out_len] = '\0';
+	LOG_INF("Model: %s", log_strdup(gsm.minfo.mdm_model));
 
 	return 0;
 }
@@ -245,11 +245,11 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(minfo.mdm_revision,
-				    sizeof(minfo.mdm_revision) - 1,
+	out_len = net_buf_linearize(gsm.minfo.mdm_revision,
+				    sizeof(gsm.minfo.mdm_revision) - 1,
 				    data->rx_buf, 0, len);
-	minfo.mdm_revision[out_len] = '\0';
-	LOG_INF("Revision: %s", log_strdup(minfo.mdm_revision));
+	gsm.minfo.mdm_revision[out_len] = '\0';
+	LOG_INF("Revision: %s", log_strdup(gsm.minfo.mdm_revision));
 
 	return 0;
 }
@@ -259,10 +259,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(minfo.mdm_imei, sizeof(minfo.mdm_imei) - 1,
+	out_len = net_buf_linearize(gsm.minfo.mdm_imei, sizeof(gsm.minfo.mdm_imei) - 1,
 				    data->rx_buf, 0, len);
-	minfo.mdm_imei[out_len] = '\0';
-	LOG_INF("IMEI: %s", log_strdup(minfo.mdm_imei));
+	gsm.minfo.mdm_imei[out_len] = '\0';
+	LOG_INF("IMEI: %s", log_strdup(gsm.minfo.mdm_imei));
 
 	return 0;
 }
@@ -273,10 +273,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(minfo.mdm_imsi, sizeof(minfo.mdm_imsi) - 1,
+	out_len = net_buf_linearize(gsm.minfo.mdm_imsi, sizeof(gsm.minfo.mdm_imsi) - 1,
 				    data->rx_buf, 0, len);
-	minfo.mdm_imsi[out_len] = '\0';
-	LOG_INF("IMSI: %s", log_strdup(minfo.mdm_imsi));
+	gsm.minfo.mdm_imsi[out_len] = '\0';
+	LOG_INF("IMSI: %s", log_strdup(gsm.minfo.mdm_imsi));
 
 	return 0;
 }
@@ -286,22 +286,22 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(minfo.mdm_iccid, sizeof(minfo.mdm_iccid) - 1,
+	out_len = net_buf_linearize(gsm.minfo.mdm_iccid, sizeof(gsm.minfo.mdm_iccid) - 1,
 				    data->rx_buf, 0, len);
-	minfo.mdm_iccid[out_len] = '\0';
-	if (minfo.mdm_iccid[0] == '+') {
+	gsm.minfo.mdm_iccid[out_len] = '\0';
+	if (gsm.minfo.mdm_iccid[0] == '+') {
 		/* Seen on U-blox SARA: "+CCID: nnnnnnnnnnnnnnnnnnnn".
 		 * Skip over the +CCID bit, which other modems omit.
 		 */
-		char *p = strchr(minfo.mdm_iccid, ' ');
+		char *p = strchr(gsm.minfo.mdm_iccid, ' ');
 
 		if (p) {
 			size_t len = strlen(p+1);
 
-			memmove(minfo.mdm_iccid, p+1, len+1);
+			memmove(gsm.minfo.mdm_iccid, p+1, len+1);
 		}
 	}
-	LOG_INF("ICCID: %s", log_strdup(minfo.mdm_iccid));
+	LOG_INF("ICCID: %s", log_strdup(gsm.minfo.mdm_iccid));
 
 	return 0;
 }
@@ -363,16 +363,16 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 	rxlev = ATOI(argv[0], 0, "rxlev");
 
 	if (rsrp >= 0 && rsrp <= 97) {
-		minfo.mdm_rssi = -140 + (rsrp - 1);
-		LOG_INF("RSRP: %d", minfo.mdm_rssi);
+		gsm.minfo.mdm_rssi = -140 + (rsrp - 1);
+		LOG_INF("RSRP: %d", gsm.minfo.mdm_rssi);
 	} else if (rscp >= 0 && rscp <= 96) {
-		minfo.mdm_rssi = -120 + (rscp - 1);
-		LOG_INF("RSCP: %d", minfo.mdm_rssi);
+		gsm.minfo.mdm_rssi = -120 + (rscp - 1);
+		LOG_INF("RSCP: %d", gsm.minfo.mdm_rssi);
 	} else if (rxlev >= 0 && rxlev <= 63) {
-		minfo.mdm_rssi = -110 + (rxlev - 1);
-		LOG_INF("RSSI: %d", minfo.mdm_rssi);
+		gsm.minfo.mdm_rssi = -110 + (rxlev - 1);
+		LOG_INF("RSSI: %d", gsm.minfo.mdm_rssi);
 	} else {
-		minfo.mdm_rssi = GSM_RSSI_INVALID;
+		gsm.minfo.mdm_rssi = GSM_RSSI_INVALID;
 		LOG_INF("RSRP/RSCP/RSSI not known");
 	}
 
@@ -392,7 +392,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 			rssi = GSM_RSSI_INVALID;
 		}
 
-		minfo.mdm_rssi = rssi;
+		gsm.minfo.mdm_rssi = rssi;
 		LOG_INF("RSSI: %d", rssi);
 	}
 
@@ -590,7 +590,7 @@ static void rssi_handler(struct k_work *work)
 #if defined(CONFIG_MODEM_CELL_INFO)
 	(void)gsm_query_cellinfo(&gsm);
 #endif
-	(void)gsm_work_reschedule(&rssi_work_handle,
+	(void)gsm_work_reschedule(&gsm.rssi_work_handle,
 				  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 #endif
 
@@ -708,8 +708,8 @@ attaching:
 		/* Read connection quality (RSSI) before PPP carrier is ON */
 		rssi_handler(NULL);
 
-		if (!(minfo.mdm_rssi && minfo.mdm_rssi != GSM_RSSI_INVALID &&
-			minfo.mdm_rssi < GSM_RSSI_MAXVAL)) {
+		if (!(gsm->minfo.mdm_rssi && gsm->minfo.mdm_rssi != GSM_RSSI_INVALID &&
+			gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL)) {
 
 			LOG_DBG("Not valid RSSI, %s", "retrying...");
 			if (gsm->rssi_retries-- > 0) {
@@ -766,7 +766,8 @@ attaching:
 			}
 		}
 		modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
-		k_work_schedule(&rssi_work_handle, K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
+		k_work_schedule(&gsm->rssi_work_handle,
+				K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 	}
 }
 
@@ -1038,7 +1039,7 @@ void gsm_ppp_start(const struct device *dev)
 	(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 
 #if defined(CONFIG_GSM_MUX)
-	k_work_init_delayable(&rssi_work_handle, rssi_handler);
+	k_work_init_delayable(&gsm->rssi_work_handle, rssi_handler);
 #endif
 }
 
@@ -1083,9 +1084,9 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
 
 const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct gsm_modem *gsm = dev->data;
 
-	return &minfo;
+	return &gsm->minfo;
 }
 
 static int gsm_init(const struct device *dev)
@@ -1116,15 +1117,15 @@ static int gsm_init(const struct device *dev)
 
 #if defined(CONFIG_MODEM_SHELL)
 	/* modem information storage */
-	gsm->context.data_manufacturer = minfo.mdm_manufacturer;
-	gsm->context.data_model = minfo.mdm_model;
-	gsm->context.data_revision = minfo.mdm_revision;
-	gsm->context.data_imei = minfo.mdm_imei;
+	gsm->context.data_manufacturer = gsm->minfo.mdm_manufacturer;
+	gsm->context.data_model = gsm->minfo.mdm_model;
+	gsm->context.data_revision = gsm->minfo.mdm_revision;
+	gsm->context.data_imei = gsm->minfo.mdm_imei;
 #if defined(CONFIG_MODEM_SIM_NUMBERS)
-	gsm->context.data_imsi = minfo.mdm_imsi;
-	gsm->context.data_iccid = minfo.mdm_iccid;
+	gsm->context.data_imsi = gsm->minfo.mdm_imsi;
+	gsm->context.data_iccid = gsm->minfo.mdm_iccid;
 #endif	/* CONFIG_MODEM_SIM_NUMBERS */
-	gsm->context.data_rssi = &minfo.mdm_rssi;
+	gsm->context.data_rssi = &gsm->minfo.mdm_rssi;
 #endif	/* CONFIG_MODEM_SHELL */
 
 	gsm->context.is_automatic_oper = false;
@@ -1147,17 +1148,17 @@ static int gsm_init(const struct device *dev)
 	LOG_DBG("iface->read %p iface->write %p",
 		gsm->context.iface.read, gsm->context.iface.write);
 
-	k_thread_create(&gsm_rx_thread, gsm_rx_stack,
+	k_thread_create(&gsm->rx_thread, gsm_rx_stack,
 			K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
 			(k_thread_entry_t) gsm_rx,
 			gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
-	k_thread_name_set(&gsm_rx_thread, "gsm_rx");
+	k_thread_name_set(&gsm->rx_thread, "gsm_rx");
 
 	/* initialize the work queue */
-	k_work_queue_init(&gsm_workq);
-	k_work_queue_start(&gsm_workq, gsm_workq_stack, K_THREAD_STACK_SIZEOF(gsm_workq_stack),
+	k_work_queue_init(&gsm->workq);
+	k_work_queue_start(&gsm->workq, gsm_workq_stack, K_THREAD_STACK_SIZEOF(gsm_workq_stack),
 			   K_PRIO_COOP(7), NULL);
-	k_thread_name_set(&gsm_workq.thread, "gsm_workq");
+	k_thread_name_set(&gsm->workq.thread, "gsm_workq");
 
 	gsm->iface = ppp_net_if();
 	if (!gsm->iface) {
