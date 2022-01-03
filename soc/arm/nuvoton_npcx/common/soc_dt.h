@@ -7,6 +7,10 @@
 #ifndef _NUVOTON_NPCX_SOC_DT_H_
 #define _NUVOTON_NPCX_SOC_DT_H_
 
+#include <devicetree.h>
+#include <irq.h>
+#include <sys/util_macro.h>
+
 /**
  * @brief Like DT_PROP(), but expand parameters with
  *        DT_ENUM_UPPER_TOKEN not DT_PROP
