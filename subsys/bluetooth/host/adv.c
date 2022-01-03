@@ -27,6 +27,126 @@ enum adv_name_type {
 	ADV_NAME_TYPE_SD,
 };
 
+struct bt_ad {
+	/* Pointer to an LTV structure */
+	const struct bt_data *data;
+	/* Number of elements in @p data */
+	size_t len;
+};
+
+struct ad_stream {
+	/* ad is a two dimensional array of struct bt_data elements. */
+	const struct bt_ad *ad;
+	/* The number of struct bt_ad elements. */
+	size_t ad_len;
+
+	/* The current index in the array of struct bt_ad elements */
+	size_t ad_index;
+	/* The current index in the array of ad.data elements */
+	size_t data_index;
+
+	/* Current LTV offset contains the data offset in the ad[x].data[y].data value array
+	 * The length and type are included in this offset.
+	 */
+	uint16_t current_ltv_offset;
+};
+
+static void ad_stream_new(struct ad_stream *stream, const struct bt_ad *ad, size_t ad_len)
+{
+	(void)memset(stream, 0, sizeof(*stream));
+	stream->ad = ad;
+	stream->ad_len = ad_len;
+}
+
+/**
+ * @brief Returns true if the current stream is empty.
+ *
+ * @param stream AD stream, @ref ad_stream_new
+ *
+ * @returns true if the stream is now empty.
+ */
+static bool ad_stream_is_empty(const struct ad_stream *stream)
+{
+	/* If ad_index == ad_len, then we are past the last element in the ad array */
+	return stream->ad_index == stream->ad_len;
+}
+
+/**
+ * @brief Returns the bt_data structure that is currently being read
+ *
+ * If the structure has been fully read, the function iterates to the next
+ *
+ * @param stream AD stream, @ref ad_stream_new
+ *
+ * @returns The current LTV structure or NULL if there are no left.
+ */
+static const struct bt_data *ad_stream_current_ltv_update(struct ad_stream *stream)
+{
+	const struct bt_data *current_ltv = &stream->ad[stream->ad_index].data[stream->data_index];
+	const bool done_reading_ltv = (stream->current_ltv_offset == current_ltv->data_len + 2);
+
+	if (done_reading_ltv) {
+		stream->current_ltv_offset = 0;
+
+		if (stream->data_index + 1 == stream->ad[stream->ad_index].len) {
+			stream->data_index = 0;
+			stream->ad_index++;
+		} else {
+			stream->data_index++;
+		}
+	}
+
+	if (ad_stream_is_empty(stream)) {
+		return NULL;
+	} else {
+		return &stream->ad[stream->ad_index].data[stream->data_index];
+	}
+}
+
+/**
+ * @brief Read at max buf_len data from the flattened AD stream.
+ *
+ * The read data can contain multiple LTV AD structures.
+ *
+ * @param stream  AD stream, @ref ad_stream_new
+ * @param buf     Buffer where the data will be put
+ * @param buf_len Buffer length
+ *
+ * @returns The number of bytes read from the stream written to the provided buffer
+ */
+static uint8_t ad_stream_read(struct ad_stream *stream, uint8_t *buf, uint8_t buf_len)
+{
+	uint8_t read_len = 0;
+
+	while (read_len < buf_len) {
+		const struct bt_data *current_ltv = ad_stream_current_ltv_update(stream);
+
+		if (!current_ltv) {
+			break;
+		}
+
+		if (stream->current_ltv_offset == 0) {
+			buf[read_len] = current_ltv->data_len + 1;
+			stream->current_ltv_offset++;
+			read_len++;
+		} else if (stream->current_ltv_offset == 1) {
+			buf[read_len] = current_ltv->type;
+			stream->current_ltv_offset++;
+			read_len++;
+		} else {
+			const size_t size_to_copy = MIN(buf_len, current_ltv->data_len);
+
+			(void)memcpy(&buf[read_len],
+				&current_ltv->data[stream->current_ltv_offset - 2],
+				size_to_copy);
+			stream->current_ltv_offset += size_to_copy;
+			read_len += size_to_copy;
+		}
+	}
+
+	return read_len;
+}
+
 enum adv_name_type get_adv_name_type(const struct bt_le_ext_adv *adv)
 {
 	if (atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME_SD)) {
@@ -338,12 +458,6 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 	return valid_adv_ext_param(param);
 }
 
-
-struct bt_ad {
-	const struct bt_data *data;
-	size_t len;
-};
-
 static int set_data_add_complete(uint8_t *set_data, uint8_t set_data_len_max,
 			const struct bt_ad *ad, size_t ad_len, uint8_t *data_len)
 {
@@ -447,85 +561,44 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op,
 				      const struct bt_ad *ad, size_t ad_len)
 {
-	struct bt_hci_cp_le_set_ext_adv_data *set_data;
-	struct net_buf *buf;
-	int err;
+	struct ad_stream stream;
 
-	for (size_t i = 0; i < ad_len; i++) {
+	ad_stream_new(&stream, ad, ad_len);
 
-		const struct bt_data *data = ad[i].data;
+	bool is_first_iteration = true;
 
-		for (size_t j = 0; j < ad[i].len; j++) {
-			size_t len = data[j].data_len;
-			uint8_t type = data[j].type;
-			size_t offset = 0;
+	while (!ad_stream_is_empty(&stream)) {
+		struct bt_hci_cp_le_set_ext_adv_data *set_data;
+		struct net_buf *buf;
+		int err;
 
-			/* We can't necessarily set one AD field in a single step. */
-			while (offset < data[j].data_len) {
-				buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
-				if (!buf) {
-					return -ENOBUFS;
-				}
-
-				set_data = net_buf_add(buf, sizeof(*set_data));
-				(void)memset(set_data, 0, sizeof(*set_data));
-
-				set_data->handle = adv->handle;
-				set_data->frag_pref = BT_HCI_LE_EXT_ADV_FRAG_DISABLED;
-
-				/* Determine the operation parameter value. */
-				if ((i == 0) && (j == 0) && (offset == 0)) {
-					set_data->op = BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG;
-				} else if ((i == ad_len - 1) && (j == ad[i].len - 1)) {
-					/* The last AD field may be split into
-					 * one or two commands.
-					 */
-					if (offset != 0) {
-						/* We can always set the data in two operations
-						 * Therefore, we know that this is the last.
-						 */
-						set_data->op = BT_HCI_LE_EXT_ADV_OP_LAST_FRAG;
-					} else if (len + 2 <= BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN) {
-						/* First part fits. */
-						set_data->op = BT_HCI_LE_EXT_ADV_OP_LAST_FRAG;
-					} else {
-						/* The data must be split into two
-						 * commands.
-						 */
-						set_data->op = BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG;
-					}
-				} else {
-					set_data->op = BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG;
-				}
-
-				if (offset == 0) {
-					set_data->len = MIN(len + 2,
-							    BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN);
-				} else {
-					/* No need to take min operation here,
-					 * as we can always fit the second part.
-					 */
-					set_data->len = len - offset;
-				}
-
-				if (offset == 0) {
-					set_data->data[0] = len + 1;
-					set_data->data[1] = type;
-					memcpy(&set_data->data[2], data[j].data, set_data->len - 2);
-					offset += set_data->len - 2;
-				} else {
-					memcpy(&set_data->data[0], &data[j].data[offset],
-					       set_data->len);
-					offset += set_data->len;
-				}
-
-				err = bt_hci_cmd_send_sync(hci_op, buf, NULL);
-				if (err) {
-					return err;
-				}
-			}
-
+		buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
+		if (!buf) {
+			return -ENOBUFS;
 		}
+
+		set_data = net_buf_add(buf, sizeof(*set_data));
+
+		set_data->handle = adv->handle;
+		set_data->frag_pref = BT_HCI_LE_EXT_ADV_FRAG_ENABLED;
+		set_data->len = ad_stream_read(&stream, set_data->data, sizeof(set_data->data));
+
+		if (is_first_iteration && ad_stream_is_empty(&stream)) {
+			set_data->op = BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA;
+		} else if (is_first_iteration) {
+			set_data->op = BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG;
+		} else if (ad_stream_is_empty(&stream)) {
+			set_data->op = BT_HCI_LE_EXT_ADV_OP_LAST_FRAG;
+		} else {
+			set_data->op = BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG;
+		}
+
+		err = bt_hci_cmd_send_sync(hci_op, buf, NULL);
+		if (err) {
+			return err;
+		}
+
+		is_first_iteration = false;
 	}
 
 	return 0;
