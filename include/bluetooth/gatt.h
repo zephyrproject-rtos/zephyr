@@ -98,6 +98,14 @@ enum {
 	 * response) which doesn't generate any response.
 	 */
 	BT_GATT_WRITE_FLAG_CMD = BIT(1),
+
+	/** @brief Attribute write execute flag
+	 *
+	 * If set, indicates that write operation is a execute, which indicates
+	 * the end of a long write, and will come after 1 or more
+	 * @ref BT_GATT_WRITE_FLAG_PREPARE.
+	 */
+	BT_GATT_WRITE_FLAG_EXECUTE = BIT(2),
 };
 
 /** @brief GATT Attribute structure. */
