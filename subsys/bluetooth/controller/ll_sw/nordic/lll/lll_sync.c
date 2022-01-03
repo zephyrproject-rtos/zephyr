@@ -925,7 +925,7 @@ isr_rx_aux_chain_done:
 
 		isr_rx_done_cleanup(lll, 1U, false);
 	} else {
-		lll_isr_cleanup(lll);
+		lll_isr_cleanup(lll_aux);
 	}
 }
 
