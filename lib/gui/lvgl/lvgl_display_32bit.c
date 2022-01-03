@@ -31,6 +31,13 @@ void lvgl_set_px_cb_32bit(struct _disp_drv_t *disp_drv,
 		lv_color_t color, lv_opa_t opa)
 {
 	uint32_t *buf_xy = (uint32_t *)(buf + x * 4U + y * 4U * buf_w);
-	*buf_xy = lv_color_to32(color);
+
+	if (opa == LV_OPA_COVER) {
+		/* Do not mix if not required */
+		*buf_xy = lv_color_to32(color);
+	} else {
+		lv_color_t bg_color = *((lv_color_t *)buf_xy);
+		*buf_xy = lv_color_to32(lv_color_mix(color, bg_color, opa));
+	}
 }
 #endif
