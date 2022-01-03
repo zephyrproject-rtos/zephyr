@@ -99,7 +99,7 @@ struct bt_att {
 	sys_slist_t		reqs;
 	struct k_fifo		tx_queue;
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
-	struct k_fifo		prep_queue;
+	sys_slist_t		prep_queue;
 #endif
 	/* Contains bt_att_chan instance(s) */
 	sys_slist_t		chans;
@@ -1836,7 +1836,7 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 	BT_DBG("buf %p handle 0x%04x offset %u", data.buf, handle, offset);
 
 	/* Store buffer in the outstanding queue */
-	net_buf_put(&chan->att->prep_queue, data.buf);
+	net_buf_slist_put(&chan->att->prep_queue, data.buf);
 
 	/* Generate response */
 	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_RSP, 0);
@@ -1882,7 +1882,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 	struct net_buf *buf;
 	uint8_t err = 0U;
 
-	while ((buf = net_buf_get(&chan->att->prep_queue, K_NO_WAIT))) {
+	while ((buf = net_buf_slist_get(&chan->att->prep_queue))) {
 		struct bt_attr_data *data = net_buf_user_data(buf);
 
 		BT_DBG("buf %p handle 0x%04x offset %u", buf, data->handle,
@@ -2531,7 +2531,7 @@ static void att_reset(struct bt_att *att)
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
-	while ((buf = net_buf_get(&att->prep_queue, K_NO_WAIT))) {
+	while ((buf = net_buf_slist_get(&att->prep_queue))) {
 		net_buf_unref(buf);
 	}
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
@@ -2617,7 +2617,7 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 		/* Init general queues when attaching the first channel */
 		k_fifo_init(&att->tx_queue);
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
-		k_fifo_init(&att->prep_queue);
+		sys_slist_init(&att->prep_queue);
 #endif
 	}
 
