@@ -7,6 +7,12 @@
 #ifndef _NUVOTON_NPCX_REG_DEF_H
 #define _NUVOTON_NPCX_REG_DEF_H
 
+#include <stdint.h>
+
+#include <sys/__assert.h>
+#include <sys/util_macro.h>
+#include <toolchain.h>
+
 /*
  * NPCX register structure size/offset checking macro function to mitigate
  * the risk of unexpected compiling results. All addresses of NPCX registers
