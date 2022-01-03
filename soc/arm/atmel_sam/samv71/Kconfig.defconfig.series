@@ -46,10 +46,6 @@ config DMA_SAM_XDMAC
 	default y
 	depends on DMA
 
-config GPIO_SAM
-	default y
-	depends on GPIO
-
 config ADC_SAM_AFEC
 	default y
 	depends on ADC
@@ -61,10 +57,6 @@ config I2C_SAM_TWIHS
 config I2S_SAM_SSC
 	default y
 	depends on I2S
-
-config SPI_SAM
-	default y
-	depends on SPI
 
 config USB_DC_SAM_USBHS
 	default y
