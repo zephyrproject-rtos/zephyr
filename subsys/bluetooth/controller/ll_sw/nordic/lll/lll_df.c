@@ -225,7 +225,7 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_latest_get(struct lll_df_sync *df_cfg,
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /* @brief Function initializes reception of Constant Tone Extension.
  *
  * @param slot_duration     Switching and sampling slots duration (1us or 2us).
@@ -264,9 +264,9 @@ void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uin
 	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
 	node_rx->chan_idx = chan_idx;
 }
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /**
  * @brief Function initializes parsing of received PDU for CTEInfo.
  *
@@ -293,7 +293,7 @@ void lll_df_conf_cte_info_parsing_enable(void)
 	/* Do not set storage for IQ samples, it is irrelevant for parsing of a PDU for CTEInfo. */
 	radio_df_iq_data_packet_set(NULL, 0);
 }
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 /* @brief Function performs common steps for initialization and reset
  * of Direction Finding LLL module.
