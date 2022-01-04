@@ -16,6 +16,7 @@ zephyr_library_sources(boot.c)
 
 if(CONFIG_MP_NUM_CPUS GREATER 1)
   zephyr_library_sources(soc_mp.c)
+  zephyr_library_sources(mp_cavs.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq-cavs.c)
