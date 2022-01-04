@@ -46,9 +46,6 @@
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
 			compatible = "st,stm32-hse-clock";
-			/* H7 clock driver may not always need this value */
-			/* but it is required by the binding */
-			clock-frequency = <DT_FREQ_M(25)>;
 			status = "disabled";
 		};
 
