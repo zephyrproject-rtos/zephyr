@@ -20,6 +20,13 @@
 #include <drivers/dma.h>
 #include <drivers/dma/dma_stm32.h>
 
+#if DT_INST_NODE_HAS_PROP(0, spi_bus_width) && \
+	DT_INST_PROP(0, spi_bus_width) == 4
+#define STM32_QSPI_USE_QUAD_IO 1
+#else
+#define STM32_QSPI_USE_QUAD_IO 0
+#endif
+
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 #if STM32_QSPI_RESET_GPIO
 #include <drivers/gpio.h>
@@ -85,6 +92,8 @@ struct flash_stm32_qspi_data {
 	uint16_t page_size;
 	int cmd_status;
 	struct stream dma;
+	uint8_t qspi_read_cmd;
+	uint8_t qspi_read_cmd_latency;
 	/*
 	 * If set addressed operations should use 32-bit rather than
 	 * 24-bit addresses.
@@ -127,6 +136,40 @@ static inline void qspi_set_address_size(const struct device *dev,
 	}
 
 	cmd->AddressSize = QSPI_ADDRESS_24_BITS;
+}
+
+static inline void qspi_prepare_quad_read(const struct device *dev,
+					  QSPI_CommandTypeDef *cmd)
+{
+	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
+
+	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO) && dev_data->flag_quad_io_en) {
+		cmd->Instruction = dev_data->qspi_read_cmd;
+		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+		cmd->DataMode = QSPI_DATA_4_LINES;
+		cmd->DummyCycles = dev_data->qspi_read_cmd_latency;
+	}
+}
+
+static inline void qspi_prepare_quad_program(const struct device *dev,
+					     QSPI_CommandTypeDef *cmd)
+{
+	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
+	/*
+	 * There is no info about PP/4PP command in the SFDP tables,
+	 * hence it has been assumed that NOR flash memory supporting
+	 * 1-4-4 mode also would support fast page programming.
+	 */
+	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO) && dev_data->flag_quad_io_en) {
+		cmd->Instruction = SPI_NOR_CMD_4PP;
+		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+		cmd->DataMode = QSPI_DATA_4_LINES;
+		/*
+		 * Dummy cycles are not required for 4PP command -
+		 * data to be programmed are sent just after address.
+		 */
+		cmd->DummyCycles = 0;
+	}
 }
 
 /*
@@ -281,6 +324,7 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 	};
 
 	qspi_set_address_size(dev, &cmd);
+	qspi_prepare_quad_read(dev, &cmd);
 	qspi_lock_thread(dev);
 
 	ret = qspi_read_access(dev, &cmd, data, size);
@@ -332,6 +376,7 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 	};
 
 	qspi_set_address_size(dev, &cmd_pp);
+	qspi_prepare_quad_program(dev, &cmd_pp);
 	qspi_lock_thread(dev);
 
 	while (size > 0) {
@@ -821,8 +866,35 @@ static int spi_nor_process_bfp(const struct device *dev,
 			}
 		}
 	}
+	/*
+	 * Only check if the 1-4-4 (i.e. 4READ) fast read operation is
+	 * supported - other modes - e.g. 1-1-4 (QREAD) or 1-1-2 (DREAD) are
+	 * not.
+	 */
+	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO)) {
+		struct jesd216_instr res;
 
-	qspi_program_quad_io(dev);
+		rc = jesd216_bfp_read_support(php, bfp, JESD216_MODE_144, &res);
+		if (rc > 0) {
+			/* Program flash memory to use SIO[0123] */
+			rc = qspi_program_quad_io(dev);
+			if (rc) {
+				LOG_ERR("Unable to enable QUAD IO mode: %d\n",
+					rc);
+				return rc;
+			}
+
+			LOG_INF("Mode: 1-4-4 with instr:[0x%x] supported!",
+				res.instr);
+
+			data->qspi_read_cmd = res.instr;
+			data->qspi_read_cmd_latency = res.wait_states;
+			if (res.mode_clocks) {
+				data->qspi_read_cmd_latency +=
+					res.mode_clocks;
+			}
+		}
+	}
 
 	return 0;
 }
