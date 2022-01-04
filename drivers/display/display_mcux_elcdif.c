@@ -260,7 +260,7 @@ DEVICE_DT_INST_DEFINE(0,
 		    &mcux_elcdif_init,
 		    NULL,
 		    &mcux_elcdif_data_1, &mcux_elcdif_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		    &mcux_elcdif_api);
 
 static void mcux_elcdif_config_func_1(const struct device *dev)

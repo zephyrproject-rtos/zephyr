@@ -62,6 +62,10 @@ struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle);
 struct ll_scan_set *ull_scan_is_disabled_get(uint8_t handle);
 
 /* Return flags if enabled */
+#define ULL_SCAN_IS_PASSIVE   BIT(0)
+#define ULL_SCAN_IS_ACTIVE    BIT(1)
+#define ULL_SCAN_IS_INITIATOR BIT(2)
+#define ULL_SCAN_IS_SYNC      BIT(3)
 uint32_t ull_scan_is_enabled(uint8_t handle);
 
 /* Return filter policy used */
@@ -81,3 +85,6 @@ struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux);
 
 /* Helper function to flush and release incomplete auxiliary PDU chaining */
 void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx);
+
+/* Helper function to stop auxiliary scan context */
+int ull_scan_aux_stop(struct ll_scan_aux_set *aux);

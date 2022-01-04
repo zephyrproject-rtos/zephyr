@@ -8,6 +8,7 @@
 #define __USB_DC_MCUX_H__
 
 #include <drivers/usb/usb_dc.h>
+#include <sys/byteorder.h>
 #include "usb_spec.h"
 #include "usb.h"
 #include "usb_device_dci.h"
@@ -24,6 +25,41 @@
 /* Whether device is self power. 1U supported, 0U not supported */
 #define USB_DEVICE_CONFIG_SELF_POWER (1U)
 #endif
+
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
+
+#ifdef USBHSD_BASE_ADDRS
+#define USB_DEVICE_CONFIG_LPCIP3511HS (1U)
+#else
+#define USB_DEVICE_CONFIG_LPCIP3511HS (0U)
+#endif
+
+#ifdef USB_BASE_ADDRS
+#define USB_DEVICE_CONFIG_LPCIP3511FS (1U)
+#else
+#define USB_DEVICE_CONFIG_LPCIP3511FS (0U)
+#endif
+
+/* Whether device is self power. 1U supported, 0U not supported */
+#define USB_DEVICE_CONFIG_SELF_POWER (1U)
+
+#endif
+
+#if defined(CONFIG_BIG_ENDIAN)
+#define USB_SHORT_FROM_LITTLE_ENDIAN(n) __bswap_16(n)
+#else
+#define USB_SHORT_FROM_LITTLE_ENDIAN(n) (n)
+#endif
+
+#if (((defined(USB_DEVICE_CONFIG_LPCIP3511FS)) && (USB_DEVICE_CONFIG_LPCIP3511FS > 0U)) || \
+	((defined(USB_DEVICE_CONFIG_LPCIP3511HS)) && (USB_DEVICE_CONFIG_LPCIP3511HS > 0U)))
+#define USB_DATA_ALIGN_SIZE 64U
+#else
+#define USB_DATA_ALIGN_SIZE 4U
+#endif
+
+#define USB_DATA_ALIGN_SIZE_MULTIPLE(n) (((n) + USB_DATA_ALIGN_SIZE - 1U) & \
+						(~(USB_DATA_ALIGN_SIZE - 1U)))
 
 /* Number of endpoints supported */
 #define USB_DEVICE_CONFIG_ENDPOINTS (DT_INST_PROP(0, num_bidir_endpoints))
@@ -42,14 +78,21 @@
 #define OSA_EXIT_CRITICAL() irq_unlock(usbOsaCurrentSr)
 
 /* NXP SDK USB controller driver configuration macros */
+#if defined(CONFIG_USB_DEDICATED_MEMORY)
+#define USB_BDT __attribute__((section("m_usb_bdt, \"aw\", %nobits @")))
+#define USB_GLOBAL __attribute__((section("m_usb_global, \"aw\", %nobits @")))
+#else
 #define USB_BDT
 #define USB_GLOBAL
-#define USB_DATA_ALIGN_SIZE 4
+#endif
+
 #define USB_RAM_ADDRESS_ALIGNMENT(n) __aligned(n)
 
 /* EHCI */
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define USB_CONTROLLER_DATA __nocache
+#elif defined(CONFIG_USB_DEDICATED_MEMORY)
+#define USB_CONTROLLER_DATA __attribute__((section("m_usb_global, \"aw\", %nobits @")))
 #else
 #define USB_CONTROLLER_DATA
 #endif

@@ -32,6 +32,12 @@ void imxrt_usdhc_pinmux(uint16_t nusdhc,
 
 void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb);
 
+typedef void (*usdhc_dat3_cfg_cb)(bool pullup);
+
+void imxrt_usdhc_dat3_cb_register(usdhc_dat3_cfg_cb cb);
+
+void imxrt_usdhc_dat3_pull(bool pullup);
+
 #endif
 
 #ifdef __cplusplus

@@ -267,6 +267,7 @@ int bmi160_trigger_mode_init(const struct device *dev)
 {
 	struct bmi160_data *data = to_data(dev);
 	const struct bmi160_cfg *cfg = to_config(dev);
+	int ret;
 
 	if (!device_is_ready(cfg->interrupt.port)) {
 		LOG_DBG("GPIO port %s not ready", cfg->interrupt.port->name);
@@ -294,14 +295,25 @@ int bmi160_trigger_mode_init(const struct device *dev)
 		return -EIO;
 	}
 
-	gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&data->gpio_cb,
 			   bmi160_gpio_callback,
 			   BIT(cfg->interrupt.pin));
 
-	gpio_add_callback(cfg->interrupt.port, &data->gpio_cb);
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_add_callback(cfg->interrupt.port, &data->gpio_cb);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return bmi160_byte_write(dev, BMI160_REG_INT_OUT_CTRL,
 				 BMI160_INT1_OUT_EN | BMI160_INT1_EDGE_CTRL);

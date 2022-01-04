@@ -23,6 +23,21 @@ config LWM2M_DTLS_SUPPORT
 	select NET_SOCKETS_SOCKOPT_TLS
 	select NET_SOCKETS_ENABLE_DTLS
 
+choice
+	prompt "LwM2M Server object version"
+	default LWM2M_SERVER_OBJECT_VERSION_1_0
+	help
+	  Select which version of the Server object should be used.
+
+config LWM2M_SERVER_OBJECT_VERSION_1_0
+	bool "Server object version 1.0"
+
+config LWM2M_SERVER_OBJECT_VERSION_1_1
+	bool "Server object version 1.1 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endchoice
+
 config LWM2M_DNS_SUPPORT
 	bool "Enable DNS support in the LWM2M client"
 	default y if DNS_RESOLVER
@@ -47,7 +62,7 @@ config LWM2M_COAP_BLOCK_SIZE
 	range 64 1024
 	help
 	  CoAP block size used by LWM2M when performing block-wise
-	  transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024.
+	  transfers. Possible values: 64, 128, 256, 512 and 1024.
 
 config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
 	int "Room for CoAP header data"
@@ -55,6 +70,13 @@ config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
 	range 24 128
 	help
 	  Extra room allocated to handle CoAP header data
+
+config LWM2M_COAP_MAX_MSG_SIZE
+	int "LWM2M CoAP maximum message size"
+	default LWM2M_COAP_BLOCK_SIZE
+	help
+	  CoAP message size used by LWM2M. Minimum is the block size used
+	  in blockwise transfers.
 
 config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
 	int "Size of the validation buffer for the incoming data"
@@ -162,7 +184,19 @@ config LWM2M_PEER_PORT
 	depends on LWM2M_RD_CLIENT_SUPPORT
 	default 5683
 	help
-	  This is the default server port to connect to for LWM2M communication
+	  This is the default server port to connect to for LWM2M communication.
+
+config LWM2M_FIRMWARE_PORT_NONSECURE
+	int "LWM2M firmware server port non-secure"
+	default 5683
+	help
+	  This is the default server port to connect to for LwM2M firmware downloads over coap.
+
+config LWM2M_FIRMWARE_PORT_SECURE
+	int "LWM2M firmware server port secure"
+	default 5684
+	help
+	  This is the default server port to connect to for LwM2M firmware downloads over coaps.
 
 config LWM2M_SECURITY_INSTANCE_COUNT
 	int "Maximum # of LWM2M Security object instances"
@@ -244,6 +278,31 @@ config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	  Include support for pulling a file from a remote server via
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
 	  adds another UDP context and packet handling.
+
+config LWM2M_SWMGMT_OBJ_SUPPORT
+	bool "Software management object support"
+	help
+	  Include support for LWM2M Software Management Object (ID 9)
+
+config LWM2M_SWMGMT_MAX_INSTANCE_COUNT
+	int "Maximum # of object instances"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 1
+
+config LWM2M_SWMGMT_PACKAGE_NAME_LEN
+	int "Maximum size of the software management object's name string"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 64
+
+config LWM2M_SWMGMT_PACKAGE_VERSION_LEN
+	int "Maximum size of the software management object's version string"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 64
+
+config LWM2M_SWMGMT_PACKAGE_URI_LEN
+	int "Maximum size of the software management object's download URI string"
+	depends on (LWM2M_SWMGMT_OBJ_SUPPORT || LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+	default 128
 
 config LWM2M_NUM_BLOCK1_CONTEXT
 	int "Maximum # of LWM2M block1 contexts"

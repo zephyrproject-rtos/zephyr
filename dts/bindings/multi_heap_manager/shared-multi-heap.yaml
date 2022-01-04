@@ -1,0 +1,20 @@
+description: Shared multi-heap memory pool manager
+
+compatible: "shared-multi-heap"
+
+include:
+  - name: base.yaml
+    property-allowlist: ['reg', 'label']
+
+properties:
+    # Keep this is sync with shared_multi_heap.h
+    capability:
+      type: string
+      required: false
+      description: memory region capability
+      enum:
+        - "cacheable"
+        - "non-cacheable"
+
+    label:
+      required: true

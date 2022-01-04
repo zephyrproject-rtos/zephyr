@@ -34,6 +34,7 @@
  *   "sleep/deep sleep" power state if CONFIG_PM is enabled.
  */
 
+#include <device.h>
 #include <drivers/clock_control.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
@@ -267,7 +268,42 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)(current);
 }
 
-int sys_clock_driver_init(const struct device *dev)
+uint64_t sys_clock_cycle_get_64(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint64_t current = npcx_itim_get_sys_cyc64();
+
+	k_spin_unlock(&lock, key);
+
+	/* Return how many cycles since system kernel timer start counting */
+	return current;
+}
+
+/* Platform specific system timer functions */
+#if defined(CONFIG_PM)
+void npcx_clock_capture_low_freq_timer(void)
+{
+	cyc_evt_enter_deep_idle = npcx_itim_evt_elapsed_cyc32();
+}
+
+void npcx_clock_compensate_system_timer(void)
+{
+	uint32_t cyc_evt_elapsed_in_deep = npcx_itim_evt_elapsed_cyc32() -
+							cyc_evt_enter_deep_idle;
+
+	cyc_sys_compensated += ((uint64_t)cyc_evt_elapsed_in_deep *
+			sys_clock_hw_cycles_per_sec()) / EVT_CYCLES_PER_SEC;
+}
+
+#if defined(CONFIG_SOC_POWER_MANAGEMENT_TRACE)
+uint64_t npcx_clock_get_sleep_ticks(void)
+{
+	return  cyc_sys_compensated / SYS_CYCLES_PER_TICK;
+}
+#endif /* CONFIG_SOC_POWER_MANAGEMENT_TRACE */
+#endif /* CONFIG_PM */
+
+static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	int ret;
@@ -348,27 +384,5 @@ int sys_clock_driver_init(const struct device *dev)
 
 	return 0;
 }
-
-/* Platform specific systme timer functions */
-#if defined(CONFIG_PM)
-void npcx_clock_capture_low_freq_timer(void)
-{
-	cyc_evt_enter_deep_idle = npcx_itim_evt_elapsed_cyc32();
-}
-
-void npcx_clock_compensate_system_timer(void)
-{
-	uint32_t cyc_evt_elapsed_in_deep = npcx_itim_evt_elapsed_cyc32() -
-							cyc_evt_enter_deep_idle;
-
-	cyc_sys_compensated += ((uint64_t)cyc_evt_elapsed_in_deep *
-			sys_clock_hw_cycles_per_sec()) / EVT_CYCLES_PER_SEC;
-}
-
-#if defined(CONFIG_SOC_POWER_MANAGEMENT_TRACE)
-uint64_t npcx_clock_get_sleep_ticks(void)
-{
-	return  cyc_sys_compensated / SYS_CYCLES_PER_TICK;
-}
-#endif /* CONFIG_SOC_POWER_MANAGEMENT_TRACE */
-#endif /* CONFIG_PM */
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

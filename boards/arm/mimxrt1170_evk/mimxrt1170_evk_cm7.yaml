@@ -20,3 +20,6 @@ supported:
   - can
   - spi
   - adc
+  - i2c
+  - pwm
+  - dma

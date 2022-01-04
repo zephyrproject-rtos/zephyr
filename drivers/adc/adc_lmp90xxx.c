@@ -1073,7 +1073,7 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 			 &lmp90xxx_init, NULL, \
 			 &lmp##t##_data_##n, \
 			 &lmp##t##_config_##n, POST_KERNEL, \
-			 CONFIG_ADC_LMP90XXX_INIT_PRIORITY, \
+			 CONFIG_ADC_INIT_PRIORITY, \
 			 &lmp90xxx_adc_api);
 
 #define LMP90XXX_FOREACH_STATUS_OKAY(compat, fn)		\

@@ -1,0 +1,15 @@
+# Copyright (c) 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NXP_GPT_TIMER := nxp,gpt-hw-timer
+
+config MCUX_GPT_TIMER
+	bool "MCUX GPT Event timer"
+	depends on HAS_MCUX_GPT
+	default $(dt_compat_enabled,$(DT_COMPAT_NXP_GPT_TIMER))
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the NXP GPT timer,
+	  and provides the standard "system clock driver" interfaces. It uses the
+	  first GPT peripheral defined in the system, which can no longer be used
+	  for the GPT counter driver.

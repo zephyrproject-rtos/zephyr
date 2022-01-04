@@ -15,8 +15,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define LP503X_DEV_NAME	DT_LABEL(DT_INST(0, ti_lp503x))
-
 #define MAX_BRIGHTNESS	100
 
 #define SLEEP_DELAY_MS	1000
@@ -213,18 +211,20 @@ static int run_channel_test(const struct device *lp503x_dev)
 
 void main(void)
 {
-	const struct device *lp503x_dev;
+	const struct device *lp503x_dev = DEVICE_DT_GET_ANY(ti_lp503x);
+
 	int err;
 	uint8_t led;
 	uint8_t num_leds = 0;
 
-	lp503x_dev = device_get_binding(LP503X_DEV_NAME);
-	if (lp503x_dev) {
-		LOG_INF("Found LED controller %s", LP503X_DEV_NAME);
-	} else {
-		LOG_ERR("LED controller %s not found", LP503X_DEV_NAME);
+	if (!lp503x_dev) {
+		LOG_ERR("No device with compatible ti,lp503x found");
+		return;
+	} else if (!device_is_ready(lp503x_dev)) {
+		LOG_ERR("LED controller %s is not ready", lp503x_dev->name);
 		return;
 	}
+	LOG_INF("Found LED controller %s", lp503x_dev->name);
 
 	for (led = 0; led < LP503X_MAX_LEDS; led++) {
 		int col;

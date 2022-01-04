@@ -316,7 +316,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    &dmamux_stm32_init,					\
 		    NULL,						\
 		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
 		    &dma_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DMAMUX_INIT)

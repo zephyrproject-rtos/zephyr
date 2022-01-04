@@ -13,6 +13,7 @@
 #include <linker/linker-defs.h>
 #include <sys/util.h>
 #include <sys/errno_private.h>
+#include <sys/heap_listener.h>
 #include <sys/libc-hooks.h>
 #include <syscall_handler.h>
 #include <app_memory/app_memdomain.h>
@@ -179,12 +180,12 @@ int z_impl_zephyr_read_stdin(char *buf, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_zephyr_read_stdin(char *buf, int nbytes)
+static inline int z_vrfy_zephyr_read_stdin(char *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
 	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
-#include <syscalls/z_zephyr_read_stdin_mrsh.c>
+#include <syscalls/zephyr_read_stdin_mrsh.c>
 #endif
 
 int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
@@ -202,12 +203,12 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_zephyr_write_stdout(const void *buf, int nbytes)
+static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
-#include <syscalls/z_zephyr_write_stdout_mrsh.c>
+#include <syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
 #ifndef CONFIG_POSIX_API
@@ -215,7 +216,7 @@ int _read(int fd, char *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return z_impl_zephyr_read_stdin(buf, nbytes);
+	return zephyr_read_stdin(buf, nbytes);
 }
 __weak FUNC_ALIAS(_read, read, int);
 
@@ -223,7 +224,7 @@ int _write(int fd, const void *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return z_impl_zephyr_write_stdout(buf, nbytes);
+	return zephyr_write_stdout(buf, nbytes);
 }
 __weak FUNC_ALIAS(_write, write, int);
 
@@ -291,6 +292,10 @@ void *_sbrk(intptr_t count)
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
 		heap_sz += count;
 		ret = ptr;
+
+#ifdef CONFIG_NEWLIB_LIBC_HEAP_LISTENER
+		heap_listener_notify_resize(HEAP_ID_LIBC, ptr, (char *)ptr + count);
+#endif
 	} else {
 		ret = (void *)-1;
 	}

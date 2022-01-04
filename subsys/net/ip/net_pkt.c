@@ -119,16 +119,16 @@ K_MEM_SLAB_DEFINE(tx_pkts, sizeof(struct net_pkt), CONFIG_NET_PKT_TX_COUNT, 4);
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 
 NET_BUF_POOL_FIXED_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT,
-			  CONFIG_NET_BUF_DATA_SIZE, NULL);
+			  CONFIG_NET_BUF_DATA_SIZE, 4, NULL);
 NET_BUF_POOL_FIXED_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT,
-			  CONFIG_NET_BUF_DATA_SIZE, NULL);
+			  CONFIG_NET_BUF_DATA_SIZE, 4, NULL);
 
 #else /* !CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT,
-			CONFIG_NET_BUF_DATA_POOL_SIZE, NULL);
+			CONFIG_NET_BUF_DATA_POOL_SIZE, 4, NULL);
 NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT,
-			CONFIG_NET_BUF_DATA_POOL_SIZE, NULL);
+			CONFIG_NET_BUF_DATA_POOL_SIZE, 4, NULL);
 
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
@@ -538,7 +538,7 @@ void net_pkt_unref(struct net_pkt *pkt)
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s [%d] pkt %p ref %d frags %p (%s():%d)",
+	NET_DBG("%s [%d] pkt %p ref %ld frags %p (%s():%d)",
 		slab2str(pkt->slab), k_mem_slab_num_free_get(pkt->slab),
 		pkt, ref - 1, pkt->frags, caller, line);
 #endif
@@ -619,7 +619,7 @@ struct net_pkt *net_pkt_ref(struct net_pkt *pkt)
 	} while (!atomic_cas(&pkt->atomic_ref, ref, ref + 1));
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s [%d] pkt %p ref %d (%s():%d)",
+	NET_DBG("%s [%d] pkt %p ref %ld (%s():%d)",
 		slab2str(pkt->slab), k_mem_slab_num_free_get(pkt->slab),
 		pkt, ref + 1, caller, line);
 #endif
@@ -1791,6 +1791,21 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 		net_pkt_set_ipv6_next_hdr(clone_pkt,
 					  net_pkt_ipv6_next_hdr(pkt));
 	}
+
+#if defined(CONFIG_IEEE802154)
+	net_pkt_set_ieee802154_rssi(clone_pkt, net_pkt_ieee802154_rssi(pkt));
+	net_pkt_set_ieee802154_lqi(clone_pkt, net_pkt_ieee802154_lqi(pkt));
+	net_pkt_set_ieee802154_arb(clone_pkt, net_pkt_ieee802154_arb(pkt));
+	net_pkt_set_ieee802154_ack_fpb(clone_pkt, net_pkt_ieee802154_ack_fpb(pkt));
+	net_pkt_set_ieee802154_frame_secured(clone_pkt, net_pkt_ieee802154_frame_secured(pkt));
+	net_pkt_set_ieee802154_mac_hdr_rdy(clone_pkt, net_pkt_ieee802154_mac_hdr_rdy(pkt));
+#if defined(CONFIG_IEEE802154_2015)
+	net_pkt_set_ieee802154_fv2015(clone_pkt, net_pkt_ieee802154_fv2015(pkt));
+	net_pkt_set_ieee802154_ack_seb(clone_pkt, net_pkt_ieee802154_ack_seb(pkt));
+	net_pkt_set_ieee802154_ack_fc(clone_pkt, net_pkt_ieee802154_ack_fc(pkt));
+	net_pkt_set_ieee802154_ack_keyid(clone_pkt, net_pkt_ieee802154_ack_keyid(pkt));
+#endif
+#endif
 }
 
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout)

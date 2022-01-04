@@ -13,6 +13,6 @@ config COUNTER_SAM0_TC32
 
 config COUNTER_ESP32
 	bool
-	default y if SOC_ESP32
+	default y if SOC_ESP32 || SOC_ESP32S2
 
 source "Kconfig.zephyr"

@@ -7,7 +7,7 @@
 
 
 #define MY_PORT 4242
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || defined(CONFIG_NET_TCP2) || \
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || defined(CONFIG_NET_TCP) || \
 	defined(CONFIG_COVERAGE)
 #define STACK_SIZE 4096
 #else
@@ -97,3 +97,12 @@ static inline bool is_tunnel(struct net_if *iface)
 	return false;
 }
 #endif /* CONFIG_NET_L2_IPIP */
+
+#if defined(CONFIG_USB_DEVICE_STACK)
+int init_usb(void);
+#else
+static inline int init_usb(void)
+{
+	return 0;
+}
+#endif /* CONFIG_USB_DEVICE_STACK */

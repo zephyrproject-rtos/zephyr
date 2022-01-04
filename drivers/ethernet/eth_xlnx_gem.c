@@ -114,11 +114,18 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 "%s invalid max./nominal link speed value %u",
 		 dev->name, (uint32_t)dev_conf->max_link_speed);
 
-	/* MDC clock divider validity check */
+	/* MDC clock divider validity check, SoC dependent */
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
 	__ASSERT(dev_conf->mdc_divider <= MDC_DIVIDER_48,
 		 "%s invalid MDC clock divider value %u, must be in "
 		 "range 0 to %u", dev->name, dev_conf->mdc_divider,
 		 (uint32_t)MDC_DIVIDER_48);
+#elif defined(CONFIG_SOC_SERIES_XILINX_ZYNQ7000)
+	__ASSERT(dev_conf->mdc_divider <= MDC_DIVIDER_224,
+		 "%s invalid MDC clock divider value %u, must be in "
+		 "range 0 to %u", dev->name, dev_conf->mdc_divider,
+		 (uint32_t)MDC_DIVIDER_224);
+#endif
 
 	/* AMBA AHB configuration options */
 	__ASSERT((dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_32BIT ||
@@ -775,6 +782,7 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 		}
 	}
 
+#if defined(CONFIG_SOC_XILINX_ZYNQMP)
 	/*
 	 * ZynqMP register crl_apb.GEMx_REF_CTRL:
 	 * RX_CLKACT bit [26]
@@ -808,6 +816,27 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 	if ((tmp & ETH_XLNX_CRL_APB_WPROT_BIT) > 0) {
 		sys_write32(tmp, ETH_XLNX_CRL_APB_WPROT_REGISTER_ADDRESS);
 	}
+# elif defined(CONFIG_SOC_SERIES_XILINX_ZYNQ7000)
+	clk_ctrl_reg  = sys_read32(dev_conf->clk_ctrl_reg_address);
+	clk_ctrl_reg &= ~((ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK <<
+			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR0_SHIFT) |
+			(ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK <<
+			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR1_SHIFT));
+	clk_ctrl_reg |= ((div0 & ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK) <<
+			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR0_SHIFT) |
+			((div1 & ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK) <<
+			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR1_SHIFT);
+
+	/*
+	 * SLCR must be unlocked prior to and locked after writing to
+	 * the clock configuration register.
+	 */
+	sys_write32(ETH_XLNX_SLCR_UNLOCK_KEY,
+		    ETH_XLNX_SLCR_UNLOCK_REGISTER_ADDRESS);
+	sys_write32(clk_ctrl_reg, dev_conf->clk_ctrl_reg_address);
+	sys_write32(ETH_XLNX_SLCR_LOCK_KEY,
+		    ETH_XLNX_SLCR_LOCK_REGISTER_ADDRESS);
+#endif /* CONFIG_SOC_XILINX_ZYNQMP / CONFIG_SOC_SERIES_XILINX_ZYNQ7000 */
 
 	LOG_DBG("%s set clock dividers div0/1 %u/%u for target "
 		"frequency %u Hz", dev->name, div0, div1, target);

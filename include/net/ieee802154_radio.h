@@ -281,6 +281,13 @@ struct ieee802154_config {
 			const uint8_t *data;
 			uint16_t data_len;
 			uint16_t short_addr;
+			/**
+			 * The extended address is expected to be passed starting
+			 * with the leftmost octet and ending with the rightmost octet.
+			 * A device with an extended address 01:23:45:67:89:ab:cd:ef
+			 * should provide a pointer to array containing values in the
+			 * same exact order.
+			 */
 			const uint8_t *ext_addr;
 		} ack_ie;
 	};
@@ -387,17 +394,8 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
  *
  * @return NET_OK if it was handled, NET_CONTINUE otherwise
  */
-#ifndef CONFIG_IEEE802154_RAW_MODE
 extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 						    struct net_pkt *pkt);
-#else /* CONFIG_IEEE802154_RAW_MODE */
-
-static inline enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-							   struct net_pkt *pkt)
-{
-	return NET_CONTINUE;
-}
-#endif /* CONFIG_IEEE802154_RAW_MODE */
 
 /**
  * @brief Initialize L2 stack for a given interface

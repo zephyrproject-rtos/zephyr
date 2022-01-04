@@ -64,17 +64,6 @@
 #define STM32WL_DUAL_CORE
 #endif
 
-#if STM32_AHB_PRESCALER > 1
-/*
- * AHB prescaler allows to set a HCLK frequency (feeding cortex systick)
- * lower than SYSCLK frequency (actual core frequency).
- * Though, zephyr doesn't make a difference today between these two clocks.
- * So, changing this prescaler is not allowed until it is made possible to
- * use them independently in zephyr clock subsystem.
- */
-#error "AHB prescaler can't be higher than 1"
-#endif
-
 /**
  * @brief fill in AHB/APB buses configuration structure
  */
@@ -210,7 +199,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32WLX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_AHB3:
-		LL_AHB3_GRP1_EnableClock(pclken->enr);
+		LL_AHB3_GRP1_DisableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32_* */
 	case STM32_CLOCK_BUS_APB1:
@@ -486,18 +475,24 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_MSI_Disable();
 
 #elif STM32_PLL_SRC_HSE
-	int hse_bypass;
 
+#ifndef CONFIG_SOC_SERIES_STM32WLX
+	int hse_bypass;
 	if (IS_ENABLED(STM32_HSE_BYPASS)) {
 		hse_bypass = LL_UTILS_HSEBYPASS_ON;
 	} else {
 		hse_bypass = LL_UTILS_HSEBYPASS_OFF;
 	}
+#else
+	if (IS_ENABLED(STM32_HSE_TCXO)) {
+		LL_RCC_HSE_EnableTcxo();
+	}
+	if (IS_ENABLED(STM32_HSE_DIV2)) {
+		LL_RCC_HSE_EnableDiv2();
+	}
+#endif
 
 	/* Switch to PLL with HSE as clock source */
-#ifdef CONFIG_SOC_SERIES_STM32WLX
-	LL_RCC_HSE_EnableTcxo();
-#endif
 	LL_PLL_ConfigSystemClock_HSE(
 #if !defined(CONFIG_SOC_SERIES_STM32WBX) && !defined(CONFIG_SOC_SERIES_STM32WLX)
 		CONFIG_CLOCK_STM32_HSE_CLOCK,
@@ -520,8 +515,14 @@ int stm32_clock_control_init(const struct device *dev)
 					       GET_CURRENT_FLASH_PRESCALER());
 
 	/* Calculate new SystemCoreClock variable based on HSE freq */
-	new_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(CONFIG_CLOCK_STM32_HSE_CLOCK,
-						hclk_prescaler);
+	uint32_t hse_freq;
+	if (IS_ENABLED(STM32_HSE_DIV2)) {
+		hse_freq = CONFIG_CLOCK_STM32_HSE_CLOCK / 2;
+	} else {
+		hse_freq = CONFIG_CLOCK_STM32_HSE_CLOCK;
+	}
+	new_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(hse_freq, hclk_prescaler);
+
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
 	new_flash_freq = RCC_CALC_FLASH_FREQ(CONFIG_CLOCK_STM32_HSE_CLOCK,
 					       flash_prescaler);
@@ -542,18 +543,18 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Enable HSE if not enabled */
 	if (LL_RCC_HSE_IsReady() != 1) {
+#ifdef CONFIG_SOC_SERIES_STM32WLX
+		if (IS_ENABLED(STM32_HSE_TCXO)) {
+			LL_RCC_HSE_EnableTcxo();
+		}
+#elif !defined(CONFIG_SOC_SERIES_STM32WBX)
 		/* Check if need to enable HSE bypass feature or not */
 		if (IS_ENABLED(STM32_HSE_BYPASS)) {
-#ifdef CONFIG_SOC_SERIES_STM32WLX
-			LL_RCC_HSE_EnableTcxo();
-		} else {
-			LL_RCC_HSE_DisableTcxo();
-#else
 			LL_RCC_HSE_EnableBypass();
 		} else {
 			LL_RCC_HSE_DisableBypass();
-#endif
 		}
+#endif
 
 		/* Enable HSE */
 		LL_RCC_HSE_Enable();
@@ -624,13 +625,11 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_SetFlashLatency(new_flash_freq);
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32WBX)
 	/* Set MSI Range */
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_RCC_MSI_EnableRangeSelection();
 #endif
 	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
-#endif
 
 #if STM32_MSI_PLL_MODE
 	/* Enable MSI hardware auto calibration */
@@ -727,5 +726,5 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY,
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &stm32_clock_control_api);

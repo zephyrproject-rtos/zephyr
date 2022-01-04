@@ -1,5 +1,0 @@
-tests:
-  subsys.pm.device_pm:
-    # arch_irq_unlock(0) can't work correctly on these arch
-    arch_exclude: arc xtensa
-    tags: power

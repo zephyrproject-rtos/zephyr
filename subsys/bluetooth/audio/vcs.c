@@ -152,7 +152,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 			notify = true;
 		}
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		volume_change = true;
@@ -164,7 +164,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 			notify = true;
 		}
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		volume_change = true;
@@ -181,14 +181,14 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	case BT_VCS_OPCODE_UNMUTE:
 		BT_DBG("Unmute (0x%x)", opcode);
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		break;
 	case BT_VCS_OPCODE_MUTE:
 		BT_DBG("Mute (0x%x)", opcode);
-		if (vcs_inst.srv.state.mute == 0) {
-			vcs_inst.srv.state.mute = 1;
+		if (vcs_inst.srv.state.mute == BT_VCS_STATE_UNMUTED) {
+			vcs_inst.srv.state.mute = BT_VCS_STATE_MUTED;
 			notify = true;
 		}
 		break;
@@ -362,6 +362,21 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 	static bool registered;
 	int err;
 
+	CHECKIF(param == NULL) {
+		BT_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(param->mute > BT_VCS_STATE_MUTED) {
+		BT_DBG("Invalid mute value: %u", param->mute);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->step == 0) {
+		BT_DBG("Invalid step value: %u", param->step);
+		return -EINVAL;
+	}
+
 	if (registered) {
 		*vcs = &vcs_inst;
 		return -EALREADY;
@@ -386,8 +401,9 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 	}
 
 
-	vcs_inst.srv.state.volume = 100; /* Default value */
-	vcs_inst.srv.volume_step = 1; /* Default value */
+	vcs_inst.srv.state.volume = param->volume;
+	vcs_inst.srv.state.mute = param->mute;
+	vcs_inst.srv.volume_step = param->step;
 	vcs_inst.srv.service_p = &vcs_svc;
 
 	err = bt_gatt_service_register(&vcs_svc);

@@ -8,6 +8,7 @@
 #include <sys/mem_manage.h>
 #include <toolchain.h>
 #include <mmu.h>
+#include <linker/sections.h>
 
 /* 32-bit IA32 page tables have no mechanism to restrict execution */
 #if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && !defined(CONFIG_X86_PAE)
@@ -17,6 +18,7 @@
 #define BASE_FLAGS	(K_MEM_CACHE_WB)
 volatile bool expect_fault;
 
+__pinned_noinit
 static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE)
 			test_page[2 * CONFIG_MMU_PAGE_SIZE];
 

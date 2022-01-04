@@ -1,0 +1,7 @@
+# Copyright (c) 2021, Marc Reilly, Creative Product Design
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_BITBANG
+	bool "Bitbang SPI controller driver"
+	help
+	  Enable the Bitbang SPI controller

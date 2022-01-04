@@ -18,6 +18,9 @@ zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_ENABLE_BACKTRACE xtensa_backtrace.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_ENABLE_BACKTRACE debug_helpers_asm.S)
+zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
+
+zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 
 zephyr_library_include_directories(include)
 

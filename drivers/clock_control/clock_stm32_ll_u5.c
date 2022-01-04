@@ -30,18 +30,6 @@
 #define z_apb3_prescaler(v) LL_RCC_APB3_DIV_ ## v
 #define apb3_prescaler(v) z_apb3_prescaler(v)
 
-
-#if STM32_AHB_PRESCALER > 1
-/*
- * AHB prescaler allows to set a HCLK frequency (feeding cortex systick)
- * lower than SYSCLK frequency (actual core frequency).
- * Though, zephyr doesn't make a difference today between these two clocks.
- * So, changing this prescaler is not allowed until it is made possible to
- * use them independently in zephyr clock subsystem.
- */
-#error "AHB prescaler can't be higher than 1"
-#endif
-
 #if STM32_SYSCLK_SRC_PLL
 
 /**
@@ -60,9 +48,10 @@ static void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
-#if STM32_LSE_CLOCK
+	/* Enable the power interface clock */
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
 
+#if STM32_LSE_CLOCK
 	if (!LL_PWR_IsEnabledBkUpAccess()) {
 		/* Enable write access to Backup domain */
 		LL_PWR_EnableBkUpAccess();
@@ -222,6 +211,21 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 	.get_rate = stm32_clock_control_get_subsys_rate,
 };
 
+static void set_regu_voltage(uint32_t hclk_freq)
+{
+	if (hclk_freq < MHZ(25)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE4);
+	} else if (hclk_freq < MHZ(55)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE3);
+	} else if (hclk_freq < MHZ(110)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+	} else {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	}
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
+}
+
 /*
  * Unconditionally switch the system clock source to HSI.
  */
@@ -252,20 +256,6 @@ static void set_up_clk_msis(void)
 	LL_RCC_MSI_EnableRangeSelection();
 
 	LL_RCC_MSIS_SetRange(STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
-
-	if (STM32_MSIS_RANGE < 4) {
-		/* MSI clock trimming for ranges 0 to 3 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_0);
-	} else if (STM32_MSIS_RANGE < 8) {
-		/* MSI clock trimming for ranges 4 to 7 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_1);
-	} else if (STM32_MSIS_RANGE < 12) {
-		/* MSI clock trimming for ranges 8 to 11 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_2);
-	} else {
-		/* MSI clock trimming for ranges 12 to 15 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_3);
-	}
 
 #if STM32_MSIS_PLL_MODE
 
@@ -335,6 +325,8 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 				     STM32_PLL_N_MULTIPLIER,
 				     STM32_PLL_R_DIVISOR);
 
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 55) {
 		/*
 		 * Set EPOD prescaler based on PLL1 input freq (MSI/PLLM)
@@ -385,6 +377,8 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	LL_RCC_HSE_Disable();
 
 #elif STM32_PLL_SRC_HSI
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
 	/* Switch to PLL with HSI as clock source */
 	LL_PLL_ConfigSystemClock_HSI(&s_PLLInitStruct, &s_ClkInitStruct);
 
@@ -394,6 +388,8 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 
 #elif STM32_PLL_SRC_HSE
 	int hse_bypass;
+
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	if (IS_ENABLED(STM32_HSE_BYPASS)) {
 		hse_bypass = LL_UTILS_HSEBYPASS_ON;
@@ -490,8 +486,6 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	uint32_t old_hclk_freq;
 	uint32_t new_hclk_freq;
 
-	set_up_clk_msis();
-
 	old_hclk_freq = HAL_RCC_GetHCLKFreq();
 
 	/* Calculate new SystemCoreClock variable with MSI freq */
@@ -510,7 +504,10 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
 	/* Set MSIS as SYSCLCK source */
+	set_up_clk_msis();
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
 	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
@@ -602,5 +599,5 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY,
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &stm32_clock_control_api);

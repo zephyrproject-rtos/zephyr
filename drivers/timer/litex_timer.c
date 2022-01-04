@@ -52,13 +52,27 @@ uint32_t sys_clock_cycle_get_32(void)
 	return timer_total;
 }
 
+uint64_t sys_clock_cycle_get_64(void)
+{
+	static struct k_spinlock lock;
+	uint64_t timer_total;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	litex_write8(UPDATE_TOTAL, TIMER_TOTAL_UPDATE);
+	timer_total = litex_read64(TIMER_TOTAL);
+
+	k_spin_unlock(&lock, key);
+
+	return timer_total;
+}
+
 /* tickless kernel is not supported */
 uint32_t sys_clock_elapsed(void)
 {
 	return 0;
 }
 
-int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority),
@@ -80,3 +94,6 @@ int sys_clock_driver_init(const struct device *dev)
 
 	return 0;
 }
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

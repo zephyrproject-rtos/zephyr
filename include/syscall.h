@@ -14,6 +14,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
+#include <linker/sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,6 +111,7 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
  *
  * @return true if the CPU is currently running with user permissions
  */
+__pinned_func
 static inline bool k_is_user_context(void)
 {
 #ifdef CONFIG_USERSPACE

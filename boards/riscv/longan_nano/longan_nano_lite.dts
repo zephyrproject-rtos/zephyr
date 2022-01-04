@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <gigadevice/gd32vf103X8.dtsi>
+#include "longan_nano-pinctrl.dtsi"
+
+/ {
+	model = "Sipeed Longan Nano Lite";
+	compatible = "sipeed,longan_nano_lite";
+
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};

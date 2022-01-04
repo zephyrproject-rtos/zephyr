@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACING_MACROS_H_
 #define ZEPHYR_INCLUDE_TRACING_TRACING_MACROS_H_
 
-#ifndef CONFIG_TRACING
+#if !defined(CONFIG_TRACING) && !defined(__DOXYGEN__)
 
 #define SYS_PORT_TRACING_FUNC(type, func, ...) do { } while (false)
 #define SYS_PORT_TRACING_FUNC_ENTER(type, func, ...) do { } while (false)
@@ -18,10 +18,23 @@
 #define SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(obj_type, func, obj, ...) do { } while (false)
 #define SYS_PORT_TRACING_OBJ_FUNC_EXIT(obj_type, func, obj, ...) do { } while (false)
 
+#define SYS_PORT_TRACING_TRACKING_FIELD(type)
+
 #else
 
-/* Helper macros used by the extended tracing system
+/**
+ * @brief Tracing utility macros
+ * @defgroup subsys_tracing_macros Tracing utility macros
+ * @ingroup subsys_tracing
+ * @{
  */
+
+/** @cond INTERNAL_HIDDEN */
+
+/*
+ * Helper macros used by the extended tracing system
+ */
+
 #define _SYS_PORT_TRACING_TYPE_MASK(type) \
 	sys_port_trace_type_mask_ ## type
 #define _SYS_PORT_TRACING_FUNC(name, func) \
@@ -43,8 +56,17 @@
 #define _SYS_PORT_TRACING_OBJ_FUNC_EXIT(name, func) \
 	sys_port_trace_ ## name ## _ ## func ## _exit
 
+/*
+ * Helper macros for the object tracking system
+ */
 
-/* Object trace macros part of the system for checking if certain
+#define _SYS_PORT_TRACKING_OBJ_INIT(name) \
+	sys_port_track_ ## name ## _init
+#define _SYS_PORT_TRACKING_OBJ_FUNC(name, func) \
+	sys_port_track_ ## name ## _ ## func
+
+/*
+ * Object trace macros part of the system for checking if certain
  * objects should be traced or not depending on the tracing configuration.
  */
 #if defined(CONFIG_TRACING_THREAD)
@@ -145,12 +167,15 @@
 	#define sys_port_trace_type_mask_k_timer(trace_call)
 #endif
 
+#if defined(CONFIG_TRACING_EVENT)
+	#define sys_port_trace_type_mask_k_event(trace_call) trace_call
+#else
+	#define sys_port_trace_type_mask_k_event(trace_call)
+#endif
 
-
+/** @endcond */
 
 /**
- * @def SYS_PORT_TRACING_OBJ_MASK
- *
  * @brief Checks if an object type should be traced or not.
  *
  * @param type Tracing event type/object
@@ -158,9 +183,6 @@
  */
 #define SYS_PORT_TRACING_TYPE_MASK(type, trace_call) \
 	_SYS_PORT_TRACING_TYPE_MASK(type)(trace_call)
-
-
-
 
 /**
  * @def SYS_PORT_TRACING_FUNC
@@ -241,11 +263,11 @@
 	do { \
 		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
 			_SYS_PORT_TRACING_OBJ_INIT(obj_type)(obj, ##__VA_ARGS__)); \
+		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
+			_SYS_PORT_TRACKING_OBJ_INIT(obj_type)(obj, ##__VA_ARGS__)); \
 	} while (false)
 
 /**
- * @def SYS_PORT_TRACING_OBJ_FUNC
- *
  * @brief Tracing macro for simple object function calls often without returns or branching.
  *
  * @param obj_type The type of object associated with the call (k_thread, k_sem, k_mutex etc.)
@@ -259,11 +281,11 @@
 	do { \
 		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
 			_SYS_PORT_TRACING_OBJ_FUNC(obj_type, func)(obj, ##__VA_ARGS__)); \
+		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
+			_SYS_PORT_TRACKING_OBJ_FUNC(obj_type, func)(obj, ##__VA_ARGS__)); \
 	} while (false)
 
 /**
- * @def SYS_PORT_TRACING_OBJ_FUNC_ENTER
- *
  * @brief Tracing macro for the entry into a function that might or might not return
  * a value.
  *
@@ -281,8 +303,6 @@
 	} while (false)
 
 /**
- * @def SYS_PORT_TRACING_OBJ_FUNC_BLOCKING
- *
  * @brief Tracing macro for when a function blocks during its execution.
  *
  * @param obj_type The type of object associated with the call (k_thread, k_sem, k_mutex etc.)
@@ -290,6 +310,7 @@
  * match the name of the function but should rather match what the user called in case of
  * system calls etc. That is, we can often omit the z_vrfy/z_impl part of the name.
  * @param obj Object
+ * @param timeout Timeout
  * @param ... Additional parameters relevant to the tracing call
  */
 #define SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(obj_type, func, obj, timeout, ...) \
@@ -300,8 +321,6 @@
 	} while (false)
 
 /**
- * @def SYS_PORT_TRACING_OBJ_FUNC_EXIT
- *
  * @brief Tracing macro for when a function ends its execution. Potential return values
  * can be given as additional arguments.
  *
@@ -317,5 +336,17 @@
 		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
 			_SYS_PORT_TRACING_OBJ_FUNC_EXIT(obj_type, func)(obj, ##__VA_ARGS__)); \
 	} while (false)
+
+/**
+ * @brief Field added to kernel objects so they are tracked.
+ *
+ * @param type Type of object being tracked (k_thread, k_sem, etc.)
+ */
+#define SYS_PORT_TRACING_TRACKING_FIELD(type) \
+	SYS_PORT_TRACING_TYPE_MASK(type, struct type *_obj_track_next;)
+
+/** @} */ /* end of subsys_tracing_macros */
+
 #endif /* CONFIG_TRACING */
-#endif
+
+#endif /* ZEPHYR_INCLUDE_TRACING_TRACING_MACROS_H_ */

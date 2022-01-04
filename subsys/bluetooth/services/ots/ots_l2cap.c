@@ -28,11 +28,11 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
 
 NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1,
-			  BT_L2CAP_SDU_BUF_SIZE(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU),
+			  BT_L2CAP_SDU_BUF_SIZE(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU), 8,
 			  NULL);
 
 #if (CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU > BT_L2CAP_SDU_RX_MTU)
-NET_BUF_POOL_FIXED_DEFINE(ot_chan_rx_pool, 1, CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU,
+NET_BUF_POOL_FIXED_DEFINE(ot_chan_rx_pool, 1, CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU, 8,
 			  NULL);
 #endif
 
@@ -122,7 +122,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
 {
-	LOG_DBG("Channel %p status %u", chan, *status);
+	LOG_DBG("Channel %p status %lu", chan, atomic_get(status));
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)

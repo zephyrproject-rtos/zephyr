@@ -207,6 +207,11 @@ class RunnerCaps:
     - commands: set of supported commands; default is {'flash',
       'debug', 'debugserver', 'attach'}.
 
+    - dev_id: whether the runner supports device identifiers, in the form of an
+      -i, --dev-id option. This is useful when the user has multiple debuggers
+      connected to a single computer, in order to select which one will be used
+      with the command provided.
+
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
       must honor the --dt-flash option.
@@ -225,14 +230,17 @@ class RunnerCaps:
     def __init__(self,
                  commands: Set[str] = {'flash', 'debug',
                                        'debugserver', 'attach'},
+                 dev_id: bool = False,
                  flash_addr: bool = False,
                  erase: bool = False):
         self.commands = commands
+        self.dev_id = dev_id
         self.flash_addr = bool(flash_addr)
         self.erase = bool(erase)
 
     def __str__(self):
         return (f'RunnerCaps(commands={self.commands}, '
+                f'dev_id={self.dev_id}, '
                 f'flash_addr={self.flash_addr}, '
                 f'erase={self.erase}'
                 ')')
@@ -260,7 +268,7 @@ class RunnerConfig(NamedTuple):
     bin_file: Optional[str]     # zephyr.bin path, or None
     gdb: Optional[str] = None   # path to a usable gdb
     openocd: Optional[str] = None  # path to a usable openocd
-    openocd_search: Optional[str] = None  # add this to openocd search path
+    openocd_search: List[str] = []  # add these paths to the openocd search path
 
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
@@ -280,6 +288,17 @@ class _ToggleAction(argparse.Action):
     def __call__(self, parser, args, ignored, option):
         setattr(args, self.dest, not option.startswith('--no-'))
 
+class DeprecatedAction(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        _logger.warning(f'Argument {self.option_strings[0]} is deprecated, '
+                        f'use {self._replacement} instead.')
+        setattr(namespace, self.dest, values)
+
+def depr_action(*args, replacement=None, **kwargs):
+    action = DeprecatedAction(*args, **kwargs)
+    setattr(action, '_replacement', replacement)
+    return action
 
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
@@ -423,6 +442,13 @@ class ZephyrBinaryRunner(abc.ABC):
         # using them to mean something else.
         caps = cls.capabilities()
 
+        if caps.dev_id:
+            parser.add_argument('-i', '--dev-id',
+                                dest='dev_id',
+                                help=cls.dev_id_help())
+        else:
+            parser.add_argument('-i', '--dev-id', help=argparse.SUPPRESS)
+
         if caps.flash_addr:
             parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
                                 action=_DTFlashAction,
@@ -454,6 +480,8 @@ class ZephyrBinaryRunner(abc.ABC):
         - ``args``: arguments parsed from execution environment, as
           specified by ``add_parser()``.'''
         caps = cls.capabilities()
+        if args.dev_id and not caps.dev_id:
+            _missing_cap(cls, '--dev-id')
         if args.dt_flash and not caps.flash_addr:
             _missing_cap(cls, '--dt-flash')
         if args.erase and not caps.erase:
@@ -529,6 +557,14 @@ class ZephyrBinaryRunner(abc.ABC):
         '''
         return (self.build_conf.getboolean('CONFIG_DEBUG_THREAD_INFO') or
                 self.build_conf.getboolean('CONFIG_OPENOCD_SUPPORT'))
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        ''' Get the ArgParse help text for the --dev-id option.'''
+        return '''Device identifier. Use it to select
+                  which debugger, device, node or instance to
+                  target when multiple ones are available or
+                  connected.'''
 
     @staticmethod
     def require(program: str) -> str:

@@ -527,6 +527,7 @@ a.internal:visited code.literal {
 
 /* Admonition tweaks */
 
+.rst-content .admonition,
 .rst-content .admonition.note,
 .rst-content .admonition.seealso {
     background-color: var(--admonition-note-background-color);
@@ -534,6 +535,7 @@ a.internal:visited code.literal {
     overflow: auto;
 }
 
+.rst-content .admonition .admonition-title,
 .rst-content .admonition.note .admonition-title,
 .rst-content .admonition.seealso .admonition-title {
     background-color: var(--admonition-note-title-background-color);
@@ -927,8 +929,16 @@ kbd, .kbd {
     background-color: var(--admonition-danger-background-color);
 }
 
-#dark-mode-toggle {
-    float: right;
+
+dark-mode-toggle::part(fieldset) {
+  padding-inline: 0.75rem;
+  padding-block: 0;
+}
+
+dark-mode-toggle::part(darkLabel),
+dark-mode-toggle::part(lightLabel),
+dark-mode-toggle::part(toggleLabel){
+  font-size: unset;
 }
 
 /* Home page grid display */

@@ -1,0 +1,145 @@
+/*
+ * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32.dtsi>
+
+/ {
+	model = "esp32";
+	compatible = "espressif,esp32";
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &green_led;
+		led2 = &red_led;
+		uart-0 = &uart0;
+		i2c-0 = &i2c0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,display = &ili9341;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios =  <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "Blue - LED0";
+		};
+
+		green_led: led_1 {
+			gpios =  <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			label = "Green - LED1";
+		};
+
+		red_led: led_2 {
+			gpios =  <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "Red - LED2";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&cpu1 {
+	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <1>;
+	rx-pin = <3>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	sda-pin = <21>;
+	scl-pin = <22>;
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <12>;
+	mosi-pin = <13>;
+	sclk-pin = <14>;
+	csel-pin = <15>;
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <25>;
+	mosi-pin = <23>;
+	sclk-pin = <19>;
+	csel-pin = <22>;
+
+	ili9341: ili9341@0 {
+		compatible = "ilitek,ili9341";
+		label = "DISPLAY";
+		spi-max-frequency = <25000000>;
+		reg = <0>;
+		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		pixel-format = <0>;
+		rotation = <0>;
+		width = <240>;
+		height = <320>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@9000 {
+			label = "storage";
+			reg = <0x00009000 0x00006000>;
+		};
+	};
+};

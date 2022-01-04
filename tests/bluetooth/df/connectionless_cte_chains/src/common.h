@@ -19,3 +19,4 @@ void common_prepare_df_cfg(struct ll_adv_set *adv, uint8_t cte_count);
 void common_validate_per_adv_chain(struct ll_adv_set *adv, uint8_t pdu_count);
 void common_validate_chain_with_cte(struct ll_adv_set *adv, uint8_t cte_count,
 				    uint8_t ad_data_pdu_count);
+void common_teardown(struct ll_adv_set *adv);

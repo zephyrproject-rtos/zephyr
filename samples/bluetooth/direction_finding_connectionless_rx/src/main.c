@@ -209,7 +209,8 @@ static void create_sync(void)
 
 	printk("Creating Periodic Advertising Sync...");
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
-	sync_create_param.options = 0;
+
+	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;

@@ -93,6 +93,7 @@
 
 &adc {
 	interrupts = <21 0>;
+	interrupt-names = "resrdy";
 	clocks = <&gclk 0x17>, <&pm 0x20 16>;
 	clock-names = "GCLK", "PM";
 };

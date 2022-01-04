@@ -26,3 +26,4 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - adc

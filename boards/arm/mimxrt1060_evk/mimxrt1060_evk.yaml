@@ -23,8 +23,10 @@ supported:
   - i2c
   - netif:eth
   - sdhc
+  - spi
   - usb_device
   - kscan:touch
   - dma
   - can
   - watchdog
+  - adc

@@ -11,7 +11,7 @@ The Bluetooth mesh shell interface provides access to most Bluetooth mesh featur
 Prerequisites
 *************
 
-The Bluetooth mesh shell subsystem depends on the :ref:`bluetooth_mesh_models_cfg_cli` and :ref:`bluetooth_mesh_models_health_cli` models.
+The Bluetooth mesh shell subsystem depends on the application to create the composition data and do the mesh initialization.
 
 Application
 ***********
@@ -125,7 +125,7 @@ General configuration
 ``mesh init``
 -------------
 
-	Initialize the mesh. This command must be run before any other mesh command.
+	Initialize the mesh shell. This command must be run before any other mesh command.
 
 
 ``mesh reset <addr>``
@@ -298,7 +298,7 @@ Provisioning
 Configuration Client model
 ==========================
 
-The Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
+The Configuration Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CFG_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
 
 The Configuration Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Configuration Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Configuration Client model targets the new node. The Configuration Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
@@ -372,6 +372,20 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``count``: Sets the new relay retransmit count if ``val`` is ``on``. Ignored if ``val`` is ``off``. Defaults to ``2`` if omitted.
 	* ``interval``: Sets the new relay retransmit interval in milliseconds if ``val`` is ``on``. Ignored if ``val`` is ``off``. Defaults to ``20`` if omitted.
 
+``mesh node-id <NetKeyIndex> [Identity]``
+-----------------------------------------
+
+	Get or Set of current Node Identity state of a subnet.
+
+	* ``NetKeyIndex``: The network key index to Get/Set.
+	* ``Identity``: If present, sets the identity of Node Identity state.
+
+``mesh polltimeout-get <LPN Address>``
+--------------------------------------
+
+	Get current value of the PollTimeout timer of the LPN within a Friend node.
+
+	* ``addr`` Address of Low Power node.
 
 ``mesh net-transmit-param [<count: 0-7> <interval: 10-320>]``
 -------------------------------------------------------------
@@ -390,6 +404,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``NetKeyIndex``: The network key index to add.
 	* ``val``: If present, sets the key value as a 128-bit hexadecimal value. Any missing bytes will be zero. Only valid if the key does not already exist in the Configuration Database. If omitted, the default key value is used.
 
+
+``mesh net-key-upd <NetKeyIndex> [val]``
+----------------------------------------
+
+	Update a network key to the target node.
+
+	* ``NetKeyIndex``: The network key index to updated.
+	* ``val``: If present, sets the key value as a 128-bit hexadecimal value. Any missing bytes will be zero. If omitted, the default key value is used.
 
 ``mesh net-key-get``
 --------------------
@@ -414,6 +436,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``AppKeyIndex``: The application key index to add.
 	* ``val``: If present, sets the key value as a 128-bit hexadecimal value. Any missing bytes will be zero. Only valid if the key does not already exist in the Configuration Database. If omitted, the default key value is used.
 
+``mesh app-key-upd <NetKeyIndex> <AppKeyIndex> [val]``
+------------------------------------------------------
+
+	Update an application key to the target node.
+
+	* ``NetKeyIndex``: The network key index the application key is bound to.
+	* ``AppKeyIndex``: The application key index to update.
+	* ``val``: If present, sets the key value as a 128-bit hexadecimal value. Any missing bytes will be zero. If omitted, the default key value is used.
 
 ``mesh app-key-get <NetKeyIndex>``
 ----------------------------------
@@ -484,6 +514,25 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 		* ``count``: Number of retransmission for each published message (``0`` to ``7``).
 		* ``interval`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
 
+``mesh mod-pub-va <addr> <UUID> <AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval> <mod id> [cid]``
+------------------------------------------------------------------------------------------------------------------
+
+	Set the publication parameters of a model.
+
+	* ``addr``: Address of the element the model is on.
+	* ``Model ID``: The model ID of the model to get the bound keys of.
+	* ``cid``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
+
+	Publication parameters:
+
+		* ``UUID``: The destination virtual address to publish to.
+		* ``AppKeyIndex``: The application key index to publish with.
+		* ``cred``: Whether to publish with Friendship credentials when acting as a Low Power Node.
+		* ``ttl``: TTL value to publish with (``0x00`` to ``0x07f``).
+		* ``period``: Encoded publication period, or 0 to disable periodic publication.
+		* ``count``: Number of retransmission for each published message (``0`` to ``7``).
+		* ``interval`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
+
 
 ``mesh mod-sub-add <elem addr> <sub addr> <Model ID> [Company ID]``
 -------------------------------------------------------------------
@@ -528,6 +577,34 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``Model ID``: The model ID of the model to add the subscription to.
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
+``mesh mod-sub-ow <elem addr> <sub addr> <Model ID> [Company ID]``
+-------------------------------------------------------------------
+
+	Overwrite all model subscriptios with a single new group address.
+
+	* ``elem addr``: Address of the element the model is on.
+	* ``sub addr``: 16-bit group address the model should added to the subscription list (``0xc000`` to ``0xFEFF``).
+	* ``Model ID``: The model ID of the model to add the subscription to.
+	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
+
+``mesh mod-sub-ow-va <elem addr> <Label UUID> <Model ID> [Company ID]``
+------------------------------------------------------------------------
+
+	Overwrite all model subscriptions with a single new virtual address. Models only receive messages sent to their unicast address or a group or virtual address they subscribe to. Models may subscribe to multiple group and virtual addresses.
+
+	* ``elem addr``: Address of the element the model is on.
+	* ``Label UUID``: 128-bit label UUID of the virtual address as the new Address to be added to the subscription list. Any omitted bytes will be zero.
+	* ``Model ID``: The model ID of the model to add the subscription to.
+	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
+
+``mesh mod-sub-del-all <elem addr> <Model ID> [Company ID]``
+-------------------------------------------------------------------
+
+	Remove all group and virtual address subscriptions from of a model.
+
+	* ``elem addr``: Address of the element the model is on.
+	* ``Model ID``: The model ID of the model to Unsubscribe all.
+	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 ``mesh mod-sub-get <elem addr> <Model ID> [Company ID]``
 --------------------------------------------------------
@@ -538,6 +615,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``Model ID``: The model ID of the model to get the subscription list of.
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
+
+``mesh krp <NetKeyIdx> [Phase]``
+-------------------------------------
+
+	Get or set the key refresh phase of a subnet.
+
+	* ``NetKeyIdx``: The identified network key used to Get/Set the current Key Refresh Phase state.
+	* ``Phase``: New Key Refresh Phase. Valid phases are 0, 1 or 2.
 
 ``mesh hb-sub [<src> <dst> <period>]``
 --------------------------------------
@@ -583,7 +668,7 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 Health Client model
 ===================
 
-The Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
+The Health Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_HEALTH_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
 
 The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 

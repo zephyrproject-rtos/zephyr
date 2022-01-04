@@ -14,7 +14,7 @@
 	soc {
 		flash-controller@58004000 {
 			flash0: flash@8000000 {
-				reg = <0x08000000 DT_SIZE_K(812)>;
+				reg = <0x08000000 DT_SIZE_K(808)>;
 			};
 		};
 	};

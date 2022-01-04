@@ -156,5 +156,5 @@ static struct creg_gpio_drv_data creg_gpio_drvdata = {
 
 DEVICE_DT_INST_DEFINE(0, creg_gpio_init, NULL,
 		      &creg_gpio_drvdata, &creg_gpio_cfg,
-		      POST_KERNEL, CONFIG_GPIO_SNPS_CREG_INIT_PRIORITY,
+		      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 		      &api_table);

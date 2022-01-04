@@ -245,6 +245,10 @@ A thread's initial priority value can be altered up or down after the thread
 has been started. Thus it is possible for a preemptible thread to become
 a cooperative thread, and vice versa, by changing its priority.
 
+.. note::
+    The scheduler does not make heuristic decisions to re-prioritize threads.
+    Thread priorities are set and changed only at the application's request.
+
 The kernel supports a virtually unlimited number of thread priority levels.
 The configuration options :kconfig:`CONFIG_NUM_COOP_PRIORITIES` and
 :kconfig:`CONFIG_NUM_PREEMPT_PRIORITIES` specify the number of priority
@@ -260,6 +264,39 @@ ranges:
 For example, configuring 5 cooperative priorities and 10 preemptive priorities
 results in the ranges -5 to -1 and 0 to 9, respectively.
 
+.. _metairq_priorities:
+
+Meta-IRQ Priorities
+===================
+
+When enabled (see :kconfig:`CONFIG_NUM_METAIRQ_PRIORITIES`), there is a special
+subclass of cooperative priorities at the highest (numerically lowest)
+end of the priority space: meta-IRQ threads.  These are scheduled
+according to their normal priority, but also have the special ability
+to preempt all other threads (and other meta-IRQ threads) at lower
+priorities, even if those threads are cooperative and/or have taken a
+scheduler lock. Meta-IRQ threads are still threads, however,
+and can still be interrupted by any hardware interrupt.
+
+This behavior makes the act of unblocking a meta-IRQ thread (by any
+means, e.g. creating it, calling k_sem_give(), etc.) into the
+equivalent of a synchronous system call when done by a lower
+priority thread, or an ARM-like "pended IRQ" when done from true
+interrupt context.  The intent is that this feature will be used to
+implement interrupt "bottom half" processing and/or "tasklet" features
+in driver subsystems.  The thread, once woken, will be guaranteed to
+run before the current CPU returns into application code.
+
+Unlike similar features in other OSes, meta-IRQ threads are true
+threads and run on their own stack (which must be allocated normally),
+not the per-CPU interrupt stack. Design work to enable the use of the
+IRQ stack on supported architectures is pending.
+
+Note that because this breaks the promise made to cooperative
+threads by the Zephyr API (namely that the OS won't schedule other
+thread until the current thread deliberately blocks), it should be
+used only with great care from application code.  These are not simply
+very high priority threads and should not be used as such.
 
 .. _thread_options_v2:
 
@@ -289,7 +326,7 @@ The following thread options are supported.
     SSE registers. Also see :c:macro:`K_FP_REGS`.
 
     By default, the kernel does not attempt to save and restore the contents
-    of this register when scheduling the thread.
+    of these registers when scheduling the thread.
 
 :c:macro:`K_FP_REGS`
     This option indicate that the thread uses the CPU's floating point

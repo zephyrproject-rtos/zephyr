@@ -179,8 +179,8 @@ on https://github.com and have Git tools available on your development system.
    (Linux, macOS, and Windows) but some of the tools used in the sections below
    are only available on Linux and macOS. On Windows, instead of running these
    tools yourself, you will need to rely on the Continuous Integration (CI)
-   service ``buildkite``, which runs automatically on GitHub when you submit
-   your Pull Request (PR).  You can see any failure results in the Buildkite
+   service using Github Actions, which runs automatically on GitHub when you submit
+   your Pull Request (PR).  You can see any failure results in the workflow
    details link near the end of the PR conversation list. See
    `Continuous Integration`_ for more information
 
@@ -205,15 +205,16 @@ Pull Requests and Issues
 
 .. _Zephyr devel mailing list: https://lists.zephyrproject.org/g/devel
 
-.. _Zephyr Slack channel: https://zephyrproject.slack.com
+.. _Zephyr Discord Server: https://chat.zephyrproject.org
 
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Slack channel`_)
-to see what others think of your issue (and proposed solution).  You may find
-others that have encountered the issue you're finding, or that have similar
-ideas for changes or additions.  Send a message to the `Zephyr devel mailing list`_
-to introduce and discuss your idea with the development community.
+conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Discord
+Server`_) to see what others think of your issue (and proposed solution).  You
+may find others that have encountered the issue you're finding, or that have
+similar ideas for changes or additions.  Send a message to the `Zephyr devel
+mailing list`_ to introduce and discuss your idea with the development
+community.
 
 It's always a good practice to search for existing or related issues before
 submitting your own. When you submit an issue (bug or feature request), the
@@ -695,11 +696,10 @@ every Pull Request (PR) in order to verify several aspects of the PR:
 * Twister builds for multiple architectures and boards
 * Documentation build to verify any doc changes
 
-CI is run both on the ``buildkite`` cloud service and Github Actions and it uses
-the same tools described in the `Contribution Tools`_ section.
-The CI results must be green indicating "All checks have passed" before
-the Pull Request can be merged.  CI is run when the PR is created, and
-again every time the PR is modified with a commit.
+CI is run on Github Actions and it uses the same tools described in the
+`Contribution Tools`_ section.  The CI results must be green indicating "All
+checks have passed" before the Pull Request can be merged.  CI is run when the
+PR is created, and again every time the PR is modified with a commit.
 
 The current status of the CI run can always be found at the bottom of the
 GitHub PR page, below the review status. Depending on the success or failure
@@ -709,17 +709,16 @@ of the run you will see:
 * "All checks have failed"
 
 In case of failure you can click on the "Details" link presented below the
-failure message in order to navigate to ``buildkite`` or ``Github Actions``
-and inspect the results.
-Once you click on the link you will be taken to the ``buildkite`` summary
+failure message in order to navigate to ``Github Actions`` and inspect the
+results.
+Once you click on the link you will be taken to the ``Github actions`` summary
 results page where a table with all the different builds will be shown. To see
 what build or test failed click on the row that contains the failed (i.e.
-non-green) build and then click on the "Tests" tab to see the console output
-messages indicating the failure.
+non-green) build.
 
 The `builds@lists.zephyrproject.org mailing list
-<https://lists.zephyrproject.org/g/builds>`_
-archives the CI (buildkite) nightly build results.
+<https://lists.zephyrproject.org/g/builds>`_ archives any nightly build results
+produced by CI.
 
 Contributions to External Modules
 **********************************

@@ -356,7 +356,7 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 	} else if (timeout == 0) {
 		count = 0;
 	} else {
-		count = timeout / 1000 + 1;
+		count = LOOP_DIVIDER;
 	}
 
 	/* First make sure that network interface is up */

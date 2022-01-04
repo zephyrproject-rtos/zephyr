@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT vishay_vcnl4040
 
 #include "vcnl4040.h"
+#include <pm/device.h>
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
@@ -218,8 +219,8 @@ static int vcnl4040_ambient_setup(const struct device *dev)
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int vcnl4040_device_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int vcnl4040_pm_action(const struct device *dev,
+			      enum pm_device_action action)
 {
 	int ret = 0;
 	uint16_t ps_conf;
@@ -354,15 +355,17 @@ static const struct vcnl4040_config vcnl4040_config = {
 	.gpio_flags = 0,
 #endif
 #endif
-	.led_i = DT_ENUM_IDX(DT_DRV_INST(0), led_current),
-	.led_dc = DT_ENUM_IDX(DT_DRV_INST(0), led_duty_cycle),
-	.als_it = DT_ENUM_IDX(DT_DRV_INST(0), als_it),
-	.proxy_it = DT_ENUM_IDX(DT_DRV_INST(0), proximity_it),
-	.proxy_type = DT_ENUM_IDX(DT_DRV_INST(0), proximity_trigger),
+	.led_i = DT_INST_ENUM_IDX(0, led_current),
+	.led_dc = DT_INST_ENUM_IDX(0, led_duty_cycle),
+	.als_it = DT_INST_ENUM_IDX(0, als_it),
+	.proxy_it = DT_INST_ENUM_IDX(0, proximity_it),
+	.proxy_type = DT_INST_ENUM_IDX(0, proximity_trigger),
 };
 
 static struct vcnl4040_data vcnl4040_data;
 
+PM_DEVICE_DT_INST_DEFINE(0, vcnl4040_pm_action);
+
 DEVICE_DT_INST_DEFINE(0, vcnl4040_init,
-	      vcnl4040_device_ctrl, &vcnl4040_data, &vcnl4040_config,
+	      PM_DEVICE_DT_INST_REF(0), &vcnl4040_data, &vcnl4040_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);

@@ -14,10 +14,9 @@
 /*
  * SPI read
  */
-int stmemsc_spi_read(const struct stmemsc_cfg_spi *stmemsc,
+int stmemsc_spi_read(const struct spi_dt_spec *stmemsc,
 		     uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
-	const struct spi_config *spi_cfg = &stmemsc->spi_cfg;
 	uint8_t buffer_tx[2] = { reg_addr | SPI_READ, 0 };
 
 	/*  write 1 byte with reg addr (msb at 1) + 1 dummy byte */
@@ -34,16 +33,15 @@ int stmemsc_spi_read(const struct stmemsc_cfg_spi *stmemsc,
 	};
 	const struct spi_buf_set rx = { .buffers = rx_buf, .count = 2 };
 
-	return spi_transceive(stmemsc->bus, spi_cfg, &tx, &rx);
+	return spi_transceive_dt(stmemsc, &tx, &rx);
 }
 
 /*
  * SPI write
  */
-int stmemsc_spi_write(const struct stmemsc_cfg_spi *stmemsc,
+int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
 		      uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
-	const struct spi_config *spi_cfg = &stmemsc->spi_cfg;
 	uint8_t buffer_tx[1] = { reg_addr & ~SPI_READ };
 
 	/*
@@ -56,5 +54,5 @@ int stmemsc_spi_write(const struct stmemsc_cfg_spi *stmemsc,
 	};
 	const struct spi_buf_set tx = { .buffers = tx_buf, .count = 2 };
 
-	return spi_write(stmemsc->bus, spi_cfg, &tx);
+	return spi_write_dt(stmemsc, &tx);
 }

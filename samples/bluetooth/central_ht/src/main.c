@@ -146,8 +146,8 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		memcpy(&uuid, BT_UUID_HTS, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;
 		discover_params.func = discover_func;
-		discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-		discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+		discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+		discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 		discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
 		err = bt_gatt_discover(default_conn, &discover_params);
@@ -228,7 +228,7 @@ static int scan_start(void)
 	 */
 	struct bt_le_scan_param scan_param = {
 		.type       = BT_LE_SCAN_TYPE_ACTIVE,
-		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
 	};

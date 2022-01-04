@@ -61,3 +61,15 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.flags = X86_THREAD_FLAG_ALL;
 	thread->switch_handle = thread;
 }
+
+int arch_float_disable(struct k_thread *thread)
+{
+	/* x86-64 always has FP/SSE enabled so cannot be disabled */
+	return -ENOTSUP;
+}
+
+int arch_float_enable(struct k_thread *thread, unsigned int options)
+{
+	/* x86-64 always has FP/SSE enabled so nothing to do here */
+	return 0;
+}

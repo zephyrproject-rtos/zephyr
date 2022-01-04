@@ -11,6 +11,7 @@
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <logging/log.h>
+#include <pm/device.h>
 #include <sys/byteorder.h>
 #include <sys/crc.h>
 
@@ -67,22 +68,24 @@ static int sgp40_attr_set(const struct device *dev,
 	switch ((enum sensor_attribute_sgp40)attr) {
 	case SENSOR_ATTR_SGP40_TEMPERATURE:
 	{
-		int16_t t_ticks;
-		int32_t tmp;
+		uint16_t t_ticks;
+		int16_t tmp;
 
-		tmp = CLAMP(val->val1, SGP40_COMP_MIN_T, SGP40_COMP_MAX_T);
-		t_ticks = ((tmp + 45U) * 0xFFFF / 175U) + 0.5;
+		tmp = (int16_t)CLAMP(val->val1, SGP40_COMP_MIN_T, SGP40_COMP_MAX_T);
+		/* adding +87 to avoid most rounding errors through truncation */
+		t_ticks = (uint16_t)((((tmp + 45) * 65535) + 87) / 175);
 		sys_put_be16(t_ticks, data->t_param);
 		data->t_param[2] = sgp40_compute_crc(t_ticks);
 	}
 		break;
 	case SENSOR_ATTR_SGP40_HUMIDITY:
 	{
-		int16_t rh_ticks;
-		int32_t tmp;
+		uint16_t rh_ticks;
+		uint8_t tmp;
 
-		tmp = CLAMP(val->val1, SGP40_COMP_MIN_RH, SGP40_COMP_MAX_RH);
-		rh_ticks = (tmp * 0xFFFF / 100U) + 0.5;
+		tmp = (uint8_t)CLAMP(val->val1, SGP40_COMP_MIN_RH, SGP40_COMP_MAX_RH);
+		/* adding +50 to eliminate rounding errors through truncation */
+		rh_ticks = (uint16_t)(((tmp * 65535U) + 50U) / 100U);
 		sys_put_be16(rh_ticks, data->rh_param);
 		data->rh_param[2] = sgp40_compute_crc(rh_ticks);
 	}
@@ -184,7 +187,8 @@ static int sgp40_channel_get(const struct device *dev,
 
 
 #ifdef CONFIG_PM_DEVICE
-static int sgp40_pm_ctrl(const struct device *dev, enum pm_device_action action)
+static int sgp40_pm_action(const struct device *dev,
+			   enum pm_device_action action)
 {
 	uint16_t cmd;
 
@@ -252,9 +256,11 @@ static const struct sensor_driver_api sgp40_api = {
 		.selftest = DT_INST_PROP(n, enable_selftest),	\
 	};							\
 								\
+	PM_DEVICE_DT_INST_DEFINE(n, sgp40_pm_action);		\
+								\
 	DEVICE_DT_INST_DEFINE(n,				\
 			      sgp40_init,			\
-			      sgp40_pm_ctrl,\
+			      PM_DEVICE_DT_INST_REF(n),	\
 			      &sgp40_data_##n,			\
 			      &sgp40_config_##n,		\
 			      POST_KERNEL,			\

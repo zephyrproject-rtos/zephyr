@@ -155,7 +155,11 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 		.bNumInterfaces = 1,
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
-		.bmAttributes = USB_SCD_ATTRIBUTES,
+		.bmAttributes = USB_SCD_RESERVED |
+				COND_CODE_1(CONFIG_USB_SELF_POWERED,
+					    (USB_SCD_SELF_POWERED), (0)) |
+				COND_CODE_1(CONFIG_USB_DEVICE_REMOTE_WAKEUP,
+					    (USB_SCD_REMOTE_WAKEUP), (0)),
 		.bMaxPower = CONFIG_USB_MAX_POWER,
 	},
 	.sec_dfu_cfg = {
@@ -431,6 +435,7 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 		case dfuIDLE:
 			dfu_reset_counters();
 			LOG_DBG("DFU_UPLOAD start");
+			__fallthrough;
 		case dfuUPLOAD_IDLE:
 			if (!setup->wLength ||
 			    dfu_data.block_nr != setup->wValue) {
@@ -756,7 +761,7 @@ static void dfu_interface_config(struct usb_desc_header *head,
 }
 
 /* Configuration of the DFU Device send to the USB Driver */
-USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
+USBD_DEFINE_CFG_DATA(dfu_config) = {
 	.usb_device_description = NULL,
 	.interface_config = dfu_interface_config,
 	.interface_descriptor = &dfu_cfg.if0,
@@ -772,7 +777,7 @@ USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
  * Dummy configuration, this is necessary to configure DFU mode descriptor
  * which is an alternative (secondary) device descriptor.
  */
-USBD_CFG_DATA_DEFINE(secondary, dfu) struct usb_cfg_data dfu_mode_config = {
+USBD_DEFINE_CFG_DATA(dfu_mode_config) = {
 	.usb_device_description = NULL,
 	.interface_config = NULL,
 	.interface_descriptor = &dfu_mode_desc.sec_dfu_cfg.if0,

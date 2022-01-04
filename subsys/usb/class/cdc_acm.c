@@ -358,9 +358,15 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		if (!dev_data->configured) {
 			cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
 					dev_data);
+			dev_data->configured = true;
 		}
-		dev_data->configured = true;
-		dev_data->tx_ready = true;
+		if (!dev_data->tx_ready) {
+			dev_data->tx_ready = true;
+			/* if wait tx irq, invoke callback */
+			if (dev_data->cb != NULL && dev_data->tx_irq_ena) {
+				k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
+			}
+		}
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_INF("Device disconnected");
@@ -582,7 +588,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	if (dev_data->tx_ready) {
+	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
 		return 1;
 	}
 
@@ -1064,8 +1070,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		},							\
 	};								\
 									\
-	USBD_CFG_DATA_DEFINE(primary, cdc_acm)				\
-	struct usb_cfg_data cdc_acm_config_##x = {			\
+	USBD_DEFINE_CFG_DATA(cdc_acm_config_##x) = {			\
 		.usb_device_description = NULL,				\
 		.interface_config = cdc_interface_config,		\
 		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
@@ -1078,26 +1083,27 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.endpoint = cdc_acm_ep_data_##x,			\
 	};								\
 									\
-	RING_BUF_DECLARE(rx_ringbuf_##x,				\
+	RING_BUF_DECLARE(cdc_acm_rx_rb_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
-	RING_BUF_DECLARE(tx_ringbuf_##x,				\
+	RING_BUF_DECLARE(cdc_acm_tx_rb_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
-		.rx_ringbuf = &rx_ringbuf_##x,				\
-		.tx_ringbuf = &tx_ringbuf_##x,				\
+		.rx_ringbuf = &cdc_acm_rx_rb_##x,			\
+		.tx_ringbuf = &cdc_acm_tx_rb_##x,			\
 	};
 
-#define CDC_ACM_DEVICE_DEFINE(idx, _)					\
+#define DT_DRV_COMPAT zephyr_cdc_acm_uart
+
+#define CDC_ACM_DT_DEVICE_DEFINE(idx)					\
+	BUILD_ASSERT(DT_INST_ON_BUS(idx, usb),				\
+		     "node " DT_NODE_PATH(DT_DRV_INST(idx))		\
+		     " is not assigned to a USB device controller");	\
 	CDC_ACM_CFG_AND_DATA_DEFINE(idx)				\
 									\
-	DEVICE_DEFINE(cdc_acm_##idx,					\
-		CONFIG_USB_CDC_ACM_DEVICE_NAME "_" #idx,		\
-		cdc_acm_init, NULL,					\
-		&cdc_acm_dev_data_##idx,				\
-		&cdc_acm_config_##idx,					\
-		POST_KERNEL,						\
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+	DEVICE_DT_INST_DEFINE(idx, cdc_acm_init, NULL,			\
+		&cdc_acm_dev_data_##idx, &cdc_acm_config_##idx,		\
+		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
 		&cdc_acm_driver_api);
 
-UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, CDC_ACM_DEVICE_DEFINE, _)
+DT_INST_FOREACH_STATUS_OKAY(CDC_ACM_DT_DEVICE_DEFINE);

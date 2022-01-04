@@ -1,0 +1,5 @@
+tests:
+  arch.arm64.gicv3_its:
+    build_only: true
+    platform_allow: fvp_base_revc_2xaemv8a
+    skip: true

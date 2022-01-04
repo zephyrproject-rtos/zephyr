@@ -156,6 +156,19 @@ struct stats_hdr {
 	STATS_INCN(group__, var__, 1)
 
 /**
+ * @brief Set a statistic entry to the specified amount.
+ *
+ * Set a statistic entry to the specified amount.  Compiled out if
+ * CONFIG_STATS is not defined.
+ *
+ * @param group__               The group containing the entry to increase.
+ * @param var__                 The statistic entry to increase.
+ * @param n__                   The amount to set the statistic entry to.
+ */
+#define STATS_SET(group__, var__, n__)	\
+	((group__).var__ = (n__))
+
+/**
  * @brief Sets a statistic entry to zero.
  *
  * Sets a statistic entry to zero.  Compiled out if CONFIG_STATS is not
@@ -349,6 +362,7 @@ struct stats_hdr *stats_group_find(const char *name);
 #define STATS_SIZE_INIT_PARMS(group__, size__)
 #define STATS_INCN(group__, var__, n__)
 #define STATS_INC(group__, var__)
+#define STATS_SET(group__, var__)
 #define STATS_CLEAR(group__, var__)
 #define STATS_INIT_AND_REG(group__, size__, name__) (0)
 
@@ -359,7 +373,7 @@ struct stats_hdr *stats_group_find(const char *name);
 #define STATS_NAME_MAP_NAME(sectname__) stats_map_ ## sectname__
 
 #define STATS_NAME_START(sectname__) \
-	const struct stats_name_map STATS_NAME_MAP_NAME(sectname__)[] = {
+	static const struct stats_name_map STATS_NAME_MAP_NAME(sectname__)[] = {
 
 #define STATS_NAME(sectname__, entry__)	\
 	{ offsetof(STATS_SECT_DECL(sectname__), entry__), #entry__ },

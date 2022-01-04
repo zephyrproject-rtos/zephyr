@@ -1,0 +1,12 @@
+# I3G4250D three-axis digital output gyroscope
+
+# Copyright (c) 2021 Jonathan Hahn
+# SPDX-License-Identifier: Apache-2.0
+
+config I3G4250D
+	bool "I3G4250D three-axis digital output gyroscope"
+	depends on SPI
+	select HAS_STMEMSC
+	select USE_STDC_I3G4250D
+	help
+	  Enable driver for I3G4250D SPI-based three-axis motion tracking device.

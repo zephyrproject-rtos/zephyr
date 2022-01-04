@@ -31,10 +31,6 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-#ifdef CONFIG_THREAD_RUNTIME_STATS
-k_thread_runtime_stats_t threads_runtime_stats;
-#endif
-
 #ifdef CONFIG_THREAD_MONITOR
 /* This lock protects the linked list of active threads; i.e. the
  * initial _kernel.threads pointer and the linked list made up of
@@ -499,8 +495,6 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	return stack_ptr;
 }
 
-#define THREAD_COOKIE	0x1337C0D3
-
 /*
  * The provided stack_size value is presumed to be either the result of
  * K_THREAD_STACK_SIZEOF(stack), or the size value passed to the instance
@@ -582,7 +576,11 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	}
 #endif
 #ifdef CONFIG_SCHED_CPU_MASK
-	new_thread->base.cpu_mask = -1;
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
+		new_thread->base.cpu_mask = 1; /* must specify only one cpu */
+	} else {
+		new_thread->base.cpu_mask = -1; /* allow all cpus */
+	}
 #endif
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	/* _current may be null if the dummy thread is not used */
@@ -604,10 +602,6 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->resource_pool = _current->resource_pool;
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
-
-#ifdef CONFIG_THREAD_RUNTIME_STATS
-	memset(&new_thread->rt_stats, 0, sizeof(new_thread->rt_stats));
-#endif
 
 	return stack_ptr;
 }
@@ -1004,67 +998,27 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 void z_thread_mark_switched_in(void)
 {
+#if defined(CONFIG_SCHED_THREAD_USAGE) && !defined(CONFIG_USE_SWITCH)
+	z_sched_usage_start(_current);
+#endif
+
 #ifdef CONFIG_TRACING
 	SYS_PORT_TRACING_FUNC(k_thread, switched_in);
 #endif
-
-#ifdef CONFIG_THREAD_RUNTIME_STATS
-	struct k_thread *thread;
-
-	thread = k_current_get();
-#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
-	thread->rt_stats.last_switched_in = timing_counter_get();
-#else
-	thread->rt_stats.last_switched_in = k_cycle_get_32();
-#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
-
-#endif /* CONFIG_THREAD_RUNTIME_STATS */
 }
 
 void z_thread_mark_switched_out(void)
 {
-#ifdef CONFIG_THREAD_RUNTIME_STATS
-#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
-	timing_t now;
-#else
-	uint32_t now;
-#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
-
-	uint64_t diff;
-	struct k_thread *thread;
-
-	thread = k_current_get();
-
-	if (unlikely(thread->rt_stats.last_switched_in == 0)) {
-		/* Has not run before */
-		return;
-	}
-
-	if (unlikely(thread->base.thread_state == _THREAD_DUMMY)) {
-		/* dummy thread has no stat struct */
-		return;
-	}
-
-#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
-	now = timing_counter_get();
-	diff = timing_cycles_get(&thread->rt_stats.last_switched_in, &now);
-#else
-	now = k_cycle_get_32();
-	diff = (uint64_t)now - thread->rt_stats.last_switched_in;
-	thread->rt_stats.last_switched_in = 0;
-#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
-
-	thread->rt_stats.stats.execution_cycles += diff;
-
-	threads_runtime_stats.execution_cycles += diff;
-#endif /* CONFIG_THREAD_RUNTIME_STATS */
+#if defined(CONFIG_SCHED_THREAD_USAGE) && !defined(CONFIG_USE_SWITCH)
+	z_sched_usage_stop();
+#endif
 
 #ifdef CONFIG_TRACING
 	SYS_PORT_TRACING_FUNC(k_thread, switched_out);
 #endif
 }
+#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
-#ifdef CONFIG_THREAD_RUNTIME_STATS
 int k_thread_runtime_stats_get(k_tid_t thread,
 			       k_thread_runtime_stats_t *stats)
 {
@@ -1072,8 +1026,11 @@ int k_thread_runtime_stats_get(k_tid_t thread,
 		return -EINVAL;
 	}
 
-	(void)memcpy(stats, &thread->rt_stats.stats,
-		     sizeof(thread->rt_stats.stats));
+	*stats = (k_thread_runtime_stats_t) {};
+
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	stats->execution_cycles = z_sched_thread_usage(thread);
+#endif
 
 	return 0;
 }
@@ -1084,11 +1041,12 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 		return -EINVAL;
 	}
 
-	(void)memcpy(stats, &threads_runtime_stats,
-		     sizeof(threads_runtime_stats));
+	*stats = (k_thread_runtime_stats_t) {};
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	stats->execution_cycles = (_kernel.all_thread_usage
+				   + _kernel.idle_thread_usage);
+#endif
 
 	return 0;
 }
-#endif /* CONFIG_THREAD_RUNTIME_STATS */
-
-#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */

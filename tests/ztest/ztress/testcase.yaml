@@ -1,0 +1,7 @@
+common:
+  tags: test_framework
+  filter: CONFIG_QEMU_TARGET
+tests:
+  testing.ztest.ztress:
+    integration_platforms:
+      - qemu_x86

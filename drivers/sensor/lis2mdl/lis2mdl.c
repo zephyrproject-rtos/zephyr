@@ -14,6 +14,7 @@
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
 #include <drivers/sensor.h>
+#include <pm/device.h>
 #include <string.h>
 #include <logging/log.h>
 #include "lis2mdl.h"
@@ -442,8 +443,8 @@ static int lis2mdl_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int lis2mdl_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int lis2mdl_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	const struct lis2mdl_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
@@ -488,9 +489,11 @@ static int lis2mdl_pm_control(const struct device *dev,
  */
 
 #define LIS2MDL_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2mdl_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2mdl_init,				\
-			    lis2mdl_pm_control,				\
+			    PM_DEVICE_DT_INST_REF(inst),		\
 			    &lis2mdl_data_##inst,			\
 			    &lis2mdl_config_##inst,			\
 			    POST_KERNEL,				\
@@ -511,7 +514,6 @@ static int lis2mdl_pm_control(const struct device *dev,
 
 #define LIS2MDL_SPI_OPERATION (SPI_WORD_SET(8) |			\
 				SPI_OP_MODE_MASTER |			\
-				SPI_LINES_SINGLE |			\
 				SPI_MODE_CPOL |				\
 				SPI_MODE_CPHA)				\
 
@@ -525,9 +527,8 @@ static int lis2mdl_pm_control(const struct device *dev,
 			.handle =					\
 			   (void *)&lis2mdl_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.spi = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.spi_cfg = SPI_CONFIG_DT_INST(inst,		\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LIS2MDL_SPI_OPERATION,	\
 					   0),				\
 		},							\
@@ -552,9 +553,8 @@ static int lis2mdl_pm_control(const struct device *dev,
 			.handle =					\
 			   (void *)&lis2mdl_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.i2c = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		.cancel_offset = DT_INST_PROP(inst, cancel_offset),	\
 		.single_mode = DT_INST_PROP(inst, single_mode),		\

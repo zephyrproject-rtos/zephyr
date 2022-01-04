@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
-set(EMU_PLATFORM armfvp)
+set(SUPPORTED_EMU_PLATFORMS armfvp)
 set(ARMFVP_BIN_NAME FVP_Base_RevC-2xAEMvA)
 
 set(ARMFVP_FLAGS
@@ -14,4 +14,5 @@ set(ARMFVP_FLAGS
   -C bp.vis.disable_visualisation=1
   -C bp.vis.rate_limit-enable=0
   -C gic_distributor.ARE-fixed-to-one=1
+  -C gic_distributor.ITS-device-bits=16
   )

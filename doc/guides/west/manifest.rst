@@ -288,6 +288,10 @@ next.
        submodules`_ defined by the project. See
        :ref:`west-manifest-submodules` for details.
 
+   * - ``userdata``
+     - Optional. The value is an arbitrary YAML value. See
+       :ref:`west-project-userdata`.
+
 .. _Git submodules: https://git-scm.com/book/en/v2/Git-Tools-Submodules
 
 Defaults
@@ -1053,6 +1057,44 @@ You can do that with this manifest file:
 Here, ``west update`` will recursively initialize and update just the
 submodules in ``foo`` with paths ``path/to/foo-first-sub`` and
 ``path/to/foo-second-sub``. Any submodules in ``bar`` are still ignored.
+
+.. _west-project-userdata:
+
+Project user data
+*****************
+
+West versions v0.12 and later support an optional ``userdata`` key in projects.
+It is meant for consumption by programs that require user-specific project
+metadata. Beyond parsing it as YAML, west itself ignores the value completely.
+
+The key's value is arbitrary YAML. West parses the value and makes it
+accessible to programs using :ref:`west-apis` as the ``userdata`` attribute of
+the corresponding ``west.manifest.Project`` object.
+
+Example manifest fragment:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+       - name: bar
+         userdata: a-string
+       - name: baz
+         userdata:
+           key: value
+
+Example Python usage:
+
+.. code-block:: python
+
+   manifest = west.manifest.Manifest.from_file()
+
+   foo, bar, baz = manifest.get_projects(['foo', 'bar', 'baz'])
+
+   foo.userdata # None
+   bar.userdata # 'a-string'
+   baz.userdata # {'key': 'value'}
 
 .. _west-manifest-import:
 

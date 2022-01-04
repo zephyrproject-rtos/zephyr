@@ -193,6 +193,7 @@ est	ESTeem Wireless Modems
 ettus	NI Ettus Research
 eukrea	Eukréa Electromatique
 everest	Everest Semiconductor Co. Ltd.
+everlight	Everlight Electronics Co. Ltd.
 everspin	Everspin Technologies, Inc.
 evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
@@ -217,6 +218,7 @@ gaisler	Gaisler
 gardena	GARDENA GmbH
 gateworks	Gateworks Corporation
 gcw	Game Consoles Worldwide
+gd	GigaDevice Semiconductor
 ge	General Electric Company
 geekbuying	GeekBuying
 gef	GE Fanuc Intelligent Platforms Embedded Systems, Inc.
@@ -410,6 +412,7 @@ nokia	Nokia
 nordic	Nordic Semiconductor
 novtech	NovTech, Inc.
 nutsboard	NutsBoard
+nuclei	Nuclei System Technology
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
 nvidia	NVIDIA
@@ -538,6 +541,7 @@ silex-insight	Silex Insight
 siliconfile	Siliconfile Technologies lnc.
 siliconmitus	Silicon Mitus, Inc.
 siemens	Siemens AG
+simcom	SIMCom Wireless Solutions Co., LTD
 simtek	Cypress Semiconductor Corporation (Simtek Corporation)
 sinlinx	Sinlinx Electronics Technology Co., LTD
 sinovoip	SinoVoip Co., Ltd
@@ -646,6 +650,7 @@ wexler	Wexler
 whwave	Shenzhen whwave Electronics, Inc.
 wi2wi	Wi2Wi, Inc.
 winbond	Winbond Electronics corp.
+winsen	Zhengzhou Winsen Electronics Technology Co., Ltd.
 winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
 wiznet	WIZnet Co., Ltd.

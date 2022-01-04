@@ -16,3 +16,4 @@ flash: 352
 supported:
   - gpio
   - pinmux
+  - i2c

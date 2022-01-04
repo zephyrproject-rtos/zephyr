@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LL_VERSION_NUMBER BT_HCI_VERSION_5_2
+#define LL_VERSION_NUMBER BT_HCI_VERSION_5_3
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #define LL_FEAT_BIT_ENC BIT64(BT_LE_FEAT_BIT_ENC)
@@ -25,17 +25,23 @@
 #define LL_FEAT_BIT_EXT_REJ_IND 0
 #endif /* !CONFIG_BT_CTLR_EXT_REJ_IND */
 
-#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
-#define LL_FEAT_BIT_SLAVE_FEAT_REQ BIT64(BT_LE_FEAT_BIT_SLAVE_FEAT_REQ)
-#else /* !CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
-#define LL_FEAT_BIT_SLAVE_FEAT_REQ 0
-#endif /* !CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
+#define LL_FEAT_BIT_PER_INIT_FEAT_XCHG BIT64(BT_LE_FEAT_BIT_PER_INIT_FEAT_XCHG)
+#else /* !CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
+#define LL_FEAT_BIT_PER_INIT_FEAT_XCHG 0
+#endif /* !CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 #define LL_FEAT_BIT_PING BIT64(BT_LE_FEAT_BIT_PING)
 #else /* !CONFIG_BT_CTLR_LE_PING */
 #define LL_FEAT_BIT_PING 0
 #endif /* !CONFIG_BT_CTLR_LE_PING */
+
+/* Maximum supported ACL Tx fragement size is limited by uint8_t len field in
+ * the PDU structure of the Controller implementation. 4 octets reserved for
+ * MIC in encrypted ACL PDUs, hence ACL Tx fragment maximum size of 251 octets.
+ */
+#define LL_LENGTH_OCTETS_TX_MAX MIN(CONFIG_BT_BUF_ACL_TX_SIZE, 251U)
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
 #define LL_FEAT_BIT_DLE BIT64(BT_LE_FEAT_BIT_DLE)
@@ -88,8 +94,10 @@
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define LL_FEAT_BIT_EXT_ADV BIT64(BT_LE_FEAT_BIT_EXT_ADV)
+#define LL_EXT_OCTETS_RX_MAX CONFIG_BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 #define LL_FEAT_BIT_EXT_ADV 0
+#define LL_EXT_OCTETS_RX_MAX 0
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC) || \
@@ -160,13 +168,13 @@
 #endif /* !CONFIG_BT_CTLR_DF && !CONFIG_BT_CTLR_DF_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-#define LL_FEAT_BIT_CIS_CENTRAL BIT64(BT_LE_FEAT_BIT_CIS_MASTER)
+#define LL_FEAT_BIT_CIS_CENTRAL BIT64(BT_LE_FEAT_BIT_CIS_CENTRAL)
 #else /* !CONFIG_BT_CTLR_CENTRAL_ISO */
 #define LL_FEAT_BIT_CIS_CENTRAL 0
 #endif /* !CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-#define LL_FEAT_BIT_CIS_PERIPHERAL BIT64(BT_LE_FEAT_BIT_CIS_SLAVE)
+#define LL_FEAT_BIT_CIS_PERIPHERAL BIT64(BT_LE_FEAT_BIT_CIS_PERIPHERAL)
 #else /* !CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #define LL_FEAT_BIT_CIS_PERIPHERAL 0
 #endif /* !CONFIG_BT_CTLR_PERIPHERAL_ISO */
@@ -190,7 +198,10 @@
 /* All defined feature bits */
 #define LL_FEAT_BIT_MASK         0xFFFFFFFFFULL
 
-/* Feature bits that are valid from controller to controller */
+/*
+ * LL_FEAT_BIT_MASK_VALID is defined as per
+ * Core Spec V5.2 Volume 6, Part B, chapter 4.6
+ */
 #define LL_FEAT_BIT_MASK_VALID   0xFF787CF2FULL
 
 /* Mask to filter away octet 0 for feature exchange */
@@ -203,7 +214,7 @@
 #define LL_FEAT                  (LL_FEAT_BIT_ENC | \
 				  LL_FEAT_BIT_CONN_PARAM_REQ | \
 				  LL_FEAT_BIT_EXT_REJ_IND | \
-				  LL_FEAT_BIT_SLAVE_FEAT_REQ | \
+				  LL_FEAT_BIT_PER_INIT_FEAT_XCHG | \
 				  LL_FEAT_BIT_PING | \
 				  LL_FEAT_BIT_DLE | \
 				  LL_FEAT_BIT_PRIVACY | \

@@ -47,17 +47,20 @@
 	sram1: memory@20008000 {
 		compatible = "mmio-sram";
 		reg = <0x20008000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@2000c000 {
 		compatible = "mmio-sram";
 		reg = <0x2000c000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	sram4: memory@20010000 {
 		/* Conencted to USB bus*/
 		compatible = "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM4";
 	};
 };
 

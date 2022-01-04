@@ -8,6 +8,7 @@ menuconfig STM32_LPTIM_TIMER
 	depends on "$(dt_nodelabel_enabled,lptim1)"
 	depends on CLOCK_CONTROL && PM
 	select TICKLESS_CAPABLE
+	select EXPERIMENTAL
 	help
 	  This module implements a kernel device driver for the LowPower Timer
 	  and provides the standard "system clock driver" interfaces.
@@ -17,15 +18,15 @@ if STM32_LPTIM_TIMER
 choice STM32_LPTIM_CLOCK
 	prompt "LPTIM clock value configuration"
 
-config STM32_LPTIM_CLOCK_LSE
-	bool "LSE"
-	help
-	  Use LSE as LPTIM clock
-
 config STM32_LPTIM_CLOCK_LSI
 	bool "LSI"
 	help
 	  Use LSI as LPTIM clock
+
+config STM32_LPTIM_CLOCK_LSE
+	bool "LSE"
+	help
+	  Use LSE as LPTIM clock
 
 endchoice
 

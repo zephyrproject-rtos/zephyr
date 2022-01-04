@@ -362,5 +362,5 @@ DEVICE_DT_INST_DEFINE(0,
 			uart_msp432p4xx_init, NULL,
 			&uart_msp432p4xx_dev_data_0,
 			&uart_msp432p4xx_dev_cfg_0,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
 			(void *)&uart_msp432p4xx_driver_api);

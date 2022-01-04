@@ -472,6 +472,7 @@ static const struct lora_driver_api sx126x_lora_api = {
 	.send = sx12xx_lora_send,
 	.send_async = sx12xx_lora_send_async,
 	.recv = sx12xx_lora_recv,
+	.recv_async = sx12xx_lora_recv_async,
 	.test_cw = sx12xx_lora_test_cw,
 };
 

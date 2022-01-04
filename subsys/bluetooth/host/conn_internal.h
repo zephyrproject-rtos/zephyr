@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_DISCONNECT_COMPLETE,
@@ -29,9 +30,9 @@ enum {
 	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
 	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
 	BT_CONN_AUTO_PHY_UPDATE,        /* Auto-update PHY */
-	BT_CONN_SLAVE_PARAM_UPDATE,	/* If slave param update timer fired */
-	BT_CONN_SLAVE_PARAM_SET,	/* If slave param were set from app */
-	BT_CONN_SLAVE_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
+	BT_CONN_PERIPHERAL_PARAM_UPDATE,/* If periph param update timer fired */
+	BT_CONN_PERIPHERAL_PARAM_SET,	/* If periph param were set from app */
+	BT_CONN_PERIPHERAL_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
 
 	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
@@ -41,6 +42,10 @@ enum {
 	/* Auto-initiated Data Length done. Auto-initiated Data Length Update
 	 * is only needed for controllers with BT_QUIRK_NO_AUTO_DLE. */
 	BT_CONN_AUTO_DATA_LEN_COMPLETE,
+
+	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
+	BT_CONN_CTE_TX_PARAMS_SET,       /* CTE transmission parameters are set */
+	BT_CONN_CTE_RSP_ENABLED,         /* CTE response procedure is enabled */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -99,6 +104,10 @@ struct bt_conn_sco {
 struct bt_conn_iso {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+
+	/* Reference to the struct bt_iso_chan */
+	struct bt_iso_chan      *chan;
+
 	union {
 		/* CIG ID */
 		uint8_t			cig_id;
@@ -107,10 +116,10 @@ struct bt_conn_iso {
 	};
 
 	union {
-		/* CIS ID */
+		/* CIS ID within the CIG */
 		uint8_t			cis_id;
 
-		/* BIS ID */
+		/* BIS ID within the BIG*/
 		uint8_t			bis_id;
 	};
 
@@ -157,6 +166,11 @@ struct bt_conn {
 	uint8_t			encrypt;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+	/** Accepted CTE type */
+	uint8_t cte_type;
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
@@ -173,13 +187,14 @@ struct bt_conn {
 
 	/* Completed TX for which we need to call the callback */
 	sys_slist_t		tx_complete;
+#if defined(CONFIG_BT_CONN_TX)
 	struct k_work           tx_complete_work;
-
+#endif /* CONFIG_BT_CONN_TX */
 
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
 
-	/* Active L2CAP/ISO channels */
+	/* Active L2CAP channels */
 	sys_slist_t		channels;
 
 	/* Delayed work deferred tasks:
@@ -247,17 +262,13 @@ struct bt_iso_create_param {
 	struct bt_iso_chan	**chans;
 };
 
-/* Bind ISO connections parameters */
-int bt_conn_bind_iso(struct bt_iso_create_param *param);
-
-/* Connect ISO connections */
-int bt_conn_connect_iso(struct bt_conn **conns, uint8_t num_conns);
+int bt_conn_iso_init(void);
 
 /* Add a new ISO connection */
 struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
 
 /* Cleanup ISO references */
-void bt_iso_cleanup(struct bt_conn *iso_conn);
+void bt_iso_cleanup_acl(struct bt_conn *iso_conn);
 
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);

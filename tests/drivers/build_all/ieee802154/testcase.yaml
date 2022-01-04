@@ -1,0 +1,32 @@
+common:
+  tags: drivers ieee802154
+  build_only: true
+tests:
+  ieee802154.build.external:
+    platform_allow: native_posix
+    extra_args: OVERLAY_CONFIG=external.conf
+  ieee802154.build.cc12xx_cc2520:
+    platform_allow: cc1352r_sensortag
+    extra_configs:
+      - CONFIG_IEEE802154_CC13XX_CC26XX=y
+      - CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ=y
+  ieee802154.build.kw41z:
+    platform_allow: frdm_kw41z
+    extra_configs:
+      - CONFIG_IEEE802154_KW41Z=y
+  ieee802154.build.mcr20a:
+    platform_allow: usb_kw24d512
+    extra_configs:
+      - CONFIG_IEEE802154_MCR20A=y
+  ieee802154.build.nrf5:
+    platform_allow: nrf52840dk_nrf52840
+    extra_configs:
+      - CONFIG_IEEE802154_NRF5=y
+  ieee802154.build.telink_b91:
+    platform_allow: tlsr9518adk80d
+    extra_configs:
+      - CONFIG_IEEE802154_TELINK_B91=y
+  ieee802154.build.upipe:
+    platform_allow: qemu_x86
+    extra_configs:
+      - CONFIG_IEEE802154_UPIPE=y

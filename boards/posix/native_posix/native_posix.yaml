@@ -5,7 +5,7 @@ arch: posix
 ram: 65536
 flash: 65536
 toolchain:
-  - zephyr
+  - host
   - llvm
 supported:
   - eeprom
@@ -14,5 +14,6 @@ supported:
   - adc
   - i2c
   - spi
+  - gpio
 testing:
   default: true

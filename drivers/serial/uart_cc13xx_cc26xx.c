@@ -397,8 +397,8 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
-					 enum pm_device_action action)
+static int uart_cc13xx_cc26xx_pm_action(const struct device *dev,
+					enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -535,11 +535,13 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define UART_CC13XX_CC26XX_DEVICE_DEFINE(n)				     \
+	PM_DEVICE_DT_INST_DEFINE(n, uart_cc13xx_cc26xx_pm_action);	     \
+									     \
 	DEVICE_DT_INST_DEFINE(n,					     \
 		uart_cc13xx_cc26xx_init_##n,				     \
-		uart_cc13xx_cc26xx_pm_control,				     \
+		PM_DEVICE_DT_INST_REF(n),				     \
 		&uart_cc13xx_cc26xx_data_##n, &uart_cc13xx_cc26xx_config_##n,\
-		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	     \
+		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		     \
 		&uart_cc13xx_cc26xx_driver_api)
 
 #ifdef CONFIG_PM_DEVICE

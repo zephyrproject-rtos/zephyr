@@ -811,6 +811,18 @@ skip_fp_move_irq:
 #endif /* CONFIG_USERSPACE */
 
 reschedule:
+	/*
+	 * Check if the current thread is the same as the thread on the ready Q. If
+	 * so, do not reschedule.
+	 * Note:
+	 *   Sometimes this code is execute back-to-back before the target thread
+	 *   has a chance to run. If this happens, the current thread and the
+	 *   target thread will be the same.
+	 */
+	la t0, _kernel
+	RV_OP_LOADREG t2, _kernel_offset_to_current(t0)
+	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t0)
+	beq t2, t3, no_reschedule
 
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
 	call z_thread_mark_switched_out

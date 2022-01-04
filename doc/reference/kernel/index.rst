@@ -40,6 +40,7 @@ synchronization.
    synchronization/semaphores.rst
    synchronization/mutexes.rst
    synchronization/condvar.rst
+   synchronization/events.rst
    smp/smp.rst
 
 .. _kernel_data_passing_api:

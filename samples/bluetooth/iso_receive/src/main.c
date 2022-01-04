@@ -263,7 +263,7 @@ static struct bt_iso_chan *bis[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 static struct bt_iso_big_sync_param big_sync_param = {
 	.bis_channels = bis,
 	.num_bis = BIS_ISO_CHAN_COUNT,
-	.bis_bitfield = (BIT(BIS_ISO_CHAN_COUNT) - 1),
+	.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT) << 1),
 	.mse = 1,
 	.sync_timeout = 100, /* in 10 ms units */
 };

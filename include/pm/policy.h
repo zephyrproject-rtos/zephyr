@@ -7,11 +7,14 @@
 #ifndef ZEPHYR_INCLUDE_PM_POLICY_H_
 #define ZEPHYR_INCLUDE_PM_POLICY_H_
 
+#include <stdint.h>
 #include <pm/state.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @brief Function to get the next PM state
@@ -20,12 +23,14 @@ extern "C" {
  * idle and returns the most appropriate state based on the number of
  * ticks to the next event.
  *
+ * @param cpu CPU index.
  * @param ticks The number of ticks to the next scheduled event.
  *
- * @return The power state the system should use.
+ * @return The power state the system should use for the given cpu.
  */
-struct pm_state_info pm_policy_next_state(int32_t ticks);
+struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks);
 
+/** @endcond */
 
 #ifdef __cplusplus
 }

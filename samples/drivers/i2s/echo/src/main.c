@@ -43,7 +43,7 @@ static struct gpio_dt_spec sw1_spec = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 
 #define BLOCK_SIZE  (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
 #define BLOCK_COUNT (INITIAL_BLOCKS + 2)
-static K_MEM_SLAB_DEFINE(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
+K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
 
 static int16_t echo_block[SAMPLES_PER_BLOCK];
 static volatile bool echo_enabled = true;

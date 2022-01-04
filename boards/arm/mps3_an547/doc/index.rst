@@ -35,6 +35,22 @@ To run the Fixed Virtual Platform simulation tool you must download "FVP model
 for the Corstone-300 MPS3" from Arm and install it on your host PC. This board
 has been tested with version 11.12.57 (Nov  2 2020).
 
+Zephyr board options
+====================
+
+The MPS3+ AN547 is an SoC with Cortex-M55 architecture. Zephyr provides support
+for building for both Secure and Non-Secure firmware.
+
+The BOARD options are summarized below:
+
++----------------------+-----------------------------------------------+
+|   BOARD              | Description                                   |
++======================+===============================================+
+| mps3_an547           | For building Secure (or Secure-only) firmware |
++----------------------+-----------------------------------------------+
+| mps3_an547_ns        | For building Non-Secure firmware              |
++----------------------+-----------------------------------------------+
+
 Hardware
 ********
 
@@ -209,8 +225,8 @@ at build time via:
    $ west build -b mps3_an547 samples/hello°world -DEMU_PLATFORM=qemu -t run
 
 
-Note, however, that the Ethos-U55 FPU is not available in QEMU. If you require
-the use of the FPU, please use the default FVP for device emulation.
+Note, however, that the Ethos-U55 NPU is not available in QEMU. If you require
+the use of the NPU, please use the default FVP for device emulation.
 
 .. _Corstone-300 FVP:
    https://developer.arm.com/tools-and-software/open-source-software/arm-platforms-software/arm-ecosystem-fvps

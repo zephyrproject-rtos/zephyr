@@ -35,6 +35,10 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
 	inc_nest_counter x0, x1
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	bl	z_sched_usage_stop
+#endif
+
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_enter
 #endif
@@ -46,8 +50,22 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl	z_soc_irq_get_active
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
+#if CONFIG_GIC_VER >= 3
+	/*
+	 * Ignore Special INTIDs 1020..1023 see 2.2.1 of Arm Generic Interrupt Controller
+	 * Architecture Specification GIC architecture version 3 and version 4
+	 */
+	cmp	x0, 1019
+	b.le	oob
+	cmp	x0, 1023
+	b.gt	oob
+	b	spurious_continue
+
+oob:
+#endif
 	/* IRQ out of bounds */
-	cmp	x0, #(CONFIG_NUM_IRQS - 1)
+	mov	x1, #(CONFIG_NUM_IRQS - 1)
+	cmp	x0, x1
 	b.hi	spurious_continue
 
 	stp	x0, xzr, [sp, #-16]!

@@ -18,6 +18,8 @@
 
 /* Length of CTE in unit of 8[us] */
 #define CTE_LEN (0x14U)
+/* Number of CTE send in single periodic advertising train */
+#define PER_ADV_EVENT_CTE_COUNT 5
 
 static void adv_sent_cb(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_sent_info *info);
@@ -50,19 +52,18 @@ static struct bt_le_per_adv_param per_adv_param = {
 static uint8_t ant_patterns[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA };
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
 
-struct bt_df_adv_cte_tx_param cte_params = {
-	.cte_len = CTE_LEN,
-	.cte_count = 1,
+struct bt_df_adv_cte_tx_param cte_params = { .cte_len = CTE_LEN,
+					     .cte_count = PER_ADV_EVENT_CTE_COUNT,
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)
-	.cte_type = BT_HCI_LE_AOD_CTE_2US,
-	.num_ant_ids = ARRAY_SIZE(ant_patterns),
-	.ant_ids = ant_patterns
+					     .cte_type = BT_HCI_LE_AOD_CTE_2US,
+					     .num_ant_ids = ARRAY_SIZE(ant_patterns),
+					     .ant_ids = ant_patterns
 #else
-	.cte_type = BT_HCI_LE_AOA_CTE,
-	.num_ant_ids = 0,
-	.ant_ids = NULL
+					     .cte_type = BT_HCI_LE_AOA_CTE,
+					     .num_ant_ids = 0,
+					     .ant_ids = NULL
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
-	};
+};
 
 static void adv_sent_cb(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_sent_info *info)

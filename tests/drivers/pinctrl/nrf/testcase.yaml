@@ -1,0 +1,4 @@
+tests:
+  drivers.pinctrl.nrf:
+    tags: drivers pinctrl
+    depends_on: pinctrl nrf

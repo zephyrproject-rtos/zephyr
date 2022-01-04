@@ -39,6 +39,7 @@
 #include "reg/mec172x_pcr.h"
 #include "reg/mec172x_qspi.h"
 #include "reg/mec172x_vbat.h"
+#include "reg/mec172x_emi.h"
 
 /* common peripheral register defines */
 #include "../common/reg/mec_acpi_ec.h"
@@ -62,6 +63,7 @@
 #include "../common/soc_pins.h"
 #include "../common/soc_espi_channels.h"
 #include "../common/soc_espi_saf.h"
+#include "../common/soc_espi_v2.h"
 
 #endif
 

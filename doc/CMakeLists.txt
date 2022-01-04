@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
 set(NO_BOILERPLATE TRUE)
@@ -82,6 +82,7 @@ endfunction()
 set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
+set(ZEPHYR_VERSION "${Zephyr_VERSION}")
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
@@ -142,6 +143,7 @@ add_custom_target(
   ARCH=*
   ARCH_DIR=arch
   SOC_DIR=soc
+  TOOLCHAIN_HAS_NEWLIB=y
   KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
   KCONFIG_WARN_UNDEF=y
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}

@@ -10,8 +10,3 @@ config EEPROM_EMULATOR
 	  performed to the EEPROM is maximized by using a flash area that is
 	  larger than the EEPROM area and by storing only changes to the EEPROM
 	  data.
-
-config EEPROM_EMULATOR_INIT_PRIORITY
-	int "EEPROM emulator init priority"
-	default 75
-	depends on EEPROM_EMULATOR

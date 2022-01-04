@@ -10,6 +10,7 @@ menuconfig LORA
 	bool "LoRa support [EXPERIMENTAL]"
 	select REQUIRES_FULL_LIBC
 	select POLL
+	select EXPERIMENTAL
 	help
 	  Include LoRa drivers in the system configuration.
 

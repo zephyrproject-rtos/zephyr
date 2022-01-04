@@ -384,14 +384,7 @@ static inline void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 }
 #endif
 
-/* We do not have to accept larger than 1500 byte IPv6 packet (RFC 2460 ch 5).
- * This means that we should receive everything within first two fragments.
- * The first one being 1280 bytes and the second one 220 bytes.
- */
-#if !defined(NET_IPV6_FRAGMENTS_MAX_PKT)
-#define NET_IPV6_FRAGMENTS_MAX_PKT 2
-#endif
-
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
 /** Store pending IPv6 fragment information that is needed for reassembly. */
 struct net_ipv6_reassembly {
 	/** IPv6 source address of the fragment */
@@ -407,11 +400,14 @@ struct net_ipv6_reassembly {
 	struct k_work_delayable timer;
 
 	/** Pointers to pending fragments */
-	struct net_pkt *pkt[NET_IPV6_FRAGMENTS_MAX_PKT];
+	struct net_pkt *pkt[CONFIG_NET_IPV6_FRAGMENT_MAX_PKT];
 
 	/** IPv6 fragment identification */
 	uint32_t id;
 };
+#else
+struct net_ipv6_reassembly;
+#endif
 
 /**
  * @typedef net_ipv6_frag_cb_t

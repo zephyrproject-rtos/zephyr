@@ -109,9 +109,9 @@ static void send_test_msg(const struct device *can_dev,
 	int ret;
 
 	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL, NULL);
-	zassert_not_equal(ret, CAN_TX_ARB_LOST,
+	zassert_not_equal(ret, -EBUSY,
 			  "Arbitration though in loopback mode");
-	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
+	zassert_equal(ret, 0, "Can't send a message. Err: %d", ret);
 }
 
 /*
@@ -125,23 +125,24 @@ static void test_filter_handling(void)
 	int ret, filter_id_1, filter_id_2;
 	struct zcan_frame msg_buffer;
 
-	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
+	can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	zassert_true(device_is_ready(can_dev), "CAN device ready");
 
 	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 
 	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_ext_masked_filter);
-	zassert_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
+	zassert_not_equal(filter_id_1, -ENOSPC,
 			  "Filter full even for a single one");
 	zassert_true((filter_id_1 >= 0), "Negative filter number");
 
 	filter_id_2 = can_attach_msgq(can_dev, &can_msgq, &test_std_filter);
-	zassert_not_equal(filter_id_2, CAN_NO_FREE_FILTER,
+	zassert_not_equal(filter_id_2, -ENOSPC,
 			  "Filter full when attaching the second one");
 	zassert_true((filter_id_2 >= 0), "Negative filter number");
 
 	can_detach(can_dev, filter_id_1);
 	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_std_some_filter);
-	zassert_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
+	zassert_not_equal(filter_id_1, -ENOSPC,
 			  "Filter full when overriding the first one");
 	zassert_true((filter_id_1 >= 0), "Negative filter number");
 
@@ -156,7 +157,7 @@ static void test_filter_handling(void)
 
 	can_detach(can_dev, filter_id_1);
 	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_ext_filter);
-	zassert_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
+	zassert_not_equal(filter_id_1, -ENOSPC,
 			  "Filter full when overriding the first one");
 	zassert_true((filter_id_1 >= 0), "Negative filter number");
 

@@ -244,7 +244,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	bt_conn_get_info(conn, &info);
-	initiator = (info.role == BT_CONN_ROLE_MASTER);
+	initiator = (info.role == BT_CONN_ROLE_CENTRAL);
 	remote_ready = false;
 	remote_handle = 0U;
 
@@ -487,8 +487,8 @@ static void ble_timeout(struct k_work *work)
 	case BLE_CONNECTED:
 		discov_param.uuid = &pong_svc_uuid.uuid;
 		discov_param.func = discover_func;
-		discov_param.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-		discov_param.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+		discov_param.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+		discov_param.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 		discov_param.type = BT_GATT_DISCOVER_PRIMARY;
 
 		err = bt_gatt_discover(default_conn, &discov_param);

@@ -206,7 +206,7 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 #define I2C_VALIDATE_LOC(idx) \
 	BUILD_ASSERT(DT_INST_PROP_BY_IDX(idx, location_sda, 0) \
 		     == DT_INST_PROP_BY_IDX(idx, location_scl, 0), \
-		     "DTS location-* properties must be equal"))
+		     "DTS location-* properties must be equal")
 #define I2C_LOC_DATA(idx) \
 	.loc = DT_INST_PROP_BY_IDX(idx, location_scl, 0)
 #endif
@@ -226,7 +226,7 @@ static const struct i2c_gecko_config i2c_gecko_config_##idx = { \
 \
 static struct i2c_gecko_data i2c_gecko_data_##idx; \
 \
-DEVICE_DT_INST_DEFINE(idx, &i2c_gecko_init, \
+I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, \
 		 NULL, \
 		 &i2c_gecko_data_##idx, &i2c_gecko_config_##idx, \
 		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \

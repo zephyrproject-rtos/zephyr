@@ -70,10 +70,10 @@ static void canopen_detach_all_rx_filters(CO_CANmodule_t *CANmodule)
 	}
 
 	for (i = 0U; i < CANmodule->rx_size; i++) {
-		if (CANmodule->rx_array[i].filter_id != CAN_NO_FREE_FILTER) {
+		if (CANmodule->rx_array[i].filter_id != -ENOSPC) {
 			can_detach(CANmodule->dev,
 				   CANmodule->rx_array[i].filter_id);
-			CANmodule->rx_array[i].filter_id = CAN_NO_FREE_FILTER;
+			CANmodule->rx_array[i].filter_id = -ENOSPC;
 		}
 	}
 }
@@ -94,7 +94,7 @@ static void canopen_rx_isr_callback(struct zcan_frame *msg, void *arg)
 	buffer->pFunct(buffer->object, &rxMsg);
 }
 
-static void canopen_tx_isr_callback(uint32_t error_flags, void *arg)
+static void canopen_tx_isr_callback(int error, void *arg)
 {
 	CO_CANmodule_t *CANmodule = arg;
 
@@ -103,7 +103,7 @@ static void canopen_tx_isr_callback(uint32_t error_flags, void *arg)
 		return;
 	}
 
-	if (error_flags == CAN_TX_OK) {
+	if (error == 0) {
 		CANmodule->first_tx_msg = false;
 	}
 
@@ -133,9 +133,9 @@ static void canopen_tx_retry(struct k_work *item)
 
 			err = can_send(CANmodule->dev, &msg, K_NO_WAIT,
 				       canopen_tx_isr_callback, CANmodule);
-			if (err == CAN_TIMEOUT) {
+			if (err == -EAGAIN) {
 				break;
-			} else if (err != CAN_TX_OK) {
+			} else if (err != 0) {
 				LOG_ERR("failed to send CAN frame (err %d)",
 					err);
 				CO_errorReport(CANmodule->em,
@@ -170,6 +170,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 	struct canopen_context *ctx = (struct canopen_context *)CANdriverState;
 	uint16_t i;
 	int err;
+	int max_filters;
 
 	LOG_DBG("rxSize = %d, txSize = %d", rxSize, txSize);
 
@@ -178,15 +179,19 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 		return CO_ERROR_ILLEGAL_ARGUMENT;
 	}
 
-	if (rxSize > CONFIG_CAN_MAX_FILTER) {
+	max_filters = can_get_max_filters(ctx->dev, CAN_STANDARD_IDENTIFIER);
+	if (max_filters < 0) {
+		LOG_ERR("unable to determine number of CAN RX filters");
+		return CO_ERROR_SYSCALL;
+	}
+
+	if (rxSize > max_filters) {
 		LOG_ERR("insufficient number of concurrent CAN RX filters"
-			" (needs %d, %d available)", rxSize,
-			CONFIG_CAN_MAX_FILTER);
+			" (needs %d, %d available)", rxSize, max_filters);
 		return CO_ERROR_OUT_OF_MEMORY;
-	} else if (rxSize < CONFIG_CAN_MAX_FILTER) {
+	} else if (rxSize < max_filters) {
 		LOG_DBG("excessive number of concurrent CAN RX filters enabled"
-			" (needs %d, %d available)", rxSize,
-			CONFIG_CAN_MAX_FILTER);
+			" (needs %d, %d available)", rxSize, max_filters);
 	}
 
 	canopen_detach_all_rx_filters(CANmodule);
@@ -205,7 +210,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 	for (i = 0U; i < rxSize; i++) {
 		rxArray[i].ident = 0U;
 		rxArray[i].pFunct = NULL;
-		rxArray[i].filter_id = CAN_NO_FREE_FILTER;
+		rxArray[i].filter_id = -ENOSPC;
 	}
 
 	for (i = 0U; i < txSize; i++) {
@@ -239,7 +244,7 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 
 	canopen_detach_all_rx_filters(CANmodule);
 
-	err = can_configure(CANmodule->dev, CAN_SILENT_MODE, 0);
+	err = can_set_mode(CANmodule->dev, CAN_SILENT_MODE);
 	if (err) {
 		LOG_ERR("failed to disable CAN interface (err %d)", err);
 	}
@@ -279,14 +284,14 @@ CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
 	filter.rtr = (rtr ? 1 : 0);
 	filter.rtr_mask = 1;
 
-	if (buffer->filter_id != CAN_NO_FREE_FILTER) {
+	if (buffer->filter_id != -ENOSPC) {
 		can_detach(CANmodule->dev, buffer->filter_id);
 	}
 
 	buffer->filter_id = can_attach_isr(CANmodule->dev,
 					   canopen_rx_isr_callback,
 					   buffer, &filter);
-	if (buffer->filter_id == CAN_NO_FREE_FILTER) {
+	if (buffer->filter_id == -ENOSPC) {
 		LOG_ERR("failed to attach CAN rx isr, no free filter");
 		CO_errorReport(CANmodule->em, CO_EM_MEMORY_ALLOCATION_ERROR,
 			       CO_EMC_SOFTWARE_INTERNAL, 0);
@@ -352,9 +357,9 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
 
 	err = can_send(CANmodule->dev, &msg, K_NO_WAIT, canopen_tx_isr_callback,
 		       CANmodule);
-	if (err == CAN_TIMEOUT) {
+	if (err == -EAGAIN) {
 		buffer->bufferFull = true;
-	} else if (err != CAN_TX_OK) {
+	} else if (err != 0) {
 		LOG_ERR("failed to send CAN frame (err %d)", err);
 		CO_errorReport(CANmodule->em, CO_EM_GENERIC_SOFTWARE_ERROR,
 			       CO_EMC_COMMUNICATION, 0);
@@ -475,6 +480,8 @@ static int canopen_init(const struct device *dev)
 	k_work_queue_start(&canopen_tx_workq, canopen_tx_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(canopen_tx_workq_stack),
 			   CONFIG_CANOPENNODE_TX_WORKQUEUE_PRIORITY, NULL);
+
+	k_thread_name_set(&canopen_tx_workq.thread, "canopen_tx_workq");
 
 	k_work_init(&canopen_tx_queue.work, canopen_tx_retry);
 

@@ -14,6 +14,8 @@
 #define ZEPHYR_TESTSUITE_ZTEST_TEST_H_
 
 #include <app_memory/app_memdomain.h>
+#include <init.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +29,91 @@ struct unit_test {
 	uint32_t thread_options;
 };
 
-void z_ztest_run_test_suite(const char *name, struct unit_test *suite);
+/**
+ * Stats about a ztest suite
+ */
+struct ztest_suite_stats {
+	/** The number of times that the suite ran */
+	uint32_t run_count;
+	/** The number of times that the suite was skipped */
+	uint32_t skip_count;
+	/** The number of times that the suite failed */
+	uint32_t fail_count;
+};
+
+/**
+ * A single node of test suite. Each node should be added to a single linker section which will
+ * allow ztest_run_registered_test_suites() to iterate over the various nodes.
+ */
+struct ztest_suite_node {
+	/** The name of the test suite. */
+	const char *name;
+	/** Pointer to the test suite. */
+	struct unit_test *suite;
+	/**
+	 * An optional predicate function to determine if the test should run. If NULL, then the
+	 * test will only run once on the first attempt.
+	 *
+	 * @param state The current state of the test application.
+	 * @return True if the suite should be run; false to skip.
+	 */
+	bool (*predicate)(const void *state);
+	/** Stats */
+	struct ztest_suite_stats stats;
+};
+
+extern struct ztest_suite_node _ztest_suite_node_list_start[];
+extern struct ztest_suite_node _ztest_suite_node_list_end[];
+
+/**
+ * Create and register a ztest suite. Using this macro creates a new test suite (using
+ * ztest_test_suite). It then creates a struct ztest_suite_node in a specific linker section.
+ *
+ * Tests can then be run by calling ztest_run_registered_test_suites(const void *state) by passing
+ * in the current state. See the documentation for ztest_run_registered_test_suites for more info.
+ *
+ * @param SUITE_NAME The name of the suite (see ztest_test_suite for more info)
+ * @param PREDICATE A function to test against the state and determine if the test should run.
+ * @param args Varargs placeholder for the remaining arguments passed for the unit tests.
+ */
+#define ztest_register_test_suite(SUITE_NAME, PREDICATE, args...)                                  \
+	ztest_test_suite(SUITE_NAME, ##args);                                                      \
+	static STRUCT_SECTION_ITERABLE(ztest_suite_node, z_ztest_test_node_##SUITE_NAME) = {       \
+		.name = #SUITE_NAME,                                                               \
+		.suite = _##SUITE_NAME,                                                            \
+		.predicate = PREDICATE,                                                            \
+	};
+
+/**
+ * Run the registered unit tests which return true from their pragma function.
+ *
+ * @param state The current state of the machine as it relates to the test executable.
+ * @return The number of tests that ran.
+ */
+int ztest_run_registered_test_suites(const void *state);
+
+/**
+ * @brief Fails the test if any of the registered tests did not run.
+ *
+ * When registering test suites, a pragma function can be provided to determine WHEN the test should
+ * run. It is possible that a test suite could be registered but the pragma always prevents it from
+ * running. In cases where a test should make sure that ALL suites ran at least once, this function
+ * may be called at the end of test_main(). It will cause the test to fail if any suite was
+ * registered but never ran.
+ */
+void ztest_verify_all_registered_test_suites_ran(void);
+
+/**
+ * @brief Run a test suite.
+ *
+ * Internal implementation. Do not call directly. This will run the full test suite along with some
+ * checks for fast failures and initialization.
+ *
+ * @param name The name of the suite to run.
+ * @param suite Pointer to the first unit test.
+ * @return Negative value if the test suite never ran; otherwise, return the number of failures.
+ */
+int z_ztest_run_test_suite(const char *name, struct unit_test *suite);
 
 /**
  * @defgroup ztest_test Ztest testing macros

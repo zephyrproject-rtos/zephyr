@@ -2,6 +2,7 @@
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	dmas = <&dma1 2 0x20440>,
 		<&dma1 3 0x20480>;

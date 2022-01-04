@@ -277,7 +277,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 			    NULL,						\
 			    &gpio_cmsdk_port_##n##_data,			\
 			    &gpio_cmsdk_port_## n ##_config,			\
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,	\
 			    &gpio_cmsdk_ahb_drv_api_funcs);			\
 										\
 	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev)	\

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config GPIO_EMUL
-	bool "[EXPERIMENTAL] Emulated GPIO driver"
+	bool "Emulated GPIO driver"
 	help
 	  Enable the emulated GPIO driver. Mainly used for testing, this
 	  driver allows for an arbitrary number of emulated GPIO controllers

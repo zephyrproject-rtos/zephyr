@@ -8,6 +8,7 @@
 #include <ksched.h>
 #include <wait_q.h>
 #include <init.h>
+#include <linker/linker-defs.h>
 
 void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
 {
@@ -21,12 +22,44 @@ static int statics_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	STRUCT_SECTION_FOREACH(k_heap, h) {
-		k_heap_init(h, h->heap.init_mem, h->heap.init_bytes);
+#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+		/* Some heaps may not present at boot, so we need to wait for
+		 * paging mechanism to be initialized before we can initialize
+		 * each heap.
+		 */
+		extern bool z_sys_post_kernel;
+		bool do_clear = z_sys_post_kernel;
+
+		/* During pre-kernel init, z_sys_post_kernel == false,
+		 * initialize if within pinned region. Otherwise skip.
+		 * In post-kernel init, z_sys_post_kernel == true, skip those in
+		 * pinned region as they have already been initialized and
+		 * possibly already in use. Otherwise initialize.
+		 */
+		if (lnkr_is_pinned((uint8_t *)h) &&
+		    lnkr_is_pinned((uint8_t *)&h->wait_q) &&
+		    lnkr_is_region_pinned((uint8_t *)h->heap.init_mem,
+					  h->heap.init_bytes)) {
+			do_clear = !do_clear;
+		}
+
+		if (do_clear)
+#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
+		{
+			k_heap_init(h, h->heap.init_mem, h->heap.init_bytes);
+		}
 	}
 	return 0;
 }
 
 SYS_INIT(statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+/* Need to wait for paging mechanism to be initialized before
+ * heaps that are not in pinned sections can be initialized.
+ */
+SYS_INIT(statics_init, POST_KERNEL, 0);
+#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 			k_timeout_t timeout)

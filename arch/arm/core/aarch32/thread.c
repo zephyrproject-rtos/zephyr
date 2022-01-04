@@ -6,10 +6,10 @@
 
 /**
  * @file
- * @brief New thread creation for ARM Cortex-M and Cortex-R
+ * @brief New thread creation for ARM Cortex-A, Cortex-M and Cortex-R
  *
- * Core thread related primitives for the ARM Cortex-M and Cortex-R
- * processor architecture.
+ * Core thread related primitives for the ARM Cortex-A, Cortex-M and
+ * Cortex-R processor architecture.
  */
 
 #include <kernel.h>
@@ -562,7 +562,8 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 
 	"movs r1, #0\n\t"
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-			|| defined(CONFIG_ARMV7_R)
+	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_ARMV7_A)
 	"cpsie i\n\t"		/* __enable_irq() */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */

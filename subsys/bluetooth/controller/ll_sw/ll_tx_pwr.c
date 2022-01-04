@@ -28,6 +28,10 @@
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
+
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"

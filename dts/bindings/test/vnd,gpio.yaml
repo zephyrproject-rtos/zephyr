@@ -23,3 +23,6 @@ gpio-cells:
 
 foo-cells:
   - foocell
+
+baz-cells:
+  - bazcell

@@ -57,6 +57,28 @@
 				supply-gpios = <&test_gpiox 2 0>;
 				label = "TEST_I2C_DEV_12";
 			};
+
+			test_dev_c: test-i2c-dev@13 {
+				compatible = "vnd,i2c-device";
+				label = "TEST_SPI_DEV_0";
+				reg = <13>;
+				status = "disabled";
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					test_p0: partition@0 {
+						label = "partition-0";
+						reg = <0x000000000 0x0000C000>;
+					};
+					test_p1: partition@c000 {
+						label = "partition-1";
+						reg = <0x0000C000 0x00067000>;
+					};
+				};
+			};
 		};
 	};
 };

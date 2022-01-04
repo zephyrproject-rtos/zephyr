@@ -344,5 +344,5 @@ static struct adc_xec_data adc_xec_dev_data_0 = {
 
 DEVICE_DT_INST_DEFINE(0, adc_xec_init, NULL,
 		    &adc_xec_dev_data_0, &adc_xec_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY,
 		    &adc_xec_api);

@@ -21,21 +21,12 @@ config BOARD
 
 config FLASH_LOAD_OFFSET
 	default 0x1000
-	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
+	depends on !USE_DT_CODE_PARTITION
 
 if USB_DEVICE_STACK
 
-config USB_UART_CONSOLE
-	default y
-
 config UART_LINE_CTRL
 	default y
-
-config UART_CONSOLE_ON_DEV_NAME
-	default "CDC_ACM_0"
-
-config UART_SHELL_ON_DEV_NAME
-	default "CDC_ACM_0"
 
 endif # USB_DEVICE_STACK
 

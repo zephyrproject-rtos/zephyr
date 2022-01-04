@@ -125,6 +125,7 @@ void test_delayed_thread_abort(void)
 {
 	int current_prio = k_thread_priority_get(k_current_get());
 
+	execute_flag = 0;
 	/* Make current thread preemptive */
 	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(2));
 

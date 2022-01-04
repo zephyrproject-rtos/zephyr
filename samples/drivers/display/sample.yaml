@@ -56,6 +56,7 @@ tests:
     tags: display
   sample.display.dummy:
     platform_allow: native_posix
+    extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
         - CONFIG_DUMMY_DISPLAY=y
         - CONFIG_SDL_DISPLAY=n

@@ -37,7 +37,7 @@ struct mdm_receiver_context {
 	char *data_imsi;
 #endif
 	char *data_iccid;
-	int   data_rssi;
+	int  *data_rssi;
 };
 
 /**

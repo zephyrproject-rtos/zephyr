@@ -294,7 +294,7 @@ static int rawprf(const char *format, ...)
 #define TEST_PRF2(rc, _fmt, ...) do { \
 	char _buf[512]; \
 	char *sp_buf = NULL; /* static package buffer */\
-	if (USE_PACKAGED && !CBPRINTF_MUST_RUNTIME_PACKAGE(0, _fmt, __VA_ARGS__)) { \
+	if (USE_PACKAGED && !CBPRINTF_MUST_RUNTIME_PACKAGE(0, 0, _fmt, __VA_ARGS__)) { \
 		int rv = 0; \
 		size_t _len; \
 		struct out_buffer package_buf = { \
@@ -510,6 +510,7 @@ static void test_d_length(void)
 	int max = 1876543210;
 	long long svll = 123LL << 48;
 	long long svll2 = -2LL;
+	unsigned long long uvll = 4000000000LLU;
 	int rc;
 
 	TEST_PRF(&rc, "%d/%d", min, max);
@@ -526,22 +527,22 @@ static void test_d_length(void)
 		PRF_CHECK("46/-22", rc);
 	}
 
-	TEST_PRF(&rc, "%ld/%ld", (long)min, (long)max);
+	TEST_PRF(&rc, "%ld/%ld/%lu/", (long)min, (long)max, 4000000000UL);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
 	    || (sizeof(long) <= 4)
 	    || IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		PRF_CHECK("-1234567890/1876543210", rc);
+		PRF_CHECK("-1234567890/1876543210/4000000000/", rc);
 	} else {
-		PRF_CHECK("%ld/%ld", rc);
+		PRF_CHECK("%ld/%ld/%lu/", rc);
 	}
 
-	TEST_PRF(&rc, "/%lld/%lld/%lld/", svll, -svll, svll2);
+	TEST_PRF(&rc, "/%lld/%lld/%lld/%llu/", svll, -svll, svll2, uvll);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
-		PRF_CHECK("/34621422135410688/-34621422135410688/-2/", rc);
+		PRF_CHECK("/34621422135410688/-34621422135410688/-2/4000000000/", rc);
 	} else if (IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
-		PRF_CHECK("/%lld/%lld/%lld/", rc);
+		PRF_CHECK("/%lld/%lld/%lld/%llu/", rc);
 	} else if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		PRF_CHECK("/ERR/ERR/-2/", rc);
+		PRF_CHECK("/ERR/ERR/-2/4000000000/", rc);
 	} else {
 		zassert_true(false, "Missed case!");
 	}

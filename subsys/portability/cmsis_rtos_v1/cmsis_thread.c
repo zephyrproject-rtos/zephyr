@@ -34,6 +34,23 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 	fun_ptr(arg1);
 }
 
+/* clear related bit in cmsis thread status bitarray
+ * when terminating a thread
+ */
+void z_thread_cmsis_status_mask_clear(struct k_thread *thread)
+{
+	uint32_t offset, instance;
+
+	osThreadDef_t *thread_def = (osThreadDef_t *)(thread->custom_data);
+
+	if (thread_def != NULL) {
+		/* get thread instance index according to stack address */
+		offset = thread->stack_info.start - (uintptr_t)thread_def->stack_mem;
+		instance = offset / K_THREAD_STACK_LEN(CONFIG_CMSIS_THREAD_MAX_STACK_SIZE);
+		sys_bitarray_clear_bit((sys_bitarray_t *)(thread_def->status_mask), instance);
+	}
+}
+
 /**
  * @brief Create a new thread.
  */
@@ -43,6 +60,8 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 	uint32_t prio;
 	k_tid_t tid;
 	uint32_t stacksz;
+	int ret;
+	size_t instance;
 
 	k_thread_stack_t
 	   (*stk_ptr)[K_THREAD_STACK_LEN(CONFIG_CMSIS_THREAD_MAX_STACK_SIZE)];
@@ -67,6 +86,13 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 		 (thread_def->tpriority <= osPriorityRealtime),
 		 "invalid priority\n");
 
+	/* get an available thread instance */
+	ret = sys_bitarray_alloc((sys_bitarray_t *)(thread_def->status_mask),
+			1, &instance);
+	if (ret != 0) {
+		return NULL;
+	}
+
 	stacksz = thread_def->stacksize;
 	if (stacksz == 0U) {
 		stacksz = CONFIG_CMSIS_THREAD_MAX_STACK_SIZE;
@@ -77,16 +103,21 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 			K_POLL_MODE_NOTIFY_ONLY, thread_def->poll_signal);
 
 	cm_thread = thread_def->cm_thread;
-	atomic_dec((atomic_t *)&thread_def->instances);
 	stk_ptr = thread_def->stack_mem;
 	prio = cmsis_to_zephyr_priority(thread_def->tpriority);
 	k_thread_custom_data_set((void *)thread_def);
 
-	tid = k_thread_create(&cm_thread[thread_def->instances],
-			stk_ptr[thread_def->instances], stacksz,
+	tid = k_thread_create(&cm_thread[instance],
+			stk_ptr[instance], stacksz,
 			(k_thread_entry_t)zephyr_thread_wrapper,
 			(void *)arg, NULL, thread_def->pthread,
 			prio, 0, K_NO_WAIT);
+
+	/* make custom_data pointer of thread point to its source thread_def,
+	 * then we can use it to release thread instances
+	 * when terminating threads
+	 */
+	tid->custom_data = (void *)thread_def;
 
 	return ((osThreadId)tid);
 }

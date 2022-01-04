@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_XILINX_ZYNQ7000
+	bool "Xilinx Zynq-7000 Core Series"
+	select ARM
+	select CPU_CORTEX_A9
+	select GIC_V1
+	select ARM_ARCH_TIMER_ERRATUM_740657 if ARM_ARCH_TIMER
+	help
+	  Enable support for the Xilinx Zynq-7000 SoC series.
+
+choice
+	prompt "Xilinx Zynq-7000 Selection"
+	depends on SOC_SERIES_XILINX_ZYNQ7000
+
+config SOC_XILINX_ZYNQ7000
+	bool "Xilinx Zynq-7000 dual-core (XC7Zxxx)"
+
+config SOC_XILINX_ZYNQ7000S
+	bool "Xilinx Zynq-7000 single-core (XC7ZxxxS)"
+
+endchoice

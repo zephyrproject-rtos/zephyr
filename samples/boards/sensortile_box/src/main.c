@@ -24,7 +24,7 @@
 static int lps22hh_trig_cnt;
 
 static void lps22hh_trigger_handler(const struct device *dev,
-				    struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_PRESS);
 	lps22hh_trig_cnt++;
@@ -35,7 +35,7 @@ static void lps22hh_trigger_handler(const struct device *dev,
 static int lis2dw12_trig_cnt;
 
 static void lis2dw12_trigger_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lis2dw12_trig_cnt++;
@@ -48,21 +48,21 @@ static int lsm6dso_gyr_trig_cnt;
 static int lsm6dso_temp_trig_cnt;
 
 static void lsm6dso_acc_trig_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lsm6dso_acc_trig_cnt++;
 }
 
 static void lsm6dso_gyr_trig_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
 	lsm6dso_gyr_trig_cnt++;
 }
 
 static void lsm6dso_temp_trig_handler(const struct device *dev,
-				      struct sensor_trigger *trig)
+				      const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_DIE_TEMP);
 	lsm6dso_temp_trig_cnt++;
@@ -73,7 +73,7 @@ static void lsm6dso_temp_trig_handler(const struct device *dev,
 static int stts751_trig_cnt;
 
 static void stts751_trigger_handler(const struct device *dev,
-				       struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 	stts751_trig_cnt++;
 }
@@ -83,7 +83,7 @@ static void stts751_trigger_handler(const struct device *dev,
 static int iis3dhhc_trig_cnt;
 
 static void iis3dhhc_trigger_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	iis3dhhc_trig_cnt++;
@@ -250,14 +250,13 @@ static void iis3dhhc_config(const struct device *iis3dhhc)
 void main(void)
 {
 	static const struct device *led0, *led1;
-	const struct device *dev = device_get_binding(
-			CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	int i, on = 1;
 	int cnt = 1;
 	uint32_t dtr = 0;
 
 	/* Application must enable USB by itself */
-	if (usb_enable(NULL)) {
+	if (!device_is_ready(dev) || usb_enable(NULL)) {
 		return;
 	}
 

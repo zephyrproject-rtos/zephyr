@@ -33,11 +33,11 @@ import sys
 import struct
 import os
 import elftools
-from distutils.version import LooseVersion
+from packaging import version
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
+if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 # This will never change, first selector in the GDT after the null selector

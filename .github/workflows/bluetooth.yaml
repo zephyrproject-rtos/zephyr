@@ -1,0 +1,85 @@
+name: Bluetooth Tests
+
+on:
+  pull_request_target:
+    paths:
+      - "west.yml"
+      - "subsys/bluetooth/**"
+      - "tests/bluetooth/bsim_bt/**"
+      - "boards/posix/**"
+      - "soc/posix/**"
+      - "arch/posix/**"
+
+jobs:
+  bluetooth-test-prep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
+  bluetooth-test-build:
+    runs-on: ubuntu-latest
+    needs: bluetooth-test-prep
+    container:
+      image: zephyrprojectrtos/ci:v0.21.0
+      options: '--entrypoint /bin/bash'
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
+      CLANG_ROOT_DIR: /usr/lib/llvm-12
+      BSIM_OUT_PATH: /opt/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      EDTT_PATH: ../tools/edtt
+      bsim_bt_test_results_file: ./bsim_bt_out/bsim_results.xml
+    steps:
+      - name: Update PATH for west
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: west setup
+        run: |
+          west init -l . || true
+          west config --global update.narrow true
+          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
+
+      - name: Run Bluetooth Tests with BSIM
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim_bt/compile.sh
+          RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_test_results_file} \
+          SEARCH_PATH=tests/bluetooth/bsim_bt/ tests/bluetooth/bsim_bt/run_parallel.sh
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Bluetooth Test Results
+          path: ./bsim_bt_out/bsim_results.xml
+
+  bluetooth-test-results:
+    name: "Publish Bluetooth Test Results"
+    needs: bluetooth-test-build
+    runs-on: ubuntu-20.04
+      # the build-and-test job might be skipped, we don't need to run this job then
+    if: success() || failure()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Publish Bluetooth Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          check_name: Bluetooth Test Results
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          files: "**/bsim_results.xml"
+          comment_mode: off

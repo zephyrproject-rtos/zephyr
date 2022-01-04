@@ -538,7 +538,7 @@ uint8_t bt_mesh_subnet_node_id_set(uint16_t net_idx,
 		bt_mesh_proxy_identity_stop(sub);
 	}
 
-	bt_mesh_adv_update();
+	bt_mesh_adv_gatt_update();
 
 	return STATUS_SUCCESS;
 }

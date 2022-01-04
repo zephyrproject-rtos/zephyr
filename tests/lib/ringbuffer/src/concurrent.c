@@ -330,7 +330,7 @@ static void microdelay(int delay)
 static void thread_entry_spsc(void *p1, void *p2, void *p3)
 {
 	struct ring_buf *rbuf = p1;
-	uint32_t timeout = 5000;
+	uint32_t timeout = 6000;
 	bool high_producer = (bool)p2;
 	uint32_t start = k_uptime_get_32();
 	struct k_timer timer;
@@ -343,6 +343,7 @@ static void thread_entry_spsc(void *p1, void *p2, void *p3)
 		     NULL);
 	k_timer_user_data_set(&timer, rbuf);
 
+	preempt_cnt = 0;
 	consume_fn(rbuf, true);
 	produce_fn(rbuf, true);
 
@@ -370,10 +371,16 @@ static void thread_entry_spsc(void *p1, void *p2, void *p3)
 	}
 
 	PRINT("preempted: %d\n", preempt_cnt);
-	zassert_true(preempt_cnt > 1500, "If thread operation was not preempted "
+	/* Test is tailored for qemu_x86 to generate enough number of preemptions
+	 * to validate that ring buffer is safe to be used without any locks in
+	 * single producer single consumer scenario.
+	 */
+	if (IS_ENABLED(CONFIG_BOARD_QEMU_X86)) {
+		zassert_true(preempt_cnt > 1500, "If thread operation was not preempted "
 			"multiple times then we cannot have confidance that it "
 			"validated the module properly. Platform should not be "
 			"used in that case");
+	}
 }
 
 extern uint32_t test_rewind_threshold;
@@ -387,8 +394,7 @@ static void test_ringbuffer_spsc(bool higher_producer, int api_type)
 	uint8_t buf[32];
 	uint32_t buf32[32];
 
-	/* Native posix cannot have sys tick high enough to run this stress test. */
-	if (IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX)) {
+	if (CONFIG_SYS_CLOCK_TICKS_PER_SEC < 100000) {
 		ztest_test_skip();
 	}
 

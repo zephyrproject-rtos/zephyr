@@ -57,7 +57,7 @@ struct lll_df_adv_cfg {
 #endif
 
 #define IQ_SAMPLE_TOTAL_CNT ((IQ_SAMPLE_REF_CNT) + (IQ_SAMPLE_SWITCH_CNT))
-#define IQ_SAMPLE_CNT  (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
+#define IQ_SAMPLE_CNT (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define RSSI_DBM_TO_DECI_DBM(x) (-(x) * 10)
 #define IQ_SHIFT_12_TO_8_BIT(x) ((x) >> 4)
@@ -109,10 +109,41 @@ enum df_cte_sampling_state {
 	DF_CTE_SAMPLING_DISABLED,
 };
 
+/* Names for allowed states for CTE transmit parameters in connected mode */
+enum df_cte_tx_state {
+	DF_CTE_CONN_TX_PARAMS_UNINITIALIZED,
+	DF_CTE_CONN_TX_PARAMS_SET,
+};
 /* Parameters for reception of Constant Tone Extension in connected mode */
 struct lll_df_conn_rx_params {
 	uint8_t state : 2;
 	uint8_t slot_durations : 2; /* One of possible values: 1 us, 2 us. */
 	uint8_t ant_sw_len : 7;
+	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+};
+
+/* @brief Structure to store data required to prepare LE Connection IQ Report event or LE
+ * Connectionless IQ Report event.
+ */
+struct cte_conn_iq_report {
+	struct pdu_cte_info cte_info;
+	uint8_t local_slot_durations;
+	uint8_t packet_status;
+	uint8_t sample_count;
+	uint8_t rssi_ant_id;
+	union {
+		uint8_t pdu[0] __aligned(4);
+		struct iq_sample sample[0];
+	};
+};
+
+/* Configuration for transmission of Constant Tone Extension in connected mode */
+struct lll_df_conn_tx_cfg {
+	uint8_t state:1;
+	uint8_t ant_sw_len:7;
+	uint8_t cte_type:2;
+	uint8_t cte_length:6; /* Length of CTE in 8us units */
+	uint8_t cte_rsp_en:1; /* CTE response is enabled */
+	uint8_t cte_types_allowed:3; /* Bitfield with allowed CTE types */
 	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
 };

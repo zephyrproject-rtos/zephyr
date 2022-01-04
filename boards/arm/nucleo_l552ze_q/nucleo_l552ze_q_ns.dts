@@ -26,8 +26,3 @@
 		sw0 = &user_button;
 	};
 };
-
-&lpuart1 {
-	current-speed = <115200>;
-	status = "okay";
-};

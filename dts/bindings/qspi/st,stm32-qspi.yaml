@@ -18,7 +18,7 @@ description: |
 
 compatible: "st,stm32-qspi"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 bus: qspi
 
@@ -27,6 +27,12 @@ properties:
       required: true
 
     interrupts:
+      required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
       required: true
 
     dmas:
@@ -44,7 +50,3 @@ properties:
 
         For example
            dma-names = "tx_rx";
-
-    pinctrl-0:
-      type: phandles
-      required: true

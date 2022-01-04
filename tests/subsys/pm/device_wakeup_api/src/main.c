@@ -6,8 +6,8 @@
 
 #include <zephyr.h>
 #include <ztest.h>
-#include <device.h>
 #include <pm/pm.h>
+#include <pm/device.h>
 
 #define DEV_NAME DT_NODELABEL(gpio0)
 
@@ -57,8 +57,10 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 	irq_unlock(0);
 }
 
-struct pm_state_info pm_policy_next_state(int32_t ticks)
+struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
+	ARG_UNUSED(cpu);
+
 	while (sleep_count < 3) {
 		sleep_count++;
 		return (struct pm_state_info){PM_STATE_SUSPEND_TO_RAM, 0, 0, 0};

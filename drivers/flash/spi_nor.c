@@ -57,9 +57,9 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define T_RES1_MS ceiling_fraction(DT_INST_PROP(0, t_exit_dpd), NSEC_PER_MSEC)
 #endif /* T_EXIT_DPD */
 #if DT_INST_NODE_HAS_PROP(0, dpd_wakeup_sequence)
-#define T_DPDD_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 0), NSEC_PER_MSEC)
-#define T_CRDP_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 1), NSEC_PER_MSEC)
-#define T_RDP_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 2), NSEC_PER_MSEC)
+#define T_DPDD_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 0), NSEC_PER_MSEC)
+#define T_CRDP_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 1), NSEC_PER_MSEC)
+#define T_RDP_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 2), NSEC_PER_MSEC)
 #else /* DPD_WAKEUP_SEQUENCE */
 #define T_DPDD_MS 0
 #endif /* DPD_WAKEUP_SEQUENCE */
@@ -674,6 +674,17 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 				ret = -EINVAL;
 			}
 		}
+
+#ifdef __XCC__
+		/*
+		 * FIXME: remove this hack once XCC is fixed.
+		 *
+		 * Without this volatile return value, XCC would segfault
+		 * compiling this file complaining about failure in CGPREP
+		 * phase.
+		 */
+		volatile int xcc_ret =
+#endif
 		spi_nor_wait_until_ready(dev);
 	}
 

@@ -321,7 +321,7 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 	static struct max17262_data max17262_data_##n;			\
 									\
 	static const struct max17262_config max17262_config_##n = {	\
-		.i2c = DEVICE_DT_GET(DT_BUS(DT_DRV_INST(n))),		\
+		.i2c = DEVICE_DT_GET(DT_INST_BUS(n)),			\
 		.i2c_addr = DT_INST_REG_ADDR(n),			\
 		.design_voltage = DT_INST_PROP(n, design_voltage),	\
 		.desired_voltage = DT_INST_PROP(n, desired_voltage),	\

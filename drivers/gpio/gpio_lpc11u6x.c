@@ -593,7 +593,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(gpio##id),				\
 		    NULL,						\
 		    &gpio_lpc11u6x_data_##id,				\
 		    &gpio_lpc11u6x_config_##id,				\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    PRE_KERNEL_2, CONFIG_GPIO_INIT_PRIORITY,		\
 		    &gpio_lpc11u6x_driver_api)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)

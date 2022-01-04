@@ -50,6 +50,9 @@
 
 #include <nrf_peripherals.h>
 
+/* This has to come before the ppi/dppi includes below. */
+#include "radio_nrf5_fem.h"
+
 #if defined(PPI_PRESENT)
 #include "radio_nrf5_ppi.h"
 #elif defined(DPPI_PRESENT)

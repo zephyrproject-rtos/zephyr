@@ -328,7 +328,7 @@ static int gpio_b91_pin_configure(const struct device *dev,
 	}
 
 	/* Strengths not implemented */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
+	if ((flags & GPIO_DS_ALT) != 0) {
 		return -ENOTSUP;
 	}
 
@@ -561,8 +561,8 @@ static void gpio_b91_irq_connect_4(void)
 			      NULL,					    \
 			      &gpio_b91_data_##n,			    \
 			      &gpio_b91_config_##n,			    \
-			      POST_KERNEL,				    \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	    \
+			      PRE_KERNEL_1,				    \
+			      CONFIG_GPIO_INIT_PRIORITY,		    \
 			      &gpio_b91_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_B91_INIT)

@@ -15,6 +15,7 @@
 #include <stm32l4xx_ll_rcc.h>
 #include <stm32l4xx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);

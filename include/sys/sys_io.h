@@ -246,6 +246,26 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
+ * @fn static inline void sys_set_bits(mem_addr_t addr, unsigned int mask)
+ * @brief Masking the designated bits from addr to 1
+ *
+ * This functions masking designated bits from addr to 1.
+ *
+ * @param addr the memory address from where to look for the bits
+ * @param mask the bit mask of a 32 bits data to set
+ */
+
+/**
+ * @fn static inline void sys_clear_bits(mem_addr_t addr, unsigned int mask)
+ * @brief Masking the designated bits from addr to 0
+ *
+ * This functions masking designated bits from addr to 0.
+ *
+ * @param addr the memory address from where to look for the bits
+ * @param mask the bit mask of a 32 bits data to set
+ */
+
+/**
  * @fn static inline void sys_clear_bit(mem_addr_t addr, unsigned int bit)
  * @brief Clear the designated bit from addr to 0
  *

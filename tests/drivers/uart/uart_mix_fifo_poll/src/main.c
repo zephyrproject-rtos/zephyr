@@ -28,7 +28,7 @@
 #elif defined(CONFIG_BOARD_ATSAME54_XPRO)
 #define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(sercom1))
 #else
-#define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
+#define UART_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_console))
 #endif
 
 struct rx_source {
@@ -89,7 +89,7 @@ static void counter_top_handler(const struct device *dev, void *user_data)
 		int err;
 
 		err = uart_rx_enable(uart_dev, async_rx_buf,
-				     sizeof(async_rx_buf), 1);
+				     sizeof(async_rx_buf), 1 * USEC_PER_MSEC);
 		zassert_true(err >= 0, NULL);
 		async_rx_enabled = true;
 	} else if (int_driven) {
@@ -248,7 +248,7 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 
 			buf = &int_async_data->buf[data->cnt & 0xF];
 			data->cnt++;
-			err = uart_tx(uart_dev, buf, 1, 1000);
+			err = uart_tx(uart_dev, buf, 1, 1000 * USEC_PER_MSEC);
 			zassert_true(err >= 0,
 					"Unexpected err:%d", err);
 		} else {

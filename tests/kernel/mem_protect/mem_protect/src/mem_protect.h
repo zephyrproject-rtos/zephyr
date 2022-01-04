@@ -23,6 +23,10 @@ extern void test_mem_domain_boot_threads(void);
 extern void test_mem_domain_migration(void);
 extern void test_mem_domain_init_fail(void);
 extern void test_mem_domain_remove_part_fail(void);
+extern void test_mem_part_add_error_null(void);
+extern void test_mem_part_add_error_zerosize(void);
+extern void test_mem_part_error_wraparound(void);
+extern void test_mem_part_remove_error_zerosize(void);
 
 extern void test_macros_obtain_names_data_bss(void);
 extern void test_mem_part_assign_bss_vars_zero(void);
@@ -59,13 +63,14 @@ extern void test_kobject_access_grant_error(void);
 extern void test_kobject_access_grant_error_user(void);
 extern void test_kobject_access_grant_error_user_null(void);
 extern void test_kobject_access_all_grant_error(void);
-extern void test_kobject_release_null(void);
+extern void test_kobject_invalid(void);
 extern void test_kobject_free_error(void);
 extern void test_kobject_init_error(void);
 extern void test_kobj_create_out_of_memory(void);
 extern void test_thread_alloc_out_of_idx(void);
 extern void test_alloc_kobjects(void);
 extern void test_kobject_perm_error(void);
+extern void test_all_kobjects_str(void);
 
 
 /* Flag needed to figure out if the fault was expected or not. */

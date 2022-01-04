@@ -43,7 +43,7 @@ struct can_mailbox {
 	can_tx_callback_t tx_callback;
 	void *callback_arg;
 	struct k_sem tx_int_sem;
-	uint32_t error_flags;
+	int error;
 };
 
 
@@ -77,8 +77,7 @@ struct can_stm32_config {
 	uint8_t ts2;
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
-	const struct soc_gpio_pinctrl *pinctrl;
-	size_t pinctrl_len;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 #endif /*ZEPHYR_DRIVERS_CAN_STM32_CAN_H_*/

@@ -14,7 +14,7 @@
 static int iis2dlpc_trig_cnt;
 
 static void iis2dlpc_trigger_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	iis2dlpc_trig_cnt++;
@@ -25,7 +25,7 @@ static void iis2dlpc_trigger_handler(const struct device *dev,
 static int iis2mdc_trig_cnt;
 
 static void iis2mdc_trigger_handler(const struct device *dev,
-				    struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
 	iis2mdc_trig_cnt++;
@@ -37,14 +37,14 @@ static int ism330dhcx_acc_trig_cnt;
 static int ism330dhcx_gyr_trig_cnt;
 
 static void ism330dhcx_acc_trigger_handler(const struct device *dev,
-					   struct sensor_trigger *trig)
+					   const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	ism330dhcx_acc_trig_cnt++;
 }
 
 static void ism330dhcx_gyr_trigger_handler(const struct device *dev,
-					   struct sensor_trigger *trig)
+					   const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
 	ism330dhcx_gyr_trig_cnt++;

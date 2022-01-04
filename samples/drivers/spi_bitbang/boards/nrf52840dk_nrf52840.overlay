@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	spibb0: spibb0 {
+		label = "SPIBB";
+		compatible = "zephyr,spi-bitbang";
+		status="okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clk-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio1 6 0>;
+		cs-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+	};
+};

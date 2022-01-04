@@ -1,9 +1,25 @@
-name: Compliance
+name: Compliance Checks
 
 on: pull_request
 
 jobs:
-  compliance_job:
+  maintainer_check:
+    runs-on: ubuntu-latest
+    name: Check MAINTAINERS file
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    - name: Run Maintainers Script
+      id: maintainer
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      run: |
+        python3 ./scripts/get_maintainer.py path CMakeLists.txt
+
+  check_compliance:
     runs-on: ubuntu-latest
     name: Run compliance checks on patch series (PR)
     steps:
@@ -41,7 +57,7 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true
-        west update
+        west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
     - name: Run Compliance Tests
       continue-on-error: true
@@ -79,6 +95,6 @@ jobs:
           fi
         done
 
-        if [ ${exit} == 1 ]; then
+        if [ "${exit}" == "1" ]; then
           exit 1;
         fi

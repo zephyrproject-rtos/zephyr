@@ -1,0 +1,10 @@
+# INA219 Bidirectional Current/Power Monitor
+
+# Copyright (c) 2021 Leonard Pollak
+# SPDX-License-Identifier: Apache-2.0
+
+config INA219
+	bool "INA219 Current/Power Monitor"
+	depends on I2C
+	help
+	  Enable driver for INA219 Bidirectional Current/Power Monitor.

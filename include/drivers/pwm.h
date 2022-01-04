@@ -152,6 +152,18 @@ __subsystem struct pwm_driver_api {
 /**
  * @brief Set the period and pulse width for a single PWM output.
  *
+ * The PWM period and pulse width will synchronously be set to the new values
+ * without glitches in the PWM signal, but the call will not block for the
+ * change to take effect.
+ *
+ * @note Not all PWM controllers support synchronous, glitch-free updates of the
+ * PWM period and pulse width. Depending on the hardware, changing the PWM
+ * period and/or pulse width may cause a glitch in the generated PWM signal.
+ *
+ * @note Some multi-channel PWM controllers share the PWM period across all
+ * channels. Depending on the hardware, changing the PWM period for one channel
+ * may affect the PWM period for the other channels of the same PWM controller.
+ *
  * Passing 0 as @p pulse will cause the pin to be driven to a constant
  * inactive level.
  * Passing a non-zero @p pulse equal to @p period will cause the pin

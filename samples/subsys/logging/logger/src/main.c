@@ -335,7 +335,11 @@ static void log_demo_supervisor(void *p1, void *p2, void *p3)
 	log_demo_thread(p1, p2, p3);
 
 #ifdef CONFIG_USERSPACE
-	k_mem_domain_init(&app_domain, ARRAY_SIZE(app_parts), app_parts);
+	int ret = k_mem_domain_init(&app_domain, ARRAY_SIZE(app_parts), app_parts);
+
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d\n", ret);
+	ARG_UNUSED(ret);
+
 	k_mem_domain_add_thread(&app_domain, k_current_get());
 	k_thread_user_mode_enter(log_demo_thread, p1, p2, p3);
 #endif

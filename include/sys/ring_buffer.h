@@ -82,7 +82,7 @@ struct ring_buf {
 #define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
 	BUILD_ASSERT((1 << pow) < RING_BUFFER_MAX_SIZE,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint32_t _ring_buffer_data_##name[BIT(pow)]; \
+	static uint32_t __noinit _ring_buffer_data_##name[BIT(pow)]; \
 	struct ring_buf name = { \
 		.size = (BIT(pow)),	  \
 		.mask = (BIT(pow)) - 1, \
@@ -106,7 +106,7 @@ struct ring_buf {
 #define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
 	BUILD_ASSERT(size32 < RING_BUFFER_MAX_SIZE,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint32_t _ring_buffer_data_##name[size32]; \
+	static uint32_t __noinit _ring_buffer_data_##name[size32]; \
 	struct ring_buf name = { \
 		.size = size32, \
 		.buf = { .buf32 = _ring_buffer_data_##name} \
@@ -128,7 +128,7 @@ struct ring_buf {
 #define RING_BUF_DECLARE(name, size8) \
 	BUILD_ASSERT(size8 < RING_BUFFER_MAX_SIZE,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint8_t _ring_buffer_data_##name[size8]; \
+	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
 	struct ring_buf name = { \
 		.size = size8, \
 		.buf = { .buf8 = _ring_buffer_data_##name} \

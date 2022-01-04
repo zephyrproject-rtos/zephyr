@@ -1,0 +1,13 @@
+identifier: dragino_nbsn95
+name: Dragino NBSN95 NB-IoT Sensor Node
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 20
+flash: 192
+testing:
+  ignore_tags:
+    - net

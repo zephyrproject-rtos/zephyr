@@ -207,7 +207,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    NULL,						\
 		    &uart_numicro_data_##index,				\
 		    &uart_numicro_cfg_##index,				\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
 		    &uart_numicro_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMICRO_INIT)

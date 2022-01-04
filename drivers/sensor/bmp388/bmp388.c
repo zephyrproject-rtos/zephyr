@@ -14,6 +14,7 @@
 #include <sys/byteorder.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
+#include <pm/device.h>
 
 #include "bmp388.h"
 
@@ -52,7 +53,7 @@ static int bmp388_transceive(const struct device *dev,
 	const struct spi_buf buf = { .buf = data, .len = length };
 	const struct spi_buf_set s = { .buffers = &buf, .count = 1 };
 
-	return spi_transceive(cfg->bus, &cfg->spi_cfg, &s, &s);
+	return spi_transceive_dt(&cfg->spi_bus, &s, &s);
 }
 
 static int bmp388_read_spi(const struct device *dev,
@@ -71,7 +72,7 @@ static int bmp388_read_spi(const struct device *dev,
 	const struct spi_buf_set tx = { .buffers = buf, .count = 1 };
 	const struct spi_buf_set rx = { .buffers = buf, .count = 2 };
 
-	return spi_transceive(cfg->bus, &cfg->spi_cfg, &tx, &rx);
+	return spi_transceive_dt(&cfg->spi_bus, &tx, &rx);
 }
 
 static int bmp388_byte_read_spi(const struct device *dev,
@@ -549,8 +550,8 @@ static int bmp388_get_calibration_data(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int bmp388_device_ctrl(const struct device *dev,
-			      enum pm_device_action action)
+static int bmp388_pm_action(const struct device *dev,
+			    enum pm_device_action action)
 {
 	uint8_t reg_val;
 
@@ -602,10 +603,10 @@ static int bmp388_init(const struct device *dev)
 	}
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	/* Verify that the CS device is ready if it is set in the DT. */
-	if (is_spi && (cfg->spi_cfg.cs != NULL)) {
-		if (!device_is_ready(cfg->spi_cfg.cs->gpio_dev)) {
-			LOG_ERR("SPI CS device is not ready");
+	/* Verify the SPI bus */
+	if (is_spi) {
+		if (!spi_is_ready(&cfg->spi_bus)) {
+			LOG_ERR("SPI bus is not ready");
 			return -ENODEV;
 		}
 	}
@@ -694,7 +695,7 @@ static int bmp388_init(const struct device *dev)
 
 #define BMP388_BUS_CFG_SPI(inst) \
 	.ops = &bmp388_spi_ops,	 \
-	.spi_cfg = SPI_CONFIG_DT_INST(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
+	.spi_bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
 
 #define BMP388_BUS_CFG(inst)			\
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
@@ -710,20 +711,21 @@ static int bmp388_init(const struct device *dev)
 
 #define BMP388_INST(inst)						   \
 	static struct bmp388_data bmp388_data_##inst = {		   \
-		.odr = DT_ENUM_IDX(DT_DRV_INST(inst), odr),		   \
-		.osr_pressure = DT_ENUM_IDX(DT_DRV_INST(inst), osr_press), \
-		.osr_temp = DT_ENUM_IDX(DT_DRV_INST(inst), osr_temp),	   \
+		.odr = DT_INST_ENUM_IDX(inst, odr),			   \
+		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),	   \
+		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),		   \
 	};								   \
 	static const struct bmp388_config bmp388_config_##inst = {	   \
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		   \
 		BMP388_BUS_CFG(inst),					   \
 		BMP388_INT_CFG(inst)					   \
-		.iir_filter = DT_ENUM_IDX(DT_DRV_INST(inst), iir_filter),  \
+		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	   \
 	};								   \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		   \
 	DEVICE_DT_INST_DEFINE(						   \
 		inst,							   \
 		bmp388_init,						   \
-		bmp388_device_ctrl,					   \
+		PM_DEVICE_DT_INST_REF(inst),				   \
 		&bmp388_data_##inst,					   \
 		&bmp388_config_##inst,					   \
 		POST_KERNEL,						   \

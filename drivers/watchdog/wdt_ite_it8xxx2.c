@@ -199,7 +199,6 @@ static void wdt_it8xxx2_isr(const struct device *dev)
 {
 	struct wdt_it8xxx2_data *data = DRV_DATA(dev);
 	struct wdt_it8xxx2_regs *const inst = DRV_REG(dev);
-	uint16_t cnt0 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(data->timeout);
 
 	/* clear pre-warning timer1 interrupt status */
 	ite_intc_isr_clear(DT_INST_IRQN(0));
@@ -213,10 +212,13 @@ static void wdt_it8xxx2_isr(const struct device *dev)
 	}
 
 	/*
-	 * Reduce interval of warning timer, so we can print more
-	 * warning messages during critical period.
+	 * Once warning timer triggered: if watchdog timer isn't reloaded,
+	 * then we will reduce interval of warning timer to 30ms to print
+	 * more warning messages before watchdog reset.
 	 */
 	if (!wdt_warning_fired++) {
+		uint16_t cnt0 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(30);
+
 		/* pre-warning timer1 is 16-bit counter down timer */
 		inst->ET1CNTLHR = (cnt0 >> 8) & 0xff;
 		inst->ET1CNTLLR = cnt0 & 0xff;

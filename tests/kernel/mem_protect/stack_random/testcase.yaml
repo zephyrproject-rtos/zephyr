@@ -1,5 +1,4 @@
 tests:
   kernel.memory_protection.stack_random:
     arch_exclude: posix
-    platform_exclude: qemu_riscv32
     tags: kernel memory_protection

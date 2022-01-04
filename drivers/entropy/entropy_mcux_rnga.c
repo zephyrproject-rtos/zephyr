@@ -61,7 +61,7 @@ static int entropy_mcux_rnga_init(const struct device *);
 
 DEVICE_DT_INST_DEFINE(0,
 		    entropy_mcux_rnga_init, NULL, NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		    &entropy_mcux_rnga_api_funcs);
 
 static int entropy_mcux_rnga_init(const struct device *dev)

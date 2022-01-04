@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr.h>
-#include <adsp/cache.h>
-#include <soc/shim.h>
+#include <soc.h>
+#include <cavs-mem.h>
 
 /* Simple output driver for the trace window of an ADSP device used
  * for communication with the host processor as a shared memory
  * region.  The protocol uses an array of 64-byte "slots", each of
  * which is prefixed by a 16 bit magic number followed by a sequential
- * ID number.  The remaining bytes are a (potentially nul-terminated)
- * string containing output data.
+ * ID number starting from 1.  The remaining bytes are a (potentially
+ * nul-terminated) string containing output data.
  *
  * IMPORTANT NOTE on cache coherence: the shared memory window is in
  * HP-SRAM.  Each DSP core has an L1 cache that is incoherent (!) from
@@ -21,6 +21,9 @@
  * 0x9xxxxxxx and not the L1-cached mapping of the same memory at
  * 0xBxxxxxxx.
  */
+
+#define SRAM_TRACE_BASE HP_SRAM_WIN3_BASE
+#define SRAM_TRACE_SIZE HP_SRAM_WIN3_SIZE
 
 #define SLOT_SIZE 64
 #define SLOT_MAGIC 0x55aa

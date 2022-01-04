@@ -313,7 +313,7 @@ static const struct adc_driver_api cc32xx_driver_api = {
 	DEVICE_DT_INST_DEFINE(index,						 \
 			      &adc_cc32xx_init, NULL, &adc_cc32xx_data_##index,	 \
 			      &adc_cc32xx_cfg_##index, POST_KERNEL,		 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		 \
+			      CONFIG_ADC_INIT_PRIORITY,				 \
 			      &cc32xx_driver_api);				 \
 										 \
 	static void adc_cc32xx_cfg_func_##index(void)				 \

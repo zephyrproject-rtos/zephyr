@@ -39,11 +39,24 @@ extern "C" {
 #define BT_VCS_ERR_INVALID_COUNTER             0x80
 #define BT_VCS_ERR_OP_NOT_SUPPORTED            0x81
 
+/** Volume Control Service Mute Values */
+#define BT_VCS_STATE_UNMUTED                   0x00
+#define BT_VCS_STATE_MUTED                     0x01
+
 /** @brief Opaque Volume Control Service instance. */
 struct bt_vcs;
 
 /** Register structure for Volume Control Service */
 struct bt_vcs_register_param {
+	/** Initial step size (1-255) */
+	uint8_t step;
+
+	/** Initial mute state (0-1) */
+	uint8_t mute;
+
+	/** Initial volume level (0-255) */
+	uint8_t volume;
+
 	/** Register parameters for Volume Offset Control Services */
 	struct bt_vocs_register_param vocs_param[BT_VCS_VOCS_CNT];
 

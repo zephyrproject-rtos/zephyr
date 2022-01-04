@@ -131,10 +131,10 @@
 #define __INT_LEAST64_TYPE__ long long int
 #define __INT_LEAST64_WIDTH__ 64
 
-#define __UINT8_MAX__ 0xff
+#define __UINT8_MAX__ 0xffU
 #define __UINT8_TYPE__ unsigned char
 
-#define __UINT16_MAX__ 0xffff
+#define __UINT16_MAX__ 0xffffU
 #define __UINT16_TYPE__ short unsigned int
 
 #define __UINT32_MAX__ 0xffffffffU
@@ -143,7 +143,7 @@
 #define __UINT64_MAX__ 0xffffffffffffffffULL
 #define __UINT64_TYPE__ long long unsigned int
 
-#define __UINT_FAST8_MAX__ 0xff
+#define __UINT_FAST8_MAX__ 0xffU
 #define __UINT_FAST8_TYPE__ unsigned char
 
 #define __UINT_FAST16_MAX__ 0xffffffffU
@@ -155,10 +155,10 @@
 #define __UINT_FAST64_MAX__ 0xffffffffffffffffULL
 #define __UINT_FAST64_TYPE__ long long unsigned int
 
-#define __UINT_LEAST8_MAX__ 0xff
+#define __UINT_LEAST8_MAX__ 0xffU
 #define __UINT_LEAST8_TYPE__ unsigned char
 
-#define __UINT_LEAST16_MAX__ 0xffff
+#define __UINT_LEAST16_MAX__ 0xffffU
 #define __UINT_LEAST16_TYPE__ short unsigned int
 
 #define __UINT_LEAST32_MAX__ 0xffffffffU

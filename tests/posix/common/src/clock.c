@@ -46,33 +46,15 @@ void test_posix_clock(void)
 
 void test_posix_realtime(void)
 {
-	/* Make sure the realtime and monotonic clocks start out the
-	 * same.  This is not true on posix and where there is a
-	 * realtime clock, so don't keep this code.
-	 */
-
 	int ret;
 	struct timespec rts, mts;
 	struct timeval tv;
-
-	printk("POSIX clock set APIs\n");
-
-	/* Minimal sleep to align us to the next tick interval. This
-	 * helps with a case that 2 consecutive calls to clock_gettime()
-	 * below return different values. Note that the tick alignment
-	 * approach may break, in which case follow the suggestion in the
-	 * comment above.
-	 */
-	k_usleep(1);
 
 	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
 	zassert_equal(ret, 0, "Fail to get monotonic clock");
 
 	ret = clock_gettime(CLOCK_REALTIME, &rts);
 	zassert_equal(ret, 0, "Fail to get realtime clock");
-
-	zassert_equal(rts.tv_sec, mts.tv_sec, "Seconds not equal");
-	zassert_equal(rts.tv_nsec, mts.tv_nsec, "Nanoseconds not equal");
 
 	/* Set a particular time.  In this case, the output of:
 	 * `date +%s -d 2018-01-01T15:45:01Z`
@@ -141,6 +123,4 @@ void test_posix_realtime(void)
 			" provide correct result");
 	zassert_true(rts.tv_nsec >= tv.tv_usec * NSEC_PER_USEC,
 			"gettimeofday didn't provide correct result");
-
-	printk("POSIX clock set APIs test done\n");
 }

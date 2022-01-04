@@ -14,7 +14,17 @@ config ADC_LMP90XXX
 config ADC_LMP90XXX_GPIO
 	default y
 
+config ADC_INIT_PRIORITY
+	default 80
+
 endif # ADC
+
+if GPIO
+
+config GPIO_INIT_PRIORITY
+	default 99
+
+endif # GPIO
 
 if EEPROM
 
@@ -23,6 +33,9 @@ config I2C
 
 config EEPROM_AT24
 	default y
+
+config EEPROM_INIT_PRIORITY
+	default 75
 
 endif # EEPROM
 

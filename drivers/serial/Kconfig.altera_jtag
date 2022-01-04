@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ALTR_JTAG_UART  := altr,jtag-uart
+
 config UART_ALTERA_JTAG
 	bool "Nios II JTAG UART driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_ALTR_JTAG_UART))
 	select SERIAL_HAS_DRIVER
 	help
 	  Enable the Altera JTAG UART driver, built in to many Nios II CPU

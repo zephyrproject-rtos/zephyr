@@ -71,7 +71,7 @@ config ETH_MCUX_HW_ACCELERATION
 config PTP_CLOCK_MCUX
 	bool "MCUX PTP clock driver support"
 	default y
-	depends on PTP_CLOCK || (NET_PKT_TIMESTAMP && NET_GPTP)
+	depends on PTP_CLOCK || NET_L2_PTP
 	help
 	  Enable MCUX PTP clock support.
 
@@ -83,6 +83,14 @@ config ETH_MCUX_PTP_CLOCK_SRC_HZ
 	help
 	  Set the frequency in Hz sourced to the PTP timer.
 	  If the value is set properly, the timer will be accurate.
+
+config ETH_MCUX_PTP_CLOCK_INIT_PRIO
+	int
+	default 85
+	help
+	  MCUX PTP Clock initialization priority level. There is
+	  a dependency from the network stack that this device
+	  initializes before network stack (NET_INIT_PRIO).
 
 endif # PTP_CLOCK_MCUX
 

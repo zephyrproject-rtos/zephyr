@@ -895,6 +895,12 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 		}
 		break;
 
+		case NRFX_USBD_EP_ABORTED: {
+			LOG_DBG("Endpoint 0x%02x write aborted",
+				p_event->data.eptransfer.ep);
+		}
+		break;
+
 		default: {
 			LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 				p_event->data.eptransfer.status,
@@ -1926,7 +1932,8 @@ static int usb_init(const struct device *arg)
 		.dcdcen = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X) ||
 			  IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_APP),
 #if NRFX_POWER_SUPPORTS_DCDCEN_VDDH
-		.dcdcenhv = IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_HV),
+		.dcdcenhv = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X_HV) ||
+			    IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_HV),
 #endif
 	};
 

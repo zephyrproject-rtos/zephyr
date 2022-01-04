@@ -42,14 +42,21 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 		return 0;
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	/* Simple SPI only supports master mode */
 	if (spi_context_is_slave(&spi->ctx)) {
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_MODE_LOOP | SPI_TRANSFER_LSB |
-				 SPI_LINES_DUAL | SPI_LINES_QUAD)) {
+	if ((config->operation & (SPI_MODE_LOOP | SPI_TRANSFER_LSB)) ||
+	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	     (config->operation &
+	      (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Unsupported configuration");
 		return -EINVAL;
 	}
@@ -77,10 +84,6 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 	sys_write8(spcr | SPI_OC_SIMPLE_SPCR_SPE, SPI_OC_SIMPLE_SPCR(info));
 
 	spi->ctx.config = config;
-
-	if (config->cs) {
-		spi_context_cs_configure(&spi->ctx);
-	}
 
 	return 0;
 }
@@ -185,10 +188,17 @@ static struct spi_driver_api spi_oc_simple_api = {
 
 int spi_oc_simple_init(const struct device *dev)
 {
+	int err;
 	const struct spi_oc_simple_cfg *info = dev->config;
+	struct spi_oc_simple_data *data = dev->data;
 
 	/* Clear chip selects */
 	sys_write8(0, SPI_OC_SIMPLE_SPSS(info));
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	/* Make sure the context is unlocked */
 	spi_context_unlock_unconditionally(&SPI_OC_SIMPLE_DATA(dev)->ctx);
@@ -212,6 +222,7 @@ int spi_oc_simple_init(const struct device *dev)
 	static struct spi_oc_simple_data spi_oc_simple_data_##inst = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_##inst, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx) \
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\

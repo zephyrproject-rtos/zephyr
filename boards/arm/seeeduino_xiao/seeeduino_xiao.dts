@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samd21.dtsi>
+#include "seeed_xiao_connector.dtsi"
 
 / {
 	model = "Seeeduino XIAO";
@@ -74,7 +75,7 @@
 	#size-cells = <0>;
 };
 
-&usb0 {
+zephyr_udc0: &usb0 {
 	status = "okay";
 };
 

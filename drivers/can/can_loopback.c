@@ -73,7 +73,7 @@ void tx_thread(void *data_arg, void *arg2, void *arg3)
 		if (!frame.cb) {
 			k_sem_give(frame.tx_compl);
 		} else {
-			frame.cb(CAN_TX_OK, frame.cb_arg);
+			frame.cb(0, frame.cb_arg);
 		}
 	}
 }
@@ -81,7 +81,7 @@ void tx_thread(void *data_arg, void *arg2, void *arg3)
 int can_loopback_send(const struct device *dev,
 		      const struct zcan_frame *frame,
 		      k_timeout_t timeout, can_tx_callback_t callback,
-		      void *callback_arg)
+		      void *user_data)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
 	int ret;
@@ -96,7 +96,7 @@ int can_loopback_send(const struct device *dev,
 
 	if (frame->dlc > CAN_MAX_DLC) {
 		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
-		return CAN_TX_EINVAL;
+		return -EINVAL;
 	}
 
 	if (!data->loopback) {
@@ -105,7 +105,7 @@ int can_loopback_send(const struct device *dev,
 
 	loopback_frame.frame = *frame;
 	loopback_frame.cb = callback;
-	loopback_frame.cb_arg = callback_arg;
+	loopback_frame.cb_arg = user_data;
 	loopback_frame.tx_compl = &tx_sem;
 
 	if (!callback) {
@@ -118,7 +118,7 @@ int can_loopback_send(const struct device *dev,
 		k_sem_take(&tx_sem, K_FOREVER);
 	}
 
-	return  ret ? CAN_TIMEOUT : CAN_TX_OK;
+	return  ret ? -EAGAIN : 0;
 }
 
 
@@ -130,7 +130,7 @@ static inline int get_free_filter(struct can_loopback_filter *filters)
 		}
 	}
 
-	return CAN_NO_FREE_FILTER;
+	return -ENOSPC;
 }
 
 int can_loopback_attach_isr(const struct device *dev, can_rx_callback_t isr,
@@ -236,6 +236,13 @@ int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
+int can_loopback_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(id_type);
+
+	return CONFIG_CAN_MAX_FILTER;
+}
+
 static const struct can_driver_api can_api_funcs = {
 	.set_mode = can_loopback_set_mode,
 	.set_timing = can_loopback_set_timing,
@@ -248,6 +255,7 @@ static const struct can_driver_api can_api_funcs = {
 #endif
 	.register_state_change_isr = can_loopback_register_state_change_isr,
 	.get_core_clock = can_loopback_get_core_clock,
+	.get_max_filters = can_loopback_get_max_filters,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x01,
@@ -295,7 +303,7 @@ static struct can_loopback_data can_loopback_dev_data_1;
 DEVICE_DEFINE(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
 		    &can_loopback_init, NULL,
 		    &can_loopback_dev_data_1, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,
 		    &can_api_funcs);
 
 
@@ -328,7 +336,7 @@ static int socket_can_init_1(const struct device *dev)
 
 NET_DEVICE_INIT(socket_can_loopback_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 		NULL, &socket_can_context_1, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		CONFIG_CAN_INIT_PRIORITY,
 		&socket_can_api,
 		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
 

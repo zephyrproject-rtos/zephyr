@@ -35,14 +35,17 @@
  * OMA-TS-LightweightM2M-V1_0_2-20180209-A
  */
 
-#define LWM2M_OBJECT_SECURITY_ID			0
-#define LWM2M_OBJECT_SERVER_ID				1
-#define LWM2M_OBJECT_ACCESS_CONTROL_ID			2
-#define LWM2M_OBJECT_DEVICE_ID				3
-#define LWM2M_OBJECT_CONNECTIVITY_MONITORING_ID		4
-#define LWM2M_OBJECT_FIRMWARE_ID			5
-#define LWM2M_OBJECT_LOCATION_ID			6
-#define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID		7
+/* clang-format off */
+#define LWM2M_OBJECT_SECURITY_ID                0
+#define LWM2M_OBJECT_SERVER_ID                  1
+#define LWM2M_OBJECT_ACCESS_CONTROL_ID          2
+#define LWM2M_OBJECT_DEVICE_ID                  3
+#define LWM2M_OBJECT_CONNECTIVITY_MONITORING_ID 4
+#define LWM2M_OBJECT_FIRMWARE_ID                5
+#define LWM2M_OBJECT_LOCATION_ID                6
+#define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID 7
+#define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID     9
+/* clang-format on */
 
 /**
  * @brief LwM2M Objects produced by 3rd party Standards Development
@@ -57,15 +60,47 @@
 #define IPSO_OBJECT_HUMIDITY_SENSOR_ID      3304
 #define IPSO_OBJECT_LIGHT_CONTROL_ID        3311
 #define IPSO_OBJECT_ACCELEROMETER_ID        3313
+#define IPSO_OBJECT_CURRENT_SENSOR_ID       3317
 #define IPSO_OBJECT_PRESSURE_ID             3323
 #define IPSO_OBJECT_BUZZER_ID               3338
 #define IPSO_OBJECT_TIMER_ID                3340
 #define IPSO_OBJECT_ONOFF_SWITCH_ID         3342
 #define IPSO_OBJECT_PUSH_BUTTON_ID          3347
+#define IPSO_OBJECT_FILLING_LEVEL_SENSOR_ID 3435
 /* clang-format on */
 
 typedef void (*lwm2m_socket_fault_cb_t)(int error);
-typedef void (*lwm2m_notify_timeout_cb_t)(void);
+
+struct lwm2m_obj_path {
+	uint16_t obj_id;
+	uint16_t obj_inst_id;
+	uint16_t res_id;
+	uint16_t res_inst_id;
+	uint8_t  level;  /* 0/1/2/3/4 (4 = resource instance) */
+};
+
+/**
+ * @brief Observe callback events
+ */
+enum lwm2m_observe_event {
+	LWM2M_OBSERVE_EVENT_OBSERVER_ADDED,
+	LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED,
+	LWM2M_OBSERVE_EVENT_NOTIFY_ACK,
+	LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,
+};
+
+/**
+ * @brief Observe callback indicating observer adds and deletes, and
+ *	  notification ACKs and timeouts
+ *
+ * @param[in] event Observer add/delete or notification ack/timeout
+ * @param[in] path LwM2M path
+ * @param[in] user_data Pointer to user_data buffer, as provided in
+ *			send_traceable_notification(). Used to determine for which
+ *			data the ACKed/timed out notification was.
+ */
+typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_obj_path *path,
+				   void *user_data);
 
 /**
  * @brief LwM2M context structure to maintain information for a single
@@ -93,6 +128,12 @@ struct lwm2m_ctx {
 	 *  LwM2M engine calls tls_credential_(add|delete)
 	 */
 	int tls_tag;
+
+	/** When MBEDTLS SNI is enabled socket must be set with destination
+	 *  hostname server.
+	 */
+	char *desthostname;
+	uint16_t desthostnamelen;
 
 	/** Client can set load_credentials function as a way of overriding
 	 *  the default behavior of load_tls_credential() in lwm2m_engine.c
@@ -126,10 +167,10 @@ struct lwm2m_ctx {
 	 */
 	lwm2m_socket_fault_cb_t fault_cb;
 
-	/** Notify Timeout Callback. LwM2M processing thread will call this
-	 *  callback in case of notify timeout.
+	/** Callback for new or cancelled observations, and acknowledged or timed
+	 *  out notifications.
 	 */
-	lwm2m_notify_timeout_cb_t notify_timeout_cb;
+	lwm2m_observe_cb_t observe_cb;
 
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
@@ -347,49 +388,103 @@ void lwm2m_firmware_set_update_cb(lwm2m_engine_execute_cb_t cb);
  * @return A registered callback function to receive the execute event.
  */
 lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb(void);
+#endif
+#endif
+
+
+#if defined(CONFIG_LWM2M_SWMGMT_OBJ_SUPPORT)
 
 /**
- * @brief Get the block context of the current firmware block.
+ * @brief Set callback to handle software activation requests
  *
- * @param[out] ctx A buffer to store the block context.
+ * The callback will be executed when the LWM2M execute operation gets called
+ * on the corresponding object's Activate resource instance.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ * @param[in] cb A callback function to receive the execute event.
+ *
+ * @return 0 on success, otherwise a negative integer.
  */
-struct coap_block_context *lwm2m_firmware_get_block_context();
+int lwm2m_swmgmt_set_activate_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Set callback to handle software deactivation requests
+ *
+ * The callback will be executed when the LWM2M execute operation gets called
+ * on the corresponding object's Deactivate resource instance.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ * @param[in] cb A callback function to receive the execute event.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_deactivate_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Set callback to handle software install requests
+ *
+ * The callback will be executed when the LWM2M execute operation gets called
+ * on the corresponding object's Install resource instance.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ * @param[in] cb A callback function to receive the execute event.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_install_package_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Set callback to handle software uninstall requests
+ *
+ * The callback will be executed when the LWM2M execute operation gets called
+ * on the corresponding object's Uninstall resource instance.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ * @param[in] cb A callback function for handling the execute event.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_delete_package_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Set callback to read software package
+ *
+ * The callback will be executed when the LWM2M read operation gets called
+ * on the corresponding object.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ * @param[in] cb A callback function for handling the read event.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_read_package_version_cb(uint16_t obj_inst_id, lwm2m_engine_get_data_cb_t cb);
+
+/**
+ * @brief Set data callback for software management block transfer.
+ *
+ * The callback will be executed when the LWM2M block write operation gets called
+ * on the corresponding object's resource instance.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ * @param[in] cb A callback function for handling the block write event.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_write_package_cb(uint16_t obj_inst_id, lwm2m_engine_set_data_cb_t cb);
+
+/**
+ * Function to be called when a Software Management object instance
+ * completed the Install operation.
+ *
+ * @param[in] obj_inst_id The Software Management object instance
+ * @param[in] error_code The result code of the operation. Zero on success
+ * otherwise it should be a negative integer.
+ *
+ * return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_install_completed(uint16_t obj_inst_id, int error_code);
+
 #endif
-#endif
-
-/**
- * @brief Data structure used to represent the LwM2M float type:
- * val1 is the whole number portion of the decimal
- * val2 is the decimal portion *1000000 for 32bit, *1000000000 for 64bit
- * Example: 123.456 == val1: 123, val2:456000
- * Example: 123.000456 = val1: 123, val2:456
- */
-
-/**
- * @brief Maximum precision value for 32-bit LwM2M float val2
- */
-#define LWM2M_FLOAT32_DEC_MAX 1000000
-
-/**
- * @brief 32-bit variant of the LwM2M float structure
- */
-typedef struct float32_value {
-	int32_t val1;
-	int32_t val2;
-} float32_value_t;
-
-/**
- * @brief Maximum precision value for 64-bit LwM2M float val2
- */
-#define LWM2M_FLOAT64_DEC_MAX 1000000000LL
-
-/**
- * @brief 32-bit variant of the LwM2M float structure
- */
-typedef struct float64_value {
-	int64_t val1;
-	int64_t val2;
-} float64_value_t;
 
 /**
  * @brief Maximum value for ObjLnk resource fields
@@ -570,24 +665,14 @@ int lwm2m_engine_set_s64(char *pathstr, int64_t value);
 int lwm2m_engine_set_bool(char *pathstr, bool value);
 
 /**
- * @brief Set resource (instance) value (32-bit float structure)
+ * @brief Set resource (instance) value (double)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[in] value 32-bit float value
+ * @param[in] value double value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value);
-
-/**
- * @brief Set resource (instance) value (64-bit float structure)
- *
- * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[in] value 64-bit float value
- *
- * @return 0 for success or negative in case of error.
- */
-int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value);
+int lwm2m_engine_set_float(char *pathstr, double *value);
 
 /**
  * @brief Set resource (instance) value (ObjLnk)
@@ -712,24 +797,14 @@ int lwm2m_engine_get_s64(char *pathstr, int64_t *value);
 int lwm2m_engine_get_bool(char *pathstr, bool *value);
 
 /**
- * @brief Get resource (instance) value (32-bit float structure)
+ * @brief Get resource (instance) value (double)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[out] buf 32-bit float buffer to copy data into
+ * @param[out] buf double buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf);
-
-/**
- * @brief Get resource (instance) value (64-bit float structure)
- *
- * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[out] buf 64-bit float buffer to copy data into
- *
- * @return 0 for success or negative in case of error.
- */
-int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf);
+int lwm2m_engine_get_float(char *pathstr, double *buf);
 
 /**
  * @brief Get resource (instance) value (ObjLnk)
@@ -936,6 +1011,18 @@ int lwm2m_engine_delete_res_inst(char *pathstr);
 int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms);
 
 /**
+ * @brief Update the period of the device service.
+ *
+ * Change the duration of the periodic device service that notifies the
+ * current time.
+ *
+ * @param[in] period_ms New period for the device service (in milliseconds)
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_update_device_service_period(uint32_t period_ms);
+
+/**
  * @brief Start the LwM2M engine
  *
  * LwM2M clients normally do not need to call this function as it is called
@@ -1014,9 +1101,13 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
  * @param[in] ep_name Registered endpoint name
  * @param[in] flags Flags used to configure current LwM2M session.
  * @param[in] event_cb Client event callback function
+ * @param[in] observe_cb Observe callback function called when an observer was
+ *			 added or deleted, and when a notification was acked or
+ *			 has timed out
  */
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
-			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb);
+			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb,
+			   lwm2m_observe_cb_t observe_cb);
 
 /**
  * @brief Stop the LwM2M RD (De-register) Client
@@ -1028,14 +1119,31 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  *
  * @param[in] client_ctx LwM2M context
  * @param[in] event_cb Client event callback function
+ * @param[in] deregister True to deregister the client if registered.
+ *                       False to force close the connection.
  */
 void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
-			  lwm2m_ctx_event_cb_t event_cb);
+			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
 
 /**
  * @brief Trigger a Registration Update of the LwM2M RD Client
  */
 void lwm2m_rd_client_update(void);
+
+/**
+ * @brief LwM2M path maximum length
+ */
+#define LWM2M_MAX_PATH_STR_LEN sizeof("65535/65535/65535/65535")
+
+/**
+ * @brief Helper function to print path objects' contents to log
+ *
+ * @param[in] buf The buffer to use for formatting the string
+ * @param[in] path The path to stringify
+ *
+ * @return Resulting formatted path string
+ */
+char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

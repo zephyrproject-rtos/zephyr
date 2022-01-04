@@ -29,7 +29,7 @@ static struct sensor_value press_out, temp_out;
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 static void lsm6dsl_trigger_handler(const struct device *dev,
-				    struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 	static struct sensor_value accel_x, accel_y, accel_z;
 	static struct sensor_value gyro_x, gyro_y, gyro_z;

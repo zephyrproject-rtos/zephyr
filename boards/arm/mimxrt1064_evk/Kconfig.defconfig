@@ -20,6 +20,7 @@ config FLASH_MCUX_FLEXSPI_NOR
 
 config FLASH_MCUX_FLEXSPI_XIP
 	default y if FLASH
+	depends on MEMC_MCUX_FLEXSPI
 
 config I2C
 	default y if KSCAN
@@ -45,9 +46,6 @@ config NET_L2_ETHERNET
 endif # NETWORKING
 
 if LVGL
-
-config LVGL_DISPLAY_DEV_NAME
-	default "ELCDIF_1"
 
 config LVGL_POINTER_KSCAN
 	default y

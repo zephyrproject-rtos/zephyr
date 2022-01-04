@@ -118,18 +118,25 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
+    *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:esp32c3_sys_timer.*(.literal .text .literal.* .text.*)
+    *libdrivers__timer.a:esp32c3_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
     *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
     *libzephyr.a:log_msg.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_list.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:uart_console.*(.literal.console_out .text.console_out)
+    *libdrivers__console.a:uart_console.*(.literal.console_out .text.console_out)
     *libzephyr.a:log_output.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+
     . = ALIGN(4);
     _init_end = ABSOLUTE(.);
     _iram_text_end = ABSOLUTE(.);   *(.srodata)
@@ -154,7 +161,9 @@ SECTIONS
     *(.data.*)
     *(.gnu.linkonce.d.*)
     *(.data1)
+#ifdef CONFIG_RISCV_GP
     __global_pointer$ = . + 0x800;
+#endif /* CONFIG_RISCV_GP */
     *(.sdata)
     *(.sdata.*)
     *(.gnu.linkonce.s.*)
@@ -167,6 +176,7 @@ SECTIONS
     *libzephyr.a:log_core.*(.rodata .rodata.*)
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.*)
+    *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
     . = ALIGN(4);
     __esp_log_const_start = .;
     KEEP(*(SORT(.log_const_*)));
@@ -236,7 +246,7 @@ SECTIONS
   .flash.rodata : ALIGN(0x10)
   {
     _rodata_start = ABSOLUTE(.);
-    _image_rodata_start = .;
+    __rodata_region_start = .;
     __esp_shell_root_cmds_start = .;
     KEEP(*(SORT(.shell_root_cmd_*)));
     __esp_shell_root_cmds_end = .;
@@ -283,7 +293,7 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    _image_rodata_end = .;
+    __rodata_region_end = .;
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -301,6 +311,8 @@ SECTIONS
     *(".srodata.*")
     *(.rodata)
     *(.rodata.*)
+    *(.rodata_wlog)
+    *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);

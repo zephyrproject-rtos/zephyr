@@ -174,20 +174,40 @@ start:
 			uint_value_type d;
 
 			if (length_mod == 'z') {
-				d = va_arg(ap, ssize_t);
-			} else if (length_mod == 'l') {
-				d = va_arg(ap, long);
-			} else if (length_mod == 'L') {
-				long long lld = va_arg(ap, long long);
-
-				if (sizeof(int_value_type) < 8U &&
-				    lld != (int_value_type) lld) {
-					data = "ERR";
-					data_len = 3;
-					precision = 0;
-					break;
+				if (*fmt == 'u') {
+					d = va_arg(ap, size_t);
+				} else {
+					d = va_arg(ap, ssize_t);
 				}
-				d = (uint_value_type) lld;
+			} else if (length_mod == 'l') {
+				if (*fmt == 'u') {
+					d = va_arg(ap, unsigned long);
+				} else {
+					d = va_arg(ap, long);
+				}
+			} else if (length_mod == 'L') {
+				if (*fmt == 'u') {
+					unsigned long long llu =
+						va_arg(ap, unsigned long long);
+
+					if (llu != (uint_value_type) llu) {
+						data = "ERR";
+						data_len = 3;
+						precision = 0;
+						break;
+					}
+					d = (uint_value_type) llu;
+				} else {
+					long long lld = va_arg(ap, long long);
+
+					if (lld != (int_value_type) lld) {
+						data = "ERR";
+						data_len = 3;
+						precision = 0;
+						break;
+					}
+					d = (int_value_type) lld;
+				}
 			} else if (*fmt == 'u') {
 				d = va_arg(ap, unsigned int);
 			} else {
@@ -229,7 +249,16 @@ start:
 			} else if (length_mod == 'l') {
 				x = va_arg(ap, unsigned long);
 			} else if (length_mod == 'L') {
-				x = va_arg(ap, unsigned long long);
+				unsigned long long llx =
+					va_arg(ap, unsigned long long);
+
+				if (llx != (uint_value_type) llx) {
+					data = "ERR";
+					data_len = 3;
+					precision = 0;
+					break;
+				}
+				x = (uint_value_type) llx;
 			} else {
 				x = va_arg(ap, unsigned int);
 			}

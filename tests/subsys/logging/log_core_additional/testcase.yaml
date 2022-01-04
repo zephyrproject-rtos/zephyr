@@ -11,4 +11,7 @@ tests:
   logging.add.user:
     tags: logging
     filter: CONFIG_USERSPACE
-    extra_args: CONF_FILE=log_user.conf
+    extra_args: CONF_FILE=log_user.conf USERSPACE_TEST=1
+  logging.add.log2:
+    tags: logging
+    extra_args: CONF_FILE=log2.conf

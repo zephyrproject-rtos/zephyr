@@ -251,6 +251,7 @@ static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 	if (err) {
 		/* We still have the ownership of the buffer */
 		req->buf = buf;
+		chan->req = NULL;
 	}
 
 	return err;
@@ -435,7 +436,7 @@ static inline bool att_chan_is_connected(struct bt_att_chan *chan)
 static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 			    bt_att_chan_sent_t cb)
 {
-	BT_DBG("chan %p flags %u code 0x%02x", chan, atomic_get(chan->flags),
+	BT_DBG("chan %p flags %lu code 0x%02x", chan, atomic_get(chan->flags),
 	       ((struct bt_att_hdr *)buf->data)->code);
 
 	return chan_send(chan, buf, cb);
@@ -1953,6 +1954,14 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	uint16_t handle;
 	int err;
 
+	/* The Signed Write Without Response sub-procedure shall only be supported
+	 * on the LE Fixed Channel Unenhanced ATT bearer.
+	 */
+	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		/* No response for this command */
+		return 0;
+	}
+
 	req = (void *)buf->data;
 
 	handle = sys_le16_to_cpu(req->handle);
@@ -2432,7 +2441,8 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (!handler) {
 		BT_WARN("Unhandled ATT code 0x%02x", hdr->code);
-		if (att_op_get_type(hdr->code) != ATT_COMMAND) {
+		if (att_op_get_type(hdr->code) != ATT_COMMAND &&
+		    att_op_get_type(hdr->code) != ATT_INDICATION) {
 			send_err_rsp(att_chan, hdr->code, 0,
 				     BT_ATT_ERR_NOT_SUPPORTED);
 		}
@@ -2517,7 +2527,6 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 static void att_reset(struct bt_att *att)
 {
-	struct bt_att_req *req, *tmp;
 	struct net_buf *buf;
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
@@ -2534,7 +2543,12 @@ static void att_reset(struct bt_att *att)
 	att->conn = NULL;
 
 	/* Notify pending requests */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->reqs, req, tmp, node) {
+	while (!sys_slist_is_empty(&att->reqs)) {
+		struct bt_att_req *req;
+		sys_snode_t *node;
+
+		node = sys_slist_get_not_empty(&att->reqs);
+		req = CONTAINER_OF(node, struct bt_att_req, node);
 		if (req->func) {
 			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0,
 				  req->user_data);
@@ -2597,7 +2611,7 @@ static struct bt_att_chan *att_get_fixed_chan(struct bt_conn *conn)
 
 static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 {
-	BT_DBG("att %p chan %p flags %u", att, chan, atomic_get(chan->flags));
+	BT_DBG("att %p chan %p flags %lu", att, chan, atomic_get(chan->flags));
 
 	if (sys_slist_is_empty(&att->chans)) {
 		/* Init general queues when attaching the first channel */
@@ -2882,6 +2896,29 @@ int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels)
 
 int bt_eatt_disconnect(struct bt_conn *conn)
 {
+	struct bt_att_chan *chan;
+	struct bt_att *att;
+	int err = -ENOTCONN;
+
+	if (!conn) {
+		return -EINVAL;
+	}
+
+	chan = att_get_fixed_chan(conn);
+	att = chan->att;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
+		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
+		}
+	}
+
+	return err;
+}
+
+#if defined(CONFIG_BT_TESTING)
+int bt_eatt_disconnect_one(struct bt_conn *conn)
+{
 	struct bt_att_chan *chan = att_get_fixed_chan(conn);
 	struct bt_att *att = chan->att;
 	int err = -ENOTCONN;
@@ -2893,12 +2930,13 @@ int bt_eatt_disconnect(struct bt_conn *conn)
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
 		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
 			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
+			return err;
 		}
 	}
 
 	return err;
 }
-
+#endif /* CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_EATT */
 
 static int bt_eatt_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)

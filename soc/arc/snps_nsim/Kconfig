@@ -29,6 +29,11 @@ config SOC_NSIM_HS_SMP
 	bool "Multi-core Synopsys ARC HS in nSIM"
 	select CPU_HAS_FPU
 
+config SOC_NSIM_HS_MPUV6
+	bool "Synopsys ARC HS with MPU v6 in nSIM"
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+
 config SOC_NSIM_HS6X
 	bool "Synopsys ARC HS6x in nSIM"
 

@@ -1,0 +1,8 @@
+# BT610 board configuration
+
+# Copyright (c) 2021 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BT610
+	bool "BT610"
+	depends on SOC_NRF52840_QIAA

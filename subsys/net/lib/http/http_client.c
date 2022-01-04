@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(net_http, CONFIG_NET_HTTP_LOG_LEVEL);
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
 	while (len) {
-		ssize_t out_len = send(sock, buf, len, 0);
+		ssize_t out_len = zsock_send(sock, buf, len, 0);
 
 		if (out_len < 0) {
 			return -errno;
@@ -269,28 +269,6 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 		req->internal.response.body_start = (uint8_t *)at;
 	}
 
-	if (req->internal.response.cb) {
-		if (http_should_keep_alive(parser)) {
-			NET_DBG("Calling callback for partitioned %zd len data",
-				req->internal.response.data_len);
-
-			req->internal.response.cb(&req->internal.response,
-						  HTTP_DATA_MORE,
-						  req->internal.user_data);
-		} else {
-			NET_DBG("Calling callback for %zd len data",
-				req->internal.response.data_len);
-
-			req->internal.response.cb(&req->internal.response,
-						  HTTP_DATA_FINAL,
-						  req->internal.user_data);
-		}
-
-		/* Re-use the result buffer and start to fill it again */
-		req->internal.response.data_len = 0;
-		req->internal.response.body_start = NULL;
-	}
-
 	return 0;
 }
 
@@ -354,12 +332,6 @@ static int on_message_complete(struct http_parser *parser)
 
 	req->internal.response.message_complete = 1;
 
-	if (req->internal.response.cb) {
-		req->internal.response.cb(&req->internal.response,
-					  HTTP_DATA_FINAL,
-					  req->internal.user_data);
-	}
-
 	return 0;
 }
 
@@ -415,13 +387,22 @@ static int http_wait_data(int sock, struct http_request *req)
 	int received, ret;
 
 	do {
-		received = recv(sock, req->internal.response.recv_buf + offset,
-				req->internal.response.recv_buf_len - offset,
-				0);
+		received = zsock_recv(sock, req->internal.response.recv_buf + offset,
+				      req->internal.response.recv_buf_len - offset,
+				      0);
 		if (received == 0) {
 			/* Connection closed */
 			LOG_DBG("Connection closed");
 			ret = total_received;
+
+			if (req->internal.response.cb) {
+				NET_DBG("Calling callback for closed connection");
+
+				req->internal.response.cb(&req->internal.response,
+							  HTTP_DATA_FINAL,
+							  req->internal.user_data);
+			}
+
 			break;
 		} else if (received < 0) {
 			/* Socket error */
@@ -445,6 +426,35 @@ static int http_wait_data(int sock, struct http_request *req)
 			offset = 0;
 		}
 
+		if (req->internal.response.cb) {
+			bool notify = false;
+			enum http_final_call event;
+
+			if (req->internal.response.message_complete) {
+				NET_DBG("Calling callback for %zd len data",
+					req->internal.response.data_len);
+
+				notify = true;
+				event = HTTP_DATA_FINAL;
+			} else if (offset == 0) {
+				NET_DBG("Calling callback for partitioned %zd len data",
+					req->internal.response.data_len);
+
+				notify = true;
+				event = HTTP_DATA_MORE;
+			}
+
+			if (notify) {
+				req->internal.response.cb(&req->internal.response,
+							  event,
+							  req->internal.user_data);
+
+				/* Re-use the result buffer and start to fill it again */
+				req->internal.response.data_len = 0;
+				req->internal.response.body_start = NULL;
+			}
+		}
+
 		if (req->internal.response.message_complete) {
 			ret = total_received;
 			break;
@@ -460,7 +470,7 @@ static void http_timeout(struct k_work *work)
 	struct http_client_internal_data *data =
 		CONTAINER_OF(work, struct http_client_internal_data, work);
 
-	(void)close(data->sock);
+	(void)zsock_close(data->sock);
 }
 
 int http_client_req(int sock, struct http_request *req,

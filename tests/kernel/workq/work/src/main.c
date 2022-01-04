@@ -230,7 +230,7 @@ static void test_queue_start(void)
 	struct k_work_queue_config cfg = {
 		.name = "wq.preempt",
 	};
-
+	k_work_queue_init(&preempt_queue);
 	zassert_equal(preempt_queue.flags, 0, NULL);
 	k_work_queue_start(&preempt_queue, preempt_stack, STACK_SIZE,
 			    PREEMPT_PRIORITY, &cfg);

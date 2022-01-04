@@ -13,6 +13,7 @@ static void fetch_and_display(const struct device *sensor)
 {
 	static unsigned int count;
 	struct sensor_value accel[3];
+	struct sensor_value temperature;
 	const char *overrun = "";
 	int rc = sensor_sample_fetch(sensor);
 
@@ -32,17 +33,31 @@ static void fetch_and_display(const struct device *sensor)
 	if (rc < 0) {
 		printf("ERROR: Update failed: %d\n", rc);
 	} else {
-		printf("#%u @ %u ms: %sx %f , y %f , z %f\n",
+		printf("#%u @ %u ms: %sx %f , y %f , z %f",
 		       count, k_uptime_get_32(), overrun,
 		       sensor_value_to_double(&accel[0]),
 		       sensor_value_to_double(&accel[1]),
 		       sensor_value_to_double(&accel[2]));
 	}
+
+	if (IS_ENABLED(CONFIG_LIS2DH_MEASURE_TEMPERATURE)) {
+		if (rc == 0) {
+			rc = sensor_channel_get(sensor, SENSOR_CHAN_DIE_TEMP, &temperature);
+			if (rc < 0) {
+				printf("\nERROR: Unable to read temperature:%d\n", rc);
+			} else {
+				printf(", t %f\n", sensor_value_to_double(&temperature));
+			}
+		}
+
+	} else {
+		printf("\n");
+	}
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trig)
+			    const struct sensor_trigger *trig)
 {
 	fetch_and_display(dev);
 }

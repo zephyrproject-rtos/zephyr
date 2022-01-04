@@ -9,6 +9,7 @@
 #include <kernel.h>
 #include <logging/log_backend.h>
 #include <logging/log_msg.h>
+#include <logging/log_internal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -169,7 +170,47 @@ void log_backend_enable(struct log_backend const *const backend,
  */
 void log_backend_disable(struct log_backend const *const backend);
 
-#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MINIMAL)
+/**
+ * @brief Get current number of allocated buffers for string duplicates.
+ */
+uint32_t log_get_strdup_pool_current_utilization(void);
+
+/**
+ * @brief Get maximal number of simultaneously allocated buffers for string
+ *	  duplicates.
+ *
+ * Value can be used to determine pool size.
+ */
+uint32_t log_get_strdup_pool_utilization(void);
+
+/**
+ * @brief Get length of the longest string duplicated.
+ *
+ * Value can be used to determine buffer size in the string duplicates pool.
+ */
+uint32_t log_get_strdup_longest_string(void);
+
+/**
+ * @brief Check if there is pending data to be processed by the logging subsystem.
+ *
+ * Function can be used to determine if all logs have been flushed. Function
+ * returns false when deferred mode is not enabled.
+ *
+ * @retval true There is pending data.
+ * @retval false No pending data to process.
+ */
+static inline bool log_data_pending(void)
+{
+	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
+		return z_log_msg2_pending();
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		return log_msg_mem_get_used() > 0;
+	}
+
+	return false;
+}
+
+#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_INIT() log_init()
 #define LOG_PANIC() log_panic()

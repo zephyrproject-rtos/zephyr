@@ -137,7 +137,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	uintptr_t stack_ptr;
 
 	/* Map the thread stack */
-	z_arm64_thread_pt_init(_current);
+	z_arm64_thread_mem_domains_init(_current);
 
 	/*
 	 * Reset the SP_EL0 stack pointer to the stack top discarding any old

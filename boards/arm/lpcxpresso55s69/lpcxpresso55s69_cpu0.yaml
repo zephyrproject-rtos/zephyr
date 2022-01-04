@@ -19,7 +19,10 @@ supported:
   - arduino_i2c
   - arduino_serial
   - arduino_spi
+  - counter
   - gpio
   - i2c
+  - i2s
   - spi
+  - usb_device
   - watchdog

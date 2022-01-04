@@ -14,3 +14,7 @@ config SPI_MCUX_FLEXCOMM
 config CLOCK_CONTROL_MCUX_SYSCON
 	default y if HAS_MCUX_SYSCON
 	depends on CLOCK_CONTROL
+
+config SERIAL_INIT_PRIORITY
+	default 55
+	depends on SERIAL

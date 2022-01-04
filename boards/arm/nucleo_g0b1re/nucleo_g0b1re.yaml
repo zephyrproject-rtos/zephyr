@@ -18,3 +18,5 @@ supported:
   - spi
   - nvs
   - dma
+  - usb_device
+  - lptim

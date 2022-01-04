@@ -400,6 +400,11 @@ your own.
    use other Zephyr modules provided by :ref:`west <west>`.
    This can for example be useful for special test purposes.
 
+If you want to permanently add modules to the zephyr workspace and you are
+using zephyr as your manifest repository, you can also add a west manifest file
+into the :zephyr_file:`submanifests` directory. See
+:zephyr_file:`submanifests/README.txt` for more details.
+
 See :ref:`west-basics` for more on west workspaces.
 
 Finally, you can also specify the list of modules yourself in various ways, or
@@ -529,6 +534,20 @@ variables. For example:
 .. code-block:: cmake
 
   include(${ZEPHYR_CURRENT_MODULE_DIR}/cmake/code.cmake)
+
+It is possible to append values to a Zephyr CMake list variable from the module's first
+CMakeLists.txt file.
+To do so, append the value to the list and then set the list in the PARENT_SCOPE
+of the CMakeLists.txt file. For example, to append ``bar`` to the ``FOO_LIST`` variable in the
+Zephyr CMakeLists.txt scope:
+
+.. code-block:: cmake
+
+  list(APPEND FOO_LIST bar)
+  set(FOO_LIST ${FOO_LIST} PARENT_SCOPE)
+
+An example of a Zephyr list where this is useful is when adding additional
+directories to the ``SYSCALL_INCLUDE_DIRS`` list.
 
 Zephyr module dependencies
 ==========================

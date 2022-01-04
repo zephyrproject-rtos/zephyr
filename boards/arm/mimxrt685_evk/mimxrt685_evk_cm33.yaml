@@ -28,3 +28,4 @@ supported:
   - sdhc
   - spi
   - watchdog
+  - usb_device

@@ -9,7 +9,7 @@
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(32)>;
-	hse-bypass;
+	hse-tcxo;
 };
 
 &clk_lse {

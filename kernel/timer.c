@@ -26,6 +26,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 {
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
 	struct k_thread *thread;
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/*
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
@@ -42,30 +43,29 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 	/* invoke timer expiry function */
 	if (timer->expiry_fn != NULL) {
+		/* Unlock for user handler. */
+		k_spin_unlock(&lock, key);
 		timer->expiry_fn(timer);
+		key = k_spin_lock(&lock);
 	}
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
 	thread = z_waitq_head(&timer->wait_q);
 
 	if (thread == NULL) {
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
-	/*
-	 * Interrupts _DO NOT_ have to be locked in this specific
-	 * instance of thread unpending because a) this is the only
-	 * place a thread can be taken off this pend queue, and b) the
-	 * only place a thread can be put on the pend queue is at
-	 * thread level, which of course cannot interrupt the current
-	 * context.
-	 */
 	z_unpend_thread_no_timeout(thread);
 
 	arch_thread_return_value_set(thread, 0);
+
+	k_spin_unlock(&lock, key);
 
 	z_ready_thread(thread);
 }

@@ -11,7 +11,7 @@ menuconfig SHT3XD
 
 if SHT3XD
 
-choice
+choice SHT3XD_TRIGGER_MODE
 	prompt "Trigger mode"
 	default SHT3XD_TRIGGER_NONE
 	help
@@ -49,7 +49,7 @@ config SHT3XD_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-choice
+choice SHT3XD_REPEATABILITY
 	prompt "Measurement repeatability"
 	default SHT3XD_REPEATABILITY_HIGH
 	help
@@ -67,7 +67,7 @@ config SHT3XD_REPEATABILITY_HIGH
 
 endchoice
 
-choice
+choice SHT3XD_MEASUREMENT_MODE
 	prompt "Measurement mode"
 	default SHT3XD_PERIODIC_MODE
 
@@ -79,7 +79,7 @@ config SHT3XD_PERIODIC_MODE
 
 endchoice
 
-choice
+choice SHT3XD_MPS
 	prompt "Measurements per second"
 	default SHT3XD_MPS_1
 	depends on SHT3XD_PERIODIC_MODE

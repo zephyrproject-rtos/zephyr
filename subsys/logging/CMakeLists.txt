@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(NOT CONFIG_LOG_MINIMAL)
+if(NOT CONFIG_LOG_MODE_MINIMAL)
   zephyr_sources_ifdef(
     CONFIG_LOG
     log_list.c
@@ -25,8 +25,6 @@ if(NOT CONFIG_LOG_MINIMAL)
     CONFIG_LOG_BACKEND_FS
     log_backend_fs.c
   )
-
-  zephyr_link_libraries_ifdef(CONFIG_LOG_BACKEND_FS LITTLEFS)
 
   zephyr_sources_ifdef(
     CONFIG_LOG_CMDS

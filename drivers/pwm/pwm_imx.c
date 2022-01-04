@@ -172,7 +172,7 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &imx_pwm_driver_api);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(fsl_imx7d_pwm)
-#define DT_DRV_COMPAT fsl_imx7d_pwm
+#if DT_HAS_COMPAT_STATUS_OKAY(fsl_imx27_pwm)
+#define DT_DRV_COMPAT fsl_imx27_pwm
 DT_INST_FOREACH_STATUS_OKAY(PWM_IMX_INIT)
 #endif

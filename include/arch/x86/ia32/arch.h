@@ -244,10 +244,8 @@ typedef struct s_isrList {
 static inline void arch_irq_direct_pm(void)
 {
 	if (_kernel.idle) {
-		int32_t idle_val = _kernel.idle;
-
 		_kernel.idle = 0;
-		z_pm_save_idle_exit(idle_val);
+		z_pm_save_idle_exit();
 	}
 }
 

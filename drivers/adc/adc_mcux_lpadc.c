@@ -273,11 +273,23 @@ static int mcux_lpadc_init(const struct device *dev)
 	lpadc_config_t adc_config;
 
 #if !defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#if	defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_PD_MASK;
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_LP_MASK;
+	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
+	CLOCK_AttachClk(kSFRO_to_ADC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, config->clock_div);
+
+#else
+
 	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, config->clock_div, true);
 	CLOCK_AttachClk(config->clock_source);
 
 	/* Power up the ADC */
 	POWER_DisablePD(kPDRUNCFG_PD_LDOGPADC);
+
+#endif
 #endif
 
 	LPADC_GetDefaultConfig(&adc_config);
@@ -357,7 +369,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #define ASSERT_WITHIN_RANGE(val, min, max, str)	\
 	BUILD_ASSERT(val >= min && val <= max, str)
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || defined(CONFIG_SOC_SERIES_IMX_RT6XX)
 #define TO_LPADC_CLOCK_SOURCE(val) 0
 #else
 #define TO_LPADC_CLOCK_SOURCE(val) \
@@ -415,7 +427,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 	DEVICE_DT_INST_DEFINE(n,						\
 		&mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,			\
 		&mcux_lpadc_config_##n, POST_KERNEL,				\
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					\
+		CONFIG_ADC_INIT_PRIORITY,					\
 		&mcux_lpadc_driver_api);							\
 										\
 	static void mcux_lpadc_config_func_##n(const struct device *dev)	\

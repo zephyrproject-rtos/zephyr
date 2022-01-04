@@ -13,6 +13,7 @@ extern void test_k_aligned_alloc(void);
 extern void test_sys_heap_mem_pool_assign(void);
 extern void test_malloc_in_isr(void);
 extern void test_malloc_in_thread(void);
+extern void test_multi_heap(void);
 
 
 /**
@@ -35,6 +36,7 @@ void test_main(void)
 			 ztest_unit_test(test_k_aligned_alloc),
 			 ztest_unit_test(test_sys_heap_mem_pool_assign),
 			 ztest_unit_test(test_malloc_in_isr),
+			 ztest_unit_test(test_multi_heap),
 			 ztest_unit_test(test_malloc_in_thread));
 	ztest_run_test_suite(mheap_api);
 }

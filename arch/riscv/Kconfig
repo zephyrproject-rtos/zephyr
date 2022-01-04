@@ -20,6 +20,18 @@ config FLOAT_HARD
 	help
 	  This option enables the hard-float calling convention.
 
+config RISCV_GP
+	bool "Enable RISC-V global pointer relative addressing"
+	default n
+	help
+	  Use global pointer relative addressing for small globals declared
+	  anywhere in the executable. It can benefit performance and reduce
+	  the code size.
+
+	  Note: To support this feature, RISC-V SoC needs to initialize
+	  global pointer at program start or earlier than any instruction
+	  using GP relative addressing.
+
 menu "RISCV Processor Options"
 
 config CORE_E31
@@ -89,6 +101,13 @@ config RISCV_SOC_INTERRUPT_INIT
 	help
 	  Enable SOC-based interrupt initialization
 	  (call soc_interrupt_init, within _IntLibInit when enabled)
+
+config RISCV_SOC_MCAUSE_EXCEPTION_MASK
+	hex
+	default 0x7FFFFFFFFFFFFFFF if 64BIT
+	default 0x7FFFFFFF
+	help
+	  Specify the bits to use for exception code in mcause register.
 
 config RISCV_GENERIC_TOOLCHAIN
 	bool "Compile using generic riscv32 toolchain"

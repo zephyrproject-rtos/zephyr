@@ -5,6 +5,7 @@
  */
 
 #define DT_DRV_COMPAT intel_hpet
+#include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
@@ -317,56 +318,6 @@ static void config_timer0(unsigned int irq)
 }
 
 __boot_func
-int sys_clock_driver_init(const struct device *dev)
-{
-	extern int z_clock_hw_cycles_per_sec;
-	uint32_t hz, reg;
-
-	ARG_UNUSED(dev);
-	ARG_UNUSED(hz);
-	ARG_UNUSED(z_clock_hw_cycles_per_sec);
-
-	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
-
-#if DT_INST_IRQ_HAS_CELL(0, sense)
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    hpet_isr, 0, DT_INST_IRQ(0, sense));
-#else
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    hpet_isr, 0, 0);
-#endif
-	config_timer0(DT_INST_IRQN(0));
-	irq_enable(DT_INST_IRQN(0));
-
-#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-	hz = (uint32_t)(HPET_COUNTER_CLK_PERIOD / hpet_counter_clk_period_get());
-	z_clock_hw_cycles_per_sec = hz;
-	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-#endif
-
-	/* Note: we set the legacy routing bit, because otherwise
-	 * nothing in Zephyr disables the PIT which then fires
-	 * interrupts into the same IRQ.  But that means we're then
-	 * forced to use IRQ2 contra the way the kconfig IRQ selection
-	 * is supposed to work.  Should fix this.
-	 */
-	reg = hpet_gconf_get();
-	reg |= GCONF_LR | GCONF_ENABLE;
-	hpet_gconf_set(reg);
-
-	last_count = hpet_counter_get();
-	if (cyc_per_tick >= HPET_CMP_MIN_DELAY) {
-		hpet_timer_comparator_set(last_count + cyc_per_tick);
-	} else {
-		hpet_timer_comparator_set(last_count + HPET_CMP_MIN_DELAY);
-	}
-
-	return 0;
-}
-
-__boot_func
 void smp_timer_init(void)
 {
 	/* Noop, the HPET is a single system-wide device and it's
@@ -439,6 +390,12 @@ uint32_t sys_clock_cycle_get_32(void)
 }
 
 __pinned_func
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return hpet_counter_get();
+}
+
+__pinned_func
 void sys_clock_idle_exit(void)
 {
 	uint32_t reg;
@@ -447,3 +404,56 @@ void sys_clock_idle_exit(void)
 	reg |= GCONF_ENABLE;
 	hpet_gconf_set(reg);
 }
+
+__boot_func
+static int sys_clock_driver_init(const struct device *dev)
+{
+	extern int z_clock_hw_cycles_per_sec;
+	uint32_t hz, reg;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(hz);
+	ARG_UNUSED(z_clock_hw_cycles_per_sec);
+
+	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
+
+#if DT_INST_IRQ_HAS_CELL(0, sense)
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    hpet_isr, 0, DT_INST_IRQ(0, sense));
+#else
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    hpet_isr, 0, 0);
+#endif
+	config_timer0(DT_INST_IRQN(0));
+	irq_enable(DT_INST_IRQN(0));
+
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	hz = (uint32_t)(HPET_COUNTER_CLK_PERIOD / hpet_counter_clk_period_get());
+	z_clock_hw_cycles_per_sec = hz;
+	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+#endif
+
+	/* Note: we set the legacy routing bit, because otherwise
+	 * nothing in Zephyr disables the PIT which then fires
+	 * interrupts into the same IRQ.  But that means we're then
+	 * forced to use IRQ2 contra the way the kconfig IRQ selection
+	 * is supposed to work.  Should fix this.
+	 */
+	reg = hpet_gconf_get();
+	reg |= GCONF_LR | GCONF_ENABLE;
+	hpet_gconf_set(reg);
+
+	last_count = hpet_counter_get();
+	if (cyc_per_tick >= HPET_CMP_MIN_DELAY) {
+		hpet_timer_comparator_set(last_count + cyc_per_tick);
+	} else {
+		hpet_timer_comparator_set(last_count + HPET_CMP_MIN_DELAY);
+	}
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

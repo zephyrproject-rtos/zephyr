@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(adc_npcx, CONFIG_ADC_LOG_LEVEL);
 #define ADC_REGULAR_MEAST_VAL	0x0001
 
 /* ADC channel number */
-#define NPCX_ADC_CH_COUNT DT_INST_PROP_LEN(0, pinctrl_0)
+#define NPCX_ADC_CH_COUNT DT_INST_NUM_PINCTRLS_BY_IDX(0, 0)
 
 /* ADC targeted operating frequency (2MHz) */
 #define NPCX_ADC_CLK 2000000
@@ -325,7 +325,7 @@ DEVICE_DT_INST_DEFINE(0,
 		    adc_npcx_init, NULL,
 		    &adc_npcx_data_0, &adc_npcx_cfg_0,
 		    PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    CONFIG_ADC_INIT_PRIORITY,
 		    &adc_npcx_driver_api);
 
 static int adc_npcx_init(const struct device *dev)

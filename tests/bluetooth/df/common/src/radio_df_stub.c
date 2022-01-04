@@ -43,6 +43,10 @@ void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_cu
 {
 }
 
+void radio_switch_complete_phyend_and_rx(uint8_t phy_rx)
+{
+}
+
 void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
 {
 }

@@ -63,7 +63,16 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_DMA_MCUX_EDMA
 	case IMX_CCM_EDMA_CLK:
-		clock_root = kCLOCK_Root_Edma + instance;
+		clock_root = kCLOCK_Root_Bus;
+		break;
+	case IMX_CCM_EDMA_LPSR_CLK:
+		clock_root = kCLOCK_Root_Bus_Lpsr;
+		break;
+#endif
+
+#ifdef CONFIG_PWM_MCUX
+	case IMX_CCM_PWM_CLK:
+		clock_root = kCLOCK_Root_Bus;
 		break;
 #endif
 
@@ -101,5 +110,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    &mcux_ccm_init,
 		    NULL,
 		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &mcux_ccm_driver_api);

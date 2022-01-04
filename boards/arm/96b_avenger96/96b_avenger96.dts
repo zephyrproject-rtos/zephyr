@@ -49,18 +49,24 @@
 	};
 };
 
+&rcc {
+	clock-frequency = <DT_FREQ_M(209)>;
+};
+
 &mailbox {
 	status = "okay";
 };
 
 &uart4 {
 	pinctrl-0 = <&uart4_tx_pd1 &uart4_rx_pb2>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart7 {
 	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };

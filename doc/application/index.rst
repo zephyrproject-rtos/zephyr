@@ -219,22 +219,30 @@ Zephyr.)
 
    .. code-block:: cmake
 
-      # Find Zephyr. This also loads Zephyr's build system.
-      cmake_minimum_required(VERSION 3.13.1)
+      cmake_minimum_required(VERSION 3.20.0)
+
       find_package(Zephyr)
       project(my_zephyr_app)
 
-      # Add your source file to the "app" target. This must come after
-      # find_package(Zephyr) which defines the target.
       target_sources(app PRIVATE src/main.c)
 
-   ``find_package(Zephyr)`` sets the minimum CMake version and pulls in the
-   Zephyr build system, which creates a CMake target named ``app`` (see
-   :ref:`cmake_pkg`). Adding sources to this target is how you include them in
-   the build.
+   ``cmake_minimum_required()`` is required to be in your
+   :file:`CMakeListst.txt` by CMake. It is also invoked by the Zephyr
+   package. The most recent of the two versions will be enforced by CMake.
 
-   .. note:: ``cmake_minimum_required()`` is also invoked by the Zephyr package.
-              The most recent of the two versions will be enforced by CMake.
+   ``find_package(Zephyr)`` pulls in the Zephyr build system, which creates a
+   CMake target named ``app`` (see :ref:`cmake_pkg`). Adding sources to this
+   target is how you include them in the build. The Zephyr package will define
+   ``Zephyr-Kernel`` as a CMake project and enable support for the ``C``,
+   ``CXX``, ``ASM`` languages.
+
+   ``project(my_zephyr_app)`` is required for defining your application
+   project.  This must be called after ``find_package(Zephyr)`` to avoid
+   interference with Zephyr's ``project(Zephyr-Kernel)``.
+
+   ``target_sources(app PRIVATE src/main.c)`` is to add your source file to the
+   ``app`` target. This must come after ``find_package(Zephyr)`` which defines
+   the target.
 
 #. Set Kconfig configuration options. See :ref:`application-kconfig`.
 
@@ -245,136 +253,8 @@ Zephyr.)
 
    ``include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)``
    is still supported for backward compatibility with older applications.
-   Including ``boilerplate.cmake`` directly in the sample still requires to run
-   ``source zephyr-env.sh`` or execute ``zephyr-env.cmd`` before building the
-   application.
-
-
-.. _env_vars:
-
-Setting Variables
-*****************
-
-Option 1: Just Once
-====================
-
-To set the environment variable :envvar:`MY_VARIABLE` to ``foo`` for the
-lifetime of your current terminal window:
-
-.. code-block:: console
-
-   # Linux and macOS
-   export MY_VARIABLE=foo
-
-   # Windows
-   set MY_VARIABLE=foo
-
-.. warning::
-
-  This is best for experimentation. If you close your terminal window, use
-  another terminal window or tab, restart your computer, etc., this setting
-  will be lost forever.
-
-  Using options 2 or 3 is recommended if you want to keep using the setting.
-
-Option 2: In all Terminals
-==========================
-
-**macOS and Linux**:
-
-Add the ``export MY_VARIABLE=foo`` line to your shell's startup script in your
-home directory. For Bash, this is usually :file:`~/.bashrc` on Linux or
-:file:`~/.bash_profile` on macOS.  Changes in these startup scripts don't
-affect shell instances already started; try opening a new terminal window to get
-the new settings.
-
-**Windows**:
-
-You can use the ``setx`` program in ``cmd.exe`` or the third-party
-RapidEE program.
-
-To use ``setx``, type this command, then close the terminal window. Any new
-``cmd.exe`` windows will have :envvar:`MY_VARIABLE` set to ``foo``.
-
-.. code-block:: console
-
-   setx MY_VARIABLE foo
-
-To install RapidEE, a freeware graphical environment variable
-editor, `using Chocolatey`_ in an Administrator command prompt:
-
-.. code-block:: console
-
-   choco install rapidee
-
-You can then run ``rapidee`` from your terminal to launch the program and set
-environment variables. Make sure to use the "User" environment variables area
--- otherwise, you have to run RapidEE as administrator. Also make sure to save
-your changes by clicking the Save button at top left before exiting.Settings
-you make in RapidEE will be available whenever you open a new terminal window.
-
-.. _env_vars_zephyrrc:
-
-Option 3: Using ``zephyrrc`` files
-==================================
-
-Choose this option if you don't want to make the variable's setting available
-to all of your terminals, but still want to save the value for loading into
-your environment when you are using Zephyr.
-
-**macOS and Linux**:
-
-Create a file named :file:`~/.zephyrrc` if it doesn't exist, then add this line
-to it:
-
-.. code-block:: console
-
-   export MY_VARIABLE=foo
-
-To get this value back into your current terminal environment, **you must run**
-``source zephyr-env.sh`` from the main ``zephyr`` repository. Among other
-things, this script sources :file:`~/.zephyrrc`.
-
-The value will be lost if you close the window, etc.; run ``source
-zephyr-env.sh`` again to get it back.
-
-**Windows**:
-
-Add the line ``set MY_VARIABLE=foo`` to the file
-:file:`%userprofile%\\zephyrrc.cmd` using a text editor such as Notepad to save
-the value.
-
-To get this value back into your current terminal environment, **you must run**
-``zephyr-env.cmd`` in a ``cmd.exe`` window after changing directory to the main
-``zephyr`` repository.  Among other things, this script runs
-:file:`%userprofile%\\zephyrrc.cmd`.
-
-The value will be lost if you close the window, etc.; run ``zephyr-env.cmd``
-again to get it back.
-
-These scripts:
-
-- set :envvar:`ZEPHYR_BASE` (see below) to the location of the zephyr
-  repository
-- adds some Zephyr-specific locations (such as zephyr's :file:`scripts`
-  directory) to your :envvar:`PATH` environment variable
-- loads any settings from the ``zephyrrc`` files described above in
-  :ref:`env_vars_zephyrrc`.
-
-You can thus use them any time you need any of these settings.
-
-Option 4: Using Zephyr Build Configuration CMake package
-=========================================================
-
-Choose this option if you want to make those variable settings shared among all
-users of your project.
-
-Using a :ref:`cmake_build_config_package` allows you to commit the shared
-settings into the repository, so that all users can share them.
-
-It also removes the need for running ``source zephyr-env.sh`` or
-``zephyr-env.cmd`` when opening a new terminal.
-
+   Including ``boilerplate.cmake`` directly in the sample still requires using
+   :ref:`zephyr-env` before building the application.
 
 .. _important-build-vars:
 
@@ -424,10 +304,21 @@ should know about.
   See :ref:`set-devicetree-overlays` for examples and :ref:`devicetree-intro`
   for information about devicetree and Zephyr.
 
+* :makevar:`SHIELD`: see :ref:`shields`
+
 * :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
   additional directories with source code, Kconfig, etc. that should be used in
-  the application build. See :ref:`modules` for details.
+  the application build. See :ref:`modules` for details. If you set this
+  variable, it must be a complete list of all modules to use, as the build
+  system will not automatically pick up any modules from west.
 
+* :makevar:`ZEPHYR_EXTRA_MODULES`: Like :makevar:`ZEPHYR_MODULES`, except these
+  will be added to the list of modules found via west, instead of replacing it.
+
+.. note::
+
+   You can use a :ref:`cmake_build_config_package` to share common settings for
+   these variables.
 
 Application CMakeLists.txt
 **************************
@@ -579,6 +470,29 @@ documentation `runningcmake`_ .
 Application Configuration
 *************************
 
+.. _application-configuration-directory:
+
+Application Configuration Directory
+===================================
+
+Zephyr will use configuration files from the application's configuration
+directory except for files with an absolute path provided by the arguments
+described earlier, for example ``CONF_FILE``, ``OVERLAY_CONFIG``, and
+``DTC_OVERLAY_FILE``.
+
+The application configuration directory is defined by the
+``APPLICATION_CONFIG_DIR`` variable.
+
+``APPLICATION_CONFIG_DIR`` will be set by one of the sources below with the
+highest priority listed first.
+
+1. If ``APPLICATION_CONFIG_DIR`` is specified by the user with
+   ``-DAPPLICATION_CONFIG_DIR=<path>`` or in a CMake file before
+   ``find_package(Zephyr)`` then this folder is used a the application's
+   configuration directory.
+
+2. The application's source directory.
+
 .. _application-kconfig:
 
 Kconfig Configuration
@@ -604,6 +518,28 @@ See :ref:`hardening` for security information related with Kconfig options.
 The other pages in the :ref:`Kconfig section of the manual <kconfig>` are also
 worth going through, especially if you planning to add new configuration
 options.
+
+Experimental features
+*********************
+
+Zephyr is a project under constant development and thus there are features that
+are still in early stages of their development cycle. Such features will be
+marked ``[EXPERIMENTAL]`` in their Kconfig title.
+
+The :kconfig:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
+at CMake configure time if any experimental feature is enabled.
+
+.. code-block:: none
+
+   CONFIG_WARN_EXPERIMENTAL=y
+
+For example, enabling experimental warnings and building a sample which enables
+:kconfig:`CONFIG_BT_EXT_ADV` will print the following warning at CMake
+configure time.
+
+.. code-block:: shell
+
+   warning: Experimental symbol BT_EXT_ADV is enabled.
 
 Devicetree Overlays
 ===================
@@ -989,6 +925,12 @@ again.
    target will use the SDK's QEMU binary by default. To use another version of
    QEMU, :ref:`set the environment variable <env_vars>` :envvar:`QEMU_BIN_PATH`
    to the path of the QEMU binary you want to use instead.
+
+.. note::
+
+   You can choose a specific emulator by appending ``_<emulator>`` to your
+   target name, for example ``west build -t run_qemu`` or ``ninja run_qemu``
+   for QEMU.
 
 .. _application_debugging:
 

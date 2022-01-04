@@ -32,6 +32,11 @@ uint32_t sys_clock_cycle_get_32(void)
 	return hwm_get_time();
 }
 
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return hwm_get_time();
+}
+
 /**
  * Interrupt handler for the timer interrupt
  * Announce to the kernel that a number of ticks have passed
@@ -53,26 +58,6 @@ static void np_timer_isr(const void *arg)
 void np_timer_isr_test_hook(const void *arg)
 {
 	np_timer_isr(NULL);
-}
-
-/*
- * @brief Initialize system timer driver
- *
- * Enable the hw timer, setting its tick period, and setup its interrupt
- */
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	last_tick_time = hwm_get_time();
-	hwtimer_enable(tick_period);
-
-	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);
-	irq_enable(TIMER_TICK_IRQ);
-
-	return 0;
 }
 
 /**
@@ -122,8 +107,6 @@ uint32_t sys_clock_elapsed(void)
 	return (hwm_get_time() - last_tick_time)/tick_period;
 }
 
-
-#if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
  *
  * @brief Stop announcing sys ticks into the kernel
@@ -137,4 +120,26 @@ void sys_clock_disable(void)
 	irq_disable(TIMER_TICK_IRQ);
 	hwtimer_set_silent_ticks(INT64_MAX);
 }
-#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */
+
+/*
+ * @brief Initialize system timer driver
+ *
+ * Enable the hw timer, setting its tick period, and setup its interrupt
+ */
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+	last_tick_time = hwm_get_time();
+	hwtimer_enable(tick_period);
+
+	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);
+	irq_enable(TIMER_TICK_IRQ);
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

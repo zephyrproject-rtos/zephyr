@@ -38,7 +38,7 @@ enum {
 	BT_DEV_EXPLICIT_SCAN,
 	BT_DEV_ACTIVE_SCAN,
 	BT_DEV_SCAN_FILTER_DUP,
-	BT_DEV_SCAN_WL,
+	BT_DEV_SCAN_FILTERED,
 	BT_DEV_SCAN_LIMITED,
 	BT_DEV_INITIATING,
 
@@ -92,7 +92,9 @@ enum {
 	/* Advertiser set is currently advertising in the controller. */
 	BT_ADV_ENABLED,
 	/* Advertiser should include name in advertising data */
-	BT_ADV_INCLUDE_NAME,
+	BT_ADV_INCLUDE_NAME_AD,
+	/* Advertiser should include name in scan response data */
+	BT_ADV_INCLUDE_NAME_SD,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
@@ -121,10 +123,6 @@ enum {
 	 * in the controller.
 	 */
 	BT_PER_ADV_CTE_ENABLED,
-	/* The device name has been forced to appear in the advertising data
-	 * instead of in the scan response data
-	 */
-	BT_ADV_FORCE_NAME_IN_AD,
 
 	BT_ADV_NUM_FLAGS,
 };
@@ -151,24 +149,29 @@ struct bt_le_ext_adv {
 	int8_t                    tx_power;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-	struct k_work_delayable	timeout_work;
+	struct k_work_delayable	lim_adv_timeout_work;
 };
 
 enum {
 	/** Periodic Advertising Sync has been created in the host. */
 	BT_PER_ADV_SYNC_CREATED,
 
-	/** Periodic advertising is in sync and can be terminated */
+	/** Periodic Advertising Sync is established and can be terminated */
 	BT_PER_ADV_SYNC_SYNCED,
 
-	/** Periodic advertising is attempting sync sync */
+	/** Periodic Advertising Sync is attempting to create sync */
 	BT_PER_ADV_SYNC_SYNCING,
 
-	/** Periodic advertising is attempting sync sync */
+	/** Periodic Advertising Sync is attempting to create sync using
+	 *  Advertiser List
+	 */
+	BT_PER_ADV_SYNC_SYNCING_USE_LIST,
+
+	/** Periodic Advertising Sync established with reporting disabled */
 	BT_PER_ADV_SYNC_RECV_DISABLED,
 
 	/** Constant Tone Extension for Periodic Advertising has been enabled
-	 * in the controller.
+	 * in the Controller.
 	 */
 	BT_PER_ADV_SYNC_CTE_ENABLED,
 
@@ -198,6 +201,19 @@ struct bt_le_per_adv_sync {
 	/** Accepted CTE type */
 	uint8_t cte_type;
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
+
+#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+	/** Reassembly buffer for advertising reports */
+	struct net_buf_simple reassembly;
+
+	/** Storage for the reassembly buffer */
+	uint8_t reassembly_data[CONFIG_BT_PER_ADV_SYNC_BUF_SIZE];
+#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
+
+	/** True if the following periodic adv reports up to and
+	 * including the next complete one should be dropped
+	 */
+	bool report_truncated;
 
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
@@ -393,7 +409,7 @@ void bt_id_add(struct bt_keys *keys);
 void bt_id_del(struct bt_keys *keys);
 
 int bt_setup_random_id_addr(void);
-void bt_setup_public_id_addr(void);
+int bt_setup_public_id_addr(void);
 
 void bt_finalize_init(void);
 
@@ -447,3 +463,5 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf);
 void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
 void bt_hci_role_change(struct net_buf *buf);
 void bt_hci_synchronous_conn_complete(struct net_buf *buf);
+
+void bt_hci_le_df_connection_iq_report(struct net_buf *buf);

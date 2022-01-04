@@ -107,18 +107,21 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pc0 &i2c3_sda_pc1>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -130,16 +133,18 @@
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
 		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &timers1 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm1: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -148,17 +153,20 @@
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa15>;
+		pinctrl-names = "default";
 	};
 };
 
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &adc1 {
 	pinctrl-0 = <&adc1_in3_pc2>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -170,9 +178,10 @@
 	status = "okay";
 };
 
-&usb {
+zephyr_udc0: &usb {
 	status = "okay";
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 };
 
 &rng {
@@ -189,9 +198,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set all partitions with first 812K of flash */
-		/* last 212K are reseved for M0 usage */
-		/* Configure partitions to make use of the whole 812K */
+		/* Set all partitions with first 808K of flash */
+		/* last 216K are reseved for M0 usage */
+		/* Configure partitions to make use of the whole 808K */
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
@@ -211,7 +220,7 @@
 		};
 		storage_partition: partition@c8000 {
 			label = "storage";
-			reg = <0x000c8000 0x3000>;
+			reg = <0x000c8000 0x2000>;
 		};
 
 	};

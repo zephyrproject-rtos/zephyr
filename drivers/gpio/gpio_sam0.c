@@ -306,7 +306,7 @@ static struct gpio_sam0_data gpio_sam0_data_0;
 DEVICE_DT_DEFINE(DT_NODELABEL(porta),
 		    gpio_sam0_init, NULL,
 		    &gpio_sam0_data_0, &gpio_sam0_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 		    &gpio_sam0_api);
 #endif
 
@@ -328,7 +328,7 @@ static struct gpio_sam0_data gpio_sam0_data_1;
 DEVICE_DT_DEFINE(DT_NODELABEL(portb),
 		    gpio_sam0_init, NULL,
 		    &gpio_sam0_data_1, &gpio_sam0_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 		    &gpio_sam0_api);
 #endif
 
@@ -350,7 +350,7 @@ static struct gpio_sam0_data gpio_sam0_data_2;
 DEVICE_DT_DEFINE(DT_NODELABEL(portc),
 		    gpio_sam0_init, NULL,
 		    &gpio_sam0_data_2, &gpio_sam0_config_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 		    &gpio_sam0_api);
 #endif
 
@@ -372,6 +372,6 @@ static struct gpio_sam0_data gpio_sam0_data_3;
 DEVICE_DT_DEFINE(DT_NODELABEL(portd),
 		    gpio_sam0_init, NULL,
 		    &gpio_sam0_data_3, &gpio_sam0_config_3,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 		    &gpio_sam0_api);
 #endif

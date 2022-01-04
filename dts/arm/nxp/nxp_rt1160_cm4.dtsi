@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2021, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rt11xx.dtsi>
+
+/ {
+	cpus {
+		/delete-node/ cpu@0;
+	};
+
+	/*
+	 * SRAM0 & SRAM1 are available only to the M4 core. EDMA_LPSR interrupts are connected
+	 * to the M4 core alone, hence this EDMA controller has been designated M4 only.
+	 * GPIO's 9, 11 are available to both M4 and M7 cores, however the GPIO interrupts are
+	 * only accesssible to the M4.
+	 *
+	 * Refer to Chapter 3 of the Reference Manual
+	 */
+	soc {
+		sram0: memory@1ffe0000 {
+			compatible = "mmio-sram";
+			reg = <0x1ffe0000 DT_SIZE_K(128)>;
+		};
+
+		sram1: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+		};
+
+		/*
+		 * M4 uses different addresses from the M7 core for GPIO2 and
+		 * GPIO3, see pg. 1364 of RT1160 ref manual for example
+		 */
+		gpio2: gpio@40130000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x40130000 0x4000>;
+			interrupts = <102 0>, <103 0>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3: gpio@40134000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x40134000 0x4000>;
+			interrupts = <104 0>, <105 0>;
+			label = "GPIO_3";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		edma_lpsr0: dma-controller@40c14000 {
+			#dma-cells = <2>;
+			compatible = "nxp,mcux-edma";
+			dma-channels = <32>;
+			dma-requests = <208>;
+			nxp,mem2mem;
+			nxp,a_on;
+			reg = <0x40c14000 0x4000>,
+				<0x40c18000 0x4000>;
+			clocks = <&ccm IMX_CCM_EDMA_LPSR_CLK 0x7C 0x000000C0>;
+			status = "disabled";
+			label = "DMA_0";
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
+				<4 0>, <5 0>, <6 0>, <7 0>,
+				<8 0>, <9 0>, <10 0>, <11 0>,
+				<12 0>, <13 0>, <14 0>, <15 0>,
+				<16 0>;
+		};
+
+	};
+
+};
+
+
+&gpio9 {
+	interrupts = <99 0>;
+};
+
+&gpio11 {
+	/* GPIO 7-11 share the same interrupt on the CM4 */
+	interrupts = <99 0>;
+	status = "disabled";
+};

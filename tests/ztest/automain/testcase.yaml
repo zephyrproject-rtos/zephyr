@@ -1,0 +1,5 @@
+tests:
+  testing.ztest.automain:
+    tags: test_framework
+    integration_platforms:
+      - native_posix

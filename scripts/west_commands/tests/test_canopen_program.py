@@ -22,13 +22,15 @@ TEST_ALT_CONTEXT = 'alternate'
 # Test cases
 #
 
-TEST_CASES = [(n, x, p, c, o, t)
+TEST_CASES = [(n, x, p, c, o, t, r, s)
               for n in range(1, 3)
               for x in (None, TEST_ALT_CONTEXT)
               for p in range(1, 3)
               for c in (False, True)
               for o in (False, True)
-              for t in range(1, 3)]
+              for t in range(1, 3)
+              for r in range(1, 3)
+              for s in range(1, 3)]
 
 os_path_isfile = os.path.isfile
 
@@ -41,7 +43,7 @@ def os_path_isfile_patch(filename):
 @patch('runners.canopen_program.CANopenProgramDownloader')
 def test_canopen_program_create(cpd, test_case, runner_config):
     '''Test CANopen runner created from command line parameters.'''
-    node_id, context, program_number, confirm, confirm_only, timeout = test_case
+    node_id, context, program_number, confirm, confirm_only, timeout, sdo_retries, sdo_timeout = test_case
 
     args = ['--node-id', str(node_id)]
     if context is not None:
@@ -54,9 +56,14 @@ def test_canopen_program_create(cpd, test_case, runner_config):
         args.append('--confirm-only')
     if timeout:
         args.extend(['--timeout', str(timeout)])
+    if sdo_retries:
+        args.extend(['--sdo-retries', str(sdo_retries)])
+    if sdo_timeout:
+        args.extend(['--sdo-timeout', str(sdo_timeout)])
 
     mock = cpd.return_value
     mock.flash_status.return_value = 0
+    mock.wait_for_flash_status_ok.return_value = 0
     mock.swid.return_value = 0
 
     parser = argparse.ArgumentParser()
@@ -71,17 +78,21 @@ def test_canopen_program_create(cpd, test_case, runner_config):
         assert cpd.call_args == call(node_id=node_id,
                                      can_context=context,
                                      logger=runner.logger,
-                                     program_number=program_number)
+                                     program_number=program_number,
+                                     sdo_retries=sdo_retries,
+                                     sdo_timeout=sdo_timeout)
     else:
         assert cpd.call_args == call(node_id=node_id,
                                      can_context=TEST_DEF_CONTEXT,
                                      logger=runner.logger,
-                                     program_number=program_number)
+                                     program_number=program_number,
+                                     sdo_retries=sdo_retries,
+                                     sdo_timeout=sdo_timeout)
 
     mock.connect.assert_called_once()
 
     if confirm_only:
-        mock.flash_status.assert_called_once()
+        mock.wait_for_flash_status_ok.assert_called_with(timeout)
         mock.swid.assert_called_once()
         mock.enter_pre_operational.assert_called_once()
         mock.zephyr_confirm_program.assert_called_once()
@@ -92,7 +103,7 @@ def test_canopen_program_create(cpd, test_case, runner_config):
         mock.wait_for_bootup.assert_not_called()
     else:
         mock.enter_pre_operational.assert_called()
-        mock.flash_status.assert_called()
+        mock.wait_for_flash_status_ok.assert_called_with(timeout)
         mock.swid.assert_called()
         mock.stop_program.assert_called_once()
         mock.clear_program.assert_called_once()

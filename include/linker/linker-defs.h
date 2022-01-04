@@ -172,9 +172,9 @@
 GDATA(__bss_start)
 GDATA(__bss_num_words)
 #ifdef CONFIG_XIP
-GDATA(__data_rom_start)
-GDATA(__data_ram_start)
-GDATA(__data_num_words)
+GDATA(__data_region_load_start)
+GDATA(__data_region_start)
+GDATA(__data_region_num_words)
 #endif
 
 #else /* ! _ASMLANGUAGE */
@@ -197,6 +197,13 @@ extern char _app_smem_size[];
 extern char _app_smem_rom_start[];
 extern char _app_smem_num_words[];
 
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+extern char _app_smem_pinned_start[];
+extern char _app_smem_pinned_end[];
+extern char _app_smem_pinned_size[];
+extern char _app_smem_pinned_num_words[];
+#endif
+
 /* Memory owned by the kernel. Start and end will be aligned for memory
  * management/protection hardware for the target architecture.
  *
@@ -217,9 +224,9 @@ extern char __bss_end[];
 
 /* Used by z_data_copy() or arch-specific implementation */
 #ifdef CONFIG_XIP
-extern char __data_rom_start[];
-extern char __data_ram_start[];
-extern char __data_ram_end[];
+extern char __data_region_load_start[];
+extern char __data_region_start[];
+extern char __data_region_end[];
 #endif /* CONFIG_XIP */
 
 #ifdef CONFIG_MMU
@@ -229,9 +236,9 @@ extern char z_mapped_end[];
 #endif /* CONFIG_MMU */
 
 /* Includes text and rodata */
-extern char _image_rom_start[];
-extern char _image_rom_end[];
-extern char _image_rom_size[];
+extern char __rom_region_start[];
+extern char __rom_region_end[];
+extern char __rom_region_size[];
 
 /* Includes all ROMable data, i.e. the size of the output image file. */
 extern char _flash_used[];
@@ -240,19 +247,19 @@ extern char _flash_used[];
 extern char _image_ram_start[];
 extern char _image_ram_end[];
 
-extern char _image_text_start[];
-extern char _image_text_end[];
-extern char _image_text_size[];
+extern char __text_region_start[];
+extern char __text_region_end[];
+extern char __text_region_size[];
 
-extern char _image_rodata_start[];
-extern char _image_rodata_end[];
-extern char _image_rodata_size[];
+extern char __rodata_region_start[];
+extern char __rodata_region_end[];
+extern char __rodata_region_size[];
 
 extern char _vector_start[];
 extern char _vector_end[];
 
 #if DT_NODE_HAS_STATUS(_NODE_RESERVED, okay)
-DT_RESERVED_MEM_SYMBOLS()
+LINKER_DT_RESERVED_MEM_SYMBOLS()
 #endif
 
 #ifdef CONFIG_SW_VECTOR_RELAY
@@ -284,7 +291,7 @@ extern char __ccm_end[];
 extern char __itcm_start[];
 extern char __itcm_end[];
 extern char __itcm_size[];
-extern char __itcm_rom_start[];
+extern char __itcm_load_start[];
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
@@ -294,9 +301,15 @@ extern char __dtcm_bss_start[];
 extern char __dtcm_bss_end[];
 extern char __dtcm_noinit_start[];
 extern char __dtcm_noinit_end[];
-extern char __dtcm_data_rom_start[];
+extern char __dtcm_data_load_start[];
 extern char __dtcm_start[];
 extern char __dtcm_end[];
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+extern char __ocm_start[];
+extern char __ocm_end[];
+extern char __ocm_size[];
 #endif
 
 /* Used by the Security Attribution Unit to configure the
@@ -329,10 +342,10 @@ extern char _nocache_ram_size[];
  * section, stored in RAM instead of FLASH.
  */
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-extern char _ramfunc_ram_start[];
-extern char _ramfunc_ram_end[];
-extern char _ramfunc_ram_size[];
-extern char _ramfunc_rom_start[];
+extern char __ramfunc_start[];
+extern char __ramfunc_end[];
+extern char __ramfunc_size[];
+extern char __ramfunc_load_start[];
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 
 /* Memory owned by the kernel. Memory region for thread privilege stack buffers,
@@ -411,6 +424,29 @@ extern char lnkr_pinned_bss_size[];
 extern char lnkr_pinned_noinit_start[];
 extern char lnkr_pinned_noinit_end[];
 extern char lnkr_pinned_noinit_size[];
+
+__pinned_func
+static inline bool lnkr_is_pinned(uint8_t *addr)
+{
+	if ((addr >= (uint8_t *)lnkr_pinned_start) &&
+	    (addr < (uint8_t *)lnkr_pinned_end)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+__pinned_func
+static inline bool lnkr_is_region_pinned(uint8_t *addr, size_t sz)
+{
+	if ((addr >= (uint8_t *)lnkr_pinned_start) &&
+	    ((addr + sz) < (uint8_t *)lnkr_pinned_end)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 #endif /* ! _ASMLANGUAGE */

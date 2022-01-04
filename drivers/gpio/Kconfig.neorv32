@@ -1,0 +1,11 @@
+# NEORV32 GPIO configuration options
+
+# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NEORV32
+	bool "NEORV32 GPIO driver"
+	default $(dt_compat_enabled,neorv32-gpio)
+	depends on SOC_SERIES_NEORV32 && SYSCON
+	help
+	  Enable NEORV32 GPIO driver.

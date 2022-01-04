@@ -63,6 +63,12 @@
 #define BUILD_ASSERT(EXPR, MSG...)
 #endif
 
+#ifdef __cplusplus
+#define ZRESTRICT __restrict
+#else
+#define ZRESTRICT restrict
+#endif
+
 #include <toolchain/common.h>
 #include <stdbool.h>
 
@@ -155,6 +161,9 @@ do {                                                                    \
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
 #define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+
+#define __in_section_unique_named(seg, name) \
+	___in_section(seg, __FILE__, name)
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead
  * of FLASH. Make sure '__ramfunc' is defined only when

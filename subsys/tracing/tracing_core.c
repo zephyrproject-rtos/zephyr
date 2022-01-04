@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Disable syscall tracing for all calls from this compilation unit to avoid
+ * undefined symbols as the macros are not expanded recursively
+ */
+#define DISABLE_SYSCALL_TRACING
+
 #include <init.h>
 #include <string.h>
 #include <kernel.h>

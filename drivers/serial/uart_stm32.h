@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 #define ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 
-#include <drivers/pinmux.h>
+#include <drivers/pinctrl.h>
 
 /* device config */
 struct uart_stm32_config {
@@ -23,8 +23,12 @@ struct uart_stm32_config {
 	bool hw_flow_control;
 	/* initial parity, 0 for none, 1 for odd, 2 for even */
 	int  parity;
-	const struct soc_gpio_pinctrl *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
+#if defined(CONFIG_PM) \
+	&& !defined(CONFIG_UART_INTERRUPT_DRIVEN) \
+	&& !defined(CONFIG_UART_ASYNC_API)
+	uart_irq_config_func_t irq_config_func;
+#endif
 };
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -66,6 +70,11 @@ struct uart_stm32_data {
 	struct uart_dma_stream dma_tx;
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
+#endif
+#ifdef CONFIG_PM
+	bool tx_poll_stream_on;
+	bool tx_int_stream_on;
+	bool pm_constraint_on;
 #endif
 };
 

@@ -22,13 +22,18 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RV32M1 soc_flash_rv32m1.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_QSPI flash_stm32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G flash_mcux_flexspi_mx25um51345g.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NOR flash_mcux_flexspi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH flash_mcux_flexspi_hyperflash.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ESP32 flash_esp32.c)
 
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
-  if(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G)
-	  zephyr_code_relocate(flash_mcux_flexspi_mx25um51345g.c ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
-  else()
+  dt_chosen(chosen_flash PROPERTY "zephyr,flash")
+  dt_prop(compat_flash PATH ${chosen_flash} PROPERTY compatible)
+  if(compat_flash MATCHES "nxp,imx-flexspi-nor")
 	  zephyr_code_relocate(flash_mcux_flexspi_nor.c ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
+  elseif(compat_flash MATCHES "nxp,imx-flexspi-mx25um51345g")
+	  zephyr_code_relocate(flash_mcux_flexspi_mx25um51345g.c ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
+  elseif(compat_flash MATCHES "nxp,imx-flexspi-hyperflash")
+    zephyr_code_relocate(flash_mcux_flexspi_hyperflash.c ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
   endif()
 endif()
 
@@ -58,6 +63,11 @@ zephyr_library_include_directories_ifdef(
 
 zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G
+  ${ZEPHYR_BASE}/drivers/memc
+)
+
+zephyr_library_include_directories_ifdef(
+  CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH
   ${ZEPHYR_BASE}/drivers/memc
 )
 

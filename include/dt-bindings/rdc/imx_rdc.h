@@ -10,6 +10,7 @@
 #define A7_DOMAIN_ID	0
 #define A9_DOMAIN_ID	0
 #define M4_DOMAIN_ID	1
+#define M7_DOMAIN_ID	1
 
 #define RDC_DOMAIN_PERM_NONE  (0x0)
 #define RDC_DOMAIN_PERM_W     (0x1)

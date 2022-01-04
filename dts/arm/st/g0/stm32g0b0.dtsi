@@ -43,13 +43,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
 			interrupts = <16 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_4";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_4";
 				#pwm-cells = <3>;
 			};
@@ -94,5 +94,24 @@
 		dmamux1: dmamux@40020800 {
 			dma-channels = <12>;
 		};
+
+		usb: usb@40005c00 {
+			compatible = "st,stm32-usb";
+			reg = <0x40005c00 0x400>;
+			interrupts = <8 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <2048>;
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00002000>;
+			status = "disabled";
+			label= "USB";
+		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "USB_FS_PHY";
 	};
 };

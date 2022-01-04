@@ -1,0 +1,278 @@
+/*
+ * Copyright (c) 2021, Electromaticus LLC, 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/MK66FN2M0VLQ18.dtsi>
+#include <dt-bindings/pwm/pwm.h>
+
+/ {
+	model = "NXP RDDRONE FMUK66 board";
+	compatible = "nxp,mk66f18", "nxp,k66f", "nxp,k6x";
+
+	aliases {
+		led0 = &amber_led;
+		led1 = &green_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+		zephyr,uart-pipe = &lpuart0;
+		zephyr,canbus = &flexcan0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		amber_led: led_0 {
+			gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
+			label = "LED_AMB";
+		};
+		green_led: led_1 {
+			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
+			label = "LED_GRN";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&ftm3 1 15625000 PWM_POLARITY_INVERTED>;
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&ftm3 4 15625000 PWM_POLARITY_INVERTED>;
+		};
+		green_pwm_led: green_pwm_led {
+			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
+		};
+	};
+};
+
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_RTC>;
+};
+
+&cpu0 {
+	clock-frequency = <160000000>;
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&temp1 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+	voltage-reference = <2>;
+};
+
+/* PWM header is powered by FlexTimer 0 for channels 1 to 4 */
+&ftm0 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&FTM0_CH0_PTC1 &FTM0_CH1_PTA4 &FTM0_CH4_PTD4 &FTM0_CH5_PTD5>;
+};
+
+
+/* RGB LED powered by FlexTimer 3, and PWM headers for channel 5 and 6 */
+&ftm3 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&FTM3_CH3_PTD3 &FTM3_CH4_PTC8 &FTM3_CH5_PTC9 &FTM3_CH6_PTE11 &FTM3_CH7_PTE12>;
+};
+
+/* LPUART connected to debug header */
+&lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&LPUART0_RX_PTD8 &LPUART0_TX_PTD9>;
+};
+
+zephyr_udc0: &usbotg {
+	compatible = "nxp,kinetis-usbd";
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&UART0_RX_PTA1 &UART0_TX_PTA2>;
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&UART1_RX_PTC3 &UART1_TX_PTC4>;
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&UART2_RX_PTD2 &UART2_TX_PTD3>;
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&UART4_RTS_b_PTE27 &UART4_CTS_b_PTC13 &UART4_RX_PTC14 &UART4_TX_PTC15>;
+};
+
+&usbotg {
+	compatible = "nxp,kinetis-usbd";
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at 0x00010000 and ending at
+		 * 0x0001ffff (sectors 16-31) is reserved for use
+		 * by the application.
+		 */
+		storage_partition: partition@1e000 {
+			label = "storage";
+			reg = <0x0001e000 0x00002000>;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x00060000>;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 0x00060000>;
+		};
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 0x00020000>;
+		};
+	};
+};
+
+&enet {
+	status = "okay";
+	pinctrl-0 = <&RMII0_RXER_PTA5 &RMII0_RXD1_PTA12
+		     &RMII0_RXD0_PTA13 &RMII0_CRS_DV_PTA14
+		     &RMII0_TXEN_PTA15 &RMII0_TXD0_PTA16
+		     &RMII0_TXD1_PTA17 &RMII0_MDIO_PTB0
+		     &RMII0_MDC_PTB1>;
+};
+
+&RMII0_MDIO_PTB0 {
+	bias-pull-up;
+	drive-open-drain;
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&CAN0_TX_PTB18 &CAN0_RX_PTB19>;
+	bus-speed = <125000>;
+};
+
+&CAN0_RX_PTB19 {
+	bias-pull-up;
+};
+
+&flexcan1 {
+	status = "okay";
+	pinctrl-0 = <&CAN1_TX_PTC17 &CAN1_RX_PTC16>;
+	bus-speed = <125000>;
+};
+
+&CAN1_RX_PTC16 {
+	bias-pull-up;
+};
+
+/* external i2c port */
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&I2C0_SCL_PTE24 &I2C0_SDA_PTE25>;
+};
+
+/* magnetometer (bmm150), barometer (bmp280), pressure (mpl3115),
+ * secure element (a7102ch) i2c bus
+ */
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&I2C1_SCL_PTC10 &I2C1_SDA_PTC11>;
+};
+
+/* f-ram spi port */
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&SPI0_PCS2_PTC2 &SPI0_SCK_PTC5 &SPI0_SOUT_PTC6 &SPI0_SIN_PTC7>;
+};
+
+/* flash (w25x40), accel, magneto (fxos8700), gyro (fxas2100) */
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&SPI1_PCS0_PTB10 &SPI1_PCS1_PTB9 &SPI1_SCK_PTB11
+			&SPI1_SOUT_PTB16 &SPI1_SIN_PTB17>;
+};
+
+/* external spi */
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&SPI2_PCS0_PTB20 &SPI2_SCK_PTB21 &SPI2_SOUT_PTB22 &SPI2_SIN_PTB23>;
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};

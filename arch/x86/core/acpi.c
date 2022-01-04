@@ -149,7 +149,12 @@ void *z_acpi_find_table(uint32_t signature)
 
 			uint32_t *end = (uint32_t *)((char *)rsdt + rsdt->sdt.length);
 
-			for (uint32_t *tp = &rsdt->table_ptrs[0]; tp < end; tp++) {
+			/* Extra indirection required to avoid
+			 * -Waddress-of-packed-member
+			 */
+			void *table_ptrs = &rsdt->table_ptrs[0];
+
+			for (uint32_t *tp = table_ptrs; tp < end; tp++) {
 				t_phys = (long)*tp;
 				z_phys_map(&mapped_tbl, t_phys, sizeof(*t), 0);
 				t = (void *)mapped_tbl;
@@ -186,7 +191,12 @@ void *z_acpi_find_table(uint32_t signature)
 
 			uint64_t *end = (uint64_t *)((char *)xsdt + xsdt->sdt.length);
 
-			for (uint64_t *tp = &xsdt->table_ptrs[0]; tp < end; tp++) {
+			/* Extra indirection required to avoid
+			 * -Waddress-of-packed-member
+			 */
+			void *table_ptrs = &xsdt->table_ptrs[0];
+
+			for (uint64_t *tp = table_ptrs; tp < end; tp++) {
 				t_phys = (long)*tp;
 				z_phys_map(&mapped_tbl, t_phys, sizeof(*t), 0);
 				t = (void *)mapped_tbl;

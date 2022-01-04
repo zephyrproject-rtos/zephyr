@@ -100,6 +100,7 @@ struct modem_data {
 	char mdm_imsi[MDM_IMSI_LENGTH];
 	char mdm_iccid[MDM_ICCID_LENGTH];
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
+	int mdm_rssi;
 
 	/* bytes written to socket in last transaction */
 	int sock_written;

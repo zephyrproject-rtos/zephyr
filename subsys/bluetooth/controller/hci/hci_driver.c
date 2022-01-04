@@ -31,6 +31,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_hci_driver
 #include "common/log.h"
+#include "hal/debug.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -44,19 +45,23 @@
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
 #include "lll/lll_df_types.h"
+#include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_conn.h"
+#include "ll_sw/lll_conn_iso.h"
+
+#include "ll_sw/isoal.h"
+
+#include "ll_sw/ull_iso_types.h"
+#include "ll_sw/ull_conn_iso_types.h"
+
+#include "ll_sw/ull_iso_internal.h"
+#include "ll_sw/ull_sync_iso_internal.h"
+#include "ll_sw/ull_conn_internal.h"
+#include "ll_sw/ull_conn_iso_internal.h"
+
 #include "ll.h"
 
-#include "isoal.h"
-#include "lll_conn_iso.h"
-#include "ull_conn_iso_types.h"
-#include "ull_iso_types.h"
-#include "ull_conn_internal.h"
-#include "ull_conn_iso_internal.h"
-
 #include "hci_internal.h"
-
-#include "hal/debug.h"
 
 static K_SEM_DEFINE(sem_prio_recv, 0, K_SEM_MAX_LIMIT);
 static K_FIFO_DEFINE(recv_fifo);
@@ -85,7 +90,7 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 	ARG_UNUSED(sink_ctx);
 	ARG_UNUSED(valid_pdu); /* TODO copy valid pdu into netbuf ? */
 
-	struct net_buf *buf  = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	struct net_buf *buf  = bt_buf_get_rx(BT_BUF_ISO_IN, K_FOREVER);
 
 	if (buf) {
 		/* Reserve space for headers */
@@ -116,7 +121,16 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 
 	buf = (struct net_buf *) valid_sdu->contents.dbuf;
 
+
 	if (buf) {
+#if defined(CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA)
+		if (valid_sdu->status != ISOAL_SDU_STATUS_VALID) {
+			/* unref buffer if invalid fragment */
+			net_buf_unref(buf);
+
+			return ISOAL_STATUS_OK;
+		}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA */
 		data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
 		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
 
@@ -124,14 +138,30 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 
 		pb = sink_ctx->sdu_production.sdu_state;
 
-		ts = 1;   /*TODO: Always assume timestamp? */
+		/*
+		 * BLUETOOTH CORE SPECIFICATION Version 5.3 | Vol 4, Part E
+		 * 5.4.5 HCI ISO Data packets
+		 *
+		 * PB_Flag:
+		 *  Value   Parameter Description
+		 *  0b00    The ISO_Data_Load field contains a header and the first fragment
+		 *          of a fragmented SDU.
+		 *  0b01    The ISO_Data_Load field contains a continuation fragment of an SDU.
+		 *  0b10    The ISO_Data_Load field contains a header and a complete SDU.
+		 *  0b11    The ISO_Data_Load field contains the last fragment of an SDU.
+		 *
+		 * The TS_Flag bit shall be set if the ISO_Data_Load field contains a
+		 * Time_Stamp field. This bit shall only be set if the PB_Flag field equals 0b00 or
+		 * 0b10.
+		 */
+		ts = !(pb & 1);
 		handle_packed = bt_iso_handle_pack(handle, pb, ts);
 		len = sink_ctx->sdu_production.sdu_written + BT_HCI_ISO_TS_DATA_HDR_SIZE;
 
 		hdr->handle = sys_cpu_to_le16(handle_packed);
 		hdr->len = sys_cpu_to_le16(len);
 
-		packet_status_flag = 0x0000; /* TODO: For now always assume "valid data" */
+		packet_status_flag = valid_sdu->status;
 		slen = sink_ctx->sdu_production.sdu_written;
 		slen_packed = bt_iso_pkt_len_pack(slen, packet_status_flag);
 
@@ -300,16 +330,23 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_ISO)
 	case HCI_CLASS_ISO_DATA: {
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
-		struct ll_conn_iso_stream *cis =
-			ll_conn_iso_stream_get(node_rx->hdr.handle);
-		struct ll_iso_datapath *dp = cis->datapath_out;
+		uint8_t handle = node_rx->hdr.handle;
+		struct ll_iso_stream_hdr *hdr = NULL;
+
+		if (IS_CIS_HANDLE(handle)) {
+			struct ll_conn_iso_stream *cis =
+				ll_conn_iso_stream_get(handle);
+			hdr = &cis->hdr;
+		}
+
+		struct ll_iso_datapath *dp = hdr->datapath_out;
 		isoal_sink_handle_t sink = dp->sink_hdl;
 
 		if (dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
 			/* If HCI datapath pass to ISO AL here */
 			struct isoal_pdu_rx pckt_meta = {
 				.meta = &node_rx->hdr.rx_iso_meta,
-				.pdu  = (union isoal_pdu *) &node_rx->pdu[0]
+				.pdu  = (struct pdu_iso *) &node_rx->pdu[0]
 			};
 
 			/* Pass the ISO PDU through ISO-AL */
@@ -318,10 +355,23 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
 		}
-#endif
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		const struct lll_sync_iso_stream *stream;
+		struct isoal_pdu_rx isoal_rx;
+		isoal_status_t err;
+
+		stream = ull_sync_iso_stream_get(node_rx->hdr.handle);
+		isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
+		isoal_rx.pdu = (void *)node_rx->pdu;
+		err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
+		LL_ASSERT(err == ISOAL_STATUS_OK ||
+			  err == ISOAL_STATUS_ERR_SDU_ALLOC);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 		break;
 	}
-#endif
+#endif /* CONFIG_BT_CTLR_ISO */
 
 	default:
 		LL_ASSERT(0);

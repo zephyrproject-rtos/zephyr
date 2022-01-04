@@ -13,7 +13,8 @@ import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-from twisterlib import TestInstance, BuildError, TestCase, TwisterException
+from twisterlib import (TestInstance, BuildError, TestCase, TwisterException,
+                        ScanPathResult)
 
 
 TESTDATA_1 = [
@@ -112,21 +113,49 @@ def test_get_unique_exception(testcase_root, workdir, name, exception):
         unique = TestCase(testcase_root, workdir, name)
         assert unique == exception
 
+
 TESTDATA_5 = [
-    ("testcases/tests/test_ztest.c", None, ['a', 'c', 'unit_a', 'newline', 'test_test_aa', 'user', 'last']),
-    ("testcases/tests/test_a/test_ztest_error.c", "Found a test that does not start with test_", ['1a', '1c', '2a', '2b']),
-    ("testcases/tests/test_a/test_ztest_error_1.c", "found invalid #ifdef, #endif in ztest_test_suite()", ['unit_1a', 'unit_1b', 'Unit_1c']),
+    ("testcases/tests/test_ztest.c",
+     ScanPathResult(
+         warnings=None,
+         matches=['a', 'c', 'unit_a',
+                  'newline',
+                  'test_test_aa',
+                  'user', 'last'],
+         has_registered_test_suites=False,
+         has_run_registered_test_suites=False,
+         has_test_main=False)),
+    ("testcases/tests/test_a/test_ztest_error.c",
+     ScanPathResult(
+         warnings="Found a test that does not start with test_",
+         matches=['1a', '1c', '2a', '2b'],
+         has_registered_test_suites=False,
+         has_run_registered_test_suites=False,
+         has_test_main=True)),
+    ("testcases/tests/test_a/test_ztest_error_1.c",
+     ScanPathResult(
+         warnings="found invalid #ifdef, #endif in ztest_test_suite()",
+         matches=['unit_1a', 'unit_1b', 'Unit_1c'],
+         has_registered_test_suites=False,
+         has_run_registered_test_suites=False,
+         has_test_main=False)),
+    ("testcases/tests/test_d/test_ztest_error_register_test_suite.c",
+     ScanPathResult(
+         warnings=None, matches=['unit_1a', 'unit_1b'],
+         has_registered_test_suites=True,
+         has_run_registered_test_suites=False,
+         has_test_main=False)),
 ]
 
-@pytest.mark.parametrize("test_file, expected_warnings, expected_subcases", TESTDATA_5)
-def test_scan_file(test_data, test_file, expected_warnings, expected_subcases):
+@pytest.mark.parametrize("test_file, expected", TESTDATA_5)
+def test_scan_file(test_data, test_file, expected: ScanPathResult):
     '''Testing scan_file method with different ztest files for warnings and results'''
 
-    testcase = TestCase("/scripts/tests/twister/test_data/testcases/tests", ".", "test_a.check_1")
+    testcase = TestCase("/scripts/tests/twister/test_data/testcases/tests", ".",
+                        "test_a.check_1")
 
-    results, warnings = testcase.scan_file(os.path.join(test_data, test_file))
-    assert sorted(results) == sorted(expected_subcases)
-    assert warnings == expected_warnings
+    result: ScanPathResult = testcase.scan_file(os.path.join(test_data, test_file))
+    assert result == expected
 
 
 TESTDATA_6 = [

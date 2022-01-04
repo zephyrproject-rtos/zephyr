@@ -34,7 +34,8 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 {
 #if defined(CONFIG_I2C_MCUX_FLEXCOMM) || \
 		defined(CONFIG_SPI_MCUX_FLEXCOMM) || \
-		defined(CONFIG_UART_MCUX_FLEXCOMM)
+		defined(CONFIG_UART_MCUX_FLEXCOMM) || \
+		defined(CONFIG_COUNTER_MCUX_CTIMER)
 
 	uint32_t clock_name = (uint32_t) sub_system;
 
@@ -63,6 +64,9 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 	case MCUX_FLEXCOMM7_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(7);
 		break;
+	case MCUX_PMIC_I2C_CLK:
+		*rate = CLOCK_GetFlexCommClkFreq(15);
+		break;
 	case MCUX_HS_SPI_CLK:
 #if defined(FSL_FEATURE_FLEXCOMM8_SPI_INDEX)
 		*rate = CLOCK_GetHsLspiClkFreq();
@@ -78,6 +82,23 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 	case MCUX_USDHC2_CLK:
 		*rate = CLOCK_GetSdioClkFreq(1);
+		break;
+#endif
+#if defined(CONFIG_COUNTER_MCUX_CTIMER)
+	case (MCUX_CTIMER0_CLK + MCUX_CTIMER_CLK_OFFSET):
+		*rate = CLOCK_GetCTimerClkFreq(0);
+		break;
+	case (MCUX_CTIMER1_CLK + MCUX_CTIMER_CLK_OFFSET):
+		*rate = CLOCK_GetCTimerClkFreq(1);
+		break;
+	case (MCUX_CTIMER2_CLK + MCUX_CTIMER_CLK_OFFSET):
+		*rate = CLOCK_GetCTimerClkFreq(2);
+		break;
+	case (MCUX_CTIMER3_CLK + MCUX_CTIMER_CLK_OFFSET):
+		*rate = CLOCK_GetCTimerClkFreq(3);
+		break;
+	case (MCUX_CTIMER4_CLK + MCUX_CTIMER_CLK_OFFSET):
+		*rate = CLOCK_GetCTimerClkFreq(4);
 		break;
 #endif
 	}
@@ -103,7 +124,7 @@ DEVICE_DT_INST_DEFINE(n, \
 		    &mcux_lpc_syscon_clock_control_init, \
 		    NULL, \
 		    NULL, NULL, \
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, \
 		    &mcux_lpc_syscon_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LPC_CLOCK_INIT)

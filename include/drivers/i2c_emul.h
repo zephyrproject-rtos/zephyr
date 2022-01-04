@@ -22,6 +22,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
+#include <drivers/emul.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,9 @@ struct i2c_emul_api;
 /** Node in a linked list of emulators for I2C devices */
 struct i2c_emul {
 	sys_snode_t node;
+
+	/** Parent emulator */
+	const struct emul *parent;
 
 	/* API provided for this device */
 	const struct i2c_emul_api *api;
@@ -72,14 +76,6 @@ int i2c_emul_register(const struct device *dev, const char *name,
 struct i2c_emul_api {
 	i2c_emul_transfer_t transfer;
 };
-
-/**
- * Back door to allow an emulator to retrieve the host configuration.
- *
- * @param dev I2C device associated with the emulator
- * @return Bit-packed 32-bit value containing the device's runtime configuration
- */
-uint32_t i2c_emul_get_config(const struct device *dev);
 
 #ifdef __cplusplus
 }

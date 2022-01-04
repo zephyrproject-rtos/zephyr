@@ -12,6 +12,9 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/arch/${ARCH}/include
   )
 
+zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER
+  SECTIONS usb.ld)
+
 if (CONFIG_SECOND_CORE_MCUX)
   set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
   string(CONFIGURE ${CONFIG_SECOND_IMAGE_MCUX} second_core_image)

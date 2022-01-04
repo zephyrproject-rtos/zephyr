@@ -12,4 +12,4 @@ zephyr_ld_options(-fuse-ld=bfd)
 
 # Set compile options
 zephyr_compile_options_ifdef(CONFIG_TELINK_B91_HWDSP -mext-dsp)
-zephyr_compile_options(-mno-relax)
+zephyr_compile_options_ifndef(CONFIG_RISCV_GP -mno-relax)

@@ -473,7 +473,7 @@ static inline void lsm6dsl_accel_convert(struct sensor_value *val, int raw_val,
 
 	/* Sensitivity is exposed in mg/LSB */
 	/* Convert to m/s^2 */
-	dval = (double)(raw_val) * sensitivity * SENSOR_G_DOUBLE / 1000;
+	dval = (double)(raw_val) * (double)sensitivity * SENSOR_G_DOUBLE / 1000;
 	val->val1 = (int32_t)dval;
 	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
 
@@ -523,7 +523,7 @@ static inline void lsm6dsl_gyro_convert(struct sensor_value *val, int raw_val,
 
 	/* Sensitivity is exposed in mdps/LSB */
 	/* Convert to rad/s */
-	dval = (double)(raw_val * sensitivity * SENSOR_DEG2RAD_DOUBLE / 1000);
+	dval = (double)(raw_val * (double)sensitivity * SENSOR_DEG2RAD_DOUBLE / 1000);
 	val->val1 = (int32_t)dval;
 	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
 }
@@ -779,33 +779,34 @@ static int lsm6dsl_init_chip(const struct device *dev)
 
 static int lsm6dsl_init(const struct device *dev)
 {
+	int ret;
 	const struct lsm6dsl_config * const config = dev->config;
-	struct lsm6dsl_data *data = dev->data;
 
-	data->bus = device_get_binding(config->bus_name);
-	if (!data->bus) {
-		LOG_DBG("master not found: %s", config->bus_name);
-		return -EINVAL;
+	ret = config->bus_init(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize sensor bus");
+		return ret;
 	}
 
-	config->bus_init(dev);
-
-	if (lsm6dsl_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
-		return -EIO;
+	ret = lsm6dsl_init_chip(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize chip");
+		return ret;
 	}
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
-	if (lsm6dsl_init_interrupt(dev) < 0) {
+	ret = lsm6dsl_init_interrupt(dev);
+	if (ret < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
-		return -EIO;
+		return ret;
 	}
 #endif
 
 #ifdef CONFIG_LSM6DSL_SENSORHUB
-	if (lsm6dsl_shub_init_external_chip(dev) < 0) {
-		LOG_DBG("failed to initialize external chip");
-		return -EIO;
+	ret = lsm6dsl_shub_init_external_chip(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize external chip");
+		return ret;
 	}
 #endif
 
@@ -836,44 +837,6 @@ static int lsm6dsl_init(const struct device *dev)
  * Instantiation macros used when a device is on a SPI bus.
  */
 
-#define LSM6DSL_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
-
-#define LSM6DSL_DATA_SPI_CS(inst)					\
-	{ .cs_ctrl = {							\
-		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
-		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
-		},							\
-	}
-
-#define LSM6DSL_DATA_SPI(inst)						\
-	COND_CODE_1(LSM6DSL_HAS_CS(inst),				\
-		    (LSM6DSL_DATA_SPI_CS(inst)),			\
-		    ({}))
-
-#define LSM6DSL_SPI_CS_PTR(inst)					\
-	COND_CODE_1(LSM6DSL_HAS_CS(inst),				\
-		    (&(lsm6dsl_data_##inst.cs_ctrl)),			\
-		    (NULL))
-
-#define LSM6DSL_SPI_CS_LABEL(inst)					\
-	COND_CODE_1(LSM6DSL_HAS_CS(inst),				\
-		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
-
-#define LSM6DSL_SPI_CFG(inst)						\
-	(&(struct lsm6dsl_spi_cfg) {					\
-		.spi_conf = {						\
-			.frequency =					\
-				DT_INST_PROP(inst, spi_max_frequency),	\
-			.operation = (SPI_WORD_SET(8) |			\
-				      SPI_OP_MODE_MASTER |		\
-				      SPI_MODE_CPOL |			\
-				      SPI_MODE_CPHA),			\
-			.slave = DT_INST_REG_ADDR(inst),		\
-			.cs = LSM6DSL_SPI_CS_PTR(inst),			\
-		},							\
-		.cs_gpios_label = LSM6DSL_SPI_CS_LABEL(inst),		\
-	})
-
 #ifdef CONFIG_LSM6DSL_TRIGGER
 #define LSM6DSL_CFG_IRQ(inst) \
 		.irq_dev_name = DT_INST_GPIO_LABEL(inst, irq_gpios),	\
@@ -883,18 +846,19 @@ static int lsm6dsl_init(const struct device *dev)
 #define LSM6DSL_CFG_IRQ(inst)
 #endif /* CONFIG_LSM6DSL_TRIGGER */
 
-#define LSM6DSL_CONFIG_SPI(inst)					\
-	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
-		.bus_init = lsm6dsl_spi_init,				\
-		.bus_cfg = { .spi_cfg = LSM6DSL_SPI_CFG(inst)	},	\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
-		(LSM6DSL_CFG_IRQ(inst)), ())				\
+#define LSM6DSL_CONFIG_SPI(inst)						\
+	{									\
+		.bus_init = lsm6dsl_spi_init,					\
+		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) |	\
+				      SPI_OP_MODE_MASTER |			\
+				      SPI_MODE_CPOL |				\
+				      SPI_MODE_CPHA, 0),			\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
+		(LSM6DSL_CFG_IRQ(inst)), ())					\
 	}
 
 #define LSM6DSL_DEFINE_SPI(inst)					\
-	static struct lsm6dsl_data lsm6dsl_data_##inst =		\
-		LSM6DSL_DATA_SPI(inst);					\
+	static struct lsm6dsl_data lsm6dsl_data_##inst;			\
 	static const struct lsm6dsl_config lsm6dsl_config_##inst =	\
 		LSM6DSL_CONFIG_SPI(inst);				\
 	LSM6DSL_DEVICE_INIT(inst)
@@ -905,9 +869,8 @@ static int lsm6dsl_init(const struct device *dev)
 
 #define LSM6DSL_CONFIG_I2C(inst)					\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lsm6dsl_i2c_init,				\
-		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 		(LSM6DSL_CFG_IRQ(inst)), ())				\
 	}

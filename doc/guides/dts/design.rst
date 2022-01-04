@@ -44,6 +44,8 @@ Example remaining work
 - Runtime determination of ``struct device`` relationships should be done using
   information obtained from devicetree, e.g. for device power management.
 
+.. _dt-source-compatibility:
+
 Source compatibility with other operating systems
 *************************************************
 

@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_lptmr
 
+#include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <fsl_lptmr.h>
 
@@ -91,7 +92,7 @@ static void mcux_lptmr_timer_isr(void *arg)
 	LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
 }
 
-int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	lptmr_config_t config;
 
@@ -120,3 +121,6 @@ int sys_clock_driver_init(const struct device *dev)
 
 	return 0;
 }
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

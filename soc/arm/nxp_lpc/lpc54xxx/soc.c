@@ -24,7 +24,9 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
+#endif
 
 /**
  *

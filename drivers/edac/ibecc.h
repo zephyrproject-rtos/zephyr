@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_DRIVERS_EDAC_IBECC_H_
+#define ZEPHYR_DRIVERS_EDAC_IBECC_H_
+
 /* TODO: Add to include/sys/util.h */
 #define BITFIELD(val, h, l)	(((val) & GENMASK(h, l)) >> l)
 
@@ -169,3 +172,7 @@ struct ibecc_error {
 	uint64_t address;
 	uint16_t syndrome;
 };
+
+#define PCI_HOST_BRIDGE PCIE_BDF(0, 0, 0)
+
+#endif /* ZEPHYR_DRIVERS_EDAC_IBECC_H_ */

@@ -79,7 +79,7 @@ static int do_fetch(const struct device *dev)
 #ifndef CONFIG_CCS811_TRIGGER_NONE
 
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trig)
+			    const struct sensor_trigger *trig)
 {
 	int rc = do_fetch(dev);
 

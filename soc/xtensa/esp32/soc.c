@@ -34,7 +34,7 @@ extern void z_cstart(void);
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
  * is already set up.
  */
-void __attribute__((section(".iram1"))) __start(void)
+void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
@@ -58,31 +58,11 @@ void __attribute__((section(".iram1"))) __start(void)
 		: "g"(&_bss_start)
 		: "memory");
 
-#if !CONFIG_BOOTLOADER_ESP_IDF
-	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
-	 * We're done booting, so disable it.
-	 * If 2nd stage bootloader from IDF is enabled, then that will take
-	 * care of this.
-	 */
-	volatile uint32_t *wdt_timg_protect = (uint32_t *)TIMG_WDTWPROTECT_REG(0);
-	volatile uint32_t *wdt_timg_reg = (uint32_t *)TIMG_WDTCONFIG0_REG(0);
-
-	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
-	*wdt_rtc_reg &= ~RTC_CNTL_WDT_FLASHBOOT_MOD_EN;
-	*wdt_rtc_protect = 0;
-	*wdt_timg_protect = TIMG_WDT_WKEY_VALUE;
-	*wdt_timg_reg &= ~TIMG_WDT_FLASHBOOT_MOD_EN;
-	*wdt_timg_protect = 0;
-#endif
-
 	/* Disable normal interrupts. */
 	__asm__ __volatile__ (
 		"wsr %0, PS"
 		:
 		: "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
-
-	/* Disable CPU1 while we figure out how to have SMP in Zephyr. */
-	*app_cpu_config_reg &= ~DPORT_APPCPU_CLKGATE_EN;
 
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
@@ -90,15 +70,13 @@ void __attribute__((section(".iram1"))) __start(void)
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
-#if CONFIG_BOOTLOADER_ESP_IDF
-	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
+	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
 	 */
 	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
-#endif
 
 #if CONFIG_ESP_SPIRAM
 	esp_err_t err = esp_spiram_init();
@@ -133,9 +111,9 @@ void __attribute__((section(".iram1"))) __start(void)
 int IRAM_ATTR arch_printk_char_out(int c)
 {
 	if (c == '\n') {
-		esp32_rom_uart_tx_one_char('\r');
+		esp_rom_uart_tx_one_char('\r');
 	}
-	esp32_rom_uart_tx_one_char(c);
+	esp_rom_uart_tx_one_char(c);
 	return 0;
 }
 
@@ -156,9 +134,9 @@ void IRAM_ATTR esp_restart_noos(void)
 	soc_ll_stall_core(other_core_id);
 
 	/* Flush any data left in UART FIFOs */
-	esp32_rom_uart_tx_wait_idle(0);
-	esp32_rom_uart_tx_wait_idle(1);
-	esp32_rom_uart_tx_wait_idle(2);
+	esp_rom_uart_tx_wait_idle(0);
+	esp_rom_uart_tx_wait_idle(1);
+	esp_rom_uart_tx_wait_idle(2);
 
 	/* Disable cache */
 	Cache_Read_Disable(0);

@@ -33,6 +33,7 @@ static void start_scan(void);
 
 static struct bt_conn *conn_connecting;
 static uint8_t volatile conn_count;
+static bool volatile is_disconnecting;
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -183,7 +184,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_conn_unref(conn);
 
-	if (conn_count == CONFIG_BT_MAX_CONN) {
+	if ((conn_count == 1U) && is_disconnecting) {
+		is_disconnecting = false;
 		start_scan();
 	}
 	conn_count--;
@@ -230,17 +232,68 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 }
 #endif
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+static void le_phy_updated(struct bt_conn *conn,
+			   struct bt_conn_le_phy_info *param)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("LE PHY Updated: %s Tx 0x%x, Rx 0x%x\n", addr, param->tx_phy,
+	       param->rx_phy);
+}
+#endif /* CONFIG_BT_USER_PHY_UPDATE */
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+static void le_data_len_updated(struct bt_conn *conn,
+				struct bt_conn_le_data_len_info *info)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Data length updated: %s max tx %u (%u us) max rx %u (%u us)\n",
+	       addr, info->tx_max_len, info->tx_max_time, info->rx_max_len,
+	       info->rx_max_time);
+}
+#endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
 	.le_param_req = le_param_req,
 	.le_param_updated = le_param_updated,
+
 #if defined(CONFIG_BT_SMP)
 	.security_changed = security_changed,
 #endif
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	.le_phy_updated = le_phy_updated,
+#endif /* CONFIG_BT_USER_PHY_UPDATE */
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	.le_data_len_updated = le_data_len_updated,
+#endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 };
 
-int init_central(void)
+static void disconnect(struct bt_conn *conn, void *data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Disconnecting %s...\n", addr);
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err) {
+		printk("Failed disconnection %s.\n", addr);
+	}
+	printk("success.\n");
+}
+
+int init_central(uint8_t iterations)
 {
 	int err;
 
@@ -256,8 +309,26 @@ int init_central(void)
 
 	start_scan();
 
-	while (conn_count < CONFIG_BT_MAX_CONN) {
-		k_sleep(K_SECONDS(1));
+	while (true) {
+		while (conn_count < CONFIG_BT_MAX_CONN) {
+			k_sleep(K_SECONDS(1));
+		}
+
+		k_sleep(K_SECONDS(10));
+
+		if (!iterations) {
+			break;
+		}
+		iterations--;
+		printk("Iterations remaining: %u\n", iterations);
+
+		printk("Disconnecting all...\n");
+		is_disconnecting = true;
+		bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
+
+		while (is_disconnecting) {
+			k_sleep(K_SECONDS(1));
+		}
 	}
 
 	return 0;

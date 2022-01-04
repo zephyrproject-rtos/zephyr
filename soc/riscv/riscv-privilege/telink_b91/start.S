@@ -27,7 +27,6 @@ entry:
 	.org 0x26
 	.short (0x173B)
 
-	.option pop
 	.align 2
 
 start:
@@ -69,3 +68,5 @@ _RAMCODE_INIT_BEGIN:
 
 _START:
 	j __start
+
+	.option pop

@@ -1,0 +1,9 @@
+sample:
+    name: MBOX IPC sample
+tests:
+    sample.drivers.mbox:
+        platform_allow: nrf5340dk_nrf5340_cpuapp
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpuapp
+        tags: mbox
+        build_only: true

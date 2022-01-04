@@ -368,7 +368,7 @@ static void adc_sam_isr(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL,			\
 			    &adc##n##_sam_data,				\
 			    &adc##n##_sam_cfg, POST_KERNEL,		\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &adc_sam_api);				\
 									\
 	static void adc##n##_sam_cfg_func(const struct device *dev)	\

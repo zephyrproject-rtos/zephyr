@@ -7,15 +7,14 @@ zephyr_library_sources_ifdef(CONFIG_ETH_GECKO
 	phy_gecko.c
 	)
 
-zephyr_library_sources_ifdef(CONFIG_ETH_SAM_GMAC
-	eth_sam_gmac.c
-	phy_sam_gmac.c
-	)
-
 zephyr_library_sources_ifdef(CONFIG_ETH_XLNX_GEM
 	eth_xlnx_gem.c
 	phy_xlnx_gem.c
 	)
+
+zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC		eth_dwmac.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC_STM32H7X	eth_dwmac_stm32h7x.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC_MMU	eth_dwmac_mmu.c)
 
 zephyr_library_sources_ifdef(CONFIG_ETH_E1000		eth_e1000.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_ENC28J60	eth_enc28j60.c)
@@ -27,16 +26,16 @@ zephyr_library_sources_ifdef(CONFIG_ETH_SMSC911X	eth_smsc911x.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STELLARIS	eth_stellaris.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STM32_HAL	eth_stm32_hal.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_W5500		eth_w5500.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_SAM_GMAC	eth_sam_gmac.c)
+zephyr_library_sources_ifdef(CONFIG_DSA_KSZ8XXX		dsa_ksz8xxx.c)
 
 if(CONFIG_ETH_NATIVE_POSIX)
-	zephyr_library_named(drivers__ethernet__native_posix)
-	zephyr_library_compile_definitions(
-		NO_POSIX_CHEATS
-		_BSD_SOURCE
-		_DEFAULT_SOURCE
-		)
-	zephyr_library_sources(
-		eth_native_posix.c
-		eth_native_posix_adapt.c
-		)
+  set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
+  set_source_files_properties(${native_posix_source_files}
+    PROPERTIES COMPILE_DEFINITIONS
+    "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
+  )
+  zephyr_library_sources(${native_posix_source_files})
 endif()
+
+add_subdirectory(phy)

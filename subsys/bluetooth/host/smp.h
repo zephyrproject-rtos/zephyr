@@ -27,6 +27,7 @@ struct bt_smp_hdr {
 #define BT_SMP_ERR_NUMERIC_COMP_FAILED		0x0c
 #define BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS	0x0d
 #define BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED	0x0e
+#define BT_SMP_ERR_KEY_REJECTED			0x0f
 
 #define BT_SMP_IO_DISPLAY_ONLY			0x00
 #define BT_SMP_IO_DISPLAY_YESNO			0x01
@@ -86,8 +87,8 @@ struct bt_smp_encrypt_info {
 	uint8_t  ltk[16];
 } __packed;
 
-#define BT_SMP_CMD_MASTER_IDENT			0x07
-struct bt_smp_master_ident {
+#define BT_SMP_CMD_CENTRAL_IDENT		0x07
+struct bt_smp_central_ident {
 	uint8_t ediv[2];
 	uint8_t rand[8];
 } __packed;

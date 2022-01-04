@@ -1,0 +1,8 @@
+tests:
+  kernel.events:
+    tags: kernel
+  kernel.events.linker_generator:
+    platform_allow: qemu_x86
+    tags: kernel linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
