@@ -23,9 +23,13 @@
 #define SPI_NOR_CMD_WRSR        0x01    /* Write status register */
 #define SPI_NOR_CMD_RDSR        0x05    /* Read status register */
 #define SPI_NOR_CMD_READ        0x03    /* Read data */
+#define SPI_NOR_CMD_DREAD       0x3B    /* Read data (1-1-2) */
+#define SPI_NOR_CMD_QREAD       0x6B    /* Read data (1-1-4) */
+#define SPI_NOR_CMD_4READ       0xEB    /* Read data (1-4-4) */
 #define SPI_NOR_CMD_WREN        0x06    /* Write enable */
 #define SPI_NOR_CMD_WRDI        0x04    /* Write disable */
 #define SPI_NOR_CMD_PP          0x02    /* Page program */
+#define SPI_NOR_CMD_4PP         0x38    /* Page program (1-4-4) */
 #define SPI_NOR_CMD_RDCR        0x15    /* Read control register */
 #define SPI_NOR_CMD_SE          0x20    /* Sector erase */
 #define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
