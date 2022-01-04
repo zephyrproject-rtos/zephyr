@@ -581,7 +581,7 @@ Documentation:
       - albertofloyd
     collaborators:
       - VenkatKotakonda
-      - scottwcpg
+      - jvasanth1
     files:
         - drivers/espi/
         - include/drivers/espi.h
@@ -1527,7 +1527,7 @@ NXP Platforms:
 Microchip Platforms:
   status: maintained
   maintainers:
-    - scottwcpg
+    - jvasanth1
   collaborators:
     - VenkatKotakonda
     - albertofloyd
