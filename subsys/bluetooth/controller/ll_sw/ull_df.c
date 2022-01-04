@@ -36,10 +36,12 @@
 #include "ull_sync_types.h"
 #include "ull_sync_internal.h"
 #include "ull_adv_types.h"
+#include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_conn_internal.h"
 #include "ull_df_types.h"
 #include "ull_df_internal.h"
+#include "ull_llcp.h"
 
 #include "ull_adv_internal.h"
 #include "ull_internal.h"
@@ -1189,11 +1191,11 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t c
 		/* If controller is aware of features supported by peer device then check
 		 * whether required features are enabled.
 		 */
-		if (conn->common.fex_valid &&
-		    (!(conn->llcp_feature.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)) ||
+		if (conn->llcp.fex.valid &&
+		    (!(conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)) ||
 		     ((requested_cte_type == BT_HCI_LE_AOD_CTE_1US ||
 		       requested_cte_type == BT_HCI_LE_AOD_CTE_2US) &&
-		      !(conn->llcp_feature.features_peer &
+		      !(conn->llcp.fex.features_peer &
 			BIT64(BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD))))) {
 			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		}
