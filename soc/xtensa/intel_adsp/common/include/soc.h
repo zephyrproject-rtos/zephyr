@@ -74,6 +74,12 @@ extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
 
+extern void z_soc_mp_asm_entry(void);
+extern void soc_mp_startup(uint32_t cpu);
+extern void soc_start_core(int cpu_num);
+
+extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
+
 /* Legacy SOC-level API still used in a few drivers */
 #define SOC_DCACHE_FLUSH(addr, size)		\
 	z_xtensa_cache_flush((addr), (size))
