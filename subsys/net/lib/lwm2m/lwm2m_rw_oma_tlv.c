@@ -551,9 +551,20 @@ static int put_opaque(struct lwm2m_output_context *out,
 static int put_objlnk(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path, struct lwm2m_objlnk *value)
 {
-	int32_t value_s32 = (value->obj_id << 16) | value->obj_inst;
+	struct tlv_out_formatter_data *fd;
+	struct oma_tlv tlv;
+	int32_t net_value = sys_cpu_to_be32(
+				((value->obj_id) << 16) | value->obj_inst);
 
-	return put_s32(out, path, value_s32);
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return -EINVAL;
+	}
+
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
+		  tlv_calc_id(fd->writer_flags, path), sizeof(net_value));
+
+	return oma_tlv_put(&tlv, out, (uint8_t *)&net_value, false);
 }
 
 static int get_number(struct lwm2m_input_context *in, int64_t *value,
