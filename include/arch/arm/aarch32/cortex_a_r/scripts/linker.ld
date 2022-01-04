@@ -352,7 +352,7 @@ GROUP_START(OCM)
 		*(.ocm_bss)
 		*(".ocm_bss.*")
 		__ocm_bss_end = .;
-	} GROUP_LINK_IN(OCM)
+	} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME(DT_CHOSEN(zephyr_ocm)))
 
 	SECTION_PROLOGUE(_OCM_DATA_SECTION_NAME,,SUBALIGN(4))
 	{
@@ -360,7 +360,7 @@ GROUP_START(OCM)
 		*(.ocm_data)
 		*(".ocm_data.*")
 		__ocm_data_end = .;
-	} GROUP_LINK_IN(OCM)
+	} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME(DT_CHOSEN(zephyr_ocm)))
 
   __ocm_end = .;
   __ocm_size = __ocm_end - __ocm_start;
