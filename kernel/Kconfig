@@ -839,6 +839,13 @@ config MP_NUM_CPUS
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
 
+config MP_TOTAL_NUM_CPUS
+	int "Total number of CPUs/cores"
+	default 1
+	range 1 5
+	help
+	  Number of cores in the system including those not used by Zephyr.
+
 config SMP_BASE_CPU
 	int "Starting CPU number"
 	default 0
@@ -849,7 +856,7 @@ config SMP_BASE_CPU
 	  This can also be used in conjunction with MP_NUM_CPUS to select a 
 	  subset of available CPUs to use for Zephyr.
 		
-  config SCHED_IPI_SUPPORTED
+config SCHED_IPI_SUPPORTED
 	bool
 	help
 	  True if the architecture supports a call to

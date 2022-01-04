@@ -60,11 +60,22 @@ static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
  * since the kernel hasn't yet set up its own stack areas. The dual purposing
  * of this area is safe since interrupts are disabled until the kernel context
  * switches to the init thread.
+ * 
+ * For setups where there are either monitor cores which are not part of the
+ * pool of CPUs that Zephyr uses or where Zephyr is restricted to a subset of
+ * the pool of CPUs, we may still need to allocate stacks for all possible CPUs
+ * to ensure that all CPUs have a stack if they end up calling the Zephyr reset
+ * code even if we are just going to park them...
  */
+#if (CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS)
+K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
+				   CONFIG_MP_TOTAL_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
+#else
 K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 				   CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
-
+#endif
 extern void idle(void *unused1, void *unused2, void *unused3);
 
 
@@ -301,8 +312,8 @@ static char *prepare_multithreading(void)
 		_kernel.cpus[i].idle_thread = &z_idle_threads[i];
 		_kernel.cpus[i].id = i;
 		_kernel.cpus[i].irq_stack =
-			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
-			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
+			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU]) +
+			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU]));
 	}
 
 	return stack_ptr;

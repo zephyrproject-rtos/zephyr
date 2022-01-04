@@ -60,7 +60,14 @@ SECTION_FUNC(TEXT, __initialize)
 	bne a0, a1, not_monitor_hart
 
 no_monitor_allowed:
-	/* Disable interrupts etc to try and keep things quiet */
+	/* 
+	 * Disable interrupts etc to try and keep things quiet.
+	 * But first assign the first isr stack to us for safety,
+	 * If monitor hart is not hart id 0, this will need changing.
+	 */
+	la sp, z_interrupt_stacks
+	li t0, CONFIG_ISR_STACK_SIZE
+	add sp, sp, t0
 	csrw mstatus, zero
     csrw mie, zero
     csrw mip, zero
@@ -69,6 +76,7 @@ no_monitor_allowed:
 	
 not_monitor_hart:
 #endif	/* CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR */
+
 #endif	/* CONFIG_SMP */
 
 #if defined(CONFIG_CLEAR_PMP_REGS)
@@ -132,7 +140,7 @@ not_super_capable:
 	/* Pre-populate all bytes in z_interrupt_stacks with 0xAA */
 	la t0, z_interrupt_stacks
 #if CONFIG_SMP
-	li t1, CONFIG_ISR_STACK_SIZE * CONFIG_MP_NUM_CPUS
+	li t1, CONFIG_ISR_STACK_SIZE * CONFIG_MP_TOTAL_NUM_CPUS
 	add t1, t1, t0
 	/* Only do this once on the startup hart */
     li a1, CONFIG_HART_TO_USE
@@ -156,14 +164,15 @@ skip_stack_fill:
 	/*
 	 * Initially, setup stack pointer to
 	 * z_interrupt_stacks[cpu] + CONFIG_ISR_STACK_SIZE
+	 * 
+	 * We always allocate these stacks based on the real hart id as we need to
+	 * account for all harts when allocating an initial stack even if
+	 * they are not going to run Zephyr... 
 	 */
 	la sp, z_interrupt_stacks
 	li t0, CONFIG_ISR_STACK_SIZE
 #if defined(CONFIG_SMP)
 	csrr a0, mhartid
-#if CONFIG_SMP_BASE_CPU != 0
-	addi a0, a0, -CONFIG_SMP_BASE_CPU
-#endif /* CONFIG_SMP_BASE_CPU != 0 */
 	mul a1, a0, t0
 	add sp, sp, a1
 #endif /* CONFIG_SMP */
