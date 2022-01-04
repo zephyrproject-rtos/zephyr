@@ -37,6 +37,8 @@ LOG_MODULE_REGISTER(soc);
 # define GENO_DIOPTOSEL           BIT(2)
 #endif
 
+extern void soc_mp_init(void);
+
 static __imr void power_init_v15(void)
 {
 	/* HP domain clocked by PLL
@@ -114,7 +116,7 @@ static __imr int soc_init(const struct device *dev)
 		power_init();
 	}
 
-	soc_idc_init();
+	soc_mp_init();
 
 	return 0;
 }
