@@ -66,6 +66,14 @@ config NRFX_GPIOTE
 	bool "Enable GPIOTE driver"
 	depends on HAS_HW_NRF_GPIOTE
 
+config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
+	int "Number of event handlers"
+	depends on NRFX_GPIOTE
+	range 1 15
+	help
+	  Specifies number of handlers that can be registered to nrfx_gpiote driver
+	  by the user.
+
 config NRFX_I2S
 	bool "Enable I2S driver"
 	depends on HAS_HW_NRF_I2S
