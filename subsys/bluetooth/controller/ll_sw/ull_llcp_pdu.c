@@ -743,11 +743,18 @@ void llcp_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
 	conn->llcp.cte_req.cte_type = pdu->llctrl.cte_req.cte_type_req;
 }
 
-void llcp_pdu_encode_cte_rsp(struct pdu_data *pdu)
+void llcp_pdu_encode_cte_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len =
-		offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
+		 offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
+
+	/* Set content of a PDU header first byte, that is not changed by LLL */
+	pdu->cp = 1U;
+	pdu->rfu = 0U;
+
+	pdu->cte_info.time = conn->llcp.cte_req.min_cte_len;
+	pdu->cte_info.type = conn->llcp.cte_req.cte_type;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
