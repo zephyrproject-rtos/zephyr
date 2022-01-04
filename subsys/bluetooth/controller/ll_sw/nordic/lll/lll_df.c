@@ -43,10 +43,7 @@
 #define DF_MIN_ANT_NUM_REQUIRED 2
 
 static int init_reset(void);
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
-static void df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t ant_ids_len,
-				const uint8_t *ant_ids);
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX || CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+
 /* @brief Function performs Direction Finding initialization
  *
  * @return	Zero in case of success, other value in case of failure.
@@ -79,20 +76,6 @@ uint8_t lll_df_ant_num_get(void)
 	return radio_df_ant_num_get();
 }
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
-/**
- * @brief Function enables transmission of Constant Tone Extension by radio peripheral in connected
- * mode.
- *
- * @param df_cfg Pointer to configuration of the CTE.
- */
-void lll_df_conn_cte_tx_enable(const struct lll_df_conn_tx_cfg *df_cfg)
-{
-	df_cte_tx_configure(df_cfg->cte_type, df_cfg->cte_length, df_cfg->ant_sw_len,
-			    df_cfg->ant_ids);
-}
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
-
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Function enables transmission of Constant Tone Extension.
  *
@@ -121,8 +104,8 @@ void lll_df_cte_tx_enable(struct lll_adv_sync *lll_sync, const struct pdu_adv *p
 			df_cfg = lll_adv_sync_extra_data_curr_get(lll_sync);
 			LL_ASSERT(df_cfg);
 
-			df_cte_tx_configure(df_cfg->cte_type, df_cfg->cte_length,
-					    df_cfg->ant_sw_len, df_cfg->ant_ids);
+			lll_df_cte_tx_configure(df_cfg->cte_type, df_cfg->cte_length,
+						df_cfg->ant_sw_len, df_cfg->ant_ids);
 
 			lll_sync->cte_started = 1U;
 			*cte_len_us = CTE_LEN_US(df_cfg->cte_length);
@@ -307,17 +290,17 @@ static int init_reset(void)
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 /**
- * @brief Function initializes transmission of Constant Tone Extension.
+ * @brief Function configures transmission of Constant Tone Extension.
  *
- * @param cte_type   Type of the CTE
- * @param cte_length Length of CTE in units of 8 us
- * @param ant_ids_len Length of antenna identifiers array
- * @param ant_ids    Pointer to antenna identifiers array
+ * @param cte_type    Type of the CTE
+ * @param cte_length  Length of CTE in units of 8 us
+ * @param num_ant_ids Length of @p ant_ids
+ * @param ant_ids     Pointer to antenna identifiers array
  *
  * In case of AoA mode ant_sw_len and ant_ids members are not used.
  */
-static void df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t ant_ids_len,
-				const uint8_t *ant_ids)
+void lll_df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t num_ant_ids,
+			     const uint8_t *ant_ids)
 {
 	if (cte_type == BT_HCI_LE_AOA_CTE) {
 		radio_df_mode_set_aoa();
@@ -335,7 +318,7 @@ static void df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t an
 
 		radio_df_ant_switching_pin_sel_cfg();
 		radio_df_ant_switch_pattern_clear();
-		radio_df_ant_switch_pattern_set(ant_ids, ant_ids_len);
+		radio_df_ant_switch_pattern_set(ant_ids, num_ant_ids);
 	}
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
 }
