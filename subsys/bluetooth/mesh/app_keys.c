@@ -445,7 +445,7 @@ ssize_t bt_mesh_app_keys_get(uint16_t net_idx, uint16_t app_idxs[], size_t max,
 
 int bt_mesh_keys_resolve(struct bt_mesh_msg_ctx *ctx,
 			 struct bt_mesh_subnet **sub,
-			 const uint8_t *app_key[16], uint8_t *aid)
+			 const uint8_t **app_key, uint8_t *aid)
 {
 	struct app_key *app = NULL;
 
