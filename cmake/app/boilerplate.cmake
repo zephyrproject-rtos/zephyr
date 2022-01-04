@@ -182,10 +182,7 @@ list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 zephyr_file(APPLICATION_ROOT SOC_ROOT)
 
-# 'ARCH_ROOT' is a prioritized list of directories where archs may be
-# found. It always includes ${ZEPHYR_BASE} at the lowest priority.
 zephyr_file(APPLICATION_ROOT ARCH_ROOT)
-list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 
 # Check that BOARD has been provided, and that it has not changed.
 zephyr_check_cache(BOARD REQUIRED)
@@ -387,21 +384,7 @@ if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
   message(FATAL_ERROR "Invalid SHIELD; see above.")
 endif()
 
-get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR}      DIRECTORY)
-get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
-
-foreach(root ${ARCH_ROOT})
-  if(EXISTS ${root}/arch/${ARCH}/CMakeLists.txt)
-    set(ARCH_DIR ${root}/arch)
-    break()
-  endif()
-endforeach()
-
-if(NOT ARCH_DIR)
-  message(FATAL_ERROR "Could not find ARCH=${ARCH} for BOARD=${BOARD}, \
-please check your installation. ARCH roots searched: \n\
-${ARCH_ROOT}")
-endif()
+include(${ZEPHYR_BASE}/cmake/arch.cmake)
 
 if(DEFINED APPLICATION_CONFIG_DIR)
   string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
