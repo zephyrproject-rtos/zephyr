@@ -758,7 +758,7 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		}
 
 		if (!err_code) {
-			llcp_pdu_encode_cte_rsp(pdu);
+			llcp_pdu_encode_cte_rsp(conn, pdu);
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 		} else {
 			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CTE_REQ, err_code);
