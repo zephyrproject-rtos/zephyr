@@ -239,6 +239,10 @@ typedef int (*dma_api_start)(const struct device *dev, uint32_t channel);
 
 typedef int (*dma_api_stop)(const struct device *dev, uint32_t channel);
 
+typedef int (*dma_api_suspend)(const struct device *dev, uint32_t channel);
+
+typedef int (*dma_api_resume)(const struct device *dev, uint32_t channel);
+
 typedef int (*dma_api_get_status)(const struct device *dev, uint32_t channel,
 				  struct dma_status *status);
 
@@ -263,6 +267,8 @@ __subsystem struct dma_driver_api {
 	dma_api_reload reload;
 	dma_api_start start;
 	dma_api_stop stop;
+	dma_api_suspend suspend;
+	dma_api_resume resume;
 	dma_api_get_status get_status;
 	dma_api_chan_filter chan_filter;
 };
@@ -366,6 +372,59 @@ static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
 		(const struct dma_driver_api *)dev->api;
 
 	return api->stop(dev, channel);
+}
+
+
+/**
+ * @brief Suspend a DMA channel transfer
+ *
+ * Implementations must check the validity of the channel state and ID passed
+ * in and return -EINVAL if either are invalid.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel to suspend
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If not implemented.
+ * @retval -EINVAL If invalid channel id or state.
+ * @retval -errno Other negative errno code failure.
+ */
+__syscall int dma_suspend(const struct device *dev, uint32_t channel);
+
+static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
+{
+	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+
+	if (api->suspend == NULL) {
+		return -ENOSYS;
+	}
+	return api->suspend(dev, channel);
+}
+
+/**
+ * @brief Resume a DMA channel transfer
+ *
+ * Implementations must check the validity of the channel state and ID passed
+ * in and return -EINVAL if either are invalid.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel to resume
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If not implemented
+ * @retval -EINVAL If invalid channel id or state.
+ * @retval -errno Other negative errno code failure.
+ */
+__syscall int dma_resume(const struct device *dev, uint32_t channel);
+
+static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
+{
+	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+
+	if (api->resume == NULL) {
+		return -ENOSYS;
+	}
+	return api->resume(dev, channel);
 }
 
 /**
