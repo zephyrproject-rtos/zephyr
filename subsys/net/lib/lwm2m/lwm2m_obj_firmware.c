@@ -72,6 +72,7 @@ static struct lwm2m_engine_res_inst res_inst[RESOURCE_INSTANCE_COUNT];
 
 static lwm2m_engine_set_data_cb_t write_cb;
 static lwm2m_engine_execute_cb_t update_cb;
+static lwm2m_engine_update_state_cb update_state_cb;
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 extern int lwm2m_firmware_start_transfer(char *package_uri);
@@ -114,6 +115,10 @@ void lwm2m_firmware_set_update_state(uint8_t state)
 	if (error) {
 		LOG_ERR("Invalid state transition: %u -> %u",
 			update_state, state);
+	}
+
+	if (update_state_cb) {
+		update_state_cb(state);
 	}
 
 	update_state = state;
@@ -283,6 +288,11 @@ void lwm2m_firmware_set_update_cb(lwm2m_engine_execute_cb_t cb)
 lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb(void)
 {
 	return update_cb;
+}
+
+void lwm2m_register_update_state_callback(lwm2m_engine_update_state_cb cb)
+{
+	update_state_cb = cb;
 }
 
 static int firmware_update_cb(uint16_t obj_inst_id,

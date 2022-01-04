@@ -102,6 +102,10 @@ enum lwm2m_observe_event {
 typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_obj_path *path,
 				   void *user_data);
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
+typedef void (*lwm2m_engine_update_state_cb)(uint8_t update_state);
+#endif
+
 /**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
@@ -370,6 +374,16 @@ void lwm2m_firmware_set_write_cb(lwm2m_engine_set_data_cb_t cb);
  * @return A registered callback function to receive the block transfer data
  */
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
+
+/**
+ * @brief Set callback to get update state changed.
+ *
+ * LwM2M clients use this function to know the state of a firmware update
+ * process.
+ *
+ * @param[in] cb A callback function to receive the update state changes
+ */
+void lwm2m_register_update_state_callback(lwm2m_engine_update_state_cb cb);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 /**
