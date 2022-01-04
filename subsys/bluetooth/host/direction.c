@@ -47,12 +47,12 @@ const static uint8_t df_dummy_switch_pattern[BT_HCI_LE_SWITCH_PATTERN_LEN_MIN] =
 #define DF_SAMPLING_ANTENNA_NUMBER_MIN 0x2
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX) || defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-static bool validate_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations,
-					  uint8_t num_ant_ids, const uint8_t *ant_ids);
+static bool valid_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations,
+				       uint8_t num_ant_ids, const uint8_t *ant_ids);
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX || CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
-static bool validate_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param *params);
+static bool valid_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param *params);
 static void
 prepare_cl_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_le_per_adv_sync *sync,
 				    const struct bt_df_per_adv_sync_cte_rx_param *params,
@@ -229,8 +229,8 @@ static int hci_df_set_adv_cte_tx_enable(struct bt_le_ext_adv *adv,
 }
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX) || defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-static bool validate_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations,
-					  uint8_t num_ant_ids, const uint8_t *ant_ids)
+static bool valid_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations,
+				       uint8_t num_ant_ids, const uint8_t *ant_ids)
 {
 	if (!(cte_types & BT_DF_CTE_TYPE_ALL)) {
 		return false;
@@ -259,15 +259,15 @@ static bool validate_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durati
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX || CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
-static bool validate_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param *params)
+static bool valid_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param *params)
 {
 	if (params->max_cte_count > BT_HCI_LE_SAMPLE_CTE_COUNT_MAX) {
 		return false;
 	}
 
 	if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
-		return validate_cte_rx_common_params(params->cte_types, params->slot_durations,
-						     params->num_ant_ids, params->ant_ids);
+		return valid_cte_rx_common_params(params->cte_types, params->slot_durations,
+						  params->num_ant_ids, params->ant_ids);
 	}
 
 	return true;
@@ -321,7 +321,7 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 	int err;
 
 	if (enable) {
-		if (!validate_cl_cte_rx_params(params)) {
+		if (!valid_cl_cte_rx_params(params)) {
 			return -EINVAL;
 		}
 	}
@@ -404,7 +404,7 @@ void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_TX)
-static bool validate_conn_cte_tx_params(const struct bt_df_conn_cte_tx_param *params)
+static bool valid_conn_cte_tx_params(const struct bt_df_conn_cte_tx_param *params)
 {
 	if (!(params->cte_types & BT_DF_CTE_TYPE_ALL)) {
 		return false;
@@ -466,7 +466,7 @@ static int hci_df_set_conn_cte_tx_param(struct bt_conn *conn,
 	/* If AoD is not enabled, ant_ids are ignored by controller:
 	 * BT Core spec 5.2 Vol 4, Part E sec. 7.8.84.
 	 */
-	if (!validate_conn_cte_tx_params(params)) {
+	if (!valid_conn_cte_tx_params(params)) {
 		return -EINVAL;
 	}
 
@@ -548,8 +548,8 @@ static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 	int err;
 
 	if (enable) {
-		if (!validate_cte_rx_common_params(params->cte_types, params->slot_durations,
-						   params->num_ant_ids, params->ant_ids)) {
+		if (!valid_cte_rx_common_params(params->cte_types, params->slot_durations,
+						params->num_ant_ids, params->ant_ids)) {
 			return -EINVAL;
 		}
 	}
