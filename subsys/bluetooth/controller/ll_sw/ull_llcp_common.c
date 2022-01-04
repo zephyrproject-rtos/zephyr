@@ -748,12 +748,12 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		/* If the PHY update is not possible, then PHY1M is used.
 		 * CTE is supported for PHY1M.
 		 */
-		if (conn->lll.phy_tx != PHY_CODED) {
+		if (conn->lll.phy_tx == PHY_CODED) {
 			err_code = BT_HCI_ERR_INVALID_LL_PARAM;
 		}
 #endif /* CONFIG_BT_PHY_UPDATE */
 		if (!(conn->llcp.cte_rsp.cte_types & BIT(conn->llcp.cte_req.cte_type)) &&
-		    conn->llcp.cte_rsp.max_cte_len >= conn->llcp.cte_req.min_cte_len) {
+		    conn->llcp.cte_rsp.max_cte_len < conn->llcp.cte_req.min_cte_len) {
 			err_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
 		}
 
