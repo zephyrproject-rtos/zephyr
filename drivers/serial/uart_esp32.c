@@ -405,7 +405,7 @@ static void uart_esp32_irq_rx_disable(const struct device *dev)
 
 static int uart_esp32_irq_tx_complete(const struct device *dev)
 {
-	/* check if TX is idle so we are sure the last byte was sent */
+	/* Check if TX is idle so we are sure the last byte was sent */
 	return uart_hal_is_tx_idle(&DEV_CFG(dev)->hal);
 }
 
