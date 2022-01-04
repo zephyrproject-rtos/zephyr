@@ -295,6 +295,7 @@ def parse_args():
 if __name__ == "__main__":
 
     args = parse_args()
+    files = []
     if args.commits:
         repo = Repo(repository_path)
         commit = repo.git.diff("--name-only", args.commits)
@@ -303,9 +304,10 @@ if __name__ == "__main__":
         with open(args.modified_files, "r") as fp:
             files = json.load(fp)
 
-    print("Changed files:\n=========")
-    print("\n".join(files))
-    print("=========")
+    if files:
+        print("Changed files:\n=========")
+        print("\n".join(files))
+        print("=========")
 
     f = Filters(files, args.pull_request, args.platform)
     f.process()
@@ -336,6 +338,7 @@ if __name__ == "__main__":
 
         tp.write(f"TWISTER_TESTS={total_tests}\n")
         tp.write(f"TWISTER_NODES={nodes}\n")
+        tp.write(f"TWISTER_FULL={f.full_twister}\n")
         logging.info(f'Total nodes to launch: {nodes}')
 
     header = ['test', 'arch', 'platform', 'status', 'extra_args', 'handler',

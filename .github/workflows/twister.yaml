@@ -32,6 +32,7 @@ jobs:
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
+      fullrun: ${{ steps.output-services.outputs.fullrun }}
     env:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
@@ -78,8 +79,6 @@ jobs:
           else
             echo "TWISTER_NODES=${MATRIX_SIZE}" >> $GITHUB_ENV
           fi
-
-
           rm -f testplan.csv .testplan
 
       - name: Determine matrix size
@@ -103,6 +102,7 @@ jobs:
           fi
           echo "::set-output name=subset::${subset}";
           echo "::set-output name=size::${size}";
+          echo "::set-output name=fullrun::${TWISTER_FULL}";
 
   twister-build:
     runs-on: zephyr_runner
@@ -196,6 +196,12 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${TWISTER_COMMON} ${PUSH_OPTIONS}
+          if [ "${{matrix.subset}}" = "1" ]; then
+            ./scripts/zephyr_module.py --twister-out module_tests.args
+            if [ -s module_tests.args ]; then
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${PUSH_OPTIONS}
+            fi
+          fi
 
       - if: github.event_name == 'pull_request_target'
         name: Run Tests with Twister (Pull Request)
@@ -205,6 +211,12 @@ jobs:
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.csv ${TWISTER_COMMON} ${PR_OPTIONS}
+          if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
+            ./scripts/zephyr_module.py --twister-out module_tests.args
+            if [ -s module_tests.args ]; then
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${PR_OPTIONS}
+            fi
+          fi
 
       - if: github.event_name == 'schedule'
         name: Run Tests with Twister (Daily)
@@ -212,6 +224,12 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${TWISTER_COMMON} ${DAILY_OPTIONS}
+          if [ "${{matrix.subset}}" = "1" ]; then
+            ./scripts/zephyr_module.py --twister-out module_tests.args
+            if [ -s module_tests.args ]; then
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${DAILY_OPTIONS}
+            fi
+          fi
 
       - name: ccache stats post
         run: |
