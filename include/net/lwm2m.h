@@ -371,6 +371,25 @@ void lwm2m_firmware_set_write_cb(lwm2m_engine_set_data_cb_t cb);
  */
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
 
+/**
+ * @brief Set data callback for firmware block transfer.
+ *
+ * LwM2M clients use this function to register a callback for receiving the
+ * block transfer data when performing a firmware update.
+ *
+ * @param[in] obj_inst_id Object instance ID
+ * @param[in] cb A callback function to receive the block transfer data
+ */
+void lwm2m_firmware_set_write_cb_inst(uint16_t obj_inst_id, lwm2m_engine_set_data_cb_t cb);
+
+/**
+ * @brief Get the data callback for firmware block transfer writes.
+ *
+ * @param[in] obj_inst_id Object instance ID
+ * @return A registered callback function to receive the block transfer data
+ */
+lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb_inst(uint16_t obj_inst_id);
+
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 /**
  * @brief Set data callback to handle firmware update execute events.
@@ -388,6 +407,25 @@ void lwm2m_firmware_set_update_cb(lwm2m_engine_execute_cb_t cb);
  * @return A registered callback function to receive the execute event.
  */
 lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb(void);
+
+/**
+ * @brief Set data callback to handle firmware update execute events.
+ *
+ * LwM2M clients use this function to register a callback for receiving the
+ * update resource "execute" operation on the LwM2M Firmware Update object.
+ *
+ * @param[in] obj_inst_id Object instance ID
+ * @param[in] cb A callback function to receive the execute event.
+ */
+void lwm2m_firmware_set_update_cb_inst(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Get the event callback for firmware update execute events.
+ *
+ * @param[in] obj_inst_id Object instance ID
+ * @return A registered callback function to receive the execute event.
+ */
+lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb_inst(uint16_t obj_inst_id);
 #endif
 #endif
 
