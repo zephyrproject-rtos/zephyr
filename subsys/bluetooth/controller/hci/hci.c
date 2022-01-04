@@ -2990,6 +2990,25 @@ static void le_df_set_conn_cte_req_enable(struct net_buf *buf, struct net_buf **
 	rp->status = status;
 	rp->handle = handle_le16;
 }
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+static void le_df_set_conn_cte_rsp_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_conn_cte_rsp_enable *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_conn_cte_rsp_enable *rp;
+	uint16_t handle, handle_le16;
+	uint8_t status;
+
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
+	status = ll_df_set_conn_cte_rsp_enable(handle, cmd->enable);
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->status = status;
+	rp->handle = handle_le16;
+}
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 static void le_df_read_ant_inf(struct net_buf *buf, struct net_buf **evt)
@@ -4346,6 +4365,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_df_set_conn_cte_req_enable(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	case BT_OCF(BT_HCI_OP_LE_CONN_CTE_RSP_ENABLE):
+		le_df_set_conn_cte_rsp_enable(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 #endif /* CONFIG_BT_CTLR_DF */
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
