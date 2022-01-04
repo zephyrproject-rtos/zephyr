@@ -351,7 +351,12 @@ include(cmake/extra_flags.cmake)
 zephyr_cc_option(-fno-asynchronous-unwind-tables)
 zephyr_cc_option(-fno-pie)
 zephyr_cc_option(-fno-pic)
-zephyr_cc_option(-fno-strict-overflow)
+# https://www.airs.com/blog/archives/120
+# -Wall sets -Wstrict-overflow=1
+# https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+zephyr_cc_option(-Wstrict-overflow=2)
+zephyr_cc_option(-Werror)
+
 
 if(CONFIG_THREAD_LOCAL_STORAGE)
 # Only support local exec TLS model at this point.
