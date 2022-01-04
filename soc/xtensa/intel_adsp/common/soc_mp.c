@@ -92,6 +92,32 @@ __asm__(".align 4                   \n\t"
 	"  l32i  a1, a1, 0          \n\t"
 	"  call4 z_mp_entry         \n\t");
 
+static __imr void soc_mp_startup(void)
+{
+	/* We got here via an IDC interrupt.  Clear the TFC high bit
+	 * (by writing a one!) to acknowledge and clear the latched
+	 * hardware interrupt (so we don't have to service it as a
+	 * spurious IPI when we enter user code).  Remember: this
+	 * could have come from any core, clear all of them.
+	 */
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		IDC[start_rec.cpu].core[i].tfc = BIT(31);
+	}
+
+	/* Interrupt must be enabled while running on current core */
+	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
+
+	/* Unfortunately the interrupt controller doesn't understand
+	 * that each CPU has its own mask register (the timer has a
+	 * similar hook).  Needed only on hardware with ROMs that
+	 * disable this; otherwise our own code in soc_idc_init()
+	 * already has it unmasked.
+	 */
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		CAVS_INTCTRL[start_rec.cpu].l2.clear = CAVS_L2_IDC;
+	}
+}
+
 __imr void z_mp_entry(void)
 {
 	cpu_early_init();
@@ -115,31 +141,8 @@ __imr void z_mp_entry(void)
 	__asm__ volatile(
 		"wsr." CONFIG_XTENSA_KERNEL_CPU_PTR_SR " %0" : : "r"(cpu));
 
-	/* We got here via an IDC interrupt.  Clear the TFC high bit
-	 * (by writing a one!) to acknowledge and clear the latched
-	 * hardware interrupt (so we don't have to service it as a
-	 * spurious IPI when we enter user code).  Remember: this
-	 * could have come from any core, clear all of them.
-	 */
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		IDC[start_rec.cpu].core[i].tfc = BIT(31);
-	}
-
-	/* Interrupt must be enabled while running on current core */
-	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
-
-	/* Unfortunately the interrupt controller doesn't understand
-	 * that each CPU has its own mask register (the timer has a
-	 * similar hook).  Needed only on hardware with ROMs that
-	 * disable this; otherwise our own code in soc_idc_init()
-	 * already has it unmasked.
-	 */
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
-		CAVS_INTCTRL[start_rec.cpu].l2.clear = CAVS_L2_IDC;
-	}
-
+	soc_mp_startup();
 	cpus_active[start_rec.cpu] = true;
-
 	start_rec.fn(start_rec.arg);
 	__ASSERT(false, "arch_start_cpu() handler should never return");
 }
@@ -157,12 +160,9 @@ static ALWAYS_INLINE uint32_t prid(void)
 	return prid;
 }
 
-void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-		    arch_cpustart_t fn, void *arg)
+void soc_start_core(int cpu_num)
 {
 	uint32_t curr_cpu = prid();
-
-	__ASSERT_NO_MSG(!cpus_active[cpu_num]);
 
 #ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* On the older hardware, core power is managed by the host
@@ -207,12 +207,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	lpsram[1] = z_soc_mp_asm_entry;
 #endif
 
-	start_rec.cpu = cpu_num;
-	start_rec.fn = fn;
-	start_rec.arg = arg;
-
-	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
-
 	/* Disable automatic power and clock gating for that CPU, so
 	 * it won't just go back to sleep.  Note that after startup,
 	 * the cores are NOT power gated even if they're configured to
@@ -248,6 +242,20 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	IDC[curr_cpu].core[cpu_num].ietc = ietc;
 	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP;
+}
+
+void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+		    arch_cpustart_t fn, void *arg)
+{
+	__ASSERT_NO_MSG(!cpus_active[cpu_num]);
+
+	start_rec.cpu = cpu_num;
+	start_rec.fn = fn;
+	start_rec.arg = arg;
+
+	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
+
+	soc_start_core(cpu_num);
 }
 
 void arch_sched_ipi(void)
@@ -287,7 +295,7 @@ __imr int cavs_idc_smp_init(const struct device *dev)
 	return 0;
 }
 
-__imr void soc_idc_init(void)
+__imr void soc_mp_init(void)
 {
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(idc)), 0, idc_isr, NULL, 0);
 
