@@ -48,10 +48,10 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			     uint8_t *is_rx_enqueue,
 			     struct node_tx **tx_release, uint8_t *is_done);
 static void empty_tx_init(void);
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready,
 				    uint8_t packet_status);
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 static struct pdu_data *get_last_tx_pdu(struct lll_conn *lll);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
@@ -195,9 +195,9 @@ void lll_conn_isr_rx(void *param)
 	uint8_t is_done;
 	uint8_t cte_len;
 	uint8_t crc_ok;
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	bool cte_ready;
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -208,15 +208,15 @@ void lll_conn_isr_rx(void *param)
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		rssi_ready = radio_rssi_is_ready();
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 		cte_ready = radio_df_cte_ready();
 
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 	} else {
 		crc_ok = rssi_ready = 0U;
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 		cte_ready = 0U;
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 	}
 
 	/* Clear radio rx status and events */
@@ -406,7 +406,7 @@ lll_conn_isr_rx_exit:
 		is_ull_rx = 1U;
 	}
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	if (cte_ready) {
 		is_iq_report =
 			create_iq_report(lll, rssi_ready,
@@ -415,7 +415,7 @@ lll_conn_isr_rx_exit:
 	} else {
 #else
 	if (1) {
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 		is_iq_report = false;
 	}
 
@@ -467,7 +467,7 @@ void lll_conn_isr_tx(void *param)
 
 	lll = param;
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 	enum radio_end_evt_delay_state end_evt_delay;
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
@@ -506,7 +506,7 @@ void lll_conn_isr_tx(void *param)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 /* Use regular API for cases when:
  * - CTE RX is not enabled,
@@ -554,13 +554,13 @@ void lll_conn_isr_tx(void *param)
 
 	radio_tmr_hcto_configure(hcto);
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	if (true) {
 #elif defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CONN_RSSI)
 	if (!trx_cnt && !lll->role) {
 #else
 	if (false) {
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 		radio_rssi_measure();
 	}
@@ -1004,7 +1004,7 @@ static void empty_tx_init(void)
 	p->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
 }
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready, uint8_t packet_status)
 {
 	struct lll_df_conn_rx_params *rx_params;
@@ -1047,7 +1047,7 @@ static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready, ui
 	return false;
 }
 
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 /**

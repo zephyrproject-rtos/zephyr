@@ -53,7 +53,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 
 #define CTE_LEN_MAX_US 160U
 
@@ -76,7 +76,7 @@ static MFIFO_DEFINE(iq_report_free, sizeof(void *), IQ_REPORT_CNT);
 
 /* Number of available instance of linked list to be used for node_rx_iq_reports. */
 static uint8_t mem_link_iq_report_quota_pdu;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX*/
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX*/
 
 /* ToDo:
  * - Add release of df_adv_cfg when adv_sync is released.
@@ -168,7 +168,7 @@ static int init_reset(void)
 		 &df_adv_cfg_free);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	/* Re-initialize the free IQ report mfifo */
 	MFIFO_INIT(iq_report_free);
 
@@ -180,7 +180,7 @@ static int init_reset(void)
 	/* Allocate free IQ report node rx */
 	mem_link_iq_report_quota_pdu = IQ_REPORT_CNT;
 	ull_df_rx_iq_report_alloc(UINT8_MAX);
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 	return 0;
 }
 
@@ -499,7 +499,7 @@ bool ull_df_sync_cfg_is_not_enabled(struct lll_df_sync *df_cfg)
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 void *ull_df_iq_report_alloc_peek(uint8_t count)
 {
 	if (count > MFIFO_AVAIL_COUNT_GET(iq_report_free)) {
@@ -560,9 +560,9 @@ void ull_df_rx_iq_report_alloc(uint8_t max)
 		ull_iq_report_link_inc_quota(-1);
 	}
 }
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 bool ull_df_conn_cfg_is_not_enabled(struct lll_df_conn_rx_cfg *rx_cfg)
 {
 	struct lll_df_conn_rx_params *rx_params;
@@ -582,7 +582,7 @@ bool ull_df_conn_cfg_is_not_enabled(struct lll_df_conn_rx_cfg *rx_cfg)
 
 	return !rx_params->is_enabled;
 }
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Function releases unused memory for DF advertising configuration.
@@ -1049,7 +1049,7 @@ uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /**
  * @brief Function sets CTE reception parameters for a connection.
  *
@@ -1118,7 +1118,7 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 
 	return BT_HCI_ERR_SUCCESS;
 }
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /* @brief Function enables or disables CTE request control procedure for a connection.

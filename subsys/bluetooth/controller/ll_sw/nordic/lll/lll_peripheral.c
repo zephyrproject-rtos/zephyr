@@ -101,10 +101,10 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	struct lll_df_conn_rx_params *df_rx_params;
 	struct lll_df_conn_rx_cfg *df_rx_cfg;
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	uint16_t event_counter;
@@ -213,7 +213,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 	enum radio_end_evt_delay_state end_evt_delay;
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
@@ -247,7 +247,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 	/* Use regular API for cases when:
 	 * - CTE RX is not enabled,
