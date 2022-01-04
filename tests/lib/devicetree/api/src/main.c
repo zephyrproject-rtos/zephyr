@@ -44,7 +44,7 @@
 #define TEST_ABCD1234	DT_PATH(test, gpio_abcd1234)
 #define TEST_ALIAS	DT_ALIAS(test_alias)
 #define TEST_NODELABEL	DT_NODELABEL(test_nodelabel)
-#define TEST_INST	DT_INST(0, vnd_gpio)
+#define TEST_INST	DT_INST(0, vnd_gpio_device)
 #define TEST_ARRAYS	DT_NODELABEL(test_arrays)
 #define TEST_PH	DT_NODELABEL(test_phandles)
 #define TEST_IRQ	DT_NODELABEL(test_irq)
@@ -100,7 +100,7 @@ static void test_path_props(void)
 	zassert_true(!strcmp(DT_PROP(TEST_DEADBEEF, status), "okay"), "");
 	zassert_equal(DT_PROP_LEN(TEST_DEADBEEF, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_DEADBEEF, compatible, 0),
-			     "vnd,gpio"), "");
+			     "vnd,gpio-device"), "");
 	zassert_true(DT_NODE_HAS_PROP(TEST_DEADBEEF, status), "");
 	zassert_false(DT_NODE_HAS_PROP(TEST_DEADBEEF, foobar), "");
 
@@ -113,7 +113,7 @@ static void test_path_props(void)
 	zassert_equal(DT_PROP_LEN_OR(TEST_ABCD1234, compatible, 4), 1, "");
 	zassert_equal(DT_PROP_LEN_OR(TEST_ABCD1234, invalid_property, 0), 0, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ABCD1234, compatible, 0),
-			     "vnd,gpio"), "");
+			     "vnd,gpio-device"), "");
 }
 
 static void test_alias_props(void)
@@ -127,7 +127,7 @@ static void test_alias_props(void)
 	zassert_true(!strcmp(DT_PROP(TEST_ALIAS, status), "okay"), "");
 	zassert_equal(DT_PROP_LEN(TEST_ALIAS, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ALIAS, compatible, 0),
-			     "vnd,gpio"), "");
+			     "vnd,gpio-device"), "");
 }
 
 static void test_nodelabel_props(void)
@@ -141,11 +141,11 @@ static void test_nodelabel_props(void)
 	zassert_true(!strcmp(DT_PROP(TEST_NODELABEL, status), "okay"), "");
 	zassert_equal(DT_PROP_LEN(TEST_NODELABEL, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_NODELABEL, compatible, 0),
-			     "vnd,gpio"), "");
+			     "vnd,gpio-device"), "");
 }
 
 #undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT vnd_gpio
+#define DT_DRV_COMPAT vnd_gpio_device
 static void test_inst_props(void)
 {
 	const char *label_startswith = "TEST_GPIO_";
@@ -163,7 +163,7 @@ static void test_inst_props(void)
 		     !strcmp(DT_PROP(TEST_INST, status), "disabled"), "");
 	zassert_equal(DT_PROP_LEN(TEST_INST, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_INST, compatible, 0),
-			     "vnd,gpio"), "");
+			     "vnd,gpio-device"), "");
 
 	zassert_equal(DT_INST_NODE_HAS_PROP(0, gpio_controller), 1, "");
 	zassert_equal(DT_INST_PROP(0, gpio_controller), 1, "");
@@ -172,7 +172,7 @@ static void test_inst_props(void)
 		     !strcmp(DT_PROP(TEST_INST, status), "disabled"), "");
 	zassert_equal(DT_INST_PROP_LEN(0, compatible), 1, "");
 	zassert_true(!strcmp(DT_INST_PROP_BY_IDX(0, compatible, 0),
-			     "vnd,gpio"), "");
+			     "vnd,gpio-device"), "");
 	zassert_true(!strncmp(label_startswith, DT_INST_LABEL(0),
 			      strlen(label_startswith)), "");
 }
@@ -245,11 +245,11 @@ static void test_has_alias(void)
 
 static void test_inst_checks(void)
 {
-	zassert_equal(DT_NODE_EXISTS(DT_INST(0, vnd_gpio)), 1, "");
-	zassert_equal(DT_NODE_EXISTS(DT_INST(1, vnd_gpio)), 1, "");
-	zassert_equal(DT_NODE_EXISTS(DT_INST(2, vnd_gpio)), 1, "");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(0, vnd_gpio_device)), 1, "");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(1, vnd_gpio_device)), 1, "");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(2, vnd_gpio_device)), 1, "");
 
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2, "");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio_device), 2, "");
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(xxxx), 0, "");
 }
 
@@ -268,8 +268,8 @@ static void test_has_compat(void)
 {
 	unsigned int compats;
 
-	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "");
-	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "");
+	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio_device), "");
+	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio_device), "");
 	zassert_false(DT_HAS_COMPAT_STATUS_OKAY(vnd_disabled_compat), "");
 
 	zassert_equal(TA_HAS_COMPAT(vnd_array_holder), 1, "");
@@ -1265,7 +1265,7 @@ static void test_arrays(void)
 }
 
 #undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT vnd_gpio
+#define DT_DRV_COMPAT vnd_gpio_device
 static void test_foreach_status_okay(void)
 {
 	/*
@@ -1409,9 +1409,9 @@ static int test_gpio_init(const struct device *dev)
 	return 0;
 }
 
-#define INST(num) DT_INST(num, vnd_gpio)
+#define INST(num) DT_INST(num, vnd_gpio_device)
 #undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT vnd_gpio
+#define DT_DRV_COMPAT vnd_gpio_device
 
 static const struct gpio_driver_api test_api;
 
@@ -1451,7 +1451,7 @@ static void test_devices(void)
 	int i = 0;
 	const struct device *dev_abcd;
 
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2, "");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio_device), 2, "");
 
 	devs[i] = device_get_binding(DT_LABEL(INST(0)));
 	if (devs[i]) {
