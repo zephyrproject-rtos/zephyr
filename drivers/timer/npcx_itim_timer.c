@@ -249,12 +249,12 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t current = npcx_itim_get_sys_cyc64();
+	uint64_t delta_cycle = npcx_itim_get_sys_cyc64() - cyc_sys_announced;
 
 	k_spin_unlock(&lock, key);
 
 	/* Return how many ticks elapsed since last sys_clock_announce() call */
-	return (uint32_t)((current - cyc_sys_announced) / SYS_CYCLES_PER_TICK);
+	return (uint32_t)(delta_cycle / SYS_CYCLES_PER_TICK);
 }
 
 uint32_t sys_clock_cycle_get_32(void)
