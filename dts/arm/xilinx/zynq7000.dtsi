@@ -26,12 +26,13 @@
 		ocm_low: memory@1000 {
 			compatible = "xlnx,zynq-ocm";
 			reg = <0x00001000 DT_SIZE_K(188)>;
-			zephyr,memory-region = "OCM";
+			zephyr,memory-region = "OCM_LOW";
 		};
 
 		ocm_high: memory@fffc0000 {
 			compatible = "xlnx,zynq-ocm";
 			reg = <0xFFFC0000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "OCM_HIGH";
 		};
 
 		arch_timer: timer@f8f00200 {
