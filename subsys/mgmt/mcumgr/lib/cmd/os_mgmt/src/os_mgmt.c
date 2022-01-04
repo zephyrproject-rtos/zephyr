@@ -13,12 +13,11 @@
 #include "mgmt/mgmt.h"
 #include "os_mgmt/os_mgmt.h"
 #include "os_mgmt/os_mgmt_impl.h"
-#include "os_mgmt/os_mgmt_config.h"
 
 /**
  * Command handler: os echo
  */
-#if OS_MGMT_ECHO
+#if CONFIG_OS_MGMT_ECHO
 static int
 os_mgmt_echo(struct mgmt_ctxt *ctxt)
 {
@@ -56,7 +55,7 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 }
 #endif
 
-#if OS_MGMT_TASKSTAT
+#if CONFIG_OS_MGMT_TASKSTAT
 /**
  * Encodes a single taskstat entry.
  */
@@ -149,16 +148,16 @@ os_mgmt_taskstat_read(struct mgmt_ctxt *ctxt)
 static int
 os_mgmt_reset(struct mgmt_ctxt *ctxt)
 {
-	return os_mgmt_impl_reset(OS_MGMT_RESET_MS);
+	return os_mgmt_impl_reset(CONFIG_OS_MGMT_RESET_MS);
 }
 
 static const struct mgmt_handler os_mgmt_group_handlers[] = {
-#if OS_MGMT_ECHO
+#if CONFIG_OS_MGMT_ECHO
 	[OS_MGMT_ID_ECHO] = {
 		os_mgmt_echo, os_mgmt_echo
 	},
 #endif
-#if OS_MGMT_TASKSTAT
+#if CONFIG_OS_MGMT_TASKSTAT
 	[OS_MGMT_ID_TASKSTAT] = {
 		os_mgmt_taskstat_read, NULL
 	},
