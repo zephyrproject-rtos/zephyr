@@ -1,0 +1,193 @@
+# Copyright (c) 2021 G-Technologies Sdn. Bhd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: KX022 16-Bit digital I2C Accelerometer sensor
+
+compatible: "kionix,kx022"
+
+include: i2c-device.yaml
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The INT1 pin
+
+    int-pin-1-polarity:
+      type: int
+      required: false
+      default: 1
+      enum:
+        - 0
+        - 1
+      description: |
+        Polarity of Physical Interrupt Pin 1
+        0: active low
+        1: Active high
+
+    int-pin-1-response:
+      type: int
+      required: false
+      default: 1
+      enum:
+        - 0
+        - 1
+      description: |
+        Response of Physical Interrupt Pin 1
+        0: Cleared by reading INT_REL
+        1: One pulse with a period of 50 us
+
+    full-scale:
+      type: int
+      required: false
+      default: 0
+      enum:
+        - 0
+        - 1
+        - 2
+      description: |
+        Specify the default accelerometer full-scale range.
+        An X value for the config represents a range of +/- X G. Valid values
+        are:
+        0:  +/- 2g
+        1:  +/- 4g
+        2:  +/- 8g
+
+    odr:
+      type: int
+      required: false
+      default: 2
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+      description: |
+        Specify the default accelerometer output data rate expressed in
+        samples per second (Hz).
+        0: 12.5Hz
+        1: 25Hz
+        2: 50Hz
+        3: 100Hz
+        4: 200Hz
+        5: 400Hz
+        6: 800Hz
+        7: 1600Hz
+
+    resolution:
+      type: int
+      required: false
+      default: 1
+      enum:
+        - 0
+        - 1
+      description: |
+        Related to the power of theKX022, 
+        the default setting is 16-bit resolution.
+        0: 8-bit
+        1: 16-bit    
+        
+    motion-odr:    
+      type: int
+      required: false
+      default: 5
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+      description: |
+        Specify the default accelerometer motion detect position output data rate
+        are:
+        0: 0.781Hz
+        1: 1.563Hz
+        2: 3.125Hz
+        3: 6.25Hz
+        4: 12.5hz
+        5: 25hz
+        6: 50hz
+        7: 100hz
+
+    motion-threshold:
+      type: int
+      required: false
+      default: 1
+      description: |
+        The motion threshold is calculated using Formula:
+        value/16 = ths in unit g(default : KX022_FS 2g):
+        1: 0.0625g
+        2: 0.1250g
+        3: 0.1875g
+        ++
+        (values range from 0x0 to 0xFF)
+
+    motion-detection-timer:
+      type: int
+      required: false
+      default: 6
+      description: |
+        The duration in second for motion,calculated by using this function
+        Value/ Motion Wake-up Output data rate(default:KX022_MOTION_ODR 25hz).
+        ie:
+        1: 0.04s
+        2: 0.08s
+        3: 0.12s
+        ++
+        (values range from 0x0 to 0xFF)
+
+    tilt-odr:
+      type: int
+      required: false
+      default: 2
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+      description: |
+        Specify the default accelerometer tilt position output data rate
+        are:
+        0: 1.56Hz
+        1: 6.25Hz
+        2: 12.5Hz
+        3: 50Hz
+
+    tilt-timer:
+      type: int
+      required: false
+      default: 3
+      description: |      
+        The duration in second for tilt, calculated by using this function
+        Value/ tilt Wake-up Output data rate(default:KX022_TILT_ODR 12.5hz).
+        ie:
+        1: 0.08s
+        2: 0.16s
+        3: 0.24s
+        ++        
+        (values range from 0x0 to 0xFF)
+
+    tilt-angle-ll:
+      type: int
+      required: false
+      default: 12
+      description: | 
+        The Tilt Angle High Limit value is calculated by using the formula below
+        Angle(count) = sin θ*32.
+        (values range from 0x0 to 0xFF)
+
+    tilt-angle-hl:
+      type: int
+      required: false
+      default: 42
+      description: | 
+        The Tilt Angle High Limit value is calculated by using the formula below
+        Angle(count) = sin θ*32.
+        (values range from 0x0 to 0xFF)

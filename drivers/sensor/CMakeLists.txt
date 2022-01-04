@@ -40,6 +40,7 @@ add_subdirectory_ifdef(CONFIG_IIS3DHHC		iis3dhhc)
 add_subdirectory_ifdef(CONFIG_INA23X		ina23x)
 add_subdirectory_ifdef(CONFIG_ISL29035		isl29035)
 add_subdirectory_ifdef(CONFIG_ISM330DHCX	ism330dhcx)
+add_subdirectory_ifdef(CONFIG_KX022             kx022)
 add_subdirectory_ifdef(CONFIG_LIS2DH		lis2dh)
 add_subdirectory_ifdef(CONFIG_LIS2DS12		lis2ds12)
 add_subdirectory_ifdef(CONFIG_LIS2DW12          lis2dw12)
@@ -95,7 +96,7 @@ add_subdirectory_ifdef(CONFIG_TACH_XEC		mchp_tach_xec)
 add_subdirectory_ifdef(CONFIG_ITDS		wsen_itds)
 add_subdirectory_ifdef(CONFIG_MCUX_ACMP		mcux_acmp)
 add_subdirectory_ifdef(CONFIG_TACH_NPCX		nuvoton_tach_npcx)
-
+add_subdirectory_ifdef(CONFIG_TACH_IT8XXX2	ite_tach_it8xxx2)
 if(CONFIG_USERSPACE OR CONFIG_SENSOR_SHELL OR CONFIG_SENSOR_SHELL_BATTERY)
 # The above if() is needed or else CMake would complain about
 # empty library.

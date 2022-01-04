@@ -1,0 +1,87 @@
+#Kionix KX022 3 - axis accelerometer driver
+#Copyright(c) 2021 G - Technologies Sdn.Bhd.
+#
+#SPDX - License - Identifier : Apache - 2.0
+
+menuconfig KX022
+	bool "KX022 I2C accelerometer sensor driver"
+	depends on I2C
+	help
+	  Enable driver for KX022 accelerometer sensor driver
+
+if KX022
+
+choice KX022_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config KX022_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select KX022_TRIGGER
+
+config KX022_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select KX022_TRIGGER
+
+endchoice
+
+config KX022_TRIGGER
+	bool "Trigger"
+
+config KX022_THREAD_PRIORITY
+	int "Thread priority"
+	depends on KX022_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config KX022_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on KX022_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config KX022_DIAGNOSTIC_MODE
+	bool "Use diagnostic mode"
+	help
+	  Get kx022 register value
+
+config KX022_ODR_RUNTIME
+	bool "set odr in runtime"
+	help
+	  Set odr in runtime
+
+config KX022_FS_RUNTIME
+	bool "set full-scale in runtime"
+	help
+	  Set full-scale in runtime
+
+config KX022_RES_RUNTIME
+	bool "set resolution in runtime"
+	help
+	  Set resolution in runtime
+
+config KX022_MOTION_DETECTION_TIMER_RUNTIME
+	bool "Set wake up delay time in runtime"
+	help
+	  Set wake up delay time in runtime
+
+config KX022_MOTION_DETECT_THRESHOLD_RUNTIME
+	bool "Set motion detect threshold in runtime"
+	help
+	  Set motion detect threshold in runtime
+
+config KX022_TILT_TIMER_RUNTIME
+	bool "Set tilt timer in runtime"
+	help
+	  Set tilt timer in runtime
+
+config KX022_TILT_ANGLE_LL_RUNTIME
+	bool "Set tilt angle ll in runtime"
+	help
+	  Set tilt angle ll in runtime 
+endif # KX022
