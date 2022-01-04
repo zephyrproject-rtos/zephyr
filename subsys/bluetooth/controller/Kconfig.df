@@ -97,7 +97,7 @@ config BT_CTLR_DF_CTE_RX
 
 config BT_CTLR_DF_CONN_CTE_REQ
 	bool "Enable Connection CTE Request feature"
-	depends on BT_CTLR_DF_CTE_RX && BT_CONN
+	depends on BT_CTLR_DF_CONN_CTE_RX
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Request feature
 	  in controller.
@@ -134,13 +134,13 @@ config BT_CTLR_DF_CONN_CTE_TX
 	  Enable transmission of Constant Tone Extension in
 	  direction finding connected mode.
 
-config BT_CTRL_DF_CONN_CTE_RX
+config BT_CTLR_DF_CONN_CTE_RX
 	bool "Enable Connection based CTE Receiver"
 	depends on BT_CTLR_DF_CTE_RX && BT_CONN
 	default y
 	help
-	  Enable reception and sampling of Constant Tone Extension in
-	  direction finding connected mode.
+	  Enable reception and sampling of Constant Tone Extension in direction
+	  finding connected mode.
 
 config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
 	bool "Enable sampling of CTE for PDUs with bad CRC"
