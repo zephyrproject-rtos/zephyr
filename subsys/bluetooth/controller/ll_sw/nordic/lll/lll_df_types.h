@@ -156,8 +156,6 @@ struct cte_conn_iq_report {
 struct lll_df_conn_tx_cfg {
 	uint8_t state:1;
 	uint8_t ant_sw_len:7;
-	uint8_t cte_type:2;
-	uint8_t cte_length:6; /* Length of CTE in 8us units */
 	uint8_t cte_rsp_en:1; /* CTE response is enabled */
 	uint8_t cte_types_allowed:3; /* Bitfield with allowed CTE types */
 	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
