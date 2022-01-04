@@ -158,9 +158,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	if (pdu_data_tx->cp) {
-		lll_df_conn_cte_tx_enable(&lll->df_tx_cfg);
-
 		cte_len = CTE_LEN_US(pdu_data_tx->cte_info.time);
+
+		lll_df_cte_tx_configure(pdu_data_tx->cte_info.type, pdu_data_tx->cte_info.time,
+					lll->df_tx_cfg.ant_sw_len, lll->df_tx_cfg.ant_ids);
 	} else
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 	{
