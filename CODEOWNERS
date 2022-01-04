@@ -54,6 +54,7 @@
 /soc/arm/ti_simplelink/cc13x2_cc26x2/     @bwitherspoon
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
+/soc/arm/xilinx_zynq7000/                 @ibirnbaum
 /soc/arm/xilinx_zynqmp/                   @stephanosio
 /soc/arm/renesas_rcar/                    @julien-massot
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
@@ -121,6 +122,7 @@
 /boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
 /boards/arm/nucleo_f401re/                @idlethread
 /boards/arm/nuvoton_pfm_m487/             @ssekar15
+/boards/arm/qemu_cortex_a9/               @ibirnbaum
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg @stephanosio
 /boards/arm/quick_feather/                @kowalewskijan @kgugala
