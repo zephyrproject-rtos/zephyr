@@ -12,6 +12,9 @@
 #include "smp/smp.h"
 #include "mgmt/mcumgr/smp.h"
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
+
 static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg;
 
 static void *
