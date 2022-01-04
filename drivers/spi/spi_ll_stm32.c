@@ -723,7 +723,18 @@ static int transceive_dma(const struct device *dev,
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* set request before enabling (else SPI CFG1 reg is write protected) */
+	LL_SPI_EnableDMAReq_RX(spi);
+	LL_SPI_EnableDMAReq_TX(spi);
+
 	LL_SPI_Enable(spi);
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+	}
+#else
+	LL_SPI_Enable(spi);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
@@ -743,8 +754,11 @@ static int transceive_dma(const struct device *dev,
 			break;
 		}
 
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+		/* toggle the DMA request to restart the transfer */
 		LL_SPI_EnableDMAReq_RX(spi);
 		LL_SPI_EnableDMAReq_TX(spi);
+#endif /* ! CONFIG_SOC_SERIES_STM32H7X */
 
 		ret = wait_dma_rx_tx_done(dev);
 		if (ret != 0) {
@@ -760,8 +774,11 @@ static int transceive_dma(const struct device *dev,
 		while (ll_func_spi_dma_busy(spi) == 0) {
 		}
 
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+		/* toggle the DMA transfer request */
 		LL_SPI_DisableDMAReq_TX(spi);
 		LL_SPI_DisableDMAReq_RX(spi);
+#endif /* ! CONFIG_SOC_SERIES_STM32H7X */
 
 		spi_context_update_tx(&data->ctx, 1, dma_len);
 		spi_context_update_rx(&data->ctx, 1, dma_len);
