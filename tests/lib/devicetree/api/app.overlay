@@ -111,7 +111,7 @@
 		};
 
 		disabled_gpio: gpio@0 {
-			compatible = "vnd,gpio";
+			compatible = "vnd,gpio-device";
 			gpio-controller;
 			reg = < 0x0 0x1000 >;
 			interrupts = <3 1>;
@@ -128,7 +128,7 @@
 		};
 
 		test_nodelabel: TEST_NODELABEL_ALLCAPS: test_gpio_1: gpio@deadbeef {
-			compatible = "vnd,gpio";
+			compatible = "vnd,gpio-device";
 			gpio-controller;
 			reg = < 0xdeadbeef 0x1000 >;
 			#gpio-cells = < 0x2 >;
@@ -140,7 +140,7 @@
 		};
 
 		test_gpio_2: gpio@abcd1234 {
-			compatible = "vnd,gpio";
+			compatible = "vnd,gpio-device";
 			gpio-controller;
 			reg = < 0xabcd1234 0x500 0x98765432 0xff >;
 			reg-names = "one", "two";
