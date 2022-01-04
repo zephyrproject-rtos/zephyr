@@ -2488,15 +2488,13 @@ static void sc_restore_rsp(struct bt_conn *conn,
 	}
 #endif
 
-#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
-	if (!err) {
+	if (!err && IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
 		struct gatt_sc_cfg *sc_cfg = find_sc_cfg(conn->id, &conn->le.dst);
 
 		if (sc_cfg) {
 			sc_reset(sc_cfg);
 		}
 	}
-#endif
 }
 
 static struct bt_gatt_indicate_params sc_restore_params[CONFIG_BT_MAX_CONN];
