@@ -119,6 +119,13 @@ int pm_device_action_run(const struct device *dev,
 
 		state = PM_DEVICE_STATE_OFF;
 		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		if (pm->state != PM_DEVICE_STATE_OFF) {
+			return -ENOTSUP;
+		}
+
+		state = PM_DEVICE_STATE_SUSPENDED;
+		break;
 	default:
 		return -ENOTSUP;
 	}
