@@ -838,6 +838,18 @@ static const struct spi_driver_api api_funcs = {
 	.release = spi_stm32_release,
 };
 
+static inline bool spi_stm32_is_subghzspi(const struct device *dev)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	const struct spi_stm32_config *cfg = dev->config;
+
+	return cfg->use_subghzspi_nss;
+#else
+	ARG_UNUSED(dev);
+	return false;
+#endif
+}
+
 static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
@@ -850,11 +862,13 @@ static int spi_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Configure dt provided device signals when available */
-	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		LOG_ERR("SPI pinctrl setup failed (%d)", err);
-		return err;
+	if (!spi_stm32_is_subghzspi(dev)) {
+		/* Configure dt provided device signals when available */
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			LOG_ERR("SPI pinctrl setup failed (%d)", err);
+			return err;
+		}
 	}
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
