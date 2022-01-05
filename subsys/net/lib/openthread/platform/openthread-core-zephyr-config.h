@@ -350,6 +350,17 @@
 #endif /* CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH */
 
 /**
+ * @def OPENTHREAD_CONFIG_CLI_PROMPT_ENABLE
+ *
+ * Enable CLI prompt.
+ *
+ * When enabled, the CLI will print prompt on the output after processing a command.
+ * Otherwise, no prompt is added to the output.
+ *
+ */
+#define OPENTHREAD_CONFIG_CLI_PROMPT_ENABLE 0
+
+/**
  * @def OPENTHREAD_CONFIG_IP6_MAX_EXT_UCAST_ADDRS
  *
  * The maximum number of supported IPv6 addresses allows to be externally added.
