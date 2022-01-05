@@ -51,6 +51,13 @@ config SYS_HEAP_RUNTIME_STATS
 	help
 	  Gather system heap runtime statistics.
 
+config SYS_HEAP_LISTENER
+	bool "Enable sys_heap event notifications"
+	select HEAP_LISTENER
+	help
+	  This allows application to listen for sys_heap events,
+	  such as memory allocation and de-allocation.
+
 config HEAP_LISTENER
 	bool
 	help
