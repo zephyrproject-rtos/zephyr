@@ -28,7 +28,7 @@ struct heap_listener {
 	uintptr_t heap_id;
 
 	/** Function called when the listened heap is resized */
-	void (*resize_cb)(void *old_heap_end, void *new_heap_end);
+	void (*resize_cb)(uintptr_t heap_id, void *old_heap_end, void *new_heap_end);
 };
 
 /**
@@ -86,7 +86,7 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
  *
  * Sample usage:
  * @code
- * void on_heap_resized(void *old_heap_end, void *new_heap_end)
+ * void on_heap_resized(uintptr_t heap_id, void *old_heap_end, void *new_heap_end)
  * {
  *   LOG_INF("Libc heap end moved from %p to %p", old_heap_end, new_heap_end);
  * }
