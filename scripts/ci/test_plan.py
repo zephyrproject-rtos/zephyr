@@ -331,7 +331,7 @@ if __name__ == "__main__":
         if total_tests % args.tests_per_builder != total_tests:
             nodes = nodes + 1
 
-        if nodes > 5:
+        if args.default_matrix > nodes > 5:
             nodes = args.default_matrix
 
         tp.write(f"TWISTER_TESTS={total_tests}\n")
