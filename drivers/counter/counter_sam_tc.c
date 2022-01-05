@@ -47,6 +47,7 @@ struct counter_sam_dev_cfg {
 	struct counter_config_info info;
 	Tc *regs;
 	uint32_t reg_cmr;
+	uint32_t reg_rc;
 	void (*irq_config_func)(const struct device *dev);
 	const struct soc_gpio_pin *pin_list;
 	uint8_t pin_list_size;
@@ -322,6 +323,7 @@ static int counter_sam_initialize(const struct device *dev)
 
 	/* Clock and Mode Selection */
 	tc_ch->TC_CMR = dev_cfg->reg_cmr;
+	tc_ch->TC_RC = dev_cfg->reg_rc;
 
 #ifdef TC_EMR_NODIVCLK
 	if (dev_cfg->nodivclk) {
@@ -374,6 +376,7 @@ static const struct counter_sam_dev_cfg counter_##n##_sam_config = { \
 	},							\
 	.regs = (Tc *)DT_INST_REG_ADDR(n),			\
 	.reg_cmr = COUNTER_SAM_TC_REG_CMR(n),			\
+	.reg_rc = DT_INST_PROP_OR(n, reg_rc, 0),		\
 	.irq_config_func = &counter_##n##_sam_config_func,	\
 	.pin_list = pins_tc##n,					\
 	.pin_list_size = ARRAY_SIZE(pins_tc##n),		\
