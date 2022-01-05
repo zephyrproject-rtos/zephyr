@@ -1,13 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# In order to ensure that the armlink symbol name is correctly passed to
-# gen_handles.py, we must first ensure that it is properly escaped.
-# For Python to work, the `$` must be passed as `\$` on command line.
-# In order to pass a single `\` to command line it must first be escaped, that is `\\`.
-# In ninja build files, a `$` is not accepted but must be passed as `$$`.
-# CMake, Python and Ninja combined results in `\\$$` in order to pass a sing `\$` to Python,
-# so `$$` thus becomes: `\\$$\\$$`.
-set_property(TARGET linker PROPERTY devices_start_symbol "Image\\$$\\$$device\\$$\\$$Base")
+set_property(TARGET linker PROPERTY devices_start_symbol "Image$$device$$Base")
 
 find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
