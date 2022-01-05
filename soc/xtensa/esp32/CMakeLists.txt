@@ -25,7 +25,7 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
     ${CMAKE_COMMAND} -G${CMAKE_GENERATOR}
     -S ${espidf_components_dir}/bootloader/subproject
     -B ${espidf_build_dir}/bootloader -DSDKCONFIG=${espidf_build_dir}/sdkconfig
-    -DIDF_PATH=${ESP_IDF_PATH} -DIDF_TARGET=${CONFIG_BOARD}
+    -DIDF_PATH=${ESP_IDF_PATH} -DIDF_TARGET=${CONFIG_SOC}
     -DPYTHON_DEPS_CHECKED=1
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
