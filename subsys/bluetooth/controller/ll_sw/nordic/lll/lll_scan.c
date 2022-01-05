@@ -1012,6 +1012,19 @@ static void isr_done_cleanup(void *param)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct event_done_extra *extra;
 
+	/* Generate Scan done events so that duration and max expiry is
+	 * detected in ULL.
+	 */
+	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN);
+	LL_ASSERT(extra);
+
+	/* Prevent scan events in pipeline from being scheduled if duration has
+	 * expired.
+	 */
+	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
+		lll->is_stop = 1U;
+	}
+
 	if (lll->is_aux_sched) {
 		struct node_rx_pdu *node_rx;
 
@@ -1026,19 +1039,6 @@ static void isr_done_cleanup(void *param)
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
 		ull_rx_sched();
-	}
-
-	/* Generate Scan done events so that duration and max expiry is
-	 * detected in ULL.
-	 */
-	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN);
-	LL_ASSERT(extra);
-
-	/* Prevent scan events in pipeline from being scheduled if duration has
-	 * expired.
-	 */
-	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
-		lll->is_stop = 1U;
 	}
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1095,8 +1095,23 @@ static void isr_cleanup(void *param)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct lll_scan *lll = param;
 
-	lll->is_aux_sched = 0U;
+	if (lll->is_aux_sched) {
+		struct node_rx_pdu *node_rx;
+
+		lll->is_aux_sched = 0U;
+
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+	}
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
+
 
 	lll_isr_cleanup(param);
 }
