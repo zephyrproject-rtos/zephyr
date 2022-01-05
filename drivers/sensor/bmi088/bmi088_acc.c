@@ -313,6 +313,23 @@ static int bmi088_acc_init(const struct device *dev) {
         return -EIO;
     }
 
+    int odr = to_config(dev)->odr;
+    int osr = to_config(dev)->osr;
+
+    if (odr < 0x05 || odr > 0x0c) {
+        odr = BMI088_DEFAULT_ODR;
+    }
+
+    if (osr < 0x05 || osr > 0x0c) {
+        osr = BMI088_DEFAULT_OSR;
+    }
+
+    uint8_t conf = (uint8_t) (0xff & (osr << 4 | odr));
+    if (bmi088_acc_byte_write(dev, ACC_CONF, conf) < 0) {
+        LOG_DBG("Failed to set acc's ODR and OSR to %d", conf);
+        return -EIO;
+    }
+
     uint8_t test;
     if (bmi088_acc_byte_read(dev, ACC_RANGE, &test) < 0){
         return -EIO;
@@ -337,7 +354,9 @@ static const struct sensor_driver_api bmi088_acc_api = {
 #define BMI088_ACC_DEVICE_INIT(inst) \
     static struct bmi088_acc_data bmi088_acc_data_##inst;               \
     static const struct bmi088_acc_cfg bmi088_acc_cfg_##inst = {           \
-        .bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
+        .bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),          \
+        .odr = DT_INST_PROP(inst, odr),  \
+        .osr = DT_INST_PROP(inst, osr),  \
     };                                   \
     DEVICE_DT_INST_DEFINE(inst, bmi088_acc_init, NULL,            \
                   &bmi088_acc_data_##inst, &bmi088_acc_cfg_##inst,    \

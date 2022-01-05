@@ -7,3 +7,15 @@ compatible: "bosch,bmi088-acc"
 
 include: spi-device.yaml
 
+properties:
+  osr:
+    type: int
+    required: false
+    default: 0x0A
+    description: Bandwidth of the internal low-pass filter
+  odr:
+    type: int
+    required: false
+    default: 0x08
+    description: Bandwidth of the internal low-pass filter
+
