@@ -56,6 +56,7 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 
 		shell = (const struct shell *)ctx;
 
+		z_flag_sync_mode_set(shell, true);
 		/* Reenable transport in blocking mode */
 		err = shell->iface->api->enable(shell->iface, true);
 	}
@@ -289,7 +290,7 @@ static void panic(const struct log_backend *const backend)
 	if (err == 0) {
 		shell->log_backend->control_block->state =
 						SHELL_LOG_BACKEND_PANIC;
-		z_flag_panic_mode_set(shell, true);
+		z_flag_sync_mode_set(shell, true);
 
 		/* Move to the start of next line. */
 		z_shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
