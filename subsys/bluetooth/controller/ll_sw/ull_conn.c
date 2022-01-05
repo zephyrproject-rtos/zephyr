@@ -2303,6 +2303,7 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 	}
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	ARG_UNUSED(rx);
+	ull_cp_state_set(conn, ULL_CP_DISCONNECTED);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	/* flush demux-ed Tx buffer still in ULL context */
