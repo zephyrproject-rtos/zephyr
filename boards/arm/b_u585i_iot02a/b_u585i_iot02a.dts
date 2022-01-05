@@ -89,6 +89,6 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-&iwdg1 {
+&iwdg {
 	status = "okay";
 };

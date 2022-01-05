@@ -28,6 +28,15 @@
 #define LOG_MODULE_NAME bt_mcs
 #include "common/log.h"
 
+/* TODO Media control may send a large number of notifications for a
+ * single command, so requires many buffers.
+ * (Number found by experiment.)
+ *
+ * Either find a better way of setting up the Kconfig, or serialize the
+ * notfications.
+ */
+BUILD_ASSERT(CONFIG_BT_L2CAP_TX_BUF_COUNT >= 10, "Too few L2CAP buffers");
+
 static struct media_proxy_sctrl_cbs cbs;
 
 /* Functions for reading and writing attributes, and for keeping track

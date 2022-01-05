@@ -512,8 +512,34 @@ config BUILD_OUTPUT_META
 	  Create a build meta file in the build directory containing lists of:
 	  - Zephyr: path and revision (if git repo)
 	  - Zephyr modules: name, path, and revision (if git repo)
-	  - West projects: path and revision
+	  - West:
+	    - manifest: path and revision
+	    - projects: path and revision
+	  - Workspace:
+	    - dirty: one or more repositories are marked dirty
+	    - extra: extra Zephyr modules are manually included in the build
+	    - off:   the SHA of one or more west projects are not what the manifest
+	             defined when `west update` was run the last time (`manifest-rev`).
+	             The off state is only present if a west workspace is found.
 	  File extension is .meta
+
+config BUILD_OUTPUT_META_STATE_PROPAGATE
+	bool "Propagate module and project state"
+	depends on BUILD_OUTPUT_META
+	help
+	  Propagate to state of each module to the Zephyr revision field.
+	  If west is used the state of each west project is also propagated to
+	  the Zephyr revision field.
+	  West manifest repo revision field will also
+	  be marked with the same state as the Zephyr revision.
+	  The final revision will become: <SHA>-<state1>-<state2>-<state3>...
+	  If no states are appended to the SHA it means the build is of a clean
+	  tree.
+	  - dirty: one or more repositories are marked dirty
+	  - extra: extra Zephyr modules are manually included in the build
+	  - off:   the SHA of one or more west projects are not what the manifest
+	           defined when `west update` was run the last time (`manifest-rev`).
+	           The off state is only present if a west workspace is found.
 
 endmenu
 
@@ -588,6 +614,7 @@ if BOOTLOADER_MCUBOOT
 config MCUBOOT_SIGNATURE_KEY_FILE
 	string "Path to the mcuboot signing key file"
 	default ""
+	depends on !MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	help
 	  The file contains a key pair whose public half is verified
 	  by your target's MCUboot image. The file is in PEM format.
@@ -646,6 +673,13 @@ config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	  you can use this option to pass extra options to imgtool.
 	  For example, you could set this to "--version 1.2".
 
+config MCUBOOT_GENERATE_UNSIGNED_IMAGE
+	bool "Generate unsigned binary image bootable with MCUboot"
+	help
+	  Enabling this configuration allows automatic unsigned binary image
+	  generation when MCUboot signing key is not provided,
+	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty.
+
 config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	bool "Also generate a padded, confirmed image"
 	help
@@ -661,7 +695,8 @@ endif # BOOTLOADER_MCUBOOT
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
-	depends on SOC_ESP32 || SOC_ESP32S2
+	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3) && !BOOTLOADER_MCUBOOT
+	default y
 	help
 	  This option will trigger the compilation of the ESP-IDF bootloader
 	  inside the build folder.

@@ -35,6 +35,22 @@ To run the Fixed Virtual Platform simulation tool you must download "FVP model
 for the Corstone-300 MPS3" from Arm and install it on your host PC. This board
 has been tested with version 11.12.57 (Nov  2 2020).
 
+Zephyr board options
+====================
+
+The MPS3+ AN547 is an SoC with Cortex-M55 architecture. Zephyr provides support
+for building for both Secure and Non-Secure firmware.
+
+The BOARD options are summarized below:
+
++----------------------+-----------------------------------------------+
+|   BOARD              | Description                                   |
++======================+===============================================+
+| mps3_an547           | For building Secure (or Secure-only) firmware |
++----------------------+-----------------------------------------------+
+| mps3_an547_ns        | For building Non-Secure firmware              |
++----------------------+-----------------------------------------------+
+
 Hardware
 ********
 

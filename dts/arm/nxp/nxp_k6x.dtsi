@@ -532,8 +532,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		edma0: dma-controller@40008000 {

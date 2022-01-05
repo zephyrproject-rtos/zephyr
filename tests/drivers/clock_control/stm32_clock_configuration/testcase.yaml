@@ -1,0 +1,29 @@
+tests:
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_msis_160:
+    timeout: 5
+    platform_allow: b_u585i_iot02a
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_msis_80:
+    extra_args: DTC_OVERLAY_FILE=boards/b_u585i_iot02a_pll_msi_80.overlay
+    timeout: 5
+    platform_allow: b_u585i_iot02a
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_hsi_160:
+    extra_args: DTC_OVERLAY_FILE=boards/b_u585i_iot02a_pll_hsi_160.overlay
+    platform_allow: b_u585i_iot02a
+    timeout: 5
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_hsi_40:
+    extra_args: DTC_OVERLAY_FILE=boards/b_u585i_iot02a_pll_hsi_40.overlay
+    platform_allow: b_u585i_iot02a
+    timeout: 5
+  drivers.stm32_clock_configuration.u5.sysclksrc_msis_48:
+    extra_args: DTC_OVERLAY_FILE=boards/b_u585i_iot02a_msis_48.overlay
+    platform_allow: b_u585i_iot02a
+    timeout: 5
+  drivers.stm32_clock_configuration.u5.sysclksrc_msis_24:
+    extra_args: DTC_OVERLAY_FILE=boards/b_u585i_iot02a_msis_24.overlay
+    platform_allow: b_u585i_iot02a
+    timeout: 5
+  drivers.stm32_clock_configuration.u5.sysclksrc_pll_hse_160:
+    extra_args: DTC_OVERLAY_FILE=boards/nucleo_u575zi_q_pll_hse_160.overlay
+    timeout: 5
+    platform_allow: nucleo_u575zi_q
+    build_only: true # Build only as HSE not implemened on the board

@@ -8,4 +8,4 @@ tests:
     tags: jwt
     filter: CONFIG_ENTROPY_HAS_DRIVER
     integration_platforms:
-      - frdm_k64
+      - frdm_k64f

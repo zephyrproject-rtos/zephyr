@@ -205,18 +205,20 @@ struct net_if *dsa_get_slave_port(struct net_if *iface, int slave_num)
 
 int dsa_switch_read(struct net_if *iface, uint16_t reg_addr, uint8_t *value)
 {
-	const struct device *dev = iface->if_dev->dev;
+	const struct device *dev = net_if_get_device(iface);
+	struct dsa_context *context = dev->data;
 	const struct dsa_api *api =
-		(const struct dsa_api *)dev->api;
+		(const struct dsa_api *)context->dapi;
 
 	return api->switch_read(dev, reg_addr, value);
 }
 
 int dsa_switch_write(struct net_if *iface, uint16_t reg_addr, uint8_t value)
 {
-	const struct device *dev = iface->if_dev->dev;
+	const struct device *dev = net_if_get_device(iface);
+	struct dsa_context *context = dev->data;
 	const struct dsa_api *api =
-		(const struct dsa_api *)dev->api;
+		(const struct dsa_api *)context->dapi;
 
 	return api->switch_write(dev, reg_addr, value);
 }
@@ -224,7 +226,7 @@ int dsa_switch_write(struct net_if *iface, uint16_t reg_addr, uint8_t value)
 /**
  * @brief      Write static MAC table entry
  *
- * @param      iface          Master DSA interface
+ * @param      iface          DSA interface
  * @param[in]  mac            MAC address
  * @param[in]  fw_port        The firmware port
  * @param[in]  tbl_entry_idx  Table entry index
@@ -238,9 +240,10 @@ int dsa_switch_set_mac_table_entry(struct net_if *iface,
 					uint16_t tbl_entry_idx,
 					uint16_t flags)
 {
-	const struct device *dev = iface->if_dev->dev;
+	const struct device *dev = net_if_get_device(iface);
+	struct dsa_context *context = dev->data;
 	const struct dsa_api *api =
-		(const struct dsa_api *)dev->api;
+		(const struct dsa_api *)context->dapi;
 
 	return api->switch_set_mac_table_entry(dev, mac, fw_port,
 							tbl_entry_idx, flags);
@@ -249,7 +252,7 @@ int dsa_switch_set_mac_table_entry(struct net_if *iface,
 /**
  * @brief      Read static MAC table entry
  *
- * @param      iface          Master DSA interface
+ * @param      iface          DSA interface
  * @param      buf            Buffer to receive MAC address
  * @param[in]  tbl_entry_idx  Table entry index
  *
@@ -259,9 +262,10 @@ int dsa_switch_get_mac_table_entry(struct net_if *iface,
 					uint8_t *buf,
 					uint16_t tbl_entry_idx)
 {
-	const struct device *dev = iface->if_dev->dev;
+	const struct device *dev = net_if_get_device(iface);
+	struct dsa_context *context = dev->data;
 	const struct dsa_api *api =
-		(const struct dsa_api *)dev->api;
+		(const struct dsa_api *)context->dapi;
 
 	return api->switch_get_mac_table_entry(dev, buf, tbl_entry_idx);
 }

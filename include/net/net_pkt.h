@@ -1212,6 +1212,29 @@ static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
 	return pkt->overwrite;
 }
 
+#ifdef CONFIG_NET_PKT_FILTER
+
+bool net_pkt_filter_send_ok(struct net_pkt *pkt);
+bool net_pkt_filter_recv_ok(struct net_pkt *pkt);
+
+#else
+
+static inline bool net_pkt_filter_send_ok(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return true;
+}
+
+static inline bool net_pkt_filter_recv_ok(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return true;
+}
+
+#endif /* CONFIG_NET_PKT_FILTER */
+
 /* @endcond */
 
 /**

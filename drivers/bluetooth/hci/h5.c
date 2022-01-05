@@ -415,6 +415,7 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 	uint8_t byte;
 	int ret;
 	static uint8_t hdr[4];
+	size_t buf_tailroom;
 
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
@@ -533,6 +534,14 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 					h5_reset_rx();
 					continue;
 				}
+			}
+
+			buf_tailroom = net_buf_tailroom(h5.rx_buf);
+			if (buf_tailroom < sizeof(byte)) {
+				BT_ERR("Not enough space in buffer %zu/%zu",
+				       sizeof(byte), buf_tailroom);
+				h5_reset_rx();
+				break;
 			}
 
 			net_buf_add_mem(h5.rx_buf, &byte, sizeof(byte));

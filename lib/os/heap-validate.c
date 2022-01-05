@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sys/sys_heap.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include "heap.h"
 
@@ -55,7 +56,7 @@ static inline void check_nexts(struct z_heap *h, int bidx)
 {
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
-	bool emptybit = (h->avail_buckets & (1 << bidx)) == 0;
+	bool emptybit = (h->avail_buckets & BIT(bidx)) == 0;
 	bool emptylist = b->next == 0;
 	bool empties_match = emptybit == emptylist;
 
@@ -137,7 +138,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 			set_chunk_used(h, c, true);
 		}
 
-		bool empty = (h->avail_buckets & (1 << b)) == 0;
+		bool empty = (h->avail_buckets & BIT(b)) == 0;
 		bool zero = n == 0;
 
 		if (empty != zero) {
@@ -279,7 +280,7 @@ static size_t rand_alloc_size(struct z_heap_stress_rec *sr)
 	 */
 	int scale = 4 + __builtin_clz(rand32());
 
-	return rand32() & ((1 << scale) - 1);
+	return rand32() & BIT_MASK(scale);
 }
 
 /* Returns the index of a randomly chosen block to free */

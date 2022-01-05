@@ -163,7 +163,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 	return 0;
 }
 
-USBD_CFG_DATA_DEFINE(primary, wpanusb) struct usb_cfg_data wpanusb_config = {
+USBD_DEFINE_CFG_DATA(wpanusb_config) = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &wpanusb_desc.if0,
 	.cb_usb_status = wpanusb_status_cb,

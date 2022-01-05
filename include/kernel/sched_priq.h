@@ -33,7 +33,6 @@ struct k_thread;
 
 struct k_thread *z_priq_dumb_best(sys_dlist_t *pq);
 void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread);
-void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread);
 
 struct _priq_rb {
 	struct rbtree tree;
@@ -56,8 +55,6 @@ struct _priq_mq {
 	unsigned int bitmask; /* bit 1<<i set if queues[i] is non-empty */
 };
 
-void z_priq_mq_add(struct _priq_mq *pq, struct k_thread *thread);
-void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread);
 struct k_thread *z_priq_mq_best(struct _priq_mq *pq);
 
 #endif /* ZEPHYR_INCLUDE_SCHED_PRIQ_H_ */

@@ -76,12 +76,12 @@ static inline void receive_report_error(struct isotp_recv_ctx *ctx, int err)
 	ctx->error_nr = err;
 }
 
-void receive_can_tx_isr(uint32_t err_flags, void *arg)
+void receive_can_tx_isr(int error, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
 
-	if (err_flags) {
-		LOG_ERR("Error sending FC frame (%d)", err_flags);
+	if (error != 0) {
+		LOG_ERR("Error sending FC frame (%d)", error);
 		receive_report_error(ctx, ISOTP_N_ERROR);
 		k_work_submit(&ctx->work);
 	}
@@ -723,7 +723,7 @@ static inline void send_report_error(struct isotp_send_ctx *ctx, uint32_t err)
 	ctx->error_nr = err;
 }
 
-static void send_can_tx_isr(uint32_t err_flags, void *arg)
+static void send_can_tx_isr(int error, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 
@@ -969,7 +969,7 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
 		       send_can_tx_isr, ctx);
-	if (ret == CAN_TX_OK) {
+	if (ret == 0) {
 		ctx->sn++;
 		pull_data_ctx(ctx, len);
 		ctx->bs--;
@@ -1051,7 +1051,7 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 
 			if (ret < 0) {
 				LOG_ERR("Failed to send CF");
-				send_report_error(ctx, ret == CAN_TIMEOUT ?
+				send_report_error(ctx, ret == -EAGAIN ?
 						ISOTP_N_TIMEOUT_A :
 						ISOTP_N_ERROR);
 				break;
@@ -1181,7 +1181,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		ret = send_sf(ctx);
 		ctx->state = ISOTP_TX_WAIT_FIN;
 		if (ret) {
-			return ret == CAN_TIMEOUT ?
+			return ret == -EAGAIN ?
 			       ISOTP_N_TIMEOUT_A : ISOTP_N_ERROR;
 		}
 	}

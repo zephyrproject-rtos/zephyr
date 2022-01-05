@@ -95,6 +95,6 @@ jobs:
           fi
         done
 
-        if [ ${exit} == 1 ]; then
+        if [ "${exit}" == "1" ]; then
           exit 1;
         fi

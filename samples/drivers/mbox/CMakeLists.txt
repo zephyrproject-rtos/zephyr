@@ -14,7 +14,7 @@ else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")
 endif()
 
-message(INFO " ${BOARD} compile as Main in this sample")
+message(STATUS "${BOARD} compile as Main in this sample")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(mbox_ipc)

@@ -13,6 +13,7 @@
 #include <soc/soc.h>
 #include <hal/gpio_ll.h>
 #include <esp_attr.h>
+#include <hal/rtc_io_hal.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -48,6 +49,10 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define ISR_HANDLER intr_handler_t
 #endif
 
+#ifndef SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT 0
+#endif
+
 struct gpio_esp32_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config drv_cfg;
@@ -63,6 +68,15 @@ struct gpio_esp32_data {
 	sys_slist_t cb;
 };
 
+static inline bool rtc_gpio_is_valid_gpio(uint32_t gpio_num)
+{
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+	return (gpio_num < SOC_GPIO_PIN_COUNT && rtc_io_num_map[gpio_num] >= 0);
+#else
+	return false;
+#endif
+}
+
 static inline bool gpio_pin_is_valid(uint32_t pin)
 {
 	return ((BIT(pin) & SOC_GPIO_VALID_GPIO_MASK) != 0);
@@ -73,20 +87,13 @@ static inline bool gpio_pin_is_output_capable(uint32_t pin)
 	return ((BIT(pin) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0);
 }
 
-static inline int gpio_get_pin_offset(const struct device *dev)
-{
-	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
-
-	return ((cfg->gpio_port) ? 32 : 0);
-}
-
 static int gpio_esp32_config(const struct device *dev,
 			     gpio_pin_t pin,
 			     gpio_flags_t flags)
 {
 	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
 	struct gpio_esp32_data *data = dev->data;
-	uint32_t io_pin = pin + gpio_get_pin_offset(dev);
+	uint32_t io_pin = (uint32_t) pin;
 	uint32_t key;
 	int ret = 0;
 
@@ -96,6 +103,12 @@ static int gpio_esp32_config(const struct device *dev,
 	}
 
 	key = irq_lock();
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+	if (rtc_gpio_is_valid_gpio(io_pin)) {
+		rtcio_hal_function_select(rtc_io_num_map[io_pin], RTCIO_FUNC_DIGITAL);
+	}
+#endif
 
 	/* Set pin function as GPIO */
 	ret = pinmux_pin_set(data->pinmux, io_pin, PIN_FUNC_GPIO);
@@ -142,10 +155,28 @@ static int gpio_esp32_config(const struct device *dev,
 		 */
 		switch (flags & GPIO_DS_MASK) {
 		case GPIO_DS_DFLT:
-			gpio_ll_set_drive_capability(cfg->gpio_base, io_pin, GPIO_DRIVE_CAP_3);
+			if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+				gpio_ll_set_drive_capability(cfg->gpio_base,
+						io_pin,
+						GPIO_DRIVE_CAP_3);
+			} else {
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+				rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
+						GPIO_DRIVE_CAP_3);
+#endif
+			}
 			break;
 		case GPIO_DS_ALT:
-			gpio_ll_set_drive_capability(cfg->gpio_base, io_pin, GPIO_DRIVE_CAP_0);
+			if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+				gpio_ll_set_drive_capability(cfg->gpio_base,
+						io_pin,
+						GPIO_DRIVE_CAP_0);
+			} else {
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+				rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
+						GPIO_DRIVE_CAP_0);
+#endif
+			}
 			break;
 		default:
 			ret = -EINVAL;
@@ -300,7 +331,7 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 					      enum gpio_int_trig trig)
 {
 	struct gpio_esp32_config *const cfg = DEV_CFG(port);
-	uint32_t io_pin = pin + gpio_get_pin_offset(port);
+	uint32_t io_pin = (uint32_t) pin;
 	int intr_trig_mode = convert_int_type(mode, trig);
 	uint32_t key;
 

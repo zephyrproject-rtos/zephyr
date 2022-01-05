@@ -46,6 +46,7 @@
 };
 
 &cpu0 {
+	clock-frequency = <96000000>;
 	status = "okay";
 };
 
@@ -138,4 +139,11 @@
 	status = "okay";
 	label = "I2C7";
 	port_sel = <7>;
+};
+
+&spi0 {
+	status = "okay";
+	clock-frequency = <4000000>;
+	lines = <4>;
+	chip-select = <0>;
 };

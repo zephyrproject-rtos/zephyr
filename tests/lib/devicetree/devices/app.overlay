@@ -18,7 +18,7 @@
 		test_gpio_0: gpio@0 {
 			gpio-controller;
 			#gpio-cells = <0x2>;
-			compatible = "vnd,gpio";
+			compatible = "vnd,gpio-device";
 			status = "okay";
 			reg = <0x0 0x1000>;
 			label = "TEST_GPIO_0";

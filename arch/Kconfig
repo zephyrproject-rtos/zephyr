@@ -96,6 +96,7 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	imply XIP
 	help

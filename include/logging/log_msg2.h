@@ -28,7 +28,7 @@ extern "C" {
 #define LOG_MSG2_DEBUG 0
 #define LOG_MSG2_DBG(...) IF_ENABLED(LOG_MSG2_DEBUG, (printk(__VA_ARGS__)))
 
-#if CONFIG_LOG_TIMESTAMP_64BIT
+#ifdef CONFIG_LOG_TIMESTAMP_64BIT
 typedef uint64_t log_timestamp_t;
 #else
 typedef uint32_t log_timestamp_t;
@@ -137,7 +137,7 @@ enum z_log_msg2_mode {
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
-#if CONFIG_LOG2_USE_VLA
+#ifdef CONFIG_LOG2_USE_VLA
 #define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
 	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
 	long double _ld_buf[ceiling_fraction(len, sizeof(long double))]; \
@@ -235,7 +235,7 @@ do { \
 	z_log_msg2_static_create((void *)_source, _desc, _msg->data, _data); \
 } while (0)
 
-#if CONFIG_LOG_SPEED
+#ifdef CONFIG_LOG_SPEED
 #define Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, _level, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
@@ -343,7 +343,7 @@ do { \
  *
  * @param ...  Optional string with arguments (fmt, ...). It may be empty.
  */
-#if CONFIG_LOG2_ALWAYS_RUNTIME
+#ifdef CONFIG_LOG2_ALWAYS_RUNTIME
 #define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do {\
@@ -353,7 +353,7 @@ do {\
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
-#elif CONFIG_LOG2_MODE_IMMEDIATE /* CONFIG_LOG2_ALWAYS_RUNTIME */
+#elif defined(CONFIG_LOG2_MODE_IMMEDIATE) /* CONFIG_LOG2_ALWAYS_RUNTIME */
 #define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \
@@ -496,7 +496,7 @@ static inline void z_log_msg2_runtime_create(uint8_t domain_id,
 	va_end(ap);
 }
 
-static inline bool z_log_item_is_msg(union log_msg2_generic *msg)
+static inline bool z_log_item_is_msg(const union log_msg2_generic *msg)
 {
 	return msg->generic.type == Z_LOG_MSG2_LOG;
 }
@@ -520,10 +520,10 @@ static inline uint32_t log_msg2_get_total_wlen(const struct log_msg2_desc desc)
  */
 static inline uint32_t log_msg2_generic_get_wlen(const union mpsc_pbuf_generic *item)
 {
-	union log_msg2_generic *generic_msg = (union log_msg2_generic *)item;
+	const union log_msg2_generic *generic_msg = (const union log_msg2_generic *)item;
 
 	if (z_log_item_is_msg(generic_msg)) {
-		struct log_msg2 *msg = (struct log_msg2 *)generic_msg;
+		const struct log_msg2 *msg = (const struct log_msg2 *)generic_msg;
 
 		return log_msg2_get_total_wlen(msg->hdr.desc);
 	}

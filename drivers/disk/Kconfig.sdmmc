@@ -41,6 +41,10 @@ config SDMMC_USDHC
 	  File system on a SDHC card accessed over
 	  NXP USDHC.
 
+if SDMMC_USDHC
+source "drivers/disk/Kconfig.usdhc"
+endif
+
 config SDMMC_STM32
 	bool "STM32 SDMMC driver"
 	depends on HAS_STM32CUBE

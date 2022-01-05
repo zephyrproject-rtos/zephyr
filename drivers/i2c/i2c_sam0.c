@@ -162,7 +162,7 @@ static void i2c_sam0_isr(const struct device *dev)
 		data->msg.buffer++;
 		data->msg.size--;
 	} else if (status & SERCOM_I2CM_INTFLAG_SB) {
-		if (!continue_next) {
+		if (!continue_next && (data->msg.size == 1)) {
 			/*
 			 * If this is the last byte, then prepare for an auto
 			 * NACK before doing the actual read.  This does not
@@ -175,7 +175,7 @@ static void i2c_sam0_isr(const struct device *dev)
 		data->msg.buffer++;
 		data->msg.size--;
 
-		if (!continue_next) {
+		if (!continue_next && !data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 			k_sem_give(&data->sem);
 			return;
@@ -807,8 +807,8 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	static void i2c_sam0_irq_config_##n(const struct device *dev);	\
 	I2C_SAM0_CONFIG(n);						\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &i2c_sam0_initialize,			\
+	I2C_DEVICE_DT_INST_DEFINE(n,					\
+			    i2c_sam0_initialize,			\
 			    NULL,					\
 			    &i2c_sam0_dev_data_##n,			\
 			    &i2c_sam0_dev_config_##n, POST_KERNEL,	\

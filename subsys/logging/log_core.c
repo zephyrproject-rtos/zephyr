@@ -109,6 +109,14 @@ static const struct mpsc_pbuf_buffer_config mpsc_config = {
 		MPSC_PBUF_MODE_OVERWRITE : 0
 };
 
+/* Check that default tag can fit in tag buffer. */
+COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, (),
+	(BUILD_ASSERT(sizeof(CONFIG_LOG_TAG_DEFAULT) <= CONFIG_LOG_TAG_MAX_LEN + 1,
+		      "Default string longer than tag capacity")));
+
+static char tag[CONFIG_LOG_TAG_MAX_LEN + 1] =
+	COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, ({}), (CONFIG_LOG_TAG_DEFAULT));
+
 bool log_is_strdup(const void *buf);
 static void msg_process(union log_msgs msg, bool bypass);
 
@@ -218,16 +226,17 @@ static void detect_missed_strdup(struct log_msg *msg)
 
 static void z_log_msg_post_finalize(void)
 {
-	atomic_inc(&buffered_cnt);
+	atomic_val_t cnt = atomic_inc(&buffered_cnt);
+
 	if (panic_mode) {
 		unsigned int key = irq_lock();
 		(void)log_process(false);
 		irq_unlock(key);
-	} else if (proc_tid != NULL && buffered_cnt == 1) {
+	} else if (proc_tid != NULL && cnt == 0) {
 		k_timer_start(&log_process_thread_timer,
 			K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS), K_NO_WAIT);
 	} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-		if ((buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
+		if ((cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
 		    (proc_tid != NULL)) {
 			k_timer_stop(&log_process_thread_timer);
 			k_sem_give(&log_process_thread_sem);
@@ -538,26 +547,23 @@ static log_timestamp_t default_lf_get_timestamp(void)
 void log_core_init(void)
 {
 	uint32_t freq;
+	log_timestamp_get_t _timestamp_func;
 
 	panic_mode = false;
 	dropped_cnt = 0;
 
 	/* Set default timestamp. */
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
-		timestamp_func = default_lf_get_timestamp;
+		_timestamp_func = default_lf_get_timestamp;
 		freq = 1000U;
 	} else {
-		timestamp_func = default_get_timestamp;
+		_timestamp_func = default_get_timestamp;
 		freq = sys_clock_hw_cycles_per_sec();
 	}
 
-	log_output_timestamp_freq_set(freq);
+	log_set_timestamp_func(_timestamp_func, freq);
 
 	if (IS_ENABLED(CONFIG_LOG2)) {
-		log_set_timestamp_func(default_get_timestamp,
-			IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
-				CONFIG_SYS_CLOCK_TICKS_PER_SEC :
-			sys_clock_hw_cycles_per_sec());
 		if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
 			z_log_msg2_init();
 		}
@@ -811,7 +817,9 @@ bool z_impl_log_process(bool bypass)
 
 	msg = get_msg();
 	if (msg.msg) {
-		atomic_dec(&buffered_cnt);
+		if (!bypass) {
+			atomic_dec(&buffered_cnt);
+		}
 		msg_process(msg, bypass);
 	}
 
@@ -1216,6 +1224,35 @@ void z_log_msg2_free(union log_msg2_generic *msg)
 bool z_log_msg2_pending(void)
 {
 	return mpsc_pbuf_is_pending(&log_buffer);
+}
+
+const char *z_log_get_tag(void)
+{
+	return CONFIG_LOG_TAG_MAX_LEN > 0 ? tag : NULL;
+}
+
+int log_set_tag(const char *str)
+{
+	if (CONFIG_LOG_TAG_MAX_LEN == 0) {
+		return -ENOTSUP;
+	}
+
+	if (str == NULL) {
+		return -EINVAL;
+	}
+
+	size_t len = strlen(str);
+	size_t cpy_len = MIN(len, CONFIG_LOG_TAG_MAX_LEN);
+
+	memcpy(tag, str, cpy_len);
+	tag[cpy_len] = '\0';
+
+	if (cpy_len < len) {
+		tag[cpy_len - 1] = '~';
+		return -ENOMEM;
+	}
+
+	return 0;
 }
 
 static void log_process_thread_timer_expiry_fn(struct k_timer *timer)

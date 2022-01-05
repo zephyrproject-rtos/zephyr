@@ -11,7 +11,7 @@
 #include <net/net_mgmt.h>
 #include <net/net_event.h>
 #include <net/net_conn_mgr.h>
-#include <drivers/gsm_ppp.h>
+#include <drivers/modem/gsm_ppp.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(sample_gsm_ppp, LOG_LEVEL_DBG);

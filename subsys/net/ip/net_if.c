@@ -333,6 +333,12 @@ void net_process_tx_packet(struct net_pkt *pkt)
 
 void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 {
+	if (!net_pkt_filter_send_ok(pkt)) {
+		/* silently drop the packet */
+		net_pkt_unref(pkt);
+		return;
+	}
+
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_tx_priority2tc(prio);
 

@@ -66,7 +66,15 @@ enum {
  * This flag has no impact in user-defined mount structures.
  */
 #define FS_MOUNT_FLAG_AUTOMOUNT BIT(2)
-
+/** Flag requests file system driver to use Disk Access API. When the flag is
+ * set to the fs_mount_t.flags prior to fs_mount call, a file system
+ * needs to use the Disk Access API, otherwise mount callback for the driver
+ * should return -ENOSUP; when the flag is not set the file system driver
+ * should use Flash API by default, unless it only supports Disc Access API.
+ * When file system will use Disk Access API and the flag is not set, the mount
+ * callback for the file system should set the flag on success.
+ */
+#define FS_MOUNT_FLAG_USE_DISK_ACCESS BIT(3)
 
 /**
  * @brief File system mount info structure
@@ -186,7 +194,8 @@ struct fs_statvfs {
 #define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)				\
 	((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0)	\
 	 | (DT_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0)	\
-	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0))
+	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0)  \
+	 | (DT_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
 
 /**
  * @brief The name under which a zephyr,fstab entry mount structure is
@@ -521,6 +530,8 @@ int fs_closedir(struct fs_dir_t *zdp);
  * @retval 0 on success;
  * @retval -ENOENT when file system type has not been registered;
  * @retval -ENOTSUP when not supported by underlying file system driver;
+ *         when @c FS_MOUNT_FLAG_USE_DISK_ACCESS is set but driver does not
+ *         support it.
  * @retval -EROFS if system requires formatting but @c FS_MOUNT_FLAG_READ_ONLY
  *	   has been set;
  * @retval <0 an other negative errno code on error.

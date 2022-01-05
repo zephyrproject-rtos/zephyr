@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 static const uint16_t lsm6dso_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
 					1660, 3330, 6660};
 
-#if defined(LSM6DSO_ACCEL_ODR_RUNTIME) || defined(LSM6DSO_GYRO_ODR_RUNTIME)
 static int lsm6dso_freq_to_odr_val(uint16_t freq)
 {
 	size_t i;
@@ -39,7 +38,6 @@ static int lsm6dso_freq_to_odr_val(uint16_t freq)
 
 	return -EINVAL;
 }
-#endif
 
 static int lsm6dso_odr_to_freq_val(uint16_t odr)
 {
@@ -52,7 +50,6 @@ static int lsm6dso_odr_to_freq_val(uint16_t odr)
 	return lsm6dso_odr_map[ARRAY_SIZE(lsm6dso_odr_map) - 1];
 }
 
-#ifdef LSM6DSO_ACCEL_FS_RUNTIME
 static const uint16_t lsm6dso_accel_fs_map[] = {2, 16, 4, 8};
 static const uint16_t lsm6dso_accel_fs_sens[] = {1, 8, 2, 4};
 
@@ -68,11 +65,9 @@ static int lsm6dso_accel_range_to_fs_val(int32_t range)
 
 	return -EINVAL;
 }
-#endif
 
-#ifdef LSM6DSO_GYRO_FS_RUNTIME
-static const uint16_t lsm6dso_gyro_fs_map[] = {250, 500, 1000, 2000, 125};
-static const uint16_t lsm6dso_gyro_fs_sens[] = {2, 4, 8, 16, 1};
+static const uint16_t lsm6dso_gyro_fs_map[] = {250, 125, 500, 0, 1000, 0, 2000};
+static const uint16_t lsm6dso_gyro_fs_sens[] = {2, 1, 4, 0, 8, 0, 16};
 
 static int lsm6dso_gyro_range_to_fs_val(int32_t range)
 {
@@ -86,7 +81,6 @@ static int lsm6dso_gyro_range_to_fs_val(int32_t range)
 
 	return -EINVAL;
 }
-#endif
 
 static inline int lsm6dso_reboot(const struct device *dev)
 {
@@ -157,7 +151,6 @@ static int lsm6dso_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 	return 0;
 }
 
-#ifdef LSM6DSO_ACCEL_ODR_RUNTIME
 static int lsm6dso_accel_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
@@ -174,9 +167,7 @@ static int lsm6dso_accel_odr_set(const struct device *dev, uint16_t freq)
 
 	return 0;
 }
-#endif
 
-#ifdef LSM6DSO_ACCEL_FS_RUNTIME
 static int lsm6dso_accel_range_set(const struct device *dev, int32_t range)
 {
 	int fs;
@@ -195,7 +186,6 @@ static int lsm6dso_accel_range_set(const struct device *dev, int32_t range)
 	data->acc_gain = (lsm6dso_accel_fs_sens[fs] * GAIN_UNIT_XL);
 	return 0;
 }
-#endif
 
 static int lsm6dso_accel_config(const struct device *dev,
 				enum sensor_channel chan,
@@ -203,14 +193,10 @@ static int lsm6dso_accel_config(const struct device *dev,
 				const struct sensor_value *val)
 {
 	switch (attr) {
-#ifdef LSM6DSO_ACCEL_FS_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
 		return lsm6dso_accel_range_set(dev, sensor_ms2_to_g(val));
-#endif
-#ifdef LSM6DSO_ACCEL_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return lsm6dso_accel_odr_set(dev, val->val1);
-#endif
 	default:
 		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
@@ -219,7 +205,6 @@ static int lsm6dso_accel_config(const struct device *dev,
 	return 0;
 }
 
-#ifdef LSM6DSO_GYRO_ODR_RUNTIME
 static int lsm6dso_gyro_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
@@ -236,9 +221,7 @@ static int lsm6dso_gyro_odr_set(const struct device *dev, uint16_t freq)
 
 	return 0;
 }
-#endif
 
-#ifdef LSM6DSO_GYRO_FS_RUNTIME
 static int lsm6dso_gyro_range_set(const struct device *dev, int32_t range)
 {
 	int fs;
@@ -257,7 +240,6 @@ static int lsm6dso_gyro_range_set(const struct device *dev, int32_t range)
 	data->gyro_gain = (lsm6dso_gyro_fs_sens[fs] * GAIN_UNIT_G);
 	return 0;
 }
-#endif
 
 static int lsm6dso_gyro_config(const struct device *dev,
 			       enum sensor_channel chan,
@@ -265,14 +247,10 @@ static int lsm6dso_gyro_config(const struct device *dev,
 			       const struct sensor_value *val)
 {
 	switch (attr) {
-#ifdef LSM6DSO_GYRO_FS_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
 		return lsm6dso_gyro_range_set(dev, sensor_rad_to_degrees(val));
-#endif
-#ifdef LSM6DSO_GYRO_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return lsm6dso_gyro_odr_set(dev, val->val1);
-#endif
 	default:
 		LOG_DBG("Gyro attribute not supported.");
 		return -ENOTSUP;
@@ -515,8 +493,7 @@ static int lsm6dso_gyro_channel_get(enum sensor_channel chan,
 				    struct sensor_value *val,
 				    struct lsm6dso_data *data)
 {
-	return lsm6dso_gyro_get_channel(chan, val, data,
-					LSM6DSO_DEFAULT_GYRO_SENSITIVITY);
+	return lsm6dso_gyro_get_channel(chan, val, data, data->gyro_gain);
 }
 
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
@@ -740,6 +717,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *lsm6dso = dev->data;
 	uint8_t chip_id;
+	uint8_t odr, fs;
 
 	if (lsm6dso_device_id_get(ctx, &chip_id) < 0) {
 		LOG_DBG("Failed reading chip id");
@@ -766,28 +744,62 @@ static int lsm6dso_init_chip(const struct device *dev)
 
 	k_busy_wait(100);
 
-	if (lsm6dso_accel_set_fs_raw(dev,
-				     LSM6DSO_DEFAULT_ACCEL_FULLSCALE) < 0) {
-		LOG_DBG("failed to set accelerometer full-scale");
+	/* set accel power mode */
+	LOG_DBG("accel pm is %d", cfg->accel_pm);
+	switch (cfg->accel_pm) {
+	default:
+	case 0:
+		lsm6dso_xl_power_mode_set(ctx, LSM6DSO_HIGH_PERFORMANCE_MD);
+		break;
+	case 1:
+		lsm6dso_xl_power_mode_set(ctx, LSM6DSO_LOW_NORMAL_POWER_MD);
+		break;
+	case 2:
+		lsm6dso_xl_power_mode_set(ctx, LSM6DSO_ULTRA_LOW_POWER_MD);
+		break;
+	}
+
+	fs = cfg->accel_range;
+	LOG_DBG("accel range is %d", fs);
+	if (lsm6dso_accel_set_fs_raw(dev, fs) < 0) {
+		LOG_ERR("failed to set accelerometer range %d", fs);
 		return -EIO;
 	}
-	lsm6dso->acc_gain = LSM6DSO_DEFAULT_ACCEL_SENSITIVITY;
+	lsm6dso->acc_gain = lsm6dso_accel_fs_sens[fs] * GAIN_UNIT_XL;
 
-	lsm6dso->accel_freq = lsm6dso_odr_to_freq_val(CONFIG_LSM6DSO_ACCEL_ODR);
-	if (lsm6dso_accel_set_odr_raw(dev, CONFIG_LSM6DSO_ACCEL_ODR) < 0) {
-		LOG_DBG("failed to set accelerometer sampling rate");
+	odr = cfg->accel_odr;
+	LOG_DBG("accel odr is %d", odr);
+	lsm6dso->accel_freq = lsm6dso_odr_to_freq_val(odr);
+	if (lsm6dso_accel_set_odr_raw(dev, odr) < 0) {
+		LOG_ERR("failed to set accelerometer odr %d", odr);
 		return -EIO;
 	}
 
-	if (lsm6dso_gyro_set_fs_raw(dev, LSM6DSO_DEFAULT_GYRO_FULLSCALE) < 0) {
-		LOG_DBG("failed to set gyroscope full-scale");
+	/* set gyro power mode */
+	LOG_DBG("gyro pm is %d", cfg->gyro_pm);
+	switch (cfg->gyro_pm) {
+	default:
+	case 0:
+		lsm6dso_gy_power_mode_set(ctx, LSM6DSO_GY_HIGH_PERFORMANCE);
+		break;
+	case 1:
+		lsm6dso_gy_power_mode_set(ctx, LSM6DSO_GY_NORMAL);
+		break;
+	}
+
+	fs = cfg->gyro_range;
+	LOG_DBG("gyro range is %d", fs);
+	if (lsm6dso_gyro_set_fs_raw(dev, fs) < 0) {
+		LOG_ERR("failed to set gyroscope range %d", fs);
 		return -EIO;
 	}
-	lsm6dso->gyro_gain = LSM6DSO_DEFAULT_GYRO_SENSITIVITY;
+	lsm6dso->gyro_gain = (lsm6dso_gyro_fs_sens[fs] * GAIN_UNIT_G);
 
-	lsm6dso->gyro_freq = lsm6dso_odr_to_freq_val(CONFIG_LSM6DSO_GYRO_ODR);
-	if (lsm6dso_gyro_set_odr_raw(dev, CONFIG_LSM6DSO_GYRO_ODR) < 0) {
-		LOG_DBG("failed to set gyroscope sampling rate");
+	odr = cfg->gyro_odr;
+	LOG_DBG("gyro odr is %d", odr);
+	lsm6dso->gyro_freq = lsm6dso_odr_to_freq_val(odr);
+	if (lsm6dso_gyro_set_odr_raw(dev, odr) < 0) {
+		LOG_ERR("failed to set gyroscope odr %d", odr);
 		return -EIO;
 	}
 
@@ -892,6 +904,12 @@ static int lsm6dso_init(const struct device *dev)
 					   LSM6DSO_SPI_OP,		\
 					   0),				\
 		},							\
+		.accel_pm = DT_INST_PROP(inst, accel_pm),		\
+		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
+		.accel_range = DT_INST_PROP(inst, accel_range),		\
+		.gyro_pm = DT_INST_PROP(inst, gyro_pm),			\
+		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
+		.gyro_range = DT_INST_PROP(inst, gyro_range),		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LSM6DSO_CFG_IRQ(inst)), ())			\
 	}
@@ -913,6 +931,12 @@ static int lsm6dso_init(const struct device *dev)
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
+		.accel_pm = DT_INST_PROP(inst, accel_pm),		\
+		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
+		.accel_range = DT_INST_PROP(inst, accel_range),		\
+		.gyro_pm = DT_INST_PROP(inst, gyro_pm),			\
+		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
+		.gyro_range = DT_INST_PROP(inst, gyro_range),		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LSM6DSO_CFG_IRQ(inst)), ())			\
 	}

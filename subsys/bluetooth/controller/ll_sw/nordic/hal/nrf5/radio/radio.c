@@ -122,11 +122,14 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(NRF_GPIO_CSN_CTLR, nordic_nrf_gpio),
 
 #endif	/* HAL_RADIO_FEM_IS_NRF21540 */
 
-/* The following two constants are used in nrfx_glue.h for marking these PPI
- * channels and groups as occupied and thus unavailable to other modules.
+/* CTEINLINE S0_MASK for periodic advertising PUDs. It allows to accept all types of extended
+ * advertising PDUs to have CTE included.
  */
-const uint32_t z_bt_ctlr_used_nrf_ppi_channels = HAL_USED_PPI_CHANNELS;
-const uint32_t z_bt_ctlr_used_nrf_ppi_groups   = HAL_USED_PPI_GROUPS;
+#define DF_S0_ALLOW_ALL_PER_ADV_PDU 0x0
+/* CTEINLINE S0_MASK for data channel PDUs. It points to CP bit in S0 byte to check if is it set
+ * to 0x1. In that is true then S1 byte (CTEInfo) is considered as present in a PDU.
+ */
+#define DF_S0_MASK_CP_BIT_IN_DATA_CHANNEL_PDU 0x20
 
 static radio_isr_cb_t isr_cb;
 static void           *isr_cb_param;
@@ -294,7 +297,8 @@ void radio_aa_set(uint8_t *aa)
 
 void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 {
-	uint8_t dc = flags & 0x01; /* Adv or Data channel */
+	const uint8_t pdu_type = RADIO_PKT_CONF_PDU_TYPE_GET(flags); /* Adv or Data channel */
+	uint8_t bits_s1;
 	uint32_t extra;
 	uint8_t phy;
 
@@ -304,14 +308,16 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	extra = 0U;
 
 	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
-	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) && dc) {
+	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) &&
+	    pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
 		bits_len = 5U;
+		bits_s1 = 3U;
 	}
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
 	defined(CONFIG_SOC_SERIES_NRF53X)
 	extra = 0U;
 
-	phy = (flags >> 1) & 0x07; /* phy */
+	phy = RADIO_PKT_CONF_PHY_GET(flags);
 	switch (phy) {
 	case PHY_1M:
 	default:
@@ -340,31 +346,34 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	/* To use same Data Channel PDU structure with nRF5 specific overhead
 	 * byte, include the S1 field in radio packet configuration.
 	 */
-	if (dc) {
+	if (pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
 		extra |= (RADIO_PCNF0_S1INCL_Include <<
 			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
+#if defined(CONFIG_BT_CTLR_DF)
+		if (RADIO_PKT_CONF_CTE_GET(flags) == RADIO_PKT_CONF_CTE_ENABLED) {
+			bits_s1 = 8U;
+		} else
+#endif /* CONFIG_BT_CTLR_DF */
+		{
+			bits_s1 = 0U;
+		}
+	} else {
+		bits_s1 = 0U;
 	}
 #endif /* CONFIG_SOC_COMPATIBLE_NRF52X */
 
-	NRF_RADIO->PCNF0 = (((1UL) << RADIO_PCNF0_S0LEN_Pos) &
-			    RADIO_PCNF0_S0LEN_Msk) |
-			   ((((uint32_t)bits_len) << RADIO_PCNF0_LFLEN_Pos) &
-			    RADIO_PCNF0_LFLEN_Msk) |
-			   ((((uint32_t)8-bits_len) << RADIO_PCNF0_S1LEN_Pos) &
-			    RADIO_PCNF0_S1LEN_Msk) |
-			   extra;
+	NRF_RADIO->PCNF0 =
+		(((1UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) |
+		((((uint32_t)bits_len) << RADIO_PCNF0_LFLEN_Pos) & RADIO_PCNF0_LFLEN_Msk) |
+		((((uint32_t)bits_s1) << RADIO_PCNF0_S1LEN_Pos) & RADIO_PCNF0_S1LEN_Msk) | extra;
 
 	NRF_RADIO->PCNF1 &= ~(RADIO_PCNF1_MAXLEN_Msk | RADIO_PCNF1_STATLEN_Msk |
 			      RADIO_PCNF1_BALEN_Msk | RADIO_PCNF1_ENDIAN_Msk);
-	NRF_RADIO->PCNF1 |= ((((uint32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) &
-			     RADIO_PCNF1_MAXLEN_Msk) |
-			    (((0UL) << RADIO_PCNF1_STATLEN_Pos) &
-			     RADIO_PCNF1_STATLEN_Msk) |
-			    (((3UL) << RADIO_PCNF1_BALEN_Pos) &
-			     RADIO_PCNF1_BALEN_Msk) |
-			    (((RADIO_PCNF1_ENDIAN_Little) <<
-			      RADIO_PCNF1_ENDIAN_Pos) &
-			     RADIO_PCNF1_ENDIAN_Msk);
+	NRF_RADIO->PCNF1 |=
+		((((uint32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) & RADIO_PCNF1_MAXLEN_Msk) |
+		(((0UL) << RADIO_PCNF1_STATLEN_Pos) & RADIO_PCNF1_STATLEN_Msk) |
+		(((3UL) << RADIO_PCNF1_BALEN_Pos) & RADIO_PCNF1_BALEN_Msk) |
+		(((RADIO_PCNF1_ENDIAN_Little) << RADIO_PCNF1_ENDIAN_Pos) & RADIO_PCNF1_ENDIAN_Msk);
 }
 
 void radio_pkt_rx_set(void *rx_packet)
@@ -460,7 +469,14 @@ void radio_status_reset(void)
 	 */
 	NRF_RADIO->EVENTS_READY = 0;
 	NRF_RADIO->EVENTS_END = 0;
+#if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
+	/* Clear it only for SoCs supporting DF extension */
+	NRF_RADIO->EVENTS_PHYEND = 0;
+#endif /* CONFIG_BT_CTLR_DF_SUPPORT && !CONFIG_ZTEST */
 	NRF_RADIO->EVENTS_DISABLED = 0;
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+	NRF_RADIO->EVENTS_CTEPRESENT = 0;
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
@@ -494,7 +510,7 @@ uint32_t radio_is_done(void)
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 uint32_t radio_is_done(void)
 {
-	return (NRF_RADIO->EVENTS_END != 0);
+	return (NRF_RADIO->NRF_RADIO_TXRX_END_EVENT != 0);
 }
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
@@ -555,14 +571,40 @@ void *radio_pkt_decrypt_get(void)
 #endif
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-
 static uint8_t sw_tifs_toggle;
-
+/**
+ * @brief Implementation of Radio operation software switch.
+ *
+ * In case the switch is from RX to TX or from RX to RX and CTEINLINE is enabled then PDU end event
+ * (EVENTS_PHYEND) may be delayed after actual PDU end. The delay occurs when received PDU does not
+ * include CTE. To maintain TIFS the delay must be compensated.
+ * To handle that, two timer EVENTS_COMPARE are prepared: without and without delay compensation.
+ * If EVENTS_CTEPRESENT is fired then EVENTS_COMPARE for delayed EVENTS_PHYEND event is cancelled.
+ * In other case EVENTS_COMPARE for delayed compensation will timeout first and disable group of
+ * PPIs related with the Radio operation switch.
+ * Enable of end event compensation is controller by @p end_evt_delay_en.
+ *
+ * @param dir_curr         Current direction the Radio is working: SW_SWITCH_TX or SW_SWITCH_RX
+ * @param dir_next         Next direction the Radio is preparing for: SW_SWITCH_TX or SW_SWITCH_RX
+ * @param phy_curr         PHY the Radio is working on.
+ * @param flags_curr       Flags related with current PHY, the Radio is workingo on.
+ * @param phy_next         Next PHY the Radio is preparing for.
+ * @param flags_next       Flags related with next PHY, the Radio is preparing for.
+ * @param end_evt_delay_en Enable end event delay compensation for TIFS after switch from current
+ *                         direction to next direction.
+ */
 void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t flags_curr,
-	       uint8_t phy_next, uint8_t flags_next)
+	       uint8_t phy_next, uint8_t flags_next,
+	       enum radio_end_evt_delay_state end_evt_delay_en)
 {
 	uint8_t ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(sw_tifs_toggle);
 	uint8_t cc = SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle);
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+	uint8_t phyend_delay_cc =
+		SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_EVTS_COMP(sw_tifs_toggle);
+	uint8_t radio_enable_ppi =
+		HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI(sw_tifs_toggle);
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 	uint32_t delay;
 
 	hal_radio_sw_switch_setup(cc, ppi, sw_tifs_toggle);
@@ -571,12 +613,12 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	 *       compiler should optimize out the redundant code path
 	 *       during the optimization.
 	 */
-	if (dir_next) {
+	if (dir_next == SW_SWITCH_TX) {
 		/* TX */
 
 		/* Calculate delay with respect to current and next PHY.
 		 */
-		if (dir_curr) {
+		if (dir_curr == SW_SWITCH_TX) {
 			delay = HAL_RADIO_NS2US_ROUND(
 			    hal_radio_tx_ready_delay_ns_get(phy_next,
 							    flags_next) +
@@ -596,6 +638,26 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			hal_radio_txen_on_sw_switch(ppi);
 		}
 
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+		if (dir_curr == SW_SWITCH_RX && end_evt_delay_en == END_EVT_DELAY_ENABLED &&
+		    !(phy_curr & PHY_CODED)) {
+			SW_SWITCH_TIMER->CC[phyend_delay_cc] =
+				SW_SWITCH_TIMER->CC[cc] - RADIO_EVENTS_PHYEND_DELAY_US;
+			if (delay < SW_SWITCH_TIMER->CC[cc]) {
+				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
+						 (SW_SWITCH_TIMER->CC[phyend_delay_cc] - delay));
+			} else {
+				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1);
+			}
+
+			hal_radio_sw_switch_phyend_delay_compensation_config_set(radio_enable_ppi,
+										 phyend_delay_cc);
+		} else {
+			hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi,
+										   phyend_delay_cc);
+		}
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 		uint8_t ppi_en =
@@ -603,7 +665,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		uint8_t ppi_dis =
 			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(sw_tifs_toggle);
 
-		if (!dir_curr && (phy_curr & PHY_CODED)) {
+		if (dir_curr == SW_SWITCH_RX && (phy_curr & PHY_CODED)) {
 			/* Switching to TX after RX on LE Coded PHY. */
 
 			uint8_t cc_s2 =
@@ -633,16 +695,24 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			hal_radio_sw_switch_coded_tx_config_set(ppi_en, ppi_dis,
 				cc_s2, sw_tifs_toggle);
 
-		} else {
-			/* Switching to TX after RX or from back-to-back TX on
-			 * LE 1M/2M PHY.
+		} else if (dir_curr == SW_SWITCH_RX) {
+			/* Switching to TX after RX on LE 1M/2M PHY.
+			 *
+			 * NOTE: PHYEND delay compensation and switching between Coded S2 and S8 PHY
+			 *       may not happen at once. PHYEND delay may not happen when Code PHY
+			 *       is used. Both functionalities use the same EVENTS_COMPARE channels,
+			 *       hence when PHYEND delay is applied, coded config clear may not be
+			 *       called.
+			 *
+			 * TODO: This has to be refactored. It is temporarily implemented this way
+			 *       because the code is very fragile and hard to debug.
 			 */
-			/* Software switch group's disable PPI needs to be
-			 * configured at every sw_switch() as they depend on
-			 * the actual PHYs used in TX/RX mode.
-			 */
-			hal_radio_sw_switch_coded_config_clear(ppi_en,
-				ppi_dis, cc, sw_tifs_toggle);
+			if (end_evt_delay_en != END_EVT_DELAY_ENABLED) {
+				hal_radio_sw_switch_coded_config_clear(ppi_en, ppi_dis, cc,
+								       sw_tifs_toggle);
+			}
+
+			hal_radio_sw_switch_disable_group_clear(ppi_dis, cc, sw_tifs_toggle);
 		}
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -657,6 +727,11 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 
 		hal_radio_rxen_on_sw_switch(ppi);
 
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+		hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi,
+									   phyend_delay_cc);
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 		if (1) {
@@ -667,6 +742,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 
 			hal_radio_sw_switch_coded_config_clear(ppi_en,
 				ppi_dis, cc, sw_tifs_toggle);
+			hal_radio_sw_switch_disable_group_clear(ppi_dis, cc, sw_tifs_toggle);
 		}
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -682,19 +758,22 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
 				BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) || \
-	defined(CONFIG_SOC_SERIES_NRF53X)
-	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End
-	 *       for End time capture and sw_switch DPPI channel toggling hence
-	 *       always need to capture End time. Or when using single event
-	 *       timer since the timer is cleared on Radio End, we always need
-	 *       to capture the Radio End time-stamp.
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* NOTE: For single timer configuration nRF5340 shares the DPPI channel being
+	 *       triggered by Radio End for End time capture and sw_switch DPPI channel toggling
+	 *       hence always need to capture End time. Or when using single event timer since
+	 *       the timer is cleared on Radio End, we always need to capture the Radio End
+	 *       time-stamp.
 	 */
 	hal_radio_end_time_capture_ppi_config();
 #if !defined(CONFIG_SOC_SERIES_NRF53X)
+	/* The function is not called for nRF5340 single timer configuration because
+	 * HAL_SW_SWITCH_TIMER_CLEAR_PPI is equal to HAL_RADIO_END_TIME_CAPTURE_PPI,
+	 * so channel is already enabled.
+	 */
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
 #endif /* !CONFIG_SOC_SERIES_NRF53X */
-#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	sw_tifs_toggle += 1U;
 	sw_tifs_toggle &= 1U;
@@ -708,15 +787,14 @@ void radio_switch_complete_and_rx(uint8_t phy_rx)
 			    RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
 	/* NOTE: As Tx chain delays are negligible constant values (~1 us)
 	 *	 across nRF5x radios, sw_switch assumes the 1M chain delay for
 	 *       calculations.
 	 */
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_RX, SW_SWITCH_PHY_1M, SW_SWITCH_FLAGS_DONTCARE, phy_rx,
-		  SW_SWITCH_FLAGS_DONTCARE);
+		  SW_SWITCH_FLAGS_DONTCARE, END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -728,10 +806,24 @@ void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx,
 			    RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
-	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx);
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx,
+		  END_EVT_DELAY_DISABLED);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_with_delay_compensation_and_tx(
+	uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx, uint8_t flags_tx,
+	enum radio_end_evt_delay_state end_delay_en)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_TXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx, end_delay_en);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -743,19 +835,19 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 			    RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
-	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next);
+	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
+		  END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
 void radio_switch_complete_and_disable(void)
 {
-	NRF_RADIO->SHORTS =
-	    (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
-
-#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
+#else /* CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE);
 	hal_radio_sw_switch_disable();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -860,6 +952,9 @@ void radio_tmr_status_reset(void)
 			BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
 			BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI) |
 			BIT(HAL_RADIO_END_TIME_CAPTURE_PPI) |
+#if defined(DPPI_PRESENT)
+			BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
+#endif /* DPPI_PRESENT */
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI) |
@@ -868,6 +963,9 @@ void radio_tmr_status_reset(void)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+			BIT(HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI) |
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 			BIT(HAL_TRIGGER_CRYPT_PPI));
 }
 
@@ -1123,16 +1221,19 @@ uint32_t radio_tmr_ready_restore(void)
 
 void radio_tmr_end_capture(void)
 {
-	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End
-	 *       for End time capture and sw_switch DPPI channel toggling hence
-	 *       always need to capture End time. Hence, the below code is
-	 *       present in hal_sw_switch_timer_clear_ppi_config() and
-	 *	 sw_switch().
+	/* NOTE: nRF5340 for single timer configuration shares the DPPI channel being triggered
+	 *       by Radio End for End time capture and sw_switch DPPI channel toggling hence
+	 *       always need to capture End time. Hence, the below code is present in
+	 *       hal_sw_switch_timer_clear_ppi_config() and sw_switch(). There is no need to
+	 *       configure the channel again in this function.
 	 */
-#if defined(CONFIG_BT_CTLR_TIFS_HW) || !defined(CONFIG_SOC_SERIES_NRF53X)
+#if !defined(CONFIG_SOC_SERIES_NRF53X) ||                                                          \
+	(defined(CONFIG_SOC_SERIES_NRF53X) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER))
 	hal_radio_end_time_capture_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* CONFIG_BT_CTLR_TIFS_HW || !CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_SOC_SERIES_NRF53X ||
+	* (CONFIG_SOC_SERIES_NRF53X && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 }
 
 uint32_t radio_tmr_end_get(void)
@@ -1543,6 +1644,7 @@ void radio_ar_resolve(const uint8_t *addr)
 
 }
 
+#if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 /* @brief Function configures CTE inline register to start sampling of CTE
  *        according to information parsed from CTEInfo field of received PDU.
  *
@@ -1551,12 +1653,11 @@ void radio_ar_resolve(const uint8_t *addr)
  */
 void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 {
-#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	const nrf_radio_cteinline_conf_t inline_conf = {
 		.enable = true,
 		/* Indicates whether CTEInfo is in S1 byte or not. */
 		.info_in_s1 = cte_info_in_s1,
-	/* Enable or disable switching and sampling when CRC is not OK. */
+		/* Enable or disable switching and sampling when CRC is not OK. */
 #if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
 		.err_handling = true,
 #else
@@ -1568,12 +1669,14 @@ void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 		.rx1us = NRF_RADIO_CTEINLINE_RX_MODE_2US,
 		/* Spacing between samples for 2us AoD or AoA is set to 4us. */
 		.rx2us = NRF_RADIO_CTEINLINE_RX_MODE_4US,
-		/**< S0 bit pattern to match all types of adv. PDUs */
-		.s0_pattern = 0x0,
-		/**< S0 bit mask set to don't match any bit in SO octet */
-		.s0_mask = 0x0
+		/* S0 bit pattern to match all types of adv. PDUs or CP bit in conn PDU*/
+		.s0_pattern = (cte_info_in_s1 ? DF_S0_MASK_CP_BIT_IN_DATA_CHANNEL_PDU :
+							DF_S0_ALLOW_ALL_PER_ADV_PDU),
+		/* S0 bit mask set to don't match any bit in SO octet or match CP bit in conn PDU */
+		.s0_mask = (cte_info_in_s1 ? DF_S0_MASK_CP_BIT_IN_DATA_CHANNEL_PDU :
+							DF_S0_ALLOW_ALL_PER_ADV_PDU)
 	};
 
 	nrf_radio_cteinline_configure(NRF_RADIO, &inline_conf);
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 }
+#endif /* CONFIG_BT_CTLR_DF_SUPPORT && !CONFIG_ZTEST */

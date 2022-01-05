@@ -225,7 +225,7 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 			    NULL,					\
 			    &imx_gpio_##n##_data,			\
 			    &imx_gpio_##n##_config,			\
-			    POST_KERNEL,				\
+			    PRE_KERNEL_1,				\
 			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &imx_gpio_driver_api);			\
 									\

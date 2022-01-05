@@ -10,3 +10,6 @@ int le_df_init(void);
 void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 					     struct bt_df_per_adv_sync_iq_samples_report *report,
 					     struct bt_le_per_adv_sync **per_adv_sync_to_report);
+int hci_df_prepare_connection_iq_report(struct net_buf *buf,
+					struct bt_df_conn_iq_samples_report *report,
+					struct bt_conn **conn_to_report);

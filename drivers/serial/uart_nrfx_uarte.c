@@ -853,6 +853,10 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		return -ENOTSUP;
 	}
 
+	if (data->async->rx_enabled) {
+		return -EBUSY;
+	}
+
 	data->async->rx_timeout = timeout;
 	/* Set minimum interval to 3 RTC ticks. 3 is used due to RTC limitation
 	 * which cannot set timeout for next tick. Assuming delay in processing
@@ -1979,7 +1983,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(UARTE(idx))))	       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(UARTE(idx));))	       \
 	static struct uarte_nrfx_data uarte_##idx##_data = {		       \
 		UARTE_CONFIG(idx),					       \
 		IF_ENABLED(CONFIG_UART_##idx##_ASYNC,			       \

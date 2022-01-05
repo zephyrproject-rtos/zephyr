@@ -195,8 +195,8 @@ bundled in the :ref:`Zephyr SDK <zephyr_sdk>` by installing it.
 Python
 ======
 
-A `modern Python 3 version <install-required-tools>` is required. Check what
-version you have by using ``python3 --version``.
+A :ref:`modern Python 3 version <install-required-tools>` is required. Check
+what version you have by using ``python3 --version``.
 
 If you have an older version, you will need to install a more recent Python 3.
 You can build from source, or use a backport from your distribution's package

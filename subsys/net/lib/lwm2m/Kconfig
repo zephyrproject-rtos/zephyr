@@ -23,6 +23,36 @@ config LWM2M_DTLS_SUPPORT
 	select NET_SOCKETS_SOCKOPT_TLS
 	select NET_SOCKETS_ENABLE_DTLS
 
+choice
+	prompt "LwM2M Security object version"
+	default LWM2M_SECURITY_OBJECT_VERSION_1_0
+	help
+	  Select which version of the security object should be used.
+
+config LWM2M_SECURITY_OBJECT_VERSION_1_0
+	bool "Security object version 1.0"
+
+config LWM2M_SECURITY_OBJECT_VERSION_1_1
+	bool "Security object version 1.1 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endchoice
+
+choice
+	prompt "LwM2M Server object version"
+	default LWM2M_SERVER_OBJECT_VERSION_1_0
+	help
+	  Select which version of the Server object should be used.
+
+config LWM2M_SERVER_OBJECT_VERSION_1_0
+	bool "Server object version 1.0"
+
+config LWM2M_SERVER_OBJECT_VERSION_1_1
+	bool "Server object version 1.1 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endchoice
+
 config LWM2M_DNS_SUPPORT
 	bool "Enable DNS support in the LWM2M client"
 	default y if DNS_RESOLVER
@@ -200,6 +230,16 @@ config LWM2M_SECURITY_KEY_SIZE
 	  This setting establishes the size of the key (pre-shared / public)
 	  resources in the security object instances.
 
+config LWM2M_SECURITY_DTLS_TLS_CIPHERSUITE_MAX
+	int "Maximum # of DTLS/TLS ciphersuite resource instances"
+	default 5
+	range 0 20
+	depends on LWM2M_SECURITY_OBJECT_VERSION_1_1
+	help
+	  This setting sets the maximum number of the resource instances of
+	  a security object defined in LWM2M version 1.1. Affects the resource
+	  0/X/16, where X is the object instance number.
+
 config LWM2M_SERVER_DEFAULT_PMIN
 	int "Default server record PMIN"
 	default 0
@@ -230,6 +270,22 @@ config LWM2M_CONN_MON_OBJ_SUPPORT
 	bool "Connectivity Monitoring object support"
 	help
 	  Include support for LWM2M Connectivity Monitoring Object (ID 4)
+
+choice
+	prompt "LwM2M Connectivity Monitor object version"
+	default LWM2M_CONNMON_OBJECT_VERSION_1_0
+	depends on LWM2M_CONN_MON_OBJ_SUPPORT
+	help
+	  Select Which version of the Connectivity Monitor object should be used.
+
+config LWM2M_CONNMON_OBJECT_VERSION_1_0
+	bool "Connectivity monitor object version 1.0"
+
+config LWM2M_CONNMON_OBJECT_VERSION_1_2
+	bool "Connectivity monitor object version 1.2 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endchoice
 
 config LWM2M_CONN_MON_BEARER_MAX
 	int "Maximum # of available network bearer resource instances"
@@ -263,6 +319,31 @@ config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	  Include support for pulling a file from a remote server via
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
 	  adds another UDP context and packet handling.
+
+config LWM2M_SWMGMT_OBJ_SUPPORT
+	bool "Software management object support"
+	help
+	  Include support for LWM2M Software Management Object (ID 9)
+
+config LWM2M_SWMGMT_MAX_INSTANCE_COUNT
+	int "Maximum # of object instances"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 1
+
+config LWM2M_SWMGMT_PACKAGE_NAME_LEN
+	int "Maximum size of the software management object's name string"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 64
+
+config LWM2M_SWMGMT_PACKAGE_VERSION_LEN
+	int "Maximum size of the software management object's version string"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 64
+
+config LWM2M_SWMGMT_PACKAGE_URI_LEN
+	int "Maximum size of the software management object's download URI string"
+	depends on (LWM2M_SWMGMT_OBJ_SUPPORT || LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+	default 128
 
 config LWM2M_NUM_BLOCK1_CONTEXT
 	int "Maximum # of LWM2M block1 contexts"

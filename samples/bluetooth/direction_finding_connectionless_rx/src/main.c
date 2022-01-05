@@ -13,7 +13,6 @@
 #include <sys/util.h>
 
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
 #include <bluetooth/direction.h>
 
 #define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
@@ -244,12 +243,12 @@ static void enable_cte_rx(void)
 	const struct bt_df_per_adv_sync_cte_rx_param cte_rx_params = {
 		.max_cte_count = 5,
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
-		.cte_type = BT_DF_CTE_TYPE_ALL,
+		.cte_types = BT_DF_CTE_TYPE_ALL,
 		.slot_durations = 0x2,
 		.num_ant_ids = ARRAY_SIZE(ant_patterns),
 		.ant_ids = ant_patterns,
 #else
-		.cte_type = BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US,
+		.cte_types = BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US,
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
 	};
 

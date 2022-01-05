@@ -791,8 +791,7 @@ static inline void bmi160_gyr_channel_get(const struct device *dev,
 {
 	struct bmi160_data *data = to_data(dev);
 
-	bmi160_channel_convert(chan, data->scale.gyr,
-			       data->sample.gyr, val);
+	bmi160_channel_convert(chan, data->scale.gyr, data->sample.gyr, val);
 }
 #endif
 
@@ -803,8 +802,7 @@ static inline void bmi160_acc_channel_get(const struct device *dev,
 {
 	struct bmi160_data *data = to_data(dev);
 
-	bmi160_channel_convert(chan, data->scale.acc,
-			       data->sample.acc, val);
+	bmi160_channel_convert(chan, data->scale.acc, data->sample.acc, val);
 }
 #endif
 

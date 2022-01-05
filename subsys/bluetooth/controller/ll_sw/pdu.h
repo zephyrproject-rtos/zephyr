@@ -388,7 +388,7 @@ struct pdu_cte_info {
 #else
 #error "Unsupported endianness"
 #endif
-};
+} __packed;
 
 struct pdu_adv_sync_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -809,9 +809,11 @@ struct pdu_data {
 	uint8_t nesn:1;
 	uint8_t sn:1;
 	uint8_t md:1;
-	uint8_t rfu:3;
+	uint8_t cp:1;
+	uint8_t rfu:2;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu:3;
+	uint8_t rfu:2;
+	uint8_t cp:1;
 	uint8_t md:1;
 	uint8_t sn:1;
 	uint8_t nesn:1;
@@ -824,7 +826,10 @@ struct pdu_data {
 
 #if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-	uint8_t resv:8; /* TODO: remove nRF specific code */
+	union {
+		uint8_t resv; /* TODO: remove nRF specific code */
+		struct pdu_cte_info cte_info; /* BT 5.1 Core spec. CTEInfo storage */
+	};
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 #endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
 
@@ -840,6 +845,52 @@ struct pdu_data {
 		struct profile         profile;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 	} __packed;
+} __packed;
+
+/* Generic ISO pdu, could be CIS or BIS
+ * To be used when reffering to component withouth knowing CIS or BIS type
+ */
+struct pdu_iso {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t ll_id:2;
+	uint8_t hdr_other:6;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t hdr_other:6;
+	uint8_t ll_id:2;
+#else
+#error "Unsupported endianness"
+#endif /* __BYTE_ORDER__ */
+	uint8_t length;
+	uint8_t payload[0];
+} __packed;
+
+/* ISO SDU segmentation header */
+#define PDU_ISO_SEG_HDR_SIZE 2
+#define PDU_ISO_SEG_TIMEOFFSET_SIZE 3
+
+struct pdu_iso_sdu_sh {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t sc:1;
+	uint8_t cmplt:1;
+	uint8_t rfu:6;
+
+	uint8_t length;
+	/* Note, timeoffset only available in first segment of sdu */
+	uint32_t timeoffset:24;
+	uint32_t payload:8;
+
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t rfu:6;
+	uint8_t cmplt:1;
+	uint8_t sc:1;
+
+	uint8_t length;
+	/* Note, timeoffset only available in first segment of sdu */
+	uint32_t payload:8;
+	uint32_t timeoffset:24;
+#else
+#error "Unsupported endianness"
+#endif /* __BYTE_ORDER__ */
 } __packed;
 
 struct pdu_cis {

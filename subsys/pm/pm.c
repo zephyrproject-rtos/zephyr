@@ -56,8 +56,8 @@ static int pm_suspend_devices(void)
 		 * ignore busy devices, wake up source and devices with
 		 * runtime PM enabled.
 		 */
-		if (pm_device_is_busy(dev) ||
-		    pm_device_wakeup_is_enabled(dev) ||
+		if (pm_device_is_busy(dev) || pm_device_state_is_locked(dev)
+		    || pm_device_wakeup_is_enabled(dev) ||
 		    ((dev->pm != NULL) && pm_device_runtime_is_enabled(dev))) {
 			continue;
 		}
@@ -207,14 +207,6 @@ bool pm_system_suspend(int32_t ticks)
 
 	if (ticks != K_TICKS_FOREVER) {
 		/*
-		 * Just a sanity check in case the policy manager does not
-		 * handle this error condition properly.
-		 */
-		__ASSERT(z_power_states[id].min_residency_us >=
-			z_power_states[id].exit_latency_us,
-			"min_residency_us < exit_latency_us");
-
-		/*
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
 		 */
@@ -294,7 +286,7 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 	return ret;
 }
 
-const struct pm_state_info pm_power_state_next_get(uint8_t cpu)
+struct pm_state_info pm_power_state_next_get(uint8_t cpu)
 {
 	return z_power_states[cpu];
 }

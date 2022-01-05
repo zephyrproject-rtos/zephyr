@@ -327,7 +327,7 @@ STM32_I2C_IRQ_HANDLER_DECL(name);					\
 									\
 DEFINE_TIMINGS(name)							\
 									\
-PINCTRL_DT_DEFINE(DT_NODELABEL(name))					\
+PINCTRL_DT_DEFINE(DT_NODELABEL(name));					\
 									\
 static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 	.i2c = (I2C_TypeDef *)DT_REG_ADDR(DT_NODELABEL(name)),		\
@@ -343,7 +343,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\
 									\
-DEVICE_DT_DEFINE(DT_NODELABEL(name), &i2c_stm32_init,			\
+I2C_DEVICE_DT_DEFINE(DT_NODELABEL(name), i2c_stm32_init,		\
 		    NULL, &i2c_stm32_dev_data_##name,			\
 		    &i2c_stm32_cfg_##name,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\

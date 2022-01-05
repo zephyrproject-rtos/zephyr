@@ -1650,6 +1650,9 @@ struct bt_hci_rp_le_read_ant_info {
 	uint8_t max_cte_len;
 };
 
+#define BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_ENABLE           BIT(0)
+#define BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE BIT(1)
+
 #define BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE     BT_OP(BT_OGF_LE, 0x0059)
 struct bt_hci_cp_le_set_per_adv_recv_enable {
 	uint16_t handle;

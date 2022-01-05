@@ -82,8 +82,8 @@ MEMORY
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
 
     /* Data & Instruction Tightly Coupled Memory */
-    LINKER_DT_REGION_FROM_NODE(ITCM, rw, DT_CHOSEN(zephyr_itcm))
-    LINKER_DT_REGION_FROM_NODE(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
+    LINKER_DT_REGION_FROM_NODE(DT_CHOSEN(zephyr_itcm), rw)
+    LINKER_DT_REGION_FROM_NODE(DT_CHOSEN(zephyr_dtcm), rw)
 
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
@@ -320,7 +320,7 @@ GROUP_START(ITCM)
 	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
 
 	__itcm_size = __itcm_end - __itcm_start;
-	__itcm_rom_start = LOADADDR(_ITCM_SECTION_NAME);
+	__itcm_load_start = LOADADDR(_ITCM_SECTION_NAME);
 
 GROUP_END(ITCM)
 #endif
@@ -355,7 +355,7 @@ GROUP_START(DTCM)
 
 	__dtcm_end = .;
 
-	__dtcm_data_rom_start = LOADADDR(_DTCM_DATA_SECTION_NAME);
+	__dtcm_data_load_start = LOADADDR(_DTCM_DATA_SECTION_NAME);
 
 GROUP_END(DTCM)
 #endif

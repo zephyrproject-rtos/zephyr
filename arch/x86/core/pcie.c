@@ -16,6 +16,7 @@
 #include <kernel_arch_func.h>
 #include <device.h>
 #include <drivers/pcie/msi.h>
+#include <drivers/interrupt_controller/sysapic.h>
 #endif
 
 /* PCI Express Extended Configuration Mechanism (MMIO) */
@@ -223,22 +224,6 @@ uint16_t pcie_msi_mdr(unsigned int irq,
 
 #if defined(CONFIG_INTEL_VTD_ICTL) || defined(CONFIG_PCIE_MSI_X)
 
-static inline uint32_t _read_pcie_irq_data(pcie_bdf_t bdf)
-{
-	uint32_t data;
-
-	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
-
-	pcie_conf_write(bdf, PCIE_CONF_INTR, data | PCIE_CONF_INTR_IRQ_NONE);
-
-	return data;
-}
-
-static inline void _write_pcie_irq_data(pcie_bdf_t bdf, uint32_t data)
-{
-	pcie_conf_write(bdf, PCIE_CONF_INTR, data);
-}
-
 uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				       msi_vector_t *vectors,
 				       uint8_t n_vector)
@@ -270,14 +255,7 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 		for (i = 0; i < n_vector; i++) {
-			uint32_t data;
-
-			data = _read_pcie_irq_data(vectors[i].bdf);
-
-			vectors[i].arch.irq = pcie_alloc_irq(vectors[i].bdf);
-
-			_write_pcie_irq_data(vectors[i].bdf, data);
-
+			vectors[i].arch.irq = arch_irq_allocate();
 			vectors[i].arch.vector =
 				z_x86_allocate_vector(priority, prev_vector);
 			if (vectors[i].arch.vector < 0) {
@@ -309,7 +287,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 	z_x86_irq_connect_on_vector(vector->arch.irq, vector->arch.vector,
-				    routine, parameter, flags);
+				    routine, parameter);
 
 	return true;
 }

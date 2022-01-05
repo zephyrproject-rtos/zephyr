@@ -496,9 +496,10 @@ static int start_read(const struct device *dev,
 		return err;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32G0X)
+#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
 	/*
-	 * Errata: Writing ADC_CFGR1 register while ADEN bit is set
+	 * Writing ADC_CFGR1 register while ADEN bit is set
 	 * resets RES[1:0] bitfield. We need to disable and enable adc.
 	 */
 	if (LL_ADC_IsEnabled(adc) == 1UL) {
@@ -515,7 +516,8 @@ static int start_read(const struct device *dev,
 	LL_ADC_SetResolution(adc, resolution);
 #endif
 
-#ifdef CONFIG_SOC_SERIES_STM32L0X
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
 	/*
 	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
 	 * or enabled without conversion on going : disable it, it will stop
@@ -592,7 +594,14 @@ static int start_read(const struct device *dev,
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
 	!defined(STM32F3X_ADC_V2_5) && \
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
+
+		/* we cannot calibrate the ADC while the ADC is enabled */
+		LL_ADC_Disable(adc);
+		while (LL_ADC_IsEnabled(adc) == 1UL) {
+		}
 		adc_stm32_calib(dev);
+		/* re-enable ADC after calibration */
+		LL_ADC_Enable(adc);
 #else
 		LOG_ERR("Calibration not supported");
 		return -ENOTSUP;
@@ -1043,7 +1052,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 									\
 static void adc_stm32_cfg_func_##index(void);				\
 									\
-PINCTRL_DT_INST_DEFINE(index)						\
+PINCTRL_DT_INST_DEFINE(index);						\
 									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\

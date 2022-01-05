@@ -35,17 +35,26 @@ static void get_runner(void *arg1, void *arg2, void *arg3)
 static void test_api_setup(void)
 {
 	int ret;
+	enum pm_device_state state;
 
-	/* make sure API is not usable (runtime PM disabled) */
+	/* check API always returns 0 when runtime PM is disabled */
 	ret = pm_device_runtime_get(dev);
-	zassert_equal(ret, -ENOTSUP, NULL);
+	zassert_equal(ret, 0, NULL);
 	ret = pm_device_runtime_put(dev);
-	zassert_equal(ret, -ENOTSUP, NULL);
+	zassert_equal(ret, 0, NULL);
 	ret = pm_device_runtime_put_async(dev);
-	zassert_equal(ret, -ENOTSUP, NULL);
+	zassert_equal(ret, 0, NULL);
 
 	/* enable runtime PM */
-	pm_device_runtime_enable(dev);
+	ret = pm_device_runtime_enable(dev);
+	zassert_equal(ret, 0, NULL);
+
+	(void)pm_device_state_get(dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
+
+	/* enabling again should succeed (no-op) */
+	ret = pm_device_runtime_enable(dev);
+	zassert_equal(ret, 0, NULL);
 }
 
 static void test_api_teardown(void)
@@ -190,6 +199,22 @@ static void test_api(void)
 
 	(void)pm_device_state_get(dev, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE, NULL);
+
+	/* Put operation should fail due the state be locked. */
+	ret = pm_device_runtime_disable(dev);
+	zassert_equal(ret, 0, NULL);
+
+	pm_device_state_lock(dev);
+
+	/* This operation should not succeed.  */
+	ret = pm_device_runtime_enable(dev);
+	zassert_equal(ret, -EPERM, NULL);
+
+	/* After unlock the state, enable runtime should work. */
+	pm_device_state_unlock(dev);
+
+	ret = pm_device_runtime_enable(dev);
+	zassert_equal(ret, 0, NULL);
 }
 
 void test_main(void)

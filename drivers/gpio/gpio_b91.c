@@ -561,7 +561,7 @@ static void gpio_b91_irq_connect_4(void)
 			      NULL,					    \
 			      &gpio_b91_data_##n,			    \
 			      &gpio_b91_config_##n,			    \
-			      POST_KERNEL,				    \
+			      PRE_KERNEL_1,				    \
 			      CONFIG_GPIO_INIT_PRIORITY,		    \
 			      &gpio_b91_driver_api);
 

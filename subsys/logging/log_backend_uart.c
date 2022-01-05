@@ -103,6 +103,8 @@ static void process(const struct log_backend *const backend,
 {
 	uint32_t flags = log_backend_std_get_flags();
 
+	flags |= IS_ENABLED(CONFIG_LOG_BACKEND_UART_SYST_ENABLE) ? LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY)) {
 		log_dict_output_msg2_process(&log_output_uart,
 					     &msg->log, flags);

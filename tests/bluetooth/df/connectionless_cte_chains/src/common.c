@@ -16,6 +16,7 @@
 #include "util/util.h"
 #include "util/memq.h"
 #include "util/mem.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 
@@ -374,10 +375,6 @@ void common_validate_per_adv_chain(struct ll_adv_set *adv, uint8_t pdu_count)
 		ext_hdr_flags = ULL_ADV_PDU_HDR_FIELD_AD_DATA;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
-		ext_hdr_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
-	}
-
 	common_validate_per_adv_pdu(pdu, TEST_PDU_EXT_ADV_SYNC_IND, ext_hdr_flags);
 	pdu = lll_adv_pdu_linked_next_get(pdu);
 	if (pdu_count > 1) {
@@ -394,10 +391,6 @@ void common_validate_per_adv_chain(struct ll_adv_set *adv, uint8_t pdu_count)
 				ULL_ADV_PDU_HDR_FIELD_AUX_PTR | ULL_ADV_PDU_HDR_FIELD_AD_DATA;
 		} else {
 			ext_hdr_flags = ULL_ADV_PDU_HDR_FIELD_AD_DATA;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
-			ext_hdr_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
 		}
 
 		common_validate_per_adv_pdu(pdu, TEST_PDU_EXT_ADV_CHAIN_IND, ext_hdr_flags);
@@ -440,10 +433,6 @@ void common_validate_chain_with_cte(struct ll_adv_set *adv, uint8_t cte_count,
 		ext_hdr_flags |= ULL_ADV_PDU_HDR_FIELD_AD_DATA;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
-		ext_hdr_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
-	}
-
 	common_validate_per_adv_pdu(pdu, TEST_PDU_EXT_ADV_SYNC_IND, ext_hdr_flags);
 
 	pdu_count = MAX(cte_count, ad_data_pdu_count);
@@ -466,10 +455,6 @@ void common_validate_chain_with_cte(struct ll_adv_set *adv, uint8_t cte_count,
 		}
 		if (idx < ad_data_pdu_count) {
 			ext_hdr_flags |= ULL_ADV_PDU_HDR_FIELD_AD_DATA;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
-			ext_hdr_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
 		}
 
 		common_validate_per_adv_pdu(pdu, TEST_PDU_EXT_ADV_CHAIN_IND, ext_hdr_flags);

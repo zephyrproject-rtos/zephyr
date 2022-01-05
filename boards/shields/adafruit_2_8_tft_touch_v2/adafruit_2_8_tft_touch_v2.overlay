@@ -6,18 +6,26 @@
 
 #include <dt-bindings/display/ili9xxx.h>
 
+/ {
+	chosen {
+		zephyr,display = &ili9340;
+	};
+};
+
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,	/* D10 */
 		   <&arduino_header 10 GPIO_ACTIVE_LOW>;	/* D04 */
 
 
-	ili9340@0 {
+	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
 		label = "ILI9340";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		width = <320>;
+		height = <240>;
 		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
 		rotation = <90>;
 		frmctr1 = [00 18];

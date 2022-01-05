@@ -5,14 +5,41 @@
 
 if SOC_ESP32
 
+if BOOTLOADER_MCUBOOT
+	config HAS_FLASH_LOAD_OFFSET
+		default y
+
+	config XIP
+		default y
+
+	config MCUBOOT_GENERATE_UNSIGNED_IMAGE
+		default y
+
+	config MCUBOOT_GENERATE_CONFIRMED_IMAGE
+		default y
+
+	config ROM_START_OFFSET
+		default 0x20
+endif
+
 config SOC
 	default "esp32"
 
 config IRQ_OFFLOAD_INTNUM
 	default 7
 
+if SMP
+
+config SCHED_IPI_SUPPORTED
+	default y
+
+config SCHED_CPU_MASK
+	default y
+
 config MP_NUM_CPUS
-	default 1
+	default 2
+
+endif
 
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n

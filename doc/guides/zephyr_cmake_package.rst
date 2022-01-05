@@ -389,10 +389,10 @@ Zephyr Build Configuration CMake package
 The Zephyr Build Configuration CMake package provides a possibility for a Zephyr based project to
 control Zephyr build settings in a generic way.
 
-It is similar to the use of ``.zephyrrc`` but with the possibility to automatically allow all users
-to share the build configuration through the project repository.
-But it also allows more advanced use cases than a ``.zephyrrc``-file, such as loading of additional
-CMake boilerplate code.
+It is similar to the per-user ``.zephyrrc`` file that can be used to set :ref:`env_vars`, but it
+sets CMake variables instead. It also allows you to automatically share the build configuration
+among all users through the project repository. It also allows more advanced use cases, such as loading
+of additional CMake boilerplate code.
 
 The Zephyr Build Configuration CMake package will be loaded in the Zephyr boilerplate code after
 initial properties and ``ZEPHYR_BASE`` has been defined, but before CMake code execution.

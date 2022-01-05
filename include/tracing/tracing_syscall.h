@@ -32,8 +32,8 @@
  * @brief Trace syscall exit
  * @param id Syscall ID (as defined in the generated syscall_list.h)
  * @param name Syscall name as a token (ex: k_thread_create)
- * @param ... Other parameters passed to the syscall, if the syscall has a return, the return value
- *            is the last parameter in the list
+ * @param ... Other parameters passed to the syscall, if the syscall has a
+ *            return, the return value is the last parameter in the list
  */
 #define sys_port_trace_syscall_exit(id, name, ...)
 

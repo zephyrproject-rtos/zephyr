@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017-2021, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,5 +19,9 @@
 #define IMX_CCM_UART_CLK		9
 #define IMX_CCM_CAN_CLK			10
 #define IMX_CCM_GPT_CLK			11
+#define IMX_CCM_SAI1_CLK		12
+#define IMX_CCM_SAI2_CLK		13
+#define IMX_CCM_SAI3_CLK		14
+#define IMX_CCM_PWM_CLK			15
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_H_ */

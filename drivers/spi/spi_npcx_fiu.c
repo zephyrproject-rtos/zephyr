@@ -77,6 +77,7 @@ static int spi_npcx_fiu_transceive(const struct device *dev,
 	int error = 0;
 
 	spi_context_lock(ctx, false, NULL, spi_cfg);
+	ctx->config = spi_cfg;
 
 	/*
 	 * Configure UMA lock/unlock only if tx buffer set and rx buffer set

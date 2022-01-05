@@ -636,8 +636,8 @@ static int ssd16xx_controller_init(const struct device *dev)
 
 static int ssd16xx_init(const struct device *dev)
 {
-	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *driver = dev->data;
+	const struct ssd16xx_config *config = driver->config;
 
 	LOG_DBG("");
 

@@ -35,19 +35,19 @@ zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE}
 zephyr_linker_memory(NAME IDT_LIST FLAGS wx START ${IDT_ADDR}   SIZE 2K)
 
 # TI CCFG Registers
-zephyr_linker_dts_memory(NAME FLASH_CCFG FLAGS rwx NODELABEL ti_ccfg_partition)
+zephyr_linker_dts_memory(NODELABEL ti_ccfg_partition FLAGS rwx)
 
 # Data & Instruction Tightly Coupled Memory
-zephyr_linker_dts_memory(NAME ITCM        FLAGS rw CHOSEN "zephyr,itcm")
-zephyr_linker_dts_memory(NAME DTCM        FLAGS rw CHOSEN "zephyr,dtcm")
+zephyr_linker_dts_memory(CHOSEN "zephyr,itcm"  FLAGS rw)
+zephyr_linker_dts_memory(CHOSEN "zephyr,dtcm"  FLAGS rw)
 
-zephyr_linker_dts_memory(NAME SRAM1       FLAGS rw NODELABEL sram1)
-zephyr_linker_dts_memory(NAME SRAM2       FLAGS rw NODELABEL sram2)
-zephyr_linker_dts_memory(NAME SRAM3       FLAGS rw NODELABEL sram3)
-zephyr_linker_dts_memory(NAME SRAM4       FLAGS rw NODELABEL sram4)
-zephyr_linker_dts_memory(NAME SDRAM1      FLAGS rw NODELABEL sdram1)
-zephyr_linker_dts_memory(NAME SDRAM2      FLAGS rw NODELABEL sdram2)
-zephyr_linker_dts_memory(NAME BACKUP_SRAM FLAGS rw NODELABEL backup_sram)
+zephyr_linker_dts_memory(NODELABEL sram1       FLAGS rw)
+zephyr_linker_dts_memory(NODELABEL sram2       FLAGS rw)
+zephyr_linker_dts_memory(NODELABEL sram3       FLAGS rw)
+zephyr_linker_dts_memory(NODELABEL sram4       FLAGS rw)
+zephyr_linker_dts_memory(NODELABEL sdram1      FLAGS rw)
+zephyr_linker_dts_memory(NODELABEL sdram2      FLAGS rw)
+zephyr_linker_dts_memory(NODELABEL backup_sram FLAGS rw)
 
 if(CONFIG_XIP)
   zephyr_linker_group(NAME ROM_REGION LMA FLASH)

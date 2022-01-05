@@ -309,7 +309,7 @@ static const struct gpio_driver_api gpio_rcar_driver_api = {
 			      NULL,				    \
 			      &gpio_rcar_data_##n,		    \
 			      &gpio_rcar_cfg_##n,		    \
-			      POST_KERNEL,			    \
+			      PRE_KERNEL_1,			    \
 			      CONFIG_GPIO_INIT_PRIORITY,	    \
 			      &gpio_rcar_driver_api		    \
 			      );				    \

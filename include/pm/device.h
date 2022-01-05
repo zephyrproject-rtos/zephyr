@@ -37,6 +37,10 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_WS_CAPABLE,
 	/** Indicates if the device is being used as wakeup source. */
 	PM_DEVICE_FLAG_WS_ENABLED,
+	/** Indicates if device runtime is enabled  */
+	PM_DEVICE_FLAG_RUNTIME_ENABLED,
+	/** Indicates if the device pm is locked.  */
+	PM_DEVICE_FLAG_STATE_LOCKED,
 };
 
 /** @endcond */
@@ -99,8 +103,6 @@ struct pm_device {
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
 	struct k_mutex lock;
-	/** Device pm enable flag */
-	bool enable : 1;
 	/** Device usage count */
 	uint32_t usage;
 	/** Work object for asynchronous calls */
@@ -172,7 +174,7 @@ struct pm_device {
 /**
  * Define device PM resources for the given node identifier.
  *
- * @param node_id Node identifier (DT_NODE_INVALID if not a DT device).
+ * @param node_id Node identifier (DT_INVALID_NODE if not a DT device).
  * @param dev_name Device name.
  * @param pm_action_cb PM control callback.
  */
@@ -296,6 +298,7 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @retval -EALREADY If device is already at the requested state.
  * @retval -EBUSY If device is changing its state.
  * @retval -ENOSYS If device does not support PM.
+ * @retval -EPERM If device has power state locked.
  * @retval Errno Other negative errno on failure.
  */
 __deprecated int pm_device_state_set(const struct device *dev,
@@ -327,6 +330,7 @@ int pm_device_state_get(const struct device *dev,
  * @retval -EALREADY If device is already at the requested state.
  * @retval -EBUSY If device is changing its state.
  * @retval -ENOSYS If device does not support PM.
+ * @retval -EPERM If device has power state locked.
  * @retval Errno Other negative errno on failure.
  */
 int pm_device_action_run(const struct device *dev,
@@ -407,6 +411,44 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  * @retval false If the device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
+
+/**
+ * @brief Lock current device state.
+ *
+ * This function locks the current device power state. Once
+ * locked the device power state will not be changed by
+ * system power management or device runtime power
+ * management until unlocked.
+ *
+ * @note The given device should not have device runtime enabled.
+ *
+ * @see pm_device_state_unlock
+ *
+ * @param dev Device instance.
+ */
+void pm_device_state_lock(const struct device *dev);
+
+/**
+ * @brief Unlock the current device state.
+ *
+ * Unlocks a previously locked device pm.
+ *
+ * @see pm_device_state_lock
+ *
+ * @param dev Device instance.
+ */
+void pm_device_state_unlock(const struct device *dev);
+
+/**
+ * @brief Check if the device pm is locked.
+ *
+ * @param dev Device instance.
+ *
+ * @retval true If device is locked.
+ * @retval false If device is not locked.
+ */
+bool pm_device_state_is_locked(const struct device *dev);
+
 #else
 static inline void pm_device_busy_set(const struct device *dev) {}
 static inline void pm_device_busy_clear(const struct device *dev) {}
@@ -421,6 +463,12 @@ static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
 	return false;
 }
 static inline bool pm_device_wakeup_is_capable(const struct device *dev)
+{
+	return false;
+}
+static inline void pm_device_state_lock(const struct device *dev) {}
+static inline void pm_device_state_unlock(const struct device *dev) {}
+static inline bool pm_device_state_is_locked(const struct device *dev)
 {
 	return false;
 }

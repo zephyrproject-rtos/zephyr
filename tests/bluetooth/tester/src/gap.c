@@ -953,6 +953,10 @@ static void set_io_cap(const uint8_t *data, uint16_t len)
 		cb.passkey_entry = auth_passkey_entry;
 		break;
 	case GAP_IO_CAP_DISPLAY_YESNO:
+		cb.cancel = auth_cancel;
+		cb.passkey_display = auth_passkey_display;
+		cb.passkey_confirm = auth_passkey_confirm;
+		break;
 	default:
 		LOG_WRN("Unhandled io_cap: 0x%x", cmd->io_cap);
 		status = BTP_STATUS_FAILED;

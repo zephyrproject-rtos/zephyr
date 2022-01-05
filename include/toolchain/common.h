@@ -187,6 +187,9 @@
  */
 #define Z_DECL_ALIGN(type) __aligned(__alignof(type)) type
 
+/* Check if a pointer is aligned enough for a particular data type. */
+#define IS_PTR_ALIGNED(ptr, type) ((((uintptr_t)ptr) % __alignof(type)) == 0)
+
 /**
  * @brief Iterable Sections APIs
  * @defgroup iterable_section_apis Iterable Sections APIs

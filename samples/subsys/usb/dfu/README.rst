@@ -29,7 +29,7 @@ for more details) and flashed with regular flash tools, but will need
 to be loaded at the offset of SLOT-0.
 
 Application images (such as this sample) must be signed.
-Use the ``scripts/imagetool.py`` script from the `MCUboot GitHub repo`_
+Use the ``scripts/imgtool.py`` script from the `MCUboot GitHub repo`_
 to sign the image.  (See the `Using MCUboot with Zephyr`_ documentation for
 details.)
 

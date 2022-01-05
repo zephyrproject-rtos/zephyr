@@ -4,10 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	chosen {
+		zephyr,display = &ssd1306;
+	};
+};
+
 &arduino_spi {
 	status = "okay";
 
-	ssd1306@0 {
+	ssd1306: ssd1306@0 {
 		compatible = "solomon,ssd1306fb";
 		reg = <0x0>;
 		label = "SSD1306";

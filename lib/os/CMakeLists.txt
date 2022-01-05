@@ -45,6 +45,8 @@ zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 
 zephyr_sources_ifdef(CONFIG_SHARED_MULTI_HEAP shared_multi_heap.c)
 
+zephyr_sources_ifdef(CONFIG_HEAP_LISTENER heap_listener.c)
+
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include

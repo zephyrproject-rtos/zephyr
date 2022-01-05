@@ -4,7 +4,7 @@ sample:
     name: OpenAMP example integration
 tests:
     sample.ipc.openamp:
-        platform_allow: lpcxpresso54114_m4 lpcxpresso55s69_cpu0 mps2_an521 v2m_musca v2m_musca_b1
+        platform_allow: lpcxpresso54114_m4 lpcxpresso55s69_cpu0 mps2_an521 v2m_musca_b1
         tags: ipm
         harness: console
         harness_config:

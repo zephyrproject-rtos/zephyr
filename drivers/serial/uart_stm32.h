@@ -57,7 +57,6 @@ struct uart_stm32_data {
 	uint32_t baud_rate;
 	/* clock device */
 	const struct device *clock;
-	atomic_t tx_lock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
@@ -74,6 +73,7 @@ struct uart_stm32_data {
 #endif
 #ifdef CONFIG_PM
 	bool tx_poll_stream_on;
+	bool tx_int_stream_on;
 	bool pm_constraint_on;
 #endif
 };

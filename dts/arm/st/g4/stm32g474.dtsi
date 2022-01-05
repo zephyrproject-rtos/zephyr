@@ -11,8 +11,6 @@
 		can {
 			can2: can@40006800 {
 				compatible = "st,stm32-fdcan";
-				#address-cells = <1>;
-				#size-cells = <0>;
 				reg = <0x40006800 0x400>, <0x4000A750 0x350>;
 				reg-names = "m_can", "message_ram";
 				interrupts = <86 0>, <87 0>;
@@ -23,8 +21,6 @@
 
 			can3: can@40006C00 {
 				compatible = "st,stm32-fdcan";
-				#address-cells = <1>;
-				#size-cells = <0>;
 				reg = <0x40006C00 0x400>, <0x4000AAA0 0x350>;
 				reg-names = "m_can", "message_ram";
 				interrupts = <88 0>, <89 0>;

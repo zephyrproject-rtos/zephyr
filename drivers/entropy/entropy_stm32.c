@@ -487,6 +487,18 @@ static int entropy_stm32_rng_init(const struct device *dev)
 		(clock_control_subsys_t *)&dev_cfg->pclken);
 	__ASSERT_NO_MSG(res == 0);
 
+
+#if DT_INST_NODE_HAS_PROP(0, health-test-config)
+#if DT_INST_NODE_HAS_PROP(0, health-test-magic)
+	/* Write Magic number before writing configuration
+	 * Not all stm32 series have a Magic number
+	 */
+	LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health-test-magic));
+#endif
+	/* Write RNG HTCR configuration */
+	LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health-test-config));
+#endif
+
 	LL_RNG_EnableIT(dev_data->rng);
 
 	LL_RNG_Enable(dev_data->rng);

@@ -29,6 +29,9 @@
 /* UART TX buffer count max value */
 #define UART_TX_BUF_CNT    ((uint8_t)8u)
 
+/* UART TX/RX data registers size */
+#define UART_DATA_SIZE     ((uint8_t)4u)
+
 /* Parity type */
 #define UART_PARITY_NONE   ((uint8_t)0u)
 #define UART_PARITY_EVEN   ((uint8_t)1u)
@@ -42,7 +45,7 @@
 
 /* B91 UART registers structure */
 struct uart_b91_t {
-	uint8_t data_buf[4];
+	uint8_t data_buf[UART_DATA_SIZE];
 	uint16_t clk_div;
 	uint8_t ctrl0;
 	uint8_t ctrl1;
@@ -373,6 +376,10 @@ static int uart_b91_fifo_fill(const struct device *dev,
 {
 	int i = 0;
 	volatile struct uart_b91_t *uart = GET_UART(dev);
+
+	if (size > UART_DATA_SIZE) {
+		size = UART_DATA_SIZE;
+	}
 
 	for (i = 0; i < size; i++) {
 		if (uart_b91_get_rx_bufcnt(uart) != 0) {

@@ -7,6 +7,7 @@
 #include <zephyr.h>
 #include <drivers/flash.h>
 #include <logging/log_ctrl.h>
+#include <pm/device.h>
 
 #define FLASH_DEVICE        DT_LABEL(DT_INST(0, atmel_at45))
 

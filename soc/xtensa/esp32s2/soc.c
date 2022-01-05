@@ -68,8 +68,10 @@ void __attribute__((section(".iram1"))) __start(void)
 	 * line size.
 	 * Enable data cache, so if we don't use SPIRAM, it just works.
 	 */
+#if CONFIG_ESP_SPIRAM
 	esp_config_data_cache_mode();
 	esp_rom_Cache_Enable_DCache(0);
+#endif
 
 #if !CONFIG_BOOTLOADER_ESP_IDF
 	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.

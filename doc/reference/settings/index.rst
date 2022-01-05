@@ -139,6 +139,14 @@ When storage becomes full (FCB) or consumes too much space (file system),
 the backend removes non-recent key-value pairs records and unnecessary
 key-delete records.
 
+Secure domain settings
+**********************
+Currently settings doesn't provide scheme of being secure, and non-secure
+configuration storage simultaneously for the same instance.
+It is recommended that secure domain uses its own settings instance and it might
+provide data for non-secure domain using dedicated interface if needed
+(case dependent).
+
 Example: Device Configuration
 *****************************
 

@@ -6,6 +6,7 @@
 
 #include <device.h>
 #include <pm/device.h>
+#include <pm/device_runtime.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
@@ -33,6 +34,10 @@ int pm_device_state_set(const struct device *dev,
 
 	if (pm == NULL) {
 		return -ENOSYS;
+	}
+
+	if (pm_device_state_is_locked(dev)) {
+		return -EPERM;
 	}
 
 	switch (state) {
@@ -82,6 +87,10 @@ int pm_device_action_run(const struct device *dev,
 
 	if (pm == NULL) {
 		return -ENOSYS;
+	}
+
+	if (pm_device_state_is_locked(dev)) {
+		return -EPERM;
 	}
 
 	switch (action) {
@@ -240,4 +249,34 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 
 	return atomic_test_bit(&pm->flags,
 			       PM_DEVICE_FLAG_WS_CAPABLE);
+}
+
+void pm_device_state_lock(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	if ((pm != NULL) && !pm_device_runtime_is_enabled(dev)) {
+		atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_STATE_LOCKED);
+	}
+}
+
+void pm_device_state_unlock(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	if (pm != NULL) {
+		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_STATE_LOCKED);
+	}
+}
+
+bool pm_device_state_is_locked(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	if (pm == NULL) {
+		return false;
+	}
+
+	return atomic_test_bit(&pm->flags,
+			       PM_DEVICE_FLAG_STATE_LOCKED);
 }

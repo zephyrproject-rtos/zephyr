@@ -36,11 +36,6 @@ endif()
 #     -fmacro-prefix-map=${ZEPHYR_BASE}=
 
 
-# Verify that the toolchain can compile a dummy file, if it is not we
-# won't be able to test for compatibility with certain C flags.
-zephyr_check_compiler_flag(C "" toolchain_is_ok)
-assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
-
 # In some cases the "final" things are not used at all and "_prebuilt"
 # is the last station. See "logical_target_for_zephyr_elf" below for
 # details.
@@ -1470,6 +1465,7 @@ if(CONFIG_BUILD_OUTPUT_META)
             ${ZEPHYR_MODULES_ARG}
             ${ZEPHYR_EXTRA_MODULES_ARG}
             --meta-out ${KERNEL_META_NAME}
+            $<$<BOOL:${CONFIG_BUILD_OUTPUT_META_STATE_PROPAGATE}>:--meta-state-propagate>
   )
   list(APPEND
     post_build_byproducts
@@ -1714,8 +1710,11 @@ set(build_types None Debug Release RelWithDebInfo MinSizeRel)
 
 if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
   string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_uppercase)
-
-  if(NOT (${OPTIMIZATION_FLAG} IN_LIST CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase}))
+  # The CMAKE_C_FLAGS_<build_type> is a string, so we do a regex to see if the
+  # optimization flag is present in that string.
+  # To avoid false-positive matches, the flag must either be matched first
+  # or last in string, or come after / followed by minimum a space.
+  if(NOT (CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase} MATCHES "(^| )${OPTIMIZATION_FLAG}($| )"))
     message(WARNING "
       The CMake build type was set to '${CMAKE_BUILD_TYPE}', but the optimization flag was set to '${OPTIMIZATION_FLAG}'.
       This may be intentional and the warning can be turned off by setting the CMake variable 'NO_BUILD_TYPE_WARNING'"

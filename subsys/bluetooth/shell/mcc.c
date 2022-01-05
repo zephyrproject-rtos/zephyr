@@ -100,7 +100,7 @@ static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *t
 static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
-		shell_error(ctx_shell, "Icon URL read failed (%d)", err);
+		shell_error(ctx_shell, "Track changed notification failed (%d)", err);
 		return;
 	}
 

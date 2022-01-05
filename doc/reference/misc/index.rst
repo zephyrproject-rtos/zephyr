@@ -1,7 +1,7 @@
 .. _misc_api:
 
-Miscellaneous APIs
-##################
+Miscellaneous
+#############
 
 .. comment
    not documenting

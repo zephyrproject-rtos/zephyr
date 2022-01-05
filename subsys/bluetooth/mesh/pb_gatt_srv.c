@@ -203,7 +203,7 @@ int bt_mesh_pb_gatt_disable(void)
 	bt_gatt_service_unregister(&prov_svc);
 	service_registered = false;
 
-	bt_mesh_adv_update();
+	bt_mesh_adv_gatt_update();
 
 	return 0;
 }
@@ -297,14 +297,14 @@ int bt_mesh_pb_gatt_adv_start(void)
 			ADV_SLOW_INT,
 		};
 
-		return bt_mesh_adv_start(&slow_adv_param, SYS_FOREVER_MS, prov_ad,
-					 ARRAY_SIZE(prov_ad), prov_sd, prov_sd_len);
+		return bt_mesh_adv_gatt_start(&slow_adv_param, SYS_FOREVER_MS, prov_ad,
+					      ARRAY_SIZE(prov_ad), prov_sd, prov_sd_len);
 	}
 
 	/* Advertise 60 seconds using fast interval */
-	err = bt_mesh_adv_start(&fast_adv_param, (60 * MSEC_PER_SEC),
-				prov_ad, ARRAY_SIZE(prov_ad),
-				prov_sd, prov_sd_len);
+	err = bt_mesh_adv_gatt_start(&fast_adv_param, (60 * MSEC_PER_SEC),
+				     prov_ad, ARRAY_SIZE(prov_ad),
+				     prov_sd, prov_sd_len);
 	if (!err) {
 		prov_fast_adv = false;
 	}

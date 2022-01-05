@@ -46,13 +46,14 @@
 	};
 
 	soc {
-		flexspi1: spi@400cc000 {
+		flexspi: spi@400cc000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x400cc000 0x4000>;
 			interrupts = <130 0>;
-			label = "FLEXSPI1";
+			label = "FLEXSPI";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		flexspi2: spi@400d0000 {
@@ -62,6 +63,7 @@
 			label = "FLEXSPI2";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		semc: semc0@400d4000 {
@@ -73,13 +75,13 @@
 			#size-cells = <1>;
 		};
 
-		gpt1: gpt@400ec000 {
-			compatible = "nxp,imx-gpt";
+		/* GPT1 is used for the hardware timer, not as a standard counter */
+		gpt_hw_timer: gpt@400ec000 {
+			compatible = "nxp,gpt-hw-timer";
 			reg = <0x400ec000 0x4000>;
 			interrupts = <119 0>;
-			gptfreq = <24000000>;
-			clocks = <&ccm IMX_CCM_GPT_CLK 0x40 0>;
-			label = "GPT1";
+			label = "GPT_HW_TIMER";
+			status = "disabled";
 		};
 
 		gpt2: gpt@400f0000 {
@@ -180,6 +182,14 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x40c64000 0x4000>;
 			label = "GPIO_9";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio10: gpio@40c68000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x40c68000 0x4000>;
+			label = "GPIO_10";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -471,6 +481,7 @@
 				label = "FLEXPWM1_PWM0";
 				interrupts = <125 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -480,6 +491,7 @@
 				label = "FLEXPWM1_PWM1";
 				interrupts = <126 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -489,6 +501,7 @@
 				label = "FLEXPWM1_PWM2";
 				interrupts = <127 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -498,6 +511,7 @@
 				label = "FLEXPWM1_PWM3";
 				interrupts = <128 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 		};
@@ -513,6 +527,7 @@
 				label = "FLEXPWM2_PWM0";
 				interrupts = <177 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -522,6 +537,7 @@
 				label = "FLEXPWM2_PWM1";
 				interrupts = <178 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -531,6 +547,7 @@
 				label = "FLEXPWM2_PWM2";
 				interrupts = <179 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -540,6 +557,7 @@
 				label = "FLEXPWM2_PWM3";
 				interrupts = <180 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 		};
@@ -555,6 +573,7 @@
 				label = "FLEXPWM3_PWM0";
 				interrupts = <182 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -564,6 +583,7 @@
 				label = "FLEXPWM3_PWM1";
 				interrupts = <183 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -573,6 +593,7 @@
 				label = "FLEXPWM3_PWM2";
 				interrupts = <184 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -582,6 +603,7 @@
 				label = "FLEXPWM3_PWM3";
 				interrupts = <185 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 		};
@@ -597,6 +619,7 @@
 				label = "FLEXPWM4_PWM0";
 				interrupts = <187 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -606,6 +629,7 @@
 				label = "FLEXPWM4_PWM1";
 				interrupts = <188 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -615,6 +639,7 @@
 				label = "FLEXPWM4_PWM2";
 				interrupts = <189 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 
@@ -624,6 +649,7 @@
 				label = "FLEXPWM4_PWM3";
 				interrupts = <190 0>;
 				#pwm-cells = <1>;
+				clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
 				status = "disabled";
 			};
 		};
@@ -697,13 +723,11 @@
 			interrupts = <44 0>, <45 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
-			clk-source = <2>;
+			clk-source = <0>;
 			label = "CAN_1";
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		flexcan2: can@400c8000 {
@@ -712,13 +736,11 @@
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 18>;
-			clk-source = <2>;
+			clk-source = <0>;
 			label = "CAN_2";
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		flexcan3: can@40c3c000 {
@@ -727,13 +749,11 @@
 			interrupts = <48 0>, <49 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN3_CLK 0x84 6>;
-			clk-source = <2>;
+			clk-source = <0>;
 			label = "CAN_3";
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		wdog1: wdog@40030000 {
@@ -796,4 +816,12 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <4>;
+};
+
+&systick {
+	/*
+	 * RT11xx relies by default on the GPT Timer for system clock
+	 * implementation, so the SysTick node should not be enabled.
+	 */
+	status = "disabled";
 };

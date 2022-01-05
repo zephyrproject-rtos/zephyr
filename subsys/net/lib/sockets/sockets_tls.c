@@ -918,7 +918,9 @@ static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 
 	while ((ret = mbedtls_ssl_handshake(&context->ssl)) != 0) {
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
+		    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
+		    ret == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
 			if (block) {
 				continue;
 			}
@@ -945,9 +947,20 @@ static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 				ret = -ETIMEDOUT;
 				break;
 			}
+		} else {
+			/* MbedTLS API documentation requires session to
+			 * be reset in other error cases
+			 */
+			NET_ERR("TLS handshake error: -%x", -ret);
+			ret = tls_mbedtls_reset(context);
+			if (ret == 0) {
+				ret = -ECONNABORTED;
+				break;
+			}
 		}
 
-		NET_ERR("TLS handshake error: -%x", -ret);
+		/* Avoid constant loop if tls_mbedtls_reset fails */
+		NET_ERR("TLS reset error: -%x", -ret);
 		ret = -ECONNABORTED;
 		break;
 	}

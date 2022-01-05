@@ -17,7 +17,6 @@
       "manifest": "${APPLICATION_SOURCE_DIR}/dummy_partition/tfm_dummy_partition.yaml",
       "output_path": "${TFM_BINARY_DIR}/dummy_partition",
       "tfm_partition_ipc": true,
-      "conditional": "TFM_PARTITION_DUMMY_PARTITION",
       "version_major": 0,
       "version_minor": 1,
       "linker_pattern": {

@@ -600,6 +600,17 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		}
 	}
 
+	if (net_ipv4_is_addr_bcast(net_pkt_iface(orig),
+				   (struct in_addr *)ip_hdr->dst)) {
+		/* We should not send an error to packet that
+		 * were sent to broadcast
+		 */
+		NET_DBG("Not sending error to bcast pkt from %s on proto %s",
+			log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)),
+			net_proto2str(AF_INET, ip_hdr->proto));
+		goto drop_no_pkt;
+	}
+
 	if (ip_hdr->proto == IPPROTO_UDP) {
 		copy_len = sizeof(struct net_ipv4_hdr) +
 			sizeof(struct net_udp_hdr);
@@ -635,8 +646,8 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 
 	NET_DBG("Sending ICMPv4 Error Message type %d code %d from %s to %s",
 		type, code,
-		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)),
-		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)));
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)),
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(net_pkt_iface(orig));

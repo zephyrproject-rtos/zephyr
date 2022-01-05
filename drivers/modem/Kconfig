@@ -145,5 +145,6 @@ source "drivers/modem/Kconfig.wncm14a2a"
 source "drivers/modem/Kconfig.gsm"
 
 source "drivers/modem/Kconfig.hl7800"
+source "drivers/modem/Kconfig.simcom-sim7080"
 
 endif # MODEM

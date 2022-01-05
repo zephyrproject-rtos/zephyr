@@ -714,6 +714,7 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 	struct net_if *iface = data->user_data;
 	struct net_route_nexthop *nexthop_route;
 	int count;
+	uint32_t now = k_uptime_get_32();
 
 	if (entry->iface != iface) {
 		return;
@@ -726,6 +727,8 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&entry->nexthop, nexthop_route, node) {
 		struct net_linkaddr_storage *lladdr;
+		char remaining_str[sizeof("01234567890 sec")];
+		uint32_t remaining;
 
 		if (!nexthop_route->nbr) {
 			continue;
@@ -734,13 +737,24 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 		PR("\tneighbor : %p\t", nexthop_route->nbr);
 
 		if (nexthop_route->nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
-			PR("addr : <unknown>\n");
+			PR("addr : <unknown>\t");
 		} else {
 			lladdr = net_nbr_get_lladdr(nexthop_route->nbr->idx);
 
-			PR("addr : %s\n", net_sprint_ll_addr(lladdr->addr,
+			PR("addr : %s\t", net_sprint_ll_addr(lladdr->addr,
 							     lladdr->len));
 		}
+
+		if (entry->is_infinite) {
+			snprintk(remaining_str, sizeof(remaining_str) - 1,
+				 "infinite");
+		} else {
+			remaining = net_timeout_remaining(&entry->lifetime, now);
+			snprintk(remaining_str, sizeof(remaining_str) - 1,
+				 "%u sec", remaining);
+		}
+
+		PR("lifetime : %s\n", remaining_str);
 
 		count++;
 	}

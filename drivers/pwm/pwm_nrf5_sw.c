@@ -18,7 +18,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_nrf5_sw);
 
-#define GENERATOR_NODE	DT_PHANDLE(DT_DRV_INST(0), generator)
+#define GENERATOR_NODE	DT_INST_PHANDLE(0, generator)
 #define GENERATOR_CC_NUM	DT_PROP(GENERATOR_NODE, cc_num)
 
 #if DT_NODE_HAS_COMPAT(GENERATOR_NODE, nordic_nrf_rtc)

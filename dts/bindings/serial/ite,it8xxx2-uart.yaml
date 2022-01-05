@@ -19,3 +19,8 @@ properties:
     gpios:
       type: phandle-array
       required: true
+
+    uart-dev:
+      type: phandle
+      required: true
+      description: Get the handle of the UART device

@@ -5,6 +5,7 @@ zephyr_library_sources(
   util/mem.c
   util/memq.c
   util/mayfly.c
+  util/dbuf.c
   util/util.c
   ticker/ticker.c
   ll_sw/ll_addr.c

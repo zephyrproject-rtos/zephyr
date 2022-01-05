@@ -14,9 +14,7 @@
 
 #include <soc.h>
 
-#ifndef CONFIG_SOC_INTEL_S1000
-#include <adsp/io.h>
-#else
+#ifdef CONFIG_SOC_INTEL_S1000
 #include <soc/shim.h>
 #endif
 

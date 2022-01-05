@@ -43,6 +43,7 @@ _names = [
     'openocd',
     'pyocd',
     'qemu',
+    'spi_burn',
     'stm32cubeprogrammer',
     'stm32flash',
     'xtensa',

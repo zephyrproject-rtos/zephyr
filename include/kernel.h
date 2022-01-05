@@ -1288,6 +1288,7 @@ struct k_timer {
 	/* user-specific data, also used to support legacy features */
 	void *user_data;
 
+	SYS_PORT_TRACING_TRACKING_FIELD(k_timer)
 };
 
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
@@ -1670,6 +1671,8 @@ struct k_queue {
 	_wait_q_t wait_q;
 
 	_POLL_EVENT;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_queue)
 };
 
 #define Z_QUEUE_INITIALIZER(obj) \
@@ -2548,6 +2551,8 @@ struct k_stack {
 	stack_data_t *base, *next, *top;
 
 	uint8_t flags;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_stack)
 };
 
 #define Z_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
@@ -2705,6 +2710,8 @@ struct k_mutex {
 
 	/** Original thread priority */
 	int owner_orig_prio;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_mutex)
 };
 
 /**
@@ -2887,6 +2894,8 @@ struct k_sem {
 	unsigned int limit;
 
 	_POLL_EVENT;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_sem)
 
 };
 
@@ -4328,6 +4337,8 @@ struct k_msgq {
 
 	/** Message queue */
 	uint8_t flags;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_msgq)
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -4617,6 +4628,7 @@ struct k_mbox {
 	_wait_q_t rx_msg_queue;
 	struct k_spinlock lock;
 
+	SYS_PORT_TRACING_TRACKING_FIELD(k_mbox)
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -4756,6 +4768,8 @@ struct k_pipe {
 	} wait_q;			/** Wait queue */
 
 	uint8_t	       flags;		/**< Flags */
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
 };
 
 /**
@@ -4929,6 +4943,7 @@ struct k_mem_slab {
 	uint32_t max_used;
 #endif
 
+	SYS_PORT_TRACING_TRACKING_FIELD(k_mem_slab)
 };
 
 #define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \

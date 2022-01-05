@@ -545,43 +545,6 @@
 #define GPCR_PORT_PIN_MODE_PULLUP   BIT(2)
 #define GPCR_PORT_PIN_MODE_PULLDOWN BIT(1)
 
-/**
- *
- * (17XXh) PS/2 Interface Register
- *
- */
-#define PSCTL1			ECREG(EC_REG_BASE_ADDR + 0x1700)
-#define PSCTL2			ECREG(EC_REG_BASE_ADDR + 0x1701)
-#define PSCTL3			ECREG(EC_REG_BASE_ADDR + 0x1702)
-#define PSINT1			ECREG(EC_REG_BASE_ADDR + 0x1704)
-#define PSINT2			ECREG(EC_REG_BASE_ADDR + 0x1705)
-#define PSINT3			ECREG(EC_REG_BASE_ADDR + 0x1706)
-#define PSSTS1			ECREG(EC_REG_BASE_ADDR + 0x1708)
-#define PSSTS2			ECREG(EC_REG_BASE_ADDR + 0x1709)
-#define PSSTS3			ECREG(EC_REG_BASE_ADDR + 0x170A)
-#define PSDAT1			ECREG(EC_REG_BASE_ADDR + 0x170C)
-#define PSDAT2			ECREG(EC_REG_BASE_ADDR + 0x170D)
-#define PSDAT3			ECREG(EC_REG_BASE_ADDR + 0x170E)
-
-/* PS/2 Control Register */
-#define DCEN			BIT(4)
-#define TRMS			BIT(3)
-#define PSHE			BIT(2)
-#define CCLK			BIT(1)
-#define CDAT			BIT(0)
-
-/* PS/2 Interrupt Control Register */
-#define TDIE			BIT(2)
-#define SIE			BIT(1)
-#define SMIE			BIT(0)
-
-/* PS/2 Status Register */
-#define FER			BIT(5)
-#define PER			BIT(4)
-#define TDS			BIT(3)
-#define SS			BIT(2)
-#define CLS			BIT(1)
-#define DLS			BIT(0)
 
 /*
  * IT8XXX2 register structure size/offset checking macro function to mitigate

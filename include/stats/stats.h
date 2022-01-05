@@ -373,7 +373,7 @@ struct stats_hdr *stats_group_find(const char *name);
 #define STATS_NAME_MAP_NAME(sectname__) stats_map_ ## sectname__
 
 #define STATS_NAME_START(sectname__) \
-	const struct stats_name_map STATS_NAME_MAP_NAME(sectname__)[] = {
+	static const struct stats_name_map STATS_NAME_MAP_NAME(sectname__)[] = {
 
 #define STATS_NAME(sectname__, entry__)	\
 	{ offsetof(STATS_SECT_DECL(sectname__), entry__), #entry__ },

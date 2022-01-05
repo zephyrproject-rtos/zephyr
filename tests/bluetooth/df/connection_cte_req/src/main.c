@@ -9,7 +9,7 @@
 
 #include <bt_common.h>
 
-#include "common.h"
+#include <bt_conn_common.h>
 #include "test_cte_set_rx_params.h"
 #include "test_cte_req_enable.h"
 

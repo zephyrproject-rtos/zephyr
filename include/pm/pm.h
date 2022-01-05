@@ -111,7 +111,7 @@ int pm_notifier_unregister(struct pm_notifier *notifier);
  * @param cpu CPU index.
  * @return next pm_state_info that will be used
  */
-const struct pm_state_info pm_power_state_next_get(uint8_t cpu);
+struct pm_state_info pm_power_state_next_get(uint8_t cpu);
 
 /**
  * @}

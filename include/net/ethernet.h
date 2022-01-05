@@ -65,6 +65,7 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_PTP		0x88f7
 #define NET_ETH_PTYPE_LLDP		0x88cc
 #define NET_ETH_PTYPE_ALL               0x0003 /* from linux/if_ether.h */
+#define NET_ETH_PTYPE_ECAT		0x88a4
 
 #if !defined(ETH_P_ALL)
 #define ETH_P_ALL	NET_ETH_PTYPE_ALL
@@ -83,6 +84,9 @@ struct net_eth_addr {
 #endif
 #if !defined(ETH_P_TSN)
 #define ETH_P_TSN	NET_ETH_PTYPE_TSN
+#endif
+#if !defined(ETH_P_ECAT)
+#define  ETH_P_ECAT	NET_ETH_PTYPE_ECAT
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
@@ -828,9 +832,10 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 #if defined(CONFIG_NET_VLAN)
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
 			      pm_action_cb, data, cfg, prio, api, mtu)	\
+	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
 			pm_action_cb, data, cfg, POST_KERNEL,		\
-			prio, api);					\
+			prio, api, &Z_DEVICE_STATE_NAME(dev_name));	\
 	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2));\
 	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
 

@@ -56,5 +56,11 @@ static inline uint8_t lll_df_sync_cfg_is_modified(struct lll_df_sync *df_cfg)
 }
 
 /* Enables CTE reception according to provided configuration */
-void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, uint8_t *ant_ids,
-			       uint8_t chan_idx);
+void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uint8_t *ant_ids,
+			       uint8_t chan_idx, bool cte_info_in_s1);
+
+/* Enable CTE transmission according to provided configuration */
+void lll_df_conn_cte_tx_enable(const struct lll_df_conn_tx_cfg *df_cfg);
+
+/* Enabled parsing of a PDU for CTEInfo */
+void lll_df_conf_cte_info_parsing_enable(void);

@@ -51,6 +51,12 @@ config SYS_HEAP_RUNTIME_STATS
 	help
 	  Gather system heap runtime statistics.
 
+config HEAP_LISTENER
+	bool "Enable heap listener"
+	help
+	  Enable API for registering and notifying listeners of certain
+	  events related to a heap usage, such as the heap resize.
+
 choice
 	prompt "Supported heap sizes"
 	depends on !64BIT
@@ -132,11 +138,10 @@ endif
 
 config REBOOT
 	bool "Reboot functionality"
-	select SYSTEM_CLOCK_DISABLE
 	help
 	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
-	  needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
-	  system clock before issuing a reset).
+	  needed to perform a "safe" reboot (e.g. to stop the system clock before
+	  issuing a reset).
 
 rsource "Kconfig.cbprintf"
 

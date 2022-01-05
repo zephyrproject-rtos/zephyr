@@ -6,7 +6,7 @@ DT_COMPAT_GIGADEVICE_GD32_PINCTRL_AFIO := gd,gd32-pinctrl-afio
 
 config PINCTRL_GD32_AF
 	bool "GD32 AF pin controller driver"
-	depends on SOC_FAMILY_GD32 && GD32_HAS_AF_PINMUX
+	depends on GD32_HAS_AF_PINMUX
 	default $(dt_compat_enabled,$(DT_COMPAT_GIGADEVICE_GD32_PINCTRL_AF))
 	help
 	  GD32 AF pin controller driver. This driver is used by series using the
@@ -14,7 +14,7 @@ config PINCTRL_GD32_AF
 
 config PINCTRL_GD32_AFIO
 	bool "GD32 AFIO pin controller driver"
-	depends on SOC_FAMILY_GD32 && GD32_HAS_AFIO_PINMUX
+	depends on GD32_HAS_AFIO_PINMUX
 	default $(dt_compat_enabled,$(DT_COMPAT_GIGADEVICE_GD32_PINCTRL_AFIO))
 	help
 	  GD32 AFIO pin controller driver. This driver is used by series using the

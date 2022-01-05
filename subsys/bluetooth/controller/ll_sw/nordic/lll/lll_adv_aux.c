@@ -19,6 +19,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 
@@ -26,7 +27,7 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_chan.h"
-#include "lll/lll_df_types.h"
+#include "lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_adv_types.h"
 #include "lll_adv.h"
@@ -182,7 +183,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll->tx_pwr_lvl);
+	radio_tx_power_set(lll_adv->tx_pwr_lvl);
 #else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
@@ -191,7 +192,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* TODO: if coded we use S8? */
 	radio_phy_set(phy_s, lll_adv->phy_flags);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy_s << 1));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, PDU_AC_PAYLOAD_SIZE_MAX,
+			    RADIO_PKT_CONF_PHY(phy_s));
 
 	/* Access address and CRC */
 	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);

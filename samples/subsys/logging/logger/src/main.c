@@ -281,6 +281,8 @@ static void log_demo_thread(void *p1, void *p2, void *p3)
 {
 	bool usermode = k_is_user_context();
 
+	(void)log_set_tag("demo_tag");
+
 	k_sleep(K_MSEC(100));
 
 	printk("\n\t---=< RUNNING LOGGER DEMO FROM %s THREAD >=---\n\n",

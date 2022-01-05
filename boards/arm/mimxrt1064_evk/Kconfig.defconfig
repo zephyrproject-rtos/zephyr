@@ -47,9 +47,6 @@ endif # NETWORKING
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "ELCDIF_1"
-
 config LVGL_POINTER_KSCAN
 	default y
 

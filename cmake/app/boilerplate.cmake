@@ -28,16 +28,6 @@
 # invocation in every toplevel CMakeLists.txt.
 cmake_minimum_required(VERSION 3.20.0)
 
-# CMP0002: "Logical target names must be globally unique"
-cmake_policy(SET CMP0002 NEW)
-
-# Use the old CMake behaviour until we are updating the CMake 3.20 as minimum
-# required. This ensure that CMake >=3.20 will be consistent with older CMakes.
-# CMP0116: Ninja generators transform DEPFILE s from add_custom_command().
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.20)
-  cmake_policy(SET CMP0116 OLD)
-endif()
-
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
     FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in.
@@ -605,11 +595,18 @@ project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 # windows now.
 list(APPEND CMAKE_ASM_SOURCE_FILE_EXTENSIONS "S")
 enable_language(C CXX ASM)
+
 # The setup / configuration of the toolchain itself and the configuration of
 # supported compilation flags are now split, as this allows to use the toolchain
 # for generic purposes, for example DTS, and then test the toolchain for
 # supported flags at stage two.
 # Testing the toolchain flags requires the enable_language() to have been called in CMake.
+
+# Verify that the toolchain can compile a dummy file, if it is not we
+# won't be able to test for compatibility with certain C flags.
+zephyr_check_compiler_flag(C "" toolchain_is_ok)
+assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
+
 include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 
 # 'project' sets PROJECT_BINARY_DIR to ${CMAKE_CURRENT_BINARY_DIR},

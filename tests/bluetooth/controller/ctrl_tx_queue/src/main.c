@@ -13,6 +13,8 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
+
 #include "pdu.h"
 #include "lll.h"
 

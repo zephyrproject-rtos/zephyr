@@ -15,6 +15,7 @@
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 #include <drivers/dma.h>
 #endif
+#include <sys_clock.h>
 
 LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
@@ -28,6 +29,10 @@ struct spi_mcux_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
+	uint32_t pre_delay;
+	uint32_t post_delay;
+	uint32_t frame_delay;
+	uint32_t transfer_delay;
 };
 
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
@@ -143,6 +148,18 @@ static void spi_mcux_transfer_callback(SPI_Type *base,
 	spi_mcux_transfer_next_packet(data->dev);
 }
 
+static uint8_t spi_clock_cycles(uint32_t delay_ns, uint32_t sck_frequency_hz)
+{
+	/* Convert delay_ns to an integer number of clock cycles of frequency
+	 * sck_frequency_hz. The maximum delay is 15 clock cycles.
+	 */
+	uint8_t delay_cycles = (uint64_t)delay_ns * sck_frequency_hz / NSEC_PER_SEC;
+
+	delay_cycles = MIN(delay_cycles, 15);
+
+	return delay_cycles;
+}
+
 static int spi_mcux_configure(const struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
@@ -210,6 +227,17 @@ static int spi_mcux_configure(const struct device *dev,
 			: kSPI_MsbFirst;
 
 		master_config.baudRate_Bps = spi_cfg->frequency;
+
+		spi_delay_config_t *delayConfig = &master_config.delayConfig;
+
+		delayConfig->preDelay = spi_clock_cycles(config->pre_delay,
+							spi_cfg->frequency);
+		delayConfig->postDelay = spi_clock_cycles(config->post_delay,
+							spi_cfg->frequency);
+		delayConfig->frameDelay = spi_clock_cycles(config->frame_delay,
+							spi_cfg->frequency);
+		delayConfig->transferDelay = spi_clock_cycles(config->transfer_delay,
+							spi_cfg->frequency);
 
 		SPI_MasterInit(base, &master_config, clock_freq);
 
@@ -769,6 +797,10 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.clock_subsys =					\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
 		SPI_MCUX_FLEXCOMM_IRQ_HANDLER_FUNC(id)			\
+		.pre_delay = DT_INST_PROP_OR(id, pre_delay, 0),		\
+		.post_delay = DT_INST_PROP_OR(id, post_delay, 0),		\
+		.frame_delay = DT_INST_PROP_OR(id, frame_delay, 0),		\
+		.transfer_delay = DT_INST_PROP_OR(id, transfer_delay, 0),		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\

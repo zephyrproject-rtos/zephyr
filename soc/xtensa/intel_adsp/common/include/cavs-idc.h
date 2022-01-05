@@ -53,14 +53,14 @@
  *     IDC[src].core[dst].itc == IDC[dst].core[src].tfc
  *
  * Finally note the two control registers at the end of each core's
- * register block, which store a bitmask of cores that are allowed to
- * send that core an interrupt via either ITC (set high "BUSY" bit) or
+ * register block, which store a bitmask of cores that it is allowed
+ * to signal with an interrupt via either ITC (set high "BUSY" bit) or
  * TFC (clear high "DONE" bit).  This masking is in ADDITION to the
  * level 2 bit for IDC in the per-core INTCTRL DSP register AND the
  * Xtensa architectural INTENABLE SR.  You must enable IDC interrupts
  * form core "src" to core "dst" with:
  *
- *     IDC[dst].busy_int |= BIT(src)  // Or disable with "&= ~BIT(src)" of course
+ *     IDC[src].busy_int |= BIT(dst)  // Or disable with "&= ~BIT(dst)" of course
  */
 struct cavs_idc {
 	struct {

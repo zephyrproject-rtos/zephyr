@@ -541,13 +541,13 @@ static const struct display_driver_api st7735r_api = {
 		.cmd_data.pin = DT_INST_GPIO_PIN(inst, cmd_data_gpios),		\
 		.cmd_data.flags = DT_INST_GPIO_FLAGS(inst, cmd_data_gpios),	\
 		.reset.name = UTIL_AND(						\
-			DT_INST_HAS_PROP(inst, reset_gpios),			\
+			DT_INST_NODE_HAS_PROP(inst, reset_gpios),		\
 			DT_INST_GPIO_LABEL(inst, reset_gpios)),			\
 		.reset.pin = UTIL_AND(						\
-			DT_INST_HAS_PROP(inst, reset_gpios),			\
+			DT_INST_NODE_HAS_PROP(inst, reset_gpios),		\
 			DT_INST_GPIO_PIN(inst, reset_gpios)),			\
 		.reset.flags = UTIL_AND(					\
-			DT_INST_HAS_PROP(inst, reset_gpios),			\
+			DT_INST_NODE_HAS_PROP(inst, reset_gpios),		\
 			DT_INST_GPIO_FLAGS(inst, reset_gpios)),			\
 		.width = DT_INST_PROP(inst, width),				\
 		.height = DT_INST_PROP(inst, height),				\

@@ -99,7 +99,7 @@ struct bt_att {
 	sys_slist_t		reqs;
 	struct k_fifo		tx_queue;
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
-	struct k_fifo		prep_queue;
+	sys_slist_t		prep_queue;
 #endif
 	/* Contains bt_att_chan instance(s) */
 	sys_slist_t		chans;
@@ -1666,6 +1666,8 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* Set command flag if not a request */
 	if (!data->req) {
 		flags |= BT_GATT_WRITE_FLAG_CMD;
+	} else if (data->req == BT_ATT_OP_EXEC_WRITE_REQ) {
+		flags |= BT_GATT_WRITE_FLAG_EXECUTE;
 	}
 
 	/* Write attribute value */
@@ -1836,7 +1838,7 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 	BT_DBG("buf %p handle 0x%04x offset %u", data.buf, handle, offset);
 
 	/* Store buffer in the outstanding queue */
-	net_buf_put(&chan->att->prep_queue, data.buf);
+	net_buf_slist_put(&chan->att->prep_queue, data.buf);
 
 	/* Generate response */
 	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_RSP, 0);
@@ -1876,23 +1878,103 @@ static uint8_t att_prepare_write_req(struct bt_att_chan *chan, struct net_buf *b
 }
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
+static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
+				     sys_slist_t *list,
+				     struct net_buf_simple *buf)
+{
+	struct net_buf *entry, *next;
+	sys_snode_t *prev;
+
+	prev = NULL;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, entry, next, node) {
+		struct bt_attr_data *tmp_data = net_buf_user_data(entry);
+
+		BT_DBG("entry %p handle 0x%04x, offset %u",
+			entry, tmp_data->handle, tmp_data->offset);
+
+		if (tmp_data->handle == handle) {
+			if (tmp_data->offset == 0) {
+				/* Multiple writes to the same handle can occur
+				 * in a prepare write queue. If the offset is 0,
+				 * that should mean that it's a new write to the
+				 * same handle, and we break to process the
+				 * first write.
+				 */
+
+				BT_DBG("tmp_data->offset == 0");
+				break;
+			}
+
+			if (tmp_data->offset != buf->len + offset) {
+				/* We require that the offset is increasing
+				 * properly to avoid badly reassembled buffers
+				 */
+
+				BT_DBG("Bad offset %u (%u, %u)",
+					tmp_data->offset, buf->len, offset);
+
+				return BT_ATT_ERR_INVALID_OFFSET;
+			}
+
+			if (buf->len + entry->len > buf->size) {
+				return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+			}
+
+			net_buf_simple_add_mem(buf, entry->data, entry->len);
+			sys_slist_remove(list, prev, &entry->node);
+			net_buf_unref(entry);
+		} else {
+			prev = &entry->node;
+		}
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+
 static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 {
 	struct bt_conn *conn = chan->chan.chan.conn;
 	struct net_buf *buf;
 	uint8_t err = 0U;
 
-	while ((buf = net_buf_get(&chan->att->prep_queue, K_NO_WAIT))) {
-		struct bt_attr_data *data = net_buf_user_data(buf);
+	/* The following code will iterate on all prepare writes in the
+	 * prep_queue, and reassemble those that share the same handle.
+	 * Once a handle has been ressembled, it is sent to the upper layers,
+	 * and the next handle is processed
+	 */
+	while (!sys_slist_is_empty(&chan->att->prep_queue)) {
+		struct bt_attr_data *data;
+		uint16_t handle;
 
-		BT_DBG("buf %p handle 0x%04x offset %u", buf, data->handle,
-		       data->offset);
+		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
+					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
+						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_MTU));
+
+		buf = net_buf_slist_get(&chan->att->prep_queue);
+		data = net_buf_user_data(buf);
+		handle = data->handle;
+
+		BT_DBG("buf %p handle 0x%04x offset %u",
+		       buf, handle, data->offset);
+
+		net_buf_simple_reset(&reassembled_data);
+		net_buf_simple_add_mem(&reassembled_data, buf->data, buf->len);
+
+		err = exec_write_reassemble(handle, data->offset,
+					    &chan->att->prep_queue,
+					    &reassembled_data);
+		if (err != BT_ATT_ERR_SUCCESS) {
+			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
+				     handle, err);
+			return 0;
+		}
 
 		/* Just discard the data if an error was set */
 		if (!err && flags == BT_ATT_FLAG_EXEC) {
 			err = att_write_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, 0,
-					    data->handle, data->offset,
-					    buf->data, buf->len);
+					    handle, data->offset,
+					    reassembled_data.data,
+					    reassembled_data.len);
 			if (err) {
 				/* Respond here since handle is set */
 				send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
@@ -2531,7 +2613,7 @@ static void att_reset(struct bt_att *att)
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
-	while ((buf = net_buf_get(&att->prep_queue, K_NO_WAIT))) {
+	while ((buf = net_buf_slist_get(&att->prep_queue))) {
 		net_buf_unref(buf);
 	}
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
@@ -2617,7 +2699,7 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 		/* Init general queues when attaching the first channel */
 		k_fifo_init(&att->tx_queue);
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
-		k_fifo_init(&att->prep_queue);
+		sys_slist_init(&att->prep_queue);
 #endif
 	}
 

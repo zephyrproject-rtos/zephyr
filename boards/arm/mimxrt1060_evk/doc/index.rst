@@ -121,7 +121,10 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
-
+| SAI       | on-chip    | i2s                                 |
++-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1060_evk/mimxrt1060_evk_defconfig``
@@ -252,6 +255,16 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_10 | ADC             | ADC1 Channel 15           |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_09 | SAI1_MCLK       | I2S                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_12 | SAI1_RX         | I2S                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_13 | SAI1_TX         | I2S                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_14 | SAI1_TX_BCLK    | I2S                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_15 | SAI1_TX_SYNC    | I2S                       |
++---------------+-----------------+---------------------------+
 
 .. note::
         In order to use the SPI peripheral on this board, resistors R278, R279,
@@ -260,8 +273,8 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 System Clock
 ============
 
-The MIMXRT1060 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 600 MHz core clock.
+The MIMXRT1060 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr.h>
-#include <adsp/cache.h>
+#include <soc.h>
 #include <cavs-mem.h>
 
 /* Simple output driver for the trace window of an ADSP device used
@@ -73,6 +73,16 @@ void intel_adsp_trace_out(int8_t *str, size_t len)
 	if (len == 0) {
 		return;
 	}
+
+#ifdef CONFIG_ADSP_TRACE_SIMCALL
+	register int a2 __asm__("a2") = 4; /* SYS_write */
+	register int a3 __asm__("a3") = 1; /* fd 1 == stdout */
+	register int a4 __asm__("a4") = (int)str;
+	register int a5 __asm__("a5") = len;
+
+	__asm__ volatile("simcall" : "+r"(a2), "+r"(a3)
+			 : "r"(a4), "r"(a5)  : "memory");
+#endif
 
 	k_spinlock_key_t key = k_spin_lock((void *)&data->lock);
 

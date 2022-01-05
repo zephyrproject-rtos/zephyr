@@ -8,7 +8,7 @@
 #include <sys/libc-hooks.h>
 #include <logging/log.h>
 
-#include "main.h"
+#include "app_shared.h"
 #include "app_b.h"
 
 LOG_MODULE_REGISTER(app_b);

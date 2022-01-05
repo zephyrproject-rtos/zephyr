@@ -465,7 +465,7 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_PORT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_P
 	static const struct gpio_nct38xx_port_config gpio_nct38xx_port_cfg_##inst = {              \
 		.common = { .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst) &               \
 					     DT_INST_PROP(inst, pin_mask) },                       \
-		.nct38xx_dev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                        \
+		.nct38xx_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                \
 		.gpio_port = DT_INST_REG_ADDR(inst),                                               \
 		.pinmux_mask = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pinmux_mask),               \
 					   (DT_INST_PROP(inst, pinmux_mask)), (0)),                \

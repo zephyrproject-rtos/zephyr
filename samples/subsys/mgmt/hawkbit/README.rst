@@ -23,7 +23,7 @@ Caveats
 *******
 
 * The Zephyr port of ``Hawkbit`` is configured to run on a
-  :ref: `Freedom-K64F <frdm_k64f>` MCU by default. The application should
+  :ref:`Freedom-K64F <frdm_k64f>` MCU by default. The application should
   build and run for other platforms with support internet connection. Some
   platforms need some modification. Overlay files would be needed to support
   BLE 6lowpan, 802.15.4 or OpenThread configurations as well as the

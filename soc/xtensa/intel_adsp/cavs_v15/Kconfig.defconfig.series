@@ -33,6 +33,12 @@ config IMR_DATA_ADDR
 config SMP
 	default y
 
+config MP_NUM_CPUS
+	default 2
+
+config SCHED_IPI_SUPPORTED
+	default y
+
 config XTENSA_TIMER
 	default n
 
@@ -77,21 +83,5 @@ config LOG_BACKEND_ADSP
 	default y
 
 endif # LOG
-
-if SMP
-
-config MP_NUM_CPUS
-	default 2
-
-config IPM
-       default y
-
-config IPM_CAVS_IDC
-	default y
-
-config SCHED_IPI_SUPPORTED
-	default y if IPM_CAVS_IDC
-
-endif # SMP
 
 endif # SOC_SERIES_INTEL_CAVS_V15

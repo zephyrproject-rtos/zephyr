@@ -4,12 +4,14 @@ API Reference
 #############
 
 .. toctree::
-   :maxdepth: 1
+   :titlesonly:
+   :maxdepth: 2
 
    api/index.rst
    audio/index.rst
    misc/notify.rst
    bluetooth/index.rst
+   canbus/index.rst
    crypto/index.rst
    devicetree/index.rst
    drivers/index.rst

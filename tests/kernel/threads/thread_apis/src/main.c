@@ -307,7 +307,7 @@ enum control_method {
 
 void join_entry(void *p1, void *p2, void *p3)
 {
-	enum control_method m = (enum control_method)p1;
+	enum control_method m = (enum control_method)(intptr_t)p1;
 
 	switch (m) {
 	case TIMEOUT:
@@ -591,7 +591,7 @@ void test_k_busy_wait(void)
 
 	/* execution_cycles increases correctly */
 	dt = test_stats.execution_cycles - cycles;
-	zassert_true(dt >= k_cyc_to_us_floor64(100), NULL);
+	zassert_true(dt >= k_us_to_cyc_floor64(100), NULL);
 }
 
 static void tp_entry(void *p1, void *p2, void *p3)

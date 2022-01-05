@@ -484,7 +484,7 @@ err_card_detect:
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
-PINCTRL_DT_INST_DEFINE(0)
+PINCTRL_DT_INST_DEFINE(0);
 
 static void stm32_sdmmc_irq_config_func(const struct device *dev)
 {

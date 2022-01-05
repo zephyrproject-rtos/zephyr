@@ -357,7 +357,7 @@ config GDBSTUB_SERIAL_BACKEND
 	bool "Use serial backend"
 	depends on SERIAL
 	help
-	  Use serial as backenf for GDB
+	  Use serial as backend for GDB
 
 endchoice
 
@@ -366,7 +366,7 @@ config GDBSTUB_SERIAL_BACKEND_NAME
 	depends on GDBSTUB_SERIAL_BACKEND
 	default "UART_0"
 	help
-	  Use serial as backenf for GDB
+	  Use serial as backend for GDB
 
 config GDBSTUB_BUF_SZ
 	int "GDB backend send/receive buffer size (in bytes)"

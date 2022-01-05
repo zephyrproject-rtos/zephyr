@@ -56,6 +56,7 @@
 		uart0: uart@40002000 {
 			/* uart can be either UART or UARTE, for the user to pick */
 			/* compatible = "nordic,nrf-uarte" or "nordic,nrf-uart"; */
+			compatible = "nordic,nrf-uarte";
 			reg = <0x40002000 0x1000>;
 			interrupts = <2 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
@@ -70,6 +71,7 @@
 			 *              "nordic,nrf-twim" or
 			 *              "nordic,nrf-twis".
 			 */
+			compatible = "nordic,nrf-twim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
@@ -87,6 +89,7 @@
 			 *              "nordic,nrf-spim" or
 			 *              "nordic,nrf-spis".
 			 */
+			compatible = "nordic,nrf-spim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;

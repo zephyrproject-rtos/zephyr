@@ -91,11 +91,13 @@ static uint8_t vcs_client_notify_handler(struct bt_conn *conn,
 					 const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct bt_vcs *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs *vcs_inst;
 
-	if (data == NULL) {
+	if (data == NULL || conn == NULL) {
 		return BT_GATT_ITER_CONTINUE;
 	}
+
+	vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	if (handle == vcs_inst->cli.state_handle &&
 	    length == sizeof(vcs_inst->cli.state)) {

@@ -438,29 +438,29 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			 * move it for the central
 			 */
 			bt_iso_remove_data_path(chan->iso);
-		}
 
 #if defined(CONFIG_BT_ISO_UNICAST)
-		bool is_chan_connected;
-		struct bt_iso_cig *cig;
+			bool is_chan_connected;
+			struct bt_iso_cig *cig;
 
-		/* Update CIG state */
-		cig = get_cig(chan);
-		__ASSERT(cig != NULL, "CIG was NULL");
+			/* Update CIG state */
+			cig = get_cig(chan);
+			__ASSERT(cig != NULL, "CIG was NULL");
 
-		is_chan_connected = false;
-		SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, chan, node) {
-			if (chan->state == BT_ISO_CONNECTED ||
-			    chan->state == BT_ISO_CONNECT) {
-				is_chan_connected = true;
-				break;
+			is_chan_connected = false;
+			SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, chan, node) {
+				if (chan->state == BT_ISO_CONNECTED ||
+				chan->state == BT_ISO_CONNECT) {
+					is_chan_connected = true;
+					break;
+				}
 			}
-		}
 
-		if (!is_chan_connected) {
-			cig->state = BT_ISO_CIG_STATE_INACTIVE;
-		}
+			if (!is_chan_connected) {
+				cig->state = BT_ISO_CIG_STATE_INACTIVE;
+			}
 #endif /* CONFIG_BT_ISO_UNICAST */
+		}
 	}
 
 	if (chan->ops->disconnected) {

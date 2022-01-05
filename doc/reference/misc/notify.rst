@@ -1,7 +1,7 @@
 .. _async_notification:
 
-Asynchronous Notification APIs
-##############################
+Asynchronous Notifications
+##########################
 
 Zephyr APIs often include :ref:`api_term_async` functions where an
 operation is initiated and the application needs to be informed when it

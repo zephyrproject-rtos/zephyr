@@ -257,13 +257,27 @@
 #define KSZ8794_GLOBAL_CTRL20_LOWSPEED_28MA          0x07
 
 enum {
+	/*
+	 * KSZ8794 register's MAP
+	 * (0x00 - 0x0F): Global Registers
+	 * Port registers (offsets):
+	 * (0x10): Port 1
+	 * (0x20): Port 2
+	 * (0x30): Port 3
+	 * (0x40): Reserved
+	 * (0x50): Port 4
+	 */
 	/* LAN ports for the ksz8794 switch */
 	KSZ8794_PORT1 = 0,
 	KSZ8794_PORT2,
 	KSZ8794_PORT3,
-	KSZ8794_PORT4,
-	/* SWITCH <-> CPU port */
-	KSZ8794_PORT5,
+	/*
+	 * SWITCH <-> CPU port
+	 *
+	 * We also need to consider the "Reserved' offset
+	 * defined above.
+	 */
+	KSZ8794_PORT4 = 4,
 };
 
 #define KSZ8794_REG_IND_DATA_8                        0x70
@@ -287,8 +301,8 @@ enum {
 #define KSZ8XXX_CHIP_ID0_ID_DEFAULT             KSZ8794_CHIP_ID0_ID_DEFAULT
 #define KSZ8XXX_CHIP_ID1_ID_DEFAULT             KSZ8794_CHIP_ID1_ID_DEFAULT
 #define KSZ8XXX_FIRST_PORT                      KSZ8794_PORT1
-#define KSZ8XXX_LAST_PORT                       KSZ8794_PORT5
-#define KSZ8XXX_CPU_PORT                        KSZ8794_PORT5
+#define KSZ8XXX_LAST_PORT                       KSZ8794_PORT3
+#define KSZ8XXX_CPU_PORT                        KSZ8794_PORT4
 #define KSZ8XXX_REG_IND_CTRL_0                  KSZ8794_REG_IND_CTRL_0
 #define KSZ8XXX_REG_IND_CTRL_1                  KSZ8794_REG_IND_CTRL_1
 #define KSZ8XXX_REG_IND_DATA_8                  KSZ8794_REG_IND_DATA_8
