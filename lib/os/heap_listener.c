@@ -35,7 +35,7 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&heap_listener_list, listener, node) {
 		if (listener->heap_id == heap_id && listener->resize_cb != NULL) {
-			listener->resize_cb(old_heap_end, new_heap_end);
+			listener->resize_cb(heap_id, old_heap_end, new_heap_end);
 		}
 	}
 
