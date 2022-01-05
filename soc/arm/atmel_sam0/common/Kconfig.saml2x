@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Argentum Systems Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_SAML21
+if SOC_SERIES_SAML21 || SOC_SERIES_SAMR34 || SOC_SERIES_SAMR35
 
 config SOC_ATMEL_SAML_DEBUG_PAUSE
 	bool "Insert a pause at boot, to allow a debugger to attach"
@@ -71,4 +71,4 @@ config SOC_ATMEL_SAML_OSC16M_AS_MAIN
 
 endchoice
 
-endif # SOC_SERIES_SAML21
+endif # SOC_SERIES_SAML21 || SOC_SERIES_SAMR34 || SOC_SERIES_SAMR35
