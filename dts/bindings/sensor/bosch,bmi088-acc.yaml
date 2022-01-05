@@ -12,7 +12,7 @@ properties:
     type: int
     required: false
     default: 0x0A
-    description: Bandwidth of the internal low-pass filter
+    description: Oversampling ratio, influences bandwidth of internal low-pass filter. See value "acc_bwp" in datasheet
   odr:
     type: int
     required: false
