@@ -767,14 +767,16 @@ static int transceive_dma(const struct device *dev,
 		spi_context_update_rx(&data->ctx, 1, dma_len);
 	}
 
+	/* spi complete relies on SPI Status Reg which cannot be disabled */
+	spi_stm32_complete(dev, ret);
+	/* disable spi instance after completion */
 	LL_SPI_Disable(spi);
+	/* The Config. Reg. on some mcus is write un-protected when SPI is disabled */
 	LL_SPI_DisableDMAReq_TX(spi);
 	LL_SPI_DisableDMAReq_RX(spi);
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.channel);
-
-	spi_stm32_complete(dev, ret);
 
 end:
 	spi_context_release(&data->ctx, ret);
