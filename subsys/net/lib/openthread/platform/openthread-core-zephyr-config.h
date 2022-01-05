@@ -273,38 +273,6 @@
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
 
 /**
- * @def OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME
- *
- * The platform logging function for openthread.
- *
- */
-#define _OT_CONF_PLAT_LOG_FUN_NARGS__IMPL(		\
-		_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,\
-		_11, _12, _13, _14, N, ...) N
-
-#define _OT_CONF_PLAT_LOG_FUN_NARGS__GET(...) \
-		_OT_CONF_PLAT_LOG_FUN_NARGS__IMPL(__VA_ARGS__,\
-		15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
-
-#define OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS(aLogLevel, unused, \
-							aFormat, ...) \
-	do { \
-		ARG_UNUSED(unused); \
-		otPlatLog( \
-		  aLogLevel, \
-		  (otLogRegion)_OT_CONF_PLAT_LOG_FUN_NARGS__GET(__VA_ARGS__),\
-		  aFormat, ##__VA_ARGS__); \
-	} while (false)
-
-#ifdef OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME
-#error OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME \
-	"OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME mustn't be defined before"
-#endif
-
-#define OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME \
-	OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS
-
-/**
  * @def OPENTHREAD_CONFIG_RADIO_LINK_IEEE_802_15_4_ENABLE
  *
  * Set to 1 to enable support for IEEE802.15.4 radio link.
