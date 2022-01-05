@@ -16,6 +16,15 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 
+/* To be able to unit test some callers some functions need to be
+ * demoted to allow overriding them.
+ */
+#ifdef CONFIG_ZTEST
+#define WEAK __weak
+#else
+#define WEAK
+#endif
+
 static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg;
 
 static void *
@@ -302,7 +311,7 @@ zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 	k_fifo_init(&zst->zst_fifo);
 }
 
-void
+WEAK void
 zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb)
 {
 	net_buf_put(&zst->zst_fifo, nb);
