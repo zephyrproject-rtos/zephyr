@@ -97,6 +97,17 @@ typedef int (*pm_device_action_cb_t)(const struct device *dev,
 				     enum pm_device_action action);
 
 /**
+ * @brief Device PM action failed callback
+ *
+ * @param dev Device that failed the action.
+ * @param err Return code of action failure.
+ *
+ * @return True to continue iteration, false to halt iteration.
+ */
+typedef bool (*pm_device_action_failed_cb_t)(const struct device *dev,
+					 int err);
+
+/**
  * @brief Device PM info
  */
 struct pm_device {
@@ -350,6 +361,20 @@ int pm_device_state_get(const struct device *dev,
  */
 int pm_device_action_run(const struct device *dev,
 		enum pm_device_action action);
+
+/**
+ * @brief Run a pm action on all children of a device.
+ *
+ * This function calls all child devices PM control callback so that the device
+ * does the necessary operations to execute the given action.
+ *
+ * @param dev Device instance.
+ * @param action Device pm action.
+ * @param failure_cb Function to call if a child fails the action, can be NULL.
+ */
+void pm_device_children_action_run(const struct device *dev,
+		enum pm_device_action action,
+		pm_device_action_failed_cb_t failure_cb);
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**
