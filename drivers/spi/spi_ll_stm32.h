@@ -53,6 +53,20 @@ struct spi_stm32_data {
 #endif
 };
 
+#ifdef CONFIG_SPI_STM32_DMA
+/* checks that DMA Tx packet is fully transmitted over the SPI */
+static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
+{
+#ifdef LL_SPI_SR_TXC
+	return LL_SPI_IsActiveFlag_TXC(spi);
+#else
+	/* the SPI Tx empty and busy flags are needed */
+	return (LL_SPI_IsActiveFlag_TXE(spi) &&
+		!LL_SPI_IsActiveFlag_BSY(spi));
+#endif
+}
+#endif /* CONFIG_SPI_STM32_DMA */
+
 static inline uint32_t ll_func_tx_is_empty(SPI_TypeDef *spi)
 {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
@@ -154,8 +168,7 @@ static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
-	return (!LL_SPI_IsActiveFlag_MODF(spi) &&
-		!LL_SPI_IsActiveFlag_TXC(spi));
+	return LL_SPI_IsActiveFlag_EOT(spi);
 #else
 	return LL_SPI_IsActiveFlag_BSY(spi);
 #endif
