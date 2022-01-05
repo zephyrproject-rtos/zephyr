@@ -32,6 +32,7 @@
 
 #include "sercom_fixup_samd5x.h"
 #include "tc_fixup_samd5x.h"
+#include "adc_fixup_sam0.h"
 #include "../common/soc_port.h"
 #include "../common/atmel_sam0_dt.h"
 
