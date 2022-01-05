@@ -89,8 +89,9 @@
 			};
 
 			ocram: ocram@20200000 {
-				compatible = "mmio-sram";
+				compatible = "zephyr,memory-region", "mmio-sram";
 				reg = <0x20200000 DT_SIZE_K(256)>;
+				zephyr,memory-region = "OCRAM";
 			};
 		};
 
