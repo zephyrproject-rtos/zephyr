@@ -116,9 +116,9 @@ void lwm2m_firmware_set_update_state(uint8_t state)
 			update_state, state);
 	}
 
-	update_state = state;
-	NOTIFY_OBSERVER(LWM2M_OBJECT_FIRMWARE_ID, 0, FIRMWARE_STATE_ID);
-	LOG_DBG("Update state = %d", update_state);
+	lwm2m_engine_set_u8("5/0/3", state);
+
+	LOG_DBG("Update state = %d", state);
 }
 
 uint8_t lwm2m_firmware_get_update_result(void)
@@ -185,9 +185,9 @@ void lwm2m_firmware_set_update_result(uint8_t result)
 			result, state);
 	}
 
-	update_result = result;
-	NOTIFY_OBSERVER(LWM2M_OBJECT_FIRMWARE_ID, 0, FIRMWARE_UPDATE_RESULT_ID);
-	LOG_DBG("Update result = %d", update_result);
+	lwm2m_engine_set_u8("5/0/5", result);
+
+	LOG_DBG("Update result = %d", result);
 }
 
 static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
