@@ -756,12 +756,8 @@ static int transceive_dma(const struct device *dev,
 		}
 #endif
 
-		/* wait until TX buffer is really empty */
-		while (ll_func_tx_is_empty(spi) == 0) {
-		}
-
-		/* wait until hardware is really ready */
-		while (ll_func_spi_is_busy(spi) == 1) {
+		/* wait until spi is no more busy (spi TX fifo is really empty) */
+		while (ll_func_spi_dma_busy(spi) == 0) {
 		}
 
 		LL_SPI_DisableDMAReq_TX(spi);
