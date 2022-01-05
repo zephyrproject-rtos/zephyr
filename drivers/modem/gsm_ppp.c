@@ -708,7 +708,7 @@ attaching:
 
 	if (!IS_ENABLED(CONFIG_GSM_MUX)) {
 		/* Read connection quality (RSSI) before PPP carrier is ON */
-		rssi_handler(NULL);
+		rssi_handler(&gsm->rssi_work_handle.work);
 
 		if (!(gsm->minfo.mdm_rssi && gsm->minfo.mdm_rssi != GSM_RSSI_INVALID &&
 			gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL)) {
