@@ -36,6 +36,16 @@
 #include "usb.h"
 #endif
 
+#define DUAL_CORE_MU_ENABLED \
+	(CONFIG_SECOND_CORE_MCUX && CONFIG_IPM && CONFIG_IPM_IMX_REV2)
+
+#if DUAL_CORE_MU_ENABLED
+/* Dual core mode is enabled, and messaging unit is present */
+#include <fsl_mu.h>
+#define BOOT_FLAG 0x1U
+#define MU_BASE (MU_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_mu_rev2))
+#endif
+
 #if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL (0x07U)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
@@ -644,6 +654,11 @@ static int imxrt_init(const struct device *arg)
 	IOMUXC_LPSR_GPR->GPR1 = IOMUXC_LPSR_GPR_GPR1_CM4_INIT_VTOR_HIGH(boot_address >> 16u);
 #endif
 
+#if DUAL_CORE_MU_ENABLED && CONFIG_CPU_CORTEX_M4
+	/* Set boot flag in messaging unit to indicate boot to primary core */
+	MU_SetFlags(MU_BASE, BOOT_FLAG);
+#endif
+
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
 	if (SCB_CCR_IC_Msk != (SCB_CCR_IC_Msk & SCB->CCR)) {
 		SCB_EnableICache();
@@ -722,7 +737,7 @@ SYS_INIT(imxrt_init, PRE_KERNEL_1, 0);
 /**
  * @brief Kickoff secondary core.
  *
- * Kick the secondary core out of reset. The
+ * Kick the secondary core out of reset and wait for it to indicate boot. The
  * core image was already copied to RAM (and the boot address was set) in
  * imxrt_init()
  *
@@ -733,6 +748,14 @@ static int second_core_boot(const struct device *arg)
 	/* Kick CM4 core out of reset */
 	SRC->CTRL_M4CORE = SRC_CTRL_M4CORE_SW_RESET_MASK;
 	SRC->SCR |= SRC_SCR_BT_RELEASE_M4_MASK;
+#if DUAL_CORE_MU_ENABLED
+	/* Wait for the secondary core to start up and set boot flag in
+	 * imxrt_init
+	 */
+	while (MU_GetFlags(MU_BASE) != BOOT_FLAG) {
+		/* Wait for secondary core to set flag */
+	}
+#endif
 	return 0;
 }
 
