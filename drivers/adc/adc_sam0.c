@@ -60,13 +60,8 @@ struct adc_sam0_cfg {
 
 static void wait_synchronization(Adc *const adc)
 {
-#if defined(ADC_SYNCBUSY_MASK)
-	while ((adc->SYNCBUSY.reg & ADC_SYNCBUSY_MASK) != 0) {
+	while ((ADC_SYNC(adc) & ADC_SYNC_MASK) != 0) {
 	}
-#else
-	while ((adc->STATUS.reg & ADC_STATUS_SYNCBUSY) != 0) {
-	}
-#endif
 }
 
 static int adc_sam0_acquisition_to_clocks(const struct device *dev,
@@ -141,26 +136,16 @@ static int adc_sam0_channel_setup(const struct device *dev,
 
 	switch (channel_cfg->reference) {
 	case ADC_REF_INTERNAL:
-#ifdef ADC_REFCTRL_REFSEL_INTREF
-		REFCTRL = ADC_REFCTRL_REFSEL_INTREF | ADC_REFCTRL_REFCOMP;
-		/* Enable the internal reference, defaulting to 1V */
-		SUPC->VREF.bit.VREFOE = 1;
-#else
-		REFCTRL = ADC_REFCTRL_REFSEL_INT1V | ADC_REFCTRL_REFCOMP;
+		REFCTRL = ADC_REFCTRL_REFSEL_INTERNAL | ADC_REFCTRL_REFCOMP;
 		/* Enable the internal bandgap reference */
-		SYSCTRL->VREF.bit.BGOUTEN = 1;
-#endif
+		ADC_BGEN = 1;
 		break;
 	case ADC_REF_VDD_1_2:
-#ifdef ADC_REFCTRL_REFSEL_INTVCC0
-		REFCTRL = ADC_REFCTRL_REFSEL_INTVCC0 | ADC_REFCTRL_REFCOMP;
-#else
-		REFCTRL = ADC_REFCTRL_REFSEL_INTVCC1 | ADC_REFCTRL_REFCOMP;
-#endif
+		REFCTRL = ADC_REFCTRL_REFSEL_VDD_1_2 | ADC_REFCTRL_REFCOMP;
 		break;
-#ifdef ADC_REFCTRL_REFSEL_INTVCC1
+#ifdef ADC_REFCTRL_REFSEL_VDD_1
 	case ADC_REF_VDD_1:
-		REFCTRL = ADC_REFCTRL_REFSEL_INTVCC1 | ADC_REFCTRL_REFCOMP;
+		REFCTRL = ADC_REFCTRL_REFSEL_VDD_1 | ADC_REFCTRL_REFCOMP;
 		break;
 #endif
 	case ADC_REF_EXTERNAL0:
@@ -226,20 +211,13 @@ static int adc_sam0_channel_setup(const struct device *dev,
 	if (channel_cfg->differential) {
 		INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(channel_cfg->input_negative);
 
-#ifdef ADC_INPUTCTRL_DIFFMODE
-		INPUTCTRL |= ADC_INPUTCTRL_DIFFMODE;
-#else
-		adc->CTRLB.bit.DIFFMODE = 1;
-		wait_synchronization(adc);
-#endif
+		ADC_DIFF(adc) |= ADC_DIFF_MASK;
 	} else {
 		INPUTCTRL |= ADC_INPUTCTRL_MUXNEG_GND;
 
-#ifndef ADC_INPUTCTRL_DIFFMODE
-		adc->CTRLB.bit.DIFFMODE = 0;
-		wait_synchronization(adc);
-#endif
+		ADC_DIFF(adc) &= ~ADC_DIFF_MASK;
 	}
+	wait_synchronization(adc);
 
 	adc->INPUTCTRL.reg = INPUTCTRL;
 	wait_synchronization(adc);
@@ -248,25 +226,21 @@ static int adc_sam0_channel_setup(const struct device *dev,
 	switch (channel_cfg->input_positive) {
 #ifdef ADC_INPUTCTRL_MUXPOS_TEMP_Val
 	case ADC_INPUTCTRL_MUXPOS_TEMP_Val:
-		SYSCTRL->VREF.bit.TSEN = 1;
+		ADC_TSEN = 1;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_MUXPOS_PTAT_Val
 	case ADC_INPUTCTRL_MUXPOS_PTAT_Val:
-		SUPC->VREF.bit.TSEN = 1;
+		ADC_TSEN = 1;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_MUXPOS_CTAT_Val
 	case ADC_INPUTCTRL_MUXPOS_CTAT_Val:
-		SUPC->VREF.bit.TSEN = 1;
+		ADC_TSEN = 1;
 		break;
 #endif
 	case ADC_INPUTCTRL_MUXPOS_BANDGAP_Val:
-#ifdef ADC_REFCTRL_REFSEL_INTREF
-		SUPC->VREF.bit.VREFOE = 1;
-#else
-		SYSCTRL->VREF.bit.BGOUTEN = 1;
-#endif
+		ADC_BGEN = 1;
 		break;
 	default:
 		break;
@@ -361,7 +335,7 @@ static int start_read(const struct device *dev,
 			return -EINVAL;
 		}
 
-		adc->CTRLB.bit.RESSEL = ADC_CTRLB_RESSEL_8BIT_Val;
+		ADC_RESSEL(adc) = ADC_RESSEL_8BIT;
 		break;
 	case 10:
 		if (sequence->oversampling) {
@@ -369,15 +343,14 @@ static int start_read(const struct device *dev,
 			return -EINVAL;
 		}
 
-		adc->CTRLB.bit.RESSEL = ADC_CTRLB_RESSEL_10BIT_Val;
+		ADC_RESSEL(adc) = ADC_RESSEL_10BIT;
 		break;
 	case 12:
 		if (sequence->oversampling) {
-			adc->CTRLB.bit.RESSEL = ADC_CTRLB_RESSEL_16BIT_Val;
+			ADC_RESSEL(adc) = ADC_RESSEL_16BIT;
 		} else {
-			adc->CTRLB.bit.RESSEL = ADC_CTRLB_RESSEL_12BIT_Val;
+			ADC_RESSEL(adc) = ADC_RESSEL_12BIT;
 		}
-
 		break;
 	default:
 		LOG_ERR("ADC resolution value %d is not valid",
@@ -473,11 +446,7 @@ static int adc_sam0_init(const struct device *dev)
 	GCLK->CLKCTRL.reg = cfg->gclk | GCLK_CLKCTRL_CLKEN;
 #endif
 
-#ifdef ADC_CTRLA_PRESCALER_Pos
-	adc->CTRLA.reg = cfg->prescaler;
-#else
-	adc->CTRLB.reg = cfg->prescaler;
-#endif
+	ADC_PRESCALER(adc) = cfg->prescaler;
 	wait_synchronization(adc);
 
 	adc->INTENCLR.reg = ADC_INTENCLR_MASK;
@@ -532,34 +501,16 @@ static const struct adc_driver_api adc_sam0_api = {
 	.gclk_mask = UTIL_CAT(GCLK_PCHCTRL_GEN_GCLK,			\
 			      DT_INST_PROP(n, gclk)),			\
 	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),	\
-	.prescaler = UTIL_CAT(ADC_CTRLA_PRESCALER_DIV,			\
-			      DT_INST_PROP(n, prescaler)),
-
-#define ADC_SAM0_BIASCOMP_SHIFT(n)					\
-	(ADC0_FUSES_BIASCOMP_Pos + DT_INST_PROP(n, calib_offset))
-#define ADC_SAM0_BIASCOMP(n)						\
-	(((*(uint32_t *)NVMCTRL_SW0) >> ADC_SAM0_BIASCOMP_SHIFT(n)) & 0x7)
-
-#define ADC_SAM0_BIASR2R_SHIFT(n)					\
-	(ADC0_FUSES_BIASR2R_Pos + DT_INST_PROP(n, calib_offset))
-#define ADC_SAM0_BIASR2R(n)						\
-	(((*(uint32_t *)NVMCTRL_SW0) >> ADC_SAM0_BIASR2R_SHIFT(n)) & 0x7)
-
-#define ADC_SAM0_BIASREFBUF_SHIFT(n)					\
-	(ADC0_FUSES_BIASREFBUF_Pos + DT_INST_PROP(n, calib_offset))
-#define ADC_SAM0_BIASREFBUF(n)						\
-	(((*(uint32_t *)NVMCTRL_SW0) >> ADC_SAM0_BIASREFBUF_SHIFT(n)) & 0x7)
+	.prescaler = UTIL_CAT(ADC_CTRLx_PRESCALER_DIV,			\
+			      UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)),
 
 #define ADC_SAM0_CONFIGURE(n)						\
 do {									\
 	const struct adc_sam0_cfg *const cfg = dev->config;		\
 	Adc * const adc = cfg->regs;					\
-	uint32_t comp = ADC_SAM0_BIASCOMP(n);				\
-	uint32_t r2r = ADC_SAM0_BIASR2R(n);				\
-	uint32_t rbuf = ADC_SAM0_BIASREFBUF(n);				\
-	adc->CALIB.reg = ADC_CALIB_BIASCOMP(comp) |			\
-			 ADC_CALIB_BIASR2R(r2r) |			\
-			 ADC_CALIB_BIASREFBUF(rbuf);			\
+	adc->CALIB.reg = ADC_SAM0_BIASCOMP(n)				\
+			 | ADC_SAM0_BIASR2R(n)				\
+			 | ADC_SAM0_BIASREFBUF(n);			\
 } while (0)
 
 #else
@@ -567,8 +518,8 @@ do {									\
 #define ADC_SAM0_CLOCK_CONTROL(n)					\
 	.gclk = UTIL_CAT(GCLK_CLKCTRL_GEN_GCLK,	DT_INST_PROP(n, gclk)) |\
 			 GCLK_CLKCTRL_ID_ADC,				\
-	.prescaler = UTIL_CAT(ADC_CTRLB_PRESCALER_DIV,			\
-			      DT_INST_PROP(n, prescaler)),		\
+	.prescaler = UTIL_CAT(ADC_CTRLx_PRESCALER_DIV,			\
+			      UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)),
 
 #define ADC_SAM0_CONFIGURE(n)						\
 do {									\
