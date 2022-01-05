@@ -132,7 +132,7 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 		if (result32) {
 			return (uint32_t)((t * to_hz + off) / from_hz);
 		} else {
-			return (t * to_hz + off) / from_hz;
+			return (t / from_hz) * to_hz + ((t % from_hz) * to_hz + off) / from_hz;
 		}
 	}
 }
