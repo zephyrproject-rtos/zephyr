@@ -81,6 +81,17 @@ config HAWKBIT_DDI_SECURITY_TOKEN
 	  Authentication security token for the configured Hawkbit DDI
 	  authentication mode.
 
+config HAWKBIT_CUSTOM_CONFIG_DATA
+	bool "Custom device attributes"
+	help
+	  Use custom definition of device attributes. When this option is
+	  selected, `mgmt/hawkbit/custom_config_data.h` should be on the
+	  include path of the application. This headers should provide the
+	  definitions of `struct hawkbit_config_data` and
+	  `static const struct json_obj_descr json_cfg_data_descr[]`. The
+	  application should also provide an implementation of
+	  hawkbit_get_config_data.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for Hawkbit code.

@@ -14,6 +14,7 @@
 #define __HAWKBIT_PRIV_H__
 
 #include <data/json.h>
+#include "hawkbit_config_data.h"
 
 #define HAWKBIT_SLEEP_LENGTH 8
 
@@ -77,11 +78,6 @@ struct hawkbit_ctl_res_links {
 struct hawkbit_ctl_res {
 	struct hawkbit_ctl_res_polling config;
 	struct hawkbit_ctl_res_links _links;
-};
-
-struct hawkbit_cfg_data {
-	const char *VIN;
-	const char *hwRevision;
 };
 
 struct hawkbit_cfg {

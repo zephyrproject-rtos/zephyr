@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #include "hawkbit_priv.h"
 #include "hawkbit_device.h"
+#include "hawkbit_config_data.h"
 #include "mgmt/hawkbit.h"
 #include "hawkbit_firmware.h"
 
@@ -143,11 +144,12 @@ static const struct json_obj_descr json_ctl_res_descr[] = {
 			      json_ctl_res_links_descr),
 };
 
+#if !defined(CONFIG_HAWKBIT_CUSTOM_CONFIG_DATA)
 static const struct json_obj_descr json_cfg_data_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, VIN, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, hwRevision,
-			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, hwRevision, JSON_TOK_STRING),
 };
+#endif
 
 static const struct json_obj_descr json_cfg_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg, mode, JSON_TOK_STRING),
@@ -509,7 +511,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 	*json_action_id = hb_context.action_id;
 
 	num_chunks = res->deployment.num_chunks;
-	if (num_chunks != 1) {
+	if (num_chunks != HAWKBIT_DEP_MAX_CHUNKS) {
 		LOG_ERR("Expecting one chunk (got %d)", num_chunks);
 		return -ENOSPC;
 	}
@@ -943,8 +945,13 @@ static bool send_request(enum http_method method,
 	case HAWKBIT_CONFIG_DEVICE:
 		memset(&cfg, 0, sizeof(cfg));
 		cfg.mode = "merge";
-		cfg.data.VIN = device_id;
-		cfg.data.hwRevision = "3";
+
+		ret = hawkbit_get_config_data(&cfg.data);
+		if (ret) {
+			LOG_ERR("Failed to get device attributes");
+			return false;
+		}
+
 		cfg.id = "";
 		cfg.time = "";
 		cfg.status.execution = exec;
@@ -1325,6 +1332,7 @@ enum hawkbit_response hawkbit_probe(void)
 
 free_md:
 	mbedtls_md_free(&hb_context.dl.hash_ctx);
+
 
 cleanup:
 	cleanup_connection();
