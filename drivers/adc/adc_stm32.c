@@ -324,17 +324,20 @@ static void adc_stm32_calib(const struct device *dev)
  */
 static int adc_stm32_enable(ADC_TypeDef *adc)
 {
-	if (LL_ADC_IsEnabled(adc) == 1UL) {
-		return 0;
-	}
-	LL_ADC_Enable(adc);
-
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
+
+	if (LL_ADC_IsEnabled(adc) == 1UL) {
+		return 0;
+	}
+
+	LL_ADC_ClearFlag_ADRDY(adc);
+	LL_ADC_Enable(adc);
+
 	/*
 	 * Enabling ADC modules in L4, WB, G0 and G4 series may fail if they are
 	 * still not stabilized, this will wait for a short time to ensure ADC
@@ -351,6 +354,8 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 			}
 		}
 	}
+#else
+	LL_ADC_Enable(adc);
 #endif
 
 	return 0;
