@@ -17,5 +17,5 @@ properties:
     type: int
     required: false
     default: 0x08
-    description: Bandwidth of the internal low-pass filter
+    description: Output data rate, influences bandwidth of internal low-pass filter. See value "acc_odr" in datasheet
 
