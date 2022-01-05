@@ -450,6 +450,7 @@ Documentation:
         - lgirdwood
         - mengxianglinx
         - marc-hb
+        - kv2019i
     files:
         - drivers/audio/
         - include/audio/
@@ -1496,6 +1497,11 @@ Intel Platforms (Xtensa):
     collaborators:
         - andyross
         - dcpleung
+        - lyakh
+        - lgirdwood
+        - mengxianglinx
+        - marc-hb
+        - kv2019i
     files:
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
