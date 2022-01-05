@@ -3859,13 +3859,13 @@ endfunction()
 # EXPR <expr>  : Expression that defines the symbol. Due to linker limitations
 #                all expressions should only contain simple math, such as
 #                `+, -, *` and similar. The expression will go directly into the
-#                linker, and all `%<symbol>%` will be replaced with the referred
+#                linker, and all `@<symbol>@` will be replaced with the referred
 #                symbol.
 #
 # Example:
 #   To create a new symbol `bar` pointing to the start VMA address of section
 #   `foo` + 1024, one can write:
-#     zephyr_linker_symbol(SYMBOL bar EXPR "(%foo% + 1024)")
+#     zephyr_linker_symbol(SYMBOL bar EXPR "(@foo@ + 1024)")
 #
 function(zephyr_linker_symbol)
   set(single_args "EXPR;SYMBOL")
