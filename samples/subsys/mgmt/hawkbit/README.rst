@@ -19,6 +19,10 @@ Manual mode requires the user to call the server probe and then, if there is
 an available update, it will install the update. You can access the sample
 source code for this mode hawkbit_manual
 
+This sample shows how to use custom device attributes which are sent to the
+server. You can access the sample source code to see how custom device
+attributes are implemented.
+
 Caveats
 *******
 

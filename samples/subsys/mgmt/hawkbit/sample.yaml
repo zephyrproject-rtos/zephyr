@@ -10,3 +10,11 @@ tests:
     depends_on: netif
     build_only: true
     platform_allow: frdm_k64f
+  samples.net.hawkbit.custom_attributes:
+    harness: net
+    tags: net
+    depends_on: netif
+    extra_configs:
+      - CONFIG_HAWKBIT_CUSTOM_CONFIG_DATA=y
+    build_only: true
+    platform_allow: frdm_k64f
