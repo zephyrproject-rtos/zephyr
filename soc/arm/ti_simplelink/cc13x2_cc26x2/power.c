@@ -257,12 +257,18 @@ static int domain_cc13xx_cc26xx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Power on domain */
 		PRCMPowerDomainOn(cfg->resource_id);
 		while (PRCMPowerDomainStatus(cfg->resource_id) !=
 		       PRCM_DOMAIN_POWER_ON) {
 		}
+		/* Notify supported devices */
+		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* Notify supported devices */
+		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
+		/* Power down domain */
 		PRCMPowerDomainOff(cfg->resource_id);
 		while (PRCMPowerDomainStatus(cfg->resource_id) !=
 		       PRCM_DOMAIN_POWER_OFF) {
