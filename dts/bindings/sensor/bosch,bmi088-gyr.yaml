@@ -7,3 +7,9 @@ compatible: "bosch,bmi088-gyr"
 
 include: spi-device.yaml
 
+properties:
+  bandwidth:
+    type: int
+    required: false
+    default: 0x04
+    description: Bandwidth of the internal low-pass filter
