@@ -8,16 +8,16 @@ tests:
     platform_allow: native_posix_64
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
-      - CONFIG_LVGL_BUFFER_ALLOC_DYNAMIC=y
-      - CONFIG_LVGL_MEM_POOL_HEAP_LIB_C=y
+      - CONFIG_LV_Z_BUFFER_ALLOC_DYNAMIC=y
+      - CONFIG_LV_Z_MEM_POOL_HEAP_LIB_C=y
   libraries.gui.lvgl.dynamic.pool.sys_heap:
     tags: display gui
     platform_allow: native_posix_64
     extra_configs:
-      - CONFIG_LVGL_BUFFER_ALLOC_DYNAMIC=y
-      - CONFIG_LVGL_MEM_POOL_SYS_HEAP=y
-      - CONFIG_LVGL_MEM_POOL_NUMBER_BLOCKS=3
-      - CONFIG_LVGL_MEM_POOL_MAX_SIZE=32768
+      - CONFIG_LV_Z_BUFFER_ALLOC_DYNAMIC=y
+      - CONFIG_LV_Z_MEM_POOL_SYS_HEAP=y
+      - CONFIG_LV_Z_MEM_POOL_NUMBER_BLOCKS=3
+      - CONFIG_LV_Z_MEM_POOL_MAX_SIZE=32768
   libraries.gui.lvgl.16bit:
     tags: display gui
     platform_allow: native_posix_64
