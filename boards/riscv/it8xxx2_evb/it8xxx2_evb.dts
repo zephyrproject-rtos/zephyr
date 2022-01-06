@@ -13,6 +13,10 @@
 	model = "IT8XXX2 EV-Board";
 	compatible = "riscv,it8xxx2-evb";
 
+	aliases {
+		i2c-0 = &i2c0;
+	};
+
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
