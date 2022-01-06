@@ -208,13 +208,19 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+	. = RAM_BASE;
+	_image_ram_start = .;
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
+
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
 #define SMEM_PARTITION_ALIGN MPU_ALIGN
 
 #include <app_smem.ld>
 
-	_image_ram_start = _app_smem_start;
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_USERSPACE */
@@ -228,9 +234,6 @@ SECTIONS
 		 */
 		 . = ALIGN(4);
 		 __bss_start = .;
-#if !defined(CONFIG_USERSPACE)
-		 _image_ram_start = .;
-#endif /* CONFIG_USERSPACE */
 		__kernel_ram_start = .;
 		 *(.sbss)
 		 *(".sbss.*")
@@ -289,11 +292,6 @@ SECTIONS
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
 #include <linker/cplusplus-ram.ld>
-
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
- */
-#include <snippets-ram-sections.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
