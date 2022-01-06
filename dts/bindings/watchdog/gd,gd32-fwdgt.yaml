@@ -1,0 +1,29 @@
+# Copyright (c) 2021, TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: GD32 free watchdog timer
+
+compatible: "gd,gd32-fwdgt"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    initial-timeout:
+      type: int
+      default: 1000
+      description: |
+        Set timeout value in milliseconds.
+        The following equation gives the maximum timeout value
+
+          timeout = prescaler * reload / peripheral_freqency.
+
+        where the maximum prescaler = 256 and the maximum reload = 4096.
+        The peripheral_frequency uses GD32_LOW_SPEED_IRC_FREQUENCY
+        that defined in modules/hal_gigadevice/Kconfig.
+        Validate the value is within a capable range at the compile time.
