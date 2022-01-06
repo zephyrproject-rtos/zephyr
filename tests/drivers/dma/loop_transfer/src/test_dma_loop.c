@@ -79,7 +79,7 @@ static void dma_user_callback(const struct device *dma_dev, void *arg,
 	 * the device is the DMAMUX, given through
 	 * the stream->user_data by the dma_stm32_irq_handler
 	 */
-	test_transfer((struct device *)arg, id);
+	test_transfer((const struct device *)arg, id);
 #else
 	test_transfer(dma_dev, id);
 #endif /* CONFIG_DMAMUX_STM32 */
@@ -113,7 +113,7 @@ static int test_loop(void)
 	dma_cfg.source_burst_length = 1U;
 	dma_cfg.dest_burst_length = 1U;
 #ifdef CONFIG_DMAMUX_STM32
-	dma_cfg.user_data = (struct device *)dma;
+	dma_cfg.user_data = (void *)dma;
 #else
 	dma_cfg.user_data = NULL;
 #endif /* CONFIG_DMAMUX_STM32 */
