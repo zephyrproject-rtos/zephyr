@@ -82,7 +82,7 @@ static const uint8_t line2irq[NUM_EXTI_LINES] = {
 #endif /* CONFIG_SOC_SERIES_GD32F4XX */
 };
 
-__unused static void gd32_exti_isr(void *isr_data)
+__unused static void gd32_exti_isr(const void *isr_data)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct gd32_exti_data *data = dev->data;

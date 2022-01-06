@@ -266,9 +266,8 @@ const struct espi_bus_isr espi_bus_isr_tbl[] = {
 #endif
 };
 
-static void espi_bus_generic_isr(void *arg)
+static void espi_bus_generic_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	int i;
 	uint32_t mask, status;

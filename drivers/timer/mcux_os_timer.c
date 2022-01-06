@@ -25,7 +25,7 @@ static struct k_spinlock lock;
 static uint64_t last_count;
 static OSTIMER_Type *base;
 
-void mcux_lpc_ostick_isr(void *arg)
+void mcux_lpc_ostick_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
