@@ -414,7 +414,7 @@ bool pm_device_is_busy(const struct device *dev);
  * @retval true If the wakeup source was successfully enabled.
  * @retval false If the wakeup source was not successfully enabled.
  */
-bool pm_device_wakeup_enable(struct device *dev, bool enable);
+bool pm_device_wakeup_enable(const struct device *dev, bool enable);
 
 /**
  * @brief Check if a device is enabled as a wake up source.
@@ -498,7 +498,8 @@ static inline bool pm_device_is_busy(const struct device *dev)
 	ARG_UNUSED(dev);
 	return false;
 }
-static inline bool pm_device_wakeup_enable(struct device *dev, bool enable)
+static inline bool pm_device_wakeup_enable(const struct device *dev,
+					   bool enable)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(enable);
