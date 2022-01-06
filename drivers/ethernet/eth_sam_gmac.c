@@ -1822,7 +1822,7 @@ static void phy_link_state_changed(const struct device *pdev,
 				   struct phy_link_state *state,
 				   void *user_data)
 {
-	const struct device *dev = (struct device *) user_data;
+	const struct device *dev = (const struct device *) user_data;
 	struct eth_sam_dev_data *const dev_data = dev->data;
 	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	bool is_up;
