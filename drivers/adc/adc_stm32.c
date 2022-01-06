@@ -236,6 +236,41 @@ static const uint32_t table_samp_time[] = {
 };
 #endif
 
+/* table to define the LL ADC clock prescaler from the DTS */
+static const uint32_t adc_clock_prescaler[] = {
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+	LL_ADC_CLOCK_SYNC_PCLK_DIV1,
+	LL_ADC_CLOCK_SYNC_PCLK_DIV2,
+	LL_ADC_CLOCK_SYNC_PCLK_DIV4,
+#elif defined(STM32F3X_ADC_V1_1) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_ADC_CLOCK_SYNC_PCLK_DIV1,
+	LL_ADC_CLOCK_SYNC_PCLK_DIV2,
+	LL_ADC_CLOCK_SYNC_PCLK_DIV4,
+#elif defined(CONFIG_SOC_SERIES_STM32L1X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
+	LL_ADC_CLOCK_ASYNC_DIV1,
+	LL_ADC_CLOCK_ASYNC_DIV2,
+	LL_ADC_CLOCK_ASYNC_DIV4,
+	LL_ADC_CLOCK_ASYNC_DIV6,
+	LL_ADC_CLOCK_ASYNC_DIV8,
+	LL_ADC_CLOCK_ASYNC_DIV10,
+	LL_ADC_CLOCK_ASYNC_DIV12,
+	LL_ADC_CLOCK_ASYNC_DIV16,
+	LL_ADC_CLOCK_ASYNC_DIV32,
+	LL_ADC_CLOCK_ASYNC_DIV64,
+	LL_ADC_CLOCK_ASYNC_DIV128,
+	LL_ADC_CLOCK_ASYNC_DIV256,
+#endif
+};
+
 /* External channels (maximum). */
 #define STM32_CHANNEL_COUNT		20
 
@@ -259,6 +294,7 @@ struct adc_stm32_cfg {
 	void (*irq_cfg_func)(void);
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
+	uint8_t clock_prescaler;
 	bool has_temp_channel;
 	bool has_vref_channel;
 };
@@ -921,6 +957,8 @@ static int adc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+	LOG_INF("ADC clock prescaler (%d)", config->clock_prescaler);
+
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
@@ -966,7 +1004,7 @@ static int adc_stm32_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
-	LL_ADC_SetClock(adc, LL_ADC_CLOCK_SYNC_PCLK_DIV4);
+	LL_ADC_SetClock(adc, adc_clock_prescaler[config->clock_prescaler]);
 #elif defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
@@ -975,11 +1013,11 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			      LL_ADC_CLOCK_SYNC_PCLK_DIV4);
+			      adc_clock_prescaler[config->clock_prescaler]);
 #elif defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			LL_ADC_CLOCK_ASYNC_DIV4);
+			adc_clock_prescaler[config->clock_prescaler]);
 #endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
@@ -1147,6 +1185,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	.clock_prescaler = DT_INST_PROP(index, st_prescaler),		\
 	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),		\
 	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),		\
 };
@@ -1168,6 +1207,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
+	.clock_prescaler = DT_INST_PROP(index, st_prescaler),		\
 	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),		\
 	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),		\
 };
@@ -1189,6 +1229,10 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    &adc_stm32_init, NULL,				\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
-		    &api_stm32_driver_api);
+		    &api_stm32_driver_api);				\
+									\
+BUILD_ASSERT(DT_INST_PROP(index, st_prescaler) <=			\
+			ARRAY_SIZE(adc_clock_prescaler),		\
+			"ADC prescaler out of range");			\
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_ADC_INIT)
