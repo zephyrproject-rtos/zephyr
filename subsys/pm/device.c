@@ -200,7 +200,7 @@ void pm_device_busy_clear(const struct device *dev)
 	atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_BUSY);
 }
 
-bool pm_device_wakeup_enable(struct device *dev, bool enable)
+bool pm_device_wakeup_enable(const struct device *dev, bool enable)
 {
 	atomic_val_t flags, new_flags;
 	struct pm_device *pm = dev->pm;
