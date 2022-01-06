@@ -78,6 +78,25 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
+    /*
+     * Set PSP and use it to boot without using MSP, so that it
+     * gets set to z_interrupt_stacks during initialization.
+     */
+    ldr r0, =z_interrupt_stacks
+    ldr r1, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
+    adds r0, r0, r1
+    msr PSP, r0
+    mrs r0, CONTROL
+    movs r1, #2
+    orrs r0, r1 /* CONTROL_SPSEL_Msk */
+    msr CONTROL, r0
+    /*
+     * When changing the stack pointer, software must use an ISB instruction
+     * immediately after the MSR instruction. This ensures that instructions
+     * after the ISB instruction execute using the new stack pointer.
+     */
+    isb
+
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
     bl z_arm_platform_init
 #endif
@@ -126,25 +145,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     ldr r2, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
     bl memset
 #endif
-
-    /*
-     * Set PSP and use it to boot without using MSP, so that it
-     * gets set to z_interrupt_stacks during initialization.
-     */
-    ldr r0, =z_interrupt_stacks
-    ldr r1, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
-    adds r0, r0, r1
-    msr PSP, r0
-    mrs r0, CONTROL
-    movs r1, #2
-    orrs r0, r1 /* CONTROL_SPSEL_Msk */
-    msr CONTROL, r0
-    /*
-     * When changing the stack pointer, software must use an ISB instruction
-     * immediately after the MSR instruction. This ensures that instructions
-     * after the ISB instruction execute using the new stack pointer.
-     */
-    isb
 
     /*
      * 'bl' jumps the furthest of the branch instructions that are
