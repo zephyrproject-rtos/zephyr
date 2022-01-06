@@ -637,10 +637,9 @@ static int peek_ring_cmpl(const struct device *dev,
 	return process_cmpl_event(dev, idx, pl_len);
 }
 #else
-static void rm_isr(void *arg)
+static void rm_isr(const struct device *dev)
 {
 	uint32_t status, err_stat, idx;
-	const struct device *dev = arg;
 	struct dma_iproc_pax_data *pd = dev->data;
 
 	err_stat =

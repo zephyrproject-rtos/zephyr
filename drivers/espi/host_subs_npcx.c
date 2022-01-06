@@ -223,7 +223,7 @@ static inline uint8_t host_shd_mem_wnd_size_sl(uint32_t size)
 
 /* Host KBC sub-device local functions */
 #if defined(CONFIG_ESPI_PERIPHERAL_8042_KBC)
-static void host_kbc_ibf_isr(void *arg)
+static void host_kbc_ibf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	struct kbc_reg *const inst_kbc = host_sub_cfg.inst_kbc;
@@ -249,7 +249,7 @@ static void host_kbc_ibf_isr(void *arg)
 							evt);
 }
 
-static void host_kbc_obe_isr(void *arg)
+static void host_kbc_obe_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	struct kbc_reg *const inst_kbc = host_sub_cfg.inst_kbc;
@@ -438,7 +438,7 @@ static void host_shared_mem_region_init(void)
 #if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO) || \
 				defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
 /* Host pm (host io) sub-module isr function for all channels such as ACPI. */
-static void host_pmch_ibf_isr(void *arg)
+static void host_pmch_ibf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	struct pmch_reg *const inst_acpi = host_sub_cfg.inst_pm_acpi;
@@ -471,7 +471,7 @@ static void host_pmch_ibf_isr(void *arg)
 
 /* Host port80 sub-device local functions */
 #if defined(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)
-static void host_port80_isr(void *arg)
+static void host_port80_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	struct shm_reg *const inst_shm = host_sub_cfg.inst_shm;

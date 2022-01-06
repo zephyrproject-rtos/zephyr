@@ -82,7 +82,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return LPTMR_GetCurrentTimerCount(LPTMR_BASE) + cycles;
 }
 
-static void mcux_lptmr_timer_isr(void *arg)
+static void mcux_lptmr_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
