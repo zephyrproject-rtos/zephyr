@@ -117,3 +117,7 @@
 &gpt_hw_timer {
 	status = "okay";
 };
+
+&wdog1 {
+	status = "okay";
+};
