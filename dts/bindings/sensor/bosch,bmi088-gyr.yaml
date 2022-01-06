@@ -12,4 +12,4 @@ properties:
     type: int
     required: false
     default: 0x04
-    description: Bandwidth of the internal low-pass filter
+    description: Bandwidth of the internal low-pass filter, see value "gyro_bw" in datasheet
