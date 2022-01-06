@@ -472,7 +472,7 @@ static int configure_dma(const struct device *dev)
 static void dma_callback(const struct device *dma_dev, void *callback_arg,
 			 uint32_t channel, int error_code)
 {
-	const struct device *dev = (struct device *)callback_arg;
+	const struct device *dev = (const struct device *)callback_arg;
 	const struct spi_mcux_config *config = dev->config;
 	SPI_Type *base = config->base;
 	struct spi_mcux_data *data = dev->data;

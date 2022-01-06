@@ -373,7 +373,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 
 static void adc_it8xxx2_isr(const void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct adc_it8xxx2_data *data = dev->data;
 
 	LOG_DBG("ADC ISR triggered.");

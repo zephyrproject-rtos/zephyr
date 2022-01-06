@@ -801,7 +801,7 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 static void i2c_xec_bus_isr(void *arg)
 {
 #ifdef CONFIG_I2C_SLAVE
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2c_xec_config *cfg =
 		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data = dev->data;
