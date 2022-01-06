@@ -101,6 +101,82 @@ int pm_device_action_run(const struct device *dev,
 	return 0;
 }
 
+static int power_domain_add_or_remove(const struct device *dev,
+				      const struct device *domain,
+				      bool add)
+{
+#if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
+	device_handle_t *rv = domain->handles;
+	device_handle_t dev_handle = -1;
+	extern const struct device __device_start[];
+	extern const struct device __device_end[];
+	size_t i, region = 0;
+	size_t numdev = __device_end - __device_start;
+
+	/*
+	 * Supported devices are stored as device handle and not
+	 * device pointers. So, it is necessary to find what is
+	 * the handle associated to the given device.
+	 */
+	for (i = 0; i < numdev; i++) {
+		if (&__device_start[i] == dev) {
+			dev_handle = i + 1;
+			break;
+		}
+	}
+
+	/*
+	 * The last part is to find an available slot in the
+	 * supported section of handles array and replace it
+	 * with the device handle.
+	 */
+	while (region != 2) {
+		if (*rv == DEVICE_HANDLE_SEP) {
+			region++;
+		}
+		rv++;
+	}
+
+	i = 0;
+	while (rv[i] != DEVICE_HANDLE_ENDS) {
+		if (add == false) {
+			if (rv[i] == dev_handle) {
+				dev->pm->domain = NULL;
+				rv[i] = DEVICE_HANDLE_NULL;
+				return 0;
+			}
+		} else {
+			if (rv[i] == DEVICE_HANDLE_NULL) {
+				dev->pm->domain = domain;
+				rv[i] = dev_handle;
+				return 0;
+			}
+		}
+		++i;
+	}
+
+	return add ? -ENOSPC : -ENOENT;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(domain);
+	ARG_UNUSED(add);
+
+	return -ENOSYS;
+#endif
+}
+
+int pm_device_power_domain_remove(const struct device *dev,
+				  const struct device *domain)
+{
+	return power_domain_add_or_remove(dev, domain, false);
+}
+
+int pm_device_power_domain_add(const struct device *dev,
+			       const struct device *domain)
+{
+	return power_domain_add_or_remove(dev, domain, true);
+}
+
 void pm_device_children_action_run(const struct device *dev,
 				   enum pm_device_action action,
 				   pm_device_action_failed_cb_t failure_cb)
@@ -120,6 +196,10 @@ void pm_device_children_action_run(const struct device *dev,
 	for (size_t i = 0U; i < handle_count; ++i) {
 		device_handle_t dh = handles[i];
 		const struct device *cdev = device_from_handle(dh);
+
+		if (cdev == NULL) {
+			continue;
+		}
 
 		rc = pm_device_action_run(cdev, action);
 		if ((failure_cb != NULL) && (rc < 0)) {

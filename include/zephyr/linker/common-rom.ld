@@ -220,6 +220,7 @@
 		KEEP(*(".dbg_thread_info"));
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+#if !defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
 	SECTION_DATA_PROLOGUE(device_handles,,)
 	{
 		__device_handles_start = .;
@@ -230,3 +231,4 @@
 #endif /* LINKER_DEVICE_HANDLES_PASS1 */
 		__device_handles_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif /* !CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */

@@ -444,6 +444,12 @@ struct device_state {
 
 struct pm_device;
 
+#ifdef CONFIG_HAS_DYNAMIC_DEVICE_HANDLES
+#define Z_DEVICE_HANDLES_CONST
+#else
+#define Z_DEVICE_HANDLES_CONST const
+#endif
+
 /**
  * @brief Runtime device structure (in ROM) per driver instance
  */
@@ -465,7 +471,8 @@ struct device {
 	 * extracted with dedicated API, such as
 	 * device_required_handles_get().
 	 */
-	const device_handle_t *const handles;
+	Z_DEVICE_HANDLES_CONST device_handle_t * const handles;
+
 #ifdef CONFIG_PM_DEVICE
 	/** Reference to the device PM resources. */
 	struct pm_device * const pm;
@@ -877,9 +884,9 @@ __deprecated static inline int device_usable_check(const struct device *dev)
  */
 BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
-	extern const device_handle_t					\
+	extern Z_DEVICE_HANDLES_CONST device_handle_t			\
 		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
-	const device_handle_t						\
+	Z_DEVICE_HANDLES_CONST device_handle_t				\
 	__aligned(sizeof(device_handle_t))				\
 	__attribute__((__weak__,					\
 		       __section__(".__device_handles_pass1")))		\

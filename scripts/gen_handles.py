@@ -62,6 +62,8 @@ def parse_args():
 
     parser.add_argument("-k", "--kernel", required=True,
                         help="Input zephyr ELF binary")
+    parser.add_argument("-d", "--num-dynamic-devices", required=False, default=0,
+                        type=int, help="Input number of dynamic devices allowed")
     parser.add_argument("-o", "--output-source", required=True,
             help="Output source file")
 
@@ -112,6 +114,7 @@ def symbol_handle_data(elf, sym):
 # These match the corresponding constants in <device.h>
 DEVICE_HANDLE_SEP = -32768
 DEVICE_HANDLE_ENDS = 32767
+DEVICE_HANDLE_NULL = 0
 def handle_name(hdl):
     if hdl == DEVICE_HANDLE_SEP:
         return "DEVICE_HANDLE_SEP"
@@ -336,6 +339,7 @@ def main():
                     else:
                         sup_paths.append('(%s)' % dn.path)
                 hdls.extend(dn.__device.dev_handle for dn in sn.__supports)
+            hdls.extend(DEVICE_HANDLE_NULL for dn in range(args.num_dynamic_devices))
 
             # Terminate the array with the end symbol
             hdls.append(DEVICE_HANDLE_ENDS)

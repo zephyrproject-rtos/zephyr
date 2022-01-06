@@ -521,6 +521,36 @@ bool pm_device_state_is_locked(const struct device *dev);
  */
 bool pm_device_on_power_domain(const struct device *dev);
 
+/**
+ * @brief Add a device to a power domain.
+ *
+ * This function adds a device to a given power domain.
+ *
+ * @param dev Device to be added to the power domain.
+ * @param domain Power domain.
+ *
+ * @retval 0 If successful.
+ * @retval -EALREADY If device is already part of the power domain.
+ * @retval -ENOSYS If the application was built without power domain support.
+ * @retval -ENOSPC If there is no space available in the power domain to add the device.
+ */
+int pm_device_power_domain_add(const struct device *dev,
+			       const struct device *domain);
+
+/**
+ * @brief Remove a device from a power domain.
+ *
+ * This function removes a device from a given power domain.
+ *
+ * @param dev Device to be removed from the power domain.
+ * @param domain Power domain.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If the application was built without power domain support.
+ * @retval -ENOENT If device is not in the given domain.
+ */
+int pm_device_power_domain_remove(const struct device *dev,
+				  const struct device *domain);
 #else
 static inline void pm_device_init_suspended(const struct device *dev)
 {
@@ -579,6 +609,19 @@ static inline bool pm_device_on_power_domain(const struct device *dev)
 	ARG_UNUSED(dev);
 	return false;
 }
+
+static inline int pm_device_power_domain_add(const struct device *dev,
+					     const struct device *domain)
+{
+	return -ENOSYS;
+}
+
+static inline int pm_device_power_domain_remove(const struct device *dev,
+						const struct device *domain)
+{
+	return -ENOSYS;
+}
+
 #endif /* CONFIG_PM_DEVICE */
 
 /** @} */
