@@ -139,6 +139,24 @@ config MODEM_CELL_INFO
 	help
 	  Query for numerical operator id, location area code and cell id.
 
+config MODEM_SMS_IN_MSG_MAX_LEN
+        int "Maximum length of inbound SMS messages"
+        default 160
+        help
+          This is the maximum length of inbound (received) SMS messages.
+          Inbound SMS messages longer than this will be truncated.
+          The absolute maximum value may be network- and/or modem-dependent,
+          but a smaller value may be preferred in order to conserve memory.
+
+config MODEM_SMS_OUT_MSG_MAX_LEN
+        int "Maximum length of outbound SMS messages"
+        default 160
+        help
+          This is the maximum length of outbound SMS messages (being sent).
+          SMS message send requests longer than this are not possible.
+          The absolute maximum value may be network- and/or modem-dependent,
+          but a smaller value may be preferred in order to conserve memory.
+
 source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"
