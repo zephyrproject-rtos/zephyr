@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2018 Foundries.io
+ * Copyright (c) 2021 John Lange <john@y2038.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +21,7 @@
 #include <drivers/console/uart_mux.h>
 
 #include <sys/printk.h>
+#include "modem_sms.h"
 
 struct modem_shell_user_data {
 	const struct shell *shell;
@@ -242,11 +244,114 @@ static int cmd_modem_info(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_modem_sms_send(const struct shell *shell, size_t argc, char *argv[])
+{
+	struct ms_context *ms_ctx;
+	struct sms_out sms;
+	int ret = -1;
+
+	if (argc != 4) {
+		shell_fprintf(shell, SHELL_ERROR,
+			      "usage: modem sms send <modem index> <phone number> <message>\n");
+	}
+	else {
+		int modem_index = atoi(argv[1]);
+
+		ms_ctx = ms_context_from_id(modem_index);
+		if (ms_ctx == NULL) {
+			shell_fprintf(shell, SHELL_ERROR,
+				      "Couldn't open context for modem index %d\n", modem_index);
+			return -ENOEXEC;
+		}
+
+		if (ms_ctx->send_sms == NULL) {
+			shell_fprintf(shell, SHELL_ERROR,
+				      "No function defined to send SMS\n");
+			return -ENOEXEC;
+		}
+
+		snprintk(sms.phone, sizeof(sms.phone), "%s", argv[2]);
+		snprintk(sms.msg, sizeof(sms.msg), "%s", argv[3]);
+
+		ret = ms_ctx->send_sms(ms_ctx, &sms);
+		if (ret == 0) {
+			shell_fprintf(shell, SHELL_NORMAL,
+				      "SMS msg was sent!");
+		} else {
+			shell_fprintf(shell, SHELL_ERROR,
+				      "error: send_sms returned %d\n", ret);
+		}
+	}
+	return ret;
+}
+
+static int cmd_modem_sms_recv(const struct shell *shell, size_t argc, char *argv[])
+{
+	struct ms_context *ms_ctx;
+	struct sms_in sms;
+	int ret = -1;
+
+	if (argc != 2) {
+		shell_fprintf(shell, SHELL_ERROR,
+			      "usage: modem sms recv <modem index>\n");
+	}
+	else {
+		int modem_index = atoi(argv[1]);
+
+		ms_ctx = ms_context_from_id(modem_index);
+		if (ms_ctx == NULL) {
+			shell_fprintf(shell, SHELL_ERROR,
+				      "Couldn't open context for modem index %d\n", modem_index);
+			return -ENOEXEC;
+		}
+
+		if (ms_ctx->recv_sms == NULL) {
+			shell_fprintf(shell, SHELL_ERROR,
+				      "No function defined to receive SMS\n");
+			return -ENOEXEC;
+		}
+
+		ret = ms_ctx->recv_sms(ms_ctx, &sms, K_NO_WAIT);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_ERROR,
+				      "recv_sms returned error %d, errno:%d\n", ret, errno);
+		} else if (ret == 0) {
+			shell_fprintf(shell, SHELL_NORMAL,
+				      "No SMS msgs available\n");
+		} else {
+			shell_fprintf(shell, SHELL_NORMAL,
+				      "Received SMS msg from %s dated %s: '%s'\n", sms.phone, sms.time, sms.msg);
+		}
+	}
+	return ret;
+}
+
+static int cmd_modem_sms(const struct shell *shell, size_t argc, char *argv[])
+{
+	ARG_UNUSED(shell);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(modem_cmd_sms,
+	SHELL_CMD(send, NULL,
+		  "'cmd_sms_send <modem index> <phone number> <message>' send sms message.",
+		  cmd_modem_sms_send),
+	SHELL_CMD(recv, NULL,
+		  "'cmd_sms_recv <modem index>' receive sms message.",
+		  cmd_modem_sms_recv),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_modem,
 	SHELL_CMD(info, NULL, "Show information for a modem", cmd_modem_info),
 	SHELL_CMD(list, NULL, "List registered modems", cmd_modem_list),
 	SHELL_CMD(send, NULL, "Send an AT <command> to a registered modem "
 			      "receiver", cmd_modem_send),
+	SHELL_CMD(sms, &modem_cmd_sms, "Send or receive SMS message via modem",
+                  cmd_modem_sms),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
