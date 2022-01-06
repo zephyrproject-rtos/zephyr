@@ -1,5 +1,8 @@
 tests:
   drivers.disk.usdhc:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
     filter: CONFIG_SDMMC_USDHC
     tags: disk mcux
     integration_platforms:
