@@ -29,7 +29,7 @@ void main(void)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_LVGL_POINTER_KSCAN)) {
+	if (IS_ENABLED(CONFIG_LV_Z_POINTER_KSCAN)) {
 		lv_obj_t *hello_world_button;
 
 		hello_world_button = lv_btn_create(lv_scr_act());
