@@ -315,13 +315,13 @@ static int bmi088_acc_init(const struct device *dev) {
 
     int odr = to_config(dev)->odr;
     int osr = to_config(dev)->osr;
-
     if (odr < 0x05 || odr > 0x0c) {
         odr = BMI088_DEFAULT_ODR;
+        LOG_WRN("BMI088 acc: specified ODR is out of range, using default value instead");
     }
-
-    if (osr < 0x05 || osr > 0x0c) {
+    if (osr < 0x08 || osr > 0x0a) {
         osr = BMI088_DEFAULT_OSR;
+        LOG_WRN("BMI088 acc: specified OSR is out of range, using default value instead");
     }
 
     uint8_t conf = (uint8_t) (0xff & (osr << 4 | odr));

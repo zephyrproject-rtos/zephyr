@@ -246,6 +246,7 @@ static int bmi088_gyr_init(const struct device *dev) {
     int bw = to_config(dev)->bandwidth;
     if (bw < 0x00 || bw > 0x07) {
         bw = BMI088_GYR_DEFAULT_BW;
+        LOG_WRN("BMI088 gyro: specified bandwidth is out of range, using default value instead");
     }
     if (bmi088_gyr_byte_write(dev, GYRO_BANDWIDTH, bw) < 0) {
         LOG_DBG("Failed to set gyro's ODR to %d", bw);
