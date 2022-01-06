@@ -926,9 +926,8 @@ static void sai_driver_irq(const struct device *dev)
 }
 
 /* clear IRQ sources atm */
-static void i2s_mcux_isr(void *arg)
+static void i2s_mcux_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = (I2S_Type *)dev_cfg->base;
 

@@ -73,9 +73,8 @@ static void gpio_rcar_modify_bit(const struct gpio_rcar_cfg *config,
 	gpio_rcar_write(config, offs, tmp);
 }
 
-static void gpio_rcar_port_isr(void *arg)
+static void gpio_rcar_port_isr(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct gpio_rcar_cfg *config = dev->config;
 	struct gpio_rcar_data *data = dev->data;
 	uint32_t pending, fsb, mask;

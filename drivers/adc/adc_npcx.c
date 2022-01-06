@@ -70,9 +70,8 @@ struct adc_npcx_data {
 #define HAL_INSTANCE(dev) ((struct adc_reg *)((const struct adc_npcx_config *)(dev)->config)->base)
 
 /* ADC local functions */
-static void adc_npcx_isr(void *arg)
+static void adc_npcx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct adc_npcx_config *config = dev->config;
 	struct adc_npcx_data *const data = dev->data;
 	struct adc_reg *const inst = HAL_INSTANCE(dev);
