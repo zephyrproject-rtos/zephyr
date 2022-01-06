@@ -928,4 +928,14 @@ config THREAD_LOCAL_STORAGE
 
 endmenu
 
+menu "Device Options"
+
+config HAS_DYNAMIC_DEVICE_HANDLES
+	bool
+	help
+	  Hidden option that makes possible to manipulate device handles at
+	  runtime.
+
+endmenu
+
 rsource "Kconfig.vm"
