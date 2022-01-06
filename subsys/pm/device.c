@@ -79,7 +79,7 @@ int pm_device_state_set(const struct device *dev,
 }
 
 int pm_device_action_run(const struct device *dev,
-			enum pm_device_action action)
+			 enum pm_device_action action)
 {
 	int ret;
 	enum pm_device_state state;
@@ -141,8 +141,8 @@ int pm_device_action_run(const struct device *dev,
 }
 
 void pm_device_children_action_run(const struct device *dev,
-		enum pm_device_action action,
-		pm_device_action_failed_cb_t failure_cb)
+				   enum pm_device_action action,
+				   pm_device_action_failed_cb_t failure_cb)
 {
 	const device_handle_t *handles;
 	size_t handle_count = 0U;
@@ -248,7 +248,7 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 		return false;
 	}
 
-	flags =	atomic_get(&pm->flags);
+	flags = atomic_get(&pm->flags);
 
 	if ((flags & BIT(PM_DEVICE_FLAG_WS_CAPABLE)) == 0U) {
 		return false;
@@ -256,7 +256,7 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 
 	if (enable) {
 		new_flags = flags |
-			BIT(PM_DEVICE_FLAG_WS_ENABLED);
+			    BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	} else {
 		new_flags = flags & ~BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	}
@@ -316,4 +316,18 @@ bool pm_device_state_is_locked(const struct device *dev)
 
 	return atomic_test_bit(&pm->flags,
 			       PM_DEVICE_FLAG_STATE_LOCKED);
+}
+
+bool pm_device_on_power_domain(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+	struct pm_device *pm = dev->pm;
+
+	if (pm == NULL) {
+		return false;
+	}
+	return pm->domain != NULL;
+#else
+	return false;
+#endif
 }
