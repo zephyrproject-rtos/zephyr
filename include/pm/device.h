@@ -489,6 +489,16 @@ void pm_device_state_unlock(const struct device *dev);
  */
 bool pm_device_state_is_locked(const struct device *dev);
 
+/**
+ * @brief Check if the device is on a switchable power domain.
+ *
+ * @param dev Device instance.
+ *
+ * @retval true If device is on a switchable power domain.
+ * @retval false If device is not on a switchable power domain.
+ */
+bool pm_device_on_power_domain(const struct device *dev);
+
 #else
 static inline void pm_device_busy_set(const struct device *dev) {}
 static inline void pm_device_busy_clear(const struct device *dev) {}
@@ -509,6 +519,10 @@ static inline bool pm_device_wakeup_is_capable(const struct device *dev)
 static inline void pm_device_state_lock(const struct device *dev) {}
 static inline void pm_device_state_unlock(const struct device *dev) {}
 static inline bool pm_device_state_is_locked(const struct device *dev)
+{
+	return false;
+}
+static inline bool pm_device_on_power_domain(const struct device *dev)
 {
 	return false;
 }
