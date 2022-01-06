@@ -129,4 +129,6 @@ source "drivers/mbox/Kconfig"
 
 source "drivers/mm/Kconfig"
 
+source "drivers/power_domain/Kconfig"
+
 endmenu

@@ -1,0 +1,15 @@
+# Copyright (c) 2022, CSIRO.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POWER_DOMAIN
+	bool "Power domain drivers"
+	help
+	  Include drivers for power domains in system config
+
+if POWER_DOMAIN
+
+config POWER_DOMAIN_GPIO
+	bool "GPIO controlled power domain"
+	depends on GPIO
+
+endif
