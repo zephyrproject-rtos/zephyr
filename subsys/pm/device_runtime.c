@@ -230,9 +230,9 @@ int pm_device_runtime_enable(const struct device *dev)
 		if (ret < 0) {
 			goto unlock;
 		}
+		pm->state = PM_DEVICE_STATE_SUSPENDED;
 	}
 
-	pm->state = PM_DEVICE_STATE_SUSPENDED;
 	pm->usage = 0U;
 
 	atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
