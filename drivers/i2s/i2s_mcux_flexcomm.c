@@ -414,7 +414,7 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 				uint32_t channel, int status)
 {
-	const struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct i2s_mcux_data *dev_data = dev->data;
 	struct stream *stream = &dev_data->tx;
 	void *buffer;
@@ -474,7 +474,7 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 static void i2s_mcux_dma_rx_callback(const struct device *dma_dev, void *arg,
 				uint32_t channel, int status)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct i2s_mcux_data *dev_data = dev->data;
 	struct stream *stream = &dev_data->rx;
 	void *buffer;

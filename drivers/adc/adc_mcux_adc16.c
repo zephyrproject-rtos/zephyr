@@ -76,7 +76,7 @@ struct mcux_adc16_data {
 static void adc_dma_callback(const struct device *dma_dev, void *callback_arg,
 			     uint32_t channel, int error_code)
 {
-	struct device *dev = (struct device *)callback_arg;
+	const struct device *dev = (const struct device *)callback_arg;
 	struct mcux_adc16_data *data = dev->data;
 
 	LOG_DBG("DMA done");

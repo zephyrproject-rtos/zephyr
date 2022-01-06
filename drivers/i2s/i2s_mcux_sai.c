@@ -186,7 +186,7 @@ static void i2s_rx_stream_disable(const struct device *dev)
 static void i2s_dma_tx_callback(const struct device *dma_dev,
 				void *arg, uint32_t channel, int status)
 {
-	const struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = (I2S_Type *)dev_cfg->base;
 	struct i2s_dev_data *dev_data = dev->data;
@@ -257,7 +257,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev,
 static void i2s_dma_rx_callback(const struct device *dma_dev,
 				void *arg, uint32_t channel, int status)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = (I2S_Type *)dev_cfg->base;
 	struct i2s_dev_data *dev_data = dev->data;
@@ -928,7 +928,7 @@ static void sai_driver_irq(const struct device *dev)
 /* clear IRQ sources atm */
 static void i2s_mcux_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = (I2S_Type *)dev_cfg->base;
 
