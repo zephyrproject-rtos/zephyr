@@ -115,9 +115,6 @@ typedef struct s_isrList {
  * @param p IRQ priority
  * @param v Interrupt Vector
  * @param d Descriptor Privilege Level
- *
- * @return N/A
- *
  */
 
 #define NANO_CPU_INT_REGISTER(r, n, p, v, d) \
