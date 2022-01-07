@@ -404,8 +404,6 @@ int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
- *
- * @return 0 on success, negative errno code on fail.
  */
 void usb_cancel_transfer(uint8_t ep);
 
