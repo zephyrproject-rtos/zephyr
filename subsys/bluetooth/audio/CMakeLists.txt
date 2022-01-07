@@ -41,3 +41,9 @@ zephyr_library_sources_ifdef(CONFIG_BT_MCS mcs.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MCS mpl.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MCS media_proxy.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_ASCS ascs.c)
+zephyr_library_sources_ifdef(CONFIG_BT_PACS pacs.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_STREAM stream.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_SERVER unicast_server.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_CAPABILITIES capabilities.c)
