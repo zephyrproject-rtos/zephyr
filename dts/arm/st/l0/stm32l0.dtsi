@@ -233,13 +233,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
 			interrupts = <15 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_2";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_2";
 				#pwm-cells = <3>;
 			};
@@ -251,13 +251,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000004>;
 			interrupts = <20 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_21";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_21";
 				#pwm-cells = <3>;
 			};
@@ -282,15 +282,6 @@
 			interrupts = <12 0>;
 			status = "disabled";
 			label = "ADC_1";
-			#io-channel-cells = <1>;
-		};
-
-		dac1: dac@40007400 {
-			compatible = "st,stm32-dac";
-			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
-			status = "disabled";
-			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
 

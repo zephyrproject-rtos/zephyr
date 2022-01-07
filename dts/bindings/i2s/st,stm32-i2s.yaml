@@ -5,7 +5,7 @@ description: STM32 I2S controller
 
 compatible: "st,stm32-i2s"
 
-include: [i2s-controller.yaml]
+include: [i2s-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -21,11 +21,7 @@ properties:
       required: true
 
     pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        Pin configuration for I2S signals.
-        We expect that the phandles will reference pinctrl nodes.
+      required: true
 
-        For example the I2S1 would be:
-        pinctrl-0 = <&i2s1_ck_pa5 &i2s1_sd_pa7>;
+    pinctrl-names:
+      required: true

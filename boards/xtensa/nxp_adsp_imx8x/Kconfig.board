@@ -1,0 +1,7 @@
+# Xtensa board configuration
+
+# Copyright (c) 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_NXP_ADSP_IMX8X
+	bool "NXP ADSP i.MX8X"

@@ -3,6 +3,7 @@
 
 menuconfig NET_L2_PPP
 	bool "Enable point-to-point (PPP) support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Add support for PPP.
 

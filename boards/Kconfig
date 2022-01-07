@@ -14,6 +14,13 @@ config QEMU_TARGET
 	  Mark all QEMU targets with this variable for checking whether we are
 	  running in an emulated environment.
 
+config NET_DRIVERS
+	bool
+	default y if QEMU_TARGET && NETWORKING
+	help
+	  When building for a qemu target then NET_DRIVERS will be default
+	  enabled to allow for easy use of SLIP or PPP
+
 # Note: $BOARD_DIR might be a glob pattern
 
 choice
@@ -46,6 +53,17 @@ config QEMU_ICOUNT_SHIFT
 	help
 	  The virtual CPU will execute one instruction every 2^N nanoseconds
 	  of virtual time, where N is the value provided here.
+
+config QEMU_ICOUNT_SLEEP
+	bool "QEMU icount sleep mode enable"
+	depends on QEMU_ICOUNT
+	help
+	  When the virtual CPU is sleeping, the virtual time will advance
+	  at default speed unless this option is set. With this option set,
+	  the virtual time will jump to the next timer deadline instantly
+	  whenever the virtual CPU goes to sleep mode and will not advance
+	  if no timer is enabled. This behavior gives deterministic execution
+	  times from the guest point of view.
 
 config QEMU_IVSHMEM_PLAIN_MEM_SIZE
 	int "QEMU ivshmem-plain shared memory size in mega-bytes"

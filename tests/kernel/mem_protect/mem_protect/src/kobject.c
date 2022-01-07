@@ -352,18 +352,20 @@ void test_kobject_release_from_user(void)
 	k_thread_join(&child_thread, K_FOREVER);
 }
 
-/* @brief Test release kernel a invaild kobject
+/**
+ * @brief Test release and access grant an invaild kobject
  *
- * @details Validate release kernel objects with NULL parameter.
+ * @details Validate release and access grant an invalid kernel object.
  *
- * @see k_object_release()
+ * @see k_object_release(), k_object_access_all_grant()
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_kobject_release_null(void)
+void test_kobject_invalid(void)
 {
 	int dummy = 0;
 
+	k_object_access_all_grant(&dummy);
 	k_object_release(&dummy);
 }
 
@@ -1256,6 +1258,7 @@ void test_alloc_kobjects(void)
 	struct k_poll_signal *polls;
 	struct k_timer *timer;
 	struct k_mutex *mutex;
+	struct k_condvar *condvar;
 	void *ko;
 
 	/* allocate kernel object */
@@ -1286,6 +1289,8 @@ void test_alloc_kobjects(void)
 	zassert_not_null(timer, "alloc obj (0x%lx)\n", (uintptr_t)timer);
 	mutex = k_object_alloc(K_OBJ_MUTEX);
 	zassert_not_null(mutex, "alloc obj (0x%lx)\n", (uintptr_t)mutex);
+	condvar = k_object_alloc(K_OBJ_CONDVAR);
+	zassert_not_null(condvar, "alloc obj (0x%lx)\n", (uintptr_t)condvar);
 
 	k_object_release((void *)mslab);
 	k_object_release((void *)polls);
@@ -1365,4 +1370,33 @@ void test_kobject_perm_error(void)
 
 		k_thread_join(tid, K_FOREVER);
 	}
+}
+
+extern const char *otype_to_str(enum k_objects otype);
+
+/**
+ * @brief Test get all kernel object list
+ *
+ * @details Get all of the kernel object in kobject list.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_all_kobjects_str(void)
+{
+	enum k_objects otype = K_OBJ_ANY;
+	const char *c;
+	int  cmp;
+
+	do {
+		c = otype_to_str(otype);
+		cmp = strcmp(c, "?");
+		if (otype != K_OBJ_LAST) {
+			zassert_true(cmp != 0,
+				"otype %d unexpectedly maps to last entry \"?\"", otype);
+		} else {
+			zassert_true(cmp == 0,
+				"otype %d does not map to last entry \"?\"", otype);
+		}
+		otype++;
+	} while (otype <= K_OBJ_LAST);
 }

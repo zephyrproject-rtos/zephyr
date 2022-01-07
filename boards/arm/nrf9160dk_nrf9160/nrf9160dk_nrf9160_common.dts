@@ -42,22 +42,29 @@
 	};
 
 	buttons {
+		/*
+		 * Unlike most DK boards, we do not actually have 4 buttons
+		 * on nRF9160 DK. Instead, we have 2 buttons and 2 switches.
+		 * Treat the switches as buttons anyway, for convenience.
+		 * This makes life easier for software that wants to deal with
+		 * the usual "4 buttons per DK board" convention.
+		 */
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Switch 1";
-		};
-		button1: button_1 {
-			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Switch 2";
-		};
-		button2: button_2 {
 			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
 		};
-		button3: button_3 {
+		button1: button_1 {
 			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
+		};
+		button2: button_2 {
+			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Switch 1";
+		};
+		button3: button_3 {
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Switch 2";
 		};
 	};
 
@@ -134,10 +141,10 @@
 		led2 = &led2;
 		led3 = &led3;
 		pwm-led0 = &pwm_led0;
-		sw0 = &button2;
-		sw1 = &button3;
-		sw2 = &button0;
-		sw3 = &button1;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
 		bootloader-led0 = &led0;
 	};
 };

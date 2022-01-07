@@ -151,14 +151,11 @@ config BT_SETTINGS_CCC_LAZY_LOADING
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
 	depends on BT_CONN
+	default y
 	help
 	  Store Client Configuration Characteristic value right after it has
-	  been updated.
-
-	  By default, CCC is only stored on disconnection.
-	  Choosing this option is safer for battery-powered devices or devices
-	  that expect to be reset suddenly. However, it requires additional
-	  workqueue stack space.
+	  been updated. If the option is disabled, the CCC is only stored on
+	  disconnection.
 
 config BT_SETTINGS_USE_PRINTK
 	bool "Use snprintk to encode Bluetooth settings key strings"
@@ -251,15 +248,7 @@ config BT_REMOTE_INFO
 	  Enable application access to the remote information available in the
 	  stack. The remote information is retrieved once a connection has been
 	  established and the application will be notified when this information
-	  is available through the remote_version_available connection callback.
-
-config BT_REMOTE_VERSION
-	bool "Enable remote version information"
-	depends on BT_REMOTE_INFO
-	help
-	  Enable this to get access to the remote version through
-	  the remote_version_available callback. The host will automatically ask
-	  the remote device after the connection has been established.
+	  is available through the remote_info_available connection callback.
 
 config BT_SMP
 	bool "Security Manager Protocol support"
@@ -551,31 +540,52 @@ config BT_ID_MAX
 
 config BT_DF
 	bool "Enable Direction Finding support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding.
 	  It will allow to: get information about antennae, configure
 	  Constant Tone Extension, transmit CTE and sample incoming CTE.
 
+if BT_DF
+
 config BT_DF_CONNECTIONLESS_CTE_RX
 	bool "Enable support for receive of CTE in connectionless mode"
-	depends on BT_DF
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
 config BT_DF_CONNECTION_CTE_RX
 	bool "Enable support for receive of CTE in connection mode"
-	depends on BT_DF
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connection mode.
 
+config BT_DF_CONNECTION_CTE_TX
+	bool "Enable support for transmission of CTE in connection mode"
+	help
+	  Enable support for transmission of Constant Tone Extension in
+	  connection mode.
+
+config BT_DF_CONNECTION_CTE_REQ
+	bool "Enable support for CTE request procedure in connection mode"
+	depends on BT_DF_CONNECTION_CTE_RX
+	help
+	  Enable support for request of Constant Tone Extension in connection
+	  mode.
+
+config BT_DF_CONNECTION_CTE_RSP
+	bool "Enable support for CTE request procedure in connection mode"
+	depends on BT_DF_CONNECTION_CTE_TX
+	help
+	  Enable support for request of Constant Tone Extension in connection
+	  mode.
+
 config BT_DEBUG_DF
 	bool "Bluetooth Direction Finding debug"
-	depends on BT_DF
 	help
 	  This option enables debug support for Bluetooth Direction Finding
 
+endif # BT_DF
 endif # BT_HCI_HOST
 
 config BT_ECC
@@ -608,6 +618,17 @@ config BT_HOST_CCM
 	  Enables the software based AES-CCM engine in the host. Will use the
 	  controller's AES encryption functions if available, or BT_HOST_CRYPTO
 	  otherwise.
+
+config BT_PER_ADV_SYNC_BUF_SIZE
+	int "Maximum periodic advertising report size"
+	depends on BT_PER_ADV_SYNC
+	range 0 1650
+	default 0
+	help
+	  Maximum size of a fragmented periodic advertising report. If the periodic
+	  advertising report provided by the controller is fragmented and larger
+	  than this buffer size, then the data will be discarded.
+	  Unfragmented reports are forwarded as they are received.
 
 if BT_DEBUG
 config BT_DEBUG_SETTINGS
@@ -752,6 +773,7 @@ config BT_BREDR
 	select BT_CENTRAL
 	select BT_SMP
 	select BT_L2CAP_DYNAMIC_CHANNEL
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth BR/EDR support
 
@@ -766,6 +788,7 @@ config BT_MAX_SCO_CONN
 
 config BT_RFCOMM
 	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth RFCOMM support
 
@@ -782,17 +805,20 @@ config BT_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
 	depends on PRINTK
 	select BT_RFCOMM
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth HF support
 
 config BT_AVDTP
 	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth AVDTP support
 
 config BT_A2DP
 	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
 	select BT_AVDTP
+	select EXPERIMENTAL
 	help
 	  This option enables the A2DP profile
 

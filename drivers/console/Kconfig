@@ -32,22 +32,20 @@ config CONSOLE_HANDLER
 	  This option enables console input handler allowing to write simple
 	  interaction between serial console and the OS.
 
+config CONSOLE_INIT_PRIORITY
+	int "Console init priority"
+	default 95 if UART_MUX
+	default 60 if UART_CONSOLE || XTENSA_SIM_CONSOLE
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Console driver device initialization priority.
+
 config UART_CONSOLE
 	bool "Use UART for console"
 	depends on SERIAL && SERIAL_HAS_DRIVER
 	select CONSOLE_HAS_DRIVER
 	help
 	  Enable this option to use one UART for console.
-
-config UART_CONSOLE_INIT_PRIORITY
-	int "Init priority"
-	default 95 if USB_UART_CONSOLE
-	default 60
-	depends on UART_CONSOLE
-	help
-	  Device driver initialization priority.
-	  Console has to be initialized after the UART driver
-	  it uses.
 
 config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	bool "Debug server hooks in debug console"
@@ -88,15 +86,6 @@ config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
 	help
 	  Fixed amount of time which unit is milliseconds to keep the UART
 	  console in use flag true.
-
-config USB_UART_CONSOLE
-	bool "Use USB port for console outputs"
-	select UART_CONSOLE
-	select USB_CDC_ACM
-	help
-	  Enable this option to use the USB CDC ACM class for console.
-	  As for the console driver, this option only changes the initialization
-	  level.
 
 config RAM_CONSOLE
 	bool "Use RAM console"
@@ -290,13 +279,6 @@ config NATIVE_POSIX_STDOUT_CONSOLE
 	help
 	  Zephyr's printk messages will be directed to the host terminal stdout.
 
-config XTENSA_CONSOLE_INIT_PRIORITY
-	int "Init priority"
-	default 60
-	depends on XTENSA_SIM_CONSOLE
-	help
-	  Device driver initialization priority.
-
 config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	int "Init priority"
 	default 99
@@ -328,19 +310,13 @@ config UART_MUX
 	bool "Enable UART muxing (GSM 07.10) support [EXPERIMENTAL]"
 	depends on SERIAL_SUPPORT_INTERRUPT && GSM_MUX
 	select UART_INTERRUPT_DRIVEN
+	select EXPERIMENTAL
 	help
 	  Enable this option to create UART muxer that run over a physical
 	  UART. The GSM 07.10 muxing protocol is used to separate the data
 	  between these muxed UARTs.
 
 if UART_MUX
-
-config UART_MUX_INIT_PRIORITY
-	int "Init priority"
-	default 95
-	help
-	  Device driver initialization priority. UART mux has to be
-	  initialized after the UART driver it uses.
 
 config UART_MUX_DEVICE_NAME
 	string "UART mux device name template"

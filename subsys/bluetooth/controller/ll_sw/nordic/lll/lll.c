@@ -368,9 +368,10 @@ int lll_done(void *param)
 }
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
-void lll_done_sync(void)
+void lll_done_ull_inc(void)
 {
-	event.done.ull_count = event.done.lll_count;
+	LL_ASSERT(event.done.ull_count != event.done.lll_count);
+	event.done.ull_count++;
 }
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
@@ -514,8 +515,8 @@ void lll_isr_tx_status_reset(void)
 	radio_status_reset();
 	radio_tmr_status_reset();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA) ||
-	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA)) {
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
 		radio_gpio_pa_lna_disable();
 	}
 }
@@ -526,8 +527,8 @@ void lll_isr_rx_status_reset(void)
 	radio_tmr_status_reset();
 	radio_rssi_status_reset();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA) ||
-	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA)) {
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
 		radio_gpio_pa_lna_disable();
 	}
 }
@@ -540,8 +541,8 @@ void lll_isr_status_reset(void)
 	radio_ar_status_reset();
 	radio_rssi_status_reset();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA) ||
-	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA)) {
+	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
 		radio_gpio_pa_lna_disable();
 	}
 }
@@ -598,6 +599,7 @@ static int init_reset(void)
 static inline void done_inc(void)
 {
 	event.done.lll_count++;
+	LL_ASSERT(event.done.lll_count != event.done.ull_count);
 }
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
@@ -941,8 +943,7 @@ static void preempt(void *param)
 		iter = ull_prepare_dequeue_iter(&iter_idx);
 		while (iter) {
 			if (!iter->is_aborted &&
-			    (event.curr.param == iter->prepare_param.param) &&
-			    iter->is_resume) {
+			    event.curr.param == iter->prepare_param.param) {
 				iter->is_aborted = 1;
 				iter->abort_cb(&iter->prepare_param,
 					       iter->prepare_param.param);

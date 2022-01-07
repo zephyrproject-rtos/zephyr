@@ -16,4 +16,8 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 24000000
 
+config CLOCK_CONTROL_INIT_PRIORITY
+	default 1
+	depends on CLOCK_CONTROL
+
 endif # SOC_SERIES_BEETLE

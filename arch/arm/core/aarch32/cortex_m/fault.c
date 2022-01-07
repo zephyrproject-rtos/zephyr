@@ -849,7 +849,7 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
 	bool *nested_exc)
 {
 	bool alternative_state_exc = false;
-	z_arch_esf_t *ptr_esf;
+	z_arch_esf_t *ptr_esf = NULL;
 
 	*nested_exc = false;
 

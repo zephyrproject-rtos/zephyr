@@ -25,5 +25,8 @@ zephyr_library_sources_ifdef(CONFIG_SPI_XLNX_AXI_QUADSPI spi_xlnx_axi_quadspi.c)
 zephyr_library_sources_ifdef(CONFIG_ESP32_SPIM		spi_esp32_spim.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_TEST		spi_test.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_PSOC6		spi_psoc6.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_NPCX_FIU	spi_npcx_fiu.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_BITBANG		spi_bitbang.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_XEC_QMSPI_LDMA	spi_xec_qmspi_ldma.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		spi_handlers.c)

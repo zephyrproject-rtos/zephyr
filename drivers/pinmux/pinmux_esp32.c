@@ -11,9 +11,24 @@
 #include <soc/soc.h>
 #include <hal/gpio_types.h>
 #include <hal/gpio_ll.h>
+#include <hal/rtc_io_hal.h>
+#include <soc.h>
 
 #include <errno.h>
 #include <drivers/pinmux.h>
+
+#ifndef SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT 0
+#endif
+
+static inline bool rtc_gpio_is_valid_gpio(uint32_t gpio_num)
+{
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+	return (gpio_num < SOC_GPIO_PIN_COUNT && rtc_io_num_map[gpio_num] >= 0);
+#else
+	return false;
+#endif
+}
 
 static int pinmux_set(const struct device *dev, uint32_t pin, uint32_t func)
 {
@@ -47,10 +62,26 @@ static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 
 	switch (func) {
 	case PINMUX_PULLUP_DISABLE:
-		gpio_ll_pullup_dis(&GPIO, pin);
+		if (!rtc_gpio_is_valid_gpio(pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+			gpio_ll_pullup_dis(&GPIO, pin);
+			gpio_ll_pulldown_en(&GPIO, pin);
+		} else {
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+			rtcio_hal_pullup_disable(rtc_io_num_map[pin]);
+			rtcio_hal_pulldown_enable(rtc_io_num_map[pin]);
+#endif
+		}
 		break;
 	case PINMUX_PULLUP_ENABLE:
-		gpio_ll_pullup_en(&GPIO, pin);
+		if (!rtc_gpio_is_valid_gpio(pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+			gpio_ll_pulldown_dis(&GPIO, pin);
+			gpio_ll_pullup_en(&GPIO, pin);
+		} else {
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+			rtcio_hal_pulldown_disable(rtc_io_num_map[pin]);
+			rtcio_hal_pullup_enable(rtc_io_num_map[pin]);
+#endif
+		}
 		break;
 	default:
 		return -EINVAL;
@@ -69,6 +100,7 @@ static int pinmux_input(const struct device *dev, uint32_t pin, uint8_t func)
 		break;
 	case PINMUX_OUTPUT_ENABLED:
 		gpio_ll_output_enable(&GPIO, pin);
+		esp_rom_gpio_matrix_out(pin, SIG_GPIO_OUT_IDX, false, false);
 		break;
 	default:
 		return -EINVAL;
@@ -96,5 +128,5 @@ static int pinmux_initialize(const struct device *dev)
  */
 DEVICE_DT_INST_DEFINE(0, &pinmux_initialize,
 		    NULL, NULL, NULL,
-		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);

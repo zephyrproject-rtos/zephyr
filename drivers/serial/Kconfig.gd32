@@ -1,0 +1,15 @@
+# Copyright (c) 2021 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_GIGADEVICE_GD32_USART := gd,gd32-usart
+
+config USART_GD32
+	bool "GD32 serial driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_GIGADEVICE_GD32_USART))
+	depends on (SOC_FAMILY_GD32 || SOC_SERIES_GD32VF103)
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select USE_GD32_USART
+	help
+	  This option enables the USART driver for GD32 SoC family.

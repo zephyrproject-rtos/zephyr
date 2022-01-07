@@ -32,12 +32,12 @@ A stack must be initialized before it can be used. This sets its queue to empty.
 A data value can be **added** to a stack by a thread or an ISR.
 The value is given directly to a waiting thread, if one exists;
 otherwise the value is added to the LIFO's queue.
-The kernel does *not* detect attempts to add a data value to a stack
-that has already reached its maximum quantity of queued values.
 
 .. note::
-    Adding a data value to a stack that is already full will result in
-    array overflow, and lead to unpredictable behavior.
+    If :kconfig:`CONFIG_NO_RUNTIME_CHECKS` is enabled, the kernel will *not* detect
+    and prevent attempts to add a data value to a stack that has already reached
+    its maximum quantity of queued values. Adding a data value to a stack that is
+    already full will result in array overflow, and lead to unpredictable behavior.
 
 A data value may be **removed** from a stack by a thread.
 If the stack's queue is empty a thread may choose to wait for it to be given.

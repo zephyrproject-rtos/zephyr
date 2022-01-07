@@ -89,4 +89,19 @@ config FS_LITTLEFS_FC_HEAP_SIZE
 	  support up to FS_LITTLE_FS_NUM_FILES blocks of
 	  FS_LITTLEFS_CACHE_SIZE bytes.
 
+if FS_LITTLEFS_FC_HEAP_SIZE <= 0
+
+config FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE
+	int "Size of per-allocation overhead for littleFS heap in bytes"
+	default 32
+	help
+	  In case when total size of littleFS heap is automatically calculated
+	  we need to take into account overhead caused per block allocation.
+	  For the purpose of heap size calculation the size of each cache block
+	  will be increased by this value.
+	  NOTE: when your app fails to open pre-defined number of files, as set
+	  by FS_LITTLEFS_NUM_FILES, try to increase the value.
+
+endif # FS_LITTLEFS_FC_HEAP_SIZE <= 0
+
 endif # FILE_SYSTEM_LITTLEFS

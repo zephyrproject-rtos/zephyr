@@ -64,17 +64,6 @@
 #define STM32WL_DUAL_CORE
 #endif
 
-#if STM32_AHB_PRESCALER > 1
-/*
- * AHB prescaler allows to set a HCLK frequency (feeding cortex systick)
- * lower than SYSCLK frequency (actual core frequency).
- * Though, zephyr doesn't make a difference today between these two clocks.
- * So, changing this prescaler is not allowed until it is made possible to
- * use them independently in zephyr clock subsystem.
- */
-#error "AHB prescaler can't be higher than 1"
-#endif
-
 /**
  * @brief fill in AHB/APB buses configuration structure
  */
@@ -210,7 +199,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32WLX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_AHB3:
-		LL_AHB3_GRP1_EnableClock(pclken->enr);
+		LL_AHB3_GRP1_DisableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32_* */
 	case STM32_CLOCK_BUS_APB1:
@@ -737,5 +726,5 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY,
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &stm32_clock_control_api);

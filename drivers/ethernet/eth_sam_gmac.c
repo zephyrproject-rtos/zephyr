@@ -1107,7 +1107,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	/* Setup Network Configuration Register */
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-	gmac->GMAC_UR = DT_ENUM_IDX(DT_DRV_INST(0), phy_connection_type);
+	gmac->GMAC_UR = DT_INST_ENUM_IDX(0, phy_connection_type);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */

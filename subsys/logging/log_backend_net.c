@@ -78,8 +78,8 @@ LOG_OUTPUT_DEFINE(log_output_net, line_out, output_buf, sizeof(output_buf));
 static int do_net_init(void)
 {
 	struct sockaddr *local_addr = NULL;
-	struct sockaddr_in6 local_addr6;
-	struct sockaddr_in local_addr4;
+	struct sockaddr_in6 local_addr6 = {0};
+	struct sockaddr_in local_addr4 = {0};
 	socklen_t server_addr_len;
 	struct net_context *ctx;
 	int ret;

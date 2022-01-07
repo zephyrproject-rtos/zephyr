@@ -265,8 +265,10 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	struct dma_stm32_stream *stream =
 				&dev_config->streams[id - STREAM_OFFSET];
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
-	LL_DMA_InitTypeDef DMA_InitStruct = {0};
+	LL_DMA_InitTypeDef DMA_InitStruct;
 	int ret;
+
+	LL_DMA_StructInit(&DMA_InitStruct);
 
 	/* give channel from index 0 */
 	id = id - STREAM_OFFSET;
@@ -682,7 +684,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    &dma_stm32_init,					\
 		    NULL,						\
 		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
 		    &dma_funcs)
 
 #ifdef CONFIG_DMA_STM32_SHARED_IRQS
@@ -773,6 +775,7 @@ DMA_STM32_DEFINE_IRQ_HANDLER(1, 0);
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 1);
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 2);
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 3);
+#if DT_INST_IRQ_HAS_IDX(1, 4)
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 4);
 #if DT_INST_IRQ_HAS_IDX(1, 5)
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 5);
@@ -780,6 +783,7 @@ DMA_STM32_DEFINE_IRQ_HANDLER(1, 5);
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 6);
 #if DT_INST_IRQ_HAS_IDX(1, 7)
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 7);
+#endif /* DT_INST_IRQ_HAS_IDX(1, 4) */
 #endif /* DT_INST_IRQ_HAS_IDX(1, 5) */
 #endif /* DT_INST_IRQ_HAS_IDX(1, 6) */
 #endif /* DT_INST_IRQ_HAS_IDX(1, 7) */
@@ -793,6 +797,7 @@ static void dma_stm32_config_irq_1(const struct device *dev)
 	DMA_STM32_IRQ_CONNECT(1, 1);
 	DMA_STM32_IRQ_CONNECT(1, 2);
 	DMA_STM32_IRQ_CONNECT(1, 3);
+#if DT_INST_IRQ_HAS_IDX(1, 4)
 	DMA_STM32_IRQ_CONNECT(1, 4);
 #if DT_INST_IRQ_HAS_IDX(1, 5)
 	DMA_STM32_IRQ_CONNECT(1, 5);
@@ -800,6 +805,7 @@ static void dma_stm32_config_irq_1(const struct device *dev)
 	DMA_STM32_IRQ_CONNECT(1, 6);
 #if DT_INST_IRQ_HAS_IDX(1, 7)
 	DMA_STM32_IRQ_CONNECT(1, 7);
+#endif /* DT_INST_IRQ_HAS_IDX(1, 4) */
 #endif /* DT_INST_IRQ_HAS_IDX(1, 5) */
 #endif /* DT_INST_IRQ_HAS_IDX(1, 6) */
 #endif /* DT_INST_IRQ_HAS_IDX(1, 7) */

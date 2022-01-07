@@ -324,8 +324,8 @@ int gpio_sam_init(const struct device *dev)
 									\
 	DEVICE_DT_INST_DEFINE(n, gpio_sam_init, NULL,			\
 			    &port_##n##_sam_runtime,			\
-			    &port_##n##_sam_config, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &port_##n##_sam_config, PRE_KERNEL_1,	\
+			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_sam_api);				\
 									\
 	static void port_##n##_sam_config_func(const struct device *dev)	\

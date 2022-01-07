@@ -86,7 +86,7 @@ struct net_pkt {
 
 	/** @cond ignore */
 
-#if defined(CONFIG_NET_ROUTING)
+#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
@@ -128,7 +128,7 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
-#if defined(CONFIG_NET_TCP2)
+#if defined(CONFIG_NET_TCP)
 	/** Allow placing the packet into sys_slist_t */
 	sys_snode_t next;
 #endif
@@ -148,10 +148,10 @@ struct net_pkt {
 				     * the driver yet.
 				     * Used only if defined(CONFIG_NET_TCP)
 				     */
-		uint8_t gptp_pkt: 1; /* For outgoing packet: is this packet
-				   * a GPTP packet.
-				   * Used only if defined (CONFIG_NET_GPTP)
-				   */
+		uint8_t ptp_pkt: 1; /* For outgoing packet: is this packet
+				     * a L2 PTP packet.
+				     * Used only if defined (CONFIG_NET_L2_PTP)
+				     */
 	};
 
 	uint8_t forwarding : 1;	/* Are we forwarding this pkt
@@ -311,7 +311,7 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 
 static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_ROUTING)
+#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
 	return pkt->orig_iface;
 #else
 	return pkt->iface;
@@ -321,7 +321,7 @@ static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 					  struct net_if *iface)
 {
-#if defined(CONFIG_NET_ROUTING)
+#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
 	pkt->orig_iface = iface;
 #endif
 }
@@ -336,14 +336,14 @@ static inline void net_pkt_set_family(struct net_pkt *pkt, uint8_t family)
 	pkt->family = family;
 }
 
-static inline bool net_pkt_is_gptp(struct net_pkt *pkt)
+static inline bool net_pkt_is_ptp(struct net_pkt *pkt)
 {
-	return !!(pkt->gptp_pkt);
+	return !!(pkt->ptp_pkt);
 }
 
-static inline void net_pkt_set_gptp(struct net_pkt *pkt, bool is_gptp)
+static inline void net_pkt_set_ptp(struct net_pkt *pkt, bool is_ptp)
 {
-	pkt->gptp_pkt = is_gptp;
+	pkt->ptp_pkt = is_ptp;
 }
 
 static inline bool net_pkt_is_captured(struct net_pkt *pkt)
@@ -1199,7 +1199,7 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 {
 	net_if_ipv6_select_src_addr(net_context_get_iface(
 					    net_pkt_context(pkt)),
-				    &NET_IPV6_HDR(pkt)->src);
+				    (struct in6_addr *)NET_IPV6_HDR(pkt)->src);
 }
 
 static inline void net_pkt_set_overwrite(struct net_pkt *pkt, bool overwrite)
@@ -1211,6 +1211,29 @@ static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
 {
 	return pkt->overwrite;
 }
+
+#ifdef CONFIG_NET_PKT_FILTER
+
+bool net_pkt_filter_send_ok(struct net_pkt *pkt);
+bool net_pkt_filter_recv_ok(struct net_pkt *pkt);
+
+#else
+
+static inline bool net_pkt_filter_send_ok(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return true;
+}
+
+static inline bool net_pkt_filter_recv_ok(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return true;
+}
+
+#endif /* CONFIG_NET_PKT_FILTER */
 
 /* @endcond */
 
@@ -1248,7 +1271,7 @@ static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
  */
 #define NET_PKT_DATA_POOL_DEFINE(name, count)				\
 	NET_BUF_POOL_DEFINE(name, count, CONFIG_NET_BUF_DATA_SIZE,	\
-			    CONFIG_NET_BUF_USER_DATA_SIZE, NULL)
+			    0, NULL)
 
 /** @cond INTERNAL_HIDDEN */
 

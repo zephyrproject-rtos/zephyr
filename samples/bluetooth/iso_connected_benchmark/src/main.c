@@ -58,8 +58,9 @@ static size_t total_iso_conn_count;
 static uint32_t iso_send_count;
 static struct bt_iso_cig *cig;
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, NULL);
-static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU - BT_ISO_CHAN_SEND_RESERVE];
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			   8, NULL);
+static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
 
 static K_SEM_DEFINE(sem_adv, 0, 1);
 static K_SEM_DEFINE(sem_iso_accept, 0, 1);
@@ -85,7 +86,7 @@ static struct bt_iso_chan_qos iso_qos = {
 	.rx = &iso_rx_qos,
 };
 
-static struct bt_iso_cig_create_param cig_create_param = {
+static struct bt_iso_cig_param cig_create_param = {
 	.interval = DEFAULT_CIS_INTERVAL_US, /* in microseconds */
 	.latency = DEFAULT_CIS_LATENCY_MS, /* milliseconds */
 	.sca = BT_GAP_SCA_UNKNOWN,
@@ -272,9 +273,10 @@ static struct bt_iso_chan_ops iso_ops = {
 	.disconnected	= iso_disconnected,
 };
 
-static int iso_accept(struct bt_conn *acl, struct bt_iso_chan **chan)
+static int iso_accept(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan)
 {
-	LOG_INF("Incoming ISO request from %p", (void *)acl);
+	LOG_INF("Incoming ISO request from %p", (void *)info->acl);
 
 	for (int i = 0; i < ARRAY_SIZE(iso_chans); i++) {
 		if (iso_chans[i].state == BT_ISO_DISCONNECTED) {

@@ -29,7 +29,8 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
-		zephyr,can-primary = &flexcan2;
+		zephyr,canbus = &flexcan2;
+		zephyr,display = &lcdif;
 	};
 
 	sdram0: memory@80000000 {
@@ -230,6 +231,7 @@ zephyr_udc0: &usb1 {
 
 &usdhc1 {
 	status = "okay";
+	no-1-8-v;
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 };
@@ -244,5 +246,30 @@ zephyr_udc0: &usb1 {
 };
 
 &wdog0 {
+	status = "okay";
+};
+
+&lpspi1 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+	dmas = <&edma0 0 13>, <&edma0 1 14>;
+	dma-names = "rx", "tx";
+};
+
+&lpspi3 {
+	status = "okay";
+	/* DMA channels 2 and 3, muxed to LPSPI3 RX and TX */
+	dmas = <&edma0 2 15>, <&edma0 3 16>;
+	dma-names = "rx", "tx";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
+ * to use systick, change this node from "gpt_hw_timer" to "systick"
+ */
+&gpt_hw_timer {
 	status = "okay";
 };

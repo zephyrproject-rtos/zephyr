@@ -611,25 +611,17 @@
 #define LSM6DSL_GYRO_ODR_RUNTIME 1
 #endif
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-struct lsm6dsl_spi_cfg {
-	struct spi_config spi_conf;
-	const char *cs_gpios_label;
-};
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
 union lsm6dsl_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	uint16_t i2c_slv_addr;
+	struct i2c_dt_spec i2c;
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	const struct lsm6dsl_spi_cfg *spi_cfg;
+	struct spi_dt_spec spi;
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
 struct lsm6dsl_config {
-	char *bus_name;
 	int (*bus_init)(const struct device *dev);
 	const union lsm6dsl_bus_cfg bus_cfg;
 #ifdef CONFIG_LSM6DSL_TRIGGER
@@ -653,11 +645,6 @@ struct lsm6dsl_transfer_function {
 };
 
 struct lsm6dsl_data {
-	const struct device *bus;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_cs_control cs_ctrl;
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
 	int accel_sample_x;
 	int accel_sample_y;
 	int accel_sample_z;

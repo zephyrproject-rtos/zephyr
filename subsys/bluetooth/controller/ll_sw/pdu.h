@@ -70,6 +70,12 @@
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
 
+/* Advertisement channel CRC init value */
+#define PDU_AC_CRC_IV          0x555555
+
+/* CRC polynomial */
+#define PDU_CRC_POLYNOMIAL     ((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16))
+
 /* Data channel minimum payload size and time */
 #define PDU_DC_PAYLOAD_SIZE_MIN 27
 #define PDU_DC_PAYLOAD_TIME_MIN 328
@@ -93,6 +99,8 @@
 #define EVENT_MAFS_US           300
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
+/* Controller defined back to back transmit MAFS */
+#define EVENT_B2B_MAFS_US       (CONFIG_BT_CTLR_ADV_PDU_BACK2BACK_AFS)
 /* Minimum Subevent Space timings */
 #define EVENT_MSS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
@@ -102,11 +110,27 @@
 #define EVENT_INSTANT_MAX         0xffff
 #define EVENT_INSTANT_LATENCY_MAX 0x7fff
 
+/* Channel Map Unused channels count minimum */
+#define CHM_USED_COUNT_MIN     2U
+
+/* Channel Map hop count minimum and maximum */
+#define CHM_HOP_COUNT_MIN      5U
+#define CHM_HOP_COUNT_MAX      16U
+
 /* Offset Units field encoding */
-#define OFFS_UNIT_30_US         30
-#define OFFS_UNIT_300_US        300
+#define OFFS_UNIT_BITS         13
+#define OFFS_UNIT_30_US        30
+#define OFFS_UNIT_300_US       300
+#define OFFS_UNIT_VALUE_30_US  0
+#define OFFS_UNIT_VALUE_300_US 1
 /* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
-#define OFFS_ADJUST_US          245760
+#define OFFS_ADJUST_US         245760
+
+/* Advertiser's Sleep Clock Accuracy Value */
+#define SCA_500_PPM       500 /* 51 ppm to 500 ppm */
+#define SCA_50_PPM        50  /* 0 ppm to 50 ppm */
+#define SCA_VALUE_500_PPM 0   /* 51 ppm to 500 ppm */
+#define SCA_VALUE_50_PPM  1   /* 0 ppm to 50 ppm */
 
 /* Sleep Clock Accuracy, calculate drift in microseconds */
 #define SCA_DRIFT_50_PPM_US(t)  (((t) * 50UL) / 1000000UL)
@@ -119,6 +143,14 @@
 
 /* Channel Map Size */
 #define PDU_CHANNEL_MAP_SIZE 5
+
+/* Advertising Data */
+#define PDU_ADV_DATA_HEADER_SIZE        2U
+#define PDU_ADV_DATA_HEADER_LEN_SIZE    1U
+#define PDU_ADV_DATA_HEADER_TYPE_SIZE   1U
+#define PDU_ADV_DATA_HEADER_LEN_OFFSET  0U
+#define PDU_ADV_DATA_HEADER_TYPE_OFFSET 1U
+#define PDU_ADV_DATA_HEADER_DATA_OFFSET 2U
 
 /*
  * Macros to return correct Data Channel PDU time
@@ -195,7 +227,14 @@
 
 #define PDU_AC_US(octets, phy, cs)   PDU_US((octets), 0, (phy), (cs))
 
-#define PKT_BIS_US(octets, mic, phy) PDU_MAX_US((octets), (mic), (phy))
+#define PDU_BIS_MAX_US(octets, enc, phy) PDU_MAX_US((octets), \
+						    ((enc) ? \
+						     (PDU_MIC_SIZE) : 0), \
+						    (phy))
+
+#define PDU_BIS_US(octets, enc, phy, s8) PDU_US((octets), \
+						((enc) ? (PDU_MIC_SIZE) : 0), \
+						(phy), (s8))
 
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
@@ -349,7 +388,7 @@ struct pdu_cte_info {
 #else
 #error "Unsupported endianness"
 #endif
-};
+} __packed;
 
 struct pdu_adv_sync_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -468,10 +507,13 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_PHY_RSP = 0x17,
 	PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND = 0x18,
 	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
+	PDU_DATA_LLCTRL_TYPE_CTE_REQ = 0x1A,
+	PDU_DATA_LLCTRL_TYPE_CTE_RSP = 0x1B,
 	PDU_DATA_LLCTRL_TYPE_CIS_REQ = 0x1F,
 	PDU_DATA_LLCTRL_TYPE_CIS_RSP = 0x20,
 	PDU_DATA_LLCTRL_TYPE_CIS_IND = 0x21,
 	PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND = 0x22,
+	PDU_DATA_LLCTRL_TYPE_UNUSED = 0xFF
 };
 
 struct pdu_data_llctrl_conn_update_ind {
@@ -624,6 +666,24 @@ struct pdu_data_llctrl_min_used_chans_ind {
 	uint8_t min_used_chans;
 } __packed;
 
+struct pdu_data_llctrl_cte_req {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t min_cte_len_req : 5;
+	uint8_t rfu : 1;
+	uint8_t cte_type_req : 2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t cte_type_req : 2;
+	uint8_t rfu : 1;
+	uint8_t min_cte_len_req : 5;
+#else
+#error "Unsupported endianness"
+#endif
+} __packed;
+
+struct pdu_data_llctrl_cte_rsp {
+	/* no members */
+} __packed;
+
 struct pdu_data_llctrl_cis_req {
 	uint8_t cig_id;
 	uint8_t cis_id;
@@ -716,6 +776,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
+		struct pdu_data_llctrl_cte_req cte_req;
+		struct pdu_data_llctrl_cte_rsp cte_rsp;
 		struct pdu_data_llctrl_cis_req cis_req;
 		struct pdu_data_llctrl_cis_rsp cis_rsp;
 		struct pdu_data_llctrl_cis_ind cis_ind;
@@ -747,9 +809,11 @@ struct pdu_data {
 	uint8_t nesn:1;
 	uint8_t sn:1;
 	uint8_t md:1;
-	uint8_t rfu:3;
+	uint8_t cp:1;
+	uint8_t rfu:2;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu:3;
+	uint8_t rfu:2;
+	uint8_t cp:1;
 	uint8_t md:1;
 	uint8_t sn:1;
 	uint8_t nesn:1;
@@ -762,7 +826,10 @@ struct pdu_data {
 
 #if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-	uint8_t resv:8; /* TODO: remove nRF specific code */
+	union {
+		uint8_t resv; /* TODO: remove nRF specific code */
+		struct pdu_cte_info cte_info; /* BT 5.1 Core spec. CTEInfo storage */
+	};
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 #endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
 
@@ -778,6 +845,52 @@ struct pdu_data {
 		struct profile         profile;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 	} __packed;
+} __packed;
+
+/* Generic ISO pdu, could be CIS or BIS
+ * To be used when reffering to component withouth knowing CIS or BIS type
+ */
+struct pdu_iso {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t ll_id:2;
+	uint8_t hdr_other:6;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t hdr_other:6;
+	uint8_t ll_id:2;
+#else
+#error "Unsupported endianness"
+#endif /* __BYTE_ORDER__ */
+	uint8_t length;
+	uint8_t payload[0];
+} __packed;
+
+/* ISO SDU segmentation header */
+#define PDU_ISO_SEG_HDR_SIZE 2
+#define PDU_ISO_SEG_TIMEOFFSET_SIZE 3
+
+struct pdu_iso_sdu_sh {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t sc:1;
+	uint8_t cmplt:1;
+	uint8_t rfu:6;
+
+	uint8_t length;
+	/* Note, timeoffset only available in first segment of sdu */
+	uint32_t timeoffset:24;
+	uint32_t payload:8;
+
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t rfu:6;
+	uint8_t cmplt:1;
+	uint8_t sc:1;
+
+	uint8_t length;
+	/* Note, timeoffset only available in first segment of sdu */
+	uint32_t payload:8;
+	uint32_t timeoffset:24;
+#else
+#error "Unsupported endianness"
+#endif /* __BYTE_ORDER__ */
 } __packed;
 
 struct pdu_cis {
@@ -913,6 +1026,10 @@ struct pdu_big_info {
 	uint8_t chm_phy[PDU_CHANNEL_MAP_SIZE]; /* 37 bit chm; 3 bit phy */
 	uint8_t payload_count_framing[5]; /* 39 bit count; 1 bit framing */
 
-	uint8_t giv; /* encryption required */
-	uint16_t gskd; /* encryption required */
+	uint8_t giv[8]; /* encryption required */
+	uint8_t gskd[16]; /* encryption required */
 } __packed;
+#define PDU_BIG_INFO_CLEARTEXT_SIZE offsetof(struct pdu_big_info, giv)
+#define PDU_BIG_INFO_ENCRYPTED_SIZE sizeof(struct pdu_big_info)
+#define PDU_BIG_BN_MAX              0x07
+#define PDU_BIG_PAYLOAD_COUNT_MAX   28

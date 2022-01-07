@@ -83,10 +83,9 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 void z_x86_irq_connect_on_vector(unsigned int irq,
 				 uint8_t vector,
 				 void (*func)(const void *arg),
-				 const void *arg, uint32_t flags)
+				 const void *arg)
 {
 	_irq_to_interrupt_vector[irq] = vector;
-	z_irq_controller_irq_config(vector, irq, flags);
 	x86_irq_funcs[vector - IV_IRQS] = func;
 	x86_irq_args[vector - IV_IRQS] = arg;
 }
@@ -110,7 +109,8 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	vector = z_x86_allocate_vector(priority, -1);
 	if (vector >= 0) {
-		z_x86_irq_connect_on_vector(irq, vector, func, arg, flags);
+		z_irq_controller_irq_config(vector, irq, flags);
+		z_x86_irq_connect_on_vector(irq, vector, func, arg);
 	}
 
 	irq_unlock(key);
@@ -156,3 +156,67 @@ void arch_sched_ipi(void)
 	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_SCHED_IPI_VECTOR);
 }
 #endif
+
+/* The first bit is used to indicate whether the list of reserved interrupts
+ * have been initialized based on content stored in the irq_alloc linker
+ * section in ROM.
+ */
+#define IRQ_LIST_INITIALIZED 0
+
+static ATOMIC_DEFINE(irq_reserved, CONFIG_MAX_IRQ_LINES);
+
+static void irq_init(void)
+{
+	extern uint8_t __irq_alloc_start[];
+	extern uint8_t __irq_alloc_end[];
+	const uint8_t *irq;
+
+	for (irq = __irq_alloc_start; irq < __irq_alloc_end; irq++) {
+		__ASSERT_NO_MSG(*irq < CONFIG_MAX_IRQ_LINES);
+		atomic_set_bit(irq_reserved, *irq);
+	}
+}
+
+unsigned int arch_irq_allocate(void)
+{
+	unsigned int key = irq_lock();
+	int i;
+
+	if (!atomic_test_and_set_bit(irq_reserved, IRQ_LIST_INITIALIZED)) {
+		irq_init();
+	}
+
+	for (i = 0; i < ARRAY_SIZE(irq_reserved); i++) {
+		unsigned int fz, irq;
+
+		while ((fz = find_lsb_set(~atomic_get(&irq_reserved[i])))) {
+			irq = (fz - 1) + (i * sizeof(atomic_val_t) * 8);
+			if (irq >= CONFIG_MAX_IRQ_LINES) {
+				break;
+			}
+
+			if (!atomic_test_and_set_bit(irq_reserved, irq)) {
+				irq_unlock(key);
+				return irq;
+			}
+		}
+	}
+
+	irq_unlock(key);
+
+	return UINT_MAX;
+}
+
+void arch_irq_set_used(unsigned int irq)
+{
+	unsigned int key = irq_lock();
+
+	atomic_set_bit(irq_reserved, irq);
+
+	irq_unlock(key);
+}
+
+bool arch_irq_is_used(unsigned int irq)
+{
+	return atomic_test_bit(irq_reserved, irq);
+}

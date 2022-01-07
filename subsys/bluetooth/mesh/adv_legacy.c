@@ -27,7 +27,6 @@
 #include "beacon.h"
 #include "host/ecc.h"
 #include "prov.h"
-#include "proxy.h"
 
 /* Pre-5.0 controllers enforce a minimum interval of 100ms
  * whereas 5.0+ controllers can go down to 20ms.
@@ -130,22 +129,20 @@ static void adv_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
-			buf = net_buf_get(&bt_mesh_adv_queue, K_NO_WAIT);
+			buf = bt_mesh_adv_buf_get(K_NO_WAIT);
 			while (!buf) {
 
 				/* Adv timeout may be set by a call from proxy
-				 * to bt_mesh_adv_start:
+				 * to bt_mesh_adv_gatt_start:
 				 */
 				adv_timeout = SYS_FOREVER_MS;
-				bt_mesh_proxy_adv_start();
-				BT_DBG("Proxy Advertising");
+				(void)bt_mesh_adv_gatt_send();
 
-				buf = net_buf_get(&bt_mesh_adv_queue,
-						  SYS_TIMEOUT_MS(adv_timeout));
+				buf = bt_mesh_adv_buf_get(SYS_TIMEOUT_MS(adv_timeout));
 				bt_le_adv_stop();
 			}
 		} else {
-			buf = net_buf_get(&bt_mesh_adv_queue, K_FOREVER);
+			buf = bt_mesh_adv_buf_get(K_FOREVER);
 		}
 
 		if (!buf) {
@@ -165,16 +162,19 @@ static void adv_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-void bt_mesh_adv_update(void)
-{
-	BT_DBG("");
-
-	k_fifo_cancel_wait(&bt_mesh_adv_queue);
-}
-
-void bt_mesh_adv_buf_ready(void)
+void bt_mesh_adv_buf_local_ready(void)
 {
 	/* Will be handled automatically */
+}
+
+void bt_mesh_adv_buf_relay_ready(void)
+{
+	/* Will be handled automatically */
+}
+
+void bt_mesh_adv_gatt_update(void)
+{
+	bt_mesh_adv_buf_get_cancel();
 }
 
 void bt_mesh_adv_init(void)
@@ -192,9 +192,9 @@ int bt_mesh_adv_enable(void)
 	return 0;
 }
 
-int bt_mesh_adv_start(const struct bt_le_adv_param *param, int32_t duration,
-		      const struct bt_data *ad, size_t ad_len,
-		      const struct bt_data *sd, size_t sd_len)
+int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration,
+			   const struct bt_data *ad, size_t ad_len,
+			   const struct bt_data *sd, size_t sd_len)
 {
 	adv_timeout = duration;
 	return bt_le_adv_start(param, ad, ad_len, sd, sd_len);

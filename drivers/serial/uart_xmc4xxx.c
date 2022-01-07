@@ -77,7 +77,7 @@ static const struct uart_device_config xmc4xxx_config_##index = {	\
 			    NULL,					\
 			    &xmc4xxx_data_##index,			\
 			    &xmc4xxx_config_##index, PRE_KERNEL_1,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &uart_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)

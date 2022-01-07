@@ -21,7 +21,7 @@
 #include <bluetooth/mesh.h>
 #include <bluetooth/uuid.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV_DEVICE)
 #define LOG_MODULE_NAME bt_mesh_prov_device
 #include "common/log.h"
 
@@ -37,6 +37,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "proxy.h"
+#include "pb_gatt_srv.h"
 #include "prov.h"
 #include "settings.h"
 
@@ -150,8 +151,11 @@ static void prov_start(const uint8_t *data)
 	memcpy(bt_mesh_prov_link.conf_inputs.start, data, PDU_LEN_START);
 
 	bt_mesh_prov_link.expect = PROV_PUB_KEY;
+	bt_mesh_prov_link.oob_method = data[2];
+	bt_mesh_prov_link.oob_action = data[3];
+	bt_mesh_prov_link.oob_size = data[4];
 
-	if (bt_mesh_prov_auth(data[2], data[3], data[4]) < 0) {
+	if (bt_mesh_prov_auth(false, data[2], data[3], data[4]) < 0) {
 		BT_ERR("Invalid authentication method: 0x%02x; "
 		       "action: 0x%02x; size: 0x%02x", data[2], data[3],
 		       data[4]);
@@ -261,14 +265,14 @@ static void send_pub_key(void)
 		return;
 	}
 
-	BT_DBG("Local Public Key: %s", bt_hex(key, BT_PUB_KEY_LEN));
-
 	bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
 
 	/* Swap X and Y halves independently to big-endian */
 	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), key, BT_PUB_KEY_COORD_LEN);
 	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), &key[BT_PUB_KEY_COORD_LEN],
 			BT_PUB_KEY_COORD_LEN);
+
+	BT_DBG("Local Public Key: %s", bt_hex(buf.data + 1, BT_PUB_KEY_LEN));
 
 	/* PublicKeyDevice */
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, &buf.data[1], PDU_LEN_PUB_KEY);
@@ -634,6 +638,10 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 		return -EALREADY;
 	}
 
+	if (bt_mesh_prov_active()) {
+		return -EBUSY;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
 	    (bearers & BT_MESH_PROV_ADV)) {
 		bt_mesh_beacon_disable();
@@ -642,7 +650,7 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
 	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_disable(true);
+		(void)bt_mesh_pb_gatt_disable();
 	}
 
 	return 0;

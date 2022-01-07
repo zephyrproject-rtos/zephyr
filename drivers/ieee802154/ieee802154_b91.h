@@ -10,13 +10,13 @@
 /* Timeouts */
 #define B91_TX_WAIT_TIME_MS                 (10)
 #define B91_ACK_WAIT_TIME_MS                (10)
-#define B91_SET_TRX_MODE_DELAY_US           (100)
 
 /* Received data parsing */
 #define B91_PAYLOAD_OFFSET                  (5)
 #define B91_PAYLOAD_MIN                     (5)
 #define B91_PAYLOAD_MAX                     (127)
 #define B91_FRAME_TYPE_OFFSET               (0)
+#define B91_FRAME_TYPE_MASK                 (0x07)
 #define B91_DEST_ADDR_TYPE_OFFSET           (1)
 #define B91_DEST_ADDR_TYPE_MASK             (0x0c)
 #define B91_DEST_ADDR_TYPE_SHORT            (8)
@@ -39,7 +39,6 @@
 #define B91_TRX_LENGTH                      (256)
 #define B91_RSSI_TO_LQI_SCALE               (3)
 #define B91_RSSI_TO_LQI_MIN                 (-87)
-#define B91_CCA_RSSI_MIN                    (-60)
 #define B91_CCA_TIME_MAX_US                 (200)
 #define B91_LOGIC_CHANNEL_TO_PHYSICAL(p)    (((p) - 10) * 5)
 
@@ -102,6 +101,7 @@ struct b91_data {
 	uint8_t filter_ieee_addr[B91_IEEE_ADDRESS_SIZE];
 	bool is_started;
 	bool ack_handler_en;
+	uint16_t current_channel;
 };
 
 #endif

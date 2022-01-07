@@ -44,11 +44,12 @@ static int max17055_reg_read(struct max17055_data *priv, int reg_addr,
 static int max17055_reg_write(struct max17055_data *priv, int reg_addr,
 			      uint16_t val)
 {
-	uint8_t i2c_data[2];
+	uint8_t buf[3];
 
-	sys_put_le16(val, i2c_data);
+	buf[0] = (uint8_t)reg_addr;
+	sys_put_le16(val, &buf[1]);
 
-	return i2c_burst_write(priv->i2c, DT_INST_REG_ADDR(0), reg_addr, i2c_data, 2);
+	return i2c_write(priv->i2c, buf, sizeof(buf), DT_INST_REG_ADDR(0));
 }
 
 /**

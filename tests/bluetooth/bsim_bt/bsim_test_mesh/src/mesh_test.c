@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 const struct bt_mesh_test_cfg *cfg;
 
-static K_MEM_SLAB_DEFINE(msg_pool, sizeof(struct bt_mesh_test_msg),
+K_MEM_SLAB_DEFINE_STATIC(msg_pool, sizeof(struct bt_mesh_test_msg),
 			 RECV_QUEUE_SIZE, 4);
 static K_QUEUE_DEFINE(recv);
 struct bt_mesh_test_stats test_stats;
@@ -89,6 +89,7 @@ static int ra_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 static const struct bt_mesh_model_op model_op[] = {
 	{ TEST_MSG_OP_1, 0, msg_rx },
 	{ TEST_MSG_OP_2, 0, ra_rx },
+	BT_MESH_MODEL_OP_END
 };
 
 int __weak test_model_pub_update(struct bt_mesh_model *mod)

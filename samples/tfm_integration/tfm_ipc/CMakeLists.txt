@@ -9,5 +9,5 @@ project(tfm_ipc)
 target_sources(app PRIVATE src/main.c)
 
 target_include_directories(app PRIVATE
-  ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
+  ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/interface/include
 )

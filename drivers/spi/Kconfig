@@ -21,9 +21,19 @@ config SPI_ASYNC
 
 config SPI_SLAVE
 	bool "Enable Slave support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enables Driver SPI slave operations. Slave support depends
 	  on the driver and the hardware it runs on.
+
+config SPI_EXTENDED_MODES
+	bool "Enable extended modes [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enables extended operations in the SPI API. Currently, this
+	  enables the possibility to select the line mode (single/dual/
+	  quad/octal), though none of these mode are really supported as
+	  it would require more features exposed into the SPI buffer.
 
 config SPI_INIT_PRIORITY
 	int "Init priority"
@@ -82,5 +92,11 @@ source "drivers/spi/Kconfig.esp32"
 source "drivers/spi/Kconfig.test"
 
 source "drivers/spi/Kconfig.psoc6"
+
+source "drivers/spi/Kconfig.npcx_fiu"
+
+source "drivers/spi/Kconfig.bitbang"
+
+source "drivers/spi/Kconfig.xec_qmspi_ldma"
 
 endif # SPI

@@ -136,6 +136,21 @@ config SCHED_CPU_MASK
 	  CPU.  With one CPU, it's just a higher overhead version of
 	  k_thread_start/stop().
 
+config SCHED_CPU_MASK_PIN_ONLY
+	bool "CPU mask variant with single-CPU pinning only"
+	depends on SMP && SCHED_CPU_MASK
+	help
+	  When true, enables a variant of SCHED_CPU_MASK where only
+	  one CPU may be specified for every thread.  Effectively, all
+	  threads have a single "assigned" CPU and they will never be
+	  scheduled symmetrically.  In general this is not helpful,
+	  but some applications have a carefully designed threading
+	  architecture and want to make their own decisions about how
+	  to assign work to CPUs.  In that circumstance, some moderate
+	  optimizations can be made (e.g. having a separate run queue
+	  per CPU, keeping the list length shorter).  Most
+	  applications don't want this.
+
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
@@ -348,12 +363,12 @@ config INSTRUMENT_THREAD_SWITCHING
 
 menuconfig THREAD_RUNTIME_STATS
 	bool "Thread runtime statistics"
-	select INSTRUMENT_THREAD_SWITCHING
 	help
 	  Gather thread runtime statistics.
 
 	  For example:
 	    - Thread total execution cycles
+	    - System total execution cycles
 
 if THREAD_RUNTIME_STATS
 
@@ -365,6 +380,20 @@ config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
 
 	  Note that timing functions may use a different timer than
 	  the default timer for OS timekeeping.
+
+config SCHED_THREAD_USAGE
+	bool "Collect thread runtime usage"
+	default y
+	select INSTRUMENT_THREAD_SWITCHING if !USE_SWITCH
+	help
+	  Collect thread runtime info at context switch time
+
+config SCHED_THREAD_USAGE_ALL
+	bool "Collect total system runtime usage"
+	default y if SCHED_THREAD_USAGE
+	depends on SCHED_THREAD_USAGE
+	help
+	  Maintain a sum of all non-idle thread cycle usage.
 
 endif # THREAD_RUNTIME_STATS
 
@@ -491,6 +520,16 @@ config NUM_PIPE_ASYNC_MSGS
 
 	  Setting this option to 0 disables support for asynchronous
 	  pipe messages.
+
+config EVENTS
+	bool "Enable event objects"
+	help
+	  This option enables event objects. Threads may wait on event
+	  objects for specific events, but both threads and ISRs may deliver
+	  events to event objects.
+
+	  Note that setting this option slightly increases the size of the
+	  thread structure.
 
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"

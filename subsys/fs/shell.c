@@ -307,7 +307,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 			break;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "%08X  ", offset);
+		shell_fprintf(shell, SHELL_NORMAL, "%08X  ", (uint32_t)offset);
 
 		for (i = 0; i < read; i++) {
 			shell_fprintf(shell, SHELL_NORMAL, "%02X ", buf[i]);
@@ -378,7 +378,7 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (read < 0) {
-			shell_error(shell, "Failed to read from file %s (err: %d)",
+			shell_error(shell, "Failed to read from file %s (err: %zd)",
 				path, read);
 		}
 

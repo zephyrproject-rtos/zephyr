@@ -1,0 +1,46 @@
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_GD32VF103
+
+config SOC
+	default "gd32vf103"
+
+config KERNEL_ENTRY
+	default "__nuclei_start"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if RISCV_MACHINE_TIMER
+
+config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
+	default $(dt_node_int_prop_int,/soc/machine-timer@d1000000,clk-divider) if RISCV_MACHINE_TIMER
+
+config RISCV_SOC_MCAUSE_EXCEPTION_MASK
+	default $(dt_node_int_prop_hex,/cpus/cpu@0,mcause-exception-mask)
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	default y
+
+config RISCV_GP
+	default y
+
+config RISCV_HAS_PLIC
+	default n
+
+config NUM_IRQS
+	default 87 if  NUCLEI_ECLIC
+	default 16 if !NUCLEI_ECLIC
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,flash0@8000000)
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config PINCTRL
+	default y
+
+endif # GD32VF103

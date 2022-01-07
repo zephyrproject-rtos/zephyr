@@ -172,10 +172,10 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		/* Swap IP src and destination address so that we can receive
 		 * the packet and the stack will not reject it.
 		 */
-		net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-				&NET_IPV6_HDR(pkt)->dst);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
+		net_ipv6_addr_copy_raw((uint8_t *)&addr, NET_IPV6_HDR(pkt)->src);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
+				       NET_IPV6_HDR(pkt)->dst);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
 
 		udp_hdr = net_udp_get_hdr(pkt, &hdr);
 		zassert_not_null(udp_hdr, "UDP header missing");

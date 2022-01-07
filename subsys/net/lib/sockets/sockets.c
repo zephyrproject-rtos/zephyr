@@ -147,7 +147,8 @@ static void zsock_flush_queue(struct net_context *ctx)
 	k_fifo_cancel_wait(&ctx->recv_q);
 }
 
-int zsock_socket_internal(int family, int type, int proto)
+#if defined(CONFIG_NET_NATIVE)
+static int zsock_socket_internal(int family, int type, int proto)
 {
 	int fd = z_reserve_fd();
 	struct net_context *ctx;
@@ -205,6 +206,7 @@ int zsock_socket_internal(int family, int type, int proto)
 
 	return fd;
 }
+#endif /* CONFIG_NET_NATIVE */
 
 int z_impl_zsock_socket(int family, int type, int proto)
 {
@@ -221,10 +223,6 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		}
 
 		return sock_family->handler(family, type, proto);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_NATIVE)) {
-		return zsock_socket_internal(family, type, proto);
 	}
 
 	errno = EAFNOSUPPORT;
@@ -868,7 +866,7 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 			goto error;
 		}
 
-		net_ipaddr_copy(&addr4->sin_addr, &ipv4_hdr->src);
+		net_ipv4_addr_copy_raw((uint8_t *)&addr4->sin_addr, ipv4_hdr->src);
 		port = &addr4->sin_port;
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
@@ -891,7 +889,7 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 			goto error;
 		}
 
-		net_ipaddr_copy(&addr6->sin6_addr, &ipv6_hdr->src);
+		net_ipv6_addr_copy_raw((uint8_t *)&addr6->sin6_addr, ipv6_hdr->src);
 		port = &addr6->sin6_port;
 	} else {
 		ret = -ENOTSUP;
@@ -962,7 +960,7 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 	}
 }
 
-static int wait_data(struct net_context *ctx, k_timeout_t *timeout)
+int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 {
 	if (ctx->cond.lock == NULL) {
 		/* For some reason the lock pointer is not set properly
@@ -1003,7 +1001,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 
-		ret = wait_data(ctx, &timeout);
+		ret = zsock_wait_data(ctx, &timeout);
 		if (ret < 0) {
 			errno = -ret;
 			return -1;
@@ -1142,7 +1140,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			res = wait_data(ctx, &timeout);
+			res = zsock_wait_data(ctx, &timeout);
 			if (res < 0) {
 				errno = -res;
 				return -1;
@@ -1993,26 +1991,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 			     socklen_t *addrlen)
 {
-	const struct socket_op_vtable *vtable;
-	struct k_mutex *lock;
-	void *ctx;
-	int ret;
-
-	ctx = get_sock_vtable(sock, &vtable, &lock);
-	if (ctx == NULL) {
-		errno = EBADF;
-		return -1;
-	}
-
-	NET_DBG("getsockname: ctx=%p, fd=%d", ctx, sock);
-
-	(void)k_mutex_lock(lock, K_FOREVER);
-
-	ret = vtable->getsockname(ctx, addr, addrlen);
-
-	k_mutex_unlock(lock);
-
-	return ret;
+	VTABLE_CALL(getsockname, sock, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -2208,3 +2187,17 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.setsockopt = sock_setsockopt_vmeth,
 	.getsockname = sock_getsockname_vmeth,
 };
+
+#if defined(CONFIG_NET_NATIVE)
+static bool inet_is_supported(int family, int type, int proto)
+{
+	if (family != AF_INET && family != AF_INET6) {
+		return false;
+	}
+
+	return true;
+}
+
+NET_SOCKET_REGISTER(af_inet46, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    inet_is_supported, zsock_socket_internal);
+#endif /* CONFIG_NET_NATIVE */

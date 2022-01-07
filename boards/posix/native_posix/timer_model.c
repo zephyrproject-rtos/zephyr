@@ -401,12 +401,12 @@ void hwtimer_get_pseudohost_rtc_time(uint32_t *nsec, uint64_t *sec)
 	uint32_t rt_ns = tv.tv_nsec % 1000;
 
 	long double drt_us = (long double)rt_us - last_radj_rtime;
-	long double drt_ns = drt_us * 1000.0 + (long double)rt_ns;
-	long double st = drt_ns * clock_ratio +
-			 (long double)(last_radj_stime + rtc_offset) * 1000.0;
+	long double drt_ns = drt_us * 1000.0L + (long double)rt_ns;
+	long double st = drt_ns * (long double)clock_ratio +
+			 (long double)(last_radj_stime + rtc_offset) * 1000.0L;
 
-	*nsec = fmodl(st, 1e9);
-	*sec = st / 1e9;
+	*nsec = fmodl(st, 1e9L);
+	*sec = st / 1e9L;
 }
 
 static struct {

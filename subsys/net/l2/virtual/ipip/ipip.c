@@ -329,7 +329,7 @@ static enum net_verdict interface_input(struct net_if *input_iface,
 		}
 
 		/* RFC4213 chapter 3.6 */
-		iface = net_if_ipv6_select_src_iface(&hdr->dst);
+		iface = net_if_ipv6_select_src_iface((struct in6_addr *)hdr->dst);
 		if (iface == NULL) {
 			NET_DBG("DROP: not for me (dst %s)",
 				net_sprint_ipv6_addr(&hdr->dst));
@@ -368,7 +368,7 @@ static enum net_verdict interface_input(struct net_if *input_iface,
 			return NET_DROP;
 		}
 
-		iface = net_if_ipv4_select_src_iface(&hdr->dst);
+		iface = net_if_ipv4_select_src_iface((struct in_addr *)hdr->dst);
 		if (iface == NULL) {
 			NET_DBG("DROP: not for me (dst %s)",
 				net_sprint_ipv4_addr(&hdr->dst));

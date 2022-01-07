@@ -291,7 +291,7 @@ static K_THREAD_STACK_ARRAY_DEFINE(stacks_##name, instances, CONFIG_CMSIS_THREAD
 static struct k_thread cm_thread_##name[instances]; \
 static struct k_poll_signal wait_signal_##name; \
 static struct k_poll_event wait_events_##name; \
-static SYS_BITARRAY_DEFINE(bitarray_##name, instances); \
+SYS_BITARRAY_DEFINE_STATIC(bitarray_##name, instances); \
 static osThreadDef_t os_thread_def_##name = \
 { (name), (priority), (instances), (stacksz), (void *)(stacks_##name), \
 	(cm_thread_##name), (&wait_signal_##name), \

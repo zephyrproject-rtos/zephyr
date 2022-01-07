@@ -6,6 +6,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/clock/stm32_clock.h>
@@ -35,16 +36,16 @@
 
 	soc {
 		rcc: rcc@50000000 {
-			compatible = "st,stm32-rcc";
+			compatible = "st,stm32mp1-rcc";
 			reg = <0x50000000 0x1000>;
 			#clock-cells = <2>;
 		};
 
-		exti: interrupt-controller@5000D000 {
+		exti: interrupt-controller@5000d000 {
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			reg = <0x5000D000 0x400>;
+			reg = <0x5000d000 0x400>;
 		};
 
 		pinctrl: pin-controller@50002000 {
@@ -170,6 +171,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x100>;
 			interrupts = <35 5>;
 			label = "SPI_1";
+			status = "disabled";
 		};
 
 		spi2: spi@4000b000 {
@@ -180,6 +182,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x800>;
 			interrupts = <36 5>;
 			label = "SPI_2";
+			status = "disabled";
 		};
 
 		spi3: spi@4000c000 {
@@ -190,6 +193,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x1000>;
 			interrupts = <51 5>;
 			label = "SPI_3";
+			status = "disabled";
 		};
 
 		spi4: spi@44005000 {
@@ -200,6 +204,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x200>;
 			interrupts = <84 5>;
 			label = "SPI_4";
+			status = "disabled";
 		};
 
 		spi5: spi@44009000 {
@@ -210,6 +215,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x400>;
 			interrupts = <85 5>;
 			label = "SPI_5";
+			status = "disabled";
 		};
 
 		usart2: serial@4000e000 {

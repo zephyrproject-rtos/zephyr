@@ -143,7 +143,7 @@ struct bmp388_config {
 	const struct bmp388_io_ops *ops;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		struct spi_config spi_cfg;
+		struct spi_dt_spec spi_bus;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 		uint16_t bus_addr;

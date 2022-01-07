@@ -14,13 +14,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_1";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_1";
 				#pwm-cells = <3>;
 			};

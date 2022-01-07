@@ -12,14 +12,16 @@ config OPENTHREAD_SECURITY_INTERNAL
 menuconfig NET_L2_OPENTHREAD
 	bool "OpenThread L2"
 	depends on NETWORKING
+	select NET_L2_PHY_IEEE802154
 
-	select SETTINGS
-	select FLASH
-	select FLASH_PAGE_LAYOUT
-	select FLASH_MAP
-	select MPU_ALLOW_FLASH_WRITE
-	select NVS
+	imply FLASH
+	imply FLASH_PAGE_LAYOUT
+	imply FLASH_MAP
+	imply MPU_ALLOW_FLASH_WRITE
+	imply NVS
 
+	select SETTINGS if FLASH
+	select OPENTHREAD_SETTINGS_RAM if !FLASH
 	select CPLUSPLUS
 	select REBOOT
 	select ENTROPY_GENERATOR
@@ -305,5 +307,19 @@ config OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
 	help
 	  Set y to enable software CSMA backoff. The option can be disabled if
 	  the radio has hardware support for this feature (IEEE802154_HW_CSMA).
+
+config OPENTHREAD_CRYPTO_PSA
+	bool "Enable ARM PSA crypto API"
+	depends on BUILD_WITH_TFM
+	select OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
+	help
+	  Enable crypto backend library implementation based on ARM PSA crypto
+	  API instead of the default, using mbedTLS.
+
+config OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
+	bool "Enable cryptographic key reference support"
+	help
+	  Enable usage of cryptographic key references instead of literal keys
+	  This requires a crypto backend library that supports key references.
 
 endif # NET_L2_OPENTHREAD

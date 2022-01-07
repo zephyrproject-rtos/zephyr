@@ -11,7 +11,11 @@
 #include <usb/usb_device.h>
 
 /* Max packet size for endpoints */
+#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#define BULK_EP_MPS		512
+#else
 #define BULK_EP_MPS		64
+#endif
 
 #define ENDP_BULK_IN		0x81
 
@@ -74,7 +78,7 @@ static struct usb_ep_cfg_data device_ep[] = {
 	},
 };
 
-USBD_CFG_DATA_DEFINE(primary, device) struct usb_cfg_data device_config = {
+USBD_DEFINE_CFG_DATA(device_config) = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = status_cb,

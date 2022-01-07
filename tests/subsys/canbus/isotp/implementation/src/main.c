@@ -12,11 +12,7 @@
 #define NUMBER_OF_REPETITIONS 5
 #define DATA_SIZE_SF          7
 
-#if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
-#define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
-#else
-#define CAN_DEVICE_NAME DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
-#endif
+#define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
 
 /*
  * @addtogroup t_can

@@ -8,6 +8,7 @@
 #include <drivers/gpio.h>
 #include "busy_sim.h"
 #include <sys/ring_buffer.h>
+#include <random/rand32.h>
 
 #define BUFFER_SIZE 32
 
@@ -18,10 +19,12 @@ struct busy_sim_data {
 	uint16_t active_delta;
 	uint32_t us_tick;
 	struct counter_alarm_cfg alarm_cfg;
-	struct k_work work;
-	struct ring_buf rnd_rbuf;
-	uint8_t rnd_buf[BUFFER_SIZE];
+	busy_sim_cb_t cb;
 };
+
+static struct k_work work;
+static struct ring_buf rnd_rbuf;
+static uint8_t rnd_buf[BUFFER_SIZE];
 
 struct busy_sim_config {
 	const struct device *entropy;
@@ -35,7 +38,9 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(vnd_busy_sim) == 1,
 	     "add exactly one vnd,busy-sim node to the devicetree");
 
 static const struct busy_sim_config sim_config = {
-	.entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy)),
+	.entropy = COND_CODE_1(CONFIG_XOSHIRO_RANDOM_GENERATOR,
+			       (NULL),
+			       (DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy)))),
 	.counter = DEVICE_DT_GET(DT_PHANDLE(DT_BUSY_SIM, counter)),
 	.pin_spec = GPIO_DT_SPEC_GET_OR(DT_BUSY_SIM, active_gpios, {0}),
 };
@@ -57,15 +62,14 @@ static void rng_pool_work_handler(struct k_work *work)
 {
 	uint8_t *buf;
 	uint32_t len;
-	struct busy_sim_data *data = get_dev_data(busy_sim_dev);
 	const struct busy_sim_config *config = get_dev_config(busy_sim_dev);
 
-	len = ring_buf_put_claim(&data->rnd_rbuf, &buf, BUFFER_SIZE - 1);
+	len = ring_buf_put_claim(&rnd_rbuf, &buf, BUFFER_SIZE - 1);
 	if (len) {
 		int err = entropy_get_entropy(config->entropy, buf, len);
 
 		if (err == 0) {
-			ring_buf_put_finish(&data->rnd_rbuf, len);
+			ring_buf_put_finish(&rnd_rbuf, len);
 			return;
 		}
 	}
@@ -82,10 +86,16 @@ static uint32_t get_timeout(bool idle)
 	uint16_t rand_val;
 	uint32_t len;
 
-	len = ring_buf_get(&data->rnd_rbuf, (uint8_t *)&rand_val, sizeof(rand_val));
-	if (len < sizeof(rand_val)) {
-		k_work_submit(&data->work);
-		rand_val = 0;
+	if (IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR)) {
+		sys_rand_get(&rand_val, sizeof(rand_val));
+	} else {
+		len = ring_buf_get(&rnd_rbuf,
+				   (uint8_t *)&rand_val,
+				   sizeof(rand_val));
+		if (len < sizeof(rand_val)) {
+			k_work_submit(&work);
+			rand_val = 0;
+		}
 	}
 
 	avg *= data->us_tick;
@@ -110,6 +120,10 @@ static void counter_alarm_callback(const struct device *dev,
 	}
 
 	/* Busy loop */
+	if (data->cb) {
+		data->cb();
+	}
+
 	k_busy_wait(get_timeout(false) / data->us_tick);
 
 	if (config->pin_spec.port) {
@@ -123,19 +137,22 @@ static void counter_alarm_callback(const struct device *dev,
 }
 
 void busy_sim_start(uint32_t active_avg, uint32_t active_delta,
-		    uint32_t idle_avg, uint32_t idle_delta)
+		    uint32_t idle_avg, uint32_t idle_delta, busy_sim_cb_t cb)
 {
 	int err;
 	const struct busy_sim_config *config = get_dev_config(busy_sim_dev);
 	struct busy_sim_data *data = get_dev_data(busy_sim_dev);
 
+	data->cb = cb;
 	data->active_avg = active_avg;
 	data->active_delta = active_delta;
 	data->idle_avg = idle_avg;
 	data->idle_delta = idle_delta;
 
-	err = k_work_submit(&data->work);
-	__ASSERT_NO_MSG(err >= 0);
+	if (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR)) {
+		err = k_work_submit(&work);
+		__ASSERT_NO_MSG(err >= 0);
+	}
 
 	data->alarm_cfg.ticks = counter_us_to_ticks(config->counter, 100);
 	err = counter_set_channel_alarm(config->counter, 0, &data->alarm_cfg);
@@ -149,9 +166,11 @@ void busy_sim_stop(void)
 {
 	int err;
 	const struct busy_sim_config *config = get_dev_config(busy_sim_dev);
-	struct busy_sim_data *data = get_dev_data(busy_sim_dev);
 
-	k_work_cancel(&data->work);
+	if (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR)) {
+		k_work_cancel(&work);
+	}
+
 	err = counter_stop(config->counter);
 	__ASSERT_NO_MSG(err == 0);
 }
@@ -163,7 +182,9 @@ static int busy_sim_init(const struct device *dev)
 	struct busy_sim_data *data = get_dev_data(dev);
 
 	if ((config->pin_spec.port && !device_is_ready(config->pin_spec.port)) ||
-	    !device_is_ready(config->counter) || !device_is_ready(config->entropy)) {
+	    !device_is_ready(config->counter) ||
+	    (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR) &&
+	    !device_is_ready(config->entropy))) {
 		__ASSERT(0, "Devices needed by busy simulator not ready.");
 		return -EIO;
 	}
@@ -178,8 +199,10 @@ static int busy_sim_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	k_work_init(&data->work, rng_pool_work_handler);
-	ring_buf_init(&data->rnd_rbuf, BUFFER_SIZE, data->rnd_buf);
+	if (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR)) {
+		k_work_init(&work, rng_pool_work_handler);
+		ring_buf_init(&rnd_rbuf, BUFFER_SIZE, rnd_buf);
+	}
 
 	data->us_tick = freq / 1000000;
 	data->alarm_cfg.callback = counter_alarm_callback;

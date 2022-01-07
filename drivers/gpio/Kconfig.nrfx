@@ -1,62 +1,10 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig GPIO_NRFX
+config GPIO_NRFX
 	bool "nRF GPIO driver"
 	default y
 	depends on SOC_FAMILY_NRF
 	select NRFX_GPIOTE
 	help
 	  Enable GPIO driver for nRF line of MCUs.
-
-if GPIO_NRFX
-
-config GPIO_NRF_INIT_PRIORITY
-	int "nRF GPIO initialization priority"
-	default 40
-	help
-	  Initialization priority for nRF GPIO.
-
-config GPIO_NRF_P0
-	bool "nRF GPIO Port P0"
-	depends on HAS_HW_NRF_GPIO0
-	default y
-	help
-	  Enable nRF GPIO port P0 config options.
-
-config GPIO_NRF_P1
-	bool "nRF GPIO Port P1"
-	depends on HAS_HW_NRF_GPIO1
-	default y
-	help
-	  Enable nRF GPIO port P1 config options.
-
-choice
-	prompt "nRF GPIO edge interrupts mechanism"
-	default GPIO_NRF_INT_EDGE_USING_GPIOTE
-
-config GPIO_NRF_INT_EDGE_USING_GPIOTE
-	bool "Edge interrupts using GPIOTE"
-	help
-	  Enable GPIO edge interrupts implementation using GPIOTE events.
-
-config GPIO_NRF_INT_EDGE_USING_SENSE
-	bool "Edge interrupts using SENSE"
-	help
-	  Enable GPIO edge interrupts implementation using GPIO SENSE, which is
-	  a level interrupt mechanism. Conversion from level to edge interrupts
-	  notification happens in GPIO driver, so it is transparent to GPIO
-	  consumers after switching from GPIOTE mechanism.
-
-	  Use this option as an alternative to GPIOTE event mechanism. According
-	  to product specifications and erratas to some nRF MCUs, using GPIOTE
-	  results in increased current consumption in System ON Idle and in
-	  conjunction with SPI/TWI peripherals. Selecting this option allows to
-	  reduce current for those cases.
-
-	  Using this option additionally allows detecting state changes of pins
-	  configured as output, which might be handy for some applications.
-
-endchoice
-
-endif # GPIO_NRFX

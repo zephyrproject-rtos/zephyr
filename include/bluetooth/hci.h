@@ -74,6 +74,7 @@ struct bt_hci_acl_hdr {
 	(((pb) & 0x0003) | (((ts) & 0x0001) << 2))
 #define bt_iso_handle_pack(h, pb, ts) \
 	((h) | (bt_iso_pack_flags(pb, ts) << 12))
+#define bt_iso_hdr_len(h)                ((h) & BIT_MASK(14))
 
 #define BT_ISO_DATA_VALID                0x00
 #define BT_ISO_DATA_INVALID              0x01
@@ -96,8 +97,8 @@ struct bt_hci_iso_ts_data_hdr {
 #define BT_HCI_ISO_TS_DATA_HDR_SIZE     8
 
 struct bt_hci_iso_hdr {
-	uint16_t handle;
-	uint16_t len;
+	uint16_t handle; /* 12 bit handle, 2 bit PB flags, 1 bit TS_Flag, 1 bit RFU */
+	uint16_t len; /* 14 bits, 2 bits RFU */
 } __packed;
 #define BT_HCI_ISO_HDR_SIZE             4
 
@@ -1374,6 +1375,9 @@ struct bt_hci_cp_le_set_per_adv_data {
 	uint8_t  data[251];
 } __packed;
 
+#define BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE     BIT(0)
+#define BT_HCI_LE_SET_PER_ADV_ENABLE_ADI        BIT(1)
+
 #define BT_HCI_OP_LE_SET_PER_ADV_ENABLE         BT_OP(BT_OGF_LE, 0x0040)
 struct bt_hci_cp_le_set_per_adv_enable {
 	uint8_t  enable;
@@ -1431,16 +1435,22 @@ struct bt_hci_cp_le_ext_create_conn {
 
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST               BIT(0)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED       BIT(1)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE       BIT(2)
 
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_FILTERING     0
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOA           BIT(0)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_1US       BIT(1)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_2US       BIT(2)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_CTE           BIT(3)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE         BIT(4)
+/* Constants to check correctness of CTE type */
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ALLOWED_BITS 5
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_INVALID_VALUE \
+	(~BIT_MASK(BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ALLOWED_BITS))
 
 #define BT_HCI_OP_LE_PER_ADV_CREATE_SYNC        BT_OP(BT_OGF_LE, 0x0044)
 struct bt_hci_cp_le_per_adv_create_sync {
-	uint8_t      options;
+	uint8_t options;
 	uint8_t      sid;
 	bt_addr_le_t addr;
 	uint16_t     skip;
@@ -1639,6 +1649,9 @@ struct bt_hci_rp_le_read_ant_info {
 	uint8_t max_switch_pattern_len;
 	uint8_t max_cte_len;
 };
+
+#define BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_ENABLE           BIT(0)
+#define BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE BIT(1)
 
 #define BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE     BT_OP(BT_OGF_LE, 0x0059)
 struct bt_hci_cp_le_set_per_adv_recv_enable {
@@ -2663,9 +2676,9 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_EVT_MASK_LE_ADV_SET_TERMINATED        BT_EVT_BIT(17)
 #define BT_EVT_MASK_LE_SCAN_REQ_RECEIVED         BT_EVT_BIT(18)
 #define BT_EVT_MASK_LE_CHAN_SEL_ALGO             BT_EVT_BIT(19)
-#define BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT  BT_EVT_BIT(21)
-#define BT_EVT_MASK_LE_CONNECTION_IQ_REPORT      BT_EVT_BIT(22)
-#define BT_EVT_MASK_LE_CTE_REQUEST_FAILED        BT_EVT_BIT(23)
+#define BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT  BT_EVT_BIT(20)
+#define BT_EVT_MASK_LE_CONNECTION_IQ_REPORT      BT_EVT_BIT(21)
+#define BT_EVT_MASK_LE_CTE_REQUEST_FAILED        BT_EVT_BIT(22)
 #define BT_EVT_MASK_LE_PAST_RECEIVED             BT_EVT_BIT(23)
 #define BT_EVT_MASK_LE_CIS_ESTABLISHED           BT_EVT_BIT(24)
 #define BT_EVT_MASK_LE_CIS_REQ                   BT_EVT_BIT(25)

@@ -9,6 +9,7 @@
 #include <drivers/i2c.h>
 #include <init.h>
 #include <drivers/sensor.h>
+#include <pm/device.h>
 #include <sys/__assert.h>
 #include <string.h>
 #include <sys/byteorder.h>
@@ -168,8 +169,8 @@ static int bq274xx_channel_get(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_TEMP:
-		int_temp = (bq274xx->internal_temperature * 0.1);
-		int_temp = int_temp - 273.15;
+		int_temp = (bq274xx->internal_temperature * 0.1f);
+		int_temp = int_temp - 273.15f;
 		val->val1 = (int32_t)int_temp;
 		val->val2 = (int_temp - (int32_t)int_temp) * 1000000;
 		break;
@@ -648,10 +649,6 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
-#ifdef CONFIG_PM_DEVICE
-	bq274xx->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
-
 	return 0;
 }
 
@@ -731,8 +728,8 @@ static int bq274xx_exit_shutdown_mode(const struct device *dev)
 	return 0;
 }
 
-static int bq274xx_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int bq274xx_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	int ret;
 	struct bq274xx_data *data = dev->data;
@@ -777,7 +774,10 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),   \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, bq274xx_pm_control,  \
+	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action);		       \
+									       \
+	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,		       \
+			    PM_DEVICE_DT_INST_REF(index),		       \
 			    &bq274xx_driver_##index,                           \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \

@@ -17,10 +17,17 @@ module = CAN
 module-str = CAN
 source "subsys/logging/Kconfig.template.log_config"
 
+config CAN_INIT_PRIORITY
+	int "CAN init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  CAN driver device initialization priority.
+
 config CAN_SHELL
 	bool "Enable CAN Shell"
 	default y
 	depends on SHELL
+	select POLL
 	help
 	  Enable CAN Shell for testing.
 
@@ -63,7 +70,7 @@ config CAN_INIT_PRIORITY
 	  so that it can start before the networking sub-system.
 
 config CAN_WORKQ_FRAMES_BUF_CNT
-	int "Work queue buffer frame count"
+	int "Work queue buffer frame count (DEPRECATED)"
 	default 4
 	range 1 65534
 	help

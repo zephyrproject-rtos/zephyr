@@ -24,6 +24,7 @@
 #include "util/mfifo.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "ticker/ticker.h"
 
@@ -45,6 +46,9 @@
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
 #include "ull_conn_types.h"
 #include "ull_filter.h"
 #include "ull_df_types.h"
@@ -58,10 +62,10 @@
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
 #include "ull_central_internal.h"
+#include "ull_iso_types.h"
 #include "ull_conn_internal.h"
 #include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
-#include "ull_iso_types.h"
 #include "ull_central_iso_internal.h"
 
 #include "ull_conn_iso_internal.h"
@@ -73,6 +77,7 @@
 
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_test.h"
 #include "ll_settings.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -224,7 +229,7 @@
 #endif
 #else
 #define BT_CTLR_ADV_EXT_RX_CNT  0
-#endif
+#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 
 #if !defined(TICKER_USER_LLL_VENDOR_OPS)
 #define TICKER_USER_LLL_VENDOR_OPS 0
@@ -303,29 +308,46 @@ static struct k_sem *sem_recv;
  */
 static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
-/* Declare done-event FIFO: mfifo_done.
+/* Declare done-event RXFIFO. This is a composite pool-backed MFIFO for rx_nodes.
+ * The declaration constructs the following data structures:
+ * - mfifo_done:    FIFO with pointers to struct node_rx_event_done
+ * - mem_done:      Backing data pool for struct node_rx_event_done elements
+ * - mem_link_done: Pool of memq_link_t elements
+ *
+ * An extra link may be reserved for use by the ull_done memq (EVENT_DONE_LINK_CNT).
+ *
  * Queue of pointers to struct node_rx_event_done.
- * The actual backing behind these pointers is mem_done
+ * The actual backing behind these pointers is mem_done.
+ *
+ * When there are radio events with time reservations lower than the preemption
+ * timeout of 1.5 ms, the pipeline has to account for the maximum radio events
+ * that can be enqueued during the preempt timeout duration. All these enqueued
+ * events could be aborted in case of late scheduling, needing as many done
+ * event buffers.
+ *
+ * During continuous scanning, there can be 1 active radio event, 1 scan resume
+ * and 1 new scan prepare. If there are peripheral prepares in addition, and due
+ * to late scheduling all these will abort needing 4 done buffers.
+ *
+ * If there are additional peripheral prepares enqueued, which are apart by
+ * their time reservations, these are not yet late and hence no more additional
+ * done buffers are needed.
+ *
+ * If Extended Scanning is supported, then an additional auxiliary scan event's
+ * prepare could be enqueued in the pipeline during the preemption duration.
  */
 #if !defined(VENDOR_EVENT_DONE_MAX)
-#define EVENT_DONE_MAX 3
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+#define EVENT_DONE_MAX 5
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
+#define EVENT_DONE_MAX 4
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #else
 #define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
 #endif
 
-static MFIFO_DEFINE(done, sizeof(struct node_rx_event_done *), EVENT_DONE_MAX);
-
-/* Backing storage for elements in mfifo_done */
-static struct {
-	void *free;
-	uint8_t pool[sizeof(struct node_rx_event_done) * EVENT_DONE_MAX];
-} mem_done;
-
-static struct {
-	void *free;
-	uint8_t pool[sizeof(memq_link_t) *
-		     (EVENT_DONE_MAX + EVENT_DONE_LINK_CNT)];
-} mem_link_done;
+static RXFIFO_DEFINE(done, sizeof(struct node_rx_event_done),
+		     EVENT_DONE_MAX, EVENT_DONE_LINK_CNT);
 
 /* Minimum number of node rx for ULL to LL/HCI thread per connection.
  * Increasing this by times the max. simultaneous connection count will permit
@@ -378,6 +400,12 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 						     PDU_DATA_SIZE), \
 						 PDU_RX_USER_PDU_OCTETS_MAX))
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SET)
+#define BT_CTLR_ADV_ISO_SET CONFIG_BT_CTLR_ADV_ISO_SET
+#else
+#define BT_CTLR_ADV_ISO_SET 0
+#endif
+
 #if defined(CONFIG_BT_PER_ADV_SYNC_MAX)
 #define BT_CTLR_SCAN_SYNC_SET CONFIG_BT_PER_ADV_SYNC_MAX
 #else
@@ -410,7 +438,8 @@ static struct {
 #define LINK_RX_POOL_SIZE                                                      \
 	(sizeof(memq_link_t) *                                                 \
 	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET +                    \
-	  (BT_CTLR_SCAN_SYNC_SET * 2) + (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +      \
+	  (BT_CTLR_ADV_ISO_SET * 2) + (BT_CTLR_SCAN_SYNC_SET * 2) +            \
+	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +                                    \
 	  (IQ_REPORT_CNT)))
 static struct {
 	uint8_t quota_pdu; /* Number of un-utilized buffers */
@@ -440,7 +469,6 @@ static void perform_lll_reset(void *param);
 static inline void *mark_set(void **m, void *param);
 static inline void *mark_unset(void **m, void *param);
 static inline void *mark_get(void *m);
-static inline void done_alloc(void);
 static inline void rx_alloc(uint8_t max);
 static void rx_demux(void *param);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
@@ -712,9 +740,6 @@ void ll_reset(void)
 	/* Re-initialize the prep mfifo */
 	MFIFO_INIT(prep);
 
-	/* Re-initialize the free done mfifo */
-	MFIFO_INIT(done);
-
 	/* Re-initialize the free rx mfifo */
 	MFIFO_INIT(pdu_rx_free);
 
@@ -762,6 +787,14 @@ void ll_reset(void)
 	err = ull_adv_reset_finalize();
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_BROADCASTER */
+
+	/* Reset/End DTM Tx or Rx commands */
+	if (IS_ENABLED(CONFIG_BT_CTLR_DTM)) {
+		uint16_t num_rx;
+
+		(void)ll_test_end(&num_rx);
+		ARG_UNUSED(num_rx);
+	}
 
 	/* Common to init and reset */
 	err = init_reset();
@@ -1092,6 +1125,11 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_DC_PDU:
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_COMPLETE:
+	case NODE_RX_TYPE_BIG_TERMINATE:
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
 
@@ -1099,6 +1137,11 @@ void ll_rx_dequeue(void)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC:
 	case NODE_RX_TYPE_SYNC_LOST:
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		/* fall through */
+	case NODE_RX_TYPE_SYNC_ISO:
+	case NODE_RX_TYPE_SYNC_ISO_LOST:
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -1160,8 +1203,12 @@ void ll_rx_dequeue(void)
 #endif
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
+	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -1213,6 +1260,20 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+		case NODE_RX_TYPE_BIG_COMPLETE:
+			/* Nothing to release */
+			break;
+
+		case NODE_RX_TYPE_BIG_TERMINATE:
+		{
+			struct ll_adv_iso_set *adv_iso = rx_free->rx_ftr.param;
+
+			ull_adv_iso_stream_release(adv_iso);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -1349,11 +1410,41 @@ void ll_rx_mem_release(void **node_rx)
 		{
 			struct node_rx_sync *se =
 				(void *)((struct node_rx_pdu *)rx_free)->pdu;
+			uint8_t status = se->status;
 
-			if (!se->status) {
+			/* Below status codes use node_rx_sync_estab, hence
+			 * release the node_rx memory and release sync context
+			 * if sync establishment failed.
+			 */
+			if ((status == BT_HCI_ERR_SUCCESS) ||
+			    (status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE) ||
+			    (status == BT_HCI_ERR_CONN_FAIL_TO_ESTAB)) {
+				struct ll_sync_set *sync;
+				struct ll_scan_set *scan;
+
+				/* pick the scan context before node_rx
+				 * release.
+				 */
+				scan = (void *)rx_free->rx_ftr.param;
+
 				mem_release(rx_free, &mem_pdu_rx.free);
 
+				/* pick the sync context before scan context
+				 * is cleanup of sync context association.
+				 */
+				sync = scan->per_scan.sync;
+
+				ull_sync_setup_complete(scan);
+
+				if (status != BT_HCI_ERR_SUCCESS) {
+					ull_sync_release(sync);
+				}
+
 				break;
+			} else {
+				LL_ASSERT(status == BT_HCI_ERR_OP_CANCELLED_BY_HOST);
+
+				/* Fall through and release sync context */
 			}
 		}
 		/* Pass through */
@@ -1363,40 +1454,68 @@ void ll_rx_mem_release(void **node_rx)
 			struct ll_sync_set *sync =
 				(void *)rx_free->rx_ftr.param;
 
-			sync->timeout_reload = 0U;
-
 			ull_sync_release(sync);
 		}
 		break;
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-		case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		case NODE_RX_TYPE_SYNC_ISO:
 		{
-			ull_iq_report_link_inc_quota(1);
-			ull_df_iq_report_mem_release(rx_free);
-			ull_df_rx_iq_report_alloc(1);
+			struct node_rx_sync_iso *se =
+				(void *)((struct node_rx_pdu *)rx_free)->pdu;
+
+			if (!se->status) {
+				mem_release(rx_free, &mem_pdu_rx.free);
+
+				break;
+			}
+		}
+		/* Pass through */
+
+		case NODE_RX_TYPE_SYNC_ISO_LOST:
+		{
+			struct ll_sync_iso_set *sync_iso =
+				(void *)rx_free->rx_ftr.param;
+
+			ull_sync_iso_stream_release(sync_iso);
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
-#if defined(CONFIG_BT_CONN)
-		case NODE_RX_TYPE_TERMINATE:
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+		case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
+		case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
 		{
-			struct ll_conn *conn;
-			memq_link_t *link;
+			const uint8_t report_cnt = 1U;
 
-			conn = ll_conn_get(rx_free->handle);
-
-			LL_ASSERT(!conn->lll.link_tx_free);
-			link = memq_deinit(&conn->lll.memq_tx.head,
-					   &conn->lll.memq_tx.tail);
-			LL_ASSERT(link);
-			conn->lll.link_tx_free = link;
-
-			ll_conn_release(conn);
+			ull_iq_report_link_inc_quota(report_cnt);
+			ull_df_iq_report_mem_release(rx_free);
+			ull_df_rx_iq_report_alloc(report_cnt);
 		}
 		break;
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_CONN_ISO)
+		case NODE_RX_TYPE_TERMINATE:
+		{
+			if (IS_ACL_HANDLE(rx_free->handle)) {
+				struct ll_conn *conn;
+				memq_link_t *link;
+
+				conn = ll_conn_get(rx_free->handle);
+
+				LL_ASSERT(!conn->lll.link_tx_free);
+				link = memq_deinit(&conn->lll.memq_tx.head,
+						&conn->lll.memq_tx.tail);
+				LL_ASSERT(link);
+				conn->lll.link_tx_free = link;
+
+				ll_conn_release(conn);
+			}
+		}
+		break;
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_CONN_ISO */
 
 		case NODE_RX_TYPE_EVENT_DONE:
 		default:
@@ -1903,16 +2022,8 @@ static inline int init_reset(void)
 {
 	memq_link_t *link;
 
-	/* Initialize done pool. */
-	mem_init(mem_done.pool, sizeof(struct node_rx_event_done),
-		 EVENT_DONE_MAX, &mem_done.free);
-
-	/* Initialize done link pool. */
-	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_DONE_MAX +
-		 EVENT_DONE_LINK_CNT, &mem_link_done.free);
-
-	/* Allocate done buffers */
-	done_alloc();
+	/* Initialize and allocate done pool */
+	RXFIFO_INIT_ALLOC(done);
 
 	/* Initialize rx pool. */
 	mem_init(mem_pdu_rx.pool, (PDU_RX_NODE_POOL_ELEMENT_SIZE),
@@ -2013,51 +2124,6 @@ static inline void *mark_unset(void **m, void *param)
 static inline void *mark_get(void *m)
 {
 	return m;
-}
-
-/**
- * @brief Allocate buffers for done events
- */
-static inline void done_alloc(void)
-{
-	uint8_t idx;
-
-	/* mfifo_done is a queue of pointers */
-	while (MFIFO_ENQUEUE_IDX_GET(done, &idx)) {
-		memq_link_t *link;
-		struct node_rx_hdr *rx;
-
-		link = mem_acquire(&mem_link_done.free);
-		if (!link) {
-			break;
-		}
-
-		rx = mem_acquire(&mem_done.free);
-		if (!rx) {
-			mem_release(link, &mem_link_done.free);
-			break;
-		}
-
-		rx->link = link;
-
-		MFIFO_BY_IDX_ENQUEUE(done, idx, rx);
-	}
-}
-
-static inline void *done_release(memq_link_t *link,
-				 struct node_rx_event_done *done)
-{
-	uint8_t idx;
-
-	if (!MFIFO_ENQUEUE_IDX_GET(done, &idx)) {
-		return NULL;
-	}
-
-	done->hdr.link = link;
-
-	MFIFO_BY_IDX_ENQUEUE(done, idx, done);
-
-	return done;
 }
 
 static inline void rx_alloc(uint8_t max)
@@ -2345,9 +2411,6 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC_REPORT:
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	{
 		struct pdu_adv *adv;
@@ -2371,8 +2434,27 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_scan_aux_release(link, rx);
 	}
 	break;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	case NODE_RX_TYPE_SYNC:
+	{
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ull_sync_established_report(link, rx);
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
+	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
+	{
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ll_rx_put(link, rx);
+		ll_rx_sched();
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
@@ -2405,6 +2487,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 #if defined(CONFIG_BT_OBSERVER) || \
 	defined(CONFIG_BT_CTLR_ADV_PERIODIC) || \
+	defined(CONFIG_BT_CTLR_BROADCAST_ISO) || \
 	defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
 	defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
@@ -2414,6 +2497,10 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	case NODE_RX_TYPE_SYNC_CHM_COMPLETE:
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_TERMINATE:
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
@@ -2444,6 +2531,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	break;
 #endif /* CONFIG_BT_OBSERVER ||
 	* CONFIG_BT_CTLR_ADV_PERIODIC ||
+	* CONFIG_BT_CTLR_BROADCAST_ISO ||
 	* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
 	* CONFIG_BT_CTLR_PROFILE_ISR ||
 	* CONFIG_BT_CTLR_ADV_INDICATION ||
@@ -2461,7 +2549,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		struct node_rx_pdu *rx_pdu = (struct node_rx_pdu *)rx;
 		struct ll_conn_iso_stream *cis =
 			ll_conn_iso_stream_get(rx_pdu->hdr.handle);
-		struct ll_iso_datapath *dp = cis->datapath_out;
+		struct ll_iso_datapath *dp = cis->hdr.datapath_out;
 		isoal_sink_handle_t sink = dp->sink_hdl;
 
 		if (dp->path_id != BT_HCI_DATAPATH_ID_HCI) {
@@ -2471,7 +2559,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 			 */
 			struct isoal_pdu_rx pckt_meta = {
 				.meta = &rx_pdu->hdr.rx_iso_meta,
-				.pdu  = (union isoal_pdu *) &rx_pdu->pdu[0]
+				.pdu  = (struct pdu_iso *) &rx_pdu->pdu[0]
 			};
 
 			/* Pass the ISO PDU through ISO-AL */
@@ -2538,6 +2626,16 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_ADV_AUX:
 		ull_adv_aux_done(done);
 		break;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case EVENT_DONE_EXTRA_TYPE_ADV_ISO_COMPLETE:
+		ull_adv_iso_done_complete(done);
+		break;
+
+	case EVENT_DONE_EXTRA_TYPE_ADV_ISO_TERMINATE:
+		ull_adv_iso_done_terminate(done);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 #endif /* CONFIG_BT_BROADCASTER */
@@ -2556,6 +2654,20 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_SYNC:
 		ull_sync_done(done);
 		break;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	case EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB:
+		ull_sync_iso_estab_done(done);
+		break;
+
+	case EVENT_DONE_EXTRA_TYPE_SYNC_ISO:
+		ull_sync_iso_done(done);
+		break;
+
+	case EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE:
+		ull_sync_iso_done_terminate(done);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -2582,17 +2694,17 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		break;
 	}
 
-	/* release done */
+	/* Release done */
 	done->extra.type = 0U;
-	release = done_release(link, done);
+	release = RXFIFO_RELEASE(done, link, done);
 	LL_ASSERT(release == done);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 	/* dequeue prepare pipeline */
 	ull_prepare_dequeue(TICKER_USER_ID_ULL_HIGH);
 
-	/* LLL done synchronized */
-	lll_done_sync();
+	/* LLL done synchronize count */
+	lll_done_ull_inc();
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 	/* If disable initiated, signal the semaphore */
@@ -2604,4 +2716,56 @@ static inline void rx_demux_event_done(memq_link_t *link,
 static void disabled_cb(void *param)
 {
 	k_sem_give(param);
+}
+
+/**
+ * @brief   Support function for RXFIFO_ALLOC macro
+ * @details This function allocates up to 'max' number of MFIFO elements by
+ *          enqueuing pointers to memory elements with associated memq links.
+ */
+void ull_rxfifo_alloc(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
+		      void *mem_free, void *link_free, uint8_t max)
+{
+	uint8_t idx;
+
+	while ((max--) && mfifo_enqueue_idx_get(n, f, *l, &idx)) {
+		memq_link_t *link;
+		struct node_rx_hdr *rx;
+
+		link = mem_acquire(link_free);
+		if (!link) {
+			break;
+		}
+
+		rx = mem_acquire(mem_free);
+		if (!rx) {
+			mem_release(link, link_free);
+			break;
+		}
+
+		link->mem = NULL;
+		rx->link = link;
+
+		mfifo_by_idx_enqueue(m, s, idx, rx, l);
+	}
+}
+
+/**
+ * @brief   Support function for RXFIFO_RELEASE macro
+ * @details This function releases a node by returning it to the FIFO.
+ */
+void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
+			 memq_link_t *link, struct node_rx_hdr *rx)
+{
+	uint8_t idx;
+
+	if (!mfifo_enqueue_idx_get(n, f, *l, &idx)) {
+		return NULL;
+	}
+
+	rx->link = link;
+
+	mfifo_by_idx_enqueue(m, s, idx, rx, l);
+
+	return rx;
 }

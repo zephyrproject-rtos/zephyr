@@ -17,6 +17,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 
@@ -50,7 +51,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
 
 #define CTE_LEN_MAX_US 160U
 
@@ -73,7 +74,7 @@ static MFIFO_DEFINE(iq_report_free, sizeof(void *), IQ_REPORT_CNT);
 
 /* Number of available instance of linked list to be used for node_rx_iq_reports. */
 static uint8_t mem_link_iq_report_quota_pdu;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX*/
 
 /* ToDo:
  * - Add release of df_adv_cfg when adv_sync is released.
@@ -165,7 +166,7 @@ static int init_reset(void)
 		 &df_adv_cfg_free);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
 	/* Re-initialize the free IQ report mfifo */
 	MFIFO_INIT(iq_report_free);
 
@@ -177,7 +178,7 @@ static int init_reset(void)
 	/* Allocate free IQ report node rx */
 	mem_link_iq_report_quota_pdu = IQ_REPORT_CNT;
 	ull_df_rx_iq_report_alloc(UINT8_MAX);
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 	return 0;
 }
 
@@ -233,11 +234,9 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
-	if ((cte_type == BT_HCI_LE_AOD_CTE_1US ||
-	     cte_type == BT_HCI_LE_AOD_CTE_2US) &&
-	    (num_ant_ids < LLL_DF_MIN_ANT_PATTERN_LEN ||
-	     num_ant_ids > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN ||
-	     !ant_ids)) {
+	if ((cte_type == BT_HCI_LE_AOD_CTE_1US || cte_type == BT_HCI_LE_AOD_CTE_2US) &&
+	    (num_ant_ids < BT_HCI_LE_CTE_LEN_MIN ||
+	     num_ant_ids > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids)) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
@@ -470,6 +469,35 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 	return 0;
 }
 
+void ull_df_sync_cfg_init(struct lll_df_sync *df_cfg)
+{
+	(void)memset(&df_cfg->cfg, 0, sizeof(df_cfg->cfg));
+	df_cfg->first = 0U;
+	df_cfg->last = 0U;
+}
+
+bool ull_df_sync_cfg_is_not_enabled(struct lll_df_sync *df_cfg)
+{
+	struct lll_df_sync_cfg *cfg;
+
+	/* If new CTE sampling configuration was enqueued, get reference to
+	 * latest congiruation without swapping buffers. Buffer should be
+	 * swapped only at the beginning of the radio event.
+	 *
+	 * We may not get here if CTE sampling is not enabled in current
+	 * configuration.
+	 */
+	if (lll_df_sync_cfg_is_modified(df_cfg)) {
+		cfg = lll_df_sync_cfg_peek(df_cfg);
+	} else {
+		cfg = lll_df_sync_cfg_curr_get(df_cfg);
+	}
+
+	return !cfg->is_enabled;
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
 void *ull_df_iq_report_alloc_peek(uint8_t count)
 {
 	if (count > MFIFO_AVAIL_COUNT_GET(iq_report_free)) {
@@ -530,17 +558,12 @@ void ull_df_rx_iq_report_alloc(uint8_t max)
 		ull_iq_report_link_inc_quota(-1);
 	}
 }
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
-void ull_df_sync_cfg_init(struct lll_df_sync *cfg)
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+bool ull_df_conn_cfg_is_not_enabled(struct lll_df_conn_rx_cfg *rx_cfg)
 {
-	memset(&cfg->cfg[0], 0, DOUBLE_BUFFER_SIZE * sizeof(cfg->cfg[0]));
-	cfg->first = 0U;
-	cfg->last = 0U;
-}
-
-uint8_t ull_df_sync_cfg_is_disabled_or_requested_to_disable(struct lll_df_sync *df_cfg)
-{
-	struct lll_df_sync_cfg *cfg;
+	struct lll_df_conn_rx_params *rx_params;
 
 	/* If new CTE sampling configuration was enqueued, get reference to
 	 * latest congiruation without swapping buffers. Buffer should be
@@ -549,15 +572,15 @@ uint8_t ull_df_sync_cfg_is_disabled_or_requested_to_disable(struct lll_df_sync *
 	 * We may not get here if CTE sampling is not enabled in current
 	 * configuration.
 	 */
-	if (lll_df_sync_cfg_is_modified(df_cfg)) {
-		cfg = lll_df_sync_cfg_peek(df_cfg);
+	if (dbuf_is_modified(&rx_cfg->hdr)) {
+		rx_params = dbuf_peek(&rx_cfg->hdr);
 	} else {
-		cfg = lll_df_sync_cfg_curr_get(df_cfg);
+		rx_params = dbuf_curr_get(&rx_cfg->hdr);
 	}
 
-	return !cfg->is_enabled;
+	return !rx_params->is_enabled;
 }
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Function releases unused memory for DF advertising configuration.
@@ -613,12 +636,17 @@ static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync, struct 
 	uint8_t pdu_add_field_flags;
 	struct pdu_adv *pdu_next;
 	uint8_t cte_index = 1;
+	bool adi_in_sync_ind;
 	bool new_chain;
 	uint8_t err;
 
 	new_chain = (pdu_prev == pdu ? false : true);
 
 	pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		adi_in_sync_ind = ull_adv_sync_pdu_had_adi(pdu_prev);
+	}
 
 	pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
 
@@ -646,6 +674,10 @@ static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync, struct 
 			}
 		}
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && adi_in_sync_ind) {
+			pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
+		}
+
 		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, pdu_add_field_flags, 0,
 						 cte_info);
 		if (err != BT_HCI_ERR_SUCCESS) {
@@ -663,6 +695,10 @@ static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync, struct 
 		pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
 	} else {
 		pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && adi_in_sync_ind) {
+		pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
 	}
 
 	/* Add new PDUs if the number of PDUs in existing chain is lower than requested number
@@ -784,6 +820,9 @@ static bool pdu_ext_adv_is_empty_without_cte(const struct pdu_adv *pdu)
 		if (ext_hdr->aux_ptr) {
 			size_rem += sizeof(struct pdu_adv_aux_ptr);
 		}
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && ext_hdr->adi) {
+			size_rem += sizeof(struct pdu_adv_adi);
+		}
 
 		if ((pdu->adv_ext_ind.ext_hdr_len - size_rem) != PDU_AC_EXT_HEADER_SIZE_MIN) {
 			return false;
@@ -835,14 +874,18 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 	while (pdu_chained) {
 		if (pdu_ext_adv_is_empty_without_cte(pdu_chained)) {
 			/* If there is an empty PDU then all remaining PDUs shoudl be released. */
-			lll_adv_pdu_linked_release_all(pdu_chained);
+			if (!new_chain) {
+				lll_adv_pdu_linked_release_all(pdu_chained);
+
+				/* Set new end of chain in PDUs linked list. If pdu differs from
+				 * prev_pdu then it is already end of a chain. If it doesn't differ,
+				 * then chain end is changed in right place by use of pdu_prev.
+				 * That makes sure there is no PDU released twice (here and when LLL
+				 * swaps PDU buffers).
+				 */
+				lll_adv_pdu_linked_append(NULL, *pdu_prev);
+			}
 			pdu_chained = NULL;
-			/* Set new end of chain in PDUs linked list. If pdu differs from prev_pdu
-			 * then it is alread end of a chain. If it doesn't differ, then chain end
-			 * is changed in rigth place by use of pdu_prev. That makes sure there
-			 * is no PDU released twice (here and when LLL swaps PDU buffers).
-			 */
-			lll_adv_pdu_linked_append(NULL, *pdu_prev);
 		} else {
 			/* Update one before pdu_chained */
 			err = ull_adv_sync_pdu_set_clear(lll_sync, *pdu_prev, *pdu, 0,
@@ -941,7 +984,7 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-#if defined CONFIG_BT_CTLR_DF_CONN_CTE_RSP
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 /* @brief Function sets CTE transmission parameters for a connection.
  *
  * @param handle             Connection handle.
@@ -953,25 +996,66 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
  * @return Status of command completion.
  */
 uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t switch_pattern_len,
-				     uint8_t *ant_id)
+				     const uint8_t *ant_ids)
 {
-	if (cte_types & BT_HCI_LE_AOD_CTE_RSP_1US || cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
-		if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
+	struct lll_df_conn_tx_cfg *df_tx_cfg;
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	df_tx_cfg = &conn->lll.df_tx_cfg;
+
+	if (df_tx_cfg->cte_rsp_en) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Bits other than representing AoA, AoD 1us, AoD 2us are RFU */
+	if (cte_types == 0U ||
+	    ((cte_types & (~(uint8_t)(BT_HCI_LE_AOA_CTE_RSP | BT_HCI_LE_AOD_CTE_RSP_1US |
+				      BT_HCI_LE_AOD_CTE_RSP_2US))) != 0U)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
+		if (cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
 
-		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
-		    switch_pattern_len > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX || !ant_id) {
+		if ((cte_types & BT_HCI_LE_AOD_CTE_RSP_1US) &&
+		    !IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
 	}
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+	/* Check antenna switching pattern only whether CTE TX in AoD mode is allowed */
+	if (((cte_types & BT_HCI_LE_AOD_CTE_RSP_1US) || (cte_types & BT_HCI_LE_AOD_CTE_RSP_2US)) &&
+	    (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+	     switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-/* @brief Function sets CTE reception parameters for a connection.
+	(void)memcpy(df_tx_cfg->ant_ids, ant_ids, switch_pattern_len);
+	df_tx_cfg->ant_sw_len = switch_pattern_len;
+
+	df_tx_cfg->cte_types_allowed = cte_types;
+	df_tx_cfg->state = DF_CTE_CONN_TX_PARAMS_SET;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+/**
+ * @brief Function sets CTE reception parameters for a connection.
+ *
+ * @note: The CTE may not be send/received with PHY CODED. The BT Core 5.3 specification does not
+ *        mention special handling of CTE receive and sampling while the functionality is enabled
+ *        for a connection that currently uses PHY CODED. Enable of CTE receive for a PHY CODED
+ *        will introduce coplications for TISF maintenance by software switch. To avoid that
+ *        the lower link layer will enable the functionality when connection uses PHY UNCODED only.
  *
  * @param handle             Connection handle.
  * @param sampling_enable    Enable or disable CTE RX. When the parameter is set to false,
@@ -986,18 +1070,28 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 				     uint8_t slot_durations, uint8_t switch_pattern_len,
 				     const uint8_t *ant_ids)
 {
-	struct lll_df_conn_rx_params *df_rx_params;
+	struct lll_df_conn_rx_params *params_rx;
+	struct dbuf_hdr *params_buf_hdr;
+	struct lll_df_conn_rx_cfg *cfg_rx;
 	struct ll_conn *conn;
+	uint8_t params_idx;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	df_rx_params = &conn->lll.df_rx_params;
+	cfg_rx = &conn->lll.df_rx_cfg;
+	/* This is an information for HCI_LE_Connection_CTE_Request_Enable that
+	 * HCI_LE_Set_Connection_CTE_Receive_Parameters was called at least once.
+	 */
+	cfg_rx->is_initialized = true;
+	params_buf_hdr = &cfg_rx->hdr;
+
+	params_rx = dbuf_alloc(params_buf_hdr, &params_idx);
 
 	if (!sampling_enable) {
-		df_rx_params->state = DF_CTE_SAMPLING_DISABLED;
+		params_rx->is_enabled = false;
 	} else {
 		if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)) {
 			if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
@@ -1012,16 +1106,19 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 			}
 		}
 
-
-		df_rx_params->state = DF_CTE_SAMPLING_ENABLED;
-		df_rx_params->slot_durations = slot_durations;
-		memcpy(df_rx_params->ant_ids, ant_ids, switch_pattern_len);
-		df_rx_params->ant_sw_len = switch_pattern_len;
+		params_rx->is_enabled = true;
+		params_rx->slot_durations = slot_durations;
+		(void)memcpy(params_rx->ant_ids, ant_ids, switch_pattern_len);
+		params_rx->ant_sw_len = switch_pattern_len;
 	}
+
+	dbuf_enqueue(params_buf_hdr, params_idx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /* @brief Function enables or disables CTE request control procedure for a connection.
  *
  * The procedure may be enabled in two modes:
@@ -1059,7 +1156,7 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t c
 		 * Requires refactored LLCPs.
 		 */
 	} else {
-		if (conn->df_rx_params.state == DF_CTE_SAMPLING_UNINITIALIZED) {
+		if (!conn->df_rx_params.is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 

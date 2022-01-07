@@ -15,4 +15,10 @@ toolchain:
 ram: 32768
 flash: 4096
 supported:
+  - can
+  - dma
+  - hwinfo
   - netif:eth
+  - watchdog
+  - spi
+  - adc

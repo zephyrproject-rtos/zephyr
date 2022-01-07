@@ -188,7 +188,7 @@ struct gdb_ctx;
 /* Should be called by the arch layer. This is the gdbstub main loop
  * and synchronously communicate with gdb on host.
  */
-extern int z_gdb_main_loop(struct gdb_ctx *ctx, bool start);
+extern int z_gdb_main_loop(struct gdb_ctx *ctx);
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
@@ -240,8 +240,10 @@ void z_mem_manage_boot_finish(void);
  *
  * This function is entered with interrupts disabled. It should re-enable
  * interrupts if it had entered a power state.
+ *
+ * @return True if the system suspended, otherwise return false
  */
-enum pm_state pm_system_suspend(int32_t ticks);
+bool pm_system_suspend(int32_t ticks);
 
 /**
  * Notify exit from kernel idling after PM operations
@@ -259,8 +261,7 @@ enum pm_state pm_system_suspend(int32_t ticks);
  * those cases, the ISR would be invoked immediately after the event wakes up
  * the CPU, before code following the CPU wait, gets a chance to execute. This
  * can be ignored if no operation needs to be done at the wake event
- * notification. Alternatively pm_idle_exit_notification_disable() can
- * be called in pm_system_suspend to disable this notification.
+ * notification.
  */
 void pm_system_resume(void);
 

@@ -18,10 +18,9 @@ if BUILD_WITH_TFM
 
 # By default, if we build with TF-M, instruct build system to
 # flash the combined TF-M (Secure) & Zephyr (Non Secure) image
-# (when building in-tree tests).
 config TFM_FLASH_MERGED_BINARY
 	bool
-	default y if TEST_ARM_CORTEX_M
+	default y
 
 endif # BUILD_WITH_TFM
 

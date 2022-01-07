@@ -138,7 +138,7 @@ static int syscon_generic_init(const struct device *dev)
 		.reg_width = DT_INST_PROP_OR(inst, reg_io_width, 4),                               \
 	};                                                                                         \
 	static struct syscon_generic_data syscon_generic_data_##inst = {                           \
-		.size = DT_REG_SIZE(DT_DRV_INST(inst)),                                            \
+		.size = DT_INST_REG_SIZE(inst),                                                    \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, syscon_generic_init, NULL, &syscon_generic_data_##inst,        \
 			      &syscon_generic_config_##inst, PRE_KERNEL_1,                         \

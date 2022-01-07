@@ -29,6 +29,9 @@
 /* UART TX buffer count max value */
 #define UART_TX_BUF_CNT    ((uint8_t)8u)
 
+/* UART TX/RX data registers size */
+#define UART_DATA_SIZE     ((uint8_t)4u)
+
 /* Parity type */
 #define UART_PARITY_NONE   ((uint8_t)0u)
 #define UART_PARITY_EVEN   ((uint8_t)1u)
@@ -42,7 +45,7 @@
 
 /* B91 UART registers structure */
 struct uart_b91_t {
-	uint8_t data_buf[4];
+	uint8_t data_buf[UART_DATA_SIZE];
 	uint16_t clk_div;
 	uint8_t ctrl0;
 	uint8_t ctrl1;
@@ -374,6 +377,10 @@ static int uart_b91_fifo_fill(const struct device *dev,
 	int i = 0;
 	volatile struct uart_b91_t *uart = GET_UART(dev);
 
+	if (size > UART_DATA_SIZE) {
+		size = UART_DATA_SIZE;
+	}
+
 	for (i = 0; i < size; i++) {
 		if (uart_b91_get_rx_bufcnt(uart) != 0) {
 			break;
@@ -427,7 +434,8 @@ static int uart_b91_irq_tx_ready(const struct device *dev)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
 
-	return (uart_b91_get_tx_bufcnt(uart) < UART_TX_BUF_CNT) ? 1 : 0;
+	return ((uart_b91_get_tx_bufcnt(uart) < UART_TX_BUF_CNT) &&
+		((uart->ctrl0 & UART_TX_IRQ_MASK) != 0)) ? 1 : 0;
 }
 
 /* API implementation: irq_tx_complete */
@@ -558,7 +566,7 @@ static const struct uart_driver_api uart_b91_driver_api = {
 			      &uart_b91_data_##n,				    \
 			      &uart_b91_cfg_##n,				    \
 			      PRE_KERNEL_1,					    \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		    \
+			      CONFIG_SERIAL_INIT_PRIORITY,			    \
 			      (void *)&uart_b91_driver_api);			    \
 										    \
 	static void uart_b91_irq_connect_##n(void)				    \

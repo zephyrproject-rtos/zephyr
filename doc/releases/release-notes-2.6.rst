@@ -123,7 +123,7 @@ Deprecated in this release
 * The runtime device power management (PM) APIs is now synchronous by default
   and the asynchronous API has the **_async** sufix. This change aligns the API
   with the convention used in Zephyr. The affected APIs are
-  :c:func:`pm_device_put` and :c:func:`pm_device_get`.
+  ``pm_device_put`` and ``pm_device_get``.
 
 * The following functions, macros, and structures related to the kernel
   work queue API:
@@ -879,7 +879,8 @@ Libraries / Subsystems
   * MCUmgr
 
     * Fixed an issue with the file system management failing to
-      open files due to missing initializations of `fs_file_t` structures.
+      open files due to missing initializations of :c:type:`fs_file_t`
+      structures.
     * Fixed an issue where multiple SMP commands sent one after the other would
       corrupt CBOR payload.
     * Fixed problem where mcumgr over shell would stall and wait for
@@ -907,9 +908,9 @@ Libraries / Subsystems
   * Device runtime power management (PM), former IDLE runtime, was
     completely overhauled.
 
-    * Multiple threads can wait an operation (:c:func:`pm_device_get_async` and
-      :c:func:`pm_device_put_async`) to finish.
-    * A new API :c:func:`pm_device_wait` was added so that drivers can easily
+    * Multiple threads can wait an operation (``pm_device_get_async`` and
+      ``pm_device_put_async``) to finish.
+    * A new API ``pm_device_wait`` was added so that drivers can easily
       wait for an async request to finish.
     * The API can be used in  :ref:`pre-kernel <api_term_pre-kernel-ok>` stages.
     * Several concurrence issues related with atomics access and the usage

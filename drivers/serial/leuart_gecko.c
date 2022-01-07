@@ -354,7 +354,7 @@ static struct leuart_gecko_data leuart_gecko_0_data;
 DEVICE_DT_INST_DEFINE(0, &leuart_gecko_init,
 		    NULL, &leuart_gecko_0_data,
 		    &leuart_gecko_0_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &leuart_gecko_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -407,7 +407,7 @@ static struct leuart_gecko_data leuart_gecko_1_data;
 DEVICE_DT_INST_DEFINE(1, &leuart_gecko_init,
 		    NULL, &leuart_gecko_1_data,
 		    &leuart_gecko_1_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &leuart_gecko_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

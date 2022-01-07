@@ -441,6 +441,10 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 	}
 #endif /* CONFIG_FS_FATFS_MOUNT_MKFS */
 
+	if (res == FR_OK) {
+		mountp->flags |= FS_MOUNT_FLAG_USE_DISK_ACCESS;
+	}
+
 	return translate_error(res);
 
 }

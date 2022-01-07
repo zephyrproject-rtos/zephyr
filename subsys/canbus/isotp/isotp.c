@@ -36,7 +36,7 @@ static struct isotp_global_ctx global_ctx = {
 
 #ifdef CONFIG_ISOTP_USE_TX_BUF
 NET_BUF_POOL_VAR_DEFINE(isotp_tx_pool, CONFIG_ISOTP_TX_BUF_COUNT,
-			CONFIG_ISOTP_BUF_TX_DATA_POOL_SIZE, NULL);
+			CONFIG_ISOTP_BUF_TX_DATA_POOL_SIZE, 0, NULL);
 #endif
 
 static void receive_state_machine(struct isotp_recv_ctx *ctx);
@@ -70,29 +70,18 @@ static void receive_ff_sf_pool_free(struct net_buf *buf)
 	}
 }
 
-static inline int _k_fifo_wait_non_empty(struct k_fifo *fifo,
-					 k_timeout_t timeout)
-{
-	struct k_poll_event events[] = {
-		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-					 K_POLL_MODE_NOTIFY_ONLY, fifo),
-	};
-
-	return k_poll(events, ARRAY_SIZE(events), timeout);
-}
-
 static inline void receive_report_error(struct isotp_recv_ctx *ctx, int err)
 {
 	ctx->state = ISOTP_RX_STATE_ERR;
 	ctx->error_nr = err;
 }
 
-void receive_can_tx_isr(uint32_t err_flags, void *arg)
+void receive_can_tx_isr(int error, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
 
-	if (err_flags) {
-		LOG_ERR("Error sending FC frame (%d)", err_flags);
+	if (error != 0) {
+		LOG_ERR("Error sending FC frame (%d)", error);
 		receive_report_error(ctx, ISOTP_N_ERROR);
 		k_work_submit(&ctx->work);
 	}
@@ -692,62 +681,40 @@ int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
 	return *(uint32_t *)net_buf_user_data(buf);
 }
 
-static inline void pull_frags(struct k_fifo *fifo, struct net_buf *buf,
-			      size_t len)
-{
-	size_t rem_len = len;
-	struct net_buf *frag = buf;
-
-	/* frags to be removed */
-	while (frag && (frag->len <= rem_len)) {
-		rem_len -= frag->len;
-		frag = frag->frags;
-		k_fifo_get(fifo, K_NO_WAIT);
-	}
-
-	if (frag) {
-		/* Start of frags to be preserved */
-		net_buf_ref(frag);
-		net_buf_pull(frag, rem_len);
-	}
-
-	net_buf_unref(buf);
-}
-
 int isotp_recv(struct isotp_recv_ctx *ctx, uint8_t *data, size_t len,
 	       k_timeout_t timeout)
 {
-	size_t num_copied, frags_len;
-	struct net_buf *buf;
-	int ret;
+	size_t copied, to_copy;
+	int err;
 
-	ret = _k_fifo_wait_non_empty(&ctx->fifo, timeout);
-	if (ret) {
-		if (ctx->error_nr) {
-			ret = ctx->error_nr;
+	if (!ctx->recv_buf) {
+		ctx->recv_buf = net_buf_get(&ctx->fifo, timeout);
+		if (!ctx->recv_buf) {
+			err = ctx->error_nr ? ctx->error_nr : ISOTP_RECV_TIMEOUT;
 			ctx->error_nr = 0;
-			return ret;
-		}
 
-		if (ret == -EAGAIN) {
-			return ISOTP_RECV_TIMEOUT;
+			return err;
 		}
-
-		return ISOTP_N_ERROR;
 	}
 
-	buf = k_fifo_peek_head(&ctx->fifo);
+	/* traverse fragments and delete them after copying the data */
+	copied = 0;
+	while (ctx->recv_buf && copied < len) {
+		to_copy = MIN(len - copied, ctx->recv_buf->len);
+		memcpy((uint8_t *)data + copied, ctx->recv_buf->data, to_copy);
 
-	if (!buf) {
-		return ISOTP_N_ERROR;
+		if (ctx->recv_buf->len == to_copy) {
+			/* point recv_buf to next frag */
+			ctx->recv_buf = net_buf_frag_del(NULL, ctx->recv_buf);
+		} else {
+			/* pull received data from remaining frag(s) */
+			net_buf_pull(ctx->recv_buf, to_copy);
+		}
+
+		copied += to_copy;
 	}
 
-	frags_len = net_buf_frags_len(buf);
-	num_copied = net_buf_linearize(data, len, buf, 0, len);
-
-	pull_frags(&ctx->fifo, buf, num_copied);
-
-	return num_copied;
+	return copied;
 }
 
 static inline void send_report_error(struct isotp_send_ctx *ctx, uint32_t err)
@@ -756,7 +723,7 @@ static inline void send_report_error(struct isotp_send_ctx *ctx, uint32_t err)
 	ctx->error_nr = err;
 }
 
-static void send_can_tx_isr(uint32_t err_flags, void *arg)
+static void send_can_tx_isr(int error, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 
@@ -1002,7 +969,7 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
 		       send_can_tx_isr, ctx);
-	if (ret == CAN_TX_OK) {
+	if (ret == 0) {
 		ctx->sn++;
 		pull_data_ctx(ctx, len);
 		ctx->bs--;
@@ -1084,7 +1051,7 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 
 			if (ret < 0) {
 				LOG_ERR("Failed to send CF");
-				send_report_error(ctx, ret == CAN_TIMEOUT ?
+				send_report_error(ctx, ret == -EAGAIN ?
 						ISOTP_N_TIMEOUT_A :
 						ISOTP_N_ERROR);
 				break;
@@ -1214,7 +1181,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		ret = send_sf(ctx);
 		ctx->state = ISOTP_TX_WAIT_FIN;
 		if (ret) {
-			return ret == CAN_TIMEOUT ?
+			return ret == -EAGAIN ?
 			       ISOTP_N_TIMEOUT_A : ISOTP_N_ERROR;
 		}
 	}

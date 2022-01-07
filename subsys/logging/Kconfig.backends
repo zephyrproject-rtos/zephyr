@@ -12,6 +12,11 @@ config LOG_BACKEND_UART
 
 if LOG_BACKEND_UART
 
+config LOG_BACKEND_UART_ASYNC
+	bool "Use UART Asynchronous API"
+	depends on UART_ASYNC_API
+	depends on !LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
+
 config LOG_BACKEND_UART_OUTPUT_DICTIONARY
 	bool
 	depends on LOG2
@@ -19,7 +24,7 @@ config LOG_BACKEND_UART_OUTPUT_DICTIONARY
 	help
 	  UART backend is in dictionary-based logging output mode.
 
-choice
+choice LOG_BACKEND_UART_OUTPUT
 	prompt "UART Backend Output Mode"
 	default LOG_BACKEND_UART_OUTPUT_TEXT
 
@@ -99,7 +104,7 @@ config LOG_BACKEND_RTT
 
 if LOG_BACKEND_RTT
 
-choice
+choice LOG_BACKEND_RTT_MODE
 	prompt "Logger behavior"
 	default LOG_BACKEND_RTT_MODE_BLOCK
 
@@ -120,6 +125,12 @@ config LOG_BACKEND_RTT_SYST_ENABLE
 	depends on LOG_MIPI_SYST_ENABLE
 	help
 	  When enabled backend is using RTT to output syst format logs.
+
+config LOG_BACKEND_RTT_MODE_OVERWRITE
+	bool "Overwrite messages if up-buffer full"
+	help
+	  If there is not enough space in up-buffer for a message overwrite
+	  oldest one.
 
 endchoice
 
@@ -315,7 +326,7 @@ config LOG_BACKEND_FS_OUTPUT_DICTIONARY
 	help
 	  FS backend is in dictionary-based logging output mode.
 
-choice
+choice LOG_BACKEND_FS_OUTPUT
 	prompt "FS Backend Output Mode"
 	default LOG_BACKEND_FS_OUTPUT_TEXT
 

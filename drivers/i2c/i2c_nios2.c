@@ -165,7 +165,7 @@ static struct i2c_nios2_config i2c_nios2_cfg = {
 	},
 };
 
-DEVICE_DT_INST_DEFINE(0, &i2c_nios2_init, NULL,
+I2C_DEVICE_DT_INST_DEFINE(0, i2c_nios2_init, NULL,
 		    NULL, &i2c_nios2_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_nios2_driver_api);

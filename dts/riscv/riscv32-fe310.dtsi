@@ -128,7 +128,7 @@
 		};
 		itim: itim@8000000 {
 			compatible = "sifive,itim0";
-			reg = <0x8000000 0x4000>;
+			reg = <0x8000000 0x2000>;
 			reg-names = "mem";
 		};
 		otp: otp@10010000 {

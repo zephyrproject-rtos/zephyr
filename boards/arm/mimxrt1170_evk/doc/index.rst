@@ -102,10 +102,18 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -141,13 +149,23 @@ The MIMXRT1170 SoC has six pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_31    | SPI1_SDI        | spi                       |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_08    | LPI2C1_SCL      | i2c                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_09    | LPI2C1_SDA      | i2c                       |
++---------------+-----------------+---------------------------+
+| GPIO_LPSR_05  | LPI2C5_SCL      | i2c                       |
++---------------+-----------------+---------------------------+
+| GPIO_LPSR_04  | LPI2C5_SDA      | i2c                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_04    | FLEXPWM1_PWM2   | pwm                       |
++---------------+-----------------+---------------------------+
 
 
 System Clock
 ============
 
-The MIMXRT1170 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 1 GHz core clock.
+The MIMXRT1170 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========

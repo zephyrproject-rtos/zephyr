@@ -237,7 +237,7 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 	static struct mcux_lpc_ctimer_data mcux_lpc_ctimer_data_##id;                              \
 	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_ctimer_init, NULL, &mcux_lpc_ctimer_data_##id,         \
 			      &mcux_lpc_ctimer_config_##id, POST_KERNEL,                           \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_ctimer_driver_api);        \
+			      CONFIG_COUNTER_INIT_PRIORITY, &mcux_ctimer_driver_api);              \
 	static void mcux_lpc_ctimer_irq_config_##id(const struct device *dev)                      \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_lpc_ctimer_isr,      \

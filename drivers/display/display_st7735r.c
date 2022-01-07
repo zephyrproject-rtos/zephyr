@@ -16,6 +16,7 @@
 #include <device.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
+#include <pm/device.h>
 #include <sys/byteorder.h>
 #include <drivers/display.h>
 
@@ -494,8 +495,8 @@ static int st7735r_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int st7735r_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int st7735r_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	int ret = 0;
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
@@ -540,13 +541,13 @@ static const struct display_driver_api st7735r_api = {
 		.cmd_data.pin = DT_INST_GPIO_PIN(inst, cmd_data_gpios),		\
 		.cmd_data.flags = DT_INST_GPIO_FLAGS(inst, cmd_data_gpios),	\
 		.reset.name = UTIL_AND(						\
-			DT_INST_HAS_PROP(inst, reset_gpios),			\
+			DT_INST_NODE_HAS_PROP(inst, reset_gpios),		\
 			DT_INST_GPIO_LABEL(inst, reset_gpios)),			\
 		.reset.pin = UTIL_AND(						\
-			DT_INST_HAS_PROP(inst, reset_gpios),			\
+			DT_INST_NODE_HAS_PROP(inst, reset_gpios),		\
 			DT_INST_GPIO_PIN(inst, reset_gpios)),			\
 		.reset.flags = UTIL_AND(					\
-			DT_INST_HAS_PROP(inst, reset_gpios),			\
+			DT_INST_NODE_HAS_PROP(inst, reset_gpios),		\
 			DT_INST_GPIO_FLAGS(inst, reset_gpios)),			\
 		.width = DT_INST_PROP(inst, width),				\
 		.height = DT_INST_PROP(inst, height),				\
@@ -573,7 +574,10 @@ static const struct display_driver_api st7735r_api = {
 		.x_offset = DT_INST_PROP(inst, x_offset),			\
 		.y_offset = DT_INST_PROP(inst, y_offset),			\
 	};									\
-	DEVICE_DT_INST_DEFINE(inst, st7735r_init, st7735r_pm_control,		\
+										\
+	PM_DEVICE_DT_INST_DEFINE(inst, st7735r_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(inst, st7735r_init, PM_DEVICE_DT_INST_REF(inst),	\
 			      &st7735r_data_ ## inst, &st7735r_config_ ## inst,	\
 			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,	\
 			      &st7735r_api);

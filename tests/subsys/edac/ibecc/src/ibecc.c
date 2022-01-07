@@ -58,13 +58,13 @@ static void test_ibecc_api(void)
 	/* Error log API */
 
 	ret = edac_ecc_error_log_get(dev, &value);
-	zassert_equal(ret, 0, "edac_ecc_error_log_get failed");
+	zassert_equal(ret, -ENODATA, "edac_ecc_error_log_get failed");
 
 	ret = edac_ecc_error_log_clear(dev);
 	zassert_equal(ret, 0, "edac_ecc_error_log_clear failed");
 
 	ret = edac_parity_error_log_get(dev, &value);
-	zassert_equal(ret, 0, "edac_parity_error_log_get failed");
+	zassert_equal(ret, -ENODATA, "edac_parity_error_log_get failed");
 
 	ret = edac_parity_error_log_clear(dev);
 	zassert_equal(ret, 0, "edac_parity_error_log_clear failed");
@@ -162,6 +162,10 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 	int ret, num_int;
 
 	interrupt = 0;
+
+	/* Test error_trigger() for unset error type */
+	ret = edac_inject_error_trigger(dev);
+	zassert_equal(ret, 0, "Error setting ctrl");
 
 	errors_cor = edac_errors_cor_get(dev);
 	zassert_not_equal(errors_cor, -ENOSYS, "Not implemented error count");
@@ -305,15 +309,33 @@ static void test_ibecc_error_inject_test_uc(void)
 }
 #endif
 
+/* Used only for code coverage */
+
+bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf);
+
+static void test_trigger_nmi_handler(void)
+{
+	bool ret;
+
+	ret = z_x86_do_kernel_nmi(NULL);
+	zassert_false(ret, "Test that NMI handling fails");
+}
+
 void test_edac_dummy_api(void);
 
 void test_main(void)
 {
 #if defined(CONFIG_USERSPACE)
-	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					     &default_part);
+	if (ret != 0) {
+		TC_PRINT("Failed to add to mem domain (%d)", ret);
+		k_oops();
+	}
 #endif
 
 	ztest_test_suite(ibecc,
+			 ztest_unit_test(test_trigger_nmi_handler),
 			 ztest_unit_test(test_ibecc_initialized),
 			 ztest_unit_test(test_ibecc_api),
 			 ztest_unit_test(test_edac_dummy_api),

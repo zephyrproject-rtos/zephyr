@@ -77,6 +77,11 @@ config SOC_MEC1501_VCI_PINS_AS_GPIOS
 	  Set this if VCI pin block HW logic is not required in the board
 	  design.
 
+config SOC_MEC1501_TEST_CLK_OUT
+	bool "Enable test clock out pin"
+	help
+	  Enables a test clock out pin
+
 choice
 	prompt "MEC1501 debug interface general configuration"
 	default SOC_MEC1501_DEBUG_WITHOUT_TRACING

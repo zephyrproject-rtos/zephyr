@@ -66,7 +66,15 @@ enum {
  * This flag has no impact in user-defined mount structures.
  */
 #define FS_MOUNT_FLAG_AUTOMOUNT BIT(2)
-
+/** Flag requests file system driver to use Disk Access API. When the flag is
+ * set to the fs_mount_t.flags prior to fs_mount call, a file system
+ * needs to use the Disk Access API, otherwise mount callback for the driver
+ * should return -ENOSUP; when the flag is not set the file system driver
+ * should use Flash API by default, unless it only supports Disc Access API.
+ * When file system will use Disk Access API and the flag is not set, the mount
+ * callback for the file system should set the flag on success.
+ */
+#define FS_MOUNT_FLAG_USE_DISK_ACCESS BIT(3)
 
 /**
  * @brief File system mount info structure
@@ -186,7 +194,8 @@ struct fs_statvfs {
 #define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)				\
 	((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0)	\
 	 | (DT_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0)	\
-	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0))
+	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0)  \
+	 | (DT_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
 
 /**
  * @brief The name under which a zephyr,fstab entry mount structure is
@@ -253,11 +262,13 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * @param flags The mode flags
  *
  * @retval 0 on success;
+ * @retval -EBUSY when zfp is already used;
  * @retval -EINVAL when a bad file name is given;
  * @retval -EROFS when opening read-only file for write, or attempting to
  *	   create a file on a system that has been mounted with the
  *	   FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOENT when the file path is not possible (bad mount point);
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code, depending on a file system back-end.
  */
 int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
@@ -270,6 +281,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
  * @param zfp Pointer to the file object
  *
  * @retval 0 on success;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
 int fs_close(struct fs_file_t *zfp);
@@ -282,6 +294,7 @@ int fs_close(struct fs_file_t *zfp);
  * @param path Path to the file or directory to delete
  *
  * @retval 0 on success;
+ * @retval -EINVAL when a bad file name is given;
  * @retval -EROFS if file is read-only, or when file system has been mounted
  *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
@@ -307,6 +320,10 @@ int fs_unlink(const char *path);
  * @param to The destination path
  *
  * @retval 0 on success;
+ * @retval -EINVAL when a bad file name is given, or when rename would cause move
+ *	   between mount points;
+ * @retval -EROFS if file is read-only, or when file system has been mounted
+ *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
@@ -324,6 +341,8 @@ int fs_rename(const char *from, const char *to);
  * @param size Number of bytes to be read
  *
  * @retval >=0 a number of bytes read, on success;
+ * @retval -EBADF when invoked on zfp that represents unopened/closed file;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
 ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
@@ -343,6 +362,7 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
  * @param size Number of bytes to be written
  *
  * @retval >=0 a number of bytes written, on success;
+ * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
@@ -362,6 +382,7 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
  * - @c FS_SEEK_END for the end of the file.
  *
  * @retval 0 on success;
+ * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP if not supported by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
@@ -375,6 +396,7 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
  * @param zfp Pointer to the file object
  *
  * @retval >= 0 a current position in file;
+ * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP if not supported by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  *
@@ -398,6 +420,7 @@ off_t fs_tell(struct fs_file_t *zfp);
  * @param length New size of the file in bytes
  *
  * @retval 0 on success;
+ * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
@@ -415,6 +438,8 @@ int fs_truncate(struct fs_file_t *zfp, off_t length);
  * @param zfp Pointer to the file object
  *
  * @retval 0 on success;
+ * @retval -EBADF when invoked on zfp that represents unopened/closed file;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
 int fs_sync(struct fs_file_t *zfp);
@@ -427,6 +452,8 @@ int fs_sync(struct fs_file_t *zfp);
  * @param path Path to the directory to create
  *
  * @retval 0 on success;
+ * @retval -EROFS if file is read-only, or when file system has been mounted
+ *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error
  */
@@ -441,6 +468,9 @@ int fs_mkdir(const char *path);
  * @param path Path to the directory to open
  *
  * @retval 0 on success;
+ * @retval -EINVAL when a bad directory path is given;
+ * @retval -EBUSY when zdp is already used;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
 int fs_opendir(struct fs_dir_t *zdp, const char *path);
@@ -459,7 +489,9 @@ int fs_opendir(struct fs_dir_t *zdp, const char *path);
  * @param zdp Pointer to the directory object
  * @param entry Pointer to zfs_dirent structure to read the entry into
  *
- * @retval 0 on success or end-of-dir;;
+ * @retval 0 on success or end-of-dir;
+ * @retval -ENOENT when no such directory found;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
 int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
@@ -472,6 +504,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
  * @param zdp Pointer to the directory object
  *
  * @retval 0 on success;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
 int fs_closedir(struct fs_dir_t *zdp);
@@ -497,6 +530,8 @@ int fs_closedir(struct fs_dir_t *zdp);
  * @retval 0 on success;
  * @retval -ENOENT when file system type has not been registered;
  * @retval -ENOTSUP when not supported by underlying file system driver;
+ *         when @c FS_MOUNT_FLAG_USE_DISK_ACCESS is set but driver does not
+ *         support it.
  * @retval -EROFS if system requires formatting but @c FS_MOUNT_FLAG_READ_ONLY
  *	   has been set;
  * @retval <0 an other negative errno code on error.
@@ -547,6 +582,9 @@ int fs_readmount(int *index, const char **name);
  * directory exists.
  *
  * @retval 0 on success;
+ * @retval -EINVAL when a bad directory or file name is given;
+ * @retval -ENOENT when no such directory or file is found;
+ * @retval -ENOTSUP when not supported by underlying file system driver;
  * @retval <0 negative errno code on error.
  */
 int fs_stat(const char *path, struct fs_dirent *entry);
@@ -558,9 +596,10 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  *
  * @param path Path to the mounted directory
  * @param stat Pointer to the zfs_statvfs structure to receive the fs
- * statistics
+ * statistics.
  *
  * @retval 0 on success;
+ * @retval -EINVAL when a bad path to a directory, or a file, is given;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
@@ -570,12 +609,16 @@ int fs_statvfs(const char *path, struct fs_statvfs *stat);
  * @brief Register a file system
  *
  * Register file system with virtual file system.
+ * Number of allowed file system types to be registered is controlled with the
+ * CONFIG_FILE_SYSTEM_MAX_TYPES Kconfig option.
  *
  * @param type Type of file system (ex: @c FS_FATFS)
  * @param fs Pointer to File system
  *
  * @retval 0 on success;
- * @retval <0 negative errno code on error.
+ * @retval -EALREADY when a file system of a given type has already been registered;
+ * @retval -ENOSCP when there is no space left, in file system registry, to add
+ *	   this file system type.
  */
 int fs_register(int type, const struct fs_file_system_t *fs);
 
@@ -588,7 +631,7 @@ int fs_register(int type, const struct fs_file_system_t *fs);
  * @param fs Pointer to File system
  *
  * @retval 0 on success;
- * @retval <0 negative errno code on error.
+ * @retval -EINVAL when file system of a given type has not been registered.
  */
 int fs_unregister(int type, const struct fs_file_system_t *fs);
 

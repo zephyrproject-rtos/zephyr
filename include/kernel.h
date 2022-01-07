@@ -21,10 +21,6 @@
 #include <toolchain.h>
 #include <tracing/tracing_macros.h>
 
-#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
-#include <timing/timing.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -79,6 +75,7 @@ struct k_poll_signal;
 struct k_mem_domain;
 struct k_mem_partition;
 struct k_futex;
+struct k_event;
 
 enum execution_context_types {
 	K_ISR = 0,
@@ -743,7 +740,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * integers.  The number of cycles between the "first" deadline in the
  * scheduler queue and the "last" deadline must be less than 2^31 (i.e
  * a signed non-negative quantity).  Failure to adhere to this rule
- * may result in scheduled threads running in an incorrect dealine
+ * may result in scheduled threads running in an incorrect deadline
  * order.
  *
  * @note Despite the API naming, the scheduler makes no guarantees the
@@ -1291,6 +1288,7 @@ struct k_timer {
 	/* user-specific data, also used to support legacy features */
 	void *user_data;
 
+	SYS_PORT_TRACING_TRACKING_FIELD(k_timer)
 };
 
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
@@ -1639,6 +1637,27 @@ static inline uint32_t k_cycle_get_32(void)
 }
 
 /**
+ * @brief Read the 64-bit hardware clock.
+ *
+ * This routine returns the current time in 64-bits, as measured by the
+ * system's hardware clock, if available.
+ *
+ * @see CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+ *
+ * @return Current hardware clock up-counter (in cycles).
+ */
+static inline uint64_t k_cycle_get_64(void)
+{
+	if (!IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		__ASSERT(0, "64-bit cycle counter not enabled on this platform. "
+			    "See CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER");
+		return 0;
+	}
+
+	return arch_k_cycle_get_64();
+}
+
+/**
  * @}
  */
 
@@ -1652,6 +1671,8 @@ struct k_queue {
 	_wait_q_t wait_q;
 
 	_POLL_EVENT;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_queue)
 };
 
 #define Z_QUEUE_INITIALIZER(obj) \
@@ -2012,6 +2033,142 @@ __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
 
 /** @} */
 #endif
+
+/**
+ * @defgroup event_apis Event APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * Event Structure
+ * @ingroup event_apis
+ */
+
+struct k_event {
+	_wait_q_t         wait_q;
+	uint32_t          events;
+	struct k_spinlock lock;
+};
+
+#define Z_EVENT_INITIALIZER(obj) \
+	{ \
+	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.events = 0 \
+	}
+/**
+ * @brief Initialize an event object
+ *
+ * This routine initializes an event object, prior to its first use.
+ *
+ * @param event Address of the event object.
+ *
+ * @return N/A
+ */
+
+__syscall void k_event_init(struct k_event *event);
+
+/**
+ * @brief Post one or more events to an event object
+ *
+ * This routine posts one or more events to an event object. All tasks waiting
+ * on the event object @a event whose waiting conditions become met by this
+ * posting immediately unpend.
+ *
+ * Posting differs from setting in that posted events are merged together with
+ * the current set of events tracked by the event object.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to post to @a event
+ *
+ * @return N/A
+ */
+
+__syscall void k_event_post(struct k_event *event, uint32_t events);
+
+/**
+ * @brief Set the events in an event object
+ *
+ * This routine sets the events stored in event object to the specified value.
+ * All tasks waiting on the event object @a event whose waiting conditions
+ * become met by this immediately unpend.
+ *
+ * Setting differs from posting in that set events replace the current set of
+ * events tracked by the event object.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to post to @a event
+ *
+ * @return N/A
+ */
+
+__syscall void k_event_set(struct k_event *event, uint32_t events);
+
+/**
+ * @brief Wait for any of the specified events
+ *
+ * This routine waits on event object @a event until any of the specified
+ * events have been delivered to the event object, or the maximum wait time
+ * @a timeout has expired. A thread may wait on up to 32 distinctly numbered
+ * events that are expressed as bits in a single 32-bit word.
+ *
+ * @note The caller must be careful when resetting if there are multiple threads
+ * waiting for the event object @a event.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if matching events were not received within the specified time
+ */
+
+__syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
+				bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Wait for any of the specified events
+ *
+ * This routine waits on event object @a event until all of the specified
+ * events have been delivered to the event object, or the maximum wait time
+ * @a timeout has expired. A thread may wait on up to 32 distinctly numbered
+ * events that are expressed as bits in a single 32-bit word.
+ *
+ * @note The caller must be careful when resetting if there are multiple threads
+ * waiting for the event object @a event.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if matching events were not received within the specified time
+ */
+
+__syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
+				    bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Statically define and initialize an event object
+ *
+ * The event can be accessed outside the module where it is defined using:
+ *
+ * @code extern struct k_event <name>; @endcode
+ *
+ * @param name Name of the event object.
+ */
+
+#define K_EVENT_DEFINE(name)                                   \
+	STRUCT_SECTION_ITERABLE(k_event, name) =               \
+		Z_EVENT_INITIALIZER(name);
+
+/** @} */
 
 struct k_fifo {
 	struct k_queue _queue;
@@ -2394,6 +2551,8 @@ struct k_stack {
 	stack_data_t *base, *next, *top;
 
 	uint8_t flags;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_stack)
 };
 
 #define Z_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
@@ -2551,6 +2710,8 @@ struct k_mutex {
 
 	/** Original thread priority */
 	int owner_orig_prio;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_mutex)
 };
 
 /**
@@ -2733,6 +2894,8 @@ struct k_sem {
 	unsigned int limit;
 
 	_POLL_EVENT;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_sem)
 
 };
 
@@ -4174,6 +4337,8 @@ struct k_msgq {
 
 	/** Message queue */
 	uint8_t flags;
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_msgq)
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -4463,6 +4628,7 @@ struct k_mbox {
 	_wait_q_t rx_msg_queue;
 	struct k_spinlock lock;
 
+	SYS_PORT_TRACING_TRACKING_FIELD(k_mbox)
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -4602,6 +4768,8 @@ struct k_pipe {
 	} wait_q;			/** Wait queue */
 
 	uint8_t	       flags;		/**< Flags */
+
+	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
 };
 
 /**
@@ -4775,6 +4943,7 @@ struct k_mem_slab {
 	uint32_t max_used;
 #endif
 
+	SYS_PORT_TRACING_TRACKING_FIELD(k_mem_slab)
 };
 
 #define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
@@ -4801,7 +4970,7 @@ struct k_mem_slab {
  */
 
 /**
- * @brief Statically define and initialize a memory slab.
+ * @brief Statically define and initialize a memory slab in a public (non-static) scope.
  *
  * The memory slab's buffer contains @a slab_num_blocks memory blocks
  * that are @a slab_block_size bytes long. The buffer is aligned to a
@@ -4814,6 +4983,10 @@ struct k_mem_slab {
  *
  * @code extern struct k_mem_slab <name>; @endcode
  *
+ * @note This macro cannot be used together with a static keyword.
+ *       If such a use-case is desired, use @ref K_MEM_SLAB_DEFINE_STATIC
+ *       instead.
+ *
  * @param name Name of the memory slab.
  * @param slab_block_size Size of each memory block (in bytes).
  * @param slab_num_blocks Number memory blocks.
@@ -4824,6 +4997,28 @@ struct k_mem_slab {
 	   __aligned(WB_UP(slab_align)) \
 	   _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
 	STRUCT_SECTION_ITERABLE(k_mem_slab, name) = \
+		Z_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
+					WB_UP(slab_block_size), slab_num_blocks)
+
+/**
+ * @brief Statically define and initialize a memory slab in a private (static) scope.
+ *
+ * The memory slab's buffer contains @a slab_num_blocks memory blocks
+ * that are @a slab_block_size bytes long. The buffer is aligned to a
+ * @a slab_align -byte boundary. To ensure that each memory block is similarly
+ * aligned to this boundary, @a slab_block_size must also be a multiple of
+ * @a slab_align.
+ *
+ * @param name Name of the memory slab.
+ * @param slab_block_size Size of each memory block (in bytes).
+ * @param slab_num_blocks Number memory blocks.
+ * @param slab_align Alignment of the memory slab's buffer (power of 2).
+ */
+#define K_MEM_SLAB_DEFINE_STATIC(name, slab_block_size, slab_num_blocks, slab_align) \
+	static char __noinit_named(k_mem_slab_buf_##name) \
+	   __aligned(WB_UP(slab_align)) \
+	   _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
+	static STRUCT_SECTION_ITERABLE(k_mem_slab, name) = \
 		Z_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
 					WB_UP(slab_block_size), slab_num_blocks)
 
@@ -5690,8 +5885,6 @@ __syscall int k_float_disable(struct k_thread *thread);
  */
 __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
 
-#ifdef CONFIG_THREAD_RUNTIME_STATS
-
 /**
  * @brief Get the runtime statistics of a thread
  *
@@ -5709,8 +5902,6 @@ int k_thread_runtime_stats_get(k_tid_t thread,
  * @return -EINVAL if null pointers, otherwise 0
  */
 int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
-
-#endif
 
 #ifdef __cplusplus
 }

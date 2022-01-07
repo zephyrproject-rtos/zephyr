@@ -283,7 +283,7 @@ static void uart_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 	 * reception.  This also catches the case of DMA completion during
 	 * timeout handling.
 	 */
-	if (dev_data->rx_timeout_time != SYS_FOREVER_MS) {
+	if (dev_data->rx_timeout_time != SYS_FOREVER_US) {
 		dev_data->rx_waiting_for_irq = true;
 		regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
 		irq_unlock(key);
@@ -356,7 +356,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 	if (dev_data->rx_timeout_from_isr) {
 		dev_data->rx_timeout_from_isr = false;
 		k_work_reschedule(&dev_data->rx_timeout_work,
-				      K_MSEC(dev_data->rx_timeout_chunk));
+				      K_USEC(dev_data->rx_timeout_chunk));
 		irq_unlock(key);
 		return;
 	}
@@ -378,7 +378,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 				      dev_data->rx_timeout_chunk);
 
 		k_work_reschedule(&dev_data->rx_timeout_work,
-				      K_MSEC(remaining));
+				      K_USEC(remaining));
 	}
 
 	irq_unlock(key);
@@ -755,11 +755,11 @@ static void uart_sam0_isr(const struct device *dev)
 		 * If we have a timeout, restart the time remaining whenever
 		 * we see data.
 		 */
-		if (dev_data->rx_timeout_time != SYS_FOREVER_MS) {
+		if (dev_data->rx_timeout_time != SYS_FOREVER_US) {
 			dev_data->rx_timeout_from_isr = true;
 			dev_data->rx_timeout_start = k_uptime_get_32();
 			k_work_reschedule(&dev_data->rx_timeout_work,
-					      K_MSEC(dev_data->rx_timeout_chunk));
+					      K_USEC(dev_data->rx_timeout_chunk));
 		}
 
 		/* DMA will read the currently ready byte out */
@@ -789,14 +789,16 @@ static void uart_sam0_irq_tx_enable(const struct device *dev)
 {
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
 
-	regs->INTENSET.reg = SERCOM_USART_INTENSET_DRE;
+	regs->INTENSET.reg = SERCOM_USART_INTENSET_DRE
+			   | SERCOM_USART_INTENSET_TXC;
 }
 
 static void uart_sam0_irq_tx_disable(const struct device *dev)
 {
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
 
-	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_DRE;
+	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_DRE
+			   | SERCOM_USART_INTENCLR_TXC;
 }
 
 static int uart_sam0_irq_tx_ready(const struct device *dev)
@@ -804,6 +806,13 @@ static int uart_sam0_irq_tx_ready(const struct device *dev)
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
 
 	return (regs->INTFLAG.bit.DRE != 0) && (regs->INTENSET.bit.DRE != 0);
+}
+
+static int uart_sam0_irq_tx_complete(const struct device *dev)
+{
+	SercomUsart * const regs = DEV_CFG(dev)->regs;
+
+	return (regs->INTFLAG.bit.TXC != 0) && (regs->INTENSET.bit.TXC != 0);
 }
 
 static void uart_sam0_irq_rx_enable(const struct device *dev)
@@ -880,7 +889,7 @@ static int uart_sam0_irq_update(const struct device *dev)
 			   |	SERCOM_USART_INTENCLR_CTSIC
 			   |	SERCOM_USART_INTENCLR_RXS;
 #else
-	regs->INTFLAG.reg |=	SERCOM_USART_INTENCLR_RXS;
+	regs->INTFLAG.reg =	SERCOM_USART_INTENCLR_RXS;
 #endif
 	return 1;
 }
@@ -945,9 +954,9 @@ static int uart_sam0_tx(const struct device *dev, const uint8_t *buf,
 		return retval;
 	}
 
-	if (timeout != SYS_FOREVER_MS) {
+	if (timeout != SYS_FOREVER_US) {
 		k_work_reschedule(&dev_data->tx_timeout_work,
-				      K_MSEC(timeout));
+				      K_USEC(timeout));
 	}
 
 	return dma_start(cfg->dma_dev, cfg->tx_dma_channel);
@@ -1141,6 +1150,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 	.irq_tx_enable = uart_sam0_irq_tx_enable,
 	.irq_tx_disable = uart_sam0_irq_tx_disable,
 	.irq_tx_ready = uart_sam0_irq_tx_ready,
+	.irq_tx_complete = uart_sam0_irq_tx_complete,
 	.irq_rx_enable = uart_sam0_irq_rx_enable,
 	.irq_rx_disable = uart_sam0_irq_rx_disable,
 	.irq_rx_ready = uart_sam0_irq_rx_ready,
@@ -1256,7 +1266,7 @@ UART_SAM0_CONFIG_DEFN(n);						\
 DEVICE_DT_INST_DEFINE(n, uart_sam0_init, NULL,				\
 		    &uart_sam0_data_##n,				\
 		    &uart_sam0_config_##n, PRE_KERNEL_1,		\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+		    CONFIG_SERIAL_INIT_PRIORITY,			\
 		    &uart_sam0_driver_api);				\
 UART_SAM0_IRQ_HANDLER(n)
 

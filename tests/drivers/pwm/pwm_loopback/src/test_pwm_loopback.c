@@ -51,14 +51,16 @@ void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 		TC_PRINT("Testing PWM capture @ %u/%u nsec\n",
 			 pulse, period);
 		err = pwm_pin_set_nsec(out.dev, out.pwm, period,
-				       pulse, out.flags);
+				       pulse, out.flags ^=
+				       (flags & PWM_POLARITY_MASK));
 		break;
 
 	case TEST_PWM_UNIT_USEC:
 		TC_PRINT("Testing PWM capture @ %u/%u usec\n",
 			 pulse, period);
 		err = pwm_pin_set_usec(out.dev, out.pwm, period,
-				       pulse, out.flags);
+				       pulse, out.flags ^=
+				       (flags & PWM_POLARITY_MASK));
 		break;
 
 	default:
@@ -99,14 +101,8 @@ void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 	}
 
 	if (flags & PWM_CAPTURE_TYPE_PULSE) {
-		if (flags & PWM_POLARITY_INVERTED) {
-			zassert_within(pulse_capture, period - pulse,
-				       (period - pulse) / 100,
-				       "pulse capture off by more than 1%");
-		} else {
-			zassert_within(pulse_capture, pulse, pulse / 100,
-				       "pulse capture off by more than 1%");
-		}
+		zassert_within(pulse_capture, pulse, pulse / 100,
+			       "pulse capture off by more than 1%");
 	}
 }
 
@@ -337,6 +333,9 @@ void test_capture_busy(void)
 					in.flags | flags,
 					continuous_capture_callback,
 					&data);
+	zassert_equal(err, -EBUSY, "pwm capture not busy (err %d)", err);
+
+	err = pwm_pin_enable_capture(in.dev, in.pwm);
 	zassert_equal(err, -EBUSY, "pwm capture not busy (err %d)", err);
 
 	err = pwm_pin_disable_capture(in.dev, in.pwm);

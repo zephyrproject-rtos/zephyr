@@ -11,6 +11,7 @@
 #include <sys/libc-hooks.h>
 #endif
 #include <sys/reboot.h>
+#include <logging/log_ctrl.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
@@ -368,14 +369,23 @@ static int run_test(struct unit_test *test)
 		}
 		k_thread_start(&ztest_thread);
 		k_thread_join(&ztest_thread, K_FOREVER);
+
 	} else {
 		test_result = 1;
 		run_test_functions(test);
 	}
 
+
 	phase = TEST_PHASE_TEARDOWN;
 	test->teardown();
 	phase = TEST_PHASE_FRAMEWORK;
+
+	/* Flush all logs in case deferred mode and default logging thread are used. */
+	while (IS_ENABLED(CONFIG_TEST_LOGGING_FLUSH_AFTER_TEST) &&
+	       IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) &&
+	       log_data_pending()) {
+		k_msleep(100);
+	}
 
 	if (test_result == -1) {
 		ret = TC_FAIL;
@@ -396,12 +406,12 @@ static int run_test(struct unit_test *test)
 
 #endif /* !KERNEL */
 
-void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
+int z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 {
 	int fail = 0;
 
 	if (test_status < 0) {
-		return;
+		return test_status;
 	}
 
 	init_testing();
@@ -418,6 +428,8 @@ void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 	TC_SUITE_END(name, (fail > 0 ? TC_FAIL : TC_PASS));
 
 	test_status = (test_status || fail) ? 1 : 0;
+
+	return fail;
 }
 
 void end_report(void)
@@ -433,6 +445,59 @@ void end_report(void)
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
+int ztest_run_registered_test_suites(const void *state)
+{
+	struct ztest_suite_node *ptr;
+	int count = 0;
+
+	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
+		struct ztest_suite_stats *stats = &ptr->stats;
+		bool should_run = true;
+
+		if (ptr->predicate != NULL) {
+			should_run = ptr->predicate(state);
+		} else  {
+			/* If pragma is NULL, only run this test once. */
+			should_run = stats->run_count == 0;
+		}
+
+		if (should_run) {
+			int fail = z_ztest_run_test_suite(ptr->name, ptr->suite);
+
+			count++;
+			stats->run_count++;
+			stats->fail_count += (fail != 0) ? 1 : 0;
+		} else {
+			stats->skip_count++;
+		}
+	}
+
+	return count;
+}
+
+void ztest_verify_all_registered_test_suites_ran(void)
+{
+	bool all_tests_run = true;
+	struct ztest_suite_node *ptr;
+
+	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
+		if (ptr->stats.run_count < 1) {
+			PRINT("ERROR: Test '%s' did not run.\n", ptr->name);
+			all_tests_run = false;
+		}
+	}
+
+	if (!all_tests_run) {
+		test_status = 1;
+	}
+}
+
+void __weak test_main(void)
+{
+	ztest_run_registered_test_suites(NULL);
+	ztest_verify_all_registered_test_suites_ran();
+}
+
 #ifndef KERNEL
 int main(void)
 {
@@ -446,17 +511,29 @@ int main(void)
 void main(void)
 {
 #ifdef CONFIG_USERSPACE
+	int ret;
+
 	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
 	 * macros. Any variables that user code may reference need to be
 	 * placed in this partition if no other memory domain configuration
 	 * is made.
 	 */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &ztest_mem_partition);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &ztest_mem_partition);
+	if (ret != 0) {
+		PRINT("ERROR: failed to add ztest_mem_partition to mem domain (%d)\n",
+		      ret);
+		k_oops();
+	}
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	/* Allow access to malloc() memory */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &z_malloc_partition);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &z_malloc_partition);
+	if (ret != 0) {
+		PRINT("ERROR: failed to add z_malloc_partition to mem domain (%d)\n",
+		      ret);
+		k_oops();
+	}
 #endif
 #endif /* CONFIG_USERSPACE */
 

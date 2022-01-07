@@ -3,7 +3,7 @@
 
 menu "Processing"
 
-if !LOG_MINIMAL
+if !LOG_MODE_MINIMAL
 
 config LOG_PRINTK
 	bool "Process printk messages"
@@ -91,7 +91,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 2048 if (RISCV && 64BIT)
 	default 2048 if LOG_BACKEND_FS
 	default 1152 if LOG_BACKEND_NET
-	default 1024 if NO_OPTIMIZATIONS
+	default 4096 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
 	default 768
 	help
@@ -167,6 +167,6 @@ config LOG_SPEED
 	  If enabled, logging may take more code size to get faster logging.
 endif # LOG2
 
-endif # !LOG_MINIMAL
+endif # !LOG_MODE_MINIMAL
 
 endmenu

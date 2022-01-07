@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LL_VERSION_NUMBER BT_HCI_VERSION_5_2
+#define LL_VERSION_NUMBER BT_HCI_VERSION_5_3
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #define LL_FEAT_BIT_ENC BIT64(BT_LE_FEAT_BIT_ENC)
@@ -36,6 +36,12 @@
 #else /* !CONFIG_BT_CTLR_LE_PING */
 #define LL_FEAT_BIT_PING 0
 #endif /* !CONFIG_BT_CTLR_LE_PING */
+
+/* Maximum supported ACL Tx fragement size is limited by uint8_t len field in
+ * the PDU structure of the Controller implementation. 4 octets reserved for
+ * MIC in encrypted ACL PDUs, hence ACL Tx fragment maximum size of 251 octets.
+ */
+#define LL_LENGTH_OCTETS_TX_MAX MIN(CONFIG_BT_BUF_ACL_TX_SIZE, 251U)
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
 #define LL_FEAT_BIT_DLE BIT64(BT_LE_FEAT_BIT_DLE)
@@ -192,7 +198,10 @@
 /* All defined feature bits */
 #define LL_FEAT_BIT_MASK         0xFFFFFFFFFULL
 
-/* Feature bits that are valid from controller to controller */
+/*
+ * LL_FEAT_BIT_MASK_VALID is defined as per
+ * Core Spec V5.2 Volume 6, Part B, chapter 4.6
+ */
 #define LL_FEAT_BIT_MASK_VALID   0xFF787CF2FULL
 
 /* Mask to filter away octet 0 for feature exchange */

@@ -575,9 +575,14 @@ static int spi_mcux_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	DSPI_MasterGetDefaultConfig(&master_config);
 
-	master_config.whichPcs = spi_cfg->slave;
+	master_config.whichPcs = 1U << spi_cfg->slave;
 	master_config.whichCtar = config->which_ctar;
 	master_config.pcsActiveHighOrLow =
 		(spi_cfg->operation & SPI_CS_ACTIVE_HIGH) ?
@@ -641,7 +646,7 @@ static int spi_mcux_configure(const struct device *dev,
 	/* record frame_size setting for DMA */
 	data->frame_size = word_size;
 	/* keep the pcs settings */
-	data->which_pcs = spi_cfg->slave;
+	data->which_pcs = 1U << spi_cfg->slave;
 #ifdef CONFIG_MCUX_DSPI_EDMA_SHUFFLE_DATA
 	mcux_init_inner_buffer_with_cmd(dev, 0);
 #endif
@@ -654,7 +659,6 @@ static int spi_mcux_configure(const struct device *dev,
 #endif
 
 	data->ctx.config = spi_cfg;
-	spi_context_cs_configure(&data->ctx);
 
 	return 0;
 }
@@ -746,6 +750,7 @@ static int spi_mcux_release(const struct device *dev,
 
 static int spi_mcux_init(const struct device *dev)
 {
+	int err;
 	struct spi_mcux_data *data = dev->data;
 #ifdef CONFIG_DSPI_MCUX_EDMA
 	enum dma_channel_filter spi_filter = DMA_CHANNEL_NORMAL;
@@ -763,6 +768,12 @@ static int spi_mcux_init(const struct device *dev)
 	config->irq_config_func(dev);
 #endif
 	data->dev = dev;
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
+
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -856,6 +867,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)	\
 		TX_DMA_CONFIG(id) RX_DMA_CONFIG(id)			\
 	};								\
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\

@@ -569,4 +569,4 @@ References
    https://www.phytec.de/reelboard/
 
 .. _DAPLink reel board Firmware:
-   https://github.com/jfischer-phytec-iot/DAPLink/tree/reel-board
+   https://github.com/PHYTEC-Messtechnik-GmbH/DAPLink/tree/reel-board

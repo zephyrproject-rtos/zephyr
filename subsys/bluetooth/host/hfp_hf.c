@@ -33,7 +33,7 @@
 struct bt_hfp_hf_cb *bt_hf;
 
 NET_BUF_POOL_FIXED_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
-			  BT_RFCOMM_BUF_SIZE(BT_HF_CLIENT_MAX_PDU), NULL);
+			  BT_RFCOMM_BUF_SIZE(BT_HF_CLIENT_MAX_PDU), 8, NULL);
 
 static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BT_MAX_CONN];
 

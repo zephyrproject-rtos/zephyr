@@ -1,0 +1,14 @@
+identifier: esp_wrover_kit
+name: ESP WROVER KIT
+type: mcu
+arch: xtensa
+toolchain:
+  - espressif
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pinmux
+  - nvs

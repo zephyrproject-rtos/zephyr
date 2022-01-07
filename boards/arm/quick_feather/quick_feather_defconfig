@@ -12,11 +12,7 @@ CONFIG_CORTEX_M_SYSTICK=y
 # console
 CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
-CONFIG_PRINTK=y
 CONFIG_UART_CONSOLE=y
-
-# misc
-CONFIG_BOOT_BANNER=y
 
 # EOS S3 Configuartion Manager copies software from external flash to MCU
 # memory using preconfigured DMA and execute it there.

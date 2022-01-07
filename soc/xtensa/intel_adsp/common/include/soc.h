@@ -3,18 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifndef __INC_SOC_H
+#define __INC_SOC_H
 
 #include <string.h>
 #include <errno.h>
-
-#include <cavs/version.h>
-
-#include <sys/sys_io.h>
-
-#include <adsp/cache.h>
-
-#ifndef __INC_SOC_H
-#define __INC_SOC_H
+#include <arch/xtensa/cache.h>
 
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0
@@ -65,13 +59,6 @@
 
 #define PDM_BASE				DMIC_BASE
 
-/* SOC DSP SHIM Registers */
-#if CAVS_VERSION == CAVS_VERSION_1_5
-#define SOC_DSP_SHIM_REG_BASE			0x00001000
-#else
-#define SOC_DSP_SHIM_REG_BASE			0x00071f00
-#endif
-
 /* DSP Wall Clock Timers (0 and 1) */
 #define DSP_WCT_IRQ(x) \
 	SOC_AGGREGATE_IRQ((22 + x), CAVS_L2_AGG_INT_LEVEL2)
@@ -79,46 +66,62 @@
 #define DSP_WCT_CS_TA(x)			BIT(x)
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
-struct soc_dsp_shim_regs {
-	uint32_t	reserved[8];
-	union {
-		struct {
-			uint32_t walclk32_lo;
-			uint32_t walclk32_hi;
-		};
-		uint64_t	walclk;
-	};
-	uint32_t	dspwctcs;
-	uint32_t	reserved1[1];
-	union {
-		struct {
-			uint32_t dspwct0c32_lo;
-			uint32_t dspwct0c32_hi;
-		};
-		uint64_t	dspwct0c;
-	};
-	union {
-		struct {
-			uint32_t dspwct1c32_lo;
-			uint32_t dspwct1c32_hi;
-		};
-		uint64_t	dspwct1c;
-	};
-	uint32_t	reserved2[14];
-	uint32_t	clkctl;
-	uint32_t	clksts;
-	uint32_t	reserved3[4];
-	uint16_t	pwrctl;
-	uint16_t	pwrsts;
-	uint32_t	lpsctl;
-	uint32_t	lpsdmas0;
-	uint32_t	lpsdmas1;
-	uint32_t	reserved4[22];
-};
+/* Attribute macros to place code and data into IMR memory */
+#define __imr __in_section_unique(imr)
+#define __imrdata __in_section_unique(imrdata)
 
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
 
+/* Legacy SOC-level API still used in a few drivers */
+#define SOC_DCACHE_FLUSH(addr, size)		\
+	z_xtensa_cache_flush((addr), (size))
+#define SOC_DCACHE_INVALIDATE(addr, size)	\
+	z_xtensa_cache_inv((addr), (size))
+
+/**
+ * @brief Return uncached pointer to a RAM address
+ *
+ * The Intel ADSP architecture maps all addressable RAM (of all types)
+ * twice, in two different 512MB segments regions whose L1 cache
+ * settings can be controlled independently.  So for any given
+ * pointer, it is possible to convert it to and from a cached version.
+ *
+ * This function takes a pointer to any addressible object (either in
+ * cacheable memory or not) and returns a pointer that can be used to
+ * refer to the same memory while bypassing the L1 data cache.  Data
+ * in the L1 cache will not be inspected nor modified by the access.
+ *
+ * @see z_soc_cached_ptr()
+ *
+ * @param p A pointer to a valid C object
+ * @return A pointer to the same object bypassing the L1 dcache
+ */
+static inline void *z_soc_uncached_ptr(void *p)
+{
+	return ((void *)(((size_t)p) & ~0x20000000));
+}
+
+/**
+ * @brief Return cached pointer to a RAM address
+ *
+ * This function takes a pointer to any addressible object (either in
+ * cacheable memory or not) and returns a pointer that can be used to
+ * refer to the same memory through the L1 data cache.  Data read
+ * through the resulting pointer will reflect locally cached values on
+ * the current CPU if they exist, and writes will go first into the
+ * cache and be written back later.
+ *
+ * @see z_soc_uncached_ptr()
+ *
+ * @param p A pointer to a valid C object
+ * @return A pointer to the same object via the L1 dcache
+
+ */
+static inline void *z_soc_cached_ptr(void *p)
+{
+	return ((void *)(((size_t)p) | 0x20000000));
+}
 
 #endif /* __INC_SOC_H */

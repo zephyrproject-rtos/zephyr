@@ -18,11 +18,14 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
+		zephyr,display = &ili9340;
 	};
 
 	sdram2: sdram@d0000000 {
+		compatible = "mmio-sram";
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM2";
 	};
 
 	leds {
@@ -75,6 +78,7 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -85,18 +89,21 @@
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -104,14 +111,17 @@
 &spi5 {
 	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
 		     &spi5_miso_pf8 &spi5_mosi_pf9>;
+	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
-	ili9340@0 {
+	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
 		label = "DISPLAY";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
+		width = <240>;
+		height = <320>;
 	};
 };
 
@@ -128,6 +138,7 @@
 		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
 		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
 		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
+	pinctrl-names = "default";
 
 	sdram {
 		status = "okay";

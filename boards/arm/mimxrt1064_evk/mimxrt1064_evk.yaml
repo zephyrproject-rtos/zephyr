@@ -21,12 +21,15 @@ supported:
   - display
   - dma
   - gpio
+  - hwinfo
   - i2c
   - netif:eth
   - pwm
   - sdhc
+  - spi
   - usb_device
   - video
   - kscan:touch
   - can
   - watchdog
+  - adc

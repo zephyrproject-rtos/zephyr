@@ -25,6 +25,7 @@ config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
 	select UART_INTERRUPT_DRIVEN
 	select BT_UART
+	select EXPERIMENTAL
 	depends on SERIAL
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI

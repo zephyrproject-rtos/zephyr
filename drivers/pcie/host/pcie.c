@@ -5,12 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
+
 #include <kernel.h>
 #include <stdbool.h>
 #include <drivers/pcie/pcie.h>
 
 #if CONFIG_PCIE_MSI
 #include <drivers/pcie/msi.h>
+#endif
+
+#ifdef CONFIG_PCIE_CONTROLLER
+#include <drivers/pcie/controller.h>
 #endif
 
 /* functions documented in drivers/pcie/pcie.h */
@@ -101,18 +108,31 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 		   struct pcie_mbar *mbar)
 {
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
+#ifdef CONFIG_PCIE_CONTROLLER
+	const struct device *dev;
+#endif
 	uintptr_t phys_addr;
 	size_t size;
+
+#ifdef CONFIG_PCIE_CONTROLLER
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
+	if (!dev) {
+		LOG_ERR("Failed to get PCIe root complex");
+		return false;
+	}
+#endif
 
 	if (reg > PCIE_CONF_BAR5) {
 		return false;
 	}
 
 	phys_addr = pcie_conf_read(bdf, reg);
+#ifndef CONFIG_PCIE_CONTROLLER
 	if (PCIE_CONF_BAR_IO(phys_addr)) {
 		/* Discard I/O bars */
 		return false;
 	}
+#endif
 
 	if (PCIE_CONF_BAR_INVAL_FLAGS(phys_addr)) {
 		/* Discard on invalid flags */
@@ -142,13 +162,33 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	size = PCIE_CONF_BAR_ADDR(size);
-	if (size == 0) {
-		/* Discard on invalid size */
-		return false;
+	if (PCIE_CONF_BAR_IO(phys_addr)) {
+		size = PCIE_CONF_BAR_IO_ADDR(size);
+		if (size == 0) {
+			/* Discard on invalid size */
+			return false;
+		}
+	} else {
+		size = PCIE_CONF_BAR_ADDR(size);
+		if (size == 0) {
+			/* Discard on invalid size */
+			return false;
+		}
 	}
 
+#ifdef CONFIG_PCIE_CONTROLLER
+	/* Translate to physical memory address from bus address */
+	if (!pcie_ctrl_region_xlate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
+				    PCIE_CONF_BAR_64(phys_addr),
+				    PCIE_CONF_BAR_MEM(phys_addr) ?
+					  PCIE_CONF_BAR_IO_ADDR(phys_addr)
+					: PCIE_CONF_BAR_ADDR(phys_addr),
+				    &mbar->phys_addr)) {
+		return false;
+	}
+#else
 	mbar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
+#endif /* CONFIG_PCIE_CONTROLLER */
 	mbar->size = size & ~(size-1);
 
 	return true;
@@ -176,82 +216,34 @@ bool pcie_probe_mbar(pcie_bdf_t bdf,
 	return pcie_get_mbar(bdf, reg - PCIE_CONF_BAR0, mbar);
 }
 
-/* The first bit is used to indicate whether the list of reserved interrupts
- * have been initialized based on content stored in the irq_alloc linker
- * section in ROM.
- */
-#define IRQ_LIST_INITIALIZED 0
-
-static ATOMIC_DEFINE(irq_reserved, CONFIG_MAX_IRQ_LINES);
-
-static unsigned int irq_alloc(void)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(irq_reserved); i++) {
-		unsigned int fz, irq;
-
-		while ((fz = find_lsb_set(~atomic_get(&irq_reserved[i])))) {
-			irq = (fz - 1) + (i * sizeof(atomic_val_t) * 8);
-			if (irq >= CONFIG_MAX_IRQ_LINES) {
-				break;
-			}
-
-			if (!atomic_test_and_set_bit(irq_reserved, irq)) {
-				return irq;
-			}
-		}
-	}
-
-	return PCIE_CONF_INTR_IRQ_NONE;
-}
-
-static bool irq_is_reserved(unsigned int irq)
-{
-	return atomic_test_bit(irq_reserved, irq);
-}
-
-static void irq_init(void)
-{
-	extern uint8_t __irq_alloc_start[];
-	extern uint8_t __irq_alloc_end[];
-	const uint8_t *irq;
-
-	for (irq = __irq_alloc_start; irq < __irq_alloc_end; irq++) {
-		__ASSERT_NO_MSG(*irq < CONFIG_MAX_IRQ_LINES);
-		atomic_set_bit(irq_reserved, *irq);
-	}
-}
+#ifndef CONFIG_PCIE_CONTROLLER
 
 unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 {
 	unsigned int irq;
 	uint32_t data;
 
-	if (!atomic_test_and_set_bit(irq_reserved, IRQ_LIST_INITIALIZED)) {
-		irq_init();
-	}
-
 	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 	irq = PCIE_CONF_INTR_IRQ(data);
 
-	if (irq == PCIE_CONF_INTR_IRQ_NONE || irq >= CONFIG_MAX_IRQ_LINES ||
-	    irq_is_reserved(irq)) {
-
-		irq = irq_alloc();
-		if (irq == PCIE_CONF_INTR_IRQ_NONE) {
-			return irq;
+	if (irq == PCIE_CONF_INTR_IRQ_NONE ||
+	    irq >= CONFIG_MAX_IRQ_LINES ||
+	    arch_irq_is_used(irq)) {
+		irq = arch_irq_allocate();
+		if (irq == UINT_MAX) {
+			return PCIE_CONF_INTR_IRQ_NONE;
 		}
 
 		data &= ~0xffU;
 		data |= irq;
 		pcie_conf_write(bdf, PCIE_CONF_INTR, data);
 	} else {
-		atomic_set_bit(irq_reserved, irq);
+		arch_irq_set_used(irq);
 	}
 
 	return irq;
 }
+#endif /* CONFIG_PCIE_CONTROLLER */
 
 unsigned int pcie_get_irq(pcie_bdf_t bdf)
 {

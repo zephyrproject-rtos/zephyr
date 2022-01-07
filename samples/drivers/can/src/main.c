@@ -25,25 +25,32 @@
 K_THREAD_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 K_THREAD_STACK_DEFINE(poll_state_stack, STATE_POLL_THREAD_STACK_SIZE);
 
-const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_can_primary));
+const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
 struct k_thread rx_thread_data;
 struct k_thread poll_state_thread_data;
-struct zcan_work rx_work;
+struct k_work_poll change_led_work;
 struct k_work state_change_work;
 enum can_state current_state;
 struct can_bus_err_cnt current_err_cnt;
 
+CAN_DEFINE_MSGQ(change_led_msgq, 2);
 CAN_DEFINE_MSGQ(counter_msgq, 2);
 
-void tx_irq_callback(uint32_t error_flags, void *arg)
+static struct k_poll_event change_led_events[1] = {
+	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&change_led_msgq, 0)
+};
+
+void tx_irq_callback(int error, void *arg)
 {
 	char *sender = (char *)arg;
 
-	if (error_flags) {
+	if (error != 0) {
 		printk("Callback! error-code: %d\nSender: %s\n",
-		       error_flags, sender);
+		       error, sender);
 	}
 }
 
@@ -78,22 +85,23 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-void change_led(struct zcan_frame *msg, void *unused)
+void change_led_work_handler(struct k_work *work)
 {
-	ARG_UNUSED(unused);
+	struct zcan_frame frame;
+	int ret;
 
-	if (led.port == NULL) {
-		printk("LED %s\n", msg->data[0] == SET_LED ? "ON" : "OFF");
-		return;
+	while (k_msgq_get(&change_led_msgq, &frame, K_NO_WAIT) == 0) {
+		if (led.port == NULL) {
+			printk("LED %s\n", frame.data[0] == SET_LED ? "ON" : "OFF");
+		} else {
+			gpio_pin_set(led.port, led.pin, frame.data[0] == SET_LED ? 1 : 0);
+		}
 	}
 
-	switch (msg->data[0]) {
-	case SET_LED:
-		gpio_pin_set(led.port, led.pin, 1);
-		break;
-	case RESET_LED:
-		gpio_pin_set(led.port, led.pin, 0);
-		break;
+	ret = k_work_poll_submit(&change_led_work, change_led_events,
+				 ARRAY_SIZE(change_led_events), K_FOREVER);
+	if (ret != 0) {
+		printk("Failed to resubmit msgq polling: %d", ret);
 	}
 }
 
@@ -213,17 +221,23 @@ void main(void)
 		}
 	}
 
-
 	k_work_init(&state_change_work, state_change_work_handler);
+	k_work_poll_init(&change_led_work, change_led_work_handler);
 
-	ret = can_attach_workq(can_dev, &k_sys_work_q, &rx_work, change_led,
-			       NULL, &change_led_filter);
-	if (ret == CAN_NO_FREE_FILTER) {
+	ret = can_attach_msgq(can_dev, &change_led_msgq, &change_led_filter);
+	if (ret == -ENOSPC) {
 		printk("Error, no filter available!\n");
 		return;
 	}
 
 	printk("Change LED filter ID: %d\n", ret);
+
+	ret = k_work_poll_submit(&change_led_work, change_led_events,
+				 ARRAY_SIZE(change_led_events), K_FOREVER);
+	if (ret != 0) {
+		printk("Failed to submit msgq polling: %d", ret);
+		return;
+	}
 
 	rx_tid = k_thread_create(&rx_thread_data, rx_thread_stack,
 				 K_THREAD_STACK_SIZEOF(rx_thread_stack),
@@ -232,7 +246,6 @@ void main(void)
 	if (!rx_tid) {
 		printk("ERROR spawning rx thread\n");
 	}
-
 
 	get_state_tid = k_thread_create(&poll_state_thread_data,
 					poll_state_stack,

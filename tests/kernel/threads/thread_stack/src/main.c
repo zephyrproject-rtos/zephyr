@@ -160,8 +160,8 @@ void stack_buffer_scenarios(void)
 	 *
 	 * First test does direct read & write starting at the estimated
 	 * stack pointer up to the highest addresses in the buffer
+	 * Starting from &val which is close enough to stack pointer
 	 */
-	val = *stack_start;
 	stack_ptr = &val;
 	for (pos = stack_ptr; pos < stack_end; pos++) {
 		/* pos is volatile so this doesn't get optimized out */
@@ -490,9 +490,9 @@ void test_main(void)
 	k_thread_system_pool_assign(k_current_get());
 
 	/* Run a thread that self-exits, triggering idle cleanup */
-	ztest_test_suite(userspace,
+	ztest_test_suite(userspace_thread_stack,
 			 ztest_1cpu_unit_test(test_stack_buffer),
 			 ztest_1cpu_unit_test(test_idle_stack)
 			 );
-	ztest_run_test_suite(userspace);
+	ztest_run_test_suite(userspace_thread_stack);
 }

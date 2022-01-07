@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2021, Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <gigadevice/gd32f4xx/gd32f450ik.dtsi>
+#include "gd32f450i_eval-pinctrl.dtsi"
+
+/ {
+	model = "GigaDevice GD32F450I-EVAL";
+	compatible = "gd,gd32f450i-eval";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led2: led2 {
+			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		led3: led3 {
+			gpios = <&gpiof 10 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		wakeup_key: wakeup_key {
+			label = "WAKEUP_KEY";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+		};
+		tamper_key: tamper_key {
+			label = "TAMPER_KEY";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+		user_key: user_key {
+			label = "USER_KEY";
+			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &user_key;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};
+
+&dac {
+	status = "okay";
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
+};

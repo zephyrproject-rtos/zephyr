@@ -27,7 +27,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,dtcm = &dtcm;
-		zephyr,can-primary = &can1;
+		zephyr,canbus = &can1;
 	};
 
 	leds {
@@ -90,44 +90,51 @@
 		     &usart2_rx_pd6
 		     &usart2_rts_pd4
 		     &usart2_cts_pd3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 };
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
 	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &timers1 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm1: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch3_pe13>;
+		pinctrl-names = "default";
 	};
 };
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	/*
 	 * WARNING: The pin PA7 will conflict on selection of SPI_1 and
@@ -146,6 +153,7 @@ zephyr_udc0: &usbotg_fs {
 
 &can1 {
 	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
+	pinctrl-names = "default";
 	bus-speed = <125000>;
 	sjw = <1>;
 	prop-seg = <0>;
@@ -156,12 +164,14 @@ zephyr_udc0: &usbotg_fs {
 
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
+	pinctrl-names = "default";
 };
 
 &rng {
@@ -179,6 +189,7 @@ zephyr_udc0: &usbotg_fs {
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
+	pinctrl-names = "default";
 };
 
 &flash0 {

@@ -231,14 +231,14 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 
 	/* Check the RSSI value. */
 	if (rssi == 31) {
-		mctx.data_rssi = -51;
+		mdata.mdm_rssi = -51;
 	} else if (rssi >= 0 && rssi <= 31) {
-		mctx.data_rssi = -114 + ((rssi * 2) + 1);
+		mdata.mdm_rssi = -114 + ((rssi * 2) + 1);
 	} else {
-		mctx.data_rssi = -1000;
+		mdata.mdm_rssi = -1000;
 	}
 
-	LOG_INF("RSSI: %d", mctx.data_rssi);
+	LOG_INF("RSSI: %d", mdata.mdm_rssi);
 	return 0;
 }
 
@@ -636,55 +636,31 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 	return offload_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
-/* Func: offload_poll
- * Desc: This function polls on a given socket object.
- */
-static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
-{
-	int i;
-	void *obj;
-
-	/* Only accept modem sockets. */
-	for (i = 0; i < nfds; i++) {
-		if (fds[i].fd < 0) {
-			continue;
-		}
-
-		/* If vtable matches, then it's modem socket. */
-		obj = z_get_fd_obj(fds[i].fd,
-				   (const struct fd_op_vtable *) &offload_socket_fd_op_vtable,
-				   EINVAL);
-		if (obj == NULL) {
-			return -1;
-		}
-	}
-
-	return modem_socket_poll(&mdata.socket_config, fds, nfds, msecs);
-}
-
 /* Func: offload_ioctl
  * Desc: Function call to handle various misc requests.
  */
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE:
-		return -EXDEV;
+	case ZFD_IOCTL_POLL_PREPARE: {
+		struct zsock_pollfd *pfd;
+		struct k_poll_event **pev;
+		struct k_poll_event *pev_end;
 
-	case ZFD_IOCTL_POLL_UPDATE:
-		return -EOPNOTSUPP;
+		pfd = va_arg(args, struct zsock_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
+		pev_end = va_arg(args, struct k_poll_event *);
 
-	case ZFD_IOCTL_POLL_OFFLOAD:
-	{
-		/* Poll on the given socket. */
-		struct zsock_pollfd *fds;
-		int nfds, timeout;
+		return modem_socket_poll_prepare(&mdata.socket_config, obj, pfd, pev, pev_end);
+	}
+	case ZFD_IOCTL_POLL_UPDATE: {
+		struct zsock_pollfd *pfd;
+		struct k_poll_event **pev;
 
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
+		pfd = va_arg(args, struct zsock_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
 
-		return offload_poll(fds, nfds, timeout);
+		return modem_socket_poll_update(obj, pfd, pev);
 	}
 
 	default:
@@ -705,6 +681,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	struct modem_cmd    cmd[]     = { MODEM_CMD("+QIOPEN: ", on_cmd_atcmdinfo_sockopen, 2U, ",") };
 	char		    buf[sizeof("AT+QIOPEN=#,##,###,####.####.####.####,######")] = {0};
 	int		    ret;
+	char		    ip_str[NET_IPV6_ADDR_LEN];
 
 	if (sock->id < mdata.socket_config.base_socket_num - 1) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d",
@@ -735,9 +712,18 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 
 	k_sem_reset(&mdata.sem_sock_conn);
 
+	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
+	if (ret != 0) {
+		LOG_ERR("Error formatting IP string %d", ret);
+		LOG_ERR("Closing the socket!!!");
+		socket_close(sock);
+		errno = -ret;
+		return -1;
+	}
+
 	/* Formulate the complete string. */
 	snprintk(buf, sizeof(buf), "AT+QIOPEN=%d,%d,\"%s\",\"%s\",%d,0,0", 1, sock->sock_fd, protocol,
-		 modem_context_sprint_ip_addr(addr), dst_port);
+		ip_str, dst_port);
 
 	/* Send out the command. */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
@@ -1025,13 +1011,13 @@ restart_rssi:
 
 	/* Keep trying to read RSSI until we get a valid value - Eventually, exit. */
 	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT &&
-	      (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000)) {
+	      (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000)) {
 		modem_rssi_query_work(NULL);
 		k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 	}
 
 	/* Is the RSSI invalid ? */
-	if (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000) {
+	if (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000) {
 		rssi_retry_count++;
 
 		if (rssi_retry_count >= MDM_NETWORK_RETRY_COUNT) {
@@ -1170,6 +1156,7 @@ static int modem_init(const struct device *dev)
 	mctx.data_imsi	       = mdata.mdm_imsi;
 	mctx.data_iccid	       = mdata.mdm_iccid;
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
+	mctx.data_rssi = &mdata.mdm_rssi;
 
 	/* pin setup */
 	mctx.pins	       = modem_pins;
@@ -1203,4 +1190,5 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
 				  &api_funcs, MDM_MAX_DATA_LENGTH);
 
 /* Register NET sockets. */
-NET_SOCKET_REGISTER(quectel_bg9x, AF_UNSPEC, offload_is_supported, offload_socket);
+NET_SOCKET_REGISTER(quectel_bg9x, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    offload_is_supported, offload_socket);

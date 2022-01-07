@@ -28,6 +28,15 @@ struct node_tx {
 	uint8_t pdu[];
 };
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+struct data_pdu_length {
+	uint16_t max_tx_octets;
+	uint16_t max_rx_octets;
+	uint16_t max_tx_time;
+	uint16_t max_rx_time;
+};
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 struct lll_conn {
 	struct lll_hdr hdr;
 
@@ -78,6 +87,8 @@ struct lll_conn {
 	};
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+
+#ifdef CONFIG_BT_LL_SW_LLCP_LEGACY
 	uint16_t max_tx_octets;
 	uint16_t max_rx_octets;
 
@@ -85,7 +96,16 @@ struct lll_conn {
 	uint16_t max_tx_time;
 	uint16_t max_rx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+	struct {
+		struct data_pdu_length local;
+		struct data_pdu_length remote;
+		struct data_pdu_length eff;
+		uint8_t update;
+	} dle;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#endif/* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	uint8_t phy_tx:3;
@@ -128,9 +148,12 @@ struct lll_conn {
 	int8_t tx_pwr_lvl;
 #endif
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-	struct lll_df_conn_rx_params df_rx_params;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	struct lll_df_conn_rx_cfg df_rx_cfg;
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	struct lll_df_conn_tx_cfg df_tx_cfg;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 };
 
 int lll_conn_init(void);

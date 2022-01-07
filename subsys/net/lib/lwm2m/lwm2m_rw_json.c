@@ -491,14 +491,14 @@ static size_t put_string(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_float32fix(struct lwm2m_output_context *out,
-			     struct lwm2m_obj_path *path,
-			     float32_value_t *value)
+static size_t put_float(struct lwm2m_output_context *out,
+			struct lwm2m_obj_path *path,
+			double *value)
 {
 	size_t len;
 
 	len = put_json_prefix(out, path, "\"v\"");
-	len += plain_text_put_float32fix(out, path, value);
+	len += plain_text_put_float(out, path, value);
 	len += put_json_postfix(out);
 	return len;
 }
@@ -612,8 +612,8 @@ static size_t get_string(struct lwm2m_input_context *in,
 	return fd->value_len;
 }
 
-static size_t get_float32fix(struct lwm2m_input_context *in,
-			     float32_value_t *value)
+static size_t get_float(struct lwm2m_input_context *in,
+			double *value)
 {
 	struct json_in_formatter_data *fd;
 
@@ -652,7 +652,7 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 
 	buf[i] = '\0';
 
-	if (lwm2m_atof32(buf, value) != 0) {
+	if (lwm2m_atof(buf, value) != 0) {
 		LOG_ERR("Failed to parse float value");
 	}
 
@@ -729,7 +729,7 @@ const struct lwm2m_writer json_writer = {
 	.put_s32 = put_s32,
 	.put_s64 = put_s64,
 	.put_string = put_string,
-	.put_float32fix = put_float32fix,
+	.put_float = put_float,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -738,7 +738,7 @@ const struct lwm2m_reader json_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
-	.get_float32fix = get_float32fix,
+	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
 	.get_objlnk = get_objlnk,

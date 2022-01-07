@@ -1,7 +1,5 @@
 CONFIG_SOC_SERIES_STM32MP1X=y
 CONFIG_SOC_STM32MP15_M4=y
-# 209 MHz system clock (mlhclk_ck)
-CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=209000000
 
 # enable GPIO
 CONFIG_GPIO=y
@@ -16,9 +14,6 @@ CONFIG_HW_STACK_PROTECTION=y
 CONFIG_SERIAL=y
 CONFIG_UART_INTERRUPT_DRIVEN=y
 
-# pin mux configuration
-CONFIG_PINMUX=y
-
 # clock configuration
 CONFIG_CLOCK_CONTROL=y
 
@@ -29,3 +24,6 @@ CONFIG_RAM_CONSOLE_BUFFER_SIZE=1024
 
 # uart console (overrides remote proc console)
 CONFIG_UART_CONSOLE=n
+
+# enable pin controller
+CONFIG_PINCTRL=y

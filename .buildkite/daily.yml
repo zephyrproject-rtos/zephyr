@@ -3,14 +3,14 @@ steps:
     - .buildkite/run.sh
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: "zephyr"
-      ZEPHYR_SDK_INSTALL_DIR: "/opt/toolchains/zephyr-sdk-0.13.1"
+      ZEPHYR_SDK_INSTALL_DIR: "/opt/toolchains/zephyr-sdk-0.13.2"
     parallelism: 475
     timeout_in_minutes: 210
     retry:
       manual: true
     plugins:
       - docker#v3.5.0:
-          image: "zephyrprojectrtos/ci:v0.18.4"
+          image: "zephyrprojectrtos/ci:v0.21.0"
           propagate-environment: true
           volumes:
             - "/var/lib/buildkite-agent/git-mirrors:/var/lib/buildkite-agent/git-mirrors"

@@ -22,10 +22,17 @@
 	reg = <0x20200000 DT_SIZE_K(64)>;
 };
 
-&gpt1 {
+&gpt2 {
 	gptfreq = <12500000>;
 };
 
-&gpt2 {
-	gptfreq = <12500000>;
+/* RT1015 only has two LPSPI blocks */
+/delete-node/ &lpspi3;
+/delete-node/ &lpspi4;
+
+/ {
+	soc {
+		/* Remove ADC2, it doesn't exist on RT1015 */
+		/delete-node/ adc@400C8000;
+	};
 };

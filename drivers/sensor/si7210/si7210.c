@@ -9,6 +9,7 @@
 #include <kernel.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
+#include <pm/device.h>
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
 #include <logging/log.h>
@@ -425,7 +426,8 @@ static const struct sensor_driver_api si7210_api_funcs = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-int si7210_pm_ctrl(const struct device *dev, enum pm_device_action action)
+static int si7210_pm_action(const struct device *dev,
+			    enum pm_device_action action)
 {
 	int rc;
 
@@ -536,7 +538,8 @@ static int si7210_init(const struct device *dev)
 	static const struct si7210_config si7210_config_##inst = { \
 		.bus = I2C_DT_SPEC_INST_GET(inst), \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, si7210_init, si7210_pm_ctrl, \
+	PM_DEVICE_DT_INST_DEFINE(inst, si7210_pm_action); \
+	DEVICE_DT_INST_DEFINE(inst, si7210_init, PM_DEVICE_DT_INST_REF(inst), \
 		&si7210_data_##inst, &si7210_config_##inst, POST_KERNEL, \
 		CONFIG_SENSOR_INIT_PRIORITY, &si7210_api_funcs);
 

@@ -1153,6 +1153,9 @@ struct bt_le_per_adv_sync_term_info {
 
 	/** Advertiser SID */
 	uint8_t sid;
+
+	/** Cause of periodic advertising termination */
+	uint8_t reason;
 };
 
 struct bt_le_per_adv_sync_recv_info {
@@ -1276,17 +1279,20 @@ enum {
 	 */
 	BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED = BIT(1),
 
+	/** Filter duplicate Periodic Advertising reports */
+	BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE = BIT(2),
+
 	/** Sync with Angle of Arrival (AoA) constant tone extension */
-	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOA = BIT(2),
+	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOA = BIT(3),
 
 	/** Sync with Angle of Departure (AoD) 1 us constant tone extension */
-	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_1US = BIT(3),
+	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_1US = BIT(4),
 
 	/** Sync with Angle of Departure (AoD) 2 us constant tone extension */
-	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_2US = BIT(4),
+	BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOD_2US = BIT(5),
 
 	/** Do not sync to packets without a constant tone extension */
-	BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT = BIT(5),
+	BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT = BIT(6),
 };
 
 struct bt_le_per_adv_sync_param {
@@ -2168,6 +2174,23 @@ struct bt_bond_info {
 void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);
+
+/** @brief Configure vendor data path
+ *
+ *  Request the Controller to configure the data transport path in a given direction between
+ *  the Controller and the Host.
+ *
+ *  @param dir            Direction to be configured, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR or
+ *                        BT_HCI_DATAPATH_DIR_CTLR_TO_HOST
+ *  @param id             Vendor specific logical transport channel ID, range
+ *                        [BT_HCI_DATAPATH_ID_VS..BT_HCI_DATAPATH_ID_VS_END]
+ *  @param vs_config_len  Length of additional vendor specific configuration data
+ *  @param vs_config      Pointer to additional vendor specific configuration data
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
+			   const uint8_t *vs_config);
 
 /**
  * @}

@@ -31,20 +31,28 @@ tests:
     tags: bluetooth
 
 # Bluetooth Audio Compile validation tests
-  bluetooth.shell.no_vcs:
+  bluetooth.shell.audio:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    tags: bluetooth
+  bluetooth.shell.audio.no_vcs:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS=n
     tags: bluetooth
-  bluetooth.shell.no_vocs:
+  bluetooth.shell.audio.no_vocs:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VOCS_MAX_INSTANCE_COUNT=0
       - CONFIG_BT_VCS_VOCS_INSTANCE_COUNT=0
     tags: bluetooth
-  bluetooth.shell.no_aics:
+  bluetooth.shell.audio.no_aics:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
@@ -52,7 +60,8 @@ tests:
       - CONFIG_BT_VCS_AICS_INSTANCE_COUNT=0
       - CONFIG_BT_MICS_AICS_INSTANCE_COUNT=0
     tags: bluetooth
-  bluetooth.shell.no_aics_vocs:
+  bluetooth.shell.audio.no_aics_vocs:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
@@ -62,53 +71,97 @@ tests:
       - CONFIG_BT_VCS_AICS_INSTANCE_COUNT=0
       - CONFIG_BT_MICS_AICS_INSTANCE_COUNT=0
     tags: bluetooth
-  bluetooth.shell.no_vcs_client:
+  bluetooth.shell.audio.no_vcs_client:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS_CLIENT=n
     tags: bluetooth
-  bluetooth.shell.no_vcs_vcs_client:
+  bluetooth.shell.audio.no_vcs_vcs_client:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS=n
       - CONFIG_BT_VCS_CLIENT=n
     tags: bluetooth
-  bluetooth.shell.vcs_client_no_aics_client:
+  bluetooth.shell.audio.vcs_client_no_aics_client:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS_CLIENT_MAX_AICS_INST=0
     tags: bluetooth
-  bluetooth.shell.vcs_client_no_vocs_client:
+  bluetooth.shell.audio.vcs_client_no_vocs_client:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST=0
     tags: bluetooth
-  bluetooth.shell.no_mics:
+  bluetooth.shell.audio.no_mics:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICS=n
     tags: bluetooth
-  bluetooth.shell.no_mics_client:
+  bluetooth.shell.audio.no_mics_client:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICS_CLIENT=n
     tags: bluetooth
-  bluetooth.shell.no_mics_mics_client:
+  bluetooth.shell.audio.no_mics_mics_client:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICS=n
       - CONFIG_BT_MICS_CLIENT=n
     tags: bluetooth
-  bluetooth.shell.mics_client_no_aics_client:
+  bluetooth.shell.audio.mics_client_no_aics_client:
+    extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICS_CLIENT_MAX_AICS_INST=0
+    tags: bluetooth
+  bluetooth.shell.audio.no_mcs:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MCS=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_mcc:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MCC=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_ots:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_OTS=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_mcc_ots:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_MCC_OTS=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_otsc:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_OTS=n
+      - CONFIG_BT_MCC_OTS=n
     tags: bluetooth

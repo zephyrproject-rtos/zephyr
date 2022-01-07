@@ -22,6 +22,19 @@ config IEEE802154_B91_INIT_PRIO
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.
 
+config IEEE802154_B91_SET_TXRX_DELAY_US
+	int "Tx/Rx modes switching delay time (us)"
+	default 120
+	help
+	  Delay time needed for PLL stabilization during Tx/Rx modes switching.
+
+config IEEE802154_B91_CCA_RSSI_THRESHOLD
+	int "CCA procedure RSSI threshold"
+	default -50
+	help
+	  CCA procedure returns true if the current RSSI value is less than
+	  this parameter.
+
 config IEEE802154_B91_RANDOM_MAC
 	bool "Random MAC address"
 	default y

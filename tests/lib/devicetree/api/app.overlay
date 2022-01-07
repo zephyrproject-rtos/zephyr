@@ -58,6 +58,8 @@
 			foo-names = "A", "b-c";
 			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;
 			pwm-names = "red", "green";
+			bar = <&test_gpio_1 200>, <&test_gpio_2 210>;
+			baz-names = "john", "doe";
 		};
 
 		test_enum_0: enum-0 {
@@ -88,6 +90,15 @@
 			compatible = "vnd,enum-int-required-false-holder";
 		};
 
+		enum-6 {
+			compatible = "vnd,enum-holder-inst";
+			val = "zero";
+		};
+
+		enum-7 {
+			compatible = "vnd,enum-required-false-holder-inst";
+		};
+
 		/*
 		 * This should be the only node with this
 		 * compatible in the tree.
@@ -100,7 +111,7 @@
 		};
 
 		disabled_gpio: gpio@0 {
-			compatible = "vnd,gpio";
+			compatible = "vnd,gpio-device";
 			gpio-controller;
 			reg = < 0x0 0x1000 >;
 			interrupts = <3 1>;
@@ -117,23 +128,25 @@
 		};
 
 		test_nodelabel: TEST_NODELABEL_ALLCAPS: test_gpio_1: gpio@deadbeef {
-			compatible = "vnd,gpio";
+			compatible = "vnd,gpio-device";
 			gpio-controller;
 			reg = < 0xdeadbeef 0x1000 >;
 			#gpio-cells = < 0x2 >;
 			#foo-cells = < 0x1 >;
+			#baz-cells = < 0x1 >;
 			label = "TEST_GPIO_1";
 			interrupts = <4 3>;
 			status = "okay";
 		};
 
 		test_gpio_2: gpio@abcd1234 {
-			compatible = "vnd,gpio";
+			compatible = "vnd,gpio-device";
 			gpio-controller;
 			reg = < 0xabcd1234 0x500 0x98765432 0xff >;
 			reg-names = "one", "two";
 			#gpio-cells = < 0x2 >;
 			#foo-cells = < 0x1 >;
+			#baz-cells = < 0x1 >;
 			interrupts = <5 2>;
 			label = "TEST_GPIO_2";
 			status = "okay";
@@ -215,6 +228,20 @@
 				label = "TEST_I2C_DEV_12";
 				reg = < 0x12 >;
 			};
+		};
+
+		test_mbox: mbox {
+			label = "TEST_MBOX";
+			compatible = "vnd,mbox";
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		test_mbox_zero_cell: mbox_zero_cell {
+			label = "TEST_MBOX_ZERO_CELL";
+			compatible = "vnd,mbox-zero-cell";
+			#mbox-cells = <0>;
+			status = "okay";
 		};
 
 		test_spi: spi@33334444 {
@@ -320,6 +347,8 @@
 			pinctrl-1 = <&test_pincfg_c &test_pincfg_d>;
 			pinctrl-2 = <&test_pincfg_d>;
 			pinctrl-names = "default", "sleep", "f.o.o2";
+			mboxes = <&test_mbox 1>, <&test_mbox 2>, <&test_mbox_zero_cell>;
+			mbox-names = "tx", "rx", "zero";
 		};
 
 		/* there should only be one of these */
@@ -419,6 +448,31 @@
 						ggc-prop = <42>;
 					};
 				};
+			};
+		};
+
+		test-ranges {
+			#address-cells = <2>;
+			#size-cells = <1>;
+
+			test_ranges_pcie: pcie@0 {
+				compatible = "vnd,pcie";
+				reg = <0 0 1>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+
+				ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+					 <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+					 <0x3000000 0x80 0 0x80 0 0x80 0>;
+			};
+
+			test_ranges_other: other@1 {
+				reg = <0 1 1>;
+				#address-cells = <2>;
+				#size-cells = <1>;
+
+				ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+				         <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
 			};
 		};
 	};

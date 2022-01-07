@@ -674,6 +674,12 @@ config USE_STM32_LL_TIM
 	help
 	  Enable STM32Cube Timer (TIM) LL module driver
 
+config USE_STM32_LL_UCPD
+	bool
+	help
+	  Enable STM32Cube USB Power Delivery device interface
+	  (UCPD) LL module driver
+
 config USE_STM32_LL_USART
 	bool
 	help

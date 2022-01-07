@@ -5,6 +5,11 @@
  */
 
 #include <drivers/spi.h>
+#include <pm/device.h>
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+#include <nrfx_gpiote.h>
+#include <nrfx_ppi.h>
+#endif
 #include <nrfx_spim.h>
 #include <hal/nrf_clock.h>
 #include <string.h>
@@ -25,6 +30,11 @@ struct spi_nrfx_data {
 #if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
 	uint8_t buffer[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE];
 #endif
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+	bool    anomaly_58_workaround_active;
+	uint8_t ppi_ch;
+	uint8_t gpiote_ch;
+#endif
 };
 
 struct spi_nrfx_config {
@@ -32,6 +42,9 @@ struct spi_nrfx_config {
 	size_t		   max_chunk_len;
 	uint32_t	   max_freq;
 	nrfx_spim_config_t def_config;
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+	bool		   anomaly_58_workaround;
+#endif
 };
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
@@ -120,6 +133,11 @@ static int configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
 		LOG_ERR("Slave mode is not supported on %s", dev->name);
 		return -EINVAL;
@@ -130,7 +148,8 @@ static int configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Only single line mode is supported");
 		return -EINVAL;
 	}
@@ -179,10 +198,90 @@ static int configure(const struct device *dev,
 	dev_data->initialized = true;
 
 	ctx->config = spi_cfg;
-	spi_context_cs_configure(ctx);
 
 	return 0;
 }
+
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+/*
+ * Brief Workaround for transmitting 1 byte with SPIM.
+ *
+ * Derived from the setup_workaround_for_ftpan_58() function from
+ * the nRF52832 Rev 1 Errata v1.6 document anomaly 58 workaround.
+ *
+ * Warning Must not be used when transmitting multiple bytes.
+ *
+ * Warning After this workaround is used, the user must reset the PPI
+ * channel and the GPIOTE channel before attempting to transmit multiple
+ * bytes.
+ */
+static void anomaly_58_workaround_setup(const struct device *dev)
+{
+	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
+	NRF_SPIM_Type *spim = dev_config->spim.p_reg;
+	uint32_t ppi_ch = dev_data->ppi_ch;
+	uint32_t gpiote_ch = dev_data->gpiote_ch;
+	uint32_t eep = (uint32_t)&NRF_GPIOTE->EVENTS_IN[gpiote_ch];
+	uint32_t tep = (uint32_t)&spim->TASKS_STOP;
+
+	dev_data->anomaly_58_workaround_active = true;
+
+	/* Create an event when SCK toggles */
+	nrf_gpiote_event_configure(NRF_GPIOTE, gpiote_ch, spim->PSEL.SCK,
+				   GPIOTE_CONFIG_POLARITY_Toggle);
+	nrf_gpiote_event_enable(NRF_GPIOTE, gpiote_ch);
+
+	/* Stop the spim instance when SCK toggles */
+	nrf_ppi_channel_endpoint_setup(NRF_PPI, ppi_ch, eep, tep);
+	nrf_ppi_channel_enable(NRF_PPI, ppi_ch);
+
+	/* The spim instance cannot be stopped mid-byte, so it will finish
+	 * transmitting the first byte and then stop. Effectively ensuring
+	 * that only 1 byte is transmitted.
+	 */
+}
+
+static void anomaly_58_workaround_clear(struct spi_nrfx_data *dev_data)
+{
+	uint32_t ppi_ch = dev_data->ppi_ch;
+	uint32_t gpiote_ch = dev_data->gpiote_ch;
+
+	if (dev_data->anomaly_58_workaround_active) {
+		nrf_ppi_channel_disable(NRF_PPI, ppi_ch);
+		nrf_gpiote_task_disable(NRF_GPIOTE, gpiote_ch);
+
+		dev_data->anomaly_58_workaround_active = false;
+	}
+}
+
+static int anomaly_58_workaround_init(const struct device *dev)
+{
+	struct spi_nrfx_data *data = get_dev_data(dev);
+	const struct spi_nrfx_config *config = get_dev_config(dev);
+	nrfx_err_t err_code;
+
+	data->anomaly_58_workaround_active = false;
+
+	if (config->anomaly_58_workaround) {
+		err_code = nrfx_ppi_channel_alloc(&data->ppi_ch);
+		if (err_code != NRFX_SUCCESS) {
+			LOG_ERR("Failed to allocate PPI channel");
+			return -ENODEV;
+		}
+
+		err_code = nrfx_gpiote_channel_alloc(&data->gpiote_ch);
+		if (err_code != NRFX_SUCCESS) {
+			LOG_ERR("Failed to allocate GPIOTE channel");
+			return -ENODEV;
+		}
+		LOG_DBG("PAN 58 workaround enabled for %s: ppi %u, gpiote %u",
+			dev->name, data->ppi_ch, data->gpiote_ch);
+	}
+
+	return 0;
+}
+#endif
 
 static void transfer_next_chunk(const struct device *dev)
 {
@@ -218,20 +317,26 @@ static void transfer_next_chunk(const struct device *dev)
 		xfer.p_rx_buffer = ctx->rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
 
-		/* This SPIM driver is only used by the NRF52832 if
-		   SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58 is enabled */
-		if (IS_ENABLED(CONFIG_SOC_NRF52832) &&
-		   (xfer.rx_length == 1 && xfer.tx_length <= 1)) {
-			LOG_WRN("Transaction aborted since it would trigger nRF52832 PAN 58");
-			error = -EIO;
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+		if (xfer.rx_length == 1 && xfer.tx_length <= 1) {
+			if (dev_config->anomaly_58_workaround) {
+				anomaly_58_workaround_setup(dev);
+			} else {
+				LOG_WRN("Transaction aborted since it would trigger "
+					"nRF52832 PAN 58");
+				error = -EIO;
+			}
 		}
-
-		if (!error) {
+#endif
+		if (error == 0) {
 			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
 			if (result == NRFX_SUCCESS) {
 				return;
 			}
 			error = -EIO;
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+			anomaly_58_workaround_clear(dev_data);
+#endif
 		}
 	}
 
@@ -248,6 +353,9 @@ static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 	struct spi_nrfx_data *dev_data = p_context;
 
 	if (p_event->type == NRFX_SPIM_EVENT_DONE) {
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+		anomaly_58_workaround_clear(dev_data);
+#endif
 		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
 		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
 
@@ -330,8 +438,8 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-static int spim_nrfx_pm_control(const struct device *dev,
-				enum pm_device_action action)
+static int spim_nrfx_pm_action(const struct device *dev,
+			       enum pm_device_action action)
 {
 	int ret = 0;
 	struct spi_nrfx_data *data = get_dev_data(dev);
@@ -386,21 +494,29 @@ static int spim_nrfx_pm_control(const struct device *dev,
 		))
 
 #define SPI_NRFX_SPIM_DEVICE(idx)					       \
-	BUILD_ASSERT(						       \
+	BUILD_ASSERT(							       \
 		!SPIM_NRFX_MISO_PULL_UP(idx) || !SPIM_NRFX_MISO_PULL_DOWN(idx),\
 		"SPIM"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
+		int err;                                                       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
+		err = spi_context_cs_configure_all(&get_dev_data(dev)->ctx);   \
+		if (err < 0) {                                                 \
+			return err;                                            \
+		}                                                              \
 		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
-		return 0;						       \
+		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
+		(return anomaly_58_workaround_init(dev);),		       \
+		(return 0;))						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPIM(idx), ctx)		       \
 		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
@@ -416,11 +532,16 @@ static int spim_nrfx_pm_control(const struct device *dev,
 			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
 			.miso_pull = SPIM_NRFX_MISO_PULL(idx),		       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
-		}							       \
+		},							       \
+		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
+			(.anomaly_58_workaround =			       \
+				SPIM_PROP(idx, anomaly_58_workaround),),       \
+			())						       \
 	};								       \
+	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPIM(idx),					       \
 		      spi_##idx##_init,					       \
-		      spim_nrfx_pm_control,				       \
+		      PM_DEVICE_DT_REF(SPIM(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \

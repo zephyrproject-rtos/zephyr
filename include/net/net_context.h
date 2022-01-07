@@ -252,10 +252,10 @@ __net_socket struct net_context {
 	net_pkt_get_pool_func_t data_pool;
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-#if defined(CONFIG_NET_TCP2)
+#if defined(CONFIG_NET_TCP)
 	/** TCP connection information */
 	void *tcp;
-#endif /* CONFIG_NET_TCP2 */
+#endif /* CONFIG_NET_TCP */
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	/**

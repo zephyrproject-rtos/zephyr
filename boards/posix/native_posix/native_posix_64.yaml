@@ -12,3 +12,4 @@ supported:
   - netif:eth
   - usb_device
   - adc
+  - gpio

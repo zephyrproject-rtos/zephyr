@@ -2,7 +2,7 @@ description: STM32 UART
 
 compatible: "st,stm32-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -12,11 +12,7 @@ properties:
       required: true
 
     pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for serial signals (RX, TX, RTS, CTS).  We expect
-        that the phandles will reference pinctrl nodes.
+      required: true
 
-        For example the USART1 would be
-           pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+    pinctrl-names:
+      required: true

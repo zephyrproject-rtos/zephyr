@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_rt6xx.dtsi>
 #include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/regulator/pca9420_i2c.h>
 
 / {
 	model = "NXP MIMXRT685-EVK board";
@@ -203,11 +204,99 @@ i2s1: &flexcomm3 {
 	dma-names = "tx";
 };
 
+/* PCA9420 PMIC */
+&pmic_i2c {
+	status = "okay";
+	compatible = "nxp,lpc-i2c";
+	label = "PMIC_I2C";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pca9420: pca9420@61 {
+		label = "PCA9420_PMIC";
+		reg = <0x61>;
+
+		pca9420_sw1: sw1_buck {
+			label = "SW1_BUCK_REG";
+			compatible = "regulator-pmic";
+			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
+			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
+			num-voltages = <42>;
+			ilim-reg = <PCA9420_TOP_CNTL0>;
+			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
+			num-current-levels = <7>;
+			vsel-reg = <PCA9420_MODECFG_0_0>;
+			vsel-mask = <PCA9420_MODECFG_0_SW1_OUT_MASK>;
+			enable-reg = <PCA9420_MODECFG_0_2>;
+			enable-mask = <PCA9420_MODECFG_2_SW1_EN_MASK>;
+			enable-val = <PCA9420_MODECFG_2_SW1_EN_VAL>;
+			min-uV = <500000>;
+			max-uV = <1800000>;
+		};
+
+		pca9420_sw2: sw2_buck {
+			label = "SW2_BUCK_REG";
+			compatible = "regulator-pmic";
+			voltage-range = <PCA9420_SW2_VOLTAGE_RANGE>;
+			num-voltages = <50>;
+			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
+			ilim-reg = <PCA9420_TOP_CNTL0>;
+			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
+			num-current-levels = <7>;
+			vsel-reg = <PCA9420_MODECFG_0_1>;
+			vsel-mask = <PCA9420_MODECFG_1_SW2_OUT_MASK>;
+			enable-reg = <PCA9420_MODECFG_0_2>;
+			enable-mask = <PCA9420_MODECFG_2_SW2_EN_MASK>;
+			enable-val = <PCA9420_MODECFG_2_SW2_EN_VAL>;
+			min-uV = <1500000>;
+			max-uV = <3300000>;
+		};
+
+		pca9420_ldo1: ldo1_reg {
+			label = "LDO1_REG";
+			compatible = "regulator-pmic";
+			voltage-range = <PCA9420_LDO1_VOLTAGE_RANGE>;
+			num-voltages = <9>;
+			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
+			ilim-reg = <PCA9420_TOP_CNTL0>;
+			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
+			num-current-levels = <7>;
+			vsel-reg = <PCA9420_MODECFG_0_2>;
+			vsel-mask = <PCA9420_MODECFG_2_LDO1_OUT_MASK>;
+			enable-reg = <PCA9420_MODECFG_0_2>;
+			enable-mask = <PCA9420_MODECFG_2_LDO1_EN_MASK>;
+			enable-val = <PCA9420_MODECFG_2_LDO1_EN_VAL>;
+			min-uV = <1700000>;
+			max-uV = <1900000>;
+		};
+
+		pca9420_ldo2: ldo2_reg {
+			label = "LDO2_REG";
+			compatible = "regulator-pmic";
+			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
+			num-voltages = <50>;
+			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
+			ilim-reg = <PCA9420_TOP_CNTL0>;
+			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
+			num-current-levels = <7>;
+			vsel-reg = <PCA9420_MODECFG_0_3>;
+			vsel-mask = <PCA9420_MODECFG_3_LDO2_OUT_MASK>;
+			enable-reg = <PCA9420_MODECFG_0_2>;
+			enable-mask = <PCA9420_MODECFG_2_LDO2_EN_MASK>;
+			enable-val = <PCA9420_MODECFG_2_LDO2_EN_VAL>;
+			min-uV = <1500000>;
+			max-uV = <3300000>;
+		};
+
+
+	};
+};
+
 &flexspi {
-	reg = <0x50134000 0x4000>, <0x18000000 DT_SIZE_M(64)>;
 	mx25um51345g: mx25um51345g@2 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
-		size = <536870912>;
+		size = <DT_SIZE_M(64)>;
 		label = "MX25UM51345G";
 		reg = <2>;
 		spi-max-frequency = <200000000>;

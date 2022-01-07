@@ -24,12 +24,10 @@ K_KERNEL_STACK_MEMBER(eswifi_spi_poll_stack, ESWIFI_SPI_THREAD_STACK_SIZE);
 #define SPI_READ_CHUNK_SIZE 32
 
 struct eswifi_spi_data {
-	const struct device *spi_dev;
+	struct spi_dt_spec bus;
 	struct eswifi_gpio csn;
 	struct eswifi_gpio dr;
 	struct k_thread poll_thread;
-	struct spi_config spi_cfg;
-	struct spi_cs_control spi_cs;
 };
 
 static struct eswifi_spi_data eswifi_spi0; /* Static instance */
@@ -63,7 +61,7 @@ static int eswifi_spi_write(struct eswifi_dev *eswifi, char *data, size_t dlen)
 	spi_tx.buffers = spi_tx_buf;
 	spi_tx.count = ARRAY_SIZE(spi_tx_buf);
 
-	status = spi_write(spi->spi_dev, &spi->spi_cfg, &spi_tx);
+	status = spi_write_dt(&spi->bus, &spi_tx);
 	if (status) {
 		LOG_ERR("SPI write error %d", status);
 	} else {
@@ -85,7 +83,7 @@ static int eswifi_spi_read(struct eswifi_dev *eswifi, char *data, size_t dlen)
 	spi_rx.buffers = spi_rx_buf;
 	spi_rx.count = ARRAY_SIZE(spi_rx_buf);
 
-	status = spi_read(spi->spi_dev, &spi->spi_cfg, &spi_rx);
+	status = spi_read_dt(&spi->bus, &spi_rx);
 	if (status) {
 		LOG_ERR("SPI read error %d", status);
 	} else {
@@ -145,7 +143,7 @@ static int eswifi_spi_request(struct eswifi_dev *eswifi, char *cmd, size_t clen,
 	eswifi_spi_write(eswifi, cmd, clen);
 
 	/* Our device is flagged with SPI_HOLD_ON_CS|SPI_LOCK_ON, release */
-	spi_release(spi->spi_dev, &spi->spi_cfg);
+	spi_release_dt(&spi->bus);
 
 data:
 	/* CMD/DATA READY signals the Data Phase */
@@ -170,7 +168,7 @@ data:
 	}
 
 	/* Our device is flagged with SPI_HOLD_ON_CS|SPI_LOCK_ON, release */
-	spi_release(spi->spi_dev, &spi->spi_cfg);
+	spi_release_dt(&spi->bus);
 
 	LOG_DBG("success");
 
@@ -226,13 +224,6 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 {
 	struct eswifi_spi_data *spi = &eswifi_spi0; /* Static instance */
 
-	/* SPI DEV */
-	spi->spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!spi->spi_dev) {
-		LOG_ERR("Failed to initialize SPI driver");
-		return -ENODEV;
-	}
-
 	/* SPI DATA READY PIN */
 	spi->dr.dev = device_get_binding(
 			DT_INST_GPIO_LABEL(0, data_gpios));
@@ -246,19 +237,11 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 			   DT_INST_GPIO_FLAGS(0, data_gpios) |
 			   GPIO_INPUT);
 
-	/* SPI CONFIG/CS */
-	spi->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	spi->spi_cfg.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
-				  SPI_WORD_SET(16) | SPI_LINES_SINGLE |
-				  SPI_HOLD_ON_CS | SPI_LOCK_ON);
-	spi->spi_cfg.slave = DT_INST_REG_ADDR(0);
-	spi->spi_cs.gpio_dev =
-		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	spi->spi_cs.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	spi->spi_cs.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	spi->spi_cs.delay = 1000U;
-	spi->spi_cfg.cs = &spi->spi_cs;
-
+	/* SPI BUS */
+	spi->bus = (struct spi_dt_spec) SPI_DT_SPEC_INST_GET(0,
+							     SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
+							     SPI_WORD_SET(16) | SPI_HOLD_ON_CS |
+							     SPI_LOCK_ON, 1000U);
 	eswifi->bus_data = spi;
 
 	LOG_DBG("success");

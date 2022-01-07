@@ -296,7 +296,7 @@
 				compatible = "st,stm32wl-subghz-radio";
 				reg = <0>;
 				interrupts = <50 0>;
-				spi-max-frequency = <1000000>;
+				spi-max-frequency = <12000000>;
 				status = "disabled";
 				label = "subghz-radio";
 			};
@@ -327,13 +327,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
 			interrupts = <23 0>, <24 0>, <25 0>, <26 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_1";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
@@ -345,13 +345,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
 			interrupts = <27 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_2";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_2";
 				#pwm-cells = <3>;
 			};
@@ -363,13 +363,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
 			interrupts = <28 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_16";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_16";
 				#pwm-cells = <3>;
 			};
@@ -381,13 +381,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00040000>;
 			interrupts = <29 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_17";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_17";
 				#pwm-cells = <3>;
 			};
@@ -407,8 +407,47 @@
 			reg = <0x58001000 0x400>;
 			interrupts = <52 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00040000>;
+			health-test-magic = <0x17590abc>;
+			health-test-config = <0xaa74>;
 			status = "disabled";
 			label = "RNG";
+		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x400>;
+			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			dma-requests = <7>;
+			dma-offset = <0>;
+			status = "disabled";
+			label = "DMA_1";
+		};
+
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x40020400 0x400>;
+			interrupts = <54 0 55 0 56 0 57 0 58 0 59 0 60 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
+			dma-requests = <7>;
+			dma-offset = <7>;
+			status = "disabled";
+			label = "DMA_2";
+		};
+
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <3>;
+			reg = <0x40020800 0x400>;
+			interrupts = <61 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
+			dma-channels = <14>;
+			dma-generators = <4>;
+			dma-requests= <38>;
+			status = "disabled";
+			label = "DMAMUX_1";
 		};
 	};
 };

@@ -13,7 +13,6 @@
 #include <sys/util.h>
 
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
 #include <bluetooth/direction.h>
 
 #define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
@@ -209,7 +208,8 @@ static void create_sync(void)
 
 	printk("Creating Periodic Advertising Sync...");
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
-	sync_create_param.options = 0;
+
+	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
@@ -243,12 +243,12 @@ static void enable_cte_rx(void)
 	const struct bt_df_per_adv_sync_cte_rx_param cte_rx_params = {
 		.max_cte_count = 5,
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
-		.cte_type = BT_DF_CTE_TYPE_ALL,
+		.cte_types = BT_DF_CTE_TYPE_ALL,
 		.slot_durations = 0x2,
 		.num_ant_ids = ARRAY_SIZE(ant_patterns),
 		.ant_ids = ant_patterns,
 #else
-		.cte_type = BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US,
+		.cte_types = BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US,
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
 	};
 

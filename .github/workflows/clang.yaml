@@ -3,7 +3,7 @@ name: Build with Clang/LLVM
 on: pull_request_target
 
 jobs:
-  clang-build-cancel:
+  clang-build-prep:
     runs-on: ubuntu-latest
     steps:
       - name: Cancel Previous Runs
@@ -11,38 +11,52 @@ jobs:
         with:
           access_token: ${{ github.token }}
   clang-build:
-    runs-on: ubuntu-latest
-    needs: clang-build-cancel
+    runs-on: zephyr_runner
+    needs: clang-build-prep
     container:
-      image: zephyrprojectrtos/ci:v0.18.4
+      image: zephyrprojectrtos/ci:v0.21.0
       options: '--entrypoint /bin/bash'
+      volumes:
+        - /home/runners/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
-        subset: [1, 2, 3, 4, 5]
+        platform: ["native_posix"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
-      MATRIX_SIZE: 5
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
+    outputs:
+      report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.6.0
-        with:
-          access_token: ${{ github.token }}
-      - name: Update PATH for west
+      - name: Cleanup
         run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: checkout
+          # hotfix, until we have a better way to deal with existing data
+          rm -rf zephyr zephyr-testing
+      - name: Checkout
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: west setup
+      - name: Environment Setup
         run: |
+          pip3 install GitPython
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
+          git rebase origin/${BASE_REF}
+          git log  --pretty=oneline | head -n 10
           west init -l . || true
-          west update
+          west config --global update.narrow true
+          # In some cases modules are left in a state where they can't be
+          # updated (i.e. when we cancel a job and the builder is killed),
+          # So first retry to update, if that does not work, remove all modules
+          # and start over. (Workaround until we implement more robust module
+          # west caching).
+          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
 
       - name: Check Environment
         run: |
@@ -51,40 +65,90 @@ jobs:
           gcc --version
           ls -la
 
-      - name: Run Tests with Twister
+      - name: Prepare ccache timestamp/data
+        id: ccache_cache_timestamp
+        shell: cmake -P {0}
         run: |
-          #source zephyr-env.sh
+          string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+          string(REPLACE "/" "_" repo ${{github.repository}})
+          string(REPLACE "-" "_" repo2 ${repo})
+          message("::set-output name=repo::${repo2}")
+      - name: use cache
+        id: cache-ccache
+        uses: nashif/action-s3-cache@master
+        with:
+          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.platform }}-ccache
+          path: /github/home/.ccache
+          aws-s3-bucket: ccache.zephyrproject.org
+          aws-access-key-id: ${{ secrets.CCACHE_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CCACHE_S3_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: ccache stats initial
+        run: |
+          test -d github/home/.ccache && rm -rf /github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          ccache -M 10G -s
+
+      - name: Run Tests with Twister
+        id: twister
+        run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
-          ./scripts/twister --inline-logs -M -N -v -p native_posix --subset ${{matrix.subset}}/${MATRIX_SIZE} --retry-failed 3
+
+          # check if we need to run a full twister or not based on files changed
+          python3 ./scripts/ci/test_plan.py --platform ${{ matrix.platform }} -c origin/${BASE_REF}..
+
+          # We can limit scope to just what has changed
+          if [ -s testplan.csv ]; then
+            echo "::set-output name=report_needed::1";
+            # Full twister but with options based on changes
+            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2
+          else
+            # if nothing is run, skip reporting step
+            echo "::set-output name=report_needed::0";
+          fi
+
+      - name: ccache stats post
+        run: |
+          ccache -s
 
       - name: Upload Unit Test Results
-        if: always()
+        if: always() && steps.twister.outputs.report_needed != 0
         uses: actions/upload-artifact@v2
         with:
-          name: Unit Test Results (Subset ${{ matrix.subset }})
+          name: Unit Test Results (Subset ${{ matrix.platform }})
           path: twister-out/twister.xml
 
-  publish-test-results:
+  clang-build-results:
     name: "Publish Unit Tests Results"
     needs: clang-build
     runs-on: ubuntu-20.04
-      # the build-and-test job might be skipped, we don't need to run this job then
-    if: success() || failure()
-
+    if: (success() || failure() ) && needs.clang-build.outputs.report_needed != 0
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v2
         with:
           path: artifacts
+      - name: Merge Test Results
+        run: |
+          pip3 install junitparser junit2html
+          junitparser merge artifacts/*/twister.xml junit.xml
+          junit2html junit.xml junit-clang.html
 
-      - name: Display structure of downloaded files
-        run: ls -R
+      - name: Upload Unit Test Results in HTML
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: HTML Unit Test Results
+          if-no-files-found: ignore
+          path: |
+            junit-clang.html
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.12
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
         with:
           check_name: Unit Test Results
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: "**/twister.xml"
-          comment_on_pr: false
+          comment_mode: off

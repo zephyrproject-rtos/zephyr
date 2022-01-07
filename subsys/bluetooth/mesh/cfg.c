@@ -5,6 +5,8 @@
  */
 
 #include <bluetooth/mesh.h>
+#include <bluetooth/bluetooth.h>
+
 #include "mesh.h"
 #include "net.h"
 #include "rpl.h"
@@ -13,6 +15,7 @@
 #include "heartbeat.h"
 #include "friend.h"
 #include "cfg.h"
+#include "adv.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_CFG)
 #define LOG_MODULE_NAME bt_mesh_cfg
@@ -79,6 +82,11 @@ static enum bt_mesh_feat_state feature_get(int feature_flag)
 		       BT_MESH_FEATURE_DISABLED;
 }
 
+static int node_id_is_running(struct bt_mesh_subnet *sub, void *cb_data)
+{
+	return sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING;
+}
+
 int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy)
 {
 	int err;
@@ -90,6 +98,11 @@ int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy)
 	err = feature_set(BT_MESH_GATT_PROXY, gatt_proxy);
 	if (err) {
 		return err;
+	}
+
+	if (gatt_proxy == BT_MESH_FEATURE_DISABLED &&
+	    !bt_mesh_subnet_find(node_id_is_running, NULL)) {
+		bt_mesh_adv_gatt_update();
 	}
 
 	bt_mesh_hb_feature_changed(BT_MESH_FEAT_PROXY);

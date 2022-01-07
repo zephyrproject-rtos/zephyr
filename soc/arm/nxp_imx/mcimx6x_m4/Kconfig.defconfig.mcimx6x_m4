@@ -31,4 +31,8 @@ config COUNTER_IMX_EPIT
 	default y
 	depends on COUNTER
 
+config PWM_IMX
+	default y
+	depends on PWM
+
 endif # SOC_MCIMX6X_M4

@@ -41,6 +41,15 @@ node-macro =/ %s"DT_N" path-id %s"_IRQ_IDX_" DIGIT
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
 node-macro =/ %s"DT_N" path-id %s"_IRQ_NAME_" dt-name
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
+; The ranges property is also special.
+node-macro =/ %s"DT_N" path-id %s"_RANGES_NUM"
+node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT
+              %s"_VAL_" ( %s"CHILD_BUS_FLAGS" / %s"CHILD_BUS_ADDRESS" /
+                          %s"PARENT_BUS_ADDRESS" / %s"LENGTH")
+node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT
+              %s"_VAL_CHILD_BUS_FLAGS_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_RANGE"
 ; Subnodes of the fixed-partitions compatible get macros which contain
 ; a unique ordinal value for each partition
 node-macro =/ %s"DT_N" path-id %s"_PARTITION_ID" DIGIT

@@ -37,7 +37,8 @@ extern void test_threads_access_atomic(void);
 extern void test_errno(void);
 extern void test_printk(void);
 extern void test_timeout_order(void);
-extern void test_clock_cycle(void);
+extern void test_clock_cycle_32(void);
+extern void test_clock_cycle_64(void);
 extern void test_clock_uptime(void);
 extern void test_ms_time_duration(void);
 extern void test_multilib(void);
@@ -156,7 +157,8 @@ void test_main(void)
 			 ztest_unit_test(test_printk),
 			 ztest_1cpu_unit_test(test_timeout_order),
 			 ztest_user_unit_test(test_clock_uptime),
-			 ztest_unit_test(test_clock_cycle),
+			 ztest_unit_test(test_clock_cycle_32),
+			 ztest_unit_test(test_clock_cycle_64),
 			 ztest_unit_test(test_version),
 			 ztest_unit_test(test_multilib),
 			 ztest_unit_test(test_thread_context),

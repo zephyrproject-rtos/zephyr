@@ -107,11 +107,6 @@ config IPM_CAVS_IDC
 	  Driver for the Intra-DSP Communication (IDC) channel for
 	  cross SoC communications.
 
-config IPM_INTEL_ADSP
-	bool "IPM ADSP Host-DSP Communication driver"
-	help
-	  Driver for the Host-DSP Mailbox Communication channel.
-
 config IPM_STM32_HSEM
 	bool "STM32 HSEM controller"
 	depends on STM32H7_DUAL_CORE

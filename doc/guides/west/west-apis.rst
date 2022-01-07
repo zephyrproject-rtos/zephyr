@@ -226,9 +226,10 @@ west.manifest
 
 .. automodule:: west.manifest
 
-The main classes are `Manifest` and `Project`. These represent the contents of
-a :ref:`manifest file <west-manifests>`. The recommended methods for parsing
-west manifests are `Manifest.from_file` and `Manifest.from_data`.
+The main classes are :py:class:`Manifest` and :py:class:`Project`. These
+represent the contents of a :ref:`manifest file <west-manifests>`. The
+recommended methods for parsing west manifests are
+:py:meth:`Manifest.from_file` and :py:meth:`Manifest.from_data`.
 
 Constants and functions
 =======================
@@ -303,6 +304,9 @@ Manifest and sub-objects
 
    .. versionadded:: 0.9.0
       The *group_filter* and *submodules* attributes.
+
+   .. versionadded:: 0.12.0
+      The *userdata* attribute.
 
    Constructor:
 

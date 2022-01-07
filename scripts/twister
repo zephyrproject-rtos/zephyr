@@ -214,9 +214,7 @@ logger.setLevel(logging.DEBUG)
 def size_report(sc):
     logger.info(sc.filename)
     logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
-    for i in range(len(sc.sections)):
-        v = sc.sections[i]
-
+    for v in sc.sections:
         logger.info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
                     (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
                      v["type"]))
@@ -258,134 +256,53 @@ Artificially long but functional example:
       --testcase-root tests/ztest/base    \\
       --testcase-root tests/kernel   \\
       --test      tests/ztest/base/testing.ztest.verbose_0  \\
-      --test      tests/kernel/fifo/fifo_api/kernel.fifo.poll
+      --test      tests/kernel/fifo/fifo_api/kernel.fifo
 
    "kernel.fifo.poll" is one of the test section names in
                                  __/fifo_api/testcase.yaml
     """)
 
-    parser.add_argument("--force-toolchain", action="store_true",
-                        help="Do not filter based on toolchain, use the set "
-                             " toolchain unconditionally")
-    parser.add_argument(
-        "-p", "--platform", action="append",
-        help="Platform filter for testing. This option may be used multiple "
-             "times. Testcases will only be built/run on the platforms "
-             "specified. If this option is not used, then platforms marked "
-             "as default in the platform metadata file will be chosen "
-             "to build and test. ")
+    compare_group_option = parser.add_mutually_exclusive_group()
 
-    parser.add_argument("-P", "--exclude-platform", action="append", default=[],
-        help="""Exclude platforms and do not build or run any tests
-        on those platforms. This option can be called multiple times.
-        """
-        )
+    platform_group_option = parser.add_mutually_exclusive_group()
 
-    parser.add_argument(
-        "-a", "--arch", action="append",
-        help="Arch filter for testing. Takes precedence over --platform. "
-             "If unspecified, test all arches. Multiple invocations "
-             "are treated as a logical 'or' relationship")
-    parser.add_argument(
-        "-t", "--tag", action="append",
-        help="Specify tags to restrict which tests to run by tag value. "
-             "Default is to not do any tag filtering. Multiple invocations "
-             "are treated as a logical 'or' relationship")
-    parser.add_argument("-e", "--exclude-tag", action="append",
-                        help="Specify tags of tests that should not run. "
-                             "Default is to run all tests with all tags.")
+    run_group_option = parser.add_mutually_exclusive_group()
+
+    serial = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
+
+    test_or_build = parser.add_mutually_exclusive_group()
+
+    test_xor_subtest = case_select.add_mutually_exclusive_group()
+
+    valgrind_asan_group = parser.add_mutually_exclusive_group()
+
+    case_select.add_argument(
+        "-E",
+        "--save-tests",
+        metavar="FILENAME",
+        action="store",
+        help="Append list of tests and platforms to be run to file.")
+
+    case_select.add_argument(
+        "-F",
+        "--load-tests",
+        metavar="FILENAME",
+        action="store",
+        help="Load list of tests and platforms to be run from file.")
+
+    case_select.add_argument(
+        "-T", "--testcase-root", action="append", default=[],
+        help="Base directory to recursively search for test cases. All "
+             "testcase.yaml files under here will be processed. May be "
+             "called multiple times. Defaults to the 'samples/' and "
+             "'tests/' directories at the base of the Zephyr tree.")
+
     case_select.add_argument(
         "-f",
         "--only-failed",
         action="store_true",
         help="Run only those tests that failed the previous twister run "
              "invocation.")
-
-    parser.add_argument(
-        "--retry-failed", type=int, default=0,
-        help="Retry failing tests again, up to the number of times specified.")
-
-    parser.add_argument(
-        "--retry-interval", type=int, default=60,
-        help="Retry failing tests after specified period of time.")
-
-    test_xor_subtest = case_select.add_mutually_exclusive_group()
-
-    test_xor_subtest.add_argument(
-        "-s", "--test", action="append",
-        help="Run only the specified test cases. These are named by "
-             "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
-
-    test_xor_subtest.add_argument(
-        "--sub-test", action="append",
-        help="""Recursively find sub-test functions and run the entire
-        test section where they were found, including all sibling test
-        functions. Sub-tests are named by:
-        section.name.in.testcase.yaml.function_name_without_test_prefix
-        Example: kernel.fifo.poll.fifo_loop
-        """)
-
-    parser.add_argument(
-        "-l", "--all", action="store_true",
-        help="Build/test on all platforms. Any --platform arguments "
-             "ignored.")
-
-    parser.add_argument(
-        "-o", "--report-dir",
-        help="""Output reports containing results of the test run into the
-        specified directory.
-        The output will be both in CSV and JUNIT format
-        (twister.csv and twister.xml).
-        """)
-    parser.add_argument(
-        "--json-report", action="store_true",
-        help="""Generate a JSON file with all test results. [Experimental]
-        """)
-    parser.add_argument(
-        "--platform-reports", action="store_true",
-        help="""Create individual reports for each platform.
-        """)
-    parser.add_argument(
-        "--report-name",
-        help="""Create a report with a custom name.
-        """)
-
-    parser.add_argument(
-        "--report-suffix",
-        help="""Add a suffix to all generated file names, for example to add a
-        version or a commit ID.
-        """)
-
-    parser.add_argument("--report-excluded",
-                        action="store_true",
-                        help="""List all tests that are never run based on current scope and
-            coverage. If you are looking for accurate results, run this with
-            --all, but this will take a while...""")
-
-    parser.add_argument("--compare-report",
-                        help="Use this report file for size comparison")
-
-    parser.add_argument(
-        "-B", "--subset",
-        help="Only run a subset of the tests, 1/4 for running the first 25%%, "
-             "3/5 means run the 3rd fifth of the total. "
-             "This option is useful when running a large number of tests on "
-             "different hosts to speed up execution time.")
-
-    parser.add_argument(
-        "-N", "--ninja", action="store_true",
-        help="Use the Ninja generator with CMake")
-
-    parser.add_argument(
-        "-y", "--dry-run", action="store_true",
-        help="""Create the filtered list of test cases, but don't actually
-        run them. Useful if you're just interested in the discard report
-        generated for every run and saved in the specified output
-        directory (twister_discard.csv).
-        """)
-
-    parser.add_argument("--list-tags", action="store_true",
-                        help="list all tags in selected tests")
 
     case_select.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
@@ -396,232 +313,43 @@ Artificially long but functional example:
         and net.socket.fd_set belong to different directories.
         """)
 
-    case_select.add_argument("--test-tree", action="store_true",
-                             help="""Output the testsuite in a tree form""")
-
     case_select.add_argument("--list-test-duplicates", action="store_true",
                              help="""List tests with duplicate identifiers.
         """)
 
-    parser.add_argument("--export-tests", action="store",
-                        metavar="FILENAME",
-                        help="Export tests case meta-data to a file in CSV format."
-                             "Test instances can be exported per target by supplying "
-                             "the platform name using --platform option. (tests for only "
-                             " one platform can be exported at a time)")
+    case_select.add_argument("--test-tree", action="store_true",
+                             help="""Output the testsuite in a tree form""")
 
-    parser.add_argument("--timestamps",
-                        action="store_true",
-                        help="Print all messages with time stamps")
+    compare_group_option.add_argument("--compare-report",
+                        help="Use this report file for size comparison")
 
-    parser.add_argument(
-        "-r", "--release", action="store_true",
-        help="Update the benchmark database with the results of this test "
-             "run. Intended to be run by CI when tagging an official "
-             "release. This database is used as a basis for comparison "
-             "when looking for deltas in metrics such as footprint")
-
-    parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
-                        help="Treat warning conditions as errors")
-
-    parser.add_argument("--overflow-as-errors", action="store_true",
-                        help="Treat RAM/SRAM overflows as errors")
-
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help="Emit debugging information, call multiple times to increase "
-             "verbosity")
-    parser.add_argument(
-        "-i", "--inline-logs", action="store_true",
-        help="Upon test failure, print relevant log data to stdout "
-             "instead of just a path to it")
-    parser.add_argument("--log-file", metavar="FILENAME", action="store",
-                        help="log also to file")
-    parser.add_argument(
+    compare_group_option.add_argument(
         "-m", "--last-metrics", action="store_true",
         help="Instead of comparing metrics from the last --release, "
              "compare with the results of the previous twister "
              "invocation")
-    parser.add_argument(
-        "-u",
-        "--no-update",
-        action="store_true",
-        help="do not update the results of the last run of the twister run")
 
-    parser.add_argument(
+    platform_group_option.add_argument(
         "-G",
         "--integration",
         action="store_true",
         help="Run integration tests")
 
-    case_select.add_argument(
-        "-F",
-        "--load-tests",
-        metavar="FILENAME",
-        action="store",
-        help="Load list of tests and platforms to be run from file.")
-
-    parser.add_argument(
-        "--quarantine-list",
-        metavar="FILENAME",
-        help="Load list of test scenarios under quarantine. The entries in "
-             "the file need to correspond to the test scenarios names as in"
-             "corresponding tests .yaml files. These scenarios"
-             "will be skipped with quarantine as the reason")
-
-    parser.add_argument(
-        "--quarantine-verify",
-        action="store_true",
-        help="Use the list of test scenarios under quarantine and run them"
-             "to verify their current status")
-
-    case_select.add_argument(
-        "-E",
-        "--save-tests",
-        metavar="FILENAME",
-        action="store",
-        help="Append list of tests and platforms to be run to file.")
-
-    test_or_build = parser.add_mutually_exclusive_group()
-    test_or_build.add_argument(
-        "-b", "--build-only", action="store_true",
-        help="Only build the code, do not execute any of it in QEMU")
-
-    test_or_build.add_argument(
-        "--test-only", action="store_true",
-        help="""Only run device tests with current artifacts, do not build
-             the code""")
-
-    parser.add_argument(
-        "--cmake-only", action="store_true",
-        help="Only run cmake, do not build or run.")
-
-    parser.add_argument(
-        "--filter", choices=['buildable', 'runnable'],
-        default='buildable',
-        help="""Filter tests to be built and executed. By default everything is
-        built and if a test is runnable (emulation or a connected device), it
-        is run. This option allows for example to only build tests that can
-        actually be run. Runnable is a subset of buildable.""")
-
-
-    parser.add_argument(
-        "-M", "--runtime-artifact-cleanup", action="store_true",
-        help="Delete artifacts of passing tests.")
-
-    parser.add_argument(
-        "-j", "--jobs", type=int,
-        help="Number of jobs for building, defaults to number of CPU threads, "
-             "overcommited by factor 2 when --build-only")
-
-    parser.add_argument(
-        "--show-footprint", action="store_true",
-        help="Show footprint statistics and deltas since last release."
-    )
-    parser.add_argument(
-        "-H", "--footprint-threshold", type=float, default=5,
-        help="When checking test case footprint sizes, warn the user if "
-             "the new app size is greater then the specified percentage "
-             "from the last release. Default is 5. 0 to warn on any "
-             "increase on app size")
-    parser.add_argument(
-        "-D", "--all-deltas", action="store_true",
-        help="Show all footprint deltas, positive or negative. Implies "
-             "--footprint-threshold=0")
-    parser.add_argument(
-        "-O", "--outdir",
-        default=os.path.join(os.getcwd(), "twister-out"),
-        help="Output directory for logs and binaries. "
-             "Default is 'twister-out' in the current directory. "
-             "This directory will be cleaned unless '--no-clean' is set. "
-             "The '--clobber-output' option controls what cleaning does.")
-    parser.add_argument(
-        "-c", "--clobber-output", action="store_true",
-        help="Cleaning the output directory will simply delete it instead "
-             "of the default policy of renaming.")
-    parser.add_argument(
-        "-n", "--no-clean", action="store_true",
-        help="Re-use the outdir before building. Will result in "
-             "faster compilation since builds will be incremental.")
-    case_select.add_argument(
-        "-T", "--testcase-root", action="append", default=[],
-        help="Base directory to recursively search for test cases. All "
-             "testcase.yaml files under here will be processed. May be "
-             "called multiple times. Defaults to the 'samples/' and "
-             "'tests/' directories at the base of the Zephyr tree.")
-
-    board_root_list = ["%s/boards" % ZEPHYR_BASE,
-                       "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
-
-    parser.add_argument(
-        "-A", "--board-root", action="append", default=board_root_list,
-        help="""Directory to search for board configuration files. All .yaml
-files in the directory will be processed. The directory should have the same
-structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
-
-    parser.add_argument(
-        "-z", "--size", action="append",
-        help="Don't run twister. Instead, produce a report to "
-             "stdout detailing RAM/ROM sizes on the specified filenames. "
-             "All other command line arguments ignored.")
-    parser.add_argument(
-        "-S", "--enable-slow", action="store_true",
-        help="Execute time-consuming test cases that have been marked "
-             "as 'slow' in testcase.yaml. Normally these are only built.")
-
-    parser.add_argument(
-        "-K", "--force-platform", action="store_true",
-        help="""Force testing on selected platforms,
-        even if they are excluded in the test configuration (testcase.yaml)"""
-    )
-
-    parser.add_argument(
-        "--disable-unrecognized-section-test", action="store_true",
-        default=False,
-        help="Skip the 'unrecognized section' test.")
-    parser.add_argument("-R", "--enable-asserts", action="store_true",
-                        default=True,
-                        help="deprecated, left for compatibility")
-    parser.add_argument("--disable-asserts", action="store_false",
-                        dest="enable_asserts",
-                        help="deprecated, left for compatibility")
-    parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
-                        help="Error on deprecation warnings.")
-    parser.add_argument("--enable-size-report", action="store_true",
-                        help="Enable expensive computation of RAM/ROM segment sizes.")
-
-    parser.add_argument(
-        "-x", "--extra-args", action="append", default=[],
-        help="""Extra CMake cache entries to define when building test cases.
-        May be called multiple times. The key-value entries will be
-        prefixed with -D before being passed to CMake.
-
-        E.g
-        "twister -x=USE_CCACHE=0"
-        will translate to
-        "cmake -DUSE_CCACHE=0"
-
-        which will ultimately disable ccache.
-        """
-    )
-
-    parser.add_argument(
+    platform_group_option.add_argument(
         "--emulation-only", action="store_true",
         help="Only build and run emulation platforms")
 
-    parser.add_argument(
+    run_group_option.add_argument(
         "--device-testing", action="store_true",
         help="Test on device directly. Specify the serial device to "
              "use with the --device-serial option.")
 
-    parser.add_argument(
-        "-X", "--fixture", action="append", default=[],
-        help="Specify a fixture that a board might support")
+    run_group_option.add_argument("--generate-hardware-map",
+                        help="""Probe serial devices connected to this platform
+                        and create a hardware map file to be used with
+                        --device-testing
+                        """)
 
-    serial = parser.add_mutually_exclusive_group()
     serial.add_argument("--device-serial",
                         help="""Serial device for accessing the board
                         (e.g., /dev/ttyACM0)
@@ -636,11 +364,243 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         --device-serial-pty <script>
                         """)
 
-    parser.add_argument("--generate-hardware-map",
-                        help="""Probe serial devices connected to this platform
-                        and create a hardware map file to be used with
-                        --device-testing
+    serial.add_argument("--hardware-map",
+                        help="""Load hardware map from a file. This will be used
+                        for testing on hardware that is listed in the file.
                         """)
+
+    test_or_build.add_argument(
+        "-b", "--build-only", action="store_true",
+        help="Only build the code, do not execute any of it in QEMU")
+
+    test_or_build.add_argument(
+        "--test-only", action="store_true",
+        help="""Only run device tests with current artifacts, do not build
+             the code""")
+
+    test_xor_subtest.add_argument(
+        "-s", "--test", action="append",
+        help="Run only the specified test cases. These are named by "
+             "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
+
+    test_xor_subtest.add_argument(
+        "--sub-test", action="append",
+        help="""Recursively find sub-test functions and run the entire
+        test section where they were found, including all sibling test
+        functions. Sub-tests are named by:
+        section.name.in.testcase.yaml.function_name_without_test_prefix
+        Example: In kernel.fifo.fifo_loop: 'kernel.fifo' is a section name
+        and 'fifo_loop' is a name of a function found in main.c without test prefix.
+        """)
+
+    valgrind_asan_group.add_argument(
+        "--enable-valgrind", action="store_true",
+        help="""Run binary through valgrind and check for several memory access
+        errors. Valgrind needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and is mutual exclusive with --enable-asan.
+        """)
+
+    valgrind_asan_group.add_argument(
+        "--enable-asan", action="store_true",
+        help="""Enable address sanitizer to check for several memory access
+        errors. Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and is mutual exclusive with --enable-valgrind.
+        """)
+
+    # Start of individual args place them in alpha-beta order
+
+    board_root_list = ["%s/boards" % ZEPHYR_BASE,
+                       "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
+
+    parser.add_argument(
+        "-A", "--board-root", action="append", default=board_root_list,
+        help="""Directory to search for board configuration files. All .yaml
+files in the directory will be processed. The directory should have the same
+structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
+
+    parser.add_argument(
+        "-a", "--arch", action="append",
+        help="Arch filter for testing. Takes precedence over --platform. "
+             "If unspecified, test all arches. Multiple invocations "
+             "are treated as a logical 'or' relationship")
+
+    parser.add_argument(
+        "-B", "--subset",
+        help="Only run a subset of the tests, 1/4 for running the first 25%%, "
+             "3/5 means run the 3rd fifth of the total. "
+             "This option is useful when running a large number of tests on "
+             "different hosts to speed up execution time.")
+
+    parser.add_argument("-C", "--coverage", action="store_true",
+                        help="Generate coverage reports. Implies "
+                             "--enable-coverage.")
+
+    parser.add_argument(
+        "-c", "--clobber-output", action="store_true",
+        help="Cleaning the output directory will simply delete it instead "
+             "of the default policy of renaming.")
+
+    parser.add_argument(
+        "--cmake-only", action="store_true",
+        help="Only run cmake, do not build or run.")
+
+    parser.add_argument("--coverage-basedir", default=ZEPHYR_BASE,
+                        help="Base source directory for coverage report.")
+
+    parser.add_argument("--coverage-platform", action="append", default=[],
+                        help="Platforms to run coverage reports on. "
+                             "This option may be used multiple times. "
+                             "Default to what was selected with --platform.")
+
+    parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
+                        help="Tool to use to generate coverage report.")
+
+    parser.add_argument(
+        "-D", "--all-deltas", action="store_true",
+        help="Show all footprint deltas, positive or negative. Implies "
+             "--footprint-threshold=0")
+
+    parser.add_argument(
+        "--device-serial-baud", action="store", default=None,
+        help="Serial device baud rate (default 115200)")
+
+    parser.add_argument("--disable-asserts", action="store_false",
+                        dest="enable_asserts",
+                        help="deprecated, left for compatibility")
+
+    parser.add_argument(
+        "--disable-unrecognized-section-test", action="store_true",
+        default=False,
+        help="Skip the 'unrecognized section' test.")
+
+    parser.add_argument("-e", "--exclude-tag", action="append",
+                        help="Specify tags of tests that should not run. "
+                             "Default is to run all tests with all tags.")
+
+    parser.add_argument("--enable-coverage", action="store_true",
+                        help="Enable code coverage using gcov.")
+
+    parser.add_argument(
+        "--enable-lsan", action="store_true",
+        help="""Enable leak sanitizer to check for heap memory leaks.
+        Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and when --enable-asan is given.
+        """)
+
+    parser.add_argument(
+        "--enable-ubsan", action="store_true",
+        help="""Enable undefined behavior sanitizer to check for undefined
+        behaviour during program execution. It uses an optional runtime library
+        to provide better error diagnostics. This option only works with host
+        binaries such as those generated for the native_posix configuration.
+        """)
+
+    parser.add_argument("--enable-size-report", action="store_true",
+                        help="Enable expensive computation of RAM/ROM segment sizes.")
+
+    parser.add_argument("--export-tests", action="store",
+                        metavar="FILENAME",
+                        help="Export tests case meta-data to a file in CSV format."
+                             "Test instances can be exported per target by supplying "
+                             "the platform name using --platform option. (tests for only "
+                             " one platform can be exported at a time)")
+
+    parser.add_argument(
+        "--filter", choices=['buildable', 'runnable'],
+        default='buildable',
+        help="""Filter tests to be built and executed. By default everything is
+        built and if a test is runnable (emulation or a connected device), it
+        is run. This option allows for example to only build tests that can
+        actually be run. Runnable is a subset of buildable.""")
+
+    parser.add_argument("--force-toolchain", action="store_true",
+                        help="Do not filter based on toolchain, use the set "
+                             " toolchain unconditionally")
+
+    parser.add_argument("--gcov-tool", default=None,
+                        help="Path to the gcov tool to use for code coverage "
+                             "reports")
+
+    parser.add_argument(
+        "-H", "--footprint-threshold", type=float, default=5,
+        help="When checking test case footprint sizes, warn the user if "
+             "the new app size is greater then the specified percentage "
+             "from the last release. Default is 5. 0 to warn on any "
+             "increase on app size.")
+
+    parser.add_argument(
+        "-i", "--inline-logs", action="store_true",
+        help="Upon test failure, print relevant log data to stdout "
+             "instead of just a path to it.")
+
+    parser.add_argument(
+        "-j", "--jobs", type=int,
+        help="Number of jobs for building, defaults to number of CPU threads, "
+             "overcommited by factor 2 when --build-only.")
+
+    parser.add_argument(
+        "--json-report", action="store_true",
+        help="""Generate a JSON file with all test results. [Experimental]
+        """)
+
+    parser.add_argument(
+        "-K", "--force-platform", action="store_true",
+        help="""Force testing on selected platforms,
+        even if they are excluded in the test configuration (testcase.yaml)."""
+    )
+
+    parser.add_argument(
+        "-l", "--all", action="store_true",
+        help="Build/test on all platforms. Any --platform arguments "
+             "ignored.")
+
+    parser.add_argument("--list-tags", action="store_true",
+                        help="List all tags occurring in selected tests.")
+
+    parser.add_argument("--log-file", metavar="FILENAME", action="store",
+                        help="Specify a file where to save logs.")
+
+    parser.add_argument(
+        "-M", "--runtime-artifact-cleanup", action="store_true",
+        help="Delete artifacts of passing tests.")
+
+    parser.add_argument(
+        "-N", "--ninja", action="store_true",
+        help="Use the Ninja generator with CMake.")
+
+    parser.add_argument(
+        "-n", "--no-clean", action="store_true",
+        help="Re-use the outdir before building. Will result in "
+             "faster compilation since builds will be incremental.")
+
+    parser.add_argument(
+        "-O", "--outdir",
+        default=os.path.join(os.getcwd(), "twister-out"),
+        help="Output directory for logs and binaries. "
+             "Default is 'twister-out' in the current directory. "
+             "This directory will be cleaned unless '--no-clean' is set. "
+             "The '--clobber-output' option controls what cleaning does.")
+
+    parser.add_argument(
+        "-o", "--report-dir",
+        help="""Output reports containing results of the test run into the
+        specified directory.
+        The output will be both in CSV and JUNIT format
+        (twister.csv and twister.xml).
+        """)
+
+    parser.add_argument("--overflow-as-errors", action="store_true",
+                        help="Treat RAM/SRAM overflows as errors.")
+
+
+    parser.add_argument("-P", "--exclude-platform", action="append", default=[],
+            help="""Exclude platforms and do not build or run any tests
+            on those platforms. This option can be called multiple times.
+            """
+            )
 
     parser.add_argument("--persistent-hardware-map", action='store_true',
                         help="""With --generate-hardware-map, tries to use
@@ -648,15 +608,113 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         that support this feature (currently only Linux).
                         """)
 
-    parser.add_argument("--hardware-map",
-                        help="""Load hardware map from a file. This will be used
-                        for testing on hardware that is listed in the file.
-                        """)
+    parser.add_argument(
+        "-p", "--platform", action="append",
+        help="Platform filter for testing. This option may be used multiple "
+             "times. Testcases will only be built/run on the platforms "
+             "specified. If this option is not used, then platforms marked "
+             "as default in the platform metadata file will be chosen "
+             "to build and test. ")
+
+    parser.add_argument(
+        "--platform-reports", action="store_true",
+        help="""Create individual reports for each platform.
+        """)
 
     parser.add_argument("--pre-script",
                         help="""specify a pre script. This will be executed
                         before device handler open serial port and invoke runner.
                         """)
+
+    parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
+                        help="Error on deprecation warnings.")
+
+    parser.add_argument(
+        "--quarantine-list",
+        metavar="FILENAME",
+        help="Load list of test scenarios under quarantine. The entries in "
+             "the file need to correspond to the test scenarios names as in "
+             "corresponding tests .yaml files. These scenarios "
+             "will be skipped with quarantine as the reason.")
+
+    parser.add_argument(
+        "--quarantine-verify",
+        action="store_true",
+        help="Use the list of test scenarios under quarantine and run them"
+             "to verify their current status.")
+
+    parser.add_argument("-R", "--enable-asserts", action="store_true",
+                        default=True,
+                        help="deprecated, left for compatibility")
+
+    parser.add_argument(
+        "-r", "--release", action="store_true",
+        help="Update the benchmark database with the results of this test "
+             "run. Intended to be run by CI when tagging an official "
+             "release. This database is used as a basis for comparison "
+             "when looking for deltas in metrics such as footprint.")
+
+    parser.add_argument("--report-excluded",
+                        action="store_true",
+                        help="""List all tests that are never run based on current scope and
+            coverage. If you are looking for accurate results, run this with
+            --all, but this will take a while...""")
+
+    parser.add_argument(
+        "--report-name",
+        help="""Create a report with a custom name.
+        """)
+
+    parser.add_argument(
+        "--report-suffix",
+        help="""Add a suffix to all generated file names, for example to add a
+        version or a commit ID.
+        """)
+
+    parser.add_argument(
+        "--retry-failed", type=int, default=0,
+        help="Retry failing tests again, up to the number of times specified.")
+
+    parser.add_argument(
+        "--retry-interval", type=int, default=60,
+        help="Retry failing tests after specified period of time.")
+
+    parser.add_argument(
+        "-S", "--enable-slow", action="store_true",
+        help="Execute time-consuming test cases that have been marked "
+             "as 'slow' in testcase.yaml. Normally these are only built.")
+
+    parser.add_argument(
+        "--show-footprint", action="store_true",
+        help="Show footprint statistics and deltas since last release."
+    )
+
+    parser.add_argument(
+        "-t", "--tag", action="append",
+        help="Specify tags to restrict which tests to run by tag value. "
+             "Default is to not do any tag filtering. Multiple invocations "
+             "are treated as a logical 'or' relationship.")
+
+    parser.add_argument("--timestamps",
+                        action="store_true",
+                        help="Print all messages with time stamps.")
+
+    parser.add_argument(
+        "-u",
+        "--no-update",
+        action="store_true",
+         help="Do not update the results of the last run of twister.")
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Emit debugging information, call multiple times to increase "
+             "verbosity.")
+
+    parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
+                        help="Treat warning conditions as errors.")
 
     parser.add_argument(
         "--west-flash", nargs='?', const=[],
@@ -683,61 +741,36 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         """
     )
 
-    valgrind_asan_group = parser.add_mutually_exclusive_group()
+    parser.add_argument(
+        "-X", "--fixture", action="append", default=[],
+        help="Specify a fixture that a board might support.")
 
-    valgrind_asan_group.add_argument(
-        "--enable-valgrind", action="store_true",
-        help="""Run binary through valgrind and check for several memory access
-        errors. Valgrind needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
-        configuration and is mutual exclusive with --enable-asan.
-        """)
+    parser.add_argument(
+        "-x", "--extra-args", action="append", default=[],
+        help="""Extra CMake cache entries to define when building test cases.
+        May be called multiple times. The key-value entries will be
+        prefixed with -D before being passed to CMake.
+        E.g
+        "twister -x=USE_CCACHE=0"
+        will translate to
+        "cmake -DUSE_CCACHE=0"
+        which will ultimately disable ccache.
+        """
+    )
 
-    valgrind_asan_group.add_argument(
-        "--enable-asan", action="store_true",
-        help="""Enable address sanitizer to check for several memory access
-        errors. Libasan needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
-        configuration and is mutual exclusive with --enable-valgrind.
+    parser.add_argument(
+        "-y", "--dry-run", action="store_true",
+        help="""Create the filtered list of test cases, but don't actually
+        run them. Useful if you're just interested in the discard report
+        generated for every run and saved in the specified output
+        directory (twister_discard.csv).
         """)
 
     parser.add_argument(
-        "--enable-lsan", action="store_true",
-        help="""Enable leak sanitizer to check for heap memory leaks.
-        Libasan needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
-        configuration and when --enable-asan is given.
-        """)
-
-    parser.add_argument(
-        "--enable-ubsan", action="store_true",
-        help="""Enable undefined behavior sanitizer to check for undefined
-        behaviour during program execution. It uses an optional runtime library
-        to provide better error diagnostics. This option only works with host
-        binaries such as those generated for the native_posix configuration.
-        """)
-
-    parser.add_argument("--enable-coverage", action="store_true",
-                        help="Enable code coverage using gcov.")
-
-    parser.add_argument("-C", "--coverage", action="store_true",
-                        help="Generate coverage reports. Implies "
-                             "--enable-coverage.")
-
-    parser.add_argument("--coverage-platform", action="append", default=[],
-                        help="Plarforms to run coverage reports on. "
-                             "This option may be used multiple times. "
-                             "Default to what was selected with --platform.")
-
-    parser.add_argument("--gcov-tool", default=None,
-                        help="Path to the gcov tool to use for code coverage "
-                             "reports")
-
-    parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
-                        help="Tool to use to generate coverage report.")
-
-    parser.add_argument("--coverage-basedir", default=ZEPHYR_BASE,
-                        help="Base source directory for coverage report.")
+        "-z", "--size", action="append",
+        help="Don't run twister. Instead, produce a report to "
+             "stdout detailing RAM/ROM sizes on the specified filenames. "
+             "All other command line arguments ignored.")
 
     return parser.parse_args()
 
@@ -835,6 +868,10 @@ def main():
     if not options.coverage_platform:
         options.coverage_platform = options.platform
 
+    if options.device_serial_pty and os.name == "nt":  # OS is Windows
+        logger.error("--device-serial-pty is not supported on Windows OS")
+        sys.exit(1)
+
     if options.size:
         for fn in options.size:
             size_report(SizeCalculator(fn, []))
@@ -925,9 +962,11 @@ def main():
             if options.platform and len(options.platform) == 1:
                 if options.device_serial:
                     hwm.add_device(options.device_serial,
-                                                 options.platform[0],
-                                                 options.pre_script,
-                                                 False)
+                                   options.platform[0],
+                                   options.pre_script,
+                                   False,
+                                   baud=options.device_serial_baud
+                                   )
                 else:
                     hwm.add_device(options.device_serial_pty,
                                                  options.platform[0],
@@ -1172,11 +1211,13 @@ def main():
 
         sliced_instances = islice(to_run.items(), start, end)
         skipped = {k : v for k,v in suite.instances.items() if v.status == 'skipped'}
+        errors = {k : v for k,v in suite.instances.items() if v.status == 'error'}
         suite.instances = OrderedDict(sliced_instances)
         if subset == 1:
-            # add all pre-filtered tests that are skipped to the first set to
-            # allow for better distribution among all sets.
+            # add all pre-filtered tests that are skipped or got error status
+            # to the first set to allow for better distribution among all sets.
             suite.instances.update(skipped)
+            suite.instances.update(errors)
 
     if options.save_tests:
         suite.csv_report(options.save_tests)
@@ -1314,5 +1355,6 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        if os.isatty(1): # stdout is interactive
+        if (os.name != "nt") and os.isatty(1):
+            # (OS is not Windows) and (stdout is interactive)
             os.system("stty sane")

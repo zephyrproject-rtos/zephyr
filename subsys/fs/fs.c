@@ -14,7 +14,6 @@
 #include <fs/fs.h>
 #include <fs/fs_sys.h>
 #include <sys/check.h>
-#include <sys/stat.h>
 
 
 #define LOG_LEVEL CONFIG_FS_LOG_LEVEL
@@ -134,9 +133,6 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
 
-	/* COpy flags to zfp for use with other fs_ API calls */
-	zfp->flags = flags;
-
 	if ((file_name == NULL) ||
 			(strlen(file_name) <= 1) || (file_name[0] != '/')) {
 		LOG_ERR("invalid file name!!");
@@ -169,6 +165,9 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		zfp->mp = NULL;
 		return rc;
 	}
+
+	/* Copy flags to zfp for use with other fs_ API calls */
+	zfp->flags = flags;
 
 	return rc;
 }
@@ -324,7 +323,7 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) < 1) || (abs_path[0] != '/')) {
-		LOG_ERR("invalid file name!!");
+		LOG_ERR("invalid directory name!!");
 		return -EINVAL;
 	}
 
@@ -480,7 +479,7 @@ int fs_mkdir(const char *abs_path)
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
-		LOG_ERR("invalid file name!!");
+		LOG_ERR("invalid directory name!!");
 		return -EINVAL;
 	}
 
@@ -586,7 +585,7 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
-		LOG_ERR("invalid file name!!");
+		LOG_ERR("invalid file or dir name!!");
 		return -EINVAL;
 	}
 
@@ -616,7 +615,7 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
-		LOG_ERR("invalid file name!!");
+		LOG_ERR("invalid file or dir name!!");
 		return -EINVAL;
 	}
 
@@ -626,11 +625,13 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 		return rc;
 	}
 
-	if (mp->fs->statvfs != NULL) {
-		rc = mp->fs->statvfs(mp, abs_path, stat);
-		if (rc < 0) {
-			LOG_ERR("failed get file or dir stat (%d)", rc);
-		}
+	CHECKIF(mp->fs->statvfs == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->statvfs(mp, abs_path, stat);
+	if (rc < 0) {
+		LOG_ERR("failed get file or dir stat (%d)", rc);
 	}
 
 	return rc;

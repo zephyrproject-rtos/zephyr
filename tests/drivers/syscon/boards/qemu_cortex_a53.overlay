@@ -18,7 +18,7 @@
 	syscon: syscon@42000000 {
 		compatible = "syscon";
 		status = "okay";
-		reg = <0x42000000 0x8>;
+		reg = <0 0x42000000 0 0x8>;
 		reg-io-width = <1>;
 	};
 };

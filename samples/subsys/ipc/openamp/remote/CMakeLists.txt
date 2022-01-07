@@ -9,7 +9,7 @@ if(("${BOARD}" STREQUAL "lpcxpresso54114_m0")
 	OR "${BOARD}" STREQUAL "lpcxpresso55s69_cpu1"
 	OR "${BOARD}" STREQUAL "mps2_an521_remote"
 	OR "${BOARD}" STREQUAL "v2m_musca_b1_ns")
-	message(INFO " ${BOARD} compiles as remote in this sample")
+	message(STATUS "${BOARD} compiles as remote in this sample")
 else()
 	message(FATAL_ERROR "${BOARD} was not supported for this sample")
 endif()

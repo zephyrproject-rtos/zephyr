@@ -30,6 +30,14 @@ config MGMT_CBORATTR_MAX_SIZE
         help
           The maximum size of a CBOR attribute during decoding
 
+config MGMT_CBORATTR_FLOAT_SUPPORT
+	bool "Enable support for float"
+	help
+	  The option enables float processing within CBOR attributes.
+	  If your code requires processing of float numbers by CBOR,
+	  the option needs to be enabled.
+	  Disabling the option slightly reduces code footprint.
+
 menu "Command Handlers"
 menuconfig MCUMGR_CMD_FS_MGMT
 	bool "Enable mcumgr handlers for file management (insecure)"
@@ -156,6 +164,17 @@ config IMG_MGMT_UL_CHUNK_SIZE
 	  this size gets allocated on the stack during handling of a image upload
 	  command.
 
+config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
+	int "Number of supported images"
+	default UPDATEABLE_IMAGE_NUMBER
+	range 1 2
+	help
+	  Sets how many application images are supported (pairs of secondary and primary slots).
+	  Setting this to 2 requires MCUMGR_BUF_SIZE to be at least 512b.
+	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
+	  needs to be set to the same value; this is due to the fact that the mcumgr uses
+	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
+	  by that library.
 
 config IMG_MGMT_VERBOSE_ERR
 	bool "Verbose logging when uploading a new image"
@@ -190,6 +209,14 @@ config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	  The base address can be set, to an image binary header, with imgtool,
 	  using the --rom-fixed command line option.
 
+config IMG_MGMT_FRUGAL_LIST
+	bool "Omit zero, empty or false values from status list"
+	help
+	  The status list send back from the device will only be filled with data that is non-zero,
+	  non-empty or true.  This option slightly reduces number of bytes transferred back from
+	  a device but requires support in client software, which has to default omitted values.
+	  Works correctly with mcumgr-cli.
+
 endif
 
 
@@ -210,7 +237,22 @@ config OS_MGMT_RESET_MS
 
 config OS_MGMT_TASKSTAT
 	bool "Support for taskstat command"
+	depends on THREAD_MONITOR
+
+if OS_MGMT_TASKSTAT
+
+config OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
+	bool "Send only data gathered by Zephyr"
 	default y
+	help
+	  Response will not include fields the Zephyr does not collect statistic for.
+	  Enable this if your client software is able to process "taskstat" response
+	  that would be missing "runtime", "cswcnt", "last_checkin" and "next_checkin"
+	  map entries for each listed task.
+	  Enabling this option will slightly reduce code size.
+
+endif
+
 
 config OS_MGMT_ECHO
 	bool "Support for echo command"
@@ -263,15 +305,63 @@ config MCUMGR_SMP_BT
 	help
 	  Enables handling of SMP commands received over Bluetooth.
 
+if MCUMGR_SMP_BT
+
 config MCUMGR_SMP_BT_AUTHEN
 	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
-	depends on MCUMGR_SMP_BT
 	select BT_SMP
 	default y
 	help
 	  Enables encrypted and authenticated connection requirement to
 	  Bluetooth SMP transport.
 
+config MCUMGR_SMP_BT_LATENCY_CONTROL
+	bool "Request low latency connection when handling SMP commands"
+	depends on SYSTEM_WORKQUEUE_PRIORITY < 0
+	help
+	  Enables support for requesting low latency connection parameter when
+	  SMP commands are handled. This option allows to speed up the command
+	  exchange process.
+	  Its recommended to enable this if SMP is used for DFU.
+
+config MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY
+	int "Default value for connection latency"
+	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
+	default BT_PERIPHERAL_PREF_LATENCY if BT_GAP_PERIPHERAL_PREF_PARAMS
+	default 99
+	range 0 499
+	help
+	  The value is a default connection latency that is used when restoring
+	  from low latency mode.
+
+config MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_TIME
+	int "Connection latency restore time in milliseconds"
+	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
+	default 5000
+	range 1 65535
+	help
+	  The value is a time after which connection latency is restored
+	  to default value
+	  (:kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY`). Latency
+	  restoration time could take up to twice as long as specified time.
+	  This is because of limiting CPU time needed to support this feature.
+	  The implementation periodically checks if the low latency is still
+	  needed every :kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_TIME`.
+	  The default latency is restored during check only if there was no SMP
+	  command exchanged in period before the check
+
+config MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_RETRY_TIME
+	int "Connection latency restore retry time in milliseconds"
+	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
+	default 1000
+	range 1 5000
+	help
+	  In case connection latency restoration fails due to an error, this
+	  option specifies the time after retry to set the default latency
+	  (:kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY`) would be
+	  executed.
+
+endif # MCUMGR_SMP_BT
 
 config MCUMGR_SMP_SHELL
 	bool "Shell mcumgr SMP transport"
@@ -432,7 +522,4 @@ config MCUMGR_BUF_USER_DATA_SIZE
 	  Different mcumgr transports impose different requirements for this
 	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
 	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
-
-	  Note that CONFIG_NET_BUF_USER_DATA_SIZE must be at least as big as
-	  MCUMGR_BUF_USER_DATA_SIZE.
 endif # MCUMGR

@@ -1,0 +1,30 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    drdy-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        DRDY pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
+
+    odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+          Specify the default output data rate expressed in samples per second (Hz).
+          Default is power-down mode
+      enum:
+        - 0  # Power-Down
+        - 1  # 1Hz
+        - 2  # 10Hz
+        - 3  # 25Hz
+        - 4  # 50Hz
+        - 5  # 75Hz
+        - 6  # 100Hz
+        - 7  # 200Hz

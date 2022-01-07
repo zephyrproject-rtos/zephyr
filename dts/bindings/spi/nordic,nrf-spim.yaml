@@ -17,3 +17,11 @@ properties:
       type: boolean
       required: false
       description: Enable pull-down on MISO line
+
+    anomaly-58-workaround:
+      type: boolean
+      required: false
+      description: |
+        Enables the workaround for the nRF52832 SoC SPIM PAN 58 anomaly.
+        Must be used in conjunction with
+        CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58=y

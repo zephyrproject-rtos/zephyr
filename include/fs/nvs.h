@@ -34,26 +34,23 @@ extern "C" {
  * @brief Non-volatile Storage File system structure
  *
  * @param offset File system offset in flash
- * @param ate_wra: Allocation table entry write address. Addresses are stored
- * as uint32_t: high 2 bytes are sector, low 2 bytes are offset in sector,
- * @param data_wra: Data write address.
- * @param sector_size File system is divided into sectors each sector should be
- * multiple of pagesize
- * @param sector_count Amount of sectors in the file systems
- * @param write_block_size Alignment size
+ * @param ate_wra Allocation table entry write address. Addresses are stored as uint32_t:
+ * high 2 bytes correspond to the sector, low 2 bytes are the offset in the sector
+ * @param data_wra Data write address
+ * @param sector_size File system is split into sectors, each sector must be multiple of pagesize
+ * @param sector_count Number of sectors in the file systems
+ * @param ready Flag indicating if the filesystem is initialized
  * @param nvs_lock Mutex
- * @param flash_device Flash Device
+ * @param flash_device Flash Device runtime structure
+ * @param flash_parameters Flash memory parameters structure
  */
 struct nvs_fs {
-	off_t offset;		/* filesystem offset in flash */
-	uint32_t ate_wra;		/* next alloc table entry write address */
-	uint32_t data_wra;		/* next data write address */
-	uint16_t sector_size;	/* filesystem is divided into sectors,
-				 * sector size should be multiple of pagesize
-				 */
-	uint16_t sector_count;	/* amount of sectors in the filesystem */
-	bool ready;		/* is the filesystem initialized ? */
-
+	off_t offset;
+	uint32_t ate_wra;
+	uint32_t data_wra;
+	uint16_t sector_size;
+	uint16_t sector_count;
+	bool ready;
 	struct k_mutex nvs_lock;
 	const struct device *flash_device;
 	const struct flash_parameters *flash_parameters;
@@ -102,10 +99,10 @@ int nvs_clear(struct nvs_fs *fs);
  * @param data Pointer to the data to be written
  * @param len Number of bytes to be written
  *
- * @return Number of bytes written. On success, it will be equal to the number
- * of bytes requested to be written. On error returns -ERRNO code.
+ * @return Number of bytes written. On success, it will be equal to the number of bytes requested
+ * to be written. When a rewrite of the same data already stored is attempted, nothing is written
+ * to flash, thus 0 is returned. On error, returns negative value of errno.h defined error codes.
  */
-
 ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len);
 
 /**
@@ -130,10 +127,10 @@ int nvs_delete(struct nvs_fs *fs, uint16_t id);
  * @param data Pointer to data buffer
  * @param len Number of bytes to be read
  *
- * @return Number of bytes read. On success, it will be equal to the number
- * of bytes requested to be read. When the return value is larger than the
- * number of bytes requested to read this indicates not all bytes were read,
- * and more data is available. On error returns -ERRNO code.
+ * @return Number of bytes read. On success, it will be equal to the number of bytes requested
+ * to be read. When the return value is larger than the number of bytes requested to read this
+ * indicates not all bytes were read, and more data is available. On error, returns negative
+ * value of errno.h defined error codes.
  */
 ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
 
@@ -146,15 +143,14 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
  * @param id Id of the entry to be read
  * @param data Pointer to data buffer
  * @param len Number of bytes to be read
- * @param cnt History counter: 0: latest entry, 1:one before latest ...
+ * @param cnt History counter: 0: latest entry, 1: one before latest ...
  *
- * @return Number of bytes read. On success, it will be equal to the number
- * of bytes requested to be read. When the return value is larger than the
- * number of bytes requested to read this indicates not all bytes were read,
- * and more data is available. On error returns -ERRNO code.
+ * @return Number of bytes read. On success, it will be equal to the number of bytes requested
+ * to be read. When the return value is larger than the number of bytes requested to read this
+ * indicates not all bytes were read, and more data is available. On error, returns negative
+ * value of errno.h defined error codes.
  */
-ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
-		  uint16_t cnt);
+ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, uint16_t cnt);
 
 /**
  * @brief nvs_calc_free_space
@@ -163,10 +159,9 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
  *
  * @param fs Pointer to file system
  *
- * @return Number of bytes free. On success, it will be equal to the number
- * of bytes that can still be written to the file system. Calculating the
- * free space is a time consuming operation, especially on spi flash.
- * On error returns -ERRNO code.
+ * @return Number of bytes free. On success, it will be equal to the number of bytes that can
+ * still be written to the file system. Calculating the free space is a time consuming operation,
+ * especially on spi flash. On error, returns negative value of errno.h defined error codes.
  */
 ssize_t nvs_calc_free_space(struct nvs_fs *fs);
 

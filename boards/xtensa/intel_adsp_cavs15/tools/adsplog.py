@@ -28,7 +28,7 @@ import mmap
 # data, followed a 16 bit "ID" number, followed by a null-terminated
 # string in the final 60 bytes (or 60 non-null bytes of log data).
 # The DSP firmware will write sequential IDs into the buffer starting
-# from an ID of zero in the first slot, and wrapping at the end.
+# from an ID of '1' in the 0th slot, and wrapping at the end.
 
 MAP_SIZE = 8192
 SLOT_SIZE = 64
@@ -61,8 +61,14 @@ for dev_addr in os.listdir(sys_devices):
         barfile = sys_devices + "/" + dev_addr + "/resource4"
 
         fd = open(barfile)
-        mem = mmap.mmap(fd.fileno(), MAP_SIZE, offset=LOG_OFFSET,
-                    prot=mmap.PROT_READ)
+        try:
+            mem = mmap.mmap(fd.fileno(), MAP_SIZE, offset=LOG_OFFSET,
+                            prot=mmap.PROT_READ)
+        except OSError as ose:
+            sys.stderr.write("""\
+mmap failed! If CONFIG IO_STRICT_DEVMEM is set then you must unload the kernel driver.
+""")
+            raise ose
         break
 
 if mem is None:
@@ -105,10 +111,10 @@ def read_hist(start_slot):
     # be a hardware bug).
     if start_slot == 0 and id0 < 0:
         if not reset_logged:
-            sys.stdout.write("===\n=== [ADSP Device Reset?]\n===\n")
+            sys.stdout.write("===\n=== [Invalid slot 0; ADSP Device Reset?]\n===\n")
             sys.stdout.flush()
         reset_logged = True
-        time.sleep(0.1)
+        time.sleep(1)
         return (0, 0, "")
 
     reset_logged = False

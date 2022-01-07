@@ -219,10 +219,10 @@
 	SECTION_DATA_PROLOGUE(device_handles,,)
 	{
 		__device_handles_start = .;
-#ifdef LINKER_ZEPHYR_FINAL
-		KEEP(*(SORT(.__device_handles_pass2*)));
-#else /* LINKER_ZEPHYR_FINAL */
+#ifdef LINKER_DEVICE_HANDLES_PASS1
 		KEEP(*(SORT(.__device_handles_pass1*)));
-#endif /* LINKER_ZEPHYR_FINAL */
+#else
+		KEEP(*(SORT(.__device_handles_pass2*)));
+#endif /* LINKER_DEVICE_HANDLES_PASS1 */
 		__device_handles_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

@@ -16,9 +16,13 @@
 	chosen {
 		zephyr,sram = &sdram0;
 		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
-		zephyr,can-primary = &flexcan3;
+		zephyr,canbus = &flexcan3;
+		zephyr,flash-controller = &flexspi;
+		zephyr,flash = &is25wp128;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	sdram0: memory@80000000 {
@@ -42,19 +46,74 @@
 	status = "okay";
 };
 
-&flexspi1 {
+&lpi2c1 {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
 	is25wp128: is25wp128@0 {
-		compatible = "issi,is25wp128", "jedec,spi-nor";
+		compatible = "nxp,imx-flexspi-nor";
 		size = <134217728>;
 		label = "IS25WP128";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
 		jedec-id = [9d 70 17];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(64)>;
+			};
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x00010000 DT_SIZE_M(3)>;
+			};
+			slot1_partition: partition@310000 {
+				label = "image-1";
+				reg = <0x00310000 DT_SIZE_M(3)>;
+			};
+			scratch_partition: partition@610000 {
+				label = "image-scratch";
+				reg = <0x00610000 DT_SIZE_K(128)>;
+			};
+			storage_partition: partition@630000 {
+				label = "storage";
+				reg = <0x00630000 DT_SIZE_K(1856)>;
+			};
+		};
 	};
 };
 
 &lpadc0 {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	no-1-8-v;
+	detect-dat3;
+	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
+};
+
+&edma0 {
+	status = "okay";
+};
+
+/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
+ * to use systick, change this node from "gpt_hw_timer" to "systick"
+ */
+&gpt_hw_timer {
 	status = "okay";
 };

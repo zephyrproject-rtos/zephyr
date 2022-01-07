@@ -32,19 +32,22 @@ struct lfs_file_data {
 #define LFS_FILEP(fp) (&((struct lfs_file_data *)(fp->filep))->file)
 
 /* Global memory pool for open files and dirs */
-static K_MEM_SLAB_DEFINE(file_data_pool, sizeof(struct lfs_file_data),
+K_MEM_SLAB_DEFINE_STATIC(file_data_pool, sizeof(struct lfs_file_data),
 			 CONFIG_FS_LITTLEFS_NUM_FILES, 4);
-static K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
+K_MEM_SLAB_DEFINE_STATIC(lfs_dir_pool, sizeof(struct lfs_dir),
 			 CONFIG_FS_LITTLEFS_NUM_DIRS, 4);
 
 /* Inferred overhead, in bytes, for each k_heap_aligned allocation for
  * the filecache heap.  This relates to the CHUNK_UNIT parameter in
  * the heap implementation, but that value is not visible outside the
  * kernel.
+ * FIXME: value for this macro should be rather taken from the Kernel
+ * internals than set by user, but we do not have a way to do so now.
  */
-#define FC_HEAP_PER_ALLOC_OVERHEAD 24U
+#define FC_HEAP_PER_ALLOC_OVERHEAD CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE
 
 #if (CONFIG_FS_LITTLEFS_FC_HEAP_SIZE - 0) <= 0
+BUILD_ASSERT((CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE % 8) == 0);
 /* Auto-generate heap size from cache size and number of files */
 #undef CONFIG_FS_LITTLEFS_FC_HEAP_SIZE
 #define CONFIG_FS_LITTLEFS_FC_HEAP_SIZE						\
@@ -569,6 +572,11 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	LOG_INF("LittleFS version %u.%u, disk version %u.%u",
 		LFS_VERSION_MAJOR, LFS_VERSION_MINOR,
 		LFS_DISK_VERSION_MAJOR, LFS_DISK_VERSION_MINOR);
+
+	if (mountp->flags & FS_MOUNT_FLAG_USE_DISK_ACCESS) {
+		LOG_DBG("LittleFS does not support Disk Access API");
+		return -ENOTSUP;
+	}
 
 	if (fs->area) {
 		return -EBUSY;

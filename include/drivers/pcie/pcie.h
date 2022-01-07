@@ -124,17 +124,22 @@ extern bool pcie_probe_mbar(pcie_bdf_t bdf,
  */
 extern void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on);
 
+#ifndef CONFIG_PCIE_CONTROLLER
 /**
  * @brief Allocate an IRQ for an endpoint.
  *
  * This function first checks the IRQ register and if it contains a valid
  * value this is returned. If the register does not contain a valid value
  * allocation of a new one is attempted.
+ * Such function is only exposed if CONFIG_PCIE_CONTROLLER is unset.
+ * It is thus available where architecture tied dynamic IRQ allocation for
+ * PCIe device makes sense.
  *
  * @param bdf the PCI(e) endpoint
  * @return the IRQ number, or PCIE_CONF_INTR_IRQ_NONE if allocation failed.
  */
 extern unsigned int pcie_alloc_irq(pcie_bdf_t bdf);
+#endif /* CONFIG_PCIE_CONTROLLER */
 
 /**
  * @brief Return the IRQ assigned by the firmware/board to an endpoint.
@@ -243,6 +248,7 @@ extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
 #define PCIE_CONF_TYPE		3U
 
+#define PCIE_CONF_MULTIFUNCTION(w)	(((w) & 0x00800000U) != 0U)
 #define PCIE_CONF_TYPE_BRIDGE(w)	(((w) & 0x007F0000U) != 0U)
 
 /*
@@ -262,6 +268,7 @@ extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 #define PCIE_CONF_BAR_MEM(w)		(((w) & 0x00000001U) != 0x00000001U)
 #define PCIE_CONF_BAR_64(w)		(((w) & 0x00000006U) == 0x00000004U)
 #define PCIE_CONF_BAR_ADDR(w)		((w) & ~0xfUL)
+#define PCIE_CONF_BAR_IO_ADDR(w)	((w) & ~0x3UL)
 #define PCIE_CONF_BAR_FLAGS(w)		((w) & 0xfUL)
 #define PCIE_CONF_BAR_NONE		0U
 

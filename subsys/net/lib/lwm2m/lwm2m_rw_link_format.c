@@ -9,6 +9,7 @@
 
 #include "lwm2m_engine.h"
 #include "lwm2m_rw_link_format.h"
+#include "lwm2m_util.h"
 
 LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
 
@@ -158,9 +159,7 @@ static int put_corelink_attributes(struct lwm2m_output_context *out,
 				   uint16_t buflen)
 {
 	struct lwm2m_attr *attr = NULL;
-	int used, base, ret;
-	uint8_t digit;
-	int32_t fraction;
+	int used, ret;
 	int len = 0;
 
 	while ((attr = lwm2m_engine_get_next_attr(ref, attr)) != NULL) {
@@ -171,25 +170,22 @@ static int put_corelink_attributes(struct lwm2m_output_context *out,
 			continue;
 		}
 
-		/* Assuming integer will have float_val.val2 set as 0. */
-		used = snprintk(buf, buflen, ";%s=%s%d%s",
-				name,
-				attr->float_val.val1 == 0 &&
-				attr->float_val.val2 < 0 ? "-" : "",
-				attr->float_val.val1,
-				attr->float_val.val2 != 0 ? "." : "");
-		if (used < 0 || used >= buflen) {
-			return -ENOMEM;
+		if (attr->type <= LWM2M_ATTR_PMAX) {
+			used = snprintk(buf, buflen, ";%s=%d", name, attr->int_val);
+		} else {
+			uint8_t float_buf[32];
+
+			used = lwm2m_ftoa(&attr->float_val, float_buf,
+					  sizeof(float_buf), 4);
+			if (used < 0 || used >= sizeof(float_buf)) {
+				return -ENOMEM;
+			}
+
+			used = snprintk(buf, buflen, ";%s=%s", name, float_buf);
 		}
 
-		base = 100000;
-		fraction = attr->float_val.val2 < 0 ?
-			   -attr->float_val.val2 : attr->float_val.val2;
-		while (fraction && used < buflen && base > 0) {
-			digit = fraction / base;
-			buf[used++] = '0' + digit;
-			fraction -= digit * base;
-			base /= 10;
+		if (used < 0 || used >= buflen) {
+			return -ENOMEM;
 		}
 
 		len += used;

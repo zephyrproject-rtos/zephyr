@@ -205,8 +205,8 @@ Using RAM backend
 
 For devices that do not have available I/O for tracing such as USB or UART but have
 enough RAM to collect trace datas, the ram backend can be enabled with configuration
-`CONFIG_TRACING_BACKEND_RAM`.
-Adjust `CONFIG_RAM_TRACING_BUFFER_SIZE` to be able to record enough traces for your needs.
+:kconfig:`CONFIG_TRACING_BACKEND_RAM`.
+Adjust :kconfig:`CONFIG_RAM_TRACING_BUFFER_SIZE` to be able to record enough traces for your needs.
 Then thanks to a runtime debugger such as gdb this buffer can be fetched from the target
 to an host computer::
 
@@ -344,6 +344,41 @@ Locking may not be needed if multiple independent channels are available.
         ``emit(a ## b ## c, thread_id);``
 
 
+Object tracking
+***************
+
+The kernel can also maintain lists of objects that can be used to track
+their usage. Currently, the following lists can be enabled::
+
+  struct k_timer *_track_list_k_timer;
+  struct k_mem_slab *_track_list_k_mem_slab;
+  struct k_sem *_track_list_k_sem;
+  struct k_mutex *_track_list_k_mutex;
+  struct k_stack *_track_list_k_stack;
+  struct k_msgq *_track_list_k_msgq;
+  struct k_mbox *_track_list_k_mbox;
+  struct k_pipe *_track_list_k_pipe;
+  struct k_queue *_track_list_k_queue;
+
+Those global variables are the head of each list - they can be traversed
+with the help of macro ``SYS_PORT_TRACK_NEXT``. For instance, to traverse
+all initialized mutexes, one can write::
+
+  struct k_mutex *cur = _track_list_k_mutex;
+  while (cur != NULL) {
+    /* Do something */
+
+    cur = SYS_PORT_TRACK_NEXT(cur);
+  }
+
+To enable object tracking, enable :kconfig:`CONFIG_TRACING_OBJECT_TRACKING`.
+Note that each list can be enabled or disabled via their tracing
+configuration. For example, to disable tracking of semaphores, one can
+disable :kconfig:`CONFIG_TRACING_SEMAPHORE`.
+
+Object tracking is behind tracing configuration as it currently leverages
+tracing infrastructure to perform the tracking.
+
 API
 ***
 
@@ -351,85 +386,93 @@ API
 Common
 ======
 
-.. doxygengroup:: tracing_apis
+.. doxygengroup:: subsys_tracing_apis
 
 Threads
 =======
 
-.. doxygengroup:: thread_tracing_apis
-
+.. doxygengroup:: subsys_tracing_apis_thread
 
 Work Queues
 ===========
 
-.. doxygengroup:: work_tracing_apis
-
+.. doxygengroup:: subsys_tracing_apis_work
 
 Poll
 ====
 
-.. doxygengroup:: poll_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_poll
 
 Semaphore
 =========
 
-.. doxygengroup:: sem_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_sem
 
 Mutex
 =====
 
-.. doxygengroup:: mutex_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_mutex
 
 Condition Variables
 ===================
 
-.. doxygengroup:: condvar_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_condvar
 
 Queues
 ======
 
-.. doxygengroup:: queue_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_queue
 
 FIFO
 ====
 
-.. doxygengroup:: fifo_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_fifo
 
 LIFO
 ====
-.. doxygengroup:: lifo_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_lifo
 
 Stacks
 ======
 
-.. doxygengroup:: stack_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_stack
 
 Message Queues
 ==============
 
-.. doxygengroup:: msgq_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_msgq
 
 Mailbox
 =======
 
-.. doxygengroup:: mbox_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_mbox
 
 Pipes
 ======
 
-.. doxygengroup:: pipe_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_pipe
 
 Heaps
 =====
 
-.. doxygengroup:: heap_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_heap
 
 Memory Slabs
 ============
 
-.. doxygengroup:: mslab_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_mslab
 
 Timers
 ======
 
-.. doxygengroup:: timer_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_timer
+
+Object tracking
+===============
+
+.. doxygengroup:: subsys_tracing_object_tracking
+
+Syscalls
+========
+
+.. doxygengroup:: subsys_tracing_apis_syscall

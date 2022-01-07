@@ -168,7 +168,19 @@ def _node_reg_size(node, index, unit):
     return node.regs[int(index)].size >> _dt_units_to_scale(unit)
 
 
-def _node_int_prop(node, prop):
+def _node_int_prop(node, prop, unit=None):
+    """
+    This function takes a 'node' and  will look to see if that 'node' has a
+    property called 'prop' and if that 'prop' is an integer type will return
+    the value of the property 'prop' as either a string int or string hex
+    value, if not we return 0.
+
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+    """
     if not node:
         return 0
 
@@ -178,7 +190,7 @@ def _node_int_prop(node, prop):
     if node.props[prop].type != "int":
         return 0
 
-    return node.props[prop].val
+    return node.props[prop].val >> _dt_units_to_scale(unit)
 
 
 def _dt_chosen_reg_addr(kconf, chosen, index=0, unit=None):
@@ -349,15 +361,20 @@ def dt_node_has_prop(kconf, _, label, prop):
 
     return "n"
 
-def dt_node_int_prop(kconf, name, path, prop):
+def dt_node_int_prop(kconf, name, path, prop, unit=None):
     """
     This function takes a 'path' and property name ('prop') looks for an EDT
     node at that path. If it finds an EDT node, it will look to see if that
     node has a property called 'prop' and if that 'prop' is an integer type
     will return the value of the property 'prop' as either a string int or
     string hex value, if not we return 0.
-    """
 
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+    """
     if doc_mode or edt is None:
         return "0"
 
@@ -367,10 +384,36 @@ def dt_node_int_prop(kconf, name, path, prop):
         return "0"
 
     if name == "dt_node_int_prop_int":
-        return str(_node_int_prop(node, prop))
+        return str(_node_int_prop(node, prop, unit))
     if name == "dt_node_int_prop_hex":
-        return hex(_node_int_prop(node, prop))
+        return hex(_node_int_prop(node, prop, unit))
 
+def dt_node_str_prop_equals(kconf, _, path, prop, val):
+    """
+    This function takes a 'path' and property name ('prop') looks for an EDT
+    node at that path. If it finds an EDT node, it will look to see if that
+    node has a property 'prop' of type string. If that 'prop' is equal to 'val'
+    it will return "y" otherwise return "n".
+    """
+
+    if doc_mode or edt is None:
+        return "n"
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return "n"
+
+    if prop not in node.props:
+        return "n"
+
+    if node.props[prop].type != "string":
+        return "n"
+
+    if node.props[prop].val == val:
+        return "y"
+
+    return "n"
 
 def dt_compat_enabled(kconf, _, compat):
     """
@@ -472,8 +515,9 @@ functions = {
         "dt_node_reg_size_hex": (dt_node_reg, 1, 3),
         "dt_node_has_bool_prop": (dt_node_has_bool_prop, 2, 2),
         "dt_node_has_prop": (dt_node_has_prop, 2, 2),
-        "dt_node_int_prop_int": (dt_node_int_prop, 2, 2),
-        "dt_node_int_prop_hex": (dt_node_int_prop, 2, 2),
+        "dt_node_int_prop_int": (dt_node_int_prop, 2, 3),
+        "dt_node_int_prop_hex": (dt_node_int_prop, 2, 3),
+        "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),

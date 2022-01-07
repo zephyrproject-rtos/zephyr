@@ -94,6 +94,28 @@ arduino_serial: &lpuart4 {};
 	current-speed = <115200>;
 };
 
+&lpspi1 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+	dmas = <&edma0 0 13>, <&edma0 1 14>;
+	dma-names = "rx", "tx";
+};
+
 zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
+ * to use systick, change this node from "gpt_hw_timer" to "systick"
+ */
+&gpt_hw_timer {
 	status = "okay";
 };

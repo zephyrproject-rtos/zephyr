@@ -359,6 +359,12 @@ static int gpio_ite_configure(const struct device *dev,
 	__ASSERT(gpio_config->index < GPIO_GROUP_COUNT,
 		"Invalid GPIO group index");
 
+	/* Don't support "open source" mode */
+	if (((flags & GPIO_SINGLE_ENDED) != 0) &&
+	    ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) {
+		return -ENOTSUP;
+	}
+
 	/*
 	 * Select open drain first, so that we don't glitch the signal
 	 * when changing the line to an output.
@@ -596,8 +602,32 @@ DEVICE_DT_INST_DEFINE(inst,                                        \
 		NULL,                                              \
 		&gpio_ite_data_##inst,                             \
 		&gpio_ite_cfg_##inst,                              \
-		POST_KERNEL,                                       \
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,               \
+		PRE_KERNEL_1,                                       \
+		CONFIG_GPIO_INIT_PRIORITY,                         \
 		&gpio_ite_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ITE_DEV_CFG_DATA)
+
+static int gpio_it8xxx2_init_set(const struct device *arg)
+{
+	ARG_UNUSED(arg);
+
+	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN)) {
+		const struct device *gpiok = DEVICE_DT_GET(DT_NODELABEL(gpiok));
+		const struct device *gpiol = DEVICE_DT_GET(DT_NODELABEL(gpiol));
+
+		for (int i = 0; i < 8; i++) {
+			gpio_pin_configure(gpiok, i, GPIO_INPUT | GPIO_PULL_DOWN);
+			gpio_pin_configure(gpiol, i, GPIO_INPUT | GPIO_PULL_DOWN);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_GPIO_H7_DEFAULT_OUTPUT_LOW)) {
+		const struct device *gpioh = DEVICE_DT_GET(DT_NODELABEL(gpioh));
+
+		gpio_pin_configure(gpioh, 7, GPIO_OUTPUT_LOW);
+	}
+
+	return 0;
+}
+SYS_INIT(gpio_it8xxx2_init_set, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY);

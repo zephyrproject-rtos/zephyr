@@ -50,23 +50,13 @@ struct mcp23s17_config {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_config common;
 
-	const char *const spi_dev_name;
-	const uint16_t slave;
-	const uint32_t freq;
-	const char *const cs_dev;
-	const uint32_t cs_pin;
-	const uint8_t cs_flags;
+	struct spi_dt_spec bus;
 };
 
 /** Runtime driver data */
 struct mcp23s17_drv_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_config data;
-
-	/** Master SPI device */
-	const struct device *spi;
-	struct spi_config spi_cfg;
-	struct spi_cs_control mcp23s17_cs_ctrl;
 
 	struct k_sem lock;
 

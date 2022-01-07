@@ -9,6 +9,7 @@
 #define DT_DRV_COMPAT ti_fdc2x1x
 
 #include <device.h>
+#include <pm/device.h>
 #include <sys/util.h>
 #include <logging/log.h>
 #include <math.h>
@@ -481,11 +482,10 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
  * @param pm_state - power management state
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_device_pm_ctrl(const struct device *dev,
-				  enum pm_device_action action)
+static int fdc2x1x_device_pm_action(const struct device *dev,
+				    enum pm_device_action action)
 {
 	int ret;
-	struct fdc2x1x_data *data = dev->data;
 	const struct fdc2x1x_config *cfg = dev->config;
 	enum pm_device_state curr_state;
 
@@ -613,7 +613,6 @@ static int fdc2x1x_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 #ifdef CONFIG_PM_DEVICE
-	struct fdc2x1x_data *data = dev->data;
 	enum pm_device_state state;
 
 	(void)pm_device_state_get(dev, &state);
@@ -1016,9 +1015,9 @@ static int fdc2x1x_init(const struct device *dev)
 		.active_channel = DT_INST_PROP(n, active_channel),	   \
 		.deglitch = DT_INST_PROP(n, deglitch),			   \
 		.sensor_activate_sel =					   \
-			DT_ENUM_IDX(DT_DRV_INST(n), sensor_activate_sel),  \
-		.clk_src = DT_ENUM_IDX(DT_DRV_INST(n), ref_clk_src),	   \
-		.current_drv = DT_ENUM_IDX(DT_DRV_INST(n), current_drive), \
+			DT_INST_ENUM_IDX(n, sensor_activate_sel),	   \
+		.clk_src = DT_INST_ENUM_IDX(n, ref_clk_src),		   \
+		.current_drv = DT_INST_ENUM_IDX(n, current_drive),	   \
 		.output_gain = DT_INST_PROP(n, output_gain),		   \
 		.ch_cfg =       ch_cfg_##n,				   \
 		.num_channels = ARRAY_SIZE(fdc2x1x_sample_buf_##n),	   \
@@ -1027,9 +1026,11 @@ static int fdc2x1x_init(const struct device *dev)
 		FDC2X1X_INTB(n)						   \
 	};								   \
 									   \
+	PM_DEVICE_DT_INST_DEFINE(n, fdc2x1x_device_pm_action);		   \
+									   \
 	DEVICE_DT_INST_DEFINE(n,					   \
 			      fdc2x1x_init,				   \
-			      fdc2x1x_device_pm_ctrl,			   \
+			      PM_DEVICE_DT_INST_REF(n),			   \
 			      &fdc2x1x_data_##n,			   \
 			      &fdc2x1x_config_##n,			   \
 			      POST_KERNEL,				   \

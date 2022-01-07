@@ -76,18 +76,21 @@
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
 	current-speed = <9600>;
 	status = "okay";
 };
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
 	current-speed = <9600>;
 	status = "okay";
 };
 
 &uart4 {
 	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -96,36 +99,42 @@
 	status = "okay";
 };
 
-&usbotg_fs {
+zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 
 &spi3 {
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &adc1 {
 	status ="okay";
 	pinctrl-0 = <&adc1_in2_pa2 &adc1_in3_pa3>;
+	pinctrl-names = "default";
 };
 
 mikrobus_1_i2c: &i2c3 {};

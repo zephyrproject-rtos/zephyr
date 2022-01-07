@@ -44,6 +44,10 @@ config PWM_MCUX
 	default y if HAS_MCUX_PWM
 	depends on PWM
 
+config ADC_MCUX_12B1MSPS_SAR
+	default y if HAS_MCUX_12B1MSPS_SAR
+	depends on ADC
+
 config ETH_MCUX
 	default y if HAS_MCUX_ENET
 	depends on NET_L2_ETHERNET
@@ -51,6 +55,26 @@ config ETH_MCUX
 config UART_MCUX_LPUART
 	default y if HAS_MCUX_LPUART
 	depends on SERIAL
+
+if FLASH_MCUX_FLEXSPI_XIP
+
+# Avoid RWW hazards by defaulting logging to disabled
+choice FLASH_LOG_LEVEL_CHOICE
+	default FLASH_LOG_LEVEL_OFF
+endchoice
+
+choice MEMC_LOG_LEVEL_CHOICE
+	default MEMC_LOG_LEVEL_OFF
+endchoice
+
+endif
+
+# set the tick per sec as a divider of the GPT clock source
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if MCUX_GPT_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if MCUX_GPT_TIMER
 
 if COUNTER
 
@@ -173,6 +197,17 @@ config TEST_EXTRA_STACKSIZE
 	int
 	default 1024
 endif # MBEDTLS
+
+if MCUX_GPT_TIMER
+
+# set the tick per sec as a divider of the GPT clock source
+config SYS_CLOCK_TICKS_PER_SEC
+	default 8192
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32786
+
+endif #MCUX_GPT_TIMER
 
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 

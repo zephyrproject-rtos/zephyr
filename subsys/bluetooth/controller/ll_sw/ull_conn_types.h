@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define IS_ACL_HANDLE(_handle) ((_handle) < CONFIG_BT_MAX_CONN)
+
 enum llcp {
 	LLCP_NONE,
 	LLCP_CONN_UPD,
@@ -30,6 +32,7 @@ enum llcp {
 #endif /* CONFIG_BT_CTLR_PHY */
 };
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 struct ll_conn {
 	struct ull_hdr  ull;
 	struct lll_conn lll;
@@ -343,6 +346,194 @@ struct ll_conn {
 	struct lll_df_conn_rx_params df_rx_params;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 };
+#else
+/*
+ * This is for the refactored LLCP
+ *
+ * to reduce length and unreadability of the ll_conn struct the
+ * structures inside it have been defined first
+ */
+struct llcp_struct {
+	/* Local Request */
+	struct {
+		sys_slist_t pend_proc_list;
+		uint8_t state;
+	} local;
+
+	/* Remote Request */
+	struct {
+		sys_slist_t pend_proc_list;
+		uint8_t state;
+		uint8_t collision;
+		uint8_t incompat;
+		uint8_t reject_opcode;
+	} remote;
+
+	/* Prepare parameters */
+	struct {
+		uint32_t ticks_at_expire;
+		uint16_t lazy;
+	} prep;
+
+	/* Version Exchange Procedure State */
+	struct {
+		uint8_t sent;
+		uint8_t valid;
+		struct pdu_data_llctrl_version_ind cached;
+	} vex;
+
+	/*
+	 * As of today only 36 feature bits are in use,
+	 * so some optimisation is possible
+	 * we also need to keep track of the features of the
+	 * other node, so that we can send a proper
+	 * reply over HCI to the host
+	 * see BT Core spec 5.2 Vol 6, Part B, sec. 5.1.4
+	 */
+	struct {
+		uint8_t sent;
+		uint8_t valid;
+		uint64_t features_peer;
+		uint64_t features_used;
+	} fex;
+
+	/* Minimum used channels procedure state */
+	struct {
+		uint8_t phys;
+		uint8_t min_used_chans;
+	} muc;
+
+	/* TODO: we'll need the next few structs eventually,
+	 * Thomas and Szymon please comment on names etc.
+	 */
+	struct {
+		uint16_t *pdu_win_offset;
+		uint32_t ticks_anchor;
+	} conn_upd;
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	/* @brief Constant Tone Extension configuration for CTE request control procedure. */
+	struct llcp_df_req_cfg {
+		/* Procedure may be active periodically, active state must be stored.
+		 * If procedure is active, request parameters update may not be issued.
+		 */
+		uint8_t is_enabled;
+		uint8_t cte_type;
+		/* Minimum requested CTE length in 8us units */
+		uint8_t min_cte_len;
+		uint16_t req_interval;
+	} cte_req;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	/* TODO (ppryga): Consided move of the type of structure to ull_df_types.h or
+	 * lll_df_types.h. To have single definition of the type and share it wish LLL.
+	 */
+	struct llcp_df_rsp_cfg {
+		uint8_t is_enabled;
+		uint8_t cte_types;
+		uint8_t max_cte_len;
+		uint8_t ant_sw_len;
+		/* TODO (ppryga): Update to use the same macro as in lll_df_types.h */
+		uint8_t ant_ids[CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+	} cte_rsp;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) &&\
+	(CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM <\
+	CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX)
+
+	uint8_t tx_buffer_alloc;
+#endif /* (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) */
+
+}; /* struct llcp_struct */
+
+struct ll_conn {
+	struct ull_hdr  ull;
+	struct lll_conn lll;
+
+	struct ull_tx_q tx_q;
+	struct llcp_struct llcp;
+
+	struct {
+		uint8_t reason_final;
+		/* node rx type with memory aligned storage for terminate
+		 * reason.
+		 * HCI will reference the value using the pdu member of
+		 * struct node_rx_pdu.
+		 */
+		struct {
+			struct node_rx_hdr hdr;
+
+			uint8_t reason __aligned(4);
+		} node_rx;
+	} llcp_terminate;
+
+/*
+ * TODO: all the following comes from the legacy LL llcp structure
+ * and/or needs to be properly integrated in the control procedures
+ */
+	union {
+#if defined(CONFIG_BT_PERIPHERAL)
+		struct {
+			uint8_t  latency_cancel:1;
+			uint8_t  sca:3;
+			uint32_t force;
+			uint32_t ticks_to_offset;
+		} periph;
+#endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CENTRAL)
+		struct {
+			uint8_t terminate_ack:1;
+		} central;
+#endif /* CONFIG_BT_CENTRAL */
+	};
+
+	/* Cancel the prepare in the instant a Connection Update takes place */
+	uint8_t cancel_prepare:1;
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	/* Pause Rx data PDU's */
+	uint8_t pause_rx_data:1;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_LE_PING)
+	uint16_t appto_reload;
+	uint16_t appto_expire;
+	uint16_t apto_reload;
+	uint16_t apto_expire;
+#endif /* CONFIG_BT_CTLR_LE_PING */
+
+	uint16_t connect_expire;
+	uint16_t supervision_reload;
+	uint16_t supervision_expire;
+	uint16_t procedure_reload;
+	uint16_t procedure_expire;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	uint8_t phy_pref_tx:3;
+	uint8_t phy_pref_rx:3;
+#endif /* CONFIG_BT_CTLR_PHY */
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	uint16_t default_tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	uint16_t default_tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	uint8_t own_id_addr_type:1;
+	uint8_t peer_id_addr_type:1;
+	uint8_t own_id_addr[BDADDR_SIZE];
+	uint8_t peer_id_addr[BDADDR_SIZE];
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+	/* Detect empty L2CAP start frame */
+	uint8_t  start_empty:1;
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+}; /* struct ll_conn */
+#endif /* BT_LL_SW_SPLIT_LEGACY */
 
 struct node_rx_cc {
 	uint8_t  status;

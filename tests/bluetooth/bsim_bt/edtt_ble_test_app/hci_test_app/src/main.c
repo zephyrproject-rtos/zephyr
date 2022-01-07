@@ -153,11 +153,11 @@ static void echo(uint16_t size)
 	}
 }
 
-NET_BUF_POOL_FIXED_DEFINE(event_pool, 32, BT_BUF_RX_SIZE + 4, NULL);
+NET_BUF_POOL_FIXED_DEFINE(event_pool, 32, BT_BUF_RX_SIZE + 4, 4, NULL);
 static K_FIFO_DEFINE(event_queue);
 static K_FIFO_DEFINE(rx_queue);
 NET_BUF_POOL_FIXED_DEFINE(data_pool, CONFIG_BT_CTLR_RX_BUFFERS + 14,
-			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE) + 4, NULL);
+			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE) + 4, 4, NULL);
 static K_FIFO_DEFINE(data_queue);
 
 /**

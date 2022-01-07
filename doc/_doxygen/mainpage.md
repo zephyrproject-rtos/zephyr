@@ -1,6 +1,4 @@
-# API Documentation
-
-## Introduction
+# Introduction
 
 The Zephyr OS is a small-footprint kernel designed for use on
 resource-constrained and embedded systems: from simple embedded

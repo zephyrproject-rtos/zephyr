@@ -30,18 +30,6 @@
 #define z_apb3_prescaler(v) LL_RCC_APB3_DIV_ ## v
 #define apb3_prescaler(v) z_apb3_prescaler(v)
 
-
-#if STM32_AHB_PRESCALER > 1
-/*
- * AHB prescaler allows to set a HCLK frequency (feeding cortex systick)
- * lower than SYSCLK frequency (actual core frequency).
- * Though, zephyr doesn't make a difference today between these two clocks.
- * So, changing this prescaler is not allowed until it is made possible to
- * use them independently in zephyr clock subsystem.
- */
-#error "AHB prescaler can't be higher than 1"
-#endif
-
 #if STM32_SYSCLK_SRC_PLL
 
 /**
@@ -223,6 +211,21 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 	.get_rate = stm32_clock_control_get_subsys_rate,
 };
 
+static void set_regu_voltage(uint32_t hclk_freq)
+{
+	if (hclk_freq < MHZ(25)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE4);
+	} else if (hclk_freq < MHZ(55)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE3);
+	} else if (hclk_freq < MHZ(110)) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+	} else {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	}
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
+}
+
 /*
  * Unconditionally switch the system clock source to HSI.
  */
@@ -253,20 +256,6 @@ static void set_up_clk_msis(void)
 	LL_RCC_MSI_EnableRangeSelection();
 
 	LL_RCC_MSIS_SetRange(STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
-
-	if (STM32_MSIS_RANGE < 4) {
-		/* MSI clock trimming for ranges 0 to 3 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_0);
-	} else if (STM32_MSIS_RANGE < 8) {
-		/* MSI clock trimming for ranges 4 to 7 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_1);
-	} else if (STM32_MSIS_RANGE < 12) {
-		/* MSI clock trimming for ranges 8 to 11 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_2);
-	} else {
-		/* MSI clock trimming for ranges 12 to 15 */
-		LL_RCC_MSI_SetCalibTrimming(0, LL_RCC_MSI_OSCILLATOR_3);
-	}
 
 #if STM32_MSIS_PLL_MODE
 
@@ -314,72 +303,13 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	LL_RCC_PLL1_SetQ(STM32_PLL_Q_DIVISOR);
 #endif /* STM32_PLL_Q_DIVISOR */
 
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
 #if STM32_PLL_SRC_MSIS
-
-	/*
-	 * For now, an issue detected in function LL_PLL_ConfigSystemClock_MSI
-	 * doesn't allow it's use in current Cube package version (1.0.0).
-	 * So we're using step by step configuration, with fixed flash latency
-	 * setting.
-	 * This has been tested using max supported freq (160MHz), but could
-	 * have limitations in lower speed settings.
-	 */
-
-	LL_FLASH_SetLatency(LL_FLASH_LATENCY_4);
-	while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_4) {
-	}
-
 	set_up_clk_msis();
 
-	LL_RCC_PLL1_ConfigDomain_SYS(LL_RCC_PLL1SOURCE_MSIS,
-				     STM32_PLL_M_DIVISOR,
-				     STM32_PLL_N_MULTIPLIER,
-				     STM32_PLL_R_DIVISOR);
-
-	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 55) {
-		/*
-		 * Set EPOD prescaler based on PLL1 input freq (MSI/PLLM)
-		 * Booster clock frequency should be between 4 and 16MHz
-		 * This is done in following steps:
-		 * Read MSI Frequency
-		 * Didvide PLL1 input freq (MSI/PLLM) by the targeted freq (8MHz)
-		 * Make sure value is not higher than 16
-		 * Shift in the register space (/2)
-		 */
-		int tmp = __LL_RCC_CALC_MSIS_FREQ(LL_RCC_MSIRANGESEL_RUN,
-				STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
-		tmp = MIN(tmp / STM32_PLL_M_DIVISOR / 8000000, 16);
-		tmp = tmp / 2;
-		LL_RCC_SetPll1EPodPrescaler(tmp << RCC_PLL1CFGR_PLL1MBOOST_Pos);
-
-		LL_PWR_EnableEPODBooster();
-		while (LL_PWR_IsActiveFlag_BOOST() == 0) {
-		}
-	}
-
-	LL_RCC_PLL1_EnableDomain_SYS();
-	LL_RCC_PLL1_SetVCOInputRange(LL_RCC_PLLINPUTRANGE_4_8);
-
-	LL_RCC_PLL1_Enable();
-
-	/* Wait till PLL is ready */
-	while (LL_RCC_PLL1_IsReady() != 1) {
-	}
-
-	/* Intermediate AHB prescaler 2 for target frequency clock > 80 MHz */
-	LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_2);
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL1);
-
-	/* Wait till System clock is ready */
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
-	}
-
-	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
-	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-	LL_RCC_SetAPB3Prescaler(s_ClkInitStruct.APB3CLKDivider);
-
-	LL_SetSystemCoreClock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	/* Switch to PLL with MSI as clock source */
+	LL_PLL_ConfigSystemClock_MSI(&s_PLLInitStruct, &s_ClkInitStruct);
 
 	/* Disable other clocks */
 	LL_RCC_HSI_Disable();
@@ -491,8 +421,6 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	uint32_t old_hclk_freq;
 	uint32_t new_hclk_freq;
 
-	set_up_clk_msis();
-
 	old_hclk_freq = HAL_RCC_GetHCLKFreq();
 
 	/* Calculate new SystemCoreClock variable with MSI freq */
@@ -511,7 +439,10 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
 	/* Set MSIS as SYSCLCK source */
+	set_up_clk_msis();
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
 	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
@@ -603,5 +534,5 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY,
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &stm32_clock_control_api);

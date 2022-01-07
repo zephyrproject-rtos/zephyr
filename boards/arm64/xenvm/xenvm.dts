@@ -25,9 +25,8 @@
 	#size-cells = <0x02>;
 
 	chosen {
-		zephyr,console = &sbsa;
-		zephyr,shell-uart = &sbsa;
 		zephyr,sram = &ram;
+		zephyr,console = &xen_hvc;
 	};
 
 	cpus {
@@ -78,12 +77,8 @@
 		interrupt-parent = <&gic>;
 	};
 
-	sbsa: sbsa-pl011@22000000 {
-		compatible = "arm,sbsa-uart";
-		reg = <0x00 0x22000000 0x00 0x1000>;
-		interrupts = <GIC_SPI 0x00 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		current-speed = <0x1c200>;
-		label = "UART";
+	xen_hvc: hvc {
+		compatible = "xen,uart_hvc";
+		status = "okay";
 	};
 };

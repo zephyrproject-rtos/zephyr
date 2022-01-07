@@ -28,7 +28,7 @@ static inline float out_ev(struct sensor_value *val)
 static int lsm6dsl_trig_cnt;
 #ifdef CONFIG_LSM6DSL_TRIGGER
 static void lsm6dsl_trigger_handler(const struct device *dev,
-				    struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 #ifdef ARGONKEY_TEST_LOG
 	char out_str[64];
@@ -50,9 +50,9 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_Y, &accel_y);
 	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_Z, &accel_z);
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "accel (%f %f %f) m/s2", out_ev(&accel_x),
-						out_ev(&accel_y),
-						out_ev(&accel_z));
+	sprintf(out_str, "accel (%f %f %f) m/s2", (double)out_ev(&accel_x),
+						(double)out_ev(&accel_y),
+						(double)out_ev(&accel_z));
 	printk("TRIG %s\n", out_str);
 #endif
 
@@ -62,9 +62,9 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Y, &gyro_y);
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Z, &gyro_z);
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "gyro (%f %f %f) dps", out_ev(&gyro_x),
-						out_ev(&gyro_y),
-						out_ev(&gyro_z));
+	sprintf(out_str, "gyro (%f %f %f) dps", (double)out_ev(&gyro_x),
+						(double)out_ev(&gyro_y),
+						(double)out_ev(&gyro_z));
 	printk("TRIG %s\n", out_str);
 #endif
 
@@ -75,9 +75,9 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_MAGN_Y, &magn_y);
 	sensor_channel_get(dev, SENSOR_CHAN_MAGN_Z, &magn_z);
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "magn (%f %f %f) gauss", out_ev(&magn_x),
-						 out_ev(&magn_y),
-						 out_ev(&magn_z));
+	sprintf(out_str, "magn (%f %f %f) gauss", (double)out_ev(&magn_x),
+						 (double)out_ev(&magn_y),
+						 (double)out_ev(&magn_z));
 	printk("TRIG %s\n", out_str);
 #endif
 
@@ -91,8 +91,8 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "press (%f) kPa - temp (%f) deg", out_ev(&press),
-							   out_ev(&temp));
+	sprintf(out_str, "press (%f) kPa - temp (%f) deg", (double)out_ev(&press),
+							   (double)out_ev(&temp));
 	printk("%s\n", out_str);
 #endif
 
@@ -312,9 +312,9 @@ void main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_X, &accel_x);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_Y, &accel_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_Z, &accel_z);
-		sprintf(out_str, "accel (%f %f %f) m/s2", out_ev(&accel_x),
-							out_ev(&accel_y),
-							out_ev(&accel_z));
+		sprintf(out_str, "accel (%f %f %f) m/s2", (double)out_ev(&accel_x),
+							(double)out_ev(&accel_y),
+							(double)out_ev(&accel_z));
 		printk("%s\n", out_str);
 
 		/* lsm6dsl gyro */
@@ -322,9 +322,9 @@ void main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_GYRO_X, &gyro_x);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_GYRO_Y, &gyro_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_GYRO_Z, &gyro_z);
-		sprintf(out_str, "gyro (%f %f %f) dps", out_ev(&gyro_x),
-							out_ev(&gyro_y),
-							out_ev(&gyro_z));
+		sprintf(out_str, "gyro (%f %f %f) dps", (double)out_ev(&gyro_x),
+							(double)out_ev(&gyro_y),
+							(double)out_ev(&gyro_z));
 		printk("%s\n", out_str);
 #if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
 		/* lsm6dsl magn */
@@ -332,9 +332,9 @@ void main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_MAGN_X, &magn_x);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_MAGN_Y, &magn_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_MAGN_Z, &magn_z);
-		sprintf(out_str, "magn (%f %f %f) gauss", out_ev(&magn_x),
-							 out_ev(&magn_y),
-							 out_ev(&magn_z));
+		sprintf(out_str, "magn (%f %f %f) gauss", (double)out_ev(&magn_x),
+							 (double)out_ev(&magn_y),
+							 (double)out_ev(&magn_z));
 		printk("%s\n", out_str);
 #endif
 #if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
@@ -346,7 +346,7 @@ void main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 
 		sprintf(out_str, "press (%f) kPa - temp (%f) deg",
-			out_ev(&press), out_ev(&temp));
+			(double)out_ev(&press), (double)out_ev(&temp));
 		printk("%s\n", out_str);
 #endif
 

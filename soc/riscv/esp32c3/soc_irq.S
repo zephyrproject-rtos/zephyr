@@ -9,6 +9,7 @@
 /* Exports */
 GTEXT(__soc_is_irq)
 GTEXT(__soc_handle_irq)
+GTEXT(soc_intr_get_next_source)
 
 SECTION_FUNC(exception.other, __soc_is_irq)
 	csrr a0, mcause
@@ -16,4 +17,10 @@ SECTION_FUNC(exception.other, __soc_is_irq)
 	ret
 
 SECTION_FUNC(exception.other, __soc_handle_irq)
+	addi sp, sp,-4
+	sw  ra, 0x00(sp)
+	la t1, soc_intr_get_next_source
+	jalr ra, t1
+	lw  ra, 0x00(sp)
+	addi sp, sp, 4
 	ret

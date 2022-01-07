@@ -13,7 +13,7 @@
 #include <sys/byteorder.h>
 #include <host/hci_core.h>
 
-#include "common.h"
+#include <bt_conn_common.h>
 #include "test_cte_req_enable.h"
 #include "test_cte_set_rx_params.h"
 
@@ -152,12 +152,12 @@ static void connection_setup(void)
 	g_data.requested_cte_length = BT_HCI_LE_CTE_LEN_MAX;
 	g_data.requested_cte_type = BT_HCI_LE_AOD_CTE_2US;
 
-	g_conn_handle = common_create_connection();
+	g_conn_handle = ut_bt_create_connection();
 }
 
 static void connection_teardown(void)
 {
-	common_destroy_connection(g_conn_handle);
+	ut_bt_destroy_connection(g_conn_handle);
 }
 
 static void cte_rx_param_setup(void)
@@ -172,8 +172,8 @@ static void cte_rx_param_setup(void)
 		.ant_ids = ant_ids
 	};
 
-	connection_setup();
-	common_set_periph_latency(g_conn_handle, REQUEST_INTERVAL_TOO_LOW);
+	ut_bt_create_connection();
+	ut_bt_set_periph_latency(g_conn_handle, REQUEST_INTERVAL_TOO_LOW);
 
 	send_set_conn_cte_rx_params(g_conn_handle, &cte_rx_params, true);
 }

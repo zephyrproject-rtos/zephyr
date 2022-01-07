@@ -18,8 +18,10 @@
 #include "time_machine.h"
 #include "bstests.h"
 
-int init_central(void);
-int init_peripheral(void);
+#define ITERATIONS 10
+
+int init_central(uint8_t iterations);
+int init_peripheral(uint8_t iterations);
 
 #define FAIL(...)					\
 	do {						\
@@ -39,7 +41,7 @@ static void test_central_main(void)
 {
 	int err;
 
-	err = init_central();
+	err = init_central(ITERATIONS);
 	if (err) {
 		goto exit;
 	}
@@ -63,7 +65,7 @@ static void test_peripheral_main(void)
 {
 	int err;
 
-	err = init_peripheral();
+	err = init_peripheral(ITERATIONS);
 	if (err) {
 		goto exit;
 	}
@@ -79,7 +81,7 @@ exit:
 
 static void test_multiple_init(void)
 {
-	bst_ticker_set_next_tick_absolute(30e6);
+	bst_ticker_set_next_tick_absolute(600e6);
 	bst_result = In_progress;
 }
 

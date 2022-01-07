@@ -7,358 +7,11 @@
 
 menu "Timer Drivers"
 
-menuconfig APIC_TIMER
-	bool "New local APIC timer"
-	depends on X86
-	depends on LOAPIC
-	select TICKLESS_CAPABLE
+config TIMER_HAS_64BIT_CYCLE_COUNTER
+	bool
 	help
-	  Use the x86 local APIC in one-shot mode as the system time
-	  source.  NOTE: this probably isn't what you want except on
-	  older or idiosyncratic hardware (or environments like qemu
-	  without complete APIC emulation).  Modern hardware will work
-	  better with CONFIG_APIC_TSC_DEADLINE_TIMER.
-
-if APIC_TIMER
-
-config APIC_TIMER_IRQ
-	int "Local APIC timer IRQ"
-	default 24
-	help
-	  This option specifies the IRQ used by the local APIC timer.
-	  Note: this MUST be set to the index immediately after the
-	  last IO-APIC IRQ (the timer is the first entry in the APIC
-	  local vector table).  This footgun is not intended to be
-	  user-configurable and almost certainly should be managed via
-	  a different mechanism.
-
-config APIC_TIMER_TSC
-	bool "Use invariant TSC for sys_clock_cycle_get_32()"
-	help
-	  If your CPU supports invariant TSC, and you know the ratio of the
-	  TSC frequency to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC (the local APIC
-	  timer frequency), then enable this for a much faster and more
-	  accurate sys_clock_cycle_get_32().
-
-if APIC_TIMER_TSC
-
-config APIC_TIMER_TSC_N
-	int "TSC to local APIC timer frequency multiplier (N)"
-	default 1
-
-config APIC_TIMER_TSC_M
-	int "TSC to local APIC timer frequency divisor (M)"
-	default 1
-
-endif # APIC_TIMER_TSC
-
-endif # APIC_TIMER
-
-config APIC_TSC_DEADLINE_TIMER
-	bool "Even newer APIC timer using TSC deadline mode"
-	depends on X86
-	select LOAPIC
-	select TICKLESS_CAPABLE
-	help
-	  Extremely simple timer driver based the local APIC TSC
-	  deadline capability.  The use of a free-running 64 bit
-	  counter with comparator eliminates almost all edge cases
-	  from the handling, and the near-instruction-cycle resolution
-	  permits effectively unlimited precision where needed (the
-	  limit becomes the CPU time taken to execute the timing
-	  logic). SMP-safe and very fast, this should be the obvious
-	  choice for any x86 device with invariant TSC and TSC
-	  deadline capability.
-
-config APIC_TIMER_IRQ_PRIORITY
-	int "Local APIC timer interrupt priority"
-	depends on APIC_TIMER || APIC_TSC_DEADLINE_TIMER
-	default 4
-	help
-	  This option specifies the interrupt priority used by the
-	  local APIC timer.
-
-config HPET_TIMER
-	bool "HPET timer"
-	select IOAPIC if X86
-	select LOAPIC if X86
-	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-	select TICKLESS_CAPABLE
-	help
-	  This option selects High Precision Event Timer (HPET) as a
-	  system timer.
-
-menuconfig ARCV2_TIMER
-	bool "ARC Timer"
-	default y
-	depends on ARC
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the ARCv2 processor timer 0
-	  and provides the standard "system clock driver" interfaces.
-
-config ARCV2_TIMER_IRQ_PRIORITY
-	int "ARC timer interrupt priority"
-	default 0
-	depends on ARCV2_TIMER
-	help
-	  This option specifies the IRQ priority used by the ARC timer. Lower
-	  values have higher priority.
-
-config ARM_ARCH_TIMER
-	bool "ARM architected timer"
-	depends on GIC
-	select ARCH_HAS_CUSTOM_BUSY_WAIT
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the ARM architected
-	  timer which provides per-cpu timers attached to a GIC to deliver its
-	  per-processor interrupts via PPIs.
-
-DT_COMPAT_ARM_V6M_SYSTICK := arm,armv6m-systick
-DT_COMPAT_ARM_V7M_SYSTICK := arm,armv7m-systick
-DT_COMPAT_ARM_V8M_SYSTICK := arm,armv8m-systick
-DT_COMPAT_ARM_V8_1M_SYSTICK := arm,armv8.1m-systick
-
-config CORTEX_M_SYSTICK
-	bool "Cortex-M SYSTICK timer"
-	depends on CPU_CORTEX_M_HAS_SYSTICK
-	default $(dt_compat_enabled,$(DT_COMPAT_ARM_V6M_SYSTICK)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ARM_V7M_SYSTICK)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8M_SYSTICK)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8_1M_SYSTICK))
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the Cortex-M processor
-	  SYSTICK timer and provides the standard "system clock driver" interfaces.
-
-config ALTERA_AVALON_TIMER
-	bool "Altera Avalon Interval Timer"
-	default y
-	depends on NIOS2
-	help
-	  This module implements a kernel device driver for the Altera Avalon
-	  Interval Timer as described in the Embedded IP documentation, for use
-	  with Nios II and possibly other Altera soft CPUs. It provides the
-	  standard "system clock driver" interfaces.
-
-config ITE_IT8XXX2_TIMER
-	bool "ITE it8xxx2 timer driver"
-	depends on SOC_IT8XXX2
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the ITE it8xxx2
-	  HW timer model
-
-config NRF_RTC_TIMER
-	bool "nRF Real Time Counter (NRF_RTC1) Timer"
-	depends on CLOCK_CONTROL
-	depends on SOC_COMPATIBLE_NRF
-	select TICKLESS_CAPABLE
-	select NRF_HW_RTC1_RESERVED
-	help
-	  This module implements a kernel device driver for the nRF Real Time
-	  Counter NRF_RTC1 and provides the standard "system clock driver"
-	  interfaces.
-
-if NRF_RTC_TIMER
-
-config NRF_RTC_TIMER_USER_CHAN_COUNT
-	int "Additional channels that can be used"
-	default 0
-	help
-	  Use nrf_rtc_timer.h API. Driver is not managing allocation of channels.
-
-choice
-	prompt "Clock startup policy"
-	default SYSTEM_CLOCK_WAIT_FOR_STABILITY
-
-config SYSTEM_CLOCK_NO_WAIT
-	bool "No wait"
-	help
-	  System clock source is initiated but does not wait for clock readiness.
-	  When this option is picked, system clock may not be ready when code relying
-	  on kernel API is executed. Requested timeouts will be prolonged by the
-	  remaining startup time.
-
-config SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY
-	bool "Wait for availability"
-	help
-	  System clock source initialization waits until clock is available. In some
-	  systems, clock initially runs from less accurate source which has faster
-	  startup time and then seamlessly switches to the target clock source when
-	  it is ready. When this option is picked, system clock is available after
-	  system clock driver initialization but it may be less accurate. Option is
-	  equivalent to waiting for stability if clock source does not have
-	  intermediate state.
-
-config SYSTEM_CLOCK_WAIT_FOR_STABILITY
-	bool "Wait for stability"
-	help
-	  System clock source initialization waits until clock is stable. When this
-	  option is picked, system clock is available and stable after system clock
-	  driver initialization.
-
-endchoice
-
-endif # NRF_RTC_TIMER
-
-source "drivers/timer/Kconfig.stm32_lptim"
-
-config RISCV_MACHINE_TIMER
-	bool "RISCV Machine Timer"
-	depends on SOC_FAMILY_RISCV_PRIVILEGE
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the generic RISCV machine
-	  timer driver. It provides the standard "system clock driver" interfaces.
-
-config RV32M1_LPTMR_TIMER
-	bool "RV32M1 LPTMR system timer driver"
-	default y
-	depends on SOC_OPENISA_RV32M1_RISCV32
-	depends on RV32M1_INTMUX
-	help
-	  This module implements a kernel device driver for using the LPTMR
-	  peripheral as the system clock. It provides the standard "system clock
-	  driver" interfaces.
-
-config LITEX_TIMER
-	bool "LiteX Timer"
-	default y
-	depends on SOC_RISCV32_LITEX_VEXRISCV
-	help
-	  This module implements a kernel device driver for LiteX Timer.
-
-config NATIVE_POSIX_TIMER
-	bool "(POSIX) native_posix timer driver"
-	default y
-	depends on BOARD_NATIVE_POSIX
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the native_posix HW timer
-	  model
-
-config XTENSA_TIMER
-	bool "Xtensa timer support"
-	depends on XTENSA
-	default y
-	select TICKLESS_CAPABLE
-	help
-	  Enables a system timer driver for Xtensa based on the CCOUNT
-	  and CCOMPARE special registers.
-
-config ESP32C3_SYS_TIMER
-	bool "ESP32C3 sys-timer support"
-	depends on SOC_ESP32C3
-	default y
-	select TICKLESS_CAPABLE
-	help
-	  This option enables the system timer driver for the Espressif ESP32C3
-	  and provides the standard "system clock driver" interface.
-
-config XTENSA_TIMER_ID
-	int "System timer CCOMPAREn register index"
-	default 1
-	depends on XTENSA_TIMER
-	help
-	  Index of the CCOMPARE register (and associated interrupt)
-	  used for the system timer.  Xtensa CPUs have hard-configured
-	  interrupt priorities associated with each timer, and some of
-	  them can be unmaskable (and thus not usable by OS code that
-	  need synchronization, like the timer subsystem!).  Choose
-	  carefully.  Generally you want the timer with the highest
-	  priority maskable interrupt.
-
-config SAM0_RTC_TIMER
-	bool "Atmel SAM0 series RTC timer"
-	depends on SOC_FAMILY_SAM0
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the Atmel SAM0
-	  series Real Time Counter and provides the standard "system clock
-	  driver" interfaces.
-
-config MCHP_XEC_RTOS_TIMER
-	bool "Microchip XEC series RTOS timer"
-	depends on SOC_FAMILY_MEC
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the Microchip
-	  XEC series RTOS timer and provides the standard "system clock
-	  driver" interfaces.
-
-config CC13X2_CC26X2_RTC_TIMER
-	bool "TI SimpleLink CC13x2/CC26x2 RTC timer"
-	depends on SOC_SERIES_CC13X2_CC26X2
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the TI SimpleLink
-	  CC13X2_CC26X2 series Real Time Counter and provides the standard
-	  "system clock driver" interfaces.
-
-config RCAR_CMT_TIMER
-	bool "Renesas RCar cmt timer"
-	default y
-	depends on SOC_SERIES_RCAR_GEN3
-	help
-	  This module implements a kernel device driver for the Renesas RCAR
-	  platform provides the standard "system clock driver" interfaces.
-	  If unchecked, no timer will be used.
-
-config XLNX_PSTTC_TIMER
-	bool "Xilinx PS ttc timer support"
-	default y
-	depends on SOC_XILINX_ZYNQMP
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the Xilinx ZynqMP
-	  platform provides the standard "system clock driver" interfaces.
-	  If unchecked, no timer will be used.
-
-config XLNX_PSTTC_TIMER_INDEX
-	int "Xilinx PS ttc timer index"
-	range 0 3
-	default 0
-	depends on XLNX_PSTTC_TIMER
-	help
-	  This is the index of TTC timer picked to provide system clock.
-
-config CAVS_TIMER
-	bool "CAVS DSP Wall Clock Timer on Intel SoC"
-	depends on CAVS_ICTL
-	select TICKLESS_CAPABLE
-	help
-	  The DSP wall clock timer is a timer driven directly by
-	  external oscillator and is external to the CPU core(s).
-	  It is not as fast as the internal core clock, but provides
-	  a common and synchronized counter for all CPU cores (which
-	  is useful for SMP).
-
-config LEON_GPTIMER
-	bool "LEON timer"
-	depends on SOC_SPARC_LEON
-	select DYNAMIC_INTERRUPTS
-	help
-	  This module implements a kernel device driver for the GRLIB
-	  GPTIMER which is common in LEON systems.
-
-config NPCX_ITIM_TIMER
-	bool "Nuvoton NPCX series internal 64/32-bit timers"
-	default y
-	depends on SOC_FAMILY_NPCX
-	select TICKLESS_CAPABLE
-	help
-	  This module implements a kernel device driver for the Nuvoton NPCX
-	  series internal 64/32-bit timers and provides the standard "system
-	  clock driver" interfaces.
-
-config SYSTEM_CLOCK_DISABLE
-	bool "API to disable system clock"
-	help
-	  This option enables the sys_clock_disable() API in the kernel. It is
-	  needed by some subsystems (which will automatically select it), but is
-	  rarely needed by applications.
+	  When this option is true, the k_cycle_get_64() call is
+	  available to provide values from a 64-bit cycle counter.
 
 config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	bool "Timer queries its hardware to find its frequency at runtime"
@@ -395,23 +48,37 @@ config TICKLESS_CAPABLE
 	  sys_clock_announce() (really, not to produce an interrupt at
 	  all) until the specified expiration.
 
-DT_COMPAT_NXP_OS_TIMER := nxp,os-timer
-
-config MCUX_OS_TIMER
-	bool "MCUX OS Event timer"
-	depends on HAS_MCUX_OS_TIMER
-	default $(dt_compat_enabled,$(DT_COMPAT_NXP_OS_TIMER))
-	select TICKLESS_CAPABLE
+config SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	bool
 	help
-	  This module implements a kernel device driver for the NXP OS
-	  event timer and provides the standard "system clock driver" interfaces.
+	  This option should be selected by drivers implementing support for
+	  sys_clock_disable() API.
 
-config MCUX_LPTMR_TIMER
-	bool "MCUX LPTMR timer"
-	depends on HAS_MCUX_LPTMR && !COUNTER_MCUX_LPTMR
-	help
-	  This module implements a kernel device driver for the NXP MCUX Low
-	  Power Timer (LPTMR) and provides the standard "system clock driver"
-	  interfaces.
+source "drivers/timer/Kconfig.altera_avalon"
+source "drivers/timer/Kconfig.apic"
+source "drivers/timer/Kconfig.arcv2"
+source "drivers/timer/Kconfig.arm_arch"
+source "drivers/timer/Kconfig.cavs"
+source "drivers/timer/Kconfig.cc13x2_cc26x2_rtc"
+source "drivers/timer/Kconfig.cortex_m_systick"
+source "drivers/timer/Kconfig.esp32c3_sys"
+source "drivers/timer/Kconfig.hpet"
+source "drivers/timer/Kconfig.ite_it8xxx2"
+source "drivers/timer/Kconfig.leon_gptimer"
+source "drivers/timer/Kconfig.litex"
+source "drivers/timer/Kconfig.mchp_xec_rtos"
+source "drivers/timer/Kconfig.mcux_gpt"
+source "drivers/timer/Kconfig.mcux_lptmr"
+source "drivers/timer/Kconfig.mcux_os"
+source "drivers/timer/Kconfig.native_posix"
+source "drivers/timer/Kconfig.npcx_itim"
+source "drivers/timer/Kconfig.nrf_rtc"
+source "drivers/timer/Kconfig.rcar_cmt"
+source "drivers/timer/Kconfig.riscv_machine"
+source "drivers/timer/Kconfig.rv32m1_lptmr"
+source "drivers/timer/Kconfig.sam0_rtc"
+source "drivers/timer/Kconfig.stm32_lptim"
+source "drivers/timer/Kconfig.xlnx_psttc"
+source "drivers/timer/Kconfig.xtensa"
 
 endmenu

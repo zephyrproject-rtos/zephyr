@@ -80,13 +80,47 @@ static int stm32h7_init(const struct device *arg)
 	SystemCoreClock = 64000000;
 
 	/* Power Configuration */
-#ifdef SMPS
+#if !defined(SMPS) && \
+		(defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT))
+#error Unsupported configuration: Selected SoC do not support SMPS
+#endif
+#if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
 	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_LDO);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_LDO);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT_AND_LDO);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT_AND_LDO);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT);
+#elif defined(CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE)
+	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
 #else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
+
+	/* Errata ES0392 Rev 8:
+	 * 2.2.9: Reading from AXI SRAM may lead to data read corruption
+	 * Workaround: Set the READ_ISS_OVERRIDE bit in the AXI_TARG7_FN_MOD
+	 * register.
+	 * Applicable only to RevY (REV_ID 0x1003)
+	 */
+	if (LL_DBGMCU_GetRevisionID() == 0x1003) {
+		MODIFY_REG(GPV->AXI_TARG7_FN_MOD, 0x1, 0x1);
 	}
 
 	return 0;

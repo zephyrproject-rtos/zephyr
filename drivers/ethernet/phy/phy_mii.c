@@ -389,7 +389,7 @@ static int phy_mii_initialize(const struct device *dev)
 	return 0;
 }
 
-#define IS_FIXED_LINK(n)	DT_NODE_HAS_PROP(DT_DRV_INST(n), fixed_link)
+#define IS_FIXED_LINK(n)	DT_INST_NODE_HAS_PROP(n, fixed_link)
 
 static const struct ethphy_driver_api phy_mii_driver_api = {
 	.get_link = phy_mii_get_link_state,
@@ -401,11 +401,11 @@ static const struct ethphy_driver_api phy_mii_driver_api = {
 
 #define PHY_MII_CONFIG(n)						 \
 static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
-	.phy_addr = DT_PROP(DT_DRV_INST(n), address),			 \
+	.phy_addr = DT_INST_PROP(n, address),				 \
 	.fixed = IS_FIXED_LINK(n),					 \
-	.fixed_speed = DT_ENUM_IDX_OR(DT_DRV_INST(n), fixed_link, 0),	 \
+	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \
-			 DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), mdio)))\
+			 DEVICE_DT_GET(DT_INST_PHANDLE(n, mdio)))	 \
 };
 
 #define PHY_MII_DEVICE(n)						\

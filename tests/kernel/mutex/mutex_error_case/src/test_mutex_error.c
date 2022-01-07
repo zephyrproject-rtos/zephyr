@@ -211,7 +211,7 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &tdata, &tstack,
 		       &mutex, &sem, &pipe, &queue);
 
-	ztest_test_suite(mutex_api,
+	ztest_test_suite(mutex_api_error,
 		 ztest_user_unit_test(test_mutex_init_null),
 		 ztest_user_unit_test(test_mutex_init_invalid_obj),
 		 ztest_user_unit_test(test_mutex_lock_null),
@@ -219,5 +219,5 @@ void test_main(void)
 		 ztest_user_unit_test(test_mutex_unlock_null),
 		 ztest_user_unit_test(test_mutex_unlock_invalid_obj)
 		 );
-	ztest_run_test_suite(mutex_api);
+	ztest_run_test_suite(mutex_api_error);
 }

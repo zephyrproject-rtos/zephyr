@@ -382,8 +382,10 @@
 	sys_trace_k_heap_sys_k_malloc_enter(heap, size)
 #define sys_port_trace_k_heap_sys_k_malloc_exit(heap, ret)                                         \
 	sys_trace_k_heap_sys_k_malloc_exit(heap, size, ret)
-#define sys_port_trace_k_heap_sys_k_free_enter(heap) sys_trace_k_heap_sys_k_free_enter(heap)
-#define sys_port_trace_k_heap_sys_k_free_exit(heap) sys_trace_k_heap_sys_k_free_exit(heap)
+#define sys_port_trace_k_heap_sys_k_free_enter(heap, heap_ref)                                     \
+	sys_trace_k_heap_sys_k_free_enter(heap, heap_ref)
+#define sys_port_trace_k_heap_sys_k_free_exit(heap, heap_ref)                                      \
+	sys_trace_k_heap_sys_k_free_exit(heap, heap_ref)
 #define sys_port_trace_k_heap_sys_k_calloc_enter(heap)                                             \
 	sys_trace_k_heap_sys_k_calloc_enter(heap, nmemb, size)
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)                                         \
@@ -408,28 +410,39 @@
 	sys_trace_k_timer_status_sync_blocking(timer)
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
 	sys_trace_k_timer_status_sync_exit(timer, result)
+
+#define sys_port_trace_k_event_init(event) sys_trace_k_event_init(event)
+#define sys_port_trace_k_event_post_enter(event, events, accumulate)   \
+	sys_trace_k_event_post_enter(event, events, accumulate)
+#define sys_port_trace_k_event_post_exit(event, events, accumulate)   \
+	sys_trace_k_event_post_exit(event, events, accumulate)
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)   \
+	sys_trace_k_event_wait_enter(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout) \
+	sys_trace_k_event_wait_blocking(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_exit(event, events, ret)   \
+	sys_trace_k_event_wait_exit(event, events, ret)
+
 #define sys_port_trace_k_thread_abort_exit(thread) sys_trace_k_thread_abort_exit(thread)
 
 #define sys_port_trace_k_thread_abort_enter(thread) sys_trace_k_thread_abort_enter(thread)
 
 #define sys_port_trace_k_thread_resume_exit(thread) sys_trace_k_thread_resume_exit(thread)
 
-#define sys_port_trace_syscall_enter() sys_trace_syscall_enter()
-#define sys_port_trace_syscall_exit() sys_trace_syscall_exit()
-
-
 #define sys_port_trace_pm_system_suspend_enter(ticks)
-#define sys_port_trace_pm_system_suspend_exit(ticks, ret)
-#define sys_port_trace_pm_device_request_enter(dev, target_state)
-#define sys_port_trace_pm_device_request_exit(dev, ret)
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)
 
-#define sys_port_trace_pm_device_enable_enter(dev)
-#define sys_port_trace_pm_device_enable_exit(dev)
-#define sys_port_trace_pm_device_disable_enter(dev)
-#define sys_port_trace_pm_device_disable_exit(dev)
+#define sys_port_trace_pm_device_runtime_get_enter(dev)
+#define sys_port_trace_pm_device_runtime_get_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_enter(dev)
+#define sys_port_trace_pm_device_runtime_put_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev)
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_enable_enter(dev)
+#define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_disable_enter(dev)
+#define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
-void sys_trace_syscall_enter(void);
-void sys_trace_syscall_exit(void);
 void sys_trace_idle(void);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
@@ -640,8 +653,8 @@ void sys_trace_k_heap_sys_k_aligned_alloc_exit(struct k_heap *h, size_t align, s
 					       void *ret);
 void sys_trace_k_heap_sys_k_malloc_enter(struct k_heap *h, size_t size);
 void sys_trace_k_heap_sys_k_malloc_exit(struct k_heap *h, size_t size, void *ret);
-void sys_trace_k_heap_sys_k_free_enter(struct k_heap *h);
-void sys_trace_k_heap_sys_k_free_exit(struct k_heap *h);
+void sys_trace_k_heap_sys_k_free_enter(struct k_heap *h, struct k_heap **heap_ref);
+void sys_trace_k_heap_sys_k_free_exit(struct k_heap *h, struct k_heap **heap_ref);
 void sys_trace_k_heap_sys_k_calloc_enter(struct k_heap *h, size_t nmemb, size_t size);
 void sys_trace_k_heap_sys_k_calloc_exit(struct k_heap *h, size_t nmemb, size_t size, void *ret);
 
@@ -659,5 +672,7 @@ void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration, k_time
 void sys_trace_k_timer_stop(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
+
+void sys_trace_k_event_init(struct k_event *event);
 
 #endif /* ZEPHYR_TRACE_TEST_H */

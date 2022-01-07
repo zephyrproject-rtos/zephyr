@@ -11,7 +11,7 @@ tests:
     # Default settings end up allocating an ~150KB sized buffer in lvgl.
     # This adds a bit of buffer to that for other data.
     min_ram: 175
-    platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832
+    platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832 stm32f769i_disco
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: shield
     harness: console
@@ -39,10 +39,10 @@ tests:
     tags: shield
   sample.display.dummy:
     build_only: true
-    platform_allow: native_posix
+    platform_allow: native_posix native_posix_64
+    extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
       - CONFIG_DUMMY_DISPLAY=y
-      - CONFIG_DUMMY_DISPLAY_DEV_NAME="DISPLAY"
       - CONFIG_KSCAN=n
       - CONFIG_SDL_DISPLAY=n
     tags: samples display gui

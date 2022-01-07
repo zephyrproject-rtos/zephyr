@@ -400,6 +400,11 @@ your own.
    use other Zephyr modules provided by :ref:`west <west>`.
    This can for example be useful for special test purposes.
 
+If you want to permanently add modules to the zephyr workspace and you are
+using zephyr as your manifest repository, you can also add a west manifest file
+into the :zephyr_file:`submanifests` directory. See
+:zephyr_file:`submanifests/README.txt` for more details.
+
 See :ref:`west-basics` for more on west workspaces.
 
 Finally, you can also specify the list of modules yourself in various ways, or

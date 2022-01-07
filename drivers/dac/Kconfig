@@ -24,6 +24,12 @@ config DAC_SHELL
 	help
 	  Enable DAC related shell commands.
 
+config DAC_INIT_PRIORITY
+	int "DAC init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  DAC driver device initialization priority.
+
 source "drivers/dac/Kconfig.mcux"
 
 source "drivers/dac/Kconfig.stm32"
@@ -37,5 +43,7 @@ source "drivers/dac/Kconfig.dacx0508"
 source "drivers/dac/Kconfig.dacx3608"
 
 source "drivers/dac/Kconfig.mcp4725"
+
+source "drivers/dac/Kconfig.gd32"
 
 endif # DAC

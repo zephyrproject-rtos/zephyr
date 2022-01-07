@@ -10,14 +10,14 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRING_H_
 
 #include <stddef.h>
-#include <bits/restrict.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern char  *strcpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s);
-extern char  *strncpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s,
+extern char  *strcpy(char *ZRESTRICT d, const char *ZRESTRICT s);
+extern char  *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s,
 		      size_t n);
 extern char  *strchr(const char *s, int c);
 extern char  *strrchr(const char *s, int c);
@@ -26,9 +26,9 @@ extern size_t strnlen(const char *s, size_t maxlen);
 extern int    strcmp(const char *s1, const char *s2);
 extern int    strncmp(const char *s1, const char *s2, size_t n);
 extern char  *strtok_r(char *str, const char *sep, char **state);
-extern char *strcat(char *_MLIBC_RESTRICT dest,
-		    const char *_MLIBC_RESTRICT src);
-extern char  *strncat(char *_MLIBC_RESTRICT dest, const char *_MLIBC_RESTRICT src,
+extern char *strcat(char *ZRESTRICT dest,
+		    const char *ZRESTRICT src);
+extern char  *strncat(char *ZRESTRICT dest, const char *ZRESTRICT src,
 		      size_t n);
 extern char *strstr(const char *s, const char *find);
 
@@ -37,7 +37,7 @@ extern size_t strcspn(const char *s, const char *reject);
 
 extern int    memcmp(const void *m1, const void *m2, size_t n);
 extern void  *memmove(void *d, const void *s, size_t n);
-extern void  *memcpy(void *_MLIBC_RESTRICT d, const void *_MLIBC_RESTRICT s,
+extern void  *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s,
 		     size_t n);
 extern void  *memset(void *buf, int c, size_t n);
 extern void  *memchr(const void *s, int c, size_t n);

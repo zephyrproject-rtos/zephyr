@@ -348,7 +348,7 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 	/* Validate the events buffer and make a copy of it in an
 	 * allocated kernel-side buffer.
 	 */
-	if (Z_SYSCALL_VERIFY(num_events >= 0U)) {
+	if (Z_SYSCALL_VERIFY(num_events >= 0)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -652,7 +652,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_work_poll, submit_to_queue, work_q, work, timeout);
 
-	/* Take overship of the work if it is possible. */
+	/* Take ownership of the work if it is possible. */
 	key = k_spin_lock(&lock);
 	if (work->workq != NULL) {
 		if (work->workq == work_q) {

@@ -410,7 +410,10 @@ static void sx126x_dio1_irq_work_handler(struct k_work *work)
 		Radio.IrqProcess();
 	}
 
-	sx126x_dio1_irq_enable(&dev_data);
+	/* Re-enable the interrupt if we are not in sleep mode */
+	if (dev_data.mode != MODE_SLEEP) {
+		sx126x_dio1_irq_enable(&dev_data);
+	}
 }
 
 static int sx126x_lora_init(const struct device *dev)
@@ -472,6 +475,7 @@ static const struct lora_driver_api sx126x_lora_api = {
 	.send = sx12xx_lora_send,
 	.send_async = sx12xx_lora_send_async,
 	.recv = sx12xx_lora_recv,
+	.recv_async = sx12xx_lora_recv_async,
 	.test_cw = sx12xx_lora_test_cw,
 };
 

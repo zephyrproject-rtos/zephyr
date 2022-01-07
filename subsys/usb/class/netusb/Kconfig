@@ -27,7 +27,6 @@ config USB_DEVICE_NETWORK_EEM
 config USB_DEVICE_NETWORK_RNDIS
 	bool "USB Remote NDIS (RNDIS) Networking device"
 	select USB_DEVICE_NETWORK
-	select USB_COMPOSITE_DEVICE
 	help
 	  Remote NDIS (RNDIS) is commonly used Microsoft vendor protocol with
 	  Specification available from Microsoft web site.
@@ -42,6 +41,7 @@ config CDC_ECM_INTERRUPT_EP_MPS
 
 config CDC_ECM_BULK_EP_MPS
 	int
+	default 512 if USB_DC_HAS_HS_SUPPORT
 	default 64
 	help
 	  CDC ECM class bulk endpoint size
@@ -59,6 +59,7 @@ endif # USB_DEVICE_NETWORK_ECM
 
 config CDC_EEM_BULK_EP_MPS
 	int
+	default 512 if USB_DC_HAS_HS_SUPPORT
 	default 64
 	depends on USB_DEVICE_NETWORK_EEM
 
@@ -72,6 +73,7 @@ config RNDIS_INTERRUPT_EP_MPS
 
 config RNDIS_BULK_EP_MPS
 	int
+	default 512 if USB_DC_HAS_HS_SUPPORT
 	default 64
 	help
 	  RNDIS bulk endpoint size

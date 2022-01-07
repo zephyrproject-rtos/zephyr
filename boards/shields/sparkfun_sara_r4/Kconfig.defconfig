@@ -35,8 +35,6 @@ config NET_IPV6
 config NET_CONFIG_NEED_IPV6
 	default n
 
-rsource "boards/*.defconfig"
-
 endif # NETWORKING
 
 endif # SHIELD_SPARKFUN_SARA_R4

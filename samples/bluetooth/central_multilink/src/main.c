@@ -6,9 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int init_central(void);
+#include <stdint.h>
+
+int init_central(uint8_t iterations);
 
 void main(void)
 {
-	(void)init_central();
+	(void)init_central(CONFIG_SAMPLE_CONN_ITERATIONS);
 }

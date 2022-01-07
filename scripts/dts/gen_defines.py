@@ -107,6 +107,16 @@ def main():
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             node.z_path_id = node_z_path_id(node)
 
+        # Check to see if we have duplicate "zephyr,memory-region" property values.
+        regions = dict()
+        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+            if 'zephyr,memory-region' in node.props:
+                region = node.props['zephyr,memory-region'].val
+                if region in regions:
+                    sys.exit(f"ERROR: Duplicate 'zephyr,memory-region' ({region}) properties "
+                             f"between {regions[region].path} and {node.path}")
+                regions[region] = node
+
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             write_node_comment(node)
 
@@ -355,6 +365,7 @@ def write_special_props(node):
     # Macros that are special to the devicetree specification
     out_comment("Macros for properties that are special in the specification:")
     write_regs(node)
+    write_ranges(node)
     write_interrupts(node)
     write_compatibles(node)
     write_status(node)
@@ -363,6 +374,49 @@ def write_special_props(node):
     # we can't capture with the current bindings language.
     write_pinctrls(node)
     write_fixed_partitions(node)
+
+def write_ranges(node):
+    # ranges property: edtlib knows the right #address-cells and
+    # #size-cells of parent and child, and can therefore pack the
+    # child & parent addresses and sizes correctly
+
+    idx_vals = []
+    path_id = node.z_path_id
+
+    if node.ranges is not None:
+        idx_vals.append((f"{path_id}_RANGES_NUM", len(node.ranges)))
+
+    for i,range in enumerate(node.ranges):
+        idx_vals.append((f"{path_id}_RANGES_IDX_{i}_EXISTS", 1))
+
+        if node.bus == "pcie":
+            idx_vals.append((f"{path_id}_RANGES_IDX_{i}_VAL_CHILD_BUS_FLAGS_EXISTS", 1))
+            idx_macro = f"{path_id}_RANGES_IDX_{i}_VAL_CHILD_BUS_FLAGS"
+            idx_value = range.child_bus_addr >> ((range.child_bus_cells - 1) * 32)
+            idx_vals.append((idx_macro,
+                             f"{idx_value} /* {hex(idx_value)} */"))
+        if range.child_bus_addr is not None:
+            idx_macro = f"{path_id}_RANGES_IDX_{i}_VAL_CHILD_BUS_ADDRESS"
+            if node.bus == "pcie":
+                idx_value = range.child_bus_addr & ((1 << (range.child_bus_cells - 1) * 32) - 1)
+            else:
+                idx_value = range.child_bus_addr
+            idx_vals.append((idx_macro,
+                             f"{idx_value} /* {hex(idx_value)} */"))
+        if range.parent_bus_addr is not None:
+            idx_macro = f"{path_id}_RANGES_IDX_{i}_VAL_PARENT_BUS_ADDRESS"
+            idx_vals.append((idx_macro,
+                             f"{range.parent_bus_addr} /* {hex(range.parent_bus_addr)} */"))
+        if range.length is not None:
+            idx_macro = f"{path_id}_RANGES_IDX_{i}_VAL_LENGTH"
+            idx_vals.append((idx_macro,
+                             f"{range.length} /* {hex(range.length)} */"))
+
+    for macro, val in idx_vals:
+        out_dt_define(macro, val)
+
+    out_dt_define(f"{path_id}_FOREACH_RANGE(fn)",
+            " ".join(f"fn(DT_{path_id}, {i})" for i,range in enumerate(node.ranges)))
 
 def write_regs(node):
     # reg property: edtlib knows the right #address-cells and
@@ -682,10 +736,12 @@ def prop_len(prop):
     # Returns the property's length if and only if we should generate
     # a _LEN macro for the property. Otherwise, returns None.
     #
-    # This deliberately excludes reg and interrupts.
+    # This deliberately excludes ranges, dma-ranges, reg and interrupts.
     # While they have array type, their lengths as arrays are
     # basically nonsense semantically due to #address-cells and
-    # #size-cells for "reg" and #interrupt-cells for "interrupts".
+    # #size-cells for "reg", #interrupt-cells for "interrupts"
+    # and #address-cells, #size-cells and the #address-cells from the
+    # parent node for "ranges" and "dma-ranges".
     #
     # We have special purpose macros for the number of register blocks
     # / interrupt specifiers. Excluding them from this list means
@@ -698,7 +754,7 @@ def prop_len(prop):
 
     if (prop.type in ["array", "uint8-array", "string-array",
                       "phandles", "phandle-array"] and
-                prop.name not in ["reg", "interrupts"]):
+                prop.name not in ["ranges", "dma-ranges", "reg", "interrupts"]):
         return len(prop.val)
 
     return None

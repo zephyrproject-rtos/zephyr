@@ -51,6 +51,38 @@ extern "C" {
 #define DNS_SD_DOMAIN_MAX_SIZE 63
 
 /**
+ * Minimum number of segments in a fully-qualified name
+ *
+ * This reqpresents FQN's of the form below
+ * ```
+ * <sn>._tcp.<domain>.
+ * ```
+ * Currently sub-types and service domains are unsupported and only the
+ * "local" domain is supported. Specifically, that excludes the following:
+ * ```
+ * <sub>._sub.<sn>._tcp.<servicedomain>.<parentdomain>.
+ * ```
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763">RFC 6763</a>, Section 7.2.
+ */
+#define DNS_SD_MIN_LABELS 3
+/**
+ * Maximum number of segments in a fully-qualified name
+ *
+ * This reqpresents FQN's of the form below
+ * ```
+ * <instance>.<sn>._tcp.<domain>.
+ * ```
+ *
+ * Currently sub-types and service domains are unsupported and only the
+ * "local" domain is supported. Specifically, that excludes the following:
+ * ```
+ * <sub>._sub.<sn>._tcp.<servicedomain>.<parentdomain>.
+ * ```
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763">RFC 6763</a>, Section 7.2.
+ */
+#define DNS_SD_MAX_LABELS 4
+
+/**
  * @brief Register a service for DNS Service Discovery
  *
  * This macro should be used for advanced use cases. Two simple use cases are
@@ -209,6 +241,12 @@ struct dns_sd_rec {
  * @internal
  */
 extern const char dns_sd_empty_txt[1];
+/**
+ * @brief Wildcard Port specifier for DNS-SD
+ *
+ * @internal
+ */
+extern const uint16_t dns_sd_port_zero;
 
 /** @endcond */
 
@@ -222,6 +260,32 @@ static inline size_t dns_sd_txt_size(const struct dns_sd_rec *rec)
 {
 	return rec->text_size;
 }
+
+/**
+ * @brief Check if @a rec is a DNS-SD Service Type Enumeration
+ *
+ * DNS-SD Service Type Enumeration is used by network tooling to
+ * acquire a list of all mDNS-advertised services belonging to a
+ * particular host on a particular domain.
+ *
+ * For example, for the domain '.local', the equivalent query
+ * would be '_services._dns-sd._udp.local'.
+ *
+ * Currently, only the '.local' domain is supported.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763#section-9">Service Type Enumeration, RFC 6763</a>.
+ *
+ * @param rec the record to in question
+ * @return true if @a rec is a DNS-SD Service Type Enumeration
+ */
+bool dns_sd_is_service_type_enumeration(const struct dns_sd_rec *rec);
+
+/**
+ * @brief Create a wildcard filter for DNS-SD records
+ *
+ * @param filter a pointer to the filter to use
+ */
+void dns_sd_create_wildcard_filter(struct dns_sd_rec *filter);
 
 /**
  * @}

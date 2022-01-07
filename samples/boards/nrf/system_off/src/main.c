@@ -9,6 +9,7 @@
 #include <device.h>
 #include <init.h>
 #include <pm/pm.h>
+#include <pm/device.h>
 #include "retained.h"
 #include <hal/nrf_gpio.h>
 
@@ -66,17 +67,17 @@ void main(void)
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
 
 	printk("Busy-wait %u s with UART off\n", BUSY_WAIT_S);
-	rc = pm_device_state_set(cons, PM_DEVICE_STATE_SUSPENDED);
+	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
-	rc = pm_device_state_set(cons, PM_DEVICE_STATE_ACTIVE);
+	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_RESUME);
 
 	printk("Sleep %u s\n", SLEEP_S);
 	k_sleep(K_SECONDS(SLEEP_S));
 
 	printk("Sleep %u s with UART off\n", SLEEP_S);
-	rc = pm_device_state_set(cons, PM_DEVICE_STATE_SUSPENDED);
+	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
 	k_sleep(K_SECONDS(SLEEP_S));
-	rc = pm_device_state_set(cons, PM_DEVICE_STATE_ACTIVE);
+	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_RESUME);
 
 	printk("Entering system off; press BUTTON1 to restart\n");
 
@@ -90,7 +91,7 @@ void main(void)
 	 * controlled delay.  Here we need to override that, then
 	 * force entry to deep sleep on any delay.
 	 */
-	pm_power_state_force((struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+	pm_power_state_force(0u, (struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
 
 	printk("ERROR: System off failed\n");
 	while (true) {

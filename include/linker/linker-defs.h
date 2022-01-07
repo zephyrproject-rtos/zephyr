@@ -259,7 +259,7 @@ extern char _vector_start[];
 extern char _vector_end[];
 
 #if DT_NODE_HAS_STATUS(_NODE_RESERVED, okay)
-DT_RESERVED_MEM_SYMBOLS()
+LINKER_DT_RESERVED_MEM_SYMBOLS()
 #endif
 
 #ifdef CONFIG_SW_VECTOR_RELAY
@@ -304,6 +304,12 @@ extern char __dtcm_noinit_end[];
 extern char __dtcm_data_load_start[];
 extern char __dtcm_start[];
 extern char __dtcm_end[];
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+extern char __ocm_start[];
+extern char __ocm_end[];
+extern char __ocm_size[];
 #endif
 
 /* Used by the Security Attribution Unit to configure the

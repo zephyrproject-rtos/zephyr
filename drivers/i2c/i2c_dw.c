@@ -13,6 +13,7 @@
 #include <drivers/i2c.h>
 #include <kernel.h>
 #include <init.h>
+#include <pm/device.h>
 #include <arch/cpu.h>
 #include <string.h>
 
@@ -727,7 +728,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		I2C_DW_INIT_PCIE(n)                                           \
 	};                                                                    \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                    \
-	DEVICE_DT_INST_DEFINE(n, &i2c_dw_initialize, NULL,                    \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL,                    \
 			      &i2c_##n##_runtime, &i2c_config_dw_##n,         \
 			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,          \
 			      &funcs);                                        \

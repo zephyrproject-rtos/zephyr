@@ -25,6 +25,32 @@
 			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&flexpwm1_pwm2 0>;
+		};
+	};
+};
+
+&lpi2c5 {
+	status = "okay";
+
+	fxos8700@1f {
+		compatible = "nxp,fxos8700";
+		reg = <0x1f>;
+		label = "FXOS8700";
+
+		/* Two zero ohm resistors (R256 and R270) isolate sensor
+		 * interrupt gpios from the soc and are unpopulated by default.
+		 * Note that if you populate them, they conflict with camera and
+		 * ethernet PHY reset signals.
+		 */
+		int1-gpios = <&gpio11 14 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio11 15 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &lpuart1 {
@@ -37,5 +63,9 @@
 };
 
 &green_led {
+	status = "okay";
+};
+
+&flexpwm1_pwm2 {
 	status = "okay";
 };

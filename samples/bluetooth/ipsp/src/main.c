@@ -166,8 +166,8 @@ static inline void set_dst_addr(sa_family_t family,
 				struct net_udp_hdr *udp_hdr,
 				struct sockaddr *dst_addr)
 {
-	net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-			&ipv6_hdr->src);
+	net_ipv6_addr_copy_raw((uint8_t *)&net_sin6(dst_addr)->sin6_addr,
+			       ipv6_hdr->src);
 	net_sin6(dst_addr)->sin6_family = AF_INET6;
 	net_sin6(dst_addr)->sin6_port = udp_hdr->src_port;
 }

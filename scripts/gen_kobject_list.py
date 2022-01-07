@@ -57,13 +57,13 @@ import math
 import os
 import struct
 import json
-from distutils.version import LooseVersion
+from packaging import version
 
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
+if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 from collections import OrderedDict
@@ -106,7 +106,8 @@ kobjects = OrderedDict([
     ("net_if", (None, False, False)),
     ("sys_mutex", (None, True, False)),
     ("k_futex", (None, True, False)),
-    ("k_condvar", (None, False, True))
+    ("k_condvar", (None, False, True)),
+    ("k_event", ("CONFIG_EVENTS", False, True))
 ])
 
 def kobject_to_enum(kobj):
@@ -452,7 +453,7 @@ def analyze_die_array(die):
             continue
 
     if not elements:
-        if type_offset in type_env.keys():
+        if type_offset in type_env:
             mt = type_env[type_offset]
             if mt.has_kobject():
                 if isinstance(mt, KobjectType) and mt.name == STACK_TYPE:
@@ -588,8 +589,7 @@ def find_kobjects(elf, syms):
             continue
 
         loc = die.attributes["DW_AT_location"]
-        if loc.form != "DW_FORM_exprloc" and \
-           loc.form != "DW_FORM_block1":
+        if loc.form not in ("DW_FORM_exprloc", "DW_FORM_block1"):
             debug_die(die, "kernel object '%s' unexpected location format" %
                       name)
             continue

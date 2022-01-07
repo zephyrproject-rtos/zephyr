@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <pm/device.h>
 #include <pm/device_runtime.h>
 #include <sys/printk.h>
 #include "dummy_parent.h"
@@ -24,8 +25,8 @@ static int dummy_transfer(const struct device *dev, uint32_t cmd,
 	return 0;
 }
 
-static int dummy_parent_pm_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int dummy_parent_pm_action(const struct device *dev,
+				  enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -47,10 +48,11 @@ static const struct dummy_parent_api funcs = {
 
 int dummy_parent_init(const struct device *dev)
 {
-	pm_device_enable(dev);
-	return 0;
+	return pm_device_runtime_enable(dev);
 }
 
+PM_DEVICE_DEFINE(dummy_parent, dummy_parent_pm_action);
+
 DEVICE_DEFINE(dummy_parent, DUMMY_PARENT_NAME, &dummy_parent_init,
-		    dummy_parent_pm_ctrl, NULL, NULL, POST_KERNEL,
+		    PM_DEVICE_REF(dummy_parent), NULL, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);

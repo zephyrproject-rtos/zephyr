@@ -21,7 +21,7 @@ static void test_busy_sim(void)
 
 	/* Start busy simulator and check that k_busy_wait last longer */
 	t = k_uptime_get_32();
-	busy_sim_start(500, 200, 1000, 400);
+	busy_sim_start(500, 200, 1000, 400, NULL);
 	k_busy_wait(1000 * ms);
 	t = k_uptime_get_32() - t;
 	busy_ms = (3 * ms) / 2;

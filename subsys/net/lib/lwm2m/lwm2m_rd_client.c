@@ -112,8 +112,8 @@ struct lwm2m_rd_client_info {
 	char server_ep[CLIENT_EP_LEN];
 
 	lwm2m_ctx_event_cb_t event_cb;
-
 	bool use_bootstrap : 1;
+
 	bool trigger_update : 1;
 	bool update_objects : 1;
 } client;
@@ -330,6 +330,24 @@ static void do_bootstrap_reg_timeout_cb(struct lwm2m_message *msg)
 }
 #endif
 
+int engine_trigger_bootstrap(void)
+{
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	if (!sm_is_registered()) {
+		/* Bootstrap is not possible to trig */
+		LOG_WRN("Cannot trigger bootstrap from state %u", client.engine_state);
+		return -EPERM;
+	}
+
+	LOG_INF("Server Initiated Bootstrap");
+	client.use_bootstrap = true;
+	client.engine_state = ENGINE_INIT;
+
+	return 0;
+#else
+	return -EPERM;
+#endif
+}
 static int do_registration_reply_cb(const struct coap_packet *response,
 				    struct coap_reply *reply,
 				    const struct sockaddr *from)
@@ -682,6 +700,7 @@ static int sm_bootstrap_trans_done(void)
 
 	/* reset security object instance */
 	client.ctx->sec_obj_inst = -1;
+	client.use_bootstrap = false;
 
 	set_sm_state(ENGINE_DO_REGISTRATION);
 
@@ -1052,7 +1071,8 @@ static void lwm2m_rd_client_service(struct k_work *work)
 }
 
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
-			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb)
+			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb,
+			   lwm2m_observe_cb_t observe_cb)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
 
@@ -1068,6 +1088,7 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 	client.ctx = client_ctx;
 	client.ctx->sock_fd = -1;
 	client.ctx->fault_cb = socket_fault_cb;
+	client.ctx->observe_cb = observe_cb;
 	client.event_cb = event_cb;
 	client.use_bootstrap = flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP;
 
@@ -1080,14 +1101,14 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 }
 
 void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
-			   lwm2m_ctx_event_cb_t event_cb)
+			   lwm2m_ctx_event_cb_t event_cb, bool deregister)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
 
 	client.ctx = client_ctx;
 	client.event_cb = event_cb;
 
-	if (sm_is_registered()) {
+	if (sm_is_registered() && deregister) {
 		set_sm_state(ENGINE_DEREGISTER);
 	} else {
 		if (client.ctx->sock_fd > -1) {

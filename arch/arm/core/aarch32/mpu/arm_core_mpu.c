@@ -278,7 +278,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 		__ASSERT((uintptr_t)&z_priv_stacks_ram_start <= guard_start,
 		"Guard start: (0x%lx) below privilege stacks boundary: (%p)",
-		guard_start, &z_priv_stacks_ram_start);
+		guard_start, z_priv_stacks_ram_start);
 	} else
 #endif /* CONFIG_USERSPACE */
 	{

@@ -49,7 +49,7 @@ config LIS2DH_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-choice
+choice LIS2DH_ACCEL_RANGE
 	prompt "Acceleration measurement range"
 	default LIS2DH_ACCEL_RANGE_RUNTIME
 	help
@@ -72,7 +72,7 @@ config LIS2DH_ACCEL_RANGE_16G
 
 endchoice
 
-choice
+choice LIS2DH_OPER_MODE
 	prompt "Operation mode"
 	default LIS2DH_OPER_MODE_NORMAL
 	help
@@ -90,7 +90,7 @@ config LIS2DH_OPER_MODE_LOW_POWER
 
 endchoice
 
-choice
+choice LIS2DH_ODR
 	prompt "Output data rate frequency"
 	default LIS2DH_ODR_RUNTIME
 	help
@@ -137,5 +137,20 @@ config LIS2DH_ODR_9_LOW
 	depends on LIS2DH_OPER_MODE_LOW_POWER
 
 endchoice
+
+config LIS2DH_BLOCK_DATA_UPDATE
+	bool "Output registers not updated until MSB and LSB read"
+
+config LIS2DH_MEASURE_TEMPERATURE
+	bool "Enable temperature measurements"
+	select LIS2DH_BLOCK_DATA_UPDATE
+	help
+	  The temperature sensor is most suitable for measuring
+	  relative temperature. For example, it is X degrees C
+	  cooler or warmer.
+	  Each chip has an offset.  This offset must be applied
+	  to the result. The offset can be obtained by comparing the
+	  the reported temperature to a reference.
+	  This option does not apply to the LSM330DLHC.
 
 endif # LIS2DH

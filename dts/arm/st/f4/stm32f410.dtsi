@@ -78,15 +78,14 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
 			interrupts = <54 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_6";
 
-			pwm {
-				compatible = "st,stm32-pwm";
+			counter {
+				compatible = "st,stm32-counter";
 				status = "disabled";
-				st,prescaler = <0>;
-				label = "PWM_6";
-				#pwm-cells = <3>;
+				label = "COUNTER_6";
 			};
 		};
 

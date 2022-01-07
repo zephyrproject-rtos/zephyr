@@ -19,6 +19,7 @@
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/direction.h>
 #include <bluetooth/conn.h>
 #include <drivers/bluetooth/hci_driver.h>
 #include <bluetooth/att.h>
@@ -38,6 +39,7 @@
 #include "att_internal.h"
 #include "gatt_internal.h"
 #include "iso_internal.h"
+#include "direction_internal.h"
 
 struct tx_meta {
 	struct bt_conn_tx *tx;
@@ -46,13 +48,16 @@ struct tx_meta {
 #define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 K_FIFO_DEFINE(free_tx);
 
+#if defined(CONFIG_BT_CONN_TX)
+static void tx_complete_work(struct k_work *work);
+#endif /* CONFIG_BT_CONN_TX */
+
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
 
 static void deferred_work(struct k_work *work);
-static void tx_complete_work(struct k_work *work);
 static void notify_connected(struct bt_conn *conn);
 
 static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
@@ -68,7 +73,7 @@ NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
  * another buffer from the acl_tx_pool would result in a deadlock.
  */
 NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT,
-			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE), NULL);
+			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE), 8, NULL);
 
 #endif /* CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0 */
 
@@ -212,8 +217,10 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 
 #if defined(CONFIG_BT_CONN)
 	k_work_init_delayable(&conn->deferred_work, deferred_work);
-	k_work_init(&conn->tx_complete_work, tx_complete_work);
 #endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_CONN_TX)
+	k_work_init(&conn->tx_complete_work, tx_complete_work);
+#endif /* CONFIG_BT_CONN_TX */
 
 	return conn;
 }
@@ -263,7 +270,13 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 
 		if (buf->len > net_buf_tailroom(conn->rx)) {
 			BT_ERR("Not enough buffer space for L2CAP data");
-			bt_conn_reset_rx_state(conn);
+
+			/* Frame is not complete but we still pass it to L2CAP
+			 * so that it may handle error on protocol level
+			 * eg disconnect channel.
+			 */
+			bt_l2cap_recv(conn, conn->rx, false);
+			conn->rx = NULL;
 			net_buf_unref(buf);
 			return;
 		}
@@ -308,7 +321,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	conn->rx = NULL;
 
 	BT_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
-	bt_l2cap_recv(conn, buf);
+	bt_l2cap_recv(conn, buf, true);
 }
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
@@ -320,7 +333,8 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	BT_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
-	if (IS_ENABLED(CONFIG_BT_ISO) &&
+	if ((IS_ENABLED(CONFIG_BT_ISO_UNICAST) ||
+	     IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) &&
 	    conn->type == BT_CONN_TYPE_ISO) {
 		bt_iso_recv(conn, buf, flags);
 		return;
@@ -1071,7 +1085,7 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 		}
 	} while (!atomic_cas(&conn->ref, old, old + 1));
 
-	BT_DBG("handle %u ref %d -> %d", conn->handle, old, old + 1);
+	BT_DBG("handle %u ref %ld -> %ld", conn->handle, old, old + 1);
 
 	return conn;
 }
@@ -1082,7 +1096,7 @@ void bt_conn_unref(struct bt_conn *conn)
 
 	old = atomic_dec(&conn->ref);
 
-	BT_DBG("handle %u ref %d -> %d", conn->handle, old,
+	BT_DBG("handle %u ref %ld -> %ld", conn->handle, old,
 	       atomic_get(&conn->ref));
 
 	__ASSERT(old > 0, "Conn reference counter is 0");
@@ -1187,6 +1201,18 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 
 	return buf;
 }
+
+#if defined(CONFIG_BT_CONN_TX)
+static void tx_complete_work(struct k_work *work)
+{
+	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
+					    tx_complete_work);
+
+	BT_DBG("conn %p", conn);
+
+	tx_notify(conn);
+}
+#endif /* CONFIG_BT_CONN_TX */
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
@@ -1479,16 +1505,6 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	return bt_l2cap_update_conn_param(conn, param);
 }
 
-static void tx_complete_work(struct k_work *work)
-{
-	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
-					   tx_complete_work);
-
-	BT_DBG("conn %p", conn);
-
-	tx_notify(conn);
-}
-
 #if defined(CONFIG_BT_ISO_UNICAST)
 static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 {
@@ -1524,8 +1540,11 @@ static void deferred_work(struct k_work *work)
 		struct bt_conn *iso;
 
 		if (conn->type == BT_CONN_TYPE_ISO) {
+			/* bt_iso_disconnected is responsible for unref'ing the
+			 * connection pointer, as it is conditional on whether
+			 * the connection is a central or peripheral.
+			 */
 			bt_iso_disconnected(conn);
-			bt_conn_unref(conn);
 			return;
 		}
 
@@ -2903,5 +2922,34 @@ int bt_conn_init(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+void bt_hci_le_df_connection_iq_report(struct net_buf *buf)
+{
+	struct bt_df_conn_iq_samples_report iq_report;
+	struct bt_conn *conn;
+	struct bt_conn_cb *cb;
+	int err;
+
+	err = hci_df_prepare_connection_iq_report(buf, &iq_report, &conn);
+	if (err) {
+		BT_ERR("Prepare CTE conn IQ report failed %d", err);
+		return;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->cte_report_cb) {
+			cb->cte_report_cb(conn, &iq_report);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->cte_report_cb) {
+			cb->cte_report_cb(conn, &iq_report);
+		}
+	}
+}
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 #endif /* CONFIG_BT_CONN */

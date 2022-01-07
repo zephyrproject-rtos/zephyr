@@ -87,12 +87,14 @@
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -102,22 +104,25 @@ zephyr_udc0: &usbotg_fs {
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &timers12 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm12: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim12_ch1_pb14>;
+		pinctrl-names = "default";
 	};
 };
 
 &adc1 {
 	pinctrl-0 = <&adc1_inp15_pa3>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -144,11 +149,13 @@ zephyr_udc0: &usbotg_fs {
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
+	pinctrl-names = "default";
 };
 
 &spi1 {
 	status = "okay";
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 };
 

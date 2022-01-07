@@ -296,23 +296,6 @@ test_i2c_si7210: si7010@30 {
 	reg = <0x30>;
 };
 
-test_i2c_ssd1306fb: ssd1306fb@26 {
-	compatible = "solomon,ssd1306fb";
-	label = "SSD1306FB";
-	reg = <0x26>;
-	height = <0>;
-	width = <0>;
-	segment-offset = <0>;
-	page-offset = <0>;
-	display-offset = <0>;
-	multiplex-ratio = <0>;
-	/* segment-remap; */
-	/* com-invdir; */
-	/* com-sequential; */
-	prechargep = <0>;
-	reset-gpios = <&test_gpio 0 0>;
-};
-
 test_i2c_hts221: hts221@27 {
 	compatible = "st,hts221";
 	label = "HTS221";
@@ -543,6 +526,13 @@ test_i2c_tmp007: tmp007@44 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_tmp108: tmp108@48 {
+	compatible = "ti,tmp108";
+	label = "TMP108";
+	reg = <0x48>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
 test_i2c_tmp112: tmp112@45 {
 	compatible = "ti,tmp112";
 	label = "TMP112";
@@ -563,6 +553,7 @@ test_i2c_bq274xx: bq27xx@47 {
 	design-capacity = <1800>;
 	taper-current = <45>;
 	terminate-voltage = <3000>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_mpr: mpr@18 {
@@ -682,15 +673,15 @@ test_i2c_lm75: lm75@4e {
 	reg = <0x4e>;
 };
 
-test_i2c_ina23x: ina23x@4f {
-	compatible = "ti,ina23x";
-	label = "INA23X";
+test_i2c_ina230: ina230@4f {
+	compatible = "ti,ina230";
+	label = "INA230";
 	reg = <0x4f>;
 	config = <0>;
-	current_lsb = <1>;
+	current-lsb = <1>;
 	rshunt = <0>;
 	mask = <0>;
-	alert_limit = <0>;
+	alert-limit = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
 
@@ -699,4 +690,26 @@ test_i2c_lm77: lm77@50 {
 	label = "LM77";
 	reg = <0x50>;
 	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ina231: ina231@51 {
+	compatible = "ti,ina230";
+	label = "INA231";
+	reg = <0x51>;
+	config = <0>;
+	current-lsb = <1>;
+	rshunt = <0>;
+	mask = <0>;
+	alert-limit = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ina237: ina237@52 {
+	compatible = "ti,ina237";
+	label = "INA237";
+	reg = <0x52>;
+	config = <0>;
+	current-lsb = <1>;
+	adc-config = <0>;
+	rshunt = <0>;
 };

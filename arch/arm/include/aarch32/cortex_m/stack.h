@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_EXTERN(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
 /**

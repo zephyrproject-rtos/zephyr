@@ -132,6 +132,7 @@
 &i2c1 {
 	status = "okay";
 	pinctrl-0 = <&I2C1_SCL_PTD8 &I2C1_SDA_PTD9>;
+	pinctrl-names = "default";
 
 	fxos8700@1c {
 		compatible = "nxp,fxos8700";
@@ -154,4 +155,5 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&UART0_RX_PTB0 &UART0_TX_PTB1>;
+	pinctrl-names = "default";
 };

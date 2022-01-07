@@ -561,7 +561,7 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {	\
 			    &dma_mcux_lpc_init,				\
 			    NULL,					\
 			    &dma_data_##n, &dma_##n##_config,\
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,\
+			    POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,	\
 			    &dma_mcux_lpc_api);			\
 									\
 	DMA_MCUX_LPC_CONFIG_FUNC(n)				\

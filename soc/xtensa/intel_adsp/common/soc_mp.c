@@ -20,73 +20,47 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <cavs-idc.h>
 #include <soc.h>
 #include <arch/xtensa/cache.h>
-#include <adsp/io.h>
-
-#include <soc/shim.h>
-
-#include <drivers/ipm.h>
-#include <ipm/ipm_cavs_idc.h>
+#include <cavs-shim.h>
+#include <cavs-mem.h>
+#include <cpu_init.h>
 
 extern void z_sched_ipi(void);
 extern void z_smp_start_cpu(int id);
 extern void z_reinit_idle_thread(int i);
 
-/* ROM wake version parsed by ROM during core wake up. */
-#define IDC_ROM_WAKE_VERSION	0x2
+/* IDC power up message to the ROM firmware.  This isn't documented
+ * anywhere, it's basically just a magic number (except the high bit,
+ * which signals the hardware)
+ */
+#define IDC_MSG_POWER_UP				  \
+	(BIT(31) |     /* Latch interrupt in ITC write */ \
+	 (0x1 << 24) | /* "ROM control version" = 1 */	  \
+	 (0x2 << 0))   /* "Core wake version" = 2 */
 
-/* IDC message type. */
-#define IDC_TYPE_SHIFT		24
-#define IDC_TYPE_MASK		0x7f
-#define IDC_TYPE(x)		(((x) & IDC_TYPE_MASK) << IDC_TYPE_SHIFT)
+#define IDC_ALL_CORES (BIT(CONFIG_MP_NUM_CPUS) - 1)
 
-/* IDC message header. */
-#define IDC_HEADER_MASK		0xffffff
-#define IDC_HEADER(x)		((x) & IDC_HEADER_MASK)
-
-/* IDC message extension. */
-#define IDC_EXTENSION_MASK	0x3fffffff
-#define IDC_EXTENSION(x)	((x) & IDC_EXTENSION_MASK)
-
-/* IDC power up message. */
-#define IDC_MSG_POWER_UP	\
-	(IDC_TYPE(0x1) | IDC_HEADER(IDC_ROM_WAKE_VERSION))
-
-#define IDC_MSG_POWER_UP_EXT(x)	IDC_EXTENSION((x) >> 2)
+#define CAVS15_ROM_IDC_DELAY 500
 
 struct cpustart_rec {
-	uint32_t		cpu;
-
+	uint32_t        cpu;
 	arch_cpustart_t	fn;
-	void		*arg;
-	uint32_t		vecbase;
-
-	uint32_t		alive;
+	void            *arg;
 };
+
+static struct cpustart_rec start_rec;
 
 static struct k_spinlock mplock;
 
 char *z_mp_stack_top;
 
-#ifdef CONFIG_KERNEL_COHERENCE
-/* Coherence guarantees that normal .data will be coherent and that it
- * won't overlap any cached memory.
+/* Vestigial silliness: An old mechanism for core startup would embed
+ * a "manifest" of code to copy to LP-SRAM at startup (vs. the tiny
+ * trampoline we use here).  This was constructed in the linker
+ * script, and the first word would encode the number of entries.  As
+ * it happens, SOF still emits the code to copy this data, so it needs
+ * to see this symbol point to a zero.
  */
-static struct {
-	struct cpustart_rec cpustart;
-} cpustart_mem;
-#else
-/* If .data RAM is by default incoherent, then the start record goes
- * into its own dedicated cache line(s)
- */
-static __aligned(XCHAL_DCACHE_LINESIZE) union {
-	struct cpustart_rec cpustart;
-	char pad[XCHAL_DCACHE_LINESIZE];
-} cpustart_mem;
-#endif
-
-#define start_rec \
-	(*((volatile struct cpustart_rec *) \
-	   z_soc_uncached_ptr(&cpustart_mem.cpustart)))
+uint32_t _loader_storage_manifest_start;
 
 /* Simple array of CPUs that are active and available for an IPI.  The
  * IDC interrupt is ALSO used to bring a CPU out of reset, so we need
@@ -107,7 +81,7 @@ void z_soc_mp_asm_entry(void);
 __asm__(".align 4                   \n\t"
 	".global z_soc_mp_asm_entry \n\t"
 	"z_soc_mp_asm_entry:        \n\t"
-	"  movi  a0, 0x40025        \n\t" /* WOE | UM | INTLEVEL(5) */
+	"  movi  a0, 0x4002f        \n\t" /* WOE | UM | INTLEVEL(max) */
 	"  wsr   a0, PS             \n\t"
 	"  movi  a0, 0              \n\t"
 	"  wsr   a0, WINDOWBASE     \n\t"
@@ -117,98 +91,10 @@ __asm__(".align 4                   \n\t"
 	"  movi  a1, z_mp_stack_top \n\t"
 	"  l32i  a1, a1, 0          \n\t"
 	"  call4 z_mp_entry         \n\t");
-BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
 
-int cavs_idc_smp_init(const struct device *dev);
-
-#define CxL1CCAP (*(volatile uint32_t *)0x9F080080)
-#define CxL1CCFG (*(volatile uint32_t *)0x9F080084)
-#define CxL1PCFG (*(volatile uint32_t *)0x9F080088)
-
-/* "Data/Instruction Cache Memory Way Count" fields */
-#define CxL1CCAP_DCMWC ((CxL1CCAP >> 16) & 7)
-#define CxL1CCAP_ICMWC ((CxL1CCAP >> 20) & 7)
-
-static ALWAYS_INLINE void enable_l1_cache(void)
+__imr void z_mp_entry(void)
 {
-	uint32_t reg;
-
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
-	/* First, on cAVS 2.5 we need to power the cache SRAM banks
-	 * on!  Write a bit for each cache way in the bottom half of
-	 * the L1CCFG register and poll the top half for them to turn
-	 * on.
-	 */
-	uint32_t dmask = BIT(CxL1CCAP_DCMWC) - 1;
-	uint32_t imask = BIT(CxL1CCAP_ICMWC) - 1;
-	uint32_t waymask = (imask << 8) | dmask;
-
-	CxL1CCFG = waymask;
-	while (((CxL1CCFG >> 16) & waymask) != waymask) {
-	}
-
-	/* Prefetcher also power gates, same interface */
-	CxL1PCFG = 1;
-	while ((CxL1PCFG & 0x10000) == 0) {
-	}
-#endif
-
-	/* Now set up the Xtensa CPU to enable the cache logic.  The
-	 * details of the fields are somewhat complicated, but per the
-	 * ISA ref: "Turning on caches at power-up usually consists of
-	 * writing a constant with bits[31:8] all 1’s to MEMCTL.".
-	 * Also set bit 0 to enable the LOOP extension instruction
-	 * fetch buffer.
-	 */
-#ifdef XCHAL_HAVE_ICACHE_DYN_ENABLE
-	reg = 0xffffff01;
-	__asm__ volatile("wsr %0, MEMCTL; rsync" :: "r"(reg));
-#endif
-
-	/* Likewise enable prefetching.  Sadly these values are not
-	 * architecturally defined by Xtensa (they're just documented
-	 * as priority hints), so this constant is just copied from
-	 * SOF for now.  If we care about prefetch priority tuning
-	 * we're supposed to ask Cadence I guess.
-	 */
-	reg = IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25) ? 0x1038 : 0;
-	__asm__ volatile("wsr %0, PREFCTL; rsync" :: "r"(reg));
-
-	/* Finally we need to enable the cache in the Region
-	 * Protection Option "TLB" entries.  The hardware defaults
-	 * have this set to RW/uncached (2) everywhere.  We want
-	 * writeback caching (4) in the sixth mapping (the second of
-	 * two RAM mappings) and to mark all unused regions
-	 * inaccessible (15) for safety.  Note that there is a HAL
-	 * routine that does this (by emulating the older "cacheattr"
-	 * hardware register), but it generates significantly larger
-	 * code.
-	 */
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
-	/* Already set up by the ROM on older hardware. */
-	const uint8_t attribs[] = { 2, 15, 15, 15, 2, 4, 15, 15 };
-
-	for (int region = 0; region < 8; region++) {
-		reg = 0x20000000 * region;
-		__asm__ volatile("wdtlb %0, %1" :: "r"(attribs[region]), "r"(reg));
-	}
-#endif
-}
-
-void z_mp_entry(void)
-{
-	volatile int ie;
-	uint32_t reg;
-
-	enable_l1_cache();
-
-	/* Fix ATOMCTL to match CPU0.  Hardware defaults for S32C1I
-	 * use internal operations (and are thus presumably atomic
-	 * only WRT the local CPU!).  We need external transactions on
-	 * the shared bus.
-	 */
-	reg = 0x15;
-	__asm__ volatile("wsr %0, ATOMCTL" :: "r"(reg));
+	cpu_early_init();
 
 	/* We don't know what the boot ROM (on pre-2.5 DSPs) might
 	 * have touched and we don't care.  Make sure it's not in our
@@ -219,18 +105,9 @@ void z_mp_entry(void)
 	 * isn't using yet.  Manual inspection of generated code says
 	 * we're safe, but really we need a better solution here.
 	 */
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V25
-	z_xtensa_cache_flush_inv_all();
-#endif
-
-	/* Copy over VECBASE from the main CPU for an initial value
-	 * (will need to revisit this if we ever allow a user API to
-	 * change interrupt vectors at runtime).
-	 */
-	ie = 0;
-	__asm__ volatile("wsr.INTENABLE %0" : : "r"(ie));
-	__asm__ volatile("wsr.VECBASE %0" : : "r"(start_rec.vecbase));
-	__asm__ volatile("rsync");
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		z_xtensa_cache_flush_inv_all();
+	}
 
 	/* Set up the CPU pointer. */
 	_cpu_t *cpu = &_kernel.cpus[start_rec.cpu];
@@ -251,25 +128,20 @@ void z_mp_entry(void)
 	/* Interrupt must be enabled while running on current core */
 	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
 
-#ifdef CONFIG_SMP_BOOT_DELAY
-	cavs_idc_smp_init(NULL);
-#endif
+	/* Unfortunately the interrupt controller doesn't understand
+	 * that each CPU has its own mask register (the timer has a
+	 * similar hook).  Needed only on hardware with ROMs that
+	 * disable this; otherwise our own code in soc_idc_init()
+	 * already has it unmasked.
+	 */
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		CAVS_INTCTRL[start_rec.cpu].l2.clear = CAVS_L2_IDC;
+	}
 
 	cpus_active[start_rec.cpu] = true;
-	start_rec.alive = 1;
 
 	start_rec.fn(start_rec.arg);
-
-#if CONFIG_MP_NUM_CPUS == 1
-	/* CPU#1 can be under manual control running custom functions
-	 * instead of participating in general thread execution.
-	 * Put the CPU into idle after those functions return
-	 * so this won't return.
-	 */
-	for (;;) {
-		k_cpu_idle();
-	}
-#endif
+	__ASSERT(false, "arch_start_cpu() handler should never return");
 }
 
 bool arch_cpu_active(int cpu_num)
@@ -288,7 +160,19 @@ static ALWAYS_INLINE uint32_t prid(void)
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	uint32_t vecbase, curr_cpu = prid();
+	uint32_t curr_cpu = prid();
+
+	__ASSERT_NO_MSG(!cpus_active[cpu_num]);
+
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	/* On the older hardware, core power is managed by the host
+	 * and aren't able to poll for anything to know it's
+	 * available.  Need a delay here so that the hardware and ROM
+	 * firmware can complete initialization and be waiting for the
+	 * IDC we're about to send.
+	 */
+	k_busy_wait(CAVS15_ROM_IDC_DELAY);
+#endif
 
 #ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	/* On cAVS v2.5, MP startup works differently.  The core has
@@ -323,18 +207,11 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	lpsram[1] = z_soc_mp_asm_entry;
 #endif
 
-	__asm__ volatile("rsr.VECBASE %0\n\t" : "=r"(vecbase));
-
 	start_rec.cpu = cpu_num;
 	start_rec.fn = fn;
 	start_rec.arg = arg;
-	start_rec.vecbase = vecbase;
-	start_rec.alive = 0;
 
 	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
-
-	/* Pre-2.x cAVS delivers the IDC to ROM code, so unmask it */
-	CAVS_INTCTRL[cpu_num].l2.clear = CAVS_L2_IDC;
 
 	/* Disable automatic power and clock gating for that CPU, so
 	 * it won't just go back to sleep.  Note that after startup,
@@ -343,47 +220,38 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	 * turn itself off when it gets to the WAITI instruction in
 	 * the idle thread.
 	 */
-	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
-
-	shim->pwrctl |= BIT(cpu_num);
+	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(cpu_num);
 	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
-		shim->clkctl |= BIT(16 + cpu_num);
+		CAVS_SHIM.clkctl |= CAVS_CLKCTL_TCPLCG(cpu_num);
 	}
 
-	/* Send power up message to the other core */
-	uint32_t ietc = IDC_MSG_POWER_UP_EXT((long) z_soc_mp_asm_entry);
+	/* Workaround.  SOF seems to have some older code on pre-2.5
+	 * hardware that is remasking these interrupts (probably a
+	 * variant of the same code we inherited earlier to mask it
+	 * while the ROM handles the startup IDC?).  Unmask
+	 * unconditionally while we get this figured out, it's cheap
+	 * and safe.
+	 */
+	if (IS_ENABLED(CONFIG_SOF)) {
+		CAVS_INTCTRL[cpu_num].l2.clear = CAVS_L2_IDC;
+		for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
+			IDC[c].busy_int |= IDC_ALL_CORES;
+		}
+	}
+
+	/* Send power-up message to the other core.  Start address
+	 * gets passed via the IETC scratch register (only 30 bits
+	 * available, so it's sent shifted).  The write to ITC
+	 * triggers the interrupt, so that comes last.
+	 */
+	uint32_t ietc = ((long) z_soc_mp_asm_entry) >> 2;
 
 	IDC[curr_cpu].core[cpu_num].ietc = ietc;
-	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP | IPC_IDCITC_BUSY;
-
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V25
-	/* Early DSPs have a ROM that actually receives the startup
-	 * IDC as an interrupt, and we don't want that to be confused
-	 * by IPIs sent by the OS elsewhere.  Mask the IDC interrupt
-	 * on other core so IPI won't cause them to jump to ISR until
-	 * the core is fully initialized.
-	 */
-	uint32_t idc_reg = idc_read(IPC_IDCCTL, cpu_num);
-
-	idc_reg &= ~IPC_IDCCTL_IDCTBIE(0);
-	idc_write(IPC_IDCCTL, cpu_num, idc_reg);
-	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x00 +
-		      CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
-
-	k_busy_wait(100);
-
-#ifdef CONFIG_SMP_BOOT_DELAY
-	cavs_idc_smp_init(NULL);
-#endif
-#endif
-
-	while (!start_rec.alive)
-		;
+	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP;
 }
 
 void arch_sched_ipi(void)
 {
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	uint32_t curr = prid();
 
 	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
@@ -391,17 +259,6 @@ void arch_sched_ipi(void)
 			IDC[curr].core[c].itc = BIT(31);
 		}
 	}
-#else
-	/* Legacy implementation for cavs15 based on the 2-core-only
-	 * IPM driver.  To be replaced with the general one when
-	 * validated.
-	 */
-	const struct device *idcdev =
-		device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
-
-	ipm_send(idcdev, 0, IPM_CAVS_IDC_MSG_SCHED_IPI_ID,
-		 IPM_CAVS_IDC_MSG_SCHED_IPI_DATA, 0);
-#endif
 }
 
 void idc_isr(void *param)
@@ -423,36 +280,29 @@ void idc_isr(void *param)
 	}
 }
 
-#ifndef CONFIG_IPM_CAVS_IDC
 /* Fallback stub for external SOF code */
-int cavs_idc_smp_init(const struct device *dev)
+__imr int cavs_idc_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
 }
-#endif
 
-void soc_idc_init(void)
+__imr void soc_idc_init(void)
 {
-#ifndef CONFIG_IPM_CAVS_IDC
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(idc)), 0, idc_isr, NULL, 0);
-#endif
 
 	/* Every CPU should be able to receive an IDC interrupt from
 	 * every other CPU, but not to be back-interrupted when the
 	 * target core clears the busy bit.
 	 */
 	for (int core = 0; core < CONFIG_MP_NUM_CPUS; core++) {
-		uint32_t coremask = BIT(CONFIG_MP_NUM_CPUS) - 1;
-
-		IDC[core].busy_int |= coremask;
-		IDC[core].done_int &= ~coremask;
+		IDC[core].busy_int |= IDC_ALL_CORES;
+		IDC[core].done_int &= ~IDC_ALL_CORES;
 
 		/* Also unmask the IDC interrupt for every core in the
 		 * L2 mask register.
 		 */
 		CAVS_INTCTRL[core].l2.clear = CAVS_L2_IDC;
-
 	}
 
 	/* Clear out any existing pending interrupts that might be present */
@@ -475,9 +325,8 @@ void soc_idc_init(void)
  *
  * @param id CPU to start, in the range [1:CONFIG_MP_NUM_CPUS)
  */
-int soc_relaunch_cpu(int id)
+__imr int soc_relaunch_cpu(int id)
 {
-	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
 	int ret = 0;
 	k_spinlock_key_t k = k_spin_lock(&mplock);
 
@@ -486,10 +335,12 @@ int soc_relaunch_cpu(int id)
 		goto out;
 	}
 
-	if (shim->pwrsts & BIT(id)) {
+	if (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id)) {
 		ret = -EINVAL;
 		goto out;
 	}
+
+	__ASSERT_NO_MSG(!cpus_active[id]);
 
 	CAVS_INTCTRL[id].l2.clear = CAVS_L2_IDC;
 	z_reinit_idle_thread(id);
@@ -515,9 +366,8 @@ int soc_relaunch_cpu(int id)
  * @param id CPU to halt, not current cpu or cpu 0
  * @return 0 on success, -EINVAL on error
  */
-int soc_halt_cpu(int id)
+__imr int soc_halt_cpu(int id)
 {
-	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
 	int ret = 0;
 	k_spinlock_key_t k = k_spin_lock(&mplock);
 
@@ -526,16 +376,17 @@ int soc_halt_cpu(int id)
 		goto out;
 	}
 
+	/* Stop sending IPIs to this core */
+	cpus_active[id] = false;
+
 	/* Turn off the "prevent power/clock gating" bits, enabling
-	 * low power idle, and mask off IDC interrupts so it will not
-	 * be woken up by scheduler IPIs
+	 * low power idle
 	 */
-	CAVS_INTCTRL[id].l2.set = CAVS_L2_IDC;
-	shim->pwrctl &= ~BIT(id);
-	shim->clkctl &= ~BIT(16 + id);
+	CAVS_SHIM.pwrctl &= ~CAVS_PWRCTL_TCPDSPPG(id);
+	CAVS_SHIM.clkctl &= ~CAVS_CLKCTL_TCPLCG(id);
 
 	/* Wait for the CPU to reach an idle state before returing */
-	while (shim->pwrsts & BIT(id)) {
+	while (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id)) {
 	}
 
  out:

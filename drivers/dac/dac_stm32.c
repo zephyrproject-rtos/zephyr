@@ -9,6 +9,7 @@
 #include <errno.h>
 
 #include <drivers/dac.h>
+#include <drivers/pinctrl.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>
@@ -20,7 +21,6 @@
 LOG_MODULE_REGISTER(dac_stm32);
 
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/pinmux_stm32.h>
 
 /* some low-end MCUs have DAC with only one channel */
 #ifdef LL_DAC_CHANNEL_2
@@ -47,9 +47,7 @@ struct dac_stm32_cfg {
 	/* Clock configuration. */
 	struct stm32_pclken pclken;
 	/* pinctrl configurations. */
-	const struct soc_gpio_pinctrl *pinctrl;
-	/* Number of pinctrl configurations. */
-	size_t pinctrl_len;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /* Runtime driver data */
@@ -129,9 +127,7 @@ static int dac_stm32_init(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	err = stm32_dt_pinctrl_configure(cfg->pinctrl,
-					 cfg->pinctrl_len,
-					 (uint32_t)cfg->base);
+	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		LOG_ERR("DAC pinctrl setup failed (%d)", err);
 		return err;
@@ -148,8 +144,7 @@ static const struct dac_driver_api api_stm32_driver_api = {
 
 #define STM32_DAC_INIT(index)						\
 									\
-static const struct soc_gpio_pinctrl dac_pins_##index[] =		\
-	ST_STM32_DT_INST_PINCTRL(index, 0);				\
+PINCTRL_DT_INST_DEFINE(index);						\
 									\
 static const struct dac_stm32_cfg dac_stm32_cfg_##index = {		\
 	.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),			\
@@ -157,8 +152,7 @@ static const struct dac_stm32_cfg dac_stm32_cfg_##index = {		\
 		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
-	.pinctrl = dac_pins_##index,					\
-	.pinctrl_len = ARRAY_SIZE(dac_pins_##index),			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 };									\
 									\
 static struct dac_stm32_data dac_stm32_data_##index = {			\
@@ -168,7 +162,7 @@ static struct dac_stm32_data dac_stm32_data_##index = {			\
 DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, NULL,			\
 		    &dac_stm32_data_##index,				\
 		    &dac_stm32_cfg_##index, POST_KERNEL,		\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+		    CONFIG_DAC_INIT_PRIORITY,				\
 		    &api_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DAC_INIT)

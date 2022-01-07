@@ -10,7 +10,6 @@ config MODEM_QUECTEL_BG9X
 	select MODEM_IFACE_UART
 	select MODEM_SOCKET
 	select NET_SOCKETS_OFFLOAD
-	imply GPIO
 	help
 	  Choose this setting to enable quectel BG9x LTE-CatM1/NB-IoT modem
 	  driver.

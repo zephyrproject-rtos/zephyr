@@ -42,6 +42,9 @@ MEMORY
   drom0_0_seg(R): org = 0x3f000020, len = 0x3f0000-0x20
   rtc_iram_seg(RWX): org = 0x40070000, len = 0x2000
   rtc_slow_seg(RW): org = 0x50000000, len = 0x2000
+#if defined(CONFIG_ESP_SPIRAM)
+  ext_ram_seg(RW): org = 0x3f500000, len = CONFIG_ESP_SPIRAM_SIZE
+#endif
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
 #endif
@@ -220,6 +223,7 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     *libzephyr.a:log_core.*(.rodata .rodata.*)
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.*)
+    *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
 
    . = ALIGN(4);
     __esp_log_const_start = .;
@@ -236,6 +240,16 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
+
+#if defined(CONFIG_ESP_SPIRAM)
+  .ext_ram.bss (NOLOAD):
+  {
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    . = ALIGN(4);
+    _ext_ram_bss_end = ABSOLUTE(.) + CONFIG_ESP_SPIRAM_SIZE;
+  } > ext_ram_seg
+#endif
 
  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(20))
   {
@@ -310,6 +324,7 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
+    *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
@@ -323,6 +338,17 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+#endif
+
     _iram_text_end = ABSOLUTE(.);
     . = ALIGN(4);
     _iram_end = ABSOLUTE(.);
@@ -332,6 +358,17 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   {
     _stext = .;
     _text_start = ABSOLUTE(.);
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+#endif
+
     *(.literal .text .literal.* .text.*)
     _text_end = ABSOLUTE(.);
     _etext = .;

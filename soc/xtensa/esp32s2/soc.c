@@ -20,13 +20,20 @@
 #include "esp_private/system_internal.h"
 #include "esp32s2/rom/cache.h"
 #include "soc/gpio_periph.h"
+#include "esp_spi_flash.h"
 #include "hal/cpu_ll.h"
 #include "esp_err.h"
+#include "esp32s2/spiram.h"
 #include "sys/printk.h"
 
 extern void z_cstart(void);
 extern void z_bss_zero(void);
 extern void rtc_clk_cpu_freq_set_xtal(void);
+
+#if CONFIG_ESP_SPIRAM
+extern int _ext_ram_bss_start;
+extern int _ext_ram_bss_end;
+#endif
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -52,32 +59,19 @@ void __attribute__((section(".iram1"))) __start(void)
 	 * Configure the mode of instruction cache :
 	 * cache size, cache associated ways, cache line size.
 	 */
-	cache_size_t cache_size;
-	cache_ways_t cache_ways;
-	cache_line_size_t cache_line_size;
+	esp_config_instruction_cache_mode();
 
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_INVALID,
-			CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_8KB;
-#else
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH,
-			CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_16KB;
+	/*
+	 * If we need use SPIRAM, we should use data cache, or if we want to
+	 * access rodata, we also should use data cache.
+	 * Configure the mode of data : cache size, cache associated ways, cache
+	 * line size.
+	 * Enable data cache, so if we don't use SPIRAM, it just works.
+	 */
+#if CONFIG_ESP_SPIRAM
+	esp_config_data_cache_mode();
+	esp_rom_Cache_Enable_DCache(0);
 #endif
-
-	cache_ways = CACHE_4WAYS_ASSOC;
-
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B
-	cache_line_size = CACHE_LINE_SIZE_16B;
-#else
-	cache_line_size = CACHE_LINE_SIZE_32B;
-#endif
-
-	esp_rom_Cache_Suspend_ICache();
-	esp_rom_Cache_Set_ICache_Mode(cache_size, cache_ways, cache_line_size);
-	esp_rom_Cache_Invalidate_ICache_All();
-	esp_rom_Cache_Resume_ICache(0);
 
 #if !CONFIG_BOOTLOADER_ESP_IDF
 	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
@@ -118,6 +112,34 @@ void __attribute__((section(".iram1"))) __start(void)
 	*wdt_rtc_protect = 0;
 #endif
 
+#if CONFIG_ESP_SPIRAM
+
+	memset(&_ext_ram_bss_start,
+		0,
+		(&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
+
+	esp_err_t err = esp_spiram_init();
+
+	if (err != ESP_OK) {
+		printk("Failed to Initialize SPIRAM, aborting.\n");
+		abort();
+	}
+	esp_spiram_init_cache();
+	if (esp_spiram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+		printk("SPIRAM size is less than configured size, aborting.\n");
+		abort();
+	}
+
+#endif /* CONFIG_ESP_SPIRAM */
+
+/* Scheduler is not started at this point. Hence, guard functions
+ * must be initialized after esp_spiram_init_cache which internally
+ * uses guard functions. Setting guard functions before SPIRAM
+ * cache initialization will result in a crash.
+ */
+#if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
+	spi_flash_guard_set(&g_flash_guard_default_ops);
+#endif
 	esp_intr_initialize();
 	/* Start Zephyr */
 	z_cstart();

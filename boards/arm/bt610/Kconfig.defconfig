@@ -1,0 +1,24 @@
+# BT6X0 Sensor configuration
+
+# Copyright (c) 2021 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BT610
+
+config BOARD
+	default "bt610"
+
+config IEEE802154_NRF5
+	default y
+	depends on IEEE802154
+
+config BT_CTLR
+	default BT
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_TI_TCA9538 := ti,tca9538
+
+config I2C
+	default $(dt_compat_on_bus,$(DT_COMPAT_TI_TCA9538),i2c)
+
+endif # BOARD_BT610

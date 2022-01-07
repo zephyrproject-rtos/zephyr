@@ -215,21 +215,6 @@ struct bt_ots_obj_size {
 	uint32_t alloc;
 } __packed;
 
-/** @brief Descriptor for OTS object initialization. */
-struct bt_ots_obj_metadata {
-	/* Object Name */
-	char                   *name;
-
-	/* Object Type */
-	struct bt_ots_obj_type type;
-
-	/* Object Size */
-	struct bt_ots_obj_size size;
-
-	/* Object Properties */
-	uint32_t               props;
-};
-
 /** @brief Object Action Control Point Feature bits. */
 enum {
 	/** Bit 0 OACP Create Op Code Supported */
@@ -486,6 +471,48 @@ struct bt_ots_feat {
 /** @brief Opaque OTS instance. */
 struct bt_ots;
 
+/** @brief Descriptor for OTS object addition */
+struct bt_ots_obj_add_param {
+	/** @brief Object size to allocate */
+	uint32_t size;
+
+	/** @brief Object type */
+	struct bt_ots_obj_type type;
+};
+
+/** @brief Descriptor for OTS created object.
+ *
+ *  Descriptor for OTS object created by the application. This descriptor is
+ *  returned by @ref bt_ots_cb.obj_created callback which contains further
+ *  documentation on distinguishing between server and client object creation.
+ */
+struct bt_ots_obj_created_desc {
+	/** @brief Object name
+	 *
+	 *  The object name as a NULL terminated string.
+	 *
+	 *  When the server creates a new object the name
+	 *  shall be > 0 and <= BT_OTS_OBJ_MAX_NAME_LEN
+	 *  When the client creates a new object the name
+	 *  shall be an empty string
+	 */
+	char *name;
+
+	/** @brief Object size
+	 *
+	 *  @ref bt_ots_obj_size.alloc shall be >= @ref bt_ots_obj_add_param.size
+	 *
+	 *  When the server creates a new object @ref bt_ots_obj_size.cur
+	 *  shall be <= @ref bt_ots_obj_add_param.size
+	 *  When the client creates a new object @ref bt_ots_obj_size.cur
+	 *  shall be 0
+	 */
+	struct bt_ots_obj_size size;
+
+	/** @brief Object properties */
+	uint32_t props;
+};
+
 /** @brief OTS callback structure. */
 struct bt_ots_cb {
 	/** @brief Object created callback
@@ -496,20 +523,23 @@ struct bt_ots_cb {
 	 *  object. This callback is also triggered when the server
 	 *  creates a new object with bt_ots_obj_add() API.
 	 *
-	 *  @param ots  OTS instance.
-	 *  @param conn The connection that is requesting object creation or
-	 *              NULL if object is created by the following function:
-	 *              bt_ots_obj_add().
-	 *  @param id   Object ID.
-	 *  @param init Object initialization metadata.
+	 *  @param ots           OTS instance.
+	 *  @param conn          The connection that is requesting object creation or
+	 *                       NULL if object is created by bt_ots_obj_add().
+	 *  @param id            Object ID.
+	 *  @param add_param     Object creation requested parameters.
+	 *  @param created_desc  Created object descriptor that shall be filled by the
+	 *                       receiver of this callback.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
-	 *  Possible return values:
-	 *  -ENOMEM if no available space for new object.
+	 *  @return -ENOTSUP if object type is not supported
+	 *  @return -ENOMEM if no available space for new object.
+	 *  @return -EINVAL if an invalid parameter is provided
+	 *  @return other negative values are treated as a generic operation failure
 	 */
-	int (*obj_created)(struct bt_ots *ots, struct bt_conn *conn,
-			   uint64_t id,
-			   const struct bt_ots_obj_metadata *init);
+	int (*obj_created)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+			   const struct bt_ots_obj_add_param *add_param,
+			   struct bt_ots_obj_created_desc *created_desc);
 
 	/** @brief Object deleted callback
 	 *
@@ -521,9 +551,19 @@ struct bt_ots_cb {
 	 *  @param conn The connection that deleted the object or NULL if
 	 *              this request came from the server.
 	 *  @param id   Object ID.
+	 *
+	 *  @retval When an error is indicated by using a negative value, the
+	 *          object delete procedure is aborted and a corresponding failed
+	 *          status is returned to the client.
+	 *  @return 0 in case of success.
+	 *  @return -EBUSY if the object is locked. This is generally not expected
+	 *          to be returned by the application as the OTS layer tracks object
+	 *          accesses. An object locked status is returned to the client.
+	 *  @return Other negative values in case of error. A generic operation
+	 *          failed status is returned to the client.
 	 */
-	void (*obj_deleted)(struct bt_ots *ots, struct bt_conn *conn,
-			    uint64_t id);
+	int (*obj_deleted)(struct bt_ots *ots, struct bt_conn *conn,
+			   uint64_t id);
 
 	/** @brief Object selected callback
 	 *
@@ -621,11 +661,12 @@ struct bt_ots_init {
  *  to notify the user about a new object ID.
  *
  *  @param ots      OTS instance.
- *  @param obj_init Meta data of the object.
+ *  @param param    Object addition parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return ID of created object in case of success.
+ *  @return negative value in case of error.
  */
-int bt_ots_obj_add(struct bt_ots *ots, struct bt_ots_obj_metadata *obj_init);
+int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param);
 
 /** @brief Delete an object from the OTS instance.
  *

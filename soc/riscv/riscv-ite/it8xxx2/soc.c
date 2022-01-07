@@ -5,10 +5,12 @@
  *
  */
 
+#include <arch/riscv/csr.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <soc.h>
+#include "soc_espi.h"
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
@@ -51,9 +53,15 @@ static const struct pll_config_t pll_configuration[] = {
 
 void __intc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 {
+	volatile uint8_t _pll_ctrl __unused;
+
 	IT8XXX2_ECPM_PLLCTRL = mode;
-	/* for deep doze / sleep mode */
-	IT8XXX2_ECPM_PLLCTRL = mode;
+	/*
+	 * for deep doze / sleep mode
+	 * This load operation will ensure PLL setting is taken into
+	 * control register before wait for interrupt instruction.
+	 */
+	_pll_ctrl = IT8XXX2_ECPM_PLLCTRL;
 }
 
 void __intc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
@@ -98,18 +106,16 @@ static void chip_configure_pll(const struct pll_config_t *pll)
 		((IT8XXX2_ECPM_SCDCR3 & 0xf) != pll->div_ec)) {
 #ifdef CONFIG_ESPI
 		/*
-		 * TODO: implement me
 		 * We have to disable eSPI pad before changing
 		 * PLL sequence or sequence will fail if CS# pin is low.
 		 */
+		espi_it8xxx2_enable_pad_ctrl(ESPI_IT8XXX2_SOC_DEV, false);
 #endif
 		/* Run change PLL sequence */
 		chip_run_pll_sequence(pll);
 #ifdef CONFIG_ESPI
-		/*
-		 * TODO: implement me
-		 * Enable eSPI pad after changing PLL sequence
-		 */
+		/* Enable eSPI pad after changing PLL sequence */
+		espi_it8xxx2_enable_pad_ctrl(ESPI_IT8XXX2_SOC_DEV, true);
 #endif
 	}
 }
@@ -131,6 +137,48 @@ static int chip_change_pll(const struct device *dev)
 }
 SYS_INIT(chip_change_pll, POST_KERNEL, 0);
 #endif /* CONFIG_SOC_IT8XXX2_PLL_FLASH_48M */
+
+extern volatile int wait_interrupt_fired;
+
+void riscv_idle(enum chip_pll_mode mode, unsigned int key)
+{
+	/* Disable M-mode external interrupt */
+	csr_clear(mie, MIP_MEIP);
+
+	sys_trace_idle();
+	/* Chip doze after wfi instruction */
+	chip_pll_ctrl(mode);
+	/* Set flag before entering low power mode. */
+	wait_interrupt_fired = 1;
+	/* unlock interrupts */
+	irq_unlock(key);
+	/* Wait for interrupt */
+	__asm__ volatile ("wfi");
+
+	/* Enable M-mode external interrupt */
+	csr_set(mie, MIP_MEIP);
+	/*
+	 * Sometimes wfi instruction may fail due to CPU's MTIP@mip
+	 * register is non-zero.
+	 * If the wait_interrupt_fired flag is true at this point,
+	 * it means that EC waked-up by the above issue not an
+	 * interrupt. Hence we loop running wfi instruction here until
+	 * wfi success.
+	 */
+	while (wait_interrupt_fired) {
+		__asm__ volatile ("wfi");
+	}
+}
+
+void arch_cpu_idle(void)
+{
+	riscv_idle(CHIP_PLL_DOZE, MSTATUS_IEN);
+}
+
+void arch_cpu_atomic_idle(unsigned int key)
+{
+	riscv_idle(CHIP_PLL_DOZE, key);
+}
 
 static int ite_it8xxx2_init(const struct device *arg)
 {

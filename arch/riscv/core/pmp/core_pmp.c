@@ -7,9 +7,13 @@
 #include <kernel.h>
 #include <kernel_internal.h>
 #include <sys/__assert.h>
+#include <sys/check.h>
 #include "core_pmp.h"
 #include <arch/riscv/csr.h>
 #include <stdio.h>
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #define PMP_SLOT_NUMBER	CONFIG_PMP_SLOT
 
@@ -284,17 +288,21 @@ void z_riscv_configure_user_allowed_stack(struct k_thread *thread)
 		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.u_pmpcfg[i]);
 }
 
-void z_riscv_pmp_add_dynamic(struct k_thread *thread,
+int z_riscv_pmp_add_dynamic(struct k_thread *thread,
 			ulong_t addr,
 			ulong_t size,
 			unsigned char flags)
 {
 	unsigned char index = 0U;
 	unsigned char *uchar_pmpcfg;
+	int ret = 0;
 
 	/* Check 4 bytes alignment */
-	__ASSERT(((addr & 0x3) == 0) && ((size & 0x3) == 0) && size,
-		 "address/size are not 4 bytes aligned\n");
+	CHECKIF(!(((addr & 0x3) == 0) && ((size & 0x3) == 0) && size)) {
+		LOG_ERR("address/size are not 4 bytes aligned\n");
+		ret = -EINVAL;
+		goto out;
+	}
 
 	/* Get next free entry */
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
@@ -306,6 +314,10 @@ void z_riscv_pmp_add_dynamic(struct k_thread *thread,
 	}
 
 	__ASSERT((index < CONFIG_PMP_SLOT), "no free PMP entry\n");
+	CHECKIF(!(index < CONFIG_PMP_SLOT)) {
+		ret = -ENOSPC;
+		goto out;
+	}
 
 	/* Select the best type */
 	if (size == 4) {
@@ -316,6 +328,11 @@ void z_riscv_pmp_add_dynamic(struct k_thread *thread,
 	else if ((addr & (size - 1)) || (size & (size - 1))) {
 		__ASSERT(((index + 1) < CONFIG_PMP_SLOT),
 			"not enough free PMP entries\n");
+		CHECKIF(!((index + 1) < CONFIG_PMP_SLOT)) {
+			ret = -ENOSPC;
+			goto out;
+		}
+
 		thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(addr);
 		uchar_pmpcfg[index++] = flags | PMP_NA4;
 		thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(addr + size);
@@ -326,6 +343,9 @@ void z_riscv_pmp_add_dynamic(struct k_thread *thread,
 		thread->arch.u_pmpaddr[index] = TO_PMP_NAPOT(addr, size);
 		uchar_pmpcfg[index] = flags | PMP_NAPOT;
 	}
+
+out:
+	return ret;
 }
 
 int arch_buffer_validate(void *addr, size_t size, int write)
@@ -413,8 +433,8 @@ int arch_mem_domain_max_partitions_get(void)
 	return PMP_MAX_DYNAMIC_REGION;
 }
 
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				       uint32_t  partition_id)
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				     uint32_t  partition_id)
 {
 	sys_dnode_t *node, *next_node;
 	uint32_t index, i, num;
@@ -423,6 +443,7 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	struct k_thread *thread;
 	ulong_t size = (ulong_t) domain->partitions[partition_id].size;
 	ulong_t start = (ulong_t) domain->partitions[partition_id].start;
+	int ret = 0;
 
 	if (size == 4) {
 		pmp_type = PMP_NA4;
@@ -444,7 +465,8 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 
 	node = sys_dlist_peek_head(&domain->mem_domain_q);
 	if (!node) {
-		return;
+		ret = -ENOENT;
+		goto out;
 	}
 
 	thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
@@ -459,7 +481,11 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 		}
 	}
 
-	__ASSERT((index < CONFIG_PMP_SLOT), "partition not found\n");
+	CHECKIF(!(index < CONFIG_PMP_SLOT)) {
+		LOG_DBG("%s: partition not found\n", __func__);
+		ret = -ENOENT;
+		goto out;
+	}
 
 #if !defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT) || defined(CONFIG_PMP_STACK_GUARD)
 	if (pmp_type == PMP_TOR) {
@@ -483,11 +509,15 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 			uchar_pmpcfg[CONFIG_PMP_SLOT - 2] = 0U;
 		}
 	}
+
+out:
+	return ret;
 }
 
-void arch_mem_domain_thread_add(struct k_thread *thread)
+int arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	struct k_mem_partition *partition;
+	int ret = 0, ret2;
 
 	for (int i = 0, pcount = 0;
 		pcount < thread->mem_domain_info.mem_domain->num_partitions;
@@ -498,29 +528,44 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 		}
 		pcount++;
 
-		z_riscv_pmp_add_dynamic(thread, (ulong_t) partition->start,
+		ret2 = z_riscv_pmp_add_dynamic(thread,
+			(ulong_t) partition->start,
 			(ulong_t) partition->size, partition->attr.pmp_attr);
+		ARG_UNUSED(ret2);
+		CHECKIF(ret2 != 0) {
+			ret = ret2;
+		}
 	}
+
+	return ret;
 }
 
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				    uint32_t partition_id)
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				  uint32_t partition_id)
 {
 	sys_dnode_t *node, *next_node;
 	struct k_thread *thread;
 	struct k_mem_partition *partition;
+	int ret = 0, ret2;
 
 	partition = &domain->partitions[partition_id];
 
 	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
 		thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
 
-		z_riscv_pmp_add_dynamic(thread, (ulong_t) partition->start,
+		ret2 = z_riscv_pmp_add_dynamic(thread,
+			(ulong_t) partition->start,
 			(ulong_t) partition->size, partition->attr.pmp_attr);
+		ARG_UNUSED(ret2);
+		CHECKIF(ret2 != 0) {
+			ret = ret2;
+		}
 	}
+
+	return ret;
 }
 
-void arch_mem_domain_thread_remove(struct k_thread *thread)
+int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	uint32_t i;
 	unsigned char *uchar_pmpcfg;
@@ -530,6 +575,8 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 	for (i = PMP_REGION_NUM_FOR_U_THREAD; i < CONFIG_PMP_SLOT; i++) {
 		uchar_pmpcfg[i] = 0U;
 	}
+
+	return 0;
 }
 
 #endif /* CONFIG_USERSPACE */

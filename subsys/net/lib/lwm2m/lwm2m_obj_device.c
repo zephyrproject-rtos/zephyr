@@ -142,6 +142,9 @@ static int reset_error_list_cb(uint16_t obj_inst_id,
 		error_code_ri[i].res_inst_id = RES_INSTANCE_NOT_CREATED;
 	}
 
+	/* Default error code indicating no error */
+	error_code_ri[0].res_inst_id = 0;
+
 	return 0;
 }
 
@@ -182,12 +185,12 @@ int lwm2m_device_add_err(uint8_t error_code)
 	int i;
 
 	for (i = 0; i < DEVICE_ERROR_CODE_MAX; i++) {
-		if (error_code_ri[i].res_inst_id == RES_INSTANCE_NOT_CREATED) {
+		if (error_code_list[i] == 0) {
 			break;
 		}
 
 		/* No duplicate error codes allowed */
-		if (*(uint8_t *)error_code_ri[i].data_ptr == error_code) {
+		if (error_code_list[i] == error_code) {
 			return 0;
 		}
 	}
@@ -206,6 +209,11 @@ int lwm2m_device_add_err(uint8_t error_code)
 static void device_periodic_service(struct k_work *work)
 {
 	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
+}
+
+int lwm2m_update_device_service_period(uint32_t period_ms)
+{
+	return lwm2m_engine_update_service_period(device_periodic_service, period_ms);
 }
 
 static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
@@ -282,6 +290,9 @@ static int lwm2m_device_init(const struct device *dev)
 	if (ret < 0) {
 		LOG_DBG("Create LWM2M instance 0 error: %d", ret);
 	}
+
+	/* Create the default error code resource instance */
+	lwm2m_device_add_err(0);
 
 	/* call device_periodic_service() every 10 seconds */
 	ret = lwm2m_engine_add_service(device_periodic_service,

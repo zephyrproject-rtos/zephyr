@@ -87,3 +87,29 @@ config ZTEST_PARAMETER_COUNT
 	depends on ZTEST_MOCKING
 	help
 	  Maximum amount of concurrent return values / expected parameters.
+
+config ZTRESS
+	bool "Stress test framework"
+	select THREAD_RUNTIME_STATS
+	select THREAD_MONITOR
+	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	depends on !USERSPACE
+
+if ZTRESS
+
+config ZTRESS_MAX_THREADS
+	int "Maximum number of threads in ztress framework"
+	default 3
+	range 1 16
+
+config ZTRESS_STACK_SIZE
+	int "Stack size of Ztress thread"
+	default 4096 if NO_OPTIMIZATIONS
+	default 2048
+
+config ZTRESS_REPORT_PROGRESS_MS
+	int "Progress report interval (in milliseconds)"
+	default 1000
+	help
+	  Use 0 to disable.
+endif # ZTRESS

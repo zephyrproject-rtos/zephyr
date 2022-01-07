@@ -9,23 +9,29 @@
 #include <toolchain.h>
 
 #include <sys/util.h>
+#include <sys/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
+#include "util/util.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
+#include "util/util.h"
 
 #include "pdu.h"
 
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_clock.h"
+#include "lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_peripheral.h"
 #include "lll_chan.h"
 
 #include "lll_internal.h"
+#include "lll_df_internal.h"
 #include "lll_tim_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -95,6 +101,10 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	struct lll_df_conn_rx_params *df_rx_params;
+	struct lll_df_conn_rx_cfg *df_rx_cfg;
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	uint16_t event_counter;
@@ -194,10 +204,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_conn_rx_pkt_set(lll);
 
 	radio_aa_set(lll->access_addr);
-	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
-			    (((uint32_t)lll->crc_init[2] << 16) |
-			     ((uint32_t)lll->crc_init[1] << 8) |
-			     ((uint32_t)lll->crc_init[0])));
+	radio_crc_configure(PDU_CRC_POLYNOMIAL,
+				sys_get_le24(lll->crc_init));
 
 	lll_chan_set(data_chan_use);
 
@@ -205,12 +213,53 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
 
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+	enum radio_end_evt_delay_state end_evt_delay;
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+
+	if (lll->phy_rx != PHY_CODED) {
+		df_rx_cfg = &lll->df_rx_cfg;
+		df_rx_params = dbuf_latest_get(&df_rx_cfg->hdr, NULL);
+
+		if (df_rx_params->is_enabled == true) {
+			lll_df_conf_cte_rx_enable(df_rx_params->slot_durations,
+						  df_rx_params->ant_sw_len, df_rx_params->ant_ids,
+						  data_chan_use, CTE_INFO_IN_S1_BYTE);
+			lll->df_rx_cfg.chan = data_chan_use;
+		} else {
+			lll_df_conf_cte_info_parsing_enable();
+		}
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+		end_evt_delay = END_EVT_DELAY_ENABLED;
+	} else {
+		end_evt_delay = END_EVT_DELAY_DISABLED;
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+	}
+
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+/* Use special API for SOC that requires compensation for PHYEND event delay. */
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_switch_complete_and_tx(lll->phy_rx, 0, lll->phy_tx,
-				     lll->phy_flags);
+	radio_switch_complete_with_delay_compensation_and_tx(lll->phy_rx, 0, lll->phy_tx,
+							     lll->phy_flags, end_evt_delay);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	radio_switch_complete_with_delay_compensation_and_tx(0, 0, 0, 0, end_evt_delay);
 #endif /* !CONFIG_BT_CTLR_PHY */
+
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+
+	/* Use regular API for cases when:
+	 * - CTE RX is not enabled,
+	 * - SOC does not require compensation for PHYEND event delay.
+	 */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)) {
+#if defined(CONFIG_BT_CTLR_PHY)
+		radio_switch_complete_and_tx(lll->phy_rx, 0, lll->phy_tx, lll->phy_flags);
+#else /* !CONFIG_BT_CTLR_PHY && !CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+		radio_switch_complete_and_tx(0, 0, 0, 0);
+#endif /* !CONFIG_BT_CTLR_PHY */
+	}
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
@@ -242,22 +291,22 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_tmr_hcto_configure(hcto);
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_rx_ready_delay_get(lll->phy_rx, 1) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_rx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
-	defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_tmr_end_capture();
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 

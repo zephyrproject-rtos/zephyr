@@ -100,6 +100,8 @@ source "drivers/sensor/hp206c/Kconfig"
 
 source "drivers/sensor/hts221/Kconfig"
 
+source "drivers/sensor/i3g4250d/Kconfig"
+
 source "drivers/sensor/icm42605/Kconfig"
 
 source "drivers/sensor/iis2dh/Kconfig"
@@ -166,6 +168,8 @@ source "drivers/sensor/mchp_tach_xec/Kconfig"
 
 source "drivers/sensor/mcp9808/Kconfig"
 
+source "drivers/sensor/mhz19b/Kconfig"
+
 source "drivers/sensor/mpr/Kconfig"
 
 source "drivers/sensor/mpu6050/Kconfig"
@@ -214,6 +218,8 @@ source "drivers/sensor/th02/Kconfig"
 
 source "drivers/sensor/tmp007/Kconfig"
 
+source "drivers/sensor/tmp108/Kconfig"
+
 source "drivers/sensor/tmp112/Kconfig"
 
 source "drivers/sensor/tmp116/Kconfig"
@@ -229,5 +235,7 @@ source "drivers/sensor/wsen_itds/Kconfig"
 source "drivers/sensor/mcux_acmp/Kconfig"
 
 source "drivers/sensor/nuvoton_tach_npcx/Kconfig"
+
+source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 
 endif # SENSOR

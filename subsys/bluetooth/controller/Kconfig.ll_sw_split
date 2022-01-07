@@ -35,6 +35,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_DF_SUPPORT if $(DT_NORDIC_RADIO_DFE_SUPPORTED)
+	select BT_CTLR_CTEINLINE_SUPPORT if $(DT_NORDIC_RADIO_DFE_SUPPORTED)
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -72,6 +73,27 @@ config BT_CTLR_TIFS_HW_SUPPORT
 
 config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
+
+choice BT_LL_SW_LLCP_IMPL
+	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
+	default BT_LL_SW_LLCP_LEGACY
+	help
+	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+
+config BT_LL_SW_LLCP_LEGACY
+	bool "Legacy implementation"
+	help
+	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
+
+config BT_LL_SW_LLCP
+	bool "New implementation, replacing the legacy one [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+	  It is considered experimental because it is still under development and is not qualifiable yet.
+
+endchoice
+
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Controller's Co-Operative high priority Rx thread stack size.
@@ -174,6 +196,22 @@ config BT_CTLR_ADV_PDU_LINK
 	  Enables extra space in each advertising PDU to allow linking PDUs. This
 	  is required to enable advertising data trains (i.e. transmission of
 	  AUX_CHAIN_IND).
+
+config BT_CTLR_ADV_PDU_BACK2BACK
+	bool "Enable back-to-back transmission of extended advertising trains"
+	depends on BT_CTLR_ADV_EXT && BT_BROADCASTER
+	select BT_CTLR_ADV_PDU_LINK
+	help
+	  Enables transmission of AUX_CHAIN_IND in extended advertising train by
+	  sending each AUX_CHAIN_IND one after another back-to-back.
+
+config BT_CTLR_ADV_PDU_BACK2BACK_AFS
+	int "AUX Frame Space for back-to-back transmission of extended advertising trains"
+	depends on BT_CTLR_ADV_PDU_BACK2BACK
+	range 300 1000
+	help
+	  Specific AUX Frame Space to be used for back-to-back transmission of
+	  extended advertising trains. Time specified in microseconds.
 
 config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
 	bool "Enable back-to-back transmission of periodic advertising trains"
@@ -320,6 +358,26 @@ config BT_CTLR_SCHED_ADVANCED
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
 
+config BT_CTLR_SCHED_ADVANCED_CENTRAL_CONN_SPACING
+	int "Advanced scheduling central preferred connection spacing"
+	depends on BT_CTLR_SCHED_ADVANCED
+	default 0
+	help
+	  The central preferred connection spacing defines an additional spacing
+	  in microseconds, added to the fixed ~1250 us spacing obtained by enabling
+	  BT_CTLR_SCHED_ADVANCED. Specifying 0 (default) will obtain a spacing of
+	  ~1250 us, whereas specifying 1250 will yield a spacing of ~2500 us.
+	  The spacing is defined as the distance in time between the anchor points
+	  of the established central role connections.
+	  The precision is determined by the resolution of the platform dependent
+	  ticker clock.
+	  When spefifying values above 6.25 ms, the spacing may be unobtainable if
+	  the connection interval becomes smaller than the total spacing. In that
+	  case, modulo is applied and a total spacing of 15 ms on a 10 ms connection
+	  interval yields 5 ms spacing.
+	  For multiple connections, it may become impossible to honor the preferred
+	  spacing, in which case overlapping will occur.
+
 config BT_CTLR_LLL_PRIO
 	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
 	range 0 3 if SOC_SERIES_NRF51X
@@ -427,15 +485,12 @@ config BT_CTLR_FAST_ENC
 	depends on BT_CTLR_LE_ENC
 	default y if BT_HCI_RAW
 	help
-	  Enable connection encryption setup in 3 connection intervals.
+	  Enable connection encryption setup in 4 connection events.
 	  Peripheral will respond to Encryption Request with Encryption Response
-	  in the same connection interval, and also, will respond with Start
-	  Encryption Response PDU in the 3rd connection interval, hence
-	  completing encryption setup in 3 connection intervals. Encrypted data
-	  would be transmitted as fast as in 3rd connection interval from the
-	  connection establishment.
-	  Maximum CPU time in Radio ISR will increase if this feature is
-	  selected.
+	  in the next connection event, and will transmit Start Encryption
+	  Request PDU in the same connection event, hence completing encryption
+	  setup in 4 connection events. Encrypted data would be transmitted as
+	  fast as in 4th connection event from Encryption Request.
 
 config BT_CTLR_LLCP_CONN
 	int "Number of connections with worst-case overlapping procedures"
@@ -446,6 +501,49 @@ config BT_CTLR_LLCP_CONN
 	  for LLCP procedures must be met. Executing LLCP procedures on
 	  more than this number of connections simultaneously may cause
 	  instabilities.
+
+if !BT_LL_SW_LLCP_LEGACY
+config BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	int
+	default 4
+	help
+	  The theoretical maximum number of tx ctrl buffers needed for any connection, is 4.
+	  two for active encryption procedure plus one for rejecting a remote request
+	  and one for a local terminate
+
+config BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be reserved per connection"
+	default BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	range 0 BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	help
+	  Set the number control buffers that is to be pre allocated per connection
+	  This defines the minimum number of buffers available for any connection
+	  Setting this to non zero will ensure a connection will always have access
+	  to buffer(s) for control procedure TX
+
+config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be available across all connections"
+	default 0
+	range 0 255
+	help
+	  Set the number control buffers that is to be available for tx.
+	  This defines the size of the pool of tx buffers available
+	  for control procedure tx. This pool is shared across all
+	  procedures/connections with allocation through a fifo queue.
+	  Configure between 0 and (4 - BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) * BT_CTLR_LLCP_CONN
+
+config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
+	int "Number of control procedure contexts to be available across all connections"
+	default BT_CTLR_LLCP_CONN
+	range 1 255
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handlign control procedures. This pool is shared across all
+	  connections (local vs remote initiate), with allocation through a queue
+
+endif #!BT_LL_SW_LLCP_LEGACY
+
 
 config BT_CTLR_LLID_DATA_START_EMPTY
 	bool "Handle zero length L2CAP start frame"
@@ -667,142 +765,6 @@ config BT_CTLR_USER_CPR_INTERVAL_MIN
 	  intervals down to a proprietary minimum value.
 
 endmenu
-
-comment "BLE Controller hardware configuration"
-
-menuconfig BT_CTLR_GPIO_PA
-	bool "Power Amplifier GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	help
-	  Enable GPIO interface to a Power Amplifier. This allows hardware
-	  designs using PA to let the Controller toggle their state based on
-	  radio activity.
-
-if BT_CTLR_GPIO_PA
-
-config BT_CTLR_GPIO_PA_PIN
-	int "Power Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to a Power Amplifier.
-
-config BT_CTLR_GPIO_PA_POL_INV
-	bool "Inverted polarity for the PA pin"
-	help
-	  Enable inverted polarity (active low) for the PA pin.
-
-config BT_CTLR_GPIO_PA_OFFSET
-	int "Time from PA ON to Tx ready"
-	default 5
-	range 0 15
-	help
-	  Time before Tx ready to turn on PA in micro seconds.
-
-endif # BT_CTLR_GPIO_PA
-
-menuconfig BT_CTLR_GPIO_LNA
-	bool "Low Noise Amplifier GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	help
-	  Enable GPIO interface to a Low Noise Amplifier. This allows hardware
-	  designs using LNAs to let the Controller toggle their state based on
-	  radio activity.
-
-if BT_CTLR_GPIO_LNA
-
-config BT_CTLR_GPIO_LNA_PIN
-	int "Low Noise Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to a Low Noise Amplifier.
-
-config BT_CTLR_GPIO_LNA_POL_INV
-	bool "Inverted polarity for the LNA pin"
-	help
-	  Enable inverted polarity (active low) for the LNA pin.
-
-config BT_CTLR_GPIO_LNA_OFFSET
-	int "Time from LNA ON to Rx ready"
-	default 5
-	range 0 15
-	help
-	  Time before Rx ready to turn on LNA in micro seconds.
-
-endif # BT_CTLR_GPIO_LNA
-
-menuconfig BT_CTLR_FEM_NRF21540
-	bool "nRF21540 GPIO interface"
-	depends on !SOC_SERIES_NRF51X
-	select BT_CTLR_GPIO_PA
-	select BT_CTLR_GPIO_LNA
-	help
-	  Enable PDN and CSN GPIO interface for the nRF21540. This allows
-	  hardware designs using the nRF21540 to let the controller toggle
-	  their state based on radio activity.
-
-if BT_CTLR_FEM_NRF21540
-
-config BT_CTLR_GPIO_PDN_PIN
-	int "FEM PDN pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to the PDN pin of the nRF21540 FEM.
-
-config BT_CTLR_GPIO_PDN_POL_INV
-	bool "Inverted polarity for the PDN pin"
-	help
-	  Enable inverted polarity (active low) for the PDN pin.
-
-config BT_CTLR_GPIO_CSN_PIN
-	int "FEM CSN pin number"
-	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
-	range 0 31
-	help
-	  GPIO Pin number connected to the CSN pin of the nRF21540 FEM.
-
-config BT_CTLR_GPIO_CSN_POL_INV
-	bool "Inverted polarity for the CSN pin"
-	default y
-	help
-	  Enable inverted polarity (active low) for the CSN pin.
-
-config BT_CTLR_GPIO_PDN_CSN_OFFSET
-	int "Time from PDN and CSN toggle to PA/LNA pin toggle"
-	range 0 20
-	help
-	  Time from PDN and CSN toggle to PA/LNA pin toggle in micro seconds.
-
-endif # BT_CTLR_FEM_NRF21540
-
-config BT_CTLR_PA_LNA_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
-	default 3 if PWM_NRF5_SW
-	default 0
-	help
-	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
-
-config BT_CTLR_PDN_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO FEM PDN GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && BT_CTLR_FEM_NRF21540
-	default 4 if PWM_NRF5_SW
-	default 1
-	help
-	  Select the nRF5 GPIOTE channel to use for FEM PDN GPIO pin toggle.
-
-config BT_CTLR_CSN_GPIOTE_CHAN
-	# Hidden "nRF5 GPIO FEM CSN GPIOTE Channel"
-	int
-	depends on SOC_FAMILY_NRF && BT_CTLR_FEM_NRF21540
-	default 5 if PWM_NRF5_SW
-	default 2
-	help
-	  Select the nRF5 GPIOTE channel to use for FEM CSN GPIO pin toggle.
 
 comment "BLE Controller debug configuration"
 

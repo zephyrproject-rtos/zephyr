@@ -90,6 +90,8 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 	z_check_stack_sentinel();
 
+	old_thread->swap_retval = -EAGAIN;
+
 	/* We always take the scheduler spinlock if we don't already
 	 * have it.  We "release" other spinlocks here.  But we never
 	 * drop the interrupt lock.
@@ -107,8 +109,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice();
 #endif
-
-		old_thread->swap_retval = -EAGAIN;
+		z_sched_usage_switch(new_thread);
 
 #ifdef CONFIG_SMP
 		_current_cpu->swap_ok = 0;
@@ -223,6 +224,11 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 #endif
 #ifdef CONFIG_USERSPACE
 	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
+#endif
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	k_thread_system_pool_assign(dummy_thread);
+#else
+	dummy_thread->resource_pool = NULL;
 #endif
 
 	_current_cpu->current = dummy_thread;

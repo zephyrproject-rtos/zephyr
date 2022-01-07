@@ -12,11 +12,11 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioh 7 GPIO_ACTIVE_LOW>;
 			label = "User LD7";
 		};
 		red_led_1: led_3 {
-			gpios = <&gpioh 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioh 6 GPIO_ACTIVE_LOW>;
 			label = "User LD6";
 		};
 	};
@@ -26,6 +26,27 @@
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <100>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <500>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <900>;
 		};
 	};
 };

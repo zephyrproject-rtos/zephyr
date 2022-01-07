@@ -69,12 +69,14 @@
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -88,34 +90,39 @@
 
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pi1 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
 	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &timers3 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm3: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim3_ch1_pb4>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -128,6 +135,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
 	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 };
 
@@ -142,12 +150,14 @@ zephyr_udc0: &usbotg_fs {
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
+	pinctrl-names = "default";
 };
 
 &quadspi {
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
 		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
 		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	n25q128a1: qspi-nor-flash@0 {

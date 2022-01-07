@@ -21,7 +21,6 @@
 LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
 
 #define DEVICE_NODE DT_NODELABEL(ibecc)
-#define PCI_HOST_BRIDGE PCIE_BDF(0, 0, 0)
 
 struct ibecc_data {
 	mem_addr_t mchbar;
@@ -199,6 +198,9 @@ static int inject_error_trigger(const struct device *dev)
 static int ecc_error_log_get(const struct device *dev, uint64_t *value)
 {
 	*value = ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
+	if (*value == 0) {
+		return -ENODATA;
+	}
 
 	return 0;
 }
@@ -215,6 +217,9 @@ static int ecc_error_log_clear(const struct device *dev)
 static int parity_error_log_get(const struct device *dev, uint64_t *value)
 {
 	*value = ibecc_read_reg64(dev, IBECC_PARITY_ERROR_LOG);
+	if (*value == 0) {
+		return -ENODATA;
+	}
 
 	return 0;
 }
@@ -278,7 +283,7 @@ static const struct edac_driver_api api = {
 	.notify_cb_set = notify_callback_set,
 };
 
-int edac_ibecc_init(const struct device *dev)
+static int edac_ibecc_init(const struct device *dev)
 {
 	const pcie_bdf_t bdf = PCI_HOST_BRIDGE;
 	struct ibecc_data *data = dev->data;
@@ -304,12 +309,12 @@ int edac_ibecc_init(const struct device *dev)
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU12):
 		break;
 	default:
-		LOG_ERR("PCI Probe failed");
+		LOG_ERR("PCI Probe failed"); /* LCOV_EXCL_BR_LINE */
 		return -ENODEV;
 	}
 
 	if (!ibecc_enabled(bdf)) {
-		LOG_ERR("IBECC is not enabled");
+		LOG_ERR("IBECC is not enabled"); /* LCOV_EXCL_BR_LINE */
 		return -ENODEV;
 	}
 
@@ -318,7 +323,7 @@ int edac_ibecc_init(const struct device *dev)
 
 	/* Check that MCHBAR is enabled */
 	if ((mchbar & MCHBAR_ENABLE) == 0) {
-		LOG_ERR("MCHBAR is not enabled");
+		LOG_ERR("MCHBAR is not enabled"); /* LCOV_EXCL_BR_LINE */
 		return -ENODEV;
 	}
 

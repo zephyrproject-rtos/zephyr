@@ -118,6 +118,7 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
+    *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:esp32c3_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
@@ -130,6 +131,12 @@ SECTIONS
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+
     . = ALIGN(4);
     _init_end = ABSOLUTE(.);
     _iram_text_end = ABSOLUTE(.);   *(.srodata)
@@ -169,6 +176,7 @@ SECTIONS
     *libzephyr.a:log_core.*(.rodata .rodata.*)
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.*)
+    *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
     . = ALIGN(4);
     __esp_log_const_start = .;
     KEEP(*(SORT(.log_const_*)));
@@ -303,6 +311,8 @@ SECTIONS
     *(".srodata.*")
     *(.rodata)
     *(.rodata.*)
+    *(.rodata_wlog)
+    *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);

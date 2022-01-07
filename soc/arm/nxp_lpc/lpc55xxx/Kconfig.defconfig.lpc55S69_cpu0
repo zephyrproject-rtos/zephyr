@@ -54,4 +54,8 @@ config I2S_MCUX_FLEXCOMM
 	depends on I2S
 	select INIT_PLL0
 
+config PWM_MCUX_SCTIMER
+	default y
+	depends on PWM
+
 endif # SOC_LPC55S69_CPU0

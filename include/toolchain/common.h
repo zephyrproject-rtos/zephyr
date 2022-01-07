@@ -26,6 +26,14 @@
 #define TASK_ENTRY_CPP  extern "C"
 #endif
 
+#ifndef ZRESTRICT
+#ifndef __cplusplus
+#define ZRESTRICT restrict
+#else
+#define ZRESTRICT
+#endif
+#endif
+
 /*
  * Generate a reference to an external symbol.
  * The reference indicates to the linker that the symbol is required
@@ -178,6 +186,9 @@
  * into a single section in the end.
  */
 #define Z_DECL_ALIGN(type) __aligned(__alignof(type)) type
+
+/* Check if a pointer is aligned enough for a particular data type. */
+#define IS_PTR_ALIGNED(ptr, type) ((((uintptr_t)ptr) % __alignof(type)) == 0)
 
 /**
  * @brief Iterable Sections APIs

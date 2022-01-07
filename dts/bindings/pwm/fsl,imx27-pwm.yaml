@@ -1,0 +1,38 @@
+# Copyright (c) 2018, Diego Sueiro <diego.sueiro@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This driver supports both i.MX6SX and i.MX7D PWM.
+    The compatible string is named "imx27" because the hardware module is the
+    same module present starting from imx27 CPUs and this driver can potentially
+    support other CPUs with imx27 module. This is also the same string used
+    in the Linux kernel.
+
+compatible: "fsl,imx27-pwm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    prescaler:
+     type: int
+     required: true
+     description: Set the PWM prescale between 0 and 4096
+
+    rdc:
+     type: int
+     required: true
+     description: Set the RDC permission for this peripheral
+
+    "#pwm-cells":
+     const: 2
+
+pwm-cells:
+  - channel
+# period in terms of nanoseconds
+  - period

@@ -85,16 +85,17 @@ extern "C" {
  * @return 1 if char * or wchar_t *, 0 otherwise.
  */
 #ifdef __cplusplus
-#define Z_CBPRINTF_IS_PCHAR(x) z_cbprintf_cxx_is_pchar(x)
+#define Z_CBPRINTF_IS_PCHAR(x, flags) \
+	z_cbprintf_cxx_is_pchar(x, flags & CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR)
 #else
-#define Z_CBPRINTF_IS_PCHAR(x) \
+#define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic((x) + 0, \
 		char * : 1, \
-		const char * : 1, \
+		const char * : (flags & CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR) ? 0 : 1, \
 		volatile char * : 1, \
 		const volatile char * : 1, \
 		wchar_t * : 1, \
-		const wchar_t * : 1, \
+		const wchar_t * : (flags & CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR) ? 0 : 1, \
 		volatile wchar_t * : 1, \
 		const volatile wchar_t * : 1, \
 		default : \
@@ -109,8 +110,8 @@ extern "C" {
  *
  * @return number of arguments which are char * or wchar_t *.
  */
-#define Z_CBPRINTF_HAS_PCHAR_ARGS(fmt, ...) \
-	(FOR_EACH(Z_CBPRINTF_IS_PCHAR, (+),  __VA_ARGS__))
+#define Z_CBPRINTF_HAS_PCHAR_ARGS(flags, fmt, ...) \
+	(FOR_EACH_FIXED_ARG(Z_CBPRINTF_IS_PCHAR, (+), flags, __VA_ARGS__))
 
 /**
  * @brief Check if formatted string must be packaged in runtime.
@@ -124,17 +125,17 @@ extern "C" {
  * @retval 0 if string can be statically packaged.
  */
 #if Z_C_GENERIC
-#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) ({\
+#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, flags, ...) ({\
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
 	int _rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
 			(0), \
-			(((Z_CBPRINTF_HAS_PCHAR_ARGS(__VA_ARGS__) - skip) > 0))); \
+			(((Z_CBPRINTF_HAS_PCHAR_ARGS(flags, __VA_ARGS__) - skip) > 0))); \
 	_Pragma("GCC diagnostic pop")\
 	_rv; \
 })
 #else
-#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) 1
+#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, flags, ...) 1
 #endif
 
 /** @brief Get storage size for given argument.
@@ -271,7 +272,7 @@ do { \
 		_align_offset += sizeof(int); \
 	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
-	if (Z_CBPRINTF_IS_PCHAR(_arg)) { \
+	if (Z_CBPRINTF_IS_PCHAR(_arg, 0)) { \
 		_s_buf[_s_idx++] = _idx / sizeof(int); \
 	} \
 	if (_buf && _idx < (int)_max) { \
@@ -314,7 +315,7 @@ union z_cbprintf_hdr {
  * if argument is a stirng literal. Suppression is added here instead of
  * the macro which generates the warning to not slow down the compiler.
  */
-#if __clang__ == 1
+#ifdef __clang__
 #define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
 	_Pragma("GCC diagnostic ignored \"-Wsizeof-array-decay\"")
 #else

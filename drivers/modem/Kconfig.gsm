@@ -40,6 +40,13 @@ config MODEM_GSM_RX_STACK_SIZE
 	help
 	  Sets the stack size which will be used by the GSM RX thread.
 
+config MODEM_GSM_WORKQ_STACK_SIZE
+	int "Size of the stack allocated for the dedicated gsm workqueue"
+	default 768
+	help
+	  Sets the stack size which will be used by the dedicated GSM workqueue
+	  thread.
+
 config MODEM_GSM_INIT_PRIORITY
 	int "Init priority for the GSM modem driver"
 	default 42

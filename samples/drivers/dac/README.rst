@@ -176,6 +176,39 @@ built and executed for the :ref:`bl5340_dvk` as follows:
 
 DAC output is available on pin 1 of the MCP4725.
 
+Building and Running for GD32450I-EVAL
+======================================
+The sample can be built and executed for the
+:ref:`gd32f450i_eval` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: gd32f450i_eval
+   :goals: build flash
+   :compact:
+
+Bridge the JP23 to DAC with the jumper cap, then DAC output will available on JP7.
+
+Building and Running for Longan Nano and Longan Nano Lite
+=========================================================
+The sample can be built and executed for the
+:ref:`longan_nano` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: longan_nano
+   :goals: build flash
+   :compact:
+
+also can run for the
+:ref: `longan_nano_lite` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: longan_nano_lite
+   :goals: build flash
+   :compact:
+
 Sample output
 =============
 

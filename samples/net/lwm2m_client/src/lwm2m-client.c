@@ -78,6 +78,11 @@ static uint32_t led_state;
 
 static struct lwm2m_ctx client;
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+/* Array with supported PULL firmware update protocols */
+static uint8_t supported_protocol[1];
+#endif
+
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #define TLS_TAG			1
 
@@ -190,7 +195,7 @@ static void *temperature_get_buf(uint16_t obj_inst_id, uint16_t res_id,
 				 uint16_t res_inst_id, size_t *data_len)
 {
 	/* Last read temperature value, will use 25.5C if no sensor available */
-	static struct float32_value v = { 25, 500000 };
+	static double v = 25.5;
 	const struct device *dev = NULL;
 
 #if defined(CONFIG_FXOS8700_TEMP)
@@ -198,17 +203,21 @@ static void *temperature_get_buf(uint16_t obj_inst_id, uint16_t res_id,
 #endif
 
 	if (dev != NULL) {
+		struct sensor_value val;
+
 		if (sensor_sample_fetch(dev)) {
 			LOG_ERR("temperature data update failed");
 		}
 
-		sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP,
-				  (struct sensor_value *) &v);
-		LOG_DBG("LWM2M temperature set to %d.%d", v.val1, v.val2);
+		sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP, &val);
+
+		v = sensor_value_to_double(&val);
+
+		LOG_DBG("LWM2M temperature set to %f", v);
 	}
 
 	/* echo the value back through the engine to update min/max values */
-	lwm2m_engine_set_float32("3303/0/5700", &v);
+	lwm2m_engine_set_float("3303/0/5700", &v);
 	*data_len = sizeof(v);
 	return &v;
 }
@@ -365,6 +374,10 @@ static int lwm2m_setup(void)
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
 #endif
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+	lwm2m_engine_create_res_inst("5/0/8/0");
+	lwm2m_engine_set_res_data("5/0/8/0", &supported_protocol[0],
+				  sizeof(supported_protocol[0]), 0);
+
 	lwm2m_firmware_set_update_cb(firmware_update_cb);
 #endif
 
@@ -445,7 +458,35 @@ static void rd_client_event(struct lwm2m_ctx *client,
 
 	case LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR:
 		LOG_ERR("LwM2M engine reported a network erorr.");
-		lwm2m_rd_client_stop(client, rd_client_event);
+		lwm2m_rd_client_stop(client, rd_client_event, true);
+		break;
+	}
+}
+
+static void observe_cb(enum lwm2m_observe_event event,
+		       struct lwm2m_obj_path *path, void *user_data)
+{
+	char buf[LWM2M_MAX_PATH_STR_LEN];
+
+	switch (event) {
+
+	case LWM2M_OBSERVE_EVENT_OBSERVER_ADDED:
+		LOG_INF("Observer added for %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED:
+		LOG_INF("Observer removed for %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_NOTIFY_ACK:
+		LOG_INF("Notify acknowledged for %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT:
+		LOG_INF("Notify timeout for %s, trying registration update",
+			lwm2m_path_log_strdup(buf, path));
+
+		lwm2m_rd_client_update();
 		break;
 	}
 }
@@ -492,10 +533,10 @@ void main(void)
 		sprintf(&dev_str[i*2], "%02x", dev_id[i]);
 	}
 
-	lwm2m_rd_client_start(&client, dev_str, flags, rd_client_event);
+	lwm2m_rd_client_start(&client, dev_str, flags, rd_client_event, observe_cb);
 #else
 	/* client.sec_obj_inst is 0 as a starting point */
-	lwm2m_rd_client_start(&client, CONFIG_BOARD, flags, rd_client_event);
+	lwm2m_rd_client_start(&client, CONFIG_BOARD, flags, rd_client_event, observe_cb);
 #endif
 
 	k_sem_take(&quit_lock, K_FOREVER);

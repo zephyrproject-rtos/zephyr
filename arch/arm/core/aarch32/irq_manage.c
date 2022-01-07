@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M and Cortex-R interrupt management
+ * @brief ARM Cortex-A, Cortex-M and Cortex-R interrupt management
  *
  *
  * Interrupt management: enabling/disabling and dynamic ISR
@@ -18,7 +18,8 @@
 #include <arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
-#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_A) \
+	|| defined(CONFIG_CPU_CORTEX_R)
 #include <drivers/interrupt_controller/gic.h>
 #endif
 #include <sys/__assert.h>
@@ -92,7 +93,8 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
-#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_A) \
+	|| defined(CONFIG_CPU_CORTEX_R)
 /*
  * For Cortex-A and Cortex-R cores, the default interrupt controller is the ARM
  * Generic Interrupt Controller (GIC) and therefore the architecture interrupt
@@ -162,10 +164,11 @@ void z_irq_spurious(const void *unused)
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R)
+	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_ARMV7_A)
 	unsigned int key;
 
-	/* irq_lock() does what we wan for this CPU */
+	/* irq_lock() does what we want for this CPU */
 	key = irq_lock();
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Lock all interrupts. irq_lock() will on this CPU only disable those
@@ -178,14 +181,13 @@ void _arch_isr_direct_pm(void)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 	if (_kernel.idle) {
-		int32_t idle_val = _kernel.idle;
-
 		_kernel.idle = 0;
-		z_pm_save_idle_exit(idle_val);
+		z_pm_save_idle_exit();
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R)
+	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_ARMV7_A)
 	irq_unlock(key);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile("cpsie i" : : : "memory");

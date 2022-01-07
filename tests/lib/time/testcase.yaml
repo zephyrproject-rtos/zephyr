@@ -2,5 +2,6 @@ tests:
   libraries.libc.time:
     tags: libc
     filter: not CONFIG_ARCH_POSIX or CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
+    timeout: 180
     integration_platforms:
       - mps2_an385

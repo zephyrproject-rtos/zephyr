@@ -58,6 +58,22 @@ extern "C" {
 #define GENMASK(h, l) \
 	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
 
+/** @brief Extract the Least Significant Bit from @p value. */
+#define LSB_GET(value) ((value) & -(value))
+
+/**
+ * @brief Extract a bitfield element from @p value corresponding to
+ *	  the field mask @p mask.
+ */
+#define FIELD_GET(mask, value)  (((value) & (mask)) / LSB_GET(mask))
+
+/**
+ * @brief Prepare a bitfield element using @p value with @p mask representing
+ *	  its field position and width. The result should be combined
+ *	  with other fields using a logical OR.
+ */
+#define FIELD_PREP(mask, value) (((value) * LSB_GET(mask)) & (mask))
+
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
 
@@ -108,7 +124,7 @@ extern "C" {
 	((ptr) && ((ptr) >= &array[0] && (ptr) < &array[ARRAY_SIZE(array)]))
 
 /**
- * @brief Get a pointer to a container structure from an element
+ * @brief Get a pointer to a structure containing the element
  *
  * Example:
  *
@@ -237,7 +253,30 @@ static inline void bytecpy(void *dst, const void *src, size_t size)
 	size_t i;
 
 	for (i = 0; i < size; ++i) {
-		((uint8_t *)dst)[i] = ((uint8_t *)src)[i];
+		((volatile uint8_t *)dst)[i] = ((volatile const uint8_t *)src)[i];
+	}
+}
+
+/**
+ * @brief byte by byte swap.
+ *
+ * Swap @a size bytes between memory regions @a a and @a b. This is
+ * guaranteed to be done byte by byte.
+ *
+ * @param a Pointer to the the first memory region.
+ * @param b Pointer to the the second memory region.
+ * @param size The number of bytes to swap.
+ */
+static inline void byteswp(void *a, void *b, size_t size)
+{
+	uint8_t t;
+	uint8_t *aa = (uint8_t *)a;
+	uint8_t *bb = (uint8_t *)b;
+
+	for (; size > 0; --size) {
+		t = *aa;
+		*aa++ = *bb;
+		*bb++ = t;
 	}
 }
 

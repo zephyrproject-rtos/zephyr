@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2021, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rt11xx.dtsi>
+
+/ {
+	cpus {
+		/delete-node/ cpu@1;
+	};
+	/*
+	 * ITCM & DTCM are available only to the M7 core. EDMA interrupts are connected
+	 * to the M7 core alone, hence this EDMA controller has been designated M7 only.
+	 * GPIO 6 is available to both M4 and M7 cores, however the GPIO interrupt is
+	 * only accesssible to the M7.
+	 *
+	 * Refer to Chapter 3 of the Reference Manual
+	 */
+	soc {
+		flexram: flexram@40028000 {
+			reg = <0x40028000 0x4000>;
+			interrupts = <50 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itcm: itcm@0 {
+				compatible = "nxp,imx-itcm";
+				reg = <0x00000000 DT_SIZE_K(256)>;
+			};
+
+			dtcm: dtcm@20000000 {
+				compatible = "nxp,imx-dtcm";
+				reg = <0x20000000 DT_SIZE_K(256)>;
+			};
+		};
+
+		/*
+		 * M7 uses different addresses from the M4 core for GPIO2 and
+		 * GPIO3, see pg. 1460 of RT1160 ref manual for example
+		 */
+		gpio2: gpio@42008000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x42008000 0x4000>;
+			interrupts = <102 0>, <103 0>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3: gpio@4200c000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x4200c000 0x4000>;
+			interrupts = <104 0>, <105 0>;
+			label = "GPIO_3";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		edma0: dma-controller@40070000 {
+			#dma-cells = <2>;
+			compatible = "nxp,mcux-edma";
+			dma-channels = <32>;
+			dma-requests = <208>;
+			nxp,mem2mem;
+			nxp,a_on;
+			reg = <0x40070000 0x4000>,
+				<0x40074000 0x4000>;
+			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7C 0x000000C0>;
+				status = "disabled";
+			label = "DMA_0";
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
+				<4 0>, <5 0>, <6 0>, <7 0>,
+				<8 0>, <9 0>, <10 0>, <11 0>,
+				<12 0>, <13 0>, <14 0>, <15 0>,
+				<16 0>;
+		};
+	};
+};
+
+&gpio6 {
+	interrupts = <61 0>, <62 0>;
+};

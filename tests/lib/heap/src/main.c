@@ -38,7 +38,16 @@
 
 #define BIG_HEAP_SZ MIN(256 * 1024, MEMSZ / 3)
 #define SMALL_HEAP_SZ MIN(BIG_HEAP_SZ, 2048)
+
+/* With enabling SYS_HEAP_RUNTIME_STATS, the size of struct z_heap
+ * will increase 16 bytes on 64 bit CPU.
+ */
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+#define SOLO_FREE_HEADER_HEAP_SZ (80)
+#else
 #define SOLO_FREE_HEADER_HEAP_SZ (64)
+#endif
+
 #define SCRATCH_SZ (sizeof(heapmem) / 2)
 
 /* The test memory.  Make them pointer arrays for robust alignment
@@ -105,6 +114,23 @@ static void check_fill(void *p)
 void *testalloc(void *arg, size_t bytes)
 {
 	void *ret = sys_heap_alloc(arg, bytes);
+
+	if (ret != NULL) {
+		/* White box: the heap internals will allocate memory
+		 * in 8 chunk units, no more than needed, but with a
+		 * header prepended that is 4 or 8 bytes.  Use this to
+		 * validate the block_size predicate.
+		 */
+		size_t blksz = sys_heap_usable_size(arg, ret);
+		size_t addr = (size_t) ret;
+		size_t chunk = ROUND_DOWN(addr - 1, 8);
+		size_t hdr = addr - chunk;
+		size_t expect = ROUND_UP(bytes + hdr, 8) - hdr;
+
+		zassert_equal(blksz, expect,
+			      "wrong size block returned bytes = %ld ret = %ld",
+			      bytes, blksz);
+	}
 
 	fill_block(ret, bytes);
 	sys_heap_validate(arg);
@@ -192,6 +218,11 @@ static void test_big_heap(void)
 {
 	struct sys_heap heap;
 	struct z_heap_stress_result result;
+
+	if (IS_ENABLED(CONFIG_SYS_HEAP_SMALL_ONLY)) {
+		TC_PRINT("big heap support is disabled\n");
+		ztest_test_skip();
+	}
 
 	TC_PRINT("Testing big (%d byte) heap\n", (int) BIG_HEAP_SZ);
 

@@ -24,6 +24,7 @@ static int fxos8700_set_odr(const struct device *dev,
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
 	uint8_t dr;
+	enum fxos8700_power power;
 
 #ifdef CONFIG_FXOS8700_MODE_HYBRID
 	/* ODR is halved in hybrid mode */
@@ -72,18 +73,24 @@ static int fxos8700_set_odr(const struct device *dev,
 
 	/*
 	 * Modify FXOS8700_REG_CTRLREG1 can only occur when the device
-	 * is in standby mode.
+	 * is in standby mode. Get the current power mode to restore it later.
 	 */
+	if (fxos8700_get_power(dev, &power)) {
+		LOG_ERR("Could not get power mode");
+		return -EIO;
+	}
+
+	/* Set standby power mode */
 	if (fxos8700_set_power(dev, FXOS8700_POWER_STANDBY)) {
 		LOG_ERR("Could not set standby");
 		return -EIO;
 	}
 
-	/* Change the attribute and activate the device. */
+	/* Change the attribute and restore power mode. */
 	return i2c_reg_update_byte(data->i2c, config->i2c_address,
 		FXOS8700_REG_CTRLREG1,
 		FXOS8700_CTRLREG1_DR_MASK | FXOS8700_CTRLREG1_ACTIVE_MASK,
-		dr | FXOS8700_POWER_ACTIVE);
+		dr | power);
 }
 
 static int fxos8700_set_mt_ths(const struct device *dev,

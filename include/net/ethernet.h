@@ -65,6 +65,7 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_PTP		0x88f7
 #define NET_ETH_PTYPE_LLDP		0x88cc
 #define NET_ETH_PTYPE_ALL               0x0003 /* from linux/if_ether.h */
+#define NET_ETH_PTYPE_ECAT		0x88a4
 
 #if !defined(ETH_P_ALL)
 #define ETH_P_ALL	NET_ETH_PTYPE_ALL
@@ -83,6 +84,9 @@ struct net_eth_addr {
 #endif
 #if !defined(ETH_P_TSN)
 #define ETH_P_TSN	NET_ETH_PTYPE_TSN
+#endif
+#if !defined(ETH_P_ECAT)
+#define  ETH_P_ECAT	NET_ETH_PTYPE_ECAT
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
@@ -549,10 +553,10 @@ struct ethernet_context {
 	 */
 	enum net_l2_flags ethernet_l2_flags;
 
-#if defined(CONFIG_NET_GPTP)
-	/** The gPTP port number for this network device. We need to store the
+#if defined(CONFIG_NET_L2_PTP)
+	/** The PTP port number for this network device. We need to store the
 	 * port number here so that we do not need to fetch it for every
-	 * incoming gPTP packet.
+	 * incoming PTP packet.
 	 */
 	int port;
 #endif
@@ -827,19 +831,20 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 
 #if defined(CONFIG_NET_VLAN)
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
-			      pm_control_fn, data, cfg, prio, api, mtu)	\
+			      pm_action_cb, data, cfg, prio, api, mtu)	\
+	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
-			pm_control_fn, data, cfg, POST_KERNEL,		\
-			prio, api);					\
+			pm_action_cb, data, cfg, POST_KERNEL,		\
+			prio, api, &Z_DEVICE_STATE_NAME(dev_name));	\
 	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2));\
 	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
 
 #else /* CONFIG_NET_VLAN */
 
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
-			      pm_control_fn, data, cfg, prio, api, mtu)	\
+			      pm_action_cb, data, cfg, prio, api, mtu)	\
 	Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
-			  pm_control_fn, data, cfg, prio, api,		\
+			  pm_action_cb, data, cfg, prio, api,		\
 			  ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),\
 			  mtu)
 #endif /* CONFIG_NET_VLAN */
@@ -853,7 +858,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to pm_control function.
+ * @param pm_action_cb Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -863,10 +868,10 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
+#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_action_cb,	\
 			    data, cfg, prio, api, mtu)			\
 	Z_ETH_NET_DEVICE_INIT(DT_INVALID_NODE, dev_name, drv_name,	\
-			      init_fn, pm_control_fn, data, cfg, prio,	\
+			      init_fn, pm_action_cb, data, cfg, prio,	\
 			      api, mtu)
 
 /**
@@ -877,7 +882,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to pm_control function.
+ * @param pm_action_cb Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -887,11 +892,11 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_control_fn, data,	\
+#define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_action_cb, data,	\
 			       cfg, prio, api, mtu)			\
 	Z_ETH_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
 			      DT_PROP_OR(node_id, label, ""),		\
-			      init_fn, pm_control_fn, data, cfg, prio,	\
+			      init_fn, pm_action_cb, data, cfg, prio,	\
 			      api, mtu)
 
 /**
@@ -966,13 +971,13 @@ static inline const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 __syscall const struct device *net_eth_get_ptp_clock_by_index(int index);
 
 /**
- * @brief Return gPTP port number attached to this interface.
+ * @brief Return PTP port number attached to this interface.
  *
  * @param iface Network interface
  *
  * @return Port number, no such port if < 0
  */
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_NET_L2_PTP)
 int net_eth_get_ptp_port(struct net_if *iface);
 #else
 static inline int net_eth_get_ptp_port(struct net_if *iface)
@@ -981,17 +986,17 @@ static inline int net_eth_get_ptp_port(struct net_if *iface)
 
 	return -ENODEV;
 }
-#endif /* CONFIG_NET_GPTP */
+#endif /* CONFIG_NET_L2_PTP */
 
 /**
- * @brief Set gPTP port number attached to this interface.
+ * @brief Set PTP port number attached to this interface.
  *
  * @param iface Network interface
  * @param port Port number to set
  */
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_NET_L2_PTP)
 void net_eth_set_ptp_port(struct net_if *iface, int port);
-#endif /* CONFIG_NET_GPTP */
+#endif /* CONFIG_NET_L2_PTP */
 
 /**
  * @}

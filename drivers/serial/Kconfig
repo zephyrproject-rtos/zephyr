@@ -31,6 +31,19 @@ config SERIAL_SUPPORT_INTERRUPT
 	  This is an option to be enabled by individual serial driver
 	  to signal that the driver and hardware supports interrupts.
 
+config SERIAL_INIT_PRIORITY
+	int "Serial init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Serial driver device initialization priority.
+
+config SERIAL_SUPPORT_WIDE_DATA
+	bool
+	help
+	  This is an option to be enabled by individual serial driver
+	  to signal that the driver and hardware support data longer
+	  than 8-bit.
+
 config UART_USE_RUNTIME_CONFIGURE
 	bool "Enable runtime configuration for UART controllers"
 	default y
@@ -47,10 +60,10 @@ config UART_USE_RUNTIME_CONFIGURE
 	  applications that do not require runtime UART configuration.
 
 config UART_ASYNC_API
-	bool "Enable new asynchronous UART API [EXPERIMENTAL]"
+	bool "Enable asynchronous UART API"
 	depends on SERIAL_SUPPORT_ASYNC
 	help
-	  This option enables new asynchronous UART API.
+	  This option enables asynchronous UART API.
 
 config UART_INTERRUPT_DRIVEN
 	bool "Enable UART Interrupt support"
@@ -77,6 +90,13 @@ config UART_DRV_CMD
 
 	  Says no if not sure.
 
+config UART_WIDE_DATA
+	bool "Enable API to support data longer than 8-bit"
+	help
+	  This enables the API to process data longer than 8-bit.
+	  This is up to the driver to implement the necessary functions
+	  to properly support this.
+
 comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.b91"
@@ -96,6 +116,8 @@ source "drivers/serial/Kconfig.mcux_lpuart"
 source "drivers/serial/Kconfig.miv"
 
 source "drivers/serial/Kconfig.imx"
+
+source "drivers/serial/Kconfig.it8xxx2"
 
 source "drivers/serial/Kconfig.stellaris"
 
@@ -120,10 +142,6 @@ source "drivers/serial/Kconfig.cmsdk_apb"
 source "drivers/serial/Kconfig.sifive"
 
 source "drivers/serial/Kconfig.esp32"
-
-source "drivers/serial/Kconfig.esp32c3_rom"
-
-source "drivers/serial/Kconfig.esp32s2_rom"
 
 source "drivers/serial/Kconfig.gecko"
 
@@ -159,6 +177,12 @@ source "drivers/serial/Kconfig.rcar"
 
 source "drivers/serial/Kconfig.xec"
 
+source "drivers/serial/Kconfig.gd32"
+
 source "drivers/serial/Kconfig.test"
+
+source "drivers/serial/Kconfig.neorv32"
+
+source "drivers/serial/Kconfig.xen"
 
 endif # SERIAL

@@ -326,6 +326,13 @@
 #define DT_PARENT(node_id) UTIL_CAT(node_id, _PARENT)
 
 /**
+ * @brief Get a DT_DRV_COMPAT parent's node identifier
+ * @param inst instance number
+ * @return a node identifier for the instance's parent
+ */
+#define DT_INST_PARENT(inst) DT_PARENT(DT_DRV_INST(inst))
+
+/**
  * @brief Get a node identifier for a grandparent node
  *
  * Example devicetree fragment:
@@ -549,7 +556,8 @@
  * - reg property: use DT_NUM_REGS(node_id) instead
  * - interrupts property: use DT_NUM_IRQS(node_id) instead
  *
- * It is an error to use this macro with the reg or interrupts properties.
+ * It is an error to use this macro with the ranges, dma-ranges, reg
+ * or interrupts properties.
  *
  * For other properties, behavior is undefined.
  *
@@ -1294,6 +1302,360 @@
  */
 
 /**
+ * @defgroup devicetree-ranges-prop ranges property
+ * @ingroup devicetree
+ * @{
+ */
+
+/**
+ * @brief Get the number of range blocks in the ranges property
+ *
+ * Use this instead of DT_PROP_LEN(node_id, ranges).
+ *
+ * Example devicetree fragment:
+ *
+ *     pcie0: pcie@0 {
+ *             compatible = "intel,pcie";
+ *             reg = <0 1>;
+ *             #address-cells = <3>;
+ *             #size-cells = <2>;
+ *
+ *             ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                      <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                      <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *     };
+ *
+ *     other: other@1 {
+ *             reg = <1 1>;
+ *
+ *             ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                      <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_NUM_RANGES(DT_NODELABEL(pcie0)) // 3
+ *     DT_NUM_RANGES(DT_NODELABEL(other)) // 2
+ *
+ * @param node_id node identifier
+ */
+#define DT_NUM_RANGES(node_id) DT_CAT(node_id, _RANGES_NUM)
+
+/**
+ * @brief Is "idx" a valid range block index?
+ *
+ * If this returns 1, then DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(node_id, idx),
+ * DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(node_id, idx) or
+ * DT_RANGES_LENGTH_BY_IDX(node_id, idx) are valid.
+ * For DT_RANGES_CHILD_BUS_FLAGS_BY_IDX(node_id, idx) the return value
+ * of DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(node_id, idx) will indicate
+ * validity.
+ * If it returns 0, it is an error to use those macros with index "idx",
+ * including DT_RANGES_CHILD_BUS_FLAGS_BY_IDX(node_id, idx).
+ *
+ * Example devicetree fragment:
+ *
+ *
+ *     pcie0: pcie@0 {
+ *             compatible = "intel,pcie";
+ *             reg = <0 1>;
+ *             #address-cells = <3>;
+ *             #size-cells = <2>;
+ *
+ *             ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                      <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                      <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *     };
+ *
+ *     other: other@1 {
+ *             reg = <1 1>;
+ *
+ *             ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                      <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_RANGES_HAS_IDX(DT_NODELABEL(pcie0), 0) // 1
+ *     DT_RANGES_HAS_IDX(DT_NODELABEL(pcie0), 1) // 1
+ *     DT_RANGES_HAS_IDX(DT_NODELABEL(pcie0), 2) // 1
+ *     DT_RANGES_HAS_IDX(DT_NODELABEL(pcie0), 3) // 0
+ *     DT_RANGES_HAS_IDX(DT_NODELABEL(other), 0) // 1
+ *     DT_RANGES_HAS_IDX(DT_NODELABEL(other), 1) // 1
+ *     DT_RANGES_HAS_IDX(DT_NODELABEL(other), 2) // 0
+ *     DT_RANGES_HAS_IDX(DT_NODELABEL(other), 3) // 0
+ *
+ * @param node_id node identifier
+ * @param idx index to check
+ * @return 1 if "idx" is a valid register block index,
+ *         0 otherwise.
+ */
+#define DT_RANGES_HAS_IDX(node_id, idx) \
+	IS_ENABLED(DT_CAT4(node_id, _RANGES_IDX_, idx, _EXISTS))
+
+/**
+ * @brief Does a ranges property have child bus flags at index?
+ *
+ * If this returns 1, then DT_RANGES_CHILD_BUS_FLAGS_BY_IDX(node_id, idx) is valid.
+ * If it returns 0, it is an error to use this macro with index "idx".
+ * This macro only returns 1 for PCIe buses (i.e. nodes whose bindings specify they
+ * are "pcie" bus nodes.)
+ *
+ * Example devicetree fragment:
+ *
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "intel,pcie";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                              <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                              <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                              <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(DT_NODELABEL(pcie0), 0) // 1
+ *     DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(DT_NODELABEL(pcie0), 1) // 1
+ *     DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(DT_NODELABEL(pcie0), 2) // 1
+ *     DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(DT_NODELABEL(pcie0), 3) // 0
+ *     DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(DT_NODELABEL(other), 0) // 0
+ *     DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(DT_NODELABEL(other), 1) // 0
+ *     DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(DT_NODELABEL(other), 2) // 0
+ *     DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(DT_NODELABEL(other), 3) // 0
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the ranges array
+ * @return 1 if "idx" is a valid child bus flags index,
+ *         0 otherwise.
+ */
+#define DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(node_id, idx) \
+	IS_ENABLED(DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_CHILD_BUS_FLAGS_EXISTS))
+
+/**
+ * @brief Get the ranges property child bus flags at index
+ *
+ * When the node is a PCIe bus, the Child Bus Address has an extra cell used to store some
+ * flags, thus this cell is extracted from the Child Bus Address as Child Bus Flags field.
+ *
+ * Example devicetree fragments:
+ *
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "intel,pcie";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                              <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                              <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_RANGES_CHILD_BUS_FLAGS_BY_IDX(DT_NODELABEL(pcie0), 0) // 0x1000000
+ *     DT_RANGES_CHILD_BUS_FLAGS_BY_IDX(DT_NODELABEL(pcie0), 1) // 0x2000000
+ *     DT_RANGES_CHILD_BUS_FLAGS_BY_IDX(DT_NODELABEL(pcie0), 2) // 0x3000000
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the ranges array
+ * @returns range child bus flags field at idx
+ */
+#define DT_RANGES_CHILD_BUS_FLAGS_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_CHILD_BUS_FLAGS)
+
+/**
+ * @brief Get the ranges property child bus address at index
+ *
+ * When the node is a PCIe bus, the Child Bus Address has an extra cell used to store some
+ * flags, thus this cell is removed from the Child Bus Address.
+ *
+ * Example devicetree fragments:
+ *
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "intel,pcie";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                              <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                              <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                              <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 0) // 0
+ *     DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 1) // 0x10000000
+ *     DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 2) // 0x8000000000
+ *     DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(other), 0) // 0
+ *     DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(other), 1) // 0x10000000
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the ranges array
+ * @returns range child bus address field at idx
+ */
+#define DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_CHILD_BUS_ADDRESS)
+
+/**
+ * @brief Get the ranges property parent bus address at index
+ *
+ * Similarly to DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(), this properly accounts
+ * for child bus flags cells when the node is a PCIe bus.
+ *
+ * Example devicetree fragment:
+ *
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "intel,pcie";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                              <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                              <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                              <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 0) // 0x3eff0000
+ *     DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 1) // 0x10000000
+ *     DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 2) // 0x8000000000
+ *     DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(other), 0) // 0x3eff0000
+ *     DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(other), 1) // 0x10000000
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the ranges array
+ * @returns range parent bus address field at idx
+ */
+#define DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_PARENT_BUS_ADDRESS)
+
+/**
+ * @brief Get the ranges property length at index
+ *
+ * Similarly to DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(), this properly accounts
+ * for child bus flags cells when the node is a PCIe bus.
+ *
+ * Example devicetree fragment:
+ *
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "intel,pcie";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                              <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                              <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                              <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_RANGES_LENGTH_BY_IDX(DT_NODELABEL(pcie0), 0) // 0x10000
+ *     DT_RANGES_LENGTH_BY_IDX(DT_NODELABEL(pcie0), 1) // 0x2eff0000
+ *     DT_RANGES_LENGTH_BY_IDX(DT_NODELABEL(pcie0), 2) // 0x8000000000
+ *     DT_RANGES_LENGTH_BY_IDX(DT_NODELABEL(other), 0) // 0x10000
+ *     DT_RANGES_LENGTH_BY_IDX(DT_NODELABEL(other), 1) // 0x2eff0000
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the ranges array
+ * @returns range length field at idx
+ */
+#define DT_RANGES_LENGTH_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_LENGTH)
+
+/**
+ * @brief Invokes "fn" for each entry of "node_id" ranges property
+ *
+ * The macro "fn" must take two parameters, "node_id" which will be the node
+ * identifier of the node with the ranges property and "idx" the index of
+ * the ranges block.
+ *
+ * Example devicetree fragment:
+ *
+ *     n: node@0 {
+ *             reg = <0 0 1>;
+ *
+ *             ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                      <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     #define RANGE_LENGTH(node_id, idx) DT_RANGES_LENGTH_BY_IDX(node_id, idx),
+ *
+ *     const uint64_t *ranges_length[] = {
+ *             DT_FOREACH_RANGE(DT_NODELABEL(n), RANGE_LENGTH)
+ *     };
+ *
+ * This expands to:
+ *
+ *     const char *ranges_length[] = {
+ *         0x10000, 0x2eff0000,
+ *     };
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_RANGE(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_RANGE)(fn)
+
+/**
+ * @}
+ */
+
+/**
  * @defgroup devicetree-reg-prop reg property
  * @ingroup devicetree
  * @{
@@ -1715,8 +2077,7 @@
 	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM_VARGS)(fn, __VA_ARGS__)
 
 /**
- * @brief Call "fn" on all nodes with compatible DT_DRV_COMPAT
- *        and status "okay"
+ * @brief Invokes "fn" for each status "okay" node of a compatible.
  *
  * This macro expands to:
  *
@@ -2100,6 +2461,26 @@
  */
 #define DT_INST_FOREACH_CHILD_VARGS(inst, fn, ...) \
 	DT_FOREACH_CHILD_VARGS(DT_DRV_INST(inst), fn, __VA_ARGS__)
+
+/**
+ * @brief Get a DT_DRV_COMPAT value's index into its enumeration values
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @return zero-based index of the property's value in its enum: list
+ */
+#define DT_INST_ENUM_IDX(inst, prop) \
+	DT_ENUM_IDX(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Like DT_INST_ENUM_IDX(), but with a fallback to a default enum index
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param default_idx_value a fallback index value to expand to
+ * @return zero-based index of the property's value in its enum if present,
+ *         default_idx_value ohterwise
+ */
+#define DT_INST_ENUM_IDX_OR(inst, prop, default_idx_value) \
+	DT_ENUM_IDX_OR(DT_DRV_INST(inst), prop, default_idx_value)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance property

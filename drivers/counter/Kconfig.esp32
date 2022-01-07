@@ -3,33 +3,16 @@
 # Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ESP32_TIMER := espressif,esp32-timer
+
 menuconfig COUNTER_ESP32
 	bool "ESP32 Counter Driver"
-	depends on SOC_ESP32 || SOC_ESP32S2
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
+	default $(dt_compat_enabled,$(DT_COMPAT_ESP32_TIMER))
 	help
 	  Enable Counter driver for ESP32 series devices.
 
 if COUNTER_ESP32
-
-config COUNTER_ESP32_TG0_T0
-	bool "TG0_T0 enable/disable option"
-	help
-	  Enables Timer 0 peripheral from Timer Group 0.
-
-config COUNTER_ESP32_TG0_T1
-	bool "TG0_T1 enable/disable option"
-	help
-	  Enables Timer 1 peripheral from Timer Group 0.
-
-config COUNTER_ESP32_TG1_T0
-	bool "TG1_T0 enable/disable option"
-	help
-	  Enables Timer 0 peripheral from Timer Group 1.
-
-config COUNTER_ESP32_TG1_T1
-	bool "TG1_T1 enable/disable option"
-	help
-	  Enables Timer 1 peripheral from Timer Group 1.
 
 config COUNTER_ESP32_PRESCALER
 	int "Prescaling value for counter device"

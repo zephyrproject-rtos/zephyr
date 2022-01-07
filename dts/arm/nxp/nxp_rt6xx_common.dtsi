@@ -116,14 +116,6 @@
 		port = <2>;
 	};
 
-	flexspi: spi@134000 {
-		compatible = "nxp,imx-flexspi";
-		reg = <0x134000 0x1000>;
-		interrupts = <42 0>;
-		label = "FLEXSPI";
-		#address-cells = <1>;
-		#size-cells = <0>;
-	};
 
 	flexcomm0: flexcomm@106000 {
 		compatible = "nxp,lpc-flexcomm";
@@ -194,6 +186,15 @@
 		interrupts = <44 0>;
 		label = "FLEXCOMM_7";
 		clocks = <&clkctl1 MCUX_FLEXCOMM7_CLK>;
+		status = "disabled";
+	};
+
+	pmic_i2c: i2c@127000 {
+		compatible = "nxp,lpc-i2c";
+		reg = <0x127000 0x1000>;
+		interrupts = <21 0>;
+		label = "PMIC_I2C";
+		clocks = <&clkctl1 MCUX_PMIC_I2C_CLK>;
 		status = "disabled";
 	};
 
@@ -391,6 +392,14 @@
 		prescale = <0>;
 		label = "CTIMER_4";
 	};
+};
+
+&flexspi {
+	compatible = "nxp,imx-flexspi";
+	interrupts = <42 0>;
+	label = "FLEXSPI";
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &nvic {

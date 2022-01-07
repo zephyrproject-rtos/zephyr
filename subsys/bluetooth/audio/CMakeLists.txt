@@ -22,4 +22,22 @@ if (CONFIG_BT_MICS OR CONFIG_BT_MICS_CLIENT)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_MICS_CLIENT mics_client.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
+
 zephyr_library_link_libraries(subsys__bluetooth)
+
+zephyr_library_sources_ifdef(CONFIG_BT_CSIS csis.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CSIS_CLIENT csis_client.c)
+if (CONFIG_BT_CSIS OR CONFIG_BT_CSIS_CLIENT)
+	zephyr_library_sources(csis_crypto.c)
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_BT_OTC otc.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MCC mcc.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MCS mcs.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MCS mpl.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MCS media_proxy.c)

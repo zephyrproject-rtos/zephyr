@@ -18,6 +18,7 @@
 #include <kernel.h>
 #include <kernel_internal.h>
 #include <string.h>
+#include <ksched.h>
 
 extern void test_threads_spawn_params(void);
 extern void test_threads_spawn_priority(void);
@@ -306,7 +307,7 @@ enum control_method {
 
 void join_entry(void *p1, void *p2, void *p3)
 {
-	enum control_method m = (enum control_method)p1;
+	enum control_method m = (enum control_method)(intptr_t)p1;
 
 	switch (m) {
 	case TIMEOUT:
@@ -531,6 +532,10 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
 	k_thread_runtime_stats_t stats;
 	int ret;
 
+	if (z_is_idle_thread_object((k_tid_t)thread)) {
+		return;
+	}
+
 	/* Check NULL parameters */
 	ret = k_thread_runtime_stats_get(NULL, &stats);
 	zassert_true(ret == -EINVAL, NULL);
@@ -541,10 +546,10 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
 	((k_thread_runtime_stats_t *)user_data)->execution_cycles +=
 		stats.execution_cycles;
 }
-/* This case accumulates every threath's execution_cycles first, then get
- * the total execution_cycles from a global k_thread_runtime_stats_t, the
- * two values should be equal. So this case must run before any thread
- * destroyed
+/* This case accumulates every threath's execution_cycles first, then
+ * get the total execution_cycles from a global
+ * k_thread_runtime_stats_t to see that all time is reflected in the
+ * total.
  */
 void test_thread_runtime_stats_get(void)
 {
@@ -559,27 +564,34 @@ void test_thread_runtime_stats_get(void)
 	zassert_true(ret == -EINVAL, NULL);
 
 	k_thread_runtime_stats_all_get(&stats_all);
-	zassert_equal(stats.execution_cycles, stats_all.execution_cycles, NULL);
+	zassert_true(stats.execution_cycles <= stats_all.execution_cycles, NULL);
 }
 
 void test_k_busy_wait(void)
 {
-	uint64_t cycles;
+	uint64_t cycles, dt;
 	k_thread_runtime_stats_t test_stats;
 
 	k_thread_runtime_stats_get(k_current_get(), &test_stats);
 	cycles = test_stats.execution_cycles;
 	k_busy_wait(0);
 	k_thread_runtime_stats_get(k_current_get(), &test_stats);
-	/* execution_cycles doesn't increase after 0 usec */
-	zassert_equal(test_stats.execution_cycles, cycles, NULL);
-	cycles = test_stats.execution_cycles;
 
+	/* execution_cycles doesn't increase significantly after 0
+	 * usec (10ms slop experimentally determined,
+	 * non-deterministic software emulators are VERY slow wrt
+	 * their cycle rate)
+	 */
+	dt = test_stats.execution_cycles - cycles;
+	zassert_true(dt < k_ms_to_cyc_ceil64(10), NULL);
+
+	cycles = test_stats.execution_cycles;
 	k_busy_wait(100);
 	k_thread_runtime_stats_get(k_current_get(), &test_stats);
-	/* in busy wait, this thread never been scheduled */
-	zassert_equal(test_stats.execution_cycles, cycles, NULL);
-	cycles = test_stats.execution_cycles;
+
+	/* execution_cycles increases correctly */
+	dt = test_stats.execution_cycles - cycles;
+	zassert_true(dt >= k_us_to_cyc_floor64(100), NULL);
 }
 
 static void tp_entry(void *p1, void *p2, void *p3)

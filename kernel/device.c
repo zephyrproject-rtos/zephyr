@@ -186,8 +186,7 @@ int device_required_foreach(const struct device *dev,
 			    void *context)
 {
 	size_t handle_count = 0;
-	const device_handle_t *handles =
-		device_required_handles_get(dev, &handle_count);
+	const device_handle_t *handles = device_required_handles_get(dev, &handle_count);
 
 	return device_visitor(handles, handle_count, visitor_cb, context);
 }
@@ -197,8 +196,7 @@ int device_supported_foreach(const struct device *dev,
 			     void *context)
 {
 	size_t handle_count = 0;
-	const device_handle_t *handles =
-		device_supported_handles_get(dev, &handle_count);
+	const device_handle_t *handles = device_supported_handles_get(dev, &handle_count);
 
 	return device_visitor(handles, handle_count, visitor_cb, context);
 }

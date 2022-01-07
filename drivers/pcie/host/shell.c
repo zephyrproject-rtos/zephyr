@@ -89,7 +89,7 @@ static void show_bars(const struct shell *shell, pcie_bdf_t bdf)
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "%08x\n",
-			      PCIE_CONF_BAR_ADDR(data));
+			      (uint32_t)PCIE_CONF_BAR_ADDR(data));
 	}
 }
 

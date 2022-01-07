@@ -23,6 +23,24 @@ config SOC_IT8XXX2_PLL_FLASH_48M
 	  Set n to use the default settings.
 	  (PLL and CPU run at 48MHz, flash frequency is 16MHz)
 
+config SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN
+	bool "The pins of GPIO group K and L aren't bonding with pad"
+	default y
+	help
+	  On IT81202 (128-pins package), the pins of GPIO group K and L aren't
+	  bonding with pad. So we configure these pins as internal pull-down
+	  at default to prevent leakage current due to floating.
+
+config SOC_IT8XXX2_GPIO_H7_DEFAULT_OUTPUT_LOW
+	bool "The GPIOH7 isn't bonding with pad and is left floating internally"
+	default y
+	help
+	  On IT81202/IT81302, the GPIOH7 isn't bonding with pad and is left
+	  floating internally. We need to enable internal pull-down for the pin
+	  to prevent leakage current, but IT81202/IT81302 doesn't have the
+	  capability to pull it down. We can only set it as output low,
+	  so we enable output low for it at initialization to prevent leakage.
+
 choice
 	prompt "Clock source for PLL reference clock"
 

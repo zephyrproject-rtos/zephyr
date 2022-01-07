@@ -10,6 +10,10 @@
 #endif
 #endif /* NETWORKING */
 
+#if defined(CONFIG_BT_MESH)
+	ITERABLE_SECTION_RAM(bt_mesh_ext_adv, 4)
+#endif
+
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{
@@ -85,6 +89,7 @@
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mbox, 4)
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_pipe, 4)
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_sem, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_event, 4)
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_queue, 4)
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, 4)
 
@@ -117,13 +122,7 @@
 		__usb_descriptor_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(usb_data,,SUBALIGN(1))
-	{
-		__usb_data_start = .;
-		*(".usb.data")
-		KEEP(*(SORT_BY_NAME(".usb.data*")))
-		__usb_data_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_RAM(usb_cfg_data, 4)
 #endif /* CONFIG_USB_DEVICE_STACK */
 
 #if defined(CONFIG_USB_DEVICE_BOS)
@@ -139,3 +138,7 @@
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
+
+#if defined(CONFIG_ZTEST)
+	ITERABLE_SECTION_RAM(ztest_suite_node, 4)
+#endif /* CONFIG_ZTEST */

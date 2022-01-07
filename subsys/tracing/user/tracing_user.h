@@ -271,8 +271,8 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_exit(heap, ret)
 #define sys_port_trace_k_heap_sys_k_malloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_malloc_exit(heap, ret)
-#define sys_port_trace_k_heap_sys_k_free_enter(heap)
-#define sys_port_trace_k_heap_sys_k_free_exit(heap)
+#define sys_port_trace_k_heap_sys_k_free_enter(heap, heap_ref)
+#define sys_port_trace_k_heap_sys_k_free_exit(heap, heap_ref)
 #define sys_port_trace_k_heap_sys_k_calloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
 
@@ -289,6 +289,14 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_timer_status_sync_enter(timer)
 #define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)
+
+#define sys_port_trace_k_event_init(event)
+#define sys_port_trace_k_event_post_enter(event, events, accumulate)
+#define sys_port_trace_k_event_post_exit(event, events, accumulate)
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_exit(event, events, ret)
+
 #define sys_port_trace_k_thread_abort_exit(thread)
 #define sys_port_trace_k_thread_abort_enter(thread)
 #define sys_port_trace_k_thread_resume_exit(thread)

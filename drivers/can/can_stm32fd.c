@@ -5,11 +5,11 @@
  */
 
 #include <drivers/can.h>
+#include <drivers/pinctrl.h>
 #include <kernel.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 #include "can_stm32fd.h"
-#include <pinmux/pinmux_stm32.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
@@ -38,6 +38,15 @@ int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
+int can_stm32fd_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	if (id_type == CAN_STANDARD_IDENTIFIER) {
+		return NUM_STD_FILTER_DATA;
+	} else {
+		return NUM_EXT_FILTER_DATA;
+	}
+}
+
 void can_stm32fd_clock_enable(void)
 {
 	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
@@ -63,9 +72,7 @@ static int can_stm32fd_init(const struct device *dev)
 	int ret;
 
 	/* Configure dt provided device signals when available */
-	ret = stm32_dt_pinctrl_configure(cfg->pinctrl,
-					 ARRAY_SIZE(cfg->pinctrl),
-					 (uint32_t)mcan_cfg->can);
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
 		return ret;
@@ -93,7 +100,7 @@ enum can_state can_stm32fd_get_state(const struct device *dev,
 
 int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 		     k_timeout_t timeout, can_tx_callback_t callback,
-		     void *callback_arg)
+		     void *user_data)
 {
 	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
@@ -101,7 +108,7 @@ int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
 	return can_mcan_send(mcan_cfg, mcan_data, msg_ram, frame, timeout,
-			     callback, callback_arg);
+			     callback, user_data);
 }
 
 int can_stm32fd_attach_isr(const struct device *dev, can_rx_callback_t isr,
@@ -175,6 +182,7 @@ static const struct can_driver_api can_api_funcs = {
 	.recover = can_mcan_recover,
 #endif
 	.get_core_clock = can_stm32fd_get_core_clock,
+	.get_max_filters = can_stm32fd_get_max_filters,
 	.register_state_change_isr = can_stm32fd_register_state_change_isr,
 	.timing_min = {
 		.sjw = 0x7f,
@@ -225,6 +233,9 @@ static void config_can_##inst##_irq(void)                                      \
 #ifdef CONFIG_CAN_FD_MODE
 
 #define CAN_STM32FD_CFG_INST(inst)                                             \
+									       \
+PINCTRL_DT_INST_DEFINE(inst);						       \
+									       \
 static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 	.msg_sram = (struct can_mcan_msg_sram *)                               \
 			DT_INST_REG_ADDR_BY_NAME(inst, message_ram),           \
@@ -248,12 +259,15 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 		.tx_delay_comp_offset =                                        \
 			DT_INST_PROP(inst, tx_delay_comp_offset)               \
 	},                                                                     \
-	.pinctrl = ST_STM32_DT_INST_PINCTRL(inst, 0),                          \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
 };
 
 #else /* CONFIG_CAN_FD_MODE */
 
 #define CAN_STM32FD_CFG_INST(inst)                                             \
+									       \
+PINCTRL_DT_INST_DEFINE(inst);						       \
+									       \
 static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 	.msg_sram = (struct can_mcan_msg_sram *)                               \
 			DT_INST_REG_ADDR_BY_NAME(inst, message_ram),           \
@@ -268,7 +282,7 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 			    DT_INST_PROP_OR(inst, phase_seg1, 0),              \
 		.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                   \
 	},                                                                     \
-	.pinctrl = ST_STM32_DT_INST_PINCTRL(inst, 0),                          \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
 };
 
 #endif /* CONFIG_CAN_FD_MODE */
@@ -279,7 +293,7 @@ static struct can_stm32fd_data can_stm32fd_dev_data_##inst;
 #define CAN_STM32FD_DEVICE_INST(inst)                                          \
 DEVICE_DT_INST_DEFINE(inst, &can_stm32fd_init, NULL,                           \
 		      &can_stm32fd_dev_data_##inst, &can_stm32fd_cfg_##inst,   \
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,         \
+		      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,                   \
 		      &can_api_funcs);
 
 #define CAN_STM32FD_INST(inst)     \

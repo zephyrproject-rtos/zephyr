@@ -57,6 +57,11 @@ static int spi_config(const struct device *dev,
 	const struct spi_gecko_config *gecko_config = dev->config;
 	struct spi_gecko_data *data = DEV_DATA(dev);
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
 		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
 		return -ENOTSUP;
@@ -72,7 +77,8 @@ static int spi_config(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Only supports single mode");
 		return -ENOTSUP;
 	}
@@ -106,8 +112,6 @@ static int spi_config(const struct device *dev,
 
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;
-
-	spi_context_cs_configure(&data->ctx);
 
 	return 0;
 }
@@ -209,7 +213,9 @@ static void spi_gecko_init_pins(const struct device *dev)
 
 static int spi_gecko_init(const struct device *dev)
 {
+	int err;
 	const struct spi_gecko_config *config = dev->config;
+	struct spi_gecko_data *data = dev->data;
 	USART_InitSync_TypeDef usartInit = USART_INITSYNC_DEFAULT;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio
@@ -236,6 +242,11 @@ static int spi_gecko_init(const struct device *dev)
 
 	/* Initialize USART pins */
 	spi_gecko_init_pins(dev);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	/* Enable the peripheral */
 	config->base->CMD = (uint32_t) usartEnable;
@@ -291,6 +302,7 @@ static struct spi_driver_api spi_gecko_api = {
 	static struct spi_gecko_data spi_gecko_data_##n = { \
 		SPI_CONTEXT_INIT_LOCK(spi_gecko_data_##n, ctx), \
 		SPI_CONTEXT_INIT_SYNC(spi_gecko_data_##n, ctx), \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	}; \
 	static struct spi_gecko_config spi_gecko_cfg_##n = { \
 	    .base = (USART_TypeDef *) \

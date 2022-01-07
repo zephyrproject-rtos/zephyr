@@ -16,6 +16,8 @@
 #include <clock_control/clock_stm32_ll_common.h>
 #include "stm32_hsem.h"
 
+#include <bluetooth/hci.h>
+
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -36,16 +38,11 @@ static void switch_on_hsi(void)
 	}
 }
 
-/* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(struct pm_state_info info)
+static void lpm_hsem_lock(void)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
-		return;
-	}
-
 	/* Implementation of STM32 AN5289 algorithm to enter/exit lowpower */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_WAIT_FOREVER);
+
 	if (!LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID)) {
 		if (LL_PWR_IsActiveFlag_C2DS()) {
 			/* Release ENTRY_STOP_MODE semaphore */
@@ -58,47 +55,89 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		/* The switch on HSI before entering Stop Mode is required */
 		switch_on_hsi();
 	}
+}
 
-	switch (info.substate_id) {
-	case 1: /* this corresponds to the STOP0 mode: */
-		/* ensure HSI is the wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
-		/* enter STOP0 mode */
-		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
-		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
-		break;
-	case 2: /* this corresponds to the STOP1 mode: */
-		/* ensure HSI is the wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
-		/* enter STOP1 mode */
-		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
-		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
-		break;
-	case 3: /* this corresponds to the STOP2 mode: */
-		/* ensure HSI is the wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
-#ifdef PWR_CR1_RRSTP
-		LL_PWR_DisableSRAM3Retention();
-#endif /* PWR_CR1_RRSTP */
-		/* enter STOP2 mode */
-		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
-		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
-		break;
-	default:
-		/* Release RCC semaphore */
-		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-		LOG_DBG("Unsupported power substate-id %u", info.substate_id);
-		break;
+#define ACI_HAL_STACK_RESET 0xFC3B
+
+static void send_stack_reset(void)
+{
+	struct net_buf *rsp;
+	int err = 0;
+
+	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, &rsp);
+
+	net_buf_unref(rsp);
+
+	if (err) {
+		LOG_ERR("M0 BLE stack reset issue");
 	}
+}
+
+
+static void shutdown_ble_stack(void)
+{
+	send_stack_reset();
+
+	/* Wait till C2DS set */
+	while (LL_PWR_IsActiveFlag_C2DS() == 0) {
+	};
+}
+
+/* Invoke Low Power/System Off specific Tasks */
+__weak void pm_power_state_set(struct pm_state_info info)
+{
+	if (info.state == PM_STATE_SOFT_OFF) {
+
+		if (IS_ENABLED(CONFIG_BT)) {
+			shutdown_ble_stack();
+		}
+
+		lpm_hsem_lock();
+
+		/* Clear all Wake-Up flags */
+		LL_PWR_ClearFlag_WU();
+
+		LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
+
+	} else if (info.state == PM_STATE_SUSPEND_TO_IDLE) {
+
+		lpm_hsem_lock();
+
+		/* ensure HSI is the wake-up system clock */
+		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
+
+		switch (info.substate_id) {
+		case 1:
+			/* enter STOP0 mode */
+			LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
+			break;
+		case 2:
+			/* enter STOP1 mode */
+			LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
+			break;
+		case 3:
+			/* enter STOP2 mode */
+			LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
+			break;
+		default:
+			/* Release RCC semaphore */
+			z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+			LOG_DBG("Unsupported power substate-id %u", info.substate_id);
+			return;
+		}
+
+	} else {
+		LOG_DBG("Unsupported power state %u", info.state);
+		return;
+	}
+
+	/* Release RCC semaphore */
+	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+
+	LL_LPM_EnableDeepSleep();
+
+	/* enter SLEEP mode : WFE or WFI */
+	k_cpu_idle();
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */

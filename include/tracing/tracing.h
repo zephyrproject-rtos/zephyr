@@ -8,24 +8,62 @@
 
 #include <kernel.h>
 
+#include "tracking.h"
+
 #if defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
-
 #elif defined CONFIG_TRACING_CTF
 #include "tracing_ctf.h"
-
 #elif defined CONFIG_TRACING_TEST
 #include "tracing_test.h"
-
 #elif defined CONFIG_TRACING_USER
 #include "tracing_user.h"
-
 #else
+/**
+ * @brief Tracing
+ *
+ * The tracing subsystem provides hooks that permits you to collect data from
+ * your application and allows tools running on a host to visualize the
+ * inner-working of the kernel and various other subsystems.
+ *
+ * @defgroup subsys_tracing Tracing
+ * @ingroup subsys
+ * @{
+ */
+
+/**
+ * @brief Tracing APIs
+ * @defgroup subsys_tracing_apis Tracing APIs
+ * @{
+ */
+
+#if defined(CONFIG_PERCEPIO_TRACERECORDER)
+#include "tracing_tracerecorder.h"
+#else
+/**
+ * @brief Called when entering an ISR
+ */
+void sys_trace_isr_enter(void);
+
+/**
+ * @brief Called when exiting an ISR
+ */
+void sys_trace_isr_exit(void);
+
+/**
+ * @brief Called when exiting an ISR and switching to scheduler
+ */
+void sys_trace_isr_exit_to_scheduler(void);
+
+/**
+ * @brief Called when the cpu enters the idle state
+ */
+void sys_trace_idle(void);
+#endif /* CONFIG_PERCEPIO_TRACERECORDER */
 
 /**
  * @brief Thread Tracing APIs
- * @defgroup thread_tracing_apis Thread Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_thread Thread Tracing APIs
  * @{
  */
 
@@ -157,6 +195,18 @@
 #define sys_port_trace_k_thread_abort(thread)
 
 /**
+ * @brief Called when a thread enters the k_thread_abort routine
+ * @param thread Thread object
+ */
+#define sys_port_trace_k_thread_abort_enter(thread)
+
+/**
+ * @brief Called when a thread exits the k_thread_abort routine
+ * @param thread Thread object
+ */
+#define sys_port_trace_k_thread_abort_exit(thread)
+
+/**
  * @brief Called when setting priority of a thread
  * @param thread Thread object
  */
@@ -278,17 +328,11 @@
  */
 #define sys_port_trace_k_thread_sched_suspend(thread)
 
-/**
- * @}
- */ /* end of thread_tracing_apis */
-
-
-
+/** @}c*/ /* end of subsys_tracing_apis_thread */
 
 /**
  * @brief Work Tracing APIs
- * @defgroup work_tracing_apis Work Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_work Work Tracing APIs
  * @{
  */
 
@@ -381,17 +425,11 @@
  */
 #define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret)
 
-/**
- * @}
- */ /* end of work_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_work */
 
 /**
  * @brief Work Queue Tracing APIs
- * @defgroup work_q_tracing_apis Work Queue Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_work_q Work Queue Tracing APIs
  * @{
  */
 
@@ -439,17 +477,11 @@
  */
 #define sys_port_trace_k_work_queue_unplug_exit(queue, ret)
 
-/**
- * @}
- */ /* end of work_q_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_work_q */
 
 /**
  * @brief Work Delayable Tracing APIs
- * @defgroup work_delayable_tracing_apis Work Delayable Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_work_delayable Work Delayable Tracing APIs
  * @{
  */
 
@@ -566,17 +598,11 @@
  */
 #define sys_port_trace_k_work_cancel_delayable_sync_exit(dwork, sync, ret)
 
-/**
- * @}
- */ /* end of work_delayable_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_work_delayable */
 
 /**
  * @brief Work Poll Tracing APIs
- * @defgroup work_poll_tracing_apis Work Poll Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_work_poll Work Poll Tracing APIs
  * @{
  */
 
@@ -645,17 +671,11 @@
  */
 #define sys_port_trace_k_work_poll_cancel_exit(work, ret)
 
-/**
- * @}
- */ /* end of work_poll_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_work_poll */
 
 /**
  * @brief Poll Tracing APIs
- * @defgroup poll_tracing_apis Poll Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_poll Poll Tracing APIs
  * @{
  */
 
@@ -703,17 +723,11 @@
  */
 #define sys_port_trace_k_poll_api_signal_raise(signal, ret)
 
-/**
- * @}
- */ /* end of poll_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_poll */
 
 /**
  * @brief Semaphore Tracing APIs
- * @defgroup sem_tracing_apis Semaphore Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_sem Semaphore Tracing APIs
  * @{
  */
 
@@ -764,17 +778,11 @@
  */
 #define sys_port_trace_k_sem_reset(sem)
 
-/**
- * @}
- */ /* end of sem_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_sem */
 
 /**
  * @brief Mutex Tracing APIs
- * @defgroup mutex_tracing_apis Mutex Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_mutex Mutex Tracing APIs
  * @{
  */
 
@@ -818,17 +826,11 @@
  */
 #define sys_port_trace_k_mutex_unlock_exit(mutex, ret)
 
-/**
- * @}
- */ /* end of mutex_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_mutex */
 
 /**
  * @brief Conditional Variable Tracing APIs
- * @defgroup condvar_tracing_apis Conditional Variable Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_condvar Conditional Variable Tracing APIs
  * @{
  */
 
@@ -885,17 +887,11 @@
  */
 #define sys_port_trace_k_condvar_wait_exit(condvar, ret)
 
-/**
- * @}
- */ /* end of condvar_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_condvar */
 
 /**
  * @brief Queue Tracing APIs
- * @defgroup queue_tracing_apis Queue Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_queue Queue Tracing APIs
  * @{
  */
 
@@ -1092,17 +1088,11 @@
  */
 #define sys_port_trace_k_queue_peek_tail(queue, ret)
 
-/**
- * @}
- */ /* end of queue_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_queue */
 
 /**
  * @brief FIFO Tracing APIs
- * @defgroup fifo_tracing_apis FIFO Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_fifo FIFO Tracing APIs
  * @{
  */
 
@@ -1165,7 +1155,7 @@
  * @param head First ll-node
  * @param tail Last ll-node
  */
-#define sys_port_trace_k_fifo_alloc_put_list_enter(fifo, head, tail)
+#define sys_port_trace_k_fifo_put_list_enter(fifo, head, tail)
 
 /**
  * @brief Trace FIFO Queue put list exit
@@ -1173,7 +1163,7 @@
  * @param head First ll-node
  * @param tail Last ll-node
  */
-#define sys_port_trace_k_fifo_alloc_put_list_exit(fifo, head, tail)
+#define sys_port_trace_k_fifo_put_list_exit(fifo, head, tail)
 
 /**
  * @brief Trace FIFO Queue put slist entry
@@ -1230,17 +1220,11 @@
  */
 #define sys_port_trace_k_fifo_peek_tail_exit(fifo, ret)
 
-/**
- * @}
- */ /* end of fifo_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_fifo */
 
 /**
  * @brief LIFO Tracing APIs
- * @defgroup lifo_tracing_apis LIFO Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_lifo LIFO Tracing APIs
  * @{
  */
 
@@ -1300,17 +1284,11 @@
  */
 #define sys_port_trace_k_lifo_get_exit(lifo, timeout, ret)
 
-/**
- * @}
- */ /* end of lifo_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_lifo */
 
 /**
  * @brief Stack Tracing APIs
- * @defgroup stack_tracing_apis Stack Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_stack Stack Tracing APIs
  * @{
  */
 
@@ -1381,17 +1359,11 @@
  */
 #define sys_port_trace_k_stack_pop_exit(stack, timeout, ret)
 
-/**
- * @}
- */ /* end of stack_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_stack */
 
 /**
  * @brief Message Queue Tracing APIs
- * @defgroup msgq_tracing_apis Message Queue Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_msgq Message Queue Tracing APIs
  * @{
  */
 
@@ -1484,17 +1456,11 @@
  */
 #define sys_port_trace_k_msgq_purge(msgq)
 
-/**
- * @}
- */ /* end of msgq_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_msgq */
 
 /**
  * @brief Mailbox Tracing APIs
- * @defgroup mbox_tracing_apis Mailbox Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_mbox Mailbox Tracing APIs
  * @{
  */
 
@@ -1583,17 +1549,11 @@
  */
 #define sys_port_trace_k_mbox_data_get(rx_msg)
 
-/**
- * @}
- */ /* end of mbox_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_mbox */
 
 /**
  * @brief Pipe Tracing APIs
- * @defgroup pipe_tracing_apis Pipe Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_pipe Pipe Tracing APIs
  * @{
  */
 
@@ -1687,17 +1647,11 @@
  */
 #define sys_port_trace_k_pipe_block_put_exit(pipe, sem)
 
-/**
- * @}
- */ /* end of pipe_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_pipe */
 
 /**
  * @brief Heap Tracing APIs
- * @defgroup heap_tracing_apis Heap Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_heap Heap Tracing APIs
  * @{
  */
 
@@ -1779,14 +1733,16 @@
 /**
  * @brief Trace System Heap free entry
  * @param heap Heap object
+ * @param heap_ref Heap reference
  */
-#define sys_port_trace_k_heap_sys_k_free_enter(heap)
+#define sys_port_trace_k_heap_sys_k_free_enter(heap, heap_ref)
 
 /**
  * @brief Trace System Heap free exit
  * @param heap Heap object
+ * @param heap_ref Heap reference
  */
-#define sys_port_trace_k_heap_sys_k_free_exit(heap)
+#define sys_port_trace_k_heap_sys_k_free_exit(heap, heap_ref)
 
 /**
  * @brief Trace System heap calloc enter
@@ -1801,17 +1757,11 @@
  */
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
 
-/**
- * @}
- */ /* end of heap_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_heap */
 
 /**
  * @brief Memory Slab Tracing APIs
- * @defgroup mslab_tracing_apis Memory Slab Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_mslab Memory Slab Tracing APIs
  * @{
  */
 
@@ -1856,17 +1806,11 @@
  */
 #define sys_port_trace_k_mem_slab_free_exit(slab)
 
-/**
- * @}
- */ /* end of mslab_tracing_apis */
-
-
-
+/** @} */ /* end of subsys_tracing_apis_mslab */
 
 /**
  * @brief Timer Tracing APIs
- * @defgroup timer_tracing_apis Timer Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_timer Timer Tracing APIs
  * @{
  */
 
@@ -1908,61 +1852,161 @@
  */
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)
 
+/** @} */ /* end of subsys_tracing_apis_timer */
+
 /**
- * @}
- */ /* end of timer_tracing_apis */
-
-#define sys_port_trace_pm_system_suspend_enter(ticks)
-
-#define sys_port_trace_pm_system_suspend_exit(ticks, ret)
-
-#define sys_port_trace_pm_device_request_enter(dev, target_state)
-
-#define sys_port_trace_pm_device_request_exit(dev, ret)
-
-#define sys_port_trace_pm_device_enable_enter(dev)
-
-#define sys_port_trace_pm_device_enable_exit(dev)
-
-#define sys_port_trace_pm_device_disable_enter(dev)
-
-#define sys_port_trace_pm_device_disable_exit(dev)
-
-
-#if defined CONFIG_PERCEPIO_TRACERECORDER
-#include "tracing_tracerecorder.h"
-#else
-/**
- * @brief Tracing APIs
- * @defgroup tracing_apis Tracing APIs
+ * @brief Event Tracing APIs
+ * @defgroup subsys_tracing_apis_event Event Tracing APIs
  * @{
  */
 
 /**
- * @brief Called when entering an ISR
+ * @brief Trace initialisation of an Event
+ * @param event Event object
  */
-void sys_trace_isr_enter(void);
+#define sys_port_trace_k_event_init(event)
 
 /**
- * @brief Called when exiting an ISR
+ * @brief Trace posting of an Event call entry
+ * @param event Event object
+ * @param events Set of posted events
+ * @param accumulate True if events accumulate, false otherwise
  */
-void sys_trace_isr_exit(void);
+#define sys_port_trace_k_event_post_enter(event, events, accumulate)
 
 /**
- * @brief Called when exiting an ISR and switching to scheduler
+ * @brief Trace posting of an Event call exit
+ * @param event Event object
+ * @param events Set of posted events
+ * @param accumulate True if events accumulate, false otherwise
  */
-void sys_trace_isr_exit_to_scheduler(void);
+#define sys_port_trace_k_event_post_exit(event, events, accumulate)
 
 /**
- * @brief Called when the cpu enters the idle state
+ * @brief Trace waiting of an Event call entry
+ * @param event Event object
+ * @param events Set of events for which to wait
+ * @param options Event wait options
+ * @param timeout Timeout period
  */
-void sys_trace_idle(void);
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
 
 /**
- * @}
+ * @brief Trace waiting of an Event call exit
+ * @param event Event object
+ * @param events Set of events for which to wait
+ * @param options Event wait options
+ * @param timeout Timeout period
  */
+#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
+
+/**
+ * @brief Trace waiting of an Event call exit
+ * @param event Event object
+ * @param events Set of events for which to wait
+ * @param ret Set of received events
+ */
+#define sys_port_trace_k_event_wait_exit(event, events, ret)
+
+/** @} */ /* end of subsys_tracing_apis_event */
+
+/**
+ * @brief System PM Tracing APIs
+ * @defgroup subsys_tracing_apis_pm_system System PM Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace system suspend call entry.
+ * @param ticks Ticks.
+ */
+#define sys_port_trace_pm_system_suspend_enter(ticks)
+
+/**
+ * @brief Trace system suspend call exit.
+ * @param ticks Ticks.
+ * @param state PM state.
+ */
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)
+
+/** @} */ /* end of subsys_tracing_apis_pm_system */
+
+/**
+ * @brief PM Device Runtime Tracing APIs
+ * @defgroup subsys_tracing_apis_pm_device_runtime PM Device Runtime Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace getting a device call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_get_enter(dev)
+
+/**
+ * @brief Trace getting a device call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_get_exit(dev, ret)
+
+/**
+ * @brief Trace putting a device call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_put_enter(dev)
+
+/**
+ * @brief Trace putting a device call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_put_exit(dev, ret)
+
+/**
+ * @brief Trace putting a device (asynchronously) call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev)
+
+/**
+ * @brief Trace putting a device (asynchronously) call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, ret)
+
+/**
+ * @brief Trace enabling device runtime PM call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_enable_enter(dev)
+
+/**
+ * @brief Trace enabling device runtime PM call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)
+
+/**
+ * @brief Trace disabling device runtime PM call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_disable_enter(dev)
+
+/**
+ * @brief Trace disabling device runtime PM call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
+
+/** @} */ /* end of subsys_tracing_apis_pm_device_runtime */
+
+/** @} */ /* end of subsys_tracing_apis */
+
+/** @} */ /* end of subsys_tracing */
+
 #endif
-
-
-#endif
-#endif
+#endif /* ZEPHYR_INCLUDE_TRACING_TRACING_H_ */

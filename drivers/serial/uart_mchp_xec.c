@@ -894,7 +894,7 @@ static const struct uart_driver_api uart_xec_driver_api = {
 			      &uart_xec_dev_data_##n,			\
 			      &uart_xec_dev_cfg_##n,			\
 			      PRE_KERNEL_1,				\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      CONFIG_SERIAL_INIT_PRIORITY,		\
 			      &uart_xec_driver_api);			\
 	UART_XEC_IRQ_FUNC_DEFINE(n)
 

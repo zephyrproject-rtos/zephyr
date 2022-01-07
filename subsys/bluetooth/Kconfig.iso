@@ -7,24 +7,38 @@
 config BT_ISO
 	bool
 
+# TODO: Split between client (central) and server (peripheral)
 config BT_ISO_UNICAST
 	bool "Bluetooth Isochronous Channel Unicast Support [EXPERIMENTAL]"
 	depends on BT_CONN
 	select BT_ISO
+	select EXPERIMENTAL
 	help
 	  This option enables support for Bluetooth Broadcast
 	  Isochronous channels.
 
-# TODO: Split between broadcaster and observer for optimization
 config BT_ISO_BROADCAST
-	bool "Bluetooth Isochronous Channel Broadcast Support [EXPERIMENTAL]"
+	bool
 	select BT_ISO
 	select BT_EXT_ADV
+
+config BT_ISO_BROADCASTER
+	bool "Bluetooth Isochronous Broadcaster Support [EXPERIMENTAL]"
+	select BT_ISO_BROADCAST
+	select BT_BROADCASTER
 	select BT_PER_ADV
-	select BT_PER_ADV_SYNC
 	help
-	  This option enables support for Bluetooth Broadcast
-	  Isochronous channels.
+	  This option enables support for the Bluetooth Isochronous Broadcaster.
+
+config BT_ISO_SYNC_RECEIVER
+	bool "Bluetooth Isochronous Synchronized Receiver Support [EXPERIMENTAL]"
+	select BT_ISO_BROADCAST
+	select BT_OBSERVER
+	select BT_PER_ADV_SYNC
+	select EXPERIMENTAL
+	help
+	  This option enables support for the Bluetooth Isochronous
+	  Synchronized Receiver.
 
 if BT_ISO
 

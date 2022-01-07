@@ -5,7 +5,7 @@ Iterable Sections
 
 This page contains the reference documentation for the iterable sections APIs,
 which can be used for defining iterable areas of equally-sized data structures,
-that can be iterated on using `STRUCT_SECTION_FOREACH()`.
+that can be iterated on using :c:macro:`STRUCT_SECTION_FOREACH`.
 
 Usage
 *****
@@ -34,10 +34,10 @@ instantiated anywhere in the code base.
 
 Then the linker has to be setup to place the place the structure in a
 contiguous segment using one of the linker macros such as
-`ITERABLE_SECTION_RAM()` or `ITERABLE_SECTION_ROM()`. Custom linker snippets
-are normally declared using one of the ``zephyr_linker_sources()`` CMake
-functions, using the appropriate section identifier, ``DATA_SECTIONS`` for RAM
-structures and ``SECTIONS`` for ROM ones.
+:c:macro:`ITERABLE_SECTION_RAM` or :c:macro:`ITERABLE_SECTION_ROM`. Custom
+linker snippets are normally declared using one of the
+``zephyr_linker_sources()`` CMake functions, using the appropriate section
+identifier, ``DATA_SECTIONS`` for RAM structures and ``SECTIONS`` for ROM ones.
 
 .. code-block:: cmake
 
@@ -49,7 +49,7 @@ structures and ``SECTIONS`` for ROM ones.
    # iterables.ld
    ITERABLE_SECTION_RAM(my_data, 4)
 
-The data can then be accessed using `STRUCT_SECTION_FOREACH()`.
+The data can then be accessed using :c:macro:`STRUCT_SECTION_FOREACH`.
 
 .. code-block:: c
 

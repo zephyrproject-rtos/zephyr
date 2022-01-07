@@ -446,7 +446,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(uart0),
 		    &lpc11u6x_uart0_init,
 		    NULL,
 		    &uart0_data, &uart0_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
+		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
 		    &uart0_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -904,7 +904,7 @@ static struct lpc11u6x_uartx_data uart_data_##idx;                            \
 DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx), 				      \
 		    &lpc11u6x_uartx_init, NULL,				      \
 		    &uart_data_##idx, &uart_cfg_##idx,			      \
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	      \
+		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		      \
 		    &uartx_api)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)

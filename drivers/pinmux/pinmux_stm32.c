@@ -18,35 +18,79 @@
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
+#include <stm32_ll_system.h>
 #include <drivers/pinmux.h>
 #include <gpio/gpio_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/pinmux_stm32.h>
-#include <pm/device_runtime.h>
-
-#define GPIO_DEVICE(gpio_port)						\
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_port), okay),	\
-		    (DEVICE_DT_GET(DT_NODELABEL(gpio_port))),		\
-		    ((const struct device *)NULL))
 
 const struct device * const gpio_ports[STM32_PORTS_MAX] = {
-	GPIO_DEVICE(gpioa),
-	GPIO_DEVICE(gpiob),
-	GPIO_DEVICE(gpioc),
-	GPIO_DEVICE(gpiod),
-	GPIO_DEVICE(gpioe),
-	GPIO_DEVICE(gpiof),
-	GPIO_DEVICE(gpiog),
-	GPIO_DEVICE(gpioh),
-	GPIO_DEVICE(gpioi),
-	GPIO_DEVICE(gpioj),
-	GPIO_DEVICE(gpiok),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiod)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioe)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiof)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiog)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioh)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioi)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioj)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiok)),
 };
+
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa11)
+#define REMAP_PA11	DT_PROP(DT_NODELABEL(pinctrl), remap_pa11)
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa12)
+#define REMAP_PA12	DT_PROP(DT_NODELABEL(pinctrl), remap_pa12)
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa11_pa12)
+#define REMAP_PA11_PA12	DT_PROP(DT_NODELABEL(pinctrl), remap_pa11_pa12)
+#endif
+
+#if REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12
+
+int stm32_pinmux_init_remap(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#if REMAP_PA11 || REMAP_PA12
+
+#if !defined(CONFIG_SOC_SERIES_STM32G0X)
+#error "Pin remap property available only on STM32G0 SoC series"
+#endif
+
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+#if REMAP_PA11
+	LL_SYSCFG_EnablePinRemap(LL_SYSCFG_PIN_RMP_PA11);
+#endif
+#if REMAP_PA12
+	LL_SYSCFG_EnablePinRemap(LL_SYSCFG_PIN_RMP_PA12);
+#endif
+
+#elif REMAP_PA11_PA12
+
+#if !defined(SYSCFG_CFGR1_PA11_PA12_RMP)
+#error "Pin remap property available only on STM32F070x SoC series"
+#endif
+
+	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
+	LL_SYSCFG_EnablePinRemap();
+
+#endif /* (REMAP_PA11 || REMAP_PA12) || REMAP_PA11_PA12 */
+
+	return 0;
+}
+
+SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
+	 CONFIG_PINMUX_STM32_REMAP_INIT_PRIORITY);
+
+#endif /* REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12 */
+
 
 static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 {
 	const struct device *port_device;
-	int ret = 0;
 
 	if (STM32_PORT(pin) >= STM32_PORTS_MAX) {
 		return -EINVAL;
@@ -58,20 +102,7 @@ static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = pm_device_get(port_device);
-	if (ret != 0) {
-		return ret;
-	}
-#endif
-
-	gpio_stm32_configure(port_device, STM32_PIN(pin), func, altf);
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = pm_device_put(port_device);
-#endif
-
-	return ret;
+	return gpio_stm32_configure(port_device, STM32_PIN(pin), func, altf);
 }
 
 /**
@@ -97,7 +128,7 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-	if (stm32_dt_pinctrl_remap(pinctrl, list_size, base)) {
+	if (stm32_dt_pinctrl_remap(pinctrl, list_size)) {
 		/* Wrong remap config. Exit */
 		return -EINVAL;
 	}
@@ -162,16 +193,23 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
  *
  * @param *pinctrl pointer to soc_gpio_pinctrl list
  * @param list_size list size
- * @param base device base register value
  *
  * @return 0 on success, -EINVAL otherwise
  */
 int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
-			   size_t list_size, uint32_t base)
+			   size_t list_size)
 {
-	uint8_t remap;
+	uint8_t pos;
+	uint32_t reg_val;
+	volatile uint32_t *reg;
+	uint16_t remap;
 
-	remap = (uint8_t)STM32_DT_PINMUX_REMAP(pinctrl[0].pinmux);
+	remap = (uint16_t)STM32_DT_PINMUX_REMAP(pinctrl[0].pinmux);
+
+	/* not remappable */
+	if (remap == NO_REMAP) {
+		return 0;
+	}
 
 	for (size_t i = 1U; i < list_size; i++) {
 		if (STM32_DT_PINMUX_REMAP(pinctrl[i].pinmux) != remap) {
@@ -183,245 +221,20 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 	/* Apply remapping before proceeding with pin configuration */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 
-	switch (base) {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay)
-	case DT_REG_ADDR(DT_NODELABEL(can1)):
-		if (remap == REMAP_1) {
-			/* PB8/PB9 */
-			LL_GPIO_AF_RemapPartial2_CAN1();
-		} else if (remap == REMAP_2) {
-			/* PD0/PD1 */
-			LL_GPIO_AF_RemapPartial3_CAN1();
-		} else {
-			/* NO_REMAP: PA11/PA12 */
-			LL_GPIO_AF_RemapPartial1_CAN1();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
-	case DT_REG_ADDR(DT_NODELABEL(can2)):
-		if (remap == REMAP_1) {
-			/* PB5/PB6 */
-			LL_GPIO_AF_EnableRemap_CAN2();
-		} else {
-			/* PB12/PB13 */
-			LL_GPIO_AF_DisableRemap_CAN2();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
-	case DT_REG_ADDR(DT_NODELABEL(i2c1)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_I2C1();
-		} else {
-			LL_GPIO_AF_DisableRemap_I2C1();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers1), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers1)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_RemapPartial_TIM1();
-		} else if (remap == REMAP_2) {
-			LL_GPIO_AF_EnableRemap_TIM1();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM1();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers2), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers2)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_RemapPartial1_TIM2();
-		} else if (remap == REMAP_2) {
-			LL_GPIO_AF_RemapPartial2_TIM2();
-		} else if (remap == REMAP_FULL) {
-			LL_GPIO_AF_EnableRemap_TIM2();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM2();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers3), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers3)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_RemapPartial_TIM3();
-		} else if (remap == REMAP_2) {
-			LL_GPIO_AF_EnableRemap_TIM3();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM3();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers4), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers4)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM4();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM4();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers9), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers9)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM9();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM9();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers10), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers10)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM10();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM10();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers11), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers11)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM11();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM11();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers12), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers12)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM12();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM12();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers13), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers13)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM13();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM13();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers14), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers14)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM14();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM14();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers15), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers15)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM15();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM15();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers16), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers16)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM16();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM16();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers17), okay)
-	case DT_REG_ADDR(DT_NODELABEL(timers17)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM17();
-		} else {
-			LL_GPIO_AF_DisableRemap_TIM17();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay)
-	case DT_REG_ADDR(DT_NODELABEL(usart1)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_USART1();
-		} else {
-			LL_GPIO_AF_DisableRemap_USART1();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart2), okay)
-	case DT_REG_ADDR(DT_NODELABEL(usart2)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_USART2();
-		} else {
-			LL_GPIO_AF_DisableRemap_USART2();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay)
-	case DT_REG_ADDR(DT_NODELABEL(usart3)):
-		if (remap == REMAP_2) {
-			LL_GPIO_AF_EnableRemap_USART3();
-		} else if (remap == REMAP_1) {
-			LL_GPIO_AF_RemapPartial_USART3();
-		} else {
-			LL_GPIO_AF_DisableRemap_USART3();
-		}
-		break;
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay)
-	case DT_REG_ADDR(DT_NODELABEL(spi1)):
-		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_SPI1();
-		} else {
-			LL_GPIO_AF_DisableRemap_SPI1();
-		}
-		break;
-#endif
+	if (STM32_REMAP_REG_GET(remap) == 0U) {
+		reg = &AFIO->MAPR;
+	} else {
+		reg = &AFIO->MAPR2;
 	}
+
+	pos = STM32_REMAP_SHIFT_GET(remap);
+
+	reg_val = *reg;
+	reg_val &= ~(STM32_REMAP_MASK_GET(remap) << pos);
+	reg_val |= STM32_REMAP_VAL_GET(remap) << pos;
+	*reg = reg_val;
 
 	return 0;
 }
+
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
-
-
-/**
- * @brief pin setup
- *
- * @param pin  STM32PIN() encoded pin ID
- * @param func SoC specific function assignment
- * @param clk  optional clock device
- *
- * @return 0 on success, error otherwise
- */
-int z_pinmux_stm32_set(uint32_t pin, uint32_t func)
-{
-	const struct device *port_device = gpio_ports[STM32_PORT(pin)];
-
-	/* make sure to enable port clock first */
-	if (gpio_stm32_clock_request(port_device, true)) {
-		return -EIO;
-	}
-
-	return stm32_pin_configure(pin, func, func & STM32_AFR_MASK);
-}
-
-/**
- * @brief setup pins according to their assignments
- *
- * @param pinconf  board pin configuration array
- * @param pins     array size
- */
-void stm32_setup_pins(const struct pin_config *pinconf,
-		      size_t pins)
-{
-	int i;
-
-	for (i = 0; i < pins; i++) {
-		z_pinmux_stm32_set(pinconf[i].pin_num,
-				  pinconf[i].mode);
-	}
-}

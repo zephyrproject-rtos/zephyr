@@ -17,6 +17,7 @@ config FLASH_MCUX_FLEXSPI_NOR
 
 config FLASH_MCUX_FLEXSPI_XIP
 	default y if FLASH
+	depends on MEMC_MCUX_FLEXSPI
 
 if NETWORKING
 

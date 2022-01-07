@@ -24,25 +24,28 @@ LOG_MODULE_REGISTER(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lps22hh_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lps22hh_data *data = dev->data;
+	const struct lps22hh_config * const cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
-	return lps22hh_data_rate_set(data->ctx, odr);
+	return lps22hh_data_rate_set(ctx, odr);
 }
 
 static int lps22hh_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct lps22hh_data *data = dev->data;
+	const struct lps22hh_config * const cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint32_t raw_press;
 	int16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (lps22hh_pressure_raw_get(data->ctx, &raw_press) < 0) {
+	if (lps22hh_pressure_raw_get(ctx, &raw_press) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
-	if (lps22hh_temperature_raw_get(data->ctx, &raw_temp) < 0) {
+	if (lps22hh_temperature_raw_get(ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
@@ -140,7 +143,7 @@ static int lps22hh_attr_set(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lps22hh_api_funcs = {
+static const struct sensor_driver_api lps22hh_driver_api = {
 	.attr_set = lps22hh_attr_set,
 	.sample_fetch = lps22hh_sample_fetch,
 	.channel_get = lps22hh_channel_get,
@@ -151,27 +154,34 @@ static const struct sensor_driver_api lps22hh_api_funcs = {
 
 static int lps22hh_init_chip(const struct device *dev)
 {
-	struct lps22hh_data *data = dev->data;
+	const struct lps22hh_config * const cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t chip_id;
+	int ret;
 
-	if (lps22hh_device_id_get(data->ctx, &chip_id) < 0) {
-		LOG_DBG("Failed reading chip id");
+	if (lps22hh_device_id_get(ctx, &chip_id) < 0) {
+		LOG_ERR("%s: Not able to read dev id", dev->name);
 		return -EIO;
 	}
 
 	if (chip_id != LPS22HH_ID) {
-		LOG_DBG("Invalid chip id 0x%x", chip_id);
+		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
 		return -EIO;
 	}
 
-	if (lps22hh_set_odr_raw(dev, CONFIG_LPS22HH_SAMPLING_RATE) < 0) {
-		LOG_DBG("Failed to set sampling rate");
-		return -EIO;
+	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
+
+	/* set sensor default odr */
+	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
+	ret = lps22hh_set_odr_raw(dev, cfg->odr);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
+		return ret;
 	}
 
-	if (lps22hh_block_data_update_set(data->ctx, PROPERTY_ENABLE) < 0) {
-		LOG_DBG("Failed to set BDU");
-		return -EIO;
+	if (lps22hh_block_data_update_set(ctx, PROPERTY_ENABLE) < 0) {
+		LOG_ERR("%s: Failed to set BDU", dev->name);
+		return ret;
 	}
 
 	return 0;
@@ -179,19 +189,6 @@ static int lps22hh_init_chip(const struct device *dev)
 
 static int lps22hh_init(const struct device *dev)
 {
-	const struct lps22hh_config * const config = dev->config;
-	struct lps22hh_data *data = dev->data;
-
-	data->dev = dev;
-
-	data->bus = device_get_binding(config->master_dev_name);
-	if (!data->bus) {
-		LOG_DBG("bus master not found: %s", config->master_dev_name);
-		return -EINVAL;
-	}
-
-	config->bus_init(dev);
-
 	if (lps22hh_init_chip(dev) < 0) {
 		LOG_DBG("Failed to initialize chip");
 		return -EIO;
@@ -207,39 +204,81 @@ static int lps22hh_init(const struct device *dev)
 	return 0;
 }
 
-static struct lps22hh_data lps22hh_data;
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "LPS22HH driver enabled without any devices"
+#endif
 
-static const struct lps22hh_config lps22hh_config = {
-	.master_dev_name = DT_INST_BUS_LABEL(0),
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
 #ifdef CONFIG_LPS22HH_TRIGGER
-	.drdy_port	= DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.drdy_pin	= DT_INST_GPIO_PIN(0, drdy_gpios),
-	.drdy_flags	= DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = lps22hh_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
-			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-
-	.spi_conf.cs        =  &lps22hh_data.cs_ctrl,
+#define LPS22HH_CFG_IRQ(inst) \
+	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),
 #else
-	.spi_conf.cs        = NULL,
-#endif
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = lps22hh_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-};
+#define LPS22HH_CFG_IRQ(inst)
+#endif /* CONFIG_LPS22HH_TRIGGER */
 
-DEVICE_DT_INST_DEFINE(0, lps22hh_init, NULL,
-		    &lps22hh_data, &lps22hh_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lps22hh_api_funcs);
+#define LPS22HH_SPI_OPERATION (SPI_WORD_SET(8) |			\
+				SPI_OP_MODE_MASTER |			\
+				SPI_MODE_CPOL |				\
+				SPI_MODE_CPHA)				\
+
+#define LPS22HH_CONFIG_SPI(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_spi_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_spi_write,	\
+			.handle =					\
+			   (void *)&lps22hh_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
+					   LPS22HH_SPI_OPERATION,	\
+					   0),				\
+		},							\
+		.odr = DT_INST_PROP(inst, odr),				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(LPS22HH_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define LPS22HH_CONFIG_I2C(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_i2c_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			.handle =					\
+			   (void *)&lps22hh_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
+		},							\
+		.odr = DT_INST_PROP(inst, odr),				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(LPS22HH_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define LPS22HH_DEFINE(inst)							\
+	static struct lps22hh_data lps22hh_data_##inst;				\
+	static const struct lps22hh_config lps22hh_config_##inst =		\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),					\
+		    (LPS22HH_CONFIG_SPI(inst)),					\
+		    (LPS22HH_CONFIG_I2C(inst)));				\
+	DEVICE_DT_INST_DEFINE(inst, lps22hh_init, NULL, &lps22hh_data_##inst,	\
+			      &lps22hh_config_##inst, POST_KERNEL,		\
+			      CONFIG_SENSOR_INIT_PRIORITY, &lps22hh_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(LPS22HH_DEFINE)

@@ -1,0 +1,30 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The AFIO peripheral is used to configure pin remapping, EXTI sources and,
+  when available, enable the I/O compensation cell.
+
+compatible: "gd,gd32-afio"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  label:
+    required: true
+
+  rcu-periph-clock:
+    type: int
+    description: Reset Control Unit Peripheral Clock ID
+    required: true
+
+  enable-cps:
+    required: false
+    type: boolean
+    description: |
+      Enable the I/O compensation cell. This option should be enabled when the
+      output speed is greater than 50MHz to reduce the I/O noise effects on
+      the power supply. This option is only available on certain GD32 series.

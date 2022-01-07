@@ -41,15 +41,28 @@ config SDMMC_USDHC
 	  File system on a SDHC card accessed over
 	  NXP USDHC.
 
+if SDMMC_USDHC
+source "drivers/disk/Kconfig.usdhc"
+endif
+
 config SDMMC_STM32
 	bool "STM32 SDMMC driver"
 	depends on HAS_STM32CUBE
 	select USE_STM32_HAL_SD
 	select USE_STM32_HAL_SD_EX if SOC_SERIES_STM32L4X
 	select USE_STM32_LL_SDMMC
+	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X)
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_SDMMC))
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.
+
+config SDMMC_STM32_HWFC
+	bool "STM32 SDMMC Hardware Flow control"
+	depends on SDMMC_STM32
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32L4X
+	help
+	  Enable SDMMC Hardware Flow Control to avoid FIFO underrun (TX mode) and
+	  overrun (RX mode) errors.
 
 module = SDMMC
 module-str = sdmmc

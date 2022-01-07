@@ -14,6 +14,7 @@
 #include <drivers/led.h>
 #include <drivers/pwm.h>
 #include <device.h>
+#include <pm/device.h>
 #include <zephyr.h>
 #include <sys/math_extras.h>
 
@@ -76,8 +77,8 @@ static int led_pwm_set_brightness(const struct device *dev,
 
 	pulse = led_pwm->period * value / 100;
 
-	return pwm_pin_set_cycles(led_pwm->dev, led_pwm->channel,
-				  led_pwm->period, pulse, led_pwm->flags);
+	return pwm_pin_set_nsec(led_pwm->dev, led_pwm->channel,
+				led_pwm->period, pulse, led_pwm->flags);
 }
 
 static int led_pwm_on(const struct device *dev, uint32_t led)
@@ -114,33 +115,21 @@ static int led_pwm_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int led_pwm_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int led_pwm_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	const struct led_pwm_config *config = DEV_CFG(dev);
 
 	/* switch all underlying PWM devices to the new state */
 	for (size_t i = 0; i < config->num_leds; i++) {
 		int err;
-		enum pm_device_state state;
 		const struct led_pwm *led_pwm = &config->led[i];
 
-		LOG_DBG("Switching PWM %p to state %" PRIu32, led_pwm->dev, state);
+		LOG_DBG("PWM %p running pm action %" PRIu32, led_pwm->dev,
+				action);
 
-		/* NOTE: temporary solution, deserves proper fix */
-		switch (action) {
-		case PM_DEVICE_ACTION_RESUME:
-			state = PM_DEVICE_STATE_ACTIVE;
-			break;
-		case PM_DEVICE_ACTION_SUSPEND:
-			state = PM_DEVICE_STATE_SUSPENDED;
-			break;
-		default:
-			return -ENOTSUP;
-		}
-
-		err = pm_device_state_set(led_pwm->dev, state);
-		if (err) {
+		err = pm_device_action_run(led_pwm->dev, action);
+		if (err && (err != -EALREADY)) {
 			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
 		}
 	}
@@ -160,7 +149,7 @@ static const struct led_driver_api led_pwm_api = {
 {									\
 	.dev		= DEVICE_DT_GET(DT_PWMS_CTLR(led_node_id)),	\
 	.channel	= DT_PWMS_CHANNEL(led_node_id),			\
-	.period		= DT_PHA_OR(led_node_id, pwms, period, 100),	\
+	.period		= DT_PHA_OR(led_node_id, pwms, period, 100000),	\
 	.flags		= DT_PHA_OR(led_node_id, pwms, flags,		\
 				    PWM_POLARITY_NORMAL),		\
 },
@@ -176,8 +165,11 @@ static const struct led_pwm_config led_pwm_config_##id = {	\
 	.led		= led_pwm_##id,				\
 };								\
 								\
-DEVICE_DT_INST_DEFINE(id, &led_pwm_init, led_pwm_pm_control,	\
-		      NULL, &led_pwm_config_##id, POST_KERNEL,	\
+PM_DEVICE_DT_INST_DEFINE(id, led_pwm_pm_action);		\
+								\
+DEVICE_DT_INST_DEFINE(id, &led_pwm_init,			\
+		      PM_DEVICE_DT_INST_REF(id), NULL,		\
+		      &led_pwm_config_##id, POST_KERNEL,	\
 		      CONFIG_LED_INIT_PRIORITY, &led_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_PWM_DEVICE)

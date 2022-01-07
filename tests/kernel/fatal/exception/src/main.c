@@ -97,7 +97,7 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_ARM64)
 	__asm__ volatile ("svc 0");
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 	__asm__ volatile ("BKPT");
 #elif defined(CONFIG_CPU_CORTEX_M)
 	__asm__ volatile ("swi 0");

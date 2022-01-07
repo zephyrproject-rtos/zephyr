@@ -59,21 +59,25 @@
 	sram1: memory@20010000 {
 		compatible = "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@20018000 {
 		compatible = "mmio-sram";
 		reg = <0x20018000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	sram3: memory@20020000 {
 		compatible = "mmio-sram";
 		reg = <0x20020000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAM3";
 	};
 
 	sram4: memory@40100000 {
 		compatible = "mmio-sram";
 		reg = <0x40100000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM4";
 	};
 };
 
@@ -374,6 +378,16 @@
 		input = <0>;
 		prescale = <0>;
 		label = "CTIMER_4";
+	};
+
+	sc_timer: pwm@85000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x85000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+		prescaler = <2>;
+		label = "SC_TIMER";
+		#pwm-cells = <2>;
 	};
 };
 

@@ -31,7 +31,7 @@ import argparse
 import os
 import struct
 import pickle
-from distutils.version import LooseVersion
+from packaging import version
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -43,7 +43,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__),
                              'dts', 'python-devicetree', 'src'))
 from devicetree import edtlib  # pylint: disable=unused-import
 
-if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
+if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 scr = os.path.basename(sys.argv[0])
@@ -268,32 +268,36 @@ def main():
     root = edt.dep_ord2node[0]
     assert root not in used_nodes
 
-    for sn in used_nodes:
+    for n in used_nodes:
         # Where we're storing the final set of nodes: these are all used
-        sn.__depends = set()
-        sn.__supports = set()
+        n.__depends = set()
+        n.__supports = set()
 
-        deps = set(sn.depends_on)
-        debug("\nNode: %s\nOrig deps:\n\t%s" % (sn.path, "\n\t".join([dn.path for dn in deps])))
+        deps = set(n.depends_on)
+        debug("\nNode: %s\nOrig deps:\n\t%s" % (n.path, "\n\t".join([dn.path for dn in deps])))
         while len(deps) > 0:
             dn = deps.pop()
             if dn in used_nodes:
                 # this is used
-                sn.__depends.add(dn)
+                n.__depends.add(dn)
             elif dn != root:
                 # forward the dependency up one level
                 for ddn in dn.depends_on:
                     deps.add(ddn)
-        debug("Final deps:\n\t%s\n" % ("\n\t".join([ _dn.path for _dn in sn.__depends])))
+        debug("Final deps:\n\t%s\n" % ("\n\t".join([ _dn.path for _dn in n.__depends])))
 
-        sups = set(sn.required_by)
+        sups = set(n.required_by)
         debug("\nOrig sups:\n\t%s" % ("\n\t".join([dn.path for dn in sups])))
         while len(sups) > 0:
-            dn = sups.pop()
-            if dn in used_nodes:
+            sn = sups.pop()
+            if sn in used_nodes:
                 # this is used
-                sn.__supports.add(dn)
-        debug("\nFinal sups:\n\t%s" % ("\n\t".join([dn.path for dn in sn.__supports])))
+                n.__supports.add(sn)
+            else:
+                # forward the support down one level
+                for ssn in sn.required_by:
+                    sups.add(ssn)
+        debug("\nFinal sups:\n\t%s" % ("\n\t".join([_sn.path for _sn in n.__supports])))
 
     with open(args.output_source, "w") as fp:
         fp.write('#include <device.h>\n')
@@ -315,12 +319,12 @@ def main():
                         dep_paths.append(dn.path)
                     else:
                         dep_paths.append('(%s)' % dn.path)
-
             # Force separator to signal start of injected dependencies
             hdls.append(DEVICE_HANDLE_SEP)
             if len(hs.ext_deps) > 0:
                 # TODO: map these to something smaller?
                 ext_paths.extend(map(str, hs.ext_deps))
+                hdls.append(DEVICE_HANDLE_SEP)
                 hdls.extend(hs.ext_deps)
 
             # Force separator to signal start of supported devices
@@ -333,15 +337,8 @@ def main():
                         sup_paths.append('(%s)' % dn.path)
                 hdls.extend(dn.__device.dev_handle for dn in sn.__supports)
 
-            # When CONFIG_USERSPACE is enabled the pre-built elf is
-            # also used to get hashes that identify kernel objects by
-            # address. We can't allow the size of any object in the
-            # final elf to change. We also must make sure at least one
-            # DEVICE_HANDLE_ENDS is inserted.
-            assert len(hdls) < len(hs.handles), "%s no DEVICE_HANDLE_ENDS inserted" % (dev.sym.name,)
-            while len(hdls) < len(hs.handles):
-                hdls.append(DEVICE_HANDLE_ENDS)
-            assert len(hdls) == len(hs.handles), "%s handle overflow" % (dev.sym.name,)
+            # Terminate the array with the end symbol
+            hdls.append(DEVICE_HANDLE_ENDS)
 
             lines = [
                 '',

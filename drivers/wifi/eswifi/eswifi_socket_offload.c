@@ -458,7 +458,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
-	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs*10));
+	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs));
 	if (ret) {
 		errno = ETIMEDOUT;
 		return -1;
@@ -571,8 +571,8 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 };
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-NET_SOCKET_REGISTER(eswifi, AF_UNSPEC, eswifi_socket_is_supported,
-		    eswifi_socket_create);
+NET_SOCKET_REGISTER(eswifi, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    eswifi_socket_is_supported, eswifi_socket_create);
 #endif
 
 static int eswifi_off_getaddrinfo(const char *node, const char *service,

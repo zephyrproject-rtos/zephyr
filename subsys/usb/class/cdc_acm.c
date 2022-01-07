@@ -1070,8 +1070,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		},							\
 	};								\
 									\
-	USBD_CFG_DATA_DEFINE(primary, cdc_acm)				\
-	struct usb_cfg_data cdc_acm_config_##x = {			\
+	USBD_DEFINE_CFG_DATA(cdc_acm_config_##x) = {			\
 		.usb_device_description = NULL,				\
 		.interface_config = cdc_interface_config,		\
 		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
@@ -1104,7 +1103,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(idx, cdc_acm_init, NULL,			\
 		&cdc_acm_dev_data_##idx, &cdc_acm_config_##idx,		\
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
 		&cdc_acm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CDC_ACM_DT_DEVICE_DEFINE);

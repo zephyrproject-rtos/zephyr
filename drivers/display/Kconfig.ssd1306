@@ -16,7 +16,7 @@ config SSD1306_DEFAULT_CONTRAST
 	default 128
 	range 0 255
 	help
-	  SSD16XX default contrast.
+	  SSD1306 default contrast.
 
 choice SSD1306_CONTROLLER_TYPE
 	prompt "Display controller type"
@@ -35,6 +35,6 @@ endchoice
 config SSD1306_REVERSE_MODE
 	bool "SSD1306 reverse mode"
 	help
-	  SSD16XX reverse video mode.
+	  SSD1306 reverse video mode.
 
 endif # SSD1306

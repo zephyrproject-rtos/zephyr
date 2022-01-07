@@ -37,7 +37,7 @@ config XTENSA_NO_IPC
 	bool "Core has no IPC support"
 	select ATOMIC_OPERATIONS_C
 	help
-	  Uncheck this if you core does not implement "SCOMPARE1" register and "s32c1i"
+	  Uncheck this if your core does not implement "SCOMPARE1" register and "s32c1i"
 	  instruction.
 
 config XTENSA_RESET_VECTOR
@@ -47,15 +47,6 @@ config XTENSA_RESET_VECTOR
 	  This option controls whether the initial reset vector code is built.
 	  This is always needed for the simulator. Real boards may already
 	  implement this in boot ROM.
-
-if XTENSA_RESET_VECTOR
-config RESET_VECTOR_IN_BOOTLOADER
-	bool "Link reset vector into bootloader"
-	default n
-	help
-	  Reset vector code can be either linked in the bootloader or the
-	  application binary. Select "y" to link it into the bootloader.
-endif
 
 config XTENSA_USE_CORE_CRT1
 	bool "Use crt1.S from core"

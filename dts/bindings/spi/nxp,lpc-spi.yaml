@@ -6,3 +6,33 @@ description: NXP LPC SPI controller
 compatible: "nxp,lpc-spi"
 
 include: [spi-controller.yaml, "nxp,lpc-flexcomm.yaml"]
+
+properties:
+    pre-delay:
+      type: int
+      required: false
+      description: |
+        Delay in nanoseconds inserted between chip select assert to the first
+        clock edge. If not set, no additional delay is inserted.
+
+    post-delay:
+      type: int
+      required: false
+      description: |
+        Delay in nanoseconds inserted between the last clock edge to the chip
+        select deassert. If not set, no additional delay is inserted.
+
+    frame-delay:
+      type: int
+      required: false
+      description: |
+        Delay in nanoseconds inserted between data frames when chip select is
+        asserted and the EOF flag is set. If not set, no additional delay is
+        inserted.
+
+    transfer-delay:
+      type: int
+      required: false
+      description: |
+        Delay in nanoseconds inserted between transfers when chip select is
+        deasserted. If not set, no additional delay is inserted.

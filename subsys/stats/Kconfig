@@ -17,3 +17,12 @@ config STATS_NAMES
 	  setting is disabled, statistics are assigned generic names of the
 	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
 	  but results in a larger code size.
+
+config STATS_SHELL
+	bool "Statistics Shell Command"
+	depends on STATS && SHELL
+	help
+	  Include a full name string for each statistic in the build.  If this
+	  setting is disabled, statistics are assigned generic names of the
+	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
+	  but results in a larger code size.

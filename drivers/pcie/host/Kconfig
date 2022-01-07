@@ -10,6 +10,27 @@ menuconfig PCIE
 
 if PCIE
 
+module = PCIE
+module-str = pcie
+source "subsys/logging/Kconfig.template.log_config"
+
+config PCIE_CONTROLLER
+	bool "Enable PCIe Controller management"
+	help
+	  Add support for PCIe Controller management when not handled by a
+	  system firmware like on x86 platforms.
+
+if PCIE_CONTROLLER
+
+config PCIE_ECAM
+	bool "Enable support for PCIe ECAM Controllers"
+	help
+	  Add support for Enhanced Configuration Address Mapping configured
+	  PCIe Controllers allowing all outgoing I/O and MEM TLPs to be mapped
+	  from memory space into any 256 MB region of the PCIe configuration space.
+
+endif # PCIE_CONTROLLER
+
 config PCIE_MSI
 	bool "Enable support for PCI(e) MSI"
 	help
@@ -39,6 +60,12 @@ config PCIE_MSI_X
 	  if you want to support multi-vector on MSI-X as well.
 
 endif # PCIE_MSI
+
+config PCIE_PTM
+	bool "Enable support for PCI(e) Precision Time Management (PTM)"
+	help
+	  This will enable support both PTM root and PTM requester features.
+	  Up to the PCIe device driver to enable its PTM requester capability.
 
 config PCIE_SHELL
 	bool "Enable PCIe/new PCI Shell"

@@ -28,11 +28,20 @@ extern "C" {
 #include <bluetooth/hci.h>
 
 /** @def BT_ISO_CHAN_SEND_RESERVE
- *  @brief Headroom needed for outgoing buffers
+ *  @brief Headroom needed for outgoing ISO SDUs
  */
-#define BT_ISO_CHAN_SEND_RESERVE (CONFIG_BT_HCI_RESERVE + \
-				  BT_HCI_ISO_HDR_SIZE + \
-				  BT_HCI_ISO_DATA_HDR_SIZE)
+#define BT_ISO_CHAN_SEND_RESERVE BT_BUF_ISO_SIZE(0)
+
+/** @def BT_ISO_SDU_BUF_SIZE
+ *
+ *  @brief Helper to calculate needed buffer size for ISO SDUs.
+ *         Useful for creating buffer pools.
+ *
+ *  @param mtu Required ISO SDU size
+ *
+ *  @return Needed buffer size to match the requested ISO SDU MTU.
+ */
+#define BT_ISO_SDU_BUF_SIZE(mtu) BT_BUF_ISO_SIZE(mtu)
 
 /** Value to set the ISO data path over HCi. */
 #define BT_ISO_DATA_PATH_HCI        0x00
@@ -74,8 +83,6 @@ extern "C" {
 /** Broadcast code size */
 #define BT_ISO_BROADCAST_CODE_SIZE  16
 
-struct bt_iso_chan;
-
 /** @brief Life-span states of ISO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
  *  context.
@@ -101,6 +108,8 @@ struct bt_iso_chan {
 	struct bt_iso_chan_qos		*qos;
 	uint8_t				state;
 	bt_security_t			required_sec_level;
+	/** Node used internally by the stack */
+	sys_snode_t node;
 };
 
 /** @brief ISO Channel IO QoS structure. */
@@ -190,11 +199,8 @@ struct bt_iso_recv_info {
 /** Opaque type representing an Connected Isochronous Group (CIG). */
 struct bt_iso_cig;
 
-struct bt_iso_cig_create_param {
-	/** @brief Array of pointers to CIS channels
-	 *
-	 * This array shall remain valid for the duration of the CIG.
-	 */
+struct bt_iso_cig_param {
+	/** @brief Array of pointers to CIS channels */
 	struct bt_iso_chan **cis_channels;
 
 	/** @brief Number channels in @p cis_channels
@@ -251,10 +257,7 @@ struct bt_iso_connect_param {
 struct bt_iso_big;
 
 struct bt_iso_big_create_param {
-	/** Array of pointers to BIS channels
-	 *
-	 * This array shall remain valid for the duration of the BIG.
-	 */
+	/** Array of pointers to BIS channels */
 	struct bt_iso_chan **bis_channels;
 
 	/** @brief Number channels in @p bis_channels
@@ -398,6 +401,10 @@ struct bt_iso_chan_ops {
 	 *  If this callback is provided it will be called whenever the
 	 *  connection completes.
 	 *
+	 *  For a peripheral, the QoS values (see @ref bt_iso_chan_io_qos)
+	 *  are set when this is called. The peripheral does not have any
+	 *  information about the RTN though.
+	 *
 	 *  @param chan The channel that has been connected
 	 */
 	void (*connected)(struct bt_iso_chan *chan);
@@ -446,6 +453,23 @@ struct bt_iso_chan_ops {
 	void (*sent)(struct bt_iso_chan *chan);
 };
 
+struct bt_iso_accept_info {
+	/** The ACL connection that is requesting authorization */
+	struct bt_conn *acl;
+
+	/** @brief The ID of the connected isochronous group (CIG) on the central
+	 *
+	 * The ID is unique per ACL
+	 */
+	uint8_t cig_id;
+
+	/** @brief The ID of the connected isochronous stream (CIS) on the central
+	 *
+	 * This ID is unique within a CIG
+	 */
+	uint8_t cis_id;
+};
+
 /** @brief ISO Server structure. */
 struct bt_iso_server {
 	/** Required minimim security level */
@@ -456,12 +480,13 @@ struct bt_iso_server {
 	 *  This callback is called whenever a new incoming connection requires
 	 *  authorization.
 	 *
-	 *  @param acl The ACL connection that is requesting authorization
+	 *  @param info The ISO accept information structure
 	 *  @param chan Pointer to receive the allocated channel
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*accept)(struct bt_conn *acl, struct bt_iso_chan **chan);
+	int (*accept)(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan);
 };
 
 /** @brief Register ISO server.
@@ -490,8 +515,30 @@ int bt_iso_server_register(struct bt_iso_server *server);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
+int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		      struct bt_iso_cig **out_cig);
+
+/** @brief Reconfigure a CIG as a central
+ *
+ *  This function can be used to update a CIG. It will update the group specific
+ *  parameters, and, if supplied, change the QoS parameters of the individual
+ *  CIS. If the cis_channels in @p param contains CIS that was not originally
+ *  in the call to bt_iso_cig_create(), these will be added to the group.
+ *  It is not possible to remove any CIS from the group after creation.
+ *
+ *  This can be called at any time before connecting an ISO to a remote device.
+ *  Once any CIS in the group has connected, the group cannot be changed.
+ *
+ *  Once a CIG is created, the channels supplied in the @p param can be
+ *  connected using bt_iso_chan_connect.
+ *
+ *  @param cig       Connected Isochronous Group object.
+ *  @param param     The parameters used to reconfigure the CIG.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
+			   const struct bt_iso_cig_param *param);
 
 /** @brief Terminates a CIG as a central
  *

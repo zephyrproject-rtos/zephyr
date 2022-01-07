@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DISABLE_SYSCALL_TRACING
+
 #include <zephyr.h>
 #include <tracing_test.h>
+#include <tracing_test_syscall.h>
 #include <tracing/tracing_format.h>
 
 void sys_trace_k_thread_switched_out(void)
@@ -55,6 +58,11 @@ void sys_trace_k_thread_resume(struct k_thread *thread)
 	TRACING_STRING("%s: %p\n", __func__, thread);
 }
 
+void sys_trace_k_thread_resume_exit(struct k_thread *thread)
+{
+	TRACING_STRING("%s: %p\n", __func__, thread);
+}
+
 void sys_trace_k_thread_ready(struct k_thread *thread)
 {
 	TRACING_STRING("%s: %p\n", __func__, thread);
@@ -91,6 +99,16 @@ void sys_trace_k_thread_sleep_enter(k_timeout_t timeout)
 }
 
 void sys_trace_k_thread_sleep_exit(k_timeout_t timeout, int ret)
+{
+	TRACING_STRING("%s\n", __func__);
+}
+
+void sys_trace_k_thread_usleep_enter(int32_t us)
+{
+	TRACING_STRING("%s\n", __func__);
+}
+
+void sys_trace_k_thread_usleep_exit(int32_t us, int ret)
 {
 	TRACING_STRING("%s\n", __func__);
 }
@@ -253,6 +271,11 @@ void sys_trace_k_sem_take_blocking(struct k_sem *sem, k_timeout_t timeout)
 	TRACING_STRING("%s: %p, timeout: %u\n", __func__, sem, (uint32_t)timeout.ticks);
 }
 
+void sys_trace_k_sem_reset(struct k_sem *sem)
+{
+	TRACING_STRING("%s: %p\n", __func__, sem);
+}
+
 void sys_trace_k_mutex_init(struct k_mutex *mutex, int ret)
 {
 	TRACING_STRING("%s: %p, returns %d\n", __func__, mutex, ret);
@@ -266,7 +289,7 @@ void sys_trace_k_mutex_lock_enter(struct k_mutex *mutex, k_timeout_t timeout)
 void sys_trace_k_mutex_lock_exit(struct k_mutex *mutex, k_timeout_t timeout, int ret)
 {
 	TRACING_STRING("%s: %p, timeout: %u, returns: %d\n", __func__, mutex,
-			(uint32_t)timeout.ticks, ret);
+		       (uint32_t)timeout.ticks, ret);
 }
 
 void sys_trace_k_mutex_lock_blocking(struct k_mutex *mutex, k_timeout_t timeout)
@@ -302,6 +325,21 @@ void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 	TRACING_STRING("%s: %p\n", __func__, timer);
 }
 
+void sys_trace_k_timer_stop(struct k_timer *timer)
+{
+	TRACING_STRING("%s: %p\n", __func__, timer);
+}
+void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer)
+{
+	TRACING_STRING("%s: %p\n", __func__, timer);
+}
+
+void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result)
+{
+	TRACING_STRING("%s: %p\n", __func__, timer);
+}
+
+
 void sys_trace_k_heap_init(struct k_heap *h, void *mem, size_t bytes)
 {
 	TRACING_STRING("%s: %p\n", __func__, h);
@@ -333,7 +371,144 @@ void sys_trace_k_heap_alloc_exit(struct k_heap *h, size_t bytes, k_timeout_t tim
 }
 
 void sys_trace_k_heap_aligned_alloc_exit(struct k_heap *h, size_t bytes,
-		k_timeout_t timeout, void *ret)
+					 k_timeout_t timeout, void *ret)
 {
 	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_heap_sys_k_free_enter(struct k_heap *h, struct k_heap **hr)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_heap_sys_k_free_exit(struct k_heap *h, struct k_heap **hr)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_queue_init(struct k_queue *queue)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_cancel_wait(struct k_queue *queue)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_append_enter(struct k_queue *queue, void *data)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_append_exit(struct k_queue *queue, void *data)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_queue_insert_enter(struct k_queue *queue, bool alloc, void *data)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_queue_insert_exit(struct k_queue *queue, bool alloc, void *data, int ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_get_blocking(struct k_queue *queue, k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_get_exit(struct k_queue *queue, k_timeout_t timeout, void *ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_peek_head(struct k_queue *queue, void *ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_peek_tail(struct k_queue *queue, void *ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_alloc_append_enter(struct k_queue *queue, void *data)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_alloc_append_exit(struct k_queue *queue, void *data, int ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_alloc_prepend_enter(struct k_queue *queue, void *data)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+void sys_trace_k_queue_alloc_prepend_exit(struct k_queue *queue, void *data, int ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, queue);
+}
+
+
+void sys_trace_k_mem_slab_alloc_enter(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, slab);
+}
+
+void sys_trace_k_mem_slab_alloc_blocking(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, slab);
+}
+
+void sys_trace_k_mem_slab_alloc_exit(struct k_mem_slab *slab, void **mem, k_timeout_t timeout,
+				     int ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, slab);
+}
+
+void sys_trace_k_mem_slab_free_enter(struct k_mem_slab *slab, void **mem)
+{
+	TRACING_STRING("%s: %p\n", __func__, slab);
+}
+
+void sys_trace_k_mem_slab_free_exit(struct k_mem_slab *slab, void **mem)
+{
+	TRACING_STRING("%s: %p\n", __func__, slab);
+}
+
+void sys_trace_k_fifo_put_enter(struct k_fifo *fifo, void *data)
+{
+	TRACING_STRING("%s: %p\n", __func__, fifo);
+}
+
+void sys_trace_k_fifo_put_exit(struct k_fifo *fifo, void *data)
+{
+	TRACING_STRING("%s: %p\n", __func__, fifo);
+}
+
+void sys_trace_k_fifo_get_enter(struct k_fifo *fifo, k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, fifo);
+}
+
+void sys_trace_k_fifo_get_exit(struct k_fifo *fifo, k_timeout_t timeout, void *ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, fifo);
+}
+
+void sys_trace_syscall_enter(uint32_t syscall_id, const char *syscall_name)
+{
+	TRACING_STRING("%s: %s (%u) enter\n", __func__, syscall_name, syscall_id);
+}
+
+void sys_trace_syscall_exit(uint32_t syscall_id, const char *syscall_name)
+{
+	TRACING_STRING("%s: %s (%u) exit\n", __func__, syscall_name, syscall_id);
 }

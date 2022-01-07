@@ -67,8 +67,11 @@ extern "C" {
  * This macro should be used to place the struct usb_cfg_data
  * inside usb data section in the RAM.
  */
-#define USBD_CFG_DATA_DEFINE(p, name) \
-	static __in_section(usb, data_##p, name) __used
+#define USBD_DEFINE_CFG_DATA(name) \
+	static STRUCT_SECTION_ITERABLE(usb_cfg_data, name)
+
+#define USBD_CFG_DATA_DEFINE(p, name) __DEPRECATED_MACRO \
+	static __in_section(_usb_cfg_data, static, p##_name) __used __aligned(4)
 
 /*************************************************************************
  *  USB configuration
@@ -432,6 +435,13 @@ bool usb_transfer_is_busy(uint8_t ep);
  *         i.e. when the bus is already active.
  */
 int usb_wakeup_request(void);
+
+/**
+ * @brief Get status of the USB remote wakeup feature
+ *
+ * @return true if remote wakeup has been enabled by the host, false otherwise.
+ */
+bool usb_get_remote_wakeup_status(void);
 
 /**
  * @}

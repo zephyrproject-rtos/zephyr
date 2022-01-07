@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,bt-c2h-uart = &uart1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <921600>;
+	tx-pin = <5>;
+	rx-pin = <18>;
+	rts-pin = <19>;
+	cts-pin = <23>;
+	hw-flow-control;
+};

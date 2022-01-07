@@ -491,7 +491,8 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	reass = reassembly_get(id, &hdr->src, &hdr->dst);
+	reass = reassembly_get(id, (struct in6_addr *)hdr->src,
+			       (struct in6_addr *)hdr->dst);
 	if (!reass) {
 		NET_DBG("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;

@@ -90,7 +90,7 @@ static struct {
  */
 static sys_slist_t link_callbacks;
 
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 /* Multicast join/leave tracking.
  */
 static sys_slist_t mcast_monitor_callbacks;
@@ -333,6 +333,12 @@ void net_process_tx_packet(struct net_pkt *pkt)
 
 void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 {
+	if (!net_pkt_filter_send_ok(pkt)) {
+		/* silently drop the packet */
+		net_pkt_unref(pkt);
+		return;
+	}
+
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_tx_priority2tc(prio);
 
@@ -920,6 +926,50 @@ static void iface_router_init(void)
 #define iface_router_init(...)
 #endif
 
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
+			       struct net_if *iface,
+			       net_if_mcast_callback_t cb)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+
+	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
+	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
+
+	mon->iface = iface;
+	mon->cb = cb;
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+
+	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_mcast_monitor(struct net_if *iface,
+			  const struct net_addr *addr,
+			  bool is_joined)
+{
+	struct net_if_mcast_monitor *mon, *tmp;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
+					  mon, tmp, node) {
+		if (iface == mon->iface) {
+			mon->cb(iface, addr, is_joined);
+		}
+	}
+
+	k_mutex_unlock(&lock);
+}
+#endif
+
 #if defined(CONFIG_NET_NATIVE_IPV6)
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
@@ -1204,7 +1254,9 @@ void net_if_start_dad(struct net_if *iface)
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (!ipv6->unicast[i].is_used ||
 		    ipv6->unicast[i].address.family != AF_INET6 ||
-		    &ipv6->unicast[i] == ifaddr) {
+		    &ipv6->unicast[i] == ifaddr ||
+		    net_ipv6_is_addr_loopback(
+			    &ipv6->unicast[i].address.in6_addr)) {
 			continue;
 		}
 
@@ -1639,7 +1691,8 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			iface, log_strdup(net_sprint_ipv6_addr(addr)),
 			net_addr_type2str(addr_type));
 
-		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
+		    !net_ipv6_is_addr_loopback(addr)) {
 			/* RFC 4862 5.4.2
 			 * Before sending a Neighbor Solicitation, an interface
 			 * MUST join the all-nodes multicast address and the
@@ -1981,48 +2034,6 @@ void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr)
 	k_mutex_unlock(&lock);
 }
 
-void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
-			       struct net_if *iface,
-			       net_if_mcast_callback_t cb)
-{
-	k_mutex_lock(&lock, K_FOREVER);
-
-	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
-	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
-
-	mon->iface = iface;
-	mon->cb = cb;
-
-	k_mutex_unlock(&lock);
-}
-
-void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon)
-{
-	k_mutex_lock(&lock, K_FOREVER);
-
-	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
-
-	k_mutex_unlock(&lock);
-}
-
-void net_if_mcast_monitor(struct net_if *iface,
-			  const struct in6_addr *addr,
-			  bool is_joined)
-{
-	struct net_if_mcast_monitor *mon, *tmp;
-
-	k_mutex_lock(&lock, K_FOREVER);
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
-					  mon, tmp, node) {
-		if (iface == mon->iface) {
-			mon->cb(iface, addr, is_joined);
-		}
-	}
-
-	k_mutex_unlock(&lock);
-}
-
 static void remove_prefix_addresses(struct net_if *iface,
 				    struct net_if_ipv6 *ipv6,
 				    struct in6_addr *addr,
@@ -2152,7 +2163,7 @@ static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
-		if (!ipv6->unicast[i].is_used) {
+		if (!ipv6->prefix[i].is_used) {
 			continue;
 		}
 
@@ -3673,6 +3684,11 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 
 		NET_DBG("interface %p address %s added", iface,
 			log_strdup(net_sprint_ipv4_addr(addr)));
+
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV4_MADDR_ADD, iface,
+			&maddr->address.in_addr,
+			sizeof(struct in_addr));
 	}
 
 out:
@@ -3694,6 +3710,11 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
 
 		NET_DBG("interface %p address %s removed",
 			iface, log_strdup(net_sprint_ipv4_addr(addr)));
+
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV4_MADDR_DEL, iface,
+			&maddr->address.in_addr,
+			sizeof(struct in_addr));
 
 		ret = true;
 	}

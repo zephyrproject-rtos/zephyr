@@ -14,6 +14,6 @@ set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
 generate_inc_file_for_target(
     app
-    src/globalsign_r2.der
-    ${gen_dir}/globalsign_r2.der.inc
+    src/globalsign_r1.der
+    ${gen_dir}/globalsign_r1.der.inc
     )

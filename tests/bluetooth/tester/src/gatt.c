@@ -181,7 +181,7 @@ static uint8_t btp2bt_uuid(const uint8_t *uuid, uint8_t len,
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
-	uint8_t cmds[4];
+	uint8_t cmds[5];
 	struct gatt_read_supported_commands_rp *rp = (void *) cmds;
 
 	(void)memset(cmds, 0, sizeof(cmds));
@@ -212,6 +212,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, GATT_GET_ATTRIBUTES);
 	tester_set_bit(cmds, GATT_GET_ATTRIBUTE_VALUE);
 	tester_set_bit(cmds, GATT_DISC_ALL_PRIM);
+	tester_set_bit(cmds, GATT_READ_MULTIPLE_VAR);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -994,8 +995,8 @@ static void disc_all_prim(uint8_t *data, uint16_t len)
 	}
 
 	discover_params.uuid = NULL;
-	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	discover_params.func = disc_prim_cb;
 
@@ -1037,8 +1038,8 @@ static void disc_prim_uuid(uint8_t *data, uint16_t len)
 	}
 
 	discover_params.uuid = &uuid.uuid;
-	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	discover_params.func = disc_prim_cb;
 
@@ -1511,7 +1512,7 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
-static void read_multiple(uint8_t *data, uint16_t len)
+static void read_multiple(uint8_t *data, uint16_t len, uint8_t opcode)
 {
 	const struct gatt_read_multiple_cmd *cmd = (void *) data;
 	uint16_t handles[cmd->handles_count];
@@ -1534,10 +1535,10 @@ static void read_multiple(uint8_t *data, uint16_t len)
 	read_params.func = read_cb;
 	read_params.handle_count = i;
 	read_params.multiple.handles = handles; /* not used in read func */
-	read_params.multiple.variable = false;
+	read_params.multiple.variable = (opcode == GATT_READ_MULTIPLE_VAR);
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
-	btp_opcode = GATT_READ_MULTIPLE;
+	btp_opcode = opcode;
 
 	if (bt_gatt_read(conn, &read_params) < 0) {
 		gatt_buf_clear();
@@ -1742,7 +1743,7 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 	}
 
 	/* Discover Characteristic Value this CCC Descriptor refers to */
-	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	discover_params.end_handle = ccc_handle;
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = discover_func;
@@ -2029,7 +2030,8 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		read_long(data, len);
 		return;
 	case GATT_READ_MULTIPLE:
-		read_multiple(data, len);
+	case GATT_READ_MULTIPLE_VAR:
+		read_multiple(data, len, opcode);
 		return;
 	case GATT_WRITE_WITHOUT_RSP:
 		write_without_rsp(data, len, opcode, false);

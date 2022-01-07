@@ -69,6 +69,7 @@ config BT_MESH_PROVISIONER
 config BT_MESH_CDB
 	bool "Mesh Configuration Database [EXPERIMENTAL]"
 	default y if BT_MESH_PROVISIONER
+	select EXPERIMENTAL
 
 if BT_MESH_CDB
 
@@ -107,6 +108,12 @@ config BT_MESH_PROXY
 config BT_MESH_GATT
 	bool
 
+config BT_MESH_PROXY_MSG_LEN
+	int
+	depends on BT_MESH_GATT
+	default 66 if BT_MESH_PB_GATT
+	default 33 if BT_MESH_GATT_PROXY
+
 config BT_MESH_GATT_SERVER
 	bool
 	select BT_MESH_GATT
@@ -119,6 +126,14 @@ config BT_MESH_PB_GATT
 	help
 	  Enable this option to allow the device to be provisioned over
 	  GATT.
+
+config BT_MESH_PB_GATT_USE_DEVICE_NAME
+	bool "Include Bluetooth device name in scan response"
+	depends on BT_MESH_PB_GATT
+	default y
+	help
+	  This option includes GAP device name in scan response when
+	  the PB-GATT is enabled.
 
 config BT_MESH_GATT_PROXY
 	bool "GATT Proxy Service support"
@@ -158,10 +173,9 @@ config BT_MESH_PROXY_USE_DEVICE_NAME
 
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
-	default 3 if BT_MESH_GATT_PROXY
-	default 1
+	default 3
 	range 1 32767
-	depends on BT_MESH_GATT_SERVER
+	depends on BT_MESH_GATT_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
 	  node supports.
@@ -286,6 +300,26 @@ config BT_MESH_ADV_EXT
 	  advertising, but isn't supported by all controllers.
 
 endchoice
+
+if BT_MESH_ADV_EXT
+
+config BT_MESH_RELAY_ADV_SETS
+	int "Maximum of simultaneous relay message support"
+	default 0
+	range 0 BT_EXT_ADV_MAX_ADV_SET
+	depends on BT_MESH_RELAY
+	help
+	  Maximum of simultaneous relay message support. Requires controller support
+	  multiple advertising sets.
+
+config BT_MESH_ADV_EXT_GATT_SEPARATE
+	bool "Use a separate extended advertising set for GATT Server Advertising"
+	depends on BT_MESH_GATT_SERVER
+	help
+	  Use a separate extended advertising set for GATT Server Advertising,
+	  otherwise will be used a shared advertising set.
+
+endif # BT_MESH_ADV_EXT
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh advertiser thread stack size"
@@ -703,8 +737,6 @@ config BT_MESH_HEALTH_CLI
 config BT_MESH_SHELL
 	bool "Enable Bluetooth mesh shell"
 	select SHELL
-	depends on BT_MESH_CFG_CLI
-	depends on BT_MESH_HEALTH_CLI
 	help
 	  Activate shell module that provides Bluetooth mesh commands to
 	  the console.
@@ -828,6 +860,12 @@ config BT_MESH_DEBUG_PROVISIONER
 	help
 	  Use this option to enable Provisioner debug logs for the
 	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_PROV_DEVICE
+	bool "Provisioning device debug"
+	help
+	  Use this option to enable Provisioning device debug logs for the
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_ACCESS
 	bool "Access layer debug"

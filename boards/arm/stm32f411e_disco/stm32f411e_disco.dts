@@ -99,20 +99,22 @@
 };
 
 &timers4 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm4: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim4_ch1_pd12
 			     &tim4_ch2_pd13
 			     &tim4_ch3_pd14
 			     &tim4_ch4_pd15>;
+		pinctrl-names = "default";
 	};
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -136,6 +138,7 @@
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -144,7 +147,8 @@
 	status = "okay";
 };
 
-&usbotg_fs {
+zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };

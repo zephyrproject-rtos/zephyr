@@ -46,11 +46,21 @@
 };
 
 &cpu0 {
+	clock-frequency = <96000000>;
 	status = "okay";
 };
 
 /* Initialize ECIA. Does not initialize child devices */
 &ecia {
+	status = "okay";
+};
+
+/* Enable aggregated GIRQ24 and GIRQ25 for eSPI virtual wires interrupts */
+&girq24 {
+	status = "okay";
+};
+
+&girq25 {
 	status = "okay";
 };
 
@@ -68,6 +78,31 @@
 };
 
 &adc0 {
+	status = "okay";
+};
+
+&espi0 {
+	status = "okay";
+};
+
+/* enable various eSPI child devices (host facing) */
+&kbc0 {
+	status = "okay";
+};
+
+&acpi_ec0 {
+	status = "okay";
+};
+
+&acpi_ec1 {
+	status = "okay";
+};
+
+&emi0 {
+	status = "okay";
+};
+
+&p80bd0 {
 	status = "okay";
 };
 
@@ -104,4 +139,11 @@
 	status = "okay";
 	label = "I2C7";
 	port_sel = <7>;
+};
+
+&spi0 {
+	status = "okay";
+	clock-frequency = <4000000>;
+	lines = <4>;
+	chip-select = <0>;
 };

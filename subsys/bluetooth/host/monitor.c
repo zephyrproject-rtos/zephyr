@@ -233,7 +233,7 @@ extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 #endif /* !CONFIG_UART_CONSOLE */
 
-#ifndef CONFIG_LOG_MINIMAL
+#ifndef CONFIG_LOG_MODE_MINIMAL
 struct monitor_log_ctx {
 	size_t total_len;
 	char msg[MONITOR_MSG_MAX];
@@ -321,6 +321,43 @@ static void monitor_log_put(const struct log_backend *const backend,
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
+static void monitor_log_process(const struct log_backend *const backend,
+				union log_msg2_generic *msg)
+{
+	struct bt_monitor_user_logging user_log;
+	struct monitor_log_ctx ctx;
+	struct bt_monitor_hdr hdr;
+	static const char id[] = "bt";
+
+	log_output_ctx_set(&monitor_log_output, &ctx);
+
+	ctx.total_len = 0;
+	log_output_msg2_process(&monitor_log_output, &msg->log,
+			       LOG_OUTPUT_FLAG_CRLF_NONE);
+
+	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
+		drop_add(BT_MONITOR_USER_LOGGING);
+		return;
+	}
+
+	encode_hdr(&hdr, (uint32_t)log_msg2_get_timestamp(&msg->log),
+		   BT_MONITOR_USER_LOGGING,
+		   sizeof(user_log) + sizeof(id) + ctx.total_len + 1);
+
+	user_log.priority = monitor_priority_get(log_msg2_get_level(&msg->log));
+	user_log.ident_len = sizeof(id);
+
+	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);
+	monitor_send(&user_log, sizeof(user_log));
+	monitor_send(id, sizeof(id));
+	monitor_send(ctx.msg, ctx.total_len);
+
+	/* Terminate the string with null */
+	uart_poll_out(monitor_dev, '\0');
+
+	atomic_clear_bit(&flags, BT_LOG_BUSY);
+}
+
 static void monitor_log_panic(const struct log_backend *const backend)
 {
 }
@@ -331,13 +368,14 @@ static void monitor_log_init(const struct log_backend *const backend)
 }
 
 static const struct log_backend_api monitor_log_api = {
-	.put = monitor_log_put,
+	.process = IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? monitor_log_process : NULL,
+	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? monitor_log_put : NULL,
 	.panic = monitor_log_panic,
 	.init = monitor_log_init,
 };
 
 LOG_BACKEND_DEFINE(bt_monitor, monitor_log_api, true);
-#endif /* CONFIG_LOG_MINIMAL */
+#endif /* CONFIG_LOG_MODE_MINIMAL */
 
 static int bt_monitor_init(const struct device *d)
 {

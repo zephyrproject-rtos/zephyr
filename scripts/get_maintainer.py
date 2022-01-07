@@ -120,6 +120,31 @@ def _parse_args():
         help="Limit to files under PATH")
     orphaned_parser.set_defaults(cmd_fn=Maintainers._orphaned_cmd)
 
+    count_parser = subparsers.add_parser(
+        "count",
+        help="Count areas, unique maintainers, and / or unique collaborators")
+    count_parser.add_argument(
+        "-a",
+        "--count-areas",
+        action="store_true",
+        help="Count the number of areas")
+    count_parser.add_argument(
+        "-c",
+        "--count-collaborators",
+        action="store_true",
+        help="Count the number of unique collaborators")
+    count_parser.add_argument(
+        "-n",
+        "--count-maintainers",
+        action="store_true",
+        help="Count the number of unique maintainers")
+    count_parser.add_argument(
+        "-o",
+        "--count-orphaned",
+        action="store_true",
+        help="Count the number of orphaned areas")
+    count_parser.set_defaults(cmd_fn=Maintainers._count_cmd)
+
     args = parser.parse_args()
     if not hasattr(args, "cmd_fn"):
         # Called without a subcommand
@@ -260,6 +285,36 @@ class Maintainers:
                     print("{:25}\t{}".format(area.name, ",".join(area.maintainers)))
             else:
                 print("{:25}\t{}".format(area.name, ",".join(area.maintainers)))
+
+    def _count_cmd(self, args):
+        # 'count' subcommand implementation
+
+        if not (args.count_areas or args.count_collaborators or args.count_maintainers or args.count_orphaned):
+            # if no specific count is provided, print them all
+            args.count_areas = True
+            args.count_collaborators = True
+            args.count_maintainers = True
+            args.count_orphaned = True
+
+        orphaned = 0
+        collaborators = set()
+        maintainers = set()
+
+        for area in self.areas.values():
+            if area.status == 'maintained':
+                maintainers = maintainers.union(set(area.maintainers))
+            elif area.status == 'orphaned':
+                orphaned += 1
+            collaborators = collaborators.union(set(area.collaborators))
+
+        if args.count_areas:
+            print('{:14}\t{}'.format('areas:', len(self.areas)))
+        if args.count_maintainers:
+            print('{:14}\t{}'.format('maintainers:', len(maintainers)))
+        if args.count_collaborators:
+            print('{:14}\t{}'.format('collaborators:', len(collaborators)))
+        if args.count_orphaned:
+            print('{:14}\t{}'.format('orphaned:', orphaned))
 
     def _list_cmd(self, args):
         # 'list' subcommand implementation

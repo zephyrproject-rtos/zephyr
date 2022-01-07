@@ -255,6 +255,14 @@ static inline uint32_t arch_k_cycle_get_32(void)
 	return sys_clock_cycle_get_32();
 }
 
+extern uint64_t sys_clock_cycle_get_64(void);
+
+__pinned_func
+static inline uint64_t arch_k_cycle_get_64(void)
+{
+	return sys_clock_cycle_get_64();
+}
+
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	return (key & 0x200) != 0;

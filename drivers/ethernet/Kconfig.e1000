@@ -27,6 +27,7 @@ config ETH_E1000_VERBOSE_DEBUG
 config ETH_E1000_PTP_CLOCK
 	bool "Enable PTP clock driver support [EXPERIMENTAL]"
 	depends on PTP_CLOCK
+	select EXPERIMENTAL
 	default y
 	help
 	  Enable PTP clock support. This is still a dummy that is only used

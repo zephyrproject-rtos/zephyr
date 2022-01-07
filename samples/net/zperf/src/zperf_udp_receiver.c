@@ -37,15 +37,15 @@ static inline void set_dst_addr(const struct shell *shell,
 				struct sockaddr *dst_addr)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-				&ip_hdr->ipv6->src);
+		net_ipv6_addr_copy_raw((uint8_t *)&net_sin6(dst_addr)->sin6_addr,
+				       ip_hdr->ipv6->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
 		net_sin6(dst_addr)->sin6_port = udp_hdr->src_port;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
-				&ip_hdr->ipv4->src);
+		net_ipv4_addr_copy_raw((uint8_t *)&net_sin(dst_addr)->sin_addr,
+				       ip_hdr->ipv4->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
 		net_sin(dst_addr)->sin_port = udp_hdr->src_port;
 	}

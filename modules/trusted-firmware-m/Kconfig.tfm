@@ -13,6 +13,7 @@ config TFM_BOARD
 	default "nordic_nrf/nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_CPU0
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
+	default "arm/mps3/an547" if BOARD_MPS3_AN547
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "arm/musca_b1/sse_200" if BOARD_MUSCA_B1
@@ -52,7 +53,7 @@ if BUILD_WITH_TFM
 config TFM_KEY_FILE_S
 	string "Path to private key used to sign secure firmware images."
 	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-RSA-3072.pem"
+	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-RSA-3072.pem"
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing secure
@@ -61,7 +62,7 @@ config TFM_KEY_FILE_S
 config TFM_KEY_FILE_NS
 	string "Path to private key used to sign non-secure firmware images."
 	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-RSA-3072_1.pem"
+	default "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot/root-RSA-3072_1.pem"
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing non-secure
@@ -137,6 +138,33 @@ config TFM_ISOLATION_LEVEL
 	  isolation level, as it is determined by the profile setting.
 	  As isolation levels 2 and 3 require PSA_API (TFM_IPC) support,
 	  force level 1 when TFM_IPC is not enabled.
+
+config TFM_ITS_NUM_ASSETS_OVERRIDE
+	bool "Override maximum number of Internal Trusted Storage assets"
+	help
+	  Override the platform's default maximum number of assets to be stored in
+	  Internal Trusted Storage (ITS) with TFM_ITS_NUM_ASSETS.
+
+config TFM_ITS_NUM_ASSETS
+	int "Maximum number of Internal Trusted Storage assets"
+	depends on TFM_ITS_NUM_ASSETS_OVERRIDE
+	default 0
+	help
+	  Maximum number of assets to be stored in Internal Trusted Storage (ITS).
+
+config TFM_ITS_MAX_ASSET_SIZE_OVERRIDE
+	bool "Override maximum Internal Trusted Storage asset size"
+	help
+	  Override the platform's default maximum size of a single asset to be
+	  stored in Internal Trusted Storage (ITS) with TFM_ITS_MAX_ASSET_SIZE.
+
+config TFM_ITS_MAX_ASSET_SIZE
+	int "Maximum Internal Trusted Storage asset size"
+	depends on TFM_ITS_MAX_ASSET_SIZE_OVERRIDE
+	default 0
+	help
+	  Maximum size (in bytes) of a single asset to be stored in Internal Trusted
+	  Storage (ITS).
 
 config TFM_BL2
 	bool "Add MCUboot to TFM"
@@ -264,5 +292,24 @@ config TFM_FLASH_MERGED_BINARY
 		Secure firmware image, optionally, the BL2 image
 		(if building with TFM_BL2 is enabled), and the
 		Non-Secure application firmware.
+
+choice TFM_SPM_LOG_LEVEL
+	prompt "TF-M SPM Log Level"
+	default TFM_SPM_LOG_LEVEL_INFO
+config TFM_SPM_LOG_LEVEL_DEBUG
+	bool "Debug"
+config TFM_SPM_LOG_LEVEL_INFO
+	bool "Info"
+config TFM_SPM_LOG_LEVEL_ERROR
+	bool "Error"
+config TFM_SPM_LOG_LEVEL_SILENCE
+	bool "Off"
+endchoice
+
+config TFM_EXCEPTION_INFO_DUMP
+	bool "TF-M exception info dump"
+	help
+	  On fatal errors in the secure firmware, capture info about the exception.
+	  Print the info if the SPM log level is sufficient.
 
 endif # BUILD_WITH_TFM

@@ -35,7 +35,8 @@
  * | -------------- | ------------------------------------------------------- |
  * | 0x06 0x09      | Byte pair indicating the start of a packet.             |
  * | 0x04 0x14      | Byte pair indicating the start of a continuation frame. |
- * | Packet length  | The combined total length of the *unencoded* body.      |
+ * | Packet length  | The combined total length of the *unencoded* body plus  |
+ * |                | the final CRC (2 bytes). Length is in Big-Endian format.|
  * | Body           | The actual SMP data (i.e., 8-byte header and CBOR       |
  * |                | key-value map).                                         |
  * | CRC16          | A CRC16 of the *unencoded* body of the entire packet.   |

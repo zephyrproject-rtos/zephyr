@@ -4,8 +4,8 @@ Core Dump
 #########
 
 The core dump module enables dumping the CPU registers and memory content
-for offline debugging. This module is called when fatal error is
-encountered, and the data is printed or stored according to which backends
+for offline debugging. This module is called when a fatal error is
+encountered and prints or stores data according to which backends
 are enabled.
 
 Configuration
@@ -25,15 +25,15 @@ Here are the choices regarding memory dump:
 
 * ``DEBUG_COREDUMP_MEMORY_DUMP_MIN``: only dumps the stack of the exception
   thread, its thread struct, and some other bare minimal data to support
-  walking the stack in debugger. Use this only if absolute minimum of data
+  walking the stack in the debugger. Use this only if absolute minimum of data
   dump is desired.
 
 Usage
 *****
 
-When the core dump module is enabled, during fatal error, CPU registers
-and memory content are being printed or stored according to which backends
-are enabled. This core dump data can fed into a custom made GDB server as
+When the core dump module is enabled, during a fatal error, CPU registers
+and memory content are printed or stored according to which backends
+are enabled. This core dump data can fed into a custom-made GDB server as
 a remote target for GDB (and other GDB compatible debuggers). CPU registers,
 memory content and stack can be examined in the debugger.
 
@@ -58,7 +58,7 @@ Example
 -------
 
 This example uses the log module backend tied to serial console.
-This was done on `qemu_x86` where a null pointer was dereferenced.
+This was done on :ref:`qemu_x86` where a null pointer was dereferenced.
 
 This is the core dump log from the serial console, and is stored
 in :file:`coredump.log`:

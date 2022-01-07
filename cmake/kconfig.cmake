@@ -90,6 +90,8 @@ endforeach()
 # A list of common environment settings used when invoking Kconfig during CMake
 # configure time or menuconfig and related build target.
 string(REPLACE ";" "\\\;" SHIELD_AS_LIST_ESCAPED "${SHIELD_AS_LIST}")
+# cmake commands are escaped differently
+string(REPLACE ";" "\\;" SHIELD_AS_LIST_ESCAPED_COMMAND "${SHIELD_AS_LIST}")
 
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
@@ -199,13 +201,14 @@ foreach(f ${merge_config_files})
   if(IS_ABSOLUTE ${f})
     set(path ${f})
   else()
-    set(path ${APPLICATION_SOURCE_DIR}/${f})
+    set(path ${APPLICATION_CONFIG_DIR}/${f})
   endif()
 
   list(APPEND merge_config_files_with_absolute_paths ${path})
 endforeach()
+set(merge_config_files ${merge_config_files_with_absolute_paths})
 
-foreach(f ${merge_config_files_with_absolute_paths})
+foreach(f ${merge_config_files})
   if(NOT EXISTS ${f} OR IS_DIRECTORY ${f})
     message(FATAL_ERROR "File not found: ${f}")
   endif()
@@ -214,7 +217,7 @@ endforeach()
 # Calculate a checksum of merge_config_files to determine if we need
 # to re-generate .config
 set(merge_config_files_checksum "")
-foreach(f ${merge_config_files_with_absolute_paths})
+foreach(f ${merge_config_files})
   file(MD5 ${f} checksum)
   set(merge_config_files_checksum "${merge_config_files_checksum}${checksum}")
 endforeach()
@@ -250,7 +253,7 @@ endif()
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E env
   ${COMMON_KCONFIG_ENV_SETTINGS}
-  SHIELD_AS_LIST=${SHIELD_AS_LIST_ESCAPED}
+  SHIELD_AS_LIST=${SHIELD_AS_LIST_ESCAPED_COMMAND}
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
   --zephyr-base=${ZEPHYR_BASE}

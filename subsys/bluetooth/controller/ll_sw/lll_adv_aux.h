@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,5 +10,6 @@ void lll_adv_aux_prepare(void *param);
 
 extern uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll);
 extern struct pdu_adv_aux_ptr *
-ull_adv_aux_lll_offset_fill(uint32_t ticks_offset, uint32_t start_us,
-			    struct pdu_adv *pdu);
+	ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
+				    uint32_t ticks_offset,
+				    uint32_t start_us);

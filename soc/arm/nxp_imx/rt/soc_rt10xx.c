@@ -261,6 +261,25 @@ void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
 		g_usdhc_pin_cfg_cb(nusdhc, init,
 			speed, strength);
 }
+
+/* Usdhc driver needs to reconfigure the dat3 line to a pullup in order to
+ * detect an SD card on the bus. Expose a callback to do that here. The board
+ * must register this callback in its init function.
+ */
+static usdhc_dat3_cfg_cb g_usdhc_dat3_cfg_cb;
+
+void imxrt_usdhc_dat3_cb_register(usdhc_dat3_cfg_cb cb)
+{
+	g_usdhc_dat3_cfg_cb = cb;
+}
+
+void imxrt_usdhc_dat3_pull(bool pullup)
+{
+	if (g_usdhc_dat3_cfg_cb) {
+		g_usdhc_dat3_cfg_cb(pullup);
+	}
+}
+
 #endif
 
 /**

@@ -559,6 +559,16 @@
 				status = "disabled";
 			};
 		};
+
+		/* Dedicated SPI interface to access SPI flashes */
+		spi_fiu0: spi@40020000 {
+			compatible = "nuvoton,npcx-spi-fiu";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40020000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL1 2>;
+			label = "SPI_FIU";
+		};
 	};
 
 	soc-if {

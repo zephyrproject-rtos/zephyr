@@ -10,13 +10,16 @@
 #include <toolchain.h>
 
 #include <sys/util.h>
+#include <sys/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/radio_df.h"
 #include "hal/ticker.h"
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 
@@ -29,6 +32,7 @@
 #include "lll_chan.h"
 
 #include "lll_internal.h"
+#include "lll_df_internal.h"
 #include "lll_tim_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -84,6 +88,10 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	struct lll_df_conn_rx_params *df_rx_params;
+	struct lll_df_conn_rx_cfg *df_rx_cfg;
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 	struct pdu_data *pdu_data_tx;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
@@ -93,6 +101,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct lll_conn *lll;
 	struct ull_hdr *ull;
 	uint32_t remainder;
+	uint8_t cte_len;
 
 	DEBUG_RADIO_START_M(1);
 
@@ -146,6 +155,18 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	if (pdu_data_tx->cp) {
+		lll_df_conn_cte_tx_enable(&lll->df_tx_cfg);
+
+		cte_len = CTE_LEN_US(pdu_data_tx->cte_info.time);
+	} else
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+	{
+		cte_len = 0U;
+	}
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
 #else
@@ -153,18 +174,31 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif
 
 	radio_aa_set(lll->access_addr);
-	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
-			    (((uint32_t)lll->crc_init[2] << 16) |
-			     ((uint32_t)lll->crc_init[1] << 8) |
-			     ((uint32_t)lll->crc_init[0])));
+	radio_crc_configure(PDU_CRC_POLYNOMIAL,
+					sys_get_le24(lll->crc_init));
 	lll_chan_set(data_chan_use);
 
-	/* setup the radio tx packet buffer */
 	lll_conn_tx_pkt_set(lll, pdu_data_tx);
 
 	radio_isr_set(lll_conn_isr_tx, lll);
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
+
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	/* If CTE RX is enabled and the PHY is not CODED, store channel used for
+	 * the connection event to report it with collected IQ samples.
+	 * The configuration of the CTE receive may not change during the event,
+	 * so config buffer is swapped in prepare and used in IRS handers.
+	 */
+	if (lll->phy_rx != PHY_CODED) {
+		df_rx_cfg = &lll->df_rx_cfg;
+		df_rx_params = dbuf_latest_get(&df_rx_cfg->hdr, NULL);
+
+		if (df_rx_params->is_enabled == true) {
+			lll->df_rx_cfg.chan = data_chan_use;
+		}
+	}
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(lll->phy_rx);
@@ -185,22 +219,22 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_tx_ready_delay_get(lll->phy_tx,
 							  lll->phy_flags) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_tx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
-#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	ARG_UNUSED(remainder_us);
-#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)

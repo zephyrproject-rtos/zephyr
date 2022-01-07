@@ -299,27 +299,43 @@ _handle_excint:
 DEF_EXCINT 1, _handle_excint, xtensa_excint1_c
 
 #if XCHAL_NMILEVEL >= 2
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 2))
 DEF_EXCINT 2, _handle_excint, xtensa_int2_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 3
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 3))
 DEF_EXCINT 3, _handle_excint, xtensa_int3_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 4
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 4))
 DEF_EXCINT 4, _handle_excint, xtensa_int4_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 5
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 5))
 DEF_EXCINT 5, _handle_excint, xtensa_int5_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 6
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 6))
 DEF_EXCINT 6, _handle_excint, xtensa_int6_c
+#endif
 #endif
 
 #if XCHAL_NMILEVEL >= 7
+#if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 7))
 DEF_EXCINT 7, _handle_excint, xtensa_int7_c
+#endif
+#endif
+
+#if defined(CONFIG_GDBSTUB)
+DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 #endif
 
 /* The user exception vector is defined here, as we need to handle

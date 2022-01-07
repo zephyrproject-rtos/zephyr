@@ -13,6 +13,7 @@
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
+#include <pm/device.h>
 #include <logging/log.h>
 
 #include "bmp388.h"

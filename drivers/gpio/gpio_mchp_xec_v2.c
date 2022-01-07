@@ -380,12 +380,12 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 };
 
 #define XEC_GPIO_PORT_FLAGS(n)						\
-	((DT_IRQ_HAS_CELL(DT_DRV_INST(n), irq)) ? GPIO_INT_ENABLE : 0)
+	((DT_INST_IRQ_HAS_CELL(n, irq)) ? GPIO_INT_ENABLE : 0)
 
 #define XEC_GPIO_PORT(n)						\
 	static int gpio_xec_port_init_##n(const struct device *dev)	\
 	{								\
-		if (!(DT_IRQ_HAS_CELL(DT_DRV_INST(n), irq))) {		\
+		if (!(DT_INST_IRQ_HAS_CELL(n, irq))) {			\
 			return 0;					\
 		}							\
 									\
@@ -420,7 +420,7 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n, gpio_xec_port_init_##n, NULL,		\
 		&gpio_xec_port_data_##n, &xec_gpio_config_##n,		\
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,			\
 		&gpio_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_GPIO_PORT)

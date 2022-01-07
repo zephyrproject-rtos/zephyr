@@ -179,9 +179,9 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 						struct net_eth_hdr *hdr)
 {
 	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst) ||
+	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
 	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     &NET_IPV4_HDR(pkt)->dst))) {
+				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
 		return NET_DROP;
 	}
 
@@ -243,7 +243,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		net_pkt_set_family(pkt, AF_INET6);
 		family = AF_INET6;
 		break;
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_NET_L2_PTP)
 	case NET_ETH_PTYPE_PTP:
 		family = AF_UNSPEC;
 		break;
@@ -353,8 +353,8 @@ drop:
 static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {
 	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				   &NET_IPV4_HDR(pkt)->dst) ||
-	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
+				   (struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
+	    net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
 		return true;
 	}
 
@@ -365,9 +365,10 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET &&
-	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
+	    net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
 		/* Multicast address */
-		net_eth_ipv4_mcast_to_mac_addr(&NET_IPV4_HDR(pkt)->dst, dst);
+		net_eth_ipv4_mcast_to_mac_addr(
+			(struct in_addr *)NET_IPV4_HDR(pkt)->dst, dst);
 
 		return true;
 	}
@@ -385,7 +386,7 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
 		struct net_pkt *arp_pkt;
 
-		arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+		arp_pkt = net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL);
 		if (!arp_pkt) {
 			return NULL;
 		}
@@ -414,11 +415,11 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET6 &&
-	    net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+	    net_ipv6_is_addr_mcast((struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
 		memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
 		       sizeof(struct net_eth_addr) - 4);
 		memcpy((uint8_t *)dst + 2,
-		       (uint8_t *)(&NET_IPV6_HDR(pkt)->dst) + 12,
+		       NET_IPV6_HDR(pkt)->dst + 12,
 		       sizeof(struct net_eth_addr) - 2);
 
 		return true;
@@ -445,7 +446,7 @@ static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
 	if (net_pkt_family(pkt) == AF_INET6) {
 		struct net_if *target;
 
-		if (net_if_ipv6_addr_lookup(&NET_IPV6_HDR(pkt)->src,
+		if (net_if_ipv6_addr_lookup((struct in6_addr *)NET_IPV6_HDR(pkt)->src,
 					    &target)) {
 			if (target != iface) {
 				NET_DBG("Iface %p should be %p", iface,
@@ -461,7 +462,7 @@ static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct net_if *target;
 
-		if (net_if_ipv4_addr_lookup(&NET_IPV4_HDR(pkt)->src,
+		if (net_if_ipv4_addr_lookup((struct in_addr *)NET_IPV4_HDR(pkt)->src,
 					    &target)) {
 			if (target != iface) {
 				NET_DBG("Iface %p should be %p", iface,
@@ -520,8 +521,9 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 
 		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
 
-		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
-		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst)) {
+		if (ptype == htons(NET_ETH_PTYPE_ARP) ||
+		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
+		     !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst))) {
 			memcpy(&hdr_vlan->dst, net_pkt_lladdr_dst(pkt)->addr,
 			       sizeof(struct net_eth_addr));
 		}
@@ -541,8 +543,9 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	} else {
 		hdr = (struct net_eth_hdr *)(hdr_frag->data);
 
-		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
-		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst)) {
+		if (ptype == htons(NET_ETH_PTYPE_ARP) ||
+		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
+		     !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst))) {
 			memcpy(&hdr->dst, net_pkt_lladdr_dst(pkt)->addr,
 			       sizeof(struct net_eth_addr));
 		}
@@ -665,7 +668,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		} else {
 			goto send;
 		}
-	} else if (IS_ENABLED(CONFIG_NET_GPTP) && net_pkt_is_gptp(pkt)) {
+	} else if (IS_ENABLED(CONFIG_NET_L2_PTP) && net_pkt_is_ptp(pkt)) {
 		ptype = htons(NET_ETH_PTYPE_PTP);
 	} else if (IS_ENABLED(CONFIG_NET_LLDP) && net_pkt_is_lldp(pkt)) {
 		ptype = htons(NET_ETH_PTYPE_LLDP);
@@ -939,7 +942,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 		return -EPERM;
 	}
 
-	if (tag == NET_VLAN_TAG_UNSPEC) {
+	if (tag >= NET_VLAN_TAG_UNSPEC) {
 		return -EBADF;
 	}
 
@@ -1143,7 +1146,7 @@ const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 }
 #endif /* CONFIG_PTP_CLOCK */
 
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_NET_L2_PTP)
 int net_eth_get_ptp_port(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
@@ -1157,7 +1160,7 @@ void net_eth_set_ptp_port(struct net_if *iface, int port)
 
 	ctx->port = port;
 }
-#endif /* CONFIG_NET_GPTP */
+#endif /* CONFIG_NET_L2_PTP */
 
 int net_eth_promisc_mode(struct net_if *iface, bool enable)
 {

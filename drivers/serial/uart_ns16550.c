@@ -33,6 +33,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <drivers/uart.h>
+#include <pm/pm.h>
 #include <sys/sys_io.h>
 #include <spinlock.h>
 
@@ -87,6 +88,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define IIR_LS    0x06 /* receiver line status interrupt */
 #define IIR_MASK  0x07 /* interrupt id bits mask  */
 #define IIR_ID    0x06 /* interrupt ID mask without NIP */
+#define IIR_FE    0xC0 /* FIFO mode enabled */
 
 /* equates for FIFO control register */
 
@@ -262,6 +264,7 @@ struct uart_ns16550_dev_data {
 #endif
 	struct uart_config uart_config;
 	struct k_spinlock lock;
+	uint8_t fifo_size;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
@@ -271,6 +274,10 @@ struct uart_ns16550_dev_data {
 
 #if UART_NS16550_DLF_ENABLED
 	uint8_t dlf;		/**< DLF value */
+#endif
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
+	bool tx_stream_on;
 #endif
 };
 
@@ -293,6 +300,11 @@ static inline uint8_t reg_interval(const struct device *dev)
 }
 #else
 #define reg_interval(dev) DEFAULT_REG_INTERVAL
+#endif
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
+static const enum pm_state pm_states[] =
+	PM_STATE_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
 #endif
 
 static const struct uart_driver_api uart_ns16550_driver_api;
@@ -464,6 +476,16 @@ static int uart_ns16550_configure(const struct device *dev,
 #endif
 		);
 
+	if ((INBYTE(IIR(dev)) & IIR_FE) == IIR_FE) {
+#ifdef CONFIG_UART_NS16750
+		dev_data->fifo_size = 64;
+#else
+		dev_data->fifo_size = 16;
+#endif
+	} else {
+		dev_data->fifo_size = 1;
+	}
+
 	/* clear the port */
 	INBYTE(RDR(dev));
 
@@ -601,7 +623,7 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 	int i;
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
-	for (i = 0; (i < size) && (INBYTE(LSR(dev)) & LSR_THRE) != 0; i++) {
+	for (i = 0; (i < size) && (i < DEV_DATA(dev)->fifo_size); i++) {
 		OUTBYTE(THR(dev), tx_data[i]);
 	}
 
@@ -645,6 +667,21 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
+	struct uart_ns16550_dev_data *const dev_data = dev->data;
+
+	if (!dev_data->tx_stream_on) {
+		dev_data->tx_stream_on = true;
+		/*
+		 * Power state to be disabled. Some platforms have multiple
+		 * states and need to be given a constraint set according to
+		 * different states.
+		 */
+		for (size_t i = 0U; i < ARRAY_SIZE(pm_states); i++) {
+			pm_constraint_set(pm_states[i]);
+		}
+	}
+#endif
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_TBE);
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
@@ -663,6 +700,21 @@ static void uart_ns16550_irq_tx_disable(const struct device *dev)
 
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_TBE));
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_PM)
+	struct uart_ns16550_dev_data *const dev_data = dev->data;
+
+	if (dev_data->tx_stream_on) {
+		dev_data->tx_stream_on = false;
+		/*
+		 * Power state to be enabled. Some platforms have multiple
+		 * states and need to be given a constraint release according
+		 * to different states.
+		 */
+		for (size_t i = 0U; i < ARRAY_SIZE(pm_states); i++) {
+			pm_constraint_release(pm_states[i]);
+		}
+	}
+#endif
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 }
 
@@ -859,6 +911,12 @@ static void uart_ns16550_isr(const struct device *dev)
 		dev_data->cb(dev, dev_data->cb_data);
 	}
 
+#ifdef CONFIG_UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	uint8_t cached_ier = INBYTE(IER(dev));
+
+	OUTBYTE(IER(dev), 0U);
+	OUTBYTE(IER(dev), cached_ier);
+#endif
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -1062,7 +1120,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_DATA_FLOW_CTRL0 UART_CFG_FLOW_CTRL_NONE
 #define DEV_DATA_FLOW_CTRL1 UART_CFG_FLOW_CTRL_RTS_CTS
 #define DEV_DATA_FLOW_CTRL(n) \
-	_CONCAT(DEV_DATA_FLOW_CTRL, DT_INST_NODE_HAS_PROP(n, hw_flow_control))
+	_CONCAT(DEV_DATA_FLOW_CTRL, DT_INST_PROP_OR(n, hw_flow_control, 0))
 
 #define DEV_DATA_DLF0(n)
 #define DEV_DATA_DLF1(n) \
@@ -1090,7 +1148,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	};                                                                           \
 	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,      \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,             \
 			      &uart_ns16550_driver_api);                             \
 	UART_NS16550_IRQ_FUNC_DEFINE(n)
 

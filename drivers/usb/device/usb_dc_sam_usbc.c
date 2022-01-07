@@ -699,7 +699,7 @@ int usb_dc_attach(void)
 	/* Select the speed with pads detached */
 	regval = USBC_UDCON_DETACH;
 
-	switch (DT_ENUM_IDX(DT_DRV_INST(0), maximum_speed)) {
+	switch (DT_INST_ENUM_IDX(0, maximum_speed)) {
 	case 1:
 		WRITE_BIT(regval, USBC_UDCON_LS_Pos, 0);
 		break;

@@ -36,8 +36,6 @@ LOG_MODULE_REGISTER(usb_descriptor);
 /* Linker-defined symbols bound the USB descriptor structs */
 extern struct usb_desc_header __usb_descriptor_start[];
 extern struct usb_desc_header __usb_descriptor_end[];
-extern struct usb_cfg_data __usb_data_start[];
-extern struct usb_cfg_data __usb_data_end[];
 
 /* Structure representing the global USB description */
 struct common_descriptor {
@@ -90,7 +88,11 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 		.bNumInterfaces = 0,
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
-		.bmAttributes = USB_SCD_ATTRIBUTES,
+		.bmAttributes = USB_SCD_RESERVED |
+				COND_CODE_1(CONFIG_USB_SELF_POWERED,
+					    (USB_SCD_SELF_POWERED), (0)) |
+				COND_CODE_1(CONFIG_USB_DEVICE_REMOTE_WAKEUP,
+					    (USB_SCD_REMOTE_WAKEUP), (0)),
 		.bMaxPower = CONFIG_USB_MAX_POWER,
 	},
 };
@@ -282,11 +284,9 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
  */
 static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 {
-	size_t length = (__usb_data_end - __usb_data_start);
-
-	for (size_t i = 0; i < length; i++) {
-		if (__usb_data_start[i].interface_descriptor == iface) {
-			return &__usb_data_start[i];
+	STRUCT_SECTION_FOREACH(usb_cfg_data, cfg_data) {
+		if (cfg_data->interface_descriptor == iface) {
+			return cfg_data;
 		}
 	}
 

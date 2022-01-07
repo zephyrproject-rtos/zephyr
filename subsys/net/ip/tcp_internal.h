@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 
-#include "tcp2_priv.h"
+#include "tcp_private.h"
 
 /**
  * @brief Calculates and returns the MSS for a given TCP context

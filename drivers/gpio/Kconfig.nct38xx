@@ -1,0 +1,41 @@
+# NPCX GPIO driver configuration options
+
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NCT38XX
+	bool "NCT38XX I2C-based GPIO chip"
+	depends on I2C
+	help
+	  Enable driver for NCT38XX I2C-based GPIO chip.
+
+if GPIO_NCT38XX
+
+config GPIO_NCT38XX_INIT_PRIORITY
+	int "NCT38XX GPIO init priority"
+	default 30
+	help
+	  Device driver initialization priority. The priority should be lower
+	  than I2C device.
+
+config GPIO_NCT38XX_PORT_INIT_PRIORITY
+	int "NCT38XX GPIO port init priority"
+	default 40
+	help
+	  Device driver initialization priority. The priority should be lower
+	  than I2C & GPIO_NCT38XX_INIT_PRIORITY device.
+
+config GPIO_NCT38XX_INTERRUPT
+	bool "NCT38XX GPIO interrupt"
+	help
+	  Enable interrupt support in NCT38XX driver.
+
+config GPIO_NCT38XX_ALERT_INIT_PRIORITY
+	int "NCT38XX GPIO alert handler init priority"
+	default 40
+	depends on GPIO_NCT38XX_INTERRUPT
+	help
+	  NCT38XX alert handler initialization priority. This initialization
+	  must take place after the alert GPIO device is initialized.
+
+endif # GPIO_NCT38XX

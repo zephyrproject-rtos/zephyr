@@ -18,6 +18,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "ticker/ticker.h"
 
@@ -34,11 +35,11 @@
 #include "lll_filter.h"
 
 #include "ull_adv_types.h"
-#include "ull_scan_types.h"
 #include "ull_filter.h"
 
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
+#include "ull_scan_types.h"
 #include "ull_scan_internal.h"
 #include "ull_sched_internal.h"
 
@@ -188,7 +189,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 
 	if ((is_coded_phy && (own_addr_type & 0x1)) ||
 	    (!is_coded_phy && (scan->own_addr_type & 0x1))) {
-		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
+		if (!mem_nz(ll_addr_get(BT_ADDR_LE_RANDOM), BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
@@ -362,7 +363,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	uint32_t ret;
 
 	lll->init_addr_type = scan->own_addr_type;
-	ll_addr_get(lll->init_addr_type, lll->init_addr);
+	(void)ll_addr_read(lll->init_addr_type, lll->init_addr);
 	lll->chan = 0U;
 	lll->is_stop = 0U;
 
@@ -489,19 +490,15 @@ void ull_scan_done(struct node_rx_event_done *done)
 		return;
 	}
 
-	rx_hdr = (void *)scan->node_rx_scan_term;
-	if (!rx_hdr) {
-		/* Prevent generation if another scan instance already did so.
-		 */
-		return;
-	}
+	/* Prevent duplicate terminate event generation */
+	lll->duration_reload = 0U;
 
 	handle = ull_scan_handle_get(scan);
 	LL_ASSERT(handle < BT_CTLR_SCAN_SET);
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	/* Reset the singular node rx buffer, so that it does not get used if
-	 * ull_scan_done get called by the other scan instance.
+	/* Prevent duplicate terminate event if ull_scan_done get called by
+	 * the other scan instance.
 	 */
 	struct ll_scan_set *scan_other;
 
@@ -510,9 +507,10 @@ void ull_scan_done(struct node_rx_event_done *done)
 	} else {
 		scan_other = ull_scan_set_get(SCAN_HANDLE_1M);
 	}
-	scan_other->node_rx_scan_term = NULL;
+	scan_other->lll.duration_reload = 0U;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 
+	rx_hdr = (void *)scan->node_rx_scan_term;
 	rx_hdr->type = NODE_RX_TYPE_EXT_SCAN_TERMINATE;
 	rx_hdr->handle = handle;
 
@@ -620,18 +618,23 @@ uint32_t ull_scan_is_enabled(uint8_t handle)
 
 	scan = ull_scan_is_enabled_get(handle);
 	if (!scan) {
-		return 0;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		scan = ull_scan_set_get(handle);
+
+		return scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U;
+#else
+		return 0U;
+#endif
 	}
 
-	/* NOTE: BIT(0) - passive scanning enabled
-	 *       BIT(1) - active scanning enabled
-	 *       BIT(2) - initiator enabled
-	 */
 	return (((uint32_t)scan->is_enabled << scan->lll.type) |
 #if defined(CONFIG_BT_CENTRAL)
-		(scan->lll.conn ? BIT(2) : 0) |
+		(scan->lll.conn ? ULL_SCAN_IS_INITIATOR : 0U) |
 #endif
-		0);
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		(scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U) |
+#endif
+		0U);
 }
 
 uint32_t ull_scan_filter_pol_get(uint8_t handle)

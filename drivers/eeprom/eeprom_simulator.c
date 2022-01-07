@@ -269,7 +269,7 @@ static int eeprom_sim_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &eeprom_sim_init, NULL,
 		    NULL, &eeprom_sim_config_0, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eeprom_sim_api);
+		    CONFIG_EEPROM_INIT_PRIORITY, &eeprom_sim_api);
 
 #ifdef CONFIG_ARCH_POSIX
 

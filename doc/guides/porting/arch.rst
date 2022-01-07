@@ -835,6 +835,141 @@ In addition to implementing these APIs, there are some other tasks as well:
   :c:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
   must be taken not to leak any register state back to user mode.
 
+GDB Stub
+********
+
+To enable GDB stub for remote debugging on a new architecture:
+
+#. Create a new ``gdbstub.h`` header file under appropriate architecture
+   include directory (``include/arch/<arch>/gdbstub.h``).
+
+   * Create a new struct ``struct gdb_ctx`` as the GDB context.
+
+     * Must define a member named ``exception`` of type ``unsigned int`` to
+       store the GDB exception reason. This value needs to be set before
+       entering :c:func:`z_gdb_main_loop`.
+
+     * Architecture can define as many members as needed for GDB stub to
+       function.
+
+     * Pointer to this struct needs to be passed to :c:func:`z_gdb_main_loop`,
+       where this pointer will be passed to other GDB stub functions.
+
+#. Functions for entering and exiting GDB stub main loop.
+
+   * If the architecture relies on interrupts to service breakpoints,
+     interrupt service routines (ISR) need to be implemented, which
+     will serve as the entry point to GDB stub main loop.
+
+   * These functions need to save and restore context so code execution
+     can continue as if no breakpoints have been encountered.
+
+   * These functions need to call :c:func:`z_gdb_main_loop` after saving
+     execution context to go into the GDB stub main loop to receive commands
+     from GDB.
+
+   * Before calling :c:func:`z_gdb_main_loop`, :c:member:`gdb_ctx.exception`
+     must be set to specify the exception reason.
+
+#. Implementat necessary functions to support GDB stub functionality:
+
+   * :c:func:`arch_gdb_init`
+
+     * This needs to initialize necessary bits to support GDB stub functionality,
+       for example, setting up the GDB context and connecting debug interrupts.
+
+     * This must stop code execution via architecture specific method (e.g.
+       raising debug interrupts). This allows GDB to connect during boot.
+
+   * :c:func:`arch_gdb_continue`
+
+     * This function is called when GDB sends a ``c`` or ``continue`` command
+       to continue code execution.
+
+   * :c:func:`arch_gdb_step`
+
+     * This function is called when GDB sends a ``si`` or ``stepi`` command
+       to execute one machine instruction, before returning to GDB prompt.
+
+   * Hardware register read/write functions:
+
+     * Since the GDB stub is running on the target, manipulation of hardware
+       registers need to cached to avoid affecting the execution of GDB stub.
+       Think of it as context switching, where the execution context is
+       changed to the GDB stub. So that the register values of the running
+       thread before context switch need to be stored. Manipulation of
+       register values must only be done to this cached copy. The updated
+       values will then be written to hardware registers before switching
+       back to the previous running thread.
+
+     * :c:func:`arch_gdb_reg_readall`
+
+       * This collects all hardware register values that would appear in
+         a ``g``/``G`` packets which will be sent back to GDB. The format of
+         the G-packet is architecture specific. Consult GDB on what is
+         expected.
+
+       * Note that, for most architectures, a valid G-packet must be returned
+         and sent to GDB. If a packet without incorrect length is sent to
+         GDB, GDB will abort the debugging session.
+
+     * :c:func:`arch_gdb_reg_writeall`
+
+       * This takes a G-packet sent by GDB and populates the hardware
+         registers with values from the G-packet.
+
+     * :c:func:`arch_gdb_reg_readone`
+
+       * This reads the value of one hardware register and sends
+         the result to GDB.
+
+     * :c:func:`arch_gdb_reg_writeone`
+
+       * This writes the value of one hardware register received from GDB.
+
+   * Breakpoints:
+
+     * :c:func:`arch_gdb_add_breakpoint` and
+       :c:func:`arch_gdb_remove_breakpoint`
+
+     * GDB may decide to use software breakpoints which modifies
+       the memory at the breakpoint locations to replace the instruction
+       with software breakpoint or trap instructions. GDB will then
+       restore the memory content once execution reaches the breakpoints.
+       GDB supports this by default and there is usually no need to
+       handle software breakpoints in the architecture code (where
+       breakpoint type is ``0``).
+
+     * Hardware breakpoints (type ``1``) are required if the code is
+       in ROM or flash that cannot be modified at runtime. Consult
+       the architecture datasheet on how to enable hardware breakpoints.
+
+     * If hardware breakpoints are not supported by the architecture,
+       there is no need to implement these in architecture code.
+       GDB will then rely on software breakpoints.
+
+#. For architecture where certain memory regions are not accessible,
+   an array named :c:var:`gdb_mem_region_array` of type
+   :c:struct:`gdb_mem_region` needs to be defined to specify regions
+   that are accessible. For each array item:
+
+   * :c:member:`gdb_mem_region.start` specifies the start of a memory
+     region.
+
+   * :c:member:`gdb_mem_region.end` specifies the end of a memory
+     region.
+
+   * :c:member:`gdb_mem_region.attribites` specifies the permission
+     of a memory region.
+
+     * :c:macro:`GDB_MEM_REGION_RO`: region is read-only.
+
+     * :c:macro:`GDB_MEM_REGION_RW`: region is read-write.
+
+   * :c:member:`gdb_mem_region.alignment` specifies read/write alignment
+     of a memory region. Use ``0`` if there is no alignment requirement
+     and read/write can be done byte-by-byte.
+
 API Reference
 *************
 
@@ -879,3 +1014,8 @@ Miscellaneous Architecture APIs
 ===============================
 
 .. doxygengroup:: arch-misc
+
+GDB Stub APIs
+=============
+
+.. doxygengroup:: arch-gdbstub

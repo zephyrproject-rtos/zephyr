@@ -3,13 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <soc.h>
 
-#define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
-			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define CYC_PER_TICK ((uint32_t)((uint64_t) (sys_clock_hw_cycles_per_sec()			 \
+					     >> CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER) \
+				 / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_CYC INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
@@ -79,17 +81,6 @@ static void timer_isr(const void *arg)
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
-	last_count = mtime();
-	set_mtimecmp(last_count + CYC_PER_TICK);
-	irq_enable(RISCV_MACHINE_TIMER_IRQ);
-	return 0;
-}
-
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -145,5 +136,24 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return (uint32_t)mtime();
+	return (uint32_t)(mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER);
 }
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return (mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER);
+}
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
+	last_count = mtime();
+	set_mtimecmp(last_count + CYC_PER_TICK);
+	irq_enable(RISCV_MACHINE_TIMER_IRQ);
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

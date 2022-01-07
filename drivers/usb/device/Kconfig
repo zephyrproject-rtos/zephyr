@@ -10,6 +10,16 @@ menuconfig USB_DEVICE_DRIVER
 
 if USB_DEVICE_DRIVER
 
+config USB_DC_HAS_HS_SUPPORT
+	bool "USB device controller supports high speed"
+	help
+	  USB device controller supports high speed.
+
+config USB_DEVICE_REMOTE_WAKEUP
+	bool "Enable remote wakeup support"
+	help
+	  USB device controller supports remote wakeup feature.
+
 config USB_DW
 	bool "Designware USB Device Controller Driver"
 	help
@@ -28,7 +38,7 @@ config USB_DC_STM32
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	help
-	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4 and G4 family of
+	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4, G4, U5 family of
 	  processors.
 
 config USB_DC_STM32_DISCONN_ENABLE
@@ -54,10 +64,14 @@ config USB_DC_SAM_USBC
 	help
 	  SAM4L family USBC device controller Driver.
 
+DT_SAM_USBHS := $(dt_nodelabel_path,usbhs)
+DT_SAM_USBHS_SPEED := $(dt_node_str_prop_equals,$(DT_SAM_USBHS),maximum-speed,high-speed)
+
 config USB_DC_SAM_USBHS
 	bool "SAM series USB HS Device Controller driver"
 	depends on SOC_SERIES_SAME70 || \
 		   SOC_SERIES_SAMV71
+	imply USB_DC_HAS_HS_SUPPORT if "$(DT_SAM_USBHS_SPEED)"
 	help
 	  SAM family USB HS device controller Driver.
 
@@ -67,6 +81,7 @@ config USB_NRFX
 	depends on HAS_HW_NRF_USBD
 	select NRFX_USBD
 	select NRFX_POWER
+	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  nRF USB Device Controller Driver
 

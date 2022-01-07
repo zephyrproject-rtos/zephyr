@@ -29,6 +29,8 @@
 			   &alta_no_peci_en
 			   &altd_npsl_in1_sl
 			   &altd_npsl_in2_sl
+			   &altd_psl_in3_sl
+			   &altd_psl_in4_sl
 			   &alt7_no_ksi0_sl
 			   &alt7_no_ksi1_sl
 			   &alt7_no_ksi2_sl
@@ -67,7 +69,7 @@
 			reg-names = "evt_itim", "sys_itim";
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
-			interrupts = <28 2>; /* Event timer interrupt */
+			interrupts = <28 1>; /* Event timer interrupt */
 			label = "ITIM";
 		};
 

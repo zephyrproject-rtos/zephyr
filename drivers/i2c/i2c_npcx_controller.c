@@ -145,6 +145,7 @@ struct i2c_ctrl_data {
 	uint8_t *ptr_msg; /* current msg pointer for FIFO read/write */
 	uint16_t addr; /* slave address of transcation */
 	uint8_t port; /* current port used the controller */
+	bool is_configured; /* is port configured? */
 	const struct npcx_i2c_timing_cfg *ptr_speed_confs;
 };
 
@@ -160,13 +161,13 @@ struct i2c_ctrl_data {
 
 /* Recommended I2C timing values are based on 15 MHz */
 static const struct npcx_i2c_timing_cfg npcx_15m_speed_confs[] = {
-	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 0, .k1 = 75, .k2 = 0},
+	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 15, .k1 = 76, .k2 = 0},
 	[NPCX_I2C_BUS_SPEED_400KHZ] = {.HLDT = 7, .k1 = 24, .k2 = 18,},
 	[NPCX_I2C_BUS_SPEED_1MHZ] = {.HLDT  = 7, .k1 = 14, .k2 = 10,},
 };
 
 static const struct npcx_i2c_timing_cfg npcx_20m_speed_confs[] = {
-	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 0, .k1 = 100, .k2 = 0},
+	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 15, .k1 = 102, .k2 = 0},
 	[NPCX_I2C_BUS_SPEED_400KHZ] = {.HLDT = 7, .k1 = 32, .k2 = 22},
 	[NPCX_I2C_BUS_SPEED_1MHZ] = {.HLDT  = 7, .k1 = 16, .k2 = 10},
 };
@@ -348,11 +349,13 @@ static void i2c_ctrl_config_bus_freq(const struct device *dev,
 	if (bus_freq == NPCX_I2C_BUS_SPEED_100KHZ) {
 		/* Enable 'Normal' Mode */
 		inst->SMBCTL3 &= ~(BIT(NPCX_SMBCTL3_400K));
-		/* Set freq of SCL */
+		/* Set freq of SCL. For 100KHz, only k1 is used.  */
 		SET_FIELD(inst->SMBCTL2, NPCX_SMBCTL2_SCLFRQ0_6_FIELD,
 				bus_cfg.k1/2 & 0x7f);
 		SET_FIELD(inst->SMBCTL3, NPCX_SMBCTL3_SCLFRQ7_8_FIELD,
-				bus_cfg.k2/2 >> 7);
+				bus_cfg.k1/2 >> 7);
+		SET_FIELD(inst->SMBCTL4, NPCX_SMBCTL4_HLDT_FIELD,
+				bus_cfg.HLDT);
 	} else {
 		/* Enable 'Fast' Mode for 400K or higher freq. */
 		inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_400K);
@@ -778,6 +781,33 @@ int npcx_i2c_ctrl_configure(const struct device *i2c_dev, uint32_t dev_config)
 	}
 
 	i2c_ctrl_config_bus_freq(i2c_dev, data->bus_freq);
+	data->is_configured = true;
+
+	return 0;
+}
+
+int npcx_i2c_ctrl_get_speed(const struct device *i2c_dev, uint32_t *speed)
+{
+	struct i2c_ctrl_data *const data = DRV_DATA(i2c_dev);
+
+	if (!data->is_configured) {
+		return -EIO;
+	}
+
+	switch (data->bus_freq) {
+	case NPCX_I2C_BUS_SPEED_100KHZ:
+		*speed = I2C_SPEED_SET(I2C_SPEED_STANDARD);
+		break;
+	case NPCX_I2C_BUS_SPEED_400KHZ:
+		*speed = I2C_SPEED_SET(I2C_SPEED_FAST);
+		break;
+	case NPCX_I2C_BUS_SPEED_1MHZ:
+		*speed = I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
+		break;
+	default:
+		return -ERANGE;
+	}
+
 	return 0;
 }
 
@@ -934,7 +964,7 @@ static int i2c_ctrl_init(const struct device *dev)
 									       \
 	static struct i2c_ctrl_data i2c_ctrl_data_##inst;                      \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,                                            \
+	I2C_DEVICE_DT_INST_DEFINE(inst,                                        \
 			    NPCX_I2C_CTRL_INIT_FUNC(inst),                     \
 			    NULL,                                              \
 			    &i2c_ctrl_data_##inst, &i2c_ctrl_cfg_##inst,       \

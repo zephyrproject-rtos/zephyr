@@ -8,5 +8,15 @@ footprints,default,altera_max10,tests/benchmarks/footprints,
 footprints,default,hifive1_revb,tests/benchmarks/footprints,
 footprints,default,ehl_crb,tests/benchmarks/footprints,
 footprints,userspace,ehl_crb,tests/benchmarks/footprints,-DCONF_FILE=prj_userspace.conf
+footprints,power-management,frdm_k64f,tests/benchmarks/footprints,-DCONF_FILE=prj_pm.conf
+footprints,power-management,disco_l475_iot1,tests/benchmarks/footprints,-DCONF_FILE=prj_pm.conf
+footprints,power-management,it8xxx2_evb,tests/benchmarks/footprints,-DCONF_FILE=prj_pm.conf
+footprints,power-management,iotdk,tests/benchmarks/footprints,-DCONF_FILE=prj_pm.conf
 echo_client,default,frdm_k64f,samples/net/sockets/echo_client,
 echo_server,default,frdm_k64f,samples/net/sockets/echo_server,
+bt_beacon,default,nrf52840dk_nrf52840,samples/bluetooth/beacon,
+bt_peripheral,default,nrf52840dk_nrf52840,samples/bluetooth/peripheral,
+bt_central_hr,default,nrf52840dk_nrf52840,samples/bluetooth/central_hr,
+bt_mesh_demo,default,bbc_microbit,samples/bluetooth/mesh_demo,
+sof,default,intel_adsp_cavs25,samples/subsys/audio/sof,
+sof,default,nxp_adsp_imx8,samples/subsys/audio/sof,

@@ -64,6 +64,9 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 	case MCUX_FLEXCOMM7_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(7);
 		break;
+	case MCUX_PMIC_I2C_CLK:
+		*rate = CLOCK_GetFlexCommClkFreq(15);
+		break;
 	case MCUX_HS_SPI_CLK:
 #if defined(FSL_FEATURE_FLEXCOMM8_SPI_INDEX)
 		*rate = CLOCK_GetHsLspiClkFreq();
@@ -121,7 +124,7 @@ DEVICE_DT_INST_DEFINE(n, \
 		    &mcux_lpc_syscon_clock_control_init, \
 		    NULL, \
 		    NULL, NULL, \
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, \
 		    &mcux_lpc_syscon_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LPC_CLOCK_INIT)

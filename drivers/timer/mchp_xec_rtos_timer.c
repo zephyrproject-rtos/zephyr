@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT microchip_xec_rtos_timer
 
+#include <device.h>
 #include <devicetree.h>
 #include <soc.h>
 #include <drivers/timer/system_timer.h>
@@ -366,7 +367,37 @@ void sys_clock_disable(void)
 	TIMER_REGS->CTRL = 0U;
 }
 
-int sys_clock_driver_init(const struct device *dev)
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+
+/*
+ * We implement custom busy wait using a MEC1501 basic timer running on
+ * the 48MHz clock domain. This code is here for future power management
+ * save/restore of the timer context.
+ */
+
+/*
+ * 32-bit basic timer 0 configured for 1MHz count up, auto-reload,
+ * and no interrupt generation.
+ */
+void arch_busy_wait(uint32_t usec_to_wait)
+{
+	if (usec_to_wait == 0) {
+		return;
+	}
+
+	uint32_t start = BTMR32_0_REGS->CNT;
+
+	for (;;) {
+		uint32_t curr = BTMR32_0_REGS->CNT;
+
+		if ((curr - start) >= usec_to_wait) {
+			break;
+		}
+	}
+}
+#endif
+
+static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -413,32 +444,5 @@ int sys_clock_driver_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-
-/*
- * We implement custom busy wait using a MEC1501 basic timer running on
- * the 48MHz clock domain. This code is here for future power management
- * save/restore of the timer context.
- */
-
-/*
- * 32-bit basic timer 0 configured for 1MHz count up, auto-reload,
- * and no interrupt generation.
- */
-void arch_busy_wait(uint32_t usec_to_wait)
-{
-	if (usec_to_wait == 0) {
-		return;
-	}
-
-	uint32_t start = BTMR32_0_REGS->CNT;
-
-	for (;;) {
-		uint32_t curr = BTMR32_0_REGS->CNT;
-
-		if ((curr - start) >= usec_to_wait) {
-			break;
-		}
-	}
-}
-#endif
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

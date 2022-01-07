@@ -387,7 +387,6 @@ out:
 static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 {
 	int res;
-	int key;
 	size_t avail;
 	bool is_nonblock;
 	size_t bytes_written;
@@ -403,10 +402,8 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 		goto out;
 	}
 
-	key = irq_lock();
-	is_nonblock = sock_is_nonblock(spair);
 	res = k_sem_take(&spair->sem, K_NO_WAIT);
-	irq_unlock(key);
+	is_nonblock = sock_is_nonblock(spair);
 	if (res < 0) {
 		if (is_nonblock) {
 			errno = EAGAIN;
@@ -595,7 +592,6 @@ out:
 static ssize_t spair_read(void *obj, void *buffer, size_t count)
 {
 	int res;
-	int key;
 	bool is_connected;
 	size_t avail;
 	bool is_nonblock;
@@ -610,10 +606,8 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 		goto out;
 	}
 
-	key = irq_lock();
-	is_nonblock = sock_is_nonblock(spair);
 	res = k_sem_take(&spair->sem, K_NO_WAIT);
-	irq_unlock(key);
+	is_nonblock = sock_is_nonblock(spair);
 	if (res < 0) {
 		if (is_nonblock) {
 			errno = EAGAIN;

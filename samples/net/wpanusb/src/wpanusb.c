@@ -28,7 +28,11 @@ LOG_MODULE_REGISTER(wpanusb);
 #define WPANUSB_PROTOCOL	0
 
 /* Max packet size for endpoints */
+#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#define WPANUSB_BULK_EP_MPS		512
+#else
 #define WPANUSB_BULK_EP_MPS		64
+#endif
 
 #define WPANUSB_IN_EP_IDX		0
 
@@ -159,7 +163,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 	return 0;
 }
 
-USBD_CFG_DATA_DEFINE(primary, wpanusb) struct usb_cfg_data wpanusb_config = {
+USBD_DEFINE_CFG_DATA(wpanusb_config) = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &wpanusb_desc.if0,
 	.cb_usb_status = wpanusb_status_cb,

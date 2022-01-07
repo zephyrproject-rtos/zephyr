@@ -98,6 +98,14 @@ enum {
 	 * response) which doesn't generate any response.
 	 */
 	BT_GATT_WRITE_FLAG_CMD = BIT(1),
+
+	/** @brief Attribute write execute flag
+	 *
+	 * If set, indicates that write operation is a execute, which indicates
+	 * the end of a long write, and will come after 1 or more
+	 * @ref BT_GATT_WRITE_FLAG_PREPARE.
+	 */
+	BT_GATT_WRITE_FLAG_EXECUTE = BIT(2),
 };
 
 /** @brief GATT Attribute structure. */
@@ -362,12 +370,20 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb);
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 
 /** @brief Unregister GATT service.
- * *
+ *
  *  @param svc Service to be unregistered.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_service_unregister(struct bt_gatt_service *svc);
+
+/** @brief Check if GATT service is registered.
+ *
+ *  @param svc Service to be checked.
+ *
+ *  @return true if registered or false if not register.
+ */
+bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc);
 
 enum {
 	BT_GATT_ITER_STOP = 0,

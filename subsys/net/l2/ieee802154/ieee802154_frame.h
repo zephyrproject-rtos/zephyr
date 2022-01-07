@@ -445,7 +445,7 @@ struct ieee802154_mpdu {
 		struct ieee802154_command *command;
 	};
 	struct ieee802154_mfr *mfr;
-} __packed;
+};
 
 /** Frame build parameters */
 struct ieee802154_frame_params {

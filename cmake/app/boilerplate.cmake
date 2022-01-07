@@ -17,7 +17,7 @@
 # It exists to reduce boilerplate code that Zephyr expects to be in
 # application CMakeLists.txt code.
 
-# CMake version 3.13.1 is the real minimum supported version.
+# CMake version 3.20 is the real minimum supported version.
 #
 # Unfortunately CMake requires the toplevel CMakeLists.txt file to
 # define the required version, not even invoking it from an included
@@ -27,16 +27,6 @@
 # Under these restraints we use a second 'cmake_minimum_required'
 # invocation in every toplevel CMakeLists.txt.
 cmake_minimum_required(VERSION 3.20.0)
-
-# CMP0002: "Logical target names must be globally unique"
-cmake_policy(SET CMP0002 NEW)
-
-# Use the old CMake behaviour until we are updating the CMake 3.20 as minimum
-# required. This ensure that CMake >=3.20 will be consistent with older CMakes.
-# CMP0116: Ninja generators transform DEPFILE s from add_custom_command().
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.20)
-  cmake_policy(SET CMP0116 OLD)
-endif()
 
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
@@ -50,18 +40,26 @@ define_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS
 zephyr_interface_library_named() appends libs to this list.")
 set_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS "")
 
-define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
-  BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
+define_property(GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES
+  BRIEF_DOCS "Source files that are generated after Zephyr has been linked once."
   FULL_DOCS "\
-Object files that are generated after Zephyr has been linked once.\
+Source files that are generated after Zephyr has been linked once.\
+May include dev_handles.c etc."
+  )
+set_property(GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES "")
+
+define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
+  BRIEF_DOCS "Object files that are generated after symbol addresses are fixed."
+  FULL_DOCS "\
+Object files that are generated after symbol addresses are fixed.\
 May include mmu tables, etc."
   )
 set_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES "")
 
 define_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES
-  BRIEF_DOCS "Source files that are generated after Zephyr has been linked once."
+  BRIEF_DOCS "Source files that are generated after symbol addresses are fixed."
   FULL_DOCS "\
-Source files that are generated after Zephyr has been linked once.\
+Source files that are generated after symbol addresses are fixed.\
 May include isr_tables.c etc."
   )
 set_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES "")
@@ -424,6 +422,17 @@ please check your installation. ARCH roots searched: \n\
 ${ARCH_ROOT}")
 endif()
 
+if(DEFINED APPLICATION_CONFIG_DIR)
+  string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
+  if(NOT IS_ABSOLUTE ${APPLICATION_CONFIG_DIR})
+    get_filename_component(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} ABSOLUTE)
+  endif()
+else()
+  # Application config dir is not set, so we default to the  application
+  # source directory as configuration directory.
+  set(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR})
+endif()
+
 if(DEFINED CONF_FILE)
   # This ensures that CACHE{CONF_FILE} will be set correctly to current scope
   # variable CONF_FILE. An already current scope variable will stay the same.
@@ -441,14 +450,9 @@ if(DEFINED CONF_FILE)
     # Need the file name to look for match.
     # Need path in order to check if it is absolute.
     get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
-    get_filename_component(CONF_FILE_DIR ${CONF_FILE} DIRECTORY)
     if(${CONF_FILE_NAME} MATCHES "prj_(.*).conf")
       set(CONF_FILE_BUILD_TYPE ${CMAKE_MATCH_1})
       set(CONF_FILE_INCLUDE_FRAGMENTS true)
-
-      if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
-        set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR}/${CONF_FILE_DIR})
-      endif()
     endif()
   endif()
 elseif(CACHED_CONF_FILE)
@@ -459,21 +463,19 @@ elseif(CACHED_CONF_FILE)
 elseif(DEFINED ENV{CONF_FILE})
   set(CONF_FILE $ENV{CONF_FILE})
 
-elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
-  set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
+elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
+  set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
 
-elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
-  set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
+elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj.conf)
+  set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj.conf)
   set(CONF_FILE_INCLUDE_FRAGMENTS true)
 endif()
 
 if(CONF_FILE_INCLUDE_FRAGMENTS)
-  if(NOT CONF_FILE_DIR)
-     set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR})
-  endif()
-  zephyr_file(CONF_FILES ${CONF_FILE_DIR}/boards KCONF CONF_FILE BUILD ${CONF_FILE_BUILD_TYPE})
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE BUILD ${CONF_FILE_BUILD_TYPE})
 endif()
 
+set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE INTERNAL "The application configuration folder")
 set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\
@@ -482,23 +484,20 @@ The CACHED_CONF_FILE is internal Zephyr variable used between CMake runs. \
 To change CONF_FILE, use the CONF_FILE variable.")
 unset(CONF_FILE CACHE)
 
-zephyr_file(CONF_FILES ${APPLICATION_SOURCE_DIR}/boards DTS APP_BOARD_DTS)
+zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS APP_BOARD_DTS)
 
 # The CONF_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(CONF_FILE)
 
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
-  # in the CMakeCache.txt. This has precedence over the environment
-  # variable DTC_OVERLAY_FILE
-elseif(DEFINED ENV{DTC_OVERLAY_FILE})
-  set(DTC_OVERLAY_FILE $ENV{DTC_OVERLAY_FILE})
+  # in the CMakeCache.txt.
 elseif(APP_BOARD_DTS)
   set(DTC_OVERLAY_FILE ${APP_BOARD_DTS})
-elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
-  set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
-elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/app.overlay)
-  set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/app.overlay)
+elseif(EXISTS          ${APPLICATION_CONFIG_DIR}/${BOARD}.overlay)
+  set(DTC_OVERLAY_FILE ${APPLICATION_CONFIG_DIR}/${BOARD}.overlay)
+elseif(EXISTS          ${APPLICATION_CONFIG_DIR}/app.overlay)
+  set(DTC_OVERLAY_FILE ${APPLICATION_CONFIG_DIR}/app.overlay)
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
@@ -549,6 +548,14 @@ set(SOC_SERIES ${CONFIG_SOC_SERIES})
 set(SOC_TOOLCHAIN_NAME ${CONFIG_SOC_TOOLCHAIN_NAME})
 set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
 
+# For the gen_app_partitions.py to work correctly, we must ensure that
+# all targets exports their compile commands to fetch object files.
+# We enable it unconditionally, as this is also useful for several IDEs
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE CACHE BOOL
+    "Export CMake compile commands. Used by gen_app_partitions.py script"
+    FORCE
+)
+
 if("${SOC_SERIES}" STREQUAL "")
   set(SOC_PATH ${SOC_NAME})
 else()
@@ -588,11 +595,18 @@ project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 # windows now.
 list(APPEND CMAKE_ASM_SOURCE_FILE_EXTENSIONS "S")
 enable_language(C CXX ASM)
+
 # The setup / configuration of the toolchain itself and the configuration of
 # supported compilation flags are now split, as this allows to use the toolchain
 # for generic purposes, for example DTS, and then test the toolchain for
 # supported flags at stage two.
 # Testing the toolchain flags requires the enable_language() to have been called in CMake.
+
+# Verify that the toolchain can compile a dummy file, if it is not we
+# won't be able to test for compatibility with certain C flags.
+zephyr_check_compiler_flag(C "" toolchain_is_ok)
+assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
+
 include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 
 # 'project' sets PROJECT_BINARY_DIR to ${CMAKE_CURRENT_BINARY_DIR},
@@ -613,6 +627,7 @@ set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
 set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
+set(KERNEL_META_NAME  ${KERNEL_NAME}.meta)
 
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 

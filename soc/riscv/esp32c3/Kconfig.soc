@@ -6,6 +6,8 @@ config SOC_ESP32C3
 	select RISCV
 	select RISCV_GP
 	select DYNAMIC_INTERRUPTS
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_ESP32
 
 config IDF_TARGET_ESP32C3
 	bool "ESP32C3 as target board"

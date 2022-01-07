@@ -73,12 +73,13 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		      (thread == k_current_get()) ? "*" : " ",
 		      thread,
 		      tname ? tname : "NA");
-	shell_print(shell, "\toptions: 0x%x, priority: %d timeout: %d",
+	/* Cannot use lld as it's less portable. */
+	shell_print(shell, "\toptions: 0x%x, priority: %d timeout: %" PRId64,
 		      thread->base.user_options,
 		      thread->base.prio,
-		      thread->base.timeout.dticks);
+		      (int64_t)thread->base.timeout.dticks);
 	shell_print(shell, "\tstate: %s, entry: %p", k_thread_state_str(thread),
-		    thread->entry);
+		    thread->entry.pEntry);
 
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	ret = 0;
@@ -103,11 +104,11 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		 * targets.
 		 */
 #ifdef CONFIG_64BIT
-		shell_print(shell, "\tTotal execution cycles: %llu (%u %%)",
-			    rt_stats_thread.execution_cycles,
+		shell_print(shell, "\tTotal execution cycles: %" PRIu64 " (%u %%)",
+			    (uint64_t)rt_stats_thread.execution_cycles,
 			    pcnt);
 #else
-		shell_print(shell, "\tTotal execution cycles: %lu (%u %%)",
+		shell_print(shell, "\tTotal execution cycles: %u (%u %%)",
 			    (uint32_t)rt_stats_thread.execution_cycles,
 			    pcnt);
 #endif
@@ -167,7 +168,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 	pcnt = ((size - unused) * 100U) / size;
 
 	shell_print((const struct shell *)user_data,
-		"%p %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)",
+		"%p %-10s (real size %zu):\tunused %zu\tusage %zu / %zu (%u %%)",
 		      thread,
 		      tname ? tname : "NA",
 		      size, unused, size - unused, size, pcnt);

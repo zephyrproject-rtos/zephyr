@@ -45,8 +45,8 @@ static bool on_off_value[MAX_INSTANCE_COUNT];
 static uint8_t dimmer_value[MAX_INSTANCE_COUNT];
 static int32_t on_time_value[MAX_INSTANCE_COUNT];
 static uint32_t on_time_offset[MAX_INSTANCE_COUNT];
-static float32_value_t cumulative_active_value[MAX_INSTANCE_COUNT];
-static float32_value_t power_factor_value[MAX_INSTANCE_COUNT];
+static double cumulative_active_value[MAX_INSTANCE_COUNT];
+static double power_factor_value[MAX_INSTANCE_COUNT];
 static char colour[MAX_INSTANCE_COUNT][LIGHT_STRING_LONG];
 static char units[MAX_INSTANCE_COUNT][LIGHT_STRING_SHORT];
 
@@ -148,10 +148,8 @@ static struct lwm2m_engine_obj_inst *light_control_create(uint16_t obj_inst_id)
 	dimmer_value[avail] = 0U;
 	on_time_value[avail] = 0;
 	on_time_offset[avail] = 0U;
-	cumulative_active_value[avail].val1 = 0;
-	cumulative_active_value[avail].val2 = 0;
-	power_factor_value[avail].val1 = 0;
-	power_factor_value[avail].val2 = 0;
+	cumulative_active_value[avail] = 0;
+	power_factor_value[avail] = 0;
 	colour[avail][0] = '\0';
 	units[avail][0] = '\0';
 

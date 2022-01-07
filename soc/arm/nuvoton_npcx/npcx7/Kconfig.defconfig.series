@@ -106,6 +106,12 @@ config PM_DEVICE
 
 endif # SOC_POWER_MANAGEMENT
 
+config SPI_NPCX_FIU
+	default y
+	depends on SPI
+	help
+	  Enable support fot NPCX SPI (FIU) driver for the NOR SPI flash access.
+
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 
 endif # SOC_SERIES_NPCX7

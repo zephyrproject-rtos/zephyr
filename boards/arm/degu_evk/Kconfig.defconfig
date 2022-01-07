@@ -13,9 +13,6 @@ if USB_DEVICE_STACK
 config USB_DEVICE_PRODUCT
 	default "Degu Evaluation Kit"
 
-config USB_UART_CONSOLE
-	default y
-
 config UART_INTERRUPT_DRIVEN
 	default y
 
