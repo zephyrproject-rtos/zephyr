@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
+zephyr_library_sources_ifdef(CONFIG_ESP32_CDC_CONSOLE esp32_hw_cdc_console.c)
 zephyr_library_sources_ifdef(CONFIG_GSM_MUX gsm_mux.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_CONSOLE_RECEIVER ipm_console_receiver.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_CONSOLE_SENDER ipm_console_sender.c)

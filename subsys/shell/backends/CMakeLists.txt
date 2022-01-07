@@ -11,6 +11,11 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_ESP32_HW_CDC
+  shell_esp32_hw_cdc.c
+)
+
+zephyr_sources_ifdef(
   CONFIG_SHELL_BACKEND_RTT
   shell_rtt.c
 )

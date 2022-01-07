@@ -119,6 +119,24 @@ config SHELL_BACKEND_SERIAL_LOG_LEVEL
 
 endif # SHELL_BACKEND_SERIAL
 
+config SHELL_BACKEND_ESP32_HW_CDC
+	bool "Enable ESP32 HW CDC backend"
+	select CONSOLE
+	select ESP32_CDC_CONSOLE
+	depends on SOC_ESP32C3
+	help
+	  Enable shell backend over ESP32 hardware CDC.
+
+if SHELL_BACKEND_ESP32_HW_CDC
+
+config SHELL_PROMPT_ESP32_HW_CDC
+	string "Displayed prompt name"
+	default "~$ "
+	help
+	  Displayed prompt name for ESP32 HW CDC backend.
+
+endif
+
 config SHELL_BACKEND_RTT
 	bool "RTT backend"
 	select CONSOLE

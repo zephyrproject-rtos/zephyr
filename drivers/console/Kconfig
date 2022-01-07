@@ -40,6 +40,15 @@ config CONSOLE_INIT_PRIORITY
 	help
 	  Console driver device initialization priority.
 
+config ESP32_CDC_CONSOLE
+	bool "Use ESP32 Hardware CDC for console"
+	depends on SOC_ESP32C3
+	default n
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable this option to esp32 enabled chips to use their
+	  hardware CDC as console output.
+
 config UART_CONSOLE
 	bool "Use UART for console"
 	depends on SERIAL && SERIAL_HAS_DRIVER
