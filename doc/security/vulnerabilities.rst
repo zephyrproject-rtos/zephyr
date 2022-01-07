@@ -832,12 +832,15 @@ CVE-2021-3323
 
 Integer Underflow in 6LoWPAN IPHC Header Uncompression
 
+This has been fixed in main for v2.5.0
+
 - `CVE-2020-3323 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3323>`_
 
-- `Zephyr project bug tracker ZEPSEC-116
-  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-116>`_
+- `Zephyr project bug tracker GHSA-89j6-qpxf-pfpc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-89j6-qpxf-pfpc>`_
 
-- This issue has not been fixed.
+- `PR 31971 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/31971>`_
 
 CVE-2021-3430
 -------------
