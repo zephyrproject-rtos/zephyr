@@ -9,7 +9,6 @@
 
 
 /**
- *
  * @brief Assert Action Handler
  *
  * This routine implements the action to be taken when an assertion fails.
@@ -19,8 +18,6 @@
  * to a persistent repository and/or rebooting the system.
  *
  * @param N/A
- *
- * @return N/A
  */
 #ifdef CONFIG_ASSERT_NO_FILE_INFO
 __weak void assert_post_action(void)
