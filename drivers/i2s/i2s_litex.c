@@ -26,8 +26,6 @@ LOG_MODULE_REGISTER(i2s_litex);
  * @brief Enable i2s device
  *
  * @param reg base register of device
- *
- * @return N/A
  */
 static void i2s_enable(uintptr_t reg)
 {
@@ -40,8 +38,6 @@ static void i2s_enable(uintptr_t reg)
  * @brief Disable i2s device
  *
  * @param reg base register of device
- *
- * @return N/A
  */
 static void i2s_disable(uintptr_t reg)
 {
@@ -54,8 +50,6 @@ static void i2s_disable(uintptr_t reg)
  * @brief Reset i2s fifo
  *
  * @param reg base register of device
- *
- * @return N/A
  */
 static void i2s_reset_fifo(uintptr_t reg)
 {
@@ -120,8 +114,6 @@ static uint32_t i2s_get_audio_freq(uintptr_t reg)
  *
  * @param reg base register of device
  * @param irq_type irq type to be enabled one of I2S_EV_READY or I2S_EV_ERROR
- *
- * @return N/A
  */
 static void i2s_irq_enable(uintptr_t reg, int irq_type)
 {
@@ -137,8 +129,6 @@ static void i2s_irq_enable(uintptr_t reg, int irq_type)
  *
  * @param reg base register of device
  * @param irq_type irq type to be disabled one of I2S_EV_READY or I2S_EV_ERROR
- *
- * @return N/A
  */
 static void i2s_irq_disable(uintptr_t reg, int irq_type)
 {
@@ -153,8 +143,6 @@ static void i2s_irq_disable(uintptr_t reg, int irq_type)
  * @brief Clear all pending irqs
  *
  * @param reg base register of device
- *
- * @return N/A
  */
 static void i2s_clear_pending_irq(uintptr_t reg)
 {
@@ -165,15 +153,14 @@ static void i2s_clear_pending_irq(uintptr_t reg)
 
 /**
  * @brief fast data copy function,
- * each operation copies 32 bit data chunks
+ *
+ * Each operation copies 32 bit data chunks
  * This function copies data from fifo into user buffer
  *
  * @param dst memory destination where fifo data will be copied to
  * @param size amount of data to be copied
  * @param sample_width width of signle sample in bits
  * @param channels number of received channels
- *
- * @return N/A
  */
 static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
 			       int channels)
@@ -219,15 +206,14 @@ static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
 
 /**
  * @brief fast data copy function,
- * each operation copies 32 bit data chunks
+ *
+ * Each operation copies 32 bit data chunks
  * This function copies data from user buffer into fifo
  *
  * @param src memory from which data will be copied to fifo
  * @param size amount of data to be copied in bytes
  * @param sample_width width of signle sample in bits
  * @param channels number of received channels
- *
- * @return N/A
  */
 static void i2s_copy_to_fifo(uint8_t *src, size_t size, int sample_width,
 			     int channels)
