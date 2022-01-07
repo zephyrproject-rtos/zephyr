@@ -50,7 +50,6 @@ K_SEM_DEFINE(sync_sema, 0, 1);
  * Fiber makes all the test preparations: registers the interrupt handler,
  * gets the first timestamp and invokes the software interrupt.
  *
- * @return N/A
  */
 static void thread_one(void)
 {

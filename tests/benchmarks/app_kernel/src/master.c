@@ -77,10 +77,9 @@ int kbhit(void)
  *
  * @brief Prepares the test output
  *
- * @return N/A
- *
  * @param continuously   Run test till the user presses the key.
  * @param autorun        Expect user input.
+ *
  */
 void init_output(int *continuously, int *autorun)
 {
@@ -97,7 +96,6 @@ void init_output(int *continuously, int *autorun)
  *
  * @brief Close output for the test
  *
- * @return N/A
  */
 void output_close(void)
 {
@@ -112,7 +110,6 @@ void output_close(void)
  * @brief Perform all selected benchmarks
  * see config.h to select or to unselect
  *
- * @return N/A
  */
 void main(void)
 {
@@ -154,7 +151,6 @@ void main(void)
  *
  * @brief Dummy test
  *
- * @return N/A
  */
 void dummy_test(void)
 {
