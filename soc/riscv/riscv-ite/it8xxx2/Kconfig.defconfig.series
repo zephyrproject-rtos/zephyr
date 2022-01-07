@@ -88,6 +88,9 @@ config PECI_ITE_IT8XXX2
 	depends on PECI
 	select PECI_INTERRUPT_DRIVEN
 
+config PINCTRL
+	default y
+
 if ITE_IT8XXX2_INTC
 config NUM_IRQS
 	default 185
