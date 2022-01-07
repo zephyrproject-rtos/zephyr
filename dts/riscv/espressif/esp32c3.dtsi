@@ -120,6 +120,7 @@
 			interrupts = <UART0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART0_MODULE>;
+			peripheral = <0>;
 		};
 
 		uart1: uart@60010000 {
@@ -131,6 +132,7 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
+			peripheral = <1>;
 		};
 
 		timer0: counter@6001f000 {
