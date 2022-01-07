@@ -1280,6 +1280,7 @@ Power management:
         - mengxianglinx
         - gmarull
         - teburd
+        - greg-leach
     files:
         - include/pm/pm.h
         - samples/subsys/pm/
