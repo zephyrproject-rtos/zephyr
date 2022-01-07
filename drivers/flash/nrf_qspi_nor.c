@@ -64,7 +64,18 @@ struct qspi_nor_config {
 #define QSPI_BLOCK_SIZE SPI_NOR_BLOCK_SIZE
 
 /* instance 0 flash size in bytes */
+#if DT_INST_NODE_HAS_PROP(0, size_in_bytes)
+#define INST_0_BYTES (DT_INST_PROP(0, size_in_bytes))
+#elif DT_INST_NODE_HAS_PROP(0, size)
 #define INST_0_BYTES (DT_INST_PROP(0, size) / 8)
+#else
+#error "No size specified. 'size' or 'size-in-bytes' must be set"
+#endif
+
+BUILD_ASSERT(!(DT_INST_NODE_HAS_PROP(0, size_in_bytes) && DT_INST_NODE_HAS_PROP(0, size)),
+	     "Node " DT_NODE_PATH(DT_DRV_INST(0)) " has both size and size-in-bytes "
+	     "properties; use exactly one");
+
 
 /*
  * Determine a configuration value (INST_0_SCK_CFG) to be used to achieve the
