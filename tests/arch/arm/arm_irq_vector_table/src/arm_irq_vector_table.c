@@ -83,7 +83,6 @@ struct k_sem sem[3];
  *
  * @brief ISR for IRQ0
  *
- * @return N/A
  */
 
 void isr0(void)
@@ -97,7 +96,6 @@ void isr0(void)
  *
  * @brief ISR for IRQ1
  *
- * @return N/A
  */
 
 void isr1(void)
@@ -111,7 +109,6 @@ void isr1(void)
  *
  * @brief ISR for IRQ2
  *
- * @return N/A
  */
 
 void isr2(void)

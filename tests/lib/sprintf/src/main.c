@@ -943,7 +943,6 @@ void test_EOF(void)
  *
  * @brief Test entry point
  *
- * @return N/A
  */
 
 void test_main(void)
