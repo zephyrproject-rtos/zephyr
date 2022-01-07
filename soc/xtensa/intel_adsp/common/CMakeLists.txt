@@ -59,6 +59,7 @@ add_custom_target(
       copy ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}.elf ${KERNEL_REMAPPED}
 
   COMMAND ${ELF_FIX} ${CMAKE_OBJCOPY} ${KERNEL_REMAPPED}
+      ${CONFIG_XTENSA_CACHED_REGION} ${CONFIG_XTENSA_UNCACHED_REGION}
 
   # Extract modules for rimage
   COMMAND ${CMAKE_OBJCOPY}
