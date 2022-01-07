@@ -108,12 +108,9 @@ uint32_t sys_clock_elapsed(void)
 }
 
 /**
- *
  * @brief Stop announcing sys ticks into the kernel
  *
  * Disable the system ticks generation
- *
- * @return N/A
  */
 void sys_clock_disable(void)
 {
@@ -121,7 +118,7 @@ void sys_clock_disable(void)
 	hwtimer_set_silent_ticks(INT64_MAX);
 }
 
-/*
+/**
  * @brief Initialize system timer driver
  *
  * Enable the hw timer, setting its tick period, and setup its interrupt
