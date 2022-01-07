@@ -58,18 +58,6 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 	return xtensa_switch(switch_to, switched_from);
 }
 
-/* FIXME: we don't have a framework for including this from the SoC
- * layer, so we define it in the arch code here.
- */
-#if defined(CONFIG_SOC_FAMILY_INTEL_ADSP) && defined(CONFIG_KERNEL_COHERENCE)
-static inline bool arch_mem_coherent(void *ptr)
-{
-	size_t addr = (size_t) ptr;
-
-	return addr >= 0x80000000 && addr < 0xa0000000;
-}
-#endif
-
 #ifdef CONFIG_KERNEL_COHERENCE
 static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 					     void *old_switch_handle,

@@ -89,4 +89,21 @@ config XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	  handlers to the end of vector table, renaming them to
 	  _Level\LVL\()VectorHelper.
 
+config XTENSA_CACHED_REGION
+	int "Cached RPO mapping"
+	range 0 7
+	help
+	  A design trick on multi-core hardware is to map memory twice
+	  so that it can be seen in both (incoherent) cached mappings
+	  and a coherent "shared" area.  This specifies which 512M
+	  region (0-7, as defined by the Xtensa Region Protection
+	  Option) contains the "cached" mapping.
+
+config XTENSA_UNCACHED_REGION
+	int "Uncached RPO mapping"
+	range 0 7
+	help
+	  As for XTENSA_CACHED_REGION, this specifies which 512M
+	  region (0-7) contains the "uncached" mapping.
+
 endmenu

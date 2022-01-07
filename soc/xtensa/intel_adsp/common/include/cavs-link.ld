@@ -25,31 +25,25 @@ OUTPUT_ARCH(xtensa)
 
 ENTRY(rom_entry);
 
-/* DSP RAM regions (all of them) are mapped twice on the DSP: once in
- * a 512MB region from 0x80000000-0x9fffffff and again from
- * 0xa0000000-0xbfffffff.  The first mapping is set up to bypass the
- * L1 cache, so it must be used when multiprocessor coherence is
- * desired, where the latter mapping is best used for processor-local
- * data (e.g. stacks) or shared data that is managed with explicit
- * cache flush/invalidate operations.
+/* DSP RAM regions (all of them) are mapped twice on the DSP.  One
+ * mapping is set up to bypass the L1 cache, so it must be used when
+ * multiprocessor coherence is desired, where the latter mapping is
+ * best used for processor-local data (e.g. stacks) or shared data
+ * that is managed with explicit cache flush/invalidate operations.
  *
  * These macros will set up a segment start address correctly,
  * including alignment to a cache line.  Be sure to also emit the
- * section to ">ram :ram_phdr" or ">ucram :ucram_phdr" as
- * appropriate. (Forgetting the correct PHDR will actually work, as
- * the output tooling ignores it, but it will cause the linker to emit
- * 512MB of unused data into the output file!)
- *
- * (Note clumsy syntax because XCC doesn't understand the "~" operator)
+ * section to ">ram" or ">ucram" as appropriate, to prevent the linker
+ * from filling in 512MB of sparse zeros.
  */
 #ifdef CONFIG_KERNEL_COHERENCE
-#define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
-#define SEGSTART_UNCACHED (ALIGN(64) & 0xdfffffff) /* == ~0x20000000 */
+#define RPO_SET(addr, reg) ((addr & 0x1fffffff) | (reg << 29))
+#define SEGSTART_CACHED   RPO_SET(ALIGN(64), CONFIG_XTENSA_CACHED_REGION)
+#define SEGSTART_UNCACHED RPO_SET(ALIGN(64), CONFIG_XTENSA_UNCACHED_REGION)
 #else
 #define SEGSTART_CACHED   .
 #define SEGSTART_UNCACHED .
 #define ucram ram
-#define ucram_phdr ram_phdr
 #endif
 
 /* intlist.ld needs an IDT_LIST memory region */
@@ -129,7 +123,7 @@ MEMORY {
 	len = RAM_SIZE
 #ifdef CONFIG_KERNEL_COHERENCE
   ucram :
-	org = RAM_BASE - 0x20000000,
+	org = RPO_SET(RAM_BASE, CONFIG_XTENSA_UNCACHED_REGION),
 	len = RAM_SIZE
 #endif
 #ifdef CONFIG_GEN_ISR_TABLES
