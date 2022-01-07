@@ -182,8 +182,6 @@ static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
  *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
- *
- * @return N/A
  */
 static inline void atomic_clear_bit(atomic_t *target, int bit)
 {
@@ -200,8 +198,6 @@ static inline void atomic_clear_bit(atomic_t *target, int bit)
  *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
- *
- * @return N/A
  */
 static inline void atomic_set_bit(atomic_t *target, int bit)
 {
@@ -219,8 +215,6 @@ static inline void atomic_set_bit(atomic_t *target, int bit)
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  * @param val true for 1, false for 0.
- *
- * @return N/A
  */
 static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
 {
