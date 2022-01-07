@@ -24,7 +24,6 @@ zephyr_sources(
   heap-validate.c
   bitarray.c
   multi_heap.c
-  utf8.c
   )
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
@@ -47,6 +46,8 @@ zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 zephyr_sources_ifdef(CONFIG_SHARED_MULTI_HEAP shared_multi_heap.c)
 
 zephyr_sources_ifdef(CONFIG_HEAP_LISTENER heap_listener.c)
+
+zephyr_sources_ifdef(CONFIG_UTF8 utf8.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
