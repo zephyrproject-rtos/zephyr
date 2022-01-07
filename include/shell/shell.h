@@ -842,8 +842,6 @@ int shell_init(const struct shell *shell, const void *transport_config,
  *
  * @param shell Pointer to shell instance.
  * @param cb Callback called when uninitialization is completed.
- *
- * @return Standard error code.
  */
 void shell_uninit(const struct shell *shell, shell_uninit_cb_t cb);
 
