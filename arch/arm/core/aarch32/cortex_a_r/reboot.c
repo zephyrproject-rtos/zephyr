@@ -19,7 +19,6 @@
  *
  * This routine resets the processor.
  *
- * @return N/A
  */
 
 void __weak sys_arch_reboot(int type)

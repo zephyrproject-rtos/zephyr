@@ -413,7 +413,6 @@ _thread_irq_disabled:
  * - Kernel run-time exceptions
  * - System Calls (User mode)
  *
- * @return N/A
  */
 SECTION_FUNC(TEXT, z_arm_svc)
   /* Use EXC_RETURN state to find out if stack frame is on the
@@ -614,7 +613,6 @@ valid_syscall_id:
  * - IRQ offloading
  * - Kernel run-time exceptions
  *
- * @return N/A
  */
 SECTION_FUNC(TEXT, z_arm_svc)
 #if defined(CONFIG_USERSPACE)
