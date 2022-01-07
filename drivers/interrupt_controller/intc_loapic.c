@@ -183,7 +183,6 @@ void z_loapic_enable(unsigned char cpu_number)
 }
 
 /**
- *
  * @brief Dummy initialization function.
  *
  * The local APIC is initialized via z_loapic_enable() long before the
@@ -204,12 +203,9 @@ uint32_t z_loapic_irq_base(void)
 }
 
 /**
- *
  * @brief Set the vector field in the specified RTE
  *
  * This associates an IRQ with the desired vector in the IDT.
- *
- * @return N/A
  */
 __boot_func
 void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
@@ -241,14 +237,11 @@ void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 }
 
 /**
- *
  * @brief Enable an individual LOAPIC interrupt (IRQ)
  *
  * @param irq the IRQ number of the interrupt
  *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
- *
- * @return N/A
  */
 __pinned_func
 void z_loapic_irq_enable(unsigned int irq)
@@ -270,14 +263,11 @@ void z_loapic_irq_enable(unsigned int irq)
 }
 
 /**
- *
  * @brief Disable an individual LOAPIC interrupt (IRQ)
  *
  * @param irq the IRQ number of the interrupt
  *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
- *
- * @return N/A
  */
 __pinned_func
 void z_loapic_irq_disable(unsigned int irq)
