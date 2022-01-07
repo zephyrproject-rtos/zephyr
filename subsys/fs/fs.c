@@ -653,6 +653,11 @@ int fs_mount(struct fs_mount_t *mp)
 		return -EINVAL;
 	}
 
+	if (sys_dnode_is_linked(&mp->node)) {
+		LOG_ERR("file system already mounted!!");
+		return -EBUSY;
+	}
+
 	len = strlen(mp->mnt_point);
 
 	if ((len <= 1) || (mp->mnt_point[0] != '/')) {
@@ -725,7 +730,7 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	k_mutex_lock(&mutex, K_FOREVER);
 
-	if (mp->fs == NULL) {
+	if (!sys_dnode_is_linked(&mp->node)) {
 		LOG_ERR("fs not mounted (mp == %p)", mp);
 		goto unmount_err;
 	}
