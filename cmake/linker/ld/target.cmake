@@ -50,13 +50,10 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     set(template_script_defines ${linker_pass_define})
     list(TRANSFORM template_script_defines PREPEND "-D")
 
-    # Different generators deal with depfiles differently.
-    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-      # Note that the IMPLICIT_DEPENDS option is currently supported only
-      # for Makefile generators and will be ignored by other generators.
-      set(linker_script_dep IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
-    elseif(CMAKE_GENERATOR STREQUAL "Ninja")
-      # Using DEPFILE with other generators than Ninja is an error.
+    # Only Ninja and Makefile generators support DEPFILE.
+    if((CMAKE_GENERATOR STREQUAL "Ninja")
+       OR (CMAKE_GENERATOR MATCHES "Makefiles")
+    )
       set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_script_gen}.dep)
     else()
       # TODO: How would the linker script dependencies work for non-linker
