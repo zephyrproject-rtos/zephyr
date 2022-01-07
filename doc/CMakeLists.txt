@@ -102,54 +102,15 @@ set_target_properties(
 #-------------------------------------------------------------------------------
 # kconfig
 
-set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
-list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
-file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
-
-include(${ZEPHYR_BASE}/cmake/extensions.cmake)
-include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
-
-foreach(module_name ${ZEPHYR_MODULE_NAMES})
-  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
-  list(APPEND
-       ZEPHYR_KCONFIG_MODULES
-       "ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR=${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR}"
-  )
-
-  if(ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG)
-    list(APPEND
-         ZEPHYR_KCONFIG_MODULES
-         "ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG=${ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG}"
-    )
-  endif()
-endforeach()
-
-if(WIN32)
-  set(SEP $<SEMICOLON>)
-else()
-  set(SEP :)
-endif()
-
 set(GEN_KCONFIG_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_kconfig_rest.py)
 
 add_custom_target(
   kconfig
   COMMAND ${CMAKE_COMMAND} -E make_directory ${DOCS_SRC_DIR}/reference/kconfig
   COMMAND ${CMAKE_COMMAND} -E env
-  PYTHONPATH=${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}
-  ZEPHYR_BASE=${ZEPHYR_BASE}
-  srctree=${ZEPHYR_BASE}
-  BOARD_DIR=boards/*/*
-  ARCH=*
-  ARCH_DIR=arch
-  SOC_DIR=soc
-  TOOLCHAIN_HAS_NEWLIB=y
-  KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
-  KCONFIG_WARN_UNDEF=y
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
-  KCONFIG_DOC_MODE=1
-  ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} ${GEN_KCONFIG_REST_SCRIPT} ${DOCS_SRC_DIR}/reference/kconfig/
+    ${PYTHON_EXECUTABLE} ${GEN_KCONFIG_REST_SCRIPT}
+      ${DOCS_SRC_DIR}/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch

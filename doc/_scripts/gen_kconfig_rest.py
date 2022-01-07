@@ -18,8 +18,18 @@ import os
 import pathlib
 import re
 import sys
+from tempfile import TemporaryDirectory
 import textwrap
 
+ZEPHYR_BASE = pathlib.Path(__file__).resolve().parents[2]
+
+SCRIPTS = ZEPHYR_BASE / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+KCONFIGLIB = SCRIPTS / "kconfig"
+sys.path.insert(0, str(KCONFIGLIB))
+
+import zephyr_module
 import kconfiglib
 
 import gen_helpers
@@ -86,6 +96,54 @@ def main():
         write_sym_pages()
 
 
+def load_kconfig(kconfig_path):
+    # Loads the Kconfig file at 'kconfig_path'
+
+    with TemporaryDirectory() as td:
+        projects = zephyr_module.west_projects()
+        projects = [p.posixpath for p in projects["projects"]] if projects else None
+        modules = zephyr_module.parse_modules(ZEPHYR_BASE, projects)
+
+        # generate Kconfig.modules file
+        kconfig = ""
+        for module in modules:
+            kconfig += zephyr_module.process_kconfig(module.project, module.meta)
+
+        with open(pathlib.Path(td) / "Kconfig.modules", "w") as f:
+            f.write(kconfig)
+
+        # base environment
+        os.environ["ZEPHYR_BASE"] = str(ZEPHYR_BASE)
+        os.environ["srctree"] = str(ZEPHYR_BASE)
+        os.environ["KCONFIG_DOC_MODE"] = "1"
+        os.environ["KCONFIG_WARN_UNDEF"] = "y"
+        os.environ["KCONFIG_BINARY_DIR"] = td
+
+        # include all archs and boards
+        os.environ["ARCH_DIR"] = "arch"
+        os.environ["ARCH"] = "*"
+        os.environ["BOARD_DIR"] = "boards/*/*"
+
+        # insert external Kconfigs to the environment
+        for module in modules:
+            try:
+                kconfig = module.meta["build"]["kconfig"]
+            except KeyError:
+                continue
+
+            kconfig = str(pathlib.Path(module.project) / kconfig)
+            name = module.meta["name"].upper()
+
+            os.environ[f"ZEPHYR_{name}_KCONFIG"] = kconfig
+
+        # insert local Kconfigs to the environment
+        for kconfig in ZEPHYR_BASE.glob("modules/*/Kconfig"):
+            name = kconfig.parent.name.replace("-", "_").upper()
+            os.environ[f"ZEPHYR_{name}_KCONFIG"] = str(kconfig)
+
+        return kconfiglib.Kconfig(kconfig_path, suppress_traceback=True)
+
+
 def init():
     # Initializes these globals:
     #
@@ -129,7 +187,7 @@ def init():
 
     args = parse_args()
 
-    kconf = kconfiglib.Kconfig(args.kconfig, suppress_traceback=True)
+    kconf = load_kconfig(args.kconfig)
     out_dir = args.out_dir
     index_desc = args.index_desc
     separate_all_index = args.separate_all_index
