@@ -128,6 +128,31 @@ struct coredump_mem_hdr_t {
 	uintptr_t	end;
 } __packed;
 
+typedef void (*coredump_backend_start_t)(void);
+typedef void (*coredump_backend_end_t)(void);
+typedef void (*coredump_backend_buffer_output_t)(uint8_t *buf, size_t buflen);
+typedef int (*coredump_backend_query_t)(enum coredump_query_id query_id,
+					void *arg);
+typedef int (*coredump_backend_cmd_t)(enum coredump_cmd_id cmd_id,
+				      void *arg);
+
+struct coredump_backend_api {
+	/* Signal to backend of the start of coredump. */
+	coredump_backend_start_t		start;
+
+	/* Signal to backend of the end of coredump. */
+	coredump_backend_end_t		end;
+
+	/* Raw buffer output */
+	coredump_backend_buffer_output_t	buffer_output;
+
+	/* Perform query on backend */
+	coredump_backend_query_t		query;
+
+	/* Perform command on backend */
+	coredump_backend_cmd_t			cmd;
+};
+
 void coredump(unsigned int reason, const z_arch_esf_t *esf,
 	      struct k_thread *thread);
 void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
