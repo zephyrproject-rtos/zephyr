@@ -28,6 +28,11 @@ config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 	  Core dump is saved to a flash partition with DTS alias
 	  "coredump-partition".
 
+config DEBUG_COREDUMP_BACKEND_OTHER
+	bool "Backend subsystem for coredump defined out of tree"
+	help
+	  Core dump is done via custom mechanism defined out of tree
+
 endchoice
 
 choice
