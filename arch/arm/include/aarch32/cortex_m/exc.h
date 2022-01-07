@@ -93,8 +93,6 @@ static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t
  * Set PendSV priority to lowest possible.
  *
  * Enable fault exceptions.
- *
- * @return N/A
  */
 static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
@@ -167,8 +165,6 @@ static ALWAYS_INLINE void z_arm_exc_setup(void)
  * @brief Clear Fault exceptions
  *
  * Clear out exceptions for Mem, Bus, Usage and Hard Faults
- *
- * @return N/A
  */
 static ALWAYS_INLINE void z_arm_clear_faults(void)
 {

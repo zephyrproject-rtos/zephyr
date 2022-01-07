@@ -42,7 +42,6 @@ GTEXT(z_arm_int_exit)
  * z_arm_pendsv()) and pends the PendSV exception if so: the latter will
  * perform the context switch itself.
  *
- * @return N/A
  */
 SECTION_FUNC(TEXT, _isr_wrapper)
 

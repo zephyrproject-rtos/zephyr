@@ -35,8 +35,6 @@ GTEXT(arch_cpu_atomic_idle)
  * Only called by arch_kernel_init(). Sets SEVONPEND bit once for the system's
  * duration.
  *
- * @return N/A
- *
  * C function prototype:
  *
  * void z_arm_cpu_idle_init(void);

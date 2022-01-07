@@ -353,7 +353,8 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason.
+ *
  */
 static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 {
@@ -565,7 +566,6 @@ static uint32_t usage_fault(const z_arch_esf_t *esf)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void secure_fault(const z_arch_esf_t *esf)
 {
@@ -604,7 +604,6 @@ static void secure_fault(const z_arch_esf_t *esf)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
 {
@@ -725,7 +724,6 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void reserved_exception(const z_arch_esf_t *esf, int fault)
 {
@@ -1057,7 +1055,6 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
  *
  * Turns on the desired hardware faults.
  *
- * @return N/A
  */
 void z_arm_fault_init(void)
 {
