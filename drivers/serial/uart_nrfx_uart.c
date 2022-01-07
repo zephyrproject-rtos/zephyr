@@ -192,7 +192,8 @@ static void event_txdrdy_clear(void)
  * @param dev UART device struct
  * @param baudrate Baud rate
  *
- * @return N/A
+ * @retval 0 on success.
+ * @retval -EINVAL for invalid baudrate.
  */
 
 static int baudrate_set(const struct device *dev, uint32_t baudrate)
@@ -1001,8 +1002,6 @@ static void uart_nrfx_irq_callback_set(const struct device *dev,
  * This simply calls the callback function, if one exists.
  *
  * @param arg Argument to ISR.
- *
- * @return N/A
  */
 static void uart_nrfx_isr(const struct device *dev)
 {

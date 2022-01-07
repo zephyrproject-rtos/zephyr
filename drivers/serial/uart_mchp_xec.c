@@ -516,8 +516,6 @@ static int uart_xec_fifo_read(const struct device *dev, uint8_t *rx_data,
  * @brief Enable TX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xec_irq_tx_enable(const struct device *dev)
 {
@@ -534,8 +532,6 @@ static void uart_xec_irq_tx_enable(const struct device *dev)
  * @brief Disable TX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xec_irq_tx_disable(const struct device *dev)
 {
@@ -591,8 +587,6 @@ static int uart_xec_irq_tx_complete(const struct device *dev)
  * @brief Enable RX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xec_irq_rx_enable(const struct device *dev)
 {
@@ -609,8 +603,6 @@ static void uart_xec_irq_rx_enable(const struct device *dev)
  * @brief Disable RX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xec_irq_rx_disable(const struct device *dev)
 {
@@ -645,8 +637,6 @@ static int uart_xec_irq_rx_ready(const struct device *dev)
  * @brief Enable error interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_xec_irq_err_enable(const struct device *dev)
 {
@@ -720,8 +710,6 @@ static int uart_xec_irq_update(const struct device *dev)
  *
  * @param dev UART device struct
  * @param cb Callback function pointer.
- *
- * @return N/A
  */
 static void uart_xec_irq_callback_set(const struct device *dev,
 				      uart_irq_callback_user_data_t cb,
@@ -742,8 +730,6 @@ static void uart_xec_irq_callback_set(const struct device *dev,
  * This simply calls the callback function, if one exists.
  *
  * @param arg Argument to ISR.
- *
- * @return N/A
  */
 static void uart_xec_isr(const struct device *dev)
 {
