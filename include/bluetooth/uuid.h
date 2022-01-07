@@ -482,6 +482,51 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MICS \
 	BT_UUID_DECLARE_16(BT_UUID_MICS_VAL)
+/** @def BT_UUID_ASCS_VAL
+ *  @brief Audio Stream Control Service value
+ */
+#define BT_UUID_ASCS_VAL 0x184E
+/** @def BT_UUID_ASCS
+ *  @brief Audio Stream Control Service
+ */
+#define BT_UUID_ASCS \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_VAL)
+/** @def BT_UUID_BASS_VAL
+ *  @brief Broadcast Audio Scan Service value
+ */
+#define BT_UUID_BASS_VAL 0x184F
+/** @def BT_UUID_BASS
+ *  @brief Broadcast Audio Scan Service
+ */
+#define BT_UUID_BASS \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_VAL)
+/** @def BT_UUID_PACS_VAL
+ *  @brief Published Audio Capabilities Service value
+ */
+#define BT_UUID_PACS_VAL 0x1850
+/** @def BT_UUID_PACS
+ *  @brief Published Audio Capabilities Service
+ */
+#define BT_UUID_PACS \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_VAL)
+/** @def BT_UUID_BASIC_AUDIO_VAL
+ *  @brief Basic Audio Announcement Service value
+ */
+#define BT_UUID_BASIC_AUDIO_VAL 0x1851
+/** @def BT_UUID_BASIC_AUDIO
+ *  @brief Basic Audio Announcement Service
+ */
+#define BT_UUID_BASIC_AUDIO \
+	BT_UUID_DECLARE_16(BT_UUID_BASIC_AUDIO_VAL)
+/** @def BT_UUID_BROADCAST_AUDIO_VAL
+ *  @brief Broadcast Audio Announcement Service value
+ */
+#define BT_UUID_BROADCAST_AUDIO_VAL 0x1852
+/** @def BT_UUID_BROADCAST_AUDIO
+ *  @brief Broadcast Audio Announcement Service
+ */
+#define BT_UUID_BROADCAST_AUDIO \
+	BT_UUID_DECLARE_16(BT_UUID_BROADCAST_AUDIO_VAL)
 /** @def BT_UUID_GATT_PRIMARY_VAL
  *  @brief GATT Primary Service UUID value
  */
@@ -1790,6 +1835,105 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MICS_MUTE \
 	BT_UUID_DECLARE_16(BT_UUID_MICS_MUTE_VAL)
+/** @def BT_UUID_ASCS_ASE_SNK_VAL
+ *  @brief Audio Stream Endpoint Sink Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_SNK_VAL 0x2BC4
+/** @def BT_UUID_ASCS_ASE_SNK
+ *  @brief Audio Stream Endpoint Sink Characteristic
+ */
+#define BT_UUID_ASCS_ASE_SNK \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_SNK_VAL)
+/** @def BT_UUID_ASCS_ASE_SRC_VAL
+ *  @brief Audio Stream Endpoint Source Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_SRC_VAL 0x2BC5
+/** @def BT_UUID_ASCS_ASE_SNK
+ *  @brief Audio Stream Endpoint Source Characteristic
+ */
+#define BT_UUID_ASCS_ASE_SRC \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_SRC_VAL)
+/** @def BT_UUID_ASCS_ASE_CP_VAL
+ *  @brief Audio Stream Endpoint Control Point Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_CP_VAL 0x2BC6
+/** @def BT_UUID_ASCS_ASE_CP
+ *  @brief Audio Stream Endpoint Control Point Characteristic
+ */
+#define BT_UUID_ASCS_ASE_CP \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_CP_VAL)
+/** @def BT_UUID_BASS_CONTROL_POINT_VAL
+ *  @brief Broadcast Audio Scan Service Scan State value
+ */
+#define BT_UUID_BASS_CONTROL_POINT_VAL 0x2BC7
+/** @def BT_UUID_BASS_CONTROL_POINT
+ *  @brief Broadcast Audio Scan Service Scan State
+ */
+#define BT_UUID_BASS_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_CONTROL_POINT_VAL)
+/** @def BT_UUID_BASS_RECV_STATE_VAL
+ *  @brief Broadcast Audio Scan Service Receive State value
+ */
+#define BT_UUID_BASS_RECV_STATE_VAL 0x2BC8
+/** @def BT_UUID_BASS_RECV_STATE
+ *  @brief Broadcast Audio Scan Service Receive State
+ */
+#define BT_UUID_BASS_RECV_STATE \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_RECV_STATE_VAL)
+/** @def BT_UUID_PACS_SNK_VAL
+ *  @brief Sink PAC Characteristic value
+ */
+#define BT_UUID_PACS_SNK_VAL 0x2BC9
+/** @def BT_UUID_PACS_SNK
+ *  @brief Sink PAC Characteristic
+ */
+#define BT_UUID_PACS_SNK \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SNK_VAL)
+/** @def BT_UUID_PACS_SNK_LOC_VAL
+ *  @brief Sink PAC Locations Characteristic value
+ */
+#define BT_UUID_PACS_SNK_LOC_VAL 0x2BCA
+/** @def BT_UUID_PACS_SNK_LOC
+ *  @brief Sink PAC Locations Characteristic
+ */
+#define BT_UUID_PACS_SNK_LOC \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SNK_LOC_VAL)
+/** @def BT_UUID_PACS_SRC_VAL
+ *  @brief Source PAC Characteristic value
+ */
+#define BT_UUID_PACS_SRC_VAL 0x2BCB
+/** @def BT_UUID_PACS_SRC
+ *  @brief Source PAC Characteristic
+ */
+#define BT_UUID_PACS_SRC \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SRC_VAL)
+/** @def BT_UUID_PACS_SRC_LOC_VAL
+ *  @brief Source PAC Locations Characteristic value
+ */
+#define BT_UUID_PACS_SRC_LOC_VAL 0x2BCC
+/** @def BT_UUID_PACS_SRC_LOC
+ *  @brief Source PAC Locations Characteristic
+ */
+#define BT_UUID_PACS_SRC_LOC \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SRC_LOC_VAL)
+/** @def BT_UUID_PACS_CONTEXT_VAL
+ *  @brief Available Audio Contexts Characteristic value
+ */
+#define BT_UUID_PACS_CONTEXT_VAL 0x2BCD
+/** @def BT_UUID_PACS_CONTEXT
+ *  @brief Available Audio Contexts Characteristic
+ */
+#define BT_UUID_PACS_CONTEXT \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_CONTEXT_VAL)
+/** @def BT_UUID_PACS_SUPPORTED_CONTEXT_VAL
+ *  @brief Supported Audio Context Characteristic value
+ */
+#define BT_UUID_PACS_SUPPORTED_CONTEXT_VAL 0x2BCE
+/** @def BT_UUID_PACS_SUPPORTED_CONTEXT
+ *  @brief Supported Audio Context Characteristic
+ */
+#define BT_UUID_PACS_SUPPORTED_CONTEXT \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SUPPORTED_CONTEXT_VAL)
 /*
  * Protocol UUIDs
  */
