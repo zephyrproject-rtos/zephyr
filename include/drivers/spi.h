@@ -297,7 +297,9 @@ struct spi_config {
 #define SPI_CONFIG_DT(node_id, operation_, delay_)			\
 	{								\
 		.frequency = DT_PROP(node_id, spi_max_frequency),	\
-		.operation = (operation_),				\
+		.operation = (operation_) |				\
+			DT_PROP(node_id, duplex) |			\
+			DT_PROP(node_id, frame_format),			\
 		.slave = DT_REG_ADDR(node_id),				\
 		.cs = COND_CODE_1(					\
 			DT_SPI_DEV_HAS_CS_GPIOS(node_id),		\
