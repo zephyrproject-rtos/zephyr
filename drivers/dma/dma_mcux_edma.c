@@ -363,6 +363,29 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
+static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+
+	if (!data->busy) {
+		return -EINVAL;
+	}
+	EDMA_StopTransfer(DEV_EDMA_HANDLE(dev, channel));
+	return 0;
+}
+
+static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+
+	if (!data->busy) {
+		return -EINVAL;
+	}
+	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
+	return 0;
+}
+
+
 static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 				uint32_t src, uint32_t dst, size_t size)
 {
@@ -419,6 +442,8 @@ static const struct dma_driver_api dma_mcux_edma_api = {
 	.config = dma_mcux_edma_configure,
 	.start = dma_mcux_edma_start,
 	.stop = dma_mcux_edma_stop,
+	.suspend = dma_mcux_edma_suspend,
+	.resume = dma_mcux_edma_resume,
 	.get_status = dma_mcux_edma_get_status,
 	.chan_filter = dma_mcux_edma_channel_filter,
 };
