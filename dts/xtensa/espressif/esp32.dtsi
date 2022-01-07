@@ -105,6 +105,7 @@
 			label = "UART_0";
 			clocks = <&rtc ESP32_UART0_MODULE>;
 			status = "disabled";
+			peripheral = <0>;
 		};
 
 		uart1: uart@3ff50000 {
@@ -115,6 +116,7 @@
 			label = "UART_1";
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			status = "disabled";
+			peripheral = <1>;
 		};
 
 		uart2: uart@3ff6e000 {
@@ -125,6 +127,7 @@
 			label = "UART_2";
 			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
+			peripheral = <2>;
 		};
 
 		pinmux: pinmux@3ff49000 {
