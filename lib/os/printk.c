@@ -55,8 +55,6 @@ int (*_char_out)(int) = arch_printk_char_out;
  * To be called by the platform's console driver at init time. Installs a
  * routine that outputs one ASCII character at a time.
  * @param fn putc routine to install
- *
- * @return N/A
  */
 void __printk_hook_install(int (*fn)(int))
 {
@@ -202,8 +200,6 @@ static inline void z_vrfy_k_str_out(char *c, size_t n)
  * otherwise 'ERR' is printed. Full 64-bit values may be printed with %llx.
  *
  * @param fmt formatted string to output
- *
- * @return N/A
  */
 
 void printk(const char *fmt, ...)
