@@ -98,12 +98,9 @@ int cpp_semaphore::wait(int timeout)
 }
 
 /**
- *
  * @brief Signal a semaphore
  *
  * This routine signals the specified semaphore.
- *
- * @return N/A
  */
 void cpp_semaphore::give(void)
 {

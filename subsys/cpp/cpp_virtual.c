@@ -14,8 +14,6 @@
  *
  * This routine is needed for linking C++ code that uses pure virtual
  * functions.
- *
- * @return N/A
  */
 void __cxa_pure_virtual(void)
 {
