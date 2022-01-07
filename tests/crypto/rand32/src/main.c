@@ -24,8 +24,6 @@
  *
  * @brief Regression test's entry point
  *
- *
- * @return N/A
  */
 
 void test_rand32(void)
