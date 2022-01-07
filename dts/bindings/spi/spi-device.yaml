@@ -18,6 +18,7 @@ properties:
       required: true
     duplex:
       type: int
+      default: 0
       required: false
       description: |
         Duplex mode, full or half. By default it's always full duplex thus 0
