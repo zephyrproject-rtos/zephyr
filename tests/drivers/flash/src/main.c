@@ -11,9 +11,15 @@
 #include <storage/flash_map.h>
 
 #if (CONFIG_NORDIC_QSPI_NOR - 0)
-#define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
+#define NORDIC_QSPI_NOR_NODE DT_INST(0, nordic_qspi_nor)
+#define FLASH_DEVICE DT_LABEL(NORDIC_QSPI_NOR_NODE)
 #define FLASH_TEST_REGION_OFFSET 0xff000
-#define TEST_AREA_MAX DT_PROP(DT_INST(0, nordic_qspi_nor), size)
+
+#if DT_NODE_HAS_PROP(NORDIC_QSPI_NOR_NODE, size_in_bytes)
+#define TEST_AREA_MAX (DT_PROP(DT_INST(0, nordic_qspi_nor), size_in_bytes))
+#else
+#define TEST_AREA_MAX DT_PROP(DT_INST(0, nordic_qspi_nor), size * 8)
+#endif
 
 #elif defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR)
 
