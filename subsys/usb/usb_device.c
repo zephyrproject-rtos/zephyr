@@ -232,8 +232,6 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
 
 /*
  * @brief send next chunk of data (possibly 0 bytes) to host
- *
- * @return N/A
  */
 static void usb_data_to_host(void)
 {
@@ -274,8 +272,6 @@ static void usb_data_to_host(void)
  *
  * @param [in] ep        Endpoint address
  * @param [in] ep_status Endpoint status
- *
- * @return N/A
  */
 static void usb_handle_control_transfer(uint8_t ep,
 					enum usb_dc_ep_cb_status_code ep_status)
@@ -398,8 +394,6 @@ static void usb_handle_control_transfer(uint8_t ep,
  *
  * @param [in] type       Type of request, e.g. USB_REQTYPE_TYPE_STANDARD
  * @param [in] handler    Callback function pointer
- *
- * @return N/A
  */
 static void usb_register_request_handler(int32_t type,
 					 usb_request_handler handler)

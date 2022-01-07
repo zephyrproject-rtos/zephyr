@@ -299,8 +299,6 @@ done:
  *
  * @param ep        Endpoint address.
  * @param ep_status Endpoint status code.
- *
- * @return  N/A.
  */
 static void cdc_acm_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
@@ -442,8 +440,6 @@ static void cdc_interface_config(struct usb_desc_header *head,
  * IRQ.
  *
  * @param work Address of work item.
- *
- * @return N/A.
  */
 static void cdc_acm_irq_callback_work_handler(struct k_work *work)
 {
@@ -549,8 +545,6 @@ static int cdc_acm_fifo_read(const struct device *dev, uint8_t *rx_data,
  * @brief Enable TX interrupt
  *
  * @param dev CDC ACM device struct.
- *
- * @return N/A.
  */
 static void cdc_acm_irq_tx_enable(const struct device *dev)
 {
@@ -567,8 +561,6 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
  * @brief Disable TX interrupt
  *
  * @param dev CDC ACM device struct.
- *
- * @return N/A.
  */
 static void cdc_acm_irq_tx_disable(const struct device *dev)
 {
@@ -599,8 +591,6 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
  * @brief Enable RX interrupt
  *
  * @param dev CDC ACM device struct.
- *
- * @return N/A
  */
 static void cdc_acm_irq_rx_enable(const struct device *dev)
 {
@@ -617,8 +607,6 @@ static void cdc_acm_irq_rx_enable(const struct device *dev)
  * @brief Disable RX interrupt
  *
  * @param dev CDC ACM device struct.
- *
- * @return N/A.
  */
 static void cdc_acm_irq_rx_disable(const struct device *dev)
 {
@@ -684,8 +672,6 @@ static int cdc_acm_irq_update(const struct device *dev)
  *
  * @param dev CDC ACM device struct.
  * @param cb  Callback function pointer.
- *
- * @return N/A
  */
 static void cdc_acm_irq_callback_set(const struct device *dev,
 				     uart_irq_callback_user_data_t cb,
@@ -722,8 +708,6 @@ int cdc_acm_dte_rate_callback_set(const struct device *dev,
  *
  * @param dev             CDC ACM device struct.
  * @param baudrate        Baud rate.
- *
- * @return N/A.
  */
 static void cdc_acm_baudrate_set(const struct device *dev, uint32_t baudrate)
 {
@@ -741,7 +725,8 @@ static void cdc_acm_baudrate_set(const struct device *dev, uint32_t baudrate)
  * @param dev CDC ACM device struct.
  * @param ep_status Endpoint status code.
  *
- * @return  N/A.
+ * @retval 0 on success.
+ * @retval -EIO if timed out.
  */
 static int cdc_acm_send_notification(const struct device *dev,
 				     uint16_t serial_state)
