@@ -108,11 +108,7 @@ const __imx_boot_ivt_section ivt image_vector_table = {
 #endif
 
 /**
- *
  * @brief Initialize the system clock
- *
- * @return N/A
- *
  */
 static ALWAYS_INLINE void clock_init(void)
 {
