@@ -25,8 +25,6 @@
  * @brief Prepare to and run C code
  *
  * This routine prepares for the execution of and runs C code.
- *
- * @return N/A
  */
 
 void _PrepC(void)
