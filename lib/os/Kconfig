@@ -151,6 +151,12 @@ config REBOOT
 	  needed to perform a "safe" reboot (e.g. to stop the system clock before
 	  issuing a reset).
 
+config UTF8
+	bool "UTF-8 string operation supported"
+	help
+	  Enable the utf8 API. The API implements functions to specifically
+	  handle UTF-8 encoded strings.
+
 rsource "Kconfig.cbprintf"
 
 endmenu
