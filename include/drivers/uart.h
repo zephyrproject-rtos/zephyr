@@ -867,6 +867,7 @@ static inline void z_impl_uart_irq_tx_enable(const struct device *dev)
 	}
 #endif
 }
+
 /**
  * @brief Disable TX interrupt in IER.
  *
@@ -1049,9 +1050,6 @@ static inline void z_impl_uart_irq_err_enable(const struct device *dev)
  * @brief Disable error interrupt.
  *
  * @param dev UART device instance.
- *
- * @retval 1 If an IRQ is ready.
- * @retval 0 Otherwise.
  */
 __syscall void uart_irq_err_disable(const struct device *dev);
 

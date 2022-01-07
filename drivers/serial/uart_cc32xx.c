@@ -259,8 +259,6 @@ static void uart_cc32xx_irq_callback_set(const struct device *dev,
  * received.
  *
  * @param arg Argument to ISR.
- *
- * @return N/A
  */
 static void uart_cc32xx_isr(const struct device *dev)
 {

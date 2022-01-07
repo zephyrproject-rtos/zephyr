@@ -262,8 +262,6 @@ static void endtx_isr(const struct device *dev)
  * This simply calls the callback function, if one exists.
  *
  * @param arg Argument to ISR.
- *
- * @return N/A
  */
 static void uarte_nrfx_isr_int(void *arg)
 {

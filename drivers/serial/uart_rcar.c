@@ -489,8 +489,6 @@ static void uart_rcar_irq_callback_set(const struct device *dev,
  * This simply calls the callback function, if one exists.
  *
  * @param arg Argument to ISR.
- *
- * @return N/A
  */
 void uart_rcar_isr(const struct device *dev)
 {
