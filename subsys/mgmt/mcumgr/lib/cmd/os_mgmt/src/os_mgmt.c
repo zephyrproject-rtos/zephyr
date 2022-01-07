@@ -26,7 +26,7 @@
 static int
 os_mgmt_echo(struct mgmt_ctxt *ctxt)
 {
-	char echo_buf[128];
+	char echo_buf[CONFIG_OS_MGMT_ECHO_LENGTH + 1];
 	CborError err;
 
 	const struct cbor_attr_t attrs[2] = {
@@ -35,14 +35,14 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 			.type = CborAttrTextStringType,
 			.addr.string = echo_buf,
 			.nodefault = 1,
-			.len = sizeof(echo_buf),
+			.len = CONFIG_OS_MGMT_ECHO_LENGTH,
 		},
 		[1] = {
 			.attribute = NULL
 		}
 	};
 
-	echo_buf[0] = '\0';
+	echo_buf[CONFIG_OS_MGMT_ECHO_LENGTH] = '\0';
 
 	err = cbor_read_object(&ctxt->it, attrs);
 	if (err != 0) {
@@ -50,8 +50,8 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 	}
 
 	err = cbor_encode_text_stringz(&ctxt->encoder, "r")				||
-	      cbor_encode_text_string(&ctxt->encoder, echo_buf, strlen(echo_buf));
-
+	      cbor_encode_text_string(&ctxt->encoder, echo_buf,
+				      strnlen(echo_buf, CONFIG_OS_MGMT_ECHO_LENGTH));
 
 	return (err == 0) ? 0 : MGMT_ERR_ENOMEM;
 }

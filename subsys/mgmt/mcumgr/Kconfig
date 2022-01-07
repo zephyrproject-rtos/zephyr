@@ -312,6 +312,17 @@ endif
 config OS_MGMT_ECHO
 	bool "Support for echo command"
 	default y
+
+if OS_MGMT_ECHO
+
+config OS_MGMT_ECHO_LENGTH
+	int "Echo buffer"
+	default 128
+	help
+	  Size of echo buffer in bytes.
+
+endif
+
 endif
 
 
