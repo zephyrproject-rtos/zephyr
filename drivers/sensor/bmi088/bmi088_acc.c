@@ -326,7 +326,7 @@ static int bmi088_acc_init(const struct device *dev) {
 
     uint8_t conf = (uint8_t) (0xff & (osr << 4 | odr));
     if (bmi088_acc_byte_write(dev, ACC_CONF, conf) < 0) {
-        LOG_DBG("Failed to set acc's ODR and OSR to %d", conf);
+        LOG_ERR("Failed to set acc's ODR and OSR to %d", conf);
         return -EIO;
     }
 
