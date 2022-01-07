@@ -89,6 +89,7 @@
 			interrupts = <UART0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART0_MODULE>;
+			peripheral = <0>;
 		};
 
 		uart1: uart@3f410000 {
@@ -100,6 +101,7 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
+			peripheral = <1>;
 		};
 
 		pinmux: pinmux@3f409000 {
