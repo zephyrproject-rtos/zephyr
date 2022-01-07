@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include "test_mslab.h"
 
-/** TESTPOINT: Statically define and initialize a memory slab*/
+/* TESTPOINT: Statically define and initialize a memory slab*/
 K_MEM_SLAB_DEFINE(kmslab, BLK_SIZE, BLK_NUM, BLK_ALIGN);
 static char __aligned(BLK_ALIGN) tslab[BLK_SIZE * BLK_NUM];
 static struct k_mem_slab mslab;
@@ -18,23 +18,23 @@ void tmslab_alloc_free(void *data)
 	void *block[BLK_NUM];
 
 	(void)memset(block, 0, sizeof(block));
-	/**
+	/*
 	 * TESTPOINT: The memory slab's buffer contains @a slab_num_blocks
 	 * memory blocks that are @a slab_block_size bytes long.
 	 */
 	for (int i = 0; i < BLK_NUM; i++) {
-		/** TESTPOINT: Allocate memory from a memory slab.*/
-		/** TESTPOINT: @retval 0 Memory allocated.*/
+		/* TESTPOINT: Allocate memory from a memory slab.*/
+		/* TESTPOINT: @retval 0 Memory allocated.*/
 		zassert_true(k_mem_slab_alloc(pslab, &block[i], K_NO_WAIT) == 0,
 			     NULL);
-		/**
+		/*
 		 * TESTPOINT: The block address area pointed at by @a mem is set
 		 * to the starting address of the memory block.
 		 */
 		zassert_not_null(block[i], NULL);
 	}
 	for (int i = 0; i < BLK_NUM; i++) {
-		/** TESTPOINT: Free memory allocated from a memory slab.*/
+		/* TESTPOINT: Free memory allocated from a memory slab.*/
 		k_mem_slab_free(pslab, &block[i]);
 	}
 }
@@ -47,7 +47,7 @@ static void tmslab_alloc_align(void *data)
 	for (int i = 0; i < BLK_NUM; i++) {
 		zassert_true(k_mem_slab_alloc(pslab, &block[i], K_NO_WAIT) == 0,
 			     NULL);
-		/**
+		/*
 		 * TESTPOINT: To ensure that each memory block is similarly
 		 * aligned to this boundary
 		 */
@@ -70,16 +70,16 @@ static void tmslab_alloc_timeout(void *data)
 			     NULL);
 	}
 
-	/** TESTPOINT: Use K_NO_WAIT to return without waiting*/
-	/** TESTPOINT: -ENOMEM Returned without waiting.*/
+	/* TESTPOINT: Use K_NO_WAIT to return without waiting*/
+	/* TESTPOINT: -ENOMEM Returned without waiting.*/
 	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, K_NO_WAIT), -ENOMEM,
 		      NULL);
 	tms = k_uptime_get();
 	err = k_mem_slab_alloc(pslab, &block_fail, K_MSEC(TIMEOUT));
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		/** TESTPOINT: -EAGAIN Waiting period timed out*/
+		/* TESTPOINT: -EAGAIN Waiting period timed out*/
 		zassert_equal(err, -EAGAIN, NULL);
-		/**
+		/*
 		 * TESTPOINT: timeout Maximum time to wait for operation to
 		 * complete (in milliseconds)
 		 */
@@ -103,9 +103,9 @@ static void tmslab_used_get(void *data)
 	for (int i = 0; i < BLK_NUM; i++) {
 		zassert_true(k_mem_slab_alloc(pslab, &block[i], K_NO_WAIT) == 0,
 			     NULL);
-		/** TESTPOINT: Get the number of used blocks in a memory slab.*/
+		/* TESTPOINT: Get the number of used blocks in a memory slab.*/
 		zassert_equal(k_mem_slab_num_used_get(pslab), i + 1, NULL);
-		/**
+		/*
 		 * TESTPOINT: Get the number of unused blocks in a memory slab.
 		 */
 		zassert_equal(k_mem_slab_num_free_get(pslab), BLK_NUM - 1 - i, NULL);
