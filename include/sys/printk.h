@@ -44,8 +44,6 @@ extern "C" {
  *
  * @param fmt Format string.
  * @param ... Optional list of format arguments.
- *
- * @return N/A
  */
 #ifdef CONFIG_PRINTK
 
