@@ -1490,8 +1490,6 @@ struct coap_observer *coap_find_observer_by_addr(
  *
  * @note This function is not exposed in a public header, as it's for internal
  * use and should therefore not be exposed to applications.
- *
- * @return N/A
  */
 void net_coap_init(void)
 {
