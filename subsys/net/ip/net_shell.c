@@ -4102,6 +4102,7 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 		str = argv[*i];
 	}
 
+	errno = 0;
 	res = strtol(str, &endptr, 10);
 
 	if (errno || (endptr == str)) {
