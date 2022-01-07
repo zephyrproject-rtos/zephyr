@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, NXP
+ * Copyright (c) 2020-22, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,15 +40,10 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 				    clock_control_subsys_t sub_system,
 				    uint32_t *rate)
 {
-#if defined(CONFIG_I2C_MCUX_FLEXCOMM) || \
-		defined(CONFIG_SPI_MCUX_FLEXCOMM) || \
-		defined(CONFIG_UART_MCUX_FLEXCOMM) || \
-		defined(CONFIG_COUNTER_MCUX_CTIMER) || \
-		defined(CONFIG_CAN_MCUX_MCAN)
-
 	uint32_t clock_name = (uint32_t) sub_system;
 
 	switch (clock_name) {
+
 #if defined(CONFIG_I2C_MCUX_FLEXCOMM) || \
 		defined(CONFIG_SPI_MCUX_FLEXCOMM) || \
 		defined(CONFIG_UART_MCUX_FLEXCOMM)
@@ -76,18 +71,36 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 	case MCUX_FLEXCOMM7_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(7);
 		break;
+	case MCUX_FLEXCOMM8_CLK:
+		*rate = CLOCK_GetFlexCommClkFreq(8);
+		break;
+	case MCUX_FLEXCOMM9_CLK:
+		*rate = CLOCK_GetFlexCommClkFreq(9);
+		break;
+	case MCUX_FLEXCOMM10_CLK:
+		*rate = CLOCK_GetFlexCommClkFreq(10);
+		break;
+	case MCUX_FLEXCOMM11_CLK:
+		*rate = CLOCK_GetFlexCommClkFreq(11);
+		break;
+	case MCUX_FLEXCOMM12_CLK:
+		*rate = CLOCK_GetFlexCommClkFreq(12);
+		break;
+	case MCUX_FLEXCOMM13_CLK:
+		*rate = CLOCK_GetFlexCommClkFreq(13);
+		break;
 	case MCUX_PMIC_I2C_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(15);
 		break;
 	case MCUX_HS_SPI_CLK:
-#if defined(FSL_FEATURE_FLEXCOMM8_SPI_INDEX)
+#if defined(SYSCON_HSLSPICLKSEL_SEL_MASK)
 		*rate = CLOCK_GetHsLspiClkFreq();
-#elif defined(FSL_FEATURE_FLEXCOMM14_SPI_INDEX)
-		*rate = CLOCK_GetFlexCommClkFreq(14);
 #else
-		LOG_ERR("Missing feature define for HS_SPI clock!");
+		*rate = CLOCK_GetFlexCommClkFreq(14);
 #endif
 		break;
+#endif
+
 #if (defined(FSL_FEATURE_SOC_USDHC_COUNT) && FSL_FEATURE_SOC_USDHC_COUNT)
 	case MCUX_USDHC1_CLK:
 		*rate = CLOCK_GetSdioClkFreq(0);
@@ -96,11 +109,13 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetSdioClkFreq(1);
 		break;
 #endif
+
 #if defined(CONFIG_CAN_MCUX_MCAN)
 	case MCUX_MCAN_CLK:
 		*rate = CLOCK_GetMCanClkFreq();
 		break;
 #endif /* defined(CONFIG_CAN_MCUX_MCAN) */
+
 #if defined(CONFIG_COUNTER_MCUX_CTIMER)
 	case (MCUX_CTIMER0_CLK + MCUX_CTIMER_CLK_OFFSET):
 		*rate = CLOCK_GetCTimerClkFreq(0);
@@ -119,8 +134,6 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif
 	}
-#endif
-#endif
 
 	return 0;
 }
