@@ -659,6 +659,54 @@ static int set_sd(struct bt_le_ext_adv *adv, const struct bt_ad *sd,
 	return hci_set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, sd, sd_len);
 }
 
+#if defined(CONFIG_BT_PER_ADV)
+static int hci_set_per_adv_data(const struct bt_le_ext_adv *adv,
+				const struct bt_data *ad, size_t ad_len)
+{
+	struct ad_stream stream;
+	struct bt_ad d = { .data = ad, .len = ad_len };
+	bool is_first_iteration = true;
+
+	ad_stream_new(&stream, &d, 1);
+
+	while (!ad_stream_is_empty(&stream)) {
+		struct bt_hci_cp_le_set_per_adv_data *set_data;
+		struct net_buf *buf;
+		int err;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_DATA, sizeof(*set_data));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		set_data = net_buf_add(buf, sizeof(*set_data));
+		(void)memset(set_data, 0, sizeof(*set_data));
+
+		set_data->handle = adv->handle;
+		set_data->len = ad_stream_read(&stream, set_data->data, sizeof(set_data->data));
+
+		if (is_first_iteration && ad_stream_is_empty(&stream)) {
+			set_data->op = BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA;
+		} else if (is_first_iteration) {
+			set_data->op = BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG;
+		} else if (ad_stream_is_empty(&stream)) {
+			set_data->op = BT_HCI_LE_EXT_ADV_OP_LAST_FRAG;
+		} else {
+			set_data->op = BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG;
+		}
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_DATA, buf, NULL);
+		if (err) {
+			return err;
+		}
+
+		is_first_iteration = false;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_PER_ADV */
+
 static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
 {
 	size_t i;
@@ -1686,10 +1734,7 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 			   const struct bt_data *ad, size_t ad_len)
 {
-	struct bt_hci_cp_le_set_per_adv_data *cp;
-	struct net_buf *buf;
-	struct bt_ad d = { .data = ad, .len = ad_len };
-	int err;
+	size_t total_len_bytes = 0;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -1703,38 +1748,19 @@ int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
-	if (ad_len > BT_HCI_LE_PER_ADV_FRAG_MAX_LEN) {
+	for (size_t i = 0; i < ad_len; i++) {
+		total_len_bytes += ad[i].data_len + 2;
+	}
+
+	if ((total_len_bytes > BT_HCI_LE_PER_ADV_FRAG_MAX_LEN) &&
+	    atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED)) {
+		/* It is not allowed to set periodic advertising data
+		 * in multiple operations while it is running.
+		 */
 		return -EINVAL;
 	}
 
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_DATA, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
-
-	cp->handle = adv->handle;
-
-	/* TODO: If data is longer than what the controller can manage,
-	 * split the data. Read size from controller on boot.
-	 */
-	cp->op = BT_HCI_LE_PER_ADV_OP_COMPLETE_DATA;
-
-	err = set_data_add_complete(cp->data, BT_HCI_LE_PER_ADV_FRAG_MAX_LEN, &d, 1,
-				    &cp->len);
-	if (err) {
-		return err;
-	}
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_DATA, buf, NULL);
-	if (err) {
-		return err;
-	}
-
-	return 0;
+	return hci_set_per_adv_data(adv, ad, ad_len);
 }
 
 static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
