@@ -22,8 +22,6 @@
  * will override the first callback installation.
  *
  * @param cb Callback that is called when device would send data to host.
- *
- * @return N/A
  */
 void ec_host_cmd_periph_sim_install_send_cb(ec_host_cmd_periph_api_send cb);
 
