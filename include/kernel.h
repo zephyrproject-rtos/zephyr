@@ -109,8 +109,6 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
  * @note This API uses @ref k_spin_lock to protect the _kernel.threads
  * list which means creation of new threads and terminations of existing
  * threads are blocked until this API returns.
- *
- * @return N/A
  */
 extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
 
@@ -463,8 +461,6 @@ __syscall int32_t k_usleep(int32_t us);
  * k_sleep().  For example k_busy_wait(1000) may take slightly more or
  * less time than k_sleep(K_MSEC(1)), with the offset dependent on
  * clock tolerances.
- *
- * @return N/A
  */
 __syscall void k_busy_wait(uint32_t usec_to_wait);
 
@@ -474,8 +470,6 @@ __syscall void k_busy_wait(uint32_t usec_to_wait);
  * This routine causes the current thread to yield execution to another
  * thread of the same or higher priority. If there are no other ready threads
  * of the same or higher priority, the routine returns immediately.
- *
- * @return N/A
  */
 __syscall void k_yield(void);
 
@@ -487,8 +481,6 @@ __syscall void k_yield(void);
  * If @a thread is not currently sleeping, the routine has no effect.
  *
  * @param thread ID of thread to wake.
- *
- * @return N/A
  */
 __syscall void k_wakeup(k_tid_t thread);
 
@@ -545,8 +537,6 @@ static inline k_tid_t k_current_get(void)
  * all such conditions.
  *
  * @param thread ID of thread to abort.
- *
- * @return N/A
  */
 __syscall void k_thread_abort(k_tid_t thread);
 
@@ -719,8 +709,6 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  *
  * @warning Changing the priority of a thread currently involved in mutex
  * priority inheritance may result in undefined behavior.
- *
- * @return N/A
  */
 __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
@@ -833,8 +821,6 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
  * If @a thread is already suspended, the routine has no effect.
  *
  * @param thread ID of thread to suspend.
- *
- * @return N/A
  */
 __syscall void k_thread_suspend(k_tid_t thread);
 
@@ -847,8 +833,6 @@ __syscall void k_thread_suspend(k_tid_t thread);
  * If @a thread is not currently suspended, the routine has no effect.
  *
  * @param thread ID of thread to resume.
- *
- * @return N/A
  */
 __syscall void k_thread_resume(k_tid_t thread);
 
@@ -877,8 +861,6 @@ __syscall void k_thread_resume(k_tid_t thread);
  *
  * @param slice Maximum time slice length (in milliseconds).
  * @param prio Highest thread priority level eligible for time slicing.
- *
- * @return N/A
  */
 extern void k_sched_time_slice_set(int32_t slice, int prio);
 
@@ -962,8 +944,6 @@ static inline bool k_is_pre_kernel(void)
  * when the operation being performed can be safely interrupted by ISRs.
  * However, if the amount of processing involved is very small, better
  * performance may be obtained by using irq_lock() and irq_unlock().
- *
- * @return N/A
  */
 extern void k_sched_lock(void);
 
@@ -973,8 +953,6 @@ extern void k_sched_lock(void);
  * This routine reverses the effect of a previous call to k_sched_lock().
  * A thread must call the routine once for each time it called k_sched_lock()
  * before the thread becomes preemptible.
- *
- * @return N/A
  */
 extern void k_sched_unlock(void);
 
@@ -988,8 +966,6 @@ extern void k_sched_unlock(void);
  * upon which to build thread-local storage.
  *
  * @param value New custom data value.
- *
- * @return N/A
  *
  */
 __syscall void k_thread_custom_data_set(void *value);
@@ -1324,8 +1300,6 @@ struct k_timer {
  * invoked if the timer has been initialized with one.
  *
  * @param timer     Address of timer.
- *
- * @return N/A
  */
 typedef void (*k_timer_expiry_t)(struct k_timer *timer);
 
@@ -1342,8 +1316,6 @@ typedef void (*k_timer_expiry_t)(struct k_timer *timer);
  * initialized with one.
  *
  * @param timer     Address of timer.
- *
- * @return N/A
  */
 typedef void (*k_timer_stop_t)(struct k_timer *timer);
 
@@ -1370,8 +1342,6 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  * @param timer     Address of timer.
  * @param expiry_fn Function to invoke each time the timer expires.
  * @param stop_fn   Function to invoke if the timer is stopped while running.
- *
- * @return N/A
  */
 extern void k_timer_init(struct k_timer *timer,
 			 k_timer_expiry_t expiry_fn,
@@ -1390,8 +1360,6 @@ extern void k_timer_init(struct k_timer *timer,
  * @param timer     Address of timer.
  * @param duration  Initial timer duration.
  * @param period    Timer period.
- *
- * @return N/A
  */
 __syscall void k_timer_start(struct k_timer *timer,
 			     k_timeout_t duration, k_timeout_t period);
@@ -1411,8 +1379,6 @@ __syscall void k_timer_start(struct k_timer *timer,
  * @funcprops \isr_ok
  *
  * @param timer     Address of timer.
- *
- * @return N/A
  */
 __syscall void k_timer_stop(struct k_timer *timer);
 
@@ -1512,8 +1478,6 @@ static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
  *
  * @param timer     Address of timer.
  * @param user_data User data to associate with the timer.
- *
- * @return N/A
  */
 __syscall void k_timer_user_data_set(struct k_timer *timer, void *user_data);
 
@@ -1701,8 +1665,6 @@ extern void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free);
  * This routine initializes a queue object, prior to its first use.
  *
  * @param queue Address of the queue.
- *
- * @return N/A
  */
 __syscall void k_queue_init(struct k_queue *queue);
 
@@ -1718,8 +1680,6 @@ __syscall void k_queue_init(struct k_queue *queue);
  * @funcprops \isr_ok
  *
  * @param queue Address of the queue.
- *
- * @return N/A
  */
 __syscall void k_queue_cancel_wait(struct k_queue *queue);
 
@@ -1734,8 +1694,6 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
- *
- * @return N/A
  */
 extern void k_queue_append(struct k_queue *queue, void *data);
 
@@ -1768,8 +1726,6 @@ __syscall int32_t k_queue_alloc_append(struct k_queue *queue, void *data);
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
- *
- * @return N/A
  */
 extern void k_queue_prepend(struct k_queue *queue, void *data);
 
@@ -1803,8 +1759,6 @@ __syscall int32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
  * @param queue Address of the queue.
  * @param prev Address of the previous data item.
  * @param data Address of the data item.
- *
- * @return N/A
  */
 extern void k_queue_insert(struct k_queue *queue, void *prev, void *data);
 
@@ -2056,16 +2010,14 @@ struct k_event {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.events = 0 \
 	}
+
 /**
  * @brief Initialize an event object
  *
  * This routine initializes an event object, prior to its first use.
  *
  * @param event Address of the event object.
- *
- * @return N/A
  */
-
 __syscall void k_event_init(struct k_event *event);
 
 /**
@@ -2080,10 +2032,7 @@ __syscall void k_event_init(struct k_event *event);
  *
  * @param event Address of the event object
  * @param events Set of events to post to @a event
- *
- * @return N/A
  */
-
 __syscall void k_event_post(struct k_event *event, uint32_t events);
 
 /**
@@ -2098,10 +2047,7 @@ __syscall void k_event_post(struct k_event *event, uint32_t events);
  *
  * @param event Address of the event object
  * @param events Set of events to post to @a event
- *
- * @return N/A
  */
-
 __syscall void k_event_set(struct k_event *event, uint32_t events);
 
 /**
@@ -2125,7 +2071,6 @@ __syscall void k_event_set(struct k_event *event, uint32_t events);
  * @retval set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
-
 __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
 				bool reset, k_timeout_t timeout);
 
@@ -2150,7 +2095,6 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  * @retval set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
-
 __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout);
 
@@ -2163,7 +2107,6 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
  *
  * @param name Name of the event object.
  */
-
 #define K_EVENT_DEFINE(name)                                   \
 	STRUCT_SECTION_ITERABLE(k_event, name) =               \
 		Z_EVENT_INITIALIZER(name);
@@ -2198,8 +2141,6 @@ struct k_fifo {
  * This routine initializes a FIFO queue, prior to its first use.
  *
  * @param fifo Address of the FIFO queue.
- *
- * @return N/A
  */
 #define k_fifo_init(fifo) \
 	({ \
@@ -2218,8 +2159,6 @@ struct k_fifo {
  * @funcprops \isr_ok
  *
  * @param fifo Address of the FIFO queue.
- *
- * @return N/A
  */
 #define k_fifo_cancel_wait(fifo) \
 	({ \
@@ -2239,8 +2178,6 @@ struct k_fifo {
  *
  * @param fifo Address of the FIFO.
  * @param data Address of the data item.
- *
- * @return N/A
  */
 #define k_fifo_put(fifo, data) \
 	({ \
@@ -2286,8 +2223,6 @@ struct k_fifo {
  * @param fifo Address of the FIFO queue.
  * @param head Pointer to first node in singly-linked list.
  * @param tail Pointer to last node in singly-linked list.
- *
- * @return N/A
  */
 #define k_fifo_put_list(fifo, head, tail) \
 	({ \
@@ -2308,8 +2243,6 @@ struct k_fifo {
  *
  * @param fifo Address of the FIFO queue.
  * @param list Pointer to sys_slist_t object.
- *
- * @return N/A
  */
 #define k_fifo_put_slist(fifo, list) \
 	({ \
@@ -2443,8 +2376,6 @@ struct k_lifo {
  * This routine initializes a LIFO queue object, prior to its first use.
  *
  * @param lifo Address of the LIFO queue.
- *
- * @return N/A
  */
 #define k_lifo_init(lifo) \
 	({ \
@@ -2464,8 +2395,6 @@ struct k_lifo {
  *
  * @param lifo Address of the LIFO queue.
  * @param data Address of the data item.
- *
- * @return N/A
  */
 #define k_lifo_put(lifo, data) \
 	({ \
@@ -2581,8 +2510,6 @@ struct k_stack {
  * @param stack Address of the stack.
  * @param buffer Address of array used to hold stacked values.
  * @param num_entries Maximum number of values that can be stacked.
- *
- * @return N/A
  */
 void k_stack_init(struct k_stack *stack,
 		  stack_data_t *buffer, uint32_t num_entries);
@@ -2974,8 +2901,6 @@ __syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
  * @funcprops \isr_ok
  *
  * @param sem Address of the semaphore.
- *
- * @return N/A
  */
 __syscall void k_sem_give(struct k_sem *sem);
 
@@ -2987,8 +2912,6 @@ __syscall void k_sem_give(struct k_sem *sem);
  * with -EAGAIN.
  *
  * @param sem Address of the semaphore.
- *
- * @return N/A
  */
 __syscall void k_sem_reset(struct k_sem *sem);
 
@@ -3990,8 +3913,6 @@ struct k_work_user;
  * when the work item is processed by the workqueue.
  *
  * @param work Address of the work item.
- *
- * @return N/A
  */
 typedef void (*k_work_user_handler_t)(struct k_work_user *work);
 
@@ -4047,8 +3968,6 @@ struct k_work_user {
  *
  * @param work Address of work item.
  * @param handler Function to invoke each time work item is processed.
- *
- * @return N/A
  */
 static inline void k_work_user_init(struct k_work_user *work,
 				    k_work_user_handler_t handler)
@@ -4134,8 +4053,6 @@ static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
  * @param prio Priority of the work queue's thread.
  * @param name optional thread name.  If not null a copy is made into the
  *		thread's name buffer.
- *
- * @return N/A
  */
 extern void k_work_user_queue_start(struct k_work_user_q *work_q,
 				    k_thread_stack_t *stack,
@@ -4204,8 +4121,6 @@ struct k_work_poll {
  *
  * @param work Address of triggered work item.
  * @param handler Function to invoke each time work item is processed.
- *
- * @return N/A
  */
 extern void k_work_poll_init(struct k_work_poll *work,
 			     k_work_handler_t handler);
@@ -4420,8 +4335,6 @@ struct k_msgq_attrs {
  * @param buffer Pointer to ring buffer that holds queued messages.
  * @param msg_size Message size (in bytes).
  * @param max_msgs Maximum number of messages that can be queued.
- *
- * @return N/A
  */
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs);
@@ -4529,8 +4442,6 @@ __syscall int k_msgq_peek(struct k_msgq *msgq, void *data);
  * message queue are unblocked and see an -ENOMSG error code.
  *
  * @param msgq Address of the message queue.
- *
- * @return N/A
  */
 __syscall void k_msgq_purge(struct k_msgq *msgq);
 
@@ -4553,8 +4464,6 @@ __syscall uint32_t k_msgq_num_free_get(struct k_msgq *msgq);
  *
  * @param msgq Address of the message queue.
  * @param attrs pointer to message queue attribute structure.
- *
- * @return N/A
  */
 __syscall void  k_msgq_get_attrs(struct k_msgq *msgq,
 				 struct k_msgq_attrs *attrs);
@@ -4663,8 +4572,6 @@ struct k_mbox {
  * This routine initializes a mailbox object, prior to its first use.
  *
  * @param mbox Address of the mailbox.
- *
- * @return N/A
  */
 extern void k_mbox_init(struct k_mbox *mbox);
 
@@ -4702,8 +4609,6 @@ extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @param mbox Address of the mailbox.
  * @param tx_msg Address of the transmit message descriptor.
  * @param sem Address of a semaphore, or NULL if none is needed.
- *
- * @return N/A
  */
 extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     struct k_sem *sem);
@@ -4740,8 +4645,6 @@ extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
  * @param rx_msg Address of the receive message descriptor.
  * @param buffer Address of the buffer to receive data, or NULL to discard
  *               the data.
- *
- * @return N/A
  */
 extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
 
@@ -4825,8 +4728,6 @@ struct k_pipe {
  *               is used.
  * @param size Size of the pipe's ring buffer (in bytes), or zero if no ring
  *             buffer is used.
- *
- * @return N/A
  */
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
 
@@ -5108,8 +5009,6 @@ extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  *
  * @param slab Address of the memory slab.
  * @param mem Pointer to block address area (as set by k_mem_slab_alloc()).
- *
- * @return N/A
  */
 extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
 
@@ -5369,8 +5268,6 @@ extern void *k_malloc(size_t size);
  * If @a ptr is NULL, no operation is performed.
  *
  * @param ptr Pointer to previously allocated memory.
- *
- * @return N/A
  */
 extern void k_free(void *ptr);
 
@@ -5584,8 +5481,6 @@ struct k_poll_event {
  *             event.
  * @param mode Future. Use K_POLL_MODE_NOTIFY_ONLY.
  * @param obj Kernel object or poll signal.
- *
- * @return N/A
  */
 
 extern void k_poll_event_init(struct k_poll_event *event, uint32_t type,
@@ -5643,8 +5538,6 @@ __syscall int k_poll(struct k_poll_event *events, int num_events,
  * Ready a poll signal object to be signaled via k_poll_signal_raise().
  *
  * @param sig A poll signal.
- *
- * @return N/A
  */
 
 __syscall void k_poll_signal_init(struct k_poll_signal *sig);
@@ -5719,8 +5612,6 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
  *
  * @note In some architectures, before returning, the function unmasks interrupts
  * unconditionally.
- *
- * @return N/A
  */
 static inline void k_cpu_idle(void)
 {
@@ -5740,8 +5631,6 @@ static inline void k_cpu_idle(void)
  * be restored as if by irq_unlock(key).
  *
  * @param key Interrupt locking key obtained from irq_lock().
- *
- * @return N/A
  */
 static inline void k_cpu_atomic_idle(unsigned int key)
 {

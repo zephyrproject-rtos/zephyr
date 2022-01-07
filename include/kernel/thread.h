@@ -28,8 +28,6 @@
  * @param p1 First argument.
  * @param p2 Second argument.
  * @param p3 Third argument.
- *
- * @return N/A
  */
 
 #ifdef CONFIG_THREAD_MONITOR

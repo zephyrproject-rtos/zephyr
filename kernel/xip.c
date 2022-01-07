@@ -16,12 +16,9 @@ extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES */
 
 /**
- *
  * @brief Copy the data section from ROM to RAM
  *
  * This routine copies the data section from ROM to RAM.
- *
- * @return N/A
  */
 void z_data_copy(void)
 {
