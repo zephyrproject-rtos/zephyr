@@ -242,9 +242,14 @@ static int bmi088_gyr_init(const struct device *dev) {
     }
 
 
-    // Set Bandwidth to 0x04 (ODR 200Hz, Filter bandwidth 23Hz)
-    if (bmi088_gyr_byte_write(dev, GYRO_BANDWIDTH, BMI088_GYR_DEFAULT_BW) < 0) {
-        LOG_DBG("Failed to set gyro's default ODR");
+    // Set Bandwidth (default is 0x04, resulting in ODR 200Hz, Filter bandwidth 23Hz)
+    int bw = to_config(dev)->bandwidth;
+    if (bw < 0x00 || bw > 0x07) {
+        bw = BMI088_GYR_DEFAULT_BW;
+        LOG_WRN("BMI088 gyro: specified bandwidth is out of range, using default value instead");
+    }
+    if (bmi088_gyr_byte_write(dev, GYRO_BANDWIDTH, bw) < 0) {
+        LOG_DBG("Failed to set gyro's ODR to %d", bw);
         return -EIO;
     }
 
@@ -261,7 +266,8 @@ static const struct sensor_driver_api bmi088_gyr_api = {
 #define BMI088_GYR_DEVICE_INIT(inst) \
     static struct bmi088_gyr_data bmi088_gyr_data_##inst;               \
     static const struct bmi088_gyr_cfg bmi088_gyr_cfg_##inst = {           \
-        .bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
+        .bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),          \
+        .bandwidth = DT_INST_PROP(inst, bandwidth)                \
     };                                   \
     DEVICE_DT_INST_DEFINE(inst, bmi088_gyr_init, NULL,            \
                   &bmi088_gyr_data_##inst, &bmi088_gyr_cfg_##inst,    \

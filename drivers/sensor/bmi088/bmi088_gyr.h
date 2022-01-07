@@ -41,6 +41,7 @@
 // end of default settings
 struct bmi088_gyr_cfg {
     struct spi_dt_spec bus;
+    int bandwidth;
 };
 
 
