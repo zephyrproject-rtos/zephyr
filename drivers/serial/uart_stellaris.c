@@ -156,8 +156,6 @@ static const struct uart_driver_api uart_stellaris_driver_api;
  * @param dev UART device struct
  * @param baudrate Baud rate
  * @param sys_clk_freq_hz System clock frequency in Hz
- *
- * @return N/A
  */
 static void baudrate_set(const struct device *dev,
 			 uint32_t baudrate, uint32_t sys_clk_freq_hz)
@@ -193,8 +191,6 @@ static void baudrate_set(const struct device *dev,
  * This routine enables the given UART.
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static inline void enable(const struct device *dev)
 {
@@ -209,8 +205,6 @@ static inline void enable(const struct device *dev)
  * This routine disables the given UART.
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static inline void disable(const struct device *dev)
 {
@@ -242,8 +236,6 @@ static inline void disable(const struct device *dev)
  * This routine sets the given UART's line controls to their default settings.
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static inline void line_control_defaults_set(const struct device *dev)
 {
@@ -389,8 +381,6 @@ static int uart_stellaris_fifo_read(const struct device *dev,
  * @brief Enable TX interrupt
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_stellaris_irq_tx_enable(const struct device *dev)
 {
@@ -443,8 +433,6 @@ static void uart_stellaris_irq_tx_enable(const struct device *dev)
  * @brief Disable TX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_stellaris_irq_tx_disable(const struct device *dev)
 {
@@ -471,8 +459,6 @@ static int uart_stellaris_irq_tx_ready(const struct device *dev)
  * @brief Enable RX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_stellaris_irq_rx_enable(const struct device *dev)
 {
@@ -485,8 +471,6 @@ static void uart_stellaris_irq_rx_enable(const struct device *dev)
  * @brief Disable RX interrupt in IER
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_stellaris_irq_rx_disable(const struct device *dev)
 {
@@ -513,8 +497,6 @@ static int uart_stellaris_irq_rx_ready(const struct device *dev)
  * @brief Enable error interrupts
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_stellaris_irq_err_enable(const struct device *dev)
 {
@@ -528,8 +510,6 @@ static void uart_stellaris_irq_err_enable(const struct device *dev)
  * @brief Disable error interrupts
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_stellaris_irq_err_disable(const struct device *dev)
 {
@@ -571,8 +551,6 @@ static int uart_stellaris_irq_update(const struct device *dev)
  *
  * @param dev UART device struct
  * @param cb Callback function pointer.
- *
- * @return N/A
  */
 static void uart_stellaris_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
@@ -590,8 +568,6 @@ static void uart_stellaris_irq_callback_set(const struct device *dev,
  * This simply calls the callback function, if one exists.
  *
  * @param arg Argument to ISR.
- *
- * @return N/A
  */
 static void uart_stellaris_isr(const struct device *dev)
 {

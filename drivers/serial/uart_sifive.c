@@ -171,8 +171,6 @@ static int uart_sifive_fifo_read(const struct device *dev,
  * @brief Enable TX interrupt in ie register
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_sifive_irq_tx_enable(const struct device *dev)
 {
@@ -185,8 +183,6 @@ static void uart_sifive_irq_tx_enable(const struct device *dev)
  * @brief Disable TX interrupt in ie register
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_sifive_irq_tx_disable(const struct device *dev)
 {
@@ -231,8 +227,6 @@ static int uart_sifive_irq_tx_complete(const struct device *dev)
  * @brief Enable RX interrupt in ie register
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_sifive_irq_rx_enable(const struct device *dev)
 {
@@ -245,8 +239,6 @@ static void uart_sifive_irq_rx_enable(const struct device *dev)
  * @brief Disable RX interrupt in ie register
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_sifive_irq_rx_disable(const struct device *dev)
 {
@@ -304,8 +296,6 @@ static int uart_sifive_irq_update(const struct device *dev)
  *
  * @param dev UART device struct
  * @param cb Callback function pointer.
- *
- * @return N/A
  */
 static void uart_sifive_irq_callback_set(const struct device *dev,
 					 uart_irq_callback_user_data_t cb,
