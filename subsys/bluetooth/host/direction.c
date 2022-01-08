@@ -669,7 +669,7 @@ static void prepare_conn_cte_req_enable_cmd_params(struct net_buf *buf, const st
 
 	if (enable) {
 		cp->cte_request_interval = params->interval;
-		cp->requested_cte_length = params->cte_length;
+		cp->requested_cte_length = sys_cpu_to_le16(params->cte_length);
 		cp->requested_cte_type = get_hci_cte_type(params->cte_type);
 	}
 }
