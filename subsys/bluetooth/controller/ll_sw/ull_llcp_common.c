@@ -210,15 +210,9 @@ static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 static void lp_comm_ntf_cte_req(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	/* TODO (ppryga): pack IQ samples and send them to host */
-	/* TODO (ppryga): procedure may be re-triggered periodically by controller itself.
-	 *		  Add periodicy handling code. It should be executed after receive
-	 *		  notification about end of current procedure run.
-	 */
 	/* TODO (ppryga): Add handling of rejections in HCI: HCI_LE_CTE_Request_Failed. */
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
-		llcp_ntf_encode_cte_req(conn, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		llcp_ntf_encode_reject_ext_ind(ctx, pdu);
@@ -351,12 +345,22 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
-		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_CTE_RSP ||
-		    (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
-		     ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ)) {
-			lp_comm_ntf(conn, ctx);
-			llcp_lr_complete(conn);
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_CTE_RSP) {
+			if (conn->llcp.cte_req.req_interval != 0U) {
+				conn->llcp.cte_req.req_expire = conn->llcp.cte_req.req_interval;
+			} else {
+				conn->llcp.cte_req.is_enabled = 0U;
+			}
 			ctx->state = LP_COMMON_STATE_IDLE;
+		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
+			   ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
+			lp_comm_ntf(conn, ctx);
+			conn->llcp.cte_req.is_enabled = 0U;
+			ctx->state = LP_COMMON_STATE_IDLE;
+		}
+
+		if (ctx->state == LP_COMMON_STATE_IDLE) {
+			llcp_lr_complete(conn);
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */

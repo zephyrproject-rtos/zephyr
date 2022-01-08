@@ -1649,6 +1649,18 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	if (conn->llcp.cte_req.req_expire != 0U) {
+		if (conn->llcp.cte_req.req_expire > elapsed_event) {
+			conn->llcp.cte_req.req_expire -= elapsed_event;
+		} else {
+			conn->llcp.cte_req.req_expire = 0U;
+			ull_cp_cte_req(conn, conn->llcp.cte_req.min_cte_len,
+				       conn->llcp.cte_req.cte_type);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 	/* generate RSSI event */
 	if (lll->rssi_sample_count == 0U) {
