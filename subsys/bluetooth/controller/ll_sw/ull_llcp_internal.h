@@ -221,6 +221,15 @@ struct proc_ctx {
 			uint8_t min_len:5;
 		} cte_req;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+		/* Use by CTE Response Procedure */
+		struct llcp_df_cte_remote_req {
+			uint8_t cte_type;
+			uint8_t min_cte_len;
+		} cte_remote_req;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 	} data;
 
 	struct {
@@ -585,8 +594,8 @@ void llcp_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
 /*
  * Constant Tone Response Procedure Helper
  */
-void llcp_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_pdu_encode_cte_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_decode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 #ifdef ZTEST_UNITTEST

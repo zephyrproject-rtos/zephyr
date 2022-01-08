@@ -694,7 +694,7 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
-		llcp_pdu_decode_cte_req(conn, pdu);
+		llcp_pdu_decode_cte_req(ctx, pdu);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
@@ -753,13 +753,13 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 			err_code = BT_HCI_ERR_INVALID_LL_PARAM;
 		}
 #endif /* CONFIG_BT_PHY_UPDATE */
-		if (!(conn->llcp.cte_rsp.cte_types & BIT(conn->llcp.cte_req.cte_type)) &&
-		    conn->llcp.cte_rsp.max_cte_len < conn->llcp.cte_req.min_cte_len) {
+		if (!(conn->llcp.cte_rsp.cte_types & BIT(ctx->data.cte_remote_req.cte_type)) ||
+		    conn->llcp.cte_rsp.max_cte_len < ctx->data.cte_remote_req.min_cte_len) {
 			err_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
 		}
 
 		if (!err_code) {
-			llcp_pdu_encode_cte_rsp(conn, pdu);
+			llcp_pdu_encode_cte_rsp(ctx, pdu);
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 		} else {
 			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CTE_REQ, err_code);
