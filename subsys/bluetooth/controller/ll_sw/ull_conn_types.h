@@ -425,9 +425,6 @@ struct llcp_struct {
 	} cte_req;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
-	/* TODO (ppryga): Consided move of the type of structure to ull_df_types.h or
-	 * lll_df_types.h. To have single definition of the type and share it wish LLL.
-	 */
 	struct llcp_df_rsp_cfg {
 		uint8_t is_enabled;
 		uint8_t cte_types;
