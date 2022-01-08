@@ -1607,7 +1607,7 @@ struct bt_hci_rp_le_set_conn_cte_tx_params {
 struct bt_hci_cp_le_conn_cte_req_enable {
 	uint16_t handle;
 	uint8_t  enable;
-	uint8_t  cte_request_interval;
+	uint16_t cte_request_interval;
 	uint8_t  requested_cte_length;
 	uint8_t  requested_cte_type;
 } __packed;

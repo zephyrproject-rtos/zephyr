@@ -1043,7 +1043,7 @@ uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t
 	df_tx_cfg->ant_sw_len = switch_pattern_len;
 
 	df_tx_cfg->cte_types_allowed = cte_types;
-	df_tx_cfg->state = DF_CTE_CONN_TX_PARAMS_SET;
+	df_tx_cfg->is_initialized = 1U;
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -1087,7 +1087,7 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 	/* This is an information for HCI_LE_Connection_CTE_Request_Enable that
 	 * HCI_LE_Set_Connection_CTE_Receive_Parameters was called at least once.
 	 */
-	cfg_rx->is_initialized = true;
+	cfg_rx->is_initialized = 1U;
 	params_buf_hdr = &cfg_rx->hdr;
 
 	params_rx = dbuf_alloc(params_buf_hdr, &params_idx);
@@ -1141,8 +1141,9 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
  *
  * @return HCI Status of command completion.
  */
-uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t cte_request_interval,
-				      uint8_t requested_cte_length, uint8_t requested_cte_type)
+uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
+				      uint16_t cte_request_interval, uint8_t requested_cte_length,
+				      uint8_t requested_cte_type)
 {
 	struct ll_conn *conn;
 
@@ -1206,6 +1207,51 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t c
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+/**
+ * @brief Function enables or disables CTE response control procedure for a connection.
+ *
+ * @param handle Connection handle.
+ * @param enable Enable or disable CTE response.
+ *
+ * @return HCI Status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_rsp_enable(uint16_t handle, uint8_t enable)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (enable) {
+		if (!conn->lll.df_tx_cfg.is_initialized) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* CTE may not be send over CODED PHY */
+		if (conn->lll.phy_tx == PHY_CODED) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+#endif /* CONFIG_BT_CTLR_PHY */
+		conn->lll.df_tx_cfg.cte_rsp_en = 1U;
+
+		ull_cp_cte_rsp_enable(conn, enable, LLL_DF_MAX_CTE_LEN,
+				conn->lll.df_tx_cfg.cte_types_allowed);
+	} else {
+		/* There is no parameter validation for disable operation. */
+
+		/* TODO: Add missing implementation of disable CTE request.
+		 * Requires refactored LLCPs.
+		 */
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 /* @brief Function provides information about Direction Finding
  *        antennas switching and sampling related settings.

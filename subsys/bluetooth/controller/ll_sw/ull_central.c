@@ -271,7 +271,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_CONN_META */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
-	conn_lll->df_rx_cfg.is_initialized = false;
+	conn_lll->df_rx_cfg.is_initialized = 0U;
 	conn_lll->df_rx_cfg.hdr.elem_size = sizeof(struct lll_df_conn_rx_params);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
