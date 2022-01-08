@@ -220,6 +220,11 @@ struct proc_ctx {
 			uint8_t type:2;
 			uint8_t min_len:5;
 		} cte_req;
+
+		struct llcp_df_cte_remote_rsp {
+			/* Storage for information that received LL_CTE_RSP PDU includes CTE */
+			uint8_t has_cte;
+		} cte_remote_rsp;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -587,7 +592,8 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn,
  * Constant Tone Request Procedure Helper
  */
 void llcp_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-void llcp_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_decode_cte_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu);
+void llcp_ntf_encode_cte_req(struct pdu_data *pdu);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)

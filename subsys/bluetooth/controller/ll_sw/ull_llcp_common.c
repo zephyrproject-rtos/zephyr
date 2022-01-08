@@ -210,9 +210,12 @@ static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 static void lp_comm_ntf_cte_req(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	/* TODO (ppryga): Add handling of rejections in HCI: HCI_LE_CTE_Request_Failed. */
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
+		/* Notify host that received LL_CTE_RSP does not have CTE */
+		if (!ctx->data.cte_remote_rsp.has_cte) {
+			llcp_ntf_encode_cte_req(pdu);
+		}
 		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		llcp_ntf_encode_reject_ext_ind(ctx, pdu);
@@ -346,10 +349,12 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_CTE_RSP) {
-			if (conn->llcp.cte_req.req_interval != 0U) {
+			if (ctx->data.cte_remote_rsp.has_cte &&
+			    conn->llcp.cte_req.req_interval != 0U) {
 				conn->llcp.cte_req.req_expire = conn->llcp.cte_req.req_interval;
 			} else {
 				conn->llcp.cte_req.is_enabled = 0U;
+				lp_comm_ntf(conn, ctx);
 			}
 			ctx->state = LP_COMMON_STATE_IDLE;
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
@@ -556,9 +561,11 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		llcp_pdu_decode_length_rsp(conn, pdu);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
-		/* CTE Response PDU had no data */
+		llcp_pdu_decode_cte_rsp(ctx, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		llcp_pdu_decode_reject_ext_ind(ctx, pdu);
 		break;
