@@ -108,11 +108,6 @@ struct lll_df_sync {
 	struct lll_df_sync_cfg cfg[DOUBLE_BUFFER_SIZE];
 };
 
-/* Names for allowed states for CTE transmit parameters in connected mode */
-enum df_cte_tx_state {
-	DF_CTE_CONN_TX_PARAMS_UNINITIALIZED,
-	DF_CTE_CONN_TX_PARAMS_SET,
-};
 /* Parameters for reception of Constant Tone Extension in connected mode */
 struct lll_df_conn_rx_params {
 	uint8_t is_enabled:1;
@@ -154,7 +149,11 @@ struct cte_conn_iq_report {
 
 /* Configuration for transmission of Constant Tone Extension in connected mode */
 struct lll_df_conn_tx_cfg {
-	uint8_t state:1;
+	/* Stores information if the TX configuration was set at least once.
+	 * It is required for handling HCI_LE_Connection_CTE_Response_Enable HCI command.
+	 * See BT 5.3 Core specification Vol 4, Part E, sec. 7.8.86.
+	 */
+	uint8_t is_initialized:1;
 	uint8_t ant_sw_len:7;
 	uint8_t cte_rsp_en:1; /* CTE response is enabled */
 	uint8_t cte_types_allowed:3; /* Bitfield with allowed CTE types */

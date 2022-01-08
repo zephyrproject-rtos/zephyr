@@ -2983,7 +2983,8 @@ static void le_df_set_conn_cte_req_enable(struct net_buf *buf, struct net_buf **
 	handle_le16 = cmd->handle;
 	handle = sys_le16_to_cpu(handle_le16);
 
-	status = ll_df_set_conn_cte_req_enable(handle, cmd->enable, cmd->cte_request_interval,
+	status = ll_df_set_conn_cte_req_enable(handle, cmd->enable,
+					       sys_le16_to_cpu(cmd->cte_request_interval),
 					       cmd->requested_cte_length, cmd->requested_cte_type);
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 

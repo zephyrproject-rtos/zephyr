@@ -179,7 +179,7 @@ struct bt_df_conn_cte_req_params {
 	 * Value 0x0 means, run the procedure once. Other values are intervals in number of
 	 * connection events, to run the command periodically.
 	 */
-	uint8_t interval;
+	uint16_t interval;
 	/** Requested length of the CTE in 8 us units. */
 	uint8_t cte_length;
 	/**
