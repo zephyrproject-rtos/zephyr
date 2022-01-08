@@ -424,6 +424,7 @@ struct llcp_struct {
 		uint16_t req_interval;
 		uint16_t req_expire;
 	} cte_req;
+
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	struct llcp_df_rsp_cfg {

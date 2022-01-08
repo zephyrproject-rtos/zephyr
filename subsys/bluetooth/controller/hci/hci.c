@@ -2991,6 +2991,21 @@ static void le_df_set_conn_cte_req_enable(struct net_buf *buf, struct net_buf **
 	rp->status = status;
 	rp->handle = handle_le16;
 }
+
+static void le_df_cte_req_failed(uint8_t error_code, uint16_t handle, struct net_buf *buf)
+{
+	struct bt_hci_evt_le_cte_req_failed *sep;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CTE_REQUEST_FAILED)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CTE_REQUEST_FAILED, sizeof(*sep));
+
+	sep->status = error_code;
+	sep->conn_handle = sys_cpu_to_le16(handle);
+}
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -7350,6 +7365,19 @@ static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 	}
 }
 
+static void le_reject_ext_ind(struct pdu_data *pdu, uint16_t handle, struct net_buf *buf)
+{
+	switch (pdu->llctrl.reject_ext_ind.reject_opcode) {
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
+		le_df_cte_req_failed(pdu->llctrl.reject_ext_ind.error_code, handle, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+	default:
+		BT_WARN("reject opcode: 0x%02x", pdu->llctrl.reject_ext_ind.reject_opcode);
+		break;
+	}
+}
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
 			      struct net_buf *buf)
@@ -7466,8 +7494,18 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
+		le_df_cte_req_failed(BT_HCI_CTE_REQ_STATUS_RSP_WITHOUT_CTE, handle, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		le_unknown_rsp(pdu_data, handle, buf);
+		break;
+
+	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
+		le_reject_ext_ind(pdu_data, handle, buf);
 		break;
 
 	default:
