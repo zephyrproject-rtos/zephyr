@@ -584,7 +584,7 @@ DEVICE_DT_INST_DEFINE(idx,				       \
 		    NULL,				       \
 		    &uart_esp32_data_##idx,				       \
 		    &uart_esp32_cfg_port_##idx,				       \
-		    PRE_KERNEL_2,					       \
+		    PRE_KERNEL_1,					       \
 		    CONFIG_SERIAL_INIT_PRIORITY,			       \
 		    &uart_esp32_api);
 
