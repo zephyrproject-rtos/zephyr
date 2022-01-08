@@ -13,3 +13,6 @@ void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 					struct bt_df_conn_iq_samples_report *report,
 					struct bt_conn **conn_to_report);
+int hci_df_prepare_conn_cte_req_failed(struct net_buf *buf,
+				       struct bt_df_conn_iq_samples_report *report,
+				       struct bt_conn **conn_to_report);
