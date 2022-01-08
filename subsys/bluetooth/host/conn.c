@@ -2949,6 +2949,8 @@ void bt_hci_le_df_connection_iq_report(struct net_buf *buf)
 			cb->cte_report_cb(conn, &iq_report);
 		}
 	}
+
+	bt_conn_unref(conn);
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
