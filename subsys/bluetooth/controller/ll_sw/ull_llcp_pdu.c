@@ -736,7 +736,9 @@ void llcp_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
 
 	/* TODO add handling of IQ samples forwarding */
 }
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 void llcp_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	conn->llcp.cte_req.min_cte_len = pdu->llctrl.cte_req.min_cte_len_req;
@@ -757,4 +759,4 @@ void llcp_pdu_encode_cte_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	pdu->cte_info.time = conn->llcp.cte_req.min_cte_len;
 	pdu->cte_info.type = conn->llcp.cte_req.cte_type;
 }
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
