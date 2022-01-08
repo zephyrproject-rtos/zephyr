@@ -2952,4 +2952,35 @@ void bt_hci_le_df_connection_iq_report(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
+void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
+{
+	struct bt_df_conn_iq_samples_report iq_report;
+	struct bt_conn *conn;
+	struct bt_conn_cb *cb;
+	int err;
+
+	err = hci_df_prepare_conn_cte_req_failed(buf, &iq_report, &conn);
+	if (err) {
+		BT_ERR("Prepare CTE REQ failed IQ report failed %d", err);
+		return;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->cte_report_cb) {
+			cb->cte_report_cb(conn, &iq_report);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->cte_report_cb) {
+			cb->cte_report_cb(conn, &iq_report);
+		}
+	}
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
+
 #endif /* CONFIG_BT_CONN */
