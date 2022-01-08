@@ -452,6 +452,14 @@ void ull_llcp_init(struct ll_conn *conn)
 	conn->lll.enc_rx = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	conn->llcp.cte_req.is_enabled = 0U;
+	conn->llcp.cte_req.req_expire = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	conn->llcp.cte_rsp.is_enabled = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
 #if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
 	conn->llcp.tx_buffer_alloc = 0;
