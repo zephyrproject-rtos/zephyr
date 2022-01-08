@@ -432,9 +432,6 @@ struct llcp_struct {
 		uint8_t is_enabled;
 		uint8_t cte_types;
 		uint8_t max_cte_len;
-		uint8_t ant_sw_len;
-		/* TODO (ppryga): Update to use the same macro as in lll_df_types.h */
-		uint8_t ant_ids[CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
 	} cte_rsp;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 #if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) &&\
