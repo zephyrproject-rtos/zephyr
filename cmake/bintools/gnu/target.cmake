@@ -16,9 +16,9 @@ find_program(CMAKE_GDB     ${CROSS_COMPILE}gdb     PATHS ${TOOLCHAIN_HOME} NO_DE
 if(CMAKE_GDB)
   execute_process(
     COMMAND ${CMAKE_GDB} --configuration
-    OUTPUT_VARIABLE GDB_PY_NO_PY
-    OUTPUT_STRIP_TRAILING_WHITESPACE
     RESULTS_VARIABLE GDB_CFG_ERR
+    OUTPUT_QUIET
+    ERROR_QUIET
     )
   if (${GDB_CFG_ERR})
     # Failed to execute GDB, likely because of Python deps
