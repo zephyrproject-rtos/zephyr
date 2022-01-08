@@ -727,14 +727,24 @@ void llcp_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	p->cte_type_req = ctx->data.cte_req.type;
 }
 
-void llcp_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
+void llcp_pdu_decode_cte_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu)
+{
+	if (pdu->cp == 0U || pdu->cte_info.time == 0U) {
+		ctx->data.cte_remote_rsp.has_cte = false;
+	} else {
+		ctx->data.cte_remote_rsp.has_cte = true;
+	}
+}
+
+void llcp_ntf_encode_cte_req(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len =
 		offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 
-	/* TODO add handling of IQ samples forwarding */
+	/* Received LL_CTE_RSP PDU didn't have CTE */
+	pdu->cp = 0U;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
