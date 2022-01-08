@@ -391,7 +391,7 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 		llcp_rp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_init_proc(ctx);
 		break;
