@@ -682,7 +682,7 @@ static int hci_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
 	struct net_buf *buf, *rsp;
 	int err;
 
-	if (enable && !valid_cte_req_params(conn, params->cte_length, params->cte_type)) {
+	if (enable && !valid_cte_req_params(conn, params->cte_type, params->cte_length)) {
 		return -EINVAL;
 	}
 
