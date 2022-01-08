@@ -534,7 +534,7 @@ static void prepare_conn_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt
 			ant_ids = &df_dummy_switch_pattern[0];
 		}
 
-		dest_ant_ids = net_buf_add(buf, params->num_ant_ids);
+		dest_ant_ids = net_buf_add(buf, cp->switch_pattern_len);
 		(void)memcpy(dest_ant_ids, ant_ids, cp->switch_pattern_len);
 	}
 }
