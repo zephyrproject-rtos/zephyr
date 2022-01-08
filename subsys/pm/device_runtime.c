@@ -86,7 +86,10 @@ static void runtime_suspend_work(struct k_work *work)
 	ret = pm->action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
 
 	(void)k_mutex_lock(&pm->lock, K_FOREVER);
-	if (ret == 0) {
+	if (ret < 0) {
+		pm->usage++;
+		pm->state = PM_DEVICE_STATE_ACTIVE;
+	} else {
 		pm->state = PM_DEVICE_STATE_SUSPENDED;
 	}
 	k_condvar_broadcast(&pm->condvar);
