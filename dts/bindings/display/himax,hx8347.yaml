@@ -1,0 +1,66 @@
+# Copyright (c) 2022 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+description: Himax HX8347D display controller bindings.
+
+include: spi-device.yaml
+
+compatible: "himax,hx8347d"
+
+properties:
+    pixel-format:
+      type: int
+      default: 0
+      enum:
+        - 0 # RGB565
+        - 1 # RGB888
+      description:
+        Display pixel format. Note that when RGB888 pixel format is selected
+        only 6 color bits are actually used being in practice equivalent to
+        RGB666.
+
+    rotation:
+      type: int
+      default: 0
+      enum:
+        - 0
+        - 90
+        - 180
+        - 270
+      description:
+        Display rotation (CW) in degrees.
+
+    display-inversion:
+      type: boolean
+      description:
+        Display inversion mode. Every bit is inverted from the frame memory to
+        the display.
+
+    gamma-offset-positive:
+      type: uint8-array
+      description: register values for the gamma correction offset positive (6 values)
+    gamma-offset-negative:
+      type: uint8-array
+      description: register values for the gamma correction offset negative (6 values)
+    gamma-center-positive:
+      type: uint8-array
+      description: register values for the gamma correction center positive (2 values)
+    gamma-center-negative:
+      type: uint8-array
+      description: register values for the gamma correction center negative (2 values)
+    gamma-macro-positive:
+      type: uint8-array
+      description: register values for the gamma correction macro positive (5 values)
+    gamma-macro-negative:
+      type: uint8-array
+      description: register values for the gamma correction macro negative (5 values)
+
+    vcom-high:
+      type: int
+      description: vcom high register value
+    vcom-low:
+      type: int
+      description: vcom low register value
+    vcom-offset:
+      type: int
+      description: vcom offset register value

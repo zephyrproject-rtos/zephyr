@@ -1,0 +1,11 @@
+# HX8347 display driver configuration options
+
+# Copyright (c) 2022 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+
+config HX8347
+	bool "HX8347D display driver"
+	select SPI
+	help
+	  Enable driver for HX8347 display driver.
