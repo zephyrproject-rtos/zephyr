@@ -831,7 +831,7 @@ reschedule:
 	la t0, _kernel
 	RV_OP_LOADREG t2, _kernel_offset_to_current(t0)
 	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t0)
-	beq t2, t3, no_reschedule
+	beq t2, t3, no_reschedule_resched
 
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
 	call z_thread_mark_switched_out
@@ -925,8 +925,16 @@ skip_load_fp_callee_saved:
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	mv a0, t1	/* kernel current */
+
+	/* Save t0/t1 caller registers for function call */
+	addi sp, sp, -16
+	RV_OP_STOREREG t0, 0(sp)
+	RV_OP_STOREREG t1, 8(sp)
 	jal ra, z_riscv_configure_stack_guard
-#endif // CONFIG_PMP_STACK_GUARD
+	RV_OP_LOADREG t0, 0(sp)
+	RV_OP_LOADREG t1, 8(sp)
+	addi sp, sp, 16
+#endif /* CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_USERSPACE
 	/* t0 still reference to _kernel */
@@ -957,6 +965,15 @@ kernel_swap:
 	call z_thread_mark_switched_in
 #endif
 
+	/*
+	 * no_reschedule_resched is an another interrupt return path.
+	 *
+	 * When CONFIG_PMP_STACK_GUARD=y, reschedule & no_reschedule
+	 * code paths use different sp and only no_reschedule code path
+	 * needs to switch sp before interrupt return. Thus, we use
+	 * another interrupt return path for reschedule path.
+	 */
+no_reschedule_resched:
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Restore context at SOC level */
 	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
