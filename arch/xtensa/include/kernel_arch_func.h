@@ -137,12 +137,9 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 		z_xtensa_cache_flush((void *)osp, 1);
 		z_xtensa_cache_inv((void *)ostack, osp - ostack);
 
-		/* FIXME: hardcoding EXCSAVE3 is bad, should be
-		 * configurable a-la XTENSA_KERNEL_CPU_PTR_SR.
-		 */
 		uint32_t end = ostack + osz;
 
-		__asm__ volatile("wsr.EXCSAVE3 %0" :: "r"(end));
+		__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(end));
 	}
 }
 #endif
