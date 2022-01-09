@@ -17,6 +17,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
+#include <zsr.h>
 #include <cavs-idc.h>
 #include <soc.h>
 #include <arch/xtensa/cache.h>
@@ -92,8 +93,7 @@ __imr void z_mp_entry(void)
 	/* Set up the CPU pointer. */
 	_cpu_t *cpu = &_kernel.cpus[start_rec.cpu];
 
-	__asm__ volatile(
-		"wsr." CONFIG_XTENSA_KERNEL_CPU_PTR_SR " %0" : : "r"(cpu));
+	__asm__ volatile("wsr %0, " ZSR_CPU_STR :: "r"(cpu));
 
 	soc_mp_startup(start_rec.cpu);
 	soc_cpus_active[start_rec.cpu] = true;
