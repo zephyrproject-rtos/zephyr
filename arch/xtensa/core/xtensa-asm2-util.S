@@ -141,51 +141,17 @@ _high_restore_done:
  * RFI levels do the same thing and differ only in the special
  * registers used to hold PC/PS, but Qemu has been observed to behave
  * strangely when RFI doesn't "return" to a INTLEVEL strictly lower
- * than it started from.  So pick level 6 (the highest that works on
- * Qemu, hardware doesn't care so it doesn't matter).  In theory we
- * should test to be able to support hardware with less than 6 levels,
- * though...
+ * than it started from.  So we leverage the zsr.h framework to pick
+ * the highest level available for our specific platform.
  */
-
-/*
- * XCC doesn't like _CONCAT() so we need to spell out
- * every single one.
- */
-#if XCHAL_NUM_INTLEVELS == 1
-# define RCTX_EPC_REG		EPC1
-# define RCTX_EPS_REG		EPS1
-#elif XCHAL_NUM_INTLEVELS == 2
-# define RCTX_EPC_REG		EPC2
-# define RCTX_EPS_REG		EPS2
-#elif XCHAL_NUM_INTLEVELS == 3
-# define RCTX_EPC_REG		EPC3
-# define RCTX_EPS_REG		EPS3
-#elif XCHAL_NUM_INTLEVELS == 4
-# define RCTX_EPC_REG		EPC4
-# define RCTX_EPS_REG		EPS4
-#elif XCHAL_NUM_INTLEVELS == 5
-# define RCTX_EPC_REG		EPC5
-# define RCTX_EPS_REG		EPS5
-#elif XCHAL_NUM_INTLEVELS == 6
-# define RCTX_EPC_REG		EPC6
-# define RCTX_EPS_REG		EPS6
-#elif XCHAL_NUM_INTLEVELS == 7
-# define RCTX_EPC_REG		EPC7
-# define RCTX_EPS_REG		EPS7
-#else
-/* Catch all */
-# define RCTX_EPC_REG		_CONCAT(EPC, XCHAL_NUM_INTLEVELS)
-# define RCTX_EPS_REG		_CONCAT(EPS, XCHAL_NUM_INTLEVELS)
-#endif
-
 .global _restore_context
 _restore_context:
 	call0 xtensa_restore_high_regs
 
 	l32i a0, a1, BSA_PC_OFF
-	wsr a0, RCTX_EPC_REG
+	wsr a0, ZSR_EPC
 	l32i a0, a1, BSA_PS_OFF
-	wsr a0, RCTX_EPS_REG
+	wsr a0, ZSR_EPS
 
 	l32i a0, a1, BSA_SAR_OFF
 	wsr a0, SAR
@@ -212,7 +178,7 @@ _restore_context:
 	l32i a3, a1, BSA_A3_OFF
 	addi a1, a1, BASE_SAVE_AREA_SIZE
 
-	rfi XCHAL_NUM_INTLEVELS
+	rfi ZSR_RFI_LEVEL
 
 /*
  * void xtensa_switch(void *new, void **old_return);
