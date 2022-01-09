@@ -203,6 +203,16 @@
 			status = "disabled";
 		};
 
+		wwdgt: watchdog@40002c00 {
+			compatible = "gd,gd32-wwdgt";
+			reg = <0x40002C00 0x400>;
+			label = "WWDGT";
+			rcu-periph-clock = <0x70b>;
+			interrupt-parent = <&eclic>;
+			interrupts = <19 0>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40010800 {
 			compatible = "gd,gd32-pinctrl-afio";
 			reg = <0x40010800 0x1c00>;
