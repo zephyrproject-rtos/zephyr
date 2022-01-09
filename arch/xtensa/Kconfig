@@ -55,13 +55,6 @@ config XTENSA_USE_CORE_CRT1
 	  SoC or boards might define their own __start by setting this setting
 	  to false.
 
-config XTENSA_KERNEL_CPU_PTR_SR
-	string
-	default "MISC0"
-	help
-	  Specify which special register to store the pointer to
-	  _kernel.cpus[] for the current CPU.
-
 config XTENSA_ENABLE_BACKTRACE
 	bool "Enable backtrace on panic exception"
 	default y
