@@ -348,18 +348,18 @@ DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
  * to save these five cycles during other exceptions and L1
  * interrupts.  Maybe revisit at some point, with better benchmarking.
  * Note that _xt_alloca_exc is Xtensa-authored code which expects A0
- * to have been saved to EXCSAVE1, which is an unfortunate ABI given
- * that Zephyr code otherwise does not use the EXCSAVE registers.
+ * to have been saved to EXCSAVE1, we've modified it to use the zsr.h
+ * API to get assigned a scratch register.
  */
 .pushsection .UserExceptionVector.text, "ax"
 .global _Level1RealVector
 _Level1RealVector:
-	wsr.excsave1 a0
+	wsr a0, ZSR_ALLOCA
 	rsr.exccause a0
 	bnei a0, EXCCAUSE_ALLOCA, _not_alloca
 	j _xt_alloca_exc
 _not_alloca:
-	rsr.excsave1 a0
+	rsr a0, ZSR_ALLOCA
 	j _Level1Vector
 .popsection
 
