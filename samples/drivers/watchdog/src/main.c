@@ -45,6 +45,15 @@
 #define WDT_NODE DT_INST(0, ti_cc32xx_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_wdog)
 #define WDT_NODE DT_INST(0, nxp_imx_wdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_fwdgt)
+#define WDT_NODE DT_INST(0, gd_gd32_fwdgt)
+#else
+#error "Unsupported SoC and no watchdog0 alias in zephyr.dts"
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
+#define WDT_MAX_WINDOW  600000U
+#define WDT_ALLOW_CALLBACK 0
 #endif
 
 #ifndef WDT_ALLOW_CALLBACK
@@ -53,6 +62,10 @@
 
 #ifndef WDT_MAX_WINDOW
 #define WDT_MAX_WINDOW  1000U
+#endif
+
+#ifndef WDG_FEED_INTERVAL
+#define WDG_FEED_INTERVAL 50U
 #endif
 
 /*
@@ -136,7 +149,7 @@ void main(void)
 	for (int i = 0; i < WDT_FEED_TRIES; ++i) {
 		printk("Feeding watchdog...\n");
 		wdt_feed(wdt, wdt_channel_id);
-		k_sleep(K_MSEC(50));
+		k_sleep(K_MSEC(WDG_FEED_INTERVAL));
 	}
 
 	/* Waiting for the SoC reset. */
