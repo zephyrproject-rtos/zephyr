@@ -10,6 +10,10 @@ This application demonstrates how to use OpenAMP with Zephyr. It is designed to
 demonstrate how to integrate OpenAMP with Zephyr both from a build perspective
 and code.
 
+This application contains an extra remote core project. Master core builds
+process will compile the remote too. Remote core builds directory located in
+``build/openamp_remote-prefix/src/openamp_remote-build``.
+
 Building the application for lpcxpresso54114_m4
 ***********************************************
 
@@ -41,6 +45,19 @@ Building the application for v2m_musca_b1
    :zephyr-app: samples/subsys/ipc/openamp
    :board: v2m_musca_b1
    :goals: debug
+
+Building the application for stm32h747i_disco_m7
+************************************************
+Build process will compile the stm32h747i_disco_m4 remote project too.
+
+.. code-block:: console
+
+   # From the root of the zephyr repository
+   west build -b stm32h747i_disco_m7 samples/subsys/ipc/openamp
+   # Flash stm32h747i_disco_m7 application
+   west flash
+   # Flash stm32h747i_disco_m4 application
+   west flash --build-dir build/openamp_remote-prefix/src/openamp_remote-build
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:

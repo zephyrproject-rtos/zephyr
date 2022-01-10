@@ -8,7 +8,8 @@ cmake_minimum_required(VERSION 3.20.0)
 if(("${BOARD}" STREQUAL "lpcxpresso54114_m0")
 	OR "${BOARD}" STREQUAL "lpcxpresso55s69_cpu1"
 	OR "${BOARD}" STREQUAL "mps2_an521_remote"
-	OR "${BOARD}" STREQUAL "v2m_musca_b1_ns")
+	OR "${BOARD}" STREQUAL "v2m_musca_b1_ns"
+	OR "${BOARD}" STREQUAL "stm32h747i_disco_m4")
 	message(STATUS "${BOARD} compiles as remote in this sample")
 else()
 	message(FATAL_ERROR "${BOARD} was not supported for this sample")

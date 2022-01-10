@@ -78,6 +78,8 @@ static void virtio_notify(struct virtqueue *vq)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 
 	ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
+#elif defined(CONFIG_IPM_STM32_HSEM)
+	ipm_send(ipm_handle, 0, 0, NULL, 0);
 #else
 	uint32_t dummy_data = 0x00110011; /* Some data must be provided */
 
