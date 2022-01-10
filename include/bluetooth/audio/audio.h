@@ -30,6 +30,8 @@
 extern "C" {
 #endif
 
+#define BT_AUDIO_BROADCAST_ID_SIZE               3 /* octets */
+
 /* Audio Context Type, Generic Audio */
 #define BT_AUDIO_CONTEXT_TYPE_PROHIBITED         BIT(0)
 #define BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED        BIT(1)
