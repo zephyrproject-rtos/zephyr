@@ -817,7 +817,7 @@ int can_mcan_add_rx_filter_std(struct can_mcan_data *data,
 
 	memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
 			 sizeof(struct can_mcan_std_filter));
-	CACHE_CLEAN(&msg_ram->std_filt[filter_nr],
+	CACHE_CLEAN(&msg_ram->std_filt[filter_id],
 		    sizeof(struct can_mcan_std_filter));
 
 	k_mutex_unlock(&data->inst_mutex);
@@ -879,7 +879,7 @@ static int can_mcan_add_rx_filter_ext(struct can_mcan_data *data,
 
 	memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
 			  sizeof(struct can_mcan_ext_filter));
-	CACHE_CLEAN(&msg_ram->ext_filt[filter_nr],
+	CACHE_CLEAN(&msg_ram->ext_filt[filter_id],
 		    sizeof(struct can_mcan_ext_filter));
 
 	k_mutex_unlock(&data->inst_mutex);
