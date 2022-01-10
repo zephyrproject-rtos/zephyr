@@ -30,8 +30,7 @@ struct stm32_temp_config {
 	bool is_ntc;
 };
 
-static int stm32_temp_sample_fetch(const struct device *dev,
-				  enum sensor_channel chan)
+static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct stm32_temp_data *data = dev->data;
 	struct adc_sequence *sp = &data->adc_seq;
@@ -54,9 +53,8 @@ static int stm32_temp_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int stm32_temp_channel_get(const struct device *dev,
-				 enum sensor_channel chan,
-				 struct sensor_value *val)
+static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel chan,
+				  struct sensor_value *val)
 {
 	struct stm32_temp_data *data = dev->data;
 	const struct stm32_temp_config *cfg = dev->config;
@@ -73,7 +71,7 @@ static int stm32_temp_channel_get(const struct device *dev,
 	} else {
 		temp = (float)(mv - cfg->v25_mv);
 	}
-	temp = (temp/cfg->avgslope)*10;
+	temp = (temp / cfg->avgslope) * 10;
 	temp += 25;
 	sensor_value_from_double(val, temp);
 
@@ -99,13 +97,11 @@ static int stm32_temp_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	*accp = (struct adc_channel_cfg){
-		.gain = ADC_GAIN_1,
-		.reference = ADC_REF_INTERNAL,
-		.acquisition_time = ADC_ACQ_TIME_MAX,
-		.channel_id = data->channel,
-		.differential = 0
-	};
+	*accp = (struct adc_channel_cfg){ .gain = ADC_GAIN_1,
+					  .reference = ADC_REF_INTERNAL,
+					  .acquisition_time = ADC_ACQ_TIME_MAX,
+					  .channel_id = data->channel,
+					  .differential = 0 };
 	rc = adc_channel_setup(data->adc, accp);
 	LOG_DBG("Setup AIN%u got %d", data->channel, rc);
 
@@ -120,26 +116,19 @@ static int stm32_temp_init(const struct device *dev)
 	return 0;
 }
 
-#define STM32_TEMP_INST(idx)    \
-	static struct stm32_temp_data inst_##idx##_data = {  \
-		.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(  \
-						DT_INST(idx, st_stm32_temp))), \
-		.channel = DT_IO_CHANNELS_INPUT( \
-						DT_INST(idx, st_stm32_temp)) \
-	};  \
-	static const struct stm32_temp_config inst_##idx##_config = { \
-		.avgslope = DT_INST_PROP(idx, avgslope),  \
-		.v25_mv = DT_INST_PROP(idx, v25),  \
-		.tsv_mv = DT_INST_PROP(idx, ts_voltage_mv),  \
-		.is_ntc = DT_INST_PROP(idx, ntc)  \
-	};  \
-	DEVICE_DT_INST_DEFINE(idx,  \
-		    stm32_temp_init,    \
-		    NULL,               \
-		    &inst_##idx##_data, \
-			&inst_##idx##_config,  \
-		    POST_KERNEL,           \
-		    CONFIG_SENSOR_INIT_PRIORITY, \
-		    &stm32_temp_driver_api);
+#define STM32_TEMP_INST(idx)                                                                       \
+	static struct stm32_temp_data inst_##idx##_data = {                                        \
+		.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(DT_INST(idx, st_stm32_temp))),            \
+		.channel = DT_IO_CHANNELS_INPUT(DT_INST(idx, st_stm32_temp))                       \
+	};                                                                                         \
+	static const struct stm32_temp_config inst_##idx##_config = {                              \
+		.avgslope = DT_INST_PROP(idx, avgslope),                                           \
+		.v25_mv = DT_INST_PROP(idx, v25),                                                  \
+		.tsv_mv = DT_INST_PROP(idx, ts_voltage_mv),                                        \
+		.is_ntc = DT_INST_PROP(idx, ntc)                                                   \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(idx, stm32_temp_init, NULL, &inst_##idx##_data,                      \
+			      &inst_##idx##_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,      \
+			      &stm32_temp_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_TEMP_INST)
