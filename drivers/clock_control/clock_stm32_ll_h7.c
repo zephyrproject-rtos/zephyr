@@ -765,8 +765,6 @@ static int stm32_clock_control_init(const struct device *dev)
 
 	optimize_regulator_voltage_scale(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
-	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-
 	if (IS_ENABLED(STM32_PLL3_ENABLE)) {
 		int r = set_up_pll3();
 
@@ -774,6 +772,8 @@ static int stm32_clock_control_init(const struct device *dev)
 			return r;
 		}
 	}
+
+	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
