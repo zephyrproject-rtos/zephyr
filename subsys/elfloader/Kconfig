@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DYNAMIC_MODULE
+	bool "Dynamic module loading"
+	depends on FILE_SYSTEM
+	depends on HEAP_MEM_POOL_SIZE > 0
+	help
+	  Enable dynamic module loading
+
+if DYNAMIC_MODULE
+
+config DYNAMIC_MODULE_MEM_SIZE
+	int "Module memory size in kilobytes"
+	default 1024
+	help
+	  Memory size used to load dynamic modules
+
+endif
