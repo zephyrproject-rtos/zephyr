@@ -44,6 +44,8 @@ typedef int (*pcie_edu_check_liveness_t)(const struct device *dev);
 typedef int (*pcie_edu_test_msi_t)(const struct device *dev);
 typedef uint32_t (*pcie_edu_calc_fact_t)(const struct device *dev, uint32_t val);
 #endif
+typedef void (*pcie_edu_dma_copy_t)(const struct device *dev, void *buffer, size_t size,
+				    bool write);
 
 __subsystem struct pcie_edu_driver_api {
 	pcie_edu_get_id_t get_id;
@@ -52,6 +54,7 @@ __subsystem struct pcie_edu_driver_api {
 	pcie_edu_test_msi_t test_msi;
 	pcie_edu_calc_fact_t calc_fact;
 #endif
+	pcie_edu_dma_copy_t dma_copy;
 };
 
 static int pcie_edu_get_id(const struct device *dev, uint32_t *id)
@@ -122,6 +125,46 @@ static uint32_t pcie_edu_calc_fact(const struct device *dev, uint32_t fact)
 }
 #endif
 
+static void pcie_edu_dma_copy(const struct device *dev, void *buffer, size_t size, bool write)
+{
+	struct pcie_edu_data *ctx = (struct pcie_edu_data *)dev->data;
+	size_t sz = MIN(4096, size);
+
+#ifdef CONFIG_PCIE_MSI
+	irq_status = 0;
+#endif
+
+	if (write) {
+		sys_write64((uint64_t)buffer, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x80));
+		sys_write64(0x40000, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x88));
+		sys_write64(sz, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x90));
+#ifdef CONFIG_PCIE_MSI
+		sys_write32(5, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x98));
+#else
+		sys_write32(1, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x98));
+#endif
+	} else {
+		sys_write64(0x40000, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x80));
+		sys_write64((uint64_t)buffer, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x88));
+		sys_write64(sz, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x90));
+#ifdef CONFIG_PCIE_MSI
+		sys_write32(7, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x98));
+#else
+		sys_write32(3, (mem_addr_t)((uint8_t *)ctx->mem_addr + 0x98));
+#endif
+	}
+
+#ifdef CONFIG_PCIE_MSI
+	while (!irq_status) {
+		k_usleep(1);
+	}
+#else
+	while (sys_read32((mem_addr_t)((uint8_t *)ctx->mem_addr + 0x98)) & 1 == 1) {
+		k_usleep(1);
+	}
+#endif
+}
+
 static int pcie_edu_init(const struct device *dev)
 {
 	const struct pcie_edu_config *cfg = (const struct pcie_edu_config *)dev->config;
@@ -174,6 +217,7 @@ static struct pcie_edu_driver_api pcie_edu_api = {
 	.test_msi = pcie_edu_test_msi,
 	.calc_fact = pcie_edu_calc_fact,
 #endif
+	.dma_copy = pcie_edu_dma_copy,
 };
 
 #define PCIE_TESTED_DEVICE_INIT(n)							\
@@ -308,6 +352,43 @@ static void test_run_calc_fact(void)
 }
 #endif
 
+static void test_run_dma_copy(void)
+{
+	const struct pcie_edu_config *cfg;
+	struct pcie_edu_driver_api *api;
+	int i;
+
+	/* First copy the device BDF in the device memory */
+
+	for (i = 0 ; dev[i] ; ++i) {
+		pcie_bdf_t pcie_bdf;
+
+		api = (struct pcie_edu_driver_api *)dev[i]->api;
+		cfg = (const struct pcie_edu_config *)dev[i]->config;
+
+		LOG_INF("edu device %d write %x", i, cfg->pcie_bdf);
+
+		pcie_bdf = cfg->pcie_bdf;
+
+		api->dma_copy(dev[i], &pcie_bdf, sizeof(pcie_bdf), true);
+	}
+
+	/* Then read back and compare with BFD */
+
+	for (i = 0 ; dev[i] ; ++i) {
+		pcie_bdf_t pcie_bdf = PCIE_BDF_NONE;
+
+		api = (struct pcie_edu_driver_api *)dev[i]->api;
+		cfg = (const struct pcie_edu_config *)dev[i]->config;
+
+		api->dma_copy(dev[i], &pcie_bdf, sizeof(pcie_bdf), false);
+
+		LOG_INF("edu device %d read %x", i, pcie_bdf);
+
+		zassert_equal(cfg->pcie_bdf, pcie_bdf, "");
+	}
+}
+
 void test_main(void)
 {
 	ztest_test_suite(pci_edu_test,
@@ -316,6 +397,7 @@ void test_main(void)
 			 ztest_unit_test(test_run_check_liveness),
 			 ztest_unit_test(test_run_test_msi),
 			 ztest_unit_test(test_run_calc_fact),
+			 ztest_unit_test(test_run_dma_copy)
 			 );
 
 	ztest_run_test_suite(pci_edu_test);
