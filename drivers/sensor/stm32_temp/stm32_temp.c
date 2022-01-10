@@ -20,7 +20,7 @@ struct stm32_temp_data {
 	struct adc_sequence adc_seq;
 	struct k_mutex mutex;
 	int16_t sample_buffer;
-	int32_t mv; /* Sensor value in millivolts */
+	int16_t raw; /* raw adc Sensor value */
 };
 
 struct stm32_temp_config {
@@ -33,7 +33,6 @@ struct stm32_temp_config {
 static int stm32_temp_sample_fetch(const struct device *dev,
 				  enum sensor_channel chan)
 {
-	const struct stm32_temp_config *cfg = dev->config;
 	struct stm32_temp_data *data = dev->data;
 	struct adc_sequence *sp = &data->adc_seq;
 	int rc;
@@ -47,7 +46,7 @@ static int stm32_temp_sample_fetch(const struct device *dev,
 	rc = adc_read(data->adc, sp);
 	sp->calibrate = false;
 	if (rc == 0) {
-		data->mv = data->sample_buffer * cfg->tsv_mv /	0x0FFF;
+		data->raw = data->sample_buffer;
 	}
 
 	k_mutex_unlock(&data->mutex);
@@ -67,10 +66,12 @@ static int stm32_temp_channel_get(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	int32_t mv = data->raw * cfg->tsv_mv / 0x0FFF; /* Sensor value in millivolts */
+
 	if (cfg->is_ntc) {
-		temp = (float)(cfg->v25_mv - data->mv);
+		temp = (float)(cfg->v25_mv - mv);
 	} else {
-		temp = (float)(data->mv - cfg->v25_mv);
+		temp = (float)(mv - cfg->v25_mv);
 	}
 	temp = (temp/cfg->avgslope)*10;
 	temp += 25;
