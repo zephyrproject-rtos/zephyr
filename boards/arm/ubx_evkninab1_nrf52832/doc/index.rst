@@ -77,7 +77,7 @@ following hardware features:
 	disabled. On the EVK-NINA-B1, these pins are
 	assigned to SWDIO and SWDCLK, respectively.
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `EVK-NINA-B1 product page`_ and `NINA-B1 Data Sheet`_
 for a complete list of EVK NINA-B1 hardware features.
 
