@@ -117,4 +117,12 @@ config SYS_MEM_BLOCKS
 	     the buffer to reside in memory regions where these can be
 	     powered down to conserve energy.
 
+config SYS_MEM_BLOCKS_LISTENER
+	bool "Enable Memory Blocks Allocator event notifications"
+	depends on SYS_MEM_BLOCKS
+	select HEAP_LISTENER
+	help
+	  This allows application to listen for memory blocks allocator
+	  events, such as memory allocation and de-allocation.
+
 endmenu
