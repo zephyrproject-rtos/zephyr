@@ -1,7 +1,7 @@
 .. _boards-stm32-power_mgmt-stm32wb_ble-sample:
 
-Boards: STM32WB BLE Power Management
-####################################
+STM32: PM BLE Power Management (STM32WB)
+########################################
 
 Overview
 ********
