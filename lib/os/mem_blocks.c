@@ -7,6 +7,7 @@
 #include <zephyr.h>
 #include <sys/__assert.h>
 #include <sys/check.h>
+#include <sys/heap_listener.h>
 #include <sys/mem_blocks.h>
 #include <sys/util.h>
 
@@ -91,6 +92,11 @@ int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
 		}
 
 		out_blocks[i] = ptr;
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+		heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(mem_block),
+					   ptr, BIT(mem_block->blk_sz_shift));
+#endif
 	}
 
 	/* If error, free already allocated blocks. */
@@ -137,6 +143,17 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 		if (r != 0) {
 			ret = r;
 		}
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+		else {
+			/*
+			 * Since we do not keep track of failed free ops,
+			 * we need to notify free one-by-one, instead of
+			 * notifying at the end of function.
+			 */
+			heap_listener_notify_free(HEAP_ID_FROM_POINTER(mem_block),
+						  ptr, BIT(mem_block->blk_sz_shift));
+		}
+#endif
 	}
 
 out:
