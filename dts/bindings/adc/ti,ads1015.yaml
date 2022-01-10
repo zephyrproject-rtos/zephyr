@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Matija Tudan
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI ADS1015
+
+compatible: "ti,ads1015"
+
+include: ti,ads101x-base.yaml
