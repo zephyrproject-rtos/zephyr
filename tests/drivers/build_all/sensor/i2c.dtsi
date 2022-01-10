@@ -630,3 +630,8 @@ test_i2c_max31875: max31875@53 {
 	compatible = "maxim,max31875";
 	reg = <0x53>;
 };
+
+test_i2c_aht20: aht20@54 {
+	compatible = "aosong,aht20";
+	reg = <0x54>;
+};

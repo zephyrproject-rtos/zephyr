@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Rafael Lee
+# SPDX-License-Identifier: Apache-2.0
+
+config AHT20
+	bool "AHT20 Temperature and Humidity Sensor"
+	default y
+	depends on DT_HAS_AOSONG_AHT20_ENABLED
+	select I2C
+	help
+	  Enable driver for the AHT20 temperature and humidity sensor.

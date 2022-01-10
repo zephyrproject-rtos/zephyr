@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Rafael Lee
+# SPDX-License-Identifier: Apache-2.0
+
+description: AHT20 Temperature and Humidity Sensor
+
+compatible: "aosong,aht20"
+
+include: [sensor-device.yaml, i2c-device.yaml]
