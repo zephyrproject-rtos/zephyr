@@ -494,6 +494,17 @@ config BUILD_OUTPUT_STRIPPED
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_INFO_HEADER
+	bool "Create a image information header"
+	help
+	  Create an image information header which will contain image
+	  information from the Zephyr binary.
+	  Example of information contained in the header file:
+	  - Number of segments in the image
+	  - LMA address of each segment
+	  - VMA address of each segment
+	  - Size of each segment
+
 config APPLICATION_DEFINED_SYSCALL
 	bool "Scan application folder for any syscall definition"
 	help
