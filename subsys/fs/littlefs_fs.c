@@ -578,7 +578,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		return -ENOTSUP;
 	}
 
-	if (fs->area) {
+	if (fs->backend) {
 		return -EBUSY;
 	}
 
@@ -587,19 +587,22 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	fs_lock(fs);
 
 	/* Open flash area */
-	ret = flash_area_open(area_id, &fs->area);
-	if ((ret < 0) || (fs->area == NULL)) {
+	const struct flash_area **fap = (const struct flash_area **)&fs->backend;
+
+	ret = flash_area_open(area_id, fap);
+	if ((ret < 0) || (*fap == NULL)) {
 		LOG_ERR("can't open flash area %d", area_id);
 		ret = -ENODEV;
 		goto out;
 	}
-	LOG_DBG("FS area %u at 0x%x for %u bytes",
-		area_id, (uint32_t)fs->area->fa_off,
-		(uint32_t)fs->area->fa_size);
 
-	dev = flash_area_get_device(fs->area);
+	LOG_DBG("FS area %u at 0x%x for %u bytes", area_id,
+		(uint32_t)(*fap)->fa_off, (uint32_t)(*fap)->fa_size);
+
+	dev = flash_area_get_device(*fap);
 	if (dev == NULL) {
-		LOG_ERR("can't get flash device: %s", log_strdup(fs->area->fa_dev_name));
+		LOG_ERR("can't get flash device: %s",
+			log_strdup((*fap)->fa_dev_name));
 		ret = -ENODEV;
 		goto out;
 	}
@@ -632,7 +635,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	lfs_size_t block_size = lcp->block_size;
 
 	if (block_size == 0) {
-		block_size = get_block_size(fs->area);
+		block_size = get_block_size(*fap);
 	}
 	if (block_size == 0) {
 		__ASSERT_NO_MSG(block_size != 0);
@@ -664,11 +667,11 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 
 	/* No, you don't get to override this. */
-	lfs_size_t block_count = fs->area->fa_size / block_size;
+	lfs_size_t block_count = (*fap)->fa_size / block_size;
 
 	LOG_INF("FS at %s:0x%x is %u 0x%x-byte blocks with %u cycle",
-		log_strdup(dev->name), (uint32_t)fs->area->fa_off,
-		block_count, block_size, block_cycles);
+		log_strdup(dev->name), (uint32_t)(*fap)->fa_off, block_count,
+		block_size, block_cycles);
 	LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
 		read_size, prog_size, cache_size, lookahead_size);
 
@@ -677,7 +680,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	__ASSERT_NO_MSG(cache_size != 0);
 	__ASSERT_NO_MSG(block_size != 0);
 
-	__ASSERT((fs->area->fa_size % block_size) == 0,
+	__ASSERT(((*fap)->fa_size % block_size) == 0,
 		 "partition size must be multiple of block size");
 	__ASSERT((block_size % prog_size) == 0,
 		 "erase size must be multiple of write size");
@@ -685,7 +688,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		 "cache size incompatible with block size");
 
 	/* Set the validated/defaulted values. */
-	lcp->context = (void *)fs->area;
+	lcp->context = fs->backend;
 	lcp->read = lfs_api_read;
 	lcp->prog = lfs_api_prog;
 	lcp->erase = lfs_api_erase;
@@ -728,7 +731,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 out:
 	if (ret < 0) {
-		fs->area = NULL;
+		fs->backend = NULL;
 	}
 
 	fs_unlock(fs);
@@ -743,8 +746,8 @@ static int littlefs_unmount(struct fs_mount_t *mountp)
 	fs_lock(fs);
 
 	lfs_unmount(&fs->lfs);
-	flash_area_close(fs->area);
-	fs->area = NULL;
+	flash_area_close(fs->backend);
+	fs->backend = NULL;
 
 	fs_unlock(fs);
 
