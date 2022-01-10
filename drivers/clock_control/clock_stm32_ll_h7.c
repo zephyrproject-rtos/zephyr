@@ -764,8 +764,6 @@ static int stm32_clock_control_init(const struct device *dev)
 	}
 #endif /* STM32_PLL3_ENABLE */
 
-	/* Set systick to 1ms */
-	SysTick_Config(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000);
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
