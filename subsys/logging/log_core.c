@@ -127,24 +127,26 @@ static void z_log_msg_post_finalize(void)
 	atomic_val_t cnt = atomic_inc(&buffered_cnt);
 
 	if (panic_mode) {
-		unsigned int key = irq_lock();
+		static struct k_spinlock process_lock;
+		k_spinlock_key_t key = k_spin_lock(&process_lock);
 		(void)log_process();
-		irq_unlock(key);
-	} else if (proc_tid != NULL && cnt == 0) {
-		k_timer_start(&log_process_thread_timer,
-			K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS), K_NO_WAIT);
-	} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-		if ((cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
-		    (proc_tid != NULL)) {
+
+		k_spin_unlock(&process_lock, key);
+	} else if (proc_tid != NULL) {
+		if (cnt == 0) {
+			k_timer_start(&log_process_thread_timer,
+				      K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS),
+				      K_NO_WAIT);
+		} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+			   cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
 			k_timer_stop(&log_process_thread_timer);
 			k_sem_give(&log_process_thread_sem);
+		} else {
+			/* No action needed. Message processing will be triggered by the
+			 * timeout or when number of upcoming messages exceeds the
+			 * threshold.
+			 */
 		}
-	} else {
-		/* No action needed. Message processing will be triggered by the
-		 * timeout or when number of upcoming messages exceeds the
-		 * threshold.
-		 */
-		;
 	}
 }
 
