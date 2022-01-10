@@ -1,7 +1,7 @@
-.. _olimex_stm32_e407_ccm:
+.. _samples_boards_stm32_ccm:
 
-Olimex STM32-E407 CCM example
-#############################
+STM32 CCM example
+#################
 
 Overview
 ********
