@@ -95,10 +95,27 @@ struct bt_ascs_ase_status_qos {
 	uint8_t  pd[3];
 } __packed;
 
-/* ASE_Status = 0x03 (Enabling), 0x04 (Streaming), or 0x05 (Disabling) as
- * defined in Table 4.9.
+/* ASE_Status = 0x03 (Enabling) defined in Table 4.9.
  */
 struct bt_ascs_ase_status_enable {
+	uint8_t  cig_id;
+	uint8_t  cis_id;
+	uint8_t  metadata_len;
+	uint8_t  metadata[0];
+} __packed;
+
+/* ASE_Status =  0x04 (Streaming) defined in Table 4.9.
+ */
+struct bt_ascs_ase_status_stream {
+	uint8_t  cig_id;
+	uint8_t  cis_id;
+	uint8_t  metadata_len;
+	uint8_t  metadata[0];
+} __packed;
+
+/* ASE_Status = 0x05 (Disabling) as defined in Table 4.9.
+ */
+struct bt_ascs_ase_status_disable {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	uint8_t  metadata_len;
