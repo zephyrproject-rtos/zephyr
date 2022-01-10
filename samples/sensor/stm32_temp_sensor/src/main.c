@@ -9,13 +9,11 @@
 #include <drivers/sensor.h>
 #include <sys/printk.h>
 
-
 void main(void)
 {
 	struct sensor_value val;
 	int rc;
-	const struct device *dev =
-		DEVICE_DT_GET(DT_INST(0, st_stm32_temp));
+	const struct device *dev = DEVICE_DT_GET(DT_INST(0, st_stm32_temp));
 
 	if (!device_is_ready(dev)) {
 		printk("Temperature sensor is not ready\n");
@@ -40,7 +38,6 @@ void main(void)
 			continue;
 		}
 
-		printk("Current temperature: %.1f °C\n",
-					sensor_value_to_double(&val));
+		printk("Current temperature: %.1f °C\n", sensor_value_to_double(&val));
 	}
 }
