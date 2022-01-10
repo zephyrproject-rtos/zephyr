@@ -395,7 +395,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	} else if (chunk_size(h, c) > chunks_need) {
 		/* Shrink in place, split off and free unused suffix */
 #ifdef CONFIG_SYS_HEAP_LISTENER
-		size_t bytes_freed = chunksz_to_bytes(h, c);
+		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
 #endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -421,7 +421,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 		chunksz_t split_size = chunks_need - chunk_size(h, c);
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
-		size_t bytes_freed = chunksz_to_bytes(h, c);
+		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
 #endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
