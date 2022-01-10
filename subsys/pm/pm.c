@@ -24,7 +24,17 @@ LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
 static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_NUM_CPUS);
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
-static struct pm_state_info z_power_states[CONFIG_MP_NUM_CPUS];
+
+/*
+ * Properly initialize cpu power states. Do not make assumptions that
+ * ACTIVE_STATE is 0
+ */
+#define CPU_PM_STATE_INIT(_, __)		\
+	{ .state = PM_STATE_ACTIVE },
+static struct pm_state_info z_power_states[] = {
+	UTIL_LISTIFY(CONFIG_MP_NUM_CPUS, CPU_PM_STATE_INIT)
+};
+
 /* bitmask to check if a power state was forced. */
 static ATOMIC_DEFINE(z_power_states_forced, CONFIG_MP_NUM_CPUS);
 #ifdef CONFIG_PM_DEVICE
