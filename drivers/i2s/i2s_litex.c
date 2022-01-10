@@ -152,7 +152,7 @@ static void i2s_clear_pending_irq(uintptr_t reg)
 }
 
 /**
- * @brief fast data copy function,
+ * @brief Fast data copy function
  *
  * Each operation copies 32 bit data chunks
  * This function copies data from fifo into user buffer
@@ -205,7 +205,7 @@ static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
 }
 
 /**
- * @brief fast data copy function,
+ * @brief Fast data copy function
  *
  * Each operation copies 32 bit data chunks
  * This function copies data from user buffer into fifo
