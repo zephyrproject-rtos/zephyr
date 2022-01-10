@@ -623,12 +623,12 @@ static int nrf5_stop(const struct device *dev)
 	}
 #else
 	ARG_UNUSED(dev);
-#endif
 
 	if (!nrf_802154_sleep()) {
 		LOG_ERR("Error while stopping radio");
 		return -EIO;
 	}
+#endif
 
 	LOG_DBG("nRF5 802154 radio stopped");
 
