@@ -1392,7 +1392,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 	static struct eth_context eth##n##_context = {			\
 		.base = (ENET_Type *)DT_INST_REG_ADDR(n),		\
 		.config_func = eth##n##_config_func,			\
-		.phy_addr = 0U,						\
+		.phy_addr = DT_INST_PROP(n, phy_addr),		\
 		.phy_duplex = kPHY_FullDuplex,				\
 		.phy_speed = kPHY_Speed100M,				\
 		.phy_handle = &eth##n##_phy_handle,			\
