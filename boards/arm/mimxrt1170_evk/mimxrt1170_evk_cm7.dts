@@ -121,3 +121,10 @@
 &wdog1 {
 	status = "okay";
 };
+
+&enet {
+	status = "okay";
+	ptp {
+		status = "okay";
+	};
+};

@@ -42,4 +42,11 @@ endchoice
 
 endif #FLASH
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if CPU_CORTEX_M7 # No cache memory support is required for driver
+
+endif # NETWORKING
+
 endif # BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4

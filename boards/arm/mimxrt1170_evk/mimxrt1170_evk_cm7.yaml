@@ -24,3 +24,4 @@ supported:
   - pwm
   - dma
   - watchdog
+  - netif:eth
