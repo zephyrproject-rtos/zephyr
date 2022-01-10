@@ -1576,6 +1576,19 @@ if(CONFIG_BUILD_OUTPUT_EXE)
     )
 endif()
 
+if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_image_info.py
+    --elf-file=${KERNEL_ELF_NAME}
+    --header-file=${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
+    )
+  list(APPEND
+    post_build_byproducts
+    ${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
+    )
+endif()
+
 # Generate and use MCUboot related artifacts as needed.
 if(CONFIG_BOOTLOADER_MCUBOOT)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)

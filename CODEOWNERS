@@ -658,6 +658,7 @@
 /scripts/pylib/twister/expr_parser.py     @nashif
 /scripts/schemas/twister/                 @nashif
 /scripts/gen_app_partitions.py            @dcpleung @nashif
+scripts/gen_image_info.py                 @tejlmand
 /scripts/get_maintainer.py                @nashif
 /scripts/dts/                             @mbolivar-nordic @galak
 /scripts/release/                         @nashif
