@@ -7,6 +7,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 
+#include <sys/heap_listener.h>
 #include <sys/mem_blocks.h>
 #include <sys/util.h>
 
@@ -50,6 +51,43 @@ static bool check_buffer_bound(sys_mem_blocks_t *mem_block, void *ptr)
 	}
 }
 
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+static uintptr_t listener_heap_id[NUM_BLOCKS];
+static void *listener_mem[NUM_BLOCKS];
+static size_t listener_size[NUM_BLOCKS];
+static uint8_t listener_idx;
+
+static void mem_block_alloc_free_cb(uintptr_t heap_id, void *mem, size_t bytes)
+{
+	listener_heap_id[listener_idx] = heap_id;
+	listener_mem[listener_idx] = mem;
+	listener_size[listener_idx] = bytes;
+
+#ifdef CONFIG_DEBUG
+	TC_PRINT("[%u] Heap 0x%" PRIxPTR ", alloc %p, size %u\n",
+		 listener_idx, heap_id, mem, (uint32_t)bytes);
+#endif
+
+	listener_idx++;
+}
+
+HEAP_LISTENER_ALLOC_DEFINE(mem_block_01_alloc,
+			   HEAP_ID_FROM_POINTER(&mem_block_01),
+			   mem_block_alloc_free_cb);
+
+HEAP_LISTENER_FREE_DEFINE(mem_block_01_free,
+			  HEAP_ID_FROM_POINTER(&mem_block_01),
+			  mem_block_alloc_free_cb);
+
+HEAP_LISTENER_ALLOC_DEFINE(mem_block_02_alloc,
+			   HEAP_ID_FROM_POINTER(&mem_block_02),
+			   mem_block_alloc_free_cb);
+
+HEAP_LISTENER_FREE_DEFINE(mem_block_02_free,
+			  HEAP_ID_FROM_POINTER(&mem_block_02),
+			  mem_block_alloc_free_cb);
+#endif /* CONFIG_SYS_MEM_BLOCKS_LISTENER */
+
 static void alloc_free(sys_mem_blocks_t *mem_block,
 		       int num_blocks, int num_iters)
 {
@@ -57,7 +95,21 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 	void *blocks[NUM_BLOCKS][1];
 	int val;
 
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	if (mem_block == &mem_block_01) {
+		heap_listener_register(&mem_block_01_alloc);
+		heap_listener_register(&mem_block_01_free);
+	} else if (mem_block == &mem_block_02) {
+		heap_listener_register(&mem_block_02_alloc);
+		heap_listener_register(&mem_block_02_free);
+	}
+#endif
+
 	for (j = 0; j < num_iters; j++) {
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+		listener_idx = 0;
+#endif
+
 		for (i = 0; i < num_blocks; i++) {
 			ret = sys_mem_blocks_alloc(mem_block, 1, blocks[i]);
 			zassert_equal(ret, 0,
@@ -70,6 +122,19 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 						    i, &val);
 			zassert_equal(val, 1,
 				      "sys_mem_blockss_alloc bitmap failed");
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+			zassert_equal(listener_heap_id[i],
+				      HEAP_ID_FROM_POINTER(mem_block),
+				      "Heap ID mismatched: 0x%lx != %p",
+				      listener_heap_id[i], mem_block);
+			zassert_equal(listener_mem[i], blocks[i][0],
+				      "Heap allocated pointer mismatched: %p != %p",
+				      listener_mem[i], blocks[i][0]);
+			zassert_equal(listener_size[i], BIT(mem_block->blk_sz_shift),
+				      "Heap allocated sized: %u != %u",
+				      listener_size[i], BIT(mem_block->blk_sz_shift));
+#endif
 		}
 
 		if (num_blocks >= NUM_BLOCKS) {
@@ -77,6 +142,10 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 			zassert_equal(ret, -ENOMEM,
 				"sys_mem_blocks_alloc should fail with -ENOMEM but not");
 		}
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+		listener_idx = 0;
+#endif
 
 		for (i = 0; i < num_blocks; i++) {
 			ret = sys_mem_blocks_free(mem_block, 1, blocks[i]);
@@ -87,8 +156,31 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 						    i, &val);
 			zassert_equal(val, 0,
 				      "sys_mem_blocks_free bitmap failed");
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+			zassert_equal(listener_heap_id[i],
+				      HEAP_ID_FROM_POINTER(mem_block),
+				      "Heap ID mismatched: 0x%lx != %p",
+				      listener_heap_id[i], mem_block);
+			zassert_equal(listener_mem[i], blocks[i][0],
+				      "Heap allocated pointer mismatched: %p != %p",
+				      listener_mem[i], blocks[i][0]);
+			zassert_equal(listener_size[i], BIT(mem_block->blk_sz_shift),
+				      "Heap allocated sized: %u != %u",
+				      listener_size[i], BIT(mem_block->blk_sz_shift));
+#endif
 		}
 	}
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	if (mem_block == &mem_block_01) {
+		heap_listener_unregister(&mem_block_01_alloc);
+		heap_listener_unregister(&mem_block_01_free);
+	} else if (mem_block == &mem_block_02) {
+		heap_listener_unregister(&mem_block_02_alloc);
+		heap_listener_unregister(&mem_block_02_free);
+	}
+#endif
 }
 
 static void test_mem_block_alloc_free(void)
