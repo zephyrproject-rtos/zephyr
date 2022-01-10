@@ -185,9 +185,10 @@ bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 
 static bool bt_audio_stream_is_broadcast(const struct bt_audio_stream *stream)
 {
-	/* TODO: Add broadcast sink */
 	return (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SOURCE) &&
-		bt_audio_ep_is_broadcast_src(stream->ep));
+		bt_audio_ep_is_broadcast_src(stream->ep)) ||
+	       (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK) &&
+		bt_audio_ep_is_broadcast_snk(stream->ep));
 }
 
 bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
