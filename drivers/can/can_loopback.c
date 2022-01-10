@@ -236,10 +236,12 @@ int can_loopback_recover(const struct device *dev, k_timeout_t timeout)
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 static void can_loopback_set_state_change_callback(const struct device *dev,
-						   can_state_change_callback_t cb)
+						   can_state_change_callback_t cb,
+						   void *user_data)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
 }
 
 int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)

@@ -81,11 +81,13 @@ static enum can_state mcux_mcan_get_state(const struct device *dev,
 }
 
 static void mcux_mcan_set_state_change_callback(const struct device *dev,
-						can_state_change_callback_t cb)
+						can_state_change_callback_t cb,
+						void *user_data)
 {
 	struct mcux_mcan_data *data = dev->data;
 
 	data->mcan.state_change_cb = cb;
+	data->mcan.state_change_cb_data = user_data;
 }
 
 static int mcux_mcan_get_core_clock(const struct device *dev, uint32_t *rate)

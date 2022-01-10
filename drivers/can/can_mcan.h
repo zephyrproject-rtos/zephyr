@@ -173,6 +173,7 @@ struct can_mcan_data {
 	void *cb_arg_std[NUM_STD_FILTER_DATA];
 	void *cb_arg_ext[NUM_EXT_FILTER_DATA];
 	can_state_change_callback_t state_change_cb;
+	void *state_change_cb_data;
 	uint32_t std_filt_rtr;
 	uint32_t std_filt_rtr_mask;
 	uint8_t ext_filt_rtr;

@@ -56,11 +56,13 @@ void can_stm32fd_clock_enable(void)
 }
 
 void can_stm32fd_set_state_change_callback(const struct device *dev,
-					   can_state_change_callback_t cb)
+					   can_state_change_callback_t cb,
+					   void *user_data)
 {
 	struct can_stm32fd_data *data = DEV_DATA(dev);
 
 	data->mcan_data.state_change_cb = cb;
+	data->mcan_data.state_change_cb_data = user_data;
 }
 
 static int can_stm32fd_init(const struct device *dev)
