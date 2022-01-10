@@ -123,6 +123,7 @@ static inline void can_stm32_bus_state_change_isr(CAN_TypeDef *can,
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
 	const can_state_change_callback_t cb = data->state_change_cb;
+	void *state_change_cb_data = data->state_change_cb_data;
 
 	if (!(can->ESR & CAN_ESR_EPVF) && !(can->ESR & CAN_ESR_BOFF)) {
 		return;
@@ -140,7 +141,7 @@ static inline void can_stm32_bus_state_change_isr(CAN_TypeDef *can,
 	}
 
 	if (cb != NULL) {
-		cb(state, err_cnt);
+		cb(state, err_cnt, state_change_cb_data);
 	}
 }
 
@@ -441,6 +442,7 @@ static int can_stm32_init(const struct device *dev)
 	data->mb1.tx_callback = NULL;
 	data->mb2.tx_callback = NULL;
 	data->state_change_cb = NULL;
+	data->state_change_cb_data = NULL;
 
 	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL;
 	(void)memset(data->rx_cb, 0, sizeof(data->rx_cb));
@@ -525,13 +527,15 @@ static int can_stm32_init(const struct device *dev)
 }
 
 static void can_stm32_set_state_change_callback(const struct device *dev,
-						can_state_change_callback_t cb)
+						can_state_change_callback_t cb,
+						void *user_data)
 {
 	struct can_stm32_data *data = DEV_DATA(dev);
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	CAN_TypeDef *can = cfg->can;
 
 	data->state_change_cb = cb;
+	data->state_change_cb_data = user_data;
 
 	if (cb == NULL) {
 		can->IER &= ~CAN_IER_EPVIE;

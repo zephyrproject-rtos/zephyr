@@ -563,11 +563,13 @@ static void mcp2515_remove_rx_filter(const struct device *dev, int filter_id)
 }
 
 static void mcp2515_set_state_change_callback(const struct device *dev,
-					      can_state_change_callback_t cb)
+					      can_state_change_callback_t cb,
+					      void *user_data)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
 	dev_data->state_change_cb = cb;
+	dev_data->state_change_cb_data = user_data;
 }
 
 static void mcp2515_rx_filter(const struct device *dev,
@@ -673,6 +675,7 @@ static void mcp2515_handle_errors(const struct device *dev)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	can_state_change_callback_t state_change_cb = dev_data->state_change_cb;
+	void *state_change_cb_data = dev_data->state_change_cb_data;
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
 
@@ -680,7 +683,7 @@ static void mcp2515_handle_errors(const struct device *dev)
 
 	if (state_change_cb && dev_data->old_state != state) {
 		dev_data->old_state = state;
-		state_change_cb(state, err_cnt);
+		state_change_cb(state, err_cnt, state_change_cb_data);
 	}
 }
 

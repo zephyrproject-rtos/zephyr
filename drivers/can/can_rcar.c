@@ -199,6 +199,7 @@ struct can_rcar_data {
 	void *rx_callback_arg[CONFIG_CAN_RCAR_MAX_FILTER];
 	struct zcan_filter filter[CONFIG_CAN_RCAR_MAX_FILTER];
 	can_state_change_callback_t state_change_cb;
+	void *state_change_cb_data;
 	enum can_state state;
 };
 
@@ -251,6 +252,7 @@ static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
 	const can_state_change_callback_t cb = data->state_change_cb;
+	void *state_change_cb_data = data->state_change_cb_data;
 	struct can_bus_err_cnt err_cnt;
 
 	if (data->state == newstate) {
@@ -265,7 +267,7 @@ static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 		return;
 	}
 	can_rcar_get_error_count(config, &err_cnt);
-	cb(newstate, err_cnt);
+	cb(newstate, err_cnt, state_change_cb_data);
 }
 
 static void can_rcar_error(const struct device *dev)
@@ -657,11 +659,13 @@ unlock:
 }
 
 static void can_rcar_set_state_change_callback(const struct device *dev,
-					       can_state_change_callback_t cb)
+					       can_state_change_callback_t cb,
+					       void *user_data)
 {
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
 
 	data->state_change_cb = cb;
+	data->state_change_cb_data = user_data;
 }
 
 static enum can_state can_rcar_get_state(const struct device *dev,
@@ -862,6 +866,7 @@ static int can_rcar_init(const struct device *dev)
 	memset(data->rx_callback, 0, sizeof(data->rx_callback));
 	data->state = CAN_ERROR_ACTIVE;
 	data->state_change_cb = NULL;
+	data->state_change_cb_data = NULL;
 
 	/* reset the registers */
 	ret = clock_control_off(config->clock_dev,
