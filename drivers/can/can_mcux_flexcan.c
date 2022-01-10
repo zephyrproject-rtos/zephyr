@@ -117,6 +117,7 @@ struct mcux_flexcan_data {
 	struct mcux_flexcan_tx_callback tx_cbs[MCUX_FLEXCAN_MAX_TX];
 	enum can_state state;
 	can_state_change_callback_t state_change_cb;
+	void *state_change_cb_data;
 	struct can_timing timing;
 };
 
@@ -423,11 +424,13 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 }
 
 static void mcux_flexcan_set_state_change_callback(const struct device *dev,
-						   can_state_change_callback_t callback)
+						   can_state_change_callback_t callback,
+						   void *user_data)
 {
 	struct mcux_flexcan_data *data = dev->data;
 
 	data->state_change_cb = callback;
+	data->state_change_cb_data = user_data;
 }
 
 static enum can_state mcux_flexcan_get_state(const struct device *dev,
@@ -518,6 +521,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	const can_state_change_callback_t cb = data->state_change_cb;
+	void *cb_data = data->state_change_cb_data;
 
 	can_tx_callback_t function;
 	int status = 0;
@@ -551,7 +555,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 		data->state = state;
 
 		if (cb) {
-			cb(state, err_cnt);
+			cb(state, err_cnt, cb_data);
 		}
 	}
 

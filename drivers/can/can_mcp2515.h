@@ -43,6 +43,7 @@ struct mcp2515_data {
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];
 	struct zcan_filter filter[CONFIG_CAN_MAX_FILTER];
 	can_state_change_callback_t state_change_cb;
+	void *state_change_cb_data;
 
 	/* general data */
 	struct k_mutex mutex;

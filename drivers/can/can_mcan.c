@@ -461,11 +461,12 @@ static void can_mcan_state_change_handler(const struct can_mcan_config *cfg,
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
 	const can_state_change_callback_t cb = data->state_change_cb;
+	void *cb_data = data->state_change_cb_data;
 
 	state = can_mcan_get_state(cfg, &err_cnt);
 
 	if (cb != NULL) {
-		cb(state, err_cnt);
+		cb(state, err_cnt, cb_data);
 	}
 }
 

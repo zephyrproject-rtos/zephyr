@@ -268,7 +268,7 @@ typedef void (*can_tx_callback_t)(int error, void *user_data);
  * @brief Defines the application callback handler function signature for receiving.
  *
  * @param frame     Received frame.
- * @param user_data User data provided when the filter was attached.
+ * @param user_data User data provided when the filter was added.
  */
 typedef void (*can_rx_callback_t)(struct zcan_frame *frame, void *user_data);
 
@@ -276,10 +276,13 @@ typedef void (*can_rx_callback_t)(struct zcan_frame *frame, void *user_data);
  * @typedef can_state_change_callback_t
  * @brief Defines the state change callback handler function signature
  *
- * @param state   State of the CAN controller.
- * @param err_cnt CAN controller error counter values.
+ * @param state     State of the CAN controller.
+ * @param err_cnt   CAN controller error counter values.
+ * @param user_data User data provided the callback was set.
  */
-typedef void (*can_state_change_callback_t)(enum can_state state, struct can_bus_err_cnt err_cnt);
+typedef void (*can_state_change_callback_t)(enum can_state state,
+					    struct can_bus_err_cnt err_cnt,
+					    void *user_data);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -351,7 +354,8 @@ typedef enum can_state (*can_get_state_t)(const struct device *dev,
  * See @a can_set_state_change_callback() for argument description
  */
 typedef void(*can_set_state_change_callback_t)(const struct device *dev,
-					       can_state_change_callback_t callback);
+					       can_state_change_callback_t callback,
+					       void *user_data);
 
 /**
  * @typedef can_get_core_clock_t
@@ -861,15 +865,17 @@ static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeo
  * Only one callback can be registered per controller. Calling this function
  * again overrides any previously registered callback.
  *
- * @param dev      Pointer to the device structure for the driver instance.
- * @param callback Callback function.
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @param callback  Callback function.
+ * @param user_data User data to pass to callback function.
  */
 static inline void can_set_state_change_callback(const struct device *dev,
-						 can_state_change_callback_t callback)
+						 can_state_change_callback_t callback,
+						 void *user_data)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->set_state_change_callback(dev, callback);
+	return api->set_state_change_callback(dev, callback, user_data);
 }
 
 /** @} */
@@ -1214,7 +1220,7 @@ __deprecated static inline void can_detach(const struct device *dev, int filter_
 __deprecated static inline void can_register_state_change_isr(const struct device *dev,
 							      can_state_change_callback_t isr)
 {
-	can_set_state_change_callback(dev, isr);
+	can_set_state_change_callback(dev, isr, NULL);
 }
 
 /** @endcond */
