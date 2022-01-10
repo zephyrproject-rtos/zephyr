@@ -599,8 +599,13 @@ static inline int can_set_bitrate(const struct device *dev,
 /**
  * @brief Transmit a CAN frame on the CAN bus
  *
- * Transmit a CAN fram on the CAN bus with optional timeout and completion
+ * Transmit a CAN frame on the CAN bus with optional timeout and completion
  * callback function.
+ *
+ * By default, the CAN controller will automatically retry transmission in case
+ * of lost bus arbitration or missing acknowledge. Some CAN controllers support
+ * disabling automatic retransmissions ("one-shot" mode) via a devicetree
+ * property.
  *
  * @see can_write() for a simplified API wrapper.
  *
@@ -616,8 +621,10 @@ static inline int can_set_bitrate(const struct device *dev,
  * @retval 0 if successful.
  * @retval -EINVAL if an invalid parameter was passed to the function.
  * @retval -ENETDOWN if the CAN controller is in bus-off state.
- * @retval -EBUSY if CAN bus arbitration was lost.
- * @retval -EIO if a general transmit error occurred.
+ * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
+ *                retransmissions are disabled).
+ * @retval -EIO if a general transmit error occurred (e.g. missing ACK if
+ *              automatic retransmissions are disabled).
  * @retval -EAGAIN on timeout.
  */
 __syscall int can_send(const struct device *dev, const struct zcan_frame *frame,
@@ -640,6 +647,11 @@ static inline int z_impl_can_send(const struct device *dev, const struct zcan_fr
  * @a zcan_frame struct. This function blocks until the data is sent or a
  * timeout occurs.
  *
+ * By default, the CAN controller will automatically retry transmission in case
+ * of lost bus arbitration or missing acknowledge. Some CAN controllers support
+ * disabling automatic retransmissions ("one-shot" mode) via a devicetree
+ * property.
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param data    Pointer to the data to write.
  * @param length  Number of bytes to write (max. 8).
@@ -650,8 +662,10 @@ static inline int z_impl_can_send(const struct device *dev, const struct zcan_fr
  * @retval 0 if successful.
  * @retval -EINVAL if an invalid parameter was passed to the function.
  * @retval -ENETDOWN if the CAN controller is in bus-off state.
- * @retval -EBUSY if CAN bus arbitration was lost.
- * @retval -EIO if a general transmit error occurred.
+ * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
+ *                retransmissions are disabled).
+ * @retval -EIO if a general transmit error occurred (e.g. missing ACK if
+ *              automatic retransmissions are disabled).
  * @retval -EAGAIN on timeout.
  */
 static inline int can_write(const struct device *dev, const uint8_t *data, uint8_t length,
