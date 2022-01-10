@@ -573,6 +573,7 @@
 			interrupt-names = "COMMON";
 			status = "disabled";
 			label = "ETH_0";
+			phy-addr = <0>;
 			ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";
