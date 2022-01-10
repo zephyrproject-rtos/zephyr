@@ -247,7 +247,11 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
 
 	/* Init System Pll2 pfd3. */
+#ifdef CONFIG_ETH_MCUX
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 24);
+#else
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 32);
+#endif
 
 	/* Init Sys Pll3. */
 	CLOCK_InitSysPll3();
@@ -290,7 +294,13 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	/* Configure BUS using SYS_PLL3_CLK */
-#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+#ifdef CONFIG_ETH_MCUX
+	/* Configure root bus clock at 198M */
+	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll2Pfd3;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+	/* Keep root bus clock at default 240M */
 	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
@@ -353,6 +363,13 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_LPI2C5_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c5, &rootCfg);
+#endif
+
+
+#ifdef CONFIG_ETH_MCUX
+	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
