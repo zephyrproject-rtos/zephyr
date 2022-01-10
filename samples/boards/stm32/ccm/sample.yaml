@@ -1,0 +1,6 @@
+sample:
+  name: CCM usages example
+tests:
+  sample.board.stm32.ccm:
+    platform_allow: olimex_stm32_e407
+    tags: board
