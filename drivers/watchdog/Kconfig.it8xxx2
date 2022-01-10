@@ -17,3 +17,12 @@ config WDT_ITE_WARNING_LEADING_TIME_MS
 	  This option defines the window in which a watchdog event must be
 	  handled. After this time window, the watchdog reset triggers
 	  immediately.
+
+config WDT_ITE_REDUCE_WARNING_LEADING_TIME
+	bool "Reduce warning leading time"
+	depends on SOC_IT8XXX2
+	default n
+	help
+	  Once warning timer triggered, if watchdog timer isn't reloaded,
+	  then we will reduce interval of warning timer to 30ms to print
+	  more warning messages before watchdog reset.
