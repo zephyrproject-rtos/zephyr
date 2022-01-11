@@ -55,6 +55,7 @@ extern void log_output_string_syst_process(const struct log_output *output,
 				const char *fmt, va_list ap, uint32_t flag);
 extern void log_output_hexdump_syst_process(const struct log_output *output,
 				struct log_msg_ids src_level,
+				const char *metadata,
 				const uint8_t *data, uint32_t length, uint32_t flag);
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
@@ -701,7 +702,8 @@ void log_output_hexdump(const struct log_output *output,
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
 		log_output_hexdump_syst_process(output,
-				src_level, data, length, flags);
+				src_level, metadata,
+				data, length, flags);
 		return;
 	}
 
