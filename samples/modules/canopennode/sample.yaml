@@ -3,7 +3,7 @@ sample:
 common:
   tags: can canopen
   depends_on: can
-  platform_allow: twr_ke18f frdm_k64f
+  platform_allow: twr_ke18f frdm_k64f stm32f3_disco
   harness: console
   harness_config:
     type: one_line
@@ -14,6 +14,7 @@ tests:
     tags: introduction
   sample.modules.canopennode.program_download:
     build_only: true
+    platform_exclude: stm32f3_disco
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
   sample.modules.canopennode.no_storage:
