@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+#include <devicetree.h>
 #include <sys/__assert.h>
 #include <sys/util_macro.h>
 #include <toolchain.h>
