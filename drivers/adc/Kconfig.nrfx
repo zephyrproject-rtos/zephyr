@@ -27,5 +27,6 @@ config ADC_NRFX_SAADC
 	depends on HAS_HW_NRF_SAADC
 	default y
 	select ADC_CONFIGURABLE_INPUTS
+	select NRFX_SAADC
 	help
 	  Enable support for nrfx SAADC driver.
