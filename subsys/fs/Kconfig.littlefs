@@ -8,6 +8,7 @@ config FILE_SYSTEM_LITTLEFS
 	depends on FILE_SYSTEM
 	depends on FLASH_MAP
 	depends on FLASH_PAGE_LAYOUT
+	depends on ZEPHYR_LITTLEFS_MODULE
 	help
 	  Enables LittleFS file system support.
 
