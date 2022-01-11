@@ -662,7 +662,7 @@ void log_output_string_syst_process(const struct log_output *log_output,
 				struct log_msg_ids src_level,
 				const char *fmt, va_list ap, uint32_t flag)
 {
-	uint8_t str[CONFIG_LOG_STRDUP_MAX_STRING];
+	uint8_t str[CONFIG_LOG_STRDUP_MAX_STRING + 1];
 	size_t length = CONFIG_LOG_STRDUP_MAX_STRING;
 	uint32_t severity = level_to_syst_severity((uint32_t)src_level.level);
 
