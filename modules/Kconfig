@@ -53,6 +53,9 @@ comment "hal_gigadevice module not available."
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
 
+comment "LittleFS module not available."
+	depends on !ZEPHYR_LITTLEFS_MODULE
+
 comment "mbedtls module not available."
 	depends on !ZEPHYR_MBEDTLS_MODULE
 
