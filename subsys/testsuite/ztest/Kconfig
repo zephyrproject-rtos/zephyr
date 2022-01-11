@@ -110,6 +110,7 @@ config ZTEST_PARAMETER_COUNT
 
 config ZTRESS
 	bool "Stress test framework"
+	depends on !SMP
 	select THREAD_RUNTIME_STATS
 	select THREAD_MONITOR
 	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
