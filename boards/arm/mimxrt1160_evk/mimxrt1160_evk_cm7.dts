@@ -114,3 +114,10 @@
 &edma0 {
 	status = "okay";
 };
+
+&enet {
+	status = "okay";
+	ptp {
+		status = "okay";
+	};
+};
