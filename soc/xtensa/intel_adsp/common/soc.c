@@ -37,7 +37,9 @@ LOG_MODULE_REGISTER(soc);
 # define GENO_DIOPTOSEL           BIT(2)
 #endif
 
+#if CONFIG_MP_NUM_CPUS > 1
 extern void soc_mp_init(void);
+#endif
 
 static __imr void power_init_v15(void)
 {
@@ -116,7 +118,9 @@ static __imr int soc_init(const struct device *dev)
 		power_init();
 	}
 
+#if CONFIG_MP_NUM_CPUS > 1
 	soc_mp_init();
+#endif
 
 	return 0;
 }
