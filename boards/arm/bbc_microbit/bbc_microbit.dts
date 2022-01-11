@@ -76,6 +76,15 @@
 
 &gpio0 {
 	status = "okay";
+	/*
+	 * Use the sensing mechanism for all pins by default, as GPIOTE channels
+	 * are needed for the LED matrix and the SW PWM.
+	 */
+	sense-edge-mask = <0xffffffff>;
+};
+
+&sw_pwm {
+	channel-count = <1>;
 };
 
 &uart0 {
