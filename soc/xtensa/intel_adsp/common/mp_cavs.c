@@ -140,7 +140,7 @@ void arch_sched_ipi(void)
 	}
 }
 
-void idc_isr(void *param)
+void idc_isr(const void *param)
 {
 	ARG_UNUSED(param);
 
