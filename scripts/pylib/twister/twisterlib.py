@@ -2149,9 +2149,9 @@ class CMake():
         cmake_args = [
             f'-B{self.build_dir}',
             f'-S{self.source_dir}',
-            f'-DEXTRA_CFLAGS="{cflags}"',
-            f'-DEXTRA_AFLAGS="{aflags}',
-            f'-DEXTRA_LDFLAGS="{ldflags}"',
+            f'-DEXTRA_CFLAGS={cflags}',
+            f'-DEXTRA_AFLAGS={aflags}',
+            f'-DEXTRA_LDFLAGS={ldflags}',
             f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
             f'-G{self.generator}'
         ]
