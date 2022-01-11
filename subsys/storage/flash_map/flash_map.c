@@ -26,18 +26,16 @@ void flash_area_foreach(flash_area_cb_t user_cb, void *user_data)
 
 int flash_area_open(uint8_t id, const struct flash_area **fap)
 {
-	const struct flash_area *area;
-
 	if (flash_map == NULL) {
+		*fap = NULL;
 		return -EACCES;
 	}
 
-	area = get_flash_area_from_id(id);
-	if (area == NULL) {
+	*fap = get_flash_area_from_id(id);
+	if (*fap == NULL) {
 		return -ENOENT;
 	}
 
-	*fap = area;
 	return 0;
 }
 
