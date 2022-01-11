@@ -67,9 +67,9 @@ void config_enable_default_clocks(void)
 		}
 
 		/* Enable LSESYS additionnally */
-		SET_BIT(RCC->BDCR, RCC_BDCR_LSESYSEN);
+		LL_RCC_LSE_EnablePropagation();
 		/* Wait till LSESYS is ready */
-		while (READ_BIT(RCC->BDCR, RCC_BDCR_LSESYSRDY) == 0U) {
+		while (!LL_RCC_LSESYS_IsReady()) {
 		}
 
 		LL_PWR_DisableBkUpAccess();
