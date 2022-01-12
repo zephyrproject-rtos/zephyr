@@ -1,0 +1,10 @@
+identifier: intel_adsp_cavs25_tgph
+name: CAVS 2.5 Audio DSP for Tiger Lake H PCH (Connected Audio Voice and Speech)
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+     - kernel
+     - sof
