@@ -10,9 +10,9 @@
 
 #include "footprint.h"
 
-#define DURATION	100
-#define PERIOD		50
-#define EXPIRE_TIMES	4
+#define DURATION	100U
+#define PERIOD		50U
+#define EXPIRE_TIMES	4U
 
 struct timer_data {
 	uint32_t expire_cnt;
@@ -46,7 +46,7 @@ static void timer_expire(struct k_timer *timer)
 	tdata.expire_cnt++;
 }
 
-static void busy_wait_ms(int32_t ms)
+static void busy_wait_ms(uint32_t ms)
 {
 	k_busy_wait(ms*1000);
 }
