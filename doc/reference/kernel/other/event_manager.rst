@@ -236,6 +236,7 @@ To turn a module into a listener for specific event types, complete the followin
 For subscribing to an event type, the Event Manager provides three types of subscriptions, differing in priority.
 They can be registered with the following macros:
 
+* :c:macro:`EVENT_SUBSCRIBE_FIRST` - notification as the first subscriber
 * :c:macro:`EVENT_SUBSCRIBE_EARLY` - notification before other listeners
 * :c:macro:`EVENT_SUBSCRIBE` - standard notification
 * :c:macro:`EVENT_SUBSCRIBE_FINAL` - notification as the last, final subscriber

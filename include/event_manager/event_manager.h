@@ -145,6 +145,17 @@ extern const struct event_type __stop_event_types[];
  */
 #define EVENT_LISTENER(lname, cb_fn) _EVENT_LISTENER(lname, cb_fn)
 
+/** Subscribe a listener to an event type as first module that is
+ *  being notified.
+ *
+ * @param lname  Name of the listener.
+ * @param ename  Name of the event.
+ */
+#define EVENT_SUBSCRIBE_FIRST(lname, ename)							\
+	_EVENT_SUBSCRIBE(lname, ename, _EM_MARKER_FIRST_ELEMENT);				\
+	const struct {} _CONCAT(_CONCAT(__event_subscriber_, ename), first_sub_redefined) = {}
+
+
 
 /** Subscribe a listener to the early notification list for an
  *  event type.
