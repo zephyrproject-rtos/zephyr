@@ -34,31 +34,37 @@ config NRFX_EGU
 
 config NRFX_EGU0
 	bool "EGU0 instance"
+	default y if "$(dt_nodelabel_enabled,egu0)"
 	depends on HAS_HW_NRF_EGU0
 	select NRFX_EGU
 
 config NRFX_EGU1
 	bool "EGU1 instance"
+	default y if "$(dt_nodelabel_enabled,egu1)"
 	depends on HAS_HW_NRF_EGU1
 	select NRFX_EGU
 
 config NRFX_EGU2
 	bool "EGU2 instance"
+	default y if "$(dt_nodelabel_enabled,egu2)"
 	depends on HAS_HW_NRF_EGU2
 	select NRFX_EGU
 
 config NRFX_EGU3
 	bool "EGU3 instance"
+	default y if "$(dt_nodelabel_enabled,egu3)"
 	depends on HAS_HW_NRF_EGU3
 	select NRFX_EGU
 
 config NRFX_EGU4
 	bool "EGU4 instance"
+	default y if "$(dt_nodelabel_enabled,egu4)"
 	depends on HAS_HW_NRF_EGU4
 	select NRFX_EGU
 
 config NRFX_EGU5
 	bool "EGU5 instance"
+	default y if "$(dt_nodelabel_enabled,egu5)"
 	depends on HAS_HW_NRF_EGU5
 	select NRFX_EGU
 
