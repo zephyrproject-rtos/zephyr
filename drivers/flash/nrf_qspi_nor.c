@@ -38,6 +38,9 @@ struct qspi_nor_data {
 	 */
 	volatile bool ready;
 #endif /* CONFIG_MULTITHREADING */
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	bool keep_base_clock_div_set;
+#endif
 };
 
 struct qspi_nor_config {
@@ -57,9 +60,62 @@ struct qspi_nor_config {
 /* instance 0 flash size in bytes */
 #define INST_0_BYTES (DT_INST_PROP(0, size) / 8)
 
+/*
+ * Determine a configuration value (INST_0_SCK_CFG) to be used to achieve the
+ * SCK frequency specified in DT and, if needed, a divider (BASE_CLOCK_DIV) for
+ * the clock from which the SCK frequency is derived.
+ */
 #define INST_0_SCK_FREQUENCY DT_INST_PROP(0, sck_frequency)
 BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 	     "Unsupported SCK frequency.");
+
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+/*
+ * On nRF53 Series SoCs, the highest SCK frequencies can only be achieved
+ * when the HFCLK192M clock divider is changed from the default /4 setting.
+ * Such change results in increased power consumption, so the divider needs
+ * to be changed only for periods when it is actually needed.
+ */
+#if (INST_0_SCK_FREQUENCY >= NRF_QSPI_BASE_CLOCK_FREQ)
+/* Use HFCLK192M / 1 / (2*1) = 96 MHz */
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
+#elif (INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 2))
+/* Use HFCLK192M / 2 / (2*1) = 48 MHz */
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
+#elif (INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 3))
+/* Use HFCLK192M / 1 / (2*3) = 32 MHz */
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV3
+#elif (INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 4))
+/* Use HFCLK192M / 4 / (2*1) = 24 MHz */
+/* BASE_CLOCK_DIV not defined => the default NRF_CLOCK_HFCLK_DIV_4 is used. */
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
+#elif (INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 6))
+/* Use HFCLK192M / 2 / (2*3) = 16 MHz */
+#define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV3
+#else
+/* BASE_CLOCK_DIV not defined => the default NRF_CLOCK_HFCLK_DIV_4 is used. */
+#define INST_0_SCK_CFG (ceiling_fraction(NRF_QSPI_BASE_CLOCK_FREQ / 4, \
+					 INST_0_SCK_FREQUENCY) - 1)
+#endif
+
+#else
+/*
+ * On nRF52 Series SoCs, the base clock divider is not configurable,
+ * so BASE_CLOCK_DIV is not defined.
+ */
+#if (INST_0_SCK_FREQUENCY >= NRF_QSPI_BASE_CLOCK_FREQ)
+#define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
+#else
+#define INST_0_SCK_CFG (ceiling_fraction(NRF_QSPI_BASE_CLOCK_FREQ, \
+					 INST_0_SCK_FREQUENCY) - 1)
+
+#endif
+
+#endif /* defined(CONFIG_SOC_SERIES_NRF53X) */
 
 /* 0 for MODE0 (CPOL=0, CPHA=0), 1 for MODE3 (CPOL=1, CPHA=1). */
 #define INST_0_SPI_MODE DT_INST_PROP(0, cpol)
@@ -152,24 +208,42 @@ static inline int qspi_get_zephyr_ret_code(nrfx_err_t res)
 
 static inline void qspi_lock(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
 	struct qspi_nor_data *dev_data = dev->data;
 
+#ifdef CONFIG_MULTITHREADING
 	k_sem_take(&dev_data->sem, K_FOREVER);
 #else /* CONFIG_MULTITHREADING */
-	ARG_UNUSED(dev);
+	ARG_UNUSED(dev_data);
 #endif /* CONFIG_MULTITHREADING */
+
+	/*
+	 * If the base clock divider needs to be changed, change it only
+	 * for the time the driver is locked to perform a QSPI operation,
+	 * unless the divider is forced to be kept set permanently.
+	 */
+#if defined(BASE_CLOCK_DIV)
+	if (!dev_data->keep_base_clock_div_set) {
+		nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
+	}
+#endif
 }
 
 static inline void qspi_unlock(const struct device *dev)
 {
-#ifdef CONFIG_MULTITHREADING
 	struct qspi_nor_data *dev_data = dev->data;
 
+#if defined(BASE_CLOCK_DIV)
+	/* Restore the default base clock divider, unless instructed not to. */
+	if (!dev_data->keep_base_clock_div_set) {
+		nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
+	}
+#endif
+
+#ifdef CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->sem);
-#else /* CONFIG_MULTITHREADING */
-	ARG_UNUSED(dev);
-#endif /* CONFIG_MULTITHREADING */
+#else
+	ARG_UNUSED(dev_data);
+#endif
 }
 
 static inline void qspi_trans_lock(const struct device *dev)
@@ -975,11 +1049,8 @@ static int qspi_nor_configure(const struct device *dev)
 static int qspi_nor_init(const struct device *dev)
 {
 #if defined(CONFIG_SOC_SERIES_NRF53X)
-	/* Make sure the PCLK192M clock, from which the SCK frequency is
-	 * derived, is not prescaled (the default setting after reset is
-	 * "divide by 4").
-	 */
-	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_1);
+	/* Make sure the default /4 divider is set initially. */
+	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
 #endif
 
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
@@ -1142,6 +1213,40 @@ static int qspi_nor_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+void  z_impl_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
+					       bool force)
+{
+#if defined(BASE_CLOCK_DIV)
+	struct qspi_nor_data *dev_data = dev->data;
+	/*
+	 * The divider is normally changed, unless the flag is set, only for
+	 * periods when the driver is locked, so the flag itself also can only
+	 * be modified while the driver is locked.
+	 */
+	qspi_lock(dev);
+	dev_data->keep_base_clock_div_set = force;
+	qspi_unlock(dev);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(force);
+#endif
+}
+
+#ifdef CONFIG_USERSPACE
+#include <syscall_handler.h>
+
+void z_vrfy_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
+					      bool force)
+{
+	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH,
+					 &qspi_nor_api));
+
+	z_impl_nrf_qspi_nor_base_clock_div_force(dev, force);
+}
+
+#include <syscalls/nrf_qspi_nor_base_clock_div_force_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 static struct qspi_nor_data qspi_nor_dev_data = {
 #ifdef CONFIG_MULTITHREADING
 	.trans = Z_SEM_INITIALIZER(qspi_nor_dev_data.trans, 1, 1),
@@ -1183,10 +1288,7 @@ static const struct qspi_nor_config qspi_nor_dev_config = {
 			    : NRF_QSPI_ADDRMODE_24BIT,
 	},
 	.nrfx_cfg.phy_if = {
-		.sck_freq = (INST_0_SCK_FREQUENCY > NRF_QSPI_BASE_CLOCK_FREQ)
-			    ? NRF_QSPI_FREQ_DIV1
-			    : (NRF_QSPI_BASE_CLOCK_FREQ /
-			       INST_0_SCK_FREQUENCY) - 1,
+		.sck_freq = INST_0_SCK_CFG,
 		.sck_delay = DT_INST_PROP(0, sck_delay),
 		.spi_mode = INST_0_SPI_MODE,
 	},
