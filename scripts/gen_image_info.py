@@ -16,6 +16,7 @@ Information included in the image information header:
 - Number of segments in the image
 - LMA address of each segment
 - VMA address of each segment
+- LMA adjusted of each segment if the LMA addresses has been adjusted after linking
 - Size of each segment
 '''
 
@@ -23,7 +24,7 @@ import argparse
 from elftools.elf.elffile import ELFFile
 
 
-def write_header(filename, segments):
+def write_header(filename, segments, adjusted_lma):
     content = []
 
     filename_we = filename.split('.h')[0].upper()
@@ -31,6 +32,7 @@ def write_header(filename, segments):
     content.append(f'#define {filename_we}_H')
     content.append(f'')
     content.append(f'#define SEGMENT_NUM {len(segments)}')
+    content.append(f'#define ADJUSTED_LMA {adjusted_lma}')
 
     for idx, segment in enumerate(segments):
         segment_header = segment['segment'].header
@@ -69,10 +71,12 @@ def main():
                         help="""Header file to write with image data.""")
     parser.add_argument('--elf-file', required=True,
                         help="""ELF File to process.""")
+    parser.add_argument('--adjusted-lma', required=False, default=0,
+                        help="""Adjusted LMA address value.""")
     args = parser.parse_args()
 
     segments = read_segments(args.elf_file)
-    write_header(args.header_file, segments)
+    write_header(args.header_file, segments, args.adjusted_lma)
 
 
 if __name__ == "__main__":

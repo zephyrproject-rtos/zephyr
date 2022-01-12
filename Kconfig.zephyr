@@ -494,6 +494,30 @@ config BUILD_OUTPUT_STRIPPED
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_ADJUST_LMA
+	string
+	help
+	  This will adjust the LMA address in the final ELF and hex files with
+	  the value provided.
+	  This will not affect the internal address symbols inside the image but
+	  can be useful when adjusting the LMA address for flash tools or multi
+	  stage loaders where a pre-loader may copy image to a second location
+	  before booting a second core.
+	  The value will be evaluated as a math expression, this means that
+	  following are valid expression
+	  - 1024
+	  - 0x1000
+	  - -0x1000
+	  - 0x20000000 - 0x10000000
+	  Note: negative numbers are valid.
+	  To adjust according to a chosen flash partition one can specify a
+	  default as:
+	  DT_CHOSEN_IMAGE_<name> := <name>,<name>-partition
+	  DT_CHOSEN_Z_FLASH := zephyr,flash
+	  config BUILD_OUTPUT_ADJUST_LMA
+	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4))-\
+	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
+
 config BUILD_OUTPUT_INFO_HEADER
 	bool "Create a image information header"
 	help
