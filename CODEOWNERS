@@ -15,7 +15,6 @@
 
 /.github/				  @nashif
 /.github/workflows/                       @galak @nashif
-/.buildkite/				  @galak
 /MAINTAINERS.yml                          @MaureenHelm
 /arch/arc/                                @abrodkin @ruuddw @evgeniy-paltsev
 /arch/arm/                                @MaureenHelm @galak @ioannisg
