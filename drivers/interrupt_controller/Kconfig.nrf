@@ -12,3 +12,21 @@ config INTC_NRF_EGU
 	depends on NRFX_EGU
 	help
 	  Enable support for EGU interrupt driver for nRF MCU series.
+
+choice INTC_SWI
+	prompt "Software interrupt implementation"
+	help
+	  Enables software interrupt utility. The software interrupt can be used
+	  to de-escalate interrupt processing from zero-latency interrupts to a
+	  priority level at which it is safe to use kernel services.
+
+DT_CHOSEN_SWI_NRF_EGU := nordic,swi-egu
+
+config INTC_SWI_NRF_EGU
+	bool "NRF EGU software interrupt implementation"
+	depends on INTC_NRF_EGU
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_SWI_NRF_EGU))
+	help
+	  Event Generator Unit backed software interrupt implementation.
+
+endchoice
