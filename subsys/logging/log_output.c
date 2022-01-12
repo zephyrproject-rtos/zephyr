@@ -103,7 +103,7 @@ static int out_func(int c, void *ctx)
 	const struct log_output *out_ctx = (const struct log_output *)ctx;
 	int idx;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		/* Backend must be thread safe in synchronous operation. */
 		out_ctx->func((uint8_t *)&c, 1, out_ctx->control_block->ctx);
 		return 0;

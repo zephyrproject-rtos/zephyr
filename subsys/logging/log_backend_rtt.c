@@ -43,7 +43,7 @@
 
 #define CHAR_BUF_SIZE \
 	((IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) && \
-	 !IS_ENABLED(CONFIG_LOG_IMMEDIATE)) ? \
+	 !IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) ? \
 		CONFIG_LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE : 1)
 
 #define RTT_LOCK() \
@@ -75,7 +75,7 @@ static int line_out_drop_mode(void);
 
 static inline bool is_sync_mode(void)
 {
-	return IS_ENABLED(CONFIG_LOG_IMMEDIATE) || panic_mode;
+	return IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) || panic_mode;
 }
 
 static inline bool is_panic_mode(void)
@@ -327,14 +327,14 @@ static void process(const struct log_backend *const backend,
 
 const struct log_backend_api log_backend_rtt_api = {
 	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 			sync_hexdump : NULL,
 	.panic = panic,
 	.init = log_backend_rtt_init,
-	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
+	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 };
 
 LOG_BACKEND_DEFINE(log_backend_rtt, log_backend_rtt_api, true);

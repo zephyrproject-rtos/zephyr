@@ -368,8 +368,8 @@ static void monitor_log_init(const struct log_backend *const backend)
 }
 
 static const struct log_backend_api monitor_log_api = {
-	.process = IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? monitor_log_process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? monitor_log_put : NULL,
+	.process = IS_ENABLED(CONFIG_LOG2_DEFERRED) ? monitor_log_process : NULL,
+	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? monitor_log_put : NULL,
 	.panic = monitor_log_panic,
 	.init = monitor_log_init,
 };

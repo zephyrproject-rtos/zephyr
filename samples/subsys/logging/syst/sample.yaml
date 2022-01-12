@@ -9,6 +9,8 @@ tests:
       type: one_line
       regex:
         - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG1=y
   sample.logger.syst.v2.deferred:
     platform_allow: mps2_an385 sam_e70_xplained
     tags: logging
@@ -17,5 +19,3 @@ tests:
       type: one_line
       regex:
         - "SYS-T RAW DATA: "
-    extra_configs:
-      - CONFIG_LOG2_MODE_DEFERRED=y

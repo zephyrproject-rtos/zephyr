@@ -331,7 +331,7 @@ static void test_log_overflow(void)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		ztest_test_skip();
 	}
 
@@ -372,7 +372,7 @@ static void test_log_overflow(void)
 	exp_timestamp = TIMESTAMP_INIT_VAL;
 	hexdump_len = get_max_hexdump();
 	mock_log_backend_reset(&backend1);
-	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
+	if (IS_ENABLED(CONFIG_LOG2_DEFERRED)) {
 		/* Log2 allocation is not destructive if request exceeds the
 		 * capacity.
 		 */
@@ -577,7 +577,7 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
  */
 static void test_log_msg_dropped_notification(void)
 {
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		ztest_test_skip();
 	}
 
@@ -639,7 +639,7 @@ static void *log_api_suite_setup(void)
 {
 	PRINT("Configuration:\n");
 	PRINT("\t Mode: %s\n",
-	      IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? "Immediate" : "Deferred");
+	      IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? "Immediate" : "Deferred");
 	PRINT("\t Version: %s\n",
 	      IS_ENABLED(CONFIG_LOG2) ? "v2" : "v1");
 	PRINT("\t Runtime filtering: %s\n",
