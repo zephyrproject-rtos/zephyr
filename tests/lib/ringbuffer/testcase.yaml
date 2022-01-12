@@ -1,6 +1,6 @@
 common:
     tags: ring_buffer circular_buffer
-
+    filter: not CONFIG_SMP
 tests:
   libraries.ring_buffer:
     integration_platforms:
