@@ -1,0 +1,6 @@
+common:
+  tags: drivers intc_swi
+  build_only: true
+tests:
+  intc_swi.build.nrf5:
+    platform_allow: nrf52840dk_nrf52840

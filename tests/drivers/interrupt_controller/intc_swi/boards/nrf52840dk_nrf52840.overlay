@@ -1,0 +1,17 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		nordic,swi-egu = &egu0;
+	};
+};
+
+/* Set RTC1 (k_timer) interrupt priority above EGU (SWI) */
+
+&rtc1 {
+	interrupts = <17 1>;
+};
+
+&egu0 {
+	interrupts = <20 2>;
+};
