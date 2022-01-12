@@ -4,20 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi1 {
-	dmas = <&dmamux1 0 12 0x440
-		&dmamux1 7 11 0x480>;
+&spi2 {
+	pinctrl-0 = <&spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	dmas = <&dma1 4 0 0x28440 0x03
+		&dma1 3 0 0x28480 0x03>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &dma1 {
-	status = "okay";
-};
-
-&dma2 {
-	status = "okay";
-};
-
-&dmamux1 {
 	status = "okay";
 };
