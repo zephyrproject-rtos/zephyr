@@ -1393,6 +1393,18 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   endif()
 endif()
 
+if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
+  math(EXPR adjustment "${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT DECIMAL)
+  list(APPEND
+    post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>${adjustment}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_ELF_NAME}
+    )
+endif()
+
 if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(ihex IN_LIST elfconvert_formats)
@@ -1582,6 +1594,7 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_image_info.py
     --elf-file=${KERNEL_ELF_NAME}
     --header-file=${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
+    $<$<BOOL:${adjustment}>:--adjusted-lma=${adjustment}>
     )
   list(APPEND
     post_build_byproducts
