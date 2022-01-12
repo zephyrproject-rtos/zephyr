@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Kconfig search */
+
+#__kconfig-search input {
+    border-radius: 5px;
+    border: 1px solid rgba(149, 157, 165, 0.2);
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px !important;
+    font-size: 18px;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    width: 100%;
+}
+
+#__kconfig-search .search-summary {
+    margin: 0.25rem 0.1rem 1.5rem;
+}
+
+#__kconfig-search .search-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#__kconfig-search .search-nav > p {
+    padding: 0 1rem;
+    margin: 0;
+}
+
+/* Kconfig entries */
+
+.kconfig ul {
+    margin-bottom: 0 !important;
+}
