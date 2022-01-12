@@ -109,7 +109,7 @@ config BT_BUF_ACL_RX_COUNT
 
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
-	default 255 if (BT_EXT_ADV && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0)) || BT_PER_ADV
+	default 255 if (BT_EXT_ADV && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0)) || BT_PER_ADV_SYNC
 	# LE Read Supported Commands command complete event.
 	default 68
 	range 68 255
