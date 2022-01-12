@@ -83,7 +83,7 @@ typedef bool (*rb_lessthan_t)(struct rbnode *a, struct rbnode *b);
 struct rbtree {
 	struct rbnode *root;
 	rb_lessthan_t lessthan_fn;
-	int max_depth;
+	unsigned int max_depth;
 #ifdef CONFIG_MISRA_SANE
 	struct rbnode *iter_stack[Z_MAX_RBTREE_DEPTH];
 	unsigned char iter_left[Z_MAX_RBTREE_DEPTH];
@@ -93,7 +93,7 @@ struct rbtree {
 typedef void (*rb_visit_t)(struct rbnode *node, void *cookie);
 
 struct rbnode *z_rb_child(struct rbnode *node, uint8_t side);
-int z_rb_is_black(struct rbnode *node);
+bool z_rb_is_black(struct rbnode *node);
 #ifndef CONFIG_MISRA_SANE
 void z_rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie);
 #endif

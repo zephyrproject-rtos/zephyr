@@ -47,7 +47,7 @@ static void set_child(struct rbnode *n, uint8_t side, void *val)
 static enum rb_color get_color(struct rbnode *n)
 {
 	CHECK(n);
-	return ((uintptr_t)n->children[0]) & 1UL;
+	return (((uintptr_t)n->children[0]) & 1U) == 0U ? RED : BLACK;
 }
 
 static bool is_black(struct rbnode *n)
@@ -76,10 +76,10 @@ static void set_color(struct rbnode *n, enum rb_color color)
  * contain at least tree->max_depth entries!  Returns the number of
  * entries pushed onto the stack.
  */
-static int find_and_stack(struct rbtree *tree, struct rbnode *node,
+static unsigned int find_and_stack(struct rbtree *tree, struct rbnode *node,
 			  struct rbnode **stack)
 {
-	int sz = 0;
+	unsigned int sz = 0;
 
 	stack[sz++] = tree->root;
 
@@ -125,7 +125,7 @@ static uint8_t get_side(struct rbnode *parent, struct rbnode *child)
  * a b            b c
  *
  */
-static void rotate(struct rbnode **stack, int stacksz)
+static void rotate(struct rbnode **stack, unsigned int stacksz)
 {
 	CHECK(stacksz >= 2);
 
@@ -152,7 +152,7 @@ static void rotate(struct rbnode **stack, int stacksz)
  * too.  Iteratively fix the tree so it becomes a valid red black tree
  * again
  */
-static void fix_extra_red(struct rbnode **stack, int stacksz)
+static void fix_extra_red(struct rbnode **stack, unsigned int stacksz)
 {
 	while (stacksz > 1) {
 		struct rbnode *node = stack[stacksz - 1];
@@ -233,7 +233,7 @@ void rb_insert(struct rbtree *tree, struct rbnode *node)
 	struct rbnode *stack[tree->max_depth + 1];
 #endif
 
-	int stacksz = find_and_stack(tree, node, stack);
+	unsigned int stacksz = find_and_stack(tree, node, stack);
 
 	struct rbnode *parent = stack[stacksz - 1];
 
@@ -264,7 +264,7 @@ void rb_insert(struct rbtree *tree, struct rbnode *node)
  * then clean it up (replace it with a simple NULL child in the
  * parent) when finished.
  */
-static void fix_missing_black(struct rbnode **stack, int stacksz,
+static void fix_missing_black(struct rbnode **stack, unsigned int stacksz,
 			      struct rbnode *null_node)
 {
 	/* Loop upward until we reach the root */
@@ -374,7 +374,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 	struct rbnode *stack[tree->max_depth + 1];
 #endif
 
-	int stacksz = find_and_stack(tree, node, stack);
+	unsigned int stacksz = find_and_stack(tree, node, stack);
 
 	if (node != stack[stacksz - 1]) {
 		return;
@@ -386,7 +386,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 	 * that one
 	 */
 	if ((get_child(node, 0U) != NULL) && (get_child(node, 1U) != NULL)) {
-		int stacksz0 = stacksz;
+		unsigned int stacksz0 = stacksz;
 		struct rbnode *hiparent, *loparent;
 		struct rbnode *node2 = get_child(node, 0U);
 
@@ -510,7 +510,7 @@ struct rbnode *z_rb_child(struct rbnode *node, uint8_t side)
 	return get_child(node, side);
 }
 
-int z_rb_is_black(struct rbnode *node)
+bool z_rb_is_black(struct rbnode *node)
 {
 	return is_black(node);
 }
@@ -520,7 +520,7 @@ bool rb_contains(struct rbtree *tree, struct rbnode *node)
 	struct rbnode *n = tree->root;
 
 	while ((n != NULL) && (n != node)) {
-		n = get_child(n, tree->lessthan_fn(n, node));
+		n = get_child(n, tree->lessthan_fn(n, node) ? 1U : 0U);
 	}
 
 	return n == node;
