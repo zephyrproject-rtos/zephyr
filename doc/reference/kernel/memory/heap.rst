@@ -92,7 +92,7 @@ complete within 1-200 cycles.  One complexity is that the search of
 the minimum bucket size for an allocation (the set of free blocks that
 "might fit") has a compile-time upper bound of iterations to prevent
 unbounded list searches, at the expense of some fragmentation
-resistance.  This :c:kconfig:`CONFIG_SYS_HEAP_ALLOC_LOOPS` value may be
+resistance.  This :kconfig:`CONFIG_SYS_HEAP_ALLOC_LOOPS` value may be
 chosen by the user at build time, and defaults to a value of 3.
 
 Multi-Heap Wrapper Utility
