@@ -15,7 +15,7 @@ static char new_string[32];
 
 void run_libc(void)
 {
-	int len;
+	size_t len;
 
 	len = strlen(const_string);
 	len = strnlen(const_string, len);
