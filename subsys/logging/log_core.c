@@ -388,7 +388,7 @@ void z_log_printk(const char *fmt, va_list ap)
 			vsnprintk(str, sizeof(str), fmt, ap);
 
 			z_log_string_from_user(src_level_union.value, str);
-		} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 			log_generic(src_level_union.structure, fmt, ap,
 							LOG_STRDUP_SKIP);
 		} else {
@@ -438,7 +438,7 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 {
 	if (k_is_user_context()) {
 		log_generic_from_user(src_level, fmt, ap);
-	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) &&
 	    (!IS_ENABLED(CONFIG_LOG_FRONTEND))) {
 		struct log_backend const *backend;
 		uint32_t timestamp = timestamp_func();
@@ -563,11 +563,9 @@ void log_core_init(void)
 
 	log_set_timestamp_func(_timestamp_func, freq);
 
-	if (IS_ENABLED(CONFIG_LOG2)) {
-		if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
-			z_log_msg2_init();
-		}
-	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+	if (IS_ENABLED(CONFIG_LOG2_DEFERRED)) {
+		z_log_msg2_init();
+	} else if (IS_ENABLED(CONFIG_LOG1_DEFERRED)) {
 		log_msg_pool_init();
 		log_list_init(&list);
 
@@ -614,7 +612,7 @@ static void thread_set(k_tid_t process_tid)
 {
 	proc_tid = process_tid;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		return;
 	}
 
@@ -667,7 +665,7 @@ void z_impl_log_panic(void)
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		/* Flush */
 		while (log_process(false) == true) {
 		}
@@ -746,12 +744,10 @@ static void msg_process(union log_msgs msg, bool bypass)
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_LOG2_MODE_IMMEDIATE)) {
-		if (IS_ENABLED(CONFIG_LOG2)) {
-			z_log_msg2_free(msg.msg2);
-		} else {
-			log_msg_put(msg.msg);
-		}
+	if (IS_ENABLED(CONFIG_LOG2_DEFERRED)) {
+		z_log_msg2_free(msg.msg2);
+	} else if (IS_ENABLED(CONFIG_LOG1_DEFERRED)) {
+		log_msg_put(msg.msg);
 	}
 }
 
@@ -882,7 +878,7 @@ char *z_log_strdup(const char *str)
 	struct log_strdup_buf *dup;
 	int err;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) ||
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ||
 	    is_rodata(str) || k_is_user_context()) {
 		return (char *)str;
 	}
@@ -1008,7 +1004,7 @@ void z_vrfy_z_log_string_from_user(uint32_t src_level_val, const char *str)
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid string passed in"));
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(str, len));
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG1_IMMEDIATE)) {
 		log_string_sync(src_level_union.structure, "%s", str);
 	} else if (IS_ENABLED(CONFIG_LOG_PRINTK) &&
 		   (level == LOG_LEVEL_INTERNAL_RAW_STRING)) {
@@ -1103,7 +1099,7 @@ void z_vrfy_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid meta passed in"));
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, len));
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG1_IMMEDIATE)) {
 		log_hexdump_sync(src_level_union.structure,
 				 kmeta, data, len);
 	} else {
@@ -1193,7 +1189,7 @@ void z_log_msg2_commit(struct log_msg2 *msg)
 {
 	msg->hdr.timestamp = timestamp_func();
 
-	if (IS_ENABLED(CONFIG_LOG2_MODE_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		union log_msgs msgs = {
 			.msg2 = (union log_msg2_generic *)msg
 		};
@@ -1204,10 +1200,7 @@ void z_log_msg2_commit(struct log_msg2 *msg)
 	}
 
 	mpsc_pbuf_commit(&log_buffer, (union mpsc_pbuf_generic *)msg);
-
-	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
-		z_log_msg_post_finalize();
-	}
+	z_log_msg_post_finalize();
 }
 
 union log_msg2_generic *z_log_msg2_claim(void)

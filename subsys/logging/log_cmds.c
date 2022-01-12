@@ -366,8 +366,8 @@ static int cmd_log_strdup_utilization(const struct shell *shell,
 				      size_t argc, char **argv)
 {
 
-	/* Defines needed when string duplication is disabled (LOG_IMMEDIATE is
-	 * on). In that case, this function is not compiled in.
+	/* Defines needed when string duplication is disabled (LOG2 or immediate
+	 * mode). In that case, this function is not compiled in.
 	 */
 	#ifndef CONFIG_LOG_STRDUP_BUF_COUNT
 	#define CONFIG_LOG_STRDUP_BUF_COUNT 0

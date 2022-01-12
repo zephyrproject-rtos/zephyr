@@ -155,14 +155,14 @@ static void log_backend_swo_sync_hexdump(
 
 const struct log_backend_api log_backend_swo_api = {
 	.process = IS_ENABLED(CONFIG_LOG2) ? log_backend_swo_process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? log_backend_swo_put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? log_backend_swo_put : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 			log_backend_swo_sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 			log_backend_swo_sync_hexdump : NULL,
 	.panic = log_backend_swo_panic,
 	.init = log_backend_swo_init,
-	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
+	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 };
 
 LOG_BACKEND_DEFINE(log_backend_swo, log_backend_swo_api, true);

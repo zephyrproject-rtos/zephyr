@@ -13,12 +13,12 @@ config LOG_PRINTK
 config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"
 	depends on LOG_PRINTK
-	depends on (!LOG_IMMEDIATE || USERSPACE)
+	depends on (!LOG_MODE_IMMEDIATE || USERSPACE)
 	default 128
 	help
 	  Array is allocated on the stack.
 
-if !LOG_IMMEDIATE
+if !LOG_MODE_IMMEDIATE
 
 config LOG_MODE_OVERFLOW
 	bool "Drop oldest message when full"
@@ -106,13 +106,13 @@ config LOG_BUFFER_SIZE
 	help
 	  Number of bytes dedicated for the logger internal buffer.
 
-endif # !LOG_IMMEDIATE
+endif # !LOG_MODE_IMMEDIATE
 
-if LOG_MODE_DEFERRED
+if LOG1_DEFERRED
 
 config LOG_DETECT_MISSED_STRDUP
 	bool "Detect missed handling of transient strings"
-	default y if !LOG_IMMEDIATE
+	default y
 	help
 	  If enabled, logger will assert and log error message is it detects
 	  that string format specifier (%s) and string address which is not from
@@ -147,7 +147,7 @@ config LOG_STRDUP_POOL_PROFILING
 	  When enabled, maximal utilization of the pool is tracked. It can
 	  be read out using shell command.
 
-endif # LOG_MODE_DEFERRED
+endif # LOG1_DEFERRED
 
 if LOG2
 

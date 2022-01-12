@@ -1152,7 +1152,7 @@ static void shell_log_process(const struct shell *shell)
 	int result;
 
 	do {
-		if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		if (!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 			z_shell_cmd_line_erase(shell);
 
 			processed = z_shell_log_backend_process(

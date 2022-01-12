@@ -5,13 +5,14 @@ common:
 tests:
   logging.add.async:
     tags: logging
+    extra_args: CONF_FILE=log2.conf
   logging.add.sync:
     tags: logging
     extra_args: CONF_FILE=log_sync.conf
-  logging.add.user:
+  logging.add.log1_user:
     tags: logging
     filter: CONFIG_USERSPACE
     extra_args: CONF_FILE=log_user.conf USERSPACE_TEST=1
-  logging.add.log2:
+  logging.add.log1:
     tags: logging
-    extra_args: CONF_FILE=log2.conf
+    extra_args: CONF_FILE=prj.conf

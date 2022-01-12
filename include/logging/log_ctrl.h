@@ -201,10 +201,9 @@ uint32_t log_get_strdup_longest_string(void);
  */
 static inline bool log_data_pending(void)
 {
-	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
-		return z_log_msg2_pending();
-	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
-		return log_msg_mem_get_used() > 0;
+	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		return IS_ENABLED(CONFIG_LOG2) ?
+			z_log_msg2_pending() : (log_msg_mem_get_used() > 0);
 	}
 
 	return false;

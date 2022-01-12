@@ -117,13 +117,11 @@ Mode of operations:
 
 :kconfig:`CONFIG_LOG_MODE_DEFERRED`: Deferred mode.
 
-:kconfig:`CONFIG_LOG2_MODE_DEFERRED`: Deferred mode v2.
-
 :kconfig:`CONFIG_LOG_MODE_IMMEDIATE`: Immediate (synchronous) mode.
 
-:kconfig:`CONFIG_LOG2_MODE_IMMEDIATE`: Immediate (synchronous) mode v2.
-
 :kconfig:`CONFIG_LOG_MODE_MINIMAL`: Minimal footprint mode.
+
+:kconfig:`CONFIG_LOG1`: Use deprecated version of logging.
 
 Filtering options:
 

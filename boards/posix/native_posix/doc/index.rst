@@ -644,7 +644,7 @@ development by integrating more seamlessly with the host operating system:
   ``--force-color``.
 
   In native_posix, by default, the logger is configured with
-  :kconfig:`CONFIG_LOG_IMMEDIATE`.
+  :kconfig:`CONFIG_LOG_MODE_IMMEDIATE`.
 
   This backend can be selected with :kconfig:`CONFIG_LOG_BACKEND_NATIVE_POSIX`
   and is enabled by default unless the native_posix UART is compiled in.

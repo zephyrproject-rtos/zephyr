@@ -6,25 +6,30 @@ common:
 tests:
   logging.log_api_deferred_overflow_rt_filter:
     extra_configs:
+      - CONFIG_LOG1=y
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
   logging.log_api_deferred_overflow:
     extra_configs:
+      - CONFIG_LOG1=y
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
   logging.log_api_deferred_no_overflow:
     extra_configs:
+      - CONFIG_LOG1=y
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n
 
   logging.log_api_deferred_static_filter:
     extra_configs:
+      - CONFIG_LOG1=y
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log_api_deferred_func_prefix:
     extra_configs:
+      - CONFIG_LOG1=y
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
       - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
@@ -32,15 +37,18 @@ tests:
 
   logging.log_api_immediate:
     extra_configs:
+      - CONFIG_LOG1=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
 
   logging.log_api_immediate_rt_filter:
     extra_configs:
+      - CONFIG_LOG1=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.log_api_immediate_static_filter:
     extra_configs:
+      - CONFIG_LOG1=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
@@ -48,7 +56,7 @@ tests:
     # FIXME:see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
 
@@ -56,28 +64,28 @@ tests:
     # FIXME:see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
 
   logging.log2_api_deferred_no_overflow:
     # FIXME:see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n
 
   logging.log2_api_deferred_static_filter:
     # FIXME:see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log2_api_deferred_func_prefix:
     # FIXME:see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
       - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
 
@@ -85,32 +93,32 @@ tests:
     # FIXME:see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
 
   logging.log2_api_immediate:
     # FIXME: qemu_arc_hs6x excluded, see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_IMMEDIATE=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
 
   logging.log2_api_immediate_rt_filter:
     # FIXME: qemu_arc_hs6x excluded, see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_IMMEDIATE=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.log2_api_immediate_static_filter:
     # FIXME: qemu_arc_hs6x excluded, see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_IMMEDIATE=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log2_api_immediate_64b_timestamp:
     # FIXME: qemu_arc_hs6x excluded, see #38041
     platform_exclude: qemu_arc_hs6x
     extra_configs:
-      - CONFIG_LOG2_MODE_IMMEDIATE=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
