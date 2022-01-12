@@ -83,4 +83,6 @@ source "drivers/interrupt_controller/Kconfig.eclic"
 
 source "drivers/interrupt_controller/Kconfig.gd32_exti"
 
+source "drivers/interrupt_controller/Kconfig.nrf"
+
 endmenu

@@ -1,0 +1,14 @@
+# Nordic Semiconductor interrupt controller configuration
+
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_NORDIC_NRF_EGU := nordic,nrf-egu
+
+config INTC_NRF_EGU
+	bool "EGU interrupt driver"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_EGU))
+	depends on NRFX_EGU
+	help
+	  Enable support for EGU interrupt driver for nRF MCU series.
