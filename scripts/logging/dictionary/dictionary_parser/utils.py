@@ -25,8 +25,8 @@ def convert_hex_file_to_bin(hexfile):
     return bin_data
 
 
-def extract_string_from_section(section, str_ptr):
-    """Extract all the strings in an ELF section"""
+def extract_one_string_in_section(section, str_ptr):
+    """Extract one string in an ELF section"""
     data = section['data']
     max_offset = section['size']
     offset = str_ptr - section['start']
@@ -36,7 +36,7 @@ def extract_string_from_section(section, str_ptr):
 
     ret_str = ""
 
-    while (data[offset] != 0) and (offset < max_offset):
+    while (offset < max_offset) and (data[offset] != 0):
         ret_str += chr(data[offset])
         offset += 1
 
