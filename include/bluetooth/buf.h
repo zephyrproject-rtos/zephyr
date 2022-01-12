@@ -79,6 +79,13 @@ struct bt_buf_data {
 /** Data size needed for HCI Event RX buffers */
 #define BT_BUF_EVT_RX_SIZE BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_RX_SIZE)
 
+/** Data size needed for discardable HCI Event RX buffers */
+#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
+#define BT_BUF_DISCARDABLE_EVT_RX_SIZE BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE)
+#else
+#define BT_BUF_DISCARDABLE_EVT_RX_SIZE 0
+#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
+
 #if defined(CONFIG_BT_ISO)
 #define BT_BUF_ISO_RX_SIZE BT_BUF_ISO_SIZE(CONFIG_BT_ISO_RX_MTU)
 #define BT_BUF_ISO_RX_COUNT CONFIG_BT_ISO_RX_BUF_COUNT
@@ -88,7 +95,9 @@ struct bt_buf_data {
 #endif /* CONFIG_BT_ISO */
 
 /** Data size needed for HCI ACL, HCI ISO or Event RX buffers */
-#define BT_BUF_RX_SIZE (MAX(MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE), \
+#define BT_BUF_RX_SIZE (MAX(MAX(MAX(BT_BUF_ACL_RX_SIZE), \
+			    BT_BUF_EVT_RX_SIZE), \
+			    BT_BUF_DISCARDABLE_EVT_RX_SIZE), \
 			    BT_BUF_ISO_RX_SIZE))
 
 /** Buffer count needed for HCI ACL, HCI ISO or Event RX buffers */
