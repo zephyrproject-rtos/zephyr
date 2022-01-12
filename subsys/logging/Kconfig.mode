@@ -4,7 +4,7 @@
 choice LOG_MODE
 	prompt "Mode"
 	default LOG_MODE_MINIMAL if LOG_DEFAULT_MINIMAL
-	default LOG_MODE_DEFERRED
+	default LOG2_MODE_DEFERRED
 
 config LOG_MODE_DEFERRED
 	bool "Deferred logging"
