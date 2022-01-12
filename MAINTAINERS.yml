@@ -1790,7 +1790,6 @@ CI:
         - galak
     files:
         - .github/
-        - .buildkite/
         - scripts/ci/
         - .checkpatch.conf
         - scripts/gitlint/
