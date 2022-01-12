@@ -64,7 +64,7 @@ set(DOCS_LATEX_DIR ${CMAKE_CURRENT_BINARY_DIR}/latex)
 #
 # Both targets will produce same result, but target 2 must have no dependencies.
 # This is useful to, e.g. re-run the Sphinx build without dependencies such as
-# devicetree or Kconfig generators.
+# devicetree generator.
 #
 function(add_doc_target name)
   add_custom_target(${name} ${ARGN})
@@ -93,67 +93,6 @@ set_target_properties(
   PROPERTIES
     ADDITIONAL_CLEAN_FILES "${DOXY_OUT}"
 )
-
-#-------------------------------------------------------------------------------
-# kconfig
-
-set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
-
-foreach(module_name ${ZEPHYR_MODULE_NAMES})
-  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
-  list(APPEND
-       ZEPHYR_KCONFIG_MODULES
-       "ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR=${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR}"
-  )
-
-  if(ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG)
-    list(APPEND
-         ZEPHYR_KCONFIG_MODULES
-         "ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG=${ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG}"
-    )
-  endif()
-endforeach()
-
-if(WIN32)
-  set(SEP $<SEMICOLON>)
-else()
-  set(SEP :)
-endif()
-
-set(GEN_KCONFIG_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_kconfig_rest.py)
-
-add_custom_target(
-  kconfig
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${DOCS_SRC_DIR}/reference/kconfig
-  COMMAND ${CMAKE_COMMAND} -E env
-  PYTHONPATH=${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}
-  ZEPHYR_BASE=${ZEPHYR_BASE}
-  srctree=${ZEPHYR_BASE}
-  BOARD_DIR=boards/*/*
-  ARCH=*
-  ARCH_DIR=arch
-  SOC_DIR=soc
-  TOOLCHAIN_HAS_NEWLIB=y
-  KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
-  KCONFIG_WARN_UNDEF=y
-  KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
-  KCONFIG_DOC_MODE=1
-  ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} ${GEN_KCONFIG_REST_SCRIPT} ${DOCS_SRC_DIR}/reference/kconfig/
-      --separate-all-index
-      --keep-module-paths
-      --modules Architecture,arch,${ZEPHYR_BASE}/arch
-                Driver,drivers,${ZEPHYR_BASE}/drivers
-                Kernel,kernel,${ZEPHYR_BASE}/kernel
-                Library,lib,${ZEPHYR_BASE}/lib
-                Subsystem,subsys,${ZEPHYR_BASE}/subsys
-                "External Module,modules,${ZEPHYR_BASE}/modules"
-
-  VERBATIM
-  COMMENT "Generating Kconfig documentation..."
-)
-
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_KCONFIG_REST_SCRIPT})
 
 #-------------------------------------------------------------------------------
 # devicetree
@@ -210,7 +149,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(html devicetree kconfig)
+add_dependencies(html devicetree)
 
 #-------------------------------------------------------------------------------
 # pdf
@@ -238,7 +177,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_LATEX_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(latex kconfig devicetree)
+add_dependencies(latex devicetree)
 
 if(LATEX_PDFLATEX_FOUND AND LATEXMK)
   if(WIN32)
