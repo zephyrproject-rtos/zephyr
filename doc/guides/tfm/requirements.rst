@@ -20,6 +20,8 @@ The following are some of the boards that can be used with TF-M:
      - ``nrf9160dk_nrf9160_ns``
    * - :ref:`nrf5340dk_nrf5340`
      - ``nrf5340dk_nrf5340_cpuapp_ns``
+   * - :ref:`b_u585i_iot02a_board`
+     - ``b_u585i_iot02a_ns``
    * - :ref:`nucleo_l552ze_q_board`
      - ``nucleo_l552ze_q_ns``
    * - :ref:`stm32l562e_dk_board`
