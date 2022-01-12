@@ -511,8 +511,8 @@ started.
 
 See :ref:`setting_configuration_values` for detailed documentation on setting
 Kconfig configuration values. The :ref:`initial-conf` section on the same page
-explains how the initial configuration is derived. See
-:ref:`configuration_options` for a complete list of configuration options.
+explains how the initial configuration is derived. See :ref:`kconfig-search`
+for a complete list of configuration options.
 See :ref:`hardening` for security information related with Kconfig options.
 
 The other pages in the :ref:`Kconfig section of the manual <kconfig>` are also

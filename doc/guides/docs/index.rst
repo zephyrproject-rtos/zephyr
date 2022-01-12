@@ -245,15 +245,13 @@ declarations. This warning may be caused by different Sphinx/Breathe issues:
 Developer-mode Document Building
 ********************************
 
-Building the documentation for all the Kconfig options significantly
-adds to the total doc build time.  When making and testing major changes
-to the documentation, we provide an option to temporarily stub-out
-the auto-generated configuration and Devicetree bindings documentation so the
-doc build process runs much faster.
+When making and testing major changes to the documentation, we provide an option
+to temporarily stub-out the auto-generated Devicetree bindings documentation so
+the doc build process runs faster.
 
 To enable this mode, set the following option when invoking cmake::
 
-   -DKCONFIG_TURBO_MODE=1 -DDT_TURBO_MODE=1
+   -DDT_TURBO_MODE=1
 
 or invoke make with the following target::
 
