@@ -8,7 +8,6 @@ zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SIMULATOR flash_simulator.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT45 spi_flash_at45.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ITE_IT8XXX2 flash_ite_it8xxx2.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER soc_flash_nrf_ticker.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_MCUX soc_flash_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_LPC soc_flash_lpc.c)
@@ -55,6 +54,15 @@ if(CONFIG_SOC_FLASH_STM32)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32G4X flash_stm32g4x.c)
   endif()
 endif()
+
+if(CONFIG_SOC_FLASH_NRF)
+  zephyr_library_sources(soc_flash_nrf.c)
+  if (CONFIG_BUILD_WITH_TFM)
+	zephyr_library_include_directories(
+      $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+	  )
+  endif()
+endif(CONFIG_SOC_FLASH_NRF)
 
 zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_NOR
