@@ -213,10 +213,52 @@
 			status = "okay";
 		};
 
+		swi0: swi@40014000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x40014000 0x1000>;
+			interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+		};
+
 		egu1: egu@40015000 {
 			compatible = "nordic,nrf-egu";
 			reg = <0x40015000 0x1000>;
 			interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi1: swi@40015000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x40015000 0x1000>;
+			interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+		};
+
+		swi2: swi@40016000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x40016000 0x1000>;
+			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi3: swi@40017000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x40017000 0x1000>;
+			interrupts = <23 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi4: swi@40018000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x40018000 0x1000>;
+			interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi5: swi@40019000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x40019000 0x1000>;
+			interrupts = <25 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 		};
 

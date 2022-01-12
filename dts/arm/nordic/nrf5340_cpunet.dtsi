@@ -239,6 +239,34 @@
 			label = "TIMER2";
 		};
 
+		swi0: swi@4101A000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101A000 0x1000>;
+			interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi1: swi@4101B000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101B000 0x1000>;
+			interrupts = <27 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi2: swi@4101C000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101C000 0x1000>;
+			interrupts = <28 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi3: swi@4101D000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101D000 0x1000>;
+			interrupts = <29 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
 		flash_controller: flash-controller@41080000 {
 			compatible = "nordic,nrf53-flash-controller";
 			reg = <0x41080000 0x1000>;
