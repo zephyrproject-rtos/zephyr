@@ -29,8 +29,6 @@ config NRFX_DPPI
 
 config NRFX_EGU
 	bool "EGU driver"
-	depends on HAS_HW_NRF_EGU0 || HAS_HW_NRF_EGU1 || HAS_HW_NRF_EGU2 || \
-		   HAS_HW_NRF_EGU3 || HAS_HW_NRF_EGU4 || HAS_HW_NRF_EGU5
 
 config NRFX_EGU0
 	bool "EGU0 instance"
