@@ -114,6 +114,15 @@ static inline void log_backend_put(const struct log_backend *const backend,
 	backend->api->put(backend, msg);
 }
 
+/**
+ * @brief Process message.
+ *
+ * Function is used in deferred and immediate mode. On return, message content
+ * is processed by the backend and memory can be freed.
+ *
+ * @param[in] backend  Pointer to the backend instance.
+ * @param[in] msg      Pointer to message with log entry.
+ */
 static inline void log_backend_msg2_process(
 					const struct log_backend *const backend,
 					union log_msg2_generic *msg)
