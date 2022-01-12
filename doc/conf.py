@@ -74,7 +74,7 @@ extensions = [
     "sphinx.ext.graphviz",
     "zephyr.application",
     "zephyr.html_redirects",
-    "zephyr.kconfig-role",
+    "zephyr.kconfig",
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
@@ -150,7 +150,7 @@ html_context = {
     "display_vcs_link": True,
     "reference_links": {
         "API": f"{reference_prefix}/doxygen/html/index.html",
-        "Kconfig Options": f"{reference_prefix}/reference/kconfig/index.html",
+        "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/reference/devicetree/bindings.html",
     }
 }
@@ -240,6 +240,11 @@ vcs_link_exclude = [
     "reference/devicetree/bindings.*",
     "reference/devicetree/compatibles.*",
 ]
+
+# -- Options for zephyr.kconfig -------------------------------------------
+
+kconfig_generate_db = True
+kconfig_ext_paths = [ZEPHYR_BASE]
 
 # -- Options for zephyr.external_content ----------------------------------
 
