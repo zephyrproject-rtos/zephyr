@@ -65,9 +65,6 @@ const static struct spi_buf_set tx_bufs = {
 	.count = 1,
 };
 
-/* HCI buffer pools */
-#define CMD_BUF_SIZE BT_BUF_RX_SIZE
-
 /*
  * This finds an arbitrary node with compatible
  * "zephyr,bt-hci-spi-slave". There should just be one in the
