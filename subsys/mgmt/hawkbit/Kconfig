@@ -81,6 +81,30 @@ config HAWKBIT_DDI_SECURITY_TOKEN
 	  Authentication security token for the configured Hawkbit DDI
 	  authentication mode.
 
+choice
+	prompt "Download strategy"
+	default HAWKBIT_DOWNLOAD_FULL
+
+config HAWKBIT_DOWNLOAD_FULL
+	bool "Download using single request"
+	help
+	  Download the firmware update using a single HTTP request.
+
+config HAWKBIT_DOWNLOAD_PART
+	bool "Download using multiple requests"
+	help
+	  Download firmware using multiple requests. This uses the HTTP Range
+	  header to split up downloads into chunks.
+
+endchoice
+
+config HAWKBIT_DOWNLOAD_PART_SIZE
+	int "Size of downloaded part"
+	depends on HAWKBIT_DOWNLOAD_PART
+	default 1
+	help
+	  Size of downloaded part of the firmware, in kB.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for Hawkbit code.

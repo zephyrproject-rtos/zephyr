@@ -24,6 +24,7 @@ enum hawkbit_http_request {
 	HAWKBIT_PROBE_DEPLOYMENT_BASE,
 	HAWKBIT_REPORT,
 	HAWKBIT_DOWNLOAD,
+	HAWKBIT_DOWNLOAD_PART,
 };
 
 enum hawkbit_status_fini {
@@ -162,6 +163,7 @@ struct entry http_request[] = {
 	{"HAWKBIT_PROBE_DEPLOYMENT_BASE", 3},
 	{"HAWKBIT_REPORT", 4},
 	{"HAWKBIT_DOWNLOAD", 5},
+	{"HAWKBIT_DOWNLOAD_PART", 6},
 };
 
 #endif /* __HAWKBIT_PRIV_H__ */
