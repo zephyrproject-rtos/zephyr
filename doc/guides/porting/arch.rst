@@ -494,8 +494,8 @@ Two types of thread stacks exist:
 - "thread" stacks which typically use more memory, but are capable of hosting
   thread running in user mode, as well as any use-cases for kernel stacks.
 
-If :c:kconfig:`CONFIG_USERSPACE` is not enabled, "thread" and "kernel" stacks
-are equivalent.
+If :kconfig:`CONFIG_USERSPACE` is not enabled, "thread" and "kernel" stacks are
+equivalent.
 
 Additional macros may be defined in the architecture layer to specify
 the alignment of the base of stack objects, any reserved data inside the

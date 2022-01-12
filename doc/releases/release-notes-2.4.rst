@@ -580,7 +580,7 @@ Drivers and Sensors
     * :kconfig:`CONFIG_USB_DEVICE_NETWORK_EEM`
     * :kconfig:`CONFIG_USB_DEVICE_NETWORK_RNDIS`
     * :kconfig:`CONFIG_TRACING_BACKEND_USB`
-    * :kconfig:`CONFIG_USB_UART_CONSOLE`
+    * ``CONFIG_USB_UART_CONSOLE``
 
   * USB device support has got its own work queue
     which is used by CDC ACM class by default.
