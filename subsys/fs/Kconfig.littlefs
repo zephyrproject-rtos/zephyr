@@ -105,4 +105,10 @@ config FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE
 
 endif # FS_LITTLEFS_FC_HEAP_SIZE <= 0
 
+config FS_LITTLEFS_READONLY
+	bool "Enable readonly little fs"
+	default 0
+	help
+	  Enable readonly littlefs
+
 endif # FILE_SYSTEM_LITTLEFS
