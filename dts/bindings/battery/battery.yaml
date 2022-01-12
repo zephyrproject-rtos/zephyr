@@ -1,0 +1,84 @@
+#
+# Copyright 2022 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+   Battery parameters and info
+
+   Voltage is in millivolts
+   Current is in milliamperes
+   Temperature is in Celsius degrees
+
+compatible: "zephyr,battery"
+
+properties:
+   manuf_name:
+      description: Manufacturer name
+      type: string
+   device_name:
+      description: Model/Device name
+      type: string
+   voltage_max:
+      description: |
+         Maximum voltage that can be applied to the battery.
+      type: int
+   voltage_normal:
+      description: |
+         Nominal voltage of the battery.
+      type: int
+   voltage_min:
+      description: |
+         Minimum voltage of the battery.
+      type: int
+   precharge_voltage:
+      description: |
+         Voltage used during the precharge phase.
+      type: int
+   precharge_current:
+      description: |
+         Maximum current used during the precharge phase.
+      type: int
+   start_charging_min_c:
+      description: |
+         Minimum temperature of battery to start charging it.
+      type: int
+   start_charging_max_c:
+      description: |
+         Maximum temperature of battery to start charging it.
+      type: int
+   charging_min_c:
+      description: |
+         Minimum temperature of battery during charging it. If the battery
+         temperature falls below this value, charging will be stopped.
+      type: int
+   charging_max_c:
+      description: |
+         Maximum temperature of battery during charging it. If the battery
+         temperature raises above this value, charging will be stopped.
+      type: int
+   discharging_min_c:
+      description: |
+         Minimum working temperature of battery.
+      type: int
+   discharging_max_c:
+      description: |
+         Maximum working temperature of battery.
+      type: int
+   design_capacity:
+      description: |
+        The nominal capacity the battery is designed to supply when new.
+      type: int
+   design_capacity:
+      description: |
+        The nominal voltage the battery is designed to supply when new.
+      type: int
+   desired-voltage:
+      type: int
+      description: |
+        Battery Desired Voltage in mV
+   desired-charging-current:
+      type: int
+      description: |
+        Battery Design Charging Current in mA

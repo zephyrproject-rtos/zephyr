@@ -137,4 +137,6 @@ source "drivers/usbc/Kconfig"
 
 source "drivers/reset/Kconfig"
 
+source "drivers/battery/Kconfig"
+
 endmenu
