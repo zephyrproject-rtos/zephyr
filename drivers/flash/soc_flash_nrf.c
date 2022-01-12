@@ -17,11 +17,18 @@
 #include <nrfx_nvmc.h>
 #include <nrf_erratas.h>
 
+#include <storage/flash_map.h>
+
 #include "soc_flash_nrf.h"
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(flash_nrf);
+
+#ifdef CONFIG_BUILD_WITH_TFM
+#include <tfm_ns_interface.h>
+#include <tfm_ioctl_api.h>
+#endif /* CONFIG_BUILD_WITH_TFM */
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf51_flash_controller), okay)
 #define DT_DRV_COMPAT nordic_nrf51_flash_controller
@@ -136,6 +143,34 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 	if (!len) {
 		return 0;
 	}
+
+	/* If the currently executing image is non-secure and the address
+	 * is not in the non-secure image we will not be able to read it
+	 * directly and must instead invoke a secure service to read out
+	 * the flash.
+	 */
+#ifdef CONFIG_BUILD_WITH_TFM
+	/* We assume that image_0_nonsecure is the only non-secure
+	 * partition. This will need to be updated when it is also
+	 * possible to execute from slot 1. Partitions that are assumed to
+	 * be secure are: mcuboot, image_0, image_scratch, and storage.
+	 */
+	if (!is_within_bounds(addr, len, FLASH_AREA_OFFSET(image_0_nonsecure),
+			      FLASH_AREA_SIZE(image_0_nonsecure))) {
+		uint32_t err = 0;
+		enum tfm_platform_err_t plt_err;
+
+		plt_err = tfm_platform_mem_read(&data, addr, len, &err);
+		if (plt_err != TFM_PLATFORM_ERR_SUCCESS || err != 0) {
+			LOG_ERR("tfm_..._mem_read failed: plt_err: 0x%x,"
+				"err: 0x%x\n",
+				plt_err, err);
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+#endif /* CONFIG_ARM_NONSECURE_FIRMWARE */
 
 	memcpy(data, (void *)addr, len);
 

@@ -56,6 +56,12 @@ if(CONFIG_SOC_FLASH_STM32)
   endif()
 endif()
 
+if (CONFIG_BUILD_WITH_TFM)
+	zephyr_library_include_directories(
+      $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+	  )
+endif()
+
 zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_NOR
   ${ZEPHYR_BASE}/drivers/memc
