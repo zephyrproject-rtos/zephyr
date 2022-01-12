@@ -613,6 +613,17 @@ config TIMEOUT_64BIT
 	  availability of absolute timeout values (which require the
 	  extra precision).
 
+config SYS_CLOCK_MAX_TIMEOUT_DAYS
+	int "Max timeout (in days) used in conversions"
+	default 365
+	help
+	  Value is used in the time conversion static inline function to determine
+	  at compile time which algorithm to use. One algorithm is faster, takes
+	  less code but may overflow if multiplication of source and target
+	  frequency exceeds 64 bits. Second algorithm prevents that. Faster
+	  algorithm is selected for conversion if maximum timeout represented in
+	  source frequency domain multiplied by target frequency fits in 64 bits.
+
 config XIP
 	bool "Execute in place"
 	help

@@ -59,6 +59,21 @@ static TIME_CONSTEXPR inline int sys_clock_hw_cycles_per_sec(void)
 #endif
 }
 
+/** @internal
+ * Macro determines if fast conversion algorithm can be used. It checks if
+ * maximum timeout represented in source frequency domain and multiplied by
+ * target frequency fits in 64 bits.
+ *
+ * @param from_hz Source frequency.
+ * @param to_hz Target frequency.
+ *
+ * @retval true Use faster algorithm.
+ * @retval false Use algorithm preventing overflow of intermediate value.
+ */
+#define Z_TMCVT_USE_FAST_ALGO(from_hz, to_hz) \
+	((ceiling_fraction(CONFIG_SYS_CLOCK_MAX_TIMEOUT_DAYS * 24ULL * 3600ULL * from_hz, \
+			   UINT32_MAX) * to_hz) <= UINT32_MAX)
+
 /* Time converter generator gadget.  Selects from one of three
  * conversion algorithms: ones that take advantage when the
  * frequencies are an integer ratio (in either direction), or a full
@@ -126,8 +141,18 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 	} else {
 		if (result32) {
 			return (uint32_t)((t * to_hz + off) / from_hz);
+		} else if (const_hz && Z_TMCVT_USE_FAST_ALGO(from_hz, to_hz)) {
+			/* Faster algorithm but source is first multiplied by target frequency
+			 * and it can overflow even though final result would not overflow.
+			 * Kconfig option shall prevent use of this algorithm when there is a
+			 * risk of overflow.
+			 */
+			return ((t * to_hz + off) / from_hz);
 		} else {
-			return (t * to_hz + off) / from_hz;
+			/* Slower algorithm but input is first divided before being multiplied
+			 * which prevents overflow of intermediate value.
+			 */
+			return (t / from_hz) * to_hz + ((t % from_hz) * to_hz + off) / from_hz;
 		}
 	}
 }
