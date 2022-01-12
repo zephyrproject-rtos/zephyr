@@ -53,6 +53,8 @@ static void test_timeout(void)
 	err = ztress_execute(&timer_data, thread_data, ARRAY_SIZE(thread_data));
 	d = k_uptime_get() - d;
 	zassert_within(d, 1000, 200, NULL);
+
+	ztress_set_timeout(K_NO_WAIT);
 }
 
 static void timeout_abort(struct k_timer *timer)
@@ -68,7 +70,6 @@ static void test_abort(void)
 	k_timer_init(&timer, timeout_abort, NULL);
 	k_timer_start(&timer, K_MSEC(100), K_NO_WAIT);
 
-	ztress_set_timeout(K_NO_WAIT);
 	ZTRESS_EXECUTE(ZTRESS_THREAD(ztress_handler_busy, NULL, repeat, 0, K_MSEC(1)),
 		       ZTRESS_THREAD(ztress_handler_busy, NULL, repeat, 0, K_MSEC(1)));
 
@@ -114,7 +115,7 @@ static void test_no_context_requirements(void)
 
 	uint32_t exec_cnt = ztress_exec_count(1);
 
-	zassert_true(exec_cnt >= repeat && exec_cnt < repeat + 10, NULL);
+	zassert_true(exec_cnt >= repeat && exec_cnt < repeat + 10, "exec_cnt: %u", exec_cnt);
 
 	/* Set of two threads. Second thread and timer context has no ending
 	 * condition (exec_cnt and preempt_cnt are 0).
