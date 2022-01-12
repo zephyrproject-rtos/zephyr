@@ -10,3 +10,12 @@ tests:
     depends_on: netif
     build_only: true
     platform_allow: frdm_k64f
+  samples.net.hawkbit.download_part:
+    harness: net
+    tags: net
+    extra_configs:
+      - CONFIG_HAWKBIT_DOWNLOAD_PART=y
+      - CONFIG_HAWKBIT_DOWNLOAD_PART_SIZE=1
+    depends_on: netif
+    build_only: true
+    platform_allow: frdm_k64f
