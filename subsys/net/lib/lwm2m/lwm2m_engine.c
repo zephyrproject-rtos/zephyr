@@ -4326,7 +4326,7 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 		obs->path.level,
 		log_strdup(sprint_token(obs->token, obs->tkl)),
 		log_strdup(lwm2m_sprint_ip_addr(&ctx->remote_addr)),
-		k_uptime_get());
+		(long long)k_uptime_get());
 
 	obj_inst = get_engine_obj_inst(obs->path.obj_id,
 				       obs->path.obj_inst_id);
