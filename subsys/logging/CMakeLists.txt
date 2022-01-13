@@ -92,7 +92,7 @@ if(CONFIG_LOG2_MODE_IMMEDIATE OR CONFIG_LOG2_MODE_DEFERRED)
 endif()
 
 if(CONFIG_LOG1)
-  message(WARNING "Logging v1 has been deprecated. Use v2 and instead and adapt \
+  message(WARNING "Logging v1 has been deprecated. Use v2 instead and adapt \
                    custom backend to the new backend API"
 ￼         )
 endif()
