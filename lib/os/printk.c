@@ -97,7 +97,7 @@ static int buf_char_out(int c, void *ctx_p)
 	struct buf_out_context *ctx = ctx_p;
 
 	ctx->count++;
-	ctx->buf[ctx->buf_count++] = c;
+	ctx->buf[ctx->buf_count++] = (char)c;
 	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
 		buf_flush(ctx);
 	}
@@ -166,7 +166,7 @@ void z_impl_k_str_out(char *c, size_t n)
 #endif
 
 	for (i = 0; i < n; i++) {
-		_char_out(c[i]);
+		_char_out((int)c[i]);
 	}
 
 #ifdef CONFIG_PRINTK_SYNC
@@ -225,8 +225,8 @@ void printk(const char *fmt, ...)
 
 struct str_context {
 	char *str;
-	int max;
-	int count;
+	size_t max;
+	size_t count;
 };
 
 static int str_out(int c, struct str_context *ctx)
@@ -239,7 +239,7 @@ static int str_out(int c, struct str_context *ctx)
 	if (ctx->count == ctx->max - 1) {
 		ctx->str[ctx->count++] = '\0';
 	} else {
-		ctx->str[ctx->count++] = c;
+		ctx->str[ctx->count++] = (char)c;
 	}
 
 	return c;
@@ -267,5 +267,5 @@ int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
 		str[ctx.count] = '\0';
 	}
 
-	return ctx.count;
+	return (int)ctx.count;
 }
