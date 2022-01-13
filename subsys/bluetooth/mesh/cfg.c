@@ -82,7 +82,7 @@ static enum bt_mesh_feat_state feature_get(int feature_flag)
 		       BT_MESH_FEATURE_DISABLED;
 }
 
-static int node_id_is_running(struct bt_mesh_subnet *sub, void *cb_data)
+static bool node_id_is_running(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	return sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING;
 }
