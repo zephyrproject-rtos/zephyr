@@ -49,6 +49,18 @@
 			health-test-magic = <0x17590abc>;
 			health-test-config = <0xaa74>;
 		};
+
+		lptim1: timers@40002400 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000200>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002400 0x400>;
+			interrupts = <93 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+			label = "LPTIM_1";
+		};
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */

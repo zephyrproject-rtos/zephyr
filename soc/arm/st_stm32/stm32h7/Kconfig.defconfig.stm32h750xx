@@ -1,6 +1,7 @@
 # ST STM32H750XX MCU configuration options
 
 # Copyright (c) 2020 Teslabs Engineering S.L.
+# Copyright (c) 2022 SILA Embedded Solutions GmbH <office@embedded-solutions.at>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_STM32H750XX
@@ -10,5 +11,10 @@ config SOC
 
 config NUM_IRQS
 	default 150
+
+choice VOS0_SWITCH_METHOD_CHOICE
+	default VOS0_SWITCH_METHOD_ODEN
+
+endchoice
 
 endif # SOC_STM32H750XX
