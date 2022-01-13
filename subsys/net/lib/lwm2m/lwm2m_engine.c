@@ -44,6 +44,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_util.h"
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+#include "lwm2m_rw_senml_json.h"
+#endif
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 #include "lwm2m_rw_json.h"
 #endif
@@ -260,6 +263,9 @@ static int init_block_ctx(const uint8_t *token, uint8_t tkl,
 	(*ctx)->timestamp = timestamp;
 	(*ctx)->expected = 0;
 	(*ctx)->last_block = false;
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	lwm2m_senml_json_context_init(&(*ctx)->senml_json_ctx);
+#endif
 	memset(&(*ctx)->opaque, 0, sizeof((*ctx)->opaque));
 
 	return 0;
@@ -1205,6 +1211,12 @@ static int select_writer(struct lwm2m_output_context *out, uint16_t accept)
 		break;
 #endif
 
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	case LWM2M_FORMAT_APP_SEML_JSON:
+		out->writer = &senml_json_writer;
+		break;
+#endif
+
 	default:
 		LOG_WRN("Unknown content type %u", accept);
 		return -ENOMSG;
@@ -1233,6 +1245,12 @@ static int select_reader(struct lwm2m_input_context *in, uint16_t format)
 	case LWM2M_FORMAT_OMA_JSON:
 	case LWM2M_FORMAT_OMA_OLD_JSON:
 		in->reader = &json_reader;
+		break;
+#endif
+
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	case LWM2M_FORMAT_APP_SEML_JSON:
+		in->reader = &senml_json_reader;
 		break;
 #endif
 
@@ -2475,10 +2493,12 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			return -EINVAL;
 
 		}
-	}
 
-	if (ret < 0) {
-		return ret;
+		/* Validate that we really read some data */
+		if (ret < 0) {
+			LOG_ERR("Read operation fail");
+			return -ENOMEM;
+		}
 	}
 
 	if (res->multi_res_inst) {
@@ -3294,6 +3314,11 @@ static int do_read_op(struct lwm2m_message *msg, uint16_t content_format)
 		return do_read_op_json(msg, content_format);
 #endif
 
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	case LWM2M_FORMAT_APP_SEML_JSON:
+		return do_read_op_senml_json(msg);
+#endif
+
 	default:
 		LOG_ERR("Unsupported content-format: %u", content_format);
 		return -ENOMSG;
@@ -3793,6 +3818,11 @@ static int do_write_op(struct lwm2m_message *msg,
 	case LWM2M_FORMAT_OMA_JSON:
 	case LWM2M_FORMAT_OMA_OLD_JSON:
 		return do_write_op_json(msg);
+#endif
+
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	case LWM2M_FORMAT_APP_SEML_JSON:
+		return do_write_op_senml_json(msg);
 #endif
 
 	default:
@@ -5262,6 +5292,187 @@ static int lwm2m_engine_init(const struct device *dev)
 	LOG_DBG("LWM2M engine socket receive thread started");
 
 	return 0;
+}
+
+static struct lwm2m_obj_path_list *lwm2m_engine_get_from_list(sys_slist_t *path_list)
+{
+	sys_snode_t *path_node = sys_slist_get(path_list);
+	struct lwm2m_obj_path_list *entry;
+
+	if (!path_node) {
+		return NULL;
+	}
+
+	entry = SYS_SLIST_CONTAINER(path_node, entry, node);
+	if (entry) {
+		memset(entry, 0, sizeof(struct lwm2m_obj_path_list));
+	}
+	return entry;
+}
+
+static void lwm2m_engine_free_list(sys_slist_t *path_list, sys_slist_t *free_list)
+{
+	sys_snode_t *node;
+
+	while (NULL != (node = sys_slist_get(path_list))) {
+		/* Add to free list */
+		sys_slist_append(free_list, node);
+	}
+}
+
+static bool lwm2m_path_object_compare(struct lwm2m_obj_path *path,
+				      struct lwm2m_obj_path *compare_path)
+{
+	if (path->level != compare_path->level || path->obj_id != compare_path->obj_id ||
+	    path->obj_inst_id != compare_path->obj_inst_id ||
+	    path->res_id != compare_path->res_id ||
+	    path->res_inst_id != compare_path->res_inst_id) {
+		return false;
+	}
+	return true;
+}
+
+void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
+				 struct lwm2m_obj_path_list path_object_buf[],
+				 uint8_t path_object_size)
+{
+	/* Init list */
+	sys_slist_init(lwm2m_path_list);
+	sys_slist_init(lwm2m_free_list);
+
+	/* Put buffer elements to free list */
+	for (int i = 0; i < path_object_size; i++) {
+		sys_slist_append(lwm2m_free_list, &path_object_buf[i].node);
+	}
+}
+
+int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
+				  struct lwm2m_obj_path *path)
+{
+	struct lwm2m_obj_path_list *prev = NULL;
+	struct lwm2m_obj_path_list *entry;
+	struct lwm2m_obj_path_list *new_entry;
+	bool add_before_current = false;
+
+	if (path->level == LWM2M_PATH_LEVEL_NONE) {
+		/* Clear the list if we are adding the root path which includes all */
+		lwm2m_engine_free_list(lwm2m_path_list, lwm2m_free_list);
+	}
+
+	/* Check is it at list already here */
+	new_entry = lwm2m_engine_get_from_list(lwm2m_free_list);
+	if (!new_entry) {
+		return -1;
+	}
+
+	new_entry->path = *path;
+	if (!sys_slist_is_empty(lwm2m_path_list)) {
+
+		/* Keep list Ordered by Object ID/ Object instance/ resource ID */
+		SYS_SLIST_FOR_EACH_CONTAINER(lwm2m_path_list, entry, node) {
+			if (entry->path.level == LWM2M_PATH_LEVEL_NONE ||
+			    lwm2m_path_object_compare(&entry->path, &new_entry->path)) {
+				/* Already Root request at list or current path is at list */
+				sys_slist_append(lwm2m_free_list, &new_entry->node);
+				return 0;
+			}
+
+			if (entry->path.obj_id > path->obj_id) {
+				/* New entry have smaller Object ID */
+				add_before_current = true;
+			} else if (entry->path.obj_id == path->obj_id &&
+				   entry->path.level > path->level) {
+				add_before_current = true;
+			} else if (entry->path.obj_id == path->obj_id &&
+				   entry->path.level == path->level) {
+				if (path->level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
+				    entry->path.obj_inst_id > path->obj_inst_id) {
+					/*
+					 * New have same Object ID
+					 * but smaller Object Instance ID
+					 */
+					add_before_current = true;
+				} else if (path->level >= LWM2M_PATH_LEVEL_RESOURCE &&
+					   entry->path.obj_inst_id == path->obj_inst_id &&
+					   entry->path.res_id > path->res_id) {
+					/*
+					 * Object ID and Object Intance id same
+					 * but Resource ID is smaller
+					 */
+					add_before_current = true;
+				} else if (path->level >= LWM2M_PATH_LEVEL_RESOURCE_INST &&
+					   entry->path.obj_inst_id == path->obj_inst_id &&
+					   entry->path.res_id == path->res_id &&
+					   entry->path.res_inst_id > path->res_inst_id) {
+					/*
+					 * Object ID, Object Intance id & Resource ID same
+					 * but Resource instance ID is smaller
+					 */
+					add_before_current = true;
+				}
+			}
+
+			if (add_before_current) {
+				if (prev) {
+					sys_slist_insert(lwm2m_path_list, &prev->node,
+							 &new_entry->node);
+				} else {
+					sys_slist_prepend(lwm2m_path_list, &new_entry->node);
+				}
+				return 0;
+			}
+			prev = entry;
+		}
+	}
+
+	/* Add First or new tail entry */
+	sys_slist_append(lwm2m_path_list, &new_entry->node);
+	return 0;
+}
+
+void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list)
+{
+	struct lwm2m_obj_path_list *prev = NULL;
+	struct lwm2m_obj_path_list *entry, *tmp;
+	bool remove_entry;
+
+	if (sys_slist_is_empty(lwm2m_path_list)) {
+		return;
+	}
+
+	/* Keep list Ordered but remove if shorter path is similar */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(lwm2m_path_list, entry, tmp, node) {
+
+		if (prev && prev->path.level < entry->path.level) {
+			if (prev->path.level == LWM2M_PATH_LEVEL_OBJECT &&
+			    entry->path.obj_id == prev->path.obj_id) {
+				remove_entry = true;
+			} else if (prev->path.level == LWM2M_PATH_LEVEL_OBJECT_INST &&
+				   entry->path.obj_id == prev->path.obj_id &&
+				   entry->path.obj_inst_id == prev->path.obj_inst_id) {
+				/* Remove current from the list */
+				remove_entry = true;
+			} else if (prev->path.level == LWM2M_PATH_LEVEL_RESOURCE &&
+				   entry->path.obj_id == prev->path.obj_id &&
+				   entry->path.obj_inst_id == prev->path.obj_inst_id &&
+				   entry->path.res_id == prev->path.res_id) {
+				/* Remove current from the list */
+				remove_entry = true;
+			} else {
+				remove_entry = false;
+			}
+
+			if (remove_entry) {
+				/* Remove Current entry */
+				sys_slist_remove(lwm2m_path_list, &prev->node, &entry->node);
+				sys_slist_append(lwm2m_free_list, &entry->node);
+			} else {
+				prev = entry;
+			}
+		} else {
+			prev = entry;
+		}
+	}
 }
 
 SYS_INIT(lwm2m_engine_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
