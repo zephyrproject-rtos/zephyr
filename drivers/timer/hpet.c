@@ -435,14 +435,19 @@ static int sys_clock_driver_init(const struct device *dev)
 	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 #endif
 
+	reg = hpet_gconf_get();
+	reg |= GCONF_ENABLE;
+
+#if (DT_INST_PROP(0, no_legacy_irq) == 0)
 	/* Note: we set the legacy routing bit, because otherwise
 	 * nothing in Zephyr disables the PIT which then fires
 	 * interrupts into the same IRQ.  But that means we're then
 	 * forced to use IRQ2 contra the way the kconfig IRQ selection
 	 * is supposed to work.  Should fix this.
 	 */
-	reg = hpet_gconf_get();
-	reg |= GCONF_LR | GCONF_ENABLE;
+	reg |= GCONF_LR;
+#endif
+
 	hpet_gconf_set(reg);
 
 	last_count = hpet_counter_get();
