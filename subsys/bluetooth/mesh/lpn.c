@@ -279,12 +279,12 @@ static void friend_req_sent(uint16_t duration, int err, void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-	if (err) {
-		BT_ERR("Sending Friend Request failed (err %d)", err);
+	if (lpn->state != BT_MESH_LPN_ENABLED) {
 		return;
 	}
 
-	if (lpn->state == BT_MESH_LPN_DISABLED) {
+	if (err) {
+		BT_ERR("Sending Friend Request failed (err %d)", err);
 		return;
 	}
 
@@ -347,6 +347,10 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 static void req_sent(uint16_t duration, int err, void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+	if (lpn->state == BT_MESH_LPN_DISABLED) {
+		return;
+	}
 
 #if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 	BT_DBG("req 0x%02x duration %u err %d state %s",
