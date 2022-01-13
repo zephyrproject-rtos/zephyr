@@ -236,7 +236,7 @@ static int flash_flexspi_nor_erase_sector(const struct device *dev,
 		.dataSize = 0,
 	};
 
-	LOG_DBG("Erasing sector at 0x%08x", offset);
+	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t) offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }
@@ -277,7 +277,7 @@ static int flash_flexspi_nor_page_program(const struct device *dev,
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08x", len, offset);
+	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t) offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }
