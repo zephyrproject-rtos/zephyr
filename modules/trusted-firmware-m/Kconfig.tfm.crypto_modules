@@ -17,6 +17,7 @@ config TFM_CRYPTO_RNG_MODULE_ENABLED
 config TFM_CRYPTO_KEY_MODULE_ENABLED
 	bool "KEY crypto module"
 	default y
+	depends on PSA_HAS_KEY_SUPPORT && NRF_SECURITY
 	help
 	  Enables the KEY crypto module within the crypto partition.
 	  Unset this option if the functionality provided by 'crypto_key.c'
@@ -25,6 +26,7 @@ config TFM_CRYPTO_KEY_MODULE_ENABLED
 config TFM_CRYPTO_AEAD_MODULE_ENABLED
 	bool "AEAD crypto module"
 	default y
+	depends on PSA_HAS_AEAD_SUPPORT && NRF_SECURITY
 	help
 	  Enables the AEAD crypto module within the crypto partition.
 	  Unset this option if the functionality provided by 'crypto_aead.c'
@@ -33,6 +35,7 @@ config TFM_CRYPTO_AEAD_MODULE_ENABLED
 config TFM_CRYPTO_MAC_MODULE_ENABLED
 	bool "MAC crypto module"
 	default y
+	depends on PSA_HAS_MAC_SUPPORT && NRF_SECURITY
 	help
 	  Enables the MAC crypto module within the crypto partition.
 	  Unset this option if the functionality provided by 'crypto_mac.c'
@@ -41,6 +44,7 @@ config TFM_CRYPTO_MAC_MODULE_ENABLED
 config TFM_CRYPTO_HASH_MODULE_ENABLED
 	bool "HASH crypto module"
 	default y
+	depends on PSA_HAS_HASH_SUPPORT && NRF_SECURITY
 	help
 	  Enables the HASH crypto module within the crypto partition.
 	  Unset this option if the functionality provided by 'crypto_hash.c'
@@ -49,6 +53,7 @@ config TFM_CRYPTO_HASH_MODULE_ENABLED
 config TFM_CRYPTO_CIPHER_MODULE_ENABLED
 	bool "CIPHER crypto module"
 	default y
+	depends on PSA_HAS_CIPHER_SUPPORT && NRF_SECURITY
 	help
 	  Enables the CIPHER crypto module within the crypto partition.
 	  Unset this option if the functionality provided by 'crypto_cipher.c'
@@ -57,6 +62,7 @@ config TFM_CRYPTO_CIPHER_MODULE_ENABLED
 config TFM_CRYPTO_ASYM_ENCRYPT_MODULE_ENABLED
 	bool "ASYM ENCRYPT crypto module"
 	default y
+	depends on PSA_HAS_ASYM_ENCRYPT_SUPPORT && NRF_SECURITY
 	help
 	  Enables the ASYM ENCRYPT crypto module within the crypto partition.
 	  Unset this option if the encrypt functionality provided by 'crypto_asymmetric.c'
@@ -65,6 +71,7 @@ config TFM_CRYPTO_ASYM_ENCRYPT_MODULE_ENABLED
 config TFM_CRYPTO_ASYM_SIGN_MODULE_ENABLED
 	bool "ASYM SIGN crypto module"
 	default y
+	depends on PSA_HAS_ASYM_SIGN_SUPPORT && NRF_SECURITY
 	help
 	  Enables the ASYM SIGN crypto module within the crypto partition.
 	  Unset this option if the sign functionality provided by 'crypto_asymmetric.c'
@@ -73,6 +80,7 @@ config TFM_CRYPTO_ASYM_SIGN_MODULE_ENABLED
 config TFM_CRYPTO_KEY_DERIVATION_MODULE_ENABLED
 	bool "KEY DERIVATION crypto module"
 	default y
+	depends on PSA_HAS_KEY_DERIVATION && NRF_SECURITY
 	help
 	  Enables the KEY_DERIVATION crypto module within the crypto partition.
 	  Unset this option if the functionality provided by 'crypto_key_derivation.c'
