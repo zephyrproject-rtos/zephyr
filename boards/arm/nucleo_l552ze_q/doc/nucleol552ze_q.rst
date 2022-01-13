@@ -180,6 +180,44 @@ The default configuration can be found in the defconfig and dts files:
   - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_ns_defconfig`
   - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_ns.dts`
 
+Zephyr board options
+====================
+
+The STM32L552e is an SoC with Cortex-M33 architecture. Zephyr provides support
+for building for both Secure and Non-Secure firmware.
+
+The BOARD options are summarized below:
+
++----------------------+-----------------------------------------------+
+|   BOARD              | Description                                   |
++======================+===============================================+
+| nucleo_l552ze_q      | For building Secure (or Secure-only) firmware |
++----------------------+-----------------------------------------------+
+| nucleo_l552ze_q_ns   | For building Non-Secure firmware              |
++----------------------+-----------------------------------------------+
+
+Here are the instructions to build Zephyr with a non-secure configuration,
+using `tfm_ipc_` sample:
+
+   .. code-block:: bash
+
+      $ west build -b nucleo_l552ze_q_ns samples/tfm_integration/tfm_ipc/
+
+Once done, before flashing, you need to first run a generated script that
+will set platform option bytes config and erase platform (among others,
+option bit TZEN will be set).
+
+   .. code-block:: bash
+
+      $ ./build/tfm/regression.sh
+      $ west flash
+
+Please note that, after having run a TFM sample on the board, you will need to
+run `./build/tfm/regression.sh` once more to clean up the board from secure
+options and get back the platform back to a "normal" state and be able to run
+usual, non-TFM, binaries.
+Also note that, even then, TZEN will remain set, and you will need to use
+STM32CubeProgrammer_ to disable it fully, if required.
 
 Connections and IOs
 ===================
@@ -346,3 +384,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L552 reference manual:
    http://www.st.com/resource/en/reference_manual/DM00346336.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
