@@ -163,6 +163,12 @@ enum {
 /** Maximum Periodic Advertising Interval (N * 1.25 ms) */
 #define BT_GAP_PER_ADV_MAX_INTERVAL             0xFFFF
 
+/**
+ * @brief Convert periodic advertising interval (N * 1.25 ms) to milliseconds
+ *
+ * 5 / 4 represents 1.25 ms unit.
+ */
+#define BT_GAP_PER_ADV_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
 
 /** Constant Tone Extension (CTE) types */
 enum {
@@ -175,7 +181,6 @@ enum {
 	/** No extensions */
 	BT_GAP_CTE_NONE = 0xFF,
 };
-
 
 /** @brief Peripheral sleep clock accuracy (SCA) in ppm (parts per million) */
 enum {
