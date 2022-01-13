@@ -31,7 +31,9 @@ static int64_t time_days_from_civil(int64_t y,
 				    unsigned int m,
 				    unsigned int d)
 {
-	y -= m <= 2;
+	if (m <= 2) {
+		--y;
+	}
 
 	int64_t era = (y >= 0 ? y : y - 399) / 400;
 	unsigned int yoe = y - era * 400;
