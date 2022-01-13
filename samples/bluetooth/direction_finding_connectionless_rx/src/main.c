@@ -13,12 +13,18 @@
 #include <sys/util.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/gap.h>
 #include <bluetooth/direction.h>
 
 #define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define NAME_LEN        30
-#define TIMEOUT_SYNC_CREATE K_SECONDS(10)
+#define PEER_NAME_LEN_MAX 30
+/* BT Core 5.3 Vol 6, Part B section 4.4.5.1 Periodic Advertising Trains allows controller to wait
+ * 6 periodic advertising events for synchronization establishment, hence timeout must be longer
+ * than that.
+ */
+#define SYNC_CREATE_TIMEOUT_INTERVAL_NUM 7
 /* Maximum length of advertising data represented in hexadecimal format */
 #define ADV_DATA_HEX_STR_LEN_MAX (BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN * 2 + 1)
 
@@ -28,6 +34,7 @@ static bt_addr_le_t per_addr;
 static bool per_adv_found;
 static bool scan_enabled;
 static uint8_t per_sid;
+static uint32_t sync_create_timeout_ms;
 
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
@@ -66,6 +73,11 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
 };
+
+static uint32_t sync_create_timeout_get(uint16_t interval)
+{
+	return BT_GAP_PER_ADV_INTERVAL_TO_MS(interval) * SYNC_CREATE_TIMEOUT_INTERVAL_NUM;
+}
 
 static const char *phy2str(uint8_t phy)
 {
@@ -196,6 +208,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       info->interval, info->interval * 5 / 4, info->sid);
 
 	if (!per_adv_found && info->interval != 0) {
+		sync_create_timeout_ms = sync_create_timeout_get(info->interval);
 		per_adv_found = true;
 		per_sid = info->sid;
 		bt_addr_le_copy(&per_addr, info->addr);
@@ -346,7 +359,7 @@ void main(void)
 		create_sync();
 
 		printk("Waiting for periodic sync...\n");
-		err = k_sem_take(&sem_per_sync, TIMEOUT_SYNC_CREATE);
+		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout_ms));
 		if (err != 0) {
 			printk("failed (err %d)\n", err);
 			err = delete_sync();
