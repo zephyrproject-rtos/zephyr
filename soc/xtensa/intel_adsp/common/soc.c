@@ -105,7 +105,6 @@ static __imr void power_init(void)
 }
 
 #if !DT_NODE_EXISTS(DT_NODELABEL(cavs0)) || CONFIG_MP_NUM_CPUS == 1
-void soc_idc_init(void) {}
 void arch_sched_ipi(void) {}
 #endif
 
