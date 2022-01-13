@@ -67,6 +67,7 @@
 #define IPSO_OBJECT_TIMER_ID                3340
 #define IPSO_OBJECT_ONOFF_SWITCH_ID         3342
 #define IPSO_OBJECT_PUSH_BUTTON_ID          3347
+#define UCIFI_OBJECT_BATTERY_ID             3411
 #define IPSO_OBJECT_FILLING_LEVEL_SENSOR_ID 3435
 /* clang-format on */
 
