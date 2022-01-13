@@ -46,7 +46,7 @@ static inline int z_vrfy_validation_overhead_syscall(void)
 
 	bool status_1 = Z_SYSCALL_OBJ(&test_sema, K_OBJ_SEM);
 
-	return status_0 || status_1;
+	return (status_0 || status_1) ? 1 : 0;
 }
 #include <syscalls/validation_overhead_syscall_mrsh.c>
 
