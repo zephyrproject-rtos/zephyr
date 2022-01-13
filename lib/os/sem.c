@@ -22,7 +22,7 @@ static inline atomic_t bounded_dec(atomic_t *val, atomic_t minimum)
 		}
 
 		new_value = old_value - 1;
-	} while (atomic_cas(val, old_value, new_value) == 0);
+	} while (!atomic_cas(val, old_value, new_value));
 
 	return old_value;
 }
@@ -40,7 +40,7 @@ static inline atomic_t bounded_inc(atomic_t *val, atomic_t minimum,
 
 		new_value = old_value < minimum ?
 			    minimum + 1 : old_value + 1;
-	} while (atomic_cas(val, old_value, new_value) == 0U);
+	} while (!atomic_cas(val, old_value, new_value));
 
 	return old_value;
 }
