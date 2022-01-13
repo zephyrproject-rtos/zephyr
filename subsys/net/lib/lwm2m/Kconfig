@@ -474,4 +474,10 @@ source "subsys/net/lib/lwm2m/Kconfig.ipso"
 
 endmenu
 
+menu "uCIFI Alliance Object Support"
+
+source "subsys/net/lib/lwm2m/Kconfig.ucifi"
+
+endmenu
+
 endif # LWM2M
