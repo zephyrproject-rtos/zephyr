@@ -104,6 +104,11 @@ struct lorawan_join_config {
 	enum lorawan_act_type mode;
 };
 
+struct lorawan_nvm_crypto_context {
+	/** Parameters are internal implementation details of loramac-node */
+	uint8_t _raw[52];
+};
+
 #define LW_RECV_PORT_ANY UINT16_MAX
 
 struct lorawan_downlink_cb {
@@ -277,6 +282,36 @@ enum lorawan_datarate lorawan_get_min_datarate(void);
  */
 void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 			       uint8_t *max_payload_size);
+
+/**
+ * @brief Get the current crypto context of the stack
+ *
+ * For devices to operate correctly on a LoRaWAN v1.0.4 network across reboots,
+ * this context must be queried and saved after each join request. Upon a
+ * reboot, this saved context must then be restored with
+ * @ref lorawan_restore_nvm_crypto_context before calling @ref lorawan_start.
+ *
+ * @note @a dev_nonce can be used to detect when the device nonce is nearing
+ *       its maximum value in order to rotate the join EUI.
+ *
+ * @warning The context only contains useful data after a join request.
+ *
+ * @param context Storage location for context data
+ * @param dev_nonce Optional storage of dev_nonce value
+ */
+void lorawan_get_nvm_crypto_context(struct lorawan_nvm_crypto_context *context,
+				    uint16_t *dev_nonce);
+
+/**
+ * @brief Restore the crypto context of the stack
+ *
+ * This must be called before @ref lorawan_start.
+ *
+ * @param context Context to restore
+ *
+ * @return 0 if successful, negative errno code if failure
+ */
+int lorawan_restore_nvm_crypto_context(struct lorawan_nvm_crypto_context *context);
 
 #ifdef __cplusplus
 }

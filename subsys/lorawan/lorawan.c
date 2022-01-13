@@ -41,6 +41,12 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_LORAMAC_REGION_UNKNOWN),
 	#error "At least one LoRaWAN region should be selected"
 #endif
 
+/* Validate that LoRaWAN subsystem struct size matches the internal
+ * loramac-node struct size
+ */
+BUILD_ASSERT(sizeof(LoRaMacCryptoNvmData_t) ==
+	     sizeof(struct lorawan_nvm_crypto_context), "");
+
 /* Use version 1.0.3.0 for ABP */
 #define LORAWAN_ABP_VERSION 0x01000300
 
@@ -66,6 +72,7 @@ static sys_slist_t dl_callbacks;
 
 static LoRaMacPrimitives_t macPrimitives;
 static LoRaMacCallback_t macCallbacks;
+static LoRaMacCryptoNvmData_t nvmDataCrypto;
 
 static LoRaMacEventInfoStatus_t last_mcps_confirm_status;
 static LoRaMacEventInfoStatus_t last_mlme_confirm_status;
@@ -92,6 +99,69 @@ static uint8_t getBatteryLevelLocal(void)
 static void OnMacProcessNotify(void)
 {
 	LoRaMacProcess();
+}
+
+void OnNvmDataChange(uint16_t notify_flags)
+{
+	MibRequestConfirm_t mibReq;
+	LoRaMacStatus_t status;
+	unsigned int key;
+
+	if (notify_flags & LORAMAC_NVM_NOTIFY_FLAG_CRYPTO) {
+		/* Retrieve the actual context */
+		mibReq.Type = MIB_NVM_CTXS;
+		status = LoRaMacMibGetRequestConfirm(&mibReq);
+		if (status != LORAMAC_STATUS_OK) {
+			LOG_ERR("Could not get the NVM context, error %d", status);
+			return;
+		}
+
+		/* Preserve data locally for querying by application */
+		key = irq_lock();
+		memcpy(&nvmDataCrypto, &mibReq.Param.Contexts->Crypto,
+		       sizeof(nvmDataCrypto));
+		irq_unlock(key);
+	}
+}
+
+void lorawan_get_nvm_crypto_context(struct lorawan_nvm_crypto_context *context,
+				    uint16_t *dev_nonce)
+{
+	unsigned int key;
+
+	key = irq_lock();
+	memcpy(context, &nvmDataCrypto, sizeof(nvmDataCrypto));
+	if (dev_nonce) {
+		*dev_nonce = nvmDataCrypto.DevNonce;
+	}
+	irq_unlock(key);
+}
+
+int lorawan_restore_nvm_crypto_context(struct lorawan_nvm_crypto_context *context)
+{
+	MibRequestConfirm_t mibReq;
+	LoRaMacStatus_t status;
+
+	/* Retrieve the actual context */
+	mibReq.Type = MIB_NVM_CTXS;
+	status = LoRaMacMibGetRequestConfirm(&mibReq);
+	if (status != LORAMAC_STATUS_OK) {
+		LOG_ERR("Could not get the NVM context, error %d", status);
+		return -EINVAL;
+	}
+
+	/* Copy provided context to stack */
+	memcpy(&mibReq.Param.Contexts->Crypto, context, sizeof(mibReq.Param.Contexts->Crypto));
+
+	/* Notify stack of new context */
+	mibReq.Type = MIB_NVM_CTXS;
+	status = LoRaMacMibSetRequestConfirm(&mibReq);
+	if (status != LORAMAC_STATUS_OK) {
+		LOG_ERR("Could not set the NVM context, error %d", status);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static void datarate_observe(bool force_notification)
@@ -588,7 +658,7 @@ static int lorawan_init(const struct device *dev)
 	macPrimitives.MacMlmeIndication = MlmeIndication;
 	macCallbacks.GetBatteryLevel = getBatteryLevelLocal;
 	macCallbacks.GetTemperatureLevel = NULL;
-	macCallbacks.NvmDataChange = NULL;
+	macCallbacks.NvmDataChange = OnNvmDataChange;
 	macCallbacks.MacProcessNotify = OnMacProcessNotify;
 
 	status = LoRaMacInitialization(&macPrimitives, &macCallbacks,
