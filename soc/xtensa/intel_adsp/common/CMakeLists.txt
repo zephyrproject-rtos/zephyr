@@ -13,6 +13,7 @@ zephyr_library_sources(soc.c)
 zephyr_library_sources(trace_out.c)
 zephyr_library_sources(rimage_modules.c)
 zephyr_library_sources(boot.c)
+zephyr_library_sources(cavs_ipc.c)
 
 if(CONFIG_MP_NUM_CPUS GREATER 1)
   zephyr_library_sources(soc_mp.c)

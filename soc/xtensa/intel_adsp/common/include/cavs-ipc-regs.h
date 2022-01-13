@@ -4,6 +4,8 @@
 #ifndef ZEPHYR_SOC_INTEL_ADSP_CAVS_IPC_REGS_H
 #define ZEPHYR_SOC_INTEL_ADSP_CAVS_IPC_REGS_H
 
+#include <stdint.h>
+
 /* Inter Processor Communication: a distressingly heavyweight method
  * for directing interrupts at software running on other processors.
  * Used for sending interrupts to and receiving them from another
