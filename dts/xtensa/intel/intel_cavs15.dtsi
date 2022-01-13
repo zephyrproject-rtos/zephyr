@@ -54,6 +54,13 @@
 			#interrupt-cells = <3>;
 		};
 
+		cavs_host_ipc: cavs_host_ipc@1180 {
+			compatible = "intel,cavs-host-ipc";
+			reg = <0x1180 0x30>;
+			interrupts = <7 0 0>;
+			interrupt-parent = <&cavs0>;
+		};
+
 		cavs0: cavs@1600  {
 			compatible = "intel,cavs-intc";
 			reg = <0x1600 0x10>;
