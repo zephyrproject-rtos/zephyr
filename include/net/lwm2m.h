@@ -1199,5 +1199,19 @@ void lwm2m_rd_client_update(void);
  */
 char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path);
 
+/** 
+ * @brief LwM2M SEND operation to given path list
+ *
+ * @param ctx LwM2M context
+ * @param path_list LwM2M Path string list
+ * @param path_list_size Length of path list. Max size is CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE
+ * @param confirmation_request True request confirmation for operation.
+ * 
+ * @return 0 for success or negative in case of error.
+ *
+ */
+int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
+		      bool confirmation_request);
+
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */
