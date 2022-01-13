@@ -18,17 +18,17 @@ static void *chunk_mem(struct z_heap *h, chunkid_t c)
 	return ret;
 }
 
-static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
+static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, unsigned int bidx)
 {
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
 	CHECK(!chunk_used(h, c));
 	CHECK(b->next != 0);
-	CHECK(h->avail_buckets & (1 << bidx));
+	CHECK(h->avail_buckets & (1U << bidx));
 
 	if (next_free_chunk(h, c) == c) {
 		/* this is the last chunk */
-		h->avail_buckets &= ~(1 << bidx);
+		h->avail_buckets &= ~((uint32_t)1 << bidx);
 		b->next = 0;
 	} else {
 		chunkid_t first = prev_free_chunk(h, c),
@@ -43,12 +43,12 @@ static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 static void free_list_remove(struct z_heap *h, chunkid_t c)
 {
 	if (!solo_free_header(h, c)) {
-		int bidx = bucket_idx(h, chunk_size(h, c));
+		unsigned int bidx = bucket_idx(h, chunk_size(h, c));
 		free_list_remove_bidx(h, c, bidx);
 	}
 }
 
-static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
+static void free_list_add_bidx(struct z_heap *h, chunkid_t c, unsigned int bidx)
 {
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
@@ -56,12 +56,12 @@ static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
 		CHECK((h->avail_buckets & (1 << bidx)) == 0);
 
 		/* Empty list, first item */
-		h->avail_buckets |= (1 << bidx);
+		h->avail_buckets |= ((uint32_t)1 << bidx);
 		b->next = c;
 		set_prev_free_chunk(h, c, c);
 		set_next_free_chunk(h, c, c);
 	} else {
-		CHECK(h->avail_buckets & (1 << bidx));
+		CHECK(h->avail_buckets & ((uint32_t)1 << bidx));
 
 		/* Insert before (!) the "next" pointer */
 		chunkid_t second = b->next;
@@ -77,7 +77,7 @@ static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
 static void free_list_add(struct z_heap *h, chunkid_t c)
 {
 	if (!solo_free_header(h, c)) {
-		int bidx = bucket_idx(h, chunk_size(h, c));
+		unsigned int bidx = bucket_idx(h, chunk_size(h, c));
 		free_list_add_bidx(h, c, bidx);
 	}
 }
@@ -136,7 +136,7 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
 static chunkid_t mem_to_chunkid(struct z_heap *h, void *p)
 {
 	uint8_t *mem = p, *base = (uint8_t *)chunk_buf(h);
-	return (mem - chunk_header_bytes(h) - base) / CHUNK_UNIT;
+	return (chunkid_t)((size_t)(mem - chunk_header_bytes(h) - base) / CHUNK_UNIT);
 }
 
 void sys_heap_free(struct sys_heap *heap, void *mem)
@@ -169,7 +169,7 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 
 static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 {
-	int bi = bucket_idx(h, sz);
+	unsigned int bi = bucket_idx(h, sz);
 	struct z_heap_bucket *b = &h->buckets[bi];
 
 	CHECK(bi <= bucket_idx(h, h->end_chunk));
@@ -199,16 +199,16 @@ static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 			}
 			b->next = next_free_chunk(h, c);
 			CHECK(b->next != 0);
-		} while (--i && b->next != first);
+		} while ((--i != 0) && (b->next != first));
 	}
 
 	/* Otherwise pick the smallest non-empty bucket guaranteed to
 	 * fit and use that unconditionally.
 	 */
-	uint32_t bmask = h->avail_buckets & ~((1 << (bi + 1)) - 1);
+	uint32_t bmask = h->avail_buckets & ~(((uint32_t)1 << (bi + 1)) - 1);
 
 	if (bmask != 0U) {
-		int minbucket = __builtin_ctz(bmask);
+		unsigned int minbucket = (unsigned int)__builtin_ctz(bmask);
 		chunkid_t c = h->buckets[minbucket].next;
 
 		free_list_remove_bidx(h, c, minbucket);
@@ -255,7 +255,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * So if e.g. align = 0x28 (32 | 8) this means we align to a 32-byte
 	 * boundary and then rewind 8 bytes.
 	 */
-	rew = align & -align;
+	rew = align & (~align + 1);
 	if (align != rew) {
 		align -= rew;
 		gap = MIN(rew, chunk_header_bytes(h));
@@ -291,7 +291,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	/* Get corresponding chunks */
 	chunkid_t c = mem_to_chunkid(h, mem);
-	chunkid_t c_end = end - chunk_buf(h);
+	chunkid_t c_end = (chunkid_t)(end - chunk_buf(h));
 	CHECK(c >= c0 && c  < c_end && c_end <= c0 + padded_sz);
 
 	/* Split and free unused prefix */
@@ -332,10 +332,10 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 
 	chunkid_t c = mem_to_chunkid(h, ptr);
 	chunkid_t rc = right_chunk(h, c);
-	size_t align_gap = (uint8_t *)ptr - (uint8_t *)chunk_mem(h, c);
+	size_t align_gap = (size_t)((uint8_t *)ptr - (uint8_t *)chunk_mem(h, c));
 	chunksz_t chunks_need = bytes_to_chunksz(h, bytes + align_gap);
 
-	if (align && ((uintptr_t)ptr & (align - 1))) {
+	if ((align != 0) && (((uintptr_t)ptr & (align - 1)) != 0)) {
 		/* ptr is not sufficiently aligned */
 	} else if (chunk_size(h, c) == chunks_need) {
 		/* We're good already */
@@ -389,7 +389,7 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	/* Round the start up, the end down */
 	uintptr_t addr = ROUND_UP(mem, CHUNK_UNIT);
 	uintptr_t end = ROUND_DOWN((uint8_t *)mem + bytes, CHUNK_UNIT);
-	chunksz_t heap_sz = (end - addr) / CHUNK_UNIT;
+	chunksz_t heap_sz = (chunksz_t)((end - addr) / CHUNK_UNIT);
 
 	CHECK(end > addr);
 	__ASSERT(heap_sz > chunksz(sizeof(struct z_heap)), "heap size is too small");
@@ -399,13 +399,13 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	h->end_chunk = heap_sz;
 	h->avail_buckets = 0;
 
-	int nb_buckets = bucket_idx(h, heap_sz) + 1;
+	unsigned int nb_buckets = bucket_idx(h, heap_sz) + 1;
 	chunksz_t chunk0_size = chunksz(sizeof(struct z_heap) +
 				     nb_buckets * sizeof(struct z_heap_bucket));
 
 	__ASSERT(chunk0_size + min_chunk_size(h) <= heap_sz, "heap size is too small");
 
-	for (int i = 0; i < nb_buckets; i++) {
+	for (unsigned int i = 0; i < nb_buckets; i++) {
 		h->buckets[i].next = 0;
 	}
 
