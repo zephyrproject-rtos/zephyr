@@ -284,6 +284,10 @@ static void friend_req_sent(uint16_t duration, int err, void *user_data)
 		return;
 	}
 
+	if (lpn->state == BT_MESH_LPN_DISABLED) {
+		return;
+	}
+
 	lpn->adv_duration = duration;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
