@@ -19,4 +19,9 @@ int do_read_op_senml_json(struct lwm2m_message *msg);
 /* General Write single Path operation */
 int do_write_op_senml_json(struct lwm2m_message *msg);
 
+/* Send opearation builder */
+int do_send_op_senml_json(struct lwm2m_message *msg, sys_slist_t *lwm_path_list);
+/* API for call composite READ from engine */
+int do_composite_read_op_senml_json(struct lwm2m_message *msg);
+
 #endif /* LWM2M_RW_SENML_JSON_H_ */
