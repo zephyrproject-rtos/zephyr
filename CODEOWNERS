@@ -317,6 +317,7 @@
 /drivers/pinmux/*it8xxx2*                 @ite
 /drivers/pinmux/*esp32*                   @glaubermaroto
 /drivers/pm_cpu_ops/                      @carlocaione
+/drivers/power_domain/                    @ceolin
 /drivers/ps2/                             @franciscomunoz @sjvasanth1
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
 /drivers/ps2/*npcx*                       @MulinChao @WealianLiao @ChiHuaL
