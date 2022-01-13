@@ -27,6 +27,7 @@
 #define LWM2M_FORMAT_APP_OCTET_STREAM	42
 #define LWM2M_FORMAT_APP_EXI		47
 #define LWM2M_FORMAT_APP_JSON		50
+#define LWM2M_FORMAT_APP_SEML_JSON	110
 #define LWM2M_FORMAT_OMA_PLAIN_TEXT	1541
 #define LWM2M_FORMAT_OMA_OLD_TLV	1542
 #define LWM2M_FORMAT_OMA_OLD_JSON	1543
@@ -53,6 +54,12 @@
 /* coap reply status */
 #define COAP_REPLY_STATUS_NONE		0
 #define COAP_REPLY_STATUS_ERROR		1
+
+/* path object list */
+struct lwm2m_obj_path_list {
+	sys_snode_t node;
+	struct lwm2m_obj_path path;
+};
 
 /* Establish a request handler callback type */
 typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
@@ -99,6 +106,16 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx);
 /* Message buffer functions */
 uint8_t *lwm2m_get_message_buf(void);
 int lwm2m_put_message_buf(uint8_t *buf);
+
+/* Initialize path list */
+void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
+				 struct lwm2m_obj_path_list path_object_buf[],
+				 uint8_t path_object_size);
+/* Add new Path to the list */
+int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
+				  struct lwm2m_obj_path *path);
+/* Remove paths when parent already exist in the list. */
+void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list);
 
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
