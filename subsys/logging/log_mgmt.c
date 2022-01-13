@@ -169,6 +169,10 @@ void log_backend_enable(struct log_backend const *const backend,
 
 	id += backend - log_backend_get(0);
 
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		__ASSERT(backend->api->process, "Backend does not support v2 API");
+	}
+
 	log_backend_id_set(backend, id);
 	backend_filter_set(backend, level);
 	log_backend_activate(backend, ctx);
