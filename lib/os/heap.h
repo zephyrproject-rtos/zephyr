@@ -79,7 +79,7 @@ static inline bool big_heap_chunks(chunksz_t chunks)
 
 static inline bool big_heap_bytes(size_t bytes)
 {
-	return big_heap_chunks(bytes / CHUNK_UNIT);
+	return big_heap_chunks((chunksz_t)(bytes / CHUNK_UNIT));
 }
 
 static inline bool big_heap(struct z_heap *h)
@@ -119,13 +119,13 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 		((uint32_t *)cmem)[f] = val;
 	} else {
 		CHECK(val == (uint16_t)val);
-		((uint16_t *)cmem)[f] = val;
+		((uint16_t *)cmem)[f] = (uint16_t)val;
 	}
 }
 
 static inline bool chunk_used(struct z_heap *h, chunkid_t c)
 {
-	return chunk_field(h, c, SIZE_AND_USED) & 1U;
+	return (chunk_field(h, c, SIZE_AND_USED) & 1U) != 0;
 }
 
 static inline chunksz_t chunk_size(struct z_heap *h, chunkid_t c)
@@ -142,13 +142,13 @@ static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
 		if (used) {
 			((uint32_t *)cmem)[SIZE_AND_USED] |= 1U;
 		} else {
-			((uint32_t *)cmem)[SIZE_AND_USED] &= ~1U;
+			((uint32_t *)cmem)[SIZE_AND_USED] &= (uint32_t)~1U;
 		}
 	} else {
 		if (used) {
 			((uint16_t *)cmem)[SIZE_AND_USED] |= 1U;
 		} else {
-			((uint16_t *)cmem)[SIZE_AND_USED] &= ~1U;
+			((uint16_t *)cmem)[SIZE_AND_USED] &= (uint16_t)~1U;
 		}
 	}
 }
@@ -208,17 +208,17 @@ static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
 
 static inline size_t chunk_header_bytes(struct z_heap *h)
 {
-	return big_heap(h) ? 8 : 4;
+	return big_heap(h) ? 8U : 4U;
 }
 
 static inline size_t heap_footer_bytes(size_t size)
 {
-	return big_heap_bytes(size) ? 8 : 4;
+	return big_heap_bytes(size) ? 8U : 4U;
 }
 
 static inline chunksz_t chunksz(size_t bytes)
 {
-	return (bytes + CHUNK_UNIT - 1U) / CHUNK_UNIT;
+	return (chunksz_t)((bytes + CHUNK_UNIT - 1U) / CHUNK_UNIT);
 }
 
 static inline chunksz_t bytes_to_chunksz(struct z_heap *h, size_t bytes)
@@ -233,13 +233,14 @@ static inline chunksz_t min_chunk_size(struct z_heap *h)
 
 static inline size_t chunksz_to_bytes(struct z_heap *h, chunksz_t chunksz_in)
 {
-	return chunksz_in * CHUNK_UNIT - chunk_header_bytes(h);
+	return chunksz_in * (size_t)CHUNK_UNIT - chunk_header_bytes(h);
 }
 
-static inline int bucket_idx(struct z_heap *h, chunksz_t sz)
+static inline unsigned int bucket_idx(struct z_heap *h, chunksz_t sz)
 {
-	unsigned int usable_sz = sz - min_chunk_size(h) + 1;
-	return 31 - __builtin_clz(usable_sz);
+	chunksz_t usable_sz = sz - min_chunk_size(h) + 1;
+
+	return 31U - (unsigned int)__builtin_clz(usable_sz);
 }
 
 static inline bool size_too_big(struct z_heap *h, size_t bytes)
