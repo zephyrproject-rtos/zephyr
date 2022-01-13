@@ -319,11 +319,11 @@ static int beacon_send(struct bt_mesh_proxy_client *client,
 				      &buf, NULL, NULL);
 }
 
-static int send_beacon_cb(struct bt_mesh_subnet *sub, void *cb_data)
+static bool send_beacon_cb(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	struct bt_mesh_proxy_client *client = cb_data;
 
-	return beacon_send(client, sub);
+	return beacon_send(client, sub) != 0;
 }
 
 static void proxy_send_beacons(struct k_work *work)
@@ -528,7 +528,7 @@ static struct bt_mesh_subnet *next_sub(void)
 	return NULL;
 }
 
-static int sub_count_cb(struct bt_mesh_subnet *sub, void *cb_data)
+static bool sub_count_cb(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	int *count = cb_data;
 
@@ -536,7 +536,10 @@ static int sub_count_cb(struct bt_mesh_subnet *sub, void *cb_data)
 		(*count)++;
 	}
 
-	return 0;
+	/* Don't stop until we've visited all subnets.
+	 * We're only using the "find" variant of the subnet iteration to get a context parameter.
+	 */
+	return false;
 }
 
 static int sub_count(void)
