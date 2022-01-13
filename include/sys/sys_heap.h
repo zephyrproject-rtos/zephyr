@@ -198,7 +198,7 @@ void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
 		     void *arg, size_t total_bytes,
 		     uint32_t op_count,
 		     void *scratch_mem, size_t scratch_bytes,
-		     int target_percent,
+		     uint32_t target_percent,
 		     struct z_heap_stress_result *result);
 
 /** @brief Print heap internal structure information to the console
