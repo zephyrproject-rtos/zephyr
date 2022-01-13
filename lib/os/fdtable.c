@@ -94,8 +94,8 @@ static int _find_fd_entry(void)
 {
 	int fd;
 
-	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (!atomic_get(&fdtable[fd].refcount)) {
+	for (fd = 0; fd < (int)ARRAY_SIZE(fdtable); fd++) {
+		if (atomic_get(&fdtable[fd].refcount) == 0) {
 			return fd;
 		}
 	}
@@ -106,12 +106,13 @@ static int _find_fd_entry(void)
 
 static int _check_fd(int fd)
 {
-	if (fd < 0 || fd >= ARRAY_SIZE(fdtable)) {
+	if (fd < 0 || fd >= (int)ARRAY_SIZE(fdtable)) {
 		errno = EBADF;
 		return -1;
 	}
+	uint32_t ufd = (uint32_t)fd;
 
-	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
+	ufd = k_array_index_sanitize(ufd, (uint32_t)ARRAY_SIZE(fdtable));
 
 	if (atomic_get(&fdtable[ufd].refcount) == 0) {
 		errno = EBADF;
