@@ -19,6 +19,8 @@
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define NAME_LEN        30
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
+/* Maximum length of advertising data represented in hexadecimal format */
+#define ADV_DATA_HEX_STR_LEN_MAX (BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN * 2 + 1)
 
 static struct bt_le_per_adv_sync_param sync_create_param;
 static struct bt_le_per_adv_sync *sync;
@@ -147,8 +149,8 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
+	static char data_str[ADV_DATA_HEX_STR_LEN_MAX];
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char data_str[129];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
