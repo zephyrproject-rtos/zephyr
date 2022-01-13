@@ -403,6 +403,7 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float = plain_text_put_float,
+	.put_time = put_s64,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -411,6 +412,7 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
+	.get_time = get_s64,
 	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,

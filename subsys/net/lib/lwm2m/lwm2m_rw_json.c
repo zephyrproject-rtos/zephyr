@@ -827,6 +827,7 @@ const struct lwm2m_writer json_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float = put_float,
+	.put_time = put_s64,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -835,6 +836,7 @@ const struct lwm2m_reader json_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
+	.get_time = get_s64,
 	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
