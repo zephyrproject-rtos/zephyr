@@ -32,7 +32,12 @@ logger = logging.getLogger(os.path.basename(sys.argv[0]))
 
 
 # Sections that contains static strings
-STATIC_STRING_SECTIONS = ['rodata', '.rodata', 'log_strings_sections']
+STATIC_STRING_SECTIONS = [
+    'rodata',
+    '.rodata',
+    'pinned.rodata',
+    'log_strings_sections'
+]
 
 
 def parse_args():
