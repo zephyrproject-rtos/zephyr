@@ -73,9 +73,17 @@ enum pm_device_action {
 	PM_DEVICE_ACTION_SUSPEND,
 	/** Resume. */
 	PM_DEVICE_ACTION_RESUME,
-	/** Turn off. */
+	/**
+	 * Turn off.
+	 * @note
+	 *     Action triggered only by a power domain.
+	 */
 	PM_DEVICE_ACTION_TURN_OFF,
-	/** Turn on. */
+	/**
+	 * Turn on.
+	 * @note
+	 *     Action triggered only by a power domain.
+	 */
 	PM_DEVICE_ACTION_TURN_ON,
 	/** Force suspend. */
 	PM_DEVICE_ACTION_FORCE_SUSPEND,
