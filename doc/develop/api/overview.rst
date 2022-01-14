@@ -67,6 +67,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.3
      - 2.3
 
+   * - :ref:`dai_api`
+     - Experimental
+     - 3.2
+     - 3.2
+
    * - :ref:`dma_api`
      - Stable
      - 1.5
