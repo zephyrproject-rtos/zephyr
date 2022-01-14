@@ -20,5 +20,6 @@
 void test_post_boot_ipi(void);
 void test_smp_boot_delay(void);
 void test_host_ipc(void);
+void test_cpu_behavior(void);
 
 #endif /* ZEPHYR_TESTS_INTEL_ADSP_TESTS_H */
