@@ -18,8 +18,3 @@ config ESPTOOLPY_FLASHFREQ_80M
 	bool
 	default y
 	depends on SOC_ESP32C3
-
-config BOOTLOADER_ESP_IDF
-	bool "Use esp-idf 2nd stage bootloader"
-	default y
-	depends on SOC_ESP32C3
