@@ -19,6 +19,14 @@ config ESPTOOLPY_FLASHFREQ_80M
 	bool
 	default y
 
+config FLASH_SIZE
+	int
+	default $(dt_node_reg_size_int,/soc/flash-controller@3f402000/flash@0,0)
+
+config FLASH_BASE_ADDRESS
+	hex
+	default $(dt_node_reg_addr_hex,/soc/flash-controller@3f402000/flash@0)
+
 choice
 	prompt "Instruction cache line size"
 	default ESP32S2_INSTRUCTION_CACHE_LINE_32B
