@@ -10,7 +10,12 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_
 
 #include <drivers/clock_control.h>
+
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 #include <dt-bindings/clock/stm32_clock.h>
+#else
+#include <dt-bindings/clock/stm32h7_clock.h>
+#endif
 
 /** Common clock control device node for all STM32 chips */
 #define STM32_CLOCK_CONTROL_NODE DT_NODELABEL(rcc)
