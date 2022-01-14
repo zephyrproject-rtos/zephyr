@@ -27,7 +27,6 @@ static struct k_spinlock rt_clock_base_lock;
  */
 int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
-	uint64_t elapsed_nsecs;
 	struct timespec base;
 	k_spinlock_key_t key;
 
@@ -48,9 +47,13 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 		return -1;
 	}
 
-	elapsed_nsecs = k_ticks_to_ns_floor64(k_uptime_ticks());
-	ts->tv_sec = (int32_t) (elapsed_nsecs / NSEC_PER_SEC);
-	ts->tv_nsec = (int32_t) (elapsed_nsecs % NSEC_PER_SEC);
+	uint64_t ticks = k_uptime_ticks();
+	uint64_t elapsed_secs = k_ticks_to_ms_floor64(ticks) / MSEC_PER_SEC;
+	uint64_t nremainder = ticks - k_ms_to_ticks_floor64(MSEC_PER_SEC * elapsed_secs);
+
+	ts->tv_sec = (time_t) elapsed_secs;
+	/* For ns 32 bit conversion can be used since its smaller than 1sec. */
+	ts->tv_nsec = (int32_t) k_ticks_to_ns_floor32(nremainder);
 
 	ts->tv_sec += base.tv_sec;
 	ts->tv_nsec += base.tv_nsec;
