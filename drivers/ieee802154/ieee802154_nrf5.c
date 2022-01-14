@@ -462,8 +462,7 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 	return nrf_802154_transmit_csma_ca_raw(payload, &metadata);
 }
 
-/* This function cannot be used in the serialized version yet. */
-#if defined(CONFIG_NET_PKT_TXTIME) && !defined(CONFIG_NRF_802154_SER_HOST)
+#if IS_ENABLED(CONFIG_NET_PKT_TXTIME)
 static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 {
 	nrf_802154_transmit_at_metadata_t metadata = {
@@ -515,8 +514,7 @@ static int nrf5_tx(const struct device *dev,
 	case IEEE802154_TX_MODE_CSMA_CA:
 		ret = nrf5_tx_csma_ca(pkt, nrf5_radio->tx_psdu);
 		break;
-/* This function cannot be used in the serialized version yet. */
-#if defined(CONFIG_NET_PKT_TXTIME) && !defined(CONFIG_NRF_802154_SER_HOST)
+#if IS_ENABLED(CONFIG_NET_PKT_TXTIME)
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
 		__ASSERT_NO_MSG(pkt);
@@ -903,7 +901,7 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].rssi = power;
 		nrf5_data.rx_frames[i].lqi = lqi;
 
-#if !defined(CONFIG_NRF_802154_SER_HOST) && defined(CONFIG_NET_PKT_TIMESTAMP)
+#if IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
 		nrf5_data.rx_frames[i].time = nrf_802154_first_symbol_timestamp_get(time, data[0]);
 #endif
 
@@ -983,7 +981,7 @@ void nrf_802154_transmitted_raw(uint8_t *frame,
 		nrf5_data.ack_frame.rssi = metadata->data.transmitted.power;
 		nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
 
-#if !IS_ENABLED(CONFIG_NRF_802154_SER_HOST) && IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
+#if IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
 		nrf5_data.ack_frame.time =
 			nrf_802154_first_symbol_timestamp_get(
 				metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
