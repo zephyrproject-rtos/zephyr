@@ -817,6 +817,7 @@ class Kconfig(object):
         "_srctree_prefix",
         "_unset_match",
         "_warn_assign_no_prompt",
+        "allow_empty_macros",
         "choices",
         "comments",
         "config_header",
@@ -866,7 +867,8 @@ class Kconfig(object):
     #
 
     def __init__(self, filename="Kconfig", warn=True, warn_to_stderr=True,
-                 encoding="utf-8", suppress_traceback=False, search_paths=None):
+                 encoding="utf-8", suppress_traceback=False, search_paths=None,
+                 allow_empty_macros=False):
         """
         Creates a new Kconfig object by parsing Kconfig files.
         Note that Kconfig files are not the same as .config files (which store
@@ -957,9 +959,21 @@ class Kconfig(object):
           Each search path is prepended to the relative filename to assist in
           finding the file. The proeect directories should have distinct
           filenames and/or subdirectory structures, so avoid ambiguity.
+
+        allow_empty_macros (default: False):
+          Normally when macros expand to empty it means that the macro is not
+          defined. This is considered an error and parsing of the Kconfig files
+          aborts with an exception. In some cases it is useful to continue
+          parsing, to obtain what information is available.
+
+          An example is where the value of various macros is not known but the
+          caller simply wants to get a list of the available Kconfig options.
+
+          Pass True here to allow empty / undefined macros.
         """
         try:
-            self._init(filename, warn, warn_to_stderr, encoding, search_paths)
+            self._init(filename, warn, warn_to_stderr, encoding, search_paths,
+                       allow_empty_macros)
         except (EnvironmentError, KconfigError) as e:
             if suppress_traceback:
                 cmd = sys.argv[0]  # Empty string if missing
@@ -971,7 +985,8 @@ class Kconfig(object):
                 sys.exit(cmd + str(e).strip())
             raise
 
-    def _init(self, filename, warn, warn_to_stderr, encoding, search_paths):
+    def _init(self, filename, warn, warn_to_stderr, encoding, search_paths,
+              allow_empty_macros):
         # See __init__()
 
         self._encoding = encoding
@@ -982,6 +997,7 @@ class Kconfig(object):
         # because it assumes symlink/../foo is the same as foo/.
         self._srctree_prefix = realpath(self.srctree) + os.sep
         self.search_paths = search_paths
+        self.allow_empty_macros = allow_empty_macros
 
         self.warn = warn
         self.warn_to_stderr = warn_to_stderr
@@ -2700,7 +2716,8 @@ class Kconfig(object):
         if not name.strip():
             # Avoid creating a Kconfig symbol with a blank name. It's almost
             # guaranteed to be an error.
-            self._parse_error("macro expanded to blank string")
+            if not self.allow_empty_macros:
+                self._parse_error("macro expanded to blank string")
 
         # Skip trailing whitespace
         while end_i < len(s) and s[end_i].isspace():
