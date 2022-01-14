@@ -19,7 +19,7 @@ static struct k_poll_event msgq_events[1] = {
 					&msgq, 0)
 };
 
-static inline int read_config_options(const struct shell *shell, int pos,
+static inline int read_config_options(const struct shell *sh, int pos,
 				      char **argv, bool *silent, bool *loopback)
 {
 	char *arg = argv[pos];
@@ -32,20 +32,20 @@ static inline int read_config_options(const struct shell *shell, int pos,
 		switch (*arg) {
 		case 's':
 			if (silent == NULL) {
-				shell_error(shell, "unknown option %c", *arg);
+				shell_error(sh, "Unknown option %c", *arg);
 			} else {
 				*silent = true;
 			}
 			break;
 		case 'l':
 			if (loopback == NULL) {
-				shell_error(shell, "unknown option %c", *arg);
+				shell_error(sh, "Unknown option %c", *arg);
 			} else {
 				*loopback = true;
 			}
 			break;
 		default:
-			shell_error(shell, "unknown option %c", *arg);
+			shell_error(sh, "Unknown option %c", *arg);
 			return -EINVAL;
 		}
 	}
@@ -53,7 +53,7 @@ static inline int read_config_options(const struct shell *shell, int pos,
 	return ++pos;
 }
 
-static inline int read_frame_options(const struct shell *shell, int pos,
+static inline int read_frame_options(const struct shell *sh, int pos,
 				     char **argv, bool *rtr, bool *ext)
 {
 	char *arg = argv[pos];
@@ -66,20 +66,20 @@ static inline int read_frame_options(const struct shell *shell, int pos,
 		switch (*arg) {
 		case 'r':
 			if (rtr == NULL) {
-				shell_error(shell, "unknown option %c", *arg);
+				shell_error(sh, "Unknown option %c", *arg);
 			} else {
 				*rtr = true;
 			}
 			break;
 		case 'e':
 			if (ext == NULL) {
-				shell_error(shell, "unknown option %c", *arg);
+				shell_error(sh, "Unknown option %c", *arg);
 			} else {
 				*ext = true;
 			}
 			break;
 		default:
-			shell_error(shell, "unknown option %c", *arg);
+			shell_error(sh, "Unknown option %c", *arg);
 			return -EINVAL;
 		}
 	}
@@ -87,7 +87,7 @@ static inline int read_frame_options(const struct shell *shell, int pos,
 	return ++pos;
 }
 
-static inline int read_bitrate(const struct shell *shell, int pos, char **argv,
+static inline int read_bitrate(const struct shell *sh, int pos, char **argv,
 			       uint32_t *bitrate)
 {
 	char *end_ptr;
@@ -95,7 +95,7 @@ static inline int read_bitrate(const struct shell *shell, int pos, char **argv,
 
 	val = strtol(argv[pos], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(shell, "bitrate is not a number");
+		shell_error(sh, "Bitrate is not a number");
 		return -EINVAL;
 	}
 
@@ -104,7 +104,7 @@ static inline int read_bitrate(const struct shell *shell, int pos, char **argv,
 	return ++pos;
 }
 
-static inline int read_id(const struct shell *shell, int pos, char **argv,
+static inline int read_id(const struct shell *sh, int pos, char **argv,
 			  bool ext, uint32_t *id)
 {
 	char *end_ptr;
@@ -112,16 +112,16 @@ static inline int read_id(const struct shell *shell, int pos, char **argv,
 
 	val = strtol(argv[pos], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(shell, "id is not a number");
+		shell_error(sh, "ID is not a number");
 		return -EINVAL;
 	}
 
 	if (val < 0 || val > CAN_EXT_ID_MASK ||
 	   (!ext && val > CAN_MAX_STD_ID)) {
-		shell_error(shell, "Id invalid. %sid must not be negative or "
-				   "bigger than 0x%x",
-				   ext ? "ext " : "",
-				   ext ? CAN_EXT_ID_MASK : CAN_MAX_STD_ID);
+		shell_error(sh, "ID invalid. %sid must not be negative or "
+			    "bigger than 0x%x",
+			    ext ? "ext " : "",
+			    ext ? CAN_EXT_ID_MASK : CAN_MAX_STD_ID);
 		return -EINVAL;
 	}
 
@@ -130,7 +130,7 @@ static inline int read_id(const struct shell *shell, int pos, char **argv,
 	return ++pos;
 }
 
-static inline int read_mask(const struct shell *shell, int pos, char **argv,
+static inline int read_mask(const struct shell *sh, int pos, char **argv,
 			  bool ext, uint32_t *mask)
 {
 	char *end_ptr;
@@ -138,16 +138,16 @@ static inline int read_mask(const struct shell *shell, int pos, char **argv,
 
 	val = strtol(argv[pos], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(shell, "Mask is not a number");
+		shell_error(sh, "Mask is not a number");
 		return -EINVAL;
 	}
 
 	if (val < 0 || val > CAN_EXT_ID_MASK ||
 	   (!ext && val > CAN_MAX_STD_ID)) {
-		shell_error(shell, "Mask invalid. %smask must not be negative "
-				   "or bigger than 0x%x",
-				   ext ? "ext " : "",
-				   ext ? CAN_EXT_ID_MASK : CAN_MAX_STD_ID);
+		shell_error(sh, "Mask invalid. %smask must not be negative "
+				"or bigger than 0x%x",
+				ext ? "ext " : "",
+				ext ? CAN_EXT_ID_MASK : CAN_MAX_STD_ID);
 		return -EINVAL;
 	}
 
@@ -156,14 +156,14 @@ static inline int read_mask(const struct shell *shell, int pos, char **argv,
 	return ++pos;
 }
 
-static inline int read_data(const struct shell *shell, int pos, char **argv,
+static inline int read_data(const struct shell *sh, int pos, char **argv,
 			    size_t argc, uint8_t *data, uint8_t *dlc)
 {
 	int i;
 	uint8_t *data_ptr = data;
 
 	if (argc - pos > CAN_MAX_DLC) {
-		shell_error(shell, "Too many databytes. Max is %d",
+		shell_error(sh, "Too many databytes. Max is %d",
 			    CAN_MAX_DLC);
 		return -EINVAL;
 	}
@@ -174,12 +174,12 @@ static inline int read_data(const struct shell *shell, int pos, char **argv,
 
 		val = strtol(argv[i], &end_ptr, 0);
 		if (*end_ptr != '\0') {
-			shell_error(shell, "Data bytes must be numbers");
+			shell_error(sh, "Data bytes must be numbers");
 			return -EINVAL;
 		}
 
 		if (val & ~0xFFL) {
-			shell_error(shell, "A data bytes must not be > 0xFF");
+			shell_error(sh, "A data bytes must not be > 0xFF");
 			return -EINVAL;
 		}
 
@@ -227,7 +227,7 @@ static void msgq_triggered_work_handler(struct k_work *work)
 	}
 }
 
-static int cmd_config(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *can_dev;
 	int pos = 1;
@@ -238,14 +238,14 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 
 	can_dev = device_get_binding(argv[pos]);
 	if (!can_dev) {
-		shell_error(shell, "Can't get binding to device \"%s\"",
+		shell_error(sh, "Can't get binding to device \"%s\"",
 			    argv[pos]);
 		return -EINVAL;
 	}
 
 	pos++;
 
-	pos = read_config_options(shell, pos, argv, &silent, &loopback);
+	pos = read_config_options(sh, pos, argv, &silent, &loopback);
 	if (pos < 0) {
 		return -EINVAL;
 	}
@@ -262,19 +262,19 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 
 	ret = can_set_mode(can_dev, mode);
 	if (ret) {
-		shell_error(shell, "Failed to set mode [%d]",
+		shell_error(sh, "Failed to set mode [%d]",
 			    ret);
 		return ret;
 	}
 
-	pos = read_bitrate(shell, pos, argv, &bitrate);
+	pos = read_bitrate(sh, pos, argv, &bitrate);
 	if (pos < 0) {
 		return -EINVAL;
 	}
 
 	ret = can_set_bitrate(can_dev, bitrate, 0);
 	if (ret) {
-		shell_error(shell, "Failed to set bitrate [%d]",
+		shell_error(sh, "Failed to set bitrate [%d]",
 			    ret);
 		return ret;
 	}
@@ -282,7 +282,7 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_send(const struct shell *shell, size_t argc, char **argv)
+static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *can_dev;
 	int pos = 1;
@@ -293,14 +293,14 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 
 	can_dev = device_get_binding(argv[pos]);
 	if (!can_dev) {
-		shell_error(shell, "Can't get binding to device \"%s\"",
+		shell_error(sh, "Can't get binding to device \"%s\"",
 			    argv[pos]);
 		return -EINVAL;
 	}
 
 	pos++;
 
-	pos = read_frame_options(shell, pos, argv, &rtr, &ext);
+	pos = read_frame_options(sh, pos, argv, &rtr, &ext);
 	if (pos < 0) {
 		return -EINVAL;
 	}
@@ -308,31 +308,31 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	frame.id_type = ext ? CAN_EXTENDED_IDENTIFIER : CAN_STANDARD_IDENTIFIER;
 	frame.rtr = rtr ? CAN_REMOTEREQUEST : CAN_DATAFRAME;
 
-	pos = read_id(shell, pos, argv, ext, &id);
+	pos = read_id(sh, pos, argv, ext, &id);
 	if (pos < 0) {
 		return -EINVAL;
 	}
 
 	frame.id = id;
 
-	pos = read_data(shell, pos, argv, argc, frame.data, &frame.dlc);
+	pos = read_data(sh, pos, argv, argc, frame.data, &frame.dlc);
 	if (pos < 0) {
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Send frame with ID 0x%x (%s id) and %d data bytes",
+	shell_print(sh, "Send frame with ID 0x%x (%s ID) and %d data bytes",
 		    frame.id, ext ? "extended" : "standard", frame.dlc);
 
 	ret = can_send(can_dev, &frame, K_FOREVER, NULL, NULL);
 	if (ret) {
-		shell_error(shell, "Failed to send frame [%d]", ret);
+		shell_error(sh, "Failed to send frame [%d]", ret);
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
+static int cmd_add_rx_filter(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *can_dev;
 	int pos = 1;
@@ -343,14 +343,14 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 
 	can_dev = device_get_binding(argv[pos]);
 	if (!can_dev) {
-		shell_error(shell, "Can't get binding to device \"%s\"",
+		shell_error(sh, "Can't get binding to device \"%s\"",
 			    argv[pos]);
 		return -EINVAL;
 	}
 
 	pos++;
 
-	pos = read_frame_options(shell, pos, argv, &rtr, &ext);
+	pos = read_frame_options(sh, pos, argv, &rtr, &ext);
 	if (pos < 0) {
 		return -EINVAL;
 	}
@@ -358,7 +358,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	filter.id_type = ext ? CAN_EXTENDED_IDENTIFIER : CAN_STANDARD_IDENTIFIER;
 	filter.rtr = rtr ? CAN_REMOTEREQUEST : CAN_DATAFRAME;
 
-	pos = read_id(shell, pos, argv, ext, &id);
+	pos = read_id(sh, pos, argv, ext, &id);
 	if (pos < 0) {
 		return -EINVAL;
 	}
@@ -366,7 +366,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	filter.id = id;
 
 	if (pos != argc) {
-		pos = read_mask(shell, pos, argv, ext, &mask);
+		pos = read_mask(sh, pos, argv, ext, &mask);
 		if (pos < 0) {
 			return -EINVAL;
 		}
@@ -376,7 +376,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (pos != argc) {
-		pos = read_frame_options(shell, pos, argv, &rtr_mask, NULL);
+		pos = read_frame_options(sh, pos, argv, &rtr_mask, NULL);
 		if (pos < 0) {
 			return -EINVAL;
 		}
@@ -384,39 +384,38 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 
 	filter.rtr_mask = rtr_mask;
 
-	shell_print(shell, "Attach filter with ID 0x%x (%s id) and mask 0x%x "
-			   " RTR: %d",
+	shell_print(sh, "Add RX filter with ID 0x%x (%s ID), mask 0x%x, RTR %d",
 		    filter.id, ext ? "extended" : "standard", filter.id_mask,
 		    filter.rtr_mask);
 
 	ret = can_add_rx_filter_msgq(can_dev, &msgq, &filter);
 	if (ret < 0) {
 		if (ret == -ENOSPC) {
-			shell_error(shell, "Can't attach, no free filter left");
+			shell_error(sh, "Failed to add RX filter, no free filter left");
 		} else {
-			shell_error(shell, "Failed to attach filter [%d]", ret);
+			shell_error(sh, "Failed to add RX filter [%d]", ret);
 		}
 
 		return -EIO;
 	}
 
-	shell_print(shell, "Filter ID: %d", ret);
+	shell_print(sh, "Filter ID: %d", ret);
 
 	if (msgq_shell == NULL) {
-		msgq_shell = shell;
+		msgq_shell = sh;
 		k_work_poll_init(&msgq_work, msgq_triggered_work_handler);
 	}
 
 	ret = k_work_poll_submit(&msgq_work, msgq_events,
 				 ARRAY_SIZE(msgq_events), K_FOREVER);
 	if (ret != 0) {
-		shell_error(shell, "Failed to submit msgq polling [%d]", ret);
+		shell_error(sh, "Failed to submit msgq polling [%d]", ret);
 	}
 
 	return 0;
 }
 
-static int cmd_detach(const struct shell *shell, size_t argc, char **argv)
+static int cmd_remove_rx_filter(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *can_dev;
 	char *end_ptr;
@@ -424,19 +423,19 @@ static int cmd_detach(const struct shell *shell, size_t argc, char **argv)
 
 	can_dev = device_get_binding(argv[1]);
 	if (!can_dev) {
-		shell_error(shell, "Can't get binding to device \"%s\"",
+		shell_error(sh, "Can't get binding to device \"%s\"",
 			    argv[1]);
 		return -EINVAL;
 	}
 
 	id = strtol(argv[2], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(shell, "filter_id is not a number");
+		shell_error(sh, "filter_id is not a number");
 		return -EINVAL;
 	}
 
 	if (id < 0) {
-		shell_error(shell, "filter_id must not be negative");
+		shell_error(sh, "filter_id must not be negative");
 	}
 
 	can_remove_rx_filter(can_dev, (int)id);
@@ -457,16 +456,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can,
 		      " -r Remote transmission request\n"
 		      " -e Extended address",
 		      cmd_send, 3, 12),
-	SHELL_CMD_ARG(attach, NULL,
-		      "Attach a message filter and print those messages.\n"
-		      " Usage: attach device_name [-re] id [mask [-r]]\n"
+	SHELL_CMD_ARG(add_rx_filter, NULL,
+		      "Add a RX filter and print matching frames.\n"
+		      " Usage: add_rx_filter device_name [-re] id [mask [-r]]\n"
 		      " -r Remote transmission request\n"
 		      " -e Extended address",
-		      cmd_attach, 3, 3),
-	SHELL_CMD_ARG(detach, NULL,
-		      "Detach the filter and stop receiving those messages\n"
-		      " Usage: detach device_name filter_id",
-		      cmd_detach, 3, 0),
+		      cmd_add_rx_filter, 3, 3),
+	SHELL_CMD_ARG(remove_rx_filter, NULL,
+		      "Remove a RX filter and stop printing matching frames\n"
+		      " Usage: remove_rx_filter device_name filter_id",
+		      cmd_remove_rx_filter, 3, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
