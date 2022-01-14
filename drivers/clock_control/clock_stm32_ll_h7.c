@@ -314,97 +314,52 @@ static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	int rc = 0;
+	volatile uint32_t *reg;
+	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
-	/* Both cores can access banks by following LL API */
-	/* Using "_Cn_" LL API would restrict access to one or the other */
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	switch (pclken->bus) {
-	case STM32_CLOCK_BUS_AHB1:
-		LL_AHB1_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB2:
-		LL_AHB2_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB3:
-		LL_AHB3_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB4:
-		LL_AHB4_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB1:
-		LL_APB1_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB1_2:
-		LL_APB1_GRP2_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB2:
-		LL_APB2_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB3:
-		LL_APB3_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB4:
-		LL_APB4_GRP1_EnableClock(pclken->enr);
-		break;
-	default:
-		rc = -ENOTSUP;
-		break;
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+		/* Attemp to toggle a wrong periph clock bit */
+		return -ENOTSUP;
 	}
+
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	reg_val = *reg;
+	reg_val |= pclken->enr;
+	*reg = reg_val;
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
-	return rc;
+	return 0;
 }
 
 static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	int rc = 0;
+	volatile uint32_t *reg;
+	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
-	/* Both cores can access banks by following LL API */
-	/* Using "_Cn_" LL API would restrict access to one or the other */
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	switch (pclken->bus) {
-	case STM32_CLOCK_BUS_AHB1:
-		LL_AHB1_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB2:
-		LL_AHB2_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB3:
-		LL_AHB3_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB4:
-		LL_AHB4_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB1:
-		LL_APB1_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB1_2:
-		LL_APB1_GRP2_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB2:
-		LL_APB2_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB3:
-		LL_APB3_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB4:
-		LL_APB4_GRP1_DisableClock(pclken->enr);
-		break;
-	default:
-		rc = -ENOTSUP;
-		break;
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+		/* Attemp to toggle a wrong periph clock bit */
+		return -ENOTSUP;
 	}
+
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	reg_val = *reg;
+	reg_val &= ~pclken->enr;
+	*reg = reg_val;
+
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
-	return rc;
+	return 0;
 }
 
 static int stm32_clock_control_get_subsys_rate(const struct device *clock,
