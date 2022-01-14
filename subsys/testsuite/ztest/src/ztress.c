@@ -353,15 +353,16 @@ int ztress_execute(struct ztress_context_data *timer_data,
 		tids[i] = k_thread_create(&threads[i], stacks[i], CONFIG_ZTRESS_STACK_SIZE,
 					  ztress_thread,
 					  &thread_data[i], (void *)(uintptr_t)ztress_prio, NULL,
-					  priority, 0, K_NO_WAIT);
+					  priority, 0, K_MSEC(10));
 		(void)k_thread_name_set(tids[i], thread_names[i]);
 		priority++;
 		ztress_prio++;
 	}
 
 	if (timer_data != NULL) {
-		k_timer_start(&ztress_timer, backoff[0], K_NO_WAIT);
+		k_timer_start(&ztress_timer, K_MSEC(10), K_NO_WAIT);
 	}
+
 
 	/* Wait until all threads complete. */
 	for (int i = 0; i < cnt; i++) {
