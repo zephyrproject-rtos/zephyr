@@ -102,3 +102,4 @@ while True:
     (last_seq, output) = winstream_read(last_seq)
     if output:
         sys.stdout.write(output)
+        sys.stdout.flush()
