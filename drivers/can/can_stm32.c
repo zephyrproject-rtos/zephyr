@@ -489,6 +489,10 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	can->MCR |= CAN_MCR_ABOM;
 #endif
+	if (cfg->one_shot) {
+		can->MCR |= CAN_MCR_NART;
+	}
+
 	timing.sjw = cfg->sjw;
 	if (cfg->sample_point && USE_SP_ALGO) {
 		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
@@ -1148,6 +1152,7 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 	.prop_ts1 = DT_PROP_OR(DT_NODELABEL(can1), prop_seg, 0) +
 		    DT_PROP_OR(DT_NODELABEL(can1), phase_seg1, 0),
 	.ts2 = DT_PROP_OR(DT_NODELABEL(can1), phase_seg2, 0),
+	.one_shot = DT_PROP(DT_NODELABEL(can1), one_shot),
 	.pclken = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can1), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
@@ -1245,6 +1250,7 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 	.prop_ts1 = DT_PROP_OR(DT_NODELABEL(can2), prop_seg, 0) +
 		    DT_PROP_OR(DT_NODELABEL(can2), phase_seg1, 0),
 	.ts2 = DT_PROP_OR(DT_NODELABEL(can2), phase_seg2, 0),
+	.one_shot = DT_PROP(DT_NODELABEL(can2), one_shot),
 	.pclken = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can2), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),
