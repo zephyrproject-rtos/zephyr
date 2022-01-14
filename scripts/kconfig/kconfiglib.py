@@ -834,6 +834,7 @@ class Kconfig(object):
         "n",
         "named_choices",
         "srctree",
+        "search_paths",
         "syms",
         "top_node",
         "unique_choices",
@@ -865,7 +866,7 @@ class Kconfig(object):
     #
 
     def __init__(self, filename="Kconfig", warn=True, warn_to_stderr=True,
-                 encoding="utf-8", suppress_traceback=False):
+                 encoding="utf-8", suppress_traceback=False, search_paths=None):
         """
         Creates a new Kconfig object by parsing Kconfig files.
         Note that Kconfig files are not the same as .config files (which store
@@ -942,9 +943,23 @@ class Kconfig(object):
 
           Other exceptions besides EnvironmentError and KconfigError are still
           propagated when suppress_traceback is True.
+
+        search_paths (default: None):
+          List of paths to search for Kconfig files. This is needed when the
+          files are split between two project directories, as is done with
+          Zephyr OS, for example. It allows files in one project to reference
+          files in another.
+
+          This argument affects the operation of commands which include other
+          Kconfig files, such as `source` and `rsource`.
+
+          When not None, it should be a list of paths to directories to search.
+          Each search path is prepended to the relative filename to assist in
+          finding the file. The proeect directories should have distinct
+          filenames and/or subdirectory structures, so avoid ambiguity.
         """
         try:
-            self._init(filename, warn, warn_to_stderr, encoding)
+            self._init(filename, warn, warn_to_stderr, encoding, search_paths)
         except (EnvironmentError, KconfigError) as e:
             if suppress_traceback:
                 cmd = sys.argv[0]  # Empty string if missing
@@ -956,7 +971,7 @@ class Kconfig(object):
                 sys.exit(cmd + str(e).strip())
             raise
 
-    def _init(self, filename, warn, warn_to_stderr, encoding):
+    def _init(self, filename, warn, warn_to_stderr, encoding, search_paths):
         # See __init__()
 
         self._encoding = encoding
@@ -966,6 +981,7 @@ class Kconfig(object):
         # relative to $srctree. relpath() can cause issues for symlinks,
         # because it assumes symlink/../foo is the same as foo/.
         self._srctree_prefix = realpath(self.srctree) + os.sep
+        self.search_paths = search_paths
 
         self.warn = warn
         self.warn_to_stderr = warn_to_stderr
@@ -2971,6 +2987,9 @@ class Kconfig(object):
                 #   Kconfig symbols, which indirectly ensures a consistent
                 #   ordering in e.g. .config files
                 filenames = sorted(iglob(join(self._srctree_prefix, pattern)))
+                if self.search_paths:
+                    for prefix in self.search_paths:
+                        filenames += sorted(iglob(join(prefix, pattern)))
 
                 if not filenames and t0 in _OBL_SOURCE_TOKENS:
                     raise KconfigError(
