@@ -84,9 +84,9 @@ static inline FUNC_NORETURN void smp_init_top(void *arg)
 {
 	struct k_thread dummy_thread;
 
-	smp_timer_init();
 	(void)atomic_set(&ready_flag, 1);
 	z_smp_thread_init(arg, &dummy_thread);
+	smp_timer_init();
 	z_swap_unlocked();
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
