@@ -481,6 +481,9 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->msg.status) {
+			/* return the bus to idle */
+			i2c->CTRLB.bit.CMD = 3;
+
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					DEV_NAME(dev));
