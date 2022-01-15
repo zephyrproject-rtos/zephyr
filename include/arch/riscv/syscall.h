@@ -151,7 +151,7 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 static inline bool arch_is_user_context(void)
 {
 	/* Defined in arch/riscv/core/thread.c */
-	extern ulong_t is_user_mode;
+	extern uint32_t is_user_mode;
 	return is_user_mode;
 }
 
