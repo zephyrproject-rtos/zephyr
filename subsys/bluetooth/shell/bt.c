@@ -2558,6 +2558,8 @@ static int cmd_bonds(const struct shell *sh, size_t argc, char *argv[])
 {
 	int bond_count = 0;
 
+	ctx_shell = sh;
+
 	shell_print(sh, "Bonded devices:");
 	bt_foreach_bond(selected_id, bond_info, &bond_count);
 	shell_print(sh, "Total %d", bond_count);
@@ -2617,6 +2619,8 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 static int cmd_connections(const struct shell *sh, size_t argc, char *argv[])
 {
 	int conn_count = 0;
+
+	ctx_shell = sh;
 
 	shell_print(sh, "Connected devices:");
 	bt_conn_foreach(BT_CONN_TYPE_ALL, connection_info, &conn_count);
