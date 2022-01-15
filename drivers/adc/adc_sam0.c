@@ -115,7 +115,7 @@ static int adc_sam0_channel_setup(const struct device *dev,
 	const struct adc_sam0_cfg *const cfg = dev->config;
 	Adc *const adc = cfg->regs;
 	int retval;
-	uint8_t SAMPCTRL = 0;
+	uint8_t sampctrl = 0;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
 		retval = adc_sam0_acquisition_to_clocks(dev,
@@ -125,41 +125,41 @@ static int adc_sam0_channel_setup(const struct device *dev,
 			return retval;
 		}
 
-		SAMPCTRL |= ADC_SAMPCTRL_SAMPLEN(retval);
+		sampctrl |= ADC_SAMPCTRL_SAMPLEN(retval);
 	}
 
-	adc->SAMPCTRL.reg = SAMPCTRL;
+	adc->SAMPCTRL.reg = sampctrl;
 	wait_synchronization(adc);
 
 
-	uint8_t REFCTRL;
+	uint8_t refctrl;
 
 	switch (channel_cfg->reference) {
 	case ADC_REF_INTERNAL:
-		REFCTRL = ADC_REFCTRL_REFSEL_INTERNAL | ADC_REFCTRL_REFCOMP;
+		refctrl = ADC_REFCTRL_REFSEL_INTERNAL | ADC_REFCTRL_REFCOMP;
 		/* Enable the internal bandgap reference */
 		ADC_BGEN = 1;
 		break;
 	case ADC_REF_VDD_1_2:
-		REFCTRL = ADC_REFCTRL_REFSEL_VDD_1_2 | ADC_REFCTRL_REFCOMP;
+		refctrl = ADC_REFCTRL_REFSEL_VDD_1_2 | ADC_REFCTRL_REFCOMP;
 		break;
 #ifdef ADC_REFCTRL_REFSEL_VDD_1
 	case ADC_REF_VDD_1:
-		REFCTRL = ADC_REFCTRL_REFSEL_VDD_1 | ADC_REFCTRL_REFCOMP;
+		refctrl = ADC_REFCTRL_REFSEL_VDD_1 | ADC_REFCTRL_REFCOMP;
 		break;
 #endif
 	case ADC_REF_EXTERNAL0:
-		REFCTRL = ADC_REFCTRL_REFSEL_AREFA;
+		refctrl = ADC_REFCTRL_REFSEL_AREFA;
 		break;
 	case ADC_REF_EXTERNAL1:
-		REFCTRL = ADC_REFCTRL_REFSEL_AREFB;
+		refctrl = ADC_REFCTRL_REFSEL_AREFB;
 		break;
 	default:
 		LOG_ERR("Selected reference is not valid");
 		return -EINVAL;
 	}
-	if (adc->REFCTRL.reg != REFCTRL) {
-		adc->REFCTRL.reg = REFCTRL;
+	if (adc->REFCTRL.reg != refctrl) {
+		adc->REFCTRL.reg = refctrl;
 		wait_synchronization(adc);
 #ifdef ADC_SAM0_REFERENCE_GLITCH
 		struct adc_sam0_data *data = dev->data;
@@ -169,37 +169,37 @@ static int adc_sam0_channel_setup(const struct device *dev,
 	}
 
 
-	uint32_t INPUTCTRL = 0;
+	uint32_t inputctrl = 0;
 
 	switch (channel_cfg->gain) {
 	case ADC_GAIN_1:
 #ifdef ADC_INPUTCTRL_GAIN_1X
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_1X;
+		inputctrl = ADC_INPUTCTRL_GAIN_1X;
 #endif
 		break;
 #ifdef ADC_INPUTCTRL_GAIN_DIV2
 	case ADC_GAIN_1_2:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_DIV2;
+		inputctrl = ADC_INPUTCTRL_GAIN_DIV2;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_GAIN_2X
 	case ADC_GAIN_2:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_2X;
+		inputctrl = ADC_INPUTCTRL_GAIN_2X;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_GAIN_4X
 	case ADC_GAIN_4:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_4X;
+		inputctrl = ADC_INPUTCTRL_GAIN_4X;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_GAIN_8X
 	case ADC_GAIN_8:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_8X;
+		inputctrl = ADC_INPUTCTRL_GAIN_8X;
 		break;
 #endif
 #ifdef ADC_INPUTCTRL_GAIN_16X
 	case ADC_GAIN_16:
-		INPUTCTRL = ADC_INPUTCTRL_GAIN_16X;
+		inputctrl = ADC_INPUTCTRL_GAIN_16X;
 		break;
 #endif
 	default:
@@ -207,19 +207,19 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	INPUTCTRL |= ADC_INPUTCTRL_MUXPOS(channel_cfg->input_positive);
+	inputctrl |= ADC_INPUTCTRL_MUXPOS(channel_cfg->input_positive);
 	if (channel_cfg->differential) {
-		INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(channel_cfg->input_negative);
+		inputctrl |= ADC_INPUTCTRL_MUXNEG(channel_cfg->input_negative);
 
 		ADC_DIFF(adc) |= ADC_DIFF_MASK;
 	} else {
-		INPUTCTRL |= ADC_INPUTCTRL_MUXNEG_GND;
+		inputctrl |= ADC_INPUTCTRL_MUXNEG_GND;
 
 		ADC_DIFF(adc) &= ~ADC_DIFF_MASK;
 	}
 	wait_synchronization(adc);
 
-	adc->INPUTCTRL.reg = INPUTCTRL;
+	adc->INPUTCTRL.reg = inputctrl;
 	wait_synchronization(adc);
 
 	/* Enable references if they're selected */
