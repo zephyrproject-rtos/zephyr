@@ -789,7 +789,7 @@ static inline int is_in_region(uint32_t index, uint32_t start, uint32_t size)
 
 	size = size == 0U ? 0U : size - 1U;
 #ifdef CONFIG_64BIT
-	if (u64_add_overflow(start, size, &end)) {
+	if (u64_add_overflow(start, size, (uint64_t *)&end)) {
 		return 0;
 	}
 #else
