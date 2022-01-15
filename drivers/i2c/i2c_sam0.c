@@ -492,18 +492,20 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			return -EIO;
 		}
 
-		if (data->msgs->flags & I2C_MSG_STOP) {
-			i2c->CTRLB.bit.CMD = 3;
-		} else if ((data->msgs->flags & I2C_MSG_RESTART) && data->num_msgs > 1) {
-			/*
-			 * No action, since we do this automatically if we
-			 * don't send an explicit stop
-			 */
-		} else {
-			/*
-			 * Neither present, so assume we want to release
-			 * the bus (by sending a stop)
-			 */
+		/*
+		 * Only send a stop if after this message:
+		 *   - it is explicitly requested that we send a stop, or
+		 *   - we are not conducting a restart, with more messages to follow
+		 *
+		 * Note: nothing validates the flags, so default to a stop if a stop is
+		 * requested... do not let a restart request override it
+		 */
+		bool send_stop = (data->msgs->flags & I2C_MSG_STOP)
+			|| !((data->msgs->flags & I2C_MSG_RESTART) && (data->num_msgs > 1));
+
+		if (send_stop) {
+			while (!i2c->STATUS.bit.CLKHOLD) {
+			}
 			i2c->CTRLB.bit.CMD = 3;
 		}
 
