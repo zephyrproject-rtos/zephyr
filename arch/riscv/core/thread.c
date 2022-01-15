@@ -225,10 +225,10 @@ FUNC_NORETURN void z_riscv_user_mode_enter_syscall(k_thread_entry_t user_entry,
 	/* Set up privileged stack */
 #ifdef CONFIG_GEN_PRIV_STACKS
 		_current->arch.priv_stack_start =
-			(uint32_t)z_priv_stack_find(_current->stack_obj);
+			(ulong_t)z_priv_stack_find(_current->stack_obj);
 #else
 		_current->arch.priv_stack_start =
-			(uint32_t)(_current->stack_obj) +
+			(ulong_t)(_current->stack_obj) +
 			Z_RISCV_STACK_GUARD_SIZE;
 #endif /* CONFIG_GEN_PRIV_STACKS */
 
