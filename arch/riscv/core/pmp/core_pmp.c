@@ -68,7 +68,7 @@ struct riscv_pmp_region {
 };
 
 #ifdef CONFIG_USERSPACE
-extern ulong_t is_user_mode;
+extern uint32_t is_user_mode;
 #endif
 
 /*
