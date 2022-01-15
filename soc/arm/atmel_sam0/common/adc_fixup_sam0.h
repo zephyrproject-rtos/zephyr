@@ -18,7 +18,7 @@
 #endif
 
 #if defined(ADC_INPUTCTRL_DIFFMODE)
-#define ADC_DIFF(adc) (INPUTCTRL)
+#define ADC_DIFF(adc) (inputctrl)
 #define ADC_DIFF_MASK (ADC_INPUTCTRL_DIFFMODE)
 #elif defined(ADC_CTRLB_DIFFMODE)
 #define ADC_DIFF(adc) ((adc)->CTRLB.reg)
