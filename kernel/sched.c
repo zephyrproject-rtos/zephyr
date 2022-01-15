@@ -976,8 +976,17 @@ void *z_get_next_switch_handle(void *interrupted)
 			if (z_is_thread_queued(old_thread)) {
 				runq_add(old_thread);
 			}
+		} else {
+			/* Re-set the switch_handle here if we don't have to
+			 * context switch later (because old_thread ==
+			 * new_thread).
+			 *
+			 * In case of context switching the switch_handle will
+			 * be set later after the context is being swapped out
+			 * to unblock the wait_for_switch().
+			 */
+			old_thread->switch_handle = interrupted;
 		}
-		old_thread->switch_handle = interrupted;
 		ret = new_thread->switch_handle;
 		if (IS_ENABLED(CONFIG_SMP)) {
 			/* Active threads MUST have a null here */
