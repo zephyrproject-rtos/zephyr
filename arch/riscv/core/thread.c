@@ -17,7 +17,7 @@
  * Glogal variable used to know the current mode running.
  * Is not boolean because it must match the PMP granularity of the arch.
  */
-ulong_t is_user_mode;
+uint32_t is_user_mode;
 bool irq_flag;
 #endif
 

@@ -14,7 +14,7 @@
 #define PMP_SLOT_NUMBER	CONFIG_PMP_SLOT
 
 #ifdef CONFIG_USERSPACE
-extern ulong_t is_user_mode;
+extern uint32_t is_user_mode;
 #endif
 
 enum {
