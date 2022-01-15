@@ -79,7 +79,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
 		}
 	}
 
-	state_testing[_current_cpu->id] = info.state;
+	state_testing[cpu] = info.state;
 
 	return &info;
 }
