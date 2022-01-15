@@ -27,11 +27,21 @@
 			gpios = <&gpio0 24 0>;
 			label = "Red LED";
 		};
+		led1: led_1 {
+			gpios = <&gpio0 16 0>;
+			label = "Green LED";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 6 0>;
+			label = "Blue LED";
+		};
 	};
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
 		spi = &spi2;
 	};
 };
