@@ -182,13 +182,15 @@ static ssize_t ots_obj_write(struct bt_ots *ots, struct bt_conn *conn,
 	return len;
 }
 
-void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn, uint64_t id, const char *name)
+static void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn,
+				 uint64_t id, const char *cur_name, const char *new_name)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 
 	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
 
-	printk("Name for object with %s ID has been written\n", id_str);
+	printk("Name for object with %s ID is being changed from '%s' to '%s'\n",
+		id_str, cur_name, new_name);
 }
 
 static struct bt_ots_cb ots_callbacks = {
