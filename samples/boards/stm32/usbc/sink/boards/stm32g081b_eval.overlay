@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2022 The Chromium OS Authors.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	aliases {
+		tcpc = &ucpd2;
+	};
+};
