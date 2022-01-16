@@ -1239,41 +1239,6 @@ static void config_can_1_irq(CAN_TypeDef *can)
 #endif /* CONFIG_CAN_STATS */
 }
 
-#if defined(CONFIG_NET_SOCKETS_CAN)
-
-#include "socket_can_generic.h"
-
-static struct socket_can_context socket_can_context_1;
-
-static int socket_can_init_1(const struct device *dev)
-{
-	const struct device *can_dev = DEVICE_DT_GET(DT_NODELABEL(can1));
-	struct socket_can_context *socket_context = dev->data;
-
-	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->name, can_dev, can_dev->name);
-
-	socket_context->can_dev = can_dev;
-	socket_context->msgq = &socket_can_msgq;
-
-	socket_context->rx_tid =
-		k_thread_create(&socket_context->rx_thread_data,
-				rx_thread_stack,
-				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-				rx_thread, socket_context, NULL, NULL,
-				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
-
-	return 0;
-}
-
-NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
-		NULL, &socket_can_context_1, NULL,
-		CONFIG_CAN_INIT_PRIORITY,
-		&socket_can_api,
-		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
-
-#endif /* CONFIG_NET_SOCKETS_CAN */
-
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay) */
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can2), st_stm32_can, okay)
@@ -1334,40 +1299,5 @@ static void config_can_2_irq(CAN_TypeDef *can)
 	can->IER |= CAN_IER_LECIE;
 #endif /* CONFIG_CAN_STATS */
 }
-
-#if defined(CONFIG_NET_SOCKETS_CAN)
-
-#include "socket_can_generic.h"
-
-static struct socket_can_context socket_can_context_2;
-
-static int socket_can_init_2(const struct device *dev)
-{
-	const struct device *can_dev = DEVICE_DT_GET(DT_NODELABEL(can2));
-	struct socket_can_context *socket_context = dev->data;
-
-	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->name, can_dev, can_dev->name);
-
-	socket_context->can_dev = can_dev;
-	socket_context->msgq = &socket_can_msgq;
-
-	socket_context->rx_tid =
-		k_thread_create(&socket_context->rx_thread_data,
-				rx_thread_stack,
-				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-				rx_thread, socket_context, NULL, NULL,
-				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
-
-	return 0;
-}
-
-NET_DEVICE_INIT(socket_can_stm32_2, SOCKET_CAN_NAME_2, socket_can_init_2,
-		NULL, &socket_can_context_2, NULL,
-		CONFIG_CAN_INIT_PRIORITY,
-		&socket_can_api,
-		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
-
-#endif /* CONFIG_NET_SOCKETS_CAN */
 
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay) */
