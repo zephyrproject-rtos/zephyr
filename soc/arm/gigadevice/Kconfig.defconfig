@@ -5,6 +5,9 @@ if SOC_FAMILY_GD32
 
 source "soc/arm/gigadevice/*/Kconfig.defconfig.series"
 
+config CLOCK_CONTROL
+	default y
+
 config PINCTRL
 	default y
 

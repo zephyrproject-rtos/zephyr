@@ -14,7 +14,6 @@ static int gd32f4xx_soc_init(const struct device *dev)
 
 	key = irq_lock();
 
-	SystemInit();
 	NMI_INIT();
 
 	irq_unlock(key);
