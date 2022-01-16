@@ -8,6 +8,13 @@
 #ifndef ZEPHYR_DRIVERS_CAN_MCAN_H_
 #define ZEPHYR_DRIVERS_CAN_MCAN_H_
 
+#include <kernel.h>
+#include <devicetree.h>
+#include <drivers/can.h>
+
+#include <toolchain.h>
+#include <stdint.h>
+
 #ifdef CONFIG_CAN_MCUX_MCAN
 #define MCAN_DT_PATH DT_NODELABEL(can0)
 #else
