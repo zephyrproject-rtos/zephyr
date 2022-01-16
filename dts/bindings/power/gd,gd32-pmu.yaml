@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GD32 Power Management Unit (PMU)
+
+compatible: "gd,gd32-pmu"
+
+include: base.yaml
+
+properties:
+  clocks:
+    required: true
+
+  high-driver-enable:
+    type: boolean
+    required: false
+    description: |
+      This option will enable the high-driver mode. It is required when
+      operating at high frequencies.
