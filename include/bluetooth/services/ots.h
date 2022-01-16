@@ -706,15 +706,16 @@ struct bt_ots_cb {
 	 *
 	 *  This callback is called when the object name is written.
 	 *  This is a notification to the application that the object name
-	 *  has been updated by the OTS service implementation.
+	 *  will be updated by the OTS service implementation.
 	 *
-	 *  @param ots    OTS instance.
-	 *  @param conn   The connection that wrote object name.
-	 *  @param id     Object ID.
-	 *  @param name   Object name.
+	 *  @param ots        OTS instance.
+	 *  @param conn       The connection that wrote object name.
+	 *  @param id         Object ID.
+	 *  @param cur_name   Current object name.
+	 *  @param new_name   New object name.
 	 */
 	void (*obj_name_written)(struct bt_ots *ots, struct bt_conn *conn,
-			     uint64_t id, const char *name);
+				 uint64_t id, const char *cur_name, const char *new_name);
 };
 
 /** @brief Descriptor for OTS initialization. */

@@ -187,13 +187,13 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
 		rc = bt_gatt_ots_obj_manager_next_obj_get(ots->obj_manager, obj, &obj);
 	}
 
-	/* Update real object name after no duplicate detected */
-	strcpy(ots->cur_obj->metadata.name, name);
-
+	/* No duplicate detected, notify application and update real object name */
 	if (ots->cb->obj_name_written) {
 		ots->cb->obj_name_written(ots, conn, ots->cur_obj->id,
-					  ots->cur_obj->metadata.name);
+					  ots->cur_obj->metadata.name, name);
 	}
+
+	strcpy(ots->cur_obj->metadata.name, name);
 
 	return len;
 }
