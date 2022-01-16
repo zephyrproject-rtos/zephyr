@@ -24,9 +24,7 @@ Allowed values are 1 or 2 * n, where n <= 15
 int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
-	int rate_tmp;
-
-	rate_tmp = LL_RCC_GetFDCANClockFreq(LL_RCC_FDCAN_CLKSOURCE);
+	const uint32_t rate_tmp = LL_RCC_GetFDCANClockFreq(LL_RCC_FDCAN_CLKSOURCE);
 
 	if (rate_tmp == LL_RCC_PERIPH_FREQUENCY_NO) {
 		LOG_ERR("Can't read core clock");
