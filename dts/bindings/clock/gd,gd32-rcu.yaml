@@ -1,0 +1,95 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Gigadevice Reset and Clock Unit (RCU).
+
+  Reset control controls three kinds of reset: power reset, system reset and
+  backup domain reset. Clock control unit is in charge of the configuration
+  of all system clocks, including system clock (CK_SYS) and peripheral bus
+  clocks (CK_APB1, CK_APB1, etc.). It provides a range of clock sources,
+  including:
+
+  - Internal 16M RC oscillator (IRC16M)
+  - Internal 48M RC oscillator (IRC48M)
+  - High Speed crystal oscillator (HXTAL)
+  - Low Speed Internal 32K RC oscillator (IRC32K)
+  - Low Speed crystal oscillator (LXTAL)
+  - Three Phase Lock Loop (PLL, PLLI2S, PLLSAI)
+
+  Clocks should be configured at board level as shown in the example below:
+
+    &rcc {
+        /* specify clock source (pll, irc16m...) */
+        clocks = <&pll>;
+        /* specify system clock frequency (as given by selected clock) */
+        clock-frequency = <DT_FREQ_M(200)>;
+        ahb-prescaler = <1>;
+        apb1-presacler = <4>;
+        apb2-presacler = <2>;
+    }
+
+  To specify a gated clock, a peripheral should define a "clocks" property
+  encoded as shown below:
+
+    gpioa: gpio@xxx {
+        ...
+        /* cell encodes RCU register offset and control bit position */
+        clocks = <&rcu GD32_RCU_GPIOA>;
+        ...
+    }
+
+  Predefined RCU clock cells are available in
+  include/dts-bindings/clock/gd32_rcu_{xxx}.h header files, where {xxx}
+  corresponds to the SoC series, e.g. f4xx.
+
+compatible: "gd,gd32-rcu"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    "#clock-cells":
+      const: 1
+
+    ahb-prescaler:
+      type: int
+      required: true
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+        - 64
+        - 128
+        - 256
+        - 512
+      description: APB1 prescaler (sets CH_AHB frequency)
+
+    apb1-prescaler:
+      type: int
+      required: true
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+      description: APB1 prescaler (sets CH_APB1 frequency)
+
+    apb2-prescaler:
+      type: int
+      required: true
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+      description: APB2 prescaler (sets CH_APB2 frequency)
+
+clock-cells:
+  - id
