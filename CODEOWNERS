@@ -406,6 +406,7 @@
 /drivers/timer/*hpet*                     @dcpleung
 /drivers/usb/                             @jfischer-no
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
+/drivers/usbc/                            @sambhurst
 /drivers/video/                           @loicpoulain
 /drivers/i2c/*b91*                        @yurvyn
 /drivers/i2c/i2c_ll_stm32*                @ydamigos

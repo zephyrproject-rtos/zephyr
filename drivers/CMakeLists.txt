@@ -7,6 +7,7 @@ add_subdirectory(misc)
 add_subdirectory(pcie)
 add_subdirectory(disk)
 add_subdirectory(usb)
+add_subdirectory(usbc)
 
 add_subdirectory_ifdef(CONFIG_ADC adc)
 add_subdirectory_ifdef(CONFIG_CLOCK_CONTROL clock_control)
