@@ -70,6 +70,31 @@
 	};
 };
 
+&hxtal {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	prescaler = <25>;
+	mul-n = <400>;
+	div-p = <2>;
+	div-q = <9>;
+	clocks = <&hxtal>;
+	status = "okay";
+};
+
+&rcu {
+	clocks = <&pll>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&pmu {
+	high-driver-enable;
+};
+
 &gpioa {
 	status = "okay";
 };
