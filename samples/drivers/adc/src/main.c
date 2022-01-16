@@ -49,7 +49,11 @@ struct adc_channel_cfg channel_cfg = {
 	.acquisition_time = ADC_ACQUISITION_TIME,
 	/* channel ID will be overwritten below */
 	.channel_id = 0,
-	.differential = 0
+	.differential = 0,
+#ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
+	.input_negative = 0,
+	.input_positive = 0,
+#endif
 };
 
 struct adc_sequence sequence = {
@@ -79,6 +83,9 @@ void main(void)
 #ifdef CONFIG_ADC_NRFX_SAADC
 		channel_cfg.input_positive = SAADC_CH_PSELP_PSELP_AnalogInput0
 					     + channel_ids[i];
+#endif
+#ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
+		channel_cfg.input_positive = channel_ids[i];
 #endif
 
 		adc_channel_setup(dev_adc, &channel_cfg);

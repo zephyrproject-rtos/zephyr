@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 Kim Bøndergaard <kim@fam-boendergaard.dk>
+ */
+
+/ {
+	zephyr,user {
+		/* J106.6 (A5) aka D21G18, pin PB02_AIN10 */
+		io-channels = <&adc 10>;
+	};
+};
+
+&adc {
+	status = "okay";
+};
