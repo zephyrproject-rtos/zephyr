@@ -119,9 +119,28 @@ spurious_continue:
 	 * x0: 1st thread in the ready queue
 	 * x1: _current thread
 	 */
+
+#ifdef CONFIG_SMP
+	/*
+	 * 2 possibilities here:
+	 *  - x0 != NULL (implies x0 != x1): we need to context switch and set
+	 *    the switch_handle in the context switch code
+	 *  - x0 == NULL: no context switch
+	 */
+	cmp	x0, #0x0
+	bne	switch
+
+	/*
+	 * No context switch. Restore x0 from x1 (they are the same thread).
+	 * See also comments to z_arch_get_next_switch_handle()
+	 */
+	mov	x0, x1
+	b	exit
+switch:
+#else
 	cmp	x0, x1
 	beq	exit
-
+#endif
 	/* Switch thread */
 	bl	z_arm64_context_switch
 
