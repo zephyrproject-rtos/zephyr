@@ -1,0 +1,62 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GD32F4XX PLL.
+
+  The PLL input (CK_PLLSRC) can be selected (PLLSEL) to be either IRC16M or
+  HXTAL generate 2 outputs: CK_PLLP and CK_PLLQ. CK_PLLP can be used to feed the
+  system clock (CK_SYSCLK). The generated clock frequencies can be calculated
+  using the following formulae:
+
+    CK_PLLVCOSRC = CK_PLLSRC / PLLPSC
+    CK_PLLVCO = CK_PLLVCOSRC * PLLN
+
+    CK_PLLP = CK_PLLVCO / PLLP
+    CK_PLLQ = CK_PLLVCO / PLLQ
+
+  The PLL output frequency must not exceed 200 MHz.
+
+compatible: "gd,gd32f4xx-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    "#clock-cells":
+      const: 0
+
+    clocks:
+      required: true
+
+    prescaler:
+      type: int
+      required: true
+      description: |
+        The PLL VCO source clock prescaler.
+        Valid range: 2 - 63
+
+    mul-n:
+      type: int
+      required: true
+      description: |
+        The PLL VCO clock multiplication factor.
+        Valid range: 64 - 500.
+
+    div-p:
+      type: int
+      required: true
+      description: |
+        The PLLP output frequency division factor from PLL VCO clock.
+        Defaults to 2 (SoC default).
+      enum:
+        - 2
+        - 4
+        - 6
+        - 8
+
+    div-q:
+      type: int
+      default: 4
+      description: |
+        The PLL Q output frequency division factor from PLL VCO clock.
+        Valid range: 2 - 15. Defaults to 4 (SoC default).
