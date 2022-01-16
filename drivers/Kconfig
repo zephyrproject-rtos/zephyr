@@ -131,4 +131,6 @@ source "drivers/mm/Kconfig"
 
 source "drivers/power_domain/Kconfig"
 
+source "drivers/usbc/Kconfig"
+
 endmenu
