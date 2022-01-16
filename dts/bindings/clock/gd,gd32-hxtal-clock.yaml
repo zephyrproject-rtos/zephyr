@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GD32 high-speed crystal (HXTAL) clock
+
+compatible: "gd,gd32-hxtal-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+    hxtal-bypass:
+      type: boolean
+      required: false
+      description: |
+        Enable the HXTAL bypass mode in which the HXTAL output clock is equal to
+        the input clock.
