@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/gd32_rcu_f4xx.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
-
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
@@ -30,6 +31,27 @@
 		};
 	};
 
+	clocks {
+		hxtal: hxtal {
+			#clock-cells = <0>;
+			compatible = "gd,gd32-hxtal-clock";
+			status = "disabled";
+		};
+
+		irc16m: irc16m {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(16)>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "gd,gd32f4xx-pll-clock";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
@@ -46,6 +68,20 @@
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
 			};
+		};
+
+		rcu: reset-clock-unit@40023800 {
+			compatible = "gd,gd32-rcu";
+			reg = <0x40023800 0x400>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		pmu: power-management-unit@40007000 {
+			compatible = "gd,gd32-pmu";
+			reg = <0x40007000 0x400>;
+			clocks = <&rcu GD32_RCU_PMU>;
+			status = "okay";
 		};
 
 		usart0: usart@40011000 {
