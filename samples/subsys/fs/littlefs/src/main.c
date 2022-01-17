@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022 Lukasz Majewski, DENX Software Engineering GmbH
  * Copyright (c) 2019 Peter Bigot Consulting, LLC
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,7 +13,10 @@
 #include <device.h>
 #include <fs/fs.h>
 #include <fs/littlefs.h>
+#include <logging/log.h>
 #include <storage/flash_map.h>
+
+LOG_MODULE_REGISTER(main);
 
 /* Matches LFS_NAME_MAX */
 #define MAX_PATH_LEN 255
@@ -50,20 +54,20 @@ void main(void)
 
 	rc = flash_area_open(id, &pfa);
 	if (rc < 0) {
-		printk("FAIL: unable to find flash area %u: %d\n",
-		       id, rc);
+		LOG_PRINTK("FAIL: unable to find flash area %u: %d\n",
+			   id, rc);
 		return;
 	}
 
-	printk("Area %u at 0x%x on %s for %u bytes\n",
-	       id, (unsigned int)pfa->fa_off, pfa->fa_dev_name,
-	       (unsigned int)pfa->fa_size);
+	LOG_PRINTK("Area %u at 0x%x on %s for %u bytes\n",
+		   id, (unsigned int)pfa->fa_off, pfa->fa_dev_name,
+		   (unsigned int)pfa->fa_size);
 
 	/* Optional wipe flash contents */
 	if (IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
-		printk("Erasing flash area ... ");
+		LOG_PRINTK("Erasing flash area ... ");
 		rc = flash_area_erase(pfa, 0, pfa->fa_size);
-		printk("%d\n", rc);
+		LOG_PRINTK("%d\n", rc);
 	}
 
 	flash_area_close(pfa);
@@ -73,33 +77,33 @@ void main(void)
 	!(FSTAB_ENTRY_DT_MOUNT_FLAGS(PARTITION_NODE) & FS_MOUNT_FLAG_AUTOMOUNT)
 	rc = fs_mount(mp);
 	if (rc < 0) {
-		printk("FAIL: mount id %" PRIuPTR " at %s: %d\n",
-		       (uintptr_t)mp->storage_dev, mp->mnt_point, rc);
+		LOG_PRINTK("FAIL: mount id %" PRIuPTR " at %s: %d\n",
+			   (uintptr_t)mp->storage_dev, mp->mnt_point, rc);
 		return;
 	}
-	printk("%s mount: %d\n", mp->mnt_point, rc);
+	LOG_PRINTK("%s mount: %d\n", mp->mnt_point, rc);
 #else
-	printk("%s automounted\n", mp->mnt_point);
+	LOG_PRINTK("%s automounted\n", mp->mnt_point);
 #endif
 
 	rc = fs_statvfs(mp->mnt_point, &sbuf);
 	if (rc < 0) {
-		printk("FAIL: statvfs: %d\n", rc);
+		LOG_PRINTK("FAIL: statvfs: %d\n", rc);
 		goto out;
 	}
 
-	printk("%s: bsize = %lu ; frsize = %lu ;"
-	       " blocks = %lu ; bfree = %lu\n",
-	       mp->mnt_point,
-	       sbuf.f_bsize, sbuf.f_frsize,
-	       sbuf.f_blocks, sbuf.f_bfree);
+	LOG_PRINTK("%s: bsize = %lu ; frsize = %lu ;"
+		   " blocks = %lu ; bfree = %lu\n",
+		   mp->mnt_point,
+		   sbuf.f_bsize, sbuf.f_frsize,
+		   sbuf.f_blocks, sbuf.f_bfree);
 
 	struct fs_dirent dirent;
 
 	rc = fs_stat(fname, &dirent);
-	printk("%s stat: %d\n", fname, rc);
+	LOG_PRINTK("%s stat: %d\n", fname, rc);
 	if (rc >= 0) {
-		printk("\tfn '%s' size %zu\n", dirent.name, dirent.size);
+		LOG_PRINTK("\tfn '%s' size %zu\n", dirent.name, dirent.size);
 	}
 
 	struct fs_file_t file;
@@ -108,7 +112,7 @@ void main(void)
 
 	rc = fs_open(&file, fname, FS_O_CREATE | FS_O_RDWR);
 	if (rc < 0) {
-		printk("FAIL: open %s: %d\n", fname, rc);
+		LOG_PRINTK("FAIL: open %s: %d\n", fname, rc);
 		goto out;
 	}
 
@@ -116,26 +120,26 @@ void main(void)
 
 	if (rc >= 0) {
 		rc = fs_read(&file, &boot_count, sizeof(boot_count));
-		printk("%s read count %u: %d\n", fname, boot_count, rc);
+		LOG_PRINTK("%s read count %u: %d\n", fname, boot_count, rc);
 		rc = fs_seek(&file, 0, FS_SEEK_SET);
-		printk("%s seek start: %d\n", fname, rc);
+		LOG_PRINTK("%s seek start: %d\n", fname, rc);
 
 	}
 
 	boot_count += 1;
 	rc = fs_write(&file, &boot_count, sizeof(boot_count));
-	printk("%s write new boot count %u: %d\n", fname,
-	       boot_count, rc);
+	LOG_PRINTK("%s write new boot count %u: %d\n", fname,
+		   boot_count, rc);
 
 	rc = fs_close(&file);
-	printk("%s close: %d\n", fname, rc);
+	LOG_PRINTK("%s close: %d\n", fname, rc);
 
 	struct fs_dir_t dir;
 
 	fs_dir_t_init(&dir);
 
 	rc = fs_opendir(&dir, mp->mnt_point);
-	printk("%s opendir: %d\n", mp->mnt_point, rc);
+	LOG_PRINTK("%s opendir: %d\n", mp->mnt_point, rc);
 
 	while (rc >= 0) {
 		struct fs_dirent ent = { 0 };
@@ -145,18 +149,18 @@ void main(void)
 			break;
 		}
 		if (ent.name[0] == 0) {
-			printk("End of files\n");
+			LOG_PRINTK("End of files\n");
 			break;
 		}
-		printk("  %c %zu %s\n",
-		       (ent.type == FS_DIR_ENTRY_FILE) ? 'F' : 'D',
-		       ent.size,
-		       ent.name);
+		LOG_PRINTK("  %c %zu %s\n",
+			   (ent.type == FS_DIR_ENTRY_FILE) ? 'F' : 'D',
+			   ent.size,
+			   ent.name);
 	}
 
 	(void)fs_closedir(&dir);
 
 out:
 	rc = fs_unmount(mp);
-	printk("%s unmount: %d\n", mp->mnt_point, rc);
+	LOG_PRINTK("%s unmount: %d\n", mp->mnt_point, rc);
 }
