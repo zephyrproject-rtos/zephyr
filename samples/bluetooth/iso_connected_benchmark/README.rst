@@ -19,9 +19,12 @@ can easily be changed.
 Requirements
 ************
 
-* A board with Bluetooth Low Energy 5.2 and Connected Isochronous Channel
-  support
-* A remote board running the same sample as the reversed role
+* BlueZ running on the host, or
+* A board with Bluetooth Low Energy 5.2 support
+* A Bluetooth Controller and board that supports setting
+  CONFIG_BT_CTLR_CENTRAL_ISO=y
+* A remote board running the same sample as the reversed role that supports
+  setting CONFIG_BT_CTLR_PERIPHERAL_ISO=y
 
 Building and running
 ********************
