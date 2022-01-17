@@ -44,6 +44,30 @@
 		led1 = &green_led;
 		sw0 = &user_button;
 	};
+
+	power-states {
+		sleep_vos0: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			substate-id = <1>;
+			exit-latency-us = <14>;
+			min-residency-us = <14>;
+		};
+		stop_svos5_flps: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			exit-latency-us = <40>;
+			min-residency-us = <40>;
+		};
+		standby: state3 {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <1>;
+			exit-latency-us = <0>;
+			min-residency-us = <0>;
+		};
+	};
 };
 
 &clk_hse {

@@ -1,0 +1,3 @@
+&cpu0 {
+	cpu-power-states = <&stop_svos5_flps>;
+};
