@@ -11,4 +11,9 @@ config SOC
 config NUM_IRQS
 	default 163
 
+choice VOS0_SWITCH_METHOD_CHOICE
+	default VOS0_SWITCH_METHOD_DIRECT
+
+endchoice
+
 endif # SOC_STM32H735XX

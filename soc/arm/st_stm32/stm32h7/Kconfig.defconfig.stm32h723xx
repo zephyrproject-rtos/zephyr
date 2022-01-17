@@ -1,6 +1,7 @@
 # ST STM32H723X MCU configuration options
 
 # Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# Copyright (c) 2022 SILA Embedded Solutions GmbH <office@embedded-solutions.at>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_STM32H723XX
@@ -10,5 +11,10 @@ config SOC
 
 config NUM_IRQS
 	default 163
+
+choice VOS0_SWITCH_METHOD_CHOICE
+	default VOS0_SWITCH_METHOD_DIRECT
+
+endchoice
 
 endif # SOC_STM32H723XX
