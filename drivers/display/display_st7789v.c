@@ -447,5 +447,5 @@ static struct st7789v_data st7789v_data = {
 PM_DEVICE_DT_INST_DEFINE(0, st7789v_pm_action);
 
 DEVICE_DT_INST_DEFINE(0, &st7789v_init,
-	      PM_DEVICE_DT_INST_REF(0), &st7789v_data, NULL, POST_KERNEL,
+	      PM_DEVICE_DT_INST_GET(0), &st7789v_data, NULL, POST_KERNEL,
 	      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);

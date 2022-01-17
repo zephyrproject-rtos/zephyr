@@ -353,7 +353,7 @@ PM_DEVICE_DT_INST_DEFINE(0, entropy_cc13xx_cc26xx_pm_action);
 
 DEVICE_DT_INST_DEFINE(0,
 		entropy_cc13xx_cc26xx_init,
-		PM_DEVICE_DT_INST_REF(0),
+		PM_DEVICE_DT_INST_GET(0),
 		&entropy_cc13xx_cc26xx_data, NULL,
 		PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		&entropy_cc13xx_cc26xx_driver_api);

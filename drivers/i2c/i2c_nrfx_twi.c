@@ -289,7 +289,7 @@ static int twi_nrfx_pm_action(const struct device *dev,
 	PM_DEVICE_DT_DEFINE(I2C(idx), twi_nrfx_pm_action);		       \
 	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twi_##idx##_init,					       \
-		      PM_DEVICE_DT_REF(I2C(idx)),			       \
+		      PM_DEVICE_DT_GET(I2C(idx)),			       \
 		      &twi_##idx##_data,				       \
 		      &twi_##idx##z_config,				       \
 		      POST_KERNEL,					       \

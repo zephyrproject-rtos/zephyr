@@ -645,7 +645,7 @@ static int gpio_stm32_init(const struct device *dev)
 	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);		       \
 	DEVICE_DT_DEFINE(__node,					       \
 			    gpio_stm32_init,				       \
-			    PM_DEVICE_DT_REF(__node),			       \
+			    PM_DEVICE_DT_GET(__node),			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
 			    PRE_KERNEL_1,				       \

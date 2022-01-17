@@ -1197,7 +1197,7 @@ static const struct qspi_nor_config qspi_nor_dev_config = {
 
 PM_DEVICE_DT_INST_DEFINE(0, qspi_nor_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, qspi_nor_init, PM_DEVICE_DT_INST_REF(0),
+DEVICE_DT_INST_DEFINE(0, qspi_nor_init, PM_DEVICE_DT_INST_GET(0),
 		      &qspi_nor_dev_data, &qspi_nor_dev_config,
 		      POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
 		      &qspi_nor_api);

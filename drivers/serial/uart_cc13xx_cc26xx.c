@@ -539,7 +539,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 									     \
 	DEVICE_DT_INST_DEFINE(n,					     \
 		uart_cc13xx_cc26xx_init_##n,				     \
-		PM_DEVICE_DT_INST_REF(n),				     \
+		PM_DEVICE_DT_INST_GET(n),				     \
 		&uart_cc13xx_cc26xx_data_##n, &uart_cc13xx_cc26xx_config_##n,\
 		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		     \
 		&uart_cc13xx_cc26xx_driver_api)

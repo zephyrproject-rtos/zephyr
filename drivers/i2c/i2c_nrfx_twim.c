@@ -374,7 +374,7 @@ static int twim_nrfx_pm_action(const struct device *dev,
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);		       \
 	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twim_##idx##_init,				       \
-		      PM_DEVICE_DT_REF(I2C(idx)),			       \
+		      PM_DEVICE_DT_GET(I2C(idx)),			       \
 		      &twim_##idx##_data,				       \
 		      &twim_##idx##z_config,				       \
 		      POST_KERNEL,					       \

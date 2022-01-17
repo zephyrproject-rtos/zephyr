@@ -415,7 +415,7 @@ static int lm77_pm_action(const struct device *dev,
 	PM_DEVICE_DT_INST_DEFINE(n, lm77_pm_action);			\
 									\
 	DEVICE_DT_INST_DEFINE(n, lm77_init,				\
-			      PM_DEVICE_DT_INST_REF(n),			\
+			      PM_DEVICE_DT_INST_GET(n),			\
 			      &lm77_data_##n,				\
 			      &lm77_config_##n, POST_KERNEL,		\
 			      CONFIG_SENSOR_INIT_PRIORITY,		\

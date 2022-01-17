@@ -453,7 +453,7 @@ static int bme280_pm_action(const struct device *dev,
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			 bme280_chip_init,				\
-			 PM_DEVICE_DT_INST_REF(inst),			\
+			 PM_DEVICE_DT_INST_GET(inst),			\
 			 &bme280_data_##inst,				\
 			 &bme280_config_##inst,				\
 			 POST_KERNEL,					\

@@ -704,7 +704,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	PM_DEVICE_DT_INST_DEFINE(idx, spi_flash_at45_pm_action);	     \
 									     \
 	DEVICE_DT_INST_DEFINE(idx,					     \
-		      spi_flash_at45_init, PM_DEVICE_DT_INST_REF(idx),	     \
+		      spi_flash_at45_init, PM_DEVICE_DT_INST_GET(idx),	     \
 		      &inst_##idx##_data, &inst_##idx##_config,		     \
 		      POST_KERNEL, CONFIG_SPI_FLASH_AT45_INIT_PRIORITY,      \
 		      &spi_flash_at45_api);

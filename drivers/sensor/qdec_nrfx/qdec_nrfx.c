@@ -245,5 +245,5 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 PM_DEVICE_DT_INST_DEFINE(0, qdec_nrfx_pm_action);
 
 DEVICE_DT_INST_DEFINE(0, qdec_nrfx_init,
-		PM_DEVICE_DT_INST_REF(0), NULL, NULL, POST_KERNEL,
+		PM_DEVICE_DT_INST_GET(0), NULL, NULL, POST_KERNEL,
 		CONFIG_SENSOR_INIT_PRIORITY, &qdec_nrfx_driver_api);
