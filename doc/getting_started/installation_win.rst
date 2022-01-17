@@ -33,4 +33,4 @@ command-prompt. This allows you to use software such as the :ref:`Zephyr SDK
    the documentation itself here.
 
 .. _Install the Windows Subsystem for Linux (WSL): https://msdn.microsoft.com/en-us/commandline/wsl/install_guide
-.. _Zephyr Issue 10420: https://github.com/zephyrproject-rtos/zephyr/issues/10420
+.. _Zephyr Issue 10420: :github:`10420`
