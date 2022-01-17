@@ -811,7 +811,7 @@ struct bt_conn_cb {
 	 *  increase @kconfig{CONFIG_BT_MAX_CONN}.
 	 *
 	 *  @param conn Connection object.
-	 *  @param reason HCI reason for the disconnection.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
 	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
 

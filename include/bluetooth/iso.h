@@ -416,7 +416,7 @@ struct bt_iso_chan_ops {
 	 *  rejected.
 	 *
 	 *  @param chan   The channel that has been Disconnected
-	 *  @param reason HCI reason for the disconnection.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
 	void (*disconnected)(struct bt_iso_chan *chan, uint8_t reason);
 
