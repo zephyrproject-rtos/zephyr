@@ -35,6 +35,48 @@ static struct fs_mount_t lfs_storage_mnt = {
 };
 #endif /* PARTITION_NODE */
 
+static int lsdir(const char *path)
+{
+	int res;
+	struct fs_dir_t dirp;
+	static struct fs_dirent entry;
+
+	fs_dir_t_init(&dirp);
+
+	/* Verify fs_opendir() */
+	res = fs_opendir(&dirp, path);
+	if (res) {
+		LOG_ERR("Error opening dir %s [%d]\n", path, res);
+		return res;
+	}
+
+	LOG_PRINTK("\nListing dir %s ...\n", path);
+	for (;;) {
+		/* Verify fs_readdir() */
+		res = fs_readdir(&dirp, &entry);
+
+		/* entry.name[0] == 0 means end-of-dir */
+		if (res || entry.name[0] == 0) {
+			if (res < 0) {
+				LOG_ERR("Error reading dir [%d]\n", res);
+			}
+			break;
+		}
+
+		if (entry.type == FS_DIR_ENTRY_DIR) {
+			LOG_PRINTK("[DIR ] %s\n", entry.name);
+		} else {
+			LOG_PRINTK("[FILE] %s (size = %zu)\n",
+				   entry.name, entry.size);
+		}
+	}
+
+	/* Verify fs_closedir() */
+	fs_closedir(&dirp);
+
+	return res;
+}
+
 void main(void)
 {
 	struct fs_mount_t *mp =
@@ -98,14 +140,6 @@ void main(void)
 		   sbuf.f_bsize, sbuf.f_frsize,
 		   sbuf.f_blocks, sbuf.f_bfree);
 
-	struct fs_dirent dirent;
-
-	rc = fs_stat(fname, &dirent);
-	LOG_PRINTK("%s stat: %d\n", fname, rc);
-	if (rc >= 0) {
-		LOG_PRINTK("\tfn '%s' size %zu\n", dirent.name, dirent.size);
-	}
-
 	struct fs_file_t file;
 
 	fs_file_t_init(&file);
@@ -134,32 +168,10 @@ void main(void)
 	rc = fs_close(&file);
 	LOG_PRINTK("%s close: %d\n", fname, rc);
 
-	struct fs_dir_t dir;
-
-	fs_dir_t_init(&dir);
-
-	rc = fs_opendir(&dir, mp->mnt_point);
-	LOG_PRINTK("%s opendir: %d\n", mp->mnt_point, rc);
-
-	while (rc >= 0) {
-		struct fs_dirent ent = { 0 };
-
-		rc = fs_readdir(&dir, &ent);
-		if (rc < 0) {
-			break;
-		}
-		if (ent.name[0] == 0) {
-			LOG_PRINTK("End of files\n");
-			break;
-		}
-		LOG_PRINTK("  %c %zu %s\n",
-			   (ent.type == FS_DIR_ENTRY_FILE) ? 'F' : 'D',
-			   ent.size,
-			   ent.name);
+	rc = lsdir(mp->mnt_point);
+	if (rc < 0) {
+		LOG_PRINTK("FAIL: lsdir %s: %d\n", mp->mnt_point, rc);
 	}
-
-	(void)fs_closedir(&dir);
-
 out:
 	rc = fs_unmount(mp);
 	LOG_PRINTK("%s unmount: %d\n", mp->mnt_point, rc);
