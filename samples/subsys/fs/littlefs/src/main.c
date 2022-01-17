@@ -259,14 +259,6 @@ static int littlefs_flash_erase(unsigned int id)
 	flash_area_close(pfa);
 	return rc;
 }
-#else
-static int littlefs_flash_erase(unsigned int id)
-{
-	return 0;
-}
-#endif /* CONFIG_APP_LITTLEFS_STORAGE_FLASH */
-
-#ifdef CONFIG_APP_LITTLEFS_STORAGE_FLASH
 #define PARTITION_NODE DT_NODELABEL(lfs1)
 
 #if DT_NODE_EXISTS(PARTITION_NODE)
@@ -292,6 +284,11 @@ static struct fs_mount_t lfs_storage_mnt = {
 static int littlefs_mount(struct fs_mount_t *mp)
 {
 	int rc;
+
+	rc = littlefs_flash_erase((uintptr_t)mp->storage_dev);
+	if (rc < 0) {
+		return rc;
+	}
 
 	/* Do not mount if auto-mount has been enabled */
 #if !DT_NODE_EXISTS(PARTITION_NODE) ||						\
@@ -322,11 +319,6 @@ void main(void)
 
 	snprintf(fname1, sizeof(fname1), "%s/boot_count", mp->mnt_point);
 	snprintf(fname2, sizeof(fname2), "%s/pattern.bin", mp->mnt_point);
-
-	rc = littlefs_flash_erase((uintptr_t)mp->storage_dev);
-	if (rc < 0) {
-		return;
-	}
 
 	rc = littlefs_mount(mp);
 	if (rc < 0) {
