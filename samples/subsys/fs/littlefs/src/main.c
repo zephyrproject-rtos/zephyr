@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(main);
 
 /* Matches LFS_NAME_MAX */
 #define MAX_PATH_LEN 255
+#define TEST_FILE_SIZE 547
 
 #define PARTITION_NODE DT_NODELABEL(lfs1)
 
@@ -35,6 +36,7 @@ static struct fs_mount_t lfs_storage_mnt = {
 };
 #endif /* PARTITION_NODE */
 
+static uint8_t file_test_pattern[TEST_FILE_SIZE];
 static int lsdir(const char *path)
 {
 	int res;
@@ -123,6 +125,128 @@ static int littlefs_increase_infile_value(char *fname)
 	return (rc < 0 ? rc : 0);
 }
 
+static void incr_pattern(uint8_t *p, uint16_t size, uint8_t inc)
+{
+	uint8_t fill = 0x55;
+
+	if (p[0] % 2 == 0) {
+		fill = 0xAA;
+	}
+
+	for (int i = 0; i < (size - 1); i++) {
+		if (i % 8 == 0) {
+			p[i] += inc;
+		} else {
+			p[i] = fill;
+		}
+	}
+
+	p[size - 1] += inc;
+}
+
+static void init_pattern(uint8_t *p, uint16_t size)
+{
+	uint8_t v = 0x1;
+
+	memset(p, 0x55, size);
+
+	for (int i = 0; i < size; i += 8) {
+		p[i] = v++;
+	}
+
+	p[size - 1] = 0xAA;
+}
+
+static void print_pattern(uint8_t *p, uint16_t size)
+{
+	int i, j = size / 16, k;
+
+	for (k = 0, i = 0; k < j; i += 16, k++) {
+		LOG_PRINTK("%02x %02x %02x %02x %02x %02x %02x %02x ",
+			   p[i], p[i+1], p[i+2], p[i+3],
+			   p[i+4], p[i+5], p[i+6], p[i+7]);
+		LOG_PRINTK("%02x %02x %02x %02x %02x %02x %02x %02x\n",
+			   p[i+8], p[i+9], p[i+10], p[i+11],
+			   p[i+12], p[i+13], p[i+14], p[i+15]);
+
+		/* Mark 512B (sector) chunks of the test file */
+		if ((k + 1) % 32 == 0) {
+			LOG_PRINTK("\n");
+		}
+	}
+
+	for (; i < size; i++) {
+		LOG_PRINTK("%02x ", p[i]);
+	}
+
+	LOG_PRINTK("\n");
+}
+
+static int littlefs_binary_file_adj(char *fname)
+{
+	struct fs_dirent dirent;
+	struct fs_file_t file;
+	int rc, ret;
+
+	/*
+	 * Uncomment below line to force re-creation of the test pattern
+	 * file on the littlefs FS.
+	 */
+	/* fs_unlink(fname); */
+	fs_file_t_init(&file);
+
+	rc = fs_open(&file, fname, FS_O_CREATE | FS_O_RDWR);
+	if (rc < 0) {
+		LOG_ERR("FAIL: open %s: %d", log_strdup(fname), rc);
+		return rc;
+	}
+
+	rc = fs_stat(fname, &dirent);
+	if (rc < 0) {
+		LOG_ERR("FAIL: stat %s: %d", log_strdup(fname), rc);
+		goto out;
+	}
+
+	/* Check if the file exists - if not just write the pattern */
+	if (rc == 0 && dirent.type == FS_DIR_ENTRY_FILE && dirent.size == 0) {
+		LOG_INF("Test file: %s not found, create one!",
+			log_strdup(fname));
+		init_pattern(file_test_pattern, sizeof(file_test_pattern));
+	} else {
+		rc = fs_read(&file, file_test_pattern,
+			     sizeof(file_test_pattern));
+		if (rc < 0) {
+			LOG_ERR("FAIL: read %s: [rd:%d]",
+				log_strdup(fname), rc);
+			goto out;
+		}
+		incr_pattern(file_test_pattern, sizeof(file_test_pattern), 0x1);
+	}
+
+	LOG_PRINTK("------ FILE: %s ------\n", fname);
+	print_pattern(file_test_pattern, sizeof(file_test_pattern));
+
+	rc = fs_seek(&file, 0, FS_SEEK_SET);
+	if (rc < 0) {
+		LOG_ERR("FAIL: seek %s: %d", log_strdup(fname), rc);
+		goto out;
+	}
+
+	rc = fs_write(&file, file_test_pattern, sizeof(file_test_pattern));
+	if (rc < 0) {
+		LOG_ERR("FAIL: write %s: %d", log_strdup(fname), rc);
+	}
+
+ out:
+	ret = fs_close(&file);
+	if (ret < 0) {
+		LOG_ERR("FAIL: close %s: %d", log_strdup(fname), ret);
+		return ret;
+	}
+
+	return (rc < 0 ? rc : 0);
+}
+
 static int littlefs_flash_erase(unsigned int id)
 {
 	const struct flash_area *pfa;
@@ -159,11 +283,13 @@ void main(void)
 #endif
 		;
 
-	char fname[MAX_PATH_LEN];
+	char fname1[MAX_PATH_LEN];
+	char fname2[MAX_PATH_LEN];
 	struct fs_statvfs sbuf;
 	int rc;
 
-	snprintf(fname, sizeof(fname), "%s/boot_count", mp->mnt_point);
+	snprintf(fname1, sizeof(fname1), "%s/boot_count", mp->mnt_point);
+	snprintf(fname2, sizeof(fname2), "%s/pattern.bin", mp->mnt_point);
 
 	rc = littlefs_flash_erase((uintptr_t)mp->storage_dev);
 	if (rc < 0) {
@@ -202,7 +328,12 @@ void main(void)
 		goto out;
 	}
 
-	rc = littlefs_increase_infile_value(fname);
+	rc = littlefs_increase_infile_value(fname1);
+	if (rc) {
+		goto out;
+	}
+
+	rc = littlefs_binary_file_adj(fname2);
 	if (rc) {
 		goto out;
 	}
