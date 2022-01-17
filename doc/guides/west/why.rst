@@ -120,4 +120,4 @@ West is:
 See `Zephyr issue #6205`_ and for more details and discussion.
 
 .. _Zephyr issue #6205:
-   https://github.com/zephyrproject-rtos/zephyr/issues/6205
+   :github:`6205`
