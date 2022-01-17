@@ -103,14 +103,14 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param after_fn The function to call after each unit test in this suite
  * @param teardown_fn The function to call after running all the tests in this suite
  */
-#define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)             \
-	static STRUCT_SECTION_ITERABLE(ztest_suite_node, z_ztest_test_node_##SUITE_NAME) = {       \
-		.name = #SUITE_NAME,                                                               \
-		.setup = (setup_fn),                                                               \
-		.before = (before_fn),                                                             \
-		.after = (after_fn),                                                               \
-		.teardown = (teardown_fn),                                                         \
-		.predicate = PREDICATE,                                                            \
+#define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)		\
+	static STRUCT_SECTION_ITERABLE(ztest_suite_node, z_ztest_test_node_ ## SUITE_NAME) = {	\
+		.name = STRINGIFY(SUITE_NAME),							\
+		.setup = (setup_fn),								\
+		.before = (before_fn),								\
+		.after = (after_fn),								\
+		.teardown = (teardown_fn),							\
+		.predicate = PREDICATE,								\
 	}
 
 /**
