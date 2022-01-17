@@ -113,3 +113,7 @@
 	pinctrl-names = "default";
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
 };
+
+&lptim1 {
+	status = "okay";
+};
