@@ -439,7 +439,7 @@ PM_DEVICE_DT_INST_DEFINE(0, i2c_cc13xx_cc26xx_pm_action);
 
 I2C_DEVICE_DT_INST_DEFINE(0,
 		i2c_cc13xx_cc26xx_init,
-		PM_DEVICE_DT_INST_REF(0),
+		PM_DEVICE_DT_INST_GET(0),
 		&i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config,
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		&i2c_cc13xx_cc26xx_driver_api);

@@ -364,7 +364,7 @@ static int spi_nrfx_pm_action(const struct device *dev,
 	PM_DEVICE_DT_DEFINE(SPI(idx), spi_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPI(idx),					       \
 		      spi_##idx##_init,					       \
-		      PM_DEVICE_DT_REF(SPI(idx)),			       \
+		      PM_DEVICE_DT_GET(SPI(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \

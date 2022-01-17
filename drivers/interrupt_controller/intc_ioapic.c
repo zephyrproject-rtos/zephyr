@@ -544,5 +544,5 @@ static void IoApicRedUpdateLo(unsigned int irq,
 
 PM_DEVICE_DEFINE(ioapic, ioapic_pm_action);
 
-DEVICE_DEFINE(ioapic, "ioapic", ioapic_init, PM_DEVICE_REF(ioapic), NULL, NULL,
+DEVICE_DEFINE(ioapic, "ioapic", ioapic_init, PM_DEVICE_GET(ioapic), NULL, NULL,
 	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);

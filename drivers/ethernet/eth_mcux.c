@@ -1449,7 +1449,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 									\
 	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
 			    eth_init,					\
-			    PM_DEVICE_DT_INST_REF(n),			\
+			    PM_DEVICE_DT_INST_GET(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
 			    CONFIG_ETH_INIT_PRIORITY,			\

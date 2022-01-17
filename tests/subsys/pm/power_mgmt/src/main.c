@@ -74,7 +74,7 @@ static int device_a_pm_action(const struct device *dev,
 PM_DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), device_a_pm_action);
 
 DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), device_init,
-		PM_DEVICE_DT_REF(DT_INST(0, test_device_pm)), NULL, NULL,
+		PM_DEVICE_DT_GET(DT_INST(0, test_device_pm)), NULL, NULL,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 
@@ -119,7 +119,7 @@ static int device_b_pm_action(const struct device *dev,
 PM_DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), device_b_pm_action);
 
 DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), device_init,
-		PM_DEVICE_DT_REF(DT_INST(1, test_device_pm)), NULL, NULL,
+		PM_DEVICE_DT_GET(DT_INST(1, test_device_pm)), NULL, NULL,
 		PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 
@@ -135,7 +135,7 @@ static int device_c_pm_action(const struct device *dev,
 PM_DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_c_pm_action);
 
 DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_init,
-		PM_DEVICE_DT_REF(DT_INST(2, test_device_pm)), NULL, NULL,
+		PM_DEVICE_DT_GET(DT_INST(2, test_device_pm)), NULL, NULL,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 

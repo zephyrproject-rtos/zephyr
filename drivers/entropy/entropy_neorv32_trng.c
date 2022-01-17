@@ -139,7 +139,7 @@ static const struct entropy_driver_api neorv32_trng_driver_api = {
 	PM_DEVICE_DT_INST_DEFINE(n, neorv32_trng_pm_action);		\
 									\
 	DEVICE_DT_INST_DEFINE(n, &neorv32_trng_init,			\
-			 PM_DEVICE_DT_INST_REF(n),			\
+			 PM_DEVICE_DT_INST_GET(n),			\
 			 NULL,						\
 			 &neorv32_trng_##n##_config,			\
 			 PRE_KERNEL_1,					\

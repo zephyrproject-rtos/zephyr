@@ -725,7 +725,7 @@ static int bmp388_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(						   \
 		inst,							   \
 		bmp388_init,						   \
-		PM_DEVICE_DT_INST_REF(inst),				   \
+		PM_DEVICE_DT_INST_GET(inst),				   \
 		&bmp388_data_##inst,					   \
 		&bmp388_config_##inst,					   \
 		POST_KERNEL,						   \
