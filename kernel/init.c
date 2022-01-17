@@ -231,7 +231,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 
 #ifdef CONFIG_SMP
-	z_smp_init();
+	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
+		z_smp_init();
+	}
 	z_sys_init_run_level(_SYS_INIT_LEVEL_SMP);
 #endif
 
@@ -278,9 +280,18 @@ static void init_idle_thread(int i)
 #endif
 }
 
-void z_reinit_idle_thread(int i)
+void z_init_cpu(int id)
 {
-	init_idle_thread(i);
+	init_idle_thread(id);
+	_kernel.cpus[id].idle_thread = &z_idle_threads[id];
+	_kernel.cpus[id].id = id;
+	_kernel.cpus[id].irq_stack =
+		(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
+		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id]));
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	_kernel.cpus[id].usage.track_usage =
+		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#endif
 }
 
 /**
@@ -323,18 +334,7 @@ static char *prepare_multithreading(void)
 	z_mark_thread_as_started(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		init_idle_thread(i);
-		_kernel.cpus[i].idle_thread = &z_idle_threads[i];
-		_kernel.cpus[i].id = i;
-		_kernel.cpus[i].irq_stack =
-			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
-			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-		_kernel.cpus[i].usage.track_usage =
-			CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
-#endif
-	}
+	z_init_cpu(0);
 
 	return stack_ptr;
 }

@@ -312,4 +312,8 @@ struct k_thread {
 typedef struct k_thread _thread_t;
 typedef struct k_thread *k_tid_t;
 
+void z_init_cpu(int id);
+void z_sched_ipi(void);
+void z_smp_start_cpu(int id);
+
 #endif
