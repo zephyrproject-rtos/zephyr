@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "eth_e1000_priv.h"
 
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 
 #define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
 #endif
