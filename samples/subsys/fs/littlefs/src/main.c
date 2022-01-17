@@ -338,13 +338,13 @@ void main(void)
 
 	LOG_PRINTK("Sample program to r/w files on littlefs\n");
 
-	snprintf(fname1, sizeof(fname1), "%s/boot_count", mp->mnt_point);
-	snprintf(fname2, sizeof(fname2), "%s/pattern.bin", mp->mnt_point);
-
 	rc = littlefs_mount(mp);
 	if (rc < 0) {
 		return;
 	}
+
+	snprintf(fname1, sizeof(fname1), "%s/boot_count", mp->mnt_point);
+	snprintf(fname2, sizeof(fname2), "%s/pattern.bin", mp->mnt_point);
 
 	rc = fs_statvfs(mp->mnt_point, &sbuf);
 	if (rc < 0) {
