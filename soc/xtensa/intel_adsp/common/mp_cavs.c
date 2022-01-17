@@ -19,10 +19,6 @@
 
 #define CAVS15_ROM_IDC_DELAY 500
 
-extern void z_sched_ipi(void);
-extern void z_reinit_idle_thread(int i);
-extern void z_smp_start_cpu(int id);
-
 static struct k_spinlock mplock;
 
 __imr void soc_mp_startup(uint32_t cpu)
@@ -221,7 +217,6 @@ __imr int soc_relaunch_cpu(int id)
 	__ASSERT_NO_MSG(!soc_cpus_active[id]);
 
 	CAVS_INTCTRL[id].l2.clear = CAVS_L2_IDC;
-	z_reinit_idle_thread(id);
 	z_smp_start_cpu(id);
 
  out:
