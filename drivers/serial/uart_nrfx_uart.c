@@ -1231,7 +1231,7 @@ PM_DEVICE_DT_INST_DEFINE(0, uart_nrfx_pm_action);
 
 DEVICE_DT_INST_DEFINE(0,
 	      uart_nrfx_init,
-	      PM_DEVICE_DT_INST_REF(0),
+	      PM_DEVICE_DT_INST_GET(0),
 	      &uart_nrfx_uart0_data,
 	      &uart_nrfx_uart0_config,
 	      /* Initialize UART device before UART console. */

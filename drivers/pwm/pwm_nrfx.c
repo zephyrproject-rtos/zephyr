@@ -368,7 +368,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 	};								      \
 	PM_DEVICE_DT_DEFINE(PWM(idx), pwm_nrfx_pm_action);		      \
 	DEVICE_DT_DEFINE(PWM(idx),					      \
-		      pwm_nrfx_init, PM_DEVICE_DT_REF(PWM(idx)),	      \
+		      pwm_nrfx_init, PM_DEVICE_DT_GET(PWM(idx)),	      \
 		      &pwm_nrfx_##idx##_data,				      \
 		      &pwm_nrfx_##idx##config,				      \
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \

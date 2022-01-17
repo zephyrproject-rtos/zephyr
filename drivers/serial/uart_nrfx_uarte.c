@@ -2028,7 +2028,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
 		      uarte_##idx##_init,				       \
-		      PM_DEVICE_DT_REF(UARTE(idx)),			       \
+		      PM_DEVICE_DT_GET(UARTE(idx)),			       \
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
 		      PRE_KERNEL_1,					       \

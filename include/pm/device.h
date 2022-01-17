@@ -189,11 +189,11 @@ struct pm_device {
  *
  * @param dev_name Device name.
  */
-#define Z_PM_DEVICE_REF(dev_name) &Z_PM_DEVICE_NAME(dev_name)
+#define Z_PM_DEVICE_GET(dev_name) &Z_PM_DEVICE_NAME(dev_name)
 
 #else
 #define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)
-#define Z_PM_DEVICE_REF(dev_name) NULL
+#define Z_PM_DEVICE_GET(dev_name) NULL
 #endif /* CONFIG_PM_DEVICE */
 
 /** @endcond */
@@ -248,8 +248,8 @@ struct pm_device {
  * @return Reference to the device PM resources (NULL if device
  * @kconfig{CONFIG_PM_DEVICE} is disabled).
  */
-#define PM_DEVICE_REF(dev_name) \
-	Z_PM_DEVICE_REF(dev_name)
+#define PM_DEVICE_GET(dev_name) \
+	Z_PM_DEVICE_GET(dev_name)
 
 /**
  * @brief Obtain a reference to the device PM resources for the given node.
@@ -259,8 +259,8 @@ struct pm_device {
  * @return Reference to the device PM resources (NULL if device
  * @kconfig{CONFIG_PM_DEVICE} is disabled).
  */
-#define PM_DEVICE_DT_REF(node_id) \
-	PM_DEVICE_REF(Z_DEVICE_DT_DEV_NAME(node_id))
+#define PM_DEVICE_DT_GET(node_id) \
+	PM_DEVICE_GET(Z_DEVICE_DT_DEV_NAME(node_id))
 
 /**
  * @brief Obtain a reference to the device PM resources for the given instance.
@@ -270,8 +270,8 @@ struct pm_device {
  * @return Reference to the device PM resources (NULL if device
  * @kconfig{CONFIG_PM_DEVICE} is disabled).
  */
-#define PM_DEVICE_DT_INST_REF(idx) \
-	PM_DEVICE_DT_REF(DT_DRV_INST(idx))
+#define PM_DEVICE_DT_INST_GET(idx) \
+	PM_DEVICE_DT_GET(DT_DRV_INST(idx))
 
 /**
  * @brief Get name of device PM state
