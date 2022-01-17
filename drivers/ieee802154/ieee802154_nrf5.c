@@ -709,7 +709,8 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 	}
 
 	i = 0;
-	for (struct ieee802154_key *keys = mac_keys; keys->key_value; keys++) {
+	for (struct ieee802154_key *keys = mac_keys; keys->key_value
+			&& i < NRF_802154_SECURITY_KEY_STORAGE_SIZE; keys++, i++) {
 		nrf_802154_key_t key = {
 			.value.p_cleartext_key = keys->key_value,
 			.id.mode = keys->key_id_mode,
@@ -719,16 +720,15 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 			.use_global_frame_counter = !(keys->frame_counter_per_key),
 		};
 
-		nrf_802154_security_error_t err = nrf_802154_security_key_store(&key);
-		__ASSERT(err == NRF_802154_SECURITY_ERROR_NONE ||
-				 err == NRF_802154_SECURITY_ERROR_ALREADY_PRESENT,
-			 "Storing key failed, err: %d", err);
+		__ASSERT_EVAL((void)nrf_802154_security_key_store(&key),
+			nrf_802154_security_error_t err = nrf_802154_security_key_store(&key),
+			err == NRF_802154_SECURITY_ERROR_NONE ||
+			err == NRF_802154_SECURITY_ERROR_ALREADY_PRESENT,
+			"Storing key failed, err: %d", err);
 
-		__ASSERT(i < NRF_802154_SECURITY_KEY_STORAGE_SIZE, "Store buffer is full");
 		stored_ids[i] = *key.id.p_key_id;
 		stored_key_ids[i].mode = key.id.mode;
 		stored_key_ids[i].p_key_id = &stored_ids[i];
-		i++;
 	};
 }
 #endif /* CONFIG_NRF_802154_ENCRYPTION */
