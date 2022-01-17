@@ -22,20 +22,6 @@ LOG_MODULE_REGISTER(main);
 #define MAX_PATH_LEN 255
 #define TEST_FILE_SIZE 547
 
-#define PARTITION_NODE DT_NODELABEL(lfs1)
-
-#if DT_NODE_EXISTS(PARTITION_NODE)
-FS_FSTAB_DECLARE_ENTRY(PARTITION_NODE);
-#else /* PARTITION_NODE */
-FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
-static struct fs_mount_t lfs_storage_mnt = {
-	.type = FS_LITTLEFS,
-	.fs_data = &storage,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
-	.mnt_point = "/lfs",
-};
-#endif /* PARTITION_NODE */
-
 static uint8_t file_test_pattern[TEST_FILE_SIZE];
 static int lsdir(const char *path)
 {
@@ -247,6 +233,7 @@ static int littlefs_binary_file_adj(char *fname)
 	return (rc < 0 ? rc : 0);
 }
 
+#ifdef CONFIG_APP_LITTLEFS_STORAGE_FLASH
 static int littlefs_flash_erase(unsigned int id)
 {
 	const struct flash_area *pfa;
@@ -272,9 +259,28 @@ static int littlefs_flash_erase(unsigned int id)
 	flash_area_close(pfa);
 	return rc;
 }
-
-void main(void)
+#else
+static int littlefs_flash_erase(unsigned int id)
 {
+	return 0;
+}
+#endif /* CONFIG_APP_LITTLEFS_STORAGE_FLASH */
+
+#ifdef CONFIG_APP_LITTLEFS_STORAGE_FLASH
+#define PARTITION_NODE DT_NODELABEL(lfs1)
+
+#if DT_NODE_EXISTS(PARTITION_NODE)
+FS_FSTAB_DECLARE_ENTRY(PARTITION_NODE);
+#else /* PARTITION_NODE */
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
+static struct fs_mount_t lfs_storage_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &storage,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.mnt_point = "/lfs",
+};
+#endif /* PARTITION_NODE */
+
 	struct fs_mount_t *mp =
 #if DT_NODE_EXISTS(PARTITION_NODE)
 		&FS_FSTAB_ENTRY(PARTITION_NODE)
@@ -283,10 +289,36 @@ void main(void)
 #endif
 		;
 
+static int littlefs_mount(struct fs_mount_t *mp)
+{
+	int rc;
+
+	/* Do not mount if auto-mount has been enabled */
+#if !DT_NODE_EXISTS(PARTITION_NODE) ||						\
+	!(FSTAB_ENTRY_DT_MOUNT_FLAGS(PARTITION_NODE) & FS_MOUNT_FLAG_AUTOMOUNT)
+	rc = fs_mount(mp);
+	if (rc < 0) {
+		LOG_PRINTK("FAIL: mount id %" PRIuPTR " at %s: %d\n",
+		       (uintptr_t)mp->storage_dev, mp->mnt_point, rc);
+		return rc;
+	}
+	LOG_PRINTK("%s mount: %d\n", mp->mnt_point, rc);
+#else
+	LOG_PRINTK("%s automounted\n", mp->mnt_point);
+#endif
+
+	return 0;
+}
+#endif /* CONFIG_APP_LITTLEFS_STORAGE_FLASH */
+
+void main(void)
+{
 	char fname1[MAX_PATH_LEN];
 	char fname2[MAX_PATH_LEN];
 	struct fs_statvfs sbuf;
 	int rc;
+
+	LOG_PRINTK("Sample program to r/w files on littlefs\n");
 
 	snprintf(fname1, sizeof(fname1), "%s/boot_count", mp->mnt_point);
 	snprintf(fname2, sizeof(fname2), "%s/pattern.bin", mp->mnt_point);
@@ -296,19 +328,10 @@ void main(void)
 		return;
 	}
 
-	/* Do not mount if auto-mount has been enabled */
-#if !DT_NODE_EXISTS(PARTITION_NODE) ||						\
-	!(FSTAB_ENTRY_DT_MOUNT_FLAGS(PARTITION_NODE) & FS_MOUNT_FLAG_AUTOMOUNT)
-	rc = fs_mount(mp);
+	rc = littlefs_mount(mp);
 	if (rc < 0) {
-		LOG_PRINTK("FAIL: mount id %" PRIuPTR " at %s: %d\n",
-			   (uintptr_t)mp->storage_dev, mp->mnt_point, rc);
 		return;
 	}
-	LOG_PRINTK("%s mount: %d\n", mp->mnt_point, rc);
-#else
-	LOG_PRINTK("%s automounted\n", mp->mnt_point);
-#endif
 
 	rc = fs_statvfs(mp->mnt_point, &sbuf);
 	if (rc < 0) {
