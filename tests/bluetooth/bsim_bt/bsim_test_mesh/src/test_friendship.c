@@ -850,11 +850,33 @@ static void test_lpn_disable(void)
 	PASS();
 }
 
-#define TEST_CASE(role, name, description)                                                         \
-	{                                                                                          \
-		.test_id = "friendship_" #role "_" #name, .test_descr = description,               \
-		.test_post_init_f = test_##role##_init, .test_tick_f = bt_mesh_test_timeout,       \
-		.test_main_f = test_##role##_##name,                                               \
+/** LPN terminate cb test.
+ *
+ * Check that terminate cb is not triggered when there is no established
+ * connection.
+ */
+static void test_lpn_term_cb_check(void)
+{
+	bt_mesh_test_setup();
+
+	bt_mesh_lpn_set(true);
+	ASSERT_OK(evt_wait(LPN_POLLED, K_MSEC(1000)), "Friend never polled");
+	bt_mesh_lpn_set(false);
+
+	if (!evt_wait(LPN_TERMINATED, K_SECONDS(30))) {
+		FAIL("LPN terminate CB triggered unexpectedly");
+	}
+
+	PASS();
+}
+
+#define TEST_CASE(role, name, description)                  \
+	{                                                   \
+		.test_id = "friendship_" #role "_" #name,   \
+		.test_descr = description,                  \
+		.test_post_init_f = test_##role##_init,     \
+		.test_tick_f = bt_mesh_test_timeout,        \
+		.test_main_f = test_##role##_##name,        \
 	}
 
 static const struct bst_test_instance test_connect[] = {
@@ -874,6 +896,7 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(lpn,    group,            "LPN: receive on group addrs"),
 	TEST_CASE(lpn,    loopback,         "LPN: send to loopback addrs"),
 	TEST_CASE(lpn,    disable,          "LPN: disable LPN"),
+	TEST_CASE(lpn,    term_cb_check,    "LPN: no terminate cb trigger"),
 
 	TEST_CASE(other,  msg,              "Other mesh device: message exchange"),
 	TEST_CASE(other,  group,            "Other mesh device: send to group addrs"),
