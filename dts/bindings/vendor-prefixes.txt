@@ -258,6 +258,7 @@ hugsun	Shenzhen Hugsun Technology Co. Ltd.
 hwacom	HwaCom Systems Inc.
 hycon	Hycon Technology Corp.
 hydis	Hydis Technologies
+hynitron	Hynitron
 hyundai	Hyundai Technology
 i2se	I2SE GmbH
 ibm	International Business Machines (IBM)
