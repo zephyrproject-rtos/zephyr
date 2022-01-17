@@ -272,6 +272,21 @@ typedef int (*lwm2m_engine_user_cb_t)(uint16_t obj_inst_id);
 typedef int (*lwm2m_engine_execute_cb_t)(uint16_t obj_inst_id,
 					 uint8_t *args, uint16_t args_len);
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
+/**
+ * @brief Asynchronous firmware update state change event callback.
+ *
+ * Register a function of this type via:
+ * lwm2m_firmware_set_update_state_cb()
+ *
+ * @param[in] update_state LWM2M Firmware Update object states
+ *
+ * @return Callback returns a negative error code (errno.h) indicating
+ *         reason of failure or 0 for success.
+ */
+typedef int (*lwm2m_firmware_get_update_state_cb_t)(uint8_t update_state);
+#endif
+
 /**
  * @brief Power source types used for the "Available Power Sources" resource of
  * the LwM2M Device object.
@@ -389,6 +404,25 @@ void lwm2m_firmware_set_write_cb_inst(uint16_t obj_inst_id, lwm2m_engine_set_dat
  * @return A registered callback function to receive the block transfer data
  */
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb_inst(uint16_t obj_inst_id);
+
+/**
+ * @brief Set event callback for firmware update changes.
+ *
+ * LwM2M clients use this function to register a callback for receiving the
+ * update state changes when performing a firmware update.
+ *
+ * @param[in] obj_inst_id Object instance ID
+ * @param[in] cb A callback function to receive firmware update state changes.
+ */
+void lwm2m_firmware_set_update_state_cb(uint16_t obj_inst_id, lwm2m_firmware_get_update_state_cb_t cb);
+
+/**
+ * @brief Get the callback for firmware update state change events.
+ *
+ * @param[in] obj_inst_id Object instance ID
+ * @return A registered callback function to receive firmware update state changes.
+ */
+lwm2m_firmware_get_update_state_cb_t lwm2m_firmware_get_update_state_cb(uint16_t obj_inst_id);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 /**

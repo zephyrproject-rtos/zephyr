@@ -79,6 +79,7 @@ static struct lwm2m_engine_res_inst res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTAN
 
 static lwm2m_engine_set_data_cb_t write_cb[MAX_INSTANCE_COUNT];
 static lwm2m_engine_execute_cb_t update_cb[MAX_INSTANCE_COUNT];
+static lwm2m_firmware_get_update_state_cb_t update_state_cb[MAX_INSTANCE_COUNT];
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 extern int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri);
@@ -98,6 +99,7 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 {
 	bool error = false;
 	char path[sizeof("5/65535/5")];
+	lwm2m_firmware_get_update_state_cb_t callback;
 
 	/* Check LWM2M SPEC appendix E.6.1 */
 	switch (state) {
@@ -132,6 +134,11 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 	snprintf(path, sizeof(path), "5/%" PRIu16 "/3", obj_inst_id);
 
 	lwm2m_engine_set_u8(path, state);
+
+	callback = lwm2m_firmware_get_update_state_cb(obj_inst_id);
+	if (callback) {
+		callback(state);
+	}
 
 	LOG_DBG("Update state = %d", state);
 }
@@ -342,6 +349,16 @@ void lwm2m_firmware_set_update_cb_inst(uint16_t obj_inst_id, lwm2m_engine_execut
 lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb_inst(uint16_t obj_inst_id)
 {
 	return update_cb[obj_inst_id];
+}
+
+void lwm2m_firmware_set_update_state_cb(uint16_t obj_inst_id, lwm2m_firmware_get_update_state_cb_t cb)
+{
+	update_state_cb[obj_inst_id] = cb;
+}
+
+lwm2m_firmware_get_update_state_cb_t lwm2m_firmware_get_update_state_cb(void)
+{
+	return update_state_cb[obj_inst_id];
 }
 
 static int firmware_update_cb(uint16_t obj_inst_id,
