@@ -32,6 +32,7 @@
 		led2 = &blled2;	/* backlight high */
 		led3 = &statusled;	/* status led, may be not populated */
 		sw0 = &key_in;  /* key in */
+		kscan0 = &cst816s;
 	};
 
 	leds {
@@ -108,7 +109,7 @@
 
 	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
 	cst816s: cst816s@15 {
-		compatible = "hynitron-cst816s";
+		compatible = "hynitron,cst816s";
 		reg = <0x15>;
 		label = "CST816S";
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
