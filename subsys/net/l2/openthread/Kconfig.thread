@@ -100,6 +100,12 @@ config OPENTHREAD_CSL_MIN_RECEIVE_ON
 	help
 	  The minimum CSL receive window (in microseconds) required to receive a full IEEE 802.15.4 frame
 
+config OPENTHREAD_PLATFORM_CSL_UNCERT
+	int "CSL clock uncertainty"
+	default 255
+	help
+	  The Uncertainty of the scheduling CSL of transmission by the parent, in ±10 us units.
+
 config OPENTHREAD_MAC_SOFTWARE_TX_SECURITY_ENABLE
 	bool "Enable software transmission security logic"
 	default y if OPENTHREAD_THREAD_VERSION_1_2
