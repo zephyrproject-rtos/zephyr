@@ -3328,6 +3328,22 @@ static int do_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	}
 }
 
+static int do_composite_read_op(struct lwm2m_message *msg, uint16_t content_format)
+{
+	switch (content_format) {
+
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	case LWM2M_FORMAT_APP_SEML_JSON:
+		return do_composite_read_op_senml_json(msg);
+#endif
+
+	default:
+		LOG_ERR("Unsupported content-format: %u", content_format);
+		return -ENOMSG;
+
+	}
+}
+
 static int lwm2m_perform_read_object_instance(struct lwm2m_message *msg,
 					      struct lwm2m_engine_obj_inst *obj_inst,
 					      uint8_t *num_read)
@@ -3964,7 +3980,7 @@ static int handle_request(struct coap_packet *request,
 
 	if (r == 0) {
 		/* No URI path or empty URI path option - allowed only during
-		 * bootstrap.
+		 * bootstrap or CoAP Fetch.
 		 */
 		switch (code & COAP_REQUEST_MASK) {
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -3977,6 +3993,9 @@ static int handle_request(struct coap_packet *request,
 			r = -EPERM;
 			goto error;
 #endif
+		case COAP_METHOD_FETCH:
+		break;
+
 		default:
 			r = -EPERM;
 			goto error;
@@ -4032,13 +4051,16 @@ static int handle_request(struct coap_packet *request,
 		goto error;
 	}
 
-	if (!(msg->ctx->bootstrap_mode && msg->path.level == 0)) {
-		/* find registered obj */
-		obj = get_engine_obj(msg->path.obj_id);
-		if (!obj) {
-			/* No matching object found - ignore request */
-			r = -ENOENT;
-			goto error;
+	/* Do Only Object find if Method is not a FETCH */
+	if ((code & COAP_REQUEST_MASK) != COAP_METHOD_FETCH) {
+		if (!(msg->ctx->bootstrap_mode && msg->path.level == LWM2M_PATH_LEVEL_NONE)) {
+			/* find registered obj */
+			obj = get_engine_obj(msg->path.obj_id);
+			if (!obj) {
+				/* No matching object found - ignore request */
+				r = -ENOENT;
+				goto error;
+			}
 		}
 	}
 
@@ -4057,6 +4079,14 @@ static int handle_request(struct coap_packet *request,
 			msg->operation = LWM2M_OP_READ;
 		}
 
+		/* check for observe */
+		observe = coap_get_option_int(msg->in.in_cpkt,
+					      COAP_OPTION_OBSERVE);
+		msg->code = COAP_RESPONSE_CODE_CONTENT;
+		break;
+
+	case COAP_METHOD_FETCH:
+		msg->operation = LWM2M_OP_READ;
 		/* check for observe */
 		observe = coap_get_option_int(msg->in.in_cpkt,
 					      COAP_OPTION_OBSERVE);
@@ -4221,7 +4251,12 @@ static int handle_request(struct coap_packet *request,
 				}
 			}
 
-			r = do_read_op(msg, accept);
+			if ((code & COAP_REQUEST_MASK) == COAP_METHOD_GET) {
+				r = do_read_op(msg, accept);
+			} else {
+				r = do_composite_read_op(msg, accept);
+			}
+
 			break;
 
 		case LWM2M_OP_DISCOVER:
