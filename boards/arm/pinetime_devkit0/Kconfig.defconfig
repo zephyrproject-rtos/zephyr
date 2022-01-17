@@ -21,4 +21,7 @@ config ST7789V
 
 endif # DISPLAY
 
+config I2C
+	default y if KSCAN
+
 endif # BOARD_PINETIME_DEVKIT0
