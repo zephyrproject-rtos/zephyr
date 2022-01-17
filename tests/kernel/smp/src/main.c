@@ -22,6 +22,7 @@
 #define EQUAL_PRIORITY 1
 #define TIME_SLICE_MS 500
 #define THREAD_DELAY 1
+#define SLEEP_MS_LONG 15000
 
 struct k_thread t2;
 K_THREAD_STACK_DEFINE(t2_stack, T2_STACK_SIZE);
@@ -51,6 +52,9 @@ static struct k_thread tthread[THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
 static volatile int thread_started[THREADS_NUM - 1];
+
+static struct k_poll_signal tsignal[THREADS_NUM];
+static struct k_poll_event tevent[THREADS_NUM];
 
 static int curr_cpu(void)
 {
@@ -948,6 +952,65 @@ void test_inc_concurrency(void)
 			"total count %d is wrong(M)", global_cnt);
 }
 
+/**
+ * @brief Torture test for context switching code
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Leverage the polling API to stress test the context switching code.
+ *          This test will hammer all the CPUs with thread swapping requests.
+ */
+static void process_events(void *arg0, void *arg1, void *arg2)
+{
+	uintptr_t id = (uintptr_t) arg0;
+
+	while (1) {
+		k_poll(&tevent[id], 1, K_FOREVER);
+
+		if (tevent[id].signal->result != 0x55) {
+			ztest_test_fail();
+		}
+
+		tevent[id].signal->signaled = 0;
+		tevent[id].state = K_POLL_STATE_NOT_READY;
+
+		k_poll_signal_reset(&tsignal[id]);
+	}
+}
+
+static void signal_raise(void *arg0, void *arg1, void *arg2)
+{
+	while (1) {
+		for (uintptr_t i = 0; i < THREADS_NUM; i++) {
+			k_poll_signal_raise(&tsignal[i], 0x55);
+		}
+	}
+}
+
+void test_smp_switch_torture(void)
+{
+	for (uintptr_t i = 0; i < THREADS_NUM; i++) {
+		k_poll_signal_init(&tsignal[i]);
+		k_poll_event_init(&tevent[i], K_POLL_TYPE_SIGNAL,
+				  K_POLL_MODE_NOTIFY_ONLY, &tsignal[i]);
+
+		k_thread_create(&tthread[i], tstack[i], STACK_SIZE,
+				(k_thread_entry_t) process_events,
+				(void *) i, NULL, NULL, K_PRIO_PREEMPT(i + 1),
+				K_INHERIT_PERMS, K_NO_WAIT);
+	}
+
+	k_thread_create(&t2, t2_stack, T2_STACK_SIZE, signal_raise,
+			NULL, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+
+	k_sleep(K_MSEC(SLEEP_MS_LONG));
+
+	k_thread_abort(&t2);
+	for (uintptr_t i = 0; i < THREADS_NUM; i++) {
+		k_thread_abort(&tthread[i]);
+	}
+}
+
 void test_main(void)
 {
 	/* Sleep a bit to guarantee that both CPUs enter an idle
@@ -969,7 +1032,8 @@ void test_main(void)
 			 ztest_unit_test(test_fatal_on_smp),
 			 ztest_unit_test(test_workq_on_smp),
 			 ztest_unit_test(test_smp_release_global_lock),
-			 ztest_unit_test(test_inc_concurrency)
+			 ztest_unit_test(test_inc_concurrency),
+			 ztest_unit_test(test_smp_switch_torture)
 			 );
 	ztest_run_test_suite(smp);
 }
