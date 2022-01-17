@@ -189,7 +189,7 @@ struct pm_device {
  *
  * @param dev_name Device name.
  */
-#define Z_PM_DEVICE_GET(dev_name) &Z_PM_DEVICE_NAME(dev_name)
+#define Z_PM_DEVICE_GET(dev_name) (&Z_PM_DEVICE_NAME(dev_name))
 
 #else
 #define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)
