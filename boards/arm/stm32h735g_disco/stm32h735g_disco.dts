@@ -138,10 +138,6 @@
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
 };
 
-&lptim1 {
-	status = "okay";
-};
-
 &clk_lsi {
 	status = "okay";
 };
