@@ -11,4 +11,5 @@ flash: 128
 supported:
   - uart
   - gpio
+  - i2c
   - watchdog
