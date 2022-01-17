@@ -17,6 +17,8 @@ choice
 config APP_LITTLEFS_STORAGE_FLASH
 	bool "Use flash memory backend"
 
+config APP_LITTLEFS_STORAGE_BLK_SDMMC
+	bool "Use block device (e.g. SD MMC) backend"
 endchoice
 
 source "Kconfig.zephyr"

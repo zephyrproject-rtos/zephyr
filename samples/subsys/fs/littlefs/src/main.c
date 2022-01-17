@@ -308,6 +308,27 @@ static int littlefs_mount(struct fs_mount_t *mp)
 }
 #endif /* CONFIG_APP_LITTLEFS_STORAGE_FLASH */
 
+#ifdef CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC
+struct fs_littlefs lfsfs;
+static struct fs_mount_t __mp = {
+	.type = FS_LITTLEFS,
+	.fs_data = &lfsfs,
+	.flags = FS_MOUNT_FLAG_USE_DISK_ACCESS,
+};
+struct fs_mount_t *mp = &__mp;
+
+static int littlefs_mount(struct fs_mount_t *mp)
+{
+	static const char *disk_mount_pt = "/"CONFIG_SDMMC_VOLUME_NAME":";
+	static const char *disk_pdrv = CONFIG_SDMMC_VOLUME_NAME;
+
+	mp->storage_dev = (void *)disk_pdrv;
+	mp->mnt_point = disk_mount_pt;
+
+	return fs_mount(mp);
+}
+#endif /* CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC */
+
 void main(void)
 {
 	char fname1[MAX_PATH_LEN];
