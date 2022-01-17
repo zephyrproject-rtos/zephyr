@@ -660,7 +660,7 @@ static void log_api_suite_before(void *data)
 }
 
 #define WRAP_TEST(test_name, suffix)                       \
-	ZTEST(test_log_api_##suffix, test_name##_##suffix) \
+	ZTEST(UTIL_CAT(test_log_api_, suffix), UTIL_CAT(test_name, UTIL_CAT(_,suffix))) \
 	{                                                  \
 		test_name();                               \
 	}
@@ -670,7 +670,7 @@ static void log_api_suite_before(void *data)
 #else
 #define TEST_SUFFIX cc
 #endif
-#define TEST_SUITE_NAME test_log_api_ ## TEST_SUFFIX
+#define TEST_SUITE_NAME UTIL_CAT(test_log_api_, TEST_SUFFIX)
 
 ZTEST_SUITE(TEST_SUITE_NAME, NULL, log_api_suite_setup,
 	    log_api_suite_before, NULL, log_api_suite_teardown);
