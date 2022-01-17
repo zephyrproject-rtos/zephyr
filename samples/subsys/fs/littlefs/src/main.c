@@ -123,6 +123,32 @@ static int littlefs_increase_infile_value(char *fname)
 	return (rc < 0 ? rc : 0);
 }
 
+static int littlefs_flash_erase(unsigned int id)
+{
+	const struct flash_area *pfa;
+	int rc;
+
+	rc = flash_area_open(id, &pfa);
+	if (rc < 0) {
+		LOG_ERR("FAIL: unable to find flash area %u: %d\n",
+			id, rc);
+		return rc;
+	}
+
+	LOG_PRINTK("Area %u at 0x%x on %s for %u bytes\n",
+		   id, (unsigned int)pfa->fa_off, pfa->fa_dev_name,
+		   (unsigned int)pfa->fa_size);
+
+	/* Optional wipe flash contents */
+	if (IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
+		rc = flash_area_erase(pfa, 0, pfa->fa_size);
+		LOG_ERR("Erasing flash area ... %d", rc);
+	}
+
+	flash_area_close(pfa);
+	return rc;
+}
+
 void main(void)
 {
 	struct fs_mount_t *mp =
@@ -132,33 +158,17 @@ void main(void)
 		&lfs_storage_mnt
 #endif
 		;
-	unsigned int id = (uintptr_t)mp->storage_dev;
+
 	char fname[MAX_PATH_LEN];
 	struct fs_statvfs sbuf;
-	const struct flash_area *pfa;
 	int rc;
 
 	snprintf(fname, sizeof(fname), "%s/boot_count", mp->mnt_point);
 
-	rc = flash_area_open(id, &pfa);
+	rc = littlefs_flash_erase((uintptr_t)mp->storage_dev);
 	if (rc < 0) {
-		LOG_PRINTK("FAIL: unable to find flash area %u: %d\n",
-			   id, rc);
 		return;
 	}
-
-	LOG_PRINTK("Area %u at 0x%x on %s for %u bytes\n",
-		   id, (unsigned int)pfa->fa_off, pfa->fa_dev_name,
-		   (unsigned int)pfa->fa_size);
-
-	/* Optional wipe flash contents */
-	if (IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
-		LOG_PRINTK("Erasing flash area ... ");
-		rc = flash_area_erase(pfa, 0, pfa->fa_size);
-		LOG_PRINTK("%d\n", rc);
-	}
-
-	flash_area_close(pfa);
 
 	/* Do not mount if auto-mount has been enabled */
 #if !DT_NODE_EXISTS(PARTITION_NODE) ||						\
