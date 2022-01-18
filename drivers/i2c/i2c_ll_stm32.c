@@ -25,8 +25,8 @@ LOG_MODULE_REGISTER(i2c_ll_stm32);
 
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	uint32_t clock = 0U;
 	int ret;
@@ -66,7 +66,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t num_msgs, uint16_t slave)
 {
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	struct i2c_stm32_data *data = dev->data;
 	struct i2c_msg *current, *next;
 	int ret = 0;
 
@@ -180,10 +180,10 @@ static const struct i2c_driver_api api_funcs = {
 static int i2c_stm32_init(const struct device *dev)
 {
 	const struct device *clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
 	uint32_t bitrate_cfg;
 	int ret;
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	struct i2c_stm32_data *data = dev->data;
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	cfg->irq_config_func(dev);
