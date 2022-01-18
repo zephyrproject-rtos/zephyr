@@ -63,16 +63,16 @@ class LogDatabase():
     BIG_ENDIAN = False
 
     def __init__(self):
-        new_db = dict()
+        new_db = {}
 
         new_db['version'] = self.ZEPHYR_DICT_LOG_VER
-        new_db['target'] = dict()
-        new_db['sections'] = dict()
-        new_db['log_subsys'] = dict()
-        new_db['log_subsys']['log_instances'] = dict()
+        new_db['target'] = {}
+        new_db['sections'] = {}
+        new_db['log_subsys'] = {}
+        new_db['log_subsys']['log_instances'] = {}
         new_db['build_id'] = None
         new_db['arch'] = None
-        new_db['kconfigs'] = dict()
+        new_db['kconfigs'] = {}
 
         self.database = new_db
 
@@ -216,7 +216,7 @@ class LogDatabase():
     def read_json_database(db_file_name):
         """Read database from file and return a LogDatabase object"""
         try:
-            with open(db_file_name, "r") as db_fd:
+            with open(db_file_name, "r", encoding="iso-8859-1") as db_fd:
                 json_db = json.load(db_fd)
         except (OSError, json.JSONDecodeError):
             return None
@@ -243,7 +243,7 @@ class LogDatabase():
             del sect['data']
 
         try:
-            with open(db_file_name, "w") as db_fd:
+            with open(db_file_name, "w", encoding="iso-8859-1") as db_fd:
                 db_fd.write(json.dumps(json_db))
         except OSError:
             return False
