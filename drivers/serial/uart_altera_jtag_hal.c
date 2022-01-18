@@ -18,9 +18,6 @@
 #define UART_ALTERA_JTAG_DATA_REG                  0
 #define UART_ALTERA_JTAG_CONTROL_REG               1
 
-#define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config)
-
 extern int altera_avalon_jtag_uart_read(altera_avalon_jtag_uart_state *sp,
 		char *buffer, int space, int flags);
 extern int altera_avalon_jtag_uart_write(altera_avalon_jtag_uart_state *sp,
@@ -32,7 +29,7 @@ static void uart_altera_jtag_poll_out(const struct device *dev,
 	const struct uart_device_config *config;
 	altera_avalon_jtag_uart_state ustate;
 
-	config = DEV_CFG(dev);
+	config = dev->config;
 
 	ustate.base = JTAG_UART_0_BASE;
 	altera_avalon_jtag_uart_write(&ustate, &c, 1, 0);
