@@ -53,7 +53,7 @@ static void sam_xdmac_isr(const struct device *dev)
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
 	struct sam_xdmac_dev_data *const dev_data = dev->data;
 
-	Xdmac *const xdmac = dev_cfg->regs;
+	Xdmac * const xdmac = dev_cfg->regs;
 	struct sam_xdmac_channel_cfg *channel_cfg;
 	uint32_t isr_status;
 	uint32_t err;
@@ -84,7 +84,7 @@ int sam_xdmac_channel_configure(const struct device *dev, uint32_t channel,
 {
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
 
-	Xdmac *const xdmac = dev_cfg->regs;
+	Xdmac * const xdmac = dev_cfg->regs;
 
 	if (channel >= DMA_CHANNELS_NO) {
 		return -EINVAL;
@@ -127,7 +127,7 @@ int sam_xdmac_transfer_configure(const struct device *dev, uint32_t channel,
 {
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
 
-	Xdmac *const xdmac = dev_cfg->regs;
+	Xdmac * const xdmac = dev_cfg->regs;
 
 	if (channel >= DMA_CHANNELS_NO) {
 		return -EINVAL;
@@ -287,7 +287,7 @@ int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
 {
 	const struct sam_xdmac_dev_cfg *config = dev->config;
 
-	Xdmac *const xdmac = config->regs;
+	Xdmac * const xdmac = config->regs;
 
 	if (channel >= DMA_CHANNELS_NO) {
 		return -EINVAL;
@@ -310,7 +310,7 @@ int sam_xdmac_transfer_stop(const struct device *dev, uint32_t channel)
 {
 	const struct sam_xdmac_dev_cfg *config = dev->config;
 
-	Xdmac *const xdmac = config->regs;
+	Xdmac * const xdmac = config->regs;
 
 	if (channel >= DMA_CHANNELS_NO) {
 		return -EINVAL;
@@ -337,7 +337,7 @@ static int sam_xdmac_initialize(const struct device *dev)
 {
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
 
-	Xdmac *const xdmac = dev_cfg->regs;
+	Xdmac * const xdmac = dev_cfg->regs;
 
 	/* Configure interrupts */
 	dev_cfg->irq_config();
