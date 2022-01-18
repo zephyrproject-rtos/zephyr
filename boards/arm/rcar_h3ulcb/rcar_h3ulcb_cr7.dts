@@ -58,6 +58,8 @@
 };
 
 &scif1 {
+	pinctrl-0 = <&scif1_data_a_tx_default &scif1_data_a_rx_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
