@@ -306,7 +306,7 @@ static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
 
 static int i2s_litex_initialize(const struct device *dev)
 {
-	struct i2s_litex_cfg *cfg = dev->config;
+	const struct i2s_litex_cfg *cfg = dev->config;
 	struct i2s_litex_data *const dev_data = dev->data;
 
 	k_sem_init(&dev_data->rx.sem, 0, CONFIG_I2S_LITEX_RX_BLOCK_COUNT);
