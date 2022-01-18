@@ -109,7 +109,6 @@ void ZSOCK_FD_SET(int fd, zsock_fd_set *set);
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 
 #define fd_set zsock_fd_set
-#define timeval zsock_timeval
 #define FD_SETSIZE ZSOCK_FD_SETSIZE
 
 static inline int select(int nfds, zsock_fd_set *readfds,

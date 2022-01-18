@@ -16,36 +16,37 @@
 
 #include <zephyr/types.h>
 
-#ifdef CONFIG_POSIX_API
+
+#ifdef CONFIG_NEWLIB_LIBC
+
+#include <newlib.h>
+
 #ifdef __NEWLIB__
 #include <sys/_timeval.h>
-#else
+#else /* __NEWLIB__ */
 #include <sys/types.h>
+/* workaround for older Newlib 2.x, as it lacks sys/_timeval.h */
+struct timeval {
+	time_t tv_sec;
+	suseconds_t tv_usec;
+};
 #endif /* __NEWLIB__ */
-#endif /* CONFIG_POSIX_API */
+
+#else /* CONFIG_NEWLIB_LIBC */
+
+#ifdef CONFIG_ARCH_POSIX
+#include <bits/types/struct_timeval.h>
+#else
+#include <sys/_timeval.h>
+#endif
+
+#endif /* CONFIG_NEWLIB_LIBC */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef CONFIG_POSIX_API
-/* Rely on the underlying libc definition */
-#ifdef __NEWLIB__
 #define zsock_timeval timeval
-#else
-/* workaround for older Newlib 2.x, as it lacks sys/_timeval.h */
-struct zsock_timeval {
-	time_t tv_sec;
-	suseconds_t tv_usec;
-};
-#endif /* __NEWLIB__ */
-#else
-struct zsock_timeval {
-	/* Using longs, as many (?) implementations seem to use it. */
-	long tv_sec;
-	long tv_usec;
-};
-#endif /* CONFIG_POSIX_API */
 
 #ifdef __cplusplus
 }
