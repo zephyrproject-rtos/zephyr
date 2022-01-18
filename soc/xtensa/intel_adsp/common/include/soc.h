@@ -89,4 +89,21 @@ extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
 #define z_soc_cached_ptr(p) arch_xtensa_cached_ptr(p)
 #define z_soc_uncached_ptr(p) arch_xtensa_uncached_ptr(p)
 
+/**
+ * @brief Halts and offlines a running CPU
+ *
+ * Enables power gating on the specified CPU, which cannot be the
+ * current CPU or CPU 0.  The CPU must be idle; no application threads
+ * may be runnable on it when this function is called (or at least the
+ * CPU must be guaranteed to reach idle in finite time without
+ * deadlock).  Actual CPU shutdown can only happen in the context of
+ * the idle thread, and synchronization is an application
+ * responsibility.  This function will hang if the other CPU fails to
+ * reach idle.
+ *
+ * @param id CPU to halt, not current cpu or cpu 0
+ * @return 0 on success, -EINVAL on error
+ */
+int soc_adsp_halt_cpu(int id);
+
 #endif /* __INC_SOC_H */
