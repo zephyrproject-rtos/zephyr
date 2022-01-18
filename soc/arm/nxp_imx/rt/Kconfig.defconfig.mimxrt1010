@@ -24,6 +24,9 @@ config AHB_DIV
 config IPG_DIV
 	default 3
 
+config DCDC_VALUE
+	default 0x12
+
 config GPIO
 	default y
 
