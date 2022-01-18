@@ -410,12 +410,6 @@
 #define ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_SHIFT	18
 #define ETH_XLNX_GEM_PHY_MAINT_DATA_MASK		0x0000FFFF
 
-/* Device configuration / run-time data resolver macros */
-#define DEV_CFG(dev) \
-	((const struct eth_xlnx_gem_dev_cfg * const)(dev->config))
-#define DEV_DATA(dev) \
-	((struct eth_xlnx_gem_dev_data *)(dev->data))
-
 /* Device initialization macro */
 #define ETH_XLNX_GEM_NET_DEV_INIT(port) \
 ETH_NET_DEVICE_DT_INST_DEFINE(port,\

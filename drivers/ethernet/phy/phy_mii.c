@@ -35,9 +35,6 @@ struct phy_mii_dev_data {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_DATA(dev) ((struct phy_mii_dev_data *const)(dev)->data)
-#define DEV_CFG(dev) \
-	((const struct phy_mii_dev_config *const)(dev)->config)
 
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state);
@@ -45,7 +42,7 @@ static int phy_mii_get_link_state(const struct device *dev,
 static inline int reg_read(const struct device *dev, uint16_t reg_addr,
 			   uint16_t *value)
 {
-	const struct phy_mii_dev_config *const cfg = DEV_CFG(dev);
+	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
@@ -53,7 +50,7 @@ static inline int reg_read(const struct device *dev, uint16_t reg_addr,
 static inline int reg_write(const struct device *dev, uint16_t reg_addr,
 			    uint16_t value)
 {
-	const struct phy_mii_dev_config *const cfg = DEV_CFG(dev);
+	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
@@ -108,8 +105,8 @@ static int get_id(const struct device *dev, uint32_t *phy_id)
 
 static int update_link_state(const struct device *dev)
 {
-	const struct phy_mii_dev_config *const cfg = DEV_CFG(dev);
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	const struct phy_mii_dev_config *const cfg = dev->config;
+	struct phy_mii_dev_data *const data = dev->data;
 	bool link_up;
 
 	uint16_t anar_reg = 0;
@@ -203,7 +200,7 @@ static int update_link_state(const struct device *dev)
 
 static void invoke_link_cb(const struct device *dev)
 {
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	struct phy_mii_dev_data *const data = dev->data;
 	struct phy_link_state state;
 
 	if (data->cb == NULL) {
@@ -300,7 +297,7 @@ static int phy_mii_cfg_link(const struct device *dev,
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state)
 {
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	struct phy_mii_dev_data *const data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
@@ -314,7 +311,7 @@ static int phy_mii_get_link_state(const struct device *dev,
 static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
 			       void *user_data)
 {
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	struct phy_mii_dev_data *const data = dev->data;
 
 	data->cb = cb;
 	data->cb_data = user_data;
@@ -330,8 +327,8 @@ static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
 
 static int phy_mii_initialize(const struct device *dev)
 {
-	const struct phy_mii_dev_config *const cfg = DEV_CFG(dev);
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	const struct phy_mii_dev_config *const cfg = dev->config;
+	struct phy_mii_dev_data *const data = dev->data;
 	uint32_t phy_id;
 
 	k_sem_init(&data->sem, 1, 1);
