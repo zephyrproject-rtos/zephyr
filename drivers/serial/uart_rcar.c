@@ -12,6 +12,7 @@
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/rcar_clock_control.h>
+#include <drivers/pinctrl.h>
 #include <spinlock.h>
 
 struct uart_rcar_cfg {
@@ -19,6 +20,7 @@ struct uart_rcar_cfg {
 	const struct device *clock_dev;
 	struct rcar_cpg_clk mod_clk;
 	struct rcar_cpg_clk bus_clk;
+	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -270,6 +272,12 @@ static int uart_rcar_init(const struct device *dev)
 	const struct uart_rcar_cfg *config = DEV_UART_CFG(dev);
 	struct uart_rcar_data *data = DEV_UART_DATA(dev);
 	int ret;
+
+	/* Configure dt provided device signals when available */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t *)&config->mod_clk);
@@ -527,6 +535,7 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 
 /* Device Instantiation */
 #define UART_RCAR_DECLARE_CFG(n, IRQ_FUNC_INIT)			    \
+	PINCTRL_DT_INST_DEFINE(n);				    \
 	static const struct uart_rcar_cfg uart_rcar_cfg_##n = {	    \
 		.reg_addr = DT_INST_REG_ADDR(n),		    \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
@@ -538,6 +547,7 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 			DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),   \
 		.bus_clk.domain =				    \
 			DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	    \
 		IRQ_FUNC_INIT					    \
 	}
 
