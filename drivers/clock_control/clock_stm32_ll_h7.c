@@ -44,25 +44,13 @@
 /* This check should only be performed for the M7 core code */
 #ifdef CONFIG_CPU_CORTEX_M7
 
-/* Define primary oscillator frequencies */
-/* Suppress the cast to uint32_t which */
-/* prevents from compare with #if > operator*/
-/* original defines in stm32h7xx_hal_conf.h*/
-#define HSI_FREQ 64000000UL	/* HSI_VALUE ((uint32_t)64000000) */
-/* HSE_VALUE overridden by the build system without C cast to uint*/
-/* Build system doesn't provide the UL type suffix for HSE_VALUE */
-/* Force HSE_FREQ to be cast to preprocessor UL to prevent overflow*/
-/* Only use these constants in preprocessor expressions */
-#define HSE_FREQ HSE_VALUE
-#define CSI_FREQ 4000000UL	/* CSI_VALUE ((uint32_t)4000000) */
-
 /* Choose PLL SRC */
 #if defined(STM32_PLL_SRC_HSI)
-#define PLLSRC_FREQ  ((HSI_FREQ)/(STM32_HSI_DIVISOR))
+#define PLLSRC_FREQ  ((STM32_HSI_FREQ)/(STM32_HSI_DIVISOR))
 #elif defined(STM32_PLL_SRC_CSI)
-#define PLLSRC_FREQ  CSI_FREQ
+#define PLLSRC_FREQ  STM32_CSI_FREQ
 #elif defined(STM32_PLL_SRC_HSE)
-#define PLLSRC_FREQ  HSE_FREQ
+#define PLLSRC_FREQ  STM32_HSE_FREQ
 #else
 #define PLLSRC_FREQ 0
 #endif
@@ -82,11 +70,11 @@
 #if defined(STM32_SYSCLK_SRC_PLL)
 #define SYSCLKSRC_FREQ	PLLP_VALUE
 #elif defined(STM32_SYSCLK_SRC_HSI)
-#define SYSCLKSRC_FREQ	((HSI_FREQ)/(STM32_HSI_DIVISOR))
+#define SYSCLKSRC_FREQ	((STM32_HSI_FREQ)/(STM32_HSI_DIVISOR))
 #elif defined(STM32_SYSCLK_SRC_CSI)
-#define SYSCLKSRC_FREQ	CSI_FREQ
+#define SYSCLKSRC_FREQ	STM32_CSI_FREQ
 #elif defined(STM32_SYSCLK_SRC_HSE)
-#define SYSCLKSRC_FREQ	HSE_FREQ
+#define SYSCLKSRC_FREQ	STM32_HSE_FREQ
 #endif
 
 /* ARM Sys CPU Clock before HPRE prescaler */
@@ -176,11 +164,11 @@ static inline uint32_t get_pllsrc_frequency(void)
 {
 	switch (LL_RCC_PLL_GetSource()) {
 	case LL_RCC_PLLSOURCE_HSI:
-		return HSI_VALUE;
+		return STM32_HSI_FREQ;
 	case LL_RCC_PLLSOURCE_CSI:
-		return CSI_VALUE;
+		return STM32_CSI_FREQ;
 	case LL_RCC_PLLSOURCE_HSE:
-		return HSE_VALUE;
+		return STM32_HSE_FREQ;
 	case LL_RCC_PLLSOURCE_NONE:
 	default:
 		return 0;
@@ -213,13 +201,13 @@ static uint32_t get_hclk_frequency(void)
 	/* Get the current system clock source */
 	switch (LL_RCC_GetSysClkSource()) {
 	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
-		sysclk = HSI_VALUE/hsidiv;
+		sysclk = STM32_HSI_FREQ/hsidiv;
 		break;
 	case LL_RCC_SYS_CLKSOURCE_STATUS_CSI:
-		sysclk = CSI_VALUE;
+		sysclk = STM32_CSI_FREQ;
 		break;
 	case LL_RCC_SYS_CLKSOURCE_STATUS_HSE:
-		sysclk = HSE_VALUE;
+		sysclk = STM32_HSE_FREQ;
 		break;
 	case LL_RCC_SYS_CLKSOURCE_STATUS_PLL1:
 		sysclk = PLLP_FREQ(get_pllsrc_frequency(),
@@ -516,7 +504,7 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 __unused
 static int set_up_pll3(void)
 {
-#if defined(STM32_PLL3_ENABLE)
+#if defined(STM32_PLL3_ENABLED)
 	int r;
 	uint32_t vco_input_range;
 	uint32_t vco_output_range;
@@ -537,17 +525,17 @@ static int set_up_pll3(void)
 	LL_RCC_PLL3_SetVCOInputRange(vco_input_range);
 	LL_RCC_PLL3_SetVCOOutputRange(vco_output_range);
 
-	if (IS_ENABLED(STM32_PLL3_P_ENABLE)) {
+	if (IS_ENABLED(STM32_PLL3_P_ENABLED)) {
 		LL_RCC_PLL3P_Enable();
 		LL_RCC_PLL3_SetP(STM32_PLL3_P_DIVISOR);
 	}
 
-	if (IS_ENABLED(STM32_PLL3_Q_ENABLE)) {
+	if (IS_ENABLED(STM32_PLL3_Q_ENABLED)) {
 		LL_RCC_PLL3Q_Enable();
 		LL_RCC_PLL3_SetQ(STM32_PLL3_Q_DIVISOR);
 	}
 
-	if (IS_ENABLED(STM32_PLL3_R_ENABLE)) {
+	if (IS_ENABLED(STM32_PLL3_R_ENABLED)) {
 		LL_RCC_PLL3R_Enable();
 		LL_RCC_PLL3_SetR(STM32_PLL3_R_DIVISOR);
 	}
@@ -555,7 +543,7 @@ static int set_up_pll3(void)
 	LL_RCC_PLL3_Enable();
 	while (LL_RCC_PLL3_IsReady() != 1U) {
 	}
-#endif /* STM32_PLL3_ENABLE */
+#endif /* STM32_PLL3_ENABLED */
 
 	return 0;
 }
@@ -765,7 +753,7 @@ static int stm32_clock_control_init(const struct device *dev)
 
 	optimize_regulator_voltage_scale(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
-	if (IS_ENABLED(STM32_PLL3_ENABLE)) {
+	if (IS_ENABLED(STM32_PLL3_ENABLED)) {
 		int r = set_up_pll3();
 
 		if (r < 0) {
