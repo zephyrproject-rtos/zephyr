@@ -53,15 +53,14 @@ struct dma_mcux_edma_data {
 	struct k_mutex dma_mutex;
 };
 
-#define DEV_CFG(dev)                                                           \
-	((const struct dma_mcux_edma_config *const)dev->config)
-#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
-#define DEV_BASE(dev) ((DMA_Type *)DEV_CFG(dev)->base)
+#define DEV_BASE(dev) \
+	((DMA_Type *)((const struct dma_mcux_edma_config *const)dev->config)->base)
 
-#define DEV_DMAMUX_BASE(dev) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base)
+#define DEV_DMAMUX_BASE(dev) \
+	((DMAMUX_Type *)((const struct dma_mcux_edma_config *const)dev->config)->dmamux_base)
 
 #define DEV_CHANNEL_DATA(dev, ch)                                              \
-	((struct call_back *)(&(DEV_DATA(dev)->data_cb[ch])))
+	((struct call_back *)(&(((struct dma_mcux_edma_data *)dev->data)->data_cb[ch])))
 
 #define DEV_EDMA_HANDLE(dev, ch)                                               \
 	((edma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->edma_handle)))
@@ -349,7 +348,7 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 {
-	struct dma_mcux_edma_data *data = DEV_DATA(dev);
+	struct dma_mcux_edma_data *data = dev->data;
 
 	if (!data->data_cb[channel].busy) {
 		return 0;
@@ -450,19 +449,22 @@ static const struct dma_driver_api dma_mcux_edma_api = {
 
 static int dma_mcux_edma_init(const struct device *dev)
 {
+	const struct dma_mcux_edma_config *config = dev->config;
+	struct dma_mcux_edma_data *data = dev->data;
+
 	edma_config_t userConfig = { 0 };
 
 	LOG_DBG("INIT NXP EDMA");
 	DMAMUX_Init(DEV_DMAMUX_BASE(dev));
 	EDMA_GetDefaultConfig(&userConfig);
 	EDMA_Init(DEV_BASE(dev), &userConfig);
-	DEV_CFG(dev)->irq_config_func(dev);
-	memset(DEV_DATA(dev), 0, sizeof(struct dma_mcux_edma_data));
+	config->irq_config_func(dev);
+	memset(dev->data, 0, sizeof(struct dma_mcux_edma_data));
 	memset(tcdpool, 0, sizeof(tcdpool));
-	k_mutex_init(&DEV_DATA(dev)->dma_mutex);
-	DEV_DATA(dev)->dma_ctx.magic = DMA_MAGIC;
-	DEV_DATA(dev)->dma_ctx.dma_channels = DEV_CFG(dev)->dma_channels;
-	DEV_DATA(dev)->dma_ctx.atomic = DEV_DATA(dev)->channels_atomic;
+	k_mutex_init(&data->dma_mutex);
+	data->dma_ctx.magic = DMA_MAGIC;
+	data->dma_ctx.dma_channels = config->dma_channels;
+	data->dma_ctx.atomic = data->channels_atomic;
 	return 0;
 }
 

@@ -45,13 +45,11 @@ struct dma_mcux_lpc_dma_data {
 	uint32_t num_channels_used;
 };
 
-#define DEV_CFG(dev) \
-	((const struct dma_mcux_lpc_config *const)(dev)->config)
-#define DEV_DATA(dev) ((struct dma_mcux_lpc_dma_data *)dev->data)
-#define DEV_BASE(dev) ((DMA_Type *)DEV_CFG(dev)->base)
+#define DEV_BASE(dev) \
+	((DMA_Type *)((const struct dma_mcux_lpc_config *const)(dev)->config)->base)
 
 #define DEV_CHANNEL_DATA(dev, ch)                                              \
-		((struct call_back *)(&(DEV_DATA(dev)->data_cb[ch])))
+	((struct call_back *)(&(((struct dma_mcux_lpc_dma_data *)dev->data)->data_cb[ch])))
 
 #define DEV_DMA_HANDLE(dev, ch)                                               \
 		((dma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->dma_handle)))
@@ -92,10 +90,11 @@ static void dma_mcux_lpc_irq_handler(const struct device *dev)
 static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				  struct dma_config *config)
 {
+	const struct dma_mcux_lpc_config *dev_config = dev->config;
 	dma_handle_t *p_handle;
 	uint32_t xferConfig = 0U;
 	struct call_back *data;
-	struct dma_mcux_lpc_dma_data *dma_data = DEV_DATA(dev);
+	struct dma_mcux_lpc_dma_data *dma_data = dev->data;
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t virtual_channel;
 	uint32_t total_dma_channels;
@@ -107,7 +106,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	}
 
 	/* Check if have a free slot to store DMA channel data */
-	if (dma_data->num_channels_used > DEV_CFG(dev)->num_of_channels) {
+	if (dma_data->num_channels_used > dev_config->num_of_channels) {
 		LOG_ERR("out of DMA channel %d", channel);
 		return -EINVAL;
 	}
@@ -347,7 +346,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 {
-	uint32_t virtual_channel = DEV_DATA(dev)->channel_index[channel];
+	struct dma_mcux_lpc_dma_data *data = dev->data;
+	uint32_t virtual_channel = data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	LOG_DBG("START TRANSFER");
@@ -359,7 +359,8 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 {
-	uint32_t virtual_channel = DEV_DATA(dev)->channel_index[channel];
+	struct dma_mcux_lpc_dma_data *data = dev->data;
+	uint32_t virtual_channel = data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	if (!data->busy) {
@@ -378,7 +379,8 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 			       uint32_t src, uint32_t dst, size_t size)
 {
-	uint32_t virtual_channel = DEV_DATA(dev)->channel_index[channel];
+	struct dma_mcux_lpc_dma_data *data = dev->data;
+	uint32_t virtual_channel = data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 	uint8_t src_inc, dst_inc;
 	uint32_t xferConfig = 0U;
@@ -453,7 +455,8 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 				   struct dma_status *status)
 {
-	uint32_t virtual_channel = DEV_DATA(dev)->channel_index[channel];
+	struct dma_mcux_lpc_dma_data *data = dev->data;
+	uint32_t virtual_channel = data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	if (data->busy) {
@@ -472,13 +475,14 @@ static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 
 static int dma_mcux_lpc_init(const struct device *dev)
 {
-	struct dma_mcux_lpc_dma_data *data = DEV_DATA(dev);
+	const struct dma_mcux_lpc_config *config = dev->config;
+	struct dma_mcux_lpc_dma_data *data = dev->data;
 	int size_channel_data;
 	int total_dma_channels;
 
 	/* Array to store DMA channel data */
 	size_channel_data =
-		sizeof(struct call_back) * DEV_CFG(dev)->num_of_channels;
+		sizeof(struct call_back) * config->num_of_channels;
 	data->data_cb = k_malloc(size_channel_data);
 	if (!data->data_cb) {
 		LOG_ERR("HEAP_MEM_POOL_SIZE is too small");
