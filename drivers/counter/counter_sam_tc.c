@@ -70,10 +70,6 @@ struct counter_sam_dev_data {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct counter_sam_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct counter_sam_dev_data *const)(dev)->data)
 
 static const uint32_t sam_tc_input_freq_table[] = {
 #if defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
@@ -100,7 +96,7 @@ static const uint32_t sam_tc_input_freq_table[] = {
 
 static int counter_sam_tc_start(const struct device *dev)
 {
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 
@@ -111,7 +107,7 @@ static int counter_sam_tc_start(const struct device *dev)
 
 static int counter_sam_tc_stop(const struct device *dev)
 {
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 
@@ -122,7 +118,7 @@ static int counter_sam_tc_stop(const struct device *dev)
 
 static int counter_sam_tc_get_value(const struct device *dev, uint32_t *ticks)
 {
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 
@@ -134,8 +130,8 @@ static int counter_sam_tc_get_value(const struct device *dev, uint32_t *ticks)
 static int counter_sam_tc_set_alarm(const struct device *dev, uint8_t chan_id,
 				    const struct counter_alarm_cfg *alarm_cfg)
 {
-	struct counter_sam_dev_data *data = DEV_DATA(dev);
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	struct counter_sam_dev_data *data = dev->data;
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 	uint32_t top_value;
@@ -196,8 +192,8 @@ static int counter_sam_tc_set_alarm(const struct device *dev, uint8_t chan_id,
 
 static int counter_sam_tc_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
-	struct counter_sam_dev_data *data = DEV_DATA(dev);
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	struct counter_sam_dev_data *data = dev->data;
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 
@@ -220,8 +216,8 @@ static int counter_sam_tc_cancel_alarm(const struct device *dev, uint8_t chan_id
 static int counter_sam_tc_set_top_value(const struct device *dev,
 					const struct counter_top_cfg *top_cfg)
 {
-	struct counter_sam_dev_data *data = DEV_DATA(dev);
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	struct counter_sam_dev_data *data = dev->data;
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 	int ret = 0;
@@ -259,7 +255,7 @@ static int counter_sam_tc_set_top_value(const struct device *dev,
 
 static uint32_t counter_sam_tc_get_top_value(const struct device *dev)
 {
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 
@@ -268,7 +264,7 @@ static uint32_t counter_sam_tc_get_top_value(const struct device *dev)
 
 static uint32_t counter_sam_tc_get_pending_int(const struct device *dev)
 {
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 
@@ -277,8 +273,8 @@ static uint32_t counter_sam_tc_get_pending_int(const struct device *dev)
 
 static void counter_sam_tc_isr(const struct device *dev)
 {
-	struct counter_sam_dev_data *data = DEV_DATA(dev);
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	struct counter_sam_dev_data *data = dev->data;
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 	uint32_t status;
@@ -314,7 +310,7 @@ static void counter_sam_tc_isr(const struct device *dev)
 
 static int counter_sam_initialize(const struct device *dev)
 {
-	const struct counter_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct counter_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *const tc = dev_cfg->regs;
 	TcChannel *tc_ch = &tc->TcChannel[dev_cfg->tc_chan_num];
 
