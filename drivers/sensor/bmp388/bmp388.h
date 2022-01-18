@@ -187,9 +187,6 @@ struct bmp388_data {
 #endif /* CONFIG_BMP388_TRIGGER */
 };
 
-#define DEV_DATA(dev) ((struct bmp388_data *)dev->data)
-#define DEV_CFG(dev)  ((const struct bmp388_config *)dev->config)
-
 int bmp388_trigger_mode_init(const struct device *dev);
 int bmp388_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
