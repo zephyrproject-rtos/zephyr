@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 STMicroelectronics
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -446,4 +447,60 @@ void flash_stm32_page_layout(const struct device *dev,
 	}
 
 	*layout_size = stm32_flash_layout_size;
+}
+
+#define BANK_SIZE (FLASH_SIZE / 2)
+
+int flash_stm32_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	if (offset < 0 || offset >= FLASH_SIZE) {
+		return -EINVAL;
+	}
+
+	if (((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) &&
+			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
+		/* For stm32l552xx with 256 KB flash */
+		if (offset > BANK_SIZE && offset < BANK2_OFFSET) {
+			/* Dummy page corresponding to discontinuity between
+			 * bank 1/2
+			 */
+			fpi->offset = offset & (BANK2_OFFSET - BANK_SIZE);
+			fpi->size = BANK2_OFFSET - BANK_SIZE;
+
+			return -ENOENT;
+		}
+
+		/* Bank1 and Bank2 */
+		fpi->offset = offset & (FLASH_PAGE_SIZE);
+		fpi->size = FLASH_PAGE_SIZE;
+
+	} else {
+		/* For stm32l562xx & stm32l552xx with 512 KB flash */
+		fpi->offset = offset & (FLASH_SIZE / FLASH_PAGE_SIZE);
+		fpi->size = FLASH_PAGE_SIZE;
+	}
+
+	return 0;
+}
+
+ssize_t flash_stm32_get_page_count(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	if (((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) &&
+			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
+		/* All pages + gap */
+		return (FLASH_SIZE / FLASH_PAGE_SIZE + 1);
+	}
+
+	return (FLASH_SIZE / FLASH_PAGE_SIZE);
+}
+
+ssize_t flash_stm32_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return FLASH_SIZE;
 }
