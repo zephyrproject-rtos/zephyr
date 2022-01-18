@@ -51,7 +51,7 @@ void config_enable_default_clocks(void)
 	/* Enable the power interface clock */
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
 
-	if (IS_ENABLED(STM32_LSE_CLOCK)) {
+	if (IS_ENABLED(STM32_LSE_ENABLED)) {
 		if (!LL_PWR_IsEnabledBkUpAccess()) {
 			/* Enable write access to Backup domain */
 			LL_PWR_EnableBkUpAccess();
@@ -257,7 +257,7 @@ static void set_up_clk_msis(void)
 	LL_RCC_MSIS_SetRange(STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
 
 	if (IS_ENABLED(STM32_MSIS_PLL_MODE)) {
-		BUILD_ASSERT(STM32_LSE_CLOCK,
+		BUILD_ASSERT(STM32_LSE_ENABLED,
 			"MSI Hardware auto calibration needs LSE clock activation");
 		/* Enable MSI hardware auto calibration */
 		LL_RCC_MSI_EnablePLLMode();
