@@ -154,6 +154,10 @@ static void iso_send(struct bt_iso_chan *chan)
 	struct net_buf *buf;
 	struct iso_chan_work *chan_work;
 
+	if (chan->qos->tx == NULL || chan->qos->tx->sdu == 0) {
+		return;
+	}
+
 	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
