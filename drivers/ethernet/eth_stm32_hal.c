@@ -1196,18 +1196,29 @@ static int ptp_clock_stm32_get(const struct device *dev,
 	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int key;
+	uint32_t second_2;
 
 	key = irq_lock();
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	tm->second = heth->Instance->MACSTSR;
 	tm->nanosecond = heth->Instance->MACSTNR;
+	second_2 = heth->Instance->MACSTSR;
 #else
 	tm->second = heth->Instance->PTPTSHR;
 	tm->nanosecond = heth->Instance->PTPTSLR;
+	second_2 = heth->Instance->PTPTSHR;
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	irq_unlock(key);
+
+	if (tm->second != second_2 && tm->nanosecond < NSEC_PER_SEC / 2) {
+		/* Second rollover has happened during first measurement: second register
+		 * was read before second boundary and nanosecond register was read after.
+		 * We will use second_2 as a new second value.
+		 */
+		tm->second = second_2;
+	}
 
 	return 0;
 }
