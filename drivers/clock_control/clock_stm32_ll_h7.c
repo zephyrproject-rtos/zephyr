@@ -160,6 +160,17 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
+static inline uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
+					    int pllm_div,
+					    int plln_mul,
+					    int pllout_div)
+{
+	__ASSERT_NO_MSG(pllm_div && pllout_div);
+
+	return (pllsrc_freq * plln_mul) /
+		(pllm_div * pllout_div);
+}
+
 static inline uint32_t get_pllsrc_frequency(void)
 {
 	switch (LL_RCC_PLL_GetSource()) {
@@ -178,30 +189,11 @@ static inline uint32_t get_pllsrc_frequency(void)
 static uint32_t get_hclk_frequency(void)
 {
 	uint32_t sysclk = 0;
-	uint32_t hpre = 0;
-	uint32_t hsidiv = 0;
-
-	/* Get the current HSI divider */
-	switch (LL_RCC_HSI_GetDivider()) {
-	case LL_RCC_HSI_DIV2:
-		hsidiv = 2;
-		break;
-	case LL_RCC_HSI_DIV4:
-		hsidiv = 4;
-		break;
-	case LL_RCC_HSI_DIV8:
-		hsidiv = 8;
-		break;
-	case LL_RCC_HSI_DIV1:
-	default:
-		hsidiv = 1;
-		break;
-	}
 
 	/* Get the current system clock source */
 	switch (LL_RCC_GetSysClkSource()) {
 	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
-		sysclk = STM32_HSI_FREQ/hsidiv;
+		sysclk = STM32_HSI_FREQ/STM32_HSI_DIVISOR;
 		break;
 	case LL_RCC_SYS_CLKSOURCE_STATUS_CSI:
 		sysclk = STM32_CSI_FREQ;
@@ -209,47 +201,17 @@ static uint32_t get_hclk_frequency(void)
 	case LL_RCC_SYS_CLKSOURCE_STATUS_HSE:
 		sysclk = STM32_HSE_FREQ;
 		break;
+#if defined(STM32_PLL_ENABLED)
 	case LL_RCC_SYS_CLKSOURCE_STATUS_PLL1:
-		sysclk = PLLP_FREQ(get_pllsrc_frequency(),
-				   LL_RCC_PLL1_GetM(),
-				   LL_RCC_PLL1_GetN(),
-				   LL_RCC_PLL1_GetP());
+		sysclk = get_pllout_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_P_DIVISOR);
 		break;
+#endif /* STM32_PLL_ENABLED */
 	}
-	/* AHB/HCLK clock is sysclk/HPRE AHB prescaler*/
-	switch (LL_RCC_GetAHBPrescaler()) {
-	case LL_RCC_AHB_DIV_1:
-		hpre = 1;
-		break;
-	case LL_RCC_AHB_DIV_2:
-		hpre = 2;
-		break;
-	case LL_RCC_AHB_DIV_4:
-		hpre = 4;
-		break;
-	case LL_RCC_AHB_DIV_8:
-		hpre = 8;
-		break;
-	case LL_RCC_AHB_DIV_16:
-		hpre = 16;
-		break;
-	case LL_RCC_AHB_DIV_64:
-		hpre = 64;
-		break;
-	case LL_RCC_AHB_DIV_128:
-		hpre = 128;
-		break;
-	case LL_RCC_AHB_DIV_256:
-		hpre = 256;
-		break;
-	case LL_RCC_AHB_DIV_512:
-		hpre = 512;
-		break;
-	default:
-		hpre = 1;
-		break;
-	}
-	return get_bus_clock(sysclk, hpre);
+
+	return get_bus_clock(sysclk, STM32_HPRE);
 }
 
 static int32_t prepare_regulator_voltage_scale(void)
