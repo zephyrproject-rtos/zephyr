@@ -506,7 +506,7 @@ err:
 static int poll_on_write_sync(const struct device *dev,
 			      struct dma_iproc_pax_ring_data *ring)
 {
-	struct dma_iproc_pax_cfg *cfg = dev->config;
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
 	const struct device *pcidev;
 	struct dma_iproc_pax_write_sync_data sync_rd, *recv, *sent;
 	uint64_t pci_addr;
@@ -676,7 +676,7 @@ static void rm_isr(void *arg)
 
 static int dma_iproc_pax_init(const struct device *dev)
 {
-	struct dma_iproc_pax_cfg *cfg = dev->config;
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
 	struct dma_iproc_pax_data *pd = dev->data;
 	int r;
 	uintptr_t mem_aligned;
@@ -920,7 +920,7 @@ static int dma_iproc_pax_process_dma_blocks(const struct device *dev,
 					    struct dma_config *config)
 {
 	struct dma_iproc_pax_data *pd = dev->data;
-	struct dma_iproc_pax_cfg *cfg = dev->config;
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
 	int ret = 0;
 	struct dma_iproc_pax_ring_data *ring;
 	uint32_t toggle_bit, non_hdr_bd_count = 0;
