@@ -486,6 +486,12 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 
 				conn->llcp.remote.reject_opcode = pdu->llctrl.opcode;
 				rr_act_reject(conn);
+			} else if (!with_instant && central && incompat == INCOMPAT_RESOLVABLE) {
+				/* No collision with procedure without instant
+				 * => Run procedure
+				 */
+				rr_act_run(conn);
+				rr_set_state(conn, RR_STATE_ACTIVE);
 			} else if (with_instant && incompat == INCOMPAT_RESERVED) {
 				/* Protocol violation.
 				 * => Disconnect
