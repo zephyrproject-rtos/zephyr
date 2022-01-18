@@ -21,10 +21,8 @@
 #include <drivers/uart.h>
 #include <uart_imx.h>
 
-#define DEV_CFG(dev) \
-	((const struct imx_uart_config *const)(dev)->config)
 #define UART_STRUCT(dev) \
-	((UART_Type *)(DEV_CFG(dev))->base)
+	((UART_Type *)((const struct imx_uart_config *const)(dev)->config)->base)
 
 struct imx_uart_config {
 	UART_Type *base;
