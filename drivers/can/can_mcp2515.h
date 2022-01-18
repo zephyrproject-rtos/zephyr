@@ -14,10 +14,6 @@
 #define MCP2515_TX_CNT                   3
 #define MCP2515_FRAME_LEN               13
 
-#define DEV_CFG(dev) \
-	((const struct mcp2515_config *const)(dev)->config)
-#define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->data)
-
 struct mcp2515_tx_cb {
 	struct k_sem sem;
 	can_tx_callback_t cb;

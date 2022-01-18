@@ -57,7 +57,7 @@ void can_stm32fd_set_state_change_callback(const struct device *dev,
 					   can_state_change_callback_t cb,
 					   void *user_data)
 {
-	struct can_stm32fd_data *data = DEV_DATA(dev);
+	struct can_stm32fd_data *data = dev->data;
 
 	data->mcan_data.state_change_cb = cb;
 	data->mcan_data.state_change_cb_data = user_data;
@@ -65,9 +65,10 @@ void can_stm32fd_set_state_change_callback(const struct device *dev,
 
 static int can_stm32fd_init(const struct device *dev)
 {
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
+	const struct can_stm32fd_config *cfg = dev->config;
+	struct can_stm32fd_data *data = dev->data;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
-	struct can_mcan_data *mcan_data = &DEV_DATA(dev)->mcan_data;
+	struct can_mcan_data *mcan_data = &data->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 	int ret;
 
@@ -92,7 +93,7 @@ static int can_stm32fd_init(const struct device *dev)
 enum can_state can_stm32fd_get_state(const struct device *dev,
 				     struct can_bus_err_cnt *err_cnt)
 {
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
+	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
 
 	return can_mcan_get_state(mcan_cfg, err_cnt);
@@ -102,9 +103,10 @@ int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 		     k_timeout_t timeout, can_tx_callback_t callback,
 		     void *user_data)
 {
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
+	const struct can_stm32fd_config *cfg = dev->config;
+	struct can_stm32fd_data *data = dev->data;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
-	struct can_mcan_data *mcan_data = &DEV_DATA(dev)->mcan_data;
+	struct can_mcan_data *mcan_data = &data->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
 	return can_mcan_send(mcan_cfg, mcan_data, msg_ram, frame, timeout,
@@ -114,8 +116,9 @@ int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 int can_stm32fd_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 			      void *user_data, const struct zcan_filter *filter)
 {
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
-	struct can_mcan_data *mcan_data = &DEV_DATA(dev)->mcan_data;
+	const struct can_stm32fd_config *cfg = dev->config;
+	struct can_stm32fd_data *data = dev->data;
+	struct can_mcan_data *mcan_data = &data->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
 	return can_mcan_add_rx_filter(mcan_data, msg_ram, callback, user_data, filter);
@@ -123,8 +126,9 @@ int can_stm32fd_add_rx_filter(const struct device *dev, can_rx_callback_t callba
 
 void can_stm32fd_remove_rx_filter(const struct device *dev, int filter_id)
 {
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
-	struct can_mcan_data *mcan_data = &DEV_DATA(dev)->mcan_data;
+	const struct can_stm32fd_config *cfg = dev->config;
+	struct can_stm32fd_data *data = dev->data;
+	struct can_mcan_data *mcan_data = &data->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
 	can_mcan_remove_rx_filter(mcan_data, msg_ram, filter_id);
@@ -132,7 +136,7 @@ void can_stm32fd_remove_rx_filter(const struct device *dev, int filter_id)
 
 int can_stm32fd_set_mode(const struct device *dev, enum can_mode mode)
 {
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
+	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
 
 	return can_mcan_set_mode(mcan_cfg, mode);
@@ -142,7 +146,7 @@ int can_stm32fd_set_timing(const struct device *dev,
 			   const struct can_timing *timing,
 			   const struct can_timing *timing_data)
 {
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
+	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
 
 	return can_mcan_set_timing(mcan_cfg, timing, timing_data);
@@ -151,9 +155,9 @@ int can_stm32fd_set_timing(const struct device *dev,
 void can_stm32fd_line_0_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
+	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
-	struct can_stm32fd_data *data = DEV_DATA(dev);
+	struct can_stm32fd_data *data = dev->data;
 	struct can_mcan_data *mcan_data = &data->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
@@ -163,9 +167,10 @@ void can_stm32fd_line_0_isr(void *arg)
 void can_stm32fd_line_1_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct can_stm32fd_config *cfg = DEV_CFG(dev);
+	const struct can_stm32fd_config *cfg = dev->config;
+	struct can_stm32fd_data *data = dev->data;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
-	struct can_mcan_data *mcan_data = &DEV_DATA(dev)->mcan_data;
+	struct can_mcan_data *mcan_data = &data->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
 	can_mcan_line_1_isr(mcan_cfg, msg_ram, mcan_data);
