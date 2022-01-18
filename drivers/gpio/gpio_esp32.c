@@ -33,8 +33,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define DEV_CFG(_dev) ((struct gpio_esp32_config *const)(_dev)->config)
-
 #ifdef CONFIG_SOC_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */
 #define out out.data
@@ -91,7 +89,7 @@ static int gpio_esp32_config(const struct device *dev,
 			     gpio_pin_t pin,
 			     gpio_flags_t flags)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
+	struct gpio_esp32_config *const cfg = dev->config;
 	struct gpio_esp32_data *data = dev->data;
 	uint32_t io_pin = (uint32_t) pin;
 	uint32_t key;
@@ -208,7 +206,7 @@ end:
 
 static int gpio_esp32_port_get_raw(const struct device *port, uint32_t *value)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(port);
+	struct gpio_esp32_config *const cfg = port->config;
 
 	if (cfg->gpio_port == 0) {
 		*value = cfg->gpio_dev->in;
@@ -224,7 +222,7 @@ static int gpio_esp32_port_get_raw(const struct device *port, uint32_t *value)
 static int gpio_esp32_port_set_masked_raw(const struct device *port,
 					  uint32_t mask, uint32_t value)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(port);
+	struct gpio_esp32_config *const cfg = port->config;
 
 	uint32_t key = irq_lock();
 
@@ -244,7 +242,7 @@ static int gpio_esp32_port_set_masked_raw(const struct device *port,
 static int gpio_esp32_port_set_bits_raw(const struct device *port,
 					uint32_t pins)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(port);
+	struct gpio_esp32_config *const cfg = port->config;
 
 	if (cfg->gpio_port == 0) {
 		cfg->gpio_dev->out_w1ts = pins;
@@ -260,7 +258,7 @@ static int gpio_esp32_port_set_bits_raw(const struct device *port,
 static int gpio_esp32_port_clear_bits_raw(const struct device *port,
 					  uint32_t pins)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(port);
+	struct gpio_esp32_config *const cfg = port->config;
 
 	if (cfg->gpio_port == 0) {
 		cfg->gpio_dev->out_w1tc = pins;
@@ -276,7 +274,7 @@ static int gpio_esp32_port_clear_bits_raw(const struct device *port,
 static int gpio_esp32_port_toggle_bits(const struct device *port,
 				       uint32_t pins)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(port);
+	struct gpio_esp32_config *const cfg = port->config;
 	uint32_t key = irq_lock();
 
 	if (cfg->gpio_port == 0) {
@@ -330,7 +328,7 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 					      enum gpio_int_mode mode,
 					      enum gpio_int_trig trig)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(port);
+	struct gpio_esp32_config *const cfg = port->config;
 	uint32_t io_pin = (uint32_t) pin;
 	int intr_trig_mode = convert_int_type(mode, trig);
 	uint32_t key;
@@ -358,7 +356,7 @@ static int gpio_esp32_manage_callback(const struct device *dev,
 
 static uint32_t gpio_esp32_get_pending_int(const struct device *dev)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
+	struct gpio_esp32_config *const cfg = dev->config;
 	uint32_t irq_status;
 	uint32_t const core_id = CPU_ID();
 
@@ -373,7 +371,7 @@ static uint32_t gpio_esp32_get_pending_int(const struct device *dev)
 
 static void IRAM_ATTR gpio_esp32_fire_callbacks(const struct device *dev)
 {
-	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
+	struct gpio_esp32_config *const cfg = dev->config;
 	struct gpio_esp32_data *data = dev->data;
 	uint32_t irq_status;
 	uint32_t const core_id = CPU_ID();
