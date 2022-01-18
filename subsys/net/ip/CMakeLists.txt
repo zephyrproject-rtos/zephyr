@@ -1,10 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
+#add_subdirectory(multicast)
+
 zephyr_library()
 zephyr_library_include_directories(.)
 zephyr_library_compile_definitions_ifdef(
   CONFIG_NEWLIB_LIBC __LINUX_ERRNO_EXTENSIONS__
   )
+
+zephyr_include_directories(.)
 
 zephyr_library_sources(
   net_core.c

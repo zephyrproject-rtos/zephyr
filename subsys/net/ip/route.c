@@ -29,6 +29,1377 @@ LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 #include "nbr.h"
 #include "route.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//MPL Routing
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if defined(CONFIG_NET_MCAST_MPL)
+
+#include <kernel.h>
+#include <limits.h>
+#include <zephyr/types.h>
+#include <sys/slist.h>
+#include <net/trickle.h>
+#include <sys/sflist.h>
+#include "udp_internal.h"
+
+#define MPL_SEED_ID_UNKNOWN 0xFF
+#define PKT_WAIT_TIME K_SECONDS(1)
+
+#if MPL_SEED_ID_TYPE == 0
+#define HBHO_TOTAL_LEN HBHO_BASE_LEN + HBHO_S0_LEN
+#elif MPL_SEED_ID_TYPE == 1
+#define HBHO_TOTAL_LEN HBHO_BASE_LEN + HBHO_S1_LEN
+#elif MPL_SEED_ID_TYPE == 2
+#define HBHO_TOTAL_LEN HBHO_BASE_LEN + HBHO_S2_LEN
+#elif MPL_SEED_ID_TYPE == 3
+#define HBHO_TOTAL_LEN HBHO_BASE_LEN + HBHO_S3_LEN
+#endif
+
+typedef struct seed_id_s {
+  uint8_t s;
+  uint8_t id[16];
+} seed_id_t;
+
+struct mpl_seed {
+  seed_id_t seed_id;
+  uint8_t min_seqno;
+  uint8_t lifetime;
+  uint8_t count;
+  sys_slist_t msg_list;
+  struct mpl_domain *domain;
+};
+
+struct mpl_msg {
+  struct mpl_msg *next;
+  struct mpl_seed *seed;
+  struct net_trickle trickle;
+  struct net_if iface;
+  struct in6_addr src;
+  uint16_t size;
+  uint8_t seq;
+  uint8_t exp;
+  uint8_t data[CONFIG_NET_BUF_DATA_SIZE];
+};
+
+struct mpl_domain {
+  struct in6_addr data_addr;
+  struct in6_addr ctrl_addr;
+  struct net_trickle trickle;
+  uint8_t exp;
+  struct net_if iface;
+};
+
+struct mpl_hbho {
+  uint8_t type;
+  uint8_t len;
+  uint8_t flags;
+  uint8_t seq;
+};
+
+struct mpl_hbho_s1 {
+  uint8_t type;
+  uint8_t len;
+  uint8_t flags;
+  uint8_t seq;
+  uint16_t seed_id;
+};
+struct mpl_hbho_s2 {
+  uint8_t type;
+  uint8_t len;
+  uint8_t flags;
+  uint8_t seq;
+  uint64_t seed_id;
+};
+struct mpl_hbho_s3 {
+  uint8_t type;
+  uint8_t len;
+  uint8_t flags;
+  uint8_t seq;
+  uint8_t seed_id[16];
+};
+
+struct seed_info {
+  uint8_t min_seqno;
+  uint8_t bm_len_S; 
+  uint8_t seed_id[16];
+};
+struct seed_info_s0 {
+  uint8_t min_seqno;
+  uint8_t bm_len_S; 
+};
+struct seed_info_s1 {
+  uint8_t min_seqno;
+  uint8_t bm_len_S; 
+  uint16_t seed_id;
+};
+struct seed_info_s2 {
+  uint8_t min_seqno;
+  uint8_t bm_len_S; 
+  uint64_t seed_id;
+};
+struct seed_info_s3 {
+  uint8_t min_seqno;
+  uint8_t bm_len_S; 
+  uint8_t seed_id[16];
+};
+
+static struct mpl_msg buffered_message_set[CONFIG_NET_MCAST_MPL_BUFFERED_MESSAGE_SET_SIZE];
+static struct mpl_seed seed_set[CONFIG_NET_MCAST_MPL_SEED_SET_SIZE];
+static struct mpl_domain domain_set[CONFIG_NET_MCAST_MPL_DOMAIN_SET_SIZE];
+
+static bool init_done = false;
+static uint16_t last_seq;
+
+//static struct ctimer lifetime_timer;
+
+#define MPL_SEED_ID_UNKNOWN 0xFF
+/* Define a way of logging the seed id */
+
+#define MSG_SET_IS_USED(h) ((h)->seed != NULL)
+#define MSG_SET_CLEAR_USED(h) ((h)->seed = NULL)
+#define SEED_SET_IS_USED(h) (((h)->domain != NULL))
+#define SEED_SET_CLEAR_USED(h) ((h)->domain = NULL)
+#define DOMAIN_SET_IS_USED(h) (net_ipv6_is_addr_mcast(&(h)->data_addr))
+#define DOMAIN_SET_CLEAR_USED(h) (memset(&(h)->data_addr, 0, sizeof(struct in6_addr)))
+#define SEED_ID_S1(dst, src) { (*(uint16_t *)&(dst)->id) = (src); (dst)->s = 1; }
+#define SEED_ID_S2(dst, src) { (*(uint64_t *)&(dst)->id) = (src); (dst)->s = 2; }
+#define SEED_ID_S3(dst, l, h) { (*(uint64_t *)&(dst)->id) = (l); (*(uint64_t *)&(dst)->id[8]) = (h); (dst)->s = 3; }
+#define HBH_GET_S(h) (((h)->flags & 0xC0) >> 6)
+#define HBH_SET_S(h, s) ((h)->flags |= ((s & 0x03) << 6))
+#define HBH_CLR_S(h) ((h)->flags &= ~0xC0)
+#define HBH_GET_M(h) (((h)->flags & 0x20) == 0x20)
+#define HBH_SET_M(h) ((h)->flags |= 0x20)
+#define HBH_GET_V(h) (((h)->flags & 0x10) == 0x10)
+#define HBH_CLR_V(h) ((h)->flags &= ~0x10)
+#define SEQ_VAL_IS_EQ(i1, i2) ((i1) == (i2))
+#define SEQ_VAL_IS_LT(i1, i2) \
+  ( \
+    ((i1) != (i2)) && \
+    ((((i1) < (i2)) && ((int16_t)((i2) - (i1)) < 0x100)) || \
+     (((i1) > (i2)) && ((int16_t)((i1) - (i2)) > 0x100))) \
+  )
+#define SEQ_VAL_IS_GT(i1, i2) \
+  ( \
+    ((i1) != (i2)) && \
+    ((((i1) < (i2)) && ((int16_t)((i2) - (i1)) > 0x100)) || \
+     (((i1) > (i2)) && ((int16_t)((i1) - (i2)) < 0x100))) \
+  )
+#define SEQ_VAL_ADD(s, n) (((s) + (n)) % 0x100)
+#define seed_id_cmp(a, b) (memcmp((a)->id, (b)->id, sizeof(uint8_t) * 16) == 0)
+#define seed_id_cpy(a, b) (memcpy((a), (b), sizeof(seed_id_t)))
+#define seed_id_clr(a) (memset((a), 0, sizeof(seed_id_t)))
+#define SEED_INFO_GET_S(h) ((h)->bm_len_S & 0x03)
+#define SEED_INFO_CLR_S(h) ((h)->bm_len_S &= ~0x03)
+#define SEED_INFO_SET_S(h, s) ((h)->bm_len_S |= (s & 0x03))
+#define SEED_INFO_GET_LEN(h) (((h)->bm_len_S >> 2) & 0x3F)
+#define SEED_INFO_CLR_LEN(h) ((h)->bm_len_S &= 0x03)
+#define SEED_INFO_SET_LEN(h, l) ((h)->bm_len_S |= (l << 2))
+
+static struct mpl_msg* buffer_allocate(void)
+{
+	struct mpl_msg *msg_ptr; 
+
+	for(msg_ptr = &buffered_message_set[CONFIG_NET_MCAST_MPL_BUFFERED_MESSAGE_SET_SIZE-1]; 
+		msg_ptr >= buffered_message_set; 
+		msg_ptr--) {
+		if(!MSG_SET_IS_USED(msg_ptr)) {
+			memset(msg_ptr, 0, sizeof(struct mpl_msg));
+			return msg_ptr;
+		}
+	}
+	return NULL;
+}
+
+static void buffer_free(struct mpl_msg *msg)
+{
+	if(net_trickle_is_running(&msg->trickle)) {
+		net_trickle_stop(&msg->trickle);
+	}
+	MSG_SET_CLEAR_USED(msg);
+}
+
+static struct mpl_msg* buffer_reclaim(void)
+{
+	struct mpl_msg *reclaim_msg_ptr;
+	struct mpl_seed *seed_ptr;
+	struct mpl_seed *largest_seed_ptr;
+  
+	largest_seed_ptr = NULL;
+	reclaim_msg_ptr = NULL;
+	for(seed_ptr = &seed_set[CONFIG_NET_MCAST_MPL_SEED_SET_SIZE]; seed_ptr >= seed_set; seed_ptr--) {
+		if(SEED_SET_IS_USED(seed_ptr) && (largest_seed_ptr == NULL || seed_ptr->count > largest_seed_ptr->count)) {
+			largest_seed_ptr = seed_ptr;
+		}
+	}
+
+	if(largest_seed_ptr != NULL) {
+		reclaim_msg_ptr = (struct mpl_msg*)sys_slist_get(&largest_seed_ptr->msg_list);
+		if(sys_slist_peek_next((sys_snode_t *)reclaim_msg_ptr) == NULL){
+			largest_seed_ptr->min_seqno = reclaim_msg_ptr->seq;
+		}else{
+		 	largest_seed_ptr->min_seqno = ((struct mpl_msg *)sys_slist_peek_next((sys_snode_t *)reclaim_msg_ptr))->seq;
+		}
+		largest_seed_ptr->count--;
+		net_trickle_stop(&reclaim_msg_ptr->trickle);
+		reclaim_msg_ptr->seed->domain->exp = 0;
+		memset(reclaim_msg_ptr, 0, sizeof(struct mpl_msg));
+	}
+
+	return reclaim_msg_ptr;
+}
+
+static void mpl_init()
+{
+	memset(domain_set, 0, sizeof(struct mpl_domain) * CONFIG_NET_MCAST_MPL_DOMAIN_SET_SIZE);
+	memset(seed_set, 0, sizeof(struct mpl_seed) * CONFIG_NET_MCAST_MPL_SEED_SET_SIZE);
+	memset(buffered_message_set, 0, sizeof(struct mpl_msg) * CONFIG_NET_MCAST_MPL_BUFFERED_MESSAGE_SET_SIZE);
+
+	init_done = true;
+}
+
+static struct mpl_domain* domain_set_allocate(struct in6_addr *address, struct net_if *iface)
+{
+	struct mpl_domain *domain_ptr;
+	struct in6_addr data_addr;
+	struct in6_addr ctrl_addr;
+	
+	struct net_if_mcast_addr *maddr;
+
+	net_ipaddr_copy(&data_addr, address);
+	net_ipaddr_copy(&ctrl_addr, address);
+
+	if(net_ipv6_is_addr_mcast_scope(address, 2)) {
+		do {
+			data_addr.s6_addr[1]++;
+
+			if(net_if_ipv6_maddr_lookup(&data_addr, &iface)) {
+				break;
+			}
+		} while(data_addr.s6_addr[1] <= 5);
+
+		if(data_addr.s6_addr[1] > 5) {
+			NET_ERR("Failed to find MPL domain data address in table\n");
+			return NULL;
+		}
+	} else {
+		ctrl_addr.s6_addr[1] = 0x02;
+	}
+
+	for(domain_ptr = &domain_set[CONFIG_NET_MCAST_MPL_DOMAIN_SET_SIZE - 1]; domain_ptr >= domain_set; domain_ptr--) {
+		if(!DOMAIN_SET_IS_USED(domain_ptr)) {
+
+			maddr = net_if_ipv6_maddr_add(iface, &ctrl_addr);
+			if (!maddr) {
+				return NULL;
+			}
+			
+			net_if_ipv6_maddr_join(maddr);
+
+			net_if_mcast_monitor(iface, (struct net_addr *) &ctrl_addr, true);
+
+			memset(domain_ptr, 0, sizeof(struct mpl_domain));
+			memcpy(&domain_ptr->data_addr, &data_addr, sizeof(struct in6_addr));
+			memcpy(&domain_ptr->ctrl_addr, &ctrl_addr, sizeof(struct in6_addr));
+			memcpy(&domain_ptr->iface, iface, sizeof(struct net_if));
+
+			if(net_trickle_create(&domain_ptr->trickle,
+			               CONFIG_NET_MCAST_MPL_CONTROL_MESSAGE_IMIN,
+			               CONFIG_NET_MCAST_MPL_CONTROL_MESSAGE_IMAX,
+			               CONFIG_NET_MCAST_MPL_CONTROL_MESSAGE_K)) {
+				LOG_ERR("Unable to configure trickle timer for domain. Dropping,...\n");
+				DOMAIN_SET_CLEAR_USED(domain_ptr);
+				return NULL;
+			}
+
+			return domain_ptr;
+		}
+	}
+	return NULL;
+}
+
+static struct mpl_seed* seed_set_lookup(struct in6_addr *seed_id, struct mpl_domain *domain)
+{
+	struct mpl_seed *seed_ptr;
+
+	for(seed_ptr = &seed_set[CONFIG_NET_MCAST_MPL_SEED_SET_SIZE - 1]; seed_ptr >= seed_set; seed_ptr--) {
+		if(SEED_SET_IS_USED(seed_ptr) && net_ipv6_addr_cmp((struct in6_addr *)&seed_ptr->seed_id.id, seed_id) && seed_ptr->domain == domain) {
+			return seed_ptr;
+		}
+	}
+	return NULL;
+}
+
+static struct mpl_seed* seed_set_allocate(void)
+{
+	struct mpl_seed *seed_ptr;
+
+	for(seed_ptr = &seed_set[CONFIG_NET_MCAST_MPL_SEED_SET_SIZE - 1]; seed_ptr >= seed_set; seed_ptr--) {
+		if(!SEED_SET_IS_USED(seed_ptr)) {
+			seed_ptr->count = 0;
+
+			sys_slist_init(&seed_ptr->msg_list);
+
+			return seed_ptr;
+		}
+	}
+	return NULL;
+}
+
+/*
+static void seed_set_free(struct mpl_seed *s)
+{
+	while((msg_ptr = (struct mpl_msg*)sys_slist_get(&s->msg_list)) != NULL) {
+		buffer_free(msg_ptr);
+	}
+	SEED_SET_CLEAR_USED(s);
+}*/
+
+static struct mpl_domain* domain_set_lookup(struct in6_addr *domain)
+{
+	struct mpl_domain *domain_ptr;
+
+	for(domain_ptr = &domain_set[CONFIG_NET_MCAST_MPL_DOMAIN_SET_SIZE - 1]; domain_ptr >= domain_set; domain_ptr--) {
+		if(DOMAIN_SET_IS_USED(domain_ptr)) {
+			if(net_ipv6_addr_cmp(domain, &domain_ptr->data_addr)
+				|| net_ipv6_addr_cmp(domain, &domain_ptr->ctrl_addr)) {
+				return domain_ptr;
+			}
+		}
+	}
+	return NULL;
+}
+
+/*
+static void domain_set_free(struct mpl_domain *domain, struct net_if *iface)
+{
+	struct net_if_mcast_addr *maddr;
+
+	for(seed_ptr = &seed_set[CONFIG_NET_MCAST_MPL_SEED_SET_SIZE]; seed_ptr >= seed_set; seed_ptr--) {
+		if(SEED_SET_IS_USED(seed_ptr) && seed_ptr->domain == domain) {
+			seed_set_free(seed_ptr);
+		}
+	}
+
+	maddr = net_if_ipv6_maddr_lookup(&domain->data_addr, &iface);
+	if (maddr != NULL) {
+		net_if_ipv6_maddr_rm(iface, &domain->data_addr);
+		net_if_mcast_monitor(iface, &domain->data_addr, false);
+	}
+	
+	maddr = net_if_ipv6_maddr_lookup(&domain->ctrl_addr, &iface);
+	if (maddr != NULL) {
+		net_if_ipv6_maddr_rm(iface, &domain->ctrl_addr);
+		net_if_mcast_monitor(iface, &domain->ctrl_addr, false);
+	}
+
+	if(net_trickle_is_running(&domain->trickle)) {
+		net_trickle_stop(&domain->trickle);
+	}
+
+	DOMAIN_SET_CLEAR_USED(domain);
+}*/
+
+static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
+					       struct net_ipv6_hdr *hdr,
+					       uint8_t opt_type,
+					       uint16_t length)
+{
+	NET_DBG("Unknown option %d (0x%02x) MSB %d - 0x%02x",
+		opt_type, opt_type, opt_type >> 6, opt_type & 0xc0);
+
+	switch (opt_type & 0xc0) {
+	case 0x00:
+		return false;
+	case 0x40:
+		break;
+	case 0xc0:
+		if (net_ipv6_is_addr_mcast((struct in6_addr *) &hdr->dst)) {
+			break;
+		}
+
+		__fallthrough;
+	case 0x80:
+		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
+				      NET_ICMPV6_PARAM_PROB_OPTION,
+				      (uint32_t)length);
+		break;
+	}
+
+	return true;
+}
+
+static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
+					      struct net_ipv6_hdr *hdr,
+					      uint16_t pkt_len)
+{
+	uint16_t exthdr_len = 0U;
+	uint16_t length = 0U;
+
+	{
+		uint8_t val = 0U;
+
+		if (net_pkt_read_u8(pkt, &val)) {
+			return -ENOBUFS;
+		}
+		exthdr_len = val * 8U + 8;
+	}
+
+	if (exthdr_len > pkt_len) {
+		NET_DBG("Corrupted packet, extension header %d too long "
+			"(max %d bytes)", exthdr_len, pkt_len);
+		return -EINVAL;
+	}
+
+	length += 2U;
+
+	while (length < exthdr_len) {
+		uint8_t opt_type, opt_len;
+
+		/* Each extension option has type and length */
+		if (net_pkt_read_u8(pkt, &opt_type)) {
+			return -ENOBUFS;
+		}
+
+		if (opt_type != NET_IPV6_EXT_HDR_OPT_PAD1) {
+			if (net_pkt_read_u8(pkt, &opt_len)) {
+				return -ENOBUFS;
+			}
+		}
+
+		switch (opt_type) {
+		case NET_IPV6_EXT_HDR_OPT_PAD1:
+			length++;
+			break;
+		case NET_IPV6_EXT_HDR_OPT_PADN:
+			NET_DBG("PADN option");
+			length += opt_len + 2;
+
+			break;
+		default:
+			if (opt_len > (exthdr_len - (1 + 1 + 1 + 1))) {
+				return -EINVAL;
+			}
+
+			if (ipv6_drop_on_unknown_option(pkt, hdr,
+							opt_type, length)) {
+				return -ENOTSUP;
+			}
+
+			if (net_pkt_skip(pkt, opt_len)) {
+				return -ENOBUFS;
+			}
+
+			length += opt_len + 2;
+
+			break;
+		}
+	}
+
+	return exthdr_len;
+}
+
+#ifndef NET_MCAST_MPL_FLOODING
+static void ctrl_message_out(struct mpl_domain *domain)
+{
+	struct mpl_msg *msg_ptr;
+	struct mpl_seed *seed_ptr;
+
+	uint8_t vector[32];
+	uint8_t vec_len;
+	uint8_t vec_size;
+	uint8_t cur_seq;
+
+	uint8_t payload_buffer[CONFIG_NET_BUF_DATA_SIZE];
+	struct net_pkt *pkt = NULL;
+	struct seed_info *info;
+	uint16_t info_cursor = 0;
+
+	struct in6_addr *addr;
+	struct in6_addr src;
+	struct in6_addr dst;
+
+	info = (struct seed_info*)payload_buffer;
+
+	net_ipaddr_copy(&dst, &domain->ctrl_addr);
+	net_ipaddr_copy(&src, net_if_ipv6_select_src_addr(&domain->iface, &domain->data_addr));
+
+	for(seed_ptr = &seed_set[CONFIG_NET_MCAST_MPL_SEED_SET_SIZE-1];
+			seed_ptr >= seed_set; seed_ptr--) {
+		if(SEED_SET_IS_USED(seed_ptr) && seed_ptr->domain == domain) {
+			info->min_seqno = seed_ptr->min_seqno;
+			SEED_INFO_CLR_LEN(info);
+			SEED_INFO_CLR_S(info);
+
+			addr = net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, (struct net_if **)&domain->iface);
+
+			if(addr) {
+				net_ipaddr_copy(&src, addr);
+			} else {
+				net_ipaddr_copy(&src, net_if_ipv6_select_src_addr(&domain->iface, &domain->data_addr));
+
+				if(net_ipv6_is_addr_unspecified(&src)) {
+					NET_ERR("icmp out: Cannot set src ip\n");
+					return;
+				}
+			}
+
+			switch(seed_ptr->seed_id.s) {
+				case 0:
+					if(net_ipv6_addr_cmp((struct in6_addr *)&seed_ptr->seed_id.id, &src)) {
+						SEED_INFO_SET_LEN(info, 0);
+						break;
+					} 
+				case 3:
+					memcpy(info->seed_id, seed_ptr->seed_id.id, 16);
+        	SEED_INFO_SET_S(info, 3);
+					break;
+				case 1:
+					
+					break;
+				case 2:
+					
+					break;
+				default:
+
+					break;
+			}
+
+			memset(vector, 0, sizeof(vector));
+			vec_len = 0;
+			cur_seq = 0;
+
+			for(msg_ptr = (struct mpl_msg *)sys_slist_peek_head(&seed_ptr->msg_list); msg_ptr != NULL; msg_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t *)msg_ptr)) {
+				cur_seq = SEQ_VAL_ADD(seed_ptr->min_seqno, vec_len);
+
+				NET_DBG("msg-seq: %d", msg_ptr->seq);
+
+				if(msg_ptr->seq == SEQ_VAL_ADD(seed_ptr->min_seqno, vec_len)) {
+					vector[vec_len/8] |= 0x01<<(vec_len%8);
+					vec_len++;
+				} else {
+					vec_len += msg_ptr->seq - cur_seq;
+					vector[vec_len/8] |= 0x01<<(vec_len%8);
+					vec_len++;
+				}
+			}
+
+			vec_size = (vec_len - 1) / 8 + 1;
+
+			NET_DBG("vector size: %d", vec_size);
+			NET_DBG("vector: %d,%d", vector[0], vector[1]);
+
+			SEED_INFO_SET_LEN(info, vec_size);
+
+			switch(SEED_INFO_GET_S(info)) {
+			case 0:
+				info_cursor += sizeof(struct seed_info_s0);
+				break;
+			case 1:
+				info_cursor += sizeof(struct seed_info_s1);
+				break;
+			case 2:
+				info_cursor += sizeof(struct seed_info_s2);
+				break;
+			case 3:
+				info_cursor += sizeof(struct seed_info_s3);
+				break;
+			}
+
+			memcpy(&payload_buffer[info_cursor], vector, vec_size);
+			info_cursor += vec_size;
+
+			info = (struct seed_info*)&payload_buffer[info_cursor];
+		}
+	}
+
+	pkt = net_pkt_alloc_with_buffer(&domain->iface, info_cursor,
+				  AF_INET6, IPPROTO_ICMPV6,
+				  PKT_WAIT_TIME);
+
+	if (net_ipv6_create(pkt, &src, &dst)) {
+		NET_DBG("DROP: wrong buffer");
+		return;
+	}
+
+	if(net_icmpv6_create(pkt, ICMPV6_MPL, 0)) {
+		NET_DBG("DROP: cannot setup icmp packet");
+		return;
+	}
+
+	net_pkt_write(pkt, payload_buffer, info_cursor);
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
+
+	net_pkt_cursor_init(pkt);
+
+	NET_DBG("CTRL: send packet");
+
+	if (net_send_data(pkt) < 0) {
+		NET_DBG("net_send_data failed");
+		return;
+	}
+
+#if defined(CONFIG_NET_STATISTICS_MPL)
+	net_stats_update_mpl_ctrl_sent(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+}
+
+static void ctrl_message_expiration(struct net_trickle *trickle, bool tx_allowed, void *ptr)
+{
+	struct mpl_domain *domain_ptr;
+
+	domain_ptr = ((struct mpl_domain *)ptr);
+
+	NET_DBG("CTRL: Trickle expiration");
+
+	if(domain_ptr->exp >= CONFIG_NET_MCAST_MPL_CONTROL_MESSAGE_TIMER_EXPIRATION) {
+		net_trickle_stop(&domain_ptr->trickle);
+		return;
+	}
+	if(tx_allowed) {
+		NET_DBG("CTRL: Trickle send ctrl msg");
+		ctrl_message_out(domain_ptr);
+	}
+
+	domain_ptr->exp++;
+}
+
+static void data_message_expiration(struct net_trickle *trickle, bool tx_allowed, void *ptr)
+{
+	struct mpl_msg *msg_ptr;
+	struct net_pkt *pkt = NULL;
+	uint8_t mpl_flags = 0;
+	msg_ptr = ((struct mpl_msg *)ptr);
+
+	NET_DBG("TRICKLE: Data expired %d, %d, %d", msg_ptr->exp, CONFIG_NET_MCAST_MPL_DATA_MESSAGE_TIMER_EXPIRATION, tx_allowed);
+
+	if(msg_ptr->exp >= CONFIG_NET_MCAST_MPL_DATA_MESSAGE_TIMER_EXPIRATION) {
+		net_trickle_stop(&msg_ptr->trickle);
+		return;
+	}
+
+	if(tx_allowed) {
+		pkt = net_pkt_alloc_with_buffer(&msg_ptr->iface, HBHO_BASE_LEN + msg_ptr->size,
+					  AF_INET6, IPPROTO_IP,
+					  PKT_WAIT_TIME);
+
+		if(pkt == NULL) {
+			NET_DBG("packet is null");
+		}
+		int ret = 0;
+		ret = net_ipv6_create(pkt, &msg_ptr->src, &msg_ptr->seed->domain->data_addr);
+		if (ret) {
+			NET_DBG("DROP: wrong buffer %d", ret);
+			return;
+		}
+
+		net_pkt_set_iface(pkt, &msg_ptr->iface);
+
+		net_pkt_write_u8(pkt, IPPROTO_UDP);
+		net_pkt_write_u8(pkt, 0);
+
+		net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
+		net_pkt_set_ipv6_ext_len(pkt, HBHO_TOTAL_LEN);
+
+		net_pkt_write_u8(pkt, HBHO_OPT_TYPE_MPL);
+		net_pkt_write_u8(pkt, 4);
+
+		if(sys_slist_peek_next((sys_snode_t *)msg_ptr) == NULL) {
+			mpl_flags |= 1<<2;
+		}
+
+		switch(msg_ptr->seed->seed_id.s) {
+			case 0:
+				mpl_flags |= 0x00;
+				break;
+			case 1:
+				//placeholder for S=1 option
+				break;
+			case 2:
+				//placeholder for S=2 option
+				break;
+			case 3:
+				//placeholder for S=3 option
+				break;
+			default:
+				NET_DBG("unknown S option");
+				return;
+		}
+
+		net_pkt_write_u8(pkt, mpl_flags);
+		net_pkt_write_u8(pkt, msg_ptr->seq);
+		net_pkt_write_u8(pkt, 0x01);
+		net_pkt_write_u8(pkt, 0x00);
+
+		net_pkt_write(pkt, msg_ptr->data, 6);
+		net_pkt_write_le16(pkt, 0x00);
+		net_pkt_write(pkt, (msg_ptr->data)+8, (msg_ptr->size)-8);
+
+		net_pkt_cursor_init(pkt);
+		net_ipv6_finalize(pkt, IPPROTO_UDP);
+		
+		if (net_send_data(pkt) < 0) {
+			NET_DBG("net_send_data failed");
+			return;
+		}
+
+		NET_DBG("TRICKLE: data-msg sent");
+
+#if defined(CONFIG_NET_STATISTICS_MPL)
+		net_stats_update_mpl_data_sent(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+	}
+
+	msg_ptr->exp++;
+}
+#endif
+
+int net_route_mpl_accept(struct net_pkt *pkt, uint8_t is_input)
+{
+	struct mpl_domain *domain_ptr;
+	struct mpl_msg *msg_ptr;
+	struct mpl_seed *seed_ptr;
+	struct mpl_hbho *hbh_header_ptr;  
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
+	NET_PKT_DATA_ACCESS_DEFINE(hbho_access, struct mpl_hbho);
+	uint8_t nexthdr = 0;
+	uint8_t seed_len = 0;
+	uint8_t seq_val = 0;
+	static seed_id_t seed_id;
+	struct net_udp_hdr *udp_hdr;
+	int pkt_len = 0;
+	uint8_t test = 0;
+
+#ifdef NET_MCAST_MPL_FLOODING
+	struct net_pkt *pkt = NULL;
+	uint8_t mpl_flags = 0;
+#endif
+
+	static struct mpl_msg *msg_local_ptr;
+	struct net_ipv6_hdr *hdr;
+
+	if(!init_done) {
+		mpl_init();
+	}
+	
+	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+	if (!hdr) {
+		NET_DBG("DROP: no buffer");
+		return -1;
+	}
+	net_pkt_acknowledge_data(pkt, &ipv6_access);
+
+	if(net_ipv6_is_my_maddr(&hdr->src) && is_input == 0x01) {
+		NET_WARN("Received message from ourselves.\n");
+#if defined(CONFIG_NET_STATISTICS_MPL)
+		net_stats_update_mpl_old_msg_recv(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+		return -1;
+	}
+
+	pkt_len = ntohs(hdr->len) + sizeof(struct net_ipv6_hdr);
+
+	nexthdr = hdr->nexthdr;
+
+	if(nexthdr != NET_IPV6_NEXTHDR_HBHO) {
+		NET_ERR("Mcast I/O, bad proto\n");
+		NET_DBG("Next Proto was %u\n", nexthdr);
+
+		if(nexthdr == IPPROTO_ICMPV6) {
+			return 1;
+		}
+
+		return -1;
+	} else {
+		net_pkt_read_u8(pkt, &nexthdr);
+		net_pkt_read_u8(pkt, &test);
+
+		if(nexthdr != IPPROTO_UDP) {
+			NET_ERR("missing UDP header");
+		}
+
+		hbh_header_ptr = (struct mpl_hbho*)net_pkt_get_data(pkt, &hbho_access);
+		if(hbh_header_ptr->type != HBHO_OPT_TYPE_MPL) {
+			LOG_ERR("Mcast I/O, bad HBHO type: %d\n",nexthdr);
+			return -1;
+		}
+	}
+	
+	if(HBH_GET_V(hbh_header_ptr)) {
+		NET_ERR("invalid V bit");
+		return -1;
+	}
+	
+	if(is_input) {
+#if defined(CONFIG_NET_STATISTICS_MPL)
+		net_stats_update_mpl_data_recv(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+	}
+	
+	seed_len = HBH_GET_S(hbh_header_ptr);
+
+	memcpy(&seed_id.id, &hdr->src, 16);
+
+	domain_ptr = domain_set_lookup(&hdr->dst);
+
+	if(!domain_ptr) {
+		domain_ptr = domain_set_allocate(&hdr->dst, net_pkt_iface(pkt));
+
+		if(!domain_ptr) {
+			NET_ERR("Could not add Domain to MPL Domain Set");
+			return -1;
+		}
+#ifndef NET_MCAST_MPL_FLOODING
+		if(net_trickle_create(&domain_ptr->trickle,
+								CONFIG_NET_MCAST_MPL_CONTROL_MESSAGE_IMIN,
+								CONFIG_NET_MCAST_MPL_CONTROL_MESSAGE_IMAX,
+								CONFIG_NET_MCAST_MPL_CONTROL_MESSAGE_K)) {
+			NET_ERR("failure creating trickle timer for domain");
+			return -1;
+		}
+#endif
+	}
+
+	seed_ptr = seed_set_lookup(&hdr->src, domain_ptr);
+	seq_val = hbh_header_ptr->seq;
+
+	if(seed_ptr) {
+		if(SEQ_VAL_IS_LT(hbh_header_ptr->seq, seed_ptr->min_seqno)) {
+			NET_DBG("Message too old\n");
+			if(is_input) {
+#if defined(CONFIG_NET_STATISTICS_MPL)
+					net_stats_update_mpl_old_msg_recv(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+			}
+			return -1;
+		}
+
+		if(sys_slist_peek_head(&seed_ptr->msg_list) != NULL) {
+			for(msg_ptr = (struct mpl_msg *)sys_slist_peek_head(&seed_ptr->msg_list); msg_ptr != NULL; msg_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t *)msg_ptr)) {
+				if(SEQ_VAL_IS_EQ(seq_val, msg_ptr->seq)) {
+#ifndef NET_MCAST_MPL_FLOODING
+					if(HBH_GET_M(hbh_header_ptr) && sys_slist_peek_next((sys_snode_t *)msg_ptr) != NULL) {
+						msg_ptr->exp = 0;
+						NET_DBG("DATA: Received MSG inconsistent");
+						net_trickle_inconsistency(&msg_ptr->trickle);
+					} else {
+						NET_DBG("DATA: Received MSG consistent");
+						net_trickle_consistency(&msg_ptr->trickle);
+					}
+#endif
+					if(is_input) {
+#if defined(CONFIG_NET_STATISTICS_MPL)
+						net_stats_update_mpl_old_msg_recv(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+					}
+					return -1;
+				}
+			}
+		}
+	}
+
+	if(is_input) {
+		NET_DBG("DATA: new msg received");
+#if defined(CONFIG_NET_STATISTICS_MPL)
+		net_stats_update_mpl_new_msg_recv(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+	}
+
+	if(!seed_ptr) {
+		seed_ptr = seed_set_allocate();
+		if(!seed_ptr) {
+			NET_ERR("Failed to allocate seed set");
+			return -1;
+		}
+		memset(seed_ptr, 0, sizeof(struct mpl_seed));
+		sys_slist_init(&seed_ptr->msg_list);
+		seed_id_cpy(&seed_ptr->seed_id, &seed_id);
+
+		seed_ptr->domain = domain_ptr;
+	}
+
+	msg_ptr = buffer_allocate();
+
+	if(!msg_ptr) {
+		NET_DBG("buffer allocation failed try to reclaim");
+		msg_ptr = buffer_reclaim();
+
+		if(!msg_ptr) {
+			NET_ERR("buffer reclaim failed");
+			return -1;
+		}
+	}
+
+	memcpy(&msg_ptr->iface, net_pkt_iface(pkt), sizeof(struct net_if));
+
+	net_ipaddr_copy((struct in6_addr *) &msg_ptr->src,(struct in6_addr *) &hdr->src);
+
+	net_pkt_read_u8(pkt, &test);
+	net_pkt_read_u8(pkt, &test);
+
+	net_pkt_acknowledge_data(pkt, &hbho_access);
+
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
+	if (!udp_hdr) {
+		NET_DBG("DROP: corrupted header");
+		return -1;
+	}
+	
+	msg_ptr->size = ntohs(udp_hdr->len);
+	memcpy(&msg_ptr->data, udp_hdr, ntohs(udp_hdr->len));
+	msg_ptr->seq = hbh_header_ptr->seq;
+	msg_ptr->seed = seed_ptr;
+
+#ifndef NET_MCAST_MPL_FLOODING
+	if(net_trickle_create(&msg_ptr->trickle,
+							CONFIG_NET_MCAST_MPL_DATA_MESSAGE_IMIN,
+							CONFIG_NET_MCAST_MPL_DATA_MESSAGE_IMAX,
+							CONFIG_NET_MCAST_MPL_DATA_MESSAGE_K)) {
+		NET_ERR("Failed to create trickle timer for message");
+		buffer_free(msg_ptr);
+		return -1;
+	}
+#endif
+
+	if(sys_slist_peek_head(&seed_ptr->msg_list) == NULL) {
+		sys_slist_prepend(&seed_ptr->msg_list, (sys_snode_t*)msg_ptr);
+		seed_ptr->min_seqno = msg_ptr->seq;
+	} else {
+		for(msg_local_ptr = (struct mpl_msg *)sys_slist_peek_head(&seed_ptr->msg_list); msg_local_ptr != NULL; msg_local_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t*)msg_local_ptr)) {
+			if(sys_slist_peek_next((sys_snode_t*)msg_local_ptr) == NULL ||
+				(SEQ_VAL_IS_GT(msg_ptr->seq, msg_local_ptr->seq) && SEQ_VAL_IS_LT(msg_ptr->seq, ((struct mpl_msg *)sys_slist_peek_next((sys_snode_t*)msg_local_ptr))->seq))) {
+				sys_slist_insert(&seed_ptr->msg_list, (sys_snode_t*)msg_local_ptr, (sys_snode_t*)msg_ptr);
+				break;
+			}
+		}
+	}
+
+	seed_ptr->count++;
+
+#ifndef NET_MCAST_MPL_FLOODING
+#if defined(CONFIG_NET_MCAST_MPL_PROACTIVE)
+	msg_ptr->exp = 0;
+	NET_DBG("DATA: Start Data Trickle Timer for message");
+	net_trickle_start(&msg_ptr->trickle, data_message_expiration, msg_ptr);
+#endif
+
+	seed_ptr->lifetime = CONFIG_NET_MCAST_MPL_SEED_SET_ENTRY_LIFETIME;
+
+#if CONFIG_NET_MCAST_MPL_CONTROL_MESSAGE_TIMER_EXPIRATION > 0
+	domain_ptr->exp = 0;
+	NET_DBG("DATA: Start CTRL Trickle Timer for message");
+	net_trickle_start(&domain_ptr->trickle, ctrl_message_expiration, domain_ptr);
+#endif
+
+#else
+	pkt = net_pkt_alloc_with_buffer(&msg_ptr->iface, HBHO_BASE_LEN + msg_ptr->size,
+				  AF_INET6, IPPROTO_IP,
+				  PKT_WAIT_TIME);
+
+	if(pkt == NULL) {
+		NET_DBG("packet is null");
+	}
+	int ret = 0;
+	ret = net_ipv6_create(pkt, &msg_ptr->src, &msg_ptr->seed->domain->data_addr);
+	if (ret) {
+		NET_DBG("DROP: wrong buffer %d", ret);
+		return;
+	}
+
+	net_pkt_set_iface(pkt, &msg_ptr->iface);
+
+	net_pkt_write_u8(pkt, IPPROTO_UDP);
+	net_pkt_write_u8(pkt, 0);
+
+	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
+	net_pkt_set_ipv6_ext_len(pkt, HBHO_TOTAL_LEN);
+
+	net_pkt_write_u8(pkt, HBHO_OPT_TYPE_MPL);
+	net_pkt_write_u8(pkt, 4);
+
+	if(sys_slist_peek_next((sys_snode_t *)msg_ptr) == NULL) {
+		mpl_flags |= 1<<2;
+	}
+
+	switch(msg_ptr->seed->seed_id.s) {
+		case 0:
+			mpl_flags |= 0x00;
+			break;
+		case 1:
+			//placeholder for S=1 option
+			break;
+		case 2:
+			//placeholder for S=2 option
+			break;
+		case 3:
+			//placeholder for S=3 option
+			break;
+		default:
+			NET_DBG("unknown S option");
+			return;
+	}
+
+	net_pkt_write_u8(pkt, mpl_flags);
+	net_pkt_write_u8(pkt, msg_ptr->seq);
+	net_pkt_write_u8(pkt, 0x01);
+	net_pkt_write_u8(pkt, 0x00);
+
+	net_pkt_write(pkt, msg_ptr->data, 6);
+	net_pkt_write_le16(pkt, 0x00);
+	net_pkt_write(pkt, (msg_ptr->data)+8, (msg_ptr->size)-8);
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, IPPROTO_UDP);
+	
+	if (net_send_data(pkt) < 0) {
+		NET_DBG("net_send_data failed");
+		return;
+	}
+
+	NET_DBG("TRICKLE: data-msg sent");
+
+#if defined(CONFIG_NET_STATISTICS_MPL)
+	net_stats_update_mpl_data_sent(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+#endif
+
+	return 1;
+}
+
+void net_route_mpl_add_hdr(struct net_pkt *pkt, size_t *len)
+{
+	uint8_t mpl_flags = 0;
+
+	net_pkt_write_u8(pkt, IPPROTO_UDP);
+	net_pkt_write_u8(pkt, 0);
+
+	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
+	net_pkt_set_ipv6_ext_len(pkt, HBHO_TOTAL_LEN);
+
+	net_pkt_write_u8(pkt, HBHO_OPT_TYPE_MPL);
+	net_pkt_write_u8(pkt, 4);
+	mpl_flags |= 0x00; //S=0
+	mpl_flags |= 1<<2; //M=1
+
+	net_pkt_write_u8(pkt, mpl_flags);
+
+	last_seq = SEQ_VAL_ADD(last_seq, 1);
+	net_pkt_write_u8(pkt, last_seq);
+
+	net_pkt_write_u8(pkt, 0x01);
+	net_pkt_write_u8(pkt, 0x00);
+}
+
+
+void net_route_mpl_send_data(struct net_pkt *pkt)
+{
+	net_pkt_cursor_init(pkt);
+
+	if(net_route_mpl_accept(pkt, 0)) {
+#if defined(CONFIG_NET_STATISTICS_MPL)
+		net_stats_update_mpl_data_sent(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+		net_send_data(pkt);
+	}
+}
+
+#ifndef NET_MCAST_MPL_FLOODING
+enum net_verdict icmpv6_handle_mpl_ctrl(struct net_pkt *pkt,
+					    struct net_ipv6_hdr *ip_hdr,
+					    struct net_icmp_hdr *icmp_hdr)
+{
+	struct mpl_domain *domain_ptr;
+	struct mpl_msg *msg_ptr;
+	struct mpl_seed *seed_ptr;
+	static seed_id_t seed_id;
+
+	static uint8_t r;
+	static uint8_t *vector;
+	static uint8_t vector_len;
+	static uint8_t r_missing;
+	static uint8_t l_missing;
+	bool new_domain = false;
+
+	struct seed_info info;
+
+#if defined(CONFIG_NET_STATISTICS_MPL)
+	net_stats_update_mpl_ctrl_recv(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+
+	domain_ptr = domain_set_lookup(&ip_hdr->dst);
+
+	if(!domain_ptr) {
+		domain_ptr = domain_set_allocate(&ip_hdr->dst, net_pkt_iface(pkt));
+		if(!domain_ptr) {
+			NET_DBG("Couldn't allocate new domain. Dropping.");
+			return NET_DROP;
+		}
+		domain_ptr->exp = 0;
+		net_trickle_start(&domain_ptr->trickle, ctrl_message_expiration, domain_ptr);
+		new_domain = true;
+	} else {
+		NET_DBG("Domain was found");
+	}
+	l_missing = 0;
+	r_missing = 0;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_skip(pkt, sizeof(struct net_icmp_hdr));
+
+	NET_DBG("CTRL: msg received ------------------------------------------------");
+	for(seed_ptr = &seed_set[CONFIG_NET_MCAST_MPL_SEED_SET_SIZE-1];
+			seed_ptr >= seed_set; seed_ptr--) {
+
+		if(SEED_SET_IS_USED(seed_ptr) && seed_ptr->domain == domain_ptr) {
+			while(net_pkt_read(pkt, &info, sizeof(struct seed_info_s0)) == 0) {
+				switch(SEED_INFO_GET_S(&info)) {
+					case 0:
+						NET_DBG("s=0");
+						net_pkt_skip(pkt, SEED_INFO_GET_LEN(&info)-sizeof(struct seed_info_s0));
+						memcpy(seed_id.id, &ip_hdr->src, 16);
+						seed_id.s = 0;
+
+						if(net_ipv6_addr_cmp((struct in6_addr *)&seed_ptr->seed_id.id, &ip_hdr->src)) {
+							goto seed_present;
+						}
+						break;
+					case 1:
+
+						break;
+					case 2:
+
+						break;
+					case 3:
+						NET_DBG("s=3");
+						net_pkt_read(pkt, seed_id.id, 16);
+						seed_id.s = 3;
+	          if(seed_id_cmp(&seed_id, &seed_ptr->seed_id)) {
+	            goto seed_present;
+	          }
+						break;
+				}
+			}
+
+			r_missing = 1;
+
+			if(sys_slist_peek_head(&seed_ptr->msg_list) != NULL) {
+				for(msg_ptr = (struct mpl_msg *)sys_slist_peek_head(&seed_ptr->msg_list); msg_ptr != NULL; msg_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t*)msg_ptr)) {
+					if(!net_trickle_is_running(&msg_ptr->trickle)) {
+						net_trickle_start(&msg_ptr->trickle, data_message_expiration, msg_ptr);
+					}
+
+					msg_ptr->exp = 0;
+					net_trickle_inconsistency(&msg_ptr->trickle);
+				}
+			}
+			
+		seed_present:
+				continue;
+		}
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_skip(pkt, sizeof(struct net_icmp_hdr));
+
+	while(net_pkt_read(pkt, &info, sizeof(struct seed_info_s0)) == 0) {
+		seed_id.s = SEED_INFO_GET_S(&info);
+
+		switch(SEED_INFO_GET_S(&info)) {
+			case 0:
+				memcpy(seed_id.id, &ip_hdr->src, 16);
+				break;
+
+			case 1:
+				net_pkt_read(pkt, &seed_id.id, 2);
+				break;
+
+			case 2:
+				net_pkt_read(pkt, &seed_id.id, 8);
+				break;
+
+			case 3:
+				net_pkt_read(pkt, &seed_id.id, 16);
+				break;
+		}
+
+		NET_DBG("seed remote is %s", log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)));
+		NET_DBG("seed id is %s", log_strdup(net_sprint_ipv6_addr(&seed_id.id)));
+
+		seed_ptr = seed_set_lookup((struct in6_addr *)seed_id.id, domain_ptr);
+		if(!seed_ptr) {
+			NET_DBG("Unknown seed in seed info");
+			l_missing = 1;
+
+			goto next;
+		}
+
+		vector_len = SEED_INFO_GET_LEN(&info) * 8;
+		vector = net_pkt_cursor_get_pos(pkt);
+
+		NET_DBG("vector_len: %d", vector_len);
+
+		if(vector_len > 8) {
+			NET_DBG("vector: %d, %d", vector[0], vector[1]);
+		} else {
+			NET_DBG("vector: %d", vector[0]);
+		}
+
+		msg_ptr = (struct mpl_msg *)sys_slist_peek_head(&seed_ptr->msg_list);
+
+		if(msg_ptr == NULL) {
+			if(vector[0] > 0) {
+				l_missing = 1;
+			}
+			goto next;
+		}
+
+		r = 0;
+
+		if(msg_ptr->seq != info.min_seqno) {
+			if(SEQ_VAL_IS_GT(&msg_ptr->seq, &info.min_seqno)) {
+				NET_DBG("seq is greater than remote min");
+				while(msg_ptr->seq != SEQ_VAL_ADD(info.min_seqno, r) && r <= vector_len) {
+					r++;
+				}
+			} else {
+				NET_DBG("remote min is greater than our seq");
+				while(msg_ptr != NULL && msg_ptr->seq != info.min_seqno) {
+					msg_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t*)msg_ptr);
+				}
+			}
+
+			NET_DBG("r: %d, vector_len: %d", r, vector_len);
+
+			if(msg_ptr == NULL) {
+				NET_DBG("no msg matches remote min seq");
+			}
+
+			if(r > vector_len || msg_ptr == NULL) {
+				NET_DBG("Seed sets of local and remote have no overlap.");
+				msg_ptr = (struct mpl_msg *)sys_slist_peek_head(&seed_ptr->msg_list);
+
+				while(sys_slist_peek_next((sys_snode_t*)msg_ptr) != NULL) {
+					msg_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t*)msg_ptr);
+				}
+				r = vector_len;
+
+				while(!((vector[r/8]) & (0x01<<(r%8)))) {
+					r--;
+				}
+
+				NET_DBG("r: %d", r);
+				NET_DBG("minseq: %d", info.min_seqno);
+
+				NET_DBG("msg_ptr->seq: %d, remote: %d", msg_ptr->seq, SEQ_VAL_ADD(info.min_seqno, r));
+
+				if(SEQ_VAL_IS_GT(msg_ptr->seq, SEQ_VAL_ADD(info.min_seqno, r))) {
+					NET_DBG("Our max sequence number is greater than their max sequence number");
+					r_missing = 1;
+
+					if(sys_slist_peek_head(&seed_ptr->msg_list) != NULL) {
+						for(msg_ptr = (struct mpl_msg *)sys_slist_peek_head(&seed_ptr->msg_list); msg_ptr != NULL; msg_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t*)msg_ptr)) {
+							if(!net_trickle_is_running(&msg_ptr->trickle)) {
+								NET_DBG("Starting timer for messages\n");
+								net_trickle_start(&msg_ptr->trickle, data_message_expiration, msg_ptr);
+							}
+							net_trickle_inconsistency(&msg_ptr->trickle);
+						}
+					}
+				} else {
+					l_missing = 1;
+				}
+				goto next;
+			}
+		}
+
+		NET_DBG("sets overlap determine specific message missmatches");
+
+		do {
+			while(msg_ptr->seq != SEQ_VAL_ADD(info.min_seqno, r)) {
+				if((vector[r/8]) & (0x01<<(r%8))) {
+					NET_DBG("We are missing seq=%u", SEQ_VAL_ADD(info.min_seqno, r));
+					l_missing = 1;
+				}
+				r++;
+			}
+
+			if(!((vector[r/8]) & (0x01<<(r%8)))) {
+				NET_DBG("Remote is missing seq=%u", msg_ptr->seq);
+				r_missing = 1;
+				if(!net_trickle_is_running(&msg_ptr->trickle)) {
+					NET_DBG("Starting timer for messages");
+					net_trickle_start(&msg_ptr->trickle, data_message_expiration, msg_ptr);
+				}
+				net_trickle_inconsistency(&msg_ptr->trickle);
+			}
+
+			r++;
+			msg_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t*)msg_ptr);
+		} while(msg_ptr != NULL && r <= vector_len);
+
+		if(msg_ptr != NULL || r < vector_len) {
+			while(r < vector_len) {
+				if((vector[r/8]) & (0x01<<(r%8))) {
+					NET_DBG("We are missing seq=%u which is greater than our max seq number", SEQ_VAL_ADD(info.min_seqno, r));
+					l_missing = 1;
+				}
+				r++;
+			}
+		} else if(r >= vector_len && msg_ptr != NULL) {
+			while(msg_ptr != NULL) {
+				NET_DBG("Remote is missing all above seq=%u", msg_ptr->seq);
+				if(!net_trickle_is_running(&msg_ptr->trickle)) {
+					NET_DBG("Starting timer for messages");
+					net_trickle_start(&msg_ptr->trickle, data_message_expiration, msg_ptr);
+				}
+				msg_ptr->exp = 0;
+				net_trickle_inconsistency(&msg_ptr->trickle);
+				r_missing = 1;
+				msg_ptr = (struct mpl_msg *)sys_slist_peek_next((sys_snode_t*)msg_ptr);
+			}
+		}
+
+		net_pkt_skip(pkt, vector_len);
+	}
+
+next:
+	
+	if(l_missing && !net_trickle_is_running(&domain_ptr->trickle)) {
+		domain_ptr->exp = 0;
+		NET_DBG("start ctrl trickle");
+		net_trickle_start(&domain_ptr->trickle, ctrl_message_expiration, domain_ptr);
+	}
+	
+	if(l_missing || r_missing) {
+		NET_DBG("Inconsistency detected l=%u, r=%u", l_missing, r_missing);
+#if defined(CONFIG_NET_STATISTICS_MPL)
+		net_stats_update_mpl_ctrl_inconsistent(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+		if(net_trickle_is_running(&domain_ptr->trickle)) {
+			net_trickle_inconsistency(&domain_ptr->trickle);
+		}
+	} else {
+		NET_DBG("Domain is consistent");
+#if defined(CONFIG_NET_STATISTICS_MPL)
+		net_stats_update_mpl_ctrl_consistent(net_pkt_iface(pkt));
+#endif /* CONFIG_NET_STATISTICS_MPL */
+		net_trickle_consistency(&domain_ptr->trickle);
+	}
+
+	return NET_DROP;
+}
+#endif
+#endif
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//End of MPL Routing
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #if !defined(NET_ROUTE_EXTRA_DATA_SIZE)
 #define NET_ROUTE_EXTRA_DATA_SIZE 0
 #endif
@@ -817,6 +2188,27 @@ int net_route_foreach(net_route_cb_t cb, void *user_data)
 static
 struct net_route_entry_mcast route_mcast_entries[CONFIG_NET_MAX_MCAST_ROUTES];
 
+#if defined(CONFIG_NET_MCAST_MPL)
+
+int net_route_mcast_forward_packet(struct net_pkt *pkt, const struct net_ipv6_hdr *hdr)
+{
+	if(hdr != NULL) {
+		if(net_route_mpl_accept(pkt, 1) < 0) {
+			NET_DBG("Packet dropped\n");
+			return -1;
+		} else {
+			NET_DBG("Ours. Deliver to upper layers\n");
+			return 1;
+		}
+	}
+	else
+	{
+		net_route_mpl_send_data(pkt);
+
+		return 1;
+	}
+}
+#else
 int net_route_mcast_forward_packet(struct net_pkt *pkt,
 				   const struct net_ipv6_hdr *hdr)
 {
@@ -858,6 +2250,8 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt,
 
 	return (err == 0) ? ret : err;
 }
+
+#endif
 
 int net_route_mcast_foreach(net_route_mcast_cb_t cb,
 			    struct in6_addr *skip,

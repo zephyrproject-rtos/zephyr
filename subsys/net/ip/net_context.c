@@ -36,6 +36,8 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "udp_internal.h"
 #include "tcp_internal.h"
 #include "net_stats.h"
+#include "route.h"
+
 
 #if IS_ENABLED(CONFIG_NET_TCP)
 #include "tcp.h"
@@ -1343,6 +1345,10 @@ static int context_setup_udp_packet(struct net_context *context,
 		return ret;
 	}
 
+#if defined(CONFIG_NET_MCAST_MPL)
+	net_route_mpl_add_hdr(pkt, &len);
+#endif
+
 	ret = net_udp_create(pkt,
 			     net_sin((struct sockaddr *)
 				     &context->local)->sin_port,
@@ -1651,8 +1657,8 @@ static int context_sendto(struct net_context *context,
 	if (iface && !net_if_is_up(iface)) {
 		return -ENETDOWN;
 	}
-
-	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
+	//TODO FIXME
+	pkt = context_alloc_pkt(context, len+8, PKT_WAIT_TIME);
 	if (!pkt) {
 		NET_ERR("Failed to allocate net_pkt");
 		return -ENOBUFS;
@@ -1719,8 +1725,17 @@ static int context_sendto(struct net_context *context,
 		}
 
 		context_finalize_packet(context, pkt);
-
+#if defined(CONFIG_NET_MCAST_MPL)
+		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    	net_context_get_family(context) == AF_INET6 &&
+	    	IS_ENABLED(CONFIG_NET_MCAST_MPL)) {
+			net_route_mcast_forward_packet(pkt, NULL);
+		} else {
+			ret = net_send_data(pkt);
+		}
+#else
 		ret = net_send_data(pkt);
+#endif
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
 

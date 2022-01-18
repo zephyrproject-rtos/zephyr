@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_icmpv6, CONFIG_NET_ICMPV6_LOG_LEVEL);
 #include "icmpv6.h"
 #include "ipv6.h"
 #include "net_stats.h"
+#include "route.h"
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
@@ -440,7 +441,19 @@ static struct net_icmpv6_handler echo_request_handler = {
 	.handler = icmpv6_handle_echo_request,
 };
 
+#if defined(CONFIG_NET_MCAST_MPL) & !defined(CONFIG_NET_MCAST_MPL_FLOODING)
+static struct net_icmpv6_handler mpl_ctrl_handler = {
+	.type = ICMPV6_MPL,
+	.code = 0,
+	.handler = icmpv6_handle_mpl_ctrl,
+};
+#endif
+
 void net_icmpv6_init(void)
 {
 	net_icmpv6_register_handler(&echo_request_handler);
+
+#if defined(CONFIG_NET_MCAST_MPL) & !defined(CONFIG_NET_MCAST_MPL_FLOODING)
+	net_icmpv6_register_handler(&mpl_ctrl_handler);
+#endif
 }

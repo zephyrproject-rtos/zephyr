@@ -12,6 +12,8 @@ menuconfig NET_IPV6
 
 if NET_IPV6
 
+source "subsys/net/ip/Kconfig.mpl"
+
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
 	default BT_MAX_CONN if NET_L2_BT

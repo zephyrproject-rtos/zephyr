@@ -144,6 +144,12 @@ static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
 	 *     Problem, Code 2, message to the packet's Source Address,
 	 *     pointing to the unrecognized Option Type.
 	 */
+#if defined(CONFIG_NET_MCAST_MPL)
+	if(opt_type == 0x6D) {
+		return false;
+	}
+#endif
+
 	NET_DBG("Unknown option %d (0x%02x) MSB %d - 0x%02x",
 		opt_type, opt_type, opt_type >> 6, opt_type & 0xc0);
 
@@ -566,6 +572,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		}
 	}
 
+	net_pkt_cursor_init(pkt);
 	net_pkt_acknowledge_data(pkt, &ipv6_access);
 
 	current_hdr = hdr->nexthdr;

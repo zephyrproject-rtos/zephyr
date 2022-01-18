@@ -25,6 +25,37 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_NET_MCAST_MPL)
+/**-------------------------------------------------------------------------------------------
+ * MPL Routing
+ */
+#define ALL_MPL_FORWARDERS 		"FF03::FC"
+#define ALL_MPL_FORWARDERS_LL 	"FF02::FC"
+
+#define MPL_OPTION_BASE_LENGTH 8
+#define HBHO_BASE_LEN              8
+
+#define HBHO_S0_LEN                0
+#define HBHO_S1_LEN                0
+#define HBHO_S2_LEN                8
+#define HBHO_S3_LEN                16
+#define MPL_OPT_LEN_S0             2
+#define MPL_OPT_LEN_S1             4
+#define MPL_OPT_LEN_S2             10
+#define MPL_OPT_LEN_S3             18
+
+#define HBHO_OPT_TYPE_MPL          0x6D
+#define ICMPV6_MPL				   159
+int net_route_mpl_accept(struct net_pkt *pkt, uint8_t is_input);
+void net_route_mpl_send_data(struct net_pkt *pkt);
+
+void net_route_mpl_add_hdr(struct net_pkt *pkt, size_t *len);
+
+enum net_verdict icmpv6_handle_mpl_ctrl(struct net_pkt *pkt,
+					    struct net_ipv6_hdr *ip_hdr,
+					    struct net_icmp_hdr *icmp_hdr);
+#endif
+
 /**
  * @brief Next hop entry for a given route.
  */

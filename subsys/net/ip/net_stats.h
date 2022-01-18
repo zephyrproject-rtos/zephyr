@@ -186,6 +186,59 @@ static inline void net_stats_update_udp_chkerr(struct net_if *iface)
 #define net_stats_update_udp_chkerr(iface)
 #endif /* CONFIG_NET_STATISTICS_UDP */
 
+#if defined(CONFIG_NET_STATISTICS_MPL) && defined(CONFIG_NET_MCAST_MPL)
+/* MPL stats */
+static inline void net_stats_update_mpl_data_sent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.mpl.data_sent++);
+}
+
+static inline void net_stats_update_mpl_data_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.mpl.data_recv++);
+}
+
+static inline void net_stats_update_mpl_ctrl_sent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.mpl.ctrl_sent++);
+}
+
+static inline void net_stats_update_mpl_ctrl_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.mpl.ctrl_recv++);
+}
+
+static inline void net_stats_update_mpl_new_msg_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.mpl.new_msg++);
+}
+
+static inline void net_stats_update_mpl_old_msg_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.mpl.old_msg++);
+}
+
+static inline void net_stats_update_mpl_ctrl_consistent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.mpl.ctrl_consistent++);
+}
+
+static inline void net_stats_update_mpl_ctrl_inconsistent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.mpl.ctrl_inconsistent++);
+}
+
+#else
+#define net_stats_update_mpl_data_sent(iface)
+#define net_stats_update_mpl_data_recv(iface)
+#define net_stats_update_mpl_ctrl_sent(iface)
+#define net_stats_update_mpl_ctrl_recv(iface)
+#define net_stats_update_mpl_new_msg_recv(iface)
+#define net_stats_update_mpl_old_msg_recv(iface)
+#define net_stats_update_mpl_ctrl_consistent(iface)
+#define net_stats_update_mpl_ctrl_inconsistent(iface)
+#endif /* CONFIG_NET_STATISTICS_MPL */
+
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 /* TCP stats */
 static inline void net_stats_update_tcp_sent(struct net_if *iface, uint32_t bytes)

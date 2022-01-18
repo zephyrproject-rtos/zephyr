@@ -53,6 +53,7 @@
 #define NET_IPV6_EXT_HDR_OPT_PAD1  0
 #define NET_IPV6_EXT_HDR_OPT_PADN  1
 #define NET_IPV6_EXT_HDR_OPT_RPL   0x63
+#define NET_IPV6_EXT_HDR_OPT_MPL   0x6D	//MPL Option type
 
 /**
  * @brief Multicast Listener Record v2 record types.

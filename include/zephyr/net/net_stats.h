@@ -183,6 +183,35 @@ struct net_stats_udp {
 };
 
 /**
+ * @brief UDP statistics
+ */
+struct net_stats_mpl {
+	/** Number of MPL data messages sent */
+	net_stats_t data_sent;
+
+	/** Number of MPL data messages received */
+	net_stats_t data_recv;
+
+	/** Number of MPL control messages sent */
+	net_stats_t ctrl_sent;
+
+	/** Number of MPL control messages received */
+	net_stats_t ctrl_recv;
+
+	/** Number of MPL messages not in any set yet */
+	net_stats_t new_msg;
+
+	/** Number of MPL messages already in the set */
+	net_stats_t old_msg;
+
+	/** Number of MPL control messages with result consistent */
+	net_stats_t ctrl_consistent;
+
+	/** Number of MPL control messages with result inconsistent */
+	net_stats_t ctrl_inconsistent;
+};
+
+/**
  * @brief IPv6 neighbor discovery statistics
  */
 struct net_stats_ipv6_nd {
@@ -325,6 +354,11 @@ struct net_stats {
 #if defined(CONFIG_NET_STATISTICS_UDP)
 	/** UDP statistics */
 	struct net_stats_udp udp;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_MPL)
+	/** UDP statistics */
+	struct net_stats_mpl mpl;
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)

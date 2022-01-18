@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/net/capture.h>
 
 #include "ipv6.h"
-
+#include <net_private.h>
 #include <errno.h>
 
 #include "ieee802154_fragment.h"
