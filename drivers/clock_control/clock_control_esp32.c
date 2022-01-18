@@ -45,8 +45,6 @@ struct esp32_clock_config {
 	int xtal_div;
 };
 
-#define DEV_CFG(dev)                ((struct esp32_clock_config *)(dev->config))
-
 static uint8_t const xtal_freq[] = {
 #ifdef CONFIG_SOC_ESP32
 	[ESP32_CLK_XTAL_24M] = 24,
@@ -119,7 +117,7 @@ static int clock_control_esp32_get_rate(const struct device *dev,
 
 static int clock_control_esp32_init(const struct device *dev)
 {
-	struct esp32_clock_config *cfg = DEV_CFG(dev);
+	struct esp32_clock_config *cfg = dev->config;
 	rtc_cpu_freq_config_t old_config;
 	rtc_cpu_freq_config_t new_config;
 	bool res;
