@@ -85,3 +85,8 @@
 &gpio6 {
 	interrupts = <61 0>, <62 0>;
 };
+
+/* Set default power states for CM7 cpu */
+&cpu0 {
+	cpu-power-states = <&idle &suspend>;
+};

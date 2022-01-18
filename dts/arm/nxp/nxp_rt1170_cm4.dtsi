@@ -83,3 +83,8 @@
 	interrupts = <99 0>;
 	status = "disabled";
 };
+
+/* Set default power states for CM4 cpu */
+&cpu1 {
+	cpu-power-states = <&idle &suspend>;
+};
