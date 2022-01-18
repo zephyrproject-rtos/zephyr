@@ -91,13 +91,10 @@ struct counter_stm32_config {
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
 
-#define DEV_DATA(dev) ((struct counter_stm32_data *)(dev)->data)
-#define DEV_CFG(dev) \
-	((const struct counter_stm32_config *const)(dev)->config)
-
 static int counter_stm32_start(const struct device *dev)
 {
-	TIM_TypeDef *timer = DEV_CFG(dev)->timer;
+	const struct counter_stm32_config *config = dev->config;
+	TIM_TypeDef *timer = config->timer;
 
 	/* enable counter */
 	LL_TIM_EnableCounter(timer);
@@ -107,7 +104,8 @@ static int counter_stm32_start(const struct device *dev)
 
 static int counter_stm32_stop(const struct device *dev)
 {
-	TIM_TypeDef *timer = DEV_CFG(dev)->timer;
+	const struct counter_stm32_config *config = dev->config;
+	TIM_TypeDef *timer = config->timer;
 
 	/* disable counter */
 	LL_TIM_DisableCounter(timer);
@@ -117,12 +115,16 @@ static int counter_stm32_stop(const struct device *dev)
 
 static uint32_t counter_stm32_get_top_value(const struct device *dev)
 {
-	return LL_TIM_GetAutoReload(DEV_CFG(dev)->timer);
+	const struct counter_stm32_config *config = dev->config;
+
+	return LL_TIM_GetAutoReload(config->timer);
 }
 
 static uint32_t counter_stm32_read(const struct device *dev)
 {
-	return LL_TIM_GetCounter(DEV_CFG(dev)->timer);
+	const struct counter_stm32_config *config = dev->config;
+
+	return LL_TIM_GetCounter(config->timer);
 }
 
 static int counter_stm32_get_value(const struct device *dev, uint32_t *ticks)
@@ -162,19 +164,25 @@ static uint32_t counter_stm32_ticks_sub(uint32_t val, uint32_t old, uint32_t top
 
 static void counter_stm32_counter_stm32_set_cc_int_pending(const struct device *dev, uint8_t chan)
 {
-	atomic_or(&DEV_DATA(dev)->cc_int_pending, BIT(chan));
-	NVIC_SetPendingIRQ(DEV_CFG(dev)->irqn);
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_data *data = dev->data;
+
+	atomic_or(&data->cc_int_pending, BIT(chan));
+	NVIC_SetPendingIRQ(config->irqn);
 }
 
 static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
 				const struct counter_alarm_cfg *alarm_cfg)
 {
-	__ASSERT_NO_MSG(DEV_DATA(dev)->guard_period < counter_stm32_get_top_value(dev));
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_data *data = dev->data;
+
+	__ASSERT_NO_MSG(data->guard_period < counter_stm32_get_top_value(dev));
 	uint32_t val = alarm_cfg->ticks;
 	uint32_t flags = alarm_cfg->flags;
 	bool absolute = flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	bool irq_on_late;
-	TIM_TypeDef *timer = DEV_CFG(dev)->timer;
+	TIM_TypeDef *timer = config->timer;
 	uint32_t top = counter_stm32_get_top_value(dev);
 	int err = 0;
 	uint32_t prev_val;
@@ -195,7 +203,7 @@ static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
 	clear_it_flag[id](timer);
 
 	if (absolute) {
-		max_rel_val = top - DEV_DATA(dev)->guard_period;
+		max_rel_val = top - data->guard_period;
 		irq_on_late = flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
 	} else {
 		/* If relative value is smaller than half of the counter range
@@ -230,7 +238,7 @@ static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
 		if (irq_on_late) {
 			counter_stm32_counter_stm32_set_cc_int_pending(dev, id);
 		} else {
-			DEV_CFG(dev)->ch_data[id].callback = NULL;
+			config->ch_data[id].callback = NULL;
 		}
 	} else {
 		enable_it[id](timer);
@@ -242,7 +250,7 @@ static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
 static int counter_stm32_set_alarm(const struct device *dev, uint8_t chan,
 				   const struct counter_alarm_cfg *alarm_cfg)
 {
-	const struct counter_stm32_config *config = DEV_CFG(dev);
+	const struct counter_stm32_config *config = dev->config;
 	struct counter_stm32_ch_data *chdata = &config->ch_data[chan];
 
 	if (alarm_cfg->ticks >  counter_stm32_get_top_value(dev)) {
@@ -261,7 +269,7 @@ static int counter_stm32_set_alarm(const struct device *dev, uint8_t chan,
 
 static int counter_stm32_cancel_alarm(const struct device *dev, uint8_t chan)
 {
-	const struct counter_stm32_config *config = DEV_CFG(dev);
+	const struct counter_stm32_config *config = dev->config;
 
 	disable_it[chan](config->timer);
 	config->ch_data[chan].callback = NULL;
@@ -272,9 +280,9 @@ static int counter_stm32_cancel_alarm(const struct device *dev, uint8_t chan)
 static int counter_stm32_set_top_value(const struct device *dev,
 				       const struct counter_top_cfg *cfg)
 {
-	const struct counter_stm32_config *config = DEV_CFG(dev);
+	const struct counter_stm32_config *config = dev->config;
 	TIM_TypeDef *timer = config->timer;
-	struct counter_stm32_data *data = DEV_DATA(dev);
+	struct counter_stm32_data *data = dev->data;
 	int err = 0;
 
 	for (int i = 0; i < counter_get_num_of_channels(dev); i++) {
@@ -311,7 +319,7 @@ static int counter_stm32_set_top_value(const struct device *dev,
 
 static uint32_t counter_stm32_get_pending_int(const struct device *dev)
 {
-	const struct counter_stm32_config *cfg = DEV_CFG(dev);
+	const struct counter_stm32_config *cfg = dev->config;
 	uint32_t pending = 0;
 
 	switch (counter_get_num_of_channels(dev)) {
@@ -423,7 +431,8 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 
 static int counter_stm32_init_timer(const struct device *dev)
 {
-	const struct counter_stm32_config *cfg = DEV_CFG(dev);
+	const struct counter_stm32_config *cfg = dev->config;
+	struct counter_stm32_data *data = dev->data;
 	TIM_TypeDef *timer = cfg->timer;
 	LL_TIM_InitTypeDef init;
 	uint32_t tim_clk;
@@ -441,7 +450,7 @@ static int counter_stm32_init_timer(const struct device *dev)
 		LOG_ERR("Could not obtain timer clock (%d)", r);
 		return r;
 	}
-	DEV_DATA(dev)->freq = tim_clk / (cfg->prescaler + 1U);
+	data->freq = tim_clk / (cfg->prescaler + 1U);
 
 	/* config/enable IRQ */
 	cfg->irq_config_func(dev);
@@ -464,44 +473,54 @@ static int counter_stm32_init_timer(const struct device *dev)
 
 static uint32_t counter_stm32_get_guard_period(const struct device *dev, uint32_t flags)
 {
+	struct counter_stm32_data *data = dev->data;
+
 	ARG_UNUSED(flags);
-	return DEV_DATA(dev)->guard_period;
+	return data->guard_period;
 }
 
 static int counter_stm32_set_guard_period(const struct device *dev, uint32_t guard,
 					  uint32_t flags)
 {
+	struct counter_stm32_data *data = dev->data;
+
 	ARG_UNUSED(flags);
 	__ASSERT_NO_MSG(guard < counter_stm32_get_top_value(dev));
 
-	DEV_DATA(dev)->guard_period = guard;
+	data->guard_period = guard;
 	return 0;
 }
 
 static uint32_t counter_stm32_get_freq(const struct device *dev)
 {
-	return DEV_DATA(dev)->freq;
+	struct counter_stm32_data *data = dev->data;
+
+	return data->freq;
 }
 
 static void counter_stm32_top_irq_handle(const struct device *dev)
 {
-	counter_top_callback_t cb = DEV_DATA(dev)->top_cb;
+	struct counter_stm32_data *data = dev->data;
+
+	counter_top_callback_t cb = data->top_cb;
 
 	__ASSERT(cb != NULL, "top event enabled - expecting callback");
-	cb(dev, DEV_DATA(dev)->top_user_data);
+	cb(dev, data->top_user_data);
 }
 
 static void counter_stm32_alarm_irq_handle(const struct device *dev, uint32_t id)
 {
-	TIM_TypeDef *timer = DEV_CFG(dev)->timer;
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_data *data = dev->data;
+	TIM_TypeDef *timer = config->timer;
 
 	struct counter_stm32_ch_data *chdata;
 	counter_alarm_callback_t cb;
 
-	atomic_and(&DEV_DATA(dev)->cc_int_pending, ~BIT(id));
+	atomic_and(&data->cc_int_pending, ~BIT(id));
 	disable_it[id](timer);
 
-	chdata = &DEV_CFG(dev)->ch_data[id];
+	chdata = &config->ch_data[id];
 	cb = chdata->callback;
 	chdata->callback = NULL;
 
@@ -530,7 +549,7 @@ static const struct counter_driver_api counter_stm32_driver_api = {
 	do {									\
 		bool hw_irq = LL_TIM_IsActiveFlag_CC##cc(timer) &&		\
 			      LL_TIM_IsEnabledIT_CC##cc(timer);			\
-		if (hw_irq || (DEV_DATA(dev)->cc_int_pending & BIT(cc - 1U))) {	\
+		if (hw_irq || (data->cc_int_pending & BIT(cc - 1U))) {		\
 			if (hw_irq) {						\
 				LL_TIM_ClearFlag_CC##cc(timer);			\
 			}							\
@@ -540,7 +559,9 @@ static const struct counter_driver_api counter_stm32_driver_api = {
 
 void counter_stm32_irq_handler(const struct device *dev)
 {
-	TIM_TypeDef *timer = DEV_CFG(dev)->timer;
+	const struct counter_stm32_config *config = dev->config;
+	struct counter_stm32_data *data = dev->data;
+	TIM_TypeDef *timer = config->timer;
 
 	/* Capture compare events */
 	switch (counter_get_num_of_channels(dev)) {
