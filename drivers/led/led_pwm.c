@@ -21,8 +21,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(led_pwm, CONFIG_LED_LOG_LEVEL);
 
-#define DEV_CFG(dev)	((const struct led_pwm_config *) ((dev)->config))
-
 struct led_pwm {
 	const struct device *dev;
 	uint32_t channel;
@@ -38,7 +36,7 @@ struct led_pwm_config {
 static int led_pwm_blink(const struct device *dev, uint32_t led,
 			 uint32_t delay_on, uint32_t delay_off)
 {
-	const struct led_pwm_config *config = DEV_CFG(dev);
+	const struct led_pwm_config *config = dev->config;
 	const struct led_pwm *led_pwm;
 	uint32_t period_usec, pulse_usec;
 
@@ -65,7 +63,7 @@ static int led_pwm_blink(const struct device *dev, uint32_t led,
 static int led_pwm_set_brightness(const struct device *dev,
 				  uint32_t led, uint8_t value)
 {
-	const struct led_pwm_config *config = DEV_CFG(dev);
+	const struct led_pwm_config *config = dev->config;
 	const struct led_pwm *led_pwm;
 	uint32_t pulse;
 
@@ -93,7 +91,7 @@ static int led_pwm_off(const struct device *dev, uint32_t led)
 
 static int led_pwm_init(const struct device *dev)
 {
-	const struct led_pwm_config *config = DEV_CFG(dev);
+	const struct led_pwm_config *config = dev->config;
 	int i;
 
 	if (!config->num_leds) {
@@ -118,7 +116,7 @@ static int led_pwm_init(const struct device *dev)
 static int led_pwm_pm_action(const struct device *dev,
 			     enum pm_device_action action)
 {
-	const struct led_pwm_config *config = DEV_CFG(dev);
+	const struct led_pwm_config *config = dev->config;
 
 	/* switch all underlying PWM devices to the new state */
 	for (size_t i = 0; i < config->num_leds; i++) {
