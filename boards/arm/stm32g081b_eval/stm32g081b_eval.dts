@@ -86,6 +86,13 @@
 		sw3 = &joy_right;
 		sw4 = &joy_up;
 	};
+
+	vbus {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 3>;
+		output-ohms = <49900>;
+		full-ohms = <(330000 + 49900)>;
+	};
 };
 
 &clk_hsi {
