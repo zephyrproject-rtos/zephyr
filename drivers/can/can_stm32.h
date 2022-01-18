@@ -10,10 +10,6 @@
 
 #include <drivers/can.h>
 
-#define DEV_DATA(dev) ((struct can_stm32_data *const)(dev)->data)
-#define DEV_CFG(dev) \
-	((const struct can_stm32_config *const)(dev)->config)
-
 #define BIT_SEG_LENGTH(cfg) ((cfg)->prop_ts1 + (cfg)->ts2 + 1)
 
 #define CAN_NUMBER_OF_FILTER_BANKS (14)
