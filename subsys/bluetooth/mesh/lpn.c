@@ -240,9 +240,11 @@ static void clear_friendship(bool force, bool disable)
 		lpn->old_friend = lpn->frnd;
 	}
 
-	STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
-		if (cb->terminated && lpn->frnd != BT_MESH_ADDR_UNASSIGNED) {
-			cb->terminated(lpn->sub->net_idx, lpn->frnd);
+	if (lpn->established) {
+		STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
+			if (cb->terminated) {
+				cb->terminated(lpn->sub->net_idx, lpn->frnd);
+			}
 		}
 	}
 
