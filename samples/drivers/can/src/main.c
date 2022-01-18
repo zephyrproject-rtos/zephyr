@@ -110,6 +110,8 @@ char *state_to_str(enum can_state state)
 	switch (state) {
 	case CAN_ERROR_ACTIVE:
 		return "error-active";
+	case CAN_ERROR_WARNING:
+		return "error-warning";
 	case CAN_ERROR_PASSIVE:
 		return "error-passive";
 	case CAN_BUS_OFF:
