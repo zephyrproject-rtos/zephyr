@@ -237,6 +237,9 @@ void test_cte_req_central_remote(void)
 	lt_rx(LL_CTE_RSP, &conn, &tx, &remote_cte_rsp);
 	lt_rx_q_is_empty(&conn);
 
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
+
 	/* Done */
 	event_done(&conn);
 
@@ -302,6 +305,9 @@ void test_cte_req_peripheral_remote(void)
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_CTE_RSP, &conn, &tx, &remote_cte_rsp);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -504,7 +510,7 @@ void test_cte_req_reject_inv_ll_param_central_remote(void)
 
 	/* Enable response for CTE request */
 	ull_cp_cte_rsp_enable(&conn, true, BT_HCI_LE_CTE_LEN_MAX,
-			      (BT_HCI_LE_AOA_CTE | BT_HCI_LE_AOD_CTE_1US));
+			      (BT_HCI_LE_AOA_CTE_RSP | BT_HCI_LE_AOD_CTE_RSP_1US));
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -521,6 +527,9 @@ void test_cte_req_reject_inv_ll_param_central_remote(void)
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &remote_reject_ext_ind);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -590,6 +599,9 @@ void test_cte_req_reject_inv_ll_param_peripheral_remote(void)
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &remote_reject_ext_ind);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
