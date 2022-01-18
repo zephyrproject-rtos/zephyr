@@ -104,6 +104,12 @@
 	status = "okay";
 };
 
+&adc1 {
+	pinctrl-0 = <&adc1_in3_pa3>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };
