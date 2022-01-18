@@ -125,7 +125,8 @@ static inline void can_stm32_bus_state_change_isr(CAN_TypeDef *can,
 	const can_state_change_callback_t cb = data->state_change_cb;
 	void *state_change_cb_data = data->state_change_cb_data;
 
-	if (!(can->ESR & CAN_ESR_EPVF) && !(can->ESR & CAN_ESR_BOFF)) {
+	if (!(can->ESR & CAN_ESR_EPVF) && !(can->ESR & CAN_ESR_BOFF) &&
+	    !(can->ESR & CAN_ESR_EWGF)) {
 		return;
 	}
 
@@ -136,6 +137,8 @@ static inline void can_stm32_bus_state_change_isr(CAN_TypeDef *can,
 		state = CAN_BUS_OFF;
 	} else if (can->ESR & CAN_ESR_EPVF) {
 		state = CAN_ERROR_PASSIVE;
+	} else if (can->ESR & CAN_ESR_EWGF) {
+		state = CAN_ERROR_WARNING;
 	} else {
 		state = CAN_ERROR_ACTIVE;
 	}
@@ -542,9 +545,9 @@ static void can_stm32_set_state_change_callback(const struct device *dev,
 	data->state_change_cb_data = user_data;
 
 	if (cb == NULL) {
-		can->IER &= ~CAN_IER_EPVIE;
+		can->IER &= ~(CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE);
 	} else {
-		can->IER |= CAN_IER_EPVIE;
+		can->IER |= CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE;
 	}
 }
 
@@ -567,6 +570,10 @@ static enum can_state can_stm32_get_state(const struct device *dev,
 
 	if (can->ESR & CAN_ESR_EPVF) {
 		return CAN_ERROR_PASSIVE;
+	}
+
+	if (can->ESR & CAN_ESR_EWGF) {
+		return CAN_ERROR_WARNING;
 	}
 
 	return CAN_ERROR_ACTIVE;
