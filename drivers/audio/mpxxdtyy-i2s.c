@@ -24,7 +24,7 @@ int mpxxdtyy_i2s_read(const struct device *dev, uint8_t stream, void **buffer,
 		      size_t *size, int32_t timeout)
 {
 	int ret;
-	struct mpxxdtyy_data *const data = DEV_DATA(dev);
+	struct mpxxdtyy_data *const data = dev->data;
 	void *pdm_block, *pcm_block;
 	size_t pdm_size;
 	TPDMFilter_InitStruct *pdm_filter = &data->pdm_filter[0];
@@ -54,7 +54,7 @@ int mpxxdtyy_i2s_read(const struct device *dev, uint8_t stream, void **buffer,
 int mpxxdtyy_i2s_trigger(const struct device *dev, enum dmic_trigger cmd)
 {
 	int ret;
-	struct mpxxdtyy_data *const data = DEV_DATA(dev);
+	struct mpxxdtyy_data *const data = dev->data;
 	enum i2s_trigger_cmd i2s_cmd;
 	enum dmic_state tmp_state;
 
@@ -92,7 +92,7 @@ int mpxxdtyy_i2s_trigger(const struct device *dev, enum dmic_trigger cmd)
 int mpxxdtyy_i2s_configure(const struct device *dev, struct dmic_cfg *cfg)
 {
 	int ret;
-	struct mpxxdtyy_data *const data = DEV_DATA(dev);
+	struct mpxxdtyy_data *const data = dev->data;
 	uint8_t chan_size = cfg->streams->pcm_width;
 	uint32_t audio_freq = cfg->streams->pcm_rate;
 	uint16_t factor;
