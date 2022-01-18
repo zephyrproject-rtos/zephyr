@@ -32,14 +32,10 @@ struct pinmux_it8xxx2_config {
 	uint8_t func4_en_mask[8];
 };
 
-#define DEV_CFG(dev)					\
-	((const struct pinmux_it8xxx2_config * const)	\
-	 (dev)->config)
-
 static int pinmux_it8xxx2_set(const struct device *dev,
 			      uint32_t pin, uint32_t func)
 {
-	const struct pinmux_it8xxx2_config *pinmux_config = DEV_CFG(dev);
+	const struct pinmux_it8xxx2_config *pinmux_config = dev->config;
 
 	volatile uint8_t *reg_gpcr =
 		(uint8_t *)(pinmux_config->reg_gpcr + pin);
@@ -89,7 +85,7 @@ static int pinmux_it8xxx2_set(const struct device *dev,
 static int pinmux_it8xxx2_get(const struct device *dev,
 			      uint32_t pin, uint32_t *func)
 {
-	const struct pinmux_it8xxx2_config *pinmux_config = DEV_CFG(dev);
+	const struct pinmux_it8xxx2_config *pinmux_config = dev->config;
 
 	volatile uint8_t *reg_gpcr =
 		(uint8_t *)(pinmux_config->reg_gpcr + pin);
@@ -110,7 +106,7 @@ static int pinmux_it8xxx2_get(const struct device *dev,
 static int pinmux_it8xxx2_pullup(const struct device *dev,
 				 uint32_t pin, uint8_t func)
 {
-	const struct pinmux_it8xxx2_config *pinmux_config = DEV_CFG(dev);
+	const struct pinmux_it8xxx2_config *pinmux_config = dev->config;
 
 	volatile uint8_t *reg_gpcr =
 		(uint8_t *)(pinmux_config->reg_gpcr + pin);
@@ -131,7 +127,7 @@ static int pinmux_it8xxx2_pullup(const struct device *dev,
 static int pinmux_it8xxx2_input(const struct device *dev,
 				uint32_t pin, uint8_t func)
 {
-	const struct pinmux_it8xxx2_config *pinmux_config = DEV_CFG(dev);
+	const struct pinmux_it8xxx2_config *pinmux_config = dev->config;
 
 	volatile uint8_t *reg_gpcr =
 		(uint8_t *)(pinmux_config->reg_gpcr + pin);
