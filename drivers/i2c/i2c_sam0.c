@@ -57,10 +57,6 @@ struct i2c_sam0_dev_data {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct i2c_sam0_dev_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2c_sam0_dev_data *const)(dev)->data)
 
 static void wait_synchronization(SercomI2cm *regs)
 {
@@ -79,8 +75,8 @@ static void wait_synchronization(SercomI2cm *regs)
 
 static bool i2c_sam0_terminate_on_error(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	if (!(i2c->STATUS.reg & (SERCOM_I2CM_STATUS_ARBLOST |
@@ -126,8 +122,8 @@ static bool i2c_sam0_terminate_on_error(const struct device *dev)
 
 static void i2c_sam0_isr(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	/* Get present interrupts and clear them */
@@ -198,8 +194,8 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 				    uint32_t id, int error_code)
 {
 	const struct device *dev = arg;
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	ARG_UNUSED(dma_dev);
@@ -235,8 +231,8 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 
 static bool i2c_sam0_dma_write_start(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -289,8 +285,8 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 				   uint32_t id, int error_code)
 {
 	const struct device *dev = arg;
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	ARG_UNUSED(dma_dev);
@@ -327,8 +323,8 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 
 static bool i2c_sam0_dma_read_start(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -383,8 +379,8 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			     uint8_t num_msgs, uint16_t addr)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t addr_reg;
 
@@ -522,7 +518,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 				      uint32_t config)
 {
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t baud;
 	uint32_t baud_low;
@@ -656,7 +652,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 
 static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 {
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -683,8 +679,8 @@ static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 
 static int i2c_sam0_initialize(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 

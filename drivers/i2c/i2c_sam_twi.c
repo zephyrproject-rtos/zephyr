@@ -66,12 +66,6 @@ struct i2c_sam_twi_dev_data {
 	struct twi_msg msg;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct i2c_sam_twi_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2c_sam_twi_dev_data *const)(dev)->data)
-
 static int i2c_clk_set(Twi *const twi, uint32_t speed)
 {
 	uint32_t ck_div = 0U;
@@ -106,7 +100,7 @@ static int i2c_clk_set(Twi *const twi, uint32_t speed)
 
 static int i2c_sam_twi_configure(const struct device *dev, uint32_t config)
 {
-	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct i2c_sam_twi_dev_cfg *const dev_cfg = dev->config;
 	Twi *const twi = dev_cfg->regs;
 	uint32_t bitrate;
 	int ret;
@@ -182,8 +176,8 @@ static int i2c_sam_twi_transfer(const struct device *dev,
 				struct i2c_msg *msgs,
 				uint8_t num_msgs, uint16_t addr)
 {
-	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2c_sam_twi_dev_cfg *const dev_cfg = dev->config;
+	struct i2c_sam_twi_dev_data *const dev_data = dev->data;
 	Twi *const twi = dev_cfg->regs;
 
 	__ASSERT_NO_MSG(msgs);
@@ -237,8 +231,8 @@ static int i2c_sam_twi_transfer(const struct device *dev,
 
 static void i2c_sam_twi_isr(const struct device *dev)
 {
-	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2c_sam_twi_dev_cfg *const dev_cfg = dev->config;
+	struct i2c_sam_twi_dev_data *const dev_data = dev->data;
 	Twi *const twi = dev_cfg->regs;
 	struct twi_msg *msg = &dev_data->msg;
 	uint32_t isr_status;
@@ -296,8 +290,8 @@ tx_comp:
 
 static int i2c_sam_twi_initialize(const struct device *dev)
 {
-	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2c_sam_twi_dev_cfg *const dev_cfg = dev->config;
+	struct i2c_sam_twi_dev_data *const dev_data = dev->data;
 	Twi *const twi = dev_cfg->regs;
 	uint32_t bitrate_cfg;
 	int ret;

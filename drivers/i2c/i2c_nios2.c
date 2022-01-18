@@ -19,9 +19,6 @@ LOG_MODULE_REGISTER(i2c_nios2);
 
 #define NIOS2_I2C_TIMEOUT_USEC		1000
 
-#define DEV_CFG(dev) \
-	((struct i2c_nios2_config *)(dev)->config)
-
 struct i2c_nios2_config {
 	ALT_AVALON_I2C_DEV_t	i2c_dev;
 	IRQ_DATA_t		irq_data;
@@ -30,7 +27,7 @@ struct i2c_nios2_config {
 
 static int i2c_nios2_configure(const struct device *dev, uint32_t dev_config)
 {
-	struct i2c_nios2_config *config = DEV_CFG(dev);
+	struct i2c_nios2_config *config = (struct i2c_nios2_config *)dev->config;
 	int32_t rc = 0;
 
 	k_sem_take(&config->sem_lock, K_FOREVER);
@@ -62,7 +59,7 @@ i2c_cfg_err:
 static int i2c_nios2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
 {
-	struct i2c_nios2_config *config = DEV_CFG(dev);
+	struct i2c_nios2_config *config = (struct i2c_nios2_config *)dev->config;
 	ALT_AVALON_I2C_STATUS_CODE status;
 	uint32_t restart, stop;
 	int32_t i, timeout, rc = 0;
@@ -143,7 +140,7 @@ i2c_transfer_err:
 
 static void i2c_nios2_isr(const struct device *dev)
 {
-	struct i2c_nios2_config *config = DEV_CFG(dev);
+	struct i2c_nios2_config *config = (struct i2c_nios2_config *)dev->config;
 
 	/* Call Altera HAL driver ISR */
 	alt_handle_irq(&config->i2c_dev, DT_INST_IRQN(0));
@@ -172,7 +169,7 @@ I2C_DEVICE_DT_INST_DEFINE(0, i2c_nios2_init, NULL,
 
 static int i2c_nios2_init(const struct device *dev)
 {
-	struct i2c_nios2_config *config = DEV_CFG(dev);
+	struct i2c_nios2_config *config = (struct i2c_nios2_config *)dev->config;
 	int rc;
 
 	/* initialize semaphore */
