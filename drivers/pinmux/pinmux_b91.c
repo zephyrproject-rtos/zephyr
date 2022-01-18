@@ -69,10 +69,6 @@
 #define PINMUX_B91_PULLUP_DISABLE   ((uint8_t)0u)
 #define PINMUX_B91_PULLUP_10K       ((uint8_t)3u)
 
-/* Get PinMux configuration */
-#define GET_CFG(dev) ((const struct pinmux_b91_config *)dev->config)
-
-
 /* B91 PinMux config structure */
 struct pinmux_b91_config {
 	uint8_t pad_mul_sel;
@@ -139,7 +135,7 @@ static void pinmux_b91_set_pull_up(uint32_t pin, uint8_t val)
 /* API implementation: init */
 static int pinmux_b91_init(const struct device *dev)
 {
-	const struct pinmux_b91_config *cfg = GET_CFG(dev);
+	const struct pinmux_b91_config *cfg = dev->config;
 
 	reg_gpio_pad_mul_sel |= cfg->pad_mul_sel;
 
