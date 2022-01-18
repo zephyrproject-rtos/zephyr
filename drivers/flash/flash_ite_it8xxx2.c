@@ -32,9 +32,6 @@ extern char _ram_code_start;
 #define FLASH_IT8XXX2_REG_BASE \
 		((struct flash_it8xxx2_regs *)DT_INST_REG_ADDR(0))
 
-#define DEV_DATA(dev) \
-	((struct flash_it8xxx2_dev_data *const)(dev)->data)
-
 struct flash_it8xxx2_dev_data {
 	struct k_sem sem;
 	int all_protected;
@@ -411,7 +408,7 @@ static int __ram_code flash_it8xxx2_read(const struct device *dev, off_t offset,
 static int __ram_code flash_it8xxx2_write(const struct device *dev, off_t offset,
 					  const void *src_data, size_t len)
 {
-	struct flash_it8xxx2_dev_data *data = DEV_DATA(dev);
+	struct flash_it8xxx2_dev_data *data = dev->data;
 	int ret = -EINVAL;
 	unsigned int key;
 
@@ -457,7 +454,7 @@ static int __ram_code flash_it8xxx2_write(const struct device *dev, off_t offset
 static int __ram_code flash_it8xxx2_erase(const struct device *dev,
 					  off_t offset, size_t len)
 {
-	struct flash_it8xxx2_dev_data *data = DEV_DATA(dev);
+	struct flash_it8xxx2_dev_data *data = dev->data;
 	int v_size = len, v_addr = offset, ret = -EINVAL;
 	unsigned int key;
 
@@ -507,7 +504,7 @@ static int __ram_code flash_it8xxx2_erase(const struct device *dev,
 static int flash_it8xxx2_write_protection(const struct device *dev,
 					  bool enable)
 {
-	struct flash_it8xxx2_dev_data *data = DEV_DATA(dev);
+	struct flash_it8xxx2_dev_data *data = dev->data;
 
 	if (enable) {
 		/* Protect the entire flash */
@@ -538,7 +535,7 @@ flash_it8xxx2_get_parameters(const struct device *dev)
 static void flash_code_static_cache(const struct device *dev)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
-	struct flash_it8xxx2_dev_data *data = DEV_DATA(dev);
+	struct flash_it8xxx2_dev_data *data = dev->data;
 	unsigned int key;
 
 	/* Make sure no interrupt while enable static cache */
@@ -574,7 +571,7 @@ static void flash_code_static_cache(const struct device *dev)
 static int flash_it8xxx2_init(const struct device *dev)
 {
 	struct flash_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
-	struct flash_it8xxx2_dev_data *data = DEV_DATA(dev);
+	struct flash_it8xxx2_dev_data *data = dev->data;
 
 	/* By default, select internal flash for indirect fast read. */
 	flash_regs->SMFI_ECINDAR3 = EC_INDIRECT_READ_INTERNAL_FLASH;
