@@ -32,7 +32,25 @@ enum dma_channel_direction {
 	MEMORY_TO_MEMORY = 0x0,
 	MEMORY_TO_PERIPHERAL,
 	PERIPHERAL_TO_MEMORY,
-	PERIPHERAL_TO_PERIPHERAL /*only supported in NXP EDMA*/
+	PERIPHERAL_TO_PERIPHERAL,
+	HOST_TO_MEMORY,
+	MEMORY_TO_HOST,
+
+	/**
+	 * Number of all common channel directions.
+	 */
+	DMA_CHANNEL_DIRECTION_COMMON_COUNT,
+
+	/**
+	 * This and higher values are dma controller or soc specific.
+	 * Refer to the specified dma driver header file.
+	 */
+	DMA_CHANNEL_DIRECTION_PRIV_START = DMA_CHANNEL_DIRECTION_COMMON_COUNT,
+
+	/**
+	 * Maximum allowed value (3 bit field!)
+	 */
+	DMA_CHANNEL_DIRECTION_MAX = 0x7
 };
 
 /** Valid values for @a source_addr_adj and @a dest_addr_adj */
@@ -135,6 +153,8 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  *                                        001-memory to peripheral,
  *                                        010-peripheral to memory,
  *                                        011-peripheral to peripheral,
+ *                                        100-host to memory
+ *                                        101-memory to host
  *                                        ...
  * @param complete_callback_en [ 10 ]       - 0-callback invoked at completion only
  *                                        1-callback invoked at completion of
