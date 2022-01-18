@@ -24,7 +24,7 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "esp,riscv";
+			compatible = "espressif,riscv";
 			reg = <0>;
 		};
 	};

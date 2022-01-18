@@ -21,7 +21,7 @@
 #include <dt-bindings/clock/esp32s2_clock.h>
 #include "esp32s2/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#define DT_CPU_COMPAT esp_riscv
+#define DT_CPU_COMPAT espressif_riscv
 #include <dt-bindings/clock/esp32c3_clock.h>
 #include "esp32c3/rom/rtc.h"
 #include <soc/soc_caps.h>
