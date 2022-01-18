@@ -26,20 +26,6 @@ const clock_arm_pll_config_t armPllConfig = {
 };
 #endif
 
-#ifdef CONFIG_INIT_SYS_PLL
-/* SYS PLL configuration for RUN mode */
-const clock_sys_pll_config_t sysPllConfig = {
-	.loopDivider = 1U
-};
-#endif
-
-#ifdef CONFIG_INIT_USB1_PLL
-/* USB1 PLL configuration for RUN mode */
-const clock_usb_pll_config_t usb1PllConfig = {
-	.loopDivider = 0U
-};
-#endif
-
 #if CONFIG_USB_DC_NXP_EHCI
 /* USB PHY condfiguration */
 #define BOARD_USB_PHY_D_CAL (0x0CU)
@@ -124,9 +110,9 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Set PERIPH_CLK MUX to PERIPH_CLK2 */
 	CLOCK_SetMux(kCLOCK_PeriphMux, 0x1);
 
-	/* Setting the VDD_SOC to 1.5V. It is necessary to config AHB to 600Mhz
+	/* Setting the VDD_SOC value.
 	 */
-	DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(0x12);
+	DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(CONFIG_DCDC_VALUE);
 	/* Waiting for DCDC_STS_DC_OK bit is asserted */
 	while (DCDC_REG0_STS_DC_OK_MASK !=
 			(DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
@@ -135,12 +121,6 @@ static ALWAYS_INLINE void clock_init(void)
 
 #ifdef CONFIG_INIT_ARM_PLL
 	CLOCK_InitArmPll(&armPllConfig); /* Configure ARM PLL to 1200M */
-#endif
-#ifdef CONFIG_INIT_SYS_PLL
-	CLOCK_InitSysPll(&sysPllConfig); /* Configure SYS PLL to 528M */
-#endif
-#ifdef CONFIG_INIT_USB1_PLL
-	CLOCK_InitUsb1Pll(&usb1PllConfig); /* Configure USB1 PLL to 480M */
 #endif
 #ifdef CONFIG_INIT_ENET_PLL
 	CLOCK_InitEnetPll(&ethPllConfig);
@@ -193,15 +173,13 @@ static ALWAYS_INLINE void clock_init(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
 	/* Configure USDHC clock source and divider */
-	CLOCK_InitSysPfd(kCLOCK_Pfd0, 0x12U);
-	CLOCK_SetDiv(kCLOCK_Usdhc1Div, 0U);
+	CLOCK_SetDiv(kCLOCK_Usdhc1Div, 1U);
 	CLOCK_SetMux(kCLOCK_Usdhc1Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay) && CONFIG_DISK_DRIVER_SDMMC
 	/* Configure USDHC clock source and divider */
-	CLOCK_InitSysPfd(kCLOCK_Pfd0, 0x12U);
-	CLOCK_SetDiv(kCLOCK_Usdhc2Div, 0U);
+	CLOCK_SetDiv(kCLOCK_Usdhc2Div, 1U);
 	CLOCK_SetMux(kCLOCK_Usdhc2Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc2);
 #endif
@@ -214,15 +192,6 @@ static ALWAYS_INLINE void clock_init(void)
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
 	CLOCK_SetDiv(kCLOCK_CanDiv, 1); /* Set CAN_CLK_PODF. */
 	CLOCK_SetMux(kCLOCK_CanMux, 2); /* Set Can clock source. */
-#endif
-
-#if !(defined(CONFIG_CODE_FLEXSPI) || defined(CONFIG_CODE_FLEXSPI2)) && \
-	defined(CONFIG_MEMC_MCUX_FLEXSPI) && \
-	DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
-	CLOCK_DisableClock(kCLOCK_FlexSpi);
-	CLOCK_InitUsb1Pfd(kCLOCK_Pfd0, 24);
-	CLOCK_SetMux(kCLOCK_FlexspiMux, 3);
-	CLOCK_SetDiv(kCLOCK_FlexspiDiv, 2);
 #endif
 
 	/* Keep the system clock running so SYSTICK can wake up the system from
