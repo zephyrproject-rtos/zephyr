@@ -433,6 +433,9 @@ void ull_llcp_init(struct ll_conn *conn)
 	sys_slist_init(&conn->llcp.remote.pend_proc_list);
 	conn->llcp.remote.incompat = INCOMPAT_NO_COLLISION;
 	conn->llcp.remote.collision = 0U;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	conn->llcp.remote.paused_cmd = PROC_NONE;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->llcp.vex, 0, sizeof(conn->llcp.vex));
