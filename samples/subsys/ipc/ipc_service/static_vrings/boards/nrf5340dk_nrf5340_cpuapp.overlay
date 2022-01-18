@@ -51,7 +51,7 @@
 		memory-region = <&sram_ipc1>;
 		mboxes = <&mbox 2>, <&mbox 3>;
 		mbox-names = "tx", "rx";
-		role = "host";
+		role = "remote";
 		status = "okay";
 	};
 };

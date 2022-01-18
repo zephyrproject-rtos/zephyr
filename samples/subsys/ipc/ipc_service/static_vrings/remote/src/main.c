@@ -61,11 +61,13 @@ static void ipc0A_entry(void *dummy0, void *dummy1, void *dummy2)
 	const struct device *ipc0_instance;
 	unsigned char message = 0;
 	struct ipc_ept ipc0A_ept;
+	const char *role;
 	int ret;
 
-	printk("IPC-service REMOTE [INST 0 - ENDP A] demo started\n");
-
 	ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+	role = DT_PROP(DT_NODELABEL(ipc0), role);
+
+	printk("IPC-service %s [INST 0 - ENDP A] demo started\n", role);
 
 	ret = ipc_service_open_instance(ipc0_instance);
 	if (ret < 0 && ret != -EALREADY) {
@@ -85,7 +87,7 @@ static void ipc0A_entry(void *dummy0, void *dummy1, void *dummy2)
 		k_sem_take(&ipc0A_data_sem, K_FOREVER);
 		message = ipc0A_received_data;
 
-		printk("REMOTE [0A]: %d\n", message);
+		printk("%s [0A]: %d\n", role, message);
 
 		message++;
 
@@ -96,7 +98,7 @@ static void ipc0A_entry(void *dummy0, void *dummy1, void *dummy2)
 		}
 	}
 
-	printk("IPC-service REMOTE [INST 0 - ENDP A] demo ended.\n");
+	printk("IPC-service %s [INST 0 - ENDP A] demo ended.\n", role);
 }
 K_THREAD_DEFINE(ipc0A_thread_id, STACKSIZE, ipc0A_entry, NULL, NULL, NULL, PRIORITY, 0, 0);
 
@@ -133,11 +135,13 @@ static void ipc0B_entry(void *dummy0, void *dummy1, void *dummy2)
 	const struct device *ipc0_instance;
 	unsigned char message = 0;
 	struct ipc_ept ipc0B_ept;
+	const char *role;
 	int ret;
 
-	printk("IPC-service REMOTE [INST 0 - ENDP B] demo started\n");
-
 	ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+	role = DT_PROP(DT_NODELABEL(ipc0), role);
+
+	printk("IPC-service %s [INST 0 - ENDP B] demo started\n", role);
 
 	ret = ipc_service_open_instance(ipc0_instance);
 	if (ret < 0 && ret != -EALREADY) {
@@ -164,7 +168,7 @@ static void ipc0B_entry(void *dummy0, void *dummy1, void *dummy2)
 		k_sem_take(&ipc0B_data_sem, K_FOREVER);
 		message = ipc0B_received_data;
 
-		printk("REMOTE [0B]: %d\n", message);
+		printk("%s [0B]: %d\n", role, message);
 
 		message++;
 
@@ -175,7 +179,7 @@ static void ipc0B_entry(void *dummy0, void *dummy1, void *dummy2)
 		}
 	}
 
-	printk("IPC-service REMOTE [INST 0 - ENDP B] demo ended.\n");
+	printk("IPC-service %s [INST 0 - ENDP B] demo ended.\n", role);
 }
 K_THREAD_DEFINE(ipc0B_thread_id, STACKSIZE, ipc0B_entry, NULL, NULL, NULL, PRIORITY, 0, 0);
 
@@ -212,11 +216,13 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 	const struct device *ipc1_instance;
 	unsigned char message = 0;
 	struct ipc_ept ipc1_ept;
+	const char *role;
 	int ret;
 
-	printk("IPC-service REMOTE [INST 1] demo started\n");
-
 	ipc1_instance = DEVICE_DT_GET(DT_NODELABEL(ipc1));
+	role = DT_PROP(DT_NODELABEL(ipc1), role);
+
+	printk("IPC-service %s [INST 1] demo started\n", role);
 
 	ret = ipc_service_open_instance(ipc1_instance);
 	if (ret < 0 && ret != -EALREADY) {
@@ -236,7 +242,7 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 		k_sem_take(&ipc1_data_sem, K_FOREVER);
 		message = ipc1_received_data;
 
-		printk("REMOTE [1]: %d\n", message);
+		printk("%s [1]: %d\n", role, message);
 
 		message++;
 
@@ -247,6 +253,6 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 		}
 	}
 
-	printk("IPC-service REMOTE [INST 1] demo ended.\n");
+	printk("IPC-service %s [INST 1] demo ended.\n", role);
 }
 K_THREAD_DEFINE(ipc1_thread_id, STACKSIZE, ipc1_entry, NULL, NULL, NULL, PRIORITY, 0, 0);
