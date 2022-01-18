@@ -852,15 +852,6 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
 
-		/* Set early as we get called again through the call to
-		 * abort_cb().
-		 */
-		ticks_at_preempt = ticks_at_preempt_new;
-
-		/* Abort previous prepare that set the preempt timeout */
-		prev->is_aborted = 1U;
-		prev->abort_cb(&prev->prepare_param, prev->prepare_param.param);
-
 		/* Schedule short preempt timeout */
 		first = next;
 	} else {
@@ -968,14 +959,57 @@ static void preempt(void *param)
 
 	/* Preemptor not in pipeline */
 	if (next != param) {
+		struct lll_event *next_next = NULL;
+		struct lll_event *e;
 		uint32_t ret;
 
-		/* Start the preempt timeout */
-		ret = preempt_ticker_start(next, NULL, next);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
+		/* Find if a short prepare request in the pipeline */
+		do {
+			e = ull_prepare_dequeue_iter(&idx);
+			if (!next_next && e && !e->is_aborted &&
+			    !e->is_resume) {
+				next_next = e;
+			}
+		} while (e && (e->is_aborted || e->is_resume || (e != param)));
 
-		return;
+		/* No short prepare request in pipeline */
+		if (!e) {
+			/* Start the preempt timeout for next event */
+			ret = preempt_ticker_start(next, NULL, next);
+			LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+				  (ret == TICKER_STATUS_BUSY));
+
+			return;
+		}
+
+		/* FIXME: Abort all events in pipeline before the short
+		 *        prepare event. For now, lets assert when many
+		 *        enqueued prepares need aborting.
+		 */
+		LL_ASSERT(next_next == e);
+
+		/* Abort the prepare that is present before the short prepare */
+		next->is_aborted = 1;
+		next->abort_cb(&next->prepare_param, next->prepare_param.param);
+
+		/* As the prepare queue has been refreshed due to the call of
+		 * abort_cb which invokes the lll_done, find the latest prepare
+		 */
+		idx = UINT8_MAX;
+		next = ull_prepare_dequeue_iter(&idx);
+		if (!next) {
+			return;
+		}
+
+		/* Find a prepare that is ready and not a resume */
+		while (next && (next->is_aborted || next->is_resume)) {
+			next = ull_prepare_dequeue_iter(&idx);
+		}
+
+		/* No ready prepare */
+		if (!next) {
+			return;
+		}
 	}
 
 	/* Check if current event want to continue */
