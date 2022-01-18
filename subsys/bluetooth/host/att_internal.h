@@ -274,6 +274,9 @@ struct bt_att_req {
 	size_t len;
 #endif /* CONFIG_BT_SMP */
 	void *user_data;
+#if defined(CONFIG_BT_EATT)
+	enum bt_att_bearer_option bearer_option;
+#endif /* CONFIG_BT_EATT */
 };
 
 void att_sent(struct bt_conn *conn, void *user_data);
