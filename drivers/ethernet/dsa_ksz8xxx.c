@@ -40,7 +40,6 @@ struct ksz8xxx_data {
 #endif
 };
 
-#define DEV_DATA(dev) ((struct dsa_context *const)(dev)->data)
 #define PRV_DATA(ctx) ((struct ksz8xxx_data *const)(ctx)->prv_data)
 
 static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev,
@@ -765,7 +764,8 @@ static void dsa_delayed_work(struct k_work *item)
 
 int dsa_port_init(const struct device *dev)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	dsa_hw_init(pdev);
 	return 0;
@@ -775,7 +775,8 @@ int dsa_port_init(const struct device *dev)
 static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr,
 				    uint8_t value)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	dsa_ksz8xxx_write_reg(pdev, reg_addr, value);
 	return 0;
@@ -785,7 +786,8 @@ static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr,
 static int dsa_ksz8xxx_sw_read_reg(const struct device *dev, uint16_t reg_addr,
 				   uint8_t *value)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	dsa_ksz8xxx_read_reg(pdev, reg_addr, value);
 	return 0;
@@ -808,7 +810,8 @@ static int dsa_ksz8xxx_set_mac_table_entry(const struct device *dev,
 						uint16_t tbl_entry_idx,
 						uint16_t flags)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	if (flags != 0) {
 		return -EINVAL;
@@ -833,7 +836,8 @@ static int dsa_ksz8xxx_get_mac_table_entry(const struct device *dev,
 						uint8_t *buf,
 						uint16_t tbl_entry_idx)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	dsa_ksz8xxx_read_static_mac_table(pdev, tbl_entry_idx, buf);
 

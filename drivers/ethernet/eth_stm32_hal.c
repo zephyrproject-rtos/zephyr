@@ -202,7 +202,7 @@ static bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_stm32_hal_dev_data *dev_data = DEV_DATA(dev);
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth;
 	uint8_t *dma_buffer;
 	int res;
@@ -462,7 +462,7 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 
 	__ASSERT_NO_MSG(dev != NULL);
 
-	dev_data = DEV_DATA(dev);
+	dev_data = dev->data;
 
 	__ASSERT_NO_MSG(dev_data != NULL);
 
@@ -646,7 +646,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	ARG_UNUSED(unused2);
 
 	dev = (const struct device *)arg1;
-	dev_data = DEV_DATA(dev);
+	dev_data = dev->data;
 
 	__ASSERT_NO_MSG(dev_data != NULL);
 
@@ -702,7 +702,7 @@ static void eth_isr(const struct device *dev)
 
 	__ASSERT_NO_MSG(dev != NULL);
 
-	dev_data = DEV_DATA(dev);
+	dev_data = dev->data;
 
 	__ASSERT_NO_MSG(dev_data != NULL);
 
@@ -802,8 +802,8 @@ static int eth_initialize(const struct device *dev)
 
 	__ASSERT_NO_MSG(dev != NULL);
 
-	dev_data = DEV_DATA(dev);
-	cfg = DEV_CFG(dev);
+	dev_data = dev->data;
+	cfg = dev->config;
 
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(cfg != NULL);
@@ -964,7 +964,7 @@ static void eth_iface_init(struct net_if *iface)
 	dev = net_if_get_device(iface);
 	__ASSERT_NO_MSG(dev != NULL);
 
-	dev_data = DEV_DATA(dev);
+	dev_data = dev->data;
 	__ASSERT_NO_MSG(dev_data != NULL);
 
 	/* For VLAN, this value is only used to get the correct L2 driver.
@@ -986,9 +986,10 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	if (is_first_init) {
+		const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 		/* Now that the iface is setup, we are safe to enable IRQs. */
-		__ASSERT_NO_MSG(DEV_CFG(dev)->config_func != NULL);
-		DEV_CFG(dev)->config_func();
+		__ASSERT_NO_MSG(cfg->config_func != NULL);
+		cfg->config_func();
 	}
 }
 
@@ -1017,7 +1018,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
 
-	dev_data = DEV_DATA(dev);
+	dev_data = dev->data;
 	heth = &dev_data->heth;
 
 	switch (type) {
@@ -1317,8 +1318,8 @@ static const struct ptp_clock_driver_api api = {
 static int ptp_stm32_init(const struct device *port)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(mac));
-	struct eth_stm32_hal_dev_data *eth_dev_data = DEV_DATA(dev);
-	const struct eth_stm32_hal_dev_cfg *eth_cfg = DEV_CFG(dev);
+	struct eth_stm32_hal_dev_data *eth_dev_data = dev->data;
+	const struct eth_stm32_hal_dev_cfg *eth_cfg = dev->config;
 	struct ptp_context *ptp_context = port->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int ret;
