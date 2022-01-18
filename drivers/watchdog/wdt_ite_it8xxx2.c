@@ -22,7 +22,7 @@ static int wdt_warning_fired;
 /* device config */
 struct wdt_it8xxx2_config {
 	/* wdt register base address */
-	uintptr_t base;
+	struct wdt_it8xxx2_regs *base;
 };
 
 /* driver data */
@@ -35,16 +35,12 @@ struct wdt_it8xxx2_data {
 	uint32_t timeout;
 };
 
-/* driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct wdt_it8xxx2_config *)(dev)->config)
-#define DRV_DATA(dev) ((struct wdt_it8xxx2_data *)(dev)->data)
-#define DRV_REG(dev) (struct wdt_it8xxx2_regs *)(DRV_CONFIG(dev)->base)
-
 static int wdt_it8xxx2_install_timeout(const struct device *dev,
 					  const struct wdt_timeout_cfg *config)
 {
-	struct wdt_it8xxx2_data *data = DRV_DATA(dev);
-	struct wdt_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct wdt_it8xxx2_config *const wdt_config = dev->config;
+	struct wdt_it8xxx2_data *data = dev->data;
+	struct wdt_it8xxx2_regs *const inst = wdt_config->base;
 
 	/* if watchdog is already running */
 	if ((inst->ETWCFG) & IT8XXX2_WDT_LEWDCNTL) {
@@ -74,8 +70,9 @@ static int wdt_it8xxx2_install_timeout(const struct device *dev,
 
 static int wdt_it8xxx2_setup(const struct device *dev, uint8_t options)
 {
-	struct wdt_it8xxx2_data *data = DRV_DATA(dev);
-	struct wdt_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct wdt_it8xxx2_config *const wdt_config = dev->config;
+	struct wdt_it8xxx2_data *data = dev->data;
+	struct wdt_it8xxx2_regs *const inst = wdt_config->base;
 	uint16_t cnt0 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(data->timeout);
 	uint16_t cnt1 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT((data->timeout
 			+ CONFIG_WDT_ITE_WARNING_LEADING_TIME_MS));
@@ -143,8 +140,9 @@ static int wdt_it8xxx2_setup(const struct device *dev, uint8_t options)
  */
 static int wdt_it8xxx2_feed(const struct device *dev, int channel_id)
 {
-	struct wdt_it8xxx2_data *data = DRV_DATA(dev);
-	struct wdt_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct wdt_it8xxx2_config *const wdt_config = dev->config;
+	struct wdt_it8xxx2_data *data = dev->data;
+	struct wdt_it8xxx2_regs *const inst = wdt_config->base;
 	uint16_t cnt0 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(data->timeout);
 
 	ARG_UNUSED(channel_id);
@@ -177,8 +175,9 @@ static int wdt_it8xxx2_feed(const struct device *dev, int channel_id)
 
 static int wdt_it8xxx2_disable(const struct device *dev)
 {
-	struct wdt_it8xxx2_data *data = DRV_DATA(dev);
-	struct wdt_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct wdt_it8xxx2_config *const wdt_config = dev->config;
+	struct wdt_it8xxx2_data *data = dev->data;
+	struct wdt_it8xxx2_regs *const inst = wdt_config->base;
 
 	/* stop watchdog timer counting */
 	inst->ETWCTRL |= IT8XXX2_WDT_EWDSCEN;
@@ -199,8 +198,9 @@ static int wdt_it8xxx2_disable(const struct device *dev)
 
 static void wdt_it8xxx2_isr(const struct device *dev)
 {
-	struct wdt_it8xxx2_data *data = DRV_DATA(dev);
-	struct wdt_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct wdt_it8xxx2_config *const wdt_config = dev->config;
+	struct wdt_it8xxx2_data *data = dev->data;
+	struct wdt_it8xxx2_regs *const inst = wdt_config->base;
 
 	/* clear pre-warning timer1 interrupt status */
 	ite_intc_isr_clear(DT_INST_IRQN(0));
@@ -244,7 +244,8 @@ static const struct wdt_driver_api wdt_it8xxx2_api = {
 
 static int wdt_it8xxx2_init(const struct device *dev)
 {
-	struct wdt_it8xxx2_regs *const inst = DRV_REG(dev);
+	const struct wdt_it8xxx2_config *const wdt_config = dev->config;
+	struct wdt_it8xxx2_regs *const inst = wdt_config->base;
 
 	if (IS_ENABLED(CONFIG_WDT_DISABLE_AT_BOOT)) {
 		wdt_it8xxx2_disable(dev);
@@ -272,7 +273,7 @@ static int wdt_it8xxx2_init(const struct device *dev)
 }
 
 static const struct wdt_it8xxx2_config wdt_it8xxx2_cfg_0 = {
-	.base = DT_INST_REG_ADDR(0),
+	.base = (struct wdt_it8xxx2_regs *)DT_INST_REG_ADDR(0),
 };
 
 static struct wdt_it8xxx2_data wdt_it8xxx2_dev_data;
