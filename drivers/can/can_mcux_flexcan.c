@@ -337,6 +337,10 @@ static enum can_state mcux_flexcan_get_state(const struct device *dev,
 		return CAN_ERROR_PASSIVE;
 	}
 
+	if ((status_flags & (kFLEXCAN_TxErrorWarningFlag | kFLEXCAN_RxErrorWarningFlag)) != 0) {
+		return CAN_ERROR_WARNING;
+	}
+
 	return CAN_ERROR_ACTIVE;
 }
 
