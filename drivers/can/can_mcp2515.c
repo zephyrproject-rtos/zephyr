@@ -682,6 +682,10 @@ static enum can_state mcp2515_get_state(const struct device *dev,
 		return CAN_ERROR_PASSIVE;
 	}
 
+	if (eflg & MCP2515_EFLG_EWARN) {
+		return CAN_ERROR_WARNING;
+	}
+
 	return CAN_ERROR_ACTIVE;
 }
 
