@@ -136,6 +136,22 @@ void llcp_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat)
 	conn->llcp.remote.incompat = incompat;
 }
 
+void llcp_rr_set_paused_cmd(struct ll_conn *conn, enum llcp_proc proc)
+{
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	conn->llcp.remote.paused_cmd = proc;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP || CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+}
+
+enum llcp_proc llcp_rr_get_paused_cmd(struct ll_conn *conn)
+{
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	return conn->llcp.remote.paused_cmd;
+#else
+	return PROC_NONE;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP || CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+}
+
 static enum proc_incompat rr_get_incompat(struct ll_conn *conn)
 {
 	return conn->llcp.remote.incompat;
@@ -245,6 +261,11 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_rp_pu_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	case PROC_CTE_REQ:
+		llcp_rp_comm_tx_ack(conn, ctx, tx);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
 		/* Ignore tx_ack */
 		break;

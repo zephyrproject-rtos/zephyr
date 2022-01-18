@@ -20,6 +20,8 @@ enum llcp_proc {
 	PROC_CHAN_MAP_UPDATE,
 	PROC_DATA_LENGTH_UPDATE,
 	PROC_CTE_REQ,
+	/* A helper enum entry, to use in pause prcedure context */
+	PROC_NONE = 0x0,
 };
 #if ((CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM <\
 			(CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX *\
@@ -444,6 +446,8 @@ void llcp_lr_abort(struct ll_conn *conn);
  */
 void llcp_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat);
 bool llcp_rr_get_collision(struct ll_conn *conn);
+void llcp_rr_set_paused_cmd(struct ll_conn *conn, enum llcp_proc);
+enum llcp_proc llcp_rr_get_paused_cmd(struct ll_conn *conn);
 struct proc_ctx *llcp_rr_peek(struct ll_conn *conn);
 void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
