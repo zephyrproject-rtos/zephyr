@@ -1045,6 +1045,15 @@ struct bt_hci_cp_le_rx_test {
 	uint8_t  rx_ch;
 } __packed;
 
+#define BT_HCI_TEST_PKT_PAYLOAD_PRBS9           0x00
+#define BT_HCI_TEST_PKT_PAYLOAD_11110000        0x01
+#define BT_HCI_TEST_PKT_PAYLOAD_10101010        0x02
+#define BT_HCI_TEST_PKT_PAYLOAD_PRBS15          0x03
+#define BT_HCI_TEST_PKT_PAYLOAD_11111111        0x04
+#define BT_HCI_TEST_PKT_PAYLOAD_00000000        0x05
+#define BT_HCI_TEST_PKT_PAYLOAD_00001111        0x06
+#define BT_HCI_TEST_PKT_PAYLOAD_01010101        0x07
+
 #define BT_HCI_OP_LE_TX_TEST                    BT_OP(BT_OGF_LE, 0x001e)
 struct bt_hci_cp_le_tx_test {
 	uint8_t  tx_ch;
@@ -1231,6 +1240,10 @@ struct bt_hci_cp_le_set_phy {
 #define BT_HCI_LE_MOD_INDEX_STANDARD            0x00
 #define BT_HCI_LE_MOD_INDEX_STABLE              0x01
 
+#define BT_HCI_LE_RX_PHY_1M                     0x01
+#define BT_HCI_LE_RX_PHY_2M                     0x02
+#define BT_HCI_LE_RX_PHY_CODED                  0x03
+
 #define BT_HCI_OP_LE_ENH_RX_TEST                BT_OP(BT_OGF_LE, 0x0033)
 struct bt_hci_cp_le_enh_rx_test {
 	uint8_t  rx_ch;
@@ -1238,7 +1251,8 @@ struct bt_hci_cp_le_enh_rx_test {
 	uint8_t  mod_index;
 } __packed;
 
-/* Extends BT_HCI_LE_PHY */
+#define BT_HCI_LE_TX_PHY_1M                     0x01
+#define BT_HCI_LE_TX_PHY_2M                     0x02
 #define BT_HCI_LE_TX_PHY_CODED_S8               0x03
 #define BT_HCI_LE_TX_PHY_CODED_S2               0x04
 
@@ -1516,6 +1530,36 @@ struct bt_hci_cp_le_write_rf_path_comp {
 struct bt_hci_cp_le_set_privacy_mode {
 	bt_addr_le_t id_addr;
 	uint8_t         mode;
+} __packed;
+
+#define BT_HCI_LE_TEST_CTE_DISABLED             0x00
+#define BT_HCI_LE_TEST_CTE_TYPE_ANY             0x00
+#define BT_HCI_LE_TEST_SLOT_DURATION_ANY        0x00
+#define BT_HCI_LE_TEST_SWITCH_PATTERN_LEN_ANY   0x00
+
+#define BT_HCI_OP_LE_RX_TEST_V3                 BT_OP(BT_OGF_LE, 0x004f)
+struct bt_hci_cp_le_rx_test_v3 {
+	uint8_t  rx_ch;
+	uint8_t  phy;
+	uint8_t  mod_index;
+	uint8_t  expected_cte_len;
+	uint8_t  expected_cte_type;
+	uint8_t  slot_durations;
+	uint8_t  switch_pattern_len;
+	uint8_t  ant_ids[0];
+} __packed;
+
+#define BT_HCI_OP_LE_TX_TEST_V3                 BT_OP(BT_OGF_LE, 0x0050)
+
+struct bt_hci_cp_le_tx_test_v3 {
+	uint8_t  tx_ch;
+	uint8_t  test_data_len;
+	uint8_t  pkt_payload;
+	uint8_t  phy;
+	uint8_t  cte_len;
+	uint8_t  cte_type;
+	uint8_t  switch_pattern_len;
+	uint8_t  ant_ids[0];
 } __packed;
 
 /* Min and max Constant Tone Extension length in 8us units */
@@ -2017,6 +2061,33 @@ struct bt_hci_rp_le_read_iso_link_quality {
 	uint32_t crc_error_packets;
 	uint32_t rx_unreceived_packets;
 	uint32_t duplicate_packets;
+} __packed;
+
+#define BT_HCI_OP_LE_TX_TEST_V4                 BT_OP(BT_OGF_LE, 0x007B)
+
+struct bt_hci_cp_le_tx_test_v4 {
+	uint8_t  tx_ch;
+	uint8_t  test_data_len;
+	uint8_t  pkt_payload;
+	uint8_t  phy;
+	uint8_t  cte_len;
+	uint8_t  cte_type;
+	uint8_t  switch_pattern_len;
+	uint8_t  ant_ids[0];
+} __packed;
+
+#define BT_HCI_TX_TEST_POWER_MIN -0x7F
+#define BT_HCI_TX_TEST_POWER_MAX 0x14
+
+#define BT_HCI_TX_TEST_POWER_MIN_SET 0x7E
+#define BT_HCI_TX_TEST_POWER_MAX_SET 0x7F
+
+/* Helper structure for Tx power parameter in the HCI Tx Test v4 command.
+ * Previous parameter of this command is variable size so having separated structure
+ * for this parameter helps in command parameters unpacking.
+ */
+struct bt_hci_cp_le_tx_test_v4_tx_power {
+	int8_t tx_power;
 } __packed;
 
 /* Event definitions */

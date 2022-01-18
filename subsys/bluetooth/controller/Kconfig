@@ -67,9 +67,6 @@ config BT_CTLR_CHAN_SEL_2_SUPPORT
 config BT_CTLR_MIN_USED_CHAN_SUPPORT
 	bool
 
-config BT_CTLR_DTM_HCI_SUPPORT
-	bool
-
 config BT_CTLR_SMI_SUPPORT
 	bool
 
@@ -747,18 +744,6 @@ config BT_CTLR_READ_ISO_LINK_QUALITY
 	help
 	  Enable support for LE Read ISO Link Quality command.
 
-config BT_CTLR_DTM
-	bool
-	help
-	  Enable support for Direct Test Mode in the Controller.
-
-config BT_CTLR_DTM_HCI
-	bool "Direct Test Mode over HCI"
-	depends on BT_CTLR_DTM_HCI_SUPPORT
-	select BT_CTLR_DTM
-	help
-	  Enable support for Direct Test Mode over the HCI transport.
-
 config BT_CTLR_SMI_RX
 	bool "Stable modulation index - Receiver"
 	depends on BT_CTLR_SMI_SUPPORT
@@ -785,6 +770,7 @@ config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 
 rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
+rsource "Kconfig.dtm"
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"

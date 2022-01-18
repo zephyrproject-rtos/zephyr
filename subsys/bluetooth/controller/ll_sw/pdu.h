@@ -1044,3 +1044,38 @@ struct pdu_big_info {
 #define PDU_BIG_INFO_ENCRYPTED_SIZE sizeof(struct pdu_big_info)
 #define PDU_BIG_BN_MAX              0x07
 #define PDU_BIG_PAYLOAD_COUNT_MAX   28
+
+struct pdu_dtm {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t type:4;
+	uint8_t rfu0:1;
+#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+	uint8_t cp:1;
+	uint8_t rfu1:2;
+#else
+	uint8_t rfu1:3;
+#endif
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+	uint8_t rfu1:2;
+	uint8_t cp:1;
+#else
+	uint8_t rfu1:3;
+#endif
+	uint8_t rfu0:1;
+	uint8_t type:4;
+#else
+#error "Unsupported endianness"
+#endif
+	uint8_t length;
+#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+	union {
+		uint8_t resv; /* TODO: remove nRF specific code */
+		struct pdu_cte_info cte_info; /* BT 5.1 Core spec. CTEInfo storage */
+	};
+#endif
+	uint8_t payload[0];
+} __packed;
+
+/* Direct Test Mode maximum payload size */
+#define PDU_DTM_PAYLOAD_SIZE_MAX 255
