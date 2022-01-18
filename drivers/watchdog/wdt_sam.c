@@ -47,7 +47,7 @@ static void wdt_sam_isr(const struct device *dev)
 {
 	const struct wdt_sam_dev_cfg *config = dev->config;
 	uint32_t wdt_sr;
-	Wdt *const wdt = config->regs;
+	Wdt * const wdt = config->regs;
 	struct wdt_sam_dev_data *data = dev->data;
 
 	/* Clear status bit to acknowledge interrupt by dummy read. */
@@ -83,7 +83,7 @@ static int wdt_sam_disable(const struct device *dev)
 {
 	const struct wdt_sam_dev_cfg *config = dev->config;
 
-	Wdt *const wdt = config->regs;
+	Wdt * const wdt = config->regs;
 	struct wdt_sam_dev_data *data = dev->data;
 
 	/* since Watchdog mode register is 'write-once', we can't disable if
@@ -108,7 +108,7 @@ static int wdt_sam_setup(const struct device *dev, uint8_t options)
 {
 	const struct wdt_sam_dev_cfg *config = dev->config;
 
-	Wdt *const wdt = config->regs;
+	Wdt * const wdt = config->regs;
 	struct wdt_sam_dev_data *data = dev->data;
 
 	if (!data->timeout_valid) {
@@ -216,7 +216,7 @@ static int wdt_sam_feed(const struct device *dev, int channel_id)
 	 * reloaded/feeded with the 12-bit watchdog counter
 	 * value from WDT_MR and restarted
 	 */
-	Wdt *const wdt = config->regs;
+	Wdt * const wdt = config->regs;
 
 	wdt->WDT_CR |= WDT_CR_KEY_PASSWD | WDT_CR_WDRSTT;
 

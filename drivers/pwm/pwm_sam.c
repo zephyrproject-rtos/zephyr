@@ -41,7 +41,7 @@ static int sam_pwm_pin_set(const struct device *dev, uint32_t ch,
 {
 	const struct sam_pwm_config *config = dev->config;
 
-	Pwm *const pwm = config->regs;
+	Pwm * const pwm = config->regs;
 
 	if (ch >= PWMCHNUM_NUMBER) {
 		return -EINVAL;
@@ -79,7 +79,7 @@ static int sam_pwm_init(const struct device *dev)
 {
 	const struct sam_pwm_config *config = dev->config;
 
-	Pwm *const pwm = config->regs;
+	Pwm * const pwm = config->regs;
 	uint32_t id = config->id;
 	uint8_t prescaler = config->prescaler;
 	uint8_t divider = config->divider;

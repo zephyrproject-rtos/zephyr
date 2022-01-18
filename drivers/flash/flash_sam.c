@@ -96,7 +96,7 @@ static int flash_sam_wait_ready(const struct device *dev)
 {
 	const struct flash_sam_dev_cfg *config = dev->config;
 
-	Efc *const efc = config->regs;
+	Efc * const efc = config->regs;
 
 	uint64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT_MS;
 	uint32_t fsr;
@@ -137,7 +137,7 @@ static int flash_sam_write_page(const struct device *dev, off_t offset,
 {
 	const struct flash_sam_dev_cfg *config = dev->config;
 
-	Efc *const efc = config->regs;
+	Efc * const efc = config->regs;
 	const uint32_t *src = data;
 	uint32_t *dst = (uint32_t *)((uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset);
 
@@ -246,7 +246,7 @@ static int flash_sam_erase_block(const struct device *dev, off_t offset)
 {
 	const struct flash_sam_dev_cfg *config = dev->config;
 
-	Efc *const efc = config->regs;
+	Efc * const efc = config->regs;
 
 	LOG_DBG("offset = 0x%lx", (long)offset);
 
@@ -320,7 +320,7 @@ static int flash_sam_write_protection(const struct device *dev, bool enable)
 {
 	const struct flash_sam_dev_cfg *config = dev->config;
 
-	Efc *const efc = config->regs;
+	Efc * const efc = config->regs;
 	int rc = 0;
 
 	if (enable) {

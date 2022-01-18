@@ -95,7 +95,7 @@ static int uart_sam_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_sam_dev_cfg *const cfg = dev->config;
 
-	Uart *const uart = cfg->regs;
+	Uart * const uart = cfg->regs;
 
 	if (!(uart->UART_SR & UART_SR_RXRDY)) {
 		return -EBUSY;
@@ -111,7 +111,7 @@ static void uart_sam_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_sam_dev_cfg *const cfg = dev->config;
 
-	Uart *const uart = cfg->regs;
+	Uart * const uart = cfg->regs;
 
 	/* Wait for transmitter to be ready */
 	while (!(uart->UART_SR & UART_SR_TXRDY)) {
@@ -385,7 +385,7 @@ static const struct uart_driver_api uart_sam_driver_api = {
 									\
 	static const struct uart_sam_dev_cfg uart##n##_sam_config;	\
 									\
-	DEVICE_DT_INST_DEFINE(n, &uart_sam_init, 			\
+	DEVICE_DT_INST_DEFINE(n, &uart_sam_init,			\
 			    NULL, &uart##n##_sam_data,			\
 			    &uart##n##_sam_config, PRE_KERNEL_1,	\
 			    CONFIG_SERIAL_INIT_PRIORITY,		\

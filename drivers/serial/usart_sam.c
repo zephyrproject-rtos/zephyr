@@ -95,7 +95,8 @@ static int usart_sam_init(const struct device *dev)
 static int usart_sam_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct usart_sam_dev_cfg *config = dev->config;
-	Usart *const usart = config->regs;
+
+	Usart * const usart = config->regs;
 
 	if (!(usart->US_CSR & US_CSR_RXRDY)) {
 		return -EBUSY;
@@ -111,7 +112,7 @@ static void usart_sam_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct usart_sam_dev_cfg *config = dev->config;
 
-	Usart *const usart = config->regs;
+	Usart * const usart = config->regs;
 
 	/* Wait for transmitter to be ready */
 	while (!(usart->US_CSR & US_CSR_TXRDY)) {
