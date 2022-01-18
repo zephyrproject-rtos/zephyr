@@ -367,6 +367,9 @@ struct llcp_struct {
 		uint8_t collision;
 		uint8_t incompat;
 		uint8_t reject_opcode;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+		uint8_t paused_cmd;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP || CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	} remote;
 
 	/* Prepare parameters */
