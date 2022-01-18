@@ -889,7 +889,7 @@ static inline void can_set_state_change_callback(const struct device *dev,
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->set_state_change_callback(dev, callback, user_data);
+	api->set_state_change_callback(dev, callback, user_data);
 }
 
 /** @} */
