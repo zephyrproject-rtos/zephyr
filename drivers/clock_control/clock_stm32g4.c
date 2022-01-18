@@ -49,7 +49,7 @@ void config_enable_default_clocks(void)
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-#if STM32_LSE_CLOCK
+#if STM32_LSE_ENABLED
 	/* LSE belongs to the back-up domain, enable access.*/
 
 	/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
