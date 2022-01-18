@@ -70,7 +70,7 @@ struct adc_it8xxx2_cfg {
 static int adc_it8xxx2_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
 {
-	struct adc_it8xxx2_cfg *config = dev->config;
+	const struct adc_it8xxx2_cfg *config = dev->config;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
 		LOG_ERR("Selected ADC acquisition time is not valid");
