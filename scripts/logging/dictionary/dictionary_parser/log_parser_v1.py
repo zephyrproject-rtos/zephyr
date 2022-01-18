@@ -21,7 +21,13 @@ from .log_parser import LogParser
 
 HEX_BYTES_IN_LINE = 16
 
-LOG_LEVELS = [('none', Fore.WHITE), ('err', Fore.RED), ('wrn', Fore.YELLOW), ('inf', Fore.GREEN), ('dbg', Fore.BLUE)]
+LOG_LEVELS = [
+    ('none', Fore.WHITE),
+    ('err', Fore.RED),
+    ('wrn', Fore.YELLOW),
+    ('inf', Fore.GREEN),
+    ('dbg', Fore.BLUE)
+]
 
 # Need to keep sync with struct log_dict_output_msg_hdr in
 # include/logging/log_output_dict.h.
@@ -97,7 +103,7 @@ class DataTypes():
 
     def __init__(self, database):
         self.database = database
-        self.data_types = dict()
+        self.data_types = {}
 
         if database.is_tgt_64bit():
             self.add_data_type(self.LONG, "q")
@@ -122,7 +128,7 @@ class DataTypes():
 
         formatter = endianness + fmt
 
-        self.data_types[data_type] = dict()
+        self.data_types[data_type] = {}
         self.data_types[data_type]['fmt'] = formatter
 
         size = struct.calcsize(formatter)
@@ -212,7 +218,7 @@ class LogParserV1(LogParser):
         is_parsing = False
         do_extract = False
 
-        args = list()
+        args = []
 
         # Translated from cbvprintf_package()
         for idx, fmt in enumerate(fmt_str):
@@ -298,7 +304,7 @@ class LogParserV1(LogParser):
     @staticmethod
     def extract_string_table(str_tbl):
         """Extract string table in a packaged log message"""
-        tbl = dict()
+        tbl = {}
 
         one_str = ""
         next_new_string = True
@@ -337,14 +343,16 @@ class LogParserV1(LogParser):
                 chr_vals += " "
 
             elif chr_done == HEX_BYTES_IN_LINE:
-                print(f"{color}%s%s|%s{Fore.RESET}" % ((" " * prefix_len), hex_vals, chr_vals))
+                print(f"{color}%s%s|%s{Fore.RESET}" % ((" " * prefix_len),
+                      hex_vals, chr_vals))
                 hex_vals = ""
                 chr_vals = ""
                 chr_done = 0
 
         if len(chr_vals) > 0:
             hex_padding = "   " * (HEX_BYTES_IN_LINE - chr_done)
-            print(f"{color}%s%s%s|%s{Fore.RESET}" % ((" " * prefix_len), hex_vals, hex_padding, chr_vals))
+            print(f"{color}%s%s%s|%s{Fore.RESET}" % ((" " * prefix_len),
+                  hex_vals, hex_padding, chr_vals))
 
 
     def parse_one_normal_msg(self, logdata, offset):
@@ -420,7 +428,7 @@ class LogParserV1(LogParser):
         log_msg = fmt_str % args
 
         if level == 0:
-            print("%s" % log_msg, end='')
+            print(f"{log_msg}", end='')
         else:
             log_prefix = f"[{timestamp:>10}] <{level_str}> {source_id_str}: "
             print(f"{color}%s%s{Fore.RESET}" % (log_prefix, log_msg))
@@ -446,7 +454,7 @@ class LogParserV1(LogParser):
                 num_dropped = struct.unpack_from(self.fmt_dropped_cnt, logdata, offset)
                 offset += struct.calcsize(self.fmt_dropped_cnt)
 
-                print("--- %d messages dropped ---" % num_dropped)
+                print(f"--- {num_dropped} messages dropped ---")
 
             elif msg_type == MSG_TYPE_NORMAL:
                 ret = self.parse_one_normal_msg(logdata, offset)
