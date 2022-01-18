@@ -33,7 +33,7 @@ static volatile bool run_on_flags[CONFIG_MP_NUM_CPUS];
 
 static uint32_t clk_ratios[CONFIG_MP_NUM_CPUS];
 
-void run_on_cpu(int cpu, void (*fn)(void *), void *arg)
+void run_on_cpu(int cpu, void (*fn)(void *), void *arg, bool wait)
 {
 	__ASSERT_NO_MSG(cpu < CONFIG_MP_NUM_CPUS);
 
@@ -49,12 +49,13 @@ void run_on_cpu(int cpu, void (*fn)(void *), void *arg)
 	run_on_flags[cpu] = false;
 	k_thread_start(&run_on_threads[cpu]);
 
-	while (!run_on_flags[cpu]) {
-		delay_relax();
-		k_yield();
+	if (wait) {
+		while (!run_on_flags[cpu]) {
+			delay_relax();
+			k_yield();
+		}
+		k_thread_abort(&run_on_threads[cpu]);
 	}
-
-	k_thread_abort(&run_on_threads[cpu]);
 }
 
 static inline uint32_t ccount(void)
@@ -134,6 +135,39 @@ void test_cpu_behavior(void)
 {
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		printk("Per-CPU smoke test %d...\n", i);
-		run_on_cpu(i, core_smoke, (void *)i);
+		run_on_cpu(i, core_smoke, (void *)i, true);
+	}
+}
+
+void alive_fn(void *arg)
+{
+	*(bool *)arg = true;
+}
+
+void halt_and_restart(int cpu)
+{
+	printk("halt/restart core %d...\n", cpu);
+	static bool alive_flag;
+
+	soc_adsp_halt_cpu(cpu);
+	alive_flag = false;
+	run_on_cpu(cpu, alive_fn, &alive_flag, false);
+	k_msleep(100);
+	zassert_false(alive_flag, "cpu didn't halt");
+
+	z_smp_start_cpu(cpu);
+	WAIT_FOR(alive_flag == true);
+
+	k_thread_abort(&run_on_threads[cpu]);
+}
+
+void test_cpu_halt(void)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		ztest_test_skip();
+	}
+
+	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+		halt_and_restart(i);
 	}
 }
