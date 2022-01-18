@@ -66,9 +66,6 @@ static const struct flash_parameters flash_esp32_parameters = {
 	.erase_value = 0xff,
 };
 
-#define DEV_DATA(dev) ((struct flash_esp32_dev_data *const)(dev)->data)
-#define DEV_CFG(dev) ((const struct flash_esp32_dev_config *const)(dev)->config)
-
 #if !defined(CONFIG_SOC_ESP32C3)
 #define SPI1_EXTRA_DUMMIES (g_rom_spiflash_dummy_len_plus[1])
 #else
@@ -101,12 +98,16 @@ static esp_rom_spiflash_chip_t esp_flashchip_info;
 
 static inline void flash_esp32_sem_take(const struct device *dev)
 {
-	k_sem_take(&DEV_DATA(dev)->sem, K_FOREVER);
+	struct flash_esp32_dev_data *data = dev->data;
+
+	k_sem_take(&data->sem, K_FOREVER);
 }
 
 static inline void flash_esp32_sem_give(const struct device *dev)
 {
-	k_sem_give(&DEV_DATA(dev)->sem);
+	struct flash_esp32_dev_data *data = dev->data;
+
+	k_sem_give(&data->sem);
 }
 
 static inline int flash_esp32_wait_cmd_done(const spi_dev_t *hw)
@@ -231,7 +232,8 @@ static void IRAM_ATTR flash_esp32_flush_cache(size_t start_addr, size_t length)
 
 static int set_read_options(const struct device *dev)
 {
-	spi_dev_t *hw = DEV_CFG(dev)->controller;
+	const struct flash_esp32_dev_config *config = dev->config;
+	spi_dev_t *hw = config->controller;
 	uint32_t dummy_len = 0;
 	uint32_t addr_len;
 	uint8_t read_cmd;
@@ -285,7 +287,8 @@ static int set_read_options(const struct device *dev)
 
 static int read_once(const struct device *dev, void *buffer, uint32_t address, uint32_t read_len)
 {
-	spi_dev_t *hw = DEV_CFG(dev)->controller;
+	const struct flash_esp32_dev_config *config = dev->config;
+	spi_dev_t *hw = config->controller;
 	int bitlen = spi_flash_ll_get_addr_bitlen(hw);
 
 	spi_flash_ll_set_usr_address(hw, address << (bitlen - 24), bitlen);
@@ -328,7 +331,7 @@ static int read_data(const struct device *dev, uint8_t *buffer, uint32_t address
 
 static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
-	const struct flash_esp32_dev_config *const cfg = DEV_CFG(dev);
+	const struct flash_esp32_dev_config *const cfg = dev->config;
 	const spi_flash_guard_funcs_t *guard = spi_flash_guard_get();
 	uint32_t chip_size = cfg->chip->chip_size;
 
@@ -408,7 +411,8 @@ out:
 
 static inline void set_write_options(const struct device *dev)
 {
-	spi_dev_t *hw = DEV_CFG(dev)->controller;
+	const struct flash_esp32_dev_config *config = dev->config;
+	spi_dev_t *hw = config->controller;
 
 	spi_flash_ll_set_dummy(hw, 0);
 	/* only single line flash write is currently supported */
@@ -417,7 +421,7 @@ static inline void set_write_options(const struct device *dev)
 
 static int read_status(const struct device *dev, uint32_t *status)
 {
-	const struct flash_esp32_dev_config *const cfg = DEV_CFG(dev);
+	const struct flash_esp32_dev_config *const cfg = dev->config;
 	uint32_t status_value = ESP_ROM_SPIFLASH_BUSY_FLAG;
 
 	if (SPI1_EXTRA_DUMMIES == 0) {
@@ -462,7 +466,7 @@ static inline bool host_idle(spi_dev_t *hw)
 
 static int wait_idle(const struct device *dev)
 {
-	const struct flash_esp32_dev_config *const cfg = DEV_CFG(dev);
+	const struct flash_esp32_dev_config *const cfg = dev->config;
 	uint32_t status;
 	int64_t timeout = k_uptime_get() + SPI_TIMEOUT_MSEC;
 
@@ -482,7 +486,7 @@ static int wait_idle(const struct device *dev)
 
 static int write_protect(const struct device *dev, bool write_protect)
 {
-	const struct flash_esp32_dev_config *const cfg = DEV_CFG(dev);
+	const struct flash_esp32_dev_config *const cfg = dev->config;
 
 	wait_idle(dev);
 
@@ -508,8 +512,9 @@ static int write_protect(const struct device *dev, bool write_protect)
 static int program_page(const struct device *dev, uint32_t spi_addr,
 			uint32_t *addr_source, int32_t byte_length)
 {
-	const uint32_t page_size =  DEV_CFG(dev)->chip->page_size;
-	spi_dev_t *hw = DEV_CFG(dev)->controller;
+	const struct flash_esp32_dev_config *config = dev->config;
+	const uint32_t page_size = config->chip->page_size;
+	spi_dev_t *hw = config->controller;
 
 	/* check 4byte alignment */
 	if ((byte_length & 0x3) != 0) {
@@ -567,9 +572,9 @@ static int flash_esp32_write_inner(const struct device *dev,
 			     const uint32_t *buffer,
 			     size_t length)
 {
-
-	const uint32_t page_size =  DEV_CFG(dev)->chip->page_size;
-	const uint32_t chip_size =  DEV_CFG(dev)->chip->chip_size;
+	const struct flash_esp32_dev_config *config = dev->config;
+	const uint32_t page_size = config->chip->page_size;
+	const uint32_t chip_size = config->chip->chip_size;
 	uint32_t prog_len, prog_num;
 
 	set_write_options(dev);
@@ -617,7 +622,8 @@ static int flash_esp32_write(const struct device *dev,
 			     const void *buffer,
 			     size_t length)
 {
-	const uint32_t chip_size =  DEV_CFG(dev)->chip->chip_size;
+	const struct flash_esp32_dev_config *config = dev->config;
+	const uint32_t chip_size =  config->chip->chip_size;
 	const spi_flash_guard_funcs_t *guard = spi_flash_guard_get();
 	int rc = 0;
 
@@ -703,7 +709,8 @@ out:
 
 static int erase_sector(const struct device *dev, uint32_t start_addr)
 {
-	spi_dev_t *hw = DEV_CFG(dev)->controller;
+	const struct flash_esp32_dev_config *config = dev->config;
+	spi_dev_t *hw = config->controller;
 	int rc = write_protect(dev, false);
 
 	if (rc == 0) {
@@ -731,8 +738,9 @@ static int erase_sector(const struct device *dev, uint32_t start_addr)
 
 static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 {
-	uint32_t sector_size = DEV_CFG(dev)->chip->sector_size;
-	uint32_t chip_size = DEV_CFG(dev)->chip->chip_size;
+	const struct flash_esp32_dev_config *config = dev->config;
+	uint32_t sector_size = config->chip->sector_size;
+	uint32_t chip_size = config->chip->chip_size;
 	const spi_flash_guard_funcs_t *guard = spi_flash_guard_get();
 	int rc = 0;
 
@@ -800,7 +808,7 @@ flash_esp32_get_parameters(const struct device *dev)
 
 static int flash_esp32_init(const struct device *dev)
 {
-	struct flash_esp32_dev_data *const dev_data = DEV_DATA(dev);
+	struct flash_esp32_dev_data *const dev_data = dev->data;
 
 #if defined(CONFIG_SOC_ESP32C3)
 	spiflash_legacy_data_t *legacy_data = rom_spiflash_legacy_data;
