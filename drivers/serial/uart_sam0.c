@@ -504,7 +504,7 @@ static int uart_sam0_init(const struct device *dev)
 	const struct uart_sam0_dev_cfg *const cfg = dev->config;
 	struct uart_sam0_dev_data *const dev_data = dev->data;
 
-	SercomUsart *const usart = cfg->regs;
+	SercomUsart * const usart = cfg->regs;
 
 #ifdef MCLK
 	/* Enable the GCLK */
@@ -633,7 +633,7 @@ static int uart_sam0_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
 
-	SercomUsart *const usart = config->regs;
+	SercomUsart * const usart = config->regs;
 
 	if (!usart->INTFLAG.bit.RXC) {
 		return -EBUSY;
@@ -647,7 +647,7 @@ static void uart_sam0_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
 
-	SercomUsart *const usart = config->regs;
+	SercomUsart * const usart = config->regs;
 
 	while (!usart->INTFLAG.bit.DRE) {
 	}
