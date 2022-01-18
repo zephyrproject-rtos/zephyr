@@ -150,12 +150,6 @@ struct uart_xlnx_ps_dev_data_t {
 #endif
 };
 
-#define DEV_CFG(dev) \
-	((const struct uart_xlnx_ps_dev_config * const) \
-	 (dev)->config)
-#define DEV_DATA(dev) \
-	((struct uart_xlnx_ps_dev_data_t *)(dev)->data)
-
 static const struct uart_driver_api uart_xlnx_ps_driver_api;
 
 /**
@@ -224,7 +218,7 @@ static void xlnx_ps_enable_uart(uint32_t reg_base)
  */
 static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t divisor, generator;
 	uint32_t baud;
 	uint32_t clk_freq;
@@ -283,7 +277,7 @@ static void set_baudrate(const struct device *dev, uint32_t baud_rate)
  */
 static int uart_xlnx_ps_init(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_val;
 	uint32_t reg_base;
 
@@ -334,7 +328,7 @@ static int uart_xlnx_ps_init(const struct device *dev)
  */
 static int uart_xlnx_ps_poll_in(const struct device *dev, unsigned char *c)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_val;
 	uint32_t reg_base;
 
@@ -365,7 +359,7 @@ static int uart_xlnx_ps_poll_in(const struct device *dev, unsigned char *c)
  */
 static void uart_xlnx_ps_poll_out(const struct device *dev, unsigned char c)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_val;
 	uint32_t reg_base;
 
@@ -597,7 +591,7 @@ static int uart_xlnx_ps_configure(const struct device *dev,
 				  const struct uart_config *cfg)
 {
 	struct uart_xlnx_ps_dev_config *dev_cfg =
-	(struct uart_xlnx_ps_dev_config *)DEV_CFG(dev);
+	(struct uart_xlnx_ps_dev_config *)dev->config;
 
 	uint32_t reg_base    = dev_cfg->uconf.regs;
 	uint32_t mode_reg    = 0;
@@ -803,7 +797,7 @@ static inline enum uart_config_flow_control uart_xlnx_ps_ll2cfg_hwctrl(
 static int uart_xlnx_ps_config_get(const struct device *dev,
 				   struct uart_config *cfg)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 
 	/*
 	 * Read the Mode & Modem control registers - they contain
@@ -841,7 +835,7 @@ static int uart_xlnx_ps_fifo_fill(const struct device *dev,
 				  const uint8_t *tx_data,
 				  int size)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base = dev_cfg->uconf.regs;
 	uint32_t data_iter = 0;
 
@@ -868,7 +862,7 @@ static int uart_xlnx_ps_fifo_fill(const struct device *dev,
 static int uart_xlnx_ps_fifo_read(const struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_val;
 	uint32_t reg_base;
 	int inum = 0;
@@ -893,7 +887,7 @@ static int uart_xlnx_ps_fifo_read(const struct device *dev, uint8_t *rx_data,
  */
 static void uart_xlnx_ps_irq_tx_enable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
@@ -909,7 +903,7 @@ static void uart_xlnx_ps_irq_tx_enable(const struct device *dev)
  */
 static void uart_xlnx_ps_irq_tx_disable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
@@ -927,7 +921,7 @@ static void uart_xlnx_ps_irq_tx_disable(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_tx_ready(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base = dev_cfg->uconf.regs;
 	uint32_t reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 
@@ -947,7 +941,7 @@ static int uart_xlnx_ps_irq_tx_ready(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_tx_complete(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base;
 	uint32_t reg_val;
 
@@ -967,7 +961,7 @@ static int uart_xlnx_ps_irq_tx_complete(const struct device *dev)
  */
 static void uart_xlnx_ps_irq_rx_enable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
@@ -981,7 +975,7 @@ static void uart_xlnx_ps_irq_rx_enable(const struct device *dev)
  */
 static void uart_xlnx_ps_irq_rx_disable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
@@ -997,7 +991,7 @@ static void uart_xlnx_ps_irq_rx_disable(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_rx_ready(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base = dev_cfg->uconf.regs;
 	uint32_t reg_val = sys_read32(reg_base + XUARTPS_ISR_OFFSET);
 
@@ -1016,7 +1010,7 @@ static int uart_xlnx_ps_irq_rx_ready(const struct device *dev)
  */
 static void uart_xlnx_ps_irq_err_enable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
@@ -1038,7 +1032,7 @@ static void uart_xlnx_ps_irq_err_enable(const struct device *dev)
  */
 static void uart_xlnx_ps_irq_err_disable(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base;
 
 	reg_base = dev_cfg->uconf.regs;
@@ -1060,7 +1054,7 @@ static void uart_xlnx_ps_irq_err_disable(const struct device *dev)
  */
 static int uart_xlnx_ps_irq_is_pending(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = DEV_CFG(dev);
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_base;
 	uint32_t reg_imr;
 	uint32_t reg_isr;
@@ -1099,7 +1093,7 @@ static void uart_xlnx_ps_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
 					    void *cb_data)
 {
-	struct uart_xlnx_ps_dev_data_t *dev_data = DEV_DATA(dev);
+	struct uart_xlnx_ps_dev_data_t *dev_data = dev->data;
 
 	dev_data->user_cb = cb;
 	dev_data->user_data = cb_data;
@@ -1114,7 +1108,7 @@ static void uart_xlnx_ps_irq_callback_set(const struct device *dev,
  */
 static void uart_xlnx_ps_isr(const struct device *dev)
 {
-	const struct uart_xlnx_ps_dev_data_t *data = DEV_DATA(dev);
+	const struct uart_xlnx_ps_dev_data_t *data = dev->data;
 
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);

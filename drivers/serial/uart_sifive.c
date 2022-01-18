@@ -64,13 +64,9 @@ struct uart_sifive_data {
 #endif
 };
 
-#define DEV_CFG(dev)						\
-	((const struct uart_sifive_device_config * const)	\
-	 (dev)->config)
 #define DEV_UART(dev)						\
-	((struct uart_sifive_regs_t *)(DEV_CFG(dev))->port)
-#define DEV_DATA(dev)						\
-	((struct uart_sifive_data * const)(dev)->data)
+	((struct uart_sifive_regs_t *)				\
+	 ((const struct uart_sifive_device_config * const)(dev)->config)->port)
 
 /**
  * @brief Output a character in polled mode.
@@ -301,7 +297,7 @@ static void uart_sifive_irq_callback_set(const struct device *dev,
 					 uart_irq_callback_user_data_t cb,
 					 void *cb_data)
 {
-	struct uart_sifive_data *data = DEV_DATA(dev);
+	struct uart_sifive_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -309,7 +305,7 @@ static void uart_sifive_irq_callback_set(const struct device *dev,
 
 static void uart_sifive_irq_handler(const struct device *dev)
 {
-	struct uart_sifive_data *data = DEV_DATA(dev);
+	struct uart_sifive_data *data = dev->data;
 
 	if (data->callback)
 		data->callback(dev, data->cb_data);
@@ -320,7 +316,7 @@ static void uart_sifive_irq_handler(const struct device *dev)
 
 static int uart_sifive_init(const struct device *dev)
 {
-	const struct uart_sifive_device_config * const cfg = DEV_CFG(dev);
+	const struct uart_sifive_device_config * const cfg = dev->config;
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/* Enable TX and RX channels */

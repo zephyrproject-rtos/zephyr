@@ -77,44 +77,39 @@ struct uart_stellaris_dev_data_t {
 #endif
 };
 
-/* convenience defines */
-
-#define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct uart_stellaris_dev_data_t * const)(dev)->data)
 #define UART_STRUCT(dev) \
-	((volatile struct _uart *)(DEV_CFG(dev))->base)
+	((volatile struct _uart *) \
+	 ((const struct uart_device_config * const)(dev)->config)->base)
 
 /* registers */
-#define UARTDR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x000)))
-#define UARTSR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x004)))
-#define UARTCR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x004)))
-#define UARTFR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x018)))
-#define UARTILPR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x020)))
-#define UARTIBRD(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x024)))
-#define UARTFBRD(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x028)))
-#define UARTLCRH(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x02C)))
-#define UARTCTL(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x030)))
-#define UARTIFLS(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x034)))
-#define UARTIM(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x038)))
-#define UARTRIS(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x03C)))
-#define UARTMIS(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x040)))
-#define UARTICR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x044)))
+#define UARTDR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x000)))
+#define UARTSR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x004)))
+#define UARTCR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x004)))
+#define UARTFR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x018)))
+#define UARTILPR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x020)))
+#define UARTIBRD(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x024)))
+#define UARTFBRD(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x028)))
+#define UARTLCRH(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x02C)))
+#define UARTCTL(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x030)))
+#define UARTIFLS(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x034)))
+#define UARTIM(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x038)))
+#define UARTRIS(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x03C)))
+#define UARTMIS(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x040)))
+#define UARTICR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x044)))
 
 /* ID registers: UARTPID = UARTPeriphID, UARTPCID = UARTPCellId */
-#define UARTPID4(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFD0)))
-#define UARTPID5(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFD4)))
-#define UARTPID6(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFD8)))
-#define UARTPID7(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFDC)))
-#define UARTPID0(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFE0)))
-#define UARTPID1(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFE4)))
-#define UARTPID2(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFE8)))
-#define UARTPID3(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFEC)))
-#define UARTPCID0(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFF0)))
-#define UARTPCID1(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFF4)))
-#define UARTPCID2(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFF8)))
-#define UARTPCID3(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFFC)))
+#define UARTPID4(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFD0)))
+#define UARTPID5(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFD4)))
+#define UARTPID6(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFD8)))
+#define UARTPID7(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFDC)))
+#define UARTPID0(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFE0)))
+#define UARTPID1(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFE4)))
+#define UARTPID2(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFE8)))
+#define UARTPID3(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFEC)))
+#define UARTPCID0(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFF0)))
+#define UARTPCID1(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFF4)))
+#define UARTPCID2(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFF8)))
+#define UARTPCID3(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFFC)))
 
 /* muxed UART registers */
 #define sr u1._sr /* Read: receive status */
@@ -256,14 +251,16 @@ static inline void line_control_defaults_set(const struct device *dev)
  */
 static int uart_stellaris_init(const struct device *dev)
 {
+	struct uart_stellaris_dev_data_t *data = dev->data;
+	const struct uart_device_config *config = dev->config;
 	disable(dev);
-	baudrate_set(dev, DEV_DATA(dev)->baud_rate,
-		     DEV_CFG(dev)->sys_clk_freq);
+	baudrate_set(dev, data->baud_rate,
+		     config->sys_clk_freq);
 	line_control_defaults_set(dev);
 	enable(dev);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	DEV_CFG(dev)->irq_config_func(dev);
+	config->irq_config_func(dev);
 #endif
 
 	return 0;
@@ -556,7 +553,7 @@ static void uart_stellaris_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
 					    void *cb_data)
 {
-	struct uart_stellaris_dev_data_t * const dev_data = DEV_DATA(dev);
+	struct uart_stellaris_dev_data_t * const dev_data = dev->data;
 
 	dev_data->cb = cb;
 	dev_data->cb_data = cb_data;
@@ -571,7 +568,7 @@ static void uart_stellaris_irq_callback_set(const struct device *dev,
  */
 static void uart_stellaris_isr(const struct device *dev)
 {
-	struct uart_stellaris_dev_data_t * const dev_data = DEV_DATA(dev);
+	struct uart_stellaris_dev_data_t * const dev_data = dev->data;
 
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
