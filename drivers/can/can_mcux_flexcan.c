@@ -52,8 +52,6 @@ LOG_MODULE_REGISTER(can_mcux_flexcan);
 	(FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(0) \
 	- MCUX_FLEXCAN_MAX_RX)
 
-#define MCUX_N_TX_ALLOC_ELEM (1 + (MCUX_FLEXCAN_MAX_TX - 1) / ATOMIC_BITS)
-
 /*
  * Convert from RX message buffer index to allocated filter ID and
  * vice versa.
@@ -277,45 +275,6 @@ static void mcux_flexcan_copy_zfilter_to_mbconfig(const struct zcan_filter *src,
 	}
 }
 
-/* mcux_get_tx_alloc is a linear on array, and binary on atomic_val_t search
- * for the highest bit set in data->tx_allocs. 0 is returned in case of an empty
- * tx_alloc, the next free bit otherwise.
- * The reason to always use a higher buffer number than the current in use is
- * that a FIFO manner is kept. The Controller would otherwise send the frame
- * that is in the lowest buffer number first.
- */
-static int mcux_get_tx_alloc(struct mcux_flexcan_data *data)
-{
-	atomic_val_t *allocs = data->tx_allocs;
-	atomic_val_t pivot = ATOMIC_BITS / 2;
-	atomic_val_t alloc, mask;
-	int i;
-
-	for (i = MCUX_N_TX_ALLOC_ELEM - 1; i >= 0; i--) {
-		alloc = allocs[i];
-		if (alloc) {
-			for (atomic_val_t bits = ATOMIC_BITS / 2U;
-			    bits; bits >>= 1) {
-				mask = GENMASK(pivot + bits - 1, pivot);
-				if (alloc & mask) {
-					pivot += bits / 2U;
-				} else {
-					pivot -= bits / 2U;
-				}
-			}
-
-			if (!(alloc & mask)) {
-				pivot--;
-			}
-
-			break;
-		}
-	}
-
-	alloc = alloc ? (pivot + 1 + i * ATOMIC_BITS) : 0;
-	return alloc >= MCUX_FLEXCAN_MAX_TX ? -1 : alloc;
-}
-
 static int mcux_flexcan_get_state(const struct device *dev, enum can_state *state,
 				  struct can_bus_err_cnt *err_cnt)
 {
@@ -368,18 +327,13 @@ static int mcux_flexcan_send(const struct device *dev,
 		return -ENETDOWN;
 	}
 
-	while (true) {
-		alloc = mcux_get_tx_alloc(data);
-		if (alloc >= 0) {
-			if (atomic_test_and_set_bit(data->tx_allocs, alloc)) {
-				continue;
-			}
+	if (k_sem_take(&data->tx_allocs_sem, timeout) != 0) {
+		return -EAGAIN;
+	}
 
+	for (alloc = 0; alloc < MCUX_FLEXCAN_MAX_TX; alloc++) {
+		if (!atomic_test_and_set_bit(data->tx_allocs, alloc)) {
 			break;
-		}
-
-		if (k_sem_take(&data->tx_allocs_sem, timeout) != 0) {
-			return -EAGAIN;
 		}
 	}
 
@@ -711,7 +665,8 @@ static int mcux_flexcan_init(const struct device *dev)
 	int i;
 
 	k_mutex_init(&data->rx_mutex);
-	k_sem_init(&data->tx_allocs_sem, 0, 1);
+	k_sem_init(&data->tx_allocs_sem, MCUX_FLEXCAN_MAX_TX,
+		   MCUX_FLEXCAN_MAX_TX);
 
 	for (i = 0; i < ARRAY_SIZE(data->tx_cbs); i++) {
 		k_sem_init(&data->tx_cbs[i].done, 0, 1);
