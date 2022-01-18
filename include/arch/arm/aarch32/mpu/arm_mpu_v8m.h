@@ -127,6 +127,15 @@
 		.r_limit = REGION_LIMIT_ADDR(base, size),  /* Region Limit */ \
 	}
 
+#define REGION_RAM_NOCACHE_ATTR(base, size) \
+	{\
+		.rbar = NOT_EXEC | \
+			P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */ \
+		/* Cache-ability */ \
+		.mair_idx = MPU_MAIR_INDEX_SRAM_NOCACHE, \
+		.r_limit = REGION_LIMIT_ADDR(base, size),  /* Region Limit */ \
+	}
+
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 /* Note that the access permissions allow for un-privileged writes, contrary
  * to ARMv7-M where un-privileged code has Read-Only permissions.
