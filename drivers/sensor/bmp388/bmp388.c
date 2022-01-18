@@ -49,7 +49,7 @@ static const struct {
 static int bmp388_transceive(const struct device *dev,
 			     void *data, size_t length)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 	const struct spi_buf buf = { .buf = data, .len = length };
 	const struct spi_buf_set s = { .buffers = &buf, .count = 1 };
 
@@ -61,7 +61,7 @@ static int bmp388_read_spi(const struct device *dev,
 			   void *data,
 			   size_t length)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	/* Reads must clock out a dummy byte after sending the address. */
 	uint8_t reg_buf[2] = { reg | BIT(7), 0 };
@@ -127,7 +127,7 @@ static int bmp388_read_i2c(const struct device *dev,
 			   void *data,
 			   size_t length)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	return i2c_burst_read(cfg->bus, cfg->bus_addr, reg, data, length);
 }
@@ -136,7 +136,7 @@ static int bmp388_byte_read_i2c(const struct device *dev,
 				uint8_t reg,
 				uint8_t *byte)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	return i2c_reg_read_byte(cfg->bus, cfg->bus_addr, reg, byte);
 }
@@ -145,7 +145,7 @@ static int bmp388_byte_write_i2c(const struct device *dev,
 				 uint8_t reg,
 				 uint8_t byte)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	return i2c_reg_write_byte(cfg->bus, cfg->bus_addr, reg, byte);
 }
@@ -155,7 +155,7 @@ int bmp388_reg_field_update_i2c(const struct device *dev,
 				uint8_t mask,
 				uint8_t val)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	return i2c_reg_update_byte(cfg->bus, cfg->bus_addr, reg, mask, val);
 }
@@ -174,7 +174,7 @@ static int bmp388_read(const struct device *dev,
 		       void *data,
 		       size_t length)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	return cfg->ops->read(dev, reg, data, length);
 }
@@ -183,7 +183,7 @@ static int bmp388_byte_read(const struct device *dev,
 			    uint8_t reg,
 			    uint8_t *byte)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	return cfg->ops->byte_read(dev, reg, byte);
 }
@@ -192,7 +192,7 @@ static int bmp388_byte_write(const struct device *dev,
 			     uint8_t reg,
 			     uint8_t byte)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	return cfg->ops->byte_write(dev, reg, byte);
 }
@@ -202,7 +202,7 @@ int bmp388_reg_field_update(const struct device *dev,
 			    uint8_t mask,
 			    uint8_t val)
 {
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	const struct bmp388_config *cfg = dev->config;
 
 	return cfg->ops->reg_field_update(dev, reg, mask, val);
 }
@@ -233,7 +233,7 @@ static int bmp388_attr_set_odr(const struct device *dev,
 			       uint16_t freq_milli)
 {
 	int err;
-	struct bmp388_data *data = DEV_DATA(dev);
+	struct bmp388_data *data = dev->data;
 	int odr = bmp388_freq_to_odr_val(freq_int, freq_milli);
 
 	if (odr < 0) {
@@ -261,7 +261,7 @@ static int bmp388_attr_set_oversampling(const struct device *dev,
 	uint32_t pos, mask;
 	int err;
 
-	struct bmp388_data *data = DEV_DATA(dev);
+	struct bmp388_data *data = dev->data;
 
 	/* Value must be a positive power of 2 <= 32. */
 	if ((val <= 0) || (val > 32) || ((val & (val - 1)) != 0)) {
@@ -343,7 +343,7 @@ static int bmp388_attr_set(const struct device *dev,
 static int bmp388_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
-	struct bmp388_data *bmp388 = DEV_DATA(dev);
+	struct bmp388_data *bmp388 = dev->data;
 	uint8_t raw[BMP388_SAMPLE_BUFFER_SIZE];
 	int ret = 0;
 
@@ -418,7 +418,7 @@ static void bmp388_compensate_temp(struct bmp388_data *data)
 static int bmp388_temp_channel_get(const struct device *dev,
 				   struct sensor_value *val)
 {
-	struct bmp388_data *data = DEV_DATA(dev);
+	struct bmp388_data *data = dev->data;
 
 	if (data->sample.comp_temp == 0) {
 		bmp388_compensate_temp(data);
@@ -490,7 +490,7 @@ static uint64_t bmp388_compensate_press(struct bmp388_data *data)
 static int bmp388_press_channel_get(const struct device *dev,
 				    struct sensor_value *val)
 {
-	struct bmp388_data *data = DEV_DATA(dev);
+	struct bmp388_data *data = dev->data;
 
 	if (data->sample.comp_temp == 0) {
 		bmp388_compensate_temp(data);
@@ -531,7 +531,7 @@ static int bmp388_channel_get(const struct device *dev,
 
 static int bmp388_get_calibration_data(const struct device *dev)
 {
-	struct bmp388_data *data = DEV_DATA(dev);
+	struct bmp388_data *data = dev->data;
 	struct bmp388_cal_data *cal = &data->cal;
 
 	if (bmp388_read(dev, BMP388_REG_CALIB0, cal, sizeof(*cal)) < 0) {
@@ -589,8 +589,8 @@ static const struct sensor_driver_api bmp388_api = {
 
 static int bmp388_init(const struct device *dev)
 {
-	struct bmp388_data *bmp388 = DEV_DATA(dev);
-	const struct bmp388_config *cfg = DEV_CFG(dev);
+	struct bmp388_data *bmp388 = dev->data;
+	const struct bmp388_config *cfg = dev->config;
 	uint8_t val = 0U;
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)

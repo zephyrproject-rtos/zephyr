@@ -35,15 +35,11 @@ struct qdec_sam_dev_data {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct qdec_sam_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct qdec_sam_dev_data *const)(dev)->data)
 
 static int qdec_sam_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	const struct qdec_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct qdec_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct qdec_sam_dev_cfg *const dev_cfg = dev->config;
+	struct qdec_sam_dev_data *const dev_data = dev->data;
 	Tc *const tc = dev_cfg->regs;
 	TcChannel *tc_ch0 = &tc->TcChannel[0];
 
@@ -56,7 +52,7 @@ static int qdec_sam_fetch(const struct device *dev, enum sensor_channel chan)
 static int qdec_sam_get(const struct device *dev, enum sensor_channel chan,
 			struct sensor_value *val)
 {
-	struct qdec_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct qdec_sam_dev_data *const dev_data = dev->data;
 
 	if (chan == SENSOR_CHAN_ROTATION) {
 		val->val1 = dev_data->position;
@@ -79,7 +75,7 @@ static void qdec_sam_start(Tc *const tc)
 
 static void qdec_sam_configure(const struct device *dev)
 {
-	const struct qdec_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct qdec_sam_dev_cfg *const dev_cfg = dev->config;
 	Tc *const tc = dev_cfg->regs;
 	TcChannel *tc_ch0 = &tc->TcChannel[0];
 
@@ -100,7 +96,7 @@ static void qdec_sam_configure(const struct device *dev)
 static int qdec_sam_initialize(const struct device *dev)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct qdec_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct qdec_sam_dev_cfg *const dev_cfg = dev->config;
 
 	/* Connect pins to the peripheral */
 	soc_gpio_list_configure(dev_cfg->pin_list, dev_cfg->pin_list_size);
