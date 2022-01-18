@@ -1354,7 +1354,7 @@ static void eth_rx(struct gmac_queue *queue)
 	struct net_pkt *rx_frame;
 #if defined(CONFIG_NET_GPTP)
 	const struct device *const dev = net_if_get_device(dev_data->iface);
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	Gmac *gmac = cfg->regs;
 	struct gptp_hdr *hdr;
 #endif
@@ -1448,8 +1448,8 @@ static int priority2queue(enum net_priority priority)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
-	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
+	struct eth_sam_dev_data *const dev_data = dev->data;
 	Gmac *gmac = cfg->regs;
 	struct gmac_queue *queue;
 	struct gmac_desc_list *tx_desc_list;
@@ -1631,8 +1631,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 static void queue0_isr(const struct device *dev)
 {
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
-	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
+	struct eth_sam_dev_data *const dev_data = dev->data;
 	Gmac *gmac = cfg->regs;
 	struct gmac_queue *queue;
 	struct gmac_desc_list *rx_desc_list;
@@ -1682,8 +1682,8 @@ static void queue0_isr(const struct device *dev)
 static inline void priority_queue_isr(const struct device *dev,
 				      unsigned int queue_idx)
 {
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
-	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
+	struct eth_sam_dev_data *const dev_data = dev->data;
 	Gmac *gmac = cfg->regs;
 	struct gmac_queue *queue;
 	struct gmac_desc_list *rx_desc_list;
@@ -1766,7 +1766,7 @@ static void queue5_isr(const struct device *dev)
 
 static int eth_initialize(const struct device *dev)
 {
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 
 	cfg->config_func();
 
@@ -1823,8 +1823,8 @@ static void phy_link_state_changed(const struct device *pdev,
 				   void *user_data)
 {
 	const struct device *dev = (struct device *) user_data;
-	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	struct eth_sam_dev_data *const dev_data = dev->data;
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	bool is_up;
 
 	is_up = state->is_up;
@@ -1852,8 +1852,8 @@ static void phy_link_state_changed(const struct device *pdev,
 static void eth0_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	struct eth_sam_dev_data *const dev_data = dev->data;
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	static bool init_done;
 	uint32_t gmac_ncfgr_val;
 	int result;
@@ -1988,7 +1988,7 @@ static int eth_sam_gmac_set_qav_param(const struct device *dev,
 				      enum ethernet_config_type type,
 				      const struct ethernet_config *config)
 {
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	Gmac *gmac = cfg->regs;
 	enum ethernet_qav_param_type qav_param_type;
 	unsigned int delta_bandwidth;
@@ -2037,8 +2037,8 @@ static int eth_sam_gmac_set_config(const struct device *dev,
 #endif
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 	{
-		struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
-		const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+		struct eth_sam_dev_data *const dev_data = dev->data;
+		const struct eth_sam_dev_cfg *const cfg = dev->config;
 
 		memcpy(dev_data->mac_addr,
 		       config->mac_address.addr,
@@ -2070,7 +2070,7 @@ static int eth_sam_gmac_get_qav_param(const struct device *dev,
 				      enum ethernet_config_type type,
 				      struct ethernet_config *config)
 {
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	Gmac *gmac = cfg->regs;
 	enum ethernet_qav_param_type qav_param_type;
 	int queue_id;
@@ -2137,7 +2137,7 @@ static int eth_sam_gmac_get_config(const struct device *dev,
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 static const struct device *eth_sam_gmac_get_ptp_clock(const struct device *dev)
 {
-	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct eth_sam_dev_data *const dev_data = dev->data;
 
 	return dev_data->ptp_clock;
 }
@@ -2401,7 +2401,7 @@ static int ptp_clock_sam_gmac_set(const struct device *dev,
 				  struct net_ptp_time *tm)
 {
 	struct ptp_context *ptp_context = dev->data;
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
+	const struct eth_sam_dev_cfg *const cfg = ptp_context->eth_dev->config;
 	Gmac *gmac = cfg->regs;
 
 	gmac->GMAC_TSH = tm->_sec.high & 0xffff;
@@ -2415,7 +2415,7 @@ static int ptp_clock_sam_gmac_get(const struct device *dev,
 				  struct net_ptp_time *tm)
 {
 	struct ptp_context *ptp_context = dev->data;
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
+	const struct eth_sam_dev_cfg *const cfg = ptp_context->eth_dev->config;
 	Gmac *gmac = cfg->regs;
 
 	tm->second = ((uint64_t)(gmac->GMAC_TSH & 0xffff) << 32) | gmac->GMAC_TSL;
@@ -2427,7 +2427,7 @@ static int ptp_clock_sam_gmac_get(const struct device *dev,
 static int ptp_clock_sam_gmac_adjust(const struct device *dev, int increment)
 {
 	struct ptp_context *ptp_context = dev->data;
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
+	const struct eth_sam_dev_cfg *const cfg = ptp_context->eth_dev->config;
 	Gmac *gmac = cfg->regs;
 
 	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
