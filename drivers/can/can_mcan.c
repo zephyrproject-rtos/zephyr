@@ -673,6 +673,10 @@ enum can_state can_mcan_get_state(const struct can_mcan_config *cfg,
 		return CAN_ERROR_PASSIVE;
 	}
 
+	if (can->psr & CAN_MCAN_PSR_EW) {
+		return CAN_ERROR_WARNING;
+	}
+
 	return CAN_ERROR_ACTIVE;
 }
 
