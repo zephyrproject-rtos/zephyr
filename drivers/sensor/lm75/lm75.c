@@ -29,13 +29,13 @@ struct lm75_config {
 	uint8_t i2c_addr;
 };
 
-static inline int lm75_reg_read(struct lm75_config *cfg, uint8_t reg,
+static inline int lm75_reg_read(const struct lm75_config *cfg, uint8_t reg,
 				uint8_t *buf, uint32_t size)
 {
 	return i2c_burst_read(cfg->i2c_dev, cfg->i2c_addr, reg, buf, size);
 }
 
-static inline int lm75_fetch_temp(struct lm75_config *cfg, struct lm75_data *data)
+static inline int lm75_fetch_temp(const struct lm75_config *cfg, struct lm75_data *data)
 {
 	int ret;
 	uint8_t temp_read[2];
@@ -62,7 +62,7 @@ static int lm75_sample_fetch(const struct device *dev,
 			     enum sensor_channel chan)
 {
 	struct lm75_data *data = (struct lm75_data *)dev->data;
-	struct lm75_config *cfg = (struct lm75_config *)dev->config;
+	const struct lm75_config *cfg = (const struct lm75_config *)dev->config;
 
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
@@ -96,7 +96,7 @@ static const struct sensor_driver_api lm75_driver_api = {
 
 int lm75_init(const struct device *dev)
 {
-	struct lm75_config *cfg = (struct lm75_config *)dev->config;
+	const struct lm75_config *cfg = (const struct lm75_config *)dev->config;
 
 	if (device_is_ready(cfg->i2c_dev)) {
 		return 0;
