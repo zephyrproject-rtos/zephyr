@@ -143,6 +143,7 @@ Default Zephyr Peripheral Mapping:
 - BUTTON (JOY_DOWN)  : PC3
 - BUTTON (JOY_RIGHT) : PC7
 - BUTTON (JOY_UP)    : PC2
+- VBUS DISCHARGE     : PB14
 - LED1        : PD5
 - LED2        : PD6
 - LED3        : PD8
