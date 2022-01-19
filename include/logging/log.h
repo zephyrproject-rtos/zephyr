@@ -256,18 +256,16 @@ extern "C" {
  * @brief Writes an formatted string to the log.
  *
  * @details Conditionally compiled (see CONFIG_LOG_PRINTK). Function provides
- * printk functionality. It is inefficient compared to standard logging
- * because string formatting is performed in the call context and not deferred
- * to the log processing context (@ref log_process).
+ * printk functionality.
+ *
+ * It is less efficient compared to standard logging because static packaging
+ * cannot be used in v2. When v1 is used string formatting is performed in the
+ * call context and not deferred to the log processing context (@ref log_process).
  *
  * @param fmt Formatted string to output.
  * @param ap  Variable parameters.
  */
-void z_log_printk(const char *fmt, va_list ap);
-static inline void log_printk(const char *fmt, va_list ap)
-{
-	z_log_printk(fmt, ap);
-}
+void z_log_vprintk(const char *fmt, va_list ap);
 
 /** @brief Copy transient string to a buffer from internal, logger pool.
  *
