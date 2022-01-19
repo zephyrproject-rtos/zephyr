@@ -72,6 +72,8 @@ The Zephyr stm32g071b_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| UCPD      | on-chip    | ucpd                                |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
@@ -94,6 +96,7 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - UART_3 TX/RX       : PC10/PC11 (ST-Link Virtual Port Com)
+- UCPD1              : PA8/PB15
 - BUTTON (JOY_SEL)   : PC0
 - BUTTON (JOY_LEFT)  : PC1
 - BUTTON (JOY_DOWN)  : PC2
