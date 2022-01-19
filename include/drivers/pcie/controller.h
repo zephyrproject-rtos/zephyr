@@ -94,9 +94,9 @@ typedef bool (*pcie_ctrl_region_allocate_t)(const struct device *dev, pcie_bdf_t
  * @param bar_addr CPU-centric address translated from the bus-centric address
  * @return True if translation was possible, False if translation failed
  */
-typedef bool (*pcie_ctrl_region_xlate_t)(const struct device *dev, pcie_bdf_t bdf,
-					 bool mem, bool mem64, uintptr_t bar_bus_addr,
-					 uintptr_t *bar_addr);
+typedef bool (*pcie_ctrl_region_translate_t)(const struct device *dev, pcie_bdf_t bdf,
+					     bool mem, bool mem64, uintptr_t bar_bus_addr,
+					     uintptr_t *bar_addr);
 
 /**
  * @brief Read a 32-bit word from a Memory-Mapped endpoint's configuration space.
@@ -147,7 +147,7 @@ __subsystem struct pcie_ctrl_driver_api {
 	pcie_ctrl_conf_read_t conf_read;
 	pcie_ctrl_conf_write_t conf_write;
 	pcie_ctrl_region_allocate_t region_allocate;
-	pcie_ctrl_region_xlate_t region_xlate;
+	pcie_ctrl_region_translate_t region_translate;
 };
 
 /**
@@ -235,18 +235,18 @@ static inline bool pcie_ctrl_region_allocate(const struct device *dev, pcie_bdf_
  * @param bar_addr CPU-centric address translated from the bus-centric address
  * @return True if translation was possible, False if translation failed
  */
-static inline bool pcie_ctrl_region_xlate(const struct device *dev, pcie_bdf_t bdf,
+static inline bool pcie_ctrl_region_translate(const struct device *dev, pcie_bdf_t bdf,
 					  bool mem, bool mem64, uintptr_t bar_bus_addr,
 					  uintptr_t *bar_addr)
 {
 	const struct pcie_ctrl_driver_api *api =
 		(const struct pcie_ctrl_driver_api *)dev->api;
 
-	if (!api->region_xlate) {
+	if (!api->region_translate) {
 		*bar_addr = bar_bus_addr;
 		return true;
 	} else {
-		return api->region_xlate(dev, bdf, mem, mem64, bar_bus_addr, bar_addr);
+		return api->region_translate(dev, bdf, mem, mem64, bar_bus_addr, bar_addr);
 	}
 }
 

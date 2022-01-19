@@ -133,8 +133,8 @@ static void generic_pcie_ctrl_type0_enumerate_bars(const struct device *ctrl_dev
 					      found_mem64, bar_size, &bar_bus_addr)) {
 			uintptr_t bar_phys_addr;
 
-			pcie_ctrl_region_xlate(ctrl_dev, bdf, found_mem,
-					      found_mem64, bar_bus_addr, &bar_phys_addr);
+			pcie_ctrl_region_translate(ctrl_dev, bdf, found_mem,
+						   found_mem64, bar_bus_addr, &bar_phys_addr);
 
 			LOG_INF("[%02x:%02x.%x] BAR%d size 0x%lx "
 				"assigned [%s 0x%lx-0x%lx -> 0x%lx-0x%lx]",
