@@ -188,7 +188,8 @@ static void process_udp6(void)
 
 static void print_stats(struct k_work *work)
 {
-	struct data *data = CONTAINER_OF(work, struct data, udp.stats_print);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct data *data = CONTAINER_OF(dwork, struct data, udp.stats_print);
 	int total_received = atomic_get(&data->udp.bytes_received);
 
 	if (total_received) {

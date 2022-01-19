@@ -717,8 +717,9 @@ struct test_msg_waitall_data {
 
 static void test_msg_waitall_tx_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct test_msg_waitall_data *test_data =
-		CONTAINER_OF(work, struct test_msg_waitall_data, tx_work);
+		CONTAINER_OF(dwork, struct test_msg_waitall_data, tx_work);
 
 	if (test_data->retries > 0) {
 		test_send(test_data->sock, test_data->data + test_data->offset, 1, 0);

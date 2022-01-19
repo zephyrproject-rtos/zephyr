@@ -347,7 +347,8 @@ static void process_tcp6(void)
 
 static void print_stats(struct k_work *work)
 {
-	struct data *data = CONTAINER_OF(work, struct data, tcp.stats_print);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct data *data = CONTAINER_OF(dwork, struct data, tcp.stats_print);
 	int total_received = atomic_get(&data->tcp.bytes_received);
 
 	if (total_received) {
