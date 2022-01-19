@@ -38,8 +38,8 @@ static void pfc_rcar_write(uint32_t offs, uint32_t val)
 /* Set the pin either in gpio or peripheral */
 static void pfc_rcar_set_gpsr(uint16_t pin, bool peripheral)
 {
-	uint8_t bank = pin % 32;
-	uint8_t bit = pin / 32;
+	uint8_t bank = pin / 32;
+	uint8_t bit = pin % 32;
 	uint32_t val = sys_read32(PFC_REG_BASE + PFC_RCAR_GPSR +
 				  bank * sizeof(uint32_t));
 
