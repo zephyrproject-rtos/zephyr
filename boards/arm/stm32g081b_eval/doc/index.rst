@@ -111,6 +111,8 @@ The Zephyr stm32g081b_eval board configuration supports the following hardware f
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| UCPD      | on-chip    + ucpd                                |
++-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
@@ -135,6 +137,7 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - UART_3 TX/RX       : PC10/PC11 (ST-Link Virtual Port Com)
+- UCPD2              : PD0/PD2
 - BUTTON (JOY_SEL)   : PA0
 - BUTTON (JOY_LEFT)  : PC8
 - BUTTON (JOY_DOWN)  : PC3
