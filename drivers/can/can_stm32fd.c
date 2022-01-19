@@ -21,7 +21,7 @@ Allowed values are 1 or 2 * n, where n <= 15
 
 #define DT_DRV_COMPAT st_stm32_fdcan
 
-int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
+static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
 	const uint32_t rate_tmp = LL_RCC_GetFDCANClockFreq(LL_RCC_FDCAN_CLKSOURCE);
@@ -36,7 +36,7 @@ int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-int can_stm32fd_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int can_stm32fd_get_max_filters(const struct device *dev, enum can_ide id_type)
 {
 	if (id_type == CAN_STANDARD_IDENTIFIER) {
 		return NUM_STD_FILTER_DATA;
@@ -45,7 +45,7 @@ int can_stm32fd_get_max_filters(const struct device *dev, enum can_ide id_type)
 	}
 }
 
-void can_stm32fd_clock_enable(void)
+static void can_stm32fd_clock_enable(void)
 {
 	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
 	__HAL_RCC_FDCAN_CLK_ENABLE();
@@ -53,9 +53,9 @@ void can_stm32fd_clock_enable(void)
 	FDCAN_CONFIG->CKDIV = CONFIG_CAN_STM32_CLOCK_DIVISOR >> 1;
 }
 
-void can_stm32fd_set_state_change_callback(const struct device *dev,
-					   can_state_change_callback_t cb,
-					   void *user_data)
+static void can_stm32fd_set_state_change_callback(const struct device *dev,
+						  can_state_change_callback_t cb,
+						  void *user_data)
 {
 	struct can_stm32fd_data *data = dev->data;
 
@@ -90,8 +90,8 @@ static int can_stm32fd_init(const struct device *dev)
 	return ret;
 }
 
-enum can_state can_stm32fd_get_state(const struct device *dev,
-				     struct can_bus_err_cnt *err_cnt)
+static enum can_state can_stm32fd_get_state(const struct device *dev,
+					    struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
@@ -99,9 +99,9 @@ enum can_state can_stm32fd_get_state(const struct device *dev,
 	return can_mcan_get_state(mcan_cfg, err_cnt);
 }
 
-int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
-		     k_timeout_t timeout, can_tx_callback_t callback,
-		     void *user_data)
+static int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
+			    k_timeout_t timeout, can_tx_callback_t callback,
+			    void *user_data)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 	struct can_stm32fd_data *data = dev->data;
@@ -113,8 +113,8 @@ int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 			     callback, user_data);
 }
 
-int can_stm32fd_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
-			      void *user_data, const struct zcan_filter *filter)
+static int can_stm32fd_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+				     void *user_data, const struct zcan_filter *filter)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 	struct can_stm32fd_data *data = dev->data;
@@ -124,7 +124,7 @@ int can_stm32fd_add_rx_filter(const struct device *dev, can_rx_callback_t callba
 	return can_mcan_add_rx_filter(mcan_data, msg_ram, callback, user_data, filter);
 }
 
-void can_stm32fd_remove_rx_filter(const struct device *dev, int filter_id)
+static void can_stm32fd_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 	struct can_stm32fd_data *data = dev->data;
@@ -134,7 +134,7 @@ void can_stm32fd_remove_rx_filter(const struct device *dev, int filter_id)
 	can_mcan_remove_rx_filter(mcan_data, msg_ram, filter_id);
 }
 
-int can_stm32fd_set_mode(const struct device *dev, enum can_mode mode)
+static int can_stm32fd_set_mode(const struct device *dev, enum can_mode mode)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
@@ -142,9 +142,9 @@ int can_stm32fd_set_mode(const struct device *dev, enum can_mode mode)
 	return can_mcan_set_mode(mcan_cfg, mode);
 }
 
-int can_stm32fd_set_timing(const struct device *dev,
-			   const struct can_timing *timing,
-			   const struct can_timing *timing_data)
+static int can_stm32fd_set_timing(const struct device *dev,
+				  const struct can_timing *timing,
+				  const struct can_timing *timing_data)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
@@ -152,7 +152,7 @@ int can_stm32fd_set_timing(const struct device *dev,
 	return can_mcan_set_timing(mcan_cfg, timing, timing_data);
 }
 
-void can_stm32fd_line_0_isr(void *arg)
+static void can_stm32fd_line_0_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct can_stm32fd_config *cfg = dev->config;
@@ -164,7 +164,7 @@ void can_stm32fd_line_0_isr(void *arg)
 	can_mcan_line_0_isr(mcan_cfg, msg_ram, mcan_data);
 }
 
-void can_stm32fd_line_1_isr(void *arg)
+static void can_stm32fd_line_1_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct can_stm32fd_config *cfg = dev->config;
