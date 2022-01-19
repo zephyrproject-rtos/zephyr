@@ -370,42 +370,51 @@ void log_hexdump(const char *str, const void *data, uint32_t length,
 	}
 }
 
-void z_log_printk(const char *fmt, va_list ap)
+void z_log_vprintk(const char *fmt, va_list ap)
 {
-	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
-		union {
-			struct log_msg_ids structure;
-			uint32_t value;
-		} src_level_union = {
-			{
-				.level = LOG_LEVEL_INTERNAL_RAW_STRING
-			}
-		};
+	if (!IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		return;
+	}
 
-		if (k_is_user_context()) {
-			uint8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL,
+					   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0,
+					   fmt, ap);
+		return;
+	}
 
-			vsnprintk(str, sizeof(str), fmt, ap);
-
-			z_log_string_from_user(src_level_union.value, str);
-		} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
-			log_generic(src_level_union.structure, fmt, ap,
-							LOG_STRDUP_SKIP);
-		} else {
-			uint8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
-			struct log_msg *msg;
-			int length;
-
-			length = vsnprintk(str, sizeof(str), fmt, ap);
-			length = MIN(length, sizeof(str));
-
-			msg = log_msg_hexdump_create(NULL, str, length);
-			if (msg == NULL) {
-				return;
-			}
-
-			msg_finalize(msg, src_level_union.structure);
+	union {
+		struct log_msg_ids structure;
+		uint32_t value;
+	} src_level_union = {
+		{
+			.level = LOG_LEVEL_INTERNAL_RAW_STRING
 		}
+	};
+
+	if (k_is_user_context()) {
+		uint8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
+
+		vsnprintk(str, sizeof(str), fmt, ap);
+
+		z_log_string_from_user(src_level_union.value, str);
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
+		log_generic(src_level_union.structure, fmt, ap,
+						LOG_STRDUP_SKIP);
+	} else {
+		uint8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
+		struct log_msg *msg;
+		int length;
+
+		length = vsnprintk(str, sizeof(str), fmt, ap);
+		length = MIN(length, sizeof(str));
+
+		msg = log_msg_hexdump_create(NULL, str, length);
+		if (msg == NULL) {
+			return;
+		}
+
+		msg_finalize(msg, src_level_union.structure);
 	}
 }
 
