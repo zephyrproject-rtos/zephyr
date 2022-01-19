@@ -117,7 +117,7 @@ static int clock_control_esp32_get_rate(const struct device *dev,
 
 static int clock_control_esp32_init(const struct device *dev)
 {
-	struct esp32_clock_config *cfg = dev->config;
+	const struct esp32_clock_config *cfg = dev->config;
 	rtc_cpu_freq_config_t old_config;
 	rtc_cpu_freq_config_t new_config;
 	bool res;
