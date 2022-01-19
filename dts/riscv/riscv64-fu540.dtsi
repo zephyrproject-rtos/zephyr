@@ -168,5 +168,24 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		gpio0: gpio@10060000 {
+			compatible = "sifive,gpio0";
+			gpio-controller;
+			interrupt-parent = <&plic>;
+			interrupts = <7 1>, <8 1>, <9 1>, <10 1>,
+				<11 1>, <12 1>, <13 1>, <14 1>,
+				<15 1>, <16 1>, <17 1>, <18 1>,
+				<19 1>, <20 1>, <21 1>, <22 1>;
+			reg = <0x10060000 0x1000>;
+			reg-names = "control";
+			label = "gpio_0";
+			status = "disabled";
+			#gpio-cells = <2>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+		};
 	};
 };

@@ -39,6 +39,9 @@
 /* Clock controller. */
 #define PRCI_BASE_ADDR               0x10000000
 
+/* PINMUX MAX PINS */
+#define SIFIVE_PINMUX_PINS           16
+
 #endif
 
 /* Timer configuration */
