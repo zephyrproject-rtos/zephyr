@@ -1435,21 +1435,14 @@ static const struct gpio_driver_api test_api;
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_GPIO_INIT)
 
-static inline struct test_gpio_data *to_data(const struct device *dev)
-{
-	return (struct test_gpio_data *)dev->data;
-}
-
-static inline const struct test_gpio_info *to_info(const struct device *dev)
-{
-	return (const struct test_gpio_info *)dev->config;
-}
-
 static void test_devices(void)
 {
 	const struct device *devs[3];
 	int i = 0;
 	const struct device *dev_abcd;
+	struct test_gpio_data *data_dev0;
+	struct test_gpio_data *data_dev1;
+	const struct test_gpio_info *config_abdc;
 
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio_device), 2, "");
 
@@ -1466,19 +1459,23 @@ static void test_devices(void)
 		i++;
 	}
 
+	data_dev0 = devs[0]->data;
+	data_dev1 = devs[1]->data;
+
 	zassert_not_null(devs[0], "");
 	zassert_not_null(devs[1], "");
 	zassert_true(devs[2] == NULL, "");
 
-	zassert_true(to_data(devs[0])->is_gpio_ctlr, "");
-	zassert_true(to_data(devs[1])->is_gpio_ctlr, "");
-	zassert_true(to_data(devs[0])->init_called, "");
-	zassert_true(to_data(devs[1])->init_called, "");
+	zassert_true(data_dev0->is_gpio_ctlr, "");
+	zassert_true(data_dev1->is_gpio_ctlr, "");
+	zassert_true(data_dev0->init_called, "");
+	zassert_true(data_dev1->init_called, "");
 
 	dev_abcd = device_get_binding(DT_LABEL(TEST_ABCD1234));
+	config_abdc = dev_abcd->config;
 	zassert_not_null(dev_abcd, "");
-	zassert_equal(to_info(dev_abcd)->reg_addr, 0xabcd1234, "");
-	zassert_equal(to_info(dev_abcd)->reg_len, 0x500, "");
+	zassert_equal(config_abdc->reg_addr, 0xabcd1234, "");
+	zassert_equal(config_abdc->reg_len, 0x500, "");
 }
 
 static void test_cs_gpios(void)
