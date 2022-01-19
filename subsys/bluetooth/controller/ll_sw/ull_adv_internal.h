@@ -231,6 +231,12 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv);
 int ull_adv_iso_init(void);
 int ull_adv_iso_reset(void);
 
+/* helper function to initial channel map update indications */
+uint8_t ull_adv_iso_chm_update(void);
+
+/* helper function to cleanup after channel map update complete */
+void ull_adv_iso_chm_complete(struct node_rx_hdr *rx);
+
 /* helper function to schedule a mayfly to get BIG offset */
 void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync);
 

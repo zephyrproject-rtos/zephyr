@@ -31,8 +31,9 @@
 #include "lll_conn.h"
 #include "lll_adv_iso.h"
 
-#include "ull_internal.h"
 #include "ull_adv_types.h"
+
+#include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_chan_internal.h"
 
@@ -53,7 +54,11 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
 			uint32_t latency_packing, uint32_t ctrl_spacing);
 static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			      uint32_t ticks_anchor, uint32_t iso_interval_us);
+static uint8_t adv_iso_chm_update(uint8_t big_handle);
+static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso);
 static void mfy_iso_offset_get(void *param);
+static void pdu_big_info_chan_map_phy_set(uint8_t *chm_phy, uint8_t *chan_map,
+					  uint8_t phy);
 static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu);
 static inline void big_info_offset_fill(struct pdu_big_info *bi,
 					uint32_t ticks_offset,
@@ -300,8 +305,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			   (bn * CONN_INT_UNIT_US)) * CONN_INT_UNIT_US;
 
 	/* Allocate next PDU */
-	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
-				     NULL, NULL, &ter_idx);
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
 	if (err) {
 		return err;
 	}
@@ -351,10 +356,9 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	big_info->max_sdu = max_sdu;
 	(void)memcpy(&big_info->base_crc_init, lll_adv_iso->base_crc_init,
 		     sizeof(big_info->base_crc_init));
-	(void)memcpy(big_info->chm_phy, lll_adv_iso->data_chan_map,
-		     sizeof(big_info->chm_phy));
-	big_info->chm_phy[4] &= 0x1F;
-	big_info->chm_phy[4] |= ((find_lsb_set(phy) - 1U) << 5);
+	pdu_big_info_chan_map_phy_set(big_info->chm_phy,
+				      lll_adv_iso->data_chan_map,
+				      phy);
 	big_info->payload_count_framing[0] = lll_adv_iso->payload_count;
 	big_info->payload_count_framing[1] = lll_adv_iso->payload_count >> 8;
 	big_info->payload_count_framing[2] = lll_adv_iso->payload_count >> 16;
@@ -452,8 +456,8 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	lll_adv_sync->iso = NULL;
 
 	/* Allocate next PDU */
-	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
-				     NULL, NULL, &ter_idx);
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
 	if (err) {
 		return err;
 	}
@@ -508,6 +512,39 @@ int ull_adv_iso_reset(void)
 	}
 
 	return 0;
+}
+
+uint8_t ull_adv_iso_chm_update(void)
+{
+	uint8_t handle;
+
+	handle = CONFIG_BT_CTLR_ADV_ISO_SET;
+	while (handle--) {
+		(void)adv_iso_chm_update(handle);
+	}
+
+	/* TODO: Should failure due to Channel Map Update being already in
+	 *       progress be returned to caller?
+	 */
+	return 0;
+}
+
+void ull_adv_iso_chm_complete(struct node_rx_hdr *rx)
+{
+	struct lll_adv_sync *sync_lll;
+	struct lll_adv_iso *iso_lll;
+	struct lll_adv *adv_lll;
+
+	iso_lll = rx->rx_ftr.param;
+	adv_lll = iso_lll->adv;
+	sync_lll = adv_lll->sync;
+
+	/* Update Channel Map in BIGInfo in the Periodic Advertising PDU */
+	while (sync_lll->iso_chm_done_req != sync_lll->iso_chm_done_ack) {
+		sync_lll->iso_chm_done_ack = sync_lll->iso_chm_done_req;
+
+		adv_iso_chm_complete_commit(iso_lll);
+	}
 }
 
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
@@ -761,8 +798,106 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	return ret;
 }
 
+static uint8_t adv_iso_chm_update(uint8_t big_handle)
+{
+	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll_iso;
+
+	adv_iso = adv_iso_get(big_handle);
+	if (!adv_iso) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	lll_iso = &adv_iso->lll;
+	if (lll_iso->term_req ||
+	    (lll_iso->chm_req != lll_iso->chm_ack)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Request channel map update procedure */
+	lll_iso->chm_chan_count = ull_chan_map_get(lll_iso->chm_chan_map);
+	lll_iso->chm_req++;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso)
+{
+	uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
+			 ULL_ADV_HDR_DATA_ACAD_PTR_SIZE];
+	struct pdu_adv *pdu_prev, *pdu;
+	struct lll_adv_sync *lll_sync;
+	struct pdu_big_info *bi;
+	struct ll_adv_set *adv;
+	uint8_t acad_len;
+	uint8_t ter_idx;
+	uint8_t ad_len;
+	uint8_t *acad;
+	uint8_t *ad;
+	uint8_t len;
+	uint8_t err;
+
+	/* Allocate next PDU */
+	adv = HDR_LLL2ULL(lll_iso->adv);
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
+	LL_ASSERT(!err);
+
+	/* Get the size of current ACAD, first octet returns the old length and
+	 * followed by pointer to previous offset to ACAD in the PDU.
+	 */
+	lll_sync = adv->lll.sync;
+	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = 0U;
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
+					 &hdr_data);
+	LL_ASSERT(!err);
+
+	/* Dev assert if ACAD empty */
+	LL_ASSERT(hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET]);
+
+	/* Get the pointer, prev content and size of current ACAD */
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
+					 &hdr_data);
+	LL_ASSERT(!err);
+
+	/* Find the BIGInfo */
+	acad_len = hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET];
+	len = acad_len;
+	(void)memcpy(&acad, &hdr_data[ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET],
+		     sizeof(acad));
+	ad = acad;
+	do {
+		ad_len = ad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+		if (ad_len &&
+		    (ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] == BT_DATA_BIG_INFO)) {
+			break;
+		}
+
+		ad_len += 1U;
+
+		LL_ASSERT(ad_len <= len);
+
+		ad += ad_len;
+		len -= ad_len;
+	} while (len);
+	LL_ASSERT(len);
+
+	/* Get reference to BIGInfo */
+	bi = (void *)&ad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
+
+	/* Copy the new/current Channel Map */
+	pdu_big_info_chan_map_phy_set(bi->chm_phy, lll_iso->data_chan_map,
+				      lll_iso->phy);
+
+	/* Commit the new PDU Buffer */
+	lll_adv_sync_data_enqueue(lll_sync, ter_idx);
+}
+
 static void mfy_iso_offset_get(void *param)
 {
+	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
 	struct lll_adv_iso *lll_iso;
 	uint32_t ticks_to_expire;
@@ -776,7 +911,8 @@ static void mfy_iso_offset_get(void *param)
 	uint8_t id;
 
 	sync = param;
-	lll_iso = sync->lll.iso;
+	lll_sync = &sync->lll;
+	lll_iso = lll_sync->iso;
 	ticker_id = TICKER_ID_ADV_ISO_BASE + lll_iso->handle;
 
 	id = TICKER_NULL;
@@ -821,7 +957,7 @@ static void mfy_iso_offset_get(void *param)
 	payload_count = lll_iso->payload_count + ((lll_iso->latency_prepare +
 						   lazy) * lll_iso->bn);
 
-	pdu = lll_adv_sync_data_latest_peek(&sync->lll);
+	pdu = lll_adv_sync_data_latest_peek(lll_sync);
 	bi = big_info_get(pdu);
 	big_info_offset_fill(bi, ticks_to_expire, 0U);
 	bi->payload_count_framing[0] = payload_count;
@@ -831,6 +967,23 @@ static void mfy_iso_offset_get(void *param)
 	bi->payload_count_framing[4] = payload_count >> 32;
 	bi->payload_count_framing[4] &= ~0x7F;
 	bi->payload_count_framing[4] |= (payload_count >> 32) & 0x7F;
+
+	/* Update Channel Map in the BIGInfo until Thread context gets a
+	 * chance to update the PDU with new Channel Map.
+	 */
+	if (lll_sync->iso_chm_done_req != lll_sync->iso_chm_done_ack) {
+		pdu_big_info_chan_map_phy_set(bi->chm_phy,
+					      lll_iso->data_chan_map,
+					      lll_iso->phy);
+	}
+}
+
+static void pdu_big_info_chan_map_phy_set(uint8_t *chm_phy, uint8_t *chan_map,
+					  uint8_t phy)
+{
+	(void)memcpy(chm_phy, chan_map, PDU_CHANNEL_MAP_SIZE);
+	chm_phy[4] &= 0x1F;
+	chm_phy[4] |= ((find_lsb_set(phy) - 1U) << 5);
 }
 
 static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu)

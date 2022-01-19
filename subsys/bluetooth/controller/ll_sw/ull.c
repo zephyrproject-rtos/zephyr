@@ -901,6 +901,26 @@ ll_rx_get_again:
 
 				goto ll_rx_get_again;
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+			} else if (rx->type == NODE_RX_TYPE_BIG_CHM_COMPLETE) {
+				(void)memq_dequeue(memq_ll_rx.tail,
+						   &memq_ll_rx.head, NULL);
+				mem_release(link, &mem_link_rx.free);
+
+				ll_rx_link_inc_quota(1);
+
+				/* Update Channel Map in BIGInfo present in
+				 * Periodic Advertising PDU.
+				 */
+				ull_adv_iso_chm_complete(rx);
+
+				mem_release(rx, &mem_pdu_rx.free);
+
+				rx_alloc(1);
+
+				goto ll_rx_get_again;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 			}
 
 			*node_rx = rx;
@@ -2509,6 +2529,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_CHM_COMPLETE:
 	case NODE_RX_TYPE_BIG_TERMINATE:
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
