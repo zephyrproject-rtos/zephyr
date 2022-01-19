@@ -61,8 +61,8 @@ static inline int lm75_fetch_temp(const struct lm75_config *cfg, struct lm75_dat
 static int lm75_sample_fetch(const struct device *dev,
 			     enum sensor_channel chan)
 {
-	struct lm75_data *data = (struct lm75_data *)dev->data;
-	const struct lm75_config *cfg = (const struct lm75_config *)dev->config;
+	struct lm75_data *data = dev->data;
+	const struct lm75_config *cfg = dev->config;
 
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
@@ -77,7 +77,7 @@ static int lm75_channel_get(const struct device *dev,
 			    enum sensor_channel chan,
 			    struct sensor_value *val)
 {
-	struct lm75_data *data = (struct lm75_data *)dev->data;
+	struct lm75_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
@@ -96,7 +96,7 @@ static const struct sensor_driver_api lm75_driver_api = {
 
 int lm75_init(const struct device *dev)
 {
-	const struct lm75_config *cfg = (const struct lm75_config *)dev->config;
+	const struct lm75_config *cfg = dev->config;
 
 	if (device_is_ready(cfg->i2c_dev)) {
 		return 0;
