@@ -87,29 +87,23 @@ static const struct flash_parameters flash_at45_parameters = {
 	.erase_value = 0xff,
 };
 
-static struct spi_flash_at45_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static const struct spi_flash_at45_config *get_dev_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 static void acquire(const struct device *dev)
 {
-	k_sem_take(&get_dev_data(dev)->lock, K_FOREVER);
+	struct spi_flash_at45_data *data = dev->data;
+
+	k_sem_take(&data->lock, K_FOREVER);
 }
 
 static void release(const struct device *dev)
 {
-	k_sem_give(&get_dev_data(dev)->lock);
+	struct spi_flash_at45_data *data = dev->data;
+
+	k_sem_give(&data->lock);
 }
 
 static int check_jedec_id(const struct device *dev)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
 	uint8_t const *expected_id = cfg->jedec_id;
 	uint8_t read_id[sizeof(cfg->jedec_id)];
@@ -158,7 +152,7 @@ static int check_jedec_id(const struct device *dev)
  */
 static int read_status_register(const struct device *dev, uint16_t *status)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
 	const uint8_t opcode = CMD_READ_STATUS;
 	const struct spi_buf tx_buf[] = {
@@ -204,7 +198,7 @@ static int wait_until_ready(const struct device *dev)
 
 static int configure_page_size(const struct device *dev)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
 	uint16_t status;
 	uint8_t const conf_binary_page_size[] = CMD_BINARY_PAGE_SIZE;
@@ -247,7 +241,7 @@ static bool is_valid_request(off_t addr, size_t size, size_t chip_size)
 static int spi_flash_at45_read(const struct device *dev, off_t offset,
 			       void *data, size_t len)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
 
 	if (!is_valid_request(offset, len, cfg->chip_size)) {
@@ -293,7 +287,7 @@ static int spi_flash_at45_read(const struct device *dev, off_t offset,
 static int perform_write(const struct device *dev, off_t offset,
 			 const void *data, size_t len)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
 	uint8_t const op_and_addr[] = {
 		IS_ENABLED(CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE)
@@ -329,7 +323,7 @@ static int perform_write(const struct device *dev, off_t offset,
 static int spi_flash_at45_write(const struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err = 0;
 
 	if (!is_valid_request(offset, len, cfg->chip_size)) {
@@ -377,7 +371,7 @@ static int spi_flash_at45_write(const struct device *dev, off_t offset,
 
 static int perform_chip_erase(const struct device *dev)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
 	uint8_t const chip_erase_cmd[] = CMD_CHIP_ERASE;
 	const struct spi_buf tx_buf[] = {
@@ -409,7 +403,7 @@ static bool is_erase_possible(size_t entity_size,
 static int perform_erase_op(const struct device *dev, uint8_t opcode,
 			    off_t offset)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err;
 	uint8_t const op_and_addr[] = {
 		opcode,
@@ -439,7 +433,7 @@ static int perform_erase_op(const struct device *dev, uint8_t opcode,
 static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 				size_t size)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err = 0;
 
 	if (!is_valid_request(offset, size, cfg->chip_size)) {
@@ -511,7 +505,9 @@ static void spi_flash_at45_pages_layout(const struct device *dev,
 					const struct flash_pages_layout **layout,
 					size_t *layout_size)
 {
-	*layout = &get_dev_config(dev)->pages_layout;
+	const struct spi_flash_at45_config *cfg = dev->config;
+
+	*layout = &cfg->pages_layout;
 	*layout_size = 1;
 }
 #endif /* IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT) */
@@ -519,7 +515,7 @@ static void spi_flash_at45_pages_layout(const struct device *dev,
 static int power_down_op(const struct device *dev, uint8_t opcode,
 			 uint32_t delay)
 {
-	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
+	const struct spi_flash_at45_config *cfg = dev->config;
 	int err = 0;
 	const struct spi_buf tx_buf[] = {
 		{
@@ -543,7 +539,7 @@ static int power_down_op(const struct device *dev, uint8_t opcode,
 
 static int spi_flash_at45_init(const struct device *dev)
 {
-	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
+	const struct spi_flash_at45_config *dev_config = dev->config;
 	int err;
 
 	if (!spi_is_ready(&dev_config->bus)) {
@@ -597,7 +593,7 @@ static int spi_flash_at45_init(const struct device *dev)
 static int spi_flash_at45_pm_action(const struct device *dev,
 				    enum pm_device_action action)
 {
-	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
+	const struct spi_flash_at45_config *dev_config = dev->config;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
