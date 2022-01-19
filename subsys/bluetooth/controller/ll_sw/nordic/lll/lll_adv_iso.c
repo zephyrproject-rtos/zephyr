@@ -274,13 +274,15 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 						    lll->ctrl_expire - 1U;
 				lll->cssn++;
 			}
-
-			lll->ctrl_chan_use = data_chan_use;
-
-		} else if ((lll->chm_req - lll->chm_ack) == 1U) {
+		} else if (((lll->chm_req - lll->chm_ack) & CHM_STATE_MASK) ==
+			   CHM_STATE_REQ) {
 			lll->chm_ack--;
+			lll->ctrl_expire = CONN_ESTAB_COUNTDOWN;
+			lll->ctrl_instant = event_counter + lll->ctrl_expire;
 			lll->cssn++;
 		}
+
+		lll->ctrl_chan_use = data_chan_use;
 		pdu->cstf = 1U;
 	} else {
 		pdu->cstf = 0U;
@@ -424,6 +426,29 @@ static void isr_tx_common(void *param,
 		/* control subevent to use bis = 0 and se_n = 1 */
 		bis = 0U;
 		data_chan_use = lll->ctrl_chan_use;
+
+	} else if (((lll->chm_req - lll->chm_ack) & CHM_STATE_MASK) ==
+		   CHM_STATE_SEND) {
+		/* Transmit the control PDU and stop after 6 intervals
+		 */
+		struct pdu_big_ctrl_chan_map_ind *chm;
+
+		pdu = radio_pkt_scratch_get();
+		pdu->ll_id = PDU_BIS_LLID_CTRL;
+		pdu->cssn = lll->cssn;
+		pdu->cstf = 0U;
+
+		pdu->len = offsetof(struct pdu_big_ctrl, ctrl_data) +
+			   sizeof(struct pdu_big_ctrl_chan_map_ind);
+		pdu->ctrl.opcode = PDU_BIG_CTRL_TYPE_CHAN_MAP_IND;
+
+		chm = (void *)&pdu->ctrl.chan_map_ind;
+		(void)memcpy(chm->chm, lll->chm_chan_map, sizeof(chm->chm));
+		chm->instant = lll->ctrl_instant;
+
+		/* control subevent to use bis = 0 and se_n = 1 */
+		bis = 0U;
+		data_chan_use = lll->ctrl_chan_use;
 	} else {
 		/* Close the BIG event as no more subevents */
 		radio_isr_set(isr_done, lll);
@@ -514,16 +539,64 @@ static void isr_done_create(void *param)
 static void isr_done_term(void *param)
 {
 	struct lll_adv_iso *lll;
+	uint16_t elapsed_event;
 
 	lll_isr_status_reset();
 
 	lll = param;
-
 	LL_ASSERT(lll->ctrl_expire);
 
-	lll->ctrl_expire--;
-	if (!lll->ctrl_expire) {
-		ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV_ISO_TERMINATE);
+	elapsed_event = lll->latency_event + 1U;
+	if (lll->ctrl_expire > elapsed_event) {
+		lll->ctrl_expire -= elapsed_event;
+	} else {
+		lll->ctrl_expire = 0U;
+
+		if (lll->chm_req != lll->chm_ack) {
+			struct lll_adv_sync *sync_lll;
+			struct lll_adv *adv_lll;
+
+			/* Reset channel map procedure requested */
+			lll->chm_ack = lll->chm_req;
+
+			/* Request periodic advertising to update channel map
+			 * in the BIGInfo when filling BIG Offset until Thread
+			 * context gets to update it using new PDU buffer.
+			 */
+			adv_lll = lll->adv;
+			sync_lll = adv_lll->sync;
+			if (sync_lll->iso_chm_done_req ==
+			    sync_lll->iso_chm_done_ack) {
+				struct node_rx_hdr *rx;
+
+				/* Request ULL to update the channel map in the
+				 * BIGInfo struct present in the current PDU of
+				 * Periodic Advertising radio events. Channel
+				 * Map is updated when filling the BIG offset.
+				 */
+				sync_lll->iso_chm_done_req++;
+
+				/* Notify Thread context to update channel map
+				 * in the BIGInfo struct present in the Periodic
+				 * Advertising PDU.
+				 */
+				rx = ull_pdu_rx_alloc();
+				LL_ASSERT(rx);
+
+				rx->type = NODE_RX_TYPE_BIG_CHM_COMPLETE;
+				rx->rx_ftr.param = lll;
+
+				ull_rx_put(rx->link, rx);
+				ull_rx_sched();
+			}
+
+			/* Use new channel map */
+			lll->data_chan_count = lll->chm_chan_count;
+			(void)memcpy(lll->data_chan_map, lll->chm_chan_map,
+				     sizeof(lll->data_chan_map));
+		} else {
+			ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV_ISO_TERMINATE);
+		}
 	}
 
 	lll_isr_cleanup(param);

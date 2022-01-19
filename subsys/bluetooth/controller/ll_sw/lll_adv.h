@@ -31,7 +31,7 @@ struct lll_adv_iso {
 	uint64_t handle:8;
 	uint64_t cssn:3;
 
-	uint8_t data_chan_map[5];
+	uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t data_chan_count:6;
 	uint8_t num_bis:5;
 	uint8_t bn:3;
@@ -56,11 +56,17 @@ struct lll_adv_iso {
 
 	uint8_t phy_flags:1;
 
+	#define CHM_STATE_MASK BIT_MASK(2U)
+	#define CHM_STATE_REQ  BIT(0U)
+	#define CHM_STATE_SEND BIT(1U)
+	uint8_t volatile chm_ack;
+	uint8_t          chm_req;
+	uint8_t chm_chan_map[PDU_CHANNEL_MAP_SIZE];
+	uint8_t chm_chan_count:6;
+
 	uint8_t term_req:1;
 	uint8_t term_ack:1;
 	uint8_t term_reason;
-	uint8_t chm_req;
-	uint8_t chm_ack;
 
 	uint8_t  ctrl_chan_use;
 	uint8_t  ctrl_expire;
@@ -92,12 +98,15 @@ struct lll_adv_sync {
 	uint32_t ticks_offset;
 
 	struct lll_adv_pdu data;
+
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
 	struct pdu_adv *last_pdu;
 #endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	struct lll_adv_iso *iso;
+	uint8_t    volatile iso_chm_done_req;
+	uint8_t             iso_chm_done_ack;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
