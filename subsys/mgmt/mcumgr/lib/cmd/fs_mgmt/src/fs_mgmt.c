@@ -34,7 +34,7 @@ static int
 fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 {
 	uint8_t file_data[FS_MGMT_DL_CHUNK_SIZE];
-	char path[FS_MGMT_PATH_SIZE + 1];
+	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
 	unsigned long long off;
 	CborError err;
 	size_t bytes_read;
@@ -126,8 +126,8 @@ fs_mgmt_file_upload_rsp(struct mgmt_ctxt *ctxt, int rc, unsigned long long off)
 static int
 fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 {
-	uint8_t file_data[FS_MGMT_UL_CHUNK_SIZE];
-	char file_name[FS_MGMT_PATH_SIZE + 1];
+	uint8_t file_data[CONFIG_FS_MGMT_UL_CHUNK_SIZE];
+	char file_name[CONFIG_FS_MGMT_PATH_SIZE + 1];
 	unsigned long long len;
 	unsigned long long off;
 	size_t data_len;
