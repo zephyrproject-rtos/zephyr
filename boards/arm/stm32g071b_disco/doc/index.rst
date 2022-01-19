@@ -106,6 +106,10 @@ Default Zephyr Peripheral Mapping:
 - LED (TO_PLUG)      : PD8
 - LED (SINK_SPY)     : PD5
 - LED (SOURCE)       : PC12
+- ENCC1              : PB10 (Enable CC1)
+- ENCC2              : PB11 (Enable CC2)
+- RDCC1              : PB12 (Enable Door Sense on CC1)
+
 
 For mode details please refer to `STM32G0 Discovery board User Manual`_.
 
