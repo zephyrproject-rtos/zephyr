@@ -110,7 +110,7 @@ typedef bool (*pcie_ctrl_region_translate_t)(const struct device *dev, pcie_bdf_
  * @param reg the configuration word index (not address)
  * @return the word read (0xFFFFFFFFU if nonexistent endpoint or word)
  */
-uint32_t generic_pcie_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned int reg);
+uint32_t pcie_generic_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned int reg);
 
 
 /**
@@ -125,7 +125,7 @@ uint32_t generic_pcie_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned
  * @param reg the configuration word index (not address)
  * @param data the value to write
  */
-void generic_pcie_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
+void pcie_generic_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
 				  unsigned int reg, uint32_t data);
 
 /**
@@ -138,7 +138,7 @@ void generic_pcie_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
  * @param dev PCI Express Controller device pointer
  * @param bdf_start PCI(e) start endpoint (only bus & dev are used to start enumeration)
  */
-void generic_pcie_ctrl_enumerate(const struct device *dev, pcie_bdf_t bdf_start);
+void pcie_generic_ctrl_enumerate(const struct device *dev, pcie_bdf_t bdf_start);
 
 /** @brief Structure providing callbacks to be implemented for devices
  * that supports the PCI Express Controller API

@@ -43,7 +43,7 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 	pcie_ctrl_conf_write(dev, bdf, reg, data);
 }
 
-uint32_t generic_pcie_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned int reg)
+uint32_t pcie_generic_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned int reg)
 {
 	volatile uint32_t *bdf_cfg_mem = (volatile uint32_t *)((uintptr_t)cfg_addr + (bdf << 4));
 
@@ -54,7 +54,7 @@ uint32_t generic_pcie_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned
 	return bdf_cfg_mem[reg];
 }
 
-void generic_pcie_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
+void pcie_generic_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
 				 unsigned int reg, uint32_t data)
 {
 	volatile uint32_t *bdf_cfg_mem = (volatile uint32_t *)((uintptr_t)cfg_addr + (bdf << 4));
@@ -66,12 +66,12 @@ void generic_pcie_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
 	bdf_cfg_mem[reg] = data;
 }
 
-static void generic_pcie_ctrl_enumerate_type1(const struct device *ctrl_dev, pcie_bdf_t bdf)
+static void pcie_generic_ctrl_enumerate_type1(const struct device *ctrl_dev, pcie_bdf_t bdf)
 {
 	/* Not yet supported */
 }
 
-static void generic_pcie_ctrl_type0_enumerate_bars(const struct device *ctrl_dev, pcie_bdf_t bdf)
+static void pcie_generic_ctrl_type0_enumerate_bars(const struct device *ctrl_dev, pcie_bdf_t bdf)
 {
 	unsigned int bar, reg, data;
 	uintptr_t scratch, bar_bus_addr;
@@ -160,13 +160,13 @@ static void generic_pcie_ctrl_type0_enumerate_bars(const struct device *ctrl_dev
 	}
 }
 
-static void generic_pcie_ctrl_enumerate_type0(const struct device *ctrl_dev, pcie_bdf_t bdf)
+static void pcie_generic_ctrl_enumerate_type0(const struct device *ctrl_dev, pcie_bdf_t bdf)
 {
 	/* Setup Type0 BARs */
-	generic_pcie_ctrl_type0_enumerate_bars(ctrl_dev, bdf);
+	pcie_generic_ctrl_type0_enumerate_bars(ctrl_dev, bdf);
 }
 
-void generic_pcie_ctrl_enumerate(const struct device *ctrl_dev, pcie_bdf_t bdf_start)
+void pcie_generic_ctrl_enumerate(const struct device *ctrl_dev, pcie_bdf_t bdf_start)
 {
 	uint32_t data, class, id;
 	unsigned int dev = PCIE_BDF_TO_DEV(bdf_start),
@@ -203,9 +203,9 @@ void generic_pcie_ctrl_enumerate(const struct device *ctrl_dev, pcie_bdf_t bdf_s
 				multifunction_device ? "true" : "false");
 
 			if (layout_type_1) {
-				generic_pcie_ctrl_enumerate_type1(ctrl_dev, bdf);
+				pcie_generic_ctrl_enumerate_type1(ctrl_dev, bdf);
 			} else {
-				generic_pcie_ctrl_enumerate_type0(ctrl_dev, bdf);
+				pcie_generic_ctrl_enumerate_type0(ctrl_dev, bdf);
 			}
 
 			/* Do not enumerate sub-functions if not a multifunction device */
