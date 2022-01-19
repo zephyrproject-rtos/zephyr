@@ -48,21 +48,11 @@ static const struct busy_sim_config sim_config = {
 static struct busy_sim_data sim_data;
 static const struct device *busy_sim_dev = DEVICE_DT_GET_ONE(vnd_busy_sim);
 
-static inline struct busy_sim_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct busy_sim_config *get_dev_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 static void rng_pool_work_handler(struct k_work *work)
 {
 	uint8_t *buf;
 	uint32_t len;
-	const struct busy_sim_config *config = get_dev_config(busy_sim_dev);
+	const struct busy_sim_config *config = busy_sim_dev->config;
 
 	len = ring_buf_put_claim(&rnd_rbuf, &buf, BUFFER_SIZE - 1);
 	if (len) {
@@ -80,7 +70,7 @@ static void rng_pool_work_handler(struct k_work *work)
 
 static uint32_t get_timeout(bool idle)
 {
-	struct busy_sim_data *data = get_dev_data(busy_sim_dev);
+	struct busy_sim_data *data = busy_sim_dev->data;
 	uint32_t avg = idle ? data->idle_avg : data->active_avg;
 	uint32_t delta = idle ? data->idle_delta : data->active_delta;
 	uint16_t rand_val;
@@ -109,8 +99,8 @@ static void counter_alarm_callback(const struct device *dev,
 				   void *user_data)
 {
 	int err;
-	const struct busy_sim_config *config = get_dev_config(busy_sim_dev);
-	struct busy_sim_data *data = get_dev_data(busy_sim_dev);
+	const struct busy_sim_config *config = busy_sim_dev->config;
+	struct busy_sim_data *data = busy_sim_dev->data;
 
 	data->alarm_cfg.ticks = get_timeout(true);
 
@@ -140,8 +130,8 @@ void busy_sim_start(uint32_t active_avg, uint32_t active_delta,
 		    uint32_t idle_avg, uint32_t idle_delta, busy_sim_cb_t cb)
 {
 	int err;
-	const struct busy_sim_config *config = get_dev_config(busy_sim_dev);
-	struct busy_sim_data *data = get_dev_data(busy_sim_dev);
+	const struct busy_sim_config *config = busy_sim_dev->config;
+	struct busy_sim_data *data = busy_sim_dev->data;
 
 	data->cb = cb;
 	data->active_avg = active_avg;
@@ -165,7 +155,7 @@ void busy_sim_start(uint32_t active_avg, uint32_t active_delta,
 void busy_sim_stop(void)
 {
 	int err;
-	const struct busy_sim_config *config = get_dev_config(busy_sim_dev);
+	const struct busy_sim_config *config = busy_sim_dev->config;
 
 	if (!IS_ENABLED(CONFIG_XOSHIRO_RANDOM_GENERATOR)) {
 		k_work_cancel(&work);
@@ -178,8 +168,8 @@ void busy_sim_stop(void)
 static int busy_sim_init(const struct device *dev)
 {
 	uint32_t freq;
-	const struct busy_sim_config *config = get_dev_config(dev);
-	struct busy_sim_data *data = get_dev_data(dev);
+	const struct busy_sim_config *config = dev->config;
+	struct busy_sim_data *data = dev->data;
 
 	if ((config->pin_spec.port && !device_is_ready(config->pin_spec.port)) ||
 	    !device_is_ready(config->counter) ||
