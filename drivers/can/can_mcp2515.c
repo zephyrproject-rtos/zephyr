@@ -649,8 +649,8 @@ static void mcp2515_tx_done(const struct device *dev, uint8_t tx_idx)
 	k_sem_give(&dev_data->tx_sem);
 }
 
-static enum can_state mcp2515_get_state(const struct device *dev,
-					struct can_bus_err_cnt *err_cnt)
+static int mcp2515_get_state(const struct device *dev, enum can_state *state,
+			     struct can_bus_err_cnt *err_cnt)
 {
 	uint8_t eflg;
 	uint8_t err_cnt_buf[2];
@@ -659,34 +659,34 @@ static enum can_state mcp2515_get_state(const struct device *dev,
 	ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_EFLG, &eflg, sizeof(eflg));
 	if (ret < 0) {
 		LOG_ERR("Failed to read error register [%d]", ret);
-		return CAN_BUS_UNKNOWN;
+		return -EIO;
 	}
 
-	if (err_cnt) {
+	if (state != NULL) {
+		if (eflg & MCP2515_EFLG_TXBO) {
+			*state = CAN_BUS_OFF;
+		} else if ((eflg & MCP2515_EFLG_RXEP) || (eflg & MCP2515_EFLG_TXEP)) {
+			*state = CAN_ERROR_PASSIVE;
+		} else if (eflg & MCP2515_EFLG_EWARN) {
+			*state = CAN_ERROR_WARNING;
+		} else {
+			*state = CAN_ERROR_ACTIVE;
+		}
+	}
+
+	if (err_cnt != NULL) {
 		ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_TEC, err_cnt_buf,
 					   sizeof(err_cnt_buf));
 		if (ret < 0) {
 			LOG_ERR("Failed to read error counters [%d]", ret);
-			return CAN_BUS_UNKNOWN;
+			return -EIO;
 		}
 
 		err_cnt->tx_err_cnt = err_cnt_buf[0];
 		err_cnt->rx_err_cnt = err_cnt_buf[1];
 	}
 
-	if (eflg & MCP2515_EFLG_TXBO) {
-		return CAN_BUS_OFF;
-	}
-
-	if ((eflg & MCP2515_EFLG_RXEP) || (eflg & MCP2515_EFLG_TXEP)) {
-		return CAN_ERROR_PASSIVE;
-	}
-
-	if (eflg & MCP2515_EFLG_EWARN) {
-		return CAN_ERROR_WARNING;
-	}
-
-	return CAN_ERROR_ACTIVE;
+	return 0;
 }
 
 static void mcp2515_handle_errors(const struct device *dev)
@@ -696,8 +696,13 @@ static void mcp2515_handle_errors(const struct device *dev)
 	void *state_change_cb_data = dev_data->state_change_cb_data;
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
+	int err;
 
-	state = mcp2515_get_state(dev, state_change_cb ? &err_cnt : NULL);
+	err = mcp2515_get_state(dev, &state, state_change_cb ? &err_cnt : NULL);
+	if (err != 0) {
+		LOG_ERR("Failed to get CAN controller state [%d]", err);
+		return;
+	}
 
 	if (state_change_cb && dev_data->old_state != state) {
 		dev_data->old_state = state;

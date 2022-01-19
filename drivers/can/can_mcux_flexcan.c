@@ -316,32 +316,33 @@ static int mcux_get_tx_alloc(struct mcux_flexcan_data *data)
 	return alloc >= MCUX_FLEXCAN_MAX_TX ? -1 : alloc;
 }
 
-static enum can_state mcux_flexcan_get_state(const struct device *dev,
-					     struct can_bus_err_cnt *err_cnt)
+static int mcux_flexcan_get_state(const struct device *dev, enum can_state *state,
+				  struct can_bus_err_cnt *err_cnt)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	uint64_t status_flags;
+
+	if (state != NULL) {
+		status_flags = FLEXCAN_GetStatusFlags(config->base);
+
+		if ((status_flags & CAN_ESR1_FLTCONF(2)) != 0U) {
+			*state = CAN_BUS_OFF;
+		} else if ((status_flags & CAN_ESR1_FLTCONF(1)) != 0U) {
+			*state = CAN_ERROR_PASSIVE;
+		} else if ((status_flags &
+			(kFLEXCAN_TxErrorWarningFlag | kFLEXCAN_RxErrorWarningFlag)) != 0) {
+			*state = CAN_ERROR_WARNING;
+		} else {
+			*state = CAN_ERROR_ACTIVE;
+		}
+	}
 
 	if (err_cnt != NULL) {
 		FLEXCAN_GetBusErrCount(config->base, &err_cnt->tx_err_cnt,
 				       &err_cnt->rx_err_cnt);
 	}
 
-	status_flags = FLEXCAN_GetStatusFlags(config->base);
-
-	if ((status_flags & CAN_ESR1_FLTCONF(2)) != 0U) {
-		return CAN_BUS_OFF;
-	}
-
-	if ((status_flags & CAN_ESR1_FLTCONF(1)) != 0U) {
-		return CAN_ERROR_PASSIVE;
-	}
-
-	if ((status_flags & (kFLEXCAN_TxErrorWarningFlag | kFLEXCAN_RxErrorWarningFlag)) != 0) {
-		return CAN_ERROR_WARNING;
-	}
-
-	return CAN_ERROR_ACTIVE;
+	return 0;
 }
 
 static int mcux_flexcan_send(const struct device *dev,
@@ -352,6 +353,7 @@ static int mcux_flexcan_send(const struct device *dev,
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	flexcan_mb_transfer_t xfer;
+	enum can_state state;
 	status_t status;
 	int alloc;
 
@@ -360,7 +362,8 @@ static int mcux_flexcan_send(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (mcux_flexcan_get_state(dev, NULL) == CAN_BUS_OFF) {
+	(void)mcux_flexcan_get_state(dev, &state, NULL);
+	if (state == CAN_BUS_OFF) {
 		LOG_DBG("Transmit failed, bus-off");
 		return -ENETDOWN;
 	}
@@ -470,10 +473,12 @@ static void mcux_flexcan_set_state_change_callback(const struct device *dev,
 int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct mcux_flexcan_config *config = dev->config;
-	int ret = 0;
+	enum can_state state;
 	uint64_t start_time;
+	int ret = 0;
 
-	if (mcux_flexcan_get_state(dev, NULL) != CAN_BUS_OFF) {
+	(void)mcux_flexcan_get_state(dev, &state, NULL);
+	if (state != CAN_BUS_OFF) {
 		return 0;
 	}
 
@@ -481,11 +486,15 @@ int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 	config->base->CTRL1 &= ~CAN_CTRL1_BOFFREC_MASK;
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		while (mcux_flexcan_get_state(dev, NULL) == CAN_BUS_OFF) {
+		(void)mcux_flexcan_get_state(dev, &state, NULL);
+
+		while (state == CAN_BUS_OFF) {
 			if (!K_TIMEOUT_EQ(timeout, K_FOREVER) &&
 			    k_uptime_ticks() - start_time >= timeout.ticks) {
 				ret = -EAGAIN;
 			}
+
+			(void)mcux_flexcan_get_state(dev, &state, NULL);
 		}
 	}
 
@@ -556,7 +565,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 		LOG_DBG("RX CRC error (error 0x%016llx)", error);
 	}
 
-	state = mcux_flexcan_get_state(dev, &err_cnt);
+	(void)mcux_flexcan_get_state(dev, &state, &err_cnt);
 	if (data->state != state) {
 		data->state = state;
 
@@ -745,7 +754,8 @@ static int mcux_flexcan_init(const struct device *dev)
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	config->base->CTRL1 |= CAN_CTRL1_BOFFREC_MASK;
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
-	data->state = mcux_flexcan_get_state(dev, NULL);
+
+	(void)mcux_flexcan_get_state(dev, &data->state, NULL);
 
 	return 0;
 }
