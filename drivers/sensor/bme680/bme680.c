@@ -344,7 +344,7 @@ static int bme680_read_compensation(const struct device *dev)
 
 static int bme680_chip_init(const struct device *dev)
 {
-	struct bme680_data *data = (struct bme680_data *)dev->data;
+	struct bme680_data *data = dev->data;
 	int err;
 
 	err = bme680_reg_read(dev, BME680_REG_CHIP_ID, &data->chip_id, 1);

@@ -78,7 +78,7 @@ static int write_port_regs(const struct device *dev, uint8_t reg, uint16_t value
  */
 static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
 {
-	struct mcp23xxx_drv_data *drv_data = (struct mcp23xxx_drv_data *)dev->data;
+	struct mcp23xxx_drv_data *drv_data = dev->data;
 	uint16_t dir = drv_data->reg_cache.iodir;
 	uint16_t output = drv_data->reg_cache.gpio;
 	int ret;
@@ -119,7 +119,7 @@ static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
  */
 static int setup_pin_pull(const struct device *dev, uint32_t pin, int flags)
 {
-	struct mcp23xxx_drv_data *drv_data = (struct mcp23xxx_drv_data *)dev->data;
+	struct mcp23xxx_drv_data *drv_data = dev->data;
 	uint16_t port;
 	int ret;
 
@@ -141,7 +141,7 @@ static int setup_pin_pull(const struct device *dev, uint32_t pin, int flags)
 
 static int mcp23xxx_pin_cfg(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
-	struct mcp23xxx_drv_data *drv_data = (struct mcp23xxx_drv_data *)dev->data;
+	struct mcp23xxx_drv_data *drv_data = dev->data;
 	int ret;
 
 	if (k_is_in_isr()) {
@@ -174,7 +174,7 @@ done:
 
 static int mcp23xxx_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	struct mcp23xxx_drv_data *drv_data = (struct mcp23xxx_drv_data *)dev->data;
+	struct mcp23xxx_drv_data *drv_data = dev->data;
 	uint16_t buf;
 	int ret;
 
@@ -195,7 +195,7 @@ static int mcp23xxx_port_get_raw(const struct device *dev, uint32_t *value)
 
 static int mcp23xxx_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
-	struct mcp23xxx_drv_data *drv_data = (struct mcp23xxx_drv_data *)dev->data;
+	struct mcp23xxx_drv_data *drv_data = dev->data;
 	uint16_t buf;
 	int ret;
 
@@ -229,7 +229,7 @@ static int mcp23xxx_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 
 static int mcp23xxx_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
-	struct mcp23xxx_drv_data *drv_data = (struct mcp23xxx_drv_data *)dev->data;
+	struct mcp23xxx_drv_data *drv_data = dev->data;
 	uint16_t buf;
 	int ret;
 
@@ -277,7 +277,7 @@ const struct gpio_driver_api gpio_mcp23xxx_api_table = {
 int gpio_mcp23xxx_init(const struct device *dev)
 {
 	const struct mcp23xxx_config *config = dev->config;
-	struct mcp23xxx_drv_data *drv_data = (struct mcp23xxx_drv_data *)dev->data;
+	struct mcp23xxx_drv_data *drv_data = dev->data;
 	int err;
 
 	if (config->ngpios != 8U && config->ngpios != 16U) {
