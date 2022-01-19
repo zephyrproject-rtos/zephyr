@@ -12,7 +12,7 @@ void z_log_msg2_finalize(struct log_msg2 *msg, const void *source,
 			 const struct log_msg2_desc desc, const void *data)
 {
 	if (!msg) {
-		z_log_dropped();
+		z_log_dropped(false);
 
 		return;
 	}
