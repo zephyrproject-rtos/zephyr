@@ -206,6 +206,7 @@ struct lll_hdr {
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint8_t score;
 	uint8_t latency;
+	int8_t  prio;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 };
 
