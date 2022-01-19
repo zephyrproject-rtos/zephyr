@@ -1,0 +1,8 @@
+# STM32H7B3I Discovery kit board configuration
+
+# Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H7B3I_DK
+	bool "STM32H7B3I Discovery Kit Development Board"
+	depends on SOC_STM32H7B3XXQ
