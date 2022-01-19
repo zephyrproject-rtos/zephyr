@@ -551,33 +551,32 @@ static void can_stm32_set_state_change_callback(const struct device *dev,
 	}
 }
 
-static enum can_state can_stm32_get_state(const struct device *dev,
-					  struct can_bus_err_cnt *err_cnt)
+static int can_stm32_get_state(const struct device *dev, enum can_state *state,
+			       struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 
-	if (err_cnt) {
+	if (state != NULL) {
+		if (can->ESR & CAN_ESR_BOFF) {
+			*state = CAN_BUS_OFF;
+		} else if (can->ESR & CAN_ESR_EPVF) {
+			*state = CAN_ERROR_PASSIVE;
+		} else if (can->ESR & CAN_ESR_EWGF) {
+			*state = CAN_ERROR_WARNING;
+		} else {
+			*state = CAN_ERROR_ACTIVE;
+		}
+	}
+
+	if (err_cnt != NULL) {
 		err_cnt->tx_err_cnt =
 			((can->ESR & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos);
 		err_cnt->rx_err_cnt =
 			((can->ESR & CAN_ESR_REC) >> CAN_ESR_REC_Pos);
 	}
 
-	if (can->ESR & CAN_ESR_BOFF) {
-		return CAN_BUS_OFF;
-	}
-
-	if (can->ESR & CAN_ESR_EPVF) {
-		return CAN_ERROR_PASSIVE;
-	}
-
-	if (can->ESR & CAN_ESR_EWGF) {
-		return CAN_ERROR_WARNING;
-	}
-
-	return CAN_ERROR_ACTIVE;
-
+	return 0;
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY

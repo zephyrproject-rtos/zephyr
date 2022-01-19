@@ -451,7 +451,7 @@ static void can_mcan_state_change_handler(const struct can_mcan_config *cfg,
 	const can_state_change_callback_t cb = data->state_change_cb;
 	void *cb_data = data->state_change_cb_data;
 
-	state = can_mcan_get_state(cfg, &err_cnt);
+	(void)can_mcan_get_state(cfg, &state, &err_cnt);
 
 	if (cb != NULL) {
 		cb(state, err_cnt, cb_data);
@@ -642,30 +642,32 @@ void can_mcan_line_1_isr(const struct can_mcan_config *cfg,
 			    CAN_MCAN_IR_RF0L | CAN_MCAN_IR_RF1L));
 }
 
-enum can_state can_mcan_get_state(const struct can_mcan_config *cfg,
-				  struct can_bus_err_cnt *err_cnt)
+int can_mcan_get_state(const struct can_mcan_config *cfg, enum can_state *state,
+		       struct can_bus_err_cnt *err_cnt)
 {
 	struct can_mcan_reg *can = cfg->can;
 
-	err_cnt->rx_err_cnt = (can->ecr & CAN_MCAN_ECR_TEC_MSK) <<
-			      CAN_MCAN_ECR_TEC_POS;
-
-	err_cnt->tx_err_cnt = (can->ecr & CAN_MCAN_ECR_REC_MSK) <<
-			      CAN_MCAN_ECR_REC_POS;
-
-	if (can->psr & CAN_MCAN_PSR_BO) {
-		return CAN_BUS_OFF;
+	if (state != NULL) {
+		if (can->psr & CAN_MCAN_PSR_BO) {
+			*state = CAN_BUS_OFF;
+		} else if (can->psr & CAN_MCAN_PSR_EP) {
+			*state = CAN_ERROR_PASSIVE;
+		} else if (can->psr & CAN_MCAN_PSR_EW) {
+			*state = CAN_ERROR_WARNING;
+		} else {
+			*state = CAN_ERROR_ACTIVE;
+		}
 	}
 
-	if (can->psr & CAN_MCAN_PSR_EP) {
-		return CAN_ERROR_PASSIVE;
+	if (err_cnt != NULL) {
+		err_cnt->rx_err_cnt = (can->ecr & CAN_MCAN_ECR_TEC_MSK) <<
+				      CAN_MCAN_ECR_TEC_POS;
+
+		err_cnt->tx_err_cnt = (can->ecr & CAN_MCAN_ECR_REC_MSK) <<
+				      CAN_MCAN_ECR_REC_POS;
 	}
 
-	if (can->psr & CAN_MCAN_PSR_EW) {
-		return CAN_ERROR_WARNING;
-	}
-
-	return CAN_ERROR_ACTIVE;
+	return 0;
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY

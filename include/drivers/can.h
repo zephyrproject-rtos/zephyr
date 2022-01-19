@@ -104,8 +104,6 @@ enum can_state {
 	CAN_ERROR_PASSIVE,
 	/** Bus-off state (RX/TX error count >= 256). */
 	CAN_BUS_OFF,
-	/** Bus state unknown. */
-	CAN_BUS_UNKNOWN
 };
 
 /**
@@ -347,8 +345,8 @@ typedef int (*can_recover_t)(const struct device *dev, k_timeout_t timeout);
  * @brief Callback API upon getting the CAN controller state
  * See @a can_get_state() for argument description
  */
-typedef enum can_state (*can_get_state_t)(const struct device *dev,
-					  struct can_bus_err_cnt *err_cnt);
+typedef int (*can_get_state_t)(const struct device *dev, enum can_state *state,
+			       struct can_bus_err_cnt *err_cnt);
 
 /**
  * @typedef can_set_state_change_callback_t
@@ -826,19 +824,21 @@ static inline int z_impl_can_get_max_filters(const struct device *dev, enum can_
  * controller.
  *
  * @param dev          Pointer to the device structure for the driver instance.
+ * @param[out] state   Pointer to the state destination enum or NULL.
  * @param[out] err_cnt Pointer to the err_cnt destination structure or NULL.
  *
- * @retval  state
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error, failed to get state.
  */
-__syscall enum can_state can_get_state(const struct device *dev,
-				       struct can_bus_err_cnt *err_cnt);
+__syscall int can_get_state(const struct device *dev, enum can_state *state,
+			    struct can_bus_err_cnt *err_cnt);
 
-static inline enum can_state z_impl_can_get_state(const struct device *dev,
-						  struct can_bus_err_cnt *err_cnt)
+static inline int z_impl_can_get_state(const struct device *dev, enum can_state *state,
+				       struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->get_state(dev, err_cnt);
+	return api->get_state(dev, state, err_cnt);
 }
 
 /**

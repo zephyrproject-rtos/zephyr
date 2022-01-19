@@ -238,7 +238,7 @@ int can_mcan_add_rx_filter(struct can_mcan_data *data,
 void can_mcan_remove_rx_filter(struct can_mcan_data *data,
 			       struct can_mcan_msg_sram *msg_ram, int filter_id);
 
-enum can_state can_mcan_get_state(const struct can_mcan_config *cfg,
-				  struct can_bus_err_cnt *err_cnt);
+int can_mcan_get_state(const struct can_mcan_config *cfg, enum can_state *state,
+		       struct can_bus_err_cnt *err_cnt);
 
 #endif /* ZEPHYR_DRIVERS_CAN_MCAN_H_ */
