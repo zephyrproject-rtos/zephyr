@@ -940,11 +940,12 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 
 		ad_len += 1U;
 
-		LL_ASSERT(ad_len < len);
+		LL_ASSERT(ad_len <= len);
 
 		ad += ad_len;
 		len -= ad_len;
 	} while (len);
+	LL_ASSERT(len);
 
 	/* Remove Channel Map Update Indication by moving other AD types that
 	 * are after it.
