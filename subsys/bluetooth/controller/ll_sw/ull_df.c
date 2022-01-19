@@ -1120,6 +1120,13 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+static void df_conn_cte_req_disable(void *param)
+{
+	k_sem_give(param);
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ || CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /* @brief Function enables or disables CTE request control procedure for a connection.
  *
@@ -1156,10 +1163,18 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 		conn->llcp.cte_req.is_enabled = false;
 		conn->llcp.cte_req.req_interval = 0U;
 
-		/* There is no verification if the command is pending. If it is already disabled
-		 * there is no change to the state.
-		 */
-		/* TODO: How handle command pending in LLL? */
+		if (conn->llcp.cte_req.is_active) {
+			struct k_sem sem;
+
+			k_sem_init(&sem, 0U, 1U);
+			conn->llcp.cte_req.disable_param = &sem;
+			conn->llcp.cte_req.disable_cb = df_conn_cte_req_disable;
+
+			if (!conn->llcp.cte_req.is_active) {
+				k_sem_take(&sem, K_FOREVER);
+			}
+		}
+
 		return BT_HCI_ERR_SUCCESS;
 	} else {
 		if (!conn->lll.df_rx_cfg.is_initialized) {
@@ -1206,7 +1221,7 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		}
 
-		conn->llcp.cte_req.is_enabled = true;
+		conn->llcp.cte_req.is_enabled = 0U;
 		conn->llcp.cte_req.req_interval = cte_request_interval;
 		conn->llcp.cte_req.cte_type = requested_cte_type;
 		conn->llcp.cte_req.min_cte_len = requested_cte_length;
@@ -1250,11 +1265,19 @@ uint8_t ll_df_set_conn_cte_rsp_enable(uint16_t handle, uint8_t enable)
 		ull_cp_cte_rsp_enable(conn, enable, LLL_DF_MAX_CTE_LEN,
 				conn->lll.df_tx_cfg.cte_types_allowed);
 	} else {
-		/* There is no parameter validation for disable operation. */
+		conn->lll.df_tx_cfg.cte_rsp_en = false;
 
-		/* TODO: Add missing implementation of disable CTE request.
-		 * Requires refactored LLCPs.
-		 */
+		if (conn->llcp.cte_rsp.is_active) {
+			struct k_sem sem;
+
+			k_sem_init(&sem, 0U, 1U);
+			conn->llcp.cte_rsp.disable_param = &sem;
+			conn->llcp.cte_rsp.disable_cb = df_conn_cte_req_disable;
+
+			if (!conn->llcp.cte_rsp.is_active) {
+				k_sem_take(&sem, K_FOREVER);
+			}
+		}
 	}
 
 	return BT_HCI_ERR_SUCCESS;
