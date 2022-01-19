@@ -19,7 +19,15 @@ extern "C" {
 
 #if defined(ARCH_HAS_MEMORY_BARRIER)
 
+#if defined(CONFIG_ARM)
+#include <arch/arm/aarch32/barrier.h>
+#elif defined(CONFIG_ARM64)
+#include <arch/arm64/barrier.h>
+#elif defined(CONFIG_RISCV)
+#include <arch/riscv/barrier.h>
+#else
 #error "Missing memory barrier definitions"
+#endif /* CONFIG_ARM */
 
 #elif defined(__GNUC__)
 

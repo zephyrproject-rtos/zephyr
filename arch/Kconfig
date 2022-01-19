@@ -34,6 +34,7 @@ config ARM
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
+	select ARCH_HAS_MEMORY_BARRIER
 	help
 	  ARM architecture
 
@@ -47,6 +48,7 @@ config ARM64
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select ARCH_HAS_MEMORY_BARRIER
 	help
 	  ARM64 (AArch64) architecture
 
@@ -112,6 +114,7 @@ config RISCV
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_MEMORY_BARRIER
 	imply XIP
 	help
 	  RISCV architecture
