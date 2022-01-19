@@ -287,7 +287,8 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
  */
 static void reass_timeout(struct k_work *work)
 {
-	struct frag_cache *cache = CONTAINER_OF(work, struct frag_cache, timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct frag_cache *cache = CONTAINER_OF(dwork, struct frag_cache, timer);
 
 	if (cache->pkt) {
 		net_pkt_unref(cache->pkt);

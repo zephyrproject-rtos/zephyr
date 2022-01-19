@@ -272,7 +272,8 @@ static int trigger_counter_post_write_cb(uint16_t obj_inst_id,
 
 static void timer_work_cb(struct k_work *work)
 {
-	struct ipso_timer_data *timer = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct ipso_timer_data *timer = CONTAINER_OF(dwork,
 						     struct ipso_timer_data,
 						     timer_work);
 	stop_timer(timer, false);

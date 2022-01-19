@@ -408,7 +408,8 @@ const struct ppp_protocol_handler *ppp_lcp_get(void)
 
 static void ppp_startup(struct k_work *work)
 {
-	struct ppp_context *ctx = CONTAINER_OF(work, struct ppp_context,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct ppp_context *ctx = CONTAINER_OF(dwork, struct ppp_context,
 					       startup);
 	int count = 0;
 

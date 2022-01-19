@@ -53,8 +53,8 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 
 static void pm_work_handler(struct k_work *work)
 {
-	struct pm_device *pm = CONTAINER_OF(work,
-					struct pm_device, work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct pm_device *pm = CONTAINER_OF(dwork, struct pm_device, work);
 
 	(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	pm_device_runtime_state_set(pm);

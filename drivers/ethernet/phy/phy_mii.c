@@ -217,8 +217,9 @@ static void invoke_link_cb(const struct device *dev)
 
 static void monitor_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct phy_mii_dev_data *const data =
-		CONTAINER_OF(work, struct phy_mii_dev_data, monitor_work);
+		CONTAINER_OF(dwork, struct phy_mii_dev_data, monitor_work);
 	const struct device *dev = data->dev;
 	int rc;
 

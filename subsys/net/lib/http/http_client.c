@@ -467,8 +467,9 @@ static int http_wait_data(int sock, struct http_request *req)
 
 static void http_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct http_client_internal_data *data =
-		CONTAINER_OF(work, struct http_client_internal_data, work);
+		CONTAINER_OF(dwork, struct http_client_internal_data, work);
 
 	(void)zsock_close(data->sock);
 }

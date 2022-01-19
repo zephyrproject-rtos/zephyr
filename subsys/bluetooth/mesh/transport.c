@@ -448,7 +448,8 @@ end:
 
 static void seg_retransmit(struct k_work *work)
 {
-	struct seg_tx *tx = CONTAINER_OF(work, struct seg_tx, retransmit);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_tx *tx = CONTAINER_OF(dwork, struct seg_tx, retransmit);
 
 	seg_tx_send_unacked(tx);
 }
@@ -1128,7 +1129,8 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 
 static void seg_ack(struct k_work *work)
 {
-	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_rx *rx = CONTAINER_OF(dwork, struct seg_rx, ack);
 	int32_t timeout;
 
 	if (!rx->in_use || rx->block == BLOCK_COMPLETE(rx->seg_n)) {
