@@ -327,6 +327,7 @@ static void can_rcar_error(const struct device *dev)
 		/* Clear interrupt condition */
 		sys_write8((uint8_t)~RCAR_CAN_EIFR_EWIF,
 			   config->reg_addr + RCAR_CAN_EIFR);
+		can_rcar_state_change(dev, CAN_ERROR_WARNING);
 	}
 	if (eifr & RCAR_CAN_EIFR_EPIF) {
 		LOG_DBG("Error passive interrupt\n");
