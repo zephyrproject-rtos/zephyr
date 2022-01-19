@@ -33,6 +33,7 @@
 		led0 = &led0;
 		kscan0 = &kscan0;
 		watchdog0 = &twd0;
+		pwm-0 = &pwm0;
 	};
 
 	leds {
