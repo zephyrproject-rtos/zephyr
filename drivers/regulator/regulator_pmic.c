@@ -89,7 +89,9 @@ static int regulator_modify_register(const struct regulator_config *conf,
  */
 int regulator_count_voltages(const struct device *dev)
 {
-	return ((struct regulator_config *)dev->config)->num_voltages;
+	const struct regulator_config *config = dev->config;
+
+	return config->num_voltages;
 }
 
 /**
