@@ -1530,7 +1530,8 @@ static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 
 static void deferred_work(struct k_work *work)
 {
-	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, deferred_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_conn *conn = CONTAINER_OF(dwork, struct bt_conn, deferred_work);
 	const struct bt_le_conn_param *param;
 
 	BT_DBG("conn %p", conn);

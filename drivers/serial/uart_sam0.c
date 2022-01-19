@@ -186,7 +186,8 @@ static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
 
 static void uart_sam0_tx_timeout(struct k_work *work)
 {
-	struct uart_sam0_dev_data *dev_data = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct uart_sam0_dev_data *dev_data = CONTAINER_OF(dwork,
 							   struct uart_sam0_dev_data, tx_timeout_work);
 
 	uart_sam0_tx_halt(dev_data);
