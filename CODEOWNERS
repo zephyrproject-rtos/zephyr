@@ -597,6 +597,7 @@
 /include/drivers/ptp_clock.h              @tbursztyka
 /include/shared_irq.h                     @dcpleung @nashif @andyross
 /include/shell/                           @jakub-uC @nordic-krch
+/include/shell/shell_mqtt.h               @ycsin
 /include/sw_isr_table.h                   @dcpleung @nashif @andyross
 /include/sys_clock.h                      @dcpleung @nashif @andyross
 /include/sys/sys_io.h                     @dcpleung @nashif @andyross
@@ -747,6 +748,7 @@ scripts/gen_image_info.py                 @tejlmand
 /subsys/random/                           @dleach02
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jakub-uC @nordic-krch
+/subsys/shell/backends/shell_mqtt.c       @ycsin
 /subsys/stats/                            @nvlsianpu
 /subsys/storage/                          @nvlsianpu
 /subsys/task_wdt/                         @martinjaeger
