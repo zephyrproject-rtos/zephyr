@@ -20,8 +20,12 @@ extern "C" {
  */
 
 /** @brief Indicate to the log core that one log message has been dropped.
+ *
+ * @param buffered True if dropped message was already buffered and it is being
+ * dropped to free space for another message. False if message is being dropped
+ * because allocation failed.
  */
-void z_log_dropped(void);
+void z_log_dropped(bool buffered);
 
 /** @brief Read and clear current drop indications counter.
  *
