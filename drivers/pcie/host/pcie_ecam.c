@@ -240,9 +240,9 @@ static bool pcie_ecam_region_allocate(const struct device *dev, pcie_bdf_t bdf,
 	return pcie_ecam_region_allocate_type(data, bdf, bar_size, bar_bus_addr, type);
 }
 
-static bool pcie_ecam_region_xlate(const struct device *dev, pcie_bdf_t bdf,
-				   bool mem, bool mem64, uintptr_t bar_bus_addr,
-				   uintptr_t *bar_addr)
+static bool pcie_ecam_region_translate(const struct device *dev, pcie_bdf_t bdf,
+				       bool mem, bool mem64, uintptr_t bar_bus_addr,
+				       uintptr_t *bar_addr)
 {
 	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
 	enum pcie_region_type type;
@@ -270,7 +270,7 @@ static const struct pcie_ctrl_driver_api pcie_ecam_api = {
 	.conf_read = pcie_ecam_ctrl_conf_read,
 	.conf_write = pcie_ecam_ctrl_conf_write,
 	.region_allocate = pcie_ecam_region_allocate,
-	.region_xlate = pcie_ecam_region_xlate,
+	.region_translate = pcie_ecam_region_translate,
 };
 
 #define PCIE_ECAM_INIT(n)							\

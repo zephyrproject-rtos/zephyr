@@ -178,12 +178,12 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 
 #ifdef CONFIG_PCIE_CONTROLLER
 	/* Translate to physical memory address from bus address */
-	if (!pcie_ctrl_region_xlate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
-				    PCIE_CONF_BAR_64(phys_addr),
-				    PCIE_CONF_BAR_MEM(phys_addr) ?
-					  PCIE_CONF_BAR_IO_ADDR(phys_addr)
-					: PCIE_CONF_BAR_ADDR(phys_addr),
-				    &mbar->phys_addr)) {
+	if (!pcie_ctrl_region_translate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
+					PCIE_CONF_BAR_64(phys_addr),
+					PCIE_CONF_BAR_MEM(phys_addr) ?
+						PCIE_CONF_BAR_IO_ADDR(phys_addr)
+						: PCIE_CONF_BAR_ADDR(phys_addr),
+					&mbar->phys_addr)) {
 		return false;
 	}
 #else
