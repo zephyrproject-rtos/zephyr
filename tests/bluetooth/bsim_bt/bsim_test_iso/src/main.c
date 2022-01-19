@@ -51,6 +51,8 @@ static const struct bt_data per_ad_data2[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data2, 3),
 };
 
+static uint8_t chan_map[] = { 0x1F, 0XF1, 0x1F, 0xF1, 0x1F };
+
 static void iso_recv(struct bt_iso_chan *chan,
 		     const struct bt_iso_recv_info *info, struct net_buf *buf);
 static void iso_connected(struct bt_iso_chan *chan);
@@ -185,7 +187,16 @@ static void test_iso_main(void)
 	}
 	printk("success.\n");
 
-	k_sleep(K_MSEC(5000));
+	k_sleep(K_MSEC(2500));
+
+	printk("Periodic Advertising and ISO Channel Map Update...");
+	err = ll_chm_update(chan_map);
+	if (err) {
+		FAIL("Channel Map Update failed.\n");
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(2500));
 
 	printk("Update periodic advertising data 2...");
 	err = bt_le_per_adv_set_data(adv, per_ad_data2,
