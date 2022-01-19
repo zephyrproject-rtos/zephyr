@@ -88,7 +88,8 @@ unlock:
 static void runtime_suspend_work(struct k_work *work)
 {
 	int ret;
-	struct pm_device *pm = CONTAINER_OF(work, struct pm_device, work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct pm_device *pm = CONTAINER_OF(dwork, struct pm_device, work);
 
 	ret = pm->action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
 

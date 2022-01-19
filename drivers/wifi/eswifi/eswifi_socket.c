@@ -91,10 +91,11 @@ static void eswifi_off_read_work(struct k_work *work)
 	int next_timeout_ms = 100;
 	int err, len;
 	char *data;
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 
 	LOG_DBG("");
 
-	socket = CONTAINER_OF(work, struct eswifi_off_socket, read_work);
+	socket = CONTAINER_OF(dwork, struct eswifi_off_socket, read_work);
 	eswifi = eswifi_socket_to_dev(socket);
 
 	eswifi_lock(eswifi);

@@ -2665,7 +2665,8 @@ static void att_chan_detach(struct bt_att_chan *chan)
 
 static void att_timeout(struct k_work *work)
 {
-	struct bt_att_chan *chan = CONTAINER_OF(work, struct bt_att_chan,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_att_chan *chan = CONTAINER_OF(dwork, struct bt_att_chan,
 						timeout_work);
 
 	BT_ERR("ATT Timeout");
