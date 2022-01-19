@@ -269,7 +269,7 @@ static int st7735r_set_contrast(const struct device *dev,
 static void st7735r_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
-	struct st7735r_config *config = (struct st7735r_config *)dev->config;
+	const struct st7735r_config *config = (const struct st7735r_config *)dev->config;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->width;
@@ -288,7 +288,7 @@ static void st7735r_get_capabilities(const struct device *dev,
 static int st7735r_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pixel_format)
 {
-	struct st7735r_config *config = (struct st7735r_config *)dev->config;
+	const struct st7735r_config *config = (const struct st7735r_config *)dev->config;
 
 	if ((pixel_format == PIXEL_FORMAT_RGB_565) &&
 	    (~config->madctl & ST7735R_MADCTL_BGR)) {
@@ -437,7 +437,7 @@ static int st7735r_lcd_init(struct st7735r_data *data)
 static int st7735r_init(const struct device *dev)
 {
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
-	struct st7735r_config *config = (struct st7735r_config *)dev->config;
+	const struct st7735r_config *config = (const struct st7735r_config *)dev->config;
 	int ret;
 
 	if (!spi_is_ready(&config->bus)) {
