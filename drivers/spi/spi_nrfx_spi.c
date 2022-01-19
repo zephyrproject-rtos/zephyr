@@ -30,16 +30,6 @@ struct spi_nrfx_config {
 
 static void event_handler(const nrfx_spi_evt_t *p_event, void *p_context);
 
-static inline struct spi_nrfx_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct spi_nrfx_config *get_dev_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 static inline nrf_spi_frequency_t get_nrf_spi_frequency(uint32_t frequency)
 {
 	/* Get the highest supported frequency not exceeding the requested one.
@@ -90,8 +80,8 @@ static inline nrf_spi_bit_order_t get_nrf_spi_bit_order(uint16_t operation)
 static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
-	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_context *ctx = &dev_data->ctx;
 	nrfx_spi_config_t config;
 	nrfx_err_t result;
@@ -159,7 +149,8 @@ static int configure(const struct device *dev,
 
 static void transfer_next_chunk(const struct device *dev)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	const struct spi_nrfx_config *config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
 	struct spi_context *ctx = &dev_data->ctx;
 	int error = 0;
 
@@ -175,7 +166,7 @@ static void transfer_next_chunk(const struct device *dev)
 		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
 		xfer.p_rx_buffer = ctx->rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
-		result = nrfx_spi_xfer(&get_dev_config(dev)->spi, &xfer, 0);
+		result = nrfx_spi_xfer(&config->spi, &xfer, 0);
 		if (result == NRFX_SUCCESS) {
 			return;
 		}
@@ -210,7 +201,7 @@ static int transceive(const struct device *dev,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
 	int error;
 
 	spi_context_lock(&dev_data->ctx, asynchronous, signal, spi_cfg);
@@ -254,7 +245,7 @@ static int spi_nrfx_transceive_async(const struct device *dev,
 static int spi_nrfx_release(const struct device *dev,
 			    const struct spi_config *spi_cfg)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
 
 	if (!spi_context_configured(&dev_data->ctx, spi_cfg)) {
 		return -EINVAL;
@@ -283,8 +274,8 @@ static int spi_nrfx_pm_action(const struct device *dev,
 			      enum pm_device_action action)
 {
 	int ret = 0;
-	struct spi_nrfx_data *data = get_dev_data(dev);
-	const struct spi_nrfx_config *config = get_dev_config(dev);
+	struct spi_nrfx_data *data = dev->data;
+	const struct spi_nrfx_config *config = dev->config;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -333,14 +324,15 @@ static int spi_nrfx_pm_action(const struct device *dev,
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
+		struct spi_nrfx_data *data = dev->data;                        \
 		int err;                                                       \
 		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
 			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \
-		err = spi_context_cs_configure_all(&get_dev_data(dev)->ctx);   \
+		err = spi_context_cs_configure_all(&data->ctx);                \
 		if (err < 0) {                                                 \
 			return err;                                            \
 		}                                                              \
-		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
+		spi_context_unlock_unconditionally(&data->ctx);                \
 		return 0;						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
