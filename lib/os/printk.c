@@ -27,8 +27,7 @@
 #define CONFIG_PRINTK_BUFFER_SIZE 0
 #endif
 
-#if defined(CONFIG_PRINTK_SYNC) && \
-	!(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
+#if defined(CONFIG_PRINTK_SYNC)
 static struct k_spinlock lock;
 #endif
 
@@ -78,10 +77,7 @@ void *__printk_get_hook(void)
 {
 	return _char_out;
 }
-#endif /* CONFIG_PRINTK */
 
-#if defined(CONFIG_PRINTK) && \
-	!(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
 struct buf_out_context {
 	int count;
 	unsigned int buf_count;
@@ -121,6 +117,11 @@ static int char_out(int c, void *ctx_p)
 
 void vprintk(const char *fmt, va_list ap)
 {
+	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		z_log_vprintk(fmt, ap);
+		return;
+	}
+
 	if (k_is_user_context()) {
 		struct buf_out_context ctx = { 0 };
 
@@ -195,16 +196,11 @@ void printk(const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
-		log_printk(fmt, ap);
-	} else {
-		vprintk(fmt, ap);
-	}
+	vprintk(fmt, ap);
+
 	va_end(ap);
 }
-#endif /* defined(CONFIG_PRINTK) && \
-	* !(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
-	*/
+#endif /* defined(CONFIG_PRINTK) */
 
 struct str_context {
 	char *str;
