@@ -260,7 +260,7 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
  */
 static int sbs_gauge_init(const struct device *dev)
 {
-	struct sbs_gauge_config *cfg;
+	const struct sbs_gauge_config *cfg;
 
 	cfg = (struct sbs_gauge_config *)dev->config;
 
