@@ -84,7 +84,7 @@ int sht3xd_attr_set(const struct device *dev,
 static inline void setup_alert(const struct device *dev,
 			       bool enable)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 	const struct sht3xd_config *cfg =
 		(const struct sht3xd_config *)dev->config;
 	unsigned int flags = enable
@@ -99,11 +99,11 @@ static inline void handle_alert(const struct device *dev)
 	setup_alert(dev, false);
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 
 	k_sem_give(&data->gpio_sem);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 
 	k_work_submit(&data->work);
 #endif
@@ -113,7 +113,7 @@ int sht3xd_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 	const struct sht3xd_config *cfg =
 		(const struct sht3xd_config *)dev->config;
 
@@ -153,7 +153,7 @@ static void sht3xd_gpio_callback(const struct device *dev,
 
 static void sht3xd_thread_cb(const struct device *dev)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
+	struct sht3xd_data *data = dev->data;
 
 	if (data->handler != NULL) {
 		data->handler(dev, &data->trigger);

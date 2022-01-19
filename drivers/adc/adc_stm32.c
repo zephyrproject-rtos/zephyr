@@ -704,7 +704,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 
 static void adc_stm32_isr(const struct device *dev)
 {
-	struct adc_stm32_data *data = (struct adc_stm32_data *)dev->data;
+	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;

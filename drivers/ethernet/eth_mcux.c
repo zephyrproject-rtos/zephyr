@@ -218,7 +218,7 @@ void eth_mcux_phy_stop(struct eth_context *context);
 static int eth_mcux_device_pm_action(const struct device *dev,
 				     enum pm_device_action action)
 {
-	struct eth_context *eth_ctx = (struct eth_context *)dev->data;
+	struct eth_context *eth_ctx = dev->data;
 	int ret = 0;
 
 	if (!eth_ctx->clock_dev) {

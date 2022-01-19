@@ -229,7 +229,7 @@ static int adc_cc32xx_read_async(const struct device *dev,
 static void adc_cc32xx_isr(const struct device *dev, int no)
 {
 	const struct adc_cc32xx_cfg *config = dev->config;
-	struct adc_cc32xx_data *data = (struct adc_cc32xx_data *)dev->data;
+	struct adc_cc32xx_data *data = dev->data;
 	const int chan = s_channel[no];
 	unsigned long mask = MAP_ADCIntStatus(config->base, chan);
 	int cnt = 0;
