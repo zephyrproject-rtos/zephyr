@@ -64,6 +64,24 @@
 		};
 	};
 
+	cc_config {
+		compatible = "gpio-leds";
+		encc1 {
+			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+			label = "ENCC1";
+		};
+
+		encc2 {
+			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+			label = "ENCC2";
+		};
+
+		rdcc1 {
+			gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+			label = "RDCC1";
+		};
+	};
+
 	aliases {
 		led0 = &red_led_4;
 		led1 = &red_led_5;
