@@ -79,6 +79,14 @@ config ZTEST_ASSERT_HOOK
 	  error test case. Remember to add ignore_fault tag in yaml file when
 	  using twister to run testing.
 
+config ZTEST_NO_YIELD
+	bool "Do not yield to the idle thread after tests complete"
+	help
+	  When the tests complete, do not yield to the idle thread and instead
+	  spin in a loop. This is useful for low power mode tests, where
+	  yielding to the idle thread may put the board into a low power state
+	  where a debugger cannot connect to it.
+
 if ZTEST_NEW_API
 
 menu "ztest provided rules"
