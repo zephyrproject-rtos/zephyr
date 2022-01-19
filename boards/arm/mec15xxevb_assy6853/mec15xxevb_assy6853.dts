@@ -25,6 +25,7 @@
 		pwm-0 = &pwm0;
 		peci-0 = &peci0;
 		i2c0 = &i2c_smb_0;
+		i2c-0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
 		i2c7 = &i2c_smb_2;
 		kscan0 = &kscan0;
