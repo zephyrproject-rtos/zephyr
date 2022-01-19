@@ -356,18 +356,24 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 				conn->llcp.cte_req.is_enabled = 0U;
 				lp_comm_ntf(conn, ctx);
 			}
-			ctx->state = LP_COMMON_STATE_IDLE;
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
 			   ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
 			lp_comm_ntf(conn, ctx);
 			conn->llcp.cte_req.is_enabled = 0U;
-			ctx->state = LP_COMMON_STATE_IDLE;
 		}
+
+		ctx->state = LP_COMMON_STATE_IDLE;
 
 		if (ctx->state == LP_COMMON_STATE_IDLE) {
 			llcp_rr_set_paused_cmd(conn, PROC_NONE);
 			llcp_lr_complete(conn);
 		}
+
+		conn->llcp.cte_req.is_active = 0U;
+		if (conn->llcp.cte_req.disable_cb) {
+			conn->llcp.cte_req.disable_cb(conn->llcp.cte_req.disable_param);
+		}
+
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
@@ -1008,6 +1014,7 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 		case PROC_CTE_REQ: {
 			/* add PHY update pause = false here */
+			ctx->tx_ack = NULL;
 			llcp_rr_set_paused_cmd(conn, PROC_NONE);
 			llcp_rr_complete(conn);
 			ctx->state = RP_COMMON_STATE_IDLE;
