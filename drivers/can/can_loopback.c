@@ -212,17 +212,21 @@ int can_loopback_set_timing(const struct device *dev,
 	return 0;
 }
 
-static enum can_state can_loopback_get_state(const struct device *dev,
-					     struct can_bus_err_cnt *err_cnt)
+static int can_loopback_get_state(const struct device *dev, enum can_state *state,
+				  struct can_bus_err_cnt *err_cnt)
 {
 	ARG_UNUSED(dev);
+
+	if (state != NULL) {
+		*state = CAN_ERROR_ACTIVE;
+	}
 
 	if (err_cnt) {
 		err_cnt->tx_err_cnt = 0;
 		err_cnt->rx_err_cnt = 0;
 	}
 
-	return CAN_ERROR_ACTIVE;
+	return 0;
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY

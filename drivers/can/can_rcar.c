@@ -671,16 +671,21 @@ static void can_rcar_set_state_change_callback(const struct device *dev,
 	data->state_change_cb_data = user_data;
 }
 
-static enum can_state can_rcar_get_state(const struct device *dev,
-					 struct can_bus_err_cnt *err_cnt)
+static int can_rcar_get_state(const struct device *dev, enum can_state *state,
+			      struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
 
+	if (state != NULL) {
+		*state = data->state;
+	}
+
 	if (err_cnt != NULL) {
 		can_rcar_get_error_count(config, err_cnt);
 	}
-	return data->state;
+
+	return 0;
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY

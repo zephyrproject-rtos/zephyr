@@ -406,6 +406,7 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	enum can_state state;
 	uint8_t rx_overflows;
 	uint32_t errors;
+	int err;
 
 	/*
 	 * TODO: Zephyr lacks an API for reading the rx mailbox
@@ -413,7 +414,11 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	 */
 	rx_overflows  = 0;
 
-	state = can_get_state(CANmodule->dev, &err_cnt);
+	err = can_get_state(CANmodule->dev, &state, &err_cnt);
+	if (err != 0) {
+		LOG_ERR("failed to get CAN controller state (err %d)", err);
+		return;
+	}
 
 	errors = ((uint32_t)err_cnt.tx_err_cnt << 16) |
 		 ((uint32_t)err_cnt.rx_err_cnt << 8) |

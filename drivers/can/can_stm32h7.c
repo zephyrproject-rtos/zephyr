@@ -120,12 +120,12 @@ static int can_stm32h7_init(const struct device *dev)
 	return 0;
 }
 
-static enum can_state can_stm32h7_get_state(const struct device *dev,
-					    struct can_bus_err_cnt *err_cnt)
+static int can_stm32h7_get_state(const struct device *dev, enum can_state *state,
+				 struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_stm32h7_config *cfg = dev->config;
 
-	return can_mcan_get_state(&cfg->mcan_cfg, err_cnt);
+	return can_mcan_get_state(&cfg->mcan_cfg, state, err_cnt);
 }
 
 static int can_stm32h7_send(const struct device *dev,
