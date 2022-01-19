@@ -525,9 +525,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 				 struct img_mgmt_upload_action *action, const char **errstr)
 {
 	const struct image_header *hdr;
-	const struct flash_area *fa;
 	struct image_version cur_ver;
-	uint8_t rem_bytes;
 	bool empty;
 	int rc;
 
@@ -642,27 +640,9 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		}
 	}
 
-	/* Calculate size of flash write. */
 	action->write_bytes = req->data_len;
-	if (req->off + req->data_len < action->size) {
-		/*
-		 * Respect flash write alignment if not in the last block
-		 */
-		rc = flash_area_open(action->area_id, &fa);
-		if (rc) {
-			*errstr = img_mgmt_err_str_flash_open_failed;
-			return MGMT_ERR_EUNKNOWN;
-		}
-
-		rem_bytes = req->data_len % flash_area_align(fa);
-		flash_area_close(fa);
-
-		if (rem_bytes) {
-			action->write_bytes -= rem_bytes;
-		}
-	}
-
 	action->proceed = true;
+
 	return 0;
 }
 
