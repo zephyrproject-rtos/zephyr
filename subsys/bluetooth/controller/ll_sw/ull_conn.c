@@ -2244,6 +2244,15 @@ static void conn_setup_adv_scan_disabled_cb(void *param)
 	ftr = &(rx->rx_ftr);
 	lll = *((struct lll_conn **)((uint8_t *)ftr->param +
 				     sizeof(struct lll_hdr)));
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING)) {
+		struct ull_hdr *hdr;
+
+		/* Prevent fast ADV re-scheduling from re-triggering */
+		hdr = HDR_LLL2ULL(ftr->param);
+		hdr->disabled_cb = NULL;
+	}
+
 	switch (lll->role) {
 #if defined(CONFIG_BT_CENTRAL)
 	case 0:

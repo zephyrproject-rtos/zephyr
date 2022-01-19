@@ -1813,7 +1813,8 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 
 static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_window,
 				   uint32_t ticks_delay_window_offset,
-				   uint32_t ticks_adjust_minus)
+				   uint32_t ticks_adjust_minus,
+				   ticker_op_func fp_op_func)
 {
 	uint32_t random_delay;
 	uint32_t ret;
@@ -1831,10 +1832,11 @@ static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_
 			    TICKER_ID_ADV_BASE + ull_adv_handle_get(adv),
 			    random_delay,
 			    ticks_adjust_minus, 0, 0, 0, 0,
-			    ticker_update_op_cb, adv);
+			    fp_op_func, adv);
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+		  (ret == TICKER_STATUS_BUSY) ||
+		  (fp_op_func == NULL));
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	adv->delay = random_delay;
@@ -1899,9 +1901,13 @@ void ull_adv_done(struct node_rx_event_done *done)
 			ticks_adjust_minus = HAL_TICKER_US_TO_TICKS(
 				(uint64_t)adv->interval * ADV_INT_UNIT_US) + adv->delay;
 
-			/* Apply random delay in range [prepare_overhead..delay_remain] */
+			/* Apply random delay in range [prepare_overhead..delay_remain].
+			 * NOTE: This ticker_update may fail if update races with
+			 * ticker_stop, e.g. from ull_periph_setup. This is not a problem
+			 * and we can safely ignore the operation result.
+			 */
 			ticker_update_rand(adv, adv->delay_remain - prepare_overhead,
-					   prepare_overhead, ticks_adjust_minus);
+					   prepare_overhead, ticks_adjust_minus, NULL);
 
 			/* Score of the event was increased due to the result, but since
 			 * we're getting a another chance we'll set it back.
@@ -2210,7 +2216,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
 		/* Apply random delay in range [0..ULL_ADV_RANDOM_DELAY] */
-		random_delay = ticker_update_rand(adv, ULL_ADV_RANDOM_DELAY, 0, 0);
+		random_delay = ticker_update_rand(adv, ULL_ADV_RANDOM_DELAY,
+						  0, 0, ticker_update_op_cb);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		adv->event_counter += (lazy + 1);
