@@ -51,6 +51,10 @@
 	status = "okay";
 };
 
+&clk_lse {
+	status = "okay";
+};
+
 &pll {
 	div-m = <5>;
 	mul-n = <110>;
