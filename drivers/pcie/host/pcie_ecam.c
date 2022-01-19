@@ -157,7 +157,7 @@ static int pcie_ecam_init(const struct device *dev)
 			data->regions[PCIE_REGION_MEM64].size);
 	}
 
-	/* Map config space to be used by the generic_pcie_ctrl_conf_read/write callbacks */
+	/* Map config space to be used by the pcie_generic_ctrl_conf_read/write callbacks */
 	device_map(&data->cfg_addr, data->cfg_phys_addr, data->cfg_size, K_MEM_CACHE_NONE);
 
 	LOG_DBG("Config space [0x%lx - 0x%lx, size 0x%lx]",
@@ -165,7 +165,7 @@ static int pcie_ecam_init(const struct device *dev)
 	LOG_DBG("Config mapped [0x%lx - 0x%lx, size 0x%lx]",
 		data->cfg_addr, (data->cfg_addr + data->cfg_size - 1), data->cfg_size);
 
-	generic_pcie_ctrl_enumerate(dev, PCIE_BDF(0, 0, 0));
+	pcie_generic_ctrl_enumerate(dev, PCIE_BDF(0, 0, 0));
 
 	return 0;
 }
@@ -174,7 +174,7 @@ static uint32_t pcie_ecam_ctrl_conf_read(const struct device *dev, pcie_bdf_t bd
 {
 	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
 
-	return generic_pcie_ctrl_conf_read(data->cfg_addr, bdf, reg);
+	return pcie_generic_ctrl_conf_read(data->cfg_addr, bdf, reg);
 }
 
 static void pcie_ecam_ctrl_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned int reg,
@@ -182,7 +182,7 @@ static void pcie_ecam_ctrl_conf_write(const struct device *dev, pcie_bdf_t bdf, 
 {
 	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
 
-	generic_pcie_ctrl_conf_write(data->cfg_addr, bdf, reg, reg_data);
+	pcie_generic_ctrl_conf_write(data->cfg_addr, bdf, reg, reg_data);
 }
 
 static bool pcie_ecam_region_allocate_type(struct pcie_ecam_data *data, pcie_bdf_t bdf,
