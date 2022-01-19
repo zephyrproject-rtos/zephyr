@@ -27,6 +27,7 @@
 #include <arch/arm/aarch32/irq.h>
 #include <arch/arm/aarch32/error.h>
 #include <arch/arm/aarch32/misc.h>
+#include <arch/arm/aarch32/barrier.h>
 #include <arch/common/addr_types.h>
 #include <arch/common/ffs.h>
 #include <arch/arm/aarch32/nmi.h>
