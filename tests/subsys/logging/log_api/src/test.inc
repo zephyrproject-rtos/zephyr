@@ -627,11 +627,52 @@ static void test_log_panic(void)
 	mock_log_backend_validate(&backend1, true);
 }
 
+static void test_log_printk(void)
+{
+	if (!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) && !IS_ENABLED(CONFIG_LOG2_MODE_IMMEDIATE)) {
+		ztest_test_skip();
+	}
+
+	if (!IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		ztest_test_skip();
+	}
+
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+
+	log_setup(false);
+
+	mock_log_backend_record(&backend1, 0,
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				exp_timestamp++, "test 100\n");
+	printk("test %d\n", 100);
+
+	log_panic();
+
+	mock_log_backend_record(&backend1, 0,
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				exp_timestamp++, "test 101\n");
+	printk("test %d\n", 101);
+
+	mock_log_backend_validate(&backend1, true);
+}
+
 /* Disable backends because same suite may be excuted again but compiled by C++ */
 static void log_api_suite_teardown(void)
 {
 	log_backend_disable(&backend1);
 	log_backend_disable(&backend2);
+}
+
+static void setup(void)
+{
+	mock_log_backend_check_enable(&backend1);
+	mock_log_backend_check_enable(&backend2);
+}
+
+static void teardown(void)
+{
+	mock_log_backend_check_disable(&backend1);
+	mock_log_backend_check_disable(&backend2);
 }
 
 /*test case main entry*/
@@ -656,13 +697,17 @@ void test_cc(void)
 #endif
 
 	ztest_test_suite(test_log_api,
-			 ztest_unit_test(test_log_various_messages),
-			 ztest_unit_test(test_log_backend_runtime_filtering),
-			 ztest_unit_test(test_log_overflow),
-			 ztest_unit_test(test_log_arguments),
-			 ztest_unit_test(test_log_from_declared_module),
-			 ztest_unit_test(test_log_msg_dropped_notification),
-			 ztest_unit_test(test_log_panic)
+			 ztest_unit_test_setup_teardown(test_log_various_messages, setup, teardown),
+			 ztest_unit_test_setup_teardown(test_log_backend_runtime_filtering,
+							setup, teardown),
+			 ztest_unit_test_setup_teardown(test_log_overflow, setup, teardown),
+			 ztest_unit_test_setup_teardown(test_log_arguments, setup, teardown),
+			 ztest_unit_test_setup_teardown(test_log_from_declared_module,
+							setup, teardown),
+			 ztest_unit_test_setup_teardown(test_log_msg_dropped_notification,
+							setup, teardown),
+			 ztest_unit_test_setup_teardown(test_log_printk, setup, teardown),
+			 ztest_unit_test_setup_teardown(test_log_panic, setup, teardown)
 			);
 	ztest_run_test_suite(test_log_api);
 
