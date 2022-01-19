@@ -20,6 +20,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/kernel/sched_priq.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>

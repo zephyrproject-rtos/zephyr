@@ -885,3 +885,9 @@ config TOOLCHAIN_HAS_BUILTIN_FFS
 	default y if !(64BIT && RISCV)
 	help
 	  Hidden option to signal that toolchain has __builtin_ffs*().
+
+config ARCH_HAS_MEMORY_BARRIER
+	bool
+	help
+	  This option signifies that the architecture does support and implement the
+	  memory barrier functions.
