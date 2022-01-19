@@ -44,6 +44,7 @@ static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p);
 static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
+static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu);
 
 /* FIXME: Optimize by moving to a common place, as similar variable is used for
  *        connections too.
@@ -258,7 +259,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	phy = lll->phy;
 	radio_phy_set(phy, PHY_FLAGS_S8);
-	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu, RADIO_PKT_CONF_PHY(phy));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu,
+			    RADIO_PKT_CONF_PHY(phy));
 	radio_aa_set(access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
@@ -430,6 +432,7 @@ static void isr_rx(void *param)
 	if (crc_ok) {
 		struct pdu_bis *pdu;
 
+		/* Check if Control Subevent being received */
 		if ((lll->bn_curr == lll->bn) &&
 		    (lll->irc_curr == lll->irc) &&
 		    (lll->ptc_curr == lll->ptc) &&
@@ -445,15 +448,7 @@ static void isr_rx(void *param)
 				goto isr_rx_done;
 			}
 
-			if (pdu->ctrl.opcode == PDU_BIG_CTRL_TYPE_TERM_IND) {
-				if (!lll->term_reason) {
-					struct pdu_big_ctrl_term_ind *term;
-
-					term = (void *)&pdu->ctrl.term_ind;
-					lll->term_reason = term->reason;
-					lll->ctrl_instant = term->instant;
-				}
-			}
+			isr_rx_ctrl_recv(lll, pdu);
 		} else {
 			node_rx = ull_iso_pdu_rx_alloc_peek(3U);
 			if (!node_rx) {
@@ -627,7 +622,34 @@ isr_rx_find_subevent:
 		e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE;
 
 		lll_isr_cleanup(param);
+
 		return;
+
+	/* Check if BIG Channel Map Update */
+	} else if (lll->chm_chan_count) {
+		const uint16_t event_counter = lll->payload_count / lll->bn;
+
+		/* Bluetooth Core Specification v5.3 Vol 6, Part B,
+		 * Section 5.5.2 BIG Control Procedures
+		 *
+		 * When a Synchronized Receiver receives such a PDU where
+		 * (instant - bigEventCounter) mod 65536 is greater than or
+		 * equal to 32767 (because the instant is in the past), the
+		 * the Link Layer may stop synchronization with the BIG.
+		 */
+
+		/* Note: We are not validating whether the control PDU was
+		 * received after the instant but apply the new channel map.
+		 * If the channel map was new at or after the instant and the
+		 * the channel at the event counter did not match then the
+		 * control PDU would not have been received.
+		 */
+		if (((event_counter - lll->ctrl_instant) & 0xFFFF) <= 0x7FFF) {
+			(void)memcpy(lll->data_chan_map, lll->chm_chan_map,
+				     sizeof(lll->data_chan_map));
+			lll->data_chan_count = lll->chm_chan_count;
+			lll->chm_chan_count = 0U;
+		}
 	}
 
 	/* Calculate and place the drift information in done event */
@@ -752,4 +774,36 @@ isr_rx_next_subevent:
 							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
+}
+
+static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu)
+{
+	const uint8_t opcode = pdu->ctrl.opcode;
+
+	if (opcode == PDU_BIG_CTRL_TYPE_TERM_IND) {
+		if (!lll->term_reason) {
+			struct pdu_big_ctrl_term_ind *term;
+
+			term = (void *)&pdu->ctrl.term_ind;
+			lll->term_reason = term->reason;
+			lll->ctrl_instant = term->instant;
+		}
+	} else if (opcode == PDU_BIG_CTRL_TYPE_CHAN_MAP_IND) {
+		if (!lll->chm_chan_count) {
+			struct pdu_big_ctrl_chan_map_ind *chm;
+			uint8_t chan_count;
+
+			chm = (void *)&pdu->ctrl.chan_map_ind;
+			chan_count =
+				util_ones_count_get(chm->chm, sizeof(chm->chm));
+			if (chan_count >= CHM_USED_COUNT_MIN) {
+				lll->chm_chan_count = chan_count;
+				(void)memcpy(lll->chm_chan_map, chm->chm,
+					     sizeof(lll->chm_chan_map));
+				lll->ctrl_instant = chm->instant;
+			}
+		}
+	} else {
+		/* Unknown control PDU, ignore */
+	}
 }
