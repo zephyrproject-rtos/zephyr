@@ -953,58 +953,13 @@ static void audio_clock_settings(const struct device *dev)
 	uint32_t clock_name = (uint32_t) dev_cfg->clk_sub_sys;
 
 	/*Clock setting for SAI*/
-#if CONFIG_CLOCK_CONTROL_MCUX_CCM_REV2
-	switch (clock_name) {
-	case IMX_CCM_SAI1_CLK:
-		CLOCK_SetRootClockMux(kCLOCK_Root_Sai1, dev_cfg->clk_src);
-		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai1, dev_cfg->clk_src_div);
-		break;
-	case IMX_CCM_SAI2_CLK:
-		CLOCK_SetRootClockMux(kCLOCK_Root_Sai2, dev_cfg->clk_src);
-		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai2, dev_cfg->clk_src_div);
-		break;
-	case IMX_CCM_SAI3_CLK:
-		CLOCK_SetRootClockMux(kCLOCK_Root_Sai3, dev_cfg->clk_src);
-		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai3, dev_cfg->clk_src_div);
-		break;
-	case IMX_CCM_SAI4_CLK:
-		CLOCK_SetRootClockMux(kCLOCK_Root_Sai4, dev_cfg->clk_src);
-		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai4, dev_cfg->clk_src_div);
-		break;
-	default:
-		LOG_ERR("wrong clock system configured");
-		return;
-	}
-#endif
-
-#if CONFIG_CLOCK_CONTROL_MCUX_CCM
-	switch (clock_name) {
-	case IMX_CCM_SAI1_CLK:
-		CLOCK_SetMux(kCLOCK_Sai1Mux, dev_cfg->clk_src);
-		CLOCK_SetDiv(kCLOCK_Sai1PreDiv, dev_cfg->clk_pre_div);
-		CLOCK_SetDiv(kCLOCK_Sai1Div, dev_cfg->clk_src_div);
-		break;
-	case IMX_CCM_SAI2_CLK:
-		CLOCK_SetMux(kCLOCK_Sai2Mux, dev_cfg->clk_src);
-		CLOCK_SetDiv(kCLOCK_Sai2PreDiv, dev_cfg->clk_pre_div);
-		CLOCK_SetDiv(kCLOCK_Sai2Div, dev_cfg->clk_src_div);
-		break;
-	case IMX_CCM_SAI3_CLK:
-		CLOCK_SetMux(kCLOCK_Sai2Mux, dev_cfg->clk_src);
-		CLOCK_SetDiv(kCLOCK_Sai2PreDiv, dev_cfg->clk_pre_div);
-		CLOCK_SetDiv(kCLOCK_Sai2Div, dev_cfg->clk_src_div);
-		break;
-	default:
-		LOG_ERR("wrong clock system configured");
-		return;
-	}
-#endif
+	imxrt_audio_codec_pll_init(clock_name, dev_cfg->clk_src,
+				dev_cfg->clk_pre_div, dev_cfg->clk_src_div);
 
 	audioPllConfig.loopDivider = dev_cfg->pll_lp;
 	audioPllConfig.postDivider = dev_cfg->pll_pd;
 	audioPllConfig.numerator = dev_cfg->pll_num;
 	audioPllConfig.denominator = dev_cfg->pll_den;
-	audioPllConfig.src = dev_cfg->pll_src;
 
 	CLOCK_InitAudioPll(&audioPllConfig);
 }
