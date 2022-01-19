@@ -641,6 +641,31 @@ static void test_log_panic(void)
 	process_and_validate(false, true);
 }
 
+static void test_log_printk(void)
+{
+	if (!IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		ztest_test_skip();
+	}
+
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+
+	log_setup(false);
+
+	mock_log_backend_record(&backend1, 0,
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				exp_timestamp++, "test 100");
+	printk("test %d", 100);
+
+	log_panic();
+
+	mock_log_backend_record(&backend1, 0,
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				exp_timestamp++, "test 101");
+	printk("test %d", 101);
+
+	process_and_validate(false, true);
+}
+
 /* Disable backends because same suite may be executed again but compiled by C++ */
 static void log_api_suite_teardown(void *data)
 {
@@ -711,3 +736,4 @@ WRAP_TEST(test_log_arguments, TEST_SUFFIX)
 WRAP_TEST(test_log_from_declared_module, TEST_SUFFIX)
 WRAP_TEST(test_log_msg_dropped_notification, TEST_SUFFIX)
 WRAP_TEST(test_log_panic, TEST_SUFFIX)
+WRAP_TEST(test_log_printk, TEST_SUFFIX)
