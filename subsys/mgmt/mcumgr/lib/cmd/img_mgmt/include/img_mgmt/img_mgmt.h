@@ -66,7 +66,7 @@ struct img_mgmt_upload_req {
 	unsigned long long size;	/* -1 if unspecified */
 	size_t data_len;
 	size_t data_sha_len;
-	uint8_t img_data[IMG_MGMT_UL_CHUNK_SIZE];
+	uint8_t img_data[CONFIG_IMG_MGMT_UL_CHUNK_SIZE];
 	uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
 	bool upgrade;			/* Only allow greater version numbers. */
 };
@@ -82,7 +82,7 @@ struct img_mgmt_state {
 	/** Hash of image data; used for resumption of a partial upload. */
 	uint8_t data_sha_len;
 	uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
-#if IMG_MGMT_LAZY_ERASE
+#if CONFIG_IMG_ERASE_PROGRESSIVELY
 	int sector_id;
 	uint32_t sector_end;
 #endif
@@ -238,7 +238,7 @@ void img_mgmt_dfu_started(void);
 void img_mgmt_dfu_pending(void);
 void img_mgmt_dfu_confirmed(void);
 
-#if IMG_MGMT_VERBOSE_ERR
+#if CONFIG_IMG_MGMT_VERBOSE_ERR
 int img_mgmt_error_rsp(struct mgmt_ctxt *ctxt, int rc, const char *rsn);
 extern const char *img_mgmt_err_str_app_reject;
 extern const char *img_mgmt_err_str_hdr_malformed;
