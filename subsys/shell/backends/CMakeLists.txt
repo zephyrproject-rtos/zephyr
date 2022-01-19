@@ -19,3 +19,8 @@ zephyr_sources_ifdef(
   CONFIG_SHELL_BACKEND_TELNET
   shell_telnet.c
 )
+
+zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_MQTT
+  shell_mqtt.c
+)
