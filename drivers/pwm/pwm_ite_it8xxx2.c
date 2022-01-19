@@ -69,17 +69,27 @@ static void pwm_enable(const struct device *dev, int enabled)
 static int pwm_it8xxx2_get_cycles_per_sec(const struct device *dev,
 					     uint32_t pwm, uint64_t *cycles)
 {
-	const struct pwm_it8xxx2_cfg *config = dev->config;
-	struct pwm_it8xxx2_regs *const inst = config->base;
-	int prs_sel = config->prs_sel;
-
 	ARG_UNUSED(pwm);
 
-	/* Get clock source cycles per second that output to prescaler */
-	if ((inst->PCFSR) & BIT(prs_sel))
-		*cycles = (uint64_t) PWM_FREQ;
-	else
-		*cycles = (uint64_t) 32768;
+	/*
+	 * There are three ways to call pwm_it8xxx2_pin_set() from pwm api:
+	 * 1) pwm_pin_set_usec() -> pwm_pin_set_cycles() -> pwm_it8xxx2_pin_set()
+	 *    target_freq = pwm_clk_src / period_cycles
+	 *                = cycles / (period * cycles / USEC_PER_SEC)
+	 *                = USEC_PER_SEC / period
+	 * 2) pwm_pin_set_nsec() -> pwm_pin_set_cycles() -> pwm_it8xxx2_pin_set()
+	 *    target_freq = pwm_clk_src / period_cycles
+	 *                = cycles / (period * cycles / NSEC_PER_SEC)
+	 *                = NSEC_PER_SEC / period
+	 * 3) pwm_pin_set_cycles() -> pwm_it8xxx2_pin_set()
+	 *    target_freq = pwm_clk_src / period_cycles
+	 *                = cycles / period
+	 *
+	 * If we need to pwm output in EC power saving mode, then we will switch
+	 * the prescaler clock source (cycles) from 8MHz to 32.768kHz. In order
+	 * to get the same target_freq in the 3) case, we always return PWM_FREQ.
+	 */
+	*cycles = (uint64_t) PWM_FREQ;
 
 	return 0;
 }
@@ -120,6 +130,21 @@ static int pwm_it8xxx2_pin_set(const struct device *dev,
 
 	pwm_it8xxx2_get_cycles_per_sec(dev, pwm, &pwm_clk_src);
 	target_freq = ((uint32_t) pwm_clk_src) / period_cycles;
+
+	/*
+	 * Support PWM output frequency:
+	 * 1) 8MHz clock source: 1Hz <= target_freq <= 79207Hz
+	 * 2) 32.768KHz clock source: 1Hz <= target_freq <= 324Hz
+	 * NOTE: PWM output signal maximum supported frequency comes from
+	 *       [8MHz or 32.768KHz] / 1 / (PWM_CTRX_MIN + 1).
+	 *       PWM output signal minimum supported frequency comes from
+	 *       [8MHz or 32.768KHz] / 65536 / 256, the minimum integer is 1.
+	 */
+	if (target_freq < 1) {
+		LOG_ERR("PWM output frequency is < 1 !");
+		return -EINVAL;
+	}
+
 	deviation = (target_freq / 100) + 1;
 
 	/*
@@ -128,8 +153,6 @@ static int pwm_it8xxx2_pin_set(const struct device *dev,
 	 * So if we still need pwm output in mode, then we should set frequency
 	 * <=324Hz in board dts. Now change prescaler clock source from 8MHz to
 	 * 32.768KHz to support pwm output in mode.
-	 * NOTE: PWM output signal maximum supported frequency 324Hz comes from
-	 *       32768 / (PWM_CTRX_MIN + 1).
 	 */
 	if ((target_freq <= 324) && (inst->PCFSR & BIT(prs_sel))) {
 		inst->PCFSR &= ~BIT(prs_sel);
