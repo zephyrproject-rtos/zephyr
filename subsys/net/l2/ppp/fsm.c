@@ -94,7 +94,8 @@ static void fsm_send_configure_req(struct ppp_fsm *fsm, bool retransmit)
 
 static void ppp_fsm_timeout(struct k_work *work)
 {
-	struct ppp_fsm *fsm = CONTAINER_OF(work, struct ppp_fsm, timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct ppp_fsm *fsm = CONTAINER_OF(dwork, struct ppp_fsm, timer);
 
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);

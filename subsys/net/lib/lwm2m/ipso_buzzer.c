@@ -177,7 +177,8 @@ static int onoff_post_write_cb(uint16_t obj_inst_id,
 
 static void buzzer_work_cb(struct k_work *work)
 {
-	struct ipso_buzzer_data *buzzer = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct ipso_buzzer_data *buzzer = CONTAINER_OF(dwork,
 						      struct ipso_buzzer_data,
 						      buzzer_work);
 	stop_buzzer(buzzer, false);
