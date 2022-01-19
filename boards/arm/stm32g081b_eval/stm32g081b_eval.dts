@@ -63,6 +63,18 @@
 		};
 	};
 
+	discharge_vbus2_config {
+		compatible = "gpio-leds";
+
+		/*
+		 * Pin B14 is used to control VBUS Discharge for Port2
+		 */
+		discharge_vbus2 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+			label = "DISCHARGE_VBUS2";
+		};
+	};
+
 	aliases {
 		led0 = &led_1;
 		led1 = &led_2;
