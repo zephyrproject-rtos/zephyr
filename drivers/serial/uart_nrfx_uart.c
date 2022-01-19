@@ -61,17 +61,6 @@ struct uart_nrfx_data {
 	struct uart_config uart_config;
 };
 
-static inline const struct uart_nrfx_config *get_dev_config(
-	const struct device *dev)
-{
-	return dev->config;
-}
-
-static inline struct uart_nrfx_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
 #ifdef CONFIG_UART_0_ASYNC
 static struct {
 	uart_callback_t callback;
@@ -117,7 +106,7 @@ static volatile bool disable_tx_irq;
 #ifndef CONFIG_PINCTRL
 static void uart_nrfx_pins_configure(const struct device *dev, bool sleep)
 {
-	const struct uart_nrfx_config *cfg = get_dev_config(dev);
+	const struct uart_nrfx_config *cfg = dev->config;
 
 	if (!sleep) {
 		if (cfg->tx_pin != NRF_UART_PSEL_DISCONNECTED) {
@@ -383,6 +372,7 @@ static int uart_nrfx_err_check(const struct device *dev)
 static int uart_nrfx_configure(const struct device *dev,
 			       const struct uart_config *cfg)
 {
+	struct uart_nrfx_data *data = dev->data;
 	nrf_uart_config_t uart_cfg;
 
 #if defined(UART_CONFIG_STOP_Msk)
@@ -447,7 +437,7 @@ static int uart_nrfx_configure(const struct device *dev,
 
 	nrf_uart_configure(uart0_addr, &uart_cfg);
 
-	get_dev_data(dev)->uart_config = *cfg;
+	data->uart_config = *cfg;
 
 	return 0;
 }
@@ -456,7 +446,9 @@ static int uart_nrfx_configure(const struct device *dev,
 static int uart_nrfx_config_get(const struct device *dev,
 				struct uart_config *cfg)
 {
-	*cfg = get_dev_data(dev)->uart_config;
+	struct uart_nrfx_data *data = dev->data;
+
+	*cfg = data->uart_config;
 	return 0;
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
@@ -1046,9 +1038,10 @@ static void uart_nrfx_isr(const struct device *dev)
  */
 static int uart_nrfx_init(const struct device *dev)
 {
+	struct uart_nrfx_data *data = dev->data;
 	int err;
 #ifdef CONFIG_PINCTRL
-	const struct uart_nrfx_config *config = get_dev_config(dev);
+	const struct uart_nrfx_config *config = dev->config;
 #endif /* CONFIG_PINCTRL */
 
 	nrf_uart_disable(uart0_addr);
@@ -1063,7 +1056,7 @@ static int uart_nrfx_init(const struct device *dev)
 #endif /* CONFIG_PINCTRL */
 
 	/* Set initial configuration */
-	err = uart_nrfx_configure(dev, &get_dev_data(dev)->uart_config);
+	err = uart_nrfx_configure(dev, &data->uart_config);
 	if (err) {
 		return err;
 	}
@@ -1148,7 +1141,7 @@ static int uart_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
 #ifdef CONFIG_PINCTRL
-	const struct uart_nrfx_config *config = get_dev_config(dev);
+	const struct uart_nrfx_config *config = dev->config;
 	int ret;
 #endif
 
