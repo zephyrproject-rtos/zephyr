@@ -31,12 +31,14 @@ add_subdirectory(startup)
 # as "core-isa-dM.h".  This can be easily parsed by non-C tooling.
 #
 # Note that this adds the SOC/HAL include directory explicitly, they
-# are the official places where we find core-isa.h.
+# are the official places where we find core-isa.h. (Also that we
+# undefine __XCC_ because that compiler actually trips an error trying
+# to build this file to protect against mismatched versions.)
 set(CORE_ISA_DM ${CMAKE_BINARY_DIR}/zephyr/include/generated/core-isa-dM.h)
 set(CORE_ISA_IN ${CMAKE_BINARY_DIR}/zephyr/include/generated/core-isa-dM.c)
-file(WRITE ${CORE_ISA_IN} "#include <xtensa/config/core-isa.h>")
+file(WRITE ${CORE_ISA_IN} "#include <xtensa/config/core-isa.h>\n")
 add_custom_command(OUTPUT ${CORE_ISA_DM}
-  COMMAND ${CMAKE_C_COMPILER} -E -dM
+  COMMAND ${CMAKE_C_COMPILER} -E -dM -U__XCC__
           -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
           -I${SOC_DIR}/${ARCH}/${SOC_PATH}
           ${CORE_ISA_IN} -o ${CORE_ISA_DM})
