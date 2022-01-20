@@ -134,6 +134,11 @@
 			pinctrls = <&pinmuxm 5 IT8XXX2_PINMUX_FUNC_1>;
 		};
 
+		/* PECI alternate function */
+		pinctrl_peci: peci {
+			pinctrls = <&pinmuxf 6 IT8XXX2_PINMUX_FUNC_3>;
+		};
+
 		/* Keyboard alternate function */
 		pinctrl_kso16: kso16 {
 			pinctrls = <&pinmuxc 3 IT8XXX2_PINMUX_FUNC_1>;
