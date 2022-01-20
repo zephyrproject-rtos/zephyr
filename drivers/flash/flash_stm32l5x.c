@@ -229,7 +229,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 			return -EINVAL;
 		}
 	} else {
-		page = offset / FLASH_PAGE_SIZE;
+		page = offset / FLASH_PAGE_SIZE_128_BITS;
 		LOG_DBG("Erase page %d\n", page);
 	}
 
@@ -368,9 +368,15 @@ void flash_stm32_page_layout(const struct device *dev,
 		/* For stm32l562xx & stm32l552xx with 512 KB flash */
 
 		if (stm32l5_flash_layout[0].pages_count == 0) {
-			stm32l5_flash_layout[0].pages_count = FLASH_SIZE
-							/ FLASH_PAGE_SIZE;
-			stm32l5_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+			if ((regs->OPTR & FLASH_OPTR_DBANK) == FLASH_OPTR_DBANK) {
+				/* flash with dualbank has 2k pages */
+				stm32l5_flash_layout[0].pages_count = FLASH_PAGE_NB;
+				stm32l5_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+			} else {
+				/* flash without dualbank has 4k pages */
+				stm32l5_flash_layout[0].pages_count = FLASH_PAGE_NB_128_BITS;
+				stm32l5_flash_layout[0].pages_size = FLASH_PAGE_SIZE_128_BITS;
+			}
 		}
 	}
 
