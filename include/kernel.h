@@ -3939,12 +3939,16 @@ struct k_work_user {
  * INTERNAL_HIDDEN @endcond
  */
 
+#if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
+#define Z_WORK_USER_INITIALIZER(work_handler) { NULL, work_handler, 0 }
+#else
 #define Z_WORK_USER_INITIALIZER(work_handler) \
 	{ \
 	._reserved = NULL, \
 	.handler = work_handler, \
 	.flags = 0 \
 	}
+#endif
 
 /**
  * @brief Initialize a statically-defined user work item.
