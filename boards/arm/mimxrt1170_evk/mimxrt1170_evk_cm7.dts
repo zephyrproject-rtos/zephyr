@@ -128,3 +128,7 @@
 		status = "okay";
 	};
 };
+
+&sai1 {
+	status = "okay";
+};
