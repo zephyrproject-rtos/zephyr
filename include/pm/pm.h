@@ -119,55 +119,6 @@ const struct pm_state_info *pm_state_next_get(uint8_t cpu);
  */
 
 /**
- * @brief System Power Management Constraints API
- * @defgroup subsys_pm_sys_constraint Constraints
- * @ingroup subsys_pm_sys
- * @{
- */
-
-/**
- * @brief Set a constraint for a power state
- *
- * @details Disabled state cannot be selected by the Zephyr power
- *	    management policies. Application defined policy should
- *	    use the @ref pm_constraint_get function to
- *	    check if given state is enabled and could be used.
- *
- * @note This API is refcount
- *
- * @param [in] state Power state to be disabled.
- */
-void pm_constraint_set(enum pm_state state);
-
-/**
- * @brief Release a constraint for a power state
- *
- * @details Enabled state can be selected by the Zephyr power
- *	    management policies. Application defined policy should
- *	    use the @ref pm_constraint_get function to
- *	    check if given state is enabled and could be used.
- *	    By default all power states are enabled.
- *
- * @note This API is refcount
- *
- * @param [in] state Power state to be enabled.
- */
-void pm_constraint_release(enum pm_state state);
-
-/**
- * @brief Check if particular power state is enabled
- *
- * This function returns true if given power state is enabled.
- *
- * @param [in] state Power state.
- */
-bool pm_constraint_get(enum pm_state state);
-
-/**
- * @}
- */
-
-/**
  * @brief System Power Management Hooks
  * @defgroup subsys_pm_sys_hooks Hooks
  * @ingroup subsys_pm_sys
@@ -214,23 +165,6 @@ static inline int pm_notifier_unregister(struct pm_notifier *notifier)
 	ARG_UNUSED(notifier);
 
 	return -ENOSYS;
-}
-
-static inline void pm_constraint_set(enum pm_state state)
-{
-	ARG_UNUSED(state);
-}
-
-static inline void pm_constraint_release(enum pm_state state)
-{
-	ARG_UNUSED(state);
-}
-
-static inline bool pm_constraint_get(enum pm_state state)
-{
-	ARG_UNUSED(state);
-
-	return true;
 }
 
 static inline void pm_state_set(enum pm_state state, uint8_t substate_id)

@@ -13,10 +13,10 @@ States
 
 .. doxygengroup:: subsys_pm_states
 
-Constraints
-===========
+Policy
+======
 
-.. doxygengroup:: subsys_pm_sys_constraint
+.. doxygengroup:: subsys_pm_sys_policy
 
 Hooks
 =====

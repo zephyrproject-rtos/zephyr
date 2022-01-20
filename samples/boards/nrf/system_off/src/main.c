@@ -10,6 +10,7 @@
 #include <init.h>
 #include <pm/pm.h>
 #include <pm/device.h>
+#include <pm/policy.h>
 #include <soc.h>
 #include "retained.h"
 #include <hal/nrf_gpio.h>
@@ -30,7 +31,7 @@ static int disable_ds_1(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	pm_constraint_set(PM_STATE_SOFT_OFF);
+	pm_policy_state_lock_get(PM_STATE_SOFT_OFF);
 	return 0;
 }
 

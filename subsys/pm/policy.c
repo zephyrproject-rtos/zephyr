@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +9,13 @@
 #include <pm/policy.h>
 #include <sys_clock.h>
 #include <sys/time_units.h>
+#include <sys/atomic.h>
+#include <toolchain.h>
 
+/** State lock reference counting */
+static atomic_t state_lock_cnt[PM_STATE_COUNT];
+
+#ifdef CONFIG_PM_POLICY_DEFAULT
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	uint8_t num_cpu_states;
@@ -20,7 +27,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 		const struct pm_state_info *state = &cpu_states[i];
 		uint32_t min_residency, exit_latency;
 
-		if (!pm_constraint_get(state->state)) {
+		if (pm_policy_state_lock_is_active(state->state)) {
 			continue;
 		}
 
@@ -34,4 +41,20 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	}
 
 	return NULL;
+}
+#endif
+
+void pm_policy_state_lock_get(enum pm_state state)
+{
+	atomic_inc(&state_lock_cnt[state]);
+}
+
+void pm_policy_state_lock_put(enum pm_state state)
+{
+	atomic_dec(&state_lock_cnt[state]);
+}
+
+bool pm_policy_state_lock_is_active(enum pm_state state)
+{
+	return (atomic_get(&state_lock_cnt[state]) != 0);
 }

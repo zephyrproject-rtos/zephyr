@@ -6,6 +6,7 @@
 #include <zephyr.h>
 #include <init.h>
 #include <pm/pm.h>
+#include <pm/policy.h>
 
 #include <driverlib/pwr_ctrl.h>
 #include <driverlib/sys_ctrl.h>

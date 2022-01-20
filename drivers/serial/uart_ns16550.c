@@ -33,7 +33,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <drivers/uart.h>
-#include <pm/pm.h>
+#include <pm/policy.h>
 #include <sys/sys_io.h>
 #include <spinlock.h>
 
@@ -681,7 +681,7 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 		 * different states.
 		 */
 		for (uint8_t i = 0U; i < num_cpu_states; i++) {
-			pm_constraint_set(cpu_states[i].state);
+			pm_policy_state_lock_get(cpu_states[i].state);
 		}
 	}
 #endif
@@ -718,7 +718,7 @@ static void uart_ns16550_irq_tx_disable(const struct device *dev)
 		 * to different states.
 		 */
 		for (uint8_t i = 0U; i < num_cpu_states; i++) {
-			pm_constraint_release(cpu_states[i].state);
+			pm_policy_state_lock_put(cpu_states[i].state);
 		}
 	}
 #endif

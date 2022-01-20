@@ -38,19 +38,6 @@ The list of available power states is defined by :c:enum:`pm_state`. In
 general power states with higher indexes will offer greater power savings and
 have higher wake latencies.
 
-.. _pm_constraints:
-
-Power States Constraint
-=======================
-
-The power management subsystem allows different Zephyr components and
-applications to set constraints on various power states preventing the
-system from transitioning into these states. This can be used by devices when
-executing tasks in background to prevent the system from going to a specific
-state where it would lose context. Constraints can be set using the
-:c:func:`pm_constraint_set`, released using :c:func:`pm_constraint_release` and
-checked using the :c:func:`pm_constraint_get`.
-
 Power Management Policies
 =========================
 
@@ -61,7 +48,7 @@ The power management subsystem supports the following power management policies:
 
 The policy manager is responsible for informing the power subsystem which
 power state the system should transition to based on states defined by the
-platform and possible runtime :ref:`constraints<pm_constraints>`
+platform and other constraints such as a list of allowed states.
 
 More details on the states definition can be found in the
 :dtcompatible:`zephyr,power-state` binding documentation.
@@ -94,3 +81,12 @@ remaining time for the next scheduled timeout.
 
 An example of an application that defines its own policy can be found in
 :zephyr_file:`tests/subsys/pm/power_mgmt/`.
+
+Policy and Power States
+------------------------
+
+The power management subsystem allows different Zephyr components and
+applications to configure the policy manager to block system from transitioning
+into certain power states. This can be used by devices when executing tasks in
+background to prevent the system from going to a specific state where it would
+lose context.
