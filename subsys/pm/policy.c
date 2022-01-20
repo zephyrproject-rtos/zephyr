@@ -8,6 +8,7 @@
 #include <pm/pm.h>
 #include <pm/policy.h>
 #include <sys_clock.h>
+#include <sys/__assert.h>
 #include <sys/time_units.h>
 #include <sys/atomic.h>
 #include <toolchain.h>
@@ -51,7 +52,11 @@ void pm_policy_state_lock_get(enum pm_state state)
 
 void pm_policy_state_lock_put(enum pm_state state)
 {
-	atomic_dec(&state_lock_cnt[state]);
+	atomic_t cnt = atomic_dec(&state_lock_cnt[state]);
+
+	ARG_UNUSED(cnt);
+
+	__ASSERT(cnt >= 1, "Unbalanced state lock get/put");
 }
 
 bool pm_policy_state_lock_is_active(enum pm_state state)
