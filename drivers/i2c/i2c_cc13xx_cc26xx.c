@@ -197,9 +197,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 
 	k_sem_take(&data->lock, K_FOREVER);
 
-#ifdef CONFIG_PM
 	pm_policy_state_lock_get(PM_STATE_STANDBY);
-#endif
 
 	for (int i = 0; i < num_msgs; i++) {
 		/* Not supported by hardware */
@@ -221,9 +219,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 		}
 	}
 
-#ifdef CONFIG_PM
 	pm_policy_state_lock_put(PM_STATE_STANDBY);
-#endif
 
 	k_sem_give(&data->lock);
 
