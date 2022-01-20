@@ -29,7 +29,7 @@ extern "C" {
  */
 
 /**
- * @brief Writes an ERROR level message to the log.
+ * @brief Write an ERROR level message to the log.
  *
  * @details It's meant to report severe errors, such as those from which it's
  * not possible to recover.
@@ -40,7 +40,7 @@ extern "C" {
 #define LOG_ERR(...)    Z_LOG(LOG_LEVEL_ERR, __VA_ARGS__)
 
 /**
- * @brief Writes a WARNING level message to the log.
+ * @brief Write a WARNING level message to the log.
  *
  * @details It's meant to register messages related to unusual situations that
  * are not necessarily errors.
@@ -51,7 +51,7 @@ extern "C" {
 #define LOG_WRN(...)   Z_LOG(LOG_LEVEL_WRN, __VA_ARGS__)
 
 /**
- * @brief Writes an INFO level message to the log.
+ * @brief Write an INFO level message to the log.
  *
  * @details It's meant to write generic user oriented messages.
  *
@@ -61,7 +61,7 @@ extern "C" {
 #define LOG_INF(...)   Z_LOG(LOG_LEVEL_INF, __VA_ARGS__)
 
 /**
- * @brief Writes a DEBUG level message to the log.
+ * @brief Write a DEBUG level message to the log.
  *
  * @details It's meant to write developer oriented information.
  *
@@ -82,7 +82,7 @@ extern "C" {
 #define LOG_PRINTK(...) Z_LOG_PRINTK(__VA_ARGS__)
 
 /**
- * @brief Writes an ERROR level message associated with the instance to the log.
+ * @brief Write an ERROR level message associated with the instance to the log.
  *
  * Message is associated with specific instance of the module which has
  * independent filtering settings (if runtime filtering is enabled) and
@@ -97,7 +97,7 @@ extern "C" {
 	Z_LOG_INSTANCE(LOG_LEVEL_ERR, _log_inst, __VA_ARGS__)
 
 /**
- * @brief Writes a WARNING level message associated with the instance to the
+ * @brief Write a WARNING level message associated with the instance to the
  *        log.
  *
  * Message is associated with specific instance of the module which has
@@ -113,7 +113,7 @@ extern "C" {
 	Z_LOG_INSTANCE(LOG_LEVEL_WRN, _log_inst, __VA_ARGS__)
 
 /**
- * @brief Writes an INFO level message associated with the instance to the log.
+ * @brief Write an INFO level message associated with the instance to the log.
  *
  * Message is associated with specific instance of the module which has
  * independent filtering settings (if runtime filtering is enabled) and
@@ -128,7 +128,7 @@ extern "C" {
 	Z_LOG_INSTANCE(LOG_LEVEL_INF, _log_inst, __VA_ARGS__)
 
 /**
- * @brief Writes a DEBUG level message associated with the instance to the log.
+ * @brief Write a DEBUG level message associated with the instance to the log.
  *
  * Message is associated with specific instance of the module which has
  * independent filtering settings (if runtime filtering is enabled) and
@@ -143,7 +143,7 @@ extern "C" {
 	Z_LOG_INSTANCE(LOG_LEVEL_DBG, _log_inst, __VA_ARGS__)
 
 /**
- * @brief Writes an ERROR level hexdump message to the log.
+ * @brief Write an ERROR level hexdump message to the log.
  *
  * @details It's meant to report severe errors, such as those from which it's
  * not possible to recover.
@@ -156,7 +156,7 @@ extern "C" {
 	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
 
 /**
- * @brief Writes a WARNING level message to the log.
+ * @brief Write a WARNING level message to the log.
  *
  * @details It's meant to register messages related to unusual situations that
  * are not necessarily errors.
@@ -169,7 +169,7 @@ extern "C" {
 	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
 
 /**
- * @brief Writes an INFO level message to the log.
+ * @brief Write an INFO level message to the log.
  *
  * @details It's meant to write generic user oriented messages.
  *
@@ -181,7 +181,7 @@ extern "C" {
 	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
 
 /**
- * @brief Writes a DEBUG level message to the log.
+ * @brief Write a DEBUG level message to the log.
  *
  * @details It's meant to write developer oriented information.
  *
@@ -193,7 +193,7 @@ extern "C" {
 	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
 
 /**
- * @brief Writes an ERROR hexdump message associated with the instance to the
+ * @brief Write an ERROR hexdump message associated with the instance to the
  *        log.
  *
  * Message is associated with specific instance of the module which has
@@ -210,7 +210,7 @@ extern "C" {
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_ERR, _log_inst, _data, _length, _str)
 
 /**
- * @brief Writes a WARNING level hexdump message associated with the instance to
+ * @brief Write a WARNING level hexdump message associated with the instance to
  *        the log.
  *
  * @details It's meant to register messages related to unusual situations that
@@ -225,7 +225,7 @@ extern "C" {
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_WRN, _log_inst, _data, _length, _str)
 
 /**
- * @brief Writes an INFO level hexdump message associated with the instance to
+ * @brief Write an INFO level hexdump message associated with the instance to
  *        the log.
  *
  * @details It's meant to write generic user oriented messages.
@@ -239,7 +239,7 @@ extern "C" {
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_INF, _log_inst, _data, _length, _str)
 
 /**
- * @brief Writes a DEBUG level hexdump message associated with the instance to
+ * @brief Write a DEBUG level hexdump message associated with the instance to
  *        the log.
  *
  * @details It's meant to write developer oriented information.
@@ -253,7 +253,7 @@ extern "C" {
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
 
 /**
- * @brief Writes an formatted string to the log.
+ * @brief Write an formatted string to the log.
  *
  * @details Conditionally compiled (see CONFIG_LOG_PRINTK). Function provides
  * printk functionality.
