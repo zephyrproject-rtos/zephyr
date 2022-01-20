@@ -55,6 +55,10 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_JSON_SUPPORT
 zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT
     lwm2m_rw_senml_json.c
     )
+# CBOR support
+zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_CBOR_SUPPORT
+    lwm2m_rw_cbor.c
+    )
 
 # IPSO Objects
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_TEMP_SENSOR
