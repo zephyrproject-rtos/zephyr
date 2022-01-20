@@ -883,12 +883,12 @@ static void mux_setup(struct k_work *work)
 			}
 		}
 
-		gsm->state = STATE_PPP_CHANNEL;
-
 		ret = mux_attach(gsm->control_dev, uart, DLCI_CONTROL, gsm);
 		if (ret < 0) {
 			goto fail;
 		}
+
+		gsm->state = STATE_PPP_CHANNEL;
 
 		break;
 
@@ -902,12 +902,12 @@ static void mux_setup(struct k_work *work)
 			}
 		}
 
-		gsm->state = STATE_AT_CHANNEL;
-
 		ret = mux_attach(gsm->ppp_dev, uart, DLCI_PPP, gsm);
 		if (ret < 0) {
 			goto fail;
 		}
+
+		gsm->state = STATE_AT_CHANNEL;
 
 		break;
 
@@ -921,12 +921,12 @@ static void mux_setup(struct k_work *work)
 			}
 		}
 
-		gsm->state = STATE_DONE;
-
 		ret = mux_attach(gsm->at_dev, uart, DLCI_AT, gsm);
 		if (ret < 0) {
 			goto fail;
 		}
+
+		gsm->state = STATE_DONE;
 
 		break;
 
