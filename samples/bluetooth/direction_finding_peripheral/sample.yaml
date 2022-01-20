@@ -1,0 +1,17 @@
+sample:
+  name: Direction Finding Peripheral
+  description: Sample application showing peripheral role of Direction Finding in connected mode
+tests:
+  sample.bluetooth.direction_finding_connectionless_rx:
+    harness: bluetooth
+    platform_allow: nrf52833dk_nrf52833
+    tags: bluetooth
+    integration_platforms:
+        - nrf52833dk_nrf52833
+  sample.bluetooth.direction_finding_connectionless_rx.aod:
+    extra_args: OVERLAY_CONFIG="overlay-aoa.conf"
+    harness: bluetooth
+    platform_allow: nrf52833dk_nrf52833
+    tags: bluetooth
+    integration_platforms:
+        - nrf52833dk_nrf52833
