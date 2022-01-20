@@ -25,7 +25,26 @@ config PM_STATS
 	help
 	  Enable System Power Management Stats.
 
-source "subsys/pm/policy/Kconfig"
+choice PM_POLICY
+	prompt "Idle State Power Management Policy"
+	default PM_POLICY_DEFAULT
+	help
+	  Select the idle state power management policy.
+
+config PM_POLICY_DEFAULT
+	bool "Default PM policy"
+	help
+	  This option selects the default PM policy. Default policy is based
+	  on CPU residency times and other constraints imposed by the drivers or
+	  application.
+
+config PM_POLICY_CUSTOM
+	bool "Custom PM Policy"
+	help
+	  This options allows applications to override the default policy with
+	  a custom implementation.
+
+endchoice
 
 endif # PM
 
