@@ -9,12 +9,12 @@
 #include <sys_clock.h>
 #include <ztest.h>
 
-#ifdef CONFIG_PM_POLICY_RESIDENCY
+#ifdef CONFIG_PM_POLICY_DEFAULT
 /**
  * @brief Test the behavior of pm_policy_next_state() when
- * CONFIG_PM_POLICY_RESIDENCY=y.
+ * CONFIG_PM_POLICY_DEFAULT=y.
  */
-static void test_pm_policy_next_state_residency(void)
+static void test_pm_policy_next_state_default(void)
 {
 	const struct pm_state_info *next;
 
@@ -57,13 +57,13 @@ static void test_pm_policy_next_state_residency(void)
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
 }
 #else
-static void test_pm_policy_next_state_residency(void)
+static void test_pm_policy_next_state_default(void)
 {
 	ztest_test_skip();
 }
-#endif /* CONFIG_PM_POLICY_RESIDENCY */
+#endif /* CONFIG_PM_POLICY_DEFAULT */
 
-#ifdef CONFIG_PM_POLICY_APP
+#ifdef CONFIG_PM_POLICY_CUSTOM
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	static const struct pm_state_info state = {.state = PM_STATE_SOFT_OFF};
@@ -76,9 +76,9 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 
 /**
  * @brief Test that a custom policy can be implemented when
- * CONFIG_PM_POLICY_APP=y.
+ * CONFIG_PM_POLICY_CUSTOM=y.
  */
-static void test_pm_policy_next_state_app(void)
+static void test_pm_policy_next_state_custom(void)
 {
 	const struct pm_state_info *next;
 
@@ -86,16 +86,16 @@ static void test_pm_policy_next_state_app(void)
 	zassert_equal(next->state, PM_STATE_SOFT_OFF, NULL);
 }
 #else
-static void test_pm_policy_next_state_app(void)
+static void test_pm_policy_next_state_custom(void)
 {
 	ztest_test_skip();
 }
-#endif /* CONFIG_PM_POLICY_APP */
+#endif /* CONFIG_PM_POLICY_CUSTOM */
 
 void test_main(void)
 {
 	ztest_test_suite(policy_api,
-			 ztest_unit_test(test_pm_policy_next_state_residency),
-			 ztest_unit_test(test_pm_policy_next_state_app));
+			 ztest_unit_test(test_pm_policy_next_state_default),
+			 ztest_unit_test(test_pm_policy_next_state_custom));
 	ztest_run_test_suite(policy_api);
 }
