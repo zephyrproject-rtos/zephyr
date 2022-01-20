@@ -131,3 +131,16 @@ config BT_DRIVER_QUIRK_NO_AUTO_DLE
 
 	  This has to be enabled when the BLE controller connected is Zephyr
 	  open source controller.
+
+config BT_HCI_SETUP
+	bool
+	help
+	  Enable the HCI vendor-specific Setup function.
+
+	  This option has to be enabled when the BT Controller requires execution
+	  of the vendor-specific commands sequence to initialize the BT Controller
+	  before the BT Host executes a Reset sequence.
+
+	  The user should generally avoid changing it via menuconfig or in
+	  configuration files. This option are enabled by the vendor-specific
+	  HCI extension, where the Setup function is implemented.
