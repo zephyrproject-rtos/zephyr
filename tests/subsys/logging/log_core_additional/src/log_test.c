@@ -156,6 +156,11 @@ static void sync_hexdump(const struct log_backend *const backend,
 	cb->sync++;
 }
 
+static void panic(const struct log_backend *const backend)
+{
+	ARG_UNUSED(backend);
+}
+
 const struct log_backend_api log_backend_test_api = {
 	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
 	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
@@ -163,6 +168,7 @@ const struct log_backend_api log_backend_test_api = {
 			sync_string : NULL,
 	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
 			sync_hexdump : NULL,
+	.panic = panic,
 };
 
 LOG_BACKEND_DEFINE(backend1, log_backend_test_api, false);
