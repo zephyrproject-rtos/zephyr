@@ -76,6 +76,11 @@ config TACH_IT8XXX2
 	default y
 	depends on SENSOR
 
+config PECI_ITE_IT8XXX2
+	default y
+	depends on PECI
+	select PECI_INTERRUPT_DRIVEN
+
 if ITE_IT8XXX2_INTC
 config NUM_IRQS
 	default 185
