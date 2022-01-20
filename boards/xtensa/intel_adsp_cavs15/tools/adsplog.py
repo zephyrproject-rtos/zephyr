@@ -29,6 +29,16 @@ WIN_IDX = 3
 WIN_SIZE = 0x20000
 LOG_OFFSET = WIN_OFFSET + WIN_IDX * WIN_SIZE
 
+# When this script was running by twister with --device-serial-pty,
+# it should wait for the rimage signed completedly then start to
+# download firmware into DSP. Have tried to receive signals such as
+# SIGUSR1 or SIGTERM here but it is not very reliable here.
+# So we use a quick workaround to just sleep 15 sec to wait for
+# rimage built and signed. Not smart but useful so far.
+#
+# FIXME: Need to use a better synchronization and switch here.
+time.sleep(15)
+
 mem = None
 sys_devices = "/sys/bus/pci/devices"
 
@@ -102,3 +112,4 @@ while True:
     (last_seq, output) = winstream_read(last_seq)
     if output:
         sys.stdout.write(output)
+        sys.stdout.flush()
