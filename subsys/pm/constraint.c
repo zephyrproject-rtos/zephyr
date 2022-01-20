@@ -17,31 +17,15 @@ static atomic_t power_state_disable_count[PM_STATE_COUNT];
 
 void pm_constraint_set(enum pm_state state)
 {
-	atomic_val_t v;
-
-	__ASSERT(state < PM_STATE_COUNT, "Invalid power state!");
-	v = atomic_inc(&power_state_disable_count[state]);
-	__ASSERT(v < UINT_MAX, "Power state disable count overflowed!");
-
-	/* Make compiler happy when assertions are disabled. */
-	(void)(v);
+	atomic_inc(&power_state_disable_count[state]);
 }
 
 void pm_constraint_release(enum pm_state state)
 {
-	atomic_val_t v;
-
-	__ASSERT(state < PM_STATE_COUNT, "Invalid power state!");
-	v = atomic_dec(&power_state_disable_count[state]);
-	__ASSERT(v > 0, "Power state disable count underflowed!");
-
-	/* Make compiler happy when assertions are disabled. */
-	(void)(v);
+	atomic_dec(&power_state_disable_count[state]);
 }
 
 bool pm_constraint_get(enum pm_state state)
 {
-	__ASSERT(state < PM_STATE_COUNT, "Invalid power state!");
-
 	return (atomic_get(&power_state_disable_count[state]) == 0);
 }
