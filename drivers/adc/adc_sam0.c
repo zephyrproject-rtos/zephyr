@@ -160,8 +160,16 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 	if (adc->REFCTRL.reg != refctrl) {
+#ifdef ADC_SAM0_REFERENCE_ENABLE_PROTECTED
+		adc->CTRLA.bit.ENABLE = 0;
+		wait_synchronization(adc);
+#endif
 		adc->REFCTRL.reg = refctrl;
 		wait_synchronization(adc);
+#ifdef ADC_SAM0_REFERENCE_ENABLE_PROTECTED
+		adc->CTRLA.bit.ENABLE = 1;
+		wait_synchronization(adc);
+#endif
 #ifdef ADC_SAM0_REFERENCE_GLITCH
 		struct adc_sam0_data *data = dev->data;
 
