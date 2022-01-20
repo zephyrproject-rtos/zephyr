@@ -811,23 +811,23 @@ void hci_le_cis_established(struct net_buf *buf)
 	}
 
 	if (!evt->status) {
+		struct bt_iso_chan_io_qos *tx;
+		struct bt_iso_chan_io_qos *rx;
 		struct bt_conn_iso *iso_conn;
+		struct bt_iso_chan *chan;
+
+		iso_conn = &iso->iso;
+		chan = iso_conn->chan;
+
+		__ASSERT(chan != NULL && chan->qos != NULL, "Invalid ISO chan");
 
 		/* Reset sequence number */
 		iso->iso.seq_num = 0;
 
-		iso_conn = &iso->iso;
+		tx = chan->qos->tx;
+		rx = chan->qos->rx;
 
 		if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
-			struct bt_iso_chan_io_qos *rx;
-			struct bt_iso_chan_io_qos *tx;
-			struct bt_iso_chan *chan;
-
-			chan = iso_conn->chan;
-
-			__ASSERT(chan != NULL && chan->qos != NULL,
-				 "Invalid ISO chan");
-
 			rx = chan->qos->rx;
 			tx = chan->qos->tx;
 
@@ -844,8 +844,31 @@ void hci_le_cis_established(struct net_buf *buf)
 			iso_conn->info.type = BT_ISO_CHAN_TYPE_CONNECTED;
 		} /* values are already set for central */
 
-		store_cis_info(evt, &iso_conn->info);
+		/* Verify if device can send */
+		iso_conn->info.can_send = false;
+		if (tx != NULL) {
+			if (iso->role == BT_HCI_ROLE_PERIPHERAL &&
+			    evt->p_bn > 0) {
+				iso_conn->info.can_send = true;
+			} else if (iso->role == BT_HCI_ROLE_CENTRAL &&
+				   evt->c_bn > 0) {
+				iso_conn->info.can_send = true;
+			}
+		}
 
+		/* Verify if device can recv */
+		iso_conn->info.can_recv = false;
+		if (rx != NULL) {
+			if (iso->role == BT_HCI_ROLE_PERIPHERAL &&
+			    evt->c_bn > 0) {
+				iso_conn->info.can_recv = true;
+			} else if (iso->role == BT_HCI_ROLE_CENTRAL &&
+				   evt->p_bn > 0) {
+				iso_conn->info.can_recv = true;
+			}
+		}
+
+		store_cis_info(evt, &iso_conn->info);
 		bt_conn_set_state(iso, BT_CONN_CONNECTED);
 		bt_conn_unref(iso);
 		return;
