@@ -5,7 +5,7 @@ description: Microchip I2C/SMB V2 controller
 
 compatible: "microchip,xec-i2c-v2"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -25,6 +25,12 @@ properties:
       type: array
       required: true
       description: PCR sleep register index and bit position
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
 
     "#girq-cells":
       type: int
