@@ -2,18 +2,21 @@
 
 choice PM_POLICY
 	prompt "Idle State Power Management Policy"
-	default PM_POLICY_RESIDENCY
+	default PM_POLICY_DEFAULT
 	help
 	  Select the idle state power management policy.
 
-config PM_POLICY_RESIDENCY
-	bool "PM Policy based on CPU residency"
+config PM_POLICY_DEFAULT
+	bool "Default PM policy"
 	help
-	  Select this option for PM policy based on CPU residencies.
+	  This option selects the default PM policy. Default policy is based
+	  on CPU residency times and other constraints imposed by the drivers or
+	  application.
 
-config PM_POLICY_APP
-	bool "Application PM Policy"
+config PM_POLICY_CUSTOM
+	bool "Custom PM Policy"
 	help
-	  When this option is selected, the application must provide PM policy.
+	  This options allows applications to override the default policy with
+	  a custom implementation.
 
 endchoice
