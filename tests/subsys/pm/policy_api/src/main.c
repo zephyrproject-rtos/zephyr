@@ -56,8 +56,54 @@ static void test_pm_policy_next_state_default(void)
 	next = pm_policy_next_state(1U, K_TICKS_FOREVER);
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
 }
+
+/**
+ * @brief Test the behavior of pm_policy_next_state() when
+ * states are allowed/disallowed and CONFIG_PM_POLICY_DEFAULT=y.
+ */
+static void test_pm_policy_next_state_default_allowed(void)
+{
+	bool active;
+	const struct pm_state_info *next;
+
+	/* initial state: PM_STATE_RUNTIME_IDLE allowed
+	 * next state: PM_STATE_RUNTIME_IDLE
+	 */
+	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE);
+	zassert_false(active, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+
+	/* disallow PM_STATE_RUNTIME_IDLE
+	 * next state: NULL (active)
+	 */
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE);
+
+	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE);
+	zassert_true(active, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next, NULL, NULL);
+
+	/* allow PM_STATE_RUNTIME_IDLE again
+	 * next state: PM_STATE_RUNTIME_IDLE
+	 */
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE);
+
+	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE);
+	zassert_false(active, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+}
 #else
 static void test_pm_policy_next_state_default(void)
+{
+	ztest_test_skip();
+}
+
+static void test_pm_policy_next_state_default_allowed(void)
 {
 	ztest_test_skip();
 }
@@ -96,6 +142,7 @@ void test_main(void)
 {
 	ztest_test_suite(policy_api,
 			 ztest_unit_test(test_pm_policy_next_state_default),
+			 ztest_unit_test(test_pm_policy_next_state_default_allowed),
 			 ztest_unit_test(test_pm_policy_next_state_custom));
 	ztest_run_test_suite(policy_api);
 }
