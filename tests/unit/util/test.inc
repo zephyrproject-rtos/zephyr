@@ -303,6 +303,39 @@ static void test_FOR_EACH_FIXED_ARG(void)
 	zassert_equal(sum, 6, "Unexpected value %d", sum);
 }
 
+static void test_DO_FIRST_N(void)
+{
+	uint32_t count = 0;
+
+	for (size_t i = 0; i < 10; i++) {
+		DO_FIRST_N(0, count++);
+	}
+	zassert_equal(count, 0, "Unexpected value %" PRIu32, count);
+
+	for (size_t i = 0; i < 10; i++) {
+		DO_FIRST_N(1, count++);
+	}
+	zassert_equal(count, 1, "Unexpected value %" PRIu32, count);
+
+	count = 0;
+	for (size_t i = 0; i < 10; i++) {
+		DO_FIRST_N(2, count++);
+	}
+	zassert_equal(count, 2, "Unexpected value %" PRIu32, count);
+
+	count = 0;
+	for (size_t i = 0; i < 10; i++) {
+		DO_FIRST_N(3, count++);
+	}
+	zassert_equal(count, 3, "Unexpected value %" PRIu32, count);
+
+	count = 0;
+	for (size_t i = 0; i < 10; i++) {
+		DO_FIRST_N(4, count++);
+	}
+	zassert_equal(count, 4, "Unexpected value %" PRIu32, count);
+}
+
 static void test_FOR_EACH_IDX(void)
 {
 	#define FOR_EACH_IDX_MACRO_TEST(n, arg) uint8_t a##n = arg
@@ -474,7 +507,8 @@ void test_cc(void)
 			 ztest_unit_test(test_nested_FOR_EACH),
 			 ztest_unit_test(test_GET_ARG_N),
 			 ztest_unit_test(test_GET_ARGS_LESS_N),
-			 ztest_unit_test(test_mixing_GET_ARG_and_FOR_EACH)
+			 ztest_unit_test(test_mixing_GET_ARG_and_FOR_EACH),
+			 ztest_unit_test(test_DO_FIRST_N)
 	);
 
 	ztest_run_test_suite(test_lib_sys_util_tests);
