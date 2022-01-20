@@ -5,7 +5,7 @@ description: i.MX DTCM (Data Tightly Coupled Memory)
 
 compatible: "nxp,imx-dtcm"
 
-include: [base.yaml, mem-region.yaml]
+include: base.yaml
 
 properties:
     reg:
