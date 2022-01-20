@@ -2469,6 +2469,7 @@ static att_type_t att_op_get_type(uint8_t op)
 	case BT_ATT_OP_READ_REQ:
 	case BT_ATT_OP_READ_BLOB_REQ:
 	case BT_ATT_OP_READ_MULT_REQ:
+	case BT_ATT_OP_READ_MULT_VL_REQ:
 	case BT_ATT_OP_READ_GROUP_REQ:
 	case BT_ATT_OP_WRITE_REQ:
 	case BT_ATT_OP_PREPARE_WRITE_REQ:
@@ -2487,12 +2488,14 @@ static att_type_t att_op_get_type(uint8_t op)
 	case BT_ATT_OP_READ_RSP:
 	case BT_ATT_OP_READ_BLOB_RSP:
 	case BT_ATT_OP_READ_MULT_RSP:
+	case BT_ATT_OP_READ_MULT_VL_RSP:
 	case BT_ATT_OP_READ_GROUP_RSP:
 	case BT_ATT_OP_WRITE_RSP:
 	case BT_ATT_OP_PREPARE_WRITE_RSP:
 	case BT_ATT_OP_EXEC_WRITE_RSP:
 		return ATT_RESPONSE;
 	case BT_ATT_OP_NOTIFY:
+	case BT_ATT_OP_NOTIFY_MULT:
 		return ATT_NOTIFICATION;
 	case BT_ATT_OP_INDICATE:
 		return ATT_INDICATION;
