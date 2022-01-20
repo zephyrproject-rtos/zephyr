@@ -40,6 +40,18 @@ extern "C" {
 #define LOG_ERR(...)    Z_LOG(LOG_LEVEL_ERR, __VA_ARGS__)
 
 /**
+ * @brief Write an ERROR level message to the log, but only the first @p n times
+ *
+ * @details It's meant to report severe errors, such as those from which it's
+ * not possible to recover.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_ERR_N(n, ...)    Z_LOG_N(n, LOG_LEVEL_ERR, __VA_ARGS__)
+
+/**
  * @brief Write a WARNING level message to the log.
  *
  * @details It's meant to register messages related to unusual situations that
@@ -51,14 +63,38 @@ extern "C" {
 #define LOG_WRN(...)   Z_LOG(LOG_LEVEL_WRN, __VA_ARGS__)
 
 /**
+ * @brief Write a WARNING level message to the log, but only the first @p n times
+ *
+ * @details It's meant to register messages related to unusual situations that
+ * are not necessarily errors.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_WRN_N(n, ...)   Z_LOG_N(n, LOG_LEVEL_WRN, __VA_ARGS__)
+
+/**
  * @brief Write an INFO level message to the log.
  *
  * @details It's meant to write generic user oriented messages.
  *
+ * @param n The number of times this log will be executed before it is silenced.
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
 #define LOG_INF(...)   Z_LOG(LOG_LEVEL_INF, __VA_ARGS__)
+
+/**
+ * @brief Write an INFO level message to the log, but only the first @p n times.
+ *
+ * @details It's meant to write generic user oriented messages.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_INF_N(n, ...)   Z_LOG_N(n, LOG_LEVEL_INF, __VA_ARGS__)
 
 /**
  * @brief Write a DEBUG level message to the log.
@@ -71,6 +107,17 @@ extern "C" {
 #define LOG_DBG(...)    Z_LOG(LOG_LEVEL_DBG, __VA_ARGS__)
 
 /**
+ * @brief Write a DEBUG level message to the log, but only the first @p n times.
+ *
+ * @details It's meant to write developer oriented information.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_DBG_N(n, ...)    Z_LOG_N(n, LOG_LEVEL_DBG, __VA_ARGS__)
+
+/**
  * @brief Unconditionally print raw log message.
  *
  * The result is same as if printk was used but it goes through logging
@@ -80,6 +127,18 @@ extern "C" {
  * followed by as many values as specifiers.
  */
 #define LOG_PRINTK(...) Z_LOG_PRINTK(__VA_ARGS__)
+
+/**
+ * @brief Unconditionally print raw log message, but only the first @p n times.
+ *
+ * The result is same as if printk was used but it goes through logging
+ * infrastructure thus utilizes logging mode, e.g. deferred mode.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_PRINTK_N(n, ...) Z_LOG_PRINTK_N(n, __VA_ARGS__)
 
 /**
  * @brief Write an ERROR level message associated with the instance to the log.
@@ -95,6 +154,23 @@ extern "C" {
  */
 #define LOG_INST_ERR(_log_inst, ...) \
 	Z_LOG_INSTANCE(LOG_LEVEL_ERR, _log_inst, __VA_ARGS__)
+
+/**
+ * @brief Write an ERROR level message associated with the instance to the log.
+ * but but only the first @p n times.
+ *
+ * Message is associated with specific instance of the module which has
+ * independent filtering settings (if runtime filtering is enabled) and
+ * message prefix (\<module_name\>.\<instance_name\>). It's meant to report
+ * severe errors, such as those from which it's not possible to recover.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @param _log_inst Pointer to the log structure associated with the instance.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_INST_ERR_N(n, _log_inst, ...) \
+	Z_LOG_INSTANCE_N(n, LOG_LEVEL_ERR, _log_inst, __VA_ARGS__)
 
 /**
  * @brief Write a WARNING level message associated with the instance to the
@@ -113,6 +189,23 @@ extern "C" {
 	Z_LOG_INSTANCE(LOG_LEVEL_WRN, _log_inst, __VA_ARGS__)
 
 /**
+ * @brief Write a WARNING level message associated with the instance to the
+ *        log, but but only the first @p n times.
+ *
+ * Message is associated with specific instance of the module which has
+ * independent filtering settings (if runtime filtering is enabled) and
+ * message prefix (\<module_name\>.\<instance_name\>). It's meant to register
+ * messages related to unusual situations that are not necessarily errors.
+ *
+ * @param n         The number of times this log will be executed before it is silenced.
+ * @param _log_inst Pointer to the log structure associated with the instance.
+ * @param ...       A string optionally containing printk valid conversion
+ *                  specifier, followed by as many values as specifiers.
+ */
+#define LOG_INST_WRN_N(n, _log_inst, ...) \
+	Z_LOG_INSTANCE_N(n, LOG_LEVEL_WRN, _log_inst, __VA_ARGS__)
+
+/**
  * @brief Write an INFO level message associated with the instance to the log.
  *
  * Message is associated with specific instance of the module which has
@@ -126,6 +219,22 @@ extern "C" {
  */
 #define LOG_INST_INF(_log_inst, ...) \
 	Z_LOG_INSTANCE(LOG_LEVEL_INF, _log_inst, __VA_ARGS__)
+
+/**
+ * @brief Write an INFO level message associated with the instance to the log,
+ * but but only the first @p n times.
+ * Message is associated with specific instance of the module which has
+ * independent filtering settings (if runtime filtering is enabled) and
+ * message prefix (\<module_name\>.\<instance_name\>). It's meant to write
+ * generic user oriented messages.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @param _log_inst Pointer to the log structure associated with the instance.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_INST_INF_N(n, _log_inst, ...) \
+	Z_LOG_INSTANCE_N(n, LOG_LEVEL_INF, _log_inst, __VA_ARGS__)
 
 /**
  * @brief Write a DEBUG level message associated with the instance to the log.
@@ -143,6 +252,23 @@ extern "C" {
 	Z_LOG_INSTANCE(LOG_LEVEL_DBG, _log_inst, __VA_ARGS__)
 
 /**
+ * @brief Write a DEBUG level message associated with the instance to the log,
+ * but but only the first @p n times.
+ *
+ * Message is associated with specific instance of the module which has
+ * independent filtering settings (if runtime filtering is enabled) and
+ * message prefix (\<module_name\>.\<instance_name\>). It's meant to write
+ * developer oriented information.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @param _log_inst Pointer to the log structure associated with the instance.
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_INST_DBG_N(n, _log_inst, ...) \
+	Z_LOG_INSTANCE_N(n, LOG_LEVEL_DBG, _log_inst, __VA_ARGS__)
+
+/**
  * @brief Write an ERROR level hexdump message to the log.
  *
  * @details It's meant to report severe errors, such as those from which it's
@@ -154,6 +280,20 @@ extern "C" {
  */
 #define LOG_HEXDUMP_ERR(_data, _length, _str) \
 	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
+
+/**
+ * @brief Write an ERROR level hexdump message to the log, but but only the first @p n times.
+ *
+ * @details It's meant to report severe errors, such as those from which it's
+ * not possible to recover.
+ *
+ * @param n       The number of times this log will be executed before it is silenced.
+ * @param _data   Pointer to the data to be logged.
+ * @param _length Length of data (in bytes).
+ * @param _str    Persistent, raw string.
+ */
+#define LOG_HEXDUMP_ERR_N(n, _data, _length, _str) \
+	Z_LOG_HEXDUMP_N(n, LOG_LEVEL_ERR, _data, _length, _str)
 
 /**
  * @brief Write a WARNING level message to the log.
@@ -169,6 +309,20 @@ extern "C" {
 	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
 
 /**
+ * @brief Write a WARNING level message to the log, but but only the first @p n times.
+ *
+ * @details It's meant to register messages related to unusual situations that
+ * are not necessarily errors.
+ *
+ * @param n       The number of times this log will be executed before it is silenced.
+ * @param _data   Pointer to the data to be logged.
+ * @param _length Length of data (in bytes).
+ * @param _str    Persistent, raw string.
+ */
+#define LOG_HEXDUMP_WRN_N(n, _data, _length, _str) \
+	Z_LOG_HEXDUMP_N(n, LOG_LEVEL_WRN, _data, _length, _str)
+
+/**
  * @brief Write an INFO level message to the log.
  *
  * @details It's meant to write generic user oriented messages.
@@ -181,6 +335,19 @@ extern "C" {
 	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
 
 /**
+ * @brief Write an INFO level message to the log.
+ *
+ * @details It's meant to write generic user oriented messages.
+ *
+ * @param n       The number of times this log will be executed before it is silenced.
+ * @param _data   Pointer to the data to be logged.
+ * @param _length Length of data (in bytes).
+ * @param _str    Persistent, raw string.
+ */
+#define LOG_HEXDUMP_INF_N(n, _data, _length, _str) \
+	Z_LOG_HEXDUMP_N(n, LOG_LEVEL_INF, _data, _length, _str)
+
+/**
  * @brief Write a DEBUG level message to the log.
  *
  * @details It's meant to write developer oriented information.
@@ -191,6 +358,19 @@ extern "C" {
  */
 #define LOG_HEXDUMP_DBG(_data, _length, _str) \
 	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
+
+/**
+ * @brief Write a DEBUG level message to the log.
+ *
+ * @details It's meant to write developer oriented information.
+ *
+ * @param n       The number of times this log will be executed before it is silenced.
+ * @param _data   Pointer to the data to be logged.
+ * @param _length Length of data (in bytes).
+ * @param _str    Persistent, raw string.
+ */
+#define LOG_HEXDUMP_DBG_N(n, _data, _length, _str) \
+	Z_LOG_HEXDUMP_N(n, LOG_LEVEL_DBG, _data, _length, _str)
 
 /**
  * @brief Write an ERROR hexdump message associated with the instance to the
@@ -210,6 +390,25 @@ extern "C" {
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_ERR, _log_inst, _data, _length, _str)
 
 /**
+ * @brief Write an ERROR hexdump message associated with the instance to the
+ *        log, but but only the first @p n times.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * Message is associated with specific instance of the module which has
+ * independent filtering settings (if runtime filtering is enabled) and
+ * message prefix (\<module_name\>.\<instance_name\>). It's meant to report
+ * severe errors, such as those from which it's not possible to recover.
+ *
+ * @param n           The number of times this log will be executed before it is silenced.
+ * @param _log_inst   Pointer to the log structure associated with the instance.
+ * @param _data       Pointer to the data to be logged.
+ * @param _length     Length of data (in bytes).
+ * @param _str        Persistent, raw string.
+ */
+#define LOG_INST_HEXDUMP_ERR_N(n, _log_inst, _data, _length, _str) \
+	Z_LOG_HEXDUMP_INSTANCE_N(n, LOG_LEVEL_ERR, _log_inst, _data, _length, _str)
+
+/**
  * @brief Write a WARNING level hexdump message associated with the instance to
  *        the log.
  *
@@ -223,6 +422,23 @@ extern "C" {
  */
 #define LOG_INST_HEXDUMP_WRN(_log_inst, _data, _length, _str) \
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_WRN, _log_inst, _data, _length, _str)
+
+/**
+ * @brief Write a WARNING level hexdump message associated with the instance to
+ *        the log, but but only the first @p n times.
+ *
+ * @param n The number of times this log will be executed before it is silenced.
+ * @details It's meant to register messages related to unusual situations that
+ * are not necessarily errors.
+ *
+ * @param n           The number of times this log will be executed before it is silenced.
+ * @param _log_inst   Pointer to the log structure associated with the instance.
+ * @param _data       Pointer to the data to be logged.
+ * @param _length     Length of data (in bytes).
+ * @param _str        Persistent, raw string.
+ */
+#define LOG_INST_HEXDUMP_WRN_N(n, _log_inst, _data, _length, _str) \
+	Z_LOG_HEXDUMP_INSTANCE_N(n, LOG_LEVEL_WRN, _log_inst, _data, _length, _str)
 
 /**
  * @brief Write an INFO level hexdump message associated with the instance to
@@ -239,6 +455,21 @@ extern "C" {
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_INF, _log_inst, _data, _length, _str)
 
 /**
+ * @brief Write an INFO level hexdump message associated with the instance to
+ *        the log.
+ *
+ * @details It's meant to write generic user oriented messages.
+ *
+ * @param n           The number of times this log will be executed before it is silenced.
+ * @param _log_inst   Pointer to the log structure associated with the instance.
+ * @param _data       Pointer to the data to be logged.
+ * @param _length     Length of data (in bytes).
+ * @param _str        Persistent, raw string.
+ */
+#define LOG_INST_HEXDUMP_INF_N(n, _log_inst, _data, _length, _str) \
+	Z_LOG_HEXDUMP_INSTANCE_N(n, LOG_LEVEL_INF, _log_inst, _data, _length, _str)
+
+/**
  * @brief Write a DEBUG level hexdump message associated with the instance to
  *        the log.
  *
@@ -251,6 +482,21 @@ extern "C" {
  */
 #define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length, _str)	\
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
+
+/**
+ * @brief Write a DEBUG level hexdump message associated with the instance to
+ *        the log.
+ *
+ * @details It's meant to write developer oriented information.
+ *
+ * @param n           The number of times this log will be executed before it is silenced.
+ * @param _log_inst   Pointer to the log structure associated with the instance.
+ * @param _data       Pointer to the data to be logged.
+ * @param _length     Length of data (in bytes).
+ * @param _str        Persistent, raw string.
+ */
+#define LOG_INST_HEXDUMP_DBG_N(n, _log_inst, _data, _length, _str)	\
+	Z_LOG_HEXDUMP_INSTANCE_N(n, LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
 
 /**
  * @brief Write an formatted string to the log.

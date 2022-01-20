@@ -360,6 +360,9 @@ static inline char z_log_minimal_level_to_char(int level)
 #define Z_LOG(_level, ...) \
 	Z_LOG2(_level, 0, __log_current_const_data, __log_current_dynamic_data, __VA_ARGS__)
 
+#define Z_LOG_N(n, _level, ...) \
+	DO_FIRST_N(n, Z_LOG(_level, __VA_ARGS__))
+
 #define Z_LOG_INSTANCE(_level, _inst, ...) \
 	Z_LOG2(_level, 1, \
 		COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, (NULL), (Z_LOG_INST(_inst))), \
@@ -367,6 +370,9 @@ static inline char z_log_minimal_level_to_char(int level)
 						CONFIG_LOG_RUNTIME_FILTERING, \
 						(Z_LOG_INST(_inst)), (NULL)), \
 		__VA_ARGS__)
+
+#define Z_LOG_INSTANCE_N(n, _level, _inst, ...) \
+	DO_FIRST_N(n, Z_LOG_INSTANCE(_level, _inst, __VA_ARGS__))
 
 /*****************************************************************************/
 /****************** Macros for hexdump logging *******************************/
@@ -455,6 +461,9 @@ static inline char z_log_minimal_level_to_char(int level)
 		      __log_current_dynamic_data, \
 		      _data, _length, __VA_ARGS__)
 
+#define Z_LOG_HEXDUMP_N(n, _level, _data, _length, ...) \
+	DO_FIRST_N(n, Z_LOG_HEXDUMP(_level, _data, _length, __VA_ARGS__))
+
 #define Z_LOG_HEXDUMP_INSTANCE(_level, _inst, _data, _length, _str) \
 	Z_LOG_HEXDUMP2(_level, 1, \
 		COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, (NULL), (Z_LOG_INST(_inst))), \
@@ -462,6 +471,9 @@ static inline char z_log_minimal_level_to_char(int level)
 						CONFIG_LOG_RUNTIME_FILTERING, \
 						(Z_LOG_INST(_inst)), (NULL)), \
 		_data, _length, _str)
+
+#define Z_LOG_HEXDUMP_INSTANCE_N(n, _level, _inst, _data, _length, _str) \
+	DO_FIRST_N(n, Z_LOG_HEXDUMP_INSTANCE(_level, _inst, _data, _length, _str))
 
 /*****************************************************************************/
 /****************** Filtering macros *****************************************/
@@ -538,6 +550,9 @@ enum log_strdup_action {
 			  CONFIG_LOG_DOMAIN_ID, NULL, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
+
+#define Z_LOG_PRINTK_N(n, ...) \
+	DO_FIRST_N(n, Z_LOG_PRINTK(__VA_ARGS__))
 
 /** @brief Get index of the log source based on the address of the constant data
  *         associated with the source.
