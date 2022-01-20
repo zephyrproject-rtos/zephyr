@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  mcumgr.smp_group_0:
+    platform_allow: native_posix
+    tags: mcumgr, smp
