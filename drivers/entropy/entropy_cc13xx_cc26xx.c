@@ -10,7 +10,7 @@
 #include <device.h>
 #include <drivers/entropy.h>
 #include <irq.h>
-#include <pm/pm.h>
+#include <pm/policy.h>
 #include <pm/device.h>
 
 #include <sys/ring_buffer.h>
@@ -101,7 +101,7 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 	unsigned int key = irq_lock();
 
 	if (!data->constrained) {
-		pm_constraint_set(PM_STATE_STANDBY);
+		pm_policy_state_lock_get(PM_STATE_STANDBY);
 		data->constrained = true;
 	}
 	irq_unlock(key);
@@ -146,7 +146,7 @@ static void entropy_cc13xx_cc26xx_isr(const struct device *dev)
 		if (cnt != sizeof(num)) {
 #ifdef CONFIG_PM
 			if (data->constrained) {
-				pm_constraint_release(
+				pm_policy_state_lock_put(
 					PM_STATE_STANDBY);
 				data->constrained = false;
 			}
@@ -290,7 +290,7 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 #if defined(CONFIG_PM)
 	Power_setDependency(PowerCC26XX_PERIPH_TRNG);
 	/* Stay out of standby until buffer is filled with entropy */
-	pm_constraint_set(PM_STATE_STANDBY);
+	pm_policy_state_lock_get(PM_STATE_STANDBY);
 	data->constrained = true;
 	/* Register notification function */
 	Power_registerNotify(&data->post_notify,
