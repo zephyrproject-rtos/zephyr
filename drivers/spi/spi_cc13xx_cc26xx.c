@@ -140,10 +140,7 @@ static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 	int err;
 
 	spi_context_lock(ctx, false, NULL, config);
-
-#ifdef CONFIG_PM
 	pm_policy_state_lock_get(PM_STATE_STANDBY);
-#endif
 
 	err = spi_cc13xx_cc26xx_configure(dev, config);
 	if (err) {
@@ -177,9 +174,7 @@ static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 	spi_context_cs_control(ctx, false);
 
 done:
-#ifdef CONFIG_PM
 	pm_policy_state_lock_put(PM_STATE_STANDBY);
-#endif
 	spi_context_release(ctx, err);
 	return err;
 }
