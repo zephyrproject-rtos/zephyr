@@ -885,6 +885,17 @@
 			label = "GCTRL";
 		};
 
+		peci0: peci@f02c00 {
+			compatible = "ite,peci-it8xxx2";
+			reg = <0x00f02c00 15>;
+			label = "PECI_0";
+			#address-cells=<1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intc>;
+			interrupts = <160 IRQ_TYPE_LEVEL_HIGH>;
+			pinctrl-0 = <&pinctrl_peci>;
+		};
+
 		kscan0: kscan@f01d00 {
 			compatible = "ite,it8xxx2-kscan";
 			reg = <0x00f01d00 0x29
