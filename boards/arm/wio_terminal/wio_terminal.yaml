@@ -5,7 +5,7 @@
 #
 
 identifier: wio_terminal
-name: Wio Terminal 
+name: Wio Terminal
 type: mcu
 arch: arm
 ram: 192
