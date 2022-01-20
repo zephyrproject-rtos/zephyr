@@ -125,6 +125,8 @@ static void broadcast_source_iso_recv(struct bt_iso_chan *chan,
 
 	if (ops != NULL && ops->recv != NULL) {
 		ops->recv(ep->stream, buf);
+	} else {
+		BT_WARN("No callback for recv set");
 	}
 }
 
@@ -139,6 +141,8 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(ep->stream);
+	} else {
+		BT_WARN("No callback for connected set");
 	}
 }
 
@@ -154,6 +158,8 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 
 	if (ops != NULL && ops->disconnected != NULL) {
 		ops->disconnected(stream, reason);
+	} else {
+		BT_WARN("No callback for disconnected set");
 	}
 }
 

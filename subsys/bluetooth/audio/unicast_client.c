@@ -75,6 +75,8 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 
 	if (ops != NULL && ops->recv != NULL) {
 		ops->recv(ep->stream, buf);
+	} else {
+		BT_WARN("No callback for recv set");
 	}
 }
 
@@ -87,6 +89,8 @@ static void unicast_client_ep_iso_connected(struct bt_iso_chan *chan)
 
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(ep->stream);
+	} else {
+		BT_WARN("No callback for connected set");
 	}
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
@@ -110,6 +114,8 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 
 	if (ops != NULL && ops->disconnected != NULL) {
 		ops->disconnected(stream, reason);
+	} else {
+		BT_WARN("No callback for disconnected set");
 	}
 
 	if (ep->type != BT_AUDIO_EP_LOCAL) {
@@ -256,6 +262,8 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep,
 	if (stream != NULL && stream->ops != NULL &&
 	    stream->ops->released != NULL) {
 		stream->ops->released(stream);
+	} else {
+		BT_WARN("No callback for released set");
 	}
 
 	bt_audio_stream_reset(stream);
@@ -329,6 +337,8 @@ static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->configured != NULL) {
 		stream->ops->configured(stream, pref);
+	} else {
+		BT_WARN("No callback for configured set");
 	}
 }
 
@@ -379,6 +389,8 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->qos_set != NULL) {
 		stream->ops->qos_set(stream);
+	} else {
+		BT_WARN("No callback for qos_set set");
 	}
 }
 
@@ -410,6 +422,8 @@ static void unicast_client_ep_enabling_state(struct bt_audio_ep *ep,
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->enabled != NULL) {
 		stream->ops->enabled(stream);
+	} else {
+		BT_WARN("No callback for enabled set");
 	}
 }
 
@@ -439,6 +453,8 @@ static void unicast_client_ep_streaming_state(struct bt_audio_ep *ep,
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->started != NULL) {
 		stream->ops->started(stream);
+	} else {
+		BT_WARN("No callback for started set");
 	}
 }
 
@@ -468,6 +484,8 @@ static void unicast_client_ep_disabling_state(struct bt_audio_ep *ep,
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->disabled != NULL) {
 		stream->ops->disabled(stream);
+	} else {
+		BT_WARN("No callback for disabled set");
 	}
 }
 
@@ -488,6 +506,8 @@ static void unicast_client_ep_releasing_state(struct bt_audio_ep *ep,
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->stopped != NULL) {
 		stream->ops->stopped(stream);
+	} else {
+		BT_WARN("No callback for stopped set");
 	}
 
 	/* The Unicast Client shall terminate any CIS established for that ASE
