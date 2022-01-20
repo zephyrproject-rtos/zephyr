@@ -51,8 +51,8 @@ LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 #endif
 
 #define TIMX p_timer_obj[TIMG(dev)][TIDX(dev)]
-#define TIMG(dev) ((const struct counter_esp32_config *const)(dev->config)->group)
-#define TIDX(dev) ((const struct counter_esp32_config *const)(dev->config)->idx)
+#define TIMG(dev) (((const struct counter_esp32_config *const)(dev)->config))->group
+#define TIDX(dev) (((const struct counter_esp32_config *const)(dev)->config))->idx
 
 static void counter_esp32_isr(void *arg);
 
@@ -174,6 +174,7 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 				   const struct counter_alarm_cfg *alarm_cfg)
 {
 	ARG_UNUSED(chan_id);
+	struct counter_esp32_data *data = dev->data;
 	uint32_t now;
 
 	counter_esp32_get_value(dev, &now);
