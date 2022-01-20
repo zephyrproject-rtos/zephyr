@@ -30,7 +30,7 @@
 
 	/* VIMS RAM configurable in CCFG as GPRAM or cache for FLASH (default) */
 	sram1: memory@11000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x11000000 0x2000>;
 		zephyr,memory-region = "SRAM1";
 	};

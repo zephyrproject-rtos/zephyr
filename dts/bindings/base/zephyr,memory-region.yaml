@@ -1,11 +1,16 @@
 # Copyright (c) 2021, CSIRO
 # SPDX-License-Identifier: Apache-2.0
-# Common fields for devices resulting in linker memory regions
+
+description: Compatible for devices resulting in linker memory regions
+
+compatible: "zephyr,memory-region"
+
+include: base.yaml
 
 properties:
   zephyr,memory-region:
     type: string
-    required: false
+    required: true
     description: |
       Signify that this node should result in a dedicated linker script
       memory region in the final executable. The region address and size

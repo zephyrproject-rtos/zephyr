@@ -28,12 +28,3 @@ child-binding:
           type: array
           description: register space
           required: true
-       zephyr,memory-region:
-          type: string
-          required: false
-          description: |
-            Signify that this node should result in a dedicated linker script
-            memory region in the final executable. The region address and size
-            is taken from the <reg> property, while the name is the value of
-            this property. This must only be added to memory-mapped partitions,
-            not partitions on external flash.
