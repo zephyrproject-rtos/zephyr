@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#include <dt-bindings/pinctrl/mchp-xec-pinctrl.h>
 #include <soc.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
@@ -368,6 +369,7 @@ static void gpio_gpio_xec_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, girq_result);
 }
 
+/* GPIO driver official API table */
 static const struct gpio_driver_api gpio_xec_driver_api = {
 	.pin_configure = gpio_xec_configure,
 	.port_get_raw = gpio_xec_port_get_raw,
