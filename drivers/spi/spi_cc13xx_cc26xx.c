@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 
 #include <drivers/spi.h>
 #include <pm/device.h>
-#include <pm/pm.h>
+#include <pm/policy.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/ssi.h>
@@ -142,7 +142,7 @@ static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 	spi_context_lock(ctx, false, NULL, config);
 
 #ifdef CONFIG_PM
-	pm_constraint_set(PM_STATE_STANDBY);
+	pm_policy_state_lock_get(PM_STATE_STANDBY);
 #endif
 
 	err = spi_cc13xx_cc26xx_configure(dev, config);
@@ -178,7 +178,7 @@ static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 
 done:
 #ifdef CONFIG_PM
-	pm_constraint_release(PM_STATE_STANDBY);
+	pm_policy_state_lock_put(PM_STATE_STANDBY);
 #endif
 	spi_context_release(ctx, err);
 	return err;
