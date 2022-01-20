@@ -81,22 +81,7 @@ MEMORY
     {
     FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
-    /* TI CCFG Registers */
-    LINKER_DT_REGION_FROM_NODE(DT_NODELABEL(ti_ccfg_partition), rwx)
-    /* Data & Instruction Tightly Coupled Memory */
-    LINKER_DT_REGION_FROM_NODE(DT_CHOSEN(zephyr_itcm), rw)
-    LINKER_DT_REGION_FROM_NODE(DT_CHOSEN(zephyr_dtcm), rw)
-    /* STM32 Core Coupled Memory */
-    LINKER_DT_REGION_FROM_NODE(DT_CHOSEN(zephyr_ccm), rw)
-    /* STM32WB IPC RAM */
-    LINKER_DT_REGION_FROM_NODE(DT_NODELABEL(sram1), rw)
-    LINKER_DT_REGION_FROM_NODE(DT_NODELABEL(sram2), rw)
-    /* STM32 alternate RAM configurations */
-    LINKER_DT_REGION_FROM_NODE(DT_NODELABEL(sram3), rw)
-    LINKER_DT_REGION_FROM_NODE(DT_NODELABEL(sram4), rw)
-    LINKER_DT_REGION_FROM_NODE(DT_NODELABEL(sdram1), rw)
-    LINKER_DT_REGION_FROM_NODE(DT_NODELABEL(sdram2), rw)
-    LINKER_DT_REGION_FROM_NODE(DT_NODELABEL(backup_sram), rw)
+    LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
     }
