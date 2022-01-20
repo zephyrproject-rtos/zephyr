@@ -455,8 +455,8 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 				   struct dma_status *status)
 {
-	struct dma_mcux_lpc_dma_data *data = dev->data;
-	uint32_t virtual_channel = data->channel_index[channel];
+	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
+	uint32_t virtual_channel = dev_data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	if (data->busy) {
