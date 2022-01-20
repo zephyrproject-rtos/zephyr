@@ -606,12 +606,47 @@ struct gen_hash_state {
 	int err;
 };
 
+union hash_attr_value {
+	/* Bluetooth Core Specification Version 5.3 | Vol 3, Part G
+	 * Table 3.1: Service declaration
+	 */
+	union {
+		uint16_t uuid16;
+		uint8_t  uuid128[BT_UUID_SIZE_128];
+	} __packed service;
+	/* Bluetooth Core Specification Version 5.3 | Vol 3, Part G
+	 * Table 3.2: Include declaration
+	 */
+	struct {
+		uint16_t attribute_handle;
+		uint16_t end_group_handle;
+		uint16_t uuid16;
+	} __packed inc;
+	/* Bluetooth Core Specification Version 5.3 | Vol 3, Part G
+	 * Table 3.3: Characteristic declaration
+	 */
+	struct {
+		uint8_t properties;
+		uint16_t value_handle;
+		union {
+			uint16_t uuid16;
+			uint8_t  uuid128[BT_UUID_SIZE_128];
+		} __packed;
+	} __packed chrc;
+	/* Bluetooth Core Specification Version 5.3 | Vol 3, Part G
+	 * Table 3.5: Characteristic Properties bit field
+	 */
+	struct {
+		uint16_t properties;
+	} __packed cep;
+} __packed;
+
 static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 			  void *user_data)
 {
 	struct gen_hash_state *state = user_data;
 	struct bt_uuid_16 *u16;
-	uint8_t data[16];
+	uint8_t data[sizeof(union hash_attr_value)];
 	ssize_t len;
 	uint16_t value;
 
