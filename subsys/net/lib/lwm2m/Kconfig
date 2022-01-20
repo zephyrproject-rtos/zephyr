@@ -434,6 +434,13 @@ config LWM2M_COMPOSITE_PATH_LIST_SIZE
 	help
 	  Define path list size for Composite Read and send operation.
 
+config LWM2M_RW_CBOR_SUPPORT
+	bool "support for CBOR writer [EXPERIMENTAL]"
+	select ZCBOR
+	select EXPERIMENTAL
+	help
+	  Include support for writing CBOR data
+
 config LWM2M_DEVICE_PWRSRC_MAX
 	int "Maximum # of device power source records"
 	default 5
