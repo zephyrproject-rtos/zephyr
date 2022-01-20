@@ -105,7 +105,10 @@ static int out_func(int c, void *ctx)
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		/* Backend must be thread safe in synchronous operation. */
-		out_ctx->func((uint8_t *)&c, 1, out_ctx->control_block->ctx);
+		/* Need that step for big endian */
+		char x = (char)c;
+
+		out_ctx->func((uint8_t *)&x, 1, out_ctx->control_block->ctx);
 		return 0;
 	}
 
