@@ -666,6 +666,197 @@ static void test_log_printk(void)
 	process_and_validate(false, true);
 }
 
+#define MOCK_LOG_BACKEND_RECORD_WITH_LEVEL(str, level) mock_log_backend_record( \
+	&backend1, LOG_CURRENT_MODULE_ID(), \
+	CONFIG_LOG_DOMAIN_ID, level, \
+	exp_timestamp++, \
+	str);
+
+static void test_log_n(void)
+{
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+
+	log_setup(false);
+
+	/**
+	 * Test at least once at each level
+	 */
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 0", LOG_LEVEL_INF);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 1", LOG_LEVEL_INF);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 2", LOG_LEVEL_INF);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 3", LOG_LEVEL_INF);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 4", LOG_LEVEL_INF);
+	for (size_t i = 0; i < 10; i++) {
+		LOG_INF_N(5, "test %zu", i);
+	}
+
+	while (LOG_PROCESS()) {
+	}
+
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 0", LOG_LEVEL_ERR);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 1", LOG_LEVEL_ERR);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 2", LOG_LEVEL_ERR);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 3", LOG_LEVEL_ERR);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 4", LOG_LEVEL_ERR);
+	for (size_t i = 0; i < 10; i++) {
+		LOG_ERR_N(5, "test %zu", i);
+	}
+
+	while (LOG_PROCESS()) {
+	}
+
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 0", LOG_LEVEL_WRN);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 1", LOG_LEVEL_WRN);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 2", LOG_LEVEL_WRN);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 3", LOG_LEVEL_WRN);
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test 4", LOG_LEVEL_WRN);
+	for (size_t i = 0; i < 10; i++) {
+		LOG_WRN_N(5, "test %zu", i);
+	}
+
+	while (LOG_PROCESS()) {
+	}
+
+	/**
+	 * Debug level tests may be prefixed with the function name
+	 */
+	static char test_0_str[32];
+	static char test_1_str[32];
+	static char test_2_str[32];
+	static char test_3_str[32];
+	static char test_4_str[32];
+
+	if (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG)) {
+		snprintk(test_0_str, sizeof(test_0_str), "%s: test 0", __func__);
+		snprintk(test_1_str, sizeof(test_1_str), "%s: test 1", __func__);
+		snprintk(test_2_str, sizeof(test_2_str), "%s: test 2", __func__);
+		snprintk(test_3_str, sizeof(test_3_str), "%s: test 3", __func__);
+		snprintk(test_4_str, sizeof(test_4_str), "%s: test 4", __func__);
+	} else {
+		snprintk(test_0_str, sizeof(test_0_str), "test 0");
+		snprintk(test_1_str, sizeof(test_1_str), "test 1");
+		snprintk(test_2_str, sizeof(test_2_str), "test 2");
+		snprintk(test_3_str, sizeof(test_3_str), "test 3");
+		snprintk(test_4_str, sizeof(test_4_str), "test 4");
+	}
+
+	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+		MOCK_LOG_BACKEND_RECORD_WITH_LEVEL(test_0_str, LOG_LEVEL_DBG);
+		MOCK_LOG_BACKEND_RECORD_WITH_LEVEL(test_1_str, LOG_LEVEL_DBG);
+		MOCK_LOG_BACKEND_RECORD_WITH_LEVEL(test_2_str, LOG_LEVEL_DBG);
+		MOCK_LOG_BACKEND_RECORD_WITH_LEVEL(test_3_str, LOG_LEVEL_DBG);
+		MOCK_LOG_BACKEND_RECORD_WITH_LEVEL(test_4_str, LOG_LEVEL_DBG);
+		for (size_t i = 0; i < 10; i++) {
+			LOG_DBG_N(5, "test %zu", i);
+		}
+	}
+
+	while (LOG_PROCESS()) {
+	}
+
+	/**
+	 * Test zero (silenced log) and one (log once)
+	 */
+	for (size_t i = 0; i < 10; i++) {
+		LOG_INF_N(0, "test zero");
+	}
+	MOCK_LOG_BACKEND_RECORD_WITH_LEVEL("test one", LOG_LEVEL_INF);
+	for (size_t i = 0; i < 10; i++) {
+		LOG_INF_N(1, "test one");
+	}
+	while (LOG_PROCESS()) {
+	}
+
+	mock_log_backend_validate(&backend1, false);
+}
+
+#define MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, level) \
+	mock_log_backend_generic_record(&backend1, LOG_CURRENT_MODULE_ID(), \
+					CONFIG_LOG_DOMAIN_ID, \
+					level, \
+					exp_timestamp++, str, \
+					data, sizeof(data));
+
+static void test_log_n_hexdump(void)
+{
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+
+	log_setup(false);
+
+	static uint8_t data[] = {1, 2, 3, 4};
+	char *str = "hexdump";
+
+	/**
+	 * Test at least once at each level
+	 */
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_INF);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_INF);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_INF);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_INF);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_INF);
+	for (size_t i = 0; i < 10; i++) {
+		LOG_HEXDUMP_INF_N(5, data, sizeof(data), str);
+	}
+
+	while (LOG_PROCESS()) {
+	}
+
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_WRN);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_WRN);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_WRN);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_WRN);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_WRN);
+	for (size_t i = 0; i < 10; i++) {
+		LOG_HEXDUMP_WRN_N(5, data, sizeof(data), str);
+	}
+
+	while (LOG_PROCESS()) {
+	}
+
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_ERR);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_ERR);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_ERR);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_ERR);
+	MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, str, LOG_LEVEL_ERR);
+	for (size_t i = 0; i < 10; i++) {
+		LOG_HEXDUMP_ERR_N(5, data, sizeof(data), str);
+	}
+
+	while (LOG_PROCESS()) {
+	}
+
+	/**
+	 * Debug level tests may be prefixed with the function name
+	 */
+	static char test_str[256];
+
+	if (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG)) {
+		snprintk(test_str, sizeof(test_str), "%s: hexdump", __func__);
+	} else {
+		snprintk(test_str, sizeof(test_str), "hexdump");
+	}
+	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+		MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, test_str, LOG_LEVEL_DBG);
+		MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, test_str, LOG_LEVEL_DBG);
+		MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, test_str, LOG_LEVEL_DBG);
+		MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, test_str, LOG_LEVEL_DBG);
+		MOCK_LOG_BACKEND_RECORD_HEXDUMP_WITH_LEVEL(data, test_str, LOG_LEVEL_DBG);
+		for (size_t i = 0; i < 10; i++) {
+			if (IS_ENABLED(CONFIG_LOG1)) {
+				LOG_HEXDUMP_DBG_N(5, data, sizeof(data), test_str);
+			}
+			else {
+				LOG_HEXDUMP_DBG_N(5, data, sizeof(data), "hexdump");
+			}
+		}
+	}
+
+	while (LOG_PROCESS()) {
+	}
+
+	mock_log_backend_validate(&backend1, false);
+}
+
 /* Disable backends because same suite may be executed again but compiled by C++ */
 static void log_api_suite_teardown(void *data)
 {
@@ -737,3 +928,5 @@ WRAP_TEST(test_log_from_declared_module, TEST_SUFFIX)
 WRAP_TEST(test_log_msg_dropped_notification, TEST_SUFFIX)
 WRAP_TEST(test_log_panic, TEST_SUFFIX)
 WRAP_TEST(test_log_printk, TEST_SUFFIX)
+WRAP_TEST(test_log_n, TEST_SUFFIX)
+WRAP_TEST(test_log_n_hexdump, TEST_SUFFIX)

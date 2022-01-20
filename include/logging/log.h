@@ -79,7 +79,6 @@ extern "C" {
  *
  * @details It's meant to write generic user oriented messages.
  *
- * @param n The number of times this log will be executed before it is silenced.
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
@@ -393,7 +392,6 @@ extern "C" {
  * @brief Write an ERROR hexdump message associated with the instance to the
  *        log, but but only the first @p n times.
  *
- * @param n The number of times this log will be executed before it is silenced.
  * Message is associated with specific instance of the module which has
  * independent filtering settings (if runtime filtering is enabled) and
  * message prefix (\<module_name\>.\<instance_name\>). It's meant to report
@@ -427,7 +425,6 @@ extern "C" {
  * @brief Write a WARNING level hexdump message associated with the instance to
  *        the log, but but only the first @p n times.
  *
- * @param n The number of times this log will be executed before it is silenced.
  * @details It's meant to register messages related to unusual situations that
  * are not necessarily errors.
  *
