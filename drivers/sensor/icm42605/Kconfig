@@ -11,7 +11,7 @@ menuconfig ICM42605
 
 if ICM42605
 
-choice
+choice ICM42605_TRIGGER_MODE
 	prompt "Trigger mode"
 	default ICM42605_TRIGGER_GLOBAL_THREAD
 	help
