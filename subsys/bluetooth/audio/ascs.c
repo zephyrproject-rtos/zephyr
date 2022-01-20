@@ -248,6 +248,8 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 
 	if (ops != NULL && ops->recv != NULL) {
 		ops->recv(ep->stream, buf);
+	} else {
+		BT_WARN("No callback for recv set");
 	}
 }
 
@@ -260,6 +262,8 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(ep->stream);
+	} else {
+		BT_WARN("No callback for connected set");
 	}
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
@@ -282,6 +286,8 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	if (ops != NULL && ops->disconnected != NULL) {
 		ops->disconnected(stream, reason);
+	} else {
+		BT_WARN("No callback for disconnected set");
 	}
 
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
