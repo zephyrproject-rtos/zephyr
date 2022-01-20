@@ -9,9 +9,6 @@
 #include <sys_clock.h>
 #include <sys/time_units.h>
 
-#include <logging/log.h>
-LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
-
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	uint8_t num_cpu_states;
