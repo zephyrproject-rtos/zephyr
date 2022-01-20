@@ -1372,39 +1372,43 @@ enum ext_timer_idx {
 #define TMRCE			ECREG(EC_REG_BASE_ADDR + 0x290B)
 #define TMEIE			ECREG(EC_REG_BASE_ADDR + 0x290C)
 
-/**
- *
+/*
  * (2Cxxh) Platform Environment Control Interface (PECI)
- *
  */
-#define HOSTAR			ECREG(EC_REG_BASE_ADDR + 0x2C00)
-#define TEMPERR			BIT(7)
-#define BUSERR			BIT(6)
-#define EXTERR			BIT(5)
-#define WR_FCS_ERR		BIT(3)
-#define RD_FCS_ERR		BIT(2)
-#define FINISH			BIT(1)
-#define HOBY			BIT(0)
-#define HOCTLR			ECREG(EC_REG_BASE_ADDR + 0x2C01)
-#define FIFOCLR			BIT(5)
-#define FCSERR_ABT		BIT(4)
-#define PECIHEN			BIT(3)
-#define CONCTRL			BIT(2)
-#define AWFCS_EN		BIT(1)
-#define PECISTART		BIT(0)
-#define HOCMDR			ECREG(EC_REG_BASE_ADDR + 0x2C02)
-#define HOTRADDR		ECREG(EC_REG_BASE_ADDR + 0x2C03)
-#define HOWRLR			ECREG(EC_REG_BASE_ADDR + 0x2C04)
-#define HORDLR			ECREG(EC_REG_BASE_ADDR + 0x2C05)
-#define HOWRDR			ECREG(EC_REG_BASE_ADDR + 0x2C06)
-#define HORDDR			ECREG(EC_REG_BASE_ADDR + 0x2C07)
-#define HOCTL2R			ECREG(EC_REG_BASE_ADDR + 0x2C08)
-#define RWFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C09)
-#define RRFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C0A)
-#define WFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C0B)
-#define RFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C0C)
-#define AWFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C0D)
-#define PADCTLR			ECREG(EC_REG_BASE_ADDR + 0x2C0E)
+#ifndef __ASSEMBLER__
+struct peci_it8xxx2_regs {
+	/* 0x00: Host Status */
+	volatile uint8_t HOSTAR;
+	/* 0x01: Host Control */
+	volatile uint8_t HOCTLR;
+	/* 0x02: Host Command */
+	volatile uint8_t HOCMDR;
+	/* 0x03: Host Target Address */
+	volatile uint8_t HOTRADDR;
+	/* 0x04: Host Write Length */
+	volatile uint8_t HOWRLR;
+	/* 0x05: Host Read Length */
+	volatile uint8_t HORDLR;
+	/* 0x06: Host Write Data */
+	volatile uint8_t HOWRDR;
+	/* 0x07: Host Read Data */
+	volatile uint8_t HORDDR;
+	/* 0x08: Host Control 2 */
+	volatile uint8_t HOCTL2R;
+	/* 0x09: Received Write FCS value */
+	volatile uint8_t RWFCSV;
+	/* 0x0A: Received Read FCS value */
+	volatile uint8_t RRFCSV;
+	/* 0x0B: Write FCS Value */
+	volatile uint8_t WFCSV;
+	/* 0x0C: Read FCS Value */
+	volatile uint8_t RFCSV;
+	/* 0x0D: Assured Write FCS Value */
+	volatile uint8_t AWFCSV;
+	/* 0x0E: Pad Control */
+	volatile uint8_t PADCTLR;
+};
+#endif /* !__ASSEMBLER__ */
 
 /**
  *
