@@ -4,7 +4,7 @@ description: Cortex-M ITCM (Instruction Tightly Coupled Memory)
 
 compatible: "arm,itcm"
 
-include: [base.yaml, mem-region.yaml]
+include: base.yaml
 
 properties:
     reg:

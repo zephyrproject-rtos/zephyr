@@ -4,7 +4,7 @@ description: Xilinx Zynq OCM (On-Chip Memory)
 
 compatible: "xlnx,zynq-ocm"
 
-include: [base.yaml, mem-region.yaml]
+include: base.yaml
 
 properties:
     reg:

@@ -37,27 +37,28 @@
 
 /** @cond INTERNAL_HIDDEN */
 
+#define _DT_COMPATIBLE	zephyr_memory_region
+
 /**
  * @brief Declare a memory region
  *
  * @param node_id devicetree node identifier
  * @param attr region attributes
  */
-#define _REGION_DECLARE(node_id, attr)		    \
-	LINKER_DT_NODE_REGION_NAME(node_id)(attr) : \
-	ORIGIN = DT_REG_ADDR(node_id),		    \
+#define _REGION_DECLARE(node_id)	      \
+	LINKER_DT_NODE_REGION_NAME(node_id) : \
+	ORIGIN = DT_REG_ADDR(node_id),	      \
 	LENGTH = DT_REG_SIZE(node_id)
 
 /** @endcond */
 
 /**
- * @brief Generate a linker memory region from a devicetree node
+ * @brief Generate linker memory regions from the device tree nodes with
+ *        compatible 'zephyr,memory-region'
  *
- * @param node_id devicetree node identifier with a \<reg\> property defining
- *                region location and size
- * @param attr region attributes to use (rx, rw, ...)
+ * Note: for now we do not deal with MEMORY attributes since those are
+ * optional, not actually used by Zephyr and they will likely conflict with the
+ * MPU configuration.
  */
-#define LINKER_DT_REGION_FROM_NODE(node_id, attr)      \
-	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay), \
-		    (_REGION_DECLARE(node_id, attr)),  \
-		    ())
+#define LINKER_DT_REGIONS() \
+	DT_FOREACH_STATUS_OKAY(_DT_COMPATIBLE, _REGION_DECLARE)
