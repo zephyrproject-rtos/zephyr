@@ -3276,6 +3276,14 @@ static void hci_vs_init(void)
 static int hci_init(void)
 {
 	int err;
+#if defined(CONFIG_BT_HCI_SETUP)
+	if (bt_dev.drv->setup) {
+		err = bt_dev.drv->setup();
+		if (err) {
+			return err;
+		}
+	}
+#endif /* defined(CONFIG_BT_HCI_SETUP) */
 
 	err = common_init();
 	if (err) {
