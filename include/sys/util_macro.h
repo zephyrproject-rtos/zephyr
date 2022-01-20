@@ -591,6 +591,21 @@ extern "C" {
 #define MACRO_MAP_CAT_N(N, ...) MACRO_MAP_CAT_N_(N, __VA_ARGS__)
 
 /**
+ * @brief Silences a piece of code after a given number of executions.
+ *
+ * @param n    Number of times @p is executed before it is silenced
+ * @param code The code to execute and then silence
+ * @return The results of expanding the macro on each argument, all pasted
+ *         together
+ */
+#define DO_FIRST_N(n, code) \
+	static unsigned int UTIL_CAT(_do_n_cnt_, __LINE__); \
+	if (UTIL_CAT(_do_n_cnt_, __LINE__) < n) { \
+		UTIL_CAT(_do_n_cnt_, __LINE__)++; \
+		code; \
+	}
+
+/**
  * @}
  */
 
