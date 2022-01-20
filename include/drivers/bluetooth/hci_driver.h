@@ -185,6 +185,21 @@ struct bt_hci_driver {
 	 * @return 0 on success or negative error number on failure.
 	 */
 	int (*send)(struct net_buf *buf);
+
+#if defined(CONFIG_BT_HCI_SETUP) || defined(__DOXYGEN__)
+	/**
+	 * @brief HCI vendor-specific setup
+	 *
+	 * Executes vendor-specific commands sequence to initialize
+	 * BT Controller before BT Host executes Reset sequence.
+	 *
+	 * @note @kconfig{CONFIG_BT_HCI_SETUP} must be selected for this
+	 * field to be available.
+	 *
+	 * @return 0 on success or negative error number on failure.
+	 */
+	int (*setup)(void);
+#endif /* defined(CONFIG_BT_HCI_SETUP) || defined(__DOXYGEN__)*/
 };
 
 /**
