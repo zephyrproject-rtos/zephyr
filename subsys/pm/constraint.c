@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <string.h>
-#include <device.h>
 #include <sys/atomic.h>
 #include <pm/state.h>
+#include <toolchain.h>
 
 static atomic_t power_state_disable_count[PM_STATE_COUNT];
 
