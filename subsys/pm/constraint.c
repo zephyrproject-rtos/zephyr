@@ -10,9 +10,6 @@
 #include <sys/atomic.h>
 #include <pm/state.h>
 
-#include <logging/log.h>
-LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
-
 static atomic_t power_state_disable_count[PM_STATE_COUNT];
 
 void pm_constraint_set(enum pm_state state)
