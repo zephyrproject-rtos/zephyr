@@ -21,6 +21,12 @@
 			reg = <0 DT_SIZE_M(64)>;
 		};
 
+		ocm: memory@fffc0000 {
+			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
+			reg = <0xfffc0000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "OCM";
+		};
+
 		uart0: uart@ff000000 {
 			compatible = "xlnx,xuartps";
 			reg = <0xff000000 0x4c>;
