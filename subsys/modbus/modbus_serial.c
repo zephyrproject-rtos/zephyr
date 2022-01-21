@@ -43,6 +43,14 @@ static void modbus_serial_tx_off(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 
+	/* Must wait till the transmission is complete or
+	 * tranceiver could be disabled before all data has
+	 * been transmitted and message will be corrupted.
+	 */
+	while (!uart_irq_tx_complete(cfg->dev)) {
+
+	}
+
 	uart_irq_tx_disable(cfg->dev);
 	if (cfg->de != NULL) {
 		gpio_pin_set(cfg->de->port, cfg->de->pin, 0);
