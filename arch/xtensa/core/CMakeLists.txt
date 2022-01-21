@@ -22,6 +22,10 @@ zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 
+if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
+  zephyr_library_sources(xcc_stubs.c)
+endif()
+
 zephyr_library_include_directories(include)
 
 add_subdirectory(startup)
