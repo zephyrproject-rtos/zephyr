@@ -430,18 +430,6 @@ void test_user_futex_bad(void)
 	ret = k_futex_wake(&no_access_futex, false);
 	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
 
-	/* Access to memory, but not a kernel object */
-	ret = k_futex_wait((struct k_futex *)&not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
-	ret = k_futex_wake((struct k_futex *)&not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
-
-	/* Access to memory, but wrong object type */
-	ret = k_futex_wait((struct k_futex *)&also_not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
-	ret = k_futex_wake((struct k_futex *)&also_not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
-
 	/* Wait with unexpected value */
 	atomic_set(&simple_futex.val, 100);
 	ret = k_futex_wait(&simple_futex, 0, K_NO_WAIT);
