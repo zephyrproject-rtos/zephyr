@@ -36,15 +36,11 @@ struct gpio_nct38xx_port_data {
 	struct k_sem lock;
 };
 
-/* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct gpio_nct38xx_port_config *)(dev)->config)
-#define DRV_DATA(dev) ((struct gpio_nct38xx_port_data *)(dev)->data)
-
 /* GPIO api functions */
 static int gpio_nct38xx_pin_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 	uint32_t mask = BIT(pin);
 	uint8_t reg, new_reg;
 	int ret;
@@ -152,7 +148,7 @@ done:
 
 static int gpio_nct38xx_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
 
 	return nct38xx_reg_read_byte(config->nct38xx_dev,
 				     NCT38XX_REG_GPIO_DATA_IN(config->gpio_port), (uint8_t *)value);
@@ -161,8 +157,8 @@ static int gpio_nct38xx_port_get_raw(const struct device *dev, gpio_port_value_t
 static int gpio_nct38xx_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 					    gpio_port_value_t value)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 	uint8_t reg, new_reg;
 	int ret;
 
@@ -185,8 +181,8 @@ done:
 
 static int gpio_nct38xx_port_set_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 	uint8_t reg, new_reg;
 	int ret;
 
@@ -209,8 +205,8 @@ done:
 
 static int gpio_nct38xx_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 	uint8_t reg, new_reg;
 	int ret;
 
@@ -233,8 +229,8 @@ done:
 
 static int gpio_nct38xx_port_toggle_bits(const struct device *dev, gpio_port_pins_t mask)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 	uint8_t reg, new_reg;
 	int ret;
 
@@ -258,8 +254,8 @@ done:
 static int gpio_nct38xx_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 						enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 	uint8_t reg, new_reg, rise, new_rise, fall, new_fall;
 	int ret;
 	uint32_t mask = BIT(pin);
@@ -380,15 +376,15 @@ done:
 static int gpio_nct38xx_manage_callback(const struct device *dev, struct gpio_callback *callback,
 					bool set)
 {
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	struct gpio_nct38xx_port_data *const data = dev->data;
 
 	return gpio_manage_callback(&data->cb_list_gpio, callback, set);
 }
 
 int gpio_nct38xx_dispatch_port_isr(const struct device *dev)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 	uint8_t alert_pins, mask;
 	int ret;
 
@@ -445,8 +441,8 @@ static const struct gpio_driver_api gpio_nct38xx_driver = {
 
 static int gpio_nct38xx_port_init(const struct device *dev)
 {
-	const struct gpio_nct38xx_port_config *const config = DRV_CONFIG(dev);
-	struct gpio_nct38xx_port_data *const data = DRV_DATA(dev);
+	const struct gpio_nct38xx_port_config *const config = dev->config;
+	struct gpio_nct38xx_port_data *const data = dev->data;
 
 	if (!device_is_ready(config->nct38xx_dev)) {
 		LOG_ERR("%s is not ready", config->nct38xx_dev->name);
