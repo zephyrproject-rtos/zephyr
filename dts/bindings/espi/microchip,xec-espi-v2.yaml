@@ -6,7 +6,7 @@ description: Microchip ESPI V2 controller
 
 compatible: "microchip,xec-espi-v2"
 
-include: espi-controller.yaml
+include: [espi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -27,6 +27,12 @@ properties:
       type: array
       required: true
       description: eSPI PCR register index and bit position
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
 
     "#girq-cells":
       type: int
