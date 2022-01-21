@@ -2003,6 +2003,9 @@ static void store_bis_broadcaster_info(const struct bt_hci_evt_le_big_complete *
 	/* Transform to n * 1.25ms */
 	broadcaster_info->pto = info->iso_interval * evt->pto;
 	broadcaster_info->max_pdu = sys_le16_to_cpu(evt->max_pdu);
+
+	info->can_send = true;
+	info->can_recv = false;
 }
 
 void hci_le_big_complete(struct net_buf *buf)
@@ -2178,6 +2181,9 @@ static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_est
 	/* Transform to n * 1.25ms */
 	receiver_info->pto = info->iso_interval * evt->pto;
 	receiver_info->max_pdu = sys_le16_to_cpu(evt->max_pdu);
+
+	info->can_send = false;
+	info->can_recv = true;
 }
 
 void hci_le_big_sync_established(struct net_buf *buf)
