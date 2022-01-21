@@ -16,6 +16,12 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#else
+#define SETTINGS_PARTITION FLASH_AREA_ID(storage)
+#endif
+
 struct settings_nvs_read_fn_arg {
 	struct nvs_fs *fs;
 	uint16_t id;
@@ -277,12 +283,12 @@ int settings_backend_init(void)
 	struct flash_sector hw_flash_sector;
 	uint32_t sector_cnt = 1;
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fa);
+	rc = flash_area_open(SETTINGS_PARTITION, &fa);
 	if (rc) {
 		return rc;
 	}
 
-	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_cnt,
+	rc = flash_area_get_sectors(SETTINGS_PARTITION, &sector_cnt,
 				    &hw_flash_sector);
 	if (rc == -ENODEV) {
 		return rc;
