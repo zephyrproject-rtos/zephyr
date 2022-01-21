@@ -224,6 +224,8 @@ following target architectures:
 
 * :abbr:`ARC (Argonaut RISC Core)`
 
+* :abbr:`MIPS (Microprocessor without Interlocked Pipeline Stages)`
+
 * :abbr:`Nios II`
 
 * :abbr:`RISC-V`
