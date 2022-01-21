@@ -51,6 +51,7 @@ struct iso_recv_stats {
 struct iso_chan_work {
 	struct bt_iso_chan chan;
 	struct k_work_delayable send_work;
+	struct bt_iso_info info;
 } iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 
 static enum benchmark_role role;
@@ -154,11 +155,11 @@ static void iso_send(struct bt_iso_chan *chan)
 	struct net_buf *buf;
 	struct iso_chan_work *chan_work;
 
-	if (chan->qos->tx == NULL || chan->qos->tx->sdu == 0) {
+	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
+
+	if (!chan_work->info.can_send) {
 		return;
 	}
-
-	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
 	if (buf == NULL) {
@@ -259,7 +260,16 @@ static void iso_recv(struct bt_iso_chan *chan,
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	struct iso_chan_work *chan_work;
+	int err;
+
 	LOG_INF("ISO Channel %p connected", chan);
+
+	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
+	err = bt_iso_chan_get_info(chan, &chan_work->info);
+	if (err != 0) {
+		LOG_ERR("Could get info about chan %p: %d", chan, err);
+	}
 
 	/* If multiple CIS was created, this will be the value of the last
 	 * created in the CIG
