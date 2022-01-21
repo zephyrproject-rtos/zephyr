@@ -307,6 +307,10 @@ extern char __dtcm_end[];
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+extern char __ocm_data_start[];
+extern char __ocm_data_end[];
+extern char __ocm_bss_start[];
+extern char __ocm_bss_end[];
 extern char __ocm_start[];
 extern char __ocm_end[];
 extern char __ocm_size[];
