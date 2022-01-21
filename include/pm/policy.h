@@ -24,6 +24,15 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Callback to notify when maximum latency changes.
+ *
+ * @param latency New maximum latency. Positive value represents latency in
+ * microseconds. SYS_FOREVER_US value lifts the latency constraint. Other values
+ * are forbidden.
+ */
+typedef void (*pm_policy_latency_changed_cb_t)(int32_t latency);
+
 /** @brief Latency request. */
 struct pm_policy_latency_request {
 	sys_snode_t node;
@@ -115,6 +124,13 @@ void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
  * @param req Latency request.
  */
 void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
+
+/**
+ * @brief Set the callback to be called when maximum latency changes.
+ *
+ * @param cb Callback function (NULL to disable).
+ */
+void pm_policy_latency_changed(pm_policy_latency_changed_cb_t cb);
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state)
 {
