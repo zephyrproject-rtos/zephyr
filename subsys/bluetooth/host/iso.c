@@ -258,7 +258,7 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 	 * in the controller.
 	 */
 
-	if (tx_qos != NULL) {
+	if (tx_qos != NULL && chan->iso->iso.can_send) {
 		if (tx_qos->path != NULL) { /* Use application path */
 			in_path = tx_qos->path;
 		} else { /* else fallback to HCI path */
@@ -266,7 +266,7 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 		}
 	}
 
-	if (rx_qos != NULL) {
+	if (rx_qos != NULL && chan->iso->iso.can_recv) {
 		if (rx_qos->path != NULL) { /* Use application path */
 			out_path = rx_qos->path;
 		} else { /* else fallback to HCI path */
