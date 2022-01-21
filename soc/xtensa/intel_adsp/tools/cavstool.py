@@ -10,6 +10,7 @@ import time
 import subprocess
 import ctypes
 import mmap
+import argparse
 
 logging.basicConfig()
 log = logging.getLogger("cavs-fw")
@@ -32,7 +33,7 @@ def map_regs():
     if os.path.exists(f"{pcidir}/driver"):
         mod = os.path.basename(os.readlink(f"{pcidir}/driver/module"))
         log.warning(f"Existing driver found!  Unloading \"{mod}\" module")
-        runx(f"rmmod {mod}")
+        runx(f"rmmod -f {mod}")
 
     # Disengage runtime power management so the kernel doesn't put it to sleep
     with open(f"{pcidir}/power/control", "w") as ctrl:
@@ -165,7 +166,11 @@ def runx(cmd):
     return subprocess.check_output(cmd, shell=True).decode().rstrip()
 
 def load_firmware(fw_file):
-    fw_bytes = open(fw_file, "rb").read()
+    try:
+        fw_bytes = open(fw_file, "rb").read()
+    except Exception:
+        log.error(f"Could not read firmware file: `{fw_file}'")
+        sys.exit(1)
 
     (magic, sz) = struct.unpack("4sI", fw_bytes[0:8])
     if magic == b'XMan':
@@ -266,6 +271,8 @@ def win_hdr():
 def winstream_read(last_seq):
     while True:
         (wlen, start, end, seq) = win_hdr()
+        if last_seq == 0:
+            last_seq = seq if args.no_history else (seq - ((end - start) % wlen))
         if seq == last_seq or start == end:
             return (seq, "")
         behind = seq - last_seq
@@ -282,12 +289,20 @@ def winstream_read(last_seq):
 
 async def main():
     global hda, sd, dsp, hda_ostream_id, cavs15
-    (hda, sd, dsp, hda_ostream_id, cavs15) = map_regs()
+    try:
+        (hda, sd, dsp, hda_ostream_id, cavs15) = map_regs()
+    except Exception:
+        log.error("Could not map device in sysfs; run as root.")
+        sys.exit(1)
+
     log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
 
-    load_firmware(sys.argv[1])
+    if not args.log_only:
+        load_firmware(args.fw_file)
+        time.sleep(0.1)
+        if not args.quiet:
+            sys.stdout.write("--\n")
 
-    sys.stdout.write("--\n")
     last_seq = 0
     while True:
         await asyncio.sleep(0.03)
@@ -295,6 +310,19 @@ async def main():
         if output:
             sys.stdout.write(output)
             sys.stdout.flush()
+
+ap = argparse.ArgumentParser(description="DSP loader/logger tool")
+ap.add_argument("-q", "--quiet", action="store_true",
+                help="No loader output, just DSP logging")
+ap.add_argument("-l", "--log-only", action="store_true",
+                help="Don't load firmware, just show log output")
+ap.add_argument("-n", "--no-history", action="store_true",
+                help="No current log buffer at start, just new output")
+ap.add_argument("fw_file", nargs="?", help="Firmware file")
+args = ap.parse_args()
+
+if args.quiet:
+    log.setLevel(logging.WARN)
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(main())
