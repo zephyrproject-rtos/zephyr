@@ -1041,10 +1041,6 @@ void gsm_ppp_start(const struct device *dev)
 
 	k_work_init_delayable(&gsm->gsm_configure_work, gsm_configure);
 	(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
-
-#if defined(CONFIG_GSM_MUX)
-	k_work_init_delayable(&gsm->rssi_work_handle, rssi_handler);
-#endif
 }
 
 void gsm_ppp_stop(const struct device *dev)
@@ -1167,6 +1163,10 @@ static int gsm_init(const struct device *dev)
 	k_work_queue_start(&gsm->workq, gsm_workq_stack, K_KERNEL_STACK_SIZEOF(gsm_workq_stack),
 			   K_PRIO_COOP(7), NULL);
 	k_thread_name_set(&gsm->workq.thread, "gsm_workq");
+
+#if defined(CONFIG_GSM_MUX)
+	k_work_init_delayable(&gsm->rssi_work_handle, rssi_handler);
+#endif
 
 	gsm->iface = ppp_net_if();
 	if (!gsm->iface) {
