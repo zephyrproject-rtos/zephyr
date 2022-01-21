@@ -5,9 +5,9 @@
  */
 
 #include <string.h>
+#include <sys/byteorder.h>
 #include "net/buf.h"
 #include "mgmt/mcumgr/buf.h"
-#include <tinycbor/compilersupport_p.h>
 
 NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_BUF_COUNT, CONFIG_MCUMGR_BUF_SIZE,
 		    CONFIG_MCUMGR_BUF_USER_DATA_SIZE, NULL);
@@ -42,48 +42,42 @@ static uint16_t
 cbor_nb_reader_get16(struct cbor_decoder_reader *d, int offset)
 {
 	struct cbor_nb_reader *cnr;
-	uint16_t val;
 
 	cnr = (struct cbor_nb_reader *) d;
 
-	if (offset < 0 || offset > cnr->nb->len - (int)sizeof(val)) {
+	if (offset < 0 || offset > cnr->nb->len - (int)sizeof(uint16_t)) {
 		return UINT16_MAX;
 	}
 
-	memcpy(&val, cnr->nb->data + offset, sizeof(val));
-	return cbor_ntohs(val);
+	return sys_get_be16(cnr->nb->data + offset);
 }
 
 static uint32_t
 cbor_nb_reader_get32(struct cbor_decoder_reader *d, int offset)
 {
 	struct cbor_nb_reader *cnr;
-	uint32_t val;
 
 	cnr = (struct cbor_nb_reader *) d;
 
-	if (offset < 0 || offset > cnr->nb->len - (int)sizeof(val)) {
+	if (offset < 0 || offset > cnr->nb->len - (int)sizeof(uint32_t)) {
 		return UINT32_MAX;
 	}
 
-	memcpy(&val, cnr->nb->data + offset, sizeof(val));
-	return cbor_ntohl(val);
+	return sys_get_be32(cnr->nb->data + offset);
 }
 
 static uint64_t
 cbor_nb_reader_get64(struct cbor_decoder_reader *d, int offset)
 {
 	struct cbor_nb_reader *cnr;
-	uint64_t val;
 
 	cnr = (struct cbor_nb_reader *) d;
 
-	if (offset < 0 || offset > cnr->nb->len - (int)sizeof(val)) {
+	if (offset < 0 || offset > cnr->nb->len - (int)sizeof(uint64_t)) {
 		return UINT64_MAX;
 	}
 
-	memcpy(&val, cnr->nb->data + offset, sizeof(val));
-	return cbor_ntohll(val);
+	return sys_get_be64(cnr->nb->data + offset);
 }
 
 static uintptr_t
