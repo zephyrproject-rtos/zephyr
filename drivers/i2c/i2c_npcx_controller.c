@@ -154,10 +154,10 @@ struct i2c_ctrl_data {
 
 #define DRV_DATA(dev) ((struct i2c_ctrl_data *)(dev)->data)
 
-#define HAL_I2C_INSTANCE(dev) (struct smb_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_I2C_INSTANCE(dev) ((struct smb_reg *)DRV_CONFIG(dev)->base)
 
 #define HAL_I2C_FIFO_INSTANCE(dev) \
-	(struct smb_fifo_reg *)(DRV_CONFIG(dev)->base)
+	((struct smb_fifo_reg *)DRV_CONFIG(dev)->base)
 
 /* Recommended I2C timing values are based on 15 MHz */
 static const struct npcx_i2c_timing_cfg npcx_15m_speed_confs[] = {

@@ -31,7 +31,7 @@ struct npcx_spi_fiu_data {
 /* Driver convenience defines */
 #define DRV_CONFIG(dev) ((const struct npcx_spi_fiu_config *)(dev)->config)
 #define DRV_DATA(dev) ((struct npcx_spi_fiu_data *)(dev)->data)
-#define HAL_INSTANCE(dev) (struct fiu_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct fiu_reg *)DRV_CONFIG(dev)->base)
 
 static inline void spi_npcx_fiu_cs_level(const struct device *dev, int level)
 {

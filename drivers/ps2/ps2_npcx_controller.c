@@ -69,7 +69,7 @@ struct ps2_npcx_ctrl_data {
 
 #define DRV_DATA(dev) ((struct ps2_npcx_ctrl_data *)(dev)->data)
 
-#define HAL_PS2_INSTANCE(dev) (struct ps2_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_PS2_INSTANCE(dev) ((struct ps2_reg *)DRV_CONFIG(dev)->base)
 
 static uint8_t ps2_npcx_ctrl_get_ch_clk_mask(uint8_t channel_id)
 {

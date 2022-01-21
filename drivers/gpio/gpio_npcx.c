@@ -47,7 +47,7 @@ struct gpio_npcx_data {
 
 #define DRV_DATA(dev) ((struct gpio_npcx_data *)(dev)->data)
 
-#define HAL_INSTANCE(dev) (struct gpio_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct gpio_reg *)DRV_CONFIG(dev)->base)
 
 /* Platform specific GPIO functions */
 const struct device *npcx_get_gpio_dev(int port)

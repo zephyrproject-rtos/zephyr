@@ -84,7 +84,7 @@ struct miwu_dev_callback miwu_cb;
 /* Driver convenience defines */
 #define DRV_CONFIG(dev) ((const struct wdt_npcx_config *)(dev)->config)
 #define DRV_DATA(dev) ((struct wdt_npcx_data *)(dev)->data)
-#define HAL_INSTANCE(dev) (struct twd_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct twd_reg *)DRV_CONFIG(dev)->base)
 
 /* WDT local inline functions */
 static inline int wdt_t0out_reload(const struct device *dev)

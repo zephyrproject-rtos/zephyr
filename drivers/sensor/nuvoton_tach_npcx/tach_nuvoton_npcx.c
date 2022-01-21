@@ -79,7 +79,7 @@ struct tach_npcx_data {
 
 #define DRV_DATA(dev) ((struct tach_npcx_data *)(dev)->data)
 
-#define HAL_INSTANCE(dev) (struct tach_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct tach_reg *)DRV_CONFIG(dev)->base)
 
 /* Maximum count of prescaler */
 #define NPCX_TACHO_PRSC_MAX 0xff
