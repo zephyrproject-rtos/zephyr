@@ -444,6 +444,14 @@ enum jesd216_dw15_qer_type {
 	JESD216_DW15_QER_S2B1v6 = 6,
 };
 
+#define JESD216_DW15_QER_VAL_NONE 0
+#define JESD216_DW15_QER_VAL_S2B1v1 1
+#define JESD216_DW15_QER_VAL_S1B6 2
+#define JESD216_DW15_QER_VAL_S2B7 3
+#define JESD216_DW15_QER_VAL_S2B1v4 4
+#define JESD216_DW15_QER_VAL_S2B1v5 5
+#define JESD216_DW15_QER_VAL_S2B1v6 6
+
 /* Decoded data from JESD216 DW15 */
 struct jesd216_bfp_dw15 {
 	/* If true clear NVECR bit 4 to disable HOLD/RESET */
