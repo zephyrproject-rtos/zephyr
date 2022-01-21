@@ -10,6 +10,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <string.h>
@@ -174,7 +175,9 @@ BUILD_ASSERT(DT_INST_PROP(0, address_size_32),
 	    "After entering 4 byte addressing mode, 4 byte addressing is expected");
 #endif
 
+#ifndef CONFIG_PM_DEVICE_RUNTIME
 static bool qspi_initialized;
+#endif
 
 static int qspi_device_init(const struct device *dev);
 static void qspi_device_uninit(const struct device *dev);
@@ -350,6 +353,9 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 
 static int qspi_device_init(const struct device *dev)
 {
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	return pm_device_runtime_get(dev);
+#else
 	struct qspi_nor_data *dev_data = dev->data;
 	nrfx_err_t res;
 	int ret = 0;
@@ -377,10 +383,18 @@ static int qspi_device_init(const struct device *dev)
 	qspi_unlock(dev);
 
 	return ret;
+#endif
 }
 
 static void qspi_device_uninit(const struct device *dev)
 {
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	int ret = pm_device_runtime_put(dev);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to schedule device sleep: %d", ret);
+	}
+#else
 	bool last = true;
 
 	qspi_lock(dev);
@@ -408,6 +422,7 @@ static void qspi_device_uninit(const struct device *dev)
 	}
 
 	qspi_unlock(dev);
+#endif
 }
 
 /* QSPI send custom command.
@@ -1171,7 +1186,16 @@ static int qspi_nor_configure(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable runtime power management: %d", ret);
+	} else {
+		LOG_DBG("Runtime power management enabled");
+	}
+#else
 	qspi_device_uninit(dev);
+#endif
 
 	/* now the spi bus is configured, we can verify the flash id */
 	if (qspi_nor_read_id(dev) != 0) {
@@ -1317,10 +1341,13 @@ static int qspi_nor_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
+#ifndef CONFIG_PM_DEVICE_RUNTIME
+		/* If PM_DEVICE_RUNTIME, we don't uninit after RESUME */
 		ret = qspi_device_init(dev);
 		if (ret < 0) {
 			return ret;
 		}
+#endif
 
 		if (nrfx_qspi_mem_busy_check() != NRFX_SUCCESS) {
 			return -EBUSY;
@@ -1357,7 +1384,10 @@ static int qspi_nor_pm_action(const struct device *dev,
 			return ret;
 		}
 
+#ifndef CONFIG_PM_DEVICE_RUNTIME
+		/* If PM_DEVICE_RUNTIME, we're immediately going to use the device */
 		qspi_device_uninit(dev);
+#endif
 		break;
 
 	default:
