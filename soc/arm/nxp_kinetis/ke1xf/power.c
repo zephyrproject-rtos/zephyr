@@ -25,15 +25,15 @@ __ramfunc static void wait_for_flash_prefetch_and_idle(void)
 }
 #endif /* CONFIG_XIP */
 
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info *info)
 {
-	switch (info.state) {
+	switch (info->state) {
 	case PM_STATE_RUNTIME_IDLE:
 		k_cpu_idle();
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
 		/* Set partial stop mode and enable deep sleep */
-		SMC->STOPCTRL = SMC_STOPCTRL_PSTOPO(info.substate_id);
+		SMC->STOPCTRL = SMC_STOPCTRL_PSTOPO(info->substate_id);
 		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 #ifdef CONFIG_XIP
 		wait_for_flash_prefetch_and_idle();
@@ -46,16 +46,16 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		}
 		break;
 	default:
-		LOG_WRN("Unsupported power state %u", info.state);
+		LOG_WRN("Unsupported power state %u", info->state);
 		break;
 	}
 }
 
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info *info)
 {
 	ARG_UNUSED(info);
 
-	if (info.state == PM_STATE_SUSPEND_TO_IDLE) {
+	if (info->state == PM_STATE_SUSPEND_TO_IDLE) {
 		/* Disable deep sleep upon exit */
 		SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk);
 	}

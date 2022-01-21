@@ -283,11 +283,11 @@ void cpu_mode_transition(gpc_cpu_mode_t mode, bool enable_standby)
  * SOC specific low power mode implementation
  * Drop to lowest power state possible given system's request
  */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info *info)
 {
 	/* Extract set point and GPC mode from the substate ID */
-	uint8_t set_point = IMX_SPC(info.substate_id);
-	gpc_cpu_mode_t gpc_mode = IMX_GPC_MODE(info.substate_id);
+	uint8_t set_point = IMX_SPC(info->substate_id);
+	gpc_cpu_mode_t gpc_mode = IMX_GPC_MODE(info->substate_id);
 	uint8_t current_set_point = GPC_SP_GetCurrentSetPoint(GPC_SET_POINT_CTRL);
 
 	LOG_DBG("Switch to Set Point %d, GPC Mode %d requested", set_point, gpc_mode);
@@ -304,7 +304,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	}
 }
 
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info *info)
 {
 	ARG_UNUSED(info);
 	/* Clear PRIMASK */
