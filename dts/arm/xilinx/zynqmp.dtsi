@@ -31,6 +31,16 @@
 			label = "UART_0";
 		};
 
+		uart1: uart@ff010000 {
+			compatible = "xlnx,xuartps";
+			reg = <0xff010000 0x4c>;
+			status = "disabled";
+			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			label = "UART_1";
+		};
+
 		ttc0: timer@ff110000 {
 			compatible = "xlnx,ttcps";
 			status = "disabled";
