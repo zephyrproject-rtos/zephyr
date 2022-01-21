@@ -119,6 +119,14 @@
 #endif
 
 /* Direction finding LE Features configs */
+#ifndef CONFIG_BT_CTLR_DF_CONN_CTE_RX
+#define CONFIG_BT_CTLR_DF_CONN_CTE_RX y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_CONN_CTE_TX
+#define CONFIG_BT_CTLR_DF_CONN_CTE_TX y
+#endif
+
 #ifndef CONFIG_BT_CTLR_DF_CONN_CTE_REQ
 #define CONFIG_BT_CTLR_DF_CONN_CTE_REQ y
 #endif
