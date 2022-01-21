@@ -10,6 +10,8 @@
 #ifndef BT_GATT_OTC_INTERNAL_H_
 #define BT_GATT_OTC_INTERNAL_H_
 
+#include "ots_oacp_internal.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,7 +29,7 @@ extern "C" {
  * OTS does not use the value "0".
  */
 #define OLCP_RESULT_TO_ERROR(RESULT) \
-	(((RESULT) == BT_OTS_OACP_RES_SUCCESS) ? 0 : RESULT)
+	(((RESULT) == BT_GATT_OTS_OACP_RES_SUCCESS) ? 0 : RESULT)
 
 
 #define OTS_FEATURE_LEN        (uint32_t)(2 * sizeof(uint32_t))

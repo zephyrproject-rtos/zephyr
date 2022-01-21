@@ -24,6 +24,9 @@
 #include <bluetooth/services/otc.h>
 #include "otc_internal.h"
 #include "ots_l2cap_internal.h"
+#include "ots_dir_list_internal.h"
+#include "ots_oacp_internal.h"
+#include "ots_olcp_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_OTC)
 #define LOG_MODULE_NAME bt_otc
@@ -196,15 +199,15 @@ static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 /* End L2CAP callbacks */
 
 
-static void print_oacp_response(enum bt_ots_oacp_proc_type req_opcode,
-				enum bt_ots_oacp_res_code result_code)
+static void print_oacp_response(enum bt_gatt_ots_oacp_proc_type req_opcode,
+				enum bt_gatt_ots_oacp_res_code result_code)
 {
 	BT_DBG("Request OP Code: %s", log_strdup(lit_request[req_opcode]));
 	BT_DBG("Result Code    : %s", log_strdup(lit_result[result_code]));
 }
 
-static void print_olcp_response(enum bt_ots_olcp_proc_type req_opcode,
-				enum bt_ots_olcp_res_code result_code)
+static void print_olcp_response(enum bt_gatt_ots_olcp_proc_type req_opcode,
+				enum bt_gatt_ots_olcp_res_code result_code)
 {
 	BT_DBG("Request OP Code: %s",
 	       log_strdup(lit_olcp_request[req_opcode]));
@@ -239,7 +242,7 @@ static struct bt_otc_internal_instance_t *lookup_inst_by_handle(uint16_t handle)
 }
 
 static void on_object_selected(struct bt_conn *conn,
-			       enum bt_ots_olcp_res_code res,
+			       enum bt_gatt_ots_olcp_res_code res,
 			       struct bt_otc_instance_t *otc_inst)
 {
 	memset(&otc_inst->cur_object, 0, sizeof(otc_inst->cur_object));
@@ -256,7 +259,7 @@ static void olcp_ind_handler(struct bt_conn *conn,
 			     struct bt_otc_instance_t *otc_inst,
 			     const void *data, uint16_t length)
 {
-	enum bt_ots_olcp_proc_type op_code;
+	enum bt_gatt_ots_olcp_proc_type op_code;
 	struct net_buf_simple net_buf;
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
@@ -265,40 +268,40 @@ static void olcp_ind_handler(struct bt_conn *conn,
 
 	BT_DBG("OLCP indication");
 
-	if (op_code == BT_OTS_OLCP_PROC_RESP) {
-		enum bt_ots_olcp_proc_type req_opcode =
+	if (op_code == BT_GATT_OTS_OLCP_PROC_RESP) {
+		enum bt_gatt_ots_olcp_proc_type req_opcode =
 			net_buf_simple_pull_u8(&net_buf);
-		enum bt_ots_olcp_res_code result_code =
+		enum bt_gatt_ots_olcp_res_code result_code =
 			net_buf_simple_pull_u8(&net_buf);
 
 		print_olcp_response(req_opcode, result_code);
 
 		switch (req_opcode) {
-		case BT_OTS_OLCP_PROC_FIRST:
+		case BT_GATT_OTS_OLCP_PROC_FIRST:
 			BT_DBG("First");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
-		case BT_OTS_OLCP_PROC_LAST:
+		case BT_GATT_OTS_OLCP_PROC_LAST:
 			BT_DBG("Last");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
-		case BT_OTS_OLCP_PROC_PREV:
+		case BT_GATT_OTS_OLCP_PROC_PREV:
 			BT_DBG("Previous");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
-		case BT_OTS_OLCP_PROC_NEXT:
+		case BT_GATT_OTS_OLCP_PROC_NEXT:
 			BT_DBG("Next");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
-		case BT_OTS_OLCP_PROC_GOTO:
+		case BT_GATT_OTS_OLCP_PROC_GOTO:
 			BT_DBG("Goto");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
-		case BT_OTS_OLCP_PROC_ORDER:
+		case BT_GATT_OTS_OLCP_PROC_ORDER:
 			BT_DBG("Order");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
-		case BT_OTS_OLCP_PROC_REQ_NUM_OBJS:
+		case BT_GATT_OTS_OLCP_PROC_REQ_NUM_OBJS:
 			BT_DBG("Request number of objects");
 			if (net_buf.len == sizeof(uint32_t)) {
 				uint32_t obj_cnt =
@@ -306,7 +309,7 @@ static void olcp_ind_handler(struct bt_conn *conn,
 				BT_DBG("Number of objects %u", obj_cnt);
 			}
 			break;
-		case BT_OTS_OLCP_PROC_CLEAR_MARKING:
+		case BT_GATT_OTS_OLCP_PROC_CLEAR_MARKING:
 			BT_DBG("Clear marking");
 			break;
 		default:
@@ -322,7 +325,7 @@ static void oacp_ind_handler(struct bt_conn *conn,
 			     struct bt_otc_instance_t *otc_inst,
 			     const void *data, uint16_t length)
 {
-	enum bt_ots_oacp_proc_type op_code;
+	enum bt_gatt_ots_oacp_proc_type op_code;
 	struct net_buf_simple net_buf;
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
@@ -331,10 +334,10 @@ static void oacp_ind_handler(struct bt_conn *conn,
 
 	BT_DBG("OACP indication");
 
-	if (op_code == BT_OTS_OACP_PROC_RESP) {
-		enum bt_ots_oacp_proc_type req_opcode  =
+	if (op_code == BT_GATT_OTS_OACP_PROC_RESP) {
+		enum bt_gatt_ots_oacp_proc_type req_opcode  =
 			net_buf_simple_pull_u8(&net_buf);
-		enum bt_ots_oacp_res_code  result_code =
+		enum bt_gatt_ots_oacp_res_code  result_code =
 			net_buf_simple_pull_u8(&net_buf);
 		print_oacp_response(req_opcode, result_code);
 	} else {
@@ -505,7 +508,7 @@ static void write_olcp_cb(struct bt_conn *conn, uint8_t err,
 }
 
 static int write_olcp(struct bt_otc_internal_instance_t *inst,
-		      struct bt_conn *conn, enum bt_ots_olcp_proc_type opcode,
+		      struct bt_conn *conn, enum bt_gatt_ots_olcp_proc_type opcode,
 		      uint8_t *params, uint8_t param_len)
 {
 	int err;
@@ -563,7 +566,7 @@ int bt_otc_select_id(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst,
 		otc_inst->cur_object.id = obj_id;
 		sys_put_le48(obj_id, param);
 
-		return write_olcp(inst, conn, BT_OTS_OLCP_PROC_GOTO,
+		return write_olcp(inst, conn, BT_GATT_OTS_OLCP_PROC_GOTO,
 				  param, BT_OTS_OBJ_ID_SIZE);
 	}
 
@@ -597,7 +600,7 @@ int bt_otc_select_first(struct bt_conn *conn,
 			return -EBUSY;
 		}
 
-		return write_olcp(inst, conn, BT_OTS_OLCP_PROC_FIRST,
+		return write_olcp(inst, conn, BT_GATT_OTS_OLCP_PROC_FIRST,
 				  NULL, 0);
 	}
 
@@ -630,7 +633,7 @@ int bt_otc_select_last(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 			return -EBUSY;
 		}
 
-		return write_olcp(inst, conn, BT_OTS_OLCP_PROC_LAST,
+		return write_olcp(inst, conn, BT_GATT_OTS_OLCP_PROC_LAST,
 				  NULL, 0);
 
 	}
@@ -664,7 +667,7 @@ int bt_otc_select_next(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 			return -EBUSY;
 		}
 
-		return write_olcp(inst, conn, BT_OTS_OLCP_PROC_NEXT,
+		return write_olcp(inst, conn, BT_GATT_OTS_OLCP_PROC_NEXT,
 				  NULL, 0);
 	}
 
@@ -697,7 +700,7 @@ int bt_otc_select_prev(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 			return -EBUSY;
 		}
 
-		return write_olcp(inst, conn, BT_OTS_OLCP_PROC_PREV,
+		return write_olcp(inst, conn, BT_GATT_OTS_OLCP_PROC_PREV,
 				  NULL, 0);
 	}
 
@@ -790,7 +793,7 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	if (err) {
 		BT_DBG("err: 0x%02X", err);
 	} else if (data) {
-		if (length == BT_OTS_ID_LEN) {
+		if (length == BT_OTS_OBJ_ID_SIZE) {
 			uint64_t obj_id = net_buf_simple_pull_le48(&net_buf);
 			char t[BT_OTS_OBJ_ID_STR_LEN];
 			struct bt_otc_obj_metadata *cur_object =
@@ -816,7 +819,7 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 			}
 		} else {
 			BT_DBG("Invalid length %u (expected %u)",
-			       length, BT_OTS_ID_LEN);
+			       length, BT_OTS_OBJ_ID_SIZE);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
@@ -1120,7 +1123,7 @@ static int oacp_read(struct bt_conn *conn,
 	net_buf_simple_reset(&otc_tx_buf);
 
 	/* OP Code */
-	net_buf_simple_add_u8(&otc_tx_buf, BT_OTS_OACP_PROC_READ);
+	net_buf_simple_add_u8(&otc_tx_buf, BT_GATT_OTS_OACP_PROC_READ);
 
 	/* Offset */
 	net_buf_simple_add_le32(&otc_tx_buf, offset);
@@ -1342,7 +1345,7 @@ static int decode_record(struct net_buf_simple *buf,
 	rec->flags = net_buf_simple_pull_u8(buf);
 	BT_DBG("flags 0x%x", rec->flags);
 
-	if (BT_OTS_DIRLIST_GET_FLAG_TYPE_128(rec->flags)) {
+	if (BT_OTS_DIR_LIST_GET_FLAG_TYPE_128(rec->flags)) {
 		uint8_t *uuid;
 
 		if ((start_len - buf->len) + BT_UUID_SIZE_128 > rec->len) {
@@ -1369,7 +1372,7 @@ static int decode_record(struct net_buf_simple *buf,
 			net_buf_simple_pull_le16(buf);
 	}
 
-	if (BT_OTS_DIRLIST_GET_FLAG_CUR_SIZE(rec->flags)) {
+	if (BT_OTS_DIR_LIST_GET_FLAG_CUR_SIZE(rec->flags)) {
 		if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
 			BT_WARN("incorrect DirListing record, reclen %u "
 				"flags indicates cur_size, too short",
@@ -1381,7 +1384,7 @@ static int decode_record(struct net_buf_simple *buf,
 		rec->metadata.current_size = net_buf_simple_pull_le32(buf);
 	}
 
-	if (BT_OTS_DIRLIST_GET_FLAG_ALLOC_SIZE(rec->flags)) {
+	if (BT_OTS_DIR_LIST_GET_FLAG_ALLOC_SIZE(rec->flags)) {
 		if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
 			BT_WARN("incorrect DirListing record, reclen %u "
 				"flags indicates alloc_size, too short",
@@ -1393,7 +1396,7 @@ static int decode_record(struct net_buf_simple *buf,
 		rec->metadata.alloc_size = net_buf_simple_pull_le32(buf);
 	}
 
-	if (BT_OTS_DIRLIST_GET_FLAG_FIRST_CREATED(rec->flags)) {
+	if (BT_OTS_DIR_LIST_GET_FLAG_FIRST_CREATED(rec->flags)) {
 		if ((start_len - buf->len) + DATE_TIME_FIELD_SIZE > rec->len) {
 			BT_WARN("incorrect DirListing record, reclen %u "
 				"too short flags indicates first_created",
@@ -1405,7 +1408,7 @@ static int decode_record(struct net_buf_simple *buf,
 		date_time_decode(buf, &rec->metadata.first_created);
 	}
 
-	if (BT_OTS_DIRLIST_GET_FLAG_LAST_MODIFIED(rec->flags)) {
+	if (BT_OTS_DIR_LIST_GET_FLAG_LAST_MODIFIED(rec->flags)) {
 		if ((start_len - buf->len) + DATE_TIME_FIELD_SIZE > rec->len) {
 			BT_WARN("incorrect DirListing record, reclen %u "
 				"flags indicates las_mod, too short",
@@ -1417,7 +1420,7 @@ static int decode_record(struct net_buf_simple *buf,
 		date_time_decode(buf, &rec->metadata.modified);
 	}
 
-	if (BT_OTS_DIRLIST_GET_FLAG_PROPERTIES(rec->flags)) {
+	if (BT_OTS_DIR_LIST_GET_FLAG_PROPERTIES(rec->flags)) {
 		if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
 			BT_WARN("incorrect DirListing record, reclen %u "
 				"flags indicates properties, too short",
