@@ -59,6 +59,15 @@
 		};
 	};
 
+	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "npm1100_force_pwm_mode";
+		regulator-name = "npm1100_force_pwm_mode";
+		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+		regulator-boot-on;
+	};
+
 	vbatt {
 		compatible = "voltage-divider";
 		io-channels = <&adc 2>;
