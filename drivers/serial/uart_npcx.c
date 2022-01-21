@@ -61,7 +61,7 @@ struct uart_npcx_data {
 
 #define DRV_DATA(dev) ((struct uart_npcx_data *)(dev)->data)
 
-#define HAL_INSTANCE(dev) (struct uart_reg *)(DRV_CONFIG(dev)->uconf.base)
+#define HAL_INSTANCE(dev) ((struct uart_reg *)DRV_CONFIG(dev)->uconf.base)
 
 #if defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
 static void uart_npcx_pm_constraint_set(struct uart_npcx_data *data,

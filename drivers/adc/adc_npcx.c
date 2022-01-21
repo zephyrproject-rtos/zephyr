@@ -71,7 +71,7 @@ struct adc_npcx_data {
 
 #define DRV_DATA(dev) ((struct adc_npcx_data *)(dev)->data)
 
-#define HAL_INSTANCE(dev) (struct adc_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct adc_reg *)DRV_CONFIG(dev)->base)
 
 /* ADC local functions */
 static void adc_npcx_isr(void *arg)

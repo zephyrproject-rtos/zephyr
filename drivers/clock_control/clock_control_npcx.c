@@ -26,10 +26,10 @@ struct npcx_pcc_config {
 	((const struct npcx_pcc_config *)(dev)->config)
 
 #define HAL_CDCG_INST(dev) \
-	(struct cdcg_reg *)(DRV_CONFIG(dev)->base_cdcg)
+	((struct cdcg_reg *)DRV_CONFIG(dev)->base_cdcg)
 
 #define HAL_PMC_INST(dev) \
-	(struct pmc_reg *)(DRV_CONFIG(dev)->base_pmc)
+	((struct pmc_reg *)DRV_CONFIG(dev)->base_pmc)
 
 /* Clock controller local functions */
 static inline int npcx_clock_control_on(const struct device *dev,
