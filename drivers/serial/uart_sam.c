@@ -229,7 +229,11 @@ static int uart_sam_irq_tx_ready(const struct device *dev)
 
 	volatile Uart * const uart = cfg->regs;
 
-	return (uart->UART_SR & UART_SR_TXRDY);
+	/* Check that the transmitter is ready but only
+	 * return true if the interrupt is also enabled
+	 */
+	return (uart->UART_SR & UART_SR_TXRDY &&
+		uart->UART_IMR & UART_IMR_TXRDY);
 }
 
 static void uart_sam_irq_rx_enable(const struct device *dev)
@@ -256,7 +260,8 @@ static int uart_sam_irq_tx_complete(const struct device *dev)
 
 	volatile Uart * const uart = cfg->regs;
 
-	return !(uart->UART_SR & UART_SR_TXRDY);
+	return (uart->UART_SR & UART_SR_TXRDY &&
+		uart->UART_IMR & UART_IMR_TXEMPTY);
 }
 
 static int uart_sam_irq_rx_ready(const struct device *dev)
