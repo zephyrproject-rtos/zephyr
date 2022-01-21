@@ -222,7 +222,10 @@ Set devicetree overlays
 Devicetree overlays are explained in :ref:`devicetree-intro`. The CMake
 variable :makevar:`DTC_OVERLAY_FILE` contains a space- or semicolon-separated
 list of overlay files to use. If :makevar:`DTC_OVERLAY_FILE` specifies multiple
-files, they are included in that order by the C preprocessor.
+files, they are included in that order by the C preprocessor.  A file in a
+Zephyr module can be referred to by escaping the Zephyr module dir variable
+like ``\${ZEPHYR_<module>_MODULE_DIR}/<path-to>/dts.overlay``
+when setting the DTC_OVERLAY_FILE variable.
 
 You can set :makevar:`DTC_OVERLAY_FILE` to contain exactly the files you want
 to use. Here is an :ref:`example <west-building-dtc-overlay-file>` using
