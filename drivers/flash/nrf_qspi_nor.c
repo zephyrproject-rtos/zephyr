@@ -661,6 +661,12 @@ static int qspi_nrfx_configure(const struct device *dev)
 	nrfx_err_t res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 	int ret = qspi_get_zephyr_ret_code(res);
 
+	// Jake: Put into 4-byte mode
+	struct qspi_cmd cmd = {
+		.op_code = SPI_NOR_CMD_4BA,
+	};
+	ret = qspi_send_cmd(dev, &cmd, false);
+
 #if DT_INST_NODE_HAS_PROP(0, rx_delay)
 	if (ret == 0 && !nrf53_errata_121()) {
 		nrf_qspi_iftiming_set(NRF_QSPI, DT_INST_PROP(0, rx_delay));
@@ -1133,7 +1139,7 @@ static int qspi_nor_configure(const struct device *dev)
  * @param name The flash name
  * @return 0 on success, negative errno code otherwise
  */
-static int qspi_nor_init(const struct device *dev)
+int qspi_nor_init(const struct device *dev)
 {
 #if defined(CONFIG_SOC_SERIES_NRF53X)
 	/* Make sure the PCLK192M clock, from which the SCK frequency is
