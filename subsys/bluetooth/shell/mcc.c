@@ -17,6 +17,7 @@
 
 #include "bt.h"
 
+#include <bluetooth/services/otc.h>
 #include "../services/ots/otc_internal.h"
 #include "../audio/media_proxy_internal.h"
 
