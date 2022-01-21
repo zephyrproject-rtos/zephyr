@@ -47,7 +47,8 @@ if(DEFINED CONF_FILE)
 
   # In order to support a `prj_<name>.conf pattern for auto inclusion of board
   # overlays, then we must first ensure only a single conf file is provided.
-  string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
+  string(CONFIGURE "${CONF_FILE}" CONF_FILE_EXPANDED)
+  string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE_EXPANDED}")
   list(LENGTH CONF_FILE_AS_LIST CONF_FILE_LENGTH)
   if(${CONF_FILE_LENGTH} EQUAL 1)
     # Need the file name to look for match.
