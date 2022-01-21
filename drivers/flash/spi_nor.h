@@ -22,6 +22,8 @@
 /* Flash opcodes */
 #define SPI_NOR_CMD_WRSR        0x01    /* Write status register */
 #define SPI_NOR_CMD_RDSR        0x05    /* Read status register */
+#define SPI_NOR_CMD_WRSR2       0x31    /* Write status register 2 */
+#define SPI_NOR_CMD_RDSR2       0x35    /* Read status register 2 */
 #define SPI_NOR_CMD_READ        0x03    /* Read data */
 #define SPI_NOR_CMD_DREAD       0x3B    /* Read data (1-1-2) */
 #define SPI_NOR_CMD_QREAD       0x6B    /* Read data (1-1-4) */
