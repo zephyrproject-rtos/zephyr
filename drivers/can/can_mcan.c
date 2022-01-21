@@ -320,7 +320,8 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	can->txefc = (((uint32_t)msg_ram->tx_event_fifo - mrba) & CAN_MCAN_TXEFC_EFSA_MSK) |
 		(ARRAY_SIZE(msg_ram->tx_event_fifo) << CAN_MCAN_TXEFC_EFS_POS);
 	can->txbc = (((uint32_t)msg_ram->tx_buffer - mrba) & CAN_MCAN_TXBC_TBSA) |
-		(ARRAY_SIZE(msg_ram->tx_buffer) << CAN_MCAN_TXBC_TFQS_POS);
+		(ARRAY_SIZE(msg_ram->tx_buffer) << CAN_MCAN_TXBC_TFQS_POS) |
+		CAN_MCAN_TXBC_TFQM;
 
 	if (sizeof(msg_ram->tx_buffer[0].data) <= 24) {
 		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 8) / 4;
