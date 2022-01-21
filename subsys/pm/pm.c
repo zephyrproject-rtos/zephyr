@@ -102,7 +102,7 @@ static void pm_resume_devices(void)
 }
 #endif	/* CONFIG_PM_DEVICE */
 
-static inline void exit_pos_ops(struct pm_state_info *info)
+static inline void pm_exit_pos_ops(struct pm_state_info *info)
 {
 	extern __weak void
 		pm_power_state_exit_post_ops(struct pm_state_info *info);
@@ -173,7 +173,7 @@ void pm_system_resume(void)
 	 * and it may schedule another thread.
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
-		exit_pos_ops(&z_cpus_pm_state[id]);
+		pm_exit_pos_ops(&z_cpus_pm_state[id]);
 		pm_state_notify(false);
 		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE,
 			0, 0};
