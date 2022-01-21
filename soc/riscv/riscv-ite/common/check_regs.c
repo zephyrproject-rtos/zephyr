@@ -124,3 +124,11 @@ IT8XXX2_REG_OFFSET_CHECK(kscan_it8xxx2_regs, KBS_KSOCTRL, 0x02);
 IT8XXX2_REG_OFFSET_CHECK(kscan_it8xxx2_regs, KBS_KSI, 0x04);
 IT8XXX2_REG_OFFSET_CHECK(kscan_it8xxx2_regs, KBS_KSIGDAT, 0x08);
 IT8XXX2_REG_OFFSET_CHECK(kscan_it8xxx2_regs, KBS_KSOLGOEN, 0x0e);
+
+/* ADC register structure check */
+IT8XXX2_REG_SIZE_CHECK(adc_it8xxx2_regs, 0x6d);
+IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, ADCGCR, 0x03);
+IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, VCH0DATM, 0x19);
+IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, adc_vchs_ctrl[0].VCHCTL, 0x60);
+IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, adc_vchs_ctrl[2].VCHDATM, 0x67);
+IT8XXX2_REG_OFFSET_CHECK(adc_it8xxx2_regs, ADCDVSTS2, 0x6c);
