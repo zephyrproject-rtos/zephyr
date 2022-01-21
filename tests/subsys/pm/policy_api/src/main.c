@@ -98,6 +98,23 @@ static void test_pm_policy_next_state_default_allowed(void)
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
 }
 
+/** Flag to indicate if latency callback has been called */
+static bool latency_cb_called;
+/** Flag to indicate expected latency */
+static int32_t expected_latency;
+
+/**
+ * Callback to notify when state allowed status changes.
+ */
+static void on_pm_policy_latency_changed(int32_t latency)
+{
+	TC_PRINT("Latency changed to %d\n", latency);
+
+	zassert_equal(latency, expected_latency, NULL);
+
+	latency_cb_called = true;
+}
+
 /**
  * @brief Test the behavior of pm_policy_next_state() when
  * latency requirements are imposed and CONFIG_PM_POLICY_DEFAULT=y.
@@ -161,6 +178,36 @@ static void test_pm_policy_next_state_default_latency(void)
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
+
+	/* get notified when latency requirement changes */
+	pm_policy_latency_changed(on_pm_policy_latency_changed);
+
+	/* add new request (expected notification) */
+	latency_cb_called = false;
+	expected_latency = 10000;
+	pm_policy_latency_request_add(&req1, 10000);
+	zassert_true(latency_cb_called, NULL);
+
+	/* update request (expected notification) */
+	latency_cb_called = false;
+	expected_latency = 50000;
+	pm_policy_latency_request_update(&req1, 50000);
+	zassert_true(latency_cb_called, NULL);
+
+	/* add a new request, with higher value (no notification, previous
+	 * prevails)
+	 */
+	latency_cb_called = false;
+	pm_policy_latency_request_add(&req2, 60000);
+	zassert_false(latency_cb_called, NULL);
+
+	pm_policy_latency_request_remove(&req2);
+	zassert_false(latency_cb_called, NULL);
+
+	/* remove first request, we no longer have latency requirements */
+	expected_latency = SYS_FOREVER_US;
+	pm_policy_latency_request_remove(&req1);
+	zassert_true(latency_cb_called, NULL);
 }
 #else
 static void test_pm_policy_next_state_default(void)
