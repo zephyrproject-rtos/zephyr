@@ -696,6 +696,10 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 	}
 
 	iso_conn = chan->iso;
+	if (!iso_conn->iso.can_send) {
+		BT_DBG("Channel not able to send");
+		return -EINVAL;
+	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->sn = sys_cpu_to_le16(iso_conn->iso.seq_num);
