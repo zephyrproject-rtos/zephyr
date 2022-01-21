@@ -52,6 +52,31 @@ config STD_CPP2B
 	help
 	  Next revision of the C++ standard, which is expected to be published in 2023.
 
+config STD_GNUPP98
+	bool "Gnu++ 98"
+	help
+	  GNU extension to the 1998 C++ standard.
+
+config STD_GNUPP11
+	bool "Gnu++ 11"
+	help
+	  GNU extension to the 2011 C++ standard.
+
+config STD_GNUPP14
+	bool "Gnu++ 14"
+	help
+	  GNU extension to the 2014 C++ standard.
+
+config STD_GNUPP17
+	bool "Gnu++ 17"
+	help
+	  GNU extension to the 2017 C++ standard.
+
+config STD_GNUPP20
+	bool "Gnu++ 20"
+	help
+	  GNU extension to the 2020 C++ standard.
+
 endchoice
 
 config LIB_CPLUSPLUS

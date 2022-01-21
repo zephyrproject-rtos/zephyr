@@ -128,6 +128,12 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20"
   "-Wno-register" "-Wno-volatile")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp98 "-std=gnu++98")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp11 "-std=gnu++11" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp14 "-std=gnu++14" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp17 "-std=gnu++17" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp20 "-std=gnu++20"
+  "-Wno-register" "-Wno-volatile")
 
 # Disable exeptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")

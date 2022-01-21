@@ -127,10 +127,15 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "-std=c++14")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "-std=c++17")
 
-#no support of C++2a, C++20, C++2b
+#no support of C++2a, C++20, C++2b and Gnu++XX
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp98 "")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp11 "")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp14 "")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp17 "")
+set_property(TARGET compiler-cpp PROPERTY dialect_gnupp20 "")
 
 # Disable exeptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
