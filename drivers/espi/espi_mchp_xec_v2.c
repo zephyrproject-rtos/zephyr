@@ -1207,13 +1207,17 @@ static const struct espi_xec_irq_info espi_xec_irq_info_0[] = {
 	DT_FOREACH_PROP_ELEM(DT_NODELABEL(espi0), girqs, XEC_IRQ_INFO)
 };
 
+/* pin control structure(s) */
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct espi_xec_config espi_xec_config = {
 	.base_addr = DT_INST_REG_ADDR(0),
 	.vw_base_addr = DT_INST_REG_ADDR_BY_NAME(0, vw),
 	.pcr_idx = DT_INST_PROP_BY_IDX(0, pcrs, 0),
 	.pcr_bitpos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
-	.irq_info_list = espi_xec_irq_info_0,
 	.irq_info_size = ARRAY_SIZE(espi_xec_irq_info_0),
+	.irq_info_list = espi_xec_irq_info_0,
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL,
@@ -1288,6 +1292,8 @@ static void espi_xec_connect_irqs(const struct device *dev)
  * contains the state of 4 virtual wires.
  * The total supported virtual wires is 64 * 4 = 256.
  * MEC172x supports 11 MSVW groups and 11 SMVW groups.
+ * NOTE: While ESPI_nRESET is active most of the eSPI hardware is held
+ * in reset state.
  */
 static int espi_xec_init(const struct device *dev)
 {
@@ -1296,6 +1302,12 @@ static int espi_xec_init(const struct device *dev)
 	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
 	struct pcr_regs *pcr = XEC_PCR_REG_BASE;
 	int ret;
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		LOG_ERR("XEC eSPI V2 pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	data->plt_rst_asserted = 0;
 #ifdef ESPI_XEC_V2_DEBUG
