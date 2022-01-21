@@ -46,7 +46,7 @@ struct espi_npcx_data {
 
 #define DRV_DATA(dev) ((struct espi_npcx_data *)(dev)->data)
 
-#define HAL_INSTANCE(dev) (struct espi_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct espi_reg *)DRV_CONFIG(dev)->base)
 
 /* eSPI channels */
 #define NPCX_ESPI_CH_PC              0

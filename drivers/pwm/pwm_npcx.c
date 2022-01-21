@@ -56,7 +56,7 @@ struct pwm_npcx_data {
 
 #define DRV_DATA(dev) ((struct pwm_npcx_data *)(dev)->data)
 
-#define HAL_INSTANCE(dev) (struct pwm_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct pwm_reg *)DRV_CONFIG(dev)->base)
 
 /* PWM local functions */
 static void pwm_npcx_configure(const struct device *dev, int clk_bus)
