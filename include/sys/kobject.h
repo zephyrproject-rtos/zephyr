@@ -73,9 +73,6 @@ union z_object_data {
 	size_t stack_size;
 #endif /* CONFIG_GEN_PRIV_STACKS */
 
-	/* Futex wait queue and spinlock for K_OBJ_FUTEX */
-	struct z_futex_data *futex_data;
-
 	/* All other objects */
 	int unused;
 };

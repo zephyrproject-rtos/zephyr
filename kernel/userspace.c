@@ -345,7 +345,6 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 		}
 		break;
 	/* The following are currently not allowed at all */
-	case K_OBJ_FUTEX:			/* Lives in user memory */
 	case K_OBJ_SYS_MUTEX:			/* Lives in user memory */
 	case K_OBJ_THREAD_STACK_ELEMENT:	/* No aligned allocator */
 	case K_OBJ_NET_SOCKET:			/* Indeterminate size */

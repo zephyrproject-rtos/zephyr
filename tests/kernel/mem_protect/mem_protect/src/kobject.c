@@ -1134,10 +1134,6 @@ void test_kobject_init_error(void)
 			"expected got NULL kobject");
 	zassert_is_null(k_object_alloc(K_OBJ_LAST),
 			"expected got NULL kobject");
-
-	/* futex not support */
-	zassert_is_null(k_object_alloc(K_OBJ_FUTEX),
-			"expected got NULL kobject");
 }
 
 /**
