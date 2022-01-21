@@ -149,6 +149,14 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 
 	BT_DBG("code 0x%02x", hdr->code);
 
+	if (IS_ENABLED(CONFIG_BT_EATT) && hdr->code == BT_ATT_OP_MTU_REQ &&
+	    chan->chan.tx.cid != BT_L2CAP_CID_ATT) {
+		/* The Exchange MTU sub-procedure shall only be supported on
+		 * the LE Fixed Channel Unenhanced ATT bearer
+		 */
+		return -ENOTSUP;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_EATT) &&
 	    atomic_test_bit(chan->flags, ATT_ENHANCED)) {
 		/* Check if sent is pending already, if it does it cannot be
