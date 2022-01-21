@@ -97,6 +97,71 @@ static void test_pm_policy_next_state_default_allowed(void)
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
 }
+
+/**
+ * @brief Test the behavior of pm_policy_next_state() when
+ * latency requirements are imposed and CONFIG_PM_POLICY_DEFAULT=y.
+ */
+static void test_pm_policy_next_state_default_latency(void)
+{
+	struct pm_policy_latency_request req1, req2;
+	const struct pm_state_info *next;
+
+	/* add a latency requirement with a maximum value below the
+	 * latency given by any state, so we should stay active all the time
+	 */
+	pm_policy_latency_request_add(&req1, 9000);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next, NULL, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
+	zassert_equal(next, NULL, NULL);
+
+	/* update latency requirement to a value between latencies for
+	 * PM_STATE_RUNTIME_IDLE and PM_STATE_SUSPEND_TO_RAM, so we should
+	 * never enter PM_STATE_SUSPEND_TO_RAM.
+	 */
+	pm_policy_latency_request_update(&req1, 50000);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+
+	/* add a new latency requirement with a maximum value below the
+	 * latency given by any state, so we should stay active all the time
+	 * since it overrides the previous one.
+	 */
+	pm_policy_latency_request_add(&req2, 8000);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next, NULL, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
+	zassert_equal(next, NULL, NULL);
+
+	/* remove previous request, so we should recover behavior given by
+	 * first request.
+	 */
+	pm_policy_latency_request_remove(&req2);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+
+	/* remove first request, so we should observe regular behavior again */
+	pm_policy_latency_request_remove(&req1);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
+	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
+}
 #else
 static void test_pm_policy_next_state_default(void)
 {
@@ -104,6 +169,10 @@ static void test_pm_policy_next_state_default(void)
 }
 
 static void test_pm_policy_next_state_default_allowed(void)
+{
+	ztest_test_skip();
+}
+static void test_pm_policy_next_state_default_latency(void)
 {
 	ztest_test_skip();
 }
@@ -143,6 +212,7 @@ void test_main(void)
 	ztest_test_suite(policy_api,
 			 ztest_unit_test(test_pm_policy_next_state_default),
 			 ztest_unit_test(test_pm_policy_next_state_default_allowed),
+			 ztest_unit_test(test_pm_policy_next_state_default_latency),
 			 ztest_unit_test(test_pm_policy_next_state_custom));
 	ztest_run_test_suite(policy_api);
 }
