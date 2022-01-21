@@ -241,6 +241,144 @@ void test_undefined_cen_rem(void)
 	}
 }
 
+#ifdef CONFIG_BT_CTLR_LE_ENC
+void test_no_enc_per_rem(void)
+{
+	/* Skip test;
+	 * LE Encryption support is available
+	 */
+	ztest_test_skip();
+}
+#else
+void test_no_enc_per_rem(void)
+{
+	/* Role */
+	test_set_role(&test_conn, BT_HCI_ROLE_PERIPHERAL);
+
+	lt_tx_pdu_and_rx_unknown_rsp(LL_ENC_REQ);
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+void test_no_enc_cen_rem(void)
+{
+	/* Role */
+	test_set_role(&test_conn, BT_HCI_ROLE_CENTRAL);
+
+	lt_tx_pdu_and_rx_unknown_rsp(LL_ENC_REQ);
+}
+
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
+void test_no_per_feat_exch_per_rem(void)
+{
+	/* Skip test;
+	 * Peripheral-initiated Features Exchange support is available
+	 */
+	ztest_test_skip();
+}
+#else
+void test_no_per_feat_exch_per_rem(void)
+{
+	/* Role */
+	test_set_role(&test_conn, BT_HCI_ROLE_PERIPHERAL);
+
+	lt_tx_pdu_and_rx_unknown_rsp(LL_PERIPH_FEAT_XCHG);
+}
+#endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
+
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
+void test_no_per_feat_exch_cen_rem(void)
+{
+	/* Skip test;
+	 * Peripheral-initiated Features Exchange support is available
+	 */
+	ztest_test_skip();
+}
+#else
+void test_no_per_feat_exch_cen_rem(void)
+{
+	/* Role */
+	test_set_role(&test_conn, BT_HCI_ROLE_CENTRAL);
+
+	lt_tx_pdu_and_rx_unknown_rsp(LL_PERIPH_FEAT_XCHG);
+}
+#endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
+
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+void test_no_cpr_per_rem(void)
+{
+	/* Skip test;
+	 * Connection Parameters Request procedure support is available
+	 */
+	ztest_test_skip();
+}
+#else
+void test_no_cpr_per_rem(void)
+{
+	/* Role */
+	test_set_role(&test_conn, BT_HCI_ROLE_PERIPHERAL);
+
+	lt_tx_pdu_and_rx_unknown_rsp(LL_CONNECTION_PARAM_REQ);
+}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+void test_no_cpr_cen_rem(void)
+{
+	/* Skip test;
+	 * Connection Parameters Request procedure support is available
+	 */
+	ztest_test_skip();
+}
+#else
+void test_no_cpr_cen_rem(void)
+{
+	/* Role */
+	test_set_role(&test_conn, BT_HCI_ROLE_CENTRAL);
+
+	lt_tx_pdu_and_rx_unknown_rsp(LL_CONNECTION_PARAM_REQ);
+}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+
+#if defined(CONFIG_BT_CTLR_PHY)
+void test_no_phy_per_rem(void)
+{
+	/* Skip test;
+	 * LE 2M PHY support is available
+	 */
+	ztest_test_skip();
+}
+#else
+void test_no_phy_per_rem(void)
+{
+	/* Role */
+	test_set_role(&test_conn, BT_HCI_ROLE_PERIPHERAL);
+
+	lt_tx_pdu_and_rx_unknown_rsp(LL_PHY_REQ);
+}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+void test_no_phy_cen_rem(void)
+{
+	/* Skip test;
+	 * LE 2M PHY support is available
+	 */
+	ztest_test_skip();
+}
+#else
+void test_no_phy_cen_rem(void)
+{
+	/* Role */
+	test_set_role(&test_conn, BT_HCI_ROLE_CENTRAL);
+
+	lt_tx_pdu_and_rx_unknown_rsp(LL_PHY_REQ);
+}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+
+
 void test_main(void)
 {
 	ztest_test_suite(invalid,
@@ -255,6 +393,26 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_undefined_cen_rem, setup,
 							unit_test_noop));
 
+	ztest_test_suite(unsupported,
+			 ztest_unit_test_setup_teardown(test_no_enc_per_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_no_enc_cen_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_no_per_feat_exch_per_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_no_per_feat_exch_cen_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_no_cpr_per_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_no_cpr_cen_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_no_phy_per_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_no_phy_cen_rem, setup,
+							unit_test_noop)
+			 );
+
 	ztest_run_test_suite(invalid);
 	ztest_run_test_suite(undefined);
+	ztest_run_test_suite(unsupported);
 }
