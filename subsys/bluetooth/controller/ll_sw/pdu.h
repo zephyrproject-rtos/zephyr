@@ -809,11 +809,19 @@ struct pdu_data {
 	uint8_t nesn:1;
 	uint8_t sn:1;
 	uint8_t md:1;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	uint8_t cp:1;
 	uint8_t rfu:2;
+#else
+	uint8_t rfu:3;
+#endif
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	uint8_t rfu:2;
 	uint8_t cp:1;
+#else
+	uint8_t rfu:3;
+#endif
 	uint8_t md:1;
 	uint8_t sn:1;
 	uint8_t nesn:1;
