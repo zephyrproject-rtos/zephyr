@@ -148,8 +148,9 @@ accomplished using the following Python code:
    import time
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -195,8 +196,9 @@ name) can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -228,8 +230,9 @@ can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -301,8 +304,9 @@ press counter) can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
