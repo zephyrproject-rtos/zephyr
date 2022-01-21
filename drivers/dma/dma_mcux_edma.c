@@ -183,16 +183,17 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *config)
 {
+	/* Check for invalid parameters before dereferencing them. */
+	if (NULL == dev || NULL == config) {
+		return -EINVAL;
+	}
+
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t slot = config->dma_slot;
 	edma_transfer_type_t transfer_type;
 	int key;
-
-	if (NULL == dev || NULL == config) {
-		return -EINVAL;
-	}
 
 	if (slot > DT_INST_PROP(0, dma_requests)) {
 		LOG_ERR("source number is outof scope %d", slot);
