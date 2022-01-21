@@ -988,6 +988,10 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
  */
 void test_sem_multiple_take_and_timeouts(void)
 {
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
 	static uint32_t timeout;
 	size_t bytes_read;
 
@@ -1052,6 +1056,10 @@ void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
  */
 void test_sem_multi_take_timeout_diff_sem(void)
 {
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
 	size_t bytes_read;
 	struct timeout_info seq_info[] = {
 		{ SEC2MS(2), &simple_sem },
