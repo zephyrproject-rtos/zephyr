@@ -7,10 +7,21 @@ tests:
     extra_configs:
       - CONFIG_EDAC_ERROR_INJECT=n
       - CONFIG_EDAC_LOG_LEVEL_DBG=y
-  edac.ibecc.injection:
+  edac.ibecc.injection.cor:
     extra_configs:
       - CONFIG_EDAC_ERROR_INJECT=y
-  edac.ibecc.injection.user:
+    extra_args: EXTRA_CFLAGS=-DEDAC_ERROR_TYPE=EDAC_ERROR_TYPE_DRAM_COR
+  edac.ibecc.injection.uc:
+    extra_configs:
+      - CONFIG_EDAC_ERROR_INJECT=y
+    extra_args: EXTRA_CFLAGS=-DEDAC_ERROR_TYPE=EDAC_ERROR_TYPE_DRAM_UC
+  edac.ibecc.injection.user.cor:
     extra_configs:
       - CONFIG_EDAC_ERROR_INJECT=y
       - CONFIG_USERSPACE=y
+    extra_args: EXTRA_CFLAGS=-DEDAC_ERROR_TYPE=EDAC_ERROR_TYPE_DRAM_COR
+  edac.ibecc.injection.user.uc:
+    extra_configs:
+      - CONFIG_EDAC_ERROR_INJECT=y
+      - CONFIG_USERSPACE=y
+    extra_args: EXTRA_CFLAGS=-DEDAC_ERROR_TYPE=EDAC_ERROR_TYPE_DRAM_UC

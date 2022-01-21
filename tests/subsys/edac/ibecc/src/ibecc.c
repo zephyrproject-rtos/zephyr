@@ -15,11 +15,14 @@
 #define DEVICE_NAME		DT_LABEL(DT_NODELABEL(ibecc))
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-#define TEST_ADDRESS1		0x1000
-#define TEST_ADDRESS2		0x2000
+#define TEST_ADDRESS		0x1000
 #define TEST_DATA		0xface
 #define TEST_ADDRESS_MASK	INJ_ADDR_BASE_MASK_MASK
 #define DURATION		100
+#endif
+
+#if !defined(EDAC_ERROR_TYPE)
+#define EDAC_ERROR_TYPE		EDAC_ERROR_TYPE_DRAM_COR
 #endif
 
 static void test_ibecc_initialized(void)
@@ -115,7 +118,7 @@ static void test_ibecc_error_inject_api(void)
 	/* Verify basic Injection API operations */
 
 	/* Set correct value of param1 */
-	ret = edac_inject_set_param1(dev, TEST_ADDRESS1);
+	ret = edac_inject_set_param1(dev, TEST_ADDRESS);
 	zassert_equal(ret, 0, "Error setting inject address");
 
 	/* Try to set incorrect value of param1 with UINT64_MAX */
@@ -124,7 +127,7 @@ static void test_ibecc_error_inject_api(void)
 
 	ret = edac_inject_get_param1(dev, &val);
 	zassert_equal(ret, 0, "Error getting param1");
-	zassert_equal(val, TEST_ADDRESS1, "Read back value differs");
+	zassert_equal(val, TEST_ADDRESS, "Read back value differs");
 
 	/* Set correct value of param2 */
 	ret = edac_inject_set_param2(dev, TEST_ADDRESS_MASK);
@@ -276,7 +279,7 @@ static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 	ret = edac_notify_callback_set(dev, callback);
 	zassert_equal(ret, 0, "Error setting notification callback");
 
-	/* Test injecting correctable error at address TEST_ADDRESS1 */
+	/* Test injecting correctable error at address TEST_ADDRESS */
 	test_inject(dev, addr, mask, type);
 
 #if defined(CONFIG_USERSPACE)
@@ -289,28 +292,17 @@ static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 #endif
 }
 
-static void test_ibecc_error_inject_test_cor(void)
+static void test_ibecc_error_inject_test(void)
 {
-	ibecc_error_inject_test(TEST_ADDRESS1, TEST_ADDRESS_MASK,
-				EDAC_ERROR_TYPE_DRAM_COR);
-}
-
-static void test_ibecc_error_inject_test_uc(void)
-{
-	ibecc_error_inject_test(TEST_ADDRESS2, TEST_ADDRESS_MASK,
-				EDAC_ERROR_TYPE_DRAM_UC);
+	ibecc_error_inject_test(TEST_ADDRESS, TEST_ADDRESS_MASK,
+				EDAC_ERROR_TYPE);
 }
 #else /* CONFIG_EDAC_ERROR_INJECT */
-static void test_ibecc_error_inject_test_cor(void)
+static void test_ibecc_error_inject_test(void)
 {
 	ztest_test_skip();
 }
-
-static void test_ibecc_error_inject_test_uc(void)
-{
-	ztest_test_skip();
-}
-#endif
+#endif /* CONFIG_EDAC_ERROR_INJECT */
 
 /* Used only for code coverage */
 
@@ -343,8 +335,7 @@ void test_main(void)
 			 ztest_unit_test(test_ibecc_api),
 			 ztest_unit_test(test_edac_dummy_api),
 			 ztest_unit_test(test_ibecc_error_inject_api),
-			 ztest_unit_test(test_ibecc_error_inject_test_cor),
-			 ztest_unit_test(test_ibecc_error_inject_test_uc)
+			 ztest_unit_test(test_ibecc_error_inject_test)
 			);
 	ztest_run_test_suite(ibecc);
 }
