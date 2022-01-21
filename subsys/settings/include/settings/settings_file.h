@@ -9,6 +9,7 @@
 #define __SETTINGS_FILE_H_
 
 #include "settings/settings.h"
+#include <fs/fs.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +22,9 @@ struct settings_file {
 	const char *cf_name;	/* filename */
 	int cf_maxlines;	/* max # of lines before compressing */
 	int cf_lines;		/* private */
+	bool wr_file_opened;
+	struct fs_file_t wr_file;
+	bool syncing; /* sync after writing value */
 };
 
 /* register file to be source of settings */

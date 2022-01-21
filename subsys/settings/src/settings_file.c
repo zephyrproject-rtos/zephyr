@@ -22,6 +22,8 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 int settings_backend_init(void);
 void settings_mount_fs_backend(struct settings_file *cf);
 
+static int settings_file_save_start(struct settings_store *cs);
+static int settings_file_save_end(struct settings_store *cs);
 static int settings_file_load(struct settings_store *cs,
 			      const struct settings_load_arg *arg);
 static int settings_file_save(struct settings_store *cs, const char *name,
@@ -29,7 +31,9 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 
 static const struct settings_store_itf settings_file_itf = {
 	.csi_load = settings_file_load,
+	.csi_save_start = settings_file_save_start,
 	.csi_save = settings_file_save,
+	.csi_save_end = settings_file_save_end
 };
 
 /*
@@ -360,52 +364,94 @@ end_rolback:
 
 }
 
+static int settings_file_open(struct settings_store *cs)
+{
+	struct settings_file *cf = (struct settings_file *)cs;
+	int rc;
+
+	if (cf->wr_file_opened) {
+		return 0;
+	}
+
+	fs_file_t_init(&cf->wr_file);
+	rc = fs_open(&cf->wr_file, cf->cf_name, FS_O_CREATE | FS_O_APPEND | FS_O_WRITE);
+	cf->wr_file_opened = true;
+	return rc;
+}
+
+static int settings_file_sync(struct settings_store *cs)
+{
+	struct settings_file *cf = (struct settings_file *)cs;
+
+	if (!cf->syncing) {
+		return 0;
+	}
+	return fs_sync(&cf->wr_file);
+}
+
+static int settings_file_close(struct settings_store *cs)
+{
+	struct settings_file *cf = (struct settings_file *)cs;
+
+	cf->wr_file_opened = false;
+	return fs_close(&cf->wr_file);
+}
+
+static int settings_file_save_start(struct settings_store *cs)
+{
+	struct settings_file *cf = (struct settings_file *)cs;
+
+	cf->syncing = false;
+	return 0;
+}
+
+static int settings_file_save_end(struct settings_store *cs)
+{
+	struct settings_file *cf = (struct settings_file *)cs;
+
+	cf->syncing = true;
+	return settings_file_sync(cs);
+}
+
 static int settings_file_save_priv(struct settings_store *cs, const char *name,
 				   const char *value, size_t val_len)
 {
 	struct settings_file *cf = (struct settings_file *)cs;
 	struct line_entry_ctx entry_ctx;
-	struct fs_file_t file;
-	int rc2;
 	int rc;
 
 	if (!name) {
 		return -EINVAL;
 	}
 
-	fs_file_t_init(&file);
-
 	if (cf->cf_maxlines && (cf->cf_lines + 1 >= cf->cf_maxlines)) {
 		/*
 		 * Compress before config file size exceeds
 		 * the max number of lines.
 		 */
-		return settings_file_save_and_compress(cf, name, value,
-						       val_len);
+		rc = settings_file_close(cs);
+		if (rc) {
+			return rc;
+		}
+		rc = settings_file_save_and_compress(cf, name, value,
+							   val_len);
+		return rc;
 	}
 
+	rc = settings_file_open(cs);
+	if (rc) {
+		return rc;
+	}
 	/*
-	 * Open the file to add this one value.
+	 * Open the file to add this one value. File has been open and seek to the end
 	 */
-	rc = fs_open(&file, cf->cf_name, FS_O_CREATE | FS_O_RDWR);
+	entry_ctx.stor_ctx = &cf->wr_file;
+	rc = settings_line_write(name, value, val_len, 0,
+							 (void *)&entry_ctx);
 	if (rc == 0) {
-		rc = fs_seek(&file, 0, FS_SEEK_END);
-		if (rc == 0) {
-			entry_ctx.stor_ctx = &file;
-			rc = settings_line_write(name, value, val_len, 0,
-						  (void *)&entry_ctx);
-			if (rc == 0) {
-				cf->cf_lines++;
-			}
-		}
-
-		rc2 = fs_close(&file);
-		if (rc == 0) {
-			rc = rc2;
-		}
+		cf->cf_lines++;
 	}
-
-	return rc;
+	return settings_file_sync(cs);
 }
 
 
@@ -484,17 +530,10 @@ static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 	struct fs_file_t *file = entry_ctx->stor_ctx;
 	int rc;
 
-	/* append to file only */
-	rc = fs_seek(file, 0, FS_SEEK_END);
-
-	if (rc == 0) {
-		rc = fs_write(file, buf, len);
-
-		if (rc > 0) {
-			rc = 0;
-		}
+	rc = fs_write(file, buf, len);
+	if (rc > 0) {
+		rc = 0;
 	}
-
 	return rc;
 }
 
@@ -507,7 +546,9 @@ int settings_backend_init(void)
 {
 	static struct settings_file config_init_settings_file = {
 		.cf_name = CONFIG_SETTINGS_FS_FILE,
-		.cf_maxlines = CONFIG_SETTINGS_FS_MAX_LINES
+		.cf_maxlines = CONFIG_SETTINGS_FS_MAX_LINES,
+		.wr_file_opened = false,
+		.syncing = true
 	};
 	struct fs_dirent entry;
 	int rc;
