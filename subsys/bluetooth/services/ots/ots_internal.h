@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,11 +15,6 @@ extern "C" {
 #include "ots_l2cap_internal.h"
 #include "ots_oacp_internal.h"
 #include "ots_olcp_internal.h"
-
-/** Maximum size of the Directory Listing Object Record. Table 4.1 in the OTS spec. */
-#define DIR_LIST_OBJ_RECORD_MIN_SIZE       13
-#define DIR_LIST_OBJ_RECORD_MAX_SIZE       172
-#define DIR_LIST_MAX_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * CONFIG_BT_OTS_MAX_OBJ_CNT)
 
 /**@brief OTS Attribute Protocol Application Error codes. */
 enum bt_gatt_ots_att_err_codes {
