@@ -144,13 +144,29 @@ BUILD_ASSERT(DT_INST_PROP(0, cpol) == DT_INST_PROP(0, cpha),
 #define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
 #define QSPI_PROP_LEN(prop) DT_PROP_LEN(QSPI_NODE, prop)
 
-#define INST_0_QER _CONCAT(JESD216_DW15_QER_, \
+#define INST_0_QER _CONCAT(JESD216_DW15_QER_VAL_, \
 			   DT_STRING_TOKEN(DT_DRV_INST(0), \
 					   quad_enable_requirements))
 
-BUILD_ASSERT(((INST_0_QER == JESD216_DW15_QER_NONE)
-	      || (INST_0_QER == JESD216_DW15_QER_S1B6)),
-	     "Driver only supports NONE or S1B6 for quad-enable-requirements");
+#define IS_EQUAL(x, y) ((x) == (y))
+#define SR1_WRITE_CLEARS_SR2 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1)
+
+#define SR2_WRITE_NEEDS_SR1  (IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1) || \
+			      IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v4) || \
+			      IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v5))
+
+#define QER_IS_S2B1 (IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1) || \
+		     IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v4) || \
+		     IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v5) || \
+		     IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v6))
+
+BUILD_ASSERT((IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE)
+	      || IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S1B6)
+	      || IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1)
+	      || IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v4)
+	      || IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v5)
+	      || IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v6)),
+	     "Driver only supports NONE, S1B6, S2B1v1, S2B1v4, S2B1v5 or S2B1v6 for quad-enable-requirements");
 
 #define INST_0_4BA DT_INST_PROP_OR(0, enter_4byte_addr, 0)
 #if (INST_0_4BA != 0)
@@ -488,16 +504,25 @@ static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd,
 	return qspi_get_zephyr_ret_code(res);
 }
 
-/* RDSR wrapper.  Negative value is error. */
-static int qspi_rdsr(const struct device *dev)
+#if !IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE)
+/* RDSR.  Negative value is error. */
+static int qspi_rdsr(const struct device *dev, uint8_t sr_num)
 {
-	uint8_t sr = -1;
+	uint8_t opcode = SPI_NOR_CMD_RDSR;
+
+	if (sr_num > 2 || sr_num == 0) {
+		return -EINVAL;
+	}
+	if (sr_num == 2) {
+		opcode = SPI_NOR_CMD_RDSR2;
+	}
+	uint8_t sr = 0xFF;
 	const struct qspi_buf sr_buf = {
 		.buf = &sr,
 		.len = sizeof(sr),
 	};
 	struct qspi_cmd cmd = {
-		.op_code = SPI_NOR_CMD_RDSR,
+		.op_code = opcode,
 		.rx_buf = &sr_buf,
 	};
 	int ret = qspi_send_cmd(dev, &cmd, false);
@@ -511,12 +536,82 @@ static int qspi_wait_while_writing(const struct device *dev)
 	int ret;
 
 	do {
-		ret = qspi_rdsr(dev);
+		ret = qspi_rdsr(dev, 1);
 	} while ((ret >= 0)
 		 && ((ret & SPI_NOR_WIP_BIT) != 0U));
 
 	return (ret < 0) ? ret : 0;
 }
+
+static int qspi_wrsr(const struct device *dev, uint8_t sr_val, uint8_t sr_num)
+{
+	int ret = 0;
+	uint8_t opcode = SPI_NOR_CMD_WRSR;
+	uint8_t length = 1;
+	uint8_t sr_array[2] = {0};
+
+	if (sr_num > 2 || sr_num == 0) {
+		return -EINVAL;
+	}
+
+	if (sr_num == 1) {
+		sr_array[0] = sr_val;
+#if SR1_WRITE_CLEARS_SR2
+		/* Writing sr1 clears sr2. need to read/modify/write both. */
+		ret = qspi_rdsr(dev, 2);
+		if (ret < 0) {
+			LOG_ERR("RDSR for WRSR failed: %d", ret);
+			return ret;
+		}
+		sr_array[1] = ret;
+		length = 2;
+#endif
+	} else { /* sr_num == 2 */
+
+#if SR2_WRITE_NEEDS_SR1
+		/* Writing sr2 requires writing sr1 as well.
+		 * Uses standard WRSR opcode
+		 */
+		sr_array[1] = sr_val;
+		ret = qspi_rdsr(dev, 1);
+		if (ret < 0) {
+			LOG_ERR("RDSR for WRSR failed: %d", ret);
+			return ret;
+		}
+		sr_array[0] = ret;
+		length = 2;
+#elif IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v6)
+		/* Writing sr2 uses a dedicated WRSR2 command */
+		sr_array[0] = sr_val;
+		opcode = SPI_NOR_CMD_WRSR2;
+#else
+		LOG_ERR("Attempted to write status register 2, but no known method to write sr2");
+		return -EINVAL;
+#endif
+	}
+
+	const struct qspi_buf sr_buf = {
+		.buf = sr_array,
+		.len = length,
+	};
+	struct qspi_cmd cmd = {
+		.op_code = opcode,
+		.tx_buf = &sr_buf,
+	};
+
+	ret = qspi_send_cmd(dev, &cmd, true);
+
+	/* Writing SR can take some time, and further
+	 * commands sent while it's happening can be
+	 * corrupted.  Wait.
+	 */
+	if (ret == 0) {
+		ret = qspi_wait_while_writing(dev);
+	}
+
+	return ret;
+}
+#endif /* !IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE) */
 
 /* QSPI erase */
 static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
@@ -627,29 +722,41 @@ static int qspi_nrfx_configure(const struct device *dev)
 	}
 #endif
 
-	if (INST_0_QER != JESD216_DW15_QER_NONE) {
-		/* Set QE to match transfer mode.  If not using quad
-		 * it's OK to leave QE set, but doing so prevents use
-		 * of WP#/RESET#/HOLD# which might be useful.
-		 *
-		 * Note build assert above ensures QER is S1B6.  Other
-		 * options require more logic.
-		 */
-
-		ret = qspi_rdsr(dev);
-		if (ret < 0) {
-			LOG_ERR("RDSR failed: %d", ret);
-			return ret;
-		}
-
-		uint8_t sr = (uint8_t)ret;
+	/* Set QE to match transfer mode.  If not using quad
+	 * it's OK to leave QE set, but doing so prevents use
+	 * of WP#/RESET#/HOLD# which might be useful.
+	 *
+	 * Note build assert above ensures QER is S1B6 or
+	 * S2B1v1/4/5/6. Other options require more logic.
+	 */
+#if !IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE)
 		nrf_qspi_prot_conf_t const *prot_if =
 			&dev_config->nrfx_cfg.prot_if;
 		bool qe_value = (prot_if->writeoc == NRF_QSPI_WRITEOC_PP4IO) ||
 				(prot_if->writeoc == NRF_QSPI_WRITEOC_PP4O)  ||
 				(prot_if->readoc == NRF_QSPI_READOC_READ4IO) ||
 				(prot_if->readoc == NRF_QSPI_READOC_READ4O);
-		const uint8_t qe_mask = BIT(6); /* only S1B6 */
+		uint8_t sr_num = 0;
+		uint8_t qe_mask = 0;
+
+#if IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S1B6)
+		sr_num = 1;
+		qe_mask = BIT(6);
+#elif QER_IS_S2B1
+		sr_num = 2;
+		qe_mask = BIT(1);
+#else
+		LOG_ERR("Unsupported QER type");
+		return -EINVAL;
+#endif
+
+		ret = qspi_rdsr(dev, sr_num);
+		if (ret < 0) {
+			LOG_ERR("RDSR failed: %d", ret);
+			return ret;
+		}
+
+		uint8_t sr = (uint8_t)ret;
 		bool qe_state = ((sr & qe_mask) != 0U);
 
 		LOG_DBG("RDSR %02x QE %d need %d: %s", sr, qe_state, qe_value,
@@ -657,25 +764,8 @@ static int qspi_nrfx_configure(const struct device *dev)
 
 		ret = 0;
 		if (qe_state != qe_value) {
-			const struct qspi_buf sr_buf = {
-				.buf = &sr,
-				.len = sizeof(sr),
-			};
-			struct qspi_cmd cmd = {
-				.op_code = SPI_NOR_CMD_WRSR,
-				.tx_buf = &sr_buf,
-			};
-
 			sr ^= qe_mask;
-			ret = qspi_send_cmd(dev, &cmd, true);
-
-			/* Writing SR can take some time, and further
-			 * commands sent while it's happening can be
-			 * corrupted.  Wait.
-			 */
-			if (ret == 0) {
-				ret = qspi_wait_while_writing(dev);
-			}
+			ret = qspi_wrsr(dev, sr, sr_num);
 		}
 
 		if (ret < 0) {
@@ -683,7 +773,7 @@ static int qspi_nrfx_configure(const struct device *dev)
 				ret);
 			return ret;
 		}
-	}
+#endif
 
 	if (INST_0_4BA != 0) {
 		struct qspi_cmd cmd = {
