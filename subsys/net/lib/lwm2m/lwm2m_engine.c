@@ -3623,6 +3623,22 @@ static int do_write_op(struct lwm2m_message *msg,
 	}
 }
 
+static int do_composite_write_op(struct lwm2m_message *msg,
+		       uint16_t format)
+{
+	switch (format) {
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	case LWM2M_FORMAT_APP_SEML_JSON:
+		return do_write_op_senml_json(msg);
+#endif
+
+	default:
+		LOG_ERR("Unsupported format: %u", format);
+		return -ENOMSG;
+
+	}
+}
+
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 static bool bootstrap_delete_allowed(int obj_id, int obj_inst_id)
 {
@@ -3699,6 +3715,28 @@ static int bootstrap_delete(struct lwm2m_message *msg)
 }
 #endif
 
+static bool lwm2m_engine_path_included(uint8_t code, bool bootstrap_mode)
+{
+	switch (code & COAP_REQUEST_MASK) {
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	case COAP_METHOD_DELETE:
+	case COAP_METHOD_GET:
+		if (bootstrap_mode) {
+			return false;
+		}
+		break;
+#endif
+	case COAP_METHOD_FETCH:
+	/* Composite Read operation */
+	case COAP_METHOD_IPATCH:
+		/* Composite write operation */
+		return false;
+	default:
+		break;
+	}
+	return true;
+}
+
 static int handle_request(struct coap_packet *request,
 			  struct lwm2m_message *msg)
 {
@@ -3749,28 +3787,13 @@ static int handle_request(struct coap_packet *request,
 		r = 0;
 	}
 
-	if (r == 0) {
+	if (r == 0 && lwm2m_engine_path_included(code, msg->ctx->bootstrap_mode)) {
 		/* No URI path or empty URI path option - allowed only during
-		 * bootstrap or CoAP Fetch.
+		 * bootstrap or CoAP Fetch or iPATCH.
 		 */
-		switch (code & COAP_REQUEST_MASK) {
-#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
-		case COAP_METHOD_DELETE:
-		case COAP_METHOD_GET:
-			if (msg->ctx->bootstrap_mode) {
-				break;
-			}
 
-			r = -EPERM;
-			goto error;
-#endif
-		case COAP_METHOD_FETCH:
-		break;
-
-		default:
-			r = -EPERM;
-			goto error;
-		}
+		r = -EPERM;
+		goto error;
 	}
 
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -3822,8 +3845,8 @@ static int handle_request(struct coap_packet *request,
 		goto error;
 	}
 
-	/* Do Only Object find if Method is not a FETCH */
-	if ((code & COAP_REQUEST_MASK) != COAP_METHOD_FETCH) {
+	/* Do Only Object find if path have been parsed */
+	if (lwm2m_engine_path_included(code, msg->ctx->bootstrap_mode)) {
 		if (!(msg->ctx->bootstrap_mode && msg->path.level == LWM2M_PATH_LEVEL_NONE)) {
 			/* find registered obj */
 			obj = get_engine_obj(msg->path.obj_id);
@@ -3862,6 +3885,11 @@ static int handle_request(struct coap_packet *request,
 		observe = coap_get_option_int(msg->in.in_cpkt,
 					      COAP_OPTION_OBSERVE);
 		msg->code = COAP_RESPONSE_CODE_CONTENT;
+		break;
+
+	case COAP_METHOD_IPATCH:
+		msg->operation = LWM2M_OP_WRITE;
+		msg->code = COAP_RESPONSE_CODE_CHANGED;
 		break;
 
 	case COAP_METHOD_POST:
@@ -4036,7 +4064,13 @@ static int handle_request(struct coap_packet *request,
 
 		case LWM2M_OP_WRITE:
 		case LWM2M_OP_CREATE:
-			r = do_write_op(msg, format);
+			if ((code & COAP_REQUEST_MASK) == COAP_METHOD_IPATCH) {
+				/* iPATCH is for Composite purpose */
+				r = do_composite_write_op(msg, format);
+			} else {
+				/* Single resource write Operation */
+				r = do_write_op(msg, format);
+			}
 			break;
 
 		case LWM2M_OP_WRITE_ATTR:
