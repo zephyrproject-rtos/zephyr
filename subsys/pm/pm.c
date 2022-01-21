@@ -105,10 +105,10 @@ static void pm_resume_devices(void)
 static inline void pm_exit_pos_ops(struct pm_state_info *info)
 {
 	extern __weak void
-		pm_power_state_exit_post_ops(struct pm_state_info *info);
+		pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 
 	if (pm_power_state_exit_post_ops != NULL) {
-		pm_power_state_exit_post_ops(info);
+		pm_power_state_exit_post_ops(info->state, info->substate_id);
 	} else {
 		/*
 		 * This function is supposed to be overridden to do SoC or
@@ -124,10 +124,10 @@ static inline void pm_exit_pos_ops(struct pm_state_info *info)
 static inline void pm_state_set(struct pm_state_info *info)
 {
 	extern __weak void
-		pm_power_state_set(struct pm_state_info *info);
+		pm_power_state_set(enum pm_state state, uint8_t substate_id);
 
 	if (pm_power_state_set != NULL) {
-		pm_power_state_set(info);
+		pm_power_state_set(info->state, info->substate_id);
 	}
 }
 
