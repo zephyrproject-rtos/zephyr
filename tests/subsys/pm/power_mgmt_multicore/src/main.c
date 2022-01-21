@@ -30,21 +30,21 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS == 2, "Invalid number of cpus");
 
 static enum pm_state state_testing[2];
 
-void pm_power_state_set(struct pm_state_info info)
+void pm_power_state_set(struct pm_state_info *info)
 {
 	switch (state_testing[_current_cpu->id]) {
 	case PM_STATE_ACTIVE:
-		zassert_equal(PM_STATE_ACTIVE, info.state, NULL);
+		zassert_equal(PM_STATE_ACTIVE, info->state, NULL);
 		break;
 	case  PM_STATE_RUNTIME_IDLE:
-		zassert_equal(PM_STATE_RUNTIME_IDLE, info.state, NULL);
+		zassert_equal(PM_STATE_RUNTIME_IDLE, info->state, NULL);
 		break;
 	case  PM_STATE_SUSPEND_TO_IDLE:
-		zassert_equal(PM_STATE_SUSPEND_TO_IDLE, info.state, NULL);
+		zassert_equal(PM_STATE_SUSPEND_TO_IDLE, info->state, NULL);
 		break;
 	case  PM_STATE_STANDBY:
 		zassert_equal(_current_cpu->id, 1U, NULL);
-		zassert_equal(PM_STATE_STANDBY, info.state, NULL);
+		zassert_equal(PM_STATE_STANDBY, info->state, NULL);
 		break;
 	default:
 		zassert_unreachable(NULL);
@@ -52,7 +52,7 @@ void pm_power_state_set(struct pm_state_info info)
 	}
 }
 
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_power_state_exit_post_ops(struct pm_state_info *info)
 {
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend

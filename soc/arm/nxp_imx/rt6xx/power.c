@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 	APP_DEEPSLEEP_RAM_APD, APP_DEEPSLEEP_RAM_PPD}))
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info *info)
 {
 	/* FIXME: When this function is entered the Kernel has disabled
 	 * interrupts using BASEPRI register. This is incorrect as it prevents
@@ -36,7 +36,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
 
-	switch (info.state) {
+	switch (info->state) {
 	case PM_STATE_RUNTIME_IDLE:
 		POWER_EnterSleep();
 		break;
@@ -44,13 +44,13 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		POWER_EnterDeepSleep(APP_EXCLUDE_FROM_DEEPSLEEP);
 		break;
 	default:
-		LOG_DBG("Unsupported power state %u", info.state);
+		LOG_DBG("Unsupported power state %u", info->state);
 		break;
 	}
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info *info)
 {
 	ARG_UNUSED(info);
 

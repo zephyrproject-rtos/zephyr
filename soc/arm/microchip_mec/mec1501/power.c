@@ -101,9 +101,9 @@ static void z_power_soc_sleep(void)
  * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info *info)
 {
-	switch (info.state) {
+	switch (info->state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
 		z_power_soc_sleep();
 		break;
@@ -123,9 +123,9 @@ __weak void pm_power_state_set(struct pm_state_info info)
  * an ISR on wake except for faults. We re-enable interrupts by setting PRIMASK
  * to 0.
  */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info *info)
 {
-	switch (info.state) {
+	switch (info->state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
 	case PM_STATE_SUSPEND_TO_RAM:
 		__set_PRIMASK(0);

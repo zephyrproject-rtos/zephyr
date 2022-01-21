@@ -141,7 +141,7 @@ DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_init,
 
 
 
-void pm_power_state_set(struct pm_state_info info)
+void pm_power_state_set(struct pm_state_info *info)
 {
 	enum pm_device_state device_power_state;
 
@@ -185,11 +185,11 @@ void pm_power_state_set(struct pm_state_info info)
 	/* this function is called when system entering low power state, so
 	 * parameter state should not be PM_STATE_ACTIVE
 	 */
-	zassert_false(info.state == PM_STATE_ACTIVE,
+	zassert_false(info->state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
 }
 
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_power_state_exit_post_ops(struct pm_state_info *info)
 {
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend

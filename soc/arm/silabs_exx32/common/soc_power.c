@@ -18,9 +18,9 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
  */
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info *info)
 {
-	LOG_DBG("SoC entering power state %d", info.state);
+	LOG_DBG("SoC entering power state %d", info->state);
 
 	/* FIXME: When this function is entered the Kernel has disabled
 	 * interrupts using BASEPRI register. This is incorrect as it prevents
@@ -34,7 +34,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
 
-	switch (info.state) {
+	switch (info->state) {
 	case PM_STATE_RUNTIME_IDLE:
 		EMU_EnterEM1();
 		break;
@@ -45,18 +45,18 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		EMU_EnterEM3(true);
 		break;
 	default:
-		LOG_DBG("Unsupported power state %u", info.state);
+		LOG_DBG("Unsupported power state %u", info->state);
 		break;
 	}
 
-	LOG_DBG("SoC leaving power state %d", info.state);
+	LOG_DBG("SoC leaving power state %d", info->state);
 
 	/* Clear PRIMASK */
 	__enable_irq();
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info *info)
 {
 	ARG_UNUSED(info);
 }

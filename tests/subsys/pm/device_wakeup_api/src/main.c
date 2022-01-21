@@ -16,7 +16,7 @@ static const struct device *dev;
 static uint8_t sleep_count;
 
 
-void pm_power_state_set(struct pm_state_info info)
+void pm_power_state_set(struct pm_state_info *info)
 {
 	ARG_UNUSED(info);
 
@@ -28,7 +28,7 @@ void pm_power_state_set(struct pm_state_info info)
 		 * Devices are suspended before SoC on PM_STATE_SUSPEND_TO_RAM, that is why
 		 * we can check the device state here.
 		 */
-		zassert_equal(info.state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
+		zassert_equal(info->state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
 
 		(void)pm_device_state_get(dev, &state);
 		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, "Wrong device state");
@@ -39,7 +39,7 @@ void pm_power_state_set(struct pm_state_info info)
 		(void)pm_device_wakeup_enable((struct device *)dev, true);
 		break;
 	case 2:
-		zassert_equal(info.state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
+		zassert_equal(info->state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
 
 		/* Second time this function is called, the system is asked to standby
 		 * and devices were suspended.
@@ -52,7 +52,7 @@ void pm_power_state_set(struct pm_state_info info)
 	}
 }
 
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_power_state_exit_post_ops(struct pm_state_info *info)
 {
 	irq_unlock(0);
 }
