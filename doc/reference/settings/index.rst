@@ -102,6 +102,17 @@ Non-volatile storage read target is registered using
 ``settings_nvs_src()``, and write target by using
 ``settings_nvs_dst()``.
 
+Storage Location
+****************
+
+The FCB and non-volatile storage (NVS) backends both look for a fixed
+partition with label "storage" by default. A different partition can be
+selected by setting the ``zephyr,settings-partition`` property of the
+chosen node in the devicetree.
+
+The file path used by the file system backend to store settings
+is selected via the option ``CONFIG_SETTINGS_FS_FILE``.
+
 Loading data from persisted storage
 ***********************************
 
