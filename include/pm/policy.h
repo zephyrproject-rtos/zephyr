@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include <pm/state.h>
+#include <sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,13 @@ extern "C" {
  * @ingroup subsys_pm_sys
  * @{
  */
+
+/** @brief Latency request. */
+struct pm_policy_latency_request {
+	sys_snode_t node;
+	/** Request value. */
+	uint32_t value;
+};
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -79,6 +87,34 @@ void pm_policy_state_lock_put(enum pm_state state);
  * @retval false if power state lock is not active.
  */
 bool pm_policy_state_lock_is_active(enum pm_state state);
+
+/**
+ * @brief Add a new latency requirement.
+ *
+ * The system will not enter any power state that would make the system to
+ * exceed the given latency value.
+ *
+ * @param req Latency request.
+ * @param value Maximum allowed latency in microseconds.
+ */
+void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
+				   uint32_t value);
+
+/**
+ * @brief Update a latency requirement.
+ *
+ * @param req Latency request.
+ * @param value New maximum allowed latency in microseconds.
+ */
+void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
+				      uint32_t value);
+
+/**
+ * @brief Remove a latency requirement.
+ *
+ * @param req Latency request.
+ */
+void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state)
 {
@@ -95,6 +131,26 @@ static inline bool pm_policy_state_lock_is_active(enum pm_state state)
 	ARG_UNUSED(state);
 
 	return false;
+}
+
+static inline void pm_policy_latency_request_add(
+	struct pm_policy_latency_request *req, uint32_t value)
+{
+	ARG_UNUSED(req);
+	ARG_UNUSED(value);
+}
+
+static inline void pm_policy_latency_request_update(
+	struct pm_policy_latency_request *req, uint32_t value)
+{
+	ARG_UNUSED(req);
+	ARG_UNUSED(value);
+}
+
+static inline void pm_policy_latency_request_remove(
+	struct pm_policy_latency_request *req)
+{
+	ARG_UNUSED(req);
 }
 #endif /* CONFIG_PM */
 
