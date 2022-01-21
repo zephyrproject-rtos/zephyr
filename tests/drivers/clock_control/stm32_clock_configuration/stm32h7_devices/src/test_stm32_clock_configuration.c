@@ -33,9 +33,8 @@ static void test_spi_clk_config(void)
 		.enr = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(spi1), kernel, bits),
 		.bus = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(spi1), kernel, bus)
 	};
-	uint32_t spi1_clk_src = __HAL_RCC_GET_SPI1_SOURCE();
-	uint32_t spi1_hal_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SPI1);
-	uint32_t spi1_dt_clk_freq;
+	uint32_t spi1_actual_clk_src, spi1_hal_clk_kernel_src, spi1_dt_clk_kernel_src;
+	uint32_t spi1_dt_clk_freq, spi1_actual_clk_freq;
 	int r;
 
 	/* Test clock_on spi1_clck_cfg */
@@ -53,22 +52,31 @@ static void test_spi_clk_config(void)
 	TC_PRINT("SPI1 ker_clk on\n");
 
 	/* Test clk_src */
-	zassert_equal(RCC_SPI123CLKSOURCE_PLL, spi1_clk_src,
+	spi1_dt_clk_kernel_src = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(spi1), kernel, bus);
+	if (spi1_dt_clk_kernel_src == STM32_SRC_PLL1_Q) {
+		spi1_hal_clk_kernel_src = RCC_SPI123CLKSOURCE_PLL;
+	} else if (spi1_dt_clk_kernel_src == STM32_SRC_PLL3_P) {
+		spi1_hal_clk_kernel_src = RCC_SPI123CLKSOURCE_PLL3;
+	} else {
+		zassert_true(1, "Unexpected clk src(%d)", spi1_dt_clk_kernel_src);
+	}
+
+	spi1_actual_clk_src = __HAL_RCC_GET_SPI1_SOURCE();
+	zassert_equal(spi1_hal_clk_kernel_src, __HAL_RCC_GET_SPI1_SOURCE(),
 			"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
-			RCC_SPI123CLKSOURCE_PLL, spi1_clk_src);
+			spi1_hal_clk_kernel_src, __HAL_RCC_GET_SPI1_SOURCE());
 
 	/* Test get_rate */
 	r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &spi1_ker_clk_cfg,
 				&spi1_dt_clk_freq);
-	zassert_true((r == 0), "Could not configure SPI Clk");
+	zassert_true((r == 0), "Could not get SPI clk freq");
 
-	TC_PRINT("Expected SPI clk freq %d\n", spi1_dt_clk_freq);
-	TC_PRINT("Actual SPI clk freq %d\n", spi1_hal_clk_freq);
+	spi1_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SPI1);
 
-	zassert_equal(spi1_dt_clk_freq, spi1_hal_clk_freq,
+	zassert_equal(spi1_dt_clk_freq, spi1_actual_clk_freq,
 			"Expected SPI clk: (%d). Actual SPI clk: %d",
-			spi1_dt_clk_freq, spi1_hal_clk_freq);
+			spi1_dt_clk_freq, spi1_actual_clk_freq);
 
 	/* Test clock_off */
 	r = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
