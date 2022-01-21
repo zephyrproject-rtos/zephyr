@@ -11,17 +11,78 @@
 #include <syscall_handler.h>
 #include <init.h>
 #include <ksched.h>
+#include <sys/rb.h>
+#include <wait_q.h>
 
-static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
+K_MEM_SLAB_DEFINE(futex_data_slab, sizeof(struct z_futex_data),
+		CONFIG_MAX_THREAD_BYTES * 8, 4);
+
+static bool node_lessthan(struct rbnode *a, struct rbnode *b);
+
+static struct rbtree futex_data_rb_tree = {
+	.lessthan_fn = node_lessthan
+};
+
+static inline struct z_futex_data *node_to_futex_data(struct rbnode *node)
 {
-	struct z_object *obj;
+	return CONTAINER_OF(node, struct z_futex_data, node);
+}
 
-	obj = z_object_find(futex);
-	if (obj == NULL || obj->type != K_OBJ_FUTEX) {
-		return NULL;
+static inline bool node_lessthan(struct rbnode *a, struct rbnode *b)
+{
+	struct z_futex_data *afdata = node_to_futex_data(a);
+	struct z_futex_data *bfdata = node_to_futex_data(b);
+
+	return afdata->addr < bfdata->addr;
+}
+
+static inline void futex_data_init(struct z_futex_data *futex_data)
+{
+	memset(futex_data, 0, sizeof(struct z_futex_data));
+	z_waitq_init(&futex_data->wait_q);
+}
+
+static struct z_futex_data *futex_find_data(void *addr)
+{
+	struct rbnode *n = futex_data_rb_tree.root;
+
+	while (n != NULL) {
+		struct z_futex_data *d = node_to_futex_data(n);
+
+		if (addr > d->addr) {
+			n = n->children[1];
+		} else if (addr < d->addr) {
+			n = (struct rbnode *) (((uintptr_t) n->children[0]) & ~1UL);
+		} else {
+			return d;
+		}
+	}
+	return NULL;
+}
+
+static int futex_add_data(struct k_futex *futex, struct z_futex_data **futex_data)
+{
+	if (k_mem_slab_num_free_get(&futex_data_slab) <= 0) {
+		return -ENOMEM;
 	}
 
-	return obj->data.futex_data;
+	int ret = k_mem_slab_alloc(&futex_data_slab, (void **) futex_data, K_NO_WAIT);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	futex_data_init(*futex_data);
+	(*futex_data)->addr = (void *) futex;
+	rb_insert(&futex_data_rb_tree, &(*futex_data)->node);
+
+	return ret;
+}
+
+static void futex_remove_data(struct z_futex_data *futex_data)
+{
+	rb_remove(&futex_data_rb_tree, &futex_data->node);
+	k_mem_slab_free(&futex_data_slab, (void **) &futex_data);
 }
 
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
@@ -31,9 +92,9 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 	struct k_thread *thread;
 	struct z_futex_data *futex_data;
 
-	futex_data = k_futex_find_data(futex);
+	futex_data = futex_find_data(futex);
 	if (futex_data == NULL) {
-		return -EINVAL;
+		return woken;
 	}
 
 	key = k_spin_lock(&futex_data->lock);
@@ -48,6 +109,10 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 	} while (thread && wake_all);
 
 	z_reschedule(&futex_data->lock, key);
+
+	if (z_waitq_head(&futex_data->wait_q) == NULL) {
+		futex_remove_data(futex_data);
+	}
 
 	return woken;
 }
@@ -69,9 +134,12 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 	k_spinlock_key_t key;
 	struct z_futex_data *futex_data;
 
-	futex_data = k_futex_find_data(futex);
+	futex_data = futex_find_data(futex);
 	if (futex_data == NULL) {
-		return -EINVAL;
+		ret = futex_add_data(futex, (struct z_futex_data **)&futex_data);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (atomic_get(&futex->val) != (atomic_val_t)expected) {
