@@ -654,7 +654,11 @@
 				     &pinctrl_adc4   /* ADC4*/
 				     &pinctrl_adc5   /* ADC5*/
 				     &pinctrl_adc6   /* ADC6*/
-				     &pinctrl_adc7>; /* ADC7*/
+				     &pinctrl_adc7   /* ADC7*/
+				     &pinctrl_adc13  /* ADC13*/
+				     &pinctrl_adc14  /* ADC14*/
+				     &pinctrl_adc15  /* ADC15*/
+				     &pinctrl_adc16>;/* ADC16*/
 		};
 		i2c0: i2c@f01c40 {
 			compatible = "ite,it8xxx2-i2c";
