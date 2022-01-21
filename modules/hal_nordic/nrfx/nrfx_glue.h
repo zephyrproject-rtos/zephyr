@@ -275,11 +275,26 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #define NRFX_GPIOTE_CHANNELS_USED NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR
 
 #if defined(CONFIG_BT_CTLR)
-#include <../subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/radio/radio_nrf5_resources.h>
 
+#if defined(CONFIG_BT_LL_SOFTDEVICE)
+#include <mpsl.h>
+#if defined(PPI_PRESENT)
+	/* PPI channels 17 - 31, for the nRF52 Series */
+	#define PPI_CHANNELS_USED_BY_CTLR (BIT_MASK(15) << 17)
+#else
+	/* DPPI channels 0 - 13, for the nRF53 Series */
+	#define PPI_CHANNELS_USED_BY_CTLR BIT_MASK(14)
+#endif
+#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    (PPI_CHANNELS_USED_BY_CTLR | MPSL_RESERVED_PPI_CHANNELS)
+#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR	     0
+#define NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR 0
+#else
+#include <../subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/radio/radio_nrf5_resources.h>
 #define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    BT_CTLR_USED_PPI_CHANNELS
 #define NRFX_PPI_GROUPS_USED_BY_BT_CTLR      BT_CTLR_USED_PPI_GROUPS
 #define NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR BT_CTLR_USED_GPIOTE_CHANNELS
+#endif
+
 #else
 #define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    0
 #define NRFX_PPI_GROUPS_USED_BY_BT_CTLR      0
