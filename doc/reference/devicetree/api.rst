@@ -411,6 +411,9 @@ device.
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
      - The node corresponding to the PCIe Controller
+   * - zephyr,settings-partition
+     - Fixed partition node. If defined this selects the partition used
+       by the NVS and FCB settings backends.
    * - zephyr,shell-uart
      - Sets UART device used by serial shell backend
    * - zephyr,sram
