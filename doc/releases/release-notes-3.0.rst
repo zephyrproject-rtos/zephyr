@@ -75,6 +75,9 @@ Removed APIs in this release:
   is changed so that it more closely mimics the real UART controller,
   option is no longer necessary.
 
+* Removed Kconfig option ``CONFIG_OPENOCD_SUPPORT`` in favor of
+  ``CONFIG_DEBUG_THREAD_INFO``.
+
 Deprecated in this release:
 
 * :c:macro:`USBD_CFG_DATA_DEFINE` is deprecated in favor of utilizing
