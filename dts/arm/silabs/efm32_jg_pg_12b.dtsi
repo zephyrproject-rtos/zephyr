@@ -1,7 +1,8 @@
 /*
  * Copyright (c) 2018 Christian Taedcke <hacking@taedcke.com>
  * Copyright (c) 2019 Lemonbeat GmbH
- *
+ * Copyright (c) 2021 T-Mobile USA, Inc. 
+ * 
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -250,6 +251,13 @@
 			reg = <0x4001d000 0x400>;
 			interrupts = <49 0>;
 			label = "TRNG0";
+			status = "disabled";
+		};
+
+		timer0: timer@40018000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40018000 0x400>;
+			label = "TIMER_0";
 			status = "disabled";
 		};
 	};
