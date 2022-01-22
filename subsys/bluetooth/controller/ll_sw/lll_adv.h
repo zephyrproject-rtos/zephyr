@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "pdu.h"
+
 struct lll_adv_iso_stream {
 	uint8_t big_handle;
 
@@ -73,8 +75,8 @@ struct lll_adv_sync {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
 
-	uint8_t access_addr[4];
-	uint8_t crc_init[3];
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
+	uint8_t crc_init[PDU_CRC_SIZE];
 
 	uint16_t latency_prepare;
 	uint16_t latency_event;

@@ -178,11 +178,11 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	uint16_t event_counter;
-	uint8_t access_addr[4];
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
 	uint32_t remainder_us;
-	uint8_t crc_init[3];
+	uint8_t crc_init[PDU_CRC_SIZE];
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t hcto;
@@ -375,11 +375,11 @@ static void isr_rx(void *param)
 	struct node_rx_pdu *node_rx;
 	struct event_done_extra *e;
 	struct lll_sync_iso *lll;
-	uint8_t access_addr[4];
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
 	uint8_t payload_index;
-	uint8_t crc_init[3];
+	uint8_t crc_init[PDU_CRC_SIZE];
 	uint8_t rssi_ready;
 	uint32_t start_us;
 	uint8_t new_burst;

@@ -173,10 +173,10 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	uint16_t event_counter;
-	uint8_t access_addr[4];
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
-	uint8_t crc_init[3];
+	uint8_t crc_init[PDU_CRC_SIZE];
 	struct pdu_bis *pdu;
 	struct ull_hdr *ull;
 	uint32_t remainder;
@@ -363,10 +363,10 @@ static void isr_tx_common(void *param,
 {
 	struct pdu_bis *pdu = NULL;
 	struct lll_adv_iso *lll;
-	uint8_t access_addr[4];
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
-	uint8_t crc_init[3];
+	uint8_t crc_init[PDU_CRC_SIZE];
 	uint8_t bis;
 
 	lll = param;
