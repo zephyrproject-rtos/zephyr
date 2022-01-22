@@ -322,12 +322,6 @@ config EXCEPTION_STACK_TRACE
 #
 # Miscellaneous debugging options
 #
-config OPENOCD_SUPPORT
-	bool "OpenOCD support (DEPRECATED)"
-	select DEBUG_THREAD_INFO
-	help
-	  This is deprecated, please use DEBUG_THREAD_INFO instead.
-
 config DEBUG_THREAD_INFO
 	bool "Thread awareness support"
 	depends on !SMP
