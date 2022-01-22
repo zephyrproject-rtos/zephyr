@@ -27,7 +27,12 @@ def map_regs():
     p = runx(f"grep -iPl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
-    cavs15 = open(f"{pcidir}/device").read().rstrip() in [ "0x5a98", "0x1a98", "0x3198" ]
+    # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
+    global cavs15, cavs18, cavs25
+    did = int(open(f"{pcidir}/device").read().rstrip(), 16)
+    cavs15 = did in [ 0x5a98, 0x1a98, 0x3198 ]
+    cavs18 = did in [ 0x9dc8, 0xa348, 0x02c8, 0x06c8, 0xa3f0 ]
+    cavs25 = did in [ 0xa0c8, 0x43c8, 0x4b55, 0x4b58, 0x7ad0, 0x51c8 ]
 
     # Check sysfs for a loaded driver and remove it
     if os.path.exists(f"{pcidir}/driver"):
@@ -77,7 +82,7 @@ def map_regs():
     dsp.SRAM_FW_STATUS = 0x80000 # Start of first SRAM window
     dsp.freeze()
 
-    return (hda, sd, dsp, hda_ostream_id, cavs15)
+    return (hda, sd, dsp, hda_ostream_id)
 
 def setup_dma_mem(fw_bytes):
     (mem, phys_addr) = map_phys_mem()
@@ -210,10 +215,12 @@ def load_firmware(fw_file):
     hda.SPBFCTL |= (1 << hda_ostream_id)
     hda.SD_SPIB = len(fw_bytes)
 
-    # Start DSP.  Just core 0 on 1.8+ (secondary core startup is handled
-    # internally), but on 1.5 the host controls the power levers.
+    # Start DSP.  Host needs to provide power to all cores on 1.5
+    # (which also starts them) and 1.8 (merely gates power, DSP also
+    # has to set PWRCTL).  The bits for cores other than 0 are ignored
+    # on 2.5 where the DSP has full control.
     log.info(f"Starting DSP, ADSPCS = 0x{dsp.ADSPCS:x}")
-    dsp.ADSPCS = 0xff0000 if cavs15 else 0x01fefe
+    dsp.ADSPCS = 0xff0000 if not cavs25 else 0x01fefe
     while (dsp.ADSPCS & 0x1000000) == 0: pass
 
     # Wait for the ROM to boot and signal it's ready.  This short
@@ -248,10 +255,11 @@ def load_firmware(fw_file):
     if not alive:
         log.warning(f"Load failed?  FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
 
-    # Turn DMA off and reset the stream.  Clearing START first is a noop
-    # per the spec, but required for 1.5, and makes the load on 1.8
-    # unstable.  Go figure.
-    if cavs15:
+    # Turn DMA off and reset the stream.  Clearing START first is a
+    # noop per the spec, but required for early versions (apparently
+    # the reset doesn't stop the stream and the next load fails), and
+    # makes the load on 2.5 unstable.  Go figure.
+    if not cavs25:
         sd.CTL &= ~2 # clear START
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
@@ -288,9 +296,9 @@ def winstream_read(last_seq):
             return (seq, result.decode("utf-8"))
 
 async def main():
-    global hda, sd, dsp, hda_ostream_id, cavs15
+    global hda, sd, dsp, hda_ostream_id
     try:
-        (hda, sd, dsp, hda_ostream_id, cavs15) = map_regs()
+        (hda, sd, dsp, hda_ostream_id) = map_regs()
     except Exception:
         log.error("Could not map device in sysfs; run as root.")
         sys.exit(1)

@@ -63,16 +63,6 @@ void soc_start_core(int cpu_num)
 {
 	uint32_t curr_cpu = prid();
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
-	/* On the older hardware, core power is managed by the host
-	 * and aren't able to poll for anything to know it's
-	 * available.  Need a delay here so that the hardware and ROM
-	 * firmware can complete initialization and be waiting for the
-	 * IDC we're about to send.
-	 */
-	k_busy_wait(CAVS15_ROM_IDC_DELAY);
-#endif
-
 #ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	/* On cAVS v2.5, MP startup works differently.  The core has
 	 * no ROM, and starts running immediately upon receipt of an
@@ -113,23 +103,25 @@ void soc_start_core(int cpu_num)
 	 * turn itself off when it gets to the WAITI instruction in
 	 * the idle thread.
 	 */
-	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(cpu_num);
 	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
 		CAVS_SHIM.clkctl |= CAVS_CLKCTL_TCPLCG(cpu_num);
 	}
+	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(cpu_num);
 
-	/* Workaround.  SOF seems to have some older code on pre-2.5
-	 * hardware that is remasking these interrupts (probably a
-	 * variant of the same code we inherited earlier to mask it
-	 * while the ROM handles the startup IDC?).  Unmask
-	 * unconditionally while we get this figured out, it's cheap
-	 * and safe.
+	/* Older devices boot from a ROM and needs some time to
+	 * complete initialization and be waiting for the IDC we're
+	 * about to send.
 	 */
-	if (IS_ENABLED(CONFIG_SOF)) {
-		CAVS_INTCTRL[cpu_num].l2.clear = CAVS_L2_IDC;
-		for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
-			IDC[c].busy_int |= IDC_ALL_CORES;
-		}
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		k_busy_wait(CAVS15_ROM_IDC_DELAY);
+	}
+
+	/* We set the interrupt controller up already, but the ROM on
+	 * some platforms will mess it up.
+	 */
+	CAVS_INTCTRL[cpu_num].l2.clear = CAVS_L2_IDC;
+	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
+		IDC[c].busy_int |= IDC_ALL_CORES;
 	}
 
 	/* Send power-up message to the other core.  Start address
