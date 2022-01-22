@@ -136,7 +136,7 @@ struct bt_gatt_attr;
  *  @param offset Offset to start reading from
  *
  *  @return Number of bytes read, or in case of an error
- *          BT_GATT_ERR() with a specific ATT error code.
+ *          BT_GATT_ERR() with a specific BT_ATT_ERR_* error code.
  */
 typedef ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
@@ -154,7 +154,7 @@ typedef ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn,
  *  @param flags  Flags (BT_GATT_WRITE_FLAG_*)
  *
  *  @return Number of bytes written, or in case of an error
- *          BT_GATT_ERR() with a specific ATT error code.
+ *          BT_GATT_ERR() with a specific BT_ATT_ERR_* error code.
  */
 typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
 					     const struct bt_gatt_attr *attr,
