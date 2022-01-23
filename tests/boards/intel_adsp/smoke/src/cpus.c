@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <kernel.h>
 #include <ztest.h>
+#include <cavs_ipc.h>
 #include "tests.h"
 
 #define RUN_ON_STACKSZ 2048
@@ -148,14 +149,41 @@ void halt_and_restart(int cpu)
 {
 	printk("halt/restart core %d...\n", cpu);
 	static bool alive_flag;
+	uint32_t all_cpus = BIT(CONFIG_MP_NUM_CPUS) - 1;
+
+	/* On older hardware we need to get the host to turn the core
+	 * off.  Construct an ADSPCS with only this core disabled
+	 */
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
+				     (all_cpus & ~BIT(cpu)) << 16);
+	}
 
 	soc_adsp_halt_cpu(cpu);
+
 	alive_flag = false;
 	run_on_cpu(cpu, alive_fn, &alive_flag, false);
 	k_msleep(100);
 	zassert_false(alive_flag, "cpu didn't halt");
 
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		/* Likewise need to ask the host to turn it back on,
+		 * and give it some time to spin up before we hit it.
+		 * We don't have a return message wired to be notified
+		 * of completion.
+		 */
+		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
+				     all_cpus << 16);
+		k_msleep(50);
+	}
+
 	z_smp_start_cpu(cpu);
+
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		/* And... startup is slow on old platforms too */
+		k_msleep(50);
+	}
+
 	WAIT_FOR(alive_flag == true);
 
 	k_thread_abort(&run_on_threads[cpu]);

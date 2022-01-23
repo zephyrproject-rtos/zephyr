@@ -101,6 +101,11 @@ extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
  * responsibility.  This function will hang if the other CPU fails to
  * reach idle.
  *
+ * @note On older cAVS hardware, core power is controlled by the host.
+ * This function must still be called for OS bookeeping, but it is
+ * insufficient without application coordination (and careful
+ * synchronization!) with the host x86 environment.
+ *
  * @param id CPU to halt, not current cpu or cpu 0
  * @return 0 on success, -EINVAL on error
  */
