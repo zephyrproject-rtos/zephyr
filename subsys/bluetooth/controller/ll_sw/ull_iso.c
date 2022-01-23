@@ -163,16 +163,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	ARG_UNUSED(codec_config_len);
 	ARG_UNUSED(codec_config);
 
-	isoal_sink_handle_t sink_handle;
-	uint32_t stream_sync_delay;
-	uint32_t group_sync_delay;
-	uint8_t flush_timeout;
-	uint16_t iso_interval;
-	uint32_t sdu_interval;
-	uint8_t  burst_number;
-	isoal_status_t err;
-	uint8_t role;
-
 	if (path_id == BT_HCI_DATAPATH_ID_DISABLED) {
 		return 0;
 	}
@@ -184,6 +174,17 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		 */
 		return BT_HCI_ERR_SUCCESS;
 	}
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	isoal_sink_handle_t sink_handle;
+	uint32_t stream_sync_delay;
+	uint32_t group_sync_delay;
+	uint8_t flush_timeout;
+	uint16_t iso_interval;
+	uint32_t sdu_interval;
+	uint8_t  burst_number;
+	isoal_status_t err;
+	uint8_t role;
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	struct ll_iso_datapath *dp_in = NULL;
@@ -241,7 +242,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	if (!stream || stream->dp) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 	/* Allocate and configure datapath */
 	struct ll_iso_datapath *dp = mem_acquire(&datapath_free);
@@ -349,13 +350,14 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 	return 0;
 }
 
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
-	struct ll_iso_datapath *dp;
+	struct ll_iso_datapath *dp = NULL;
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	struct ll_conn_iso_stream *cis = NULL;
