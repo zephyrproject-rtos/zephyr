@@ -202,8 +202,13 @@ int soc_adsp_halt_cpu(int id)
 	CAVS_SHIM.pwrctl &= ~CAVS_PWRCTL_TCPDSPPG(id);
 	CAVS_SHIM.clkctl &= ~CAVS_CLKCTL_TCPLCG(id);
 
-	/* Wait for the CPU to reach an idle state before returing */
-	while (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id)) {
+	/* If possible, wait for the other CPU to reach an idle state
+	 * before returning.  On older hardware this doesn't work
+	 * because power is controlled by the host, so synchronization
+	 * needs to be part of the application layer.
+	 */
+	while (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25) &&
+	       (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id))) {
 	}
 	return 0;
 }
