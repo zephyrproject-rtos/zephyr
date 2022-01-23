@@ -45,7 +45,9 @@ static int as5601_sample_fetch(const struct device *dev,
 static inline void as5601_rot_convert(struct sensor_value *val,
                                       int32_t raw_val)
 {
-	CONFIG_AS5601_STEPS_PER_ROTATION;
+	const float angle_deg = (float(raw_val)/4096.0f) * 360.0f;
+	val->val1 = (int)angle_deg;
+	val->val2 = (angle_deg - val->val1) * 1000;
 }
 
 static int as5601_channel_get(const struct device *dev,
