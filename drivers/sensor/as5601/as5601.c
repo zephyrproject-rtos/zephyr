@@ -42,6 +42,12 @@ static int as5601_sample_fetch(const struct device *dev,
 	return 0;
 }
 
+static inline void as5601_rot_convert(struct sensor_value *val,
+                                      int32_t raw_val)
+{
+	CONFIG_AS5601_STEPS_PER_ROTATION;
+}
+
 static int as5601_channel_get(const struct device *dev,
                               enum sensor_channel chan,
                               struct sensor_value *val)
@@ -61,6 +67,25 @@ static const struct sensor_driver_api as5601_api_func = {
 	.sample_fetch = as5601_sample_fetch,
 	.channel_get = as5601_channel_get,
 };
+
+static int as5601_init_ic(const struct device *dev)
+{
+	struct as5601_data *data = dev->data;
+	const struct as5601_config *config = dev->config;
+	int rc;
+
+	rc = i2c_reg_write_byte(data->i2c_master,
+				config_>i2c_slave_addr,
+				AS5601_REG_ABN,
+				CONFIG_AS5601_STEPS_PER_ROTATION);
+
+	if (rc < 0) {
+		LOG_DBG("Failed to init steps per rotation");
+		return -EIO;
+	}
+
+	return 0;
+}
 
 static int as5601_init(const struct device *dev)
 {
