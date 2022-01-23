@@ -163,6 +163,21 @@ void halt_and_restart(int cpu)
 
 void test_cpu_halt(void)
 {
+	/* Obviously this only works on CPU0.  This sequence is a
+	 * little whiteboxey: officially the cpu_mask API isn't
+	 * supposed to be used on a running thread, but by setting it
+	 * with interrupts masked we're guaranteed not to accidentally
+	 * disable ourselves, and the minimum-time sleep will
+	 * guarantee we re-enter the scheduler (and thus have our mask
+	 * honored) before running further.
+	 */
+	uint32_t key = arch_irq_lock();
+
+	k_thread_cpu_mask_clear(k_current_get());
+	k_thread_cpu_mask_enable(k_current_get(), 1);
+	arch_irq_unlock(key);
+	k_sleep(K_TICKS(0));
+
 	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
 		ztest_test_skip();
 	}
