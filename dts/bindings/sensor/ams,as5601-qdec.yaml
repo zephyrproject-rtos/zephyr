@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: ams as5601 magnetic rotary position sensor
+
+compatible: "ams,as5601-qdec"
+
+include: i2c-device.yaml

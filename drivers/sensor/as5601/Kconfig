@@ -1,0 +1,15 @@
+# ...
+
+menuconfig AS5601
+	bool "AS5601 magnetic rotary position sensor"
+	depends on I2C
+	help
+	  Enable driver for AS5601, I2C-based, magnetic rotary
+	  position sensor.
+
+config AS5601_STEPS_PER_ROTATION
+	int "Steps count per rotation"
+	default 16
+	depends on AS5601
+	help
+	  Steps count, per rotation, of the quadrature encoder signal.
