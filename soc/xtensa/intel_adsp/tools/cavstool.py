@@ -336,6 +336,8 @@ def ipc_command(data, ext_data):
             asyncio.ensure_future(ipc_delay_done())
     elif data == 2: # echo back ext_data as a message command
         send_msg = True
+    elif data == 3: # set ADSPCS
+        dsp.ADSPCS = ext_data
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
 
