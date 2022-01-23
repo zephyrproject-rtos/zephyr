@@ -6,16 +6,6 @@
 #include <cavs_ipc.h>
 #include "tests.h"
 
-/* The cavstool.py script that launched us listens for a very simple
- * set of IPC commands to help test.  Pass one of the following values
- * as the "data" argument to cavs_ipc_send_message():
- *
- * 0: The host takes no action, but signals DONE to complete the message
- * 1: The host returns done after a short timeout
- * 2: The host issues a new message with the ext_data value as its "data"
- */
-enum cavstool_cmd { SIGNAL_DONE, ASYNC_DONE_DELAY, RETURN_MSG };
-
 static volatile bool done_flag, msg_flag;
 
 #define RETURN_MSG_SYNC_VAL  0x12345
@@ -49,7 +39,7 @@ void test_host_ipc(void)
 	/* Just send a message and wait for it to complete */
 	printk("Simple message send...\n");
 	done_flag = false;
-	ret = cavs_ipc_send_message(CAVS_HOST_DEV, SIGNAL_DONE, 0);
+	ret = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_SIGNAL_DONE, 0);
 	zassert_true(ret, "send failed");
 	WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV));
 	WAIT_FOR(done_flag);
@@ -60,7 +50,7 @@ void test_host_ipc(void)
 	printk("Return message request...\n");
 	done_flag = false;
 	msg_flag = false;
-	ret = cavs_ipc_send_message(CAVS_HOST_DEV, RETURN_MSG,
+	ret = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_RETURN_MSG,
 				    RETURN_MSG_SYNC_VAL);
 	zassert_true(ret, "send failed");
 	WAIT_FOR(done_flag);
@@ -73,7 +63,7 @@ void test_host_ipc(void)
 	printk("Return message request 2...\n");
 	done_flag = false;
 	msg_flag = false;
-	ret = cavs_ipc_send_message(CAVS_HOST_DEV, RETURN_MSG,
+	ret = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_RETURN_MSG,
 				    RETURN_MSG_SYNC_VAL);
 	zassert_true(ret, "send failed");
 	WAIT_FOR(done_flag);
@@ -85,7 +75,7 @@ void test_host_ipc(void)
 		printk("Return message request, async...\n");
 		done_flag = false;
 		msg_flag = false;
-		ret = cavs_ipc_send_message(CAVS_HOST_DEV, RETURN_MSG,
+		ret = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_RETURN_MSG,
 					    RETURN_MSG_ASYNC_VAL);
 		zassert_true(ret, "send failed");
 		WAIT_FOR(done_flag);
@@ -101,7 +91,8 @@ void test_host_ipc(void)
 	 */
 	printk("Synchronous message send...\n");
 	done_flag = false;
-	ret = cavs_ipc_send_message_sync(CAVS_HOST_DEV, ASYNC_DONE_DELAY, 0, K_FOREVER);
+	ret = cavs_ipc_send_message_sync(CAVS_HOST_DEV, IPCCMD_ASYNC_DONE_DELAY,
+					 0, K_FOREVER);
 	zassert_true(ret, "send failed");
 	zassert_true(done_flag, "done interrupt failed to fire");
 	zassert_true(cavs_ipc_is_complete(CAVS_HOST_DEV), "sync message incomplete");

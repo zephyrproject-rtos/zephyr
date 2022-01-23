@@ -17,6 +17,24 @@
 		zassert_true(i < 10000, "timeout waiting for %s", #expr); \
 	} while (0)
 
+/* The cavstool.py script that launched us listens for a very simple
+ * set of IPC commands to help test.  Pass one of the following values
+ * as the "data" argument to cavs_ipc_send_message(CAVS_HOST_DEV, ...):
+ */
+enum cavstool_cmd {
+	/* The host takes no action, but signals DONE to complete the message */
+	IPCCMD_SIGNAL_DONE,
+
+	/* The host returns done after a short timeout */
+	IPCCMD_ASYNC_DONE_DELAY,
+
+	/* The host issues a new message with the ext_data value as its "data" */
+	IPCCMD_RETURN_MSG,
+
+	/* The host writes the given value to ADSPCS */
+	IPCCMD_ADSPCS,
+};
+
 void test_post_boot_ipi(void);
 void test_smp_boot_delay(void);
 void test_host_ipc(void);
