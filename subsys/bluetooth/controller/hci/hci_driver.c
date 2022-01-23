@@ -234,7 +234,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 		iso_received = false;
 
-#if defined(CONFIG_BT_CTLR_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		node_rx = ll_iso_rx_get();
 		if (node_rx) {
 			ll_iso_rx_dequeue();
@@ -250,7 +250,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 			iso_received = true;
 		}
-#endif /* CONFIG_BT_CTLR_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 		/* While there are completed rx nodes */
 		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
@@ -349,7 +349,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		hci_acl_encode(node_rx, buf);
 		break;
 #endif
-#if defined(CONFIG_BT_CTLR_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	case HCI_CLASS_ISO_DATA: {
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		uint8_t handle = node_rx->hdr.handle;
@@ -404,7 +404,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 		return buf;
 	}
-#endif /* CONFIG_BT_CTLR_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 	default:
 		LL_ASSERT(0);
