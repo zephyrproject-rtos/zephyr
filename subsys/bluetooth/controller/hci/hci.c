@@ -4915,8 +4915,9 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 	return evt;
 }
 
-#if defined(CONFIG_BT_CONN)
-static void data_buf_overflow(struct net_buf **buf)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO) || \
+	defined(CONFIG_BT_CTLR_CONN_ISO)
+static void data_buf_overflow(struct net_buf **buf, uint8_t link_type)
 {
 	struct bt_hci_evt_data_buf_overflow *ep;
 
@@ -4928,9 +4929,13 @@ static void data_buf_overflow(struct net_buf **buf)
 	hci_evt_create(*buf, BT_HCI_EVT_DATA_BUF_OVERFLOW, sizeof(*ep));
 	ep = net_buf_add(*buf, sizeof(*ep));
 
-	ep->link_type = BT_OVERFLOW_LINK_ACL;
+	ep->link_type = link_type;
 }
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_SYNC_ISO ||
+	* CONFIG_BT_CTLR_CONN_ISO
+	*/
 
+#if defined(CONFIG_BT_CONN)
 int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 {
 	struct node_tx *node_tx;
@@ -4968,7 +4973,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	node_tx = ll_tx_mem_acquire();
 	if (!node_tx) {
 		BT_ERR("Tx Buffer Overflow");
-		data_buf_overflow(evt);
+		data_buf_overflow(evt, BT_OVERFLOW_LINK_ACL);
 		return -ENOBUFS;
 	}
 
