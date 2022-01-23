@@ -342,6 +342,9 @@ def ipc_command(data, ext_data):
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
 
     dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+    if cavs18:
+        time.sleep(0.01) # Needed on 1.8, or the command below won't send!
+
     if done and not cavs15:
         dsp.HIPCTDA = 1<<31 # Signal done
     if send_msg:
