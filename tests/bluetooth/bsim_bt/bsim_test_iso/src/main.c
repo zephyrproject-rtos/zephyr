@@ -8,7 +8,7 @@
 
 #include <stddef.h>
 
-#include <zephyr/types.h>
+#include <sys/byteorder.h>
 #include <sys/printk.h>
 #include <sys/util.h>
 
@@ -53,15 +53,16 @@ static const struct bt_data per_ad_data2[] = {
 
 static uint8_t chan_map[] = { 0x1F, 0XF1, 0x1F, 0xF1, 0x1F };
 
-static void iso_recv(struct bt_iso_chan *chan,
-		     const struct bt_iso_recv_info *info, struct net_buf *buf);
+static bool volatile is_iso_connected;
 static void iso_connected(struct bt_iso_chan *chan);
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason);
+static void iso_recv(struct bt_iso_chan *chan,
+		     const struct bt_iso_recv_info *info, struct net_buf *buf);
 
 static struct bt_iso_chan_ops iso_ops = {
-	.recv		= iso_recv,
 	.connected	= iso_connected,
 	.disconnected	= iso_disconnected,
+	.recv		= iso_recv,
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos;
@@ -75,6 +76,9 @@ static struct bt_iso_chan bis_iso_chan = {
 
 #define BIS_ISO_CHAN_COUNT 1
 static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
+
+NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
 static void test_iso_main(void)
 {
@@ -176,6 +180,28 @@ static void test_iso_main(void)
 	}
 	printk("success.\n");
 
+	printk("Wait for ISO connected callback...");
+	while (!is_iso_connected) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("ISO connected\n");
+
+	uint32_t iso_send_count = 0;
+	uint8_t iso_data[sizeof(iso_send_count)] = { 0 };
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&bis_tx_pool, K_FOREVER);
+	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+	sys_put_le32(++iso_send_count, iso_data);
+	net_buf_add_mem(buf, iso_data, sizeof(iso_data));
+	err = bt_iso_chan_send(&bis_iso_chan, buf);
+	if (err < 0) {
+		net_buf_unref(buf);
+		FAIL("Unable to broadcast data (%d)", err);
+		return;
+	}
+	printk("Sending value %u\n", iso_send_count);
+
 	k_sleep(K_MSEC(5000));
 
 	printk("Update periodic advertising data 1...");
@@ -260,8 +286,6 @@ static void iso_recv(struct bt_iso_chan *chan,
 	printk("Incoming data channel %p len %u, flags %u, sn %u, ts %u\n",
 		chan, buf->len, info->flags, info->sn, info->ts);
 }
-
-static bool volatile is_iso_connected;
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
