@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(AS5601, CONFIG_SENSOR_LOG_LEVEL);
 
 static int as5601_sample_fetch(const struct device *dev,
-                               enum sensor_channel chan)
+							   enum sensor_channel chan)
 {
 	struct as5601_data *data = dev->data;
 	const struct as5601_config *config = dev->config;
@@ -43,16 +43,17 @@ static int as5601_sample_fetch(const struct device *dev,
 }
 
 static inline void as5601_rot_convert(struct sensor_value *val,
-                                      int32_t raw_val)
+									  int32_t raw_val)
 {
 	const float angle_deg = (float(raw_val)/4096.0f) * 360.0f;
+
 	val->val1 = (int)angle_deg;
 	val->val2 = (angle_deg - val->val1) * 1000;
 }
 
 static int as5601_channel_get(const struct device *dev,
-                              enum sensor_channel chan,
-                              struct sensor_value *val)
+							  enum sensor_channel chan,
+							  struct sensor_value *val)
 {
 	struct as5601_data *data = dev->data;
 
@@ -77,7 +78,7 @@ static int as5601_init_ic(const struct device *dev)
 	int rc;
 
 	rc = i2c_reg_write_byte(data->i2c_master,
-				config_>i2c_slave_addr,
+				config->i2c_slave_addr,
 				AS5601_REG_ABN,
 				CONFIG_AS5601_STEPS_PER_ROTATION);
 
@@ -116,5 +117,5 @@ static const as5601_config as5601_config = {
 static struct as5601_data as5601_data;
 
 DEVICE_DT_INST_DEFINE(0, as5601_init, NULL,
-                      &as5601_data, &as5601_config, POST_KERNEL,
-                      CONFIG_SENSOR_INIT_PRIORITY, &as5601_api_funcs);
+					  &as5601_data, &as5601_config, POST_KERNEL,
+					  CONFIG_SENSOR_INIT_PRIORITY, &as5601_api_funcs);

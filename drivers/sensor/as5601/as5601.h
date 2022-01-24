@@ -13,18 +13,18 @@
 #include <drivers/i2c.h>
 #include <sys/util.h>
 
-// Configuration registers
+/* Configuration registers */
 #define AS5601_REG_ZMCO    0x00
 #define AS5601_REG_ZPOS    0x01
 #define AS5601_REG_CONF    0x07
 #define AS5601_REG_ABN     0x09
 #define AS5601_REG_PUSHTHR 0x0A
 
-// Output registers (read only)
+/* Output registers (read only) */
 #define AS5601_REG_RAW_ANGLE 0x0C
 #define AS5601_REG_ANGLE     0x0E
 
-// Status registers (read only)
+/* Status registers (read only) */
 #define AS5601_REG_STATUS 0x0B
 
 #define AS5601_MASK_REG_STATUS_MH BIT(3)
