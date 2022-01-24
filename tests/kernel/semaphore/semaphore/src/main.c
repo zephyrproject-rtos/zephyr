@@ -1318,6 +1318,7 @@ void test_sem_count_get_null(void)
 /* ztest main entry*/
 void test_main(void)
 {
+#ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 			      &simple_sem, &multiple_thread_sem, &low_prio_sem,
 				  &mid_prio_sem, &high_prio_sem, &ksema, &sema,
@@ -1325,6 +1326,7 @@ void test_main(void)
 				  &stack_3, &stack_4, &timeout_info_pipe,
 				  &sem_tid_1, &sem_tid_2, &sem_tid_3, &sem_tid_4,
 				  &tstack, &tdata, &mut_sem);
+#endif
 
 	ztest_test_suite(test_semaphore,
 			 ztest_user_unit_test(test_k_sem_define),
