@@ -1150,7 +1150,7 @@ static int oacp_read(struct bt_conn *conn,
 	return err;
 }
 
-int bt_otc_read(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
+int bt_otc_read_object_data(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 {
 	struct bt_otc_internal_instance_t *inst;
 
@@ -1237,9 +1237,9 @@ static void read_next_metadata(struct bt_conn *conn,
 	}
 }
 
-int bt_otc_obj_metadata_read(struct bt_conn *conn,
-			     struct bt_otc_instance_t *otc_inst,
-			     uint8_t metadata)
+int bt_otc_read_object_metadata(struct bt_conn *conn,
+				struct bt_otc_instance_t *otc_inst,
+				uint8_t metadata)
 {
 	struct bt_otc_internal_instance_t *inst;
 
