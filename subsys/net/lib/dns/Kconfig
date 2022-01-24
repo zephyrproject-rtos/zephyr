@@ -125,6 +125,8 @@ endif # DNS_RESOLVER
 config MDNS_RESPONDER
 	bool "mDNS responder"
 	select NET_IPV6_MLD if NET_IPV6
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the mDNS responder support for Zephyr.
