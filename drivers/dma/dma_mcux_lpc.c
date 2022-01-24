@@ -346,8 +346,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 {
-	struct dma_mcux_lpc_dma_data *data = dev->data;
-	uint32_t virtual_channel = data->channel_index[channel];
+	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
+	uint32_t virtual_channel = dev_data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	LOG_DBG("START TRANSFER");
@@ -359,8 +359,8 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 {
-	struct dma_mcux_lpc_dma_data *data = dev->data;
-	uint32_t virtual_channel = data->channel_index[channel];
+	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
+	uint32_t virtual_channel = dev_data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	if (!data->busy) {
@@ -379,7 +379,7 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 			       uint32_t src, uint32_t dst, size_t size)
 {
-	struct dma_mcux_lpc_dma_data *data = dev->data;
+	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	uint32_t virtual_channel = data->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 	uint8_t src_inc, dst_inc;
