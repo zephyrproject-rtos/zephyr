@@ -2586,7 +2586,12 @@ void send_command(struct mpl_cmd command)
 {
 	struct mpl_cmd_ntf ntf;
 
-	BT_DBG("opcode: %d, param: %d", command.opcode, command.param);
+	if (command.use_param) {
+		BT_DBG("opcode: %d, param: %d", command.opcode, command.param);
+	} else {
+		command.param = 0; /* ensure that is set to 0 if not used */
+		BT_DBG("opcode: %d", command.opcode);
+	}
 
 	if (pl.state < BT_MCS_MEDIA_STATE_LAST) {
 		ntf.requested_opcode = command.opcode;
