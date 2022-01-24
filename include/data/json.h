@@ -9,6 +9,7 @@
 
 #include <sys/util.h>
 #include <stddef.h>
+#include <toolchain.h>
 #include <zephyr/types.h>
 #include <sys/types.h>
 
@@ -37,8 +38,12 @@ enum json_tokens {
 	JSON_TOK_NONE = '_',
 	JSON_TOK_OBJECT_START = '{',
 	JSON_TOK_OBJECT_END = '}',
-	JSON_TOK_LIST_START = '[',
-	JSON_TOK_LIST_END = ']',
+	/* JSON_TOK_LIST_START will be removed use JSON_TOK_ARRAY_START */
+	JSON_TOK_LIST_START __deprecated = '[',
+	JSON_TOK_ARRAY_START = '[',
+	/* JSON_TOK_LIST_END will be removed use JSON_TOK_ARRAY_END */
+	JSON_TOK_LIST_END __deprecated = ']',
+	JSON_TOK_ARRAY_END = ']',
 	JSON_TOK_STRING = '"',
 	JSON_TOK_COLON = ':',
 	JSON_TOK_COMMA = ',',
@@ -65,7 +70,7 @@ struct json_obj_descr {
 
 	/* Valid values here (enum json_tokens): JSON_TOK_STRING,
 	 * JSON_TOK_NUMBER, JSON_TOK_TRUE, JSON_TOK_FALSE,
-	 * JSON_TOK_OBJECT_START, JSON_TOK_LIST_START.  (All others
+	 * JSON_TOK_OBJECT_START, JSON_TOK_ARRAY_START.  (All others
 	 * ignored.) Maximum value is '}' (125), so this has to be 7 bits
 	 * long.
 	 */
@@ -110,9 +115,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * values.
  *
  * @param struct_ Struct packing the values
- *
  * @param field_name_ Field name in the struct
- *
  * @param type_ Token type for JSON value corresponding to a primitive
  * type. Must be one of: JSON_TOK_STRING for strings, JSON_TOK_NUMBER
  * for numbers, JSON_TOK_TRUE (or JSON_TOK_FALSE) for booleans.
@@ -140,9 +143,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @brief Helper macro to declare a descriptor for an object value
  *
  * @param struct_ Struct packing the values
- *
  * @param field_name_ Field name in the struct
- *
  * @param sub_descr_ Array of json_obj_descr describing the subobject
  *
  * Here's an example of use:
@@ -178,17 +179,61 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 	}
 
 /**
+ * @internal @brief Helper macro to declare an element descriptor
+ *
+ * @param struct_ Struct packing the values
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ * @param elem_type_ Element type, must be a primitive type
+ * @param union_ Optional macro argument containing array or object descriptor
+ */
+#define Z_JSON_ELEMENT_DESCR(struct_, len_field_, elem_type_, union_) \
+	(const struct json_obj_descr[]) \
+	{ \
+		{ \
+			.align_shift = Z_ALIGN_SHIFT(struct_), \
+			.type = elem_type_, \
+			.offset = offsetof(struct_, len_field_), \
+			union_ \
+		} \
+	}
+
+/**
+ * @internal @brief Helper macro to declare an array descriptor
+ *
+ * @param elem_descr_ Element descriptor, pointer to a descriptor array
+ * @param elem_descr_len_ Number of elements in elem_descr_
+ */
+#define Z_JSON_DESCR_ARRAY(elem_descr_, elem_descr_len_) \
+	{ \
+		.array = { \
+			.element_descr = elem_descr_, \
+			.n_elements = elem_descr_len_, \
+		}, \
+	}
+
+/**
+ * @internal @brief Helper macro to declare an object descriptor
+ *
+ * @param elem_descr_ Element descriptor, pointer to a descriptor array
+ * @param elem_descr_len_ Number of elements in elem_descr_
+ */
+#define Z_JSON_DESCR_OBJ(elem_descr_, elem_descr_len_) \
+	{ \
+		.object = { \
+			.sub_descr = elem_descr_, \
+			.sub_descr_len = elem_descr_len_, \
+		}, \
+	}
+
+/**
  * @brief Helper macro to declare a descriptor for an array of primitives
  *
  * @param struct_ Struct packing the values
- *
  * @param field_name_ Field name in the struct
- *
  * @param max_len_ Maximum number of elements in array
- *
  * @param len_field_ Field name in the struct for the number of elements
  * in the array
- *
  * @param elem_type_ Element type, must be a primitive type
  *
  * Here's an example of use:
@@ -209,18 +254,12 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (#field_name_), \
 		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.field_name_len = sizeof(#field_name_) - 1, \
-		.type = JSON_TOK_LIST_START, \
+		.type = JSON_TOK_ARRAY_START, \
 		.offset = offsetof(struct_, field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = elem_type_, \
-					.offset = \
-						offsetof(struct_, \
-							 len_field_), \
-				} }, \
+				.element_descr = Z_JSON_ELEMENT_DESCR(struct_, len_field_, \
+					elem_type_,), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
@@ -230,16 +269,11 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @brief Helper macro to declare a descriptor for an array of objects
  *
  * @param struct_ Struct packing the values
- *
  * @param field_name_ Field name in the struct containing the array
- *
  * @param max_len_ Maximum number of elements in the array
- *
  * @param len_field_ Field name in the struct for the number of elements
  * in the array
- *
  * @param elem_descr_ Element descriptor, pointer to a descriptor array
- *
  * @param elem_descr_len_ Number of elements in elem_descr_
  *
  * Here's an example of use:
@@ -271,25 +305,13 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (#field_name_), \
 		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.field_name_len = sizeof(#field_name_) - 1, \
-		.type = JSON_TOK_LIST_START, \
+		.type = JSON_TOK_ARRAY_START, \
 		.offset = offsetof(struct_, field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = JSON_TOK_OBJECT_START, \
-					.offset = offsetof(struct_, \
-							   len_field_), \
-					{ \
-						.object = { \
-							.sub_descr = \
-								elem_descr_, \
-							.sub_descr_len = \
-							    elem_descr_len_, \
-						}, \
-					}, \
-				} }, \
+				.element_descr = Z_JSON_ELEMENT_DESCR(struct_, len_field_, \
+					JSON_TOK_OBJECT_START, \
+					Z_JSON_DESCR_OBJ(elem_descr_, elem_descr_len_)), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
@@ -299,16 +321,11 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @brief Helper macro to declare a descriptor for an array of array
  *
  * @param struct_ Struct packing the values
- *
  * @param field_name_ Field name in the struct containing the array
- *
  * @param max_len_ Maximum number of elements in the array
- *
  * @param len_field_ Field name in the struct for the number of elements
  * in the array
- *
  * @param elem_descr_ Element descriptor, pointer to a descriptor array
- *
  * @param elem_descr_len_ Number of elements in elem_descr_
  *
  * Here's an example of use:
@@ -349,25 +366,15 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (#field_name_), \
 		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.field_name_len = sizeof(#field_name_) - 1, \
-		.type = JSON_TOK_LIST_START, \
+		.type = JSON_TOK_ARRAY_START, \
 		.offset = offsetof(struct_, field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = JSON_TOK_LIST_START, \
-					.offset = offsetof(struct_, \
-							   len_field_), \
-					{ \
-						.object = { \
-							.sub_descr = \
-								elem_descr_, \
-							.sub_descr_len = \
-							    elem_descr_len_, \
-						}, \
-					}, \
-				} }, \
+				.element_descr = Z_JSON_ELEMENT_DESCR( \
+					struct_, len_field_, JSON_TOK_ARRAY_START, \
+					Z_JSON_DESCR_ARRAY( \
+						elem_descr_, \
+						1 + ZERO_OR_COMPILE_ERROR(elem_descr_len_ == 1))), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
@@ -380,11 +387,8 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * This is useful when the JSON field is not a valid C identifier.
  *
  * @param struct_ Struct packing the values.
- *
  * @param json_field_name_ String, field name in JSON strings
- *
  * @param struct_field_name_ Field name in the struct
- *
  * @param type_ Token type for JSON value corresponding to a primitive
  * type.
  *
@@ -407,11 +411,8 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * This is useful when the JSON field is not a valid C identifier.
  *
  * @param struct_ Struct packing the values
- *
  * @param json_field_name_ String, field name in JSON strings
- *
  * @param struct_field_name_ Field name in the struct
- *
  * @param sub_descr_ Array of json_obj_descr describing the subobject
  *
  * @see JSON_OBJ_DESCR_OBJECT
@@ -439,16 +440,11 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * This is useful when the JSON field is not a valid C identifier.
  *
  * @param struct_ Struct packing the values
- *
  * @param json_field_name_ String, field name in JSON strings
- *
  * @param struct_field_name_ Field name in the struct
- *
  * @param max_len_ Maximum number of elements in array
- *
  * @param len_field_ Field name in the struct for the number of elements
  * in the array
- *
  * @param elem_type_ Element type, must be a primitive type
  *
  * @see JSON_OBJ_DESCR_ARRAY
@@ -460,17 +456,12 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (json_field_name_), \
 		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.field_name_len = sizeof(json_field_name_) - 1, \
-		.type = JSON_TOK_LIST_START, \
+		.type = JSON_TOK_ARRAY_START, \
 		.offset = offsetof(struct_, struct_field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = elem_type_, \
-					.offset = offsetof(struct_, \
-							   len_field_), \
-				} }, \
+				.element_descr = \
+					Z_JSON_ELEMENT_DESCR(struct_, len_field_, elem_type_,), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
@@ -483,18 +474,12 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * This is useful when the JSON field is not a valid C identifier.
  *
  * @param struct_ Struct packing the values
- *
  * @param json_field_name_ String, field name of the array in JSON strings
- *
  * @param struct_field_name_ Field name in the struct containing the array
- *
  * @param max_len_ Maximum number of elements in the array
- *
  * @param len_field_ Field name in the struct for the number of elements
  * in the array
- *
  * @param elem_descr_ Element descriptor, pointer to a descriptor array
- *
  * @param elem_descr_len_ Number of elements in elem_descr_
  *
  * Here's an example of use:
@@ -530,32 +515,20 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = json_field_name_, \
 		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.field_name_len = sizeof(json_field_name_) - 1, \
-		.type = JSON_TOK_LIST_START, \
+		.type = JSON_TOK_ARRAY_START, \
 		.offset = offsetof(struct_, struct_field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = JSON_TOK_OBJECT_START, \
-					.offset = offsetof(struct_, \
-							   len_field_), \
-					{ \
-						.object = { \
-							.sub_descr = \
-								elem_descr_, \
-							.sub_descr_len = \
-							    elem_descr_len_, \
-						}, \
-					}, \
-				} }, \
+				.element_descr = Z_JSON_ELEMENT_DESCR(struct_, len_field_, \
+					JSON_TOK_OBJECT_START, \
+					Z_JSON_DESCR_OBJ(elem_descr_, elem_descr_len_)), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
 	}
 
 /**
- * @brief Parses the JSON-encoded object pointer to by @a json, with
+ * @brief Parses the JSON-encoded object pointed to by @a json, with
  * size @a len, according to the descriptor pointed to by @a descr.
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
@@ -574,15 +547,11 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * (3) only integer numbers are supported (no strtod() in the minimal libc).
  *
  * @param json Pointer to JSON-encoded value to be parsed
- *
  * @param len Length of JSON-encoded value
- *
  * @param descr Pointer to the descriptor array
- *
  * @param descr_len Number of elements in the descriptor array. Must be less
  * than 31 due to implementation detail reasons (if more fields are
  * necessary, use two descriptors)
- *
  * @param val Pointer to the struct to hold the decoded values
  *
  * @return < 0 if error, bitmap of decoded fields on success (bit 0
@@ -593,14 +562,47 @@ int json_obj_parse(char *json, size_t len,
 	void *val);
 
 /**
+ * @brief Parses the JSON-encoded array pointed to by @a json, with
+ * size @a len, according to the descriptor pointed to by @a descr.
+ * Values are stored in a struct pointed to by @a val.  Set up the
+ * descriptor like this:
+ *
+ *    struct s { int foo; char *bar; }
+ *    struct json_obj_descr descr[] = {
+ *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
+ *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
+ *    };
+ *    struct a { struct s baz[10]; size_t count; }
+ *    struct json_obj_descr array[] = {
+ *       JSON_OBJ_DESCR_OBJ_ARRAY(struct a, baz, 10, count,
+ *                                descr, ARRAY_SIZE(descr)),
+ *    };
+ *
+ * Since this parser is designed for machine-to-machine communications, some
+ * liberties were taken to simplify the design:
+ * (1) strings are not unescaped (but only valid escape sequences are
+ * accepted);
+ * (2) no UTF-8 validation is performed; and
+ * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ *
+ * @param json Pointer to JSON-encoded array to be parsed
+ * @param len Length of JSON-encoded array
+ * @param descr Pointer to the descriptor array
+ * @param val Pointer to the struct to hold the decoded values
+ *
+ * @return 0 if array has been successfully parsed. A negative value
+ * indicates an error (as defined on errno.h).
+ */
+int json_arr_parse(char *json, size_t len,
+	const struct json_obj_descr *descr, void *val);
+
+/**
  * @brief Escapes the string so it can be used to encode JSON objects
  *
  * @param str The string to escape; the escape string is stored the
  * buffer pointed to by this parameter
- *
  * @param len Points to a size_t containing the size before and after
  * the escaping process
- *
  * @param buf_size The size of buffer str points to
  *
  * @return 0 if string has been escaped properly, or -ENOMEM if there
@@ -612,7 +614,6 @@ ssize_t json_escape(char *str, size_t *len, size_t buf_size);
  * @brief Calculates the JSON-escaped string length
  *
  * @param str The string to analyze
- *
  * @param len String size
  *
  * @return The length str would have if it were escaped
@@ -623,9 +624,7 @@ size_t json_calc_escaped_len(const char *str, size_t len);
  * @brief Calculates the string length to fully encode an object
  *
  * @param descr Pointer to the descriptor array
- *
  * @param descr_len Number of elements in the descriptor array
- *
  * @param val Struct holding the values
  *
  * @return Number of bytes necessary to encode the values if >0,
@@ -638,13 +637,9 @@ ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
  * @brief Encodes an object in a contiguous memory location
  *
  * @param descr Pointer to the descriptor array
- *
  * @param descr_len Number of elements in the descriptor array
- *
  * @param val Struct holding the values
- *
  * @param buffer Buffer to store the JSON data
- *
  * @param buf_size Size of buffer, in bytes, with space for the terminating
  * NUL character
  *
@@ -658,11 +653,8 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
  * @brief Encodes an array in a contiguous memory location
  *
  * @param descr Pointer to the descriptor array
- *
  * @param val Struct holding the values
- *
  * @param buffer Buffer to store the JSON data
- *
  * @param buf_size Size of buffer, in bytes, with space for the terminating
  * NUL character
  *
@@ -676,13 +668,9 @@ int json_arr_encode_buf(const struct json_obj_descr *descr, const void *val,
  * @brief Encodes an object using an arbitrary writer function
  *
  * @param descr Pointer to the descriptor array
- *
  * @param descr_len Number of elements in the descriptor array
- *
  * @param val Struct holding the values
- *
  * @param append_bytes Function to append bytes to the output
- *
  * @param data Data pointer to be passed to the append_bytes callback
  * function.
  *
@@ -697,11 +685,8 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
  * @brief Encodes an array using an arbitrary writer function
  *
  * @param descr Pointer to the descriptor array
- *
  * @param val Struct holding the values
- *
  * @param append_bytes Function to append bytes to the output
- *
  * @param data Data pointer to be passed to the append_bytes callback
  * function.
  *

@@ -83,7 +83,7 @@ void test_clock_uptime(void)
 }
 
 /**
- * @brief Test clock cycle functionality
+ * @brief Test 32-bit clock cycle functionality
  *
  * @details
  * Test Objectve:
@@ -122,7 +122,7 @@ void test_clock_uptime(void)
  * @see k_cycle_get_32(), k_uptime_get_32()
  */
 
-void test_clock_cycle(void)
+void test_clock_cycle_32(void)
 {
 	uint32_t c32, c0, c1, t32;
 
@@ -158,6 +158,39 @@ void test_clock_cycle(void)
 		zassert_true((uint32_t)k_cyc_to_ns_floor64(c1 - c0) >
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
 	}
+}
+
+/**
+ * @brief Test 64-bit clock cycle functionality
+ */
+void test_clock_cycle_64(void)
+{
+	uint32_t d32;
+	uint64_t d64;
+	uint32_t t32[2];
+	uint64_t t64[2];
+
+	if (!IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		ztest_test_skip();
+	}
+
+	t64[0] = k_cycle_get_64();
+	t32[0] = k_cycle_get_32();
+
+	k_msleep(1);
+
+	t32[1] = k_cycle_get_32();
+	t64[1] = k_cycle_get_64();
+
+	d32 = MIN(t32[1] - t32[0], t32[0] - t32[1]);
+	d64 = MIN(t64[1] - t64[0], t64[1] - t64[0]);
+
+	zassert_true(d64 >= d32,
+		"k_cycle_get() (64-bit): d64: %" PRIu64 " < d32: %u", d64, d32);
+
+	zassert_true(d64 < (d32 << 1),
+		"k_cycle_get() (64-bit): d64: %" PRIu64 " >= 2 * d32: %u",
+		d64, (d32 << 1));
 }
 
 /*

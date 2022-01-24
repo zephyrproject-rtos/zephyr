@@ -24,13 +24,13 @@ SECTIONS
 
 #include <linker/rel-sections.ld>
 
-    _image_rom_start = .;
+    __rom_region_start = .;
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 		/* Trap table alignment required by SPARC V8 specification. */
 		. = ALIGN(0x1000);
-		_image_text_start = .;
+		__text_region_start = .;
 
 		*(.text.traptable)
 		*(.text)
@@ -39,8 +39,8 @@ SECTIONS
 		*(.gnu.linkonce.t.*)
 	} GROUP_LINK_IN(REGION_TEXT)
 
-    _image_text_end = .;
-    _image_rodata_start = .;
+    __text_region_end = .;
+    __rodata_region_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -62,12 +62,12 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 
-    _image_rodata_end = .;
-    _image_rodata_size = _image_rodata_end - _image_rodata_start;
+    __rodata_region_end = .;
+    __rodata_region_size = __rodata_region_end - __rodata_region_start;
 
-    _image_rom_end = .;
+    __rom_region_end = .;
 
-    __data_rom_start = .;
+    __data_region_load_start = .;
 
 
     SECTION_PROLOGUE(.plt,,)
@@ -84,7 +84,8 @@ SECTIONS
 	{
 		 . = ALIGN(8);
 		 _image_ram_start = .;
-		 __data_ram_start = .;
+		 __data_region_start = .;
+		 __data_start = .;
 
 		 *(.data)
 		 *(.data.*)
@@ -96,7 +97,11 @@ SECTIONS
  */
 #include <snippets-rwdata.ld>
 
+		 __data_end = .;
+
 	}  GROUP_DATA_LINK_IN(REGION_DATA_VMA, REGION_DATA_LMA)
+    __data_size = __data_end - __data_start;
+    __data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 
@@ -110,7 +115,7 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
-    __data_ram_end = .;
+    __data_region_end = .;
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{

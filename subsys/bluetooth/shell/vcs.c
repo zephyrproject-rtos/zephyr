@@ -193,6 +193,10 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 		vcs_param.aics_param[i].cb = &aics_cbs;
 	}
 
+	vcs_param.step = 1;
+	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.volume = 100;
+
 	vcs_param.cb = &vcs_cbs;
 
 	result = bt_vcs_register(&vcs_param, &vcs);
@@ -428,9 +432,9 @@ static int cmd_vcs_vocs_offset_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (offset > UINT8_MAX || offset < -UINT8_MAX) {
+	if (offset > BT_VOCS_MAX_OFFSET || offset < BT_VOCS_MIN_OFFSET) {
 		shell_error(sh, "Offset shall be %d-%d, was %d",
-			    -UINT8_MAX, UINT8_MAX, offset);
+			    BT_VOCS_MIN_OFFSET, BT_VOCS_MAX_OFFSET, offset);
 		return -ENOEXEC;
 	}
 

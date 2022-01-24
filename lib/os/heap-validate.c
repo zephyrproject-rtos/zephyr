@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sys/sys_heap.h>
+#include <sys/util.h>
 #include <kernel.h>
 #include "heap.h"
 
@@ -55,7 +56,7 @@ static inline void check_nexts(struct z_heap *h, int bidx)
 {
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
-	bool emptybit = (h->avail_buckets & (1 << bidx)) == 0;
+	bool emptybit = (h->avail_buckets & BIT(bidx)) == 0;
 	bool emptylist = b->next == 0;
 	bool empties_match = emptybit == emptylist;
 
@@ -64,6 +65,23 @@ static inline void check_nexts(struct z_heap *h, int bidx)
 
 	if (b->next != 0) {
 		CHECK(valid_chunk(h, b->next));
+	}
+}
+
+static void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
+			   size_t *free_bytes)
+{
+	chunkid_t c;
+
+	*alloc_bytes = 0;
+	*free_bytes = 0;
+
+	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
+		if (chunk_used(h, c)) {
+			*alloc_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+		} else if (!solo_free_header(h, c)) {
+			*free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+		}
 	}
 }
 
@@ -84,6 +102,24 @@ bool sys_heap_validate(struct sys_heap *heap)
 		return false;  /* Should have exactly consumed the buffer */
 	}
 
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	/*
+	 * Validate sys_heap_runtime_stats_get API.
+	 * Iterate all chunks in sys_heap to get total allocated bytes and
+	 * free bytes, then compare with the results of
+	 * sys_heap_runtime_stats_get function.
+	 */
+	size_t allocated_bytes, free_bytes;
+	struct sys_heap_runtime_stats stat;
+
+	get_alloc_info(h, &allocated_bytes, &free_bytes);
+	sys_heap_runtime_stats_get(heap, &stat);
+	if ((stat.allocated_bytes != allocated_bytes) ||
+	    (stat.free_bytes != free_bytes)) {
+		return false;
+	}
+#endif
+
 	/* Check the free lists: entry count should match, empty bit
 	 * should be correct, and all chunk entries should point into
 	 * valid unused chunks.  Mark those chunks USED, temporarily.
@@ -102,7 +138,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 			set_chunk_used(h, c, true);
 		}
 
-		bool empty = (h->avail_buckets & (1 << b)) == 0;
+		bool empty = (h->avail_buckets & BIT(b)) == 0;
 		bool zero = n == 0;
 
 		if (empty != zero) {
@@ -244,7 +280,7 @@ static size_t rand_alloc_size(struct z_heap_stress_rec *sr)
 	 */
 	int scale = 4 + __builtin_clz(rand32());
 
-	return rand32() & ((1 << scale) - 1);
+	return rand32() & BIT_MASK(scale);
 }
 
 /* Returns the index of a randomly chosen block to free */
@@ -345,20 +381,7 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 
 	if (dump_chunks) {
 		printk("\nChunk dump:\n");
-	}
-	free_bytes = allocated_bytes = 0;
-	for (chunkid_t c = 0; ; c = right_chunk(h, c)) {
-		if (chunk_used(h, c)) {
-			if ((c != 0) && (c != h->end_chunk)) {
-				/* 1st and last are always allocated for internal purposes */
-				allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
-			}
-		} else {
-			if (!solo_free_header(h, c)) {
-				free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
-			}
-		}
-		if (dump_chunks) {
+		for (chunkid_t c = 0; ; c = right_chunk(h, c)) {
 			printk("chunk %4d: [%c] size=%-4d left=%-4d right=%d\n",
 			       c,
 			       chunk_used(h, c) ? '*'
@@ -367,12 +390,13 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 			       chunk_size(h, c),
 			       left_chunk(h, c),
 			       right_chunk(h, c));
-		}
-		if (c == h->end_chunk) {
-			break;
+			if (c == h->end_chunk) {
+				break;
+			}
 		}
 	}
 
+	get_alloc_info(h, &allocated_bytes, &free_bytes);
 	/* The end marker chunk has a header. It is part of the overhead. */
 	total = h->end_chunk * CHUNK_UNIT + chunk_header_bytes(h);
 	overhead = total - free_bytes - allocated_bytes;
@@ -386,3 +410,20 @@ void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks)
 {
 	heap_print_info(heap->heap, dump_chunks);
 }
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+
+int sys_heap_runtime_stats_get(struct sys_heap *heap,
+		struct sys_heap_runtime_stats *stats)
+{
+	if ((heap == NULL) || (stats == NULL)) {
+		return -EINVAL;
+	}
+
+	stats->free_bytes = heap->heap->free_bytes;
+	stats->allocated_bytes = heap->heap->allocated_bytes;
+
+	return 0;
+}
+
+#endif

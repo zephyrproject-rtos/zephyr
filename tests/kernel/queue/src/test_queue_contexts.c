@@ -526,3 +526,30 @@ void test_queue_multithread_competition(void)
 	/* Revert priority of the main thread */
 	k_thread_priority_set(k_current_get(), old_prio);
 }
+
+/**
+ * @brief Verify k_queue_unique_append()
+ *
+ * @ingroup kernel_queue_tests
+ *
+ * @details Append the same data to the queue repeatedly,
+ * see if it returns expected value.
+ * And verify operation succeed if append different data to
+ * the queue.
+ *
+ * @see k_queue_unique_append()
+ */
+void test_queue_unique_append(void)
+{
+	bool ret;
+
+	k_queue_init(&queue);
+	ret = k_queue_unique_append(&queue, (void *)&data[0]);
+	zassert_true(ret, "queue unique append failed");
+
+	ret = k_queue_unique_append(&queue, (void *)&data[0]);
+	zassert_false(ret, "queue unique append should fail");
+
+	ret = k_queue_unique_append(&queue, (void *)&data[1]);
+	zassert_true(ret, "queue unique append failed");
+}

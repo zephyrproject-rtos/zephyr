@@ -11,7 +11,8 @@ DT_COMPAT_XLNX_GEM := xlnx,gem
 menuconfig ETH_XLNX_GEM
 	bool "Xilinx GEM Ethernet driver"
 	default $(dt_compat_enabled,$(DT_COMPAT_XLNX_GEM))
-	depends on SOC_XILINX_ZYNQMP_RPU
+	depends on SOC_XILINX_ZYNQMP_RPU || SOC_FAMILY_XILINX_ZYNQ7000
+	depends on !QEMU_TARGET || (QEMU_TARGET && NET_QEMU_ETHERNET)
 	help
 	  Enable Xilinx GEM Ethernet driver.
 

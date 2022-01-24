@@ -11,6 +11,18 @@
 
 #include "memc_mcux_flexspi.h"
 
+
+/*
+ * NOTE: If CONFIG_FLASH_MCUX_FLEXSPI_XIP is selected, Any external functions
+ * called while interacting with the flexspi MUST be relocated to SRAM or ITCM
+ * at runtime, so that the chip does not access the flexspi to read program
+ * instructions while it is being written to
+ */
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_XIP) && (CONFIG_MEMC_LOG_LEVEL > 0)
+#warning "Enabling memc driver logging and XIP mode simultaneously can cause \
+	read-while-write hazards. This configuration is not recommended."
+#endif
+
 LOG_MODULE_REGISTER(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
 
 struct memc_flexspi_config {
@@ -29,6 +41,14 @@ struct memc_flexspi_config {
 struct memc_flexspi_data {
 	size_t size[kFLEXSPI_PortCount];
 };
+
+void memc_flexspi_wait_bus_idle(const struct device *dev)
+{
+	const struct memc_flexspi_config *config = dev->config;
+
+	while (false == FLEXSPI_GetBusIdleStatus(config->base)) {
+	}
+}
 
 bool memc_flexspi_is_running_xip(const struct device *dev)
 {
@@ -99,7 +119,7 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 	int i;
 
 	if (port >= kFLEXSPI_PortCount) {
-		LOG_ERR("Invalid port number");
+		LOG_ERR("Invalid port number: %u", port);
 		return NULL;
 	}
 
@@ -127,7 +147,10 @@ static int memc_flexspi_init(const struct device *dev)
 	flexspi_config.ahbConfig.enableAHBCachable = config->ahb_cacheable;
 	flexspi_config.ahbConfig.enableAHBPrefetch = config->ahb_prefetch;
 	flexspi_config.ahbConfig.enableReadAddressOpt = config->ahb_read_addr_opt;
+#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN) && \
+	FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN)
 	flexspi_config.enableCombination = config->combination_mode;
+#endif
 	flexspi_config.enableSckBDiffOpt = config->sck_differential_clock;
 	flexspi_config.rxSampleClock = config->rx_sample_clock;
 

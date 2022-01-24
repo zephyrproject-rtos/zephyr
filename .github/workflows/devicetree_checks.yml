@@ -22,6 +22,9 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8]
         os: [ubuntu-latest, macos-latest, windows-latest]
+        exclude:
+          - os: macos-latest
+            python-version: 3.6
     steps:
     - name: checkout
       uses: actions/checkout@v2

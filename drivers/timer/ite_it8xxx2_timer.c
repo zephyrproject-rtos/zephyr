@@ -5,6 +5,7 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_timer
 
+#include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <soc.h>
@@ -14,28 +15,12 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
-/* Control external timer3~8 */
-#define IT8XXX2_EXT_TIMER_BASE	(DT_INST_REG_ADDR(0))/*0x00F01F10*/
-#define IT8XXX2_EXT_CTRLX(n)	ECREG(IT8XXX2_EXT_TIMER_BASE + (n << 3))
-#define IT8XXX2_EXT_PSRX(n)	ECREG(IT8XXX2_EXT_TIMER_BASE + 0x01 + (n << 3))
-#define IT8XXX2_EXT_CNTX(n)	ECREG_u32(IT8XXX2_EXT_TIMER_BASE + 0x04 + \
-						(n << 3))
-#define IT8XXX2_EXT_CNTOX(n)	ECREG_u32(IT8XXX2_EXT_TIMER_BASE + 0x38 + \
-						(n << 2))
-
 /* Event timer configurations */
 #define EVENT_TIMER		EXT_TIMER_3
 #define EVENT_TIMER_IRQ		DT_INST_IRQ_BY_IDX(0, 0, irq)
 #define EVENT_TIMER_FLAG	DT_INST_IRQ_BY_IDX(0, 0, flags)
 /* Event timer max count is 512 sec (base on clock source 32768Hz) */
 #define EVENT_TIMER_MAX_CNT	0x00FFFFFFUL
-
-/* Free run timer configurations */
-#define FREE_RUN_TIMER		EXT_TIMER_4
-#define FREE_RUN_TIMER_IRQ	DT_INST_IRQ_BY_IDX(0, 1, irq)
-#define FREE_RUN_TIMER_FLAG	DT_INST_IRQ_BY_IDX(0, 1, flags)
-/* Free run timer max count is 36.4 hr (base on clock source 32768Hz) */
-#define FREE_RUN_TIMER_MAX_CNT	0xFFFFFFFFUL
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
 /*
@@ -66,29 +51,29 @@ LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 #define EVEN_TIMER_MAX_CNT_SYS_TICK	(EVENT_TIMER_MAX_CNT \
 					/ HW_CNT_PER_SYS_TICK)
 
-enum ext_clk_src_sel {
-	EXT_PSR_32P768K = 0,
-	EXT_PSR_1P024K,
-	EXT_PSR_32,
-	EXT_PSR_8M,
-};
-
-/*
- * 24-bit timers: external timer 3, 5, and 7
- * 32-bit timers: external timer 4, 6, and 8
- */
-enum ext_timer_idx {
-	EXT_TIMER_3 = 0,	/* Event timer */
-	EXT_TIMER_4,		/* Free run timer */
-	EXT_TIMER_5,
-	EXT_TIMER_6,
-	EXT_TIMER_7,
-	EXT_TIMER_8,
-};
-
 static struct k_spinlock lock;
 /* Last HW count that we called sys_clock_announce() */
 static volatile uint32_t last_announced_hw_cnt;
+
+enum ext_timer_raw_cnt {
+	EXT_NOT_RAW_CNT = 0,
+	EXT_RAW_CNT,
+};
+
+enum ext_timer_init {
+	EXT_NOT_FIRST_TIME_ENABLE = 0,
+	EXT_FIRST_TIME_ENABLE,
+};
+
+enum ext_timer_int {
+	EXT_WITHOUT_TIMER_INT = 0,
+	EXT_WITH_TIMER_INT,
+};
+
+enum ext_timer_start {
+	EXT_NOT_START_TIMER = 0,
+	EXT_START_TIMER,
+};
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
 static void timer_5ms_one_shot_isr(const void *unused)
@@ -116,7 +101,7 @@ void timer_5ms_one_shot(void)
 			ONE_SHOT_TIMER_FLAG);
 
 	/* Set rising edge triggered of one shot timer */
-	ite_intc_irq_priority_set(ONE_SHOT_TIMER_IRQ, 0, ONE_SHOT_TIMER_FLAG);
+	ite_intc_irq_polarity_set(ONE_SHOT_TIMER_IRQ, ONE_SHOT_TIMER_FLAG);
 
 	/* Clear interrupt status of one shot timer */
 	ite_intc_isr_clear(ONE_SHOT_TIMER_IRQ);
@@ -166,6 +151,19 @@ static void evt_timer_isr(const void *unused)
 	}
 }
 
+static void free_run_timer_overflow_isr(const void *unused)
+{
+	ARG_UNUSED(unused);
+
+	/* Read to clear terminal count flag */
+	__unused uint8_t rc_tc = IT8XXX2_EXT_CTRLX(FREE_RUN_TIMER);
+
+	/*
+	 * TODO: to increment 32-bit "top half" here for software 64-bit
+	 * timer emulation.
+	 */
+}
+
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	uint32_t hw_cnt;
@@ -180,9 +178,13 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Critical section */
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* NOTE: To reduce cpu effort, we don't add critical section here */
+	/* Disable event timer */
+	IT8XXX2_EXT_CTRLX(EVENT_TIMER) &= ~IT8XXX2_EXT_ETXEN;
+
 	if (ticks == K_TICKS_FOREVER) {
-		hw_cnt = EVENT_TIMER_MAX_CNT;
+		/* Return since no future timer interrupts are required */
+		k_spin_unlock(&lock, key);
+		return;
 	} else if (ticks <= 1) {
 		/*
 		 * Ticks <= 1 means the kernel wants the tick announced
@@ -210,12 +212,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Set event timer 24-bit count */
 	IT8XXX2_EXT_CNTX(EVENT_TIMER) = hw_cnt;
 
-	/* Enable and re-start event timer */
-	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= (IT8XXX2_EXT_ETXEN |
-					   IT8XXX2_EXT_ETXRST);
-
 	/* W/C event timer interrupt status */
 	ite_intc_isr_clear(EVENT_TIMER_IRQ);
+
+	/*
+	 * When timer enable bit is from 0->1, timer will reload counts and
+	 * start countdown.
+	 */
+	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= IT8XXX2_EXT_ETXEN;
 
 	k_spin_unlock(&lock, key);
 
@@ -261,17 +265,17 @@ uint32_t sys_clock_cycle_get_32(void)
 
 static int timer_init(enum ext_timer_idx ext_timer,
 			enum ext_clk_src_sel clock_source_sel,
-			uint32_t raw,
+			enum ext_timer_raw_cnt raw,
 			uint32_t ms,
-			uint8_t first_time_enable,
+			enum ext_timer_init first_time_enable,
 			uint32_t irq_num,
 			uint32_t irq_flag,
-			uint8_t with_int,
-			uint8_t start)
+			enum ext_timer_int with_int,
+			enum ext_timer_start start)
 {
 	uint32_t hw_cnt;
 
-	if (raw) {
+	if (raw == EXT_RAW_CNT) {
 		hw_cnt = ms;
 	} else {
 		if (clock_source_sel == EXT_PSR_32P768K)
@@ -293,7 +297,7 @@ static int timer_init(enum ext_timer_idx ext_timer,
 		return -1;
 	}
 
-	if (first_time_enable) {
+	if (first_time_enable == EXT_FIRST_TIME_ENABLE) {
 		/* Enable and re-start external timer x */
 		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN |
 						 IT8XXX2_EXT_ETXRST);
@@ -302,7 +306,7 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	}
 
 	/* Set rising edge triggered of external timer x */
-	ite_intc_irq_priority_set(irq_num, 0, irq_flag);
+	ite_intc_irq_polarity_set(irq_num, irq_flag);
 
 	/* Clear interrupt status of external timer x */
 	ite_intc_isr_clear(irq_num);
@@ -315,12 +319,12 @@ static int timer_init(enum ext_timer_idx ext_timer,
 
 	/* Disable external timer x */
 	IT8XXX2_EXT_CTRLX(ext_timer) &= ~IT8XXX2_EXT_ETXEN;
-	if (start)
+	if (start == EXT_START_TIMER)
 		/* Enable and re-start external timer x */
 		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN |
 						 IT8XXX2_EXT_ETXRST);
 
-	if (with_int)
+	if (with_int == EXT_WITH_TIMER_INT)
 		irq_enable(irq_num);
 	else
 		irq_disable(irq_num);
@@ -328,16 +332,20 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	return 0;
 }
 
-int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	int ret;
 
 	ARG_UNUSED(dev);
 
+	/* Enable 32-bit free run timer overflow interrupt */
+	IRQ_CONNECT(FREE_RUN_TIMER_IRQ, 0, free_run_timer_overflow_isr, NULL,
+		    FREE_RUN_TIMER_FLAG);
 	/* Set 32-bit timer4 for free run*/
-	ret = timer_init(FREE_RUN_TIMER, EXT_PSR_32P768K, TRUE,
-			 FREE_RUN_TIMER_MAX_CNT, TRUE, FREE_RUN_TIMER_IRQ,
-			 FREE_RUN_TIMER_FLAG, FALSE, TRUE);
+	ret = timer_init(FREE_RUN_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT,
+			 FREE_RUN_TIMER_MAX_CNT, EXT_FIRST_TIME_ENABLE,
+			 FREE_RUN_TIMER_IRQ, FREE_RUN_TIMER_FLAG,
+			 EXT_WITH_TIMER_INT, EXT_START_TIMER);
 	if (ret < 0) {
 		LOG_ERR("Init free run timer failed");
 		return ret;
@@ -346,15 +354,17 @@ int sys_clock_driver_init(const struct device *dev)
 	/* Set 24-bit timer3 for timeout event */
 	IRQ_CONNECT(EVENT_TIMER_IRQ, 0, evt_timer_isr, NULL, EVENT_TIMER_FLAG);
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, TRUE,
-				 EVENT_TIMER_MAX_CNT, TRUE, EVENT_TIMER_IRQ,
-				 EVENT_TIMER_FLAG, TRUE, FALSE);
+		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT,
+				 EVENT_TIMER_MAX_CNT, EXT_FIRST_TIME_ENABLE,
+				 EVENT_TIMER_IRQ, EVENT_TIMER_FLAG,
+				 EXT_WITH_TIMER_INT, EXT_NOT_START_TIMER);
 	} else {
 		/* Start a event timer in one system tick */
-		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, TRUE,
-				 MAX((1 * HW_CNT_PER_SYS_TICK), 1), TRUE,
-				 EVENT_TIMER_IRQ, EVENT_TIMER_FLAG,
-				 TRUE, TRUE);
+		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT,
+				 MAX((1 * HW_CNT_PER_SYS_TICK), 1),
+				 EXT_FIRST_TIME_ENABLE, EVENT_TIMER_IRQ,
+				 EVENT_TIMER_FLAG, EXT_WITH_TIMER_INT,
+				 EXT_START_TIMER);
 	}
 	if (ret < 0) {
 		LOG_ERR("Init event timer failed");
@@ -363,3 +373,6 @@ int sys_clock_driver_init(const struct device *dev)
 
 	return 0;
 }
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

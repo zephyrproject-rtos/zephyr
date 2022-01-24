@@ -4,8 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD
-	default "esp32c3"
+	default "esp32c3_devkitm"
 	depends on BOARD_ESP32C3_DEVKITM
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR
 
 if BT
 

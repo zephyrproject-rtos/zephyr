@@ -58,6 +58,22 @@ extern "C" {
 #define GENMASK(h, l) \
 	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
 
+/** @brief Extract the Least Significant Bit from @p value. */
+#define LSB_GET(value) ((value) & -(value))
+
+/**
+ * @brief Extract a bitfield element from @p value corresponding to
+ *	  the field mask @p mask.
+ */
+#define FIELD_GET(mask, value)  (((value) & (mask)) / LSB_GET(mask))
+
+/**
+ * @brief Prepare a bitfield element using @p value with @p mask representing
+ *	  its field position and width. The result should be combined
+ *	  with other fields using a logical OR.
+ */
+#define FIELD_PREP(mask, value) (((value) * LSB_GET(mask)) & (mask))
+
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
 
@@ -108,7 +124,7 @@ extern "C" {
 	((ptr) && ((ptr) >= &array[0] && (ptr) < &array[ARRAY_SIZE(array)]))
 
 /**
- * @brief Get a pointer to a container structure from an element
+ * @brief Get a pointer to a structure containing the element
  *
  * Example:
  *
@@ -234,8 +250,33 @@ static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
  */
 static inline void bytecpy(void *dst, const void *src, size_t size)
 {
-	for (size_t i = 0; i < size; ++i) {
-		((uint8_t *)dst)[i] = ((uint8_t *)src)[i];
+	size_t i;
+
+	for (i = 0; i < size; ++i) {
+		((volatile uint8_t *)dst)[i] = ((volatile const uint8_t *)src)[i];
+	}
+}
+
+/**
+ * @brief byte by byte swap.
+ *
+ * Swap @a size bytes between memory regions @a a and @a b. This is
+ * guaranteed to be done byte by byte.
+ *
+ * @param a Pointer to the the first memory region.
+ * @param b Pointer to the the second memory region.
+ * @param size The number of bytes to swap.
+ */
+static inline void byteswp(void *a, void *b, size_t size)
+{
+	uint8_t t;
+	uint8_t *aa = (uint8_t *)a;
+	uint8_t *bb = (uint8_t *)b;
+
+	for (; size > 0; --size) {
+		t = *aa;
+		*aa++ = *bb;
+		*bb++ = t;
 	}
 }
 
@@ -284,6 +325,30 @@ size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen);
 size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen);
 
 /**
+ * @brief Convert a binary coded decimal (BCD 8421) value to binary.
+ *
+ * @param bcd BCD 8421 value to convert.
+ *
+ * @return Binary representation of input value.
+ */
+static inline uint8_t bcd2bin(uint8_t bcd)
+{
+	return ((10 * (bcd >> 4)) + (bcd & 0x0F));
+}
+
+/**
+ * @brief Convert a binary value to binary coded decimal (BCD 8421).
+ *
+ * @param bin Binary value to convert.
+ *
+ * @return BCD 8421 representation of input value.
+ */
+static inline uint8_t bin2bcd(uint8_t bin)
+{
+	return (((bin / 10) << 4) | (bin % 10));
+}
+
+/**
  * @brief      Convert a uint8_t into a decimal string representation.
  *
  * Convert a uint8_t value into its ASCII decimal string representation.
@@ -297,6 +362,46 @@ size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen);
  *             any), or 0 if an error occurred.
  */
 uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
+
+/**
+ * @brief Properly truncate a NULL-terminated UTF-8 string
+ *
+ * Take a NULL-terminated UTF-8 string and ensure that if the string has been
+ * truncated (by setting the NULL terminator) earlier by other means, that
+ * the string ends with a properly formatted UTF-8 character (1-4 bytes).
+ *
+ * @htmlonly
+ * Example:
+ *      char test_str[] = "€€€";
+ *      char trunc_utf8[8];
+ *
+ *      printf("Original : %s\n", test_str); // €€€
+ *      strncpy(trunc_utf8, test_str, sizeof(trunc_utf8));
+ *      trunc_utf8[sizeof(trunc_utf8) - 1] = '\0';
+ *      printf("Bad      : %s\n", trunc_utf8); // €€�
+ *      utf8_trunc(trunc_utf8);
+ *      printf("Truncated: %s\n", trunc_utf8); // €€
+ * @endhtmlonly
+ *
+ * @param utf8_str NULL-terminated string
+ *
+ *  @return Pointer to the @p utf8_str
+ */
+char *utf8_trunc(char *utf8_str);
+
+/**
+ * @brief Copies a UTF-8 encoded string from @p src to @p dst
+ *
+ * The resulting @p dst will always be NULL terminated, and the @p dst string
+ * will always be properly UTF-8 truncated.
+ *
+ * @param dst The destination of the UTF-8 string.
+ * @param src The source string
+ * @param n   The size of the @p dst buffer. Shall not be 0.
+ *
+ * return Pointer to the @p dst
+ */
+char *utf8_lcpy(char *dst, const char *src, size_t n);
 
 #ifdef __cplusplus
 }

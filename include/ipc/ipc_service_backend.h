@@ -25,41 +25,53 @@ extern "C" {
  *  This structure is used for configuration backend during registration.
  */
 struct ipc_service_backend {
-	/** @brief Name of the IPC backend. */
-	const char *name;
+	/** @brief Pointer to the function that will be used to open an instance
+	 *
+	 *  @param instance Instance pointer.
+	 *
+	 *  @retval -EALREADY when the instance is already opened.
+	 *
+	 *  @retval 0 on success
+	 *  @retval other errno codes depending on the implementation of the
+	 *	    backend.
+	 */
+	int (*open_instance)(const struct device *instance);
 
 	/** @brief Pointer to the function that will be used to send data to the endpoint.
 	 *
-	 *  @param ept Registered endpoint.
+	 *  @param instance Instance pointer.
+	 *  @param token Backend-specific token.
 	 *  @param data Pointer to the buffer to send.
 	 *  @param len Number of bytes to send.
 	 *
-	 *  @retval Status code.
+	 *  @retval -EINVAL when instance is invalid.
+	 *  @retval -EBADMSG when the message is invalid.
+	 *  @retval -EBUSY when the instance is busy or not ready.
+	 *
+	 *  @retval 0 on success
+	 *  @retval other errno codes depending on the implementation of the
+	 *	    backend.
 	 */
-	int (*send)(struct ipc_ept *ept, const void *data, size_t len);
+	int (*send)(const struct device *instance, void *token,
+		    const void *data, size_t len);
 
 	/** @brief Pointer to the function that will be used to register endpoints.
 	 *
-	 *  @param ept Endpoint object.
+	 *  @param instance Instance to register the endpoint onto.
+	 *  @param token Backend-specific token.
 	 *  @param cfg Endpoint configuration.
 	 *
-	 *  @retval Status code.
+	 *  @retval -EINVAL when the endpoint configuration or instance is invalid.
+	 *  @retval -EBUSY when the instance is busy or not ready.
+	 *
+	 *  @retval 0 on success
+	 *  @retval other errno codes depending on the implementation of the
+	 *	    backend.
 	 */
-	int (*register_endpoint)(struct ipc_ept **ept, const struct ipc_ept_cfg *cfg);
+	int (*register_endpoint)(const struct device *instance,
+				 void **token,
+				 const struct ipc_ept_cfg *cfg);
 };
-
-/** @brief IPC backend registration.
- *
- *  Registration must be done before using IPC Service.
- *
- *  @param backend Configuration of the backend.
- *
- *  @retval -EALREADY The backend is already registered.
- *  @retval -EINVAL The backend configuration is incorrect.
- *  @retval Zero on success.
- *
- */
-int ipc_service_register_backend(const struct ipc_service_backend *backend);
 
 /**
  * @}

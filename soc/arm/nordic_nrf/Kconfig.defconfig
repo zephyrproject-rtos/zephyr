@@ -28,7 +28,7 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
 config PM
-	default y if SYS_CLOCK_EXISTS && !HAS_NO_SYS_PM && MULTITHREADING
+	default y if SYS_CLOCK_EXISTS && !HAS_NO_PM && MULTITHREADING
 
 config BUILD_OUTPUT_HEX
 	default y
@@ -41,9 +41,5 @@ endif
 config GPIO
 	default y
 	depends on SPI
-
-choice NULL_POINTER_EXCEPTION_DETECTION
-	default NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
-endchoice
 
 endif # SOC_FAMILY_NRF

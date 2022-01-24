@@ -49,11 +49,14 @@ amstaos	AMS-Taos Inc.
 analogix	Analogix Semiconductor, Inc.
 andestech	Andes Technology Corporation
 anvo	Anvo-Systems Dresden GmbH
+aosong	Guangzhou Aosong Electronic Co., Ltd.
+apa	Apa Electronic Co., Ltd
 apm	Applied Micro Circuits Corporation (APM)
 apple	Apple Inc.
 aptina	Aptina Imaging
 arasan	Arasan Chip Systems
 archermind	ArcherMind Technology (Nanjing) Co., Ltd.
+arc	Synopsys, Inc. (formerly ARC International PLC)
 arctic	Arctic Sand
 arcx	arcx Inc. / Archronix Inc.
 arduino	Arduino
@@ -95,7 +98,6 @@ brcm	Broadcom Corporation
 buffalo	Buffalo, Inc.
 bur	B&R Industrial Automation GmbH
 bticino	Bticino International
-cadence	Cadence Design Systems, Inc.
 calaosystems	CALAO Systems SAS
 calxeda	Calxeda
 canaan	Canaan, Inc.
@@ -140,6 +142,7 @@ cznic	CZ.NIC, z.s.p.o.
 dallas	Maxim Integrated Products (formerly Dallas Semiconductor)
 dataimage	DataImage, Inc.
 davicom	DAVICOM Semiconductor, Inc.
+decawave	Qorvo, Inc (formerly Decawave)
 dell	Dell Inc.
 delta	Delta Electronics, Inc.
 denx	Denx Software Engineering
@@ -190,6 +193,7 @@ est	ESTeem Wireless Modems
 ettus	NI Ettus Research
 eukrea	Eukréa Electromatique
 everest	Everest Semiconductor Co. Ltd.
+everlight	Everlight Electronics Co. Ltd.
 everspin	Everspin Technologies, Inc.
 evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
@@ -208,11 +212,13 @@ focaltech	FocalTech Systems Co.,Ltd
 frida	Shenzhen Frida LCD Co., Ltd.
 friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
+ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
 gaisler	Gaisler
 gardena	GARDENA GmbH
 gateworks	Gateworks Corporation
 gcw	Game Consoles Worldwide
+gd	GigaDevice Semiconductor
 ge	General Electric Company
 geekbuying	GeekBuying
 gef	GE Fanuc Intelligent Platforms Embedded Systems, Inc.
@@ -224,8 +230,10 @@ giantplus	Giantplus Technology Co., Ltd.
 globalscale	Globalscale Technologies, Inc.
 globaltop	GlobalTop Technology, Inc.
 gmt	Global Mixed-mode Technology, Inc.
+gooddisplay	Dalian Good Display Co., Ltd.
 goodix	Shenzhen Huiding Technology Co., Ltd.
 google	Google, Inc.
+greeled	GreeLed Electronic Ltd.
 grinn	Grinn
 grmn	Garmin Limited
 gumstix	Gumstix, Inc.
@@ -241,6 +249,7 @@ hitex	Hitex Development Tools
 holt	Holt Integrated Circuits, Inc.
 honestar	Honestar Technologies Co., Ltd.
 honeywell	Honeywell
+hoperf	HOPERF Microelectronics Co. Ltd
 hoperun	Jiangsu HopeRun Software Co., Ltd.
 hp	Hewlett Packard
 hsg	HannStar Display Co.
@@ -262,6 +271,7 @@ incircuit	In-Circuit GmbH
 inet-tek	Shenzhen iNet Mobile Internet Technology Co., Ltd
 infineon	Infineon Technologies
 inforce	Inforce Computing
+inventek	Inventek Systems
 ivo	InfoVision Optoelectronics Kunshan Co. Ltd.
 ingenic	Ingenic Semiconductor
 innolux	Innolux Corporation
@@ -353,9 +363,11 @@ mentor	Mentor Graphics
 meraki	Cisco Meraki, LLC
 merrii	Merrii Technology Co., Ltd.
 micrel	Micrel Inc.
+microbit	Micro:bit Educational Foundation
 microchip	Microchip Technology Inc.
 microcrystal	Micro Crystal AG
 micron	Micron Technology Inc.
+microsemi	Microchip Technology Inc. (formerly Microsemi Corporation)
 microsoft	Microsoft Corporation
 microsys	MicroSys Electronics GmbH
 mikroe	MikroElektronika d.o.o.
@@ -400,6 +412,7 @@ nokia	Nokia
 nordic	Nordic Semiconductor
 novtech	NovTech, Inc.
 nutsboard	NutsBoard
+nuclei	Nuclei System Technology
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
 nvidia	NVIDIA
@@ -467,6 +480,7 @@ qi	Qi Hardware
 qihua	Chengdu Kaixuan Information Technology Co., Ltd.
 qiaodian	QiaoDian XianShi Corporation
 qnap	QNAP Systems, Inc.
+quectel	Quectel Wireless Solutions Co., Ltd.
 quicklogic	QuickLogic Corp.
 radxa	Radxa
 raidsonic	RaidSonic Technology GmbH
@@ -499,6 +513,7 @@ sancloud	Sancloud Ltd
 sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
+sc	Space Cubics, LLC
 schindler	Schindler
 seagate	Seagate Technology PLC
 segger	SEGGER Microcontroller GmbH
@@ -527,6 +542,7 @@ silex-insight	Silex Insight
 siliconfile	Siliconfile Technologies lnc.
 siliconmitus	Silicon Mitus, Inc.
 siemens	Siemens AG
+simcom	SIMCom Wireless Solutions Co., LTD
 simtek	Cypress Semiconductor Corporation (Simtek Corporation)
 sinlinx	Sinlinx Electronics Technology Co., LTD
 sinovoip	SinoVoip Co., Ltd
@@ -538,6 +554,7 @@ skyworks	Skyworks Solutions, Inc.
 smartlabs	SmartLabs LLC
 smsc	Standard Microsystems Corporation
 snps	Synopsys, Inc.
+starfive	StarFive Technology Co. Ltd.
 sochip	Shenzhen SoChip Technology Co., Ltd.
 socionext	Socionext Inc.
 solidrun	SolidRun
@@ -569,6 +586,7 @@ tcs	Shenzhen City Tang Cheng Technology Co., Ltd.
 tdo	Shangai Top Display Optoelectronics Co., Ltd
 technexion	TechNexion
 technologic	Technologic Systems
+telink	Telink Semiconductor
 tempo	Tempo Semiconductor
 techstar	Shenzhen Techstar Electronics Co., Ltd.
 terasic	Terasic Inc.
@@ -633,11 +651,16 @@ wexler	Wexler
 whwave	Shenzhen whwave Electronics, Inc.
 wi2wi	Wi2Wi, Inc.
 winbond	Winbond Electronics corp.
+winsen	Zhengzhou Winsen Electronics Technology Co., Ltd.
 winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
+wiznet	WIZnet Co., Ltd.
 wlf	Wolfson Microelectronics
 wm	Wondermedia Technologies, Inc.
+wnc	Wistron NeWeb Corporation
 wobo	Wobo
+wolfson	Cirrus Logic, Inc. (formerly Wolfson Microelectronics plc)
+worldsemi	Worldsemi Co., Limited
 x-powers	X-Powers
 xes	Extreme Engineering Solutions (X-ES)
 xiaomi	Xiaomi Technology Co., Ltd.

@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include <net/net_core.h>
 #include <net/net_pkt.h>
+#include <net/net_if.h>
 
 #include <net/ppp.h>
 #include <random/rand32.h>
@@ -380,6 +381,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	struct ppp_packet ppp;
 	struct net_pkt *pkt = NULL;
 	int ret;
+	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
 
 	if (!iface) {
 		if (!fsm) {
@@ -396,7 +398,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	switch (type) {
 	case PPP_CODE_REJ:
 		len = net_pkt_get_len(req_pkt);
-		len = MIN(len, PPP_MRU);
+		len = MIN(len, ctx->lcp.my_options.mru);
 		break;
 
 	case PPP_CONFIGURE_ACK:
@@ -495,7 +497,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 			goto out_of_mem;
 		}
 
-		data_len = MIN(data_len, PPP_MRU);
+		data_len = MIN(data_len, ctx->lcp.my_options.mru);
 		if (data_len > 0) {
 			if (data_len == sizeof(uint32_t)) {
 				ret = net_pkt_write_be32(pkt,
@@ -1020,6 +1022,7 @@ enum net_verdict ppp_fsm_input(struct ppp_fsm *fsm, uint16_t proto,
 	uint8_t code, id;
 	uint16_t length;
 	int ret;
+	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
 
 	ret = net_pkt_read_u8(pkt, &code);
 	if (ret < 0) {
@@ -1042,7 +1045,7 @@ enum net_verdict ppp_fsm_input(struct ppp_fsm *fsm, uint16_t proto,
 		return NET_DROP;
 	}
 
-	if (length > PPP_MRU) {
+	if (length > ctx->lcp.my_options.mru) {
 		NET_DBG("[%s/%p] Too long msg %d", fsm->name, fsm, length);
 		return NET_DROP;
 	}

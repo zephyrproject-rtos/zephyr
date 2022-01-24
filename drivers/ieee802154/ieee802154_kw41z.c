@@ -706,7 +706,7 @@ static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 		handle_ack(kw41z, frag->data[2]);
 	}
 
-	LOG_DBG("seq_retval: %d", kw41z->seq_retval);
+	LOG_DBG("seq_retval: %ld", kw41z->seq_retval);
 	return kw41z->seq_retval;
 }
 

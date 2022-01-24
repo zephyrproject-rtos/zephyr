@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2019-2021 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mps3_an547_ns
+name: Arm MPS3-AN547_ns
+type: mcu
+arch: arm
+simulation: qemu
+toolchain:
+  - gnuarmemb
+  - zephyr
+  - xtools
+testing:
+  default: true
+  only_tags:
+    - tfm

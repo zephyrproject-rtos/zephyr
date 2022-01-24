@@ -111,7 +111,7 @@ struct bt_mesh_hb_cb {
  *  @param _name Name of callback structure.
  */
 #define BT_MESH_HB_CB_DEFINE(_name)                                            \
-	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_hb_cb, _name)
+	static const STRUCT_SECTION_ITERABLE(bt_mesh_hb_cb, _name)
 
 /** @brief Get the current Heartbeat publication parameters.
  *

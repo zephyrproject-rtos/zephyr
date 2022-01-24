@@ -19,11 +19,6 @@ extern "C" {
 #define MPXXDTYY_MIN_PDM_FREQ		1200000 /* 1.2MHz */
 #define MPXXDTYY_MAX_PDM_FREQ		3250000 /* 3.25MHz */
 
-#define DEV_CFG(dev) \
-	((const struct mpxxdtyy_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct mpxxdtyy_data *const)(dev)->data)
-
 struct mpxxdtyy_data {
 	const struct device *comm_master;
 	enum dmic_state		state;

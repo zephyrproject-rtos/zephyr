@@ -30,10 +30,9 @@ config SYSCON_GENERIC
 	help
 	  Enable generic SYSCON (System Controller) driver
 
-config SYSCON_GENERIC_INIT_PRIORITY_DEVICE
-	int "SYSCON (System Controller) generic init device priority"
+config SYSCON_INIT_PRIORITY
+	int "SYSCON (System Controller) driver init priority"
 	default 50
-	depends on SYSCON_GENERIC
 	help
 	  This option controls the priority of the syscon device
 	  initialization. Higher priority ensures that the device is

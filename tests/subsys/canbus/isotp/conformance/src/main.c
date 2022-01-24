@@ -49,12 +49,6 @@
 #define BS_TIMEOUT_UPPER_MS   1100
 #define BS_TIMEOUT_LOWER_MS   1000
 
-#if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
-#define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
-#else
-#define CAN_DEVICE_NAME DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
-#endif
-
 /*
  * @addtogroup t_can
  * @{
@@ -124,11 +118,11 @@ const struct isotp_msg_id tx_addr_fixed = {
 	.use_fixed_addr = 1
 };
 
-const struct device *can_dev;
+const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
 uint8_t data_buf[128];
-CAN_DEFINE_MSGQ(frame_msgq, 10);
+CAN_MSGQ_DEFINE(frame_msgq, 10);
 struct k_sem send_compl_sem;
 
 void send_complette_cb(int error_nr, void *arg)
@@ -250,7 +244,7 @@ static void send_frame_series(struct frame_desired *frames, size_t length,
 		frame.dlc = desired->length;
 		memcpy(frame.data, desired->data, desired->length);
 		ret = can_send(can_dev, &frame, K_MSEC(500), NULL, NULL);
-		zassert_equal(ret, CAN_TX_OK, "Sending msg %d failed.", i);
+		zassert_equal(ret, 0, "Sending msg %d failed.", i);
 		desired++;
 	}
 }
@@ -285,7 +279,7 @@ static void check_frame_series(struct frame_desired *frames, size_t length,
 	zassert_equal(ret, -EAGAIN, "Expected timeout, but received %d", ret);
 }
 
-static int attach_msgq(uint32_t id, uint32_t mask)
+static int add_rx_msgq(uint32_t id, uint32_t mask)
 {
 	int filter_id;
 	struct zcan_filter filter = {
@@ -297,8 +291,8 @@ static int attach_msgq(uint32_t id, uint32_t mask)
 		.id_mask = mask
 	};
 
-	filter_id = can_attach_msgq(can_dev, &frame_msgq, &filter);
-	zassert_not_equal(filter_id, CAN_NO_FREE_FILTER, "Filter full");
+	filter_id = can_add_rx_filter_msgq(can_dev, &frame_msgq, &filter);
+	zassert_not_equal(filter_id, -ENOSPC, "Filter full");
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -338,7 +332,7 @@ static void test_send_sf(void)
 	memcpy(&des_frame.data[1], random_data, DATA_SIZE_SF);
 	des_frame.length = DATA_SIZE_SF + 1;
 
-	filter_id = attach_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -346,7 +340,7 @@ static void test_send_sf(void)
 
 	check_frame_series(&des_frame, 1, &frame_msgq);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 }
 
 static void test_receive_sf(void)
@@ -390,7 +384,7 @@ static void test_send_sf_ext(void)
 	memcpy(&des_frame.data[2], random_data, DATA_SIZE_SF_EXT);
 	des_frame.length = DATA_SIZE_SF_EXT + 2;
 
-	filter_id = attach_msgq(rx_addr_ext.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(rx_addr_ext.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -401,7 +395,7 @@ static void test_send_sf_ext(void)
 
 	check_frame_series(&des_frame, 1, &frame_msgq);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 }
 
 static void test_receive_sf_ext(void)
@@ -446,7 +440,7 @@ static void test_send_sf_fixed(void)
 	des_frame.length = DATA_SIZE_SF + 1;
 
 	/* mask to allow any priority and source address (SA) */
-	filter_id = attach_msgq(rx_addr_fixed.ext_id, 0x03FFFF00);
+	filter_id = add_rx_msgq(rx_addr_fixed.ext_id, 0x03FFFF00);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -457,7 +451,7 @@ static void test_send_sf_fixed(void)
 
 	check_frame_series(&des_frame, 1, &frame_msgq);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 }
 
 static void test_receive_sf_fixed(void)
@@ -514,7 +508,7 @@ static void test_send_data(void)
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
 			  remaining_length);
 
-	filter_id = attach_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -526,7 +520,7 @@ static void test_send_data(void)
 
 	check_frame_series(des_frames, ARRAY_SIZE(des_frames), &frame_msgq);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 }
 
 static void test_send_data_blocks(void)
@@ -555,7 +549,7 @@ static void test_send_data_blocks(void)
 
 	remaining_length = DATA_SEND_LENGTH;
 
-	filter_id = attach_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -591,7 +585,7 @@ static void test_send_data_blocks(void)
 	ret = k_msgq_get(&frame_msgq, &dummy_frame, K_MSEC(50));
 	zassert_equal(ret, -EAGAIN, "Expected timeout but got %d", ret);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 }
 
 static void test_receive_data(void)
@@ -616,7 +610,7 @@ static void test_receive_data(void)
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
 			  remaining_length);
 
-	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 			 &fc_opts_single, K_NO_WAIT);
@@ -630,7 +624,7 @@ static void test_receive_data(void)
 
 	receive_test_data(&recv_ctx, random_data, DATA_SEND_LENGTH, 0);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 	isotp_unbind(&recv_ctx);
 }
 
@@ -662,7 +656,7 @@ static void test_receive_data_blocks(void)
 
 	remaining_frames = CEIL(remaining_length, DATA_SIZE_CF);
 
-	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -693,7 +687,7 @@ static void test_receive_data_blocks(void)
 
 	receive_test_data(&recv_ctx, random_data, DATA_SEND_LENGTH, 0);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 	isotp_unbind(&recv_ctx);
 }
 
@@ -809,7 +803,7 @@ static void test_stmin(void)
 	fc_frame.data[2] = FC_PCI_BYTE_3(STMIN_VAL_1);
 	fc_frame.length = DATA_SIZE_FC;
 
-	filter_id = attach_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -846,7 +840,7 @@ static void test_stmin(void)
 	zassert_true(time_diff >= STMIN_VAL_2, "STmin too short (%dms)",
 		     time_diff);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 }
 
 void test_receiver_fc_errors(void)
@@ -864,7 +858,7 @@ void test_receiver_fc_errors(void)
 	fc_frame.data[2] = FC_PCI_BYTE_3(fc_opts.stmin);
 	fc_frame.length = DATA_SIZE_FC;
 
-	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -889,7 +883,7 @@ void test_receiver_fc_errors(void)
 	zassert_equal(ret, ISOTP_N_WRONG_SN,
 		      "Expected wrong SN but got %d", ret);
 
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 	k_msgq_cleanup(&frame_msgq);
 	isotp_unbind(&recv_ctx);
 }
@@ -904,7 +898,7 @@ void test_sender_fc_errors(void)
 	memcpy(&ff_frame.data[2], random_data, DATA_SIZE_FF);
 	ff_frame.length = DATA_SIZE_FF + 2;
 
-	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 
 	/* invalid flow status */
 	fc_frame.data[0] = FC_PCI_BYTE_1(3);
@@ -924,7 +918,7 @@ void test_sender_fc_errors(void)
 	zassert_equal(ret, 0, "Send complete callback not called");
 
 	/* buffer overflow */
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 	ret = isotp_bind(&recv_ctx, can_dev, &tx_addr, &rx_addr,
 			 &fc_opts_single, K_NO_WAIT);
 	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
@@ -934,7 +928,7 @@ void test_sender_fc_errors(void)
 	zassert_equal(ret, ISOTP_N_BUFFER_OVERFLW,
 		      "Expected overflow but got %d", ret);
 	isotp_unbind(&recv_ctx);
-	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 
 	k_sem_reset(&send_compl_sem);
 	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SEND_LENGTH,
@@ -962,7 +956,7 @@ void test_sender_fc_errors(void)
 	ret = k_sem_take(&send_compl_sem, K_MSEC(200));
 	zassert_equal(ret, 0, "Send complete callback not called");
 	k_msgq_cleanup(&frame_msgq);
-	can_detach(can_dev, filter_id);
+	can_remove_rx_filter(can_dev, filter_id);
 }
 
 
@@ -973,8 +967,7 @@ void test_main(void)
 	zassert_true(sizeof(random_data) >= sizeof(data_buf) * 2 + 10,
 		     "Test data size to small");
 
-	can_dev = device_get_binding(CAN_DEVICE_NAME);
-	zassert_not_null(can_dev, "CAN device not not found");
+	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
 	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 	zassert_equal(ret, 0, "Failed to set loopback mode [%d]", ret);

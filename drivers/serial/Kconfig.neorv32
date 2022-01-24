@@ -1,0 +1,13 @@
+# NEORV32 UART configuration
+
+# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_NEORV32
+	bool "NEORV32 UART"
+	default $(dt_compat_enabled,neorv32-uart)
+	depends on SOC_SERIES_NEORV32 && SYSCON
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for the NEORV32.

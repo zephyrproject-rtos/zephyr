@@ -204,6 +204,8 @@ features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -231,6 +233,7 @@ Default Zephyr Peripheral Mapping:
 - SPI_1_SCK : PA5 (arduino_spi)
 - SPI_1_MISO : PA6 (arduino_spi)
 - SPI_1_MOSI : PA7 (arduino_spi)
+- ADC1_IN5 : PB1 (Arduino pin A0)
 
 System Clock
 ------------

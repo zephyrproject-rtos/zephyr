@@ -190,7 +190,6 @@ will be corrupted.
 */
 
 /**
- *
  * @brief Work to be done before handing control to an IRQ ISR
  *
  * The processor pushes automatically all registers that need to be saved.
@@ -198,8 +197,6 @@ will be corrupted.
  * automatic switch to the IRQ stack: this must be done in software.
  *
  * Assumption by _isr_demux: r3 is untouched by _rirq_enter.
- *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT, _rirq_enter)
@@ -228,10 +225,7 @@ rirq_nest:
 
 
 /**
- *
  * @brief Work to be done exiting an IRQ
- *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT, _rirq_exit)

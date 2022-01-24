@@ -331,7 +331,7 @@ static void test_log_overflow(void)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		ztest_test_skip();
 	}
 
@@ -372,7 +372,7 @@ static void test_log_overflow(void)
 	exp_timestamp = TIMESTAMP_INIT_VAL;
 	hexdump_len = get_max_hexdump();
 	mock_log_backend_reset(&backend1);
-	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
+	if (IS_ENABLED(CONFIG_LOG2_DEFERRED)) {
 		/* Log2 allocation is not destructive if request exceeds the
 		 * capacity.
 		 */
@@ -402,38 +402,59 @@ static void test_log_overflow(void)
  * Log messages with supported number of messages are called. Test backend
  * validates number of arguments and values.
  */
+#define MOCK_LOG_BACKEND_RECORD(str) mock_log_backend_record( \
+	&backend1, LOG_CURRENT_MODULE_ID(), \
+	CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF, \
+	exp_timestamp++, \
+	str);
+
 static void test_log_arguments(void)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
 	log_setup(false);
 
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++, "test");
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++,
-				"test 1 2 3");
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++,
-				"test 1 2 3 4 5 6 7");
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++,
-				"test 1 2 3 4 5 6 7 8 9 10 11");
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++,
-				"test 1 2 3 4 5 6 7 8 9 10 11 12 13 14");
+	MOCK_LOG_BACKEND_RECORD("test");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13 14");
+
 	LOG_INF("test");
 	LOG_INF("test %d %d %d", 1, 2, 3);
+	LOG_INF("test %d %d %d %d", 1, 2, 3, 4);
+	LOG_INF("test %d %d %d %d %d", 1, 2, 3, 4, 5);
+	while (LOG_PROCESS()) {
+	}
+
+	LOG_INF("test %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6);
 	LOG_INF("test %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7);
+	LOG_INF("test %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7,8);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7,8, 9);
+	while (LOG_PROCESS()) {
+	}
+
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d",
+		1, 2, 3, 4, 5, 6, 7,8, 9, 10);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d",
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d",
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+	while (LOG_PROCESS()) {
+	}
+
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d",
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
 	while (LOG_PROCESS()) {
 	}
 
@@ -556,7 +577,7 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
  */
 static void test_log_msg_dropped_notification(void)
 {
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		ztest_test_skip();
 	}
 
@@ -606,24 +627,19 @@ static void test_log_panic(void)
 	mock_log_backend_validate(&backend1, true);
 }
 
-/* Disable backends because same suite may be excuted again but compiled by C++ */
-static void log_api_suite_teardown(void)
+/* Disable backends because same suite may be executed again but compiled by C++ */
+static void log_api_suite_teardown(void *data)
 {
+	ARG_UNUSED(data);
 	log_backend_disable(&backend1);
 	log_backend_disable(&backend2);
 }
 
-/*test case main entry*/
-#if __cplusplus
-extern "C" void test_cxx(void);
-void test_cxx(void)
-#else
-void test_cc(void)
-#endif
+static void *log_api_suite_setup(void)
 {
 	PRINT("Configuration:\n");
 	PRINT("\t Mode: %s\n",
-	      IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? "Immediate" : "Deferred");
+	      IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? "Immediate" : "Deferred");
 	PRINT("\t Version: %s\n",
 	      IS_ENABLED(CONFIG_LOG2) ? "v2" : "v1");
 	PRINT("\t Runtime filtering: %s\n",
@@ -633,17 +649,35 @@ void test_cc(void)
 #if __cplusplus
 	PRINT("\t C++: yes\n");
 #endif
-
-	ztest_test_suite(test_log_api,
-			 ztest_unit_test(test_log_various_messages),
-			 ztest_unit_test(test_log_backend_runtime_filtering),
-			 ztest_unit_test(test_log_overflow),
-			 ztest_unit_test(test_log_arguments),
-			 ztest_unit_test(test_log_from_declared_module),
-			 ztest_unit_test(test_log_msg_dropped_notification),
-			 ztest_unit_test(test_log_panic)
-			);
-	ztest_run_test_suite(test_log_api);
-
-	log_api_suite_teardown();
+	return NULL;
 }
+
+static void log_api_suite_before(void *data)
+{
+	ARG_UNUSED(data);
+	while(LOG_PROCESS()) {
+	}
+}
+
+#define WRAP_TEST(test_name, suffix)                       \
+	ZTEST(UTIL_CAT(test_log_api_, suffix), UTIL_CAT(test_name, UTIL_CAT(_,suffix))) \
+	{                                                  \
+		test_name();                               \
+	}
+
+#if __cplusplus
+#define TEST_SUFFIX cxx
+#else
+#define TEST_SUFFIX cc
+#endif
+#define TEST_SUITE_NAME UTIL_CAT(test_log_api_, TEST_SUFFIX)
+
+ZTEST_SUITE(TEST_SUITE_NAME, NULL, log_api_suite_setup,
+	    log_api_suite_before, NULL, log_api_suite_teardown);
+WRAP_TEST(test_log_various_messages, TEST_SUFFIX)
+WRAP_TEST(test_log_backend_runtime_filtering, TEST_SUFFIX)
+WRAP_TEST(test_log_overflow, TEST_SUFFIX)
+WRAP_TEST(test_log_arguments, TEST_SUFFIX)
+WRAP_TEST(test_log_from_declared_module, TEST_SUFFIX)
+WRAP_TEST(test_log_msg_dropped_notification, TEST_SUFFIX)
+WRAP_TEST(test_log_panic, TEST_SUFFIX)

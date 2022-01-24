@@ -10,6 +10,16 @@ menuconfig USB_DEVICE_DRIVER
 
 if USB_DEVICE_DRIVER
 
+config USB_DC_HAS_HS_SUPPORT
+	bool "USB device controller supports high speed"
+	help
+	  USB device controller supports high speed.
+
+config USB_DEVICE_REMOTE_WAKEUP
+	bool "Enable remote wakeup support"
+	help
+	  USB device controller supports remote wakeup feature.
+
 config USB_DW
 	bool "Designware USB Device Controller Driver"
 	help
@@ -28,7 +38,7 @@ config USB_DC_STM32
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	help
-	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4 and G4 family of
+	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4, G4, U5 family of
 	  processors.
 
 config USB_DC_STM32_DISCONN_ENABLE
@@ -45,10 +55,23 @@ config USB_DC_SAM0
 	help
 	  SAM0 family USB device controller Driver.
 
+DT_COMPAT_SAM_USBC := atmel,sam-usbc
+
+config USB_DC_SAM_USBC
+	bool "SAM4L USBC Device Controller driver"
+	depends on SOC_SERIES_SAM4L
+	default $(dt_compat_enabled,$(DT_COMPAT_SAM_USBC))
+	help
+	  SAM4L family USBC device controller Driver.
+
+DT_SAM_USBHS := $(dt_nodelabel_path,usbhs)
+DT_SAM_USBHS_SPEED := $(dt_node_str_prop_equals,$(DT_SAM_USBHS),maximum-speed,high-speed)
+
 config USB_DC_SAM_USBHS
 	bool "SAM series USB HS Device Controller driver"
 	depends on SOC_SERIES_SAME70 || \
 		   SOC_SERIES_SAMV71
+	imply USB_DC_HAS_HS_SUPPORT if "$(DT_SAM_USBHS_SPEED)"
 	help
 	  SAM family USB HS device controller Driver.
 
@@ -58,6 +81,7 @@ config USB_NRFX
 	depends on HAS_HW_NRF_USBD
 	select NRFX_USBD
 	select NRFX_POWER
+	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  nRF USB Device Controller Driver
 
@@ -93,12 +117,32 @@ config USB_KINETIS
 	help
 	  Kinetis USB Device Controller Driver.
 
+config USB_MCUX
+	bool "NXP MCUX USB Device Controller Driver"
+	help
+	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
+
+if USB_MCUX
+
+choice USB_MCUX_CONTROLLER_TYPE
+	prompt "USB Controller type"
+	help
+	  Select the type of controller available in the SoC.
+
 config USB_DC_NXP_EHCI
-	bool "Kinetis and RT EHCI USB Device Controller Driver"
-	depends on HAS_MCUX_USB_EHCI
+	bool "MXRT EHCI USB Device Controller"
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
+
+config USB_DC_NXP_LPCIP3511
+	bool "LPC USB Device Controller"
+	help
+	  LPC USB Device Controller Driver.
+
+endchoice
+
+endif # USB_MCUX
 
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"

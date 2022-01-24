@@ -7,7 +7,8 @@
 #
 
 menuconfig BT_AUDIO
-	bool "Bluetooth Audio support [Experimental]"
+	bool "Bluetooth Audio support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth Audio support. The specific
 	  features that are available may depend on other features
@@ -16,6 +17,12 @@ menuconfig BT_AUDIO
 	  for Unicast.
 
 if BT_AUDIO
+
+config BT_CCID
+	bool
+	help
+	  This hidden option is enabled when any of the content control
+	  features are enabled.
 
 if BT_CONN
 
@@ -35,7 +42,8 @@ config BT_AUDIO_UNICAST
 # TODO: Make BT_AUDIO_BROADCAST not depend on BT_CONN
 config BT_AUDIO_BROADCAST
 	bool "Bluetooth Broadcast Audio Support"
-	select BT_ISO_BROADCAST
+	select BT_ISO_BROADCASTER
+	select BT_ISO_SYNC_RECEIVER
 	help
 	  This option enables support for Bluetooth Broadcast Audio using
 	  Isochronous channels.
@@ -53,5 +61,8 @@ rsource "Kconfig.vocs"
 rsource "Kconfig.aics"
 rsource "Kconfig.vcs"
 rsource "Kconfig.mics"
+rsource "Kconfig.csis"
+rsource "Kconfig.otc"
+rsource "Kconfig.mcs"
 
 endif # BT_AUDIO

@@ -159,7 +159,7 @@ static const struct gpio_driver_api gpio_lmp90xxx_api = {
 };
 
 BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
-	     CONFIG_ADC_LMP90XXX_INIT_PRIORITY,
+	     CONFIG_ADC_INIT_PRIORITY,
 	     "LMP90xxx GPIO driver must be initialized after LMP90xxx ADC "
 	     "driver");
 

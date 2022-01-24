@@ -15,14 +15,9 @@ struct uart_xmc4xxx_data {
 	XMC_UART_CH_CONFIG_t config;
 };
 
-#define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct uart_xmc4xxx_data * const)(dev)->data)
-
 static int uart_xmc4xxx_poll_in(const struct device *dev, unsigned char *c)
 {
-	const struct uart_device_config *config = DEV_CFG(dev);
+	const struct uart_device_config *config = dev->config;
 
 	*(uint16_t *)c =
 		XMC_UART_CH_GetReceivedData((XMC_USIC_CH_t *)config->base);
@@ -32,15 +27,15 @@ static int uart_xmc4xxx_poll_in(const struct device *dev, unsigned char *c)
 
 static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 {
-	const struct uart_device_config *config = DEV_CFG(dev);
+	const struct uart_device_config *config = dev->config;
 
 	XMC_UART_CH_Transmit((XMC_USIC_CH_t *)config->base, (uint16_t)c);
 }
 
 static int uart_xmc4xxx_init(const struct device *dev)
 {
-	const struct uart_device_config *config = DEV_CFG(dev);
-	struct uart_xmc4xxx_data *data = DEV_DATA(dev);
+	const struct uart_device_config *config = dev->config;
+	struct uart_xmc4xxx_data *data = dev->data;
 	XMC_USIC_CH_t *uart = (XMC_USIC_CH_t *)config->base;
 
 	data->config.data_bits = 8U;
@@ -77,7 +72,7 @@ static const struct uart_device_config xmc4xxx_config_##index = {	\
 			    NULL,					\
 			    &xmc4xxx_data_##index,			\
 			    &xmc4xxx_config_##index, PRE_KERNEL_1,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &uart_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)

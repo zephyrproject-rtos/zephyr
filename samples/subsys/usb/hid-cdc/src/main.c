@@ -159,13 +159,14 @@ static uint8_t chr_ptr_mouse, chr_ptr_kbd, str_pointer;
 #define MOUSE_BTN_RIGHT		BIT(1)
 #define MOUSE_BTN_MIDDLE	BIT(2)
 
-static const char *banner0	=	"Welcome to CDC ACM 0!\r\n"
+static const char *welcome	=	"Welcome to ";
+static const char *banner0	=	"\r\n"
 					"Supported commands:\r\n"
 					"up    - moves the mouse up\r\n"
 					"down  - moves the mouse down\r\n"
 					"right - moves the mouse to right\r\n"
 					"left  - moves the mouse to left\r\n";
-static const char *banner1	=	"Welcome to CDC ACM 1!\r\n"
+static const char *banner1	=	"\r\n"
 					"Enter a string and terminate "
 					"it with ENTER.\r\n"
 					"It will be sent via HID "
@@ -545,13 +546,18 @@ static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 	LOG_INF("Status %d", status);
 }
 
+#define DEVICE_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
+
 void main(void)
 {
-	int ret;
-
-	const struct device *hid0_dev, *hid1_dev, *cdc0_dev, *cdc1_dev;
-	uint32_t dtr = 0U;
+	const struct device *cdc_dev[] = {
+		DT_FOREACH_STATUS_OKAY(zephyr_cdc_acm_uart, DEVICE_AND_COMMA)
+	};
+	BUILD_ASSERT(ARRAY_SIZE(cdc_dev) >= 2, "Not enough CDC ACM instances");
+	const struct device *hid0_dev, *hid1_dev;
 	struct app_evt_t *ev;
+	uint32_t dtr = 0U;
+	int ret;
 
 	/* Configure devices */
 
@@ -567,16 +573,12 @@ void main(void)
 		return;
 	}
 
-	cdc0_dev = device_get_binding("CDC_ACM_0");
-	if (cdc0_dev == NULL) {
-		LOG_ERR("Cannot get USB CDC 0 Device");
-		return;
-	}
-
-	cdc1_dev = device_get_binding("CDC_ACM_1");
-	if (cdc1_dev == NULL) {
-		LOG_ERR("Cannot get USB CDC 1 Device");
-		return;
+	for (int idx = 0; idx < ARRAY_SIZE(cdc_dev); idx++) {
+		if (!device_is_ready(cdc_dev[idx])) {
+			LOG_ERR("CDC ACM device %s is not ready",
+				cdc_dev[idx]->name);
+			return;
+		}
 	}
 
 	if (callbacks_configure(device_get_binding(PORT0), PIN0, PIN0_FLAGS,
@@ -627,36 +629,38 @@ void main(void)
 	}
 
 	/* Initialize CDC ACM */
-
-	LOG_INF("Wait for DTR on CDC ACM 0");
-	while (1) {
-		uart_line_ctrl_get(cdc0_dev, UART_LINE_CTRL_DTR, &dtr);
-		if (dtr) {
-			break;
+	for (int idx = 0; idx < ARRAY_SIZE(cdc_dev); idx++) {
+		LOG_INF("Wait for DTR on %s", cdc_dev[idx]->name);
+		while (1) {
+			uart_line_ctrl_get(cdc_dev[idx],
+					   UART_LINE_CTRL_DTR,
+					   &dtr);
+			if (dtr) {
+				break;
+			} else {
+				/* Give CPU resources to low priority threads. */
+				k_sleep(K_MSEC(100));
+			}
 		}
-	}
-	LOG_INF("DTR on CDC ACM 0 set");
 
-	LOG_INF("Wait for DTR on CDC ACM 1");
-	while (1) {
-		uart_line_ctrl_get(cdc1_dev, UART_LINE_CTRL_DTR, &dtr);
-		if (dtr) {
-			break;
-		}
+		LOG_INF("DTR on device %s", cdc_dev[idx]->name);
 	}
-	LOG_INF("DTR on CDC ACM 1 set");
 
 	/* Wait 1 sec for the host to do all settings */
 	k_busy_wait(USEC_PER_SEC);
 
-	uart_irq_callback_set(cdc0_dev, cdc_mouse_int_handler);
-	uart_irq_callback_set(cdc1_dev, cdc_kbd_int_handler);
+	uart_irq_callback_set(cdc_dev[0], cdc_mouse_int_handler);
+	uart_irq_callback_set(cdc_dev[1], cdc_kbd_int_handler);
 
-	write_data(cdc0_dev, banner0, strlen(banner0));
-	write_data(cdc1_dev, banner1, strlen(banner1));
+	write_data(cdc_dev[0], welcome, strlen(welcome));
+	write_data(cdc_dev[0], cdc_dev[0]->name, strlen(cdc_dev[0]->name));
+	write_data(cdc_dev[0], banner0, strlen(banner0));
+	write_data(cdc_dev[1], welcome, strlen(welcome));
+	write_data(cdc_dev[1], cdc_dev[1]->name, strlen(cdc_dev[1]->name));
+	write_data(cdc_dev[1], banner1, strlen(banner1));
 
-	uart_irq_rx_enable(cdc0_dev);
-	uart_irq_rx_enable(cdc1_dev);
+	uart_irq_rx_enable(cdc_dev[0]);
+	uart_irq_rx_enable(cdc_dev[1]);
 
 	while (true) {
 		k_sem_take(&evt_sem, K_FOREVER);
@@ -672,7 +676,7 @@ void main(void)
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
 						 sizeof(rep), NULL);
-				write_data(cdc0_dev, gpio0, strlen(gpio0));
+				write_data(cdc_dev[0], gpio0, strlen(gpio0));
 				clear_mouse_report();
 				break;
 			}
@@ -685,14 +689,14 @@ void main(void)
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
 						 sizeof(rep), NULL);
-				write_data(cdc0_dev, gpio1, strlen(gpio1));
+				write_data(cdc_dev[0], gpio1, strlen(gpio1));
 				clear_mouse_report();
 				break;
 			}
 			case GPIO_BUTTON_2:
 			{
 				/* Send string on HID keyboard */
-				write_data(cdc1_dev, gpio2, strlen(gpio2));
+				write_data(cdc_dev[1], gpio2, strlen(gpio2));
 				if (strlen(string) > 0) {
 					struct app_evt_t *ev = app_evt_alloc();
 
@@ -713,7 +717,7 @@ void main(void)
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid1_dev, rep,
 						 sizeof(rep), NULL);
-				write_data(cdc1_dev, gpio3, strlen(gpio3));
+				write_data(cdc_dev[1], gpio3, strlen(gpio3));
 				clear_kbd_report();
 				break;
 			}
@@ -725,7 +729,7 @@ void main(void)
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
 						 sizeof(rep), NULL);
-				write_data(cdc0_dev, up, strlen(up));
+				write_data(cdc_dev[0], up, strlen(up));
 				clear_mouse_report();
 				break;
 			}
@@ -737,7 +741,7 @@ void main(void)
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
 						 sizeof(rep), NULL);
-				write_data(cdc0_dev, down, strlen(down));
+				write_data(cdc_dev[0], down, strlen(down));
 				clear_mouse_report();
 				break;
 			}
@@ -749,7 +753,7 @@ void main(void)
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
 						 sizeof(rep), NULL);
-				write_data(cdc0_dev, right, strlen(right));
+				write_data(cdc_dev[0], right, strlen(right));
 				clear_mouse_report();
 				break;
 			}
@@ -761,25 +765,25 @@ void main(void)
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
 						 sizeof(rep), NULL);
-				write_data(cdc0_dev, left, strlen(left));
+				write_data(cdc_dev[0], left, strlen(left));
 				clear_mouse_report();
 				break;
 			}
 			case CDC_UNKNOWN:
 			{
-				write_data(cdc0_dev, unknown, strlen(unknown));
-				write_data(cdc1_dev, unknown, strlen(unknown));
+				write_data(cdc_dev[0], unknown, strlen(unknown));
+				write_data(cdc_dev[1], unknown, strlen(unknown));
 				break;
 			}
 			case CDC_STRING:
 			{
-				write_data(cdc0_dev, set_str, strlen(set_str));
-				write_data(cdc0_dev, string, strlen(string));
-				write_data(cdc0_dev, endl, strlen(endl));
+				write_data(cdc_dev[0], set_str, strlen(set_str));
+				write_data(cdc_dev[0], string, strlen(string));
+				write_data(cdc_dev[0], endl, strlen(endl));
 
-				write_data(cdc1_dev, set_str, strlen(set_str));
-				write_data(cdc1_dev, string, strlen(string));
-				write_data(cdc1_dev, endl, strlen(endl));
+				write_data(cdc_dev[1], set_str, strlen(set_str));
+				write_data(cdc_dev[1], string, strlen(string));
+				write_data(cdc_dev[1], endl, strlen(endl));
 				break;
 			}
 			case HID_MOUSE_CLEAR:
@@ -841,9 +845,9 @@ void main(void)
 			default:
 			{
 				LOG_ERR("Unknown event to execute");
-				write_data(cdc0_dev, evt_fail,
+				write_data(cdc_dev[0], evt_fail,
 					   strlen(evt_fail));
-				write_data(cdc1_dev, evt_fail,
+				write_data(cdc_dev[1], evt_fail,
 					   strlen(evt_fail));
 				break;
 			}

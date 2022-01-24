@@ -408,7 +408,13 @@ static int ssd1306_init(const struct device *dev)
 	}
 
 	if (config->reset.port) {
-		gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
+		int ret;
+
+		ret = gpio_pin_configure_dt(&config->reset,
+					    GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (ssd1306_init_device(dev)) {
@@ -424,8 +430,7 @@ static const struct ssd1306_config ssd1306_config = {
 	.bus = I2C_DT_SPEC_INST_GET(0),
 #elif DT_INST_ON_BUS(0, spi)
 	.bus = SPI_DT_SPEC_INST_GET(
-		0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
-		SPI_WORD_SET(8) | SPI_LINES_SINGLE, 0),
+		0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),
 	.data_cmd = GPIO_DT_SPEC_INST_GET(0, data_cmd_gpios),
 #endif
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 })
@@ -448,5 +453,5 @@ static struct display_driver_api ssd1306_driver_api = {
 
 DEVICE_DT_INST_DEFINE(0, ssd1306_init, NULL,
 		      &ssd1306_driver, &ssd1306_config,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+		      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		      &ssd1306_driver_api);

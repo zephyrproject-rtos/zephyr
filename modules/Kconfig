@@ -46,6 +46,9 @@ comment "Unavailable modules, please install those via the project manifest."
 # config ZEPHYR_<MODULE_NAME_UPPER>_MODULE
 # 	bool
 
+comment "hal_gigadevice module not available."
+	depends on !ZEPHYR_HAL_GIGADEVICE_MODULE
+
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
 
@@ -66,6 +69,9 @@ comment "loramac-node module not available."
 
 comment "CANopenNode module not available."
 	depends on !ZEPHYR_CANOPENNODE_MODULE
+
+comment "FFF module not available."
+	depends on !ZEPHYR_FFF_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the

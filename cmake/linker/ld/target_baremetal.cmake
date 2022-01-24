@@ -8,7 +8,6 @@ macro(toolchain_ld_baremetal)
   zephyr_ld_options(
     -nostdlib
     -static
-    -no-pie
     ${LINKERFLAGPREFIX},-X
     ${LINKERFLAGPREFIX},-N
   )

@@ -131,7 +131,7 @@ int settings_save(void)
 	}
 	rc = 0;
 
-	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (ch->h_export) {
 			rc2 = ch->h_export(settings_save_one);
 			if (!rc) {

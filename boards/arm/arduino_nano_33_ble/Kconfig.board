@@ -13,7 +13,6 @@ config BOARD_ARDUINO_NANO_33_BLE_EN_USB_CONSOLE
 	select CONSOLE
 	select PRINTK
 	select UART_INTERRUPT_DRIVEN
-	select USB_UART_CONSOLE
 
 config BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS
 	bool "Initializes the internal I2C sensors on the board"

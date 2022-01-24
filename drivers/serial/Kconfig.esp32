@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
+
+DT_COMPAT_ESP32_UART := espressif,esp32-uart
+
 config UART_ESP32
 	bool "ESP32 UART driver"
-	default y
+	default $(dt_compat_enabled,$(DT_COMPAT_ESP32_UART))
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select GPIO_ESP32
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
-	  Enable the ESP32 UART using ROM routines.
+	  Enable the ESP32 UART.

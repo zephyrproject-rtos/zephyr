@@ -151,7 +151,7 @@ Documentation presentation theme
 
 Sphinx supports easy customization of the generated documentation
 appearance through the use of themes. Replace the theme files and do
-another ``make htmldocs`` and the output layout and style is changed.
+another ``make html`` and the output layout and style is changed.
 The ``read-the-docs`` theme is installed as part of the
 :ref:`install_py_requirements` step you took in the getting started
 guide.
@@ -261,7 +261,21 @@ or invoke make with the following target::
    # To generate HTML output without detailed Kconfig
    make html-fast
 
+Linking external Doxygen projects against Zephyr
+************************************************
+
+External projects that build upon Zephyr functionality and wish to refer to
+Zephyr documentation in Doxygen (through the use of @ref), can utilize the
+tag file exported at `zephyr.tag </doxygen/html/zephyr.tag>`_
+
+Once downloaded, the tag file can be used in a custom ``doxyfile.in`` as follows::
+
+   TAGFILES = "/path/to/zephyr.tag=https://docs.zephyrproject.org/latest/doxygen/html/"
+
+For additional information refer to `Doxygen External Documentation`_.
+
 
 .. _reStructuredText: http://sphinx-doc.org/rest.html
 .. _Sphinx: http://sphinx-doc.org/
 .. _Windows Python Path: https://docs.python.org/3/using/windows.html#finding-the-python-executable
+.. _Doxygen External Documentation: https://www.doxygen.nl/manual/external.html

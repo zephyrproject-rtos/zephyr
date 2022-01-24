@@ -6,11 +6,13 @@
  */
 
 #include <mem.h>
+#include <dt-bindings/dt-util.h>
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/pwm/it8xxx2_pwm.h>
+#include <dt-bindings/sensor/it8xxx2_tach.h>
 #include "it8xxx2-alts-map.dtsi"
 
 / {
@@ -20,10 +22,19 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "ite,riscv-ite";
 			device_type = "cpu";
 			reg = <0>;
+			cpu-power-states = <&standby>;
+		};
+	};
+
+	power-states {
+		standby: standby {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <240000>;
 		};
 	};
 
@@ -32,6 +43,14 @@
 		#size-cells = <1>;
 		ranges;
 
+		bbram: bb-ram@f02200 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "ite,it8xxx2-bbram";
+			status = "okay";
+			reg = <0x00f02200 0xc0>;
+			label = "BBRAM";
+		};
 		flashctrl: flash-controller@f01000 {
 			compatible = "ite,it8xxx2-flash-controller";
 			reg = <0x00f01000 0x100>;
@@ -259,6 +278,26 @@
 			interrupt-parent = <&intc>;
 		};
 
+		ite_uart1_wrapper: uartwrapper@f02720 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02720 0x0020>;
+			status = "disabled";
+			label = "UART1_WRAPPER";
+			port-num = <1>;
+			gpios = <&gpiob 0 0>;
+			uart-dev = <&uart1>;
+		};
+
+		ite_uart2_wrapper: uartwrapper@f02820 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02820 0x0020>;
+			status = "disabled";
+			label = "UART2_WRAPPER";
+			port-num = <2>;
+			gpios = <&gpioh 1 0>;
+			uart-dev = <&uart2>;
+		};
+
 		twd0: watchdog@f01f00 {
 			compatible = "ite,it8xxx2-watchdog";
 			reg = <0x00f01f00 0x0062>;
@@ -320,6 +359,7 @@
 				      IT8XXX2_IRQ_WU105 IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_WU106 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
+			wakeup-source;   /* WUI53 */
 			#gpio-cells = <2>;
 		};
 
@@ -446,6 +486,7 @@
 				IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH
 				0 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
+			wakeup-source;   /* WUI17 */
 			#gpio-cells = <2>;
 		};
 
@@ -554,6 +595,28 @@
 			#gpio-cells = <2>;
 		};
 
+		espi0: espi@f03100 {
+			compatible = "ite,it8xxx2-espi";
+			reg = <0x00f03100 0xd8    /* eSPI slave */
+			       0x00f03200 0x9a    /* eSPI VW */
+			       0x00f03300 0xd0    /* eSPI Queue 0 */
+			       0x00f03400 0xc0    /* eSPI Queue 1 */
+			       0x00f01200 6       /* EC2I bridge */
+			       0x00f01300 11      /* Host KBC */
+			       0x00f01500 0x100>; /* Host PMC */
+			interrupts = <IT8XXX2_IRQ_ESPI IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_ESPI_VW IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_KBC_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_KBC_OBE IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PMC1_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PCH_P80 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			label = "ESPI_0";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
 		spi0:spi@f02600  {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -602,8 +665,8 @@
 			label = "I2C_0";
 			port-num = <0>;
 			gpio-dev = <&gpiob>;
-			pinctrl-0 = <&pinctrl_i2c_clk0>;  /* GPB3 */
-			pinctrl-1 = <&pinctrl_i2c_data0>; /* GPB4 */
+			pinctrl-0 = <&pinctrl_i2c_clk0    /* GPB3 */
+				     &pinctrl_i2c_data0>; /* GPB4 */
 		};
 		i2c1: i2c@f01c80 {
 			compatible = "ite,it8xxx2-i2c";
@@ -616,8 +679,8 @@
 			label = "I2C_1";
 			port-num = <1>;
 			gpio-dev = <&gpioc>;
-			pinctrl-0 = <&pinctrl_i2c_clk1>;  /* GPC1 */
-			pinctrl-1 = <&pinctrl_i2c_data1>; /* GPC2 */
+			pinctrl-0 = <&pinctrl_i2c_clk1    /* GPC1 */
+				     &pinctrl_i2c_data1>; /* GPC2 */
 		};
 		i2c2: i2c@f01cc0 {
 			compatible = "ite,it8xxx2-i2c";
@@ -630,8 +693,8 @@
 			label = "I2C_2";
 			port-num = <2>;
 			gpio-dev = <&gpiof>;
-			pinctrl-0 = <&pinctrl_i2c_clk2>;  /* GPF6 */
-			pinctrl-1 = <&pinctrl_i2c_data2>; /* GPF7 */
+			pinctrl-0 = <&pinctrl_i2c_clk2    /* GPF6 */
+				     &pinctrl_i2c_data2>; /* GPF7 */
 		};
 		i2c3: i2c@f03680 {
 			compatible = "ite,it8xxx2-i2c";
@@ -644,8 +707,8 @@
 			label = "I2C_3";
 			port-num = <3>;
 			gpio-dev = <&gpioh>;
-			pinctrl-0 = <&pinctrl_i2c_clk3>;  /* GPH1 */
-			pinctrl-1 = <&pinctrl_i2c_data3>; /* GPH2 */
+			pinctrl-0 = <&pinctrl_i2c_clk3_gph1    /* GPH1 */
+				     &pinctrl_i2c_data3_gph2>; /* GPH2 */
 		};
 		i2c4: i2c@f03500 {
 			compatible = "ite,it8xxx2-i2c";
@@ -658,8 +721,8 @@
 			label = "I2C_4";
 			port-num = <4>;
 			gpio-dev = <&gpioe>;
-			pinctrl-0 = <&pinctrl_i2c_clk4>;  /* GPE0 */
-			pinctrl-1 = <&pinctrl_i2c_data4>; /* GPE7 */
+			pinctrl-0 = <&pinctrl_i2c_clk4    /* GPE0 */
+				     &pinctrl_i2c_data4>; /* GPE7 */
 		};
 		i2c5: i2c@f03580 {
 			compatible = "ite,it8xxx2-i2c";
@@ -672,8 +735,8 @@
 			label = "I2C_5";
 			port-num = <5>;
 			gpio-dev = <&gpioa>;
-			pinctrl-0 = <&pinctrl_i2c_clk5>;  /* GPA4 */
-			pinctrl-1 = <&pinctrl_i2c_data5>; /* GPA5 */
+			pinctrl-0 = <&pinctrl_i2c_clk5    /* GPA4 */
+				     &pinctrl_i2c_data5>; /* GPA5 */
 		};
 
 		ecpm: clock-controller@f01e00 {
@@ -790,6 +853,51 @@
 			pwmctrl = <&prs>;
 			pinctrl-0 = <&pinctrl_pwm7>; /* GPA7 */
 			#pwm-cells = <2>;
+		};
+		tach0: tach@f0181e {
+			compatible = "ite,it8xxx2-tach";
+			reg = <0x00f0181e 1   /* F1TLRR */
+			       0x00f0181f 1   /* F1TMRR */
+			       0x00f01848 1>; /* TSWCTLR */
+			dvs-bit = <BIT(3)>;
+			chsel-bit = <BIT(2)>;
+			label = "TACH_0";
+			status = "disabled";
+			pinctrl-0 = <&pinctrl_tach0a   /* GPD6 */
+				     &pinctrl_tach0b>; /* GPJ2 */
+		};
+		tach1: tach@f01820 {
+			compatible = "ite,it8xxx2-tach";
+			reg = <0x00f01820 1   /* F2TLRR */
+			       0x00f01821 1   /* F2TMRR */
+			       0x00f01848 1>; /* TSWCTLR */
+			dvs-bit = <BIT(1)>;
+			chsel-bit = <BIT(0)>;
+			label = "TACH_1";
+			status = "disabled";
+			pinctrl-0 = <&pinctrl_tach1a   /* GPD7 */
+				     &pinctrl_tach1b>; /* GPJ3 */
+		};
+
+		gctrl: general-control@f02000 {
+			compatible = "ite,it8xxx2-gctrl";
+			reg = <0x00f02000 0x100>;
+			label = "GCTRL";
+		};
+
+		kscan0: kscan@f01d00 {
+			compatible = "ite,it8xxx2-kscan";
+			reg = <0x00f01d00 0x29
+			       0x00f01b02 0x01   /* WUEMR3 */
+			       0x00f01b06 0x01   /* WUESR3 */
+			       0x00f01b0a 0x01>; /* WUENR3 */
+			label = "KSCAN";
+			interrupt-parent = <&intc>;
+			interrupts = <IT8XXX2_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+			gpio-dev = <&gpioc>;
+			pinctrl-0 = <&pinctrl_kso16   /* GPC3 */
+				     &pinctrl_kso17>; /* GPC5 */
 		};
 	};
 };

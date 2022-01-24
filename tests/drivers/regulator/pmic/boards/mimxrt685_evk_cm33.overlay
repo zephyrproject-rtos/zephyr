@@ -1,0 +1,12 @@
+/*
+ * Copyright 2021 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&lpadc0 0>;
+	};
+};

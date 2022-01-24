@@ -7,14 +7,12 @@ common:
         - "thread_a: Hello World from (.*)!"
         - "thread_b: Hello World from (.*)!"
 tests:
+  tracing.user:
+    extra_args: CONF_FILE="prj_user.conf"
   tracing.format.sysview:
     platform_allow: nrf52840dk_nrf52840 mimxrt1050_evk mimxrt1064_evk
     extra_args: CONF_FILE="prj_sysview.conf"
   tracing.osawareness.openocd:
-    extra_configs:
-      - CONFIG_MP_NUM_CPUS=1
-      - CONFIG_DEBUG_THREAD_INFO=y
-      - CONFIG_SMP=n
     arch_exclude: posix xtensa
     platform_exclude: qemu_x86_64
   tracing.transport.uart:

@@ -10,6 +10,11 @@ config HAS_MCUX
 
 if HAS_MCUX
 
+config HAS_MCUX_12B1MSPS_SAR
+	bool
+	help
+	  Set if the 12B1MSPS SAR ADC module is present in the SoC.
+
 config HAS_MCUX_ADC12
 	bool
 	help
@@ -131,6 +136,16 @@ config HAS_MCUX_GPT
 	help
 	  Set if the general purpose timer (GPT) module is present in the SoC.
 
+config HAS_MCUX_GPC
+	bool
+	help
+	  Set if the general power controller (GPC) module is present in the SoC.
+
+config HAS_MCUX_SNVS
+	bool
+	help
+	  Set if the SNVS module is present on the SoC.
+
 config HAS_MCUX_RNG
 	bool
 	help
@@ -171,6 +186,12 @@ config HAS_MCUX_SIM
 	  Set if the system integration module (SIM) module is present in the
 	  SoC.
 
+config HAS_MCUX_SRC
+	bool
+	help
+	  Set if the system reset controller (SRC) module is present in the
+	  SoC.
+
 config HAS_MCUX_TRNG
 	bool
 	help
@@ -181,6 +202,11 @@ config HAS_MCUX_USB_EHCI
 	bool
 	help
 	  Set if the USB controller EHCI module is present in the SoC.
+
+config HAS_MCUX_USB_LPCIP3511
+	bool
+	help
+	  Set if the USB controller LPCIP3511 module is present in the SoC.
 
 config HAS_MCUX_USDHC1
 	bool
@@ -282,5 +308,20 @@ config HAS_MCUX_RCM
 	help
 	  Set if the Reset Control Module (RCM) module is present in
 	  the SoC.
+
+config HAS_MCUX_CTIMER
+	bool
+	help
+	  Set if the CTIMER module is present in the SoC.
+
+config HAS_MCUX_I2S
+	bool
+	help
+	  Set if the I2S/SAI module is present on the Soc
+
+config HAS_MCUX_MCAN
+	bool
+	help
+	  Set if the MCAN module is present on the SoC.
 
 endif # HAS_MCUX

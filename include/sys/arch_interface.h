@@ -58,6 +58,13 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  */
 static inline uint32_t arch_k_cycle_get_32(void);
 
+/**
+ * Obtain the current cycle count, in units that are hardware-specific
+ *
+ * @see k_cycle_get_64()
+ */
+static inline uint64_t arch_k_cycle_get_64(void);
+
 /** @} */
 
 
@@ -306,6 +313,14 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * @see IRQ_CONNECT()
  */
 
+#ifdef CONFIG_PCIE
+/**
+ * @def ARCH_PCIE_IRQ_CONNECT(bdf, irq, pri, isr, arg, flags)
+ *
+ * @see PCIE_IRQ_CONNECT()
+ */
+#endif /* CONFIG_PCIE */
+
 /**
  * @def ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
  *
@@ -335,6 +350,39 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  *
  * @see ISR_DIRECT_DECLARE()
  */
+
+#ifndef CONFIG_PCIE_CONTROLLER
+/**
+ * @brief Arch-specific hook for allocating IRQs
+ *
+ * Note: disable/enable IRQ relevantly inside the implementation of such
+ * function to avoid concurrency issues. Also, an allocated IRQ is assumed
+ * to be used thus a following @see arch_irq_is_used() should return true.
+ *
+ * @return The newly allocated IRQ or UINT_MAX on error.
+ */
+unsigned int arch_irq_allocate(void);
+
+/**
+ * @brief Arch-specific hook for declaring an IRQ being used
+ *
+ * Note: disable/enable IRQ relevantly inside the implementation of such
+ * function to avoid concurrency issues.
+ *
+ * @param irq the IRQ to declare being used
+ */
+void arch_irq_set_used(unsigned int irq);
+
+/**
+ * @brief Arch-specific hook for checking if an IRQ is being used already
+ *
+ * @param irq the IRQ to check
+ *
+ * @return true if being, false otherwise
+ */
+bool arch_irq_is_used(unsigned int irq);
+
+#endif /* CONFIG_PCIE_CONTROLLER */
 
 /**
  * @def ARCH_EXCEPT(reason_p)
@@ -574,8 +622,13 @@ int arch_mem_domain_init(struct k_mem_domain *domain);
  * thread is not already a member of this domain.
  *
  * @param thread Thread which needs to be configured.
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOSPC if running out of space in internal structures
+ *                    (e.g. translation tables)
  */
-void arch_mem_domain_thread_add(struct k_thread *thread);
+int arch_mem_domain_thread_add(struct k_thread *thread);
 
 /**
  * @brief Remove a thread from a memory domain (arch-specific)
@@ -587,8 +640,11 @@ void arch_mem_domain_thread_add(struct k_thread *thread);
  * is being removed from.
  *
  * @param thread Thread being removed from its memory domain
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
  */
-void arch_mem_domain_thread_remove(struct k_thread *thread);
+int arch_mem_domain_thread_remove(struct k_thread *thread);
 
 /**
  * @brief Remove a partition from the memory domain (arch-specific)
@@ -602,9 +658,13 @@ void arch_mem_domain_thread_remove(struct k_thread *thread);
  *
  * @param domain The memory domain structure
  * @param partition_id The partition index that needs to be deleted
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOENT if no matching partition found
  */
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      uint32_t partition_id);
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				     uint32_t partition_id);
 
 /**
  * @brief Add a partition to the memory domain
@@ -614,9 +674,12 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
  *
  * @param domain The memory domain structure
  * @param partition_id The partition that needs to be added
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
  */
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				   uint32_t partition_id);
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				  uint32_t partition_id);
 #endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 /**
@@ -648,6 +711,21 @@ void arch_mem_domain_partition_add(struct k_mem_domain *domain,
  * @return nonzero if the permissions don't match.
  */
 int arch_buffer_validate(void *addr, size_t size, int write);
+
+/**
+ * Get the optimal virtual region alignment to optimize the MMU table layout
+ *
+ * Some MMU HW requires some region to be aligned to some of the intermediate
+ * block alignment in order to reduce table usage.
+ * This call returns the optimal virtual address alignment in order to permit
+ * such optimization in the following MMU mapping call.
+ *
+ * @param[in] phys Physical address of region to be mapped, aligned to MMU_PAGE_SIZE
+ * @param[in] size Size of region to be mapped, aligned to MMU_PAGE_SIZE
+ *
+ * @retval alignment to apply on the virtual address of this region
+ */
+size_t arch_virt_region_align(uintptr_t phys, size_t size);
 
 /**
  * Perform a one-way transition from supervisor to kernel mode.
@@ -782,14 +860,9 @@ static inline void arch_cohere_stacks(struct k_thread *old_thread,
  * @{
  */
 
-/**
- * @def ARCH_GDB_NUM_REGISTERS
- *
- * ARCH_GDB_NUM_REGISTERS is architecure specific and
- * this symbol must be defined in architecure specific header
- */
-
 #ifdef CONFIG_GDBSTUB
+struct gdb_ctx;
+
 /**
  * @brief Architecture layer debug start
  *
@@ -810,6 +883,100 @@ void arch_gdb_continue(void);
  * Continue software execution until reaches the next statement.
  */
 void arch_gdb_step(void);
+
+/**
+ * @brief Read all registers, and outputs as hexadecimal string.
+ *
+ * This reads all CPU registers and outputs as hexadecimal string.
+ * The output string must be parsable by GDB.
+ *
+ * @param ctx    GDB context
+ * @param buf    Buffer to output hexadecimal string.
+ * @param buflen Length of buffer.
+ *
+ * @return Length of hexadecimal string written.
+ *         Return 0 if error or not supported.
+ */
+size_t arch_gdb_reg_readall(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen);
+
+/**
+ * @brief Take a hexadecimal string and update all registers.
+ *
+ * This takes in a hexadecimal string as presented from GDB,
+ * and updates all CPU registers with new values.
+ *
+ * @param ctx    GDB context
+ * @param hex    Input hexadecimal string.
+ * @param hexlen Length of hexadecimal string.
+ *
+ * @return Length of hexadecimal string parsed.
+ *         Return 0 if error or not supported.
+ */
+size_t arch_gdb_reg_writeall(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen);
+
+/**
+ * @brief Read one register, and outputs as hexadecimal string.
+ *
+ * This reads one CPU register and outputs as hexadecimal string.
+ * The output string must be parsable by GDB.
+ *
+ * @param ctx    GDB context
+ * @param buf    Buffer to output hexadecimal string.
+ * @param buflen Length of buffer.
+ * @param regno  Register number
+ *
+ * @return Length of hexadecimal string written.
+ *         Return 0 if error or not supported.
+ */
+size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
+			    uint32_t regno);
+
+/**
+ * @brief Take a hexadecimal string and update one register.
+ *
+ * This takes in a hexadecimal string as presented from GDB,
+ * and updates one CPU registers with new value.
+ *
+ * @param ctx    GDB context
+ * @param hex    Input hexadecimal string.
+ * @param hexlen Length of hexadecimal string.
+ * @param regno  Register number
+ *
+ * @return Length of hexadecimal string parsed.
+ *         Return 0 if error or not supported.
+ */
+size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
+			     uint32_t regno);
+
+/**
+ * @brief Add breakpoint or watchpoint.
+ *
+ * @param ctx GDB context
+ * @param type Breakpoint or watchpoint type
+ * @param addr Address of breakpoint or watchpoint
+ * @param kind Size of breakpoint/watchpoint in bytes
+ *
+ * @retval 0  Operation successful
+ * @retval -1 Error encountered
+ * @retval -2 Not supported
+ */
+int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
+			    uintptr_t addr, uint32_t kind);
+
+/**
+ * @brief Remove breakpoint or watchpoint.
+ *
+ * @param ctx GDB context
+ * @param type Breakpoint or watchpoint type
+ * @param addr Address of breakpoint or watchpoint
+ * @param kind Size of breakpoint/watchpoint in bytes
+ *
+ * @retval 0  Operation successful
+ * @retval -1 Error encountered
+ * @retval -2 Not supported
+ */
+int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
+			       uintptr_t addr, uint32_t kind);
 
 #endif
 /** @} */

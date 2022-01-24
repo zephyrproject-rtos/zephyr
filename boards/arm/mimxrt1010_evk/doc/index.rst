@@ -67,12 +67,18 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -100,12 +106,24 @@ The MIMXRT1010 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_02       | LPI2C1_CLK      | I2C SCL                   |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_03    | LPSPI1_SDI      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_04    | LPSPI1_SDO      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_05    | LPSPI1_PCS0     | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_06    | LPSPI1_SCK      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_01    | ADC             | ADC1 Channel 1            |
++---------------+-----------------+---------------------------+
+| GPIO_AD_02    | ADC             | ADC1 Channel 2            |
++---------------+-----------------+---------------------------+
 
 System Clock
 ============
 
-The MIMXRT1010 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 500 MHz core clock.
+The MIMXRT1010 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========

@@ -11,6 +11,9 @@ config SPI
 config ADC_MCP320X
 	default y
 
+config ADC_INIT_PRIORITY
+	default 80
+
 endif # ADC
 
 endif # SHIELD_MIKROE_ADC_CLICK

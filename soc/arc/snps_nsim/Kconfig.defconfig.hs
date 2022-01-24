@@ -30,4 +30,7 @@ config ARC_FIRQ
 config CACHE_MANAGEMENT
 	default y
 
+config ARC_HAS_ACCL_REGS
+	default y
+
 endif # SOC_NSIM_HS

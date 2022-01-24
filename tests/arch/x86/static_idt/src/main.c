@@ -63,8 +63,6 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
  * Handler to perform various actions from within an ISR context
  *
  * This routine is the ISR handler for _trigger_isr_handler().
- *
- * @return N/A
  */
 
 void isr_handler(void)
@@ -89,7 +87,6 @@ void isr_handler(void)
  * done, then control goes back to the offending instruction and an infinite
  * loop of divide-by-zero errors would be created.)
  *
- * @return N/A
  */
 
 void exc_divide_error_handler(z_arch_esf_t *p_esf)

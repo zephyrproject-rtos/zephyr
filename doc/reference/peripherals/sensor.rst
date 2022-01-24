@@ -55,12 +55,6 @@ compensates data for both channels.
    :lines: 12-
    :linenos:
 
-The example assumes that the returned values have type :c:struct:`sensor_value`,
-which is the case for BME280.  A real application
-supporting multiple sensors should inspect the :c:data:`type` field of
-the :c:data:`temp` and :c:data:`press` values and use the other fields
-of the structure accordingly.
-
 Configuration and Attributes
 ****************************
 

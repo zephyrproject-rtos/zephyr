@@ -83,7 +83,7 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 * ...
 	 * 16 -> LL_RCC_PREDIV_DIV_16 -> 0x0000000F
 	 */
-	pllinit->Prediv = STM32_PLL_PREDIV1 - 1;
+	pllinit->Prediv = STM32_PLL_PREDIV - 1;
 #endif /* CONFIG_SOC_STM32F10X_DENSITY_DEVICE */
 
 #endif /* STM32_PLL_SRC_HSI */

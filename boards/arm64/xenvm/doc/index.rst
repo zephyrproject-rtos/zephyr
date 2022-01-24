@@ -20,8 +20,6 @@ It provides minimal set of devices:
 
 * ARM Generic timer
 * GICv2
-* SBSA (subset of PL011) UART controller
-
 
 Hardware
 ********
@@ -34,8 +32,6 @@ The following hardware features are supported:
 | Interface    | Controller  | Driver/Component     |
 +==============+=============+======================+
 | GIC          | virtualized | interrupt controller |
-+--------------+-------------+----------------------+
-| SBSA UART    | emulated    | serial port          |
 +--------------+-------------+----------------------+
 | ARM TIMER    | virtualized | system clock         |
 +--------------+-------------+----------------------+
@@ -56,13 +52,6 @@ boot log:
 ::
 
   (XEN) [    0.147541] Generic Timer IRQ: phys=30 hyp=26 virt=27 Freq: 8320 KHz
-
-Serial Port
------------
-
-This board configuration uses a single serial communication channel using SBSA
-UART. This is a minimal UART implementation provided by Xen. Xen PV Console is
-not supported at this moment.
 
 Interrupt Controller
 --------------------
@@ -88,13 +77,16 @@ configuration would not boot on your hardware. In this case you need to update
 configuration by altering device tree and Kconfig options. This will be covered
 in detail in next section.
 
-No Xen-specific features are supported at the moment. This includes:
+Most of Xen-specific features are not supported at the moment. This includes:
+* XenBus (under development)
+* Xen grant tables (under development)
+* Xen PV drivers
 
+Now only following features are supported:
 * Xen Enlighten memory page
-* XenBus
-* Xen event channels
-* Xen grant tables
-* Xen PV drivers (including PV console)
+* Xen event channels (currently only pre-defined - PV console, Xenbus)
+* Xen PV console (2 versions: regular ring buffer based for DomU and consoleio for Dom0)
+* Xen early console_io interface (mainly for debug purposes - requires debug version of Xen)
 
 Building and Running
 ********************
@@ -118,7 +110,6 @@ create guest configuration file :code:`zephyr.conf`. There is example:
    memory=16
    gic_version="v2"
    on_crash="preserve"
-   vuart="sbsa_uart"
 
 You need to upload both :code:`zephyr.bin` and :code:`zephyr.conf` to your Dom0
 and then you can run Zephyr by issuing
@@ -127,11 +118,17 @@ and then you can run Zephyr by issuing
 
    $ xl create zephyr.conf
 
-Next you need to attach to SBSA virtual console:
+Next you need to attach to PV console:
 
 .. code-block::
 
-   $ xl console -t vuart zephyr
+   $ xl console zephyr
+
+Also this can be performed via single command:
+
+.. code-block::
+
+   $ xl create -c zephyr.conf
 
 You will see Zephyr output:
 

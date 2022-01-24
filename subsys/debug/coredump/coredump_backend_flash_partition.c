@@ -273,10 +273,9 @@ out:
 }
 
 /**
- * @brief Process the stored coredump in flash partition.
+ * @brief Erase the stored coredump from flash partition.
  *
- * This reads the stored coredump data and processes it via
- * the callback function.
+ * This erases the stored coredump data from the flash partition.
  *
  * @return 0 if successful; error otherwise
  */
@@ -304,7 +303,7 @@ static int erase_flash_partition(void)
 static void coredump_flash_backend_start(void)
 {
 	const struct device *flash_dev;
-	size_t offset;
+	size_t offset, header_size;
 	int ret;
 
 	ret = partition_open();
@@ -325,15 +324,14 @@ static void coredump_flash_backend_start(void)
 		 * The header size is rounded up so the beginning of coredump
 		 * is aligned to write size (for easier read and seek).
 		 */
-		offset = backend_ctx.flash_area->fa_off;
-		offset += ROUND_UP(sizeof(struct flash_hdr_t),
-				   FLASH_WRITE_SIZE);
+		header_size = ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE);
+		offset = backend_ctx.flash_area->fa_off + header_size;
 
 		ret = stream_flash_init(&backend_ctx.stream_ctx, flash_dev,
 					stream_flash_buf,
 					sizeof(stream_flash_buf),
 					offset,
-					backend_ctx.flash_area->fa_size,
+					backend_ctx.flash_area->fa_size - header_size,
 					NULL);
 	}
 
@@ -354,7 +352,6 @@ static void coredump_flash_backend_start(void)
 static void coredump_flash_backend_end(void)
 {
 	int ret;
-	const struct device *flash_dev;
 
 	struct flash_hdr_t hdr = {
 		.id = {'C', 'D'},
@@ -376,22 +373,10 @@ static void coredump_flash_backend_end(void)
 	hdr.error = backend_ctx.error;
 	hdr.flags = 0;
 
-	flash_dev = flash_area_get_device(backend_ctx.flash_area);
-
-	/* Need to re-init context to write at beginning of flash */
-	ret = stream_flash_init(&backend_ctx.stream_ctx, flash_dev,
-				stream_flash_buf,
-				sizeof(stream_flash_buf),
-				backend_ctx.flash_area->fa_off,
-				backend_ctx.flash_area->fa_size, NULL);
-	if (ret == 0) {
-		ret = stream_flash_buffered_write(&backend_ctx.stream_ctx,
-						  (void *)&hdr, sizeof(hdr),
-						  true);
-		if (ret != 0) {
-			LOG_ERR("Cannot write coredump header!");
-			backend_ctx.error = ret;
-		}
+	ret = flash_area_write(backend_ctx.flash_area, 0, (void *)&hdr, sizeof(hdr));
+	if (ret != 0) {
+		LOG_ERR("Cannot write coredump header!");
+		backend_ctx.error = ret;
 	}
 
 	if (backend_ctx.error != 0) {
@@ -513,7 +498,7 @@ static int coredump_flash_backend_cmd(enum coredump_cmd_id cmd_id,
 }
 
 
-struct z_coredump_backend_api z_coredump_backend_flash_partition = {
+struct coredump_backend_api coredump_backend_flash_partition = {
 	.start = coredump_flash_backend_start,
 	.end = coredump_flash_backend_end,
 	.buffer_output = coredump_flash_backend_buffer_output,

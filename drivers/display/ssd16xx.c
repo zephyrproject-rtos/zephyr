@@ -636,8 +636,8 @@ static int ssd16xx_controller_init(const struct device *dev)
 
 static int ssd16xx_init(const struct device *dev)
 {
-	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *driver = dev->data;
+	const struct ssd16xx_config *config = driver->config;
 
 	LOG_DBG("");
 
@@ -701,5 +701,5 @@ static struct display_driver_api ssd16xx_driver_api = {
 
 DEVICE_DT_INST_DEFINE(0, ssd16xx_init, NULL,
 		    &ssd16xx_driver, NULL,
-		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+		    POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		    &ssd16xx_driver_api);

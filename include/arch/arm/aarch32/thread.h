@@ -121,6 +121,10 @@ struct _thread_arch {
 
 #if defined(CONFIG_USERSPACE)
 	uint32_t priv_stack_start;
+#if defined(CONFIG_CPU_CORTEX_R)
+	uint32_t priv_stack_end;
+	uint32_t sp_usr;
+#endif
 #endif
 #endif
 };

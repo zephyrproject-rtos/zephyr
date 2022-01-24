@@ -14,7 +14,7 @@
 static int lis2dw12_trig_cnt;
 
 static void lis2dw12_trigger_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lis2dw12_trig_cnt++;
@@ -27,21 +27,21 @@ static int lsm6dso_gyr_trig_cnt;
 static int lsm6dso_temp_trig_cnt;
 
 static void lsm6dso_acc_trig_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lsm6dso_acc_trig_cnt++;
 }
 
 static void lsm6dso_gyr_trig_handler(const struct device *dev,
-				     struct sensor_trigger *trig)
+				     const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
 	lsm6dso_gyr_trig_cnt++;
 }
 
 static void lsm6dso_temp_trig_handler(const struct device *dev,
-				      struct sensor_trigger *trig)
+				      const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_DIE_TEMP);
 	lsm6dso_temp_trig_cnt++;

@@ -27,6 +27,7 @@
 #include <arch/xtensa/irq.h>
 #include <xtensa/config/core.h>
 #include <arch/common/addr_types.h>
+#include <arch/xtensa/gdbstub.h>
 
 #ifdef CONFIG_KERNEL_COHERENCE
 #define ARCH_STACK_PTR_ALIGN XCHAL_DCACHE_LINESIZE
@@ -61,6 +62,13 @@ extern uint32_t sys_clock_cycle_get_32(void);
 static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return sys_clock_cycle_get_32();
+}
+
+extern uint64_t sys_clock_cycle_get_64(void);
+
+static inline uint64_t arch_k_cycle_get_64(void)
+{
+	return sys_clock_cycle_get_64();
 }
 
 static ALWAYS_INLINE void arch_nop(void)

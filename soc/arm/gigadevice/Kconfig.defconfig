@@ -1,0 +1,11 @@
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_GD32
+
+source "soc/arm/gigadevice/*/Kconfig.defconfig.series"
+
+config PINCTRL
+	default y
+
+endif # SOC_FAMILY_GD32

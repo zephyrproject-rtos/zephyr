@@ -36,17 +36,19 @@
 	sram1: memory@20030000 {
 		compatible = "mmio-sram";
 		reg = <0x20030000 0x2800>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@20038000 {
 		compatible = "mmio-sram";
 		reg = <0x20038000 0x5000>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
-			compatible = "st,stm32-hse-clock";
+			compatible = "fixed-clock";
 			/* Expected clock-frequency on the whole series 32MHz */
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "disabled";
@@ -106,7 +108,7 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
 
 				write-block-size = <8>;
@@ -281,13 +283,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_1";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
@@ -299,13 +301,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
 			interrupts = <28 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_2";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_2";
 				#pwm-cells = <3>;
 			};
@@ -317,13 +319,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
 			interrupts = <25 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_16";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_16";
 				#pwm-cells = <3>;
 			};
@@ -335,13 +337,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00040000>;
 			interrupts = <26 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_17";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_17";
 				#pwm-cells = <3>;
 			};
@@ -369,7 +371,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <47 0>;
+			interrupts = <47 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 			label = "LPTIM_1";

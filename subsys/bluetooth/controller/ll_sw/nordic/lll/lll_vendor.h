@@ -12,7 +12,7 @@
 /* Worst-case time margin needed after event end-time in the air
  * (done/preempt race margin + power-down/chain delay)
  */
-#define EVENT_OVERHEAD_END_US         40
+#define EVENT_OVERHEAD_END_US         100
 #define EVENT_JITTER_US               16
 /* Inter-Event Space (IES) */
 #define EVENT_TIES_US                 625

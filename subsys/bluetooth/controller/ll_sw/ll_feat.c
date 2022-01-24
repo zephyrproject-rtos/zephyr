@@ -7,13 +7,16 @@
 
 #include <zephyr.h>
 
+#include "util/util.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "hal/ccm.h"
 
 #include "pdu.h"
 
 #include "lll.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 
 #include "ull_conn_internal.h"

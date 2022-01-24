@@ -26,11 +26,13 @@
 	sram1:memory@20000000 {
 		compatible = "mmio-sram";
 		reg = <0x20000000 0x800>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2:memory@20004000 {
 		compatible = "mmio-sram";
 		reg = <0x20004000 0x800>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	soc {

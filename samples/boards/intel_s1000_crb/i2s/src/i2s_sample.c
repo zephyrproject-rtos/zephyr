@@ -32,8 +32,8 @@ LOG_MODULE_REGISTER(i2s_sample);
 #define I2S_PLAY_BUF_COUNT		(6)
 #define I2S_TX_PRELOAD_BUF_COUNT	(2)
 
-#define BASE_TONE_FREQ_HZ		1046.502 /* Hz */
-#define FLOAT_VALUE_OF_2PI		(2 * 3.1415926535897932384626433832795)
+#define BASE_TONE_FREQ_HZ		1046.502f /* Hz */
+#define FLOAT_VALUE_OF_2PI		(2 * 3.1415926535897932384626433832795f)
 #define BASE_TONE_FREQ_RAD		(BASE_TONE_FREQ_HZ * FLOAT_VALUE_OF_2PI)
 #define BASE_TONE_PHASE_DELTA		(BASE_TONE_FREQ_RAD / AUDIO_SAMPLE_FREQ)
 
@@ -75,7 +75,7 @@ static inline int audio_playback_buffer_fill(float phase_delta, int32_t *buffer,
 
 	wr_ptr = buffer;
 	sample_index = 0;
-	while ((sample_index < samples) && (phase_delta != 0.0)) {
+	while ((sample_index < samples) && (phase_delta != 0.0f)) {
 		/* get sine(phase) and scale it */
 		sample = (int32_t)(SIGNAL_AMPLITUDE_SCALE * sinf(phase));
 		/* update phase for next sample */
@@ -98,7 +98,7 @@ static float audio_playback_tone_get_next(void)
 
 	if (frame == 0) {
 		LOG_INF("Tone %u Hz", (unsigned int)(BASE_TONE_FREQ_HZ *
-					powf(2.0, (float)tones[index]/12.0)));
+					powf(2.0f, (float)tones[index]/12.0f)));
 	}
 
 	if (++frame == AUDIO_FRAMES_PER_TONE_DURATION) {
@@ -113,7 +113,7 @@ static float audio_playback_tone_get_next(void)
 		return 0.0f;
 	}
 
-	return (BASE_TONE_PHASE_DELTA * powf(2.0, (float)tones[index]/12.0));
+	return (BASE_TONE_PHASE_DELTA * powf(2.0f, (float)tones[index]/12.0f));
 }
 #endif
 

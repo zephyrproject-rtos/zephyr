@@ -55,7 +55,7 @@ struct ticker_node {
 					     * skipping
 					     */
 	uint16_t lazy_current;		    /* Current number of timeouts
-					     * skipped = slave latency
+					     * skipped = peripheral latency
 					     */
 	union {
 		uint32_t remainder_periodic;/* Sub-microsecond tick remainder
@@ -151,7 +151,7 @@ struct ticker_user_op_update {
 					 * slot reservation (air-time)
 					 */
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-	uint16_t lazy;			/* Slave latency:
+	uint16_t lazy;			/* Peripheral latency:
 					 *  0: Do nothing
 					 *  1: latency = 0
 					 * >1: latency = lazy - 1
@@ -892,6 +892,7 @@ void ticker_worker(void *param)
 		struct ticker_node *ticker;
 		uint32_t ticks_to_expire;
 		uint8_t must_expire_skip;
+		uint32_t ticks_drift;
 
 		ticker = &node[ticker_id_head];
 
@@ -960,14 +961,25 @@ void ticker_worker(void *param)
 
 #if defined(CONFIG_BT_TICKER_EXT)
 		if (ticker->ext_data) {
+			ticks_drift = ticker->ext_data->ticks_drift;
 			ticker->ext_data->ticks_drift = 0U;
 			/* Mark node as not re-scheduling */
 			ticker->ext_data->reschedule_state =
 				TICKER_RESCHEDULE_STATE_NONE;
+		} else {
+			ticks_drift = 0U;
 		}
-#endif /* CONFIG_BT_TICKER_EXT */
-#endif /* !CONFIG_BT_TICKER_LOW_LAT &&
-	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
+
+#else  /* !CONFIG_BT_TICKER_EXT */
+		ticks_drift = 0U;
+#endif /* !CONFIG_BT_TICKER_EXT */
+
+#else  /* CONFIG_BT_TICKER_LOW_LAT ||
+	* CONFIG_BT_TICKER_SLOT_AGNOSTIC
+	*/
+		ticks_drift = 0U;
+#endif /* CONFIG_BT_TICKER_LOW_LAT ||
+	* CONFIG_BT_TICKER_SLOT_AGNOSTIC
 	*/
 		/* Scheduled timeout is acknowledged to be complete */
 		ticker->ack--;
@@ -983,6 +995,7 @@ void ticker_worker(void *param)
 			DEBUG_TICKER_TASK(1);
 			/* Invoke the timeout callback */
 			ticker->timeout_func(ticks_at_expire,
+					     ticks_drift,
 					     ticker->remainder_current,
 					     must_expire_skip ?
 					     TICKER_LAZY_MUST_EXPIRE :
@@ -1922,6 +1935,8 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 			ticker_id_iter = node->next;
 		}
 
+		ticker->ext_data->ticks_drift += ticks_to_expire -
+						 ticker->ticks_to_expire;
 		ticker->ticks_to_expire = ticks_to_expire;
 		ticker_id_iter = nodes[ticker_id_head].next;
 		ticker_id_prev = TICKER_NULL;

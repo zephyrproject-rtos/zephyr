@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #if defined(CONFIG_USERSPACE)
+#include <sys/mem_manage.h>
 #include <syscall_handler.h>
 #include "test_syscalls.h"
 #endif
@@ -80,7 +81,7 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 	__asm__ volatile ("swi");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on RISCV
-	 * and xtensa
+	 * and xtensa, TLB exception (instruction fetch) on MIPS.
 	 */
 	{
 		volatile long illegal = 0;
@@ -96,7 +97,7 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_ARM64)
 	__asm__ volatile ("svc 0");
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 	__asm__ volatile ("BKPT");
 #elif defined(CONFIG_CPU_CORTEX_M)
 	__asm__ volatile ("swi 0");
@@ -113,7 +114,7 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #else
-	/* used to create a divide by zero error on X86 */
+	/* used to create a divide by zero error on X86 and MIPS */
 	volatile int error;
 	volatile int zero = 0;
 
@@ -125,28 +126,20 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 
 void entry_oops(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
 	expected_reason = K_ERR_KERNEL_OOPS;
 
-	key = irq_lock();
 	k_oops();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 void entry_panic(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
 	expected_reason = K_ERR_KERNEL_PANIC;
 
-	key = irq_lock();
 	k_panic();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 void entry_zephyr_assert(void *p1, void *p2, void *p3)
@@ -159,28 +152,20 @@ void entry_zephyr_assert(void *p1, void *p2, void *p3)
 
 void entry_arbitrary_reason(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
 	expected_reason = INT_MAX;
 
-	key = irq_lock();
 	z_except_reason(INT_MAX);
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 void entry_arbitrary_reason_negative(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
 	expected_reason = -2;
 
-	key = irq_lock();
 	z_except_reason(-2);
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 #ifndef CONFIG_ARCH_POSIX
@@ -241,12 +226,10 @@ void stack_sentinel_timer(void *p1, void *p2, void *p3)
 
 void stack_sentinel_swap(void *p1, void *p2, void *p3)
 {
-	unsigned int key = irq_lock();
-
 	/* Test that stack overflow check due to swap works */
 	blow_up_stack();
 	TC_PRINT("swapping...\n");
-	z_swap_irqlock(key);
+	z_swap_unlocked();
 	TC_ERROR("should never see this\n");
 	rv = TC_FAIL;
 }
@@ -446,6 +429,54 @@ void test_fatal(void)
 /*test case main entry*/
 void test_main(void)
 {
+#if defined(CONFIG_DEMAND_PAGING) && \
+	!defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+	uintptr_t pin_addr;
+	size_t pin_size, obj_size;
+
+	/* Need to pin the whole stack object (including reserved
+	 * space), or else it would cause double faults: exception
+	 * being processed while page faults on the stacks.
+	 *
+	 * Same applies for some variables needed during exception
+	 * processing.
+	 */
+#if defined(CONFIG_STACK_SENTINEL) && !defined(CONFIG_ARCH_POSIX)
+
+	obj_size = K_THREAD_STACK_SIZEOF(overflow_stack);
+#if defined(CONFIG_USERSPACE)
+	obj_size = Z_THREAD_STACK_SIZE_ADJUST(obj_size);
+#endif
+
+	k_mem_region_align(&pin_addr, &pin_size,
+			   POINTER_TO_UINT(&overflow_stack),
+			   obj_size, CONFIG_MMU_PAGE_SIZE);
+
+	k_mem_pin(UINT_TO_POINTER(pin_addr), pin_size);
+#endif /* CONFIG_STACK_SENTINEL && !CONFIG_ARCH_POSIX */
+
+	obj_size = K_THREAD_STACK_SIZEOF(alt_stack);
+#if defined(CONFIG_USERSPACE)
+	obj_size = Z_THREAD_STACK_SIZE_ADJUST(obj_size);
+#endif
+
+	k_mem_region_align(&pin_addr, &pin_size,
+			   POINTER_TO_UINT(&alt_stack),
+			   obj_size,
+			   CONFIG_MMU_PAGE_SIZE);
+
+	k_mem_pin(UINT_TO_POINTER(pin_addr), pin_size);
+
+	k_mem_region_align(&pin_addr, &pin_size,
+			   POINTER_TO_UINT((void *)&expected_reason),
+			   sizeof(expected_reason),
+			   CONFIG_MMU_PAGE_SIZE);
+
+	k_mem_pin(UINT_TO_POINTER(pin_addr), pin_size);
+#endif /* CONFIG_DEMAND_PAGING
+	* && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	*/
+
 	ztest_test_suite(fatal,
 			ztest_unit_test(test_fatal));
 	ztest_run_test_suite(fatal);

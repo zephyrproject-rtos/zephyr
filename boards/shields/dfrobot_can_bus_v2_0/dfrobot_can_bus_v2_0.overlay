@@ -21,13 +21,11 @@
 		prop-seg = <2>;
 		phase-seg1 = <7>;
 		phase-seg2 = <6>;
-		#address-cells = <1>;
-		#size-cells = <0>;
 	};
 };
 
 / {
 	chosen {
-		zephyr,can-primary = &can1;
+		zephyr,canbus = &can1;
 	};
 };

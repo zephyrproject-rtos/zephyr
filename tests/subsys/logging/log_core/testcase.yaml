@@ -3,4 +3,4 @@ tests:
     integration_platforms:
       - native_posix
     tags: log_core logging
-    filter: not CONFIG_LOG_IMMEDIATE
+    filter: not CONFIG_LOG_MODE_IMMEDIATE

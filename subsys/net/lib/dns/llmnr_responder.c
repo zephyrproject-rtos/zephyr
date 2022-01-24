@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/dns_resolve.h>
 #include <net/udp.h>
+#include <net/igmp.h>
 
 #include "dns_pack.h"
 #include "ipv6.h"
@@ -75,7 +76,7 @@ static void create_ipv6_dst_addr(struct net_pkt *pkt,
 	addr->sin6_family = AF_INET6;
 	addr->sin6_port = udp_hdr->src_port;
 
-	net_ipaddr_copy(&addr->sin6_addr, &NET_IPV6_HDR(pkt)->src);
+	net_ipv6_addr_copy_raw((uint8_t *)&addr->sin6_addr, NET_IPV6_HDR(pkt)->src);
 }
 #endif
 
@@ -103,7 +104,7 @@ static void create_ipv4_dst_addr(struct net_pkt *pkt,
 	addr->sin_family = AF_INET;
 	addr->sin_port = udp_hdr->src_port;
 
-	net_ipaddr_copy(&addr->sin_addr, &NET_IPV4_HDR(pkt)->src);
+	net_ipv4_addr_copy_raw((uint8_t *)&addr->sin_addr, NET_IPV4_HDR(pkt)->src);
 }
 #endif
 
@@ -300,7 +301,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 	} else if (qtype == DNS_RR_TYPE_AAAA) {
 #if defined(CONFIG_NET_IPV6)
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv6->src);
+				    (struct in6_addr *)ip_hdr->ipv6->src);
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -342,7 +343,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 
 	if (qtype == DNS_RR_TYPE_AAAA) {
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv6->src);
+				    (struct in6_addr *)ip_hdr->ipv6->src);
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -351,7 +352,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 	} else if (qtype == DNS_RR_TYPE_A) {
 #if defined(CONFIG_NET_IPV4)
 		addr = get_ipv4_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv4->src);
+				    (struct in_addr *)ip_hdr->ipv4->src);
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -571,10 +572,10 @@ static void setup_ipv6_addr(struct sockaddr_in6 *local_addr)
 static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 {
 	struct in_addr *addr = user_data;
-	struct net_if_mcast_addr *ifaddr;
+	int ret;
 
-	ifaddr = net_if_ipv4_maddr_add(iface, addr);
-	if (!ifaddr) {
+	ret = net_ipv4_igmp_join(iface, addr);
+	if (ret < 0) {
 		NET_DBG("Cannot add IPv4 multicast address to iface %p",
 			iface);
 	}

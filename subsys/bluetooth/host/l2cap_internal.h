@@ -234,7 +234,7 @@ struct bt_l2cap_fixed_chan {
 };
 
 #define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept, _destroy)         \
-	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = { \
+	const STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = {   \
 				.cid = _cid,                            \
 				.accept = _accept,                      \
 				.destroy = _destroy,                    \
@@ -247,7 +247,7 @@ struct bt_l2cap_br_fixed_chan {
 };
 
 #define BT_L2CAP_BR_CHANNEL_DEFINE(_name, _cid, _accept)		\
-	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
+	const STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
 				.cid = _cid,			\
 				.accept = _accept,		\
 			}
@@ -312,7 +312,7 @@ static inline int bt_l2cap_send(struct bt_conn *conn, uint16_t cid,
 }
 
 /* Receive a new L2CAP PDU from a connection */
-void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf);
+void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf, bool complete);
 
 /* Perform connection parameter update request */
 int bt_l2cap_update_conn_param(struct bt_conn *conn,

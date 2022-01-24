@@ -51,12 +51,17 @@ struct ll_adv_set {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
-	uint8_t  own_addr[BDADDR_SIZE];
+	uint8_t  own_id_addr[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	struct lll_df_adv_cfg *df_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint32_t delay;
+	uint32_t delay_remain;
+	uint32_t ticks_at_expire;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 };
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -65,6 +70,14 @@ struct ll_adv_aux_set {
 	struct lll_adv_aux lll;
 
 	uint16_t interval;
+
+	uint16_t data_chan_id;
+	struct {
+		uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
+		uint8_t data_chan_count:6;
+	} chm[DOUBLE_BUFFER_SIZE];
+	uint8_t  chm_first;
+	uint8_t  chm_last;
 
 	uint8_t is_started:1;
 };
@@ -79,41 +92,23 @@ struct ll_adv_sync_set {
 	uint8_t is_started:1;
 };
 
-struct ll_adv_iso {
+struct ll_adv_iso_set {
 	struct ull_hdr        ull;
 	struct lll_adv_iso    lll;
 
-#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
-	uint8_t  hci_handle;
-#endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
-
-	uint16_t bis_handle; /* TODO: Support multiple BIS per BIG */
-
-	uint8_t  num_bis:5;
-	uint8_t  packing:1;
-	uint8_t  framing:1;
-	uint8_t  encryption:1;
-
-	uint32_t sdu_interval:20;
-	uint32_t max_sdu:12;
-
-	uint16_t max_latency:12;
-	uint16_t rtn:4;
-
-	uint8_t  phy:3;
-
-	uint8_t  bcode[16];
-
-	struct node_rx_hdr node_rx_complete;
 	struct {
-		struct node_rx_hdr node_rx_hdr_terminate;
+		struct node_rx_hdr hdr;
+	} node_rx_complete;
+	struct {
+		struct node_rx_hdr hdr;
 		union {
 			uint8_t    pdu[0] __aligned(4);
 			uint8_t    reason;
 		};
 	} node_rx_terminate;
 
-	struct pdu_bis pdu;
+#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
+	uint8_t  hci_handle;
+#endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
 };
-
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

@@ -14,10 +14,6 @@
 #define MCP2515_TX_CNT                   3
 #define MCP2515_FRAME_LEN               13
 
-#define DEV_CFG(dev) \
-	((const struct mcp2515_config *const)(dev)->config)
-#define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->data)
-
 struct mcp2515_tx_cb {
 	struct k_sem sem;
 	can_tx_callback_t cb;
@@ -42,7 +38,8 @@ struct mcp2515_data {
 	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];
 	struct zcan_filter filter[CONFIG_CAN_MAX_FILTER];
-	can_state_change_isr_t state_change_isr;
+	can_state_change_callback_t state_change_cb;
+	void *state_change_cb_data;
 
 	/* general data */
 	struct k_mutex mutex;

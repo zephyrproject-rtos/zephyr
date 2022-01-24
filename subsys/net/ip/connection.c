@@ -420,18 +420,18 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_pkt_family(pkt) == AF_INET6 &&
 	    addr->sa_family == AF_INET6) {
-		struct in6_addr *addr6;
+		uint8_t *addr6;
 
 		if (is_remote) {
-			addr6 = &ip_hdr->ipv6->src;
+			addr6 = ip_hdr->ipv6->src;
 		} else {
-			addr6 = &ip_hdr->ipv6->dst;
+			addr6 = ip_hdr->ipv6->dst;
 		}
 
 		if (!net_ipv6_is_addr_unspecified(
 			    &net_sin6(addr)->sin6_addr)) {
-			if (!net_ipv6_addr_cmp(&net_sin6(addr)->sin6_addr,
-					       addr6)) {
+			if (!net_ipv6_addr_cmp_raw((uint8_t *)&net_sin6(addr)->sin6_addr,
+						   addr6)) {
 				return false;
 			}
 		}
@@ -440,17 +440,17 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_pkt_family(pkt) == AF_INET &&
 		   addr->sa_family == AF_INET) {
-		struct in_addr *addr4;
+		uint8_t *addr4;
 
 		if (is_remote) {
-			addr4 = &ip_hdr->ipv4->src;
+			addr4 = ip_hdr->ipv4->src;
 		} else {
-			addr4 = &ip_hdr->ipv4->dst;
+			addr4 = ip_hdr->ipv4->dst;
 		}
 
 		if (net_sin(addr)->sin_addr.s_addr) {
-			if (!net_ipv4_addr_cmp(&net_sin(addr)->sin_addr,
-					       addr4)) {
+			if (!net_ipv4_addr_cmp_raw((uint8_t *)&net_sin(addr)->sin_addr,
+						   addr4)) {
 				return false;
 			}
 		}
@@ -494,16 +494,16 @@ static bool conn_are_end_points_valid(struct net_pkt *pkt,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_addr_cmp(&ip_hdr->ipv4->src,
-				      &ip_hdr->ipv4->dst) ||
-		    net_ipv4_is_my_addr(&ip_hdr->ipv4->src)) {
+		if (net_ipv4_addr_cmp_raw(ip_hdr->ipv4->src,
+					  ip_hdr->ipv4->dst) ||
+		    net_ipv4_is_my_addr((struct in_addr *)ip_hdr->ipv4->src)) {
 			my_src_addr = true;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_addr_cmp(&ip_hdr->ipv6->src,
-				      &ip_hdr->ipv6->dst) ||
-		    net_ipv6_is_my_addr(&ip_hdr->ipv6->src)) {
+		if (net_ipv6_addr_cmp_raw(ip_hdr->ipv6->src,
+					  ip_hdr->ipv6->dst) ||
+		    net_ipv6_is_my_addr((struct in6_addr *)ip_hdr->ipv6->src)) {
 			my_src_addr = true;
 		}
 	}
@@ -614,15 +614,15 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	 * need to deliver the packet to multiple recipients.
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_is_addr_mcast(&ip_hdr->ipv4->dst)) {
+		if (net_ipv4_is_addr_mcast((struct in_addr *)ip_hdr->ipv4->dst)) {
 			is_mcast_pkt = true;
-		} else if (net_if_ipv4_is_addr_bcast(pkt_iface,
-						     &ip_hdr->ipv4->dst)) {
+		} else if (net_if_ipv4_is_addr_bcast(
+				pkt_iface, (struct in_addr *)ip_hdr->ipv4->dst)) {
 			is_bcast_pkt = true;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 					   net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_is_addr_mcast(&ip_hdr->ipv6->dst)) {
+		if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->ipv6->dst)) {
 			is_mcast_pkt = true;
 		}
 	}

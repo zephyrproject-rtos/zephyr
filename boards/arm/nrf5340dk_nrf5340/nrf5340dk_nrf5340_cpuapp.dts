@@ -19,10 +19,6 @@
 		zephyr,sram-secure-partition = &sram0_s;
 		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
-
-	aliases {
-		usbd0 = &usbd;
-	};
 };
 
 &spi2 {
@@ -33,7 +29,7 @@
 	mosi-pin = <45>;
 };
 
-&usbd {
+zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };

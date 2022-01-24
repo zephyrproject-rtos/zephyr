@@ -344,5 +344,5 @@ static struct glcd_data grove_lcd_driver = {
 	 */
 DEVICE_DEFINE(grove_lcd, GROVE_LCD_NAME, glcd_initialize,
 		NULL, &grove_lcd_driver, &grove_lcd_config,
-		POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+		POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		(void *)&grove_lcd_driver);

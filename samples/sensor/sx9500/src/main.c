@@ -12,7 +12,7 @@
 #ifdef CONFIG_SX9500_TRIGGER
 
 static void sensor_trigger_handler(const struct device *dev,
-				   struct sensor_trigger *trig)
+				   const struct sensor_trigger *trig)
 {
 	struct sensor_value prox_value;
 	int ret;

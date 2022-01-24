@@ -9,6 +9,9 @@ Overview
 This tutorial shows how to setup AutoPTS client on Linux with AutoPTS server running on Windows 10
 virtual machine. Tested with Ubuntu 20.4 and Linux Mint 20.4.
 
+You must have a Zephyr development environment set up. See
+:ref:`getting_started` for details.
+
 Supported methods to test zephyr bluetooth host:
 
 - Testing Zephyr Host Stack on QEMU
@@ -22,86 +25,6 @@ For running with QEMU or native posix, please visit:
 
 Setup Linux
 ===========================
-
-Setup Zephyr project
----------------------
-
-Do the setup from Zephyr site https://docs.zephyrproject.org/latest/getting_started/index.html,
-especially:
-
-Update OS
-^^^^^^^^^^
-
-This guide covers Ubuntu version 18.04 LTS and later.
-
-.. code-block::
-
-    sudo apt update
-    sudo apt upgrade
-
-Install dependencies
-^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block::
-
-    sudo apt install --no-install-recommends git cmake ninja-build gperf \
-    ccache dfu-util device-tree-compiler wget \
-    python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-    make gcc gcc-multilib g++-multilib libsdl2-dev
-
-Get Zephyr and install Python dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Install west, and make sure ~/.local/bin is on your PATH environment variable:
-
-.. code-block::
-
-    pip3 install --user -U west
-    echo 'export PATH=~/.local/bin:"$PATH"' >> ~/.bashrc
-    source ~/.bashrc
-
-Get the Zephyr source code:
-
-.. code-block::
-
-    west init ~/zephyrproject
-    cd ~/zephyrproject
-    west update
-
-Export a Zephyr CMake package. This allows CMake to automatically load
-boilerplate code required for building Zephyr applications:
-
-.. code-block::
-
-    west zephyr-export
-
-Zephyr’s scripts/requirements.txt file declares additional Python dependencies.
-Install them with pip3:
-
-.. code-block::
-
-    pip3 install --user -r ~/zephyrproject/zephyr/scripts/requirements.txt
-
-Install a Toolchain
-^^^^^^^^^^^^^^^^^^^^
-
-A toolchain provides a compiler, assembler, linker, and other programs
-required to build Zephyr applications.
-
-Download the latest SDK installer from https://github.com/zephyrproject-rtos/sdk-ng/releases and
-run the installer, installing the SDK in ~/zephyr-sdk-<your_version>, e.g.:
-
-.. code-block::
-
-    chmod +x zephyr-sdk-<your_version>-setup.run
-    ./zephyr-sdk-<your_version>-setup.run -- -d ~/zephyr-sdk-<your_version>
-
-Install udev rules, which allow you to flash most Zephyr boards as a regular user:
-
-.. code-block::
-
-    sudo cp ~/zephyr-sdk-<your_version>/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
-    sudo udevadm control --reload
 
 Install nrftools (only required in the actual hardware test mode)
 =================================================================

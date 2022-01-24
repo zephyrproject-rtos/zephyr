@@ -16,7 +16,7 @@ static volatile bool alerted;
 struct k_sem sem;
 
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trig)
+			    const struct sensor_trigger *trig)
 {
 #ifdef CONFIG_ISL29035_TRIGGER
 	alerted = !alerted;

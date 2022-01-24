@@ -289,7 +289,7 @@ static inline void log_printk(const char *fmt, va_list ap)
 char *z_log_strdup(const char *str);
 static inline char *log_strdup(const char *str)
 {
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL) || IS_ENABLED(CONFIG_LOG2)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL) || IS_ENABLED(CONFIG_LOG2)) {
 		return (char *)str;
 	}
 
@@ -316,13 +316,13 @@ static inline char *log_strdup(const char *str)
 /* Return first argument */
 #define _LOG_ARG1(arg1, ...) arg1
 
-#define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			     \
-	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))				     \
-	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
-	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
-	__attribute__((used)) = {					     \
-		.name = STRINGIFY(_name),				     \
-		.level = _level						     \
+#define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			       \
+	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))				       \
+	const struct log_source_const_data Z_LOG_ITEM_CONST_DATA(_name)	       \
+	__attribute__ ((section("." STRINGIFY(Z_LOG_ITEM_CONST_DATA(_name))))) \
+	__attribute__((used)) = {					       \
+		.name = STRINGIFY(_name),				       \
+		.level = _level						       \
 	}
 
 #define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)				\
@@ -409,14 +409,14 @@ static inline char *log_strdup(const char *str)
  */
 #define LOG_MODULE_DECLARE(...)						      \
 	extern const struct log_source_const_data			      \
-			LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__));	      \
+			Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__));     \
 	extern struct log_source_dynamic_data				      \
 			LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__));     \
 									      \
 	static const struct log_source_const_data *			      \
 		__log_current_const_data __unused =			      \
 			_LOG_LEVEL_RESOLVE(__VA_ARGS__) ?		      \
-			&LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)) :     \
+			&Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)) :   \
 			NULL;						      \
 									      \
 	static struct log_source_dynamic_data *				      \

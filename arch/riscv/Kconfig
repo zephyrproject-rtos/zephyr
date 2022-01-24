@@ -20,6 +20,18 @@ config FLOAT_HARD
 	help
 	  This option enables the hard-float calling convention.
 
+config RISCV_GP
+	bool "Enable RISC-V global pointer relative addressing"
+	default n
+	help
+	  Use global pointer relative addressing for small globals declared
+	  anywhere in the executable. It can benefit performance and reduce
+	  the code size.
+
+	  Note: To support this feature, RISC-V SoC needs to initialize
+	  global pointer at program start or earlier than any instruction
+	  using GP relative addressing.
+
 menu "RISCV Processor Options"
 
 config CORE_E31
@@ -90,11 +102,12 @@ config RISCV_SOC_INTERRUPT_INIT
 	  Enable SOC-based interrupt initialization
 	  (call soc_interrupt_init, within _IntLibInit when enabled)
 
-config RISCV_SOC_INIT_GP_VALUE
-	bool "Enable SOC-based global pointer register initialization"
+config RISCV_SOC_MCAUSE_EXCEPTION_MASK
+	hex
+	default 0x7FFFFFFFFFFFFFFF if 64BIT
+	default 0x7FFFFFFF
 	help
-	  Enable SOC-based pointer register initialization
-	  (call __soc_get_gp_initial_value when initializing a thread)
+	  Specify the bits to use for exception code in mcause register.
 
 config RISCV_GENERIC_TOOLCHAIN
 	bool "Compile using generic riscv32 toolchain"
@@ -129,8 +142,6 @@ menuconfig RISCV_PMP
 	select PMP_POWER_OF_TWO_ALIGNMENT if USERSPACE
 	help
 	  MCU implements Physical Memory Protection.
-	  Memory protection against read-only area writing
-	  is natively supported on real HW.
 
 if RISCV_PMP
 source "arch/riscv/core/pmp/Kconfig"
@@ -142,7 +153,7 @@ config MAIN_STACK_SIZE
 	default 4096 if 64BIT
 
 config TEST_EXTRA_STACKSIZE
-	default 1024 if 64BIT
+	default 1024
 
 config CMSIS_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT

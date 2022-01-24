@@ -52,11 +52,11 @@ GTEXT(arch_user_string_nlen)
 GTEXT(z_arc_user_string_nlen_fault_start)
 GTEXT(z_arc_user_string_nlen_fault_end)
 GTEXT(z_arc_user_string_nlen_fixup)
-/*
+
+/**
  * @brief Wrapper for z_thread_entry in the case of user thread
- * The init parameters are in privileged stack
  *
- * @return N/A
+ * The init parameters are in privileged stack
  */
 SECTION_FUNC(TEXT, z_user_thread_entry_wrapper)
 	seti _ARC_V2_INIT_IRQ_LOCK_KEY

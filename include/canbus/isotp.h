@@ -406,6 +406,8 @@ struct isotp_recv_ctx {
 	const struct device *can_dev;
 	struct net_buf *buf;
 	struct net_buf *act_frag;
+	/* buffer currently processed in isotp_recv */
+	struct net_buf *recv_buf;
 	sys_snode_t alloc_node;
 	uint32_t length;
 	int error_nr;

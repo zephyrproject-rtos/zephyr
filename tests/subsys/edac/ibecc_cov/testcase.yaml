@@ -1,0 +1,11 @@
+common:
+  arch_allow: x86
+  platform_allow: ehl_crb
+  tags: ibecc ibecc_cov
+tests:
+  edac.ibecc.coverage:
+    extra_args: EXTRA_CFLAGS=-DEMULATE_SKU=0
+  edac.ibecc.coverage_sku:
+    extra_args: EXTRA_CFLAGS=-DEMULATE_SKU=0x45148086
+  edac.ibecc.coverage_sku_en:
+    extra_args: EXTRA_CPPFLAGS=-DEMULATE_SKU=0x45148086 EXTRA_CFLAGS=-DIBECC_ENABLED=1

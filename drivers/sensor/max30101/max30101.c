@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT max_max30101
+#define DT_DRV_COMPAT maxim_max30101
 
 #include <logging/log.h>
 

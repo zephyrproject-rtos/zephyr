@@ -60,7 +60,7 @@ static void notify_recv(uint8_t hops, uint16_t feat)
 {
 	sub.remaining = sub_remaining();
 
-	Z_STRUCT_SECTION_FOREACH(bt_mesh_hb_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_mesh_hb_cb, cb) {
 		if (cb->recv) {
 			cb->recv(&sub, hops, feat);
 		}
@@ -71,7 +71,7 @@ static void notify_sub_end(void)
 {
 	sub.remaining = 0;
 
-	Z_STRUCT_SECTION_FOREACH(bt_mesh_hb_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_mesh_hb_cb, cb) {
 		if (cb->sub_end) {
 			cb->sub_end(&sub);
 		}

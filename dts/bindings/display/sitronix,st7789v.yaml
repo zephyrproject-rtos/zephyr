@@ -6,13 +6,14 @@ description: ST7789V 320x240 display controller
 
 compatible: "sitronix,st7789v"
 
-include: spi-device.yaml
+include: [spi-device.yaml, display-controller.yaml]
 
 properties:
     reset-gpios:
       type: phandle-array
-      required: true
-      description: RESET pin.
+      required: false
+      description: |
+        RESET pin.
 
         The RESET pin of ST7789V is active low.
         If connected directly the MCU pin should be configured
@@ -21,21 +22,12 @@ properties:
     cmd-data-gpios:
       type: phandle-array
       required: true
-      description: D/CX pin.
+      description: |
+        D/CX pin.
 
         The D/CX pin of ST7789V is active low (transmission command byte).
         If connected directly the MCU pin should be configured
         as active low.
-
-    height:
-      type: int
-      required: true
-      description: Height in pixels of the panel driven by the controller
-
-    width:
-      type: int
-      required: true
-      description: Width in pixels of the panel driven by the controller
 
     x-offset:
       type: int

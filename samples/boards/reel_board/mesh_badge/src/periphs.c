@@ -104,7 +104,7 @@ static void motion_timeout(struct k_work *work)
 }
 
 static void motion_handler(const struct device *dev,
-			   struct sensor_trigger *trig)
+			   const struct sensor_trigger *trig)
 {
 	int err;
 

@@ -596,7 +596,7 @@ int gpio_intel_init(const struct device *dev)
 			      NULL,					       \
 			      &gpio_intel_data_##n,			       \
 			      &gpio_intel_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,	       \
 			      &gpio_intel_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_NR_SUBDEVS of these! */

@@ -29,15 +29,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #define BUF_TIMEOUT K_MSEC(50)
 
-/* No need to hold space for the FCS */
-static uint8_t frame_buffer_data[IEEE802154_MTU - 2];
-
-static struct net_buf frame_buf = {
-	.data = frame_buffer_data,
-	.size = IEEE802154_MTU - 2,
-	.frags = NULL,
-	.__buf = frame_buffer_data,
-};
+NET_BUF_POOL_DEFINE(frame_buf_pool, 1, IEEE802154_MTU - 2, 8, NULL);
 
 #define PKT_TITLE      "IEEE 802.15.4 packet content:"
 #define TX_PKT_TITLE   "> " PKT_TITLE
@@ -119,6 +111,66 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 	addr->type = NET_LINK_IEEE802154;
 }
 
+/**
+ * Filters the destination address of the frame (used when IEEE802154_HW_FILTER
+ * is not available).
+ */
+static bool ieeee802154_check_dst_addr(struct net_if *iface,
+				      struct ieee802154_mhr *mhr)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_address_field_plain *dst_plain = &mhr->dst_addr->plain;
+
+	/*
+	 * Apply filtering requirements from chapter 6.7.2 of the IEEE
+	 * 802.15.4-2015 standard:
+	 */
+
+	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
+		/* TODO: apply d.4 and d.5 when PAN coordinator is implemented */
+		/* also, macImplicitBroadcast is not implemented */
+		return false;
+	}
+
+	/*
+	 * c. If a destination PAN ID is included in the frame, it shall match
+	 * macPanId or shall be the broadcastPAN ID
+	 */
+	if (!(dst_plain->pan_id == IEEE802154_BROADCAST_PAN_ID ||
+			dst_plain->pan_id == ctx->pan_id)) {
+		LOG_DBG("Frame PAN ID does not match!");
+		return false;
+	}
+
+	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
+		/*
+		 * d.1. A short destination address is included in the frame,
+		 * and it matches either macShortAddress orthe broadcast
+		 * address.
+		 */
+		if (!(dst_plain->addr.short_addr == IEEE802154_BROADCAST_ADDRESS ||
+				dst_plain->addr.short_addr == ctx->short_addr)) {
+			LOG_DBG("Frame dst address (short) does not match!");
+			return false;
+		}
+
+	} else if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_EXTENDED) {
+		/*
+		 * An extended destination address is included in the frame and
+		 * matches either macExtendedAddress or, if macGroupRxMode is
+		 * set to TRUE, an 64-bit extended unique identifier (EUI-64)
+		 * group address.
+		 */
+		if (memcmp(dst_plain->addr.ext_addr, ctx->ext_addr,
+					IEEE802154_EXT_ADDR_LENGTH) != 0) {
+			LOG_DBG("Frame dst address (ext) does not match!");
+			return false;
+		}
+	}
+
+	return true;
+}
+
 #ifdef CONFIG_NET_6LO
 static inline
 enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
@@ -166,11 +218,19 @@ out:
 static enum net_verdict ieee802154_recv(struct net_if *iface,
 					struct net_pkt *pkt)
 {
+	const struct ieee802154_radio_api *radio =
+		net_if_get_device(iface)->api;
 	struct ieee802154_mpdu mpdu;
 	size_t hdr_len;
 
 	if (!ieee802154_validate_frame(net_pkt_data(pkt),
 				       net_pkt_get_len(pkt), &mpdu)) {
+		return NET_DROP;
+	}
+
+	/* validate LL destination address (when IEEE802154_HW_FILTER not available) */
+	if (!(radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) &&
+			!ieeee802154_check_dst_addr(iface, &mpdu.mhr)) {
 		return NET_DROP;
 	}
 
@@ -218,6 +278,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_fragment_ctx f_ctx;
+	static struct net_buf *frame_buf;
 	struct net_buf *buf;
 	uint8_t ll_hdr_size;
 	bool fragment;
@@ -227,8 +288,12 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	ll_hdr_size = ieee802154_compute_header_size(iface,
-						     &NET_IPV6_HDR(pkt)->dst);
+	if (frame_buf == NULL) {
+		frame_buf = net_buf_alloc(&frame_buf_pool, K_FOREVER);
+	}
+
+	ll_hdr_size = ieee802154_compute_header_size(
+			iface, (struct in6_addr *)&NET_IPV6_HDR(pkt)->dst);
 
 	/* len will hold the hdr size difference on success */
 	len = net_6lo_compress(pkt, true);
@@ -242,26 +307,24 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	ieee802154_fragment_ctx_init(&f_ctx, pkt, len, true);
 
 	len = 0;
-	frame_buf.len = 0U;
+	net_buf_reset(frame_buf);
 	buf = pkt->buffer;
 
 	while (buf) {
 		int ret;
 
-		net_buf_add(&frame_buf, ll_hdr_size);
+		net_buf_add(frame_buf, ll_hdr_size);
 
 		if (fragment) {
-			ieee802154_fragment(&f_ctx, &frame_buf, true);
+			ieee802154_fragment(&f_ctx, frame_buf, true);
 			buf = f_ctx.buf;
 		} else {
-			memcpy(frame_buf.data + frame_buf.len,
-			       buf->data, buf->len);
-			net_buf_add(&frame_buf, buf->len);
+			net_buf_add_mem(frame_buf, buf->data, buf->len);
 			buf = buf->frags;
 		}
 
 		if (!ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),
-						  &frame_buf, ll_hdr_size)) {
+						  frame_buf, ll_hdr_size)) {
 			return -EINVAL;
 		}
 
@@ -269,19 +332,19 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		    ieee802154_get_hw_capabilities(iface) &
 		    IEEE802154_HW_CSMA) {
 			ret = ieee802154_tx(iface, IEEE802154_TX_MODE_CSMA_CA,
-					    pkt, &frame_buf);
+					    pkt, frame_buf);
 		} else {
-			ret = ieee802154_radio_send(iface, pkt, &frame_buf);
+			ret = ieee802154_radio_send(iface, pkt, frame_buf);
 		}
 
 		if (ret) {
 			return ret;
 		}
 
-		len += frame_buf.len;
+		len += frame_buf->len;
 
 		/* Reinitializing frame_buf */
-		frame_buf.len = 0U;
+		net_buf_reset(frame_buf);
 	}
 
 	net_pkt_unref(pkt);

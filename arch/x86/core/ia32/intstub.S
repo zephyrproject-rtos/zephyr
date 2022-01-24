@@ -56,8 +56,6 @@
  * created by this routine to determine the locations of volatile registers.
  * These tools must be updated to reflect any changes to the stack frame.
  *
- * @return N/A
- *
  * C function prototype:
  *
  * void _interrupt_enter(void *isr, void *isr_param);
@@ -301,8 +299,6 @@ nestedInterrupt:
 handle_idle:
 	pushl	%eax
 	pushl	%edx
-	/* Populate 'ticks' argument to z_pm_save_idle_exit */
-	push	_kernel_offset_to_idle(%ecx)
 	/* Zero out _kernel.idle */
 	movl	$0, _kernel_offset_to_idle(%ecx)
 
@@ -314,8 +310,6 @@ handle_idle:
 	 */
 
 	call	z_pm_save_idle_exit
-	/* discard 'ticks' argument passed on the stack */
-	add	$0x4, %esp
 	popl	%edx
 	popl	%eax
 	jmp	alreadyOnIntStack

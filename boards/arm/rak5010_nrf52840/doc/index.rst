@@ -84,7 +84,7 @@ The rak5010_nrf52840 board configuration supports the following hardware feature
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================
@@ -127,7 +127,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the RAK5010 board to your host computer using the USB debug port.
-Then build and flash the :ref:`hello_world` application.
+   Then build and flash the :ref:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

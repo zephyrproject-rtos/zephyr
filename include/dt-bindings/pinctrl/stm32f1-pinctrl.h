@@ -8,6 +8,7 @@
 #define ZEPHYR_STM32_PINCTRLF1_H_
 
 #include <dt-bindings/pinctrl/stm32-pinctrl-common.h>
+#include <dt-bindings/pinctrl/stm32f1-afio.h>
 
 /* Adapted from Linux: include/dt-bindings/pinctrl/stm32-pinfunc.h */
 
@@ -16,9 +17,36 @@
  * This is adapted from Linux equivalent st,stm32f429-pinctrl binding
  */
 
-#define PIN_NO(port, line)	(((port) - 'A') * 0x10 + (line))
-#define STM32F1_PINMUX(port, line, mode, remap) \
-			(((PIN_NO(port, line)) << 8) | (mode << 6) | (remap))
+/**
+ * @brief Pin configuration configuration bit field.
+ *
+ * Fields:
+ *
+ * - mode  [ 0 : 1 ]
+ * - line  [ 2 : 5 ]
+ * - port  [ 6 : 9 ]
+ * - remap [ 10 : 19 ]
+ *
+ * @param port Port ('A'..'K')
+ * @param line Pin (0..15)
+ * @param mode Pin mode (ANALOG, GPIO_IN, ALTERNATE).
+ * @param remap Pin remapping configuration (NO_REMAP, REMAP_1, ...)
+ */
+
+#define STM32_MODE_SHIFT  0U
+#define STM32_MODE_MASK   0x3U
+#define STM32_LINE_SHIFT  2U
+#define STM32_LINE_MASK   0xFU
+#define STM32_PORT_SHIFT  6U
+#define STM32_PORT_MASK   0xFU
+#define STM32_REMAP_SHIFT 10U
+#define STM32_REMAP_MASK  0x3FFU
+
+#define STM32F1_PINMUX(port, line, mode, remap)				       \
+		(((((port) - 'A') & STM32_PORT_MASK) << STM32_PORT_SHIFT) |    \
+		(((line) & STM32_LINE_MASK) << STM32_LINE_SHIFT) |	       \
+		(((mode) & STM32_MODE_MASK) << STM32_MODE_SHIFT) |	       \
+		(((remap) & STM32_REMAP_MASK) << STM32_REMAP_SHIFT))
 
 /**
  * @brief Pin modes
@@ -27,16 +55,6 @@
 #define ALTERNATE	0x0  /* Alternate function output */
 #define GPIO_IN		0x1  /* Input */
 #define ANALOG		0x2  /* Analog */
-
-/**
- * @brief Pin remapping configurations
- */
-
-#define NO_REMAP	0x0  /* No remapping */
-#define REMAP_1		0x1  /* Partial remapping 1 */
-#define REMAP_2		0x2  /* Partial remapping 2 */
-#define REMAP_3		0x3  /* Partial remapping 3 */
-#define REMAP_FULL	0x4  /* Full remapping */
 
 /**
  * @brief PIN configuration bitfield
@@ -52,12 +70,6 @@
  *
  * Applicable to STM32F1 series
  */
-
-/* Alternate functions */
-/* STM32F1 Pinmux doesn't use explicit alternate functions */
-/* These are kept for compatibility with other STM32 pinmux */
-#define STM32_AFR_MASK			0
-#define STM32_AFR_SHIFT			0
 
 /* Port Mode */
 #define STM32_MODE_INPUT		(0x0<<STM32_MODE_INOUT_SHIFT)
@@ -95,50 +107,5 @@
 #define STM32_PUPD_PULL_DOWN		(0x2<<STM32_PUPD_SHIFT)
 #define STM32_PUPD_MASK			0x3
 #define STM32_PUPD_SHIFT		7
-
-/* Alternate defines */
-/* IO pin functions are mostly common across STM32 devices. Notable
- * exception is STM32F1 as these MCUs do not have registers for
- * configuration of pin's alternate function. The configuration is
- * done implicitly by setting specific mode and config in MODE and CNF
- * registers for particular pin.
- */
-#define STM32_ALTERNATE			(STM32_MODE_OUTPUT | STM32_CNF_ALT_FUNC)
-
-#define STM32_PIN_USART_TX		(STM32_ALTERNATE | STM32_CNF_PUSH_PULL)
-#define STM32_PIN_USART_RX		(STM32_MODE_INPUT | STM32_CNF_IN_FLOAT)
-#define STM32_PIN_I2C			(STM32_ALTERNATE | STM32_CNF_OPEN_DRAIN)
-#define STM32_PIN_PWM			(STM32_ALTERNATE | STM32_CNF_PUSH_PULL)
-#define STM32_PIN_SPI_MASTER_SCK	(STM32_ALTERNATE | STM32_CNF_PUSH_PULL)
-#define STM32_PIN_SPI_SLAVE_SCK		(STM32_MODE_INPUT | STM32_CNF_IN_FLOAT)
-#define STM32_PIN_SPI_MASTER_MOSI	(STM32_ALTERNATE | STM32_CNF_PUSH_PULL)
-#define STM32_PIN_SPI_SLAVE_MOSI	(STM32_MODE_INPUT | STM32_CNF_IN_FLOAT)
-#define STM32_PIN_SPI_MASTER_MISO	(STM32_MODE_INPUT | STM32_CNF_IN_FLOAT)
-#define STM32_PIN_SPI_SLAVE_MISO	(STM32_ALTERNATE | STM32_CNF_PUSH_PULL)
-#define STM32_PIN_CAN_TX		(STM32_ALTERNATE | STM32_CNF_PUSH_PULL)
-#define STM32_PIN_CAN_RX		(STM32_MODE_INPUT  | STM32_PUPD_PULL_UP)
-
-/*
- * Reference manual (RM0008)
- * Section 25.3.1: Slave select (NSS) pin management
- *
- * Hardware NSS management:
- * - NSS output disabled: allows multimaster capability for devices operating
- *   in master mode.
- * - NSS output enabled: used only when the device operates in master mode.
- *
- * Software NSS management:
- * - External NSS pin remains free for other application uses.
- *
- */
-
-/* Hardware master NSS output disabled */
-#define STM32_PIN_SPI_MASTER_NSS	(STM32_MODE_INPUT | STM32_CNF_IN_FLOAT)
-/* Hardware master NSS output enabled */
-#define STM32_PIN_SPI_MASTER_NSS_OE	(STM32_MODE_OUTPUT | \
-						STM32_CNF_ALT_FUNC | \
-						STM32_CNF_PUSH_PULL)
-#define STM32_PIN_SPI_SLAVE_NSS		(STM32_MODE_INPUT | STM32_CNF_IN_FLOAT)
-#define STM32_PIN_USB			(STM32_MODE_INPUT | STM32_CNF_IN_PUPD)
 
 #endif	/* ZEPHYR_STM32_PINCTRLF1_H_ */

@@ -9,3 +9,8 @@ ram: 128
 flash: 1024
 supported:
   - gpio
+  - i2c
+  - ieee802154
+  - pwm
+  - spi
+  - netif:openthread

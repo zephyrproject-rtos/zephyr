@@ -185,6 +185,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -204,6 +206,44 @@ The default configuration can be found in the defconfig and dts files:
   - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_ns_defconfig`
   - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_ns.dts`
 
+Zephyr board options
+====================
+
+The STM32L562e is an SoC with Cortex-M33 architecture. Zephyr provides support
+for building for both Secure and Non-Secure firmware.
+
+The BOARD options are summarized below:
+
++----------------------+-----------------------------------------------+
+|   BOARD              | Description                                   |
++======================+===============================================+
+| stm32l562e_dk        | For building Secure (or Secure-only) firmware |
++----------------------+-----------------------------------------------+
+| stm32l562e_dk_ns     | For building Non-Secure firmware              |
++----------------------+-----------------------------------------------+
+
+Here are the instructions to build Zephyr with a non-secure configuration,
+using `tfm_ipc_` sample:
+
+   .. code-block:: bash
+
+      $ west build -b stm32l562e_dk_ns samples/tfm_integration/tfm_ipc/
+
+Once done, before flashing, you need to first run a generated script that
+will set platform option bytes config and erase platform (among others,
+option bit TZEN will be set).
+
+   .. code-block:: bash
+
+      $ ./build/tfm/regression.sh
+      $ west flash
+
+Please note that, after having run a TFM sample on the board, you will need to
+run `./build/tfm/regression.sh` once more to clean up the board from secure
+options and get back the platform back to a "normal" state and be able to run
+usual, non-TFM, binaries.
+Also note that, even then, TZEN will remain set, and you will need to use
+STM32CubeProgrammer_ to disable it fully, if required.
 
 Connections and IOs
 ===================
@@ -252,18 +292,16 @@ Flashing
 ========
 
 STM32L562E-DK Discovery board includes an ST-LINK/V3E embedded debug tool
-interface. This interface is not yet supported by the openocd version.
-Instead, support can be enabled on pyocd by adding "pack" support with
-the following pyocd command:
+interface. Support can be enabled on pyocd by adding "pack" support with the
+following pyocd command:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32l562qe
 
-STM32L562E-DK Discovery board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version
-included in the Zephyr SDK since v0.9.2.
+Alternatively, this interface is supported by the openocd version
+included in the Zephyr SDK since v0.13.1.
 
 Flashing an application to STM32L562E-DK Discovery
 --------------------------------------------------
@@ -344,3 +382,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L562 reference manual:
    http://www.st.com/resource/en/reference_manual/DM00346336.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

@@ -66,7 +66,8 @@ __no_optimization static void trigger_fault_access(void)
 	 * address instead to trigger exception. See issue #31419.
 	 */
 	void *a = (void *)0xFFFFFFFF;
-#elif defined(CONFIG_CPU_CORTEX_M)
+#elif defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_CORTEX_R) || \
+	defined(CONFIG_CPU_AARCH64_CORTEX_R)
 	/* As this test case only runs when User Mode is enabled,
 	 * accessing _current always triggers a memory access fault,
 	 * and is guaranteed not to trigger SecureFault exceptions.
@@ -106,8 +107,8 @@ __no_optimization static void trigger_fault_divide_zero(void)
 
 /*
  * While no optimization is enabled, some QEMU such as QEMU cortex a53
- * series, QEMU mps2 series and QEMU ARC series boards will not trigger
- * an exception for divide zero. They might need to enable the divide
+ * series, QEMU mps2 and mps3 series and QEMU ARC series boards will not
+ * trigger an exception for divide zero. They might need to enable the divide
  * zero exception. We only skip the QEMU board here, this means this
  * test will still apply on the physical board.
  * For the Cortex-M0, M0+, M23 (CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -115,8 +116,11 @@ __no_optimization static void trigger_fault_divide_zero(void)
  * and there will be no hardware exception for that.
  */
 #if (defined(CONFIG_SOC_SERIES_MPS2) && defined(CONFIG_QEMU_TARGET)) || \
+	(defined(CONFIG_SOC_SERIES_MPS3) && defined(CONFIG_QEMU_TARGET)) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_A53) || defined(CONFIG_SOC_QEMU_ARC) || \
-	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
+	defined(CONFIG_BOARD_QEMU_CORTEX_R5) || \
+	defined(CONFIG_BOARD_FVP_BASER_AEMV8R)
 	ztest_test_skip();
 #endif
 }
@@ -263,7 +267,14 @@ void test_catch_fatal_error(void)
 #if defined(CONFIG_USERSPACE)
 	run_trigger_thread(ZTEST_CATCH_FATAL_ACCESS);
 	run_trigger_thread(ZTEST_CATCH_FATAL_ILLEAGAL_INSTRUCTION);
+#if !defined(CONFIG_RISCV)
+	/*
+	 * Because RISC-V Arch doesn't trigger exception for division-by-zero,
+	 * this test couldn't support RISC-V.
+	 * (RISC-V ISA Manual v2.2, Ch6.2 Division Operation)
+	 */
 	run_trigger_thread(ZTEST_CATCH_FATAL_DIVIDE_ZERO);
+#endif
 #endif
 	run_trigger_thread(ZTEST_CATCH_FATAL_K_PANIC);
 	run_trigger_thread(ZTEST_CATCH_FATAL_K_OOPS);

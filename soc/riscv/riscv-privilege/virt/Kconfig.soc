@@ -8,5 +8,6 @@ choice
 config SOC_RISCV_VIRT
 	bool "QEMU RISC-V VirtIO Board"
 	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
 
 endchoice

@@ -4,11 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	chosen {
+		zephyr,display = &st7735r;
+	};
+};
+
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 
-	st7735r@0 {
+	st7735r: st7735r@0 {
 		compatible = "sitronix,st7735r";
 		label = "ST7735R";
 		spi-max-frequency = <20000000>;

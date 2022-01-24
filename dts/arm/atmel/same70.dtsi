@@ -238,6 +238,16 @@
 			pinctrl-0 = <&pd9c_afec1_adtrg>;
 		};
 
+		dacc: dacc@40040000 {
+			compatible = "atmel,sam-dac";
+			reg = <0x40040000 0x100>;
+			interrupts = <30 0>;
+			peripheral-id = <30>;
+			status = "disabled";
+			label = "DACC";
+			#io-channel-cells = <1>;
+		};
+
 		pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
@@ -331,7 +341,7 @@
 			reg = <0x40038000 0x4000>;
 			interrupts = <34 0>;
 			interrupt-names = "usbhs";
-			maximum-speed = "full-speed";
+			maximum-speed = "high-speed";
 			num-bidir-endpoints = <10>;
 			peripheral-id = <34>;
 			status = "disabled";
@@ -352,8 +362,14 @@
 			pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
 				     &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
 				     &pd4a_gmac_grxdv &pd5a_gmac_grx0
-				     &pd6a_gmac_grx1 &pd7a_gmac_grxer
-				     &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
+				     &pd6a_gmac_grx1 &pd7a_gmac_grxer>;
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				label = "MDIO";
+				status = "disabled";
+				pinctrl-0 = <&pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
+			};
 		};
 
 		tc0: tc@4000c000 {
@@ -429,6 +445,44 @@
 			peripheral-id = <22>;
 			label = "SSC_0";
 			status = "disabled";
+		};
+
+		can {
+			compatible = "bosch,m-can-base";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			std-filter-elements = <28>;
+			ext-filter-elements = <8>;
+			rx-fifo0-elements = <3>;
+			rx-fifo1-elements = <3>;
+			rx-buffer-elements = <0>;
+			tx-buffer-elements = <1>;
+
+			can0: can@40030000 {
+				compatible = "atmel,sam-can";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x40030000 0x100>;
+				reg-names = "m_can";
+				interrupts = <35 0>, <36 0>;
+				interrupt-names = "LINE_0", "LINE_1";
+				peripheral-id = <35>;
+				status = "disabled";
+				label = "CAN_0";
+			};
+
+			can1: can@40034000 {
+				compatible = "atmel,sam-can";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x40034000 0x100>;
+				reg-names = "m_can";
+				interrupts = <37 0>, <38 0>;
+				interrupt-names = "LINE_0", "LINE_1";
+				peripheral-id = <37>;
+				status = "disabled";
+				label = "CAN_1";
+			};
 		};
 	};
 };

@@ -61,17 +61,35 @@
 
 #else /* defined(_ASMLANGUAGE) */
 
+/* MWDT toolchain misses ssize_t definition which is used by Zephyr */
+#ifndef _SSIZE_T_DEFINED
+#define _SSIZE_T_DEFINED
+#ifdef CONFIG_64BIT
+	typedef long ssize_t;
+#else
+	typedef int ssize_t;
+#endif
+#endif /* _SSIZE_T_DEFINED */
+
+#ifdef CONFIG_NEWLIB_LIBC
+  #error "ARC MWDT doesn't support building with CONFIG_NEWLIB_LIBC as it doesn't have newlib"
+#endif /* CONFIG_NEWLIB_LIBC */
+
+#ifdef CONFIG_NATIVE_APPLICATION
+  #error "ARC MWDT doesn't support building Zephyr as an native application"
+#endif /* CONFIG_NATIVE_APPLICATION */
+
+
 #define __no_optimization __attribute__((optnone))
 
 #include <toolchain/gcc.h>
 
-/* Metaware toolchain has _Static_assert. However it not able to calculate
- * conditional expression in build time for some realy complex cases. ARC GNU
- * toolchain works fine in this cases, so it looks like MWDT bug. So, disable
- * BUILD_ASSERT macro until we fix that issue in MWDT toolchain.
- */
 #undef BUILD_ASSERT
-#define BUILD_ASSERT(EXPR, MSG...)
+#ifdef __cplusplus
+#define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+#else
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#endif
 
 #define __builtin_arc_nop()	_nop()
 

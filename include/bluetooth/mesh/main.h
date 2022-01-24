@@ -598,10 +598,10 @@ struct bt_mesh_lpn_cb {
  *
  *  @param _name Name of callback structure.
  */
-#define BT_MESH_LPN_CB_DEFINE(_name)                                    \
-	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_lpn_cb,         \
-					       _CONCAT(bt_mesh_lpn_cb, \
-						       _name))
+#define BT_MESH_LPN_CB_DEFINE(_name)                                  \
+	static const STRUCT_SECTION_ITERABLE(bt_mesh_lpn_cb,          \
+					     _CONCAT(bt_mesh_lpn_cb_, \
+						     _name))
 
 /** Friend Node callback functions. */
 struct bt_mesh_friend_cb {
@@ -651,10 +651,10 @@ struct bt_mesh_friend_cb {
  *
  *  @param _name Name of callback structure.
  */
-#define BT_MESH_FRIEND_CB_DEFINE(_name)                                   \
-	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,         \
-					       _CONCAT(bt_mesh_friend_cb, \
-						       _name))
+#define BT_MESH_FRIEND_CB_DEFINE(_name)                                  \
+	static const STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,          \
+					     _CONCAT(bt_mesh_friend_cb_, \
+						     _name))
 
 /** @brief Terminate Friendship.
  *

@@ -2,15 +2,4 @@ description: Bosch m_can CAN-FD controller
 
 compatible: "st,stm32-fdcan"
 
-include: bosch-mcan.yaml
-
-properties:
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for CAN signals (RX, TX). We expect
-        that the phandles will reference pinctrl nodes.
-
-        For example the can1 would be
-           pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+include: ["bosch,m-can.yaml", "pinctrl-device.yaml"]

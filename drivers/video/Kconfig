@@ -39,4 +39,6 @@ source "drivers/video/Kconfig.mt9m114"
 
 source "drivers/video/Kconfig.ov7725"
 
+source "drivers/video/Kconfig.ov2640"
+
 endif # VIDEO

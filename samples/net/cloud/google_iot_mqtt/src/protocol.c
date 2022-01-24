@@ -19,7 +19,6 @@ LOG_MODULE_DECLARE(net_google_iot_mqtt, LOG_LEVEL_DBG);
 #include <net/mqtt.h>
 
 #include <mbedtls/platform.h>
-#include <mbedtls/net.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
@@ -166,10 +165,10 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 
 		/* assuming the config message is textual */
 		while (len) {
-			bytes_read = mqtt_read_publish_payload(
+			bytes_read = mqtt_read_publish_payload_blocking(
 				client, d,
 				len >= 32 ? 32 : len);
-			if (bytes_read < 0 && bytes_read != -EAGAIN) {
+			if (bytes_read < 0) {
 				LOG_ERR("failure to read payload");
 				break;
 			}

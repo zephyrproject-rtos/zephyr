@@ -62,8 +62,6 @@ int do_sntp(void)
  */
 void main(void)
 {
-	int res;
-
 	LOG_INF("Main entered");
 
 	app_dhcpv4_startup();

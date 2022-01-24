@@ -46,13 +46,30 @@ Property access
 ===============
 
 The following general-purpose macros can be used to access node properties.
-There are special-purpose APIs for accessing the :ref:`devicetree-reg-property`
-and :ref:`devicetree-interrupts-property`.
+There are special-purpose APIs for accessing the :ref:`devicetree-ranges-property`,
+:ref:`devicetree-reg-property` and :ref:`devicetree-interrupts-property`.
 
 Property values can be read using these macros even if the node is disabled,
 as long as it has a matching binding.
 
 .. doxygengroup:: devicetree-generic-prop
+
+.. _devicetree-ranges-property:
+
+``ranges`` property
+===================
+
+Use these APIs instead of :ref:`devicetree-property-access` to access the
+``ranges`` property. Because this property's semantics are defined by the
+devicetree specification, these macros can be used even for nodes without
+matching bindings. However, they take on special semantics when the node's
+binding indicates it is a PCIe bus node, as defined in the
+`PCI Bus Binding to: IEEE Std 1275-1994 Standard for Boot (Initialization Configuration) Firmware`_
+
+.. _PCI Bus Binding to\: IEEE Std 1275-1994 Standard for Boot (Initialization Configuration) Firmware:
+    https://www.openfirmware.info/data/docs/bus.pci.pdf
+
+.. doxygengroup:: devicetree-ranges-prop
 
 .. _devicetree-reg-property:
 
@@ -254,6 +271,36 @@ channels (e.g. ADC or DAC channels) for conversion.
 
 .. doxygengroup:: devicetree-io-channels
 
+.. _devicetree-pinctrl-api:
+
+Pinctrl (pin control)
+=====================
+
+These are used to access pin control properties by name or index.
+
+Devicetree nodes may have properties which specify pin control (sometimes known
+as pin mux) settings. These are expressed using ``pinctrl-<index>`` properties
+within the node, where the ``<index>`` values are contiguous integers starting
+from 0. These may also be named using the ``pinctrl-names`` property.
+
+Here is an example:
+
+.. code-block:: DTS
+
+   node {
+       ...
+       pinctrl-0 = <&foo &bar ...>;
+       pinctrl-1 = <&baz ...>;
+       pinctrl-names = "default", "sleep";
+   };
+
+Above, ``pinctrl-0`` has name ``"default"``, and ``pinctrl-1`` has name
+``"sleep"``. The ``pinctrl-<index>`` property values contain phandles. The
+``&foo``, ``&bar``, etc. phandles within the properties point to nodes whose
+contents vary by platform, and which describe a pin configuration for the node.
+
+.. doxygengroup:: devicetree-pinctrl
+
 PWM
 ===
 
@@ -308,18 +355,20 @@ device.
      - Selects the UART used for host communication in the
        :ref:`bluetooth-hci-uart-sample`
    * - zephyr,bt-mon-uart
-     - Sets default :kconfig:`CONFIG_BT_MONITOR_ON_DEV_NAME`
+     - Sets UART device used for the Bluetooth monitor logging
    * - zephyr,bt-uart
-     - Sets default :kconfig:`CONFIG_BT_UART_ON_DEV_NAME`
-   * - zephyr,can-primary
-     - Sets the primary CAN controller
+     - Sets UART device used by Bluetooth
+   * - zephyr,canbus
+     - Sets the default CAN controller
    * - zephyr,ccm
      - Core-Coupled Memory node on some STM32 SoCs
    * - zephyr,code-partition
      - Flash partition that the Zephyr image's text section should be linked
        into
    * - zephyr,console
-     - Sets default :kconfig:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
+     - Sets UART device used by console driver
+   * - zephyr,display
+     - Sets the default display controller
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
@@ -339,8 +388,12 @@ device.
        interprocess-communication (IPC)
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,ot-uart
+     - Used by the OpenThread to specify UART device for Spinel protocol
+   * - zephyr,pcie-controller
+     - The node corresponding to the PCIe Controller
    * - zephyr,shell-uart
-     - Sets default :kconfig:`CONFIG_UART_SHELL_ON_DEV_NAME`
+     - Sets UART device used by serial shell backend
    * - zephyr,sram
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking

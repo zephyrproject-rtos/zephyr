@@ -213,7 +213,7 @@ static void bt_h4_interface_config(struct usb_desc_header *head,
 	bt_h4_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 
-USBD_CFG_DATA_DEFINE(primary, hci_h4) struct usb_cfg_data bt_h4_config = {
+USBD_DEFINE_CFG_DATA(bt_h4_config) = {
 	.usb_device_description = NULL,
 	.interface_config = bt_h4_interface_config,
 	.interface_descriptor = &bt_h4_cfg.if0,

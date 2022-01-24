@@ -14,6 +14,8 @@
 #ifndef ZEPHYR_INCLUDE_SYS_REBOOT_H_
 #define ZEPHYR_INCLUDE_SYS_REBOOT_H_
 
+#include <toolchain.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,11 +31,8 @@ extern "C" {
  * SYS_REBOOT_WARM).
  *
  * When successful, this routine does not return.
- *
- * @return N/A
  */
-
-extern void sys_reboot(int type);
+extern FUNC_NORETURN void sys_reboot(int type);
 
 #ifdef __cplusplus
 }

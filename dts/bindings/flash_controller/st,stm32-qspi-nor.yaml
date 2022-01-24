@@ -12,6 +12,9 @@ description: |
                 reg = <0>;
                 qspi-max-frequency = <80000000>;
                 size = <0x4000000>;
+                reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+                reset-gpios-duration = <1>;
+                spi-bus-width = <4>;
                 status = "okay";
         };
 
@@ -33,3 +36,16 @@ properties:
     size:
       required: true
       description: Flash Memory size in bits
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: RESETn pin
+    reset-gpios-duration:
+      type: int
+      required: false
+      description: The duration (in ms) for the flash memory reset pulse
+    spi-bus-width:
+      type: int
+      required: false
+      description: The width of (Q)SPI bus to which flash memory is connected.
+                   Now only value of 4 (when using SIO[0123]) is supported.

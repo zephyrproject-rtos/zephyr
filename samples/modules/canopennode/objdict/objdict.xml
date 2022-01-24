@@ -1018,7 +1018,7 @@ The counter can be reset by writing the value 0.</description>
     </CANopenObject>
   </CANopenObjectList>
   <other>
-    <file fileName="objdict.xml" fileCreator="" fileCreationDate="09-18-2019" fileCreationTime="2:52PM" fileModifedBy="" fileMotifcationDate="02-20-2020" fileModificationTime="12:28PM" fileVersion="1" fileRevision="1" exportFolder="/home/hebad/Projects/zephyrproject/zephyr/samples/subsys/canbus/canopen/objdict" EdsFile="/home/hebad/Projects/zephyrproject/zephyr/samples/subsys/canbus/canopen/objdict/objdict.eds" />
+    <file fileName="objdict.xml" fileCreator="" fileCreationDate="09-18-2019" fileCreationTime="2:52PM" fileModifedBy="" fileMotifcationDate="02-20-2020" fileModificationTime="12:28PM" fileVersion="1" fileRevision="1" exportFolder="samples/modules/canopennode/objdict" EdsFile="samples/modules/canopennode/objdict/objdict.eds" />
     <DeviceIdentity>
       <vendorName />
       <vendorNumber>0</vendorNumber>

@@ -49,7 +49,7 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 * STM32F030xC, STM32F302xE, STM32F303xE and STM32F39xx
 	 * cf Reference manual for more details
 	 */
-	pllinit->PLLDiv = STM32_PLL_PREDIV1 - 1;
+	pllinit->PLLDiv = STM32_PLL_PREDIV - 1;
 #else
 	pllinit->Prediv = STM32_PLL_PREDIV - 1;
 #endif /* RCC_PLLSRC_PREDIV1_SUPPORT */

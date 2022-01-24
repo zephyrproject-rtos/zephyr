@@ -1,0 +1,4 @@
+tests:
+  misc.iterable_sections:
+    tags: iterable_sections
+    arch_exclude: posix xtensa

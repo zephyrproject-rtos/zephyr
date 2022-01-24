@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT grove_temperature
+#define DT_DRV_COMPAT seeed_grove_temperature
 
 #include <drivers/adc.h>
 #include <device.h>

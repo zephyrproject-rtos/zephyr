@@ -16,8 +16,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
 
 #include <stdbool.h>
-#include <device.h>
-#include <stdbool.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,26 +27,6 @@ extern "C" {
  * @defgroup clock_apis Clock APIs
  * @{
  */
-
-/**
- * @brief Initialize system clock driver
- *
- * The system clock is a Zephyr device created globally.  This is its
- * initialization callback.  It is a weak symbol that will be
- * implemented as a noop if undefined in the clock driver.
- */
-extern int sys_clock_driver_init(const struct device *dev);
-
-/**
- * @brief Initialize system clock driver
- *
- * The system clock is a Zephyr device created globally.  This is its
- * device control callback, used in a few devices for power
- * management.  It is a weak symbol that will be implemented as a noop
- * if undefined in the clock driver.
- */
-extern int clock_device_ctrl(const struct device *dev,
-			     enum pm_device_state state);
 
 /**
  * @brief Set system clock timeout
@@ -129,6 +108,21 @@ extern void sys_clock_announce(int32_t ticks);
  * instantaneous answer.
  */
 extern uint32_t sys_clock_elapsed(void);
+
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
+	defined(CONFIG_SYSTEM_TIMER_HAS_DISABLE_SUPPORT) || \
+	defined(__DOXYGEN__)
+/**
+ * @brief Disable system timer.
+ *
+ * This function is a no-op if the system timer does not have the capability
+ * of being disabled.
+ */
+extern void sys_clock_disable(void);
+#else
+static inline void sys_clock_disable(void) {}
+#endif /* CONFIG_SYSTEM_TIMER_HAS_DISABLE_SUPPORT */
+
 /**
  * @}
  */

@@ -17,6 +17,7 @@ toolchain:
 supported:
   - adc
   - arduino_spi
+  - counter
   - dma
   - gpio
   - spi

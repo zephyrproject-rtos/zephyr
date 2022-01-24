@@ -43,3 +43,8 @@ tests:
     extra_args: CONF_FILE=ext_adv.conf
     platform_allow: qemu_x86 nrf51dk_nrf51422 nrf52840dk_nrf52840
     tags: bluetooth mesh
+  bluetooth.mesh.multi_ext_adv:
+    build_only: true
+    extra_args: CONF_FILE=multi_ext_adv.conf
+    platform_allow: qemu_x86 nrf51dk_nrf51422 nrf52840dk_nrf52840
+    tags: bluetooth mesh

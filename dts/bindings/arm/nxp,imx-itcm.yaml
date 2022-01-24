@@ -5,7 +5,7 @@ description: i.MX ITCM (Instruction Tightly Coupled Memory)
 
 compatible: "nxp,imx-itcm"
 
-include: base.yaml
+include: [base.yaml, mem-region.yaml]
 
 properties:
     reg:

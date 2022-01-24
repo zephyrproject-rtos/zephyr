@@ -54,6 +54,14 @@ enum clock_control_status {
  */
 typedef void *clock_control_subsys_t;
 
+/**
+ * clock_control_subsys_rate_t is a type to identify a clock
+ * controller sub-system rate.  Such data pointed is opaque and
+ * relevant only to set the clock controller rate of the driver
+ * instance being used.
+ */
+typedef void *clock_control_subsys_rate_t;
+
 /** @brief Callback called on clock started.
  *
  * @param dev		Device structure whose driver controls the clock.
@@ -80,12 +88,17 @@ typedef enum clock_control_status (*clock_control_get_status_fn)(
 						    const struct device *dev,
 						    clock_control_subsys_t sys);
 
+typedef int (*clock_control_set)(const struct device *dev,
+				 clock_control_subsys_t sys,
+				 clock_control_subsys_rate_t rate);
+
 struct clock_control_driver_api {
 	clock_control			on;
 	clock_control			off;
 	clock_control_async_on_fn	async_on;
 	clock_control_get		get_rate;
 	clock_control_get_status_fn	get_status;
+	clock_control_set		set_rate;
 };
 
 /**
@@ -104,10 +117,8 @@ struct clock_control_driver_api {
 static inline int clock_control_on(const struct device *dev,
 				   clock_control_subsys_t sys)
 {
-	int ret = device_usable_check(dev);
-
-	if (ret != 0) {
-		return ret;
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
 	}
 
 	const struct clock_control_driver_api *api =
@@ -129,10 +140,8 @@ static inline int clock_control_on(const struct device *dev,
 static inline int clock_control_off(const struct device *dev,
 				    clock_control_subsys_t sys)
 {
-	int ret = device_usable_check(dev);
-
-	if (ret != 0) {
-		return ret;
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
 	}
 
 	const struct clock_control_driver_api *api =
@@ -170,10 +179,8 @@ static inline int clock_control_async_on(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	int ret = device_usable_check(dev);
-
-	if (ret != 0) {
-		return ret;
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
 	}
 
 	return api->async_on(dev, sys, cb, user_data);
@@ -215,10 +222,8 @@ static inline int clock_control_get_rate(const struct device *dev,
 					 clock_control_subsys_t sys,
 					 uint32_t *rate)
 {
-	int ret = device_usable_check(dev);
-
-	if (ret != 0) {
-		return ret;
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
 	}
 
 	const struct clock_control_driver_api *api =
@@ -230,6 +235,41 @@ static inline int clock_control_get_rate(const struct device *dev,
 
 	return api->get_rate(dev, sys, rate);
 }
+
+/**
+ * @brief Set the rate of the clock controlled by the device.
+ *
+ * On success, the new clock rate is set and ready when this function
+ * returns. This function may sleep, and thus can only be called from
+ * thread context.
+ *
+ * @param dev Device structure whose driver controls the clock.
+ * @param sys Opaque data representing the clock.
+ * @param rate Opaque data representing the clock rate to be used.
+ *
+ * @retval -EALREADY if clock was already in the given rate.
+ * @retval -ENOTSUP If the requested mode of operation is not supported.
+ * @retval -ENOSYS if the interface is not implemented.
+ * @retval other negative errno on vendor specific error.
+ */
+static inline int clock_control_set_rate(const struct device *dev,
+		clock_control_subsys_t sys,
+		clock_control_subsys_rate_t rate)
+{
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->api;
+
+	if (api->set_rate == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_rate(dev, sys, rate);
+}
+
 
 #ifdef __cplusplus
 }

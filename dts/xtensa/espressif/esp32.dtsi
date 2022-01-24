@@ -22,16 +22,14 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx6";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
-			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx6";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
-			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 	};
@@ -61,7 +59,6 @@
 			reg = <0x3ff48000 0x0D8>;
 			label = "RTC";
 			xtal-freq = <ESP32_CLK_XTAL_40M>;
-			xtal-div = <0>;
 			#clock-cells = <1>;
 			status = "ok";
 		};
@@ -84,6 +81,22 @@
 			};
 		};
 
+		ipi0: ipi@3f4c0058 {
+			compatible = "espressif,crosscore-interrupt";
+			label = "IPI0";
+			reg = <0x3f4c0058 0x4>;
+			interrupts = <FROM_CPU_INTR0_SOURCE>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi1: ipi@3f4c005c {
+			compatible = "espressif,crosscore-interrupt";
+			label = "IPI1";
+			reg = <0x3f4c005c 0x4>;
+			interrupts = <FROM_CPU_INTR1_SOURCE>;
+			interrupt-parent = <&intc>;
+		};
+
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff40000 0x400>;
@@ -92,6 +105,7 @@
 			label = "UART_0";
 			clocks = <&rtc ESP32_UART0_MODULE>;
 			status = "disabled";
+			peripheral = <0>;
 		};
 
 		uart1: uart@3ff50000 {
@@ -102,6 +116,7 @@
 			label = "UART_1";
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			status = "disabled";
+			peripheral = <1>;
 		};
 
 		uart2: uart@3ff6e000 {
@@ -112,11 +127,21 @@
 			label = "UART_2";
 			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
+			peripheral = <2>;
 		};
 
 		pinmux: pinmux@3ff49000 {
 			compatible = "espressif,esp32-pinmux";
 			reg = <0x3ff49000 0x94>;
+		};
+
+		ledc0: ledc@3ff59000 {
+			compatible = "espressif,esp32-ledc";
+			pwm-controller;
+			#pwm-cells = <3>;
+			reg = <0x3ff59000 0x800>;
+			label = "LEDC_0";
+			status = "disabled";
 		};
 
 		gpio0: gpio@3ff44000 {
@@ -149,7 +174,7 @@
 			interrupts = <I2C_EXT0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "I2C_0";
-			clocks = <&rtc ESP32_I2C_EXT0_MODULE>;
+			clocks = <&rtc ESP32_I2C0_MODULE>;
 			status = "disabled";
 		};
 
@@ -161,7 +186,7 @@
 			interrupts = <I2C_EXT1_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "I2C_1";
-			clocks = <&rtc ESP32_I2C_EXT1_MODULE>;
+			clocks = <&rtc ESP32_I2C1_MODULE>;
 			status = "disabled";
 		};
 
@@ -197,8 +222,9 @@
 			interrupts = <SPI2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "SPI_2";
-			clocks = <&rtc ESP32_SPI2_MODULE>;
+			clocks = <&rtc ESP32_HSPI_MODULE>;
 			status = "disabled";
+			use-iomux;
 		};
 
 		spi3: spi@3ff65000 {
@@ -207,8 +233,9 @@
 			interrupts = <SPI3_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "SPI_3";
-			clocks = <&rtc ESP32_SPI3_MODULE>;
+			clocks = <&rtc ESP32_VSPI_MODULE>;
 			status = "disabled";
+			use-iomux;
 		};
 
 		timer0: counter@3ff5f000 {

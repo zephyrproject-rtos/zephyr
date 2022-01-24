@@ -68,11 +68,13 @@ struct espi_host_emul_data {
 	struct espi_emul emul;
 	/** eSPI controller device */
 	const struct device *espi;
-	/** Configuration information */
-	const struct espi_host_emul_cfg *cfg;
 	/** Virtual Wires states, for one slave only.
 	 *  With multi-slaves config, the states should be saved per slave */
 	struct vw_data vw_state[NUMBER_OF_VWIRES];
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	/** ACPI Shared memory. */
+	uint8_t shm_acpi_mmap[CONFIG_EMUL_ESPI_HOST_ACPI_SHM_REGION_SIZE];
+#endif
 };
 
 /** Static configuration for the emulator */
@@ -81,8 +83,6 @@ struct espi_host_emul_cfg {
 	const char *espi_label;
 	/** Label of the emulated AP*/
 	const char *label;
-	/** Pointer to run-time data */
-	struct espi_host_emul_data *data;
 	/* eSPI chip-select of the emulated device */
 	uint16_t chipsel;
 };
@@ -217,10 +217,31 @@ int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data)
 	return 0;
 }
 
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+static uintptr_t emul_espi_dev_get_acpi_shm(struct espi_emul *emul)
+{
+	struct espi_host_emul_data *data =
+		CONTAINER_OF(emul, struct espi_host_emul_data, emul);
+
+	return (uintptr_t)data->shm_acpi_mmap;
+}
+
+uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev)
+{
+	uint32_t shm;
+	int rc = espi_read_lpc_request(espi_dev, EACPI_GET_SHARED_MEMORY, &shm);
+
+	__ASSERT_NO_MSG(rc == 0);
+
+	return (uintptr_t) shm;
+}
+#endif
+
 /* Device instantiation */
 static struct emul_espi_device_api ap_emul_api = {
 	.set_vw = emul_host_set_vw,
 	.get_vw = emul_host_get_vw,
+	.get_acpi_shm = emul_espi_dev_get_acpi_shm,
 };
 
 /**
@@ -233,24 +254,24 @@ static struct emul_espi_device_api ap_emul_api = {
 static int emul_host_init(const struct emul *emul, const struct device *bus)
 {
 	const struct espi_host_emul_cfg *cfg = emul->cfg;
-	struct espi_host_emul_data *data = cfg->data;
+	struct espi_host_emul_data *data = emul->data;
 
 	data->emul.api = &ap_emul_api;
 	data->emul.chipsel = cfg->chipsel;
+	data->emul.parent = emul;
 	data->espi = bus;
-	data->cfg = cfg;
 	emul_host_init_vw_state(data);
 
 	return espi_emul_register(bus, emul->dev_label, &data->emul);
 }
 
-#define HOST_EMUL(n)							  \
-	static struct espi_host_emul_data espi_host_emul_data_##n;	  \
-	static const struct espi_host_emul_cfg espi_host_emul_cfg_##n = { \
-		.espi_label = DT_INST_BUS_LABEL(n),			  \
-		.data = &espi_host_emul_data_##n,			  \
-		.chipsel = DT_INST_REG_ADDR(n),				  \
-	};								  \
-	EMUL_DEFINE(emul_host_init, DT_DRV_INST(n), &espi_host_emul_cfg_##n)
+#define HOST_EMUL(n)                                                                               \
+	static struct espi_host_emul_data espi_host_emul_data_##n;                                 \
+	static const struct espi_host_emul_cfg espi_host_emul_cfg_##n = {                          \
+		.espi_label = DT_INST_BUS_LABEL(n),                                                \
+		.chipsel = DT_INST_REG_ADDR(n),                                                    \
+	};                                                                                         \
+	EMUL_DEFINE(emul_host_init, DT_DRV_INST(n), &espi_host_emul_cfg_##n,                       \
+		    &espi_host_emul_data_##n)
 
 DT_INST_FOREACH_STATUS_OKAY(HOST_EMUL)

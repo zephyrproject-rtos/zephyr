@@ -143,7 +143,7 @@ static int static_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	Z_STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
+	STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
 		for (int i = 0; i < pp->num; i++) {
 			uintptr_t ssz = K_THREAD_STACK_LEN(pp->stack_size);
 			struct k_p4wq *q = pp->flags & K_P4WQ_QUEUE_PER_THREAD ?

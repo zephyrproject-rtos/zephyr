@@ -81,15 +81,17 @@
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&FTM3_CH4_PTC8 &FTM3_CH5_PTC9 &FTM3_CH0_PTD0>;
+	pinctrl-names = "default";
 };
 
 &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&I2C0_SCL_PTB0 &I2C0_SDA_PTB1>;
+	pinctrl-names = "default";
 
 	max30101@57 {
 		status = "disabled";
-		compatible = "max,max30101";
+		compatible = "maxim,max30101";
 		reg = <0x57>;
 		label = "MAX30101";
 	};
@@ -106,6 +108,7 @@
 &i2c1 {
 	status = "okay";
 	pinctrl-0 = <&I2C1_SCL_PTC10 &I2C1_SDA_PTC11>;
+	pinctrl-names = "default";
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";
@@ -136,12 +139,14 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&UART0_RX_PTB16 &UART0_TX_PTB17>;
+	pinctrl-names = "default";
 };
 
 &uart4 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&UART4_RX_PTE25 &UART4_TX_PTE24>;
+	pinctrl-names = "default";
 };
 
 &gpiob {

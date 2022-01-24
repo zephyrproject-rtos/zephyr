@@ -47,7 +47,7 @@ struct log_dict_output_dropped_msg_t {
 	uint16_t num_dropped_messages;
 } __packed;
 
-/** @brief Process log messages v2 for dictionary-basde logging.
+/** @brief Process log messages v2 for dictionary-based logging.
  *
  * Function is using provided context with the buffer and output function to
  * process formatted string and output the data.

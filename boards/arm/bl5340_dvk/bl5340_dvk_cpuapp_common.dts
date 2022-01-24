@@ -12,6 +12,7 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
+		zephyr,display = &ili9340;
 	};
 
 	/* Main LEDs and buttons are on an I2C TCA9538 GPIO port expander */
@@ -195,7 +196,7 @@
 	mosi-pin = <9>;
 	sck-pin = <8>;
 
-	ili9340@0 {
+	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
 		reg = <0>;
 		spi-max-frequency = <32000000>;
@@ -203,6 +204,8 @@
 		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		rotation = <270>;
+		width = <240>;
+		height = <320>;
 	};
 };
 

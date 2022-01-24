@@ -15,30 +15,26 @@
 
 /* Devicetree related macros to construct pin mux config data */
 
-/* Get a node id from a pinctrl-0 prop at index 'i' */
-#define NODE_ID_FROM_PINCTRL_0(node_id, i) \
-	DT_PHANDLE_BY_IDX(node_id, pinctrl_0, i)
-
 /* Get PIN associated with pinctrl-0 pin at index 'i' */
 #define ATMEL_SAM_PIN(node_id, i) \
-	DT_PHA(NODE_ID_FROM_PINCTRL_0(node_id, i), atmel_pins, pin)
+	DT_PHA(DT_PINCTRL_0(node_id, i), atmel_pins, pin)
 
 /* Get PIO register address associated with pinctrl-0 pin at index 'i' */
 #define ATMEL_SAM_PIN_TO_PIO_REG_ADDR(node_id, i) \
-	DT_REG_ADDR(DT_PHANDLE(NODE_ID_FROM_PINCTRL_0(node_id, i), atmel_pins))
+	DT_REG_ADDR(DT_PHANDLE(DT_PINCTRL_0(node_id, i), atmel_pins))
 
 /* Get peripheral id for PIO associated with pinctrl-0 pin at index 'i' */
 #define ATMEL_SAM_PIN_2_PIO_PERIPH_ID(node_id, i) \
-	DT_PROP_BY_PHANDLE(NODE_ID_FROM_PINCTRL_0(node_id, i),\
+	DT_PROP_BY_PHANDLE(DT_PINCTRL_0(node_id, i),\
 			   atmel_pins, peripheral_id)
 
 /* Get peripheral cfg associated wiith pinctrl-0 pin at index 'i' */
 #define ATMEL_SAM_PIN_PERIPH(node_id, i) \
-	DT_PHA(NODE_ID_FROM_PINCTRL_0(node_id, i), atmel_pins, peripheral)
+	DT_PHA(DT_PINCTRL_0(node_id, i), atmel_pins, peripheral)
 
 /* Helper function for ATMEL_SAM_PIN_FLAGS */
 #define ATMEL_SAM_PIN_FLAG(node_id, i, flag) \
-	DT_PROP(NODE_ID_FROM_PINCTRL_0(node_id, i), flag)
+	DT_PROP(DT_PINCTRL_0(node_id, i), flag)
 
 /* Convert DT flags to SoC flags */
 #define ATMEL_SAM_PIN_FLAGS(node_id, i) \
@@ -81,7 +77,7 @@
 #endif
 
 /* Get the number of pins for pinctrl-0 */
-#define ATMEL_SAM_DT_NUM_PINS(node_id) DT_PROP_LEN(node_id, pinctrl_0)
+#define ATMEL_SAM_DT_NUM_PINS(node_id) DT_NUM_PINCTRLS_BY_IDX(node_id, 0)
 
 #define ATMEL_SAM_DT_INST_NUM_PINS(inst) \
 	ATMEL_SAM_DT_NUM_PINS(DT_DRV_INST(inst))

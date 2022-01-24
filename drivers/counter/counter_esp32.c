@@ -15,13 +15,24 @@
 #include <hal/timer_hal.h>
 #include <string.h>
 #include <drivers/counter.h>
+#ifndef CONFIG_SOC_ESP32C3
 #include <drivers/interrupt_controller/intc_esp32.h>
+#else
+#include <drivers/interrupt_controller/intc_esp32c3.h>
+#endif
 #include <device.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
+#ifdef CONFIG_SOC_ESP32C3
+#define ISR_HANDLER isr_handler_t
+#else
+#define ISR_HANDLER intr_handler_t
+#endif
+
 #define INITIAL_COUNT (0x00000000ULL)
 
+#ifndef CONFIG_SOC_ESP32C3
 #define INST_0_INDEX TIMER_0
 #define INST_1_INDEX TIMER_1
 #define INST_2_INDEX TIMER_0
@@ -31,12 +42,17 @@ LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 #define INST_1_GROUP TIMER_GROUP_0
 #define INST_2_GROUP TIMER_GROUP_1
 #define INST_3_GROUP TIMER_GROUP_1
+#else
+#define INST_0_INDEX TIMER_0
+#define INST_1_INDEX TIMER_0
+
+#define INST_0_GROUP TIMER_GROUP_0
+#define INST_1_GROUP TIMER_GROUP_1
+#endif
 
 #define TIMX p_timer_obj[TIMG(dev)][TIDX(dev)]
-#define DEV_CFG(dev) ((const struct counter_esp32_config *const)(dev)->config)
-#define DEV_DATA(dev) ((struct counter_esp32_data *)(dev)->data)
-#define TIMG(dev) (DEV_CFG(dev)->group)
-#define TIDX(dev) (DEV_CFG(dev)->idx)
+#define TIMG(dev) (((const struct counter_esp32_config *const)(dev)->config))->group
+#define TIDX(dev) (((const struct counter_esp32_config *const)(dev)->config))->idx
 
 static void counter_esp32_isr(void *arg);
 
@@ -70,9 +86,14 @@ struct counter_esp32_data {
 static struct counter_obj_t *p_timer_obj[TIMER_GROUP_MAX][TIMER_MAX] = { 0 };
 static struct k_spinlock lock;
 
+#ifdef CONFIG_SOC_ESP32C3
+static struct counter_obj_t timer_pool[TIMER_GROUP_MAX] = {0};
+#endif
+
 static int counter_esp32_init(const struct device *dev)
 {
-	const struct counter_esp32_config *cfg = DEV_CFG(dev);
+	const struct counter_esp32_config *cfg = dev->config;
+	struct counter_esp32_data *data = dev->data;
 
 	if (TIMG(dev) == TIMER_GROUP_0) {
 		periph_module_enable(PERIPH_TIMG0_MODULE);
@@ -83,17 +104,21 @@ static int counter_esp32_init(const struct device *dev)
 	}
 
 	if (TIMX == NULL) {
+		#ifndef CONFIG_SOC_ESP32C3
 		TIMX = (struct counter_obj_t *)k_calloc(1, sizeof(struct counter_obj_t));
 		if (TIMX == NULL) {
 			LOG_ERR("TIMER driver malloc error");
 			return -ENOMEM;
 		}
+		#else
+		TIMX = &timer_pool[TIMG(dev)];
+		#endif
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_hal_init(&TIMX->hal, TIMG(dev), TIDX(dev));
-	DEV_DATA(dev)->alarm_cfg.callback = NULL;
+	data->alarm_cfg.callback = NULL;
 	timer_hal_intr_disable(&TIMX->hal);
 	timer_hal_clear_intr_status(&TIMX->hal);
 	timer_hal_set_auto_reload(&TIMX->hal, cfg->config.auto_reload);
@@ -105,7 +130,11 @@ static int counter_esp32_init(const struct device *dev)
 	}
 	timer_hal_set_counter_value(&TIMX->hal, INITIAL_COUNT);
 	timer_hal_set_counter_enable(&TIMX->hal, cfg->config.counter_en);
-	esp_intr_alloc(DEV_CFG(dev)->irq_source, 0, counter_esp32_isr, (void *)dev, NULL);
+	esp_intr_alloc(cfg->irq_source,
+			0,
+			(ISR_HANDLER)counter_esp32_isr,
+			(void *)dev,
+			NULL);
 	k_spin_unlock(&lock, key);
 
 	return 0;
@@ -145,6 +174,7 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 				   const struct counter_alarm_cfg *alarm_cfg)
 {
 	ARG_UNUSED(chan_id);
+	struct counter_esp32_data *data = dev->data;
 	uint32_t now;
 
 	counter_esp32_get_value(dev, &now);
@@ -153,8 +183,8 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	timer_hal_set_alarm_value(&TIMX->hal, (now + alarm_cfg->ticks));
 	timer_hal_intr_enable(&TIMX->hal);
 	timer_hal_set_alarm_enable(&TIMX->hal, TIMER_ALARM_EN);
-	DEV_DATA(dev)->alarm_cfg.callback = alarm_cfg->callback;
-	DEV_DATA(dev)->alarm_cfg.user_data = alarm_cfg->user_data;
+	data->alarm_cfg.callback = alarm_cfg->callback;
+	data->alarm_cfg.user_data = alarm_cfg->user_data;
 	k_spin_unlock(&lock, key);
 
 	return 0;
@@ -176,7 +206,9 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 static int counter_esp32_set_top_value(const struct device *dev,
 				       const struct counter_top_cfg *cfg)
 {
-	if (cfg->ticks != (DEV_CFG(dev))->counter_info.max_top_value) {
+	const struct counter_esp32_config *config = dev->config;
+
+	if (cfg->ticks != config->counter_info.max_top_value) {
 		return -ENOTSUP;
 	} else {
 		return 0;
@@ -192,7 +224,9 @@ static uint32_t counter_esp32_get_pending_int(const struct device *dev)
 
 static uint32_t counter_esp32_get_top_value(const struct device *dev)
 {
-	return DEV_CFG(dev)->counter_info.max_top_value;
+	const struct counter_esp32_config *config = dev->config;
+
+	return config->counter_info.max_top_value;
 }
 
 static const struct counter_driver_api counter_api = {
@@ -209,12 +243,13 @@ static const struct counter_driver_api counter_api = {
 static void counter_esp32_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
+	struct counter_esp32_data *data = dev->data;
 	counter_esp32_cancel_alarm(dev, 0);
 	uint32_t now;
 
 	counter_esp32_get_value(dev, &now);
 
-	struct counter_alarm_cfg *alarm_cfg = &DEV_DATA(dev)->alarm_cfg;
+	struct counter_alarm_cfg *alarm_cfg = &data->alarm_cfg;
 
 	if (alarm_cfg->callback) {
 		alarm_cfg->callback(dev, 0, now, alarm_cfg->user_data);
@@ -252,20 +287,6 @@ static void counter_esp32_isr(void *arg)
 			      counter_esp32_init,				 \
 			      NULL, &counter_data_##n,				 \
 			      &counter_config_##n, PRE_KERNEL_1,		 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &counter_api);
+			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
 
-#ifdef CONFIG_COUNTER_ESP32_TG0_T0
-ESP32_COUNTER_INIT(0);
-#endif
-
-#ifdef CONFIG_COUNTER_ESP32_TG0_T1
-ESP32_COUNTER_INIT(1);
-#endif
-
-#ifdef CONFIG_COUNTER_ESP32_TG1_T0
-ESP32_COUNTER_INIT(2);
-#endif
-
-#ifdef CONFIG_COUNTER_ESP32_TG1_T1
-ESP32_COUNTER_INIT(3);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(ESP32_COUNTER_INIT);

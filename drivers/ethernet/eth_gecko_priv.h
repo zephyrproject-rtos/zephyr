@@ -95,10 +95,6 @@ struct eth_gecko_dev_data {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct eth_gecko_dev_cfg *)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct eth_gecko_dev_data *)(dev)->data)
 
 /* PHY Management pins */
 #define PIN_PHY_MDC {DT_INST_PROP_BY_IDX(0, location_phy_mdc, 1), \

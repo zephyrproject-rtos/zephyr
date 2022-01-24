@@ -33,9 +33,31 @@ int loopback_dev_init(const struct device *dev)
 
 static void loopback_init(struct net_if *iface)
 {
+	struct net_if_addr *ifaddr;
+
 	/* RFC 7042, s.2.1.1. address to use in documentation */
 	net_if_set_link_addr(iface, "\x00\x00\x5e\x00\x53\xff", 6,
 			     NET_LINK_DUMMY);
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		struct in_addr ipv4_loopback = INADDR_LOOPBACK_INIT;
+
+		ifaddr = net_if_ipv4_addr_add(iface, &ipv4_loopback,
+					      NET_ADDR_AUTOCONF, 0);
+		if (!ifaddr) {
+			LOG_ERR("Failed to register IPv4 loopback address");
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		struct in6_addr ipv6_loopback = IN6ADDR_LOOPBACK_INIT;
+
+		ifaddr = net_if_ipv6_addr_add(iface, &ipv6_loopback,
+					      NET_ADDR_AUTOCONF, 0);
+		if (!ifaddr) {
+			LOG_ERR("Failed to register IPv6 loopback address");
+		}
+	}
 }
 
 static int loopback_send(const struct device *dev, struct net_pkt *pkt)
@@ -57,17 +79,17 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 	if (net_pkt_family(pkt) == AF_INET6) {
 		struct in6_addr addr;
 
-		net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-				&NET_IPV6_HDR(pkt)->dst);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
+		net_ipv6_addr_copy_raw((uint8_t *)&addr, NET_IPV6_HDR(pkt)->src);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
+				       NET_IPV6_HDR(pkt)->dst);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
 	} else {
 		struct in_addr addr;
 
-		net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
-		net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
-				&NET_IPV4_HDR(pkt)->dst);
-		net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
+		net_ipv4_addr_copy_raw((uint8_t *)&addr, NET_IPV4_HDR(pkt)->src);
+		net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->src,
+				       NET_IPV4_HDR(pkt)->dst);
+		net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->dst, (uint8_t *)&addr);
 	}
 
 	/* We should simulate normal driver meaning that if the packet is

@@ -14,29 +14,26 @@
 		LOG_MODULE_REGISTER(i2c_ite_it8xxx2);
 #include "i2c-priv.h"
 #include <soc.h>
+#include <soc_dt.h>
 #include <sys/util.h>
-
-#define DEV_CFG(dev) \
-		((const struct i2c_it8xxx2_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-		((struct i2c_it8xxx2_data * const)(dev)->data)
-
-#define DEV_CLK_PINMUX(idx)     DEVICE_DT_GET(DT_PHANDLE \
-	(DT_NODELABEL(pinctrl_i2c_clk##idx), pinctrls))
-#define DEV_DATA_PINMUX(idx)    DEVICE_DT_GET(DT_PHANDLE \
-	(DT_NODELABEL(pinctrl_i2c_data##idx), pinctrls))
-#define DEV_CLK_PIN(idx)        DT_PHA(DT_PHANDLE_BY_IDX \
-	(DT_DRV_INST(idx), pinctrl_0, 0), pinctrls, pin)
-#define DEV_DATA_PIN(idx)       DT_PHA(DT_PHANDLE_BY_IDX \
-	(DT_DRV_INST(idx), pinctrl_1, 0), pinctrls, pin)
-#define DEV_CLK_ALT_FUNC(idx)   DT_PHA(DT_PHANDLE_BY_IDX \
-	(DT_DRV_INST(idx), pinctrl_0, 0), pinctrls, alt_func)
-#define DEV_DATA_ALT_FUNC(idx)  DT_PHA(DT_PHANDLE_BY_IDX \
-	(DT_DRV_INST(idx), pinctrl_1, 0), pinctrls, alt_func)
 
 #define I2C_STANDARD_PORT_COUNT 3
 /* Default PLL frequency. */
 #define PLL_CLOCK 48000000
+
+/*
+ * Structure i2c_alts_cfg is about the alternate function
+ * setting of i2c, this config will be used at initial
+ * time and recover bus.
+ */
+struct i2c_alts_cfg {
+	/* Pinmux control group */
+	const struct device *pinctrls;
+	/* GPIO pin */
+	uint8_t pin;
+	/* Alternate function */
+	uint8_t alt_fun;
+};
 
 struct i2c_it8xxx2_config {
 	void (*irq_config_func)(void);
@@ -44,17 +41,15 @@ struct i2c_it8xxx2_config {
 	uint8_t *base;
 	uint8_t i2c_irq_base;
 	uint8_t port;
-	/* Pinmux control group */
-	const struct device *clk_pinctrls;
-	const struct device *data_pinctrls;
-	/* GPIO pin */
-	uint8_t clk_pin;
-	uint8_t data_pin;
-	/* Alternate function */
-	uint8_t clk_alt_fun;
-	uint8_t data_alt_fun;
+	/* I2C alternate configuration */
+	const struct i2c_alts_cfg *alts_list;
 	/* GPIO handle */
 	const struct device *gpio_dev;
+};
+
+enum i2c_pin_fun {
+	SCL = 0,
+	SDA,
 };
 
 enum i2c_ch_status {
@@ -73,6 +68,8 @@ struct i2c_it8xxx2_data {
 	size_t widx;
 	/* Index into input data */
 	size_t ridx;
+	/* operation freq of i2c */
+	uint32_t bus_freq;
 	/* Error code, if any */
 	uint32_t err;
 	/* address of device */
@@ -148,25 +145,36 @@ enum i2c_reset_cause {
 #define I2C_LINE_SDA_HIGH BIT(1)
 #define I2C_LINE_IDLE (I2C_LINE_SCL_HIGH | I2C_LINE_SDA_HIGH)
 
-struct i2c_pin {
-	volatile uint8_t *mirror_clk;
-	volatile uint8_t *mirror_data;
-	uint8_t clk_mask;
-	uint8_t data_mask;
-};
+static int i2c_parsing_return_value(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 
-static const struct i2c_pin i2c_pin_regs[] = {
-	{ &GPDMRB, &GPDMRB,	0x08, 0x10},
-	{ &GPDMRC, &GPDMRC,	0x02, 0x04},
-	{ &GPDMRF, &GPDMRF,	0x40, 0x80},
-	{ &GPDMRH, &GPDMRH,	0x02, 0x04},
-	{ &GPDMRE, &GPDMRE,	0x01, 0x80},
-	{ &GPDMRA, &GPDMRA,	0x10, 0x20},
-};
+	if (!data->err)
+		return 0;
+
+	/* Connection timed out */
+	if (data->err == ETIMEDOUT)
+		return -ETIMEDOUT;
+
+	if (config->port < I2C_STANDARD_PORT_COUNT) {
+		/* The device does not respond ACK */
+		if (data->err == HOSTA_NACK)
+			return -ENXIO;
+		else
+			return -EIO;
+	} else {
+		/* The device does not respond ACK */
+		if (data->err == E_HOSTA_ACK)
+			return -ENXIO;
+		else
+			return -EIO;
+	}
+}
 
 static int i2c_get_line_levels(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	int pin_sts = 0;
 
@@ -174,12 +182,11 @@ static int i2c_get_line_levels(const struct device *dev)
 		return IT83XX_SMB_SMBPCTL(base) & 0x03;
 	}
 
-	if (*i2c_pin_regs[config->port].mirror_clk &
-					i2c_pin_regs[config->port].clk_mask) {
+	if (IT83XX_I2C_TOS(base) & IT8XXX2_I2C_SCL_IN) {
 		pin_sts |= I2C_LINE_SCL_HIGH;
 	}
-	if (*i2c_pin_regs[config->port].mirror_data &
-					i2c_pin_regs[config->port].data_mask) {
+
+	if (IT83XX_I2C_TOS(base) & IT8XXX2_I2C_SDA_IN) {
 		pin_sts |= I2C_LINE_SDA_HIGH;
 	}
 
@@ -188,7 +195,7 @@ static int i2c_get_line_levels(const struct device *dev)
 
 static int i2c_is_busy(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (config->port < I2C_STANDARD_PORT_COUNT) {
@@ -211,7 +218,7 @@ static int i2c_bus_not_available(const struct device *dev)
 
 static void i2c_reset(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (config->port < I2C_STANDARD_PORT_COUNT) {
@@ -248,7 +255,7 @@ static void i2c_standard_port_timing_regs_400khz(uint8_t port)
 static void i2c_standard_port_set_frequency(const struct device *dev,
 					int freq_khz, int freq_set)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 
 	/*
 	 * If port's clock frequency is 400kHz, we use timing registers
@@ -269,8 +276,8 @@ static void i2c_standard_port_set_frequency(const struct device *dev,
 static void i2c_enhanced_port_set_frequency(const struct device *dev,
 				int freq_khz)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint32_t clk_div, psr;
 	uint8_t *base = config->base;
 
@@ -307,7 +314,8 @@ static void i2c_enhanced_port_set_frequency(const struct device *dev,
 static int i2c_it8xxx2_configure(const struct device *dev,
 				uint32_t dev_config_raw)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
+	struct i2c_it8xxx2_data *const data = dev->data;
 	uint32_t freq, freq_set;
 
 	if (!(I2C_MODE_MASTER & dev_config_raw)) {
@@ -318,7 +326,9 @@ static int i2c_it8xxx2_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	switch (I2C_SPEED_GET(dev_config_raw)) {
+	data->bus_freq = I2C_SPEED_GET(dev_config_raw);
+
+	switch (data->bus_freq) {
 	case I2C_SPEED_STANDARD:
 		freq = 100;
 		freq_set = 2;
@@ -344,10 +354,40 @@ static int i2c_it8xxx2_configure(const struct device *dev,
 	return 0;
 }
 
+static int i2c_it8xxx2_get_config(const struct device *dev,
+				  uint32_t *dev_config)
+{
+	struct i2c_it8xxx2_data *const data = dev->data;
+	uint32_t speed;
+
+	if (!data->bus_freq) {
+		LOG_ERR("The bus frequency is not initially configured.");
+		return -EIO;
+	}
+
+	switch (data->bus_freq) {
+	case I2C_SPEED_STANDARD:
+		speed = I2C_SPEED_SET(I2C_SPEED_STANDARD);
+		break;
+	case I2C_SPEED_FAST:
+		speed = I2C_SPEED_SET(I2C_SPEED_FAST);
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		speed = I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
+		break;
+	default:
+		return -ERANGE;
+	}
+
+	*dev_config = (I2C_MODE_MASTER | speed);
+
+	return 0;
+}
+
 static int enhanced_i2c_error(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t i2c_str = IT83XX_I2C_STR(base);
 
@@ -364,8 +404,8 @@ static int enhanced_i2c_error(const struct device *dev)
 
 static void enhanced_i2c_start(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	/* State reset and hardware reset */
@@ -386,8 +426,8 @@ static void i2c_pio_trans_data(const struct device *dev,
 				enum enhanced_i2c_transfer_direct direct,
 				uint16_t trans_data, int first_byte)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t nack = 0;
 
@@ -419,8 +459,8 @@ static void i2c_pio_trans_data(const struct device *dev,
 
 static int enhanced_i2c_tran_read(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint8_t in_data = 0;
 
@@ -478,8 +518,8 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 
 static int enhanced_i2c_tran_write(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint8_t out_data;
 
@@ -520,8 +560,8 @@ static int enhanced_i2c_tran_write(const struct device *dev)
 
 static void i2c_r_last_byte(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	/*
@@ -536,7 +576,7 @@ static void i2c_r_last_byte(const struct device *dev)
 
 static void i2c_w2r_change_direction(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	/* I2C switch direction */
@@ -557,8 +597,8 @@ static void i2c_w2r_change_direction(const struct device *dev)
 
 static int i2c_tran_read(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (data->msgs->flags & I2C_MSG_START) {
@@ -632,8 +672,8 @@ static int i2c_tran_read(const struct device *dev)
 
 static int i2c_tran_write(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (data->msgs->flags & I2C_MSG_START) {
@@ -695,8 +735,8 @@ static int i2c_tran_write(const struct device *dev)
 
 static int i2c_transaction(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (config->port < I2C_STANDARD_PORT_COUNT) {
@@ -745,8 +785,8 @@ static int i2c_transaction(const struct device *dev)
 static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		uint8_t num_msgs, uint16_t addr)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data;
+	const struct i2c_it8xxx2_config *config;
 	int res;
 
 	/* Check for NULL pointers */
@@ -758,6 +798,9 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		LOG_ERR("Device message is NULL");
 		return -EINVAL;
 	}
+
+	data = dev->data;
+	config = dev->config;
 
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
@@ -835,14 +878,14 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
-	return data->err;
+	return i2c_parsing_return_value(dev);
 }
 
 static void i2c_it8xxx2_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 
 	/* If done doing work, wake up the task waiting for the transfer */
 	if (!i2c_transaction(dev)) {
@@ -853,8 +896,8 @@ static void i2c_it8xxx2_isr(void *arg)
 
 static int i2c_it8xxx2_init(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t bitrate_cfg, offset = 0;
 	int error;
@@ -875,8 +918,6 @@ static int i2c_it8xxx2_init(const struct device *dev)
 		break;
 	case DT_REG_ADDR(DT_NODELABEL(i2c3)):
 		offset = CGC_OFFSET_SMBD;
-		/* Enable SMBus D channel */
-		GCR2 |= SMB3E;
 		break;
 	case DT_REG_ADDR(DT_NODELABEL(i2c4)):
 		offset = CGC_OFFSET_SMBE;
@@ -936,59 +977,72 @@ static int i2c_it8xxx2_init(const struct device *dev)
 		return error;
 	}
 
-	/* The pin is set to I2C alternate function of clock */
-	pinmux_pin_set(config->clk_pinctrls, config->clk_pin, config->clk_alt_fun);
-	/* The pin is set to I2C alternate function of data */
-	pinmux_pin_set(config->data_pinctrls, config->data_pin, config->data_alt_fun);
+	/* The pin is set to I2C alternate function of SCL */
+	pinmux_pin_set(config->alts_list[SCL].pinctrls,
+		       config->alts_list[SCL].pin,
+		       config->alts_list[SCL].alt_fun);
+	/* The pin is set to I2C alternate function of SDA */
+	pinmux_pin_set(config->alts_list[SDA].pinctrls,
+		       config->alts_list[SDA].pin,
+		       config->alts_list[SDA].alt_fun);
 
 	return 0;
 }
 
 static int i2c_it8xxx2_recover_bus(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	int i;
 
-	/* Set clock of I2C as GPIO pin */
-	pinmux_pin_input_enable(config->clk_pinctrls, config->clk_pin,
+	/* Set SCL of I2C as GPIO pin */
+	pinmux_pin_input_enable(config->alts_list[SCL].pinctrls,
+				config->alts_list[SCL].pin,
 				PINMUX_OUTPUT_ENABLED);
-	/* Set data of I2C as GPIO pin */
-	pinmux_pin_input_enable(config->data_pinctrls, config->data_pin,
+	/* Set SDA of I2C as GPIO pin */
+	pinmux_pin_input_enable(config->alts_list[SDA].pinctrls,
+				config->alts_list[SDA].pin,
 				PINMUX_OUTPUT_ENABLED);
 
-	gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
-	gpio_pin_set(config->gpio_dev, config->data_pin, 1);
+	/* Pull SCL and SDA pin to high */
+	gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 1);
+	gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 1);
 	k_msleep(1);
 
 	/* Start condition */
-	gpio_pin_set(config->gpio_dev, config->data_pin, 0);
+	gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 0);
 	k_msleep(1);
-	gpio_pin_set(config->gpio_dev, config->clk_pin, 0);
+	gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 0);
 	k_msleep(1);
 
 	/* 9 cycles of SCL with SDA held high */
 	for (i = 0; i < 9; i++) {
-		gpio_pin_set(config->gpio_dev, config->data_pin, 1);
-		gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
+		/* SDA */
+		gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 1);
+		/* SCL */
+		gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 1);
 		k_msleep(1);
-		gpio_pin_set(config->gpio_dev, config->clk_pin, 0);
+		/* SCL */
+		gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 0);
 		k_msleep(1);
 	}
-	gpio_pin_set(config->gpio_dev, config->data_pin, 0);
+	/* SDA */
+	gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 0);
 	k_msleep(1);
 
 	/* Stop condition */
-	gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
+	gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 1);
 	k_msleep(1);
-	gpio_pin_set(config->gpio_dev, config->data_pin, 1);
+	gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 1);
 	k_msleep(1);
 
-	/* Set GPIO back to I2C alternate function of clock */
-	pinmux_pin_set(config->clk_pinctrls, config->clk_pin,
-		       config->clk_alt_fun);
-	/* Set GPIO back to I2C alternate function of data */
-	pinmux_pin_set(config->data_pinctrls, config->data_pin,
-		       config->data_alt_fun);
+	/* Set GPIO back to I2C alternate function of SCL */
+	pinmux_pin_set(config->alts_list[SCL].pinctrls,
+		       config->alts_list[SCL].pin,
+		       config->alts_list[SCL].alt_fun);
+	/* Set GPIO back to I2C alternate function of SDA */
+	pinmux_pin_set(config->alts_list[SDA].pinctrls,
+		       config->alts_list[SDA].pin,
+		       config->alts_list[SDA].alt_fun);
 
 	/* reset i2c port */
 	i2c_reset(dev);
@@ -1000,12 +1054,16 @@ static int i2c_it8xxx2_recover_bus(const struct device *dev)
 
 static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 	.configure = i2c_it8xxx2_configure,
+	.get_config = i2c_it8xxx2_get_config,
 	.transfer = i2c_it8xxx2_transfer,
 	.recover_bus = i2c_it8xxx2_recover_bus,
 };
 
 #define I2C_ITE_IT8XXX2_INIT(idx)                                              \
 	static void i2c_it8xxx2_config_func_##idx(void);                       \
+	static const struct i2c_alts_cfg                                       \
+		i2c_alts_##idx[DT_INST_NUM_PINCTRLS_BY_IDX(idx, 0)] =          \
+			IT8XXX2_DT_ALT_ITEMS_LIST(idx);                        \
 									       \
 	static const struct i2c_it8xxx2_config i2c_it8xxx2_cfg_##idx = {       \
 		.base = (uint8_t *)(DT_INST_REG_ADDR(idx)),                    \
@@ -1013,19 +1071,14 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 		.bitrate = DT_INST_PROP(idx, clock_frequency),                 \
 		.i2c_irq_base = DT_INST_IRQN(idx),                             \
 		.port = DT_INST_PROP(idx, port_num),                           \
-		.clk_pinctrls = DEV_CLK_PINMUX(idx),                           \
-		.data_pinctrls = DEV_DATA_PINMUX(idx),                         \
-		.clk_pin = DEV_CLK_PIN(idx),                                   \
-		.data_pin = DEV_DATA_PIN(idx),                                 \
-		.clk_alt_fun = DEV_CLK_ALT_FUNC(idx),                          \
-		.data_alt_fun = DEV_DATA_ALT_FUNC(idx),                        \
+		.alts_list = i2c_alts_##idx,                                   \
 		.gpio_dev = DEVICE_DT_GET(DT_INST_PHANDLE(idx, gpio_dev)),     \
 	};                                                                     \
 	\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##idx;	               \
 	\
-	DEVICE_DT_INST_DEFINE(idx,				               \
-			&i2c_it8xxx2_init, NULL,			       \
+	I2C_DEVICE_DT_INST_DEFINE(idx,				               \
+			i2c_it8xxx2_init, NULL,				       \
 			&i2c_it8xxx2_data_##idx,	                       \
 			&i2c_it8xxx2_cfg_##idx, POST_KERNEL,		       \
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                    \

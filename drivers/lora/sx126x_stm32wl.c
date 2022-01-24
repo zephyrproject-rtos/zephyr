@@ -35,6 +35,7 @@ uint32_t sx126x_get_dio1_pin_state(struct sx126x_data *dev_data)
 
 void sx126x_dio1_irq_enable(struct sx126x_data *dev_data)
 {
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 }
 

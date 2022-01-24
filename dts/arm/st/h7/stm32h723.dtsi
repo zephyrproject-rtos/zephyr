@@ -35,12 +35,18 @@
 		dmamux1: dmamux@40020800 {
 			dma-requests= <129>;
 		};
+
+		rng: rng@48021800 {
+			health-test-magic = <0x17590abc>;
+			health-test-config = <0xaa74>;
+		};
 	};
 
 	/* DTCM memory directly coppled to CPU */
 	dtcm: memory@20000000 {
 		compatible = "arm,dtcm";
 		reg = <0x20000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "DTCM";
 	};
 
 	/* AXI SRAM in D1 domain (AXI bus) */

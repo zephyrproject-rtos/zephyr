@@ -117,6 +117,12 @@
 #define __in_section_unique(seg) \
 	__attribute__((section("." STRINGIFY(seg) "." STRINGIFY(__COUNTER__))))
 
+#undef __in_section_unique_named
+#define __in_section_unique_named(seg, name) \
+	__attribute__((section("." STRINGIFY(seg) \
+			       "." STRINGIFY(__COUNTER__) \
+			       "." STRINGIFY(name))))
+
 #ifndef __GCC_LINKER_CMD__
 #include <xtensa/config/core.h>
 

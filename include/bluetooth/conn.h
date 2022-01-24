@@ -23,6 +23,7 @@
 #include <bluetooth/hci_err.h>
 #include <bluetooth/addr.h>
 #include <bluetooth/gap.h>
+#include <bluetooth/direction.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -285,7 +286,7 @@ struct bt_conn_le_info {
 	/** Remote device address used during connection setup. */
 	const bt_addr_le_t *remote;
 	uint16_t interval; /** Connection interval */
-	uint16_t latency; /** Connection slave latency */
+	uint16_t latency; /** Connection peripheral latency */
 	uint16_t timeout; /** Connection supervision timeout */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
@@ -303,11 +304,14 @@ struct bt_conn_br_info {
 	const bt_addr_t *dst; /** Destination (Remote) BR/EDR address */
 };
 
-/** Connection role (master or slave) */
 enum {
-	BT_CONN_ROLE_MASTER,
-	BT_CONN_ROLE_SLAVE,
+	BT_CONN_ROLE_CENTRAL = 0,
+	BT_CONN_ROLE_PERIPHERAL = 1,
 };
+
+/** Connection role (central or peripheral) */
+#define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
+#define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
 
 /** Connection Info Structure */
 struct bt_conn_info {
@@ -582,7 +586,7 @@ struct bt_conn_le_create_param {
 				BT_GAP_SCAN_FAST_INTERVAL, \
 				BT_GAP_SCAN_FAST_INTERVAL)
 
-/** Default LE create connection using whitelist parameters.
+/** Default LE create connection using filter accept list parameters.
  *  Scan window:   30 ms.
  *  Scan interval: 60 ms.
  */
@@ -615,14 +619,14 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		      const struct bt_le_conn_param *conn_param,
 		      struct bt_conn **conn);
 
-/** @brief Automatically connect to remote devices in whitelist.
+/** @brief Automatically connect to remote devices in the filter accept list..
  *
  *  This uses the Auto Connection Establishment procedure.
  *  The procedure will continue until a single connection is established or the
  *  procedure is stopped through @ref bt_conn_create_auto_stop.
- *  To establish connections to all devices in the whitelist the procedure
- *  should be started again in the connected callback after a new connection has
- *  been established.
+ *  To establish connections to all devices in the the filter accept list the
+ *  procedure should be started again in the connected callback after a
+ *  new connection has been established.
  *
  *  @param create_param Create connection parameters
  *  @param conn_param   Initial connection parameters.
@@ -748,6 +752,9 @@ enum bt_security_err {
 	/** Invalid parameters. */
 	BT_SECURITY_ERR_INVALID_PARAM,
 
+	/** Distributed Key Rejected */
+	BT_SECURITY_ERR_KEY_REJECTED,
+
 	/** Pairing failed but the exact reason could not be specified. */
 	BT_SECURITY_ERR_UNSPECIFIED,
 };
@@ -804,7 +811,7 @@ struct bt_conn_cb {
 	 *  increase @kconfig{CONFIG_BT_MAX_CONN}.
 	 *
 	 *  @param conn Connection object.
-	 *  @param reason HCI reason for the disconnection.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
 	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
 
@@ -919,7 +926,18 @@ struct bt_conn_cb {
 	 */
 	void (*le_data_len_updated)(struct bt_conn *conn,
 				    struct bt_conn_le_data_len_info *info);
-#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
+#endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+	/** @brief Callback for IQ samples report collected when sampling
+	 *        CTE received by data channel PDU.
+	 *
+	 * @param conn      The connection object.
+	 * @param iq_report Report data for collected IQ samples.
+	 */
+	void (*cte_report_cb)(struct bt_conn *conn,
+			      const struct bt_df_conn_iq_samples_report *iq_report);
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 	struct bt_conn_cb *_next;
 };
@@ -939,8 +957,8 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  *  @param _name Name of callback structure.
  */
 #define BT_CONN_CB_DEFINE(_name)					\
-	static const Z_STRUCT_SECTION_ITERABLE(bt_conn_cb,		\
-						_CONCAT(bt_conn_cb,	\
+	static const STRUCT_SECTION_ITERABLE(bt_conn_cb,		\
+						_CONCAT(bt_conn_cb_,	\
 							_name))
 
 /** @brief Enable/disable bonding.

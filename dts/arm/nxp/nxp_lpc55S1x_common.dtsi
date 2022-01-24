@@ -47,17 +47,20 @@
 	sram1: memory@20008000 {
 		compatible = "mmio-sram";
 		reg = <0x20008000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@2000c000 {
 		compatible = "mmio-sram";
 		reg = <0x2000c000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	sram4: memory@20010000 {
 		/* Conencted to USB bus*/
 		compatible = "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM4";
 	};
 };
 
@@ -209,6 +212,25 @@
 		interrupts = <21 0>;
 		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 		label = "FLEXCOMM_7";
+		status = "disabled";
+	};
+
+	can0: can@9d000 {
+		compatible = "nxp,lpc-mcan";
+		reg = <0x9d000 0x1000>;
+		interrupts = <43 0>, <44 0>;
+		clocks = <&syscon MCUX_MCAN_CLK>;
+		label = "CAN_0";
+		std-filter-elements = <128>;
+		ext-filter-elements = <64>;
+		rx-fifo0-elements = <64>;
+		rx-fifo1-elements = <64>;
+		rx-buffer-elements = <64>;
+		tx-buffer-elements = <32>;
+		sjw = <1>;
+		sample-point = <875>;
+		sjw-data = <1>;
+		sample-point-data = <875>;
 		status = "disabled";
 	};
 

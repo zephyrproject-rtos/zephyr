@@ -20,6 +20,8 @@ config BBRAM_INIT_PRIORITY
 
 source "drivers/bbram/Kconfig.npcx"
 
+source "drivers/bbram/Kconfig.it8xxx2"
+
 source "drivers/bbram/Kconfig.bbram_emul"
 
 endif # BBRAM

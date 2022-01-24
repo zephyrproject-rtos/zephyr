@@ -524,6 +524,8 @@ void main(void)
 #endif
 
 #if defined(CONFIG_USERSPACE)
+	int ret;
+
 	struct k_mem_partition *parts[] = {
 #if Z_LIBC_PARTITION_EXISTS
 		&z_libc_partition,
@@ -531,7 +533,10 @@ void main(void)
 		&app_partition
 	};
 
-	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+	ret = k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d", ret);
+	ARG_UNUSED(ret);
+
 	k_mem_domain_add_thread(&app_domain, app_thread);
 	k_thread_heap_assign(app_thread, &app_mem_pool);
 

@@ -257,7 +257,14 @@ __csSet:
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION
 	call	z_bss_zero_pinned
 #endif
+#ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	/* Don't clear BSS if the section is not present
+	 * in memory at boot. Or else it would cause page
+	 * faults. Zeroing BSS will be done later once the
+	 * the paging mechanism has been initialized.
+	 */
 	call	z_bss_zero
+#endif
 
 	/* load 32-bit operand size IDT */
 	lidt	z_x86_idt

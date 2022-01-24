@@ -679,13 +679,6 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 }
 #endif  /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 
-/* Excerpted from SimpleLink's socket.h:
- * "Unsupported: these are only placeholders to not break BSD code."
- *  Remove once Zephyr has POSIX socket options defined.
- */
-#define SO_BROADCAST  (200)
-#define SO_SNDBUF     (202)
-
 /* Needed to keep line lengths < 80: */
 #define _SEC_DOMAIN_VERIF SL_SO_SECURE_DOMAIN_NAME_VERIFICATION
 
@@ -1264,8 +1257,8 @@ static int simplelink_socket_accept(void *obj, struct sockaddr *addr,
 }
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-NET_SOCKET_REGISTER(simplelink, AF_UNSPEC, simplelink_is_supported,
-		    simplelink_socket_create);
+NET_SOCKET_REGISTER(simplelink, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    simplelink_is_supported, simplelink_socket_create);
 #endif
 
 void simplelink_sockets_init(void)

@@ -1,6 +1,11 @@
 # Misc network drivers configuration options
 # SPDX-License-Identifier: Apache-2.0
 
+menuconfig NET_DRIVERS
+	bool "Network Drivers"
+
+if NET_DRIVERS
+
 #
 # PPP options
 #
@@ -12,6 +17,11 @@ menuconfig NET_PPP
 	select UART_MUX if GSM_MUX
 
 if NET_PPP
+
+config NET_PPP_ASYNC_UART
+	bool "Asynchronous UART API is used"
+	depends on UART_ASYNC_API
+	depends on !GSM_MUX
 
 config NET_PPP_UART_NAME
 	string "UART device name the PPP is connected to"
@@ -78,6 +88,38 @@ config PPP_CLIENT_CLIENTSERVER
 	  This is only necessary if a ppp connection should be
 	  established with a Microsoft Windows PC.
 
+config PPP_NET_IF_NO_AUTO_START
+	bool "Disable PPP interface auto-start"
+	help
+	  This option allows user to disable autostarting of the PPP interface
+	  immediately after initialization.
+
+if NET_PPP_ASYNC_UART
+
+config NET_PPP_ASYNC_UART_TX_BUF_LEN
+	int "Buffer length from where the write to async UART is done"
+	default 2048
+	help
+	  This options sets the size of the UART TX buffer where data
+	  is being written from to UART.
+
+config NET_PPP_ASYNC_UART_RX_RECOVERY_TIMEOUT
+	int "UART RX recovery timeout in milliseconds"
+	default 200
+	help
+	  The time that UART RX is in disabled state in case
+	  when we cannot receive more data from UART.
+
+config NET_PPP_ASYNC_UART_RX_ENABLE_TIMEOUT
+	int "A timeout for uart_rx_enable()"
+	default 100
+
+config NET_PPP_ASYNC_UART_TX_TIMEOUT
+	int "A timeout for uart_tx()"
+	default 100
+
+endif # NET_PPP_ASYNC_UART
+
 module = NET_PPP
 module-dep = LOG
 module-str = Log level for ppp driver
@@ -90,8 +132,7 @@ endif # NET_PPP
 # SLIP options
 #
 menuconfig SLIP
-	bool "SLIP driver"
-	depends on (!QEMU_TARGET || NET_QEMU_SLIP)
+	bool "SLIP driver" if !QEMU_TARGET
 	depends on NET_NATIVE
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
@@ -149,3 +190,5 @@ module-help = Sets log level for network loopback driver.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif
+
+endif # NET_DRIVERS

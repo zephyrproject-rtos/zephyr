@@ -1,0 +1,18 @@
+# Example manifest file you can include into the main west.yml file.
+#
+# To make this work, copy this file's contents to a new file,
+# 'example.yaml', in the same directory.
+#
+# Then change the 'name' and 'url' below and run 'west update'.
+#
+# Your module will be added to the local workspace and kept in sync
+# every time you run 'west update'.
+#
+# If you want to fetch a particular commit rather than the main
+# branch, change the 'revision' line accordingly.
+
+manifest:
+  projects:
+    - name: my-module
+      url: https://github.com/my-username/my-module
+      revision: main

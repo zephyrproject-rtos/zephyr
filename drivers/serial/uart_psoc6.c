@@ -60,9 +60,6 @@ struct cypress_psoc6_data {
 	void *irq_cb_data;			/* Interrupt Callback Arg */
 };
 
-#define DEV_DATA(dev) \
-	((struct cypress_psoc6_data *const)(dev)->data)
-
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 /* Populate configuration structure */
@@ -288,7 +285,7 @@ static void uart_psoc6_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
-	struct cypress_psoc6_data *const dev_data = DEV_DATA(dev);
+	struct cypress_psoc6_data *const dev_data = dev->data;
 
 	dev_data->irq_cb = cb;
 	dev_data->irq_cb_data = cb_data;
@@ -296,7 +293,7 @@ static void uart_psoc6_irq_callback_set(const struct device *dev,
 
 static void uart_psoc6_isr(const struct device *dev)
 {
-	struct cypress_psoc6_data *const dev_data = DEV_DATA(dev);
+	struct cypress_psoc6_data *const dev_data = dev->data;
 
 	if (dev_data->irq_cb) {
 		dev_data->irq_cb(dev, dev_data->irq_cb_data);
@@ -361,7 +358,7 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 	DEVICE_DT_INST_DEFINE(n, &uart_psoc6_init, NULL,			\
 			      CY_PSOC6_UART_DECL_DATA_PTR(n),			\
 			      &cy_psoc6_uart##n##_config, PRE_KERNEL_1,		\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      CONFIG_SERIAL_INIT_PRIORITY,			\
 			      &uart_psoc6_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CY_PSOC6_UART_INIT)

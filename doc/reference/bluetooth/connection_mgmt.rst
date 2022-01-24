@@ -17,7 +17,7 @@ to a connection.
 
 An application may track connections by registering a
 :c:struct:`bt_conn_cb` struct using the :c:func:`bt_conn_cb_register`
-or c:func:`BT_CONN_CB_DEFINE()` APIs. This struct lets the application
+or :c:macro:`BT_CONN_CB_DEFINE` APIs. This struct lets the application
 define callbacks for connection & disconnection events, as well as other
 events related to a connection such as a change in the security level or
 the connection parameters. When acting as a central the application will

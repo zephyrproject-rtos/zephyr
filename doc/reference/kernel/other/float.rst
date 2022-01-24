@@ -113,7 +113,7 @@ an extra 72 bytes of stack space where the callee-saved FP context can
 be saved.
 
 `Lazy Stacking
-<http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dai0298a/DAFGGBJD.html>`_
+<https://developer.arm.com/documentation/dai0298/a>`_
 is currently enabled in Zephyr applications on ARM Cortex-M
 architecture, minimizing interrupt latency, when the floating
 point context is active.

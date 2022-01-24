@@ -18,18 +18,18 @@ extern struct bmg160_device_data bmg160_data;
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_int(const struct device *dev,
+static inline int setup_int(const struct device *dev,
 			      bool enable)
 {
 	struct bmg160_device_data *data = dev->data;
 	const struct bmg160_device_config *const cfg =
 		dev->config;
 
-	gpio_pin_interrupt_configure(data->gpio,
-				     cfg->int_pin,
-				     enable
-				     ? GPIO_INT_EDGE_TO_ACTIVE
-				     : GPIO_INT_DISABLE);
+	return gpio_pin_interrupt_configure(data->gpio,
+					    cfg->int_pin,
+					    enable
+					    ? GPIO_INT_EDGE_TO_ACTIVE
+					    : GPIO_INT_DISABLE);
 }
 
 static void bmg160_gpio_callback(const struct device *port,
@@ -208,6 +208,7 @@ int bmg160_trigger_init(const struct device *dev)
 {
 	const struct bmg160_device_config *cfg = dev->config;
 	struct bmg160_device_data *bmg160 = dev->data;
+	int ret;
 
 	/* set INT1 pin to: push-pull, active low */
 	if (bmg160_write_byte(dev, BMG160_REG_INT_EN1, 0) < 0) {
@@ -257,12 +258,19 @@ int bmg160_trigger_init(const struct device *dev)
 	bmg160->work.handler = bmg160_work_cb;
 #endif
 
-	gpio_pin_configure(bmg160->gpio, cfg->int_pin,
-			   cfg->int_flags | GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_configure(bmg160->gpio, cfg->int_pin,
+				 cfg->int_flags | GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
+
 	gpio_init_callback(&bmg160->gpio_cb, bmg160_gpio_callback,
 			   BIT(cfg->int_pin));
-	gpio_add_callback(bmg160->gpio, &bmg160->gpio_cb);
-	setup_int(dev, true);
 
-	return 0;
+	ret = gpio_add_callback(bmg160->gpio, &bmg160->gpio_cb);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return setup_int(dev, true);
 }

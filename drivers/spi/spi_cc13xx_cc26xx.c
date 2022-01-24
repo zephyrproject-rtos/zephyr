@@ -37,26 +37,21 @@ struct spi_cc13xx_cc26xx_data {
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-static inline struct spi_cc13xx_cc26xx_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct spi_cc13xx_cc26xx_config *
-get_dev_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 				       const struct spi_config *config)
 {
-	const struct spi_cc13xx_cc26xx_config *cfg = get_dev_config(dev);
-	struct spi_context *ctx = &get_dev_data(dev)->ctx;
+	const struct spi_cc13xx_cc26xx_config *cfg = dev->config;
+	struct spi_cc13xx_cc26xx_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	uint32_t prot;
 
 	if (spi_context_configured(ctx, config)) {
 		return 0;
+	}
+
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
 	}
 
 	/* Slave mode has not been implemented */
@@ -76,7 +71,8 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Multiple lines are not supported");
 		return -EINVAL;
 	}
@@ -114,8 +110,6 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 			    cfg->cs_pin, cfg->sck_pin);
 
 	ctx->config = config;
-	/* This will reconfigure the CS pin as GPIO if same as cfg->cs_pin. */
-	spi_context_cs_configure(ctx);
 
 	/* Disable SSI before making configuration changes */
 	SSIDisable(cfg->base);
@@ -139,8 +133,9 @@ static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 					const struct spi_buf_set *tx_bufs,
 					const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_cc13xx_cc26xx_config *cfg = get_dev_config(dev);
-	struct spi_context *ctx = &get_dev_data(dev)->ctx;
+	const struct spi_cc13xx_cc26xx_config *cfg = dev->config;
+	struct spi_cc13xx_cc26xx_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	uint32_t txd, rxd;
 	int err;
 
@@ -192,13 +187,15 @@ done:
 static int spi_cc13xx_cc26xx_release(const struct device *dev,
 				     const struct spi_config *config)
 {
-	struct spi_context *ctx = &get_dev_data(dev)->ctx;
+	const struct spi_cc13xx_cc26xx_config *cfg = dev->config;
+	struct spi_cc13xx_cc26xx_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 
 	if (!spi_context_configured(ctx, config)) {
 		return -EINVAL;
 	}
 
-	if (SSIBusy(get_dev_config(dev)->base)) {
+	if (SSIBusy(cfg->base)) {
 		return -EBUSY;
 	}
 
@@ -208,23 +205,25 @@ static int spi_cc13xx_cc26xx_release(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
-					enum pm_device_action action)
+static int spi_cc13xx_cc26xx_pm_action(const struct device *dev,
+				       enum pm_device_action action)
 {
+	const struct spi_cc13xx_cc26xx_config *config = dev->config;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (get_dev_config(dev)->base == DT_INST_REG_ADDR(0)) {
+		if (config->base == DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI0);
 		} else {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI1);
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		SSIDisable(get_dev_config(dev)->base);
+		SSIDisable(config->base);
 		/*
 		 * Release power dependency
 		 */
-		if (get_dev_config(dev)->base == DT_INST_REG_ADDR(0)) {
+		if (config->base == DT_INST_REG_ADDR(0)) {
 			Power_releaseDependency(PowerCC26XX_PERIPH_SSI0);
 		} else {
 			Power_releaseDependency(PowerCC26XX_PERIPH_SSI1);
@@ -290,21 +289,30 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #endif
 
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
-	DEVICE_DT_INST_DEFINE(n,						    \
+	PM_DEVICE_DT_INST_DEFINE(n, spi_cc13xx_cc26xx_pm_action);	    \
+									    \
+	DEVICE_DT_INST_DEFINE(n,					    \
 		spi_cc13xx_cc26xx_init_##n,				    \
-		spi_cc13xx_cc26xx_pm_control,				    \
+		PM_DEVICE_DT_INST_GET(n),				    \
 		&spi_cc13xx_cc26xx_data_##n, &spi_cc13xx_cc26xx_config_##n, \
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			    \
 		&spi_cc13xx_cc26xx_driver_api)
 
-#define SPI_CC13XX_CC26XX_INIT_FUNC(n)					    \
-	static int spi_cc13xx_cc26xx_init_##n(const struct device *dev)	    \
-	{								    \
-		SPI_CC13XX_CC26XX_POWER_SPI(n);				    \
-									    \
-		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);\
-									    \
-		return 0;						    \
+#define SPI_CC13XX_CC26XX_INIT_FUNC(n)						\
+	static int spi_cc13xx_cc26xx_init_##n(const struct device *dev)		\
+	{									\
+		struct spi_cc13xx_cc26xx_data *data = dev->data;		\
+		int err;							\
+		SPI_CC13XX_CC26XX_POWER_SPI(n);					\
+										\
+		err = spi_context_cs_configure_all(&data->ctx);			\
+		if (err < 0) {							\
+			return err;						\
+		}								\
+										\
+		spi_context_unlock_unconditionally(&data->ctx);			\
+										\
+		return 0;							\
 	}
 
 #define SPI_CC13XX_CC26XX_INIT(n)					\
@@ -322,10 +330,11 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 									\
 	static struct spi_cc13xx_cc26xx_data				\
 		spi_cc13xx_cc26xx_data_##n = {				\
-		SPI_CONTEXT_INIT_LOCK(spi_cc13xx_cc26xx_data_##n, ctx),	  \
-		SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_##n, ctx),	  \
-	};								  \
-									  \
+		SPI_CONTEXT_INIT_LOCK(spi_cc13xx_cc26xx_data_##n, ctx),	\
+		SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_##n, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
+	};								\
+									\
 	SPI_CC13XX_CC26XX_DEVICE_INIT(n);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_CC13XX_CC26XX_INIT)

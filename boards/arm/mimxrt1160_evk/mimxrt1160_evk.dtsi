@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2021, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio9 3 GPIO_ACTIVE_LOW>;
+			label = "User LED D6";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW7";
+			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&flexpwm1_pwm2 0>;
+		};
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&user_button {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&lpi2c5 {
+	status = "okay";
+
+	fxos8700@1f {
+		compatible = "nxp,fxos8700";
+		reg = <0x1f>;
+		label = "FXOS8700";
+
+		/* Two zero ohm resistors (R256 and R270) isolate sensor
+		 * interrupt gpios from the soc and are unpopulated by default.
+		 * Note that if you populate them, they conflict with camera and
+		 * ethernet PHY reset signals.
+		 */
+		int1-gpios = <&gpio11 14 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio11 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&flexpwm1_pwm2 {
+	status = "okay";
+};

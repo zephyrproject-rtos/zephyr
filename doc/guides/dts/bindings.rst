@@ -142,8 +142,9 @@ subdirectories of the following places:
 - any :ref:`module <modules>` that defines a ``dts_root`` in its
   :ref:`modules_build_settings`
 
-The build system will consider any YAML file in any of these, including
-in any subdirectories, when matching nodes to bindings.
+The build system will consider any YAML file in any of these, including in any
+subdirectories, when matching nodes to bindings. A file is considered YAML if
+its name ends with ``.yaml`` or ``.yml``.
 
 .. warning::
 
@@ -497,6 +498,8 @@ The tooling will report a warning if the devicetree includes the property that
 is flagged as deprecated. (This warning is upgraded to an error in the
 :ref:`twister_script` for upstream pull requests.)
 
+.. _dt-bindings-default:
+
 Default values for properties
 +++++++++++++++++++++++++++++
 
@@ -806,6 +809,9 @@ Because other property names are derived from the name of the property by
 removing the final ``s``, the property name must end in ``s``. An error is
 raised if it doesn't.
 
+An alternative is using a ``specifier-space`` property to indicate the base
+property name for ``*-names`` and ``*-cells``.
+
 ``*-gpios`` properties are special-cased so that e.g. ``foo-gpios`` resolves to
 ``#gpio-cells`` rather than ``#foo-gpio-cells``.
 
@@ -926,6 +932,121 @@ Finally, you can filter from a child binding like this:
        child-binding:
          property-allowlist:
            - child-prop-to-allow
+
+.. _dt-writing-bindings:
+
+Rules for mainline bindings
+***************************
+
+This section includes general rules for writing bindings that you want to
+submit to the mainline Zephyr Project. (You don't need to follow these rules
+for bindings you don't intend to contribute to the Zephyr Project, but it's a
+good idea.)
+
+Decisions made by the Zephyr devicetree maintainer override the contents of
+this section. If that happens, though, please let them know so they can update
+this page, or you can send a patch yourself.
+
+Check for existing bindings
+===========================
+
+Zephyr aims for devicetree :ref:`dt-source-compatibility`. Therefore, if there
+is an existing binding for your device in an authoritative location, you should
+try to replicate its properties when writing a Zephyr binding, and you must
+justify any Zephyr-specific divergences.
+
+In particular, this rule applies if:
+
+- There is an existing binding in the mainline Linux kernel. See
+  :file:`Documentation/devicetree/bindings` in `Linus's tree`_ for existing
+  bindings and the `Linux devicetree documentation`_ for more information.
+
+- Your hardware vendor provides an official binding outside of the Linux
+  kernel.
+
+.. _Linus's tree:
+   https://github.com/torvalds/linux/
+
+.. _Linux devicetree documentation:
+   https://www.kernel.org/doc/html/latest/devicetree/index.html
+
+General rules
+=============
+
+- Bindings which match a compatible must have file names based on the compatible.
+
+  - For example, a binding for compatible ``vnd,foo`` must be named ``vnd,foo.yaml``.
+  - If the binding is bus-specific, you can append the bus to the file name;
+    for example, if the binding YAML has ``on-bus: bar``, you may name the file
+    ``vnd,foo-bar.yaml``.
+
+- All recommendations in :ref:`dt-bindings-default` are requirements when
+  submitting the binding.
+
+  In particular, if you use the ``default:`` feature, you must justify the
+  value in the property's description.
+
+- There are two ways to write property ``description:`` strings that are always
+  OK.
+
+  If your description is short, it's fine to use this style:
+
+  .. code-block:: yaml
+
+     description: my short string
+
+  If your description is long or spans multiple lines, you must use this
+  style:
+
+  .. code-block:: yaml
+
+     description: |
+       My very long string
+       goes here.
+       Look at all these lines!
+
+  This ``|`` style prevents YAML parsers from removing the newlines in
+  multi-line descriptions. This in turn makes these long strings
+  display propertly in the :ref:`devicetree_binding_index`.
+
+  Do not use any other style for long or multi-line strings.
+
+Vendor prefixes
+===============
+
+The following general rules apply to vendor prefixes in :ref:`compatible
+<dt-important-props>` properties.
+
+- If your device is manufactured by a specific vendor, then its compatible
+  should have a vendor prefix.
+
+  If your binding describes hardware with a well known vendor from the list in
+  :zephyr_file:`dts/bindings/vendor-prefixes.txt`, you must use that vendor
+  prefix.
+
+- If your device is not manufactured by a specific hardware vendor, do **not**
+  invent a vendor prefix. Vendor prefixes are not mandatory parts of compatible
+  properties, and compatibles should not include them unless they refer to an
+  actual vendor. There are some exceptions to this rule, but the practice is
+  strongly discouraged.
+
+- Do not submit additions to Zephyr's :file:`dts/bindings/vendor-prefixes.txt`
+  file unless you also include users of the new prefix. This means at least a
+  binding and a devicetree using the vendor prefix, and should ideally include
+  a device driver handling that compatible.
+
+  For custom bindings, you can add a custom
+  :file:`dts/bindings/vendor-prefixes.txt` file to any directory in your
+  :ref:`DTS_ROOT <dts_root>`. The devicetree tooling will respect these
+  prefixes, and will not generate warnings or errors if you use them in your
+  own bindings or devicetrees.
+
+- We sometimes synchronize Zephyr's vendor-prefixes.txt file with the Linux
+  kernel's equivalent file; this process is exempt from the previous rule.
+
+- If your binding is describing an abstract class of hardware with Zephyr
+  specific drivers handling the nodes, it's usually best to use ``zephyr`` as
+  the vendor prefix. See :ref:`dt_vendor_zephyr` for examples.
 
 .. _dt-inferred-bindings:
 .. _dt-zephyr-user:

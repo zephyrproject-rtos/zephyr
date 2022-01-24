@@ -6,10 +6,10 @@
 
 /**
  * @file
- * @brief New thread creation for ARM Cortex-M and Cortex-R
+ * @brief New thread creation for ARM Cortex-A, Cortex-M and Cortex-R
  *
- * Core thread related primitives for the ARM Cortex-M and Cortex-R
- * processor architecture.
+ * Core thread related primitives for the ARM Cortex-A, Cortex-M and
+ * Cortex-R processor architecture.
  */
 
 #include <kernel.h>
@@ -266,6 +266,11 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
+
+#if defined(CONFIG_CPU_CORTEX_R)
+	_current->arch.priv_stack_end =
+		_current->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE;
+#endif
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (uint32_t)_current->stack_info.start,
@@ -557,7 +562,8 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 
 	"movs r1, #0\n\t"
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-			|| defined(CONFIG_ARMV7_R)
+	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_ARMV7_A)
 	"cpsie i\n\t"		/* __enable_irq() */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */

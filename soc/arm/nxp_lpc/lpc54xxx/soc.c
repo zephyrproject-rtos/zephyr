@@ -24,13 +24,13 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
+#endif
 
 /**
  *
  * @brief Initialize the system clock
- *
- * @return N/A
  *
  */
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
@@ -142,7 +142,9 @@ static const char core_m0[] = {
  * @brief Slave Init
  *
  * This routine boots the secondary core
- * @return N/A
+ *
+ * @retval 0 on success.
+ *
  */
 /* This function is also called at deep sleep resume. */
 int _slave_init(const struct device *arg)

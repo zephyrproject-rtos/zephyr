@@ -69,10 +69,16 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC                                 |
++-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -104,12 +110,24 @@ The MIMXRT1015 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_14 | LPI2C1_CLK      | I2C SCL                   |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B0_10 | LPSPI1_SCK      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_11 | LPSPI1_PCS0     | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_12 | LPSPI1_SDO      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_13 | LPSPI1_SDI      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_14 | ADC             | ADC1 Channel 1            |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_13 | ADC             | ADC1 Channel 13           |
++---------------+-----------------+---------------------------+
 
 System Clock
 ============
 
-The MIMXRT1015 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 500 MHz core clock.
+The MIMXRT1015 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========

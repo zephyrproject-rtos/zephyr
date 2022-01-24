@@ -71,6 +71,16 @@
 				ngpios = <8>;
 				nint-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_mcp230xx: mcp230xx@0 {
+				compatible = "microchip,mcp230xx";
+				label = "MCP230XX";
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+
 			test_i2c_fxl6408: fxl6408@43 {
 				status = "okay";
 				compatible = "fcs,fxl6408";
@@ -79,7 +89,74 @@
 				ngpios = <8>;
 				#gpio-cells = <2>;
 				gpio-controller;
-			    };
+			};
+
+			test_i2c_nct3807: nct3807@72 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "nuvoton,nct38xx-gpio";
+				reg = <0x72>;
+				label = "NCT3807_0";
+
+				gpio@0 {
+					compatible = "nuvoton,nct38xx-gpio-port";
+					reg = <0x0>;
+					label = "NCT3807_0_GPIO0";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					pin_mask = <0xff>;
+					pinmux_mask = <0xf7>;
+				};
+
+				gpio@1 {
+					compatible = "nuvoton,nct38xx-gpio-port";
+					reg = <0x1>;
+					label = "NCT3807_0_GPIO1";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					pin_mask = <0xff>;
+				};
+			};
+
+			test_i2c_nct3808_p1: nct3808_0_P1@71 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "nuvoton,nct38xx-gpio";
+				reg = <0x71>;
+				label = "NCT3808_0_P1";
+
+				gpio@0 {
+					compatible = "nuvoton,nct38xx-gpio-port";
+					reg = <0x0>;
+					label = "NCT3808_0_P1_GPIO0";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					pin_mask = <0xdc>;
+					pinmux_mask = <0xff>;
+				};
+			};
+
+			test_i2c_nct3808_p2: nct3808_0_P2@75 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "nuvoton,nct38xx-gpio";
+				reg = <0x75>;
+				label = "NCT3808_0_P2";
+
+				gpio@0 {
+					compatible = "nuvoton,nct38xx-gpio-port";
+					reg = <0x0>;
+					label = "NCT3808_0_P2_GPIO0";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					pin_mask = <0xdc>;
+					pinmux_mask = <0xff>;
+				};
+			};
 		};
 
 		test_spi: spi@33334444 {
@@ -92,11 +169,21 @@
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices at spi.dtsi */
-			cs-gpios = <&test_gpio 0 0>;
+			cs-gpios = <&test_gpio 0 0 &test_gpio 0 0>;
 
 			test_spi_mcp23s17: mcp23s17@0 {
 				compatible = "microchip,mcp23s17";
 				label = "GPIO_E0";
+				spi-max-frequency = <0>;
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+
+			test_spi_mcp23sxx: mcp23sxx@0 {
+				compatible = "microchip,mcp23sxx";
+				label = "GPIO_E1";
 				spi-max-frequency = <0>;
 				reg = <0x0>;
 				gpio-controller;

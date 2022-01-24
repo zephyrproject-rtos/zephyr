@@ -169,6 +169,11 @@ config USE_STM32_HAL_FLASH_RAMFUNC
 	  Enable STM32Cube Embedded Flash Memory RAM functions (FLASH_RAMFUNC)
 	  HAL module driver
 
+config USE_STM32_HAL_FMAC
+	bool
+	help
+	  Enable STM32Cube Filter Math Accelerator (FMAC) HAL module driver
+
 config USE_STM32_HAL_FMPI2C
 	bool
 	help
@@ -567,6 +572,11 @@ config USE_STM32_LL_EXTI
 	  Enable STM32Cube Extended interrupt and event controller (EXTI) LL
 	  module driver
 
+config USE_STM32_LL_FMAC
+	bool
+	help
+	  Enable STM32Cube Filter Math Accelerator (FMAC) LL module driver
+
 config USE_STM32_LL_FMC
 	bool
 	help
@@ -663,6 +673,12 @@ config USE_STM32_LL_TIM
 	bool
 	help
 	  Enable STM32Cube Timer (TIM) LL module driver
+
+config USE_STM32_LL_UCPD
+	bool
+	help
+	  Enable STM32Cube USB Power Delivery device interface
+	  (UCPD) LL module driver
 
 config USE_STM32_LL_USART
 	bool

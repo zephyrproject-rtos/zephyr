@@ -16,3 +16,17 @@ properties:
 
     clocks:
       required: true
+
+    health-test-magic:
+      type: int
+      required: false
+      description: |
+           Magic Number to be written to Health Test Configuration Register (HTCR)
+           prior to real configuration, if any.
+
+    health-test-config:
+      type: int
+      required: false
+      description: |
+           Heath Test Configuration, necessary to have proper RNG behavior,
+           when available.

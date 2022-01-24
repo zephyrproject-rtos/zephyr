@@ -79,13 +79,18 @@ config TEST_LOGGING_DEFAULTS
 	bool "Enable test case logging defaults"
 	depends on TEST
 	select LOG
-	imply LOG_MINIMAL
+	select LOG_DEFAULT_MINIMAL
 	default y
 	help
 	  Option which implements default policy of enabling logging in
 	  minimal mode for all test cases. For tests that need alternate
 	  logging configuration, or no logging at all, disable this
 	  in the project-level defconfig.
+
+config TEST_LOGGING_FLUSH_AFTER_TEST
+	bool "When enabled logs are flushed after each test case"
+	default y
+	depends on MULTITHREADING
 
 config TEST_ENABLE_USERSPACE
 	bool
@@ -149,7 +154,7 @@ config TEST_BUSY_SIM
 	bool "Enable busy simulator"
 	depends on TEST
 	select ENTROPY_GENERATOR
-	select RING_BUFFER
+	select RING_BUFFER if !XOSHIRO_RANDOM_GENERATOR
 	select COUNTER
 	help
 	  It simulates cpu load by using counter device to generate interrupts

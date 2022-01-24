@@ -143,7 +143,7 @@ struct bmp388_config {
 	const struct bmp388_io_ops *ops;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		struct spi_config spi_cfg;
+		struct spi_dt_spec spi_bus;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 		uint16_t bus_addr;
@@ -186,9 +186,6 @@ struct bmp388_data {
 	sensor_trigger_handler_t handler_drdy;
 #endif /* CONFIG_BMP388_TRIGGER */
 };
-
-#define DEV_DATA(dev) ((struct bmp388_data *)dev->data)
-#define DEV_CFG(dev)  ((const struct bmp388_config *)dev->config)
 
 int bmp388_trigger_mode_init(const struct device *dev);
 int bmp388_trigger_set(const struct device *dev,

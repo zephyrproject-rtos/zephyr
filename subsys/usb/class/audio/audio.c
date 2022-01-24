@@ -917,8 +917,7 @@ void usb_audio_register(const struct device *dev,
 }
 
 #define DEFINE_AUDIO_DEVICE(dev, i)					  \
-	USBD_CFG_DATA_DEFINE(primary, audio)				  \
-	struct usb_cfg_data dev##_audio_config_##i = {			  \
+	USBD_DEFINE_CFG_DATA(dev##_audio_config_##i) = {		  \
 		.usb_device_description	= NULL,				  \
 		.interface_config = audio_interface_config,		  \
 		.interface_descriptor = &dev##_desc_##i.std_ac_interface, \
@@ -940,7 +939,7 @@ void usb_audio_register(const struct device *dev,
 			    DUMMY_API)
 
 #define DEFINE_BUF_POOL(name, size) \
-	NET_BUF_POOL_FIXED_DEFINE(name, 5, size, net_buf_destroy)
+	NET_BUF_POOL_FIXED_DEFINE(name, 5, size, 4, net_buf_destroy)
 
 #define UNIDIR_DEVICE(dev, i, out_pool, in_size, it_type, ot_type, cb, addr) \
 	UTIL_EXPAND( \

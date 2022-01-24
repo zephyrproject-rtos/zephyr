@@ -52,6 +52,7 @@ static inline int _ticker_stop(uint8_t inst_idx, uint8_t u_id, uint8_t tic_id)
 }
 
 static void time_slot_callback_work(uint32_t ticks_at_expire,
+				    uint32_t ticks_drift,
 				    uint32_t remainder,
 				    uint16_t lazy, uint8_t force,
 				    void *context)
@@ -120,6 +121,7 @@ static void time_slot_delay(uint32_t ticks_at_expire, uint32_t ticks_delay,
 }
 
 static void time_slot_callback_abort(uint32_t ticks_at_expire,
+				     uint32_t ticks_drift,
 				     uint32_t remainder,
 				     uint16_t lazy, uint8_t force,
 				     void *context)
@@ -132,13 +134,14 @@ static void time_slot_callback_abort(uint32_t ticks_at_expire,
 }
 
 static void time_slot_callback_prepare(uint32_t ticks_at_expire,
+				       uint32_t ticks_drift,
 				       uint32_t remainder,
 				       uint16_t lazy, uint8_t force,
 				       void *context)
 {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
-	time_slot_callback_abort(ticks_at_expire, remainder, lazy, force,
-				 context);
+	time_slot_callback_abort(ticks_at_expire, ticks_drift, remainder, lazy,
+				 force, context);
 #else /* !CONFIG_BT_CTLR_LOW_LAT */
 	time_slot_delay(ticks_at_expire,
 			HAL_TICKER_US_TO_TICKS(FLASH_RADIO_ABORT_DELAY_US),

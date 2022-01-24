@@ -3,12 +3,16 @@
 #if defined(CONFIG_NETWORKING)
 #ifndef NETWORK_RAM_SECTIONS
 #define NETWORK_RAM_SECTIONS \
-	Z_ITERABLE_SECTION_RAM(net_if, 4) \
-	Z_ITERABLE_SECTION_RAM(net_if_dev, 4) \
-	Z_ITERABLE_SECTION_RAM(net_l2, 4) \
-	Z_ITERABLE_SECTION_RAM(eth_bridge, 4)
+	ITERABLE_SECTION_RAM(net_if, 4) \
+	ITERABLE_SECTION_RAM(net_if_dev, 4) \
+	ITERABLE_SECTION_RAM(net_l2, 4) \
+	ITERABLE_SECTION_RAM(eth_bridge, 4)
 #endif
 #endif /* NETWORKING */
+
+#if defined(CONFIG_BT_MESH)
+	ITERABLE_SECTION_RAM(bt_mesh_ext_adv, 4)
+#endif
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
@@ -22,6 +26,15 @@
 		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
+
+        SECTION_DATA_PROLOGUE(device_states,,)
+        {
+		/* Device states used by the device objects. */
+                __device_states_start = .;
+		KEEP(*(".z_devstate"));
+		KEEP(*(".z_devstate.*"));
+                __device_states_end = .;
+        } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if CONFIG_PM_DEVICE
 	SECTION_DATA_PROLOGUE(pm_device_slots, (NOLOAD),)
@@ -53,7 +66,7 @@
 		__log_dynamic_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	Z_ITERABLE_SECTION_RAM(_static_thread_data, 4)
+	ITERABLE_SECTION_RAM(_static_thread_data, 4)
 
 #ifdef CONFIG_USERSPACE
 	/* All kernel objects within are assumed to be either completely
@@ -66,18 +79,19 @@
 	_static_kernel_objects_begin = .;
 #endif /* CONFIG_USERSPACE */
 
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_timer, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_mem_slab, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_mem_pool, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_heap, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_mutex, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_stack, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_msgq, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_mbox, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_pipe, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_sem, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_queue, 4)
-	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_timer, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mem_slab, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mem_pool, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_heap, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mutex, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_stack, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_msgq, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_mbox, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_pipe, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_sem, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_event, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_queue, 4)
+	ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, 4)
 
 	SECTION_DATA_PROLOGUE(_net_buf_pool_area,,SUBALIGN(4))
 	{
@@ -108,13 +122,7 @@
 		__usb_descriptor_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(usb_data,,SUBALIGN(1))
-	{
-		__usb_data_start = .;
-		*(".usb.data")
-		KEEP(*(SORT_BY_NAME(".usb.data*")))
-		__usb_data_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	ITERABLE_SECTION_RAM(usb_cfg_data, 4)
 #endif /* CONFIG_USB_DEVICE_STACK */
 
 #if defined(CONFIG_USB_DEVICE_BOS)
@@ -130,3 +138,11 @@
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
+
+#if defined(CONFIG_ZTEST)
+	ITERABLE_SECTION_RAM(ztest_suite_node, 4)
+#if defined(CONFIG_ZTEST_NEW_API)
+	ITERABLE_SECTION_RAM(ztest_unit_test, 4)
+	ITERABLE_SECTION_RAM(ztest_test_rule, 4)
+#endif /* CONFIG_ZTEST_NEW_API */
+#endif /* CONFIG_ZTEST */

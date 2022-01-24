@@ -144,6 +144,10 @@
 			DT_ATMEL_PIN(tc3, tiob9, e, 1, b);
 			DT_ATMEL_PIN(tc3, tiob10, e, 4, b);
 			DT_ATMEL_PIN(tc3, tiob11, d, 22, c);
+			DT_ATMEL_PIN(can0, rx0, b, 3, a);
+			DT_ATMEL_PIN(can0, tx0, b, 2, a);
+			DT_ATMEL_PIN(can1, rx1, c, 12, c);
+			DT_ATMEL_PIN(can1, tx1, c, 14, c);
 		};
 	};
 };

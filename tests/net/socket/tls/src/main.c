@@ -24,7 +24,6 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define MAX_CONNS 5
 
 #define TCP_TEARDOWN_TIMEOUT K_SECONDS(1)
-#define THREAD_SLEEP 50 /* ms */
 
 static const unsigned char psk[] = {
 	0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -72,13 +71,15 @@ static void test_listen(int sock)
 
 static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
+	k_yield();
+
 	zassert_equal(connect(sock, addr, addrlen),
 		      0,
 		      "connect failed");
 
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 		/* Let the connection proceed */
-		k_msleep(THREAD_SLEEP);
+		k_yield();
 	}
 }
 
@@ -227,7 +228,7 @@ void test_v4_msg_waitall(void)
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 	struct timeval timeo_optval = {
 		.tv_sec = 0,
-		.tv_usec = 200000,
+		.tv_usec = 500000,
 	};
 
 	prepare_sock_tls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
@@ -305,7 +306,7 @@ void test_v6_msg_waitall(void)
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 	struct timeval timeo_optval = {
 		.tv_sec = 0,
-		.tv_usec = 200000,
+		.tv_usec = 500000,
 	};
 
 	prepare_sock_tls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,

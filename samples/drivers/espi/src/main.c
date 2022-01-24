@@ -219,7 +219,7 @@ int spi_saf_init(void)
 
 	spi_cfg.frequency = SAF_TEST_FREQ_HZ;
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
-			    | SPI_WORD_SET(8) | SPI_LINES_SINGLE;
+			    | SPI_WORD_SET(8);
 
 	/*
 	 * Use SPI master mode and inform driver the SPI controller hardware

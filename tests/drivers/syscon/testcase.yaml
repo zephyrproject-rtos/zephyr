@@ -1,0 +1,8 @@
+# Copyright 2021 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.syscon:
+    tags: drivers syscon
+    harness: ztest
+    platform_allow: qemu_cortex_a53

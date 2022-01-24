@@ -3,6 +3,27 @@
 West Release Notes
 ##################
 
+v0.12.0
+*******
+
+New features:
+
+- West now works on the `MSYS2 <https://www.msys2.org/>`_ platform.
+
+- West manifest files can now contain arbitrary user data associated with each
+  project. See :ref:`west-project-userdata` for details.
+
+Bug fixes:
+
+- The ``west list`` command's ``{sha}`` format key has been fixed for
+  the manifest repository; it now prints ``N/A`` ("not applicable")
+  as expected.
+
+:ref:`API <west-apis>` changes:
+
+- The ``west.manifest.Project.userdata`` attribute was added to support
+  project user data.
+
 v0.11.1
 *******
 
@@ -14,7 +35,7 @@ New features:
 Bug fixes:
 
 - The manifest file parser was incorrectly allowing project names which contain
-  the path separator characters ``/`` and ``\\``. These invalid characters are
+  the path separator characters ``/`` and ``\``. These invalid characters are
   now rejected.
 
   Note: if you need to place a project within a subdirectory of the workspace
@@ -30,7 +51,7 @@ Bug fixes:
 - The :envvar:`WEST_CONFIG_LOCAL` environment variable now correctly
   overrides the default location, :file:`<workspace topdir>/.west/config`.
 
-- ``west update --fetch=smart`` (``smart`` is the default) now correclty skips
+- ``west update --fetch=smart`` (``smart`` is the default) now correctly skips
   fetches for project revisions which are `lightweight tags`_ (it already
   worked correctly for annotated tags; only lightweight tags were unnecessarily
   fetched).

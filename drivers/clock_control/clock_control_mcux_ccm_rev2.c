@@ -63,7 +63,16 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_DMA_MCUX_EDMA
 	case IMX_CCM_EDMA_CLK:
-		clock_root = kCLOCK_Root_Edma + instance;
+		clock_root = kCLOCK_Root_Bus;
+		break;
+	case IMX_CCM_EDMA_LPSR_CLK:
+		clock_root = kCLOCK_Root_Bus_Lpsr;
+		break;
+#endif
+
+#ifdef CONFIG_PWM_MCUX
+	case IMX_CCM_PWM_CLK:
+		clock_root = kCLOCK_Root_Bus;
 		break;
 #endif
 
@@ -76,6 +85,25 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #ifdef CONFIG_COUNTER_MCUX_GPT
 	case IMX_CCM_GPT_CLK:
 		clock_root = kCLOCK_Root_Gpt1 + instance;
+		break;
+#endif
+
+#ifdef CONFIG_I2S_MCUX_SAI
+	case IMX_CCM_SAI1_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_AudioPll)
+			/ CLOCK_GetRootClockDiv(kCLOCK_Root_Sai1);
+		break;
+	case IMX_CCM_SAI2_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_AudioPll)
+			/ CLOCK_GetRootClockDiv(kCLOCK_Root_Sai2);
+		break;
+	case IMX_CCM_SAI3_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_AudioPll);
+			/ CLOCK_GetRootClockDiv(kCLOCK_Root_Sai3);
+		break;
+	case IMX_CCM_SAI4_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_AudioPll);
+			/ CLOCK_GetRootClockDiv(kCLOCK_Root_Sai4);
 		break;
 #endif
 	default:
@@ -101,5 +129,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    &mcux_ccm_init,
 		    NULL,
 		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &mcux_ccm_driver_api);

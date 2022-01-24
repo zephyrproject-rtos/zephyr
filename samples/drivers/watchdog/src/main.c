@@ -43,6 +43,8 @@
 #define WDT_NODE DT_INST(0, microchip_xec_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc32xx_watchdog)
 #define WDT_NODE DT_INST(0, ti_cc32xx_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_wdog)
+#define WDT_NODE DT_INST(0, nxp_imx_wdog)
 #endif
 
 #ifndef WDT_ALLOW_CALLBACK

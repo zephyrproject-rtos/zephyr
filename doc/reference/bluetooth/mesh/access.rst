@@ -100,6 +100,16 @@ populate the :c:member:`bt_mesh_model_pub.update` callback. The
 message is published, allowing the model to change the payload to reflect its
 current state.
 
+By setting :c:member:`bt_mesh_model_pub.retr_update` to 1, the model can
+configure the :c:member:`bt_mesh_model_pub.update` callback to be triggered
+on every retransmission. This can, for example, be used by models that make
+use of a Delay parameter, which can be adjusted for every retransmission.
+The :c:func:`bt_mesh_model_pub_is_retransmission` function can be
+used to differentiate a first publication and a retransmission.
+The :c:macro:`BT_MESH_PUB_MSG_TOTAL` and :c:macro:`BT_MESH_PUB_MSG_NUM` macros
+can be used to return total number of transmissions and the retransmission
+number within one publication interval.
+
 Extended models
 ===============
 

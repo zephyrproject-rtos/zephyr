@@ -21,7 +21,7 @@ Building and Running
 Build this sample application with the following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/display/cfb
+   :zephyr-app: samples/subsys/display/cfb
    :board: reel_board
    :goals: build
    :compact:

@@ -622,9 +622,9 @@ static int cmd_vcs_client_vocs_offset_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (offset > UINT8_MAX || offset < -UINT8_MAX) {
+	if (offset > BT_VOCS_MAX_OFFSET || offset < BT_VOCS_MIN_OFFSET) {
 		shell_error(sh, "Offset shall be %d-%d, was %d",
-			    -UINT8_MAX, UINT8_MAX, offset);
+			    BT_VOCS_MIN_OFFSET, BT_VOCS_MAX_OFFSET, offset);
 		return -ENOEXEC;
 	}
 

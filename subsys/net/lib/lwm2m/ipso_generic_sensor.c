@@ -56,29 +56,29 @@ BUILD_ASSERT(SENSOR_TYPE_STR_MAX_SIZE >=
 #define RESOURCE_INSTANCE_COUNT (NUMBER_OF_OBJ_FIELDS - 1)
 
 /* resource state variables */
-static float32_value_t sensor_value[MAX_INSTANCE_COUNT];
+static double sensor_value[MAX_INSTANCE_COUNT];
 static char units[MAX_INSTANCE_COUNT][UNIT_STR_MAX_SIZE];
-static float32_value_t min_measured_value[MAX_INSTANCE_COUNT];
-static float32_value_t max_measured_value[MAX_INSTANCE_COUNT];
-static float32_value_t min_range_value[MAX_INSTANCE_COUNT];
-static float32_value_t max_range_value[MAX_INSTANCE_COUNT];
+static double min_measured_value[MAX_INSTANCE_COUNT];
+static double max_measured_value[MAX_INSTANCE_COUNT];
+static double min_range_value[MAX_INSTANCE_COUNT];
+static double max_range_value[MAX_INSTANCE_COUNT];
 static char app_type[MAX_INSTANCE_COUNT][APP_TYPE_STR_MAX_SIZE];
 static char sensor_type[MAX_INSTANCE_COUNT][SENSOR_TYPE_STR_MAX_SIZE];
 
 static struct lwm2m_engine_obj sensor;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(SENSOR_VALUE_RID, R, FLOAT32),
+	OBJ_FIELD_DATA(SENSOR_VALUE_RID, R, FLOAT),
 	OBJ_FIELD_DATA(SENSOR_UNITS_RID, R_OPT, STRING),
-	OBJ_FIELD_DATA(MIN_MEASURED_VALUE_RID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(MAX_MEASURED_VALUE_RID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(MIN_RANGE_VALUE_RID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(MAX_RANGE_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(MIN_MEASURED_VALUE_RID, R_OPT, FLOAT),
+	OBJ_FIELD_DATA(MAX_MEASURED_VALUE_RID, R_OPT, FLOAT),
+	OBJ_FIELD_DATA(MIN_RANGE_VALUE_RID, R_OPT, FLOAT),
+	OBJ_FIELD_DATA(MAX_RANGE_VALUE_RID, R_OPT, FLOAT),
 	OBJ_FIELD_EXECUTE_OPT(RESET_MIN_MAX_MEASURED_VALUES_RID),
 	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
 	OBJ_FIELD_DATA(SENSOR_TYPE_RID, R_OPT, STRING),
 #if defined(CONFIG_LWM2M_IPSO_GENERIC_SENSOR_VERSION_1_1)
 	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
-	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT),
 	OBJ_FIELD_DATA(MEASUREMENT_QUALITY_INDICATOR_RID, R_OPT, U8),
 	OBJ_FIELD_DATA(MEASUREMENT_QUALITY_LEVEL_RID, R_OPT, U8),
 #endif
@@ -91,15 +91,13 @@ static struct lwm2m_engine_res_inst res_inst[MAX_INSTANCE_COUNT]
 
 static void update_min_measured(uint16_t obj_inst_id, int index)
 {
-	min_measured_value[index].val1 = sensor_value[index].val1;
-	min_measured_value[index].val2 = sensor_value[index].val2;
+	min_measured_value[index] = sensor_value[index];
 	NOTIFY_OBSERVER(IPSO_OBJECT_ID, obj_inst_id, MIN_MEASURED_VALUE_RID);
 }
 
 static void update_max_measured(uint16_t obj_inst_id, int index)
 {
-	max_measured_value[index].val1 = sensor_value[index].val1;
-	max_measured_value[index].val2 = sensor_value[index].val2;
+	max_measured_value[index] = sensor_value[index];
 	NOTIFY_OBSERVER(IPSO_OBJECT_ID, obj_inst_id, MAX_MEASURED_VALUE_RID);
 }
 
@@ -126,35 +124,15 @@ static int sensor_value_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 				 size_t total_size)
 {
 	int i;
-	bool update_min = false;
-	bool update_max = false;
 
 	for (i = 0; i < MAX_INSTANCE_COUNT; i++) {
 		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
 			/* update min / max */
-			if (sensor_value[i].val1 < min_measured_value[i].val1) {
-				update_min = true;
-			} else if (sensor_value[i].val1 ==
-					   min_measured_value[i].val1 &&
-				   sensor_value[i].val2 <
-					   min_measured_value[i].val2) {
-				update_min = true;
-			}
-
-			if (sensor_value[i].val1 > max_measured_value[i].val1) {
-				update_max = true;
-			} else if (sensor_value[i].val1 ==
-					   max_measured_value[i].val1 &&
-				   sensor_value[i].val2 >
-					   max_measured_value[i].val2) {
-				update_max = true;
-			}
-
-			if (update_min) {
+			if (sensor_value[i] < min_measured_value[i]) {
 				update_min_measured(obj_inst_id, i);
 			}
 
-			if (update_max) {
+			if (sensor_value[i] > max_measured_value[i]) {
 				update_max_measured(obj_inst_id, i);
 			}
 		}
@@ -190,17 +168,12 @@ static struct lwm2m_engine_obj_inst *generic_sensor_create(uint16_t obj_inst_id)
 	}
 
 	/* Set default values */
-	sensor_value[index].val1 = 0;
-	sensor_value[index].val2 = 0;
+	sensor_value[index] = 0;
 	units[index][0] = '\0';
-	min_measured_value[index].val1 = INT32_MAX;
-	min_measured_value[index].val2 = 0;
-	max_measured_value[index].val1 = -INT32_MAX;
-	max_measured_value[index].val2 = 0;
-	min_range_value[index].val1 = 0;
-	min_range_value[index].val2 = 0;
-	max_range_value[index].val1 = 0;
-	max_range_value[index].val2 = 0;
+	min_measured_value[index] = INT32_MAX;
+	max_measured_value[index] = -INT32_MAX;
+	min_range_value[index] = 0;
+	max_range_value[index] = 0;
 	app_type[index][0] = '\0';
 	strncpy(sensor_type[index], CONFIG_LWM2M_IPSO_GENERIC_SENSOR_TYPE,
 		SENSOR_TYPE_STR_MAX_SIZE);

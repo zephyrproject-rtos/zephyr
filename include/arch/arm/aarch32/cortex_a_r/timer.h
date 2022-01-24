@@ -35,6 +35,8 @@ extern "C" {
 #define TIMER_COMP_ENABLE       BIT(1)
 #define TIMER_ENABLE            BIT(0)
 
+#define TIMER_ISR_EVENT_FLAG	BIT(0)
+
 DEVICE_MMIO_TOPLEVEL_STATIC(timer_regs, ARM_TIMER_NODE);
 
 #define TIMER_REG_GET(offs) (DEVICE_MMIO_TOPLEVEL_GET(timer_regs) + offs)
@@ -62,6 +64,30 @@ static ALWAYS_INLINE void arm_arch_timer_set_compare(uint64_t val)
 	ctrl |= TIMER_COMP_ENABLE;
 	sys_write32(ctrl, TIMER_REG_GET(TIMER_CTRL));
 }
+
+#if defined(CONFIG_ARM_ARCH_TIMER_ERRATUM_740657)
+
+/*
+ * R/W access to the event flag register is required for the timer errata
+ * 740657 workaround -> comp. ISR implementation in arm_arch_timer.c.
+ * This functionality is not present in the aarch64 implementation of the
+ * ARM global timer access functions.
+ *
+ * comp. ARM Cortex-A9 processors Software Developers Errata Notice,
+ * ARM document ID032315.
+ */
+
+static ALWAYS_INLINE uint8_t arm_arch_timer_get_int_status(void)
+{
+	return (uint8_t)(sys_read32(TIMER_REG_GET(TIMER_ISR)) & TIMER_ISR_EVENT_FLAG);
+}
+
+static ALWAYS_INLINE void arm_arch_timer_clear_int_status(void)
+{
+	sys_write32(TIMER_ISR_EVENT_FLAG, TIMER_REG_GET(TIMER_ISR));
+}
+
+#endif /* CONFIG_ARM_ARCH_TIMER_ERRATUM_740657 */
 
 static ALWAYS_INLINE void arm_arch_timer_enable(bool enable)
 {

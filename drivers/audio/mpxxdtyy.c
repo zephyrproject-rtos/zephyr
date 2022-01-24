@@ -47,7 +47,7 @@ static uint8_t right_channel(uint8_t a, uint8_t b)
 
 uint16_t sw_filter_lib_init(const struct device *dev, struct dmic_cfg *cfg)
 {
-	struct mpxxdtyy_data *const data = DEV_DATA(dev);
+	struct mpxxdtyy_data *const data = dev->data;
 	TPDMFilter_InitStruct *pdm_filter = &data->pdm_filter[0];
 	uint16_t factor;
 	uint32_t audio_freq = cfg->streams->pcm_rate;
@@ -150,7 +150,7 @@ static const struct _dmic_ops mpxxdtyy_driver_api = {
 
 static int mpxxdtyy_initialize(const struct device *dev)
 {
-	struct mpxxdtyy_data *const data = DEV_DATA(dev);
+	struct mpxxdtyy_data *const data = dev->data;
 
 	data->comm_master = device_get_binding(DT_INST_BUS_LABEL(0));
 

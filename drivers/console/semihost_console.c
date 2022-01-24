@@ -6,7 +6,6 @@
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <kernel_arch_interface.h>
 
 extern void __stdout_hook_install(int (*fn)(int));
 
@@ -52,4 +51,4 @@ static int semihost_console_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(semihost_console_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(semihost_console_init, PRE_KERNEL_1, CONFIG_CONSOLE_INIT_PRIORITY);

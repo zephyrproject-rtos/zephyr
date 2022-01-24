@@ -60,6 +60,7 @@ config GSM_MUX_PENDING_CMD_MAX
 config GSM_MUX_MRU_DEFAULT_LEN
 	int "Default size of received user data (MRU)"
 	default 127 if MODEM_GSM_SIMCOM
+	default 127 if MODEM_GSM_QUECTEL
 	default 31
 	range 1 1509
 	depends on GSM_MUX

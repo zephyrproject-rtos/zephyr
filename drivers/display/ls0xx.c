@@ -340,5 +340,5 @@ static struct display_driver_api ls0xx_driver_api = {
 
 DEVICE_DT_INST_DEFINE(0, ls0xx_init, NULL,
 		      &ls0xx_driver, &ls0xx_config,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+		      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		      &ls0xx_driver_api);

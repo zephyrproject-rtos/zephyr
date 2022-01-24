@@ -43,4 +43,14 @@ config GIC_SINGLE_SECURITY_STATE
 	  Some ARM Cortex-family processors only supports single security
 	  state.
 
+config GIC_V3_ITS
+	bool "GIC v3 Interrupt Translation Service"
+	depends on GIC_V3
+	# ITS generates Non-secure Group 1 LPI interrupts, requiring EL1NS
+	select ARMV8_A_NS
+	select DYNAMIC_INTERRUPTS
+	help
+	  Support for the optional Interrupt Translation Service used to translate
+	  hardware interrupt from PCIe MSI messages for example.
+
 endif # CPU_CORTEX

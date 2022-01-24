@@ -14,6 +14,3 @@ common:
 tests:
   sample.basic.helloworld:
     tags: introduction
-  sample.basic.helloworld.uefi:
-    platform_allow: qemu_x86_64
-    extra_args: CONF_FILE=prj_uefi.conf

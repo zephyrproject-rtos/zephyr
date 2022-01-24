@@ -52,8 +52,6 @@
 
 		can1: can@40006400 {
 			compatible = "st,stm32-can";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
@@ -69,8 +67,6 @@
 
 		can2: can@40006800 {
 			compatible = "st,stm32-can";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0x40006800 0x400>;
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
@@ -108,6 +104,7 @@
 			reg = <0x40024000 DT_SIZE_K(4)>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 			label = "BACKUP_SRAM";
+			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
 

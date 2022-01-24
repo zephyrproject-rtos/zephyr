@@ -199,7 +199,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_addr_cmp(&NET_IPV6_HDR(pkt)->dst,
+		if (net_ipv6_addr_cmp((struct in6_addr *)NET_IPV6_HDR(pkt)->dst,
 				      net_ipv6_unspecified_address())) {
 			NET_DBG("IPv6 dst address missing");
 			return -EADDRNOTAVAIL;
@@ -208,17 +208,19 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_ipv6_is_addr_loopback(&NET_IPV6_HDR(pkt)->dst) ||
-		    net_ipv6_is_my_addr(&NET_IPV6_HDR(pkt)->dst)) {
+		if (net_ipv6_is_addr_loopback(
+				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst) ||
+		    net_ipv6_is_my_addr(
+				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
 			struct in6_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
 			 */
-			net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
-			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-					&NET_IPV6_HDR(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
+			net_ipv6_addr_copy_raw((uint8_t *)&addr, NET_IPV6_HDR(pkt)->src);
+			net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
+					       NET_IPV6_HDR(pkt)->dst);
+			net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
 
 			return 1;
 		}
@@ -229,7 +231,8 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		 * in local host, so this is similar as how ::1 unicast
 		 * addresses are handled. See RFC 3513 ch 2.7 for details.
 		 */
-		if (net_ipv6_is_addr_mcast_iface(&NET_IPV6_HDR(pkt)->dst)) {
+		if (net_ipv6_is_addr_mcast_iface(
+				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
 			NET_DBG("IPv6 interface scope mcast dst address");
 			return 1;
 		}
@@ -237,7 +240,8 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* The source check must be done after the destination check
 		 * as having src ::1 is perfectly ok if dst is ::1 too.
 		 */
-		if (net_ipv6_is_addr_loopback(&NET_IPV6_HDR(pkt)->src)) {
+		if (net_ipv6_is_addr_loopback(
+				(struct in6_addr *)NET_IPV6_HDR(pkt)->src)) {
 			NET_DBG("IPv6 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
@@ -246,7 +250,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->dst,
+		if (net_ipv4_addr_cmp((struct in_addr *)NET_IPV4_HDR(pkt)->dst,
 				      net_ipv4_unspecified_address())) {
 			NET_DBG("IPv4 dst address missing");
 			return -EADDRNOTAVAIL;
@@ -255,19 +259,19 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_ipv4_is_addr_loopback(&NET_IPV4_HDR(pkt)->dst) ||
+		if (net_ipv4_is_addr_loopback((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
 		    (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     &NET_IPV4_HDR(pkt)->dst) == false &&
-		     net_ipv4_is_my_addr(&NET_IPV4_HDR(pkt)->dst))) {
+				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst) == false &&
+		     net_ipv4_is_my_addr((struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
 			struct in_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
 			 */
-			net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
-			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
-					&NET_IPV4_HDR(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
+			net_ipv4_addr_copy_raw((uint8_t *)&addr, NET_IPV4_HDR(pkt)->src);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->src,
+					       NET_IPV4_HDR(pkt)->dst);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->dst, (uint8_t *)&addr);
 
 			return 1;
 		}
@@ -276,7 +280,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		 * as having src 127.0.0.0/8 is perfectly ok if dst is in
 		 * localhost subnet too.
 		 */
-		if (net_ipv4_is_addr_loopback(&NET_IPV4_HDR(pkt)->src)) {
+		if (net_ipv4_is_addr_loopback((struct in_addr *)NET_IPV4_HDR(pkt)->src)) {
 			NET_DBG("IPv4 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
@@ -422,7 +426,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 
 	net_pkt_set_iface(pkt, iface);
 
-	net_queue_rx(iface, pkt);
+	if (!net_pkt_filter_recv_ok(pkt)) {
+		/* silently drop the packet */
+		net_pkt_unref(pkt);
+	} else {
+		net_queue_rx(iface, pkt);
+	}
 
 	return 0;
 }

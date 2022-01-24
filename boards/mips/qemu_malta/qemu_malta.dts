@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2020 Antony Pavlov <antonynpavlov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "skeleton.dtsi"
+
+/ {
+	model = "Qemu MIPS Malta";
+	compatible = "qemu,malta";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "mti,mips24Kc";
+			reg = <0>;
+
+			cpu_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "mti,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	sram0: memory@80200000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x80200000 0x100000>;
+	};
+
+	uart2: serial@bf000900 {
+		compatible = "ns16550";
+		reg = <0xbf000900 0x40>;
+		reg-shift = <3>;
+		interrupt-parent = <&cpu_intc>;
+		interrupts = <4>;
+		/* no matter for emulated port */
+		clock-frequency = <1843200>;
+		current-speed = <115200>;
+		label = "UART_2";
+		status = "okay";
+	};
+};

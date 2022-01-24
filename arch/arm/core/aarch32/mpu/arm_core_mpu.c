@@ -82,8 +82,8 @@ static const struct z_arm_mpu_partition static_regions[] = {
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 		{
 		/* Special RAM area for program text */
-		.start = (uint32_t)&_ramfunc_ram_start,
-		.size = (uint32_t)&_ramfunc_ram_size,
+		.start = (uint32_t)&__ramfunc_start,
+		.size = (uint32_t)&__ramfunc_size,
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
 		},
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
@@ -278,7 +278,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 		__ASSERT((uintptr_t)&z_priv_stacks_ram_start <= guard_start,
 		"Guard start: (0x%lx) below privilege stacks boundary: (%p)",
-		guard_start, &z_priv_stacks_ram_start);
+		guard_start, z_priv_stacks_ram_start);
 	} else
 #endif /* CONFIG_USERSPACE */
 	{

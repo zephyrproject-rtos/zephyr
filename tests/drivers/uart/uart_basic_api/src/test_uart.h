@@ -18,8 +18,6 @@
 #include <drivers/uart.h>
 #include <ztest.h>
 
-#define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
-
 void test_uart_configure(void);
 void test_uart_config_get(void);
 void test_uart_poll_out(void);

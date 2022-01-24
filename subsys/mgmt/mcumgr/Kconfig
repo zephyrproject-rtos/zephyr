@@ -30,6 +30,14 @@ config MGMT_CBORATTR_MAX_SIZE
         help
           The maximum size of a CBOR attribute during decoding
 
+config MGMT_CBORATTR_FLOAT_SUPPORT
+	bool "Enable support for float"
+	help
+	  The option enables float processing within CBOR attributes.
+	  If your code requires processing of float numbers by CBOR,
+	  the option needs to be enabled.
+	  Disabling the option slightly reduces code footprint.
+
 menu "Command Handlers"
 menuconfig MCUMGR_CMD_FS_MGMT
 	bool "Enable mcumgr handlers for file management (insecure)"
@@ -156,6 +164,17 @@ config IMG_MGMT_UL_CHUNK_SIZE
 	  this size gets allocated on the stack during handling of a image upload
 	  command.
 
+config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
+	int "Number of supported images"
+	default UPDATEABLE_IMAGE_NUMBER
+	range 1 2
+	help
+	  Sets how many application images are supported (pairs of secondary and primary slots).
+	  Setting this to 2 requires MCUMGR_BUF_SIZE to be at least 512b.
+	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
+	  needs to be set to the same value; this is due to the fact that the mcumgr uses
+	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
+	  by that library.
 
 config IMG_MGMT_VERBOSE_ERR
 	bool "Verbose logging when uploading a new image"
@@ -168,6 +187,18 @@ config IMG_MGMT_DUMMY_HDR
 	  Returns dummy image header data for imgr functions,
 	  useful when there are no images present, Eg: unit tests.
 
+config IMG_MGMT_DIRECT_IMAGE_UPLOAD
+	bool "Allow direct image upload"
+	help
+	  Enables directly uploading image to selected image partition.
+	  This changes how "image" is understood by mcumgr: normally the mcumgr allows to upload
+	  to first slot of the only image it knows, where image is understood as two slots
+	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
+	  target for upload, and more than two may be used (4 at this time).
+	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
+	  behaviour is, when image is not selected, to upload to image that represents secndary
+	  slot in normal operation.
+
 config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	bool "Reject Direct-XIP applications with mismatched address"
 	help
@@ -177,6 +208,14 @@ config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	  Direct-XIP address.
 	  The base address can be set, to an image binary header, with imgtool,
 	  using the --rom-fixed command line option.
+
+config IMG_MGMT_FRUGAL_LIST
+	bool "Omit zero, empty or false values from status list"
+	help
+	  The status list send back from the device will only be filled with data that is non-zero,
+	  non-empty or true.  This option slightly reduces number of bytes transferred back from
+	  a device but requires support in client software, which has to default omitted values.
+	  Works correctly with mcumgr-cli.
 
 endif
 
@@ -198,7 +237,77 @@ config OS_MGMT_RESET_MS
 
 config OS_MGMT_TASKSTAT
 	bool "Support for taskstat command"
+	depends on THREAD_MONITOR
+
+if OS_MGMT_TASKSTAT
+
+config OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
+	bool "Send only data gathered by Zephyr"
 	default y
+	help
+	  Response will not include fields the Zephyr does not collect statistic for.
+	  Enable this if your client software is able to process "taskstat" response
+	  that would be missing "runtime", "cswcnt", "last_checkin" and "next_checkin"
+	  map entries for each listed task.
+	  Enabling this option will slightly reduce code size.
+
+choice OS_MGMT_TASKSTAT_THREAD_NAME_CHOICE
+	prompt "Characteristic used as thread name in taskstat"
+	default OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME if THREAD_NAME
+	default OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+	help
+	  Select what will serve as thread name in "taskstat" response.
+	  By default taskstat responses use thread priority, when THREAD_NAME is disabled,
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
+		bool "Thread name"
+		depends on THREAD_NAME
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_IDX_FOR_NAME
+		bool "Thread index"
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+		bool "Thread priority"
+
+endchoice
+
+config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
+	int "Length of thread name to return in response"
+	default THREAD_MAX_NAME_LEN if THREAD_NAME
+	default 5 if !THREAD_NAME
+	range 3 THREAD_MAX_NAME_LEN if THREAD_NAME
+	range 3 6 if !THREAD_NAME
+	help
+	  The length, including terminating 0, of the string that is sent in response
+	  to taskstat command, as a thread name.
+	  When THREAD_NAME is enabled then this defaults to THREAD_MAX_NAME_LEN.
+	  When THREAD_NAME is disabled the name is generated from thread priority,
+	  signed integer, and this number regulates how many digits will be used;
+	  in such case this value should also take into account possible '-'
+	  sign.
+
+config OS_MGMT_TASKSTAT_SIGNED_PRIORITY
+	bool "Enable signed priorities"
+	help
+	  Zephyr uses int8_t as thread priorities, but in taskstat response it encodes
+	  them as unsigned.  Enabling this option will use signed int for priorities in
+	  responses, which is more natural for Zephyr.
+	  Enable this option only if your client software is able to properly decode
+	  and accept signed integers as priorities.
+
+config OS_MGMT_TASKSTAT_STACK_INFO
+	bool "Include stack info in taskstat responses"
+	depends on THREAD_STACK_INFO
+	help
+	  Enabling this option adds stack information into "taskstat" command
+	  responses, this is default when THREAD_STACK_INFO is selected.
+	  Disable this option only when your client application is able to
+	  process "taskstat" response without the "stksiz" and "stkuse" fields.
+	  It is worth disabling this option when THREAD_STACK_INFO is disabled,
+	  as it will prevent sending zeroed stack information just to fill
+	  all the fields in "taskstat" responses, and it will slightly reduce code size.
+
+endif
 
 config OS_MGMT_ECHO
 	bool "Support for echo command"
@@ -251,15 +360,63 @@ config MCUMGR_SMP_BT
 	help
 	  Enables handling of SMP commands received over Bluetooth.
 
+if MCUMGR_SMP_BT
+
 config MCUMGR_SMP_BT_AUTHEN
 	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
-	depends on MCUMGR_SMP_BT
 	select BT_SMP
 	default y
 	help
 	  Enables encrypted and authenticated connection requirement to
 	  Bluetooth SMP transport.
 
+config MCUMGR_SMP_BT_LATENCY_CONTROL
+	bool "Request low latency connection when handling SMP commands"
+	depends on SYSTEM_WORKQUEUE_PRIORITY < 0
+	help
+	  Enables support for requesting low latency connection parameter when
+	  SMP commands are handled. This option allows to speed up the command
+	  exchange process.
+	  Its recommended to enable this if SMP is used for DFU.
+
+config MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY
+	int "Default value for connection latency"
+	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
+	default BT_PERIPHERAL_PREF_LATENCY if BT_GAP_PERIPHERAL_PREF_PARAMS
+	default 99
+	range 0 499
+	help
+	  The value is a default connection latency that is used when restoring
+	  from low latency mode.
+
+config MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_TIME
+	int "Connection latency restore time in milliseconds"
+	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
+	default 5000
+	range 1 65535
+	help
+	  The value is a time after which connection latency is restored
+	  to default value
+	  (:kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY`). Latency
+	  restoration time could take up to twice as long as specified time.
+	  This is because of limiting CPU time needed to support this feature.
+	  The implementation periodically checks if the low latency is still
+	  needed every :kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_TIME`.
+	  The default latency is restored during check only if there was no SMP
+	  command exchanged in period before the check
+
+config MCUMGR_SMP_BT_LATENCY_CONTROL_RESTORE_RETRY_TIME
+	int "Connection latency restore retry time in milliseconds"
+	depends on MCUMGR_SMP_BT_LATENCY_CONTROL
+	default 1000
+	range 1 5000
+	help
+	  In case connection latency restoration fails due to an error, this
+	  option specifies the time after retry to set the default latency
+	  (:kconfig:`MCUMGR_SMP_BT_LATENCY_CONTROL_DEFAULT_LATENCY`) would be
+	  executed.
+
+endif # MCUMGR_SMP_BT
 
 config MCUMGR_SMP_SHELL
 	bool "Shell mcumgr SMP transport"
@@ -297,6 +454,33 @@ config MCUMGR_SMP_UART
 	  lightweight alternative to MCUMGR_SMP_SHELL.  It allows mcumgr
 	  commands to be received over UART without requiring an additional
 	  thread.
+
+if UART_ASYNC_API && MCUMGR_SMP_UART
+
+menuconfig MCUMGR_SMP_UART_ASYNC
+	bool "Use async UART API when available"
+	help
+	  The option enables use of UART async API when available for selected mcumgr uart port.
+
+if MCUMGR_SMP_UART_ASYNC
+config MCUMGR_SMP_UART_ASYNC_BUFS
+	int "Number of async RX UART buffers"
+	range 2 8
+	default 2
+	help
+	  The asynchronous UART API requires registering RX buffers for received data; when the RX
+	  reaches the end of a buffer, it will send event requesting next buffer, to be able to
+	  receive data without stopping due to running out of buffer space.  At least two buffers
+	  area required for smooth RX operation.
+
+config MCUMGR_SMP_UART_ASYNC_BUF_SIZE
+	int "Size of single async RX UART buffer"
+	default 64
+	help
+	  The size of single buffer for asynchronous RX.
+
+endif # MCUMGR_SMP_UART_ASYNC
+endif # UART_ASYNC_API
 
 config MCUMGR_SMP_UART_MTU
 	int "UART SMP MTU"
@@ -393,7 +577,4 @@ config MCUMGR_BUF_USER_DATA_SIZE
 	  Different mcumgr transports impose different requirements for this
 	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
 	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
-
-	  Note that CONFIG_NET_BUF_USER_DATA_SIZE must be at least as big as
-	  MCUMGR_BUF_USER_DATA_SIZE.
 endif # MCUMGR

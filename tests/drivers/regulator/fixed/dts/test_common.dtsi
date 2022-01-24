@@ -26,6 +26,6 @@
 #endif /* APP_DTS_REGULATOR_OFF_DELAYED */
 	};
 	resources {
-		compatible = "test,regulator-fixed";
+		compatible = "test-regulator-fixed";
 	};
 };

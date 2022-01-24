@@ -122,8 +122,6 @@
 	RV_OP_STOREREG temp, __z_arch_esf_t_mstatus_OFFSET(to_reg)	;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_ra_OFFSET(from_reg)		;\
 	RV_OP_STOREREG temp, __z_arch_esf_t_ra_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_gp_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_gp_OFFSET(to_reg)		;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_tp_OFFSET(from_reg)		;\
 	RV_OP_STOREREG temp, __z_arch_esf_t_tp_OFFSET(to_reg)		;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_t0_OFFSET(from_reg)		;\
@@ -174,12 +172,11 @@
 #define STORE_CALLEE_SAVED(reg) \
 	DO_CALLEE_SAVED(RV_OP_STOREREG, reg)
 
-#define LOAD_CALLER_SAVED(reg) \
+#define LOAD_CALLEE_SAVED(reg) \
 	DO_CALLEE_SAVED(RV_OP_LOADREG, reg)
 
 #define DO_CALLER_SAVED(op) \
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
-	op gp, __z_arch_esf_t_gp_OFFSET(sp)		;\
 	op tp, __z_arch_esf_t_tp_OFFSET(sp)		;\
 	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
 	op t1, __z_arch_esf_t_t1_OFFSET(sp)		;\
@@ -201,7 +198,7 @@
 	addi sp, sp, -__z_arch_esf_t_SIZEOF	;\
 	DO_CALLER_SAVED(RV_OP_STOREREG)		;
 
-#define LOAD_CALLEE_SAVED() \
+#define LOAD_CALLER_SAVED() \
 	DO_CALLER_SAVED(RV_OP_LOADREG)		;\
 	addi sp, sp, __z_arch_esf_t_SIZEOF	;
 
@@ -426,17 +423,26 @@ is_priv_sp:
 	addi a0, sp, 0
 
 #ifdef CONFIG_USERSPACE
-	la ra, no_reschedule_from_fault
+	/* Check if we are in user thread */
+	WAS_NOT_USER(t0, t1)
+	bnez t0, supervisor_fault
+
+user_fault:
+	/* Fault at user mode */
+	la ra, no_reschedule_user_fault
+
 	/* Switch to privilege stack */
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
 	RV_OP_LOADREG t0, _thread_offset_to_priv_stack_start(t1)
 	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Update user SP */
 	addi sp, t0, CONFIG_PRIVILEGED_STACK_SIZE
-#else
-	la ra, no_reschedule
-#endif /* CONFIG_USERSPACE */
+	tail _Fault
 
+supervisor_fault:
+#endif /* CONFIG_USERSPACE */
+	/* Fault at supervisor mode */
+	la ra, no_reschedule
 	tail _Fault
 
 is_kernel_syscall:
@@ -602,18 +608,18 @@ valid_syscall_id:
 
 return_from_syscall:
 	/*
-	 * Retrieve a0 (returned value) from privilege stack
+	 * Retrieve a0 (return value) from privilege stack
 	 * (or IRQ stack if stack guard is enabled).
 	 */
 	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
 
-no_reschedule_from_fault:
-	/* Restore User SP */
+no_reschedule_user_fault:
+	/* Restore user stack */
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
 	RV_OP_LOADREG sp, _thread_offset_to_user_sp(t1)
 
-	/* Update a0 (return value) */
+	/* Update a0 (return value) to user stack. */
 	RV_OP_STOREREG a0, __z_arch_esf_t_a0_OFFSET(sp)
 
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -814,6 +820,18 @@ skip_fp_move_irq:
 #endif /* CONFIG_USERSPACE */
 
 reschedule:
+	/*
+	 * Check if the current thread is the same as the thread on the ready Q. If
+	 * so, do not reschedule.
+	 * Note:
+	 *   Sometimes this code is execute back-to-back before the target thread
+	 *   has a chance to run. If this happens, the current thread and the
+	 *   target thread will be the same.
+	 */
+	la t0, _kernel
+	RV_OP_LOADREG t2, _kernel_offset_to_current(t0)
+	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t0)
+	beq t2, t3, no_reschedule_resched
 
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
 	call z_thread_mark_switched_out
@@ -883,7 +901,7 @@ skip_callee_saved_reg:
 	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)
 
 	/* Restore callee-saved registers of new thread */
-	LOAD_CALLER_SAVED(t1)
+	LOAD_CALLEE_SAVED(t1)
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Determine if we need to restore floating-point registers. */
@@ -907,8 +925,16 @@ skip_load_fp_callee_saved:
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	mv a0, t1	/* kernel current */
+
+	/* Save t0/t1 caller registers for function call */
+	addi sp, sp, -16
+	RV_OP_STOREREG t0, 0(sp)
+	RV_OP_STOREREG t1, 8(sp)
 	jal ra, z_riscv_configure_stack_guard
-#endif // CONFIG_PMP_STACK_GUARD
+	RV_OP_LOADREG t0, 0(sp)
+	RV_OP_LOADREG t1, 8(sp)
+	addi sp, sp, 16
+#endif /* CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_USERSPACE
 	/* t0 still reference to _kernel */
@@ -939,6 +965,15 @@ kernel_swap:
 	call z_thread_mark_switched_in
 #endif
 
+	/*
+	 * no_reschedule_resched is an another interrupt return path.
+	 *
+	 * When CONFIG_PMP_STACK_GUARD=y, reschedule & no_reschedule
+	 * code paths use different sp and only no_reschedule code path
+	 * needs to switch sp before interrupt return. Thus, we use
+	 * another interrupt return path for reschedule path.
+	 */
+no_reschedule_resched:
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Restore context at SOC level */
 	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
@@ -967,7 +1002,7 @@ skip_load_fp_caller_saved_resched:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Restore caller-saved registers from thread stack */
-	LOAD_CALLEE_SAVED()
+	LOAD_CALLER_SAVED()
 
 	/* Call SOC_ERET to exit ISR */
 	SOC_ERET
@@ -1032,7 +1067,7 @@ skip_load_fp_caller_saved:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Restore caller-saved registers from thread stack */
-	LOAD_CALLEE_SAVED()
+	LOAD_CALLER_SAVED()
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	csrrw sp, mscratch, sp

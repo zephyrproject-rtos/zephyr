@@ -44,6 +44,7 @@ static struct k_sem rel_sem;
  * if a test fails.
  */
 static struct k_work work;
+static struct k_work work1;
 static struct k_work_delayable dwork;
 
 /* Work synchronization objects must be in cache-coherent memory,
@@ -112,6 +113,9 @@ static inline int preempt_counter(void)
 {
 	return atomic_get(&preempt_ctr);
 }
+
+static K_THREAD_STACK_DEFINE(invalid_test_stack, STACK_SIZE);
+static struct k_work_q invalid_test_queue;
 
 static atomic_t system_ctr;
 static inline int system_counter(void)
@@ -230,7 +234,7 @@ static void test_queue_start(void)
 	struct k_work_queue_config cfg = {
 		.name = "wq.preempt",
 	};
-
+	k_work_queue_init(&preempt_queue);
 	zassert_equal(preempt_queue.flags, 0, NULL);
 	k_work_queue_start(&preempt_queue, preempt_stack, STACK_SIZE,
 			    PREEMPT_PRIORITY, &cfg);
@@ -242,6 +246,20 @@ static void test_queue_start(void)
 		zassert_true(tn != cfg.name, NULL);
 		zassert_true(tn != NULL, NULL);
 		zassert_equal(strcmp(tn, cfg.name), 0, NULL);
+	}
+
+	cfg.name = NULL;
+	zassert_equal(invalid_test_queue.flags, 0, NULL);
+	k_work_queue_start(&invalid_test_queue, invalid_test_stack, STACK_SIZE,
+			    PREEMPT_PRIORITY, &cfg);
+	zassert_equal(invalid_test_queue.flags, K_WORK_QUEUE_STARTED, NULL);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *tn = k_thread_name_get(&invalid_test_queue.thread);
+
+		zassert_true(tn != cfg.name, NULL);
+		zassert_true(tn != NULL, NULL);
+		zassert_equal(strcmp(tn, ""), 0, NULL);
 	}
 
 	cfg.name = "wq.coophi";
@@ -414,7 +432,8 @@ static void test_1cpu_reentrant_queue(void)
 	zassert_equal(coophi_counter(), 2, NULL);
 }
 
-/* Single CPU submit a work item and wait for flush before it gets started.
+/* Single CPU submit two work items and wait for flush in order
+ * before they get started.
  */
 static void test_1cpu_queued_flush(void)
 {
@@ -423,8 +442,11 @@ static void test_1cpu_queued_flush(void)
 	/* Reset state and use the delaying handler */
 	reset_counters();
 	k_work_init(&work, delay_handler);
+	k_work_init(&work1, delay_handler);
 
 	/* Submit to the cooperative queue. */
+	rc = k_work_submit_to_queue(&coophi_queue, &work1);
+	zassert_equal(rc, 1, NULL);
 	rc = k_work_submit_to_queue(&coophi_queue, &work);
 	zassert_equal(rc, 1, NULL);
 	zassert_equal(coophi_counter(), 0, NULL);
@@ -433,16 +455,20 @@ static void test_1cpu_queued_flush(void)
 	 * This should wait.
 	 */
 	zassert_equal(k_work_busy_get(&work), K_WORK_QUEUED, NULL);
+	zassert_equal(k_work_busy_get(&work1), K_WORK_QUEUED, NULL);
 	zassert_true(k_work_flush(&work, &work_sync), NULL);
+	zassert_false(k_work_flush(&work1, &work_sync), NULL);
 
 	/* Verify completion. */
-	zassert_equal(coophi_counter(), 1, NULL);
+	zassert_equal(coophi_counter(), 2, NULL);
 	zassert_true(!k_work_is_pending(&work), NULL);
+	zassert_true(!k_work_is_pending(&work1), NULL);
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);
 	zassert_equal(rc, 0, NULL);
 
 	/* After completion flush should be a no-op */
 	zassert_false(k_work_flush(&work, &work_sync), NULL);
+	zassert_false(k_work_flush(&work1, &work_sync), NULL);
 }
 
 /* Single CPU submit a work item and wait for flush after it's started.
@@ -541,6 +567,11 @@ static void test_1cpu_queued_cancel_sync(void)
 	reset_counters();
 	k_work_init(&work, rel_handler);
 
+	/* Cancel an unqueued work item should not affect the work
+	 * and return false.
+	 */
+	zassert_false(k_work_cancel_sync(&work, &work_sync), NULL);
+
 	/* Submit to the cooperative queue. */
 	rc = k_work_submit_to_queue(&coophi_queue, &work);
 	zassert_equal(rc, 1, NULL);
@@ -587,6 +618,11 @@ static void test_1cpu_delayed_cancel_sync(void)
 	/* Reset state and use the blocking handler */
 	reset_counters();
 	k_work_init_delayable(&dwork, rel_handler);
+
+	/* Cancel an unqueued delayable work item should not affect the work
+	 * and return false.
+	 */
+	zassert_false(k_work_cancel_delayable_sync(&dwork, &work_sync), NULL);
 
 	/* Submit to the cooperative queue. */
 	rc = k_work_schedule_for_queue(&coophi_queue, &dwork, K_MSEC(DELAY_MS));
@@ -907,6 +943,10 @@ static void test_1cpu_plugged_drain(void)
 	/* Unplug the queue */
 	rc = k_work_queue_unplug(&coophi_queue);
 	zassert_equal(rc, 0, NULL);
+
+	/* Unplug the unplugged queue should not affect the queue */
+	rc = k_work_queue_unplug(&coophi_queue);
+	zassert_equal(rc, -EALREADY, NULL);
 	zassert_equal(coophi_queue.flags,
 		      K_WORK_QUEUE_STARTED | K_WORK_QUEUE_NO_YIELD,
 		      NULL);

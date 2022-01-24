@@ -14,7 +14,7 @@ struct x86_memmap_exclusion x86_memmap_exclusions[] = {
 	{ "locore", _locore_start, _locore_end },
 #endif
 #ifdef CONFIG_XIP
-	{ "rom", _image_rom_start, _image_rom_end },
+	{ "rom", __rom_region_start, __rom_region_end },
 #endif
 	{ "ram", _image_ram_start, _image_ram_end },
 #ifdef CONFIG_USERSPACE

@@ -26,12 +26,20 @@ on:
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 0.11.1a1
+  WEST_VERSION: 0.12.0
+  # The latest CMake available directly with apt is 3.18, but we need >=3.20
+  # so we fetch that through pip.
+  CMAKE_VERSION: 3.20.5
+  DOXYGEN_VERSION: 1.9.2
 
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: doc-build-html-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
     - name: checkout
@@ -39,7 +47,11 @@ jobs:
 
     - name: install-pkgs
       run: |
-        sudo apt-get install -y ninja-build doxygen graphviz
+        sudo apt-get update
+        sudo apt-get install -y ninja-build graphviz libclang1-9 libclang-cpp9
+        wget --no-verbose https://www.doxygen.nl/files/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+        tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+        echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: cache-pip
       uses: actions/cache@v1
@@ -52,6 +64,7 @@ jobs:
         sudo pip3 install -U setuptools wheel pip
         pip3 install -r scripts/requirements-doc.txt
         pip3 install west==${WEST_VERSION}
+        pip3 install cmake==${CMAKE_VERSION}
 
     - name: west setup
       run: |
@@ -65,7 +78,13 @@ jobs:
           DOC_TAG="development"
         fi
 
-        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -j auto" make -C doc html
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          DOC_TARGET="html-fast"
+        else
+          DOC_TARGET="html"
+        fi
+
+        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -t publish" make -C doc ${DOC_TARGET}
 
     - name: compress-docs
       run: |
@@ -81,6 +100,10 @@ jobs:
     name: "Documentation Build (PDF)"
     runs-on: ubuntu-latest
     container: texlive/texlive:latest
+    timeout-minutes: 30
+    concurrency:
+      group: doc-build-pdf-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
     - name: checkout
@@ -89,7 +112,7 @@ jobs:
     - name: install-pkgs
       run: |
         apt-get update
-        apt-get install -y python3-pip cmake ninja-build doxygen graphviz librsvg2-bin
+        apt-get install -y python3-pip ninja-build doxygen graphviz librsvg2-bin
 
     - name: cache-pip
       uses: actions/cache@v1
@@ -102,6 +125,7 @@ jobs:
         pip3 install -U setuptools wheel pip
         pip3 install -r scripts/requirements-doc.txt
         pip3 install west==${WEST_VERSION}
+        pip3 install cmake==${CMAKE_VERSION}
 
     - name: west setup
       run: |

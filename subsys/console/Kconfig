@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CONSOLE_SUBSYS
-	bool "Console subsystem/support routines [EXPERIMENTAL]"
+	bool "Console subsystem/support routines"
 	help
 	  Console subsystem and helper functions
 

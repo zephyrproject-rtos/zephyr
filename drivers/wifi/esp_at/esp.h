@@ -59,7 +59,7 @@ extern "C" {
 #define ESP_PROTO_PASSIVE(proto) 0
 #endif /* CONFIG_WIFI_ESP_AT_PASSIVE_MODE */
 
-#define ESP_BUS DT_BUS(DT_DRV_INST(0))
+#define ESP_BUS DT_INST_BUS(0)
 
 #if DT_PROP(ESP_BUS, hw_flow_control) == 1
 #define _FLOW_CONTROL "3"
@@ -130,6 +130,28 @@ extern "C" {
 
 #define ESP_CMD_SET_IP(ip, gateway, mask) "AT+"_CIPSTA"=\"" \
 			  ip "\",\""  gateway  "\",\""  mask "\""
+
+#if defined(CONFIG_WIFI_ESP_AT_SCAN_PASSIVE)
+#define ESP_CMD_CWLAP "AT+CWLAP=,,,1,,"
+#else
+#define ESP_CMD_CWLAP "AT+CWLAP"
+#endif
+
+#if defined(CONFIG_WIFI_ESP_AT_SCAN_RESULT_RSSI_ORDERED)
+#define ESP_CMD_CWLAPOPT_ORDERED "1"
+#else
+#define ESP_CMD_CWLAPOPT_ORDERED "0"
+#endif
+
+#if defined(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)
+/* We need ecn,ssid,rssi,mac,channel */
+#define ESP_CMD_CWLAPOPT_MASK "31"
+#else
+/* no mac: only need ecn,ssid,rssi,channel */
+#define ESP_CMD_CWLAPOPT_MASK "23"
+#endif
+
+#define ESP_CMD_CWLAPOPT(sort, mask) "AT+CWLAPOPT=" sort "," mask
 
 extern struct esp_data esp_driver_data;
 

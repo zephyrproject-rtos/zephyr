@@ -328,7 +328,7 @@ static int counter_xec_init(const struct device *dev)
 			    &counter_xec_dev_data_##inst,		\
 			    &counter_xec_dev_config_##inst,		\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_COUNTER_INIT_PRIORITY,		\
 			    &counter_xec_api);				\
 									\
 	static void counter_xec_irq_config_##inst(void)			\

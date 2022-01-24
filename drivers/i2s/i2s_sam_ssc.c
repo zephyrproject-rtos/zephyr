@@ -99,10 +99,6 @@ struct i2s_sam_dev_data {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct i2s_sam_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2s_sam_dev_data *const)(dev)->data)
 
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
 
@@ -210,8 +206,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
 	const struct device *dev = get_dev_from_dma_channel(channel);
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream = &dev_data->rx;
 	int ret;
@@ -270,8 +266,8 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 			    uint32_t channel, int status)
 {
 	const struct device *dev = get_dev_from_dma_channel(channel);
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream = &dev_data->tx;
 	size_t mem_block_size;
@@ -534,7 +530,7 @@ static int bit_clock_set(Ssc *const ssc, uint32_t bit_clk_freq)
 static const struct i2s_config *i2s_sam_config_get(const struct device *dev,
 						   enum i2s_dir dir)
 {
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	struct stream *stream;
 
 	if (dir == I2S_DIR_RX) {
@@ -553,8 +549,8 @@ static const struct i2s_config *i2s_sam_config_get(const struct device *dev,
 static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 			     const struct i2s_config *i2s_cfg)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	uint8_t num_words = i2s_cfg->channels;
 	uint8_t word_size_bits = i2s_cfg->word_size;
@@ -788,8 +784,8 @@ static void tx_queue_drop(struct stream *stream)
 static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 			   enum i2s_trigger_cmd cmd)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	struct stream *stream;
 	unsigned int key;
@@ -878,7 +874,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 static int i2s_sam_read(const struct device *dev, void **mem_block,
 			size_t *size)
 {
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	int ret;
 
 	if (dev_data->rx.state == I2S_STATE_NOT_READY) {
@@ -906,7 +902,7 @@ static int i2s_sam_read(const struct device *dev, void **mem_block,
 static int i2s_sam_write(const struct device *dev, void *mem_block,
 			 size_t size)
 {
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	int ret;
 
 	if (dev_data->tx.state != I2S_STATE_RUNNING &&
@@ -929,8 +925,8 @@ static int i2s_sam_write(const struct device *dev, void *mem_block,
 
 static void i2s_sam_isr(const struct device *dev)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 	uint32_t isr_status;
 
@@ -955,8 +951,8 @@ static void i2s_sam_isr(const struct device *dev)
 
 static int i2s_sam_initialize(const struct device *dev)
 {
-	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
+	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
 
 	/* Configure interrupts */

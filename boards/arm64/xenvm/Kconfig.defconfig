@@ -6,6 +6,12 @@ if BOARD_XENVM
 config BUILD_OUTPUT_BIN
 	default y
 
+config XEN_INITIAL_DOMAIN
+	bool "Zephyr as Xen Domain 0"
+	default n
+	help
+	  Built binary will be used as Xen privileged domain.
+
 config BOARD
 	default "xenvm"
 

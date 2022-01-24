@@ -4,10 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	chosen {
+		zephyr,display = &sh1106;
+	};
+};
+
 &arduino_i2c {
 	status = "okay";
 
-	ssd1306@3c {
+	sh1106: ssd1306@3c {
 		compatible = "solomon,ssd1306fb";
 		reg = <0x3c>;
 		label = "SSD1306";

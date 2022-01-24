@@ -8,6 +8,7 @@ config BT_OTS
 	select BT_L2CAP_DYNAMIC_CHANNEL
 	select BT_GATT_DYNAMIC_DB
 	select BT_SMP
+	select EXPERIMENTAL
 	help
 	  Enable Object Transfer Service.
 
@@ -44,6 +45,14 @@ config BT_OTS_MAX_OBJ_CNT
 
 config BT_OTS_SECONDARY_SVC
 	bool "Register OTS as Secondary Service"
+
+config BT_OTS_OACP_CREATE_SUPPORT
+	bool "Support OACP Create Operation"
+	depends on BT_OTS_OACP_WRITE_SUPPORT
+	depends on BT_OTS_OBJ_NAME_WRITE_SUPPORT
+
+config BT_OTS_OACP_DELETE_SUPPORT
+	bool "Support OACP Delete Operation"
 
 config BT_OTS_OACP_READ_SUPPORT
 	bool "Support OACP Read Operation"

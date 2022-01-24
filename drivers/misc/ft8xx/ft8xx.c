@@ -96,7 +96,7 @@ static bool verify_chip(void)
 static int ft8xx_init(const struct device *dev)
 {
 	int ret;
-	struct ft8xx_config *config = (struct ft8xx_config *)dev->config;
+	const struct ft8xx_config *config = dev->config;
 
 	ret = ft8xx_drv_init();
 	if (ret < 0) {

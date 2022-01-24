@@ -4,9 +4,6 @@ CONFIG_SOC_STM32WLE5XX=y
 # enable uart driver
 CONFIG_SERIAL=y
 
-# enable pinmux
-CONFIG_PINMUX=y
-
 # enable GPIO
 CONFIG_GPIO=y
 
@@ -25,3 +22,6 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # Enable regulator for the power-rails
 CONFIG_REGULATOR=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

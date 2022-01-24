@@ -42,14 +42,6 @@ check_set_compiler_property(APPEND PROPERTY warning_base -Wpointer-arith)
 # not portable
 check_set_compiler_property(APPEND PROPERTY warning_base -Wexpansion-to-defined)
 
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.1.0")
-  set_compiler_property(APPEND PROPERTY warning_base
-                        # FIXME: Remove once #16587 is fixed
-                        -Wno-address-of-packed-member
-  )
-endif()
-
-
 # GCC options for warning levels 1, 2, 3, when using `-DW=[1|2|3]`
 set_compiler_property(PROPERTY warning_dw_1
                       -Waggregate-return
@@ -119,6 +111,8 @@ if (NOT CONFIG_NEWLIB_LIBC AND
   set_compiler_property(PROPERTY nostdinc -nostdinc)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
+
+set_compiler_property(TARGET compiler-cpp PROPERTY nostdincxx "-nostdinc++")
 
 # Required C++ flags when using gcc
 set_property(TARGET compiler-cpp PROPERTY required "-fcheck-new")

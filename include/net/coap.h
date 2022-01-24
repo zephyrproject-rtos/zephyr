@@ -73,6 +73,9 @@ enum coap_method {
 	COAP_METHOD_POST = 2,
 	COAP_METHOD_PUT = 3,
 	COAP_METHOD_DELETE = 4,
+	COAP_METHOD_FETCH = 5,
+	COAP_METHOD_PATCH = 6,
+	COAP_METHOD_IPATCH = 7,
 };
 
 #define COAP_REQUEST_MASK 0x07
@@ -135,10 +138,13 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_NOT_ALLOWED = coap_make_response_code(4, 5),
 	COAP_RESPONSE_CODE_NOT_ACCEPTABLE = coap_make_response_code(4, 6),
 	COAP_RESPONSE_CODE_INCOMPLETE = coap_make_response_code(4, 8),
+	COAP_RESPONSE_CODE_CONFLICT = coap_make_response_code(4, 9),
 	COAP_RESPONSE_CODE_PRECONDITION_FAILED = coap_make_response_code(4, 12),
 	COAP_RESPONSE_CODE_REQUEST_TOO_LARGE = coap_make_response_code(4, 13),
 	COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT =
 						coap_make_response_code(4, 15),
+	COAP_RESPONSE_CODE_UNPROCESSABLE_ENTITY = coap_make_response_code(4, 22),
+	COAP_RESPONSE_CODE_TOO_MANY_REQUESTS = coap_make_response_code(4, 29),
 	COAP_RESPONSE_CODE_INTERNAL_ERROR = coap_make_response_code(5, 0),
 	COAP_RESPONSE_CODE_NOT_IMPLEMENTED = coap_make_response_code(5, 1),
 	COAP_RESPONSE_CODE_BAD_GATEWAY = coap_make_response_code(5, 2),
@@ -164,6 +170,8 @@ enum coap_content_format {
 	COAP_CONTENT_FORMAT_APP_OCTET_STREAM = 42,
 	COAP_CONTENT_FORMAT_APP_EXI = 47,
 	COAP_CONTENT_FORMAT_APP_JSON = 50,
+	COAP_CONTENT_FORMAT_APP_JSON_PATCH_JSON = 51,
+	COAP_CONTENT_FORMAT_APP_MERGE_PATCH_JSON = 52,
 	COAP_CONTENT_FORMAT_APP_CBOR = 60,
 };
 
@@ -203,7 +211,7 @@ typedef void (*coap_notify_t)(struct coap_resource *resource,
  */
 struct coap_resource {
 	/** Which function to be called for each CoAP method */
-	coap_method_t get, post, put, del;
+	coap_method_t get, post, put, del, fetch, patch, ipatch;
 	coap_notify_t notify;
 	const char * const *path;
 	void *user_data;
@@ -638,6 +646,22 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
  */
 int coap_update_from_block(const struct coap_packet *cpkt,
 			   struct coap_block_context *ctx);
+
+/**
+ * @brief Updates @a ctx according to @a option set in @a cpkt
+ * so after this is called the current entry indicates the correct
+ * offset in the body of data being transferred.
+ *
+ * @param cpkt Packet in which to look for block-wise transfers options
+ * @param ctx Block context to be updated
+ * @param option Either COAP_OPTION_BLOCK1 or COAP_OPTION_BLOCK2
+ *
+ * @return The offset in the block-wise transfer, 0 if the transfer
+ * has finished or a negative value in case of an error.
+ */
+int coap_next_block_for_option(const struct coap_packet *cpkt,
+			       struct coap_block_context *ctx,
+			       enum coap_option_num option);
 
 /**
  * @brief Updates @a ctx so after this is called the current entry

@@ -10,4 +10,7 @@ source "soc/arm/st_stm32/stm32u5/Kconfig.defconfig.stm32u5*"
 config SOC_SERIES
 	default "stm32u5"
 
+config STM32_LPTIM_TIMER
+	default y if PM
+
 endif # SOC_SERIES_STM32U5X

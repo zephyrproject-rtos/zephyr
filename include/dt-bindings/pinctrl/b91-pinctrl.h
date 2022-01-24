@@ -39,15 +39,15 @@
 #define B91_PINMUX_GET_PIN(pinmux)        (pinmux & 0xFFFF)
 
 #define B91_PINMUX_DT_INST_GET_ELEM(idx, x, inst) \
-	DT_PROP_BY_PHANDLE_IDX(DT_DRV_INST(inst), pinctrl_##x, idx, pinmux),
+	DT_PROP(DT_INST_PINCTRL_BY_IDX(inst, x, idx), pinmux),
 
-#define B91_PINMUX_DT_INST_GET_ARRAY(inst, x)				 \
-	{ COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pinctrl_##x),		 \
-		      (UTIL_LISTIFY(DT_INST_PROP_LEN(inst, pinctrl_##x), \
-				    B91_PINMUX_DT_INST_GET_ELEM,	 \
-				    x,					 \
-				    inst)),				 \
-		      ())						 \
+#define B91_PINMUX_DT_INST_GET_ARRAY(inst, x)				\
+	{ COND_CODE_1(DT_INST_PINCTRL_HAS_IDX(inst, x),			\
+		(UTIL_LISTIFY(DT_INST_NUM_PINCTRLS_BY_IDX(inst, x),	\
+			      B91_PINMUX_DT_INST_GET_ELEM,		\
+			      x,					\
+			      inst)),					\
+		())							\
 	}
 
 #endif  /* ZEPHYR_B91_PINCTRL_COMMON_H_ */

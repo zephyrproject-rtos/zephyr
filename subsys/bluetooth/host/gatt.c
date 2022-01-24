@@ -70,6 +70,11 @@ struct gatt_sub {
 #define SUB_MAX 0
 #endif /* CONFIG_BT_GATT_CLIENT */
 
+/**
+ * Entry x is free for reuse whenever (subscriptions[x].peer == BT_ADDR_LE_ANY).
+ * Invariant: (sys_slist_is_empty(subscriptions[x].list))
+ *              <=> (subscriptions[x].peer == BT_ADDR_LE_ANY).
+ */
 static struct gatt_sub subscriptions[SUB_MAX];
 static sys_slist_t callback_list;
 
@@ -150,7 +155,7 @@ static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	ppcp.min_int = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_MIN_INT);
 	ppcp.max_int = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_MAX_INT);
-	ppcp.latency = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY);
+	ppcp.latency = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_LATENCY);
 	ppcp.timeout = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &ppcp,
@@ -783,7 +788,7 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	 * The client reads the Database Hash characteristic and then the server
 	 * receives another ATT request from the client.
 	 */
-	bt_gatt_change_aware(conn, true);
+	(void)bt_gatt_change_aware(conn, true);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, db_hash.hash,
 				 sizeof(db_hash.hash));
@@ -1094,7 +1099,7 @@ static void bt_gatt_service_init(void)
 		return;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
+	STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
 		last_static_handle += svc->attr_count;
 	}
 }
@@ -1318,6 +1323,24 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 
 	return 0;
 }
+
+bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc)
+{
+	bool registered = false;
+	sys_snode_t *node;
+
+	k_sched_lock();
+	SYS_SLIST_FOR_EACH_NODE(&db, node) {
+		if (&svc->node == node) {
+			registered = true;
+			break;
+		}
+	}
+
+	k_sched_unlock();
+
+	return registered;
+}
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
 ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -1391,7 +1414,7 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 		return attr->handle;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
+	STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 		/* Skip ahead if start is not within service attributes array */
 		if ((attr < &static_svc->attrs[0]) ||
 		    (attr > &static_svc->attrs[static_svc->attr_count - 1])) {
@@ -1587,7 +1610,7 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 	if (start_handle <= last_static_handle) {
 		uint16_t handle = 1;
 
-		Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
+		STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 			/* Skip ahead if start is not within service handles */
 			if (handle + static_svc->attr_count < start_handle) {
 				handle += static_svc->attr_count;
@@ -1964,12 +1987,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
 	if (gatt_cf_notify_multi(conn)) {
-		int err;
-
-		err = gatt_notify_mult(conn, handle, params);
-		if (err && err != -ENOMEM) {
-			return err;
-		}
+		return gatt_notify_mult(conn, handle, params);
 	}
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
@@ -2293,6 +2311,8 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 		if (!gatt_find_by_uuid(&data, params->uuid)) {
 			return -ENOENT;
 		}
+
+		params->attr = data.attr;
 	} else {
 		if (!data.handle) {
 			return -ENOENT;
@@ -2369,6 +2389,8 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		if (!gatt_find_by_uuid(&data, params->uuid)) {
 			return -ENOENT;
 		}
+
+		params->attr = data.attr;
 	} else {
 		if (!data.handle) {
 			return -ENOENT;
@@ -2465,6 +2487,14 @@ static void sc_restore_rsp(struct bt_conn *conn,
 		BT_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
 	}
 #endif
+
+	if (!err && IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+		struct gatt_sc_cfg *sc_cfg = find_sc_cfg(conn->id, &conn->le.dst);
+
+		if (sc_cfg) {
+			sc_reset(sc_cfg);
+		}
+	}
 }
 
 static struct bt_gatt_indicate_params sc_restore_params[CONFIG_BT_MAX_CONN];
@@ -2500,9 +2530,6 @@ static void sc_restore(struct bt_conn *conn)
 	if (bt_gatt_indicate(conn, &sc_restore_params[index])) {
 		BT_ERR("SC restore indication failed");
 	}
-
-	/* Reset config data */
-	sc_reset(cfg);
 }
 
 struct conn_data {
@@ -2695,6 +2722,19 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 	return false;
 }
 
+static bool gatt_sub_is_empty(struct gatt_sub *sub)
+{
+	return sys_slist_is_empty(&sub->list);
+}
+
+/** @brief Free sub for reuse.
+ */
+static void gatt_sub_free(struct gatt_sub *sub)
+{
+	__ASSERT_NO_MSG(gatt_sub_is_empty(sub));
+	bt_addr_le_copy(&sub->peer, BT_ADDR_LE_ANY);
+}
+
 static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 			    sys_snode_t *prev,
 			    struct bt_gatt_subscribe_params *params)
@@ -2706,9 +2746,8 @@ static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 		params->notify(conn, params, NULL, 0);
 	}
 
-	if (sys_slist_is_empty(&sub->list)) {
-		/* Reset address if there are no subscription left */
-		bt_addr_le_copy(&sub->peer, BT_ADDR_LE_ANY);
+	if (gatt_sub_is_empty(sub)) {
+		gatt_sub_free(sub);
 	}
 }
 
@@ -3287,7 +3326,8 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		}
 
 		value = (struct bt_gatt_chrc)BT_GATT_CHRC_INIT(
-			&u.uuid, chrc->value_handle, chrc->properties);
+			&u.uuid, sys_le16_to_cpu(chrc->value_handle),
+			chrc->properties);
 		attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(
 			BT_UUID_GATT_CHRC, 0, NULL, NULL, &value);
 		attr.handle = handle;
@@ -3951,7 +3991,7 @@ static int gatt_read_mult_encode(struct net_buf *buf, size_t len,
 	uint8_t i;
 
 	for (i = 0U; i < params->handle_count; i++) {
-		net_buf_add_le16(buf, params->handles[i]);
+		net_buf_add_le16(buf, params->multiple.handles[i]);
 	}
 
 	return 0;
@@ -3979,9 +4019,6 @@ static void gatt_read_mult_vl_rsp(struct bt_conn *conn, uint8_t err,
 	BT_DBG("err 0x%02x", err);
 
 	if (err || !length) {
-		if (err == BT_ATT_ERR_NOT_SUPPORTED) {
-			gatt_read_mult(conn, params);
-		}
 		params->func(conn, err, params, NULL, 0);
 		return;
 	}
@@ -4018,7 +4055,7 @@ static int gatt_read_mult_vl_encode(struct net_buf *buf, size_t len,
 	uint8_t i;
 
 	for (i = 0U; i < params->handle_count; i++) {
-		net_buf_add_le16(buf, params->handles[i]);
+		net_buf_add_le16(buf, params->multiple.handles[i]);
 	}
 
 	return 0;
@@ -4042,13 +4079,15 @@ static int gatt_read_mult(struct bt_conn *conn,
 {
 	return -ENOTSUP;
 }
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 
+#if !defined(CONFIG_BT_GATT_READ_MULTIPLE) || !defined(CONFIG_BT_EATT)
 static int gatt_read_mult_vl(struct bt_conn *conn,
 			     struct bt_gatt_read_params *params)
 {
 	return -ENOTSUP;
 }
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+#endif
 
 static int gatt_read_encode(struct net_buf *buf, size_t len, void *user_data)
 {
@@ -4075,11 +4114,11 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	}
 
 	if (params->handle_count > 1) {
-#if defined(CONFIG_BT_EATT)
-		return gatt_read_mult_vl(conn, params);
-#else
-		return gatt_read_mult(conn, params);
-#endif /* CONFIG_BT_EATT */
+		if (params->multiple.variable) {
+			return gatt_read_mult_vl(conn, params);
+		} else {
+			return gatt_read_mult(conn, params);
+		}
 	}
 
 	if (params->single.offset) {
@@ -4594,6 +4633,10 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (gatt_sub_is_empty(sub)) {
+		gatt_sub_free(sub);
+	}
+
 	if (has_subscription) {
 		/* Notify with NULL data to complete unsubscribe */
 		params->notify(conn, params, NULL, 0);
@@ -4607,7 +4650,22 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 
 void bt_gatt_cancel(struct bt_conn *conn, void *params)
 {
-	bt_att_req_cancel(conn, params);
+	struct bt_att_req *req;
+	bt_att_func_t func = NULL;
+
+	k_sched_lock();
+
+	req = bt_att_find_req_by_user_data(conn, params);
+	if (req) {
+		func = req->func;
+		bt_att_req_cancel(conn, req);
+	}
+
+	k_sched_unlock();
+
+	if (func) {
+		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
+	}
 }
 
 static void add_subscriptions(struct bt_conn *conn)
@@ -4754,7 +4812,14 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		} else if (!next) {
 			load.addr_with_id.id = BT_ID_DEFAULT;
 		} else {
-			load.addr_with_id.id = strtol(next, NULL, 10);
+			unsigned long next_id = strtoul(next, NULL, 10);
+
+			if (next_id >= CONFIG_BT_ID_MAX) {
+				BT_ERR("Invalid local identity %lu", next_id);
+				return -EINVAL;
+			}
+
+			load.addr_with_id.id = (uint8_t)next_id;
 		}
 
 		err = bt_settings_decode_key(name, &addr);
@@ -4855,8 +4920,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 		settings_load_subtree_direct(key, ccc_set_direct, (void *)key);
 	}
 
-	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
-
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part C page 2192:
 	 *
 	 * 10.3.1.1 Handling of GATT indications and notifications
@@ -4874,7 +4937,7 @@ void bt_gatt_connected(struct bt_conn *conn)
 	 * enabling encryption will fail.
 	 */
 	if (IS_ENABLED(CONFIG_BT_SMP) &&
-	    (conn->role == BT_HCI_ROLE_MASTER ||
+	    (conn->role == BT_HCI_ROLE_CENTRAL ||
 	     IS_ENABLED(CONFIG_BT_GATT_AUTO_SEC_REQ)) &&
 	    bt_conn_get_security(conn) < data.sec) {
 		int err = bt_conn_set_security(conn, data.sec);
@@ -5135,7 +5198,14 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (!next) {
 		id = BT_ID_DEFAULT;
 	} else {
-		id = strtol(next, NULL, 10);
+		unsigned long next_id = strtoul(next, NULL, 10);
+
+		if (next_id >= CONFIG_BT_ID_MAX) {
+			BT_ERR("Invalid local identity %lu", next_id);
+			return -EINVAL;
+		}
+
+		id = (uint8_t)next_id;
 	}
 
 	cfg = find_sc_cfg(id, &addr);
@@ -5213,7 +5283,14 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (!next) {
 		id = BT_ID_DEFAULT;
 	} else {
-		id = strtol(next, NULL, 10);
+		unsigned long next_id = strtoul(next, NULL, 10);
+
+		if (next_id >= CONFIG_BT_ID_MAX) {
+			BT_ERR("Invalid local identity %lu", next_id);
+			return -EINVAL;
+		}
+
+		id = (uint8_t)next_id;
 	}
 
 	cfg = find_cf_cfg_by_addr(id, &addr);

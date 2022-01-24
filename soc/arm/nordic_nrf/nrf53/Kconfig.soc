@@ -3,14 +3,16 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_SERIES_NRF53X
 config SOC_NRF5340_CPUAPP
-	depends on SOC_SERIES_NRF53X
 	bool
 	select CPU_HAS_NRF_IDAU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_HW_NRF_CC312
+	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_DCNF
 	select HAS_HW_NRF_DPPIC
 	select HAS_HW_NRF_EGU0
 	select HAS_HW_NRF_EGU1
@@ -24,8 +26,11 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_I2S
 	select HAS_HW_NRF_IPC
 	select HAS_HW_NRF_KMU
+	select HAS_HW_NRF_LPCOMP
+	select HAS_HW_NRF_MUTEX
 	select HAS_HW_NRF_NFCT
 	select HAS_HW_NRF_NVMC_PE
+	select HAS_HW_NRF_OSCILLATORS
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PWM0
@@ -35,6 +40,8 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_QDEC0
 	select HAS_HW_NRF_QDEC1
 	select HAS_HW_NRF_QSPI
+	select HAS_HW_NRF_REGULATORS
+	select HAS_HW_NRF_RESET
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
 	select HAS_HW_NRF_SAADC
@@ -65,17 +72,18 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_UARTE3
 	select HAS_HW_NRF_USBD
 	select HAS_HW_NRF_USBREG
+	select HAS_HW_NRF_VMC
 	select HAS_HW_NRF_WDT0
 	select HAS_HW_NRF_WDT1
 
 config SOC_NRF5340_CPUNET
-	depends on SOC_SERIES_NRF53X
 	bool
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_CCM
 	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_DPPIC
+	select HAS_HW_NRF_ECB
 	select HAS_HW_NRF_EGU0
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIO1
@@ -86,12 +94,15 @@ config SOC_NRF5340_CPUNET
 	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RADIO_IEEE802154
-	select HAS_HW_NRF_RADIO_BLE_DF
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
 	select HAS_HW_NRF_SPIM0
 	select HAS_HW_NRF_SPIS0
+	select HAS_HW_NRF_SWI0
+	select HAS_HW_NRF_SWI1
+	select HAS_HW_NRF_SWI2
+	select HAS_HW_NRF_SWI3
 	select HAS_HW_NRF_TEMP
 	select HAS_HW_NRF_TIMER0
 	select HAS_HW_NRF_TIMER1
@@ -100,11 +111,10 @@ config SOC_NRF5340_CPUNET
 	select HAS_HW_NRF_TWIS0
 	select HAS_HW_NRF_UARTE0
 	select HAS_HW_NRF_WDT
-	select HAS_NO_SYS_PM
+	select HAS_NO_PM
 
 choice
 	prompt "nRF53x MCU Selection"
-	depends on SOC_SERIES_NRF53X
 
 config SOC_NRF5340_CPUAPP_QKAA
 	bool "NRF5340_CPUAPP_QKAA"
@@ -212,3 +222,71 @@ config NRF_ENABLE_CACHE
 
 	  Instruction cache only (I-Cache) is available in nRF5340
 	  CPUNET (Network MCU).
+
+config NRF53_SYNC_RTC
+	bool "Enable RTC clock synchronization"
+	default y if LOG && !LOG_MODE_MINIMAL
+	depends on NRF_RTC_TIMER
+	select NRFX_DPPI
+	select IPM if !MBOX
+
+if NRF53_SYNC_RTC
+
+module = SYNC_RTC
+module-str = Synchronized RTC
+source "subsys/logging/Kconfig.template.log_config"
+
+config NRF_RTC_TIMER_USER_CHAN_COUNT
+	default 1
+
+config NRF53_SYNC_RTC_LOG_TIMESTAMP
+	bool "Use Synchronized RTC for logging timestamp"
+	default y
+
+config NRF53_SYNC_RTC_IPM_OUT
+	int "IPM channel from APP to NET"
+	range 0 15
+	default 7 if SOC_NRF5340_CPUAPP
+	default 8
+
+config NRF53_SYNC_RTC_IPM_IN
+	int "IPM channel from APP to NET"
+	range 0 15
+	default 8 if SOC_NRF5340_CPUAPP
+	default 7
+
+ipm_num = 0
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 1
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 2
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 3
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 4
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 5
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 6
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 7
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 8
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 9
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 10
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 11
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 12
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 13
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 14
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 15
+rsource "Kconfig.sync_rtc_ipm"
+
+endif # NRF53_SYNC_RTC
+endif # SOC_SERIES_NRF53X

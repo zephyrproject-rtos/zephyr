@@ -30,7 +30,7 @@ static void test_arm_fir_q7(void)
 	arm_fir_instance_q7 inst;
 
 	/* Allocate buffers */
-	state = malloc(64 * sizeof(q7_t));
+	state = malloc(47 * sizeof(q7_t));
 	zassert_not_null(state, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output_buf = malloc(length * sizeof(q7_t));

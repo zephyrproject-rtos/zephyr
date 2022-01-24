@@ -58,6 +58,8 @@ In these other cases, however, manual wiring is necessary:
      - connect PWM2 (PA0) to an LED
    * - :ref:`nucleo_f103rb_board`
      - connect PWM1 (PA8) to an LED
+   * - :ref:`nucleo_wb55rg_board`
+     - connect PWM1 (PA8) to an LED
 
 Building and Running
 ********************

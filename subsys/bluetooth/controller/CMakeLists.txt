@@ -5,6 +5,7 @@ zephyr_library_sources(
   util/mem.c
   util/memq.c
   util/mayfly.c
+  util/dbuf.c
   util/util.c
   ticker/ticker.c
   ll_sw/ll_addr.c
@@ -71,9 +72,30 @@ if(CONFIG_BT_LL_SW_SPLIT)
     zephyr_library_sources(
       ll_sw/ull_conn.c
       )
+    if(CONFIG_BT_LL_SW_LLCP_LEGACY)
+    else()
+      zephyr_library_sources_ifdef(
+        CONFIG_BT_PHY_UPDATE
+        ll_sw/ull_llcp_phy.c
+        )
+      zephyr_library_sources_ifdef(
+        CONFIG_BT_CTLR_LE_ENC
+        ll_sw/ull_llcp_enc.c
+        )
+      zephyr_library_sources(
+        ll_sw/ull_tx_queue.c
+        ll_sw/ull_llcp.c
+        ll_sw/ull_llcp_common.c
+        ll_sw/ull_llcp_local.c
+        ll_sw/ull_llcp_pdu.c
+        ll_sw/ull_llcp_conn_upd.c
+        ll_sw/ull_llcp_chmu.c
+        ll_sw/ull_llcp_remote.c
+        )
+    endif()
     if(CONFIG_BT_PERIPHERAL)
       zephyr_library_sources(
-        ll_sw/ull_slave.c
+        ll_sw/ull_peripheral.c
       )
     zephyr_library_sources_ifdef(
         CONFIG_BT_CTLR_PERIPHERAL_ISO
@@ -82,7 +104,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
     endif()
     if(CONFIG_BT_CENTRAL)
       zephyr_library_sources(
-        ll_sw/ull_master.c
+        ll_sw/ull_central.c
         )
       zephyr_library_sources_ifdef(
         CONFIG_BT_CTLR_CENTRAL_ISO
@@ -112,6 +134,8 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
   endif()
   if(CONFIG_BT_CONN OR
+     (CONFIG_BT_BROADCASTER AND
+      CONFIG_BT_CTLR_ADV_EXT) OR
      CONFIG_BT_CTLR_ADV_PERIODIC OR
      CONFIG_BT_CTLR_SYNC_PERIODIC)
     zephyr_library_sources(
@@ -119,10 +143,12 @@ if(CONFIG_BT_LL_SW_SPLIT)
       ll_sw/lll_chan.c
       )
   endif()
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_CTLR_FILTER
-    ll_sw/ull_filter.c
-    )
+  if(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST OR
+     CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST)
+    zephyr_library_sources(
+      ll_sw/ull_filter.c
+      )
+  endif()
   zephyr_library_sources_ifdef(
     CONFIG_BT_HCI_MESH_EXT
     ll_sw/ll_mesh.c

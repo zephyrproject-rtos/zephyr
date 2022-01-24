@@ -12,9 +12,13 @@ if ESPI
 
 source "drivers/espi/Kconfig.xec"
 
+source "drivers/espi/Kconfig.xec_v2"
+
 source "drivers/espi/Kconfig.npcx"
 
 source "drivers/espi/Kconfig.espi_emul"
+
+source "drivers/espi/Kconfig.it8xxx2"
 
 module = ESPI
 module-str = espi

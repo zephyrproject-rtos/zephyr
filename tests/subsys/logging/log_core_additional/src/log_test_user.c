@@ -39,6 +39,7 @@ void test_log_from_user(void)
 	zassert_true(cnt1 <= cnt0, "no message is handled");
 }
 
+/* test log_hexdump_from_user() from user space */
 void test_log_hexdump_from_user(void)
 {
 	int32_t data = 128;
@@ -68,7 +69,8 @@ static void call_log_generic(uint32_t source_id, const char *fmt, ...)
 	va_end(ap);
 }
 
-void test_log_generic(void)
+/* test log_generic() from user space */
+void test_log_generic_user(void)
 {
 	uint32_t source_id = 0;
 
@@ -77,11 +79,13 @@ void test_log_generic(void)
 	}
 }
 
+/* test log_filter_set from user space */
 void test_log_filter_set(void)
 {
 	log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID, 0, LOG_LEVEL_WRN);
 }
 
+/* test log_panic() from user space */
 void test_log_panic(void)
 {
 	struct log_msg_ids src_level = {
@@ -94,15 +98,4 @@ void test_log_panic(void)
 	log_from_user(src_level, "log from user, level %d\n", src_level.level);
 
 	log_panic();
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_log_list,
-			 ztest_user_unit_test(test_log_from_user),
-			 ztest_user_unit_test(test_log_hexdump_from_user),
-			 ztest_user_unit_test(test_log_generic),
-			 ztest_user_unit_test(test_log_filter_set),
-			 ztest_user_unit_test(test_log_panic));
-	ztest_run_test_suite(test_log_list);
 }

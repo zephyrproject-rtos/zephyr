@@ -7,6 +7,16 @@
 #include "skeleton.dtsi"
 
 / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "gaisler,leon3";
+			reg = <0>;
+		};
+	};
+
 	dram: ram@30000000 {
 		/* tightly coupled data RAM */
 		reg = <0x30000000 0x00010000>;

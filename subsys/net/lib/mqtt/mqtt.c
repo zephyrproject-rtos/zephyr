@@ -578,9 +578,9 @@ error:
 
 int mqtt_abort(struct mqtt_client *client)
 {
-	mqtt_mutex_lock(client);
-
 	NULL_PARAM_CHECK(client);
+
+	mqtt_mutex_lock(client);
 
 	if (client->internal.state != MQTT_STATE_IDLE) {
 		client_disconnect(client, -ECONNABORTED, true);
@@ -649,7 +649,7 @@ int mqtt_input(struct mqtt_client *client)
 	if (MQTT_HAS_STATE(client, MQTT_STATE_TCP_CONNECTED)) {
 		err_code = client_read(client);
 	} else {
-		err_code = -EACCES;
+		err_code = -ENOTCONN;
 	}
 
 	mqtt_mutex_unlock(client);

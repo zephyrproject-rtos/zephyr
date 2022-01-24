@@ -18,7 +18,7 @@
 #include "../host/hci_core.h"
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-int cmd_mesh_adv(const struct shell *shell, size_t argc, char *argv[])
+int cmd_mesh_adv(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_buf *buf;
 	int err;

@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Disable syscall tracing for all calls from this compilation unit to avoid
+ * undefined symbols as the macros are not expanded recursively
+ */
+#define DISABLE_SYSCALL_TRACING
+
 #include <sys/util.h>
 #include <sys/atomic.h>
 #include <sys/__assert.h>
@@ -122,8 +127,7 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 	},
 };
 
-USBD_CFG_DATA_DEFINE(primary, tracing_backend_usb)
-	struct usb_cfg_data tracing_backend_usb_config = {
+USBD_DEFINE_CFG_DATA(tracing_backend_usb_config) = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = dev_status_cb,

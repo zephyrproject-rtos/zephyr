@@ -30,9 +30,10 @@ static void coredump_logging_backend_start(void)
 	/* Reset error */
 	error = 0;
 
-	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
-		LOG_PANIC();
-	}
+	while (LOG_PROCESS())
+		;
+
+	LOG_PANIC();
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
 }
 
@@ -116,7 +117,7 @@ static int coredump_logging_backend_cmd(enum coredump_cmd_id cmd_id,
 }
 
 
-struct z_coredump_backend_api z_coredump_backend_logging = {
+struct coredump_backend_api coredump_backend_logging = {
 	.start = coredump_logging_backend_start,
 	.end = coredump_logging_backend_end,
 	.buffer_output = coredump_logging_backend_buffer_output,

@@ -7,6 +7,7 @@
 #include <shell/shell.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define MAX_CMD_CNT (20u)
 #define MAX_CMD_LEN (33u)

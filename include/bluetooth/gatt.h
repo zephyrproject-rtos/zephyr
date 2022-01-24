@@ -98,6 +98,14 @@ enum {
 	 * response) which doesn't generate any response.
 	 */
 	BT_GATT_WRITE_FLAG_CMD = BIT(1),
+
+	/** @brief Attribute write execute flag
+	 *
+	 * If set, indicates that write operation is a execute, which indicates
+	 * the end of a long write, and will come after 1 or more
+	 * @ref BT_GATT_WRITE_FLAG_PREPARE.
+	 */
+	BT_GATT_WRITE_FLAG_EXECUTE = BIT(2),
 };
 
 /** @brief GATT Attribute structure. */
@@ -362,12 +370,20 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb);
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 
 /** @brief Unregister GATT service.
- * *
+ *
  *  @param svc Service to be unregistered.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_service_unregister(struct bt_gatt_service *svc);
+
+/** @brief Check if GATT service is registered.
+ *
+ *  @param svc Service to be checked.
+ *
+ *  @return true if registered or false if not register.
+ */
+bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc);
 
 enum {
 	BT_GATT_ITER_STOP = 0,
@@ -519,8 +535,8 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  */
 #define BT_GATT_SERVICE_DEFINE(_name, ...)				\
 	const struct bt_gatt_attr attr_##_name[] = { __VA_ARGS__ };	\
-	const Z_STRUCT_SECTION_ITERABLE(bt_gatt_service_static, _name) =\
-						BT_GATT_SERVICE(attr_##_name)
+	const STRUCT_SECTION_ITERABLE(bt_gatt_service_static, _name) =	\
+					BT_GATT_SERVICE(attr_##_name)
 
 #define _BT_GATT_ATTRS_ARRAY_DEFINE(n, _instances, _attrs_def)	\
 	static struct bt_gatt_attr attrs_##n[] = _attrs_def(_instances[n]);
@@ -1366,8 +1382,7 @@ struct bt_gatt_read_params {
 	/** Read attribute callback. */
 	bt_gatt_read_func_t func;
 	/** If equals to 1 single.handle and single.offset are used.
-	 *  If >1 Read Multiple Characteristic Values is performed and handles
-	 *  are used.
+	 *  If greater than 1 multiple.handles are used.
 	 *  If equals to 0 by_uuid is used for Read Using Characteristic UUID.
 	 */
 	size_t handle_count;
@@ -1378,8 +1393,23 @@ struct bt_gatt_read_params {
 			/** Attribute data offset. */
 			uint16_t offset;
 		} single;
-		/** Handles to read in Read Multiple Characteristic Values. */
-		uint16_t *handles;
+		struct {
+			/** Attribute handles to read with Read Multiple
+			 *  Characteristic Values.
+			 */
+			uint16_t *handles;
+			/** If true use Read Multiple Variable Length
+			 *  Characteristic Values procedure.
+			 *  The values of the set of attributes may be of
+			 *  variable or unknown length.
+			 *  If false use Read Multiple Characteristic Values
+			 *  procedure.
+			 *  The values of the set of attributes must be of a
+			 *  known fixed length, with the exception of the last
+			 *  value that can have a variable length.
+			 */
+			bool variable;
+		} multiple;
 		struct {
 			/** First requested handle number. */
 			uint16_t start_handle;
@@ -1645,10 +1675,22 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params);
 
-/** @brief Cancel GATT pending request
+/** @brief Try to cancel the first pending request identified by @p params.
  *
- *  @param conn Connection object.
- *  @param params Requested params address.
+ *  This function does not release @p params for reuse. The usual callbacks
+ *  for the request still apply. A successful cancel simulates a
+ *  #BT_ATT_ERR_UNLIKELY response from the server.
+ *
+ *  This function can cancel the following request functions:
+ *   - #bt_gatt_exchange_mtu
+ *   - #bt_gatt_discover
+ *   - #bt_gatt_read
+ *   - #bt_gatt_write
+ *   - #bt_gatt_subscribe
+ *   - #bt_gatt_unsubscribe
+ *
+ *  @param conn The connection the request was issued on.
+ *  @param params The address `params` used in the request function call.
  */
 void bt_gatt_cancel(struct bt_conn *conn, void *params);
 

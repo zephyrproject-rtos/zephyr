@@ -14,6 +14,10 @@
 #include <arch/cpu.h>
 #include <toolchain.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup fatal_apis Fatal error APIs
  * @ingroup kernel_apis
@@ -99,5 +103,9 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf);
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 /** @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_FATAL_H */

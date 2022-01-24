@@ -141,7 +141,7 @@ void test_sensor_get_channels(void)
 }
 
 static void trigger_handler(const struct device *dev,
-				struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(trigger);

@@ -51,14 +51,14 @@ properties:
       const: 2
 
     clock-frequency:
-      required: false
+      required: true
       type: int
       description: |
         default frequency in Hz for clock output
 
     d1cpre:
       type: int
-      required: false
+      required: true
       enum:
         - 1
       description: |
@@ -70,7 +70,7 @@ properties:
 
     hpre:
       type: int
-      required: false
+      required: true
       description: |
           D2 domain, CPU2 core clock and AHB(1/2/3/4) peripheral prescaler
       enum:
@@ -86,7 +86,7 @@ properties:
 
     d1ppre:
       type: int
-      required: false
+      required: true
       description: |
           D1 domain, APB3 peripheral prescaler
       enum:
@@ -98,7 +98,7 @@ properties:
 
     d2ppre1:
       type: int
-      required: false
+      required: true
       description: |
           D2 domain, APB1 peripheral prescaler
       enum:
@@ -110,7 +110,7 @@ properties:
 
     d2ppre2:
       type: int
-      required: false
+      required: true
       description: |
           D2 domain, APB2 peripheral prescaler
       enum:
@@ -122,7 +122,7 @@ properties:
 
     d3ppre:
       type: int
-      required: false
+      required: true
       description: |
           D3 domain, APB4 peripheral prescaler
       enum:

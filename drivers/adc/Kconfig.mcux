@@ -15,6 +15,12 @@ config ADC_MCUX_ADC16
 	help
 	  Enable the MCUX ADC16 driver.
 
+config ADC_MCUX_12B1MSPS_SAR
+	bool "MCUX 12B1MSPS SAR ADC driver"
+	depends on HAS_MCUX_12B1MSPS_SAR
+	help
+	  Enable the MCUX 12B1MSPS SAR ADC driver.
+
 config ADC_MCUX_LPADC
 	bool "MCUX LPADC driver"
 	depends on HAS_MCUX_LPADC
@@ -60,12 +66,6 @@ config ADC_MCUX_ADC16_ENABLE_EDMA
 	  Enable the MCUX ADC16 driver.
 
 if ADC_MCUX_ADC16_ENABLE_EDMA
-
-config ADC_MCUX_ADC16_INIT_PRIORITY
-	int "Init priority"
-	default 70
-	help
-	  Device driver initialization priority.
 
 config ADC_MCUX_ADC16_HW_TRIGGER
 	bool "ADC HW TRIGGER"

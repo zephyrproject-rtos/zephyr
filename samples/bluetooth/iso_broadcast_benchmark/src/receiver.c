@@ -338,7 +338,7 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	uint32_t sem_timeout = per_interval_ms * PA_RETRY_COUNT;
 	uint32_t sync_timeout_ms;
 	static struct bt_iso_chan bis_iso_chan[CONFIG_BT_ISO_MAX_CHAN];
-	static struct bt_iso_chan *bis[CONFIG_BT_ISO_MAX_CHAN];
+	struct bt_iso_chan *bis[CONFIG_BT_ISO_MAX_CHAN];
 	struct bt_iso_big_sync_param big_sync_param = {
 		.bis_channels = bis,
 		.num_bis = 0,
@@ -363,7 +363,8 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	sync_timeout_ms = iso_interval_ms * ISO_RETRY_COUNT;
 	big_sync_param.sync_timeout = CLAMP(sync_timeout_ms / 10, 0x000A, 0x4000); /* 10 ms units */
 	big_sync_param.num_bis = bis_count;
-	for (int i = 0; i < big_sync_param.num_bis; i++) {
+	/* BIS indexes start from 0x01, so add one to `i` */
+	for (int i = 1; i <= big_sync_param.num_bis; i++) {
 		big_sync_param.bis_bitfield |= BIT(i);
 	}
 

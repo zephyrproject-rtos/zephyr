@@ -2,7 +2,7 @@ description: STM32 UART
 
 compatible: "st,stm32-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -11,12 +11,17 @@ properties:
     interrupts:
       required: true
 
-    pinctrl-0:
-      type: phandles
+    single-wire:
+      type: boolean
       required: false
       description: |
-        GPIO pin configuration for serial signals (RX, TX, RTS, CTS).  We expect
-        that the phandles will reference pinctrl nodes.
+        Enable the single wire half-duplex communication.
+        Using this mode, TX and RX lines are internally connected and
+        only TX pin is used afterwards and should be configured.
+        RX/TX conflicts must be handled on user side.
 
-        For example the USART1 would be
-           pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true

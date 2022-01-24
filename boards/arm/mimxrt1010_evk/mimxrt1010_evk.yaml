@@ -19,3 +19,5 @@ supported:
   - i2c
   - counter
   - usb_device
+  - spi
+  - adc

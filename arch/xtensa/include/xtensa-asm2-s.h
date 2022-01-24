@@ -356,6 +356,11 @@ _restore_\@:
  * with a simple jump instruction.
  */
 .macro DEF_EXCINT LVL, ENTRY_SYM, C_HANDLER_SYM
+#if defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
+.pushsection .iram.text, "ax"
+.global _Level\LVL\()VectorHelper
+_Level\LVL\()VectorHelper :
+#else
 .if \LVL == 1
 .pushsection .iram0.text, "ax"
 .elseif \LVL == XCHAL_DEBUGLEVEL
@@ -367,6 +372,7 @@ _restore_\@:
 .endif
 .global _Level\LVL\()Vector
 _Level\LVL\()Vector:
+#endif
 	addi a1, a1, -BASE_SAVE_AREA_SIZE
 	s32i a0, a1, BSA_A0_OFF
 	s32i a2, a1, BSA_A2_OFF
@@ -418,6 +424,23 @@ _after_imms\LVL:
 	l32r a0, _handle_excint_imm\LVL
 	jx a0
 .popsection
+
+#if defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
+.if \LVL == 1
+.pushsection .iram0.text, "ax"
+.elseif \LVL == XCHAL_DEBUGLEVEL
+.pushsection .DebugExceptionVector.text, "ax"
+.elseif \LVL == XCHAL_NMILEVEL
+.pushsection .NMIExceptionVector.text, "ax"
+.else
+.pushsection .Level\LVL\()InterruptVector.text, "ax"
+.endif
+.global _Level\LVL\()Vector
+_Level\LVL\()Vector :
+j _Level\LVL\()VectorHelper
+.popsection
+#endif
+
 .endm
 
 #endif	/* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H */

@@ -13,6 +13,16 @@
   #error test can only run on Cortex-M MCUs
 #endif
 
+#if defined(CONFIG_ARMV8_1_M_MAINLINE)
+/*
+ * For ARMv8.1-M, the FPSCR[18:16] LTPSIZE field may always read 0b010 if MVE
+ * is not implemented, so mask it when validating the value of the FPSCR.
+ */
+#define FPSCR_MASK		(~FPU_FPDSCR_LTPSIZE_Msk)
+#else
+#define FPSCR_MASK		(0xffffffffU)
+#endif
+
 extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
 static volatile int test_flag;
@@ -58,7 +68,7 @@ void test_main(void)
 			psp, main_stack_base, main_stack_top);
 
 #if defined(CONFIG_FPU)
-	__ASSERT(__get_FPSCR() == 0,
+	__ASSERT((__get_FPSCR() & FPSCR_MASK) == 0,
 		"FPSCR not zero (0x%x)", __get_FPSCR());
 #endif
 

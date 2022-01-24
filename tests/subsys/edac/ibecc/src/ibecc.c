@@ -22,10 +22,10 @@
 #define DURATION		100
 #endif
 
-const struct device *dev;
-
 static void test_ibecc_initialized(void)
 {
+	const struct device *dev;
+
 	dev = device_get_binding(DEVICE_NAME);
 	zassert_not_null(dev, "Device not found");
 
@@ -52,19 +52,23 @@ static void callback(const struct device *d, void *data)
 
 static void test_ibecc_api(void)
 {
+	const struct device *dev;
 	uint64_t value;
 	int ret;
 
 	/* Error log API */
 
+	dev = device_get_binding(DEVICE_NAME);
+	zassert_not_null(dev, "Device not found");
+
 	ret = edac_ecc_error_log_get(dev, &value);
-	zassert_equal(ret, 0, "edac_ecc_error_log_get failed");
+	zassert_equal(ret, -ENODATA, "edac_ecc_error_log_get failed");
 
 	ret = edac_ecc_error_log_clear(dev);
 	zassert_equal(ret, 0, "edac_ecc_error_log_clear failed");
 
 	ret = edac_parity_error_log_get(dev, &value);
-	zassert_equal(ret, 0, "edac_parity_error_log_get failed");
+	zassert_equal(ret, -ENODATA, "edac_parity_error_log_get failed");
 
 	ret = edac_parity_error_log_clear(dev);
 	zassert_equal(ret, 0, "edac_parity_error_log_clear failed");
@@ -86,8 +90,29 @@ static void test_ibecc_api(void)
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static void test_ibecc_error_inject_api(void)
 {
+	const struct device *dev;
+	uint32_t test_value;
 	uint64_t val;
 	int ret;
+
+	dev = device_get_binding(DEVICE_NAME);
+	zassert_not_null(dev, "Device not found");
+
+	/* Verify default parameters */
+
+	ret = edac_inject_get_error_type(dev, &test_value);
+	zassert_equal(ret, 0, "Error getting error_type");
+	zassert_equal(test_value, 0, "Error type not zero");
+
+	ret = edac_inject_get_param1(dev, &val);
+	zassert_equal(ret, 0, "Error getting param1");
+	zassert_equal(val, 0, "Error param1 is not zero");
+
+	ret = edac_inject_get_param2(dev, &val);
+	zassert_equal(ret, 0, "Error getting param2");
+	zassert_equal(val, 0, "Error param2 is not zero");
+
+	/* Verify basic Injection API operations */
 
 	/* Set correct value of param1 */
 	ret = edac_inject_set_param1(dev, TEST_ADDRESS1);
@@ -137,14 +162,25 @@ static void test_ibecc_error_inject_api(void)
 #endif
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
+static void test_inject(const struct device *dev, uint64_t addr, uint64_t mask,
+			uint8_t type)
 {
-
+	unsigned int errors_cor, errors_uc;
 	uint64_t test_addr;
 	uint32_t test_value;
 	int ret, num_int;
 
 	interrupt = 0;
+
+	/* Test error_trigger() for unset error type */
+	ret = edac_inject_error_trigger(dev);
+	zassert_equal(ret, 0, "Error setting ctrl");
+
+	errors_cor = edac_errors_cor_get(dev);
+	zassert_not_equal(errors_cor, -ENOSYS, "Not implemented error count");
+
+	errors_uc = edac_errors_uc_get(dev);
+	zassert_not_equal(errors_uc, -ENOSYS, "Not implemented error count");
 
 	ret = edac_inject_set_param1(dev, addr);
 	zassert_equal(ret, 0, "Error setting inject address");
@@ -191,6 +227,20 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 	TC_PRINT("Interrupt %d\n", num_int);
 	TC_PRINT("Error: type %u, address 0x%llx, syndrome %u\n",
 		 error_type, error_address, error_syndrome);
+
+	/* Check statistic information */
+
+	ret = edac_errors_cor_get(dev);
+	zassert_equal(ret, type == EDAC_ERROR_TYPE_DRAM_COR ?
+		      errors_cor + 1 : errors_cor,
+		      "Incorrect correctable count");
+	TC_PRINT("Correctable error count %d\n", ret);
+
+	ret = edac_errors_uc_get(dev);
+	zassert_equal(ret, type == EDAC_ERROR_TYPE_DRAM_UC ?
+		      errors_uc + 1 : errors_uc,
+		      "Incorrect uncorrectable count");
+	TC_PRINT("Uncorrectable error count %d\n", ret);
 }
 
 static int check_values(void *p1, void *p2, void *p3)
@@ -215,48 +265,42 @@ static int check_values(void *p1, void *p2, void *p3)
 	return 0;
 }
 
-static void test_ibecc_error_inject_test_cor(void)
+static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 {
+	const struct device *dev;
 	int ret;
+
+	dev = device_get_binding(DEVICE_NAME);
+	zassert_not_null(dev, "Device not found");
 
 	ret = edac_notify_callback_set(dev, callback);
 	zassert_equal(ret, 0, "Error setting notification callback");
 
 	/* Test injecting correctable error at address TEST_ADDRESS1 */
-	test_inject(TEST_ADDRESS1, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_COR);
+	test_inject(dev, addr, mask, type);
 
 #if defined(CONFIG_USERSPACE)
 	k_thread_user_mode_enter((k_thread_entry_t)check_values,
-				 (void *)TEST_ADDRESS1,
-				 (void *)EDAC_ERROR_TYPE_DRAM_COR,
+				 (void *)addr,
+				 (void *)type,
 				 NULL);
 #else
-	check_values((void *)TEST_ADDRESS1, (void *)EDAC_ERROR_TYPE_DRAM_COR,
-		     NULL);
+	check_values((void *)addr, (void *)type, NULL);
 #endif
+}
+
+static void test_ibecc_error_inject_test_cor(void)
+{
+	ibecc_error_inject_test(TEST_ADDRESS1, TEST_ADDRESS_MASK,
+				EDAC_ERROR_TYPE_DRAM_COR);
 }
 
 static void test_ibecc_error_inject_test_uc(void)
 {
-	int ret;
-
-	ret = edac_notify_callback_set(dev, callback);
-	zassert_equal(ret, 0, "Error setting notification callback");
-
-	/* Test injecting uncorrectable error at address TEST_ADDRESS2 */
-	test_inject(TEST_ADDRESS2, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_UC);
-
-#if defined(CONFIG_USERSPACE)
-	k_thread_user_mode_enter((k_thread_entry_t)check_values,
-				 (void *)TEST_ADDRESS2,
-				 (void *)EDAC_ERROR_TYPE_DRAM_UC,
-				 NULL);
-#else
-	check_values((void *)TEST_ADDRESS2, (void *)EDAC_ERROR_TYPE_DRAM_UC,
-		     NULL);
-#endif
+	ibecc_error_inject_test(TEST_ADDRESS2, TEST_ADDRESS_MASK,
+				EDAC_ERROR_TYPE_DRAM_UC);
 }
-#else
+#else /* CONFIG_EDAC_ERROR_INJECT */
 static void test_ibecc_error_inject_test_cor(void)
 {
 	ztest_test_skip();
@@ -267,16 +311,34 @@ static void test_ibecc_error_inject_test_uc(void)
 	ztest_test_skip();
 }
 #endif
+
+/* Used only for code coverage */
+
+bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf);
+
+static void test_trigger_nmi_handler(void)
+{
+	bool ret;
+
+	ret = z_x86_do_kernel_nmi(NULL);
+	zassert_false(ret, "Test that NMI handling fails");
+}
 
 void test_edac_dummy_api(void);
 
 void test_main(void)
 {
 #if defined(CONFIG_USERSPACE)
-	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					     &default_part);
+	if (ret != 0) {
+		TC_PRINT("Failed to add to mem domain (%d)", ret);
+		k_oops();
+	}
 #endif
 
 	ztest_test_suite(ibecc,
+			 ztest_unit_test(test_trigger_nmi_handler),
 			 ztest_unit_test(test_ibecc_initialized),
 			 ztest_unit_test(test_ibecc_api),
 			 ztest_unit_test(test_edac_dummy_api),

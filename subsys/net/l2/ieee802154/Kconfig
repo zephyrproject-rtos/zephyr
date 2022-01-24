@@ -3,6 +3,7 @@
 
 menuconfig NET_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 Radio"
+	select NET_L2_PHY_IEEE802154
 	help
 	  Add support for low rate WPAN IEEE 802.15.4 technology.
 
@@ -115,6 +116,7 @@ config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 
 config NET_L2_IEEE802154_SECURITY
 	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enable 802.15.4 frame security handling, in order to bring data
 	  confidentiality and authenticity.

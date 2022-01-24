@@ -15,6 +15,7 @@
 #include <stm32l4xx_ll_rcc.h>
 #include <stm32l4xx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -120,4 +121,4 @@ static int stm32_power_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(stm32_power_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(stm32_power_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

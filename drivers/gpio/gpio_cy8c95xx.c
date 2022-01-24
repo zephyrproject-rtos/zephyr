@@ -106,7 +106,7 @@ static int cy8c95xx_config(const struct device *dev,
 	}
 
 	/* Strengths not implemented */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
+	if ((flags & GPIO_DS_ALT) != 0) {
 		return -ENOTSUP;
 	}
 
@@ -279,7 +279,7 @@ out:
 	if (rc != 0) {
 		LOG_ERR("%s init failed: %d", dev->name, rc);
 	} else {
-		LOG_INF("%s init ok", dev->name);
+		LOG_DBG("%s init ok", dev->name);
 	}
 	k_sem_give(drv_data->lock);
 	return rc;

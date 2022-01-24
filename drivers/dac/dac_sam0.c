@@ -28,13 +28,11 @@ struct dac_sam0_cfg {
 	uint8_t refsel;
 };
 
-#define DEV_CFG(dev) ((const struct dac_sam0_cfg *const)(dev)->config)
-
 /* Write to the DAC. */
 static int dac_sam0_write_value(const struct device *dev, uint8_t channel,
 				uint32_t value)
 {
-	const struct dac_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct dac_sam0_cfg *const cfg = dev->config;
 	Dac *regs = cfg->regs;
 
 	regs->DATA.reg = (uint16_t)value;
@@ -62,7 +60,7 @@ static int dac_sam0_channel_setup(const struct device *dev,
 /* Initialise and enable the DAC. */
 static int dac_sam0_init(const struct device *dev)
 {
-	const struct dac_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct dac_sam0_cfg *const cfg = dev->config;
 	Dac *regs = cfg->regs;
 
 	/* Enable the GCLK */
@@ -95,7 +93,7 @@ static const struct dac_driver_api api_sam0_driver_api = {
 
 #define SAM0_DAC_REFSEL(n)						       \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, reference),		       \
-		    (DT_ENUM_IDX(DT_DRV_INST(n), reference)), (0))
+		    (DT_INST_ENUM_IDX(n, reference)), (0))
 
 #define SAM0_DAC_INIT(n)						       \
 	static const struct dac_sam0_cfg dac_sam0_cfg_##n = {		       \
@@ -108,7 +106,7 @@ static const struct dac_driver_api api_sam0_driver_api = {
 									       \
 	DEVICE_DT_INST_DEFINE(n, &dac_sam0_init, NULL, NULL,		       \
 			    &dac_sam0_cfg_##n, POST_KERNEL,		       \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			    CONFIG_DAC_INIT_PRIORITY,			       \
 			    &api_sam0_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SAM0_DAC_INIT);

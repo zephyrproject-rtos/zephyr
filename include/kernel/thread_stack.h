@@ -303,6 +303,9 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define Z_THREAD_STACK_BUFFER		Z_KERNEL_STACK_BUFFER
 #define K_THREAD_STACK_EXTERN		K_KERNEL_STACK_EXTERN
 #define K_THREAD_STACK_ARRAY_EXTERN	K_KERNEL_STACK_ARRAY_EXTERN
+#define K_THREAD_PINNED_STACK_DEFINE	K_KERNEL_PINNED_STACK_DEFINE
+#define K_THREAD_PINNED_STACK_ARRAY_DEFINE \
+					K_KERNEL_PINNED_STACK_ARRAY_DEFINE
 #else
 /**
  * @def K_THREAD_STACK_RESERVED
@@ -519,6 +522,44 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 	Z_THREAD_STACK_DEFINE_IN(sym, size, __stackmem)
 
 /**
+ * @brief Define a toplevel thread stack memory region in pinned section
+ *
+ * This declares a region of memory suitable for use as a thread's stack.
+ *
+ * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
+ * and put in 'noinit' section so that it isn't zeroed at boot
+ *
+ * The declared symbol will always be a k_thread_stack_t which can be passed to
+ * k_thread_create(), but should otherwise not be manipulated. If the buffer
+ * inside needs to be examined, examine thread->stack_info for the associated
+ * thread object to obtain the boundaries.
+ *
+ * It is legal to precede this definition with the 'static' keyword.
+ *
+ * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
+ * parameter of k_thread_create(), it may not be the same as the
+ * 'size' parameter. Use K_THREAD_STACK_SIZEOF() instead.
+ *
+ * Some arches may round the size of the usable stack region up to satisfy
+ * alignment constraints. K_THREAD_STACK_SIZEOF() will return the aligned
+ * size.
+ *
+ * This puts the stack into the pinned noinit linker section if
+ * CONFIG_LINKER_USE_PINNED_SECTION is enabled, or else it would
+ * put the stack into the same section as K_THREAD_STACK_DEFINE().
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define K_THREAD_PINNED_STACK_DEFINE(sym, size) \
+	Z_THREAD_STACK_DEFINE_IN(sym, size, __pinned_noinit)
+#else
+#define K_THREAD_PINNED_STACK_DEFINE(sym, size) \
+	K_THREAD_STACK_DEFINE(sym, size)
+#endif
+
+/**
  * @brief Calculate size of stacks to be allocated in a stack array
  *
  * This macro calculates the size to be allocated for the stacks
@@ -550,6 +591,31 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	Z_THREAD_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __stackmem)
+
+/**
+ * @brief Declare a toplevel array of thread stack memory regions in pinned section
+ *
+ * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
+ * definition for additional details and constraints.
+ *
+ * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
+ * and put in 'noinit' section so that it isn't zeroed at boot
+ *
+ * This puts the stack into the pinned noinit linker section if
+ * CONFIG_LINKER_USE_PINNED_SECTION is enabled, or else it would
+ * put the stack into the same section as K_THREAD_STACK_DEFINE().
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define K_THREAD_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	Z_THREAD_PINNED_STACK_DEFINE_IN(sym, nmemb, size, __pinned_noinit)
+#else
+#define K_THREAD_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
+#endif
 
 /**
  * @brief Declare an embedded stack memory region

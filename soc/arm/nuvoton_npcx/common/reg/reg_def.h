@@ -7,6 +7,13 @@
 #ifndef _NUVOTON_NPCX_REG_DEF_H
 #define _NUVOTON_NPCX_REG_DEF_H
 
+#include <stdint.h>
+
+#include <devicetree.h>
+#include <sys/__assert.h>
+#include <sys/util_macro.h>
+#include <toolchain.h>
+
 /*
  * NPCX register structure size/offset checking macro function to mitigate
  * the risk of unexpected compiling results. All addresses of NPCX registers
@@ -329,7 +336,7 @@ struct uart_reg {
 #define NPCX_UFTCTL_TEMPTY_LVL_SEL            FIELD(0, 5)
 #define NPCX_UFTCTL_TEMPTY_LVL_EN             5
 #define NPCX_UFTCTL_TEMPTY_EN                 6
-#define NPCX_UFTCTL_NXMIPEN                   7
+#define NPCX_UFTCTL_NXMIP_EN                  7
 #define NPCX_UFRCTL_RFULL_LVL_SEL             FIELD(0, 5)
 #define NPCX_UFRCTL_RFULL_LVL_EN              5
 #define NPCX_UFRCTL_RNEMPTY_EN                6
@@ -488,13 +495,7 @@ struct adc_reg {
 	volatile uint16_t ASCADD;
 	/* 0x008: ADC Scan Channels Select */
 	volatile uint16_t ADCCS;
-	volatile uint8_t reserved1[10];
-	/* 0x014: Threshold Control 1 */
-	volatile uint16_t THRCTL1;
-	/* 0x016: Threshold Control 2 */
-	volatile uint16_t THRCTL2;
-	/* 0x018: Threshold Control 3 */
-	volatile uint16_t THRCTL3;
+	volatile uint8_t reserved1[16];
 	/* 0x01A:  Threshold Status */
 	volatile uint16_t THRCTS;
 	volatile uint8_t reserved2[4];
@@ -505,16 +506,20 @@ struct adc_reg {
 	volatile uint8_t reserved3[2];
 	/* 0x026: Internal register 3 for ADC Speed */
 	volatile uint16_t MEAST;
-	volatile uint8_t reserved4[18];
-	/* 0x03A: Deassertion Threshold Control 1 Word */
-	volatile uint16_t THR_DCTL1;
-	/* 0x03C: Deassertion Threshold Control 2 Word */
-	volatile uint16_t THR_DCTL2;
-	/* 0x03E: Deassertion Threshold Control 3 Word */
-	volatile uint16_t THR_DCTL3;
-	/* 0x040 - 52: Data Buffer of Channel 0 - 9 */
-	volatile uint16_t CHNDAT[10];
 };
+
+static inline uint32_t npcx_thrctl_offset(uint32_t ctl_no)
+{
+	return DT_PROP(DT_INST(0, nuvoton_npcx_adc), threshold_reg_offset) + (ctl_no - 1) * 2;
+}
+
+static inline uint32_t npcx_chndat_offset(uint32_t ch)
+{
+	return 0x40 + ch * 2;
+}
+
+#define THRCTL(base, ctl_no) (*(volatile uint16_t *)((base) + npcx_thrctl_offset(ctl_no)))
+#define CHNDAT(base, ch) (*(volatile uint16_t *)((base) + npcx_chndat_offset(ch)))
 
 /* ADC register fields */
 #define NPCX_ATCTL_SCLKDIV_FIELD              FIELD(0, 6)
@@ -671,8 +676,8 @@ struct espi_reg {
 #define NPCX_ESPICFG_HFLASHCHANEN        7
 #define NPCX_ESPICFG_CHANS_FIELD         FIELD(0, 4)
 #define NPCX_ESPICFG_HCHANS_FIELD        FIELD(4, 4)
-#define NPCX_ESPICFG_IOMODE_FIELD        FIELD(8, 9)
-#define NPCX_ESPICFG_MAXFREQ_FIELD       FIELD(10, 12)
+#define NPCX_ESPICFG_IOMODE_FIELD        FIELD(8, 2)
+#define NPCX_ESPICFG_MAXFREQ_FIELD       FIELD(10, 3)
 #define NPCX_ESPICFG_PCCHN_SUPP          24
 #define NPCX_ESPICFG_VWCHN_SUPP          25
 #define NPCX_ESPICFG_OOBCHN_SUPP         26
@@ -1410,4 +1415,97 @@ struct ps2_reg {
 #define NPCX_PSIEN_PS2_WUE               4
 #define NPCX_PSIEN_PS2_CLK_SEL           7
 
+/* Flash Interface Unit (FIU) device registers */
+struct fiu_reg {
+	volatile uint8_t reserved1;
+	/* 0x001: Burst Configuration */
+	volatile uint8_t BURST_CFG;
+	/* 0x002: FIU Response Configuration */
+	volatile uint8_t RESP_CFG;
+	volatile uint8_t reserved2[17];
+	/* 0x014: SPI Flash Configuration */
+	volatile uint8_t SPI_FL_CFG;
+	volatile uint8_t reserved3;
+	/* 0x016: UMA Code Byte */
+	volatile uint8_t UMA_CODE;
+	/* 0x017: UMA Address Byte 0 */
+	volatile uint8_t UMA_AB0;
+	/* 0x018: UMA Address Byte 1 */
+	volatile uint8_t UMA_AB1;
+	/* 0x019: UMA Address Byte 2 */
+	volatile uint8_t UMA_AB2;
+	/* 0x01A: UMA Data Byte 0 */
+	volatile uint8_t UMA_DB0;
+	/* 0x01B: UMA Data Byte 1 */
+	volatile uint8_t UMA_DB1;
+	/* 0x01C: UMA Data Byte 2 */
+	volatile uint8_t UMA_DB2;
+	/* 0x01D: UMA Data Byte 3 */
+	volatile uint8_t UMA_DB3;
+	/* 0x01E: UMA Control and Status */
+	volatile uint8_t UMA_CTS;
+	/* 0x01F: UMA Extended Control and Status */
+	volatile uint8_t UMA_ECTS;
+	/* 0x020: UMA Data Bytes 0-3 */
+	volatile uint32_t UMA_DB0_3;
+	volatile uint8_t reserved4[2];
+	/* 0x026: CRC Control Register */
+	volatile uint8_t CRCCON;
+	/* 0x027: CRC Entry Register */
+	volatile uint8_t CRCENT;
+	/* 0x028: CRC Initialization and Result Register */
+	volatile uint32_t CRCRSLT;
+	volatile uint8_t reserved5[4];
+	/* 0x030: FIU Read Command */
+	volatile uint8_t FIU_RD_CMD;
+	volatile uint8_t reserved6;
+	/* 0x032: FIU Dummy Cycles */
+	volatile uint8_t FIU_DMM_CYC;
+	/* 0x033: FIU Extended Configuration */
+	volatile uint8_t FIU_EXT_CFG;
+};
+
+/* FIU register fields */
+#define NPCX_RESP_CFG_IAD_EN             0
+#define NPCX_RESP_CFG_DEV_SIZE_EX        2
+#define NPCX_UMA_CTS_A_SIZE              3
+#define NPCX_UMA_CTS_C_SIZE              4
+#define NPCX_UMA_CTS_RD_WR               5
+#define NPCX_UMA_CTS_DEV_NUM             6
+#define NPCX_UMA_CTS_EXEC_DONE           7
+#define NPCX_UMA_ECTS_SW_CS0             0
+#define NPCX_UMA_ECTS_SW_CS1             1
+#define NPCX_UMA_ECTS_SEC_CS             2
+#define NPCX_UMA_ECTS_UMA_LOCK           3
+
+/* UMA fields selections */
+#define UMA_FLD_ADDR     BIT(NPCX_UMA_CTS_A_SIZE)  /* 3-bytes ADR field */
+#define UMA_FLD_NO_CMD   BIT(NPCX_UMA_CTS_C_SIZE)  /* No 1-Byte CMD field */
+#define UMA_FLD_WRITE    BIT(NPCX_UMA_CTS_RD_WR)   /* Write transaction */
+#define UMA_FLD_SHD_SL   BIT(NPCX_UMA_CTS_DEV_NUM) /* Shared flash selected */
+#define UMA_FLD_EXEC     BIT(NPCX_UMA_CTS_EXEC_DONE)
+
+#define UMA_FIELD_DATA_1 0x01
+#define UMA_FIELD_DATA_2 0x02
+#define UMA_FIELD_DATA_3 0x03
+#define UMA_FIELD_DATA_4 0x04
+
+/* UMA code for transaction */
+#define UMA_CODE_CMD_ONLY       (UMA_FLD_EXEC | UMA_FLD_SHD_SL)
+#define UMA_CODE_CMD_ADR        (UMA_FLD_EXEC | UMA_FLD_ADDR | \
+					UMA_FLD_SHD_SL)
+#define UMA_CODE_CMD_RD_BYTE(n) (UMA_FLD_EXEC | UMA_FIELD_DATA_##n | \
+					UMA_FLD_SHD_SL)
+#define UMA_CODE_RD_BYTE(n)     (UMA_FLD_EXEC | UMA_FLD_NO_CMD | \
+					UMA_FIELD_DATA_##n | UMA_FLD_SHD_SL)
+#define UMA_CODE_CMD_WR_ONLY    (UMA_FLD_EXEC | UMA_FLD_WRITE | \
+					UMA_FLD_SHD_SL)
+#define UMA_CODE_CMD_WR_BYTE(n) (UMA_FLD_EXEC | UMA_FLD_WRITE | \
+					UMA_FIELD_DATA_##n | UMA_FLD_SHD_SL)
+#define UMA_CODE_CMD_WR_ADR     (UMA_FLD_EXEC | UMA_FLD_WRITE | UMA_FLD_ADDR | \
+				UMA_FLD_SHD_SL)
+
+#define UMA_CODE_CMD_ADR_WR_BYTE(n) (UMA_FLD_EXEC | UMA_FLD_WRITE | \
+					UMA_FLD_ADDR | UMA_FIELD_DATA_##n | \
+					UMA_FLD_SHD_SL)
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

@@ -33,6 +33,9 @@
 /* The FPGA bitstream is stored in the lower 536 sectors of the flash. */
 #define FLASH_TEST_REGION_OFFSET \
 	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(fpga_bitstream))
+#elif defined(CONFIG_BOARD_NPCX9M6F_EVB) || \
+	defined(CONFIG_BOARD_NPCX7M6FB_EVB)
+#define FLASH_TEST_REGION_OFFSET 0x7F000
 #else
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #endif
@@ -74,7 +77,7 @@ void main(void)
 
 	printf("\nTest 2: Flash write\n");
 
-	printf("Attempting to write %u bytes\n", len);
+	printf("Attempting to write %zu bytes\n", len);
 	rc = flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, expected, len);
 	if (rc != 0) {
 		printf("Flash write failed! %d\n", rc);

@@ -390,5 +390,5 @@ static bool net_mgmt_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_REGISTER(af_net_mgmt, AF_NET_MGMT, net_mgmt_is_supported,
-		    znet_mgmt_socket);
+NET_SOCKET_REGISTER(af_net_mgmt, NET_SOCKET_DEFAULT_PRIO, AF_NET_MGMT,
+		    net_mgmt_is_supported, znet_mgmt_socket);

@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "Intel SoC FPGA Agilex"
+depends on SOC_SERIES_AGILEX
+
+config SOC_AGILEX
+	bool "Intel SoC FPGA Agilex"
+endchoice

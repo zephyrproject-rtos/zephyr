@@ -32,8 +32,7 @@ struct i2c_stm32_config {
 	struct stm32_pclken pclken;
 	I2C_TypeDef *i2c;
 	uint32_t bitrate;
-	const struct soc_gpio_pinctrl *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 	const struct i2c_config_timing *timings;
 	size_t n_timings;
@@ -90,9 +89,5 @@ int i2c_stm32_slave_register(const struct device *dev,
 int i2c_stm32_slave_unregister(const struct device *dev,
 			       struct i2c_slave_config *config);
 #endif
-
-#define DEV_DATA(dev) ((struct i2c_stm32_data * const)(dev)->data)
-#define DEV_CFG(dev)	\
-((const struct i2c_stm32_config * const)(dev)->config)
 
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */

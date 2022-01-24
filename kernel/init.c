@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 struct z_kernel _kernel;
 
 /* init/main and idle threads */
-K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
@@ -65,14 +65,6 @@ K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 				   CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	#define initialize_timeouts() do { \
-		sys_dlist_init(&_timeout_q); \
-	} while (false)
-#else
-	#define initialize_timeouts() do { } while ((0))
-#endif
-
 extern void idle(void *unused1, void *unused2, void *unused3);
 
 
@@ -84,12 +76,9 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  */
 
 /**
- *
  * @brief Clear BSS
  *
  * This routine clears the BSS region, so all bytes are 0.
- *
- * @return N/A
  */
 __boot_func
 void z_bss_zero(void)
@@ -166,13 +155,10 @@ bool z_sys_post_kernel;
 extern void boot_banner(void);
 
 /**
- *
  * @brief Mainline for kernel's background thread
  *
  * This routine completes kernel initialization by invoking the remaining
  * init functions, then invokes application's main() routine.
- *
- * @return N/A
  */
 __boot_func
 static void bg_thread_main(void *unused1, void *unused2, void *unused3)
@@ -216,6 +202,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_sys_init_run_level(_SYS_INIT_LEVEL_SMP);
 #endif
 
+#ifdef CONFIG_MMU
+	z_mem_manage_boot_finish();
+#endif /* CONFIG_MMU */
+
 	extern void main(void);
 
 	main();
@@ -228,16 +218,6 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	gcov_coverage_dump();
 #endif
 } /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
-
-/* LCOV_EXCL_START */
-
-void __weak main(void)
-{
-	/* NOP default main() if the application does not provide one. */
-	arch_nop();
-}
-
-/* LCOV_EXCL_STOP */
 
 #if defined(CONFIG_MULTITHREADING)
 __boot_func
@@ -263,6 +243,11 @@ static void init_idle_thread(int i)
 #ifdef CONFIG_SMP
 	thread->base.is_idle = 1U;
 #endif
+}
+
+void z_reinit_idle_thread(int i)
+{
+	init_idle_thread(i);
 }
 
 /**
@@ -312,9 +297,11 @@ static char *prepare_multithreading(void)
 		_kernel.cpus[i].irq_stack =
 			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
 			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+		_kernel.cpus[i].usage.track_usage =
+			CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#endif
 	}
-
-	initialize_timeouts();
 
 	return stack_ptr;
 }

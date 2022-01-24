@@ -1,4 +1,4 @@
-set(EMU_PLATFORM qemu)
+set(SUPPORTED_EMU_PLATFORMS qemu)
 
 set(QEMU_CPU_TYPE_${ARCH} arc)
 

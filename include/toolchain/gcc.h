@@ -63,6 +63,12 @@
 #define BUILD_ASSERT(EXPR, MSG...)
 #endif
 
+#ifdef __cplusplus
+#define ZRESTRICT __restrict
+#else
+#define ZRESTRICT restrict
+#endif
+
 #include <toolchain/common.h>
 #include <stdbool.h>
 
@@ -155,6 +161,9 @@ do {                                                                    \
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
 #define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+
+#define __in_section_unique_named(seg, name) \
+	___in_section(seg, __FILE__, name)
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead
  * of FLASH. Make sure '__ramfunc' is defined only when
@@ -286,7 +295,8 @@ do {                                                                    \
 #if defined(_ASMLANGUAGE)
 
 #if defined(CONFIG_ARM) || defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) \
-	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64)
+	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64) \
+	|| defined(CONFIG_MIPS)
 #define GTEXT(sym) .global sym; .type sym, %function
 #define GDATA(sym) .global sym; .type sym, %object
 #define WTEXT(sym) .weak sym; .type sym, %function
@@ -467,7 +477,8 @@ do {                                                                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",@object")
 
-#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_XTENSA)
+#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
+	defined(CONFIG_XTENSA) || defined(CONFIG_MIPS)
 
 /* No special prefixes necessary for constants in this arch AFAICT */
 #define GEN_ABSOLUTE_SYM(name, value)		\

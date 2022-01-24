@@ -181,8 +181,9 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
  * @note For ARM architecture, disabling floating point preservation may only
  * be requested for the current thread and cannot be requested in ISRs.
  *
- * @retval 0       On success.
- * @retval -EINVAL If the floating point disabling could not be performed.
+ * @retval 0        On success.
+ * @retval -EINVAL  If the floating point disabling could not be performed.
+ * @retval -ENOTSUP If the operation is not supported
  */
 int arch_float_disable(struct k_thread *thread);
 
@@ -192,7 +193,7 @@ int arch_float_disable(struct k_thread *thread);
  * The function is used to enable the preservation of floating
  * point context information for a particular thread.
  * This API depends on each architecture implimentation. If the architecture
- * does not support enableing, this API will always be failed.
+ * does not support enabling, this API will always be failed.
  *
  * The @a options parameter indicates which floating point register sets will
  * be used by the specified thread. Currently it is used by x86 only.
@@ -200,8 +201,9 @@ int arch_float_disable(struct k_thread *thread);
  * @param thread  ID of thread.
  * @param options architecture dependent options
  *
- * @retval 0       On success.
- * @retval -EINVAL If the floating point enabling could not be performed.
+ * @retval 0        On success.
+ * @retval -EINVAL  If the floating point enabling could not be performed.
+ * @retval -ENOTSUP If the operation is not supported
  */
 int arch_float_enable(struct k_thread *thread, unsigned int options);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
@@ -243,7 +245,6 @@ static inline bool arch_is_in_isr(void);
  * @{
  */
 
-#ifdef CONFIG_MMU
 /**
  * Map physical memory into the virtual address space
  *
@@ -333,7 +334,6 @@ void arch_mem_unmap(void *addr, size_t size);
  */
 int arch_page_phys_get(void *virt, uintptr_t *phys);
 
-#ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
 /**
  * Update page frame database with reserved pages
  *
@@ -345,9 +345,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys);
  * early system initialization with mm_lock held.
  */
 void arch_reserved_pages_update(void);
-#endif /* ARCH_HAS_RESERVED_PAGE_FRAMES */
 
-#ifdef CONFIG_DEMAND_PAGING
 /**
  * Update all page tables for a paged-out data page
  *
@@ -524,8 +522,7 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
  */
 uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
 			     bool clear_accessed);
-#endif /* CONFIG_DEMAND_PAGING */
-#endif /* CONFIG_MMU */
+
 /** @} */
 
 /**
@@ -538,7 +535,7 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
  * Early boot console output hook
  *
  * Definition of this function is optional. If implemented, any invocation
- * of printk() (or logging calls with CONFIG_LOG_MINIMAL which are backed by
+ * of printk() (or logging calls with CONFIG_LOG_MODE_MINIMAL which are backed by
  * printk) will default to sending characters to this function. It is
  * useful for early boot debugging before main serial or console drivers
  * come up.

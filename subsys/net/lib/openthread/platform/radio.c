@@ -272,6 +272,10 @@ void transmit_message(struct k_work *tx_job)
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 	radio_api->set_txpower(radio_dev, tx_power);
 
+	net_pkt_set_ieee802154_frame_secured(tx_pkt,
+					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);
+	net_pkt_set_ieee802154_mac_hdr_rdy(tx_pkt, sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated);
+
 	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
 		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
@@ -325,6 +329,10 @@ void transmit_message(struct k_work *tx_job)
 
 static inline void handle_tx_done(otInstance *aInstance)
 {
+	sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed =
+		net_pkt_ieee802154_frame_secured(tx_pkt);
+	sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated = net_pkt_ieee802154_mac_hdr_rdy(tx_pkt);
+
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioTransmitDone(aInstance, &sTransmitFrame, tx_result);
 	} else {
@@ -997,13 +1005,13 @@ uint64_t otPlatRadioGetNow(otInstance *aInstance)
 #endif
 
 #if defined(CONFIG_IEEE802154_2015)
-void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode,
-			  uint8_t aKeyId, const otMacKey *aPrevKey,
-			  const otMacKey *aCurrKey, const otMacKey *aNextKey)
+void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKeyId,
+			  const otMacKeyMaterial *aPrevKey, const otMacKeyMaterial *aCurrKey,
+			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
 {
 	ARG_UNUSED(aInstance);
-	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL &&
-			aNextKey != NULL);
+	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
 
 	uint8_t key_id_mode = aKeyIdMode >> 3;
 
@@ -1011,19 +1019,19 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode,
 		{
 			.key_id_mode = key_id_mode,
 			.key_index = aKeyId == 1 ? 0x80 : aKeyId - 1,
-			.key_value = (uint8_t *)aPrevKey->m8,
+			.key_value = (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
 			.key_id_mode = key_id_mode,
 			.key_index = aKeyId,
-			.key_value = (uint8_t *)aCurrKey->m8,
+			.key_value = (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
 			.key_id_mode = key_id_mode,
 			.key_index = aKeyId == 0x80 ? 1 : aKeyId + 1,
-			.key_value = (uint8_t *)aNextKey->m8,
+			.key_value = (uint8_t *)aNextKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
@@ -1031,8 +1039,17 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode,
 		},
 	};
 
+	struct ieee802154_key clear_keys[] = {
+		{
+			.key_value = NULL,
+		},
+	};
+
+	/* aKeyId in range: (1, 0x80) means valid keys
+	 * aKeyId == 0 is used only to clear keys for stack reset in RCP
+	 */
 	struct ieee802154_config config = {
-		.mac_keys = keys
+		.mac_keys = aKeyId == 0 ? clear_keys : keys,
 	};
 
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_MAC_KEYS,

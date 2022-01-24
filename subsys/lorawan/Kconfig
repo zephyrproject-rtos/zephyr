@@ -8,6 +8,7 @@ menuconfig LORAWAN
 	depends on LORA
 	select HAS_SEMTECH_LORAMAC
 	select HAS_SEMTECH_SOFT_SE
+	select EXPERIMENTAL
 	help
 	  This option enables LoRaWAN support.
 

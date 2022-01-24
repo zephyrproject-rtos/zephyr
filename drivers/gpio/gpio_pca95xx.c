@@ -181,17 +181,17 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 		(struct gpio_pca95xx_drv_data * const)dev->data;
 	const struct device *i2c_master = drv_data->i2c_master;
 	uint16_t i2c_addr = config->i2c_slave_addr;
-	uint16_t port_data;
+	uint8_t buf[3];
 	int ret;
 
 	LOG_DBG("PCA95XX[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = "
 		"0x%X", i2c_addr, reg, (value & 0xFF),
 		(reg + 1), (value >> 8));
 
-	port_data = sys_cpu_to_le16(value);
+	buf[0] = reg;
+	sys_put_le16(value, &buf[1]);
 
-	ret = i2c_burst_write(i2c_master, i2c_addr, reg,
-			      (uint8_t *)&port_data, sizeof(port_data));
+	ret = i2c_write(i2c_master, buf, sizeof(buf), i2c_addr);
 	if (ret == 0) {
 		*cache = value;
 	} else {

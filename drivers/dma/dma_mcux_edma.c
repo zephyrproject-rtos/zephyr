@@ -53,15 +53,14 @@ struct dma_mcux_edma_data {
 	struct k_mutex dma_mutex;
 };
 
-#define DEV_CFG(dev)                                                           \
-	((const struct dma_mcux_edma_config *const)dev->config)
-#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
-#define DEV_BASE(dev) ((DMA_Type *)DEV_CFG(dev)->base)
+#define DEV_BASE(dev) \
+	((DMA_Type *)((const struct dma_mcux_edma_config *const)dev->config)->base)
 
-#define DEV_DMAMUX_BASE(dev) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base)
+#define DEV_DMAMUX_BASE(dev) \
+	((DMAMUX_Type *)((const struct dma_mcux_edma_config *const)dev->config)->dmamux_base)
 
 #define DEV_CHANNEL_DATA(dev, ch)                                              \
-	((struct call_back *)(&(DEV_DATA(dev)->data_cb[ch])))
+	((struct call_back *)(&(((struct dma_mcux_edma_data *)dev->data)->data_cb[ch])))
 
 #define DEV_EDMA_HANDLE(dev, ch)                                               \
 	((edma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->edma_handle)))
@@ -184,16 +183,17 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *config)
 {
+	/* Check for invalid parameters before dereferencing them. */
+	if (NULL == dev || NULL == config) {
+		return -EINVAL;
+	}
+
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t slot = config->dma_slot;
 	edma_transfer_type_t transfer_type;
 	int key;
-
-	if (NULL == dev || NULL == config) {
-		return -EINVAL;
-	}
 
 	if (slot > DT_INST_PROP(0, dma_requests)) {
 		LOG_ERR("source number is outof scope %d", slot);
@@ -349,7 +349,7 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 {
-	struct dma_mcux_edma_data *data = DEV_DATA(dev);
+	struct dma_mcux_edma_data *data = dev->data;
 
 	if (!data->data_cb[channel].busy) {
 		return 0;
@@ -362,6 +362,29 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 	data->data_cb[channel].busy = false;
 	return 0;
 }
+
+static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+
+	if (!data->busy) {
+		return -EINVAL;
+	}
+	EDMA_StopTransfer(DEV_EDMA_HANDLE(dev, channel));
+	return 0;
+}
+
+static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+
+	if (!data->busy) {
+		return -EINVAL;
+	}
+	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
+	return 0;
+}
+
 
 static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 				uint32_t src, uint32_t dst, size_t size)
@@ -419,136 +442,90 @@ static const struct dma_driver_api dma_mcux_edma_api = {
 	.config = dma_mcux_edma_configure,
 	.start = dma_mcux_edma_start,
 	.stop = dma_mcux_edma_stop,
+	.suspend = dma_mcux_edma_suspend,
+	.resume = dma_mcux_edma_resume,
 	.get_status = dma_mcux_edma_get_status,
 	.chan_filter = dma_mcux_edma_channel_filter,
 };
 
 static int dma_mcux_edma_init(const struct device *dev)
 {
+	const struct dma_mcux_edma_config *config = dev->config;
+	struct dma_mcux_edma_data *data = dev->data;
+
 	edma_config_t userConfig = { 0 };
 
 	LOG_DBG("INIT NXP EDMA");
 	DMAMUX_Init(DEV_DMAMUX_BASE(dev));
 	EDMA_GetDefaultConfig(&userConfig);
 	EDMA_Init(DEV_BASE(dev), &userConfig);
-	DEV_CFG(dev)->irq_config_func(dev);
-	memset(DEV_DATA(dev), 0, sizeof(struct dma_mcux_edma_data));
+	config->irq_config_func(dev);
+	memset(dev->data, 0, sizeof(struct dma_mcux_edma_data));
 	memset(tcdpool, 0, sizeof(tcdpool));
-	k_mutex_init(&DEV_DATA(dev)->dma_mutex);
-	DEV_DATA(dev)->dma_ctx.magic = DMA_MAGIC;
-	DEV_DATA(dev)->dma_ctx.dma_channels = DEV_CFG(dev)->dma_channels;
-	DEV_DATA(dev)->dma_ctx.atomic = DEV_DATA(dev)->channels_atomic;
+	k_mutex_init(&data->dma_mutex);
+	data->dma_ctx.magic = DMA_MAGIC;
+	data->dma_ctx.dma_channels = config->dma_channels;
+	data->dma_ctx.atomic = data->channels_atomic;
 	return 0;
 }
 
-static void dma_imx_config_func_0(const struct device *dev);
+#define IRQ_CONFIG(n, idx, fn)						\
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, idx), (			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),		\
+		DT_INST_IRQ_BY_IDX(n, idx, priority),			\
+		fn,							\
+		DEVICE_DT_INST_GET(n), 0);				\
+		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));		\
+		))
 
-static const struct dma_mcux_edma_config dma_config_0 = {
-	.base = (DMA_Type *)DT_INST_REG_ADDR(0),
-	.dmamux_base = (DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(0, 1),
-	.dma_channels = DT_INST_PROP(0, dma_channels),
-	.irq_config_func = dma_imx_config_func_0,
-};
+#define DMA_MCUX_EDMA_CONFIG_FUNC(n)					\
+	static void dma_imx_config_func_##n(const struct device *dev)	\
+	{								\
+		ARG_UNUSED(dev);					\
+									\
+		IRQ_CONFIG(n, 0, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 1, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 2, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 3, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 4, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 5, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 6, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 7, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 8, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 9, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 10, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 11, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 12, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 13, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 14, dma_mcux_edma_irq_handler);		\
+		IRQ_CONFIG(n, 15, dma_mcux_edma_irq_handler);		\
+									\
+		IRQ_CONFIG(n, 16, dma_mcux_edma_error_irq_handler);	\
+									\
+		LOG_DBG("install irq done");				\
+	}
 
-struct dma_mcux_edma_data dma_data;
 /*
  * define the dma
  */
-DEVICE_DT_INST_DEFINE(0, &dma_mcux_edma_init, NULL,
-		    &dma_data, &dma_config_0, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dma_mcux_edma_api);
+#define DMA_INIT(n)							\
+	static void dma_imx_config_func_##n(const struct device *dev);	\
+	static const struct dma_mcux_edma_config dma_config_##n = {	\
+		.base = (DMA_Type *)DT_INST_REG_ADDR(n),		\
+		.dmamux_base =						\
+			(DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(n, 1),	\
+		.dma_channels = DT_INST_PROP(n, dma_channels),		\
+		.irq_config_func = dma_imx_config_func_##n,		\
+	};								\
+									\
+	struct dma_mcux_edma_data dma_data_##n;				\
+									\
+	DEVICE_DT_INST_DEFINE(n,					\
+			    &dma_mcux_edma_init, NULL,			\
+			    &dma_data_##n, &dma_config_##n,		\
+			    POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,	\
+			    &dma_mcux_edma_api);			\
+									\
+	DMA_MCUX_EDMA_CONFIG_FUNC(n);
 
-void dma_imx_config_func_0(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/*install the dma error handle*/
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),
-		    DT_INST_IRQ_BY_IDX(0, 0, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 0, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),
-		    DT_INST_IRQ_BY_IDX(0, 1, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),
-		    DT_INST_IRQ_BY_IDX(0, 2, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 3, irq),
-		    DT_INST_IRQ_BY_IDX(0, 3, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 3, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 4, irq),
-		    DT_INST_IRQ_BY_IDX(0, 4, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 4, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 5, irq),
-		    DT_INST_IRQ_BY_IDX(0, 5, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 5, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 6, irq),
-		    DT_INST_IRQ_BY_IDX(0, 6, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 6, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 7, irq),
-		    DT_INST_IRQ_BY_IDX(0, 7, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 7, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 8, irq),
-		    DT_INST_IRQ_BY_IDX(0, 8, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 8, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 9, irq),
-		    DT_INST_IRQ_BY_IDX(0, 9, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 9, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 10, irq),
-		    DT_INST_IRQ_BY_IDX(0, 10, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 10, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 11, irq),
-		    DT_INST_IRQ_BY_IDX(0, 11, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 11, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 12, irq),
-		    DT_INST_IRQ_BY_IDX(0, 12, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 12, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 13, irq),
-		    DT_INST_IRQ_BY_IDX(0, 13, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 13, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 14, irq),
-		    DT_INST_IRQ_BY_IDX(0, 14, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 14, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 15, irq),
-		    DT_INST_IRQ_BY_IDX(0, 15, priority),
-		    dma_mcux_edma_irq_handler, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 15, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 16, irq),
-		    DT_INST_IRQ_BY_IDX(0, 16, priority),
-		    dma_mcux_edma_error_irq_handler,
-		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 16, irq));
-
-	LOG_DBG("install irq done");
-}
+DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)

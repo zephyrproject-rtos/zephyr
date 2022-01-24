@@ -52,13 +52,11 @@ struct i2c_sam0_msg {
 struct i2c_sam0_dev_data {
 	struct k_sem sem;
 	struct i2c_sam0_msg msg;
+	struct i2c_msg *msgs;
+	uint8_t num_msgs;
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct i2c_sam0_dev_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2c_sam0_dev_data *const)(dev)->data)
 
 static void wait_synchronization(SercomI2cm *regs)
 {
@@ -77,8 +75,8 @@ static void wait_synchronization(SercomI2cm *regs)
 
 static bool i2c_sam0_terminate_on_error(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	if (!(i2c->STATUS.reg & (SERCOM_I2CM_STATUS_ARBLOST |
@@ -124,8 +122,8 @@ static bool i2c_sam0_terminate_on_error(const struct device *dev)
 
 static void i2c_sam0_isr(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	/* Get present interrupts and clear them */
@@ -137,6 +135,18 @@ static void i2c_sam0_isr(const struct device *dev)
 		return;
 	}
 
+	/*
+	 * Directly send/receive next message if it is in the same direction and
+	 * the current message has no stop flag and the next message has no
+	 * restart flag.
+	 */
+	const bool continue_next = (data->msg.size == 1) && (data->num_msgs > 1) &&
+				   ((data->msgs[0].flags & I2C_MSG_RW_MASK) ==
+				    (data->msgs[1].flags & I2C_MSG_RW_MASK)) &&
+				   !(data->msgs[0].flags & I2C_MSG_STOP) &&
+				   !(data->msgs[1].flags & I2C_MSG_RESTART) &&
+				   ((status & (SERCOM_I2CM_INTFLAG_MB | SERCOM_I2CM_INTFLAG_SB)));
+
 	if (status & SERCOM_I2CM_INTFLAG_MB) {
 		if (!data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
@@ -147,12 +157,8 @@ static void i2c_sam0_isr(const struct device *dev)
 		i2c->DATA.reg = *data->msg.buffer;
 		data->msg.buffer++;
 		data->msg.size--;
-
-		return;
-	}
-
-	if (status & SERCOM_I2CM_INTFLAG_SB) {
-		if (data->msg.size == 1) {
+	} else if (status & SERCOM_I2CM_INTFLAG_SB) {
+		if (!continue_next && (data->msg.size == 1)) {
 			/*
 			 * If this is the last byte, then prepare for an auto
 			 * NACK before doing the actual read.  This does not
@@ -165,12 +171,20 @@ static void i2c_sam0_isr(const struct device *dev)
 		data->msg.buffer++;
 		data->msg.size--;
 
-		if (!data->msg.size) {
+		if (!continue_next && !data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 			k_sem_give(&data->sem);
 			return;
 		}
-		return;
+	}
+
+	if (continue_next) {
+		data->msgs++;
+		data->num_msgs--;
+
+		data->msg.buffer = data->msgs->buf;
+		data->msg.size = data->msgs->len;
+		data->msg.status = 0;
 	}
 }
 
@@ -180,8 +194,8 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 				    uint32_t id, int error_code)
 {
 	const struct device *dev = arg;
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	ARG_UNUSED(dma_dev);
@@ -217,8 +231,8 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 
 static bool i2c_sam0_dma_write_start(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -271,8 +285,8 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 				   uint32_t id, int error_code)
 {
 	const struct device *dev = arg;
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	ARG_UNUSED(dma_dev);
@@ -309,8 +323,8 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 
 static bool i2c_sam0_dma_read_start(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -365,18 +379,20 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			     uint8_t num_msgs, uint16_t addr)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t addr_reg;
 
 	if (!num_msgs) {
 		return 0;
 	}
+	data->num_msgs = num_msgs;
+	data->msgs = msgs;
 
-	for (; num_msgs > 0;) {
-		if (!msgs->len) {
-			if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+	for (; data->num_msgs > 0;) {
+		if (!data->msgs->len) {
+			if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 				return -EINVAL;
 			}
 		}
@@ -392,12 +408,12 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 				  SERCOM_I2CM_STATUS_BUSERR;
 		wait_synchronization(i2c);
 
-		data->msg.buffer = msgs->buf;
-		data->msg.size = msgs->len;
+		data->msg.buffer = data->msgs->buf;
+		data->msg.size = data->msgs->len;
 		data->msg.status = 0;
 
 		addr_reg = addr << 1U;
-		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+		if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			addr_reg |= 1U;
 
 			/* Set to auto ACK */
@@ -405,7 +421,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			wait_synchronization(i2c);
 		}
 
-		if (msgs->flags & I2C_MSG_ADDR_10_BITS) {
+		if (data->msgs->flags & I2C_MSG_ADDR_10_BITS) {
 #ifdef SERCOM_I2CM_ADDR_TENBITEN
 			addr_reg |= SERCOM_I2CM_ADDR_TENBITEN;
 #else
@@ -432,7 +448,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		i2c->INTENSET.reg = SERCOM_I2CM_INTENSET_ERROR;
 #endif
 
-		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+		if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			/*
 			 * Always set MB even when reading, since that's how
 			 * some errors are indicated.
@@ -461,6 +477,9 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->msg.status) {
+			/* return the bus to idle */
+			i2c->CTRLB.bit.CMD = 3;
+
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					DEV_NAME(dev));
@@ -472,23 +491,25 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			return -EIO;
 		}
 
-		if (msgs->flags & I2C_MSG_STOP) {
-			i2c->CTRLB.bit.CMD = 3;
-		} else if ((msgs->flags & I2C_MSG_RESTART) && num_msgs > 1) {
-			/*
-			 * No action, since we do this automatically if we
-			 * don't send an explicit stop
-			 */
-		} else {
-			/*
-			 * Neither present, so assume we want to release
-			 * the bus (by sending a stop)
-			 */
+		/*
+		 * Only send a stop if after this message:
+		 *   - it is explicitly requested that we send a stop, or
+		 *   - we are not conducting a restart, with more messages to follow
+		 *
+		 * Note: nothing validates the flags, so default to a stop if a stop is
+		 * requested... do not let a restart request override it
+		 */
+		bool send_stop = (data->msgs->flags & I2C_MSG_STOP)
+			|| !((data->msgs->flags & I2C_MSG_RESTART) && (data->num_msgs > 1));
+
+		if (send_stop) {
+			while (!i2c->STATUS.bit.CLKHOLD) {
+			}
 			i2c->CTRLB.bit.CMD = 3;
 		}
 
-		num_msgs--;
-		msgs++;
+		data->num_msgs--;
+		data->msgs++;
 	}
 
 	return 0;
@@ -497,7 +518,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 				      uint32_t config)
 {
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t baud;
 	uint32_t baud_low;
@@ -631,7 +652,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 
 static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 {
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -658,8 +679,8 @@ static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 
 static int i2c_sam0_initialize(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -787,8 +808,8 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	static void i2c_sam0_irq_config_##n(const struct device *dev);	\
 	I2C_SAM0_CONFIG(n);						\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &i2c_sam0_initialize,			\
+	I2C_DEVICE_DT_INST_DEFINE(n,					\
+			    i2c_sam0_initialize,			\
 			    NULL,					\
 			    &i2c_sam0_dev_data_##n,			\
 			    &i2c_sam0_dev_config_##n, POST_KERNEL,	\

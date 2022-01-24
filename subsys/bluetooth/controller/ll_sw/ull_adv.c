@@ -16,11 +16,13 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
+#include "hal/cntr.h"
 
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "ticker/ticker.h"
 
@@ -33,9 +35,13 @@
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_filter.h"
-#include "lll/lll_df_types.h"
+
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ll_sw/ull_tx_queue.h"
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -51,6 +57,10 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ll_sw/ull_llcp.h"
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_adv
 #include "common/log.h"
@@ -62,15 +72,20 @@ inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv);
 static int init_reset(void);
 static inline struct ll_adv_set *is_disabled_get(uint8_t handle);
 static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
-			     uint8_t adv_chn_cnt, uint8_t phy);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
-static void ticker_op_update_cb(uint32_t status, void *param);
+			     uint8_t adv_chn_cnt, uint8_t phy,
+			     uint8_t phy_flags);
+
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
+static void ticker_update_op_cb(uint32_t status, void *param);
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			   uint16_t lazy, uint8_t force, void *param);
-static void ticker_op_stop_cb(uint32_t status, void *param);
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			   uint32_t remainder, uint16_t lazy, uint8_t force,
+			   void *param);
+static void ticker_stop_op_cb(uint32_t status, void *param);
+static void adv_disable(void *param);
 static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -79,8 +94,11 @@ static void conn_release(struct ll_adv_set *adv);
 static void adv_max_events_duration_set(struct ll_adv_set *adv,
 					uint16_t duration,
 					uint8_t max_ext_adv_evts);
-static void ticker_op_aux_stop_cb(uint32_t status, void *param);
-static void ticker_op_ext_stop_cb(uint32_t status, void *param);
+static void ticker_stop_aux_op_cb(uint32_t status, void *param);
+static void aux_disable(void *param);
+static void aux_disabled_cb(void *param);
+static void ticker_stop_ext_op_cb(uint32_t status, void *param);
+static void ext_disable(void *param);
 static void ext_disabled_cb(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -281,6 +299,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 					 /* pdu_adv_type array. */
 
 			adv->lll.phy_p = phy_p;
+			adv->lll.phy_flags = PHY_FLAGS_S8;
 		}
 	} else {
 		adv->lll.phy_p = PHY_1M;
@@ -550,7 +569,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			pri_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
 		}
 		if (pri_hdr->aux_ptr) {
-			ull_adv_aux_ptr_fill(&pri_dptr, phy_s);
+			pri_dptr -= sizeof(struct pdu_adv_aux_ptr);
+			ull_adv_aux_ptr_fill((void *)pri_dptr, 0U, phy_s);
 		}
 		adv->lll.phy_s = phy_s;
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
@@ -632,6 +652,11 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		pdu->tx_addr = own_addr_type & 0x1;
 		pdu->rx_addr = 0;
 	}
+
+	/* Initialize LLL header with parent pointer so that ULL contexts
+	 * can be referenced in functions having the LLL context reference.
+	 */
+	lll_hdr_init(&adv->lll, adv);
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -826,7 +851,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	lll->rl_idx = FILTER_IDX_NONE;
 
-	/* Prepare whitelist and optionally resolving list */
+	/* Prepare filter accept list and optionally resolving list */
 	ull_filter_adv_update(lll->filter_policy);
 
 	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
@@ -922,24 +947,37 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->nesn = 0;
 		conn_lll->empty = 0;
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 		conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		/* Use the default 1M packet max time */
-		conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-		conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+		conn_lll->max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						      PHY_1M);
+		conn_lll->max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						      PHY_1M);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
-					    PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
-						   lll->phy_s));
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+							  lll->phy_s));
 		conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
-					    PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
-						   lll->phy_s));
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+							  lll->phy_s));
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
+#endif
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_ADV_EXT)
+		const uint8_t phy = lll->phy_s;
+#else
+		const uint8_t phy = PHY_1M;
+#endif
+		ull_dle_init(conn, phy);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn_lll->phy_flags = 0;
@@ -971,23 +1009,30 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		/* FIXME: BEGIN: Move to ULL? */
 		conn_lll->role = 1;
-		conn_lll->slave.initiated = 0;
-		conn_lll->slave.cancelled = 0;
+		conn_lll->periph.initiated = 0;
+		conn_lll->periph.cancelled = 0;
 		conn_lll->data_chan_sel = 0;
 		conn_lll->data_chan_use = 0;
 		conn_lll->event_counter = 0;
 
 		conn_lll->latency_prepare = 0;
 		conn_lll->latency_event = 0;
-		conn_lll->slave.latency_enabled = 0;
-		conn_lll->slave.window_widening_prepare_us = 0;
-		conn_lll->slave.window_widening_event_us = 0;
-		conn_lll->slave.window_size_prepare_us = 0;
+		conn_lll->periph.latency_enabled = 0;
+		conn_lll->periph.window_widening_prepare_us = 0;
+		conn_lll->periph.window_widening_event_us = 0;
+		conn_lll->periph.window_size_prepare_us = 0;
 		/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 		memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
 #endif /* CONFIG_BT_CTLR_CONN_META */
-
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+		conn_lll->df_rx_cfg.is_initialized = 0U;
+		conn_lll->df_rx_cfg.hdr.elem_size = sizeof(struct lll_df_conn_rx_params);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+		conn_lll->df_tx_cfg.is_initialized = 0U;
+		conn_lll->df_tx_cfg.cte_rsp_en = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 		conn->connect_expire = 6;
 		conn->supervision_expire = 0;
 		conn->procedure_expire = 0;
@@ -998,15 +1043,18 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
-		conn->own_addr_type = BT_ADDR_LE_NONE->type;
-		memcpy(conn->own_addr, BT_ADDR_LE_NONE->a.val, sizeof(conn->own_addr));
-		conn->peer_addr_type = BT_ADDR_LE_NONE->type;
-		memcpy(conn->peer_addr, BT_ADDR_LE_NONE->a.val, sizeof(conn->peer_addr));
+		conn->own_id_addr_type = BT_ADDR_LE_NONE->type;
+		(void)memcpy(conn->own_id_addr, BT_ADDR_LE_NONE->a.val,
+			     sizeof(conn->own_id_addr));
+		conn->peer_id_addr_type = BT_ADDR_LE_NONE->type;
+		(void)memcpy(conn->peer_id_addr, BT_ADDR_LE_NONE->a.val,
+			     sizeof(conn->peer_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 		conn->common.fex_valid = 0;
 		conn->common.txn_lock = 0;
-		conn->slave.latency_cancel = 0;
+		conn->periph.latency_cancel = 0;
 
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
 		conn->llcp_rx = NULL;
@@ -1028,14 +1076,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_enc.req = conn->llcp_enc.ack = 0U;
 		conn->llcp_enc.pause_tx = conn->llcp_enc.pause_rx = 0U;
 		conn->llcp_enc.refresh = 0U;
-		conn->slave.llcp_type = 0U;
+		conn->periph.llcp_type = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		conn->llcp_conn_param.req = 0;
 		conn->llcp_conn_param.ack = 0;
 		conn->llcp_conn_param.disabled = 0;
-		conn->slave.ticks_to_offset = 0;
+		conn->periph.ticks_to_offset = 0;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -1043,7 +1091,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_length.disabled = 0U;
 		conn->llcp_length.cache.tx_octets = 0U;
 		conn->default_tx_octets = ull_conn_default_tx_octets_get();
-
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->default_tx_time = ull_conn_default_tx_time_get();
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -1059,6 +1106,24 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 		conn->tx_data = conn->tx_data_last = 0;
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+		/* Re-initialize the control procedure data structures */
+		ull_llcp_init(conn);
+
+		conn->llcp_terminate.reason_final = 0;
+		/* NOTE: use allocated link for generating dedicated
+		 * terminate ind rx node
+		 */
+		conn->llcp_terminate.node_rx.hdr.link = link;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
+		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		/* Re-initialize the Tx Q */
+		ull_tx_q_init(&conn->tx_q);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 		/* NOTE: using same link as supplied for terminate ind */
 		adv->link_cc_free = link;
@@ -1115,14 +1180,28 @@ uint8_t ll_adv_enable(uint8_t enable)
 		node_rx_adv_term->hdr.link = (void *)link_adv_term;
 		adv->lll.node_rx_adv_term = (void *)node_rx_adv_term;
 
-		adv_max_events_duration_set(adv, duration, max_ext_adv_evts);
+		if (0) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		} else if (lll->is_hdcd) {
+			adv_max_events_duration_set(adv, 0U, 0U);
+#endif /* CONFIG_BT_PERIPHERAL */
+		} else {
+			adv_max_events_duration_set(adv, duration,
+						    max_ext_adv_evts);
+		}
+	} else {
+		adv->lll.node_rx_adv_term = NULL;
+		adv_max_events_duration_set(adv, 0U, 0U);
 	}
 
 	const uint8_t phy = lll->phy_p;
+	const uint8_t phy_flags = lll->phy_flags;
 
+	adv->event_counter = 0U;
 #else
 	/* Legacy ADV only supports LE_1M PHY */
 	const uint8_t phy = PHY_1M;
+	const uint8_t phy_flags = 0U;
 #endif
 
 	/* For now we adv on all channels enabled in channel map */
@@ -1135,7 +1214,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 	}
 
 	/* Calculate the advertising time reservation */
-	uint16_t time_us = adv_time_get(pdu_adv, pdu_scan, adv_chn_cnt, phy);
+	uint16_t time_us = adv_time_get(pdu_adv, pdu_scan, adv_chn_cnt, phy,
+					phy_flags);
 
 	uint16_t interval = adv->interval;
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -1149,9 +1229,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 		interval_min_us = time_us +
 				  (scan_delay + scan_window) * USEC_PER_MSEC;
 		if ((interval * SCAN_INT_UNIT_US) < interval_min_us) {
-			interval = (interval_min_us +
-				(SCAN_INT_UNIT_US - 1)) /
-				SCAN_INT_UNIT_US;
+			interval = ceiling_fraction(interval_min_us,
+						    SCAN_INT_UNIT_US);
 		}
 
 		/* passive scanning */
@@ -1172,8 +1251,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+	/* Initialize ULL context before radio event scheduling is started. */
 	ull_hdr_init(&adv->ull);
-	lll_hdr_init(lll, adv);
 
 	/* TODO: active_to_start feature port */
 	adv->ull.ticks_active_to_start = 0;
@@ -1732,20 +1811,109 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 	return 0;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_window,
+				   uint32_t ticks_delay_window_offset,
+				   uint32_t ticks_adjust_minus)
+{
+	uint32_t random_delay;
+	uint32_t ret;
+
+	/* Get pseudo-random number in the range [0..ticks_delay_window].
+	 * Please note that using modulo of 2^32 samle space has an uneven
+	 * distribution, slightly favoring smaller values.
+	 */
+	lll_rand_isr_get(&random_delay, sizeof(random_delay));
+	random_delay %= ticks_delay_window;
+	random_delay += (ticks_delay_window_offset + 1);
+
+	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+			    TICKER_USER_ID_ULL_HIGH,
+			    TICKER_ID_ADV_BASE + ull_adv_handle_get(adv),
+			    random_delay,
+			    ticks_adjust_minus, 0, 0, 0, 0,
+			    ticker_update_op_cb, adv);
+
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	adv->delay = random_delay;
+#endif
+	return random_delay;
+}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || \
+	defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 void ull_adv_done(struct node_rx_event_done *done)
 {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct lll_adv_aux *lll_aux;
 	struct node_rx_hdr *rx_hdr;
-	struct ll_adv_set *adv;
-	struct lll_adv *lll;
 	uint8_t handle;
 	uint32_t ret;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	struct ll_adv_set *adv;
+	struct lll_adv *lll;
 
 	/* Get reference to ULL context */
 	adv = CONTAINER_OF(done->param, struct ll_adv_set, ull);
 	lll = &adv->lll;
 
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	if (done->extra.result == DONE_COMPLETED) {
+		/* Event completed successfully */
+		adv->delay_remain = ULL_ADV_RANDOM_DELAY;
+	} else {
+		/* Event aborted or too late - try to re-schedule */
+		uint32_t ticks_elapsed;
+		uint32_t ticks_now;
+
+		const uint32_t prepare_overhead =
+			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+		const uint32_t ticks_adv_airtime = adv->ticks_at_expire +
+			prepare_overhead;
+
+		ticks_elapsed = 0;
+
+		ticks_now = cntr_cnt_get();
+		if ((int32_t)(ticks_now - ticks_adv_airtime) > 0) {
+			ticks_elapsed = ticks_now - ticks_adv_airtime;
+		}
+
+		if (adv->delay_remain >= adv->delay + ticks_elapsed) {
+			/* The perturbation window is still open */
+			adv->delay_remain -= (adv->delay + ticks_elapsed);
+		} else {
+			adv->delay_remain = 0;
+		}
+
+		/* Check if we have enough time to re-schedule */
+		if (adv->delay_remain > prepare_overhead) {
+			uint32_t ticks_adjust_minus;
+
+			/* Get negative ticker adjustment needed to pull back ADV one
+			 * interval plus the randomized delay. This means that the ticker
+			 * will be updated to expire in time frame of now + start
+			 * overhead, until 10 ms window is exhausted.
+			 */
+			ticks_adjust_minus = HAL_TICKER_US_TO_TICKS(
+				(uint64_t)adv->interval * ADV_INT_UNIT_US) + adv->delay;
+
+			/* Apply random delay in range [prepare_overhead..delay_remain] */
+			ticker_update_rand(adv, adv->delay_remain - prepare_overhead,
+					   prepare_overhead, ticks_adjust_minus);
+
+			/* Score of the event was increased due to the result, but since
+			 * we're getting a another chance we'll set it back.
+			 */
+			adv->lll.hdr.score -= 1;
+		} else {
+			adv->delay_remain = ULL_ADV_RANDOM_DELAY;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (adv->max_events && (adv->event_counter >= adv->max_events)) {
 		adv->max_events = 0;
 
@@ -1781,18 +1949,19 @@ void ull_adv_done(struct node_rx_event_done *done)
 		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				  TICKER_USER_ID_ULL_HIGH,
 				  (TICKER_ID_ADV_AUX_BASE + aux_handle),
-				  ticker_op_aux_stop_cb, adv);
+				  ticker_stop_aux_op_cb, adv);
 	} else {
 		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				  TICKER_USER_ID_ULL_HIGH,
 				  (TICKER_ID_ADV_BASE + handle),
-				  ticker_op_ext_stop_cb, adv);
+				  ticker_stop_ext_op_cb, adv);
 	}
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
-}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 					struct pdu_adv *pdu)
@@ -1836,15 +2005,26 @@ uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 	uint32_t ticks_plus;
 	struct lll_adv *lll;
 	uint32_t time_ticks;
+	uint8_t phy_flags;
 	uint16_t time_us;
 	uint8_t chan_map;
 	uint8_t chan_cnt;
 	uint32_t ret;
+	uint8_t phy;
 
 	lll = &adv->lll;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	phy = lll->phy_p;
+	phy_flags = lll->phy_flags;
+#else
+	phy = PHY_1M;
+	phy_flags = 0U;
+#endif
+
 	chan_map = lll->chan_map;
 	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
-	time_us = adv_time_get(pdu, pdu_scan, chan_cnt, PHY_1M);
+	time_us = adv_time_get(pdu, pdu_scan, chan_cnt, phy, phy_flags);
 	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (adv->ull.ticks_slot > time_ticks) {
 		ticks_minus = adv->ull.ticks_slot - time_ticks;
@@ -1885,6 +2065,13 @@ static int init_reset(void)
 	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
 		lll_adv_data_init(&ll_adv[handle].lll.adv_data);
 		lll_adv_data_init(&ll_adv[handle].lll.scan_rsp);
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+		/* Pointer to DF configuration must be cleared on reset. In other case it will point
+		 * to a memory pool address that should be released. It may be used by the pool
+		 * itself. In such situation it may cause error.
+		 */
+		ll_adv[handle].df_cfg = NULL;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	}
 
 	/* Make sure that set #0 is initialized with empty legacy PDUs. This is
@@ -1910,14 +2097,20 @@ static inline struct ll_adv_set *is_disabled_get(uint8_t handle)
 }
 
 static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
-			     uint8_t adv_chn_cnt, uint8_t phy)
+			     uint8_t adv_chn_cnt, uint8_t phy,
+			     uint8_t phy_flags)
 {
 	uint16_t time_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+	/* NOTE: 16-bit value is sufficient to calculate the maximum radio
+	 *       event time reservation for PDUs on primary advertising
+	 *       channels (37, 38, and 39 channel indices of 1M and Coded PHY).
+	 */
 
 	/* Calculate the PDU Tx Time and hence the radio event length */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
-		time_us += PKT_AC_US(pdu->len, phy) * adv_chn_cnt +
+		time_us += PDU_AC_US(pdu->len, phy, phy_flags) * adv_chn_cnt +
 			   EVENT_RX_TX_TURNAROUND(phy) * (adv_chn_cnt - 1);
 	} else
 #endif
@@ -1964,13 +2157,15 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 	return time_us;
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-		      uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_prepare};
 	static struct lll_prepare_param p;
 	struct ll_adv_set *adv = param;
+	uint32_t random_delay;
 	struct lll_adv *lll;
 	uint32_t ret;
 	uint8_t ref;
@@ -1997,6 +2192,16 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+		if (adv->lll.aux) {
+			ull_adv_aux_offset_get(adv);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		adv->ticks_at_expire = ticks_at_expire;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	}
 
 	/* Apply adv random delay */
@@ -2004,22 +2209,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	if (!lll->is_hdcd)
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		uint32_t random_delay;
-		uint32_t ret;
-
-		lll_rand_isr_get(&random_delay, sizeof(random_delay));
-		random_delay %= ULL_ADV_RANDOM_DELAY;
-		random_delay += 1;
-
-		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
-				    TICKER_USER_ID_ULL_HIGH,
-				    (TICKER_ID_ADV_BASE +
-				     ull_adv_handle_get(adv)),
-				    random_delay,
-				    0, 0, 0, 0, 0,
-				    ticker_op_update_cb, adv);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
+		/* Apply random delay in range [0..ULL_ADV_RANDOM_DELAY] */
+		random_delay = ticker_update_rand(adv, ULL_ADV_RANDOM_DELAY, 0, 0);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		adv->event_counter += (lazy + 1);
@@ -2028,15 +2219,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 			uint32_t ticks_interval =
 				HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
 						       ADV_INT_UNIT_US);
-			uint32_t ticks_elapsed = ticks_interval * (lazy + 1);
+			uint32_t ticks_elapsed = ticks_interval * (lazy + 1) +
+						 ticks_drift;
 
 			if (adv->ticks_remain_duration > ticks_elapsed) {
 				adv->ticks_remain_duration -= ticks_elapsed;
-
-				if (adv->ticks_remain_duration > random_delay) {
-					adv->ticks_remain_duration -=
-						random_delay;
-				}
 			} else {
 				adv->ticks_remain_duration = ticks_interval;
 			}
@@ -2044,24 +2231,19 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
-	if (adv->lll.aux) {
-		ull_adv_aux_offset_get(adv);
-	}
-#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
-
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
-static void ticker_op_update_cb(uint32_t status, void *param)
+static void ticker_update_op_cb(uint32_t status, void *param)
 {
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_disable_mark_get());
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			   uint16_t lazy, uint8_t force, void *param)
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			   uint32_t remainder, uint16_t lazy, uint8_t force,
+			   void *param)
 {
 	struct ll_adv_set *adv = param;
 	uint8_t handle;
@@ -2072,17 +2254,16 @@ static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  TICKER_ID_ADV_BASE + handle,
-			  ticker_op_stop_cb, adv);
+			  ticker_stop_op_cb, adv);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void ticker_op_stop_cb(uint32_t status, void *param)
+static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
-	struct ll_adv_set *adv;
-	struct ull_hdr *hdr;
+	static struct mayfly mfy = {0, 0, &link, NULL, adv_disable};
+	uint32_t ret;
 
 	/* Ignore if race between thread and ULL */
 	if (status != TICKER_STATUS_SUCCESS) {
@@ -2098,33 +2279,42 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
-	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
-	 *       As we are in the callback after successful stop of the
-	 *       ticker, the ULL reference count will not be modified
-	 *       further hence it is safe to check and act on either the need
-	 *       to call lll_disable or not.
-	 */
+	/* Check if any pending LLL events that need to be aborted */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void adv_disable(void *param)
+{
+	struct ll_adv_set *adv;
+	struct ull_hdr *hdr;
+
+	/* Check ref count to determine if any pending LLL events in pipeline */
 	adv = param;
 	hdr = &adv->ull;
-	mfy.param = &adv->lll;
 	if (ull_ref_get(hdr)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
 		uint32_t ret;
 
+		mfy.param = &adv->lll;
+
+		/* Setup disabled callback to be called when ref count
+		 * returns to zero.
+		 */
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = disabled_cb;
 
-		mfy.fp = lll_disable;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+		/* Trigger LLL disable */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
 	} else {
-		uint32_t ret;
-
-		mfy.fp = disabled_cb;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
-		LL_ASSERT(!ret);
+		/* No pending LLL events */
+		disabled_cb(&adv->lll);
 	}
 }
 
@@ -2209,26 +2399,59 @@ static void adv_max_events_duration_set(struct ll_adv_set *adv,
 		HAL_TICKER_US_TO_TICKS((uint64_t)duration * 10 * USEC_PER_MSEC);
 }
 
-static void ticker_op_aux_stop_cb(uint32_t status, void *param)
+static void ticker_stop_aux_op_cb(uint32_t status, void *param)
 {
-	uint8_t handle;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, aux_disable};
 	uint32_t ret;
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
+	/* Check if any pending LLL events that need to be aborted */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void aux_disable(void *param)
+{
+	struct lll_adv_aux *lll_aux;
+	struct ll_adv_aux_set *aux;
+	struct ll_adv_set *adv;
+	struct ull_hdr *hdr;
+
+	adv = param;
+	lll_aux = adv->lll.aux;
+	aux = HDR_LLL2ULL(lll_aux);
+	hdr = &aux->ull;
+	if (ull_ref_get(hdr)) {
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = adv;
+		hdr->disabled_cb = aux_disabled_cb;
+	} else {
+		aux_disabled_cb(param);
+	}
+}
+
+static void aux_disabled_cb(void *param)
+{
+	uint8_t handle;
+	uint32_t ret;
+
 	handle = ull_adv_handle_get(param);
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_LOW,
-			  (TICKER_ID_ADV_BASE + handle), ticker_op_ext_stop_cb,
-			  param);
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+			  TICKER_USER_ID_ULL_HIGH,
+			  (TICKER_ID_ADV_BASE + handle),
+			  ticker_stop_ext_op_cb, param);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void ticker_op_ext_stop_cb(uint32_t status, void *param)
+static void ticker_stop_ext_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
-	struct ll_adv_set *adv;
+	static struct mayfly mfy = {0, 0, &link, NULL, ext_disable};
 	uint32_t ret;
 
 	/* Ignore if race between thread and ULL */
@@ -2238,12 +2461,43 @@ static void ticker_op_ext_stop_cb(uint32_t status, void *param)
 		return;
 	}
 
-	adv = param;
-	mfy.fp = ext_disabled_cb;
-	mfy.param = &adv->lll;
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH, 0,
-			     &mfy);
+	/* Check if any pending LLL events that need to be aborted */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
 	LL_ASSERT(!ret);
+}
+
+static void ext_disable(void *param)
+{
+	struct ll_adv_set *adv;
+	struct ull_hdr *hdr;
+
+	/* Check ref count to determine if any pending LLL events in pipeline */
+	adv = param;
+	hdr = &adv->ull;
+	if (ull_ref_get(hdr)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		uint32_t ret;
+
+		mfy.param = &adv->lll;
+
+		/* Setup disabled callback to be called when ref count
+		 * returns to zero.
+		 */
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = ext_disabled_cb;
+
+		/* Trigger LLL disable */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		/* No pending LLL events */
+		ext_disabled_cb(&adv->lll);
+	}
 }
 
 static void ext_disabled_cb(void *param)
@@ -2252,7 +2506,8 @@ static void ext_disabled_cb(void *param)
 	struct node_rx_hdr *rx_hdr = (void *)lll->node_rx_adv_term;
 
 	/* Under race condition, if a connection has been established then
-	 * node_rx is already utilized to send terminate event on connection */
+	 * node_rx is already utilized to send terminate event on connection
+	 */
 	if (!rx_hdr) {
 		return;
 	}
@@ -2287,13 +2542,13 @@ static inline uint8_t disable(uint8_t handle)
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (adv->lll.conn) {
 		/* Indicate to LLL that a cancellation is requested */
-		adv->lll.conn->slave.cancelled = 1U;
+		adv->lll.conn->periph.cancelled = 1U;
 		cpu_dmb();
 
 		/* Check if a connection was initiated (connection
 		 * establishment race between LLL and ULL).
 		 */
-		if (unlikely(adv->lll.conn->slave.initiated)) {
+		if (unlikely(adv->lll.conn->periph.initiated)) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
@@ -2505,11 +2760,11 @@ static inline uint8_t *adv_pdu_adva_get(struct pdu_adv *pdu)
 static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	const uint8_t *rpa = ull_filter_adva_get(adv);
+	const uint8_t *rpa = ull_filter_adva_get(adv->lll.rl_idx);
 #else
 	const uint8_t *rpa = NULL;
 #endif
-	const uint8_t *own_addr;
+	const uint8_t *own_id_addr;
 	const uint8_t *tx_addr;
 	uint8_t *adv_addr;
 
@@ -2517,22 +2772,22 @@ static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 		if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		} else if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
-			own_addr = ll_adv_aux_random_addr_get(adv, NULL);
+			own_id_addr = adv->rnd_addr;
 #endif
 		} else {
-			own_addr = ll_addr_get(pdu->tx_addr, NULL);
+			own_id_addr = ll_addr_get(pdu->tx_addr);
 		}
 	}
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
-	memcpy(adv->own_addr, own_addr, BDADDR_SIZE);
+	(void)memcpy(adv->own_id_addr, own_id_addr, BDADDR_SIZE);
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 	if (rpa) {
 		pdu->tx_addr = 1;
 		tx_addr = rpa;
 	} else {
-		tx_addr = own_addr;
+		tx_addr = own_id_addr;
 	}
 
 	adv_addr = adv_pdu_adva_get(pdu);
@@ -2547,7 +2802,7 @@ static void tgta_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 	const uint8_t *rx_addr = NULL;
 	uint8_t *tgt_addr;
 
-	rx_addr = ull_filter_tgta_get(adv);
+	rx_addr = ull_filter_tgta_get(adv->lll.rl_idx);
 	if (rx_addr) {
 		pdu->rx_addr = 1;
 
@@ -2580,7 +2835,10 @@ static void init_set(struct ll_adv_set *adv)
 	adv->own_addr_type = BT_ADDR_LE_PUBLIC;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	adv->lll.chan_map = BT_LE_ADV_CHAN_MAP_ALL;
-	adv->lll.filter_policy = BT_LE_ADV_FP_NO_WHITELIST;
+	adv->lll.filter_policy = BT_LE_ADV_FP_NO_FILTER;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	adv->delay_remain = ULL_ADV_RANDOM_DELAY;
+#endif /* ONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	init_pdu(lll_adv_data_peek(&ll_adv[0].lll), PDU_ADV_TYPE_ADV_IND);
 	init_pdu(lll_adv_scan_rsp_peek(&ll_adv[0].lll), PDU_ADV_TYPE_SCAN_RSP);

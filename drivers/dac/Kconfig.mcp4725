@@ -9,13 +9,3 @@ config DAC_MCP4725
 	depends on I2C
 	help
 	  Enable the driver for the Microchip MCP4725.
-
-if DAC_MCP4725
-
-config DAC_MCP4725_INIT_PRIORITY
-	int "Init priority"
-	default 80
-	help
-	  MCP4725 DAC device driver initialization priority.
-
-endif # DAC_MCP4725

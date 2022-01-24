@@ -135,7 +135,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1272) +
 #define SX127X_PA_OUTPUT(power)		SX127X_PA_BOOST
 #elif DT_INST_NODE_HAS_PROP(0, power_amplifier_output)
 #define SX127X_PA_OUTPUT(power)				\
-	DT_ENUM_IDX(DT_DRV_INST(0), power_amplifier_output)
+	DT_INST_ENUM_IDX(0, power_amplifier_output)
 #else
 BUILD_ASSERT(0, "None of rfo-enable-gpios, pa-boost-enable-gpios and "
 	     "power-amplifier-output has been specified. "
@@ -658,7 +658,9 @@ static int sx127x_lora_init(const struct device *dev)
 static const struct lora_driver_api sx127x_lora_api = {
 	.config = sx12xx_lora_config,
 	.send = sx12xx_lora_send,
+	.send_async = sx12xx_lora_send_async,
 	.recv = sx12xx_lora_recv,
+	.recv_async = sx12xx_lora_recv_async,
 	.test_cw = sx12xx_lora_test_cw,
 };
 

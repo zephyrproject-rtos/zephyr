@@ -28,7 +28,16 @@
 #define PIN_TO_INPUT_MUX_CONNECTION(port, pin) \
 	((PINTSEL_PMUX_ID << PMUX_SHIFT) + (32 * port) + (pin))
 
-#define NO_PINT_INT ((1 << sizeof(pint_pin_int_t)) - 1)
+#ifndef FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS
+#define FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS 0
+#endif
+#ifndef FSL_FEATURE_SECPINT_NUMBER_OF_CONNECTED_OUTPUTS
+#define FSL_FEATURE_SECPINT_NUMBER_OF_CONNECTED_OUTPUTS 0
+#endif
+
+#define NO_PINT_INT                                                                                \
+	MAX(FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS,                                          \
+	    FSL_FEATURE_SECPINT_NUMBER_OF_CONNECTED_OUTPUTS)
 
 struct gpio_mcux_lpc_config {
 	/* gpio_driver_config needs to be first */
@@ -364,6 +373,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 
 #define GPIO_MCUX_LPC_IRQ_CONNECT(n, m)							\
 	do {										\
+		struct gpio_mcux_lpc_data *data = dev->data;				\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq),				\
 			    DT_INST_IRQ_BY_IDX(n, m, priority),				\
 			    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(n), 0);		\
@@ -373,6 +383,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 
 #define GPIO_MCUX_LPC_IRQ(n, m)								\
 	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, m), (GPIO_MCUX_LPC_IRQ_CONNECT(n, m)), ())
+
 
 #define GPIO_MCUX_LPC(n)								\
 	static int lpc_gpio_init_##n(const struct device *dev);				\
@@ -392,14 +403,12 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 											\
 	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n, NULL,				\
 		    &gpio_mcux_lpc_data_##n,						\
-		    &gpio_mcux_lpc_config_##n, POST_KERNEL,				\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,				\
+		    &gpio_mcux_lpc_config_##n, PRE_KERNEL_1,				\
+		    CONFIG_GPIO_INIT_PRIORITY,						\
 		    &gpio_mcux_lpc_driver_api);						\
 											\
 	static int lpc_gpio_init_##n(const struct device *dev)				\
 	{										\
-		struct gpio_mcux_lpc_data *data = dev->data;				\
-											\
 		gpio_mcux_lpc_init(dev);						\
 											\
 		GPIO_MCUX_LPC_IRQ(n, 0);						\

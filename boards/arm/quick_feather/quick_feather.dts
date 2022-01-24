@@ -50,6 +50,10 @@
 			label = "User Push Button 0";
 		};
 	};
+
+	fpga {
+		status = "okay";
+	};
 };
 
 &cpu0 {

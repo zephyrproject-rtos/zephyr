@@ -17,7 +17,7 @@
  * @return pointer to destination buffer <d>
  */
 
-char *strcpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s)
+char *strcpy(char *ZRESTRICT d, const char *ZRESTRICT s)
 {
 	char *dest = d;
 
@@ -39,7 +39,7 @@ char *strcpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s)
  * @return pointer to destination buffer <d>
  */
 
-char *strncpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s, size_t n)
+char *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s, size_t n)
 {
 	char *dest = d;
 
@@ -209,13 +209,13 @@ char *strtok_r(char *str, const char *sep, char **state)
 	return start;
 }
 
-char *strcat(char *_MLIBC_RESTRICT dest, const char *_MLIBC_RESTRICT src)
+char *strcat(char *ZRESTRICT dest, const char *ZRESTRICT src)
 {
 	strcpy(dest + strlen(dest), src);
 	return dest;
 }
 
-char *strncat(char *_MLIBC_RESTRICT dest, const char *_MLIBC_RESTRICT src,
+char *strncat(char *ZRESTRICT dest, const char *ZRESTRICT src,
 	      size_t n)
 {
 	char *orig_dest = dest;
@@ -295,7 +295,7 @@ void *memmove(void *d, const void *s, size_t n)
  * @return pointer to start of destination buffer
  */
 
-void *memcpy(void *_MLIBC_RESTRICT d, const void *_MLIBC_RESTRICT s, size_t n)
+void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 {
 	/* attempt word-sized copying only if buffers have identical alignment */
 

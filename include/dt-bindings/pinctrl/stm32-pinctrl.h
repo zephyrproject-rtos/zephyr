@@ -35,11 +35,34 @@
 
 /**
  * @brief Macro to generate pinmux int using port, pin number and mode arguments
- * This is taken from Linux equivalent st,stm32f429-pinctrl binding
+ * This is inspired from Linux equivalent st,stm32f429-pinctrl binding
  */
 
-#define PIN_NO(port, line)	(((port) - 'A') * 0x10 + (line))
-#define STM32_PINMUX(port, line, mode) (((PIN_NO(port, line)) << 8) | (STM32_ ## mode))
+/**
+ * @brief Pin configuration configuration bit field.
+ *
+ * Fields:
+ *
+ * - mode [ 0 : 4 ]
+ * - line [ 5 : 8 ]
+ * - port [ 9 : 12 ]
+ *
+ * @param port Port ('A'..'K')
+ * @param line Pin (0..15)
+ * @param mode Mode (ANALOG, GPIO_IN, ALTERNATE).
+ */
+
+#define STM32_MODE_SHIFT 0U
+#define STM32_MODE_MASK  0x1FU
+#define STM32_LINE_SHIFT 5U
+#define STM32_LINE_MASK  0xFU
+#define STM32_PORT_SHIFT 9U
+#define STM32_PORT_MASK  0xFU
+
+#define STM32_PINMUX(port, line, mode)					       \
+		(((((port) - 'A') & STM32_PORT_MASK) << STM32_PORT_SHIFT) |    \
+		(((line) & STM32_LINE_MASK) << STM32_LINE_SHIFT) |	       \
+		(((STM32_ ## mode) & STM32_MODE_MASK) << STM32_MODE_SHIFT))
 
 /**
  * @brief PIN configuration bitfield
@@ -54,26 +77,6 @@
  *
  * Applicable to STM32F3, STM32F4, STM32L4 series
  */
-
-/* Alternate functions */
-#define STM32_FUNC_ALT_0                0
-#define STM32_FUNC_ALT_1                1
-#define STM32_FUNC_ALT_2                2
-#define STM32_FUNC_ALT_3                3
-#define STM32_FUNC_ALT_4                4
-#define STM32_FUNC_ALT_5                5
-#define STM32_FUNC_ALT_6                6
-#define STM32_FUNC_ALT_7                7
-#define STM32_FUNC_ALT_8                8
-#define STM32_FUNC_ALT_9                9
-#define STM32_FUNC_ALT_10               10
-#define STM32_FUNC_ALT_11               11
-#define STM32_FUNC_ALT_12               12
-#define STM32_FUNC_ALT_13               13
-#define STM32_FUNC_ALT_14               14
-#define STM32_FUNC_ALT_15               15
-#define STM32_AFR_MASK			0xF
-#define STM32_AFR_SHIFT			0
 
 /* GPIO Mode */
 #define STM32_MODER_INPUT_MODE		(0x0<<STM32_MODER_SHIFT)
@@ -103,28 +106,5 @@
 #define STM32_PUPDR_PULL_DOWN		(0x2<<STM32_PUPDR_SHIFT)
 #define STM32_PUPDR_MASK		0x3
 #define STM32_PUPDR_SHIFT		9
-
-/* Alternate functions definitions */
-#define	STM32_PINMUX_ALT_FUNC_0 (STM32_FUNC_ALT_0 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_1 (STM32_FUNC_ALT_1 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_2 (STM32_FUNC_ALT_2 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_3 (STM32_FUNC_ALT_3 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_4 (STM32_FUNC_ALT_4 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_5 (STM32_FUNC_ALT_5 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_6 (STM32_FUNC_ALT_6 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_7 (STM32_FUNC_ALT_7 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_8 (STM32_FUNC_ALT_8 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_9 (STM32_FUNC_ALT_9 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_10 (STM32_FUNC_ALT_10 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_11 (STM32_FUNC_ALT_11 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_12 (STM32_FUNC_ALT_12 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_13 (STM32_FUNC_ALT_13 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_14 (STM32_FUNC_ALT_14 | STM32_MODER_ALT_MODE)
-#define	STM32_PINMUX_ALT_FUNC_15 (STM32_FUNC_ALT_15 | STM32_MODER_ALT_MODE)
-
-/* Useful definitions */
-#define STM32_PUSHPULL_NOPULL    (STM32_OTYPER_PUSH_PULL | STM32_PUPDR_NO_PULL)
-#define STM32_OPENDRAIN_PULLUP   (STM32_OTYPER_OPEN_DRAIN | STM32_PUPDR_PULL_UP)
-#define STM32_PUSHPULL_PULLUP	 (STM32_OTYPER_PUSH_PULL | STM32_PUPDR_PULL_UP)
 
 #endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_H_ */
