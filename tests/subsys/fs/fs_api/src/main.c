@@ -90,6 +90,7 @@ void test_main(void)
 			 ztest_unit_test(test_file_rename),
 			 ztest_unit_test(test_file_stat),
 			 ztest_unit_test(test_file_unlink),
+			 ztest_unit_test(test_is_open),
 			 ztest_unit_test(test_unmount),
 			 ztest_unit_test_setup_teardown(test_mount_flags,
 							dummy_setup,

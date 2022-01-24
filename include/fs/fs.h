@@ -274,6 +274,18 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
 int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
 
 /**
+ * @brief Check if file is open
+ *
+ * @param zfp Pointer to a file object
+ *
+ * @return true if @p zfp describes open file.
+ */
+static inline bool fs_is_open(const struct fs_file_t *zfp)
+{
+	return (zfp->mp != NULL);
+}
+
+/**
  * @brief Close file
  *
  * Flushes the associated stream and closes the file.
@@ -474,6 +486,18 @@ int fs_mkdir(const char *path);
  * @retval <0 a negative errno code on error.
  */
 int fs_opendir(struct fs_dir_t *zdp, const char *path);
+
+/**
+ * @brief Check if directory is open
+ *
+ * @param zdp Pointer to the directory object
+ *
+ * @return true if @p zdp describes open directly
+ */
+static inline bool fs_is_opendir(const struct fs_dir_t *zdp)
+{
+	return (zdp->mp != NULL || zdp->dirp != NULL);
+}
 
 /**
  * @brief Directory read entry

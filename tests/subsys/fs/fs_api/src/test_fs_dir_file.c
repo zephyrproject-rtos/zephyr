@@ -1031,3 +1031,51 @@ void test_file_unlink(void)
 
 	TC_PRINT("File (%s) deleted successfully!\n", TEST_FILE_RN);
 }
+
+void test_is_open(void)
+{
+	struct fs_dir_t diro;
+	struct fs_file_t fso;
+	int ret;
+
+	fs_dir_t_init(&diro);
+	fs_file_t_init(&fso);
+
+	zassert_false(fs_is_opendir(&diro), "Expected dir to be unopened");
+	zassert_false(fs_is_open(&fso), "Expected file to be unopened");
+
+	/* Open should fail */
+	ret = fs_open(&fso, NULL, FS_O_READ);
+	zassert_true(ret != 0, "Open should have failed");
+
+	/* File should remain unopened */
+	zassert_false(fs_is_open(&fso), "Expected file to remain closed");
+
+	ret = fs_open(&fso, TEST_FILE, FS_O_READ);
+	zassert_equal(ret, 0, "Fail to open file");
+	zassert_true(fs_is_open(&fso), "Expected file to be open");
+
+	fs_close(&fso);
+	zassert_false(fs_is_open(&fso), "Expected file to be closed");
+
+	/* Open should fail */
+	ret = fs_opendir(&diro, NULL);
+	zassert_not_equal(ret, 0, "Open dir with NULL pointer parameter");
+
+	/* Expected dir to remain unopened */
+	zassert_false(fs_is_opendir(&diro), "Expected dir to remain closed");
+
+	ret = fs_opendir(&diro, "/");
+	zassert_equal(ret, 0, "Fail to open root dir");
+
+	zassert_true(fs_is_opendir(&diro), "Expected dir to be opened");
+
+	fs_closedir(&diro);
+	zassert_false(fs_is_opendir(&diro), "Expected dir to be unopened");
+
+	ret = fs_opendir(&diro, TEST_DIR);
+	zassert_equal(ret, 0, "Fail to open dir");
+
+	zassert_true(fs_is_opendir(&diro), "Expected dir to be opened");
+	fs_closedir(&diro);
+}
