@@ -326,6 +326,7 @@ Drivers and Sensors
   * Added driver for GigaDevice GD32 SoCs
   * Added stats functionality to all drivers
   * Added I2C driver for Renesas R-Car platform
+  * Added support for TCA9548A I2C switch
 
 * I2S
 
