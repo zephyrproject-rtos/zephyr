@@ -273,6 +273,13 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 			buf = NULL;
 		}
 	} else {
+		if (net_buf_tailroom(buf) < size) {
+			LOG_ERR("Buffer tailroom too small");
+			net_buf_unref(buf);
+			buf = NULL;
+			goto restart_out_transfer;
+		}
+
 		/*
 		 * Take over the next chunk if HCI packet is
 		 * larger than USB_MAX_FS_BULK_MPS.
