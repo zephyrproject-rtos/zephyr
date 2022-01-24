@@ -122,6 +122,11 @@ struct bt_conn_iso {
 		uint8_t			bis_id;
 	};
 
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+	/** 16-bit sequence number that shall be incremented per SDU interval */
+	uint16_t seq_num;
+#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
+
 	/** Type of the ISO channel */
 	enum bt_iso_chan_type type;
 };
