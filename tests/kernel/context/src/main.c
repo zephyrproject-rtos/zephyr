@@ -56,9 +56,6 @@
 #elif defined(CONFIG_XTENSA_TIMER)
 #define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
 			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
-
-#elif defined(CONFIG_CAVS_TIMER)
-#define TICK_IRQ DSP_WCT_IRQ(0)
 #elif defined(CONFIG_ALTERA_AVALON_TIMER)
 #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)
@@ -94,8 +91,13 @@
  */
 #endif /* defined(CONFIG_ARCH_POSIX) */
 #else
-/* generate an error */
-#error Timer type is not defined for this platform
+
+/* Ooooooph.  All that is a mess.  Here's the new API to be portably
+ * supported by timer drivers:
+ */
+extern int32_t z_sys_timer_irq_for_test;
+#define TICK_IRQ (z_sys_timer_irq_for_test)
+
 #endif
 
 /* Cortex-M1, Nios II, and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
