@@ -159,6 +159,11 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 	bt_buf_set_type(buf, type);
 
 	if (data && size) {
+		if (net_buf_tailroom(buf) < size) {
+			net_buf_unref(buf);
+			return NULL;
+		}
+
 		net_buf_add_mem(buf, data, size);
 	}
 
