@@ -166,19 +166,27 @@ int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
 	int ret = 0;
 
-	/* Some pins cannot be used as GPIO */
+	/* Set pin as GPIO if capable */
 	if (RCAR_IS_GP_PIN(pin->pin)) {
-		pfc_rcar_set_gpsr(pin->pin, true);
+		pfc_rcar_set_gpsr(pin->pin, false);
+	} else if ((pin->flags & RCAR_PIN_FLAGS_FUNC_SET) == 0U) {
+		/* A function must be set for non GPIO capable pin */
+		return -EINVAL;
 	}
 
+	/* Select function for pin */
 	if ((pin->flags & RCAR_PIN_FLAGS_FUNC_SET) != 0U) {
 		pfc_rcar_set_ipsr(&pin->func);
-	}
 
-	if ((pin->flags & RCAR_PIN_FLAGS_PULL_SET) != 0U) {
-		ret = pfc_rcar_set_bias(pin->pin, pin->flags);
-		if (ret < 0) {
-			return ret;
+		if (RCAR_IS_GP_PIN(pin->pin)) {
+			pfc_rcar_set_gpsr(pin->pin, true);
+		}
+
+		if ((pin->flags & RCAR_PIN_FLAGS_PULL_SET) != 0U) {
+			ret = pfc_rcar_set_bias(pin->pin, pin->flags);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 	}
 
