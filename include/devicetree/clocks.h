@@ -23,6 +23,92 @@ extern "C" {
  */
 
 /**
+ * @brief Test if a node has a clocks phandle-array property at a given index
+ *
+ * This expands to 1 if the given index is valid clocks property phandle-array index.
+ * Otherwise, it expands to 0.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             clocks = <...>, <...>;
+ *     };
+ *
+ *     n2: node-2 {
+ *             clocks = <...>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_CLOCKS_HAS_IDX(DT_NODELABEL(n1), 0) // 1
+ *     DT_CLOCKS_HAS_IDX(DT_NODELABEL(n1), 1) // 1
+ *     DT_CLOCKS_HAS_IDX(DT_NODELABEL(n1), 2) // 0
+ *     DT_CLOCKS_HAS_IDX(DT_NODELABEL(n2), 1) // 0
+ *
+ * @param node_id node identifier; may or may not have any clocks property
+ * @param idx index of a clocks property phandle-array whose existence to check
+ * @return 1 if the index exists, 0 otherwise
+ */
+#define DT_CLOCKS_HAS_IDX(node_id, idx) \
+	DT_PROP_HAS_IDX(node_id, clocks, idx)
+
+/**
+ * @brief Test if a node has a clock-names array property holds a given name
+ *
+ * This expands to 1 if the name is available as clocks-name array property cell.
+ * Otherwise, it expands to 0.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             clocks = <...>, <...>;
+ *             clock-names = "alpha", "beta";
+ *     };
+ *
+ *     n2: node-2 {
+ *             clocks = <...>;
+ *             clock-names = "alpha";
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_CLOCKS_HAS_NAME(DT_NODELABEL(n1), alpha) // 1
+ *     DT_CLOCKS_HAS_NAME(DT_NODELABEL(n1), beta)  // 1
+ *     DT_CLOCKS_HAS_NAME(DT_NODELABEL(n2), beta)  // 0
+ *
+ * @param node_id node identifier; may or may not have any clock-names property.
+ * @param name lowercase-and-underscores clock-names cell value name to check
+ * @return 1 if the clock name exists, 0 otherwise
+ */
+#define DT_CLOCKS_HAS_NAME(node_id, name) \
+	DT_PROP_HAS_NAME(node_id, clocks, name)
+
+/**
+ * @brief Get the number of elements in a clocks property
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             clocks = <&foo>, <&bar>;
+ *     };
+ *
+ *     n2: node-2 {
+ *             clocks = <&foo>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_NUM_CLOCKS(DT_NODELABEL(n1)) // 2
+ *     DT_NUM_CLOCKS(DT_NODELABEL(n2)) // 1
+ *
+ * @param node_id node identifier with a clocks property
+ * @return number of elements in the property
+ */
+#define DT_NUM_CLOCKS(node_id) \
+	DT_PROP_LEN(node_id, clocks)
+
+
+/**
  * @brief Get the node identifier for the controller phandle from a
  *        "clocks" phandle-array property at an index
  *
@@ -165,6 +251,32 @@ extern "C" {
  * @see DT_CLOCKS_CELL_BY_IDX()
  */
 #define DT_CLOCKS_CELL(node_id, cell) DT_CLOCKS_CELL_BY_IDX(node_id, 0, cell)
+
+/**
+ * @brief Equivalent to DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), idx)
+ * @param inst DT_DRV_COMPAT instance number; may or may not have any clocks property
+ * @param idx index of a clocks property phandle-array whose existence to check
+ * @return 1 if the index exists, 0 otherwise
+ */
+#define DT_INST_CLOCKS_HAS_IDX(inst, idx) \
+	DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Equivalent to DT_CLOCK_HAS_NAME(DT_DRV_INST(inst), name)
+ * @param inst DT_DRV_COMPAT instance number; may or may not have any clock-names property.
+ * @param name lowercase-and-underscores clock-names cell value name to check
+ * @return 1 if the clock name exists, 0 otherwise
+ */
+#define DT_INST_CLOCKS_HAS_NAME(inst, name) \
+	DT_CLOCKS_HAS_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Equivalent to DT_NUM_CLOCKS(DT_DRV_INST(inst))
+ * @param inst instance number
+ * @return number of elements in the clocks property
+ */
+#define DT_INST_NUM_CLOCKS(inst) \
+	DT_NUM_CLOCKS(DT_DRV_INST(inst))
 
 /**
  * @brief Get the node identifier for the controller phandle from a
