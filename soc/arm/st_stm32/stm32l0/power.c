@@ -58,6 +58,7 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 	case PM_STATE_SUSPEND_TO_IDLE:
 		LL_LPM_DisableSleepOnExit();
 		LL_LPM_EnableSleep();
+		LL_PWR_SetRegulModeLP(LL_PWR_REGU_LPMODES_MAIN);
 
 		/* Restore the clock setup. */
 		stm32_clock_control_init(NULL);
