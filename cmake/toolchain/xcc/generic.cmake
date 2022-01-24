@@ -33,6 +33,16 @@ else()
   list(APPEND TOOLCHAIN_C_FLAGS
     -imacros${ZEPHYR_BASE}/include/toolchain/xcc_missing_defs.h
     )
+
+  # GCC-based XCC uses GNU Assembler (xt-as).
+  # However, CMake doesn't recognize it when invoking through xt-xcc.
+  # This results in CMake going through all possible combinations of
+  # command line arguments while invoking xt-xcc to determine
+  # assembler vendor. This multiple invocation of xt-xcc unnecessarily
+  # lengthens the CMake phase of build, especially when XCC needs to
+  # obtain license information from remote licensing servers. So here
+  # forces the assembler ID to be GNU to speed things up a bit.
+  set(CMAKE_ASM_COMPILER_ID "GNU")
 endif()
 
 set(NOSYSDEF_CFLAG "")
