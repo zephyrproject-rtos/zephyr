@@ -324,6 +324,8 @@ async def ipc_delay_done():
     await asyncio.sleep(0.1)
     dsp.HIPCTDA = 1<<31
 
+ipc_timestamp = 0
+
 # Super-simple command language, driven by the test code on the DSP
 def ipc_command(data, ext_data):
     send_msg = False
@@ -338,6 +340,12 @@ def ipc_command(data, ext_data):
         send_msg = True
     elif data == 3: # set ADSPCS
         dsp.ADSPCS = ext_data
+    elif data == 4: # echo back microseconds since last timestamp command
+        global ipc_timestamp
+        t = round(time.time() * 1e6)
+        ext_data = t - ipc_timestamp
+        ipc_timestamp = t
+        send_msg = True
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
 

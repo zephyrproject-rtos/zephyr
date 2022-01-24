@@ -4,6 +4,8 @@
 #ifndef ZEPHYR_TESTS_INTEL_ADSP_TESTS_H
 #define ZEPHYR_TESTS_INTEL_ADSP_TESTS_H
 
+#include <cavs_ipc.h>
+
 /* Helper to escape from infinite polling loops with a test failure
  * instead of a hang.  Spins with a relaxation loop so that it works
  * in interrupt context and doesn't stress shared resources like SRAM
@@ -33,6 +35,9 @@ enum cavstool_cmd {
 
 	/* The host writes the given value to ADSPCS */
 	IPCCMD_ADSPCS,
+
+	/* The host emits a (real/host time) timestamp into the log stream */
+	IPCCMD_TIMESTAMP,
 };
 
 void test_post_boot_ipi(void);

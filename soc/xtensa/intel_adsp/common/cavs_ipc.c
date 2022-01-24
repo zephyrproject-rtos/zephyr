@@ -32,6 +32,7 @@ void z_cavs_ipc_isr(const void *devarg)
 	const struct device *dev = devarg;
 	const struct cavs_ipc_config *config = dev->config;
 	struct cavs_ipc_data *devdata = dev->data;
+
 	volatile struct cavs_ipc *regs = config->regs;
 	k_spinlock_key_t key = k_spin_lock(&devdata->lock);
 
