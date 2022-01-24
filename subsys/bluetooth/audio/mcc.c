@@ -2652,8 +2652,8 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn)
 {
 	int err;
 
-	err = bt_otc_obj_metadata_read(conn, &cur_mcs_inst->otc,
-				       BT_OTC_METADATA_REQ_ALL);
+	err = bt_otc_read_object_metadata(conn, &cur_mcs_inst->otc,
+					  BT_OTC_METADATA_REQ_ALL);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2669,7 +2669,7 @@ int bt_mcc_otc_read_icon_object(struct bt_conn *conn)
 
 	cur_mcs_inst->otc.cb->content_cb = on_icon_content;
 
-	err = bt_otc_read(conn, &cur_mcs_inst->otc);
+	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2686,7 +2686,7 @@ int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 	cur_mcs_inst->otc.cb->content_cb = on_track_segments_content;
 
-	err = bt_otc_read(conn, &cur_mcs_inst->otc);
+	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2703,7 +2703,7 @@ int bt_mcc_otc_read_current_track_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 	cur_mcs_inst->otc.cb->content_cb = on_current_track_content;
 
-	err = bt_otc_read(conn, &cur_mcs_inst->otc);
+	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2720,7 +2720,7 @@ int bt_mcc_otc_read_next_track_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 	cur_mcs_inst->otc.cb->content_cb = on_next_track_content;
 
-	err = bt_otc_read(conn, &cur_mcs_inst->otc);
+	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2739,7 +2739,7 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 	/* Reuse callback for current group */
 	cur_mcs_inst->otc.cb->content_cb = on_parent_group_content;
 
-	err = bt_otc_read(conn, &cur_mcs_inst->otc);
+	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2756,7 +2756,7 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 	cur_mcs_inst->otc.cb->content_cb = on_current_group_content;
 
-	err = bt_otc_read(conn, &cur_mcs_inst->otc);
+	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}

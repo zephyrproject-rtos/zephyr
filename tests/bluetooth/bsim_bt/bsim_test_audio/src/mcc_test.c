@@ -603,8 +603,8 @@ static void select_read_meta(int64_t id)
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
 	UNSET_FLAG(metadata_read);
-	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(),
-				       BT_OTC_METADATA_REQ_ALL);
+	err = bt_otc_read_object_metadata(default_conn, bt_mcc_otc_inst(),
+					  BT_OTC_METADATA_REQ_ALL);
 	if (err) {
 		FAIL("Failed to read object metadata\n");
 		return;

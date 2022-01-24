@@ -1175,7 +1175,7 @@ int cmd_mcc_otc_read(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 
-	result = bt_otc_read(default_conn, bt_mcc_otc_inst());
+	result = bt_otc_read_object_data(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1187,8 +1187,8 @@ int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(),
-					  BT_OTC_METADATA_REQ_ALL);
+	result = bt_otc_read_object_metadata(default_conn, bt_mcc_otc_inst(),
+					     BT_OTC_METADATA_REQ_ALL);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}

@@ -141,7 +141,7 @@ struct bt_otc_cb {
 	 *
 	 *  Called when the a new object is selected and the current object
 	 *  has changed. The `cur_object` in `ots_inst` will have been reset,
-	 *  and metadata should be read again with `bt_otc_obj_metadata_read`.
+	 *  and metadata should be read again with bt_otc_read_object_metadata().
 	 *
 	 *  @param conn              The connection to the peer device.
 	 *  @param err               Error code (bt_ots_olcp_res_code).
@@ -283,11 +283,11 @@ int bt_otc_select_prev(struct bt_conn *conn,
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_otc_obj_metadata_read(struct bt_conn *conn,
-			     struct bt_otc_instance_t *otc_inst,
-			     uint8_t metadata);
+int bt_otc_read_object_metadata(struct bt_conn *conn,
+				struct bt_otc_instance_t *otc_inst,
+				uint8_t metadata);
 
-/** @brief Read the currently selected object.
+/** @brief Read the (data of the) current selected object.
  *
  *  This will trigger an OACP read operation for the current size of the object
  *  with a 0 offset and then expect receiving the content via the L2CAP CoC.
@@ -297,7 +297,8 @@ int bt_otc_obj_metadata_read(struct bt_conn *conn,
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_otc_read(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst);
+int bt_otc_read_object_data(struct bt_conn *conn,
+		       struct bt_otc_instance_t *otc_inst);
 
 /** @brief Used to decode the Directory Listing object into object metadata.
  *
