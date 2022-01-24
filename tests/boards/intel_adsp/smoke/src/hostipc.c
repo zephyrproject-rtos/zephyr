@@ -96,4 +96,8 @@ void test_host_ipc(void)
 	zassert_true(ret, "send failed");
 	zassert_true(done_flag, "done interrupt failed to fire");
 	zassert_true(cavs_ipc_is_complete(CAVS_HOST_DEV), "sync message incomplete");
+
+	/* Clean up. Further tests might want to use IPC */
+	cavs_ipc_set_message_handler(CAVS_HOST_DEV, NULL, NULL);
+	cavs_ipc_set_done_handler(CAVS_HOST_DEV, NULL, NULL);
 }
