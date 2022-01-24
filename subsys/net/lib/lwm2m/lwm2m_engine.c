@@ -2731,6 +2731,14 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		return ret;
 	}
 
+	/* take default values, if not set before  */
+	if (nattrs.flags != BIT(LWM2M_ATTR_PMAX)) {
+		nattrs.pmax = lwm2m_server_get_pmax(msg->ctx->srv_obj_inst);
+	}
+	if (nattrs.flags != BIT(LWM2M_ATTR_PMIN)) {
+		nattrs.pmin = lwm2m_server_get_pmin(msg->ctx->srv_obj_inst);
+	}
+
 	/* loop through options to parse attribute */
 	for (i = 0; i < nr_opt; i++) {
 		int limit = MIN(options[i].len, 5), plen = 0, vlen;
