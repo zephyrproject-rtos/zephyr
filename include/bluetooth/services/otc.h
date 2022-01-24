@@ -123,15 +123,19 @@ struct bt_otc_instance_t {
 	struct bt_otc_obj_metadata cur_object;
 };
 
-/** @brief Callback used decoding the directory listing.
+/** @brief Directory listing object metadata callback
  *
- *  @param object The object metadata that was decoded.
+ * If a directory listing is decoded using bt_otc_decode_dirlisting(),
+ * this callback will be called for each object in the directory listing.
+ *
+ *  @param meta The metadata of the decoded object
  *
  *  @return int   BT_OTC_STOP or BT_OTC_CONTINUE. BT_OTC_STOP can be used to
  *                stop the decoding.
  */
-typedef int (*bt_otc_dirlisting_cb)(struct bt_otc_obj_metadata *object);
+typedef int (*bt_otc_dirlisting_cb)(struct bt_otc_obj_metadata *meta);
 
+/** OTC callback structure */
 struct bt_otc_cb {
 	/** @brief Callback function when a new object is selected.
 	 *
