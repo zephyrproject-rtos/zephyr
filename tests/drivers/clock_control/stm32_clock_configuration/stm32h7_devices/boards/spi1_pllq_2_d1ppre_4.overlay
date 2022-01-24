@@ -9,6 +9,12 @@
  * It is assumed that it is applied after core_init.overlay file.
  */
 
+/* With this particular div-q and d1ppre values
+ * APB2 and PLL_Q clock frequencies are equal.
+ * This setting is default stm32h7 SPI devices configuration.
+ * This test config ensures it still works.
+ */
+
 &pll {
 	/delete-property/ div-q;
 	div-q = <2>;
@@ -21,8 +27,7 @@
 
 &spi1 {
 	/delete-property/ clocks;
-	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
-		 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
-	clock-names = "reg", "kernel";
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+	clock-names = "reg";
 	status = "okay";
 };
