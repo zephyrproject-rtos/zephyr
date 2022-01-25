@@ -238,7 +238,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	stream_handle = handle - BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE;
 
 	stream = ull_sync_iso_stream_get(stream_handle);
-	if (stream->dp) {
+	if (!stream || stream->dp) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
@@ -406,6 +406,10 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 	stream_handle = handle - BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE;
 
 	stream = ull_sync_iso_stream_get(stream_handle);
+	if (!stream) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	dp = stream->dp;
 	if (dp) {
 		stream->dp = NULL;
