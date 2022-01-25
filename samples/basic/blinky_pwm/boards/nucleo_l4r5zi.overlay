@@ -1,0 +1,45 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 STMicroelectronics
+ */
+
+#include <dt-bindings/pwm/pwm.h>
+
+/ {
+	pwmleds {
+		compatible = "pwm-leds";
+
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm4 2 4 PWM_POLARITY_NORMAL>;
+		};
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm1 2 4 PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &red_pwm_led;
+	};
+};
+
+&timers4 {
+	st,prescaler = <10000>;
+	status = "okay";
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch2_pb7>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch2n_pb14>;
+		pinctrl-names = "default";
+	};
+};
