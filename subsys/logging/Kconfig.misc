@@ -14,7 +14,7 @@ config LOG_DOMAIN_ID
 config LOG_CMDS
 	bool "Shell commands"
 	depends on SHELL
-	depends on !LOG_FRONTEND && !LOG_MODE_MINIMAL
+	depends on !LOG_FRONTEND_ONLY && !LOG_MODE_MINIMAL
 	default y if SHELL
 
 config LOG_TEST_CLEAR_MESSAGE_SPACE
