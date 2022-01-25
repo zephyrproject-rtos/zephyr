@@ -25,6 +25,11 @@
 #define GET_PORT(n, pin_name) \
 	DT_INST_PROP_BY_IDX(n, pin_name, 1)
 
+struct uart_cc13xx_cc26xx_config {
+	uint32_t reg;
+	uint32_t sys_clk_freq;
+};
+
 struct uart_cc13xx_cc26xx_data {
 	struct uart_config uart_config;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -41,13 +46,13 @@ struct uart_cc13xx_cc26xx_data {
 static int uart_cc13xx_cc26xx_poll_in(const struct device *dev,
 				      unsigned char *c)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	if (!UARTCharsAvail(config->regs)) {
+	if (!UARTCharsAvail(config->reg)) {
 		return -1;
 	}
 
-	*c = UARTCharGetNonBlocking(config->regs);
+	*c = UARTCharGetNonBlocking(config->reg);
 
 	return 0;
 }
@@ -55,29 +60,29 @@ static int uart_cc13xx_cc26xx_poll_in(const struct device *dev,
 static void uart_cc13xx_cc26xx_poll_out(const struct device *dev,
 					unsigned char c)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	UARTCharPut(config->regs, c);
+	UARTCharPut(config->reg, c);
 	/*
 	 * Need to wait for character to be transmitted to ensure cpu does not
 	 * enter standby when uart is busy
 	 */
-	while (UARTBusy(config->regs) == true) {
+	while (UARTBusy(config->reg) == true) {
 	}
 }
 
 static int uart_cc13xx_cc26xx_err_check(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	uint32_t flags = UARTRxErrorGet(config->regs);
+	uint32_t flags = UARTRxErrorGet(config->reg);
 
 	int error = (flags & UART_RXERROR_FRAMING ? UART_ERROR_FRAMING : 0) |
 		    (flags & UART_RXERROR_PARITY ? UART_ERROR_PARITY : 0) |
 		    (flags & UART_RXERROR_BREAK ? UART_BREAK : 0) |
 		    (flags & UART_RXERROR_OVERRUN ? UART_ERROR_OVERRUN : 0);
 
-	UARTRxErrorClear(config->regs);
+	UARTRxErrorClear(config->reg);
 
 	return error;
 }
@@ -85,7 +90,7 @@ static int uart_cc13xx_cc26xx_err_check(const struct device *dev)
 static int uart_cc13xx_cc26xx_configure(const struct device *dev,
 					const struct uart_config *cfg)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
 	uint32_t line_ctrl = 0;
 	bool flow_ctrl;
@@ -155,27 +160,27 @@ static int uart_cc13xx_cc26xx_configure(const struct device *dev,
 	}
 
 	/* Disables UART before setting control registers */
-	UARTConfigSetExpClk(config->regs,
+	UARTConfigSetExpClk(config->reg,
 			    config->sys_clk_freq, cfg->baudrate,
 			    line_ctrl);
 
 	/* Clear all UART interrupts */
-	UARTIntClear(config->regs,
+	UARTIntClear(config->reg,
 		UART_INT_OE | UART_INT_BE | UART_INT_PE |
 		UART_INT_FE | UART_INT_RT | UART_INT_TX |
 		UART_INT_RX | UART_INT_CTS);
 
 	if (flow_ctrl) {
-		UARTHwFlowControlEnable(config->regs);
+		UARTHwFlowControlEnable(config->reg);
 	} else {
-		UARTHwFlowControlDisable(config->regs);
+		UARTHwFlowControlDisable(config->reg);
 	}
 
 	/* Re-enable UART */
-	UARTEnable(config->regs);
+	UARTEnable(config->reg);
 
 	/* Disabled FIFOs act as 1-byte-deep holding registers (character mode) */
-	UARTFIFODisable(config->regs);
+	UARTFIFODisable(config->reg);
 
 	data->uart_config = *cfg;
 
@@ -199,11 +204,11 @@ static int uart_cc13xx_cc26xx_fifo_fill(const struct device *dev,
 					const uint8_t *buf,
 					int len)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 	int n = 0;
 
 	while (n < len) {
-		if (!UARTCharPutNonBlocking(config->regs, buf[n])) {
+		if (!UARTCharPutNonBlocking(config->reg, buf[n])) {
 			break;
 		}
 		n++;
@@ -216,12 +221,12 @@ static int uart_cc13xx_cc26xx_fifo_read(const struct device *dev,
 					uint8_t *buf,
 					const int len)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 	int c, n;
 
 	n = 0;
 	while (n < len) {
-		c = UARTCharGetNonBlocking(config->regs);
+		c = UARTCharGetNonBlocking(config->reg);
 		if (c == -1) {
 			break;
 		}
@@ -233,7 +238,7 @@ static int uart_cc13xx_cc26xx_fifo_read(const struct device *dev,
 
 static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
 #ifdef CONFIG_PM
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
@@ -254,14 +259,14 @@ static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 	}
 #endif
 
-	UARTIntEnable(config->regs, UART_INT_TX);
+	UARTIntEnable(config->reg, UART_INT_TX);
 }
 
 static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	UARTIntDisable(config->regs, UART_INT_TX);
+	UARTIntDisable(config->reg, UART_INT_TX);
 
 #ifdef CONFIG_PM
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
@@ -275,14 +280,14 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 
 static int uart_cc13xx_cc26xx_irq_tx_ready(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	return UARTSpaceAvail(config->regs) ? 1 : 0;
+	return UARTSpaceAvail(config->reg) ? 1 : 0;
 }
 
 static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
 #ifdef CONFIG_PM
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
@@ -298,12 +303,12 @@ static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 	}
 #endif
 
-	UARTIntEnable(config->regs, UART_INT_RX);
+	UARTIntEnable(config->reg, UART_INT_RX);
 }
 
 static void uart_cc13xx_cc26xx_irq_rx_disable(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
 #ifdef CONFIG_PM
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
@@ -314,45 +319,45 @@ static void uart_cc13xx_cc26xx_irq_rx_disable(const struct device *dev)
 	}
 #endif
 
-	UARTIntDisable(config->regs, UART_INT_RX);
+	UARTIntDisable(config->reg, UART_INT_RX);
 }
 
 static int uart_cc13xx_cc26xx_irq_tx_complete(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	return UARTBusy(config->regs) ? 0 : 1;
+	return UARTBusy(config->reg) ? 0 : 1;
 }
 
 static int uart_cc13xx_cc26xx_irq_rx_ready(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	return UARTCharsAvail(config->regs) ? 1 : 0;
+	return UARTCharsAvail(config->reg) ? 1 : 0;
 }
 
 static void uart_cc13xx_cc26xx_irq_err_enable(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	return UARTIntEnable(config->regs,
+	return UARTIntEnable(config->reg,
 			     UART_INT_OE | UART_INT_BE | UART_INT_PE |
 				     UART_INT_FE);
 }
 
 static void uart_cc13xx_cc26xx_irq_err_disable(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 
-	return UARTIntDisable(config->regs,
+	return UARTIntDisable(config->reg,
 			      UART_INT_OE | UART_INT_BE | UART_INT_PE |
 				      UART_INT_FE);
 }
 
 static int uart_cc13xx_cc26xx_irq_is_pending(const struct device *dev)
 {
-	const struct uart_device_config *config = dev->config;
-	uint32_t status = UARTIntStatus(config->regs, true);
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
+	uint32_t status = UARTIntStatus(config->reg, true);
 
 	return status & (UART_INT_TX | UART_INT_RX) ? 1 : 0;
 }
@@ -397,14 +402,14 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 	uintptr_t clientArg)
 {
 	const struct device *dev = (const struct device *)clientArg;
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
 	int ret = Power_NOTIFYDONE;
 	int16_t res_id;
 
 	/* Reconfigure the hardware if returning from standby */
 	if (eventType == PowerCC26XX_AWAKE_STANDBY) {
-		if (config->regs == DT_INST_REG_ADDR(0)) {
+		if (config->reg == DT_INST_REG_ADDR(0)) {
 			res_id = PowerCC26XX_PERIPH_UART0;
 		} else { /* DT_INST_REG_ADDR(1) */
 			res_id = PowerCC26X2_PERIPH_UART1;
@@ -430,13 +435,13 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 static int uart_cc13xx_cc26xx_pm_action(const struct device *dev,
 					enum pm_device_action action)
 {
-	const struct uart_device_config *config = dev->config;
+	const struct uart_cc13xx_cc26xx_config *config = dev->config;
 	struct uart_cc13xx_cc26xx_data *data = dev->data;
 	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (config->regs == DT_INST_REG_ADDR(0)) {
+		if (config->reg == DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_UART0);
 		} else {
 			Power_setDependency(PowerCC26X2_PERIPH_UART1);
@@ -445,12 +450,12 @@ static int uart_cc13xx_cc26xx_pm_action(const struct device *dev,
 		ret = uart_cc13xx_cc26xx_configure(dev, &data->uart_config);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		UARTDisable(config->regs);
+		UARTDisable(config->reg);
 		/*
 		 * Release power dependency - i.e. potentially power
 		 * down serial domain.
 		 */
-		if (config->regs == DT_INST_REG_ADDR(0)) {
+		if (config->reg == DT_INST_REG_ADDR(0)) {
 			Power_releaseDependency(PowerCC26XX_PERIPH_UART0);
 		} else {
 			Power_releaseDependency(PowerCC26X2_PERIPH_UART1);
@@ -546,9 +551,10 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define UART_CC13XX_CC26XX_IRQ_CFG(n)					\
 	do {								\
-		const struct uart_device_config *config = dev->config;	\
+		const struct uart_cc13xx_cc26xx_config *config =	\
+			dev->config;					\
 									\
-		UARTIntClear(config->regs, UART_INT_RX);		\
+		UARTIntClear(config->reg, UART_INT_RX);			\
 									\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 				DT_INST_IRQ(n, priority),		\
@@ -557,7 +563,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 				0);					\
 		irq_enable(DT_INST_IRQN(n));				\
 		/* Causes an initial TX ready INT when TX INT enabled */\
-		UARTCharPutNonBlocking(config->regs, '\0');		\
+		UARTCharPutNonBlocking(config->reg, '\0');		\
 	} while (0)
 
 #define UART_CC13XX_CC26XX_INT_FIELDS					\
@@ -610,9 +616,9 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #define UART_CC13XX_CC26XX_INIT(n)				     \
 	UART_CC13XX_CC26XX_INIT_FUNC(n);			     \
 								     \
-	static const struct uart_device_config			     \
+	static const struct uart_cc13xx_cc26xx_config		     \
 		uart_cc13xx_cc26xx_config_##n = {		     \
-		.regs = DT_INST_REG_ADDR(n),			     \
+		.reg = DT_INST_REG_ADDR(n),			     \
 		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks,   \
 			clock_frequency)			     \
 	};							     \
