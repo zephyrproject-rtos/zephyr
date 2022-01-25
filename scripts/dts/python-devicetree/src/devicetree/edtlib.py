@@ -448,6 +448,7 @@ class EDT:
         # Initialize node lookup tables (LUTs).
 
         self.label2node = OrderedDict()
+        self.prop_label2node = OrderedDict()
         self.dep_ord2node = OrderedDict()
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
@@ -455,6 +456,10 @@ class EDT:
         for node in self.nodes:
             for label in node.labels:
                 self.label2node[label] = node
+
+            nlabel = node.props.get('label')
+            if nlabel:
+                self.prop_label2node[nlabel.val_as_token] = node
 
             for compat in node.compats:
                 self.compat2nodes[compat].append(node)
