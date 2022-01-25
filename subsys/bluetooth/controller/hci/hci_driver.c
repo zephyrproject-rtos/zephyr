@@ -387,9 +387,9 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		stream = ull_sync_iso_stream_get(node_rx->hdr.handle);
 
 		/* Check validity of the data path sink. FIXME: A channel disconnect race
-		 * may cause ISO data pending with without valid data path.
+		 * may cause ISO data pending without valid data path.
 		 */
-		if (stream && stream->dp && stream->dp->sink_hdl) {
+		if (stream && stream->dp) {
 			isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
 			isoal_rx.pdu = (void *)node_rx->pdu;
 			err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
