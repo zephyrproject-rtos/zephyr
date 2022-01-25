@@ -14,8 +14,12 @@
 
 #include <drivers/pinctrl.h>
 
+#include <stm32_ll_usart.h>
+
 /* device config */
 struct uart_stm32_config {
+	/* USART instance */
+	USART_TypeDef *usart;
 	struct uart_device_config uconf;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
