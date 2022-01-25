@@ -270,9 +270,20 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		LL_TIM_OC_StructInit(&oc_init);
 
 		oc_init.OCMode = LL_TIM_OCMODE_PWM1;
-		oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
+
+		/* the cfg->pcfg->states->pins->pincfg holds the STM32_PWM_COMPLEMENTARY_PIN information */
+		const struct pinctrl_state *state;
+		pinctrl_lookup_state(cfg->pcfg, PINCTRL_STATE_DEFAULT, &state);
+
+		if (state->pins->pincfg & STM32_PWM_COMPLEMENTARY_PIN) {
+			oc_init.OCNState = LL_TIM_OCSTATE_ENABLE;
+			oc_init.OCNPolarity = get_polarity(flags);
+		} else {
+			oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
+			oc_init.OCPolarity = get_polarity(flags);
+		}
 		oc_init.CompareValue = pulse_cycles;
-		oc_init.OCPolarity = get_polarity(flags);
+
 
 #ifdef CONFIG_PWM_CAPTURE
 		if (IS_TIM_SLAVE_INSTANCE(cfg->timer)) {
