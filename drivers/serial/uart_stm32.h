@@ -20,7 +20,6 @@
 struct uart_stm32_config {
 	/* USART instance */
 	USART_TypeDef *usart;
-	struct uart_device_config uconf;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
 	/* initial hardware flow control, 1 for RTS/CTS */
@@ -30,9 +29,8 @@ struct uart_stm32_config {
 	/* switch to enable single wire / half duplex feature */
 	bool single_wire;
 	const struct pinctrl_dev_config *pcfg;
-#if defined(CONFIG_PM) \
-	&& !defined(CONFIG_UART_INTERRUPT_DRIVEN) \
-	&& !defined(CONFIG_UART_ASYNC_API)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
+	defined(CONFIG_PM)
 	uart_irq_config_func_t irq_config_func;
 #endif
 };
