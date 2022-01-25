@@ -40,11 +40,11 @@ LOG_MODULE_REGISTER(adc_stm32);
 #endif
 #endif
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
+#if !defined(CONFIG_SOC_SERIES_STM32F0X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32G0X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32L0X) &&	\
 	!defined(CONFIG_SOC_SERIES_STM32WLX)
-#define RANK(n)		LL_ADC_REG_RANK_##n
+#define RANK(n)         LL_ADC_REG_RANK_##n
 static const uint32_t table_rank[] = {
 	RANK(1),
 	RANK(2),
@@ -64,7 +64,7 @@ static const uint32_t table_rank[] = {
 	RANK(16),
 };
 
-#define SEQ_LEN(n)	LL_ADC_REG_SEQ_SCAN_ENABLE_##n##RANKS
+#define SEQ_LEN(n)      LL_ADC_REG_SEQ_SCAN_ENABLE_##n##RANKS
 static const uint32_t table_seq_len[] = {
 	LL_ADC_REG_SEQ_SCAN_DISABLE,
 	SEQ_LEN(2),
@@ -85,7 +85,7 @@ static const uint32_t table_seq_len[] = {
 };
 #endif
 
-#define RES(n)		LL_ADC_RESOLUTION_##n##B
+#define RES(n)          LL_ADC_RESOLUTION_##n##B
 static const uint32_t table_resolution[] = {
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || \
 	defined(STM32F3X_ADC_V2_5)
@@ -107,7 +107,7 @@ static const uint32_t table_resolution[] = {
 #endif
 };
 
-#define SMP_TIME(x, y)		LL_ADC_SAMPLINGTIME_##x##CYCLE##y
+#define SMP_TIME(x, y)          LL_ADC_SAMPLINGTIME_##x##CYCLE##y
 
 /*
  * Conversion time in ADC cycles. Many values should have been 0.5 less,
@@ -115,7 +115,7 @@ static const uint32_t table_resolution[] = {
  * So all half cycles are counted as one.
  */
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F1X)
-static const uint16_t acq_time_tbl[8] = {2, 8, 14, 29, 42, 56, 72, 240};
+static const uint16_t acq_time_tbl[8] = { 2, 8, 14, 29, 42, 56, 72, 240 };
 static const uint32_t table_samp_time[] = {
 	SMP_TIME(1,   _5),
 	SMP_TIME(7,   S_5),
@@ -126,10 +126,10 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(71,  S_5),
 	SMP_TIME(239, S_5),
 };
-#elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32F2X) ||   \
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X)
-static const uint16_t acq_time_tbl[8] = {3, 15, 28, 56, 84, 112, 144, 480};
+static const uint16_t acq_time_tbl[8] = { 3, 15, 28, 56, 84, 112, 144, 480 };
 static const uint32_t table_samp_time[] = {
 	SMP_TIME(3,   S),
 	SMP_TIME(15,  S),
@@ -142,7 +142,7 @@ static const uint32_t table_samp_time[] = {
 };
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
 #ifdef ADC5_V1_1
-static const uint16_t acq_time_tbl[8] = {2, 3, 5, 8, 20, 62, 182, 602};
+static const uint16_t acq_time_tbl[8] = { 2, 3, 5, 8, 20, 62, 182, 602 };
 static const uint32_t table_samp_time[] = {
 	SMP_TIME(1,   _5),
 	SMP_TIME(2,   S_5),
@@ -154,7 +154,7 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(601, S_5),
 };
 #else
-static const uint16_t acq_time_tbl[8] = {2, 8, 14, 29, 42, 56, 72, 240};
+static const uint16_t acq_time_tbl[8] = { 2, 8, 14, 29, 42, 56, 72, 240 };
 static const uint32_t table_samp_time[] = {
 	SMP_TIME(1,   _5),
 	SMP_TIME(7,   S_5),
@@ -166,10 +166,10 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(239, S_5),
 };
 #endif /* ADC5_V1_1 */
-#elif defined(CONFIG_SOC_SERIES_STM32L0X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32L0X) ||   \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
-static const uint16_t acq_time_tbl[8] = {2, 4, 8, 13, 20, 40, 80, 161};
+static const uint16_t acq_time_tbl[8] = { 2, 4, 8, 13, 20, 40, 80, 161 };
 static const uint32_t table_samp_time[] = {
 	SMP_TIME(1,   _5),
 	SMP_TIME(3,   S_5),
@@ -180,11 +180,11 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(79,  S_5),
 	SMP_TIME(160, S_5),
 };
-#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32L4X) ||   \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
-static const uint16_t acq_time_tbl[8] = {3, 7, 13, 25, 48, 93, 248, 641};
+static const uint16_t acq_time_tbl[8] = { 3, 7, 13, 25, 48, 93, 248, 641 };
 static const uint32_t table_samp_time[] = {
 	SMP_TIME(2,   S_5),
 	SMP_TIME(6,   S_5),
@@ -196,7 +196,7 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(640, S_5),
 };
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
-static const uint16_t acq_time_tbl[8] = {5, 10, 17, 25, 49, 97, 193, 385};
+static const uint16_t acq_time_tbl[8] = { 5, 10, 17, 25, 49, 97, 193, 385 };
 static const uint32_t table_samp_time[] = {
 	SMP_TIME(4,   S),
 	SMP_TIME(9,   S),
@@ -208,7 +208,7 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(384, S),
 };
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
-static const uint16_t acq_time_tbl[8] = {2, 3, 9, 17, 33, 65, 388, 811};
+static const uint16_t acq_time_tbl[8] = { 2, 3, 9, 17, 33, 65, 388, 811 };
 static const uint32_t table_samp_time[] = {
 	SMP_TIME(1,   _5),
 	SMP_TIME(2,   S_5),
@@ -220,9 +220,9 @@ static const uint32_t table_samp_time[] = {
 	SMP_TIME(810, S_5),
 };
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-static const uint16_t acq_time_tbl[8] = {5, 6, 12, 20, 36, 68, 391, 814};
+static const uint16_t acq_time_tbl[8] = { 5, 6, 12, 20, 36, 68, 391, 814 };
 static const uint32_t table_samp_time[] = {
-	SMP_TIME(5,),
+	SMP_TIME(5, ),
 	SMP_TIME(6,   S),
 	SMP_TIME(12,  S),
 	SMP_TIME(20,  S),
@@ -239,7 +239,7 @@ static const uint32_t table_samp_time[] = {
 #endif
 
 /* External channels (maximum). */
-#define STM32_CHANNEL_COUNT		20
+#define STM32_CHANNEL_COUNT             20
 
 struct adc_stm32_data {
 	struct adc_context ctx;
@@ -249,7 +249,7 @@ struct adc_stm32_data {
 
 	uint8_t resolution;
 	uint8_t channel_count;
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	int8_t acq_time_index;
@@ -280,7 +280,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 
 	if (sequence->buffer_size < needed_buffer_size) {
 		LOG_ERR("Provided buffer is too small (%u/%u)",
-				sequence->buffer_size, needed_buffer_size);
+			sequence->buffer_size, needed_buffer_size);
 		return -ENOMEM;
 	}
 
@@ -294,7 +294,7 @@ static void adc_stm32_start_conversion(const struct device *dev)
 
 	LOG_DBG("Starting conversion");
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
@@ -311,11 +311,11 @@ static void adc_stm32_start_conversion(const struct device *dev)
 #endif
 }
 
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
+#if !defined(CONFIG_SOC_SERIES_STM32F2X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32F4X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32F7X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32F1X) &&	\
+	!defined(STM32F3X_ADC_V2_5) &&		\
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
 static void adc_stm32_calib(const struct device *dev)
 {
@@ -323,13 +323,13 @@ static void adc_stm32_calib(const struct device *dev)
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
 
-#if defined(STM32F3X_ADC_V1_1) || \
+#if defined(STM32F3X_ADC_V1_1) ||	       \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
-#elif defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32F0X) ||   \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -344,7 +344,7 @@ static void adc_stm32_calib(const struct device *dev)
 }
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32G0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
@@ -356,24 +356,24 @@ static void adc_stm32_calib(const struct device *dev)
 
 #ifdef LL_ADC_OVS_RATIO_2
 /* table for shifting oversampling mostly for ADC3 != ADC_VER_V5_V90 */
-	static const uint32_t stm32_adc_ratio_table[] = {
-		0,
-		LL_ADC_OVS_RATIO_2,
-		LL_ADC_OVS_RATIO_4,
-		LL_ADC_OVS_RATIO_8,
-		LL_ADC_OVS_RATIO_16,
-		LL_ADC_OVS_RATIO_32,
-		LL_ADC_OVS_RATIO_64,
-		LL_ADC_OVS_RATIO_128,
-		LL_ADC_OVS_RATIO_256,
-	};
+static const uint32_t stm32_adc_ratio_table[] = {
+	0,
+	LL_ADC_OVS_RATIO_2,
+	LL_ADC_OVS_RATIO_4,
+	LL_ADC_OVS_RATIO_8,
+	LL_ADC_OVS_RATIO_16,
+	LL_ADC_OVS_RATIO_32,
+	LL_ADC_OVS_RATIO_64,
+	LL_ADC_OVS_RATIO_128,
+	LL_ADC_OVS_RATIO_256,
+};
 #endif /* ! ADC_VER_V5_V90 */
 
-	/*
-	 * Function to configure the oversampling ratio and shit using stm32 LL
-	 * ratio is directly the sequence->oversampling (a 2^n value)
-	 * shift is the corresponding LL_ADC_OVS_SHIFT_RIGHT_x constant
-	 */
+/*
+ * Function to configure the oversampling ratio and shit using stm32 LL
+ * ratio is directly the sequence->oversampling (a 2^n value)
+ * shift is the corresponding LL_ADC_OVS_SHIFT_RIGHT_x constant
+ */
 static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shift)
 {
 	LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
@@ -385,14 +385,14 @@ static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shi
 #if defined(ADC_VER_V5_V90)
 	if (adc == ADC3) {
 		MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC3_CFGR2_OVSR),
-			(shift | stm32_adc_ratio_table[ratio]));
+			   (shift | stm32_adc_ratio_table[ratio]));
 	} else {
 		MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC_CFGR2_OVSR),
-			(shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
+			   (shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
 	}
 #endif /* ADC_VER_V5_V90*/
 	MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC_CFGR2_OVSR),
-		(shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
+		   (shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	if (adc == ADC1) {
 		/* the LL function expects a value from 1 to 1024 */
@@ -412,7 +412,7 @@ static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shi
  */
 static int adc_stm32_enable(ADC_TypeDef *adc)
 {
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+#if defined(CONFIG_SOC_SERIES_STM32L4X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -461,7 +461,7 @@ static int start_read(const struct device *dev,
 
 	switch (sequence->resolution) {
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(STM32F3X_ADC_V2_5)
+		defined(STM32F3X_ADC_V2_5)
 	case 12:
 		resolution = table_resolution[0];
 		break;
@@ -573,7 +573,7 @@ static int start_read(const struct device *dev,
 	}
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32G0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
@@ -635,12 +635,12 @@ static int start_read(const struct device *dev,
 #endif
 
 	if (sequence->calibrate) {
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
-	!defined(CONFIG_SOC_SERIES_STM32L1X)
+#if !defined(CONFIG_SOC_SERIES_STM32F2X) &&		\
+		!defined(CONFIG_SOC_SERIES_STM32F4X) &&	\
+		!defined(CONFIG_SOC_SERIES_STM32F7X) &&	\
+		!defined(CONFIG_SOC_SERIES_STM32F1X) &&	\
+		!defined(STM32F3X_ADC_V2_5) &&		\
+		!defined(CONFIG_SOC_SERIES_STM32L1X)
 
 		/* we cannot calibrate the ADC while the ADC is enabled */
 		LL_ADC_Disable(adc);
@@ -655,8 +655,8 @@ static int start_read(const struct device *dev,
 #endif
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(STM32F3X_ADC_V1_1) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
+	defined(STM32F3X_ADC_V1_1) ||	       \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
@@ -731,8 +731,8 @@ static int adc_stm32_read(const struct device *dev,
 
 #ifdef CONFIG_ADC_ASYNC
 static int adc_stm32_read_async(const struct device *dev,
-				 const struct adc_sequence *sequence,
-				 struct k_poll_signal *async)
+				const struct adc_sequence *sequence,
+				struct k_poll_signal *async)
 {
 	struct adc_stm32_data *data = dev->data;
 	int error;
@@ -774,6 +774,7 @@ static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInt
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
 	(void) adc; /* Avoid 'unused variable' warning for some families */
 
 	/* Do not remove existing paths */
@@ -790,23 +791,23 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_SetSamplingTimeCommonChannels(adc,
-		table_samp_time[acq_time_index]);
+					     table_samp_time[acq_time_index]);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
 	LL_ADC_SetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_1,
-		table_samp_time[acq_time_index]);
+					     table_samp_time[acq_time_index]);
 #else
 	LL_ADC_SetChannelSamplingTime(adc,
-		__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
-		table_samp_time[acq_time_index]);
+				      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+				      table_samp_time[acq_time_index]);
 #endif
 }
 
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	 defined(CONFIG_SOC_SERIES_STM32L0X)
+	defined(CONFIG_SOC_SERIES_STM32L0X)
 	struct adc_stm32_data *data = dev->data;
 #endif
 	int acq_time_index;
@@ -817,11 +818,11 @@ static int adc_stm32_channel_setup(const struct device *dev,
 	}
 
 	acq_time_index = adc_stm32_check_acq_time(
-				channel_cfg->acquisition_time);
+		channel_cfg->acquisition_time);
 	if (acq_time_index < 0) {
 		return acq_time_index;
 	}
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	if (data->acq_time_index == -1) {
@@ -856,7 +857,7 @@ static int adc_stm32_channel_setup(const struct device *dev,
 	}
 
 	adc_stm32_setup_speed(dev, channel_cfg->channel_id,
-				  acq_time_index);
+			      acq_time_index);
 
 	LOG_DBG("Channel setup succeeded!");
 
@@ -874,7 +875,7 @@ static int adc_stm32_init(const struct device *dev)
 	LOG_DBG("Initializing....");
 
 	data->dev = dev;
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	/*
@@ -888,7 +889,7 @@ static int adc_stm32_init(const struct device *dev)
 #endif
 
 	if (clock_control_on(clk,
-		(clock_control_subsys_t *) &config->pclken) != 0) {
+			     (clock_control_subsys_t *) &config->pclken) != 0) {
 		return -EIO;
 	}
 
@@ -903,7 +904,7 @@ static int adc_stm32_init(const struct device *dev)
 	LL_PWR_EnableVDDA();
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+#if defined(CONFIG_SOC_SERIES_STM32L4X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
@@ -921,7 +922,7 @@ static int adc_stm32_init(const struct device *dev)
 	 * F3, L4, WB, G0 and G4 ADC modules need some time
 	 * to be stabilized before performing any enable or calibration actions.
 	 */
-#if defined(STM32F3X_ADC_V1_1) || \
+#if defined(STM32F3X_ADC_V1_1) ||	       \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
@@ -934,11 +935,11 @@ static int adc_stm32_init(const struct device *dev)
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_SetClock(adc, LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(STM32F3X_ADC_V1_1) || \
+#elif defined(STM32F3X_ADC_V1_1) ||	       \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
@@ -950,14 +951,14 @@ static int adc_stm32_init(const struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			LL_ADC_CLOCK_ASYNC_DIV4);
+			      LL_ADC_CLOCK_ASYNC_DIV4);
 #endif
 
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(STM32F3X_ADC_V2_5) && \
+#if !defined(CONFIG_SOC_SERIES_STM32F2X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32F4X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32F7X) &&	\
+	!defined(CONFIG_SOC_SERIES_STM32F1X) &&	\
+	!defined(STM32F3X_ADC_V2_5) &&		\
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
 	/*
 	 * Calibration of F1 and F3 (ADC1_V2_5) series has to be started
@@ -966,7 +967,7 @@ static int adc_stm32_init(const struct device *dev)
 	adc_stm32_calib(dev);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
@@ -988,8 +989,8 @@ static int adc_stm32_init(const struct device *dev)
 				       LL_ADC_PATH_INTERNAL_VREFINT);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(STM32F3X_ADC_V1_1) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) ||     \
+	defined(STM32F3X_ADC_V1_1) ||	       \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
@@ -1006,7 +1007,7 @@ static int adc_stm32_init(const struct device *dev)
 	uint32_t adc_rate, wait_cycles;
 
 	if (clock_control_get_rate(clk,
-		(clock_control_subsys_t *) &config->pclken, &adc_rate) < 0) {
+				   (clock_control_subsys_t *) &config->pclken, &adc_rate) < 0) {
 		LOG_ERR("ADC clock rate get error.");
 	}
 
@@ -1046,18 +1047,18 @@ static int adc_stm32_init(const struct device *dev)
 		channel_offset = 0UL;
 	} else if (adc == ADC2) {
 		channel_offset = 8UL;
-	} else   /*Case ADC3*/ {
+	} else { /*Case ADC3*/
 		channel_offset = 16UL;
 	}
 	/* Read factory calibration factors */
 	for (uint32_t count = 0UL; count < ADC_LINEAR_CALIB_REG_COUNT; count++) {
 		linear_calib_buffer = *(uint32_t *)(
 			ADC_LINEAR_CALIB_REG_1_ADDR + channel_offset + count
-		);
+			);
 		LL_ADC_SetCalibrationLinearFactor(
 			adc, LL_ADC_CALIB_LINEARITY_WORD1 << count,
-			linear_calib_buffer
-		);
+				linear_calib_buffer
+			);
 	}
 #endif
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -1083,13 +1084,13 @@ bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
 	       LL_ADC_IsActiveFlag_AWD1(adc);
 }
 
-#define HANDLE_IRQS(index)							\
-	static const struct device *dev_##index = DEVICE_DT_INST_GET(index);	\
-	const struct adc_stm32_cfg *cfg_##index = dev_##index->config;		\
-	ADC_TypeDef *adc_##index = (ADC_TypeDef *)(cfg_##index->base);		\
-										\
-	if (adc_stm32_is_irq_active(adc_##index)) {				\
-		adc_stm32_isr(dev_##index);					\
+#define HANDLE_IRQS(index)						     \
+	static const struct device *dev_##index = DEVICE_DT_INST_GET(index); \
+	const struct adc_stm32_cfg *cfg_##index = dev_##index->config;	     \
+	ADC_TypeDef *adc_##index = (ADC_TypeDef *)(cfg_##index->base);	     \
+									     \
+	if (adc_stm32_is_irq_active(adc_##index)) {			     \
+		adc_stm32_isr(dev_##index);				     \
 	}
 
 static void adc_stm32_shared_irq_handler(void)
@@ -1102,59 +1103,59 @@ static void adc_stm32_irq_init(void)
 	if (init_irq) {
 		init_irq = false;
 		IRQ_CONNECT(DT_INST_IRQN(0),
-			DT_INST_IRQ(0, priority),
-			adc_stm32_shared_irq_handler, NULL, 0);
+			    DT_INST_IRQ(0, priority),
+			    adc_stm32_shared_irq_handler, NULL, 0);
 		irq_enable(DT_INST_IRQN(0));
 	}
 }
 
-#define ADC_STM32_CONFIG(index)						\
-static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
-	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
-	.irq_cfg_func = adc_stm32_irq_init,				\
-	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
-		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
-	},								\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-};
+#define ADC_STM32_CONFIG(index)					    \
+	static const struct adc_stm32_cfg adc_stm32_cfg_##index = { \
+		.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),	    \
+		.irq_cfg_func = adc_stm32_irq_init,		    \
+		.pclken = {					    \
+			.enr = DT_INST_CLOCKS_CELL(index, bits),    \
+			.bus = DT_INST_CLOCKS_CELL(index, bus),	    \
+		},						    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),	    \
+	};
 #else
-#define ADC_STM32_CONFIG(index)						\
-static void adc_stm32_cfg_func_##index(void)				\
-{									\
-	IRQ_CONNECT(DT_INST_IRQN(index),				\
-		    DT_INST_IRQ(index, priority),			\
-		    adc_stm32_isr, DEVICE_DT_INST_GET(index), 0);	\
-	irq_enable(DT_INST_IRQN(index));				\
-}									\
-									\
-static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
-	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
-	.irq_cfg_func = adc_stm32_cfg_func_##index,			\
-	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
-		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
-	},								\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-};
+#define ADC_STM32_CONFIG(index)						  \
+	static void adc_stm32_cfg_func_##index(void)			  \
+	{								  \
+		IRQ_CONNECT(DT_INST_IRQN(index),			  \
+			    DT_INST_IRQ(index, priority),		  \
+			    adc_stm32_isr, DEVICE_DT_INST_GET(index), 0); \
+		irq_enable(DT_INST_IRQN(index));			  \
+	}								  \
+									  \
+	static const struct adc_stm32_cfg adc_stm32_cfg_##index = {	  \
+		.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),		  \
+		.irq_cfg_func = adc_stm32_cfg_func_##index,		  \
+		.pclken = {						  \
+			.enr = DT_INST_CLOCKS_CELL(index, bits),	  \
+			.bus = DT_INST_CLOCKS_CELL(index, bus),		  \
+		},							  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		  \
+	};
 #endif /* CONFIG_ADC_STM32_SHARED_IRQS */
 
-#define STM32_ADC_INIT(index)						\
-									\
-PINCTRL_DT_INST_DEFINE(index);						\
-									\
-ADC_STM32_CONFIG(index)							\
-									\
-static struct adc_stm32_data adc_stm32_data_##index = {			\
-	ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),		\
-	ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx),		\
-	ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),		\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(index,						\
-		    &adc_stm32_init, NULL,				\
-		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
-		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
-		    &api_stm32_driver_api);
+#define STM32_ADC_INIT(index)						       \
+									       \
+	PINCTRL_DT_INST_DEFINE(index);					       \
+									       \
+	ADC_STM32_CONFIG(index)						       \
+									       \
+	static struct adc_stm32_data adc_stm32_data_##index = {		       \
+		ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),	       \
+		ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx),	       \
+		ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),	       \
+	};								       \
+									       \
+	DEVICE_DT_INST_DEFINE(index,					       \
+			      &adc_stm32_init, NULL,			       \
+			      &adc_stm32_data_##index, &adc_stm32_cfg_##index, \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	       \
+			      &api_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_ADC_INIT)
