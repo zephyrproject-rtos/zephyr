@@ -85,43 +85,6 @@ struct uart_stellaris_dev_data_t {
 #endif
 };
 
-#define UART_STRUCT(dev) \
-	(((const struct uart_stellaris_config * const)(dev)->config)->uart)
-
-/* registers */
-#define UARTDR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x000)))
-#define UARTSR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x004)))
-#define UARTCR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x004)))
-#define UARTFR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x018)))
-#define UARTILPR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x020)))
-#define UARTIBRD(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x024)))
-#define UARTFBRD(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x028)))
-#define UARTLCRH(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x02C)))
-#define UARTCTL(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x030)))
-#define UARTIFLS(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x034)))
-#define UARTIM(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x038)))
-#define UARTRIS(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x03C)))
-#define UARTMIS(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x040)))
-#define UARTICR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x044)))
-
-/* ID registers: UARTPID = UARTPeriphID, UARTPCID = UARTPCellId */
-#define UARTPID4(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFD0)))
-#define UARTPID5(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFD4)))
-#define UARTPID6(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFD8)))
-#define UARTPID7(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFDC)))
-#define UARTPID0(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFE0)))
-#define UARTPID1(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFE4)))
-#define UARTPID2(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFE8)))
-#define UARTPID3(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFEC)))
-#define UARTPCID0(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFF0)))
-#define UARTPCID1(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFF4)))
-#define UARTPCID2(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFF8)))
-#define UARTPCID3(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0xFFC)))
-
-/* muxed UART registers */
-#define sr u1._sr /* Read: receive status */
-#define cr u1._cr /* Write: receive error clear */
-
 /* bits */
 #define UARTFR_BUSY 0x00000008
 #define UARTFR_RXFE 0x00000010
