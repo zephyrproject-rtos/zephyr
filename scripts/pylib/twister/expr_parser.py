@@ -285,6 +285,14 @@ def ast_expr(ast, env, edt):
         if node and node.status == "okay":
             return True
         return False
+    elif ast[0] == "dt_proplabel_enabled":
+        # Checks to see if the DT has an enabled node with a matching
+        # property 'label'
+        prop_label = ast[1][0]
+        node = edt.prop_label2node.get(prop_label)
+        if node and node.status == "okay":
+            return True
+        return False
 
 def ast_handle_dt_enabled_alias_with_parent_compat(edt, alias, compat):
     # Helper shared with the now deprecated
