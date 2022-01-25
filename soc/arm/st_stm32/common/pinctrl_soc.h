@@ -55,7 +55,8 @@ typedef struct pinctrl_soc_pin {
 	 ((STM32_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << STM32_PUPD_SHIFT) | \
 	 ((STM32_PUSH_PULL * DT_PROP(node_id, drive_push_pull)) << STM32_CNF_OUT_0_SHIFT) | \
 	 ((STM32_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain)) << STM32_CNF_OUT_0_SHIFT) | \
-	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_MODE_OSPEED_SHIFT))
+	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_MODE_OSPEED_SHIFT) | \
+	 (DT_PROP(node_id, pwm_complementary) << STM32_PWM_COMPLEMENTARY_SHIFT))
 #else
 /**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t (non-F1).
@@ -68,7 +69,8 @@ typedef struct pinctrl_soc_pin {
 	 ((STM32_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << STM32_PUPDR_SHIFT) | \
 	 ((STM32_PUSH_PULL * DT_PROP(node_id, drive_push_pull)) << STM32_OTYPER_SHIFT) | \
 	 ((STM32_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain)) << STM32_OTYPER_SHIFT) | \
-	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_OSPEEDR_SHIFT))
+	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_OSPEEDR_SHIFT) | \
+	 (DT_PROP(node_id, pwm_complementary) << STM32_PWM_COMPLEMENTARY_SHIFT))
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 /**

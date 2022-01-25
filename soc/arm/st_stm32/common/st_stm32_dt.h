@@ -122,6 +122,32 @@
 	DT_ENUM_IDX(ST_STM32_DT_NODE_ID_FROM_PINCTRL(name, x, i), slew_rate)
 
 /**
+ * @brief Internal: Provide PWM complementary value for a pin with index i of a
+ *        pinctrl-x property for a given device instance inst
+ *
+ * @param inst device instance number
+ * @param x index of targeted pinctrl- property (eg: pinctrl-<x>)
+ * @param i index of soc_gpio_pinctrl element
+ * @return PWM complementary value
+ */
+#define ST_STM32_DT_INST_PWM_COMPLEMENTARY(inst, x, i) \
+	DT_INST_PROP(ST_STM32_DT_INST_NODE_ID_FROM_PINCTRL(inst, x, i), \
+								pwm_complementary)
+
+
+/**
+ * @brief Internal: Provide PWM complementary value for a pin with index i of a
+ *        pinctrl-x property for a given device
+ *
+ * @param inst device instance number
+ * @param x index of targeted pinctrl- property (eg: pinctrl-<x>)
+ * @param name device node label identifier
+ * @return PWM complementary value
+ */
+#define ST_STM32_DT_PWM_COMPLEMENTARY(name, x, i) \
+	DT_INST_PROP(ST_STM32_DT_NODE_ID_FROM_PINCTRL(name, x, i), pwm_complementary)
+
+/**
  * @brief Internal: Contruct a pincfg field of a soc_gpio_pinctrl element
  *        with index i of a pinctrl-x property for a given device instance inst
  *
@@ -143,7 +169,9 @@
 	((STM32_OPEN_DRAIN * ST_STM32_DT_INST_FUNC(inst, x, i,		       \
 							drive_open_drain))     \
 						<< STM32_OTYPER_SHIFT) |       \
-	(ST_STM32_DT_INST_SLEW_RATE(inst, x, i) << STM32_OSPEEDR_SHIFT))
+	(ST_STM32_DT_INST_SLEW_RATE(inst, x, i) << STM32_OSPEEDR_SHIFT) |      \
+	(ST_STM32_DT_INST_PWM_COMPLEMENTARY(inst, x, i) << STM32_PWM_COMPLEMENTARY_SHIFT))
+
 #else
 #define ST_STM32_DT_INST_PINCFG(inst, x, i)				       \
 	(((STM32_NO_PULL * ST_STM32_DT_INST_FUNC(inst, x, i, bias_disable))    \
@@ -157,7 +185,9 @@
 	((STM32_OPEN_DRAIN * ST_STM32_DT_INST_FUNC(inst, x, i,		       \
 							drive_open_drain))     \
 						<< STM32_CNF_OUT_0_SHIFT) |    \
-	(ST_STM32_DT_INST_SLEW_RATE(inst, x, i) << STM32_MODE_OSPEED_SHIFT))
+	(ST_STM32_DT_INST_SLEW_RATE(inst, x, i) << STM32_MODE_OSPEED_SHIFT) |  \
+	(ST_STM32_DT_INST_PWM_COMPLEMENTARY(inst, x, i) << STM32_PWM_COMPLEMENTARY_SHIFT))
+
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 /**
@@ -181,7 +211,8 @@
 						<< STM32_OTYPER_SHIFT) |    \
 	((STM32_OPEN_DRAIN * ST_STM32_DT_FUNC(name, x, i, drive_open_drain))\
 						<< STM32_OTYPER_SHIFT) |    \
-	(ST_STM32_DT_SLEW_RATE(name, x, i) << STM32_OSPEEDR_SHIFT))
+	(ST_STM32_DT_SLEW_RATE(name, x, i) << STM32_OSPEEDR_SHIFT) |        \
+	(ST_STM32_DT_PWM_COMPLEMENTARY(name, x, i) << STM32_PWM_COMPLEMENTARY_SHIFT))
 #else
 #define ST_STM32_DT_PINCFG(name, x, i)				            \
 	(((STM32_NO_PULL * ST_STM32_DT_FUNC(name, x, i, bias_disable))      \
@@ -194,7 +225,8 @@
 						<< STM32_CNF_OUT_0_SHIFT) | \
 	((STM32_OPEN_DRAIN * ST_STM32_DT_FUNC(name, x, i, drive_open_drain))\
 						<< STM32_CNF_OUT_0_SHIFT) | \
-	(ST_STM32_DT_SLEW_RATE(name, x, i) << STM32_MODE_OSPEED_SHIFT))
+	(ST_STM32_DT_SLEW_RATE(name, x, i) << STM32_MODE_OSPEED_SHIFT) |    \
+	(ST_STM32_DT_PWM_COMPLEMENTARY(name, x, i) << STM32_PWM_COMPLEMENTARY_SHIFT))
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 /**
