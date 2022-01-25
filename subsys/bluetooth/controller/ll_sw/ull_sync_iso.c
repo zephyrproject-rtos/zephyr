@@ -268,7 +268,11 @@ struct ll_sync_iso_set *ull_sync_iso_by_stream_get(uint16_t handle)
 
 struct lll_sync_iso_stream *ull_sync_iso_stream_get(uint16_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT) {
+	struct ll_sync_iso_set *sync_iso;
+
+	/* Get the BIG Sync context and check for not being terminated */
+	sync_iso = ull_sync_iso_by_stream_get(handle);
+	if (!sync_iso || !sync_iso->sync) {
 		return NULL;
 	}
 
@@ -287,6 +291,7 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 
 		handle = lll->stream_handle[lll->stream_count];
 		stream = ull_sync_iso_stream_get(handle);
+		LL_ASSERT(stream);
 
 		dp = stream->dp;
 		if (dp) {
