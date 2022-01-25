@@ -19,6 +19,7 @@
 #include <init.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
+#include <dt-bindings/pwm/stm32_pwm.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
@@ -40,6 +41,10 @@ struct pwm_stm32_capture_data {
 	bool capture_pulse;
 	bool continuous;
 };
+
+/* first capture is always nonsense, second is nonsense when polarity changed */
+#define SKIPPED_PWM_CAPTURES 2u
+
 #endif /*CONFIG_PWM_CAPTURE*/
 
 /** PWM data. */
@@ -66,33 +71,14 @@ struct pwm_stm32_config {
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
-/** Series F3, F7, G0, G4, H7, L4, MP1 and WB have up to 6 channels, others up
- *  to 4.
- */
-#if defined(CONFIG_SOC_SERIES_STM32F3X) ||				       \
-	defined(CONFIG_SOC_SERIES_STM32F7X) ||				       \
-	defined(CONFIG_SOC_SERIES_STM32G0X) ||				       \
-	defined(CONFIG_SOC_SERIES_STM32G4X) ||				       \
-	defined(CONFIG_SOC_SERIES_STM32H7X) ||				       \
-	defined(CONFIG_SOC_SERIES_STM32L4X) ||				       \
-	defined(CONFIG_SOC_SERIES_STM32MP1X) ||				       \
-	defined(CONFIG_SOC_SERIES_STM32WBX)
+/** Maximum number of timer channels : some stm32 soc have 6 else only 4 */
+#if defined(LL_TIM_CHANNEL_CH6)
 #define TIMER_HAS_6CH 1
-#else
-#define TIMER_HAS_6CH 0
-#endif
-
-/** Maximum number of timer channels. */
-#if TIMER_HAS_6CH
 #define TIMER_MAX_CH 6u
 #else
+#define TIMER_HAS_6CH 0
 #define TIMER_MAX_CH 4u
 #endif
-
-/* first capture is always nonsense, second is nonsense when polarity changed */
-#ifdef CONFIG_PWM_CAPTURE
-#define SKIPPED_PWM_CAPTURES 2u
-#endif /* CONFIG_PWM_CAPTURE */
 
 /** Channel to LL mapping. */
 static const uint32_t ch2ll[TIMER_MAX_CH] = {
@@ -102,6 +88,21 @@ static const uint32_t ch2ll[TIMER_MAX_CH] = {
 	LL_TIM_CHANNEL_CH5, LL_TIM_CHANNEL_CH6
 #endif
 };
+
+
+/** Some stm32 mcus have complementary channels : 3 or 4 */
+static const uint32_t ch2ll_n[] = {
+#if defined(LL_TIM_CHANNEL_CH1N)
+	LL_TIM_CHANNEL_CH1N,
+	LL_TIM_CHANNEL_CH2N,
+	LL_TIM_CHANNEL_CH3N,
+#if defined(LL_TIM_CHANNEL_CH4N)
+/** stm32g4x and stm32u5x have 4 complementary channels */
+	LL_TIM_CHANNEL_CH4N,
+#endif /* LL_TIM_CHANNEL_CH4N */
+#endif /* LL_TIM_CHANNEL_CH1N */
+};
+/** Maximum number of complemented timer channels is ARRAY_SIZE(ch2ll_n)*/
 
 /** Channel to compare set function mapping. */
 static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
@@ -227,6 +228,7 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 	const struct pwm_stm32_config *cfg = dev->config;
 
 	uint32_t channel;
+	uint32_t current_channel; /* complementary output if used */
 
 	if (pwm < 1u || pwm > TIMER_MAX_CH) {
 		LOG_ERR("Invalid channel (%d)", pwm);
@@ -259,20 +261,47 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 
 	channel = ch2ll[pwm - 1u];
 
+	/* in LL_TIM_CC_DisableChannel and LL_TIM_CC_IsEnabledChannel,
+	 * the channel param could be the complementary one
+	 */
+	if ((flags & PWM_STM32_COMPLEMENTARY_MASK) == PWM_STM32_COMPLEMENTARY) {
+		if (pwm > ARRAY_SIZE(ch2ll_n)) {
+			/* setting a flag on a channel that has not this capability */
+			LOG_ERR("Channel %d has NO complementary output", pwm);
+			return -EINVAL;
+		}
+		current_channel = ch2ll_n[pwm - 1u];
+	} else {
+		current_channel = channel;
+	}
+
 	if (period_cycles == 0u) {
-		LL_TIM_CC_DisableChannel(cfg->timer, channel);
+		LL_TIM_CC_DisableChannel(cfg->timer, current_channel);
 		return 0;
 	}
 
-	if (!LL_TIM_CC_IsEnabledChannel(cfg->timer, channel)) {
+	if (!LL_TIM_CC_IsEnabledChannel(cfg->timer, current_channel)) {
 		LL_TIM_OC_InitTypeDef oc_init;
 
 		LL_TIM_OC_StructInit(&oc_init);
 
 		oc_init.OCMode = LL_TIM_OCMODE_PWM1;
+
+#if defined(LL_TIM_CHANNEL_CH1N)
+		/* the flags holds the PWM_STM32_COMPLEMENTARY information */
+		if ((flags & PWM_STM32_COMPLEMENTARY_MASK) == PWM_STM32_COMPLEMENTARY) {
+			oc_init.OCNState = LL_TIM_OCSTATE_ENABLE;
+			oc_init.OCNPolarity = get_polarity(flags);
+		} else {
+			oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
+			oc_init.OCPolarity = get_polarity(flags);
+		}
+#else /* LL_TIM_CHANNEL_CH1N */
+
 		oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
-		oc_init.CompareValue = pulse_cycles;
 		oc_init.OCPolarity = get_polarity(flags);
+#endif /* LL_TIM_CHANNEL_CH1N */
+		oc_init.CompareValue = pulse_cycles;
 
 #ifdef CONFIG_PWM_CAPTURE
 		if (IS_TIM_SLAVE_INSTANCE(cfg->timer)) {
@@ -283,17 +312,20 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		}
 #endif /* CONFIG_PWM_CAPTURE */
 
+		/* in LL_TIM_OC_Init, the channel is always the non-complementary */
 		if (LL_TIM_OC_Init(cfg->timer, channel, &oc_init) != SUCCESS) {
 			LOG_ERR("Could not initialize timer channel output");
 			return -EIO;
 		}
 
 		LL_TIM_EnableARRPreload(cfg->timer);
+		/* in LL_TIM_OC_EnablePreload, the channel is always the non-complementary */
 		LL_TIM_OC_EnablePreload(cfg->timer, channel);
 		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
 		LL_TIM_GenerateEvent_UPDATE(cfg->timer);
 	} else {
-		LL_TIM_OC_SetPolarity(cfg->timer, channel, get_polarity(flags));
+		/* in LL_TIM_OC_SetPolarity, the channel could be the complementary one */
+		LL_TIM_OC_SetPolarity(cfg->timer, current_channel, get_polarity(flags));
 		set_timer_compare[pwm - 1u](cfg->timer, pulse_cycles);
 		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
 	}
