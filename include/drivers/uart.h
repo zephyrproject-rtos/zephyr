@@ -343,28 +343,6 @@ typedef void (*uart_callback_t)(const struct device *dev,
  * For internal driver use only, skip these in public documentation.
  */
 
-/**
- * @brief UART device configuration.
- *
- * @param port Base port number
- * @param base Memory mapped base address
- * @param regs Register address
- * @param sys_clk_freq System clock frequency in Hz
- */
-struct uart_device_config {
-	union {
-		uint32_t port;
-		uint8_t *base;
-		uint32_t regs;
-	};
-
-	uint32_t sys_clk_freq;
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
-	uart_irq_config_func_t	irq_config_func;
-#endif
-};
-
 /** @brief Driver API structure. */
 __subsystem struct uart_driver_api {
 
