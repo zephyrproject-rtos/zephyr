@@ -28,6 +28,7 @@ API Changes
 ***********
 
 Changes in this release
+=======================
 
 * Following functions in UART Asynchronous API are using microseconds to represent
   timeout instead of milliseconds:
@@ -41,10 +42,8 @@ Changes in this release
 * Added ``ranges`` and ``dma-ranges`` as invalid property to be used with DT_PROP_LEN()
   along ``reg`` and ``interrupts``.
 
-Changes in this release
-=======================
-
-Removed APIs in this release:
+Removed APIs in this release
+============================
 
 * The following Kconfig options related to radio front-end modules (FEMs) were
   removed:
@@ -78,7 +77,8 @@ Removed APIs in this release:
 * Removed Kconfig option ``CONFIG_OPENOCD_SUPPORT`` in favor of
   ``CONFIG_DEBUG_THREAD_INFO``.
 
-Deprecated in this release:
+Deprecated in this release
+==========================
 
 * :c:macro:`USBD_CFG_DATA_DEFINE` is deprecated in favor of utilizing
   :c:macro:`USBD_DEFINE_CFG_DATA`
