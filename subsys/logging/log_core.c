@@ -60,6 +60,10 @@ LOG_MODULE_REGISTER(log);
 #define CONFIG_LOG_BUFFER_SIZE 4
 #endif
 
+#ifndef CONFIG_LOG_TAG_MAX_LEN
+#define CONFIG_LOG_TAG_MAX_LEN 0
+#endif
+
 #ifndef CONFIG_LOG2_ALWAYS_RUNTIME
 BUILD_ASSERT(!IS_ENABLED(CONFIG_NO_OPTIMIZATIONS),
 	     "Option must be enabled when CONFIG_NO_OPTIMIZATIONS is set");
@@ -686,6 +690,10 @@ void z_impl_log_panic(void)
 	 * Forcing initialization of the logger and auto-starting backends.
 	 */
 	log_init();
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		log_frontend_panic();
+	}
 
 	for (int i = 0; i < log_backend_count_get(); i++) {
 		backend = log_backend_get(i);
