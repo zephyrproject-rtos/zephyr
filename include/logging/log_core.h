@@ -201,7 +201,9 @@ extern "C" {
 
 #define Z_LOG_INTERNAL2(is_user_context, _src_level, ...) do { \
 	if (is_user_context) { \
-		log_from_user(_src_level, __VA_ARGS__); \
+		if (!IS_ENABLED(CONFIG_LOG_FRONTEND)) { \
+			log_from_user(_src_level, __VA_ARGS__); \
+		} \
 	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) { \
 		log_string_sync(_src_level, __VA_ARGS__); \
 	} else { \
@@ -334,8 +336,8 @@ static inline char z_log_minimal_level_to_char(int level)
 	bool is_user_context = k_is_user_context(); \
 	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 						(_dsource)->filters : 0;\
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
-	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
+	if (!IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
+	    !is_user_context && _level > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
@@ -414,8 +416,8 @@ static inline char z_log_minimal_level_to_char(int level)
 					    (const char *)_data, _len);\
 		break; \
 	} \
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
-	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
+	if (!IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
+	    !is_user_context && _level > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
@@ -440,8 +442,9 @@ static inline char z_log_minimal_level_to_char(int level)
 		.source_id = src_id, \
 	}; \
 	if (is_user_context) { \
-		log_hexdump_from_user(src_level, _str, \
-				      (const char *)_data, _len); \
+		if (!IS_ENABLED(CONFIG_LOG_FRONTEND)) { \
+			log_hexdump_from_user(src_level, _str, (const char *)_data, _len); \
+		} \
 	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) { \
 		log_hexdump_sync(src_level, _str, (const char *)_data, _len); \
 	} else { \

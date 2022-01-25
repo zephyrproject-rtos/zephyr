@@ -4,7 +4,7 @@
 menu "Output Formatting"
 
 menu "Prepend non-hexdump log message with function name"
-	depends on !LOG_FRONTEND
+	depends on !LOG_FRONTEND_ONLY
 
 config LOG_FUNC_NAME_PREFIX_ERR
 	bool "Error messages prepended"
