@@ -400,10 +400,10 @@ FUNC_NORETURN void z_cstart(void)
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
 
-	LOG_CORE_INIT();
-
 	/* perform any architecture-specific initialization */
 	arch_kernel_init();
+
+	LOG_CORE_INIT();
 
 #if defined(CONFIG_MULTITHREADING)
 	/* Note: The z_ready_thread() call in prepare_multithreading() requires
