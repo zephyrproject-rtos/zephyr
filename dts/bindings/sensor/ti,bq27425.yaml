@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI BQ27425 Fuel Gauge
+
+compatible: "ti,bq27425"
+
+include: ti,bq274xx-common.yaml

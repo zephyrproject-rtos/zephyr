@@ -25,7 +25,7 @@ from BQ274XX sensor and prints this information to the UART console.
 Requirements
 ************
 
-- nrf9160_innblue22 board with BQ274XX sensor `BQ274XX Sensor`_
+- nrf9160_innblue22 board with BQ27421 sensor `BQ274XX Sensor`_
 
 Building and Running
 ********************

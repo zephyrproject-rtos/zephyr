@@ -210,7 +210,7 @@ void main(void)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(DT_LABEL(DT_INST(0, ti_bq274xx)));
+	dev = device_get_binding(DT_LABEL(DT_INST(0, ti_bq27421)));
 	if (!dev) {
 		printk("Failed to get device binding");
 		return;

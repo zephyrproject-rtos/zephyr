@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI BQ27426 Fuel Gauge
+
+compatible: "ti,bq27426"
+
+include: ti,bq274xx-common.yaml
+
+properties:
+    chemistry:
+      type: string
+      required: false
+      description: |
+        Chemistry type to use for devices that support programmable chemistry.
+      enum:
+         - "CHEM_A"
+         - "CHEM_B"
+         - "CHEM_C"

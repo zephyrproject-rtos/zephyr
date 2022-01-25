@@ -95,8 +95,8 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	bq27421@55 {
-		compatible = "ti,bq274xx";
-		label = "BQ274XX";
+		compatible = "ti,bq27421";
+		label = "BQ27421";
 		reg = <0x55>;
 		design-voltage = <3700>;
 		design-capacity = <1800>;
