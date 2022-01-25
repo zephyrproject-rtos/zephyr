@@ -1620,11 +1620,11 @@ static int uart_stm32_init(const struct device *dev)
 	}
 #endif /* !USART_ISR_REACK */
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
-	config->uconf.irq_config_func(dev);
-#elif defined(CONFIG_PM)
+#if defined(CONFIG_PM) || \
+	defined(CONFIG_UART_INTERRUPT_DRIVEN) || \
+	defined(CONFIG_UART_ASYNC_API)
 	config->irq_config_func(dev);
-#endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
+#endif /* CONFIG_PM || CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
 #ifdef CONFIG_UART_ASYNC_API
 	return uart_stm32_async_init(dev);
@@ -1681,17 +1681,12 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #define STM32_UART_IRQ_HANDLER(index) /* Not used */
 #endif
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
+	defined(CONFIG_PM)
 #define STM32_UART_IRQ_HANDLER_FUNC(index)				\
-	.irq_config_func = uart_stm32_irq_config_func_##index,
-#define STM32_UART_POLL_IRQ_HANDLER_FUNC(index) /* Not used */
-#elif defined(CONFIG_PM)
-#define STM32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
-#define STM32_UART_POLL_IRQ_HANDLER_FUNC(index)				\
 	.irq_config_func = uart_stm32_irq_config_func_##index,
 #else
 #define STM32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
-#define STM32_UART_POLL_IRQ_HANDLER_FUNC(index) /* Not used */
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -1713,9 +1708,6 @@ PINCTRL_DT_INST_DEFINE(index);						\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.usart = (USART_TypeDef *)DT_INST_REG_ADDR(index),		\
-	.uconf = {							\
-		STM32_UART_IRQ_HANDLER_FUNC(index)			\
-	},								\
 	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits)		\
 	},								\
@@ -1723,7 +1715,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.single_wire = DT_INST_PROP_OR(index, single_wire, false), \
-	STM32_UART_POLL_IRQ_HANDLER_FUNC(index)				\
+	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
