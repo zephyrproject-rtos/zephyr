@@ -1,0 +1,21 @@
+# Synopsys DW AHB WDOG cfg
+
+# Copyright 2022 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+config WDOG_SDW_APB
+	bool "SDW APB Watchdog Driver for RISCV family of MCUs"
+	depends on (CONFIG_SOC_FAMILY_RISCV_PRIVILEGE) || \
+		    SOC_FAMILY_BCMVK
+	help
+	  Enable SDW APB Watchdog (WDOG_SDW_APB) Driver for RISCV
+	  family of MCUs.
+
+config WDOG_SDW_APB_START_AT_BOOT
+	bool "Start Watchdog during boot"
+	depends on WDOG_SDW_APB
+	help
+	  Enable this setting to allow WDOG to be automatically started
+	  during device initialization. Note that once WDOG is started
+	  it must be reloaded before the counter reaches 0, otherwise
+	  the MCU will be reset.

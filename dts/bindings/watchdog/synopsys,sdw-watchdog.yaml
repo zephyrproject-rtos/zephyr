@@ -1,0 +1,16 @@
+description: SYNOPSYS Designware apb watchdog
+
+compatible: "synopsys,sdw-watchdog"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    clocks:
+      required: true
+
+    utops:
+      type: array
+      required: false
