@@ -495,7 +495,8 @@ typedef void (*gpio_callback_handler_t)(const struct device *port,
  * are unique pointers of struct gpio_callback.
  * Beware such structure should not be allocated on stack.
  *
- * Note: To help setting it, see gpio_init_callback() below
+ * @see gpio_init_callback()
+ * @see gpio_pin_setup_interrupt_dt()
  */
 struct gpio_callback {
 	/** This is meant to be used in the driver and the user should not
@@ -1299,6 +1300,95 @@ static inline int gpio_remove_callback(const struct device *port,
 	}
 
 	return api->manage_callback(port, callback, false);
+}
+
+/**
+ * @brief Convenience helper for setting up a callback from devicetree
+ *
+ * This helper can be used to save typing when initializing and adding
+ * an application callback from a GPIO pin specified in devicetree.
+ *
+ * It is equivalent to:
+ *
+ *     gpio_init_callback(callback, handler, BIT(spec->pin));
+ *     gpio_add_callback(spec->port, callback);
+ *
+ * This function propagates the return value from gpio_add_callback().
+ *
+ * @param spec GPIO pin specification from devicetree
+ * @param callback callback to initialize and add
+ * @param handler a valid handler function pointer
+ * @return 0 if successful, negative errno on failure
+ */
+static inline int gpio_pin_setup_callback_dt(const struct gpio_dt_spec *spec,
+					     struct gpio_callback *callback,
+					     gpio_callback_handler_t handler)
+{
+	gpio_init_callback(callback, handler, BIT(spec->pin));
+	return gpio_add_callback(spec->port, callback);
+}
+
+/**
+ * @brief Convenience helper for setting up an interrupt pin from devicetree
+ *
+ * This helper can be used to completely initialize an interrupt on a
+ * single GPIO pin specified in devicetree.
+ *
+ * Example usage:
+ *
+ *     const struct gpio_dt_spec my_spec = GPIO_DT_SPEC_GET(...);
+ *     struct gpio_callback my_callback;
+ *
+ *     gpio_pin_setup_interrupt_dt(&my_spec, &my_callback, my_handler,
+ *                                 GPIO_INPUT | GPIO_INT_EDGE_TO_ACTIVE);
+ *
+ * Before doing anything, this function checks if the
+ * <tt>spec->port</tt> device is ready for use with device_is_ready().
+ * If the device is not ready, it returns -ENODEV.
+ *
+ * Otherwise, it calls the following functions in order:
+ *
+ *     gpio_pin_configure_dt(spec, mode_flags);
+ *     gpio_pin_setup_callback_dt(spec, callback, handler);
+ *     gpio_pin_interrupt_configure_dt(spec, interrupt_flags);
+ *
+ * Above, @p mode_flags is the subset of @p flags which can be passed
+ * to gpio_pin_configure_dt(), and @p interrupt_flags is the subset of
+ * @p flags which can be passed to gpio_pin_interrupt_configure_dt().
+ *
+ * If any of the above calls fails, this function immediately returns
+ * the error code.
+ *
+ * @param spec GPIO specification from devicetree
+ * @param callback a valid application's callback structure pointer
+ * @param handler a valid handler function pointer
+ * @param flags additional flags, typically <tt>GPIO_INPUT | GPIO_INT_...</tt>
+ * @return 0 on success, negative errno on failure
+ */
+static inline int gpio_pin_setup_interrupt_dt(const struct gpio_dt_spec *spec,
+					      struct gpio_callback *callback,
+					      gpio_callback_handler_t handler,
+					      gpio_flags_t flags)
+{
+	const gpio_flags_t mode_flags = flags & ~GPIO_INT_MASK;
+	const gpio_flags_t interrupt_flags = flags & GPIO_INT_MASK;
+	int ret;
+
+	if (!device_is_ready(spec->port)) {
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(spec, mode_flags);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_setup_callback_dt(spec, callback, handler);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return gpio_pin_interrupt_configure_dt(spec, interrupt_flags);
 }
 
 /**
