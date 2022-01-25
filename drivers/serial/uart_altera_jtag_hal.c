@@ -26,10 +26,7 @@ extern int altera_avalon_jtag_uart_write(altera_avalon_jtag_uart_state *sp,
 static void uart_altera_jtag_poll_out(const struct device *dev,
 					       unsigned char c)
 {
-	const struct uart_device_config *config;
 	altera_avalon_jtag_uart_state ustate;
-
-	config = dev->config;
 
 	ustate.base = JTAG_UART_0_BASE;
 	altera_avalon_jtag_uart_write(&ustate, &c, 1, 0);
@@ -51,12 +48,6 @@ static const struct uart_driver_api uart_altera_jtag_driver_api = {
 	.err_check = NULL,
 };
 
-static const struct uart_device_config uart_altera_jtag_dev_cfg_0 = {
-	.base = (void *)JTAG_UART_0_BASE,
-	.sys_clk_freq = 0, /* Unused */
-};
-
-DEVICE_DT_INST_DEFINE(0, uart_altera_jtag_init, NULL,
-		      NULL, &uart_altera_jtag_dev_cfg_0,
-		      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_SERIAL_INIT_PRIORITY,
 		      &uart_altera_jtag_driver_api);
