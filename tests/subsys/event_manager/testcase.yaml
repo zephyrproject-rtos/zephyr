@@ -1,0 +1,4 @@
+tests:
+  event_manager.core:
+    arch_exclude: xtensa
+    tags: event_manager
