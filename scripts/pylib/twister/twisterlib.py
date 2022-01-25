@@ -838,7 +838,8 @@ class DeviceHandler(Handler):
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
                 try:
                     (stdout, stderr) = proc.communicate(timeout=30)
-                    logger.debug(stdout.decode())
+                    # ignore unencodable unicode chars
+                    logger.debug(stdout.decode(errors = "ignore"))
 
                     if proc.returncode != 0:
                         self.instance.reason = "Device issue (Flash?)"
