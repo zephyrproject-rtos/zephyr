@@ -10,6 +10,16 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_
 
+/**
+ * @brief Object Transfer Service Client (OTC)
+ * @defgroup bt_otc Object Transfer Service Client (OTC)
+ * @ingroup bluetooth
+ * @{
+ *
+ * [Experimental] Users should note that the APIs can change
+ * as a part of ongoing development.
+ */
+
 #include <stdbool.h>
 #include <zephyr/types.h>
 #include <bluetooth/gatt.h>
@@ -324,5 +334,9 @@ void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_ */

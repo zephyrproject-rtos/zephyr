@@ -9,10 +9,11 @@
 #### Object Transfer Service Client ################################
 
 config BT_OTC
-	bool "Object Transfer Service Client Support"
+	bool "Object Transfer Service Client Support (OTC) [Experimental]"
 	select BT_L2CAP_DYNAMIC_CHANNEL
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
+	select EXPERIMENTAL
 	default n
 	help
 	  This option enables support for the Object Transfer Service Client.
