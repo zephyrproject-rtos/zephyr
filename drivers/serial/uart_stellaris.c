@@ -67,6 +67,14 @@ struct _uart {
 	uint32_t p_cell_id3;
 };
 
+struct uart_stellaris_config {
+	volatile struct _uart *uart;
+	uint32_t sys_clk_freq;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_config_func_t irq_config_func;
+#endif
+};
+
 /* Device data structure */
 struct uart_stellaris_dev_data_t {
 	uint32_t baud_rate;	/* Baud rate */
@@ -78,8 +86,7 @@ struct uart_stellaris_dev_data_t {
 };
 
 #define UART_STRUCT(dev) \
-	((volatile struct _uart *) \
-	 ((const struct uart_device_config * const)(dev)->config)->base)
+	(((const struct uart_stellaris_config * const)(dev)->config)->uart)
 
 /* registers */
 #define UARTDR(dev) (*((volatile uint32_t *)(UART_STRUCT(dev) + 0x000)))
@@ -155,7 +162,7 @@ static const struct uart_driver_api uart_stellaris_driver_api;
 static void baudrate_set(const struct device *dev,
 			 uint32_t baudrate, uint32_t sys_clk_freq_hz)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 	uint32_t brdi, brdf, div, rem;
 
 	/* upon reset, the system clock uses the intenal OSC @ 12MHz */
@@ -176,8 +183,8 @@ static void baudrate_set(const struct device *dev,
 	 * those registers are 32-bit, but the reserved bits should be
 	 * preserved
 	 */
-	uart->ibrd = (uint16_t)(brdi & 0xffff); /* 16 bits */
-	uart->fbrd = (uint8_t)(brdf & 0x3f);    /* 6 bits */
+	config->uart->ibrd = (uint16_t)(brdi & 0xffff); /* 16 bits */
+	config->uart->fbrd = (uint8_t)(brdf & 0x3f);    /* 6 bits */
 }
 
 /**
@@ -189,9 +196,9 @@ static void baudrate_set(const struct device *dev,
  */
 static inline void enable(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	uart->ctl |= UARTCTL_UARTEN;
+	config->uart->ctl |= UARTCTL_UARTEN;
 }
 
 /**
@@ -203,16 +210,16 @@ static inline void enable(const struct device *dev)
  */
 static inline void disable(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	uart->ctl &= ~UARTCTL_UARTEN;
+	config->uart->ctl &= ~UARTCTL_UARTEN;
 
 	/* ensure transmissions are complete */
-	while (uart->fr & UARTFR_BUSY) {
+	while (config->uart->fr & UARTFR_BUSY) {
 	}
 
 	/* flush the FIFOs by disabling them */
-	uart->lcrh &= ~UARTLCRH_FEN;
+	config->uart->lcrh &= ~UARTLCRH_FEN;
 }
 
 /*
@@ -234,9 +241,9 @@ static inline void disable(const struct device *dev)
  */
 static inline void line_control_defaults_set(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	uart->lcrh = LINE_CONTROL_DEFAULTS;
+	config->uart->lcrh = LINE_CONTROL_DEFAULTS;
 }
 
 /**
@@ -252,7 +259,7 @@ static inline void line_control_defaults_set(const struct device *dev)
 static int uart_stellaris_init(const struct device *dev)
 {
 	struct uart_stellaris_dev_data_t *data = dev->data;
-	const struct uart_device_config *config = dev->config;
+	const struct uart_stellaris_config *config = dev->config;
 	disable(dev);
 	baudrate_set(dev, data->baud_rate,
 		     config->sys_clk_freq);
@@ -277,9 +284,9 @@ static int uart_stellaris_init(const struct device *dev)
  */
 static int poll_tx_ready(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	return (uart->fr & UARTFR_TXFE);
+	return (config->uart->fr & UARTFR_TXFE);
 }
 
 /**
@@ -293,14 +300,14 @@ static int poll_tx_ready(const struct device *dev)
 
 static int uart_stellaris_poll_in(const struct device *dev, unsigned char *c)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	if (uart->fr & UARTFR_RXFE) {
+	if (config->uart->fr & UARTFR_RXFE) {
 		return (-1);
 	}
 
 	/* got a character */
-	*c = (unsigned char)uart->dr;
+	*c = (unsigned char)config->uart->dr;
 
 	return 0;
 }
@@ -317,13 +324,13 @@ static int uart_stellaris_poll_in(const struct device *dev, unsigned char *c)
 static void uart_stellaris_poll_out(const struct device *dev,
 					     unsigned char c)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
 	while (!poll_tx_ready(dev)) {
 	}
 
 	/* send a character */
-	uart->dr = (uint32_t)c;
+	config->uart->dr = (uint32_t)c;
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
@@ -341,11 +348,11 @@ static int uart_stellaris_fifo_fill(const struct device *dev,
 				    const uint8_t *tx_data,
 				    int len)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 	uint8_t num_tx = 0U;
 
-	while ((len - num_tx > 0) && ((uart->fr & UARTFR_TXFF) == 0U)) {
-		uart->dr = (uint32_t)tx_data[num_tx++];
+	while ((len - num_tx > 0) && ((config->uart->fr & UARTFR_TXFF) == 0U)) {
+		config->uart->dr = (uint32_t)tx_data[num_tx++];
 	}
 
 	return (int)num_tx;
@@ -364,11 +371,11 @@ static int uart_stellaris_fifo_read(const struct device *dev,
 				    uint8_t *rx_data,
 				    const int size)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 	uint8_t num_rx = 0U;
 
-	while ((size - num_rx > 0) && ((uart->fr & UARTFR_RXFE) == 0U)) {
-		rx_data[num_rx++] = (uint8_t)uart->dr;
+	while ((size - num_rx > 0) && ((config->uart->fr & UARTFR_RXFE) == 0U)) {
+		rx_data[num_rx++] = (uint8_t)config->uart->dr;
 	}
 
 	return num_rx;
@@ -387,7 +394,7 @@ static void uart_stellaris_irq_tx_enable(const struct device *dev)
 	uint32_t saved_ibrd; /* saved UARTIBRD (integer baud rate) register */
 	uint32_t saved_fbrd; /* saved UARTFBRD (fractional baud rate) register
 				*/
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
 	if (first_time) {
 		/*
@@ -400,30 +407,30 @@ static void uart_stellaris_irq_tx_enable(const struct device *dev)
 		first_time = 0U;
 
 		/* save current control and baud rate settings */
-		saved_ctl = uart->ctl;
-		saved_ibrd = uart->ibrd;
-		saved_fbrd = uart->fbrd;
+		saved_ctl = config->uart->ctl;
+		saved_ibrd = config->uart->ibrd;
+		saved_fbrd = config->uart->fbrd;
 
 		/* send a character with default settings via loopback */
 		disable(dev);
-		uart->fbrd = 0U;
-		uart->ibrd = 1U;
-		uart->lcrh = 0U;
-		uart->ctl = (UARTCTL_UARTEN | UARTCTL_TXEN | UARTCTL_LBE);
-		uart->dr = 0U;
+		config->uart->fbrd = 0U;
+		config->uart->ibrd = 1U;
+		config->uart->lcrh = 0U;
+		config->uart->ctl = (UARTCTL_UARTEN | UARTCTL_TXEN | UARTCTL_LBE);
+		config->uart->dr = 0U;
 
-		while (uart->fr & UARTFR_BUSY) {
+		while (config->uart->fr & UARTFR_BUSY) {
 		}
 
 		/* restore control and baud rate settings */
 		disable(dev);
-		uart->ibrd = saved_ibrd;
-		uart->fbrd = saved_fbrd;
+		config->uart->ibrd = saved_ibrd;
+		config->uart->fbrd = saved_fbrd;
 		line_control_defaults_set(dev);
-		uart->ctl = saved_ctl;
+		config->uart->ctl = saved_ctl;
 	}
 
-	uart->im |= UARTTIM_TXIM;
+	config->uart->im |= UARTTIM_TXIM;
 }
 
 /**
@@ -433,9 +440,9 @@ static void uart_stellaris_irq_tx_enable(const struct device *dev)
  */
 static void uart_stellaris_irq_tx_disable(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	uart->im &= ~UARTTIM_TXIM;
+	config->uart->im &= ~UARTTIM_TXIM;
 }
 
 /**
@@ -447,9 +454,9 @@ static void uart_stellaris_irq_tx_disable(const struct device *dev)
  */
 static int uart_stellaris_irq_tx_ready(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	return ((uart->mis & UARTMIS_TXMIS) == UARTMIS_TXMIS);
+	return ((config->uart->mis & UARTMIS_TXMIS) == UARTMIS_TXMIS);
 }
 
 /**
@@ -459,9 +466,9 @@ static int uart_stellaris_irq_tx_ready(const struct device *dev)
  */
 static void uart_stellaris_irq_rx_enable(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	uart->im |= UARTTIM_RXIM;
+	config->uart->im |= UARTTIM_RXIM;
 }
 
 /**
@@ -471,9 +478,9 @@ static void uart_stellaris_irq_rx_enable(const struct device *dev)
  */
 static void uart_stellaris_irq_rx_disable(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	uart->im &= ~UARTTIM_RXIM;
+	config->uart->im &= ~UARTTIM_RXIM;
 }
 
 /**
@@ -485,9 +492,9 @@ static void uart_stellaris_irq_rx_disable(const struct device *dev)
  */
 static int uart_stellaris_irq_rx_ready(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	return ((uart->mis & UARTMIS_RXMIS) == UARTMIS_RXMIS);
+	return ((config->uart->mis & UARTMIS_RXMIS) == UARTMIS_RXMIS);
 }
 
 /**
@@ -497,10 +504,10 @@ static int uart_stellaris_irq_rx_ready(const struct device *dev)
  */
 static void uart_stellaris_irq_err_enable(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	uart->im |= (UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
-		      UARTTIM_BEIM | UARTTIM_OEIM);
+	config->uart->im |= (UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
+			     UARTTIM_BEIM | UARTTIM_OEIM);
 }
 
 /**
@@ -510,10 +517,10 @@ static void uart_stellaris_irq_err_enable(const struct device *dev)
  */
 static void uart_stellaris_irq_err_disable(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
-	uart->im &= ~(UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
-		       UARTTIM_BEIM | UARTTIM_OEIM);
+	config->uart->im &= ~(UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
+			      UARTTIM_BEIM | UARTTIM_OEIM);
 }
 
 /**
@@ -525,10 +532,10 @@ static void uart_stellaris_irq_err_disable(const struct device *dev)
  */
 static int uart_stellaris_irq_is_pending(const struct device *dev)
 {
-	volatile struct _uart *uart = UART_STRUCT(dev);
+	const struct uart_stellaris_config *config = dev->config;
 
 	/* Look only at Tx and Rx data interrupt flags */
-	return ((uart->mis & (UARTMIS_RXMIS | UARTMIS_TXMIS)) ? 1 : 0);
+	return ((config->uart->mis & (UARTMIS_RXMIS | UARTMIS_TXMIS)) ? 1 : 0);
 }
 
 /**
@@ -608,8 +615,8 @@ static const struct uart_driver_api uart_stellaris_driver_api = {
 static void irq_config_func_0(const struct device *port);
 #endif
 
-static const struct uart_device_config uart_stellaris_dev_cfg_0 = {
-	.base = (uint8_t *)DT_INST_REG_ADDR(0),
+static const struct uart_stellaris_config uart_stellaris_dev_cfg_0 = {
+	.uart = (volatile struct _uart *)DT_INST_REG_ADDR(0),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -647,8 +654,8 @@ static void irq_config_func_0(const struct device *dev)
 static void irq_config_func_1(const struct device *port);
 #endif
 
-static struct uart_device_config uart_stellaris_dev_cfg_1 = {
-	.base = (uint8_t *)DT_INST_REG_ADDR(1),
+static struct uart_stellaris_config uart_stellaris_dev_cfg_1 = {
+	.uart = (volatile struct _uart *)DT_INST_REG_ADDR(1),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(1, clocks, clock_frequency),
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -686,8 +693,8 @@ static void irq_config_func_1(const struct device *dev)
 static void irq_config_func_2(const struct device *port);
 #endif
 
-static const struct uart_device_config uart_stellaris_dev_cfg_2 = {
-	.base = (uint8_t *)DT_INST_REG_ADDR(2),
+static const struct uart_stellaris_config uart_stellaris_dev_cfg_2 = {
+	.uart = (volatile struct _uart *)DT_INST_REG_ADDR(2),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(2, clocks, clock_frequency),
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
