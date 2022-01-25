@@ -249,6 +249,7 @@ struct adc_stm32_data {
 
 	uint8_t resolution;
 	uint8_t channel_count;
+	uint8_t num_channels_remaining_to_sample;
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
@@ -439,6 +440,7 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 			LL_ADC_Enable(adc);
 			count_timeout++;
 			if (count_timeout == 10) {
+				LOG_ERR("enable timed out!");
 				return -ETIMEDOUT;
 			}
 		}
@@ -505,44 +507,46 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-	uint32_t channels = sequence->channels;
-	uint8_t index = find_lsb_set(channels) - 1;
+	data->channel_count = 0;
 
-	if (channels > BIT(index)) {
-		LOG_ERR("Only single channel supported");
-		return -ENOTSUP;
-	}
+	for (uint32_t i = 0; i < STM32_CHANNEL_COUNT; ++i) {
+		/* only process selected channels */
+		if (!(sequence->channels & BIT(i))) {
+			continue;
+		}
 
-	data->buffer = sequence->buffer;
-
-	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(index);
+		uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(i);
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/*
-	 * Each channel in the sequence must be previously enabled in PCSEL.
-	 * This register controls the analog switch integrated in the IO level.
-	 */
-	LL_ADC_SetChannelPreSelection(adc, channel);
+		/*
+		 * Each channel in the sequence must be previously enabled in PCSEL.
+		 * This register controls the analog switch integrated in the IO level.
+		 */
+		LL_ADC_SetChannelPreSelection(adc, channel);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X)
-	LL_ADC_REG_SetSequencerChannels(adc, channel);
+		defined(CONFIG_SOC_SERIES_STM32L0X)
+		LL_ADC_REG_SetSequencerChannels(adc, channel);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	/* STM32G0 in "not fully configurable" sequencer mode */
-	LL_ADC_REG_SetSequencerChannels(adc, channel);
-	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
-	}
+		defined(CONFIG_SOC_SERIES_STM32WLX)
+		/* STM32G0 in "not fully configurable" sequencer mode */
+		LL_ADC_REG_SetSequencerChannels(adc, channel);
+		while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
+		}
 #else
-	LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
-	LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
+		/* Just rank them in order from channel 0 -> max */
+		LL_ADC_REG_SetSequencerRanks(adc, table_rank[data->channel_count], channel);
+		LL_ADC_REG_SetSequencerLength(adc, table_seq_len[data->channel_count]);
 #endif
-	data->channel_count = 1;
+		data->channel_count++;
+	}
 
 	err = check_buffer_size(sequence, data->channel_count);
 	if (err) {
 		return err;
 	}
+
+	data->buffer = sequence->buffer;
 
 #if defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -687,6 +691,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
 
 	data->repeat_buffer = data->buffer;
+	data->num_channels_remaining_to_sample = data->channel_count;
 
 	adc_stm32_start_conversion(data->dev);
 }
@@ -709,11 +714,28 @@ static void adc_stm32_isr(const struct device *dev)
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
 
-	*data->buffer++ = LL_ADC_REG_ReadConversionData32(adc);
-
-	adc_context_on_sampling_done(&data->ctx, dev);
-
 	LOG_DBG("%s ISR triggered.", dev->name);
+
+	/* Samples coming in too quickly! */
+	if (LL_ADC_IsActiveFlag_OVR(adc)) {
+		LL_ADC_REG_StopConversion(adc);
+		LL_ADC_ClearFlag_OVR(adc);
+
+		LOG_ERR("%s ADC sample could not retrieved before being overwritten "
+			"by another sample! Try increasing the sampling time.",
+			dev->name);
+
+		adc_context_complete(&data->ctx, -EINVAL);
+	} else {
+		*data->buffer = LL_ADC_REG_ReadConversionData32(adc);
+
+		data->buffer++;
+		data->num_channels_remaining_to_sample--;
+
+		if (data->num_channels_remaining_to_sample == 0) {
+			adc_context_on_sampling_done(&data->ctx, dev);
+		}
+	}
 }
 
 static int adc_stm32_read(const struct device *dev,
