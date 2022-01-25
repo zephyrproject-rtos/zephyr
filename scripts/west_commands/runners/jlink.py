@@ -35,7 +35,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device, dev_id=None,
                  commander=DEFAULT_JLINK_EXE,
-                 dt_flash=True, erase=True, reset_after_load=False,
+                 dt_flash=True, erase=True, erase_range='',
+                 reset_after_load=False,
                  iface='swd', speed='auto',
                  gdbserver='JLinkGDBServer',
                  gdb_host='',
@@ -51,6 +52,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.commander = commander
         self.dt_flash = dt_flash
         self.erase = erase
+        self.erase_range = erase_range
         self.reset_after_load = reset_after_load
         self.gdbserver = gdbserver
         self.iface = iface
@@ -111,6 +113,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             dest='reset_after_load', nargs=0,
                             action=ToggleAction,
                             help='reset after loading? (default: no)')
+        parser.add_argument('--erase-range', default='', nargs=2,
+                            help='erase flash range, default erases all flash sectors')
 
         parser.set_defaults(reset_after_load=False)
 
@@ -121,6 +125,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  commander=args.commander,
                                  dt_flash=args.dt_flash,
                                  erase=args.erase,
+                                 erase_range=args.erase_range,
                                  reset_after_load=args.reset_after_load,
                                  iface=args.iface, speed=args.speed,
                                  gdbserver=args.gdbserver,
@@ -256,8 +261,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             'r',  # Reset and halt the target
         ]
 
-        if self.erase:
-            lines.append('erase') # Erase all flash sectors
+        if self.erase or self.erase_range:
+            if self.erase_range:
+                lines.append('erase {}'.format(' '.join(self.erase_range)))
+            else:
+                lines.append('erase')
 
         # Get the build artifact to flash, prefering .hex over .bin
         if self.hex_name is not None and os.path.isfile(self.hex_name):
