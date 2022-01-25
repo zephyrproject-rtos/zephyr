@@ -106,6 +106,16 @@ Architectures
 
 * x86
 
+* Xtensa
+
+  * Introduced a mechanism to automatically figure out which scratch registers
+    are used for internal code, instead of hard-coding. This is to accommodate
+    the configurability of the architecture where some registers may exist in
+    one SoC but not on another one.
+
+  * Added coredump support for Xtensa.
+
+  * Added GDB stub support for Xtensa.
 
 Bluetooth
 *********
