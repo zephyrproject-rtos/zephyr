@@ -52,6 +52,27 @@ tests:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
+  logging.log_api_frontend_dbg:
+    extra_configs:
+      - CONFIG_LOG1=y
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+
+  logging.log_api_frontend:
+    extra_configs:
+      - CONFIG_LOG1=y
+      - CONFIG_LOG_FRONTEND=y
+
+  logging.log_api_frontend_no_backends:
+    extra_configs:
+      - CONFIG_LOG1=y
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_BACKEND_RTT=n
+      - CONFIG_LOG_BACKEND_NATIVE_POSIX=n
+      - CONFIG_LOG_BACKEND_XTENSA_SIM=n
+    extra_args: EXTRA_CPPFLAGS=-DNO_BACKENDS=1
+
   logging.log2_api_deferred_overflow_rt_filter:
     # FIXME:see #38041
     platform_exclude: qemu_arc_hs6x
@@ -139,3 +160,44 @@ tests:
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
+
+  logging.log_api_frontend_dbg:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+
+  logging.log_api_frontend:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+
+  logging.log_api_frontend_immediate:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+
+  logging.log_api_frontend_only:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+
+  logging.log_api_frontend_no_backends:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_BACKEND_RTT=n
+      - CONFIG_LOG_BACKEND_NATIVE_POSIX=n
+      - CONFIG_LOG_BACKEND_XTENSA_SIM=n
+    extra_args: EXTRA_CPPFLAGS=-DNO_BACKENDS=1
