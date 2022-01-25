@@ -79,6 +79,12 @@ child-binding:
                      pinmux = <STM32_PINMUX('A', 9, ANALOG)>;
             };
 
+        pwm-complementary:
+          type: boolean
+          required: false
+          description: |
+            when 'true', indicates if the timer channel N is selected
+
         slew-rate:
           required: false
           type: string
