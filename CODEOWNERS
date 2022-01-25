@@ -761,6 +761,7 @@ scripts/gen_image_info.py                 @tejlmand
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @alwa-nordic @jhedberg @Vudentz
+/tests/bluetooth/controller/              @cvinayak @thoh-ot @kruithofa @erbr-ot @sjanc @ppryga
 /tests/bluetooth/bsim_bt/                 @alwa-nordic @jhedberg @Vudentz @aescolar @wopu-ot
 /tests/bluetooth/bsim_bt/bsim_test_audio/ @alwa-nordic @jhedberg @Vudentz @aescolar @wopu-ot @Thalley @asbjornsabo
 /tests/bluetooth/tester/                  @alwa-nordic @jhedberg @Vudentz @sjanc
