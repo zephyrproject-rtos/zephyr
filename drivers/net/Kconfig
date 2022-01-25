@@ -111,11 +111,11 @@ config NET_PPP_ASYNC_UART_RX_RECOVERY_TIMEOUT
 	  when we cannot receive more data from UART.
 
 config NET_PPP_ASYNC_UART_RX_ENABLE_TIMEOUT
-	int "A timeout for uart_rx_enable()"
+	int "A timeout for uart_rx_enable() in milliseconds"
 	default 100
 
 config NET_PPP_ASYNC_UART_TX_TIMEOUT
-	int "A timeout for uart_tx()"
+	int "A timeout for uart_tx() in milliseconds"
 	default 100
 
 endif # NET_PPP_ASYNC_UART
