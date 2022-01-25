@@ -301,7 +301,7 @@ static int pmic_reg_init(const struct device *dev)
 	/* Do the same cast for current limit ranges */
 	data->current_levels = (struct current_range *)config->current_array;
 	/* Check to verify we have a valid I2C device */
-	if (config->i2c_dev == NULL || !device_is_ready(config->i2c_dev)) {
+	if (!device_is_ready(config->i2c_dev)) {
 		return -ENODEV;
 	}
 	return 0;
