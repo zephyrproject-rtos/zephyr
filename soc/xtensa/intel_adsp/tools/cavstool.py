@@ -256,11 +256,14 @@ def load_firmware(fw_file):
         log.warning(f"Load failed?  FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
 
     # Turn DMA off and reset the stream.  Clearing START first is a
-    # noop per the spec, but required for early versions (apparently
-    # the reset doesn't stop the stream and the next load fails), and
-    # makes the load on 2.5 unstable.  Go figure.
-    if not cavs25:
-        sd.CTL &= ~2 # clear START
+    # noop per the spec, but absolutely required for stability.
+    # Apparently the reset doesn't stop the stream, and the next load
+    # starts before it's ready and kills the load (and often the DSP).
+    # The sleep too is required, on at least one board (a fast
+    # chromebook) putting the two writes next each other also hangs
+    # the DSP!
+    sd.CTL &= ~2 # clear START
+    time.sleep(0.1)
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
 
