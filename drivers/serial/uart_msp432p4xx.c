@@ -34,7 +34,6 @@ static void uart_msp432p4xx_isr(const struct device *dev);
 
 static const struct uart_device_config uart_msp432p4xx_dev_cfg_0 = {
 	.base = (void *)DT_INST_REG_ADDR(0),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
 };
 
 static struct uart_msp432p4xx_dev_data_t uart_msp432p4xx_dev_data_0 = {
