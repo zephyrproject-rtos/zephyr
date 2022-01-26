@@ -220,9 +220,6 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 		goto rx_disable;
 	}
 
-	/* Assure cache coherency after DMA write operation */
-	DCACHE_INVALIDATE(stream->mem_block, stream->cfg.block_size);
-
 	/* All block data received */
 	ret = queue_put(&stream->mem_block_queue, stream->mem_block,
 			stream->cfg.block_size);
@@ -246,6 +243,9 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
+
+	/* Assure cache coherency before DMA write operation */
+	DCACHE_INVALIDATE(stream->mem_block, stream->cfg.block_size);
 
 	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel,
 			 (void *)&(ssc->SSC_RHR), stream->mem_block,
