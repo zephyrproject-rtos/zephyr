@@ -37,8 +37,12 @@ def map_regs():
     # Check sysfs for a loaded driver and remove it
     if os.path.exists(f"{pcidir}/driver"):
         mod = os.path.basename(os.readlink(f"{pcidir}/driver/module"))
-        log.warning(f"Existing driver found!  Unloading \"{mod}\" module")
-        runx(f"rmmod -f {mod}")
+        found_msg = f"Existing driver \"{mod}\" found"
+        if args.log_only:
+            log.info(found_msg)
+        else:
+            log.warning(found_msg + ", unloading module")
+            runx(f"rmmod -f {mod}")
 
     # Disengage runtime power management so the kernel doesn't put it to sleep
     with open(f"{pcidir}/power/control", "w") as ctrl:
