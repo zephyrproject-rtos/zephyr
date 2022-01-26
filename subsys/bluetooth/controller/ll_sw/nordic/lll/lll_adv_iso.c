@@ -499,6 +499,39 @@ static void isr_tx_common(void *param,
 		bis = 0U;
 		data_chan_use = lll->ctrl_chan_use;
 	} else {
+		struct lll_adv_iso_stream *stream;
+		uint16_t stream_handle;
+		uint16_t handle;
+		memq_link_t *link;
+
+		/* TODO:
+		 * stream_handle = lll->stream_handle[lll->bis_curr - 1U];
+		 */
+		stream_handle = 0U;
+		handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+		stream = ull_adv_iso_lll_stream_get(stream_handle);
+		LL_ASSERT(stream);
+
+		do {
+			struct node_tx_iso *tx;
+
+			link = memq_peek(stream->memq_tx.head,
+					 stream->memq_tx.tail,
+					 (void **)&tx);
+			if (link) {
+				if (tx->payload_count >= lll->payload_count) {
+					break;
+				}
+
+				memq_dequeue(stream->memq_tx.tail,
+					     &stream->memq_tx.head,
+					     NULL);
+
+				tx->next = link;
+				ull_iso_lll_ack_enqueue(handle, tx);
+			}
+		} while (link);
+
 		/* Close the BIG event as no more subevents */
 		radio_isr_set(isr_done, lll);
 		radio_disable();
