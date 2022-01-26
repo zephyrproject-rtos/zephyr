@@ -9,9 +9,8 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
-#include "dma_atmel_sams70.h"
 
-#include "sams70-pinctrl.dtsi"
+#include <atmel/samx7x-pinctrl.dtsi>
 
 / {
 	aliases {
@@ -62,7 +61,7 @@
 
 			flash0: flash@400000 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_S70";
+				label = "FLASH_E70";
 
 				write-block-size = <16>;
 				erase-block-size = <8192>;
@@ -105,6 +104,7 @@
 			pinctrl-0 = <&pb5a_twihs1_twck1 &pb4a_twihs1_twd1>;
 		};
 
+		/* Only on N & Q devices */
 		twihs2: i2c@40060000 {
 			compatible = "atmel,sam-i2c-twihs";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -118,6 +118,7 @@
 			pinctrl-0 = <&pd28c_twihs2_twck2 &pd27c_twihs2_twd2>;
 		};
 
+		/* Only on N & Q devices */
 		spi0: spi@40008000 {
 			compatible = "atmel,sam-spi";
 			#address-cells = <1>;
@@ -130,20 +131,17 @@
 			pinctrl-0 = <&pd20b_spi0_miso &pd21b_spi0_mosi &pd22b_spi0_spck>;
 		};
 
-		qspi: qspi@4007c000 {
-			compatible = "atmel,sam-qspi";
+		/* Only on Q devices */
+		spi1: spi@40058000 {
+			compatible = "atmel,sam-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4007c000 0xec>;
-			interrupts = <43 0>;
-			peripheral-id = <43>;
-			label = "QSPI";
+			reg = <0x40058000 0x4000>;
+			interrupts = <42 0>;
+			peripheral-id = <42>;
+			label = "SPI_1";
 			status = "disabled";
-			pinctrl-0 = <
-				&pa13a_qspi_qio0 &pa12a_qspi_qio1
-				&pa17a_qspi_qio2 &pa31d_qspi_qio3
-				&pa14a_qspi_qsck &pa11a_qspi_qcs
-			>;
+			pinctrl-0 = <&pc26c_spi1_miso &pc27c_spi1_mosi &pc24c_spi1_spck>;
 		};
 
 		uart0: uart@400e0800 {
@@ -174,6 +172,7 @@
 			label = "UART_2";
 		};
 
+		/* Only on N & Q devices */
 		uart3: uart@400e1c00 {
 			compatible = "atmel,sam-uart";
 			reg = <0x400e1c00 0x100>;
@@ -183,6 +182,7 @@
 			label = "UART_3";
 		};
 
+		/* Only on N & Q devices */
 		uart4: uart@400e1e00 {
 			compatible = "atmel,sam-uart";
 			reg = <0x400e1e00 0x100>;
@@ -212,6 +212,7 @@
 			pinctrl-0 = <&pa21a_usart1_rxd1 &pb4d_usart1_txd1>;
 		};
 
+		/* Only on N & Q devices */
 		usart2: usart@4002c000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x4002c000 0x100>;
@@ -254,14 +255,6 @@
 			#io-channel-cells = <1>;
 		};
 
-		acc: acc@40044000 {
-			reg = <0x40044000 0x400>;
-			interrupts = <33 0>;
-			peripheral-id = <33>;
-			status = "disabled";
-			label = "ACC";
-		};
-
 		pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
@@ -290,12 +283,34 @@
 				#atmel,pin-cells = <2>;
 			};
 
+			pioc: gpio@400e1200 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1200 0x190>;
+				interrupts = <12 1>;
+				peripheral-id = <12>;
+				label = "PORTC";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
 			piod: gpio@400e1400 {
 				compatible = "atmel,sam-gpio";
 				reg = <0x400e1400 0x190>;
 				interrupts = <16 1>;
 				peripheral-id = <16>;
 				label = "PORTD";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			pioe: gpio@400e1600 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1600 0x190>;
+				interrupts = <17 1>;
+				peripheral-id = <17>;
+				label = "PORTE";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -333,7 +348,7 @@
 			reg = <0x40038000 0x4000>;
 			interrupts = <34 0>;
 			interrupt-names = "usbhs";
-			maximum-speed = "full-speed";
+			maximum-speed = "high-speed";
 			num-bidir-endpoints = <10>;
 			peripheral-id = <34>;
 			status = "disabled";

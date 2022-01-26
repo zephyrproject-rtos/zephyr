@@ -5,5 +5,6 @@
  */
 
 #include <atmel/same70.dtsi>
+#include <atmel/dma_atmel_samx7x.h>
 
-#include "dma_atmel_samv71.h"
+/* TODO: the V71 supports the medialb driver, implement it here */

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef DMA_ATMEL_SAMV71_H_
-#define DMA_ATMEL_SAMV71_H_
+#ifndef DMA_ATMEL_SAMX7X_H_
+#define DMA_ATMEL_SAMX7X_H_
 
 /** Peripheral Hardware Request Line Identifier */
 #define DMA_PERID_HSMCI_TX_RX 0
@@ -60,4 +60,4 @@
 #define DMA_PERID_I2SC1_TX_R  50
 #define DMA_PERID_I2SC1_RX_R  51
 
-#endif /* DMA_ATMEL_SAMV71_H_ */
+#endif /* DMA_ATMEL_SAMX7X_H_ */
