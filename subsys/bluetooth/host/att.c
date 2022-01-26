@@ -3127,6 +3127,29 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 	return 0;
 }
 
+#if defined(CONFIG_BT_EATT_AUTO_CONNECT)
+void eatt_auto_connect(struct bt_conn *conn, uint8_t conn_err)
+{
+	int eatt_err;
+
+	if (conn_err) {
+		return;
+	}
+
+	eatt_err = att_schedule_eatt_connect(conn, CONFIG_BT_EATT_MAX);
+	if (eatt_err < 0) {
+		BT_WARN("Automatic creation of EATT bearers failed on "
+			"connection %s with error %d",
+			bt_addr_le_str_real(bt_conn_get_dst(conn)), eatt_err);
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = eatt_auto_connect,
+};
+
+#endif /* CONFIG_BT_EATT_AUTO_CONNECT */
+
 int bt_eatt_disconnect(struct bt_conn *conn)
 {
 	struct bt_att_chan *chan;

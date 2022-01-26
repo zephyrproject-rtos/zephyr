@@ -43,6 +43,14 @@ config BT_EATT_MAX
 	help
 	  Number of Enhanced ATT bearers available.
 
+
+config BT_EATT_AUTO_CONNECT
+	bool "Automatically connect EATT bearers when a link is established"
+	default y
+	help
+	  The device will try to connect BT_EATT_MAX enhanced ATT bearers when a
+	  connection to a peer is established.
+
 config BT_EATT_SEC_LEVEL
 	int "Enhanced ATT bearer security level"
 	default 1
