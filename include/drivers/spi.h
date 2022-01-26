@@ -164,6 +164,46 @@ struct spi_cs_control {
 	uint32_t delay;
 };
 
+/**
+ * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.devicetree}
+ *     gpio1: gpio@... { ... };
+ *
+ *     gpio2: gpio@... { ... };
+ *
+ *     spi@... {
+ *             compatible = "vnd,spi";
+ *             cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
+ *                        <&gpio2 20 GPIO_ACTIVE_LOW>;
+ *
+ *             a: spi-dev-a@0 {
+ *                     reg = <0>;
+ *             };
+ *
+ *             b: spi-dev-b@1 {
+ *                     reg = <1>;
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(a)) \
+ *           // { DEVICE_DT_GET(DT_NODELABEL(gpio1)), 10, GPIO_ACTIVE_LOW }
+ *     SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(b)) \
+ *           // { DEVICE_DT_GET(DT_NODELABEL(gpio2)), 20, GPIO_ACTIVE_LOW }
+ * @endcode
+ *
+ * @param spi_dev a SPI device node identifier
+ * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
+ */
+#define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev) \
+	GPIO_DT_SPEC_GET_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
+
 #ifndef __cplusplus
 /**
  * @brief Initialize and get a pointer to a @p spi_cs_control from a
@@ -211,7 +251,7 @@ struct spi_cs_control {
  */
 #define SPI_CS_CONTROL_PTR_DT(node_id, delay_)			  \
 	(&(struct spi_cs_control) {				  \
-		.gpio = DT_SPI_DEV_CS_GPIOS_DT_SPEC_GET(node_id), \
+		.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id), \
 		.delay = (delay_),				  \
 	})
 
