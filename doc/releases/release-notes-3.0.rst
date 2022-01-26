@@ -524,6 +524,9 @@ Trusted Firmware-m
 Documentation
 *************
 
+* A new theme is used by the Doxygen HTML pages. It is based on
+  `doxygen-awesome-css <https://github.com/jothepro/doxygen-awesome-css>`_
+  theme.
 
 Tests and Samples
 *****************
