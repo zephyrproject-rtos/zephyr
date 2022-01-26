@@ -90,20 +90,16 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_I2S_MCUX_SAI
 	case IMX_CCM_SAI1_CLK:
-		*rate = CLOCK_GetFreq(kCLOCK_AudioPll)
-			/ CLOCK_GetRootClockDiv(kCLOCK_Root_Sai1);
+		clock_root =  kCLOCK_Root_Sai1;
 		break;
 	case IMX_CCM_SAI2_CLK:
-		*rate = CLOCK_GetFreq(kCLOCK_AudioPll)
-			/ CLOCK_GetRootClockDiv(kCLOCK_Root_Sai2);
+		clock_root =  kCLOCK_Root_Sai2;
 		break;
 	case IMX_CCM_SAI3_CLK:
-		*rate = CLOCK_GetFreq(kCLOCK_AudioPll);
-			/ CLOCK_GetRootClockDiv(kCLOCK_Root_Sai3);
+		clock_root =  kCLOCK_Root_Sai3;
 		break;
 	case IMX_CCM_SAI4_CLK:
-		*rate = CLOCK_GetFreq(kCLOCK_AudioPll);
-			/ CLOCK_GetRootClockDiv(kCLOCK_Root_Sai4);
+		clock_root =  kCLOCK_Root_Sai4;
 		break;
 #endif
 	default:
