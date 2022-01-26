@@ -53,6 +53,7 @@ function compile(){
   sed -i "1i $(wc -l ${map_file_name} | cut -d" " -f1)" ${map_file_name}
 }
 
+app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_collision.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split.conf \
 	compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_privacy.conf \
