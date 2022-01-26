@@ -60,8 +60,10 @@ extern "C" {
 	static __in_section(usb, descriptor_##p, 3) __used __aligned(1)
 #define USBD_STRING_DESCR_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 4) __used __aligned(1)
-#define USBD_TERM_DESCR_DEFINE(p) \
+#define USBD_STRING_DESCR_USER_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 5) __used __aligned(1)
+#define USBD_TERM_DESCR_DEFINE(p) \
+	static __in_section(usb, descriptor_##p, 6) __used __aligned(1)
 
 /*
  * This macro should be used to place the struct usb_cfg_data
