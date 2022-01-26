@@ -515,7 +515,6 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai4, clk_src_div);
 		break;
 	default:
-		LOG_ERR("wrong clock system configured");
 		return;
 	}
 }
