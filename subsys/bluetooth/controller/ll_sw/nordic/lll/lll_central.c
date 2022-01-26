@@ -14,10 +14,12 @@
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/radio_df.h"
 #include "hal/ticker.h"
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 
@@ -30,6 +32,7 @@
 #include "lll_chan.h"
 
 #include "lll_internal.h"
+#include "lll_df_internal.h"
 #include "lll_tim_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -85,6 +88,10 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	struct lll_df_conn_rx_params *df_rx_params;
+	struct lll_df_conn_rx_cfg *df_rx_cfg;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 	struct pdu_data *pdu_data_tx;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
@@ -94,6 +101,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct lll_conn *lll;
 	struct ull_hdr *ull;
 	uint32_t remainder;
+	uint8_t cte_len;
 
 	DEBUG_RADIO_START_M(1);
 
@@ -147,6 +155,19 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	if (pdu_data_tx->cp) {
+		cte_len = CTE_LEN_US(pdu_data_tx->cte_info.time);
+
+		lll_df_cte_tx_configure(pdu_data_tx->cte_info.type, pdu_data_tx->cte_info.time,
+					lll->df_tx_cfg.ant_sw_len, lll->df_tx_cfg.ant_ids);
+	} else
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+	{
+		cte_len = 0U;
+	}
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
 #else
@@ -158,12 +179,27 @@ static int prepare_cb(struct lll_prepare_param *p)
 					sys_get_le24(lll->crc_init));
 	lll_chan_set(data_chan_use);
 
-	/* setup the radio tx packet buffer */
 	lll_conn_tx_pkt_set(lll, pdu_data_tx);
 
 	radio_isr_set(lll_conn_isr_tx, lll);
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	/* If CTE RX is enabled and the PHY is not CODED, store channel used for
+	 * the connection event to report it with collected IQ samples.
+	 * The configuration of the CTE receive may not change during the event,
+	 * so config buffer is swapped in prepare and used in IRS handers.
+	 */
+	if (lll->phy_rx != PHY_CODED) {
+		df_rx_cfg = &lll->df_rx_cfg;
+		df_rx_params = dbuf_latest_get(&df_rx_cfg->hdr, NULL);
+
+		if (df_rx_params->is_enabled == true) {
+			lll->df_rx_cfg.chan = data_chan_use;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(lll->phy_rx);

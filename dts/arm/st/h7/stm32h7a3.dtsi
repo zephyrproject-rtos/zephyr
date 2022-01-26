@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2021 Electrolance Solutions
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h7.dtsi>
+
+/ {
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				write-block-size = <16>;
+				erase-block-size = <DT_SIZE_K(8)>;
+			};
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-requests= <111>;
+		};
+
+	};
+
+	/* System data RAM accessible over AXI bus: AXI SRAM1 in CD domain */
+	sram0: memory@24000000 {
+		compatible = "mmio-sram";
+		reg = <0x24000000 DT_SIZE_K(256)>;
+	};
+
+	/* System data RAM accessible over AXI bus: AXI SRAM2 in CD domain */
+	sram1: memory@24040000 {
+		compatible = "mmio-sram";
+		reg = <0x24040000 DT_SIZE_K(384)>;
+		zephyr,memory-region = "SRAM1";
+	};
+
+	/* System data RAM accessible over AXI bus: AXI SRAM3 in CD domain */
+	sram2: memory@240A0000 {
+		compatible = "mmio-sram";
+		reg = <0x240A0000 DT_SIZE_K(384)>;
+		zephyr,memory-region = "SRAM2";
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM1 in CD domain */
+	sram3: memory@30000000 {
+		compatible = "mmio-sram";
+		reg = <0x30000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAM3";
+	};
+
+	/* System data RAM accessible over AHB bus: SRAM2 in CD domain  */
+	sram4: memory@30010000 {
+		compatible = "mmio-sram";
+		reg = <0x30010000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAM4";
+	};
+
+	/* System data RAM accessible over AHB bus: SRD SRAM in SRD domain  */
+	sram5: memory@38000000 {
+		compatible = "mmio-sram";
+		reg = <0x38000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAM5";
+	};
+
+	dtcm: memory@20000000 {
+		compatible = "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "DTCM";
+	};
+
+};

@@ -25,6 +25,14 @@
 			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&flexpwm1_pwm2 0>;
+		};
+	};
 };
 
 &lpi2c5 {
@@ -55,5 +63,9 @@
 };
 
 &green_led {
+	status = "okay";
+};
+
+&flexpwm1_pwm2 {
 	status = "okay";
 };

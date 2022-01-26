@@ -55,6 +55,17 @@ properties:
         the driver to count events generated on the TIOA, TIOB signal connected
         to the external pin.
 
+    reg-rc:
+      type: int
+      required: false
+      description: |
+        Register C compare/match value. RC can be used as compare/match unit
+        for an specific timer unit. Their use depends on how timer channel
+        is configured,see reg-cmr. It can be used as trigger for both input
+        capture or counter mode, or even as event source. The RC register
+        behavior is SoC dependent. For more information and use cases,
+        check SoC datasheet and application notes.
+
     pinctrl-0:
       type: phandles
       required: false

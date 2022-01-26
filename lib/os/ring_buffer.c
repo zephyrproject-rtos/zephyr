@@ -38,7 +38,12 @@ static uint32_t mod(struct ring_buf *buf, uint32_t val)
 
 static uint32_t get_rewind_value(uint32_t buf_size, uint32_t threshold)
 {
-	return buf_size * (threshold / buf_size);
+	/* Rewind value is rounded to buffer size and decreased by buffer_size.
+	 * This is done to ensure that there will be no negative numbers after
+	 * subtraction. That could happen because tail is rewinded first and
+	 * head (which follows tail) is rewinded on next getting.
+	 */
+	return buf_size * (threshold / buf_size - 1);
 }
 
 int ring_buf_is_empty(struct ring_buf *buf)
@@ -168,24 +173,19 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 	return 0;
 }
 
-/** @brief Wraps index if it exceeds the limit.
- *
- * @param val  Value
- * @param max  Max.
- *
- * @return value % max.
- */
-static inline uint32_t wrap(uint32_t val, uint32_t max)
-{
-	return val >= max ? (val - max) : val;
-}
-
 uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 {
 	uint32_t space, trail_size, allocated, tmp_trail_mod;
+	uint32_t head = buf->head;
+	uint32_t tmp_tail = buf->misc.byte_mode.tmp_tail;
+
+	if (buf->misc.byte_mode.tmp_tail < head) {
+		/* Head is already rewinded but tail is not */
+		tmp_tail += get_rewind_value(buf->size, ring_buf_get_rewind_threshold());
+	}
 
 	tmp_trail_mod = mod(buf, buf->misc.byte_mode.tmp_tail);
-	space = (buf->head + buf->size) - buf->misc.byte_mode.tmp_tail;
+	space = (head + buf->size) - tmp_tail;
 	trail_size = buf->size - tmp_trail_mod;
 
 	/* Limit requested size to available size. */

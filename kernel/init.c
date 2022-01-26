@@ -76,12 +76,9 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  */
 
 /**
- *
  * @brief Clear BSS
  *
  * This routine clears the BSS region, so all bytes are 0.
- *
- * @return N/A
  */
 __boot_func
 void z_bss_zero(void)
@@ -158,13 +155,10 @@ bool z_sys_post_kernel;
 extern void boot_banner(void);
 
 /**
- *
  * @brief Mainline for kernel's background thread
  *
  * This routine completes kernel initialization by invoking the remaining
  * init functions, then invokes application's main() routine.
- *
- * @return N/A
  */
 __boot_func
 static void bg_thread_main(void *unused1, void *unused2, void *unused3)
@@ -303,6 +297,10 @@ static char *prepare_multithreading(void)
 		_kernel.cpus[i].irq_stack =
 			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
 			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+		_kernel.cpus[i].usage.track_usage =
+			CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#endif
 	}
 
 	return stack_ptr;

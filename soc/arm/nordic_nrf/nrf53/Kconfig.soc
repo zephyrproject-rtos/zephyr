@@ -3,8 +3,8 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_SERIES_NRF53X
 config SOC_NRF5340_CPUAPP
-	depends on SOC_SERIES_NRF53X
 	bool
 	select CPU_HAS_NRF_IDAU
 	select CPU_HAS_FPU
@@ -77,7 +77,6 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_WDT1
 
 config SOC_NRF5340_CPUNET
-	depends on SOC_SERIES_NRF53X
 	bool
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CLOCK
@@ -116,7 +115,6 @@ config SOC_NRF5340_CPUNET
 
 choice
 	prompt "nRF53x MCU Selection"
-	depends on SOC_SERIES_NRF53X
 
 config SOC_NRF5340_CPUAPP_QKAA
 	bool "NRF5340_CPUAPP_QKAA"
@@ -224,3 +222,71 @@ config NRF_ENABLE_CACHE
 
 	  Instruction cache only (I-Cache) is available in nRF5340
 	  CPUNET (Network MCU).
+
+config NRF53_SYNC_RTC
+	bool "Enable RTC clock synchronization"
+	default y if LOG && !LOG_MODE_MINIMAL
+	depends on NRF_RTC_TIMER
+	select NRFX_DPPI
+	select IPM if !MBOX
+
+if NRF53_SYNC_RTC
+
+module = SYNC_RTC
+module-str = Synchronized RTC
+source "subsys/logging/Kconfig.template.log_config"
+
+config NRF_RTC_TIMER_USER_CHAN_COUNT
+	default 1
+
+config NRF53_SYNC_RTC_LOG_TIMESTAMP
+	bool "Use Synchronized RTC for logging timestamp"
+	default y
+
+config NRF53_SYNC_RTC_IPM_OUT
+	int "IPM channel from APP to NET"
+	range 0 15
+	default 7 if SOC_NRF5340_CPUAPP
+	default 8
+
+config NRF53_SYNC_RTC_IPM_IN
+	int "IPM channel from APP to NET"
+	range 0 15
+	default 8 if SOC_NRF5340_CPUAPP
+	default 7
+
+ipm_num = 0
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 1
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 2
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 3
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 4
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 5
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 6
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 7
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 8
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 9
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 10
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 11
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 12
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 13
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 14
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 15
+rsource "Kconfig.sync_rtc_ipm"
+
+endif # NRF53_SYNC_RTC
+endif # SOC_SERIES_NRF53X

@@ -272,14 +272,14 @@ particular state are enclosed in a single Devicetree node.
     &pinctrl {
         /* Node with pin configuration for default state */
         periph0_default: periph0_default {
-            pins1 {
+            group1 {
                 /* Mappings: PERIPH0_SIGA -> PX0, PERIPH0_SIGC -> PZ1 */
                 pinmux = <PERIPH0_SIGA_PX0>, <PERIPH0_SIGC_PZ1>;
                 /* Pins PX0 and PZ1 have pull-up enabled */
                 bias-pull-up;
             };
             ...
-            pinsN {
+            groupN {
                 /* Mappings: PERIPH0_SIGB -> PY7 */
                 pinmux = <PERIPH0_SIGB_PY7>;
             };
@@ -473,7 +473,7 @@ The example below contains a complete example of a device driver that uses the
 
     #define MYDEV_DEFINE(i)                                                    \
         /* Define all pinctrl configuration for instance "i" */                \
-        PINCTRL_DT_INST_DEFINE(i)                                              \
+        PINCTRL_DT_INST_DEFINE(i);                                             \
         ...                                                                    \
         static const struct mydev_config mydev_config_##i = {                  \
             ...                                                                \
@@ -484,7 +484,7 @@ The example below contains a complete example of a device driver that uses the
         ...                                                                    \
                                                                                \
         DEVICE_DT_INST_DEFINE(i, mydev_init, NULL, &mydev_data##i,             \
-                              &mydev_config##i, ...)
+                              &mydev_config##i, ...);
 
     DT_INST_FOREACH_STATUS_OKAY(MYDEV_DEFINE)
 

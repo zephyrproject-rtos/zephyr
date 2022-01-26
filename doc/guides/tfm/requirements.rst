@@ -10,6 +10,8 @@ The following are some of the boards that can be used with TF-M:
      - NSPE board name
    * - :ref:`mps2_an521_board`
      - ``mps2_an521_ns`` (qemu supported)
+   * - :ref:`mps3_an547_board`
+     - ``mps3_an547_ns`` (qemu supported)
    * - :ref:`bl5340_dvk`
      - ``bl5340_dvk_cpuapp_ns``
    * - :ref:`lpcxpresso55s69`
@@ -18,6 +20,8 @@ The following are some of the boards that can be used with TF-M:
      - ``nrf9160dk_nrf9160_ns``
    * - :ref:`nrf5340dk_nrf5340`
      - ``nrf5340dk_nrf5340_cpuapp_ns``
+   * - :ref:`b_u585i_iot02a_board`
+     - ``b_u585i_iot02a_ns``
    * - :ref:`nucleo_l552ze_q_board`
      - ``nucleo_l552ze_q_ns``
    * - :ref:`stm32l562e_dk_board`

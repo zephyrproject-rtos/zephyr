@@ -36,11 +36,6 @@ endif()
 #     -fmacro-prefix-map=${ZEPHYR_BASE}=
 
 
-# Verify that the toolchain can compile a dummy file, if it is not we
-# won't be able to test for compatibility with certain C flags.
-zephyr_check_compiler_flag(C "" toolchain_is_ok)
-assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
-
 # In some cases the "final" things are not used at all and "_prebuilt"
 # is the last station. See "logical_target_for_zephyr_elf" below for
 # details.
@@ -356,7 +351,6 @@ include(cmake/extra_flags.cmake)
 zephyr_cc_option(-fno-asynchronous-unwind-tables)
 zephyr_cc_option(-fno-pie)
 zephyr_cc_option(-fno-pic)
-zephyr_cc_option(-fno-strict-overflow)
 
 if(CONFIG_THREAD_LOCAL_STORAGE)
 # Only support local exec TLS model at this point.
@@ -807,6 +801,7 @@ if(CONFIG_HAS_DTS)
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
     --start-symbol "$<TARGET_PROPERTY:linker,devices_start_symbol>"
+    VERBATIM
     DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES dev_handles.c)
@@ -1398,6 +1393,18 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   endif()
 endif()
 
+if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
+  math(EXPR adjustment "${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT DECIMAL)
+  list(APPEND
+    post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>${adjustment}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_ELF_NAME}
+    )
+endif()
+
 if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(ihex IN_LIST elfconvert_formats)
@@ -1470,6 +1477,7 @@ if(CONFIG_BUILD_OUTPUT_META)
             ${ZEPHYR_MODULES_ARG}
             ${ZEPHYR_EXTRA_MODULES_ARG}
             --meta-out ${KERNEL_META_NAME}
+            $<$<BOOL:${CONFIG_BUILD_OUTPUT_META_STATE_PROPAGATE}>:--meta-state-propagate>
   )
   list(APPEND
     post_build_byproducts
@@ -1577,6 +1585,20 @@ if(CONFIG_BUILD_OUTPUT_EXE)
   list(APPEND
     post_build_byproducts
     ${KERNEL_EXE_NAME}
+    )
+endif()
+
+if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_image_info.py
+    --elf-file=${KERNEL_ELF_NAME}
+    --header-file=${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
+    $<$<BOOL:${adjustment}>:--adjusted-lma=${adjustment}>
+    )
+  list(APPEND
+    post_build_byproducts
+    ${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
     )
 endif()
 
@@ -1714,8 +1736,11 @@ set(build_types None Debug Release RelWithDebInfo MinSizeRel)
 
 if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
   string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_uppercase)
-
-  if(NOT (${OPTIMIZATION_FLAG} IN_LIST CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase}))
+  # The CMAKE_C_FLAGS_<build_type> is a string, so we do a regex to see if the
+  # optimization flag is present in that string.
+  # To avoid false-positive matches, the flag must either be matched first
+  # or last in string, or come after / followed by minimum a space.
+  if(NOT (CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase} MATCHES "(^| )${OPTIMIZATION_FLAG}($| )"))
     message(WARNING "
       The CMake build type was set to '${CMAKE_BUILD_TYPE}', but the optimization flag was set to '${OPTIMIZATION_FLAG}'.
       This may be intentional and the warning can be turned off by setting the CMake variable 'NO_BUILD_TYPE_WARNING'"

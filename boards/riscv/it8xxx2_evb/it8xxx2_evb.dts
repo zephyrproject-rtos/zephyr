@@ -5,12 +5,17 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
 #include <it8xxx2.dtsi>
 #include <it8xxx2-alts-map.dtsi>
 
 / {
 	model = "IT8XXX2 EV-Board";
 	compatible = "riscv,it8xxx2-evb";
+
+	aliases {
+		i2c-0 = &i2c0;
+	};
 
 	chosen {
 		zephyr,console = &uart1;
@@ -21,6 +26,20 @@
 		zephyr,flash-controller = &flashctrl;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,keyboard-scan = &kscan0;
+	};
+
+	aliases {
+		led0 = &led0;
+		kscan0 = &kscan0;
+		watchdog0 = &twd0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
 	};
 };
 &adc0 {

@@ -39,8 +39,6 @@
 #include "cfg.h"
 
 #define LOOPBACK_MAX_PDU_LEN (BT_MESH_NET_HDR_LEN + 16)
-#define LOOPBACK_USER_DATA_SIZE sizeof(struct bt_mesh_subnet *)
-#define LOOPBACK_BUF_SUB(buf) (*(struct bt_mesh_subnet **)net_buf_user_data(buf))
 
 /* Seq limit after IV Update is triggered */
 #define IV_UPDATE_SEQ_LIMIT CONFIG_BT_MESH_IV_UPDATE_SEQ_LIMIT
@@ -98,8 +96,16 @@ struct bt_mesh_net bt_mesh = {
  */
 static bool ivi_was_recovered;
 
-NET_BUF_POOL_DEFINE(loopback_buf_pool, CONFIG_BT_MESH_LOOPBACK_BUFS,
-		    LOOPBACK_MAX_PDU_LEN, LOOPBACK_USER_DATA_SIZE, NULL);
+struct loopback_buf {
+	sys_snode_t node;
+	struct bt_mesh_subnet *sub;
+	uint8_t len;
+	uint8_t data[LOOPBACK_MAX_PDU_LEN];
+};
+
+K_MEM_SLAB_DEFINE(loopback_buf_pool,
+		  sizeof(struct loopback_buf),
+		  CONFIG_BT_MESH_LOOPBACK_BUFS, __alignof__(struct loopback_buf));
 
 static uint32_t dup_cache[CONFIG_BT_MESH_MSG_CACHE_SIZE];
 static int   dup_cache_next;
@@ -362,13 +368,14 @@ uint32_t bt_mesh_next_seq(void)
 
 static void bt_mesh_net_local(struct k_work *work)
 {
-	struct net_buf *buf;
+	struct net_buf_simple sbuf;
+	sys_snode_t *node;
 
-	while ((buf = net_buf_slist_get(&bt_mesh.local_queue))) {
-		struct bt_mesh_subnet *sub = LOOPBACK_BUF_SUB(buf);
+	while ((node = sys_slist_get(&bt_mesh.local_queue))) {
+		struct loopback_buf *buf = CONTAINER_OF(node, struct loopback_buf, node);
 		struct bt_mesh_net_rx rx = {
 			.ctx = {
-				.net_idx = sub->net_idx,
+				.net_idx = buf->sub->net_idx,
 				/* Initialize AppIdx to a sane value */
 				.app_idx = BT_MESH_KEY_UNUSED,
 				.recv_ttl = TTL(buf->data),
@@ -379,20 +386,21 @@ static void bt_mesh_net_local(struct k_work *work)
 				.recv_rssi = 0,
 			},
 			.net_if = BT_MESH_NET_IF_LOCAL,
-			.sub = sub,
+			.sub = buf->sub,
 			.old_iv = (IVI(buf->data) != (bt_mesh.iv_index & 0x01)),
 			.ctl = CTL(buf->data),
 			.seq = SEQ(buf->data),
-			.new_key = SUBNET_KEY_TX_IDX(sub),
+			.new_key = SUBNET_KEY_TX_IDX(buf->sub),
 			.local_match = 1U,
 			.friend_match = 0U,
 		};
 
 		BT_DBG("src: 0x%04x dst: 0x%04x seq 0x%06x sub %p", rx.ctx.addr,
-		       rx.ctx.addr, rx.seq, sub);
+		       rx.ctx.addr, rx.seq, buf->sub);
 
-		(void) bt_mesh_trans_recv(&buf->b, &rx);
-		net_buf_unref(buf);
+		net_buf_simple_init_with_data(&sbuf, buf->data, buf->len);
+		(void)bt_mesh_trans_recv(&sbuf, &rx);
+		k_mem_slab_free(&loopback_buf_pool, (void **)&buf);
 	}
 }
 
@@ -471,21 +479,21 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 static int loopback(const struct bt_mesh_net_tx *tx, const uint8_t *data,
 		    size_t len)
 {
-	struct net_buf *buf;
+	int err;
+	struct loopback_buf *buf;
 
-	buf = net_buf_alloc(&loopback_buf_pool, K_NO_WAIT);
-	if (!buf) {
+	err = k_mem_slab_alloc(&loopback_buf_pool, (void **)&buf, K_NO_WAIT);
+	if (err) {
 		BT_WARN("Unable to allocate loopback");
 		return -ENOMEM;
 	}
 
-	BT_DBG("");
+	buf->sub = tx->sub;
 
-	LOOPBACK_BUF_SUB(buf) = tx->sub;
+	(void)memcpy(buf->data, data, len);
+	buf->len = len;
 
-	net_buf_add_mem(buf, data, len);
-
-	net_buf_slist_put(&bt_mesh.local_queue, buf);
+	sys_slist_append(&bt_mesh.local_queue, &buf->node);
 
 	k_work_submit(&bt_mesh.local_work);
 
@@ -563,20 +571,20 @@ done:
 void bt_mesh_net_loopback_clear(uint16_t net_idx)
 {
 	sys_slist_t new_list;
-	struct net_buf *buf;
+	sys_snode_t *node;
 
 	BT_DBG("0x%04x", net_idx);
 
 	sys_slist_init(&new_list);
 
-	while ((buf = net_buf_slist_get(&bt_mesh.local_queue))) {
-		struct bt_mesh_subnet *sub = LOOPBACK_BUF_SUB(buf);
+	while ((node = sys_slist_get(&bt_mesh.local_queue))) {
+		struct loopback_buf *buf = CONTAINER_OF(node, struct loopback_buf, node);
 
-		if (net_idx == BT_MESH_KEY_ANY || net_idx == sub->net_idx) {
+		if (net_idx == BT_MESH_KEY_ANY || net_idx == buf->sub->net_idx) {
 			BT_DBG("Dropped 0x%06x", SEQ(buf->data));
-			net_buf_unref(buf);
+			k_mem_slab_free(&loopback_buf_pool, (void **)&buf);
 		} else {
-			net_buf_slist_put(&new_list, buf);
+			sys_slist_append(&new_list, &buf->node);
 		}
 	}
 
@@ -676,7 +684,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		transmit = bt_mesh_net_transmit_get();
 	}
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, transmit, K_NO_WAIT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
+				 transmit, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Out of relay buffers");
 		return;

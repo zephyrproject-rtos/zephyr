@@ -21,3 +21,7 @@ supported:
   - spi
   - adc
   - i2c
+  - pwm
+  - dma
+  - watchdog
+  - netif:eth

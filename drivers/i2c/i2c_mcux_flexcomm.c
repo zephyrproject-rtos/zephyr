@@ -225,8 +225,8 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
-	DEVICE_DT_INST_DEFINE(id,					\
-			    &mcux_flexcomm_init,			\
+	I2C_DEVICE_DT_INST_DEFINE(id,					\
+			    mcux_flexcomm_init,				\
 			    NULL,					\
 			    &mcux_flexcomm_data_##id,			\
 			    &mcux_flexcomm_config_##id,			\

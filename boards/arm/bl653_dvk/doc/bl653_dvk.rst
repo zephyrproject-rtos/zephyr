@@ -81,7 +81,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `BL653 website`_
 for a complete list of BL653 Development Kit board hardware features.
 

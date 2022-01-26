@@ -19,6 +19,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 
@@ -53,7 +54,6 @@ static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_done(void *param);
-static void switch_radio_complete_and_phy_end_disable(const struct lll_adv_sync *lll);
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 static void isr_tx(void *param);
@@ -163,7 +163,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Start setting up of Radio h/w */
 	radio_reset();
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll->tx_pwr_lvl);
+	radio_tx_power_set(lll->adv->tx_pwr_lvl);
 #else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif
@@ -172,7 +172,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* TODO: if coded we use S8? */
 	radio_phy_set(phy_s, lll->adv->phy_flags);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy_s << 1));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, PDU_AC_PAYLOAD_SIZE_MAX,
+			    RADIO_PKT_CONF_PHY(phy_s));
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
 				sys_get_le24(lll->crc_init));
@@ -203,13 +204,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->last_pdu = pdu;
 
 		radio_isr_set(isr_tx, lll);
-		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS + cte_len_us);
+		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS);
 		switch_radio_complete_and_b2b_tx(lll, phy_s);
 	} else
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 	{
 		radio_isr_set(isr_done, lll);
-		switch_radio_complete_and_phy_end_disable(lll);
+		radio_switch_complete_and_disable();
 	}
 
 	ticks_at_event = p->ticks_at_expire;
@@ -349,12 +350,12 @@ static void isr_tx(void *param)
 
 	/* setup tIFS switching */
 	if (pdu->adv_ext_ind.ext_hdr_len && pdu->adv_ext_ind.ext_hdr.aux_ptr) {
-		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS + cte_len_us);
+		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS);
 		radio_isr_set(isr_tx, lll_sync);
 		switch_radio_complete_and_b2b_tx(lll_sync, lll->phy_s);
 	} else {
-		radio_isr_set(isr_done, lll);
-		switch_radio_complete_and_phy_end_disable(lll_sync);
+		radio_isr_set(isr_done, lll_sync);
+		radio_switch_complete_and_disable();
 	}
 
 	radio_pkt_tx_set(pdu);
@@ -465,15 +466,3 @@ static void switch_radio_complete_and_b2b_tx(const struct lll_adv_sync *lll, uin
 	}
 }
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
-
-static void switch_radio_complete_and_phy_end_disable(const struct lll_adv_sync *lll)
-{
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	if (lll->cte_started) {
-		radio_switch_complete_and_phy_end_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-	{
-		radio_switch_complete_and_disable();
-	}
-}

@@ -314,6 +314,7 @@ static void bt_spi_rx_thread(void)
 	struct bt_hci_acl_hdr acl_hdr;
 	uint8_t size = 0U;
 	int ret;
+	int len;
 
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
@@ -369,8 +370,7 @@ static void bt_spi_rx_thread(void)
 					continue;
 				default:
 					if (rxmsg[1] == BT_HCI_EVT_LE_META_EVENT &&
-					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
-					     rxmsg[3] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
 						discardable = true;
 						timeout = K_NO_WAIT;
 					}
@@ -383,15 +383,24 @@ static void bt_spi_rx_thread(void)
 					}
 				}
 
-				net_buf_add_mem(buf, &rxmsg[1],
-						rxmsg[EVT_HEADER_SIZE] + 2);
+				len = sizeof(struct bt_hci_evt_hdr) + rxmsg[EVT_HEADER_SIZE];
+				if (len > net_buf_tailroom(buf)) {
+					BT_ERR("Event too long: %d", len);
+					net_buf_unref(buf);
+					continue;
+				}
+				net_buf_add_mem(buf, &rxmsg[1], len);
 				break;
 			case HCI_ACL:
 				buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 				memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
-				net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
-				net_buf_add_mem(buf, &rxmsg[5],
-						sys_le16_to_cpu(acl_hdr.len));
+				len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
+				if (len > net_buf_tailroom(buf)) {
+					BT_ERR("ACL too long: %d", len);
+					net_buf_unref(buf);
+					continue;
+				}
+				net_buf_add_mem(buf, &rxmsg[1], len);
 				break;
 			default:
 				BT_ERR("Unknown BT buf type %d", rxmsg[0]);

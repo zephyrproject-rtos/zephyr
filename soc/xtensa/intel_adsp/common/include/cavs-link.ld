@@ -23,46 +23,41 @@ OUTPUT_ARCH(xtensa)
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
-PROVIDE(__memctl_default = 0x00000000);
-PROVIDE(_MemErrorHandler = 0x00000000);
+ENTRY(rom_entry);
 
-#define LP_SRAM_REGION lpram
-
-/* DSP RAM regions (all of them) are mapped twice on the DSP: once in
- * a 512MB region from 0x80000000-0x9fffffff and again from
- * 0xa0000000-0xbfffffff.  The first mapping is set up to bypass the
- * L1 cache, so it must be used when multiprocessor coherence is
- * desired, where the latter mapping is best used for processor-local
- * data (e.g. stacks) or shared data that is managed with explicit
- * cache flush/invalidate operations.
+/* DSP RAM regions (all of them) are mapped twice on the DSP.  One
+ * mapping is set up to bypass the L1 cache, so it must be used when
+ * multiprocessor coherence is desired, where the latter mapping is
+ * best used for processor-local data (e.g. stacks) or shared data
+ * that is managed with explicit cache flush/invalidate operations.
  *
  * These macros will set up a segment start address correctly,
  * including alignment to a cache line.  Be sure to also emit the
- * section to ">ram :ram_phdr" or ">ucram :ucram_phdr" as
- * appropriate. (Forgetting the correct PHDR will actually work, as
- * the output tooling ignores it, but it will cause the linker to emit
- * 512MB of unused data into the output file!)
- *
- * (Note clumsy syntax because XCC doesn't understand the "~" operator)
+ * section to ">ram" or ">ucram" as appropriate, to prevent the linker
+ * from filling in 512MB of sparse zeros.
  */
 #ifdef CONFIG_KERNEL_COHERENCE
-#define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
-#define SEGSTART_UNCACHED (ALIGN(64) & 0xdfffffff) /* == ~0x20000000 */
+#define RPO_SET(addr, reg) ((addr & 0x1fffffff) | (reg << 29))
+#define SEGSTART_CACHED   RPO_SET(ALIGN(64), CONFIG_XTENSA_CACHED_REGION)
+#define SEGSTART_UNCACHED RPO_SET(ALIGN(64), CONFIG_XTENSA_UNCACHED_REGION)
 #else
-#define SEGSTART_CACHED   /**/
-#define SEGSTART_UNCACHED /**/
+#define SEGSTART_CACHED   .
+#define SEGSTART_UNCACHED .
 #define ucram ram
-#define ucram_phdr ram_phdr
 #endif
 
-MEMORY
-{
-  vector_memory_lit :
-	org = XCHAL_MEMERROR_VECTOR_PADDR + MEM_ERROR_LIT_SIZE,
-        len = MEM_ERROR_LIT_SIZE
-  vector_memory_text :
-	org = XCHAL_MEMERROR_VECTOR_PADDR,
-        len = MEM_ERROR_TEXT_SIZE
+/* intlist.ld needs an IDT_LIST memory region */
+#define IDT_BASE 0xe0000000
+#define IDT_SIZE 0x2000
+
+/* rimage module sections are C struct data, and thus flagged ALLOC.
+ * The xcc linker demands they be in a declared memory region even if
+ * the enclosing output section is (NOLOAD).  Put them here.
+ */
+#define NOLOAD_BASE 0x20000
+#define NOLOAD_SIZE 0x100000
+
+MEMORY {
   vector_base_text :
 	org = XCHAL_VECBASE_RESET_PADDR_SRAM,
         len = MEM_VECBASE_LIT_SIZE
@@ -120,12 +115,15 @@ MEMORY
   vector_double_text :
 	org = XCHAL_DOUBLEEXC_VECTOR_PADDR_SRAM,
         len = MEM_VECT_TEXT_SIZE
+  imr :
+        org = IMR_BOOT_LDR_TEXT_ENTRY_BASE,
+        len = 0x100000
   ram :
 	org = RAM_BASE,
 	len = RAM_SIZE
 #ifdef CONFIG_KERNEL_COHERENCE
   ucram :
-	org = RAM_BASE - 0x20000000,
+	org = RPO_SET(RAM_BASE, CONFIG_XTENSA_UNCACHED_REGION),
 	len = RAM_SIZE
 #endif
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -136,237 +134,128 @@ MEMORY
   lpram :
 	org = LP_SRAM_BASE,
 	len = LP_SRAM_SIZE
-
-  static_uuid_entries_seg (!ari) :
-        org = UUID_ENTRY_ELF_BASE,
-        len = UUID_ENTRY_ELF_SIZE
-  static_log_entries_seg (!ari) :
-        org = LOG_ENTRY_ELF_BASE,
-        len = LOG_ENTRY_ELF_SIZE
-  fw_metadata_seg (!ari) :
-        org = EXT_MANIFEST_ELF_BASE,
-        len = EXT_MANIFEST_ELF_SIZE
+  noload :
+        org = NOLOAD_BASE,
+        len = NOLOAD_SIZE
 }
 
-PHDRS
-{
-  vector_memory_lit_phdr PT_LOAD;
-  vector_memory_text_phdr PT_LOAD;
-  vector_base_text_phdr PT_LOAD;
-  vector_int2_lit_phdr PT_LOAD;
-  vector_int2_text_phdr PT_LOAD;
-  vector_int3_lit_phdr PT_LOAD;
-  vector_int3_text_phdr PT_LOAD;
-  vector_int4_lit_phdr PT_LOAD;
-  vector_int4_text_phdr PT_LOAD;
-  vector_int5_lit_phdr PT_LOAD;
-  vector_int5_text_phdr PT_LOAD;
-  vector_int6_lit_phdr PT_LOAD;
-  vector_int6_text_phdr PT_LOAD;
-  vector_int7_lit_phdr PT_LOAD;
-  vector_int7_text_phdr PT_LOAD;
-  vector_kernel_lit_phdr PT_LOAD;
-  vector_kernel_text_phdr PT_LOAD;
-  vector_user_lit_phdr PT_LOAD;
-  vector_user_text_phdr PT_LOAD;
-  vector_double_lit_phdr PT_LOAD;
-  vector_double_text_phdr PT_LOAD;
-  ram_phdr PT_LOAD;
-#ifdef CONFIG_KERNEL_COHERENCE
-  ucram_phdr PT_LOAD;
-#endif
-  static_uuid_entries_phdr PT_NOTE;
-  static_log_entries_phdr PT_NOTE;
-  metadata_entries_phdr PT_NOTE;
-}
-_rom_store_table = 0;
-PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_SRAM);
+SECTIONS {
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+  /* Boot loader code in IMR memory */
+  .imr : {
+    /* Entry point MUST be here per external configuration */
+    KEEP (*(.boot_entry.text))
+    *(.imr .imr.*)
+  } >imr
 
-/* Various memory-map dependent cache attribute settings: */
-_memmap_cacheattr_wb_base = 0x44024000;
-_memmap_cacheattr_wt_base = 0x11021000;
-_memmap_cacheattr_bp_base = 0x22022000;
-_memmap_cacheattr_unused_mask = 0x00F00FFF;
-_memmap_cacheattr_wb_trapnull = 0x4422422F;
-_memmap_cacheattr_wba_trapnull = 0x4422422F;
-_memmap_cacheattr_wbna_trapnull = 0x25222222;
-_memmap_cacheattr_wt_trapnull = 0x1122122F;
-_memmap_cacheattr_bp_trapnull = 0x2222222F;
-_memmap_cacheattr_wb_strict = 0x44F24FFF;
-_memmap_cacheattr_wt_strict = 0x11F21FFF;
-_memmap_cacheattr_bp_strict = 0x22F22FFF;
-_memmap_cacheattr_wb_allvalid = 0x44224222;
-_memmap_cacheattr_wt_allvalid = 0x11221222;
-_memmap_cacheattr_bp_allvalid = 0x22222222;
+  /* Boot loader data.  Note that rimage seems to want this
+   * page-aligned or it will throw an error, not sure why since all
+   * the ROM cares about is a contiguous region.  And it's
+   * particularly infuriating as it precludes linker .rodata next to
+   * .text.
+   */
+  .imrdata : ALIGN(4096) {
+    *(.imrdata .imrdata.*)
+  } >imr
 
-/*
- * Cache attributes for memory addresses:
- * (Each 4 bits correspond to 512MB of memory)
- *
- * 0x00000000 - 0x1FFFFFFF (bit  0 -  3) : Bypass cache
- *                                         (region for hardware registers)
- * 0x20000000 - 0x3FFFFFFF (bit  4 -  7) : No access
- * 0x40000000 - 0x5FFFFFFF (bit  8 - 11) : No access
- * 0x60000000 - 0x7FFFFFFF (bit 12 - 15) : No access
- * 0x80000000 - 0x9FFFFFFF (bit 16 - 19) : Bypass cache
- * 0xA0000000 - 0xBFFFFFFF (bit 20 - 23) : Cached, write-back
- * 0xC0000000 - 0xDFFFFFFF (bit 24 - 27) : No access
- * 0xE0000000 - 0xFFFFFFFF (bit 28 - 31) : No access
- *
- * Note that this is both for instruction and data caches,
- * as cacheattr_set macro sets them both to the same set of
- * attributes.
- */
-_memmap_cacheattr_intel_cavs25_adsp = 0xFF42FFF2;
-
-PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_cavs25_adsp);
-
-_EXT_MAN_ALIGN_ = 16;
-EXTERN(ext_man_fw_ver)
-EXTERN(ext_man_cavs_config)
-
-SECTIONS
-{
-
-#include <linker/rel-sections.ld>
-
- .MemoryExceptionVector.literal : ALIGN(4)
-  {
-    _MemoryExceptionVector_literal_start = ABSOLUTE(.);
-    KEEP (*(.MemoryExceptionVector.literal))
-    _MemoryExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_memory_lit :vector_memory_lit_phdr
-  .MemoryExceptionVector.text : ALIGN(4)
-  {
-    _MemoryExceptionVector_text_start = ABSOLUTE(.);
-    KEEP (*(.MemoryExceptionVector.text))
-    _MemoryExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_memory_text :vector_memory_text_phdr
-   .WindowVectors.text : ALIGN(4)
-  {
-    _WindowVectors_text_start = ABSOLUTE(.);
+   .WindowVectors.text : {
+    _WindowVectors_text_start = .;
     KEEP (*(.WindowVectors.text))
-    _WindowVectors_text_end = ABSOLUTE(.);
-  } >vector_base_text :vector_base_text_phdr
-  .Level2InterruptVector.literal : ALIGN(4)
-  {
-    _Level2InterruptVector_literal_start = ABSOLUTE(.);
+    _WindowVectors_text_end = .;
+  } >vector_base_text
+  .Level2InterruptVector.literal : {
+    _Level2InterruptVector_literal_start = .;
     *(.Level2InterruptVector.literal)
-    _Level2InterruptVector_literal_end = ABSOLUTE(.);
-  } >vector_int2_lit :vector_int2_lit_phdr
-  .Level2InterruptVector.text : ALIGN(4)
-  {
-    _Level2InterruptVector_text_start = ABSOLUTE(.);
+    _Level2InterruptVector_literal_end = .;
+  } >vector_int2_lit
+  .Level2InterruptVector.text : {
+    _Level2InterruptVector_text_start = .;
     KEEP (*(.Level2InterruptVector.text))
-    _Level2InterruptVector_text_end = ABSOLUTE(.);
-  } >vector_int2_text :vector_int2_text_phdr
-  .Level3InterruptVector.literal : ALIGN(4)
-  {
-    _Level3InterruptVector_literal_start = ABSOLUTE(.);
+    _Level2InterruptVector_text_end = .;
+  } >vector_int2_text
+  .Level3InterruptVector.literal : {
+    _Level3InterruptVector_literal_start = .;
     *(.Level3InterruptVector.literal)
-    _Level3InterruptVector_literal_end = ABSOLUTE(.);
-  } >vector_int3_lit :vector_int3_lit_phdr
-  .Level3InterruptVector.text : ALIGN(4)
-  {
-    _Level3InterruptVector_text_start = ABSOLUTE(.);
+    _Level3InterruptVector_literal_end = .;
+  } >vector_int3_lit
+  .Level3InterruptVector.text : {
+    _Level3InterruptVector_text_start = .;
     KEEP (*(.Level3InterruptVector.text))
-    _Level3InterruptVector_text_end = ABSOLUTE(.);
-  } >vector_int3_text :vector_int3_text_phdr
-  .Level4InterruptVector.literal : ALIGN(4)
-  {
-    _Level4InterruptVector_literal_start = ABSOLUTE(.);
+    _Level3InterruptVector_text_end = .;
+  } >vector_int3_text
+  .Level4InterruptVector.literal : {
+    _Level4InterruptVector_literal_start = .;
     *(.Level4InterruptVector.literal)
-    _Level4InterruptVector_literal_end = ABSOLUTE(.);
-  } >vector_int4_lit :vector_int4_lit_phdr
-  .Level4InterruptVector.text : ALIGN(4)
-  {
-    _Level4InterruptVector_text_start = ABSOLUTE(.);
+    _Level4InterruptVector_literal_end = .;
+  } >vector_int4_lit
+  .Level4InterruptVector.text : {
+    _Level4InterruptVector_text_start = .;
     KEEP (*(.Level4InterruptVector.text))
-    _Level4InterruptVector_text_end = ABSOLUTE(.);
-  } >vector_int4_text :vector_int4_text_phdr
-  .Level5InterruptVector.literal : ALIGN(4)
-  {
-    _Level5InterruptVector_literal_start = ABSOLUTE(.);
+    _Level4InterruptVector_text_end = .;
+  } >vector_int4_text
+  .Level5InterruptVector.literal : {
+    _Level5InterruptVector_literal_start = .;
     *(.Level5InterruptVector.literal)
-    _Level5InterruptVector_literal_end = ABSOLUTE(.);
-  } >vector_int5_lit :vector_int5_lit_phdr
-  .Level5InterruptVector.text : ALIGN(4)
-  {
-    _Level5InterruptVector_text_start = ABSOLUTE(.);
+    _Level5InterruptVector_literal_end = .;
+  } >vector_int5_lit
+  .Level5InterruptVector.text : {
+    _Level5InterruptVector_text_start = .;
     KEEP (*(.Level5InterruptVector.text))
-    _Level5InterruptVector_text_end = ABSOLUTE(.);
-  } >vector_int5_text :vector_int5_text_phdr
-  .DebugExceptionVector.literal : ALIGN(4)
-  {
-    _DebugExceptionVector_literal_start = ABSOLUTE(.);
+    _Level5InterruptVector_text_end = .;
+  } >vector_int5_text
+  .DebugExceptionVector.literal : {
+    _DebugExceptionVector_literal_start = .;
     *(.DebugExceptionVector.literal)
-    _DebugExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_int6_lit :vector_int6_lit_phdr
-  .DebugExceptionVector.text : ALIGN(4)
-  {
-    _DebugExceptionVector_text_start = ABSOLUTE(.);
+    _DebugExceptionVector_literal_end = .;
+  } >vector_int6_lit
+  .DebugExceptionVector.text : {
+    _DebugExceptionVector_text_start = .;
     KEEP (*(.DebugExceptionVector.text))
-    _DebugExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_int6_text :vector_int6_text_phdr
-  .NMIExceptionVector.literal : ALIGN(4)
-  {
-    _NMIExceptionVector_literal_start = ABSOLUTE(.);
+    _DebugExceptionVector_text_end = .;
+  } >vector_int6_text
+  .NMIExceptionVector.literal : {
+    _NMIExceptionVector_literal_start = .;
     *(.NMIExceptionVector.literal)
-    _NMIExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_int7_lit :vector_int7_lit_phdr
-  .NMIExceptionVector.text : ALIGN(4)
-  {
-    _NMIExceptionVector_text_start = ABSOLUTE(.);
+    _NMIExceptionVector_literal_end = .;
+  } >vector_int7_lit
+  .NMIExceptionVector.text : {
+    _NMIExceptionVector_text_start = .;
     KEEP (*(.NMIExceptionVector.text))
-    _NMIExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_int7_text :vector_int7_text_phdr
-  .KernelExceptionVector.literal : ALIGN(4)
-  {
-    _KernelExceptionVector_literal_start = ABSOLUTE(.);
+    _NMIExceptionVector_text_end = .;
+  } >vector_int7_text
+  .KernelExceptionVector.literal : {
+    _KernelExceptionVector_literal_start = .;
     *(.KernelExceptionVector.literal)
-    _KernelExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_kernel_lit :vector_kernel_lit_phdr
-  .KernelExceptionVector.text : ALIGN(4)
-  {
-    _KernelExceptionVector_text_start = ABSOLUTE(.);
+    _KernelExceptionVector_literal_end = .;
+  } >vector_kernel_lit
+  .KernelExceptionVector.text : {
+    _KernelExceptionVector_text_start = .;
     KEEP (*(.KernelExceptionVector.text))
-    _KernelExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_kernel_text :vector_kernel_text_phdr
-  .UserExceptionVector.literal : ALIGN(4)
-  {
-    _UserExceptionVector_literal_start = ABSOLUTE(.);
+    _KernelExceptionVector_text_end = .;
+  } >vector_kernel_text
+  .UserExceptionVector.literal : {
+    _UserExceptionVector_literal_start = .;
     *(.UserExceptionVector.literal)
-    _UserExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_user_lit :vector_user_lit_phdr
-  .UserExceptionVector.text : ALIGN(4)
-  {
-    _UserExceptionVector_text_start = ABSOLUTE(.);
+    _UserExceptionVector_literal_end = .;
+  } >vector_user_lit
+  .UserExceptionVector.text : {
+    _UserExceptionVector_text_start = .;
     KEEP (*(.UserExceptionVector.text))
-    _UserExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_user_text :vector_user_text_phdr
-  .DoubleExceptionVector.literal : ALIGN(4)
-  {
-    _DoubleExceptionVector_literal_start = ABSOLUTE(.);
+    _UserExceptionVector_text_end = .;
+  } >vector_user_text
+  .DoubleExceptionVector.literal : {
+    _DoubleExceptionVector_literal_start = .;
     *(.DoubleExceptionVector.literal)
-    _DoubleExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_double_lit :vector_double_lit_phdr
-  .DoubleExceptionVector.text : ALIGN(4)
-  {
-    _DoubleExceptionVector_text_start = ABSOLUTE(.);
+    _DoubleExceptionVector_literal_end = .;
+  } >vector_double_lit
+  .DoubleExceptionVector.text : {
+    _DoubleExceptionVector_text_start = .;
     KEEP (*(.DoubleExceptionVector.text))
-    _DoubleExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_double_text :vector_double_text_phdr
+    _DoubleExceptionVector_text_end = .;
+  } >vector_double_text
 
-  .text : ALIGN(4)
-  {
-    _stext = .;
-    _text_start = ABSOLUTE(.);
-    KEEP(*(.MainEntry.text))
-    *(.MainEntry.literal)
-    KEEP (*(.ResetVector.text))
-    *(.ResetVector.literal)
+  .text : {
+    _text_start = .;
     *(.entry.text)
     *(.init.literal)
     *(.iram0.text)
@@ -376,19 +265,17 @@ SECTIONS
     *(.fini.literal)
     KEEP(*(.fini))
     *(.gnu.version)
-    _text_end = ABSOLUTE(.);
-    _etext = .;
-    . = ALIGN(4096);
-  } >ram :ram_phdr
+    _text_end = .;
+  } >ram
 
   .rodata : ALIGN(4096)
   {
-    _rodata_start = ABSOLUTE(.);
+    _rodata_start = .;
     *(.rodata)
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     *(.rodata1)
-    __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
+    __XT_EXCEPTION_TABLE__ = .;
     KEEP (*(.xt_except_table))
     KEEP (*(.gcc_except_table .gcc_except_table.*))
     *(.gnu.linkonce.e.*)
@@ -402,47 +289,42 @@ SECTIONS
     KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
     KEEP (*(SORT(.dtors.*)))
     KEEP (*(.dtors))
-    __XT_EXCEPTION_DESCS__ = ABSOLUTE(.);
+    __XT_EXCEPTION_DESCS__ = .;
     *(.xt_except_desc)
     *(.gnu.linkonce.h.*)
-    __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
+    __XT_EXCEPTION_DESCS_END__ = .;
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    . = ALIGN(4);
-    _bss_table_start = ABSOLUTE(.);
+    _bss_table_start = .;
     LONG(_bss_start)
     LONG(_bss_end)
-    _bss_table_end = ABSOLUTE(.);
-    _rodata_end = ABSOLUTE(.);
-  } >ram :ram_phdr
+    _bss_table_end = .;
+    _rodata_end = .;
+  } >ram
 
-  .module_init : ALIGN(4)
-  {
-    _module_init_start = ABSOLUTE(.);
+  .module_init : {
+    _module_init_start = .;
     *(*.module_init)
-    _module_init_end = ABSOLUTE(.);
-  } >ram :ram_phdr
+    _module_init_end = .;
+  } >ram
 
-#define RAMABLE_REGION ram :ram_phdr
-#define ROMABLE_REGION ram :ram_phdr
+#define RAMABLE_REGION ram
+#define ROMABLE_REGION ram
 #include <linker/common-rom.ld>
 
-  .fw_ready : ALIGN(4)
-  {
+  .fw_ready : {
     KEEP(*(".fw_ready"));
     KEEP (*(.fw_ready_metadata))
-  } >ram :ram_phdr
+  } >ram
 
-  .noinit SEGSTART_UNCACHED : ALIGN(4)
-  {
+  .noinit SEGSTART_UNCACHED : {
     *(.noinit)
     *(.noinit.*)
-  } >ucram :ucram_phdr
+  } >ucram
 
-  .data SEGSTART_UNCACHED : ALIGN(4)
-  {
-    _data_start = ABSOLUTE(.);
+  .data SEGSTART_UNCACHED : {
+    _data_start = .;
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -455,52 +337,53 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
-    . = ALIGN(4096);
+    _trace_ctx_start = ABSOLUTE(.);
+    *(.trace_ctx)
+    _trace_ctx_end = ABSOLUTE(.);
     *(.gna_model)
-    _data_end = ABSOLUTE(.);
-    . = ALIGN(4096);
-  } >ucram :ucram_phdr
+    _data_end = .;
+  } >ucram
 
-  .lit4 SEGSTART_CACHED : ALIGN(4)
-  {
-    _lit4_start = ABSOLUTE(.);
+  .lit4 SEGSTART_CACHED : {
+    _lit4_start = .;
     *(*.lit4)
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
-    _lit4_end = ABSOLUTE(.);
-  } >ram :ram_phdr
+    _lit4_end = .;
+  } >ram
 
-#ifdef CONFIG_KERNEL_COHERENCE
 /* These values need to change in our scheme, where the common-ram
  * sections need to be linked in safe/uncached memory but common-rom
  * wants to use the cache
  */
-  . = SEGSTART_UNCACHED;
-#endif
-
+. = SEGSTART_UNCACHED;
 #undef RAMABLE_REGION
 #undef ROMABLE_REGION
-#define RAMABLE_REGION ucram :ucram_phdr
-#define ROMABLE_REGION ucram :ucram_phdr
+#define RAMABLE_REGION ucram
+#define ROMABLE_REGION ucram
 
 #include <linker/common-ram.ld>
 
-  .tm_clone_table :
-  {
+  .tm_clone_table : {
     *(.tm_clone_table)
-  } >ram :ram_phdr
+  } >ram
 
   /* This section is cached.  By default it contains only declared
   * thread stacks, but applications can put symbols here too.
   */
-  .cached SEGSTART_CACHED :
-  {
+  .cached SEGSTART_CACHED : {
     *(.cached .cached.*)
-  } >ram :ram_phdr
+  } >ram
 
+  /* Rimage requires 4k alignment between "DATA" and "BSS", can't do
+   * this in the section declaration below because we're also changing
+   * cacheability and that leaves a gap in the image large enough for
+   * binutils to decide to warn about (no way to turn that off, it
+   * seems, --warn-section-align is on by default)
+   */
   . = ALIGN(4096);
 
-  .bss SEGSTART_UNCACHED (NOLOAD) : ALIGN(4096)
+  .bss SEGSTART_UNCACHED (NOLOAD) :
   {
     _bss_start = .;
     *(.dynsbss)
@@ -518,107 +401,83 @@ SECTIONS
     *(COMMON)
     . = ALIGN(8);
     _bss_end = .;
-  } >ucram :ucram_phdr
+  } >ucram
 
-#ifdef CONFIG_KERNEL_COHERENCE
+  /* Heap start and end markers.  Mostly unused, though newlib likes them */
   . = SEGSTART_UNCACHED;
-#endif
   _end = ALIGN(8);
-  PROVIDE(end = ALIGN(8));
-
-  /* Re-adjust to the upper mapping for the final symbols below */
-#ifdef CONFIG_KERNEL_COHERENCE
-  . = SEGSTART_CACHED;
-#endif
-  __stack = L2_SRAM_BASE + L2_SRAM_SIZE;
-
-#ifdef CONFIG_KERNEL_COHERENCE
-  . = SEGSTART_UNCACHED;
-#endif
-
-  /* dma buffers */
-  .lpbuf (NOLOAD): ALIGN(4)
-  {
-    _dma_buf_start = ABSOLUTE(.);
-    *(.dma_buffers)
-    _dma_buf_end = ABSOLUTE(.);
-  } >LP_SRAM_REGION
-
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
-#ifdef CONFIG_KERNEL_COHERENCE
   . = SEGSTART_UNCACHED;
-#endif
   _heap_sentry = .;
 
-  .comment  0 :  { *(.comment) }
-  .debug 0 : { *(.debug) }
-  .line 0 : { *(.line) }
-  .debug_srcinfo 0 : { *(.debug_srcinfo) }
-  .debug_sfnames 0 : { *(.debug_sfnames) }
-  .debug_aranges 0 : { *(.debug_aranges) }
-  .debug_pubnames 0 : { *(.debug_pubnames) }
-  .debug_info 0 : { *(.debug_info) }
-  .debug_abbrev 0 : { *(.debug_abbrev) }
-  .debug_line 0 : { *(.debug_line) }
-  .debug_frame 0 : { *(.debug_frame) }
-  .debug_str 0 : { *(.debug_str) }
-  .debug_loc 0 : { *(.debug_loc) }
-  .debug_macinfo 0 : { *(.debug_macinfo) }
-  .debug_weaknames 0 : { *(.debug_weaknames) }
-  .debug_funcnames 0 : { *(.debug_funcnames) }
-  .debug_typenames 0 : { *(.debug_typenames) }
-  .debug_varnames 0 : { *(.debug_varnames) }
-  .debug_ranges  0 :  { *(.debug_ranges) }
-  .xtensa.info  0 :  { *(.xtensa.info) }
-  .xt.insn 0 :
-  {
+  /* dma buffers */
+  .lpbuf (NOLOAD): {
+    _dma_buf_start = .;
+    *(.dma_buffers)
+    _dma_buf_end = .;
+  } >lpram
+
+  /* Non-loadable sections below.  Back to cached memory so
+   * the cache remap script doesn't try to move them around needlessly.
+   */
+  . = SEGSTART_CACHED;
+
+  /* rimage module manifest headers */
+  .module.boot : { KEEP(*(.module.boot)) } >noload
+  .module.main : { KEEP(*(.module.main)) } >noload
+
+ .static_uuid_entries : {
+    *(*.static_uuids)
+  } >noload
+
+  .static_log_entries : {
+    *(*.static_log*)
+  } >noload
+
+  /* This is the "extended manifest" data (mostly versioning stuff)
+   * emitted by SOF and inspected by the kernel driver.  It doesn't
+   * appear directly in the image, but rimage will parse and repack
+   * this into the output file header, so requires this be present
+   * even if empty.  Alignment and padding to 16 bytes is required,
+   * otherwise rimage will complain about the size being wrong (which
+   * sounds like a struct should be declared packed somewhere...)
+   */
+  .fw_metadata : ALIGN(16) {
+    KEEP (*(.fw_metadata))
+    . = ALIGN(16);
+  } >noload
+
+#include <linker/debug-sections.ld>
+
+  .xtensa.info 0 : { *(.xtensa.info) }
+  .xt.insn 0 : {
     KEEP (*(.xt.insn))
     KEEP (*(.gnu.linkonce.x.*))
   }
-  .xt.prop 0 :
-  {
+  .xt.prop 0 : {
     KEEP (*(.xt.prop))
     KEEP (*(.xt.prop.*))
     KEEP (*(.gnu.linkonce.prop.*))
   }
-  .xt.lit 0 :
-  {
+  .xt.lit 0 : {
     KEEP (*(.xt.lit))
     KEEP (*(.xt.lit.*))
     KEEP (*(.gnu.linkonce.p.*))
   }
-  .xt.profile_range 0 :
-  {
+  .xt.profile_range 0 : {
     KEEP (*(.xt.profile_range))
     KEEP (*(.gnu.linkonce.profile_range.*))
   }
-  .xt.profile_ranges 0 :
-  {
+  .xt.profile_ranges 0 : {
     KEEP (*(.xt.profile_ranges))
     KEEP (*(.gnu.linkonce.xt.profile_ranges.*))
   }
-  .xt.profile_files 0 :
-  {
+  .xt.profile_files 0 : {
     KEEP (*(.xt.profile_files))
     KEEP (*(.gnu.linkonce.xt.profile_files.*))
   }
+
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
 #endif
-
- .static_uuid_entries (COPY) : ALIGN(1024)
-  {
-    *(*.static_uuids)
-  } > static_uuid_entries_seg :static_uuid_entries_phdr
-
-  .static_log_entries (COPY) : ALIGN(1024)
-  {
-    *(*.static_log*)
-  } > static_log_entries_seg :static_log_entries_phdr
-
-  .fw_metadata (COPY) : ALIGN(1024)
-  {
-    KEEP (*(.fw_metadata))
-    . = ALIGN(_EXT_MAN_ALIGN_);
-  } >fw_metadata_seg :metadata_entries_phdr
 }

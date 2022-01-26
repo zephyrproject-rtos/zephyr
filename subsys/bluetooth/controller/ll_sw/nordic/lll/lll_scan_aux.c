@@ -18,6 +18,7 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 #include "util/mayfly.h"
 
 #include "pdu.h"
@@ -278,7 +279,8 @@ void lll_scan_aux_isr_aux_setup(void *param)
 
 	/* Setup radio for auxiliary PDU scan */
 	radio_phy_set(phy_aux, PHY_FLAGS_S8);
-	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (phy_aux << 1));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, LL_EXT_OCTETS_RX_MAX,
+			    RADIO_PKT_CONF_PHY(phy_aux));
 	lll_chan_set(aux_ptr->chan_idx);
 
 	radio_pkt_rx_set(node_rx->pdu);
@@ -422,12 +424,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_aux = p->param;
 	lll = ull_scan_aux_lll_parent_get(lll_aux, &is_lll_scan);
 
-	/* Initialize scanning state */
-	lll_aux->state = 0U;
-
-	/* Reset Tx/rx count */
-	trx_cnt = 0U;
-
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* Check if this aux scan is for periodic advertising train */
 	if (!is_lll_scan) {
@@ -455,7 +451,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CENTRAL */
 
 	/* Initialize scanning state */
-	lll->state = 0U;
+	lll_aux->state = 0U;
 
 	/* Reset Tx/rx count */
 	trx_cnt = 0U;
@@ -464,13 +460,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll_aux->tx_pwr_lvl);
+	radio_tx_power_set(lll->tx_pwr_lvl);
 #else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif
 
 	radio_phy_set(lll_aux->phy, PHY_FLAGS_S8);
-	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll_aux->phy << 1));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, LL_EXT_OCTETS_RX_MAX,
+			    RADIO_PKT_CONF_PHY(lll_aux->phy));
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);

@@ -248,7 +248,7 @@ partition.
 
 To upload a new image::
 
-  mcumgr <connection-options> image upload [-n] [-e] [-u] <signed-bin>
+  mcumgr <connection-options> image upload [-n] [-e] [-u] [-w] <signed-bin>
 
 * ``-n``: This option allows uploading a new image to a specific set of images
   in a multi-image system, and is currently only supported by MCUboot when the
@@ -274,7 +274,15 @@ To upload a new image::
    ``mcumgr`` does not understand .hex files, when uploading a new image always
    use the .bin file.
 
-* ``-u``: upgrade only to newer image version.
+* ``-u``: This option allows upgrading only to newer image version.
+
+* ``-w``: This option allows setting the maximum size for the window of outstanding chunks in transit.
+  It is set to 5 by default.
+
+  .. tip::
+
+     If the option is set to a value lower than the default one, for example ``-w 1``, less chunks are transmitted on the window,
+     resulting in lower risk of errors. Conversely, setting a value higher than 5 increases risk of errors and may impact performance.
 
 After an image upload is finished, a new ``image list`` would now have an output
 like this::

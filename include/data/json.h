@@ -528,7 +528,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 	}
 
 /**
- * @brief Parses the JSON-encoded object pointer to by @a json, with
+ * @brief Parses the JSON-encoded object pointed to by @a json, with
  * size @a len, according to the descriptor pointed to by @a descr.
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
@@ -560,6 +560,41 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 int json_obj_parse(char *json, size_t len,
 	const struct json_obj_descr *descr, size_t descr_len,
 	void *val);
+
+/**
+ * @brief Parses the JSON-encoded array pointed to by @a json, with
+ * size @a len, according to the descriptor pointed to by @a descr.
+ * Values are stored in a struct pointed to by @a val.  Set up the
+ * descriptor like this:
+ *
+ *    struct s { int foo; char *bar; }
+ *    struct json_obj_descr descr[] = {
+ *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
+ *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
+ *    };
+ *    struct a { struct s baz[10]; size_t count; }
+ *    struct json_obj_descr array[] = {
+ *       JSON_OBJ_DESCR_OBJ_ARRAY(struct a, baz, 10, count,
+ *                                descr, ARRAY_SIZE(descr)),
+ *    };
+ *
+ * Since this parser is designed for machine-to-machine communications, some
+ * liberties were taken to simplify the design:
+ * (1) strings are not unescaped (but only valid escape sequences are
+ * accepted);
+ * (2) no UTF-8 validation is performed; and
+ * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ *
+ * @param json Pointer to JSON-encoded array to be parsed
+ * @param len Length of JSON-encoded array
+ * @param descr Pointer to the descriptor array
+ * @param val Pointer to the struct to hold the decoded values
+ *
+ * @return 0 if array has been successfully parsed. A negative value
+ * indicates an error (as defined on errno.h).
+ */
+int json_arr_parse(char *json, size_t len,
+	const struct json_obj_descr *descr, void *val);
 
 /**
  * @brief Escapes the string so it can be used to encode JSON objects

@@ -510,7 +510,7 @@ void z_shell_fprintf(const struct shell *sh,
 	__ASSERT_NO_MSG(sh->ctx);
 	__ASSERT_NO_MSG(sh->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
-	__ASSERT(z_flag_panic_mode_get(sh) || !k_is_in_isr(),
+	__ASSERT(z_flag_sync_mode_get(sh) || !k_is_in_isr(),
 		 "Thread context required.");
 
 	va_list args;

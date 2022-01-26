@@ -13,6 +13,8 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_GECKO      gpio_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_IMX        gpio_imx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_ITE_IT8XXX2 gpio_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_MCP23S17   gpio_mcp23s17.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_MCP23XXX   gpio_mcp23xxx.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_MCP23SXX   gpio_mcp23sxx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_MCP230XX   gpio_mcp230xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_MCUX       gpio_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_MCUX_IGPIO gpio_mcux_igpio.c)
@@ -50,7 +52,8 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_NEORV32    gpio_neorv32.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_NCT38XX    gpio_nct38xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_NCT38XX    gpio_nct38xx_port.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_NCT38XX_INTERRUPT gpio_nct38xx_alert.c)
-
+zephyr_library_sources_ifdef(CONFIG_GPIO_TEST       gpio_test.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_GD32       gpio_gd32.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 

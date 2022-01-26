@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -545,43 +545,6 @@
 #define GPCR_PORT_PIN_MODE_PULLUP   BIT(2)
 #define GPCR_PORT_PIN_MODE_PULLDOWN BIT(1)
 
-/**
- *
- * (17XXh) PS/2 Interface Register
- *
- */
-#define PSCTL1			ECREG(EC_REG_BASE_ADDR + 0x1700)
-#define PSCTL2			ECREG(EC_REG_BASE_ADDR + 0x1701)
-#define PSCTL3			ECREG(EC_REG_BASE_ADDR + 0x1702)
-#define PSINT1			ECREG(EC_REG_BASE_ADDR + 0x1704)
-#define PSINT2			ECREG(EC_REG_BASE_ADDR + 0x1705)
-#define PSINT3			ECREG(EC_REG_BASE_ADDR + 0x1706)
-#define PSSTS1			ECREG(EC_REG_BASE_ADDR + 0x1708)
-#define PSSTS2			ECREG(EC_REG_BASE_ADDR + 0x1709)
-#define PSSTS3			ECREG(EC_REG_BASE_ADDR + 0x170A)
-#define PSDAT1			ECREG(EC_REG_BASE_ADDR + 0x170C)
-#define PSDAT2			ECREG(EC_REG_BASE_ADDR + 0x170D)
-#define PSDAT3			ECREG(EC_REG_BASE_ADDR + 0x170E)
-
-/* PS/2 Control Register */
-#define DCEN			BIT(4)
-#define TRMS			BIT(3)
-#define PSHE			BIT(2)
-#define CCLK			BIT(1)
-#define CDAT			BIT(0)
-
-/* PS/2 Interrupt Control Register */
-#define TDIE			BIT(2)
-#define SIE			BIT(1)
-#define SMIE			BIT(0)
-
-/* PS/2 Status Register */
-#define FER			BIT(5)
-#define PER			BIT(4)
-#define TDS			BIT(3)
-#define SS			BIT(2)
-#define CLS			BIT(1)
-#define DLS			BIT(0)
 
 /*
  * IT8XXX2 register structure size/offset checking macro function to mitigate
@@ -1689,6 +1652,11 @@ enum chip_pll_mode {
 #define IT83XX_I2C_RAMH2A(base)		ECREG(base+0x50)
 #define IT83XX_I2C_CMD_ADDH2(base)	ECREG(base+0x52)
 
+/* SMBus/I2C register fields */
+/* 0x07: Time Out Status */
+#define IT8XXX2_I2C_SCL_IN		BIT(2)
+#define IT8XXX2_I2C_SDA_IN		BIT(0)
+
 /* --- General Control (GCTRL) --- */
 #define IT83XX_GCTRL_BASE 0x00F02000
 
@@ -1884,6 +1852,8 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_LRSIWR		BIT(2)
 #define IT8XXX2_GCTRL_LRSIPWRSWTR	BIT(1)
 #define IT8XXX2_GCTRL_LRSIPGWR		BIT(0)
+/* 0x46: Pin Multi-function Enable 3 */
+#define IT8XXX2_GCTRL_SMB3PSEL		BIT(6)
 /* 0x4B: ETWD and UART Control */
 #define IT8XXX2_GCTRL_ETWD_HW_RST_EN	BIT(0)
 /* Accept Port 80h Cycle */
@@ -1905,6 +1875,24 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_HGRST		BIT(3)
 /* bit[2] = 1: Enable global reset. */
 #define IT8XXX2_GCTRL_GRST		BIT(2)
+
+/**
+ *
+ * (22xxh) Battery-backed SRAM (BRAM) registers
+ *
+ */
+#ifndef __ASSEMBLER__
+/* Battery backed RAM indices. */
+#define BRAM_MAGIC_FIELD_OFFSET 0xbc
+enum bram_indices {
+
+	/* This field is used to indicate BRAM is valid or not. */
+	BRAM_IDX_VALID_FLAGS0 = BRAM_MAGIC_FIELD_OFFSET,
+	BRAM_IDX_VALID_FLAGS1,
+	BRAM_IDX_VALID_FLAGS2,
+	BRAM_IDX_VALID_FLAGS3
+};
+#endif /* !__ASSEMBLER__ */
 
 #ifndef __ASSEMBLER__
 /*

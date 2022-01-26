@@ -88,6 +88,7 @@
 			 * compatible = "nordic,nrf-spi" or
 			 *              "nordic,nrf-spis".
 			 */
+			compatible = "nordic,nrf-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;

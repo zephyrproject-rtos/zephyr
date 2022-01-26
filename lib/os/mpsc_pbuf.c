@@ -96,18 +96,6 @@ static inline uint32_t idx_inc(struct mpsc_pbuf_buffer *buffer,
 	return (i >= buffer->size) ? i - buffer->size : i;
 }
 
-static inline uint32_t idx_dec(struct mpsc_pbuf_buffer *buffer,
-				uint32_t idx, uint32_t val)
-{
-	uint32_t i = idx - val;
-
-	if (buffer->flags & MPSC_PBUF_SIZE_POW2) {
-		return idx & (buffer->size - 1);
-	}
-
-	return (i >= buffer->size) ? i + buffer->size : i;
-}
-
 static inline uint32_t get_skip(union mpsc_pbuf_generic *item)
 {
 	if (item->hdr.busy && !item->hdr.valid) {
@@ -444,18 +432,19 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 }
 
 void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
-		     union mpsc_pbuf_generic *item)
+		     const union mpsc_pbuf_generic *item)
 {
 	uint32_t wlen = buffer->get_wlen(item);
 	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
+	union mpsc_pbuf_generic *witem = (union mpsc_pbuf_generic *)item;
 
-	item->hdr.valid = 0;
+	witem->hdr.valid = 0;
 	if (!(buffer->flags & MPSC_PBUF_MODE_OVERWRITE) ||
 		 ((uint32_t *)item == &buffer->buf[buffer->rd_idx])) {
-		item->hdr.busy = 0;
+		witem->hdr.busy = 0;
 		buffer->rd_idx = idx_inc(buffer, buffer->rd_idx, wlen);
 	} else {
-		item->skip.len = wlen;
+		witem->skip.len = wlen;
 	}
 	MPSC_PBUF_DBG(buffer, "freed: %p ", item);
 

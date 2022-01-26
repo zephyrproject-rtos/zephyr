@@ -49,16 +49,6 @@ struct spi_nrfx_config {
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
 
-static inline struct spi_nrfx_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct spi_nrfx_config *get_dev_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 static inline nrf_spim_frequency_t get_nrf_spim_frequency(uint32_t frequency)
 {
 	/* Get the highest supported frequency not exceeding the requested one.
@@ -121,8 +111,8 @@ static inline nrf_spim_bit_order_t get_nrf_spim_bit_order(uint16_t operation)
 static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
-	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_context *ctx = &dev_data->ctx;
 	uint32_t max_freq = dev_config->max_freq;
 	nrfx_spim_config_t config;
@@ -217,8 +207,8 @@ static int configure(const struct device *dev,
  */
 static void anomaly_58_workaround_setup(const struct device *dev)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
-	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	NRF_SPIM_Type *spim = dev_config->spim.p_reg;
 	uint32_t ppi_ch = dev_data->ppi_ch;
 	uint32_t gpiote_ch = dev_data->gpiote_ch;
@@ -257,8 +247,8 @@ static void anomaly_58_workaround_clear(struct spi_nrfx_data *dev_data)
 
 static int anomaly_58_workaround_init(const struct device *dev)
 {
-	struct spi_nrfx_data *data = get_dev_data(dev);
-	const struct spi_nrfx_config *config = get_dev_config(dev);
+	struct spi_nrfx_data *data = dev->data;
+	const struct spi_nrfx_config *config = dev->config;
 	nrfx_err_t err_code;
 
 	data->anomaly_58_workaround_active = false;
@@ -285,8 +275,8 @@ static int anomaly_58_workaround_init(const struct device *dev)
 
 static void transfer_next_chunk(const struct device *dev)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
-	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_context *ctx = &dev_data->ctx;
 	int error = 0;
 
@@ -370,7 +360,7 @@ static int transceive(const struct device *dev,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
 	int error;
 
 	spi_context_lock(&dev_data->ctx, asynchronous, signal, spi_cfg);
@@ -414,7 +404,7 @@ static int spi_nrfx_transceive_async(const struct device *dev,
 static int spi_nrfx_release(const struct device *dev,
 			    const struct spi_config *spi_cfg)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
 
 	if (!spi_context_configured(&dev_data->ctx, spi_cfg)) {
 		return -EINVAL;
@@ -442,8 +432,8 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
 	int ret = 0;
-	struct spi_nrfx_data *data = get_dev_data(dev);
-	const struct spi_nrfx_config *config = get_dev_config(dev);
+	struct spi_nrfx_data *data = dev->data;
+	const struct spi_nrfx_config *config = dev->config;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -500,15 +490,16 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
+		struct spi_nrfx_data *data = dev->data;                        \
 		int err;                                                       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
-		err = spi_context_cs_configure_all(&get_dev_data(dev)->ctx);   \
+		err = spi_context_cs_configure_all(&data->ctx);                \
 		if (err < 0) {                                                 \
 			return err;                                            \
 		}                                                              \
-		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
+		spi_context_unlock_unconditionally(&data->ctx);                \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 		(return anomaly_58_workaround_init(dev);),		       \
 		(return 0;))						       \
@@ -541,7 +532,7 @@ static int spim_nrfx_pm_action(const struct device *dev,
 	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPIM(idx),					       \
 		      spi_##idx##_init,					       \
-		      PM_DEVICE_DT_REF(SPIM(idx)),			       \
+		      PM_DEVICE_DT_GET(SPIM(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \

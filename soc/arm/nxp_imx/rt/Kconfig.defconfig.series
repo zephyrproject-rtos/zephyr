@@ -69,6 +69,13 @@ endchoice
 
 endif
 
+# set the tick per sec as a divider of the GPT clock source
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if MCUX_GPT_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if MCUX_GPT_TIMER
+
 if COUNTER
 
 config COUNTER_MCUX_GPT
@@ -87,6 +94,10 @@ config ADC_MCUX_LPADC
 config WDT_MCUX_IMX_WDOG
 	default y
 	depends on WATCHDOG
+
+config PM_MCUX_GPC
+	default y if HAS_MCUX_GPC
+	depends on SOC_SERIES_IMX_RT11XX && PM
 
 if CODE_SEMC
 

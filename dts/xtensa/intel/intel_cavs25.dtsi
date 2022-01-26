@@ -47,7 +47,7 @@
 	sram1: memory@be800000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0xbe800000 DT_SIZE_K(128)>;
+		reg = <0xbe800000 DT_SIZE_K(64)>;
 	};
 
 	soc {
@@ -119,6 +119,11 @@
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
 			interrupt-parent = <&cavs0>;
+		};
+
+		tlb: tlb@3000 {
+			compatible = "intel,adsp-tlb";
+			reg = <0x3000 0x1000>;
 		};
 	};
 };

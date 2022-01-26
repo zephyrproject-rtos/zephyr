@@ -1,13 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# In order to ensure that the armlink symbol name is correctly passed to
-# gen_handles.py, we must first ensure that it is properly escaped.
-# For Python to work, the `$` must be passed as `\$` on command line.
-# In order to pass a single `\` to command line it must first be escaped, that is `\\`.
-# In ninja build files, a `$` is not accepted but must be passed as `$$`.
-# CMake, Python and Ninja combined results in `\\$$` in order to pass a sing `\$` to Python,
-# so `$$` thus becomes: `\\$$\\$$`.
-set_property(TARGET linker PROPERTY devices_start_symbol "Image\\$$\\$$device\\$$\\$$Base")
+set_property(TARGET linker PROPERTY devices_start_symbol "Image$$device$$Base")
 
 find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
@@ -30,8 +23,9 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   set(STEERING_C)
   set(STEERING_FILE_ARG)
   set(STEERING_C_ARG)
+  set(linker_pass_define_list ${linker_pass_define})
 
-  if("LINKER_ZEPHYR_FINAL" IN_LIST "${linker_pass_define}")
+  if("LINKER_ZEPHYR_FINAL" IN_LIST linker_pass_define_list)
     set(STEERING_FILE ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.steer)
     set(STEERING_C ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.c)
     set(STEERING_FILE_ARG "-DSTEERING_FILE=${STEERING_FILE}")
@@ -55,7 +49,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       -P ${ZEPHYR_BASE}/cmake/linker/armlink/scatter_script.cmake
   )
 
-  if("LINKER_ZEPHYR_FINAL" IN_LIST "${linker_pass_define}")
+  if("LINKER_ZEPHYR_FINAL" IN_LIST linker_pass_define_list)
     add_library(armlink_steering OBJECT ${STEERING_C})
     target_link_libraries(armlink_steering PRIVATE zephyr_interface)
   endif()
@@ -120,8 +114,6 @@ function(toolchain_ld_link_elf)
   )
 endfunction(toolchain_ld_link_elf)
 
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_base.cmake)
-#include(${ZEPHYR_BASE}/cmake/linker/ld/target_baremetal.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)

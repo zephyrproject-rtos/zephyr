@@ -51,7 +51,6 @@ extern void __printk_hook_install(int (*fn)(int));
 
 /**
  * @brief Install printk/stdout hook for Xtensa Simulator console output
- * @return N/A
  */
 static void xt_sim_console_hook_install(void)
 {

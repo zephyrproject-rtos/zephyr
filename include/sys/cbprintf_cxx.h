@@ -11,6 +11,7 @@
 /* C++ version for detecting a pointer to a string. */
 static inline int z_cbprintf_cxx_is_pchar(char *, bool const_as_fixed)
 {
+	ARG_UNUSED(const_as_fixed);
 	return 1;
 }
 
@@ -57,6 +58,7 @@ static inline int z_cbprintf_cxx_is_pchar(const volatile wchar_t *, bool const_a
 template < typename T >
 static inline int z_cbprintf_cxx_is_pchar(T arg, bool const_as_fixed)
 {
+	ARG_UNUSED(arg);
 	_Pragma("GCC diagnostic push")
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
 	ARG_UNUSED(const_as_fixed);

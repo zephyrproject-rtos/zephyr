@@ -1,7 +1,17 @@
 sample:
   name: syst sample
 tests:
-  sample.logger.syst:
+  sample.logger.syst.v1:
+    platform_allow: mps2_an385 sam_e70_xplained
+    tags: logging
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG1=y
+  sample.logger.syst.v2.deferred:
     platform_allow: mps2_an385 sam_e70_xplained
     tags: logging
     harness: console

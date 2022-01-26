@@ -14,8 +14,6 @@
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(i2s_litex);
-#define DEV_CFG(dev) ((struct i2s_litex_cfg *const)(dev)->config)
-#define DEV_DATA(dev) ((struct i2s_litex_data *const)(dev)->data)
 
 #define MODULO_INC(val, max)                                                   \
 	{					                               \
@@ -26,8 +24,6 @@ LOG_MODULE_REGISTER(i2s_litex);
  * @brief Enable i2s device
  *
  * @param reg base register of device
- *
- * @return N/A
  */
 static void i2s_enable(uintptr_t reg)
 {
@@ -40,8 +36,6 @@ static void i2s_enable(uintptr_t reg)
  * @brief Disable i2s device
  *
  * @param reg base register of device
- *
- * @return N/A
  */
 static void i2s_disable(uintptr_t reg)
 {
@@ -54,8 +48,6 @@ static void i2s_disable(uintptr_t reg)
  * @brief Reset i2s fifo
  *
  * @param reg base register of device
- *
- * @return N/A
  */
 static void i2s_reset_fifo(uintptr_t reg)
 {
@@ -120,8 +112,6 @@ static uint32_t i2s_get_audio_freq(uintptr_t reg)
  *
  * @param reg base register of device
  * @param irq_type irq type to be enabled one of I2S_EV_READY or I2S_EV_ERROR
- *
- * @return N/A
  */
 static void i2s_irq_enable(uintptr_t reg, int irq_type)
 {
@@ -137,8 +127,6 @@ static void i2s_irq_enable(uintptr_t reg, int irq_type)
  *
  * @param reg base register of device
  * @param irq_type irq type to be disabled one of I2S_EV_READY or I2S_EV_ERROR
- *
- * @return N/A
  */
 static void i2s_irq_disable(uintptr_t reg, int irq_type)
 {
@@ -153,8 +141,6 @@ static void i2s_irq_disable(uintptr_t reg, int irq_type)
  * @brief Clear all pending irqs
  *
  * @param reg base register of device
- *
- * @return N/A
  */
 static void i2s_clear_pending_irq(uintptr_t reg)
 {
@@ -164,16 +150,15 @@ static void i2s_clear_pending_irq(uintptr_t reg)
 }
 
 /**
- * @brief fast data copy function,
- * each operation copies 32 bit data chunks
+ * @brief Fast data copy function
+ *
+ * Each operation copies 32 bit data chunks
  * This function copies data from fifo into user buffer
  *
  * @param dst memory destination where fifo data will be copied to
  * @param size amount of data to be copied
  * @param sample_width width of signle sample in bits
  * @param channels number of received channels
- *
- * @return N/A
  */
 static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
 			       int channels)
@@ -218,16 +203,15 @@ static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
 }
 
 /**
- * @brief fast data copy function,
- * each operation copies 32 bit data chunks
+ * @brief Fast data copy function
+ *
+ * Each operation copies 32 bit data chunks
  * This function copies data from user buffer into fifo
  *
  * @param src memory from which data will be copied to fifo
  * @param size amount of data to be copied in bytes
  * @param sample_width width of signle sample in bits
  * @param channels number of received channels
- *
- * @return N/A
  */
 static void i2s_copy_to_fifo(uint8_t *src, size_t size, int sample_width,
 			     int channels)
@@ -322,8 +306,8 @@ static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
 
 static int i2s_litex_initialize(const struct device *dev)
 {
-	struct i2s_litex_cfg *cfg = DEV_CFG(dev);
-	struct i2s_litex_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_litex_cfg *cfg = dev->config;
+	struct i2s_litex_data *const dev_data = dev->data;
 
 	k_sem_init(&dev_data->rx.sem, 0, CONFIG_I2S_LITEX_RX_BLOCK_COUNT);
 	k_sem_init(&dev_data->tx.sem, CONFIG_I2S_LITEX_TX_BLOCK_COUNT - 1,
@@ -336,8 +320,8 @@ static int i2s_litex_initialize(const struct device *dev)
 static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 			       const struct i2s_config *i2s_cfg)
 {
-	struct i2s_litex_data *const dev_data = DEV_DATA(dev);
-	const struct i2s_litex_cfg *const cfg = DEV_CFG(dev);
+	struct i2s_litex_data *const dev_data = dev->data;
+	const struct i2s_litex_cfg *const cfg = dev->config;
 	struct stream *stream;
 	int channels_concatenated;
 	int dev_audio_freq = i2s_get_audio_freq(cfg->base);
@@ -445,7 +429,7 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 static int i2s_litex_read(const struct device *dev, void **mem_block,
 			  size_t *size)
 {
-	struct i2s_litex_data *const dev_data = DEV_DATA(dev);
+	struct i2s_litex_data *const dev_data = dev->data;
 	int ret;
 
 	if (dev_data->rx.state == I2S_STATE_NOT_READY) {
@@ -465,8 +449,8 @@ static int i2s_litex_read(const struct device *dev, void **mem_block,
 static int i2s_litex_write(const struct device *dev, void *mem_block,
 			   size_t size)
 {
-	struct i2s_litex_data *const dev_data = DEV_DATA(dev);
-	const struct i2s_litex_cfg *cfg = DEV_CFG(dev);
+	struct i2s_litex_data *const dev_data = dev->data;
+	const struct i2s_litex_cfg *cfg = dev->config;
 	int ret;
 
 	if (dev_data->tx.state != I2S_STATE_RUNNING &&
@@ -496,8 +480,8 @@ static int i2s_litex_write(const struct device *dev, void *mem_block,
 static int i2s_litex_trigger(const struct device *dev, enum i2s_dir dir,
 			     enum i2s_trigger_cmd cmd)
 {
-	struct i2s_litex_data *const dev_data = DEV_DATA(dev);
-	const struct i2s_litex_cfg *const cfg = DEV_CFG(dev);
+	struct i2s_litex_data *const dev_data = dev->data;
+	const struct i2s_litex_cfg *const cfg = dev->config;
 	struct stream *stream;
 
 	if (dir == I2S_DIR_RX) {
@@ -554,8 +538,9 @@ static inline void clear_rx_fifo(const struct i2s_litex_cfg *cfg)
 static void i2s_litex_isr_rx(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct i2s_litex_cfg *cfg = DEV_CFG(dev);
-	struct stream *stream = &DEV_DATA(dev)->rx;
+	const struct i2s_litex_cfg *cfg = dev->config;
+	struct i2s_litex_data *data = dev->data;
+	struct stream *stream = &data->rx;
 	int ret;
 
 	/* Prepare to receive the next data block */
@@ -585,9 +570,10 @@ static void i2s_litex_isr_rx(void *arg)
 static void i2s_litex_isr_tx(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct i2s_litex_cfg *cfg = DEV_CFG(dev);
+	const struct i2s_litex_cfg *cfg = dev->config;
+	struct i2s_litex_data *data = dev->data;
 	size_t mem_block_size;
-	struct stream *stream = &DEV_DATA(dev)->tx;
+	struct stream *stream = &data->tx;
 	int ret;
 
 	ret = queue_get(&stream->mem_block_queue, &stream->mem_block,

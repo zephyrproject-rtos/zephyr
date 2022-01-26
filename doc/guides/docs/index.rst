@@ -261,7 +261,21 @@ or invoke make with the following target::
    # To generate HTML output without detailed Kconfig
    make html-fast
 
+Linking external Doxygen projects against Zephyr
+************************************************
+
+External projects that build upon Zephyr functionality and wish to refer to
+Zephyr documentation in Doxygen (through the use of @ref), can utilize the
+tag file exported at `zephyr.tag </doxygen/html/zephyr.tag>`_
+
+Once downloaded, the tag file can be used in a custom ``doxyfile.in`` as follows::
+
+   TAGFILES = "/path/to/zephyr.tag=https://docs.zephyrproject.org/latest/doxygen/html/"
+
+For additional information refer to `Doxygen External Documentation`_.
+
 
 .. _reStructuredText: http://sphinx-doc.org/rest.html
 .. _Sphinx: http://sphinx-doc.org/
 .. _Windows Python Path: https://docs.python.org/3/using/windows.html#finding-the-python-executable
+.. _Doxygen External Documentation: https://www.doxygen.nl/manual/external.html

@@ -264,8 +264,8 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 		.completion_sync = Z_SEM_INITIALIZER(                          \
 			rv32m1_lpi2c_##id##_data.completion_sync, 0, 1),       \
 	};                                                                     \
-	DEVICE_DT_INST_DEFINE(id,                                              \
-			    &rv32m1_lpi2c_init,                                \
+	I2C_DEVICE_DT_INST_DEFINE(id,                                          \
+			    rv32m1_lpi2c_init,                                 \
 			    NULL,                                              \
 			    &rv32m1_lpi2c_##id##_data,                         \
 			    &rv32m1_lpi2c_##id##_config,                       \

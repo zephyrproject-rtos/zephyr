@@ -12,6 +12,12 @@
 /* @brief Min supported length of antenna switching pattern */
 #define LLL_DF_MIN_ANT_PATTERN_LEN 3
 
+/* @brief Mactros to name constants informing where CTEInfo may be found within a PDU depending on
+ * a PDU type.
+ */
+#define CTE_INFO_IN_S1_BYTE true
+#define CTE_INFO_IN_PAYLOAD false
+
 /* @brief Macro to convert length of CTE to [us] */
 #define CTE_LEN_US(n) ((n) * 8U)
 
@@ -60,7 +66,7 @@ struct lll_df_adv_cfg {
 #define IQ_SAMPLE_CNT (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define RSSI_DBM_TO_DECI_DBM(x) (-(x) * 10)
-#define IQ_SHIFT_12_TO_8_BIT(x) ((x) >> 4)
+#define IQ_SHIFT_12_TO_8_BIT(x) ((int8_t)((x) >> 4))
 
 /* Structure to store an single IQ sample */
 struct iq_sample {
@@ -88,7 +94,7 @@ struct node_rx_iq_report {
  */
 struct lll_df_sync_cfg {
 	uint8_t is_enabled:1;
-	uint8_t slot_durations:2; /* One of possible values: 1us, 2us. */
+	uint8_t slot_durations:2; /* Bit field where: BIT(0) is 1us, BIT(1) is 2us. */
 	uint8_t max_cte_count:5;  /* Max number of received CTEs. */
 	uint8_t cte_count:5;      /* Received CTEs count. */
 	uint8_t ant_sw_len:7;
@@ -102,26 +108,32 @@ struct lll_df_sync {
 	struct lll_df_sync_cfg cfg[DOUBLE_BUFFER_SIZE];
 };
 
-/* Names for allowed states for CTE sampling in connected mode */
-enum df_cte_sampling_state {
-	DF_CTE_SAMPLING_UNINITIALIZED,
-	DF_CTE_SAMPLING_ENABLED,
-	DF_CTE_SAMPLING_DISABLED,
-};
-
 /* Parameters for reception of Constant Tone Extension in connected mode */
 struct lll_df_conn_rx_params {
-	uint8_t state : 2;
-	uint8_t slot_durations : 2; /* One of possible values: 1 us, 2 us. */
-	uint8_t ant_sw_len : 7;
+	uint8_t is_enabled:1;
+	uint8_t ant_sw_len:7;
 	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+	uint8_t slot_durations:2; /* Bit field where: BIT(0) is 1us, BIT(1) is 2us. */
+};
+
+/* Double buffer to store receive and sampling configuration for connected mode */
+struct lll_df_conn_rx_cfg {
+	/* Stores information if the RX configuration was set at least once.
+	 * It is required for handling HCI_LE_Connection_CTE_Request_Enable HCI command.
+	 * See BT 5.3 Core specification Vol 4, Part E, sec. 7.8.85.
+	 */
+	uint8_t is_initialized:1;
+	/* Channel is set only once for a connection vent. The information will be used during CTE
+	 * RX configuration by ISR handlers.
+	 */
+	uint8_t chan:6;
+	/* Double buffer header must be placed just before memory for the buffer. */
+	struct dbuf_hdr hdr;
+	struct lll_df_conn_rx_params params[DOUBLE_BUFFER_SIZE];
 };
 
 /* @brief Structure to store data required to prepare LE Connection IQ Report event or LE
  * Connectionless IQ Report event.
- *
- * TODO (ppryga): use struct cte_conn_iq_report in connected mode. Members are exactly the same as
- * members of node_rx_iq_report except hdr.
  */
 struct cte_conn_iq_report {
 	struct pdu_cte_info cte_info;
@@ -133,4 +145,17 @@ struct cte_conn_iq_report {
 		uint8_t pdu[0] __aligned(4);
 		struct iq_sample sample[0];
 	};
+};
+
+/* Configuration for transmission of Constant Tone Extension in connected mode */
+struct lll_df_conn_tx_cfg {
+	/* Stores information if the TX configuration was set at least once.
+	 * It is required for handling HCI_LE_Connection_CTE_Response_Enable HCI command.
+	 * See BT 5.3 Core specification Vol 4, Part E, sec. 7.8.86.
+	 */
+	uint8_t is_initialized:1;
+	uint8_t ant_sw_len:7;
+	uint8_t cte_rsp_en:1; /* CTE response is enabled */
+	uint8_t cte_types_allowed:3; /* Bitfield with allowed CTE types */
+	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
 };

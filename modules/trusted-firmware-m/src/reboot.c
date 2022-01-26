@@ -22,8 +22,6 @@
  * the weak implementation of sys_arch_reboot() in scb.c.
  *
  * \pre The implementation requires the TFM_PARTITION_PLATFORM be defined.
- *
- * @return N/A
  */
 
 #if defined(CONFIG_TFM_PARTITION_PLATFORM)

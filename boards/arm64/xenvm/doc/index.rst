@@ -78,16 +78,15 @@ configuration by altering device tree and Kconfig options. This will be covered
 in detail in next section.
 
 Most of Xen-specific features are not supported at the moment. This includes:
-
-* Xen Enlighten memory page (under development)
-* XenBus
-* Xen event channels (under development)
-* Xen grant tables
+* XenBus (under development)
+* Xen grant tables (under development)
 * Xen PV drivers
 
 Now only following features are supported:
-* Xen PV console (UART-like driver with poll API, IRQ driven is under development)
-* Xen early console_io interface (mainly for debug purposes)
+* Xen Enlighten memory page
+* Xen event channels (currently only pre-defined - PV console, Xenbus)
+* Xen PV console (2 versions: regular ring buffer based for DomU and consoleio for Dom0)
+* Xen early console_io interface (mainly for debug purposes - requires debug version of Xen)
 
 Building and Running
 ********************

@@ -75,13 +75,9 @@ struct uart_cmsdk_apb_dev_data {
 	const struct arm_clock_control_t uart_cc_dss;
 };
 
-/* convenience defines */
-#define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct uart_cmsdk_apb_dev_data * const)(dev)->data)
 #define UART_STRUCT(dev) \
-	((volatile struct uart_cmsdk_apb *)(DEV_CFG(dev))->base)
+	((volatile struct uart_cmsdk_apb *) \
+	 ((const struct uart_device_config * const)(dev)->config)->base)
 
 static const struct uart_driver_api uart_cmsdk_apb_driver_api;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -94,14 +90,12 @@ static void uart_cmsdk_apb_isr(const struct device *dev);
  * This routine set the given baud rate for the UART.
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void baudrate_set(const struct device *dev)
 {
 	volatile struct uart_cmsdk_apb *uart = UART_STRUCT(dev);
-	const struct uart_device_config * const dev_cfg = DEV_CFG(dev);
-	struct uart_cmsdk_apb_dev_data *const dev_data = DEV_DATA(dev);
+	const struct uart_device_config * const dev_cfg = dev->config;
+	struct uart_cmsdk_apb_dev_data *const dev_data = dev->data;
 	/*
 	 * If baudrate and/or sys_clk_freq are 0 the configuration remains
 	 * unchanged. It can be useful in case that Zephyr it is run via
@@ -127,7 +121,7 @@ static int uart_cmsdk_apb_init(const struct device *dev)
 {
 	volatile struct uart_cmsdk_apb *uart = UART_STRUCT(dev);
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	const struct uart_device_config * const dev_cfg = DEV_CFG(dev);
+	const struct uart_device_config * const dev_cfg = dev->config;
 #endif
 
 #ifdef CONFIG_CLOCK_CONTROL
@@ -135,7 +129,7 @@ static int uart_cmsdk_apb_init(const struct device *dev)
 	const struct device *clk =
 		device_get_binding(CONFIG_ARM_CLOCK_CONTROL_DEV_NAME);
 
-	struct uart_cmsdk_apb_dev_data * const data = DEV_DATA(dev);
+	struct uart_cmsdk_apb_dev_data * const data = dev->data;
 
 #ifdef CONFIG_SOC_SERIES_BEETLE
 	clock_control_on(clk, (clock_control_subsys_t *) &data->uart_cc_as);
@@ -275,8 +269,6 @@ static int uart_cmsdk_apb_fifo_read(const struct device *dev,
  * @brief Enable TX interrupt
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
 {
@@ -300,8 +292,6 @@ static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
  * @brief Disable TX interrupt
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_cmsdk_apb_irq_tx_disable(const struct device *dev)
 {
@@ -326,8 +316,6 @@ static int uart_cmsdk_apb_irq_tx_ready(const struct device *dev)
  * @brief Enable RX interrupt
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_cmsdk_apb_irq_rx_enable(const struct device *dev)
 {
@@ -338,8 +326,6 @@ static void uart_cmsdk_apb_irq_rx_enable(const struct device *dev)
  * @brief Disable RX interrupt
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_cmsdk_apb_irq_rx_disable(const struct device *dev)
 {
@@ -376,8 +362,6 @@ static int uart_cmsdk_apb_irq_rx_ready(const struct device *dev)
  * @brief Enable error interrupt
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_cmsdk_apb_irq_err_enable(const struct device *dev)
 {
@@ -388,8 +372,6 @@ static void uart_cmsdk_apb_irq_err_enable(const struct device *dev)
  * @brief Disable error interrupt
  *
  * @param dev UART device struct
- *
- * @return N/A
  */
 static void uart_cmsdk_apb_irq_err_disable(const struct device *dev)
 {
@@ -425,15 +407,15 @@ static int uart_cmsdk_apb_irq_update(const struct device *dev)
  *
  * @param dev UART device structure
  * @param cb Callback function pointer.
- *
- * @return N/A
  */
 static void uart_cmsdk_apb_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
 					    void *cb_data)
 {
-	DEV_DATA(dev)->irq_cb = cb;
-	DEV_DATA(dev)->irq_cb_data = cb_data;
+	struct uart_cmsdk_apb_dev_data *data = dev->data;
+
+	data->irq_cb = cb;
+	data->irq_cb_data = cb_data;
 }
 
 /**
@@ -442,12 +424,10 @@ static void uart_cmsdk_apb_irq_callback_set(const struct device *dev,
  * Calls the callback function, if exists.
  *
  * @param arg argument to interrupt service routine.
- *
- * @return N/A
  */
 void uart_cmsdk_apb_isr(const struct device *dev)
 {
-	struct uart_cmsdk_apb_dev_data *data = DEV_DATA(dev);
+	struct uart_cmsdk_apb_dev_data *data = dev->data;
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {

@@ -33,13 +33,6 @@ struct i2c_eeprom_slave_config {
 	uint8_t *buffer;
 };
 
-/* convenience defines */
-#define DEV_CFG(dev)							\
-	((const struct i2c_eeprom_slave_config * const)			\
-		(dev)->config)
-#define DEV_DATA(dev)							\
-	((struct i2c_eeprom_slave_data * const)(dev)->data)
-
 int eeprom_slave_program(const struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length)
 {
@@ -186,8 +179,8 @@ static const struct i2c_slave_callbacks eeprom_callbacks = {
 
 static int i2c_eeprom_slave_init(const struct device *dev)
 {
-	struct i2c_eeprom_slave_data *data = DEV_DATA(dev);
-	const struct i2c_eeprom_slave_config *cfg = DEV_CFG(dev);
+	struct i2c_eeprom_slave_data *data = dev->data;
+	const struct i2c_eeprom_slave_config *cfg = dev->config;
 
 	data->i2c_controller =
 		device_get_binding(cfg->controller_dev_name);

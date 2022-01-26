@@ -85,6 +85,7 @@ extern "C" {
 
 void imxrt_usdhc_pinmux(uint16_t nusdhc,
 	bool init, uint32_t speed, uint32_t strength);
+void imxrt_usdhc_dat3_pull(bool pullup);
 
 #endif
 

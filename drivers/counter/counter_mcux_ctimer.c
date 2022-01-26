@@ -132,6 +132,29 @@ static uint32_t mcux_lpc_ctimer_get_top_value(const struct device *dev)
 	return config->info.max_top_value;
 }
 
+static uint32_t mcux_lpc_ctimer_get_freq(const struct device *dev)
+{
+	/*
+	 * The frequency of the timer is not known at compile time so we need to
+	 * calculate at runtime when the frequency is known.
+	 */
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+
+	uint32_t clk_freq = 0;
+
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+					&clk_freq)) {
+		LOG_ERR("unable to get clock frequency");
+		return 0;
+	}
+
+	/* prescale increments when the prescale counter is 0 so if prescale is 1
+	 * the counter is incremented every 2 cycles of the clock so will actually
+	 * divide by 2 hence the addition of 1 to the value here.
+	 */
+	return (clk_freq / (config->prescale + 1));
+}
+
 static void mcux_lpc_ctimer_isr(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
@@ -161,31 +184,10 @@ static void mcux_lpc_ctimer_isr(const struct device *dev)
 
 static int mcux_lpc_ctimer_init(const struct device *dev)
 {
-	/*
-	 * The frequency of the timer is not known at compile time so we need to
-	 * modify the timer's config in the init function at runtime when the
-	 * frequency is known.
-	 */
-	struct mcux_lpc_ctimer_config *config = (struct mcux_lpc_ctimer_config *)dev->config;
+	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
 
 	ctimer_config_t ctimer_config;
-
-	uint32_t clk_freq = 0;
-
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&clk_freq)) {
-		LOG_ERR("unable to get clock frequency");
-		return -EINVAL;
-	}
-
-	/* prescale increments when the prescale counter is 0 so if prescale is 1
-	 * the counter is incremented every 2 cycles of the clock so will actually
-	 * divide by 2 hence the addition of 1 to the value here.
-	 */
-	uint32_t freq = clk_freq / (config->prescale + 1);
-
-	config->info.freq = freq;
 
 	for (uint8_t chan = 0; chan < NUM_CHANNELS; chan++) {
 		data->channels[chan].alarm_callback = NULL;
@@ -214,6 +216,7 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 	.set_top_value = mcux_lpc_ctimer_set_top_value,
 	.get_pending_int = mcux_lpc_ctimer_get_pending_int,
 	.get_top_value = mcux_lpc_ctimer_get_top_value,
+	.get_freq = mcux_lpc_ctimer_get_freq,
 };
 
 #define COUNTER_LPC_CTIMER_DEVICE(id)                                                              \
@@ -221,7 +224,6 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 	static struct mcux_lpc_ctimer_config mcux_lpc_ctimer_config_##id = { \
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
-			.freq = 1,					\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 			.channels = NUM_CHANNELS,					\
 		},\

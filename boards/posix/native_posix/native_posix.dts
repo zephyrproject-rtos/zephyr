@@ -21,6 +21,8 @@
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flashcontroller0;
 		zephyr,ec-host-interface = &hcp;
+		zephyr,display = &sdl_dc;
+		zephyr,canbus = &can_loopback0;
 	};
 
 	aliases {
@@ -35,6 +37,16 @@
 		led0: led_0 {
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "zephyr,native-posix-cpu";
+			reg = <0>;
 		};
 	};
 
@@ -175,5 +187,21 @@
 	zephyr_udc0: udc0 {
 		compatible = "zephyr,native-posix-udc";
 		label = "USBD";
+	};
+
+	sdl_dc: sdl_dc {
+		compatible = "zephyr,sdl-dc";
+		label = "SDL display controller";
+		height = <240>;
+		width = <320>;
+	};
+
+	can_loopback0: can_loopback0 {
+		status = "disabled";
+		compatible = "zephyr,can-loopback";
+		label = "CAN_LOOPBACK_0";
+		sjw = <1>;
+		sample-point = <875>;
+		bus-speed = <125000>;
 	};
 };

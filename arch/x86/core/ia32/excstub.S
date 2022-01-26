@@ -45,8 +45,6 @@
  * created by this routine to determine the locations of volatile registers.
  * These tools must be updated to reflect any changes to the stack frame.
  *
- * @return N/A
- *
  * C function prototype:
  *
  * void _exception_enter(uint32_t error_code, void *handler)

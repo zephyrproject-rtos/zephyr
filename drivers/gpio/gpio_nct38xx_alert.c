@@ -140,7 +140,7 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_
 		.nct38xx_num = DT_INST_PROP_LEN(inst, nct38xx_dev),                                \
 	};                                                                                         \
 	static struct nct38xx_alert_data nct38xx_alert_data_##inst = {                             \
-		.alert_dev = DEVICE_DT_GET(DT_DRV_INST(inst)),                                     \
+		.alert_dev = DEVICE_DT_INST_GET(inst),                                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, nct38xx_alert_init, NULL, &nct38xx_alert_data_##inst,          \
 			      &nct38xx_alert_cfg_##inst, POST_KERNEL,                              \

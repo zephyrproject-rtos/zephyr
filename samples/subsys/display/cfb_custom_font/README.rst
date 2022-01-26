@@ -32,7 +32,7 @@ directory:
 Example building for the reel_board with SSD16XX display support:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/display/cfb_custom_font
+   :zephyr-app: samples/subsys/display/cfb_custom_font
    :host-os: unix
    :board: reel_board
    :goals: flash

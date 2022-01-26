@@ -12,6 +12,11 @@ config LOG_BACKEND_UART
 
 if LOG_BACKEND_UART
 
+config LOG_BACKEND_UART_ASYNC
+	bool "Use UART Asynchronous API"
+	depends on UART_ASYNC_API
+	depends on !LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
+
 config LOG_BACKEND_UART_OUTPUT_DICTIONARY
 	bool
 	depends on LOG2
@@ -235,7 +240,7 @@ config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Enable networking backend"
-	depends on NETWORKING && NET_UDP && !LOG_IMMEDIATE
+	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
 	help
 	  Send syslog messages to network server.

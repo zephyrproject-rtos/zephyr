@@ -5,6 +5,7 @@
  */
 
 #include <assert.h>
+#include <sys/util_macro.h>
 
 #include "tinycbor/cbor.h"
 #include "cborattr/cborattr.h"
@@ -190,7 +191,7 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 
 	err |= cbor_encoder_create_array(&ctxt->encoder, &images, CborIndefiniteLength);
 
-	for (i = 0; i < 2 * IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
 		rc = img_mgmt_read_info(i, &ver, hash, &flags);
 		if (rc != 0) {
 			continue;
@@ -200,7 +201,7 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 
 		err |= cbor_encoder_create_map(&images, &image, CborIndefiniteLength);
 
-#if IMG_MGMT_UPDATABLE_IMAGE_NUMBER > 1
+#if CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER > 1
 		err |= cbor_encode_text_stringz(&image, "image");
 		err |= cbor_encode_int(&image, i >> 1);
 #endif
@@ -214,30 +215,32 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 		err |= cbor_encode_text_stringz(&image, "hash");
 		err |= cbor_encode_byte_string(&image, hash, IMAGE_HASH_LEN);
 
-		if (!IMG_MGMT_FRUGAL_LIST || !(flags & IMAGE_F_NON_BOOTABLE)) {
+		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) || !(flags & IMAGE_F_NON_BOOTABLE)) {
 			err |= cbor_encode_text_stringz(&image, "bootable");
 			err |= cbor_encode_boolean(&image, !(flags & IMAGE_F_NON_BOOTABLE));
 		}
 
-		if (!IMG_MGMT_FRUGAL_LIST || (state_flags & IMG_MGMT_STATE_F_PENDING)) {
+		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) ||
+		    (state_flags & IMG_MGMT_STATE_F_PENDING)) {
 			err |= cbor_encode_text_stringz(&image, "pending");
 			err |= cbor_encode_boolean(&image, state_flags & IMG_MGMT_STATE_F_PENDING);
 		}
 
-		if (!IMG_MGMT_FRUGAL_LIST ||
-			(state_flags & IMG_MGMT_STATE_F_CONFIRMED)) {
+		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) ||
+		    (state_flags & IMG_MGMT_STATE_F_CONFIRMED)) {
 			err |= cbor_encode_text_stringz(&image, "confirmed");
 			err |= cbor_encode_boolean(&image,
 						   state_flags & IMG_MGMT_STATE_F_CONFIRMED);
 		}
 
-		if (!IMG_MGMT_FRUGAL_LIST || (state_flags & IMG_MGMT_STATE_F_ACTIVE)) {
+		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) ||
+		    (state_flags & IMG_MGMT_STATE_F_ACTIVE)) {
 			err |= cbor_encode_text_stringz(&image, "active");
 			err |= cbor_encode_boolean(&image, state_flags & IMG_MGMT_STATE_F_ACTIVE);
 		}
 
-		if (!IMG_MGMT_FRUGAL_LIST ||
-			(state_flags & IMG_MGMT_STATE_F_PERMANENT)) {
+		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) ||
+		    (state_flags & IMG_MGMT_STATE_F_PERMANENT)) {
 			err |= cbor_encode_text_stringz(&image, "permanent");
 			err |= cbor_encode_boolean(&image,
 						   state_flags & IMG_MGMT_STATE_F_PERMANENT);
@@ -249,7 +252,7 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 	err |= cbor_encoder_close_container(&ctxt->encoder, &images);
 
 	/* splitStatus is always 0 so in frugal list it is not present at all */
-	if (!IMG_MGMT_FRUGAL_LIST) {
+	if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST)) {
 		err |= cbor_encode_text_stringz(&ctxt->encoder, "splitStatus");
 		err |= cbor_encode_int(&ctxt->encoder, 0);
 	}

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Eug Krashtan
+ * Copyright (c) 2022 Wouter Cappelle
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,15 @@
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
 #define DT_DRV_COMPAT st_stm32_temp
+#define HAS_CALIBRATION 0
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
+#define DT_DRV_COMPAT st_stm32_temp_cal
+#define HAS_CALIBRATION 1
+#else
+#error "No compatible devicetree node found"
+#endif
 
 struct stm32_temp_data {
 	const struct device *adc;
@@ -20,20 +29,27 @@ struct stm32_temp_data {
 	struct adc_sequence adc_seq;
 	struct k_mutex mutex;
 	int16_t sample_buffer;
-	int32_t mv; /* Sensor value in millivolts */
+	int16_t raw; /* raw adc Sensor value */
 };
 
 struct stm32_temp_config {
+	int tsv_mv;
+#if HAS_CALIBRATION
+	uint16_t *cal1_addr;
+	uint16_t *cal2_addr;
+	int cal1_temp;
+	int cal2_temp;
+	int cal_vrefanalog;
+	int cal_offset;
+#else
 	int avgslope;
 	int v25_mv;
-	int tsv_mv;
 	bool is_ntc;
+#endif
 };
 
-static int stm32_temp_sample_fetch(const struct device *dev,
-				  enum sensor_channel chan)
+static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	const struct stm32_temp_config *cfg = dev->config;
 	struct stm32_temp_data *data = dev->data;
 	struct adc_sequence *sp = &data->adc_seq;
 	int rc;
@@ -47,7 +63,7 @@ static int stm32_temp_sample_fetch(const struct device *dev,
 	rc = adc_read(data->adc, sp);
 	sp->calibrate = false;
 	if (rc == 0) {
-		data->mv = data->sample_buffer * cfg->tsv_mv /	0x0FFF;
+		data->raw = data->sample_buffer;
 	}
 
 	k_mutex_unlock(&data->mutex);
@@ -55,9 +71,8 @@ static int stm32_temp_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int stm32_temp_channel_get(const struct device *dev,
-				 enum sensor_channel chan,
-				 struct sensor_value *val)
+static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel chan,
+				  struct sensor_value *val)
 {
 	struct stm32_temp_data *data = dev->data;
 	const struct stm32_temp_config *cfg = dev->config;
@@ -67,13 +82,24 @@ static int stm32_temp_channel_get(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if HAS_CALIBRATION
+	temp = ((float)data->raw * cfg->tsv_mv) / cfg->cal_vrefanalog;
+	temp -= *cfg->cal1_addr;
+	temp *= (cfg->cal2_temp - cfg->cal1_temp);
+	temp /= (*cfg->cal2_addr - *cfg->cal1_addr);
+	temp += cfg->cal_offset;
+#else
+	int32_t mv = data->raw * cfg->tsv_mv / 0x0FFF; /* Sensor value in millivolts */
+
 	if (cfg->is_ntc) {
-		temp = (float)(cfg->v25_mv - data->mv);
+		temp = (float)(cfg->v25_mv - mv);
 	} else {
-		temp = (float)(data->mv - cfg->v25_mv);
+		temp = (float)(mv - cfg->v25_mv);
 	}
-	temp = (temp/cfg->avgslope)*10;
+	temp = (temp / cfg->avgslope) * 10;
 	temp += 25;
+#endif
+
 	sensor_value_from_double(val, temp);
 
 	return 0;
@@ -98,13 +124,11 @@ static int stm32_temp_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	*accp = (struct adc_channel_cfg){
-		.gain = ADC_GAIN_1,
-		.reference = ADC_REF_INTERNAL,
-		.acquisition_time = ADC_ACQ_TIME_MAX,
-		.channel_id = data->channel,
-		.differential = 0
-	};
+	*accp = (struct adc_channel_cfg){ .gain = ADC_GAIN_1,
+					  .reference = ADC_REF_INTERNAL,
+					  .acquisition_time = ADC_ACQ_TIME_MAX,
+					  .channel_id = data->channel,
+					  .differential = 0 };
 	rc = adc_channel_setup(data->adc, accp);
 	LOG_DBG("Setup AIN%u got %d", data->channel, rc);
 
@@ -119,26 +143,26 @@ static int stm32_temp_init(const struct device *dev)
 	return 0;
 }
 
-#define STM32_TEMP_INST(idx)    \
-	static struct stm32_temp_data inst_##idx##_data = {  \
-		.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(  \
-						DT_INST(idx, st_stm32_temp))), \
-		.channel = DT_IO_CHANNELS_INPUT( \
-						DT_INST(idx, st_stm32_temp)) \
-	};  \
-	static const struct stm32_temp_config inst_##idx##_config = { \
-		.avgslope = DT_INST_PROP(idx, avgslope),  \
-		.v25_mv = DT_INST_PROP(idx, v25),  \
-		.tsv_mv = DT_INST_PROP(idx, ts_voltage_mv),  \
-		.is_ntc = DT_INST_PROP(idx, ntc)  \
-	};  \
-	DEVICE_DT_INST_DEFINE(idx,  \
-		    stm32_temp_init,    \
-		    NULL,               \
-		    &inst_##idx##_data, \
-			&inst_##idx##_config,  \
-		    POST_KERNEL,           \
-		    CONFIG_SENSOR_INIT_PRIORITY, \
-		    &stm32_temp_driver_api);
+static const struct stm32_temp_config stm32_temp_dev_config = {
+	.tsv_mv = DT_INST_PROP(0, ts_voltage_mv),
+#if HAS_CALIBRATION
+	.cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
+	.cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
+	.cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
+	.cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
+	.cal_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
+	.cal_offset = DT_INST_PROP(0, ts_cal_offset)
+#else
+	.avgslope = DT_INST_PROP(0, avgslope),
+	.v25_mv = DT_INST_PROP(0, v25),
+	.is_ntc = DT_INST_PROP(0, ntc)
+#endif
+};
 
-DT_INST_FOREACH_STATUS_OKAY(STM32_TEMP_INST)
+static struct stm32_temp_data stm32_temp_dev_data = {
+	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
+	.channel = DT_INST_IO_CHANNELS_INPUT(0),
+};
+
+DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL, &stm32_temp_dev_data, &stm32_temp_dev_config,
+		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &stm32_temp_driver_api);

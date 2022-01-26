@@ -322,12 +322,6 @@ config EXCEPTION_STACK_TRACE
 #
 # Miscellaneous debugging options
 #
-config OPENOCD_SUPPORT
-	bool "OpenOCD support (DEPRECATED)"
-	select DEBUG_THREAD_INFO
-	help
-	  This is deprecated, please use DEBUG_THREAD_INFO instead.
-
 config DEBUG_THREAD_INFO
 	bool "Thread awareness support"
 	depends on !SMP
@@ -357,7 +351,7 @@ config GDBSTUB_SERIAL_BACKEND
 	bool "Use serial backend"
 	depends on SERIAL
 	help
-	  Use serial as backenf for GDB
+	  Use serial as backend for GDB
 
 endchoice
 
@@ -366,7 +360,14 @@ config GDBSTUB_SERIAL_BACKEND_NAME
 	depends on GDBSTUB_SERIAL_BACKEND
 	default "UART_0"
 	help
-	  Use serial as backenf for GDB
+	  Use serial as backend for GDB
 
+config GDBSTUB_BUF_SZ
+	int "GDB backend send/receive buffer size (in bytes)"
+	default 256
+	help
+	  This specifies the size (in bytes) of the send/receive buffer
+	  for GDB backend. This needs to be big enough to hold one
+	  full GDB packet at a time.
 
 endif

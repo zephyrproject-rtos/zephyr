@@ -24,15 +24,15 @@ struct token {
 };
 
 struct lexer {
-	void *(*state)(struct lexer *lexer);
+	void *(*state)(struct lexer *lex);
 	char *start;
 	char *pos;
 	char *end;
-	struct token token;
+	struct token tok;
 };
 
 struct json_obj {
-	struct lexer lexer;
+	struct lexer lex;
 };
 
 struct json_obj_key_value {
@@ -41,86 +41,86 @@ struct json_obj_key_value {
 	struct token value;
 };
 
-static bool lexer_consume(struct lexer *lexer, struct token *token,
+static bool lexer_consume(struct lexer *lex, struct token *tok,
 			  enum json_tokens empty_token)
 {
-	if (lexer->token.type == empty_token) {
+	if (lex->tok.type == empty_token) {
 		return false;
 	}
 
-	*token = lexer->token;
-	lexer->token.type = empty_token;
+	*tok = lex->tok;
+	lex->tok.type = empty_token;
 
 	return true;
 }
 
-static bool lexer_next(struct lexer *lexer, struct token *token)
+static bool lexer_next(struct lexer *lex, struct token *tok)
 {
-	while (lexer->state) {
-		if (lexer_consume(lexer, token, JSON_TOK_NONE)) {
+	while (lex->state) {
+		if (lexer_consume(lex, tok, JSON_TOK_NONE)) {
 			return true;
 		}
 
-		lexer->state = lexer->state(lexer);
+		lex->state = lex->state(lex);
 	}
 
-	return lexer_consume(lexer, token, JSON_TOK_EOF);
+	return lexer_consume(lex, tok, JSON_TOK_EOF);
 }
 
-static void *lexer_json(struct lexer *lexer);
+static void *lexer_json(struct lexer *lex);
 
-static void emit(struct lexer *lexer, enum json_tokens token)
+static void emit(struct lexer *lex, enum json_tokens token)
 {
-	lexer->token.type = token;
-	lexer->token.start = lexer->start;
-	lexer->token.end = lexer->pos;
-	lexer->start = lexer->pos;
+	lex->tok.type = token;
+	lex->tok.start = lex->start;
+	lex->tok.end = lex->pos;
+	lex->start = lex->pos;
 }
 
-static int next(struct lexer *lexer)
+static int next(struct lexer *lex)
 {
-	if (lexer->pos >= lexer->end) {
-		lexer->pos = lexer->end + 1;
+	if (lex->pos >= lex->end) {
+		lex->pos = lex->end + 1;
 
 		return '\0';
 	}
 
-	return *lexer->pos++;
+	return *lex->pos++;
 }
 
-static void ignore(struct lexer *lexer)
+static void ignore(struct lexer *lex)
 {
-	lexer->start = lexer->pos;
+	lex->start = lex->pos;
 }
 
-static void backup(struct lexer *lexer)
+static void backup(struct lexer *lex)
 {
-	lexer->pos--;
+	lex->pos--;
 }
 
-static int peek(struct lexer *lexer)
+static int peek(struct lexer *lex)
 {
-	int chr = next(lexer);
+	int chr = next(lex);
 
-	backup(lexer);
+	backup(lex);
 
 	return chr;
 }
 
-static void *lexer_string(struct lexer *lexer)
+static void *lexer_string(struct lexer *lex)
 {
-	ignore(lexer);
+	ignore(lex);
 
 	while (true) {
-		int chr = next(lexer);
+		int chr = next(lex);
 
 		if (chr == '\0') {
-			emit(lexer, JSON_TOK_ERROR);
+			emit(lex, JSON_TOK_ERROR);
 			return NULL;
 		}
 
 		if (chr == '\\') {
-			switch (next(lexer)) {
+			switch (next(lex)) {
 			case '"':
 			case '\\':
 			case '/':
@@ -131,19 +131,19 @@ static void *lexer_string(struct lexer *lexer)
 			case 't':
 				continue;
 			case 'u':
-				if (!isxdigit(next(lexer))) {
+				if (!isxdigit(next(lex))) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lexer))) {
+				if (!isxdigit(next(lex))) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lexer))) {
+				if (!isxdigit(next(lex))) {
 					goto error;
 				}
 
-				if (!isxdigit(next(lexer))) {
+				if (!isxdigit(next(lex))) {
 					goto error;
 				}
 
@@ -154,25 +154,25 @@ static void *lexer_string(struct lexer *lexer)
 		}
 
 		if (chr == '"') {
-			backup(lexer);
-			emit(lexer, JSON_TOK_STRING);
+			backup(lex);
+			emit(lex, JSON_TOK_STRING);
 
-			next(lexer);
-			ignore(lexer);
+			next(lex);
+			ignore(lex);
 
 			return lexer_json;
 		}
 	}
 
 error:
-	emit(lexer, JSON_TOK_ERROR);
+	emit(lex, JSON_TOK_ERROR);
 	return NULL;
 }
 
-static int accept_run(struct lexer *lexer, const char *run)
+static int accept_run(struct lexer *lex, const char *run)
 {
 	for (; *run; run++) {
-		if (next(lexer) != *run) {
+		if (next(lex) != *run) {
 			return -EINVAL;
 		}
 	}
@@ -180,64 +180,64 @@ static int accept_run(struct lexer *lexer, const char *run)
 	return 0;
 }
 
-static void *lexer_boolean(struct lexer *lexer)
+static void *lexer_boolean(struct lexer *lex)
 {
-	backup(lexer);
+	backup(lex);
 
-	switch (next(lexer)) {
+	switch (next(lex)) {
 	case 't':
-		if (!accept_run(lexer, "rue")) {
-			emit(lexer, JSON_TOK_TRUE);
+		if (!accept_run(lex, "rue")) {
+			emit(lex, JSON_TOK_TRUE);
 			return lexer_json;
 		}
 		break;
 	case 'f':
-		if (!accept_run(lexer, "alse")) {
-			emit(lexer, JSON_TOK_FALSE);
+		if (!accept_run(lex, "alse")) {
+			emit(lex, JSON_TOK_FALSE);
 			return lexer_json;
 		}
 		break;
 	}
 
-	emit(lexer, JSON_TOK_ERROR);
+	emit(lex, JSON_TOK_ERROR);
 	return NULL;
 }
 
-static void *lexer_null(struct lexer *lexer)
+static void *lexer_null(struct lexer *lex)
 {
-	if (accept_run(lexer, "ull") < 0) {
-		emit(lexer, JSON_TOK_ERROR);
+	if (accept_run(lex, "ull") < 0) {
+		emit(lex, JSON_TOK_ERROR);
 		return NULL;
 	}
 
-	emit(lexer, JSON_TOK_NULL);
+	emit(lex, JSON_TOK_NULL);
 	return lexer_json;
 }
 
-static void *lexer_number(struct lexer *lexer)
+static void *lexer_number(struct lexer *lex)
 {
 	while (true) {
-		int chr = next(lexer);
+		int chr = next(lex);
 
 		if (isdigit(chr) || chr == '.') {
 			continue;
 		}
 
-		backup(lexer);
-		emit(lexer, JSON_TOK_NUMBER);
+		backup(lex);
+		emit(lex, JSON_TOK_NUMBER);
 
 		return lexer_json;
 	}
 }
 
-static void *lexer_json(struct lexer *lexer)
+static void *lexer_json(struct lexer *lex)
 {
 	while (true) {
-		int chr = next(lexer);
+		int chr = next(lex);
 
 		switch (chr) {
 		case '\0':
-			emit(lexer, JSON_TOK_EOF);
+			emit(lex, JSON_TOK_EOF);
 			return NULL;
 		case '}':
 		case '{':
@@ -245,7 +245,7 @@ static void *lexer_json(struct lexer *lexer)
 		case ']':
 		case ',':
 		case ':':
-			emit(lexer, (enum json_tokens)chr);
+			emit(lex, (enum json_tokens)chr);
 			return lexer_json;
 		case '"':
 			return lexer_string;
@@ -255,14 +255,14 @@ static void *lexer_json(struct lexer *lexer)
 		case 'f':
 			return lexer_boolean;
 		case '-':
-			if (isdigit(peek(lexer))) {
+			if (isdigit(peek(lex))) {
 				return lexer_number;
 			}
 
 			__fallthrough;
 		default:
 			if (isspace(chr)) {
-				ignore(lexer);
+				ignore(lex);
 				continue;
 			}
 
@@ -270,32 +270,49 @@ static void *lexer_json(struct lexer *lexer)
 				return lexer_number;
 			}
 
-			emit(lexer, JSON_TOK_ERROR);
+			emit(lex, JSON_TOK_ERROR);
 			return NULL;
 		}
 	}
 }
 
-static void lexer_init(struct lexer *lexer, char *data, size_t len)
+static void lexer_init(struct lexer *lex, char *data, size_t len)
 {
-	lexer->state = lexer_json;
-	lexer->start = data;
-	lexer->pos = data;
-	lexer->end = data + len;
-	lexer->token.type = JSON_TOK_NONE;
+	lex->state = lexer_json;
+	lex->start = data;
+	lex->pos = data;
+	lex->end = data + len;
+	lex->tok.type = JSON_TOK_NONE;
 }
 
 static int obj_init(struct json_obj *json, char *data, size_t len)
 {
-	struct token token;
+	struct token tok;
 
-	lexer_init(&json->lexer, data, len);
+	lexer_init(&json->lex, data, len);
 
-	if (!lexer_next(&json->lexer, &token)) {
+	if (!lexer_next(&json->lex, &tok)) {
 		return -EINVAL;
 	}
 
-	if (token.type != JSON_TOK_OBJECT_START) {
+	if (tok.type != JSON_TOK_OBJECT_START) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int arr_init(struct json_obj *json, char *data, size_t len)
+{
+	struct token tok;
+
+	lexer_init(&json->lex, data, len);
+
+	if (!lexer_next(&json->lex, &tok)) {
+		return -EINVAL;
+	}
+
+	if (tok.type != JSON_TOK_ARRAY_START) {
 		return -EINVAL;
 	}
 
@@ -320,49 +337,49 @@ static int element_token(enum json_tokens token)
 static int obj_next(struct json_obj *json,
 		    struct json_obj_key_value *kv)
 {
-	struct token token;
+	struct token tok;
 
-	if (!lexer_next(&json->lexer, &token)) {
+	if (!lexer_next(&json->lex, &tok)) {
 		return -EINVAL;
 	}
 
 	/* Match end of object or next key */
-	switch (token.type) {
+	switch (tok.type) {
 	case JSON_TOK_OBJECT_END:
 		kv->key = NULL;
 		kv->key_len = 0;
-		kv->value = token;
+		kv->value = tok;
 
 		return 0;
 	case JSON_TOK_COMMA:
-		if (!lexer_next(&json->lexer, &token)) {
+		if (!lexer_next(&json->lex, &tok)) {
 			return -EINVAL;
 		}
 
-		if (token.type != JSON_TOK_STRING) {
+		if (tok.type != JSON_TOK_STRING) {
 			return -EINVAL;
 		}
 
 		__fallthrough;
 	case JSON_TOK_STRING:
-		kv->key = token.start;
-		kv->key_len = (size_t)(token.end - token.start);
+		kv->key = tok.start;
+		kv->key_len = (size_t)(tok.end - tok.start);
 		break;
 	default:
 		return -EINVAL;
 	}
 
 	/* Match : after key */
-	if (!lexer_next(&json->lexer, &token)) {
+	if (!lexer_next(&json->lex, &tok)) {
 		return -EINVAL;
 	}
 
-	if (token.type != JSON_TOK_COLON) {
+	if (tok.type != JSON_TOK_COLON) {
 		return -EINVAL;
 	}
 
 	/* Match value */
-	if (!lexer_next(&json->lexer, &kv->value)) {
+	if (!lexer_next(&json->lex, &kv->value)) {
 		return -EINVAL;
 	}
 
@@ -371,7 +388,7 @@ static int obj_next(struct json_obj *json,
 
 static int arr_next(struct json_obj *json, struct token *value)
 {
-	if (!lexer_next(&json->lexer, value)) {
+	if (!lexer_next(&json->lex, value)) {
 		return -EINVAL;
 	}
 
@@ -380,7 +397,7 @@ static int arr_next(struct json_obj *json, struct token *value)
 	}
 
 	if (value->type == JSON_TOK_COMMA) {
-		if (!lexer_next(&json->lexer, value)) {
+		if (!lexer_next(&json->lex, value)) {
 			return -EINVAL;
 		}
 	}
@@ -605,6 +622,23 @@ int json_obj_parse(char *payload, size_t len,
 	}
 
 	return obj_parse(&obj, descr, descr_len, val);
+}
+
+int json_arr_parse(char *payload, size_t len,
+		   const struct json_obj_descr *descr, void *val)
+{
+	struct json_obj arr;
+	int ret;
+
+	ret = arr_init(&arr, payload, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	void *ptr = (char *)val + descr->offset;
+
+	return arr_parse(&arr, descr->array.element_descr,
+			 descr->array.n_elements, ptr, val);
 }
 
 static char escape_as(char chr)

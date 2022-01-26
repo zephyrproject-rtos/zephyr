@@ -33,6 +33,7 @@ def test_runner_imports():
                     'openocd',
                     'pyocd',
                     'qemu',
+                    'spi_burn',
                     'stm32cubeprogrammer',
                     'stm32flash',
                     'xtensa'))

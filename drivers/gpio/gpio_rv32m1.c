@@ -317,7 +317,7 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 			    NULL,					\
 			    &gpio_rv32m1_##n##_data,			\
 			    &gpio_rv32m1_##n##_config,			\
-			    POST_KERNEL,				\
+			    PRE_KERNEL_1,				\
 			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_rv32m1_driver_api);			\
 									\

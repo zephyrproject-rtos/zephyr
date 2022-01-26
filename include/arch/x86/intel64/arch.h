@@ -133,9 +133,20 @@ struct x86_ssf {
 				 (void (*)(const void *))isr_p,		\
 				 isr_param_p, flags_p)
 
+#ifdef CONFIG_PCIE
+
+#define ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
+			      isr_p, isr_param_p, flags_p)		\
+	X86_RESERVE_IRQ(irq_p, _CONCAT(_irq_alloc_fixed, __COUNTER__)); \
+	pcie_connect_dynamic_irq(bdf_p, irq_p, priority_p,		\
+				 (void (*)(const void *))isr_p,		\
+				 isr_param_p, flags_p)
+
+#endif /* CONFIG_PCIE */
+
 /*
  * Thread object needs to be 16-byte aligned.
  */
-#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	16
+#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	16
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */

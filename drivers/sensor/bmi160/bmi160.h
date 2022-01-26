@@ -471,7 +471,7 @@ union bmi160_sample {
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 		uint16_t acc[BMI160_AXES];
 #endif
-	} __packed;
+	};
 };
 
 struct bmi160_scale {
@@ -508,16 +508,6 @@ struct bmi160_data {
 #endif
 #endif /* CONFIG_BMI160_TRIGGER */
 };
-
-static inline struct bmi160_data *to_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct bmi160_cfg *to_config(const struct device *dev)
-{
-	return dev->config;
-}
 
 int bmi160_read(const struct device *dev, uint8_t reg_addr,
 		void *data, uint8_t len);

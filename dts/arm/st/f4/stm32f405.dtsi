@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2021 Marius Scholtz, RIC Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +80,12 @@
 			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_6";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+				label = "COUNTER_6";
+			};
 		};
 
 		timers7: timers@40001400 {
@@ -90,6 +97,12 @@
 			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_7";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+				label = "COUNTER_7";
+			};
 		};
 
 		timers8: timers@40010400 {
@@ -126,6 +139,12 @@
 				label = "PWM_12";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+				label = "COUNTER_12";
+			};
 		};
 
 		timers13: timers@40001c00 {
@@ -143,6 +162,12 @@
 				status = "disabled";
 				label = "PWM_13";
 				#pwm-cells = <3>;
+			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+				label = "COUNTER_13";
 			};
 		};
 
@@ -162,6 +187,12 @@
 				label = "PWM_14";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+				label = "COUNTER_14";
+			};
 		};
 
 		usbotg_hs: usb@40040000 {
@@ -180,8 +211,6 @@
 
 		can1: can@40006400 {
 			compatible = "st,stm32-can";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
@@ -197,8 +226,6 @@
 
 		can2: can@40006800 {
 			compatible = "st,stm32-can";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0x40006800 0x400>;
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
@@ -227,7 +254,28 @@
 			reg = <0x40024000 DT_SIZE_K(4)>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 			label = "BACKUP_SRAM";
+			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
+		};
+
+		adc2: adc@40012100 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012100 0x050>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+		};
+
+		adc3: adc@40012200 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012200 0x050>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_3";
+			#io-channel-cells = <1>;
 		};
 
 		dac1: dac@40007400 {

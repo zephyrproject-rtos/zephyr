@@ -5,6 +5,7 @@
  */
 
 #include <drivers/pinctrl.h>
+#include <soc.h>
 
 BUILD_ASSERT((GD32_PUPD_NONE == GPIO_PUPD_NONE) &&
 	     (GD32_PUPD_PULLUP == GPIO_PUPD_PULLUP) &&
@@ -16,9 +17,15 @@ BUILD_ASSERT((GD32_OTYPE_PP == GPIO_OTYPE_PP) &&
 	     "pinctrl output type definitions != HAL definitions");
 
 BUILD_ASSERT((GD32_OSPEED_2MHZ == GPIO_OSPEED_2MHZ) &&
+#ifdef CONFIG_SOC_SERIES_GD32F3X0
+	     (GD32_OSPEED_10MHZ == GPIO_OSPEED_10MHZ) &&
+	     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
+#else
 	     (GD32_OSPEED_25MHZ == GPIO_OSPEED_25MHZ) &&
 	     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
-	     (GD32_OSPEED_200MHZ == GPIO_OSPEED_200MHZ),
+	     (GD32_OSPEED_200MHZ == GPIO_OSPEED_200MHZ) &&
+#endif /* CONFIG_SOC_SERIES_GD32F3X0 */
+	     1U,
 	     "pinctrl output speed definitions != HAL definitions");
 
 /** Utility macro that expands to the GPIO port address if it exists */
@@ -87,8 +94,6 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	gpio_mode_set(port, mode, GD32_PUPD_GET(pin), pin_num);
 	gpio_output_options_set(port, GD32_OTYPE_GET(pin),
 				GD32_OSPEED_GET(pin), pin_num);
-
-	rcu_periph_clock_disable(rcu);
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,

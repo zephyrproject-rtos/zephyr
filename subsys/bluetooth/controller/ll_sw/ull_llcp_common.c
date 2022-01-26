@@ -16,6 +16,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "ll.h"
@@ -209,15 +210,12 @@ static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 static void lp_comm_ntf_cte_req(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	/* TODO (ppryga): pack IQ samples and send them to host */
-	/* TODO (ppryga): procedure may be re-triggered periodically by controller itself.
-	 *		  Add periodicy handling code. It should be executed after receive
-	 *		  notification about end of current procedure run.
-	 */
-	/* TODO (ppryga): Add handling of rejections in HCI: HCI_LE_CTE_Request_Failed. */
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
-		llcp_ntf_encode_cte_req(conn, pdu);
+		/* Notify host that received LL_CTE_RSP does not have CTE */
+		if (!ctx->data.cte_remote_rsp.has_cte) {
+			llcp_ntf_encode_cte_req(pdu);
+		}
 		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		llcp_ntf_encode_reject_ext_ind(ctx, pdu);
@@ -350,13 +348,32 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
-		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_CTE_RSP ||
-		    (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
-		     ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ)) {
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_CTE_RSP) {
+			if (ctx->data.cte_remote_rsp.has_cte &&
+			    conn->llcp.cte_req.req_interval != 0U) {
+				conn->llcp.cte_req.req_expire = conn->llcp.cte_req.req_interval;
+			} else {
+				conn->llcp.cte_req.is_enabled = 0U;
+				lp_comm_ntf(conn, ctx);
+			}
+		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
+			   ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
 			lp_comm_ntf(conn, ctx);
-			llcp_lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
+			conn->llcp.cte_req.is_enabled = 0U;
 		}
+
+		ctx->state = LP_COMMON_STATE_IDLE;
+
+		if (ctx->state == LP_COMMON_STATE_IDLE) {
+			llcp_rr_set_paused_cmd(conn, PROC_NONE);
+			llcp_lr_complete(conn);
+		}
+
+		conn->llcp.cte_req.is_active = 0U;
+		if (conn->llcp.cte_req.disable_cb) {
+			conn->llcp.cte_req.disable_cb(conn->llcp.cte_req.disable_param);
+		}
+
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
@@ -415,7 +432,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 	case PROC_TERMINATE:
-		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+		if (!llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -448,7 +465,8 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
-		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx) ||
+		    (llcp_rr_get_paused_cmd(conn) == PROC_CTE_REQ)) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -551,9 +569,11 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		llcp_pdu_decode_length_rsp(conn, pdu);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
-		/* CTE Response PDU had no data */
+		llcp_pdu_decode_cte_rsp(ctx, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		llcp_pdu_decode_reject_ext_ind(ctx, pdu);
 		break;
@@ -691,11 +711,11 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		llcp_tx_pause_data(conn);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
-		llcp_pdu_decode_cte_req(conn, pdu);
+		llcp_pdu_decode_cte_req(ctx, pdu);
 		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
 		/* Unknown opcode */
 		LL_ASSERT(0);
@@ -736,36 +756,40 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ: {
 		uint8_t err_code = 0;
 
 		if (conn->llcp.cte_rsp.is_enabled == 0) {
 			err_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
 		}
+
 #if defined(CONFIG_BT_PHY_UPDATE)
 		/* If the PHY update is not possible, then PHY1M is used.
 		 * CTE is supported for PHY1M.
 		 */
-		if (conn->lll.phy_tx != PHY_CODED) {
+		if (conn->lll.phy_tx == PHY_CODED) {
 			err_code = BT_HCI_ERR_INVALID_LL_PARAM;
 		}
 #endif /* CONFIG_BT_PHY_UPDATE */
-		if (!(conn->llcp.cte_rsp.cte_types & BIT(conn->llcp.cte_req.cte_type)) &&
-		    conn->llcp.cte_rsp.max_cte_len >= conn->llcp.cte_req.min_cte_len) {
+		if (!(conn->llcp.cte_rsp.cte_types & BIT(ctx->data.cte_remote_req.cte_type)) ||
+		    conn->llcp.cte_rsp.max_cte_len < ctx->data.cte_remote_req.min_cte_len) {
 			err_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
 		}
 
 		if (!err_code) {
-			llcp_pdu_encode_cte_rsp(pdu);
+			llcp_pdu_encode_cte_rsp(ctx, pdu);
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 		} else {
 			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CTE_REQ, err_code);
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
 		}
+
+		ctx->tx_ack = tx;
+
 		break;
 	}
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -919,17 +943,18 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
-		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx) ||
+		    (llcp_rr_get_paused_cmd(conn) == PROC_CTE_REQ)) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
+			llcp_rr_set_paused_cmd(conn, PROC_PHY_UPDATE);
 			rp_comm_tx(conn, ctx);
-			llcp_rr_complete(conn);
-			ctx->state = RP_COMMON_STATE_IDLE;
+			ctx->state = RP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -961,13 +986,13 @@ static void rp_comm_st_wait_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	}
 }
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
 {
 	switch (evt) {
 	case RP_COMMON_EVT_ACK:
 		switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		case PROC_DATA_LENGTH_UPDATE: {
 			/* Apply changes in data lengths/times */
 			uint8_t dle_changed = ull_dle_update_eff(conn);
@@ -985,6 +1010,16 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 			}
 			break;
 		}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+		case PROC_CTE_REQ: {
+			/* add PHY update pause = false here */
+			ctx->tx_ack = NULL;
+			llcp_rr_set_paused_cmd(conn, PROC_NONE);
+			llcp_rr_complete(conn);
+			ctx->state = RP_COMMON_STATE_IDLE;
+		}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 		default:
 			/* Ignore other procedures */
 			break;
@@ -996,6 +1031,7 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void rp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
@@ -1020,10 +1056,10 @@ static void rp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	case RP_COMMON_STATE_WAIT_TX:
 		rp_comm_st_wait_tx(conn, ctx, evt, param);
 		break;
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case RP_COMMON_STATE_WAIT_TX_ACK:
 		rp_comm_st_wait_tx_ack(conn, ctx, evt, param);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case RP_COMMON_STATE_WAIT_NTF:
 		rp_comm_st_wait_ntf(conn, ctx, evt, param);
 		break;

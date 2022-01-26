@@ -3,7 +3,7 @@
 
 description: Espressif RISC-V CPU
 
-compatible: "esp,riscv"
+compatible: "espressif,riscv"
 
 include: cpu.yaml
 

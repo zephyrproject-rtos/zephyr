@@ -5,6 +5,7 @@
 
 config BT_CTLR_DF_SUPPORT
 	bool
+	depends on !BT_CTLR_TIFS_HW
 	select BT_CTLR_DF_CTE_TX_SUPPORT
 	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
@@ -89,20 +90,21 @@ config BT_CTLR_DF_ANT_SWITCH_RX
 config BT_CTLR_DF_CTE_RX
 	bool "Enable reception of Constant Tone Extension feature"
 	depends on BT_CTLR_DF_CTE_RX_SUPPORT
+	select BT_CTLR_CONN_RSSI if BT_CONN
 	default y
 	help
 	  Enable support for reception of Constant Tone Extension in controller.
 
 config BT_CTLR_DF_CONN_CTE_REQ
 	bool "Enable Connection CTE Request feature"
-	depends on BT_CTLR_DF_CTE_RX && BT_CONN
+	depends on BT_CTLR_DF_CONN_CTE_RX
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Request feature
 	  in controller.
 
 config BT_CTLR_DF_CONN_CTE_RSP
 	bool "Enable Connection CTE Response feature"
-	depends on BT_CTLR_DF_CTE_TX && BT_CONN
+	depends on BT_CTLR_DF_CONN_CTE_TX
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Response feature
 	  in controller.
@@ -123,6 +125,22 @@ config BT_CTLR_DF_SCAN_CTE_RX
 	help
 	  Enable support for Bluetooth v5.1 connectionless CTE reception
 	  in controller.
+
+config BT_CTLR_DF_CONN_CTE_TX
+	bool "Enable Connection based CTE Transmitter"
+	depends on BT_CTLR_DF_CTE_TX && BT_CONN
+	default y
+	help
+	  Enable transmission of Constant Tone Extension in
+	  direction finding connected mode.
+
+config BT_CTLR_DF_CONN_CTE_RX
+	bool "Enable Connection based CTE Receiver"
+	depends on BT_CTLR_DF_CTE_RX && BT_CONN
+	default y
+	help
+	  Enable reception and sampling of Constant Tone Extension in direction
+	  finding connected mode.
 
 config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
 	bool "Enable sampling of CTE for PDUs with bad CRC"
@@ -182,5 +200,15 @@ config BT_CTLR_DF_DEBUG_ENABLE
 	help
 	  This option enables debug support for the Direction Finding
 	  implementation in controller.
+
+config BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE
+	bool
+	depends on BT_CTLR_DF_CTE_RX && BT_CONN && (SOC_NRF52811 || SOC_NRF52820 || SOC_NRF52833 || SOC_NRF5340_CPUNET)
+	default y
+	help
+	  SOCs nRF52811, nRF52820, nRF52833, nRF5340 generate PHYEND event delayed when
+	  CTEINLINECTRLEN is enabled and received PDU does not have CTEInfo field. The option
+	  enables workaround for the delay to maintain inter frame spacing (IFS) for connection
+	  events.
 
 endif # BT_CTLR_DF

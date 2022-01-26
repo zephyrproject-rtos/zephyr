@@ -178,12 +178,12 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 
 #ifdef CONFIG_PCIE_CONTROLLER
 	/* Translate to physical memory address from bus address */
-	if (!pcie_ctrl_region_xlate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
-				    PCIE_CONF_BAR_64(phys_addr),
-				    PCIE_CONF_BAR_MEM(phys_addr) ?
-					  PCIE_CONF_BAR_IO_ADDR(phys_addr)
-					: PCIE_CONF_BAR_ADDR(phys_addr),
-				    &mbar->phys_addr)) {
+	if (!pcie_ctrl_region_translate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
+					PCIE_CONF_BAR_64(phys_addr),
+					PCIE_CONF_BAR_MEM(phys_addr) ?
+						PCIE_CONF_BAR_IO_ADDR(phys_addr)
+						: PCIE_CONF_BAR_ADDR(phys_addr),
+					&mbar->phys_addr)) {
 		return false;
 	}
 #else
@@ -216,93 +216,69 @@ bool pcie_probe_mbar(pcie_bdf_t bdf,
 	return pcie_get_mbar(bdf, reg - PCIE_CONF_BAR0, mbar);
 }
 
-/* The first bit is used to indicate whether the list of reserved interrupts
- * have been initialized based on content stored in the irq_alloc linker
- * section in ROM.
- */
-#define IRQ_LIST_INITIALIZED 0
-
-#ifndef CONFIG_MAX_IRQ_LINES
-#warning TOFIX for non-x86
-#define CONFIG_MAX_IRQ_LINES 0
-#endif
-
-static ATOMIC_DEFINE(irq_reserved, CONFIG_MAX_IRQ_LINES);
-
-static unsigned int irq_alloc(void)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(irq_reserved); i++) {
-		unsigned int fz, irq;
-
-		while ((fz = find_lsb_set(~atomic_get(&irq_reserved[i])))) {
-			irq = (fz - 1) + (i * sizeof(atomic_val_t) * 8);
-			if (irq >= CONFIG_MAX_IRQ_LINES) {
-				break;
-			}
-
-			if (!atomic_test_and_set_bit(irq_reserved, irq)) {
-				return irq;
-			}
-		}
-	}
-
-	return PCIE_CONF_INTR_IRQ_NONE;
-}
-
-static bool irq_is_reserved(unsigned int irq)
-{
-	return atomic_test_bit(irq_reserved, irq);
-}
-
-static void irq_init(void)
-{
-	extern uint8_t __irq_alloc_start[];
-	extern uint8_t __irq_alloc_end[];
-	const uint8_t *irq;
-
-	for (irq = __irq_alloc_start; irq < __irq_alloc_end; irq++) {
-		__ASSERT_NO_MSG(*irq < CONFIG_MAX_IRQ_LINES);
-		atomic_set_bit(irq_reserved, *irq);
-	}
-}
+#ifndef CONFIG_PCIE_CONTROLLER
 
 unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 {
 	unsigned int irq;
 	uint32_t data;
 
-	if (!atomic_test_and_set_bit(irq_reserved, IRQ_LIST_INITIALIZED)) {
-		irq_init();
-	}
-
 	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 	irq = PCIE_CONF_INTR_IRQ(data);
 
-	if (irq == PCIE_CONF_INTR_IRQ_NONE || irq >= CONFIG_MAX_IRQ_LINES ||
-	    irq_is_reserved(irq)) {
-
-		irq = irq_alloc();
-		if (irq == PCIE_CONF_INTR_IRQ_NONE) {
-			return irq;
+	if (irq == PCIE_CONF_INTR_IRQ_NONE ||
+	    irq >= CONFIG_MAX_IRQ_LINES ||
+	    arch_irq_is_used(irq)) {
+		irq = arch_irq_allocate();
+		if (irq == UINT_MAX) {
+			return PCIE_CONF_INTR_IRQ_NONE;
 		}
 
 		data &= ~0xffU;
 		data |= irq;
 		pcie_conf_write(bdf, PCIE_CONF_INTR, data);
 	} else {
-		atomic_set_bit(irq_reserved, irq);
+		arch_irq_set_used(irq);
 	}
 
 	return irq;
 }
+#endif /* CONFIG_PCIE_CONTROLLER */
 
 unsigned int pcie_get_irq(pcie_bdf_t bdf)
 {
 	uint32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 
 	return PCIE_CONF_INTR_IRQ(data);
+}
+
+bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
+			      unsigned int irq,
+			      unsigned int priority,
+			      void (*routine)(const void *parameter),
+			      const void *parameter,
+			      uint32_t flags)
+{
+#if defined(CONFIG_PCIE_MSI) && defined(CONFIG_PCIE_MSI_MULTI_VECTOR)
+	if (pcie_is_msi(bdf)) {
+		msi_vector_t vector;
+
+		if ((pcie_msi_vectors_allocate(bdf, priority,
+					       &vector, 1) == 0) ||
+		    !pcie_msi_vector_connect(bdf, &vector,
+					     routine, parameter, flags)) {
+			return false;
+		}
+	} else
+#endif /* CONFIG_PCIE_MSI && CONFIG_PCIE_MSI_MULTI_VECTOR */
+	{
+		if (irq_connect_dynamic(irq, priority, routine,
+					parameter, flags) < 0) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)

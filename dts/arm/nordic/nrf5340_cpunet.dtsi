@@ -50,6 +50,7 @@
 
 		sram1: memory@21000000 {
 			compatible = "mmio-sram";
+			zephyr,memory-region = "SRAM1";
 		};
 
 		clock: clock@41005000 {
@@ -156,6 +157,7 @@
 			 * compatible = "nordic,nrf-twim" or
 			 *              "nordic,nrf-twis".
 			 */
+			compatible = "nordic,nrf-twim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x41013000 0x1000>;
@@ -172,6 +174,7 @@
 			 * compatible = "nordic,nrf-spim" or
 			 *              "nordic,nrf-spis".
 			 */
+			compatible = "nordic,nrf-spim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x41013000 0x1000>;

@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <arm/renesas/gen3/r8a77951.dtsi>
+#include "rcar_h3ulcb_cr7-pinctrl.dtsi"
 
 / {
 	model = "Renesas h3ulcb board";
@@ -51,10 +52,14 @@
 };
 
 &can0 {
+	pinctrl-0 = <&can0_data_a_tx_default &can0_data_a_rx_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &scif1 {
+	pinctrl-0 = <&scif1_data_a_tx_default &scif1_data_a_rx_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

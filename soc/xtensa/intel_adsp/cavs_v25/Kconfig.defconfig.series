@@ -38,11 +38,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 config IRQ_OFFLOAD_INTNUM
 	default 0
 
-# This series does not have MISC0.
-# Since EXCSAVE7 is unused by Zephyr, use it instead.
-config XTENSA_KERNEL_CPU_PTR_SR
-	default "EXCSAVE2"
-
 config KERNEL_ENTRY
 	default "_MainEntry"
 
@@ -69,5 +64,12 @@ config LOG_BACKEND_ADSP
 	default y
 
 endif # LOG
+
+if KERNEL_VM_SUPPORT
+
+config KERNEL_VM_SIZE
+	default 0x800000
+
+endif
 
 endif # SOC_SERIES_INTEL_CAVS_V25

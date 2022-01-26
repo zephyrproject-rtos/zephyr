@@ -412,6 +412,7 @@ nokia	Nokia
 nordic	Nordic Semiconductor
 novtech	NovTech, Inc.
 nutsboard	NutsBoard
+nuclei	Nuclei System Technology
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
 nvidia	NVIDIA
@@ -512,6 +513,7 @@ sancloud	Sancloud Ltd
 sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
+sc	Space Cubics, LLC
 schindler	Schindler
 seagate	Seagate Technology PLC
 segger	SEGGER Microcontroller GmbH
@@ -540,6 +542,7 @@ silex-insight	Silex Insight
 siliconfile	Siliconfile Technologies lnc.
 siliconmitus	Silicon Mitus, Inc.
 siemens	Siemens AG
+simcom	SIMCom Wireless Solutions Co., LTD
 simtek	Cypress Semiconductor Corporation (Simtek Corporation)
 sinlinx	Sinlinx Electronics Technology Co., LTD
 sinovoip	SinoVoip Co., Ltd
@@ -648,6 +651,7 @@ wexler	Wexler
 whwave	Shenzhen whwave Electronics, Inc.
 wi2wi	Wi2Wi, Inc.
 winbond	Winbond Electronics corp.
+winsen	Zhengzhou Winsen Electronics Technology Co., Ltd.
 winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
 wiznet	WIZnet Co., Ltd.

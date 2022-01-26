@@ -185,6 +185,11 @@ Bluetooth:
         - subsys/bluetooth/shell/
         - subsys/bluetooth/audio/
         - tests/bluetooth/
+    files-exclude:
+        - include/bluetooth/mesh/
+        - subsys/bluetooth/controller/
+        - subsys/bluetooth/mesh/
+        - samples/bluetooth/mesh/
     labels:
         - "area: Bluetooth"
 
@@ -203,6 +208,7 @@ Bluetooth controller:
         - subsys/bluetooth/controller/
     labels:
         - "area: Bluetooth Controller"
+        - "area: Bluetooth"
 
 Bluetooth Mesh:
     status: maintained
@@ -212,12 +218,14 @@ Bluetooth Mesh:
         - jhedberg
         - LingaoM
         - alxelax
+        - PavelVPV
     files:
         - subsys/bluetooth/mesh/
         - include/bluetooth/mesh/
         - tests/bluetooth/mesh*/
     labels:
         - "area: Bluetooth Mesh"
+        - "area: Bluetooth"
 
 Build system:
     status: maintained
@@ -442,6 +450,7 @@ Documentation:
         - lgirdwood
         - mengxianglinx
         - marc-hb
+        - kv2019i
     files:
         - drivers/audio/
         - include/audio/
@@ -470,7 +479,7 @@ Documentation:
         - samples/drivers/can/
         - tests/drivers/can/
         - samples/subsys/canbus/
-        - doc/reference/networking/can_api.rst
+        - doc/reference/canbus/
         - modules/canopennode/
         - samples/modules/canopennode/
     labels:
@@ -534,7 +543,9 @@ Documentation:
         - "area: DAC"
 
 "Drivers: DMA":
-    status: orphaned
+    status: maintained
+    maintainers:
+        - teburd
     files:
         - drivers/dma/
         - tests/drivers/dma/
@@ -571,7 +582,7 @@ Documentation:
       - albertofloyd
     collaborators:
       - VenkatKotakonda
-      - scottwcpg
+      - jvasanth1
     files:
         - drivers/espi/
         - include/drivers/espi.h
@@ -630,7 +641,9 @@ Documentation:
         - "area: HWINFO"
 
 "Drivers: I2C":
-    status: orphaned
+    status: maintained
+    maintainers:
+        - teburd
     files:
         - drivers/i2c/
         - dts/bindings/i2c/
@@ -841,6 +854,7 @@ Documentation:
         - include/drivers/uart.h
         - include/drivers/uart/
         - dts/bindings/serial/
+        - samples/drivers/uart/
         - tests/drivers/uart/
     labels:
         - "area: UART"
@@ -1305,6 +1319,7 @@ Twister:
         - PerMac
         - enjiamai
         - hakehuang
+        - gopiotr
     files:
         - scripts/twister
         - scripts/pylib/twister/
@@ -1379,14 +1394,19 @@ GD32 Platforms:
     maintainers:
         - nandojve
         - gmarull
+    collaborators:
+        - soburi
     files:
         - boards/arm/gd32*/
+        - boards/riscv/gd32*/
+        - boards/riscv/longan_nano/
         - drivers/*/*gd32*/
         - drivers/*/*gd32*
-        - dts/arm/gigadevice/
+        - dts/*/gigadevice/
         - dts/bindings/*/*gd32*
         - modules/hal_gigadevice/
         - soc/arm/gigadevice/
+        - soc/riscv/riscv-privilege/gd32vf103/
         - scripts/west_commands/*/*gd32*
     labels:
         - "platform: GD32"
@@ -1479,6 +1499,11 @@ Intel Platforms (Xtensa):
     collaborators:
         - andyross
         - dcpleung
+        - lyakh
+        - lgirdwood
+        - mengxianglinx
+        - marc-hb
+        - kv2019i
     files:
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
@@ -1492,6 +1517,7 @@ NXP Platforms:
     - dleach02
   collaborators:
     - mmahadevan108
+    - danieldegrasse
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
@@ -1509,7 +1535,7 @@ NXP Platforms:
 Microchip Platforms:
   status: maintained
   maintainers:
-    - scottwcpg
+    - jvasanth1
   collaborators:
     - VenkatKotakonda
     - albertofloyd
@@ -1764,7 +1790,6 @@ CI:
         - galak
     files:
         - .github/
-        - .buildkite/
         - scripts/ci/
         - .checkpatch.conf
         - scripts/gitlint/

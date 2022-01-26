@@ -158,8 +158,6 @@ static int mbox_message_match(struct k_mbox_msg *tx_msg,
  * then notifies the sender that message processing is complete.
  *
  * @param rx_msg Pointer to receive message descriptor.
- *
- * @return N/A
  */
 static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 {

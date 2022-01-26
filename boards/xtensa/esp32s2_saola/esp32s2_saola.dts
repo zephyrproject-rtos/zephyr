@@ -31,8 +31,8 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	rx-pin = <5>;
-	tx-pin = <6>;
+	tx-pin = <43>;
+	rx-pin = <44>;
 };
 
 &gpio0 {

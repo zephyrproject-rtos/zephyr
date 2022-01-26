@@ -121,6 +121,27 @@ __no_optimization void test_nop(void)
 	/* do 2 nop instructions more to cost cycles */
 	arch_nop();
 	arch_nop();
+#if defined(CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER)
+	/* When the case machine timer clock uses the divided system clock,
+	 * k_cycle_get_32() can't measure accurately how many cycles elapsed.
+	 *
+	 * For example, use the value as timer clock obtained by dividing
+	 * the system clock by 4.
+	 * In this case, measuring a duration with k_cycle_get32() has up to 3
+	 * (4-1) cycles systematic error.
+	 *
+	 * To run this test, we need to insert an appropriate of nops
+	 * with consideration for the errors.
+	 * 'nop' can not repeat with for loop.
+	 * Must insert as separated statement.
+	 * But we don't have a convenient function such as
+	 * BOOST_PP_REPEAT in C++.
+	 *
+	 * At this time, Implementing a generic test is a bit difficult.
+	 * Skipping this test in the case.
+	 */
+	ztest_test_skip();
+#endif
 #elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
 	defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* do 4 nop instructions more to cost cycles */

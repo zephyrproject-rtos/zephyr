@@ -273,38 +273,6 @@
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
 
 /**
- * @def OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME
- *
- * The platform logging function for openthread.
- *
- */
-#define _OT_CONF_PLAT_LOG_FUN_NARGS__IMPL(		\
-		_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,\
-		_11, _12, _13, _14, N, ...) N
-
-#define _OT_CONF_PLAT_LOG_FUN_NARGS__GET(...) \
-		_OT_CONF_PLAT_LOG_FUN_NARGS__IMPL(__VA_ARGS__,\
-		15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
-
-#define OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS(aLogLevel, unused, \
-							aFormat, ...) \
-	do { \
-		ARG_UNUSED(unused); \
-		otPlatLog( \
-		  aLogLevel, \
-		  (otLogRegion)_OT_CONF_PLAT_LOG_FUN_NARGS__GET(__VA_ARGS__),\
-		  aFormat, ##__VA_ARGS__); \
-	} while (false)
-
-#ifdef OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME
-#error OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME \
-	"OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME mustn't be defined before"
-#endif
-
-#define OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME \
-	OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS
-
-/**
  * @def OPENTHREAD_CONFIG_RADIO_LINK_IEEE_802_15_4_ENABLE
  *
  * Set to 1 to enable support for IEEE802.15.4 radio link.
@@ -361,6 +329,16 @@
 #endif /* CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON */
 
 /**
+ * @def OPENTHREAD_CONFIG_PLATFORM_CSL_UNCERT
+ *
+ * The Uncertainty of the scheduling CSL of transmission by the parent, in ±10 us units.
+ */
+
+#ifdef CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT
+#define OPENTHREAD_CONFIG_PLATFORM_CSL_UNCERT CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT */
+
+/**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE
  *
  * Set to 1 to enable software transmission security logic.
@@ -380,6 +358,17 @@
 #ifdef CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH
 #define OPENTHREAD_CONFIG_CLI_MAX_LINE_LENGTH CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH
 #endif /* CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH */
+
+/**
+ * @def OPENTHREAD_CONFIG_CLI_PROMPT_ENABLE
+ *
+ * Enable CLI prompt.
+ *
+ * When enabled, the CLI will print prompt on the output after processing a command.
+ * Otherwise, no prompt is added to the output.
+ *
+ */
+#define OPENTHREAD_CONFIG_CLI_PROMPT_ENABLE 0
 
 /**
  * @def OPENTHREAD_CONFIG_IP6_MAX_EXT_UCAST_ADDRS

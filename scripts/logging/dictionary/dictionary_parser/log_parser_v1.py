@@ -195,7 +195,10 @@ class LogParserV1(LogParser):
             str_idx = arg_offset + self.data_types.get_sizeof(DataTypes.PTR) * 2
             str_idx /= self.data_types.get_sizeof(DataTypes.INT)
 
-            ret = string_tbl[int(str_idx)]
+            if int(str_idx) not in string_tbl:
+                ret = "<string@0x{0:x}>".format(arg)
+            else:
+                ret = string_tbl[int(str_idx)]
 
         return ret
 

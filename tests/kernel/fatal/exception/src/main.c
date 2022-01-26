@@ -81,7 +81,7 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 	__asm__ volatile ("swi");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on RISCV
-	 * and xtensa
+	 * and xtensa, TLB exception (instruction fetch) on MIPS.
 	 */
 	{
 		volatile long illegal = 0;
@@ -114,7 +114,7 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #else
-	/* used to create a divide by zero error on X86 */
+	/* used to create a divide by zero error on X86 and MIPS */
 	volatile int error;
 	volatile int zero = 0;
 
@@ -126,28 +126,20 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 
 void entry_oops(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
 	expected_reason = K_ERR_KERNEL_OOPS;
 
-	key = irq_lock();
 	k_oops();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 void entry_panic(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
 	expected_reason = K_ERR_KERNEL_PANIC;
 
-	key = irq_lock();
 	k_panic();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 void entry_zephyr_assert(void *p1, void *p2, void *p3)
@@ -160,28 +152,20 @@ void entry_zephyr_assert(void *p1, void *p2, void *p3)
 
 void entry_arbitrary_reason(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
 	expected_reason = INT_MAX;
 
-	key = irq_lock();
 	z_except_reason(INT_MAX);
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 void entry_arbitrary_reason_negative(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
 	expected_reason = -2;
 
-	key = irq_lock();
 	z_except_reason(-2);
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 #ifndef CONFIG_ARCH_POSIX
@@ -242,12 +226,10 @@ void stack_sentinel_timer(void *p1, void *p2, void *p3)
 
 void stack_sentinel_swap(void *p1, void *p2, void *p3)
 {
-	unsigned int key = irq_lock();
-
 	/* Test that stack overflow check due to swap works */
 	blow_up_stack();
 	TC_PRINT("swapping...\n");
-	z_swap_irqlock(key);
+	z_swap_unlocked();
 	TC_ERROR("should never see this\n");
 	rv = TC_FAIL;
 }

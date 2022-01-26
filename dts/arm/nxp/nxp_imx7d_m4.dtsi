@@ -331,7 +331,7 @@
 		};
 
 		pwm1: pwm@30660000 {
-			compatible = "fsl,imx7d-pwm";
+			compatible = "fsl,imx7d-pwm", "fsl,imx27-pwm";
 			reg = <0x30660000 0x10000>;
 			interrupts = <81 0>;
 			prescaler = <0>;
@@ -345,7 +345,7 @@
 		};
 
 		pwm2: pwm@30670000 {
-			compatible = "fsl,imx7d-pwm";
+			compatible = "fsl,imx7d-pwm", "fsl,imx27-pwm";
 			reg = <0x30670000 0x10000>;
 			interrupts = <82 0>;
 			prescaler = <0>;
@@ -359,7 +359,7 @@
 		};
 
 		pwm3: pwm@30680000 {
-			compatible = "fsl,imx7d-pwm";
+			compatible = "fsl,imx7d-pwm", "fsl,imx27-pwm";
 			reg = <0x30680000 0x10000>;
 			interrupts = <83 0>;
 			prescaler = <0>;
@@ -373,7 +373,7 @@
 		};
 
 		pwm4: pwm@30690000 {
-			compatible = "fsl,imx7d-pwm";
+			compatible = "fsl,imx7d-pwm", "fsl,imx27-pwm";
 			reg = <0x30690000 0x10000>;
 			interrupts = <84 0>;
 			prescaler = <0>;

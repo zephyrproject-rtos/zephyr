@@ -262,7 +262,9 @@ static struct net_route_entry *add_route(struct net_if *iface,
 		return route;
 	}
 
-	route = net_route_add(iface, addr, prefix_len, addr);
+	route = net_route_add(iface, addr, prefix_len, addr,
+			      NET_IPV6_ND_INFINITE_LIFETIME,
+			      NET_ROUTE_PREFERENCE_LOW);
 
 	NET_DBG("%s route to %s/%d iface %p", route ? "Add" : "Cannot add",
 		log_strdup(net_sprint_ipv6_addr(addr)), prefix_len, iface);

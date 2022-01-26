@@ -1372,7 +1372,7 @@ struct bt_hci_cp_le_set_per_adv_data {
 	uint8_t  handle;
 	uint8_t  op;
 	uint8_t  len;
-	uint8_t  data[251];
+	uint8_t  data[BT_HCI_LE_PER_ADV_FRAG_MAX_LEN];
 } __packed;
 
 #define BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE     BIT(0)
@@ -1607,7 +1607,7 @@ struct bt_hci_rp_le_set_conn_cte_tx_params {
 struct bt_hci_cp_le_conn_cte_req_enable {
 	uint16_t handle;
 	uint8_t  enable;
-	uint8_t  cte_request_interval;
+	uint16_t cte_request_interval;
 	uint8_t  requested_cte_length;
 	uint8_t  requested_cte_type;
 } __packed;
@@ -1649,6 +1649,9 @@ struct bt_hci_rp_le_read_ant_info {
 	uint8_t max_switch_pattern_len;
 	uint8_t max_cte_len;
 };
+
+#define BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_ENABLE           BIT(0)
+#define BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE BIT(1)
 
 #define BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE     BT_OP(BT_OGF_LE, 0x0059)
 struct bt_hci_cp_le_set_per_adv_recv_enable {
@@ -2492,8 +2495,15 @@ struct bt_hci_evt_le_connection_iq_report {
 	struct bt_hci_le_iq_sample sample[0];
 } __packed;
 
+#define BT_HCI_CTE_REQ_STATUS_RSP_WITHOUT_CTE  0x0
+
 #define BT_HCI_EVT_LE_CTE_REQUEST_FAILED       0x17
 struct bt_hci_evt_le_cte_req_failed {
+	/* According to BT 5.3 Core Spec the status field may have following
+	 * values:
+	 * - BT_HCI_CTE_REQ_STATUS_RSP_WIHOUT_CTE when received LL_CTE_RSP_PDU without CTE.
+	 * - Other Controller error code for peer rejected request.
+	 */
 	uint8_t  status;
 	uint16_t conn_handle;
 } __packed;

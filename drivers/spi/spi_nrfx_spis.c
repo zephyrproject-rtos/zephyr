@@ -23,16 +23,6 @@ struct spi_nrfx_config {
 	size_t      max_buf_len;
 };
 
-static inline struct spi_nrfx_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct spi_nrfx_config *get_dev_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {
 	if (SPI_MODE_GET(operation) & SPI_MODE_CPOL) {
@@ -62,7 +52,9 @@ static inline nrf_spis_bit_order_t get_nrf_spis_bit_order(uint16_t operation)
 static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
-	struct spi_context *ctx = &get_dev_data(dev)->ctx;
+	const struct spi_nrfx_config *config = dev->config;
+	struct spi_nrfx_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		/* Already configured. No need to do it again. */
@@ -102,7 +94,7 @@ static int configure(const struct device *dev,
 
 	ctx->config = spi_cfg;
 
-	nrf_spis_configure(get_dev_config(dev)->spis.p_reg,
+	nrf_spis_configure(config->spis.p_reg,
 			   get_nrf_spis_mode(spi_cfg->operation),
 			   get_nrf_spis_bit_order(spi_cfg->operation));
 
@@ -113,8 +105,8 @@ static void prepare_for_transfer(const struct device *dev,
 				 const uint8_t *tx_buf, size_t tx_buf_len,
 				 uint8_t *rx_buf, size_t rx_buf_len)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
-	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	int status;
 
 	if (tx_buf_len > dev_config->max_buf_len ||
@@ -146,7 +138,7 @@ static int transceive(const struct device *dev,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
 	int error;
 
 	spi_context_lock(&dev_data->ctx, asynchronous, signal, spi_cfg);
@@ -199,7 +191,7 @@ static int spi_nrfx_transceive_async(const struct device *dev,
 static int spi_nrfx_release(const struct device *dev,
 			    const struct spi_config *spi_cfg)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	struct spi_nrfx_data *dev_data = dev->data;
 
 	if (!spi_context_configured(&dev_data->ctx, spi_cfg)) {
 		return -EINVAL;
@@ -231,11 +223,12 @@ static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 static int init_spis(const struct device *dev,
 		     const nrfx_spis_config_t *config)
 {
-	struct spi_nrfx_data *dev_data = get_dev_data(dev);
+	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
 	/* This sets only default values of mode and bit order. The ones to be
 	 * actually used are set in configure() when a transfer is prepared.
 	 */
-	nrfx_err_t result = nrfx_spis_init(&get_dev_config(dev)->spis,
+	nrfx_err_t result = nrfx_spis_init(&dev_config->spis,
 					   config,
 					   event_handler,
 					   dev_data);

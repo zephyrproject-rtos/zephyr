@@ -188,7 +188,7 @@ struct gdb_ctx;
 /* Should be called by the arch layer. This is the gdbstub main loop
  * and synchronously communicate with gdb on host.
  */
-extern int z_gdb_main_loop(struct gdb_ctx *ctx, bool start);
+extern int z_gdb_main_loop(struct gdb_ctx *ctx);
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING

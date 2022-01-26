@@ -13,10 +13,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 #include <kernel.h>
 #include <errno.h>
 #include <sys/util.h>
-#include <drivers/spi.h>
 #include <net/ethernet.h>
 #include <linker/sections.h>
-#include <drivers/spi.h>
 
 #if defined(CONFIG_DSA_SPI)
 #include <drivers/spi.h>
@@ -38,13 +36,10 @@ struct ksz8xxx_data {
 	int iface_init_count;
 	bool is_init;
 #if defined(CONFIG_DSA_SPI)
-	const struct device *spi;
-	struct spi_config spi_cfg;
-	struct spi_cs_control cs_ctrl;
+	struct spi_dt_spec spi;
 #endif
 };
 
-#define DEV_DATA(dev) ((struct dsa_context *const)(dev)->data)
 #define PRV_DATA(ctx) ((struct ksz8xxx_data *const)(ctx)->prv_data)
 
 static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev,
@@ -66,7 +61,7 @@ static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev,
 	buf[1] = (reg_addr << 1) & 0xFE;
 	buf[2] = value;
 
-	spi_write(pdev->spi, &pdev->spi_cfg, &tx);
+	spi_write_dt(&pdev->spi, &tx);
 #endif
 }
 
@@ -98,7 +93,7 @@ static void dsa_ksz8xxx_read_reg(const struct ksz8xxx_data *pdev,
 	buf[1] = (reg_addr << 1) & 0xFE;
 	buf[2] = 0x0;
 
-	if (!spi_transceive(pdev->spi, &pdev->spi_cfg, &tx, &rx)) {
+	if (!spi_transceive_dt(&pdev->spi, &tx, &rx)) {
 		*value = buf[2];
 	} else {
 		LOG_DBG("Failure while reading register 0x%04x", reg_addr);
@@ -312,11 +307,6 @@ static int dsa_ksz8xxx_switch_setup(struct ksz8xxx_data *pdev)
 	 * disabled.
 	 */
 	for (i = KSZ8XXX_FIRST_PORT; i <= KSZ8XXX_LAST_PORT; i++) {
-		/* Skip Switch <-> CPU Port */
-		if (i == KSZ8XXX_CPU_PORT) {
-			continue;
-		}
-
 		/* Enable transmission, reception and switch address learning */
 		dsa_ksz8xxx_read_reg(pdev, KSZ8794_CTRL2_PORTn(i), &tmp);
 		tmp |= KSZ8794_CTRL2_TRANSMIT_EN;
@@ -325,7 +315,7 @@ static int dsa_ksz8xxx_switch_setup(struct ksz8xxx_data *pdev)
 		dsa_ksz8xxx_write_reg(pdev, KSZ8794_CTRL2_PORTn(i), tmp);
 	}
 
-#if defined(DSA_KSZ_TAIL_TAGGING)
+#if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
 	/* Enable tail tag feature */
 	dsa_ksz8xxx_read_reg(pdev, KSZ8794_GLOBAL_CTRL10, &tmp);
 	tmp |= KSZ8794_GLOBAL_CTRL10_TAIL_TAG_EN;
@@ -674,29 +664,19 @@ static int dsa_ksz8xxx_configure_bus(struct ksz8xxx_data *pdev)
 {
 #if defined(CONFIG_DSA_SPI)
 	/* SPI config */
-	pdev->spi_cfg.operation =
+	pdev->spi = (struct spi_dt_spec) SPI_DT_SPEC_INST_GET(0,
 #if DT_INST_PROP(0, spi_cpol)
 		SPI_MODE_CPOL |
 #endif
 #if DT_INST_PROP(0, spi_cpha)
 		SPI_MODE_CPHA |
 #endif
-		SPI_WORD_SET(8);
+		SPI_WORD_SET(8),
+		0U);
 
-	pdev->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	pdev->spi_cfg.slave = DT_INST_REG_ADDR(0);
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	pdev->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	pdev->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	pdev->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	pdev->cs_ctrl.delay = 0U;
-	pdev->spi_cfg.cs = &(pdev->cs_ctrl);
-#else
-	pdev->spi_cfg.cs = NULL;
-#endif
-	pdev->spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!pdev->spi) {
+	if (!spi_is_ready(&pdev->spi)) {
+		LOG_ERR("SPI bus %s is not ready",
+			pdev->spi.bus->name);
 		return -ENODEV;
 	}
 #endif
@@ -784,7 +764,8 @@ static void dsa_delayed_work(struct k_work *item)
 
 int dsa_port_init(const struct device *dev)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	dsa_hw_init(pdev);
 	return 0;
@@ -794,7 +775,8 @@ int dsa_port_init(const struct device *dev)
 static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr,
 				    uint8_t value)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	dsa_ksz8xxx_write_reg(pdev, reg_addr, value);
 	return 0;
@@ -804,7 +786,8 @@ static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr,
 static int dsa_ksz8xxx_sw_read_reg(const struct device *dev, uint16_t reg_addr,
 				   uint8_t *value)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	dsa_ksz8xxx_read_reg(pdev, reg_addr, value);
 	return 0;
@@ -827,7 +810,8 @@ static int dsa_ksz8xxx_set_mac_table_entry(const struct device *dev,
 						uint16_t tbl_entry_idx,
 						uint16_t flags)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	if (flags != 0) {
 		return -EINVAL;
@@ -852,14 +836,15 @@ static int dsa_ksz8xxx_get_mac_table_entry(const struct device *dev,
 						uint8_t *buf,
 						uint16_t tbl_entry_idx)
 {
-	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+	struct dsa_context *data = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(data);
 
 	dsa_ksz8xxx_read_static_mac_table(pdev, tbl_entry_idx, buf);
 
 	return 0;
 }
 
-#if defined(DSA_KSZ_TAIL_TAGGING)
+#if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
 #define DSA_KSZ8795_TAIL_TAG_OVRD	BIT(6)
 #define DSA_KSZ8795_TAIL_TAG_LOOKUP	BIT(7)
 
@@ -919,7 +904,7 @@ struct net_pkt *dsa_ksz8xxx_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
 	if (dsa_is_port_master(iface)) {
 		port_idx = DSA_KSZ8795_TAIL_TAG_LOOKUP;
 	} else {
-		port_idx = (1 << (ctx->dsa_port_idx - 1));
+		port_idx = (1 << (ctx->dsa_port_idx));
 	}
 
 	NET_DBG("TT - port: 0x%x[%p] LEN: %d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
@@ -1071,7 +1056,7 @@ static struct dsa_api dsa_api_f = {
 	.switch_write = dsa_ksz8xxx_sw_write_reg,
 	.switch_set_mac_table_entry = dsa_ksz8xxx_set_mac_table_entry,
 	.switch_get_mac_table_entry = dsa_ksz8xxx_get_mac_table_entry,
-#if defined(DSA_KSZ_TAIL_TAGGING)
+#if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
 	.dsa_xmit_pkt = dsa_ksz8xxx_xmit_pkt,
 	.dsa_get_iface = dsa_ksz8xxx_get_iface,
 #endif

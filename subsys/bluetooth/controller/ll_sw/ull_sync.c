@@ -13,6 +13,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -179,6 +180,10 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	sync->node_rx_sync_estab = node_rx;
 	sync->node_rx_lost.hdr.link = link_sync_lost;
 
+	/* Reporting initially enabled/disabled */
+	sync->rx_enable =
+		!(options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED);
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	sync->nodups = (options &
 			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE) ?
@@ -218,6 +223,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Initialize sync LLL context */
 	lll_sync = &sync->lll;
+	lll_sync->is_rx_enabled = sync->rx_enable;
 	lll_sync->skip_prepare = 0U;
 	lll_sync->skip_event = 0U;
 	lll_sync->window_widening_prepare_us = 0U;
@@ -226,10 +232,6 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->cte_type = sync_cte_type;
 	lll_sync->filter_policy = scan->per_scan.filter_policy;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
-
-	/* TODO: Add support for reporting initially enabled/disabled */
-	lll_sync->is_rx_enabled =
-		!(options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	ull_df_sync_cfg_init(&lll_sync->df_cfg);
@@ -323,6 +325,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 
 uint8_t ll_sync_terminate(uint16_t handle)
 {
+	struct lll_scan_aux *lll_aux;
 	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
 	int err;
@@ -339,6 +342,17 @@ uint8_t ll_sync_terminate(uint16_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	lll_aux = sync->lll.lll_aux;
+	if (lll_aux) {
+		struct ll_scan_aux_set *aux;
+
+		aux = HDR_LLL2ULL(lll_aux);
+		err = ull_scan_aux_stop(aux);
+		if (err) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+	}
+
 	link_sync_lost = sync->node_rx_lost.hdr.link;
 	ll_rx_link_release(link_sync_lost);
 
@@ -347,10 +361,36 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	return 0;
 }
 
+/* @brief Link Layer interface function corresponding to HCI LE Set Periodic
+ *        Advertising Receive Enable command.
+ *
+ * @param[in] handle Sync_Handle identifying the periodic advertising
+ *                   train. Range: 0x0000 to 0x0EFF.
+ * @param[in] enable Bit number 0 - Reporting Enabled.
+ *                   Bit number 1 - Duplicate filtering enabled.
+ *                   All other bits - Reserved for future use.
+ *
+ * @return HCI error codes as documented in Bluetooth Core Specification v5.3.
+ */
 uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable)
 {
-	/* TODO: Add support for reporting enable/disable */
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	struct ll_sync_set *sync;
+
+	sync = ull_sync_is_enabled_get(handle);
+	if (!sync) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	/* Reporting enabled/disabled */
+	sync->rx_enable = (enable & BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_ENABLE) ?
+			  1U : 0U;
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+	sync->nodups = (enable & BT_HCI_LE_SET_PER_ADV_RECV_ENABLE_FILTER_DUPLICATE) ?
+		       1U : 0U;
+#endif
+
+	return 0;
 }
 
 int ull_sync_init(void)
@@ -476,6 +516,16 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 		   !memcmp(addr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
 		/* Address matched */
 		scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+
+	/* Check identity address with explicitly supplied address */
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) &&
+		   (rl_idx < ll_rl_size_get())) {
+		ll_rl_id_addr_get(rl_idx, &addr_type, addr);
+		if ((addr_type == scan->per_scan.adv_addr_type) &&
+		    !memcmp(addr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
+			/* Identity address matched */
+			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+		}
 	}
 }
 
@@ -719,9 +769,10 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	 * or the CTE type is incorrect and filter policy doesn't allow to continue scanning.
 	 */
 	if (sync_status != SYNC_STAT_READY_OR_CONT_SCAN) {
-#else
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+
 	if (1) {
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+#endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 		/* Set the sync handle corresponding to the LLL context passed in the node rx
 		 * footer field.
@@ -761,13 +812,16 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	 * scanning is terminated due to wrong CTE type.
 	 */
 	if (sync_status != SYNC_STAT_TERM) {
-#else
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+
 	if (1) {
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+#endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 		/* Switch sync event prepare function to one reposnsible for regular PDUs receive */
 		mfy_lll_prepare.fp = lll_sync_prepare;
 
-		/* Change node type to appropriately handle periodic advertising PDU report */
+		/* Change node type to appropriately handle periodic
+		 * advertising PDU report.
+		 */
 		rx->type = NODE_RX_TYPE_SYNC_REPORT;
 		ull_scan_aux_setup(link, rx);
 	}
@@ -1056,6 +1110,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_O(1);
 
 	lll = &sync->lll;
+
+	/* Commit receive enable changed value */
+	lll->is_rx_enabled = sync->rx_enable;
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync->ull);

@@ -42,14 +42,6 @@ check_set_compiler_property(APPEND PROPERTY warning_base -Wpointer-arith)
 # not portable
 check_set_compiler_property(APPEND PROPERTY warning_base -Wexpansion-to-defined)
 
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.1.0")
-  set_compiler_property(APPEND PROPERTY warning_base
-                        # FIXME: Remove once #16587 is fixed
-                        -Wno-address-of-packed-member
-  )
-endif()
-
-
 # GCC options for warning levels 1, 2, 3, when using `-DW=[1|2|3]`
 set_compiler_property(PROPERTY warning_dw_1
                       -Waggregate-return
@@ -170,12 +162,14 @@ check_set_compiler_property(APPEND PROPERTY hosted -fno-freestanding)
 # gcc flag for a freestandingapplication
 set_compiler_property(PROPERTY freestanding -ffreestanding)
 
-# Flag to enable debugging
-set_compiler_property(PROPERTY debug -g)
+if(NOT DEFINED GCC_NO_G_FLAG)
+  # Flag to enable debugging
+  set_compiler_property(PROPERTY debug -g)
 
-# GCC 11 by default emits DWARF version 5 which cannot be parsed by
-# pyelftools. Can be removed once pyelftools supports v5.
-check_set_compiler_property(APPEND PROPERTY debug -gdwarf-4)
+  # GCC 11 by default emits DWARF version 5 which cannot be parsed by
+  # pyelftools. Can be removed once pyelftools supports v5.
+  check_set_compiler_property(APPEND PROPERTY debug -gdwarf-4)
+endif()
 
 set_compiler_property(PROPERTY no_common -fno-common)
 

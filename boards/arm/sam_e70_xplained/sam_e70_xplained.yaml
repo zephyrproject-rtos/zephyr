@@ -17,3 +17,5 @@ supported:
   - watchdog
   - usb_device
   - pwm
+  - can
+  - canfd

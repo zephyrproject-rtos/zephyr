@@ -22,11 +22,11 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_1 {
-			gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 		green_led: led_2 {
-			gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -48,6 +48,10 @@
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&clk_lse {
 	status = "okay";
 };
 
@@ -112,4 +116,8 @@
 		     &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
+};
+
+&lptim1 {
+	status = "okay";
 };

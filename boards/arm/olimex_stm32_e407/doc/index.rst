@@ -48,7 +48,7 @@ hardware features:
 | USB OTG HS | on-chip    | USB device           |
 +------------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Pin Mapping
 ===========

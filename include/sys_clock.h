@@ -79,7 +79,7 @@ typedef struct {
  */
 #define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
 
-#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {})
+#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {0})
 #if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
 #define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { (t) })
 #else

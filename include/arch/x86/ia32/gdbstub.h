@@ -20,7 +20,7 @@
 /**
  * @brief Number of register used by gdbstub in IA-32
  */
-#define ARCH_GDB_NUM_REGISTERS 16
+#define GDB_STUB_NUM_REGISTERS 16
 
 /**
  * @brief GDB interruption context
@@ -71,12 +71,13 @@ enum GDB_REGISTER {
 	GDB_DS,
 	GDB_ES,
 	GDB_FS,
-	GDB_GS
+	GDB_GS,
+	GDB_ORIG_EAX = 41,
 };
 
 struct gdb_ctx {
 	unsigned int exception;
-	unsigned int registers[ARCH_GDB_NUM_REGISTERS];
+	unsigned int registers[GDB_STUB_NUM_REGISTERS];
 };
 
 #endif /* _ASMLANGUAGE */

@@ -492,16 +492,16 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	/* Enable keyboard scan loop */
 	atomic_set(&data->enable_scan, 1);
 
+	irq_connect_dynamic(DT_INST_IRQN(0), 0,
+			    (void (*)(const void *))keyboard_raw_interrupt,
+			    (const void *)dev, 0);
+
 	/* Create keyboard scan task */
 	k_thread_create(&data->thread, data->thread_stack,
 			TASK_STACK_SIZE,
 			(void (*)(void *, void *, void *))polling_task,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(4), 0, K_NO_WAIT);
-
-	irq_connect_dynamic(DT_INST_IRQN(0), 0,
-			    (void (*)(const void *))keyboard_raw_interrupt,
-			    (const void *)dev, 0);
 
 	return 0;
 }
@@ -556,7 +556,7 @@ static const struct kscan_it8xxx2_config kscan_it8xxx2_cfg_0 = {
 	.reg_wuesr3 = DT_INST_REG_ADDR_BY_IDX(0, 2),
 	.reg_wuenr3 = DT_INST_REG_ADDR_BY_IDX(0, 3),
 	.irq = DT_INST_IRQN(0),
-	.gpio_dev = DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DT_DRV_INST(0), gpio_dev, 0)),
+	.gpio_dev = DEVICE_DT_GET(DT_INST_PHANDLE_BY_IDX(0, gpio_dev, 0)),
 	.alt_list = kscan_alt_0,
 };
 

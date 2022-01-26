@@ -86,7 +86,7 @@ The BL654 Sensor Board configuration supports the following hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See the `BL654 website`_ for a complete list of BL654 module hardware features.
 
 Connections and IOs

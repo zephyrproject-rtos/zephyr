@@ -83,12 +83,13 @@
 		regulator-boot-on;
 	};
 
-	nrf21540fem_ctrl: nrf21540fem-ctrl {
+	nrf_radio_fem: fem {
 		compatible = "nordic,nrf21540-fem";
 		rx-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		spi-if = <&nrf_radio_fem_spi>;
 	};
 
 	aliases {
@@ -180,7 +181,7 @@
 		int1-gpios = <&gpio0 23 0>;
 	};
 
-	nrf21540fem: spi-dev-nrf21540fem@2 {
+	nrf_radio_fem_spi: fem_spi@2 {
 		compatible = "nordic,nrf21540-fem-spi";
 		status = "okay";
 		reg = <2>;

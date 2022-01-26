@@ -538,7 +538,7 @@ uint8_t bt_mesh_subnet_node_id_set(uint16_t net_idx,
 		bt_mesh_proxy_identity_stop(sub);
 	}
 
-	bt_mesh_adv_update();
+	bt_mesh_adv_gatt_update();
 
 	return STATUS_SUCCESS;
 }
@@ -638,8 +638,7 @@ int bt_mesh_subnet_set(uint16_t net_idx, uint8_t kr_phase,
 	return 0;
 }
 
-struct bt_mesh_subnet *bt_mesh_subnet_find(int (*cb)(struct bt_mesh_subnet *sub,
-						     void *cb_data),
+struct bt_mesh_subnet *bt_mesh_subnet_find(bool (*cb)(struct bt_mesh_subnet *sub, void *cb_data),
 					   void *cb_data)
 {
 	for (int i = 0; i < ARRAY_SIZE(subnets); i++) {

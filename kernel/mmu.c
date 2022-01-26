@@ -380,7 +380,10 @@ static void free_page_frame_list_put(struct z_page_frame *pf)
 {
 	PF_ASSERT(pf, z_page_frame_is_available(pf),
 		 "unavailable page put on free list");
-	sys_slist_append(&free_page_frame_list, &pf->node);
+	/* The structure is packed, which ensures that this is true */
+	void *node = pf;
+
+	sys_slist_append(&free_page_frame_list, node);
 	z_free_page_count++;
 }
 

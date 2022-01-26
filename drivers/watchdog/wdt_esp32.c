@@ -64,12 +64,9 @@ struct wdt_esp32_config {
 	int irq_source;
 };
 
-#define DEV_CFG(dev) \
-	((const struct wdt_esp32_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct wdt_esp32_data *)(dev)->data)
 #define DEV_BASE(dev) \
-	((volatile struct wdt_esp32_regs_t  *)(DEV_CFG(dev))->base)
+	((volatile struct wdt_esp32_regs_t  *) \
+	 ((const struct wdt_esp32_config *const)(dev)->config)->base)
 
 /* ESP32 ignores writes to any register if WDTWPROTECT doesn't contain the
  * magic value of TIMG_WDT_WKEY_VALUE.  The datasheet recommends unsealing,
@@ -126,20 +123,23 @@ static int wdt_esp32_feed(const struct device *dev, int channel_id)
 
 static void set_interrupt_enabled(const struct device *dev, bool setting)
 {
-	*DEV_CFG(dev)->irq_regs.timer_int_clr |= TIMG_WDT_INT_CLR;
+	const struct wdt_esp32_config *config = dev->config;
+	struct wdt_esp32_data *data = dev->data;
+
+	*config->irq_regs.timer_int_clr |= TIMG_WDT_INT_CLR;
 
 	if (setting) {
-		*DEV_CFG(dev)->irq_regs.timer_int_ena |= TIMG_WDT_INT_ENA;
-		irq_enable(DEV_DATA(dev)->irq_line);
+		*config->irq_regs.timer_int_ena |= TIMG_WDT_INT_ENA;
+		irq_enable(data->irq_line);
 	} else {
-		*DEV_CFG(dev)->irq_regs.timer_int_ena &= ~TIMG_WDT_INT_ENA;
-		irq_disable(DEV_DATA(dev)->irq_line);
+		*config->irq_regs.timer_int_ena &= ~TIMG_WDT_INT_ENA;
+		irq_disable(data->irq_line);
 	}
 }
 
 static int wdt_esp32_set_config(const struct device *dev, uint8_t options)
 {
-	struct wdt_esp32_data *data = DEV_DATA(dev);
+	struct wdt_esp32_data *data = dev->data;
 	uint32_t v = DEV_BASE(dev)->config0;
 
 	if (!data) {
@@ -195,7 +195,7 @@ static int wdt_esp32_set_config(const struct device *dev, uint8_t options)
 static int wdt_esp32_install_timeout(const struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
-	struct wdt_esp32_data *data = DEV_DATA(dev);
+	struct wdt_esp32_data *data = dev->data;
 
 	if (cfg->flags != WDT_FLAG_RESET_SOC) {
 		return -ENOTSUP;
@@ -217,8 +217,8 @@ static int wdt_esp32_install_timeout(const struct device *dev,
 
 static int wdt_esp32_init(const struct device *dev)
 {
-	const struct wdt_esp32_config *const config = DEV_CFG(dev);
-	struct wdt_esp32_data *data = DEV_DATA(dev);
+	const struct wdt_esp32_config *const config = dev->config;
+	struct wdt_esp32_data *data = dev->data;
 
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_esp32_disable(dev);
@@ -268,13 +268,14 @@ static const struct wdt_driver_api wdt_api = {
 static void wdt_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	struct wdt_esp32_data *data = DEV_DATA(dev);
+	const struct wdt_esp32_config *config = dev->config;
+	struct wdt_esp32_data *data = dev->data;
 
 	if (data->callback) {
 		data->callback(dev, 0);
 	}
 
-	*DEV_CFG(dev)->irq_regs.timer_int_clr |= TIMG_WDT_INT_CLR;
+	*config->irq_regs.timer_int_clr |= TIMG_WDT_INT_CLR;
 }
 
 

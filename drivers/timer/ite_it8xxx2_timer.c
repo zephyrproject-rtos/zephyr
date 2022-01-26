@@ -5,6 +5,7 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_timer
 
+#include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <soc.h>
@@ -100,7 +101,7 @@ void timer_5ms_one_shot(void)
 			ONE_SHOT_TIMER_FLAG);
 
 	/* Set rising edge triggered of one shot timer */
-	ite_intc_irq_priority_set(ONE_SHOT_TIMER_IRQ, 0, ONE_SHOT_TIMER_FLAG);
+	ite_intc_irq_polarity_set(ONE_SHOT_TIMER_IRQ, ONE_SHOT_TIMER_FLAG);
 
 	/* Clear interrupt status of one shot timer */
 	ite_intc_isr_clear(ONE_SHOT_TIMER_IRQ);
@@ -305,7 +306,7 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	}
 
 	/* Set rising edge triggered of external timer x */
-	ite_intc_irq_priority_set(irq_num, 0, irq_flag);
+	ite_intc_irq_polarity_set(irq_num, irq_flag);
 
 	/* Clear interrupt status of external timer x */
 	ite_intc_isr_clear(irq_num);
@@ -331,7 +332,7 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	return 0;
 }
 
-int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	int ret;
 
@@ -372,3 +373,6 @@ int sys_clock_driver_init(const struct device *dev)
 
 	return 0;
 }
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -5,10 +5,13 @@ tests:
   libraries.ring_buffer:
     integration_platforms:
       - native_posix
+    extra_configs:
+      - CONFIG_MP_NUM_CPUS=1
 
   libraries.ring_buffer_concurrent:
     platform_allow: qemu_x86
     extra_configs:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+      - CONFIG_MP_NUM_CPUS=1
     integration_platforms:
       - qemu_x86

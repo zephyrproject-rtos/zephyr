@@ -118,6 +118,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -255,8 +257,8 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 System Clock
 ============
 
-The MIMXRT1050 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 600 MHz core clock.
+The MIMXRT1050 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========
@@ -297,6 +299,10 @@ Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
 the `OpenSDA J-Link MIMXRT1050-EVK-Hyperflash Firmware`_. Check that jumpers
 J32 and J33 are **on** (they are on by default when boards ship from the
 factory) to ensure SWD signals are connected to the OpenSDA microcontroller.
+
+Follow the instructions in `Enable QSPI flash support in SEGGER JLink`_
+in order to support your EVK if you have modified it to boot from QSPI NOR
+flash as specified by NXP AN12108.
 
 Option 2: :ref:`jlink-external-debug-probe`
 -------------------------------------------
@@ -430,3 +436,6 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
 
 .. _NXP i.MXRT1050 A0 to A1 Migration Guide:
    https://www.nxp.com/docs/en/nxp/application-notes/AN12146.pdf
+
+.. _Enable QSPI flash support in SEGGER JLink:
+   https://wiki.segger.com/i.MXRT1050#QSPI_flash

@@ -43,8 +43,7 @@ extern void ite_intc_irq_enable(unsigned int irq);
 extern void ite_intc_irq_disable(unsigned int irq);
 extern uint8_t ite_intc_get_irq_num(void);
 extern int ite_intc_irq_is_enable(unsigned int irq);
-extern void ite_intc_irq_priority_set(unsigned int irq,
-			unsigned int prio, unsigned int flags);
+extern void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags);
 extern void ite_intc_isr_clear(unsigned int irq);
 #endif /* CONFIG_ITE_IT8XXX2_INTC */
 
@@ -54,8 +53,6 @@ void timer_5ms_one_shot(void);
 
 void chip_pll_ctrl(enum chip_pll_mode mode);
 void riscv_idle(enum chip_pll_mode mode, unsigned int key);
-extern void uart1_wui_isr_late(void);
-extern void uart2_wui_isr_late(void);
 
 #endif /* !_ASMLANGUAGE */
 

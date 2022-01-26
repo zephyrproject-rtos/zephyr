@@ -7,6 +7,7 @@ set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx)
 set(INC_DIR ${NRFX_DIR}/drivers/include)
 set(SRC_DIR ${NRFX_DIR}/drivers/src)
 set(MDK_DIR ${NRFX_DIR}/mdk)
+set(HELPERS_DIR ${NRFX_DIR}/helpers)
 
 zephyr_include_directories(${NRFX_DIR})
 zephyr_include_directories(${INC_DIR})
@@ -41,6 +42,11 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING
 zephyr_library_compile_definitions_ifdef(CONFIG_NRF_TRACE_PORT
                                  ENABLE_TRACE)
 
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP
+                                 NRF_SKIP_FICR_NS_COPY_TO_RAM)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160
+                                 NRF_SKIP_FICR_NS_COPY_TO_RAM)
+
 # Connect Kconfig compilation option for Non-Secure software with option required by MDK/nrfx
 zephyr_compile_definitions_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE NRF_TRUSTZONE_NONSECURE)
 zephyr_compile_definitions_ifdef(CONFIG_LOG_BACKEND_SWO ENABLE_SWO)
@@ -58,6 +64,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUNET ${MDK_DIR}/system_nrf5340
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF9160        ${MDK_DIR}/system_nrf9160.c)
 
 zephyr_library_sources(nrfx_glue.c)
+zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
 
 zephyr_library_sources_ifdef(CONFIG_NRFX_PRS     ${SRC_DIR}/prs/nrfx_prs.c)
 

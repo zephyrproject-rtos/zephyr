@@ -31,6 +31,9 @@ struct spi_stm32_config {
 #define SPI_STM32_DMA_DONE_FLAG	\
 	(SPI_STM32_DMA_RX_DONE_FLAG | SPI_STM32_DMA_TX_DONE_FLAG)
 
+#define SPI_STM32_DMA_TX	0x01
+#define SPI_STM32_DMA_RX	0x02
+
 struct stream {
 	const struct device *dma_dev;
 	uint32_t channel; /* stores the channel for dma or mux */
@@ -52,6 +55,35 @@ struct spi_stm32_data {
 	struct stream dma_tx;
 #endif
 };
+
+#ifdef CONFIG_SPI_STM32_DMA
+static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t location)
+{
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	if (location == SPI_STM32_DMA_TX) {
+		/* use direct register location until the LL_SPI_DMA_GetTxRegAddr exists */
+		return (uint32_t)&(spi->TXDR);
+	}
+	/* use direct register location until the LL_SPI_DMA_GetRxRegAddr exists */
+	return (uint32_t)&(spi->RXDR);
+#else
+	ARG_UNUSED(location);
+	return (uint32_t)LL_SPI_DMA_GetRegAddr(spi);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+}
+
+/* checks that DMA Tx packet is fully transmitted over the SPI */
+static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
+{
+#ifdef LL_SPI_SR_TXC
+	return LL_SPI_IsActiveFlag_TXC(spi);
+#else
+	/* the SPI Tx empty and busy flags are needed */
+	return (LL_SPI_IsActiveFlag_TXE(spi) &&
+		!LL_SPI_IsActiveFlag_BSY(spi));
+#endif
+}
+#endif /* CONFIG_SPI_STM32_DMA */
 
 static inline uint32_t ll_func_tx_is_empty(SPI_TypeDef *spi)
 {
@@ -154,8 +186,7 @@ static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
-	return (!LL_SPI_IsActiveFlag_MODF(spi) &&
-		!LL_SPI_IsActiveFlag_TXC(spi));
+	return LL_SPI_IsActiveFlag_EOT(spi);
 #else
 	return LL_SPI_IsActiveFlag_BSY(spi);
 #endif

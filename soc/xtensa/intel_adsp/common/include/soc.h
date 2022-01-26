@@ -3,18 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifndef __INC_SOC_H
+#define __INC_SOC_H
 
 #include <string.h>
 #include <errno.h>
-
-#include <cavs/version.h>
-
-#include <sys/sys_io.h>
-
-#include <adsp/cache.h>
-
-#ifndef __INC_SOC_H
-#define __INC_SOC_H
+#include <arch/xtensa/cache.h>
 
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0
@@ -72,9 +66,27 @@
 #define DSP_WCT_CS_TA(x)			BIT(x)
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
+/* Attribute macros to place code and data into IMR memory */
+#define __imr __in_section_unique(imr)
+#define __imrdata __in_section_unique(imrdata)
+
+extern void soc_trace_init(void);
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
 
+extern void z_soc_mp_asm_entry(void);
+extern void soc_mp_startup(uint32_t cpu);
+extern void soc_start_core(int cpu_num);
+
+extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
+
+/* Legacy cache APIs still used in a few places */
+#define SOC_DCACHE_FLUSH(addr, size)		\
+	z_xtensa_cache_flush((addr), (size))
+#define SOC_DCACHE_INVALIDATE(addr, size)	\
+	z_xtensa_cache_inv((addr), (size))
+#define z_soc_cached_ptr(p) arch_xtensa_cached_ptr(p)
+#define z_soc_uncached_ptr(p) arch_xtensa_uncached_ptr(p)
 
 #endif /* __INC_SOC_H */

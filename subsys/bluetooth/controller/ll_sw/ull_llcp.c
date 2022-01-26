@@ -16,6 +16,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "ll.h"
@@ -390,7 +391,7 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 		llcp_rp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_init_proc(ctx);
 		break;
@@ -432,6 +433,9 @@ void ull_llcp_init(struct ll_conn *conn)
 	sys_slist_init(&conn->llcp.remote.pend_proc_list);
 	conn->llcp.remote.incompat = INCOMPAT_NO_COLLISION;
 	conn->llcp.remote.collision = 0U;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	conn->llcp.remote.paused_cmd = PROC_NONE;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->llcp.vex, 0, sizeof(conn->llcp.vex));
@@ -450,6 +454,20 @@ void ull_llcp_init(struct ll_conn *conn)
 	conn->lll.enc_tx = 0U;
 	conn->lll.enc_rx = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	conn->llcp.cte_req.is_enabled = 0U;
+	conn->llcp.cte_req.req_expire = 0U;
+	conn->llcp.cte_req.is_active = 0U;
+	conn->llcp.cte_req.disable_param = NULL;
+	conn->llcp.cte_req.disable_cb = NULL;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	conn->llcp.cte_rsp.is_enabled = 0U;
+	conn->llcp.cte_rsp.is_active = 0U;
+	conn->llcp.cte_rsp.disable_param = NULL;
+	conn->llcp.cte_rsp.disable_cb = NULL;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
 #if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
@@ -892,6 +910,9 @@ uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_ty
 
 	ctx->data.cte_req.min_len = min_cte_len;
 	ctx->data.cte_req.type = cte_type;
+
+	conn->llcp.cte_req.is_active = 1U;
+
 	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;

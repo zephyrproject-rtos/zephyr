@@ -426,7 +426,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 
 	net_pkt_set_iface(pkt, iface);
 
-	net_queue_rx(iface, pkt);
+	if (!net_pkt_filter_recv_ok(pkt)) {
+		/* silently drop the packet */
+		net_pkt_unref(pkt);
+	} else {
+		net_queue_rx(iface, pkt);
+	}
 
 	return 0;
 }

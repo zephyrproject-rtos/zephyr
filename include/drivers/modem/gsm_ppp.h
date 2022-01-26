@@ -43,8 +43,6 @@ void gsm_ppp_stop(const struct device *dev);
  * @param modem_off: callback function to
  *		execute during gsm ppp stopping.
  * @param user_data: user specified data
- *
- * @retval None.
  */
 void gsm_ppp_register_modem_power_callback(const struct device *dev,
 					   gsm_modem_power_cb modem_on,

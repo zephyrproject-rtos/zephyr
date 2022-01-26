@@ -62,7 +62,7 @@ void test_main(void)
 		ztest_unit_test(test_kobject_grant_access_kobj),
 		ztest_unit_test(test_kobject_grant_access_kobj_invalid),
 		ztest_unit_test(test_kobject_release_from_user),
-		ztest_unit_test(test_kobject_release_null),
+		ztest_unit_test(test_kobject_invalid),
 		ztest_unit_test(test_kobject_access_all_grant),
 		ztest_unit_test(test_thread_has_residual_permissions),
 		ztest_unit_test(test_kobject_access_grant_to_invalid_thread),

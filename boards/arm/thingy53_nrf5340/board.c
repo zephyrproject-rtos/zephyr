@@ -13,11 +13,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(thingy53_board_init);
 
-#define NRF21540FEM_CTRL_NODE		DT_NODELABEL(nrf21540fem_ctrl)
-#define NRF21540FEM_CTRL_PDN_GPIO_NODE	DT_GPIO_CTLR(NRF21540FEM_CTRL_NODE, pdn_gpios)
-#define NRF21540FEM_CTRL_PDN_PIN	DT_GPIO_PIN(NRF21540FEM_CTRL_NODE, pdn_gpios)
-#define NRF21540FEM_CTRL_PDN_FLAGS	DT_GPIO_FLAGS(NRF21540FEM_CTRL_NODE, pdn_gpios)
-
 #define ADXL362_NODE			DT_NODELABEL(adxl362)
 #define ADXL362_GPIO_NODE		DT_SPI_DEV_CS_GPIOS_CTLR(ADXL362_NODE)
 #define ADXL362_CS			DT_SPI_DEV_CS_GPIOS_PIN(ADXL362_NODE)
@@ -27,11 +22,6 @@ LOG_MODULE_REGISTER(thingy53_board_init);
 #define BMI270_GPIO_NODE		DT_SPI_DEV_CS_GPIOS_CTLR(BMI270_NODE)
 #define BMI270_CS			DT_SPI_DEV_CS_GPIOS_PIN(BMI270_NODE)
 #define BMI270_FLAGS			DT_SPI_DEV_CS_GPIOS_FLAGS(BMI270_NODE)
-
-#define NRF21540FEM_NODE		DT_NODELABEL(nrf21540fem)
-#define NRF21540FEM_GPIO_NODE		DT_SPI_DEV_CS_GPIOS_CTLR(NRF21540FEM_NODE)
-#define NRF21540FEM_CS			DT_SPI_DEV_CS_GPIOS_PIN(NRF21540FEM_NODE)
-#define NRF21540FEM_FLAGS		DT_SPI_DEV_CS_GPIOS_FLAGS(NRF21540FEM_NODE)
 
 /* Initialization chain of Thingy:53 board requires some delays before on board sensors
  * could be accessed after power up. In particular bme680 and bmm150 sensors require,
@@ -56,16 +46,6 @@ BUILD_ASSERT(CONFIG_THINGY53_INIT_PRIORITY < CONFIG_SENSOR_INIT_PRIORITY,
 static void enable_cpunet(void)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	/* Give nRF21540fem control pins to NetworkMCU */
-	nrf_gpio_pin_mcu_select(NRF_DT_GPIOS_TO_PSEL(NRF21540FEM_CTRL_NODE, tx_en_gpios),
-				GPIO_PIN_CNF_MCUSEL_NetworkMCU); /* TX_EN */
-	nrf_gpio_pin_mcu_select(NRF_DT_GPIOS_TO_PSEL(NRF21540FEM_CTRL_NODE, pdn_gpios),
-				GPIO_PIN_CNF_MCUSEL_NetworkMCU); /* PDN */
-	nrf_gpio_pin_mcu_select(NRF_DT_GPIOS_TO_PSEL(NRF21540FEM_CTRL_NODE, rx_en_gpios),
-				GPIO_PIN_CNF_MCUSEL_NetworkMCU); /* RX_EN */
-	nrf_gpio_pin_mcu_select(NRF_DT_GPIOS_TO_PSEL(NRF21540FEM_CTRL_NODE, mode_gpios),
-				GPIO_PIN_CNF_MCUSEL_NetworkMCU); /* MODE */
-
 	/* Retain nRF5340 Network MCU in Secure domain (bus
 	 * accesses by Network MCU will have Secure attribute set).
 	 */
@@ -95,20 +75,6 @@ static int setup(const struct device *dev)
 	const struct device *gpio;
 	int err;
 
-	gpio = DEVICE_DT_GET(NRF21540FEM_CTRL_PDN_GPIO_NODE);
-	if (!device_is_ready(gpio)) {
-		LOG_ERR("%s device not ready", gpio->name);
-		return -ENODEV;
-	}
-	err = gpio_pin_configure(gpio, NRF21540FEM_CTRL_PDN_PIN,
-				 NRF21540FEM_CTRL_PDN_FLAGS |
-				 IS_ENABLED(CONFIG_THINGY53_MISO_WORKAROUND) ?
-				 GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure NRF21540FEM PDN Pin");
-		return err;
-	}
-
 	gpio = DEVICE_DT_GET(ADXL362_GPIO_NODE);
 	if (!device_is_ready(gpio)) {
 		LOG_ERR("%s device not ready", gpio->name);
@@ -128,17 +94,6 @@ static int setup(const struct device *dev)
 	err = gpio_pin_configure(gpio, BMI270_CS, BMI270_FLAGS | GPIO_OUTPUT_INACTIVE);
 	if (err < 0) {
 		LOG_ERR("Failed to configure BMI270 CS Pin");
-		return err;
-	}
-
-	gpio = DEVICE_DT_GET(NRF21540FEM_GPIO_NODE);
-	if (!device_is_ready(gpio)) {
-		LOG_ERR("%s device not ready", gpio->name);
-		return -ENODEV;
-	}
-	err = gpio_pin_configure(gpio, NRF21540FEM_CS, NRF21540FEM_FLAGS | GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure NRF21540FEM CS Pin");
 		return err;
 	}
 

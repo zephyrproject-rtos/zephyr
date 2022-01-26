@@ -243,6 +243,17 @@ FSF mainline get inexplicable protocol errors when connecting.
 Further documentation can be obtained from the SoC vendor in `JTAG debugging
 for ESP32`_.
 
+Note on Debugging with GDB Stub
+===============================
+
+GDB stub is enabled on ESP32.
+
+* When adding breakpoints, please use hardware breakpoints with command
+  ``hbreak``. Command ``break`` uses software breakpoints which requires
+  modifying memory content to insert break/trap instructions.
+  This does not work as the code is on flash which cannot be randomly
+  accessed for modification.
+
 References
 **********
 

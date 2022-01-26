@@ -208,7 +208,7 @@ bool sys_heap_validate(struct sys_heap *heap);
  * target_percent full.  Allocation and free operations are provided
  * by the caller as callbacks (i.e. this can in theory test any heap).
  * Results, including counts of frees and successful/unsuccessful
- * allocations, are returnewd via the @result struct.
+ * allocations, are returned via the @a result struct.
  *
  * @param alloc_fn Callback to perform an allocation.  Passes back the @a
  *              arg parameter as a context handle.

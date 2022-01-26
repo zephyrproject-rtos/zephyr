@@ -2817,13 +2817,15 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		nattrs.flags |= BIT(type);
 	}
 
-	if ((nattrs.flags & (BIT(LWM2M_ATTR_PMIN) | BIT(LWM2M_ATTR_PMAX))) &&
+	if (((nattrs.flags & (BIT(LWM2M_ATTR_PMIN) | BIT(LWM2M_ATTR_PMAX))) ==
+	     (BIT(LWM2M_ATTR_PMIN) | BIT(LWM2M_ATTR_PMAX))) &&
 	    nattrs.pmin > nattrs.pmax) {
 		LOG_DBG("pmin (%d) > pmax (%d)", nattrs.pmin, nattrs.pmax);
 		return -EEXIST;
 	}
 
-	if (nattrs.flags & (BIT(LWM2M_ATTR_LT) | BIT(LWM2M_ATTR_GT))) {
+	if ((nattrs.flags & (BIT(LWM2M_ATTR_LT) | BIT(LWM2M_ATTR_GT))) ==
+	    (BIT(LWM2M_ATTR_LT) | BIT(LWM2M_ATTR_GT))) {
 		if (nattrs.lt > nattrs.gt) {
 			LOG_DBG("lt > gt");
 			return -EEXIST;
@@ -2994,7 +2996,9 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			obs->min_period_sec, obs->max_period_sec,
 			nattrs.pmin, MAX(nattrs.pmin, nattrs.pmax));
 		obs->min_period_sec = (uint32_t)nattrs.pmin;
-		obs->max_period_sec = (uint32_t)MAX(nattrs.pmin, nattrs.pmax);
+		/* Ignore pmax value if pmax < pmin. */
+		obs->max_period_sec = (nattrs.pmax >= nattrs.pmin) ?
+						(uint32_t)nattrs.pmax : 0UL;
 		(void)memset(&nattrs, 0, sizeof(nattrs));
 	}
 

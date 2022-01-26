@@ -3,7 +3,7 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-config GPIO_LMP90XXX
+menuconfig GPIO_LMP90XXX
 	bool "LMP90xxx GPIO driver"
 	depends on ADC_LMP90XXX_GPIO
 	help
@@ -14,3 +14,11 @@ config GPIO_LMP90XXX
 
 	  The GPIO port of the LMP90xxx (D6 to D0) is exposed as a
 	  GPIO controller driver with read/write support.
+
+config GPIO_LMP90XXX_INIT_PRIORITY
+	int "Driver init priority"
+	default 99
+	depends on GPIO_LMP90XXX
+	help
+	  Device driver initialization priority. This driver must be
+	  initialized after the LMP90xxx ADC driver.

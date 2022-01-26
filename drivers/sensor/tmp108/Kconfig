@@ -1,0 +1,20 @@
+# TMP108 temperature sensor configuration options
+
+# Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TMP108
+	bool "TMP108 Temperature Sensor"
+	depends on I2C
+	help
+	  Enable driver for the TMP108 temperature sensor.
+
+if TMP108
+
+config TMP108_ALERT_INTERRUPTS
+	bool "Allow interrupts to service over and under temp alerts"
+	help
+	  This will set up interrupts to service under and over temp alerts
+	  see TMP108 spec sheet for more information on how these work.
+
+endif # TMP108

@@ -601,6 +601,12 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	new_thread->resource_pool = _current->resource_pool;
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	new_thread->base.usage = (struct k_cycle_stats) {};
+	new_thread->base.usage.track_usage =
+		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#endif
+
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 
 	return stack_ptr;
@@ -1026,10 +1032,10 @@ int k_thread_runtime_stats_get(k_tid_t thread,
 		return -EINVAL;
 	}
 
-	*stats = (k_thread_runtime_stats_t) {};
-
 #ifdef CONFIG_SCHED_THREAD_USAGE
-	stats->execution_cycles = z_sched_thread_usage(thread);
+	z_sched_thread_usage(thread, stats);
+#else
+	*stats = (k_thread_runtime_stats_t) {};
 #endif
 
 	return 0;
@@ -1037,6 +1043,10 @@ int k_thread_runtime_stats_get(k_tid_t thread,
 
 int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 {
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	k_thread_runtime_stats_t  tmp_stats;
+#endif
+
 	if (stats == NULL) {
 		return -EINVAL;
 	}
@@ -1044,8 +1054,19 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 	*stats = (k_thread_runtime_stats_t) {};
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	stats->execution_cycles = (_kernel.all_thread_usage
-				   + _kernel.idle_thread_usage);
+	/* Retrieve the usage stats for each core and amalgamate them. */
+
+	for (uint8_t i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		z_sched_cpu_usage(i, &tmp_stats);
+
+		stats->execution_cycles += tmp_stats.execution_cycles;
+		stats->total_cycles     += tmp_stats.total_cycles;
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+		stats->peak_cycles      += tmp_stats.peak_cycles;
+		stats->average_cycles   += tmp_stats.average_cycles;
+#endif
+		stats->idle_cycles      += tmp_stats.idle_cycles;
+	}
 #endif
 
 	return 0;

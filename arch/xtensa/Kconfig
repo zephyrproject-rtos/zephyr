@@ -37,7 +37,7 @@ config XTENSA_NO_IPC
 	bool "Core has no IPC support"
 	select ATOMIC_OPERATIONS_C
 	help
-	  Uncheck this if you core does not implement "SCOMPARE1" register and "s32c1i"
+	  Uncheck this if your core does not implement "SCOMPARE1" register and "s32c1i"
 	  instruction.
 
 config XTENSA_RESET_VECTOR
@@ -48,28 +48,12 @@ config XTENSA_RESET_VECTOR
 	  This is always needed for the simulator. Real boards may already
 	  implement this in boot ROM.
 
-if XTENSA_RESET_VECTOR
-config RESET_VECTOR_IN_BOOTLOADER
-	bool "Link reset vector into bootloader"
-	default n
-	help
-	  Reset vector code can be either linked in the bootloader or the
-	  application binary. Select "y" to link it into the bootloader.
-endif
-
 config XTENSA_USE_CORE_CRT1
 	bool "Use crt1.S from core"
 	default y
 	help
 	  SoC or boards might define their own __start by setting this setting
 	  to false.
-
-config XTENSA_KERNEL_CPU_PTR_SR
-	string
-	default "MISC0"
-	help
-	  Specify which special register to store the pointer to
-	  _kernel.cpus[] for the current CPU.
 
 config XTENSA_ENABLE_BACKTRACE
 	bool "Enable backtrace on panic exception"
@@ -97,5 +81,22 @@ config XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	  constraint of the vector table entry and moved the default
 	  handlers to the end of vector table, renaming them to
 	  _Level\LVL\()VectorHelper.
+
+config XTENSA_CACHED_REGION
+	int "Cached RPO mapping"
+	range 0 7
+	help
+	  A design trick on multi-core hardware is to map memory twice
+	  so that it can be seen in both (incoherent) cached mappings
+	  and a coherent "shared" area.  This specifies which 512M
+	  region (0-7, as defined by the Xtensa Region Protection
+	  Option) contains the "cached" mapping.
+
+config XTENSA_UNCACHED_REGION
+	int "Uncached RPO mapping"
+	range 0 7
+	help
+	  As for XTENSA_CACHED_REGION, this specifies which 512M
+	  region (0-7) contains the "uncached" mapping.
 
 endmenu

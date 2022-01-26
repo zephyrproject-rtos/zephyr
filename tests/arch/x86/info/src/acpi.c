@@ -9,6 +9,7 @@
 static void vtd_dev_scope_info(struct acpi_dmar_dev_scope *dev_scope)
 {
 	struct acpi_dmar_dev_path *path;
+	uint16_t id;
 	int n_path;
 
 	printk("\t\t\t. Type: ");
@@ -32,6 +33,11 @@ static void vtd_dev_scope_info(struct acpi_dmar_dev_scope *dev_scope)
 	default:
 		printk("unknown\n");
 		return;
+	}
+
+	id = z_acpi_get_dev_id_from_dmar(dev_scope->type);
+	if (id != USHRT_MAX) {
+		printk(" ID 0x%x", id);
 	}
 
 	printk("\n");

@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_PM_POLICY_H_
 #define ZEPHYR_INCLUDE_PM_POLICY_H_
 
+#include <stdint.h>
 #include <pm/state.h>
 
 #ifdef __cplusplus
@@ -25,9 +26,10 @@ extern "C" {
  * @param cpu CPU index.
  * @param ticks The number of ticks to the next scheduled event.
  *
- * @return The power state the system should use for the given cpu.
+ * @return The power state the system should use for the given cpu. The function
+ * will return NULL if system should remain into PM_STATE_ACTIVE.
  */
-struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks);
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
 
 /** @endcond */
 

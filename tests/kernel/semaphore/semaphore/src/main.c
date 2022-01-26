@@ -988,6 +988,10 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
  */
 void test_sem_multiple_take_and_timeouts(void)
 {
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
 	static uint32_t timeout;
 	size_t bytes_read;
 
@@ -1052,6 +1056,10 @@ void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
  */
 void test_sem_multi_take_timeout_diff_sem(void)
 {
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
 	size_t bytes_read;
 	struct timeout_info seq_info[] = {
 		{ SEC2MS(2), &simple_sem },
@@ -1310,6 +1318,7 @@ void test_sem_count_get_null(void)
 /* ztest main entry*/
 void test_main(void)
 {
+#ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 			      &simple_sem, &multiple_thread_sem, &low_prio_sem,
 				  &mid_prio_sem, &high_prio_sem, &ksema, &sema,
@@ -1317,6 +1326,7 @@ void test_main(void)
 				  &stack_3, &stack_4, &timeout_info_pipe,
 				  &sem_tid_1, &sem_tid_2, &sem_tid_3, &sem_tid_4,
 				  &tstack, &tdata, &mut_sem);
+#endif
 
 	ztest_test_suite(test_semaphore,
 			 ztest_user_unit_test(test_k_sem_define),

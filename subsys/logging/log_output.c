@@ -48,11 +48,14 @@ static uint32_t timestamp_div;
 
 extern void log_output_msg_syst_process(const struct log_output *output,
 				struct log_msg *msg, uint32_t flag);
+extern void log_output_msg2_syst_process(const struct log_output *output,
+				struct log_msg2 *msg, uint32_t flag);
 extern void log_output_string_syst_process(const struct log_output *output,
 				struct log_msg_ids src_level,
 				const char *fmt, va_list ap, uint32_t flag);
 extern void log_output_hexdump_syst_process(const struct log_output *output,
 				struct log_msg_ids src_level,
+				const char *metadata,
 				const uint8_t *data, uint32_t length, uint32_t flag);
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
@@ -100,7 +103,7 @@ static int out_func(int c, void *ctx)
 	const struct log_output *out_ctx = (const struct log_output *)ctx;
 	int idx;
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		/* Backend must be thread safe in synchronous operation. */
 		out_ctx->func((uint8_t *)&c, 1, out_ctx->control_block->ctx);
 		return 0;
@@ -495,6 +498,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
 	bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
+	const char *tag = z_log_get_tag();
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
@@ -510,6 +514,10 @@ static uint32_t prefix_print(const struct log_output *output,
 			"<%d>1 ",
 			facility * 8 +
 			level_to_rfc5424_severity(level));
+	}
+
+	if (tag) {
+		length += print_formatted(output, "%s ", tag);
 	}
 
 	if (stamp) {
@@ -589,10 +597,7 @@ void log_output_msg2_process(const struct log_output *output,
 
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		__ASSERT_NO_MSG(0);
-		/* todo not supported
-		 * log_output_msg_syst_process(output, msg, flags);
-		 */
+		log_output_msg2_syst_process(output, msg, flags);
 		return;
 	}
 
@@ -697,7 +702,8 @@ void log_output_hexdump(const struct log_output *output,
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
 		log_output_hexdump_syst_process(output,
-				src_level, data, length, flags);
+				src_level, metadata,
+				data, length, flags);
 		return;
 	}
 

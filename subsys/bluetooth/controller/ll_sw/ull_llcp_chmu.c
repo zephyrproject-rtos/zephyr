@@ -16,6 +16,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "ll.h"
@@ -113,7 +114,7 @@ static void lp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 						uint8_t evt, void *param)
 {
-	if (llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (ctx->pause || llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CHMU_STATE_WAIT_TX_CHAN_MAP_IND;
 	} else {
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);

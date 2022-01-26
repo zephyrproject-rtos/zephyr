@@ -46,6 +46,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
           west init -l . || true
@@ -55,7 +56,7 @@ jobs:
           # So first retry to update, if that does not work, remove all modules
           # and start over. (Workaround until we implement more robust module
           # west caching).
-          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules && west update --path-cache /github/cache/zephyrproject)
+          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
 
       - name: Check Environment
         run: |
@@ -85,7 +86,7 @@ jobs:
 
       - name: ccache stats initial
         run: |
-          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          test -d github/home/.ccache && rm -rf /github/home/.ccache && mv github/home/.ccache /github/home/.ccache
           ccache -M 10G -s
 
       - name: Run Tests with Twister
@@ -128,6 +129,20 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: artifacts
+      - name: Merge Test Results
+        run: |
+          pip3 install junitparser junit2html
+          junitparser merge artifacts/*/twister.xml junit.xml
+          junit2html junit.xml junit-clang.html
+
+      - name: Upload Unit Test Results in HTML
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: HTML Unit Test Results
+          if-no-files-found: ignore
+          path: |
+            junit-clang.html
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1

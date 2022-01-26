@@ -1877,8 +1877,6 @@ bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len)
  *  @param uuid Bluetooth UUID
  *  @param str pointer where to put converted string
  *  @param len length of str
- *
- *  @return N/A
  */
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
 

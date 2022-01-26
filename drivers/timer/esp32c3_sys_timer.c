@@ -67,26 +67,6 @@ static void sys_timer_isr(const void *arg)
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	esp_intr_alloc(DT_IRQN(DT_NODELABEL(systimer0)),
-		0,
-		sys_timer_isr,
-		NULL,
-		NULL);
-
-	systimer_hal_init();
-	systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_0, SYSTIMER_COUNTER_1);
-	systimer_hal_enable_counter(SYSTIMER_COUNTER_1);
-	systimer_hal_counter_can_stall_by_cpu(SYSTIMER_COUNTER_1, 0, true);
-	last_count = systimer_alarm();
-	set_systimer_alarm(last_count + CYC_PER_TICK);
-
-	return 0;
-}
-
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -139,3 +119,26 @@ uint64_t sys_clock_cycle_get_64(void)
 {
 	return systimer_alarm();
 }
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	esp_intr_alloc(DT_IRQN(DT_NODELABEL(systimer0)),
+		0,
+		sys_timer_isr,
+		NULL,
+		NULL);
+
+	systimer_hal_init();
+	systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_0, SYSTIMER_COUNTER_1);
+	systimer_hal_enable_counter(SYSTIMER_COUNTER_1);
+	systimer_hal_counter_can_stall_by_cpu(SYSTIMER_COUNTER_1, 0, true);
+	last_count = systimer_alarm();
+	set_systimer_alarm(last_count + CYC_PER_TICK);
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

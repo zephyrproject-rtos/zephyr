@@ -304,3 +304,10 @@ int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels);
 
 /* Disconnect EATT channels */
 int bt_eatt_disconnect(struct bt_conn *conn);
+
+/** @brief Find a pending ATT request by its user_data pointer.
+ *  @param conn The connection the request was issued on.
+ *  @param user_data The pointer value to look for.
+ *  @return The found request. NULL if not found.
+ */
+struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void *user_data);

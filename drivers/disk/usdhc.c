@@ -388,6 +388,8 @@ struct usdhc_config {
 	uint8_t detect_pin;
 	gpio_dt_flags_t detect_flags;
 
+	bool detect_dat3;
+
 	bool no_1_8_v;
 
 	uint32_t data_timeout;
@@ -514,6 +516,10 @@ enum usdhc_xfer_data_type {
 #define CARD_BUS_STRENGTH_5 (5U)
 #define CARD_BUS_STRENGTH_6 (6U)
 #define CARD_BUS_STRENGTH_7 (7U)
+
+#define USDHC_DAT3_PULL_DOWN 0U /*!< Data 3 pull down */
+#define USDHC_DAT3_PULL_UP 1U /*!< Data 3 pull up */
+#define USDHC_WAIT_IDLE_TIMEOUT 600U
 
 enum usdhc_adma_flag {
 	USDHC_ADMA_SINGLE_FLAG = 0U,
@@ -840,11 +846,17 @@ static int usdhc_Internal_dma_cfg(struct usdhc_priv *priv,
 		base->ADMA_SYS_ADDR = (uint32_t)(dma_cfg->adma_table);
 	}
 
+#if (defined(FSL_FEATURE_USDHC_HAS_NO_RW_BURST_LEN) && FSL_FEATURE_USDHC_HAS_NO_RW_BURST_LEN)
+	/* select DMA mode */
+	base->PROT_CTRL &= ~(USDHC_PROT_CTRL_DMASEL_MASK);
+	base->PROT_CTRL |= USDHC_PROT_CTRL_DMASEL(dma_cfg->dma_mode);
+#else
 	/* select DMA mode and config the burst length */
 	base->PROT_CTRL &= ~(USDHC_PROT_CTRL_DMASEL_MASK |
 		USDHC_PROT_CTRL_BURST_LEN_EN_MASK);
 	base->PROT_CTRL |= USDHC_PROT_CTRL_DMASEL(dma_cfg->dma_mode) |
 		USDHC_PROT_CTRL_BURST_LEN_EN(dma_cfg->burst_len);
+#endif
 	/* enable DMA */
 	base->MIX_CTRL |= USDHC_MIX_CTRL_DMAEN_MASK;
 
@@ -1534,12 +1546,6 @@ int usdhc_adjust_tuning_timing(USDHC_Type *base, uint32_t delay)
 	return 0;
 }
 
-static inline void usdhc_set_retuning_timer(USDHC_Type *base, uint32_t counter)
-{
-	base->HOST_CTRL_CAP &= ~USDHC_HOST_CTRL_CAP_TIME_COUNT_RETUNING_MASK;
-	base->HOST_CTRL_CAP |= USDHC_HOST_CTRL_CAP_TIME_COUNT_RETUNING(counter);
-}
-
 static inline void usdhc_set_bus_width(USDHC_Type *base,
 	enum usdhc_data_bus_width width)
 {
@@ -1595,7 +1601,8 @@ static int usdhc_execute_tuning(struct usdhc_priv *priv)
 		return -EIO;
 	}
 
-	usdhc_set_retuning_timer(base, SDHC_RETUNING_TIMER_COUNT);
+	/* Enable auto retuning */
+	base->MIX_CTRL |= USDHC_MIX_CTRL_AUTO_TUNE_EN_MASK;
 
 	return 0;
 }
@@ -1783,8 +1790,13 @@ uint32_t usdhc_set_sd_clk(USDHC_Type *base, uint32_t src_clk_hz, uint32_t sd_clk
 	uint32_t sysctl = 0U;
 	uint32_t nearest_freq = 0U;
 
+
 	__ASSERT_NO_MSG(src_clk_hz != 0U);
-	__ASSERT_NO_MSG((sd_clk_hz != 0U) && (sd_clk_hz <= src_clk_hz));
+	__ASSERT_NO_MSG(sd_clk_hz != 0);
+
+	if (sd_clk_hz > src_clk_hz) {
+		sd_clk_hz = src_clk_hz;
+	}
 
 	/* calculate total divisor first */
 	total_div = src_clk_hz / sd_clk_hz;
@@ -2048,6 +2060,59 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 	return error;
 }
 
+static int usdhc_send_status(struct usdhc_priv *priv)
+{
+	int retry = 10, ret = -ETIMEDOUT;
+	struct usdhc_cmd *cmd = &priv->op_context.cmd;
+
+	usdhc_op_ctx_init(priv, true, SDHC_SEND_STATUS,
+		priv->card_info.relative_addr << 16U,
+		SDHC_RSP_TYPE_R1);
+	while (retry--) {
+		ret = usdhc_xfer(priv);
+		if (ret) {
+			LOG_DBG("Send CMD13 failed with host error %d", ret);
+			continue;
+		} else {
+			if (((cmd->response[0U] & SDHC_R1READY_FOR_DATA) != 0U) &&
+				(SD_R1_CURRENT_STATE(cmd->response[0U]) != SDMMC_R1_PROGRAM)) {
+				/* Card is idle */
+				ret = 0;
+			} else {
+				ret = -EBUSY;
+			}
+			break;
+		}
+	}
+	return ret;
+}
+
+static int usdhc_poll_card_status_busy(struct usdhc_priv *priv,
+			uint32_t timeout_ms)
+{
+	USDHC_Type *base = priv->config->base;
+	uint32_t timeout_us = timeout_ms * 1000;
+	int card_busy, ret = -ETIMEDOUT;
+
+	while (timeout_us) {
+		/* Check card status */
+		card_busy = (base->PRES_STATE & USDHC_DATA0_LINE_LEVEL_FLAG) !=
+						USDHC_DATA0_LINE_LEVEL_FLAG;
+		if (!card_busy) {
+			/* Send status to SD card and return from wait */
+			ret = usdhc_send_status(priv);
+			if (!ret) {
+				break;
+			}
+		} else {
+			/* Delay 125us to throttle the polling rate */
+			k_busy_wait(125);
+			timeout_us -= 125;
+		}
+	}
+	return ret;
+}
+
 static int usdhc_write_sector(void *bus_data, const uint8_t *buf, uint32_t sector,
 		     uint32_t count)
 {
@@ -2057,6 +2122,14 @@ static int usdhc_write_sector(void *bus_data, const uint8_t *buf, uint32_t secto
 
 	memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
 	memset((char *)data, 0, sizeof(struct usdhc_data));
+
+	if (sector + count > priv->card_info.sd_block_count) {
+		return -EIO;
+	}
+
+	if (usdhc_poll_card_status_busy(priv, USDHC_WAIT_IDLE_TIMEOUT)) {
+		return -ETIMEDOUT;
+	}
 
 	priv->op_context.cmd_only = 0;
 	cmd->index = SDHC_WRITE_MULTIPLE_BLOCK;
@@ -2086,6 +2159,14 @@ static int usdhc_read_sector(void *bus_data, uint8_t *buf, uint32_t sector,
 
 	memset((char *)cmd, 0, sizeof(struct usdhc_cmd));
 	memset((char *)data, 0, sizeof(struct usdhc_data));
+
+	if (sector + count > priv->card_info.sd_block_count) {
+		return -EIO;
+	}
+
+	if (usdhc_poll_card_status_busy(priv, USDHC_WAIT_IDLE_TIMEOUT)) {
+		return -ETIMEDOUT;
+	}
 
 	priv->op_context.cmd_only = 0;
 	cmd->index = SDHC_READ_MULTIPLE_BLOCK;
@@ -2193,6 +2274,12 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 	/* Endian mode*/
 	proctl |= USDHC_PROT_CTRL_EMODE(config->endian);
 
+#if (defined(FSL_FEATURE_USDHC_HAS_NO_RW_BURST_LEN) && FSL_FEATURE_USDHC_HAS_NO_RW_BURST_LEN)
+	/* Watermark level */
+	wml &= ~(USDHC_WTMK_LVL_RD_WML_MASK | USDHC_WTMK_LVL_WR_WML_MASK);
+	wml |= (USDHC_WTMK_LVL_RD_WML(config->read_watermark) |
+		USDHC_WTMK_LVL_WR_WML(config->write_watermark));
+#else
 	/* Watermark level */
 	wml &= ~(USDHC_WTMK_LVL_RD_WML_MASK |
 			USDHC_WTMK_LVL_WR_WML_MASK |
@@ -2202,6 +2289,7 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 			USDHC_WTMK_LVL_WR_WML(config->write_watermark) |
 			USDHC_WTMK_LVL_RD_BRST_LEN(config->read_burst_len) |
 			USDHC_WTMK_LVL_WR_BRST_LEN(config->write_burst_len));
+#endif
 
 	/* config the data timeout value */
 	sysctl &= ~USDHC_SYS_CTRL_DTOCV_MASK;
@@ -2596,6 +2684,33 @@ APP_SEND_OP_COND_AGAIN:
 
 static K_MUTEX_DEFINE(z_usdhc_init_lock);
 
+
+static int usdhc_dat3_pull(bool pullup, struct usdhc_priv *priv)
+{
+	int ret = 0U;
+
+	/* Call board specific function to pull down DAT3 */
+	imxrt_usdhc_dat3_pull(pullup);
+#ifdef CONFIG_SDMMC_USDHC_DAT3_PWR_TOGGLE
+	if (!pullup) {
+		/* Power off the card to clear DAT3 legacy status */
+		if (priv->pwr_gpio) {
+			ret = gpio_pin_set(priv->pwr_gpio, priv->config->pwr_pin, 0);
+			if (ret) {
+				return ret;
+			}
+			/* Delay for card power off to complete */
+			usdhc_millsec_delay(CONFIG_SDMMC_USDHC_DAT3_PWR_DELAY);
+			ret = gpio_pin_set(priv->pwr_gpio, priv->config->pwr_pin, 1);
+			if (ret) {
+				return ret;
+			}
+		}
+	}
+#endif
+	return ret;
+}
+
 static int usdhc_board_access_init(struct usdhc_priv *priv)
 {
 	const struct usdhc_config *config = priv->config;
@@ -2618,6 +2733,11 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		}
 	}
 
+	if (config->detect_dat3) {
+		priv->detect_type = SD_DETECT_HOST_DATA3;
+	}
+
+
 	if (priv->pwr_gpio) {
 		ret = gpio_pin_configure(priv->pwr_gpio,
 				config->pwr_pin,
@@ -2635,10 +2755,21 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 	if (!priv->detect_gpio) {
 		LOG_INF("USDHC detection other than GPIO");
-		/* DATA3 does not monitor card insertion */
-		base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
+		if (config->detect_dat3) {
+			base->PROT_CTRL |= USDHC_PROT_CTRL_D3CD_MASK;
+			/* Pull down DAT3 */
+			usdhc_dat3_pull(USDHC_DAT3_PULL_DOWN, priv);
+		} else {
+			/* DATA3 does not monitor card insertion */
+			base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
+		}
 		if ((base->PRES_STATE & USDHC_PRES_STATE_CINST_MASK) != 0) {
 			priv->inserted = true;
+			if (config->detect_dat3) {
+				usdhc_dat3_pull(USDHC_DAT3_PULL_UP, priv);
+				/* Disable DAT3 detect function */
+				base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
+			}
 		} else {
 			priv->inserted = false;
 			return -ENODEV;
@@ -2845,6 +2976,7 @@ static int disk_usdhc_init(const struct device *dev)
 		DISK_ACCESS_USDHC_INIT_PWR(n)				\
 		DISK_ACCESS_USDHC_INIT_CD(n)				\
 		.no_1_8_v = DT_INST_PROP(n, no_1_8_v),			\
+		.detect_dat3 = DT_INST_PROP(n, detect_dat3),	\
 		.data_timeout = USDHC_DATA_TIMEOUT,			\
 		.endian = USDHC_LITTLE_ENDIAN,				\
 		.read_watermark = USDHC_READ_WATERMARK_LEVEL,		\

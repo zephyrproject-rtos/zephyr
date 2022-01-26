@@ -10,9 +10,6 @@
 
 #include "can_mcan.h"
 
-#define DEV_DATA(dev) ((struct can_stm32fd_data *)(dev)->data)
-#define DEV_CFG(dev) ((const struct can_stm32fd_config *)(dev)->config)
-
 struct can_stm32fd_config {
 	struct can_mcan_msg_sram *msg_sram;
 	void (*config_irq)(void);

@@ -46,7 +46,7 @@ static int memc_stm32_init(const struct device *dev)
 	return 0;
 }
 
-PINCTRL_DT_INST_DEFINE(0)
+PINCTRL_DT_INST_DEFINE(0);
 
 static const struct memc_stm32_config config = {
 	.fmc = DT_INST_REG_ADDR(0),

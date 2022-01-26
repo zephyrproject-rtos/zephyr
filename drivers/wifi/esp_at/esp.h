@@ -59,7 +59,7 @@ extern "C" {
 #define ESP_PROTO_PASSIVE(proto) 0
 #endif /* CONFIG_WIFI_ESP_AT_PASSIVE_MODE */
 
-#define ESP_BUS DT_BUS(DT_DRV_INST(0))
+#define ESP_BUS DT_INST_BUS(0)
 
 #if DT_PROP(ESP_BUS, hw_flow_control) == 1
 #define _FLOW_CONTROL "3"

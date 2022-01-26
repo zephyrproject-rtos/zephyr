@@ -27,11 +27,18 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
     lwm2m_obj_firmware.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_SWMGMT_OBJ_SUPPORT
+    lwm2m_obj_swmgmt.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
     lwm2m_obj_firmware_pull.c
+    lwm2m_pull_context.c
     )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_LOCATION_OBJ_SUPPORT
     lwm2m_obj_location.c
+    )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_GATEWAY_OBJ_SUPPORT
+    lwm2m_obj_gateway.c
     )
 
 # JSON Support
@@ -75,6 +82,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_CURRENT_SENSOR
     )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_FILLING_SENSOR
     ipso_filling_sensor.c
+    )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_UCIFI_BATTERY
+    ucifi_battery.c
     )
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

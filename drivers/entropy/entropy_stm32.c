@@ -87,13 +87,6 @@ struct entropy_stm32_rng_dev_data {
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_STM32_THR_POOL_SIZE);
 };
 
-#define DEV_DATA(dev) \
-	((struct entropy_stm32_rng_dev_data *)(dev)->data)
-
-#define DEV_CFG(dev) \
-	((const struct entropy_stm32_rng_dev_cfg *)(dev)->config)
-
-
 static const struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
 	.pclken	= { .bus = DT_INST_CLOCKS_CELL(0, bus),
 		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
@@ -315,7 +308,7 @@ static int entropy_stm32_rng_get_entropy(const struct device *dev,
 					 uint16_t len)
 {
 	/* Check if this API is called on correct driver instance. */
-	__ASSERT_NO_MSG(&entropy_stm32_rng_data == DEV_DATA(dev));
+	__ASSERT_NO_MSG(&entropy_stm32_rng_data == dev->data);
 
 	while (len) {
 		uint16_t bytes;
@@ -347,7 +340,7 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 	uint16_t cnt = len;
 
 	/* Check if this API is called on correct driver instance. */
-	__ASSERT_NO_MSG(&entropy_stm32_rng_data == DEV_DATA(dev));
+	__ASSERT_NO_MSG(&entropy_stm32_rng_data == dev->data);
 
 	if (likely((flags & ENTROPY_BUSYWAIT) == 0U)) {
 		return rng_pool_get(
@@ -416,8 +409,8 @@ static int entropy_stm32_rng_init(const struct device *dev)
 
 	__ASSERT_NO_MSG(dev != NULL);
 
-	dev_data = DEV_DATA(dev);
-	dev_cfg = DEV_CFG(dev);
+	dev_data = dev->data;
+	dev_cfg = dev->config;
 
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(dev_cfg != NULL);
@@ -486,6 +479,18 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	res = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&dev_cfg->pclken);
 	__ASSERT_NO_MSG(res == 0);
+
+
+#if DT_INST_NODE_HAS_PROP(0, health-test-config)
+#if DT_INST_NODE_HAS_PROP(0, health-test-magic)
+	/* Write Magic number before writing configuration
+	 * Not all stm32 series have a Magic number
+	 */
+	LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health-test-magic));
+#endif
+	/* Write RNG HTCR configuration */
+	LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health-test-config));
+#endif
 
 	LL_RNG_EnableIT(dev_data->rng);
 

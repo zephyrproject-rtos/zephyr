@@ -21,6 +21,7 @@
 # 3.5. File system management
 # 4. Devicetree extensions
 # 4.1 dt_*
+# 4.2. *_if_dt_node
 # 5. Zephyr linker functions
 # 5.1. zephyr_linker*
 
@@ -826,8 +827,8 @@ function(board_finalize_runner_args runner)
 endfunction()
 
 function(board_set_rimage_target target)
-  zephyr_check_cache(RIMAGE_TARGET)
   set(RIMAGE_TARGET ${target} CACHE STRING "rimage target")
+  zephyr_check_cache(RIMAGE_TARGET)
 endfunction()
 
 # Zephyr board revision:
@@ -835,7 +836,7 @@ endfunction()
 # This section provides a function for revision checking.
 
 # Usage:
-#   board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>
+#   board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>
 #                        [EXACT]
 #                        [DEFAULT_REVISION <revision>]
 #                        [HIGHEST_REVISION <revision>]
@@ -851,8 +852,9 @@ endfunction()
 # When `EXACT` is not specified, this function will set the Zephyr build system
 # variable `ACTIVE_BOARD_REVISION` with the selected revision.
 #
-# FORMAT <LETTER | MAJOR.MINOR.PATCH>: Specify the revision format.
+# FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>: Specify the revision format.
 #         LETTER:             Revision format is a single letter from A - Z.
+#         NUMBER:             Revision format is a single integer number.
 #         MAJOR.MINOR.PATCH:  Revision format is three numbers, separated by `.`,
 #                             `x.y.z`. Trailing zeroes may be omitted on the
 #                             command line, which means:
@@ -905,6 +907,8 @@ function(board_check_revision)
   if(DEFINED BOARD_REV_HIGHEST_REVISION)
     if(((BOARD_REV_FORMAT STREQUAL LETTER) AND
         (BOARD_REVISION STRGREATER BOARD_REV_HIGHEST_REVISION)) OR
+       ((BOARD_REV_FORMAT STREQUAL NUMBER) AND
+       (BOARD_REVISION GREATER BOARD_REV_HIGHEST_REVISION)) OR
        ((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
         (BOARD_REVISION VERSION_GREATER BOARD_REV_HIGHEST_REVISION))
     )
@@ -916,6 +920,8 @@ function(board_check_revision)
 
   if(BOARD_REV_FORMAT STREQUAL LETTER)
     set(revision_regex "([A-Z])")
+  elseif(BOARD_REV_FORMAT STREQUAL NUMBER)
+    set(revision_regex "([0-9]+)")
   elseif(BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$")
     set(revision_regex "((0|[1-9][0-9]*)(\.[0-9]+)(\.[0-9]+))")
     # We allow loose <board>@<revision> typing on command line.
@@ -932,7 +938,7 @@ function(board_check_revision)
     endif()
   else()
     message(FATAL_ERROR "Invalid format specified for \
-    `board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>)`")
+    `board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>)`")
   endif()
 
   if(NOT (BOARD_REVISION MATCHES "^${revision_regex}$"))
@@ -969,6 +975,11 @@ function(board_check_revision)
       elseif((BOARD_REV_FORMAT STREQUAL LETTER) AND
              (${BOARD_REVISION} STRGREATER ${TEST_REVISION}) AND
              (${TEST_REVISION} STRGREATER "${ACTIVE_BOARD_REVISION}")
+      )
+        set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
+      elseif((BOARD_REV_FORMAT STREQUAL NUMBER) AND
+             (${BOARD_REVISION} GREATER ${TEST_REVISION}) AND
+             (${TEST_REVISION} GREATER "${ACTIVE_BOARD_REVISION}")
       )
         set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
       endif()
@@ -2520,8 +2531,16 @@ endfunction()
 #
 # The following methods are for retrieving devicetree information in CMake.
 #
-# Note: In CMake we refer to the nodes using the node's path, therefore there
-# is no dt_path(...) function for obtaining a node identifier.
+# Notes:
+#
+# - In CMake, we refer to the nodes using the node's path, therefore
+#   there is no dt_path(...) function for obtaining a node identifier
+#   like there is in the C devicetree.h API.
+#
+# - As another difference from the C API, you can generally use an
+#   alias at the beginning of a path interchangeably with the full
+#   path to the aliased node in these functions. The usage comments
+#   will make this clear in each case.
 
 # Usage:
 #   dt_nodelabel(<var> NODELABEL <label>)
@@ -2572,9 +2591,58 @@ function(dt_nodelabel var)
 endfunction()
 
 # Usage:
+#   dt_alias(<var> PROPERTY <prop>)
+#
+# Get a node path for an /aliases node property.
+#
+# Example usage:
+#
+#   # The full path to the 'led0' alias is returned in 'path'.
+#   dt_alias(path PROPERTY "led0")
+#
+#   # The variable 'path' will be left undefined for a nonexistent
+#   # alias "does-not-exist".
+#   dt_alias(path PROPERTY "does-not-exist")
+#
+# The node's path will be returned in the <var> parameter. The
+# variable will be left undefined if the alias does not exist.
+#
+# <var>           : Return variable where the node path will be stored
+# PROPERTY <prop> : The alias to check
+function(dt_alias var)
+  set(req_single_args "PROPERTY")
+  cmake_parse_arguments(DT_ALIAS "" "${req_single_args}" "" ${ARGN})
+
+  if(${ARGV0} IN_LIST req_single_args)
+    message(FATAL_ERROR "dt_alias(${ARGV0} ...) missing return parameter.")
+  endif()
+
+  foreach(arg ${req_single_args})
+    if(NOT DEFINED DT_ALIAS_${arg})
+      message(FATAL_ERROR "dt_alias(${ARGV0} ...) "
+                          "missing required argument: ${arg}"
+      )
+    endif()
+  endforeach()
+
+  get_target_property(${var} devicetree_target "DT_ALIAS|${DT_ALIAS_PROPERTY}")
+  if(${${var}} STREQUAL ${var}-NOTFOUND)
+    set(${var})
+  endif()
+
+  set(${var} ${${var}} PARENT_SCOPE)
+endfunction()
+
+# Usage:
 #   dt_node_exists(<var> PATH <path>)
 #
 # Tests whether a node with path <path> exists in the devicetree.
+#
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
 #
 # The result of the check, either TRUE or FALSE, will be returned in
 # the <var> parameter.
@@ -2597,10 +2665,9 @@ function(dt_node_exists var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_NODE|${DT_NODE_PATH}")
-
-  if(${var})
-    set(${var} ${${var}} PARENT_SCOPE)
+  dt_path_internal(canonical "${DT_NODE_PATH}")
+  if (DEFINED canonical)
+    set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
   endif()
@@ -2614,6 +2681,12 @@ endfunction()
 # - has a status property matching the <status> argument
 #   (a missing status or an “ok” status is treated as if it
 #    were “okay” instead)
+#
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
 #
 # The result of the check, either TRUE or FALSE, will be returned in
 # the <var> parameter.
@@ -2637,12 +2710,13 @@ function(dt_node_has_status var)
     endif()
   endforeach()
 
-  dt_node_exists(${var} PATH ${DT_NODE_PATH})
-  if(NOT ${${var}})
+  dt_path_internal(canonical ${DT_NODE_PATH})
+  if(NOT DEFINED canonical)
     set(${var} FALSE PARENT_SCOPE)
+    return()
   endif()
 
-  dt_prop(${var} PATH ${DT_NODE_PATH} PROPERTY status)
+  dt_prop(${var} PATH ${canonical} PROPERTY status)
 
   if(NOT DEFINED ${var} OR "${${var}}" STREQUAL ok)
     set(${var} okay)
@@ -2661,6 +2735,12 @@ endfunction()
 #
 # Get a devicetree property value. The value will be returned in the
 # <var> parameter.
+#
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
 #
 # This function currently only supports properties with the following
 # devicetree binding types: string, int, boolean, array, uint8-array,
@@ -2716,8 +2796,9 @@ function(dt_prop var)
     endif()
   endforeach()
 
+  dt_path_internal(canonical "${DT_PROP_PATH}")
   get_property(exists TARGET devicetree_target
-      PROPERTY "DT_PROP|${DT_PROP_PATH}|${DT_PROP_PROPERTY}"
+      PROPERTY "DT_PROP|${canonical}|${DT_PROP_PROPERTY}"
       SET
   )
 
@@ -2727,7 +2808,7 @@ function(dt_prop var)
   endif()
 
   get_target_property(val devicetree_target
-      "DT_PROP|${DT_PROP_PATH}|${DT_PROP_PROPERTY}"
+      "DT_PROP|${canonical}|${DT_PROP_PROPERTY}"
   )
 
   if(DEFINED DT_PROP_INDEX)
@@ -2747,6 +2828,12 @@ endfunction()
 #
 # The value will be returned in the <var> parameter.
 #
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
+#
 # <var>          : Return variable where the property value will be stored
 # PATH <path>    : Node path
 function(dt_num_regs var)
@@ -2765,30 +2852,39 @@ function(dt_num_regs var)
     endif()
   endforeach()
 
-  get_target_property(${var} devicetree_target "DT_REG|${DT_REG_PATH}|NUM")
+  dt_path_internal(canonical "${DT_REG_PATH}")
+  get_target_property(${var} devicetree_target "DT_REG|${canonical}|NUM")
 
   set(${var} ${${var}} PARENT_SCOPE)
 endfunction()
 
 # Usage:
-#   dt_reg_addr(<var> PATH <path> [INDEX <idx>])
+#   dt_reg_addr(<var> PATH <path> [INDEX <idx>] [NAME <name>])
 #
-# Get the base address of the register block at index <idx>.
-# If <idx> is omitted, then the value at index 0 will be returned.
+# Get the base address of the register block at index <idx>, or with
+# name <name>. If <idx> and <name> are both omitted, the value at
+# index 0 will be returned. Do not give both <idx> and <name>.
 #
 # The value will be returned in the <var> parameter.
+#
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
 #
 # Results can be:
 # - The base address of the register block
 # - <var> will be undefined if node does not exists or does not have a register
-#   block at the requested index.
+#   block at the requested index or with the requested name
 #
 # <var>          : Return variable where the address value will be stored
 # PATH <path>    : Node path
-# INDEX <idx>    : Index number
+# INDEX <idx>    : Register block index number
+# NAME <name>    : Register block name
 function(dt_reg_addr var)
   set(req_single_args "PATH")
-  set(single_args "INDEX")
+  set(single_args "INDEX;NAME")
   cmake_parse_arguments(DT_REG "" "${req_single_args};${single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
@@ -2803,11 +2899,20 @@ function(dt_reg_addr var)
     endif()
   endforeach()
 
-  if(NOT DEFINED DT_REG_INDEX)
+  if(DEFINED DT_REG_INDEX AND DEFINED DT_REG_NAME)
+    message(FATAL_ERROR "dt_reg_addr(${ARGV0} ...) given both INDEX and NAME")
+  elseif(NOT DEFINED DT_REG_INDEX AND NOT DEFINED DT_REG_NAME)
     set(DT_REG_INDEX 0)
+  elseif(DEFINED DT_REG_NAME)
+    dt_reg_index_private(DT_REG_INDEX "${DT_REG_PATH}" "${DT_REG_NAME}")
+    if(DT_REG_INDEX EQUAL "-1")
+      set(${var} PARENT_SCOPE)
+      return()
+    endif()
   endif()
 
-  get_target_property(${var}_list devicetree_target "DT_REG|${DT_REG_PATH}|ADDR")
+  dt_path_internal(canonical "${DT_REG_PATH}")
+  get_target_property(${var}_list devicetree_target "DT_REG|${canonical}|ADDR")
 
   list(GET ${var}_list ${DT_REG_INDEX} ${var})
 
@@ -2819,19 +2924,27 @@ function(dt_reg_addr var)
 endfunction()
 
 # Usage:
-#   dt_reg_size(<var> PATH <path> [INDEX <idx>])
+#   dt_reg_size(<var> PATH <path> [INDEX <idx>] [NAME <name>])
 #
-# Get the size of the register block at index <idx>.
-# If INDEX is omitted, then the value at index 0 will be returned.
+# Get the size of the register block at index <idx>, or with
+# name <name>. If <idx> and <name> are both omitted, the value at
+# index 0 will be returned. Do not give both <idx> and <name>.
 #
 # The value will be returned in the <value> parameter.
 #
+# The <path> value may be any of these:
+#
+# - absolute path to a node, like '/foo/bar'
+# - a node alias, like 'my-alias'
+# - a node alias followed by a path to a child node, like 'my-alias/child-node'
+#
 # <var>          : Return variable where the size value will be stored
 # PATH <path>    : Node path
-# INDEX <idx>    : Index number
+# INDEX <idx>    : Register block index number
+# NAME <name>    : Register block name
 function(dt_reg_size var)
   set(req_single_args "PATH")
-  set(single_args "INDEX")
+  set(single_args "INDEX;NAME")
   cmake_parse_arguments(DT_REG "" "${req_single_args};${single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
@@ -2846,11 +2959,20 @@ function(dt_reg_size var)
     endif()
   endforeach()
 
-  if(NOT DEFINED DT_REG_INDEX)
+  if(DEFINED DT_REG_INDEX AND DEFINED DT_REG_NAME)
+    message(FATAL_ERROR "dt_reg_size(${ARGV0} ...) given both INDEX and NAME")
+  elseif(NOT DEFINED DT_REG_INDEX AND NOT DEFINED DT_REG_NAME)
     set(DT_REG_INDEX 0)
+  elseif(DEFINED DT_REG_NAME)
+    dt_reg_index_private(DT_REG_INDEX "${DT_REG_PATH}" "${DT_REG_NAME}")
+    if(DT_REG_INDEX EQUAL "-1")
+      set(${var} PARENT_SCOPE)
+      return()
+    endif()
   endif()
 
-  get_target_property(${var}_list devicetree_target "DT_REG|${DT_REG_PATH}|SIZE")
+  dt_path_internal(canonical "${DT_REG_PATH}")
+  get_target_property(${var}_list devicetree_target "DT_REG|${canonical}|SIZE")
 
   list(GET ${var}_list ${DT_REG_INDEX} ${var})
 
@@ -2859,6 +2981,17 @@ function(dt_reg_size var)
   endif()
 
   set(${var} ${${var}} PARENT_SCOPE)
+endfunction()
+
+# Internal helper for dt_reg_addr/dt_reg_size; not meant to be used directly
+function(dt_reg_index_private var path name)
+  dt_prop(reg_names PATH "${path}" PROPERTY "reg-names")
+  if(NOT DEFINED reg_names)
+    set(index "-1")
+  else()
+    list(FIND reg_names "${name}" index)
+  endif()
+  set(${var} "${index}" PARENT_SCOPE)
 endfunction()
 
 # Usage:
@@ -2916,7 +3049,8 @@ endfunction()
 #
 # Get a node path for a /chosen node property.
 #
-# the node path will be returned in the <value> parameter.
+# The node's path will be returned in the <var> parameter. The
+# variable will be left undefined if the chosen node does not exist.
 #
 # <var>           : Return variable where the node path will be stored
 # PROPERTY <prop> : Chosen property
@@ -2925,7 +3059,7 @@ function(dt_chosen var)
   cmake_parse_arguments(DT_CHOSEN "" "${req_single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
-    message(FATAL_ERROR "dt_has_chosen(${ARGV0} ...) missing return parameter.")
+    message(FATAL_ERROR "dt_chosen(${ARGV0} ...) missing return parameter.")
   endif()
 
   foreach(arg ${req_single_args})
@@ -2942,6 +3076,107 @@ function(dt_chosen var)
     set(${var} PARENT_SCOPE)
   else()
     set(${var} ${${var}} PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Internal helper. Canonicalizes a path 'path' into the output
+# variable 'var'. This resolves aliases, if any. Child nodes may be
+# accessed via alias as well. 'var' is left undefined if the path does
+# not refer to an existing node.
+#
+# Example devicetree:
+#
+#   / {
+#           foo {
+#                   my-label: bar {
+#                           baz {};
+#                   };
+#           };
+#           aliases {
+#                   my-alias = &my-label;
+#           };
+#   };
+#
+# Example usage:
+#
+#   dt_path_internal(ret "/foo/bar")     # sets ret to "/foo/bar"
+#   dt_path_internal(ret "my-alias")     # sets ret to "/foo/bar"
+#   dt_path_internal(ret "my-alias/baz") # sets ret to "/foo/bar/baz"
+#   dt_path_internal(ret "/blub")        # ret is undefined
+function(dt_path_internal var path)
+  string(FIND "${path}" "/" slash_index)
+
+  if("${slash_index}" EQUAL 0)
+    # If the string starts with a slash, it should be an existing
+    # canonical path.
+    dt_path_internal_exists(check "${path}")
+    if (check)
+      set(${var} "${path}" PARENT_SCOPE)
+      return()
+    endif()
+  else()
+    # Otherwise, try to expand a leading alias.
+    string(SUBSTRING "${path}" 0 "${slash_index}" alias_name)
+    dt_alias(alias_path PROPERTY "${alias_name}")
+
+    # If there is a leading alias, append the rest of the string
+    # onto it and see if that's an existing node.
+    if (DEFINED alias_path)
+      set(rest)
+      if (NOT "${slash_index}" EQUAL -1)
+        string(SUBSTRING "${path}" "${slash_index}" -1 rest)
+      endif()
+      dt_path_internal_exists(expanded_path_exists "${alias_path}${rest}")
+      if (expanded_path_exists)
+        set(${var} "${alias_path}${rest}" PARENT_SCOPE)
+        return()
+      endif()
+    endif()
+  endif()
+
+  # Failed search; ensure return variable is undefined.
+  set(${var} PARENT_SCOPE)
+endfunction()
+
+# Internal helper. Set 'var' to TRUE if a canonical path 'path' refers
+# to an existing node. Set it to FALSE otherwise. See
+# dt_path_internal for a definition and examples of 'canonical' paths.
+function(dt_path_internal_exists var path)
+  get_target_property(path_prop devicetree_target "DT_NODE|${path}")
+  if (path_prop)
+    set(${var} TRUE PARENT_SCOPE)
+  else()
+    set(${var} FALSE PARENT_SCOPE)
+  endif()
+endfunction()
+
+# 4.2. *_if_dt_node
+#
+# This section is similar to the extensions named *_ifdef, except
+# actions are performed if the devicetree contains some node.
+# *_if_dt_node functions may be added as needed, or if they are likely
+# to be useful for user applications.
+
+# Add item(s) to a target's SOURCES list if a devicetree node exists.
+#
+# Example usage:
+#
+#   # If the devicetree alias "led0" refers to a node, this
+#   # adds "blink_led.c" to the sources list for the "app" target.
+#   target_sources_if_dt_node("led0" app PRIVATE blink_led.c)
+#
+#   # If the devicetree path "/soc/serial@4000" is a node, this
+#   # adds "uart.c" to the sources list for the "lib" target,
+#   target_sources_if_dt_node("/soc/serial@4000" lib PRIVATE uart.c)
+#
+# <path>    : Path to devicetree node to check
+# <target>  : Build system target whose sources to add to
+# <scope>   : Scope to add items to
+# <item>    : Item (or items) to add to the target
+function(target_sources_if_dt_node path target scope item)
+  dt_node_exists(check PATH "${path}")
+  if(${check})
+    target_sources(${target} ${scope} ${item} ${ARGN})
   endif()
 endfunction()
 
@@ -3081,9 +3316,9 @@ macro(zephyr_linker_memory_ifdef feature_toggle)
 endmacro()
 
 # Usage:
-#   zephyr_linker_dts_memory(NAME <name> PATH <path> FLAGS <flags>)
-#   zephyr_linker_dts_memory(NAME <name> NODELABEL <nodelabel> FLAGS <flags>)
-#   zephyr_linker_dts_memory(NAME <name> CHOSEN <prop> FLAGS <flags>)
+#   zephyr_linker_dts_memory(PATH <path> FLAGS <flags>)
+#   zephyr_linker_dts_memory(NODELABEL <nodelabel> FLAGS <flags>)
+#   zephyr_linker_dts_memory(CHOSEN <prop> FLAGS <flags>)
 #
 # Zephyr linker devicetree memory.
 # This function specifies a memory region for the platform in use based on its
@@ -3094,7 +3329,6 @@ endmacro()
 #
 # Only one of PATH, NODELABEL, and CHOSEN parameters may be given.
 #
-# NAME <name>      : Name of the memory region, for example FLASH.
 # PATH <path>      : Devicetree node identifier.
 # NODELABEL <label>: Node label
 # CHOSEN <prop>    : Chosen property, add memory section described by the
@@ -3107,7 +3341,7 @@ endmacro()
 #                  The flags r and x, or w and x may be combined like: rx, wx.
 #
 function(zephyr_linker_dts_memory)
-  set(single_args "CHOSEN;FLAGS;NAME;PATH;NODELABEL")
+  set(single_args "CHOSEN;FLAGS;PATH;NODELABEL")
   cmake_parse_arguments(DTS_MEMORY "" "${single_args}" "" ${ARGN})
 
   if(DTS_MEMORY_UNPARSED_ARGUMENTS)
@@ -3142,9 +3376,14 @@ function(zephyr_linker_dts_memory)
 
   dt_reg_addr(addr PATH ${DTS_MEMORY_PATH})
   dt_reg_size(size PATH ${DTS_MEMORY_PATH})
+  dt_prop(name PATH ${DTS_MEMORY_PATH} PROPERTY "zephyr,memory-region")
+  if (NOT DEFINED name)
+    # Fallback to the node path
+    set(name ${DTS_MEMORY_PATH})
+  endif()
 
   zephyr_linker_memory(
-    NAME  ${DTS_MEMORY_NAME}
+    NAME  ${name}
     START ${addr}
     SIZE  ${size}
     FLAGS ${DTS_MEMORY_FLAGS}
@@ -3620,13 +3859,13 @@ endfunction()
 # EXPR <expr>  : Expression that defines the symbol. Due to linker limitations
 #                all expressions should only contain simple math, such as
 #                `+, -, *` and similar. The expression will go directly into the
-#                linker, and all `%<symbol>%` will be replaced with the referred
+#                linker, and all `@<symbol>@` will be replaced with the referred
 #                symbol.
 #
 # Example:
 #   To create a new symbol `bar` pointing to the start VMA address of section
 #   `foo` + 1024, one can write:
-#     zephyr_linker_symbol(SYMBOL bar EXPR "(%foo% + 1024)")
+#     zephyr_linker_symbol(SYMBOL bar EXPR "(@foo@ + 1024)")
 #
 function(zephyr_linker_symbol)
   set(single_args "EXPR;SYMBOL")

@@ -961,6 +961,50 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	IOPCTL_PinMuxSet(IOPCTL, 2U, 9U, port2_pin9_config);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pmic_i2c), nxp_lpc_i2c, okay)  && CONFIG_I2C
+	const uint32_t fc15_i2c_scl_config = (/* Pin is configured as I2C_SCL */
+		IOPCTL_PIO_FUNC0 |
+		/* Enable pull-up / pull-down function */
+		IOPCTL_PIO_PUPD_EN |
+		/* Enable pull-up function */
+		IOPCTL_PIO_PULLUP_EN |
+		/* Enables input buffer function */
+		IOPCTL_PIO_INBUF_EN |
+		/* Normal mode */
+		IOPCTL_PIO_SLEW_RATE_NORMAL |
+		/* Normal drive */
+		IOPCTL_PIO_FULLDRIVE_DI |
+		/* Analog mux is disabled */
+		IOPCTL_PIO_ANAMUX_DI |
+		/* Pseudo Output Drain is enabled */
+		IOPCTL_PIO_PSEDRAIN_EN |
+		/* Input function is not inverted */
+		IOPCTL_PIO_INV_DI);
+	/* FC15_SCL PIN (coords: E16) is configured as I2C SCL */
+	IOPCTL->FC15_I2C_SCL = fc15_i2c_scl_config;
+
+	const uint32_t fc15_i2c_sda_config = (/* Pin is configured as I2C_SDA */
+		IOPCTL_PIO_FUNC0 |
+		/* Enable pull-up / pull-down function */
+		IOPCTL_PIO_PUPD_EN |
+		/* Enable pull-up function */
+		IOPCTL_PIO_PULLUP_EN |
+		/* Enables input buffer function */
+		IOPCTL_PIO_INBUF_EN |
+		/* Normal mode */
+		IOPCTL_PIO_SLEW_RATE_NORMAL |
+		/* Normal drive */
+		IOPCTL_PIO_FULLDRIVE_DI |
+		/* Analog mux is disabled */
+		IOPCTL_PIO_ANAMUX_DI |
+		/* Pseudo Output Drain is enabled */
+		IOPCTL_PIO_PSEDRAIN_EN |
+		/* Input function is not inverted */
+		IOPCTL_PIO_INV_DI);
+	/* FC15_SDA PIN (coords: F16) is configured as I2C SDA */
+	IOPCTL->FC15_I2C_SDA = fc15_i2c_sda_config;
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay) && CONFIG_ADC
 	/*
 	 * The current test and sample applications uses a single channel for

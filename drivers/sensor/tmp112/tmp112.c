@@ -21,13 +21,11 @@ LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 static int tmp112_reg_read(const struct tmp112_config *cfg,
 			   uint8_t reg, uint16_t *val)
 {
-	uint8_t buf[sizeof(val)];
-
-	if (i2c_burst_read_dt(&cfg->bus, reg, buf, sizeof(buf)) < 0) {
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, sizeof(*val)) < 0) {
 		return -EIO;
 	}
 
-	*val = sys_get_be16(buf);
+	*val = sys_be16_to_cpu(*val);
 
 	return 0;
 }
@@ -35,9 +33,12 @@ static int tmp112_reg_read(const struct tmp112_config *cfg,
 static int tmp112_reg_write(const struct tmp112_config *cfg,
 			    uint8_t reg, uint16_t val)
 {
-	uint16_t val_be = sys_cpu_to_be16(val);
+	uint8_t buf[3];
 
-	return i2c_burst_write_dt(&cfg->bus, reg, (uint8_t *)&val_be, 2);
+	buf[0] = reg;
+	sys_put_be16(val, &buf[1]);
+
+	return i2c_write_dt(&cfg->bus, buf, sizeof(buf));
 }
 
 static uint16_t set_config_flags(struct tmp112_data *data, uint16_t mask,
@@ -55,7 +56,7 @@ static int tmp112_update_config(const struct device *dev, uint16_t mask,
 
 	rc = tmp112_reg_write(dev->config, TMP112_REG_CONFIG, new_val);
 	if (rc == 0) {
-		data->config_reg = val;
+		data->config_reg = new_val;
 	}
 
 	return rc;
@@ -204,7 +205,7 @@ int tmp112_init(const struct device *dev)
 	static struct tmp112_data tmp112_data_##inst;			    \
 	static const struct tmp112_config tmp112_config_##inst = {	    \
 		.bus = I2C_DT_SPEC_INST_GET(inst),			    \
-		.cr = DT_ENUM_IDX(DT_DRV_INST(inst), conversion_rate),	    \
+		.cr = DT_INST_ENUM_IDX(inst, conversion_rate),		    \
 		.extended_mode = DT_INST_PROP(inst, extended_mode),	    \
 	};								    \
 									    \

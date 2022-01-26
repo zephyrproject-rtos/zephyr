@@ -297,15 +297,17 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable);
 /* Provides information about antennae switching and sampling settings */
 uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types,
-				     uint8_t switching_patterns_len,
-				     uint8_t *ant_id);
+				     uint8_t switching_patterns_len, const uint8_t *ant_id);
 /* Enables or disables CTE sampling in direction fingin connected mode. */
 uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 				     uint8_t slot_durations, uint8_t switch_pattern_len,
 				     const uint8_t *ant_ids);
 /* Enables or disables CTE request control procedure in direction fingin connected mode. */
-uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t cte_request_interval,
-				      uint8_t requested_cte_length, uint8_t requested_cte_type);
+uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
+				      uint16_t cte_request_interval, uint8_t requested_cte_length,
+				      uint8_t requested_cte_type);
+/* Enables or disables CTE response control procedure in direction fingin connected mode. */
+uint8_t ll_df_set_conn_cte_rsp_enable(uint16_t handle, uint8_t enable);
 /* Enables or disables CTE sampling in periodic advertising scan */
 uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 					uint8_t sampling_enable,
@@ -328,6 +330,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *node_tx);
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle);
 void ll_rx_dequeue(void);
 void ll_rx_mem_release(void **node_rx);
+void ll_iso_rx_mem_release(void **node_rx);
 
 /* Downstream - ISO Data */
 void *ll_iso_tx_mem_acquire(void);

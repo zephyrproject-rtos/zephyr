@@ -9,17 +9,30 @@ config SOC_ESP32C3
 	select CLOCK_CONTROL
 	select CLOCK_CONTROL_ESP32
 
+if SOC_ESP32C3
+
 config IDF_TARGET_ESP32C3
 	bool "ESP32C3 as target board"
 	default y
-	depends on SOC_ESP32C3
 
 config ESPTOOLPY_FLASHFREQ_80M
 	bool
 	default y
-	depends on SOC_ESP32C3
 
-config BOOTLOADER_ESP_IDF
-	bool "Use esp-idf 2nd stage bootloader"
-	default y
-	depends on SOC_ESP32C3
+config FLASH_SIZE
+	int
+	default $(dt_node_reg_size_int,/soc/flash-controller@60002000/flash@0,0)
+
+config FLASH_BASE_ADDRESS
+	hex
+	default $(dt_node_reg_addr_hex,/soc/flash-controller@60002000/flash@0)
+
+config ESPTOOLPY_FLASHSIZE
+	string
+	default "1MB" if FLASH_SIZE = 0x100000
+	default "2MB" if FLASH_SIZE = 0x200000
+	default "4MB" if FLASH_SIZE = 0x400000
+	default "8MB" if FLASH_SIZE = 0x800000
+	default "16MB" if FLASH_SIZE = 0x1000000
+
+endif

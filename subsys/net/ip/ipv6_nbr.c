@@ -2281,6 +2281,63 @@ static inline bool handle_ra_6co(struct net_pkt *pkt, uint8_t len)
 }
 #endif
 
+static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(routeinfo_access,
+				   struct net_icmpv6_nd_opt_route_info);
+	struct net_icmpv6_nd_opt_route_info *route_info;
+	struct net_route_entry *route;
+	struct in6_addr prefix_buf = { 0 };
+	uint8_t prefix_field_len = (len - 1) * 8;
+	uint32_t route_lifetime;
+	uint8_t prefix_len;
+	uint8_t preference;
+	int ret;
+
+	route_info = (struct net_icmpv6_nd_opt_route_info *)
+				net_pkt_get_data(pkt, &routeinfo_access);
+	if (!route_info) {
+		return false;
+	}
+
+	ret = net_pkt_acknowledge_data(pkt, &routeinfo_access);
+	if (ret < 0) {
+		return false;
+	}
+
+	prefix_len = route_info->prefix_len;
+	route_lifetime = ntohl(route_info->route_lifetime);
+	preference = route_info->flags.prf;
+
+	ret = net_pkt_read(pkt, &prefix_buf, prefix_field_len);
+	if (ret < 0) {
+		NET_ERR("Error reading prefix, %d", ret);
+		return false;
+	}
+
+	if (route_lifetime == 0) {
+		route = net_route_lookup(net_pkt_orig_iface(pkt), &prefix_buf);
+		if (route != NULL) {
+			ret = net_route_del(route);
+			if (ret < 0) {
+				NET_DBG("Failed to delete route");
+			}
+		}
+	} else {
+		route = net_route_add(net_pkt_orig_iface(pkt),
+				      &prefix_buf,
+				      prefix_len,
+				      (struct in6_addr *)NET_IPV6_HDR(pkt)->src,
+				      route_lifetime,
+				      preference);
+		if (route == NULL) {
+			NET_DBG("Failed to add route");
+		}
+	}
+
+	return true;
+}
+
 static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 					struct net_ipv6_hdr *ip_hdr,
 					struct net_icmp_hdr *icmp_hdr)
@@ -2404,9 +2461,23 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 			break;
 #endif
 		case NET_ICMPV6_ND_OPT_ROUTE:
-			NET_DBG("Route option skipped");
-			goto skip;
+			if (!IS_ENABLED(CONFIG_NET_ROUTE)) {
+				NET_DBG("Route option skipped");
+				goto skip;
+			}
 
+			/* RFC 4191, ch. 2.3 */
+			if (nd_opt_hdr->len == 0U || nd_opt_hdr->len > 3U) {
+				NET_ERR("DROP: Invalid %s length (%d)",
+					"route info opt", nd_opt_hdr->len);
+				goto drop;
+			}
+
+			if (!handle_ra_route_info(pkt, nd_opt_hdr->len)) {
+				goto drop;
+			}
+
+			break;
 #if defined(CONFIG_NET_IPV6_RA_RDNSS)
 		case NET_ICMPV6_ND_OPT_RDNSS:
 			NET_DBG("RDNSS option skipped");

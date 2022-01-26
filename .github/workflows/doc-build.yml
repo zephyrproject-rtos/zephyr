@@ -37,6 +37,9 @@ jobs:
     name: "Documentation Build (HTML)"
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: doc-build-html-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
     - name: checkout
@@ -44,8 +47,9 @@ jobs:
 
     - name: install-pkgs
       run: |
+        sudo apt-get update
         sudo apt-get install -y ninja-build graphviz libclang1-9 libclang-cpp9
-        wget -q https://www.doxygen.nl/files/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+        wget --no-verbose https://www.doxygen.nl/files/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
@@ -74,7 +78,13 @@ jobs:
           DOC_TAG="development"
         fi
 
-        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -j auto -t publish" make -C doc html
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          DOC_TARGET="html-fast"
+        else
+          DOC_TARGET="html"
+        fi
+
+        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -t publish" make -C doc ${DOC_TARGET}
 
     - name: compress-docs
       run: |
@@ -91,6 +101,9 @@ jobs:
     runs-on: ubuntu-latest
     container: texlive/texlive:latest
     timeout-minutes: 30
+    concurrency:
+      group: doc-build-pdf-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
     - name: checkout

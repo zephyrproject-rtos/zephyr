@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "fsl_enet.h"
 #include "fsl_phy.h"
+#include "fsl_phyksz8081.h"
+#include "fsl_enet_mdio.h"
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 #include "fsl_clock.h"
 #include <drivers/clock_control.h>
@@ -49,6 +51,34 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <devicetree.h>
 
 #include "eth.h"
+
+#define PHY_OMS_OVERRIDE_REG 0x16U      /* The PHY Operation Mode Strap Override register. */
+#define PHY_OMS_STATUS_REG 0x17U        /* The PHY Operation Mode Strap Status register. */
+
+#define PHY_OMS_NANDTREE_MASK 0x0020U     /* The PHY NAND Tree Strap-In Override/Status mask. */
+#define PHY_OMS_FACTORY_MODE_MASK 0x8000U /* The factory mode Override/Status mask. */
+
+/* Defines the PHY KSZ8081 vendor defined registers. */
+#define PHY_CONTROL1_REG 0x1EU /* The PHY control one register. */
+#define PHY_CONTROL2_REG 0x1FU /* The PHY control two register. */
+
+/* Defines the PHY KSZ8081 ID number. */
+#define PHY_CONTROL_ID1 0x22U /* The PHY ID1 */
+
+/* Defines the mask flag of operation mode in control registers */
+#define PHY_CTL2_REMOTELOOP_MASK    0x0004U /* The PHY remote loopback mask. */
+#define PHY_CTL2_REFCLK_SELECT_MASK 0x0080U /* The PHY RMII reference clock select. */
+#define PHY_CTL1_10HALFDUPLEX_MASK  0x0001U /* The PHY 10M half duplex mask. */
+#define PHY_CTL1_100HALFDUPLEX_MASK 0x0002U /* The PHY 100M half duplex mask. */
+#define PHY_CTL1_10FULLDUPLEX_MASK  0x0005U /* The PHY 10M full duplex mask. */
+#define PHY_CTL1_100FULLDUPLEX_MASK 0x0006U /* The PHY 100M full duplex mask. */
+#define PHY_CTL1_SPEEDUPLX_MASK     0x0007U /* The PHY speed and duplex mask. */
+#define PHY_CTL1_ENERGYDETECT_MASK  0x10U   /* The PHY signal present on rx differential pair. */
+#define PHY_CTL1_LINKUP_MASK        0x100U  /* The PHY link up. */
+#define PHY_LINK_READY_MASK         (PHY_CTL1_ENERGYDETECT_MASK | PHY_CTL1_LINKUP_MASK)
+
+/* Defines the timeout macro. */
+#define PHY_READID_TIMEOUT_COUNT 1000U
 
 #define FREESCALE_OUI_B0 0x00
 #define FREESCALE_OUI_B1 0x04
@@ -132,6 +162,7 @@ struct eth_context {
 	float clk_ratio;
 #endif
 	struct k_sem tx_buf_sem;
+	phy_handle_t *phy_handle;
 	enum eth_mcux_phy_state phy_state;
 	bool enabled;
 	bool link_up;
@@ -187,7 +218,7 @@ void eth_mcux_phy_stop(struct eth_context *context);
 static int eth_mcux_device_pm_action(const struct device *dev,
 				     enum pm_device_action action)
 {
-	struct eth_context *eth_ctx = (struct eth_context *)dev->data;
+	struct eth_context *eth_ctx = dev->data;
 	int ret = 0;
 
 	if (!eth_ctx->clock_dev) {
@@ -318,6 +349,7 @@ static void eth_mcux_phy_start(struct eth_context *context)
 
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
+		context->phy_handle->phyAddr = context->phy_addr;
 		ENET_ActiveRead(context->base);
 		/* Reset the PHY. */
 #if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
@@ -405,8 +437,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	case eth_mcux_phy_state_initial:
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
 		ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
-		res = PHY_Read(context->base, context->phy_addr,
-			       PHY_CONTROL2_REG, &ctrl2);
+		res = PHY_Read(context->phy_handle, PHY_CONTROL2_REG, &ctrl2);
 		ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
 		if (res != kStatus_Success) {
 			LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
@@ -419,7 +450,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 					   ctrl2);
 		}
 		context->phy_state = eth_mcux_phy_state_reset;
-#endif
+#endif /* CONFIG_SOC_SERIES_IMX_RT */
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 		/*
 		 * When the iface is available proceed with the eth link setup,
@@ -450,7 +481,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 				   (PHY_100BASETX_FULLDUPLEX_MASK |
 				    PHY_100BASETX_HALFDUPLEX_MASK |
 				    PHY_10BASETX_FULLDUPLEX_MASK |
-				    PHY_10BASETX_HALFDUPLEX_MASK | 0x1U));
+				    PHY_10BASETX_HALFDUPLEX_MASK |
+					PHY_IEEE802_3_SELECTOR_MASK));
 #endif
 		context->phy_state = eth_mcux_phy_state_autoneg;
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
@@ -580,7 +612,7 @@ static void eth_mcux_phy_setup(struct eth_context *context)
 	/* Disable MII interrupts to prevent triggering PHY events. */
 	ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
 
-	res = PHY_Read(context->base, context->phy_addr,
+	res = PHY_Read(context->phy_handle,
 		       PHY_OMS_OVERRIDE_REG, &oms_override);
 	if (res != kStatus_Success) {
 		LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
@@ -595,7 +627,7 @@ static void eth_mcux_phy_setup(struct eth_context *context)
 			oms_override &= ~PHY_OMS_NANDTREE_MASK;
 		}
 
-		res = PHY_Write(context->base, context->phy_addr,
+		res = PHY_Write(context->phy_handle,
 				PHY_OMS_OVERRIDE_REG, oms_override);
 		if (res != kStatus_Success) {
 			LOG_WRN("Writing PHY reg failed (status 0x%x)", res);
@@ -914,11 +946,13 @@ static void eth_mcux_init(const struct device *dev)
 #endif
 
 	context->phy_state = eth_mcux_phy_state_initial;
+	context->phy_handle->mdioHandle->ops = &enet_ops;
+	context->phy_handle->ops = &phyksz8081_ops;
 
 #if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
 	sys_clock = CLOCK_GetFreq(kCLOCK_IpgClk);
-#elif defined(SOC_SERIES_IMX_RT11XX)
-	sys_clock = CLOCK_GetFreq(kCLOCK_Root_Bus);
+#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+	sys_clock = CLOCK_GetRootClockFreq(kCLOCK_Root_Bus);
 #else
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 #endif
@@ -929,6 +963,7 @@ static void eth_mcux_init(const struct device *dev)
 #if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 	enet_config.interrupt |= kENET_MiiInterrupt;
 #endif
+	enet_config.miiMode = kENET_RmiiMode;
 
 	if (IS_ENABLED(CONFIG_ETH_MCUX_PROMISCUOUS_MODE)) {
 		enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
@@ -1166,9 +1201,19 @@ static void eth_mcux_common_isr(const struct device *dev)
 	int irq_lock_key = irq_lock();
 
 	if (EIR & (kENET_RxBufferInterrupt | kENET_RxFrameInterrupt)) {
+#if FSL_FEATURE_ENET_QUEUE > 1
+		/* Only use ring 0 in this driver */
+		ENET_ReceiveIRQHandler(context->base, &context->enet_handle, 0);
+#else
 		ENET_ReceiveIRQHandler(context->base, &context->enet_handle);
+#endif
 	} else if (EIR & (kENET_TxBufferInterrupt | kENET_TxFrameInterrupt)) {
+#if FSL_FEATURE_ENET_QUEUE > 1
+		/* Only use ring 0 in this driver */
+		ENET_TransmitIRQHandler(context->base, &context->enet_handle, 0);
+#else
 		ENET_TransmitIRQHandler(context->base, &context->enet_handle);
+#endif
 	} else if (EIR & ENET_EIR_MII_MASK) {
 		k_work_submit(&context->phy_work);
 		ENET_ClearInterruptStatus(context->base, kENET_MiiInterrupt);
@@ -1217,8 +1262,10 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define NOCACHE
 #endif
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
 #define ETH_MCUX_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
+#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#define ETH_MCUX_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
 #define ETH_MCUX_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
 #else
@@ -1347,12 +1394,21 @@ static void eth_mcux_err_isr(const struct device *dev)
 									\
 	static void eth##n##_config_func(void);				\
 									\
+	static mdio_handle_t eth##n##_mdio_handle = {			\
+		  .resource.base = (ENET_Type *)DT_INST_REG_ADDR(n),	\
+		};							\
+									\
+	static phy_handle_t eth##n##_phy_handle = {			\
+		  .mdioHandle = &eth##n##_mdio_handle,			\
+		};							\
+									\
 	static struct eth_context eth##n##_context = {			\
 		.base = (ENET_Type *)DT_INST_REG_ADDR(n),		\
 		.config_func = eth##n##_config_func,			\
-		.phy_addr = 0U,						\
+		.phy_addr = DT_INST_PROP(n, phy_addr),		\
 		.phy_duplex = kPHY_FullDuplex,				\
 		.phy_speed = kPHY_Speed100M,				\
+		.phy_handle = &eth##n##_phy_handle,			\
 		ETH_MCUX_MAC_ADDR(n)					\
 		ETH_MCUX_POWER(n)					\
 	};								\
@@ -1393,7 +1449,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 									\
 	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
 			    eth_init,					\
-			    PM_DEVICE_DT_INST_REF(n),			\
+			    PM_DEVICE_DT_INST_GET(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
 			    CONFIG_ETH_INIT_PRIORITY,			\

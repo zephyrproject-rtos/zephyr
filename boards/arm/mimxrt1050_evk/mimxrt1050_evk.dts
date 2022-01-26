@@ -28,6 +28,7 @@
 		zephyr,flash-controller = &s26ks512s0;
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &lcdif;
 	};
 
 	sdram0: memory@80000000 {
@@ -194,10 +195,16 @@ arduino_serial: &lpuart3 {};
 
 &lpspi1 {
 	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+	dmas = <&edma0 0 13>, <&edma0 1 14>;
+	dma-names = "rx", "tx";
 };
 
 &lpspi3 {
 	status = "okay";
+	/* DMA channels 2 and 3, muxed to LPSPI3 RX and TX */
+	dmas = <&edma0 2 15>, <&edma0 3 16>;
+	dma-names = "rx", "tx";
 };
 
 &enet {
@@ -219,5 +226,16 @@ zephyr_udc0: &usb1 {
 };
 
 &wdog0 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
+ * to use systick, change this node from "gpt_hw_timer" to "systick"
+ */
+&gpt_hw_timer {
 	status = "okay";
 };

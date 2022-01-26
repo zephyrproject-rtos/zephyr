@@ -15,7 +15,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_DEVICE_MMIO_H
 #define ZEPHYR_INCLUDE_SYS_DEVICE_MMIO_H
 
-#include <toolchain/common.h>
+#include <toolchain.h>
 #include <linker/sections.h>
 
 /**

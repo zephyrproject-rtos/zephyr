@@ -367,6 +367,8 @@ device.
        into
    * - zephyr,console
      - Sets UART device used by console driver
+   * - zephyr,display
+     - Sets the default display controller
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy

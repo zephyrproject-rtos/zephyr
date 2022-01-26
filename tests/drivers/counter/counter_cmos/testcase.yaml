@@ -1,4 +1,0 @@
-tests:
-  drivers.counter.cmos:
-    tags: drivers
-    arch_allow: x86

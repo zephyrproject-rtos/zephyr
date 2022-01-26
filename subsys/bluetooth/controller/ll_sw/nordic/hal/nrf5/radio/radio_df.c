@@ -62,13 +62,6 @@ struct df_ant_cfg {
 #define MAX_ANTENNA_NUM 0
 #endif
 
-/* PDU_ANTENNA is defined outside of the #if block below because
- * radio_df_pdu_antenna_switch_pattern_get() can get called even when
- * the preprocessor condition being tested is 0. In this case, we use
- * the default value of 0.
- */
-#define PDU_ANTENNA DT_PROP_OR(RADIO_NODE, dfe_pdu_antenna, 0)
-
 uint8_t radio_df_pdu_antenna_switch_pattern_get(void)
 {
 	return PDU_ANTENNA;
@@ -307,7 +300,7 @@ void radio_df_cte_tx_aoa_set(uint8_t cte_len)
 			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 }
 
-void radio_df_cte_rx_2us_switching(void)
+void radio_df_cte_rx_2us_switching(bool cte_info_in_s1)
 {
 	/* BT spec requires single sample for a single switching slot, so
 	 * spacing for slot and samples is the same.
@@ -315,10 +308,10 @@ void radio_df_cte_rx_2us_switching(void)
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_2us,
 			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
-	radio_df_cte_inline_set_enabled(false);
+	radio_df_cte_inline_set_enabled(cte_info_in_s1);
 }
 
-void radio_df_cte_rx_4us_switching(void)
+void radio_df_cte_rx_4us_switching(bool cte_info_in_s1)
 {
 	/* BT spec requires single sample for a single switching slot, so
 	 * spacing for slot and samples is the same.
@@ -326,7 +319,7 @@ void radio_df_cte_rx_4us_switching(void)
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_4us,
 			  RADIO_DFECTRL1_TSAMPLESPACING_4us);
-	radio_df_cte_inline_set_enabled(false);
+	radio_df_cte_inline_set_enabled(cte_info_in_s1);
 }
 
 void radio_df_ant_switch_pattern_clear(void)
@@ -341,25 +334,16 @@ void radio_df_reset(void)
 	radio_df_ant_switch_pattern_clear();
 }
 
-void radio_switch_complete_and_phy_end_disable(void)
-{
-	NRF_RADIO->SHORTS =
-	       (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk);
-
-#if !defined(CONFIG_BT_CTLR_TIFS_HW)
-	hal_radio_sw_switch_disable();
-#endif /* !CONFIG_BT_CTLR_TIFS_HW */
-}
-
 void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 					      uint8_t phy_next, uint8_t flags_next)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk |
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk;
-	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
+		  END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -376,4 +360,9 @@ uint32_t radio_df_iq_samples_amount_get(void)
 uint8_t radio_df_cte_status_get(void)
 {
 	return NRF_RADIO->CTESTATUS;
+}
+
+bool radio_df_cte_ready(void)
+{
+	return (NRF_RADIO->EVENTS_CTEPRESENT != 0);
 }

@@ -388,12 +388,31 @@ config SCHED_THREAD_USAGE
 	help
 	  Collect thread runtime info at context switch time
 
+config SCHED_THREAD_USAGE_ANALYSIS
+	bool "Analyze the collected thread runtime usage statistics"
+	default n
+	depends on SCHED_THREAD_USAGE
+	select INSTRUMENT_THREAD_SWITCHING if !USE_SWITCH
+	help
+	  Collect additional timing information related to thread scheduling
+	  for analysis purposes. This includes the total time that a thread
+	  has been scheduled, the longest time for which it was scheduled and
+	  others.
+
 config SCHED_THREAD_USAGE_ALL
 	bool "Collect total system runtime usage"
 	default y if SCHED_THREAD_USAGE
 	depends on SCHED_THREAD_USAGE
 	help
 	  Maintain a sum of all non-idle thread cycle usage.
+
+config SCHED_THREAD_USAGE_AUTO_ENABLE
+	bool "Automatically enable runtime usage statistics"
+	default y
+	depends on SCHED_THREAD_USAGE
+	help
+	  When set, this option automatically enables the gathering of both
+	  the thread and CPU usage statistics.
 
 endif # THREAD_RUNTIME_STATS
 
@@ -510,17 +529,6 @@ config NUM_MBOX_ASYNC_MSGS
 	  Setting this option to 0 disables support for asynchronous
 	  mailbox messages.
 
-config NUM_PIPE_ASYNC_MSGS
-	int "Maximum number of in-flight asynchronous pipe messages"
-	default 10
-	help
-	  This option specifies the total number of asynchronous pipe
-	  messages that can exist simultaneously, across all pipes in
-	  the system.
-
-	  Setting this option to 0 disables support for asynchronous
-	  pipe messages.
-
 config EVENTS
 	bool "Enable event objects"
 	help
@@ -635,6 +643,17 @@ config TIMEOUT_64BIT
 	  of overflowing the 32 bit word.  This feature also gates the
 	  availability of absolute timeout values (which require the
 	  extra precision).
+
+config SYS_CLOCK_MAX_TIMEOUT_DAYS
+	int "Max timeout (in days) used in conversions"
+	default 365
+	help
+	  Value is used in the time conversion static inline function to determine
+	  at compile time which algorithm to use. One algorithm is faster, takes
+	  less code but may overflow if multiplication of source and target
+	  frequency exceeds 64 bits. Second algorithm prevents that. Faster
+	  algorithm is selected for conversion if maximum timeout represented in
+	  source frequency domain multiplied by target frequency fits in 64 bits.
 
 config XIP
 	bool "Execute in place"
@@ -900,3 +919,5 @@ config THREAD_LOCAL_STORAGE
 	  This option enables thread local storage (TLS) support in kernel.
 
 endmenu
+
+rsource "Kconfig.vm"

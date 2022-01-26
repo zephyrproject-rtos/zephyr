@@ -8,6 +8,8 @@
 
 #include <kernel.h>
 
+#include "tracking.h"
+
 #if defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
 #elif defined CONFIG_TRACING_CTF
@@ -34,30 +36,6 @@
  * @defgroup subsys_tracing_apis Tracing APIs
  * @{
  */
-
-#if defined(CONFIG_PERCEPIO_TRACERECORDER)
-#include "tracing_tracerecorder.h"
-#else
-/**
- * @brief Called when entering an ISR
- */
-void sys_trace_isr_enter(void);
-
-/**
- * @brief Called when exiting an ISR
- */
-void sys_trace_isr_exit(void);
-
-/**
- * @brief Called when exiting an ISR and switching to scheduler
- */
-void sys_trace_isr_exit_to_scheduler(void);
-
-/**
- * @brief Called when the cpu enters the idle state
- */
-void sys_trace_idle(void);
-#endif /* CONFIG_PERCEPIO_TRACERECORDER */
 
 /**
  * @brief Thread Tracing APIs
@@ -1153,7 +1131,7 @@ void sys_trace_idle(void);
  * @param head First ll-node
  * @param tail Last ll-node
  */
-#define sys_port_trace_k_fifo_alloc_put_list_enter(fifo, head, tail)
+#define sys_port_trace_k_fifo_put_list_enter(fifo, head, tail)
 
 /**
  * @brief Trace FIFO Queue put list exit
@@ -1161,7 +1139,7 @@ void sys_trace_idle(void);
  * @param head First ll-node
  * @param tail Last ll-node
  */
-#define sys_port_trace_k_fifo_alloc_put_list_exit(fifo, head, tail)
+#define sys_port_trace_k_fifo_put_list_exit(fifo, head, tail)
 
 /**
  * @brief Trace FIFO Queue put slist entry
@@ -1588,6 +1566,30 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_pipe_alloc_init_exit(pipe, ret)
 
 /**
+ * @brief Trace Pipe flush entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_flush_enter(pipe)
+
+/**
+ * @brief Trace Pipe flush exit
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_flush_exit(pipe)
+
+/**
+ * @brief Trace Pipe buffer flush entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_buffer_flush_enter(pipe)
+
+/**
+ * @brief Trace Pipe buffer flush exit
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_buffer_flush_exit(pipe)
+
+/**
  * @brief Trace Pipe put attempt entry
  * @param pipe Pipe object
  * @param timeout Timeout period
@@ -1983,8 +1985,9 @@ void sys_trace_idle(void);
 /**
  * @brief Trace enabling device runtime PM call exit.
  * @param dev Device instance.
+ * @param ret Return value.
  */
-#define sys_port_trace_pm_device_runtime_enable_exit(dev)
+#define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)
 
 /**
  * @brief Trace disabling device runtime PM call entry.
@@ -2000,6 +2003,30 @@ void sys_trace_idle(void);
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
 /** @} */ /* end of subsys_tracing_apis_pm_device_runtime */
+
+#if defined(CONFIG_PERCEPIO_TRACERECORDER)
+#include "tracing_tracerecorder.h"
+#else
+/**
+ * @brief Called when entering an ISR
+ */
+void sys_trace_isr_enter(void);
+
+/**
+ * @brief Called when exiting an ISR
+ */
+void sys_trace_isr_exit(void);
+
+/**
+ * @brief Called when exiting an ISR and switching to scheduler
+ */
+void sys_trace_isr_exit_to_scheduler(void);
+
+/**
+ * @brief Called when the cpu enters the idle state
+ */
+void sys_trace_idle(void);
+#endif /* CONFIG_PERCEPIO_TRACERECORDER */
 
 /** @} */ /* end of subsys_tracing_apis */
 

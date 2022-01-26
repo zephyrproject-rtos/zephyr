@@ -164,6 +164,7 @@ def test_apply_filters_part1(class_testsuite, all_testcases_dict, platforms_list
         assert not discards
 
     class_testsuite.platforms = platforms_list
+    class_testsuite.platform_names = [p.name for p in platforms_list]
     class_testsuite.testcases = all_testcases_dict
     for plat in class_testsuite.platforms:
         if plat_attribute == "ignore_tags":
@@ -234,6 +235,7 @@ def test_apply_filters_part2(class_testsuite, all_testcases_dict,
     """
 
     class_testsuite.platforms = platforms_list
+    class_testsuite.platform_names = [p.name for p in platforms_list]
     class_testsuite.testcases = all_testcases_dict
     kwargs = {
         extra_filter : extra_filter_value,
@@ -264,6 +266,7 @@ def test_apply_filters_part3(class_testsuite, all_testcases_dict, platforms_list
     Part 3 : Testing edge cases for ram and flash values of platforms & testcases
     """
     class_testsuite.platforms = platforms_list
+    class_testsuite.platform_names = [p.name for p in platforms_list]
     class_testsuite.testcases = all_testcases_dict
 
     for plat in class_testsuite.platforms:

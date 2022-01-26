@@ -120,11 +120,7 @@ const __imx_boot_ivt_section ivt image_vector_table = {
 #endif
 
 /**
- *
  * @brief Initialize the system clock
- *
- * @return N/A
- *
  */
 static ALWAYS_INLINE void clock_init(void)
 {
@@ -134,7 +130,7 @@ static ALWAYS_INLINE void clock_init(void)
 	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P15V);
 #endif
 
-/* RT1160 does not have Foward Body Biasing on the CM7 core */
+/* RT1160 does not have Forward Body Biasing on the CM7 core */
 #if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
 	/* Check if FBB need to be enabled in OverDrive(OD) mode */
 	if (((OCOTP->FUSEN[7].FUSE & 0x10U) >> 4U) != 1) {
@@ -251,7 +247,11 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
 
 	/* Init System Pll2 pfd3. */
+#ifdef CONFIG_ETH_MCUX
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 24);
+#else
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 32);
+#endif
 
 	/* Init Sys Pll3. */
 	CLOCK_InitSysPll3();
@@ -294,16 +294,26 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	/* Configure BUS using SYS_PLL3_CLK */
-#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+#ifdef CONFIG_ETH_MCUX
+	/* Configure root bus clock at 198M */
+	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll2Pfd3;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+	/* Keep root bus clock at default 240M */
 	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
 #endif
 
 	/* Configure BUS_LPSR using SYS_PLL3_CLK */
-#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
+#if defined(CONFIG_SOC_MIMXRT1176_CM4)
 	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1166_CM4)
+	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 4;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
 #endif
 
@@ -355,6 +365,21 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c5, &rootCfg);
 #endif
 
+
+#ifdef CONFIG_ETH_MCUX
+	/* 50 MHz ENET clock */
+	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
+#endif
+
+#ifdef CONFIG_PTP_CLOCK_MCUX
+	/* 24MHz PTP clock */
+	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer1, &rootCfg);
+#endif
+
 #ifdef CONFIG_SPI_MCUX_LPSPI
 	/* Configure lpspi using Osc48MDiv2 */
 	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc48MDiv2;
@@ -363,16 +388,41 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
-	/* Configure CAN3 using OSC_RC_400M */
-	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc400M;
-	rootCfg.div = 5;
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay)
+	/* Configure CAN1 using Osc48MDiv2 */
+	rootCfg.mux = kCLOCK_CAN1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Can1, &rootCfg);
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan3), okay)
+	/* Configure CAN1 using Osc48MDiv2 */
+	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Can3, &rootCfg);
+#endif
 #endif
 
 #ifdef CONFIG_COUNTER_MCUX_GPT
 	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+	/* Configure USDHC1 using  SysPll2Pfd2*/
+	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Usdhc1, &rootCfg);
+	CLOCK_EnableClock(kCLOCK_Usdhc1);
+#endif
+
+#if !(defined(CONFIG_CODE_FLEXSPI) || defined(CONFIG_CODE_FLEXSPI2)) && \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && \
+	DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
+	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */
+	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
 	/* Keep core clock ungated during WFI */
@@ -392,6 +442,83 @@ static ALWAYS_INLINE void clock_init(void)
 	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_CM7_FORCE_HCLK_EN_MASK;
 #endif
 }
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+
+/* Usdhc driver needs to re-configure pinmux
+ * Pinmux depends on board design.
+ * From the perspective of Usdhc driver,
+ * it can't access board specific function.
+ * So SoC provides this for board to register
+ * its usdhc pinmux and for usdhc to access
+ * pinmux.
+ */
+
+static usdhc_pin_cfg_cb g_usdhc_pin_cfg_cb;
+
+void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb)
+{
+	g_usdhc_pin_cfg_cb = cb;
+}
+
+void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength)
+{
+	if (g_usdhc_pin_cfg_cb)
+		g_usdhc_pin_cfg_cb(nusdhc, init,
+			speed, strength);
+}
+
+/* Usdhc driver needs to reconfigure the dat3 line to a pullup in order to
+ * detect an SD card on the bus. Expose a callback to do that here. The board
+ * must register this callback in its init function.
+ */
+static usdhc_dat3_cfg_cb g_usdhc_dat3_cfg_cb;
+
+void imxrt_usdhc_dat3_cb_register(usdhc_dat3_cfg_cb cb)
+{
+	g_usdhc_dat3_cfg_cb = cb;
+}
+
+void imxrt_usdhc_dat3_pull(bool pullup)
+{
+	if (g_usdhc_dat3_cfg_cb) {
+		g_usdhc_dat3_cfg_cb(pullup);
+	}
+}
+
+#endif
+
+
+#if CONFIG_I2S_MCUX_SAI
+void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
+					uint32_t clk_pre_div, uint32_t clk_src_div)
+{
+	ARG_UNUSED(clk_pre_div);
+
+	switch (clock_name) {
+	case IMX_CCM_SAI1_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai1, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai1, clk_src_div);
+		break;
+	case IMX_CCM_SAI2_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai2, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai2, clk_src_div);
+		break;
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai3, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai3, clk_src_div);
+		break;
+	case IMX_CCM_SAI4_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai4, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai4, clk_src_div);
+		break;
+	default:
+		LOG_ERR("wrong clock system configured");
+		return;
+	}
+}
+#endif
 
 /**
  *

@@ -75,7 +75,7 @@ static void dropped(struct log_backend const *const backend, uint32_t cnt)
 }
 
 const struct log_backend_api log_backend_test_api = {
-	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
+	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
 	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
 	.panic = panic,
 	.dropped = dropped,
@@ -240,13 +240,11 @@ void test_log_message_with_string(void)
 /*test case main entry*/
 void test_main(void)
 {
-	PRINT("LOGGING MODE:%s\n", IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? "DEFERREDv1" :
-			(IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? "DEFERREDv2" :
-			(IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? "IMMEDIATEv1" :
-			"IMMEDIATEv2")));
+	PRINT("LOGGING MODE:%s\n", IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? "DEFERRED" : "IMMEDIATE");
+	PRINT("VERSION:v%d\n", IS_ENABLED(CONFIG_LOG1) ? 1 : 2);
 	PRINT("\tOVERWRITE: %d\n", IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW));
 	PRINT("\tBUFFER_SIZE: %d\n", CONFIG_LOG_BUFFER_SIZE);
-	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
+	if (!IS_ENABLED(CONFIG_LOG1)) {
 		PRINT("\tSPEED: %d", IS_ENABLED(CONFIG_LOG_SPEED));
 	}
 	ztest_test_suite(test_log_benchmark,

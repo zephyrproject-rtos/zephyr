@@ -22,8 +22,16 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+
+#ifdef CONFIG_RISCV_PMP
+void z_riscv_configure_static_pmp_regions(void);
+#endif
+
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_RISCV_PMP
+	z_riscv_configure_static_pmp_regions();
+#endif
 }
 
 static ALWAYS_INLINE void

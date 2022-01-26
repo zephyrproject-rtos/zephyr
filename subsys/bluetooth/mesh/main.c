@@ -359,7 +359,7 @@ int bt_mesh_start(void)
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 			(void)bt_mesh_proxy_gatt_enable();
-			bt_mesh_adv_update();
+			bt_mesh_adv_gatt_update();
 		}
 	}
 

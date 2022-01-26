@@ -50,10 +50,10 @@ NPCX_REG_OFFSET_CHECK(pwm_reg, DCR, 0x006);
 NPCX_REG_OFFSET_CHECK(pwm_reg, PWMCTLEX, 0x00c);
 
 /* ADC register structure check */
-NPCX_REG_SIZE_CHECK(adc_reg, 0x54);
-NPCX_REG_OFFSET_CHECK(adc_reg, THRCTL1, 0x014);
+NPCX_REG_SIZE_CHECK(adc_reg, 0x028);
+NPCX_REG_OFFSET_CHECK(adc_reg, THRCTS, 0x01a);
 NPCX_REG_OFFSET_CHECK(adc_reg, ADCCNF2, 0x020);
-NPCX_REG_OFFSET_CHECK(adc_reg, CHNDAT, 0x040);
+NPCX_REG_OFFSET_CHECK(adc_reg, MEAST, 0x026);
 
 /* TWD register structure check */
 NPCX_REG_SIZE_CHECK(twd_reg, 0x012);

@@ -164,8 +164,6 @@ static void configure_pin(pinctrl_soc_pin_t pin)
 	}
 
 	*reg = reg_val;
-
-	rcu_periph_clock_disable(rcu);
 }
 
 /**

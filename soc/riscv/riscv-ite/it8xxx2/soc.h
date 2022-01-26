@@ -7,7 +7,6 @@
  *
  */
 #include <soc_common.h>
-#include <devicetree.h>
 
 #define UART_REG_ADDR_INTERVAL 1
 

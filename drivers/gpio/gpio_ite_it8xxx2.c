@@ -359,6 +359,12 @@ static int gpio_ite_configure(const struct device *dev,
 	__ASSERT(gpio_config->index < GPIO_GROUP_COUNT,
 		"Invalid GPIO group index");
 
+	/* Don't support "open source" mode */
+	if (((flags & GPIO_SINGLE_ENDED) != 0) &&
+	    ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) {
+		return -ENOTSUP;
+	}
+
 	/*
 	 * Select open drain first, so that we don't glitch the signal
 	 * when changing the line to an output.
@@ -596,7 +602,7 @@ DEVICE_DT_INST_DEFINE(inst,                                        \
 		NULL,                                              \
 		&gpio_ite_data_##inst,                             \
 		&gpio_ite_cfg_##inst,                              \
-		POST_KERNEL,                                       \
+		PRE_KERNEL_1,                                       \
 		CONFIG_GPIO_INIT_PRIORITY,                         \
 		&gpio_ite_driver_api);
 
@@ -624,4 +630,4 @@ static int gpio_it8xxx2_init_set(const struct device *arg)
 
 	return 0;
 }
-SYS_INIT(gpio_it8xxx2_init_set, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY);
+SYS_INIT(gpio_it8xxx2_init_set, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY);

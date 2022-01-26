@@ -23,6 +23,9 @@
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
+#include "isoal.h"
+#include "ull_iso_types.h"
+
 #include "ull_conn_types.h"
 #include "ull_conn_iso_types.h"
 #include "ull_internal.h"

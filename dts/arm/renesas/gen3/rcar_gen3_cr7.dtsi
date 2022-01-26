@@ -65,6 +65,11 @@
 			label = "gpio6";
 		};
 
+		pfc: pin-controller@e6060000 {
+			compatible = "renesas,rcar-pfc";
+			reg = <0xe6060000 0x50c>;
+		};
+
 		cmt0: timer@e60f0500 {
 			compatible = "renesas,rcar-cmt";
 			interrupt-parent = <&gic>;
@@ -94,8 +99,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 916>,
 				<&cpg CPG_CORE CPG_CORE_CLK_CANFD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			bus-speed = <125000>;
 			sjw = <1>;
 			prop-seg = <8>;

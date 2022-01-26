@@ -72,7 +72,7 @@ uint32_t sys_clock_elapsed(void)
 	return 0;
 }
 
-int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority),
@@ -94,3 +94,6 @@ int sys_clock_driver_init(const struct device *dev)
 
 	return 0;
 }
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

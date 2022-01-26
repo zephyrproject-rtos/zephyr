@@ -82,6 +82,8 @@ source "subsys/net/l2/Kconfig"
 
 source "subsys/net/ip/Kconfig"
 
+source "subsys/net/pkt_filter/Kconfig"
+
 source "subsys/net/lib/Kconfig"
 
 endif

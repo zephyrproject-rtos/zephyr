@@ -83,6 +83,7 @@
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
 #elif defined(CONFIG_SPARC)
+#elif defined(CONFIG_MIPS)
 #elif defined(CONFIG_ARCH_POSIX)
 #if  defined(CONFIG_BOARD_NATIVE_POSIX)
 #define TICK_IRQ TIMER_TICK_IRQ
@@ -219,8 +220,6 @@ static void test_kernel_cpu_idle_atomic(void);
  *
  * This routine is the ISR handler for isr_handler_trigger(). It performs
  * the command requested in <isr_info.command>.
- *
- * @return N/A
  */
 static void isr_handler(const void *data)
 {
@@ -285,8 +284,6 @@ int irq_lock_wrapper(int unused)
 
 /**
  * @brief A wrapper for irq_unlock()
- *
- * @return N/A
  */
 void irq_unlock_wrapper(int imask)
 {
@@ -306,8 +303,6 @@ int irq_disable_wrapper(int irq)
 
 /**
  * @brief A wrapper for irq_enable()
- *
- * @return N/A
  */
 void irq_enable_wrapper(int irq)
 {
@@ -328,16 +323,19 @@ static void _test_kernel_cpu_idle(int atomic)
 	int tms, tms2;
 	int i;
 
-	/* Align to ticks so the first iteration sleeps long enough
-	 * (k_timer_start() rounds its duration argument down, not up,
-	 * to a tick boundary)
-	 */
-	 k_usleep(1);
-
 	/* Set up a time to trigger events to exit idle mode */
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
 
 	for (i = 0; i < 5; i++) { /* Repeat the test five times */
+		/* Align to ticks before starting the timer.
+		 * (k_timer_start() rounds its duration argument down, not up,
+		 * to a tick boundary)
+		 * This timer operates under the assumption that the interrupt set
+		 * to wake the cpu from idle will be no sooner than 1 millsecond in
+		 * the future. Ensure we are a tick boundary each time, so that the
+		 * system timer does not choose to fire an interrupt sooner.
+		 */
+		k_usleep(1);
 		k_timer_start(&idle_timer, K_MSEC(1), K_NO_WAIT);
 		tms = k_uptime_get_32();
 		if (atomic) {
@@ -757,7 +755,6 @@ static void _test_kernel_thread(k_tid_t _thread_id)
  * @param arg2    unused
  * @param arg3    unused
  *
- * @return N/A
  */
 
 static void thread_helper(void *arg1, void *arg2, void *arg3)

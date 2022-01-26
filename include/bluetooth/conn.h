@@ -23,6 +23,7 @@
 #include <bluetooth/hci_err.h>
 #include <bluetooth/addr.h>
 #include <bluetooth/gap.h>
+#include <bluetooth/direction.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -810,7 +811,7 @@ struct bt_conn_cb {
 	 *  increase @kconfig{CONFIG_BT_MAX_CONN}.
 	 *
 	 *  @param conn Connection object.
-	 *  @param reason HCI reason for the disconnection.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
 	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
 
@@ -926,6 +927,17 @@ struct bt_conn_cb {
 	void (*le_data_len_updated)(struct bt_conn *conn,
 				    struct bt_conn_le_data_len_info *info);
 #endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+	/** @brief Callback for IQ samples report collected when sampling
+	 *        CTE received by data channel PDU.
+	 *
+	 * @param conn      The connection object.
+	 * @param iq_report Report data for collected IQ samples.
+	 */
+	void (*cte_report_cb)(struct bt_conn *conn,
+			      const struct bt_df_conn_iq_samples_report *iq_report);
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 	struct bt_conn_cb *_next;
 };

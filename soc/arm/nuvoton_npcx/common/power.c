@@ -84,27 +84,6 @@ enum {
 	NPCX_STANDARD_WAKE_UP,
 };
 
-#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
-static int64_t expired_timeout = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
-static int64_t console_expired_time = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
-
-/* Platform specific power control functions */
-bool npcx_power_console_is_in_use(void)
-{
-	return (k_uptime_get() < console_expired_time);
-}
-
-void npcx_power_console_is_in_use_refresh(void)
-{
-	console_expired_time = k_uptime_get() + expired_timeout;
-}
-
-void npcx_power_set_console_in_use_timeout(int64_t timeout)
-{
-	expired_timeout = timeout;
-}
-#endif
-
 static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 {
 	/* Disable interrupts */

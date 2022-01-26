@@ -14,13 +14,14 @@ menuconfig NET_L2_OPENTHREAD
 	depends on NETWORKING
 	select NET_L2_PHY_IEEE802154
 
-	select SETTINGS
-	select FLASH
-	select FLASH_PAGE_LAYOUT
-	select FLASH_MAP
-	select MPU_ALLOW_FLASH_WRITE
-	select NVS
+	imply FLASH
+	imply FLASH_PAGE_LAYOUT
+	imply FLASH_MAP
+	imply MPU_ALLOW_FLASH_WRITE
+	imply NVS
 
+	select SETTINGS if FLASH
+	select OPENTHREAD_SETTINGS_RAM if !FLASH
 	select CPLUSPLUS
 	select REBOOT
 	select ENTROPY_GENERATOR

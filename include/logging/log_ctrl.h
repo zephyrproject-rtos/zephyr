@@ -201,14 +201,24 @@ uint32_t log_get_strdup_longest_string(void);
  */
 static inline bool log_data_pending(void)
 {
-	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
-		return z_log_msg2_pending();
-	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
-		return log_msg_mem_get_used() > 0;
+	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		return IS_ENABLED(CONFIG_LOG2) ?
+			z_log_msg2_pending() : (log_msg_mem_get_used() > 0);
 	}
 
 	return false;
 }
+
+/**
+ * @brief Configure tag used to prefix each message.
+ *
+ * @param tag Tag.
+ *
+ * @retval 0 on successful operation.
+ * @retval -ENOTSUP if feature is disabled.
+ * @retval -ENOMEM if string is longer than the buffer capacity. Tag will be trimmed.
+ */
+int log_set_tag(const char *tag);
 
 #if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()

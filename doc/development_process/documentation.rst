@@ -99,7 +99,6 @@ requirements, we use the ``satisfy`` alias in doxygen::
     *
     * @param sem Address of the semaphore.
     *
-    * @return N/A
     * @satisfy{@req{015}}
     */
     __syscall void k_sem_give(struct k_sem *sem);

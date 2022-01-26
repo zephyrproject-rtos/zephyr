@@ -128,10 +128,10 @@ int32_t lwm2m_server_get_pmax(uint16_t obj_inst_id);
 int lwm2m_server_short_id_to_inst(uint16_t short_id);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
-uint8_t lwm2m_firmware_get_update_state(void);
+void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state);
+void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result);
 void lwm2m_firmware_set_update_state(uint8_t state);
 void lwm2m_firmware_set_update_result(uint8_t result);
-uint8_t lwm2m_firmware_get_update_result(void);
 #endif
 
 /* Attribute handling. */

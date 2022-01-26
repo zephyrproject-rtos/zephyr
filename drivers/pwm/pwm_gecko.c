@@ -23,15 +23,12 @@ struct pwm_gecko_config {
 	uint8_t pin;
 };
 
-#define DEV_CFG(dev) \
-	((const struct pwm_gecko_config * const)(dev)->config)
-
 static int pwm_gecko_pin_set(const struct device *dev, uint32_t pwm,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
 	TIMER_InitCC_TypeDef compare_config = TIMER_INITCC_DEFAULT;
-	const struct pwm_gecko_config *cfg = DEV_CFG(dev);
+	const struct pwm_gecko_config *cfg = dev->config;
 
 	if (BUS_RegMaskedRead(&cfg->timer->CC[pwm].CTRL,
 		_TIMER_CC_CTRL_MODE_MASK) != timerCCModePWM) {
@@ -68,7 +65,7 @@ static int pwm_gecko_get_cycles_per_sec(const struct device *dev,
 					uint32_t pwm,
 					uint64_t *cycles)
 {
-	const struct pwm_gecko_config *cfg = DEV_CFG(dev);
+	const struct pwm_gecko_config *cfg = dev->config;
 
 	*cycles = CMU_ClockFreqGet(cfg->clock) / cfg->prescaler;
 
@@ -83,7 +80,7 @@ static const struct pwm_driver_api pwm_gecko_driver_api = {
 static int pwm_gecko_init(const struct device *dev)
 {
 	TIMER_Init_TypeDef timer = TIMER_INIT_DEFAULT;
-	const struct pwm_gecko_config *cfg = DEV_CFG(dev);
+	const struct pwm_gecko_config *cfg = dev->config;
 
 	CMU_ClockEnable(cfg->clock, true);
 
@@ -102,8 +99,7 @@ static int pwm_gecko_init(const struct device *dev)
 
 #define PWM_GECKO_INIT(index)							\
 	static const struct pwm_gecko_config pwm_gecko_config_##index = {	\
-		.timer = (TIMER_TypeDef *)DT_REG_ADDR(                          \
-			DT_PARENT(DT_DRV_INST(index))),				\
+		.timer = (TIMER_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),	\
 		.clock = CLOCK_TIMER(index),					\
 		.prescaler = DT_INST_PROP(index, prescaler),			\
 		.prescale_enum = (TIMER_Prescale_TypeDef)			\

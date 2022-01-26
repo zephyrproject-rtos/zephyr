@@ -16,6 +16,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "ll.h"
@@ -135,6 +136,22 @@ void llcp_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat)
 	conn->llcp.remote.incompat = incompat;
 }
 
+void llcp_rr_set_paused_cmd(struct ll_conn *conn, enum llcp_proc proc)
+{
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	conn->llcp.remote.paused_cmd = proc;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP || CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+}
+
+enum llcp_proc llcp_rr_get_paused_cmd(struct ll_conn *conn)
+{
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	return conn->llcp.remote.paused_cmd;
+#else
+	return PROC_NONE;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP || CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+}
+
 static enum proc_incompat rr_get_incompat(struct ll_conn *conn)
 {
 	return conn->llcp.remote.incompat;
@@ -170,6 +187,27 @@ struct proc_ctx *llcp_rr_peek(struct ll_conn *conn)
 	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
 	return ctx;
 }
+
+void llcp_rr_pause(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
+	if (ctx) {
+		ctx->pause = 1;
+	}
+}
+
+void llcp_rr_resume(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
+	if (ctx) {
+		ctx->pause = 0;
+	}
+}
+
 
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
@@ -218,11 +256,11 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -244,6 +282,11 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_rp_pu_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	case PROC_CTE_REQ:
+		llcp_rp_comm_tx_ack(conn, ctx, tx);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
 		/* Ignore tx_ack */
 		break;
@@ -303,11 +346,11 @@ static void rr_act_run(struct ll_conn *conn)
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -351,7 +394,7 @@ static void rr_act_reject(struct ll_conn *conn)
 
 	LL_ASSERT(ctx != NULL);
 
-	if (!llcp_tx_alloc_peek(conn, ctx)) {
+	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_REJECT);
 	} else {
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
@@ -428,7 +471,7 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				/* Run remote procedure */
 				rr_act_run(conn);
 				rr_set_state(conn, RR_STATE_TERMINATE);
-			} else if (incompat == INCOMPAT_NO_COLLISION) {
+			} else if (!with_instant || incompat == INCOMPAT_NO_COLLISION) {
 				/* No collision
 				 * => Run procedure
 				 *
@@ -464,6 +507,12 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 
 				conn->llcp.remote.reject_opcode = pdu->llctrl.opcode;
 				rr_act_reject(conn);
+			} else if (!with_instant && central && incompat == INCOMPAT_RESOLVABLE) {
+				/* No collision with procedure without instant
+				 * => Run procedure
+				 */
+				rr_act_run(conn);
+				rr_set_state(conn, RR_STATE_ACTIVE);
 			} else if (with_instant && incompat == INCOMPAT_RESERVED) {
 				/* Protocol violation.
 				 * => Disconnect

@@ -1134,6 +1134,9 @@ static int obs_get(struct coap_resource *resource,
 	bool observe = true;
 
 	if (!coap_request_is_observe(request)) {
+		if (coap_get_option_int(request, COAP_OPTION_OBSERVE) == 1) {
+			remove_observer(addr);
+		}
 		observe = false;
 		goto done;
 	}
@@ -1382,20 +1385,18 @@ static void process_coap_request(uint8_t *data, uint16_t data_len,
 	}
 
 	/* Clear CoAP pending request */
-	if (type == COAP_TYPE_ACK) {
+	if (type == COAP_TYPE_ACK || type == COAP_TYPE_RESET) {
 		k_free(pending->data);
 		coap_pending_clear(pending);
+
+		if (type == COAP_TYPE_RESET) {
+			remove_observer(client_addr);
+		}
 	}
 
 	return;
 
 not_found:
-
-	if (type == COAP_TYPE_RESET) {
-		remove_observer(client_addr);
-		return;
-	}
-
 	r = coap_handle_request(&request, resources, options, opt_num,
 				client_addr, client_addr_len);
 	if (r < 0) {

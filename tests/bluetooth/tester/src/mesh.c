@@ -2177,9 +2177,7 @@ static void health_fault_clear(uint8_t *data, uint16_t len)
 						 cmd->cid, &test_id, faults,
 						 &fault_count);
 	} else {
-		err = bt_mesh_health_fault_clear(cmd->address, cmd->app_idx,
-						 cmd->cid, NULL, faults,
-						 &fault_count);
+		err = bt_mesh_health_fault_clear_unack(cmd->address, cmd->app_idx, cmd->cid);
 	}
 
 	if (err) {
@@ -2219,9 +2217,8 @@ static void health_fault_test(uint8_t *data, uint16_t len)
 						cid, test_id, faults,
 						&fault_count);
 	} else {
-		err = bt_mesh_health_fault_test(cmd->address, cmd->app_idx,
-						cid, test_id, NULL,
-						&fault_count);
+		err = bt_mesh_health_fault_test_unack(cmd->address, cmd->app_idx,
+						cid, test_id);
 	}
 
 	if (err) {
@@ -2279,8 +2276,7 @@ static void health_period_set(uint8_t *data, uint16_t len)
 		err = bt_mesh_health_period_set(cmd->address, cmd->app_idx,
 						cmd->divisor, &updated_divisor);
 	} else {
-		err = bt_mesh_health_period_set(cmd->address, cmd->app_idx,
-						cmd->divisor, NULL);
+		err = bt_mesh_health_period_set_unack(cmd->address, cmd->app_idx, cmd->divisor);
 	}
 
 	if (err) {
@@ -2336,8 +2332,8 @@ static void health_attention_set(uint8_t *data, uint16_t len)
 						   cmd->attention,
 						   &updated_attention);
 	} else {
-		err = bt_mesh_health_attention_set(cmd->address, cmd->app_idx,
-						   cmd->attention, NULL);
+		err = bt_mesh_health_attention_set_unack(cmd->address, cmd->app_idx,
+							 cmd->attention);
 	}
 
 	if (err) {

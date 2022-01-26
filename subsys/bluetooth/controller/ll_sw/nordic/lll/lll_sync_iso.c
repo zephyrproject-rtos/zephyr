@@ -258,12 +258,12 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	phy = lll->phy;
 	radio_phy_set(phy, PHY_FLAGS_S8);
-	radio_pkt_configure(8U, lll->max_pdu, (phy << 1));
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu, RADIO_PKT_CONF_PHY(phy));
 	radio_aa_set(access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
 
-	node_rx = ull_pdu_rx_alloc_peek(1U);
+	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -381,6 +381,7 @@ static void isr_rx(void *param)
 	uint8_t payload_index;
 	uint8_t crc_init[3];
 	uint8_t rssi_ready;
+	uint32_t start_us;
 	uint8_t new_burst;
 	uint8_t trx_done;
 	uint8_t bis_idx;
@@ -436,7 +437,7 @@ static void isr_rx(void *param)
 		    lll->ctrl) {
 			lll->cssn_curr = lll->cssn_next;
 
-			node_rx = ull_pdu_rx_alloc_peek(1U);
+			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 			LL_ASSERT(node_rx);
 
 			pdu = (void *)node_rx->pdu;
@@ -454,7 +455,7 @@ static void isr_rx(void *param)
 				}
 			}
 		} else {
-			node_rx = ull_pdu_rx_alloc_peek(3U);
+			node_rx = ull_iso_pdu_rx_alloc_peek(3U);
 			if (!node_rx) {
 				goto isr_rx_done;
 			}
@@ -479,15 +480,15 @@ static void isr_rx(void *param)
 		     (payload_index < lll->payload_head))) {
 			struct node_rx_iso_meta *iso_meta;
 
-			ull_pdu_rx_alloc();
+			ull_iso_pdu_rx_alloc();
 
-			node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_PDU;
+			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 			node_rx->hdr.handle = lll->stream_handle[bis_idx];
 
 			iso_meta = &node_rx->hdr.rx_iso_meta;
-			iso_meta->payload_number = (lll->payload_count +
-						    (lll->ptc_curr *
-						     lll->pto) - 1U) /
+			iso_meta->payload_number = lll->payload_count +
+						   (lll->bn_curr - 1U) +
+						   (lll->ptc_curr * lll->pto) -
 						   lll->bn;
 			iso_meta->timestamp =
 				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
@@ -600,7 +601,7 @@ isr_rx_find_subevent:
 				node_rx = lll->payload[bis_idx][payload_tail];
 				lll->payload[bis_idx][payload_tail] = NULL;
 
-				ull_rx_put(node_rx->hdr.link, node_rx);
+				iso_rx_put(node_rx->hdr.link, node_rx);
 			}
 
 			payload_index = payload_tail + 1U;
@@ -614,7 +615,7 @@ isr_rx_find_subevent:
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	if (node_rx) {
-		ull_rx_sched();
+		iso_rx_sched();
 	}
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
@@ -680,7 +681,7 @@ isr_rx_next_subevent:
 	}
 	lll_chan_set(data_chan_use);
 
-	node_rx = ull_pdu_rx_alloc_peek(1U);
+	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -711,7 +712,8 @@ isr_rx_next_subevent:
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= (EVENT_CLOCK_JITTER_US << 1);
 
-		radio_tmr_start_us(0, hcto);
+		start_us = hcto;
+		radio_tmr_start_us(0, start_us);
 
 		/* Add 4 us + 4 us, as radio was setup to listen 4 us early */
 		hcto += (EVENT_CLOCK_JITTER_US << 2);
@@ -721,7 +723,8 @@ isr_rx_next_subevent:
 		 */
 		hcto += radio_tmr_ready_restore();
 
-		radio_tmr_start_us(0U, hcto);
+		start_us = hcto;
+		radio_tmr_start_us(0U, start_us);
 
 		hcto += ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
 			  lll->window_widening_event_us) << 1) +
@@ -744,7 +747,7 @@ isr_rx_next_subevent:
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 
-	radio_gpio_pa_lna_enable(remainder_us +
+	radio_gpio_pa_lna_enable(start_us +
 				 radio_rx_ready_delay_get(lll->phy,
 							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);

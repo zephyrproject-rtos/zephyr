@@ -76,6 +76,25 @@ typedef bool (*pcie_ctrl_region_allocate_t)(const struct device *dev, pcie_bdf_t
 					    uintptr_t *bar_bus_addr);
 
 /**
+ * @brief Function called to get the current allocation base of a memory region subset
+ * for an endpoint Base Address Register.
+ *
+ * When enumerating PCIe Endpoints, Type1 bridge endpoints requires a range of memory
+ * allocated by all endpoints in the bridged bus.
+ *
+ * @param dev PCI Express Controller device pointer
+ * @param bdf PCI(e) endpoint
+ * @param mem True if the BAR is of memory type
+ * @param mem64 True if the BAR is of 64bit memory type
+ * @param align size to take in account for alignment
+ * @param bar_base_addr bus-centric address allocation base
+ * @return True if allocation was possible, False if allocation failed
+ */
+typedef bool (*pcie_ctrl_region_get_allocate_base_t)(const struct device *dev, pcie_bdf_t bdf,
+						     bool mem, bool mem64, size_t align,
+						     uintptr_t *bar_base_addr);
+
+/**
  * @brief Function called to translate an endpoint Base Address Register bus-centric address
  * into Physical address.
  *
@@ -94,9 +113,9 @@ typedef bool (*pcie_ctrl_region_allocate_t)(const struct device *dev, pcie_bdf_t
  * @param bar_addr CPU-centric address translated from the bus-centric address
  * @return True if translation was possible, False if translation failed
  */
-typedef bool (*pcie_ctrl_region_xlate_t)(const struct device *dev, pcie_bdf_t bdf,
-					 bool mem, bool mem64, uintptr_t bar_bus_addr,
-					 uintptr_t *bar_addr);
+typedef bool (*pcie_ctrl_region_translate_t)(const struct device *dev, pcie_bdf_t bdf,
+					     bool mem, bool mem64, uintptr_t bar_bus_addr,
+					     uintptr_t *bar_addr);
 
 /**
  * @brief Read a 32-bit word from a Memory-Mapped endpoint's configuration space.
@@ -110,7 +129,7 @@ typedef bool (*pcie_ctrl_region_xlate_t)(const struct device *dev, pcie_bdf_t bd
  * @param reg the configuration word index (not address)
  * @return the word read (0xFFFFFFFFU if nonexistent endpoint or word)
  */
-uint32_t generic_pcie_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned int reg);
+uint32_t pcie_generic_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned int reg);
 
 
 /**
@@ -125,7 +144,7 @@ uint32_t generic_pcie_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned
  * @param reg the configuration word index (not address)
  * @param data the value to write
  */
-void generic_pcie_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
+void pcie_generic_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
 				  unsigned int reg, uint32_t data);
 
 /**
@@ -138,7 +157,7 @@ void generic_pcie_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
  * @param dev PCI Express Controller device pointer
  * @param bdf_start PCI(e) start endpoint (only bus & dev are used to start enumeration)
  */
-void generic_pcie_ctrl_enumerate(const struct device *dev, pcie_bdf_t bdf_start);
+void pcie_generic_ctrl_enumerate(const struct device *dev, pcie_bdf_t bdf_start);
 
 /** @brief Structure providing callbacks to be implemented for devices
  * that supports the PCI Express Controller API
@@ -147,7 +166,8 @@ __subsystem struct pcie_ctrl_driver_api {
 	pcie_ctrl_conf_read_t conf_read;
 	pcie_ctrl_conf_write_t conf_write;
 	pcie_ctrl_region_allocate_t region_allocate;
-	pcie_ctrl_region_xlate_t region_xlate;
+	pcie_ctrl_region_get_allocate_base_t region_get_allocate_base;
+	pcie_ctrl_region_translate_t region_translate;
 };
 
 /**
@@ -218,6 +238,31 @@ static inline bool pcie_ctrl_region_allocate(const struct device *dev, pcie_bdf_
 }
 
 /**
+ * @brief Function called to get the current allocation base of a memory region subset
+ * for an endpoint Base Address Register.
+ *
+ * When enumerating PCIe Endpoints, Type1 bridge endpoints requires a range of memory
+ * allocated by all endpoints in the bridged bus.
+ *
+ * @param dev PCI Express Controller device pointer
+ * @param bdf PCI(e) endpoint
+ * @param mem True if the BAR is of memory type
+ * @param mem64 True if the BAR is of 64bit memory type
+ * @param align size to take in account for alignment
+ * @param bar_base_addr bus-centric address allocation base
+ * @return True if allocation was possible, False if allocation failed
+ */
+static inline bool pcie_ctrl_region_get_allocate_base(const struct device *dev, pcie_bdf_t bdf,
+						      bool mem, bool mem64, size_t align,
+						      uintptr_t *bar_base_addr)
+{
+	const struct pcie_ctrl_driver_api *api =
+		(const struct pcie_ctrl_driver_api *)dev->api;
+
+	return api->region_get_allocate_base(dev, bdf, mem, mem64, align, bar_base_addr);
+}
+
+/**
  * @brief Translate an endpoint Base Address Register bus-centric address into Physical address.
  *
  * When enumerating PCIe Endpoints, Type0 endpoints can require up to 6 memory zones
@@ -235,18 +280,18 @@ static inline bool pcie_ctrl_region_allocate(const struct device *dev, pcie_bdf_
  * @param bar_addr CPU-centric address translated from the bus-centric address
  * @return True if translation was possible, False if translation failed
  */
-static inline bool pcie_ctrl_region_xlate(const struct device *dev, pcie_bdf_t bdf,
+static inline bool pcie_ctrl_region_translate(const struct device *dev, pcie_bdf_t bdf,
 					  bool mem, bool mem64, uintptr_t bar_bus_addr,
 					  uintptr_t *bar_addr)
 {
 	const struct pcie_ctrl_driver_api *api =
 		(const struct pcie_ctrl_driver_api *)dev->api;
 
-	if (!api->region_xlate) {
+	if (!api->region_translate) {
 		*bar_addr = bar_bus_addr;
 		return true;
 	} else {
-		return api->region_xlate(dev, bdf, mem, mem64, bar_bus_addr, bar_addr);
+		return api->region_translate(dev, bdf, mem, mem64, bar_bus_addr, bar_addr);
 	}
 }
 

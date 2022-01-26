@@ -63,7 +63,7 @@ extern void test_kobject_access_grant_error(void);
 extern void test_kobject_access_grant_error_user(void);
 extern void test_kobject_access_grant_error_user_null(void);
 extern void test_kobject_access_all_grant_error(void);
-extern void test_kobject_release_null(void);
+extern void test_kobject_invalid(void);
 extern void test_kobject_free_error(void);
 extern void test_kobject_init_error(void);
 extern void test_kobj_create_out_of_memory(void);
@@ -136,7 +136,8 @@ static inline void set_fault_valid(bool valid)
 
 
 
-#if defined(CONFIG_X86_64) || defined(CONFIG_ARM64)
+#if (defined(CONFIG_X86_64) || defined(CONFIG_ARM64) || \
+	(defined(CONFIG_RISCV) && defined(CONFIG_64BIT)))
 #define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 1024
 #define MAX_OBJ 512
 #else

@@ -81,6 +81,22 @@
 			};
 		};
 
+		ipi0: ipi@3f4c0058 {
+			compatible = "espressif,crosscore-interrupt";
+			label = "IPI0";
+			reg = <0x3f4c0058 0x4>;
+			interrupts = <FROM_CPU_INTR0_SOURCE>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi1: ipi@3f4c005c {
+			compatible = "espressif,crosscore-interrupt";
+			label = "IPI1";
+			reg = <0x3f4c005c 0x4>;
+			interrupts = <FROM_CPU_INTR1_SOURCE>;
+			interrupt-parent = <&intc>;
+		};
+
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff40000 0x400>;
@@ -89,6 +105,7 @@
 			label = "UART_0";
 			clocks = <&rtc ESP32_UART0_MODULE>;
 			status = "disabled";
+			peripheral = <0>;
 		};
 
 		uart1: uart@3ff50000 {
@@ -99,6 +116,7 @@
 			label = "UART_1";
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			status = "disabled";
+			peripheral = <1>;
 		};
 
 		uart2: uart@3ff6e000 {
@@ -109,6 +127,7 @@
 			label = "UART_2";
 			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
+			peripheral = <2>;
 		};
 
 		pinmux: pinmux@3ff49000 {

@@ -58,7 +58,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if cfg.openocd_search is not None:
             for p in cfg.openocd_search:
                 search_args.extend(['-s', p])
-        self.openocd_cmd = [cfg.openocd] + search_args
+        self.openocd_cmd = [cfg.openocd or 'openocd'] + search_args
         # openocd doesn't cope with Windows path names, so convert
         # them to POSIX style just to be sure.
         self.elf_name = Path(cfg.elf_file).as_posix()

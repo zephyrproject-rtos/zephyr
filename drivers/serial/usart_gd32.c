@@ -8,6 +8,12 @@
 #include <errno.h>
 #include <drivers/pinctrl.h>
 #include <drivers/uart.h>
+#include <soc.h>
+
+/* Unify GD32 HAL USART status register name to USART_STAT */
+#ifndef USART_STAT
+#define USART_STAT USART_STAT0
+#endif
 
 struct gd32_usart_config {
 	uint32_t reg;
@@ -120,7 +126,7 @@ static void usart_gd32_poll_out(const struct device *dev, unsigned char c)
 static int usart_gd32_err_check(const struct device *dev)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
-	uint32_t status = USART_STAT0(cfg->reg);
+	uint32_t status = USART_STAT(cfg->reg);
 	int errors = 0;
 
 	if (status & USART_FLAG_ORERR) {
@@ -302,7 +308,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define GD32_USART_INIT(n)							\
-	PINCTRL_DT_INST_DEFINE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);						\
 	GD32_USART_IRQ_HANDLER(n)						\
 	static struct gd32_usart_data usart_gd32_data_##n = {			\
 		.baud_rate = DT_INST_PROP(n, current_speed),			\
@@ -311,8 +317,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 		.reg = DT_INST_REG_ADDR(n),					\
 		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.parity = DT_ENUM_IDX_OR(DT_DRV_INST(n), parity,		\
-					 UART_CFG_PARITY_NONE),			\
+		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
 		 GD32_USART_IRQ_HANDLER_FUNC_INIT(n)				\
 	};									\
 	DEVICE_DT_INST_DEFINE(n, &usart_gd32_init,				\
