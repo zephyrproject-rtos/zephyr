@@ -901,6 +901,7 @@
 			#pinmux-cells = <2>;
 			reg = <0x40404000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+			pre-div = <0>;
 			podf = <4>;
 			pll-clocks = <&anatop 0 0 0>,
 					<&anatop 0 0 30>,
@@ -922,6 +923,7 @@
 			#pinmux-cells = <2>;
 			reg = <0x40408000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI2_CLK 0x2084 4>;
+			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,
 					<&anatop 0 0 30>,
@@ -943,6 +945,7 @@
 			#pinmux-cells = <2>;
 			reg = <0x4040c000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI3_CLK 0x2104 4>;
+			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,
 					<&anatop 0 0 30>,
@@ -964,6 +967,7 @@
 			#pinmux-cells = <2>;
 			reg = <0x40c0000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI4_CLK 0x2184 6>;
+			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,
 					<&anatop 0 0 30>,
