@@ -76,7 +76,6 @@ def parse_args():
     argparser = argparse.ArgumentParser()
 
     argparser.add_argument("elffile", help="Zephyr ELF binary")
-    argparser.add_argument("dbfile", help="Dictionary Logging Database file")
     argparser.add_argument("--build", help="Build ID")
     argparser.add_argument("--build-header",
                            help="Header file containing BUILD_VERSION define")
@@ -84,6 +83,10 @@ def parse_args():
                            help="Print extra debugging information")
     argparser.add_argument("-v", "--verbose", action="store_true",
                            help="Print more information")
+
+    outfile_grp = argparser.add_mutually_exclusive_group(required=True)
+    outfile_grp.add_argument("--json",
+                             help="Output Dictionary Logging Database file in JSON")
 
     return argparser.parse_args()
 
@@ -521,7 +524,12 @@ def main():
         sys.exit(1)
 
     logger.info("ELF file %s", args.elffile)
-    logger.info("Database file %s", args.dbfile)
+
+    if args.json:
+        logger.info("JSON Database file %s", args.json)
+    else:
+        logger.error("Need to specify output file.")
+        sys.exit(1)
 
     elf = ELFFile(elffile)
 
@@ -560,9 +568,11 @@ def main():
     extract_logging_subsys_information(elf, database)
 
     # Write database file
-    if not LogDatabase.write_json_database(args.dbfile, database):
-        logger.error("ERROR: Cannot open database file for write: %s, exiting...", args.dbfile)
-        sys.exit(1)
+    if args.json:
+        if not LogDatabase.write_json_database(args.json, database):
+            logger.error("ERROR: Cannot open database file for write: %s, exiting...",
+                         args.json)
+            sys.exit(1)
 
     elffile.close()
 
