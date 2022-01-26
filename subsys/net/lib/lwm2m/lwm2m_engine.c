@@ -3966,6 +3966,42 @@ static bool lwm2m_engine_path_included(uint8_t code, bool bootstrap_mode)
 	return true;
 }
 
+static int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uint16_t accept)
+{
+	int r;
+
+	if (observe == 0) {
+		/* add new observer */
+		r = coap_append_option_int(msg->out.out_cpkt, COAP_OPTION_OBSERVE,
+					   OBSERVE_COUNTER_START);
+		if (r < 0) {
+			LOG_ERR("OBSERVE option error: %d", r);
+			return r;
+		}
+
+		r = engine_add_observer(msg, msg->token, msg->tkl, accept);
+		if (r < 0) {
+			LOG_ERR("add OBSERVE error: %d", r);
+		}
+	} else if (observe == 1) {
+		/* remove observer */
+		r = engine_remove_observer_by_token(msg->ctx, msg->token, msg->tkl);
+		if (r < 0) {
+#if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
+			r = engine_remove_observer_by_path(msg->ctx, &msg->path);
+			if (r < 0)
+#endif /* CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH */
+			{
+				LOG_ERR("remove observe error: %d", r);
+				r = 0;
+			}
+		}
+	} else {
+		r = -EINVAL;
+	}
+	return r;
+}
+
 static int handle_request(struct coap_packet *request,
 			  struct lwm2m_message *msg)
 {
@@ -4241,50 +4277,35 @@ static int handle_request(struct coap_packet *request,
 		switch (msg->operation) {
 
 		case LWM2M_OP_READ:
-			if (observe == 0) {
-				/* add new observer */
-				if (msg->token) {
-					r = coap_append_option_int(
-						msg->out.out_cpkt,
-						COAP_OPTION_OBSERVE,
-						OBSERVE_COUNTER_START);
-					if (r < 0) {
-						LOG_ERR("OBSERVE option error: %d", r);
-						goto error;
-					}
-
-					r = engine_add_observer(msg, token, tkl,
-								accept);
-					if (r < 0) {
-						LOG_ERR("add OBSERVE error: %d", r);
-						goto error;
-					}
-				} else {
+			if (observe >= 0) {
+				/* Validate That Token is valid for Observation */
+				if (!msg->token) {
 					LOG_ERR("OBSERVE request missing token");
 					r = -EINVAL;
 					goto error;
 				}
-			} else if (observe == 1) {
-				/* remove observer */
-				r = engine_remove_observer_by_token(msg->ctx, token, tkl);
-				if (r < 0) {
-#if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
-					r = engine_remove_observer_by_path(msg->ctx,
-									   &msg->path);
-					if (r < 0)
-#endif /* CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH */
-					{
-						LOG_ERR("remove observe error: %d", r);
+
+				if ((code & COAP_REQUEST_MASK) == COAP_METHOD_GET) {
+					/* Normal Obeservation Request or Cancel */
+					r = lwm2m_engine_observation_handler(msg, observe, accept);
+					if (r < 0) {
+						goto error;
 					}
+
+					r = do_read_op(msg, accept);
+				} else {
+					/* Composite Observation request & cancel handler */
+					/* TODO add support for Composite observation support */
+					r = -ENOTSUP;
+					goto error;
+				}
+			} else {
+				if ((code & COAP_REQUEST_MASK) == COAP_METHOD_GET) {
+					r = do_read_op(msg, accept);
+				} else {
+					r = do_composite_read_op(msg, accept);
 				}
 			}
-
-			if ((code & COAP_REQUEST_MASK) == COAP_METHOD_GET) {
-				r = do_read_op(msg, accept);
-			} else {
-				r = do_composite_read_op(msg, accept);
-			}
-
 			break;
 
 		case LWM2M_OP_DISCOVER:
