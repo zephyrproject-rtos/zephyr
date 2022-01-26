@@ -3078,14 +3078,16 @@ static void ecred_connect_cb(struct bt_conn *conn, uint16_t result, uint8_t atte
 	}
 }
 
-int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels)
+int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 {
 	struct bt_att_chan *att_chan = att_get_fixed_chan(conn);
 	struct bt_att *att = att_chan->att;
-	struct bt_l2cap_chan *chan[CONFIG_BT_EATT_MAX] = {};
-	int i = 0;
+	struct bt_l2cap_chan *chan[CONFIG_BT_EATT_MAX + 1] = {};
+	size_t offset = 0;
+	size_t i = 0;
+	int err;
 
-	if (num_channels > CONFIG_BT_EATT_MAX) {
+	if (num_channels > CONFIG_BT_EATT_MAX || num_channels == 0) {
 		return -EINVAL;
 	}
 
@@ -3103,7 +3105,19 @@ int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels)
 		return -ENOMEM;
 	}
 
-	return bt_l2cap_ecred_chan_connect(conn, chan, BT_EATT_PSM);
+	while (offset < i) {
+		/* bt_l2cap_ecred_chan_connect() uses the first L2CAP_ECRED_CHAN_MAX_PER_REQ
+		 * elements of the array or until a null-terminator is reached.
+		 */
+		err = bt_l2cap_ecred_chan_connect(conn, &chan[offset], BT_EATT_PSM);
+		if (err < 0) {
+			return err;
+		}
+
+		offset += L2CAP_ECRED_CHAN_MAX_PER_REQ;
+	}
+
+	return 0;
 }
 
 int bt_eatt_disconnect(struct bt_conn *conn)
