@@ -328,7 +328,6 @@ static void enable_mclk_direction(const struct device *dev, bool dir)
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	uint32_t offset = dev_cfg->mclk_pin_offset;
 	uint32_t mask = dev_cfg->mclk_pin_mask;
-	uint32_t value = 0;
 	uint32_t *gpr =  (uint32_t *)DT_REG_ADDR(DT_NODELABEL(iomuxcgpr)) + offset;
 
 	if (dir) {
