@@ -22,7 +22,7 @@ LL/CON/INI/BV-20-C
 LL/CON/INI/BV-21-C
 LL/CON/INI/BV-23-C
 LL/CON/INI/BV-24-C
-LL/CON/CEN/BI-06-C
+#LL/CON/CEN/BI-06-C # This test implementation is not valid, and will fail with refactored LLCP
 LL/CON/CEN/BV-03-C
 LL/CON/CEN/BV-04-C
 LL/CON/CEN/BV-05-C
@@ -35,7 +35,7 @@ LL/CON/CEN/BV-21-C
 LL/CON/CEN/BV-23-C
 LL/CON/CEN/BV-24-C
 LL/CON/CEN/BV-25-C
-LL/CON/CEN/BV-26-C
+#LL/CON/CEN/BV-26-C # This test case is not valid, and will fail with refactored LLCP
 LL/CON/CEN/BV-27-C
 LL/CON/CEN/BV-29-C
 LL/CON/CEN/BV-30-C
@@ -47,7 +47,7 @@ LL/CON/CEN/BV-73-C
 LL/CON/CEN/BV-74-C
 #LL/CON/CEN/BV-76-C # Needs testcase implementation update
 LL/CON/CEN/BV-77-C
-LL/CON/PER/BI-08-C
+#LL/CON/PER/BI-08-C # This test implementation is not valid, and will fail with refactored LLCP
 LL/CON/PER/BV-04-C
 LL/CON/PER/BV-05-C
 LL/CON/PER/BV-06-C
