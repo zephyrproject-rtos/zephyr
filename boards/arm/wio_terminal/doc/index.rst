@@ -129,7 +129,7 @@ will be entered automatically when you run :code:`west flash`. (Note: The board 
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`button` sample application:
+#. Build the Zephyr kernel and the :code:`button` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
