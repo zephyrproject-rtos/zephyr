@@ -279,13 +279,12 @@ int lsm6dso_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&lsm6dso->gpio_cb,
-			   lsm6dso_gpio_callback,
-			   BIT(cfg->gpio_drdy.pin));
-
-	if (gpio_add_callback(cfg->gpio_drdy.port, &lsm6dso->gpio_cb) < 0) {
+	ret = gpio_pin_setup_callback_dt(&cfg->gpio_drdy,
+					 &lsm6dso->gpio_cb,
+					 lsm6dso_gpio_callback);
+	if (ret < 0) {
 		LOG_DBG("Could not set gpio callback");
-		return -EIO;
+		return ret;
 	}
 
 	/* enable interrupt on int1/int2 in pulse mode */

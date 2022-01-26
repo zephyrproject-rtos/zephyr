@@ -325,37 +325,16 @@ static int setup_interrupts(const struct device *dev)
 	const struct gpio_dt_spec *alert_gpio = &config->alert_gpio;
 	int result;
 
-	if (!device_is_ready(alert_gpio->port)) {
-		LOG_ERR("tmp108: gpio controller %s not ready",
-			alert_gpio->port->name);
-		return -ENODEV;
+	result = gpio_pin_setup_interrupt_dt(alert_gpio,
+					     &drv_data->temp_alert_gpio_cb,
+					     tmp108_trigger_handle_alert,
+					     GPIO_INPUT | GPIO_INT_EDGE_BOTH);
+	if (result) {
+		LOG_ERR("tmp108: can't setup interrupt on gpio %s pin %u: %d",
+			alert_gpio->port->name, alert_gpio->port.pin, result);
 	}
 
-	result = gpio_pin_configure_dt(alert_gpio, GPIO_INPUT);
-
-	if (result < 0) {
-		return result;
-	}
-
-	gpio_init_callback(&drv_data->temp_alert_gpio_cb,
-			   tmp108_trigger_handle_alert,
-			   BIT(alert_gpio->pin));
-
-	result = gpio_add_callback(alert_gpio->port,
-				   &drv_data->temp_alert_gpio_cb);
-
-	if (result < 0) {
-		return result;
-	}
-
-	result = gpio_pin_interrupt_configure_dt(alert_gpio,
-						 GPIO_INT_EDGE_BOTH);
-
-	if (result < 0) {
-		return result;
-	}
-
-	return 0;
+	return result;
 }
 #endif
 

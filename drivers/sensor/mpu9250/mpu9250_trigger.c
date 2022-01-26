@@ -133,11 +133,9 @@ int mpu9250_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   mpu9250_gpio_callback,
-			   BIT(cfg->int_pin.pin));
-
-	ret = gpio_add_callback(cfg->int_pin.port, &drv_data->gpio_cb);
+	ret = gpio_pin_setup_callback_dt(&cfg->int_pin,
+					 &drv_data->gpio_cb,
+					 mpu9250_gpio_callback);
 	if (ret < 0) {
 		LOG_ERR("Failed to set gpio callback.");
 		return ret;

@@ -987,10 +987,9 @@ static int lmp90xxx_init(const struct device *dev)
 			return -EINVAL;
 		}
 
-		gpio_init_callback(&data->drdyb_cb, lmp90xxx_drdyb_callback,
-				   BIT(config->drdyb.pin));
-
-		err = gpio_add_callback(config->drdyb.port, &data->drdyb_cb);
+		err = gpio_pin_setup_callback_dt(&config->drdyb,
+						 &data->drdyb_cb,
+						 lmp90xxx_drdyb_callback);
 		if (err) {
 			LOG_ERR("failed to add DRDYB callback (err %d)", err);
 			return -EINVAL;

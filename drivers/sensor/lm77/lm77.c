@@ -347,10 +347,9 @@ static int lm77_init(const struct device *dev)
 			return err;
 		}
 
-		gpio_init_callback(&data->int_gpio_cb, lm77_int_gpio_callback_handler,
-				   BIT(config->int_gpio.pin));
-
-		err = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
+		err = gpio_pin_setup_callback_dt(&config->int_gpio,
+						 &data->int_gpio_cb,
+						 lm77_int_gpio_callback_handler);
 		if (err < 0) {
 			LOG_ERR("failed to add INT GPIO callback (err %d)", err);
 			return err;

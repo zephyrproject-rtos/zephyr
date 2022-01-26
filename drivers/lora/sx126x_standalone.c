@@ -72,10 +72,9 @@ int sx126x_variant_init(const struct device *dev)
 		return -EIO;
 	}
 
-	gpio_init_callback(&dev_data->dio1_irq_callback,
-			   sx126x_dio1_irq_callback, BIT(sx126x_gpio_dio1.pin));
-	if (gpio_add_callback(sx126x_gpio_dio1.port,
-			      &dev_data->dio1_irq_callback) < 0) {
+	if (gpio_pin_setup_callback_dt(&sx126x_gpio_dio1,
+				       &dev_data->dio1_irq_callback,
+				       sx126x_dio1_irq_callback) < 0) {
 		LOG_ERR("Could not set GPIO callback for DIO1 interrupt.");
 		return -EIO;
 	}

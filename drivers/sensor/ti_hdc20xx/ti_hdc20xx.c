@@ -192,29 +192,13 @@ static int ti_hdc20xx_init(const struct device *dev)
 
 	/* Configure the interrupt GPIO if available */
 	if (config->gpio_int.port) {
-		if (!device_is_ready(config->gpio_int.port)) {
-			LOG_ERR("Cannot get pointer to gpio interrupt device");
-			return -ENODEV;
-		}
-
-		rc = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
+		/* Initialize the interrupt */
+		rc = gpio_pin_setup_interrupt_dt(&config->gpio_int,
+						 &data->cb_int,
+						 ti_hdc20xx_int_callback,
+						 GPIO_INPUT | GPIO_INT_EDGE_TO_ACTIVE);
 		if (rc) {
-			LOG_ERR("Failed to configure interrupt pin");
-			return rc;
-		}
-
-		gpio_init_callback(&data->cb_int, ti_hdc20xx_int_callback,
-				   BIT(config->gpio_int.pin));
-
-		rc = gpio_add_callback(config->gpio_int.port, &data->cb_int);
-		if (rc) {
-			LOG_ERR("Failed to set interrupt callback");
-			return rc;
-		}
-
-		rc = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
-		if (rc) {
-			LOG_ERR("Failed to configure interrupt");
+			LOG_ERR("Failed to configure GPIO interrupt");
 			return rc;
 		}
 

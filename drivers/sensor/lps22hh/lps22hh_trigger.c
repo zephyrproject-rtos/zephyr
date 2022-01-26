@@ -171,11 +171,9 @@ int lps22hh_init_interrupt(const struct device *dev)
 	LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name,
 				      cfg->gpio_int.pin);
 
-	gpio_init_callback(&lps22hh->gpio_cb,
-			   lps22hh_gpio_callback,
-			   BIT(cfg->gpio_int.pin));
-
-	ret = gpio_add_callback(cfg->gpio_int.port, &lps22hh->gpio_cb);
+	ret = gpio_pin_setup_callback_dt(&cfg->gpio_int,
+					 &lps22hh->gpio_cb,
+					 lps22hh_gpio_callback);
 	if (ret < 0) {
 		LOG_ERR("Could not set gpio callback");
 		return ret;

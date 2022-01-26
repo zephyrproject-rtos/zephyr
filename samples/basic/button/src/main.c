@@ -42,29 +42,10 @@ void main(void)
 {
 	int ret;
 
-	if (!device_is_ready(button.port)) {
-		printk("Error: button device %s is not ready\n",
-		       button.port->name);
-		return;
-	}
-
-	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
-	if (ret != 0) {
-		printk("Error %d: failed to configure %s pin %d\n",
-		       ret, button.port->name, button.pin);
-		return;
-	}
-
-	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
-	ret = gpio_add_callback(button.port, &button_cb_data);
-	if (ret != 0) {
-		printk("Error %d: failed to configure callback on %s pin %d\n",
-			ret, button.port->name, button.pin);
-		return;
-	}
-
-	ret = gpio_pin_interrupt_configure_dt(&button,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_setup_interrupt_dt(&button,
+					  button_cb_data,
+					  button_pressed,
+					  GPIO_INPUT | GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		printk("Error %d: failed to configure interrupt on %s pin %d\n",
 			ret, button.port->name, button.pin);
