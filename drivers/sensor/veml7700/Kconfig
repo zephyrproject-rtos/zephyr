@@ -1,0 +1,158 @@
+# VEML7700 High Accuracy Ambient Light Sensor With I2C Interface
+
+# Copyright (c) 2022 innblue
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VEML7700
+	bool "VEML7700 sensor"
+	depends on I2C
+	help
+	  Enable driver for VEML7700 I2C-based sensor.
+
+if VEML7700
+
+choice
+    prompt "Gain selection"
+    default VEML7700_GAINx1_4
+    help
+        The VEML7700 is specified with a resolution of 0.0036 lx/counts.
+        This high resolution is only available for a smaller light rangeof approximately 0 lx to 230 lx.
+        For this range a high gain factor can be selected. For light levels up to about 120 000 lx, a reduced
+        gain factor of 1/8 would then lead to a possible resolution of 0.0576 lx/counts
+        (with an integration time of 800 ms), respectiveof 0.4608 lx/counts (with IT = 100 ms).
+
+        To avoid possible saturation / overflow effects, application software should always start with low gain:
+        ALS gain x 1/8 or  gain  1/4.  ALS  gain  x  2  shows  the  highest  resolution  and  should  only  be  used
+        with  very  low  illumination  values, e.g. if sensor is placed below a very “dark” cover allowing only low
+        light levels reaching the photodiode
+
+        After stratup sensor starts self-calibration sequence and if selected by user value dosen't suit it will be
+        changed automatically with notification through calibration status.
+
+config VEML7700_GAINx1
+    bool "gain x 1"
+config VEML7700_GAINx2
+    bool "gain x 2"
+config VEML7700_GAINx1_8
+    bool "gain x 1\8"
+config VEML7700_GAINx1_4
+    bool "gain x 1\4"
+endchoice
+
+config VEML7700_GAIN
+    int
+    range 0 3
+    default 3
+    default 3 if VEML7700_GAINx1_4
+    default 2 if VEML7700_GAINx1_8
+    default 1 if VEML7700_GAINx2
+    default 0 if VEML7700_GAINx1
+
+choice
+    prompt "Integration time setting"
+    default VEML7700_IT_100
+    help
+        The standard integration time is 100 ms.
+        If a very high resolution is needed, one may increase this integration time upto 800 ms.
+        If faster measurement results are needed, it can be decreased down to 25 ms
+
+config VEML7700_IT_25
+    bool "25ms"
+config VEML7700_IT_50
+    bool "50ms"
+config VEML7700_IT_100
+    bool "100ms"
+config VEML7700_IT_200
+    bool "200ms"
+config VEML7700_IT_400
+    bool "400ms"
+config VEML7700_IT_800
+    bool "800ms"
+endchoice
+
+config VEML7700_IT
+    int
+    range 0 12
+    default 0
+    default 12 if VEML7700_IT_25
+    default 8 if VEML7700_IT_50
+    default 0 if VEML7700_IT_100
+    default 1 if VEML7700_IT_200
+    default 2 if VEML7700_IT_400
+    default 3 if VEML7700_IT_800
+
+choice VEML7700_TRIGGER_MODE
+	prompt "Trigger mode"
+	default VEML7700_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config VEML7700_TRIGGER_NONE
+	bool "No trigger"
+
+config VEML7700_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select VEML7700_TRIGGER
+
+config VEML7700_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select VEML7700_TRIGGER
+
+endchoice
+
+config VEML7700_TRIGGER
+	bool
+
+if VEML7700_TRIGGER
+
+config VEML7700_THREAD_PRIORITY
+	int "Thread priority"
+	depends on VEML7700_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config VEML7700_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on VEML7700_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config VEML7700_HIGH_THRS
+    int "ALS high threshold window setting"
+    range 0 65535
+    default 65535
+
+config VEML7700_LOW_THRS
+    int "ALS low threshold window setting"
+    range 0 65535
+    default 0
+
+endif # VEML7700_TRIGGER
+
+config VEML7700_PSM_ENABLE
+    bool "Configure power saving mode"
+    default n
+
+if VEML7700_PSM_ENABLE
+
+config VEML7700_PSM
+    int "Power saving mode"
+    range 0 3
+    default 0
+
+endif # VEML7700_PSM_ENABLE
+
+config VEML7700_STARTUP_CALIBRATION_ENABLE
+    bool "Enable self calibration at startup"
+    default y
+    help
+        For a wide light detection range of more than seven decades (from 0.007 lx to 120 klx),
+        it is necessary to adjust the sensor.
+        This is done with the help of four gain steps and seven steps for the integration time.
+        Designing the VEML7700 Into an Application. Application Note. Revision: 20-Sep-2019 Document Number: 84323
+
+endif # VEML7700
