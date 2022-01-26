@@ -22,7 +22,7 @@
 #define FLASH_NAME DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
 
 /* so that we don't overwrite the application when running on hw */
-#define FLASH_BASE (64*1024)
+#define FLASH_BASE (128*1024)
 #define FLASH_AVAILABLE (FLASH_SIZE-FLASH_BASE)
 
 static const struct device *fdev;
