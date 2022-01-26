@@ -265,7 +265,8 @@ static const struct can_driver_api can_api_funcs = {
 			DT_INST_PROP_OR(n, phase_seg1_data, 0),		\
 		.ts2_data = DT_INST_PROP_OR(n, phase_seg2_data, 0),	\
 		.tx_delay_comp_offset =					\
-			DT_INST_PROP(n, tx_delay_comp_offset)		\
+			DT_INST_PROP(n, tx_delay_comp_offset),		\
+		.one_shot = DT_INST_PROP(n, one_shot),			\
 	}
 #else /* CONFIG_CAN_FD_MODE */
 #define CAN_STM32H7_MCAN_MCAN_INIT(n)					\
@@ -277,6 +278,7 @@ static const struct can_driver_api can_api_funcs = {
 		.prop_ts1 = DT_INST_PROP_OR(n, prop_seg, 0) +		\
 			DT_INST_PROP_OR(n, phase_seg1, 0),		\
 		.ts2 = DT_INST_PROP_OR(n, phase_seg2, 0),		\
+		.one_shot = DT_INST_PROP(n, one_shot),			\
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
 

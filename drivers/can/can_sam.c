@@ -223,7 +223,8 @@ static void config_can_##inst##_irq(void)                                       
 	.prop_ts1_data = DT_INST_PROP_OR(inst, prop_seg_data, 0) +                             \
 			 DT_INST_PROP_OR(inst, phase_seg1_data, 0),                            \
 	.ts2_data = DT_INST_PROP_OR(inst, phase_seg2_data, 0),                                 \
-	.tx_delay_comp_offset = DT_INST_PROP(inst, tx_delay_comp_offset)                       \
+	.tx_delay_comp_offset = DT_INST_PROP(inst, tx_delay_comp_offset),                      \
+	.one_shot = DT_INST_PROP(inst, one_shot),                                              \
 }
 #else /* CONFIG_CAN_FD_MODE */
 #define CAN_SAM_MCAN_CFG(inst)                                                                 \
@@ -233,6 +234,7 @@ static void config_can_##inst##_irq(void)                                       
 	.sample_point = DT_INST_PROP_OR(inst, sample_point, 0),                                \
 	.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) + DT_INST_PROP_OR(inst, phase_seg1, 0), \
 	.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                                           \
+	.one_shot = DT_INST_PROP(inst, one_shot),                                              \
 }
 #endif /* CONFIG_CAN_FD_MODE */
 

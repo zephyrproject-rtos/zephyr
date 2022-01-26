@@ -355,6 +355,10 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 		       CAN_MCAN_CCCR_ASM);
 	can->test &= ~(CAN_MCAN_TEST_LBCK);
 
+	if (cfg->one_shot) {
+		can->cccr |= CAN_MCAN_CCCR_DAR;
+	}
+
 #if defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE)
 	can->dbtp |= CAN_MCAN_DBTP_TDC;
 	can->tdcr |=  cfg->tx_delay_comp_offset << CAN_MCAN_TDCR_TDCO_POS;

@@ -263,7 +263,8 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 				DT_INST_PROP_OR(inst, phase_seg1_data, 0),     \
 		.ts2_data = DT_INST_PROP_OR(inst, phase_seg2_data, 0),         \
 		.tx_delay_comp_offset =                                        \
-			DT_INST_PROP(inst, tx_delay_comp_offset)               \
+			DT_INST_PROP(inst, tx_delay_comp_offset),              \
+		.one_shot = DT_INST_PROP(inst, one_shot),                      \
 	},                                                                     \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
 };
@@ -287,6 +288,7 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 		.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +               \
 			    DT_INST_PROP_OR(inst, phase_seg1, 0),              \
 		.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                   \
+		.one_shot = DT_INST_PROP(inst, one_shot),                      \
 	},                                                                     \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
 };

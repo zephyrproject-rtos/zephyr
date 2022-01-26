@@ -193,6 +193,7 @@ struct can_mcan_config {
 	uint16_t sample_point;
 	uint16_t prop_ts1;
 	uint16_t ts2;
+	bool one_shot;
 #ifdef CONFIG_CAN_FD_MODE
 	uint16_t sample_point_data;
 	uint8_t sjw_data;
