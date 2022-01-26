@@ -324,7 +324,7 @@ do { \
  * @param ...  Optional string with arguments (fmt, ...). It may be empty.
  */
 #ifdef CONFIG_LOG2_ALWAYS_RUNTIME
-#define Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do {\
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__) \
@@ -357,42 +357,45 @@ do { \
 	} \
 	(void)_mode; \
 } while (0)
-#endif /* CONFIG_LOG2_ALWAYS_RUNTIME */
 
-#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _domain_id, _source,\
-			  _level, _data, _dlen, ...) \
-	Z_LOG_MSG2_CREATE3(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_, _level), \
-			   _domain_id, _source, _level, _data, _dlen, \
-			   Z_LOG_STR(_level, __VA_ARGS__))
+#if defined(__cplusplus)
+#define Z_AUTO_TYPE auto
+#else
+#define Z_AUTO_TYPE __auto_type
+#endif
 
 /* Macro for getting name of a local variable with the exception of the first argument
  * which is a formatted string in log message.
  */
 #define Z_LOG_LOCAL_ARG_NAME(idx, arg) COND_CODE_0(idx, (arg), (_v##idx))
 
-/* Create local variable from input variable (expect first (fmt) argument). */
-#ifdef __cplusplus
+/* Create local variable from input variable (expect for the first (fmt) argument). */
 #define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
-	COND_CODE_0(idx, (), (auto Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg) + 0))
-#else
-#define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
-	COND_CODE_0(idx, (), (__auto_type Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg) + 0))
-#endif
+	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg) + 0))
 
 /* First level of processing creates stack variables to be passed for further processing.
  * This is done to prevent multiple evaluations of input arguments (in case argument
- * evaluation has consequences, e.g. it is a function call).
+ * evaluation has side effects, e.g. it is a non-pure function call).
  */
-#define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source, _level, _data, _dlen, ...) \
+#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
+			   _level, _data, _dlen, ...) \
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
 	FOR_EACH_IDX(Z_LOG_LOCAL_ARG_CREATE, (;), __VA_ARGS__); \
 	_Pragma("GCC diagnostic pop") \
-	Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _domain_id, _source,\
+	Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
 } while (0)
+#endif /* CONFIG_LOG2_ALWAYS_RUNTIME */
+
+
+#define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
+			  _level, _data, _dlen, ...) \
+	Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_, _level), \
+			   _domain_id, _source, _level, _data, _dlen, \
+			   Z_LOG_STR(_level, __VA_ARGS__))
 
 /** @brief Allocate log message.
  *

@@ -15,6 +15,24 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_msg2.c
   )
 
+  # Determine if __auto_type is supported. If not then runtime approach must always
+  # be used.
+  # Supported by:
+  # - C++ (auto)
+  # - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
+  # - Clang 3.8
+  if (NOT CONFIG_LOG2_ALWAYS_RUNTIME)
+    if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+      if(CMAKE_C_COMPILER_VERSION VERSION_LESS "3.8.0")
+        message(WARNING "Compiler version requires CONFIG_LOG2_ALWAYS_RUNTIME to be set")
+      endif()
+    endif()
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+      if(CMAKE_C_COMPILER_VERSION VERSION_LESS "4.9.0")
+        message(WARNING "Compiler version requires CONFIG_LOG2_ALWAYS_RUNTIME to be set")
+      endif()
+    endif()
+  endif()
 
   zephyr_sources_ifdef(
     CONFIG_LOG_BACKEND_UART
