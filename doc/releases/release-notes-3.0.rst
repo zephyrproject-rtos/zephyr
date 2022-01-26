@@ -87,6 +87,10 @@ Deprecated in this release
   ``<sys/reboot.h>`` and ``<pm/pm.h>`` should be used instead.
 * :c:macro:`USBD_CFG_DATA_DEFINE` is deprecated in favor of utilizing
   :c:macro:`USBD_DEFINE_CFG_DATA`
+* :c:macro:`SYS_DEVICE_DEFINE` is deprecated in favor of utilizing
+  :c:macro:`SYS_INIT`.
+* :c:func:`device_usable_check` is deprecated in favor of utilizing
+  :c:func:`device_is_ready`.
 
 Stable API changes in this release
 ==================================
