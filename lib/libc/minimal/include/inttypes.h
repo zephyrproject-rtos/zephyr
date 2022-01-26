@@ -46,4 +46,12 @@
 #define	PRIX64			"llX"		/* uint64_t */
 #define	PRIXPTR			"lX"		/* uintptr_t */
 
+#if SIZE_MAX == UINT32_MAX
+#define LOCAL_PRIxOFF		"08zx"		/* off_t */
+#elif SIZE_MAX == UIN64_MAX
+#define LOCAL_PRIxOFF		"16zx"		/* off_t */
+#else
+#error Formatting undefined for this size of ssize_t/off_t
+#endif
+
 #endif
