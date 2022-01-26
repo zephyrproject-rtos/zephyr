@@ -52,8 +52,8 @@ static int eeprom_lpc11u6x_read(const struct device *dev,
 	ret = iap_cmd(cmd);
 
 	if (ret != IAP_STATUS_CMD_SUCCESS) {
-		LOG_ERR("failed to read EEPROM (offset=%08x len=%d err=%d)",
-			(unsigned int) offset, len, ret);
+		LOG_ERR("failed to read EEPROM (offset=%" LOCAL_PRIxOFF " len=%d err=%d)",
+			(ssize_t) offset, len, ret);
 		return -EINVAL;
 	}
 
@@ -85,8 +85,8 @@ static int eeprom_lpc11u6x_write(const struct device *dev,
 	ret = iap_cmd(cmd);
 
 	if (ret != IAP_STATUS_CMD_SUCCESS) {
-		LOG_ERR("failed to write EEPROM (offset=%08x len=%d err=%d)",
-			(unsigned int) offset, len, ret);
+		LOG_ERR("failed to write EEPROM (offset=%" LOCAL_PRIxOFF " len=%d err=%d)",
+			(ssize_t) offset, len, ret);
 		return -EINVAL;
 	}
 
