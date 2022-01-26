@@ -1,0 +1,84 @@
+# Atmel SAM S70 MCU series configuration options
+
+# Copyright (c) 2022 RIC Electronics
+# Copyright (c) 2019 Gerson Fernando Budke
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAMS70
+
+config SOC_SERIES
+	default "sams70"
+
+config SOC_PART_NUMBER
+	default "sams70q21" if SOC_PART_NUMBER_SAMS70Q21
+	default "sams70q20" if SOC_PART_NUMBER_SAMS70Q20
+	default "sams70q19" if SOC_PART_NUMBER_SAMS70Q19
+	default "sams70n21" if SOC_PART_NUMBER_SAMS70N21
+	default "sams70n20" if SOC_PART_NUMBER_SAMS70N20
+	default "sams70n19" if SOC_PART_NUMBER_SAMS70N19
+	default "sams70j21" if SOC_PART_NUMBER_SAMS70J21
+	default "sams70j20" if SOC_PART_NUMBER_SAMS70J20
+	default "sams70j19" if SOC_PART_NUMBER_SAMS70J19
+	default "sams70q21b" if SOC_PART_NUMBER_SAMS70Q21B
+	default "sams70q20b" if SOC_PART_NUMBER_SAMS70Q20B
+	default "sams70q19b" if SOC_PART_NUMBER_SAMS70Q19B
+	default "sams70n21b" if SOC_PART_NUMBER_SAMS70N21B
+	default "sams70n20b" if SOC_PART_NUMBER_SAMS70N20B
+	default "sams70n19b" if SOC_PART_NUMBER_SAMS70N19B
+	default "sams70j21b" if SOC_PART_NUMBER_SAMS70J21B
+	default "sams70j20b" if SOC_PART_NUMBER_SAMS70J20B
+	default "sams70j19b" if SOC_PART_NUMBER_SAMS70J19B
+
+#
+# SAM S70 family has in total 74 interrupts
+# Note that 70S devices do not have ethernet or can so there will actually be less
+#
+config NUM_IRQS
+	default 74
+
+# Configure default device drivers. If a feature is supported by more than one
+# device driver the default configuration will be placed in the board defconfig
+# file.
+
+config DMA_SAM_XDMAC
+	default y
+	depends on DMA
+
+config GPIO_SAM
+	default y
+	depends on GPIO
+
+config ADC_SAM_AFEC
+	default y
+	depends on ADC
+
+config I2C_SAM_TWIHS
+	default y
+	depends on I2C
+
+config I2S_SAM_SSC
+	default y
+	depends on I2S
+
+config SPI_SAM
+	default y
+	depends on SPI
+
+config USB_DC_SAM_USBHS
+	default y
+	depends on USB_DEVICE_DRIVER
+
+config ENTROPY_SAM_RNG
+	default y
+	depends on ENTROPY_GENERATOR
+
+config SOC_FLASH_SAM
+	default y
+	depends on FLASH
+
+config PWM_SAM
+	default y
+	depends on PWM
+
+endif # SOC_SERIES_SAMS70
