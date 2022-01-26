@@ -8,4 +8,14 @@ config BOARD
 	default "longan_nano" if BOARD_LONGAN_NANO
 	default "longan_nano_lite" if BOARD_LONGAN_NANO_LITE
 
+if DISPLAY
+
+config SPI
+	default y
+
+config ST7735R
+	default y
+
+endif # DISPLAY
+
 endif # BOARD_LONGAN_NANO || BOARD_LONGAN_NANO_LITE
