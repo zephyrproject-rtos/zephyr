@@ -1,0 +1,245 @@
+/*
+ * Copyright (c) 2021 innblue UG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Dali2/SensorReady Zhaga formfactor based on nRF52840 Board
+ *
+ * BluFDali --> F = full assembly (all features)
+ *
+ * i2c devices sda: p0.14 scl: p0.15
+ * - accelerometer LIS2DTW12 addr: 0x19 ints: p1.12, p1.13
+ * - ambient light VEML6030  addr: 0x48 ints: p0.13
+ * - RTC with batt MCP7940N  addr: 0x6F ints: p0.08
+ * 
+ * JST i2c device sda: p1.09 scl: p0.11
+ *
+ * SPI devices
+ * - Flash memory  MX25V1635FZUI
+ *
+ * PDM devices
+ * - microphone    SPK0641HT4h
+ *   gpios: dat p1.08 clk p1.01
+ *
+ * UI devices
+ * - RGB led p0.25, p0.16, p0.24
+ * - solderbridges p0.29, p0.30, p0.04
+ * 
+ * Dali device RX: p0.26 TX: p1.03
+ *
+ * JST UART p0.31, p0.02, p0.28, p0.03
+ *
+ * USB data only
+ *
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "innblue dalibluf NRF52840";
+	compatible = "nordic,dalibluf-nrf52840";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			label = "LED Red";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			label = "LED Green";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			label = "LED Blue";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 24>;
+			};
+		pwm_led1: pwm_led1 {
+			pwms = <&pwm1 16>;
+		};
+		pwm_led2: pwm_led2 {
+			pwms = <&pwm1 24>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 29 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SolderBridge #1";
+		};
+		button1: button_1 {
+			gpios = <&gpio0 30 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SolderBridge #2";
+		};
+		button2: button_2 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SolderBridge #3";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		pwm-led2 = &pwm_led2;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	status = "okay";
+	current-speed = <115200>;
+	rx-pin = <2>;
+	tx-pin = <31>;
+	rts-pin = <28>;
+	cts-pin = <3>;
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	sda-pin = <14>;
+	scl-pin = <15>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	label = "I2C_MAIN";
+
+	/* out of tree drivers */
+	lis2dtw12@19 {
+		compatible = "st,lis2dw12";
+		reg = <0x19>;
+		irq-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>, <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		label = "ACCELEROMETER";
+	};
+
+	veml6030@48 {
+		compatible = "vishay,veml7700";
+		reg = <0x48>;
+		int_gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		label = "ALS";
+	};
+
+	onboardrtc0: mcp7940n@6f {
+		compatible = "microchip,mcp7940n";
+		reg = <0x6F>;
+		int-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		label = "RTC";
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	ch0-pin = <25>;
+	ch0-inverted;
+	ch1-pin = <16>;
+	ch1-inverted;
+	ch2-pin = <24>;
+	ch2-inverted;
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spim";
+	label = "SPI_MAIN";
+	status = "okay";
+	sck-pin = <19>;
+	mosi-pin = <20>;
+	miso-pin = <21>;
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+	/* io2: p0.22 io3: p0.23 */
+	spi_mx25v1635f: mx25v1635f@0 {
+		compatible = "jedec,spi-nor";
+		label = "MX25V1635F";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		size = <0x1600000>;
+		has-dpd;
+		t-enter-dpd = <4000>;
+		t-exit-dpd = <30000>;
+		jedec-id = [c2 23 15];
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00067000>;
+		};
+		slot1_partition: partition@73000 {
+			label = "image-1";
+			reg = <0x00073000 0x00067000>;
+		};
+		scratch_partition: partition@da000 {
+			label = "image-scratch";
+			reg = <0x000da000 0x0001e000>;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.gpio
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

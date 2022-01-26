@@ -1,0 +1,26 @@
+# dalibluf nRF52840 board configuration
+# Copyright (c) 2021 innblue
+#
+# dali2/sr board
+# F = full assembly
+
+
+if BOARD_BLUFDALI_NRF52840
+
+config BOARD
+	default "blufdali_nrf52840"
+
+if USB
+
+config USB_NRFX
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_BLUFDALI_NRF52840
