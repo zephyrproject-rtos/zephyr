@@ -289,7 +289,8 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
  * @param streamer	The streamer to use for reading, writing, and transmitting.
  * @param req		A buffer containing the request packet.
  *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
+ * @return 0 on success, MGMT_ERR_ECORRUPT if buffer starts with non SMP data header,
+ *                       or other MGMT_ERR_[...] code on failure.
  */
 int
 smp_process_request_packet(struct smp_streamer *streamer, void *req)
@@ -298,25 +299,23 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 	struct mgmt_evt_op_cmd_done_arg cmd_done_arg;
 	void *rsp;
 	bool valid_hdr, handler_found;
-	int rc;
+	int rc = 0;
 
 	rsp = NULL;
-	valid_hdr = true;
 
-	while (1) {
+	mgmt_streamer_init_reader(&streamer->mgmt_stmr, req);
+
+	while (streamer->mgmt_stmr.reader->message_size > 0) {
 		handler_found = false;
-
-		rc = mgmt_streamer_init_reader(&streamer->mgmt_stmr, req);
-		if (rc != 0) {
-			valid_hdr = false;
-			break;
-		}
+		valid_hdr = false;
 
 		/* Read the management header and strip it from the request. */
 		rc = smp_read_hdr(streamer, &req_hdr);
 		if (rc != 0) {
-			valid_hdr = false;
+			rc = MGMT_ERR_ECORRUPT;
 			break;
+		} else {
+			valid_hdr = true;
 		}
 		mgmt_ntoh_hdr(&req_hdr);
 		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, MGMT_HDR_SIZE);
@@ -367,5 +366,5 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 
 	mgmt_streamer_free_buf(&streamer->mgmt_stmr, req);
 	mgmt_streamer_free_buf(&streamer->mgmt_stmr, rsp);
-	return 0;
+	return rc;
 }
