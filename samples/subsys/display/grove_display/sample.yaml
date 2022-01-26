@@ -5,3 +5,4 @@ tests:
     tags: drivers
     harness: grove
     depends_on: i2c
+    filter: dt_proplabel_enabled("I2C_0")
