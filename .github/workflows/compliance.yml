@@ -12,7 +12,9 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
+        path: ./zephyr
     - name: Run Maintainers Script
+      working-directory: ./zephyr
       id: maintainer
       env:
         BASE_REF: ${{ github.base_ref }}
@@ -32,6 +34,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
+        path: ./zephyr
 
     - name: cache-pip
       uses: actions/cache@v1
@@ -47,6 +50,7 @@ jobs:
         pip3 install west
 
     - name: west setup
+      working-directory: ./zephyr
       env:
         BASE_REF: ${{ github.base_ref }}
       run: |
@@ -62,6 +66,7 @@ jobs:
         west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
 
     - name: Run Compliance Tests
+      working-directory: ./zephyr
       continue-on-error: true
       id: compliance
       env:
@@ -78,9 +83,10 @@ jobs:
       continue-on-error: True
       with:
         name: compliance.xml
-        path: compliance.xml
+        path: zephyr/compliance.xml
 
     - name: check-warns
+      working-directory: ./zephyr
       run: |
         if [[ ! -s "compliance.xml" ]]; then
           exit 1;
