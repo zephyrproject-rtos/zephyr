@@ -47,6 +47,11 @@ Changes in this release
   CRC-16-ANSI checksum. A new function, :c:func:`crc16_reflect`, has been
   introduced to calculated reflected CRCs.
 
+* GATT callbacks ``bt_gatt_..._func_t`` would previously be called with argument
+  ``conn = NULL`` in the event of a disconnect. This was not documented as part
+  of the API. This behavior is changed so the ``conn`` argument is provided as
+  normal when a disconnect occurs.
+
 Removed APIs in this release
 ============================
 
