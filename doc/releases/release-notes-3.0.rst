@@ -83,6 +83,8 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* Removed ``<power/reboot.h>`` and ``<power/power.h>`` deprecated headers.
+  ``<sys/reboot.h>`` and ``<pm/pm.h>`` should be used instead.
 * :c:macro:`USBD_CFG_DATA_DEFINE` is deprecated in favor of utilizing
   :c:macro:`USBD_DEFINE_CFG_DATA`
 
@@ -441,6 +443,23 @@ Libraries / Subsystems
 
 * Power management
 
+  * Power management resources are now manually allocated by devices using
+    :c:macro:`PM_DEVICE_DEFINE`, :c:macro:`PM_DEVICE_DT_DEFINE` or
+    :c:macro:`PM_DEVICE_DT_INST_DEFINE`. Device instantiation macros take now
+    a reference to the allocated resources. The reference can be obtained using
+    :c:macro:`PM_DEVICE_GET`, :c:macro:`PM_DEVICE_DT_GET` or
+    :c:macro:`PM_DEVICE_DT_INST_GET`. Thanks to this change, devices not
+    implementing support for device power management will not use unnecessary
+    memory.
+  * Device runtime power management API error handling has been simplified.
+  * :c:func:`pm_device_runtime_enable` suspends the target device if not already
+    suspended. This change makes sure device state is always kept in a
+    consistent state.
+  * Improved PM states Devicetree macros naming
+  * Added a new API call :c:func:`pm_state_cpu_get_all` to obtain information
+    about CPU power states.
+  * ``pm/device.h`` is no longer included by ``device.h``, since the device API
+    no longer depends on the PM API.
 
 * Logging
 
