@@ -11,7 +11,7 @@ jobs:
         with:
           access_token: ${{ github.token }}
   clang-build:
-    runs-on: zephyr_runner
+    runs-on: ubuntu-latest
     needs: clang-build-prep
     container:
       image: zephyrprojectrtos/ci:v0.21.0
@@ -39,8 +39,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          path: ./zephyr
 
       - name: Environment Setup
+        working-directory: ./zephyr
         run: |
           pip3 install GitPython
           echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -59,6 +61,7 @@ jobs:
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
 
       - name: Check Environment
+        working-directory: ./zephyr
         run: |
           cmake --version
           ${CLANG_ROOT_DIR}/bin/clang --version
@@ -66,6 +69,7 @@ jobs:
           ls -la
 
       - name: Prepare ccache timestamp/data
+        working-directory: ./zephyr
         id: ccache_cache_timestamp
         shell: cmake -P {0}
         run: |
@@ -85,11 +89,13 @@ jobs:
           aws-region: us-east-2
 
       - name: ccache stats initial
+        working-directory: ./zephyr
         run: |
           test -d github/home/.ccache && rm -rf /github/home/.ccache && mv github/home/.ccache /github/home/.ccache
           ccache -M 10G -s
 
       - name: Run Tests with Twister
+        working-directory: ./zephyr
         id: twister
         run: |
           export ZEPHYR_BASE=${PWD}
@@ -109,6 +115,7 @@ jobs:
           fi
 
       - name: ccache stats post
+        working-directory: ./zephyr
         run: |
           ccache -s
 
@@ -117,7 +124,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Subset ${{ matrix.platform }})
-          path: twister-out/twister.xml
+          path: zephyr/twister-out/twister.xml
 
   clang-build-results:
     name: "Publish Unit Tests Results"

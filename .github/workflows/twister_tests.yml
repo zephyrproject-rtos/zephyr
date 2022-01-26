@@ -28,6 +28,8 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v2
+      with:
+        path: ./zephyr
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
@@ -44,6 +46,7 @@ jobs:
       run: |
         pip3 install pytest colorama pyyaml ply mock
     - name: Run pytest
+      working-directory: ./zephyr
       env:
         ZEPHYR_BASE: ./
         ZEPHYR_TOOLCHAIN_VARIANT: zephyr
