@@ -122,6 +122,13 @@ New APIs in this release
 
       * :c:func:`uart_fifo_read_u16` to read data from FIFO.
 
+* Devicetree
+
+  * Added new Devicetree helpers:
+
+    * :c:macro:`DT_INST_ENUM_IDX`
+    * :c:macro:`DT_INST_ENUM_IDX_OR`
+    * :c:macro:`DT_INST_PARENT`
 
 Kernel
 ******
