@@ -725,3 +725,10 @@ test_i2c_ina237: ina237@52 {
 	adc-config = <0>;
 	rshunt = <0>;
 };
+
+test_i2c_veml7700: veml7700@10 {
+	compatible = "vishay,veml7700";
+	reg = <0x10>;
+	label = "VEML7700";
+	int_gpios = <&test_gpio 0 0>;
+};
