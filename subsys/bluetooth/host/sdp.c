@@ -35,6 +35,9 @@
 
 #define SDP_MTU (SDP_DATA_MTU + sizeof(struct bt_sdp_hdr))
 
+/* it's value cannot exceed 65536 */
+#define SDP_ONE_ATTRIBUTE_MAX_LEN 512
+
 #define MAX_NUM_ATT_ID_FILTER 10
 
 #define SDP_SERVICE_HANDLE_BASE 0x10000
@@ -48,12 +51,17 @@
 /* 2 bytes for the total no. of matching records */
 #define SDP_SS_CONT_STATE_SIZE 3
 
-/* 1 byte for the no. of attributes searched till this response */
-#define SDP_SA_CONT_STATE_SIZE 1
+/* 1 byte is for the no. of attributes searched till this response;
+   2 bytes are for the attribute length till this response,
+   attribute's max length is 65536.
+*/
+#define SDP_SA_CONT_STATE_SIZE 3
 
 /* 1 byte for the no. of services searched till this response */
 /* 1 byte for the no. of attributes searched till this response */
-#define SDP_SSA_CONT_STATE_SIZE 2
+/* 2 bytes are for the attribute length till this response,
+   attribute's max length is 65536.*/
+#define SDP_SSA_CONT_STATE_SIZE 4
 
 #define SDP_INVALID 0xff
 
@@ -71,6 +79,9 @@ static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 /* Pool for outgoing SDP packets */
 NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
 			  BT_L2CAP_BUF_SIZE(SDP_MTU), 8, NULL);
+/* Pool for one att value that is larger than SDP_MTU */
+NET_BUF_POOL_FIXED_DEFINE(sdp_max_att_pool, CONFIG_BT_MAX_CONN,
+			  SDP_ONE_ATTRIBUTE_MAX_LEN, 0, NULL);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
 
@@ -99,8 +110,10 @@ enum {
 
 struct search_state {
 	uint16_t att_list_size;
+	uint16_t last_att_offset;
 	uint8_t  current_svc;
 	uint8_t  last_att;
+	bool  rsp_buf_empty;
 	bool     pkt_full;
 };
 
@@ -861,6 +874,47 @@ static uint8_t select_attrs(struct bt_sdp_attribute *attr, uint8_t att_idx,
 			     (space < seq_size + sad->cont_state_size))) {
 				/* Packet exhausted */
 				sad->state->pkt_full = true;
+
+				/* If packet is NULL, put part of the attribute */
+				if (sad->state->rsp_buf_empty) {
+					//if (!sad->state->pkt_full && sad->rsp_buf) {
+					/* construct the whole attribute data to sdp_max_att_pool */
+					struct net_buf *att_buf = net_buf_alloc(&sdp_max_att_pool, K_NO_WAIT);
+					if (att_buf != NULL) {
+						struct bt_sdp_data_elem_seq *att_seq;
+						if (!sad->seq &&
+							(sad->state->current_svc != sad->rec->index)) {
+								att_seq = net_buf_add(att_buf, sizeof(*att_seq));
+								att_seq->type = BT_SDP_SEQ16;
+								att_seq->size = 3 + attr->val.total_size;;
+						}
+
+						/* Add attribute ID */
+						net_buf_add_u8(att_buf, BT_SDP_UINT16);
+						net_buf_add_be16(att_buf, att_id_cur);
+
+						/* Add attribute value */
+						copy_attribute(&attr->val, att_buf, 1);
+
+						/* put to rsp buf */
+						sad->state->last_att = att_idx;
+						sad->state->rsp_buf_empty = false;
+						if (space >= (att_buf->len - sad->state->last_att_offset)) {
+							net_buf_add_mem(sad->rsp_buf, att_buf->data + sad->state->last_att_offset, (att_buf->len - sad->state->last_att_offset));
+							sad->att_list_len = att_buf->len - sad->state->last_att_offset;
+							sad->state->last_att_offset = 0;
+						} else {
+							net_buf_add_mem(sad->rsp_buf, att_buf->data + sad->state->last_att_offset, space);
+							sad->att_list_len = space;
+							sad->state->last_att_offset += space;
+						}
+
+						net_buf_unref(att_buf);
+
+						return BT_SDP_ITER_STOP;
+					}
+					//}
+				}
 			}
 		}
 
@@ -871,12 +925,14 @@ static uint8_t select_attrs(struct bt_sdp_attribute *attr, uint8_t att_idx,
 			 */
 			if (!sad->seq &&
 			    (sad->state->current_svc != sad->rec->index)) {
+				sad->state->rsp_buf_empty = false;
 				sad->seq = net_buf_add(sad->rsp_buf,
 						       sizeof(*sad->seq));
 				sad->seq->type = BT_SDP_SEQ16;
 				sad->seq->size = 0U;
 			}
 
+			sad->state->rsp_buf_empty = false;
 			/* Add attribute ID */
 			net_buf_add_u8(sad->rsp_buf, BT_SDP_UINT16);
 			net_buf_add_be16(sad->rsp_buf, att_id_cur);
@@ -1069,8 +1125,10 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 {
 	uint32_t filter[MAX_NUM_ATT_ID_FILTER];
 	struct search_state state = {
+		.last_att_offset = 0,
 		.current_svc = SDP_INVALID,
 		.last_att = SDP_INVALID,
+		.rsp_buf_empty = true,
 		.pkt_full = false
 	};
 	struct bt_sdp_record *record;
@@ -1102,8 +1160,8 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 
 	cont_state_size = net_buf_pull_u8(buf);
 
-	/* We only send out 1 byte continuation state in responses,
-	 * so expect only 1 byte in requests
+	/* We only send out SDP_SA_CONT_STATE_SIZE byte continuation state in responses,
+	 * so expect only SDP_SA_CONT_STATE_SIZE byte in requests
 	 */
 	if (cont_state_size) {
 		if (cont_state_size != SDP_SA_CONT_STATE_SIZE) {
@@ -1117,6 +1175,11 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 		}
 
 		state.last_att = net_buf_pull_u8(buf) + 1;
+		state.last_att_offset = net_buf_pull_le16(buf);
+		if (state.last_att_offset != 0) {
+			/* keep sending data of the last sent att */
+			state.last_att -= 1;
+		}
 		next_att = state.last_att;
 	}
 
@@ -1154,8 +1217,9 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	/* Add continuation state */
 	if (state.pkt_full) {
 		BT_DBG("Packet full, state.last_att %u", state.last_att);
-		net_buf_add_u8(rsp_buf, 1);
+		net_buf_add_u8(rsp_buf, SDP_SS_CONT_STATE_SIZE);
 		net_buf_add_u8(rsp_buf, state.last_att);
+		net_buf_add_le16(rsp_buf, state.last_att_offset);
 	} else {
 		net_buf_add_u8(rsp_buf, 0);
 	}
@@ -1184,9 +1248,10 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	uint32_t filter[MAX_NUM_ATT_ID_FILTER];
 	struct bt_sdp_record *matching_recs[BT_SDP_MAX_SERVICES];
 	struct search_state state = {
-		.att_list_size = 0,
+		.last_att_offset = 0,
 		.current_svc = SDP_INVALID,
 		.last_att = SDP_INVALID,
+		.rsp_buf_empty = true,
 		.pkt_full = false
 	};
 	struct net_buf *rsp_buf, *rsp_buf_cpy;
@@ -1240,6 +1305,11 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 
 		state.current_svc = net_buf_pull_u8(buf);
 		state.last_att = net_buf_pull_u8(buf) + 1;
+		state.last_att_offset = net_buf_pull_le16(buf);
+		if (state.last_att_offset != 0) {
+			/* keep sending data of the last sent att */
+			state.last_att -= 1;
+		}
 		next_svc = state.current_svc;
 		next_att = state.last_att;
 	}
@@ -1282,9 +1352,10 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 			dry_run = true;
 
 			/* Add continuation state */
-			net_buf_add_u8(rsp_buf, 2);
+			net_buf_add_u8(rsp_buf, SDP_SSA_CONT_STATE_SIZE);
 			net_buf_add_u8(rsp_buf, state.current_svc);
 			net_buf_add_u8(rsp_buf, state.last_att);
+			net_buf_add_le16(rsp_buf, state.last_att_offset);
 
 			/* Break if it's not a partial response, else dry-run
 			 * Dry run: Look for other services that match
