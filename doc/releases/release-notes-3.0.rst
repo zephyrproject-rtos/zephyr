@@ -182,6 +182,7 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * GigaDevice GD32VF103, GD32F3X0, GD32F403 and GD32F450.
 
 * Removed support for these SoC series:
 
@@ -196,6 +197,9 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+  * GigaDevice GD32F350R-EVAL
+  * GigaDevice GD32F403Z-EVAL
+  * GigaDevice GD32F450I-EVAL
   * OLIMEX-STM32-H405
   * ST Nucleo G031K8
   * ST Nucleo H7A3ZI Q
@@ -209,6 +213,10 @@ Boards & SoC Support
 
 * Removed support for these X86 boards:
 
+* Added support for these RISC-V boards:
+
+  * GigaDevice GD32VF103V-EVAL
+  * Sipeed Longan Nano and Nano Lite
 
 * Made these changes in other boards:
 
@@ -242,6 +250,7 @@ Drivers and Sensors
 
 * DAC
 
+  * Added support for GigaDevice GD32 SoCs
   * Added support for stm32u5 series
 
 * Disk
@@ -290,12 +299,14 @@ Drivers and Sensors
 
 * GPIO
 
+  * Added driver for GigaDevice GD32 SoCs
 
 * Hardware Info
 
 
 * I2C
 
+  * Added driver for GigaDevice GD32 SoCs
 
 * I2S
 
@@ -305,6 +316,8 @@ Drivers and Sensors
 
 * Interrupt Controller
 
+  * Added ECLIC driver for GigaDevice RISC-V GD32 SoCs
+  * Added EXTI driver for GigaDevice GD32 SoCs
 
 * LED
 
@@ -337,6 +350,7 @@ Drivers and Sensors
   * stm32: DT bindings: `st,prescaler` property was moved from pwm
     to parent timer node.
   * stm32: Implemented PWM capture API
+  * Added driver for GigaDevice GD32 SoCs. Only PWM output is supported.
 
 * Sensor
 
@@ -360,6 +374,8 @@ Drivers and Sensors
 * Serial
 
   * stm32: Implemented half-duplex option.
+  * Added driver for GigaDevice GD32 SoCs. Polling and interrupt driven modes
+    are supported.
 
 * SPI
 
@@ -446,6 +462,8 @@ Build and Infrastructure
 
 * West (extensions)
 
+  * Added support for gd32isp runner
+
 
 Libraries / Subsystems
 **********************
@@ -509,6 +527,9 @@ HALs
   * stm32cube/stm32wb and its lib: Upgraded to version V1.12.1
   * stm32cube/stm32mp1: Upgraded to version V1.5.0
   * stm32cube/stm32u5: Upgraded to version V1.0.2
+
+* Added `GigaDevice HAL module
+  <https://github.com/zephyrproject-rtos/hal_gigadevice>`_
 
 MCUboot
 *******
