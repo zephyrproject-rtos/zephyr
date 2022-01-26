@@ -563,7 +563,7 @@ else()
 endif()
 
 # Use SOC to search for a 'CMakeLists.txt' file.
-# e.g. zephyr/soc/xtense/intel_apl_adsp/CMakeLists.txt.
+# e.g. zephyr/soc/xtensa/intel_adsp/CMakeLists.txt.
 foreach(root ${SOC_ROOT})
   # Check that the root looks reasonable.
   if(NOT IS_DIRECTORY "${root}/soc")
