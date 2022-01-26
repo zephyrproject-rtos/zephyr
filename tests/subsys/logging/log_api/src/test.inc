@@ -666,6 +666,31 @@ static void test_log_printk(void)
 	process_and_validate(false, true);
 }
 
+static void test_log_arg_evaluation(void)
+{
+	uint32_t cnt0 = 0;
+	uint32_t cnt1 = 0;
+	uint32_t exp0 = 1;
+	uint32_t exp1 = 1;
+
+	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+		/* Debug message arguments are only evaluated when this level
+		 * is enabled.
+		 */
+		exp0++;
+		exp1++;
+	}
+
+	/* Arguments used for logging shall be evaluated only once. They should
+	 * be evaluated also when given log level is disabled.
+	 */
+	LOG_INF("%u %u", cnt0++, cnt1++);
+	LOG_DBG("%u %u", cnt0++, cnt1++);
+
+	zassert_equal(cnt0, exp0, "Got:%u, Expected:%u", cnt0, exp0);
+	zassert_equal(cnt1, exp1, "Got:%u, Expected:%u", cnt1, exp1);
+}
+
 /* Disable backends because same suite may be executed again but compiled by C++ */
 static void log_api_suite_teardown(void *data)
 {
@@ -754,6 +779,7 @@ WRAP_TEST(test_log_arguments, test_log_api)
 WRAP_TEST(test_log_from_declared_module, test_log_api)
 WRAP_TEST(test_log_panic, test_log_api)
 WRAP_TEST(test_log_printk, test_log_api)
+WRAP_TEST(test_log_arg_evaluation, test_log_api)
 
 /* With multiple cpus you may not get consistent message dropping
  * as other core may process logs. Executing on 1 cpu only.
