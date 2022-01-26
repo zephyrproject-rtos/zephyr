@@ -81,7 +81,7 @@ static void qdec_sam_configure(const struct device *dev)
 
 	/* Clock, Trigger Edge, Trigger and Mode Selection */
 	tc_ch0->TC_CMR =  TC_CMR_TCCLKS_XC0
-			| TC_CMR_ETRGEDG_RISING
+			| TC_CMR_ETRGEDG_NONE
 			| TC_CMR_ABETRG;
 
 	/* Enable QDEC in Position Mode*/
