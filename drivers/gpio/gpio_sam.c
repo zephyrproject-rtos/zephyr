@@ -54,6 +54,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 #if defined(CONFIG_SOC_SERIES_SAM4S) || \
 	defined(CONFIG_SOC_SERIES_SAM4E) || \
 	defined(CONFIG_SOC_SERIES_SAME70) || \
+	defined(CONFIG_SOC_SERIES_SAMS70) || \
 	defined(CONFIG_SOC_SERIES_SAMV71)
 		/* Disable pull-down. */
 		pio->PIO_PPDDR = mask;
@@ -96,6 +97,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 #if defined(CONFIG_SOC_SERIES_SAM4S) || \
 	defined(CONFIG_SOC_SERIES_SAM4E) || \
 	defined(CONFIG_SOC_SERIES_SAME70) || \
+	defined(CONFIG_SOC_SERIES_SAMS70) || \
 	defined(CONFIG_SOC_SERIES_SAMV71)
 	pio->PIO_PPDDR = mask;
 #endif
@@ -105,6 +107,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 #if defined(CONFIG_SOC_SERIES_SAM4S) || \
 	defined(CONFIG_SOC_SERIES_SAM4E) || \
 	defined(CONFIG_SOC_SERIES_SAME70) || \
+	defined(CONFIG_SOC_SERIES_SAMS70) || \
 	defined(CONFIG_SOC_SERIES_SAMV71)
 
 	/* Setup Pull-down resistor. */
@@ -124,6 +127,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 #elif defined(CONFIG_SOC_SERIES_SAM4S) || \
 	defined(CONFIG_SOC_SERIES_SAM4E) || \
 	defined(CONFIG_SOC_SERIES_SAME70) || \
+	defined(CONFIG_SOC_SERIES_SAMS70) || \
 	defined(CONFIG_SOC_SERIES_SAMV71)
 
 	/* Setup debounce. */
