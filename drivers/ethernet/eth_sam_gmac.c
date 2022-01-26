@@ -2030,6 +2030,8 @@ static int eth_sam_gmac_set_config(const struct device *dev,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
+	int result = 0;
+
 	switch (type) {
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
@@ -2057,12 +2059,14 @@ static int eth_sam_gmac_set_config(const struct device *dev,
 		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
 				     sizeof(dev_data->mac_addr),
 				     NET_LINK_ETHERNET);
+		break;
 	}
 	default:
+		result = -ENOTSUP;
 		break;
 	}
 
-	return -ENOTSUP;
+	return result;
 }
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
