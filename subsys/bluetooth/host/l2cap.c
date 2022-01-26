@@ -62,8 +62,6 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 				sizeof(struct bt_l2cap_disconn_req)),
 			  8, NULL);
 
-#define L2CAP_ECRED_CHAN_MAX	5
-
 #define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 
@@ -550,14 +548,14 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
 	if (chan->ident) {
-		struct bt_l2cap_chan *echan[L2CAP_ECRED_CHAN_MAX];
+		struct bt_l2cap_chan *echan[L2CAP_ECRED_CHAN_MAX_PER_REQ];
 		struct bt_l2cap_chan *ch;
 		int i = 0;
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&chan->conn->channels, ch, node) {
 			if (chan->ident == ch->ident) {
-				__ASSERT(i < L2CAP_ECRED_CHAN_MAX,
-					 "There can only be L2CAP_ECRED_CHAN_MAX channels "
+				__ASSERT(i < L2CAP_ECRED_CHAN_MAX_PER_REQ,
+					 "There can only be L2CAP_ECRED_CHAN_MAX_PER_REQ channels "
 					 "from the same request.");
 				atomic_clear_bit(ch->status, BT_L2CAP_STATUS_ENCRYPT_PENDING);
 				echan[i++] = ch;
@@ -1165,13 +1163,13 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			      struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
-	struct bt_l2cap_chan *chan[L2CAP_ECRED_CHAN_MAX];
+	struct bt_l2cap_chan *chan[L2CAP_ECRED_CHAN_MAX_PER_REQ];
 	struct bt_l2cap_le_chan *ch = NULL;
 	struct bt_l2cap_server *server;
 	struct bt_l2cap_ecred_conn_req *req;
 	struct bt_l2cap_ecred_conn_rsp *rsp;
 	uint16_t psm, mtu, mps, credits, result = BT_L2CAP_LE_SUCCESS;
-	uint16_t scid, dcid[L2CAP_ECRED_CHAN_MAX];
+	uint16_t scid, dcid[L2CAP_ECRED_CHAN_MAX_PER_REQ];
 	int i = 0;
 	uint8_t req_cid_count;
 	uint8_t succeeded = 0;
@@ -1190,7 +1188,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	if (buf->len > sizeof(dcid)) {
 		BT_ERR("Too large LE conn req packet size");
-		req_cid_count = L2CAP_ECRED_CHAN_MAX;
+		req_cid_count = L2CAP_ECRED_CHAN_MAX_PER_REQ;
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		goto response;
 	}
@@ -1281,7 +1279,7 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 				struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
-	struct bt_l2cap_chan *chans[L2CAP_ECRED_CHAN_MAX];
+	struct bt_l2cap_chan *chans[L2CAP_ECRED_CHAN_MAX_PER_REQ];
 	struct bt_l2cap_ecred_reconf_req *req;
 	struct bt_l2cap_ecred_reconf_rsp *rsp;
 	uint16_t mtu, mps;
@@ -2672,7 +2670,7 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 	}
 
 	/* Init non-null channels */
-	for (i = 0; i < L2CAP_ECRED_CHAN_MAX; i++) {
+	for (i = 0; i < L2CAP_ECRED_CHAN_MAX_PER_REQ; i++) {
 		if (!chan[i]) {
 			break;
 		}
@@ -2726,7 +2724,7 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		return -EINVAL;
 	}
 
-	for (i = 0; i < L2CAP_ECRED_CHAN_MAX; i++) {
+	for (i = 0; i < L2CAP_ECRED_CHAN_MAX_PER_REQ; i++) {
 		if (!chans[i]) {
 			break;
 		}
