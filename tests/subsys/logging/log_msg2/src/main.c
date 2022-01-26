@@ -189,11 +189,11 @@ void test_log_msg2_0_args_msg(void)
 	test_init();
 	printk("Test string:%s\n", TEST_MSG);
 
-	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level,
+	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level,
 			  NULL, 0, TEST_MSG);
 	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
 
-	Z_LOG_MSG2_CREATE2(0, mode, 0, domain, source, level,
+	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level,
 			  NULL, 0, TEST_MSG);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
@@ -222,11 +222,11 @@ void test_log_msg2_various_args(void)
 	test_init();
 	printk("Test string:%s\n", TEST_MSG);
 
-	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level, NULL, 0,
+	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, s8, u, lld, (void *)str, lld, (void *)iarray);
 	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
 
-	Z_LOG_MSG2_CREATE2(0, mode, 0, domain, source, level, NULL, 0,
+	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, s8, u, lld, (void *)str, lld, (void *)iarray);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
@@ -249,11 +249,11 @@ void test_log_msg2_only_data(void)
 
 	test_init();
 
-	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level, array,
+	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, array,
 			   sizeof(array));
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
-	Z_LOG_MSG2_CREATE2(0, mode, 0, domain, source, level, array,
+	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, array,
 			   sizeof(array));
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
@@ -278,11 +278,11 @@ void test_log_msg2_string_and_data(void)
 
 	test_init();
 
-	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level, array,
+	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, array,
 			   sizeof(array), TEST_MSG);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
-	Z_LOG_MSG2_CREATE2(0, mode, 0, domain, source, level, array,
+	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, array,
 			   sizeof(array), TEST_MSG);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
@@ -315,11 +315,11 @@ void test_log_msg2_fp(void)
 
 	test_init();
 
-	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level, NULL, 0,
+	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, i, lli, (double)f, &i, d, source);
 	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
 
-	Z_LOG_MSG2_CREATE2(0, mode, 0, domain, source, level, NULL, 0,
+	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, i, lli, (double)f, &i, d, source);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
@@ -354,12 +354,12 @@ void test_mode_size_plain_string(void)
 	uint32_t exp_len;
 	int mode;
 
-	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level, NULL, 0,
+	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, NULL, 0,
 			"test str");
 	zassert_equal(mode, EXP_MODE(ZERO_COPY),
 			"Unexpected creation mode");
 
-	Z_LOG_MSG2_CREATE2(0, mode, 0, domain, source, level, NULL, 0,
+	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, NULL, 0,
 			"test str");
 	zassert_equal(mode, EXP_MODE(FROM_STACK),
 			"Unexpected creation mode");
@@ -393,7 +393,7 @@ void test_mode_size_data_only(void)
 	 */
 	uint8_t data[] = {1, 2, 3};
 
-	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level,
+	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level,
 			   data, sizeof(data));
 	zassert_equal(mode, EXP_MODE(FROM_STACK),
 			"Unexpected creation mode");
@@ -421,7 +421,7 @@ void test_mode_size_plain_str_data(void)
 	 */
 	uint8_t data[] = {1, 2, 3};
 
-	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level,
+	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level,
 			   data, sizeof(data), "test");
 	zassert_equal(mode, EXP_MODE(FROM_STACK),
 			"Unexpected creation mode");
@@ -450,13 +450,13 @@ void test_mode_size_str_with_strings(void)
 	int mode;
 	static const char *prefix = "prefix";
 
-	Z_LOG_MSG2_CREATE2(1, mode,
+	Z_LOG_MSG2_CREATE3(1, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
 			   NULL, 0, "test %s", prefix);
 	zassert_equal(mode, EXP_MODE(ZERO_COPY),
 			"Unexpected creation mode");
-	Z_LOG_MSG2_CREATE2(0, mode,
+	Z_LOG_MSG2_CREATE3(0, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
 			   NULL, 0, "test %s", prefix);
@@ -489,13 +489,13 @@ void test_mode_size_str_with_2strings(void)
 	int mode;
 	static const char *prefix = "prefix";
 
-	Z_LOG_MSG2_CREATE2(1, mode,
+	Z_LOG_MSG2_CREATE3(1, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
 			   NULL, 0, TEST_STR, prefix, "sufix");
 	zassert_equal(mode, EXP_MODE(RUNTIME),
 			"Unexpected creation mode");
-	Z_LOG_MSG2_CREATE2(0, mode,
+	Z_LOG_MSG2_CREATE3(0, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
 			   NULL, 0, TEST_STR, prefix, "sufix");
@@ -546,14 +546,14 @@ void test_saturate(void)
 	log_set_timestamp_func(timestamp_get_inc, 0);
 
 	for (int i = 0; i < exp_capacity; i++) {
-		Z_LOG_MSG2_CREATE2(1, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
+		Z_LOG_MSG2_CREATE3(1, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
 	}
 
 	zassert_equal(z_log_dropped_read_and_clear(), 0, "No dropped messages.");
 
 	/* Message should not fit in and be dropped. */
-	Z_LOG_MSG2_CREATE2(1, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
-	Z_LOG_MSG2_CREATE2(0, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
+	Z_LOG_MSG2_CREATE3(1, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
+	Z_LOG_MSG2_CREATE3(0, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
 	z_log_msg2_runtime_create(0, (void *)1, 2, NULL, 0, "test");
 
 	zassert_equal(z_log_dropped_read_and_clear(), 3, "No dropped messages.");
