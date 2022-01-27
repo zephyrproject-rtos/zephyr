@@ -5,3 +5,4 @@ tests:
     tags: drivers
     harness: grove
     depends_on: i2c
+    platform_exclude: ip_k66f
