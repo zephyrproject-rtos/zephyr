@@ -46,9 +46,19 @@ extern "C" {
  */
 #define LOG_OUTPUT_FLAG_FORMAT_SYSLOG		BIT(6)
 
-/** @brief Flag forcing syslog format specified in mipi sys-t
+/** @brief Flag forcing syslog format specified in mipi sys-t.
+ * This flag is deprecated and can only be used when CONFIG_LOG1 is enabled.
  */
 #define LOG_OUTPUT_FLAG_FORMAT_SYST		BIT(7)
+
+/** @brief Supported backend logging format types for use
+ * with log_format_set() API to switch log format at runtime.
+ */
+#define LOG_OUTPUT_TEXT 0
+
+#define LOG_OUTPUT_SYST 1
+
+#define LOG_OUTPUT_DICT 2
 
 /**
  * @brief Prototype of the function processing output data.
@@ -79,6 +89,23 @@ struct log_output {
 	uint8_t *buf;
 	size_t size;
 };
+
+/**
+ * @brief Typedef of the function pointer table "format_table".
+ *
+ * @param output Pointer to log_output struct.
+ * @param msg2 Pointer to log_msg2 struct.
+ * @param flags Flags used for text formatting options.
+ *
+ * @return Function pointer based on Kconfigs defined for backends.
+ */
+typedef void (*log_format_func_t)(const struct log_output *output,
+					struct log_msg2 *msg2, uint32_t flags);
+
+/**
+ * @brief Declaration of the get routine for function pointer table format_table.
+ */
+log_format_func_t log_format_func_t_get(uint32_t log_type);
 
 /** @brief Create log_output instance.
  *
@@ -120,6 +147,18 @@ void log_output_msg_process(const struct log_output *output,
  */
 void log_output_msg2_process(const struct log_output *log_output,
 			     struct log_msg2 *msg, uint32_t flags);
+
+/** @brief Process log messages v2 to SYS-T format.
+ *
+ * Function is using provided context with the buffer and output function to
+ * process formatted string and output the data in sys-t log output format.
+ *
+ * @param log_output Pointer to the log output instance.
+ * @param msg Log message.
+ * @param flag Optional flags.
+ */
+void log_output_msg2_syst_process(const struct log_output *log_output,
+			     struct log_msg2 *msg, uint32_t flag);
 
 /** @brief Process log string
  *

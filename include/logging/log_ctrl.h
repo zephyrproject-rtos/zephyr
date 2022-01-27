@@ -179,6 +179,14 @@ void log_backend_disable(struct log_backend const *const backend);
  */
 const struct log_backend *log_backend_get_by_name(const char *backend_name);
 
+/** @brief Sets logging format for all active backends.
+ *
+ * @param log_type Log format.
+ *
+ * @retval Pointer to the last backend that failed, NULL for success.
+ */
+const struct log_backend *log_format_set_all_active_backends(size_t log_type);
+
 /**
  * @brief Get current number of allocated buffers for string duplicates.
  */

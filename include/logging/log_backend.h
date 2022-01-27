@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <sys/__assert.h>
 #include <sys/util.h>
+#include <logging/log_output.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +49,8 @@ struct log_backend_api {
 	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
 	void (*init)(const struct log_backend *const backend);
+	int (*format_set)(const struct log_backend *const backend,
+				uint32_t log_type);
 };
 
 /**
@@ -303,6 +306,40 @@ static inline bool log_backend_is_active(
 	__ASSERT_NO_MSG(backend != NULL);
 	return backend->cb->active;
 }
+
+#ifndef CONFIG_LOG1
+/** @brief Set logging format.
+ *
+ * @param backend Pointer to the backend instance.
+ * @param log_type Log format.
+ *
+ * @retval -ENOTSUP If the backend does not support changing format types.
+ * @retval -EINVAL If the input is invalid.
+ * @retval 0 for success.
+ */
+static inline int log_backend_format_set(const struct log_backend *backend, uint32_t log_type)
+{
+	extern size_t log_format_table_size(void);
+
+	if ((size_t)log_type >= log_format_table_size()) {
+		return -EINVAL;
+	}
+
+	if (log_format_func_t_get(log_type) == NULL) {
+		return -EINVAL;
+	}
+
+	if (backend == NULL) {
+		return -EINVAL;
+	}
+
+	if (backend->api->format_set == NULL) {
+		return -ENOTSUP;
+	}
+
+	return backend->api->format_set(backend, log_type);
+}
+#endif
 
 /**
  * @}
