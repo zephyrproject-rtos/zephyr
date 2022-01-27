@@ -65,7 +65,7 @@ extern "C" {
  * @brief Bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,
  * or 0 if @p n is 0.
  */
-#define BIT_MASK(n) (BIT(n) - 1UL)
+#define BIT_MASK(n) (BIT64(n) - 1UL)
 
 /**
  * @brief 64-bit bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,
