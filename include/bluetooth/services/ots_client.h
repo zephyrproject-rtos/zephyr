@@ -1,14 +1,14 @@
 /* @file
- * @brief Object Transfer client header
+ * @brief Object Transfer Service client header
  *
- * For use with the Object Transfer Service client (OTC)
+ * For use with the Object Transfer Service Client
  *
  * Copyright (c) 2020 - 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTS_CLIENT_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTS_CLIENT_H_
 
 /**
  * @brief Object Transfer Service Client (OTC)
@@ -339,4 +339,4 @@ void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTC_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_OTS_CLIENT_H_ */

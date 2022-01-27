@@ -21,8 +21,8 @@
 #include "../../host/conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
 
 #include <bluetooth/services/ots.h>
-#include <bluetooth/services/otc.h>
-#include "otc_internal.h"
+#include <bluetooth/services/ots_client.h>
+#include "ots_client_internal.h"
 #include "ots_l2cap_internal.h"
 #include "ots_dir_list_internal.h"
 #include "ots_oacp_internal.h"
