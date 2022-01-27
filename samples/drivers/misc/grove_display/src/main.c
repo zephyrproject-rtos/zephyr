@@ -11,7 +11,7 @@
 #include <device.h>
 #include <drivers/i2c.h>
 
-#include <display/grove_lcd.h>
+#include <drivers/misc/grove_lcd/grove_lcd.h>
 
 /**
  * @file Display a counter through I2C and Grove LCD.

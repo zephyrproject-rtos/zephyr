@@ -6,5 +6,6 @@
 menu "Miscellaneous Drivers"
 
 source "drivers/misc/ft8xx/Kconfig"
+source "drivers/misc/grove_lcd_rgb/Kconfig"
 
 endmenu
