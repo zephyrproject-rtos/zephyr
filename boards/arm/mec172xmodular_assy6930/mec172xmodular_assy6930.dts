@@ -1,0 +1,163 @@
+/*
+ * Copyright (c) 2021, Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microchip/mec172xnsz.dtsi>
+#include <microchip/mec172x/mec172xnsz-pinctrl.dtsi>
+
+/ {
+	model = "Microchip MEC172XMODULAR_ASSY6930 evaluation board";
+	compatible = "microchip,mec172xmodular_assy6930", "microchip,mec172xnsz";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+	};
+
+	aliases {
+		led0 = &led4;
+		led1 = &led3;
+		i2c0 = &i2c_smb_0;
+		i2c1 = &i2c_smb_1;
+		i2c7 = &i2c_smb_2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led4: led_0 {
+			/* GPIO241/CMP_VOUT0/PWM0_ALT on schematic,
+			 * LED4 on silkscreen.
+			 */
+			gpios = <&gpio_240_276 1 GPIO_ACTIVE_HIGH>;
+			label = "LED 4";
+		};
+		led3: led_1 {
+			/* GPIO175/CMP_VOUT1/PWM8_ALT on schematic,
+			 * LED5 on silkscreen.
+			 */
+			gpios = <&gpio_140_176 29 GPIO_ACTIVE_HIGH>;
+			label = "LED 5";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <96000000>;
+	status = "okay";
+};
+
+/* Initialize ECIA. Does not initialize child devices */
+&ecia {
+	status = "okay";
+};
+
+/* Enable aggregated GIRQ24 and GIRQ25 for eSPI virtual wires interrupts */
+&girq24 {
+	status = "okay";
+};
+
+&girq25 {
+	status = "okay";
+};
+
+&rtimer {
+	status = "okay";
+};
+
+&pcr {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_tx_gpio170 &uart1_rx_gpio171>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc00_gpio200 &adc03_gpio203
+		     &adc04_gpio204 &adc05_gpio205>;
+	pinctrl-names = "default";
+};
+
+&espi0 {
+	status = "okay";
+	pinctrl-0 = < &espi_reset_n_gpio061 &espi_cs_n_gpio066
+		      &espi_alert_n_gpio063 &espi_clk_gpio065
+		      &espi_io0_gpio070 &espi_io1_gpio071
+		      &espi_io2_gpio072 &espi_io3_gpio073 >;
+	pinctrl-names = "default";
+};
+
+/* enable various eSPI child devices (host facing) */
+&kbc0 {
+	status = "okay";
+};
+
+&acpi_ec0 {
+	status = "okay";
+};
+
+&acpi_ec1 {
+	status = "okay";
+};
+
+&emi0 {
+	status = "okay";
+};
+
+&p80bd0 {
+	status = "okay";
+};
+
+/* I2C */
+&i2c_smb_0 {
+	status = "okay";
+	label = "I2C0";
+	port_sel = <0>;
+
+	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
+	pinctrl-names = "default";
+
+	pca9555@26 {
+		compatible = "nxp,pca95xx";
+		label = "GPIO_P0";
+
+		/* Depends on JP53 for device address.
+		 * Pin 1-2 = A0, pin 3-4 = A1, pin 5-6 = A2.
+		 * Address is: 0100<A2><A1><A0>b.
+		 *
+		 * Default has pin 1-2 on JP53 connected,
+		 * resulting in device address 0x26.
+		 */
+		reg = <0x26>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+&i2c00_scl_gpio004 {
+	drive-open-drain;
+	output-high;
+};
+
+&i2c00_sda_gpio003 {
+	drive-open-drain;
+	output-high;
+};
+
+&i2c_smb_1 {
+	status = "okay";
+	label = "I2C1";
+	port_sel = <1>;
+	pinctrl-0 = <&i2c01_scl_gpio131 &i2c01_sda_gpio130>;
+	pinctrl-names = "default";
+};
