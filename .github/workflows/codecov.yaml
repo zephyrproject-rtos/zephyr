@@ -5,15 +5,6 @@ on:
     - cron: '25 */3 * * 1-5'
 
 jobs:
-  codecov-prep:
-    runs-on: ubuntu-latest
-    if: github.repository == 'zephyrproject-rtos/zephyr'
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.6.0
-        with:
-          access_token: ${{ github.token }}
-
   codecov:
     runs-on: zephyr_runner
     needs: codecov-prep
@@ -27,6 +18,10 @@ jobs:
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
+
     steps:
       - name: Update PATH for west
         run: |

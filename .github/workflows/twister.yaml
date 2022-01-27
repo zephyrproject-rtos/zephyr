@@ -12,18 +12,9 @@ on:
     - cron: '0 0 * * 6'
 
 jobs:
-  twister-build-cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.6.0
-        with:
-          access_token: ${{ github.token }}
-
   twister-build-prep:
 
     runs-on: zephyr_runner
-    needs: twister-build-cleanup
     container:
       image: zephyrprojectrtos/ci:v0.21.0
       options: '--entrypoint /bin/bash'
@@ -41,6 +32,10 @@ jobs:
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+      cancel-in-progress: true
+
     steps:
       - name: Cleanup
         run: |
