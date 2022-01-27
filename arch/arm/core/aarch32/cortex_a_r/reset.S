@@ -46,7 +46,40 @@ GTEXT(z_arm_platform_init)
  */
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
+#if defined(CONFIG_AARCH32_ARMV8_R)
+    /* Check if we are starting in HYP mode */
+    mrs r0, cpsr
+    and r0, r0, #MODE_MASK
+    cmp r0, #MODE_HYP
+    bne EL1_Reset_Handler
 
+    /* Init HSCTLR see Armv8-R AArch32 architecture profile */
+    ldr r0, =(HSCTLR_RES1 | SCTLR_I_BIT | SCTLR_C_BIT)
+    mcr p15, 4, r0, c1, c0, 0
+
+    /* Init HACTLR: Enable EL1 access to all IMP DEF registers */
+    ldr r0, =HACTLR_INIT
+    mcr p15, 4, r0, c1, c0, 1
+
+    /* Change EL1 exception base address */
+    ldr r0,=_vector_table
+    mcr p15, 0, r0, c12, c0, 0 /* Write to VBAR */
+
+    /* Go to SVC mode */
+    mrs r0, cpsr
+    bic r0, #MODE_MASK
+    orr r0, #MODE_SVC
+    msr spsr_hyp, r0
+
+    ldr r0, =EL1_Reset_Handler
+    msr elr_hyp, r0
+    dsb
+    isb
+    eret
+
+EL1_Reset_Handler:
+
+#endif
 #if defined(CONFIG_CPU_HAS_DCLS)
     /*
      * Initialise CPU registers to a defined state if the processor is
