@@ -172,12 +172,18 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * stm32h7: Added SMPS support
+  * stm32u5: Enabled TF-M
 
 * Changes for ARC boards:
 
 
 * Added support for these ARM boards:
 
+  * OLIMEX-STM32-H405
+  * ST Nucleo G031K8
+  * ST Nucleo H7A3ZI Q
+  * ST STM32G081B Evaluation
 
 * Added support for these ARM64 boards:
 
@@ -199,6 +205,8 @@ Drivers and Sensors
 
 * ADC
 
+  * Added support for stm32u5 series
+  * stm32: Added shared IRQ support
 
 * Bluetooth
 
@@ -214,12 +222,16 @@ Drivers and Sensors
 
 * Counter
 
+  * stm32: Added timer based counter driver (stm32f4 only for now).
 
 * DAC
 
+  * Added support for stm32u5 series
 
 * Disk
 
+  * stm32 sdmmc: Converted from polling to IT driven mode and added Hardware
+    Flow Control option
 
 * Display
 
@@ -233,14 +245,26 @@ Drivers and Sensors
 * EEPROM
 
 
+* Entropy
+
+  * Added support for stm32u5 series
+
 * ESPI
 
 
 * Ethernet
 
+  * Added support for Synopsys DesignWare MAC driver with implementation
+    on stm32h7 series.
+  * stm32 (hal based): Added promiscuous mode support
+  * stm32 (hal based): Added PTP L2 timestamping support
 
 * Flash
 
+  * stm32g0: Added Dual Bank support
+  * stm32_qspi: General enhancement (Generation of the reset pulse for SPI-NOR memory,
+    Usage of 4IO for read / write (4READ/4PP), Support for different QSPI banks,
+    Support for 4B addressing on spi-nor)
 
 * GPIO
 
@@ -266,29 +290,46 @@ Drivers and Sensors
 * LoRa
 
 
+* MEMC
+
+  *  Added support for stm32f7 series
+
 * Modem
 
 
+* Pinctrl
+
+  * Added support for STM32
+
 * PWM
 
+  * stm32: DT bindings: `st,prescaler` property was moved from pwm
+    to parent timer node.
+  * stm32: Implemented PWM capture API
 
 * Sensor
 
+  * Added L5 die temperature sensor
 
 * Serial
 
+  * stm32: Implemented half-duplex option.
 
 * SPI
 
+  * stm32: Implemented Frame format option (TI vs Motorola).
 
 * Timer
 
+  * stm32 lptim: Added support for stm32h7
 
 * USB
 
+  * Added support for stm32u5 series (OTG full speed)
 
 * Watchdog
 
+  * Added support for stm32u5 series (Independent and Window)
 
 * WiFi
 
@@ -400,6 +441,12 @@ Libraries / Subsystems
 HALs
 ****
 
+* STM32
+
+  * stm32cube/stm32wb and its lib: Upgraded to version V1.12.1
+  * stm32cube/stm32mp1: Upgraded to version V1.5.0
+  * stm32cube/stm32u5: Upgraded to version V1.0.2
+
 MCUboot
 *******
 
@@ -427,6 +474,7 @@ Documentation
 Tests and Samples
 *****************
 
+* Drivers: clock_control: Added test suite for stm32 (u5, h7).
 
 Issue Related Items
 *******************
