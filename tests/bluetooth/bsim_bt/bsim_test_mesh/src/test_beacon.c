@@ -21,11 +21,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define WAIT_TIME 60 /*seconds*/
 #define BEACON_INTERVAL       K_SECONDS(10)
 
-#define BSIM_MINUTE(minute) K_SECONDS(60 * minute)
 #define OBSERVER_PERIODE 600 /*seconds*/
-#define EXPECTED_BEACONS 60 /*600s/10s = 60 */
-#define BEACON_INTERVAL_MAX 10000 /*10 seconds*/
-#define BEACON_INTERVAL_MIN 600000 /*10 minutes */
+#define EXPECTED_BEACONS OBSERVER_PERIODE/10 /*expected #beacons = Observe Periode / beacon interval*/
+#define BEACON_INTERVAL_MAX 600000 /*miliseconds*/
+#define BEACON_INTERVAL_MIN 10000 /*miliseconds*/
 
 extern enum bst_result_t bst_result;
 
@@ -239,23 +238,23 @@ static void test_rx_on_key_refresh(void)
 
 static void test_tx_beacon_init(void)
 {
-	bt_mesh_test_cfg_set(&tx_cfg, OBSERVER_PERIODE);
+	bt_mesh_test_cfg_set(&tx_cfg, OBSERVER_PERIODE + 60);
 }
 
 static void test_rx_beacon_init(void)
 {
-	bt_mesh_test_cfg_set(&tx_cfg, OBSERVER_PERIODE);
+	bt_mesh_test_cfg_set(&tx_cfg, OBSERVER_PERIODE + 60);
 }
 
 static void test_tx_beacon_secure(void)
 {
-	/* shift beaconing time line to avoid boundary cases. */
 	uint32_t delay_time;
 	uint32_t sent_beacons;
 	uint32_t sent_beacon_time;
 	struct bt_mesh_subnet *sub;
 	
-	delay_time = get_device_nbr() * 100;
+	/* shift beaconing time line to avoid boundary cases. */
+	delay_time = get_device_nbr() * 0;
 	k_sleep(K_MSEC(delay_time));
 
 	bt_mesh_test_setup();
@@ -264,9 +263,8 @@ static void test_tx_beacon_secure(void)
 
 	sent_beacons = 0;
 	sent_beacon_time = 0;
-	/*checkout the beacond sent timestamp and wait at least 2 beacons sent */
 	while (true) {
-		k_sleep(K_MSEC(100));
+		k_sleep(K_SECONDS(10));
 		if (sent_beacon_time != sub->beacon_sent) {
 			sent_beacon_time = sub->beacon_sent;
 			sent_beacons++;
@@ -281,9 +279,9 @@ static void test_tx_beacon_secure(void)
 }
 
 static struct k_sem observer_sem;
-static uint32_t obs_min_interval; /*minimun time measured between two consecutive beacons*/
-static uint32_t obs_max_interval; /*maximum time measured between two consecutive beacons*/
-static uint32_t last_beacon_time; /*timestamp for last received valid secure beacon*/
+static uint32_t obs_min_interval; /*minimun time measured between two consecutive beacons in miliseconds*/
+static uint32_t obs_max_interval; /*maximum time measured between two consecutive beacons in miliseconds*/
+static uint32_t last_beacon_time; /*timestamp for last received valid secure beacon in miliseconds*/
 static uint32_t total_beacons; /*total number of beacons received*/
 
 static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
@@ -337,7 +335,8 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 	}
 
 	total_beacons++;
-	if (total_beacons >= EXPECTED_BEACONS) {
+	/*some beacons may get lost, Thus*/
+	if (total_beacons >= (EXPECTED_BEACONS - 4)) {
 		k_sem_give(&observer_sem);
 	}
 }
@@ -355,7 +354,7 @@ static struct bt_le_scan_cb scan_callbacks = {
 static void test_rx_beacon_secure(void)
 {
 	k_sem_init(&observer_sem, 0, 1);
-	/*initial estimatd interval values*/
+	/*initial estimated interval values*/
 	obs_min_interval = 10000;
 	obs_max_interval = 10000;
 
@@ -364,9 +363,9 @@ static void test_rx_beacon_secure(void)
 	bt_mesh_beacon_disable();
 	bt_le_scan_cb_register(&scan_callbacks);
 
-	ASSERT_TRUE(!k_sem_take(&observer_sem, BSIM_MINUTE(10)));
-	ASSERT_TRUE(obs_max_interval<600000);
-	ASSERT_TRUE(obs_min_interval>=10000);
+	ASSERT_TRUE(!k_sem_take(&observer_sem, K_SECONDS(OBSERVER_PERIODE)));
+	ASSERT_TRUE(obs_max_interval<=BEACON_INTERVAL_MAX);
+	ASSERT_TRUE(obs_min_interval>=BEACON_INTERVAL_MIN);
 	PASS();
 }
 
