@@ -486,6 +486,14 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	  name string. If the SoC in use is known by UF2, the Family ID will
 	  be pre-filled with the known value.
 
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	bool
+	default n
+
+config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
+	bool
+	default n
+
 endif # BUILD_OUTPUT_UF2
 
 config BUILD_OUTPUT_STRIPPED

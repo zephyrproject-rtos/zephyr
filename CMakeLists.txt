@@ -1454,12 +1454,27 @@ if(CONFIG_BUILD_OUTPUT_BIN)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
+  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
+    set(flash_addr "${CONFIG_FLASH_BASE_ADDRESS}")
+  else()
+    set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
+  endif()
+
+  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_OFFSET)
+    # Note, the `+ 0` in formula below avoids errors in cases where a Kconfig
+    #       variable is undefined and thus expands to nothing.
+    math(EXPR flash_addr
+        "${flash_addr} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
+         OUTPUT_FORMAT HEXADECIMAL
+    )
+  endif()
+
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/uf2conv.py
             -c
             -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
-            -b ${CONFIG_FLASH_LOAD_OFFSET}
+            -b ${flash_addr}
             -o ${KERNEL_UF2_NAME}
             ${KERNEL_BIN_NAME}
   )
