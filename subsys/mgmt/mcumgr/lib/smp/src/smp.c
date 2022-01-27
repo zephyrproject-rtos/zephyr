@@ -14,19 +14,6 @@
 #include "mgmt/mgmt.h"
 #include "smp/smp.h"
 
-static int
-smp_align4(int x)
-{
-	int rem;
-
-	rem = x % 4;
-	if (rem == 0) {
-		return x;
-	} else {
-		return x - rem + 4;
-	}
-}
-
 /**
  * Converts a request opcode to its corresponding response opcode.
  */
@@ -289,7 +276,8 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
  * @param streamer	The streamer to use for reading, writing, and transmitting.
  * @param req		A buffer containing the request packet.
  *
- * @return 0 on success, MGMT_ERR_ECORRUPT if buffer starts with non SMP data header,
+ * @return 0 on success, MGMT_ERR_ECORRUPT if buffer starts with non SMP data header
+ *                       or there is not enough bytes to process header,
  *                       or other MGMT_ERR_[...] code on failure.
  */
 int
@@ -318,6 +306,12 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 			valid_hdr = true;
 		}
 		mgmt_ntoh_hdr(&req_hdr);
+		/* Does buffer contain whole message? */
+		if (streamer->mgmt_stmr.reader->message_size < (req_hdr.nh_len + MGMT_HDR_SIZE)) {
+			rc = MGMT_ERR_ECORRUPT;
+			break;
+		}
+
 		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, MGMT_HDR_SIZE);
 
 		rsp = mgmt_streamer_alloc_rsp(&streamer->mgmt_stmr, req);
@@ -345,7 +339,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		}
 
 		/* Trim processed request to free up space for subsequent responses. */
-		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, smp_align4(req_hdr.nh_len));
+		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, req_hdr.nh_len);
 
 		cmd_done_arg.err = MGMT_ERR_EOK;
 		mgmt_evt(MGMT_EVT_OP_CMD_DONE, req_hdr.nh_group, req_hdr.nh_id,
