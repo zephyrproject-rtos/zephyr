@@ -235,8 +235,12 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 	/* Extract affinity fields from target */
 	aff1 = MPIDR_AFFLVL(target_aff, 1);
 	aff2 = MPIDR_AFFLVL(target_aff, 2);
+#if defined(CONFIG_ARM)
+	/* There is no Aff3 in AArch32 MPIDR */
+	aff3 = 0;
+#else
 	aff3 = MPIDR_AFFLVL(target_aff, 3);
-
+#endif
 	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id,
 				   SGIR_IRM_TO_AFF, target_list);
 

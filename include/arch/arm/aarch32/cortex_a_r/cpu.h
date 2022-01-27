@@ -76,4 +76,43 @@
 #define CNTV_CTL_ENABLE_BIT	BIT(0)
 #define CNTV_CTL_IMASK_BIT	BIT(1)
 
+/* Interrupt Controller System Register Enable Register */
+#define ICC_SRE_ELx_SRE_BIT	BIT(0)
+#define ICC_SRE_ELx_DFB_BIT	BIT(1)
+#define ICC_SRE_ELx_DIB_BIT	BIT(2)
+#define ICC_SRE_EL3_EN_BIT	BIT(3)
+
+/* MPIDR */
+#define MPIDR_AFFLVL_MASK	(0xff)
+
+#define MPIDR_AFF0_SHIFT	(0)
+#define MPIDR_AFF1_SHIFT	(8)
+#define MPIDR_AFF2_SHIFT	(16)
+
+#define MPIDR_AFFLVL(mpidr, aff_level) \
+		(((mpidr) >> MPIDR_AFF##aff_level##_SHIFT) & MPIDR_AFFLVL_MASK)
+
+#define GET_MPIDR()		read_sysreg(mpidr)
+#define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
+
+/* ICC SGI macros */
+#define SGIR_TGT_MASK		(0xffff)
+#define SGIR_AFF1_SHIFT		(16)
+#define SGIR_AFF2_SHIFT		(32)
+#define SGIR_AFF3_SHIFT		(48)
+#define SGIR_AFF_MASK		(0xff)
+#define SGIR_INTID_SHIFT	(24)
+#define SGIR_INTID_MASK		(0xf)
+#define SGIR_IRM_SHIFT		(40)
+#define SGIR_IRM_MASK		(0x1)
+#define SGIR_IRM_TO_AFF		(0)
+
+#define GICV3_SGIR_VALUE(_aff3, _aff2, _aff1, _intid, _irm, _tgt)	\
+	((((uint64_t) (_aff3) & SGIR_AFF_MASK) << SGIR_AFF3_SHIFT) |	\
+	 (((uint64_t) (_irm) & SGIR_IRM_MASK) << SGIR_IRM_SHIFT) |	\
+	 (((uint64_t) (_aff2) & SGIR_AFF_MASK) << SGIR_AFF2_SHIFT) |	\
+	 (((_intid) & SGIR_INTID_MASK) << SGIR_INTID_SHIFT) |		\
+	 (((_aff1) & SGIR_AFF_MASK) << SGIR_AFF1_SHIFT) |		\
+	 ((_tgt) & SGIR_TGT_MASK))
+
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CPU_H_ */
