@@ -4,10 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztress.h>
+#include <ztest_test.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/random/rand32.h>
 #include <string.h>
 
+/* Flag set at startup which determines if stress test can run on this platform.
+ * Stress test should not run on the platform which system clock is too high
+ * compared to cpu clock. System clock is sometimes set globally for the test
+ * and for some platforms it may be unacceptable.
+ */
+static bool cpu_sys_clock_ok;
 
 /* Timer used for adjusting contexts backoff time to get optimal CPU load. */
 static void ctrl_timeout(struct k_timer *timer);
@@ -328,6 +335,14 @@ int ztress_execute(struct ztress_context_data *timer_data,
 		return -EINVAL;
 	}
 
+	/* Skip test if system clock is set too high compared to CPU frequency.
+	 * It can happen when system clock is set globally for the test which is
+	 * run on various platforms.
+	 */
+	if (!cpu_sys_clock_ok) {
+		ztest_test_skip();
+	}
+
 	ztress_init(thread_data);
 
 	context_cnt = cnt + (timer_data ? 1 : 0);
@@ -433,3 +448,29 @@ uint32_t ztress_optimized_ticks(uint32_t id)
 
 	return backoff[id].ticks;
 }
+
+/* Doing it here and not before each test because test may have some additional
+ * cpu load (e.g. busy simulator) running that would influence the result.
+ *
+ */
+static int ztress_cpu_clock_to_sys_clock_check(const struct device *unused)
+{
+	static volatile int cnt = 2000;
+	uint32_t t = sys_clock_tick_get_32();
+
+	while (cnt-- > 0) {
+		/* empty */
+	}
+
+	t = sys_clock_tick_get_32() - t;
+	/* Threshold is arbitrary. Derived from nRF platorm where CPU runs at 64MHz and
+	 * system clock at 32kHz (sys clock interrupt every 1950 cycles). That ratio is
+	 * ok even for no optimization case.
+	 * If some valid platforms are cut because of that, it can be changed.
+	 */
+	cpu_sys_clock_ok = t <= 12;
+
+	return 0;
+}
+
+SYS_INIT(ztress_cpu_clock_to_sys_clock_check, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
