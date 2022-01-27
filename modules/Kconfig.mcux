@@ -141,6 +141,16 @@ config HAS_MCUX_GPC
 	help
 	  Set if the general power controller (GPC) module is present in the SoC.
 
+config HAS_MCUX_PMU
+	bool
+	help
+	  Set if the power management unit (PMU) module is present in the SoC.
+
+config HAS_MCUX_DCDC
+	bool
+	help
+	  Set if the DCDC converter module is present in the SoC.
+
 config HAS_MCUX_SNVS
 	bool
 	help
