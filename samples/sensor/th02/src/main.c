@@ -11,7 +11,7 @@
 #include <sys/util.h>
 
 #ifdef CONFIG_GROVE_LCD_RGB
-#include <display/grove_lcd.h>
+#include <drivers/misc/grove_lcd/grove_lcd.h>
 #include <stdio.h>
 #include <string.h>
 #endif
