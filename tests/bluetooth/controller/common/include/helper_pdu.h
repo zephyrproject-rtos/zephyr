@@ -52,6 +52,8 @@ void helper_pdu_encode_cte_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_cte_rsp(struct pdu_data *pdu, void *param);
 void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param);
 
+void helper_pdu_encode_zero(struct pdu_data *pdu, void *param);
+
 void helper_pdu_verify_ping_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_ping_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
@@ -161,6 +163,7 @@ enum helper_pdu_opcode {
 	LL_LENGTH_RSP,
 	LL_CTE_REQ,
 	LL_CTE_RSP,
+	LL_ZERO,
 };
 
 enum helper_node_opcode {
