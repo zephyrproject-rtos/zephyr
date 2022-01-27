@@ -164,7 +164,7 @@ struct eth_context {
 	struct net_pkt *ts_tx_pkt;
 	const struct device *ptp_clock;
 	enet_ptp_config_t ptp_config;
-	float clk_ratio;
+	double clk_ratio;
 	struct k_mutex ptp_mutex;
 #endif
 	struct k_sem tx_buf_sem;
@@ -1646,14 +1646,14 @@ static int ptp_clock_mcux_adjust(const struct device *dev, int increment)
 	return ret;
 }
 
-static int ptp_clock_mcux_rate_adjust(const struct device *dev, float ratio)
+static int ptp_clock_mcux_rate_adjust(const struct device *dev, double ratio)
 {
 	const int hw_inc = NSEC_PER_SEC / CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ;
 	struct ptp_context *ptp_context = dev->data;
 	struct eth_context *context = ptp_context->eth_context;
 	int corr;
 	int32_t mul;
-	float val;
+	double val;
 
 	/* No change needed. */
 	if ((ratio > 1.0 && ratio - 1.0 < 0.00000001) ||

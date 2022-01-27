@@ -695,7 +695,7 @@ static int ptp_clock_adjust_native_posix(const struct device *clk,
 }
 
 static int ptp_clock_rate_adjust_native_posix(const struct device *clk,
-					      float ratio)
+					      double ratio)
 {
 	ARG_UNUSED(clk);
 	ARG_UNUSED(ratio);

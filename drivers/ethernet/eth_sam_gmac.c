@@ -2448,7 +2448,7 @@ static int ptp_clock_sam_gmac_adjust(const struct device *dev, int increment)
 }
 
 static int ptp_clock_sam_gmac_rate_adjust(const struct device *dev,
-					  float ratio)
+					  double ratio)
 {
 	return -ENOTSUP;
 }
