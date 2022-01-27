@@ -391,6 +391,12 @@ void helper_pdu_encode_cte_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 }
 
+void helper_pdu_encode_zero(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = 0;
+}
+
 void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param)
 {
 	rx->hdr.rx_ftr.iq_report = (struct cte_conn_iq_report *)param;

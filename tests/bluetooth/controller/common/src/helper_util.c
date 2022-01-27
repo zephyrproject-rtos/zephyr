@@ -78,6 +78,7 @@ helper_pdu_encode_func_t *const helper_pdu_encode[] = {
 	[LL_LENGTH_RSP] = helper_pdu_encode_length_rsp,
 	[LL_CTE_REQ] = helper_pdu_encode_cte_req,
 	[LL_CTE_RSP] = helper_pdu_encode_cte_rsp,
+	[LL_ZERO] = helper_pdu_encode_zero,
 };
 
 helper_pdu_verify_func_t *const helper_pdu_verify[] = {
