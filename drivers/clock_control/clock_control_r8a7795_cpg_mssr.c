@@ -121,6 +121,9 @@ static int r8a7795_cpg_get_rate(const struct device *dev,
 	case R8A7795_CLK_S3D4:
 		*rate = S3D4_CLK_RATE;
 		break;
+	case R8A7795_CLK_S0D12:
+		*rate = S0D12_CLK_RATE;
+		break;
 	default:
 		ret = -ENOTSUP;
 		break;
