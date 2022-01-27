@@ -11,6 +11,6 @@ zephyr_sources_ifdef(
   zephyr_library_sources_ifdef(CONFIG_BT_OTS_DIR_LIST_OBJ ots_dir_list.c)
 
 zephyr_library_sources_ifdef(
-  CONFIG_BT_OTC
+  CONFIG_BT_OTS_CLIENT
   otc.c
   ots_l2cap.c)
