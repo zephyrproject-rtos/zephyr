@@ -318,10 +318,19 @@ Drivers and Sensors
 
 * Modem
 
+* Pin control
 
-* Pinctrl
+  * Introduced a new state-based pin control (``pinctrl``) API inspired by the
+    Linux design principles. The ``pinctrl`` API will replace the existing
+    pinmux API, so all platforms using pinmux are encouraged to migrate. A
+    detailed guide with design principles and implementation guidelines can be
+    found in :ref:`pinctrl-guide`.
+  * Platforms already supporting the ``pinctrl`` API:
 
-  * Added support for STM32
+    * GigaDevice GD32
+    * Nordic (preliminary support)
+    * Renesas R-Car
+    * STM32
 
 * PWM
 
