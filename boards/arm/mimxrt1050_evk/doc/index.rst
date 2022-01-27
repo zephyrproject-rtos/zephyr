@@ -249,6 +249,10 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_05 | USDHC1_DATA3    | SD Card                   |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_02 | 1588_EVENT2_OUT | 1588                      |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_03 | 1588_EVENT2_IN  | 1588                      |
++---------------+-----------------+---------------------------+
 
 .. note::
         In order to use the SPI peripheral on this board, resistors R278,
