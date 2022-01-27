@@ -28,7 +28,7 @@
 #include "ots_oacp_internal.h"
 #include "ots_olcp_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_OTC)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_OTS_CLIENT)
 #define LOG_MODULE_NAME bt_otc
 #include "common/log.h"
 
@@ -1296,7 +1296,7 @@ static int decode_record(struct net_buf_simple *buf,
 
 	rec->metadata.id = net_buf_simple_pull_le48(buf);
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_OTC)) {
+	if (IS_ENABLED(CONFIG_BT_DEBUG_OTS_CLIENT)) {
 		char t[BT_OTS_OBJ_ID_STR_LEN];
 
 		(void)bt_ots_obj_id_to_str(rec->metadata.id, t, sizeof(t));

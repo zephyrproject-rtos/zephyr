@@ -39,24 +39,24 @@ struct mpl_tseg {
 
 /* Tracks */
 struct mpl_track {
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t             id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
+#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
 	char                 title[CONFIG_BT_MCS_TRACK_TITLE_MAX];
 	int32_t              duration;
 	struct mpl_tseg     *segment;
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t             segments_id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
+#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
 	struct mpl_track    *prev;
 	struct mpl_track    *next;
 };
 
 /* Groups */
 struct mpl_group {
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t             id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
+#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
 	char                 title[CONFIG_BT_MCS_GROUP_TITLE_MAX];
 	struct mpl_track    *track;
 	struct mpl_group    *parent;
@@ -67,9 +67,9 @@ struct mpl_group {
 /** @brief Media Player */
 struct mpl_mediaplayer   {
 	char                name[CONFIG_BT_MCS_MEDIA_PLAYER_NAME_MAX];
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t            icon_id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
+#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
 	char                icon_url[CONFIG_BT_MCS_ICON_URL_MAX];
 	struct mpl_group   *group;
 	int32_t             track_pos;
@@ -79,9 +79,9 @@ struct mpl_mediaplayer   {
 	uint8_t             playing_order;
 	uint16_t            playing_orders_supported;
 	uint32_t            opcodes_supported;
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t            search_results_id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
+#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
 	uint8_t             content_ctrl_id;
 	struct media_proxy_pl_calls calls;
 
