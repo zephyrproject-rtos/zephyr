@@ -15,6 +15,7 @@
 #define LOG_MODULE_NAME bt_mesh_settings
 #include "common/log.h"
 
+#include "host/hci_core.h"
 #include "mesh.h"
 #include "subnet.h"
 #include "app_keys.h"
@@ -56,6 +57,16 @@ int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 
 static int mesh_commit(void)
 {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		/* The Bluetooth mesh settings loader calls bt_mesh_start() immediately
+		 * after loading the settings. This is not intended to work before
+		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
+		 * tree to be loaded after @ref bt_enable is completed, so this handler
+		 * will be called again later.
+		 */
+		return 0;
+	}
+
 	if (!bt_mesh_subnet_next(NULL)) {
 		/* Nothing to do since we're not yet provisioned */
 		return 0;
