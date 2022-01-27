@@ -133,14 +133,11 @@ static uint32_t elapsed(void)
 /* Interrupt fires every time GPT timer reaches set value.
  * GPT timer will reset to 0x0.
  *
- * Note: we use a direct ISR for latency concerns.
  */
-ISR_DIRECT_DECLARE(mcux_imx_gpt_isr)
+void mcux_imx_gpt_isr(const void *arg)
 {
-	/* Note: we do not call PM hooks in this function,
-	 * GPT timer does not need PM
-	 */
-	ISR_DIRECT_HEADER();
+	ARG_UNUSED(arg);
+
 	/* Update the value of 'wrapped_cycles' */
 	elapsed();
 
@@ -167,8 +164,6 @@ ISR_DIRECT_DECLARE(mcux_imx_gpt_isr)
 	/* If system is tickful, interrupt will fire again at next tick */
 	sys_clock_announce(1);
 #endif
-	ISR_DIRECT_FOOTER(1);
-	return 1;
 }
 
 /* Next needed call to sys_clock_announce will not be until the specified number
@@ -318,8 +313,8 @@ int sys_clock_driver_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 	/* Configure ISR. Use instance 0 of the GPT timer */
-	IRQ_DIRECT_CONNECT(DT_IRQN(GPT_INST), DT_IRQ(GPT_INST, priority),
-		    mcux_imx_gpt_isr, 0);
+	IRQ_CONNECT(DT_IRQN(GPT_INST), DT_IRQ(GPT_INST, priority),
+		    mcux_imx_gpt_isr, NULL, 0);
 
 	base = (GPT_Type *)DT_REG_ADDR(GPT_INST);
 
