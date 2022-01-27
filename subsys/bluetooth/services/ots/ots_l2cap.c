@@ -19,7 +19,14 @@
 
 #include <logging/log.h>
 
+/* This l2cap is the only OTS-file in use for OTC.
+ * If only OTC is used, the OTS log module must be registered here.
+ */
+#if IS_ENABLED(CONFIG_BT_OTS)
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
+#elif IS_ENABLED(CONFIG_BT_OTC)
+LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
+#endif
 
 /* According to BLE specification Assigned Numbers that are used in the
  * Logical Link Control for protocol/service multiplexers.
