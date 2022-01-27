@@ -63,8 +63,7 @@ static void codec_read_all_regs(const struct device *dev);
 
 static int codec_initialize(const struct device *dev)
 {
-	struct codec_driver_config *const dev_cfg =
-		(struct codec_driver_config *)dev->config;
+	const struct codec_driver_config *const dev_cfg = dev->config;
 
 	if (!device_is_ready(dev_cfg->bus.bus)) {
 		LOG_ERR("I2C device not ready");
@@ -82,8 +81,7 @@ static int codec_initialize(const struct device *dev)
 static int codec_configure(const struct device *dev,
 			   struct audio_codec_cfg *cfg)
 {
-	struct codec_driver_config *const dev_cfg =
-		(struct codec_driver_config *)dev->config;
+	const struct codec_driver_config *const dev_cfg = dev->config;
 	int ret;
 
 	if (cfg->dai_type != AUDIO_DAI_TYPE_I2S) {
@@ -183,8 +181,7 @@ static void codec_write_reg(const struct device *dev, struct reg_addr reg,
 			    uint8_t val)
 {
 	struct codec_driver_data *const dev_data = dev->data;
-	struct codec_driver_config *const dev_cfg =
-		(struct codec_driver_config *)dev->config;
+	const struct codec_driver_config *const dev_cfg = dev->config;
 
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
@@ -201,8 +198,7 @@ static void codec_read_reg(const struct device *dev, struct reg_addr reg,
 			   uint8_t *val)
 {
 	struct codec_driver_data *const dev_data = dev->data;
-	struct codec_driver_config *const dev_cfg =
-		(struct codec_driver_config *)dev->config;
+	const struct codec_driver_config *const dev_cfg = dev->config;
 
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
