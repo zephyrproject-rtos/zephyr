@@ -16,7 +16,6 @@
 #include <shell/shell.h>
 #endif
 #include <sys/printk.h>
-#include <logging/log_ctrl.h>
 
 #if defined CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE
 #include <tc_util_user_override.h>
@@ -175,6 +174,7 @@ static inline void test_time_ms(void)
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)
+#include <logging/log_ctrl.h>
 #define TC_END_POST(result) do { \
 	LOG_PANIC(); \
 	posix_exit(result); \
