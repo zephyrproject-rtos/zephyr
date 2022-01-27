@@ -149,6 +149,9 @@ int can_mcan_set_timing(const struct can_mcan_config *cfg,
 		return -EIO;
 	}
 
+	/* Configuration Change Enable */
+	can->cccr |= CAN_MCAN_CCCR_CCE;
+
 	can_mcan_configure_timing(can, timing, timing_data);
 
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
