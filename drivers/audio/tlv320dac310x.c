@@ -28,10 +28,7 @@ struct codec_driver_config {
 	const struct device *i2c_device;
 	const char	*i2c_dev_name;
 	uint8_t		i2c_address;
-	const struct device *gpio_device;
-	const char	*gpio_dev_name;
-	uint32_t		gpio_pin;
-	int		gpio_flags;
+	struct gpio_dt_spec reset_gpio;
 };
 
 struct codec_driver_data {
@@ -42,10 +39,7 @@ static struct codec_driver_config codec_device_config = {
 	.i2c_device	= NULL,
 	.i2c_dev_name	= DT_INST_BUS_LABEL(0),
 	.i2c_address	= DT_INST_REG_ADDR(0),
-	.gpio_device	= NULL,
-	.gpio_dev_name	= DT_INST_GPIO_LABEL(0, reset_gpios),
-	.gpio_pin	= DT_INST_GPIO_PIN(0, reset_gpios),
-	.gpio_flags	= DT_INST_GPIO_FLAGS(0, reset_gpios),
+	.reset_gpio	= GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 };
 
 static struct codec_driver_data codec_device_data;
@@ -84,12 +78,9 @@ static int codec_initialize(const struct device *dev)
 		return -ENXIO;
 	}
 
-	/* bind GPIO */
-	dev_cfg->gpio_device = device_get_binding(dev_cfg->gpio_dev_name);
-
-	if (dev_cfg->gpio_device == NULL) {
-		LOG_ERR("GPIO device binding error");
-		return -ENXIO;
+	if (!device_is_ready(dev_cfg->reset_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
 	return 0;
@@ -110,8 +101,7 @@ static int codec_configure(const struct device *dev,
 	/* Configure reset GPIO, and set the line to inactive, which will also
 	 * de-assert the reset line and thus enable the codec.
 	 */
-	gpio_pin_configure(dev_cfg->gpio_device, dev_cfg->gpio_pin,
-			   dev_cfg->gpio_flags | GPIO_OUTPUT_INACTIVE);
+	gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
 
 	codec_soft_reset(dev);
 
