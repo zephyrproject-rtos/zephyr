@@ -87,6 +87,8 @@ def parse_args():
     outfile_grp = argparser.add_mutually_exclusive_group(required=True)
     outfile_grp.add_argument("--json",
                              help="Output Dictionary Logging Database file in JSON")
+    outfile_grp.add_argument("--syst",
+                             help="Output MIPI Sys-T Collateral XML file")
 
     return argparser.parse_args()
 
@@ -468,7 +470,7 @@ def extract_strings_in_one_section(section, str_mappings):
     return str_mappings
 
 
-def extract_static_strings(elf, database):
+def extract_static_strings(elf, database, section_extraction=False):
     """
     Extract static strings from ELF file using DWARF,
     and also extraction from binary data.
@@ -488,19 +490,25 @@ def extract_static_strings(elf, database):
                              str_var['addr'], one_str)
                 break
 
-    # Extract strings from ELF sections
-    string_sections = STATIC_STRING_SECTIONS
+    if section_extraction:
+        # Extract strings from ELF sections
+        string_sections = STATIC_STRING_SECTIONS
+        rawstr_map = {}
 
-    # Some architectures may put static strings into additional sections.
-    # So need to extract them too.
-    arch_data = dictionary_parser.log_database.ARCHS[database.get_arch()]
-    if "extra_string_section" in arch_data:
-        string_sections.extend(arch_data['extra_string_section'])
+        # Some architectures may put static strings into additional sections.
+        # So need to extract them too.
+        arch_data = dictionary_parser.log_database.ARCHS[database.get_arch()]
+        if "extra_string_section" in arch_data:
+            string_sections.extend(arch_data['extra_string_section'])
 
-    for sect_name in string_sections:
-        if sect_name in elf_sections:
-            string_mappings = extract_strings_in_one_section(elf_sections[sect_name],
-                                                             string_mappings)
+        for sect_name in string_sections:
+            if sect_name in elf_sections:
+                rawstr_map = extract_strings_in_one_section(elf_sections[sect_name],
+                                                                rawstr_map)
+
+        for one_str in rawstr_map:
+            if one_str not in string_mappings:
+                string_mappings[one_str] = rawstr_map[one_str]
 
     if len(string_mappings) > 0:
         database.set_string_mappings(string_mappings)
@@ -527,9 +535,13 @@ def main():
 
     if args.json:
         logger.info("JSON Database file %s", args.json)
-    else:
-        logger.error("Need to specify output file.")
-        sys.exit(1)
+        section_extraction = True
+        get_subsys_info = True
+
+    if args.syst:
+        logger.info("MIPI Sys-T Collateral file %s", args.syst)
+        section_extraction = False
+        get_subsys_info = False
 
     elf = ELFFile(elffile)
 
@@ -562,16 +574,23 @@ def main():
         PTR_FMT = '0x%016x'
 
     # Extract strings from ELF files
-    extract_static_strings(elf, database)
+    extract_static_strings(elf, database, section_extraction)
 
     # Extract information related to logging subsystem
-    extract_logging_subsys_information(elf, database)
+    if get_subsys_info:
+        extract_logging_subsys_information(elf, database)
 
     # Write database file
     if args.json:
         if not LogDatabase.write_json_database(args.json, database):
             logger.error("ERROR: Cannot open database file for write: %s, exiting...",
                          args.json)
+            sys.exit(1)
+
+    if args.syst:
+        if not LogDatabase.write_syst_database(args.syst, database):
+            logger.error("ERROR: Cannot open database file for write: %s, exiting...",
+                         args.syst)
             sys.exit(1)
 
     elffile.close()

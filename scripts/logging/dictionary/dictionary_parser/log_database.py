@@ -12,6 +12,7 @@ import base64
 import copy
 import json
 
+from .mipi_syst import gen_syst_xml_file
 from .utils import extract_one_string_in_section
 
 
@@ -307,6 +308,21 @@ class LogDatabase():
         try:
             with open(db_file_name, "w", encoding="iso-8859-1") as db_fd:
                 db_fd.write(json.dumps(json_db))
+        except OSError:
+            return False
+
+        return True
+
+    @staticmethod
+    def write_syst_database(db_file_name, database):
+        """
+        Write the database into MIPI Sys-T Collateral XML file
+        """
+
+        try:
+            with open(db_file_name, "w", encoding="iso-8859-1") as db_fd:
+                xml = gen_syst_xml_file(database)
+                db_fd.write(xml)
         except OSError:
             return False
 
