@@ -297,6 +297,11 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 Configuring a Debug Probe
 =========================
 
+.. note::
+	When the device transitions into low power states, the debugger may be
+	unable to access the chip. Use caution when enabling ``CONFIG_PM``, and
+	if the debugger cannot flash the part, see :ref:`Troubleshooting RT1064`
+
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
 however the :ref:`pyocd-debug-host-tools` do not yet support programming the
@@ -369,6 +374,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! mimxrt1064_evk
+
+
+.. _Troubleshooting RT1064:
 
 Troubleshooting
 ===============
