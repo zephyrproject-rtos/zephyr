@@ -380,7 +380,7 @@ static int ptp_clock_e1000_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int ptp_clock_e1000_rate_adjust(const struct device *dev, float ratio)
+static int ptp_clock_e1000_rate_adjust(const struct device *dev, double ratio)
 {
 	const int hw_inc = NSEC_PER_SEC / CONFIG_ETH_E1000_PTP_CLOCK_SRC_HZ;
 	struct ptp_context *ptp_context = dev->data;
