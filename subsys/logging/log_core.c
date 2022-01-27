@@ -19,6 +19,7 @@
 #include <ctype.h>
 #include <logging/log_frontend.h>
 #include <syscall_handler.h>
+#include <logging/log_output_dict.h>
 
 LOG_MODULE_REGISTER(log);
 
@@ -56,6 +57,26 @@ LOG_MODULE_REGISTER(log);
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
 #define CONFIG_LOG_BUFFER_SIZE 4
+#endif
+
+#ifndef CONFIG_LOG1
+log_format_func_t format_table[] = {
+	[LOG_OUTPUT_TEXT] = log_output_msg2_process,
+	[LOG_OUTPUT_SYST] = IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) ?
+						log_output_msg2_syst_process : NULL,
+	[LOG_OUTPUT_DICT] = IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT) ?
+						log_dict_output_msg2_process : NULL
+};
+
+log_format_func_t log_format_func_t_get(uint32_t log_type)
+{
+	return format_table[log_type];
+}
+
+size_t log_format_table_size(void)
+{
+	return ARRAY_SIZE(format_table);
+}
 #endif
 
 struct log_strdup_buf {
@@ -353,6 +374,26 @@ void log_n(const char *str,
 		msg_finalize(msg, src_level);
 	}
 }
+
+#ifndef CONFIG_LOG1
+const struct log_backend *log_format_set_all_active_backends(size_t log_type)
+{
+	const struct log_backend *backend;
+	const struct log_backend *failed_backend = NULL;
+
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		backend = log_backend_get(i);
+		if (log_backend_is_active(backend)) {
+			int retCode = log_backend_format_set(backend, log_type);
+
+			if (retCode != 0) {
+				failed_backend = backend;
+			}
+		}
+	}
+	return failed_backend;
+}
+#endif
 
 void log_hexdump(const char *str, const void *data, uint32_t length,
 		 struct log_msg_ids src_level)

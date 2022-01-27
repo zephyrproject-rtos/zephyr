@@ -598,12 +598,6 @@ void log_output_msg2_process(const struct log_output *output,
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	uint32_t prefix_offset;
 
-	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_msg2_syst_process(output, msg, flags);
-		return;
-	}
-
 	if (!raw_string) {
 		void *source = (void *)log_msg2_get_source(msg);
 		uint8_t domain_id = log_msg2_get_domain(msg);
