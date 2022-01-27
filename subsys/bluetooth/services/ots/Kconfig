@@ -33,16 +33,6 @@ config BT_OTS_MAX_INST_CNT
 	default 1
 	range 1 1 if !BT_OTS_SECONDARY_SVC
 
-config BT_OTS_MAX_OBJ_CNT
-	hex "Maximum number of objects that each service instance can store"
-	default 0x05
-	# Given the maximum size of a directory listing record (172) and the maximum size of an
-	# object using the net_buf implementation is 2^16-1, the maximum number of objects is given
-	# by 2^16-1 / 172 = 381 == 0x17D)
-	range 0x02 0x17D if BT_OTS_DIR_LIST_OBJ
-	# Max obj count is otherwise the non-RFU IDs available
-	range 0x01 0xFFFFFFFFFFFFFEFF
-
 config BT_OTS_SECONDARY_SVC
 	bool "Register OTS as Secondary Service"
 
@@ -69,6 +59,28 @@ config BT_OTS_OLCP_GO_TO_SUPPORT
 	bool "Support OLCP Go To Operation"
 	default y
 
+config BT_OTS_OBJ_MAX_NAME_LEN
+	int "Maximum object name length"
+	default 120
+	range 1 120
+
+config BT_OTS_OBJ_NAME_WRITE_SUPPORT
+	bool "Support object name write"
+
+endif # BT_OTS
+
+if BT_OTS || BT_OTC
+
+config BT_OTS_MAX_OBJ_CNT
+	hex "Maximum number of objects that each service instance can store"
+	default 0x05
+	# Given the maximum size of a directory listing record (172) and the maximum size of an
+	# object using the net_buf implementation is 2^16-1, the maximum number of objects is given
+	# by 2^16-1 / 172 = 381 == 0x17D)
+	range 0x02 0x17D if BT_OTS_DIR_LIST_OBJ
+	# Max obj count is otherwise the non-RFU IDs available
+	range 0x01 0xFFFFFFFFFFFFFEFF
+
 config BT_OTS_L2CAP_CHAN_TX_MTU
 	int "Size of TX MTU for Object Transfer Channel"
 	default 256
@@ -80,16 +92,8 @@ config BT_OTS_L2CAP_CHAN_RX_MTU
 	default BT_BUF_ACL_RX_SIZE
 	range 21 BT_BUF_ACL_RX_SIZE
 
-config BT_OTS_OBJ_MAX_NAME_LEN
-	int "Maximum object name length"
-	default 120
-	range 1 120
-
-config BT_OTS_OBJ_NAME_WRITE_SUPPORT
-	bool "Support object name write"
-
 module = BT_OTS
 module-str = BT_OTS
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
 
-endif # BT_OTS
+endif # BT_OTS || BT_OTC
