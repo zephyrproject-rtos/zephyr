@@ -291,6 +291,15 @@ You should see the following message on the console:
 
    Hello World! arm
 
+.. Note:
+
+   Nucleo WL55JC board is provided with a stock firmware which demonstrates
+   sleep mode. Unfortunately, default openocd configuration, which is debug
+   compatible, doesn't allow flashing when SoC is in sleep mode.
+   As a consequence, when flashing Nucleo WL55JC board over a stock firmware,
+   please update board's openocd.cfg configuration file to select sleep mode
+   compatible configuration.
+
 Debugging
 =========
 
