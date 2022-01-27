@@ -25,9 +25,7 @@ LOG_MODULE_REGISTER(tlv320dac310x);
 #define CODEC_OUTPUT_VOLUME_MIN		(-78 * 2)
 
 struct codec_driver_config {
-	const struct device *i2c_device;
-	const char	*i2c_dev_name;
-	uint8_t		i2c_address;
+	struct i2c_dt_spec bus;
 	struct gpio_dt_spec reset_gpio;
 };
 
@@ -36,9 +34,7 @@ struct codec_driver_data {
 };
 
 static struct codec_driver_config codec_device_config = {
-	.i2c_device	= NULL,
-	.i2c_dev_name	= DT_INST_BUS_LABEL(0),
-	.i2c_address	= DT_INST_REG_ADDR(0),
+	.bus		= I2C_DT_SPEC_INST_GET(0),
 	.reset_gpio	= GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 };
 
@@ -70,12 +66,9 @@ static int codec_initialize(const struct device *dev)
 	struct codec_driver_config *const dev_cfg =
 		(struct codec_driver_config *)dev->config;
 
-	/* bind I2C */
-	dev_cfg->i2c_device = device_get_binding(dev_cfg->i2c_dev_name);
-
-	if (dev_cfg->i2c_device == NULL) {
-		LOG_ERR("I2C device binding error");
-		return -ENXIO;
+	if (!device_is_ready(dev_cfg->bus.bus)) {
+		LOG_ERR("I2C device not ready");
+		return -ENODEV;
 	}
 
 	if (!device_is_ready(dev_cfg->reset_gpio.port)) {
@@ -195,13 +188,11 @@ static void codec_write_reg(const struct device *dev, struct reg_addr reg,
 
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
-		i2c_reg_write_byte(dev_cfg->i2c_device,
-				dev_cfg->i2c_address, 0, reg.page);
+		i2c_reg_write_byte_dt(&dev_cfg->bus, 0, reg.page);
 		dev_data->reg_addr_cache.page = reg.page;
 	}
 
-	i2c_reg_write_byte(dev_cfg->i2c_device,
-			dev_cfg->i2c_address, reg.reg_addr, val);
+	i2c_reg_write_byte_dt(&dev_cfg->bus, reg.reg_addr, val);
 	LOG_DBG("WR PG:%u REG:%02u VAL:0x%02x",
 			reg.page, reg.reg_addr, val);
 }
@@ -215,13 +206,11 @@ static void codec_read_reg(const struct device *dev, struct reg_addr reg,
 
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
-		i2c_reg_write_byte(dev_cfg->i2c_device,
-				dev_cfg->i2c_address, 0, reg.page);
+		i2c_reg_write_byte_dt(&dev_cfg->bus, 0, reg.page);
 		dev_data->reg_addr_cache.page = reg.page;
 	}
 
-	i2c_reg_read_byte(dev_cfg->i2c_device,
-			dev_cfg->i2c_address, reg.reg_addr, val);
+	i2c_reg_read_byte_dt(&dev_cfg->bus, reg.reg_addr, val);
 	LOG_DBG("RD PG:%u REG:%02u VAL:0x%02x",
 			reg.page, reg.reg_addr, *val);
 }
