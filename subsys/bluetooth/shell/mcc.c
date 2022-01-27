@@ -17,8 +17,8 @@
 
 #include "bt.h"
 
-#include <bluetooth/services/otc.h>
-#include "../services/ots/otc_internal.h"
+#include <bluetooth/services/ots_client.h>
+#include "../services/ots/ots_client_internal.h"
 #include "../audio/media_proxy_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCC)
