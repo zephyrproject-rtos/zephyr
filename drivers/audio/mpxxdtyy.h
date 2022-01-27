@@ -19,8 +19,11 @@ extern "C" {
 #define MPXXDTYY_MIN_PDM_FREQ		1200000 /* 1.2MHz */
 #define MPXXDTYY_MAX_PDM_FREQ		3250000 /* 3.25MHz */
 
-struct mpxxdtyy_data {
+struct mpxxdtyy_config {
 	const struct device *comm_master;
+};
+
+struct mpxxdtyy_data {
 	enum dmic_state		state;
 	TPDMFilter_InitStruct	pdm_filter[2];
 	size_t			pcm_mem_size;
