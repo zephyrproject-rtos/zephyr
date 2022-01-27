@@ -11,6 +11,7 @@
 #include <dt-bindings/gpio/gpio.h>
 
 #include <atmel/samx7x-pinctrl.dtsi>
+#include <atmel/dma_atmel_samx7x.h>
 
 / {
 	aliases {

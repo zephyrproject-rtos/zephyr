@@ -149,6 +149,18 @@ Flashing
       :board: sam_e70b_xplained
       :goals: build flash
 
+#. This board can also be used to target only the SAMS70 subset. The
+   S70 IC's are the same as the E70 parts except that they do not
+   support ethernet and can. For more information on the differences
+   see the datasheet. To target the SAMS70 subset build for the
+   "sam_s70_xplained" or the "sam_s70b_xplained" depending on the
+   actual IC variant on the board.
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam_s70_xplained
+      :goals: build flash
+
 You can flash the image using an external debug adapter such as J-Link
 or ULINK, connected to the 20-pin JTAG header. Supply the name of the
 debug adapter (e.g., ``jlink``) via an OPENOCD_INTERFACE environment

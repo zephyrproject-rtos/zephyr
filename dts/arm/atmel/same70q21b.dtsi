@@ -7,4 +7,3 @@
 
 #include <atmel/same70b.dtsi>
 #include <atmel/samx7xx21.dtsi>
-#include <atmel/dma_atmel_samx7x.h>

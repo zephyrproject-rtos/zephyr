@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022 RIC Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/sams70q21b.dtsi>
+#include "sam_s70_xplained-common.dtsi"
+
+/ {
+	model = "Atmel SAM E70B Xplained board (Targeting S70b Subset)";
+	compatible = "atmel,sam_s70b_xplained", "atmel,sams70q21b", "atmel,sams70b";
+};

@@ -1,0 +1,18 @@
+identifier: sam_s70b_xplained
+name: SAM E70B Xplained (S70B Subset)
+type: mcu
+arch: arm
+ram: 384
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - i2s
+  - gpio
+  - spi
+  - watchdog
+  - usb_device
+  - pwm
