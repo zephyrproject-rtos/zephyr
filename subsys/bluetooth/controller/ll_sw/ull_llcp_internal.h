@@ -481,7 +481,7 @@ void llcp_rr_run(struct ll_conn *conn);
 void llcp_rr_complete(struct ll_conn *conn);
 void llcp_rr_connect(struct ll_conn *conn);
 void llcp_rr_disconnect(struct ll_conn *conn);
-void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx);
+void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 /*

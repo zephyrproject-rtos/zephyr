@@ -1024,6 +1024,382 @@ static bool pdu_is_terminate(struct pdu_data *pdu)
 	return pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
 }
 
+#if defined(CONFIG_BT_PERIPHERAL)
+static bool pdu_validate_conn_update_ind(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.conn_update_ind) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool pdu_validate_chan_map_ind(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.chan_map_ind) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+static bool pdu_validate_terminate_ind(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.terminate_ind) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
+static bool pdu_validate_enc_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.enc_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
+static bool pdu_validate_enc_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.enc_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool pdu_validate_start_enc_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.start_enc_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
+static bool pdu_validate_start_enc_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.start_enc_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif
+
+static bool pdu_validate_unknown_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.unknown_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static bool pdu_validate_feature_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.feature_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif
+
+#if defined(CONFIG_BT_CENTRAL)
+static bool pdu_validate_feature_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.feature_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif
+
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
+static bool pdu_validate_pause_enc_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.pause_enc_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
+static bool pdu_validate_pause_enc_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.pause_enc_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif
+
+static bool pdu_validate_version_ind(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.version_ind) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool pdu_validate_reject_ind(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.reject_ind) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_CENTRAL)
+static bool pdu_validate_per_init_feat_xchg(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.per_init_feat_xchg) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static bool pdu_validate_conn_param_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.conn_param_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+static bool pdu_validate_conn_param_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.conn_param_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool pdu_validate_reject_ext_ind(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.reject_ext_ind) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+#if defined(CONFIG_BT_CTLR_LE_PING)
+static bool pdu_validate_ping_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.ping_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_LE_PING */
+
+static bool pdu_validate_ping_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.ping_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+static bool pdu_validate_length_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.length_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+static bool pdu_validate_length_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.length_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+static bool pdu_validate_phy_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.phy_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+static bool pdu_validate_phy_rsp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.phy_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool pdu_validate_phy_upd_ind(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.phy_upd_ind) + 1) {
+		return false;
+	}
+
+	return true;
+}
+
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
+static bool pdu_validate_min_used_chan_ind(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.min_used_chans_ind) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+static bool pdu_validate_cte_req(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.cte_req) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+static bool pdu_validate_cte_resp(struct pdu_data *pdu)
+{
+	if (pdu->len != sizeof(pdu->llctrl.cte_rsp) + 1) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+typedef bool (*pdu_param_validate_t)(struct pdu_data *pdu);
+
+struct pdu_validate {
+	/* TODO can be just size if no other sanity checks here */
+	pdu_param_validate_t validate_cb;
+};
+
+static const struct pdu_validate pdu_validate[] = {
+#if defined(CONFIG_BT_PERIPHERAL)
+	[PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND] = { pdu_validate_conn_update_ind },
+	[PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND] = { pdu_validate_chan_map_ind },
+#endif /* CONFIG_BT_PERIPHERAL */
+	[PDU_DATA_LLCTRL_TYPE_TERMINATE_IND] = { pdu_validate_terminate_ind },
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
+	[PDU_DATA_LLCTRL_TYPE_ENC_REQ] = { pdu_validate_enc_req },
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
+	[PDU_DATA_LLCTRL_TYPE_ENC_RSP] = { pdu_validate_enc_rsp },
+	[PDU_DATA_LLCTRL_TYPE_START_ENC_REQ] = { pdu_validate_start_enc_req },
+#endif
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
+	[PDU_DATA_LLCTRL_TYPE_START_ENC_RSP] = { pdu_validate_start_enc_rsp },
+#endif
+	[PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP] = { pdu_validate_unknown_rsp },
+#if defined(CONFIG_BT_PERIPHERAL)
+	[PDU_DATA_LLCTRL_TYPE_FEATURE_REQ] = { pdu_validate_feature_req },
+#endif
+#if defined(CONFIG_BT_CENTRAL)
+	[PDU_DATA_LLCTRL_TYPE_FEATURE_RSP] = { pdu_validate_feature_rsp },
+#endif
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
+	[PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ] = { pdu_validate_pause_enc_req },
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
+	[PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP] = { pdu_validate_pause_enc_rsp },
+#endif
+	[PDU_DATA_LLCTRL_TYPE_VERSION_IND] = { pdu_validate_version_ind },
+	[PDU_DATA_LLCTRL_TYPE_REJECT_IND] = { pdu_validate_reject_ind },
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_CENTRAL)
+	[PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG] = { pdu_validate_per_init_feat_xchg },
+#endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	[PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ] = { pdu_validate_conn_param_req },
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	[PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP] = { pdu_validate_conn_param_rsp },
+	[PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND] = { pdu_validate_reject_ext_ind },
+#if defined(CONFIG_BT_CTLR_LE_PING)
+	[PDU_DATA_LLCTRL_TYPE_PING_REQ] = { pdu_validate_ping_req },
+#endif /* CONFIG_BT_CTLR_LE_PING */
+	[PDU_DATA_LLCTRL_TYPE_PING_RSP] = { pdu_validate_ping_rsp },
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = { pdu_validate_length_req },
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = { pdu_validate_length_rsp },
+#if defined(CONFIG_BT_CTLR_PHY)
+	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = { pdu_validate_phy_req },
+#endif /* CONFIG_BT_CTLR_PHY */
+	[PDU_DATA_LLCTRL_TYPE_PHY_RSP] = { pdu_validate_phy_rsp },
+	[PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND] = { pdu_validate_phy_upd_ind },
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
+	[PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND] = { pdu_validate_min_used_chan_ind },
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	[PDU_DATA_LLCTRL_TYPE_CTE_REQ] = { pdu_validate_cte_req },
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = { pdu_validate_cte_resp },
+#endif /* PDU_DATA_LLCTRL_TYPE_CTE_RSP */
+};
+
+static bool pdu_is_valid(struct pdu_data *pdu)
+{
+	/* the should be at least 1 byte of data with opcode*/
+	if (pdu->len < 1) {
+		/* fake opcode */
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
+		return false;
+	}
+
+	if (pdu->llctrl.opcode < ARRAY_SIZE(pdu_validate)) {
+		pdu_param_validate_t cb;
+
+		cb = pdu_validate[pdu->llctrl.opcode].validate_cb;
+		if (cb) {
+			return cb(pdu);
+		}
+	}
+
+	/* consider unsupported and unknows PDUs as valid */
+	return true;
+}
+
 void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 {
 	struct proc_ctx *ctx;
@@ -1048,10 +1424,29 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 	struct pdu_data *pdu;
 	bool unexpected_l;
 	bool unexpected_r;
+	bool pdu_valid;
 
 	pdu = (struct pdu_data *)rx->pdu;
 
-	if (pdu_is_terminate(pdu)) {
+	pdu_valid = pdu_is_valid(pdu);
+
+	if (!pdu_valid) {
+		struct proc_ctx *ctx;
+
+		ctx = llcp_lr_peek(conn);
+		if (ctx && pdu_is_expected(pdu, ctx)) {
+			return;
+		}
+
+		ctx = llcp_rr_peek(conn);
+		if (ctx && pdu_is_expected(pdu, ctx)) {
+			return;
+		}
+
+		/*  Process invalid PDU's as new procedure */
+		ctx_l = NULL;
+		ctx_r = NULL;
+	} else if (pdu_is_terminate(pdu)) {
 		/*  Process LL_TERMINATE_IND PDU's as new procedure */
 		ctx_l = NULL;
 		ctx_r = NULL;
@@ -1130,7 +1525,8 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 				 */
 
 				/* Process PDU as a new remote request */
-				llcp_rr_new(conn, rx);
+				LL_ASSERT(pdu_valid);
+				llcp_rr_new(conn, rx, true);
 			} else {
 				/* Local active procedure
 				 * Expected local procedure PDU
@@ -1154,7 +1550,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 		 */
 
 		/* Process PDU as a new remote request */
-		llcp_rr_new(conn, rx);
+		llcp_rr_new(conn, rx, pdu_valid);
 	}
 }
 

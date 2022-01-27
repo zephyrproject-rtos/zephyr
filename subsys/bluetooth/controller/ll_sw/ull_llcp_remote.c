@@ -767,7 +767,7 @@ static const struct proc_role new_proc_lut[] = {
 	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
 };
 
-void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
+void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx, bool valid_pdu)
 {
 	struct proc_ctx *ctx;
 	struct pdu_data *pdu;
@@ -777,7 +777,7 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 
 	/* Is this a valid opcode */
-	if (pdu->llctrl.opcode < ARRAY_SIZE(new_proc_lut)) {
+	if (valid_pdu && pdu->llctrl.opcode < ARRAY_SIZE(new_proc_lut)) {
 		/* Lookup procedure */
 		uint8_t role_mask  = (1 << conn->lll.role);
 		struct proc_role pr = new_proc_lut[pdu->llctrl.opcode];
