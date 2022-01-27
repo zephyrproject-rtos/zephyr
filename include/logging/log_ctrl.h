@@ -171,6 +171,15 @@ void log_backend_enable(struct log_backend const *const backend,
 void log_backend_disable(struct log_backend const *const backend);
 
 /**
+ * @brief Get backend by name.
+ *
+ * @param[in] backend_name Name of the backend as defined by the LOG_BACKEND_DEFINE.
+ *
+ * @retval Pointer to the backend instance if found, NULL if backend is not found.
+ */
+const struct log_backend *log_backend_get_by_name(const char *backend_name);
+
+/**
  * @brief Get current number of allocated buffers for string duplicates.
  */
 uint32_t log_get_strdup_pool_current_utilization(void);
