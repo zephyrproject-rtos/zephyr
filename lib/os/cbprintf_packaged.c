@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
+#include <linker/utils.h>
 #include <sys/cbprintf.h>
 #include <sys/types.h>
 #include <sys/util.h>
@@ -27,27 +28,10 @@ static inline bool ptr_in_rodata(const char *addr)
 	/* Unit test is X86 (or other host) but not using Zephyr
 	 * linker scripts.
 	 */
-#define RO_START 0
-#define RO_END 0
-#elif defined(CONFIG_ARC) || defined(CONFIG_ARM) || defined(CONFIG_X86) \
-	|| defined(CONFIG_RISCV) || defined(CONFIG_ARM64) \
-	|| defined(CONFIG_NIOS2) || defined(CONFIG_MIPS) || defined(CONFIG_SPARC)
-	extern char __rodata_region_start[];
-	extern char __rodata_region_end[];
-#define RO_START __rodata_region_start
-#define RO_END __rodata_region_end
-#elif defined(CONFIG_XTENSA)
-	extern char _rodata_start[];
-	extern char _rodata_end[];
-#define RO_START _rodata_start
-#define RO_END _rodata_end
+	return false;
 #else
-#define RO_START 0
-#define RO_END 0
+	return linker_is_in_rodata(addr);
 #endif
-
-	return ((addr >= (const char *)RO_START) &&
-		(addr < (const char *)RO_END));
 }
 
 /*

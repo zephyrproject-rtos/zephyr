@@ -20,6 +20,7 @@
 #include <logging/log_frontend.h>
 #include <syscall_handler.h>
 #include <logging/log_output_dict.h>
+#include <linker/utils.h>
 
 LOG_MODULE_REGISTER(log);
 
@@ -175,36 +176,6 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
 }
 
 /**
- * @brief Check if address is in read only section.
- *
- * @param addr Address.
- *
- * @return True if address identified within read only section.
- */
-static bool is_rodata(const void *addr)
-{
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || \
-	defined(CONFIG_ARM64) || defined(CONFIG_NIOS2) || \
-	defined(CONFIG_RISCV) || defined(CONFIG_SPARC) || defined(CONFIG_MIPS)
-	extern const char *__rodata_region_start[];
-	extern const char *__rodata_region_end[];
-	#define RO_START __rodata_region_start
-	#define RO_END __rodata_region_end
-#elif defined(CONFIG_XTENSA)
-	extern const char *_rodata_start[];
-	extern const char *_rodata_end[];
-	#define RO_START _rodata_start
-	#define RO_END _rodata_end
-#else
-	#define RO_START 0
-	#define RO_END 0
-#endif
-
-	return (((const char *)addr >= (const char *)RO_START) &&
-		((const char *)addr < (const char *)RO_END));
-}
-
-/**
  * @brief Scan string arguments and report every address which is not in read
  *	  only memory and not yet duplicated.
  *
@@ -229,7 +200,7 @@ static void detect_missed_strdup(struct log_msg *msg)
 	while (mask) {
 		idx = 31 - __builtin_clz(mask);
 		str = (const char *)log_msg_arg_get(msg, idx);
-		if (!is_rodata(str) && !log_is_strdup(str) &&
+		if (!linker_is_in_rodata(str) && !log_is_strdup(str) &&
 			(str != log_strdup_fail_msg)) {
 			const char *src_name =
 				log_source_name_get(CONFIG_LOG_DOMAIN_ID,
@@ -529,7 +500,7 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 				uint32_t idx = 31 - __builtin_clz(mask);
 				const char *str = (const char *)args[idx];
 
-				/* is_rodata(str) is not checked,
+				/* linker_is_in_rodata(str) is not checked,
 				 * because log_strdup does it.
 				 * Hence, we will do only optional check
 				 * if already not duplicated.
@@ -933,7 +904,7 @@ char *z_log_strdup(const char *str)
 	int err;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ||
-	    is_rodata(str) || k_is_user_context()) {
+	    linker_is_in_rodata(str) || k_is_user_context()) {
 		return (char *)str;
 	}
 
