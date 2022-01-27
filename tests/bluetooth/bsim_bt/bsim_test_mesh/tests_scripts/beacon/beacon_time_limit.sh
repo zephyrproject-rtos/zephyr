@@ -8,5 +8,4 @@ RunTest mesh_beacon_time_limit \
         beacon_tx_beacon_secure \
         beacon_tx_beacon_secure \
         beacon_tx_beacon_secure \
-        beacon_tx_beacon_secure \
         beacon_rx_beacon_secure

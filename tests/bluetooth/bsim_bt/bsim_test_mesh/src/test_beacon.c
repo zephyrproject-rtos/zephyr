@@ -254,7 +254,7 @@ static void test_tx_beacon_secure(void)
 	struct bt_mesh_subnet *sub;
 	
 	/* shift beaconing time line to avoid boundary cases. */
-	delay_time = get_device_nbr() * 0;
+	delay_time = get_device_nbr() * 100;
 	k_sleep(K_MSEC(delay_time));
 
 	bt_mesh_test_setup();
