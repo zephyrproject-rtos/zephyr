@@ -1,0 +1,10 @@
+sample:
+  description: TBD
+  name: TBD
+tests:
+  sample.sensor.veml7700:
+    build_only: true
+    platform_allow: blufdali_nrf52840
+    integration_platforms:
+      - blufdali_nrf52840
+    tags: sensors
