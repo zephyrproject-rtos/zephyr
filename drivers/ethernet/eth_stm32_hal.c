@@ -1267,7 +1267,7 @@ static int ptp_clock_stm32_adjust(const struct device *dev, int increment)
 	return ret;
 }
 
-static int ptp_clock_stm32_rate_adjust(const struct device *dev, float ratio)
+static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 {
 	struct ptp_context *ptp_context = dev->data;
 	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
