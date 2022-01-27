@@ -361,6 +361,7 @@
 /drivers/pwm/*gecko*                      @sun681
 /drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/pwm/*esp32*                      @LucasTambor
+/drivers/pwm/*rcar*                       @pmarzin
 /drivers/regulator/*pmic*                 @danieldegrasse
 /drivers/reset/                           @andrei-edward-popa
 /drivers/sensor/                          @MaureenHelm
