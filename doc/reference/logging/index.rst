@@ -11,7 +11,6 @@ The logging API provides a common interface to process messages issued by
 developers. Messages are passed through a frontend and are then
 processed by active backends.
 Custom frontend and backends can be used if needed.
-Default configuration uses built-in frontend and UART backend.
 
 Summary of the logging features:
 
@@ -19,7 +18,7 @@ Summary of the logging features:
   consuming operations to a known context instead of processing and sending
   the log message when called.
 - Multiple backends supported (up to 9 backends).
-- Custom frontend supported.
+- Custom frontend support. When enabled no backends can be active.
 - Compile time filtering on module level.
 - Run time filtering independent for each backend.
 - Additional run time filtering on module instance level.
@@ -48,6 +47,7 @@ Logging v2 introduces following changes:
 - Slightly degrade performance in normal circumstances due to the fact that
   allocation from ring buffer is more complex than from memslab.
 - No change in logging API
+- Logging to frontend can be used together with backends.
 - Logging backend API exteded with function for processing v2 messages.
 
 .. note::
@@ -179,7 +179,9 @@ log_strdup().
 
 :kconfig:option:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
 
-:kconfig:option:`CONFIG_LOG_FRONTEND`: Redirect logs to a custom frontend.
+:kconfig:option`CONFIG_LOG_FRONTEND`: Direct logs to a custom frontend.
+
+:kconfig:option`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
 
 :kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
 
@@ -518,11 +520,11 @@ particular source will be buffered.
 Custom Frontend
 ===============
 
-Custom frontend is enabled using :kconfig:option:`CONFIG_LOG_FRONTEND`. Logs are redirected
+Custom frontend is enabled using :kconfig:option:`CONFIG_LOG_FRONTEND`. Logs are directed
 to functions declared in :zephyr_file:`include/logging/log_frontend.h`.
-This may be required in very time-sensitive cases, but most of the logging
-features cannot be used then, which includes default frontend, core and all
-backends features.
+If option :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY` is enabled then log message is not
+created and no backend is handled. Otherwise, custom frontend can coexist with
+backends (not available in v1).
 
 .. _logging_strings:
 
