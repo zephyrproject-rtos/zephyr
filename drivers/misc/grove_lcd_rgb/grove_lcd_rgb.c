@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #include <drivers/i2c.h>
-#include <display/grove_lcd.h>
+#include <drivers/misc/grove_lcd/grove_lcd.h>
 #include <sys/util.h>
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
@@ -344,5 +344,5 @@ static struct glcd_data grove_lcd_driver = {
 	 */
 DEVICE_DEFINE(grove_lcd, GROVE_LCD_NAME, glcd_initialize,
 		NULL, &grove_lcd_driver, &grove_lcd_config,
-		POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		(void *)&grove_lcd_driver);
