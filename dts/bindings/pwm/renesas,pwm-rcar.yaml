@@ -1,0 +1,18 @@
+# Copyright (c) 2022, IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas R-Car PWM controller
+
+compatible: "renesas,pwm-rcar"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+    "#pwm-cells":
+      const: 3
+
+pwm-cells:
+  - channel
+  # period in terms of nanoseconds
+  - period
+  - flags
