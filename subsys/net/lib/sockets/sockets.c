@@ -1366,6 +1366,10 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 		(*pev)++;
 	}
 
+	if (sock_is_eof(ctx)) {
+		pfd->revents |= ZSOCK_POLLHUP;
+	}
+
 	return 0;
 }
 
