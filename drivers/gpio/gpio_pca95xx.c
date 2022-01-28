@@ -70,12 +70,7 @@ struct gpio_pca95xx_config {
 	uint8_t capabilities;
 
 #ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
-	/* Interrupt pin definition */
-	const char *int_gpio_port;
-
-	gpio_pin_t int_gpio_pin;
-
-	gpio_flags_t int_gpio_flags;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
@@ -568,7 +563,6 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_pca95xx_config * const config = dev->config;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
-	const struct device *int_gpio_dev;
 	uint16_t reg;
 	bool enabled, edge, level, active;
 
@@ -612,15 +606,14 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 
 	/* Enable / disable interrupt as needed */
 	if (active != drv_data->interrupt_active) {
-		int_gpio_dev = device_get_binding(config->int_gpio_port);
-		ret = gpio_pin_interrupt_configure(int_gpio_dev,
-			config->int_gpio_pin, (active ?
-				GPIO_INT_EDGE_TO_ACTIVE :
-				GPIO_INT_MODE_DISABLED));
+		ret = gpio_pin_interrupt_configure_dt(
+			&int_gpio, active ?
+				   GPIO_INT_EDGE_TO_ACTIVE :
+				   GPIO_INT_MODE_DISABLED);
 		if (ret != 0) {
 			LOG_ERR("PCA95XX[0x%X]: failed to configure interrupt "
 				"on pin %d (%d)", config->i2c_slave_addr,
-				config->int_gpio_pin, ret);
+				config->int_gpio.pin, ret);
 			goto err;
 		}
 		drv_data->interrupt_active = active;
@@ -699,7 +692,6 @@ static int gpio_pca95xx_init(const struct device *dev)
 #ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
 	/* Check if GPIO port supports interrupts */
 	if ((config->capabilities & PCA_HAS_INTERRUPT) != 0) {
-		const struct device *int_gpio_dev;
 		int ret;
 
 		/* Store self-reference for interrupt handling */
@@ -710,28 +702,26 @@ static int gpio_pca95xx_init(const struct device *dev)
 			    gpio_pca95xx_interrupt_worker);
 
 		/* Configure GPIO interrupt pin */
-		int_gpio_dev = device_get_binding(config->int_gpio_port);
-		if (int_gpio_dev == NULL) {
-			LOG_ERR("PCA95XX[0x%X]: error getting interrupt GPIO"
-				" device (%s)", config->i2c_slave_addr,
-				config->int_gpio_port);
-			return -ENODEV;
+		if (!device_is_ready(config->int_gpio.port)) {
+			LOG_ERR("PCA95XX[0x%X]: interrupt GPIO not ready",
+				config->i2c_slave_addr);
+			err = -ENODEV;
+			goto err;
 		}
 
-		ret = gpio_pin_configure(int_gpio_dev, config->int_gpio_pin,
-					(config->int_gpio_flags | GPIO_INPUT));
+		ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 		if (ret != 0) {
 			LOG_ERR("PCA95XX[0x%X]: failed to configure interrupt"
 				" pin %d (%d)", config->i2c_slave_addr,
-				config->int_gpio_pin, ret);
+				config->int_gpio.pin, ret);
 			return ret;
 		}
 
 		/* Prepare GPIO callback for interrupt pin */
 		gpio_init_callback(&drv_data->gpio_callback,
 				   gpio_pca95xx_interrupt_callback,
-				   BIT(config->int_gpio_pin));
-		gpio_add_callback(int_gpio_dev, &drv_data->gpio_callback);
+				   BIT(config->int_gpio.pin));
+		gpio_add_callback(cfg->int_gpio.port, &drv_data->gpio_callback);
 	}
 #endif
 
@@ -753,12 +743,8 @@ static const struct gpio_pca95xx_config gpio_pca95xx_##inst##_cfg = {	\
 			PCA_HAS_INTERRUPT : 0) |			\
 		))							\
 		0,							\
-	IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT, (			\
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, interrupt_gpios), (	\
-	.int_gpio_port = DT_INST_GPIO_LABEL(inst, interrupt_gpios),	\
-	.int_gpio_pin = DT_INST_GPIO_PIN(inst, interrupt_gpios),	\
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(inst, interrupt_gpios),	\
-	))))								\
+	IF_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT,			\
+	(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, interrupt_gpios, {}),)) \
 };									\
 									\
 static struct gpio_pca95xx_drv_data gpio_pca95xx_##inst##_drvdata = {	\
