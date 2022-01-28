@@ -363,12 +363,9 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			conn->llcp.cte_req.is_enabled = 0U;
 		}
 
+		llcp_rr_set_paused_cmd(conn, PROC_NONE);
+		llcp_lr_complete(conn);
 		ctx->state = LP_COMMON_STATE_IDLE;
-
-		if (ctx->state == LP_COMMON_STATE_IDLE) {
-			llcp_rr_set_paused_cmd(conn, PROC_NONE);
-			llcp_lr_complete(conn);
-		}
 
 		conn->llcp.cte_req.is_active = 0U;
 		if (conn->llcp.cte_req.disable_cb) {
