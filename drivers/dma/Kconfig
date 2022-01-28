@@ -46,6 +46,8 @@ source "drivers/dma/Kconfig.iproc_pax"
 
 source "drivers/dma/Kconfig.cavs_gpdma"
 
+source "drivers/dma/Kconfig.ace_gpdma"
+
 source "drivers/dma/Kconfig.cavs_hda"
 
 endif # DMA

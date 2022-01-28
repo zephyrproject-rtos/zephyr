@@ -1,0 +1,10 @@
+# DMA configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_ACE_GPDMA
+	bool "ACE General Purpose Direct Memory Access driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_DMA_ACE_GPDMA))
+	help
+	  Intel ACE DMA driver.
