@@ -217,6 +217,7 @@ bool pm_system_suspend(int32_t ticks)
 		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				   z_cpus_pm_state[id].state);
 		ret = false;
+		atomic_clear_bit(z_cpus_pm_state_forced, id);
 		goto end;
 	}
 
@@ -241,6 +242,7 @@ bool pm_system_suspend(int32_t ticks)
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 						   z_cpus_pm_state[id].state);
 			ret = false;
+			atomic_clear_bit(z_cpus_pm_state_forced, id);
 			goto end;
 		}
 	}
