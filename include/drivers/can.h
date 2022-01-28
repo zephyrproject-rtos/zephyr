@@ -607,8 +607,6 @@ static inline int can_set_bitrate(const struct device *dev,
  * disabling automatic retransmissions ("one-shot" mode) via a devicetree
  * property.
  *
- * @see can_write() for a simplified API wrapper.
- *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param frame     CAN frame to transmit.
  * @param timeout   Timeout waiting for a empty TX mailbox or ``K_FOREVER``.
@@ -638,58 +636,6 @@ static inline int z_impl_can_send(const struct device *dev, const struct zcan_fr
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	return api->send(dev, frame, timeout, callback, user_data);
-}
-
-/**
- * @brief Wrapper function for writing data to the CAN bus.
- *
- * Simple wrapper function for @a can_send() without the need for filling in a
- * @a zcan_frame struct. This function blocks until the data is sent or a
- * timeout occurs.
- *
- * By default, the CAN controller will automatically retry transmission in case
- * of lost bus arbitration or missing acknowledge. Some CAN controllers support
- * disabling automatic retransmissions ("one-shot" mode) via a devicetree
- * property.
- *
- * @param dev     Pointer to the device structure for the driver instance.
- * @param data    Pointer to the data to write.
- * @param length  Number of bytes to write (max. 8).
- * @param id      CAN identifier used for writing.
- * @param rtr     Write as data frame or Remote Transmission Request (RTR) frame.
- * @param timeout Timeout waiting for an empty TX mailbox or ``K_FOREVER``.
- *
- * @retval 0 if successful.
- * @retval -EINVAL if an invalid parameter was passed to the function.
- * @retval -ENETDOWN if the CAN controller is in bus-off state.
- * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
- *                retransmissions are disabled).
- * @retval -EIO if a general transmit error occurred (e.g. missing ACK if
- *              automatic retransmissions are disabled).
- * @retval -EAGAIN on timeout.
- */
-static inline int can_write(const struct device *dev, const uint8_t *data, uint8_t length,
-			    uint32_t id, enum can_rtr rtr, k_timeout_t timeout)
-{
-	struct zcan_frame frame;
-
-	if (length > 8) {
-		return -EINVAL;
-	}
-
-	frame.id = id;
-
-	if (id > CAN_MAX_STD_ID) {
-		frame.id_type = CAN_EXTENDED_IDENTIFIER;
-	} else {
-		frame.id_type = CAN_STANDARD_IDENTIFIER;
-	}
-
-	frame.dlc = length;
-	frame.rtr = rtr;
-	memcpy(frame.data, data, length);
-
-	return can_send(dev, &frame, timeout, NULL, NULL);
 }
 
 /** @} */
@@ -1235,6 +1181,61 @@ __deprecated static inline void can_register_state_change_isr(const struct devic
 							      can_state_change_callback_t isr)
 {
 	can_set_state_change_callback(dev, isr, NULL);
+}
+
+/**
+ * @brief Wrapper function for writing data to the CAN bus.
+ *
+ * Simple wrapper function for @a can_send() without the need for filling in a
+ * @a zcan_frame struct. This function blocks until the data is sent or a
+ * timeout occurs.
+ *
+ * By default, the CAN controller will automatically retry transmission in case
+ * of lost bus arbitration or missing acknowledge. Some CAN controllers support
+ * disabling automatic retransmissions ("one-shot" mode) via a devicetree
+ * property.
+ *
+ * @deprecated Use @a can_send() instead.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param data    Pointer to the data to write.
+ * @param length  Number of bytes to write (max. 8).
+ * @param id      CAN identifier used for writing.
+ * @param rtr     Write as data frame or Remote Transmission Request (RTR) frame.
+ * @param timeout Timeout waiting for an empty TX mailbox or ``K_FOREVER``.
+ *
+ * @retval 0 if successful.
+ * @retval -EINVAL if an invalid parameter was passed to the function.
+ * @retval -ENETDOWN if the CAN controller is in bus-off state.
+ * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
+ *                retransmissions are disabled).
+ * @retval -EIO if a general transmit error occurred (e.g. missing ACK if
+ *              automatic retransmissions are disabled).
+ * @retval -EAGAIN on timeout.
+ */
+__deprecated static inline int can_write(const struct device *dev, const uint8_t *data,
+					 uint8_t length, uint32_t id, enum can_rtr rtr,
+					 k_timeout_t timeout)
+{
+	struct zcan_frame frame;
+
+	if (length > 8) {
+		return -EINVAL;
+	}
+
+	frame.id = id;
+
+	if (id > CAN_MAX_STD_ID) {
+		frame.id_type = CAN_EXTENDED_IDENTIFIER;
+	} else {
+		frame.id_type = CAN_STANDARD_IDENTIFIER;
+	}
+
+	frame.dlc = length;
+	frame.rtr = rtr;
+	memcpy(frame.data, data, length);
+
+	return can_send(dev, &frame, timeout, NULL, NULL);
 }
 
 /** @endcond */
