@@ -1300,6 +1300,7 @@ struct bt_le_per_adv_sync_param {
 	 * @brief Periodic Advertiser Address
 	 *
 	 * Only valid if not using the periodic advertising list
+	 * (BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST)
 	 */
 	bt_addr_le_t addr;
 
@@ -1307,6 +1308,7 @@ struct bt_le_per_adv_sync_param {
 	 * @brief Advertiser SID
 	 *
 	 * Only valid if not using the periodic advertising list
+	 * (BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST)
 	 */
 	uint8_t sid;
 
