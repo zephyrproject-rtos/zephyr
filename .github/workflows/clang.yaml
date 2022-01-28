@@ -21,12 +21,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ["native_posix"]
+        subset: [1, 2, 3, 4, 5]
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
+      MATRIX_SIZE: 5
     outputs:
       report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
@@ -81,7 +82,7 @@ jobs:
         id: cache-ccache
         uses: nashif/action-s3-cache@master
         with:
-          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.platform }}-ccache
+          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.subset }}-ccache
           path: /github/home/.ccache
           aws-s3-bucket: ccache.zephyrproject.org
           aws-access-key-id: ${{ secrets.CCACHE_S3_ACCESS_KEY_ID }}
@@ -94,6 +95,17 @@ jobs:
           test -d github/home/.ccache && rm -rf /github/home/.ccache && mv github/home/.ccache /github/home/.ccache
           ccache -M 10G -s
 
+      - name: Build test plan with Twister
+        working-directory: ./zephyr
+        id: twister_test_plan
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=llvm
+
+          # check if we need to run a full twister or not based on files changed
+          python3 ./scripts/ci/test_plan.py -p native_posix -c origin/${BASE_REF}..
+
+
       - name: Run Tests with Twister
         working-directory: ./zephyr
         id: twister
@@ -101,14 +113,11 @@ jobs:
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
 
-          # check if we need to run a full twister or not based on files changed
-          python3 ./scripts/ci/test_plan.py --platform ${{ matrix.platform }} -c origin/${BASE_REF}..
-
           # We can limit scope to just what has changed
           if [ -s testplan.csv ]; then
             echo "::set-output name=report_needed::1";
             # Full twister but with options based on changes
-            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2
+            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2 --subset ${{matrix.subset}}/${MATRIX_SIZE}
           else
             # if nothing is run, skip reporting step
             echo "::set-output name=report_needed::0";
@@ -123,7 +132,7 @@ jobs:
         if: always() && steps.twister.outputs.report_needed != 0
         uses: actions/upload-artifact@v2
         with:
-          name: Unit Test Results (Subset ${{ matrix.platform }})
+          name: Unit Test Results (Subset ${{ matrix.subset }})
           path: zephyr/twister-out/twister.xml
 
   clang-build-results:
