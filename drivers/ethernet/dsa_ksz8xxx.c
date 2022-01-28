@@ -988,9 +988,7 @@ static void dsa_iface_init(struct net_if *iface)
 
 	/* Find master port for ksz8794 switch */
 	if (context->iface_master == NULL) {
-		dm = device_get_binding(DT_INST_PROP_BY_PHANDLE(0,
-								dsa_master_port,
-								label));
+		dm = DEVICE_DT_GET(DT_INST_PHANDLE(0, dsa_master_port));
 		context->iface_master = net_if_lookup_by_dev(dm);
 		if (context->iface_master == NULL) {
 			LOG_ERR("DSA: Master iface NOT found!");
