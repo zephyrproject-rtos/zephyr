@@ -507,18 +507,11 @@ static int poll_on_write_sync(const struct device *dev,
 			      struct dma_iproc_pax_ring_data *ring)
 {
 	const struct dma_iproc_pax_cfg *cfg = dev->config;
-	const struct device *pcidev;
 	struct dma_iproc_pax_write_sync_data sync_rd, *recv, *sent;
 	uint64_t pci_addr;
 	uint32_t *pci32, *axi32;
 	uint32_t zero_init = 0, timeout = PAX_DMA_MAX_SYNC_WAIT;
 	int ret;
-
-	pcidev = device_get_binding(cfg->pcie_dev_name);
-	if (!pcidev) {
-		LOG_ERR("Cannot get pcie device\n");
-		return -EINVAL;
-	}
 
 	recv = &sync_rd;
 	sent = &(ring->curr.sync_data);
@@ -529,13 +522,13 @@ static int poll_on_write_sync(const struct device *dev,
 	axi32 = (uint32_t *)&sync_rd;
 
 	do {
-		ret = pcie_ep_xfer_data_memcpy(pcidev, pci_addr,
+		ret = pcie_ep_xfer_data_memcpy(cfg->pcie_dev, pci_addr,
 					       (uintptr_t *)axi32, 4,
 					       PCIE_OB_LOWMEM, HOST_TO_DEVICE);
 
 		if (memcmp((void *)recv, (void *)sent, 4) == 0) {
 			/* clear the sync word */
-			ret = pcie_ep_xfer_data_memcpy(pcidev, pci_addr,
+			ret = pcie_ep_xfer_data_memcpy(cfg->pcie_dev, pci_addr,
 						       (uintptr_t *)&zero_init,
 						       4, PCIE_OB_LOWMEM,
 						       DEVICE_TO_HOST);
@@ -680,6 +673,11 @@ static int dma_iproc_pax_init(const struct device *dev)
 	struct dma_iproc_pax_data *pd = dev->data;
 	int r;
 	uintptr_t mem_aligned;
+
+	if (!device_is_ready(cfg->pcie_dev)) {
+		LOG_ERR("PCIe device not ready");
+		return -ENODEV;
+	}
 
 	pd->dma_base = cfg->dma_base;
 	pd->rm_comm_base = cfg->rm_comm_base;
@@ -1096,7 +1094,7 @@ static const struct dma_iproc_pax_cfg pax_dma_cfg = {
 	.use_rings = DT_INST_PROP(0, dma_channels),
 	.bd_memory_base = (void *)DT_INST_PROP_BY_IDX(0, bd_memory, 0),
 	.scr_addr_loc = DT_INST_PROP(0, scr_addr_loc),
-	.pcie_dev_name = DT_INST_PROP_BY_PHANDLE(0, pcie_ep, label),
+	.pcie_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, pcie_ep)),
 };
 
 DEVICE_DT_INST_DEFINE(0,
