@@ -62,22 +62,15 @@ struct register_map {
 	uint8_t temp_frac256;
 };
 
-struct gpios {
-	const char *ctrl;
-	gpio_pin_t pin;
-	gpio_dt_flags_t flags;
-};
-
 struct ds3231_config {
 	/* Common structure first because generic API expects this here. */
 	struct counter_config_info generic;
 	struct i2c_dt_spec bus;
-	struct gpios isw_gpios;
+	struct gpio_dt_spec isw_gpios;
 };
 
 struct ds3231_data {
 	const struct device *ds3231;
-	const struct device *isw;
 	struct register_map registers;
 
 	struct k_sem lock;
@@ -255,14 +248,15 @@ static void validate_isw_monitoring(const struct device *dev)
 	if (data->sync_state != SYNCSM_IDLE) {
 		isw_mon_req |= ISW_MON_REQ_Sync;
 	}
-	LOG_DBG("ISW %p : %d ?= %d", data->isw, isw_mon_req, data->isw_mon_req);
-	if ((data->isw != NULL)
+	LOG_DBG("ISW %p : %d ?= %d", cfg->isw_gpios.port, isw_mon_req,
+		data->isw_mon_req);
+	if ((cfg->isw_gpios.port != NULL)
 	    && (isw_mon_req != data->isw_mon_req)) {
 		int rc = 0;
 
 		/* Disable before reconfigure */
-		rc = gpio_pin_interrupt_configure(data->isw, cfg->isw_gpios.pin,
-						  GPIO_INT_DISABLE);
+		rc = gpio_pin_interrupt_configure_dt(&cfg->isw_gpios,
+						     GPIO_INT_DISABLE);
 
 		if ((rc >= 0)
 		    && ((isw_mon_req & ISW_MON_REQ_Sync)
@@ -280,9 +274,8 @@ static void validate_isw_monitoring(const struct device *dev)
 
 		/* Enable if any requests active */
 		if ((rc >= 0) && (isw_mon_req != 0)) {
-			rc = gpio_pin_interrupt_configure(data->isw,
-							  cfg->isw_gpios.pin,
-							  GPIO_INT_EDGE_TO_ACTIVE);
+			rc = gpio_pin_interrupt_configure_dt(
+				&cfg->isw_gpios, GPIO_INT_EDGE_TO_ACTIVE);
 		}
 
 		LOG_INF("ISW reconfigure to %x: %d", isw_mon_req, rc);
@@ -1000,6 +993,7 @@ int z_impl_maxim_ds3231_get_syncpoint(const struct device *dev,
 int maxim_ds3231_synchronize(const struct device *dev,
 			     struct sys_notify *notify)
 {
+	const struct ds3231_config *cfg = dev->config;
 	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
@@ -1008,7 +1002,7 @@ int maxim_ds3231_synchronize(const struct device *dev,
 		goto out;
 	}
 
-	if (data->isw == NULL) {
+	if (cfg->isw_gpios.port == NULL) {
 		rv = -ENOTSUP;
 		goto out;
 	}
@@ -1038,10 +1032,11 @@ out:
 int z_impl_maxim_ds3231_req_syncpoint(const struct device *dev,
 				      struct k_poll_signal *sig)
 {
+	const struct ds3231_config *cfg = dev->config;
 	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
-	if (data->isw == NULL) {
+	if (cfg->isw_gpios.port == NULL) {
 		rv = -ENOTSUP;
 		goto out;
 	}
@@ -1072,6 +1067,7 @@ int maxim_ds3231_set(const struct device *dev,
 		     const struct maxim_ds3231_syncpoint *syncpoint,
 		     struct sys_notify *notify)
 {
+	const struct ds3231_config *cfg = dev->config;
 	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
@@ -1080,7 +1076,7 @@ int maxim_ds3231_set(const struct device *dev,
 		rv = -EINVAL;
 		goto out;
 	}
-	if (data->isw == NULL) {
+	if (cfg->isw_gpios.port == NULL) {
 		rv = -ENOTSUP;
 		goto out;
 	}
@@ -1145,13 +1141,10 @@ static int ds3231_init(const struct device *dev)
 	 * detected using the extended API.
 	 */
 
-	if (cfg->isw_gpios.ctrl != NULL) {
-		const struct device *gpio = device_get_binding(cfg->isw_gpios.ctrl);
-
-		if (gpio == NULL) {
-			LOG_WRN("Failed to get INTn/SQW GPIO %s",
-				cfg->isw_gpios.ctrl);
-			rc = -EINVAL;
+	if (cfg->isw_gpios.port != NULL) {
+		if (!device_is_ready(cfg->isw_gpios.port)) {
+			LOG_ERR("INTn/SQW GPIO device not ready");
+			rc = -ENODEV;
 			goto out;
 		}
 
@@ -1163,19 +1156,18 @@ static int ds3231_init(const struct device *dev)
 				   isw_gpio_callback,
 				   BIT(cfg->isw_gpios.pin));
 
-		rc = gpio_pin_configure(gpio, cfg->isw_gpios.pin,
-					GPIO_INPUT | cfg->isw_gpios.flags);
+		rc = gpio_pin_configure_dt(&cfg->isw_gpios, GPIO_INPUT);
 		if (rc >= 0) {
-			rc = gpio_pin_interrupt_configure(gpio, cfg->isw_gpios.pin,
-							  GPIO_INT_DISABLE);
+			rc = gpio_pin_interrupt_configure_dt(&cfg->isw_gpios,
+							     GPIO_INT_DISABLE);
 		}
 		if (rc >= 0) {
-			rc = gpio_add_callback(gpio, &data->isw_callback);
-		}
-		if (rc >= 0) {
-			data->isw = gpio;
-		} else {
-			LOG_WRN("Failed to configure ISW callback: %d", rc);
+			rc = gpio_add_callback(cfg->isw_gpios.port,
+					       &data->isw_callback);
+			if (rc < 0) {
+				LOG_ERR("Failed to configure ISW callback: %d",
+					rc);
+			}
 		}
 	}
 
@@ -1292,13 +1284,7 @@ static const struct ds3231_config ds3231_0_config = {
 	},
 	.bus = I2C_DT_SPEC_INST_GET(0),
 	/* Driver does not currently use 32k GPIO. */
-#if DT_INST_NODE_HAS_PROP(0, isw_gpios)
-	.isw_gpios = {
-		DT_INST_GPIO_LABEL(0, isw_gpios),
-		DT_INST_GPIO_PIN(0, isw_gpios),
-		DT_INST_GPIO_FLAGS(0, isw_gpios),
-	},
-#endif
+	.isw_gpios = GPIO_DT_SPEC_INST_GET_OR(0, isw_gpios, {}),
 };
 
 static struct ds3231_data ds3231_0_data;
