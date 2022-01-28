@@ -346,6 +346,12 @@ static void lr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 		lr_act_disconnect(conn);
 		lr_set_state(conn, LR_STATE_DISCONNECT);
 		break;
+	case LR_EVT_COMPLETE:
+		/* Some procedures like CTE request may be completed without actual run due to
+		 * change in conditions while the procedure was waiting in a queue.
+		 */
+		lr_act_complete(conn);
+		break;
 	default:
 		/* Ignore other evts */
 		break;
