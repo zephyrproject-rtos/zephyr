@@ -30,11 +30,6 @@ struct ws2812_gpio_cfg {
 	const uint8_t *color_mapping;
 };
 
-static const struct ws2812_gpio_cfg *dev_cfg(const struct device *dev)
-{
-	return dev->config;
-}
-
 /*
  * This is hard-coded to nRF51 in two ways:
  *
@@ -94,8 +89,9 @@ static const struct ws2812_gpio_cfg *dev_cfg(const struct device *dev)
 
 static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 {
+	const struct ws2812_gpio_cfg *config = dev->config;
 	volatile uint32_t *base = (uint32_t *)&NRF_GPIO->OUTSET;
-	const uint32_t val = BIT(dev_cfg(dev)->in_gpio.pin);
+	const uint32_t val = BIT(config->in_gpio.pin);
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	struct onoff_client cli;
@@ -218,7 +214,7 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 									\
 	static int ws2812_gpio_##idx##_init(const struct device *dev)	\
 	{								\
-		const struct ws2812_gpio_cfg *cfg = dev_cfg(dev);	\
+		const struct ws2812_gpio_cfg *cfg = dev->config;	\
 		uint8_t i;						\
 									\
 		if (!device_is_ready(cfg->in_gpio.port)) {		\
