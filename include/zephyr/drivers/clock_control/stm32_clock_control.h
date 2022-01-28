@@ -271,4 +271,36 @@ struct stm32_pclken {
 	uint32_t enr;
 };
 
+/** Device tree clocks helpers  */
+
+#define STM32_CLOCK_INFO(clk_index, id)					\
+	{								\
+	.enr = DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(id), clk_index, bits),\
+	.bus = DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(id), clk_index, bus)	\
+	}
+#define STM32_DT_CLOCKS(id)						\
+	{								\
+		LISTIFY(DT_NUM_CLOCKS(DT_NODELABEL(id)),		\
+			STM32_CLOCK_INFO, (,), id)			\
+	}
+
+#define STM32_INST_CLOCK_INFO(clk_index, inst)				\
+	{								\
+	.enr = DT_INST_CLOCKS_CELL_BY_IDX(inst, clk_index, bits),	\
+	.bus = DT_INST_CLOCKS_CELL_BY_IDX(inst, clk_index, bus)		\
+	}
+#define STM32_DT_INST_CLOCKS(inst)					\
+	{								\
+		LISTIFY(DT_INST_NUM_CLOCKS(inst),			\
+			STM32_INST_CLOCK_INFO, (,), inst)		\
+	}
+
+#define STM32_OPT_CLOCK_INST_SUPPORT(inst) DT_INST_CLOCKS_HAS_IDX(inst, 1) ||
+#define STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT				\
+		(DT_INST_FOREACH_STATUS_OKAY(STM32_OPT_CLOCK_INST_SUPPORT) 0)
+
+#define STM32_OPT_CLOCK_SUPPORT(id) DT_CLOCKS_HAS_IDX(DT_NODELABEL(id), 1) ||
+#define STM32_DT_DEV_OPT_CLOCK_SUPPORT					\
+		(DT_FOREACH_STATUS_OKAY(STM32_OPT_CLOCK_SUPPORT) 0)
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_ */
