@@ -252,7 +252,7 @@ const struct led_info lp503x_leds_##id[] = {			\
 								\
 static uint8_t lp503x_chan_buf_##id[LP503X_NUM_CHANNELS + 1];	\
 								\
-static struct lp503x_config lp503x_config_##id = {		\
+static const struct lp503x_config lp503x_config_##id = {	\
 	.bus		= I2C_DT_SPEC_INST_GET(id),		\
 	.num_leds	= ARRAY_SIZE(lp503x_leds_##id),		\
 	.max_curr_opt	= DT_INST_PROP(id, max_curr_opt),	\
