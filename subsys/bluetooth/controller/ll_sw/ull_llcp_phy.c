@@ -845,9 +845,11 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx) ||
+	(llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
+		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		ctx->data.pu.instant = pu_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
 		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
