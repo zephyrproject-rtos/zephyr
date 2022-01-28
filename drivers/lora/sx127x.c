@@ -98,8 +98,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1272) +
 	     "Multiple SX127x instances in DT");
 
 #define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
-#define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
-#define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
 
 #define GPIO_ANTENNA_ENABLE_PIN				\
 	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
@@ -179,6 +177,14 @@ static const struct sx127x_dio sx127x_dios[] = { SX127X_DIO_GPIO_INIT(0) };
 
 #define SX127X_MAX_DIO ARRAY_SIZE(sx127x_dios)
 
+struct sx127x_config {
+	struct spi_dt_spec bus;
+};
+
+static const struct sx127x_config dev_config = {
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+};
+
 static struct sx127x_data {
 	const struct device *reset;
 #if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
@@ -201,8 +207,6 @@ static struct sx127x_data {
 	const struct device *tcxo_power;
 	bool tcxo_power_enabled;
 #endif
-	const struct device *spi;
-	struct spi_config spi_cfg;
 	const struct device *dio_dev[SX127X_MAX_DIO];
 	struct k_work dio_work[SX127X_MAX_DIO];
 } dev_data;
@@ -416,10 +420,10 @@ static int sx127x_transceive(uint8_t reg, bool write, void *data, size_t length)
 			.count = ARRAY_SIZE(buf)
 		};
 
-		return spi_transceive(dev_data.spi, &dev_data.spi_cfg, &tx, &rx);
+		return spi_transceive_dt(&dev_config.bus, &tx, &rx);
 	}
 
-	return spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+	return spi_write_dt(&dev_config.bus, &tx);
 }
 
 int sx127x_read(uint8_t reg_addr, uint8_t *data, uint8_t len)
@@ -585,37 +589,13 @@ static int sx127x_antenna_configure(void)
 
 static int sx127x_lora_init(const struct device *dev)
 {
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	static struct spi_cs_control spi_cs;
-#endif
 	int ret;
 	uint8_t regval;
 
-	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!dev_data.spi) {
-		LOG_ERR("Cannot get pointer to %s device",
-			DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!spi_is_ready(&dev_config.bus)) {
+		LOG_ERR("SPI device not ready");
+		return -ENODEV;
 	}
-
-	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	spi_cs.gpio_dev = device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!spi_cs.gpio_dev) {
-		LOG_ERR("Cannot get pointer to %s device",
-			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-		return -EIO;
-	}
-
-	spi_cs.gpio_pin = GPIO_CS_PIN;
-	spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
-	spi_cs.delay = 0U;
-
-	dev_data.spi_cfg.cs = &spi_cs;
-#endif
 
 	ret = sx12xx_configure_pin(tcxo_power, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
