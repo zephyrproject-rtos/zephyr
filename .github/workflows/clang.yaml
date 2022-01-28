@@ -8,8 +8,7 @@ concurrency:
 
 jobs:
   clang-build:
-    if: github.repository_owner == 'zephyrproject-rtos'
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.26.4
       options: '--entrypoint /bin/bash'
@@ -19,11 +18,13 @@ jobs:
       fail-fast: false
       matrix:
         platform: ["native_posix"]
+        subset: [1, 2, 3, 4, 5]
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.1
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
+      MATRIX_SIZE: 5
     outputs:
       report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
@@ -85,7 +86,7 @@ jobs:
         id: cache-ccache
         uses: zephyrproject-rtos/action-s3-cache@v1.2.0
         with:
-          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.platform }}-ccache
+          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.subset }}-ccache
           path: /github/home/.cache/ccache
           aws-s3-bucket: ccache.zephyrproject.org
           aws-access-key-id: ${{ vars.AWS_CCACHE_ACCESS_KEY_ID }}
@@ -97,6 +98,16 @@ jobs:
           mkdir -p /github/home/.cache
           test -d github/home/.cache/ccache && rm -rf /github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
           ccache -M 10G -s
+
+      - name: Build test plan with Twister
+        id: twister_test_plan
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=llvm
+
+          # check if we need to run a full twister or not based on files changed
+          python3 ./scripts/ci/test_plan.py -p native_posix -c origin/${BASE_REF}..
+
 
       - name: Run Tests with Twister
         id: twister
@@ -111,7 +122,7 @@ jobs:
           if [ -s testplan.json ]; then
             echo "report_needed=1" >> $GITHUB_OUTPUT
             # Full twister but with options based on changes
-            ./scripts/twister --force-color --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
+            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2 --subset ${{matrix.subset}}/${MATRIX_SIZE}
           else
             # if nothing is run, skip reporting step
             echo "report_needed=0" >> $GITHUB_OUTPUT
@@ -126,7 +137,7 @@ jobs:
         if: always() && steps.twister.outputs.report_needed != 0
         uses: actions/upload-artifact@v3
         with:
-          name: Unit Test Results (Subset ${{ matrix.platform }})
+          name: Unit Test Results (Subset ${{ matrix.subset }})
           path: twister-out/twister.xml
 
   clang-build-results:
