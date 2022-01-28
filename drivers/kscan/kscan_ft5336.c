@@ -225,21 +225,12 @@ static const struct kscan_driver_api ft5336_driver_api = {
 	.disable_callback = ft5336_disable_callback,
 };
 
-#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-#define FT5336_DEFINE_CONFIG(index)					       \
-	static const struct ft5336_config ft5336_config_##index = {	       \
-		.bus = I2C_DT_SPEC_INST_GET(index),			       \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios)	       \
-	}
-#else
-#define FT5336_DEFINE_CONFIG(index)					       \
-	static const struct ft5336_config ft5336_config_##index = {	       \
-		.bus = I2C_DT_SPEC_INST_GET(index),			       \
-	}
-#endif
-
 #define FT5336_INIT(index)                                                     \
-	FT5336_DEFINE_CONFIG(index);					       \
+	static const struct ft5336_config ft5336_config_##index = {	       \
+		.bus = I2C_DT_SPEC_INST_GET(index),			       \
+		IF_ENABLED(CONFIG_KSCAN_FT5336_INTERRUPT,		       \
+		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),))	       \
+	};								       \
 	static struct ft5336_data ft5336_data_##index;			       \
 	DEVICE_DT_INST_DEFINE(index, ft5336_init, NULL,			       \
 			    &ft5336_data_##index, &ft5336_config_##index,      \
