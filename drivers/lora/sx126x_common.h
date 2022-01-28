@@ -34,27 +34,23 @@
 #define HAVE_GPIO_TX_ENABLE	DT_INST_NODE_HAS_PROP(0, tx_enable_gpios)
 #define HAVE_GPIO_RX_ENABLE	DT_INST_NODE_HAS_PROP(0, rx_enable_gpios)
 
-#define GPIO_ANTENNA_ENABLE_PIN	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
-#define GPIO_TX_ENABLE_PIN	DT_INST_GPIO_PIN(0, tx_enable_gpios)
-#define GPIO_RX_ENABLE_PIN	DT_INST_GPIO_PIN(0, rx_enable_gpios)
-
 struct sx126x_config {
 	struct spi_dt_spec bus;
+#if HAVE_GPIO_ANTENNA_ENABLE
+	struct gpio_dt_spec antenna_enable;
+#endif
+#if HAVE_GPIO_TX_ENABLE
+	struct gpio_dt_spec tx_enable;
+#endif
+#if HAVE_GPIO_RX_ENABLE
+	struct gpio_dt_spec rx_enable;
+#endif
 };
 
 struct sx126x_data {
 	struct gpio_callback dio1_irq_callback;
 	struct k_work dio1_irq_work;
 	DioIrqHandler *radio_dio_irq;
-#if HAVE_GPIO_ANTENNA_ENABLE
-	const struct device *antenna_enable;
-#endif
-#if HAVE_GPIO_TX_ENABLE
-	const struct device *tx_enable;
-#endif
-#if HAVE_GPIO_RX_ENABLE
-	const struct device *rx_enable;
-#endif
 	RadioOperatingModes_t mode;
 };
 

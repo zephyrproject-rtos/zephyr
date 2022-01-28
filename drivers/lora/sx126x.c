@@ -228,7 +228,7 @@ void SX126xAntSwOn(void)
 {
 #if HAVE_GPIO_ANTENNA_ENABLE
 	LOG_DBG("Enabling antenna switch");
-	gpio_pin_set(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 1);
+	gpio_pin_set_dt(&dev_config.antenna_enable, 1);
 #else
 	LOG_DBG("No antenna switch configured");
 #endif
@@ -238,7 +238,7 @@ void SX126xAntSwOff(void)
 {
 #if HAVE_GPIO_ANTENNA_ENABLE
 	LOG_DBG("Disabling antenna switch");
-	gpio_pin_set(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN, 0);
+	gpio_pin_set_dt(&dev_config.antenna_enable, 0);
 #else
 	LOG_DBG("No antenna switch configured");
 #endif
@@ -247,14 +247,14 @@ void SX126xAntSwOff(void)
 static void sx126x_set_tx_enable(int value)
 {
 #if HAVE_GPIO_TX_ENABLE
-	gpio_pin_set(dev_data.tx_enable, GPIO_TX_ENABLE_PIN, value);
+	gpio_pin_set_dt(&dev_config.tx_enable, value);
 #endif
 }
 
 static void sx126x_set_rx_enable(int value)
 {
 #if HAVE_GPIO_RX_ENABLE
-	gpio_pin_set(dev_data.rx_enable, GPIO_RX_ENABLE_PIN, value);
+	gpio_pin_set_dt(&dev_config.rx_enable, value);
 #endif
 }
 
