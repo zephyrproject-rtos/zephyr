@@ -71,6 +71,7 @@
 #define __imrdata __in_section_unique(imrdata)
 
 extern void soc_trace_init(void);
+extern void z_soc_irq_init(void);
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
