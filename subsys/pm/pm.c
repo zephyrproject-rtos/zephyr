@@ -270,12 +270,12 @@ bool pm_system_suspend(int32_t ticks)
 #endif
 	pm_stats_update(z_cpus_pm_state[id].state);
 	pm_system_resume();
+	atomic_clear_bit(z_cpus_pm_state_forced, id);
 	k_sched_unlock();
 	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				   z_cpus_pm_state[id].state);
 
 end:
-	atomic_clear_bit(z_cpus_pm_state_forced, id);
 	return ret;
 }
 
