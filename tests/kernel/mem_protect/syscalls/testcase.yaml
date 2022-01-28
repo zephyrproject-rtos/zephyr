@@ -1,4 +1,4 @@
 tests:
   kernel.memory_protection.syscalls:
-    filter: CONFIG_ARCH_HAS_USERSPACE
+    filter: CONFIG_ARCH_HAS_USERSPACE and not CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE
     tags: kernel security userspace ignore_faults

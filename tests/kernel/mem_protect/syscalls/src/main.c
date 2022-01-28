@@ -240,6 +240,11 @@ void test_string_nlen(void)
 void test_user_string_alloc_copy(void)
 {
 	int ret;
+#ifdef CONFIG_64BIT
+	char *src = (char *)0xffffffffffffffff;
+#else
+	char *src = (char *)0xffffffff;
+#endif
 
 	ret = string_alloc_copy("asdkajshdazskjdh");
 	zassert_equal(ret, -2, "got %d", ret);
@@ -253,6 +258,9 @@ void test_user_string_alloc_copy(void)
 
 	ret = string_alloc_copy("this is a kernel string");
 	zassert_equal(ret, 0, "string should have matched");
+
+	ret = string_alloc_copy(src);
+	zassert_equal(ret, -1, "got %d", ret);
 }
 
 /**
