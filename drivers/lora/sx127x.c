@@ -97,19 +97,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1272) +
 	     DT_NUM_INST_STATUS_OKAY(semtech_sx1276) <= 1,
 	     "Multiple SX127x instances in DT");
 
-#define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
-
-#define GPIO_ANTENNA_ENABLE_PIN				\
-	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
-#define GPIO_RFI_ENABLE_PIN			\
-	DT_INST_GPIO_PIN(0, rfi_enable_gpios)
-#define GPIO_RFO_ENABLE_PIN			\
-	DT_INST_GPIO_PIN(0, rfo_enable_gpios)
-#define GPIO_PA_BOOST_ENABLE_PIN			\
-	DT_INST_GPIO_PIN(0, pa_boost_enable_gpios)
-
-#define GPIO_TCXO_POWER_PIN	DT_INST_GPIO_PIN(0, tcxo_power_gpios)
-
 #if DT_INST_NODE_HAS_PROP(0, tcxo_power_startup_delay_ms)
 #define TCXO_POWER_STARTUP_DELAY_MS			\
 	DT_INST_PROP(0, tcxo_power_startup_delay_ms)
@@ -153,61 +140,67 @@ BUILD_ASSERT(0, "None of rfo-enable-gpios, pa-boost-enable-gpios and "
 
 extern DioIrqHandler *DioIrq[];
 
-struct sx127x_dio {
-	const char *port;
-	gpio_pin_t pin;
-	gpio_dt_flags_t flags;
-};
-
 /* Helper macro that UTIL_LISTIFY can use and produces an element with comma */
 #define SX127X_DIO_GPIO_LEN(inst) \
 	DT_INST_PROP_LEN(inst, dio_gpios)
 
 #define SX127X_DIO_GPIO_ELEM(idx, inst) \
-	{ \
-		DT_INST_GPIO_LABEL_BY_IDX(inst, dio_gpios, idx), \
-		DT_INST_GPIO_PIN_BY_IDX(inst, dio_gpios, idx), \
-		DT_INST_GPIO_FLAGS_BY_IDX(inst, dio_gpios, idx), \
-	},
+	GPIO_DT_SPEC_INST_GET_BY_IDX(inst, dio_gpios, idx),
 
 #define SX127X_DIO_GPIO_INIT(n) \
 	UTIL_LISTIFY(SX127X_DIO_GPIO_LEN(n), SX127X_DIO_GPIO_ELEM, n)
 
-static const struct sx127x_dio sx127x_dios[] = { SX127X_DIO_GPIO_INIT(0) };
+static const struct gpio_dt_spec sx127x_dios[] = { SX127X_DIO_GPIO_INIT(0) };
 
 #define SX127X_MAX_DIO ARRAY_SIZE(sx127x_dios)
 
 struct sx127x_config {
 	struct spi_dt_spec bus;
+	struct gpio_dt_spec reset;
+#if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
+	struct gpio_dt_spec antenna_enable;
+#endif
+#if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
+	struct gpio_dt_spec rfi_enable;
+#endif
+#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
+	struct gpio_dt_spec rfo_enable;
+#endif
+#if DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+	struct gpio_dt_spec pa_boost_enable;
+#endif
+#if DT_INST_NODE_HAS_PROP(0, tcxo_power_gpios)
+	struct gpio_dt_spec tcxo_power;
+#endif
 };
 
 static const struct sx127x_config dev_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+#if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
+	.antenna_enable = GPIO_DT_SPEC_INST_GET(0, antenna_enable_gpios),
+#endif
+#if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
+	.rfi_enable = GPIO_DT_SPEC_INST_GET(0, rfi_enable_gpios),
+#endif
+#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
+	.rfo_enable = GPIO_DT_SPEC_INST_GET(0, rfo_enable_gpios),
+#endif
+#if DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+	.pa_boost_enable = GPIO_DT_SPEC_INST_GET(0, pa_boost_enable_gpios),
+#endif
+#if DT_INST_NODE_HAS_PROP(0, tcxo_power_gpios)
+	.tcxo_power = GPIO_DT_SPEC_INST_GET(0, tcxo_power_gpios),
+#endif
 };
 
 static struct sx127x_data {
-	const struct device *reset;
-#if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
-	const struct device *antenna_enable;
-#endif
-#if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
-	const struct device *rfi_enable;
-#endif
-#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
-	const struct device *rfo_enable;
-#endif
-#if DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
-	const struct device *pa_boost_enable;
-#endif
 #if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios) &&	\
 	DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
 	uint8_t tx_power;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, tcxo_power_gpios)
-	const struct device *tcxo_power;
 	bool tcxo_power_enabled;
 #endif
-	const struct device *dio_dev[SX127X_MAX_DIO];
 	struct k_work dio_work[SX127X_MAX_DIO];
 } dev_data;
 
@@ -236,28 +229,28 @@ uint32_t SX127xGetBoardTcxoWakeupTime(void)
 static inline void sx127x_antenna_enable(int val)
 {
 #if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
-	gpio_pin_set(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN, val);
+	gpio_pin_set_dt(&dev_config.antenna_enable, val);
 #endif
 }
 
 static inline void sx127x_rfi_enable(int val)
 {
 #if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
-	gpio_pin_set(dev_data.rfi_enable, GPIO_RFI_ENABLE_PIN, val);
+	gpio_pin_set_dt(&dev_config.rfi_enable, val);
 #endif
 }
 
 static inline void sx127x_rfo_enable(int val)
 {
 #if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
-	gpio_pin_set(dev_data.rfo_enable, GPIO_RFO_ENABLE_PIN, val);
+	gpio_pin_set_dt(&dev_config.rfo_enable, val);
 #endif
 }
 
 static inline void sx127x_pa_boost_enable(int val)
 {
 #if DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
-	gpio_pin_set(dev_data.pa_boost_enable, GPIO_PA_BOOST_ENABLE_PIN, val);
+	gpio_pin_set_dt(&dev_config.pa_boost_enable, val);
 #endif
 }
 
@@ -287,13 +280,13 @@ void SX127xSetBoardTcxo(uint8_t state)
 	}
 
 	if (enable) {
-		gpio_pin_set(dev_data.tcxo_power, GPIO_TCXO_POWER_PIN, 1);
+		gpio_pin_set_dt(&dev_config.tcxo_power, 1);
 
 		if (TCXO_POWER_STARTUP_DELAY_MS > 0) {
 			k_sleep(K_MSEC(TCXO_POWER_STARTUP_DELAY_MS));
 		}
 	} else {
-		gpio_pin_set(dev_data.tcxo_power, GPIO_TCXO_POWER_PIN, 0);
+		gpio_pin_set_dt(&dev_config.tcxo_power, 0);
 	}
 
 	dev_data.tcxo_power_enabled = enable;
@@ -326,11 +319,11 @@ void SX127xReset(void)
 {
 	SX127xSetBoardTcxo(true);
 
-	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 1);
+	gpio_pin_set_dt(&dev_config.reset, 1);
 
 	k_sleep(K_MSEC(1));
 
-	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
+	gpio_pin_set_dt(&dev_config.reset, 0);
 
 	k_sleep(K_MSEC(6));
 }
@@ -350,7 +343,7 @@ static void sx127x_irq_callback(const struct device *dev,
 	pin = find_lsb_set(pins) - 1;
 
 	for (i = 0; i < SX127X_MAX_DIO; i++) {
-		if (dev == dev_data.dio_dev[i] &&
+		if (dev == sx127x_dios[i].port &&
 		    pin == sx127x_dios[i].pin) {
 			k_work_submit(&dev_data.dio_work[i]);
 		}
@@ -368,30 +361,27 @@ void SX127xIoIrqInit(DioIrqHandler **irqHandlers)
 			continue;
 		}
 
-		dev_data.dio_dev[i] = device_get_binding(sx127x_dios[i].port);
-		if (dev_data.dio_dev[i] == NULL) {
-			LOG_ERR("Cannot get pointer to %s device",
-				sx127x_dios[i].port);
+		if (!device_is_ready(sx127x_dios[i].port)) {
+			LOG_ERR("GPIO port %s not ready",
+				sx127x_dios[i].port->name);
 			return;
 		}
 
 		k_work_init(&dev_data.dio_work[i], sx127x_dio_work_handle);
 
-		gpio_pin_configure(dev_data.dio_dev[i], sx127x_dios[i].pin,
-				   GPIO_INPUT | GPIO_INT_DEBOUNCE
-				   | sx127x_dios[i].flags);
+		gpio_pin_configure_dt(&sx127x_dios[i],
+				      GPIO_INPUT | GPIO_INT_DEBOUNCE);
 
 		gpio_init_callback(&callbacks[i],
 				   sx127x_irq_callback,
 				   BIT(sx127x_dios[i].pin));
 
-		if (gpio_add_callback(dev_data.dio_dev[i], &callbacks[i]) < 0) {
+		if (gpio_add_callback(sx127x_dios[i].port, &callbacks[i]) < 0) {
 			LOG_ERR("Could not set gpio callback.");
 			return;
 		}
-		gpio_pin_interrupt_configure(dev_data.dio_dev[i],
-					     sx127x_dios[i].pin,
-					     GPIO_INT_EDGE_TO_ACTIVE);
+		gpio_pin_interrupt_configure_dt(&sx127x_dios[i],
+						GPIO_INT_EDGE_TO_ACTIVE);
 	}
 
 }
@@ -523,7 +513,7 @@ void SX127xSetRfTxPower(int8_t power)
 uint32_t SX127xGetDio1PinState(void)
 {
 #if SX127X_DIO_GPIO_LEN(0) >= 2
-	if (gpio_pin_get(dev_data.dio_dev[1], sx127x_dios[1].pin) > 0) {
+	if (gpio_pin_get_dt(&sx127x_dios[1]) > 0) {
 		return 1U;
 	}
 #endif
@@ -609,7 +599,7 @@ static int sx127x_lora_init(const struct device *dev)
 	}
 
 	k_sleep(K_MSEC(100));
-	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
+	gpio_pin_set_dt(&dev_config.reset, 0);
 	k_sleep(K_MSEC(100));
 
 	ret = sx127x_read(REG_VERSION, &regval, 1);
