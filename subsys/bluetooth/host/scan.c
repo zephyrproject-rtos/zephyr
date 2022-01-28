@@ -935,6 +935,14 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	memset(&sync_info, 0, sizeof(sync_info));
 	sync_info.interval = pending_per_adv_sync->interval;
 	sync_info.phy = bt_get_phy(pending_per_adv_sync->phy);
+
+	if (atomic_test_bit(pending_per_adv_sync->flags,
+			    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
+		/* Now we know which address and SID we synchronized to. */
+		bt_addr_le_copy(&pending_per_adv_sync->addr, &evt->adv_addr);
+		pending_per_adv_sync->sid = evt->sid;
+	}
+
 	sync_info.addr = &pending_per_adv_sync->addr;
 	sync_info.sid = pending_per_adv_sync->sid;
 
