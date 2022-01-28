@@ -2176,8 +2176,6 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 
 		/* Treat any other error as fatal. */
 		return -EIO;
-	} else if (ret == 0 && ctx->type == SOCK_STREAM) {
-		return -ENOTCONN;
 	}
 
 	return mbedtls_ssl_get_bytes_avail(&ctx->ssl);
@@ -2206,7 +2204,7 @@ static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
 	}
 
 	ret = ztls_socket_data_check(ctx);
-	if (ret == -ENOTCONN) {
+	if (ret == -ENOTCONN || (pfd->revents & ZSOCK_POLLHUP)) {
 		/* Datagram does not return 0 on consecutive recv, but an error
 		 * code, hence clear POLLIN.
 		 */
