@@ -835,6 +835,66 @@ struct btp_mesh_models_metadata_get_rp {
 	uint8_t data[0];
 } __packed;
 
+#define BTP_MESH_COMP_CHANGE_PREPARE		0x57
+
+#define BTP_MESH_SET_COMP_ALT			0x58
+
+#define BTP_MESH_RPR_SCAN_START			0x59
+struct btp_rpr_scan_start_cmd {
+	uint16_t dst;
+	uint8_t timeout;
+	uint8_t uuid[16];
+} __packed;
+
+#define BTP_MESH_RPR_EXT_SCAN_START		0x5a
+struct btp_rpr_ext_scan_start_cmd {
+	uint16_t dst;
+	uint8_t timeout;
+	uint8_t uuid[16];
+	uint8_t ad_count;
+	uint8_t ad_types[];
+} __packed;
+
+#define BTP_MESH_RPR_SCAN_CAPS_GET		0x5b
+struct btp_rpr_scan_caps_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_SCAN_GET			0x5c
+struct btp_rpr_scan_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_SCAN_STOP			0x5d
+struct btp_rpr_scan_stop_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_LINK_GET			0x5e
+struct btp_rpr_link_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_LINK_CLOSE			0x5f
+struct btp_rpr_link_close_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_PROV_REMOTE		0x60
+struct btp_rpr_prov_remote_cmd {
+	uint16_t dst;
+	uint8_t uuid[16];
+	uint16_t net_idx;
+	uint16_t addr;
+} __packed;
+
+#define BTP_MESH_RPR_REPROV_REMOTE		0x61
+struct btp_rpr_reprov_remote_cmd {
+	uint16_t dst;
+	uint16_t addr;
+	bool comp_change;
+} __packed;
+
 /* events */
 #define BTP_MESH_EV_OUT_NUMBER_ACTION		0x80
 struct btp_mesh_out_number_action_ev {
@@ -858,6 +918,7 @@ struct btp_mesh_in_action_ev {
 
 #define BTP_MESH_PROV_BEARER_PB_ADV		0x00
 #define BTP_MESH_PROV_BEARER_PB_GATT		0x01
+#define BTP_MESH_PROV_BEARER_REMOTE		0x04
 #define BTP_MESH_EV_PROV_LINK_OPEN		0x84
 struct btp_mesh_prov_link_open_ev {
 	uint8_t bearer;
