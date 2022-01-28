@@ -138,9 +138,9 @@ static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		       struct bt_conn *conn, struct net_buf *buf)
 {
-	uint32_t offset = cur_inst->rcvd_size;
+	const uint32_t offset = cur_inst->rcvd_size;
 	bool is_complete = false;
-	struct bt_otc_obj_metadata *cur_object =
+	const struct bt_otc_obj_metadata *cur_object =
 		&cur_inst->otc_inst->cur_object;
 	int cb_ret;
 
@@ -164,7 +164,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 						    is_complete, 0);
 
 	if (is_complete) {
-		uint32_t rcv_size = cur_object->current_size;
+		const uint32_t rcv_size = cur_object->current_size;
 		int err;
 
 		BT_DBG("Received the whole object (%u bytes). "
@@ -176,7 +176,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
 		cur_inst = NULL;
 	} else if (cb_ret == BT_OTC_STOP) {
-		uint32_t rcv_size = cur_object->current_size;
+		const uint32_t rcv_size = cur_object->current_size;
 		int err;
 
 		BT_DBG("Stopped receiving after%u bytes. "
@@ -188,7 +188,6 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		}
 
 		cur_inst = NULL;
-
 	}
 
 	return 0;
@@ -200,7 +199,6 @@ static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	BT_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, conn);
 }
 /* End L2CAP callbacks */
-
 
 static void print_oacp_response(enum bt_gatt_ots_oacp_proc_type req_opcode,
 				enum bt_gatt_ots_oacp_res_code result_code)
@@ -430,7 +428,7 @@ int bt_otc_register(struct bt_otc_instance_t *otc_inst)
 		BT_DBG("%u", i);
 		err = bt_gatt_ots_l2cap_register(&otc_insts[i].l2cap_ctx);
 		if (err) {
-			BT_WARN("Could not register L2CAP context");
+			BT_WARN("Could not register L2CAP context %d", err);
 			return err;
 		}
 
