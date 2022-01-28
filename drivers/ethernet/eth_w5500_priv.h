@@ -83,6 +83,7 @@ struct w5500_config {
 	void (*config_func)(void);
 	uint8_t full_duplex;
 	int32_t timeout;
+	int32_t int_timeout;
 };
 
 struct w5500_runtime {

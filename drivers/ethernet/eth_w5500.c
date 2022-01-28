@@ -284,10 +284,23 @@ static void w5500_isr(const struct device *dev)
 {
 	uint8_t ir;
 	uint8_t mask = 0;
+	int sem_status = -EAGAIN;
+	int rx_status = 0;
 	struct w5500_runtime *ctx = dev->data;
+	const struct w5500_config *config = dev->config;
 
 	while (true) {
-		k_sem_take(&ctx->int_sem, K_FOREVER);
+		do {
+			/* wait for interrupt notification */
+			sem_status = k_sem_take(&ctx->int_sem,
+						K_MSEC(config->int_timeout));
+			rx_status = gpio_pin_get_dt(&(config->interrupt));
+
+			if (sem_status == -EAGAIN && rx_status == 1) {
+				/* missed interrupt for available data */
+				break;
+			}
+		} while (sem_status != 0);
 
 		w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
 		if (!ir) {
@@ -553,6 +566,7 @@ static const struct w5500_config w5500_0_config = {
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.timeout = CONFIG_ETH_W5500_TIMEOUT,
+	.int_timeout = CONFIG_ETH_W5500_INT_TIMEOUT,
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
