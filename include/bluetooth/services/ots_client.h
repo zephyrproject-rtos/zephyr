@@ -32,7 +32,6 @@ extern "C" {
 #define SET_OR_CLEAR_BIT(var, bit_val, set)				\
 	((var) = (set) ? ((var) | bit_val) : ((var) & ~bit_val))
 
-
 /** @brief Date and Time structure.
  *  TODO: Move somewhere else - bluetooth.h?
  */
@@ -47,9 +46,6 @@ struct bt_date_time {
 };
 
 #define BT_OTS_NAME_MAX_SIZE           120
-
-#define BT_OTC_MAX_WRITE_SIZE               23
-#define BT_OTC_UNKNOWN_ID                   0xFF
 
 #define BT_OTC_METADATA_REQ_NAME          BIT(0)
 #define BT_OTC_METADATA_REQ_TYPE          BIT(1)

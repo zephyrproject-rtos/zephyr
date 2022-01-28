@@ -33,7 +33,10 @@
 #include "common/log.h"
 
 /* TODO: KConfig options */
-#define OTS_CLIENT_INST_COUNT   1
+#define OTS_CLIENT_INST_COUNT     1
+
+#define BT_OTC_MAX_WRITE_SIZE    23
+#define BT_OTC_UNKNOWN_ID      0xFF
 
 struct dirlisting_record_t {
 	uint16_t                      len;
