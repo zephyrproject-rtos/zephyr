@@ -1218,7 +1218,7 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		}
 
-		conn->llcp.cte_req.is_enabled = 0U;
+		conn->llcp.cte_req.is_enabled = 1U;
 		conn->llcp.cte_req.req_interval = cte_request_interval;
 		conn->llcp.cte_req.cte_type = requested_cte_type;
 		conn->llcp.cte_req.min_cte_len = requested_cte_length;
