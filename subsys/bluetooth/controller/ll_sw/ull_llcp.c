@@ -917,6 +917,12 @@ uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_ty
 
 	return BT_HCI_ERR_SUCCESS;
 }
+
+void ull_cp_cte_req_set_disable(struct ll_conn *conn)
+{
+	conn->llcp.cte_req.is_enabled = 0U;
+	conn->llcp.cte_req.req_interval = 0U;
+}
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
 static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
