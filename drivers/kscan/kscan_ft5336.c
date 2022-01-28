@@ -37,10 +37,8 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
 
 /** FT5336 configuration (DT). */
 struct ft5336_config {
-	/** I2C controller device name. */
-	char *i2c_name;
-	/** I2C chip address. */
-	uint8_t i2c_address;
+	/** I2C bus. */
+	struct i2c_dt_spec bus;
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	/** Interrupt GPIO information. */
 	struct gpio_dt_spec int_gpio;
@@ -51,8 +49,6 @@ struct ft5336_config {
 struct ft5336_data {
 	/** Device pointer. */
 	const struct device *dev;
-	/** I2C controller device. */
-	const struct device *i2c;
 	/** KSCAN Callback. */
 	kscan_callback_t callback;
 	/** Work queue (for deferred read). */
@@ -79,8 +75,7 @@ static int ft5336_process(const struct device *dev)
 	bool pressed;
 
 	/* obtain number of touch points (NOTE: multi-touch ignored) */
-	r = i2c_reg_read_byte(data->i2c, config->i2c_address, REG_TD_STATUS,
-			      &points);
+	r = i2c_reg_read_byte_dt(&config->bus, REG_TD_STATUS, &points);
 	if (r < 0) {
 		return r;
 	}
@@ -93,8 +88,7 @@ static int ft5336_process(const struct device *dev)
 	/* obtain first point X, Y coordinates and event from:
 	 * REG_P1_XH, REG_P1_XL, REG_P1_YH, REG_P1_YL.
 	 */
-	r = i2c_burst_read(data->i2c, config->i2c_address, REG_P1_XH, coords,
-			   sizeof(coords));
+	r = i2c_burst_read_dt(&config->bus, REG_P1_XH, coords, sizeof(coords));
 	if (r < 0) {
 		return r;
 	}
@@ -186,9 +180,8 @@ static int ft5336_init(const struct device *dev)
 	const struct ft5336_config *config = dev->config;
 	struct ft5336_data *data = dev->data;
 
-	data->i2c = device_get_binding(config->i2c_name);
-	if (!data->i2c) {
-		LOG_ERR("Could not find I2C controller");
+	if (!device_is_ready(config->bus.bus)) {
+		LOG_ERR("I2C controller device not ready");
 		return -ENODEV;
 	}
 
@@ -235,15 +228,13 @@ static const struct kscan_driver_api ft5336_driver_api = {
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 #define FT5336_DEFINE_CONFIG(index)					       \
 	static const struct ft5336_config ft5336_config_##index = {	       \
-		.i2c_name = DT_INST_BUS_LABEL(index),			       \
-		.i2c_address = DT_INST_REG_ADDR(index),			       \
+		.bus = I2C_DT_SPEC_INST_GET(index),			       \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios)	       \
 	}
 #else
 #define FT5336_DEFINE_CONFIG(index)					       \
 	static const struct ft5336_config ft5336_config_##index = {	       \
-		.i2c_name = DT_INST_BUS_LABEL(index),			       \
-		.i2c_address = DT_INST_REG_ADDR(index)			       \
+		.bus = I2C_DT_SPEC_INST_GET(index),			       \
 	}
 #endif
 
