@@ -67,7 +67,6 @@ struct sx1509b_drv_data {
 	struct k_sem lock;
 
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
-	const struct device *gpio_int;
 	struct gpio_callback gpio_cb;
 	struct k_work work;
 	struct sx1509b_irq_state irq_state;
@@ -84,9 +83,7 @@ struct sx1509b_config {
 	struct gpio_driver_config common;
 	struct i2c_dt_spec bus;
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
-	const char *gpio_int_dev_name;
-	gpio_pin_t gpio_pin;
-	gpio_dt_flags_t gpio_flags;
+	struct gpio_dt_spec nint_gpio;
 #endif /* CONFIG_GPIO_SX1509B_INTERRUPT */
 };
 
@@ -574,21 +571,19 @@ static int sx1509b_init(const struct device *dev)
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
 	drv_data->dev = dev;
 
-	drv_data->gpio_int = device_get_binding(cfg->gpio_int_dev_name);
-	if (!drv_data->gpio_int) {
-		rc = -ENOTSUP;
+	if (!device_is_ready(cfg->nint_gpio.port)) {
+		rc = -ENODEV;
 		goto out;
 	}
 	k_work_init(&drv_data->work, sx1509b_work_handler);
 
-	gpio_pin_configure(drv_data->gpio_int, cfg->gpio_pin,
-			   GPIO_INPUT | cfg->gpio_flags);
-	gpio_pin_interrupt_configure(drv_data->gpio_int, cfg->gpio_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_configure_dt(&cfg->nint_gpio, GPIO_INPUT);
+	gpio_pin_interrupt_configure_dt(&cfg->nint_gpio,
+					GPIO_INT_EDGE_TO_ACTIVE);
 
 	gpio_init_callback(&drv_data->gpio_cb, sx1509_int_cb,
-			   BIT(cfg->gpio_pin));
-	gpio_add_callback(drv_data->gpio_int, &drv_data->gpio_cb);
+			   BIT(cfg->nint_gpio.pin));
+	gpio_add_callback(cfg->nint_gpio.port, &drv_data->gpio_cb);
 
 	drv_data->irq_state = (struct sx1509b_irq_state) {
 		.interrupt_mask = ALL_PINS,
@@ -749,9 +744,7 @@ static const struct sx1509b_config sx1509b_cfg = {
 	},
 	.bus = I2C_DT_SPEC_INST_GET(0),
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
-	.gpio_int_dev_name = DT_INST_GPIO_LABEL(0, nint_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, nint_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, nint_gpios),
+	.nint_gpio = GPIO_DT_SPEC_INST_GET(0, nint_gpios),
 #endif
 };
 
