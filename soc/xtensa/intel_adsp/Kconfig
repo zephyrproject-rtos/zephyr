@@ -20,6 +20,11 @@ config CAVS_IPC
 	  Driver for the host IPC interrupt delivery mechanism.
 	  Currently SOF has its own driver for this hardware.
 
+config INTEL_ADSP_CAVS
+	bool
+	help
+	  Indicates a CAVS SoC
+
 config HP_SRAM_RESERVE
 	int "Bytes to reserve at start of HP-SRAM"
 	default 65536
