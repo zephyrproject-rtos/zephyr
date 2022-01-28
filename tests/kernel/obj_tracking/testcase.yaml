@@ -1,4 +1,4 @@
 tests:
   kernel.objects.tracking:
     tags: kernel
-    platform_exclude: qemu_x86_tiny intel_adsp_cavs25
+    platform_exclude: qemu_x86_tiny

@@ -28,6 +28,7 @@ API Changes
 ***********
 
 Changes in this release
+=======================
 
 * Following functions in UART Asynchronous API are using microseconds to represent
   timeout instead of milliseconds:
@@ -41,10 +42,8 @@ Changes in this release
 * Added ``ranges`` and ``dma-ranges`` as invalid property to be used with DT_PROP_LEN()
   along ``reg`` and ``interrupts``.
 
-Changes in this release
-=======================
-
-Removed APIs in this release:
+Removed APIs in this release
+============================
 
 * The following Kconfig options related to radio front-end modules (FEMs) were
   removed:
@@ -78,13 +77,42 @@ Removed APIs in this release:
 * Removed Kconfig option ``CONFIG_OPENOCD_SUPPORT`` in favor of
   ``CONFIG_DEBUG_THREAD_INFO``.
 
-Deprecated in this release:
+Deprecated in this release
+==========================
 
 * :c:macro:`USBD_CFG_DATA_DEFINE` is deprecated in favor of utilizing
   :c:macro:`USBD_DEFINE_CFG_DATA`
 
 Stable API changes in this release
 ==================================
+
+New APIs in this release
+========================
+
+* Serial
+
+  * Added new APIs to support datum wider than 8-bit.
+
+    * :kconfig:`CONFIG_UART_WIDE_DATA` is added to enable this new APIs.
+
+    * Following functions, mirroring similar functions for 8-bit datum,
+      are added:
+
+      * :c:func:`uart_tx_u16` to send a given number of datum from buffer.
+
+      * :c:func:`uart_rx_enable_u16` to start receiving data.
+
+      * :c:func:`uart_rx_buf_rsp_u16` to set buffer for receiving data
+        in response to ``UART_RX_BUF_REQUEST`` event.
+
+      * :c:func:`uart_poll_in_u16` to poll for input.
+
+      * :c:func:`uart_poll_out_u16` to output datum in polling mode.
+
+      * :c:func:`uart_fifo_fill_u16` to fill FIFO with data.
+
+      * :c:func:`uart_fifo_read_u16` to read data from FIFO.
+
 
 Kernel
 ******
@@ -106,6 +134,16 @@ Architectures
 
 * x86
 
+* Xtensa
+
+  * Introduced a mechanism to automatically figure out which scratch registers
+    are used for internal code, instead of hard-coding. This is to accommodate
+    the configurability of the architecture where some registers may exist in
+    one SoC but not on another one.
+
+  * Added coredump support for Xtensa.
+
+  * Added GDB stub support for Xtensa.
 
 Bluetooth
 *********

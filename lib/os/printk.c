@@ -22,8 +22,12 @@
 #include <sys/cbprintf.h>
 #include <sys/types.h>
 
-#if defined(CONFIG_PRINTK_SYNC) && \
-	!(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
+/* Option present only when CONFIG_USERSPACE enabled. */
+#ifndef CONFIG_PRINTK_BUFFER_SIZE
+#define CONFIG_PRINTK_BUFFER_SIZE 0
+#endif
+
+#if defined(CONFIG_PRINTK_SYNC)
 static struct k_spinlock lock;
 #endif
 
@@ -73,11 +77,7 @@ void *__printk_get_hook(void)
 {
 	return _char_out;
 }
-#endif /* CONFIG_PRINTK */
 
-#if defined(CONFIG_PRINTK) && \
-	!(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
-#ifdef CONFIG_USERSPACE
 struct buf_out_context {
 	int count;
 	unsigned int buf_count;
@@ -102,7 +102,6 @@ static int buf_char_out(int c, void *ctx_p)
 
 	return c;
 }
-#endif /* CONFIG_USERSPACE */
 
 struct out_context {
 	int count;
@@ -116,9 +115,13 @@ static int char_out(int c, void *ctx_p)
 	return _char_out(c);
 }
 
-#ifdef CONFIG_USERSPACE
 void vprintk(const char *fmt, va_list ap)
 {
+	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		z_log_vprintk(fmt, ap);
+		return;
+	}
+
 	if (k_is_user_context()) {
 		struct buf_out_context ctx = { 0 };
 
@@ -140,21 +143,6 @@ void vprintk(const char *fmt, va_list ap)
 #endif
 	}
 }
-#else
-void vprintk(const char *fmt, va_list ap)
-{
-	struct out_context ctx = { 0 };
-#ifdef CONFIG_PRINTK_SYNC
-	k_spinlock_key_t key = k_spin_lock(&lock);
-#endif
-
-	cbvprintf(char_out, &ctx, fmt, ap);
-
-#ifdef CONFIG_PRINTK_SYNC
-	k_spin_unlock(&lock, key);
-#endif
-}
-#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_str_out(char *c, size_t n)
 {
@@ -208,16 +196,11 @@ void printk(const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
-		log_printk(fmt, ap);
-	} else {
-		vprintk(fmt, ap);
-	}
+	vprintk(fmt, ap);
+
 	va_end(ap);
 }
-#endif /* defined(CONFIG_PRINTK) && \
-	* !(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
-	*/
+#endif /* defined(CONFIG_PRINTK) */
 
 struct str_context {
 	char *str;

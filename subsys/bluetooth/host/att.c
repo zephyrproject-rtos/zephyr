@@ -3113,6 +3113,13 @@ struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout)
 {
 	struct bt_att_req *req = NULL;
 
+	if (k_current_get() == bt_recv_thread_id) {
+		/* No req will be fulfilled while blocking on the bt_recv thread.
+		 * Blocking would cause deadlock.
+		 */
+		timeout = K_NO_WAIT;
+	}
+
 	/* Reserve space for request */
 	if (k_mem_slab_alloc(&req_slab, (void **)&req, timeout)) {
 		BT_DBG("No space for req");

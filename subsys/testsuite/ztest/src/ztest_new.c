@@ -605,6 +605,7 @@ void main(void)
 	z_init_mock();
 	test_main();
 	end_report();
+	LOG_PANIC();
 	if (IS_ENABLED(CONFIG_ZTEST_RETEST_IF_PASSED)) {
 		static __noinit struct {
 			uint32_t magic;

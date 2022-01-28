@@ -5741,6 +5741,7 @@ static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	const uint8_t data_len_frag = MIN(*data_len, data_len_max);
 
 	do {
+		/* Prepare a fragment of PDU data in a HCI event */
 		ext_adv_info_fill(evt_type, phy, sec_phy, adv_addr_type,
 				  adv_addr, direct_addr_type, direct_addr,
 				  rl_idx, tx_pwr, rssi, interval_le16, adi,
@@ -5752,6 +5753,10 @@ static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 
 		*evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 		net_buf_frag_add(buf, *evt_buf);
+
+		/* Continue to fragment until last partial PDU data fragment,
+		 * remainder PDU data's HCI event will be prepare by caller.
+		 */
 	} while (*data_len > data_len_max);
 }
 
@@ -5771,15 +5776,24 @@ static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
 	evt_type |= (BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL << 5);
 
 	do {
+		/* Fragment the PDU data */
 		ext_adv_pdu_frag(evt_type, phy, *sec_phy, adv_addr_type,
 				 adv_addr, direct_addr_type, direct_addr,
 				 rl_idx, tx_pwr, rssi, interval_le16, adi,
 				 data_len_max, &data_len_total, data_len,
 				 data, buf, evt_buf);
 
+		/* Check if more PDUs in the list */
 		node_rx_data = node_rx_data->hdr.rx_ftr.extra;
 		if (node_rx_data) {
-			if (*data_len) {
+			if (*data_len >= data_len_total) {
+				/* Last fragment restricted to maximum scan
+				 * data length, caller will prepare the last
+				 * HCI fragment event.
+				 */
+				break;
+			} else if (*data_len) {
+				/* Last fragment of current PDU data */
 				ext_adv_pdu_frag(evt_type, phy, *sec_phy,
 						 adv_addr_type, adv_addr,
 						 direct_addr_type, direct_addr,
@@ -5789,9 +5803,20 @@ static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
 						 data_len, data, buf, evt_buf);
 			}
 
+			/* Get next PDU data in list */
 			*data_len = ext_adv_data_get(node_rx_data, sec_phy,
 						     data);
+
+			/* Restrict PDU data to maximum scan data length */
+			if (*data_len > data_len_total) {
+				*data_len = data_len_total;
+			}
 		}
+
+		/* Continue to fragment if current PDU data length less than
+		 * total data length or current PDU data length greater than
+		 * HCI event max length.
+		 */
 	} while ((*data_len < data_len_total) || (*data_len > data_len_max));
 }
 
@@ -6139,6 +6164,16 @@ no_ext_hdr:
 		}
 	}
 
+	/* Restrict data length to maximum scan data length */
+	if (data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX) {
+		data_len_total = CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX;
+		if (data_len > data_len_total) {
+			data_len = data_len_total;
+		}
+
+		data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
+	}
+
 	/* Set directed advertising bit */
 	if (direct_addr) {
 		evt_type |= BT_HCI_LE_ADV_EVT_TYPE_DIRECT;
@@ -6151,6 +6186,9 @@ no_ext_hdr:
 		       sizeof(struct bt_hci_evt_le_ext_advertising_report) -
 		       sizeof(struct bt_hci_evt_le_ext_advertising_info);
 
+	/* If PDU data length less than total data length or PDU data length
+	 * greater than maximum HCI event data length, then fragment.
+	 */
 	if ((data_len < data_len_total) || (data_len > data_len_max)) {
 		ext_adv_data_frag(node_rx_data, evt_type, phy, &sec_phy,
 				  adv_addr_type, adv_addr, direct_addr_type,
@@ -6163,7 +6201,7 @@ no_ext_hdr:
 	/* Set data status bits */
 	evt_type |= (data_status << 5);
 
-	/* Start constructing the adv event */
+	/* Start constructing the adv event for remainder of the PDU data */
 	ext_adv_info_fill(evt_type, phy, sec_phy, adv_addr_type, adv_addr,
 			  direct_addr_type, direct_addr, rl_idx, tx_pwr, rssi,
 			  interval_le16, adi, data_len, data, evt_buf);
@@ -6173,6 +6211,16 @@ no_ext_hdr:
 		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 
 		return;
+	}
+
+	/* Restrict scan response data length to maximum scan data length */
+	if (scan_data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX) {
+		scan_data_len_total = CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX;
+		if (scan_data_len > scan_data_len_total) {
+			scan_data_len = scan_data_len_total;
+		}
+
+		scan_data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 	}
 
 	/* Set scan response bit */
@@ -6187,6 +6235,9 @@ no_ext_hdr:
 	evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 	net_buf_frag_add(buf, evt_buf);
 
+	/* If PDU data length less than total data length or PDU data length
+	 * greater than maximum HCI event data length, then fragment.
+	 */
 	if ((scan_data_len < scan_data_len_total) ||
 	    (scan_data_len > data_len_max)) {
 		ext_adv_data_frag(node_rx_scan_data, evt_type, phy,
@@ -6200,7 +6251,7 @@ no_ext_hdr:
 	/* set scan data status bits */
 	evt_type |= (scan_data_status << 5);
 
-	/* Start constructing the event */
+	/* Start constructing the event for remainder of the PDU data */
 	ext_adv_info_fill(evt_type, phy, sec_phy_scan, adv_addr_type, adv_addr,
 			  direct_addr_type, direct_addr, rl_idx, tx_pwr, rssi,
 			  interval_le16, adi, scan_data_len, scan_data,

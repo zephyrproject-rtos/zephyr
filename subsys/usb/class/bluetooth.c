@@ -248,11 +248,21 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
 		    bt_hci_raw_get_mode() == BT_HCI_RAW_MODE_H4) {
 			buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, data, size);
+			if (!buf) {
+				LOG_ERR("Failed to allocate buffer");
+				goto restart_out_transfer;
+			}
+
 			pkt_len = hci_pkt_get_len(buf, &data[1], size - 1);
 			LOG_DBG("pkt_len %u, chunk %u", pkt_len, size);
 		} else {
 			buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
 					    data, size);
+			if (!buf) {
+				LOG_ERR("Failed to allocate buffer");
+				goto restart_out_transfer;
+			}
+
 			pkt_len = hci_pkt_get_len(buf, data, size);
 			LOG_DBG("pkt_len %u, chunk %u", pkt_len, size);
 		}
@@ -263,6 +273,13 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 			buf = NULL;
 		}
 	} else {
+		if (net_buf_tailroom(buf) < size) {
+			LOG_ERR("Buffer tailroom too small");
+			net_buf_unref(buf);
+			buf = NULL;
+			goto restart_out_transfer;
+		}
+
 		/*
 		 * Take over the next chunk if HCI packet is
 		 * larger than USB_MAX_FS_BULK_MPS.

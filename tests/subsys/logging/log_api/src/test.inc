@@ -65,6 +65,25 @@ static int16_t log_source_id_get(const char *name)
 	return -1;
 }
 
+/**
+ * @brief Flush logs.
+ *
+ * If processing thread is enabled keep sleeping until there are no pending messages
+ * else process logs here.
+ */
+static void flush_log(void)
+{
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		while (log_data_pending()) {
+			k_msleep(100);
+		}
+		k_msleep(100);
+	} else {
+		while (LOG_PROCESS()) {
+		}
+	}
+}
+
 static void log_setup(bool backend2_enable)
 {
 	stamp = TIMESTAMP_INIT_VAL;
@@ -89,6 +108,25 @@ static void log_setup(bool backend2_enable)
 
 	test_source_id = log_source_id_get(STRINGIFY(MODULE_NAME));
 	test_cxx_source_id = log_source_id_get(STRINGIFY(CXX_MODULE_NAME));
+}
+
+/**
+ * @brief Process and validate that backends got exepcted content.
+ *
+ * @param backend2_enable If true backend2 is also validated.
+ * @param panic True means that logging is in panic mode, flushing is skipped.
+ */
+static void process_and_validate(bool backend2_enable, bool panic)
+{
+	if (!panic) {
+		flush_log();
+	}
+
+	mock_log_backend_validate(&backend1, panic);
+
+	if (backend2_enable) {
+		mock_log_backend_validate(&backend2, panic);
+	}
 }
 
 static void test_log_various_messages(void)
@@ -177,10 +215,7 @@ static void test_log_various_messages(void)
 
 	LOG_ERR("err");
 
-	while (LOG_PROCESS()) {
-	}
-
-	mock_log_backend_validate(&backend1, false);
+	process_and_validate(false, false);
 }
 
 /*
@@ -197,7 +232,6 @@ static void test_log_backend_runtime_filtering(void)
 	}
 
 	log_setup(true);
-
 
 	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
 		char str[128];
@@ -230,11 +264,7 @@ static void test_log_backend_runtime_filtering(void)
 	LOG_DBG("test");
 	LOG_INF("test");
 
-	while (LOG_PROCESS()) {
-	}
-
-	mock_log_backend_validate(&backend1, false);
-	mock_log_backend_validate(&backend2, false);
+	process_and_validate(true, false);
 
 	log_filter_set(&backend2,
 			CONFIG_LOG_DOMAIN_ID,
@@ -276,11 +306,7 @@ static void test_log_backend_runtime_filtering(void)
 	LOG_WRN("test2");
 	LOG_HEXDUMP_WRN(data, sizeof(data), "hexdump");
 
-	while (LOG_PROCESS()) {
-	}
-
-	mock_log_backend_validate(&backend1, false);
-	mock_log_backend_validate(&backend2, false);
+	process_and_validate(true, false);
 }
 
 static size_t get_max_hexdump(void)
@@ -362,10 +388,7 @@ static void test_log_overflow(void)
 	LOG_HEXDUMP_INF(data, hexdump_len, "hexdump");
 	LOG_INF("test2");
 
-	while (LOG_PROCESS()) {
-	}
-
-	mock_log_backend_validate(&backend1, false);
+	process_and_validate(false, false);
 
 	log_setup(false);
 
@@ -390,10 +413,7 @@ static void test_log_overflow(void)
 	LOG_INF("test");
 	LOG_HEXDUMP_INF(data, hexdump_len+1, "test");
 
-	while (LOG_PROCESS()) {
-	}
-
-	mock_log_backend_validate(&backend1, false);
+	process_and_validate(false, false);
 }
 
 /*
@@ -418,29 +438,29 @@ static void test_log_arguments(void)
 	MOCK_LOG_BACKEND_RECORD("test 1 2 3");
 	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4");
 	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13");
-	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13 14");
 
 	LOG_INF("test");
 	LOG_INF("test %d %d %d", 1, 2, 3);
 	LOG_INF("test %d %d %d %d", 1, 2, 3, 4);
 	LOG_INF("test %d %d %d %d %d", 1, 2, 3, 4, 5);
-	while (LOG_PROCESS()) {
-	}
+
+	process_and_validate(false, false);
+
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9");
 
 	LOG_INF("test %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6);
 	LOG_INF("test %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7);
 	LOG_INF("test %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7,8);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7,8, 9);
-	while (LOG_PROCESS()) {
-	}
+
+	process_and_validate(false, false);
+
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12");
 
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d",
 		1, 2, 3, 4, 5, 6, 7,8, 9, 10);
@@ -448,17 +468,17 @@ static void test_log_arguments(void)
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d",
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
-	while (LOG_PROCESS()) {
-	}
 
+	process_and_validate(false, false);
+
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13 14");
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d",
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
-	while (LOG_PROCESS()) {
-	}
 
-	mock_log_backend_validate(&backend1, false);
+	process_and_validate(false, false);
 }
 
 /* Function comes from the file which is part of test module. It is
@@ -516,10 +536,7 @@ static void test_log_from_declared_module(void)
 
 	test_inline_func();
 
-	while (LOG_PROCESS()) {
-	}
-
-	mock_log_backend_validate(&backend1, false);
+	process_and_validate(false, false);
 }
 
 /** Calculate how many messages will fit in the buffer. Also calculate if
@@ -563,10 +580,7 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 
 	mock_log_backend_drop_record(&backend1, exp_dropped);
 
-	while (LOG_PROCESS()) {
-	}
-
-	mock_log_backend_validate(&backend1, false);
+	process_and_validate(false, false);
 	mock_log_backend_reset(&backend1);
 }
 
@@ -616,7 +630,7 @@ static void test_log_panic(void)
 	/* logs should be flushed in panic */
 	log_panic();
 
-	mock_log_backend_validate(&backend1, true);
+	process_and_validate(false, true);
 
 	/* messages processed where called */
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
@@ -624,7 +638,32 @@ static void test_log_panic(void)
 				exp_timestamp++, "test");
 	LOG_WRN("test");
 
-	mock_log_backend_validate(&backend1, true);
+	process_and_validate(false, true);
+}
+
+static void test_log_printk(void)
+{
+	if (!IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		ztest_test_skip();
+	}
+
+	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+
+	log_setup(false);
+
+	mock_log_backend_record(&backend1, 0,
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				exp_timestamp++, "test 100");
+	printk("test %d", 100);
+
+	log_panic();
+
+	mock_log_backend_record(&backend1, 0,
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				exp_timestamp++, "test 101");
+	printk("test %d", 101);
+
+	process_and_validate(false, true);
 }
 
 /* Disable backends because same suite may be executed again but compiled by C++ */
@@ -649,14 +688,30 @@ static void *log_api_suite_setup(void)
 #if __cplusplus
 	PRINT("\t C++: yes\n");
 #endif
+	flush_log();
+
 	return NULL;
 }
 
 static void log_api_suite_before(void *data)
 {
 	ARG_UNUSED(data);
-	while(LOG_PROCESS()) {
-	}
+
+	/* Flush logs and enable test backends. */
+	flush_log();
+	mock_log_backend_check_enable(&backend1);
+	mock_log_backend_check_enable(&backend2);
+}
+
+static void log_api_suite_after(void *data)
+{
+
+	ARG_UNUSED(data);
+	/* Disable testing backends after the test. Otherwise test may fail due
+	 * to unexpected log message.
+	 */
+	mock_log_backend_check_disable(&backend1);
+	mock_log_backend_check_disable(&backend2);
 }
 
 #define WRAP_TEST(test_name, suffix)                       \
@@ -673,7 +728,7 @@ static void log_api_suite_before(void *data)
 #define TEST_SUITE_NAME UTIL_CAT(test_log_api_, TEST_SUFFIX)
 
 ZTEST_SUITE(TEST_SUITE_NAME, NULL, log_api_suite_setup,
-	    log_api_suite_before, NULL, log_api_suite_teardown);
+	    log_api_suite_before, log_api_suite_after, log_api_suite_teardown);
 WRAP_TEST(test_log_various_messages, TEST_SUFFIX)
 WRAP_TEST(test_log_backend_runtime_filtering, TEST_SUFFIX)
 WRAP_TEST(test_log_overflow, TEST_SUFFIX)
@@ -681,3 +736,4 @@ WRAP_TEST(test_log_arguments, TEST_SUFFIX)
 WRAP_TEST(test_log_from_declared_module, TEST_SUFFIX)
 WRAP_TEST(test_log_msg_dropped_notification, TEST_SUFFIX)
 WRAP_TEST(test_log_panic, TEST_SUFFIX)
+WRAP_TEST(test_log_printk, TEST_SUFFIX)

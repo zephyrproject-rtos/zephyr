@@ -117,46 +117,6 @@ extern "C" {
 #define DT_SPI_DEV_HAS_CS_GPIOS(spi_dev) DT_SPI_HAS_CS_GPIOS(DT_BUS(spi_dev))
 
 /**
- * @brief Get a SPI device's chip select devicetree specification
- *
- * Example devicetree fragment:
- *
- * @code{.devicetree}
- *     gpio1: gpio@... { ... };
- *
- *     gpio2: gpio@... { ... };
- *
- *     spi@... {
- *             compatible = "vnd,spi";
- *             cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
- *                        <&gpio2 20 GPIO_ACTIVE_LOW>;
- *
- *             a: spi-dev-a@0 {
- *                     reg = <0>;
- *             };
- *
- *             b: spi-dev-b@1 {
- *                     reg = <1>;
- *             };
- *     };
- * @endcode
- *
- * Example usage:
- *
- * @code{.c}
- *     DT_SPI_DEV_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(a)) \
- *           // { DEVICE_DT_GET(DT_NODELABEL(gpio1)), 10, GPIO_ACTIVE_LOW }
- *     DT_SPI_DEV_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(b)) \
- *           // { DEVICE_DT_GET(DT_NODELABEL(gpio2)), 20, GPIO_ACTIVE_LOW }
- * @endcode
- *
- * @param spi_dev a SPI device node identifier
- * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
- */
-#define DT_SPI_DEV_CS_GPIOS_DT_SPEC_GET(spi_dev) \
-	GPIO_DT_SPEC_GET_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
-
-/**
  * @brief Get a SPI device's chip select GPIO controller's node identifier
  *
  * Example devicetree fragment:

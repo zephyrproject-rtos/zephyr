@@ -508,6 +508,13 @@ config BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
 	help
 	  Maximum Advertising Extensions Receive PDU Length.
 
+config BT_CTLR_SCAN_DATA_LEN_MAX
+	int "Maximum Extended Scanning Data Length"
+	depends on BT_OBSERVER
+	range 31 1650
+	help
+	  Maximum Extended Scanning Data Length.
+
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State" if !BT_LL_SW_SPLIT
 	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT

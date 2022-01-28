@@ -44,12 +44,6 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
-#define ADV_SYNC_PDU_B2B_AFS (CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS)
-#else
-#define ADV_SYNC_PDU_B2B_AFS 0
-#endif
-
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -204,7 +198,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->last_pdu = pdu;
 
 		radio_isr_set(isr_tx, lll);
-		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS);
+		radio_tmr_tifs_set(EVENT_SYNC_B2B_MAFS_US);
 		switch_radio_complete_and_b2b_tx(lll, phy_s);
 	} else
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
@@ -222,6 +216,26 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1, ticks_at_start, remainder);
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	/* capture end of AUX_SYNC_IND/AUX_CHAIN_IND PDU, used for calculating
+	 * next PDU timestamp.
+	 *
+	 * In Periodic Advertising without chaining there is no need for LLL to
+	 * get the end time from radio, hence there is no call to
+	 * radio_tmr_end_capture() to capture the radio end time.
+	 *
+	 * With chaining the sw_switch used PPI/DPPI for back to back Tx, no
+	 * radio end time capture is needed there either.
+	 *
+	 * For PA LNA (and ISR profiling), the radio end time is required to
+	 * setup the GPIOTE using radio_gpio_pa_lna_enable which needs call to
+	 * radio_tmr_tifs_base_get(), both PA/LNA and ISR profiling call
+	 * radio_tmr_end_get().
+	 */
+	radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
@@ -350,7 +364,7 @@ static void isr_tx(void *param)
 
 	/* setup tIFS switching */
 	if (pdu->adv_ext_ind.ext_hdr_len && pdu->adv_ext_ind.ext_hdr.aux_ptr) {
-		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS);
+		radio_tmr_tifs_set(EVENT_SYNC_B2B_MAFS_US);
 		radio_isr_set(isr_tx, lll_sync);
 		switch_radio_complete_and_b2b_tx(lll_sync, lll->phy_s);
 	} else {
@@ -367,12 +381,15 @@ static void isr_tx(void *param)
 		lll_prof_cputime_capture();
 	}
 
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	/* capture end of AUX_SYNC_IND/AUX_CHAIN_IND PDU, used for calculating
 	 * next PDU timestamp.
 	 */
 	radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
-#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		/* PA/LNA enable is overwriting packet end used in ISR
 		 * profiling, hence back it up for later use.
@@ -380,11 +397,13 @@ static void isr_tx(void *param)
 		lll_prof_radio_end_backup();
 	}
 
-	radio_gpio_lna_setup();
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + ADV_SYNC_PDU_B2B_AFS - 4 + cte_len_us -
+	radio_gpio_pa_setup();
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+				 EVENT_SYNC_B2B_MAFS_US -
+				 (EVENT_CLOCK_JITTER_US << 1) + cte_len_us -
 				 radio_tx_chain_delay_get(lll->phy_s, 0) -
-				 HAL_RADIO_GPIO_LNA_OFFSET);
-#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
+				 HAL_RADIO_GPIO_PA_OFFSET);
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
@@ -396,7 +415,7 @@ static void pdu_b2b_update(struct lll_adv_sync *lll, struct pdu_adv *pdu, uint32
 	while (pdu) {
 		/* FIXME: Use implementation defined channel index */
 		pdu_b2b_aux_ptr_update(pdu, lll->adv->phy_s, lll->adv->phy_flags, 0,
-				       ADV_SYNC_PDU_B2B_AFS, cte_len_us);
+				       EVENT_SYNC_B2B_MAFS_US, cte_len_us);
 		pdu = lll_adv_pdu_linked_next_get(pdu);
 	}
 }

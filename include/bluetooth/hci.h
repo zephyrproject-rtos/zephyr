@@ -166,6 +166,10 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_PWR_CTRL_REQ             33
 #define BT_LE_FEAT_BIT_PWR_CHG_IND              34
 #define BT_LE_FEAT_BIT_PATH_LOSS_MONITOR        35
+#define BT_LE_FEAT_BIT_PER_ADV_ADI_SUPP         36
+#define BT_LE_FEAT_BIT_CONN_SUBRATING           37
+#define BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP 38
+#define BT_LE_FEAT_BIT_CHANNEL_CLASSIFICATION   39
 
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))

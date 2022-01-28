@@ -37,8 +37,12 @@ def map_regs():
     # Check sysfs for a loaded driver and remove it
     if os.path.exists(f"{pcidir}/driver"):
         mod = os.path.basename(os.readlink(f"{pcidir}/driver/module"))
-        log.warning(f"Existing driver found!  Unloading \"{mod}\" module")
-        runx(f"rmmod -f {mod}")
+        found_msg = f"Existing driver \"{mod}\" found"
+        if args.log_only:
+            log.info(found_msg)
+        else:
+            log.warning(found_msg + ", unloading module")
+            runx(f"rmmod -f {mod}")
 
     # Disengage runtime power management so the kernel doesn't put it to sleep
     with open(f"{pcidir}/power/control", "w") as ctrl:
@@ -173,8 +177,9 @@ def runx(cmd):
 def load_firmware(fw_file):
     try:
         fw_bytes = open(fw_file, "rb").read()
-    except Exception:
+    except Exception as e:
         log.error(f"Could not read firmware file: `{fw_file}'")
+        log.error(e)
         sys.exit(1)
 
     (magic, sz) = struct.unpack("4sI", fw_bytes[0:8])
@@ -302,13 +307,18 @@ async def main():
     global hda, sd, dsp, hda_ostream_id
     try:
         (hda, sd, dsp, hda_ostream_id) = map_regs()
-    except Exception:
-        log.error("Could not map device in sysfs; run as root.")
+    except Exception as e:
+        log.error("Could not map device in sysfs; run as root?")
+        log.error(e)
         sys.exit(1)
 
     log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
 
     if not args.log_only:
+        if not args.fw_file:
+            log.error("Firmware file argument missing")
+            sys.exit(1)
+
         load_firmware(args.fw_file)
         time.sleep(0.1)
         if not args.quiet:

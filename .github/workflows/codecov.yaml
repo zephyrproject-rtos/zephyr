@@ -149,6 +149,7 @@ jobs:
 
       - name: Merge coverage files
         run: |
+          sudo apt-get update
           sudo apt-get install -y lcov
           cd ./coverage/reports
           lcov ${{ steps.get-coverage-files.outputs.mergefiles }} -o merged.info --rc lcov_branch_coverage=1

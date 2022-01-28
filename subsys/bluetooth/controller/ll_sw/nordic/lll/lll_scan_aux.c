@@ -1420,12 +1420,21 @@ static void isr_rx_connect_rsp(void *param)
 	struct lll_conn *conn_lll = lll->conn;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
 				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
 						  lll_aux->phy));
 	conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
 				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
 						  lll_aux->phy));
+#else
+	conn_lll->dle.eff.max_tx_time = MAX(conn_lll->dle.eff.max_tx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+							  lll_aux->phy));
+	conn_lll->dle.eff.max_rx_time = MAX(conn_lll->dle.eff.max_rx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+							  lll_aux->phy));
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH*/
 
 	conn_lll->phy_tx = lll_aux->phy;

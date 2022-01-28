@@ -173,7 +173,6 @@ static void spi_gecko_xfer(const struct device *dev,
 	struct spi_gecko_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	const struct spi_gecko_config *gecko_config = dev->config;
-	struct spi_gecko_data *data = dev->data;
 
 	spi_context_cs_control(ctx, true);
 

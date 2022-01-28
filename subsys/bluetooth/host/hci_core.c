@@ -3387,8 +3387,14 @@ void hci_event_prio(struct net_buf *buf)
 	}
 }
 
+k_tid_t bt_recv_thread_id;
+
 int bt_recv(struct net_buf *buf)
 {
+	if (bt_recv_thread_id == NULL) {
+		bt_recv_thread_id = k_current_get();
+	}
+
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
