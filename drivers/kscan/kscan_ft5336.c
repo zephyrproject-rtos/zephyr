@@ -35,16 +35,6 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
 /* REG_Pn_XH: Position */
 #define POSITION_H_MSK		0x0FU
 
-/** GPIO DT information. */
-struct gpio_dt_info {
-	/** Port. */
-	const char *port;
-	/** Pin. */
-	gpio_pin_t pin;
-	/** Flags. */
-	gpio_dt_flags_t flags;
-};
-
 /** FT5336 configuration (DT). */
 struct ft5336_config {
 	/** I2C controller device name. */
@@ -53,7 +43,7 @@ struct ft5336_config {
 	uint8_t i2c_address;
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	/** Interrupt GPIO information. */
-	struct gpio_dt_info int_gpio;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
@@ -68,8 +58,6 @@ struct ft5336_data {
 	/** Work queue (for deferred read). */
 	struct k_work work;
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-	/** Interrupt GPIO controller. */
-	const struct device *int_gpio;
 	/** Interrupt GPIO callback. */
 	struct gpio_callback int_gpio_cb;
 #else
@@ -167,7 +155,9 @@ static int ft5336_enable_callback(const struct device *dev)
 	struct ft5336_data *data = dev->data;
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-	gpio_add_callback(data->int_gpio, &data->int_gpio_cb);
+	const struct ft5336_config *config = dev->config;
+
+	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 #else
 	k_timer_start(&data->timer, K_MSEC(CONFIG_KSCAN_FT5336_PERIOD),
 		      K_MSEC(CONFIG_KSCAN_FT5336_PERIOD));
@@ -181,7 +171,9 @@ static int ft5336_disable_callback(const struct device *dev)
 	struct ft5336_data *data = dev->data;
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-	gpio_remove_callback(data->int_gpio, &data->int_gpio_cb);
+	const struct ft5336_config *config = dev->config;
+
+	gpio_remove_callback(config->int_gpio.port, &data->int_gpio_cb);
 #else
 	k_timer_stop(&data->timer);
 #endif
@@ -207,21 +199,19 @@ static int ft5336_init(const struct device *dev)
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	int r;
 
-	data->int_gpio = device_get_binding(config->int_gpio.port);
-	if (!data->int_gpio) {
-		LOG_ERR("Could not find interrupt GPIO controller");
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("Interrupt GPIO controller device not ready");
 		return -ENODEV;
 	}
 
-	r = gpio_pin_configure(data->int_gpio, config->int_gpio.pin,
-			       config->int_gpio.flags | GPIO_INPUT);
+	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (r < 0) {
 		LOG_ERR("Could not configure interrupt GPIO pin");
 		return r;
 	}
 
-	r = gpio_pin_interrupt_configure(data->int_gpio, config->int_gpio.pin,
-					 GPIO_INT_EDGE_TO_ACTIVE);
+	r = gpio_pin_interrupt_configure_dt(&config->int_gpio,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {
 		LOG_ERR("Could not configure interrupt GPIO interrupt.");
 		return r;
@@ -242,19 +232,12 @@ static const struct kscan_driver_api ft5336_driver_api = {
 	.disable_callback = ft5336_disable_callback,
 };
 
-#define DT_INST_GPIO(index, gpio_pha)					       \
-	{								       \
-		DT_INST_GPIO_LABEL(index, gpio_pha),			       \
-		DT_INST_GPIO_PIN(index, gpio_pha),			       \
-		DT_INST_GPIO_FLAGS(index, gpio_pha),			       \
-	}
-
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 #define FT5336_DEFINE_CONFIG(index)					       \
 	static const struct ft5336_config ft5336_config_##index = {	       \
 		.i2c_name = DT_INST_BUS_LABEL(index),			       \
 		.i2c_address = DT_INST_REG_ADDR(index),			       \
-		.int_gpio = DT_INST_GPIO(index, int_gpios)		       \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios)	       \
 	}
 #else
 #define FT5336_DEFINE_CONFIG(index)					       \
