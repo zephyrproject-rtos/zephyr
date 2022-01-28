@@ -1,6 +1,7 @@
 # ADC configuration options
 
 # Copyright (c) 2017 comsuisse AG
+# Copyright (c) 2022 RIC Electronics
 # SPDX-License-Identifier: Apache-2.0
 
 config ADC_SAM_AFEC
@@ -9,3 +10,30 @@ config ADC_SAM_AFEC
 	help
 	  Enable Atmel SAM MCU Family Analog-to-Digital Converter (ADC) driver
 	  based on AFEC module.
+if ADC_SAM_AFEC
+
+config ADC_SAM_AFEC_DMA
+	bool "Use DMA for the transfer"
+	depends on DMA
+	help
+	  When enabled DMA will be used for the transfer. Note that
+	  currently DMA requires a hardware trigger to be configured.
+	  Please refer to the driver binding file and the datasheet
+	  for more information on how to configure a hardware trigger.
+
+config ADC_SAM_AFEC_TAG_CHANNEL
+	bool "When using DMA include a channel tag"
+	depends on ADC_SAM_AFEC_DMA
+	help
+	  When DMA is enabled optionally change the data width to 32-bits
+	  and include a channel tag. This makes it easy to validate which
+	  channel a sample came from.
+
+	  Note that data caching is enabled by default so the cache must
+	  be invalidated after reading to get the correct results.
+	  For example:
+
+	  adc_read_async(adc0, &seq, &signal);
+	  SCB_InvalidateDCache_by_Addr(buffer, sizeof(buffer));
+
+endif

@@ -31,5 +31,53 @@ properties:
         For example the I2C on SAME7x would be
            pinctrl-0 = <&pa8b_afec0_adtrg>;
 
+    dmas:
+      required: false
+      description: |
+        DMA specifiers.  Each specifier will have a phandle
+        reference to the dma controller, the channel number, and peripheral
+        trigger source.
+
+        For example dmas for ADC0 channel 0:
+          dmas = <&xdmac 0 DMA_PERID_AFEC0_RX>;
+
+    trigger-source:
+      type: int
+      required: false
+      default: 0
+      enum:
+        - 0 # Software driven
+        - 1 # TIOA output of Timer Counter channel 0 for AFEC0
+            # TIOA output of Timer Counter channel 3 for AFEC1
+        - 2 # TIOA output of Timer Counter channel 1 for AFEC0
+            # TIOA output of Timer Counter channel 4 for AFEC1
+        - 3 # TIOA output of Timer Counter channel 2 for AFEC0
+            # TIOA output of Timer Counter channel 5 for AFEC1
+        - 4 # PWM0 event line 0 for AFEC0
+            # PWM1 event line 0 for AFEC1
+        - 5 # PWM0 event line 1 for AFEC0
+            # PWM1 event line 1 for AFEC1
+        - 6 # Analog Comparator
+      description: |
+        The trigger source of the ADC conversions. If a hardware
+        source is selected, the hardware pheripheral will need
+        to be setup separately to generate the event. This driver
+        only configures the AFEC side. Please refer to the
+        datasheet for more information. Also note that only the
+        timer has been tested as a trigger source. Ther TC channels
+        0-2 are on TC0, 3-5 are on TC1. So those timers have to be
+        used.
+
+    tc:
+      type: phandle
+      required: false
+      description: |
+        When trigger-source 1, 2 or 3 is configured then this
+        is the phandle of the timer used for triggering. The timer
+        needs to be separately configured to trigger the conversion.
+        For details how to do that refer to the timer driver and
+        datasheet.
+        e.g tc = <&tc0>;
+
 io-channel-cells:
     - input
