@@ -1373,14 +1373,19 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
-
-	bt_addr_le_copy(&cp->addr, &param->addr);
-
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST) {
 		atomic_set_bit(per_adv_sync->flags,
 			       BT_PER_ADV_SYNC_SYNCING_USE_LIST);
 
 		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
+	} else {
+		/* If BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST is set, then the
+		 * address and SID are ignored by the controller, so we only
+		 * copy/assign them in case that the periodic advertising list
+		 * is not used.
+		 */
+		bt_addr_le_copy(&cp->addr, &param->addr);
+		cp->sid = param->sid;
 	}
 
 	if (param->options &
@@ -1415,7 +1420,6 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		cp->cte_type |= BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE;
 	}
 
-	cp->sid = param->sid;
 	cp->skip = sys_cpu_to_le16(param->skip);
 	cp->sync_timeout = sys_cpu_to_le16(param->timeout);
 
