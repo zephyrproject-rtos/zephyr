@@ -199,6 +199,11 @@ SECTIONS
 
     Z_LINK_ITERABLE_ALIGNED(tracing_backend, 4)
 
+    /* Located in generated directory. This file is populated by the
+    * zephyr_linker_sources() Cmake function.
+    */
+    #include <snippets-rodata.ld>
+
     __esp_shell_root_cmds_start = .;
     KEEP(*(SORT(.shell_root_cmd_*)));
     __esp_shell_root_cmds_end = .;
