@@ -160,6 +160,9 @@ K_KERNEL_PINNED_STACK_ARRAY_EXTERN(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 #endif
 
+/* Calculate stack usage. */
+int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
+
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack);
 
