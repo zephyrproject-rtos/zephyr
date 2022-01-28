@@ -14,6 +14,7 @@
 #include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <kernel.h>
+#include <kernel_internal.h>
 
 static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
@@ -187,9 +188,6 @@ extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 static int cmd_kernel_stacks(const struct shell *shell,
 			     size_t argc, char **argv)
 {
-	uint8_t *buf;
-	size_t size, unused;
-
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	k_thread_foreach(shell_stack_dump, (void *)shell);
@@ -199,17 +197,13 @@ static int cmd_kernel_stacks(const struct shell *shell,
 	 * stack buffers.
 	 */
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
-		size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
+		size_t unused;
+		const uint8_t *buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
+		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
+		int err = z_stack_space_get(buf, size, &unused);
 
-		unused = 0;
-		for (size_t i = 0; i < size; i++) {
-			if (buf[i] == 0xAAU) {
-				unused++;
-			} else {
-				break;
-			}
-		}
+		(void)err;
+		__ASSERT_NO_MSG(err == 0);
 
 		shell_print(shell,
 			"%p IRQ %02d     (real size %zu):\tunused %zu\tusage %zu / %zu (%zu %%)",
