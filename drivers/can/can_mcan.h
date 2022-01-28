@@ -26,6 +26,8 @@
 #define NUM_RX_FIFO0_ELEMENTS   DT_PROP(MCAN_DT_PATH, rx_fifo0_elements)
 #define NUM_RX_FIFO1_ELEMENTS   DT_PROP(MCAN_DT_PATH, rx_fifo0_elements)
 #define NUM_RX_BUF_ELEMENTS     DT_PROP(MCAN_DT_PATH, rx_buffer_elements)
+#define NUM_TX_EVENT_FIFO_ELEMENTS \
+				DT_PROP(MCAN_DT_PATH, tx_event_fifo_elements)
 #define NUM_TX_BUF_ELEMENTS     DT_PROP(MCAN_DT_PATH, tx_buffer_elements)
 
 #ifdef CONFIG_CAN_STM32FD
@@ -161,7 +163,7 @@ struct can_mcan_msg_sram {
 	volatile struct can_mcan_rx_fifo rx_fifo0[NUM_RX_FIFO0_ELEMENTS];
 	volatile struct can_mcan_rx_fifo rx_fifo1[NUM_RX_FIFO1_ELEMENTS];
 	volatile struct can_mcan_rx_fifo rx_buffer[NUM_RX_BUF_ELEMENTS];
-	volatile struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_BUF_ELEMENTS];
+	volatile struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_EVENT_FIFO_ELEMENTS];
 	volatile struct can_mcan_tx_buffer tx_buffer[NUM_TX_BUF_ELEMENTS];
 } __packed __aligned(4);
 
