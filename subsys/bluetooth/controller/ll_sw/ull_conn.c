@@ -1654,9 +1654,24 @@ void ull_conn_done(struct node_rx_event_done *done)
 		if (conn->llcp.cte_req.req_expire > elapsed_event) {
 			conn->llcp.cte_req.req_expire -= elapsed_event;
 		} else {
+			uint8_t err;
+
 			conn->llcp.cte_req.req_expire = 0U;
-			ull_cp_cte_req(conn, conn->llcp.cte_req.min_cte_len,
-				       conn->llcp.cte_req.cte_type);
+
+			err = ull_cp_cte_req(conn, conn->llcp.cte_req.min_cte_len,
+					     conn->llcp.cte_req.cte_type);
+
+			if (err == BT_HCI_ERR_CMD_DISALLOWED) {
+				/* Conditions has changed e.g. PHY was changed to CODED.
+				 * New CTE REQ is not possible. Disable the periodic requests.
+				 *
+				 * If the CTE REQ is in active state, let it complete and disable
+				 * in regular control procedure way.
+				 */
+				if (!conn->llcp.cte_req.is_active) {
+					ull_cp_cte_req_set_disable(conn);
+				}
+			}
 		}
 	}
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
