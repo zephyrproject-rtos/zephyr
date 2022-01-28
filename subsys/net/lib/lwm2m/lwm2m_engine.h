@@ -132,6 +132,10 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state);
 void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result);
 void lwm2m_firmware_set_update_state(uint8_t state);
 void lwm2m_firmware_set_update_result(uint8_t result);
+uint8_t lwm2m_firmware_get_update_state_inst(uint16_t obj_inst_id);
+uint8_t lwm2m_firmware_get_update_state(void);
+uint8_t lwm2m_firmware_get_update_result_inst(uint16_t obj_inst_id);
+uint8_t lwm2m_firmware_get_update_result(void);
 #endif
 
 /* Attribute handling. */
