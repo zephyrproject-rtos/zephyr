@@ -508,6 +508,10 @@ static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
 		LL_USART_ClearFlag_ORE(UartInstance);
 	}
 
+	/*
+	 * On stm32 F4X, F1X, and F2X, the RXNE flag is affected (cleared) by
+	 * the uart_err_check function call (on errors flags clearing)
+	 */
 	if (!LL_USART_IsActiveFlag_RXNE(UartInstance)) {
 		return -1;
 	}
@@ -570,9 +574,10 @@ static int uart_stm32_err_check(const struct device *dev)
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	uint32_t err = 0U;
 
-	/* Check for errors, but don't clear them here.
+	/* Check for errors, then clear them.
 	 * Some SoC clear all error flags when at least
-	 * one is cleared. (e.g. F4X, F1X, and F2X)
+	 * one is cleared. (e.g. F4X, F1X, and F2X).
+	 * The stm32 F4X, F1X, and F2X also reads the usart DR when clearing Errors
 	 */
 	if (LL_USART_IsActiveFlag_ORE(UartInstance)) {
 		err |= UART_ERROR_OVERRUN;
@@ -595,7 +600,11 @@ static int uart_stm32_err_check(const struct device *dev)
 		LL_USART_ClearFlag_LBD(UartInstance);
 	}
 #endif
-
+	/* Clearing error :
+	 * the stm32 F4X, F1X, and F2X sw sequence is reading the usart SR
+	 * then the usart DR to clear the Error flags ORE, PE, FE, NE
+	 * --> so is the RXNE flag also cleared !
+	 */
 	if (err & UART_ERROR_OVERRUN) {
 		LL_USART_ClearFlag_ORE(UartInstance);
 	}
@@ -669,6 +678,10 @@ static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data,
 		/* Clear overrun error flag */
 		if (LL_USART_IsActiveFlag_ORE(UartInstance)) {
 			LL_USART_ClearFlag_ORE(UartInstance);
+		/*
+		 * On stm32 F4X, F1X, and F2X, the RXNE flag is affected (cleared) by
+		 * the uart_err_check function call (on errors flags clearing)
+		 */
 		}
 	}
 
@@ -750,7 +763,10 @@ static void uart_stm32_irq_rx_disable(const struct device *dev)
 static int uart_stm32_irq_rx_ready(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
+	/*
+	 * On stm32 F4X, F1X, and F2X, the RXNE flag is affected (cleared) by
+	 * the uart_err_check function call (on errors flags clearing)
+	 */
 	return LL_USART_IsActiveFlag_RXNE(UartInstance);
 }
 
