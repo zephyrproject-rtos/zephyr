@@ -39,6 +39,10 @@ config THREAD_ANALYZER_USE_PRINTK
 
 endchoice
 
+config THREAD_ANALYZER_ISR_STACK_USAGE
+	bool "Analyze interrupt stacks usage"
+	default y
+
 config THREAD_ANALYZER_RUN_UNLOCKED
 	bool "Run analysis with interrupts unlocked"
 	default y
