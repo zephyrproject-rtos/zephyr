@@ -368,6 +368,10 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		ctx->state = LP_COMMON_STATE_IDLE;
 
 		conn->llcp.cte_req.is_active = 0U;
+		/* If disable_cb is not NULL then there is waiting CTE REQ disable request from
+		 * host. Execute the callback to notify waiting thread that the procedure is
+		 * inactive.
+		 */
 		if (conn->llcp.cte_req.disable_cb) {
 			conn->llcp.cte_req.disable_cb(conn->llcp.cte_req.disable_param);
 		}
