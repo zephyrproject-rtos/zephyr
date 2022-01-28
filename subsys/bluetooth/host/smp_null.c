@@ -27,7 +27,7 @@
 #include "l2cap_internal.h"
 #include "smp.h"
 
-static struct bt_l2cap_le_chan bt_smp_pool[CONFIG_BT_MAX_CONN];
+static struct bt_l2cap_chan bt_smp_pool[CONFIG_BT_MAX_CONN];
 
 int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 {
@@ -80,15 +80,15 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	BT_DBG("conn %p handle %u", conn, conn->handle);
 
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
-		struct bt_l2cap_le_chan *smp = &bt_smp_pool[i];
+		struct bt_l2cap_chan *smp = &bt_smp_pool[i];
 
-		if (smp->chan.conn) {
+		if (smp->conn) {
 			continue;
 		}
 
-		smp->chan.ops = &ops;
+		smp->ops = &ops;
 
-		*chan = &smp->chan;
+		*chan = smp;
 
 		return 0;
 	}
