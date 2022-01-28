@@ -380,4 +380,94 @@ config LOG_BACKEND_FS_FILES_LIMIT
 
 endif # LOG_BACKEND_FS
 
+config LOG_BACKEND_MEMORY
+	bool "Enable memory backend"
+	help
+	  When enabled, backend will use a buffer to output logs to memory.
+	
+if LOG_BACKEND_MEMORY
+
+config CONFIG_LOG_BACKEND_MEMORY_OUTPUT_DICTIONARY
+	bool
+	depends on LOG2
+	select LOG_DICTIONARY_SUPPORT
+	help
+	  Memory backend is in dictionary-based logging output mode.
+
+config LOG_BACKEND_MEMORY_SYST_ENABLE
+	bool "MIPI SyS-T"
+	# TODO: Is the below dependency really necessary...? If not, why did UART do it?
+	depends on LOG_BACKEND_MEMORY
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled, backend is using memory to output syst format logs.
+
+choice LOG_BACKEND_MEMORY_TYPE
+	prompt "Type of memory to store memory buffer"
+
+config LOG_BACKEND_MEMORY_TYPE_RAM
+	bool "RAM"
+	help
+	  Use RAM to store memory buffer.
+
+config LOG_BACKEND_MEMORY_TYPE_FLASH
+	bool "Flash"
+	help
+	  Use part or all of a flash partition to store memory buffer. Preserves
+	  logs in case of power failure.
+
+endchoice
+
+# TODO: ...Dumb question but how do I force them to assign a value? 
+# Do I really need another BUILD ASSERT
+config LOG_BACKEND_MEMORY_BUFFER_START_ADDR
+	hex "Starting address of memory buffer"
+	default 0x0
+	help
+	  The starting address of the memory buffer.
+
+# TODO: How to let user set what partition to store the buffer if flash
+
+config LOG_BACKEND_MEMORY_BUFFER_SIZE
+	int "Size of memory buffer in bytes"
+	help
+	  Must be a multiple of LOG_BACKEND_MEMORY_BLOCK_SIZE. If 
+	  LOG_BACKEND_MEMORY_PRESERVE_NEWEST is enabled, must also be big enough
+	  to hold the sys_winstream struct.
+
+config LOG_BACKEND_MEMORY_BLOCK_BUFFER_SIZE
+	int "Size of block in bytes to write to memory at a time"
+	# TODO: Are these reasonable defaults? First is a sentence, second is paragraph
+	default 32 if LOG_FLUSH_ON_CRASH 
+	default 256
+	help
+	  The memory backend fills a block buffer character by character until
+	  the block is full and then writes the entire block to the buffer in memory.
+	  Must be a factor of LOG_BACKEND_MEMORY_BUFFER_SIZE.
+
+choice LOG_BACKEND_MEMORY_OVERFLOW_BEHAVIOR
+	prompt "Behavior on memory buffer overflow"
+	default LOG_BACKEND_MEMORY_PRESERVE_NEWEST
+
+config LOG_BACKEND_MEMORY_PRESERVE_NEWEST
+	bool "Preserve latest messages"
+	select WINSTREAM
+	help
+	  When enabled, if backend reaches the end of the buffer, it will overwrite
+	  older messages in order to store new messages. A winstream buffer is used
+	  to wraparound and sequence writes. As a result, the winstream library must
+	  be used to read out of the buffer.
+
+config LOG_BACKEND_MEMORY_PRESERVE_OLDEST
+	bool "Preserve earliest messages"
+	help
+	  When enabled, if backend reaches the end of the buffer, it will drop
+	  all new messages in order to preserve the oldest messages. When 
+	  LOG_FLUSH_ON_CRASH is enabled, this option prioritizes logs closest
+	  to the time of log panic.
+
+endchoice
+
+endif # LOG_BACKEND_MEMORY
+
 endmenu

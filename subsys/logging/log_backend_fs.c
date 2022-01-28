@@ -32,7 +32,7 @@ static int allocate_new_file(struct fs_file_t *file);
 static int del_oldest_log(void);
 static int get_log_file_id(struct fs_dirent *ent);
 
-static int check_log_volumen_available(void)
+static int check_log_volume_available(void)
 {
 	int index = 0;
 	char const *name;
@@ -149,7 +149,7 @@ int write_log_to_file(uint8_t *data, size_t length, void *ctx)
 	struct fs_file_t *f = &file;
 
 	if (backend_state == BACKEND_FS_NOT_INITIALIZED) {
-		if (check_log_volumen_available()) {
+		if (check_log_volume_available()) {
 			return length;
 		}
 		rc = create_log_dir(CONFIG_LOG_BACKEND_FS_DIR);

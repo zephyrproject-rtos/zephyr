@@ -279,6 +279,8 @@ static void external_log_system_showcase(void)
 
 static void log_demo_thread(void *p1, void *p2, void *p3)
 {
+	k_msleep(10000);
+
 	bool usermode = k_is_user_context();
 
 	(void)log_set_tag("demo_tag");

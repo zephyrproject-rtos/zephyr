@@ -81,6 +81,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     zephyr_sources(log_output_dict.c)
   endif()
 
+  zephyr_sources_ifdef(
+    CONFIG_LOG_BACKEND_MEMORY
+    log_backend_memory.c
+  )
+
 else()
   zephyr_sources(log_minimal.c)
 endif()

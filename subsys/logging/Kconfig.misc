@@ -26,6 +26,14 @@ config LOG_TEST_CLEAR_MESSAGE_SPACE
 	  Used in testing to simplify message comparision if message contains
 	  paddings.
 
+config LOG_FLUSH_ON_CRASH
+	bool "Flush logs to memory backend on crash"
+	select LOG_BACKEND_MEMORY
+	help
+	  Outputs logs to memory starting from log panic and continuing
+	  until system crashes. Provided that the memory backend is
+	  configured to use persistent storage, it allows for post-mortem analysis.
+
 config LOG2_USE_VLA
 	bool "Using variable length arrays"
 	default y if !MISRA_SANE
