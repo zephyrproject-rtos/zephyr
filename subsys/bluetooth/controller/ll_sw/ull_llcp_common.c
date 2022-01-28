@@ -355,6 +355,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			} else {
 				conn->llcp.cte_req.is_enabled = 0U;
 				lp_comm_ntf(conn, ctx);
+				ull_cp_cte_req_set_disable(conn);
 			}
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
 			   ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
