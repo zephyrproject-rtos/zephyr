@@ -1079,8 +1079,7 @@ static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
  * `CAN_NO_FREE_FILTER` is returned by `can_add_rx_*()` if no free filters are
  * available. `CAN_TIMEOUT` indicates that @a can_recover() timed out.
  *
- * @warning These definitions are deprecated. Use the corresponding errno
- * definitions instead.
+ * @deprecated Use the corresponding errno definitions instead.
  *
  * @{
  */
@@ -1107,8 +1106,7 @@ static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
 /**
  * @brief Configure operation of a host controller.
  *
- * @warning This function is deprecated. Use @a can_set_bitrate() and @a
- * can_set_mode() instead.
+ * @deprecated Use @a can_set_bitrate() and @a can_set_mode() instead.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param mode Operation mode.
@@ -1181,8 +1179,8 @@ struct zcan_work {
  * @note The work queue must be initialized before and the caller must have
  * appropriate permissions on it.
  *
- * @warning This function is deprecated. Use @a can_add_rx_filter_msgq() along
- * with @a k_work_poll_submit() instead.
+ * @deprecated Use @a can_add_rx_filter_msgq() along with @a
+ * k_work_poll_submit() instead.
  *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param work_q    Pointer to the already initialized @a zcan_work queue.
@@ -1200,7 +1198,7 @@ __deprecated int can_attach_workq(const struct device *dev, struct k_work_q  *wo
 				  void *user_data, const struct zcan_filter *filter);
 
 /**
- * @see can_add_rx_filter()
+ * @deprecated Use can_add_rx_filter() instead.
  */
 __deprecated static inline int can_attach_isr(const struct device *dev, can_rx_callback_t isr,
 					      void *user_data, const struct zcan_filter *filter)
@@ -1209,12 +1207,12 @@ __deprecated static inline int can_attach_isr(const struct device *dev, can_rx_c
 }
 
 /**
- * @see CAN_MSGQ_DEFINE()
+ * @deprecated Use CAN_MSGQ_DEFINE() instead.
  */
 #define CAN_DEFINE_MSGQ(name, size) CAN_MSGQ_DEFINE(name, size) __DEPRECATED_MACRO
 
 /**
- * @see can_add_rx_filter_msgq()
+ * @deprecated Use can_add_rx_filter_msgq() instead.
  */
 __deprecated static inline int can_attach_msgq(const struct device *dev, struct k_msgq *msg_q,
 					       const struct zcan_filter *filter)
@@ -1223,7 +1221,7 @@ __deprecated static inline int can_attach_msgq(const struct device *dev, struct 
 }
 
 /**
- * @see can_remove_rx_filter()
+ * @deprecated Use can_remove_rx_filter() instead.
  */
 __deprecated static inline void can_detach(const struct device *dev, int filter_id)
 {
@@ -1231,7 +1229,7 @@ __deprecated static inline void can_detach(const struct device *dev, int filter_
 }
 
 /**
- * @see can_set_state_change_callback()
+ * @deprecated Use can_set_state_change_callback() instead.
  */
 __deprecated static inline void can_register_state_change_isr(const struct device *dev,
 							      can_state_change_callback_t isr)
