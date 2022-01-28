@@ -5,8 +5,10 @@
  */
 #include <kernel.h>
 #include "mesh_test.h"
+#include "argparse.h"
 #include "mesh/net.h"
 #include "mesh/beacon.h"
+#include "mesh/crypto.h"
 #include "mesh/mesh.h"
 #include "mesh/foundation.h"
 
@@ -17,7 +19,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define GROUP_ADDR 0xc000
 #define WAIT_TIME 60 /*seconds*/
-#define BEACON_INTERVAL       K_SECONDS(10)
+#define BEACON_INTERVAL  10 /*seconds*/
+#define BEACON_OBSERVE_INTERVAL 60 /*seconds*/
+#define EXPECTED_BEACON_CNT ((BEACON_OBSERVE_INTERVAL/BEACON_INTERVAL)-1)
+#define MIN_BEACON_INTERVAL 10000 /*millisecods*/
+
 
 extern enum bst_result_t bst_result;
 
@@ -81,19 +87,19 @@ static void test_tx_on_iv_update(void)
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(!bt_mesh_iv_update());
 	ASSERT_TRUE(!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(bt_mesh_iv_update());
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 2);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	PASS();
 }
@@ -118,19 +124,19 @@ static void test_rx_on_iv_update(void)
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_TEST));
 	ivu_log();
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 1);
 	ivu_log();
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 1);
 	ivu_log();
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 2);
@@ -160,7 +166,7 @@ static void test_tx_on_key_refresh(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	phase = BT_MESH_KR_PHASE_2;
 	status = bt_mesh_subnet_kr_phase_set(BT_MESH_KEY_PRIMARY, &phase);
@@ -169,7 +175,7 @@ static void test_tx_on_key_refresh(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_2);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	phase = BT_MESH_KR_PHASE_3;
 	status = bt_mesh_subnet_kr_phase_set(BT_MESH_KEY_PRIMARY, &phase);
@@ -178,7 +184,7 @@ static void test_tx_on_key_refresh(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_NORMAL);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	PASS();
 }
@@ -208,19 +214,19 @@ static void test_rx_on_key_refresh(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	status = bt_mesh_subnet_kr_phase_get(BT_MESH_KEY_PRIMARY, &phase);
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	status = bt_mesh_subnet_kr_phase_get(BT_MESH_KEY_PRIMARY, &phase);
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_2);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	status = bt_mesh_subnet_kr_phase_get(BT_MESH_KEY_PRIMARY, &phase);
 	ASSERT_TRUE(status == STATUS_SUCCESS);
@@ -228,6 +234,128 @@ static void test_rx_on_key_refresh(void)
 
 	PASS();
 }
+
+static void test_tx_beacon_init(void)
+{
+	bt_mesh_test_cfg_set(&tx_cfg, BEACON_OBSERVE_INTERVAL);
+}
+
+static void test_rx_beacon_init(void)
+{
+	bt_mesh_test_cfg_set(&tx_cfg, BEACON_OBSERVE_INTERVAL);
+}
+
+static void test_tx_beacon_secure(void)
+{
+	uint32_t delay_time;
+	uint32_t sent_beacons;
+	uint32_t sent_beacon_time;
+	struct bt_mesh_subnet *sub;
+	
+	/* shift beaconing time line to avoid boundary cases. */
+	delay_time = get_device_nbr() * 100;
+	k_sleep(K_MSEC(delay_time));
+
+	bt_mesh_test_setup();
+
+	sub = bt_mesh_subnet_find(NULL, NULL);
+
+	sent_beacons = 0;
+	sent_beacon_time = 0;
+	while (true) {
+		k_sleep(K_SECONDS(10));
+		if (sent_beacon_time != sub->beacon_sent) {
+			sent_beacon_time = sub->beacon_sent;
+			sent_beacons++;
+		}
+
+		if (sent_beacons >= 1) { /*sending out at least 1 beacon is enough*/
+			break;
+		}
+	}
+
+	PASS();
+}
+
+static struct k_sem observer_sem;
+static uint32_t obs_min_interval; /*minimum time measured between two consecutive beacons in milliseconds*/
+static uint32_t last_beacon_time; /*timestamp for last received valid secure beacon in milliseconds*/
+static uint32_t total_beacons; /*total number of beacons received*/
+
+static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
+{
+	struct bt_mesh_subnet *sub;
+	uint8_t length;
+	uint8_t payload[13];
+	uint64_t *sub_auth;
+	uint64_t auth;
+	uint8_t mac[16];
+	uint32_t now;
+	uint32_t interval;
+
+	now = k_uptime_get_32();
+	interval = now - last_beacon_time;
+
+	ASSERT_EQUAL(BT_GAP_ADV_TYPE_ADV_NONCONN_IND, info->adv_type);
+
+	length = net_buf_simple_pull_u8(buf);
+	ASSERT_EQUAL(buf->len, length);
+	ASSERT_EQUAL(BT_DATA_MESH_BEACON, net_buf_simple_pull_u8(buf));
+	ASSERT_EQUAL(0x01, net_buf_simple_pull_u8(buf));
+
+	sub = bt_mesh_subnet_find(NULL, NULL);
+
+	memcpy(payload, buf->data, sizeof(payload));
+	net_buf_simple_pull(buf, 13);
+
+	if (bt_mesh_aes_cmac_one(sub->keys->beacon, payload, sizeof(payload), mac)) {
+		return;
+	}
+
+	memcpy(&auth, mac, sizeof(auth));
+	sub_auth = (uint64_t *)sub->auth;
+
+	ASSERT_EQUAL(auth, *sub_auth);
+
+	last_beacon_time = now;
+
+	if (interval < obs_min_interval) {
+		obs_min_interval = interval;
+	}
+
+	total_beacons++;
+	if (total_beacons >= (EXPECTED_BEACON_CNT)) {
+		k_sem_give(&observer_sem);
+	}
+}
+
+static void scan_timeout_cb(void)
+{
+	return;
+}
+
+static struct bt_le_scan_cb scan_callbacks = {
+	.recv = scan_recv_cb,
+	.timeout = scan_timeout_cb,
+};
+
+static void test_rx_beacon_secure(void)
+{
+	k_sem_init(&observer_sem, 0, 1);
+	/*initial estimated interval value*/
+	obs_min_interval = 10000;
+
+	bt_mesh_test_setup();
+	/* scanner will not send secure beacons */
+	bt_mesh_beacon_disable();
+	bt_le_scan_cb_register(&scan_callbacks);
+
+	ASSERT_TRUE(!k_sem_take(&observer_sem, K_SECONDS(BEACON_OBSERVE_INTERVAL)));
+	/*minimum time between two consecutive secure beacon shouldn't be less then 10000ms (10s)*/
+	ASSERT_TRUE(obs_min_interval>=MIN_BEACON_INTERVAL);
+	PASS();
+}
+
 
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
@@ -244,6 +372,9 @@ static const struct bst_test_instance test_beacon[] = {
 
 	TEST_CASE(rx, on_iv_update,   "Beacon: receive with IV update flag"),
 	TEST_CASE(rx, on_key_refresh,  "Beacon: receive with key refresh flag"),
+
+	TEST_CASE(tx_beacon, secure, "Beacon: send secure mesh beacons"),
+	TEST_CASE(rx_beacon, secure, "Beacon: receive secure mesh beacons"),
 	BSTEST_END_MARKER
 };
 
