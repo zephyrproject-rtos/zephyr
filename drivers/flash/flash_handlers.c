@@ -28,15 +28,6 @@ static inline int z_vrfy_flash_write(const struct device *dev, off_t offset,
 }
 #include <syscalls/flash_write_mrsh.c>
 
-static inline int z_vrfy_flash_write_protection_set(const struct device *dev,
-						    bool enable)
-{
-	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, write_protection));
-	return z_impl_flash_write_protection_set((const struct device *)dev,
-						 enable);
-}
-#include <syscalls/flash_write_protection_set_mrsh.c>
-
 static inline size_t z_vrfy_flash_get_write_block_size(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
