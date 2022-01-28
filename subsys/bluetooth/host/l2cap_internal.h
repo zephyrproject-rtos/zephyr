@@ -252,6 +252,14 @@ struct bt_l2cap_br_fixed_chan {
 				.accept = _accept,		\
 			}
 
+struct bt_l2cap_monitor {
+	uint16_t cid;
+	void (*recv)(struct bt_conn *conn, struct net_buf *buf);
+};
+
+#define BT_L2CAP_CHANNEL_MONITOR(_name)				\
+	const STRUCT_SECTION_ITERABLE(bt_l2cap_monitor, _name)
+
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);
 

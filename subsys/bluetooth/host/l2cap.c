@@ -2446,6 +2446,12 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 
 	BT_DBG("Packet for CID %u len %u", cid, buf->len);
 
+	STRUCT_SECTION_FOREACH(bt_l2cap_monitor, mon) {
+		if (mon->cid == cid) {
+			mon->recv(conn, buf);
+		}
+	}
+
 	chan = bt_l2cap_le_lookup_rx_cid(conn, cid);
 	if (!chan) {
 		BT_WARN("Ignoring data for unknown channel ID 0x%04x", cid);

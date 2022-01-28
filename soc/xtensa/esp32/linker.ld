@@ -157,6 +157,8 @@ SECTIONS
 
     Z_LINK_ITERABLE_ALIGNED(bt_l2cap_fixed_chan, 4);
 
+    Z_LINK_ITERABLE_ALIGNED(bt_l2cap_monitor, 4)
+
 #if defined(CONFIG_BT_BREDR)
     Z_LINK_ITERABLE_ALIGNED(bt_l2cap_br_fixed_chan, 4);
 #endif
