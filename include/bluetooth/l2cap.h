@@ -135,19 +135,8 @@ struct bt_l2cap_chan {
 	const struct bt_l2cap_chan_ops	*ops;
 	sys_snode_t			node;
 	bt_l2cap_chan_destroy_t		destroy;
-	/* Response Timeout eXpired (RTX) timer */
-	struct k_work_delayable		rtx_work;
-	struct k_work_sync              rtx_sync;
-	ATOMIC_DEFINE(status, BT_L2CAP_NUM_STATUS);
 
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	bt_l2cap_chan_state_t		state;
-	/** Remote PSM to be connected */
-	uint16_t				psm;
-	/** Helps match request context during CoC */
-	uint8_t				ident;
-	bt_security_t			required_sec_level;
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+	ATOMIC_DEFINE(status, BT_L2CAP_NUM_STATUS);
 };
 
 /** @brief LE L2CAP Endpoint structure. */
@@ -191,10 +180,23 @@ struct bt_l2cap_le_chan {
 	struct k_work			tx_work;
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
-	uint16_t				_sdu_len;
+	uint16_t			_sdu_len;
 
 	struct k_work			rx_work;
 	struct k_fifo			rx_queue;
+
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	bt_l2cap_chan_state_t		state;
+	/** Remote PSM to be connected */
+	uint16_t			psm;
+	/** Helps match request context during CoC */
+	uint8_t				ident;
+	bt_security_t			required_sec_level;
+
+	/* Response Timeout eXpired (RTX) timer */
+	struct k_work_delayable		rtx_work;
+	struct k_work_sync		rtx_sync;
+#endif
 };
 
 /** @def BT_L2CAP_LE_CHAN(_ch)
@@ -226,6 +228,17 @@ struct bt_l2cap_br_chan {
 	struct bt_l2cap_br_endpoint	tx;
 	/* For internal use only */
 	atomic_t			flags[1];
+
+	bt_l2cap_chan_state_t		state;
+	/** Remote PSM to be connected */
+	uint16_t			psm;
+	/** Helps match request context during CoC */
+	uint8_t				ident;
+	bt_security_t			required_sec_level;
+
+	/* Response Timeout eXpired (RTX) timer */
+	struct k_work_delayable		rtx_work;
+	struct k_work_sync		rtx_sync;
 };
 
 /** @brief L2CAP Channel operations structure. */

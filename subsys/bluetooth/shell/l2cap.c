@@ -297,7 +297,7 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 
 		sec = *argv[2] - '0';
 
-		l2ch_chan.ch.chan.required_sec_level = sec;
+		l2ch_chan.ch.required_sec_level = sec;
 	}
 
 	err = bt_l2cap_chan_connect(default_conn, &l2ch_chan.ch.chan, psm);
