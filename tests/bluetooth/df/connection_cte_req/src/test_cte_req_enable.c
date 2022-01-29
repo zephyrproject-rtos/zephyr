@@ -173,7 +173,7 @@ static void cte_rx_param_setup(void)
 	};
 
 	ut_bt_create_connection();
-	ut_bt_set_periph_latency(g_conn_handle, REQUEST_INTERVAL_TOO_LOW);
+	ut_bt_set_periph_latency(g_conn_handle, CONN_PERIPH_LATENCY);
 
 	send_set_conn_cte_rx_params(g_conn_handle, &cte_rx_params, true);
 }
