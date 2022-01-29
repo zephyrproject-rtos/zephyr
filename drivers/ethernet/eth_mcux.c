@@ -1656,7 +1656,8 @@ static int ptp_clock_mcux_rate_adjust(const struct device *dev, float ratio)
 	float val;
 
 	/* No change needed. */
-	if (ratio == 1.0f) {
+	if ((ratio > 1.0 && ratio - 1.0 < 0.00000001) ||
+	   (ratio < 1.0 && 1.0 - ratio < 0.00000001)) {
 		return 0;
 	}
 
