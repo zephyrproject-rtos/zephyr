@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(grove_lcd);
 
 #define SLEEP_IN_US(_x_)	((_x_) * 1000)
 
-#define GROVE_LCD_DISPLAY_ADDR		(0x3E)
 #define GROVE_RGB_BACKLIGHT_ADDR	(0x62)
 
 struct command {
@@ -31,15 +30,13 @@ struct command {
 };
 
 struct glcd_data {
-	const struct device *i2c;
 	uint8_t input_set;
 	uint8_t display_switch;
 	uint8_t function;
 };
 
 struct glcd_driver {
-	uint16_t	lcd_addr;
-	uint16_t	rgb_addr;
+	struct i2c_dt_spec bus;
 };
 
 
@@ -109,13 +106,12 @@ void glcd_print(const struct device *port, char *data, uint32_t size)
 {
 	const struct glcd_driver * const rom = (const struct glcd_driver *)
 						port->config;
-	struct glcd_data *dev = port->data;
 	uint8_t buf[] = { GLCD_CMD_SET_CGRAM_ADDR, 0 };
 	int i;
 
 	for (i = 0; i < size; i++) {
 		buf[1] = data[i];
-		i2c_write(dev->i2c, buf, sizeof(buf), rom->lcd_addr);
+		i2c_write_dt(&rom->bus, buf, sizeof(buf));
 	}
 }
 
@@ -124,7 +120,6 @@ void glcd_cursor_pos_set(const struct device *port, uint8_t col, uint8_t row)
 {
 	const struct glcd_driver * const rom = (const struct glcd_driver *)
 						port->config;
-	struct glcd_data *dev = port->data;
 
 	unsigned char data[2];
 
@@ -137,7 +132,7 @@ void glcd_cursor_pos_set(const struct device *port, uint8_t col, uint8_t row)
 	data[0] = GLCD_CMD_SET_DDRAM_ADDR;
 	data[1] = col;
 
-	i2c_write(dev->i2c, data, 2, rom->lcd_addr);
+	i2c_write_dt(&rom->bus, data, 2);
 }
 
 
@@ -145,10 +140,9 @@ void glcd_clear(const struct device *port)
 {
 	const struct glcd_driver * const rom = (const struct glcd_driver *)
 						port->config;
-	struct glcd_data *dev = port->data;
 	uint8_t clear[] = { 0, GLCD_CMD_SCREEN_CLEAR };
 
-	i2c_write(dev->i2c, clear, sizeof(clear), rom->lcd_addr);
+	i2c_write_dt(&rom->bus, clear, sizeof(clear));
 	LOG_DBG("clear, delay 20 ms");
 	sleep(20);
 }
@@ -164,7 +158,7 @@ void glcd_display_state_set(const struct device *port, uint8_t opt)
 	dev->display_switch = opt;
 	data[1] = (opt | GLCD_CMD_DISPLAY_SWITCH);
 
-	i2c_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
+	i2c_write_dt(&rom->bus, data, sizeof(data));
 
 	LOG_DBG("set display_state options, delay 5 ms");
 	sleep(5);
@@ -188,8 +182,7 @@ void glcd_input_state_set(const struct device *port, uint8_t opt)
 	dev->input_set = opt;
 	data[1] = (opt | GLCD_CMD_INPUT_SET);
 
-	i2c_write(dev->i2c, &dev->input_set, sizeof(dev->input_set),
-		  rom->lcd_addr);
+	i2c_write_dt(&rom->bus, &dev->input_set, sizeof(dev->input_set));
 	LOG_DBG("set the input_set, no delay");
 }
 
@@ -217,11 +210,11 @@ void glcd_color_select(const struct device *port, uint8_t color)
 void glcd_color_set(const struct device *port, uint8_t r, uint8_t g,
 		    uint8_t b)
 {
-	struct glcd_data * const dev = port->data;
+	const struct glcd_driver * const rom = port->config;
 
-	rgb_reg_set(dev->i2c, REGISTER_R, r);
-	rgb_reg_set(dev->i2c, REGISTER_G, g);
-	rgb_reg_set(dev->i2c, REGISTER_B, b);
+	rgb_reg_set(rom->bus.bus, REGISTER_R, r);
+	rgb_reg_set(rom->bus.bus, REGISTER_G, g);
+	rgb_reg_set(rom->bus.bus, REGISTER_B, b);
 }
 
 
@@ -234,7 +227,7 @@ void glcd_function_set(const struct device *port, uint8_t opt)
 	dev->function = opt;
 	data[1] = (opt | GLCD_CMD_FUNCTION_SET);
 
-	i2c_write(dev->i2c, data, sizeof(data), rom->lcd_addr);
+	i2c_write_dt(&rom->bus, data, sizeof(data));
 
 	LOG_DBG("set function options, delay 5 ms");
 	sleep(5);
@@ -251,6 +244,7 @@ uint8_t glcd_function_get(const struct device *port)
 
 int glcd_initialize(const struct device *port)
 {
+	const struct glcd_driver * const rom = port->config;
 	struct glcd_data *dev = port->data;
 	uint8_t cmd;
 
@@ -260,17 +254,9 @@ int glcd_initialize(const struct device *port)
 	dev->display_switch = 0U;
 	dev->function = 0U;
 
-	/*
-	 * First set up the device driver...
-	 * we need a pointer to the I2C device we are bound to
-	 */
-	dev->i2c = device_get_binding(
-			CONFIG_GROVE_LCD_RGB_I2C_MASTER_DEV_NAME);
-
-	if (!dev->i2c) {
-		return -EPERM;
+	if (!device_is_ready(rom->bus.bus)) {
+		return -ENODEV;
 	}
-
 
 	/*
 	 * Initialization sequence from the data sheet:
@@ -313,26 +299,24 @@ int glcd_initialize(const struct device *port)
 
 	/* Now power on the background RGB control */
 	LOG_INF("configuring the RGB background");
-	rgb_reg_set(dev->i2c, 0x00, 0x00);
-	rgb_reg_set(dev->i2c, 0x01, 0x05);
-	rgb_reg_set(dev->i2c, 0x08, 0xAA);
+	rgb_reg_set(rom->bus.bus, 0x00, 0x00);
+	rgb_reg_set(rom->bus.bus, 0x01, 0x05);
+	rgb_reg_set(rom->bus.bus, 0x08, 0xAA);
 
 	/* Now set the background color to white */
 	LOG_DBG("background set to white");
-	rgb_reg_set(dev->i2c, REGISTER_R, color_define[GROVE_RGB_WHITE][0]);
-	rgb_reg_set(dev->i2c, REGISTER_G, color_define[GROVE_RGB_WHITE][1]);
-	rgb_reg_set(dev->i2c, REGISTER_B, color_define[GROVE_RGB_WHITE][2]);
+	rgb_reg_set(rom->bus.bus, REGISTER_R, color_define[GROVE_RGB_WHITE][0]);
+	rgb_reg_set(rom->bus.bus, REGISTER_G, color_define[GROVE_RGB_WHITE][1]);
+	rgb_reg_set(rom->bus.bus, REGISTER_B, color_define[GROVE_RGB_WHITE][2]);
 
 	return 0;
 }
 
 static const struct glcd_driver grove_lcd_config = {
-	.lcd_addr = GROVE_LCD_DISPLAY_ADDR,
-	.rgb_addr = GROVE_RGB_BACKLIGHT_ADDR,
+	.bus = I2C_DT_SPEC_INST_GET(0),
 };
 
 static struct glcd_data grove_lcd_driver = {
-	.i2c = NULL,
 	.input_set = 0,
 	.display_switch = 0,
 	.function = 0,
