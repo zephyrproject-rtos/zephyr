@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "mpfs_icicle"
+	depends on BOARD_MPFS_ICICLE

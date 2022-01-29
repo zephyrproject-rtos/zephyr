@@ -1,0 +1,13 @@
+# Icicle board configuration
+
+# Copyright (c) 2020 Tobias Svehagen
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_USE_DDR
+	bool "Enable running in DDR instead of LIM"
+	select SOC_ICICLE_IN_DDR
+	default n
+	depends on BOARD_MPFS_ICICLE
+	
+	
+	

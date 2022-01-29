@@ -1,0 +1,17 @@
+:name: Mi-V
+:description: This script is prepared to run Zephyr on a Mi-V RISC-V board.
+
+$name?="Mi-V"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription @platforms/boards/miv-board.repl
+
+showAnalyzer uart
+cpu PerformanceInMips 80
+
+macro reset
+"""
+    sysbus LoadELF $bin
+"""
+runMacro $reset
