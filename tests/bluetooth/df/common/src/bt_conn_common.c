@@ -19,6 +19,7 @@
 #include <lll/lll_df_types.h>
 #include <lll_conn.h>
 
+#include <ull_tx_queue.h>
 #include <ull_conn_types.h>
 #include <ull_conn_internal.h>
 
@@ -54,8 +55,8 @@ void ut_bt_set_peer_features(uint16_t conn_handle, uint64_t features)
 	conn = ll_conn_get(conn_handle);
 	zassert_not_equal(conn, NULL, "Failed ll_conn instance for given handle");
 
-	conn->common.fex_valid = PEER_FEATURES_ARE_VALID;
-	conn->llcp_feature.features_peer = features;
+	conn->llcp.fex.valid = PEER_FEATURES_ARE_VALID;
+	conn->llcp.fex.features_peer = features;
 }
 
 void ut_bt_set_periph_latency(uint16_t conn_handle, uint16_t periph_latency)
