@@ -122,7 +122,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->soc_context = soc_esf_init;
 #endif
 
+#if defined(CONFIG_SMP)
+	thread->switch_handle = thread;
+#endif
 	thread->callee_saved.sp = (ulong_t)stack_init;
+	
+}
+
+void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
+{
+	*old_thread =  _current;
+
+	return z_get_next_switch_handle(*old_thread);
 }
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)

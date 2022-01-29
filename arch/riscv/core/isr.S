@@ -122,6 +122,8 @@
 	RV_OP_STOREREG temp, __z_arch_esf_t_mstatus_OFFSET(to_reg)	;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_ra_OFFSET(from_reg)		;\
 	RV_OP_STOREREG temp, __z_arch_esf_t_ra_OFFSET(to_reg)		;\
+	RV_OP_LOADREG temp, __z_arch_esf_t_gp_OFFSET(from_reg)		;\
+	RV_OP_STOREREG temp, __z_arch_esf_t_gp_OFFSET(to_reg)		;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_tp_OFFSET(from_reg)		;\
 	RV_OP_STOREREG temp, __z_arch_esf_t_tp_OFFSET(to_reg)		;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_t0_OFFSET(from_reg)		;\
@@ -172,11 +174,20 @@
 #define STORE_CALLEE_SAVED(reg) \
 	DO_CALLEE_SAVED(RV_OP_STOREREG, reg)
 
+/*
+ * From here on in we differentiate between arch_switch() and arch_swap()
+ * initially implemented for Polarfire SOC SMP support.
+ * first cut of switch implementation has CONFIG_USERSPACE and 
+ * CONFIG_PMP_STACK_GUARD and some other options removed to simplify
+ * the initial development.
+ */
+#if CONFIG_USE_SWITCH
 #define LOAD_CALLEE_SAVED(reg) \
 	DO_CALLEE_SAVED(RV_OP_LOADREG, reg)
 
 #define DO_CALLER_SAVED(op) \
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
+	op gp, __z_arch_esf_t_gp_OFFSET(sp)		;\
 	op tp, __z_arch_esf_t_tp_OFFSET(sp)		;\
 	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
 	op t1, __z_arch_esf_t_t1_OFFSET(sp)		;\
@@ -199,6 +210,450 @@
 	DO_CALLER_SAVED(RV_OP_STOREREG)		;
 
 #define LOAD_CALLER_SAVED() \
+	DO_CALLER_SAVED(RV_OP_LOADREG)		;\
+	addi sp, sp, __z_arch_esf_t_SIZEOF	;
+
+/*
+ * @brief Check previous mode.
+ *
+ * @param ret Register to return value.
+ * @param temp Register used foor temporary value.
+ *
+ * @return 0 if previous mode is user.
+ */
+#define WAS_NOT_USER(ret, temp) \
+	RV_OP_LOADREG ret, __z_arch_esf_t_mstatus_OFFSET(sp)	;\
+	li temp, MSTATUS_MPP					;\
+	and ret, ret, temp					;
+
+
+/* imports */
+GDATA(_sw_isr_table)
+GTEXT(__soc_is_irq)
+GTEXT(__soc_handle_irq)
+GTEXT(_Fault)
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+GTEXT(__soc_save_context)
+GTEXT(__soc_restore_context)
+#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+
+GTEXT(_k_neg_eagain)
+GTEXT(_is_next_thread_current)
+GTEXT(z_get_next_ready_thread)
+GTEXT(_arch_get_next_switch_handle)
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+GTEXT(z_thread_mark_switched_in)
+GTEXT(z_thread_mark_switched_out)
+#ifdef CONFIG_TRACING
+GTEXT(sys_trace_isr_enter)
+#endif
+#endif
+
+#ifdef CONFIG_IRQ_OFFLOAD
+GTEXT(_offload_routine)
+#endif
+
+#ifdef CONFIG_USERSPACE
+GTEXT(z_riscv_do_syscall)
+GTEXT(z_riscv_configure_user_allowed_stack)
+GTEXT(z_interrupt_stacks)
+GTEXT(z_riscv_do_syscall_start)
+GTEXT(z_riscv_do_syscall_end)
+#endif
+
+#ifdef CONFIG_PMP_STACK_GUARD
+GTEXT(z_riscv_configure_stack_guard)
+#endif
+
+/* exports */
+GTEXT(__irq_wrapper)
+GTEXT(__irq_wrapper_s)
+
+/* use ABI name of registers for the sake of simplicity */
+
+/*
+ * Generic architecture-level IRQ handling, along with callouts to
+ * SoC-specific routines.
+ *
+ * Architecture level IRQ handling includes basic context save/restore
+ * of standard registers and calling ISRs registered at Zephyr's driver
+ * level.
+ *
+ * Since RISC-V does not completely prescribe IRQ handling behavior,
+ * implementations vary (some implementations also deviate from
+ * what standard behavior is defined). Hence, the arch level code expects
+ * the following functions to be provided at the SOC level:
+ *
+ *     - __soc_is_irq: decide if we're handling an interrupt or an exception
+ *     - __soc_handle_irq: handle SoC-specific details for a pending IRQ
+ *       (e.g. clear a pending bit in a SoC-specific register)
+ *
+ * If CONFIG_RISCV_SOC_CONTEXT_SAVE=y, calls to SoC-level context save/restore
+ * routines are also made here. For details, see the Kconfig help text.
+ *
+ */
+
+/*
+ * Handler called upon each exception/interrupt/fault
+ * In this architecture, system call (ECALL) is used to perform context
+ * switching using the Zephyr arch_switch method or IRQ offloading (when enabled).
+ */
+SECTION_FUNC(exception.entry, __irq_wrapper_s)
+endless:
+    nop
+    nop
+    nop
+    beqz x0, endless
+
+SECTION_FUNC(exception.entry, __irq_wrapper)
+
+	/*
+	 * Save caller-saved registers on current thread stack.
+	 * NOTE: need to be updated to account for floating-point registers
+	 * floating-point registers should be accounted for when corresponding
+	 * config variable is set
+     * 
+     * for arch_switch() a0 contains new thread to restore and a1 contains
+     * pointer to where to store old thread pointer.
+     *
+     * During all this we need frequent access to _kernel, _kernel.cpu[x] 
+     * and _kernel.cpu[x].current
+     *
+     * t4 = _kernal.cpu[x].current
+     * t5 = _kernal
+     * t6 = _kernel.cpu[x]
+	 */
+	STORE_CALLER_SAVED()
+
+	/* Assess whether floating-point registers need to be saved. */
+	csrr t0, mhartid
+#if defined(CONFIG_SOC_MPFS)
+	addi t0, t0, -1
+#endif
+    /* Set up t4, t5 and t6 to point to current thread, _kernel and _cpu[x] */
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t5, _kernel
+	add t6, t5, t1
+	RV_OP_LOADREG t4, ___cpu_t_current_OFFSET(t6)
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	RV_OP_LOADREG t0, _thread_offset_to_user_options(t4)
+	andi t0, t0, K_FP_REGS
+	RV_OP_STOREREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
+	beqz t0, skip_store_fp_caller_saved
+	STORE_FP_CALLER_SAVED(sp)
+
+skip_store_fp_caller_saved:
+#endif
+	/* Save MEPC register */
+	csrr t0, mepc
+	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+
+	/* Save SOC-specific MSTATUS register */
+	csrr t0, mstatus
+	RV_OP_STOREREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	/*
+	 * Check if exception is the result of an interrupt or not.
+	 * (SOC dependent). Following the RISC-V architecture spec, the MSB
+	 * of the mcause register is used to indicate whether an exception
+	 * is the result of an interrupt or an exception/fault. But for some
+	 * SOCs (like pulpino or riscv-qemu), the MSB is never set to indicate
+	 * interrupt. Hence, check for interrupt/exception via the __soc_is_irq
+	 * function (that needs to be implemented by each SOC). The result is
+	 * returned via register a0 (1: interrupt, 0 exception)
+	 */
+     
+     /* For the moment we will assume t4 - t7 are safe - not ideal but reasonable assumption... */
+	jal ra, __soc_is_irq
+
+	/* If a0 != 0, jump to is_interrupt */
+	addi t1, x0, 0 /* NOP ? - official is addi x0, x0, 0... */
+	bnez a0, is_interrupt
+
+	/*
+	 * If the exception is the result of an ECALL, check whether to
+	 * perform a context-switch or an IRQ offload. Otherwise call _Fault
+	 * to report the exception.
+	 */
+	csrr t0, mcause
+	li t2, SOC_MCAUSE_EXP_MASK
+	and t0, t0, t2
+	li t1, SOC_MCAUSE_ECALL_EXP
+
+	/*
+	 * If mcause == SOC_MCAUSE_ECALL_EXP, handle system call from
+	 * kernel thread.
+	 */
+	beq t0, t1, is_kernel_syscall
+
+	/*
+	 * Call _Fault to handle exception.
+	 * Stack pointer is pointing to a z_arch_esf_t structure, pass it
+	 * to _Fault (via register a0).
+	 * If _Fault shall return, set return address to
+	 * no_reschedule to restore stack.
+	 */
+	addi a0, sp, 0
+
+	la ra, no_reschedule
+
+	tail _Fault
+
+is_kernel_syscall:
+	/*
+	 * A syscall is the result of an ecall instruction, in which case the
+	 * MEPC will contain the address of the ecall instruction.
+	 * Increment saved MEPC by 4 to prevent triggering the same ecall
+	 * again upon exiting the ISR.
+	 *
+	 * It's safe to always increment by 4, even with compressed
+	 * instructions, because the ecall instruction is always 4 bytes.
+	 */
+	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	addi t0, t0, 4
+	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+
+	/*
+	 * Go to reschedule to handle context-switch - saved a0 and a1 have
+     * arch_switch() arguments a0 - &to, a1 - &from.switch_handle
+	 */
+	j reschedule
+
+is_interrupt:
+	/*
+	 * Save current thread stack pointer and switch
+	 * stack pointer to interrupt stack.
+	 */
+
+	/* Save thread stack pointer to temp register t0 */
+	addi t0, sp, 0
+
+	/* Switch to interrupt stack */
+	RV_OP_LOADREG sp, ___cpu_t_irq_stack_OFFSET(t6)
+
+	/*
+	 * Save thread stack pointer on interrupt stack
+	 * In RISC-V, stack pointer needs to be 16-byte aligned
+     * also allow for temp regs
+	 */
+	addi sp, sp, -32
+	RV_OP_STOREREG t0, 0x00(sp)
+
+on_irq_stack:
+	/* Increment _kernel.cpus[0].nested variable */
+	lw t3, ___cpu_t_nested_OFFSET(t6)
+	addi t3, t3, 1
+	sw t3, ___cpu_t_nested_OFFSET(t6)
+
+	/* Get IRQ causing interrupt */
+	csrr a0, mcause
+	li t0, SOC_MCAUSE_EXP_MASK
+	and a0, a0, t0
+
+	/*
+	 * Clear pending IRQ generating the interrupt at SOC level
+	 * Pass IRQ number to __soc_handle_irq via register a0
+	 */
+     /* For the moment we will assume t4 - t7 are safe - not ideal but reasonable assumption... */
+	jal ra, __soc_handle_irq
+
+	/*
+	 * Call corresponding registered function in _sw_isr_table.
+	 * (table is 2-word wide, we should shift index accordingly)
+	 */
+	la t0, _sw_isr_table
+	slli a0, a0, (RV_REGSHIFT + 1)
+	add t0, t0, a0
+
+	/* Load argument in a0 register */
+
+	/* Load ISR function address in register t1 */
+	RV_OP_LOADREG t1, RV_REGSIZE(t0)
+
+	/* Call ISR function */
+	RV_OP_STOREREG t4, 0x08(sp)
+	RV_OP_STOREREG t5, 0x10(sp)
+	RV_OP_STOREREG t6, 0x18(sp)
+	jalr ra, t1
+	RV_OP_LOADREG t4, 0x08(sp)
+	RV_OP_LOADREG t5, 0x10(sp)
+	RV_OP_LOADREG t6, 0x18(sp)
+
+on_thread_stack:
+	/* Decrement _kernel.cpus[x].nested variable */
+	lw t2, ___cpu_t_nested_OFFSET(t6)
+	addi t2, t2, -1
+	sw t2, ___cpu_t_nested_OFFSET(t6)
+
+	/* Restore thread stack pointer */
+	RV_OP_LOADREG t0, 0x00(sp)
+	addi sp, t0, 0
+
+	/*
+	 * Check if we need to perform a reschedule.
+     *
+     * Allocate space on stack for response and save temps.
+	 */
+	addi sp, sp, -32
+	RV_OP_STOREREG t4, 0x08(sp)
+	RV_OP_STOREREG t5, 0x10(sp)
+	RV_OP_STOREREG t6, 0x18(sp)
+	addi a0, sp, 0 /* **old_thread parameter */
+	jal ra, z_arch_get_next_switch_handle
+	RV_OP_LOADREG a1, 0x00(sp) 
+	RV_OP_LOADREG t4, 0x08(sp)
+	RV_OP_LOADREG t5, 0x10(sp)
+	RV_OP_LOADREG t6, 0x18(sp)
+	addi sp, sp, 32
+	/*
+	 * Check if next thread to schedule is current thread.
+	 * If yes do not perform a reschedule
+	 */
+    beq a0, a1, no_reschedule
+    addi a1, a1, ___thread_t_switch_handle_OFFSET
+    j reschedule_irq
+reschedule:
+    /*
+     * Land here for arch_swap() so recover switch_to and switched_from
+     * parameters 
+     */
+	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
+	RV_OP_LOADREG a1, __z_arch_esf_t_a1_OFFSET(sp)
+reschedule_irq:
+    /* Land here if switching after IRQ so parameters set up already...
+     * Convert switched_from back to thread pointer as the 
+     * thread handle is actually the thread address in our implementation.
+     */
+    addi a2, a1, 0
+    addi a1, a1, -___thread_t_switch_handle_OFFSET
+    
+	/*
+	 * Save callee-saved registers of current kernel thread
+	 * prior to handle context-switching
+	 */
+	STORE_CALLEE_SAVED(a1)
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	/* Assess whether floating-point registers need to be saved. */
+	RV_OP_LOADREG t0, _thread_offset_to_user_options(t4)
+	andi t0, t0, K_FP_REGS
+	beqz t0, skip_store_fp_callee_saved
+	STORE_FP_CALLEE_SAVED(a1)
+
+skip_store_fp_callee_saved:
+#endif
+	/*
+	 * Save stack pointer of current thread and set sp to new thread sp
+	 */
+    RV_OP_STOREREG sp, _thread_offset_to_sp(a1)
+    RV_OP_STOREREG a1, (a2)
+	RV_OP_LOADREG sp, _thread_offset_to_sp(a0)
+    
+
+	/* Restore callee-saved registers of new thread */
+	LOAD_CALLEE_SAVED(a0)
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	/* Determine if we need to restore floating-point registers. */
+	RV_OP_LOADREG t1, _thread_offset_to_user_options(t4)
+	andi t1, t1, K_FP_REGS
+	beqz t1, skip_load_fp_callee_saved
+
+	/*
+	 * If we are switching from a thread with floating-point disabled the
+	 * mstatus FS bits will still be cleared, which can cause an illegal
+	 * instruction fault. Set the FS state before restoring the registers.
+	 * mstatus will be restored later on.
+	 */
+	li t0, MSTATUS_FS_INIT
+	csrrs x0, mstatus, t0
+
+	LOAD_FP_CALLEE_SAVED(a0)
+
+skip_load_fp_callee_saved:
+#endif
+	/* Restore MEPC register */
+	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	csrw mepc, t0
+
+	/* Restore SOC-specific MSTATUS register */
+	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	csrw mstatus, t0
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	/*
+	 * Determine if we need to restore floating-point registers. This needs
+	 * to happen before restoring integer registers to avoid stomping on
+	 * t1.
+	 */
+	beqz t1, skip_load_fp_caller_saved_resched
+	LOAD_FP_CALLER_SAVED(sp)
+
+skip_load_fp_caller_saved_resched:
+#endif
+	/* Restore caller-saved registers from thread stack */
+	LOAD_CALLER_SAVED()
+
+	/* Call SOC_ERET to exit ISR */
+	SOC_ERET
+
+no_reschedule:
+	/* Restore MEPC register */
+	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	csrw mepc, t0
+
+	/* Restore SOC-specific MSTATUS register */
+	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	csrw mstatus, t0
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	/*
+	 * Determine if we need to restore floating-point registers. This needs
+	 * to happen before restoring integer registers to avoid stomping on
+	 * t0.
+	 */
+	RV_OP_LOADREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
+	beqz t0, skip_load_fp_caller_saved
+	LOAD_FP_CALLER_SAVED(sp)
+
+skip_load_fp_caller_saved:
+#endif
+	/* Restore caller-saved registers from thread stack */
+	LOAD_CALLER_SAVED()
+
+	/* Call SOC_ERET to exit ISR */
+	SOC_ERET
+#else /* CONFIG_USE_SWITCH */
+
+#define LOAD_CALLER_SAVED(reg) \
+	DO_CALLEE_SAVED(RV_OP_LOADREG, reg)
+
+#define DO_CALLER_SAVED(op) \
+	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
+	op gp, __z_arch_esf_t_gp_OFFSET(sp)		;\
+	op tp, __z_arch_esf_t_tp_OFFSET(sp)		;\
+	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
+	op t1, __z_arch_esf_t_t1_OFFSET(sp)		;\
+	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
+	op t3, __z_arch_esf_t_t3_OFFSET(sp)		;\
+	op t4, __z_arch_esf_t_t4_OFFSET(sp)		;\
+	op t5, __z_arch_esf_t_t5_OFFSET(sp)		;\
+	op t6, __z_arch_esf_t_t6_OFFSET(sp)		;\
+	op a0, __z_arch_esf_t_a0_OFFSET(sp)		;\
+	op a1, __z_arch_esf_t_a1_OFFSET(sp)		;\
+	op a2, __z_arch_esf_t_a2_OFFSET(sp)		;\
+	op a3, __z_arch_esf_t_a3_OFFSET(sp)		;\
+	op a4, __z_arch_esf_t_a4_OFFSET(sp)		;\
+	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
+	op a6, __z_arch_esf_t_a6_OFFSET(sp)		;\
+	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;
+
+#define STORE_CALLER_SAVED() \
+	addi sp, sp, -__z_arch_esf_t_SIZEOF	;\
+	DO_CALLER_SAVED(RV_OP_STOREREG)		;
+
+#define LOAD_CALLEE_SAVED() \
 	DO_CALLER_SAVED(RV_OP_LOADREG)		;\
 	addi sp, sp, __z_arch_esf_t_SIZEOF	;
 
@@ -256,6 +711,7 @@ GTEXT(z_riscv_configure_stack_guard)
 
 /* exports */
 GTEXT(__irq_wrapper)
+GTEXT(__irq_wrapper_s)
 
 /* use ABI name of registers for the sake of simplicity */
 
@@ -285,6 +741,15 @@ GTEXT(__irq_wrapper)
  * In this architecture, system call (ECALL) is used to perform context
  * switching or IRQ offloading (when enabled).
  */
+SECTION_FUNC(exception.entry, __irq_wrapper_s)
+endless:
+    nop
+    nop
+    nop
+    beqz x0, endless
+
+
+
 SECTION_FUNC(exception.entry, __irq_wrapper)
 
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -298,12 +763,24 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	 * floating-point registers should be accounted for when corresponding
 	 * config variable is set
 	 */
+loops:
+//	 la a0, 1
+//	 beqz a0, loops
 	STORE_CALLER_SAVED()
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t0, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t0, _kernel
+	add t0, t0, t1
+	RV_OP_LOADREG t0, ___cpu_t_current_OFFSET(t0)
+#else
 	la t0, _kernel
 	RV_OP_LOADREG t0, _kernel_offset_to_current(t0)
+#endif
 	RV_OP_LOADREG t0, _thread_offset_to_user_options(t0)
 	andi t0, t0, K_FP_REGS
 	RV_OP_STOREREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
@@ -332,9 +809,17 @@ skip_store_fp_caller_saved:
 	WAS_NOT_USER(t0, t1)
 	bnez t0, is_priv_sp
 
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t0, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t0, _kernel
+	add t0, t0, t1
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#else
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-
+#endif
 	/* Save user stack pointer */
 #ifdef CONFIG_PMP_STACK_GUARD
 	csrr t2, mscratch
@@ -527,8 +1012,18 @@ skip_fp_move_kernel_syscall:
 is_user_syscall:
 
 #ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t0, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t0, _kernel
+	add t0, t0, t1
+	RV_OP_LOADREG a0, ___cpu_t_current_OFFSET(t0)
+#else
 	la t0, _kernel
 	RV_OP_LOADREG a0, _kernel_offset_to_current(t0)
+#endif
+
 	jal ra, z_riscv_configure_stack_guard
 #endif /* CONFIG_PMP_STACK_GUARD */
 
@@ -572,8 +1067,17 @@ skip_fp_copy_user_syscall:
 	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Switch to privilege stack */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t0, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t0, _kernel
+	add t0, t0, t1
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#else
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+#endif
 	RV_OP_LOADREG t0, _thread_offset_to_priv_stack_start(t1)
 	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Update user SP */
 	addi sp, t0, CONFIG_PRIVILEGED_STACK_SIZE
@@ -606,8 +1110,17 @@ return_from_syscall:
 
 no_reschedule_from_fault:
 	/* Restore User SP */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t0, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t0, _kernel
+	add t0, t0, t1
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#else
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+#endif
 	RV_OP_LOADREG sp, _thread_offset_to_user_sp(t1)
 
 	/* Update a0 (return value) */
@@ -658,8 +1171,17 @@ is_interrupt:
 	addi t0, sp, 0
 
 	/* Switch to interrupt stack */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t2, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t2
+	la t2, _kernel
+	add t2, t2, t1
+	RV_OP_LOADREG sp, ___cpu_t_irq_stack_OFFSET(t2)
+#else
 	la t2, _kernel
 	RV_OP_LOADREG sp, _kernel_offset_to_irq_stack(t2)
+#endif
 
 	/*
 	 * Save thread stack pointer on interrupt stack
@@ -668,14 +1190,28 @@ is_interrupt:
 	addi sp, sp, -16
 	RV_OP_STOREREG t0, 0x00(sp)
 #else
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t2, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t2
 	la t2, _kernel
+	add t2, t2, t1
+#else
+	la t2, _kernel
+#endif
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
 
 on_irq_stack:
 	/* Increment _kernel.cpus[0].nested variable */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	lw t3, ___cpu_t_nested_OFFSET(t2)
+	addi t3, t3, 1
+	sw t3, ___cpu_t_nested_OFFSET(t2)
+#else
 	lw t3, _kernel_offset_to_nested(t2)
 	addi t3, t3, 1
 	sw t3, _kernel_offset_to_nested(t2)
+#endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
@@ -728,13 +1264,26 @@ call_irq:
 
 on_thread_stack:
 	/* Get reference to _kernel */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t2, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t2
+	la t2, _kernel
+	add t1, t2, t1
+#else
 	la t1, _kernel
+#endif
 
 	/* Decrement _kernel.cpus[0].nested variable */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	lw t2, ___cpu_t_nested_OFFSET(t1)
+	addi t2, t2, -1
+	sw t2, ___cpu_t_nested_OFFSET(t1)
+#else
 	lw t2, _kernel_offset_to_nested(t1)
 	addi t2, t2, -1
 	sw t2, _kernel_offset_to_nested(t1)
-
+#endif
 #if !defined(CONFIG_USERSPACE) && !defined(CONFIG_PMP_STACK_GUARD)
 	/* Restore thread stack pointer */
 	RV_OP_LOADREG t0, 0x00(sp)
@@ -742,8 +1291,16 @@ on_thread_stack:
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_STACK_SENTINEL
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	addi sp, sp, -16
+	sd t1, 0x00(sp)
+	call z_check_stack_sentinel
+	sd t1, 0x00(sp)
+	addi sp, sp, 16
+#else	
 	call z_check_stack_sentinel
 	la t1, _kernel
+#endif
 #endif
 
 #ifdef CONFIG_PREEMPT_ENABLED
@@ -752,6 +1309,16 @@ on_thread_stack:
 	 */
 
 	/* Get pointer to _kernel.current */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	RV_OP_LOADREG t2, ___cpu_t_current_OFFSET (t1)
+
+	/*
+	 * Check if next thread to schedule is current thread.
+	 * If yes do not perform a reschedule
+	 */
+	la t4, _kernel
+	RV_OP_LOADREG t3, ___kernel_t_ready_q_OFFSET(t4)
+#else
 	RV_OP_LOADREG t2, _kernel_offset_to_current(t1)
 
 	/*
@@ -759,13 +1326,18 @@ on_thread_stack:
 	 * If yes do not perform a reschedule
 	 */
 	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t1)
+#endif
 	beq t3, t2, no_reschedule
 #else
 	j no_reschedule
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 #ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	RV_OP_LOADREG a0, ___cpu_t_current_OFFSET (t1)
+#else
 	RV_OP_LOADREG a0, _kernel_offset_to_current(t1)
+#endif
 	jal ra, z_riscv_configure_stack_guard
 
 	/*
@@ -810,7 +1382,17 @@ skip_fp_move_irq:
 
 #endif /* CONFIG_USERSPACE */
 
+/*
+ * This is in 2_7_99 and not in PMCS patches
+ */
+
+
 reschedule:
+
+/*
+ * This is in 2_7_99 and not in PMCS patches
+ */
+
 	/*
 	 * Check if the current thread is the same as the thread on the ready Q. If
 	 * so, do not reschedule.
@@ -827,12 +1409,20 @@ reschedule:
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
 	call z_thread_mark_switched_out
 #endif
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t0, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t0, _kernel
+	add t0, t0, t1
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#else
 	/* Get reference to _kernel */
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-
+#endif
 #ifdef CONFIG_USERSPACE
 	/*
 	 * Check the thread mode and skip callee saved storing
@@ -881,17 +1471,27 @@ skip_callee_saved_reg:
 	sw t3, _thread_offset_to_swap_return_value(t1)
 
 	/* Get next thread to schedule. */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	la t1, _kernel
+#else
 	RV_OP_LOADREG t1, _kernel_offset_to_ready_q_cache(t0)
+#endif
 
 	/*
 	 * Set _kernel.current to new thread loaded in t1
 	 */
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#else
 	RV_OP_STOREREG t1, _kernel_offset_to_current(t0)
+#endif
 
 	/* Switch to new thread stack */
 	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)
 
 	/* Restore callee-saved registers of new thread */
+	/*Part of 2_7_99 - this statment is switched*/
+	// LOAD_CALLER_SAVED(t1)
 	LOAD_CALLEE_SAVED(t1)
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
@@ -976,6 +1576,8 @@ skip_load_fp_caller_saved_resched:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Restore caller-saved registers from thread stack */
+	/* Part of 2_7_99*/
+	// LOAD_CALLEE_SAVED()
 	LOAD_CALLER_SAVED()
 
 	/* Call SOC_ERET to exit ISR */
@@ -992,8 +1594,17 @@ no_reschedule:
 	li t0, MSTATUS_MPRV
 	csrc mstatus, t0
 
+#if defined(CONFIG_MP_NUM_CPUS) && (CONFIG_MP_NUM_CPUS != 1)
+	csrr t0, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t0, _kernel
+	add t0, t0, t1
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#else
 	la t0, _kernel
 	RV_OP_LOADREG a0, _kernel_offset_to_current(t0)
+#endif
 	jal ra, z_riscv_configure_user_allowed_stack
 
 	/* Set user mode variable */
@@ -1041,10 +1652,12 @@ skip_load_fp_caller_saved:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Restore caller-saved registers from thread stack */
+	/*Part of 2_7_99*/
+	//LOAD_CALLEE_SAVED()
 	LOAD_CALLER_SAVED()
-
 #ifdef CONFIG_PMP_STACK_GUARD
 	csrrw sp, mscratch, sp
 #endif /* CONFIG_PMP_STACK_GUARD */
 	/* Call SOC_ERET to exit ISR */
 	SOC_ERET
+#endif

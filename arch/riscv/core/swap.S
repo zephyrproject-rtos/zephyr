@@ -11,6 +11,15 @@
 
 /* exports */
 GTEXT(arch_swap)
+GTEXT(arch_switch_riscv)
+SECTION_FUNC(exception.other, arch_switch_riscv)
+
+	/* Make a system call to perform context switch */
+	ecall
+	/* Return */
+	jalr x0, ra
+
+
 GTEXT(z_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
@@ -35,11 +44,19 @@ SECTION_FUNC(exception.other, arch_swap)
 	 * _thread_offset_to_swap_return_value). Normally, it should be -EAGAIN,
 	 * unless someone has previously called arch_thread_return_value_set(..).
 	 */
+#if defined(CONFIG_BOARD_HART_TO_USE) && (CONFIG_BOARD_HART_TO_USE != 0)
+	csrr t0, mhartid
+	li t1, ___cpu_t_SIZEOF
+	mul t1,t1,t0
+	la t0, _kernel
+	add t0, t0, t1
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#else
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-
+#endif
 	/* Load return value of arch_swap function in temp register t2 */
 	lw t2, _thread_offset_to_swap_return_value(t1)
 
