@@ -1051,11 +1051,14 @@ static void eth_mcux_init(const struct device *dev)
 	ENET_AddMulticastGroup(context->base, ptp_multicast);
 	ENET_AddMulticastGroup(context->base, ptp_peer_multicast);
 
-	context->ptp_config.channel = kENET_PtpTimerChannel1;
+	/* only for ERRATA_2579 */
+	context->ptp_config.channel = kENET_PtpTimerChannel3;
 	context->ptp_config.ptp1588ClockSrc_Hz =
 					CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ;
 	context->clk_ratio = 1.0;
 
+	ENET_Ptp1588SetChannelMode(context->base, kENET_PtpTimerChannel3,
+			kENET_PtpChannelPulseHighonCompare, true);
 	ENET_Ptp1588Configure(context->base, &context->enet_handle,
 			      &context->ptp_config);
 #endif
@@ -1262,8 +1265,17 @@ static const struct ethernet_api api_funcs = {
 static void eth_mcux_ptp_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
+	int irq_lock_key = irq_lock();
+	enet_ptp_timer_channel_t channel;
 
+	/* clear channel */
+	for (channel = kENET_PtpTimerChannel1; channel <= kENET_PtpTimerChannel4; channel++) {
+		if (ENET_Ptp1588GetChannelStatus(context->base, channel)) {
+			ENET_Ptp1588ClearChannelStatus(context->base, channel);
+		}
+	}
 	ENET_TimeStampIRQHandler(context->base, &context->enet_handle);
+	irq_unlock(irq_lock_key);
 }
 #endif
 
