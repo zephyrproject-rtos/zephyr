@@ -25,8 +25,6 @@ extern "C" {
  * @{
  */
 
-#define GROVE_LCD_NAME			"GLCD"
-
 /**
  *  @brief Send text to the screen
  *
