@@ -114,16 +114,29 @@ rsource "../mesh/Kconfig"
 rsource "../audio/Kconfig"
 
 config BT_HOST_CRYPTO
-	# Hidden option that compiles in random number generation and AES
-	# encryption support using TinyCrypt library if this is not provided
-	# by the controller implementation.
+	# Hidden option that compiles in AES encryption support using TinyCrypt
+	# library if this is not provided by the controller implementation.
 	bool
 	default y if !BT_CTLR_CRYPTO
 	select TINYCRYPT
 	select TINYCRYPT_AES
+
+config BT_HOST_CRYPTO_PRNG
+	bool "Use Tinycrypt library for random number generation"
+	default y
 	select TINYCRYPT_SHA256
 	select TINYCRYPT_SHA256_HMAC
 	select TINYCRYPT_SHA256_HMAC_PRNG
+	depends on BT_HOST_CRYPTO
+	help
+	  When selected, will use tinycrypt library for random number generation.
+	  This will consume additional ram, but may speed up the generation of random
+	  numbers.
+
+	  Otherwise, random numbers will be generated through multiple HCI calls,
+	  which will not consume additional resources, but may take a long time,
+	  depending on the length of the random data.
+	  This method is generally recommended within 16 bytes.
 
 config BT_SETTINGS
 	bool "Store Bluetooth state and configuration persistently"
