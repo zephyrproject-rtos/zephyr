@@ -2740,31 +2740,31 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
-	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 
-	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
+	BT_DBG("chan %p cid 0x%04x", le_chan, le_chan->tx.cid);
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
 	if (!atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
-		ch->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
-		ch->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
+		le_chan->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
+		le_chan->rx.mtu = BT_ATT_DEFAULT_LE_MTU;
 	}
 
 	att_chan_mtu_updated(att_chan);
 
 	k_work_init_delayable(&att_chan->timeout_work, att_timeout);
 
-	bt_gatt_connected(ch->chan.conn);
+	bt_gatt_connected(le_chan->chan.conn);
 }
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
 	struct bt_att *att = att_chan->att;
-	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 
-	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
+	BT_DBG("chan %p cid 0x%04x", le_chan, le_chan->tx.cid);
 
 	if (!att_chan->att) {
 		BT_DBG("Ignore disconnect on detached ATT chan");
@@ -2780,7 +2780,7 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 
 	att_reset(att);
 
-	bt_gatt_disconnected(ch->chan.conn);
+	bt_gatt_disconnected(le_chan->chan.conn);
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -2818,12 +2818,12 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 				  uint8_t hci_status)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
-	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-	struct bt_conn *conn = ch->chan.conn;
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	struct bt_conn *conn = le_chan->chan.conn;
 	uint8_t err;
 
-	BT_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x", ch,
-	       conn, conn->handle, conn->sec_level, hci_status);
+	BT_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x",
+	       le_chan, conn, conn->handle, conn->sec_level, hci_status);
 
 	if (!att_chan->att) {
 		BT_DBG("Ignore encrypt change on detached ATT chan");
