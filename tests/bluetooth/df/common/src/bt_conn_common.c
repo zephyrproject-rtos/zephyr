@@ -35,6 +35,14 @@ uint16_t ut_bt_create_connection(void)
 	conn->lll.latency = 0;
 	conn->lll.handle = ll_conn_handle_get(conn);
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	conn->lll.df_rx_cfg.is_initialized = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	conn->llcp.cte_req.is_enabled = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
 	return conn->lll.handle;
 }
 
