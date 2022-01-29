@@ -20,8 +20,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(grove_lcd);
 
-#define SLEEP_IN_US(_x_)	((_x_) * 1000)
-
 #define GROVE_RGB_BACKLIGHT_ADDR	(0x62)
 
 struct command {
@@ -92,13 +90,6 @@ static void rgb_reg_set(const struct device *i2c, uint8_t addr, uint8_t dta)
 	i2c_write(i2c, data, sizeof(data), GROVE_RGB_BACKLIGHT_ADDR);
 }
 
-
-static inline void sleep(uint32_t sleep_in_ms)
-{
-	k_busy_wait(SLEEP_IN_US(sleep_in_ms));
-}
-
-
 /********************************************
  *  PUBLIC FUNCTIONS
  *******************************************/
@@ -144,7 +135,7 @@ void glcd_clear(const struct device *port)
 
 	i2c_write_dt(&rom->bus, clear, sizeof(clear));
 	LOG_DBG("clear, delay 20 ms");
-	sleep(20);
+	k_sleep(K_MSEC(20));
 }
 
 
@@ -161,7 +152,7 @@ void glcd_display_state_set(const struct device *port, uint8_t opt)
 	i2c_write_dt(&rom->bus, data, sizeof(data));
 
 	LOG_DBG("set display_state options, delay 5 ms");
-	sleep(5);
+	k_sleep(K_MSEC(5));
 }
 
 
@@ -230,7 +221,7 @@ void glcd_function_set(const struct device *port, uint8_t opt)
 	i2c_write_dt(&rom->bus, data, sizeof(data));
 
 	LOG_DBG("set function options, delay 5 ms");
-	sleep(5);
+	k_sleep(K_MSEC(5));
 }
 
 
@@ -278,7 +269,7 @@ int glcd_initialize(const struct device *port)
 	 * VDD to power on, so pause a little here, 30 ms min, so we go 50
 	 */
 	LOG_DBG("delay 50 ms while the VDD powers on");
-	sleep(50);
+	k_sleep(K_MSEC(50));
 
 	/* Configure everything for the display function first */
 	cmd = GLCD_CMD_FUNCTION_SET | GLCD_FS_ROWS_2;
