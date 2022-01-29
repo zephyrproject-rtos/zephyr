@@ -53,6 +53,7 @@ struct __esf {
 	ulong_t ra;		/* return address */
 	ulong_t tp;		/* thread pointer */
 
+	ulong_t gp;		/* global pointer */
 	ulong_t t0;		/* Caller-saved temporary register */
 	ulong_t t1;		/* Caller-saved temporary register */
 	ulong_t t2;		/* Caller-saved temporary register */
