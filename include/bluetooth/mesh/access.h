@@ -56,14 +56,35 @@ extern "C" {
 #define BT_MESH_IS_DEV_KEY(key) (key == BT_MESH_KEY_DEV_LOCAL || \
 				 key == BT_MESH_KEY_DEV_REMOTE)
 
-/** Maximum payload size of an access message (in octets). */
+/** Maximum size of an access message segment (in octets). */
 #define BT_MESH_APP_SEG_SDU_MAX   12
+
+/** Maximum payload size of an unsegmented access message (in octets). */
+#define BT_MESH_APP_UNSEG_SDU_MAX 15
+
+/** Maximum number of segments supported for incoming messages. */
+#if defined(CONFIG_BT_MESH_RX_SEG_MAX)
+#define BT_MESH_RX_SEG_MAX CONFIG_BT_MESH_RX_SEG_MAX
+#else
+#define BT_MESH_RX_SEG_MAX 0
+#endif
+
+/** Maximum number of segments supported for outgoing messages. */
+#if defined(CONFIG_BT_MESH_TX_SEG_MAX)
+#define BT_MESH_TX_SEG_MAX CONFIG_BT_MESH_TX_SEG_MAX
+#else
+#define BT_MESH_TX_SEG_MAX 0
+#endif
+
 /** Maximum possible payload size of an outgoing access message (in octets). */
-#define BT_MESH_TX_SDU_MAX        (CONFIG_BT_MESH_TX_SEG_MAX * \
-				  BT_MESH_APP_SEG_SDU_MAX)
+#define BT_MESH_TX_SDU_MAX        MAX((BT_MESH_TX_SEG_MAX *		\
+				       BT_MESH_APP_SEG_SDU_MAX),	\
+				      BT_MESH_APP_UNSEG_SDU_MAX)
+
 /** Maximum possible payload size of an incoming access message (in octets). */
-#define BT_MESH_RX_SDU_MAX        (CONFIG_BT_MESH_RX_SEG_MAX * \
-				  BT_MESH_APP_SEG_SDU_MAX)
+#define BT_MESH_RX_SDU_MAX        MAX((BT_MESH_RX_SEG_MAX *		\
+				       BT_MESH_APP_SEG_SDU_MAX),	\
+				      BT_MESH_APP_UNSEG_SDU_MAX)
 
 /** Helper to define a mesh element within an array.
  *

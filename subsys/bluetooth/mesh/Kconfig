@@ -378,18 +378,26 @@ config BT_MESH_IVU_DIVIDER
 config BT_MESH_TX_SEG_MSG_COUNT
 	int "Maximum number of simultaneous outgoing segmented messages"
 	default 1
-	range 1 255
+	range 0 255
 	help
 	  Maximum number of simultaneous outgoing multi-segment and/or
 	  reliable messages.
 
+	  Note that: Since Mesh Segmentation/reassemblying is a mandatory
+	  feature of specification, set to zero will not allow send any
+	  Mesh Segment message.
+
 config BT_MESH_RX_SEG_MSG_COUNT
 	int "Maximum number of simultaneous incoming segmented messages"
 	default 1
-	range 1 255
+	range 0 255
 	help
 	  Maximum number of simultaneous incoming multi-segment and/or
 	  reliable messages.
+
+	  Note that: Since Mesh Segmentation/reassemblying is a mandatory
+	  feature of specification, set to zero will not allow receive any
+	  Mesh Segment message.
 
 config BT_MESH_SEG_BUFS
 	int "Number of segment buffers available"
@@ -411,7 +419,8 @@ config BT_MESH_SEG_BUFS
 config BT_MESH_RX_SEG_MAX
 	int "Maximum number of segments in incoming messages"
 	default 3
-	range 2 32
+	range 1 32
+	depends on BT_MESH_RX_SEG_MSG_COUNT > 0
 	help
 	  Maximum number of segments supported for incoming messages.
 	  This value should typically be fine-tuned based on what
@@ -430,7 +439,8 @@ config BT_MESH_RX_SEG_MAX
 config BT_MESH_TX_SEG_MAX
 	int "Maximum number of segments in outgoing messages"
 	default 3
-	range 2 32
+	range 1 32
+	depends on BT_MESH_TX_SEG_MSG_COUNT > 0
 	help
 	  Maximum number of segments supported for outgoing messages.
 	  This value should typically be fine-tuned based on what
