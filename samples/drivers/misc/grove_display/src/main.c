@@ -33,7 +33,7 @@ uint8_t clamp_rgb(int val)
 
 void main(void)
 {
-	const struct device *glcd;
+	const struct device *glcd = DEVICE_DT_GET(DT_NODELABEL(glcd));
 	char str[20];
 	int rgb[] = { 0x0, 0x0, 0x0 };
 	uint8_t rgb_chg[3];
@@ -42,9 +42,8 @@ void main(void)
 	int i, j, m;
 	int cnt;
 
-	glcd = device_get_binding(GROVE_LCD_NAME);
-	if (!glcd) {
-		printk("Grove LCD: Device not found.\n");
+	if (!device_is_ready(glcd)) {
+		printk("Grove LCD: Device not ready.\n");
 		return;
 	}
 
