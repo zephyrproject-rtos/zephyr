@@ -1,8 +1,11 @@
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT seeed_grove_lcd_rgb
 
 #include <errno.h>
 #include <kernel.h>
@@ -335,14 +338,6 @@ static struct glcd_data grove_lcd_driver = {
 	.function = 0,
 };
 
-	/* Since device_get_binding() will not return any
-	 * reference to a driver instance if driver_api
-	 * is NULL and grove_lcd does not have any API struct,
-	 * just populate it with some magic number
-	 * so grove_lcd can be referenced.
-	 * since grove_lcd_driver struct is available, populating with it
-	 */
-DEVICE_DEFINE(grove_lcd, GROVE_LCD_NAME, glcd_initialize,
-		NULL, &grove_lcd_driver, &grove_lcd_config,
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		(void *)&grove_lcd_driver);
+DEVICE_DT_INST_DEFINE(0, glcd_initialize, NULL, &grove_lcd_driver,
+		      &grove_lcd_config, POST_KERNEL,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
