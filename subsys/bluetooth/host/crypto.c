@@ -94,6 +94,7 @@ int prng_init(void)
 	return prng_reseed(&prng);
 }
 
+#if defined(CONFIG_BT_HOST_CRYPTO_PRNG)
 int bt_rand(void *buf, size_t len)
 {
 	int ret;
@@ -114,6 +115,44 @@ int bt_rand(void *buf, size_t len)
 
 	return -EIO;
 }
+#else /* !CONFIG_BT_HOST_CRYPTO_PRNG */
+int bt_rand(void *buf, size_t len)
+{
+	int ret, size;
+	size_t i = 0;
+
+	/* Check first that HCI_LE_Rand is supported */
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 7)) {
+		return -ENOTSUP;
+	}
+
+	while (len) {
+		struct bt_hci_rp_le_rand *rp;
+		struct net_buf *rsp;
+
+		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+		if (ret) {
+			return ret;
+		}
+
+		rp = (void *)rsp->data;
+		if (rp->status) {
+			return -EIO;
+		}
+
+		size = MIN(len, sizeof(rp->rand));
+
+		(void)memcpy((uint8_t *)buf + i, rp->rand, size);
+
+		net_buf_unref(rsp);
+
+		i += size;
+		len -= size;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HOST_CRYPTO_PRNG */
 
 int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 		  uint8_t enc_data[16])
