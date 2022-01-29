@@ -208,6 +208,23 @@ static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+
+static void lp_comm_complete_cte_req_finalize(struct ll_conn *conn)
+{
+	llcp_rr_set_paused_cmd(conn, PROC_NONE);
+	llcp_lr_complete(conn);
+
+	conn->llcp.cte_req.is_active = 0U;
+
+	/* If disable_cb is not NULL then there is waiting CTE REQ disable request
+	 * from host. Execute the callback to notify waiting thread that the
+	 * procedure is inactive.
+	 */
+	if (conn->llcp.cte_req.disable_cb) {
+		conn->llcp.cte_req.disable_cb(conn->llcp.cte_req.disable_param);
+	}
+}
+
 static void lp_comm_ntf_cte_req(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	switch (ctx->response_opcode) {
@@ -352,16 +369,23 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			if (ctx->data.cte_remote_rsp.has_cte &&
 			    conn->llcp.cte_req.req_interval != 0U) {
 				conn->llcp.cte_req.req_expire = conn->llcp.cte_req.req_interval;
-			} else {
-				/* TODO: add wait for notification buffer */
+				ctx->state = LP_COMMON_STATE_IDLE;
+			} else if (llcp_ntf_alloc_is_available()) {
 				lp_comm_ntf(conn, ctx);
 				ull_cp_cte_req_set_disable(conn);
+				ctx->state = LP_COMMON_STATE_IDLE;
+			} else {
+				ctx->state = LP_COMMON_STATE_WAIT_NTF;
 			}
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
 			   ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
-			/* TODO: add wait for notification buffer */
-			lp_comm_ntf(conn, ctx);
-			ull_cp_cte_req_set_disable(conn);
+			if (llcp_ntf_alloc_is_available()) {
+				lp_comm_ntf(conn, ctx);
+				ull_cp_cte_req_set_disable(conn);
+				ctx->state = LP_COMMON_STATE_IDLE;
+			} else {
+				ctx->state = LP_COMMON_STATE_WAIT_NTF;
+			}
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNUSED) {
 			/* This path is related with handling disable the CTE REQ when PHY
 			 * has been changed to CODED PHY. BT 5.3 Core Vol 4 Part E 7.8.85
@@ -369,21 +393,12 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			 * by Host. There is no notification send to Host.
 			 */
 			ull_cp_cte_req_set_disable(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 
-		llcp_rr_set_paused_cmd(conn, PROC_NONE);
-		llcp_lr_complete(conn);
-		ctx->state = LP_COMMON_STATE_IDLE;
-
-		conn->llcp.cte_req.is_active = 0U;
-		/* If disable_cb is not NULL then there is waiting CTE REQ disable request from
-		 * host. Execute the callback to notify waiting thread that the procedure is
-		 * inactive.
-		 */
-		if (conn->llcp.cte_req.disable_cb) {
-			conn->llcp.cte_req.disable_cb(conn->llcp.cte_req.disable_param);
+		if (ctx->state == LP_COMMON_STATE_IDLE) {
+			lp_comm_complete_cte_req_finalize(conn);
 		}
-
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
@@ -642,6 +657,15 @@ static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint
 				ctx->state = LP_COMMON_STATE_IDLE;
 			}
 			break;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+		case PROC_CTE_REQ:
+			if (llcp_ntf_alloc_is_available()) {
+				lp_comm_ntf(conn, ctx);
+				ctx->state = LP_COMMON_STATE_IDLE;
+				lp_comm_complete_cte_req_finalize(conn);
+			}
+			break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 		default:
 			break;
 		}
