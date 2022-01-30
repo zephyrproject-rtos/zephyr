@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <dt-bindings/pinctrl/esp32-gpio-sigmap.h>
+
+&pinctrl {
+
+	uart0_tx_gpio1: uart0_tx_gpio1 {
+		pinmux = <UART0_TX_GPIO1>;
+	};
+
+	uart0_rx_gpio3: uart0_rx_gpio3 {
+		pinmux = <UART0_RX_GPIO3>;
+		bias-pull-up;
+	};
+
+	uart1_tx_gpio10: uart1_tx_gpio10 {
+		pinmux = <UART0_TX_GPIO10>;
+	};
+
+	uart1_rx_gpio9: uart1_rx_gpio9 {
+		pinmux = <UART0_RX_GPIO9>;
+		bias-pull-up;
+	};
+
+	uart2_tx_gpio17: uart2_tx_gpio17 {
+		pinmux = <UART0_TX_GPIO17>;
+	};
+
+	uart2_rx_gpio16: uart2_rx_gpio16 {
+		pinmux = <UART0_RX_GPIO16>;
+		bias-pull-up;
+	};
+
+};
