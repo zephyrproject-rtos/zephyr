@@ -43,5 +43,6 @@ source "drivers/pinctrl/Kconfig.mcux"
 source "drivers/pinctrl/Kconfig.sifive"
 source "drivers/pinctrl/Kconfig.lpc_iocon"
 source "drivers/pinctrl/Kconfig.cc13xx_cc26xx"
+source "drivers/pinctrl/Kconfig.esp32"
 
 endif # PINCTRL
