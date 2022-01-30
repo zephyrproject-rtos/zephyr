@@ -58,8 +58,8 @@ const pll_setup_t pll0Setup = {
 
 static ALWAYS_INLINE void clock_init(void)
 {
-#if defined(CONFIG_SOC_LPC55S16) || defined(CONFIG_SOC_LPC55S28) || \
-	defined(CONFIG_SOC_LPC55S69_CPU0)
+#if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
+	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S69_CPU0)
     /*!< Set up the clock sources */
     /*!< Configure FRO192M */
 	/*!< Ensure FRO is on  */
