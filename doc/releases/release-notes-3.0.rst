@@ -196,6 +196,7 @@ Boards & SoC Support
 
 * Made these changes in other boards:
 
+  * sam_e70_xplained: Added support for CAN-FD driver
 
 * Added support for these following shields:
 
@@ -213,6 +214,7 @@ Drivers and Sensors
 
 * CAN
 
+  * Add Atmel SAM Bosch m_can CAN-FD Driver
 
 * Clock Control
 
