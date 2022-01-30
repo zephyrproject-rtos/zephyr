@@ -35,3 +35,7 @@ tests:
              dt_compat_enabled("st,stm32h7-flash-controller")) and
        dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     tags: drivers flash
+  drivers.flash.spi_sam0_quadspi:
+    integration_platforms:
+      - atsame54_xpro
+    tags: drivers flash
