@@ -108,6 +108,15 @@ static int board_pinmux_init(const struct device *dev)
 	pinmux_pin_set(muxc, 12, PINMUX_FUNC_L);	/* PC12 = GMDIO */
 #endif
 
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(qspi0), okay) && CONFIG_SPI)
+	pinmux_pin_set(muxa, 8, PINMUX_FUNC_H);
+	pinmux_pin_set(muxa, 9, PINMUX_FUNC_H);
+	pinmux_pin_set(muxa, 10, PINMUX_FUNC_H);
+	pinmux_pin_set(muxa, 11, PINMUX_FUNC_H);
+	pinmux_pin_set(muxb, 10, PINMUX_FUNC_H);
+	pinmux_pin_set(muxb, 11, PINMUX_FUNC_H);
+#endif
+
 	return 0;
 }
 
