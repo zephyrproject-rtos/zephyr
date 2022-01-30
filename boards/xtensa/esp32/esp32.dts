@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <espressif/esp32.dtsi>
+#include "esp32-pinctrl.dtsi"
 
 / {
 	model = "esp32";
@@ -35,20 +36,20 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <1>;
-	rx-pin = <3>;
+	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-names = "default";
 };
 
 &uart1 {
 	current-speed = <115200>;
-	tx-pin = <10>;
-	rx-pin = <9>;
+	pinctrl-0 = <&uart1_tx_gpio10 &uart1_rx_gpio9>;
+	pinctrl-names = "default";
 };
 
 &uart2 {
 	current-speed = <115200>;
-	tx-pin = <17>;
-	rx-pin = <16>;
+	pinctrl-0 = <&uart2_tx_gpio17 &uart2_rx_gpio16>;
+	pinctrl-names = "default";
 };
 
 &gpio0 {
