@@ -227,6 +227,7 @@
 		rx-fifo1-elements = <64>;
 		rx-buffer-elements = <64>;
 		tx-buffer-elements = <32>;
+		tx-event-fifo-elements = <32>;
 		sjw = <1>;
 		sample-point = <875>;
 		sjw-data = <1>;

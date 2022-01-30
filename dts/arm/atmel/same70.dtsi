@@ -457,6 +457,7 @@
 			rx-fifo1-elements = <3>;
 			rx-buffer-elements = <0>;
 			tx-buffer-elements = <1>;
+			tx-event-fifo-elements = <1>;
 
 			can0: can@40030000 {
 				compatible = "atmel,sam-can";

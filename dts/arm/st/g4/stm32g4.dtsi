@@ -358,6 +358,7 @@
 			rx-fifo1-elements = <3>;
 			rx-buffer-elements = <0>;
 			tx-buffer-elements = <3>;
+			tx-event-fifo-elements = <3>;
 
 			can1: can@40006400 {
 				compatible = "st,stm32-fdcan";
