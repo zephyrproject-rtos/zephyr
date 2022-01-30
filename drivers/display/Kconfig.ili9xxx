@@ -10,6 +10,13 @@ config ILI9XXX
 	help
 	  Hidden configuration entry for all ILI9XXX drivers.
 
+config ILI9163
+	bool "ILI9163 display driver"
+	depends on SPI
+	select ILI9XXX
+	help
+	  Enable driver for ILI9163 display driver.
+
 config ILI9340
 	bool "ILI9340 display driver"
 	depends on SPI
