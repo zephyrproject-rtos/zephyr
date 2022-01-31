@@ -50,4 +50,8 @@ struct tftpc {
 int tftp_get(struct sockaddr *server, struct tftpc *client,
 	     const char *remote_file, const char *mode);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* ZEPHYR_INCLUDE_NET_TFTP_H_ */
