@@ -309,7 +309,22 @@ Drivers and Sensors
 
 * Sensor
 
-  * Added L5 die temperature sensor
+  * Added Invensense MPU9250 9-axis IMU driver.
+  * Added ITE IT8XX2 tachometer driver.
+  * Added STM L5 die temperature driver.
+  * Added STM I3G4250D gyroscope driver.
+  * Added TI TMP108 driver.
+  * Added Winsen MH-Z19B CO2 driver.
+  * Constified device config access in sbs_gauge and LM75 drivers.
+  * Dropped DEV_DATA/DEV_CFG usage from various drivers.
+  * Moved ODR and range properties from Kconfig to devicetree in various STM
+    drivers.
+  * Refactored INA230 driver to add support for INA237 variant.
+  * Refactored various drivers to use I2C/SPI/GPIO DT APIs.
+  * Enabled level triggered interrupts in LIS2DH driver.
+  * Fixed TMP112 driver to avoid I2C burst write portability issues.
+  * Fixed SENSOR_DEG2RAD_DOUBLE macro in LSM6DS0 driver.
+  * Fixed gain factor in LSM303DLHC magnetometer driver.
 
 * Serial
 
