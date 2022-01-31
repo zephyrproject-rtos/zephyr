@@ -187,4 +187,8 @@ static inline void pm_device_runtime_init_off(const struct device *dev) { }
 
 /** @} */
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* ZEPHYR_INCLUDE_PM_DEVICE_RUNTIME_H_ */
