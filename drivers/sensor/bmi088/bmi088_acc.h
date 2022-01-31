@@ -21,6 +21,7 @@
 // read/write
 #define ACC_RANGE      0x41
 #define ACC_PWR_CTRL    0x7D
+#define ACC_CONF    0x40
 
 //other defines
 #define BMI088_ACC_REG_READ BIT(7)  // Indicates a read operation; bit 7 is clear on write s
@@ -39,10 +40,15 @@
 
 #define BMI088_SAMPLE_SIZE  (BMI088_AXES * sizeof(uint16_t))    // Size of Samples with 2 bytes per axis = 6 bytes
 
+#define BMI088_DEFAULT_OSR  0x0A // no oversampling
+#define BMI088_DEFAULT_ODR  0x08 // 100Hz
+
 // end of default settings
 
 struct bmi088_acc_cfg {
     struct spi_dt_spec bus;
+    int odr;
+    int osr;
 };
 
 // Each sample has X, Y and Z, each with lsb and msb Bytes
