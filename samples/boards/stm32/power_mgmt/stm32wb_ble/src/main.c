@@ -17,6 +17,11 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
+/* size of stack area used by each thread */
+#define STACKSIZE 1024
+/* scheduling priority used by each thread */
+#define PRIORITY 7
+
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
@@ -113,10 +118,22 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+}
 
-	k_sleep(K_SECONDS(6));
+/* Shutdown thread */
+void shutdown(void)
+{
+	k_sleep(K_SECONDS(8));
 
 	printk("Device shutdown\n");
 
 	pm_power_state_force(0u, (struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+
+	/* Give time to enter idle thread */
+	k_sleep(K_MSEC(1000));
+
+	printk("ERROR: System off failed\n");
 }
+
+K_THREAD_DEFINE(beacon_thread, STACKSIZE, shutdown, NULL, NULL, NULL,
+		PRIORITY, 0, 0);
