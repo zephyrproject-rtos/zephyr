@@ -61,12 +61,9 @@ static void lpm_hsem_lock(void)
 
 static void send_stack_reset(void)
 {
-	struct net_buf *rsp;
 	int err = 0;
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, &rsp);
-
-	net_buf_unref(rsp);
+	err = bt_hci_cmd_send(ACI_HAL_STACK_RESET, NULL);
 
 	if (err) {
 		LOG_ERR("M0 BLE stack reset issue");
