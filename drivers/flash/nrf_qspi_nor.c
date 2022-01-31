@@ -79,6 +79,9 @@ BUILD_ASSERT(((INST_0_QER == JESD216_DW15_QER_NONE)
 	      || (INST_0_QER == JESD216_DW15_QER_S1B6)),
 	     "Driver only supports NONE or S1B6 for quad-enable-requirements");
 
+#define INST_QE_BIT DT_INST_PROP(0, quad_enable_bit)
+BUILD_ASSERT( INST_QE_BIT < 16, "Driver only supports QE bits less than 16");
+
 #if NRF52_ERRATA_122_PRESENT
 #include <hal/nrf_gpio.h>
 static int anomaly_122_init(const struct device *dev);
@@ -393,6 +396,26 @@ static int qspi_rdsr(const struct device *dev)
 		.rx_buf = &sr_buf,
 	};
 	int ret = qspi_send_cmd(dev, &cmd, false);
+	// Only need to read second register if QE bit is in second register
+#if INST_QE_BIT > 7
+	if ( ret == 0 ) {
+		uint8_t sr2 = -1;
+		const struct qspi_buf sr_buf = {
+			.buf = &sr2,
+			.len = sizeof(sr),
+		};
+		struct qspi_cmd cmd = {
+			// I ~THINK~ this is the universal command, but I dont actually
+			// have a jedec spec book, I am only going by chip manuals
+			.op_code = 0x35,
+			.rx_buf = &sr_buf,
+		};
+		int ret2 = qspi_send_cmd(dev, &cmd, false);
+
+		uint16_t final = ((uint16_t) sr2 << 8) | sr;
+		return (ret2 < 0) ? ret2 : final;
+	}
+#endif
 
 	return (ret < 0) ? ret : sr;
 }
@@ -521,31 +544,47 @@ static int qspi_nrfx_configure(const struct device *dev)
 			return ret;
 		}
 
-		uint8_t sr = (uint8_t)ret;
+		uint8_t sr_array[2] = {0, 0};
+		// by default only first bit needs sent, unless QE bit is in second
+		// register
+		sr_array[0] = (uint8_t)(ret);
+		size_t sr_length = sizeof(sr_array[0]);
+
+#if INST_QE_BIT <  7
+		uint8_t qe_mask = BIT(INST_QE_BIT);
+		uint8_t * sr = sr_array;
+#else
+		// bit is in second register, offset by first buffer (0 indexed)
+		uint8_t qe_mask = BIT(INST_QE_BIT - 8);
+		sr_array[1] = ((uint8_t)(ret >> 8));
+		sr_length = sizeof(sr_array);
+		uint8_t * sr = sr_array+1;
+#endif
+
 		nrf_qspi_prot_conf_t const *prot_if =
 			&dev_config->nrfx_cfg.prot_if;
 		bool qe_value = (prot_if->writeoc == NRF_QSPI_WRITEOC_PP4IO) ||
 				(prot_if->writeoc == NRF_QSPI_WRITEOC_PP4O)  ||
 				(prot_if->readoc == NRF_QSPI_READOC_READ4IO) ||
 				(prot_if->readoc == NRF_QSPI_READOC_READ4O);
-		const uint8_t qe_mask = BIT(6); /* only S1B6 */
-		bool qe_state = ((sr & qe_mask) != 0U);
+		bool qe_state = ((*sr & qe_mask) != 0U);
 
-		LOG_DBG("RDSR %02x QE %d need %d: %s", sr, qe_state, qe_value,
+		LOG_DBG("RDSR %02x QE %d need %d: %s", *sr, qe_state, qe_value,
 			(qe_state != qe_value) ? "updating" : "no-change");
 
 		ret = 0;
 		if (qe_state != qe_value) {
 			const struct qspi_buf sr_buf = {
-				.buf = &sr,
-				.len = sizeof(sr),
+				.buf = sr_array,
+				.len = sr_length,
 			};
 			struct qspi_cmd cmd = {
 				.op_code = SPI_NOR_CMD_WRSR,
 				.tx_buf = &sr_buf,
 			};
 
-			sr ^= qe_mask;
+			// only need to update the register with QE bit in it
+			*sr ^= qe_mask;
 			ret = qspi_send_cmd(dev, &cmd, true);
 
 			/* Writing SR can take some time, and further

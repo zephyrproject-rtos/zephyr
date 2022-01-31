@@ -101,8 +101,9 @@
 		 */
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
-		writeoc = "pp2o";
-		readoc = "read2io";
+		writeoc = "pp4o";
+		readoc = "read4o";
+		quad-enable-bit = < 9 >;
 		sck-frequency = <16000000>;
 		label = "GD25Q16";
 		jedec-id = [c8 40 15];
