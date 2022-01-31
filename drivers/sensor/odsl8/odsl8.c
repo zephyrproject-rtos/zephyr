@@ -75,8 +75,8 @@ static int laser_channel_get(const struct device *dev,
         LOG_WRN("Sensor not in linear region between 20..500mm!");
     }
 
-    val->val1 = distance; // integer part
-    val->val2 = 0; //distance % 1000000ULL; // fractional part
+    val->val1 = distance;
+    val->val2 = 0;
 
     return 0;
 }

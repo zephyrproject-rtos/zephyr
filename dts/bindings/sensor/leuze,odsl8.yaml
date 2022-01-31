@@ -21,13 +21,3 @@ properties:
     description: |
       Sensing resistor value for current driven sensor output
 
-  range1-gpios:
-    type: phandle-array
-    required: false
-    description: Range 1 trigger, also referred to as Q1
-
-  range2-gpios:
-    type: phandle-array
-    required: false
-    description: Range 2 trigger, also referred to as Q2
-
