@@ -429,7 +429,7 @@ static struct gd7965_data gd7965_driver = {
 	.config = &gd7965_config
 };
 
-static const struct gd7965_config gd7965_config {
+static const struct gd7965_config gd7965_config = {
 	.bus = SPI_DT_SPEC_INST_GET(
 		0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
 };
