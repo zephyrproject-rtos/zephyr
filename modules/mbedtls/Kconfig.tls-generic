@@ -9,6 +9,8 @@ menu "TLS configuration"
 
 menu "Supported TLS version"
 
+if !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
+
 config MBEDTLS_TLS_VERSION_1_0
 	bool "Support for TLS 1.0"
 	select MBEDTLS_CIPHER
@@ -33,6 +35,8 @@ config MBEDTLS_DTLS
 	bool "Support for DTLS"
 	depends on MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
+endif
+
 config MBEDTLS_SSL_EXPORT_KEYS
 	bool "Support for exporting SSL key block and master secret"
 	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
@@ -46,6 +50,8 @@ endmenu
 menu "Ciphersuite configuration"
 
 comment "Supported key exchange modes"
+
+if !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
 
 config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	bool "All available ciphersuite modes"
@@ -81,12 +87,16 @@ config MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
 		MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
 		MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 
+endif
+
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
 	default 32
 	depends on MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
 	help
 	  Max size of TLS pre-shared keys, in bytes.
+
+if !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
@@ -202,6 +212,7 @@ config MBEDTLS_ECP_NIST_OPTIM
 	bool "NSIT curves optimization"
 
 endif
+endif # !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
 
 comment "Supported hash"
 
@@ -225,6 +236,8 @@ config MBEDTLS_HASH_SHA512_ENABLED
 	default y if !NET_L2_OPENTHREAD
 
 comment "Supported cipher modes"
+
+if !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
 
 config MBEDTLS_CIPHER_ALL_ENABLED
 	bool "All available ciphers"
@@ -299,7 +312,11 @@ config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	bool "ChaCha20-Poly1305 AEAD algorithm"
 	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED || MBEDTLS_MAC_POLY1305_ENABLED
 
+endif
+
 comment "Supported message authentication methods"
+
+if !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
 
 config MBEDTLS_MAC_ALL_ENABLED
 	bool "All available MAC methods"
@@ -349,9 +366,13 @@ config MBEDTLS_MAC_CMAC_ENABLED
 	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
 	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
 
+endif
+
 endmenu
 
 comment "Random number generators"
+
+if !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
 
 config MBEDTLS_CTR_DRBG_ENABLED
 	bool "CTR_DRBG AES-256-based random generator"
@@ -362,13 +383,19 @@ config MBEDTLS_HMAC_DRBG_ENABLED
 	bool "HMAC_DRBG random generator"
 	select MBEDTLS_MD
 
+endif
+
 comment "Other configurations"
 
 config MBEDTLS_CIPHER
 	bool "generic cipher layer."
 
+if !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
+
 config MBEDTLS_MD
 	bool "generic message digest layer."
+
+endif
 
 config MBEDTLS_GENPRIME_ENABLED
 	bool "prime-number generation code."
@@ -387,10 +414,14 @@ config MBEDTLS_HAVE_ASM
 	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
+if !(NRF_SECURITY || NORDIC_SECURITY_BACKEND)
+
 config MBEDTLS_ENTROPY_ENABLED
 	bool "MbedTLS generic entropy pool"
 	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA384_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
 	default y if MBEDTLS_ZEPHYR_ENTROPY
+
+endif
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	bool "MbedTLS optimizations for OpenThread"

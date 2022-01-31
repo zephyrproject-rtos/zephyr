@@ -45,7 +45,7 @@ static void init_heap(void)
 #define init_heap(...)
 #endif /* CONFIG_MBEDTLS_ENABLE_HEAP && MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
-#if defined(CONFIG_MBEDTLS_ZEPHYR_ENTROPY)
+#if defined(CONFIG_MBEDTLS_ZEPHYR_ENTROPY) && !defined(CONFIG_NRF_CC3XX_PLATFORM)
 static const struct device *const entropy_dev =
 			DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
 

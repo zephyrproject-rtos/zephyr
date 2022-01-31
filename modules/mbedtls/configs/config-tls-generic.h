@@ -500,4 +500,8 @@
 #include "mbedtls/check_config.h"
 #endif
 
+#if defined(CONFIG_NRF_CC3XX_PLATFORM)
+#define MBEDTLS_PLATFORM_ZEROIZE_ALT
+#endif
+
 #endif /* MBEDTLS_CONFIG_H */
