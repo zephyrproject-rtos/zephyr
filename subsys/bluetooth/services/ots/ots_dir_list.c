@@ -98,9 +98,6 @@ void bt_ots_dir_list_obj_add(struct bt_ots_dir_list *dir_list, void *obj_manager
 
 	dir_list_object_encode(obj, &dir_list->net_buf);
 
-	/*re-encode the Directory Listing Object size with the is new size*/
-	sys_put_le16(dir_list->net_buf.len, dir_list->net_buf.data);
-
 	/* Update Directory Listing Object metadata size */
 	dir_list->dir_list_obj->metadata.size.cur = dir_list->net_buf.len;
 }
@@ -156,9 +153,6 @@ void bt_ots_dir_list_obj_remove(struct bt_ots_dir_list *dir_list, void *obj_mana
 
 	__ASSERT(offset <= dir_list->net_buf.len, "Object was not removed");
 
-	/*re-encode the Directory Listing Object size with the is new size*/
-	sys_put_le16(dir_list->net_buf.len, dir_list->net_buf.data);
-
 	/* Update Directory Listing Object metadata size */
 	dir_list->dir_list_obj->metadata.size.cur = dir_list->net_buf.len;
 }
@@ -183,9 +177,6 @@ static void dir_list_encode(struct bt_ots_dir_list *dir_list, void *obj_manager)
 
 		err = bt_gatt_ots_obj_manager_next_obj_get(obj_manager, obj, &obj);
 	} while (!err);
-
-	/*re-encode the Directory Listing Object size with the is new size*/
-	sys_put_le16(dir_list->net_buf.len, dir_list->net_buf.data);
 
 	/* Update Directory Listing Object metadata size */
 	dir_list->dir_list_obj->metadata.size.cur = dir_list->net_buf.len;
