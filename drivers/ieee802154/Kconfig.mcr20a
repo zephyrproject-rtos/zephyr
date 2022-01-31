@@ -9,12 +9,6 @@ menuconfig IEEE802154_MCR20A
 
 if IEEE802154_MCR20A
 
-config IEEE802154_MCR20A_DRV_NAME
-	string "NXP MCR20A Driver's name"
-	default "mcr20a"
-	help
-	  This option sets the driver name
-
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	bool "MCR20A device is part of KW2xD SiP"
 	help
