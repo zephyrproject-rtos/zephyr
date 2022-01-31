@@ -1057,6 +1057,11 @@ struct bt_audio_unicast_server_cb {
 	 *  is returned, the previously returned @p codec values (if any) will
 	 *  be sent to the client that requested the value.
 	 *
+	 *  @param conn   The connection that requests the capabilities.
+	 *                Will be NULL if the capabilities is requested for
+	 *                sending a notification, as a result of callling
+	 *                bt_audio_capability_register() or
+	 *                bt_audio_capability_unregister().
 	 *  @param type   Type of the endpoint.
 	 *  @param index  Index of the codec object requested. Multiple objects
 	 *                may be returned, and this value keep tracks of how

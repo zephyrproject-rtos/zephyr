@@ -347,21 +347,28 @@ static void pac_notify(struct k_work *work)
 {
 #if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
 	struct bt_uuid *uuid;
+	uint8_t type;
 	int err;
 
 #if defined(CONFIG_BT_PAC_SNK)
 	if (work == &snks_work.work) {
+		type = BT_AUDIO_SINK;
 		uuid = BT_UUID_PACS_SNK;
 	}
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 	if (work == &srcs_work.work) {
+		type = BT_AUDIO_SOURCE;
 		uuid = BT_UUID_PACS_SRC;
 	}
 #endif /* CONFIG_BT_PAC_SRC */
 
-	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs, NULL, 0);
+	/* TODO: We can skip this if we are not connected to any devices */
+	get_pac_records(NULL, type, &read_buf);
+
+	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs, read_buf.data,
+				  read_buf.len);
 	if (err != 0) {
 		BT_WARN("PACS notify failed: %d", err);
 	}
