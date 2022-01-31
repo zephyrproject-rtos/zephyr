@@ -1,8 +1,19 @@
 sample:
   name: syst sample
 tests:
-  sample.logger.syst.v1:
-    platform_allow: mps2_an385 sam_e70_xplained
+  sample.logger.syst.v1.deferred:
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    platform_allow: mps2_an385 qemu_x86 sam_e70_xplained
+    tags: logging
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG1=y
+  sample.logger.syst.v1.immediate:
+    platform_allow: mps2_an385 qemu_x86 sam_e70_xplained
     tags: logging
     harness: console
     harness_config:
@@ -12,7 +23,16 @@ tests:
     extra_configs:
       - CONFIG_LOG1=y
   sample.logger.syst.v2.deferred:
-    platform_allow: mps2_an385 sam_e70_xplained
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    platform_allow: mps2_an385 qemu_x86 sam_e70_xplained
+    tags: logging
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+  sample.logger.syst.v2.immediate:
+    platform_allow: mps2_an385 qemu_x86 sam_e70_xplained
     tags: logging
     harness: console
     harness_config:
