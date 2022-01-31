@@ -29,7 +29,7 @@
 #include "pacs_internal.h"
 #include "unicast_server.h"
 
-#define PAC_INDICATE_TIMEOUT	K_MSEC(10)
+#define PAC_NOTIFY_TIMEOUT	K_MSEC(10)
 
 #if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
@@ -292,7 +292,7 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 #endif /* CONFIG_BT_PAC_SNK */
 #if defined(CONFIG_BT_PAC_SRC)
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SRC,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_INDICATE,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT,
 			       src_read, NULL, NULL),
 	BT_GATT_CCC(src_cfg_changed,
@@ -337,26 +337,28 @@ static struct k_work_delayable *bt_pacs_get_work(uint8_t type)
 	return NULL;
 }
 
-static void pac_indicate(struct k_work *work)
+static void pac_notify(struct k_work *work)
 {
 #if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
-	struct bt_gatt_indicate_params params;
+	struct bt_uuid *uuid;
+	int err;
 
 #if defined(CONFIG_BT_PAC_SNK)
 	if (work == &snks_work.work) {
-		params.uuid = BT_UUID_PACS_SNK;
+		uuid = BT_UUID_PACS_SNK;
 	}
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 	if (work == &srcs_work.work) {
-		params.uuid = BT_UUID_PACS_SRC;
+		uuid = BT_UUID_PACS_SRC;
 	}
 #endif /* CONFIG_BT_PAC_SRC */
 
-	params.attr = pacs_svc.attrs;
-
-	bt_gatt_indicate(NULL, &params);
+	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs, NULL, 0);
+	if (err != 0) {
+		BT_WARN("PACS notify failed: %d", err);
+	}
 #endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 }
 
@@ -371,10 +373,10 @@ void bt_pacs_add_capability(uint8_t type)
 
 	/* Initialize handler if it hasn't been initialized */
 	if (!work->work.handler) {
-		k_work_init_delayable(work, pac_indicate);
+		k_work_init_delayable(work, pac_notify);
 	}
 
-	k_work_reschedule(work, PAC_INDICATE_TIMEOUT);
+	k_work_reschedule(work, PAC_NOTIFY_TIMEOUT);
 }
 
 void bt_pacs_remove_capability(uint8_t type)
@@ -386,5 +388,5 @@ void bt_pacs_remove_capability(uint8_t type)
 		return;
 	}
 
-	k_work_reschedule(work, PAC_INDICATE_TIMEOUT);
+	k_work_reschedule(work, PAC_NOTIFY_TIMEOUT);
 }
