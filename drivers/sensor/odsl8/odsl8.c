@@ -67,16 +67,16 @@ static int laser_channel_get(const struct device *dev,
                           &raw_value);
 
     LOG_INF("finished channel get!");
-    // 4..20mA for 20..500mm (linear)
+    // 4..20mA for 20..50mm (linear)
     const int slope = (500 - 20) / (20 - 4);
-    int32_t distance = ((raw_value * slope) / config->meas_resistor - 4 * slope) + 20; // distance in mm
+    int32_t distance = (raw_value * slope / config->meas_resistor - 4 * slope) + 20; // distance in mm
 
     if (distance < 20 || distance > 500) {
         LOG_WRN("Sensor not in linear region between 20..500mm!");
     }
 
-    val->val1 = distance / 1000000ULL; // integer part
-    val->val2 = distance % 1000000ULL; // fractional part
+    val->val1 = distance; // integer part
+    val->val2 = 0; //distance % 1000000ULL; // fractional part
 
     return 0;
 }
@@ -104,8 +104,8 @@ static const struct sensor_driver_api laser_driver_api = {
 };
 
 #define LEUZE_ODSL8_INIT(inst) \
-    static const struct adc_data data_##inst; \
-    static const struct sensor_config cfg_##inst = { \
+    static struct adc_data data_##inst; \
+    static struct sensor_config cfg_##inst = { \
         .adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)), \
         .channel_config= { \
             .gain = ADC_GAIN_1, \

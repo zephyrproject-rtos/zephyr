@@ -320,6 +320,7 @@ leez	Leez
 lego	LEGO Systems A/S
 lemaker	Shenzhen LeMaker Technology Co., Ltd.
 lenovo	Lenovo Group Ltd.
+leuze	Leuze electronic GmbH + Co. KG
 lg	LG Corporation
 lgphilips	LG Display
 libretech	Shenzhen Libre Technology Co., Ltd
