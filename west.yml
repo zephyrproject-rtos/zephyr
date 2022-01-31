@@ -236,7 +236,7 @@ manifest:
       groups:
         - tee
     - name: psa-arch-tests
-      revision: 0aab24602cbef30f6422e7ef1066a8473073e586
+      revision: 4f45df539d3d98b6e38e112be9936be4a2b8a97c
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
