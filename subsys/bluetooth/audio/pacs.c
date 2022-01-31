@@ -50,35 +50,27 @@ static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
 	}
 }
 
-static ssize_t pac_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset)
+static void get_pac_records(struct bt_conn *conn, uint8_t type,
+			    struct net_buf_simple *buf)
 {
 	struct bt_pacs_read_rsp *rsp;
-	uint8_t type;
-	int err;
 
 	/* Reset if buffer before using */
-	net_buf_simple_reset(&read_buf);
+	net_buf_simple_reset(buf);
 
 	rsp = net_buf_simple_add(&read_buf, sizeof(*rsp));
 	rsp->num_pac = 0;
 
-	if (!bt_uuid_cmp(attr->uuid, BT_UUID_PACS_SNK)) {
-		type = BT_AUDIO_SINK;
-	} else {
-		type = BT_AUDIO_SOURCE;
-	}
-
 	if (unicast_server_cb == NULL ||
 	    unicast_server_cb->publish_capability == NULL) {
-		return bt_gatt_attr_read(conn, attr, buf, len, offset,
-					 read_buf.data, read_buf.len);
+		return;
 	}
 
 	while (true) {
+		struct bt_pac_meta *meta;
 		struct bt_codec codec;
 		struct bt_pac *pac;
-		struct bt_pac_meta *meta;
+		int err;
 
 		err = unicast_server_cb->publish_capability(conn, type,
 							    rsp->num_pac,
@@ -113,6 +105,20 @@ static ssize_t pac_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 		rsp->num_pac++;
 	}
+}
+
+static ssize_t pac_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			void *buf, uint16_t len, uint16_t offset)
+{
+	uint8_t type;
+
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_PACS_SNK)) {
+		type = BT_AUDIO_SINK;
+	} else {
+		type = BT_AUDIO_SOURCE;
+	}
+
+	get_pac_records(conn, type, &read_buf);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
 				 read_buf.len);
