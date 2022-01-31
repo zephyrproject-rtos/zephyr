@@ -804,24 +804,23 @@ static inline void irqb_int_handler(const struct device *port,
 static void enable_irqb_interrupt(const struct device *dev,
 				 bool enable)
 {
-	struct mcr20a_context *mcr20a = dev->data;
+	const struct mcr20a_config *config = dev->config;
 	gpio_flags_t flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(mcr20a->irq_gpio,
-				     DT_INST_GPIO_PIN(0, irqb_gpios),
-				     flags);
+	gpio_pin_interrupt_configure_dt(&config->irq_gpio, flags);
 }
 
 static inline void setup_gpio_callbacks(const struct device *dev)
 {
+	const struct mcr20a_config *config = dev->config;
 	struct mcr20a_context *mcr20a = dev->data;
 
 	gpio_init_callback(&mcr20a->irqb_cb,
 			   irqb_int_handler,
-			   BIT(DT_INST_GPIO_PIN(0, irqb_gpios)));
-	gpio_add_callback(mcr20a->irq_gpio, &mcr20a->irqb_cb);
+			   BIT(config->irq_gpio.pin));
+	gpio_add_callback(config->irq_gpio.port, &mcr20a->irqb_cb);
 }
 
 static int mcr20a_set_cca_mode(const struct device *dev, uint8_t mode)
@@ -1281,23 +1280,20 @@ error:
 
 static int power_on_and_setup(const struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->data;
+	const struct mcr20a_config *config = dev->config;
 	uint8_t timeout = 6U;
 	int pin;
 	uint8_t tmp = 0U;
 
 	if (!PART_OF_KW2XD_SIP) {
-		gpio_pin_set(mcr20a->reset_gpio,
-			     DT_INST_GPIO_PIN(0, reset_gpios), 1);
+		gpio_pin_set_dt(&config->reset_gpio, 1);
 		z_usleep(150);
-		gpio_pin_set(mcr20a->reset_gpio,
-			     DT_INST_GPIO_PIN(0, reset_gpios), 0);
+		gpio_pin_set_dt(&config->reset_gpio, 0);
 
 		do {
 			z_usleep(50);
 			timeout--;
-			pin = gpio_pin_get(mcr20a->irq_gpio,
-					   DT_INST_GPIO_PIN(0, irqb_gpios));
+			pin = gpio_pin_get_dt(&config->irq_gpio);
 		} while (pin > 0 && timeout);
 
 		if (pin) {
@@ -1347,36 +1343,24 @@ static int power_on_and_setup(const struct device *dev)
 
 static inline int configure_gpios(const struct device *dev)
 {
-	struct mcr20a_context *mcr20a = dev->data;
+	const struct mcr20a_config *config = dev->config;
 
 	/* setup gpio for the modem interrupt */
-	mcr20a->irq_gpio =
-		device_get_binding(DT_INST_GPIO_LABEL(0, irqb_gpios));
-	if (mcr20a->irq_gpio == NULL) {
-		LOG_ERR("Failed to get pointer to %s device",
-			DT_INST_GPIO_LABEL(0, irqb_gpios));
-		return -EINVAL;
+	if (!device_is_ready(config->irq_gpio.port)) {
+		LOG_ERR("IRQ GPIO device not ready");
+		return -ENODEV;
 	}
 
-	gpio_pin_configure(mcr20a->irq_gpio,
-			   DT_INST_GPIO_PIN(0, irqb_gpios),
-			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, irqb_gpios));
+	gpio_pin_configure_dt(&config->irq_gpio, GPIO_INPUT);
 
 	if (!PART_OF_KW2XD_SIP) {
 		/* setup gpio for the modems reset */
-		mcr20a->reset_gpio =
-			device_get_binding(
-				DT_INST_GPIO_LABEL(0, reset_gpios));
-		if (mcr20a->reset_gpio == NULL) {
-			LOG_ERR("Failed to get pointer to %s device",
-				DT_INST_GPIO_LABEL(0, reset_gpios));
+		if (!device_is_ready(config->reset_gpio.port)) {
+			LOG_ERR("Reset GPIO device not ready");
 			return -EINVAL;
 		}
 
-		gpio_pin_configure(mcr20a->reset_gpio,
-				   DT_INST_GPIO_PIN(0, reset_gpios),
-				   GPIO_OUTPUT_ACTIVE |
-				   DT_INST_GPIO_FLAGS(0, reset_gpios));
+		gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	}
 
 	return 0;
@@ -1435,6 +1419,8 @@ static void mcr20a_iface_init(struct net_if *iface)
 
 static const struct mcr20a_config mcr20a_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.irq_gpio = GPIO_DT_SPEC_INST_GET(0, irqb_gpios),
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 };
 
 static struct mcr20a_context mcr20a_context_data;
