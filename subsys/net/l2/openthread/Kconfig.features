@@ -29,6 +29,9 @@ config OPENTHREAD_BORDER_AGENT
 config OPENTHREAD_BORDER_ROUTER
 	bool "Enable Border Router support"
 
+config OPENTHREAD_BORDER_ROUTING_NAT64
+	bool "Enable border routing NAT64 support"
+
 config OPENTHREAD_COAP
 	bool "Enable OpenThread CoAP support"
 	help
@@ -81,6 +84,9 @@ config OPENTHREAD_DIAG
 config OPENTHREAD_DNS_CLIENT
 	bool "Enable DNS client support"
 
+config OPENTHREAD_DNS_DSO
+	bool "Enable DNS Stateful Operations (DSO) support"
+
 config OPENTHREAD_DNSSD_SERVER
 	bool "Enable DNS-SD server support"
 
@@ -94,6 +100,9 @@ config OPENTHREAD_LOG_LEVEL_DYNAMIC
 
 config OPENTHREAD_ECDSA
 	bool "Enable ECDSA support"
+
+config OPENTHREAD_EXCLUDE_TCPLP_LIB
+	bool "Exclude TCPlp library from build"
 
 config OPENTHREAD_EXTERNAL_HEAP
 	bool "Enable external heap support"
