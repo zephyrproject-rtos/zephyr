@@ -14,7 +14,7 @@
 #include <sys/util.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(grove_lcd, CONFIG_DISPLAY_LOG_LEVEL);
+LOG_MODULE_REGISTER(grove_lcd, CONFIG_GROVE_LCD_RGB_LOG_LEVEL);
 
 #define GROVE_RGB_BACKLIGHT_ADDR	(0x62)
 
