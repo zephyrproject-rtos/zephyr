@@ -16,6 +16,8 @@
 
 struct mcr20a_config {
 	struct spi_dt_spec bus;
+	struct gpio_dt_spec irq_gpio;
+	struct gpio_dt_spec reset_gpio;
 };
 
 /* Runtime context structure
@@ -24,8 +26,6 @@ struct mcr20a_config {
 struct mcr20a_context {
 	struct net_if *iface;
 	/**************************/
-	const struct device *irq_gpio;
-	const struct device *reset_gpio;
 	struct gpio_callback irqb_cb;
 	const struct device *spi;
 	struct spi_config spi_cfg;
