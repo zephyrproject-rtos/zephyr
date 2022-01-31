@@ -302,7 +302,7 @@ toolchains for all Zephyr target architectures, and does not require any extra
 flags when building applications or running tests. In addition to
 cross-compilers, the Zephyr SDK also provides prebuilt host tools. It is,
 however, possible to build without the SDK's toolchain by using another
-toolchain as as described in the main :ref:`getting_started` document.
+toolchain as as described in the :ref:`third_party_x_compilers` section.
 
 As already noted above, the SDK also includes prebuilt host tools.  To use the
 SDK's prebuilt host tools with a toolchain from another source, you must set the
