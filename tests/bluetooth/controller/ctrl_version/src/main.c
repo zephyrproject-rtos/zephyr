@@ -346,8 +346,10 @@ void test_version_exchange_mas_loc_twice(void)
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
-	/* Note that one context buffer is not freed for this test */
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1,
+	/* Second attempt to run the version exchange completes immediately in idle state.
+	 * The context is released just after that.
+	 */
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
