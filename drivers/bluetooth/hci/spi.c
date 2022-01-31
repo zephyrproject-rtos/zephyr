@@ -47,11 +47,6 @@
 #define CMD_OGF			1
 #define CMD_OCF			2
 
-#define GPIO_IRQ_PIN		DT_INST_GPIO_PIN(0, irq_gpios)
-#define GPIO_IRQ_FLAGS		DT_INST_GPIO_FLAGS(0, irq_gpios)
-#define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
-#define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
-
 /* Max SPI buffer length for transceive operations.
  *
  * Buffer size needs to be at least the size of the larger RX/TX buffer
@@ -64,8 +59,8 @@
 static uint8_t rxmsg[SPI_MAX_MSG_LEN];
 static uint8_t txmsg[SPI_MAX_MSG_LEN];
 
-static const struct device *irq_dev;
-static const struct device *rst_dev;
+static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios);
+static const struct gpio_dt_spec rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios);
 
 static struct gpio_callback	gpio_cb;
 
@@ -208,7 +203,7 @@ static bool irq_pin_high(void)
 {
 	int pin_state;
 
-	pin_state = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
+	pin_state = gpio_pin_get_dt(&irq_gpio);
 
 	BT_DBG("IRQ Pin: %d", pin_state);
 
@@ -282,8 +277,7 @@ static void bt_spi_rx_thread(void)
 		k_sem_take(&sem_request, K_FOREVER);
 		/* Disable IRQ pin callback to avoid spurious IRQs */
 
-		gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
-					     GPIO_INT_DISABLE);
+		gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
 		k_sem_take(&sem_busy, K_FOREVER);
 
 		BT_DBG("");
@@ -307,8 +301,8 @@ static void bt_spi_rx_thread(void)
 			}
 
 			release_cs();
-			gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
-						     GPIO_INT_EDGE_TO_ACTIVE);
+			gpio_pin_interrupt_configure_dt(
+				&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 			k_sem_give(&sem_busy);
 
@@ -391,7 +385,7 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Allow time for the read thread to handle interrupt */
 	while (true) {
-		pending = gpio_pin_get(irq_dev, GPIO_IRQ_PIN);
+		pending = gpio_pin_get_dt(&irq_gpio);
 		if (pending <= 0) {
 			break;
 		}
@@ -467,21 +461,18 @@ out:
 static int bt_spi_open(void)
 {
 	/* Configure RST pin and hold BLE in Reset */
-	gpio_pin_configure(rst_dev, GPIO_RESET_PIN,
-			   GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
+	gpio_pin_configure_dt(&rst_gpio, GPIO_OUTPUT_ACTIVE);
 
 	/* Configure IRQ pin and the IRQ call-back/handler */
-	gpio_pin_configure(irq_dev, GPIO_IRQ_PIN,
-			   GPIO_INPUT | GPIO_IRQ_FLAGS);
+	gpio_pin_configure_dt(&irq_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&gpio_cb, bt_spi_isr, BIT(GPIO_IRQ_PIN));
+	gpio_init_callback(&gpio_cb, bt_spi_isr, BIT(irq_gpio.pin));
 
-	if (gpio_add_callback(irq_dev, &gpio_cb)) {
+	if (gpio_add_callback(irq_gpio.port, &gpio_cb)) {
 		return -EINVAL;
 	}
 
-	gpio_pin_interrupt_configure(irq_dev, GPIO_IRQ_PIN,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
@@ -491,7 +482,7 @@ static int bt_spi_open(void)
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
-	gpio_pin_set(rst_dev, GPIO_RESET_PIN, 0);
+	gpio_pin_set_dt(&rst_gpio, 0);
 
 	/* Device will let us know when it's ready */
 	k_sem_take(&sem_initialised, K_FOREVER);
@@ -522,20 +513,14 @@ static int bt_spi_init(const struct device *unused)
 		return -EIO;
 	}
 
-	irq_dev = device_get_binding(
-		DT_INST_GPIO_LABEL(0, irq_gpios));
-	if (!irq_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_GPIO_LABEL(0, irq_gpios));
-		return -EIO;
+	if (!device_is_ready(irq_gpio.port)) {
+		BT_ERR("IRQ GPIO device not ready");
+		return -ENODEV;
 	}
 
-	rst_dev = device_get_binding(
-		DT_INST_GPIO_LABEL(0, reset_gpios));
-	if (!rst_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_GPIO_LABEL(0, reset_gpios));
-		return -EIO;
+	if (!device_is_ready(rst_gpio.port)) {
+		BT_ERR("Reset GPIO device not ready");
+		return -ENODEV;
 	}
 
 	bt_hci_driver_register(&drv);
