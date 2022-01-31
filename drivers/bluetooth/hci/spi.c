@@ -51,10 +51,6 @@
 #define GPIO_IRQ_FLAGS		DT_INST_GPIO_FLAGS(0, irq_gpios)
 #define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
 #define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-#define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
-#define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 /* Max SPI buffer length for transceive operations.
  *
@@ -105,7 +101,6 @@ void spi_dump_message(const uint8_t *pre, uint8_t *buf, uint8_t size) {}
 #endif
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
-static const struct device *cs_dev;
 /* Define a limit when reading IRQ high */
 /* It can be required to be increased for */
 /* some particular cases. */
@@ -126,14 +121,9 @@ struct bluenrg_aci_cmd_ll_param {
 static int bt_spi_send_aci_config_data_controller_mode(void);
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
-static const struct device *spi_dev;
+static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
 
-static struct spi_config spi_conf = {
-	.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),
-	.slave     = 0,
-	.cs        = NULL,
-};
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
 static const struct spi_buf_set spi_tx = {
@@ -152,7 +142,7 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
 	spi_tx_buf.len = (size_t)tx_len;
 	spi_rx_buf.buf = rx;
 	spi_rx_buf.len = (size_t)rx_len;
-	return spi_transceive(spi_dev, &spi_conf, &spi_tx, &spi_rx);
+	return spi_transceive_dt(&bus, &spi_tx, &spi_rx);
 }
 
 static inline uint16_t bt_spi_get_cmd(uint8_t *txmsg)
@@ -199,30 +189,19 @@ static void bt_spi_handle_vendor_evt(uint8_t *rxmsg)
  */
 static int configure_cs(void)
 {
-	cs_dev = device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!cs_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-		return -EIO;
-	}
-
 	/* Configure pin as output and set to active */
-	gpio_pin_configure(cs_dev, GPIO_CS_PIN,
-			   GPIO_OUTPUT_ACTIVE | GPIO_CS_FLAGS);
-
-
-	return 0;
+	return gpio_pin_configure_dt(&bus.config.cs->gpio, GPIO_OUTPUT_ACTIVE);
 }
 
 static void kick_cs(void)
 {
-	gpio_pin_set(cs_dev, GPIO_CS_PIN, 1);
-	gpio_pin_set(cs_dev, GPIO_CS_PIN, 0);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
 }
 
 static void release_cs(void)
 {
-	gpio_pin_set(cs_dev, GPIO_CS_PIN, 1);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
 }
 
 static bool irq_pin_high(void)
@@ -253,26 +232,7 @@ static bool exit_irq_high_loop(void)
 
 #else
 
-static int configure_cs(void)
-{
-#ifdef GPIO_CS_PIN
-	static struct spi_cs_control spi_conf_cs;
-
-	spi_conf_cs.gpio_pin = GPIO_CS_PIN;
-	spi_conf_cs.gpio_dt_flags = GPIO_CS_FLAGS;
-	spi_conf_cs.gpio_dev = device_get_binding(
-		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!spi_conf_cs.gpio_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-		return -EIO;
-	}
-
-	spi_conf.cs = &spi_conf_cs;
-#endif /* GPIO_CS_PIN */
-
-	return 0;
-}
+#define configure_cs(...) 0
 #define kick_cs(...)
 #define release_cs(...)
 #define irq_pin_high(...) 0
@@ -553,11 +513,9 @@ static int bt_spi_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!spi_dev) {
-		BT_ERR("Failed to initialize SPI driver: %s",
-		       DT_INST_BUS_LABEL(0));
-		return -EIO;
+	if (!spi_is_ready(&bus)) {
+		BT_ERR("SPI device not ready");
+		return -ENODEV;
 	}
 
 	if (configure_cs()) {
