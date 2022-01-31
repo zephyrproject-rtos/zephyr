@@ -438,6 +438,10 @@
 #include CONFIG_MBEDTLS_USER_CONFIG_FILE
 #endif
 
+#if defined(CONFIG_NRF_CC3XX_PLATFORM)
+#define MBEDTLS_PLATFORM_ZEROIZE_ALT
+#endif
+
 #include "mbedtls/check_config.h"
 
 #endif /* MBEDTLS_CONFIG_H */
