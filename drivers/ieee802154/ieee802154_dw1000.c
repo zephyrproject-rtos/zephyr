@@ -91,12 +91,8 @@ struct dwt_phy_config {
 
 struct dwt_hi_cfg {
 	struct spi_dt_spec bus;
-	const char *irq_port;
-	uint8_t irq_pin;
-	gpio_dt_flags_t irq_flags;
-	const char *rst_port;
-	uint8_t rst_pin;
-	gpio_dt_flags_t rst_flags;
+	struct gpio_dt_spec irq_gpio;
+	struct gpio_dt_spec rst_gpio;
 };
 
 #define DWT_STATE_TX		0
@@ -106,8 +102,6 @@ struct dwt_hi_cfg {
 struct dwt_context {
 	const struct device *dev;
 	struct net_if *iface;
-	const struct device *irq_gpio;
-	const struct device *rst_gpio;
 	const struct spi_config *spi_cfg;
 	struct spi_config spi_cfg_slow;
 	struct gpio_callback gpio_cb;
@@ -124,12 +118,8 @@ struct dwt_context {
 
 static const struct dwt_hi_cfg dw1000_0_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
-	.irq_port = DT_INST_GPIO_LABEL(0, int_gpios),
-	.irq_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.irq_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-	.rst_port = DT_INST_GPIO_LABEL(0, reset_gpios),
-	.rst_pin = DT_INST_GPIO_PIN(0, reset_gpios),
-	.rst_flags = DT_INST_GPIO_FLAGS(0, reset_gpios),
+	.irq_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
+	.rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 };
 
 static struct dwt_context dwt_0_context = {
@@ -331,16 +321,13 @@ static inline void dwt_reg_write_u8(const struct device *dev,
 static ALWAYS_INLINE void dwt_setup_int(const struct device *dev,
 					bool enable)
 {
-	struct dwt_context *ctx = dev->data;
 	const struct dwt_hi_cfg *hi_cfg = dev->config;
 
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(ctx->irq_gpio,
-				     hi_cfg->irq_pin,
-				     flags);
+	gpio_pin_interrupt_configure_dt(&hi_cfg->irq_gpio, flags);
 }
 
 static void dwt_reset_rfrx(const struct device *dev)
@@ -958,22 +945,19 @@ static int dwt_configure(const struct device *dev,
  */
 static int dwt_hw_reset(const struct device *dev)
 {
-	struct dwt_context *ctx = dev->data;
 	const struct dwt_hi_cfg *hi_cfg = dev->config;
 
-	if (gpio_pin_configure(ctx->rst_gpio, hi_cfg->rst_pin,
-			       GPIO_OUTPUT_ACTIVE | hi_cfg->rst_flags)) {
-		LOG_ERR("Failed to configure GPIO pin %u", hi_cfg->rst_pin);
+	if (gpio_pin_configure_dt(&hi_cfg->rst_gpio, GPIO_OUTPUT_ACTIVE)) {
+		LOG_ERR("Failed to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
 		return -EINVAL;
 	}
 
 	k_sleep(K_MSEC(1));
-	gpio_pin_set(ctx->rst_gpio, hi_cfg->rst_pin, 0);
+	gpio_pin_set_dt(&hi_cfg->rst_gpio, 0);
 	k_sleep(K_MSEC(5));
 
-	if (gpio_pin_configure(ctx->rst_gpio, hi_cfg->rst_pin,
-			       GPIO_INPUT | hi_cfg->rst_flags)) {
-		LOG_ERR("Failed to configure GPIO pin %u", hi_cfg->rst_pin);
+	if (gpio_pin_configure_dt(&hi_cfg->rst_gpio, GPIO_INPUT)) {
+		LOG_ERR("Failed to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
 		return -EINVAL;
 	}
 
@@ -1518,36 +1502,32 @@ static int dw1000_init(const struct device *dev)
 	dwt_set_spi_slow(dev, DWT_SPI_SLOW_FREQ);
 
 	/* Initialize IRQ GPIO */
-	ctx->irq_gpio = device_get_binding((char *)hi_cfg->irq_port);
-	if (!ctx->irq_gpio) {
-		LOG_ERR("GPIO port %s not found", hi_cfg->irq_port);
-		return -EINVAL;
+	if (!device_is_ready(hi_cfg->irq_gpio.port)) {
+		LOG_ERR("IRQ GPIO device not ready");
+		return -ENODEV;
 	}
 
-	if (gpio_pin_configure(ctx->irq_gpio, hi_cfg->irq_pin,
-			       GPIO_INPUT | hi_cfg->irq_flags)) {
-		LOG_ERR("Unable to configure GPIO pin %u", hi_cfg->irq_pin);
+	if (gpio_pin_configure_dt(&hi_cfg->irq_gpio, GPIO_INPUT)) {
+		LOG_ERR("Unable to configure GPIO pin %u", hi_cfg->irq_gpio.pin);
 		return -EINVAL;
 	}
 
 	gpio_init_callback(&(ctx->gpio_cb), dwt_gpio_callback,
-			   BIT(hi_cfg->irq_pin));
+			   BIT(hi_cfg->irq_gpio.pin));
 
-	if (gpio_add_callback(ctx->irq_gpio, &(ctx->gpio_cb))) {
+	if (gpio_add_callback(hi_cfg->irq_gpio.port, &(ctx->gpio_cb))) {
 		LOG_ERR("Failed to add IRQ callback");
 		return -EINVAL;
 	}
 
 	/* Initialize RESET GPIO */
-	ctx->rst_gpio = device_get_binding(hi_cfg->rst_port);
-	if (ctx->rst_gpio == NULL) {
-		LOG_ERR("Could not get GPIO port for RESET");
-		return -EIO;
+	if (!device_is_ready(hi_cfg->rst_gpio.port)) {
+		LOG_ERR("Reset GPIO device not ready");
+		return -ENODEV;
 	}
 
-	if (gpio_pin_configure(ctx->rst_gpio, hi_cfg->rst_pin,
-			       GPIO_INPUT | hi_cfg->rst_flags)) {
-		LOG_ERR("Unable to configure GPIO pin %u", hi_cfg->rst_pin);
+	if (gpio_pin_configure_dt(&hi_cfg->rst_gpio, GPIO_INPUT)) {
+		LOG_ERR("Unable to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
 		return -EINVAL;
 	}
 
