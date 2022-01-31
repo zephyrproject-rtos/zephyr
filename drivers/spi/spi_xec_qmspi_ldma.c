@@ -1002,11 +1002,13 @@ void qmspi_xec_isr(const struct device *dev)
 {
 	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *data = dev->data;
-	struct spi_context *ctx = &data->ctx;
 	struct qmspi_regs *regs = cfg->regs;
+	uint32_t qstatus = regs->STS;
+#ifdef CONFIG_SPI_ASYNC
+	struct spi_context *ctx = &data->ctx;
 	int xstatus = 0;
 	size_t nrx = 0;
-	uint32_t qstatus = regs->STS;
+#endif
 
 	regs->IEN = 0;
 	data->qstatus = qstatus;
