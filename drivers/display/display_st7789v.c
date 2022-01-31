@@ -23,11 +23,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(display_st7789v);
 
-#define ST7789V_CMD_DATA_PIN	DT_INST_GPIO_PIN(0, cmd_data_gpios)
-#define ST7789V_CMD_DATA_FLAGS	DT_INST_GPIO_FLAGS(0, cmd_data_gpios)
-#define ST7789V_RESET_PIN	DT_INST_GPIO_PIN(0, reset_gpios)
-#define ST7789V_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
-
 static uint8_t st7789v_porch_param[] = DT_INST_PROP(0, porch_param);
 static uint8_t st7789v_cmd2en_param[] = DT_INST_PROP(0, cmd2en_param);
 static uint8_t st7789v_pwctrl1_param[] = DT_INST_PROP(0, pwctrl1_param);
@@ -38,14 +33,13 @@ static uint8_t st7789v_rgb_param[] = DT_INST_PROP(0, rgb_param);
 
 struct st7789v_config {
 	struct spi_dt_spec bus;
+	struct gpio_dt_spec cmd_data_gpio;
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	struct gpio_dt_spec reset_gpio;
+#endif
 };
 
 struct st7789v_data {
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	const struct device *reset_gpio;
-#endif
-	const struct device *cmd_data_gpio;
-
 	uint16_t height;
 	uint16_t width;
 	uint16_t x_offset;
@@ -69,9 +63,9 @@ static void st7789v_set_lcd_margins(const struct device *dev,
 
 static void st7789v_set_cmd(const struct device *dev, int is_cmd)
 {
-	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 
-	gpio_pin_set(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN, is_cmd);
+	gpio_pin_set_dt(&config->cmd_data_gpio, is_cmd);
 }
 
 static void st7789v_transmit(const struct device *dev, uint8_t cmd,
@@ -102,13 +96,14 @@ static void st7789v_exit_sleep(const struct device *dev)
 static void st7789v_reset_display(const struct device *dev)
 {
 	LOG_DBG("Resetting display");
+
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 
 	k_sleep(K_MSEC(1));
-	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 1);
+	gpio_pin_set_dt(&config->reset_gpio, 1);
 	k_sleep(K_MSEC(6));
-	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 0);
+	gpio_pin_set_dt(&config->reset_gpio, 0);
 	k_sleep(K_MSEC(20));
 #else
 	st7789v_transmit(dev, ST7789V_CMD_SW_RESET, NULL, 0);
@@ -338,7 +333,6 @@ static void st7789v_lcd_init(const struct device *dev)
 static int st7789v_init(const struct device *dev)
 {
 	const struct st7789v_config *config = dev->config;
-	struct st7789v_data *data = dev->data;
 
 	if (!spi_is_ready(&config->bus)) {
 		LOG_ERR("SPI device not ready");
@@ -346,28 +340,23 @@ static int st7789v_init(const struct device *dev)
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	data->reset_gpio = device_get_binding(
-			DT_INST_GPIO_LABEL(0, reset_gpios));
-	if (data->reset_gpio == NULL) {
-		LOG_ERR("Could not get GPIO port for display reset");
-		return -EPERM;
+	if (!device_is_ready(config->reset_gpio.port)) {
+		LOG_ERR("Reset GPIO device not ready");
+		return -ENODEV;
 	}
 
-	if (gpio_pin_configure(data->reset_gpio, ST7789V_RESET_PIN,
-			       GPIO_OUTPUT_INACTIVE | ST7789V_RESET_FLAGS)) {
+	if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE)) {
 		LOG_ERR("Couldn't configure reset pin");
 		return -EIO;
 	}
 #endif
 
-	data->cmd_data_gpio = device_get_binding(
-			DT_INST_GPIO_LABEL(0, cmd_data_gpios));
-	if (data->cmd_data_gpio == NULL) {
-		LOG_ERR("Could not get GPIO port for cmd/DATA port");
-		return -EPERM;
+	if (!device_is_ready(config->cmd_data_gpio.port)) {
+		LOG_ERR("Reset GPIO device not ready");
+		return -ENODEV;
 	}
-	if (gpio_pin_configure(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN,
-			       GPIO_OUTPUT | ST7789V_CMD_DATA_FLAGS)) {
+
+	if (gpio_pin_configure_dt(&config->cmd_data_gpio, GPIO_OUTPUT)) {
 		LOG_ERR("Couldn't configure cmd/DATA pin");
 		return -EIO;
 	}
