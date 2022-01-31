@@ -23,7 +23,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(display_st7789v);
 
-#define ST7789V_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
 #define ST7789V_CMD_DATA_PIN	DT_INST_GPIO_PIN(0, cmd_data_gpios)
 #define ST7789V_CMD_DATA_FLAGS	DT_INST_GPIO_FLAGS(0, cmd_data_gpios)
 #define ST7789V_RESET_PIN	DT_INST_GPIO_PIN(0, reset_gpios)
@@ -37,13 +36,11 @@ static uint8_t st7789v_nvgam_param[] = DT_INST_PROP(0, nvgam_param);
 static uint8_t st7789v_ram_param[] = DT_INST_PROP(0, ram_param);
 static uint8_t st7789v_rgb_param[] = DT_INST_PROP(0, rgb_param);
 
-struct st7789v_data {
-	const struct device *spi_dev;
-	struct spi_config spi_config;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif
+struct st7789v_config {
+	struct spi_dt_spec bus;
+};
 
+struct st7789v_data {
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	const struct device *reset_gpio;
 #endif
@@ -80,19 +77,19 @@ static void st7789v_set_cmd(const struct device *dev, int is_cmd)
 static void st7789v_transmit(const struct device *dev, uint8_t cmd,
 			     uint8_t *tx_data, size_t tx_count)
 {
-	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
 	st7789v_set_cmd(dev, 1);
-	spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+	spi_write_dt(&config->bus, &tx_bufs);
 
 	if (tx_data != NULL) {
 		tx_buf.buf = tx_data;
 		tx_buf.len = tx_count;
 		st7789v_set_cmd(dev, 0);
-		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+		spi_write_dt(&config->bus, &tx_bufs);
 	}
 }
 
@@ -164,7 +161,7 @@ static int st7789v_write(const struct device *dev,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	struct spi_buf tx_buf;
 	struct spi_buf_set tx_bufs;
@@ -199,7 +196,7 @@ static int st7789v_write(const struct device *dev,
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		tx_buf.buf = (void *)write_data_start;
 		tx_buf.len = desc->width * ST7789V_PIXEL_SIZE * write_h;
-		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+		spi_write_dt(&config->bus, &tx_bufs);
 		write_data_start += (desc->pitch * ST7789V_PIXEL_SIZE);
 	}
 
@@ -340,29 +337,13 @@ static void st7789v_lcd_init(const struct device *dev)
 
 static int st7789v_init(const struct device *dev)
 {
+	const struct st7789v_config *config = dev->config;
 	struct st7789v_data *data = dev->data;
 
-	data->spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (data->spi_dev == NULL) {
-		LOG_ERR("Could not get SPI device for LCD");
-		return -EPERM;
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI device not ready");
+		return -ENODEV;
 	}
-
-	data->spi_config.frequency =
-		DT_INST_PROP(0, spi_max_frequency);
-	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	data->spi_config.slave = DT_INST_REG_ADDR(0);
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	data->cs_ctrl.gpio_dev = device_get_binding(
-			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	data->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	data->cs_ctrl.delay = 0U;
-	data->spi_config.cs = &(data->cs_ctrl);
-#else
-	data->spi_config.cs = NULL;
-#endif
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	data->reset_gpio = device_get_binding(
@@ -437,6 +418,10 @@ static const struct display_driver_api st7789v_api = {
 	.set_orientation = st7789v_set_orientation,
 };
 
+static const struct st7789v_config st7789v_config = {
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),
+};
+
 static struct st7789v_data st7789v_data = {
 	.width = DT_INST_PROP(0, width),
 	.height = DT_INST_PROP(0, height),
@@ -446,6 +431,6 @@ static struct st7789v_data st7789v_data = {
 
 PM_DEVICE_DT_INST_DEFINE(0, st7789v_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, &st7789v_init,
-	      PM_DEVICE_DT_INST_GET(0), &st7789v_data, NULL, POST_KERNEL,
-	      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);
+DEVICE_DT_INST_DEFINE(0, &st7789v_init, PM_DEVICE_DT_INST_GET(0), &st7789v_data,
+		      &st7789v_config, POST_KERNEL,
+		      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);
