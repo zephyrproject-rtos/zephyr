@@ -37,9 +37,10 @@
 /soc/arm/atmel_sam/sam4s/                 @fallrisk
 /soc/arm/atmel_sam/same70/                @nandojve
 /soc/arm/atmel_sam/samv71/                @nandojve
-/soc/arm/cypress/                         @nandojve
+/soc/arm/cypress/                         @nandojve @ifyall
 /soc/arm/bcm*/                            @sbranden
 /soc/arm/gigadevice/                      @nandojve
+/soc/arm/infineon_cat1/                   @ifyall
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @mmahadevan108 @dleach02
 /soc/arm/nordic_nrf/                      @anangl
@@ -99,7 +100,9 @@
 /boards/arm/cc1352r1_launchxl/            @bwitherspoon
 /boards/arm/cc26x2r1_launchxl/            @bwitherspoon
 /boards/arm/cc3220sf_launchxl/            @vanti
-/boards/arm/cy8*                          @nandojve
+/boards/arm/cy8ckit_062_ble               @nandojve @ifyall
+/boards/arm/cy8ckit_062_wifi_bt           @nandojve @ifyall
+/boards/arm/cy8cproto_062_4343w           @ifyall
 /boards/arm/disco_l475_iot1/              @erwango
 /boards/arm/efm32pg_stk3401a/             @rdmeneze
 /boards/arm/faze/                         @mbittan @simonguinot
@@ -367,6 +370,7 @@
 /drivers/serial/uart_hvc_xen_consoleio.c  @lorc @firscity
 /drivers/serial/Kconfig.it8xxx2           @GTLin08
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
+/drivers/serial/*infineon_cat1*           @ifyall
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_spi.c                 @JunYangNXP
@@ -432,9 +436,10 @@
 /dts/arm/atmel/samv71*                    @nandojve
 /dts/arm/atmel/                           @galak
 /dts/arm/broadcom/                        @sbranden
-/dts/arm/cypress/                         @nandojve
+/dts/arm/cypress/                         @nandojve @ifyall
 /dts/arm/gigadevice/                      @nandojve
-/dts/arm/infineon/                        @parthitce
+/dts/arm/infineon/xmc4*                   @parthitce @ifyall
+/dts/arm/infineon/psoc6/                  @ifyall
 /dts/arm64/                               @carlocaione
 /dts/arm64/armv8-r.dtsi                   @povergoing
 /dts/arm64/nxp/                           @JiafeiPan
@@ -485,7 +490,8 @@
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*gd32*                    @nandojve
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
-/dts/bindings/*/*psoc6*                   @nandojve
+/dts/bindings/*/*psoc6*                   @nandojve @ifyall
+/dts/bindings/*/infineon,mtbhal*          @ifyall
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @mmahadevan108 @dleach02
 /dts/bindings/*/openisa*                  @dleach02
