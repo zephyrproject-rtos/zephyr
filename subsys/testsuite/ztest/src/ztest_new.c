@@ -21,6 +21,17 @@ static struct k_thread ztest_thread;
 #include <unistd.h>
 #endif
 
+#ifdef CONFIG_ZTEST_SHUFFLE
+#include <random/rand32.h>
+#include <stdlib.h>
+#include <time.h>
+#define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
+#define NUM_ITER_PER_TEST CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+#else
+#define NUM_ITER_PER_SUITE 1
+#define NUM_ITER_PER_TEST 1
+#endif
+
 /* ZTEST_DMEM and ZTEST_BMEM are used for the application shared memory test  */
 
 /**
@@ -495,11 +506,33 @@ struct ztest_unit_test *ztest_get_next_test(const char *suite, struct ztest_unit
 	return NULL;
 }
 
+#ifdef CONFIG_ZTEST_SHUFFLE
+static void z_ztest_shuffle(void *array, size_t num_items, void *tmp, size_t elem_size)
+{
+	char *arr = array;
+
+	for (int i = num_items - 1; i > 0; i--) {
+		int j = sys_rand32_get() % (i + 1);
+
+		if (i != j) {
+			memcpy(tmp, arr + (j * elem_size), elem_size);
+			memcpy(arr + (j * elem_size), arr + (i * elem_size), elem_size);
+			memcpy(arr + (i * elem_size), tmp, elem_size);
+		}
+	}
+
+}
+#endif /* CONFIG_ZTEST_SHUFFLE */
+
 static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 {
 	struct ztest_unit_test *test = NULL;
 	void *data = NULL;
 	int fail = 0;
+
+#ifdef CONFIG_ZTEST_SHUFFLE
+	struct ztest_unit_test tmp;
+#endif
 
 	if (test_status < 0) {
 		return test_status;
@@ -517,20 +550,32 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 	if (suite->setup != NULL) {
 		data = suite->setup();
 	}
-	while ((test = ztest_get_next_test(suite->name, test)) != NULL) {
-		fail += run_test(suite, test, data);
 
-		if (fail && FAIL_FAST) {
-			break;
+	for (int i = 0; i < NUM_ITER_PER_TEST; i++) {
+		fail = 0;
+
+#ifdef CONFIG_ZTEST_SHUFFLE
+		z_ztest_shuffle(_ztest_unit_test_list_start,
+				_ztest_unit_test_list_end - _ztest_unit_test_list_start, &tmp,
+				sizeof(struct ztest_unit_test));
+#endif
+
+		while (((test = ztest_get_next_test(suite->name, test)) != NULL)) {
+			fail += run_test(suite, test, data);
+
+			if (fail && FAIL_FAST) {
+				break;
+			}
 		}
+
+		test_status = (test_status || fail) ? 1 : 0;
 	}
+
 	TC_SUITE_END(suite->name, (fail > 0 ? TC_FAIL : TC_PASS));
 	phase = TEST_PHASE_TEARDOWN;
 	if (suite->teardown != NULL) {
 		suite->teardown(data);
 	}
-
-	test_status = (test_status || fail) ? 1 : 0;
 
 	return fail;
 }
@@ -558,6 +603,14 @@ int ztest_run_test_suites(const void *state)
 	struct ztest_suite_node *ptr;
 	int count = 0;
 
+#ifdef CONFIG_ZTEST_SHUFFLE
+	struct ztest_suite_node tmp;
+
+	z_ztest_shuffle(_ztest_suite_node_list_start,
+			_ztest_suite_node_list_end - _ztest_suite_node_list_start, &tmp,
+			sizeof(struct ztest_suite_node));
+#endif
+
 	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
 		struct ztest_suite_stats *stats = &ptr->stats;
 		bool should_run = true;
@@ -569,14 +622,16 @@ int ztest_run_test_suites(const void *state)
 			should_run = stats->run_count == 0;
 		}
 
-		if (should_run) {
-			int fail = z_ztest_run_test_suite_ptr(ptr);
+		for (int i = 0; i < NUM_ITER_PER_SUITE; i++) {
+			if (should_run) {
+				int fail = z_ztest_run_test_suite_ptr(ptr);
 
-			count++;
-			stats->run_count++;
-			stats->fail_count += (fail != 0) ? 1 : 0;
-		} else {
-			stats->skip_count++;
+				count++;
+				stats->run_count++;
+				stats->fail_count += (fail != 0) ? 1 : 0;
+			} else {
+				stats->skip_count++;
+			}
 		}
 	}
 
