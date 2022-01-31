@@ -1477,15 +1477,12 @@ static struct ieee802154_radio_api mcr20a_radio_api = {
 };
 
 #if defined(CONFIG_IEEE802154_RAW_MODE)
-DEVICE_DEFINE(mcr20a, CONFIG_IEEE802154_MCR20A_DRV_NAME,
-		mcr20a_init, NULL, &mcr20a_context_data, NULL,
-		POST_KERNEL, CONFIG_IEEE802154_MCR20A_INIT_PRIO,
-		&mcr20a_radio_api);
+DEVICE_DT_INST_DEFINE(0, mcr20a_init, NULL, &mcr20a_context_data, NULL,
+		      POST_KERNEL, CONFIG_IEEE802154_MCR20A_INIT_PRIO,
+		      &mcr20a_radio_api);
 #else
-NET_DEVICE_INIT(mcr20a, CONFIG_IEEE802154_MCR20A_DRV_NAME,
-		mcr20a_init, NULL, &mcr20a_context_data, NULL,
-		CONFIG_IEEE802154_MCR20A_INIT_PRIO,
-		&mcr20a_radio_api, IEEE802154_L2,
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2),
-		MCR20A_PSDU_LENGTH);
+NET_DEVICE_DT_INST_DEFINE(0, mcr20a_init, NULL, &mcr20a_context_data, NULL,
+			  CONFIG_IEEE802154_MCR20A_INIT_PRIO, &mcr20a_radio_api,
+			  IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2),
+			  MCR20A_PSDU_LENGTH);
 #endif
