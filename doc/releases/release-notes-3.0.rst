@@ -77,6 +77,9 @@ Removed APIs in this release
 * Removed Kconfig option ``CONFIG_OPENOCD_SUPPORT`` in favor of
   ``CONFIG_DEBUG_THREAD_INFO``.
 
+* Removed ``flash_write_protection_set()`` along with the flash write protection
+  implementation handler.
+
 Deprecated in this release
 ==========================
 
@@ -265,6 +268,12 @@ Drivers and Sensors
   * stm32_qspi: General enhancement (Generation of the reset pulse for SPI-NOR memory,
     Usage of 4IO for read / write (4READ/4PP), Support for different QSPI banks,
     Support for 4B addressing on spi-nor)
+
+  * ite_i8xxx2: The driver has been reworked so the write/erase protection
+    management has been moved to implementations of the flash_write()
+    and the flash_erase() calls. The driver was keeping the write protection API
+    which was designed to be removed since 2.6 release.
+
 
 * GPIO
 
