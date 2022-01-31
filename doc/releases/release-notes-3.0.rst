@@ -278,6 +278,7 @@ Networking
 
 * Misc:
 
+  * gptp: clock sync ratio as double, not float
 
 * OpenThread:
 
