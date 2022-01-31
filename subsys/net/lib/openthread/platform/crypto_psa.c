@@ -115,9 +115,9 @@ static void ensureKeyIsLoaded(otCryptoKeyRef aKeyRef)
 	psa_reset_key_attributes(&attributes);
 }
 
-otError otPlatCryptoInit(void)
+void otPlatCryptoInit(void)
 {
-	return psaToOtError(psa_crypto_init());
+	psa_crypto_init();
 }
 
 otError otPlatCryptoImportKey(otCryptoKeyRef *aKeyRef,
@@ -404,4 +404,17 @@ otError otPlatCryptoSha256Finish(otCryptoContext *aContext, uint8_t *aHash, uint
 	operation = aContext->mContext;
 
 	return psaToOtError(psa_hash_finish(operation, aHash, aHashSize, &hash_size));
+}
+
+void otPlatCryptoRandomInit(void)
+{
+}
+
+void otPlatCryptoRandomDeinit(void)
+{
+}
+
+otError otPlatCryptoRandomGet(uint8_t *aBuffer, uint16_t aSize)
+{
+	return psaToOtError(psa_generate_random(aBuffer, aSize));
 }
