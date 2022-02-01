@@ -5,6 +5,8 @@ arch: xtensa
 toolchain:
   - xcc
   - zephyr
+supported:
+  - dma
 testing:
   ignore_tags:
      - net
