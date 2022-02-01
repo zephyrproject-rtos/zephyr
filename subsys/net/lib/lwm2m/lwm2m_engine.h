@@ -104,6 +104,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_message *msg);
 
+bool lwm2m_engine_bootstrap_override(struct lwm2m_ctx *client_ctx, struct lwm2m_obj_path *path);
+
 int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap);
 
 enum coap_block_size lwm2m_default_block_size(void);
