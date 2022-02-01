@@ -58,6 +58,23 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
 
+#if defined(CONFIG_LIBLC3CODEC)
+
+#include "lc3.h"
+
+/* Current sample do not use codec configuration parameters, hence below shall match the selected
+ * codec configuration.
+ */
+#define AUDIO_SAMPLE_RATE_HZ    16000
+#define AUDIO_LENGTH_US         10000 /* amount of sample data - shall match LC3 frame length */
+#define NUM_SAMPLES             ((AUDIO_LENGTH_US * AUDIO_SAMPLE_RATE_HZ) / USEC_PER_SEC)
+
+static int16_t audio_buf[NUM_SAMPLES];
+static lc3_decoder_t lc3_decoder;
+static lc3_decoder_mem_48k_t lc3_decoder_mem;
+
+#endif
+
 void print_hex(const uint8_t *ptr, size_t len)
 {
 	while (len-- != 0) {
@@ -76,7 +93,7 @@ static void print_codec(const struct bt_codec *codec)
 		       codec->data[i].data.data_len);
 		print_hex(codec->data[i].data.data,
 			  codec->data[i].data.data_len -
-				sizeof(codec->data[i].data.type));
+			  sizeof(codec->data[i].data.type));
 		printk("\n");
 	}
 
@@ -86,7 +103,7 @@ static void print_codec(const struct bt_codec *codec)
 		       codec->meta[i].data.data_len);
 		print_hex(codec->meta[i].data.data,
 			  codec->meta[i].data.data_len -
-				sizeof(codec->meta[i].data.type));
+			  sizeof(codec->meta[i].data.type));
 		printk("\n");
 	}
 }
@@ -151,6 +168,13 @@ static int lc3_enable(struct bt_audio_stream *stream,
 {
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
+#if defined(CONFIG_LIBLC3CODEC)
+	/* TODO: parse codec config data and extract frame duration and sample-rate
+	 *       Currently there is no lib for this.
+	 */
+	lc3_decoder = lc3_setup_decoder(AUDIO_LENGTH_US, AUDIO_SAMPLE_RATE_HZ, 0, &lc3_decoder_mem);
+#endif
+
 	return 0;
 }
 
@@ -203,13 +227,54 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.release = lc3_release,
 };
 
+
+#if defined(CONFIG_LIBLC3CODEC)
+
+static void stream_recv_lc3_codec(struct bt_audio_stream *stream, struct net_buf *buf)
+{
+	uint8_t err;
+	/* TODO: If there is a way to know if the controller supports indicating errors in the
+	 *       payload one could feed that into bad-frame-indicator. The HCI layer allows to
+	 *       include this information, but currently there is no controller support.
+	 *       Here it is assumed that reveiving a zero-length payload means a lost frame -
+	 *       but actually it could just as well indicate a pause in the stream.
+	 */
+	const uint8_t bad_frame_indicator = buf->len == 0 ? 1 : 0;
+	uint8_t *in_buf = (bad_frame_indicator ? NULL : buf->data);
+
+	/* This code is to demonstrate the use of the LC3 codec. On an actual implementation
+	 * it might be required to offload the processing to another task to avoid blocking the
+	 * BT stack.
+	 */
+
+	err = lc3_decode(lc3_decoder, in_buf, buf->len, LC3_PCM_FORMAT_S16, audio_buf, 1);
+
+	printk("RX stream %p len %u\n", stream, buf->len);
+
+	if (err == 1) {
+		printk("  decoder performed PLC\n");
+		return;
+	} else if (err < 0) {
+		printk("  decoder failed - wrong parameters?\n");
+		return;
+	}
+}
+
+#else
+
 static void stream_recv(struct bt_audio_stream *stream, struct net_buf *buf)
 {
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
+#endif
+
 static struct bt_audio_stream_ops stream_ops = {
+#if defined(CONFIG_LIBLC3CODEC)
+	.recv = stream_recv_lc3_codec
+#else
 	.recv = stream_recv
+#endif
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)
