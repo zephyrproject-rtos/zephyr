@@ -761,7 +761,7 @@ void log_output_hexdump_syst_process(const struct log_output *log_output,
 	}
 }
 
-#else
+#else /* !CONFIG_LOG2 */
 static void hexdump2_print(const uint8_t *data, uint32_t length,
 			   uint32_t severity)
 {
@@ -775,10 +775,20 @@ static void hexdump2_print(const uint8_t *data, uint32_t length,
 	}
 }
 
+static int mipi_formatter(cbprintf_cb out, void *ctx,
+			  const char *fmt, va_list ap)
+{
+	struct log_msg2 *msg = ctx;
+	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+
+	MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, ap);
+
+	return 0;
+}
+
 void log_output_msg2_syst_process(const struct log_output *output,
 				struct log_msg2 *msg, uint32_t flag)
 {
-	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
 	size_t len, hexdump_len;
 
 	update_systh_platform_data(&log_syst_handle, output, flag);
@@ -786,27 +796,17 @@ void log_output_msg2_syst_process(const struct log_output *output,
 	uint8_t *data = log_msg2_get_package(msg, &len);
 
 	if (len) {
-		char *buf = data, *fmt;
-
-		fmt = ((char **)buf)[1];
-		buf += sizeof(char *) * 2;
-
-		union {
-			va_list ap;
-			void *ptr;
-		} u;
-
-		u.ptr = buf;
-
-		MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, u.ap);
+		(void)cbpprintf_external(NULL, mipi_formatter, msg, data);
 	}
 
 	data = log_msg2_get_data(msg, &hexdump_len);
 	if (hexdump_len) {
+		uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+
 		hexdump2_print(data, hexdump_len, severity);
 	}
 }
-#endif
+#endif /* !CONFIG_LOG2 */
 
 static int syst_init(const struct device *arg)
 {
