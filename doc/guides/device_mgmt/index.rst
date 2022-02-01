@@ -9,3 +9,4 @@ Device Management
     mcumgr.rst
     mcumgr_backporting.rst
     dfu.rst
+    ota.rst

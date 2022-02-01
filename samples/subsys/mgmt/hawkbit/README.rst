@@ -1,3 +1,5 @@
+.. _hawkbit-api-sample:
+
 Hawkbit Direct Device Integration API sample
 ############################################
 
