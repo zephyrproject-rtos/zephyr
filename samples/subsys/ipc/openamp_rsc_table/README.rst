@@ -7,7 +7,11 @@ Overview
 ********
 
 This application demonstrates how to use OpenAMP with Zephyr based on a resource
-table. It is designed to respond to the `Linux rpmsg client sample <https://elixir.bootlin.com/linux/latest/source/samples/rpmsg/rpmsg_client_sample.c>`_.
+table. It is designed to respond to the:
+
+* `Linux rpmsg client sample <https://elixir.bootlin.com/linux/latest/source/samples/rpmsg/rpmsg_client_sample.c>`_
+* `Linux rpmsg tty driver <https://elixir.bootlin.com/linux/latest/source/drivers/tty/rpmsg_tty.c>`_
+
 This sample implementation is compatible with platforms that embed
 a Linux kernel OS on the main processor and a Zephyr application on
 the co-processor.
@@ -53,8 +57,8 @@ Open a Linux shell (minicom, ssh, etc.) and insert a module into the Linux Kerne
 
    root@linuxshell: insmod rpmsg_client_sample.ko
 
-Result on Zephyr console
--------------------------
+Result on Zephyr console on boot
+--------------------------------
 
 The following message will appear on the corresponding Zephyr console:
 
@@ -70,3 +74,16 @@ The following message will appear on the corresponding Zephyr console:
    ...
    Remote core received message 100: hello world!
    OpenAMP demo ended.
+
+
+rpmsg TTY demo on Linux console
+-------------------------------
+
+On the Linux console send a message to Zephyr which answers with the "TTY <add>" prefix.
+<addr> corresponds to the Zephyr rpmsg-tty endpoint address:
+
+.. code-block:: console
+
+   $> cat /dev/ttyRPMSG0 &
+   $> echo "Hello Zephyr" >/dev/ttyRPMSG0
+   TTY 0x0401: Hello Zephyr
