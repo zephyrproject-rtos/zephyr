@@ -1028,7 +1028,8 @@ int do_write_op_json(struct lwm2m_message *msg)
 			 * resources are ignored
 			 */
 
-			if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W)) {
+			if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W) &&
+			    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
 				ret = -EPERM;
 				break;
 			}
