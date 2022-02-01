@@ -48,9 +48,7 @@ extern "C" {
 extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
-}
+	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p)
 
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(const void *unused);
