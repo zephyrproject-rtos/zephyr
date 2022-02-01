@@ -54,6 +54,19 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
 
+#if defined(CONFIG_LIBLC3CODEC)
+
+#include "lc3_config.h"
+#include "lc3_decoder.h"
+
+#define AUDIO_SAMPLE_RATE_HZ    16000
+#define AUDIO_LENGTH_US         10000
+#define NUM_SAMPLES             ((AUDIO_LENGTH_US * AUDIO_SAMPLE_RATE_HZ) / 1000000)
+
+static int16_t audio_buf[NUM_SAMPLES];
+Lc3Decoder_t lc3_decoder;
+#endif
+
 void print_hex(const uint8_t *ptr, size_t len)
 {
 	while (len-- != 0) {
@@ -72,7 +85,7 @@ static void print_codec(const struct bt_codec *codec)
 		       codec->data[i].data.data_len);
 		print_hex(codec->data[i].data.data,
 			  codec->data[i].data.data_len -
-				sizeof(codec->data[i].data.type));
+			  sizeof(codec->data[i].data.type));
 		printk("\n");
 	}
 
@@ -82,7 +95,7 @@ static void print_codec(const struct bt_codec *codec)
 		       codec->meta[i].data.data_len);
 		print_hex(codec->meta[i].data.data,
 			  codec->meta[i].data.data_len -
-				sizeof(codec->meta[i].data.type));
+			  sizeof(codec->meta[i].data.type));
 		printk("\n");
 	}
 }
@@ -94,6 +107,27 @@ static void print_qos(struct bt_codec_qos *qos)
 	       qos->dir, qos->interval, qos->framing, qos->phy, qos->sdu,
 	       qos->rtn, qos->latency, qos->pd);
 }
+
+#if defined(CONFIG_LIBLC3CODEC)
+static const char *get_err_str(uint8_t err)
+{
+	switch (err) {
+	case LC3_DECODE_ERR_FREE:
+		return "LC3_DECODE_ERR_FREE";
+	case LC3_DECODE_ERR_INVALID_CONFIGURATION:
+		return "LC3_DECODE_ERR_INVALID_CONFIGURATION";
+	case LC3_DECODE_ERR_INVALID_BYTE_COUNT:
+		return "LC3_DECODE_ERR_INVALID_BYTE_COUNT";
+	case LC3_DECODE_ERR_INVALID_X_OUT_SIZE:
+		return "LC3_DECODE_ERR_INVALID_X_OUT_SIZE";
+	case LC3_DECODE_ERR_INVALID_BITS_PER_AUDIO_SAMPLE:
+		return "LC3_DECODE_ERR_INVALID_BITS_PER_AUDIO_SAMPLE";
+	case LC3_DECODE_ERR_DECODER_ALLOCATION:
+		return "LC3_DECODE_ERR_DECODER_ALLOCATION";
+	}
+	return "UNKNOWN LC3_DECODE ERROR";
+}
+#endif
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
@@ -144,6 +178,13 @@ static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 {
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
+#if defined(CONFIG_LIBLC3CODEC)
+	/* TODO: parse codec config data and extract frame duration and sample-rate
+	 *       Currently there is no lib for this.
+	 */
+	lc3_decoder = Lc3Decoder_create(AUDIO_SAMPLE_RATE_HZ, lc3config_duration_10ms);
+#endif
+
 	return 0;
 }
 
@@ -180,6 +221,11 @@ static int lc3_release(struct bt_audio_stream *stream)
 {
 	printk("Release: stream %p\n", stream);
 
+#if defined(CONFIG_LIBLC3CODEC)
+	Lc3Decoder_destroy(lc3_decoder);
+	lc3_decoder = NULL;
+#endif
+
 	return 0;
 }
 
@@ -205,15 +251,58 @@ static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
 	printk("Audio Stream %p disconnected (reason 0x%02x)\n", stream, reason);
 }
 
+
+#if defined(CONFIG_LIBLC3CODEC)
+
+static void stream_recv_lc3_codec(struct bt_audio_stream *stream, struct net_buf *buf)
+{
+	uint8_t bit_error_detect = 0;
+	uint8_t err;
+	/* TODO: If there is a way to know if the controller supports indicating errors in the
+	 *       payload one could feed that into bad-frame-indicator. The HCI layer allows to
+	 *       include this information, but currently there is no controller support.
+	 *       Here it is assumed that reveiving a zero-length payload means a lost frame -
+	 *       but actually it could just as well indicate a pause in the stream.
+	 */
+	const uint8_t bad_frame_indicator = buf->len == 0 ? 1 : 0;
+
+	/* This code is to demonstrate the use of the LC3 codec. On an actual implementation
+	 * it might be required to offload the processing to another task to avoid blocking the
+	 * BT stack.
+	 */
+	err = Lc3Decoder_run(lc3_decoder, buf->data, buf->len, bad_frame_indicator, audio_buf,
+			     sizeof(audio_buf)/2, &bit_error_detect);
+
+	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+
+	if (err != LC3_DECODE_ERR_FREE) {
+		printk("decoder return: %s (%d)", get_err_str(err), err);
+		return;
+	}
+
+	if (bit_error_detect) {
+		printk("  BIT errors detected\n");
+		return;
+	}
+}
+
+#else
+
 static void stream_recv(struct bt_audio_stream *stream, struct net_buf *buf)
 {
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
+#endif
+
 static struct bt_audio_stream_ops stream_ops = {
 	.connected = stream_connected,
 	.disconnected = stream_disconnected,
+#if defined(CONFIG_LIBLC3CODEC)
+	.recv = stream_recv_lc3_codec
+#else
 	.recv = stream_recv
+#endif
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)

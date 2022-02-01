@@ -38,38 +38,150 @@ static K_SEM_DEFINE(sem_stream_qos, 0, 1);
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
 
-void print_hex(const uint8_t *ptr, size_t len)
+
+#if defined(CONFIG_LIBLC3CODEC)
+
+#include "lc3_config.h"
+#include "lc3_encoder.h"
+#include "math.h"
+
+#define AUDIO_SAMPLE_RATE_HZ    16000
+#define AUDIO_FREQUENCY_HZ      800
+#define AUDIO_LENGTH_US         10000
+#define NUM_SAMPLES             ((AUDIO_LENGTH_US * AUDIO_SAMPLE_RATE_HZ) / 1000000)
+
+static int16_t audio_buf[NUM_SAMPLES];
+static Lc3Encoder_t lc3_encoder;
+
+/**
+ * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
+ *
+ * @param buf Destination buffer
+ * @param length_us Length of the buffer in microseconds
+ * @param frequency_hz frequency in Hz
+ * @param sample_rate_hz sample-rate in Hz.
+ */
+static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, int sample_rate_hz)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	const int sine_period = sample_rate_hz / frequency_hz;
+	const int num_samples = (length_us * sample_rate_hz) / 1000000;
+	const float step = 3.1415 / sine_period;
+
+	for (int i = 0; i < num_samples; i++) {
+		float sample = sin(i * step);
+
+		buf[i] = (int16_t)(INT16_MAX * sample);
 	}
 }
 
-static void print_codec(const struct bt_codec *codec)
+static const char *get_err_str(uint16_t err)
 {
-	printk("codec 0x%02x cid 0x%04x vid 0x%04x count %u\n",
-	       codec->id, codec->cid, codec->vid, codec->data_count);
+	switch (err) {
+	case LC3_ENCODE_ERR_FREE:
+		return "LC3_ENCODE_ERR_FREE";
+	case LC3_ENCODE_ERR_INVALID_CONFIGURATION:
+		return "LC3_ENCODE_ERR_INVALID_CONFIGURATION";
+	case LC3_ENCODE_ERR_INVALID_BYTE_COUNT:
+		return "LC3_ENCODE_ERR_INVALID_BYTE_COUNT";
+	case LC3_ENCODE_ERR_INVALID_BITS_PER_AUDIO_SAMPLE:
+		return "LC3_ENCODE_ERR_INVALID_BITS_PER_AUDIO_SAMPLE";
+	case LC3_ENCODE_ERR_ENCODER_ALLOCATION:
+		return "LC3_ENCODE_ERR_ENCODER_ALLOCATION";
+	}
+	return "UNKNOWN LC3 ENCODE ERROR";
+}
 
-	for (size_t i = 0; i < codec->data_count; i++) {
-		printk("data #%zu: type 0x%02x len %u\n",
-		       i, codec->data[i].data.type,
-		       codec->data[i].data.data_len);
-		print_hex(codec->data[i].data.data,
-			  codec->data[i].data.data_len -
-				sizeof(codec->data[i].data.type));
-		printk("\n");
+static void lc3_audio_timer_timeout(struct k_work *work)
+{
+	/* For the first call-back we push multiple audio frames to the buffer to use the
+	 * controller ISO buffer to handle jitter.
+	 */
+	const uint8_t prime_count = 2;
+	static int64_t start_time;
+	static int32_t pdu_cnt;
+	int32_t pdu_goal_cnt;
+	int64_t uptime, run_time_ms;
+	int ret;
+	struct net_buf *buf;
+	uint8_t *net_buffer;
+	uint16_t lc3_ret;
+	const uint16_t tx_sdu_len = audio_stream.iso->qos->tx->sdu;
+
+	k_work_schedule(&audio_send_work, K_MSEC(10));
+
+	if (start_time == 0) {
+		/* Read start time and produce the number of frames needed to catch up with any
+		 * inaccuracities in the timer. by calculating the number of frames we should
+		 * have send and compare to how many wa have actually sent.
+		 */
+		start_time = k_uptime_get();
 	}
 
-	for (size_t i = 0; i < codec->meta_count; i++) {
-		printk("meta #%zu: type 0x%02x len %u\n",
-		       i, codec->meta[i].data.type,
-		       codec->meta[i].data.data_len);
-		print_hex(codec->meta[i].data.data,
-			  codec->meta[i].data.data_len -
-				sizeof(codec->meta[i].data.type));
-		printk("\n");
+	uptime = k_uptime_get();
+	run_time_ms = uptime - start_time;
+	pdu_goal_cnt = ((run_time_ms * 10) / (AUDIO_LENGTH_US / 100)); /* scale to allow 7.5ms */
+
+	/* Add primer value to ensure the controller do not run low on data due to jutter */
+	pdu_goal_cnt += prime_count;
+
+	printk("LC3 encode %d frames (uptime: %lld start_time: %lld run_time: %lld pdu_cnt: %d pdu_goal_cnt: %d)\n",
+	       pdu_goal_cnt - pdu_cnt, uptime, start_time, run_time_ms,
+	       pdu_cnt, pdu_goal_cnt);
+
+	while (pdu_cnt < pdu_goal_cnt) {
+		buf = net_buf_alloc(&tx_pool, K_FOREVER);
+		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+
+		net_buffer = net_buf_tail(buf);
+		buf->len += tx_sdu_len;
+
+		lc3_ret = Lc3Encoder_run_single(lc3_encoder, audio_buf, tx_sdu_len, net_buffer, 0);
+
+		if (lc3_ret != LC3_ENCODE_ERR_FREE) {
+			printk("LC3 encoder failed: %s (%d)", get_err_str(lc3_ret), lc3_ret);
+		}
+
+		ret = bt_audio_stream_send(&audio_stream, buf);
+
+		if (ret < 0) {
+			printk("  Failed to send LC3 audio data (%d)\n", ret);
+			net_buf_unref(buf);
+		} else {
+			printk("  Sending LC3 data with len %zu\n", tx_sdu_len);
+			pdu_cnt++;
+		}
 	}
 }
+
+static void init_lc3(void)
+{
+	/* Fill audio buffer with Sine wave */
+	fill_audio_buf_sin(audio_buf, AUDIO_LENGTH_US, AUDIO_FREQUENCY_HZ,
+			   AUDIO_SAMPLE_RATE_HZ);
+
+	for (int i = 0; i < NUM_SAMPLES; i++) {
+		printk("%3i: %6i\n", i, audio_buf[i]);
+	}
+
+	/* Create instance of the codec config class - can be used to calculate number of bytes
+	 * for a specific bit-rate/fame_length configuration. Here it is just demonstrated without
+	 * being used.
+	 */
+	Lc3Config_t lc3cfg = Lc3Config_create(AUDIO_SAMPLE_RATE_HZ,
+					      lc3config_duration_10ms, 1);
+
+	printk("Lc3Config_getByteCountFromBitrate() %i\n",
+		Lc3Config_getByteCountFromBitrate(lc3cfg, 2 * AUDIO_SAMPLE_RATE_HZ));
+
+	/* Cteare the encoder instance. This shall complete before stream_started() is called. */
+	lc3_encoder = Lc3Encoder_create(AUDIO_SAMPLE_RATE_HZ,
+					lc3config_duration_10ms, 1);
+
+}
+
+#else
+
+#define init_lc3(...)
 
 /**
  * @brief Send audio data on timeout
@@ -123,6 +235,41 @@ static void audio_timer_timeout(struct k_work *work)
 	}
 }
 
+#endif
+
+
+static void print_hex(const uint8_t *ptr, size_t len)
+{
+	while (len-- != 0) {
+		printk("%02x", *ptr++);
+	}
+}
+
+static void print_codec(const struct bt_codec *codec)
+{
+	printk("codec 0x%02x cid 0x%04x vid 0x%04x count %u\n",
+	       codec->id, codec->cid, codec->vid, codec->data_count);
+
+	for (uint8_t i = 0; i < codec->data_count; i++) {
+		printk("data #%u: type 0x%02x len %u\n",
+		       i, codec->data[i].data.type,
+		       codec->data[i].data.data_len);
+		print_hex(codec->data[i].data.data,
+			  codec->data[i].data.data_len -
+			  sizeof(codec->data[i].data.type));
+		printk("\n");
+	}
+
+	for (uint8_t i = 0; i < codec->meta_count; i++) {
+		printk("meta #%u: type 0x%02x len %u\n",
+		       i, codec->meta[i].data.type,
+		       codec->meta[i].data.data_len);
+		print_hex(codec->meta[i].data.data,
+			  codec->meta[i].data.data_len -
+			  sizeof(codec->meta[i].data.type));
+		printk("\n");
+	}
+}
 static bool check_audio_support_and_connect(struct bt_data *data,
 					    void *user_data)
 {
@@ -413,7 +560,11 @@ static int init(void)
 
 	audio_stream.ops = &stream_ops;
 
+#if defined(CONFIG_LIBLC3CODEC)
+	k_work_init_delayable(&audio_send_work, lc3_audio_timer_timeout);
+#else
 	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
+#endif
 
 	return 0;
 }
@@ -534,6 +685,10 @@ static int set_stream_qos(void)
 static int enable_stream(struct bt_audio_stream *stream)
 {
 	int err;
+
+	if (IS_ENABLED(CONFIG_LIBLC3CODEC)) {
+		init_lc3();
+	}
 
 	err = bt_audio_stream_enable(stream, preset_16_2_1.codec.meta_count,
 				     preset_16_2_1.codec.meta);
