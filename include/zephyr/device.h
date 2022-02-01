@@ -30,6 +30,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
