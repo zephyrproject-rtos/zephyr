@@ -23,18 +23,9 @@ extern "C" {
  * @{
  */
 
-#if !defined(nop) || defined(__DOXYGEN__)
-/**
- * @brief nop
- *
- * NOP instruction.
- */
-#define nop()		__asm__ volatile ("nop")
-#endif /* !nop */
-
 #if !defined(isb) || defined(__DOXYGEN__)
 /**
- * @brief isb
+ * @brief isb - Instruction Synchronization Barrier
  *
  * This is used to guarantee that any subsequent instructions are fetched, so
  * that privilege and access are checked with the current MMU configuration.
