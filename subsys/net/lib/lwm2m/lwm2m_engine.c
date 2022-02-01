@@ -2399,6 +2399,12 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			continue;
 		}
 
+		if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+			msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST &&
+		    msg->path.res_inst_id != res->res_instances[i].res_inst_id) {
+			continue;
+		}
+
 		if (res->res_inst_count > 1) {
 			msg->path.res_inst_id =
 				res->res_instances[i].res_inst_id;
@@ -3496,8 +3502,15 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	memcpy(&msg->path, &temp_path, sizeof(temp_path));
 
 	/* did not read anything even if we should have - on single item */
-	if (ret == 0 && num_read == 0U && msg->path.level >= LWM2M_PATH_LEVEL_RESOURCE) {
-		return -ENOENT;
+	if (ret == 0 && num_read == 0U) {
+		if (msg->path.level ==  LWM2M_PATH_LEVEL_RESOURCE) {
+			return -ENOENT;
+		}
+
+		if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+			msg->path.level ==  LWM2M_PATH_LEVEL_RESOURCE_INST) {
+			return -ENOENT;
+		}
 	}
 
 	return ret;
