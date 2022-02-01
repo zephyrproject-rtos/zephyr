@@ -760,10 +760,12 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 	iso_conn = chan->iso;
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->sn = sys_cpu_to_le16(iso_conn->iso.seq_num++);
+	hdr->sn = sys_cpu_to_le16(iso_conn->iso.seq_num);
 	hdr->slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(net_buf_frags_len(buf)
 							- sizeof(*hdr),
 							BT_ISO_DATA_VALID));
+
+	iso_conn->iso.seq_num++;
 
 	return bt_conn_send_cb(iso_conn, buf, bt_iso_send_cb, NULL);
 }
@@ -1357,8 +1359,10 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 
 	i = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
+		const uint16_t handle = cig_rsp->handle[i++];
+
 		/* Assign the connection handle */
-		cis->iso->handle = sys_le16_to_cpu(cig_rsp->handle[i++]);
+		cis->iso->handle = sys_le16_to_cpu(handle);
 	}
 
 	net_buf_unref(rsp);
@@ -1456,8 +1460,10 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 
 	i = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
+		const uint16_t handle = cig_rsp->handle[i++];
+
 		/* Assign the connection handle */
-		cis->iso->handle = sys_le16_to_cpu(cig_rsp->handle[i++]);
+		cis->iso->handle = sys_le16_to_cpu(handle);
 	}
 
 	net_buf_unref(rsp);
@@ -1939,10 +1945,11 @@ void hci_le_big_complete(struct net_buf *buf)
 
 	i = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
+		const uint16_t handle = evt->handle[i++];
 		struct bt_conn *iso_conn = bis->iso;
 
 		iso_conn->iso.seq_num = 0;
-		iso_conn->handle = sys_le16_to_cpu(evt->handle[i++]);
+		iso_conn->handle = sys_le16_to_cpu(handle);
 		bt_conn_set_state(iso_conn, BT_CONN_CONNECTED);
 	}
 }
@@ -2095,7 +2102,9 @@ void hci_le_big_sync_established(struct net_buf *buf)
 
 	i = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
-		bis->iso->handle = sys_le16_to_cpu(evt->handle[i++]);
+		const uint16_t handle = evt->handle[i++];
+
+		bis->iso->handle = sys_le16_to_cpu(handle);
 		bt_conn_set_state(bis->iso, BT_CONN_CONNECTED);
 	}
 
