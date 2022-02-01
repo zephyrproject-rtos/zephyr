@@ -30,6 +30,7 @@
 #include <linker/sections.h>
 #include <sys/device_mmio.h>
 #include <sys/util.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
