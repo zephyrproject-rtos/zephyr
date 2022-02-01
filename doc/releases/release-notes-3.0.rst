@@ -585,6 +585,21 @@ Libraries / Subsystems
     about CPU power states.
   * ``pm/device.h`` is no longer included by ``device.h``, since the device API
     no longer depends on the PM API.
+  * Added support for power domains. Power domains are implemented as
+    simple devices and use the existent PM API for resume and suspend, devices
+    under a power domain are notified when it becomes active or suspended.
+  * Added a new action :c:enum:`PM_DEVICE_ACTION_TURN_ON`. This action
+    is used by power domains to notify devices when it becomes active.
+  * Added new API (:c:func:`pm_device_state_lock`,
+    :c:func:`pm_device_state_unlock` and
+    :c:func:`pm_device_state_is_locked`) to lock a device pm
+    state. When the device has its state locked, the kernel will no
+    longer suspend and resume devices when the system goes to sleep
+    and device runtime power management operations will fail.
+  * :c:func:`pm_device_state_set` is deprecated in favor of utilizing
+    :c:func:`pm_device_action_run`.
+  * Proper multicore support. Devices are suspended only when the last
+    active CPU. A cpu parameter was added to Policy and SoC interfaces.
 
 * Logging
 
