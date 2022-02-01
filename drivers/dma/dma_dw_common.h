@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2017 Intel Corporation.
+ * Copyright (c) 2022 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_DMA_DMA_DW_H_
-#define ZEPHYR_DRIVERS_DMA_DMA_DW_H_
+#ifndef ZEPHYR_DRIVERS_DMA_DMA_DW_COMMON_H_
+#define ZEPHYR_DRIVERS_DMA_DMA_DW_COMMON_H_
+
+#include <drivers/dma.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,13 +92,13 @@ struct dma_chan_data {
 #define CHAN_DISABLE(chan)	(0x100 << chan)
 
 /* TODO: add FIFO sizes */
-struct chan_arbit_data {
+struct dw_chan_arbit_data {
 	uint16_t class;
 	uint16_t weight;
 };
 
 struct dw_drv_plat_data {
-	struct chan_arbit_data chan[DW_MAX_CHAN];
+	struct dw_chan_arbit_data chan[DW_MAX_CHAN];
 };
 
 /* Device run time data */
@@ -111,8 +113,22 @@ struct dw_dma_dev_cfg {
 	void (*irq_config)(void);
 };
 
+void dw_dma_setup(const struct device *dev);
+
+int dw_dma_config(const struct device *dev, uint32_t channel,
+		  struct dma_config *cfg);
+
+int dw_dma_reload(const struct device *dev, uint32_t channel,
+		  uint32_t src, uint32_t dst, size_t size);
+
+int dw_dma_transfer_start(const struct device *dev, uint32_t channel);
+
+int dw_dma_transfer_stop(const struct device *dev, uint32_t channel);
+
+void dw_dma_isr(const struct device *dev);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_DMA_DMA_DW_H_ */
+#endif /* ZEPHYR_DRIVERS_DMA_DMA_DW_COMMON_H_ */
