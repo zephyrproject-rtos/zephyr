@@ -421,9 +421,15 @@ const struct lwm2m_reader plain_text_reader = {
 
 int do_read_op_plain_text(struct lwm2m_message *msg, int content_format)
 {
-	/* Plain text can only return single resource */
-	if (msg->path.level != 3U) {
-		return -EPERM; /* NOT_ALLOWED */
+	/* Plain text can only return single resource (instance) */
+	if (msg->path.level < LWM2M_PATH_LEVEL_RESOURCE) {
+		return -EPERM;
+	} else if (msg->path.level > LWM2M_PATH_LEVEL_RESOURCE) {
+		if (!IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
+			return -ENOENT;
+		} else if (msg->path.level > LWM2M_PATH_LEVEL_RESOURCE_INST) {
+			return -ENOENT;
+		}
 	}
 
 	return lwm2m_perform_read_op(msg, content_format);
