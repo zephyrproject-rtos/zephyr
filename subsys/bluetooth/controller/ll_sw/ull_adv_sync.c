@@ -1734,6 +1734,12 @@ static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 	uint32_t offs;
 
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
+
+	if (offs >= OFFS_ADJUST_US) {
+		offs -= OFFS_ADJUST_US;
+		si->offs_adjust = 1U;
+	}
+
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
 		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /

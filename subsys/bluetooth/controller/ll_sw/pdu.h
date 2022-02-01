@@ -126,7 +126,7 @@
 #define OFFS_UNIT_VALUE_30_US  0
 #define OFFS_UNIT_VALUE_300_US 1
 /* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
-#define OFFS_ADJUST_US         245760
+#define OFFS_ADJUST_US         2457600UL
 
 /* Advertiser's Sleep Clock Accuracy Value */
 #define SCA_500_PPM       500 /* 51 ppm to 500 ppm */
