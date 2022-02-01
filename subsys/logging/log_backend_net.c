@@ -35,6 +35,7 @@ static uint8_t output_buf[CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE];
 static bool net_init_done;
 struct sockaddr server_addr;
 static bool panic_mode;
+static uint32_t log_format_current = CONFIG_LOG_BACKEND_NET_OUTPUT_DEFAULT;
 
 const struct log_backend *log_backend_net_get(void);
 
@@ -188,7 +189,7 @@ static void send_output(const struct log_backend *const backend,
 	log_output_msg_process(&log_output_net, msg,
 			       LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
 			       LOG_OUTPUT_FLAG_TIMESTAMP |
-			(IS_ENABLED(CONFIG_LOG_BACKEND_NET_SYST_ENABLE) ?
+			(IS_ENABLED(CONFIG_LOG_BACKEND_NET_OUTPUT_SYST) ?
 			LOG_OUTPUT_FLAG_FORMAT_SYST : 0));
 
 	log_msg_put(msg);
@@ -207,7 +208,15 @@ static void process(const struct log_backend *const backend,
 		net_init_done = true;
 	}
 
-	log_output_msg2_process(&log_output_net, &msg->log, flags);
+	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
+
+	log_output_func(&log_output_net, &msg->log, flags);
+}
+
+static int format_set(const struct log_backend *const backend, uint32_t log_type)
+{
+	log_format_current = log_type;
+	return 0;
 }
 
 static void init_net(struct log_backend const *const backend)
@@ -239,7 +248,7 @@ static void sync_string(const struct log_backend *const backend,
 {
 	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
 		LOG_OUTPUT_FLAG_TIMESTAMP |
-		(IS_ENABLED(CONFIG_LOG_BACKEND_NET_SYST_ENABLE) ?
+		(IS_ENABLED(CONFIG_LOG_BACKEND_NET_OUTPUT_SYST) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0);
 	uint32_t key;
 
@@ -265,6 +274,7 @@ const struct log_backend_api log_backend_net_api = {
 	 * this can be revisited if needed.
 	 */
 	.put_sync_hexdump = NULL,
+	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
 };
 
 /* Note that the backend can be activated only after we have networking
