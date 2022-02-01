@@ -29,34 +29,20 @@ properties:
 
   # Some chips don't put the Quad Enable bit in the same register while
   # otherwise being completely compatible, give option for override
-  quad-enable-bit:
-    default: 2
+  quad-enable-bit-mask:
+    default: 64
     type: int
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-      - 10
-      - 11
-      - 12
-      - 13
-      - 14
-      - 15
     description: |
       Some flash chips put the quad enable bit in a different bit/register
-      than the jedec spec. This property allows overriding which bit will
-      be used to set Quad mode. Bits 0-7 correspond to register 1 and 8-15
-      correspond to register 2. WARNING setting the wrong bit could end up
-      setting your board PERMANENTLY in read-only mode. Only change this if
-      you are confident. Defaults to bit 2 of S1B6 spec as supported by this
-      driver.
+      than the jedec spec. This property allows overriding the bitmask that
+      will be used to enable quad mode. This should be a value
+      corresponding a 16 bit wide number. The 8 bits will be used as a quad
+      enable bit mask in the first register (values 0 - 255), the later 8
+      bits will be used as a mask for a second register (values 256-65280)
+      these bits will be a no-op the later 8 bits are zero. WARNING setting
+      the wrong bit could end up setting your board PERMANENTLY in
+      read-only mode. Only change this if you are confident. Defaults to
+      64 (bit 6) of S1B6 spec as supported by this driver.
 
   readoc:
     type: string

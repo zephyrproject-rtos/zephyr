@@ -79,8 +79,8 @@ BUILD_ASSERT(((INST_0_QER == JESD216_DW15_QER_NONE)
 	      || (INST_0_QER == JESD216_DW15_QER_S1B6)),
 	     "Driver only supports NONE or S1B6 for quad-enable-requirements");
 
-#define INST_QE_BIT DT_INST_PROP(0, quad_enable_bit)
-BUILD_ASSERT( INST_QE_BIT < 16, "Driver only supports QE bits less than 16");
+#define INST_QE_BIT_MASK DT_INST_PROP(0, quad_enable_bit_mask)
+BUILD_ASSERT( INST_QE_BIT_MASK < 65536, "Driver only supports QE bit mask less than 16 bits");
 
 #if NRF52_ERRATA_122_PRESENT
 #include <hal/nrf_gpio.h>
@@ -397,7 +397,7 @@ static int qspi_rdsr(const struct device *dev)
 	};
 	int ret = qspi_send_cmd(dev, &cmd, false);
 	// Only need to read second register if QE bit is in second register
-#if INST_QE_BIT > 7
+#if INST_QE_BIT_MASK > 255
 	if ( ret == 0 ) {
 		uint8_t sr2 = -1;
 		const struct qspi_buf sr_buf = {
@@ -544,33 +544,35 @@ static int qspi_nrfx_configure(const struct device *dev)
 			return ret;
 		}
 
-		uint8_t sr_array[2] = {0, 0};
-		// by default only first bit needs sent, unless QE bit is in second
-		// register
-		sr_array[0] = (uint8_t)(ret);
-		size_t sr_length = sizeof(sr_array[0]);
-
-#if INST_QE_BIT <  7
-		uint8_t qe_mask = BIT(INST_QE_BIT);
-		uint8_t * sr = sr_array;
-#else
-		// bit is in second register, offset by first buffer (0 indexed)
-		uint8_t qe_mask = BIT(INST_QE_BIT - 8);
-		sr_array[1] = ((uint8_t)(ret >> 8));
-		sr_length = sizeof(sr_array);
-		uint8_t * sr = sr_array+1;
-#endif
-
 		nrf_qspi_prot_conf_t const *prot_if =
 			&dev_config->nrfx_cfg.prot_if;
 		bool qe_value = (prot_if->writeoc == NRF_QSPI_WRITEOC_PP4IO) ||
 				(prot_if->writeoc == NRF_QSPI_WRITEOC_PP4O)  ||
 				(prot_if->readoc == NRF_QSPI_READOC_READ4IO) ||
 				(prot_if->readoc == NRF_QSPI_READOC_READ4O);
-		bool qe_state = ((*sr & qe_mask) != 0U);
 
-		LOG_DBG("RDSR %02x QE %d need %d: %s", *sr, qe_state, qe_value,
+		uint8_t sr_array[2] = {0, 0};
+		// by default only first bit needs sent, unless QE bit is in second
+		// register
+		sr_array[0] = (uint8_t)(ret);
+		size_t sr_length = sizeof(sr_array[0]);
+
+		uint8_t qe_mask = (uint8_t)INST_QE_BIT_MASK;
+		bool qe_state = ((sr_array[0] & qe_mask) != 0U);
+		LOG_DBG("RDSR %02x QE %d need %d: %s", sr_array[0], qe_state, qe_value,
 			(qe_state != qe_value) ? "updating" : "no-change");
+
+#if INST_QE_BIT_MASK > 255
+		// bit is in second register, offset by first buffer (0 indexed)
+		uint8_t qe_mask_2 = (uint8_t)(INST_QE_BIT_MASK >> 8);
+		sr_array[1] = ((uint8_t)(ret >> 8));
+		sr_length = sizeof(sr_array);
+		bool qe_state_2 = ((sr_array[1] & qe_mask) != 0U);
+		LOG_DBG("RDSR %02x QE %d need %d: %s", sr_array[1], qe_state, qe_value,
+			(qe_state_2 != qe_value) ? "updating" : "no-change");
+		qe_state ^= qe_state_2
+#endif
+
 
 		ret = 0;
 		if (qe_state != qe_value) {
@@ -584,7 +586,10 @@ static int qspi_nrfx_configure(const struct device *dev)
 			};
 
 			// only need to update the register with QE bit in it
-			*sr ^= qe_mask;
+			sr_array[0] ^= qe_mask;
+#if INST_QE_BIT_MASK > 255
+			sr_array[1] ^= qe_mask_2;
+#endif
 			ret = qspi_send_cmd(dev, &cmd, true);
 
 			/* Writing SR can take some time, and further

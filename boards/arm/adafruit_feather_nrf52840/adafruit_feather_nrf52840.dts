@@ -103,7 +103,7 @@
 		reg = <0>;
 		writeoc = "pp4o";
 		readoc = "read4o";
-		quad-enable-bit = < 9 >;
+		quad-enable-bit-mask = < 512 >;
 		sck-frequency = <16000000>;
 		label = "GD25Q16";
 		jedec-id = [c8 40 15];
