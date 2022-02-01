@@ -10,6 +10,7 @@
 #include <logging/log_output.h>
 #include <logging/log_backend_std.h>
 
+static uint32_t log_format_current = CONFIG_LOG_BACKEND_ADSP_OUTPUT_DEFAULT;
 void intel_adsp_trace_out(int8_t *str, size_t len);
 
 static int char_out(uint8_t *data, size_t length, void *ctx)
@@ -73,7 +74,15 @@ static inline void put_sync_hexdump(const struct log_backend *const backend,
 static void process(const struct log_backend *const backend,
 		union log_msg2_generic *msg)
 {
-	log_output_msg2_process(&log_output_adsp, &msg->log, format_flags());
+	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
+
+	log_output_func(&log_output_adsp, &msg->log, format_flags());
+}
+
+static int format_set(const struct log_backend *const backend, uint32_t log_type)
+{
+	log_format_current = log_type;
+	return 0;
 }
 
 const struct log_backend_api log_backend_adsp_api = {
@@ -85,6 +94,7 @@ const struct log_backend_api log_backend_adsp_api = {
 	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 	.panic = panic,
+	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_adsp, log_backend_adsp_api, true);
