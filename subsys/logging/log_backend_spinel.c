@@ -18,6 +18,7 @@
 static uint8_t char_buf[CONFIG_LOG_BACKEND_SPINEL_BUFFER_SIZE];
 static bool panic_mode;
 static uint16_t last_log_level;
+static uint32_t log_format_current = CONFIG_LOG_BACKEND_SPINEL_OUTPUT_DEFAULT;
 
 static int write(uint8_t *data, size_t length, void *ctx);
 
@@ -45,7 +46,15 @@ static void process(const struct log_backend *const backend,
 	/* prevent adding CRLF, which may crash spinel decoding */
 	uint32_t flags = LOG_OUTPUT_FLAG_CRLF_NONE | log_backend_std_get_flags();
 
-	log_output_msg2_process(&log_output_spinel, &msg->log, flags);
+	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
+
+	log_output_func(&log_output_spinel, &msg->log, flags);
+}
+
+static int format_set(const struct log_backend *const backend, uint32_t log_type)
+{
+	log_format_current = log_type;
+	return 0;
 }
 
 static void sync_string(const struct log_backend *const backend,
@@ -136,6 +145,7 @@ const struct log_backend_api log_backend_spinel_api = {
 	.panic = panic,
 	.init = log_backend_spinel_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
+	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_spinel, log_backend_spinel_api, true);

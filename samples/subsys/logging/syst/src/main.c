@@ -7,6 +7,8 @@
 #include <zephyr.h>
 #include <logging/log.h>
 #include <sys/printk.h>
+#include <logging/log_ctrl.h>
+#include <logging/log_output.h>
 
 #define DATA_MAX_DLEN 8
 #define LOG_MODULE_NAME syst
@@ -29,7 +31,7 @@ struct test_frame {
 	};
 } __packed;
 
-void main(void)
+void log_msgs(void)
 {
 	struct test_frame frame = { 0 };
 	const uint8_t data[DATA_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
@@ -101,6 +103,26 @@ void main(void)
 #ifndef CONFIG_LOG2
 	/* log output string */
 	log_string_sync(src_level, "%s", "log string sync");
+#endif
+
+}
+
+void main(void)
+{
+	log_msgs();
+
+#ifndef CONFIG_LOG1
+
+	uint32_t log_type = LOG_OUTPUT_TEXT;
+
+	log_backend_format_set(log_backend_get_by_name("log_backend_uart"), log_type);
+
+	log_msgs();
+
+	log_type = LOG_OUTPUT_SYST;
+	log_backend_format_set(log_backend_get_by_name("log_backend_uart"), log_type);
+
+	log_msgs();
 #endif
 
 }

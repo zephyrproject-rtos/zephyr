@@ -18,6 +18,7 @@
 #define _STDOUT_BUF_SIZE 256
 static char stdout_buff[_STDOUT_BUF_SIZE];
 static int n_pend; /* Number of pending characters in buffer */
+static uint32_t log_format_current = CONFIG_LOG_BACKEND_NATIVE_POSIX_OUTPUT_DEFAULT;
 
 static void preprint_char(int c)
 {
@@ -140,7 +141,15 @@ static void process(const struct log_backend *const backend,
 {
 	uint32_t flags = log_backend_std_get_flags();
 
-	log_output_msg2_process(&log_output_posix, &msg->log, flags);
+	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
+
+	log_output_func(&log_output_posix, &msg->log, flags);
+}
+
+static int format_set(const struct log_backend *const backend, uint32_t log_type)
+{
+	log_format_current = log_type;
+	return 0;
 }
 
 const struct log_backend_api log_backend_native_posix_api = {
@@ -152,6 +161,7 @@ const struct log_backend_api log_backend_native_posix_api = {
 			sync_hexdump : NULL,
 	.panic = panic,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
+	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_native_posix,
