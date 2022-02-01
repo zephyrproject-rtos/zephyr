@@ -23,12 +23,27 @@ config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on !USE_DT_CODE_PARTITION
 
-if USB_DEVICE_STACK
+config USB_CDC_ACM
+	default n if USB_DEVICE_BLUETOOTH
 
-config UART_LINE_CTRL
+config BL654_USB_SERIAL_BACKEND_CDCACM
+	bool "Use CDC ACM UART as backend for BL654 USB adapter"
+	default y if !USB_DEVICE_BLUETOOTH
+	help
+	  Use CDC ACM UART as backend for console or shell.
+
+if BL654_USB_SERIAL_BACKEND_CDCACM
+
+config UART_CONSOLE
+	default CONSOLE
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
 	default y
 
-endif # USB_DEVICE_STACK
+config SHELL_BACKEND_SERIAL_CHECK_DTR
+	default SHELL
+
+endif #BL654_USB_SERIAL_BACKEND_CDCACM
 
 if IEEE802154
 
