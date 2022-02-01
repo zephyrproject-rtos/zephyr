@@ -169,6 +169,19 @@
 			label = "UART_4";
 			status = "disabled";
 		};
+
+		mailbox0: mailbox@30ab0000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x30ab0000 DT_SIZE_K(64)>;
+			interrupts = <97 0>;
+			label = "MAILBOX_0";
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
 	};
 };
 
