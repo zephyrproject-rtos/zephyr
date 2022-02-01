@@ -83,6 +83,15 @@ command (assuming JLink is used):
 
    $ openocd -f interface/jlink.cfg -c 'transport select swd' -f target/rp2040.cfg -c "adapter speed 2000" -c 'targets rp2040.core0' -c 'program path/to/zephyr.elf verify reset exit'
 
+Using UF2
+---------
+
+If you don't have an SWD adapter, you can flash the Raspberry Pi Pico with
+a UF2 file. By default, building an app for this board will generate a
+`build/zephyr/zephyr.uf2` file. If the Pico is powered on with the `BOOTSEL`
+button pressed, it will appear on the host as a mass storage device. The
+UF2 file should be drag-and-dropped to the device, which will flash the Pico.
+
 Debugging
 =========
 
