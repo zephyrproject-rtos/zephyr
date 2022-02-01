@@ -446,7 +446,8 @@ int do_write_op_plain_text(struct lwm2m_message *msg)
 		return -ENOENT;
 	}
 
-	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W)) {
+	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W) &&
+	    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
 		return -EPERM;
 	}
 

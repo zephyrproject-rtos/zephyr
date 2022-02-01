@@ -2485,6 +2485,21 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 	return opaque_ctx.len;
 }
 
+bool lwm2m_engine_bootstrap_override(struct lwm2m_ctx *client_ctx, struct lwm2m_obj_path *path)
+{
+	if (!client_ctx->bootstrap_mode) {
+		/* Bootstrap is not active override is not possible then */
+		return false;
+	}
+
+	if (path->obj_id == LWM2M_OBJECT_SECURITY_ID || path->obj_id == LWM2M_OBJECT_SERVER_ID) {
+		/* Bootstrap server have a access to Security and Server object */
+		return true;
+	}
+
+	return false;
+}
+
 /* This function is exposed for the content format writers */
 int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_res *res,

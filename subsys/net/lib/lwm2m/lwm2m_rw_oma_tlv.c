@@ -821,7 +821,8 @@ static int do_write_op_tlv_item(struct lwm2m_message *msg)
 		goto error;
 	}
 
-	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W)) {
+	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W) &&
+	    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
 		ret = -EPERM;
 		goto error;
 	}
