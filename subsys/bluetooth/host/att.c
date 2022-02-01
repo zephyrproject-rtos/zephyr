@@ -440,12 +440,6 @@ struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op,
 	return buf;
 }
 
-static inline bool att_chan_is_connected(struct bt_att_chan *chan)
-{
-	return (chan->att->conn->state != BT_CONN_CONNECTED ||
-		!atomic_test_bit(chan->flags, ATT_DISCONNECTED));
-}
-
 static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 			    bt_att_chan_sent_t cb)
 {
