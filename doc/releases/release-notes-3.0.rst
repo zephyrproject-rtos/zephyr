@@ -266,6 +266,9 @@ Drivers and Sensors
 
 * DMA
 
+  * Added support for suspending and resuming transfers
+  * Added support for SoCs with DMA between application and embedded
+    processors, allows for transfer directions to be identified as such.
 
 * EEPROM
 
@@ -307,6 +310,7 @@ Drivers and Sensors
 * I2C
 
   * Added driver for GigaDevice GD32 SoCs
+  * Added stats functionality to all drivers
 
 * I2S
 
@@ -513,6 +517,8 @@ Libraries / Subsystems
 
 * Tracing
 
+  * Support all syscalls being traced using the python syscall generator to
+    introduce a tracing hook call.
 
 * Debug
 
