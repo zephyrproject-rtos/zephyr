@@ -34,7 +34,7 @@ volatile struct {
  * 
  */
 
-#define WAKE_FLAG_COUNT (CONFIG_SMP_BASE_CPU + CONFIG_MP_NUM_CPUS)
+#define WAKE_FLAG_COUNT (CONFIG_MP_TOTAL_NUM_CPUS)
 
 /* we will index directly off of mhartid so need to be careful... */
 volatile __noinit uint64_t hart_wake_flags[WAKE_FLAG_COUNT];
