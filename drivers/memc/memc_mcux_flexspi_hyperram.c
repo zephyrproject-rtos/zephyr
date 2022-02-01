@@ -33,13 +33,8 @@ enum {
 };
 
 struct memc_flexspi_hyperram_config {
-	char *controller_label;
 	flexspi_port_t port;
 	flexspi_device_config_t config;
-};
-
-struct memc_flexspi_hyperram_data {
-	const struct device *controller;
 };
 
 static const uint32_t memc_flexspi_hyperram_lut[][4] = {
@@ -88,7 +83,6 @@ static int memc_flexspi_hyperram_get_vendor_id(const struct device *dev,
 						uint16_t *vendor_id)
 {
 	const struct memc_flexspi_hyperram_config *config = dev->config;
-	struct memc_flexspi_hyperram_data *data = dev->data;
 	uint32_t buffer = 0;
 	int ret;
 
@@ -104,7 +98,7 @@ static int memc_flexspi_hyperram_get_vendor_id(const struct device *dev,
 
 	LOG_DBG("Reading id");
 
-	ret = memc_flexspi_transfer(data->controller, &transfer);
+	ret = memc_flexspi_transfer(config->controller, &transfer);
 	*vendor_id = buffer & 0xffff;
 
 	return ret;
@@ -113,29 +107,27 @@ static int memc_flexspi_hyperram_get_vendor_id(const struct device *dev,
 static int memc_flexspi_hyperram_init(const struct device *dev)
 {
 	const struct memc_flexspi_hyperram_config *config = dev->config;
-	struct memc_flexspi_hyperram_data *data = dev->data;
 	uint16_t vendor_id;
 
-	data->controller = device_get_binding(config->controller_label);
-	if (data->controller == NULL) {
-		LOG_ERR("Could not find controller");
-		return -EINVAL;
+	if (!device_is_ready(config->controller)) {
+		LOG_ERR("Controller device not ready");
+		return -ENODEV;
 	}
 
-	if (memc_flexspi_set_device_config(data->controller, &config->config,
+	if (memc_flexspi_set_device_config(config->controller, &config->config,
 					   config->port)) {
 		LOG_ERR("Could not set device configuration");
 		return -EINVAL;
 	}
 
-	if (memc_flexspi_update_lut(data->controller, 0,
+	if (memc_flexspi_update_lut(config->controller, 0,
 				    (const uint32_t *) memc_flexspi_hyperram_lut,
 				    sizeof(memc_flexspi_hyperram_lut) / 4)) {
 		LOG_ERR("Could not update lut");
 		return -EINVAL;
 	}
 
-	memc_flexspi_reset(data->controller);
+	memc_flexspi_reset(config->controller);
 
 	if (memc_flexspi_hyperram_get_vendor_id(dev, &vendor_id)) {
 		LOG_ERR("Could not read vendor id");
@@ -183,18 +175,15 @@ static int memc_flexspi_hyperram_init(const struct device *dev)
 #define MEMC_FLEXSPI_HYPERRAM(n)				  \
 	static const struct memc_flexspi_hyperram_config	  \
 		memc_flexspi_hyperram_config_##n = {		  \
-		.controller_label = DT_INST_BUS_LABEL(n),	  \
+		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),	  \
 		.port = DT_INST_REG_ADDR(n),			  \
 		.config = MEMC_FLEXSPI_DEVICE_CONFIG(n),	  \
 	};							  \
 								  \
-	static struct memc_flexspi_hyperram_data		  \
-		memc_flexspi_hyperram_data_##n;			  \
-								  \
 	DEVICE_DT_INST_DEFINE(n,				  \
 			      memc_flexspi_hyperram_init,	  \
 			      NULL,				  \
-			      &memc_flexspi_hyperram_data_##n,	  \
+			      NULL,				  \
 			      &memc_flexspi_hyperram_config_##n,  \
 			      POST_KERNEL,			  \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
