@@ -26,7 +26,6 @@
  * @{
  */
 
-#include <init.h>
 #include <linker/sections.h>
 #include <sys/device_mmio.h>
 #include <sys/util.h>
@@ -472,6 +471,8 @@ struct device {
 	struct pm_device * const pm;
 #endif
 };
+
+#include <init.h>
 
 /**
  * @brief Get the handle for a given device
