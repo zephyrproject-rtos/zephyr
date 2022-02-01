@@ -237,6 +237,7 @@
 /drivers/dma/dma_stm32*                   @cybertale @lowlander
 /drivers/dma/*pl330*                      @raveenp
 /drivers/dma/*iproc_pax*                  @raveenp
+/drivers/dma/*cavs*                       @teburd
 /drivers/ec_host_cmd_periph/              @jettr
 /drivers/edac/                            @finikorg
 /drivers/eeprom/                          @henrikbrixandersen
