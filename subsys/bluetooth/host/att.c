@@ -71,7 +71,7 @@ K_MEM_SLAB_DEFINE(req_slab, sizeof(struct bt_att_req),
 enum {
 	ATT_PENDING_RSP,
 	ATT_PENDING_CFM,
-	ATT_DISCONNECTED,
+	ATT_CONNECTED,
 	ATT_ENHANCED,
 	ATT_PENDING_SENT,
 
@@ -153,6 +153,10 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 	hdr = (void *)buf->data;
 
 	BT_DBG("code 0x%02x", hdr->code);
+
+	if (!atomic_test_bit(chan->flags, ATT_CONNECTED)) {
+		return -EINVAL;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_EATT) && hdr->code == BT_ATT_OP_MTU_REQ &&
 	    chan->chan.tx.cid != BT_L2CAP_CID_ATT) {
@@ -2583,10 +2587,8 @@ static struct bt_att *att_get(struct bt_conn *conn)
 	}
 
 	att_chan = ATT_CHAN(chan);
-	if (atomic_test_bit(att_chan->flags, ATT_DISCONNECTED)) {
-		BT_WARN("ATT channel flagged as disconnected");
-		return NULL;
-	}
+	__ASSERT(atomic_test_bit(att_chan->flags, ATT_CONNECTED),
+		 "ATT channel not connected");
 
 	return att_chan->att;
 }
@@ -2718,15 +2720,12 @@ static void att_chan_attach(struct bt_att *att, struct bt_att_chan *chan)
 
 static void bt_att_connected(struct bt_l2cap_chan *chan)
 {
-	struct bt_att_chan *att_chan = att_get_fixed_chan(chan->conn);
-	struct bt_att *att = att_chan->att;
+	struct bt_att_chan *att_chan = ATT_CHAN(chan);
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
-	att_chan = ATT_CHAN(chan);
-
-	att_chan_attach(att, att_chan);
+	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
 	if (!atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
 		ch->tx.mtu = BT_ATT_DEFAULT_LE_MTU;
@@ -2924,6 +2923,7 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 	k_fifo_init(&chan->tx_queue);
 	atomic_set(chan->flags, flags);
 	chan->att = att;
+	att_chan_attach(att, chan);
 
 	return chan;
 }
