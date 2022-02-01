@@ -4002,6 +4002,24 @@ static int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int obser
 	return r;
 }
 
+static int lwm2m_engine_default_content_format(uint16_t *accept_format)
+{
+	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
+		/* Select content format use SenML CBOR when it possible */
+		if (IS_ENABLED(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)) {
+			LOG_DBG("No accept option given. Assume SenML Json.");
+			*accept_format = LWM2M_FORMAT_APP_SEML_JSON;
+		} else {
+			LOG_ERR("SenML CBOR or JSON is not supported");
+			return -ENOTSUP;
+		}
+	} else {
+		LOG_DBG("No accept option given. Assume OMA TLV.");
+		*accept_format = LWM2M_FORMAT_OMA_TLV;
+	}
+	return 0;
+}
+
 static int handle_request(struct coap_packet *request,
 			  struct lwm2m_message *msg)
 {
@@ -4101,8 +4119,11 @@ static int handle_request(struct coap_packet *request,
 	if (r > 0) {
 		accept = coap_option_value_to_int(&options[0]);
 	} else {
-		LOG_DBG("No accept option given. Assume OMA TLV.");
-		accept = LWM2M_FORMAT_OMA_TLV;
+		/* Select Default based LWM2M_VERSION */
+		r = lwm2m_engine_default_content_format(&accept);
+		if (r) {
+			goto error;
+		}
 	}
 
 	r = select_writer(&msg->out, accept);
