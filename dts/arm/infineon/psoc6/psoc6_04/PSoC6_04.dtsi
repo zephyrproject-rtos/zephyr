@@ -1,0 +1,428 @@
+/*
+ * Copyright (c) 2021, Cypress Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-m.dtsi>
+
+/ {
+    soc {
+        uid: device_uid@16000600 {
+            compatible = "infineon,mtbhal-uid";
+            reg = <0x16000600 0xB>;
+            status = "disabled";
+        };
+
+        adc0: adc@409F0000 {
+            compatible = "infineon,mtbhal-adc";
+            reg = <0x409F0000 0x10000>;
+            interrupts = <39 6>;
+            peripheral-id = <0 0>;
+            status = "disabled";
+            label = "adc_0";
+        };
+        adc1: adc@409F0000 {
+            compatible = "infineon,mtbhal-adc";
+            reg = <0x409F0000 0x10000>;
+            interrupts = <40 6>;
+            peripheral-id = <0 1>;
+            status = "disabled";
+            label = "adc_1";
+        };
+
+        i2c0: i2c@40600000 {
+            compatible = "infineon,mtbhal-i2c";
+            reg = <0x40600000 0x10000>;
+            interrupts = <45 6>;
+            peripheral-id = <0>;
+            status = "disabled";
+            label = "i2c_0";
+        };
+        i2c1: i2c@40610000 {
+            compatible = "infineon,mtbhal-i2c";
+            reg = <0x40610000 0x10000>;
+            interrupts = <46 6>;
+            peripheral-id = <1>;
+            status = "disabled";
+            label = "i2c_1";
+        };
+        i2c2: i2c@40620000 {
+            compatible = "infineon,mtbhal-i2c";
+            reg = <0x40620000 0x10000>;
+            interrupts = <47 6>;
+            peripheral-id = <2>;
+            status = "disabled";
+            label = "i2c_2";
+        };
+        i2c4: i2c@40640000 {
+            compatible = "infineon,mtbhal-i2c";
+            reg = <0x40640000 0x10000>;
+            interrupts = <49 6>;
+            peripheral-id = <4>;
+            status = "disabled";
+            label = "i2c_4";
+        };
+        i2c5: i2c@40650000 {
+            compatible = "infineon,mtbhal-i2c";
+            reg = <0x40650000 0x10000>;
+            interrupts = <50 6>;
+            peripheral-id = <5>;
+            status = "disabled";
+            label = "i2c_5";
+        };
+        i2c6: i2c@40660000 {
+            compatible = "infineon,mtbhal-i2c";
+            reg = <0x40660000 0x10000>;
+            interrupts = <18 6>;
+            peripheral-id = <6>;
+            status = "disabled";
+            label = "i2c_6";
+        };
+
+        spi0: spi@40600000 {
+            compatible = "infineon,mtbhal-spi";
+            reg = <0x40600000 0x10000>;
+            interrupts = <45 6>;
+            peripheral-id = <0>;
+            status = "disabled";
+            label = "spi_0";
+        };
+        spi1: spi@40610000 {
+            compatible = "infineon,mtbhal-spi";
+            reg = <0x40610000 0x10000>;
+            interrupts = <46 6>;
+            peripheral-id = <1>;
+            status = "disabled";
+            label = "spi_1";
+        };
+        spi2: spi@40620000 {
+            compatible = "infineon,mtbhal-spi";
+            reg = <0x40620000 0x10000>;
+            interrupts = <47 6>;
+            peripheral-id = <2>;
+            status = "disabled";
+            label = "spi_2";
+        };
+        spi4: spi@40640000 {
+            compatible = "infineon,mtbhal-spi";
+            reg = <0x40640000 0x10000>;
+            interrupts = <49 6>;
+            peripheral-id = <4>;
+            status = "disabled";
+            label = "spi_4";
+        };
+        spi5: spi@40650000 {
+            compatible = "infineon,mtbhal-spi";
+            reg = <0x40650000 0x10000>;
+            interrupts = <50 6>;
+            peripheral-id = <5>;
+            status = "disabled";
+            label = "spi_5";
+        };
+        spi6: spi@40660000 {
+            compatible = "infineon,mtbhal-spi";
+            reg = <0x40660000 0x10000>;
+            interrupts = <18 6>;
+            peripheral-id = <6>;
+            status = "disabled";
+            label = "spi_6";
+        };
+
+        uart0: uart@40600000 {
+            compatible = "infineon,mtbhal-uart";
+            reg = <0x40600000 0x10000>;
+            interrupts = <45 6>;
+            peripheral-id = <0>;
+            status = "disabled";
+            label = "uart_0";
+        };
+        uart1: uart@40610000 {
+            compatible = "infineon,mtbhal-uart";
+            reg = <0x40610000 0x10000>;
+            interrupts = <46 6>;
+            peripheral-id = <1>;
+            status = "disabled";
+            label = "uart_1";
+        };
+        uart2: uart@40620000 {
+            compatible = "infineon,mtbhal-uart";
+            reg = <0x40620000 0x10000>;
+            interrupts = <47 6>;
+            peripheral-id = <2>;
+            status = "disabled";
+            label = "uart_2";
+        };
+        uart4: uart@40640000 {
+            compatible = "infineon,mtbhal-uart";
+            reg = <0x40640000 0x10000>;
+            interrupts = <49 6>;
+            peripheral-id = <4>;
+            status = "disabled";
+            label = "uart_4";
+        };
+        uart5: uart@40650000 {
+            compatible = "infineon,mtbhal-uart";
+            reg = <0x40650000 0x10000>;
+            interrupts = <50 6>;
+            peripheral-id = <5>;
+            status = "disabled";
+            label = "uart_5";
+        };
+
+        timer0: timer@40260000 {
+            compatible = "infineon,mtbhal-timer";
+            reg = <0x40260200 0x40>;
+            interrupts = <19 6>;
+            peripheral-id = <0>;
+            status = "disabled";
+            label = "timer_0";
+        };
+        timer1: timer@40260000 {
+            compatible = "infineon,mtbhal-timer";
+            reg = <0x40260240 0x40>;
+            interrupts = <20 6>;
+            peripheral-id = <1>;
+            status = "disabled";
+            label = "timer_1";
+        };
+
+        watchdog@40260180 {
+            compatible = "infineon,mtbhal-watchdog";
+            reg = <0x40260180 0xC>;
+            interrupts = <22 6>;
+            status = "disabled";
+            label = "watchdog";
+        };
+
+        counter0_0: counter@40380000 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40380000 0x80>;
+            interrupts = <123 6>;
+            peripheral-id = <0 0>;
+            resolution = <32>;
+            status = "disabled";
+            label = "counter_0_0";
+        };
+        counter0_1: counter@40380080 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40380080 0x80>;
+            interrupts = <124 6>;
+            peripheral-id = <0 1>;
+            resolution = <32>;
+            status = "disabled";
+            label = "counter_0_1";
+        };
+        counter0_2: counter@40380100 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40380100 0x80>;
+            interrupts = <125 6>;
+            peripheral-id = <0 2>;
+            resolution = <32>;
+            status = "disabled";
+            label = "counter_0_2";
+        };
+        counter0_3: counter@40380180 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40380180 0x80>;
+            interrupts = <126 6>;
+            peripheral-id = <0 3>;
+            resolution = <32>;
+            status = "disabled";
+            label = "counter_0_3";
+        };
+        counter1_0: counter@40388000 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40388000 0x80>;
+            interrupts = <131 6>;
+            peripheral-id = <1 0>;
+            resolution = <16>;
+            status = "disabled";
+            label = "counter_1_0";
+        };
+        counter1_1: counter@40388080 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40388080 0x80>;
+            interrupts = <132 6>;
+            peripheral-id = <1 1>;
+            resolution = <16>;
+            status = "disabled";
+            label = "counter_1_1";
+        };
+        counter1_2: counter@40388100 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40388100 0x80>;
+            interrupts = <133 6>;
+            peripheral-id = <1 2>;
+            resolution = <16>;
+            status = "disabled";
+            label = "counter_1_2";
+        };
+        counter1_3: counter@40388180 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40388180 0x80>;
+            interrupts = <134 6>;
+            peripheral-id = <1 3>;
+            resolution = <16>;
+            status = "disabled";
+            label = "counter_1_3";
+        };
+        counter1_4: counter@40388200 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40388200 0x80>;
+            interrupts = <135 6>;
+            peripheral-id = <1 4>;
+            resolution = <16>;
+            status = "disabled";
+            label = "counter_1_4";
+        };
+        counter1_5: counter@40388280 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40388280 0x80>;
+            interrupts = <136 6>;
+            peripheral-id = <1 5>;
+            resolution = <16>;
+            status = "disabled";
+            label = "counter_1_5";
+        };
+        counter1_6: counter@40388300 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40388300 0x80>;
+            interrupts = <137 6>;
+            peripheral-id = <1 6>;
+            resolution = <16>;
+            status = "disabled";
+            label = "counter_1_6";
+        };
+        counter1_7: counter@40388380 {
+            compatible = "infineon,mtbhal-counter";
+            reg = <0x40388380 0x80>;
+            interrupts = <138 6>;
+            peripheral-id = <1 7>;
+            resolution = <16>;
+            status = "disabled";
+            label = "counter_1_7";
+        };
+
+        pwm0_0: pwm@40380000 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40380000 0x80>;
+            interrupts = <123 6>;
+            peripheral-id = <0 0>;
+            resolution = <32>;
+            status = "disabled";
+            label = "pwm_0_0";
+        };
+        pwm0_1: pwm@40380080 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40380080 0x80>;
+            interrupts = <124 6>;
+            peripheral-id = <0 1>;
+            resolution = <32>;
+            status = "disabled";
+            label = "pwm_0_1";
+        };
+        pwm0_2: pwm@40380100 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40380100 0x80>;
+            interrupts = <125 6>;
+            peripheral-id = <0 2>;
+            resolution = <32>;
+            status = "disabled";
+            label = "pwm_0_2";
+        };
+        pwm0_3: pwm@40380180 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40380180 0x80>;
+            interrupts = <126 6>;
+            peripheral-id = <0 3>;
+            resolution = <32>;
+            status = "disabled";
+            label = "pwm_0_3";
+        };
+        pwm1_0: pwm@40388000 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40388000 0x80>;
+            interrupts = <131 6>;
+            peripheral-id = <1 0>;
+            resolution = <16>;
+            status = "disabled";
+            label = "pwm_1_0";
+        };
+        pwm1_1: pwm@40388080 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40388080 0x80>;
+            interrupts = <132 6>;
+            peripheral-id = <1 1>;
+            resolution = <16>;
+            status = "disabled";
+            label = "pwm_1_1";
+        };
+        pwm1_2: pwm@40388100 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40388100 0x80>;
+            interrupts = <133 6>;
+            peripheral-id = <1 2>;
+            resolution = <16>;
+            status = "disabled";
+            label = "pwm_1_2";
+        };
+        pwm1_3: pwm@40388180 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40388180 0x80>;
+            interrupts = <134 6>;
+            peripheral-id = <1 3>;
+            resolution = <16>;
+            status = "disabled";
+            label = "pwm_1_3";
+        };
+        pwm1_4: pwm@40388200 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40388200 0x80>;
+            interrupts = <135 6>;
+            peripheral-id = <1 4>;
+            resolution = <16>;
+            status = "disabled";
+            label = "pwm_1_4";
+        };
+        pwm1_5: pwm@40388280 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40388280 0x80>;
+            interrupts = <136 6>;
+            peripheral-id = <1 5>;
+            resolution = <16>;
+            status = "disabled";
+            label = "pwm_1_5";
+        };
+        pwm1_6: pwm@40388300 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40388300 0x80>;
+            interrupts = <137 6>;
+            peripheral-id = <1 6>;
+            resolution = <16>;
+            status = "disabled";
+            label = "pwm_1_6";
+        };
+        pwm1_7: pwm@40388380 {
+            compatible = "infineon,mtbhal-pwm";
+            reg = <0x40388380 0x80>;
+            interrupts = <138 6>;
+            peripheral-id = <1 7>;
+            resolution = <16>;
+            status = "disabled";
+            label = "pwm_1_7";
+        };
+
+        usb0: usb@403F0000 {
+            compatible = "infineon,mtbhal-usb";
+            reg = <0x403F0000 0x10000>;
+            interrupts = <161 6 /* Hi */>,
+                         <162 6 /* Med */>,
+                         <163 6 /* Lo */>;
+            peripheral-id = <0>;
+            status = "disabled";
+            label = "usb_0";
+        };
+
+    };
+};

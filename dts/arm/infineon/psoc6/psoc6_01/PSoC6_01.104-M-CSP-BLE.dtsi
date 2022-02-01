@@ -1,0 +1,138 @@
+/*
+ * Copyright (c) 2021, Cypress Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include "PSoC6_01.dtsi"
+
+/ {
+    soc {
+        pinctrl@40310000 {
+            compatible = "infineon,mtbhal-pinctrl";
+            ranges = <0x40310000 0x20000>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            hsiom: hsiom@40310000 {
+                compatible = "infineon,mtbhal-hsiom";
+                reg = <0x40310000 0x4000>;
+                interrupts = <15 6>, <16 6>;
+                label = "HSIOM";
+                status = "disabled";
+            };
+
+            gpio_prt0: gpio@40320000 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320000 0x80>;
+                interrupts = <0 6>;
+                gpio-controller;
+                ngpios = <6>;
+                status = "disabled";
+                label = "P0";
+                #gpio-cells = <2>;
+            };
+            gpio_prt1: gpio@40320080 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320080 0x80>;
+                interrupts = <1 6>;
+                gpio-controller;
+                ngpios = <5>;
+                status = "disabled";
+                label = "P1";
+                #gpio-cells = <2>;
+            };
+            gpio_prt5: gpio@40320280 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320280 0x80>;
+                interrupts = <5 6>;
+                gpio-controller;
+                ngpios = <8>;
+                status = "disabled";
+                label = "P5";
+                #gpio-cells = <2>;
+            };
+            gpio_prt6: gpio@40320300 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320300 0x80>;
+                interrupts = <6 6>;
+                gpio-controller;
+                ngpios = <8>;
+                status = "disabled";
+                label = "P6";
+                #gpio-cells = <2>;
+            };
+            gpio_prt7: gpio@40320380 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320380 0x80>;
+                interrupts = <7 6>;
+                gpio-controller;
+                ngpios = <8>;
+                status = "disabled";
+                label = "P7";
+                #gpio-cells = <2>;
+            };
+            gpio_prt8: gpio@40320400 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320400 0x80>;
+                interrupts = <8 6>;
+                gpio-controller;
+                ngpios = <8>;
+                status = "disabled";
+                label = "P8";
+                #gpio-cells = <2>;
+            };
+            gpio_prt9: gpio@40320480 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320480 0x80>;
+                interrupts = <9 6>;
+                gpio-controller;
+                ngpios = <4>;
+                status = "disabled";
+                label = "P9";
+                #gpio-cells = <2>;
+            };
+            gpio_prt10: gpio@40320500 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320500 0x80>;
+                interrupts = <10 6>;
+                gpio-controller;
+                ngpios = <8>;
+                status = "disabled";
+                label = "P10";
+                #gpio-cells = <2>;
+            };
+            gpio_prt11: gpio@40320580 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320580 0x80>;
+                interrupts = <11 6>;
+                gpio-controller;
+                ngpios = <8>;
+                status = "disabled";
+                label = "P11";
+                #gpio-cells = <2>;
+            };
+            gpio_prt12: gpio@40320600 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320600 0x80>;
+                interrupts = <12 6>;
+                gpio-controller;
+                ngpios = <5>;
+                status = "disabled";
+                label = "P12";
+                #gpio-cells = <2>;
+            };
+            gpio_prt13: gpio@40320680 {
+                compatible = "infineon,mtbhal-gpio";
+                reg = <0x40320680 0x80>;
+                interrupts = <13 6>;
+                gpio-controller;
+                ngpios = <2>;
+                status = "disabled";
+                label = "P13";
+                #gpio-cells = <2>;
+            };
+
+        };
+    };
+};
