@@ -19,7 +19,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
-#define RPMSG_CHAN_NAME	"rpmsg-client-sample"
 #define SHM_DEVICE_NAME	"shm"
 
 #if !DT_HAS_CHOSEN(zephyr_ipc_shm)
@@ -32,8 +31,11 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 #define SHM_SIZE		DT_REG_SIZE(SHM_NODE)
 
 #define APP_TASK_STACK_SIZE (512)
-K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
-static struct k_thread thread_data;
+K_THREAD_STACK_DEFINE(thread_mng_stack, APP_TASK_STACK_SIZE);
+K_THREAD_STACK_DEFINE(thread_rp__client_stack, APP_TASK_STACK_SIZE);
+
+static struct k_thread thread_mng_data;
+static struct k_thread thread_rp__client_data;
 
 static const struct device *ipm_handle;
 
@@ -51,6 +53,11 @@ struct metal_device shm_device = {
 	.irq_info = NULL
 };
 
+struct rpmsg_rcv_msg {
+	void *data;
+	size_t len;
+};
+
 static struct metal_io_region *shm_io;
 static struct rpmsg_virtio_shm_pool shpool;
 
@@ -58,13 +65,14 @@ static struct metal_io_region *rsc_io;
 static struct rpmsg_virtio_device rvdev;
 
 static void *rsc_table;
+static struct rpmsg_device *rpdev;
 
-static char rcv_msg[20];  /* should receive "Hello world!" */
-static unsigned int rcv_len;
-static struct rpmsg_endpoint rcv_ept;
+static char rx_sc_msg[20];  /* should receive "Hello world!" */
+static struct rpmsg_endpoint sc_ept;
+static struct rpmsg_rcv_msg sc_msg = {.data = rx_sc_msg};
 
 static K_SEM_DEFINE(data_sem, 0, 1);
-static K_SEM_DEFINE(data_rx_sem, 0, 1);
+static K_SEM_DEFINE(data_sc_sem, 0, 1);
 
 static void platform_ipm_callback(const struct device *dev, void *context,
 				  uint32_t id, volatile void *data)
@@ -73,27 +81,23 @@ static void platform_ipm_callback(const struct device *dev, void *context,
 	k_sem_give(&data_sem);
 }
 
-static int rpmsg_recv_callback(struct rpmsg_endpoint *ept, void *data,
-			       size_t len, uint32_t src, void *priv)
+static int rpmsg_recv_cs_callback(struct rpmsg_endpoint *ept, void *data,
+				  size_t len, uint32_t src, void *priv)
 {
-	memcpy(rcv_msg, data, len);
-	rcv_len = len;
-	k_sem_give(&data_rx_sem);
+	memcpy(sc_msg.data, data, len);
+	sc_msg.len = len;
+	k_sem_give(&data_sc_sem);
 
 	return RPMSG_SUCCESS;
 }
 
 static void receive_message(unsigned char **msg, unsigned int *len)
 {
-	while (k_sem_take(&data_rx_sem, K_NO_WAIT) != 0) {
-		int status = k_sem_take(&data_sem, K_FOREVER);
+	int status = k_sem_take(&data_sem, K_FOREVER);
 
-		if (status == 0) {
-			rproc_virtio_notified(rvdev.vdev, VRING1_ID);
-		}
+	if (status == 0) {
+		rproc_virtio_notified(rvdev.vdev, VRING1_ID);
 	}
-	*len = rcv_len;
-	*msg = rcv_msg;
 }
 
 static void new_service_cb(struct rpmsg_device *rdev, const char *name,
@@ -243,14 +247,39 @@ failed:
 	return NULL;
 }
 
-void app_task(void *arg1, void *arg2, void *arg3)
+void app_rpmsg_client_sample(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
-	struct rpmsg_device *rpdev;
+	unsigned int msg_cnt = 0;
+	int ret = 0;
+
+	k_sem_take(&data_sc_sem,  K_FOREVER);
+
+	printk("\r\nOpenAMP[remote] Linux sample client responder started\r\n");
+
+	ret = rpmsg_create_ept(&sc_ept, rpdev, "rpmsg-client-sample",
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			       rpmsg_recv_cs_callback, NULL);
+
+	while (msg_cnt < 100) {
+		k_sem_take(&data_sc_sem,  K_FOREVER);
+		msg_cnt++;
+		rpmsg_send(&sc_ept, sc_msg.data, sc_msg.len);
+	}
+	rpmsg_destroy_ept(&sc_ept);
+
+	printk("OpenAMP Linux sample client responder ended\n");
+}
+
+void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 	unsigned char *msg;
-	unsigned int len, msg_cnt = 0;
+	unsigned int len;
 	int ret = 0;
 
 	printk("\r\nOpenAMP[remote]  linux responder demo started\r\n");
@@ -271,18 +300,12 @@ void app_task(void *arg1, void *arg2, void *arg3)
 		goto task_end;
 	}
 
-	ret = rpmsg_create_ept(&rcv_ept, rpdev, RPMSG_CHAN_NAME,
-			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
-			       rpmsg_recv_callback, NULL);
-	if (ret != 0)
-		LOG_ERR("error while creating endpoint(%d)\n", ret);
+	/* start the rpmsg clients */
+	k_sem_give(&data_sc_sem);
 
-	while (msg_cnt < 100) {
+	while (1) {
 		receive_message(&msg, &len);
-		msg_cnt++;
-		rpmsg_send(&rcv_ept, msg, len);
 	}
-	rpmsg_destroy_ept(&rcv_ept);
 
 task_end:
 	cleanup_system();
@@ -292,8 +315,11 @@ task_end:
 
 void main(void)
 {
-	printk("Starting application thread!\n");
-	k_thread_create(&thread_data, thread_stack, APP_TASK_STACK_SIZE,
-			(k_thread_entry_t)app_task,
+	printk("Starting application threads!\n");
+	k_thread_create(&thread_mng_data, thread_mng_stack, APP_TASK_STACK_SIZE,
+			(k_thread_entry_t)rpmsg_mng_task,
+			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+	k_thread_create(&thread_rp__client_data, thread_rp__client_stack, APP_TASK_STACK_SIZE,
+			(k_thread_entry_t)app_rpmsg_client_sample,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
