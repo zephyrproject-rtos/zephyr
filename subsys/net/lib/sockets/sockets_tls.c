@@ -255,8 +255,10 @@ static void tls_debug(void *ctx, int level, const char *file,
 		}
 	}
 
-	NET_DBG("%s:%04d: |%d| %s", basename, line, level,
-		log_strdup(str));
+	char *log_str = log_strdup(str);
+
+	/* Skip the extra EOL to improve log readability. */
+	NET_DBG("%s:%04d: |%d| %.*s", basename, line, level, strlen(log_str) - 1, log_str);
 }
 #endif /* defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG) */
 
