@@ -453,6 +453,21 @@ class Handler:
             if c not in harness.tests:
                 harness.tests[c] = "BLOCK"
 
+    def _set_skip_reason(self, harness_state):
+        """
+        If testcase written in ztest framework is skipped by "ztest_test_skip()"
+        function, then such testcase is marked in instance.results dict as
+        "SKIP", but reason of this sipping still "Unknown". This method pick up
+        this situation and complete the instance.reason properly.
+        """
+        harness_state_pass = "passed"
+        harness_testcase_result_skip = "SKIP"
+        instance_reason_unknown = "Unknown"
+        if harness_state == harness_state_pass and \
+                self.instance.reason == instance_reason_unknown and \
+                harness_testcase_result_skip in self.instance.results.values():
+            self.instance.reason = "ztest skip"
+
 
 class BinaryHandler(Handler):
     def __init__(self, instance, type_str):
@@ -608,6 +623,8 @@ class BinaryHandler(Handler):
             self.set_state("timeout", handler_time)
             self.instance.reason = "Timeout"
             self.add_missing_testscases(harness)
+
+        self._set_skip_reason(harness.state)
 
         self.record(harness)
 
@@ -905,6 +922,8 @@ class DeviceHandler(Handler):
         else:
             self.set_state(out_state, handler_time)
 
+        self._set_skip_reason(harness.state)
+
         if post_script:
             self.run_custom_script(post_script, 30)
 
@@ -1172,6 +1191,8 @@ class QEMUHandler(Handler):
             else:
                 self.instance.reason = "Exited with {}".format(self.returncode)
             self.add_missing_testscases(harness)
+
+        self._set_skip_reason(harness.state)
 
     def get_fifo(self):
         return self.fifo_fn
