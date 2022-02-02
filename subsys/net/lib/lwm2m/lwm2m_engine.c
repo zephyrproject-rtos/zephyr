@@ -142,6 +142,13 @@ static struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id,
 /* Shared set of in-flight LwM2M messages */
 static struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
 
+/* Forward declarations. */
+static int path_to_objs(const struct lwm2m_obj_path *path,
+			struct lwm2m_engine_obj_inst **obj_inst,
+			struct lwm2m_engine_obj_field **obj_field,
+			struct lwm2m_engine_res **res,
+			struct lwm2m_engine_res_inst **res_inst);
+
 /* for debugging: to print IP addresses */
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 {
@@ -383,6 +390,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	struct lwm2m_engine_obj *obj = NULL;
 	struct lwm2m_engine_obj_field *obj_field = NULL;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct observe_node *obs;
 	struct notification_attrs attrs = {
 		.flags = BIT(LWM2M_ATTR_PMIN) | BIT(LWM2M_ATTR_PMAX),
@@ -437,7 +445,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	}
 
 	/* check if object instance exists */
-	if (msg->path.level >= 2U) {
+	if (msg->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST) {
 		obj_inst = get_engine_obj_inst(msg->path.obj_id,
 					       msg->path.obj_inst_id);
 		if (!obj_inst) {
@@ -453,7 +461,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	}
 
 	/* check if resource exists */
-	if (msg->path.level >= 3U) {
+	if (msg->path.level >= LWM2M_PATH_LEVEL_RESOURCE) {
 		for (i = 0; i < obj_inst->resource_count; i++) {
 			if (obj_inst->resources[i].res_id == msg->path.res_id) {
 				break;
@@ -488,6 +496,24 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		}
 	}
 
+	/* check if resource instance exists */
+	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+	    msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		ret = path_to_objs(&msg->path, NULL, NULL, NULL, &res_inst);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (res_inst == NULL) {
+			return -ENOENT;
+		}
+
+		ret = update_attrs(res_inst, &attrs);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* find an unused observer index node */
 	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_OBSERVER; i++) {
 		if (!observe_node_data[i].tkl) {
@@ -508,16 +534,16 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	observe_node_data[i].event_timestamp =
 			observe_node_data[i].last_timestamp;
 	observe_node_data[i].min_period_sec = attrs.pmin;
-	observe_node_data[i].max_period_sec = (attrs.pmax > 0) ? MAX(attrs.pmax, attrs.pmin)
-							       : attrs.pmax;
+	observe_node_data[i].max_period_sec = (attrs.pmax >= attrs.pmin) ?
+						(uint32_t)attrs.pmax : 0UL;
 	observe_node_data[i].format = format;
 	observe_node_data[i].counter = OBSERVE_COUNTER_START;
 	sys_slist_append(&msg->ctx->observer,
 			 &observe_node_data[i].node);
 
-	LOG_DBG("OBSERVER ADDED %u/%u/%u(%u) token:'%s' addr:%s",
+	LOG_DBG("OBSERVER ADDED %u/%u/%u/%u(%u) token:'%s' addr:%s",
 		msg->path.obj_id, msg->path.obj_inst_id,
-		msg->path.res_id, msg->path.level,
+		msg->path.res_id, msg->path.res_inst_id, msg->path.level,
 		log_strdup(sprint_token(token, tkl)),
 		log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
 
@@ -2830,6 +2856,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	struct coap_option options[NR_LWM2M_ATTR];
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_res *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_attr *attr;
 	struct notification_attrs nattrs = { 0 };
 	struct observe_node *obs;
@@ -2857,16 +2884,9 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	}
 
 	/* get lwm2m_attr slist */
-	if (msg->path.level == 3U) {
-		ret = path_to_objs(&msg->path, NULL, NULL, &res, NULL);
-		if (ret < 0) {
-			return ret;
-		}
-
-		ref = res;
-	} else if (msg->path.level == 1U) {
+	if (msg->path.level == LWM2M_PATH_LEVEL_OBJECT) {
 		ref = obj;
-	} else if (msg->path.level == 2U) {
+	} else if (msg->path.level == LWM2M_PATH_LEVEL_OBJECT_INST) {
 		obj_inst = get_engine_obj_inst(msg->path.obj_id,
 					       msg->path.obj_inst_id);
 		if (!obj_inst) {
@@ -2874,6 +2894,22 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		}
 
 		ref = obj_inst;
+	} else if (msg->path.level == LWM2M_PATH_LEVEL_RESOURCE) {
+		ret = path_to_objs(&msg->path, NULL, NULL, &res, NULL);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ref = res;
+	} else if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+		   msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+
+		ret = path_to_objs(&msg->path, NULL, NULL, NULL, &res_inst);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ref = res_inst;
 	} else {
 		/* bad request */
 		return -EEXIST;
@@ -3038,7 +3074,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		}
 	}
 
-	/* add attribute to obj/obj_inst/res */
+	/* add attribute to obj/obj_inst/res/res_inst */
 	for (type = 0U; nattrs.flags && type < NR_LWM2M_ATTR; type++) {
 		if (!(BIT(type) & nattrs.flags)) {
 			continue;
@@ -3101,8 +3137,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			return ret;
 		}
 
-		if (obs->path.level > 1) {
-			if (msg->path.level > 1 &&
+		if (obs->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST) {
+			if (msg->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
 			    msg->path.obj_inst_id != obs->path.obj_inst_id) {
 				continue;
 			}
@@ -3124,8 +3160,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			}
 		}
 
-		if (obs->path.level > 2) {
-			if (msg->path.level > 2 &&
+		if (obs->path.level >= LWM2M_PATH_LEVEL_RESOURCE) {
+			if (msg->path.level >= LWM2M_PATH_LEVEL_RESOURCE &&
 			    msg->path.res_id != obs->path.res_id) {
 				continue;
 			}
@@ -3144,11 +3180,34 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			}
 		}
 
-		LOG_DBG("%d/%d/%d(%d) updated from %d/%d to %u/%u",
+		if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+		    obs->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+			if (msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST &&
+			    msg->path.res_inst_id != obs->path.res_inst_id) {
+				continue;
+			}
+
+			if (!res_inst || res_inst->res_inst_id != obs->path.res_inst_id) {
+				ret = path_to_objs(&obs->path, NULL, NULL, NULL,
+						   &res_inst);
+				if (ret < 0) {
+					return ret;
+				}
+			}
+
+			ret = update_attrs(res_inst, &nattrs);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		LOG_DBG("%d/%d/%d/%d(%d) updated from %d/%d to %u/%u",
 			obs->path.obj_id, obs->path.obj_inst_id,
-			obs->path.res_id, obs->path.level,
-			obs->min_period_sec, obs->max_period_sec,
-			nattrs.pmin, MAX(nattrs.pmin, nattrs.pmax));
+			obs->path.res_id, obs->path.res_inst_id,
+			obs->path.level, obs->min_period_sec,
+			obs->max_period_sec, nattrs.pmin,
+			(nattrs.pmax >= nattrs.pmin) ? nattrs.pmax : 0);
+
 		obs->min_period_sec = (uint32_t)nattrs.pmin;
 		/* Ignore pmax value if pmax < pmin. */
 		obs->max_period_sec = (nattrs.pmax >= nattrs.pmin) ?
