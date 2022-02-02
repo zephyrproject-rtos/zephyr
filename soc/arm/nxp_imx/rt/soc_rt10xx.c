@@ -174,12 +174,14 @@ static ALWAYS_INLINE void clock_init(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
 	/* Configure USDHC clock source and divider */
+	CLOCK_InitSysPfd(kCLOCK_Pfd0, 24U);
 	CLOCK_SetDiv(kCLOCK_Usdhc1Div, 1U);
 	CLOCK_SetMux(kCLOCK_Usdhc1Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay) && CONFIG_DISK_DRIVER_SDMMC
 	/* Configure USDHC clock source and divider */
+	CLOCK_InitSysPfd(kCLOCK_Pfd0, 24U);
 	CLOCK_SetDiv(kCLOCK_Usdhc2Div, 1U);
 	CLOCK_SetMux(kCLOCK_Usdhc2Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc2);
