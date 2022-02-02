@@ -77,6 +77,8 @@ K_FIFO_DEFINE(ipm_rx_events_fifo);
 static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_STM32_IPM_RX_STACK_SIZE);
 static struct k_thread ipm_rx_thread_data;
 
+static bool c2_started_flag;
+
 static void stm32wb_start_ble(void)
 {
 	SHCI_C2_Ble_Init_Cmd_Packet_t ble_init_cmd_packet = {
@@ -527,9 +529,43 @@ static int bt_ipm_ble_init(void)
 	return 0;
 }
 
+static int c2_reset(void)
+{
+	start_ble_rf();
+
+	/* Take BLE out of reset */
+	ipcc_reset();
+
+	transport_init();
+
+	/* Device will let us know when it's ready */
+	if (k_sem_take(&c2_started, STM32WB_C2_LOCK_TIMEOUT)) {
+		return -ETIMEDOUT;
+	}
+	BT_DBG("C2 unlocked");
+
+	stm32wb_start_ble();
+
+	c2_started_flag = true;
+
+	return 0;
+}
+
 static int bt_ipm_open(void)
 {
 	int err;
+
+	if (!c2_started_flag) {
+		/* C2 has been teared down. Reinit required */
+		SHCI_C2_Reinit();
+		while (LL_PWR_IsActiveFlag_C2DS() == 0) {
+		};
+
+		err = c2_reset();
+		if (err) {
+			return err;
+		}
+	}
 
 	/* Start RX thread */
 	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
@@ -564,7 +600,7 @@ static int bt_ipm_close(void)
 	while (LL_PWR_IsActiveFlag_C2DS() == 0) {
 	};
 
-	SHCI_C2_Reinit();
+	c2_started_flag = false;
 
 	k_thread_abort(&ipm_rx_thread_data);
 
@@ -584,24 +620,16 @@ static const struct bt_hci_driver drv = {
 
 static int _bt_ipm_init(const struct device *unused)
 {
+	int err;
+
 	ARG_UNUSED(unused);
 
 	bt_hci_driver_register(&drv);
 
-	start_ble_rf();
-
-	/* Take BLE out of reset */
-	ipcc_reset();
-
-	transport_init();
-
-	/* Device will let us know when it's ready */
-	if (k_sem_take(&c2_started, STM32WB_C2_LOCK_TIMEOUT)) {
-		return -ETIMEDOUT;
+	err = c2_reset();
+	if (err) {
+		return err;
 	}
-	BT_DBG("C2 unlocked");
-
-	stm32wb_start_ble();
 
 	return 0;
 }
