@@ -124,31 +124,27 @@ TESTDATA_5 = [
                   'user', 'last'],
          has_registered_test_suites=False,
          has_run_registered_test_suites=False,
-         has_test_main=False,
-         ztest_suite_names = ["test_api"])),
+         has_test_main=False)),
     ("testcases/tests/test_a/test_ztest_error.c",
      ScanPathResult(
          warnings="Found a test that does not start with test_",
          matches=['1a', '1c', '2a', '2b'],
          has_registered_test_suites=False,
          has_run_registered_test_suites=False,
-         has_test_main=True,
-         ztest_suite_names = ["feature1", "feature2"])),
+         has_test_main=True)),
     ("testcases/tests/test_a/test_ztest_error_1.c",
      ScanPathResult(
          warnings="found invalid #ifdef, #endif in ztest_test_suite()",
          matches=['unit_1a', 'unit_1b', 'Unit_1c'],
          has_registered_test_suites=False,
          has_run_registered_test_suites=False,
-         has_test_main=False,
-         ztest_suite_names = ["feature3"])),
+         has_test_main=False)),
     ("testcases/tests/test_d/test_ztest_error_register_test_suite.c",
      ScanPathResult(
          warnings=None, matches=['unit_1a', 'unit_1b'],
          has_registered_test_suites=True,
          has_run_registered_test_suites=False,
-         has_test_main=False,
-         ztest_suite_names = ["feature4"])),
+         has_test_main=False)),
 ]
 
 @pytest.mark.parametrize("test_file, expected", TESTDATA_5)
@@ -163,26 +159,17 @@ def test_scan_file(test_data, test_file, expected: ScanPathResult):
 
 
 TESTDATA_6 = [
-    (
-        "testcases/tests",
-        ['a', 'c', 'unit_a', 'newline', 'test_test_aa', 'user', 'last'],
-        ["test_api"]
-    ),
-    (
-        "testcases/tests/test_a",
-        ['unit_1a', 'unit_1b', 'Unit_1c', '1a', '1c', '2a', '2b'],
-        ["feature3", "feature1", "feature2"]
-    ),
+    ("testcases/tests", ['a', 'c', 'unit_a', 'newline', 'test_test_aa', 'user', 'last']),
+    ("testcases/tests/test_a", ['unit_1a', 'unit_1b', 'Unit_1c', '1a', '1c', '2a', '2b']),
 ]
 
-@pytest.mark.parametrize("test_path, expected_subcases, expected_ztest_suite_names", TESTDATA_6)
-def test_subcases(test_data, test_path, expected_subcases, expected_ztest_suite_names):
+@pytest.mark.parametrize("test_path, expected_subcases", TESTDATA_6)
+def test_subcases(test_data, test_path, expected_subcases):
     '''Testing scan path and parse subcases methods for expected subcases'''
     testcase = TestCase("/scripts/tests/twister/test_data/testcases/tests", ".", "test_a.check_1")
 
-    subcases, ztest_suite_names = testcase.scan_path(os.path.join(test_data, test_path))
+    subcases = testcase.scan_path(os.path.join(test_data, test_path))
     assert sorted(subcases) == sorted(expected_subcases)
-    assert sorted(ztest_suite_names) == sorted(expected_ztest_suite_names)
 
     testcase.id = "test_id"
     testcase.parse_subcases(test_data + test_path)
