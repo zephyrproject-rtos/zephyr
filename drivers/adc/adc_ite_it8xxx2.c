@@ -11,6 +11,7 @@
 LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 
 #include <drivers/adc.h>
+#include <drivers/adc/adc_vcmp_ite_it8xxx2.h>
 #include <drivers/pinmux.h>
 #include <soc.h>
 #include <soc_dt.h>
@@ -25,6 +26,23 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 /* ADC channels disabled */
 #define IT8XXX2_ADC_CHANNEL_DISABLED 0x1F
 
+/* ADC VCMP */
+#define IT8XXX2_ADC_CMPXEN		BIT(7)
+#define IT8XXX2_ADC_CMPXINTEN		BIT(6)
+#define IT8XXX2_ADC_CMPXTMOD		BIT(5)
+#define IT8XXX2_ADC_CMPXELSM		BIT(4)
+#define IT8XXX2_ADC_CMPXGPOL		BIT(3)
+#define IT8XXX2_ADC_CMPCXSELL_MASK	0x7
+
+#define IT8XXX2_ADC_CMPCXSELM		BIT(0)
+
+#define VCMPCTL(base,idx)	ECREG(&base->VCMP0CTL + (idx * 3))
+#define VCMPTHRDATM(base,idx)	ECREG(&base->VCMP0THRDATM + (idx * 3))
+#define VCMPTHRDATL(base,idx)	ECREG(&base->VCMP0THRDATL + (idx * 3))
+#define VCMPCSELM(base,idx)	ECREG(&base->VCMP0CSELM + (idx * 3))
+
+#define IT8XXX2_ADC_VCMP_COUNT   3
+
 /* List of ADC channels. */
 enum chip_adc_channel {
 	CHIP_ADC_CH0 = 0,
@@ -38,6 +56,42 @@ enum chip_adc_channel {
 	CHIP_ADC_COUNT,
 };
 
+struct adc_it8xxx2_vcmp_control {
+	/*
+	 * Selects ADC channel number, for which the measured data is compared
+	 * for threshold detection.
+	 */
+	uint8_t csel;
+	/*
+	 * Sets relation between measured value and assetion threshold value.
+	 * in thrval:
+	 * 0: Threshold event is generated if Measured data > thrval.
+	 * 1: Threshold event is generated if Measured data <= thrval.
+	 */
+	bool tmod;
+	/* Sets the threshold value to which measured data is compared. */
+	uint16_t thrdat;
+	/*
+	 * Pointer of work queue thread to be notified when threshold assertion
+	 * occurs.
+	 */
+	struct k_work *work;
+};
+
+struct adc_it8xxx2_vcmp_data {
+        /*
+	 * If ADC read is requested on a channle being used as comparator,
+	 * we need to resume to comparator operation once ADC capture
+	 * is completed. This variable keeps track of current channels being
+	 * used as comparators.
+         */
+	uint16_t cmp_channels;
+
+	uint8_t cmp_enabled;
+	/* This structure holds comparatort configurations */
+	struct adc_it8xxx2_vcmp_control control[IT8XXX2_ADC_VCMP_COUNT];
+};
+
 struct adc_it8xxx2_data {
 	struct adc_context ctx;
 	/* Channel ID */
@@ -49,6 +103,8 @@ struct adc_it8xxx2_data {
 	 * for writing of next sampling results.
 	 */
 	uint16_t *repeat_buffer;
+	/* Comparator data */
+	struct adc_it8xxx2_vcmp_data *vcmp_data;
 };
 
 /*
@@ -63,6 +119,8 @@ struct adc_it8xxx2_cfg {
 	/* Alternate function */
 	uint8_t alt_fun;
 };
+
+static struct adc_it8xxx2_vcmp_data adc_it8xxx2_vcmp_data_0;
 
 #define ADC_IT8XXX2_REG_BASE	\
 	((struct adc_it8xxx2_regs *)(DT_INST_REG_ADDR(0)))
@@ -107,11 +165,6 @@ static void adc_enable_measurement(uint32_t ch)
 	/* Select and enable a voltage channel input for measurement */
 	adc_regs->VCH0CTL = (IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_INTDVEN) + ch;
 
-	/* Enable adc interrupt */
-	irq_enable(DT_INST_IRQN(0));
-
-	/* ADC module enable */
-	adc_regs->ADCCFG |= IT8XXX2_ADC_ADCEN;
 }
 
 static void adc_disable_measurement(void)
@@ -124,11 +177,27 @@ static void adc_disable_measurement(void)
 	 */
 	adc_regs->VCH0CTL = IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_CHANNEL_DISABLED;
 
-	/* ADC module disable */
-	adc_regs->ADCCFG &= ~IT8XXX2_ADC_ADCEN;
+	adc_regs->VCH0CTL &= ~IT8XXX2_ADC_INTDVEN;
 
-	/* disable adc interrupt */
-	irq_disable(DT_INST_IRQN(0));
+}
+
+static void adc_enable(bool enable)
+{
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+
+	if (enable) {
+		/* Enable adc interrupt */
+		irq_enable(DT_INST_IRQN(0));
+
+		/* ADC module enable */
+		adc_regs->ADCCFG |= IT8XXX2_ADC_ADCEN;
+	} else {
+		/* ADC module disable */
+		adc_regs->ADCCFG &= ~IT8XXX2_ADC_ADCEN;
+
+		/* disable adc interrupt */
+		irq_disable(DT_INST_IRQN(0));
+	}
 }
 
 static int check_buffer_size(const struct adc_sequence *sequence,
@@ -180,6 +249,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	data->repeat_buffer = data->buffer;
 
 	adc_enable_measurement(data->ch);
+
+	adc_enable(true);
+
 }
 
 static int adc_it8xxx2_read(const struct device *dev,
@@ -222,38 +294,268 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-/* Get result for each ADC selected channel. */
-static void adc_it8xxx2_get_sample(const struct device *dev)
-{
-	struct adc_it8xxx2_data *data = dev->data;
-	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
-	bool valid = false;
-
-	if (adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL) {
-		/* Read adc raw data of msb and lsb */
-		*data->buffer++ = adc_regs->VCH0DATM << 8 | adc_regs->VCH0DATL;
-
-		valid = 1;
-	}
-
-	if (!valid) {
-		LOG_WRN("ADC failed to read (regs=%x, ch=%d)",
-			adc_regs->ADCDVSTS, data->ch);
-	}
-
-	adc_disable_measurement();
-}
-
 static void adc_it8xxx2_isr(const void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct adc_it8xxx2_data *data = dev->data;
+	struct adc_it8xxx2_vcmp_data *v_data = data->vcmp_data;
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
 
 	LOG_DBG("ADC ISR triggered.");
 
-	adc_it8xxx2_get_sample(dev);
+	if (adc_regs->VCH0CTL & (IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_INTDVEN))  {
+		/* Read adc raw data of msb and lsb */
+		*data->buffer++ = adc_regs->VCH0DATM << 8 | adc_regs->VCH0DATL;
 
-	adc_context_on_sampling_done(&data->ctx, dev);
+		adc_disable_measurement();
+
+		if (IS_ENABLED(CONFIG_ADC_THRESHOLD_IRQ) &&
+		    v_data->cmp_enabled) {
+			/* TODO: Handle restoring active ADC comparator */
+		} else {
+			adc_enable(false);
+		}
+		adc_context_on_sampling_done(&data->ctx, dev);
+	}
+
+	if (!IS_ENABLED(CONFIG_ADC_THRESHOLD_IRQ)) {
+		return;
+	}
+
+	for (int i = 0; i < IT8XXX2_ADC_VCMP_COUNT; i++) {
+		uint8_t vcmpctl = VCMPCTL(adc_regs, i);
+		uint8_t vcmpsts = adc_regs->VCMPSTS;
+
+		/* Check comparator interruptions */
+		if (vcmpctl & (IT8XXX2_ADC_CMPXEN | IT8XXX2_ADC_CMPXINTEN) &&
+		    vcmpsts & BIT(i)) {
+			if (v_data->control[i].work) {
+				k_work_submit(v_data->control[i].work);
+			}
+		}
+		/* Clear cmp threshold interruption status bit */
+		adc_regs->VCMPSTS = vcmpsts;
+	}
+}
+
+int adc_vcmp_it8xxx2_set_scan_period(const struct device *dev,
+				     const enum vcmp_scan_period scan_period)
+{
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+
+	ARG_UNUSED(dev);
+
+	if (scan_period < VCMP_SCAN_PERIOD_100US ||
+	    scan_period > VCMP_SCAN_PERIOD_5MS) {
+		return -ENOTSUP;
+	}
+
+	adc_regs->VCMPSCP &= ~(0xF << 4);
+	adc_regs->VCMPSCP |= scan_period & (0xF << 4);
+	return 0;
+}
+
+
+int adc_vcmp_it8xxx2_ctrl_set_param(const struct device *dev,
+				    const uint8_t vcmp,
+				    const struct adc_vcmp_it8xxx2_vcmp_control_t
+				    *control)
+{
+	struct adc_it8xxx2_data *data = dev->data;
+	struct adc_it8xxx2_vcmp_data *const v_data = data->vcmp_data;
+	struct adc_it8xxx2_vcmp_control *const v_ctrl =
+					&v_data->control[vcmp];
+	int ret = 0;
+
+	if (!IS_ENABLED(ADC_VCMP_ITE_IT8XXX2)) {
+		return -EOPNOTSUPP;
+	}
+
+	if (!control || vcmp >= IT8XXX2_ADC_VCMP_COUNT) {
+		return -EINVAL;
+	}
+
+	adc_context_lock(&data->ctx, false, NULL);
+	switch (control->param) {
+	case ADC_VCMP_ITE_IT8XXX2_PARAM_CSELL:
+		if (control->val > CHIP_ADC_COUNT) {
+			ret = -EINVAL;
+			break;
+		}
+		v_ctrl->csel = (uint8_t)control->val;
+		break;
+
+	case ADC_VCMP_ITE_IT8XXX2_PARAM_TMOD:
+		v_ctrl->tmod = !!control->val;
+		break;
+
+	case ADC_VCMP_ITE_IT8XXX2_PARAM_THRDAT:
+		if (control->val == 0 || control->val >= ADC_REF_INTERNAL) {
+			ret = -EINVAL;
+			break;
+		}
+		v_ctrl->thrdat = (uint16_t)control->val;
+		break;
+
+	case ADC_VCMP_ITE_IT8XXX2_PARAM_WORK:
+		if (control->val == 0) {
+			ret = -EINVAL;
+			break;
+		}
+		v_ctrl->work = (struct k_work *)control->val;
+		break;
+	default:
+		ret = -EINVAL;
+	}
+	adc_context_release(&data->ctx, 0);
+	return ret;
+}
+
+static int adc_vcmp_it8xxx2_enable_irq(const struct device *dev,
+				       const uint8_t vcmp)
+{
+	struct adc_it8xxx2_data *data = dev->data;
+	struct adc_it8xxx2_vcmp_data *v_data = data->vcmp_data;
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+	struct adc_it8xxx2_vcmp_control *const v_ctrl =
+					&v_data->control[vcmp];
+
+	if (vcmp >= IT8XXX2_ADC_VCMP_COUNT) {
+		return -EINVAL;
+	}
+
+	adc_context_lock(&data->ctx, false, NULL);
+	if (v_data->cmp_enabled & BIT(vcmp)) {
+		/* Comparator irq is already enabled */
+		adc_context_release(&data->ctx, 0);
+		return 0;
+	}
+
+	if (v_ctrl->csel >= CHIP_ADC_COUNT ||
+	    v_ctrl->thrdat == 0 || v_ctrl->work == 0) {
+		adc_context_release(&data->ctx, 0);
+		LOG_ERR("Threshold selected (%d) is not configured!", vcmp);
+		return -EINVAL;
+	}
+	/* Set channel being used as comparator */
+	v_data->cmp_channels |= BIT(v_ctrl->csel);
+
+	if (!data->vcmp_data->cmp_enabled)
+		adc_enable(true);
+
+	v_data->cmp_enabled |= BIT(vcmp);
+
+	/* Enable comparator and interruption */
+	VCMPCTL(adc_regs, vcmp) |= (IT8XXX2_ADC_CMPXEN | IT8XXX2_ADC_CMPXINTEN);
+
+	adc_context_release(&data->ctx, 0);
+
+	return 0;
+}
+
+static int adc_vcmp_it8xxx2_disable_irq(const struct device *dev,
+					const uint8_t vcmp)
+{
+	struct adc_it8xxx2_data *data = dev->data;
+	struct adc_it8xxx2_vcmp_data *v_data = data->vcmp_data;
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+	struct adc_it8xxx2_vcmp_control *const v_ctrl =
+					&v_data->control[vcmp];
+
+	if (vcmp >= IT8XXX2_ADC_VCMP_COUNT) {
+		return -EINVAL;
+	}
+
+	adc_context_lock(&data->ctx, false, NULL);
+	if (!(v_data->cmp_enabled & BIT(vcmp))) {
+		/* Comparator irq is already disabled */
+		adc_context_release(&data->ctx, 0);
+		return 0;
+	}
+	/* Clear comparator bit */
+	v_data->cmp_channels &= ~BIT(v_ctrl->csel);
+
+	v_data->cmp_enabled &= ~BIT(vcmp);
+
+	if (!data->vcmp_data->cmp_enabled)
+		adc_enable(false);
+
+	/* Disable comparator and interruption */
+	VCMPCTL(adc_regs, vcmp) &=
+			~(IT8XXX2_ADC_CMPXEN | IT8XXX2_ADC_CMPXINTEN);
+
+	adc_context_release(&data->ctx, 0);
+
+	return 0;
+}
+
+static int adc_vcmp_it8xxx2_ctrl_setup(const struct device *dev,
+				       const uint8_t vcmp)
+{
+	struct adc_it8xxx2_data *data = dev->data;
+	struct adc_it8xxx2_vcmp_data *const v_data = data->vcmp_data;
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+	struct adc_it8xxx2_vcmp_control *const v_ctrl =
+					&v_data->control[vcmp];
+
+	uint8_t vcmpctl;
+
+	if (vcmp >= IT8XXX2_ADC_VCMP_COUNT) {
+		return -EINVAL;
+	}
+
+	adc_context_lock(&data->ctx, false, NULL);
+	/* Set LSB comparator channel selection */
+	vcmpctl = (v_ctrl->csel & IT8XXX2_ADC_CMPCXSELL_MASK);
+
+	/* Set edge comparator sense mode */
+	vcmpctl &= ~IT8XXX2_ADC_CMPXELSM;
+
+	if (v_ctrl->tmod) {
+		vcmpctl |= IT8XXX2_ADC_CMPXTMOD;
+	} else {
+		vcmpctl &= ~IT8XXX2_ADC_CMPXTMOD;
+	}
+
+	/* Set comparator threshold value */
+	VCMPTHRDATM(adc_regs, vcmp) = (uint8_t)(v_ctrl->thrdat >> 8);
+	VCMPTHRDATL(adc_regs, vcmp) = (uint8_t)v_ctrl->thrdat;
+
+	VCMPCTL(adc_regs, vcmp) = vcmpctl;
+
+	/* Set MSB comparator channel selection */
+	if (v_ctrl->csel & ~IT8XXX2_ADC_CMPCXSELL_MASK) {
+		VCMPCSELM(adc_regs, vcmp) |= IT8XXX2_ADC_CMPCXSELM;
+	} else {
+		VCMPCSELM(adc_regs, vcmp) &= ~IT8XXX2_ADC_CMPCXSELM;
+	}
+
+	adc_context_release(&data->ctx, 0);
+
+	return 0;
+}
+
+int adc_vcmp_it8xxx2_ctrl_enable(const struct device *dev, uint8_t vcmp,
+				 const bool enable)
+{
+	int ret;
+
+	if (!IS_ENABLED(ADC_VCMP_ITE_IT8XXX2)) {
+		return -EOPNOTSUPP;
+	}
+
+	/* Enable/Disable threshold IRQ */
+	if (enable) {
+		/* Set control threshold registers */
+		ret = adc_vcmp_it8xxx2_ctrl_setup(dev, vcmp);
+		if (ret) {
+			return ret;
+		}
+		ret = adc_vcmp_it8xxx2_enable_irq(dev, vcmp);
+	} else {
+		ret = adc_vcmp_it8xxx2_disable_irq(dev, vcmp);
+	}
+	return ret;
 }
 
 static const struct adc_driver_api api_it8xxx2_driver_api = {
@@ -309,6 +611,10 @@ static int adc_it8xxx2_init(const struct device *dev)
 	 * kept until data valid is cleared.
 	 */
 	adc_regs->ADCGCR |= IT8XXX2_ADC_DBKEN;
+
+	if (IS_ENABLED(CONFIG_ADC_THRESHOLD_IRQ)) {
+		data->vcmp_data = &adc_it8xxx2_vcmp_data_0;
+	}
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    adc_it8xxx2_isr, DEVICE_DT_INST_GET(0), 0);

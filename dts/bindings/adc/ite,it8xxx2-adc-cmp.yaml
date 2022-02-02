@@ -1,0 +1,60 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This will perform signal comparision with threshold established.
+
+compatible: "ite,it8xxx2-adc-cmp"
+
+properties:
+  adc:
+    type: phandle
+    required: true
+    description: |
+      ADC port that will be performing measurement.
+
+  scan-period:
+    type: string
+    required: false
+    default: VCMP_SCAN_PERIOD_1MS
+    description: |
+      Define interval at which ADC scan will me performed.
+    enum:
+      - VCMP_SCAN_PERIOD_100US
+      - VCMP_SCAN_PERIOD_200US
+      - VCMP_SCAN_PERIOD_400US
+      - VCMP_SCAN_PERIOD_600US
+      - VCMP_SCAN_PERIOD_800US
+      - VCMP_SCAN_PERIOD_1MS
+      - VCMP_SCAN_PERIOD_1_5MS
+      - VCMP_SCAN_PERIOD_2MS
+      - VCMP_SCAN_PERIOD_2_5MS
+      - VCMP_SCAN_PERIOD_3MS
+      - VCMP_SCAN_PERIOD_4MS
+      - VCMP_SCAN_PERIOD_5MS
+
+child-binding:
+  description: |
+    Define each individual voltage comparator with parameters.
+  properties:
+    adc-channel:
+      type: int
+      required: true
+      description: |
+        ADC channel that will perform signal measurement.
+
+    threshold-mv:
+      type: int
+      required: false
+      description: |
+        Value in millivolts present on ADC data as threshold assert.
+
+    trigger-mode:
+      type: string
+      required: false
+      description: |
+        Determines the condition to be met between ADC data and
+        threshold assert value that will trigger comparator event.
+      enum:
+      - VCMP_TRIGGER_MODE_LESS_OR_EQUAL
+      - VCMP_TRIGGER_MODE_GREATER

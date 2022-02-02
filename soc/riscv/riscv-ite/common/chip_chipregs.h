@@ -1536,8 +1536,16 @@ struct adc_it8xxx2_regs {
 	volatile uint8_t reserved1[18];
 	volatile uint8_t VCH0DATL;
 	volatile uint8_t VCH0DATM;
-	volatile uint8_t reserved2[42];
+	volatile uint8_t reserved2[29];
+	volatile uint8_t VCMPSCP;
+	volatile uint8_t reserved3[12];
 	volatile uint8_t ADCDVSTS;
+	volatile uint8_t VCMPSTS;
+	volatile uint8_t VCMP0CTL;
+	volatile uint8_t VCMP0THRDATM;
+	volatile uint8_t VCMP0THRDATL;
+	volatile uint8_t reserved4[46];
+	volatile uint8_t VCMP0CSELM;
 };
 #endif /* !__ASSEMBLER__ */
 

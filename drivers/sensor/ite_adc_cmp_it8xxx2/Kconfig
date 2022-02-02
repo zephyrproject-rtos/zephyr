@@ -1,0 +1,15 @@
+#  ADC CMP NPCX driver configuration options
+
+# Copyright (c) 2022 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if ADC_ITE_IT8XXX2
+
+config ADC_VCMP_ITE_IT8XXX2
+	bool "ITE IT8XXX2 ADC threshold detection interruption"
+	default n
+	help
+	  This option enables threshold interruption using sensor
+	  trigger API.
+
+endif # ADC_CMP_ITE_IT8XXX2

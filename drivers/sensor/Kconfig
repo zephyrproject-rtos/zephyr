@@ -240,4 +240,6 @@ source "drivers/sensor/nuvoton_tach_npcx/Kconfig"
 
 source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 
+source "drivers/sensor/ite_adc_cmp_it8xxx2/Kconfig"
+
 endif # SENSOR
