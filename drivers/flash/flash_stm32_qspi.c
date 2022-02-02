@@ -312,7 +312,7 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 	}
 
 	/* read non-zero size */
-	if (!size) {
+	if (size == 0) {
 		return 0;
 	}
 
@@ -365,7 +365,7 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 	}
 
 	/* write non-zero size */
-	if (!size) {
+	if (size == 0) {
 		return 0;
 	}
 
@@ -440,7 +440,7 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 	}
 
 	/* erase non-zero size */
-	if (!size) {
+	if (size == 0) {
 		return 0;
 	}
 
