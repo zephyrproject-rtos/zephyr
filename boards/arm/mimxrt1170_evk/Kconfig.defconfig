@@ -23,7 +23,7 @@ config SDMMC_USDHC_DAT3_PWR_TOGGLE
 	default y
 
 config SDMMC_USDHC_DAT3_PWR_DELAY
-	default 1000
+	default 10
 
 endif # DISK_DRIVERS
 
