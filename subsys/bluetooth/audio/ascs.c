@@ -724,6 +724,7 @@ void ascs_ep_init(struct bt_audio_ep *ep, uint8_t id)
 	ep->iso.qos = &ep->iso_qos;
 	ep->iso.qos->rx = &ep->iso_rx;
 	ep->iso.qos->tx = &ep->iso_tx;
+	ep->dir = ASE_DIR(id);
 }
 
 static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
