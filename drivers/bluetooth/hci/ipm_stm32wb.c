@@ -65,6 +65,7 @@ struct aci_set_ble_addr {
 
 #define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
 #define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
+#define ACI_HAL_STACK_RESET		   BT_OP(BT_OGF_VS, 0xFC3B)
 
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET		0
 #define HCI_CONFIG_DATA_RANDOM_ADDRESS_OFFSET	0x2E
@@ -547,11 +548,37 @@ static int bt_ipm_open(void)
 	return 0;
 }
 
+static int bt_ipm_close(void)
+{
+	int err;
+	struct net_buf *rsp;
+
+	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, &rsp);
+	if (err) {
+		BT_ERR("IPM Channel Close Issue");
+		return err;
+	}
+	net_buf_unref(rsp);
+
+	/* Wait till C2DS set */
+	while (LL_PWR_IsActiveFlag_C2DS() == 0) {
+	};
+
+	SHCI_C2_Reinit();
+
+	k_thread_abort(&ipm_rx_thread_data);
+
+	BT_DBG("IPM Channel Close Completed");
+
+	return err;
+}
+
 static const struct bt_hci_driver drv = {
 	.name           = "BT IPM",
 	.bus            = BT_HCI_DRIVER_BUS_IPM,
 	.quirks         = BT_QUIRK_NO_RESET,
 	.open           = bt_ipm_open,
+	.close          = bt_ipm_close,
 	.send           = bt_ipm_send,
 };
 
