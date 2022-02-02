@@ -116,7 +116,12 @@ void main(void)
 
 	k_sleep(K_SECONDS(6));
 
-	printk("Device shutdown\n");
+	printk("BLE disable\n");
+	err = bt_disable();
+	if (err) {
+		printk("Bluetooth disable failed (err %d)\n", err);
+	}
 
+	printk("Shutdown\n");
 	pm_state_force(0u, &(struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
 }
