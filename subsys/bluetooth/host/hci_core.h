@@ -29,6 +29,7 @@ enum {
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ENABLE,
+	BT_DEV_DISABLE,
 	BT_DEV_READY,
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,

@@ -359,3 +359,8 @@ void bt_hci_ecc_init(void)
 			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
 	k_thread_name_set(&ecc_thread_data, "BT ECC");
 }
+
+void bt_hci_ecc_deinit(void)
+{
+	k_thread_abort(&ecc_thread_data);
+}

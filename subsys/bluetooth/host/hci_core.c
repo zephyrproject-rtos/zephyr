@@ -3574,6 +3574,8 @@ int bt_enable(bt_ready_cb_t cb)
 		return -ENODEV;
 	}
 
+	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
+
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_ENABLE)) {
 		return -EALREADY;
 	}
@@ -3629,6 +3631,57 @@ int bt_enable(bt_ready_cb_t cb)
 	k_work_submit(&bt_dev.init);
 	return 0;
 }
+
+int bt_disable(void)
+{
+	int err;
+
+	if (!bt_dev.drv) {
+		BT_ERR("No HCI driver registered");
+		return -ENODEV;
+	}
+
+	if (!bt_dev.drv->close) {
+		return -ENOTSUP;
+	}
+
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLE)) {
+		return -EALREADY;
+	}
+
+	/* Clear BT_DEV_READY before disabling HCI link */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+
+	err = bt_dev.drv->close();
+	if (err) {
+		BT_ERR("HCI driver close failed (%d)", err);
+
+		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
+		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+
+		return err;
+	}
+
+	/* Abort TX thread */
+	k_thread_abort(&tx_thread_data);
+
+#if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
+	/* Abort RX thread */
+	k_thread_abort(&rx_thread_data);
+#endif
+
+	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+		bt_hci_ecc_deinit();
+	}
+
+	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
+
+	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLE);
+
+	return 0;
+}
+
 
 #define DEVICE_NAME_LEN (sizeof(CONFIG_BT_DEVICE_NAME) - 1)
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
