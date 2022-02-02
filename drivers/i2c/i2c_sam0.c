@@ -51,6 +51,7 @@ struct i2c_sam0_msg {
 
 struct i2c_sam0_dev_data {
 	struct k_sem sem;
+	struct k_sem lock;
 	struct i2c_sam0_msg msg;
 	struct i2c_msg *msgs;
 	uint8_t num_msgs;
@@ -387,12 +388,15 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (!num_msgs) {
 		return 0;
 	}
+
+	k_sem_take(&data->lock, K_FOREVER);
 	data->num_msgs = num_msgs;
 	data->msgs = msgs;
 
 	for (; data->num_msgs > 0;) {
 		if (!data->msgs->len) {
 			if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+				k_sem_give(&data->lock);
 				return -EINVAL;
 			}
 		}
@@ -480,6 +484,8 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			/* return the bus to idle */
 			i2c->CTRLB.bit.CMD = 3;
 
+			k_sem_give(&data->lock);
+
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					DEV_NAME(dev));
@@ -511,6 +517,8 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		data->num_msgs--;
 		data->msgs++;
 	}
+
+	k_sem_give(&data->lock);
 
 	return 0;
 }
@@ -652,6 +660,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 
 static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 {
+	struct i2c_sam0_dev_data *data = dev->data;
 	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
@@ -661,6 +670,8 @@ static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 	}
 
 	if (config & I2C_SPEED_MASK) {
+		k_sem_take(&data->lock, K_FOREVER);
+
 		i2c->CTRLA.bit.ENABLE = 0;
 		wait_synchronization(i2c);
 
@@ -668,6 +679,8 @@ static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 
 		i2c->CTRLA.bit.ENABLE = 1;
 		wait_synchronization(i2c);
+
+		k_sem_give(&data->lock);
 
 		if (retval != 0) {
 			return retval;
@@ -719,6 +732,7 @@ static int i2c_sam0_initialize(const struct device *dev)
 		return retval;
 	}
 
+	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->sem, 0, 1);
 
 	cfg->irq_config_func(dev);
