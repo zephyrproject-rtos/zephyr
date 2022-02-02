@@ -1078,25 +1078,12 @@ static struct bt_audio_broadcast_sink_cb sink_cbs = {
 };
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 
-static void audio_connected(struct bt_audio_stream *stream)
-{
-	shell_print(ctx_shell, "Channel %p connected\n", stream);
-}
-
-static void audio_disconnected(struct bt_audio_stream *stream, uint8_t reason)
-{
-	shell_print(ctx_shell, "Channel %p disconnected with reason 0x%2x\n",
-		    stream, reason);
-}
-
 static void audio_recv(struct bt_audio_stream *stream, struct net_buf *buf)
 {
 	shell_print(ctx_shell, "Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
 static struct bt_audio_stream_ops stream_ops = {
-	.connected = audio_connected,
-	.disconnected = audio_disconnected,
 	.recv = audio_recv
 };
 

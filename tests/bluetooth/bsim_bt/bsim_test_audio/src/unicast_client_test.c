@@ -80,17 +80,6 @@ static void stream_released(struct bt_audio_stream *stream)
 	printk("Released stream %p\n", stream);
 }
 
-static void stream_connected(struct bt_audio_stream *stream)
-{
-	printk("Audio Stream %p connected\n", stream);
-}
-
-static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
-{
-	printk("Audio Stream %p disconnected (reason 0x%02x)\n",
-	       stream, reason);
-}
-
 static struct bt_audio_stream_ops stream_ops = {
 	.configured = stream_configured,
 	.qos_set = stream_qos_set,
@@ -100,8 +89,6 @@ static struct bt_audio_stream_ops stream_ops = {
 	.disabled = stream_disabled,
 	.stopped = stream_stopped,
 	.released = stream_released,
-	.connected = stream_connected,
-	.disconnected = stream_disconnected,
 };
 
 static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
