@@ -274,6 +274,8 @@ Drivers and Sensors
 
 * EEPROM
 
+  * Added support for the EEPROM present in the TMP116 digital temperature
+    sensor.
 
 * Entropy
 
