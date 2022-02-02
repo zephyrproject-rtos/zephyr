@@ -117,7 +117,8 @@ as described below:
 
       .. code-block:: console
 
-         sudo pacman -S graphviz doxygen librsvg texlive-core texlive-bin
+         sudo pacman -S graphviz doxygen librsvg texlive-core texlive-bin \
+         texlive-latexextra texlive-fontsextra
 
    .. group-tab:: macOS
 
