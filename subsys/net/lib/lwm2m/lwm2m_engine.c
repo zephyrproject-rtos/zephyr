@@ -3399,6 +3399,54 @@ move_forward:
 	return ret;
 }
 
+static int lwm2m_discover_add_res(struct lwm2m_message *msg,
+				  struct lwm2m_engine_obj_inst *obj_inst,
+				  struct lwm2m_engine_res *res)
+{
+	int ret;
+	struct lwm2m_obj_path path = {
+		.obj_id = obj_inst->obj->obj_id,
+		.obj_inst_id = obj_inst->obj_inst_id,
+		.res_id = res->res_id,
+		.level = LWM2M_PATH_LEVEL_RESOURCE,
+	};
+
+	ret = engine_put_corelink(&msg->out, &path);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Report resource instances, if applicable. */
+	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+	    msg->path.level == LWM2M_PATH_LEVEL_RESOURCE &&
+	    res->multi_res_inst) {
+		for (int i = 0; i < res->res_inst_count; i++) {
+			struct lwm2m_engine_res_inst *res_inst =
+						&res->res_instances[i];
+
+			if (res_inst->res_inst_id ==
+				RES_INSTANCE_NOT_CREATED) {
+				continue;
+			}
+
+			path = (struct lwm2m_obj_path){
+				.obj_id = obj_inst->obj->obj_id,
+				.obj_inst_id = obj_inst->obj_inst_id,
+				.res_id = res->res_id,
+				.res_inst_id = res_inst->res_inst_id,
+				.level = LWM2M_PATH_LEVEL_RESOURCE_INST,
+			};
+
+			ret = engine_put_corelink(&msg->out, &path);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	return 0;
+}
+
 int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 {
 	struct lwm2m_engine_obj *obj;
@@ -3515,14 +3563,8 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 					continue;
 				}
 
-				struct lwm2m_obj_path path = {
-					.obj_id = obj_inst->obj->obj_id,
-					.obj_inst_id = obj_inst->obj_inst_id,
-					.res_id = obj_inst->resources[i].res_id,
-					.level = LWM2M_PATH_LEVEL_RESOURCE,
-				};
-
-				ret = engine_put_corelink(&msg->out, &path);
+				ret = lwm2m_discover_add_res(msg, obj_inst,
+							     &obj_inst->resources[i]);
 				if (ret < 0) {
 					return ret;
 				}
@@ -3644,6 +3686,24 @@ struct lwm2m_engine_res *lwm2m_engine_get_res(
 	}
 
 	return res;
+}
+
+struct lwm2m_engine_res_inst *lwm2m_engine_get_res_inst(
+					const struct lwm2m_obj_path *path)
+{
+	struct lwm2m_engine_res_inst *res_inst = NULL;
+	int ret;
+
+	if (path->level != LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		return NULL;
+	}
+
+	ret = path_to_objs(path, NULL, NULL, NULL, &res_inst);
+	if (ret < 0) {
+		return NULL;
+	}
+
+	return res_inst;
 }
 
 bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj)
