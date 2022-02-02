@@ -313,6 +313,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		}
 
 		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, MGMT_HDR_SIZE);
+		streamer->mgmt_stmr.reader->message_size -= MGMT_HDR_SIZE;
 
 		rsp = mgmt_streamer_alloc_rsp(&streamer->mgmt_stmr, req);
 		if (rsp == NULL) {
@@ -340,6 +341,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 
 		/* Trim processed request to free up space for subsequent responses. */
 		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, req_hdr.nh_len);
+		streamer->mgmt_stmr.reader->message_size -= req_hdr.nh_len;
 
 		cmd_done_arg.err = MGMT_ERR_EOK;
 		mgmt_evt(MGMT_EVT_OP_CMD_DONE, req_hdr.nh_group, req_hdr.nh_id,
