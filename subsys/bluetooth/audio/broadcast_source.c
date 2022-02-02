@@ -114,22 +114,6 @@ static void broadcast_source_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 	}
 }
 
-static void broadcast_source_iso_recv(struct bt_iso_chan *chan,
-				    const struct bt_iso_recv_info *info,
-				    struct net_buf *buf)
-{
-	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
-	struct bt_audio_stream_ops *ops = ep->stream->ops;
-
-	BT_DBG("stream %p ep %p len %zu", chan, ep, net_buf_frags_len(buf));
-
-	if (ops != NULL && ops->recv != NULL) {
-		ops->recv(ep->stream, buf);
-	} else {
-		BT_WARN("No callback for recv set");
-	}
-}
-
 static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
@@ -164,7 +148,6 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 }
 
 static struct bt_iso_chan_ops broadcast_source_iso_ops = {
-	.recv		= broadcast_source_iso_recv,
 	.connected	= broadcast_source_iso_connected,
 	.disconnected	= broadcast_source_iso_disconnected,
 };

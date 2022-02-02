@@ -1234,6 +1234,7 @@ struct bt_audio_stream_ops {
 	 */
 	void (*stopped)(struct bt_audio_stream *stream);
 
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 	/** @brief Stream audio HCI receive callback.
 	 *
 	 *  This callback is only used if the ISO data path is HCI.
@@ -1242,6 +1243,7 @@ struct bt_audio_stream_ops {
 	 *  @param buf  Buffer containing incoming audio data.
 	 */
 	void (*recv)(struct bt_audio_stream *stream, struct net_buf *buf);
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
 };
 
 /** @brief Audio Capability type */
