@@ -232,13 +232,19 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
  * individually in its own packet.  If a request elicits an error response,
  * processing of the packet is aborted.  This function consumes the supplied
  * request buffer regardless of the outcome.
+ * The function will return MGMT_ERR_EOK (0) when given an empty input stream,
+ * and will also release the buffer from the stream; it does not return
+ * MTMT_ERR_ECORRUPT, or any other MGMT error, because there was no error while
+ * processing of the input stream, it is callers fault that an empty stream has
+ * been passed to the function.
  *
  * @param streamer	The streamer to use for reading, writing, and transmitting.
  * @param req		A buffer containing the request packet.
  *
- * @return 0 on success, MGMT_ERR_ECORRUPT if buffer starts with non SMP data header
- *                       or there is not enough bytes to process header,
- *                       or other MGMT_ERR_[...] code on failure.
+ * @return 0 on success or when input stream is empty;
+ *         MGMT_ERR_ECORRUPT if buffer starts with non SMP data header or there
+ *         is not enough bytes to process header, or other MGMT_ERR_[...] code on
+ *         failure.
  */
 int
 smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
