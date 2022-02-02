@@ -308,16 +308,16 @@ struct dfu_data_t {
 };
 
 #if FLASH_AREA_LABEL_EXISTS(image_1)
-	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_1)
+	#define DOWNLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_1)
 #else
-	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_0)
+	#define DOWNLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_0)
 #endif
 
 
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_area_id = UPLOAD_FLASH_AREA_ID,
+	.flash_area_id = DOWNLOAD_FLASH_AREA_ID,
 	.alt_setting = 0,
 	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
 };
@@ -562,7 +562,7 @@ static int dfu_class_handle_to_device(struct usb_setup_packet *setup,
 			dfu_reset_counters();
 			k_poll_signal_reset(&dfu_signal);
 
-			if (dfu_data.flash_area_id != UPLOAD_FLASH_AREA_ID) {
+			if (dfu_data.flash_area_id != DOWNLOAD_FLASH_AREA_ID) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
 				LOG_ERR("This area can not be overwritten");
@@ -730,8 +730,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *setup,
 			break;
 #if FLASH_AREA_LABEL_EXISTS(image_1)
 		case 1:
-			dfu_data.flash_area_id =
-			    UPLOAD_FLASH_AREA_ID;
+			dfu_data.flash_area_id = DOWNLOAD_FLASH_AREA_ID;
 			break;
 #endif
 		default:
@@ -800,7 +799,7 @@ static void dfu_work_handler(struct k_work *item)
  * image collection, so not erase whole bank at DFU beginning
  */
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		if (boot_erase_img_bank(UPLOAD_FLASH_AREA_ID)) {
+		if (boot_erase_img_bank(DOWNLOAD_FLASH_AREA_ID)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;
