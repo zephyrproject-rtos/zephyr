@@ -126,20 +126,18 @@ done:
 	return -ENOSPC;
 }
 
-int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
-				  struct bt_codec_qos *codec)
+int bt_audio_codec_qos_to_iso_qos(struct bt_audio_stream *stream,
+				  const struct bt_codec_qos *codec)
 {
+	struct bt_iso_chan_qos *qos = stream->iso->qos;
 	struct bt_iso_chan_io_qos *io;
 
-	switch (codec->dir) {
-	case BT_CODEC_QOS_IN:
+	switch (stream->ep->dir) {
+	case BT_AUDIO_SINK:
 		io = qos->rx;
 		break;
-	case BT_CODEC_QOS_OUT:
+	case BT_AUDIO_SOURCE:
 		io = qos->tx;
-		break;
-	case BT_CODEC_QOS_INOUT:
-		io = qos->rx = qos->tx;
 		break;
 	default:
 		return -EINVAL;
@@ -546,7 +544,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos, qos);
+		err = bt_audio_codec_qos_to_iso_qos(stream, qos);
 		if (err) {
 			BT_DBG("Unable to convert codec QoS to ISO QoS: %d",
 			       err);
