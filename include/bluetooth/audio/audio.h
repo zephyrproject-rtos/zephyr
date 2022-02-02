@@ -1232,26 +1232,6 @@ struct bt_audio_stream_ops {
 	 */
 	void (*released)(struct bt_audio_stream *stream);
 
-	/** @brief Stream connected callback
-	 *
-	 *  If this callback is provided it will be called when the
-	 *  isochronous stream is connected.
-	 *
-	 *  @param stream The stream that has been connected
-	 */
-	void (*connected)(struct bt_audio_stream *stream);
-
-	/** @brief Stream disconnected callback
-	 *
-	 *  If this callback is provided it will be called when the
-	 *  isochronous stream is disconnected, including when a connection gets
-	 *  rejected.
-	 *
-	 *  @param stream The stream that has been Disconnected
-	 *  @param reason HCI reason for the disconnection.
-	 */
-	void (*disconnected)(struct bt_audio_stream *stream, uint8_t reason);
-
 	/** @brief Stream audio HCI receive callback.
 	 *
 	 *  This callback is only used if the ISO data path is HCI.

@@ -83,15 +83,8 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 static void unicast_client_ep_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
-	struct bt_audio_stream_ops *ops = ep->stream->ops;
 
 	BT_DBG("stream %p ep %p type %u", chan, ep, ep != NULL ? ep->type : 0);
-
-	if (ops != NULL && ops->connected != NULL) {
-		ops->connected(ep->stream);
-	} else {
-		BT_WARN("No callback for connected set");
-	}
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		BT_DBG("endpoint not in enabling state: %s",
@@ -112,10 +105,10 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 
 	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
 
-	if (ops != NULL && ops->disconnected != NULL) {
-		ops->disconnected(stream, reason);
+	if (ops != NULL && ops->stopped != NULL) {
+		ops->stopped(stream);
 	} else {
-		BT_WARN("No callback for disconnected set");
+		BT_WARN("No callback for stopped set");
 	}
 
 	if (ep->type != BT_AUDIO_EP_LOCAL) {
@@ -502,13 +495,6 @@ static void unicast_client_ep_releasing_state(struct bt_audio_ep *ep,
 
 	BT_DBG("dir 0x%02x",
 	       unicast_client_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE);
-
-	/* Notify upper layer */
-	if (stream->ops != NULL && stream->ops->stopped != NULL) {
-		stream->ops->stopped(stream);
-	} else {
-		BT_WARN("No callback for stopped set");
-	}
 
 	/* The Unicast Client shall terminate any CIS established for that ASE
 	 * by following the Connected Isochronous Stream Terminate procedure

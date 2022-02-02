@@ -199,24 +199,12 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.release = lc3_release,
 };
 
-static void stream_connected(struct bt_audio_stream *stream)
-{
-	printk("Audio Stream %p connected\n", stream);
-}
-
-static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
-{
-	printk("Audio Stream %p disconnected (reason 0x%02x)\n", stream, reason);
-}
-
 static void stream_recv(struct bt_audio_stream *stream, struct net_buf *buf)
 {
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
 static struct bt_audio_stream_ops stream_ops = {
-	.connected = stream_connected,
-	.disconnected = stream_disconnected,
 	.recv = stream_recv
 };
 
