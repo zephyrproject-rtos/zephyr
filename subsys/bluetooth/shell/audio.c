@@ -239,9 +239,9 @@ static void set_stream(struct bt_audio_stream *stream)
 #if defined(CONFIG_BT_AUDIO_UNICAST)
 static void print_qos(struct bt_codec_qos *qos)
 {
-	shell_print(ctx_shell, "QoS: dir 0x%02x interval %u framing 0x%02x "
+	shell_print(ctx_shell, "QoS: interval %u framing 0x%02x "
 		    "phy 0x%02x sdu %u rtn %u latency %u pd %u",
-		    qos->dir, qos->interval, qos->framing, qos->phy, qos->sdu,
+		    qos->interval, qos->framing, qos->phy, qos->sdu,
 		    qos->rtn, qos->latency, qos->pd);
 }
 
