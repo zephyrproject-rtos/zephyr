@@ -87,6 +87,8 @@ struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(
 					const struct lwm2m_obj_path *path);
 struct lwm2m_engine_res *lwm2m_engine_get_res(
 					const struct lwm2m_obj_path *path);
+struct lwm2m_engine_res_inst *lwm2m_engine_get_res_inst(
+					const struct lwm2m_obj_path *path);
 
 bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj);
 
