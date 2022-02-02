@@ -10,6 +10,10 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Simple, fast heap implementation.
  *
  * A more or less conventional segregated fit allocator with
@@ -245,5 +249,10 @@ void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
  * @param dump_chunks True to print the entire heap chunk list
  */
 void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_SYS_HEAP_H_ */
