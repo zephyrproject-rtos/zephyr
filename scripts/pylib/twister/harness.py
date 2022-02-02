@@ -32,6 +32,7 @@ class Harness:
         self.fieldnames = []
         self.ztest = False
         self.is_pytest = False
+        self.detected_suite_names = []
 
     def configure(self, instance):
         config = instance.testcase.harness_config
@@ -219,8 +220,15 @@ class Pytest(Harness):
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
+    test_suite_start_pattern = r"Running test suite (?P<suite_name>.*)"
 
     def handle(self, line):
+        test_suite_match = re.search(self.test_suite_start_pattern, line)
+        if test_suite_match:
+            suite_name = test_suite_match.group("suite_name")
+            self.detected_suite_names.append(suite_name)
+            self.ztest = True
+
         match = result_re.match(line)
         if match and match.group(2):
             name = "{}.{}".format(self.id, match.group(3))
