@@ -37,22 +37,22 @@ static const struct bt_data ad[] = {
 /* Length of CTE in unit of 8 us */
 #define CTE_LEN (0x14U)
 
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)
+#if defined(CONFIG_BT_DF_CTE_TX_AOD)
 static const uint8_t ant_patterns[] = { 0x2, 0x0, 0x5, 0x6, 0x1, 0x4, 0xC, 0x9, 0xE, 0xD, 0x8 };
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
+#endif /* CONFIG_BT_DF_CTE_TX_AOD */
 
 static void enable_cte_response(struct bt_conn *conn)
 {
 	int err;
 
 	const struct bt_df_conn_cte_tx_param cte_tx_params = {
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)
+#if defined(CONFIG_BT_DF_CTE_TX_AOD)
 		.cte_types = BT_DF_CTE_TYPE_ALL,
 		.num_ant_ids = ARRAY_SIZE(ant_patterns),
 		.ant_ids = ant_patterns,
 #else
 		.cte_types = BT_DF_CTE_TYPE_AOA,
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
+#endif /* CONFIG_BT_DF_CTE_TX_AOD */
 	};
 
 	printk("Set CTE transmission params...");
