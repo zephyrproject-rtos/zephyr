@@ -189,57 +189,5 @@ void PowerCC26XX_schedulerRestore(void)
 	 */
 }
 
-#ifdef CONFIG_PM
-/* Constraint API hooks */
-
-void pm_constraint_set(enum pm_state state)
-{
-	switch (state) {
-	case PM_STATE_RUNTIME_IDLE:
-		Power_setConstraint(PowerCC26XX_DISALLOW_IDLE);
-		break;
-	case PM_STATE_STANDBY:
-		Power_setConstraint(PowerCC26XX_DISALLOW_STANDBY);
-		break;
-	default:
-		break;
-	}
-}
-
-void pm_constraint_release(enum pm_state state)
-{
-	switch (state) {
-	case PM_STATE_RUNTIME_IDLE:
-		Power_releaseConstraint(PowerCC26XX_DISALLOW_IDLE);
-		break;
-	case PM_STATE_STANDBY:
-		Power_releaseConstraint(PowerCC26XX_DISALLOW_STANDBY);
-		break;
-	default:
-		break;
-	}
-}
-
-bool pm_constraint_get(enum pm_state state)
-{
-	bool ret = true;
-	uint32_t constraints;
-
-	constraints = Power_getConstraintMask();
-	switch (state) {
-	case PM_STATE_RUNTIME_IDLE:
-		ret = (constraints & (1 << PowerCC26XX_DISALLOW_IDLE)) == 0;
-		break;
-	case PM_STATE_STANDBY:
-		ret = (constraints & (1 << PowerCC26XX_DISALLOW_STANDBY)) == 0;
-		break;
-	default:
-		break;
-	}
-
-	return ret;
-}
-#endif /* CONFIG_PM */
-
 SYS_INIT(power_initialize, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 SYS_INIT(unlatch_pins, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
