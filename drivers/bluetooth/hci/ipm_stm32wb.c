@@ -530,6 +530,13 @@ static int bt_ipm_open(void)
 {
 	int err;
 
+	/* Start RX thread */
+	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
+			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
+			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
+			0, K_NO_WAIT);
+
 	err = bt_ipm_ble_init();
 	if (err) {
 		return err;
@@ -555,13 +562,6 @@ static int _bt_ipm_init(const struct device *unused)
 	bt_hci_driver_register(&drv);
 
 	start_ble_rf();
-
-	/* Start RX thread */
-	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
-			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
-			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
-			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
 	ipcc_reset();
