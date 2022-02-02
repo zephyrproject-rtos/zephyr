@@ -1078,6 +1078,7 @@ static struct bt_audio_broadcast_sink_cb sink_cbs = {
 };
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 static void audio_recv(struct bt_audio_stream *stream, struct net_buf *buf)
 {
 	shell_print(ctx_shell, "Incoming audio on stream %p len %u\n", stream, buf->len);
@@ -1086,7 +1087,7 @@ static void audio_recv(struct bt_audio_stream *stream, struct net_buf *buf)
 static struct bt_audio_stream_ops stream_ops = {
 	.recv = audio_recv
 };
-
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
@@ -1340,13 +1341,6 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);
 	}
 #endif /* CONFIG_BT_AUDIO_UNICAST */
-
-#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
-	for (i = 0; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		bt_audio_stream_cb_register(&broadcast_source_streams[i],
-					    &stream_ops);
-	}
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 	bt_audio_broadcast_sink_register_cb(&sink_cbs);
