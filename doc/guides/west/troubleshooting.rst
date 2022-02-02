@@ -44,7 +44,7 @@ update`` without entering your password in that same shell.
 "'west' is not recognized as an internal or external command, operable program or batch file.'
 **********************************************************************************************
 
-On Windows, this means that either west is not installed, or your :envvar:`PATH`
+On Windows, this means that either west is not installed, or your ``PATH``
 environment variable does not contain the directory where pip installed
 :file:`west.exe`.
 
@@ -53,7 +53,7 @@ running ``west`` from a new ``cmd.exe`` window. If that still doesn't work,
 keep reading.
 
 You need to find the directory containing :file:`west.exe`, then add it to your
-:envvar:`PATH`. (This :envvar:`PATH` change should have been done for you when
+``PATH``. (This ``PATH`` change should have been done for you when
 you installed Python and pip, so ordinarily you should not need to follow these
 steps.)
 
@@ -74,7 +74,7 @@ Then:
       Notice how ``lib\site-packages`` in the ``pip3 show`` output was changed
       to ``scripts``!
 #. If you see ``west.exe`` in the ``scripts`` directory, add the full path to
-   ``scripts`` to your :envvar:`PATH` using a command like this::
+   ``scripts`` to your ``PATH`` using a command like this::
 
      setx PATH "%PATH%;C:\foo\python\python38\scripts"
 
@@ -151,8 +151,8 @@ To fix this, you have two choices:
    For example, create your build directory inside the workspace, or run ``west
    flash --build-dir YOUR_BUILD_DIR`` from inside the workspace.
 
-#. Set the :envvar:`ZEPHYR_BASE` :ref:`environment variable <env_vars>` and re-run
-   the west extension command. If set, west will use :envvar:`ZEPHYR_BASE` to
+#. Set the ``ZEPHYR_BASE`` :ref:`environment variable <env_vars>` and re-run
+   the west extension command. If set, west will use ``ZEPHYR_BASE`` to
    find your workspace.
 
 If you're unsure whether a command is built-in or an extension, run ``west
@@ -214,10 +214,10 @@ You may see this error when running ``west init`` with west 0.6:
    FATAL ERROR: already in an installation (<some directory>), aborting
 
 If this is unexpected and you're really trying to create a new west workspace,
-then it's likely that west is using the :envvar:`ZEPHYR_BASE` :ref:`environment
+then it's likely that west is using the ``ZEPHYR_BASE`` :ref:`environment
 variable <env_vars>` to locate a workspace elsewhere on your system.
 
 This is intentional; it allows you to put your Zephyr applications in
 any directory and still use west to build, flash, and debug them, for example.
 
-To resolve this issue, unset :envvar:`ZEPHYR_BASE` and try again.
+To resolve this issue, unset ``ZEPHYR_BASE`` and try again.

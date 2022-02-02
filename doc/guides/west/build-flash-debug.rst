@@ -64,7 +64,7 @@ can force CMake to run again with ``--cmake``.
 
 You don't need to use the ``--board`` option if you've already got an existing
 build directory; ``west build`` can figure out the board from the CMake cache.
-For new builds, the ``--board`` option, :envvar:`BOARD` environment variable,
+For new builds, the ``--board`` option, ``BOARD`` environment variable,
 or ``build.board`` configuration option are checked (in that order).
 
 Examples
@@ -328,7 +328,7 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
      - Description
    * - ``build.board``
      - String. If given, this the board used by :ref:`west build
-       <west-building>` when ``--board`` is not given and :envvar:`BOARD`
+       <west-building>` when ``--board`` is not given and ``BOARD``
        is unset in the environment.
    * - ``build.board_warn``
      - Boolean, default ``true``. If ``false``, disables warnings when

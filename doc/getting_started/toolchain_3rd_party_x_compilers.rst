@@ -31,13 +31,13 @@ GNU Arm Embedded
 
 #. :ref:`Set these environment variables <env_vars>`:
 
-   - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
-   - Set :envvar:`GNUARMEMB_TOOLCHAIN_PATH` to the toolchain installation
+   - Set ``ZEPHYR_TOOLCHAIN_VARIANT`` to ``gnuarmemb``.
+   - Set ``GNUARMEMB_TOOLCHAIN_PATH`` to the toolchain installation
      directory.
 
 #. To check that you have set these variables correctly in your current
    environment, follow these example shell sessions (the
-   :envvar:`GNUARMEMB_TOOLCHAIN_PATH` values may be different on your system):
+   ``GNUARMEMB_TOOLCHAIN_PATH`` values may be different on your system):
 
    .. code-block:: console
 
@@ -58,8 +58,8 @@ GNU Arm Embedded
       On macOS, if you are having trouble with the suggested procedure, there is an unofficial package on brew that might help you.
       Run ``brew install gcc-arm-embedded`` and configure the variables
 
-      - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
-      - Set :envvar:`GNUARMEMB_TOOLCHAIN_PATH` to the brew installation directory (something like ``/usr/local``)
+      - Set ``ZEPHYR_TOOLCHAIN_VARIANT`` to ``gnuarmemb``.
+      - Set ``GNUARMEMB_TOOLCHAIN_PATH`` to the brew installation directory (something like ``/usr/local``)
 
 .. _toolchain_armclang:
 
@@ -71,11 +71,11 @@ Arm Compiler 6
 
 #. :ref:`Set these environment variables <env_vars>`:
 
-   - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``armclang``.
-   - Set :envvar:`ARMCLANG_TOOLCHAIN_PATH` to the toolchain installation
+   - Set ``ZEPHYR_TOOLCHAIN_VARIANT`` to ``armclang``.
+   - Set ``ARMCLANG_TOOLCHAIN_PATH`` to the toolchain installation
      directory.
 
-#. The Arm Compiler 6 needs the :envvar:`ARMLMD_LICENSE_FILE` environment
+#. The Arm Compiler 6 needs the ``ARMLMD_LICENSE_FILE`` environment
    variable to point to your license file or server.
 
 For example:
@@ -93,10 +93,10 @@ For example:
       > set ARMLMD_LICENSE_FILE=8224@myserver
 
 #. If the Arm Compiler 6 was installed as part of an Arm Development Studio, then
-   you must set the :envvar:`ARM_PRODUCT_DEF` to point to the product definition file:
+   you must set the ``ARM_PRODUCT_DEF`` to point to the product definition file:
    See also: `Product and toolkit configuration <https://developer.arm.com/tools-and-software/software-development-tools/license-management/resources/product-and-toolkit-configuration>`_.
    For example if the Arm Development Studio is installed in:
-   ``/opt/armds-2020-1`` with a Gold license, then set :envvar:`ARM_PRODUCT_DEF`
+   ``/opt/armds-2020-1`` with a Gold license, then set ``ARM_PRODUCT_DEF``
    to point to ``/opt/armds-2020-1/gold.elmap``.
 
    .. note::
@@ -135,7 +135,7 @@ Intel oneAPI Toolkit
    The above will also change the python environment to the one used by the
    toolchain and might conflict with what Zephyr uses.
 
-#. Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``oneApi``.
+#. Set ``ZEPHYR_TOOLCHAIN_VARIANT`` to ``oneApi``.
 
 DesignWare ARC MetaWare Development Toolkit (MWDT)
 **************************************************
@@ -146,15 +146,15 @@ DesignWare ARC MetaWare Development Toolkit (MWDT)
 
 #. :ref:`Set these environment variables <env_vars>`:
 
-   - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``arcmwdt``.
-   - Set :envvar:`ARCMWDT_TOOLCHAIN_PATH` to the toolchain installation
-     directory. MWDT installation provides :envvar:`METAWARE_ROOT` so simply set
-     :envvar:`ARCMWDT_TOOLCHAIN_PATH` to ``$METAWARE_ROOT/../`` (Linux)
+   - Set ``ZEPHYR_TOOLCHAIN_VARIANT`` to ``arcmwdt``.
+   - Set ``ARCMWDT_TOOLCHAIN_PATH`` to the toolchain installation
+     directory. MWDT installation provides ``METAWARE_ROOT`` so simply set
+     ``ARCMWDT_TOOLCHAIN_PATH`` to ``$METAWARE_ROOT/../`` (Linux)
      or ``%METAWARE_ROOT%\..\`` (Windows)
 
 #. To check that you have set these variables correctly in your current
    environment, follow these example shell sessions (the
-   :envvar:`ARCMWDT_TOOLCHAIN_PATH` values may be different on your system):
+   ``ARCMWDT_TOOLCHAIN_PATH`` values may be different on your system):
 
    .. code-block:: console
 
@@ -195,12 +195,12 @@ You can build toolchains from source code using crosstool-NG.
 
 #. :ref:`Set these environment variables <env_vars>`:
 
-   - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xtools``.
-   - Set :envvar:`XTOOLS_TOOLCHAIN_PATH` to the toolchain build directory.
+   - Set ``ZEPHYR_TOOLCHAIN_VARIANT`` to ``xtools``.
+   - Set ``XTOOLS_TOOLCHAIN_PATH`` to the toolchain build directory.
 
 #. To check that you have set these variables correctly in your current
    environment, follow these example shell sessions (the
-   :envvar:`XTOOLS_TOOLCHAIN_PATH` values may be different on your system):
+   ``XTOOLS_TOOLCHAIN_PATH`` values may be different on your system):
 
    .. code-block:: console
 
