@@ -473,7 +473,11 @@ void lll_conn_isr_tx(void *param)
 	enum radio_end_evt_delay_state end_evt_delay;
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
+#if defined(CONFIG_BT_CTLR_PHY)
 	if (lll->phy_rx != PHY_CODED) {
+#else
+	if (1) {
+#endif /* CONFIG_BT_CTLR_PHY */
 		struct lll_df_conn_rx_params *df_rx_params;
 		struct lll_df_conn_rx_cfg *df_rx_cfg;
 
@@ -1021,9 +1025,11 @@ static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready, ui
 	struct lll_df_conn_rx_params *rx_params;
 	struct lll_df_conn_rx_cfg *rx_cfg;
 
+#if defined(CONFIG_BT_CTLR_PHY)
 	if (lll->phy_rx == PHY_CODED) {
 		return false;
 	}
+#endif /* CONFIG_BT_CTLR_PHY */
 
 	rx_cfg = &lll->df_rx_cfg;
 
