@@ -17,7 +17,7 @@ Requirements
 
 The board should support enabling PM. For a STM32 based target, it means that
 it should support a clock source alternative to Cortex Systick that can be used
-in core sleep states, as LPTIM (:ref:`dtbinding_st_stm32_lptim`).
+in core sleep states, as LPTIM (:dtcompatible:`st,stm32-lptim`).
 
 Building and Running
 ********************
