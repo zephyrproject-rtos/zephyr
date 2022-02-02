@@ -35,9 +35,9 @@ static struct bt_conn *default_conn;
 static const struct bt_le_conn_param conn_params = BT_LE_CONN_PARAM_INIT(
 	BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MAX, CONN_LATENCY, CONN_TIMEOUT);
 
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+#if defined(CONFIG_BT_DF_CTE_RX_AOA)
 static const uint8_t ant_patterns[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA };
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
+#endif /* CONFIG_BT_DF_CTE_RX_AOA */
 
 static void start_scan(void);
 
@@ -129,24 +129,24 @@ static void enable_cte_reqest(void)
 	int err;
 
 	const struct bt_df_conn_cte_rx_param cte_rx_params = {
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+#if defined(CONFIG_BT_DF_CTE_RX_AOA)
 		.cte_types = BT_DF_CTE_TYPE_ALL,
 		.slot_durations = 0x2,
 		.num_ant_ids = ARRAY_SIZE(ant_patterns),
 		.ant_ids = ant_patterns,
 #else
 		.cte_types = BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US,
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
+#endif /* CONFIG_BT_DF_CTE_RX_AOA */
 	};
 
 	const struct bt_df_conn_cte_req_params cte_req_params = {
 		.interval = CTE_REQ_INTERVAL,
 		.cte_length = CTE_LEN,
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+#if defined(CONFIG_BT_DF_CTE_RX_AOA)
 		.cte_type = BT_DF_CTE_TYPE_AOA,
 #else
 		.cte_type = BT_DF_CTE_TYPE_AOD_2US,
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
+#endif /* CONFIG_BT_DF_CTE_RX_AOA */
 	};
 
 	printk("Enable receiving of CTE...\n");

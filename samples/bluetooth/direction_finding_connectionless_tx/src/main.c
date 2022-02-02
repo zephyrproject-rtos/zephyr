@@ -47,13 +47,13 @@ static struct bt_le_per_adv_param per_adv_param = {
 	.options = BT_LE_ADV_OPT_USE_TX_POWER,
 };
 
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)
+#if defined(CONFIG_BT_DF_CTE_TX_AOD)
 static uint8_t ant_patterns[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA };
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
+#endif /* CONFIG_BT_DF_CTE_TX_AOD */
 
 struct bt_df_adv_cte_tx_param cte_params = { .cte_len = CTE_LEN,
 					     .cte_count = PER_ADV_EVENT_CTE_COUNT,
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)
+#if defined(CONFIG_BT_DF_CTE_TX_AOD)
 					     .cte_type = BT_DF_CTE_TYPE_AOD_2US,
 					     .num_ant_ids = ARRAY_SIZE(ant_patterns),
 					     .ant_ids = ant_patterns
@@ -61,7 +61,7 @@ struct bt_df_adv_cte_tx_param cte_params = { .cte_len = CTE_LEN,
 					     .cte_type = BT_DF_CTE_TYPE_AOA,
 					     .num_ant_ids = 0,
 					     .ant_ids = NULL
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
+#endif /* CONFIG_BT_DF_CTE_TX_AOD */
 };
 
 static void adv_sent_cb(struct bt_le_ext_adv *adv,
