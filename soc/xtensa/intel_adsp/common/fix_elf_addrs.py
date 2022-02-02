@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 # ADSP devices have their RAM regions mapped twice.  The first mapping
@@ -47,5 +47,5 @@ for s in fixup:
     # error (no --quiet option, no -Werror=no-whatever, nothing).
     # Just swallow the error stream for now pending rework to the
     # linker framework.
-    cmd = f"{objcopy_bin} --change-section-address {s}+{cache_off} {elffile} 2>/dev/null"
+    cmd = f"{objcopy_bin} --change-section-address {s}+{cache_off} {elffile} 2>{os.devnull}"
     os.system(cmd)
