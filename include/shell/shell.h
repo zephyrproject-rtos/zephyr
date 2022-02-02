@@ -416,7 +416,8 @@ struct shell_static_entry {
 
 /* Internal macro used for creating handlers for dictionary commands. */
 #define Z_SHELL_CMD_DICT_HANDLER_CREATE(_data, _handler)		\
-static int UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data))(	\
+static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),		\
+			GET_ARG_N(1, __DEBRACKET _data))(		\
 		const struct shell *shell, size_t argc, char **argv)	\
 {									\
 	return _handler(shell, argc, argv,				\
@@ -424,9 +425,10 @@ static int UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data))(	\
 }
 
 /* Internal macro used for creating dictionary commands. */
-#define SHELL_CMD_DICT_CREATE(_data)					\
+#define SHELL_CMD_DICT_CREATE(_data, _handler)				\
 	SHELL_CMD_ARG(GET_ARG_N(1, __DEBRACKET _data), NULL, NULL,	\
-		UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data)), 1, 0)
+		UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),	\
+			GET_ARG_N(1, __DEBRACKET _data)), 1, 0)
 
 /**
  * @brief Initializes shell dictionary commands.
@@ -462,7 +464,7 @@ static int UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data))(	\
 	FOR_EACH_FIXED_ARG(Z_SHELL_CMD_DICT_HANDLER_CREATE, (),		\
 			   _handler, __VA_ARGS__)			\
 	SHELL_STATIC_SUBCMD_SET_CREATE(_name,				\
-		FOR_EACH(SHELL_CMD_DICT_CREATE, (,), __VA_ARGS__),	\
+		FOR_EACH_FIXED_ARG(SHELL_CMD_DICT_CREATE, (,), _handler, __VA_ARGS__),	\
 		SHELL_SUBCMD_SET_END					\
 	)
 
