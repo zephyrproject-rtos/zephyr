@@ -146,6 +146,17 @@ typedef void (*bt_ready_cb_t)(int err);
 int bt_enable(bt_ready_cb_t cb);
 
 /**
+ * @brief Disable Bluetooth
+ *
+ * Disable Bluetooth. Can't be called before bt_enable has completed.
+ *
+ * Close and release HCI resources. Result is architecture dependent.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_disable(void);
+
+/**
  * @brief Set Bluetooth Device Name
  *
  * Set Bluetooth GAP Device Name.
