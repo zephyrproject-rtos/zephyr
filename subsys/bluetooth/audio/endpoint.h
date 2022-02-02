@@ -33,6 +33,7 @@ struct bt_audio_broadcast_sink;
 
 struct bt_audio_ep {
 	uint8_t  type;
+	uint8_t  dir;
 	uint16_t handle;
 	uint16_t cp_handle;
 	uint8_t  cig_id;

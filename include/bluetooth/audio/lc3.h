@@ -372,45 +372,25 @@ struct bt_codec_lc3_frame_len {
 /** @def BT_CODEC_LC3_QOS_7_5
  *  @brief Helper to declare LC3 codec QoS for 7.5ms interval
  */
-#define BT_CODEC_LC3_QOS_7_5(_dir, _framing, _sdu, _rtn, _latency, _pd) \
-	BT_CODEC_QOS(_dir, 7500u, _framing, BT_CODEC_QOS_2M, _sdu, _rtn, \
+#define BT_CODEC_LC3_QOS_7_5(_framing, _sdu, _rtn, _latency, _pd) \
+	BT_CODEC_QOS(7500u, _framing, BT_CODEC_QOS_2M, _sdu, _rtn, \
 		     _latency, _pd)
-/** @def BT_CODEC_LC3_QOS_7_5_IN_UNFRAMED
+/** @def BT_CODEC_LC3_QOS_7_5_UNFRAMED
  *  @brief Helper to declare LC3 codec QoS for 7.5ms interval unframed input
  */
-#define BT_CODEC_LC3_QOS_7_5_IN_UNFRAMED(_sdu, _rtn, _latency, _pd) \
-	BT_CODEC_QOS_IN_UNFRAMED(7500u, _sdu, _rtn, _latency, _pd)
-/** @def BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED
- *  @brief Helper to declare LC3 codec QoS for 7.5ms interval unframed output
- */
-#define BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(_sdu, _rtn, _latency, _pd) \
-	BT_CODEC_QOS_OUT_UNFRAMED(7500u, _sdu, _rtn, _latency, _pd)
-/** @def BT_CODEC_LC3_QOS_7_5_INOUT_UNFRAMED
- *  @brief Helper to declare LC3 codec QoS for 7.5ms interval unframed in/out
- */
-#define BT_CODEC_LC3_QOS_7_5_INOUT_UNFRAMED(_sdu, _rtn, _latency, _pd) \
-	BT_CODEC_QOS_INOUT_UNFRAMED(7500u, _sdu, _rtn, _latency, _pd)
+#define BT_CODEC_LC3_QOS_7_5_UNFRAMED(_sdu, _rtn, _latency, _pd) \
+	BT_CODEC_QOS_UNFRAMED(7500u, _sdu, _rtn, _latency, _pd)
 /** @def BT_CODEC_LC3_QOS_10
  *  @brief Helper to declare LC3 codec QoS for 10ms frame internal
  */
-#define BT_CODEC_LC3_QOS_10(_dir, _framing, _sdu, _rtn, _latency, _pd) \
-	BT_CODEC_QOS(_dir, 10000u, _framing, BT_CODEC_QOS_2M, _sdu, _rtn, \
+#define BT_CODEC_LC3_QOS_10(_framing, _sdu, _rtn, _latency, _pd) \
+	BT_CODEC_QOS(10000u, _framing, BT_CODEC_QOS_2M, _sdu, _rtn, \
 		     _latency, _pd)
-/** @def BT_CODEC_LC3_QOS_10_IN_UNFRAMED
+/** @def BT_CODEC_LC3_QOS_10_UNFRAMED
  *  @brief Helper to declare LC3 codec QoS for 10ms interval unframed input
  */
-#define BT_CODEC_LC3_QOS_10_IN_UNFRAMED(_sdu, _rtn, _latency, _pd) \
-	BT_CODEC_QOS_IN_UNFRAMED(10000u, _sdu, _rtn, _latency, _pd)
-/** @def BT_CODEC_LC3_QOS_10_OUT_UNFRAMED
- *  @brief Helper to declare LC3 codec QoS for 10ms interval unframed output
- */
-#define BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(_sdu, _rtn, _latency, _pd) \
-	BT_CODEC_QOS_OUT_UNFRAMED(10000u, _sdu, _rtn, _latency, _pd)
-/** @def BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED
- *  @brief Helper to declare LC3 codec QoS for 10ms interval unframed in/out
- */
-#define BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(_sdu, _rtn, _latency, _pd) \
-	BT_CODEC_QOS_INOUT_UNFRAMED(10000u, _sdu, _rtn, _latency, _pd)
+#define BT_CODEC_LC3_QOS_10_UNFRAMED(_sdu, _rtn, _latency, _pd) \
+	BT_CODEC_QOS_UNFRAMED(10000u, _sdu, _rtn, _latency, _pd)
 
 #ifdef __cplusplus
 }

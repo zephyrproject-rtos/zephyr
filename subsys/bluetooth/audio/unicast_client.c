@@ -130,7 +130,7 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 };
 
 static void unicast_client_ep_init(struct bt_audio_ep *ep, uint8_t type,
-				   uint16_t handle, uint8_t id)
+				   uint16_t handle, uint8_t id, uint8_t dir)
 {
 	BT_DBG("ep %p type 0x%02x handle 0x%04x id 0x%02x", ep, type, handle,
 	       id);
@@ -143,6 +143,7 @@ static void unicast_client_ep_init(struct bt_audio_ep *ep, uint8_t type,
 	ep->iso.qos = &ep->iso_qos;
 	ep->iso.qos->rx = &ep->iso_rx;
 	ep->iso.qos->tx = &ep->iso_tx;
+	ep->dir = dir;
 }
 
 static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
@@ -201,7 +202,7 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 
 		if (!ep->handle) {
 			unicast_client_ep_init(ep, BT_AUDIO_EP_REMOTE, handle,
-					       0x00);
+					       0x00, dir);
 			return ep;
 		}
 	}
