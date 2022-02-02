@@ -565,6 +565,12 @@ config BT_DF_CONNECTIONLESS_CTE_RX
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
+config BT_DF_CONNECTIONLESS_CTE_TX
+	bool "Enable support for transmission of CTE in connectionless mode"
+	help
+	  Enable support for transmission of Constant Tone Extension in
+	  connectionless mode.
+
 config BT_DF_CONNECTION_CTE_RX
 	bool "Enable support for receive of CTE in connection mode"
 	help
@@ -590,6 +596,22 @@ config BT_DF_CONNECTION_CTE_RSP
 	help
 	  Enable support for request of Constant Tone Extension in connection
 	  mode.
+
+config BT_DF_CTE_RX_AOA
+	bool "Enable antenna switching during CTE reception (AoA) feature"
+	depends on BT_DF_CONNECTIONLESS_CTE_RX || BT_DF_CONNECTION_CTE_RX
+	default y
+	help
+	  Enable support for antenna switching during CTE reception.
+	  Also known as Angle of Arrival mode.
+
+config BT_DF_CTE_TX_AOD
+	bool "Enable antenna switching during CTE transmission (AoD) feature"
+	depends on BT_DF_CONNECTIONLESS_CTE_TX || BT_DF_CONNECTION_CTE_TX
+	default y
+	help
+	  Enable support for antenna switching during CTE transmission.
+	  Also known as Angle of Departure mode.
 
 config BT_DEBUG_DF
 	bool "Bluetooth Direction Finding debug"
