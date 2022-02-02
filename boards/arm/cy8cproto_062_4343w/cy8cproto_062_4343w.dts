@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2021 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/psoc6/common/gpio_pins_def.h>
+#include <infineon/psoc6/mpns/CY8C624ABZI_S2D44.dtsi>
+#include "cy8cproto_062_4343w_common.dtsi"
+
+/ {
+	model = "cy8cproto_062_4343w with an Cypress PSoC™ 6 SoC";
+	compatible = "cy8cproto_062_4343w", "PSoC6";
+
+	aliases {
+		uart-5 = &uart5;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+	};
+};
+
+&uart5 {
+	status = "okay";
+	current-speed = <115200>;
+	rx-pin = <P5_0>;
+	tx-pin = <P5_1>;
+};

@@ -1,0 +1,20 @@
+[Device=CY8C624ABZI-S2D44]
+
+[Blocks]
+# WIFI
+# CYBSP_WIFI_SDIO
+sdhc[0]
+# CYBSP_WIFI_SDIO_D0
+ioss[0].port[2].pin[0]
+# CYBSP_WIFI_SDIO_D1
+ioss[0].port[2].pin[1]
+# CYBSP_WIFI_SDIO_D2
+ioss[0].port[2].pin[2]
+# CYBSP_WIFI_SDIO_D3
+ioss[0].port[2].pin[3]
+# CYBSP_WIFI_SDIO_CMD
+ioss[0].port[2].pin[4]
+# CYBSP_WIFI_SDIO_CLK
+ioss[0].port[2].pin[5]
+# CYBSP_WIFI_WL_REG_ON
+ioss[0].port[2].pin[6]
