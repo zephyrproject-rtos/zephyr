@@ -28,19 +28,16 @@ volatile struct {
  * debugger so we have to stage things carefully to ensure we only wake
  * up at the correct time.
  *
- * MPFS
- *
- * initial implementation which assumes there are CONFIG_MP_NUM_CPUS harts
- * which are numbered 1 to 4 as the E51 is hart 0 and we only support SMP
- * on the U54s...
+ * initial implementation which assumes any monitor hart is hart id 0 and
+ * SMP harts have contiguous hart IDs. CONFIG_SMP_BASE_CPU will have minimum
+ * value of 1 for systems with monitor hart and zero otherwise.
+ * 
  */
 
-#if defined(CONFIG_SOC_MPFS)
-/* we will index directly off of mhartid so need extra for E51 */
-volatile __noinit uint64_t hart_wake_flags[5 /* CONFIG_MP_NUM_CPUS + 1*/];
-#else
-volatile __noinit uint64_t hart_wake_flags[CONFIG_MP_NUM_CPUS];
-#endif
+#define WAKE_FLAG_COUNT (CONFIG_SMP_BASE_CPU + CONFIG_MP_NUM_CPUS)
+
+/* we will index directly off of mhartid so need to be careful... */
+volatile __noinit uint64_t hart_wake_flags[WAKE_FLAG_COUNT];
 
 volatile char *riscv_cpu_sp;
 /*
@@ -53,11 +50,8 @@ volatile _cpu_t *_curr_cpu[CONFIG_MP_NUM_CPUS];
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-#if defined(CONFIG_SOC_MPFS)
-	int hart_num = cpu_num + 1;
-#else
-	int hart_num = cpu_num; 
-#endif
+	int hart_num = cpu_num + CONFIG_SMP_BASE_CPU;
+
 	/* Used to avoid empty loops which can cause debugger issues
 	 * and also for retry count on interrupt to keep sending every now and again...
 	 */
@@ -131,11 +125,7 @@ void arch_sched_ipi(void)
      * if the target is current core, hardware will ignore it
      */
     for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-#if defined(CONFIG_SOC_MPFS)
-        RISCV_CLINT->MSIP[i + 1] = 0x01U;   /*raise soft interrupt for hart(x) where x== hart ID*/
-#else
-        RISCV_CLINT->MSIP[i] = 0x01U;   /*raise soft interrupt for hart(x) where x== hart ID*/
-#endif
+        RISCV_CLINT->MSIP[i + CONFIG_SMP_BASE_CPU] = 0x01U;   /*raise soft interrupt for hart(x) where x== hart ID*/
     }
 }
 

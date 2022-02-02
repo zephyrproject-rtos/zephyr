@@ -331,8 +331,8 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 	/* Assess whether floating-point registers need to be saved. */
 	csrr t0, mhartid
-#if defined(CONFIG_SOC_MPFS)
-	addi t0, t0, -1
+#if defined(CONFIG_SMP_BASE_CPU) && (0 != CONFIG_SMP_BASE_CPU)
+	addi t0, t0, -CONFIG_SMP_BASE_CPU
 #endif
     /* Set up t4, t5 and t6 to point to current thread, _kernel and _cpu[x] */
 	li t1, ___cpu_t_SIZEOF
@@ -349,7 +349,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	STORE_FP_CALLER_SAVED(sp)
 
 skip_store_fp_caller_saved:
-#endif
+#endif /* defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) */
 	/* Save MEPC register */
 	csrr t0, mepc
 	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
@@ -595,7 +595,7 @@ skip_load_fp_callee_saved:
 	LOAD_FP_CALLER_SAVED(sp)
 
 skip_load_fp_caller_saved_resched:
-#endif
+#endif /* defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) */
 	/* Restore caller-saved registers from thread stack */
 	LOAD_CALLER_SAVED()
 
@@ -622,7 +622,7 @@ no_reschedule:
 	LOAD_FP_CALLER_SAVED(sp)
 
 skip_load_fp_caller_saved:
-#endif
+#endif /* defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) */
 	/* Restore caller-saved registers from thread stack */
 	LOAD_CALLER_SAVED()
 
@@ -694,12 +694,12 @@ GTEXT(z_thread_mark_switched_in)
 GTEXT(z_thread_mark_switched_out)
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
-#endif
-#endif
+#endif /* CONFIG_TRACING */
+#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
 #ifdef CONFIG_IRQ_OFFLOAD
 GTEXT(_offload_routine)
-#endif
+#endif /* CONFIG_IRQ_OFFLOAD */
 
 #ifdef CONFIG_USERSPACE
 GTEXT(z_riscv_do_syscall)
@@ -707,11 +707,11 @@ GTEXT(z_riscv_configure_user_allowed_stack)
 GTEXT(z_interrupt_stacks)
 GTEXT(z_riscv_do_syscall_start)
 GTEXT(z_riscv_do_syscall_end)
-#endif
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_PMP_STACK_GUARD
 GTEXT(z_riscv_configure_stack_guard)
-#endif
+#endif /* CONFIG_PMP_STACK_GUARD */
 
 /* exports */
 GTEXT(__irq_wrapper)

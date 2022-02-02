@@ -10,7 +10,7 @@
 #include <arch/cpu.h>
 #if defined(CONFIG_SMP)
 #include <rv_smp_defs.h>
-#endif
+#endif /* CONFIG_SMP */
 /* exports */
 GTEXT(__initialize)
 GTEXT(__reset)
@@ -20,7 +20,7 @@ GTEXT(_PrepC)
 #if defined(CONFIG_SMP)
 GDATA(hart_wake_flags)
 GDATA(riscv_cpu_sp)
-#endif
+#endif /* CONFIG_SMP */
 
 #if CONFIG_INCLUDE_RESET_VECTOR
 SECTION_FUNC(reset, __reset)
@@ -43,35 +43,38 @@ SECTION_FUNC(TEXT, __initialize)
 
 #if CONFIG_SMP
     csrr a0, mhartid /* Who are we? */
-	/* First stage of wake up - we assume for MPFS that array has CONFIG_MP_NUM_CPUS + 1 */
+	/* First stage of wake up - we assume for MPFS and other systems with monitor hart 
+	 * that array has CONFIG_MP_NUM_CPUS + 1 */
 	slli a1, a0, 3
 	la a2, hart_wake_flags
 	add a2, a2, a1
 	li a1, RV_WAKE_INIT
 	sd a1, 0(a2)
-#endif	
-#if defined(CONFIG_SOC_MPFS) && defined(CONFIG_SMP)
+#if CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR
 /*
- * For MPFS SMP operation the e51 cannot be part of the SMP group
- * of harts as it is not the same as the U54s... 
- * Just loop for ever for now.
+ * For SMP operation the monitor hart cannot be part of the SMP group
+ * of harts as it is generally not the same as the application harts... 
+ * Just loop for ever for now if we get here.
  */
-	bnez a0, not_e51
-no_e51:
+	li a1, CONFIG_MONITOR_HART_ID
+	bne a0, a1, not_monitor_hart
+
+no_monitor_allowed:
 	/* Disable interrupts etc to try and keep things quiet */
 	csrw mstatus, zero
     csrw mie, zero
     csrw mip, zero
 	wfi
-	j no_e51
+	j no_monitor_allowed
 	
-not_e51:
-#endif
-#if defined(CONFIG_SOC_MPFS)
+not_monitor_hart:
+#endif	/* CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR */
+#endif	/* CONFIG_SMP */
+
     /*
      * Temporary step, zeroise PMPs in case random values cause issues...
      *
-     * MPFS has semi-random values in the registers after power up so this is
+     * RISC-V has semi-random values in the registers after power up so this is
      * a good idea unless you are booting from HSS etc which have already
      * setup up PMPs.
      */
@@ -123,62 +126,55 @@ not_super_capable:
 	 * all exception flags.
 	 */
 	fscsr x0, x0
-#endif
+#endif /* CONFIG_FPU */
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in z_interrupt_stacks with 0xAA */
 	la t0, z_interrupt_stacks
 #if CONFIG_SMP
 	li t1, CONFIG_ISR_STACK_SIZE * CONFIG_MP_NUM_CPUS
-#else
-	li t1, CONFIG_ISR_STACK_SIZE
-#endif
 	add t1, t1, t0
-
-#if CONFIG_SMP
-#ifdef CONFIG_BOARD_HART_TO_USE
-    li a1, CONFIG_BOARD_HART_TO_USE
-#else
-    li a1, 0
-#endif
+	/* Only do this once on the startup hart */
+    li a1, CONFIG_HART_TO_USE
     csrr a0, mhartid
     bne a0, a1, skip_stack_fill
-#endif
+#else /* CONFIG_SMP */
+	li t1, CONFIG_ISR_STACK_SIZE
+	add t1, t1, t0
+#endif /* CONFIG_SMP */
+
 	/* Populate z_interrupt_stacks with 0xaaaaaaaa */
 	li t2, 0xaaaaaaaa
 aa_loop:
 	sw t2, 0x00(t0)
 	addi t0, t0, 4
 	blt t0, t1, aa_loop
-#endif
+
+skip_stack_fill:
+#endif /* CONFIG_INIT_STACKS */
 
 	/*
 	 * Initially, setup stack pointer to
 	 * z_interrupt_stacks[cpu] + CONFIG_ISR_STACK_SIZE
 	 */
-skip_stack_fill:
 	la sp, z_interrupt_stacks
 	li t0, CONFIG_ISR_STACK_SIZE
 #if defined(CONFIG_SMP)
 	csrr a0, mhartid
-#if defined(CONFIG_SOC_MPFS)
-	addi a0, a0, -1
-#endif
+#if CONFIG_SMP_BASE_CPU != 0
+	addi a0, a0, -CONFIG_SMP_BASE_CPU
+#endif /* CONFIG_SMP_BASE_CPU != 0 */
 	mul a1, a0, t0
 	add sp, sp, a1
-#endif
+#endif /* CONFIG_SMP */
 	add sp, sp, t0
 
 	csrw mscratch, sp
 
 #ifdef CONFIG_WDOG_INIT
 	call _WdogInit
-#endif
+#endif /* CONFIG_WDOG_INIT */
 
-#ifdef CONFIG_BOARD_HART_TO_USE
-	li a1, CONFIG_BOARD_HART_TO_USE
-#else
-	li a1, 0
-#endif
+	li a1, CONFIG_HART_TO_USE
 	csrr a0, mhartid
 	beq a0, a1, boot_master_core
 
@@ -187,7 +183,7 @@ skip_stack_fill:
 	li a1, RV_WAKE_WAIT
 	sd a1, 0(a2)
 	li a0, RV_WAKE_GO
-#endif	
+#endif	/* CONFIG_SMP */
 	/*
 	 * Enable software interrupt
 	 */
@@ -204,22 +200,24 @@ loop_slave_core:
 	 */
 	li a1, RV_WAKE_DONE
 	sd a1, 0(a2)
-	
 	la t0, riscv_cpu_sp
 	ld t0, 0(t0)
 	addi sp, t0, 0
 	csrr a0, mhartid
-#if defined(CONFIG_SOC_MPFS)
-	addi a0, a0, -1
-#endif
+
+#if CONFIG_SMP_BASE_CPU != 0
+	addi a0, a0, -CONFIG_SMP_BASE_CPU /* Convert to 0 - n cpu number */
+#endif /* CONFIG_SMP_BASE_CPU != 0 */
+
 	csrw mstatus, zero
     csrw mie, zero
     csrw mip, zero
 	call z_riscv_secondary_start
 	
-#else
+#else	/* CONFIG_SMP */
 	j loop_slave_core
-#endif
+#endif	/* CONFIG_SMP */
+
 boot_master_core:
 	/*
 	 * Jump into C domain. _PrepC zeroes BSS, copies rw data into RAM,
