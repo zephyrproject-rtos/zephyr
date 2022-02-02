@@ -105,6 +105,26 @@ todo_include_todos = False
 
 numfig = True
 
+nitpick_ignore = [
+    # ignore C standard identifiers (they are not defined in Zephyr docs)
+    ("c:identifier", "FILE"),
+    ("c:identifier", "int8_t"),
+    ("c:identifier", "int16_t"),
+    ("c:identifier", "int32_t"),
+    ("c:identifier", "int64_t"),
+    ("c:identifier", "intptr_t"),
+    ("c:identifier", "off_t"),
+    ("c:identifier", "size_t"),
+    ("c:identifier", "ssize_t"),
+    ("c:identifier", "time_t"),
+    ("c:identifier", "uint8_t"),
+    ("c:identifier", "uint16_t"),
+    ("c:identifier", "uint32_t"),
+    ("c:identifier", "uint64_t"),
+    ("c:identifier", "uintptr_t"),
+    ("c:identifier", "va_list"),
+]
+
 rst_epilog = """
 .. include:: /substitutions.txt
 """
