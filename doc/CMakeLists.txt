@@ -14,6 +14,7 @@ message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
 set(SPHINXOPTS "-j auto" CACHE STRING "Default Sphinx Options")
 set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
+set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
 
@@ -170,10 +171,14 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_KCONFIG_RES
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
 
-set(DTS_ROOT_ARGS)
+set(DTS_ARGS)
 foreach(root ${DTS_ROOTS})
-  list(APPEND DTS_ROOT_ARGS --dts-root ${root})
+  list(APPEND DTS_ARGS --dts-root ${root})
 endforeach()
+
+if(DT_TURBO_MODE)
+  list(APPEND DTS_ARGS --turbo-mode)
+endif()
 
 add_custom_target(
   devicetree
@@ -182,7 +187,7 @@ add_custom_target(
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
     --vendor-prefixes ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt
-    ${DTS_ROOT_ARGS}
+    ${DTS_ARGS}
     ${DOCS_SRC_DIR}/reference/devicetree
   VERBATIM
   USES_TERMINAL
