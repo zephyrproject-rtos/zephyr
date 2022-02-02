@@ -85,6 +85,13 @@ Removed APIs in this release
 * Removed ``flash_write_protection_set()`` along with the flash write protection
   implementation handler.
 
+* Removed ``CAN_BUS_UNKNOWN`` and changed the signature of
+  :c:func:`can_get_state` to return an error code instead.
+
+* Removed ``DT_CHOSEN_ZEPHYR_CANBUS_LABEL`` in favor of utilizing
+  :c:macro:`DEVICE_DT_GET`.
+
+
 Deprecated in this release
 ==========================
 
@@ -96,6 +103,26 @@ Deprecated in this release
   :c:macro:`SYS_INIT`.
 * :c:func:`device_usable_check` is deprecated in favor of utilizing
   :c:func:`device_is_ready`.
+* Custom CAN return codes (:c:macro:`CAN_TX_OK`, :c:macro:`CAN_TX_ERR`,
+  :c:macro:`CAN_TX_ARB_LOST`, :c:macro:`CAN_TX_BUS_OFF`,
+  :c:macro:`CAN_TX_UNKNOWN`, :c:macro:`CAN_TX_EINVAL`,
+  :c:macro:`CAN_NO_FREE_FILTER`, and :c:macro:`CAN_TIMEOUT`) are deprecated in
+  favor of utilizing standard errno error codes.
+* :c:func:`can_configure` is deprecated in favor of utilizing
+  :c:func:`can_set_bitrate` and :c:func:`can_set_mode`.
+* :c:func:`can_attach_workq` is deprecated in favor of utilizing
+  :c:func:`can_add_rx_filter_msgq` and :c:func:`k_work_poll_submit`.
+* :c:func:`can_attach_isr` is is deprecated and replaced by
+  :c:func:`can_add_rx_filter`.
+* :c:macro:`CAN_DEFINE_MSGQ` is deprecated and replaced by
+  :c:macro:`CAN_MSGQ_DEFINE`.
+* :c:func:`can_attach_msgq` is deprecated and replaced by
+  :c:func:`can_add_rx_filter_msgq`.
+* :c:func:`can_detach` is deprecated and replaced by
+  :c:func:`can_remove_rx_filter`.
+* :c:func:`can_register_state_change_isr` is deprecated and replaced by
+  :c:func:`can_set_state_change_callback`.
+* :c:func:`can_write` is deprecated in favor of utilizing :c:func:`can_send`.
 
 Stable API changes in this release
 ==================================
@@ -134,6 +161,11 @@ New APIs in this release
     * :c:macro:`DT_INST_ENUM_IDX`
     * :c:macro:`DT_INST_ENUM_IDX_OR`
     * :c:macro:`DT_INST_PARENT`
+
+* CAN
+
+  * Added :c:func:`can_get_max_filters` for retrieving the maximum number of RX
+    filters support by a CAN controller device.
 
 Kernel
 ******
@@ -250,8 +282,18 @@ Drivers and Sensors
 
 * CAN
 
-  * Add Atmel SAM Bosch m_can CAN-FD Driver
-  * Added LPCXpresso support for MCAN
+  * Renamed ``zephyr,can-primary`` chosen property to ``zephyr,canbus``.
+  * Added :c:macro:`CAN_ERROR_WARNING` CAN controller state.
+  * Added Atmel SAM Bosch M_CAN CAN-FD driver.
+  * Added NXP LPCXpresso Bosch M_CAN CAN-FD driver.
+  * Added ST STM32H7 Bosch M_CAN CAN-FD driver.
+  * Rework transmission error handling the NXP FlexCAN driver to automatically
+    retry transmission in case or arbitration lost or missing acknowledge and
+    to fail early in :c:func:`can_send` if in :c:macro:`CAN_BUS_OFF` state.
+  * Added support for disabling automatic retransmissions ("one-shot" mode") to
+    the ST STM32 bxCAN driver.
+  * Converted the emulated CAN loopback driver to be configured through
+    devicetree instead of Kconfig.
 
 * Clock Control
 
