@@ -9,7 +9,7 @@ tests:
     filter: not CONFIG_SOC_FAMILY_STM32
     harness_config:
       fixture: spi_loopback
-  driver.spi.loopback.internal:
+  drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
   drivers.mcux_dspi_dma.loopback:
     tags: dma
