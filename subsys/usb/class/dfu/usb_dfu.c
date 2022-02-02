@@ -65,6 +65,15 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 #define INTERMITTENT_CHECK_DELAY	50
 
+#if IS_ENABLED(CONFIG_USB_DFU_ENABLE_UPLOAD)
+#define DFU_DESC_ATTRIBUTES		(DFU_ATTR_CAN_DNLOAD | \
+					 DFU_ATTR_CAN_UPLOAD | \
+					 DFU_ATTR_MANIFESTATION_TOLERANT)
+#else
+#define DFU_DESC_ATTRIBUTES		(DFU_ATTR_CAN_DNLOAD | \
+					 DFU_ATTR_MANIFESTATION_TOLERANT)
+#endif
+
 static struct k_poll_event dfu_event;
 static struct k_poll_signal dfu_signal;
 static struct k_timer dfu_timer;
@@ -100,9 +109,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_dfu_config dfu_cfg = {
 	.dfu_descr = {
 		.bLength = sizeof(struct dfu_runtime_descriptor),
 		.bDescriptorType = DFU_FUNC_DESC,
-		.bmAttributes = DFU_ATTR_CAN_DNLOAD |
-				DFU_ATTR_CAN_UPLOAD |
-				DFU_ATTR_MANIFESTATION_TOLERANT,
+		.bmAttributes = DFU_DESC_ATTRIBUTES,
 		.wDetachTimeOut =
 			sys_cpu_to_le16(CONFIG_USB_DFU_DETACH_TIMEOUT),
 		.wTransferSize =
@@ -191,9 +198,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 		.dfu_descr = {
 			.bLength = sizeof(struct dfu_runtime_descriptor),
 			.bDescriptorType = DFU_FUNC_DESC,
-			.bmAttributes = DFU_ATTR_CAN_DNLOAD |
-					DFU_ATTR_CAN_UPLOAD |
-					DFU_ATTR_MANIFESTATION_TOLERANT,
+			.bmAttributes = DFU_DESC_ATTRIBUTES,
 			.wDetachTimeOut =
 				sys_cpu_to_le16(CONFIG_USB_DFU_DETACH_TIMEOUT),
 			.wTransferSize =
@@ -426,6 +431,13 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 	case DFU_UPLOAD:
 		LOG_DBG("DFU_UPLOAD block %d, len %d, state %d",
 			setup->wValue, setup->wLength, dfu_data.state);
+
+		if (!IS_ENABLED(CONFIG_USB_DFU_ENABLE_UPLOAD)) {
+			LOG_WRN("Firmware uploading is not enabled");
+			dfu_data.status = errSTALLEDPKT;
+			dfu_data.state = dfuERROR;
+			return -ENOTSUP;
+		}
 
 		if (dfu_check_app_state()) {
 			return -EINVAL;
