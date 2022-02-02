@@ -2916,9 +2916,14 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 
 	lll = iq_report->hdr.rx_ftr.param;
 
+#if defined(CONFIG_BT_CTLR_PHY)
 	phy_rx = lll->phy_rx;
+
 	/* Make sure the report is generated for connection on PHY UNCODED */
 	LL_ASSERT(phy_rx != PHY_CODED);
+#else
+	phy_rx = PHY_1M;
+#endif /* CONFIG_BT_CTLR_PHY */
 
 	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
 	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporing

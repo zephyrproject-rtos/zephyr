@@ -218,7 +218,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 	enum radio_end_evt_delay_state end_evt_delay;
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
+#if defined(CONFIG_BT_CTLR_PHY)
 	if (lll->phy_rx != PHY_CODED) {
+#else
+	if (1) {
+#endif /* CONFIG_BT_CTLR_PHY */
 		df_rx_cfg = &lll->df_rx_cfg;
 		df_rx_params = dbuf_latest_get(&df_rx_cfg->hdr, NULL);
 
