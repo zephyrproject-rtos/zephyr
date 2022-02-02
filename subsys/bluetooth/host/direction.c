@@ -53,8 +53,8 @@ static bool valid_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
 static bool valid_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param *params);
-static void
-prepare_cl_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_le_per_adv_sync *sync,
+static int
+prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_sync *sync,
 				    const struct bt_df_per_adv_sync_cte_rx_param *params,
 				    bool enable);
 static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enable,
@@ -62,9 +62,9 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-static void prepare_conn_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_conn *conn,
-						  const struct bt_df_conn_cte_rx_param *params,
-						  bool enable);
+static int prepare_conn_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_conn *conn,
+						 const struct bt_df_conn_cte_rx_param *params,
+						 bool enable);
 static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 					 const struct bt_df_conn_cte_rx_param *params);
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
@@ -273,28 +273,44 @@ static bool valid_cl_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param 
 	return true;
 }
 
-static void
-prepare_cl_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_le_per_adv_sync *sync,
+static int
+prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_sync *sync,
 				    const struct bt_df_per_adv_sync_cte_rx_param *params,
 				    bool enable)
 {
 	struct bt_hci_cp_le_set_cl_cte_sampling_enable *cp;
-	const uint8_t *ant_ids;
+	uint8_t switch_pattern_len;
 
-	cp = net_buf_add(buf, sizeof(*cp));
+	if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
+		switch_pattern_len = cp->switch_pattern_len;
+	} else {
+		switch_pattern_len = ARRAY_SIZE(df_dummy_switch_pattern);
+	}
+
+	/* If CTE Rx is enabled, command parameters total length must include
+	 * antenna ids, so command size if extended by num_and_ids.
+	 */
+	*buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE,
+				 (sizeof(struct bt_hci_cp_le_set_cl_cte_sampling_enable) +
+				 (enable ? switch_pattern_len : 0)));
+	if (!(*buf)) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(*buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
 	cp->sync_handle = sys_cpu_to_le16(sync->handle);
 	cp->sampling_enable = enable ? 1 : 0;
 
 	if (enable) {
+		const uint8_t *ant_ids;
 		uint8_t *dest_ant_ids;
 
 		cp->max_sampled_cte = params->max_cte_count;
 
 		if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
 			cp->slot_durations = params->slot_durations;
-			cp->switch_pattern_len = params->num_ant_ids;
 			ant_ids = params->ant_ids;
 		} else {
 			/* Those values are put here due to constraints from HCI command
@@ -303,13 +319,15 @@ prepare_cl_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_le_per_adv_sy
 			 * receive for AoD mode (e.g. device equipped with single antenna).
 			 */
 			cp->slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US;
-			cp->switch_pattern_len = ARRAY_SIZE(df_dummy_switch_pattern);
 			ant_ids = &df_dummy_switch_pattern[0];
 		}
 
-		dest_ant_ids =	net_buf_add(buf, params->num_ant_ids);
+		cp->switch_pattern_len = switch_pattern_len;
+		dest_ant_ids = net_buf_add(*buf, params->num_ant_ids);
 		memcpy(dest_ant_ids, ant_ids, cp->switch_pattern_len);
 	}
+
+	return 0;
 }
 
 static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enable,
@@ -326,17 +344,10 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 		}
 	}
 
-	/* If CTE Rx is enabled, command parameters total length must include
-	 * antenna ids, so command size if extended by num_and_ids.
-	 */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE,
-				(sizeof(struct bt_hci_cp_le_set_cl_cte_sampling_enable) +
-				 (enable ? params->num_ant_ids : 0)));
-	if (!buf) {
-		return -ENOBUFS;
+	err = prepare_cl_cte_rx_enable_cmd_params(&buf, sync, params, enable);
+	if (err) {
+		return err;
 	}
-
-	prepare_cl_cte_rx_enable_cmd_params(buf, sync, params, enable);
 
 	bt_hci_cmd_state_set_init(buf, &state, sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED, enable);
 
@@ -503,40 +514,60 @@ static int hci_df_set_conn_cte_tx_param(struct bt_conn *conn,
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_TX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-static void prepare_conn_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_conn *conn,
-						  const struct bt_df_conn_cte_rx_param *params,
-						  bool enable)
+static int prepare_conn_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_conn *conn,
+						 const struct bt_df_conn_cte_rx_param *params,
+						 bool enable)
 {
 	struct bt_hci_cp_le_set_conn_cte_rx_params *cp;
-	const uint8_t *ant_ids;
+	uint8_t switch_pattern_len;
 
-	cp = net_buf_add(buf, sizeof(*cp));
+	if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
+		switch_pattern_len = cp->switch_pattern_len;
+	} else {
+		switch_pattern_len = ARRAY_SIZE(df_dummy_switch_pattern);
+	}
+
+	/* If CTE Rx is enabled, command parameters total length must include
+	 * antenna ids, so command size if extended by num_and_ids.
+	 */
+	*buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS,
+				 (sizeof(struct bt_hci_cp_le_set_conn_cte_rx_params) +
+				 (enable ? switch_pattern_len : 0)));
+	if (!(*buf)) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(*buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->sampling_enable = enable ? 1 : 0;
 
 	if (enable) {
+		const uint8_t *ant_ids;
 		uint8_t *dest_ant_ids;
 
 		if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
 			cp->slot_durations = params->slot_durations;
-			cp->switch_pattern_len = params->num_ant_ids;
 			ant_ids = params->ant_ids;
 		} else {
 			/* Those values are put here due to constraints from HCI command
 			 * specification: Bluetooth Core Spec. 5.3 Vol 4,Part E, sec 7.8.85.
 			 * There is no right way to successfully send the command to enable CTE
 			 * receive for AoD mode (e.g. device equipped with single antenna).
+			 * There is no CTE type in the parameters list, so controller is forced
+			 * to check correctness of all parameters always.
 			 */
 			cp->slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US;
-			cp->switch_pattern_len = ARRAY_SIZE(df_dummy_switch_pattern);
 			ant_ids = &df_dummy_switch_pattern[0];
 		}
 
-		dest_ant_ids = net_buf_add(buf, cp->switch_pattern_len);
+		cp->switch_pattern_len = switch_pattern_len;
+		dest_ant_ids = net_buf_add(*buf, cp->switch_pattern_len);
 		(void)memcpy(dest_ant_ids, ant_ids, cp->switch_pattern_len);
 	}
+
+	return 0;
 }
 
 static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
@@ -554,17 +585,10 @@ static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 		}
 	}
 
-	/* If CTE Rx is enabled, command parameters total length must include
-	 * antenna ids, so command size if extended by num_and_ids.
-	 */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS,
-				(sizeof(struct bt_hci_rp_le_set_conn_cte_rx_params) +
-				 (enable ? params->num_ant_ids : 0)));
-	if (!buf) {
-		return -ENOBUFS;
+	err = prepare_conn_cte_rx_enable_cmd_params(&buf, conn, params, enable);
+	if (err) {
+		return err;
 	}
-
-	prepare_conn_cte_rx_enable_cmd_params(buf, conn, params, enable);
 
 	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_RX_ENABLED, enable);
 
