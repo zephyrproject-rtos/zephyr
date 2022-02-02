@@ -311,6 +311,11 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
+	/* read non-zero size */
+	if (!size) {
+		return 0;
+	}
+
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_READ,
 		.Address = addr,
@@ -357,6 +362,11 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 		LOG_DBG("Error: address or size exceeds expected values: "
 			"addr 0x%lx, size %zu", (long)addr, size);
 		return -EINVAL;
+	}
+
+	/* write non-zero size */
+	if (!size) {
+		return 0;
 	}
 
 	QSPI_CommandTypeDef cmd_write_en = {
@@ -427,6 +437,11 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 		LOG_DBG("Error: address or size exceeds expected values: "
 			"addr 0x%lx, size %zu", (long)addr, size);
 		return -EINVAL;
+	}
+
+	/* erase non-zero size */
+	if (!size) {
+		return 0;
 	}
 
 	QSPI_CommandTypeDef cmd_write_en = {
