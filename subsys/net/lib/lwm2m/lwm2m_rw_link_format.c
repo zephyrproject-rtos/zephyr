@@ -436,6 +436,55 @@ static int put_res_corelink(struct lwm2m_output_context *out,
 	return len;
 }
 
+static int put_res_inst_corelink(struct lwm2m_output_context *out,
+				 const struct lwm2m_obj_path *path,
+				 struct link_format_out_formatter_data *fd)
+{
+	char obj_buf[CORELINK_BUF_SIZE];
+	int len = 0;
+	int ret;
+
+	if (fd->mode != LINK_FORMAT_MODE_DISCOVERY) {
+		/* Report resources instances only in device management
+		 * discovery.
+		 */
+		return 0;
+	}
+
+	ret = snprintk(obj_buf, sizeof(obj_buf), "</%u/%u/%u/%u>", path->obj_id,
+		       path->obj_inst_id, path->res_id, path->res_inst_id);
+	if (ret < 0 || ret >= sizeof(obj_buf)) {
+		return -ENOMEM;
+	}
+
+	len += ret;
+
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), obj_buf, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Report resource instance attrs only when resource was specified. */
+	if (fd->request_level == LWM2M_PATH_LEVEL_RESOURCE) {
+		struct lwm2m_engine_res_inst *res_inst =
+					lwm2m_engine_get_res_inst(path);
+
+		if (res_inst == NULL) {
+			return -EINVAL;
+		}
+
+		ret = put_corelink_attributes(out, res_inst, obj_buf,
+					      sizeof(obj_buf));
+		if (ret < 0) {
+			return ret;
+		}
+
+		len += ret;
+	}
+
+	return len;
+}
+
 static int put_corelink(struct lwm2m_output_context *out,
 			const struct lwm2m_obj_path *path)
 {
@@ -486,6 +535,19 @@ static int put_corelink(struct lwm2m_output_context *out,
 
 		len += ret;
 		break;
+
+	case LWM2M_PATH_LEVEL_RESOURCE_INST:
+		if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
+			ret = put_res_inst_corelink(out, path, fd);
+			if (ret < 0) {
+				return ret;
+			}
+
+			len += ret;
+			break;
+		}
+
+		__fallthrough;
 
 	default:
 		LOG_ERR("Invalid corelink path level: %d", path->level);
