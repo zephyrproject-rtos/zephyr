@@ -558,6 +558,8 @@ MCUboot
 Trusted Firmware-m
 ******************
 
+* Updated TF-M to 1.5.0 release, with a handful of additional cherry-picked
+  commits.
 
 Documentation
 *************
