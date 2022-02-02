@@ -1,0 +1,78 @@
+# Copyright (c) 2021, Cypress
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 UART
+
+compatible: "infineon,mtbhal-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      required: true
+
+    tx-pin:
+      type: int
+      description: TX pin
+      required: true
+
+    rx-pin:
+      type: int
+      description: RX pin
+      required: true
+
+    rts-pin:
+      type: int
+      description: RTS pin
+      required: false
+      default: 0xffff
+
+    cts-pin:
+      type: int
+      description: CTS pin
+      required: false
+      default: 0xffff
+
+    current-speed:
+      type: int
+      required: false
+      description: Initial baud rate setting for UART
+      default: 115200
+
+
+    parity:
+      required: false
+      type: string
+      description: |
+        Configures the parity of the adapter. Enumeration id 0 for none, 1 for odd
+        and 2 for even parity. Default to none if not specified.
+      enum:
+        - "none"
+        - "odd"
+        - "even"
+      default: "none"
+
+    stop_bits:
+      required: false
+      type: int
+      description: |
+        The number of stop bits, refer to uart_config_stop_bits
+      default: 1
+
+    data_bits:
+      required: false
+      type: int
+      description: |
+        The number of data bits:
+        for 8 use 3 (UART_CFG_DATA_BITS_8),
+        for 9 use 4 (UART_CFG_DATA_BITS_9),
+        refer to uart_config_data_bits. 
+      default: 3
