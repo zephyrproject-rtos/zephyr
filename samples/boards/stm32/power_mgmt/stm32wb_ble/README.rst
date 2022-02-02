@@ -11,6 +11,9 @@ Zephyr power management enabled (:kconfig:option:`CONFIG_PM`).
 
 After startup, a first 2 seconds beacon is performed, 1 second break and
 beacon is started again.
+BLE link is then disabled and started up again after 2 seconds, then same
+beacon sequence happens.
+
 Finally, platform shutdown is triggered. It can be restarted by pressing the
 board reset button.
 
