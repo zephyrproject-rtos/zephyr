@@ -389,6 +389,36 @@ static void test_max_argc(void)
 	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12", -ENOEXEC);
 }
 
+
+static int cmd_handler_dict_1(const struct shell *sh, size_t argc, char **argv, void *data)
+{
+	int n = (intptr_t)data;
+
+	return n;
+}
+
+static int cmd_handler_dict_2(const struct shell *sh, size_t argc, char **argv, void *data)
+{
+	int n = (intptr_t)data;
+
+	return n + n;
+}
+
+SHELL_SUBCMD_DICT_SET_CREATE(dict1, cmd_handler_dict_1, (one, 1), (two, 2));
+SHELL_SUBCMD_DICT_SET_CREATE(dict2, cmd_handler_dict_2, (one, 1), (two, 2));
+
+SHELL_CMD_REGISTER(dict1, &dict1, NULL, NULL);
+SHELL_CMD_REGISTER(dict2, &dict2, NULL, NULL);
+
+static void test_cmd_dict(void)
+{
+	test_shell_execute_cmd("dict1 one", 1);
+	test_shell_execute_cmd("dict1 two", 2);
+
+	test_shell_execute_cmd("dict2 one", 2);
+	test_shell_execute_cmd("dict2 two", 4);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(shell_test_suite,
@@ -404,7 +434,8 @@ void test_main(void)
 			ztest_unit_test(test_shell_fprintf),
 			ztest_unit_test(test_set_root_cmd),
 			ztest_unit_test(test_raw_arg),
-			ztest_unit_test(test_max_argc)
+			ztest_unit_test(test_max_argc),
+			ztest_unit_test(test_cmd_dict)
 			);
 
 	/* Let the shell backend initialize. */
