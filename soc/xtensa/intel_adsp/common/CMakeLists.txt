@@ -1,6 +1,6 @@
 # Intel CAVS SoC family CMake file
 #
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_interface_library_named(INTEL_ADSP_COMMON)
@@ -29,6 +29,12 @@ target_link_libraries(INTEL_ADSP_COMMON INTERFACE intel_adsp_common)
 set(ELF_FIX ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/fix_elf_addrs.py)
 set(KERNEL_REMAPPED ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_NAME}-remapped.elf)
 set(EXTMAN ${CMAKE_BINARY_DIR}/zephyr/extman.bin)
+
+if(${CMAKE_HOST_WIN32})
+    set(NULL_FILE nul)
+elseif(${CMAKE_HOST_UNIX})
+    set(NULL_FILE /dev/null)
+endif()
 
 # Generate rimage modules from the base kernel ELF file.  Note the
 # warning squashing on the objcopy steps.  Binutils has a misfeature
@@ -68,7 +74,7 @@ add_custom_target(
       --only-section .module.boot
       --set-section-flags .module.boot=noload,readonly
       --rename-section .module.boot=.module
-      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/boot.mod 2>/dev/null
+      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/boot.mod 2>${NULL_FILE}
 
   # Remove .fw_metadata here...
   COMMAND ${CMAKE_OBJCOPY}
@@ -80,12 +86,12 @@ add_custom_target(
       --set-section-flags .static_uuid_entries=noload,readonly
       --set-section-flags .static_log_entries=noload,readonly
       --rename-section .module.main=.module
-      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>/dev/null
+      ${KERNEL_REMAPPED} ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>${NULL_FILE}
 
   # ...and copy it back in
   COMMAND ${CMAKE_OBJCOPY}
       --add-section .fw_metadata=${EXTMAN}
       --set-section-flags .fw_metadata=noload,readonly
       ${CMAKE_BINARY_DIR}/zephyr/main.mod
-      ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>/dev/null
+      ${CMAKE_BINARY_DIR}/zephyr/main.mod 2>${NULL_FILE}
 )
