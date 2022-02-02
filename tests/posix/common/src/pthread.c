@@ -97,7 +97,7 @@ void *thread_top_exec(void *p1)
 		 * scheduled and wait on cvar0.
 		 */
 		if (!(id == 0 && i == 0)) {
-			pthread_cond_wait(&cvar0, &lock);
+			zassert_equal(0, pthread_cond_wait(&cvar0, &lock), "");
 		} else {
 			pthread_mutex_unlock(&lock);
 			usleep(USEC_PER_MSEC * 500U);
