@@ -2855,6 +2855,60 @@ function(dt_prop var)
   endif()
 endfunction()
 
+# Usage:
+#
+#   dt_comp_path(<var> COMPATIBLE <compatible> [INDEX <idx>])
+#
+# Get a list of paths for the nodes with the given compatible. The value will
+# be returned in the <var> parameter.
+# <var> will be undefined if no such compatible exists.
+#
+# For details and considerations about the format of <path> and the returned
+# parameter refer to dt_prop().
+#
+# <var>                  : Return variable where the property value will be stored
+# COMPATIBLE <compatible>: Compatible for which the list of paths should be
+#                          returned, as it appears in the DTS source
+# INDEX <idx>            : Optional index when retrieving a value in an array property
+
+function(dt_comp_path var)
+  set(req_single_args "COMPATIBLE")
+  set(single_args "INDEX")
+  cmake_parse_arguments(DT_COMP "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  if(${ARGV0} IN_LIST req_single_args)
+    message(FATAL_ERROR "dt_comp_path(${ARGV0} ...) missing return parameter.")
+  endif()
+
+  foreach(arg ${req_single_args})
+    if(NOT DEFINED DT_COMP_${arg})
+      message(FATAL_ERROR "dt_comp_path(${ARGV0} ...) "
+                          "missing required argument: ${arg}"
+      )
+    endif()
+  endforeach()
+
+  get_property(exists TARGET devicetree_target
+      PROPERTY "DT_COMP|${DT_COMP_COMPATIBLE}"
+      SET
+  )
+
+  if(NOT exists)
+    set(${var} PARENT_SCOPE)
+    return()
+  endif()
+
+  get_target_property(val devicetree_target
+      "DT_COMP|${DT_COMP_COMPATIBLE}"
+  )
+
+  if(DEFINED DT_COMP_INDEX)
+    list(GET val ${DT_COMP_INDEX} element)
+    set(${var} "${element}" PARENT_SCOPE)
+  else()
+    set(${var} "${val}" PARENT_SCOPE)
+  endif()
+endfunction()
 
 # Usage:
 #   dt_num_regs(<var> PATH <path>)
