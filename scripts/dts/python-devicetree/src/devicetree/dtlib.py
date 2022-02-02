@@ -909,6 +909,11 @@ class DT:
                     self._parse_error("no root node defined")
                 return
 
+            elif tok.id == _T.DTS_V1:
+                # Overlay files may start with /dts-v1/; also, so allow it
+                # anywhere in the preprocessed file.
+                self._expect_token(";")
+
             else:
                 self._parse_error("expected '/' or label reference (&foo)")
 
