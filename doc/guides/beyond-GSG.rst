@@ -24,7 +24,7 @@ documented throughout the instructions.
 See `Installing Packages`_ in the Python Packaging User Guide for more
 information about pip\ [#pip]_, including `information on -\\-user`_.
 
-- On Linux, make sure ``~/.local/bin`` is at the front of your :envvar:`PATH`
+- On Linux, make sure ``~/.local/bin`` is at the front of your ``PATH``
   :ref:`environment variable <env_vars>`, or programs installed with ``--user``
   won't be found. Installing with ``--user`` avoids conflicts between pip
   and the system package manager, and is the default on Debian-based
@@ -72,7 +72,7 @@ extracting a zip archive, etc.
 
 You configure the Zephyr build system to use a specific toolchain by
 setting :ref:`environment variables <env_vars>` such as
-:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to a supported value, along with
+``ZEPHYR_TOOLCHAIN_VARIANT`` to a supported value, along with
 additional variable(s) specific to the toolchain variant.
 
 While the Zephyr SDK includes standard tool chains for all supported
@@ -158,7 +158,7 @@ supported by a CMake file with content like this:
    set(k64f_BOARD_ALIAS frdm_k64f)
    set(sltb004a_BOARD_ALIAS efr32mg_sltb004a)
 
-and specifying its location in :envvar:`ZEPHYR_BOARD_ALIASES`.  This
+and specifying its location in ``ZEPHYR_BOARD_ALIASES``.  This
 enables use of aliases ``pca10028`` in contexts like
 ``cmake -DBOARD=pca10028`` and ``west -b pca10028``.
 

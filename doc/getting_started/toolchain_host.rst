@@ -7,6 +7,6 @@ In some specific configurations, like when building for non-MCU x86 targets on
 a Linux host, you may be able to re-use the native development tools provided
 by your operating system.
 
-To use your host gcc, set the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`
+To use your host gcc, set the ``ZEPHYR_TOOLCHAIN_VARIANT``
 :ref:`environment variable <env_vars>` to ``host``. To use clang, set
-:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``llvm``.
+``ZEPHYR_TOOLCHAIN_VARIANT`` to ``llvm``.

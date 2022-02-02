@@ -170,7 +170,7 @@ automatically generate a :file:`zephyr.vhd` file suitable for initialising the
 internal instruction memory of the NEORV32.
 
 In order for the build system to automatically detect the ``image_gen`` binary
-it needs to be in the :envvar:`PATH` environment variable. If not, the path
+it needs to be in the ``PATH`` environment variable. If not, the path
 can be passed at build time:
 
 .. zephyr-app-commands::

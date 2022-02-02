@@ -53,7 +53,7 @@ topdir
   The topdir contains the :file:`.west` directory. When west needs to find
   the topdir, it searches for :file:`.west`, and uses its parent directory.
   The search starts from the current working directory (and starts again from
-  the location in the :envvar:`ZEPHYR_BASE` environment variable as a
+  the location in the ``ZEPHYR_BASE`` environment variable as a
   fallback if that fails).
 
 configuration file

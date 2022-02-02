@@ -138,7 +138,7 @@ The current minimum required version for the main dependencies are:
 
       These instructions rely on `Chocolatey`_. If Chocolatey isn't an option,
       you can install dependencies from their respective websites and ensure
-      the command line tools are on your :envvar:`PATH` :ref:`environment
+      the command line tools are on your ``PATH`` :ref:`environment
       variable <env_vars>`.
 
       |p|
@@ -201,7 +201,7 @@ reason it is suggested to use `Python virtual environments`_.
          .. group-tab:: Install globally
 
             #. Install west, and make sure :file:`~/.local/bin` is on your
-               :envvar:`PATH` :ref:`environment variable <env_vars>`:
+               ``PATH`` :ref:`environment variable <env_vars>`:
 
                .. code-block:: bash
 
@@ -527,7 +527,7 @@ to build Zephyr applications.
       is not available on macOS.
 
       Do not forget to set the required :ref:`environment variables <env_vars>`
-      (:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` and toolchain specific ones).
+      (``ZEPHYR_TOOLCHAIN_VARIANT`` and toolchain specific ones).
 
    .. group-tab:: Windows
 
@@ -535,7 +535,7 @@ to build Zephyr applications.
       is not available on Windows.
 
       Do not forget to set the required :ref:`environment variables <env_vars>`
-      (:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` and toolchain specific ones).
+      (``ZEPHYR_TOOLCHAIN_VARIANT`` and toolchain specific ones).
 
 .. _getting_started_run_sample:
 

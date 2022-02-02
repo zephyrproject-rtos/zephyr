@@ -12,7 +12,7 @@ Setting Variables
 Option 1: Just Once
 -------------------
 
-To set the environment variable :envvar:`MY_VARIABLE` to ``foo`` for the
+To set the environment variable ``MY_VARIABLE`` to ``foo`` for the
 lifetime of your current terminal window:
 
 .. tabs::
@@ -56,7 +56,7 @@ Option 2: In all Terminals
       program.
 
       To use ``setx``, type this command, then close the terminal window. Any
-      new ``cmd.exe`` windows will have :envvar:`MY_VARIABLE` set to ``foo``.
+      new ``cmd.exe`` windows will have ``MY_VARIABLE`` set to ``foo``.
 
       .. code-block:: console
 
@@ -118,10 +118,10 @@ your environment when you are using Zephyr.
 
       These scripts:
 
-      - set :envvar:`ZEPHYR_BASE` (see below) to the location of the zephyr
+      - set ``ZEPHYR_BASE`` (see below) to the location of the zephyr
         repository
       - adds some Zephyr-specific locations (such as zephyr's :file:`scripts`
-        directory) to your :envvar:`PATH` environment variable
+        directory) to your ``PATH`` environment variable
       - loads any settings from the ``zephyrrc`` files described above in
         :ref:`env_vars_zephyrrc`.
 
@@ -153,10 +153,10 @@ zephyr repository:
 
 These scripts:
 
-- set :envvar:`ZEPHYR_BASE` (see below) to the location of the zephyr
+- set ``ZEPHYR_BASE`` (see below) to the location of the zephyr
   repository
 - adds some Zephyr-specific locations (such as zephyr's :file:`scripts`
-  directory) to your :envvar:`PATH` environment variable
+  directory) to your ``PATH`` environment variable
 - loads any settings from the ``zephyrrc`` files described above in
   :ref:`env_vars_zephyrrc`.
 
@@ -171,20 +171,20 @@ Some :ref:`important-build-vars` can also be set in the environment. Here
 is a description of some of these important environment variables. This is not
 a comprehensive list.
 
-- :envvar:`BOARD`
-- :envvar:`CONF_FILE`
-- :envvar:`SHIELD`
-- :envvar:`ZEPHYR_BASE`
-- :envvar:`ZEPHYR_EXTRA_MODULES`
-- :envvar:`ZEPHYR_MODULES`
+- ``BOARD``
+- ``CONF_FILE``
+- ``SHIELD``
+- ``ZEPHYR_BASE``
+- ``ZEPHYR_EXTRA_MODULES``
+- ``ZEPHYR_MODULES``
 
 The following additional environment variables are significant when configuring
 the :ref:`toolchain <gs_toolchain>` used to build Zephyr applications.
 
-- :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`: the name of the toolchain to use
-- :envvar:`<TOOLCHAIN>_TOOLCHAIN_PATH`: path to the toolchain specified by
-  :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`. For example, if
-  ``ZEPHYR_TOOLCHAIN_VARIANT=llvm``, use :envvar:`LLVM_TOOLCHAIN_PATH`. (Note
+- ``ZEPHYR_TOOLCHAIN_VARIANT``: the name of the toolchain to use
+- ``<TOOLCHAIN>_TOOLCHAIN_PATH``: path to the toolchain specified by
+  ``ZEPHYR_TOOLCHAIN_VARIANT``. For example, if
+  ``ZEPHYR_TOOLCHAIN_VARIANT=llvm``, use ``LLVM_TOOLCHAIN_PATH``. (Note
   the capitalization when forming the environment variable name.)
 
 Emulators and boards may also depend on additional programs. The build system

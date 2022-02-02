@@ -278,10 +278,10 @@ installed it.
 
    If you install the Zephyr SDK outside any of those locations, then it is
    required to register the Zephyr SDK in the CMake package registry during
-   installation or set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to point to the Zephyr
+   installation or set ``ZEPHYR_SDK_INSTALL_DIR`` to point to the Zephyr
    SDK installation folder.
 
-   :envvar:`ZEPHYR_SDK_INSTALL_DIR` can also be used for pointing to a folder
+   ``ZEPHYR_SDK_INSTALL_DIR`` can also be used for pointing to a folder
    containing multiple Zephyr SDKs, allowing for automatic toolchain selection,
    for example: ``ZEPHYR_SDK_INSTALL_DIR=/company/tools``
 
@@ -306,9 +306,9 @@ toolchain as as described in the :ref:`third_party_x_compilers` section.
 
 As already noted above, the SDK also includes prebuilt host tools.  To use the
 SDK's prebuilt host tools with a toolchain from another source, you must set the
-:envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable to the Zephyr SDK
+``ZEPHYR_SDK_INSTALL_DIR`` environment variable to the Zephyr SDK
 installation directory. To build without the Zephyr SDK's prebuilt host tools,
-the :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable must be unset.
+the ``ZEPHYR_SDK_INSTALL_DIR`` environment variable must be unset.
 
 To make sure this variable is unset, run:
 

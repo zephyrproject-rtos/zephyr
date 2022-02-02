@@ -162,7 +162,7 @@ To do this, use the following ``find_package()`` syntax:
    find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 This syntax instructs CMake to first search for Zephyr using the Zephyr base environment setting
-:envvar:`ZEPHYR_BASE` and then use the normal search paths.
+``ZEPHYR_BASE`` and then use the normal search paths.
 
 .. _zephyr_cmake_search_order:
 
