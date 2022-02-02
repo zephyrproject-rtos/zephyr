@@ -1158,6 +1158,7 @@ struct bt_audio_broadcast_sink_cb {
 
 /** @brief Stream operation. */
 struct bt_audio_stream_ops {
+#if defined(CONFIG_BT_AUDIO_UNICAST)
 	/** @brief Stream configured callback
 	 *
 	 *  Configured callback is called whenever an Audio Stream has been
@@ -1187,15 +1188,6 @@ struct bt_audio_stream_ops {
 	 */
 	void (*enabled)(struct bt_audio_stream *stream);
 
-	/** @brief Stream started callback
-	 *
-	 *  Started callback is called whenever an Audio Stream has been started
-	 *  and will be usable for streaming.
-	 *
-	 *  @param stream Stream object that has been started.
-	 */
-	void (*started)(struct bt_audio_stream *stream);
-
 	/** @brief Stream metadata updated callback
 	 *
 	 *  Metadata Updated callback is called whenever an Audio Stream's
@@ -1214,15 +1206,6 @@ struct bt_audio_stream_ops {
 	 */
 	void (*disabled)(struct bt_audio_stream *stream);
 
-	/** @brief Stream stopped callback
-	 *
-	 *  Stopped callback is called whenever an Audio Stream has been
-	 *  stopped.
-	 *
-	 *  @param stream Stream object that has been stopped.
-	 */
-	void (*stopped)(struct bt_audio_stream *stream);
-
 	/** @brief Stream released callback
 	 *
 	 *  Released callback is called whenever a Audio Stream has been
@@ -1231,6 +1214,25 @@ struct bt_audio_stream_ops {
 	 *  @param stream Stream object that has been released.
 	 */
 	void (*released)(struct bt_audio_stream *stream);
+#endif /* CONFIG_BT_AUDIO_UNICAST */
+
+	/** @brief Stream started callback
+	 *
+	 *  Started callback is called whenever an Audio Stream has been started
+	 *  and will be usable for streaming.
+	 *
+	 *  @param stream Stream object that has been started.
+	 */
+	void (*started)(struct bt_audio_stream *stream);
+
+	/** @brief Stream stopped callback
+	 *
+	 *  Stopped callback is called whenever an Audio Stream has been
+	 *  stopped.
+	 *
+	 *  @param stream Stream object that has been stopped.
+	 */
+	void (*stopped)(struct bt_audio_stream *stream);
 
 	/** @brief Stream audio HCI receive callback.
 	 *
