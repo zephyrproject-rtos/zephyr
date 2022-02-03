@@ -727,7 +727,7 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		if (lll->packet_tx_head_offset) {
 			p->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 			/* BT 5.3 Core Spec does not define handling of CP bit
 			 * for PDUs fragmented by Controller, hence the CP bit
 			 * is set to zero. The CTE should not be transmitted
@@ -735,7 +735,7 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 			 */
 			p->cp = 0U;
 			p->resv = 0U;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 		}
 
 		p->len = lll->packet_tx_head_len - lll->packet_tx_head_offset;
@@ -755,9 +755,9 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		p->rfu = 0U;
 
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-#if !defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+#if !defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) && !defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 		p->resv = 0U;
-#endif /* !CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+#endif /* !CONFIG_BT_CTLR_DF_CONN_CTE_TX && !CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 	}
 
