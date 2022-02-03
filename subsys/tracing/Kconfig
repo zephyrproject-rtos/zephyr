@@ -161,6 +161,15 @@ config TRACING_BACKEND_RAM
 	  be dumped to a file at runtime with a debugger.
 	  See gdb dump binary memory documentation for example.
 
+config TRACING_BACKEND_RAM_RING
+	bool "Enable RAM ring backend"
+	help
+	  Similar to TRACING_BACKEND_RAM, but older data is dropped
+	  in favor of newer data. GDB can be used to dump data,
+	  see gdb dump binary memory documentation for example.
+
+endchoice
+
 config RAM_TRACING_BUFFER_SIZE
 	int "Ram Tracing buffer size"
 	default 4096
@@ -169,7 +178,13 @@ config RAM_TRACING_BUFFER_SIZE
 	  Size of the RAM trace buffer. Trace will be discarded if the
 	  length is exceeded.
 
-endchoice
+config RAM_RING_TRACING_BUFFER_SIZE
+	int "Ram ring tracing buffer size"
+	default 4096
+	depends on TRACING_BACKEND_RAM_RING
+	help
+	  Size of the RAM ring trace buffer. When full, old data is
+	  discarded to make room for new data.
 
 config TRACING_BACKEND_UART_NAME
 	string "Device Name of UART Device for UART backend"
