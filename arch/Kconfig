@@ -34,6 +34,7 @@ config ARM
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_CORTEX_R || CPU_CORTEX_M
+	select ARCH_HAS_MEMORY_BARRIER
 	help
 	  ARM architecture
 
@@ -46,6 +47,7 @@ config ARM64
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
+	select ARCH_HAS_MEMORY_BARRIER
 	help
 	  ARM64 (AArch64) architecture
 
@@ -99,6 +101,7 @@ config RISCV
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	imply XIP
+	select ARCH_HAS_MEMORY_BARRIER
 	help
 	  RISCV architecture
 
@@ -994,3 +997,10 @@ config TOOLCHAIN_HAS_BUILTIN_FFS
 	default y if !(64BIT && RISCV)
 	help
 	  Hidden option to signal that toolchain has __builtin_ffs*().
+
+config ARCH_HAS_MEMORY_BARRIER
+	bool "Enable architecture specific memory barrier support"
+	help
+	  This option enable architecture specific function for
+	  the memory barrier API support. These functions can be
+	  implemented or builtin toolchain.
