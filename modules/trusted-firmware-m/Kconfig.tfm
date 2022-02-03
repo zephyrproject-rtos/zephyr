@@ -294,8 +294,15 @@ config TFM_FLASH_MERGED_BINARY
 		(if building with TFM_BL2 is enabled), and the
 		Non-Secure application firmware.
 
+config TFM_LOG_LEVEL_SILENCE
+	bool "TF-M Disable secure logging"
+	help
+	  Set the log level to silence for all TF-M modules (SPM, partition, etc.).
+	  On some platforms this will release the UART from
+	  the secure domain and reduce the uart driver's flash usage.
+
 choice TFM_SPM_LOG_LEVEL
-	prompt "TF-M SPM Log Level"
+	prompt "TF-M SPM Log Level" if !TFM_LOG_LEVEL_SILENCE
 	default TFM_SPM_LOG_LEVEL_INFO
 config TFM_SPM_LOG_LEVEL_DEBUG
 	bool "Debug"
