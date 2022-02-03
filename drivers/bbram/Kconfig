@@ -24,4 +24,6 @@ source "drivers/bbram/Kconfig.it8xxx2"
 
 source "drivers/bbram/Kconfig.bbram_emul"
 
+source "drivers/bbram/Kconfig.xec"
+
 endif # BBRAM
