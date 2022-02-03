@@ -29,7 +29,6 @@ API Reference
    modbus/index.rst
    networking/index.rst
    peripherals/index.rst
-   pinctrl/index.rst
    pm/index.rst
    random/index.rst
    resource_management/index.rst

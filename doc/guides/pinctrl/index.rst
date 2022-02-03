@@ -3,9 +3,6 @@
 Pin Control
 ###########
 
-This is a high-level guide to pin control. See :ref:`pinctrl_api` for API
-reference material.
-
 Introduction
 ************
 
@@ -128,6 +125,9 @@ details the standardized states and its purpose.
 
 Note that other standard states could be introduced in the future.
 
+.. doxygendefine:: PINCTRL_STATE_DEFAULT
+.. doxygendefine:: PINCTRL_STATE_SLEEP
+
 Custom states
 =============
 
@@ -145,6 +145,8 @@ in the driver's scope.
 If custom states need to be accessed from outside the driver, for example to
 perform dynamic pin control, custom identifiers should be placed in a header
 that is publicly accessible.
+
+.. doxygendefine:: PINCTRL_STATE_PRIV_START
 
 Skipping states
 ===============
@@ -194,6 +196,8 @@ or pin configurations, though). The user can then use
 :c:struct:`pinctrl_dev_config` with a new set. This effectively means that the
 device driver will apply the pin configurations stored in the updated states
 when it applies a state.
+
+.. doxygenfunction:: pinctrl_update_states
 
 Devicetree representation
 *************************
@@ -373,6 +377,8 @@ configurations that need to be applied. Furthermore, if
 device register address for the given pins. This information may be required by
 some drivers to perform device specific actions.
 
+.. doxygenfunction:: pinctrl_configure_pins
+
 The pin configuration is stored in an opaque type that is vendor/SoC dependent:
 ``pinctrl_soc_pin_t``. This type needs to be defined in a header named
 ``pinctrl_soc.h`` file that is in the Zephyr's include path. It can range from
@@ -422,6 +428,12 @@ is required to later use the API. This can be achieved using the
 :c:macro:`PINCTRL_DT_DEV_CONFIG_GET` and
 :c:macro:`PINCTRL_DT_INST_DEV_CONFIG_GET` macros.
 
+.. doxygenstruct:: pinctrl_dev_config
+.. doxygendefine:: PINCTRL_DT_DEFINE
+.. doxygendefine:: PINCTRL_DT_INST_DEFINE
+.. doxygendefine:: PINCTRL_DT_DEV_CONFIG_GET
+.. doxygendefine:: PINCTRL_DT_INST_DEV_CONFIG_GET
+
 It is worth to note that the only relationship between a device and its
 associated pin control configuration is based on variable naming conventions.
 The way an instance of :c:struct:`pinctrl_dev_config` is named for a
@@ -436,6 +448,9 @@ using :c:func:`pinctrl_apply_state`. It is also possible to use the lower level
 function :c:func:`pinctrl_apply_state_direct` to skip state lookup if it is
 cached in advance (e.g. at init time). Since state lookup time is expected to be
 fast, it is recommended to use :c:func:`pinctrl_apply_state`.
+
+.. doxygenfunction:: pinctrl_apply_state
+.. doxygenfunction:: pinctrl_apply_state_direct
 
 The example below contains a complete example of a device driver that uses the
 ``pinctrl`` API.
