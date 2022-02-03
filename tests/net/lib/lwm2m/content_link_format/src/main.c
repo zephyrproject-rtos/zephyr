@@ -218,7 +218,8 @@ static void test_put_corelink_discovery(void)
 		{
 			.request_level = LWM2M_PATH_LEVEL_RESOURCE,
 			.path_level = LWM2M_PATH_LEVEL_RESOURCE,
-			.expected_payload = "</65535/0/0>;pmax=" STRINGIFY(TEST_PMAX)
+			.expected_payload = "</65535/0/0>;pmin=" STRINGIFY(TEST_PMIN)
+					    ";pmax=" STRINGIFY(TEST_PMAX)
 		},
 	};
 
