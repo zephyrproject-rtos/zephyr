@@ -960,12 +960,12 @@
 			label = "I2S_2";
 		};
 
-		sai4: sai@40c0000 {
+		sai4: sai@40c40000 {
 			compatible = "nxp,mcux-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#pinmux-cells = <2>;
-			reg = <0x40c0000 0x4000>;
+			reg = <0x40c40000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI4_CLK 0x2184 6>;
 			pre-div = <0>;
 			podf = <63>;
