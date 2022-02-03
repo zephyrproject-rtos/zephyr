@@ -302,6 +302,10 @@ int bt_send(struct net_buf *buf)
 {
 	BT_DBG("buf %p len %u", buf, buf->len);
 
+	if (buf->len == 0) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	if (IS_ENABLED(CONFIG_BT_HCI_RAW_CMD_EXT) &&
