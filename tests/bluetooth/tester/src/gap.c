@@ -42,6 +42,12 @@ static struct bt_le_oob oob_sc_local = { 0 };
 static struct bt_le_oob oob_sc_remote = { 0 };
 #endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 
+/* connection parameters for rejection test */
+#define REJECT_INTERVAL_MIN 0x0C80
+#define REJECT_INTERVAL_MAX 0x0C80
+#define REJECT_LATENCY 0x0000
+#define REJECT_SUPERVISION_TIMEOUT 0x0C80
+
 #if defined(CONFIG_BT_PRIVACY)
 static struct {
 	bt_addr_le_t addr;
@@ -153,6 +159,19 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
+static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+{
+	/* reject update if all parameters match reject pattern */
+	if ((param->interval_min == REJECT_INTERVAL_MIN) &&
+			(param->interval_max == REJECT_INTERVAL_MAX) &&
+			(param->latency == REJECT_LATENCY) &&
+			(param->timeout == REJECT_SUPERVISION_TIMEOUT)) {
+		return false;
+	}
+
+	return true;
+}
+
 static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
@@ -200,6 +219,7 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = le_disconnected,
 	.identity_resolved = le_identity_resolved,
 	.le_param_updated = le_param_updated,
+	.le_param_req = le_param_req,
 	.security_changed = le_security_changed,
 };
 
