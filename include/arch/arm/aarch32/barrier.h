@@ -9,44 +9,40 @@
 
 #ifndef _ASMLANGUAGE
 
-/*
- * Fallback on CMSIS
- */
+#ifndef CONFIG_HAS_BUILTIN_MEMORY_BARRIER
+/* Fallback on CMSIS */
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #elif defined(CONFIG_CPU_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <arch/arm/aarch32/cortex_a_r/cmsis.h>
-#endif
+#endif /* CONFIG_CPU_CORTEX_M | CONFIG_CPU_CORTEX_R | CONFIG_CPU_CORTEX_A */
+#endif /* !CONFIG_HAS_BUILTIN_MEMORY_BARRIER */
 
-#if !defined(isb)
-#define isb()		__ISB()
-#endif
+#define arch_isb()		__ISB()
 
-#if !defined(mb)
-#define mb()		__DSB()
-#endif
+#define arch_mb()		__DSB()
 
-#if !defined(rmb)
-#define rmb()		__DSB()
-#endif
+#define arch_rmb()		__DSB()
 
-#if !defined(wmb)
-#define wmb()		__DSB()
-#endif
+#define arch_wmb()		__DSB()
 
-#if !defined(smp_mb)
-#define smp_mb()	__DMB()
-#endif
+#if defined(CONFIG_SMP)
 
-#if !defined(smp_rmb)
-#define smp_rmb()	__DMB()
-#endif
+#define arch_smp_mb()	__DMB()
 
-#if !defined(smp_wmb)
-#define smp_wmb()	__DMB()
-#endif
+#define arch_smp_rmb()	__DMB()
 
-#include <barrier.h>
+#define arch_smp_wmb()	__DMB()
+
+#else /* !CONFIG_SMP */
+
+#define arch_smp_mb()    arch_mb()
+
+#define arch_smp_rmb()   arch_rmb()
+
+#define arch_smp_wmb()   arch_wmb()
+
+#endif /* CONFIG_SMP */
 
 #endif /* !_ASMLANGUAGE */
 

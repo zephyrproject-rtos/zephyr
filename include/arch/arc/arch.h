@@ -31,7 +31,7 @@
 #include <arch/arc/v2/asm_inline.h>
 #include <arch/arc/arc_addr_types.h>
 #include <arch/arc/v2/error.h>
-#include <arch/arc/barrier.h>
+#include <barrier.h>
 
 #ifdef CONFIG_ARC_CONNECT
 #include <arch/arc/v2/arc_connect.h>

@@ -28,7 +28,7 @@
 #include <soc.h>
 #include <devicetree.h>
 #include <arch/riscv/csr.h>
-#include <arch/riscv/barrier.h>
+#include <barrier.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define ARCH_STACK_PTR_ALIGN  16
