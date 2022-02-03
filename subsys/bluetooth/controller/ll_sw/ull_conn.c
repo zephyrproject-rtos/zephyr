@@ -2080,14 +2080,14 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 /**
  * @brief Initialize pdu_data members that are read only in lower link layer.
  *
- * @param pdu_tx Pointer to pdu_data object to be initialized
+ * @param pdu Pointer to pdu_data object to be initialized
  */
-void ull_pdu_data_init(struct pdu_data *pdu_tx)
+void ull_pdu_data_init(struct pdu_data *pdu)
 {
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
-	pdu_tx->cp = 0U;
-	pdu_tx->resv = 0U;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	pdu->cp = 0U;
+	pdu->resv = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 }
 
 static int init_reset(void)
