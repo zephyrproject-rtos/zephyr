@@ -20,4 +20,16 @@
 #define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment)), used))
 #define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
 
+/* Memory Barrier buitin functions */
+#ifdef CONFIG_ARM
+#define __HAS_BUILTIN_MEMORY_BARRIER 1
+#define arch_isb()		__builtin_arm_isb(0xF)
+#define arch_mb()		__builtin_arm_dsb(0xF)
+#define arch_rmb()		__builtin_arm_dsb(0xF)
+#define arch_wmb()		__builtin_arm_dsb(0xF)
+#define arch_smp_mb()	__builtin_arm_dmb(0xF)
+#define arch_smp_rmb()	__builtin_arm_dmb(0xF)
+#define arch_smp_wmb()	__builtin_arm_dmb(0xF)
+#endif /* CONFIG_ARM */
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_ARMCLANG_H_ */
