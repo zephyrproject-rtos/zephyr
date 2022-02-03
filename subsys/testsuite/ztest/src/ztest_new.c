@@ -555,11 +555,21 @@ int ztest_run_test_suites(const void *state)
 void ztest_verify_all_test_suites_ran(void)
 {
 	bool all_tests_run = true;
-	struct ztest_suite_node *ptr;
+	struct ztest_suite_node *suite;
+	struct ztest_unit_test *test;
 
-	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
-		if (ptr->stats.run_count < 1) {
-			PRINT("ERROR: Test '%s' did not run.\n", ptr->name);
+	for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end; ++suite) {
+		if (suite->stats.run_count < 1) {
+			PRINT("ERROR: Test suite '%s' did not run.\n", suite->name);
+			all_tests_run = false;
+		}
+	}
+
+	for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
+		suite = ztest_find_test_suite(test->test_suite_name);
+		if (suite == NULL) {
+			PRINT("ERROR: Test '%s' assigned to test suite '%s' which doesn't exist\n",
+			      test->name, test->test_suite_name);
 			all_tests_run = false;
 		}
 	}
