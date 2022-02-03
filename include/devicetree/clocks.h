@@ -61,9 +61,8 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the controller phandle from a
- *        clocks phandle-array property at an index
+ *        clocks phandle-array property by name
  *
-
  * Example devicetree fragment:
  *
  *     clk1: clock-controller@... { ... };
