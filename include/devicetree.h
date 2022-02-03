@@ -3002,5 +3002,6 @@
 #include <devicetree/pinctrl.h>
 #include <devicetree/can.h>
 #include <devicetree/reset.h>
+#include <devicetree/mbox.h>
 
 #endif /* DEVICETREE_H */

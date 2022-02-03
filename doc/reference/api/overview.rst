@@ -207,6 +207,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.5
      - 2.5
 
+   * - :ref:`mbox_api`
+     - Experimental
+     - 1.0
+     - 3.0
+
    * - :ref:`mqtt_socket_interface`
      - Unstable
      - 1.14
