@@ -143,7 +143,7 @@ static void ascs_ep_get_status_config(struct bt_audio_ep *ep,
 
 	BT_DBG("dir 0x%02x unframed_supported 0x%02x phy 0x%02x rtn %u "
 	       "latency %u pd_min %u pd_max %u codec 0x%02x",
-	       ASE_DIR(ep->status.id), pref->unframed_supported, pref->phy,
+	       ep->dir, pref->unframed_supported, pref->phy,
 	       pref->rtn, pref->latency, pref->pd_min, pref->pd_max,
 	       ep->stream->codec->id);
 
@@ -170,7 +170,7 @@ static void ascs_ep_get_status_qos(struct bt_audio_ep *ep,
 
 	BT_DBG("dir 0x%02x codec 0x%02x interval %u framing 0x%02x phy 0x%02x "
 	       "rtn %u latency %u pd %u",
-	       ASE_DIR(ep->status.id), ep->stream->codec->id,
+	       ep->dir, ep->stream->codec->id,
 	       ep->stream->qos->interval, ep->stream->qos->framing,
 	       ep->stream->qos->phy, ep->stream->qos->rtn,
 	       ep->stream->qos->latency, ep->stream->qos->pd);
@@ -190,7 +190,7 @@ static void ascs_ep_get_status_enable(struct bt_audio_ep *ep,
 	enable->metadata_len = buf->len - enable->metadata_len;
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
-	       ASE_DIR(ep->status.id), ep->cig_id, ep->cis_id);
+	       ep->dir, ep->cig_id, ep->cis_id);
 }
 
 static int ascs_ep_get_status(struct bt_audio_ep *ep,
@@ -516,7 +516,7 @@ static void ase_disable(struct bt_ascs_ase *ase)
 	/* The ASE state machine goes into different states from this operation
 	 * based on whether it is a source or a sink ASE.
 	 */
-	if (ASE_DIR(ep->status.id) == BT_AUDIO_SOURCE) {
+	if (ep->dir == BT_AUDIO_SOURCE) {
 		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
 	} else {
 		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
@@ -973,7 +973,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		if (unicast_server_cb != NULL &&
 		    unicast_server_cb->reconfig != NULL) {
 			err = unicast_server_cb->reconfig(ase->ep.stream,
-							  ASE_DIR(ase->ep.status.id),
+							  ase->ep.dir,
 							  &ase->ep.codec,
 							  &ase->ep.qos_pref);
 		} else {
@@ -998,7 +998,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		if (unicast_server_cb != NULL &&
 		    unicast_server_cb->config != NULL) {
 			err = unicast_server_cb->config(ascs->conn, &ase->ep,
-							ASE_DIR(ase->ep.status.id),
+							ase->ep.dir,
 							&ase->ep.codec, &stream,
 							&ase->ep.qos_pref);
 		} else {
@@ -1439,7 +1439,7 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_ENABLING);
 
 
-	if (ASE_DIR(ep->status.id) == BT_AUDIO_SINK) {
+	if (ep->dir == BT_AUDIO_SINK) {
 		/* SINK ASEs can autonomously go into the streaming state if
 		 * the CIS is connected
 		 */
@@ -1526,7 +1526,7 @@ static void ase_start(struct bt_ascs_ase *ase)
 	 * characteristic to the client, and the server shall set the
 	 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
 	 */
-	if (ASE_DIR(ep->status.id) == BT_AUDIO_SINK) {
+	if (ep->dir == BT_AUDIO_SINK) {
 		BT_ERR("Start failed: invalid operation for Sink");
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP,
 				BT_ASCS_RSP_INVALID_DIR, BT_ASCS_REASON_NONE);
@@ -1650,7 +1650,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	 * characteristic to the client, and the server shall set the
 	 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
 	 */
-	if (ASE_DIR(ase->ep.status.id) == BT_AUDIO_SINK) {
+	if (ase->ep.dir == BT_AUDIO_SINK) {
 		BT_ERR("Stop failed: invalid operation for Sink");
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_STOP_OP,
 				BT_ASCS_RSP_INVALID_DIR, BT_ASCS_REASON_NONE);
