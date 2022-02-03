@@ -76,7 +76,7 @@
 			nxp,rx-dma-channel = <6>;
 		};
 
-		sai4: sai@40c0000 {
+		sai4: sai@40c40000 {
 			dmas = <&edma_lpsr0 0 60>, <&edma_lpsr0 0 61>;
 			dma-names = "rx", "tx";
 			nxp,tx-dma-channel = <7>;
