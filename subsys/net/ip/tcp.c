@@ -1126,9 +1126,8 @@ static void tcp_resend_data(struct k_work *work)
 	conn->unacked_len = 0;
 
 	ret = tcp_send_data(conn);
+	conn->send_data_retries++;
 	if (ret == 0) {
-		conn->send_data_retries++;
-
 		if (conn->in_close && conn->send_data_total == 0) {
 			NET_DBG("TCP connection in active close, "
 				"not disposing yet (waiting %dms)",
