@@ -42,6 +42,11 @@ Changes in this release
 * Added ``ranges`` and ``dma-ranges`` as invalid property to be used with DT_PROP_LEN()
   along ``reg`` and ``interrupts``.
 
+* The existing :c:func:`crc16` and :c:func:`crc16_ansi` functions have been
+  modified. The former has a new signature. The latter now properly calculates the
+  CRC-16-ANSI checksum. A new function, :c:func:`crc16_reflect`, has been
+  introduced to calculated reflected CRCs.
+
 Removed APIs in this release
 ============================
 

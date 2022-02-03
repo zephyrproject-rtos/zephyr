@@ -52,27 +52,35 @@ void test_crc32_ieee(void)
 
 void test_crc16(void)
 {
-	uint8_t test0[] = { };
-	uint8_t test1[] = { 'A' };
-	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	uint8_t test[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert_equal(crc16(test0, sizeof(test0), 0x1021, 0xffff, true),
-		      0x1d0f, NULL);
-	zassert_equal(crc16(test1, sizeof(test1), 0x1021, 0xffff, true),
-		      0x9479, NULL);
-	zassert_equal(crc16(test2, sizeof(test2), 0x1021, 0xffff, true),
-		      0xe5cc, NULL);
+	/* CRC-16/CCITT, CRC-16/CCITT-TRUE, CRC-16/KERMIT
+	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-kermit
+	 * check=0x2189
+	 * poly is 0x1021, reflected 0x8408
+	 */
+	zassert_equal(crc16_reflect(0x8408, 0x0, test, sizeof(test)), 0x2189, NULL);
+
+	/* CRC-16/DECT-X
+	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-dect-x
+	 * check=0x007f
+	 */
+	zassert_equal(crc16(0x0589, 0x0, test, sizeof(test)), 0x007f, NULL);
 }
 
 void test_crc16_ansi(void)
 {
-	uint8_t test0[] = { };
-	uint8_t test1[] = { 'A' };
-	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	uint8_t test[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert(crc16_ansi(test0, sizeof(test0)) == 0x800d, "pass", "fail");
-	zassert(crc16_ansi(test1, sizeof(test1)) == 0x8f85, "pass", "fail");
-	zassert(crc16_ansi(test2, sizeof(test2)) == 0x9ecf, "pass", "fail");
+	uint16_t crc16_c = crc16_ansi(test, sizeof(test));
+
+	/* CRC-16/ANSI, CRC-16/MODBUS, CRC-16/USB, CRC-16/IBM
+	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-modbus
+	 * check=0x4b37
+	 * poly is 0x1021, reflected 0xA001
+	 */
+	zassert_equal(crc16_c, 0x4b37, NULL);
+	zassert_equal(crc16_reflect(0xA001, 0xffff, test, sizeof(test)), crc16_c, NULL);
 }
 
 void test_crc16_ccitt(void)
