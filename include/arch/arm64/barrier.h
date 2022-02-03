@@ -9,35 +9,31 @@
 
 #ifndef _ASMLANGUAGE
 
-#if !defined(isb)
-#define isb()		__asm__ volatile ("isb")
-#endif
+#define arch_isb()		__asm__ volatile ("isb")
 
-#if !defined(mb)
-#define mb()		__asm__ volatile ("dsb sy" : : : "memory")
-#endif
+#define arch_mb()		__asm__ volatile ("dsb sy" : : : "memory")
 
-#if !defined(rmb)
-#define rmb()		__asm__ volatile ("dsb ld" : : : "memory")
-#endif
+#define arch_rmb()		__asm__ volatile ("dsb ld" : : : "memory")
 
-#if !defined(wmb)
-#define wmb()		__asm__ volatile ("dsb st" : : : "memory")
-#endif
+#define arch_wmb()		__asm__ volatile ("dsb st" : : : "memory")
 
-#if !defined(smp_mb)
-#define smp_mb()	__asm__ volatile ("dmb ish" : : : "memory")
-#endif
+#if defined(CONFIG_SMP)
 
-#if !defined(smp_rmb)
-#define smp_rmb()	__asm__ volatile ("dmb ishld" : : : "memory")
-#endif
+#define arch_smp_mb()	__asm__ volatile ("dmb ish" : : : "memory")
 
-#if !defined(smp_wmb)
-#define smp_wmb()	__asm__ volatile ("dmb ishst" : : : "memory")
-#endif
+#define arch_smp_rmb()	__asm__ volatile ("dmb ishld" : : : "memory")
 
-#include <barrier.h>
+#define arch_smp_wmb()	__asm__ volatile ("dmb ishst" : : : "memory")
+
+#else /* !CONFIG_SMP */
+
+#define arch_smp_mb()    arch_mb()
+
+#define arch_smp_rmb()   arch_rmb()
+
+#define arch_smp_wmb()   arch_wmb()
+
+#endif /* CONFIG_SMP */
 
 #endif /* !_ASMLANGUAGE */
 

@@ -24,7 +24,7 @@
 #include <arch/common/sys_bitops.h>
 #include <sys/sys_io.h>
 #include <arch/common/ffs.h>
-#include <arch/nios2/barrier.h>
+#include <barrier.h>
 
 #define ARCH_STACK_PTR_ALIGN  4
 

@@ -25,7 +25,7 @@
 #include <sw_isr_table.h>
 #include <arch/xtensa/thread.h>
 #include <arch/xtensa/irq.h>
-#include <arch/xtensa/barrier.h>
+#include <barrier.h>
 #include <xtensa/config/core.h>
 #include <arch/common/addr_types.h>
 #include <arch/xtensa/gdbstub.h>

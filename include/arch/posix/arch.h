@@ -27,7 +27,7 @@
 #include <board_irq.h> /* Each board must define this */
 #include <sw_isr_table.h>
 #include <arch/posix/posix_soc_if.h>
-#include <arch/posix/barrier.h>
+#include <barrier.h>
 
 #ifdef __cplusplus
 extern "C" {

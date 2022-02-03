@@ -16,3 +16,4 @@
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_SPARC_BARRIER_H_ */
+/* To be remove */

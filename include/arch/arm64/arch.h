@@ -31,7 +31,7 @@
 #include <arch/arm64/error.h>
 #include <arch/arm64/mm.h>
 #include <arch/arm64/thread_stack.h>
-#include <arch/arm64/barrier.h>
+#include <barrier.h>
 #include <arch/common/addr_types.h>
 #include <arch/common/sys_bitops.h>
 #include <arch/common/ffs.h>
