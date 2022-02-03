@@ -32,40 +32,41 @@ find_package(ZephyrBuildConfiguration
 )
 
 # Prepare user cache
-include(python)
-include(user_cache)
+list(APPEND zephyr_cmake_modules python)
+list(APPEND zephyr_cmake_modules user_cache)
 
 # Load Zephyr extensions
-include(extensions)
-include(version)  # depends on hex.cmake
+list(APPEND zephyr_cmake_modules extensions)
+list(APPEND zephyr_cmake_modules version)
 
 #
 # Find tools
 #
 
-include(west)
-include(ccache)
+list(APPEND zephyr_cmake_modules west)
+list(APPEND zephyr_cmake_modules ccache)
 
 # Load default root settings
-include(root)
+list(APPEND zephyr_cmake_modules root)
 
 #
 # Find Zephyr modules.
 # Those may contain additional DTS, BOARD, SOC, ARCH ROOTs.
 # Also create the Kconfig binary dir for generated Kconf files.
 #
-include(zephyr_module)
+list(APPEND zephyr_cmake_modules zephyr_module)
 
-include(boards)
-include(shields)
-include(arch)
-include(configuration_files)
+list(APPEND zephyr_cmake_modules boards)
+list(APPEND zephyr_cmake_modules shields)
+list(APPEND zephyr_cmake_modules arch)
+list(APPEND zephyr_cmake_modules configuration_files)
 
-include(verify-toolchain)
-include(host-tools)
+list(APPEND zephyr_cmake_modules verify-toolchain)
+list(APPEND zephyr_cmake_modules host-tools)
 
 # Include board specific device-tree flags before parsing.
-include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
+set(pre_dt_board "\${BOARD_DIR}/pre_dt_board.cmake" OPTIONAL)
+list(APPEND zephyr_cmake_modules "\${pre_dt_board}")
 
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
@@ -80,9 +81,35 @@ include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
 # preprocess DT sources, and then, after we have finished processing
 # both DT and Kconfig we complete the target-specific configuration,
 # and possibly change the toolchain.
-include(generic_toolchain)
-include(dts)
-include(kconfig)
-include(soc)
-include(target_toolchain)
+list(APPEND zephyr_cmake_modules generic_toolchain)
+list(APPEND zephyr_cmake_modules dts)
+list(APPEND zephyr_cmake_modules kconfig)
+list(APPEND zephyr_cmake_modules soc)
+list(APPEND zephyr_cmake_modules target_toolchain)
+
+foreach(component ${SUB_COMPONENTS})
+  if(NOT ${component} IN_LIST zephyr_cmake_modules)
+    message(FATAL_ERROR
+      "Subcomponent '${component}' not default module for Zephyr CMake build system.\n"
+      "Please choose one or more valid components: ${zephyr_cmake_modules}"
+    )
+  endif()
+endforeach()
+
+foreach(module IN LISTS zephyr_cmake_modules)
+  # Ensures any module of type `${module}` are properly expanded to list before
+  # passed on the `include(${module})`.
+  # This is done twice to support cases where the content of `${module}` itself
+  # contains a variable, like `${BOARD_DIR}`.
+  string(CONFIGURE "${module}" module)
+  string(CONFIGURE "${module}" module)
+  include(${module})
+
+  list(REMOVE_ITEM SUB_COMPONENTS ${module})
+  if(DEFINED SUB_COMPONENTS AND NOT SUB_COMPONENTS)
+    # All requested Zephyr CMake modules have been loaded, so let's return.
+    return()
+  endif()
+endforeach()
+
 include(kernel)
