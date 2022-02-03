@@ -85,7 +85,17 @@ void test_crc16_ccitt(void)
 
 	zassert_equal(crc16_ccitt(0, test0, sizeof(test0)), 0x0, NULL);
 	zassert_equal(crc16_ccitt(0, test1, sizeof(test1)), 0x538d, NULL);
+	/* CRC-16/CCITT, CRC-16/CCITT-TRUE, CRC-16/KERMIT
+	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-kermit
+	 * check=0x2189
+	 */
 	zassert_equal(crc16_ccitt(0, test2, sizeof(test2)), 0x2189, NULL);
+	/* CRC-16/X-25, CRC-16/IBM-SDLC, CRC-16/ISO-HDLC
+	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-ibm-sdlc
+	 * check=0x906e
+	 */
+	zassert_equal(crc16_ccitt(0xffff, test2, sizeof(test2)) ^ 0xffff,
+		      0x906e, NULL);
 
 	/* Appending the CRC to a buffer and computing the CRC over
 	 * the extended buffer leaves a residual of zero.
@@ -120,8 +130,22 @@ void test_crc16_itu_t(void)
 {
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)),
-		      0x31c3, NULL);
+	/* CRC-16/XMODEM, CRC-16/ACORN, CRC-16/LTE
+	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-xmodem
+	 * check=0x31c3
+	 */
+	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)), 0x31c3, NULL);
+	/* CRC16/CCITT-FALSE, CRC-16/IBM-3740, CRC-16/AUTOSAR
+	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-ibm-3740
+	 * check=0x29b1
+	 */
+	zassert_equal(crc16_itu_t(0xffff, test2, sizeof(test2)), 0x29b1, NULL);
+	/* CRC-16/GSM
+	 * https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-gsm
+	 * check=0xce3c
+	 */
+	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)) ^ 0xffff, 0xce3c, NULL);
+
 }
 
 void test_crc8_ccitt(void)
