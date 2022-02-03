@@ -188,10 +188,15 @@ void llcp_tx_alloc_unpeek(struct proc_ctx *ctx)
 
 struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx)
 {
+	struct pdu_data *pdu;
 	struct node_tx *tx;
 
 	ARG_UNUSED(conn);
 	tx = (struct node_tx *)mem_acquire(&mem_tx.free);
+
+	pdu = (struct pdu_data *)tx->pdu;
+	ull_pdu_data_init(pdu);
+
 	return tx;
 }
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
