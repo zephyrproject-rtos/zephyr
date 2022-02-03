@@ -179,10 +179,8 @@ void halt_and_restart(int cpu)
 
 	z_smp_start_cpu(cpu);
 
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
-		/* And... startup is slow on old platforms too */
-		k_msleep(50);
-	}
+	/* Startup can be slow */
+	k_msleep(50);
 
 	WAIT_FOR(alive_flag == true);
 
