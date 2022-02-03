@@ -185,6 +185,7 @@ def process_doxyfile(
             raise ValueError("Invalid formatting pattern or variables")
 
         if outdir_var:
+            fmt_vars = fmt_vars.copy()
             fmt_vars[outdir_var] = outdir.as_posix()
 
         for var, value in fmt_vars.items():
