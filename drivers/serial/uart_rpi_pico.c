@@ -33,20 +33,26 @@ struct uart_rpi_data {
 static int uart_rpi_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_rpi_config *config = dev->config;
+	uart_hw_t * const uart_hw = config->uart_regs;
 
-	if (!uart_is_readable(config->uart_dev)) {
+	if (uart_hw->fr & UART_UARTFR_RXFE_BITS) {
 		return -1;
 	}
 
-	*c = (unsigned char)uart_get_hw(config->uart_dev)->dr;
+	*c = (unsigned char)uart_hw->dr;
 	return 0;
 }
 
 static void uart_rpi_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_rpi_config *config = dev->config;
+	uart_hw_t * const uart_hw = config->uart_regs;
 
-	uart_putc_raw(config->uart_dev, c);
+	while (uart_hw->fr & UART_UARTFR_TXFF_BITS) {
+		/* Wait */
+	}
+
+	uart_hw->dr = c;
 }
 
 static int uart_rpi_init(const struct device *dev)
@@ -62,6 +68,10 @@ static int uart_rpi_init(const struct device *dev)
 		return ret;
 	}
 
+	/*
+	 * uart_init() may be replaced by register based API once rpi-pico platform
+	 * has a clock controller driver and a reset controller driver
+	 */
 	baudrate = uart_init(uart_inst, data->baudrate);
 	/* Check if baudrate adjustment returned by 'uart_init' function is a positive value */
 	if (baudrate <= 0) {
