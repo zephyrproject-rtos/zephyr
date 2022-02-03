@@ -38,23 +38,55 @@ extern "C" {
  */
 
 /**
- * @brief Generic function for computing CRC 16
+ * @brief Generic function for computing a CRC-16 without input or output
+ *        reflection.
  *
- * Compute CRC 16 by passing in the address of the input, the input length
- * and polynomial used in addition to the initial value.
+ * Compute CRC-16 by passing in the address of the input, the input length
+ * and polynomial used in addition to the initial value. This is O(n*8) where n
+ * is the length of the buffer provided. No reflection is performed.
  *
+ * @note If you are planning to use a CRC based on poly 0x1012 the functions
+ * crc16_itu_t() is faster and thus recommended over this one.
+ *
+ * @param poly The polynomial to use omitting the leading x^16
+ *             coefficient
+ * @param seed Initial value for the CRC computation
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
- * @param polynomial The polynomial to use omitting the leading x^16
- *        coefficient
- * @param initial_value Initial value for the CRC computation
- * @param pad Adds padding with zeros at the end of input bytes
  *
- * @return The computed CRC16 value
+ * @return The computed CRC16 value (without any XOR applied to it)
  */
-uint16_t crc16(const uint8_t *src, size_t len, uint16_t polynomial,
-	    uint16_t initial_value, bool pad);
+uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
 
+/**
+ * @brief Generic function for computing a CRC-16 with input and output
+ *        reflection.
+ *
+ * Compute CRC-16 by passing in the address of the input, the input length
+ * and polynomial used in addition to the initial value. This is O(n*8) where n
+ * is the length of the buffer provided. Both input and output are reflected.
+ *
+ * @note If you are planning to use a CRC based on poly 0x1012 the function
+ * crc16_ccitt() is faster and thus recommended over this one.
+ *
+ * The following checksums can, among others, be calculated by this function,
+ * depending on the value provided for the initial seed and the value the final
+ * calculated CRC is XORed with:
+ *
+ * - CRC-16/ANSI, CRC-16/MODBUS, CRC-16/USB, CRC-16/IBM
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-modbus
+ *   poly: 0x8005 (0xA001) initial seed: 0xffff, xor output: 0x0000
+ *
+ * @param poly The polynomial to use omitting the leading x^16
+ *             coefficient. Important: please reflect the poly. For example,
+ *             use 0xA001 instead of 0x8005 for CRC-16-MODBUS.
+ * @param seed Initial value for the CRC computation
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
 /**
  * @brief Generic function for computing CRC 8
  *
@@ -144,10 +176,10 @@ uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len);
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
 
 /**
- * @brief Compute ANSI variant of CRC 16
+ * @brief Compute the ANSI (or Modbus) variant of CRC-16
  *
- * ANSI variant of CRC 16 is using 0x8005 as its polynomial with the initial
- * value set to 0xffff.
+ * The ANSI variant of CRC-16 uses 0x8005 (0xA001 reflected) as its polynomial
+ * with the initial * value set to 0xffff.
  *
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
@@ -156,7 +188,7 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
  */
 static inline uint16_t crc16_ansi(const uint8_t *src, size_t len)
 {
-	return crc16(src, len, 0x8005, 0xffff, true);
+	return crc16_reflect(0xA001, 0xffff, src, len);
 }
 
 /**
