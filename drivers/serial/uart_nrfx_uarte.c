@@ -1330,7 +1330,16 @@ static void rxto_isr(const struct device *dev)
 	notify_rx_buf_release(dev, &data->async->rx_buf, true);
 	notify_rx_buf_release(dev, &data->async->rx_next_buf, true);
 
-	if (!data->async->rx_enabled) {
+	/* If the rx_enabled flag is still set at this point, it means that
+	 * RX is being disabled because all provided RX buffers have been
+	 * filled up. Clear the flag then, so that RX can be enabled again.
+	 *
+	 * If the flag is already cleared, it means that RX was aborted by
+	 * a call to uart_rx_disable() and data from FIFO should be discarded.
+	 */
+	if (data->async->rx_enabled) {
+		data->async->rx_enabled = false;
+	} else {
 		(void)rx_flush(dev, NULL, 0);
 	}
 
