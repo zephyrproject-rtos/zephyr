@@ -1,6 +1,6 @@
 # TI SimpleLink CC3235S LaunchXL Board
 
-# Copyright (c) 2019, Texas Instruments Incorporated
+# Copyright (c) 2021 ithinx GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_CC3235S_LAUNCHXL

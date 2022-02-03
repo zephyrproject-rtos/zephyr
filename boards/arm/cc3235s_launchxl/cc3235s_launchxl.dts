@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Texas Instruments Incorporated
+ * Copyright (c) 2021 ithinx GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
