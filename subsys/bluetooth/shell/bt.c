@@ -38,9 +38,6 @@
 #include "ll.h"
 #include "hci.h"
 
-/* Multiply bt 1.25 to get MS */
-#define BT_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
-
 static bool no_settings_load;
 
 uint8_t selected_id = BT_ID_DEFAULT;
@@ -172,7 +169,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		    (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 		    (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 		    phy2str(info->primary_phy), phy2str(info->secondary_phy),
-		    info->interval, BT_INTERVAL_TO_MS(info->interval),
+		    info->interval, BT_CONN_INTERVAL_TO_MS(info->interval),
 		    info->sid);
 }
 
@@ -529,7 +526,7 @@ static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 		    "Interval 0x%04x (%u ms), PHY %s, SD 0x%04X, PAST peer %s",
 		    bt_le_per_adv_sync_get_index(sync), le_addr,
-		    info->interval, BT_INTERVAL_TO_MS(info->interval),
+		    info->interval, BT_CONN_INTERVAL_TO_MS(info->interval),
 		    phy2str(info->phy), info->service_data, past_peer);
 
 	if (info->conn) { /* if from PAST */
@@ -586,7 +583,7 @@ static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
 		    "%sencrypted",
 		    bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid, biginfo->num_bis,
 		    biginfo->sub_evt_count, biginfo->iso_interval,
-		    BT_INTERVAL_TO_MS(biginfo->iso_interval), biginfo->burst_number,
+		    BT_CONN_INTERVAL_TO_MS(biginfo->iso_interval), biginfo->burst_number,
 		    biginfo->offset, biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
 		    biginfo->max_sdu, phy2str(biginfo->phy), biginfo->framing,
 		    biginfo->encryption ? "" : "not ");
@@ -2192,10 +2189,10 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 
 		shell_print(ctx_shell, "Interval: 0x%04x (%u ms)",
 			    info.le.interval,
-			    BT_INTERVAL_TO_MS(info.le.interval));
+			    BT_CONN_INTERVAL_TO_MS(info.le.interval));
 		shell_print(ctx_shell, "Latency: 0x%04x (%u ms)",
 			    info.le.latency,
-			    BT_INTERVAL_TO_MS(info.le.latency));
+			    BT_CONN_INTERVAL_TO_MS(info.le.latency));
 		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
 #if defined(CONFIG_BT_USER_PHY_UPDATE)

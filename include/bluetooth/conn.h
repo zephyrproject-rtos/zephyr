@@ -299,6 +299,9 @@ struct bt_conn_le_info {
 #endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
 };
 
+/* Multiply bt 1.25 to get MS */
+#define BT_CONN_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
+
 /** BR/EDR Connection Info Structure */
 struct bt_conn_br_info {
 	const bt_addr_t *dst; /** Destination (Remote) BR/EDR address */
