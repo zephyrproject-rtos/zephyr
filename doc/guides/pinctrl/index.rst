@@ -103,30 +103,13 @@ The name assigned to pin control states or the number of them is up to the
 device driver requirements. In many cases a single state applied at
 initialization time will be sufficient, but in some other cases more will be
 required. In order to make things consistent, a naming convention has been
-established for the most common use cases. :numref:`pinctrl-states-standard`
-details the standardized states and its purpose.
-
-.. _pinctrl-states-standard:
-
-.. table:: Standardized state names
-    :align: center
-
-    +-------------+----------------------------------+-------------------------+
-    | State       | Identifier                       | Purpose                 |
-    +-------------+----------------------------------+-------------------------+
-    | ``default`` | :c:macro:`PINCTRL_STATE_DEFAULT` | State of the pins when  |
-    |             |                                  | the device is in        |
-    |             |                                  | operational state       |
-    +-------------+----------------------------------+-------------------------+
-    | ``sleep``   | :c:macro:`PINCTRL_STATE_SLEEP`   | State of the pins when  |
-    |             |                                  | the device is in low    |
-    |             |                                  | power or sleep modes    |
-    +-------------+----------------------------------+-------------------------+
-
-Note that other standard states could be introduced in the future.
+established for the most common use cases. Below you will find a list of the
+standardized states and its purpose.
 
 .. doxygendefine:: PINCTRL_STATE_DEFAULT
 .. doxygendefine:: PINCTRL_STATE_SLEEP
+
+Note that other standard states could be introduced in the future.
 
 Custom states
 =============

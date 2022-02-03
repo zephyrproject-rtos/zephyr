@@ -34,9 +34,15 @@ extern "C" {
  * @{
  */
 
-/** Default state (state used when the device is in operational state). */
+/**
+ * @brief Default state (@c default).
+ * This state is used when the device is in operational state.
+ */
 #define PINCTRL_STATE_DEFAULT 0U
-/** Sleep state (state used when the device is in low power mode). */
+/**
+ * @brief Sleep state (@c sleep).
+ * This state is used when the device is in low power mode.
+ */
 #define PINCTRL_STATE_SLEEP 1U
 
 /** This and higher values refer to custom private states. */
