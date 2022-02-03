@@ -3506,10 +3506,12 @@ static void sock_notif_cb_work(struct k_work *work)
 		k_work_reschedule_for_queue(&hl7800_workq, &sock->notif_work,
 					    MDM_SOCK_NOTIF_DELAY);
 	} else {
-		LOG_DBG("Sock %d trigger NULL packet", sock->socket_id);
-		sock->state = SOCK_SERVER_CLOSED;
-		k_work_submit_to_queue(&hl7800_workq, &sock->recv_cb_work);
-		sock->error = false;
+		if (sock->type == SOCK_STREAM) {
+			LOG_DBG("Sock %d trigger NULL packet", sock->socket_id);
+			sock->state = SOCK_SERVER_CLOSED;
+			k_work_submit_to_queue(&hl7800_workq, &sock->recv_cb_work);
+			sock->error = false;
+		}
 	}
 	hl7800_unlock();
 }
