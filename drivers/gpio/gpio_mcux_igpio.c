@@ -47,11 +47,11 @@ static int mcux_igpio_configure(const struct device *dev,
 	}
 
 	if (flags & GPIO_OUTPUT_INIT_HIGH) {
-		base->DR_SET = BIT(pin);
+		GPIO_WritePinOutput(base, pin, 1);
 	}
 
 	if (flags & GPIO_OUTPUT_INIT_LOW) {
-		base->DR_CLEAR = BIT(pin);
+		GPIO_WritePinOutput(base, pin, 0);
 	}
 
 	WRITE_BIT(base->GDIR, pin, flags & GPIO_OUTPUT);
@@ -87,7 +87,7 @@ static int mcux_igpio_port_set_bits_raw(const struct device *dev,
 	const struct mcux_igpio_config *config = dev->config;
 	GPIO_Type *base = config->base;
 
-	base->DR_SET = mask;
+	GPIO_PortSet(base, mask);
 
 	return 0;
 }
@@ -98,7 +98,7 @@ static int mcux_igpio_port_clear_bits_raw(const struct device *dev,
 	const struct mcux_igpio_config *config = dev->config;
 	GPIO_Type *base = config->base;
 
-	base->DR_CLEAR = mask;
+	GPIO_PortClear(base, mask);
 
 	return 0;
 }
@@ -109,7 +109,7 @@ static int mcux_igpio_port_toggle_bits(const struct device *dev,
 	const struct mcux_igpio_config *config = dev->config;
 	GPIO_Type *base = config->base;
 
-	base->DR_TOGGLE = mask;
+	GPIO_PortToggle(base, mask);
 
 	return 0;
 }

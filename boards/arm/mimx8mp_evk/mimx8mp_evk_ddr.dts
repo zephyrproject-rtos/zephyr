@@ -26,3 +26,7 @@
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&gpio3 {
+	status = "okay";
+};
