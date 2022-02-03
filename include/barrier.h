@@ -24,7 +24,7 @@ extern "C" {
 #include <arch/arm/aarch32/barrier.h>
 
 # elif CONFIG_ARM64
-#include <arch/arm/aarch64/barrier.h>
+#include <arch/arm/barrier.h>
 # endif /* CONFIG_ARM | CONFIG_ARM64 */
 
 #else /* !CONFIG_HAS_ARCH_MEMORY_BARRIER */
