@@ -35,7 +35,6 @@ config ARM
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_CORTEX_R || CPU_CORTEX_M
 	select HAS_ARCH_MEMORY_BARRIER
-	select HAS_BUILTIN_MEMORY_BARRIER
 	help
 	  ARM architecture
 
@@ -1002,9 +1001,3 @@ config HAS_ARCH_MEMORY_BARRIER
 	bool "Memory Barrier"
 	help
 	  "Have architecture specific support for memory barrier"
-
-config HAS_BUILTIN_MEMORY_BARRIER
-	bool "Builtin Memory Barrier"
-	depends on HAS_ARCH_MEMORY_BARRIER
-	help
-	  "Toolchain support memory barrier function(s)"
