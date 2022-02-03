@@ -87,6 +87,76 @@
 			#clock-cells = <3>;
 		};
 
+		gpio1: gpio@30200000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30200000 DT_SIZE_K(64)>;
+			interrupts = <64 0>, <65 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@30210000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30210000 DT_SIZE_K(64)>;
+			interrupts = <66 0>, <67 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio3: gpio@30220000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30220000 DT_SIZE_K(64)>;
+			interrupts = <68 0>, <69 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_3";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio4: gpio@30230000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30230000 DT_SIZE_K(64)>;
+			interrupts = <70 0>, <71 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_4";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio5: gpio@30240000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30240000 DT_SIZE_K(64)>;
+			interrupts = <72 0>, <73 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "GPIO_5";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
 		/*
 		 * For now only UART4 is supported and
 		 * tested with the serial driver

@@ -27,6 +27,9 @@ config PINMUX_MCUX
 
 endif # PINMUX
 
+config GPIO
+	default y
+
 if SERIAL
 
 config UART_MCUX_IUART
