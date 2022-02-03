@@ -210,30 +210,6 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 	return NULL;
 }
 
-static bool unicast_client_ep_is_snk(const struct bt_audio_ep *ep)
-{
-#if SNK_SIZE > 0
-	for (size_t i = 0; i < ARRAY_SIZE(snks); i++) {
-		if (PART_OF_ARRAY(snks[i], ep)) {
-			return true;
-		}
-	}
-#endif /* SNK_SIZE > 0 */
-	return false;
-}
-
-bool bt_unicast_client_ep_is_src(const struct bt_audio_ep *ep)
-{
-#if SRC_SIZE > 0
-	for (size_t i = 0; i < ARRAY_SIZE(srcs); i++) {
-		if (PART_OF_ARRAY(srcs[i], ep)) {
-			return true;
-		}
-	}
-#endif /* SRC_SIZE > 0 */
-	return false;
-}
-
 static struct bt_audio_ep *unicast_client_ep_get(struct bt_conn *conn,
 						 uint8_t dir, uint16_t handle)
 {
@@ -319,9 +295,8 @@ static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
 
 	BT_DBG("dir 0x%02x unframed_supported 0x%02x phy 0x%02x rtn %u "
 	       "latency %u pd_min %u pd_max %u codec 0x%02x ",
-	       unicast_client_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
-	       pref->unframed_supported, pref->phy, pref->rtn, pref->latency,
-	       pref->pd_min, pref->pd_max, stream->codec->id);
+	       ep->dir, pref->unframed_supported, pref->phy, pref->rtn,
+	       pref->latency, pref->pd_min, pref->pd_max, stream->codec->id);
 
 	unicast_client_ep_set_codec(ep, cfg->codec.id,
 				    sys_le16_to_cpu(cfg->codec.cid),
@@ -369,8 +344,7 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
 	       "framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
-	       unicast_client_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
-	       ep->cig_id, ep->cis_id, stream->codec->id,
+	       ep->dir, ep->cig_id, ep->cis_id, stream->codec->id,
 	       stream->qos->interval, stream->qos->framing,
 	       stream->qos->phy, stream->qos->rtn, stream->qos->latency,
 	       stream->qos->pd);
@@ -408,8 +382,7 @@ static void unicast_client_ep_enabling_state(struct bt_audio_ep *ep,
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
-	       unicast_client_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
-	       ep->cig_id, ep->cis_id);
+	       ep->dir, ep->cig_id, ep->cis_id);
 
 	unicast_client_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
 
@@ -441,8 +414,7 @@ static void unicast_client_ep_streaming_state(struct bt_audio_ep *ep,
 	stream_status = net_buf_simple_pull_mem(buf, sizeof(*stream_status));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
-	       unicast_client_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
-	       ep->cig_id, ep->cis_id);
+	       ep->dir, ep->cig_id, ep->cis_id);
 
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->started != NULL) {
@@ -472,8 +444,7 @@ static void unicast_client_ep_disabling_state(struct bt_audio_ep *ep,
 	disable = net_buf_simple_pull_mem(buf, sizeof(*disable));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
-	       unicast_client_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
-	       ep->cig_id, ep->cis_id);
+	       ep->dir, ep->cig_id, ep->cis_id);
 
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->disabled != NULL) {
@@ -494,8 +465,7 @@ static void unicast_client_ep_releasing_state(struct bt_audio_ep *ep,
 		return;
 	}
 
-	BT_DBG("dir 0x%02x",
-	       unicast_client_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE);
+	BT_DBG("dir 0x%02x", ep->dir);
 
 	/* The Unicast Client shall terminate any CIS established for that ASE
 	 * by following the Connected Isochronous Stream Terminate procedure
@@ -1013,8 +983,7 @@ static int unicast_client_ep_config(struct bt_audio_ep *ep,
 	}
 
 	BT_DBG("id 0x%02x dir 0x%02x codec 0x%02x", ep->status.id,
-	       unicast_client_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
-	       codec->id);
+	       ep->dir, codec->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->status.id;
@@ -1438,7 +1407,7 @@ int bt_unicast_client_start(struct bt_audio_stream *stream)
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
 	 */
-	if (bt_unicast_client_ep_is_src(ep)) {
+	if (ep->dir == BT_AUDIO_SOURCE) {
 		err = unicast_client_ep_start(ep, buf);
 		if (err) {
 			return err;
@@ -1490,7 +1459,7 @@ int bt_unicast_client_stop(struct bt_audio_stream *stream)
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
 	 */
-	if (bt_unicast_client_ep_is_src(ep)) {
+	if (ep->dir == BT_AUDIO_SOURCE) {
 		err = unicast_client_ep_stop(ep, buf);
 		if (err) {
 			return err;
