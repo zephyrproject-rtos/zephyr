@@ -40,14 +40,21 @@ static void uart_rpi_poll_out(const struct device *dev, unsigned char c)
 static int uart_rpi_init(const struct device *dev)
 {
 	const struct uart_rpi_config *config = dev->config;
-	int ret;
+	uart_inst_t * const uart_inst = config->uart_dev;
+	uart_hw_t * const uart_hw = config->uart_regs;
+	struct uart_rpi_data * const data = dev->data;
+	int ret, baudrate;
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;
 	}
 
-	uart_init(config->uart_dev, config->baudrate);
+	baudrate = uart_init(uart_inst, data->baudrate);
+	/* Check if baudrate adjustment returned by 'uart_init' function is a positive value */
+	if (baudrate <= 0) {
+		return -EINVAL;
+	}
 
 	return 0;
 }
