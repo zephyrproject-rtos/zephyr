@@ -5,7 +5,7 @@
 
 menuconfig BMI160
 	bool "Bosch BMI160 inertial measurement unit"
-	depends on SPI
+	depends on SPI || I2C
 	help
 	  Enable Bosch BMI160 inertial measurement unit that provides acceleration
 	  and angular rate measurements.
