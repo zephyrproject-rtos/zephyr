@@ -25,7 +25,6 @@ int bt_unicast_client_stop(struct bt_audio_stream *stream);
 
 int bt_unicast_client_release(struct bt_audio_stream *stream);
 
-bool bt_unicast_client_ep_is_src(const struct bt_audio_ep *ep);
 
 void bt_unicast_client_ep_set_state(struct bt_audio_ep *ep, uint8_t state);
 

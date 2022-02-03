@@ -676,7 +676,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 		return 0;
 	}
 
-	if (bt_unicast_client_ep_is_src(stream->ep)) {
+	if (stream->ep->dir == BT_AUDIO_SOURCE) {
 		return 0;
 	}
 
@@ -779,7 +779,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 
 	bt_unicast_client_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_DISABLING);
 
-	if (bt_unicast_client_ep_is_src(stream->ep)) {
+	if (stream->ep->dir == BT_AUDIO_SOURCE) {
 		return 0;
 	}
 
