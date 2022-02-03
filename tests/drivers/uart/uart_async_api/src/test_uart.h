@@ -55,6 +55,7 @@
 void init_test(void);
 
 void test_single_read(void);
+void test_multiple_rx_enable(void);
 void test_chained_read(void);
 void test_double_buffer(void);
 void test_read_abort(void);
@@ -64,6 +65,7 @@ void test_long_buffers(void);
 void test_chained_write(void);
 
 void test_single_read_setup(void);
+void test_multiple_rx_enable_setup(void);
 void test_chained_read_setup(void);
 void test_double_buffer_setup(void);
 void test_read_abort_setup(void);
