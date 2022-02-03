@@ -1026,7 +1026,7 @@ if(CONFIG_USERSPACE)
     --rodata ${CONFIG_KOBJECT_RODATA_AREA_EXTRA_BYTES}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
-    kobj_prebuilt_hash_output_lib
+    kobj_prebuilt_hash_output_lib $<TARGET_OBJECTS:kobj_prebuilt_hash_output_lib>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
@@ -1153,7 +1153,7 @@ if(CONFIG_USERSPACE)
   # Use gperf to generate C code (KOBJECT_HASH_OUTPUT_SRC_PRE) which implements a
   # perfect hashtable based on KOBJECT_HASH_LIST
   add_custom_command(
-    OUTPUT ${KOBJECT_HASH_OUTPUT_SRC_PRE}
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC_PRE}
     COMMAND
     ${GPERF}
     --output-file ${KOBJECT_HASH_OUTPUT_SRC_PRE}
@@ -1181,7 +1181,7 @@ if(CONFIG_USERSPACE)
     -o ${KOBJECT_HASH_OUTPUT_SRC}
     -p "struct z_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS kobj_hash_output_src_pre ${KOBJECT_HASH_OUTPUT_SRC_PRE}
+    DEPENDS kobj_hash_output_src_pre ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(
@@ -1224,7 +1224,7 @@ if(CONFIG_USERSPACE)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_OBJECTS:kobj_hash_output_lib>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KOBJECT_HASH_OUTPUT_OBJ_RENAMED}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-    DEPENDS kobj_hash_output_lib
+    DEPENDS kobj_hash_output_lib $<TARGET_OBJECTS:kobj_hash_output_lib>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMAND_EXPAND_LISTS
     )
