@@ -1195,18 +1195,23 @@ int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 {
 	struct bt_audio_stream *stream;
+	struct bt_iso_cig *cig;
 
 	CHECKIF(unicast_group == NULL) {
 		BT_DBG("unicast_group is NULL");
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, stream, node) {
-		if (stream->group == NULL) {
-			BT_DBG("stream %p not in a group", stream);
-			return -EINVAL;
-		}
+	/* We can just check the CIG state to see if any streams have started as
+	 * that would start the ISO connection procedure
+	 */
+	cig = unicast_group->cig;
+	if (cig != NULL && cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
+		BT_DBG("At least one unicast group stream is started");
+		return -EBADMSG;
+	}
 
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, stream, node) {
 		stream->unicast_group = NULL;
 	}
 
