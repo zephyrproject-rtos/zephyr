@@ -59,11 +59,6 @@ config BT_OTS_OLCP_GO_TO_SUPPORT
 	bool "Support OLCP Go To Operation"
 	default y
 
-config BT_OTS_OBJ_MAX_NAME_LEN
-	int "Maximum object name length"
-	default 120
-	range 1 120
-
 config BT_OTS_OBJ_NAME_WRITE_SUPPORT
 	bool "Support object name write"
 
@@ -113,6 +108,14 @@ config BT_OTS_L2CAP_CHAN_RX_MTU
 	# RX MTU will be truncated to account for the L2CAP PDU and SDU header.
 	default BT_BUF_ACL_RX_SIZE
 	range 21 BT_BUF_ACL_RX_SIZE
+
+config BT_OTS_OBJ_MAX_NAME_LEN
+	int "Maximum object name length"
+	# Max name length allowed by OTS spec is 120 octets
+	# TODO: Set separate max name length for client, as other
+	# servers may use the full 120 octets.
+	default 120
+	range 1 120
 
 module = BT_OTS
 module-str = BT_OTS

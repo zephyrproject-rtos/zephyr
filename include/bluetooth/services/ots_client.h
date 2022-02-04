@@ -45,8 +45,6 @@ struct bt_date_time {
 	uint8_t seconds;
 };
 
-#define BT_OTS_NAME_MAX_SIZE           120
-
 #define BT_OTC_METADATA_REQ_NAME          BIT(0)
 #define BT_OTC_METADATA_REQ_TYPE          BIT(1)
 #define BT_OTC_METADATA_REQ_SIZE          BIT(2)
@@ -91,7 +89,7 @@ struct bt_date_time {
 
 /**@brief Metadata of an OTS Object  */
 struct bt_otc_obj_metadata {
-	char name[BT_OTS_NAME_MAX_SIZE + 1];
+	char name[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
 	struct bt_ots_obj_type type_uuid;
 	uint32_t current_size;
 	uint32_t alloc_size;

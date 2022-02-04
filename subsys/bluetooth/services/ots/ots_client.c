@@ -852,12 +852,12 @@ static uint8_t read_obj_name_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (data) {
-		if (length <= BT_OTS_NAME_MAX_SIZE) {
+		if (length <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
 			memcpy(inst->otc_inst->cur_object.name, data, length);
 			inst->otc_inst->cur_object.name[length] = '\0';
 		} else {
 			BT_WARN("Invalid length %u (expected max %u)",
-				length, BT_OTS_NAME_MAX_SIZE);
+				length, CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
