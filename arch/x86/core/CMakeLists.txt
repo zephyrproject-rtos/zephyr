@@ -6,6 +6,7 @@ zephyr_library()
 zephyr_library_sources(cpuhalt.c)
 zephyr_library_sources(prep_c.c)
 zephyr_library_sources(fatal.c)
+zephyr_library_sources(cpuid.c)
 zephyr_library_sources(spec_ctrl.c)
 
 zephyr_library_sources_ifdef(CONFIG_X86_MEMMAP memmap.c)
