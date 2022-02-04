@@ -38,7 +38,8 @@ static int gpio_rpi_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_init(pin);
+	/* Avoid gpio_init, since that also clears previously set direction/high/low */
+	gpio_set_function(pin, GPIO_FUNC_SIO);
 
 	if (flags & GPIO_OUTPUT) {
 		gpio_set_dir(pin, GPIO_OUT);
@@ -50,11 +51,9 @@ static int gpio_rpi_configure(const struct device *dev,
 		}
 	} else if (flags & GPIO_INPUT) {
 		gpio_set_dir(pin, GPIO_IN);
-		if (flags & GPIO_PULL_UP) {
-			gpio_pull_up(pin);
-		} else if (flags & GPIO_PULL_DOWN) {
-			gpio_pull_down(pin);
-		}
+		gpio_set_pulls(pin,
+			(flags & GPIO_PULL_UP) != 0U,
+			(flags & GPIO_PULL_DOWN) != 0U);
 	}
 
 	return 0;
@@ -102,6 +101,7 @@ static int gpio_rpi_pin_interrupt_configure(const struct device *dev,
 	struct gpio_rpi_data *data = dev->data;
 	uint32_t events = 0;
 
+	gpio_set_irq_enabled(pin, ALL_EVENTS, false);
 	if (mode != GPIO_INT_DISABLE) {
 		if (mode & GPIO_INT_EDGE) {
 			if (trig & GPIO_INT_LOW_0) {
@@ -179,6 +179,10 @@ static int gpio_rpi_bank_init(const struct device *dev)
 	}									\
 	static const struct gpio_rpi_config gpio_rpi_##idx##_config = {		\
 		.bank_config_func = bank_##idx##_config_func,			\
+		.common =							\
+		{								\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),	\
+		}								\
 	};									\
 										\
 	static struct gpio_rpi_data gpio_rpi_##idx##_data;			\
