@@ -2846,8 +2846,8 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 		sep->sample_count = 0U;
 	} else {
 		for (uint8_t idx = 0U; idx < samples_cnt; ++idx) {
-			sep->sample[idx].i = IQ_SHIFT_12_TO_8_BIT(iq_report->sample[idx].i);
-			sep->sample[idx].q = IQ_SHIFT_12_TO_8_BIT(iq_report->sample[idx].q);
+			sep->sample[idx].i = IQ_CONVERT_12_TO_8_BIT(iq_report->sample[idx].i);
+			sep->sample[idx].q = IQ_CONVERT_12_TO_8_BIT(iq_report->sample[idx].q);
 		}
 
 		sep->sample_count = samples_cnt;
@@ -2969,8 +2969,8 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 		sep->sample_count = 0U;
 	} else {
 		for (uint8_t idx = 0U; idx < samples_cnt; ++idx) {
-			sep->sample[idx].i = IQ_SHIFT_12_TO_8_BIT(iq_report->sample[idx].i);
-			sep->sample[idx].q = IQ_SHIFT_12_TO_8_BIT(iq_report->sample[idx].q);
+			sep->sample[idx].i = IQ_CONVERT_12_TO_8_BIT(iq_report->sample[idx].i);
+			sep->sample[idx].q = IQ_CONVERT_12_TO_8_BIT(iq_report->sample[idx].q);
 		}
 		sep->sample_count = samples_cnt;
 	}

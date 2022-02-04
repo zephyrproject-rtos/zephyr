@@ -66,8 +66,22 @@ struct lll_df_adv_cfg {
 #define IQ_SAMPLE_CNT (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define RSSI_DBM_TO_DECI_DBM(x) (-(x) * 10)
-#define IQ_SHIFT_12_TO_8_BIT(x) ((int8_t)((x) >> 4))
+/* Macro that represents out of range IQ sample (saturated). Value provided by Radio specifications.
+ * It is not defined by Bluetooth Core specification. This is the vendor specific value.
+ *
+ * Nordic Semiconductor Radio peripheral provides 16 bit wide IQ samples.
+ * BT 5.3 Core specification Vol 4, Part E sectons 7.7.65.21 and 7.7.65.22 limit size of
+ * IQ samples to 8 bits.
+ * To mitigate the limited accuratcy and losing information about saturated IQ samples a 0x80 value
+ * is selected to serve the purpose.
+ */
+#define IQ_SAMPLE_STATURATED_16_BIT 0x8000
+#define IQ_SAMPLE_STATURATED_8_BIT 0x80
 
+#define IQ_SHIFT_12_TO_8_BIT(x) ((int8_t)((x) >> 4))
+#define IQ_CONVERT_12_TO_8_BIT(x)                                                                  \
+	(((x) == IQ_SAMPLE_STATURATED_16_BIT) ? IQ_SAMPLE_STATURATED_8_BIT :                       \
+						      IQ_SHIFT_12_TO_8_BIT((x)))
 /* Structure to store an single IQ sample */
 struct iq_sample {
 	int16_t i;
