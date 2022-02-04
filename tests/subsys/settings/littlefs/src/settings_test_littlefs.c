@@ -16,14 +16,14 @@ void test_main(void)
 {
 	ztest_test_suite(test_config,
 			 /* Config tests */
-			 ztest_unit_test(config_empty_lookups),
+			 ztest_unit_test(test_config_empty_lookups),
 			 ztest_unit_test(test_config_insert),
 			 ztest_unit_test(test_config_getset_unknown),
 			 ztest_unit_test(test_config_getset_int),
 			 ztest_unit_test(test_config_getset_int64),
 			 ztest_unit_test(test_config_commit),
 			 /* Littlefs as backing storage. */
-			 ztest_unit_test(config_setup_littlefs),
+			 ztest_unit_test(test_config_setup_littlefs),
 			 ztest_unit_test(test_config_empty_file),
 			 ztest_unit_test(test_config_small_file),
 			 ztest_unit_test(test_config_multiple_in_file),
