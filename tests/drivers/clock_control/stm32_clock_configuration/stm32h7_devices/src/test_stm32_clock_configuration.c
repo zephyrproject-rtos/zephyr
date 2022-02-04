@@ -75,6 +75,10 @@ static void test_spi_clk_config(void)
 			zassert_equal(spi1_actual_clk_src, RCC_SPI123CLKSOURCE_PLL3,
 					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
 					spi1_actual_clk_src, RCC_SPI123CLKSOURCE_PLL3);
+		} else if (spi1_dt_ker_clk_src == STM32_SRC_CKPER) {
+			zassert_equal(spi1_actual_clk_src, RCC_SPI123CLKSOURCE_CLKP,
+					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
+					spi1_actual_clk_src, RCC_SPI123CLKSOURCE_CLKP);
 		} else {
 			zassert_true(1, "Unexpected ker_clk src(%d)", spi1_dt_ker_clk_src);
 		}
@@ -103,6 +107,8 @@ static void test_spi_clk_config(void)
 				"Expected SPI clk: (%d). Actual SPI clk: %d",
 				spi1_dt_clk_freq, spi1_actual_clk_freq);
 	}
+
+	TC_PRINT("SPI1 clock freq: %d(MHz)\n", spi1_actual_clk_freq / (1000*1000));
 
 	/* Test clock_off(reg_clk) */
 	r = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
