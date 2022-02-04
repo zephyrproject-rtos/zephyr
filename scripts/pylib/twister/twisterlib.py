@@ -1928,7 +1928,8 @@ Tests should reference the category and subsystem with a dot as a separator.
         has_test_main = False
         ztest_suite_names = []
 
-        for filename in glob.glob(os.path.join(path, "src", "*.c*")):
+        src_dir_path = self._find_src_dir_path(path)
+        for filename in glob.glob(os.path.join(src_dir_path, "*.c*")):
             try:
                 result: ScanPathResult = self.scan_file(filename)
                 if result.warnings:
@@ -1981,6 +1982,21 @@ Tests should reference the category and subsystem with a dot as a separator.
             self.cases.append(self.id)
 
         self.ztest_suite_names = ztest_suite_names
+
+    @staticmethod
+    def _find_src_dir_path(test_dir_path):
+        """
+        Try to find src directory with test source code. Sometimes due to the
+        optimization reasons it is placed in upper directory.
+        """
+        src_dir_name = "src"
+        src_dir_path = os.path.join(test_dir_path, src_dir_name)
+        if os.path.isdir(src_dir_path):
+            return src_dir_path
+        src_dir_path = os.path.join(test_dir_path, "..", src_dir_name)
+        if os.path.isdir(src_dir_path):
+            return src_dir_path
+        return ""
 
     def __str__(self):
         return self.name
