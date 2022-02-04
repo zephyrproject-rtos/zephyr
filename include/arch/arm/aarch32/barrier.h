@@ -18,33 +18,15 @@
 #include <arch/arm/aarch32/cortex_a_r/cmsis.h>
 #endif
 
-#if !defined(isb)
-#define isb()		__ISB()
-#endif
-
-#if !defined(mb)
-#define mb()		__DSB()
-#endif
-
-#if !defined(rmb)
-#define rmb()		__DSB()
-#endif
-
-#if !defined(wmb)
-#define wmb()		__DSB()
-#endif
-
-#if !defined(smp_mb)
-#define smp_mb()	__DMB()
-#endif
-
-#if !defined(smp_rmb)
-#define smp_rmb()	__DMB()
-#endif
-
-#if !defined(smp_wmb)
-#define smp_wmb()	__DMB()
-#endif
+#if !defined(__HAS_BUILTIN_MEMORY_BARRIER)
+#define arch_isb()		__ISB()
+#define arch_mb()		__DSB()
+#define arch_rmb()		__DSB()
+#define arch_wmb()		__DSB()
+#define arch_smp_mb()	__DMB()
+#define arch_smp_rmb()	__DMB()
+#define arch_smp_wmb()	__DMB()
+#endif /* !__has_builtin_memory_barrier */
 
 #include <barrier.h>
 
