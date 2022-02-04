@@ -340,6 +340,11 @@ config LWM2M_SWMGMT_OBJ_SUPPORT
 	help
 	  Include support for LWM2M Software Management Object (ID 9)
 
+config LWM2M_PORTFOLIO_OBJ_SUPPORT
+	bool "LwM2M Portfolio object ID support for Conformance test"
+	help
+	  Include support for LWM2M Portfolio Object (ID 16).
+
 config LWM2M_SWMGMT_MAX_INSTANCE_COUNT
 	int "Maximum # of object instances"
 	depends on LWM2M_SWMGMT_OBJ_SUPPORT
