@@ -16,6 +16,8 @@
 #include <kernel_arch_func.h>
 #include <device.h>
 #include <drivers/pcie/msi.h>
+#include <drivers/interrupt_controller/sysapic.h>
+#include <arch/x86/cpuid.h>
 #endif
 
 /* PCI Express Extended Configuration Mechanism (MMIO) */
@@ -179,12 +181,15 @@ static bool get_vtd(void)
 
 /* these functions are explained in include/drivers/pcie/msi.h */
 
+#define MSI_MAP_DESTINATION_ID_SHIFT 12
+#define MSI_RH BIT(3)
+
 uint32_t pcie_msi_map(unsigned int irq,
 		      msi_vector_t *vector)
 {
 	uint32_t map;
-
 	ARG_UNUSED(irq);
+
 #if defined(CONFIG_INTEL_VTD_ICTL)
 #if !defined(CONFIG_PCIE_MSI_X)
 	if (vector != NULL) {
@@ -197,7 +202,15 @@ uint32_t pcie_msi_map(unsigned int irq,
 #endif
 #endif
 	{
-		map = 0xFEE00000U; /* standard delivery to BSP local APIC */
+		uint32_t dest_id;
+
+		dest_id = z_x86_cpuid_get_current_physical_apic_id() <<
+			MSI_MAP_DESTINATION_ID_SHIFT;
+
+		/* Directing to current physical CPU (may not be BSP)
+		 * Destination ID - RH 1 - DM 0
+		 */
+		map = 0xFEE00000U | dest_id | MSI_RH;
 	}
 
 	return map;
