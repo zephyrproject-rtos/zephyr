@@ -185,6 +185,10 @@ static inline void pm_device_runtime_init_suspended(const struct device *dev) { 
 static inline void pm_device_runtime_init_off(const struct device *dev) { }
 #endif
 
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+
 /** @} */
 
 #ifdef __cplusplus
