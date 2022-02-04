@@ -49,8 +49,7 @@ static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
 	net_buf_simple_add_u8(net_buf, obj_name_len);
 
 	/* Name */
-	net_buf_simple_add_mem(net_buf, obj->metadata.name,
-			       strlen(obj->metadata.name));
+	net_buf_simple_add_mem(net_buf, obj->metadata.name, obj_name_len);
 
 	/* Flags */
 	net_buf_simple_add_u8(net_buf, flags);
