@@ -99,13 +99,10 @@
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
 	gd25q16: gd25q16@0 {
-		/* NOTE: Quad mode not supported as driver does not handle
-		 * QE bit setting in SR2. Ref. GD25Q16C, Rev 3.0, p. 12.
-		 */
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
-		writeoc = "pp2o";
-		readoc = "read2io";
+		writeoc = "pp4o";
+		readoc = "read4io";
 		sck-frequency = <16000000>;
 		label = "GD25Q16";
 		jedec-id = [c8 40 15];
@@ -113,6 +110,7 @@
 		has-dpd;
 		t-enter-dpd = <20000>;
 		t-exit-dpd = <20000>;
+		quad-enable-requirements = "S2B1v1";
 	};
 };
 
