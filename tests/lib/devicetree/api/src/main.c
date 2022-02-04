@@ -640,6 +640,13 @@ static void test_phandles(void)
 	zassert_true(DT_PROP_HAS_IDX(TEST_PH, gpios, 1), "");
 	zassert_false(DT_PROP_HAS_IDX(TEST_PH, gpios, 2), "");
 
+	/* DT_PROP_HAS_NAME */
+	zassert_false(DT_PROP_HAS_NAME(TEST_PH, foos, A), "");
+	zassert_true(DT_PROP_HAS_NAME(TEST_PH, foos, a), "");
+	zassert_false(DT_PROP_HAS_NAME(TEST_PH, foos, b-c), "");
+	zassert_true(DT_PROP_HAS_NAME(TEST_PH, foos, b_c), "");
+	zassert_false(DT_PROP_HAS_NAME(TEST_PH, bazs, jane), "");
+
 	/* DT_PHA_HAS_CELL_AT_IDX */
 	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, pin), "");
 	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, flags), "");
@@ -736,6 +743,13 @@ static void test_phandles(void)
 	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 0), "");
 	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 1), "");
 	zassert_false(DT_INST_PROP_HAS_IDX(0, gpios, 2), "");
+
+	/* DT_INST_PROP_HAS_NAME */
+	zassert_false(DT_INST_PROP_HAS_NAME(0, foos, A), "");
+	zassert_true(DT_INST_PROP_HAS_NAME(0, foos, a), "");
+	zassert_false(DT_INST_PROP_HAS_NAME(0, foos, b-c), "");
+	zassert_true(DT_INST_PROP_HAS_NAME(0, foos, b_c), "");
+	zassert_false(DT_INST_PROP_HAS_NAME(0, bazs, jane), "");
 
 	/* DT_INST_PHA_HAS_CELL_AT_IDX */
 	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, gpios, 1, pin), "");
