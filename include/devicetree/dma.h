@@ -258,7 +258,7 @@ extern "C" {
  * @return 1 if the dmas property has the named element, 0 otherwise
  */
 #define DT_DMAS_HAS_NAME(node_id, name) \
-	IS_ENABLED(DT_CAT(node_id, _P_dmas_NAME_##name##_EXISTS))
+	DT_PROP_HAS_NAME(node_id, dmas, name)
 
 /**
  * @brief Does a DT_DRV_COMPAT instance's dmas property have a named element?
