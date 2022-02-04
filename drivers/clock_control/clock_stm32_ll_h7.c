@@ -319,8 +319,23 @@ static inline int enabled_clock(uint32_t src_clk)
 	switch (src_clk) {
 	case STM32_SRC_SYSCLK:
 		break;
+	case STM32_SRC_CKPER:
+		if (!IS_ENABLED(STM32_CKPER_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
 	case STM32_SRC_HSE:
 		if (!IS_ENABLED(STM32_HSE_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+	case STM32_SRC_HSI_KER:
+		if (!IS_ENABLED(STM32_HSI_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+	case STM32_SRC_CSI_KER:
+		if (!IS_ENABLED(STM32_CSI_ENABLED)) {
 			r = -ENOTSUP;
 		}
 		break;
@@ -502,6 +517,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	case STM32_SRC_SYSCLK:
 		*rate = get_hclk_frequency();
 		break;
+#if defined(STM32_CKPER_ENABLED)
+	case STM32_SRC_CKPER:
+		*rate = LL_RCC_GetCLKPClockFreq(LL_RCC_CLKP_CLKSOURCE);
+		break;
+#endif /* STM32_CKPER_ENABLED */
 #if defined(STM32_HSE_ENABLED)
 	case STM32_SRC_HSE:
 		*rate = STM32_HSE_FREQ;
