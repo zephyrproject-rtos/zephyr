@@ -264,6 +264,10 @@
 #define STM32_HSE_FREQ		0
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(perck), st_stm32_clock_mux, okay)
+#define STM32_CKPER_ENABLED	1
+#endif
+
 /** Driver structure definition */
 
 struct stm32_pclken {
