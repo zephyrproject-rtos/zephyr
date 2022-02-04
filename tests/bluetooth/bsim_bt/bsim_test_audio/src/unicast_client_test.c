@@ -299,14 +299,45 @@ static void test_main(void)
 	}
 
 	printk("Creating unicast group\n");
-	err = bt_audio_unicast_group_create(g_streams, stream_cnt,
-					    &unicast_group);
+	err = bt_audio_unicast_group_create(g_streams, 1, &unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
 		return;
 	}
 
+	/* Test removing streams from group before adding them */
+	if (stream_cnt > 1) {
+		err = bt_audio_unicast_group_remove_streams(unicast_group,
+							    g_streams + 1,
+							    stream_cnt - 1);
+		if (err == 0) {
+			FAIL("Able to remove stream not in group");
+			return;
+		}
+
+		/* Test adding streams to group after creation */
+		err = bt_audio_unicast_group_add_streams(unicast_group,
+							 g_streams + 1,
+							 stream_cnt - 1);
+		if (err != 0) {
+			FAIL("Unable to add streams to unicast group: %d", err);
+			return;
+		}
+	}
+
 	/* TODO: When babblesim supports ISO setup Audio streams */
+
+	/* Test removing streams from group after creation */
+	if (stream_cnt > 1) {
+		err = bt_audio_unicast_group_remove_streams(unicast_group,
+							    g_streams + 1,
+							    stream_cnt - 1);
+		if (err != 0) {
+			FAIL("Unable to remove streams from unicast group: %d",
+			     err);
+			return;
+		}
+	}
 
 	printk("Deleting unicast group\n");
 	err = bt_audio_unicast_group_delete(unicast_group);

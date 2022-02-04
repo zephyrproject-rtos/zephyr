@@ -1077,6 +1077,121 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
 	return 0;
 }
 
+int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
+				       struct bt_audio_stream *streams,
+				       uint8_t num_stream)
+{
+	struct bt_audio_stream *tmp_stream;
+	uint8_t total_stream_cnt;
+	struct bt_iso_cig *cig;
+
+	CHECKIF(unicast_group == NULL) {
+		BT_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(streams == NULL) {
+		BT_DBG("streams is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(num_stream == 0) {
+		BT_DBG("num_stream is 0");
+		return -EINVAL;
+	}
+
+	total_stream_cnt = num_stream;
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, tmp_stream, node) {
+		total_stream_cnt++;
+	}
+
+	if (total_stream_cnt > UNICAST_GROUP_STREAM_CNT) {
+		BT_DBG("Too many streams provided: %u/%u",
+		       total_stream_cnt, UNICAST_GROUP_STREAM_CNT);
+		return -EINVAL;
+
+	}
+
+	/* Validate input */
+	for (uint8_t i = 0; i < num_stream; i++) {
+		if (streams[i].group != NULL) {
+			BT_DBG("stream[%u] is already part of group %p",
+			       i, streams[i].group);
+			return -EINVAL;
+		}
+	}
+
+	/* We can just check the CIG state to see if any streams have started as
+	 * that would start the ISO connection procedure
+	 */
+	cig = unicast_group->cig;
+	if (cig != NULL && cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
+		BT_DBG("At least one unicast group stream is started");
+		return -EBADMSG;
+	}
+
+	for (uint8_t i = 0; i < num_stream; i++) {
+		sys_slist_t *group_streams = &unicast_group->streams;
+		struct bt_audio_stream *stream = &streams[i];
+
+		stream->unicast_group = unicast_group;
+		sys_slist_append(group_streams, &stream->node);
+	}
+
+	return 0;
+}
+
+int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast_group,
+					  struct bt_audio_stream *streams,
+					  uint8_t num_stream)
+{
+	struct bt_iso_cig *cig;
+
+	CHECKIF(unicast_group == NULL) {
+		BT_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(streams == NULL) {
+		BT_DBG("streams is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(num_stream == 0) {
+		BT_DBG("num_stream is 0");
+		return -EINVAL;
+	}
+
+	/* Validate input */
+	for (uint8_t i = 0; i < num_stream; i++) {
+		if (streams[i].group != unicast_group) {
+			BT_DBG("stream[%u] group %p is not group %p",
+			       i, streams[i].group, unicast_group);
+			return -EINVAL;
+		}
+	}
+
+	/* We can just check the CIG state to see if any streams have started as
+	 * that would start the ISO connection procedure
+	 */
+	cig = unicast_group->cig;
+	if (cig != NULL && cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
+		BT_DBG("At least one unicast group stream is started");
+		return -EBADMSG;
+	}
+
+	for (uint8_t i = 0; i < num_stream; i++) {
+		sys_slist_t *group_streams = &unicast_group->streams;
+		struct bt_audio_stream *stream = &streams[i];
+
+		stream->unicast_group = NULL;
+		(void)sys_slist_find_and_remove(group_streams,
+						&streams->node);
+	}
+
+	return 0;
+}
+
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 {
 	struct bt_audio_stream *stream;

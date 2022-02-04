@@ -1503,6 +1503,45 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
 				  uint8_t num_stream,
 				  struct bt_audio_unicast_group **unicast_group);
 
+/** @brief Add streams to a unicast group as a unicast client
+ *
+ *  This function can be used to add additional streams to a
+ *  bt_audio_unicast_group.
+ *
+ *  This can be called at any time before any of the streams in the
+ *  group has been started (see bt_audio_stream_ops.started()).
+ *  This can also be called after the streams have been stopped
+ *  (see bt_audio_stream_ops.stopped()).
+ *
+ *  @param unicast_group  Pointer to the unicast group
+ *  @param streams        Array of stream objects being added to the group.
+ *  @param num_stream     Number of streams in @p streams.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
+				       struct bt_audio_stream *streams,
+				       uint8_t num_stream);
+
+/** @brief Remove streams from a unicast group as a unicast client
+ *
+ *  This function can be used to remove streams from a bt_audio_unicast_group.
+ *
+ *  This can be called at any time before any of the streams in the
+ *  group has been started (see bt_audio_stream_ops.started()).
+ *  This can also be called after the streams have been stopped
+ *  (see bt_audio_stream_ops.stopped()).
+ *
+ *  @param unicast_group  Pointer to the unicast group
+ *  @param streams        Array of stream objects removed from the group.
+ *  @param num_stream     Number of streams in @p streams.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast_group,
+					  struct bt_audio_stream *streams,
+					  uint8_t num_stream);
+
 /** @brief Delete audio unicast group.
  *
  *  Delete a audio unicast group as a client. All streams in the group shall
