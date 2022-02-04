@@ -33,7 +33,7 @@ config LOG_MIPI_SYST_USE_CATALOG
 	bool "Use MIPI Sys-T Catalog for logging"
 	depends on LOG2
 	select LOG2_FMT_SECTION
-	select LOG2_MSG_PKG_ALWAYS_ADD_RO_STRING_IDXS
+	select LOG2_USE_TAGGED_ARGUMENTS
 	help
 	  Use MIPI Sys-T Catalog for logging instead of plain text.
 
