@@ -208,7 +208,9 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 	struct heap_listener name = { \
 		.heap_id = _heap_id, \
 		.event = HEAP_ALLOC, \
-		.alloc_cb = _alloc_cb \
+		{ \
+			.alloc_cb = _alloc_cb \
+		}, \
 	}
 
 /**
@@ -232,7 +234,9 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 	struct heap_listener name = { \
 		.heap_id = _heap_id, \
 		.event = HEAP_FREE, \
-		.free_cb = _free_cb \
+		{ \
+			.free_cb = _free_cb \
+		}, \
 	}
 
 /**
@@ -256,7 +260,9 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 	struct heap_listener name = { \
 		.heap_id = _heap_id, \
 		.event = HEAP_RESIZE, \
-		.resize_cb = _resize_cb \
+		{ \
+			.resize_cb = _resize_cb \
+		}, \
 	}
 
 /** @} */
