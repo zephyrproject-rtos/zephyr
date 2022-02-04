@@ -923,9 +923,12 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 
 void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 {
+	const struct device *dev = net_if_get_device(nrf5_data.iface);
+
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if ((id == DRX_SLOT_PH) || (id == DRX_SLOT_RX)) {
-		nrf5_stop(net_if_get_device(nrf5_data.iface));
+		__ASSERT_NO_MSG(nrf5_data.event_handler);
+		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
 		return;
 	}
 #else
@@ -955,9 +958,7 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 
 	nrf5_data.last_frame_ack_fpb = false;
 	if (nrf5_data.event_handler) {
-		nrf5_data.event_handler(net_if_get_device(nrf5_data.iface),
-					IEEE802154_EVENT_RX_FAILED,
-					(void *)&reason);
+		nrf5_data.event_handler(dev, IEEE802154_EVENT_RX_FAILED, (void *)&reason);
 	}
 }
 
