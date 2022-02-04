@@ -183,7 +183,14 @@ static inline void ctf_top_thread_name_set(uint32_t thread_id,
 
 static inline void ctf_top_isr_enter(void)
 {
-	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_ISR_ENTER));
+	uint32_t interrupt_num;
+#ifdef CONFIG_CPU_CORTEX_M
+	interrupt_num = ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) >>
+		     SCB_ICSR_VECTACTIVE_Pos);
+#else
+	interrupt_num = 0;
+#endif
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_ISR_ENTER), interrupt_num);
 }
 
 static inline void ctf_top_isr_exit(void)
