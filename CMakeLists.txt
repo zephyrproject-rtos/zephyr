@@ -145,12 +145,6 @@ if(CONFIG_STACK_CANARIES)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries>)
 endif()
 
-if(BUILD_VERSION)
-  zephyr_compile_definitions(
-    BUILD_VERSION=${BUILD_VERSION}
-  )
-endif()
-
 # @Intent: Obtain compiler optimizations flags and store in variables
 # @details:
 #   Kconfig.zephyr "Optimization level" is a kconfig choice, ensuring
@@ -435,7 +429,23 @@ if(NOT EXISTS ${LINKER_SCRIPT})
   message(FATAL_ERROR "Could not find linker script: '${LINKER_SCRIPT}'. Corrupted configuration?")
 endif()
 
-configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
+if(DEFINED BUILD_VERSION)
+  set(build_version_argument "-DBUILD_VERSION=${BUILD_VERSION}")
+elseif(EXISTS ${ZEPHYR_BASE}/.git/index)
+  set(git_dependency ${ZEPHYR_BASE}/.git/index)
+else()
+  message(WARNING "ZEPHYR_BASE=${ZEPHYR_BASE} doesn't appear to be a git "
+    "repository, please specify '-DBUILD_VERSION=<version>'")
+endif()
+add_custom_command(
+  OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
+  COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
+    -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
+    ${build_version_argument}
+    -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
+  DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
+)
+add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
 # Error-out when the deprecated naming convention is found (until
 # after 1.14.0 has been released)
@@ -705,7 +715,7 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 
 add_custom_target(zephyr_generated_headers)
 add_dependencies(zephyr_generated_headers
-  offsets_h
+  offsets_h version_h
   )
 
 # Generate offsets.c.obj from offsets.c
@@ -1652,7 +1662,7 @@ if(CONFIG_LOG_DICTIONARY_SUPPORT)
     ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
     ${KERNEL_ELF_NAME}
     ${LOG_DICT_DB_NAME}
-    --build ${BUILD_VERSION}
+    --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
     )
   list(APPEND
     post_build_byproducts
