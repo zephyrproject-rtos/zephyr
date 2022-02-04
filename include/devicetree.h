@@ -609,6 +609,37 @@
 	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _IDX_, idx, _EXISTS))
 
 /**
+ * @brief Is name "name" available in a foo-names property?
+ *
+ * This property is handled as special case:
+ *
+ * - interrupts property: use DT_IRQ_HAS_NAME(node_id, idx) instead
+ *
+ * It is an error to use this macro with the interrupts property.
+ *
+ * Example devicetree fragment:
+ *
+ *	nx: node-x {
+ *		foos = <&bar xx yy>, <&baz xx zz>;
+ *		foo-names = "event", "error";
+ *		status = "okay";
+ *	};
+ *
+ * Example usage:
+ *
+ *     DT_PROP_HAS_NAME(nx, foos, event)    // 1
+ *     DT_PROP_HAS_NAME(nx, foos, failure)  // 0
+ *
+ * @param node_id node identifier
+ * @param prop a lowercase-and-underscores "prop-names" type property
+ * @param name a lowercase-and-underscores name to check
+ * @return An expression which evaluates to 1 if "name" is an available
+ *         name into the given property, and 0 otherwise.
+ */
+#define DT_PROP_HAS_NAME(node_id, prop, name) \
+	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _NAME_, name, _EXISTS))
+
+/**
  * @brief Get the value at index "idx" in an array type property
  *
  * It might help to read the argument order as being similar to
@@ -2384,6 +2415,17 @@
  */
 #define DT_INST_PROP_HAS_IDX(inst, prop, idx) \
 	DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Is name "name" available in a foo-names property?
+ * @param inst instance number
+ * @param prop a lowercase-and-underscores "prop-names" type property
+ * @param name a lowercase-and-underscores name to check
+ * @return An expression which evaluates to 1 if "name" is an available
+ *         name into the given property, and 0 otherwise.
+ */
+#define DT_INST_PROP_HAS_NAME(inst, prop, name) \
+	DT_PROP_HAS_NAME(DT_DRV_INST(inst), prop, name)
 
 /**
  * @brief Get a DT_DRV_COMPAT element value in an array property
