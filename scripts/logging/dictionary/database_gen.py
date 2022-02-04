@@ -15,6 +15,7 @@ with the parser to decode binary log messages.
 import argparse
 import logging
 import os
+import re
 import struct
 import sys
 
@@ -47,6 +48,8 @@ def parse_args():
     argparser.add_argument("elffile", help="Zephyr ELF binary")
     argparser.add_argument("dbfile", help="Dictionary Logging Database file")
     argparser.add_argument("--build", help="Build ID")
+    argparser.add_argument("--build-header",
+                           help="Header file containing BUILD_VERSION define")
     argparser.add_argument("--debug", action="store_true",
                            help="Print extra debugging information")
     argparser.add_argument("-v", "--verbose", action="store_true",
@@ -263,6 +266,14 @@ def main():
     elf = ELFFile(elffile)
 
     database = LogDatabase()
+
+    if args.build_header:
+        with open(args.build_header) as f:
+            for l in f:
+                match = re.match(r'\s*#define\s+BUILD_VERSION\s+(.*)', l)
+                if match:
+                    database.set_build_id(match.group(1))
+                    break
 
     if args.build:
         database.set_build_id(args.build)
