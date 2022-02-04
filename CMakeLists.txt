@@ -1698,7 +1698,11 @@ list(APPEND
 
 if(CONFIG_LOG_DICTIONARY_SUPPORT)
   set(log_dict_db_output --json=${PROJECT_BINARY_DIR}/log_dictionary.json)
+elseif(CONFIG_LOG_MIPI_SYST_USE_CATALOG)
+  set(log_dict_db_output --syst=${PROJECT_BINARY_DIR}/mipi_syst_collateral.xml)
+endif()
 
+if(log_dict_db_output)
   list(APPEND
     post_build_commands
     COMMAND
