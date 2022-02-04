@@ -9,7 +9,9 @@
 #include <ctype.h>
 #include <kernel.h>
 #include <mipi_syst.h>
+#include <spinlock.h>
 #include <sys/__assert.h>
+#include <linker/utils.h>
 #include <logging/log.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
@@ -770,7 +772,8 @@ static void hexdump2_print(const uint8_t *data, uint32_t length,
 	}
 }
 
-static int mipi_formatter(cbprintf_cb out, void *ctx,
+#ifndef CONFIG_LOG_MIPI_SYST_USE_CATALOG
+static int mipi_vprintf_formatter(cbprintf_cb out, void *ctx,
 			  const char *fmt, va_list ap)
 {
 	struct log_msg2 *msg = ctx;
@@ -780,6 +783,169 @@ static int mipi_formatter(cbprintf_cb out, void *ctx,
 
 	return 0;
 }
+#else
+
+static inline bool is_in_log_strings_section(const void *addr)
+{
+	extern const char __log_strings_start[];
+	extern const char __log_strings_end[];
+
+	if (((const char *)addr >= (const char *)__log_strings_start) &&
+	    ((const char *)addr < (const char *)__log_strings_end)) {
+		return true;
+	}
+
+	return false;
+}
+
+
+static struct k_spinlock payload_lock;
+static uint8_t payload_buf[1024];
+
+static int mipi_catalog_formatter(cbprintf_cb out, void *ctx,
+			  const char *fmt, va_list ap)
+{
+	struct log_msg2 *msg = ctx;
+	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+	k_spinlock_key_t key;
+
+	if (is_in_log_strings_section(fmt)) {
+		union {
+			mipi_syst_u64 v64;
+			mipi_syst_u32 v32;
+
+			unsigned int u;
+			unsigned long lu;
+			unsigned long long llu;
+
+			double d;
+
+			void *p;
+		} val;
+
+		const char *s;
+		size_t arg_sz;
+
+		uint8_t *argp = payload_buf;
+		uint8_t *argEob = payload_buf + sizeof(payload_buf);
+
+		size_t payload_sz;
+
+		key = k_spin_lock(&payload_lock);
+
+		for (int arg_tag = va_arg(ap, int);
+		     arg_tag != CBPRINTF_PACKAGE_ARG_TYPE_END;
+		     arg_tag = va_arg(ap, int)) {
+
+			switch (arg_tag) {
+			case CBPRINTF_PACKAGE_ARG_TYPE_CHAR:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_CHAR:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_SHORT:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_SHORT:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_INT:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_INT:
+				val.u = (unsigned int)va_arg(ap, unsigned int);
+				arg_sz = sizeof(unsigned int);
+				break;
+
+			case CBPRINTF_PACKAGE_ARG_TYPE_LONG:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG:
+				val.lu = (unsigned long)va_arg(ap, unsigned long);
+				arg_sz = sizeof(unsigned long);
+				break;
+
+			case CBPRINTF_PACKAGE_ARG_TYPE_LONG_LONG:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG_LONG:
+				val.llu = (unsigned long long)va_arg(ap, unsigned long long);
+				arg_sz = sizeof(unsigned long long);
+				break;
+
+			case CBPRINTF_PACKAGE_ARG_TYPE_FLOAT:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_DOUBLE:
+				val.d = (double)va_arg(ap, double);
+				arg_sz = sizeof(double);
+				break;
+
+			case CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE:
+				/* Handle long double as double */
+				val.d = (double)va_arg(ap, long double);
+				arg_sz = sizeof(double);
+				break;
+
+			case CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID:
+				val.p = (void *)va_arg(ap, void *);
+				arg_sz = sizeof(void *);
+				break;
+
+			case CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR:
+				s = va_arg(ap, char *);
+				while (argp < argEob) {
+					*argp++ = *s;
+					if (*s == 0) {
+						break;
+					}
+					s++;
+
+					if (argp == argEob) {
+						goto no_space;
+					}
+				}
+				continue;
+
+			default:
+				k_spin_unlock(&payload_lock, key);
+				return -EINVAL;
+			}
+
+			if (argp + arg_sz >= argEob) {
+				goto no_space;
+			}
+
+			if (arg_sz == sizeof(mipi_syst_u64)) {
+				*((mipi_syst_u64 *)argp) =
+					(mipi_syst_u64)MIPI_SYST_HTOLE64(val.v64);
+			} else {
+				*((mipi_syst_u32 *)argp) =
+					(mipi_syst_u32)MIPI_SYST_HTOLE32(val.v32);
+			}
+			argp += arg_sz;
+		}
+
+		/* Calculate how much buffer has been used */
+		payload_sz = argp - payload_buf;
+
+#ifdef CONFIG_64BIT
+		MIPI_SYST_CATALOG64_ARGS_COPY(&log_syst_handle, severity,
+					      (uintptr_t)fmt,
+					      payload_buf,
+					      payload_sz);
+#else
+		MIPI_SYST_CATALOG32_ARGS_COPY(&log_syst_handle, severity,
+					      (uintptr_t)fmt,
+					      payload_buf,
+					      payload_sz);
+#endif
+
+		k_spin_unlock(&payload_lock, key);
+	} else {
+		MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, ap);
+	}
+
+	return 0;
+
+no_space:
+	k_spin_unlock(&payload_lock, key);
+	return -ENOSPC;
+}
+#endif /* !CONFIG_LOG_MIPI_SYST_USE_CATALOG */
 
 void log_output_msg2_syst_process(const struct log_output *output,
 				struct log_msg2 *msg, uint32_t flag)
@@ -791,7 +957,13 @@ void log_output_msg2_syst_process(const struct log_output *output,
 	uint8_t *data = log_msg2_get_package(msg, &len);
 
 	if (len) {
-		(void)cbpprintf_external(NULL, mipi_formatter, msg, data);
+		(void)cbpprintf_external(NULL,
+#ifdef CONFIG_LOG_MIPI_SYST_USE_CATALOG
+					 mipi_catalog_formatter,
+#else
+					 mipi_vprintf_formatter,
+#endif
+					 msg, data);
 	}
 
 	data = log_msg2_get_data(msg, &hexdump_len);
