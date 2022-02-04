@@ -17,6 +17,9 @@ dt_reg_addr(img_0_off PATH ${dts_partition_path})
 dt_nodelabel(dts_partition_path NODELABEL "boot_partition")
 dt_reg_addr(boot_off PATH ${dts_partition_path})
 
+# get flash size to use in esptool as string
+math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
+
 if(CONFIG_BOOTLOADER_ESP_IDF)
   include(ExternalProject)
 
@@ -53,14 +56,14 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
     CONFIGURE_COMMAND ""
     BUILD_COMMAND
     ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/partition_table/gen_esp32part.py -q
-    --offset 0x8000 --flash-size ${CONFIG_ESPTOOLPY_FLASHSIZE} ${ESP_IDF_PATH}/components/partition_table/partitions_singleapp.csv ${espidf_build_dir}/partitions_singleapp.bin
+    --offset 0x8000 --flash-size ${esptoolpy_flashsize}MB ${ESP_IDF_PATH}/components/partition_table/partitions_singleapp.csv ${espidf_build_dir}/partitions_singleapp.bin
     INSTALL_COMMAND ""
     )
 
   if(CONFIG_BUILD_OUTPUT_BIN)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
-      ARGS --chip ${CONFIG_SOC} elf2image --flash_mode dio --flash_freq 40m --flash_size ${CONFIG_ESPTOOLPY_FLASHSIZE}
+      ARGS --chip ${CONFIG_SOC} elf2image --flash_mode dio --flash_freq 40m --flash_size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
   endif()
