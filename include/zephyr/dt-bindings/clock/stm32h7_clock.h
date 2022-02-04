@@ -27,15 +27,15 @@
 #define STM32_SRC_LSI		0x00C
 /** Oscillators not yet supported */
 /* #define STM32_SRC_HSI48	0x00D */
-/* #define STM32_SRC_HSI_KER	0x00E */ /* HSI + HSIKERON */
-/* #define STM32_SRC_CSI_KER	0x00F */ /* CSI + CSIKERON */
+#define STM32_SRC_HSI_KER	0x00E /* HSI + HSIKERON */
+#define STM32_SRC_CSI_KER	0x00F /* CSI + CSIKERON */
 /** Core clock */
 #define STM32_SRC_SYSCLK	0x010
 /** Others: Not yet supported */
 /* #define STM32_SRC_I2SCKIN	0x011 */
 /* #define STM32_SRC_SPDIFRX	0x012 */
 /** Clock muxes */
-/* #define STM32_SRC_PER	0x013 */
+#define STM32_SRC_CKPER		0x013
 
 #define STM32_SRC_CLOCK_MIN	STM32_SRC_PLL1_P
 #define STM32_SRC_CLOCK_MAX	STM32_SRC_CKPER

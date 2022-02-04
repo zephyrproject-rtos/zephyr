@@ -92,6 +92,12 @@
 			reg = <2>;
 			status = "disabled";
 		};
+
+		perck: perck {
+			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			status = "disabled";
+		};
 	};
 
 	soc {
