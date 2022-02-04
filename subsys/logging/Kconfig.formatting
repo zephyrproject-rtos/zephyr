@@ -27,6 +27,23 @@ config LOG_MIPI_SYST_ENABLE
 	help
 	  Enable MIPI SyS-T format output for the logger system.
 
+config LOG_MIPI_SYST_USE_CATALOG
+	bool "Use MIPI Sys-T Catalog for logging"
+	depends on LOG2 && LOG_MIPI_SYST_ENABLE
+	select LOG2_FMT_SECTION
+	select LOG2_MSG_PKG_ALWAYS_ADD_RO_STRING_IDXS
+	help
+	  Use MIPI Sys-T Catalog for logging instead of plain text.
+
+config LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE
+	int "Size of temporary arguments buffer when using Sys-T Catalog"
+	depends on LOG_MIPI_SYST_USE_CATALOG
+	default 1024
+	help
+	  The size (in bytes) of the temporary buffer to store the expanded
+	  argument list needed for the MIPI Sys-T library for processing
+	  catalog messages.
+
 config LOG_DICTIONARY_SUPPORT
 	bool
 	depends on LOG2
