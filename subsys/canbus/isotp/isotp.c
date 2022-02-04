@@ -728,6 +728,7 @@ static void send_can_tx_cb(int error, void *arg)
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
 
 	ctx->tx_backlog--;
+	k_sem_give(&ctx->tx_sem);
 
 	if (ctx->state == ISOTP_TX_WAIT_BACKLOG) {
 		if (ctx->tx_backlog > 0) {
@@ -784,6 +785,7 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 		ctx->state = ISOTP_TX_SEND_CF;
 		ctx->wft = 0;
 		ctx->tx_backlog = 0;
+		k_sem_reset(&ctx->tx_sem);
 		ctx->opts.bs = *data++;
 		ctx->opts.stmin = *data++;
 		ctx->bs = ctx->opts.bs;
@@ -1068,6 +1070,9 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 				ctx->state = ISOTP_TX_WAIT_ST;
 				break;
 			}
+
+			/* Ensure FIFO style transmission of CF */
+			k_sem_take(&ctx->tx_sem, K_FOREVER);
 		} while (ret > 0);
 
 		break;
@@ -1154,6 +1159,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		ctx->has_callback = 0;
 	}
 
+	k_sem_init(&ctx->tx_sem, 0, 1);
 	ctx->can_dev = can_dev;
 	ctx->tx_addr = *tx_addr;
 	ctx->rx_addr = *rx_addr;
