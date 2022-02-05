@@ -6,10 +6,6 @@ compatible: "leuze,odsl8"
 include: base.yaml
 
 properties:
-  label:
-    type: string
-    required: false
-    description: Label
 
   io-channels:
     required: true
