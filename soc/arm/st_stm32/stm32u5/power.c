@@ -62,7 +62,7 @@ void set_mode_shutdown(uint8_t substate_id)
 }
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:

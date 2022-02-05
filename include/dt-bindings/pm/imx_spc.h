@@ -12,7 +12,7 @@
  * power saving. See your SOC's datasheet for specifics of what peripherals
  * have their clocks gated at each set point.
  *
- * Set point control is implemented at the soc level (see pm_power_state_set())
+ * Set point control is implemented at the soc level (see pm_state_set())
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PM_IMX_SPC_H_

@@ -101,7 +101,7 @@ static void z_power_soc_sleep(void)
  * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */
-__weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
