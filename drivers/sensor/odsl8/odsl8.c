@@ -52,7 +52,7 @@ static int laser_channel_get(const struct device *dev,
         val->val1 = 0;
         val->val2 = 0;
         LOG_ERR("Wrong channel selection! Sensor only supports channel distance.");
-        return 0;
+        return -ENOTSUP;
     }
 
     LOG_INF("start channel get!");
