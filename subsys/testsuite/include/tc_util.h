@@ -17,6 +17,27 @@
 #endif
 #include <sys/printk.h>
 
+#if defined(CONFIG_ZTEST) && defined(CONFIG_ZTEST_PRINT_TO_LOG)
+/* Override the PRINT_DATA and TC_END_REPORT macros to use Zephyr's
+ * logging system. Use ZTEST_PRINTK() (i.e. always print) for
+ * TC_END_REPORT() because that line is critical for twister to
+ * determine when tests running within QEMU have completed.
+ */
+
+#include <ztest.h>
+
+#define PRINT_DATA ZTEST_INF
+
+#define TC_END_REPORT(result)                                          \
+	do {                                                           \
+		PRINT_LINE;                                            \
+		TC_PRINT_RUNID;                                        \
+		ZTEST_PRINTK("PROJECT EXECUTION %s\n",                 \
+		       (result) == TC_PASS ? "SUCCESSFUL" : "FAILED"); \
+		TC_END_POST(result);                                   \
+	} while (0)
+#endif
+
 #if defined CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE
 #include <tc_util_user_override.h>
 #endif

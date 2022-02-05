@@ -75,11 +75,11 @@ static int cleanup_test(struct unit_test *test)
 #endif
 
 	if (!ret && mock_status == 1) {
-		PRINT("Test %s failed: Unused mock parameter values\n",
+		ZTEST_ERR("Test %s failed: Unused mock parameter values\n",
 		      test->name);
 		ret = TC_FAIL;
 	} else if (!ret && mock_status == 2) {
-		PRINT("Test %s failed: Unused mock return values\n",
+		ZTEST_ERR("Test %s failed: Unused mock return values\n",
 		      test->name);
 		ret = TC_FAIL;
 	} else {
@@ -244,15 +244,15 @@ static void handle_signal(int sig)
 		"teardown",
 	};
 
-	PRINT("    %s", strsignal(sig));
+	ZTEST_ERR("    %s", strsignal(sig));
 	switch (phase) {
 	case TEST_PHASE_SETUP:
 	case TEST_PHASE_TEST:
 	case TEST_PHASE_TEARDOWN:
-		PRINT(" at %s function\n", phase_str[phase]);
+		ZTEST_ERR(" at %s function\n", phase_str[phase]);
 		longjmp(test_fail, 1);
 	case TEST_PHASE_FRAMEWORK:
-		PRINT("\n");
+		ZTEST_ERR("\n");
 		longjmp(stack_fail, 1);
 	}
 }
@@ -263,7 +263,7 @@ static void init_testing(void)
 	signal(SIGSEGV, handle_signal);
 
 	if (setjmp(stack_fail)) {
-		PRINT("Test suite crashed.");
+		ZTEST_ERR("Test suite crashed.");
 		exit(1);
 	}
 }
@@ -482,7 +482,7 @@ void ztest_verify_all_registered_test_suites_ran(void)
 
 	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
 		if (ptr->stats.run_count < 1) {
-			PRINT("ERROR: Test '%s' did not run.\n", ptr->name);
+			ZTEST_ERR("ERROR: Test '%s' did not run.\n", ptr->name);
 			all_tests_run = false;
 		}
 	}
@@ -521,7 +521,8 @@ void main(void)
 	ret = k_mem_domain_add_partition(&k_mem_domain_default,
 					 &ztest_mem_partition);
 	if (ret != 0) {
-		PRINT("ERROR: failed to add ztest_mem_partition to mem domain (%d)\n",
+		ZTEST_ERR(
+		      "ERROR: failed to add ztest_mem_partition to mem domain (%d)\n",
 		      ret);
 		k_oops();
 	}
@@ -530,7 +531,8 @@ void main(void)
 	ret = k_mem_domain_add_partition(&k_mem_domain_default,
 					 &z_malloc_partition);
 	if (ret != 0) {
-		PRINT("ERROR: failed to add z_malloc_partition to mem domain (%d)\n",
+		ZTEST_ERR(
+		      "ERROR: failed to add z_malloc_partition to mem domain (%d)\n",
 		      ret);
 		k_oops();
 	}
@@ -553,12 +555,12 @@ void main(void)
 		}
 		state.boots += 1;
 		if (test_status == 0) {
-			PRINT("Reset board #%u to test again\n",
+			ZTEST_ERR("Reset board #%u to test again\n",
 				state.boots);
 			k_msleep(10);
 			sys_reboot(SYS_REBOOT_COLD);
 		} else {
-			PRINT("Failed after %u attempts\n", state.boots);
+			ZTEST_ERR("Failed after %u attempts\n", state.boots);
 			state.boots = 0;
 		}
 	}

@@ -10,6 +10,19 @@ config ZTEST
 
 if ZTEST
 
+config ZTEST_PRINT_TO_LOG
+	bool "Use the Zephyr logging subsystem"
+	depends on LOG
+	depends on ZTEST_NEW_API
+	help
+	  If enabled, the ZTEST logging macros (ZTEST_ERR, ZTEST_WRN, etc) will be
+	  forwarded to the Zephyr logging subsystem at the corresponding levels.
+	  The verbosity level of these logs can be controlled using the normal
+	  Zephyr log Kconfig options. A console logging backend will be attached.
+	  
+	  If disabled, all log messages using the ZTEST logging macros will be
+	  directed to printk(). There is no control over verbosity in this case.
+
 config ZTEST_NEW_API
 	bool "Use the new Ztest API"
 	help

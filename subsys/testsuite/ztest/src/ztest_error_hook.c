@@ -51,10 +51,10 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	k_tid_t curr_tid = k_current_get();
 	bool valid_fault = (curr_tid == valid_fault_tid) || fault_in_isr;
 
-	printk("Caught system error -- reason %d %d\n", reason, valid_fault);
+	ZTEST_ERR("Caught system error -- reason %d %d\n", reason, valid_fault);
 
 	if (valid_fault) {
-		printk("Fatal error expected as part of test case.\n");
+		ZTEST_ERR("Fatal error expected as part of test case.\n");
 
 		/* reset back to normal */
 		reset_stored_fault_status();
@@ -62,7 +62,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		/* do some action after expected fatal error happened */
 		ztest_post_fatal_error_hook(reason, pEsf);
 	} else {
-		printk("Fatal error was unexpected, aborting...\n");
+		ZTEST_ERR("Fatal error was unexpected, aborting...\n");
 		k_fatal_halt(reason);
 	}
 }
@@ -119,10 +119,10 @@ void assert_post_action(const char *file, unsigned int line)
 	ARG_UNUSED(line);
 #endif
 
-	printk("Caught assert failed\n");
+	ZTEST_ERR("Caught assert failed\n");
 
 	if ((k_current_get() == valid_assert_tid) || assert_in_isr) {
-		printk("Assert error expected as part of test case.\n");
+		ZTEST_ERR("Assert error expected as part of test case.\n");
 
 		/* reset back to normal */
 		reset_stored_assert_status();
@@ -132,7 +132,7 @@ void assert_post_action(const char *file, unsigned int line)
 		 */
 		ztest_post_assert_fail_hook();
 	} else {
-		printk("Assert failed was unexpected, aborting...\n");
+		ZTEST_ERR("Assert failed was unexpected, aborting...\n");
 #ifdef CONFIG_USERSPACE
 	/* User threads aren't allowed to induce kernel panics; generate
 	 * an oops instead.

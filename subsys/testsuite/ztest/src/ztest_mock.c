@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_ZTEST_PRINT_TO_LOG
+#include <logging/log.h>
+
+LOG_MODULE_DECLARE(ztest_log_mod);
+#endif /* CONFIG_ZTEST_PRINT_TO_LOG */
+
 #include <ztest.h>
 #include <zephyr/types.h>
 #include <string.h>
@@ -32,7 +38,7 @@ static struct parameter *alloc_parameter(void)
 
 	param = calloc(1, sizeof(struct parameter));
 	if (!param) {
-		PRINT("Failed to allocate mock parameter\n");
+		ZTEST_ERR("Failed to allocate mock parameter\n");
 		ztest_test_fail();
 	}
 
@@ -122,7 +128,7 @@ static struct parameter *alloc_parameter(void)
 	allocation_index = sys_bitfield_find_first_clear(
 		params_allocation, CONFIG_ZTEST_PARAMETER_COUNT);
 	if (allocation_index == -1) {
-		printk("No more mock parameters available for allocation\n");
+		ZTEST_ERR("No more mock parameters available for allocation\n");
 		ztest_test_fail();
 	}
 	sys_bitfield_set_bit((mem_addr_t)params_allocation, allocation_index);
@@ -193,7 +199,7 @@ void z_ztest_check_expected_value(const char *fn, const char *name,
 
 	param = find_and_delete_value(&parameter_list, fn, name);
 	if (!param) {
-		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		ZTEST_ERR("Failed to find parameter %s for %s\n", name, fn);
 		ztest_test_fail();
 	}
 
@@ -204,7 +210,7 @@ void z_ztest_check_expected_value(const char *fn, const char *name,
 		/* We need to cast these values since the toolchain doesn't
 		 * provide inttypes.h
 		 */
-		PRINT("%s:%s received wrong value: Got %lu, expected %lu\n", fn,
+		ZTEST_ERR("%s:%s received wrong value: Got %lu, expected %lu\n", fn,
 		      name, (unsigned long)val, (unsigned long)expected);
 		ztest_test_fail();
 	}
@@ -223,7 +229,7 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
 
 	param = find_and_delete_value(&parameter_list, fn, name);
 	if (!param) {
-		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		ZTEST_ERR("Failed to find parameter %s for %s\n", name, fn);
 		/* No return from this function but for coverity reasons
 		 * put a return after to avoid the warning of a null
 		 * dereference of param below.
@@ -236,15 +242,15 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
 	free_parameter(param);
 
 	if (expected == NULL && data != NULL) {
-		PRINT("%s:%s received null pointer\n", fn, name);
+		ZTEST_ERR("%s:%s received null pointer\n", fn, name);
 		ztest_test_fail();
 	} else if (data == NULL && expected != NULL) {
-		PRINT("%s:%s received data while expected null pointer\n", fn,
+		ZTEST_ERR("%s:%s received data while expected null pointer\n", fn,
 		      name);
 		ztest_test_fail();
 	} else if (data != NULL) {
 		if (memcmp(data, expected, length) != 0) {
-			PRINT("%s:%s data provided don't match\n", fn, name);
+			ZTEST_ERR("%s:%s data provided don't match\n", fn, name);
 			ztest_test_fail();
 		}
 	}
@@ -262,14 +268,14 @@ void z_ztest_copy_return_data(const char *fn, const char *name, void *data,
 	void *return_data;
 
 	if (data == NULL) {
-		PRINT("%s:%s received null pointer\n", fn, name);
+		ZTEST_ERR("%s:%s received null pointer\n", fn, name);
 		ztest_test_fail();
 		return;
 	}
 
 	param = find_and_delete_value(&parameter_list, fn, name);
 	if (!param) {
-		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		ZTEST_ERR("Failed to find parameter %s for %s\n", name, fn);
 		memset(data, 0, length);
 		ztest_test_fail();
 	} else {
@@ -291,7 +297,7 @@ uintptr_t z_ztest_get_return_value(const char *fn)
 		find_and_delete_value(&return_value_list, fn, "");
 
 	if (!param) {
-		PRINT("Failed to find return value for function %s\n", fn);
+		ZTEST_ERR("Failed to find return value for function %s\n", fn);
 		ztest_test_fail();
 	}
 
@@ -317,13 +323,13 @@ int z_cleanup_mock(void)
 	int fail = 0;
 
 	if (parameter_list.next) {
-		PRINT("Parameter not used by mock: %s:%s\n",
+		ZTEST_ERR("Parameter not used by mock: %s:%s\n",
 		      parameter_list.next->fn,
 		      parameter_list.next->name);
 		fail = 1;
 	}
 	if (return_value_list.next) {
-		PRINT("Return value no used by mock: %s\n",
+		ZTEST_ERR("Return value no used by mock: %s\n",
 		      return_value_list.next->fn);
 		fail = 2;
 	}

@@ -30,7 +30,7 @@ void ztest_test_fail(void);
 static inline bool z_zassert_(bool cond, const char *file, int line)
 {
 	if (cond == false) {
-		PRINT("\n    Assertion failed at %s:%d\n",
+		ZTEST_ERR("\n    Assertion failed at %s:%d\n",
 		      ztest_relative_filename(file), line);
 		ztest_test_fail();
 		return false;
@@ -50,21 +50,29 @@ static inline bool z_zassert(bool cond,
 			    int line, const char *func,
 			    const char *msg, ...)
 {
+	static char formatted_msg[512]; /* TODO: is this the right size? */
+
 	if (cond == false) {
 		va_list vargs;
+		int ret;
 
 		va_start(vargs, msg);
-		PRINT("\n    Assertion failed at %s:%d: %s: %s\n",
-		      ztest_relative_filename(file), line, func, default_msg);
-		vprintk(msg, vargs);
-		printk("\n");
+		ZTEST_ERR("\n    Assertion failed at %s:%d: %s: %s\n",
+			  ztest_relative_filename(file), line, func, default_msg);
+
+		ret = vsnprintf(formatted_msg, sizeof(formatted_msg), msg, vargs);
+		if (ret >= sizeof(formatted_msg)) {
+			ZTEST_ERR("The assertion message has been truncated!\n");
+		}
+		ZTEST_ERR("%s\n", formatted_msg);
 		va_end(vargs);
 		ztest_test_fail();
 		return false;
 	}
+/* TODO - is this config option still relevant? */
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 2
 	else {
-		PRINT("\n   Assertion succeeded at %s:%d (%s)\n",
+		ZTEST_DBG("\n   Assertion succeeded at %s:%d (%s)\n",
 		      ztest_relative_filename(file), line, func);
 	}
 #endif

@@ -54,6 +54,37 @@ typedef struct esf z_arch_esf_t;
 #endif /* KERNEL */
 
 #include <sys/printk.h>
+
+/* Test logging destination */
+#ifdef CONFIG_ZTEST_PRINT_TO_LOG
+/* Use the Zephyr logging subsystem */
+#include <logging/log.h>
+
+#ifndef ZTEST_DONT_DECLARE_LOG
+/* Automatically declare the log module in all compilation units including
+ * this header, unless this macro is set. The macro should be set in the
+ * source file that initially registers the module to avoid a redefinition.
+ */
+
+LOG_MODULE_DECLARE(ztest_log_mod);
+#endif /* ZTEST_DONT_DECLARE_LOG */
+
+
+#define ZTEST_DBG LOG_DBG
+#define ZTEST_INF LOG_INF
+#define ZTEST_WRN LOG_WRN
+#define ZTEST_ERR LOG_ERR
+#define ZTEST_PRINTK LOG_PRINTK
+#else
+/* Direct everything through printk */
+#define ZTEST_DBG printk
+#define ZTEST_INF printk
+#define ZTEST_WRN printk
+#define ZTEST_ERR printk
+#define ZTEST_PRINTK printk
+#endif /* ZTEST_PRINT_TO_LOG */
+
+/* TODO: Do we want to retain this? Could user tests be relying on it? */
 #define PRINT printk
 
 #include <zephyr.h>

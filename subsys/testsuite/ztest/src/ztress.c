@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#ifdef CONFIG_ZTEST_PRINT_TO_LOG
+#include <logging/log.h>
+
+LOG_MODULE_DECLARE(ztest_log_mod);
+#endif /* CONFIG_ZTEST_PRINT_TO_LOG */
+
 #include <ztress.h>
 #include <sys/printk.h>
 #include <random/rand32.h>
@@ -102,6 +109,7 @@ static void progress_timeout(struct k_timer *timer)
 	uint64_t rem = 1000 * (k_timer_expires_ticks(&test_timer) - sys_clock_tick_get()) /
 			CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
+	/* TODO: this isn't really a log message but more of a progress bar. leave alone? */
 	printk("\r%u%% remaining:%u ms", progress, (uint32_t)rem);
 }
 
@@ -275,7 +283,7 @@ static void ztress_init(struct ztress_context_data *thread_data)
 	k_msleep(10);
 
 	if (idle_tid == NULL) {
-		printk("Failed to identify idle thread. CPU load will not be tracked\n");
+		ZTEST_WRN("Failed to identify idle thread. CPU load will not be tracked\n");
 	}
 
 	k_timer_start(&ctrl_timer, K_MSEC(100), K_MSEC(100));
@@ -385,15 +393,15 @@ void ztress_set_timeout(k_timeout_t t)
 
 void ztress_report(void)
 {
-	printk("\nZtress execution report:\n");
+	ZTEST_INF("\nZtress execution report:\n");
 	for (uint32_t i = 0; i < context_cnt; i++) {
-		printk("\t context %u:\n\t\t - executed:%u, preempted:%u\n",
+		ZTEST_INF("\t context %u:\n\t\t - executed:%u, preempted:%u\n",
 			i, exec_cnt[i], preempt_cnt[i]);
-		printk("\t\t - ticks initial:%u, optimized:%u\n",
+		ZTEST_INF("\t\t - ticks initial:%u, optimized:%u\n",
 			(uint32_t)init_backoff[i].ticks, (uint32_t)backoff[i].ticks);
 	}
 
-	printk("\tAvarage CPU load:%u%%, measurements:%u\n",
+	ZTEST_INF("\tAvarage CPU load:%u%%, measurements:%u\n",
 			rt.cpu_load / 10, rt.cpu_load_measurements);
 }
 

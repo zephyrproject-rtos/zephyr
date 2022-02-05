@@ -4,6 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_ZTEST_PRINT_TO_LOG
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(ztest_log_mod);
+
+/* Setting this prevents ztest.h from re-declaring the log module objects */
+#define ZTEST_DONT_DECLARE_LOG
+#endif /* CONFIG_ZTEST_PRINT_TO_LOG */
+
 #include <ztest.h>
 #include <stdio.h>
 #include <app_memory/app_memdomain.h>
@@ -77,11 +86,11 @@ static int cleanup_test(struct ztest_unit_test *test)
 #endif
 
 	if (!ret && mock_status == 1) {
-		PRINT("Test %s failed: Unused mock parameter values\n",
+		ZTEST_ERR("Test %s failed: Unused mock parameter values\n",
 		      test->name);
 		ret = TC_FAIL;
 	} else if (!ret && mock_status == 2) {
-		PRINT("Test %s failed: Unused mock return values\n",
+		ZTEST_ERR("Test %s failed: Unused mock return values\n",
 		      test->name);
 		ret = TC_FAIL;
 	} else {
@@ -256,17 +265,17 @@ static void handle_signal(int sig)
 		"teardown",
 	};
 
-	PRINT("    %s", strsignal(sig));
+	ZTEST_ERR("    %s", strsignal(sig));
 	switch (phase) {
 	case TEST_PHASE_SETUP:
 	case TEST_PHASE_BEFORE:
 	case TEST_PHASE_TEST:
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
-		PRINT(" at %s function\n", phase_str[phase]);
+		ZTEST_ERR(" at %s function\n", phase_str[phase]);
 		longjmp(test_fail, 1);
 	case TEST_PHASE_FRAMEWORK:
-		PRINT("\n");
+		ZTEST_ERR("\n");
 		longjmp(stack_fail, 1);
 	}
 }
@@ -277,7 +286,7 @@ static void init_testing(void)
 	signal(SIGSEGV, handle_signal);
 
 	if (setjmp(stack_fail)) {
-		PRINT("Test suite crashed.");
+		ZTEST_ERR("Test suite crashed."); /* TODO: should there be a \n? */
 		exit(1);
 	}
 }
@@ -560,7 +569,7 @@ void ztest_verify_all_test_suites_ran(void)
 
 	for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end; ++suite) {
 		if (suite->stats.run_count < 1) {
-			PRINT("ERROR: Test suite '%s' did not run.\n", suite->name);
+			ZTEST_ERR("Test suite '%s' did not run.\n", suite->name);
 			all_tests_run = false;
 		}
 	}
@@ -568,7 +577,7 @@ void ztest_verify_all_test_suites_ran(void)
 	for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
 		suite = ztest_find_test_suite(test->test_suite_name);
 		if (suite == NULL) {
-			PRINT("ERROR: Test '%s' assigned to test suite '%s' which doesn't exist\n",
+			ZTEST_ERR("Test '%s' assigned to test suite '%s' which doesn't exist\n",
 			      test->name, test->test_suite_name);
 			all_tests_run = false;
 		}
@@ -629,12 +638,12 @@ void main(void)
 		}
 		state.boots += 1;
 		if (test_status == 0) {
-			PRINT("Reset board #%u to test again\n",
+			ZTEST_ERR("Reset board #%u to test again\n",
 				state.boots);
 			k_msleep(10);
 			sys_reboot(SYS_REBOOT_COLD);
 		} else {
-			PRINT("Failed after %u attempts\n", state.boots);
+			ZTEST_ERR("Failed after %u attempts\n", state.boots);
 			state.boots = 0;
 		}
 	}
