@@ -68,15 +68,14 @@ static int laser_channel_get(const struct device *dev,
 
     LOG_INF("finished channel get!");
     // 4..20mA for 20..50mm (linear)
-    const int slope = (500 - 20) / (20 - 4);
-    int32_t distance = (raw_value * slope / config->meas_resistor - 4 * slope) + 20; // distance in mm
+    const double slope = (500.0 - 20.0) / (20.0 - 4.0);
+    double distance_in_m = (((double) raw_value / (double) config->meas_resistor - 4 )  * slope + 20.0) / 1000.0; // distance in m
 
-    if (distance < 20 || distance > 500) {
+    if (distance_in_m < 20.0 || distance_in_m > 500.0) {
         LOG_WRN("Sensor not in linear region between 20..500mm!");
     }
 
-    val->val1 = distance;
-    val->val2 = 0;
+    sensor_value_from_double(val, distance_in_m);
 
     return 0;
 }
