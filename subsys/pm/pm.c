@@ -121,13 +121,13 @@ static inline void pm_exit_pos_ops(struct pm_state_info *info)
 	}
 }
 
-static inline void pm_state_set(struct pm_state_info *info)
+static inline void state_set(struct pm_state_info *info)
 {
 	extern __weak void
-		pm_power_state_set(enum pm_state state, uint8_t substate_id);
+		pm_state_set(enum pm_state state, uint8_t substate_id);
 
-	if (pm_power_state_set != NULL) {
-		pm_power_state_set(info->state, info->substate_id);
+	if (pm_state_set != NULL) {
+		pm_state_set(info->state, info->substate_id);
 	}
 }
 
@@ -261,7 +261,7 @@ bool pm_system_suspend(int32_t ticks)
 	/* Enter power state */
 	pm_state_notify(true);
 	atomic_set_bit(z_post_ops_required, id);
-	pm_state_set(&z_cpus_pm_state[id]);
+	state_set(&z_cpus_pm_state[id]);
 	pm_stats_stop();
 
 	/* Wake up sequence starts here */
