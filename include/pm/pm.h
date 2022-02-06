@@ -11,6 +11,7 @@
 #include <sys/slist.h>
 #include <pm/state.h>
 #include <toolchain.h>
+#include <errno.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -203,18 +204,54 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 
 #else  /* CONFIG_PM */
 
-#define pm_notifier_register(notifier)
-#define pm_notifier_unregister(notifier) (-ENOSYS)
+static inline void pm_notifier_register(struct pm_notifier *notifier)
+{
+	ARG_UNUSED(notifier);
+}
 
-#define pm_constraint_set(pm_state)
-#define pm_constraint_release(pm_state)
-#define pm_constraint_get(pm_state) (true)
+static inline int pm_notifier_unregister(struct pm_notifier *notifier)
+{
+	ARG_UNUSED(notifier);
 
-#define pm_state_set(state, substate_id)
-#define pm_state_exit_post_ops(state, substate_id)
-#define pm_state_next_get(cpu) \
-	(&(struct pm_state_info){PM_STATE_ACTIVE, 0, 0})
+	return -ENOSYS;
+}
 
+static inline void pm_constraint_set(enum pm_state state)
+{
+	ARG_UNUSED(state);
+}
+
+static inline void pm_constraint_release(enum pm_state state)
+{
+	ARG_UNUSED(state);
+}
+
+static inline bool pm_constraint_get(enum pm_state state)
+{
+	ARG_UNUSED(state);
+
+	return true;
+}
+
+static inline void pm_state_set(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+}
+
+static inline void pm_state_exit_post_ops(enum pm_state state,
+					  uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+}
+
+static inline const struct pm_state_info *pm_state_next_get(uint8_t cpu)
+{
+	ARG_UNUSED(cpu);
+
+	return NULL;
+}
 #endif /* CONFIG_PM */
 
 void z_pm_save_idle_exit(void);
