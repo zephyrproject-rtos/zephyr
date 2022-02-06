@@ -92,6 +92,8 @@
 	/* Gives a maximum period of 1.4 s */
 	prescaler = <4>;
 
+	pinctrl-0 = <&pa10f_tcc0_wo2>;
+
 	#pwm-cells = <1>;
 };
 

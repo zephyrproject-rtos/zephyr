@@ -132,6 +132,9 @@
 	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <1024>;
+
+	pinctrl-0 = <&pa17e_tcc2_wo1>;
+
 	#pwm-cells = <1>;
 };
 

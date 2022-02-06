@@ -32,6 +32,9 @@ struct pwm_sam0_config {
 	uint32_t pm_apbcmask;
 	uint16_t gclk_clkctrl_id;
 #endif
+
+	uint32_t num_pins;
+	struct soc_port_pin pins[];
 };
 
 /* Wait for the peripheral to finish all commands */
@@ -124,6 +127,9 @@ static int pwm_sam0_init(const struct device *dev)
 	regs->CTRLA.bit.ENABLE = 1;
 	wait_synchronization(regs);
 
+	/* Enable PINMUX based on PINCTRL */
+	soc_port_list_configure(cfg->pins, cfg->num_pins);
+
 	return 0;
 }
 
@@ -152,6 +158,8 @@ static const struct pwm_driver_api pwm_sam0_driver_api = {
 				      DT_INST_PROP(inst, prescaler)),	       \
 		.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ /			       \
 			DT_INST_PROP(inst, prescaler),			       \
+		.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(inst),		       \
+		.pins = ATMEL_SAM0_DT_INST_PINS(inst),			       \
 		PWM_SAM0_INIT_CLOCKS(inst),				       \
 	};								       \
 									       \

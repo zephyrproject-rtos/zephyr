@@ -24,13 +24,6 @@ static int board_pinmux_init(const struct device *dev)
 	pinmux_pin_set(muxa, 24, PINMUX_FUNC_G);
 #endif
 
-#if (ATMEL_SAM0_DT_TCC_CHECK(0, atmel_sam0_tcc_pwm) && CONFIG_PWM_SAM0_TCC)
-	/* TCC0 on WO4=PA22 (red),  WO3=PA19 (green),  WO5=PA23 (blue) */
-	pinmux_pin_set(muxa, 22, PINMUX_FUNC_F);
-	pinmux_pin_set(muxa, 19, PINMUX_FUNC_F);
-	pinmux_pin_set(muxa, 23, PINMUX_FUNC_F);
-#endif
-
 	return 0;
 }
 

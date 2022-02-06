@@ -58,5 +58,18 @@ properties:
   "#pwm-cells":
     const: 1
 
+  pinctrl-0:
+    type: phandles
+    description: |
+      PORT pin configuration for all PWM signals.  We expect that
+      the phandles will reference pinctrl nodes.  These nodes will
+      have a nodelabel that matches the Atmel SoC HAL defines and
+      be of the form p<port><pin><periph>_<inst>_<signal>.
+
+      For example the TCC0 WO3 on SAMR21 could be
+         pinctrl-0 = <&pa19f_tcc0_wo3>;
+
+    required: true
+
 pwm-cells:
   - channel

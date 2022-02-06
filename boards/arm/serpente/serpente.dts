@@ -102,6 +102,9 @@ zephyr_udc0: &usb0 {
 	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <4>;
+
+	pinctrl-0 = <&pa22f_tcc0_wo4 &pa19f_tcc0_wo3 &pa23f_tcc0_wo5>;
+
 	#pwm-cells = <1>;
 };
 

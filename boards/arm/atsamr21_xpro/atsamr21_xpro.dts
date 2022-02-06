@@ -105,6 +105,8 @@
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <4>;
 	#pwm-cells = <1>;
+
+	pinctrl-0 = <&pa19f_tcc0_wo3>;
 };
 
 &sercom0 {

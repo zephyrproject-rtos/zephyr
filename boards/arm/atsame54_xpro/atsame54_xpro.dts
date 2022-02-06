@@ -55,6 +55,9 @@
 	compatible = "atmel,sam0-tcc-pwm";
 	/* Gives a maximum period of 1.1s for 120MHz main clock */
 	prescaler = <8>;
+
+	pinctrl-0 = <&pc18f_tcc0_wo2>;
+
 	#pwm-cells = <1>;
 };
 

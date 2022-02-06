@@ -73,7 +73,13 @@
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <8>;
 
+	pinctrl-0 = <&pa22g_tcc0_wo2>;
+
 	#pwm-cells = <1>;
+};
+
+&tcc1 {
+	pinctrl-0 = <&pa18f_tcc1_wo2 &pa19f_tcc1_wo3>;
 };
 
 zephyr_udc0: &usb0 {
