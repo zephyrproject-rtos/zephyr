@@ -1,0 +1,8 @@
+sample:
+  name: Display text using LCD 2004 through I2C
+tests:
+  sample.drivers.i2c.lcd_2004:
+    tags: display
+    depends_on: gpio, i2c
+    filter: dt_nodelabel_enabled("i2c0"), CONFIG_I2C
+    harness: display
