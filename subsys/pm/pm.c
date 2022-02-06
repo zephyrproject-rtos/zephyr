@@ -105,10 +105,10 @@ static void pm_resume_devices(void)
 static inline void pm_exit_pos_ops(struct pm_state_info *info)
 {
 	extern __weak void
-		pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
+		pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 
-	if (pm_power_state_exit_post_ops != NULL) {
-		pm_power_state_exit_post_ops(info->state, info->substate_id);
+	if (pm_state_exit_post_ops != NULL) {
+		pm_state_exit_post_ops(info->state, info->substate_id);
 	} else {
 		/*
 		 * This function is supposed to be overridden to do SoC or
@@ -250,7 +250,7 @@ bool pm_system_suspend(int32_t ticks)
 	/*
 	 * This function runs with interruptions locked but it is
 	 * expected the SoC to unlock them in
-	 * pm_power_state_exit_post_ops() when returning to active
+	 * pm_state_exit_post_ops() when returning to active
 	 * state. We don't want to be scheduled out yet, first we need
 	 * to send a notification about leaving the idle state. So,
 	 * we lock the scheduler here and unlock just after we have
