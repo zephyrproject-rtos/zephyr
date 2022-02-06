@@ -68,3 +68,17 @@
 &gpio0 {
 	status = "okay";
 };
+
+&i2c0 {
+	clock-frequency = <100000>;
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	clock-frequency = <100000>;
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
