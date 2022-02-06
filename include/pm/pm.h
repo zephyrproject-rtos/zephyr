@@ -195,7 +195,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * @param state Power state.
  * @param substate_id Power substate id.
  */
-void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 
 /**
  * @}
@@ -211,7 +211,7 @@ void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 #define pm_constraint_get(pm_state) (true)
 
 #define pm_state_set(state, substate_id)
-#define pm_power_state_exit_post_ops(state, substate_id)
+#define pm_state_exit_post_ops(state, substate_id)
 #define pm_state_next_get(cpu) \
 	(&(struct pm_state_info){PM_STATE_ACTIVE, 0, 0})
 

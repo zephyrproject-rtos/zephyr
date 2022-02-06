@@ -50,7 +50,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	if (state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power substate %u", state);

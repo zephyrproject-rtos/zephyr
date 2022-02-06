@@ -192,7 +192,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		      "Entering low power state with a wrong parameter");
 }
 
-void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
