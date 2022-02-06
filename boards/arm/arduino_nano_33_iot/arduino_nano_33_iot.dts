@@ -50,6 +50,9 @@
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <1>;
+
+	pinctrl-0 = <&pa16c_sercom1_pad0 &pa17c_sercom1_pad1 &pa19c_sercom1_pad3>;
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 };
@@ -63,6 +66,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	pinctrl-0 = <&pa12c_sercom2_pad0 &pa13c_sercom2_pad1 &pa15c_sercom2_pad3>;
 	cs-gpios = <&porta 14 GPIO_ACTIVE_LOW>;
 
 	nina_w102@0 {

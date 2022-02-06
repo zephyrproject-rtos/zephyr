@@ -139,6 +139,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	pinctrl-0 = <&pc19f_sercom4_pad0 &pb31f_sercom4_pad1
+			&pb30f_sercom4_pad2 &pc18f_sercom4_pad3>;
 	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
 
 	rf2xx@0 {
@@ -160,6 +162,9 @@
 	dipo = <0>;
 	dopo = <2>;
 	label = "SPI_0";
+
+	pinctrl-0 = <&pb2d_sercom5_pad0 &pb22d_sercom5_pad2 &pb23d_sercom5_pad3>;
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 };

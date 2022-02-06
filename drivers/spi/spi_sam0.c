@@ -39,6 +39,8 @@ struct spi_sam0_config {
 	uint8_t rx_dma_request;
 	uint8_t rx_dma_channel;
 #endif
+	uint32_t num_pins;
+	struct soc_port_pin pins[];
 };
 
 /* Device run time data */
@@ -704,6 +706,9 @@ static int spi_sam0_init(const struct device *dev)
 	regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
 	wait_synchronization(regs);
 
+	/* Enable PINMUX based on PINCTRL */
+	soc_port_list_configure(cfg->pins, cfg->num_pins);
+
 #ifdef CONFIG_SPI_ASYNC
 	if (!device_is_ready(cfg->dma_dev)) {
 		return -ENODEV;
@@ -755,7 +760,9 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
-	.pads = SPI_SAM0_SERCOM_PADS(n)					\
+	.pads = SPI_SAM0_SERCOM_PADS(n),					\
+	.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(n),			\
+	.pins = ATMEL_SAM0_DT_INST_PINS(n)				\
 }
 #else
 #define SPI_SAM0_DEFINE_CONFIG(n)					\
@@ -764,6 +771,8 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
 	.pads = SPI_SAM0_SERCOM_PADS(n),				\
+	.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(n),			\
+	.pins = ATMEL_SAM0_DT_INST_PINS(n),				\
 	SPI_SAM0_DMA_CHANNELS(n)					\
 }
 #endif /* MCLK */

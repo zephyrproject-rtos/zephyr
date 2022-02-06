@@ -105,6 +105,9 @@
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
+
+	pinctrl-0 = <&pb16c_sercom5_pad0 &pb22d_sercom5_pad2 &pb23d_sercom5_pad3>;
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 };

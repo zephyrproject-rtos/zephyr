@@ -72,10 +72,6 @@
 	clock-frequency = <48000000>;
 };
 
-&sercom0 {
-	status = "okay";
-};
-
 &sercom2 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";
@@ -91,6 +87,9 @@
 	compatible = "atmel,sam0-spi";
 	dipo = <1>;
 	dopo = <1>;
+
+	pinctrl-0 = <&pa18d_sercom3_pad2 &pa16d_sercom3_pad0 &pa17d_sercom3_pad1>;
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 };

@@ -27,6 +27,19 @@ properties:
       required: true
       description: Data Out Pinout
 
+    pinctrl-0:
+      type: phandles
+      description: |
+        PORT pin configuration for all SPI signals.  We expect that
+        the phandles will reference pinctrl nodes.  These nodes will
+        have a nodelabel that matches the Atmel SoC HAL defines and
+        be of the form p<port><pin><periph>_<inst>_<signal>.
+
+        For example the SERCOM0 on SAMR21 could be
+           pinctrl-0 = <&pa4d_sercom0_pad0 &pa5d_sercom0_pad1 &pa6d_sercom0_pad2>;
+
+      required: true
+
     dmas:
       description: |
         Optional TX & RX dma specifiers.  Each specifier will have a phandle

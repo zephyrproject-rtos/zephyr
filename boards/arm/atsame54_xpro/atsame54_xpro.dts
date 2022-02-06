@@ -76,6 +76,9 @@
 	dipo = <3>;
 	dopo = <0>;
 	label = "SPI_0";
+
+	pinctrl-0 = <&pb26d_sercom4_pad1 &pb27d_sercom4_pad0 &pb29d_sercom4_pad3>;
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 };
