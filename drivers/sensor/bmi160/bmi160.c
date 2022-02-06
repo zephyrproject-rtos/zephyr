@@ -8,8 +8,6 @@
  * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMI160-DS000-07.pdf
  */
 
-#define DT_DRV_COMPAT bosch_bmi160
-
 #include <init.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
