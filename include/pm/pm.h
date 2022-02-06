@@ -77,7 +77,7 @@ struct pm_notifier {
  * @param info Power state which should be used in the ongoing
  *	suspend operation.
  */
-bool pm_power_state_force(uint8_t cpu, const struct pm_state_info *info);
+bool pm_state_force(uint8_t cpu, const struct pm_state_info *info);
 
 /**
  * @brief Register a power management notifier
