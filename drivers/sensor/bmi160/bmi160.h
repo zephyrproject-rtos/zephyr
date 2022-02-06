@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
+#define DT_DRV_COMPAT bosch_bmi160
+
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>
