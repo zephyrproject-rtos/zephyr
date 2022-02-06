@@ -118,5 +118,5 @@ void main(void)
 
 	printk("Device shutdown\n");
 
-	pm_power_state_force(0u, &(struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+	pm_state_force(0u, &(struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
 }

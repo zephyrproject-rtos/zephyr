@@ -180,7 +180,7 @@ void pm_system_resume(void)
 	}
 }
 
-bool pm_power_state_force(uint8_t cpu, const struct pm_state_info *info)
+bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 {
 	bool ret = false;
 
