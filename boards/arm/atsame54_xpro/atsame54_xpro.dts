@@ -90,6 +90,8 @@
 	label = "I2C_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&pd8c_sercom7_pad0 &pd9c_sercom7_pad1>;
 };
 
 &adc0 {

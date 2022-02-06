@@ -56,6 +56,8 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&pa22c_sercom3_pad0 &pa23c_sercom3_pad1>;
 };
 
 &sercom4 {

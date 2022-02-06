@@ -124,6 +124,8 @@
 	label = "I2C_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&pa16c_sercom1_pad0 &pa17c_sercom1_pad1>;
 };
 
 &sercom4 {

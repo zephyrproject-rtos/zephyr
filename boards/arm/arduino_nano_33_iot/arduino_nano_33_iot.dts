@@ -103,6 +103,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	pinctrl-0 = <&pb8d_sercom4_pad0 &pb9d_sercom4_pad1>;
+
 	lsm6ds3@6a {
 		compatible = "st,lsm6ds3";
 		reg = <0x6a>;

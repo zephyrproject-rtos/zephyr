@@ -41,6 +41,9 @@ struct i2c_sam0_dev_config {
 	uint8_t read_dma_request;
 	uint8_t dma_channel;
 #endif
+
+	uint32_t num_pins;
+	struct soc_port_pin pins[];
 };
 
 struct i2c_sam0_msg {
@@ -709,6 +712,9 @@ static int i2c_sam0_initialize(const struct device *dev)
 			 SERCOM_I2CM_CTRLA_INACTOUT(0x3);
 	wait_synchronization(i2c);
 
+	/* Enable PINMUX based on PINCTRL */
+	soc_port_list_configure(cfg->pins, cfg->num_pins);
+
 	/* Enable smart mode (auto ACK) */
 	i2c->CTRLB.reg = SERCOM_I2CM_CTRLB_SMEN;
 	wait_synchronization(i2c);
@@ -789,7 +795,9 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
-	.irq_config_func = &i2c_sam0_irq_config_##n			\
+	.irq_config_func = &i2c_sam0_irq_config_##n,			\
+	.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(n),			\
+	.pins = ATMEL_SAM0_DT_INST_PINS(n),				\
 	I2C_SAM0_DMA_CHANNELS(n)					\
 }
 #else /* !MCLK */
@@ -800,6 +808,8 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
 	.irq_config_func = &i2c_sam0_irq_config_##n,			\
+	.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(n),			\
+	.pins = ATMEL_SAM0_DT_INST_PINS(n),				\
 	I2C_SAM0_DMA_CHANNELS(n)					\
 }
 #endif

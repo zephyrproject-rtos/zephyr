@@ -12,7 +12,6 @@ static int board_pinmux_init(const struct device *dev)
 {
 	const struct device *muxa = DEVICE_DT_GET(DT_NODELABEL(pinmux_a));
 	const struct device *muxc = DEVICE_DT_GET(DT_NODELABEL(pinmux_c));
-	const struct device *muxd = DEVICE_DT_GET(DT_NODELABEL(pinmux_d));
 
 	ARG_UNUSED(dev);
 
@@ -22,35 +21,6 @@ static int board_pinmux_init(const struct device *dev)
 	if (!device_is_ready(muxc)) {
 		return -ENXIO;
 	}
-	if (!device_is_ready(muxd)) {
-		return -ENXIO;
-	}
-
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(6, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(7, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
-	pinmux_pin_set(muxd, 8, PINMUX_FUNC_C);
-	pinmux_pin_set(muxd, 9, PINMUX_FUNC_C);
-#endif
 
 #if (ATMEL_SAM0_DT_TCC_CHECK(0, atmel_sam0_tcc_pwm) && CONFIG_PWM_SAM0_TCC)
 	/* TCC0 on WO2=PC18 */
