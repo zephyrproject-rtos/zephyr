@@ -57,6 +57,9 @@ hardware features:
    * - GPIO
      - :kconfig:`CONFIG_GPIO`
      - :dtcompatible:`rpi,pico-gpio`
+   * - I2C
+     - :kconfig:`CONFIG_I2C`
+     - :dtcompatible:`rpi,pico-i2c`
 
 Programming and Debugging
 *************************
