@@ -118,6 +118,8 @@ struct i2c_dw_dev_config {
 	uint8_t			request_bytes;
 	uint8_t			xfr_flags;
 	bool			support_hs_mode;
+
+	struct i2c_slave_config *slave_cfg;
 };
 
 #define Z_REG_READ(__sz) sys_read##__sz
