@@ -15,6 +15,7 @@
 / {
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash;
 	};
 
 	cpus {
@@ -83,8 +84,8 @@
 	};
 
 	soc {
-		flash-controller@40022000 {
-			compatible = "st,stm32u5-flash-controller";
+		flash: flash-controller@40022000 {
+			compatible = "st,stm32-flash-controller", "st,stm32u5-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
 			interrupts = <6 0>;
@@ -93,8 +94,13 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
+
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+				/* maximum erase time(ms) for a 8K sector */
+				max-erase-time = <5>;
 			};
 		};
 
