@@ -482,7 +482,12 @@ uint32_t log_msg_mem_get_used(void);
  */
 uint32_t log_msg_mem_get_max_used(void);
 
-
+/**
+ * @brief Get slab size
+ *
+ * @return Size of a slab used in slab pool for log messages.
+ */
+size_t log_msg_get_slab_size(void);
 /**
  * @}
  */
