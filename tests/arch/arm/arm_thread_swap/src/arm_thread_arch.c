@@ -89,7 +89,7 @@ static void load_callee_saved_regs(const _callee_saved_t *regs)
 		: "memory"
 	);
 #endif
-	__DSB();
+	arch_dsb();
 }
 
 static void verify_callee_saved(const _callee_saved_t *src,
@@ -151,7 +151,7 @@ static void load_fp_callee_saved_regs(
 		: "r" (regs)
 		: "memory"
 		);
-	__DSB();
+	arch_dsb();
 }
 
 static void verify_fp_callee_saved(const struct _preempt_float *src,

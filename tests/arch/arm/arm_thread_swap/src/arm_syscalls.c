@@ -137,16 +137,16 @@ static void user_thread_entry(uint32_t irq_line)
 	TC_PRINT("USR Thread: IRQ Line: %u\n", (uint32_t)irq_line);
 
 	NVIC->STIR = irq_line;
-	__DSB();
-	__ISB();
+	arch_dsb();
+	arch_isb();
 
 	/* ISR is set to cause thread to context-switch -out and -in again.
 	 * We inspect for a second time, to verlfy the status, after
 	 * the user thread is switch back in.
 	 */
 	NVIC->STIR = irq_line;
-	__DSB();
-	__ISB();
+	arch_dsb();
+	arch_isb();
 #endif
 }
 

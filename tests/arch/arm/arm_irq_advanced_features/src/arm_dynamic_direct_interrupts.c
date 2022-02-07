@@ -53,8 +53,8 @@ void test_arm_dynamic_direct_interrupts(void)
 	 * Instruction barriers to make sure the NVIC IRQ is
 	 * set to pending state before 'test_flag' is checked.
 	 */
-	__DSB();
-	__ISB();
+	arch_dsb();
+	arch_isb();
 
 	/* Confirm test flag is set by the dynamic direct ISR handler. */
 	post_flag = test_flag;
@@ -77,8 +77,8 @@ void test_arm_dynamic_direct_interrupts(void)
 	 * Instruction barriers to make sure the NVIC IRQ is
 	 * set to pending state before 'test_flag' is checked.
 	 */
-	__DSB();
-	__ISB();
+	arch_dsb();
+	arch_isb();
 
 	/* Confirm test flag is set by the dynamic direct ISR handler. */
 	post_flag = test_flag;

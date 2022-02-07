@@ -89,8 +89,8 @@ void test_main(void)
 	/* Verify activating the PendSV IRQ triggers a K_ERR_SPURIOUS_IRQ */
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-	__DSB();
-	__ISB();
+	arch_dsb();
+	arch_isb();
 
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i, flag = test_flag;
@@ -142,8 +142,8 @@ void test_main(void)
 
 		NVIC_EnableIRQ(i);
 
-		__DSB();
-		__ISB();
+		arch_dsb();
+		arch_isb();
 
 		flag = test_flag;
 

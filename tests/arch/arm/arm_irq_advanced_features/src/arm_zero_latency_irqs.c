@@ -94,8 +94,8 @@ void test_arm_zero_latency_irqs(void)
 	 * Instruction barriers to make sure the NVIC IRQ is
 	 * set to pending state before 'test_flag' is checked.
 	 */
-	__DSB();
-	__ISB();
+	arch_dsb();
+	arch_isb();
 
 	/* Confirm test flag is set by the zero-latency ISR handler. */
 	post_flag = test_flag;
