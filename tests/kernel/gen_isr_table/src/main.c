@@ -145,7 +145,7 @@ int test_irq(int offset)
 	TC_PRINT("triggering irq %d\n", IRQ_LINE(offset));
 	trigger_irq(IRQ_LINE(offset));
 #ifdef CONFIG_CPU_CORTEX_M
-	arch_dsb();
+	arch_mb();
 	arch_isb();
 #endif
 	if (trigger_check[offset] != 1) {

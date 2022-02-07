@@ -284,7 +284,7 @@ void test_arm_interrupt(void)
 	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
 	NVIC_SetPendingIRQ(i);
-	arch_dsb();
+	arch_mb();
 	arch_isb();
 
 	/* Verify that the spurious ISR has led to the fault and the
@@ -312,7 +312,7 @@ void test_arm_interrupt(void)
 		 * Instruction barriers to make sure the NVIC IRQ is
 		 * set to pending state before 'test_flag' is checked.
 		 */
-		arch_dsb();
+		arch_mb();
 		arch_isb();
 
 		/* Returning here implies the thread was not aborted. */
@@ -359,7 +359,7 @@ void test_arm_interrupt(void)
 #endif
 
 	__enable_irq();
-	arch_dsb();
+	arch_mb();
 	arch_isb();
 
 	/* No stack variable access below this point.

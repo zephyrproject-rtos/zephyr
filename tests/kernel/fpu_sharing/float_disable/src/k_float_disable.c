@@ -211,7 +211,7 @@ static void sup_fp_thread_entry(void)
 	 * Instruction barriers to make sure the NVIC IRQ is
 	 * set to pending state before program proceeds.
 	 */
-	arch_dsb();
+	arch_mb();
 	arch_isb();
 
 	/* Verify K_FP_REGS flag is still set */

@@ -146,7 +146,7 @@ static void test_write_control(void)
 	msr_value = __get_CONTROL();
 	msr_value &= ~(CONTROL_nPRIV_Msk);
 	__set_CONTROL(msr_value);
-	arch_dsb();
+	arch_mb();
 	arch_isb();
 	msr_value = __get_CONTROL();
 	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
