@@ -22,19 +22,6 @@
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
 
-/**
- * @brief Declare the ARCH_STACK_PTR_ALIGN
- *
- * Denotes the required alignment of the stack pointer on public API
- * boundaries
- *
- */
-#ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
-#define ARCH_STACK_PTR_ALIGN 8
-#else
-#define ARCH_STACK_PTR_ALIGN 4
-#endif
-
 #include <arch/arm/aarch32/thread.h>
 #include <arch/arm/aarch32/exc.h>
 #include <arch/arm/aarch32/irq.h>
@@ -59,6 +46,19 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/**
+ * @brief Declare the ARCH_STACK_PTR_ALIGN
+ *
+ * Denotes the required alignment of the stack pointer on public API
+ * boundaries
+ *
+ */
+#ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
+#define ARCH_STACK_PTR_ALIGN 8
+#else
+#define ARCH_STACK_PTR_ALIGN 4
 #endif
 
 /**
