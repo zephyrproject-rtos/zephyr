@@ -16,6 +16,16 @@ Security Vulnerability Related
 
 The following CVEs are addressed by this release:
 
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+* CVE-2021-3835: `Zephyr project bug tracker GHSA-fm6v-8625-99jf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fm6v-8625-99jf>`_
+
+* CVE-2021-3861: `Zephyr project bug tracker GHSA-hvfp-w4h8-gxvj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hvfp-w4h8-gxvj>`_
+
+* CVE-2021-3966: Under embargo until 2021-02-12
 
 Known issues
 ************
