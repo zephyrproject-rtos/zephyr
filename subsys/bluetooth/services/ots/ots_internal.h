@@ -16,6 +16,36 @@ extern "C" {
 #include "ots_oacp_internal.h"
 #include "ots_olcp_internal.h"
 
+#define BT_OTS_SET_METADATA_REQ_NAME(metadata) \
+	((metadata) = (metadata) | BT_OTS_METADATA_REQ_NAME)
+#define BT_OTS_SET_METADATA_REQ_TYPE(metadata) \
+	((metadata) = (metadata) | BT_OTS_METADATA_REQ_TYPE)
+#define BT_OTS_SET_METADATA_REQ_SIZE(metadata) \
+	((metadata) = (metadata) | BT_OTS_METADATA_REQ_SIZE)
+#define BT_OTS_SET_METADATA_REQ_CREATED(metadata) \
+	((metadata) = (metadata) | BT_OTS_METADATA_REQ_CREATED)
+#define BT_OTS_SET_METADATA_REQ_MODIFIED(metadata) \
+	((metadata) = (metadata) | BT_OTS_METADATA_REQ_MODIFIED)
+#define BT_OTS_SET_METADATA_REQ_ID(metadata) \
+	((metadata) = (metadata) | BT_OTS_METADATA_REQ_ID)
+#define BT_OTS_SET_METADATA_REQ_PROPS(metadata) \
+	((metadata) = (metadata) | BT_OTS_METADATA_REQ_PROPS)
+
+#define BT_OTS_GET_METADATA_REQ_NAME(metadata) \
+	((metadata) & BT_OTS_METADATA_REQ_NAME)
+#define BT_OTS_GET_METADATA_REQ_TYPE(metadata) \
+	((metadata) & BT_OTS_METADATA_REQ_TYPE)
+#define BT_OTS_GET_METADATA_REQ_SIZE(metadata) \
+	((metadata) & BT_OTS_METADATA_REQ_SIZE)
+#define BT_OTS_GET_METADATA_REQ_CREATED(metadata) \
+	((metadata) & BT_OTS_METADATA_REQ_CREATED)
+#define BT_OTS_GET_METADATA_REQ_MODIFIED(metadata) \
+	((metadata) & BT_OTS_METADATA_REQ_MODIFIED)
+#define BT_OTS_GET_METADATA_REQ_ID(metadata) \
+	((metadata) & BT_OTS_METADATA_REQ_ID)
+#define BT_OTS_GET_METADATA_REQ_PROPS(metadata) \
+	((metadata) & BT_OTS_METADATA_REQ_PROPS)
+
 /**@brief OTS Attribute Protocol Application Error codes. */
 enum bt_gatt_ots_att_err_codes {
 	/** An attempt was made to write a value that is invalid or

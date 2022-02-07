@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -467,6 +467,26 @@ struct bt_ots_feat {
 	/* OLCP Features */
 	uint32_t olcp;
 } __packed;
+
+/** @brief Object metadata request bit field values */
+enum {
+	/** @brief Request object name */
+	BT_OTS_METADATA_REQ_NAME                        = BIT(0),
+	/** @brief Request object type */
+	BT_OTS_METADATA_REQ_TYPE                        = BIT(1),
+	/** @brief Request object size */
+	BT_OTS_METADATA_REQ_SIZE                        = BIT(2),
+	/** @brief Request object first created time */
+	BT_OTS_METADATA_REQ_CREATED                     = BIT(3),
+	/** @brief Request object last modified time */
+	BT_OTS_METADATA_REQ_MODIFIED                    = BIT(4),
+	/** @brief Request object ID */
+	BT_OTS_METADATA_REQ_ID                          = BIT(5),
+	/** @brief Request object properties */
+	BT_OTS_METADATA_REQ_PROPS                       = BIT(6),
+	/** @brief Request all object metadata */
+	BT_OTS_METADATA_REQ_ALL                         = 0x7F,
+};
 
 /** @brief Opaque OTS instance. */
 struct bt_ots;

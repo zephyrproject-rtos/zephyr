@@ -22,6 +22,7 @@
 
 #include <bluetooth/services/ots.h>
 #include <bluetooth/services/ots_client.h>
+#include "ots_internal.h"
 #include "ots_client_internal.h"
 #include "ots_l2cap_internal.h"
 #include "ots_dir_list_internal.h"
@@ -758,7 +759,7 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
 					cur_object->current_size);
 			}
 
-			BT_OTC_SET_METADATA_REQ_SIZE(inst->metadata_read, true);
+			BT_OTS_SET_METADATA_REQ_SIZE(inst->metadata_read);
 		}
 	}
 
@@ -815,8 +816,7 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 				BT_INFO("Read Obj Id confirmed correct Obj Id");
 				cur_object->id = obj_id;
 
-				BT_OTC_SET_METADATA_REQ_ID(inst->metadata_read,
-							   true);
+				BT_OTS_SET_METADATA_REQ_ID(inst->metadata_read);
 			}
 		} else {
 			BT_DBG("Invalid length %u (expected %u)",
@@ -899,7 +899,7 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 			bt_uuid_to_str(uuid, uuid_str, sizeof(uuid_str));
 			BT_DBG("UUID type read: %s", log_strdup(uuid_str));
 
-			BT_OTC_SET_METADATA_REQ_TYPE(inst->metadata_read, true);
+			BT_OTS_SET_METADATA_REQ_TYPE(inst->metadata_read);
 		} else {
 			BT_WARN("Invalid length %u (expected max %u)",
 				length, OTS_TYPE_MAX_LEN);
@@ -1055,7 +1055,7 @@ static uint8_t read_obj_properties_cb(struct bt_conn *conn, uint8_t err,
 			BT_WARN("Obj properties: Obj read not supported");
 		}
 
-		BT_OTC_SET_METADATA_REQ_PROPS(inst->metadata_read, true);
+		BT_OTS_SET_METADATA_REQ_PROPS(inst->metadata_read);
 	} else {
 		BT_WARN("Invalid length %u (expected %u)",
 			length, OTS_PROPERTIES_LEN);
@@ -1187,38 +1187,32 @@ static void read_next_metadata(struct bt_conn *conn,
 
 	BT_DBG("Attempting to read metadata 0x%02X", metadata_remaining);
 
-	if (BT_OTC_GET_METADATA_REQ_NAME(metadata_remaining)) {
-		BT_OTC_SET_METADATA_REQ_NAME(inst->metadata_read_attempted,
-					     true);
+	if (BT_OTS_GET_METADATA_REQ_NAME(metadata_remaining)) {
+		BT_OTS_SET_METADATA_REQ_NAME(inst->metadata_read_attempted);
 		err = read_attr(conn, inst, inst->otc_inst->obj_name_handle,
 				read_obj_name_cb);
-	} else if (BT_OTC_GET_METADATA_REQ_TYPE(metadata_remaining)) {
-		BT_OTC_SET_METADATA_REQ_TYPE(inst->metadata_read_attempted,
-					     true);
+	} else if (BT_OTS_GET_METADATA_REQ_TYPE(metadata_remaining)) {
+		BT_OTS_SET_METADATA_REQ_TYPE(inst->metadata_read_attempted);
 		err = read_attr(conn, inst, inst->otc_inst->obj_type_handle,
 				read_obj_type_cb);
-	} else if (BT_OTC_GET_METADATA_REQ_SIZE(metadata_remaining)) {
-		BT_OTC_SET_METADATA_REQ_SIZE(inst->metadata_read_attempted,
-					     true);
+	} else if (BT_OTS_GET_METADATA_REQ_SIZE(metadata_remaining)) {
+		BT_OTS_SET_METADATA_REQ_SIZE(inst->metadata_read_attempted);
 		err = read_attr(conn, inst, inst->otc_inst->obj_size_handle,
 				read_object_size_cb);
-	} else if (BT_OTC_GET_METADATA_REQ_CREATED(metadata_remaining)) {
-		BT_OTC_SET_METADATA_REQ_CREATED(inst->metadata_read_attempted,
-						true);
+	} else if (BT_OTS_GET_METADATA_REQ_CREATED(metadata_remaining)) {
+		BT_OTS_SET_METADATA_REQ_CREATED(inst->metadata_read_attempted);
 		err = read_attr(conn, inst, inst->otc_inst->obj_created_handle,
 				read_obj_created_cb);
-	} else if (BT_OTC_GET_METADATA_REQ_MODIFIED(metadata_remaining)) {
-		BT_OTC_SET_METADATA_REQ_MODIFIED(inst->metadata_read_attempted,
-						 true);
+	} else if (BT_OTS_GET_METADATA_REQ_MODIFIED(metadata_remaining)) {
+		BT_OTS_SET_METADATA_REQ_MODIFIED(inst->metadata_read_attempted);
 		err = read_attr(conn, inst, inst->otc_inst->obj_modified_handle,
 				read_obj_modified_cb);
-	} else if (BT_OTC_GET_METADATA_REQ_ID(metadata_remaining)) {
-		BT_OTC_SET_METADATA_REQ_ID(inst->metadata_read_attempted, true);
+	} else if (BT_OTS_GET_METADATA_REQ_ID(metadata_remaining)) {
+		BT_OTS_SET_METADATA_REQ_ID(inst->metadata_read_attempted);
 		err = read_attr(conn, inst, inst->otc_inst->obj_id_handle,
 				read_obj_id_cb);
-	} else if (BT_OTC_GET_METADATA_REQ_PROPS(metadata_remaining)) {
-		BT_OTC_SET_METADATA_REQ_PROPS(inst->metadata_read_attempted,
-					      true);
+	} else if (BT_OTS_GET_METADATA_REQ_PROPS(metadata_remaining)) {
+		BT_OTS_SET_METADATA_REQ_PROPS(inst->metadata_read_attempted);
 		err = read_attr(conn, inst,
 				inst->otc_inst->obj_properties_handle,
 				read_obj_properties_cb);
@@ -1265,7 +1259,7 @@ int bt_otc_read_object_metadata(struct bt_conn *conn,
 	}
 
 	inst->metadata_read = 0;
-	inst->metadata_to_read = metadata & BT_OTC_METADATA_REQ_ALL;
+	inst->metadata_to_read = metadata & BT_OTS_METADATA_REQ_ALL;
 	inst->metadata_read_attempted = 0;
 
 	inst->busy = true;
