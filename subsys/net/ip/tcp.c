@@ -403,8 +403,10 @@ static int tcp_conn_unref(struct tcp *conn)
 	}
 
 	if (conn->context->recv_cb) {
+		k_mutex_unlock(&tcp_lock);
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
 					-ECONNRESET, conn->recv_user_data);
+		k_mutex_lock(&tcp_lock, K_FOREVER);
 	}
 
 	conn->context->tcp = NULL;
