@@ -58,6 +58,8 @@ Here is the current supported features when running Zephyr Project on the R-Car 
 +-----------+------------------------------+--------------------------------+
 | I2C       | i2c                          | interrupt driven               |
 +-----------+------------------------------+--------------------------------+
+| PWM       | pwm                          | All channels                   |
++-----------+------------------------------+--------------------------------+
 
 It's also currently possible to write on the ram console.
 
@@ -161,6 +163,13 @@ H3ULCB board provides two I2C buses. Unfortunately direct access to these buses 
 I2C is mainly used to manage and power on multiple of onboard chips on the H3ULCB and Kingfisher daughter board.
 
 Embedded I2C devices and I/O expanders are not yet supported. The current I2C support therefore does not make any devices available to the user at this time.
+
+PWM
+---
+
+ULCB boards provide one PWM controller with a maximum of 7 channels [0..6]. H3ULCB does provide the pwm0 from test pin CP8 only.
+
+When plugged on a Kingfisher daughter board, pwm4 channel is available on CN7 LVDS connector.
 
 Programming and Debugging
 *************************
