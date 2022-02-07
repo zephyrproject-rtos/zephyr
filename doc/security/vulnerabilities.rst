@@ -1126,3 +1126,17 @@ This has been fixed in main for v3.0.0
 - `PR 42167 fix for 2.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_
 
+CVE-2021-3861
+-------------
+
+Buffer overflow in the RNDIS USB device class
+
+This has been fixed in main for v3.0.0
+
+- `CVE-2021-3861 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3861>`_
+
+- `Zephyr project bug tracker GHSA-hvfp-w4h8-gxvj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hvfp-w4h8-gxvj>`_
+
+- `PR 39725 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/39725>`_
