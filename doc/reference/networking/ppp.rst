@@ -21,7 +21,7 @@ In Zephyr, each individual PPP link is modelled as a network interface. This
 is similar to how Linux implements PPP.
 
 PPP support must be enabled at compile time by setting option
-:kconfig:`CONFIG_NET_PPP` and :kconfig:`CONFIG_NET_L2_PPP`.
+:kconfig:option:`CONFIG_NET_PPP` and :kconfig:option:`CONFIG_NET_L2_PPP`.
 The PPP support in Zephyr 2.0 is still experimental and the implementation
 supports only these protocols:
 

@@ -58,7 +58,7 @@ the data has been transmitted over the air. Indications are supported by
 :c:func:`bt_gatt_indicate` API.
 
 Client procedures can be enabled with the configuration option:
-:kconfig:`CONFIG_BT_GATT_CLIENT`
+:kconfig:option:`CONFIG_BT_GATT_CLIENT`
 
 Discover procedures can be initiated with the use of
 :c:func:`bt_gatt_discover` API which takes the
@@ -73,7 +73,7 @@ to NULL allows all attributes to be discovered.
 Read procedures are supported by :c:func:`bt_gatt_read` API which takes the
 :c:struct:`bt_gatt_read_params` struct as parameters. In the parameters one or
 more attributes can be set, though setting multiple handles requires the option:
-:kconfig:`CONFIG_BT_GATT_READ_MULTIPLE`
+:kconfig:option:`CONFIG_BT_GATT_READ_MULTIPLE`
 
 Write procedures are supported by :c:func:`bt_gatt_write` API and takes
 :c:struct:`bt_gatt_write_params` struct as parameters. In case the write

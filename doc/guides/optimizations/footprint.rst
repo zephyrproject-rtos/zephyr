@@ -11,19 +11,19 @@ usage in different scenarios on as many supported platforms as possible. You
 should start the optimization process by reviewing all stack sizes and adjusting
 them for your application:
 
-:kconfig:`CONFIG_ISR_STACK_SIZE`
+:kconfig:option:`CONFIG_ISR_STACK_SIZE`
   Set to 2048 by default
 
-:kconfig:`CONFIG_MAIN_STACK_SIZE`
+:kconfig:option:`CONFIG_MAIN_STACK_SIZE`
   Set to 1024 by default
 
-:kconfig:`CONFIG_IDLE_STACK_SIZE`
+:kconfig:option:`CONFIG_IDLE_STACK_SIZE`
   Set to 320 by default
 
-:kconfig:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`
+:kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`
   Set to 1024 by default
 
-:kconfig:`CONFIG_PRIVILEGED_STACK_SIZE`
+:kconfig:option:`CONFIG_PRIVILEGED_STACK_SIZE`
   Set to 1024 by default, depends on userspace feature.
 
 
@@ -43,10 +43,10 @@ Various Debug/Informational Options
 The following options are enabled by default to provide more information about
 the running application and to provide means for debugging and error handling:
 
-:kconfig:`CONFIG_BOOT_BANNER`
+:kconfig:option:`CONFIG_BOOT_BANNER`
   This option can be disabled to save a few bytes.
 
-:kconfig:`CONFIG_DEBUG`
+:kconfig:option:`CONFIG_DEBUG`
   This option can be disabled for production builds
 
 

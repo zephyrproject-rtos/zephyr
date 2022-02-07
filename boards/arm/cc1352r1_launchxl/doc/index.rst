@@ -196,7 +196,7 @@ Bootloader
 The ROM bootloader on CC13x2 and CC26x2 devices is enabled by default. The
 bootloader will start if there is no valid application image in flash or the
 so-called backdoor is enabled (via option
-:kconfig:`CONFIG_CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE`) and BTN-1 is held
+:kconfig:option:`CONFIG_CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE`) and BTN-1 is held
 down during reset. See the bootloader documentation in chapter 10 of the `TI
 CC13x2 / CC26x2 Technical Reference Manual`_ for additional information.
 
@@ -205,7 +205,7 @@ Power Management and UART
 
 System and device power management are supported on this platform, and
 can be enabled via the standard Kconfig options in Zephyr, such as
-:kconfig:`CONFIG_PM`, :kconfig:`CONFIG_PM_DEVICE`.
+:kconfig:option:`CONFIG_PM`, :kconfig:option:`CONFIG_PM_DEVICE`.
 
 When system power management is turned on (CONFIG_PM=y),
 sleep state 2 (standby mode) is allowed, and polling is used to retrieve input

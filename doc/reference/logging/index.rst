@@ -111,101 +111,101 @@ Global Kconfig Options
 
 These options can be found in the following path :zephyr_file:`subsys/logging/Kconfig`.
 
-:kconfig:`CONFIG_LOG`: Global switch, turns on/off the logging.
+:kconfig:option:`CONFIG_LOG`: Global switch, turns on/off the logging.
 
 Mode of operations:
 
-:kconfig:`CONFIG_LOG_MODE_DEFERRED`: Deferred mode.
+:kconfig:option:`CONFIG_LOG_MODE_DEFERRED`: Deferred mode.
 
-:kconfig:`CONFIG_LOG_MODE_IMMEDIATE`: Immediate (synchronous) mode.
+:kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE`: Immediate (synchronous) mode.
 
-:kconfig:`CONFIG_LOG_MODE_MINIMAL`: Minimal footprint mode.
+:kconfig:option:`CONFIG_LOG_MODE_MINIMAL`: Minimal footprint mode.
 
-:kconfig:`CONFIG_LOG1`: Use deprecated version of logging.
+:kconfig:option:`CONFIG_LOG1`: Use deprecated version of logging.
 
 Filtering options:
 
-:kconfig:`CONFIG_LOG_RUNTIME_FILTERING`: Enables runtime reconfiguration of the
+:kconfig:option:`CONFIG_LOG_RUNTIME_FILTERING`: Enables runtime reconfiguration of the
 filtering.
 
-:kconfig:`CONFIG_LOG_DEFAULT_LEVEL`: Default level, sets the logging level
+:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`: Default level, sets the logging level
 used by modules that are not setting their own logging level.
 
-:kconfig:`CONFIG_LOG_OVERRIDE_LEVEL`: It overrides module logging level when
+:kconfig:option:`CONFIG_LOG_OVERRIDE_LEVEL`: It overrides module logging level when
 it is not set or set lower than the override value.
 
-:kconfig:`CONFIG_LOG_MAX_LEVEL`: Maximal (lowest severity) level which is
+:kconfig:option:`CONFIG_LOG_MAX_LEVEL`: Maximal (lowest severity) level which is
 compiled in.
 
 Processing options:
 
-:kconfig:`CONFIG_LOG_MODE_OVERFLOW`: When new message cannot be allocated,
+:kconfig:option:`CONFIG_LOG_MODE_OVERFLOW`: When new message cannot be allocated,
 oldest one are discarded.
 
-:kconfig:`CONFIG_LOG_BLOCK_IN_THREAD`: If enabled and new log message cannot
+:kconfig:option:`CONFIG_LOG_BLOCK_IN_THREAD`: If enabled and new log message cannot
 be allocated thread context will block for up to
-:kconfig:`CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS` or until log message is
+:kconfig:option:`CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS` or until log message is
 allocated.
 
-:kconfig:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logging.
+:kconfig:option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logging.
 
-:kconfig:`CONFIG_LOG_PRINTK_MAX_STRING_LENGTH`: Maximal string length that can
+:kconfig:option:`CONFIG_LOG_PRINTK_MAX_STRING_LENGTH`: Maximal string length that can
 be processed by printk. Longer strings are trimmed.
 
-:kconfig:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
+:kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
 messages reaches the threshold dedicated thread (see :c:func:`log_thread_set`)
-is waken up. If :kconfig:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
+is waken up. If :kconfig:option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
 threshold is used by the internal thread.
 
-:kconfig:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logging thread is created
+:kconfig:option:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logging thread is created
 which handles log processing.
 
-:kconfig:`CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS`: Delay in milliseconds
+:kconfig:option:`CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS`: Delay in milliseconds
 after which logging thread is started.
 
-:kconfig:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the message pool.
+:kconfig:option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the message pool.
 Single message capable of storing standard log with up to 3 arguments or hexdump
 message with 12 bytes of data take 32 bytes. In v2 it indicates buffer size
 dedicated for circular packet buffer.
 
-:kconfig:`CONFIG_LOG_DETECT_MISSED_STRDUP`: Enable detection of missed transient
+:kconfig:option:`CONFIG_LOG_DETECT_MISSED_STRDUP`: Enable detection of missed transient
 strings handling.
 
-:kconfig:`CONFIG_LOG_STRDUP_MAX_STRING`: Longest string that can be duplicated
+:kconfig:option:`CONFIG_LOG_STRDUP_MAX_STRING`: Longest string that can be duplicated
 using log_strdup().
 
-:kconfig:`CONFIG_LOG_STRDUP_BUF_COUNT`: Number of buffers in the pool used by
+:kconfig:option:`CONFIG_LOG_STRDUP_BUF_COUNT`: Number of buffers in the pool used by
 log_strdup().
 
-:kconfig:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
+:kconfig:option:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
 
-:kconfig:`CONFIG_LOG_FRONTEND`: Redirect logs to a custom frontend.
+:kconfig:option:`CONFIG_LOG_FRONTEND`: Redirect logs to a custom frontend.
 
-:kconfig:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
+:kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
 
 Formatting options:
 
-:kconfig:`CONFIG_LOG_FUNC_NAME_PREFIX_ERR`: Prepend standard ERROR log messages
+:kconfig:option:`CONFIG_LOG_FUNC_NAME_PREFIX_ERR`: Prepend standard ERROR log messages
 with function name. Hexdump messages are not prepended.
 
-:kconfig:`CONFIG_LOG_FUNC_NAME_PREFIX_WRN`: Prepend standard WARNING log messages
+:kconfig:option:`CONFIG_LOG_FUNC_NAME_PREFIX_WRN`: Prepend standard WARNING log messages
 with function name. Hexdump messages are not prepended.
 
-:kconfig:`CONFIG_LOG_FUNC_NAME_PREFIX_INF`: Prepend standard INFO log messages
+:kconfig:option:`CONFIG_LOG_FUNC_NAME_PREFIX_INF`: Prepend standard INFO log messages
 with function name. Hexdump messages are not prepended.
 
-:kconfig:`CONFIG_LOG_FUNC_NAME_PREFIX_DBG`: Prepend standard DEBUG log messages
+:kconfig:option:`CONFIG_LOG_FUNC_NAME_PREFIX_DBG`: Prepend standard DEBUG log messages
 with function name. Hexdump messages are not prepended.
 
-:kconfig:`CONFIG_LOG_BACKEND_SHOW_COLOR`: Enables coloring of errors (red)
+:kconfig:option:`CONFIG_LOG_BACKEND_SHOW_COLOR`: Enables coloring of errors (red)
 and warnings (yellow).
 
-:kconfig:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`: If enabled timestamp is
+:kconfig:option:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`: If enabled timestamp is
 formatted to *hh:mm:ss:mmm,uuu*. Otherwise is printed in raw format.
 
 Backend options:
 
-:kconfig:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.
+:kconfig:option:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.
 
 .. _log_usage:
 
@@ -218,7 +218,7 @@ Logging in a module
 In order to use logging in the module, a unique name of a module must be
 specified and module must be registered using :c:macro:`LOG_MODULE_REGISTER`.
 Optionally, a compile time log level for the module can be specified as the
-second parameter. Default log level (:kconfig:`CONFIG_LOG_DEFAULT_LEVEL`) is used
+second parameter. Default log level (:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used
 if custom log level is not provided.
 
 .. code-block:: c
@@ -230,7 +230,7 @@ If the module consists of multiple files, then ``LOG_MODULE_REGISTER()`` should
 appear in exactly one of them. Each other file should use
 :c:macro:`LOG_MODULE_DECLARE` to declare its membership in the module.
 Optionally, a compile time log level for the module can be specified as
-the second parameter. Default log level (:kconfig:`CONFIG_LOG_DEFAULT_LEVEL`)
+the second parameter. Default log level (:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`)
 is used if custom log level is not provided.
 
 .. code-block:: c
@@ -243,7 +243,7 @@ In order to use logging API in a function implemented in a header file
 :c:macro:`LOG_MODULE_DECLARE` macro must be used in the function body
 before logging API is called. Optionally, a compile time log level for the module
 can be specified as the second parameter. Default log level
-(:kconfig:`CONFIG_LOG_DEFAULT_LEVEL`) is used if custom log level is not
+(:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used if custom log level is not
 provided.
 
 .. code-block:: c
@@ -358,8 +358,8 @@ Following snippet shows how logging can be processed in simple forever loop.
 
 If logs are processed from a thread then it is possible to enable a feature
 which will wake up processing thread when certain amount of log messages are
-buffered (see :kconfig:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`). It is also
-possible to enable internal logging thread (see :kconfig:`CONFIG_LOG_PROCESS_THREAD`).
+buffered (see :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`). It is also
+possible to enable internal logging thread (see :kconfig:option:`CONFIG_LOG_PROCESS_THREAD`).
 In that case, logging thread is initialized and log messages are processed implicitly.
 
 .. _logging_panic:
@@ -485,7 +485,7 @@ are two strategies to handle that case:
 
 - No overflow - new log is dropped if space for a message cannot be allocated.
 - Overflow - oldest pending messages are freed, until new message can be
-  allocated. Enabled by :kconfig:`CONFIG_LOG_MODE_OVERFLOW`. Note that it degrades
+  allocated. Enabled by :kconfig:option:`CONFIG_LOG_MODE_OVERFLOW`. Note that it degrades
   performance thus it is recommended to adjust buffer size and amount of enabled
   logs to limit dropping.
 
@@ -518,7 +518,7 @@ particular source will be buffered.
 Custom Frontend
 ===============
 
-Custom frontend is enabled using :kconfig:`CONFIG_LOG_FRONTEND`. Logs are redirected
+Custom frontend is enabled using :kconfig:option:`CONFIG_LOG_FRONTEND`. Logs are redirected
 to functions declared in :zephyr_file:`include/logging/log_frontend.h`.
 This may be required in very time-sensitive cases, but most of the logging
 features cannot be used then, which includes default frontend, core and all
@@ -536,13 +536,13 @@ Since log message contains only the value of the argument, when ``%s`` is used
 only the address of a string is stored. Because a string variable argument could
 be transient, allocated on the stack, or modifiable, logger provides a mechanism
 and a dedicated buffer pool to hold copies of strings. The buffer size and count
-is configurable (see :kconfig:`CONFIG_LOG_STRDUP_MAX_STRING` and
-:kconfig:`CONFIG_LOG_STRDUP_BUF_COUNT`).
+is configurable (see :kconfig:option:`CONFIG_LOG_STRDUP_MAX_STRING` and
+:kconfig:option:`CONFIG_LOG_STRDUP_BUF_COUNT`).
 
 If a string argument is transient, the user must call :c:func:`log_strdup` to
 duplicate the passed string into a buffer from the pool. See the examples below.
 If a strdup buffer cannot be allocated, a warning message is logged and an error
-code returned indicating :kconfig:`CONFIG_LOG_STRDUP_BUF_COUNT` should be
+code returned indicating :kconfig:option:`CONFIG_LOG_STRDUP_BUF_COUNT` should be
 increased. Buffers are freed together with the log message.
 
 .. code-block:: c
@@ -552,7 +552,7 @@ increased. Buffers are freed together with the log message.
    LOG_INF("logging transient string: %s", log_strdup(local_str));
    local_str[0] = '\0'; /* String can be modified, logger will use duplicate."
 
-When :kconfig:`CONFIG_LOG_DETECT_MISSED_STRDUP` is enabled logger will scan
+When :kconfig:option:`CONFIG_LOG_DETECT_MISSED_STRDUP` is enabled logger will scan
 each log message and report if string format specifier is found and string
 address is not in read only memory section or does not belong to memory pool
 dedicated to string duplicates. It indictes that :c:func:`log_strdup` is
@@ -671,18 +671,18 @@ Configuration
 
 Here are kconfig options related to dictionary-based logging:
 
-- :kconfig:`CONFIG_LOG_DICTIONARY_SUPPORT` enables dictionary-based logging
+- :kconfig:option:`CONFIG_LOG_DICTIONARY_SUPPORT` enables dictionary-based logging
   support. This should be selected by the backends which require it.
 
 - The UART backend can be used for dictionary-based logging. These are
   additional config for the UART backend:
 
-  - :kconfig:`CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX` tells
+  - :kconfig:option:`CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX` tells
     the UART backend to output hexadecimal characters for dictionary based
     logging. This is useful when the log data needs to be captured manually
     via terminals and consoles.
 
-  - :kconfig:`CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN` tells
+  - :kconfig:option:`CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN` tells
     the UART backend to output binary data.
 
 
@@ -733,7 +733,7 @@ Logging v2
 Solves major limitations of v1. However, in order to get most of the logging
 capabilities following recommendations shall be followed:
 
-* Enable :kconfig:`CONFIG_LOG_SPEED` to slightly speed up deferred logging at the
+* Enable :kconfig:option:`CONFIG_LOG_SPEED` to slightly speed up deferred logging at the
   cost of slight increase in memory footprint.
 * Compiler with C11 ``_Generic`` keyword support is recommended. Logging
   performance is significantly degraded without it. See :ref:`cbprintf_packaging`.
@@ -784,7 +784,7 @@ from userspace. It is at the cost of larger memory footprint for a log message.
 
 .. rubric:: Benchmark details
 
-.. [#f0] :kconfig:`CONFIG_LOG_SPEED` enabled.
+.. [#f0] :kconfig:option:`CONFIG_LOG_SPEED` enabled.
 
 .. [#f1] Number of log messages with various number of arguments that fits in 2048
   bytes dedicated for logging.
@@ -801,9 +801,9 @@ Stack usage
 
 When logging is enabled it impacts stack usage of the context that uses logging API. If stack
 is optimized it may lead to stack overflow. Stack usage depends on mode and optimization. It
-also significantly varies between platforms. In general, when :kconfig:`CONFIG_LOG_MODE_DEFERRED`
+also significantly varies between platforms. In general, when :kconfig:option:`CONFIG_LOG_MODE_DEFERRED`
 is used stack usage is smaller since logging is limited to creating and storing log message.
-When :kconfig:`CONFIG_LOG_MODE_IMMEDIATE` is used then log message is processed by the backend
+When :kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE` is used then log message is processed by the backend
 which includes string formatting. In case of that mode, stack usage will depend on which backends
 are used.
 

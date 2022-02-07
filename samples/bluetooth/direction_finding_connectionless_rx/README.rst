@@ -50,7 +50,7 @@ enabled:
   to a new file,
   :file:`samples/bluetooth/hci_rpmsg/boards/nrf5340dk_nrf5340_cpunet.conf`. Add
   the line ``CONFIG_BT_EXT_ADV=y`` to enable extended size of
-  :kconfig:`CONFIG_BT_BUF_CMD_TX_SIZE` to support the LE Set Extended Advertising
+  :kconfig:option:`CONFIG_BT_BUF_CMD_TX_SIZE` to support the LE Set Extended Advertising
   Data command.
 
 Antenna matrix configuration

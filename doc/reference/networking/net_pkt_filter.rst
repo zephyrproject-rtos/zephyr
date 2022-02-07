@@ -15,7 +15,7 @@ construct custom rules for accepting and/or denying packet transmission
 and reception. This can be used to create a basic firewall, control
 network traffic, etc.
 
-The :kconfig:`CONFIG_NET_PKT_FILTER` must be set in order to enable the
+The :kconfig:option:`CONFIG_NET_PKT_FILTER` must be set in order to enable the
 relevant APIs.
 
 Both the transmission and reception paths may have a list of filter rules.

@@ -84,16 +84,16 @@ Paging Statistics
 *****************
 
 Paging statistics can be obtained via various function calls when
-:kconfig:`CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS` is enabled:
+:kconfig:option:`CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS` is enabled:
 
 * Overall statistics via :c:func:`k_mem_paging_stats_get()`
 
 * Per-thread statistics via :c:func:`k_mem_paging_thread_stats_get()`
-  if :kconfig:`CONFIG_DEMAND_PAGING_THREAD_STATS` is enabled
+  if :kconfig:option:`CONFIG_DEMAND_PAGING_THREAD_STATS` is enabled
 
 * Execution time histogram can be obtained when
-  :kconfig:`CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM` is enabled, and
-  :kconfig:`CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS` is defined.
+  :kconfig:option:`CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM` is enabled, and
+  :kconfig:option:`CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS` is defined.
   Note that the timing is highly dependent on the architecture,
   SoC or board. It is highly recommended that
   ``k_mem_paging_eviction_histogram_bounds[]`` and

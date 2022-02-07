@@ -41,7 +41,7 @@ exist, the scheduler chooses the one that has been waiting longest.
 
 A thread's relative priority is primarily determined by its static priority.
 However, when both earliest-deadline-first scheduling is enabled
-(:kconfig:`CONFIG_SCHED_DEADLINE`) and a choice of threads have equal
+(:kconfig:option:`CONFIG_SCHED_DEADLINE`) and a choice of threads have equal
 static priority, then the thread with the earlier deadline is considered
 to have the higher priority. Thus, when earliest-deadline-first scheduling is
 enabled, two threads are only considered to have the same priority when both
@@ -59,7 +59,7 @@ The kernel can be built with one of several choices for the ready queue
 implementation, offering different choices between code size, constant factor
 runtime overhead and performance scaling when many threads are added.
 
-* Simple linked-list ready queue (:kconfig:`CONFIG_SCHED_DUMB`)
+* Simple linked-list ready queue (:kconfig:option:`CONFIG_SCHED_DUMB`)
 
   The scheduler ready queue will be implemented as a simple unordered list, with
   very fast constant time performance for single threads and very low code size.
@@ -68,7 +68,7 @@ runtime overhead and performance scaling when many threads are added.
   the queue at any given time.  On most platforms (that are not otherwise using
   the red/black tree) this results in a savings of ~2k of code size.
 
-* Red/black tree ready queue (:kconfig:`CONFIG_SCHED_SCALABLE`)
+* Red/black tree ready queue (:kconfig:option:`CONFIG_SCHED_SCALABLE`)
 
   The scheduler ready queue will be implemented as a red/black tree.  This has
   rather slower constant-time insertion and removal overhead, and on most
@@ -79,7 +79,7 @@ runtime overhead and performance scaling when many threads are added.
   Use this for applications needing many concurrent runnable threads (> 20 or
   so).  Most applications won't need this ready queue implementation.
 
-* Traditional multi-queue ready queue (:kconfig:`CONFIG_SCHED_MULTIQ`)
+* Traditional multi-queue ready queue (:kconfig:option:`CONFIG_SCHED_MULTIQ`)
 
   When selected, the scheduler ready queue will be implemented as the
   classic/textbook array of lists, one per priority (max 32 priorities).
@@ -102,17 +102,17 @@ The wait_q abstraction used in IPC primitives to pend threads for later wakeup
 shares the same backend data structure choices as the scheduler, and can use
 the same options.
 
-* Scalable wait_q implementation (:kconfig:`CONFIG_WAITQ_SCALABLE`)
+* Scalable wait_q implementation (:kconfig:option:`CONFIG_WAITQ_SCALABLE`)
 
   When selected, the wait_q will be implemented with a balanced tree.  Choose
   this if you expect to have many threads waiting on individual primitives.
-  There is a ~2kb code size increase over :kconfig:`CONFIG_WAITQ_DUMB` (which may
-  be shared with :kconfig:`CONFIG_SCHED_SCALABLE`) if the red/black tree is not
+  There is a ~2kb code size increase over :kconfig:option:`CONFIG_WAITQ_DUMB` (which may
+  be shared with :kconfig:option:`CONFIG_SCHED_SCALABLE`) if the red/black tree is not
   used elsewhere in the application, and pend/unpend operations on "small"
   queues will be somewhat slower (though this is not generally a performance
   path).
 
-* Simple linked-list wait_q (:kconfig:`CONFIG_WAITQ_DUMB`)
+* Simple linked-list wait_q (:kconfig:option:`CONFIG_WAITQ_DUMB`)
 
   When selected, the wait_q will be implemented with a doubly-linked list.
   Choose this if you expect to have only a few threads blocked on any single

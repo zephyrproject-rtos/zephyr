@@ -116,7 +116,7 @@ Troubleshooting
 MPU fault while using NVS, or ``-ETIMEDOUT`` error returned
    NVS can use the internal flash of the SoC.  While the MPU is enabled,
    the flash driver requires MPU RWX access to flash memory, configured
-   using :kconfig:`CONFIG_MPU_ALLOW_FLASH_WRITE`.  If this option is
+   using :kconfig:option:`CONFIG_MPU_ALLOW_FLASH_WRITE`.  If this option is
    disabled, the NVS application will get an MPU fault if it references
    the internal SoC flash and it's the only thread running.  In a
    multi-threaded application, another thread might intercept the fault

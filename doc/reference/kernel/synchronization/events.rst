@@ -164,7 +164,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_EVENTS`
+* :kconfig:option:`CONFIG_EVENTS`
 
 API Reference
 **************

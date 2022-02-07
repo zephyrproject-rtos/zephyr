@@ -464,9 +464,9 @@ Mocking
 
 These functions allow abstracting callbacks and related functions and
 controlling them from specific tests. You can enable the mocking framework by
-setting :kconfig:`CONFIG_ZTEST_MOCKING` to "y" in the configuration file of the
+setting :kconfig:option:`CONFIG_ZTEST_MOCKING` to "y" in the configuration file of the
 test.  The amount of concurrent return values and expected parameters is
-limited by :kconfig:`CONFIG_ZTEST_PARAMETER_COUNT`.
+limited by :kconfig:option:`CONFIG_ZTEST_PARAMETER_COUNT`.
 
 Here is an example for configuring the function ``expect_two_parameters`` to
 expect the values ``a=2`` and ``b=3``, and telling ``returns_int`` to return
@@ -483,7 +483,7 @@ Customizing Test Output
 The way output is presented when running tests can be customized.
 An example can be found in :zephyr_file:`tests/ztest/custom_output`.
 
-Customization is enabled by setting :kconfig:`CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE` to "y"
+Customization is enabled by setting :kconfig:option:`CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE` to "y"
 and adding a file :file:`tc_util_user_override.h` with your overrides.
 
 Add the line ``zephyr_include_directories(my_folder)`` to

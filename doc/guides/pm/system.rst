@@ -2,7 +2,7 @@ System Power Management
 #######################
 
 The kernel enters the idle state when it has nothing to schedule. If enabled via
-the :kconfig:`CONFIG_PM` Kconfig option, the Power Management
+the :kconfig:option:`CONFIG_PM` Kconfig option, the Power Management
 Subsystem can put an idle system in one of the supported power states, based
 on the selected power management policy and the duration of the idle time
 allotted by the kernel.

@@ -151,7 +151,7 @@ New APIs in this release
 
   * Added new APIs to support datum wider than 8-bit.
 
-    * :kconfig:`CONFIG_UART_WIDE_DATA` is added to enable this new APIs.
+    * :kconfig:option:`CONFIG_UART_WIDE_DATA` is added to enable this new APIs.
 
     * Following functions, mirroring similar functions for 8-bit datum,
       are added:
@@ -293,9 +293,9 @@ Bluetooth
 
 * Host
 
-  * The :kconfig:`CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE` is now enabled by default.
-    Storing CCC right after it's written reduces risk of inconsistency of CCC values between
-    bonded peers
+  * The :kconfig:option:`CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE` is now enabled
+    by default. Storing CCC right after it's written reduces risk of
+    inconsistency of CCC values between bonded peers
   * Added support for L2CAP channel reconfiguration.
   * Added support for SMP error code 0xF, where the peer rejects a distributed
     key

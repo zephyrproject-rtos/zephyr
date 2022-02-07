@@ -89,7 +89,7 @@ internally and statically at compile-time in the bottom-layer.
 
 
 The CTF top layer is enabled using the configuration option
-:kconfig:`CONFIG_TRACING_CTF` and can be used with the different transport
+:kconfig:option:`CONFIG_TRACING_CTF` and can be used with the different transport
 backends both in synchronous and asynchronous modes.
 
 
@@ -105,7 +105,7 @@ transports, for example UART or using snapshot mode (both still not
 supported in Zephyr).
 
 To enable tracing support with `SEGGER SystemView`_ add the configuration option
-:kconfig:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
+:kconfig:option:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
 it to *y*. For example, this can be added to the
 :ref:`synchronization_sample` to visualize fast switching between threads.
 SystemView can also be used for post-mortem tracing, which can be enabled with
@@ -160,7 +160,7 @@ The following functions can be defined by the user:
 - ``void sys_trace_isr_exit_user(int nested_interrupts)``
 - ``void sys_trace_idle_user()``
 
-Enable this format with the :kconfig:`CONFIG_TRACING_USER` option.
+Enable this format with the :kconfig:option:`CONFIG_TRACING_USER` option.
 
 
 Transport Backends
@@ -205,8 +205,8 @@ Using RAM backend
 
 For devices that do not have available I/O for tracing such as USB or UART but have
 enough RAM to collect trace datas, the ram backend can be enabled with configuration
-:kconfig:`CONFIG_TRACING_BACKEND_RAM`.
-Adjust :kconfig:`CONFIG_RAM_TRACING_BUFFER_SIZE` to be able to record enough traces for your needs.
+:kconfig:option:`CONFIG_TRACING_BACKEND_RAM`.
+Adjust :kconfig:option:`CONFIG_RAM_TRACING_BUFFER_SIZE` to be able to record enough traces for your needs.
 Then thanks to a runtime debugger such as gdb this buffer can be fetched from the target
 to an host computer::
 
@@ -371,10 +371,10 @@ all initialized mutexes, one can write::
     cur = SYS_PORT_TRACK_NEXT(cur);
   }
 
-To enable object tracking, enable :kconfig:`CONFIG_TRACING_OBJECT_TRACKING`.
+To enable object tracking, enable :kconfig:option:`CONFIG_TRACING_OBJECT_TRACKING`.
 Note that each list can be enabled or disabled via their tracing
 configuration. For example, to disable tracking of semaphores, one can
-disable :kconfig:`CONFIG_TRACING_SEMAPHORE`.
+disable :kconfig:option:`CONFIG_TRACING_SEMAPHORE`.
 
 Object tracking is behind tracing configuration as it currently leverages
 tracing infrastructure to perform the tracking.

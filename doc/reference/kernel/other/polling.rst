@@ -289,7 +289,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_POLL`
+* :kconfig:option:`CONFIG_POLL`
 
 API Reference
 *************

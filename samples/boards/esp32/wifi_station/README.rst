@@ -89,7 +89,7 @@ This example uses ``west espressif monitor``, which automatically detects the se
 Sample console interaction
 ==========================
 
-If the :kconfig:`CONFIG_NET_SHELL` option is set, network shell functions
+If the :kconfig:option:`CONFIG_NET_SHELL` option is set, network shell functions
 can be used to check internet connection.
 
 .. code-block:: console

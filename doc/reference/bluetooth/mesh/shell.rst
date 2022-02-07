@@ -305,7 +305,7 @@ Provisioning
 Proxy Client
 ============
 
-The Proxy Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_PROXY_CLIENT` configuration option.
+The Proxy Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_PROXY_CLIENT` configuration option.
 
 ``mesh proxy-connect <NetKeyIndex>``
 ------------------------------------
@@ -327,7 +327,7 @@ The Proxy Client model is an optional mesh subsystem that can be enabled through
 Configuration Client model
 ==========================
 
-The Configuration Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CFG_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
+The Configuration Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_CFG_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
 
 The Configuration Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Configuration Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Configuration Client model targets the new node. The Configuration Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
@@ -697,7 +697,7 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 Health Client model
 ===================
 
-The Health Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_HEALTH_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
+The Health Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_HEALTH_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
 
 The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
@@ -809,7 +809,7 @@ Health Server model
 Configuration database
 ======================
 
-The Configuration database is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CDB` configuration option. The Configuration database is only available on provisioner devices, and allows them to store all information about the mesh network. To avoid conflicts, there should only be one mesh node in the network with the Configuration database enabled. This node is the Configurator, and is responsible for adding new nodes to the network and configuring them.
+The Configuration database is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_CDB` configuration option. The Configuration database is only available on provisioner devices, and allows them to store all information about the mesh network. To avoid conflicts, there should only be one mesh node in the network with the Configuration database enabled. This node is the Configurator, and is responsible for adding new nodes to the network and configuring them.
 
 ``mesh cdb-create [NetKey]``
 ----------------------------

@@ -102,7 +102,7 @@ Data receiving (RX)
    header and frame check sequence, etc.
 
 4. The packet is processed by a network interface. The network statistics are
-   collected if enabled by :kconfig:`CONFIG_NET_STATISTICS`.
+   collected if enabled by :kconfig:option:`CONFIG_NET_STATISTICS`.
 
 5. The packet is then passed to L3 processing. If the packet is IP based,
    then the L3 layer checks if the packet is a proper IPv6 or IPv4 packet.

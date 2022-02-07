@@ -53,7 +53,7 @@ Glossary of Terms
       Device Runtime Power Management (PM) refers the capability of devices to
       save energy independently of the the system power state. Devices will keep
       reference of their usage and will automatically be suspended or resumed.
-      This feature is enabled via the :kconfig:`CONFIG_PM_DEVICE_RUNTIME`
+      This feature is enabled via the :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`
       Kconfig option.
 
    idle thread

@@ -10,7 +10,7 @@ Thread support is not necessary in some applications:
 * Examples intended to demonstrate core functionality
 
 Thread support can be disabled in Zephyr by setting
-:kconfig:`CONFIG_MULTITHREADING` to ``n``.  Since this configuration has
+:kconfig:option:`CONFIG_MULTITHREADING` to ``n``.  Since this configuration has
 a significant impact on Zephyr's functionality and testing of it has
 been limited, there are conditions on what can be expected to work in
 this configuration.
@@ -19,7 +19,7 @@ What Can be Expected to Work
 ****************************
 
 These core capabilities shall function correctly when
-:kconfig:`CONFIG_MULTITHREADING` is disabled:
+:kconfig:option:`CONFIG_MULTITHREADING` is disabled:
 
 * The :ref:`build system <application>`
 
@@ -42,12 +42,12 @@ These core capabilities shall function correctly when
 * Specifically identified drivers in certain subsystems, listed below.
 
 The expectations above affect selection of other features; for example
-:kconfig:`CONFIG_SYS_CLOCK_EXISTS` cannot be set to ``n``.
+:kconfig:option:`CONFIG_SYS_CLOCK_EXISTS` cannot be set to ``n``.
 
 What Cannot be Expected to Work
 *******************************
 
-Functionality that will not work with :kconfig:`CONFIG_MULTITHREADING`
+Functionality that will not work with :kconfig:option:`CONFIG_MULTITHREADING`
 includes majority of the kernel API:
 
 * :ref:`threads_v2`
@@ -74,7 +74,7 @@ Subsystem Behavior Without Thread Support
 *****************************************
 
 The sections below list driver and functional subsystems that are
-expected to work to some degree when :kconfig:`CONFIG_MULTITHREADING` is
+expected to work to some degree when :kconfig:option:`CONFIG_MULTITHREADING` is
 disabled.  Subsystems that are not listed here should not be expected to
 work.
 
@@ -108,14 +108,14 @@ UART
 A subset of the :ref:`uart_api` is expected to work for all SoC UART
 peripheral drivers.
 
-* Applications that select :kconfig:`CONFIG_UART_INTERRUPT_DRIVEN` may
+* Applications that select :kconfig:option:`CONFIG_UART_INTERRUPT_DRIVEN` may
   work, depending on driver implementation.
 
-* Applications that select :kconfig:`CONFIG_UART_ASYNC_API` may
+* Applications that select :kconfig:option:`CONFIG_UART_ASYNC_API` may
   work, depending on driver implementation.
 
-* Applications that do not select either :kconfig:`CONFIG_UART_ASYNC_API`
-  or :kconfig:`CONFIG_UART_INTERRUPT_DRIVEN` are expected to work.
+* Applications that do not select either :kconfig:option:`CONFIG_UART_ASYNC_API`
+  or :kconfig:option:`CONFIG_UART_INTERRUPT_DRIVEN` are expected to work.
 
 *List/table of supported drivers to go here, including which API options
 are supported*

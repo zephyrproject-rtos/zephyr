@@ -13,7 +13,7 @@ specified by architecture, SoC or board configuration.
 Configuration
 *************
 
-To allow using the timing functions, :kconfig:`CONFIG_TIMING_FUNCTIONS`
+To allow using the timing functions, :kconfig:option:`CONFIG_TIMING_FUNCTIONS`
 needs to be enabled.
 
 Usage

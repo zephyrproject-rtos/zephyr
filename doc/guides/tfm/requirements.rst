@@ -33,7 +33,7 @@ The following are some of the boards that can be used with TF-M:
 
 You can run ``west boards -n _ns$`` to search for non-secure variants
 of different board targets. To make sure TF-M is supported for a board
-in its output, check that :kconfig:`CONFIG_TRUSTED_EXECUTION_NONSECURE`
+in its output, check that :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NONSECURE`
 is set to ``y`` in that board's default configuration.
 
 Software Requirements

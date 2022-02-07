@@ -25,18 +25,18 @@ use of ``s*printf()`` C libraries in Zephyr can be converted to
 Several Kconfig options control the set of features that are enabled,
 allowing some control over features and memory usage:
 
-* :kconfig:`CONFIG_CBPRINTF_FULL_INTEGRAL`
-  or :kconfig:`CONFIG_CBPRINTF_REDUCED_INTEGRAL`
-* :kconfig:`CONFIG_CBPRINTF_FP_SUPPORT`
-* :kconfig:`CONFIG_CBPRINTF_FP_A_SUPPORT`
-* :kconfig:`CONFIG_CBPRINTF_FP_ALWAYS_A`
-* :kconfig:`CONFIG_CBPRINTF_N_SPECIFIER`
+* :kconfig:option:`CONFIG_CBPRINTF_FULL_INTEGRAL`
+  or :kconfig:option:`CONFIG_CBPRINTF_REDUCED_INTEGRAL`
+* :kconfig:option:`CONFIG_CBPRINTF_FP_SUPPORT`
+* :kconfig:option:`CONFIG_CBPRINTF_FP_A_SUPPORT`
+* :kconfig:option:`CONFIG_CBPRINTF_FP_ALWAYS_A`
+* :kconfig:option:`CONFIG_CBPRINTF_N_SPECIFIER`
 
-:kconfig:`CONFIG_CBPRINTF_LIBC_SUBSTS` can be used to provide functions
+:kconfig:option:`CONFIG_CBPRINTF_LIBC_SUBSTS` can be used to provide functions
 that behave like standard libc functions but use the selected cbprintf
 formatter rather than pulling in another formatter from libc.
 
-In addition :kconfig:`CONFIG_CBPRINTF_NANO` can be used to revert back to
+In addition :kconfig:option:`CONFIG_CBPRINTF_NANO` can be used to revert back to
 the very space-optimized but limited formatter used for :c:func:`printk`
 before this capability was added.
 
@@ -76,8 +76,8 @@ Package can be created using two methods:
 
 Several Kconfig options control behavior of the packaging:
 
-* :kconfig:`CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE`
-* :kconfig:`CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT`
+* :kconfig:option:`CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE`
+* :kconfig:option:`CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT`
 
 Cbprintf package format
 =======================
@@ -122,8 +122,8 @@ formatting since address changes whenever package is copied.
 
 .. warning::
 
-  If :kconfig:`CONFIG_MINIMAL_LIBC` is selected in combination with
-  :kconfig:`CONFIG_CBPRINTF_NANO` formatting with C standard library
+  If :kconfig:option:`CONFIG_MINIMAL_LIBC` is selected in combination with
+  :kconfig:option:`CONFIG_CBPRINTF_NANO` formatting with C standard library
   functions like ``printf`` or ``snprintf`` is limited.  Among other
   things the ``%n`` specifier, most format flags, precision control, and
   floating point are not supported.

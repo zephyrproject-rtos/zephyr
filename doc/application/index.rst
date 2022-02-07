@@ -526,7 +526,7 @@ Zephyr is a project under constant development and thus there are features that
 are still in early stages of their development cycle. Such features will be
 marked ``[EXPERIMENTAL]`` in their Kconfig title.
 
-The :kconfig:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
+The :kconfig:option:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
 at CMake configure time if any experimental feature is enabled.
 
 .. code-block:: none
@@ -534,8 +534,8 @@ at CMake configure time if any experimental feature is enabled.
    CONFIG_WARN_EXPERIMENTAL=y
 
 For example, if option ``CONFIG_FOO`` is experimental, then enabling it and
-:kconfig:`CONIG_WARN_EXPERIMENTAL` will print the following warning at CMake
-configure time when you build an application:
+:kconfig:option:`CONIG_WARN_EXPERIMENTAL` will print the following warning at
+CMake configure time when you build an application:
 
 .. code-block:: none
 
