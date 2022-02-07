@@ -33,6 +33,7 @@
 #include "proxy_msg.h"
 #include "proxy_cli.h"
 #include "gatt_cli.h"
+#include "pb_gatt_cli.h"
 
 static struct bt_mesh_gatt_server {
 	struct bt_conn *conn;
@@ -280,6 +281,11 @@ static void gatt_advertising_recv(const struct bt_le_scan_recv_info *info,
 #if defined(CONFIG_BT_MESH_PROXY_CLIENT)
 	case BT_UUID_MESH_PROXY_VAL:
 		bt_mesh_proxy_cli_adv_recv(info, buf);
+		break;
+#endif
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	case BT_UUID_MESH_PROV_VAL:
+		bt_mesh_pb_gatt_cli_adv_recv(info, buf);
 		break;
 #endif
 
