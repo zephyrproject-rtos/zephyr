@@ -485,7 +485,7 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				rr_act_run(conn);
 				rr_set_state(conn, RR_STATE_ACTIVE);
 			} else if (periph && incompat == INCOMPAT_RESOLVABLE) {
-				/* Slave collision
+				/* Peripheral collision
 				 * => Run procedure
 				 *
 				 * Local periph procedure completes with error.
@@ -495,7 +495,7 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				rr_act_run(conn);
 				rr_set_state(conn, RR_STATE_ACTIVE);
 			} else if (with_instant && central && incompat == INCOMPAT_RESOLVABLE) {
-				/* Master collision
+				/* Central collision
 				 * => Send reject
 				 *
 				 * Local central incompatible procedure continues unaffected.
