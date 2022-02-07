@@ -10,9 +10,6 @@
 
 #include <bluetooth/gatt.h>
 
-int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *buf,
-			 bt_gatt_complete_func_t end, void *user_data);
-
 int bt_mesh_pb_gatt_enable(void);
 int bt_mesh_pb_gatt_disable(void);
 

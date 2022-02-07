@@ -726,9 +726,10 @@ int bt_mesh_prov_remote_pub_key_set(const uint8_t public_key[BT_PUB_KEY_LEN])
 	return 0;
 }
 
-#if defined(CONFIG_BT_MESH_PB_ADV)
-int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
-			uint8_t attention_duration)
+static int bt_mesh_provisioner_open(const struct prov_bearer *bearer,
+				    const uint8_t uuid[16],
+				    uint16_t net_idx, uint16_t addr,
+				    uint8_t attention_duration)
 {
 	int err;
 
@@ -746,7 +747,7 @@ int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 	prov_device.addr = addr;
 	prov_device.net_idx = net_idx;
 	prov_device.attention_duration = attention_duration;
-	bt_mesh_prov_link.bearer = &pb_adv;
+	bt_mesh_prov_link.bearer = bearer;
 	bt_mesh_prov_link.role = &role_provisioner;
 
 	err = bt_mesh_prov_link.bearer->link_open(prov_device.uuid, PROTOCOL_TIMEOUT,
@@ -756,5 +757,20 @@ int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 	}
 
 	return err;
+}
+
+#if defined(CONFIG_BT_MESH_PB_ADV)
+int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
+			uint8_t attention_duration)
+{
+	return bt_mesh_provisioner_open(&pb_adv, uuid, net_idx, addr, attention_duration);
+}
+#endif
+
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+int bt_mesh_pb_gatt_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
+			 uint8_t attention_duration)
+{
+	return bt_mesh_provisioner_open(&pb_gatt, uuid, net_idx, addr, attention_duration);
 }
 #endif

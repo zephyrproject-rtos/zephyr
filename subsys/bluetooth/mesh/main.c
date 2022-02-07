@@ -142,6 +142,25 @@ int bt_mesh_provision_adv(const uint8_t uuid[16], uint16_t net_idx, uint16_t add
 	return -ENOTSUP;
 }
 
+int bt_mesh_provision_gatt(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
+			   uint8_t attention_duration)
+{
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		return -EINVAL;
+	}
+
+	if (bt_mesh_subnet_get(net_idx) == NULL) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT_CLIENT)) {
+		return bt_mesh_pb_gatt_open(uuid, net_idx, addr,
+					    attention_duration);
+	}
+
+	return -ENOTSUP;
+}
+
 void bt_mesh_reset(void)
 {
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
