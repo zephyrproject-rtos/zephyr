@@ -75,7 +75,6 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 			 uint16_t len, uint16_t offset, uint8_t flags)
 {
 	const uint8_t *data = buf;
-	struct bt_mesh_proxy_client *client = find_client(conn);
 
 	if (len < 1) {
 		BT_WARN("Too small Proxy PDU");
@@ -87,7 +86,7 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	return bt_mesh_proxy_msg_recv(client->cli, buf, len);
+	return bt_mesh_proxy_msg_recv(conn, buf, len);
 }
 
 /* Next subnet in queue to be advertised */
@@ -207,7 +206,7 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 		return;
 	}
 
-	err = bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_CONFIG,
+	err = bt_mesh_proxy_msg_send(client->cli->conn, BT_MESH_PROXY_CONFIG,
 				     buf, NULL, NULL);
 	if (err) {
 		BT_ERR("Failed to send proxy cfg message (err %d)", err);
@@ -315,7 +314,7 @@ static int beacon_send(struct bt_mesh_proxy_client *client,
 	net_buf_simple_reserve(&buf, 1);
 	bt_mesh_beacon_create(sub, &buf);
 
-	return bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_BEACON,
+	return bt_mesh_proxy_msg_send(client->cli->conn, BT_MESH_PROXY_BEACON,
 				      &buf, NULL, NULL);
 }
 
@@ -834,7 +833,7 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 		net_buf_simple_reserve(&msg, 1);
 		net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
-		err = bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_NET_PDU,
+		err = bt_mesh_proxy_msg_send(client->cli->conn, BT_MESH_PROXY_NET_PDU,
 					     &msg, buf_send_end, net_buf_ref(buf));
 
 		bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));

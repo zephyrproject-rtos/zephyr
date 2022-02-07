@@ -87,7 +87,7 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	return bt_mesh_proxy_msg_recv(cli, buf, len);
+	return bt_mesh_proxy_msg_recv(conn, buf, len);
 }
 
 static void gatt_connected(struct bt_conn *conn, uint8_t err)
@@ -227,7 +227,7 @@ int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *buf,
 		return -ENOTCONN;
 	}
 
-	return bt_mesh_proxy_msg_send(cli, BT_MESH_PROXY_PROV, buf, end, user_data);
+	return bt_mesh_proxy_msg_send(conn, BT_MESH_PROXY_PROV, buf, end, user_data);
 }
 
 static size_t gatt_prov_adv_create(struct bt_data prov_sd[1])

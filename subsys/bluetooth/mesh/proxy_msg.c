@@ -66,10 +66,11 @@ static void proxy_sar_timeout(struct k_work *work)
 	}
 }
 
-ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
+ssize_t bt_mesh_proxy_msg_recv(struct bt_conn *conn,
 			       const void *buf, uint16_t len)
 {
 	const uint8_t *data = buf;
+	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
 	switch (PDU_SAR(data)) {
 	case SAR_COMPLETE:
@@ -134,13 +135,13 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
 	return len;
 }
 
-int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
+int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 			   struct net_buf_simple *msg,
 			   bt_gatt_complete_func_t end, void *user_data)
 {
 	int err;
 	uint16_t mtu;
-	struct bt_conn *conn = role->conn;
+	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
 	BT_DBG("conn %p type 0x%02x len %u: %s", (void *)conn, type, msg->len,
 	       bt_hex(msg->data, msg->len));
