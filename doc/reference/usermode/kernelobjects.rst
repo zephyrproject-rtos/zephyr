@@ -75,7 +75,7 @@ Dynamic Objects
 ***************
 
 Kernel objects may also be allocated at runtime if
-:kconfig:`CONFIG_DYNAMIC_OBJECTS` is enabled. In this case, the
+:kconfig:option:`CONFIG_DYNAMIC_OBJECTS` is enabled. In this case, the
 :c:func:`k_object_alloc` API may be used to instantiate an object from
 the calling thread's resource pool. Such allocations may be freed in two
 ways:
@@ -122,7 +122,7 @@ includes:
 * A bitfield indicating permissions on that object. All threads have a
   numerical ID assigned to them at build time, used to index the permission
   bitfield for an object to see if that thread has permission on it. The size
-  of this bitfield is controlled by the :kconfig:`CONFIG_MAX_THREAD_BYTES`
+  of this bitfield is controlled by the :kconfig:option:`CONFIG_MAX_THREAD_BYTES`
   option and the build system will generate an error if this value is too low.
 * A type field indicating what kind of object this is, which is some
   instance of :c:enum:`k_objects`.
@@ -263,8 +263,8 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_USERSPACE`
-* :kconfig:`CONFIG_MAX_THREAD_BYTES`
+* :kconfig:option:`CONFIG_USERSPACE`
+* :kconfig:option:`CONFIG_MAX_THREAD_BYTES`
 
 API Reference
 *************

@@ -46,8 +46,8 @@ Building and Running
 
 .. note::
    When deferred logging is enabled you will likely need to increase
-   :kconfig:`CONFIG_LOG_STRDUP_BUF_COUNT` and/or
-   :kconfig:`CONFIG_LOG_STRDUP_MAX_STRING` to make sure no messages are lost or
+   :kconfig:option:`CONFIG_LOG_STRDUP_BUF_COUNT` and/or
+   :kconfig:option:`CONFIG_LOG_STRDUP_MAX_STRING` to make sure no messages are lost or
    truncated.
 
 Example building for :ref:`nrf52840dk_nrf52840`:

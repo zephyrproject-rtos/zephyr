@@ -13,7 +13,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_AUDIO_DMIC`
+* :kconfig:option:`CONFIG_AUDIO_DMIC`
 
 API Reference
 *************

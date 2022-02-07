@@ -46,10 +46,10 @@ text/ro-data, this is sufficient for the boot time configuration.
 Hardware Stack Overflow
 ***********************
 
-:kconfig:`CONFIG_HW_STACK_PROTECTION` is an optional feature which detects stack
+:kconfig:option:`CONFIG_HW_STACK_PROTECTION` is an optional feature which detects stack
 buffer overflows when the system is running in supervisor mode. This
 catches issues when the entire stack buffer has overflowed, and not
-individual stack frames, use compiler-assisted :kconfig:`CONFIG_STACK_CANARIES`
+individual stack frames, use compiler-assisted :kconfig:option:`CONFIG_STACK_CANARIES`
 for that.
 
 Like any crash in supervisor mode, no guarantees can be made about the overall
@@ -434,7 +434,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_MAX_DOMAIN_PARTITIONS`
+* :kconfig:option:`CONFIG_MAX_DOMAIN_PARTITIONS`
 
 API Reference
 *************

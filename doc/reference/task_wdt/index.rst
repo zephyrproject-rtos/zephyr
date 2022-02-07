@@ -38,15 +38,15 @@ Configuration Options
 Related configuration options can be found under
 :zephyr_file:`subsys/task_wdt/Kconfig`.
 
-* :kconfig:`CONFIG_TASK_WDT`
+* :kconfig:option:`CONFIG_TASK_WDT`
 
-* :kconfig:`CONFIG_TASK_WDT_CHANNELS`
+* :kconfig:option:`CONFIG_TASK_WDT_CHANNELS`
 
-* :kconfig:`CONFIG_TASK_WDT_HW_FALLBACK`
+* :kconfig:option:`CONFIG_TASK_WDT_HW_FALLBACK`
 
-* :kconfig:`CONFIG_TASK_WDT_MIN_TIMEOUT`
+* :kconfig:option:`CONFIG_TASK_WDT_MIN_TIMEOUT`
 
-* :kconfig:`CONFIG_TASK_WDT_HW_FALLBACK_DELAY`
+* :kconfig:option:`CONFIG_TASK_WDT_HW_FALLBACK_DELAY`
 
 API Reference
 *************

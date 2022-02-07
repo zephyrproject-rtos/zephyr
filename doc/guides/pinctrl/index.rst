@@ -153,7 +153,7 @@ In most situations, the states defined in Devicetree will be the ones used in
 the compiled firmware. However, there are some cases where certain states will
 be conditionally used depending on a compilation flag. A typical case is the
 ``sleep`` state. This state is only used in practice if
-:kconfig:`CONFIG_PM_DEVICE` is enabled. If a firmware variant without device
+:kconfig:option:`CONFIG_PM_DEVICE` is enabled. If a firmware variant without device
 power management is needed, one should in theory remove the ``sleep`` state from
 Devicetree to not waste ROM space storing such unused state.
 
@@ -177,7 +177,7 @@ Dynamic pin control refers to the capability of changing pin configuration
 at runtime. This feature can be useful in situations where the same firmware
 needs to run onto slightly different boards, each having a peripheral routed at
 a different set of pins. This feature can be enabled by setting
-:kconfig:`CONFIG_PINCTRL_DYNAMIC`.
+:kconfig:option:`CONFIG_PINCTRL_DYNAMIC`.
 
 .. note::
 
@@ -369,7 +369,7 @@ Pin control drivers
 Pin control drivers need to implement a single function:
 :c:func:`pinctrl_configure_pins`. This function receives an array of pin
 configurations that need to be applied. Furthermore, if
-:kconfig:`CONFIG_PINCTRL_STORE_REG` is set, it also receives the associated
+:kconfig:option:`CONFIG_PINCTRL_STORE_REG` is set, it also receives the associated
 device register address for the given pins. This information may be required by
 some drivers to perform device specific actions.
 

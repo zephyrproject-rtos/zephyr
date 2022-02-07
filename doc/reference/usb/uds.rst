@@ -108,17 +108,17 @@ When adding a new sample, add a new entry in :file:`samples/subsys/usb/usb_pid.K
 and a Kconfig file inside your sample subdirectory.
 The following Product IDs are currently used:
 
-* :kconfig:`CONFIG_USB_PID_CDC_ACM_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_CDC_ACM_COMPOSITE_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_HID_CDC_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_CONSOLE_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_DFU_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_HID_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_HID_MOUSE_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_MASS_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_TESTUSB_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_WEBUSB_SAMPLE`
-* :kconfig:`CONFIG_USB_PID_BLE_HCI_H4_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_CDC_ACM_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_CDC_ACM_COMPOSITE_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_HID_CDC_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_CONSOLE_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_DFU_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_HID_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_HID_MOUSE_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_MASS_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_TESTUSB_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_WEBUSB_SAMPLE`
+* :kconfig:option:`CONFIG_USB_PID_BLE_HCI_H4_SAMPLE`
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents
 the Zephyr kernel major and minor versions as a binary coded decimal value.

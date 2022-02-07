@@ -19,7 +19,7 @@ The radio control and polling is managed automatically by the mesh stack, but
 the LPN API allows the application to trigger the polling at any time through
 :c:func:`bt_mesh_lpn_poll`. The LPN operation parameters, including poll
 interval, poll event timing and Friend requirements is controlled through the
-:kconfig:`CONFIG_BT_MESH_LOW_POWER` option and related configuration options.
+:kconfig:option:`CONFIG_BT_MESH_LOW_POWER` option and related configuration options.
 
 Replay Protection List
 **********************

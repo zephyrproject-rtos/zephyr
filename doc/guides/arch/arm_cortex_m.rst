@@ -97,11 +97,11 @@ Thread stack alignment
 ----------------------
 
 Each Zephyr thread is defined with its own stack memory. By default, Cortex-M enforces a double word thread stack alignment, see
-:kconfig:`CONFIG_STACK_ALIGN_DOUBLE_WORD`. If MPU-based HW-assisted stack overflow detection (:kconfig:`CONFIG_MPU_STACK_GUARD`)
-is enabled, thread stacks need to be aligned with a larger value, reflected by :kconfig:`CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE`.
+:kconfig:option:`CONFIG_STACK_ALIGN_DOUBLE_WORD`. If MPU-based HW-assisted stack overflow detection (:kconfig:option:`CONFIG_MPU_STACK_GUARD`)
+is enabled, thread stacks need to be aligned with a larger value, reflected by :kconfig:option:`CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE`.
 In Arm v6-M and Arm v7-M architecture variants, thread stacks are additionally required to be align with a value equal to their size,
-in applications that need to support user mode (:kconfig:`CONFIG_USERSPACE`). The thread stack sizes in that case need to be a power
-of two. This is all reflected by :kconfig:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT`, that is enforced in Arm v6-M and Arm v7-M
+in applications that need to support user mode (:kconfig:option:`CONFIG_USERSPACE`). The thread stack sizes in that case need to be a power
+of two. This is all reflected by :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT`, that is enforced in Arm v6-M and Arm v7-M
 builds with user mode support.
 
 Stack pointers
@@ -114,7 +114,7 @@ handler mode.
 
 In Arm Cortex-M builds a single interrupt stack memory is shared among exceptions and interrupts. The size of the interrupt stack needs
 to be selected taking into consideration nested interrupts, each pushing an additional stack frame. Deverlopers can modify the interrupt
-stack size using :kconfig:`CONFIG_ISR_STACK_SIZE`.
+stack size using :kconfig:option:`CONFIG_ISR_STACK_SIZE`.
 
 The interrupt stack is also used during early boot so the kernel can initialize the main thread's stack before switching to the main thread.
 
@@ -161,9 +161,9 @@ Typically a thread context-switch will perform the following operations
      memories, and/or programs a stack-overflow MPU guard at the bottom of the thread's
      privileged stack
    * restores the PSP for the incoming thread and re-programs the stack pointer limit
-     register (if applicable, see :kconfig:`CONFIG_BUILTIN_STACK_GUARD`)
+     register (if applicable, see :kconfig:option:`CONFIG_BUILTIN_STACK_GUARD`)
    * optionally does a stack limit checking for the switched-in thread, if
-     sentinel-based stack limit checking is enabled (see :kconfig:`CONFIG_STACK_SENTINEL`).
+     sentinel-based stack limit checking is enabled (see :kconfig:option:`CONFIG_STACK_SENTINEL`).
 
 PendSV exception return sequence restores the new thread's caller-saved registers and the
 return address, as part of unstacking the exception stack frame.
@@ -175,7 +175,7 @@ Stack limit checking (Arm v8-M)
 -------------------------------
 
 Armv8-M and Armv8.1-M variants support stack limit checking using the MSPLIM and PSPLIM
-core registers. The feature is enabled when :kconfig:`CONFIG_BUILTIN_STACK_GUARD` is set.
+core registers. The feature is enabled when :kconfig:option:`CONFIG_BUILTIN_STACK_GUARD` is set.
 When stack limit checking is enabled, both the thread's privileged or user stack, as well
 as the interrupt stack are guarded by PSPLIM and MSPLIM registers, respectively. MSPLIM is
 configured *once* during kernel boot, while PSLIM is re-programmed during every thread
@@ -225,7 +225,7 @@ higher than any configurable exception priority.
 
 In *Mainline* Cortex-M, the available fault exceptions (e.g. MemManageFault,
 UsageFault, etc.) are assigned the highest *configurable* priority level.
-(:kconfig:`CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS` signifies explicitly
+(:kconfig:option:`CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS` signifies explicitly
 that the Cortex-M implementation supports configurable fault priorities.)
 
 This priority level is never shared with HW interrupts (an exception to
@@ -255,7 +255,7 @@ HW interrupts in Mainline Cortex-M builds are allocated a priority level lower t
 One exception to the above rules is when Zephyr applications support Zero Latency Interrupts
 (ZLIs). Such interrupts are designed to have a priority level higher than any HW or system
 interrupt. If the ZLI feature is enabled in Mainline Cortex-M builds (see
-:kconfig:`CONFIG_ZERO_LATENCY_IRQS`), then
+:kconfig:option:`CONFIG_ZERO_LATENCY_IRQS`), then
 
 * ZLIs are assigned the highest configurable priority level
 * SVCs are assigned the second highest configurable priority level
@@ -278,7 +278,7 @@ priority. While this fulfils the OS requirement of locking interrupts, the conse
 is that kernel runtime errors (triggering SVCs) will escalate to HardFault.
 
 In Mainline Cortex-M locking interrupts is implemented using the BASEPRI register (Mainline
-Cortex-M builds select :kconfig:`CONFIG_CPU_CORTEX_M_HAS_BASEPRI` to signify that BASEPRI register is
+Cortex-M builds select :kconfig:option:`CONFIG_CPU_CORTEX_M_HAS_BASEPRI` to signify that BASEPRI register is
 implemented.). By modifying BASEPRI (or BASEPRI_MAX) arch_irq_lock() masks all system and HW
 interrupts with the exception of
 
@@ -309,10 +309,10 @@ handling and do not go through all of the common Zephyr interrupt handling
 code.
 
 Direct dynamic interrupts are enabled via switching on
-:kconfig:`CONFIG_DYNAMIC_DIRECT_INTERRUPTS`.
+:kconfig:option:`CONFIG_DYNAMIC_DIRECT_INTERRUPTS`.
 
 Note that enabling direct dynamic interrupts requires enabling support for
-dynamic interrupts in the kernel, as well (see :kconfig:`CONFIG_DYNAMIC_INTERRUPTS`).
+dynamic interrupts in the kernel, as well (see :kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS`).
 
 Zero Latency interrupts
 -----------------------
@@ -321,7 +321,7 @@ As described above, in Mainline Cortex-M applications, the Zephyr kernel reserve
 the highest configurable interrupt priority level for its own use (SVC). SVCs will
 not be masked by interrupt locking. Zero-latency interrupt can be used to set up
 an interrupt at the highest interrupt priority which will not be blocked by interrupt
-locking. To use the ZLI feature :kconfig:`CONFIG_ZERO_LATENCY_IRQS` needs to be enabled.
+locking. To use the ZLI feature :kconfig:option:`CONFIG_ZERO_LATENCY_IRQS` needs to be enabled.
 
 Zero latency IRQs have minimal interrupt latency, as they will always preempt regular HW
 or system interrupts.
@@ -369,7 +369,7 @@ User mode system calls
 User mode is supported in Cortex-M platforms that implement the standard (Arm) MPU
 or a similar core peripheral logic for memory access policy configuration and
 control, such as the NXP MPU for Kinetis platforms. (Currently,
-:kconfig:`CONFIG_ARCH_HAS_USERSPACE` is selected if :kconfig:`CONFIG_ARM_MPU` is enabled
+:kconfig:option:`CONFIG_ARCH_HAS_USERSPACE` is selected if :kconfig:option:`CONFIG_ARM_MPU` is enabled
 by the user in the board default Kconfig settings).
 
 A thread performs a system call by triggering a (synchronous) SVC exception, where
@@ -401,25 +401,25 @@ latency if they occur during a system call preparation.
 MPU-assisted stack overflow detection
 -------------------------------------
 
-Cortex-M platforms with MPU may enable :kconfig:`CONFIG_MPU_STACK_GUARD` to enable the MPU-based
+Cortex-M platforms with MPU may enable :kconfig:option:`CONFIG_MPU_STACK_GUARD` to enable the MPU-based
 stack overflow detection mechanism. The following points need to be considered when enabling the
 MPU stack guards
 
 * stack overflows are triggering processor faults as soon as they occur
 * the mechanism is essential for detecting stack overflows in supervisor threads, or
   user threads in privileged mode; stack overflows in threads in user mode will always be
-  detected regardless of :kconfig:`CONFIG_MPU_STACK_GUARD` being set.
+  detected regardless of :kconfig:option:`CONFIG_MPU_STACK_GUARD` being set.
 * stack overflows are always detected, however, the mechanism does not guarantee that
   no memory corruption occurs when supervisor threads overflow their stack memory
-* :kconfig:`CONFIG_MPU_STACK_GUARD` will normally reserve one MPU region for programming
-  the stack guard (in certain Arm v8-M configurations with :kconfig:`CONFIG_MPU_GAP_FILLING`
+* :kconfig:option:`CONFIG_MPU_STACK_GUARD` will normally reserve one MPU region for programming
+  the stack guard (in certain Arm v8-M configurations with :kconfig:option:`CONFIG_MPU_GAP_FILLING`
   enabled 2 MPU regions are required to implement the guard feature)
 * MPU guards are re-programmed at every context-switch, adding a small overhead to the
-  thread swap routine. Compared, however, to the :kconfig:`CONFIG_BUILTIN_STACK_GUARD` feature,
+  thread swap routine. Compared, however, to the :kconfig:option:`CONFIG_BUILTIN_STACK_GUARD` feature,
   no re-programming occurs during system calls.
-* When :kconfig:`CONFIG_HW_STACK_PROTECTION` is enabled on Arm v8-M platforms the native
+* When :kconfig:option:`CONFIG_HW_STACK_PROTECTION` is enabled on Arm v8-M platforms the native
   stack limit checking mechanism is used by default instead of the MPU-based stack overflow
-  detection mechanism; users may override this setting by manually enabling :kconfig:`CONFIG_MPU_STACK_GUARD`
+  detection mechanism; users may override this setting by manually enabling :kconfig:option:`CONFIG_MPU_STACK_GUARD`
   in these scenarios.
 
 Memory map and MPU considerations
@@ -428,21 +428,21 @@ Memory map and MPU considerations
 Fixed MPU regions
 -----------------
 
-By default, when :kconfig:`CONFIG_ARM_MPU` is enabled a set of *fixed* MPU regions
+By default, when :kconfig:option:`CONFIG_ARM_MPU` is enabled a set of *fixed* MPU regions
 are programmed during system boot.
 
 * One MPU region programs the entire flash area as read-execute.
-  User can override this setting by enabling :kconfig:`CONFIG_MPU_ALLOW_FLASH_WRITE`,
-  which programs the flash with RWX permissions. If :kconfig:`CONFIG_USERSPACE` is
+  User can override this setting by enabling :kconfig:option:`CONFIG_MPU_ALLOW_FLASH_WRITE`,
+  which programs the flash with RWX permissions. If :kconfig:option:`CONFIG_USERSPACE` is
   enabled unprivileged access on the entire flash area is allowed.
 * One MPU region programs the entire SRAM area with privileged-only
   RW permissions. That is, an  MPU region is utilized to disallow execute permissions on
-  SRAM. (An exception to this setting is when :kconfig:`CONFIG_MPU_GAP_FILLING` is disabled (Arm v8-M only);
+  SRAM. (An exception to this setting is when :kconfig:option:`CONFIG_MPU_GAP_FILLING` is disabled (Arm v8-M only);
   in that case no SRAM MPU programming is done so the access is determined by the default
   Arm memory map policies, allowing for privileged-only RWX permissions on SRAM).
 
 The above MPU regions are defined in :file:`soc/arm/common/arm_mpu_regions.c`.
-Alternative MPU configurations are allowed by enabling :kconfig:`CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS`.
+Alternative MPU configurations are allowed by enabling :kconfig:option:`CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS`.
 When enabled, this option signifies that the Cortex-M SoC will define and
 configure its own fixed MPU regions in the SoC definition.
 
@@ -452,12 +452,12 @@ Static MPU regions
 Additional *static* MPU regions may be programmed once during system boot. These regions
 are required to enable certain features
 
-* a RX region to allow execution from SRAM, when :kconfig:`CONFIG_ARCH_HAS_RAMFUNC_SUPPORT` is
+* a RX region to allow execution from SRAM, when :kconfig:option:`CONFIG_ARCH_HAS_RAMFUNC_SUPPORT` is
   enabled and users have defined functions to execute from SRAM.
-* a RX region for relocating text sections to SRAM, when :kconfig:`CONFIG_CODE_DATA_RELOCATION_SRAM` is enabled
-* a no-cache region to allow for a none-cacheable SRAM area, when :kconfig:`CONFIG_NOCACHE_MEMORY` is enabled
-* a possibly unprivileged RW region for GCOV code coverage accounting area, when :kconfig:`CONFIG_COVERAGE_GCOV` is enabled
-* a no-access region to implement null pointer dereference detection, when :kconfig:`CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU` is enabled
+* a RX region for relocating text sections to SRAM, when :kconfig:option:`CONFIG_CODE_DATA_RELOCATION_SRAM` is enabled
+* a no-cache region to allow for a none-cacheable SRAM area, when :kconfig:option:`CONFIG_NOCACHE_MEMORY` is enabled
+* a possibly unprivileged RW region for GCOV code coverage accounting area, when :kconfig:option:`CONFIG_COVERAGE_GCOV` is enabled
+* a no-access region to implement null pointer dereference detection, when :kconfig:option:`CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU` is enabled
 
 The boundaries of these static MPU regions are derived from symbols exposed by the linker, in
 :file:`include/linker/linker-defs.h`.
@@ -485,15 +485,15 @@ features that require MPU region programming. In most practical applications, ho
 only a certain set of features is required and 8 MPU regions are, in many cases, sufficient.
 
 In Arm v8-M processors the MPU architecture does not allow programmed MPU regions to
-overlap. :kconfig:`CONFIG_MPU_GAP_FILLING` controls whether the fixed MPU region
+overlap. :kconfig:option:`CONFIG_MPU_GAP_FILLING` controls whether the fixed MPU region
 covering the entire SRAM is programmed. When it does, a full SRAM area partitioning
 is required, in order to program the  static and the dynamic MPU regions. This increases
-the total number of required MPU regions. When :kconfig:`CONFIG_MPU_GAP_FILLING` is not
+the total number of required MPU regions. When :kconfig:option:`CONFIG_MPU_GAP_FILLING` is not
 enabled the fixed MPU region convering the entire SRAM is not programmed, thus, the static
 and dynamic regions are simply programmed on top of the always-existing background region
 (full-SRAM partitioning is not required).
 Note, however, that the background SRAM region allows execution from SRAM, so when
-:kconfig:`CONFIG_MPU_GAP_FILLING` is not set Zephyr is not protected against attacks
+:kconfig:option:`CONFIG_MPU_GAP_FILLING` is not set Zephyr is not protected against attacks
 that attempt to execute malicious code from SRAM.
 
 
@@ -504,8 +504,8 @@ Both unshared and shared FP registers mode are supported in Cortex-M (see
 :ref:`float_v2` for more details).
 
 When FPU support is enabled in the build
-(:kconfig:`CONFIG_FPU` is enabled), the
-sharing FP registers mode (:kconfig:`CONFIG_FPU_SHARING`)
+(:kconfig:option:`CONFIG_FPU` is enabled), the
+sharing FP registers mode (:kconfig:option:`CONFIG_FPU_SHARING`)
 is enabled by default. This is done as some compiler configurations
 may activate a floating point context by generating FP instructions
 for any thread, regardless of whether floating point calculations are
@@ -541,7 +541,7 @@ Chain-loadable images
 Cortex-M applications may either be standalone images or chain-loadable, for instance,
 by a bootloader. Application images chain-loadable by bootloaders (or other applications)
 normally occupy a specific area in the flash denoted as their *code partition*.
-:kconfig:`CONFIG_USE_DT_CODE_PARTITION` will ensure that a Zephyr chain-loadable image
+:kconfig:option:`CONFIG_USE_DT_CODE_PARTITION` will ensure that a Zephyr chain-loadable image
 will be linked into its code partition, specified in DeviceTree.
 
 HW initialization at boot
@@ -549,14 +549,14 @@ HW initialization at boot
 
 In order to boot properly, chain-loaded applications may require that the core Arm
 hardware registers and peripherals are initialized in their reset values. Enabling
-:kconfig:`CONFIG_INIT_ARCH_HW_AT_BOOT` Zephyr to force the initialization of the
+:kconfig:option:`CONFIG_INIT_ARCH_HW_AT_BOOT` Zephyr to force the initialization of the
 internal Cortex-M architectural state during boot to the reset values as specified
 by the corresponding Arm architecture manual.
 
 Software vector relaying
 ------------------------
 
-In Cortex-M platforms that implement the VTOR register (see :kconfig:`CONFIG_CPU_CORTEX_M_HAS_VTOR`),
+In Cortex-M platforms that implement the VTOR register (see :kconfig:option:`CONFIG_CPU_CORTEX_M_HAS_VTOR`),
 chain-loadable images relocate the Cortex-M vector table by updating the VTOR register with the offset
 of the image vector table.
 
@@ -565,10 +565,10 @@ vector table which remains at a fixed location. Therefore, a chain-loadable imag
 require an alternative way to route HW interrupts and system exeptions to its own vector
 table; this is achieved with software vector relaying.
 
-When a bootloader image enables :kconfig:`CONFIG_SW_VECTOR_RELAY`
+When a bootloader image enables :kconfig:option:`CONFIG_SW_VECTOR_RELAY`
 it is able to relay exceptions and interrupts based on a vector table
 pointer that is set by the chain-loadable application. The latter sets
-the :kconfig:`CONFIG_SW_VECTOR_RELAY_CLIENT` option to instruct the boot
+the :kconfig:option:`CONFIG_SW_VECTOR_RELAY_CLIENT` option to instruct the boot
 sequence to set the vector table pointer in SRAM so that the bootloader can
 forward the exceptions and interrupts to the chain-loadable image's software
 vector table.
@@ -580,7 +580,7 @@ Code relocation
 ===============
 
 Cortex-M support the code relocation feature. When
-:kconfig:`CONFIG_CODE_DATA_RELOCATION_SRAM` is selected,
+:kconfig:option:`CONFIG_CODE_DATA_RELOCATION_SRAM` is selected,
 Zephyr will relocate .text, data and .bss sections
 from the specified files and place it in SRAM. It is
 possible to relocate only parts of the code sections
@@ -604,7 +604,7 @@ CMSIS
 Cortex-M CMSIS headers are hosted in a standalone module repository:
 `zephyrproject-rtos/cmsis <https://github.com/zephyrproject-rtos/cmsis>`_.
 
-:kconfig:`CONFIG_CPU_CORTEX_M` selects :kconfig:`CONFIG_HAS_CMSIS_CORE` to signify that
+:kconfig:option:`CONFIG_CPU_CORTEX_M` selects :kconfig:option:`CONFIG_HAS_CMSIS_CORE` to signify that
 CMSIS headers are available for all supported Cortex-M variants.
 
 Testing

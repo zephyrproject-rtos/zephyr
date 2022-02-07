@@ -238,13 +238,13 @@ the switched-out thread. Floating point registers are saved on the thread's
 stack. Floating point registers are restored when a thread context is restored
 iff they were saved at the context save. Saving and restoring of the floating
 point registers is synchronous and thus not lazy. The FPU is always disabled
-when an ISR is called (independent of :kconfig:`CONFIG_FPU_SHARING`).
+when an ISR is called (independent of :kconfig:option:`CONFIG_FPU_SHARING`).
 
 Floating point disabling with :c:func:`k_float_disable` is not implemented.
 
-When :kconfig:`CONFIG_FPU_SHARING` is used, then 136 bytes of stack space
+When :kconfig:option:`CONFIG_FPU_SHARING` is used, then 136 bytes of stack space
 is required for each FPU user thread to load and store floating point
-registers. No extra stack is required if :kconfig:`CONFIG_FPU_SHARING` is
+registers. No extra stack is required if :kconfig:option:`CONFIG_FPU_SHARING` is
 not used.
 
 x86 architecture
@@ -335,17 +335,17 @@ perform floating point operations.
 Configuration Options
 *********************
 
-To configure unshared FP registers mode, enable the :kconfig:`CONFIG_FPU`
-configuration option and leave the :kconfig:`CONFIG_FPU_SHARING` configuration
+To configure unshared FP registers mode, enable the :kconfig:option:`CONFIG_FPU`
+configuration option and leave the :kconfig:option:`CONFIG_FPU_SHARING` configuration
 option disabled.
 
-To configure shared FP registers mode, enable both the :kconfig:`CONFIG_FPU`
-configuration option and the :kconfig:`CONFIG_FPU_SHARING` configuration option.
+To configure shared FP registers mode, enable both the :kconfig:option:`CONFIG_FPU`
+configuration option and the :kconfig:option:`CONFIG_FPU_SHARING` configuration option.
 Also, ensure that any thread that uses the floating point registers has
 sufficient added stack space for saving floating point register values
 during context switches, as described above.
 
-For x86, use the :kconfig:`CONFIG_X86_SSE` configuration option to enable
+For x86, use the :kconfig:option:`CONFIG_X86_SSE` configuration option to enable
 support for SSEx instructions.
 
 API Reference

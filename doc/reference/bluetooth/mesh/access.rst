@@ -56,7 +56,7 @@ messages on. Only messages encrypted with application keys in the AppKey list
 will be passed to the model.
 
 The maximum number of supported application keys each model can hold is
-configured with the :kconfig:`CONFIG_BT_MESH_MODEL_KEY_COUNT` configuration
+configured with the :kconfig:option:`CONFIG_BT_MESH_MODEL_KEY_COUNT` configuration
 option. The contents of the AppKey list is managed by the
 :ref:`bluetooth_mesh_models_cfg_srv`.
 
@@ -70,7 +70,7 @@ virtual address in its subscription list. This allows nodes to address
 multiple nodes throughout the mesh network with a single message.
 
 The maximum number of supported addresses in the Subscription list each model
-can hold is configured with the :kconfig:`CONFIG_BT_MESH_MODEL_GROUP_COUNT`
+can hold is configured with the :kconfig:option:`CONFIG_BT_MESH_MODEL_GROUP_COUNT`
 configuration option. The contents of the subscription list is managed by the
 :ref:`bluetooth_mesh_models_cfg_srv`.
 
@@ -132,7 +132,7 @@ relationships between the models must be defined by the model implementations.
 
 The model extension concept adds some overhead in the access layer packet
 processing, and must be explicitly enabled with
-:kconfig:`CONFIG_BT_MESH_MODEL_EXTENSIONS` to have any effect.
+:kconfig:option:`CONFIG_BT_MESH_MODEL_EXTENSIONS` to have any effect.
 
 Model data storage
 ==================

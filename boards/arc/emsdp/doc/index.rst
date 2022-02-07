@@ -26,10 +26,10 @@ Hardware
 
 The EM Software Development Platform supports different core configurations, such as EM4,
 EM5D, EM6, EM7D, EM9D, EM9D+ESP, EM11D, the default core configuration is EM11D. Use
-:kconfig:`CONFIG_SOC_EMSDP_EM4`, :kconfig:`CONFIG_SOC_EMSDP_EM5D`,
-:kconfig:`CONFIG_SOC_EMSDP_EM6`, :kconfig:`CONFIG_SOC_EMSDP_EM7D`,
-:kconfig:`CONFIG_SOC_EMSDP_EM7D_ESP`, :kconfig:`CONFIG_SOC_EMSDP_EM9D` or
-:kconfig:`CONFIG_SOC_EMSDP_EM11D` to select different core configuration.
+:kconfig:option:`CONFIG_SOC_EMSDP_EM4`, :kconfig:option:`CONFIG_SOC_EMSDP_EM5D`,
+:kconfig:option:`CONFIG_SOC_EMSDP_EM6`, :kconfig:option:`CONFIG_SOC_EMSDP_EM7D`,
+:kconfig:option:`CONFIG_SOC_EMSDP_EM7D_ESP`, :kconfig:option:`CONFIG_SOC_EMSDP_EM9D` or
+:kconfig:option:`CONFIG_SOC_EMSDP_EM11D` to select different core configuration.
 
 The following table shows the hardware features supported for different core configuration:
 

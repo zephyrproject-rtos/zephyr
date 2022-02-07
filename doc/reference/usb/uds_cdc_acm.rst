@@ -19,7 +19,7 @@ The devicetree compatible property for CDC ACM UART is
 :dtcompatible:`zephyr,cdc-acm-uart`.
 CDC ACM support is automatically selected when USB device support is enabled
 and a compatible node in the devicetree sources is present. If necessary,
-CDC ACM support can be explicitly disabled by :kconfig:`CONFIG_USB_CDC_ACM`.
+CDC ACM support can be explicitly disabled by :kconfig:option:`CONFIG_USB_CDC_ACM`.
 About four CDC ACM UART instances can be defined and used,
 limited by the maximum number of supported endpoints on the controller.
 

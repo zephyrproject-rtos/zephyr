@@ -10,8 +10,8 @@ This sample application demonstrates using the POSIX gettimeofday()
 function to display the absolute wall clock time and local time every
 second. At system startup, the current time is queried using the SNTP
 networking protocol, enabled by setting the
-:kconfig:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` and
-:kconfig:`CONFIG_NET_CONFIG_SNTP_INIT_SERVER` options.
+:kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` and
+:kconfig:option:`CONFIG_NET_CONFIG_SNTP_INIT_SERVER` options.
 
 Requirements
 ************

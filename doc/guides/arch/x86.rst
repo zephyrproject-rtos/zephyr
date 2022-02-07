@@ -16,12 +16,12 @@ During very early boot, page tables are loaded so technically the kernel
 is executing in virtual address space. By default, physical and virtual
 memory are identity mapped and thus giving the appearance of execution
 taking place in physical address space. The physical address space is
-marked by kconfig :kconfig:`CONFIG_SRAM_BASE_ADDRESS` and
-:kconfig:`CONFIG_SRAM_SIZE` while the virtual address space is marked by
-:kconfig:`CONFIG_KERNEL_VM_BASE` and :kconfig:`CONFIG_KERNEL_VM_SIZE`.
-Note that :kconfig:`CONFIG_SRAM_OFFSET` controls where the Zephyr kernel
+marked by kconfig :kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` and
+:kconfig:option:`CONFIG_SRAM_SIZE` while the virtual address space is marked by
+:kconfig:option:`CONFIG_KERNEL_VM_BASE` and :kconfig:option:`CONFIG_KERNEL_VM_SIZE`.
+Note that :kconfig:option:`CONFIG_SRAM_OFFSET` controls where the Zephyr kernel
 is being placed in the memory, and its counterpart
-:kconfig:`CONFIG_KERNEL_VM_OFFSET`.
+:kconfig:option:`CONFIG_KERNEL_VM_OFFSET`.
 
 Separate Virtual Address Space from Physical Address Space
 ==========================================================
@@ -53,7 +53,7 @@ There are restrictions on where virtual address space can be:
   If they are not disjoint, it would clear the entries needed for
   virtual addresses.
 
-  - If :kconfig:`CONFIG_X86_PAE` is enabled (``=y``), each address space
+  - If :kconfig:option:`CONFIG_X86_PAE` is enabled (``=y``), each address space
     must reside in their own 1GB region, due to each entry of PDP
     (Page Directory Pointer) covers 1GB of memory. For example:
 
@@ -66,7 +66,7 @@ There are restrictions on where virtual address space can be:
     - ``CONFIG_SRAM_BASE_ADDRESS == 0x00000000`` and
       ``CONFIG_KERNEL_VM_BASE = 0x20000000`` is not.
 
-  - If :kconfig:`CONFIG_X86_PAE` is disabled (``=n``), each address space
+  - If :kconfig:option:`CONFIG_X86_PAE` is disabled (``=n``), each address space
     must reside in their own 4MB region, due to each entry of PD
     (Page Directory) covers 4MB of memory.
 
@@ -117,7 +117,7 @@ The argument ``--map`` takes the following value:
 
 Note that specifying additional memory mappings requires larger storage
 space for the pre-allocated page tables (both kernel and per-domain
-tables). :kconfig:`CONFIG_X86_EXTRA_PAGE_TABLE_PAGES` is needed to
+tables). :kconfig:option:`CONFIG_X86_EXTRA_PAGE_TABLE_PAGES` is needed to
 specify how many more memory pages to be reserved for the page tables.
 If the needed space is not exactly the same as required space,
 the ``gen_mmu.py`` script will print out a message indicating what

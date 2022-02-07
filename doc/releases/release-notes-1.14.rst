@@ -899,7 +899,7 @@ Bluetooth
 * New BLE split software Controller (experimental):
 
   - Split design with Upper Link Layer and Lower Link Layer
-  - Enabled with :kconfig:`CONFIG_BT_LL_SW_SPLIT` (disabled by default)
+  - Enabled with :kconfig:option:`CONFIG_BT_LL_SW_SPLIT` (disabled by default)
   - Support for multiple BLE radio hardware architectures
   - Asynchronous handling of procedures in the ULL
   - Enhanced radio utilization (99% on continuous 100ms scan)

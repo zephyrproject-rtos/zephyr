@@ -67,9 +67,9 @@ through the use of one or more nested interrupt controllers.  Sources of
 hardware interrupts are combined into one line that is then routed to
 the parent controller.
 
-If nested interrupt controllers are supported, :kconfig:`CONFIG_MULTI_LEVEL_INTERRUPTS`
-should be set to 1, and :kconfig:`CONFIG_2ND_LEVEL_INTERRUPTS` and
-:kconfig:`CONFIG_3RD_LEVEL_INTERRUPTS` configured as well, based on the
+If nested interrupt controllers are supported, :kconfig:option:`CONFIG_MULTI_LEVEL_INTERRUPTS`
+should be set to 1, and :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPTS` and
+:kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPTS` configured as well, based on the
 hardware architecture.
 
 A unique 32-bit interrupt number is assigned with information
@@ -173,7 +173,7 @@ The kernel addresses such use-cases by allowing interrupts with critical
 latency constraints to execute at a priority level that cannot be blocked
 by interrupt locking. These interrupts are defined as
 *zero-latency interrupts*. The support for zero-latency interrupts requires
-:kconfig:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. In addition to that, the
+:kconfig:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. In addition to that, the
 flag :c:macro:`IRQ_ZERO_LATENCY` must be passed to :c:macro:`IRQ_CONNECT` or
 :c:macro:`IRQ_DIRECT_CONNECT` macros to configure the particular interrupt
 with zero latency.
@@ -270,7 +270,7 @@ possible to install interrupts at runtime with
        ...
     }
 
-Dynamic interrupts require the :kconfig:`CONFIG_DYNAMIC_INTERRUPTS` option to
+Dynamic interrupts require the :kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` option to
 be enabled. Removing or re-configuring a dynamic interrupt is currently
 unsupported.
 
@@ -377,7 +377,7 @@ argument is ignored.
 
 Vector Table
 ------------
-A vector table is generated when :kconfig:`CONFIG_GEN_IRQ_VECTOR_TABLE` is
+A vector table is generated when :kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` is
 enabled.  This data structure is used natively by the CPU and is simply an
 array of function pointers, where each element n corresponds to the IRQ handler
 for IRQ line n, and the function pointers are:
@@ -394,7 +394,7 @@ for IRQ line n, and the function pointers are:
 
 Some architectures (such as the Nios II internal interrupt controller) have a
 common entry point for all interrupts and do not support a vector table, in
-which case the :kconfig:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be
+which case the :kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be
 disabled.
 
 Some architectures may reserve some initial vectors for system exceptions
@@ -450,7 +450,7 @@ to program the IRQ-to-vector association in the interrupt controller.
 
 For dynamic interrupts, the build must generate some 4-byte dynamic interrupt
 stubs, one stub per dynamic interrupt in use. The number of stubs is controlled
-by the :kconfig:`CONFIG_X86_DYNAMIC_IRQ_STUBS` option. Each stub pushes an
+by the :kconfig:option:`CONFIG_X86_DYNAMIC_IRQ_STUBS` option. Each stub pushes an
 unique identifier which is then used to fetch the appropriate handler function
 and parameter out of a table populated when the dynamic interrupt was
 connected.
@@ -471,7 +471,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_ISR_STACK_SIZE`
+* :kconfig:option:`CONFIG_ISR_STACK_SIZE`
 
 Additional architecture-specific and device-specific configuration options
 also exist.

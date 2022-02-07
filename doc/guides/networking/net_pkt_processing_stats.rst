@@ -13,8 +13,8 @@ statistics inside network stack.
 Network stack contains infrastructure to figure out how long the network packet
 processing takes either in sending or receiving path. There are two Kconfig
 options that control this. For transmit (TX) path the option is called
-:kconfig:`CONFIG_NET_PKT_TXTIME_STATS` and for receive (RX) path the options is
-called :kconfig:`CONFIG_NET_PKT_RXTIME_STATS`. Note that for TX, all kind of
+:kconfig:option:`CONFIG_NET_PKT_TXTIME_STATS` and for receive (RX) path the options is
+called :kconfig:option:`CONFIG_NET_PKT_RXTIME_STATS`. Note that for TX, all kind of
 network packet statistics is collected. For RX, only UDP, TCP or raw packet
 type network packet statistics is collected.
 
@@ -35,10 +35,10 @@ when it was sent to the network. The RX time tells the time from its creation
 to when it was passed to the application. The values are in microseconds. The
 statistics will be collected per traffic class if there are more than one
 transmit or receive queues defined in the system. These are controlled by
-:kconfig:`CONFIG_NET_TC_TX_COUNT` and :kconfig:`CONFIG_NET_TC_RX_COUNT` options.
+:kconfig:option:`CONFIG_NET_TC_TX_COUNT` and :kconfig:option:`CONFIG_NET_TC_RX_COUNT` options.
 
-If you enable :kconfig:`CONFIG_NET_PKT_TXTIME_STATS_DETAIL` or
-:kconfig:`CONFIG_NET_PKT_RXTIME_STATS_DETAIL` options, then additional
+If you enable :kconfig:option:`CONFIG_NET_PKT_TXTIME_STATS_DETAIL` or
+:kconfig:option:`CONFIG_NET_PKT_RXTIME_STATS_DETAIL` options, then additional
 information for TX or RX network packets are collected when the network packet
 traverses the IP stack.
 

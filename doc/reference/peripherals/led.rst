@@ -14,8 +14,8 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_LED`
-* :kconfig:`CONFIG_LED_STRIP`
+* :kconfig:option:`CONFIG_LED`
+* :kconfig:option:`CONFIG_LED_STRIP`
 
 API Reference
 *************
