@@ -43,7 +43,7 @@ struct dirlisting_record_t {
 	uint16_t                      len;
 	uint8_t                       flags;
 	uint8_t                       name_len;
-	struct bt_otc_obj_metadata    metadata;
+	struct bt_ots_obj_metadata    metadata;
 };
 
 /**@brief String literals for the OACP result codes. Used for logging output.*/
@@ -141,7 +141,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 {
 	const uint32_t offset = cur_inst->rcvd_size;
 	bool is_complete = false;
-	const struct bt_otc_obj_metadata *cur_object =
+	const struct bt_ots_obj_metadata *cur_object =
 		&cur_inst->otc_inst->cur_object;
 	int cb_ret;
 
@@ -150,13 +150,13 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
 	cur_inst->rcvd_size += buf->len;
 
-	if (cur_inst->rcvd_size >= cur_object->current_size) {
+	if (cur_inst->rcvd_size >= cur_object->size.cur) {
 		is_complete = true;
 	}
 
-	if (cur_inst->rcvd_size > cur_object->current_size) {
+	if (cur_inst->rcvd_size > cur_object->size.cur) {
 		BT_WARN("Received %u but expected maximum %u",
-			cur_inst->rcvd_size, cur_object->current_size);
+			cur_inst->rcvd_size, cur_object->size.cur);
 	}
 
 
@@ -165,7 +165,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 						    is_complete, 0);
 
 	if (is_complete) {
-		const uint32_t rcv_size = cur_object->current_size;
+		const uint32_t rcv_size = cur_object->size.cur;
 		int err;
 
 		BT_DBG("Received the whole object (%u bytes). "
@@ -177,7 +177,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
 		cur_inst = NULL;
 	} else if (cb_ret == BT_OTC_STOP) {
-		const uint32_t rcv_size = cur_object->current_size;
+		const uint32_t rcv_size = cur_object->size.cur;
 		int err;
 
 		BT_DBG("Stopped receiving after%u bytes. "
@@ -218,7 +218,7 @@ static void print_olcp_response(enum bt_gatt_ots_olcp_proc_type req_opcode,
 }
 
 static void date_time_decode(struct net_buf_simple *buf,
-			     struct bt_date_time *p_date_time)
+			     struct bt_ots_date_time *p_date_time)
 {
 	p_date_time->year = net_buf_simple_pull_le16(buf);
 	p_date_time->month = net_buf_simple_pull_u8(buf);
@@ -735,28 +735,28 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
 			       length, OTS_SIZE_LEN);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		} else {
-			struct bt_otc_obj_metadata *cur_object =
+			struct bt_ots_obj_metadata *cur_object =
 				&inst->otc_inst->cur_object;
-			cur_object->current_size =
+			cur_object->size.cur =
 				net_buf_simple_pull_le32(&net_buf);
-			cur_object->alloc_size =
+			cur_object->size.alloc =
 				net_buf_simple_pull_le32(&net_buf);
 
 			BT_DBG("Object Size : current size %u, "
 			       "allocated size %u",
-			       cur_object->current_size,
-			       cur_object->alloc_size);
+			       cur_object->size.cur,
+			       cur_object->size.alloc);
 
-			if (cur_object->current_size == 0) {
+			if (cur_object->size.cur == 0) {
 				BT_WARN("Obj size read returned a current "
 					"size of 0");
-			} else if (cur_object->current_size >
-					cur_object->alloc_size &&
-				   cur_object->alloc_size != 0) {
+			} else if (cur_object->size.cur >
+					cur_object->size.alloc &&
+				   cur_object->size.alloc != 0) {
 				BT_WARN("Allocated size %u is smaller than "
 					"current size %u",
-					cur_object->alloc_size,
-					cur_object->current_size);
+					cur_object->size.alloc,
+					cur_object->size.cur);
 			}
 
 			BT_OTS_SET_METADATA_REQ_SIZE(inst->metadata_read);
@@ -798,7 +798,7 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		if (length == BT_OTS_OBJ_ID_SIZE) {
 			uint64_t obj_id = net_buf_simple_pull_le48(&net_buf);
 			char t[BT_OTS_OBJ_ID_STR_LEN];
-			struct bt_otc_obj_metadata *cur_object =
+			struct bt_ots_obj_metadata *cur_object =
 				&inst->otc_inst->cur_object;
 
 			(void)bt_ots_obj_id_to_str(obj_id, t, sizeof(t));
@@ -853,8 +853,8 @@ static uint8_t read_obj_name_cb(struct bt_conn *conn, uint8_t err,
 
 	if (data) {
 		if (length <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
-			memcpy(inst->otc_inst->cur_object.name, data, length);
-			inst->otc_inst->cur_object.name[length] = '\0';
+			memcpy(inst->otc_inst->cur_object.name_c, data, length);
+			inst->otc_inst->cur_object.name_c[length] = '\0';
 		} else {
 			BT_WARN("Invalid length %u (expected max %u)",
 				length, CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
@@ -892,7 +892,7 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 		if (length == BT_UUID_SIZE_128 || length == BT_UUID_SIZE_16) {
 			char uuid_str[BT_UUID_STR_LEN];
 			struct bt_uuid *uuid =
-				&inst->otc_inst->cur_object.type_uuid.uuid;
+				&inst->otc_inst->cur_object.type.uuid;
 
 			bt_uuid_create(uuid, data, length);
 
@@ -938,13 +938,13 @@ static uint8_t read_obj_created_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (data) {
-		if (length <= DATE_TIME_FIELD_SIZE) {
+		if (length <= BT_OTS_DATE_TIME_FIELD_SIZE) {
 			date_time_decode(
 				&net_buf,
 				&inst->otc_inst->cur_object.first_created);
 		} else {
 			BT_WARN("Invalid length %u (expected max %u)",
-				length, DATE_TIME_FIELD_SIZE);
+				length, BT_OTS_DATE_TIME_FIELD_SIZE);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
@@ -979,12 +979,12 @@ static uint8_t read_obj_modified_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (data) {
-		if (length <= DATE_TIME_FIELD_SIZE) {
+		if (length <= BT_OTS_DATE_TIME_FIELD_SIZE) {
 			date_time_decode(&net_buf,
 					 &inst->otc_inst->cur_object.modified);
 		} else {
 			BT_WARN("Invalid length %u (expected max %u)",
-				length, DATE_TIME_FIELD_SIZE);
+				length, BT_OTS_DATE_TIME_FIELD_SIZE);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
@@ -1043,15 +1043,15 @@ static uint8_t read_obj_properties_cb(struct bt_conn *conn, uint8_t err,
 	if (err) {
 		BT_WARN("err: 0x%02X", err);
 	} else if (data && length <= OTS_PROPERTIES_LEN) {
-		struct bt_otc_obj_metadata *cur_object =
+		struct bt_ots_obj_metadata *cur_object =
 			&inst->otc_inst->cur_object;
 
-		cur_object->properties = net_buf_simple_pull_le32(&net_buf);
+		cur_object->props = net_buf_simple_pull_le32(&net_buf);
 
 		BT_INFO("Object properties (raw) : 0x%x",
-			cur_object->properties);
+			cur_object->props);
 
-		if (!BT_OTS_OBJ_GET_PROP_READ(cur_object->properties)) {
+		if (!BT_OTS_OBJ_GET_PROP_READ(cur_object->props)) {
 			BT_WARN("Obj properties: Obj read not supported");
 		}
 
@@ -1130,7 +1130,7 @@ static int oacp_read(struct bt_conn *conn,
 	net_buf_simple_add_le32(&otc_tx_buf, offset);
 
 	/* Len */
-	length = inst->otc_inst->cur_object.current_size - offset;
+	length = inst->otc_inst->cur_object.size.cur - offset;
 	net_buf_simple_add_le32(&otc_tx_buf, length);
 
 	inst->otc_inst->write_params.offset = 0;
@@ -1170,7 +1170,7 @@ int bt_otc_read_object_data(struct bt_conn *conn, struct bt_otc_instance_t *otc_
 		return -EINVAL;
 	}
 
-	if (otc_inst->cur_object.current_size == 0) {
+	if (otc_inst->cur_object.size.cur == 0) {
 		BT_WARN("Unknown object size");
 		return -EINVAL;
 	}
@@ -1318,17 +1318,17 @@ static int decode_record(struct net_buf_simple *buf,
 			return -EINVAL;
 		}
 
-		if (rec->name_len >= sizeof(rec->metadata.name)) {
+		if (rec->name_len >= sizeof(rec->metadata.name_c)) {
 			BT_WARN("Name length %u too long, invalid record",
 				rec->name_len);
 			return -EINVAL;
 		}
 
 		name = net_buf_simple_pull_mem(buf, rec->name_len);
-		memcpy(rec->metadata.name, name, rec->name_len);
+		memcpy(rec->metadata.name_c, name, rec->name_len);
 	}
 
-	rec->metadata.name[rec->name_len] = '\0';
+	rec->metadata.name_c[rec->name_len] = '\0';
 	rec->flags = 0;
 
 	if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
@@ -1352,7 +1352,7 @@ static int decode_record(struct net_buf_simple *buf,
 		}
 
 		uuid = net_buf_simple_pull_mem(buf, BT_UUID_SIZE_128);
-		bt_uuid_create(&rec->metadata.type_uuid.uuid,
+		bt_uuid_create(&rec->metadata.type.uuid,
 			       uuid, BT_UUID_SIZE_128);
 	} else {
 		if ((start_len - buf->len) + BT_UUID_SIZE_16 > rec->len) {
@@ -1363,7 +1363,7 @@ static int decode_record(struct net_buf_simple *buf,
 			return -EINVAL;
 		}
 
-		rec->metadata.type_uuid.uuid_16.val =
+		rec->metadata.type.uuid_16.val =
 			net_buf_simple_pull_le16(buf);
 	}
 
@@ -1376,23 +1376,23 @@ static int decode_record(struct net_buf_simple *buf,
 			return -EINVAL;
 		}
 
-		rec->metadata.current_size = net_buf_simple_pull_le32(buf);
+		rec->metadata.size.cur = net_buf_simple_pull_le32(buf);
 	}
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_ALLOC_SIZE(rec->flags)) {
 		if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
 			BT_WARN("incorrect DirListing record, reclen %u "
-				"flags indicates alloc_size, too short",
+				"flags indicates allocated size, too short",
 				rec->len);
 			BT_INFO("flags 0x%x", rec->flags);
 			return -EINVAL;
 		}
 
-		rec->metadata.alloc_size = net_buf_simple_pull_le32(buf);
+		rec->metadata.size.alloc = net_buf_simple_pull_le32(buf);
 	}
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_FIRST_CREATED(rec->flags)) {
-		if ((start_len - buf->len) + DATE_TIME_FIELD_SIZE > rec->len) {
+		if ((start_len - buf->len) + BT_OTS_DATE_TIME_FIELD_SIZE > rec->len) {
 			BT_WARN("incorrect DirListing record, reclen %u "
 				"too short flags indicates first_created",
 				rec->len);
@@ -1404,7 +1404,7 @@ static int decode_record(struct net_buf_simple *buf,
 	}
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_LAST_MODIFIED(rec->flags)) {
-		if ((start_len - buf->len) + DATE_TIME_FIELD_SIZE > rec->len) {
+		if ((start_len - buf->len) + BT_OTS_DATE_TIME_FIELD_SIZE > rec->len) {
 			BT_WARN("incorrect DirListing record, reclen %u "
 				"flags indicates las_mod, too short",
 				rec->len);
@@ -1424,7 +1424,7 @@ static int decode_record(struct net_buf_simple *buf,
 			return -EINVAL;
 		}
 
-		rec->metadata.properties = net_buf_simple_pull_le32(buf);
+		rec->metadata.props = net_buf_simple_pull_le32(buf);
 	}
 
 	return rec->len;
@@ -1472,7 +1472,7 @@ int bt_otc_decode_dirlisting(uint8_t *data, uint16_t length,
 	return count;
 }
 
-void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
+void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
 			     uint16_t count)
 {
 	BT_INFO("--- Displaying %u metadata records ---", count);
@@ -1482,59 +1482,59 @@ void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
 
 		(void)bt_ots_obj_id_to_str(metadata->id, t, sizeof(t));
 		BT_INFO("Object ID: 0x%s", log_strdup(t));
-		BT_INFO("Object name: %s", log_strdup(metadata->name));
-		BT_INFO("Object Current Size: %u", metadata->current_size);
-		BT_INFO("Object Allocate Size: %u", metadata->alloc_size);
+		BT_INFO("Object name: %s", log_strdup(metadata->name_c));
+		BT_INFO("Object Current Size: %u", metadata->size.cur);
+		BT_INFO("Object Allocate Size: %u", metadata->size.alloc);
 
-		if (!bt_uuid_cmp(&metadata->type_uuid.uuid,
+		if (!bt_uuid_cmp(&metadata->type.uuid,
 				 BT_UUID_OTS_TYPE_MPL_ICON)) {
 			BT_INFO("Type: Icon Obj Type");
-		} else if (!bt_uuid_cmp(&metadata->type_uuid.uuid,
+		} else if (!bt_uuid_cmp(&metadata->type.uuid,
 					BT_UUID_OTS_TYPE_TRACK_SEGMENT)) {
 			BT_INFO("Type: Track Segment Obj Type");
-		} else if (!bt_uuid_cmp(&metadata->type_uuid.uuid,
+		} else if (!bt_uuid_cmp(&metadata->type.uuid,
 					BT_UUID_OTS_TYPE_TRACK)) {
 			BT_INFO("Type: Track Obj Type");
-		} else if (!bt_uuid_cmp(&metadata->type_uuid.uuid,
+		} else if (!bt_uuid_cmp(&metadata->type.uuid,
 					BT_UUID_OTS_TYPE_GROUP)) {
 			BT_INFO("Type: Group Obj Type");
-		} else if (!bt_uuid_cmp(&metadata->type_uuid.uuid,
+		} else if (!bt_uuid_cmp(&metadata->type.uuid,
 					BT_UUID_OTS_DIRECTORY_LISTING)) {
 			BT_INFO("Type: Directory Listing");
 		}
 
 
-		BT_INFO("Properties:0x%x", metadata->properties);
+		BT_INFO("Properties:0x%x", metadata->props);
 
-		if (BT_OTS_OBJ_GET_PROP_APPEND(metadata->properties)) {
+		if (BT_OTS_OBJ_GET_PROP_APPEND(metadata->props)) {
 			BT_INFO(" - append permitted");
 		}
 
-		if (BT_OTS_OBJ_GET_PROP_DELETE(metadata->properties)) {
+		if (BT_OTS_OBJ_GET_PROP_DELETE(metadata->props)) {
 			BT_INFO(" - delete permitted");
 		}
 
-		if (BT_OTS_OBJ_GET_PROP_EXECUTE(metadata->properties)) {
+		if (BT_OTS_OBJ_GET_PROP_EXECUTE(metadata->props)) {
 			BT_INFO(" - execute permitted");
 		}
 
-		if (BT_OTS_OBJ_GET_PROP_MARKED(metadata->properties)) {
+		if (BT_OTS_OBJ_GET_PROP_MARKED(metadata->props)) {
 			BT_INFO(" - marked");
 		}
 
-		if (BT_OTS_OBJ_GET_PROP_PATCH(metadata->properties)) {
+		if (BT_OTS_OBJ_GET_PROP_PATCH(metadata->props)) {
 			BT_INFO(" - patch permitted");
 		}
 
-		if (BT_OTS_OBJ_GET_PROP_READ(metadata->properties)) {
+		if (BT_OTS_OBJ_GET_PROP_READ(metadata->props)) {
 			BT_INFO(" - read permitted");
 		}
 
-		if (BT_OTS_OBJ_GET_PROP_TRUNCATE(metadata->properties)) {
+		if (BT_OTS_OBJ_GET_PROP_TRUNCATE(metadata->props)) {
 			BT_INFO(" - truncate permitted");
 		}
 
-		if (BT_OTS_OBJ_GET_PROP_WRITE(metadata->properties)) {
+		if (BT_OTS_OBJ_GET_PROP_WRITE(metadata->props)) {
 			BT_INFO(" - write permitted");
 		}
 	}

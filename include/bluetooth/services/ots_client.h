@@ -29,33 +29,8 @@
 extern "C" {
 #endif
 
-/** @brief Date and Time structure.
- *  TODO: Move somewhere else - bluetooth.h?
- */
-#define DATE_TIME_FIELD_SIZE 7
-struct bt_date_time {
-	uint16_t year;
-	uint8_t month;
-	uint8_t day;
-	uint8_t hours;
-	uint8_t minutes;
-	uint8_t seconds;
-};
-
 #define BT_OTC_STOP                       0
 #define BT_OTC_CONTINUE                   1
-
-/**@brief Metadata of an OTS Object  */
-struct bt_otc_obj_metadata {
-	char name[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
-	struct bt_ots_obj_type type_uuid;
-	uint32_t current_size;
-	uint32_t alloc_size;
-	struct bt_date_time first_created;
-	struct bt_date_time modified;
-	uint64_t id;
-	uint32_t properties;
-};
 
 struct bt_otc_instance_t {
 	uint16_t start_handle;
@@ -82,7 +57,7 @@ struct bt_otc_instance_t {
 
 	struct bt_ots_feat features;
 
-	struct bt_otc_obj_metadata cur_object;
+	struct bt_ots_obj_metadata cur_object;
 };
 
 /** @brief Directory listing object metadata callback
@@ -95,7 +70,7 @@ struct bt_otc_instance_t {
  *  @return int   BT_OTC_STOP or BT_OTC_CONTINUE. BT_OTC_STOP can be used to
  *                stop the decoding.
  */
-typedef int (*bt_otc_dirlisting_cb)(struct bt_otc_obj_metadata *meta);
+typedef int (*bt_otc_dirlisting_cb)(struct bt_ots_obj_metadata *meta);
 
 /** OTC callback structure */
 struct bt_otc_cb {
@@ -279,7 +254,7 @@ int bt_otc_decode_dirlisting(uint8_t *data, uint16_t length,
  * @param metadata Pointer to the first (or only) metadata in an array.
  * @param count    Number of metadata objects to display information of.
  */
-void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
+void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
 			     uint16_t count);
 
 

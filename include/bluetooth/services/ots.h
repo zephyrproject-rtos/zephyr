@@ -208,10 +208,10 @@ enum {
 
 /** @brief Descriptor for OTS Object Size parameter. */
 struct bt_ots_obj_size {
-	/* Current Size */
+	/** @brief Current Size */
 	uint32_t cur;
 
-	/* Allocated Size */
+	/** @brief Allocated Size */
 	uint32_t alloc;
 } __packed;
 
@@ -486,6 +486,56 @@ enum {
 	BT_OTS_METADATA_REQ_PROPS                       = BIT(6),
 	/** @brief Request all object metadata */
 	BT_OTS_METADATA_REQ_ALL                         = 0x7F,
+};
+
+/** @brief Date and Time structure */
+struct bt_ots_date_time {
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hours;
+	uint8_t minutes;
+	uint8_t seconds;
+};
+#define BT_OTS_DATE_TIME_FIELD_SIZE 7
+
+/** @brief Metadata of an OTS object
+ *
+ * Used by the server as a descriptor for OTS object initialization.
+ * Used by the client to present object metadata to the application.
+ */
+struct bt_ots_obj_metadata {
+
+#if defined(CONFIG_BT_OTS)
+	/** @brief Object Name */
+	char                           *name;
+#endif /* CONFIG_BT_OTS */
+
+#if defined(CONFIG_BT_OTS_CLIENT)
+	/* TODO: Unify client/server name */
+	/** @brief Object name (client) */
+	char                           name_c[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
+#endif /* CONFIG_BT_OTS_CLIENT */
+
+	/** @brief Object Type */
+	struct bt_ots_obj_type         type;
+
+	/** @brief Object Size */
+	struct bt_ots_obj_size         size;
+
+#if defined(CONFIG_BT_OTS_CLIENT)
+	/** @brief Object first created time */
+	struct bt_ots_date_time        first_created;
+
+	/** @brief Object last modified time */
+	struct bt_ots_date_time        modified;
+
+	/** @brief Object ID */
+	uint64_t                       id;
+#endif /* CONFIG_BT_OTS_CLIENT */
+
+	/** @brief Object Properties */
+	uint32_t                       props;
 };
 
 /** @brief Opaque OTS instance. */
