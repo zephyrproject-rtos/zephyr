@@ -799,24 +799,15 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 	return false;
 }
 
-static void buf_send_end(struct bt_conn *conn, void *user_data)
-{
-	struct net_buf *buf = user_data;
-
-	net_buf_unref(buf);
-}
-
 bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 {
 	bool relayed = false;
-	int i, err;
+	int i;
 
 	BT_DBG("%u bytes to dst 0x%04x", buf->len, dst);
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
-
-		NET_BUF_SIMPLE_DEFINE(msg, 32);
 
 		if (!client->cli) {
 			continue;
@@ -826,25 +817,7 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 			continue;
 		}
 
-		/* Proxy PDU sending modifies the original buffer,
-		 * so we need to make a copy.
-		 */
-		net_buf_simple_reserve(&msg, 1);
-		net_buf_simple_add_mem(&msg, buf->data, buf->len);
-
-		err = bt_mesh_proxy_msg_send(client->cli->conn, BT_MESH_PROXY_NET_PDU,
-					     &msg, buf_send_end, net_buf_ref(buf));
-
-		bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
-		if (err) {
-			BT_ERR("Failed to send proxy message (err %d)", err);
-
-			/* If segment_and_send() fails the buf_send_end() callback will
-			 * not be called, so we need to clear the user data (net_buf,
-			 * which is just opaque data to segment_and send) reference given
-			 * to segment_and_send() here.
-			 */
-			net_buf_unref(buf);
+		if (bt_mesh_proxy_relay_send(client->cli->conn, buf)) {
 			continue;
 		}
 

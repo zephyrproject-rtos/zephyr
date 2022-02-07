@@ -186,6 +186,43 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 	return 0;
 }
 
+static void buf_send_end(struct bt_conn *conn, void *user_data)
+{
+	struct net_buf *buf = user_data;
+
+	net_buf_unref(buf);
+}
+
+int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct net_buf *buf)
+{
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(msg, 1 + BT_MESH_NET_MAX_PDU_LEN);
+
+	/* Proxy PDU sending modifies the original buffer,
+	 * so we need to make a copy.
+	 */
+	net_buf_simple_reserve(&msg, 1);
+	net_buf_simple_add_mem(&msg, buf->data, buf->len);
+
+	err = bt_mesh_proxy_msg_send(conn, BT_MESH_PROXY_NET_PDU,
+				     &msg, buf_send_end, net_buf_ref(buf));
+
+	bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
+	if (err) {
+		BT_ERR("Failed to send proxy message (err %d)", err);
+
+		/* If segment_and_send() fails the buf_send_end() callback will
+		 * not be called, so we need to clear the user data (net_buf,
+		 * which is just opaque data to segment_and send) reference given
+		 * to segment_and_send() here.
+		 */
+		net_buf_unref(buf);
+	}
+
+	return err;
+}
+
 static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 {
 	/* Check if buf has been allocated, in this way, we no longer need
