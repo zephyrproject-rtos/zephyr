@@ -55,6 +55,18 @@ config HAS_NEWLIB_LIBC_NANO
 
 if NEWLIB_LIBC
 
+config ZEPHYR_TOOLCHAIN_VARIANT
+	string
+	option env="ZEPHYR_TOOLCHAIN_VARIANT"
+
+config TOOLCHAIN_HAS_NEWLIB_LIBC_NANO
+	bool "Toolchain has newlib-nano"
+	depends on ZEPHYR_TOOLCHAIN_VARIANT = "cross-compile"
+	select HAS_NEWLIB_LIBC_NANO
+	help
+	  Select if "cross-compile" toolchain has nano version of
+	  Newlib C library
+
 config NEWLIB_LIBC_NANO
 	bool "Build with newlib-nano C library"
 	depends on HAS_NEWLIB_LIBC_NANO
