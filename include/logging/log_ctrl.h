@@ -220,6 +220,32 @@ static inline bool log_data_pending(void)
  */
 int log_set_tag(const char *tag);
 
+/**
+ * @brief Get current memory usage.
+ *
+ * @param[out] buf_size Capacity of the buffer used for storing log messages.
+ * @param[out] usage Number of bytes currently containing pending log messages.
+ *
+ * @retval -EINVAL if logging mode does not use the buffer.
+ * @retval 0 successfully collected usage data.
+ */
+int log_mem_get_usage(uint32_t *buf_size, uint32_t *usage);
+
+/**
+ * @brief Get maximum memory usage.
+ *
+ * Requires CONFIG_LOG_MEM_UTILIZATION option.
+ *
+ * @param[out] max Maximum number of bytes used for pending log messages.
+ *
+ * @retval -EINVAL if logging mode does not use the buffer.
+ * @retval -ENOTSUP if instrumentation is not enabled.
+ * not been enabled.
+ *
+ * @retval 0 successfully collected usage data.
+ */
+int log_mem_get_max_usage(uint32_t *max);
+
 #if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_INIT() log_init()

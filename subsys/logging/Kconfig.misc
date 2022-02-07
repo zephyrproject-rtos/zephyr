@@ -53,4 +53,13 @@ config LOG2_FMT_SECTION
 	  removing strings from final binary and should be used for dictionary
 	  logging.
 
+config LOG_MEM_UTILIZATION
+	bool "Enable tracking maximum memory utilization"
+	depends on LOG_MODE_DEFERRED
+	default y if LOG_CMDS
+	select MEM_SLAB_TRACE_MAX_UTILIZATION if LOG1
+	help
+	  When enabled, maximum usage of memory used for log messages in deferred
+	  mode is tracked. It can be used to trim LOG_BUFFER_SIZE.
+
 endmenu

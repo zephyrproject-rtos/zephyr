@@ -498,3 +498,8 @@ uint32_t log_msg_mem_get_max_used(void)
 {
 	return k_mem_slab_max_used_get(&log_msg_pool);
 }
+
+size_t log_msg_get_slab_size(void)
+{
+	return MSG_SIZE;
+}

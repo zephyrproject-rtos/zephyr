@@ -105,8 +105,10 @@ static const struct mpsc_pbuf_buffer_config mpsc_config = {
 	.size = ARRAY_SIZE(buf32),
 	.notify_drop = notify_drop,
 	.get_wlen = log_msg2_generic_get_wlen,
-	.flags = IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW) ?
-		MPSC_PBUF_MODE_OVERWRITE : 0
+	.flags = (IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW) ?
+		  MPSC_PBUF_MODE_OVERWRITE : 0) |
+		 (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION) ?
+		  MPSC_PBUF_MAX_UTILIZATION : 0)
 };
 
 /* Check that default tag can fit in tag buffer. */
@@ -1257,6 +1259,42 @@ int log_set_tag(const char *str)
 	}
 
 	return 0;
+}
+
+int log_mem_get_usage(uint32_t *buf_size, uint32_t *usage)
+{
+	__ASSERT_NO_MSG(buf_size != NULL);
+	__ASSERT_NO_MSG(usage != NULL);
+
+	if (!IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG1)) {
+		*buf_size = CONFIG_LOG_BUFFER_SIZE;
+		*usage = log_msg_mem_get_used() * log_msg_get_slab_size();
+		return 0;
+	}
+
+	mpsc_pbuf_get_utilization(&log_buffer, buf_size, usage);
+
+	return 0;
+}
+
+int log_mem_get_max_usage(uint32_t *max)
+{
+	__ASSERT_NO_MSG(max != NULL);
+
+	if (!IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG1)) {
+		*max = log_msg_mem_get_max_used() * log_msg_get_slab_size();
+		return 0;
+	}
+
+	return mpsc_pbuf_get_max_utilization(&log_buffer, max);
 }
 
 static void log_process_thread_timer_expiry_fn(struct k_timer *timer)
