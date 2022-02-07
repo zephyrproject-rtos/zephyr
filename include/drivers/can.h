@@ -597,10 +597,24 @@ static inline int can_set_bitrate(const struct device *dev,
  */
 
 /**
- * @brief Transmit a CAN frame on the CAN bus
+ * @brief Queue a CAN frame for transmission on the CAN bus
  *
- * Transmit a CAN frame on the CAN bus with optional timeout and completion
- * callback function.
+ * Queue a CAN frame for transmission on the CAN bus with optional timeout and
+ * completion callback function.
+ *
+ * Queued CAN frames are transmitted in order according to the their priority:
+ * - The lower the CAN-ID, the higher the priority.
+ * - Data frames have higher priority than Remote Transmission Request (RTR)
+ *   frames with identical CAN-IDs.
+ * - Frames with standard (11-bit) identifiers have higher priority than frames
+ *   with extended (29-bit) identifiers with identical base IDs (the higher 11
+ *   bits of the extended identifier).
+ * - Transmission order for queued frames with the same priority is hardware
+ *   dependent.
+ *
+ * @note If transmitting segmented messages spanning multiple CAN frames with
+ * identical CAN-IDs, the sender must ensure to only queue one frame at a time
+ * if FIFO order is required.
  *
  * By default, the CAN controller will automatically retry transmission in case
  * of lost bus arbitration or missing acknowledge. Some CAN controllers support
