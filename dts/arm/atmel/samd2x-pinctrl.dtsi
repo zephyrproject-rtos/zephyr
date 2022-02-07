@@ -122,7 +122,7 @@
 			DT_ATMEL_PORT(tcc3, wo0, b, 22, f, pinmux-enable);
 			DT_ATMEL_PORT(tcc3, wo1, b, 23, f, pinmux-enable);
 			DT_ATMEL_PORT(tcc3, wo6, a, 27, f, pinmux-enable);
-			DT_ATMEL_PORT(tcc3, wo7, a, 27, f, pinmux-enable);
+			DT_ATMEL_PORT(tcc3, wo7, a, 28, f, pinmux-enable);
 			DT_ATMEL_PORT(tcc1, wo0, a, 30, e, pinmux-enable);
 			DT_ATMEL_PORT(tcc3, wo4, a, 30, f, pinmux-enable);
 			DT_ATMEL_PORT(tcc1, wo1, a, 31, e, pinmux-enable);
