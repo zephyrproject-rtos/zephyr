@@ -80,4 +80,21 @@ if(CONFIG_HAS_RPI_PICO)
           ${rp2_common_dir}/hardware_uart/uart.c)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_UART
           ${rp2_common_dir}/hardware_uart/include)
+
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_FLASH
+          ${rp2_common_dir}/hardware_flash/flash.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_FLASH
+          ${rp2_common_dir}/hardware_flash/include)
+
+  # Some flash driver functions must be executed from the RAM.
+  # Originally pico-sdk places them in the RW data section, so this
+  # implementation does the same.
+  zephyr_linker_sources_ifdef(CONFIG_PICOSDK_USE_FLASH RWDATA timecritical.ld)
+
+  # A function in flash.c adds 1 to a function pointer, causing a warning
+  set_source_files_properties(
+    ${rp2_common_dir}/hardware_flash/flash.c
+    PROPERTIES
+    COMPILE_FLAGS $<TARGET_PROPERTY:compiler,warning_no_pointer_arithmetic>
+  )
 endif()

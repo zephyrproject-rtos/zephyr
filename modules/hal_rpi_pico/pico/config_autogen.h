@@ -35,4 +35,11 @@
 #define __always_inline ALWAYS_INLINE
 #endif /* __always_inline */
 
+/* Two definitions required for the flash driver */
+#define __STRING(x) #x
+
+#ifndef __noinline
+#define __noinline __attribute__((noinline))
+#endif
+
 #endif
