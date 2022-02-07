@@ -63,7 +63,6 @@ static struct bt_mesh_proxy_client {
 };
 
 static bool service_registered;
-static int conn_count;
 
 static struct bt_mesh_proxy_client *find_client(struct bt_conn *conn)
 {
@@ -559,7 +558,7 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 
 	BT_DBG("");
 
-	if (conn_count == CONFIG_BT_MAX_CONN) {
+	if (bt_mesh_proxy_conn_count_get() == CONFIG_BT_MAX_CONN) {
 		BT_DBG("Connectable advertising deferred (max connections)");
 		return -ENOMEM;
 	}
@@ -868,8 +867,6 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 
 	BT_DBG("conn %p err 0x%02x", (void *)conn, err);
 
-	conn_count++;
-
 	client = find_client(conn);
 
 	client->filter_type = NONE;
@@ -878,7 +875,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 					       proxy_msg_recv);
 
 	/* Try to re-enable advertising in case it's possible */
-	if (conn_count < CONFIG_BT_MAX_CONN) {
+	if (bt_mesh_proxy_conn_count_get() < CONFIG_BT_MAX_CONN) {
 		bt_mesh_adv_gatt_update();
 	}
 }
@@ -900,7 +897,6 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	client = find_client(conn);
 	if (client->cli) {
-		conn_count--;
 		bt_mesh_proxy_role_cleanup(client->cli);
 		client->cli = NULL;
 	}
