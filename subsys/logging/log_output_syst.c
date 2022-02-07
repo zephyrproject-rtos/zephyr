@@ -727,16 +727,11 @@ void log_output_string_syst_process(const struct log_output *log_output,
 				struct log_msg_ids src_level,
 				const char *fmt, va_list ap, uint32_t flag)
 {
-	uint8_t str[STRING_BUF_MAX_LEN + 1];
-	size_t length = STRING_BUF_MAX_LEN;
 	uint32_t severity = level_to_syst_severity((uint32_t)src_level.level);
-
-	length = vsnprintk(str, length, fmt, ap);
-	str[length] = '\0';
 
 	update_systh_platform_data(&log_syst_handle, log_output, flag);
 
-	MIPI_SYST_PRINTF(&log_syst_handle, severity, str);
+	MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, ap);
 }
 
 void log_output_hexdump_syst_process(const struct log_output *log_output,
