@@ -299,9 +299,6 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req);
 /* Cancel ATT request */
 void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req);
 
-/* Connect EATT channels */
-int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels);
-
 /* Disconnect EATT channels */
 int bt_eatt_disconnect(struct bt_conn *conn);
 
