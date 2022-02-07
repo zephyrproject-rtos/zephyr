@@ -52,6 +52,8 @@ static uint8_t __noinit bufs[CONFIG_BT_MAX_CONN * CONFIG_BT_MESH_PROXY_MSG_LEN];
 
 static struct bt_mesh_proxy_role roles[CONFIG_BT_MAX_CONN];
 
+static int conn_count;
+
 static void proxy_sar_timeout(struct k_work *work)
 {
 	struct bt_mesh_proxy_role *role;
@@ -210,6 +212,8 @@ struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
 {
 	struct bt_mesh_proxy_role *role;
 
+	conn_count++;
+
 	role = &roles[bt_conn_index(conn)];
 
 	role->conn = bt_conn_ref(conn);
@@ -230,5 +234,12 @@ void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role)
 	bt_conn_unref(role->conn);
 	role->conn = NULL;
 
+	conn_count--;
+
 	bt_mesh_adv_gatt_update();
+}
+
+int bt_mesh_proxy_conn_count_get(void)
+{
+	return conn_count;
 }
