@@ -471,7 +471,7 @@ set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/devicet
 
 # Concatenate the fixups into a single header file for easy
 # #include'ing
-file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by devicetree.h */\n\n")
+file(WRITE ${DTS_CAT_OF_FIXUP_FILES}.new "/* May only be included by devicetree.h */\n\n")
 set(DISCOVERED_FIXUP_FILES)
 foreach(fixup_file
     ${DTS_BOARD_FIXUP_FILE}
@@ -481,10 +481,12 @@ foreach(fixup_file
     )
   if(EXISTS ${fixup_file})
     file(READ ${fixup_file} contents)
-    file(APPEND ${DTS_CAT_OF_FIXUP_FILES} "${contents}")
+    file(APPEND ${DTS_CAT_OF_FIXUP_FILES}.new "${contents}")
     string(APPEND DISCOVERED_FIXUP_FILES "- ${fixup_file}\n")
   endif()
 endforeach()
+zephyr_file_copy(${DTS_CAT_OF_FIXUP_FILES}.new ${DTS_CAT_OF_FIXUP_FILES} ONLY_IF_DIFFERENT)
+file(REMOVE ${DTS_CAT_OF_FIXUP_FILES}.new)
 
 if (DISCOVERED_FIXUP_FILES)
   message(WARNING "One or more dts_fixup.h files detected:\n${DISCOVERED_FIXUP_FILES}Use of these files is deprecated; use the devicetree.h API instead.")

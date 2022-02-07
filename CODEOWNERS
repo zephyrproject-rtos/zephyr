@@ -613,6 +613,7 @@
 /subsys/portability/                      @nashif
 /lib/libc/                                @nashif
 /lib/libc/arcmwdt/                        @abrodkin @ruuddw @evgeniy-paltsev
+/misc/                                    @tejlmand
 /modules/                                 @nashif
 /modules/canopennode/                     @henrikbrixandersen
 /modules/mbedtls/                         @ceolin @d3zd3z
