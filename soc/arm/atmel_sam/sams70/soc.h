@@ -80,6 +80,5 @@
 #endif /* _ASMLANGUAGE */
 
 #include "pwm_fixup.h"
-#include "fixups.h"
 
 #endif /* _ATMEL_SAMS70_SOC_H_ */
