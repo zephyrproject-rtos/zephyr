@@ -89,21 +89,6 @@ struct bt_gatt_ots_object_state {
 	};
 };
 
-/** @brief Descriptor for OTS object initialization. */
-struct bt_ots_obj_metadata {
-	/* Object Name */
-	char                   *name;
-
-	/* Object Type */
-	struct bt_ots_obj_type type;
-
-	/* Object Size */
-	struct bt_ots_obj_size size;
-
-	/* Object Properties */
-	uint32_t               props;
-};
-
 struct bt_gatt_ots_object {
 	uint64_t id;
 	struct bt_ots_obj_metadata metadata;

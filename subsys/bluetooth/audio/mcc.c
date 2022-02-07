@@ -2635,13 +2635,13 @@ void on_object_metadata(struct bt_conn *conn, int err,
 			uint8_t metadata_read)
 {
 	BT_INFO("Object's meta data:");
-	BT_INFO("\tCurrent size\t:%u", otc_inst->cur_object.current_size);
+	BT_INFO("\tCurrent size\t:%u", otc_inst->cur_object.size.cur);
 
-	if (otc_inst->cur_object.current_size > otc_obj_buf.size) {
+	if (otc_inst->cur_object.size.cur > otc_obj_buf.size) {
 		BT_DBG("Object larger than allocated buffer");
 	}
 
-	bt_otc_metadata_display(&otc_inst->cur_object, 1);
+	bt_ots_metadata_display(&otc_inst->cur_object, 1);
 
 	if (mcc_cb && mcc_cb->otc_obj_metadata) {
 		mcc_cb->otc_obj_metadata(conn, err);
