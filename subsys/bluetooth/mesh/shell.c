@@ -789,10 +789,81 @@ static void print_unprovisioned_beacon(uint8_t uuid[16],
 
 	bin2hex(uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
 
-	shell_print_ctx("UUID %s, OOB Info 0x%04x, URI Hash 0x%x",
+	shell_print_ctx("PB-ADV UUID %s, OOB Info 0x%04x, URI Hash 0x%x",
 			uuid_hex_str, oob_info,
 			(uri_hash == NULL ? 0 : *uri_hash));
 }
+
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+static void pb_gatt_unprovisioned(uint8_t uuid[16],
+				  bt_mesh_prov_oob_info_t oob_info)
+{
+	char uuid_hex_str[32 + 1];
+
+	bin2hex(uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
+
+	shell_print_ctx("PB-GATT UUID %s, OOB Info 0x%04x", uuid_hex_str, oob_info);
+}
+
+static int cmd_provision_gatt(const struct shell *sh, size_t argc,
+			      char *argv[])
+{
+	static uint8_t uuid[16];
+	uint8_t attention_duration;
+	uint16_t net_idx;
+	uint16_t addr;
+	size_t len;
+	int err;
+
+	len = hex2bin(argv[1], strlen(argv[1]), uuid, sizeof(uuid));
+	(void)memset(uuid + len, 0, sizeof(uuid) - len);
+
+	net_idx = strtoul(argv[2], NULL, 0);
+	addr = strtoul(argv[3], NULL, 0);
+	attention_duration = strtoul(argv[4], NULL, 0);
+
+	err = bt_mesh_provision_gatt(uuid, net_idx, addr, attention_duration);
+	if (err) {
+		shell_error(sh, "Provisioning failed (err %d)", err);
+	}
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_BT_MESH_PROXY_CLIENT)
+static int cmd_proxy_connect(const struct shell *sh, size_t argc,
+			     char *argv[])
+{
+	uint16_t net_idx;
+	int err;
+
+	net_idx = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_proxy_connect(net_idx);
+	if (err) {
+		shell_error(sh, "Proxy connect failed (err %d)", err);
+	}
+
+	return 0;
+}
+
+static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	uint16_t net_idx;
+	int err;
+
+	net_idx = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_proxy_disconnect(net_idx);
+	if (err) {
+		shell_error(sh, "Proxy disconnect failed (err %d)", err);
+	}
+
+	return 0;
+}
+#endif
 
 static int cmd_beacon_listen(const struct shell *shell, size_t argc,
 			     char *argv[])
@@ -801,8 +872,12 @@ static int cmd_beacon_listen(const struct shell *shell, size_t argc,
 
 	if (val) {
 		bt_mesh_shell_prov.unprovisioned_beacon = print_unprovisioned_beacon;
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+		bt_mesh_shell_prov.unprovisioned_beacon_gatt = pb_gatt_unprovisioned;
+#endif
 	} else {
 		bt_mesh_shell_prov.unprovisioned_beacon = NULL;
+		bt_mesh_shell_prov.unprovisioned_beacon_gatt = NULL;
 	}
 
 	return 0;
@@ -3027,6 +3102,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      "<AttentionDuration>", cmd_provision_adv, 5, 0),
 #endif
 #endif
+
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	SHELL_CMD_ARG(provision-gatt, NULL, "<UUID> <NetKeyIndex> <addr> "
+		      "<AttentionDuration>", cmd_provision_gatt, 5, 0),
+#endif
+
+#if defined(CONFIG_BT_MESH_PROXY_CLIENT)
+	SHELL_CMD_ARG(proxy-connect, NULL, "<NetKeyIndex>",
+		      cmd_proxy_connect, 2, 0),
+	SHELL_CMD_ARG(proxy-disconnect, NULL, "<NetKeyIndex>",
+		      cmd_proxy_disconnect, 2, 0),
+#endif
+
 	SHELL_CMD_ARG(uuid, NULL, "<UUID: 1-16 hex values>", cmd_uuid, 2, 0),
 	SHELL_CMD_ARG(input-num, NULL, "<number>", cmd_input_num, 2, 0),
 	SHELL_CMD_ARG(input-str, NULL, "<string>", cmd_input_str, 2, 0),

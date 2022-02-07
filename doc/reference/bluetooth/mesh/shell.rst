@@ -243,6 +243,15 @@ Provisioning
 	* ``addr``: First unicast address to assign to the unprovisioned device. The device will occupy as many addresses as it has elements, and all must be available.
 	* ``AttentionDuration``: The duration in seconds the unprovisioned device will identify itself for, if supported. See :ref:`bluetooth_mesh_models_health_srv_attention` for details.
 
+``mesh provision-gatt <UUID> <NetKeyIndex> <addr> <AttentionDuration>``
+-----------------------------------------------------------------------
+
+	Provision a nearby device into the mesh. The mesh node starts scanning for connectable advertising for PB-GATT with the given UUID. Once found, the unprovisioned device will be added to the mesh network with the given unicast address, and given the network key indicated by ``NetKeyIndex``.
+
+	* ``UUID``: UUID of the unprovisioned device.
+	* ``NetKeyIndex``: Index of the network key to pass to the device.
+	* ``addr``: First unicast address to assign to the unprovisioned device. The device will occupy as many addresses as it has elements, and all must be available.
+	* ``AttentionDuration``: The duration in seconds the unprovisioned device will identify itself for, if supported. See :ref:`bluetooth_mesh_models_health_srv_attention` for details.
 
 ``mesh uuid <UUID: 1-16 hex values>``
 -------------------------------------
@@ -292,6 +301,26 @@ Provisioning
 	Enable or disable printing of incoming unprovisioned beacons. Allows a provisioner device to detect nearby unprovisioned devices and provision them.
 
 	* ``val``: Whether to enable the unprovisioned beacon printing.
+
+Proxy Client
+============
+
+The Proxy Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_PROXY_CLIENT` configuration option.
+
+``mesh proxy-connect <NetKeyIndex>``
+------------------------------------
+
+	Auto-Connect a nearby proxy server into the mesh.
+
+	* ``NetKeyIndex``: Index of the network key to conenct.
+
+
+``mesh proxy-disconnect <NetKeyIndex>``
+---------------------------------------
+
+	Disconnect the existing proxy connection.
+
+	* ``NetKeyIndex``: Index of the network key to disconnect.
 
 .. _bluetooth_mesh_shell_cfg_cli:
 
