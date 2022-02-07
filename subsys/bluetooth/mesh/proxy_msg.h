@@ -46,9 +46,9 @@ struct bt_mesh_proxy_role {
 	struct net_buf_simple buf;
 };
 
-ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
+ssize_t bt_mesh_proxy_msg_recv(struct bt_conn *conn,
 			       const void *buf, uint16_t len);
-int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
+int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 			   struct net_buf_simple *msg,
 			   bt_gatt_complete_func_t end, void *user_data);
 struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
