@@ -20,7 +20,7 @@ conditionally compiled. Their definitions may be found in
 Assertions are enabled by setting the ``__ASSERT_ON`` preprocessor symbol to a
 non-zero value. There are two ways to do this:
 
-- Use the :kconfig:`CONFIG_ASSERT` and :kconfig:`CONFIG_ASSERT_LEVEL` kconfig
+- Use the :kconfig:option:`CONFIG_ASSERT` and :kconfig:option:`CONFIG_ASSERT_LEVEL` kconfig
   options.
 - Add ``-D__ASSERT_ON=<level>`` to the project's CFLAGS, either on the
   build command line or in a CMakeLists.txt.
@@ -34,7 +34,7 @@ issued since assertion code is not normally present in a final product.
 Specifying assertion level 2 suppresses these warnings.
 
 Assertions are enabled by default when running Zephyr test cases, as
-configured by the :kconfig:`CONFIG_TEST` option.
+configured by the :kconfig:option:`CONFIG_TEST` option.
 
 The policy for what to do when encountering a failed assertion is controlled
 by the implementation of :c:func:`assert_post_action`. Zephyr provides
@@ -198,9 +198,9 @@ addresses outside of the stack buffer. Because this is enforced by the
 memory protection hardware, there is no risk of data corruption to memory
 that the thread would not otherwise be able to write to.
 
-If a thread is running in supervisor mode, or if :kconfig:`CONFIG_USERSPACE` is
+If a thread is running in supervisor mode, or if :kconfig:option:`CONFIG_USERSPACE` is
 not enabled, depending on configuration stack overflows may or may not be
-caught.  :kconfig:`CONFIG_HW_STACK_PROTECTION` is supported on some
+caught.  :kconfig:option:`CONFIG_HW_STACK_PROTECTION` is supported on some
 architectures and will catch stack overflows in supervisor mode, including
 when handling a system call on behalf of a user thread. Typically this is
 implemented via dedicated CPU features, or read-only MMU/MPU guard regions
@@ -210,7 +210,7 @@ should be treated as a very serious condition impacting the health of the
 entire system.
 
 If a platform lacks memory management hardware support,
-:kconfig:`CONFIG_STACK_SENTINEL` is a software-only stack overflow detection
+:kconfig:option:`CONFIG_STACK_SENTINEL` is a software-only stack overflow detection
 feature which periodically checks if a sentinel value at the end of the stack
 buffer has been corrupted. It does not require hardware support, but provides
 no protection against data corruption. Since the checks are typically done at
@@ -218,7 +218,7 @@ interrupt exit, the overflow may be detected a nontrivial amount of time after
 the stack actually overflowed.
 
 Finally, Zephyr supports GCC compiler stack canaries via
-:kconfig:`CONFIG_STACK_CANARIES`.  If enabled, the compiler will insert a canary
+:kconfig:option:`CONFIG_STACK_CANARIES`.  If enabled, the compiler will insert a canary
 value randomly generated at boot into function stack frames, checking that the
 canary has not been overwritten at function exit. If the check fails, the
 compiler invokes :c:func:`__stack_chk_fail()`, whose Zephyr implementation

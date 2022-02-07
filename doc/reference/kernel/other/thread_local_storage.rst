@@ -13,15 +13,15 @@ Zephyr currently requires toolchain support for TLS.
 Configuration
 *************
 
-To enable thread local storage in Zephyr, :kconfig:`CONFIG_THREAD_LOCAL_STORAGE`
+To enable thread local storage in Zephyr, :kconfig:option:`CONFIG_THREAD_LOCAL_STORAGE`
 needs to be enabled. Note that this option may not be available if
 the architecture or the SoC does not have the hidden option
-:kconfig:`CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE` enabled, which means
+:kconfig:option:`CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE` enabled, which means
 the architecture or the SoC does not have the necessary code to support
 thread local storage and/or the toolchain does not support TLS.
 
-:kconfig:`CONFIG_ERRNO_IN_TLS` can be enabled together with
-:kconfig:`CONFIG_ERRNO` to let the variable ``errno`` be a thread local
+:kconfig:option:`CONFIG_ERRNO_IN_TLS` can be enabled together with
+:kconfig:option:`CONFIG_ERRNO` to let the variable ``errno`` be a thread local
 variable. This allows user threads to access the value of ``errno`` without
 making a system call.
 

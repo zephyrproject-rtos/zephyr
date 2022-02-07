@@ -24,10 +24,10 @@ real network interface. This is similar to how Linux implements VLANs. The
 that is run on top of *eth0*.
 
 VLAN support must be enabled at compile time by setting option
-:kconfig:`CONFIG_NET_VLAN` and :kconfig:`CONFIG_NET_VLAN_COUNT` to reflect how
+:kconfig:option:`CONFIG_NET_VLAN` and :kconfig:option:`CONFIG_NET_VLAN_COUNT` to reflect how
 many network interfaces there will be in the system.  For example, if there is
 one network interface without VLAN support, and two with VLAN support, the
-:kconfig:`CONFIG_NET_VLAN_COUNT` option should be set to 3.
+:kconfig:option:`CONFIG_NET_VLAN_COUNT` option should be set to 3.
 
 Even if VLAN is enabled in a :file:`prj.conf` file, the VLAN needs to be
 activated at runtime by the application. The VLAN API provides a

@@ -140,6 +140,6 @@ Power Domain
 
 Power domain on Zephyr is represented as a regular device. The power management
 subsystem ensures that a domain is resumed before and suspended after devices
-using it. When :kconfig:`CONFIG_PM_DEVICE_RUNTIME` is enabled, every time a
+using it. When :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME` is enabled, every time a
 device is suspended or resumed the same action is done in the domain the
 device belongs.

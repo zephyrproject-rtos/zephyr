@@ -36,10 +36,10 @@ device has enough RAM when enabling the coverage for it. For example a small dev
 like frdm_k64f can run a simple test application but the more complex test
 cases which consume more RAM will crash when coverage is enabled.
 
-To enable the device for coverage, select :kconfig:`CONFIG_HAS_COVERAGE_SUPPORT`
+To enable the device for coverage, select :kconfig:option:`CONFIG_HAS_COVERAGE_SUPPORT`
 in the Kconfig.board file.
 
-To report the coverage for the particular test application set :kconfig:`CONFIG_COVERAGE`.
+To report the coverage for the particular test application set :kconfig:option:`CONFIG_COVERAGE`.
 
 Steps to generate code coverage reports
 =======================================
@@ -100,7 +100,7 @@ That means you can use the same tools you would while developing any
 other desktop application.
 
 To build your application with ``gcc``'s `gcov`_, simply set
-:kconfig:`CONFIG_COVERAGE` before compiling it.
+:kconfig:option:`CONFIG_COVERAGE` before compiling it.
 When you run your application, ``gcov`` coverage data will be dumped into the
 respective ``gcda`` and ``gcno`` files.
 You may postprocess these with your preferred tools. For example:

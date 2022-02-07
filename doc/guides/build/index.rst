@@ -219,7 +219,7 @@ Unfixed size binary
 Fixed size binary
    The fixed size intermediate binary is produced when :ref:`usermode_api`
    is enabled or when generated IRQ tables are used,
-   :kconfig:`CONFIG_GEN_ISR_TABLES`
+   :kconfig:option:`CONFIG_GEN_ISR_TABLES`
    It produces a binary where sizes are fixed and thus the size must not change
    between the intermediate binary and the final binary.
 
@@ -266,7 +266,7 @@ Device dependencies
     :figclass: align-center
     :width: 80%
 
-When :kconfig:`CONFIG_GEN_ISR_TABLES` is enabled:
+When :kconfig:option:`CONFIG_GEN_ISR_TABLES` is enabled:
    The *gen_isr_tables.py* script scant the fixed size binary and creates
    an isr_tables.c source file with a hardware vector table and/or software
    IRQ table.

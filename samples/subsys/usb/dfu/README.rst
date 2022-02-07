@@ -19,7 +19,7 @@ partition layout. You SoC must run MCUboot as the stage 1 bootloader.
 This sample is built as an application for the MCUboot bootloader.
 
 .. note::
-   This example explicitly turns :kconfig:`CONFIG_USB_DFU_ENABLE_UPLOAD` on.
+   This example explicitly turns :kconfig:option:`CONFIG_USB_DFU_ENABLE_UPLOAD` on.
 
 Building and Testing
 ********************

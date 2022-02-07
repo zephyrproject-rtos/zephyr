@@ -4,7 +4,7 @@ Logical Link Control and Adaptation Protocol (L2CAP)
 ####################################################
 
 L2CAP layer enables connection-oriented channels which can be enable with the
-configuration option: :kconfig:`CONFIG_BT_L2CAP_DYNAMIC_CHANNEL`. This channels
+configuration option: :kconfig:option:`CONFIG_BT_L2CAP_DYNAMIC_CHANNEL`. This channels
 support segmentation and reassembly transparently, they also support credit
 based flow control making it suitable for data streams.
 

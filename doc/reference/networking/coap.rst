@@ -76,7 +76,7 @@ responsibility to either reply or act according to CoAP request.
     coap_handle_request(&request, resources, options, opt_num,
                         client_addr, client_addr_len);
 
-If :kconfig:`CONFIG_COAP_URI_WILDCARD` enabled, server may accept multiple resources
+If :kconfig:option:`CONFIG_COAP_URI_WILDCARD` enabled, server may accept multiple resources
 using MQTT-like wildcard style:
 
 - the plus symbol represents a single-level wild card in the path;

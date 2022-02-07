@@ -24,7 +24,7 @@ An example of such a string is:
 This script is invoked with the following parameters:
 ``python3 gen_relocate_app.py -i input_string -o generated_linker -c generated_code``
 
-Kconfig :kconfig:`CONFIG_CODE_DATA_RELOCATION` option,  when enabled in
+Kconfig :kconfig:option:`CONFIG_CODE_DATA_RELOCATION` option,  when enabled in
 ``prj.conf``, will invoke the script and do the required relocation.
 
 This script also trigger the generation of ``linker_relocate.ld`` and
@@ -49,7 +49,7 @@ for  data copy operations from ROM to required memory type.
 
 **The procedure to invoke this feature is:**
 
-* Enable :kconfig:`CONFIG_CODE_DATA_RELOCATION` in the ``prj.conf`` file
+* Enable :kconfig:option:`CONFIG_CODE_DATA_RELOCATION` in the ``prj.conf`` file
 
 * Inside the ``CMakeLists.txt`` file in the project, mention
   all the files that need relocation.

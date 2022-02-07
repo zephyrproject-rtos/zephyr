@@ -37,7 +37,7 @@ interaction is required. This module is a Unix-like shell with these features:
 	Some of these features have a significant impact on RAM and flash usage,
 	but many can be disabled when not needed.  To default to options which
 	favor reduced RAM and flash requirements instead of features, you should
-	enable :kconfig:`CONFIG_SHELL_MINIMAL` and selectively enable just the
+	enable :kconfig:option:`CONFIG_SHELL_MINIMAL` and selectively enable just the
 	features you want.
 
 The module can be connected to any transport for command input and output.
@@ -283,7 +283,7 @@ and a function :c:func:`shell_execute_cmd`, as shown in this example:
 	}
 
 Enable the DUMMY backend by setting the Kconfig
-:kconfig:`CONFIG_SHELL_BACKEND_DUMMY` option.
+:kconfig:option:`CONFIG_SHELL_BACKEND_DUMMY` option.
 
 
 Command handler
@@ -363,7 +363,7 @@ commands or the parent commands, depending on how you index ``argv``.
 Built-in commands
 =================
 
-These commands are activated by :kconfig:`CONFIG_SHELL_CMDS` set to ``y``.
+These commands are activated by :kconfig:option:`CONFIG_SHELL_CMDS` set to ``y``.
 
 * :command:`clear` - Clears the screen.
 * :command:`history` - Shows the recently entered commands.
@@ -377,10 +377,10 @@ These commands are activated by :kconfig:`CONFIG_SHELL_CMDS` set to ``y``.
 	  terminal and assume successful delivery.
 
   These command needs extra activation:
-  :kconfig:`CONFIG_SHELL_CMDS_RESIZE` set to ``y``.
+  :kconfig:option:`CONFIG_SHELL_CMDS_RESIZE` set to ``y``.
 * :command:`select` - It can be used to set new root command. Exit to main
   command tree is with alt+r. This command needs extra activation:
-  :kconfig:`CONFIG_SHELL_CMDS_SELECT` set to ``y``.
+  :kconfig:option:`CONFIG_SHELL_CMDS_SELECT` set to ``y``.
 * :command:`shell` - Root command with useful shell-related subcommands like:
 
 	* :command:`echo` - Toggles shell echo.
@@ -393,10 +393,10 @@ Tab Feature
 ***********
 
 The Tab button can be used to suggest commands or subcommands. This feature
-is enabled by :kconfig:`CONFIG_SHELL_TAB` set to ``y``.
+is enabled by :kconfig:option:`CONFIG_SHELL_TAB` set to ``y``.
 It can also be used for partial or complete auto-completion of commands.
 This feature is activated by
-:kconfig:`CONFIG_SHELL_TAB_AUTOCOMPLETION` set to ``y``.
+:kconfig:option:`CONFIG_SHELL_TAB_AUTOCOMPLETION` set to ``y``.
 When user starts writing a command and presses the :kbd:`Tab` button then
 the shell will do one of 3 possible things:
 
@@ -412,11 +412,11 @@ History Feature
 ***************
 
 This feature enables commands history in the shell. It is activated by:
-:kconfig:`CONFIG_SHELL_HISTORY` set to ``y``. History can be accessed
+:kconfig:option:`CONFIG_SHELL_HISTORY` set to ``y``. History can be accessed
 using keys: :kbd:`↑` :kbd:`↓` or :kbd:`Ctrl + n` and :kbd:`Ctrl + p`
 if meta keys are active.
 Number of commands that can be stored depends on size
-of :kconfig:`CONFIG_SHELL_HISTORY_BUFFER` parameter.
+of :kconfig:option:`CONFIG_SHELL_HISTORY_BUFFER` parameter.
 
 Wildcards Feature
 *****************
@@ -434,7 +434,7 @@ modules you can execute the following command:
       :align: center
       :alt: Wildcard usage example
 
-This feature is activated by :kconfig:`CONFIG_SHELL_WILDCARD` set to ``y``.
+This feature is activated by :kconfig:option:`CONFIG_SHELL_WILDCARD` set to ``y``.
 
 Meta Keys Feature
 *****************
@@ -479,7 +479,7 @@ The shell module supports the following meta keys:
    * - :kbd:`Alt + f`
      - Moves the cursor forward one word.
 
-This feature is activated by :kconfig:`CONFIG_SHELL_METAKEYS` set to ``y``.
+This feature is activated by :kconfig:option:`CONFIG_SHELL_METAKEYS` set to ``y``.
 
 Getopt Feature
 *****************
@@ -490,7 +490,7 @@ is accomplished by the ``getopt`` familly functions.
 
 For this purpose shell supports the getopt and getopt_long libraries available
 in the FreeBSD project. This feature is activated by:
-:kconfig:`CONFIG_GETOPT` set to ``y`` and :kconfig:`CONFIG_GETOPT_LONG`
+:kconfig:option:`CONFIG_GETOPT` set to ``y`` and :kconfig:option:`CONFIG_GETOPT_LONG`
 set to ``y``.
 
 This feature can be used in thread safe as well as non thread safe manner.
@@ -530,7 +530,7 @@ An example thread safe usage:
   }
 
 Thread safe getopt functionality is activated by
-:kconfig:`CONFIG_SHELL_GETOPT` set to ``y``.
+:kconfig:option:`CONFIG_SHELL_GETOPT` set to ``y``.
 
 Obscured Input Feature
 **********************
@@ -547,11 +547,11 @@ An example of login and logout commands using this feature is located in
 :zephyr_file:`samples/subsys/shell/shell_module/src/main.c` and the config file
 :zephyr_file:`samples/subsys/shell/shell_module/prj_login.conf`.
 
-This feature is activated upon startup by :kconfig:`CONFIG_SHELL_START_OBSCURED`
+This feature is activated upon startup by :kconfig:option:`CONFIG_SHELL_START_OBSCURED`
 set to ``y``. With this set either way, the option can still be controlled later
-at runtime. :kconfig:`CONFIG_SHELL_CMDS_SELECT` is useful to prevent entry
+at runtime. :kconfig:option:`CONFIG_SHELL_CMDS_SELECT` is useful to prevent entry
 of any other command besides a login command, by means of the
-``shell_set_root_cmd`` function. Likewise, :kconfig:`CONFIG_SHELL_PROMPT_UART`
+``shell_set_root_cmd`` function. Likewise, :kconfig:option:`CONFIG_SHELL_PROMPT_UART`
 allows you to set the prompt upon startup, but it can be changed later with the
 ``shell_prompt_change`` function.
 
@@ -567,7 +567,7 @@ new message is enqueued. Use the ``shell stats show`` command to retrieve
 number of log messages dropped by the shell instance. Log queue size and timeout
 are :c:macro:`SHELL_DEFINE` arguments.
 
-This feature is activated by: :kconfig:`CONFIG_SHELL_LOG_BACKEND` set to ``y``.
+This feature is activated by: :kconfig:option:`CONFIG_SHELL_LOG_BACKEND` set to ``y``.
 
 .. warning::
 	Enqueuing timeout must be set carefully when multiple backends are used
@@ -580,8 +580,8 @@ This feature is activated by: :kconfig:`CONFIG_SHELL_LOG_BACKEND` set to ``y``.
 	As the shell is a complex logger backend, it can not output logs if
 	the application crashes before the shell thread is running. In this
 	situation, you can enable one of the simple logging backends instead,
-	such as UART (:kconfig:`CONFIG_LOG_BACKEND_UART`) or
-	RTT (:kconfig:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
+	such as UART (:kconfig:option:`CONFIG_LOG_BACKEND_UART`) or
+	RTT (:kconfig:option:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
 	during system initialization.
 
 Usage

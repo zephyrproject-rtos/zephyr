@@ -16,30 +16,30 @@ The following net-shell commands are implemented:
    :widths: auto
 
    "net allocs", "Print network memory allocations. Only available if
-   :kconfig:`CONFIG_NET_DEBUG_NET_PKT_ALLOC` is set."
+   :kconfig:option:`CONFIG_NET_DEBUG_NET_PKT_ALLOC` is set."
    "net arp", "Print information about IPv4 ARP cache. Only available if
-   :kconfig:`CONFIG_NET_ARP` is set in IPv4 enabled networks."
+   :kconfig:option:`CONFIG_NET_ARP` is set in IPv4 enabled networks."
    "net capture", "Monitor network traffic See :ref:`network_monitoring`
    for details."
    "net conn", "Print information about network connections."
    "net dns", "Show how DNS is configured. The command can also be used to
-   resolve a DNS name. Only available if :kconfig:`CONFIG_DNS_RESOLVER` is set."
+   resolve a DNS name. Only available if :kconfig:option:`CONFIG_DNS_RESOLVER` is set."
    "net events", "Enable network event monitoring. Only available if
-   :kconfig:`CONFIG_NET_MGMT_EVENT_MONITOR` is set."
+   :kconfig:option:`CONFIG_NET_MGMT_EVENT_MONITOR` is set."
    "net gptp", "Print information about gPTP support. Only available if
-   :kconfig:`CONFIG_NET_GPTP` is set."
+   :kconfig:option:`CONFIG_NET_GPTP` is set."
    "net iface", "Print information about network interfaces."
    "net ipv6", "Print IPv6 specific information and configuration.
-   Only available if :kconfig:`CONFIG_NET_IPV6` is set."
+   Only available if :kconfig:option:`CONFIG_NET_IPV6` is set."
    "net mem", "Print information about network memory usage. The command will
-   print more information if :kconfig:`CONFIG_NET_BUF_POOL_USAGE` is set."
+   print more information if :kconfig:option:`CONFIG_NET_BUF_POOL_USAGE` is set."
    "net nbr", "Print neighbor information. Only available if
-   :kconfig:`CONFIG_NET_IPV6` is set."
+   :kconfig:option:`CONFIG_NET_IPV6` is set."
    "net ping", "Ping a network host."
    "net route", "Show IPv6 network routes. Only available if
-   :kconfig:`CONFIG_NET_ROUTE` is set."
+   :kconfig:option:`CONFIG_NET_ROUTE` is set."
    "net stats", "Show network statistics."
    "net tcp", "Connect/send data/close TCP connection. Only available if
-   :kconfig:`CONFIG_NET_TCP` is set."
+   :kconfig:option:`CONFIG_NET_TCP` is set."
    "net vlan", "Show Ethernet virtual LAN information. Only available if
-   :kconfig:`CONFIG_NET_VLAN` is set."
+   :kconfig:option:`CONFIG_NET_VLAN` is set."

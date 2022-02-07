@@ -17,7 +17,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_EEPROM`
+* :kconfig:option:`CONFIG_EEPROM`
 
 API Reference
 *************

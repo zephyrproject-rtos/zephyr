@@ -92,7 +92,7 @@ complete within 1-200 cycles.  One complexity is that the search of
 the minimum bucket size for an allocation (the set of free blocks that
 "might fit") has a compile-time upper bound of iterations to prevent
 unbounded list searches, at the expense of some fragmentation
-resistance.  This :kconfig:`CONFIG_SYS_HEAP_ALLOC_LOOPS` value may be
+resistance.  This :kconfig:option:`CONFIG_SYS_HEAP_ALLOC_LOOPS` value may be
 chosen by the user at build time, and defaults to a value of 3.
 
 Multi-Heap Wrapper Utility
@@ -158,7 +158,7 @@ Defining the Heap Memory Pool
 =============================
 
 The size of the heap memory pool is specified using the
-:kconfig:`CONFIG_HEAP_MEM_POOL_SIZE` configuration option.
+:kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE` configuration option.
 
 By default, the heap memory pool size is zero bytes. This value instructs
 the kernel not to define the heap memory pool object. The maximum size is limited
@@ -212,7 +212,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_HEAP_MEM_POOL_SIZE`
+* :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`
 
 API Reference
 =============

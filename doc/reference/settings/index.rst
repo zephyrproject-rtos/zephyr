@@ -83,9 +83,9 @@ Zephyr Storage Backends
 ***********************
 
 Zephyr has three storage backends: a Flash Circular Buffer
-(:kconfig:`CONFIG_SETTINGS_FCB`), a file in the filesystem
-(:kconfig:`CONFIG_SETTINGS_FS`), or non-volatile storage
-(:kconfig:`CONFIG_SETTINGS_NVS`).
+(:kconfig:option:`CONFIG_SETTINGS_FCB`), a file in the filesystem
+(:kconfig:option:`CONFIG_SETTINGS_FS`), or non-volatile storage
+(:kconfig:option:`CONFIG_SETTINGS_NVS`).
 
 You can declare multiple sources for settings; settings from
 all of these are restored when ``settings_load()`` is called.
@@ -271,7 +271,7 @@ Example: Custom Backend Implementation
 **************************************
 
 This is a simple example showing how to register a simple custom backend
-handler (:kconfig:`CONFIG_SETTINGS_CUSTOM`).
+handler (:kconfig:option:`CONFIG_SETTINGS_CUSTOM`).
 
 .. code-block:: c
 

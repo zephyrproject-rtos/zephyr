@@ -253,8 +253,8 @@ TAB_SIZE               = 8
 
 ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          endrst=\endverbatim \
-                         "option{1}=\verbatim embed:rst:inline :kconfig:`\1` \endverbatim" \
-                         "kconfig{1}=\verbatim embed:rst:inline :kconfig:`\1` \endverbatim" \
+                         "option{1}=\verbatim embed:rst:inline :kconfig:option:`\1` \endverbatim" \
+                         "kconfig{1}=\verbatim embed:rst:inline :kconfig:option:`\1` \endverbatim" \
                          "req{1}=\ref ZEPH_\1 \"ZEPH-\1\"" \
                          "satisfy{1}=\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1" \
                          "verify{1}=\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1" \

@@ -48,7 +48,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_VIDEO`
+* :kconfig:option:`CONFIG_VIDEO`
 
 API Reference
 *************

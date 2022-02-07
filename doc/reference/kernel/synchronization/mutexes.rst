@@ -71,7 +71,7 @@ the unlocking thread resets its priority to the level it had before locking
 that mutex.
 
 .. note::
-    The :kconfig:`CONFIG_PRIORITY_CEILING` configuration option limits
+    The :kconfig:option:`CONFIG_PRIORITY_CEILING` configuration option limits
     how high the kernel can raise a thread's priority due to priority
     inheritance. The default value of 0 permits unlimited elevation.
 
@@ -159,7 +159,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_PRIORITY_CEILING`
+* :kconfig:option:`CONFIG_PRIORITY_CEILING`
 
 API Reference
 *************

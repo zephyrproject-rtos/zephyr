@@ -137,7 +137,7 @@ to you.
   duplication between services.
 
 The current isolation level can be checked via
-:kconfig:`CONFIG_TFM_ISOLATION_LEVEL`.
+:kconfig:option:`CONFIG_TFM_ISOLATION_LEVEL`.
 
 Secure Boot
 ===========
@@ -174,9 +174,9 @@ When dealing with (optionally) encrypted images:
 
 Key config properties to control secure boot in Zephyr are:
 
-* :kconfig:`CONFIG_TFM_BL2` toggles the bootloader (default = ``y``).
-* :kconfig:`CONFIG_TFM_KEY_FILE_S` overrides the secure signing key.
-* :kconfig:`CONFIG_TFM_KEY_FILE_NS` overrides the non-secure signing key.
+* :kconfig:option:`CONFIG_TFM_BL2` toggles the bootloader (default = ``y``).
+* :kconfig:option:`CONFIG_TFM_KEY_FILE_S` overrides the secure signing key.
+* :kconfig:option:`CONFIG_TFM_KEY_FILE_NS` overrides the non-secure signing key.
 
 Secure Processing Environment
 =============================
@@ -260,7 +260,7 @@ Non-Secure Processing Environment
 =================================
 
 Zephyr is used for the NSPE, using a board that is supported by TF-M where the
-:kconfig:`CONFIG_BUILD_WITH_TFM` flag has been enabled.
+:kconfig:option:`CONFIG_BUILD_WITH_TFM` flag has been enabled.
 
 Generally, you simply need to select the ``*_ns`` variant of a valid target
 (for example ``mps2_an521_ns``), which will configure your Zephyr application

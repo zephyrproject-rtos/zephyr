@@ -34,7 +34,7 @@ The value is given directly to a waiting thread, if one exists;
 otherwise the value is added to the LIFO's queue.
 
 .. note::
-    If :kconfig:`CONFIG_NO_RUNTIME_CHECKS` is enabled, the kernel will *not* detect
+    If :kconfig:option:`CONFIG_NO_RUNTIME_CHECKS` is enabled, the kernel will *not* detect
     and prevent attempts to add a data value to a stack that has already reached
     its maximum quantity of queued values. Adding a data value to a stack that is
     already full will result in array overflow, and lead to unpredictable behavior.
