@@ -8,6 +8,8 @@ if BOARD_SAM_E70_XPLAINED
 config BOARD
 	default "sam_e70_xplained"
 
+if !SOC_SERIES_SAMS70
+
 if ETH_SAM_GMAC
 
 # Read MAC address from AT24MAC402 EEPROM
@@ -39,5 +41,7 @@ config ETH_SAM_GMAC
 	default y if NET_L2_ETHERNET
 
 endif # NETWORKING
+
+endif #!SOC_SERIES_SAMS70
 
 endif # BOARD_SAM_E70_XPLAINED
