@@ -41,6 +41,7 @@ config NPCX_HEADER_CHIP
 	default "npcx7m7" if SOC_NPCX7M7FC
 	default "npcx9m3" if SOC_NPCX9M3F
 	default "npcx9m6" if SOC_NPCX9M6F
+	default "npcx9m7" if SOC_NPCX9M7F
 
 choice NPCX_HEADER_SPI_MAX_CLOCK_CHOICE
 	prompt "Clock rate to use for SPI flash"
