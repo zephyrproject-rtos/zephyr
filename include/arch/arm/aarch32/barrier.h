@@ -12,11 +12,11 @@
 /*
  * Fallback on CMSIS
  */
-#if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#elif defined(CONFIG_CPU_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
-#endif
+// #if defined(CONFIG_CPU_CORTEX_M)
+// #include <arch/arm/aarch32/cortex_m/cmsis.h>
+// #elif defined(CONFIG_CPU_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+// #include <arch/arm/aarch32/cortex_a_r/cmsis.h>
+// #endif
 
 #if !defined(__HAS_BUILTIN_MEMORY_BARRIER)
 #define arch_isb()		__ISB()
