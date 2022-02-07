@@ -508,7 +508,7 @@ uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 	 * for the specified Connection_Handle. The returned value indicates the state of
 	 * the Channel_Map specified by the last transmitted or received Channel_Map
 	 * (in a CONNECT_IND or LL_CHANNEL_MAP_IND message) for the specified
-	 * Connection_Handle, regardless of whether the Master has received an
+	 * Connection_Handle, regardless of whether the Central has received an
 	 * acknowledgment
 	 */
 	const uint8_t *pending_chm;
