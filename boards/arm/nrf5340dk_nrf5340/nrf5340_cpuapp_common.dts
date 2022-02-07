@@ -103,7 +103,10 @@
 
 	gpio_fwd: nrf-gpio-forwarder {
 		compatible = "nordic,nrf-gpio-forwarder";
-		status = "disabled";
+		status = "okay";
+		uart {
+			gpios = <&gpio1 1 0>, <&gpio1 0 0>, <&gpio0 11 0>, <&gpio0 10 0>;
+		};
 	};
 
 	/* These aliases are provided for compatibility with samples */
