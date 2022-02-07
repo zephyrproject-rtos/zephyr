@@ -78,15 +78,6 @@ struct flash_it8xxx2_dev_data {
 /* Set FSCE# as low level by writing data to address xfff_fd00h */
 #define FLASH_FSCE_LOW_ADDRESS         0x0FFFFD00
 
-#define FWP_REG(bank) (bank / 8)
-#define FWP_MASK(bank) (1 << (bank % 8))
-
-enum flash_wp_interface {
-	FLASH_WP_HOST = 0x01,
-	FLASH_WP_DBGR = 0x02,
-	FLASH_WP_EC = 0x04,
-};
-
 enum flash_status_mask {
 	FLASH_SR_NO_BUSY = 0,
 	/* Internal write operation is in progress */
@@ -353,30 +344,6 @@ void __ram_code ramcode_flash_erase(int addr, int cmd)
 	ramcode_flash_cmd_write_disable();
 }
 
-/**
- * Protect flash banks until reboot.
- *
- * @param start_bank    Start bank to protect
- * @param bank_count    Number of banks to protect
- */
-static void flash_protect_banks(int start_bank, int bank_count,
-				enum flash_wp_interface wp_if)
-{
-	int bank;
-
-	for (bank = start_bank; bank < start_bank + bank_count; bank++) {
-		if (wp_if & FLASH_WP_EC) {
-			IT83XX_GCTRL_EWPR0PFEC(FWP_REG(bank)) |= FWP_MASK(bank);
-		}
-		if (wp_if & FLASH_WP_HOST) {
-			IT83XX_GCTRL_EWPR0PFH(FWP_REG(bank)) |= FWP_MASK(bank);
-		}
-		if (wp_if & FLASH_WP_DBGR) {
-			IT83XX_GCTRL_EWPR0PFD(FWP_REG(bank)) |= FWP_MASK(bank);
-		}
-	}
-}
-
 /* Read data from flash */
 static int __ram_code flash_it8xxx2_read(const struct device *dev, off_t offset,
 					 void *data, size_t len)
@@ -401,22 +368,6 @@ static int __ram_code flash_it8xxx2_read(const struct device *dev, off_t offset,
 	}
 
 	return 0;
-}
-
-/* Enable or disable the write protection */
-static void flash_it8xxx2_write_protection(bool enable)
-{
-	if (enable) {
-		/* Protect the entire flash */
-		flash_protect_banks(0, CHIP_FLASH_SIZE_BYTES /
-			CHIP_FLASH_BANK_SIZE, FLASH_WP_EC);
-	}
-
-	/*
-	 * bit[0], eflash protect lock register which can only be write 1 and
-	 * only be cleared by power-on reset.
-	 */
-	IT83XX_GCTRL_EPLR |= IT83XX_GCTRL_EPLR_ENABLE;
 }
 
 /* Write data to the flash, page by page */
@@ -449,15 +400,11 @@ static int __ram_code flash_it8xxx2_write(const struct device *dev, off_t offset
 	 */
 	key = irq_lock();
 
-	flash_it8xxx2_write_protection(false);
-
 	ramcode_flash_write(offset, len, src_data);
 	ramcode_reset_i_cache();
 	/* Get the ILM address of a flash offset. */
 	offset |= CHIP_MAPPED_STORAGE_BASE;
 	ret = ramcode_flash_verify(offset, len, src_data);
-
-	flash_it8xxx2_write_protection(true);
 
 	irq_unlock(key);
 
@@ -496,8 +443,6 @@ static int __ram_code flash_it8xxx2_erase(const struct device *dev,
 	 */
 	key = irq_lock();
 
-	flash_it8xxx2_write_protection(false);
-
 	/* Always use sector erase command */
 	for (; len > 0; len -= FLASH_ERASE_BLK_SZ) {
 		ramcode_flash_erase(offset, FLASH_CMD_SECTOR_ERASE);
@@ -507,8 +452,6 @@ static int __ram_code flash_it8xxx2_erase(const struct device *dev,
 	/* get the ILM address of a flash offset. */
 	v_addr |= CHIP_MAPPED_STORAGE_BASE;
 	ret = ramcode_flash_verify(v_addr, v_size, NULL);
-
-	flash_it8xxx2_write_protection(true);
 
 	irq_unlock(key);
 
