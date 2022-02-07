@@ -7,8 +7,13 @@
 #include <string.h>
 #include <drivers/hwinfo.h>
 #include <hardware/flash.h>
+#include <hardware/structs/vreg_and_chip_reset.h>
 
 #define FLASH_RUID_DATA_BYTES 8
+
+#define HAD_RUN_BIT BIT(VREG_AND_CHIP_RESET_CHIP_RESET_HAD_RUN_LSB)
+#define HAD_PSM_RESTART_BIT BIT(VREG_AND_CHIP_RESET_CHIP_RESET_HAD_PSM_RESTART_LSB)
+#define HAD_POR_BIT BIT(VREG_AND_CHIP_RESET_CHIP_RESET_HAD_POR_LSB)
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
@@ -31,4 +36,39 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	memcpy(buffer, id, length);
 
 	return length;
+}
+
+int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
+{
+	uint32_t flags = 0;
+	uint32_t reset_register = vreg_and_chip_reset_hw->chip_reset;
+
+	if (reset_register & HAD_POR_BIT) {
+		flags |= RESET_POR;
+	}
+
+	if (reset_register & HAD_RUN_BIT) {
+		flags |= RESET_PIN;
+	}
+
+	if (reset_register & HAD_PSM_RESTART_BIT) {
+		flags |= RESET_DEBUG;
+	}
+
+	*cause = flags;
+	return 0;
+}
+
+int z_impl_hwinfo_clear_reset_cause(void)
+{
+	/* The reset register can't be modified, nothing to do. */
+
+	return -ENOSYS;
+}
+
+int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
+{
+	*supported = RESET_PIN | RESET_DEBUG | RESET_POR;
+
+	return 0;
 }
