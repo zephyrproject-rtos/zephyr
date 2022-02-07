@@ -2202,11 +2202,34 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->le.dst;
 }
 
+static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
+{
+	switch (state) {
+	case BT_CONN_DISCONNECTED:
+	case BT_CONN_DISCONNECT_COMPLETE:
+		return BT_CONN_STATE_DISCONNECTED;
+	case BT_CONN_CONNECT_SCAN:
+	case BT_CONN_CONNECT_AUTO:
+	case BT_CONN_CONNECT_ADV:
+	case BT_CONN_CONNECT_DIR_ADV:
+	case BT_CONN_CONNECT:
+		return BT_CONN_STATE_CONNECTING;
+	case BT_CONN_CONNECTED:
+		return BT_CONN_STATE_CONNECTED;
+	case BT_CONN_DISCONNECT:
+		return BT_CONN_STATE_DISCONNECTING;
+	default:
+		__ASSERT(false, "Invalid conn state %u", state);
+		return 0;
+	}
+}
+
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
 	info->type = conn->type;
 	info->role = conn->role;
 	info->id = conn->id;
+	info->state = conn_internal_to_public_state(conn->state);
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:
