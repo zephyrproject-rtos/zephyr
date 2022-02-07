@@ -2283,6 +2283,42 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
 endfunction()
 
 # Usage:
+#   zephyr_file_copy(<oldname> <newname> [ONLY_IF_DIFFERENT])
+#
+# Zephyr file copy extension.
+# This function is similar to CMake function
+# 'file(COPY_FILE <oldname> <newname> [ONLY_IF_DIFFERENT])'
+# introduced with CMake 3.21.
+#
+# Because the minimal required CMake version with Zephyr is 3.20, this function
+# is not guaranteed to be available.
+#
+# When using CMake version 3.21 or newer 'zephyr_file_copy()' simply calls
+# 'file(COPY_FILE...)' directly.
+# When using CMake version 3.20, the implementation will execute using CMake
+# for running command line tool in a subprocess for identical functionality.
+function(zephyr_file_copy oldname newname)
+  set(options ONLY_IF_DIFFERENT)
+  cmake_parse_arguments(ZEPHYR_FILE_COPY "${options}" "" "" ${ARGN})
+
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
+    if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
+      set(copy_file_options ONLY_IF_DIFFERENT)
+    endif()
+    file(COPY_FILE ${oldname} ${newname} ${copy_file_options})
+  else()
+    if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
+      set(copy_file_command copy_if_different)
+    else()
+      set(copy_file_command copy)
+    endif()
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E ${copy_file_command} ${oldname} ${newname}
+    )
+  endif()
+endfunction()
+
+# Usage:
 #   zephyr_string(<mode> <out-var> <input> ...)
 #
 # Zephyr string function extension.
