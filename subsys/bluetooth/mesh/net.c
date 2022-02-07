@@ -29,6 +29,7 @@
 #include "lpn.h"
 #include "friend.h"
 #include "proxy.h"
+#include "proxy_cli.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
@@ -560,6 +561,11 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 
 		err = 0;
 		goto done;
+	}
+
+	/* Deliver to GATT Proxy Servers if necessary. */
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_CLIENT)) {
+		(void)bt_mesh_proxy_cli_relay(buf);
 	}
 
 	bt_mesh_adv_send(buf, cb, cb_data);
