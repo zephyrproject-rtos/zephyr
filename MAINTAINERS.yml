@@ -1209,6 +1209,8 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
+    collaborators:
+        - SeppoTakalo
     files:
         - samples/net/lwm2m_client/
         - subsys/net/lib/lwm2m/
