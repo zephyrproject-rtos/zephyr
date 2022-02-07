@@ -411,4 +411,12 @@ config MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
 	depends on MBEDTLS_SSL_CACHE_C
 	default 5
 
+config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+	bool "(D)TLS Extended Master Secret extension"
+	depends on MBEDTLS_TLS_VERSION_1_2
+	help
+	  Enable support for the (D)TLS Extended Master Secret extension
+	  which ensures that master secrets are different for every
+	  connection and every session.
+
 endmenu
