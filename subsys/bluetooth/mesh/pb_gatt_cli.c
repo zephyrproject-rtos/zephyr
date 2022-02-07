@@ -58,11 +58,13 @@ static void pb_gatt_connected(struct bt_conn *conn, void *user_data)
 					      pb_gatt_msg_recv);
 
 	server.target = NULL;
+
+	bt_mesh_pb_gatt_cli_start(conn);
 }
 
 static void pb_gatt_link_open(struct bt_conn *conn)
 {
-	bt_mesh_pb_gatt_start(conn);
+	bt_mesh_pb_gatt_cli_open(conn);
 }
 
 static void pb_gatt_disconnected(struct bt_conn *conn)

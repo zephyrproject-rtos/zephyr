@@ -148,7 +148,7 @@ static ssize_t prov_ccc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
-	bt_mesh_pb_gatt_open(conn);
+	bt_mesh_pb_gatt_start(conn);
 
 	return sizeof(value);
 }
@@ -219,17 +219,6 @@ static const struct bt_data prov_ad[] = {
 		      BT_UUID_16_ENCODE(BT_UUID_MESH_PROV_VAL)),
 	BT_DATA(BT_DATA_SVC_DATA16, prov_svc_data, sizeof(prov_svc_data)),
 };
-
-int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *buf,
-			 bt_gatt_complete_func_t end, void *user_data)
-{
-	if (!cli || cli->conn != conn) {
-		BT_ERR("No PB-GATT Client found");
-		return -ENOTCONN;
-	}
-
-	return bt_mesh_proxy_msg_send(conn, BT_MESH_PROXY_PROV, buf, end, user_data);
-}
 
 static size_t gatt_prov_adv_create(struct bt_data prov_sd[1])
 {
