@@ -1,0 +1,76 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This is an abstract device responsible for forwarding pins between cores.
+
+    In nRF53 family of SoCs, GPIO pins must be explicitly forwarded by
+    the application core to the network core if the latter should drive them.
+    The purpose of this abstract device is to represent all GPIO pins that the
+    nRF53 application core should forward to the nRF53 network core.
+
+    Once the control over selected GPIO pins is forwarded to it, the network
+    core is responsible for configuring the pins and driving them as needed.
+
+    Here is an example of how a nrf-gpio-forwarder can be used with a nRF5340
+    combined with a nRF21540 Front-End module. Consider the following node
+    present in DTS file targeted for the nRF5340 network core, which defines
+    the details of the nRF21540 Front-End module's interface:
+
+    nrf_radio_fem: nrf21540 {
+      compatible = "nordic,nrf21540-fem";
+      tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+      rx-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+      pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+      mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+    };
+
+    Since the nRF21540 Front-End module should be controlled by the nRF5340
+    network core, all the GPIO pins used to control it must be forwarded by
+    the nRF5340 application core to the network core. Consider the following
+    nrf-gpio-forwarder node defined in DTS file targeted for the nRF5340
+    application core:
+
+    gpio_fwd: nrf-gpio-forwarder {
+      compatible = "nordic,nrf-gpio-forwarder";
+      nrf21540-gpio-if {
+        gpios = <&gpio0 30 0>, <&gpio1 11 0>, <&gpio1 10 0>, <&gpio1 12 0>;
+      };
+    };
+
+    In the above example, the nrf-gpio-forwarder node is configured to forward
+    control over the following GPIO pins to the network core:
+
+      - P0.30 (matching `tx-en-gpios`)
+      - P1.11 (matching `rx-en-gpios`)
+      - P1.10 (matching `pdn-gpios`)
+      - P1.12 (matching `mode-gpios`)
+
+    Please note that the GPIO flags provided for child nodes of the forwarder
+    are ignored. In order to configure the GPIOs passed to the forwarder, their
+    GPIO flags must be set in the matching node that these GPIOs are forwarded
+    to. In the above example, the GPIO flags must be set in the nrf21540 node.
+    They are set to 0 in the nrf-gpio-forwarder node as they are ignored anyway.
+
+    Child nodes for the forwarder can be defined independently by multiple DTS
+    files. They are merged into a single node with multiple child nodes when
+    processing devicetree for an application build. However, in order for that
+    to happen, names of the child nodes must be unique in the scope of a single
+    nrf-gpio-forwarder instance.
+
+compatible: "nordic,nrf-gpio-forwarder"
+
+include: "base.yaml"
+
+child-binding:
+  description: Arrays of GPIOs to be forwarded.
+
+  properties:
+    gpios:
+      type: phandle-array
+      required: true
+      description: |
+          Array of GPIOs to be forwarded. Note that GPIO flags provided for
+          elements of this array are ignored. In order to configure the GPIOs
+          from this array, their GPIO flags must be set in the matching
+          node that these GPIOs are forwarded to.
