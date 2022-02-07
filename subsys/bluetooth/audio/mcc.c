@@ -2653,7 +2653,7 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn)
 	int err;
 
 	err = bt_otc_read_object_metadata(conn, &cur_mcs_inst->otc,
-					  BT_OTC_METADATA_REQ_ALL);
+					  BT_OTS_METADATA_REQ_ALL);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}

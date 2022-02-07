@@ -29,9 +29,6 @@
 extern "C" {
 #endif
 
-#define SET_OR_CLEAR_BIT(var, bit_val, set)				\
-	((var) = (set) ? ((var) | bit_val) : ((var) & ~bit_val))
-
 /** @brief Date and Time structure.
  *  TODO: Move somewhere else - bluetooth.h?
  */
@@ -45,47 +42,8 @@ struct bt_date_time {
 	uint8_t seconds;
 };
 
-#define BT_OTC_METADATA_REQ_NAME          BIT(0)
-#define BT_OTC_METADATA_REQ_TYPE          BIT(1)
-#define BT_OTC_METADATA_REQ_SIZE          BIT(2)
-#define BT_OTC_METADATA_REQ_CREATED       BIT(3)
-#define BT_OTC_METADATA_REQ_MODIFIED      BIT(4)
-#define BT_OTC_METADATA_REQ_ID            BIT(5)
-#define BT_OTC_METADATA_REQ_PROPS         BIT(6)
-#define BT_OTC_METADATA_REQ_ALL           0x7F
-
 #define BT_OTC_STOP                       0
 #define BT_OTC_CONTINUE                   1
-
-#define BT_OTC_SET_METADATA_REQ_NAME(metadata, set) \
-	SET_OR_CLEAR_BIT(metadata, BT_OTC_METADATA_REQ_NAME, set)
-#define BT_OTC_SET_METADATA_REQ_TYPE(metadata, set) \
-	SET_OR_CLEAR_BIT(metadata, BT_OTC_METADATA_REQ_TYPE, set)
-#define BT_OTC_SET_METADATA_REQ_SIZE(metadata, set) \
-	SET_OR_CLEAR_BIT(metadata, BT_OTC_METADATA_REQ_SIZE, set)
-#define BT_OTC_SET_METADATA_REQ_CREATED(metadata, set) \
-	SET_OR_CLEAR_BIT(metadata, BT_OTC_METADATA_REQ_CREATED, set)
-#define BT_OTC_SET_METADATA_REQ_MODIFIED(metadata, set) \
-	SET_OR_CLEAR_BIT(metadata, BT_OTC_METADATA_REQ_MODIFIED, set)
-#define BT_OTC_SET_METADATA_REQ_ID(metadata, set) \
-	SET_OR_CLEAR_BIT(metadata, BT_OTC_METADATA_REQ_ID, set)
-#define BT_OTC_SET_METADATA_REQ_PROPS(metadata, set) \
-	SET_OR_CLEAR_BIT(metadata, BT_OTC_METADATA_REQ_PROPS, set)
-
-#define BT_OTC_GET_METADATA_REQ_NAME(metadata) \
-	((metadata) & BT_OTC_METADATA_REQ_NAME)
-#define BT_OTC_GET_METADATA_REQ_TYPE(metadata) \
-	((metadata) & BT_OTC_METADATA_REQ_TYPE)
-#define BT_OTC_GET_METADATA_REQ_SIZE(metadata) \
-	((metadata) & BT_OTC_METADATA_REQ_SIZE)
-#define BT_OTC_GET_METADATA_REQ_CREATED(metadata) \
-	((metadata) & BT_OTC_METADATA_REQ_CREATED)
-#define BT_OTC_GET_METADATA_REQ_MODIFIED(metadata) \
-	((metadata) & BT_OTC_METADATA_REQ_MODIFIED)
-#define BT_OTC_GET_METADATA_REQ_ID(metadata) \
-	((metadata) & BT_OTC_METADATA_REQ_ID)
-#define BT_OTC_GET_METADATA_REQ_PROPS(metadata) \
-	((metadata) & BT_OTC_METADATA_REQ_PROPS)
 
 /**@brief Metadata of an OTS Object  */
 struct bt_otc_obj_metadata {
@@ -282,7 +240,7 @@ int bt_otc_select_prev(struct bt_conn *conn,
  *
  *  @param conn         Pointer to the connection object.
  *  @param otc_inst     Pointer to the OTC instance.
- *  @param metadata     Bitfield (`BT_OTC_METADATA_REQ_*`) of the metadata
+ *  @param metadata     Bitfield (`BT_OTS_METADATA_REQ_*`) of the metadata
  *                      to read.
  *
  *  @return int         0 if success, ERRNO on failure.
