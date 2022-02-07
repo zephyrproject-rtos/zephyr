@@ -34,7 +34,7 @@ struct flash_stm32_priv {
 #endif
 
 /* Differentiate between arm trust-zone non-secure/secure, and others. */
-#if defined(FLASH_NSSR_NSBSY)		/* For mcu w. TZ in non-secure mode */
+#if defined(FLASH_NSSR_NSBSY) || defined(FLASH_NSSR_BSY) /* For mcu w. TZ in non-secure mode */
 #define FLASH_SECURITY_NS
 #define FLASH_STM32_SR		NSSR
 #elif defined(FLASH_SECSR_SECBSY)	/* For mcu w. TZ  in secured mode */
@@ -53,6 +53,20 @@ struct flash_stm32_priv {
 
 
 /* Redefinitions of flags and masks to harmonize stm32 series: */
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#define FLASH_NSCR_NSLOCK FLASH_NSCR_LOCK
+#define FLASH_OPTR_DBANK FLASH_OPTR_DUALBANK
+#define FLASH_NSCR_NSPG FLASH_NSCR_PG
+#define FLASH_NSCR_NSBKER_Msk FLASH_NSCR_BKER_Msk
+#define FLASH_NSCR_NSBKER FLASH_NSCR_BKER
+#define FLASH_NSCR_NSPER FLASH_NSCR_PER
+#define FLASH_NSCR_NSPNB_Msk FLASH_NSCR_PNB_Msk
+#define FLASH_NSCR_NSPNB_Pos FLASH_NSCR_PNB_Pos
+#define FLASH_NSCR_NSPNB FLASH_NSCR_PNB
+#define FLASH_NSCR_NSSTRT FLASH_NSCR_STRT
+#define FLASH_PAGE_SIZE_128_BITS FLASH_PAGE_SIZE
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+
 #if defined(CONFIG_SOC_SERIES_STM32G0X)
 #if defined(FLASH_FLAG_BSY2)
 #define FLASH_STM32_SR_BUSY	(FLASH_FLAG_BSY1 | FLASH_FLAG_BSY2);
