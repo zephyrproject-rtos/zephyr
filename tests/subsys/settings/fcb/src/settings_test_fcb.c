@@ -356,7 +356,7 @@ void test_settings_check_target(void)
 }
 
 void test_settings_encode(void);
-void config_empty_lookups(void);
+void test_config_empty_lookups(void);
 void test_config_insert(void);
 void test_config_getset_unknown(void);
 void test_config_getset_int(void);
