@@ -397,9 +397,6 @@ int bt_mesh_proxy_identity_enable(void)
 	return 0;
 }
 
-#define ID_TYPE_NET  0x00
-#define ID_TYPE_NODE 0x01
-
 #define NODE_ID_LEN  19
 #define NET_ID_LEN   11
 
@@ -434,7 +431,7 @@ static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	BT_DBG("");
 
-	proxy_svc_data[2] = ID_TYPE_NODE;
+	proxy_svc_data[2] = BT_MESH_ID_TYPE_NODE;
 
 	err = bt_rand(proxy_svc_data + 11, 8);
 	if (err) {
@@ -473,7 +470,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	BT_DBG("");
 
-	proxy_svc_data[2] = ID_TYPE_NET;
+	proxy_svc_data[2] = BT_MESH_ID_TYPE_NET;
 
 	BT_DBG("Advertising with NetId %s",
 	       bt_hex(sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8));

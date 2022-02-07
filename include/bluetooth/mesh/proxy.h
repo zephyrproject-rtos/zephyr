@@ -63,6 +63,26 @@ struct bt_mesh_proxy_cb {
  */
 int bt_mesh_proxy_identity_enable(void);
 
+/** @brief Allow Proxy Client to auto connect to a network.
+ *
+ *  This API allows a proxy client to auto-connect a given network.
+ *
+ *  @param net_idx Network Key Index
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_proxy_connect(uint16_t net_idx);
+
+/** @brief Disallow Proxy Client to auto connect to a network.
+ *
+ *  This API disallows a proxy client to connect a given network.
+ *
+ *  @param net_idx Network Key Index
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_proxy_disconnect(uint16_t net_idx);
+
 #ifdef __cplusplus
 }
 #endif
