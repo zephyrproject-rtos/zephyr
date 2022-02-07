@@ -39,6 +39,7 @@
 #include "pb_gatt_srv.h"
 #include "settings.h"
 #include "mesh.h"
+#include "gatt_cli.h"
 
 int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		      uint8_t flags, uint32_t iv_index, uint16_t addr,
@@ -185,6 +186,10 @@ void bt_mesh_reset(void)
 		(void)bt_mesh_proxy_gatt_disable();
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_CLIENT)) {
+		bt_mesh_gatt_client_deinit();
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_net_clear();
 	}
@@ -235,6 +240,10 @@ int bt_mesh_suspend(void)
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
 		BT_WARN("Disabling scanning failed (err %d)", err);
 		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_CLIENT)) {
+		bt_mesh_proxy_disconnect(BT_MESH_KEY_ANY);
 	}
 
 	bt_mesh_hb_suspend();
@@ -361,6 +370,10 @@ int bt_mesh_start(void)
 			(void)bt_mesh_proxy_gatt_enable();
 			bt_mesh_adv_gatt_update();
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_CLIENT)) {
+		bt_mesh_gatt_client_init();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
