@@ -312,6 +312,17 @@ enum {
 	BT_CONN_ROLE_PERIPHERAL = 1,
 };
 
+enum bt_conn_state {
+	/** Channel disconnected */
+	BT_CONN_STATE_DISCONNECTED,
+	/** Channel in connecting state */
+	BT_CONN_STATE_CONNECTING,
+	/** Channel connected and ready for upper layer traffic on it */
+	BT_CONN_STATE_CONNECTED,
+	/** Channel in disconnecting state */
+	BT_CONN_STATE_DISCONNECTING,
+};
+
 /** Connection role (central or peripheral) */
 #define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
 #define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
@@ -331,6 +342,8 @@ struct bt_conn_info {
 		/** BR/EDR Connection specific Info. */
 		struct bt_conn_br_info br;
 	};
+
+	enum bt_conn_state state;
 };
 
 /** LE Connection Remote Info Structure */
