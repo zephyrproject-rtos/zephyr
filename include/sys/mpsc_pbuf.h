@@ -58,6 +58,9 @@ extern "C" {
  */
 #define MPSC_PBUF_MODE_OVERWRITE BIT(1)
 
+/** @brief Flag indicating that maximum buffer usage is tracked. */
+#define MPSC_PBUF_MAX_UTILIZATION BIT(2)
+
 /**@} */
 
 /* Forward declaration */
@@ -111,6 +114,9 @@ struct mpsc_pbuf_buffer {
 
 	/* Buffer size in 32 bit words. */
 	uint32_t size;
+
+	/* Store max buffer usage. */
+	uint32_t max_usage;
 
 	struct k_sem sem;
 };
@@ -237,6 +243,24 @@ void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
  */
 bool mpsc_pbuf_is_pending(struct mpsc_pbuf_buffer *buffer);
 
+/** @brief Get current memory utilization.
+ *
+ * @param[in, out] buffer Buffer.
+ * @param[out]     size   Buffer size in bytes.
+ * @param[out]     now    Current buffer usage in bytes.
+ */
+void mpsc_pbuf_get_utilization(struct mpsc_pbuf_buffer *buffer,
+			       uint32_t *size, uint32_t *now);
+
+/** @brief Get maximum memory utilization.
+ *
+ * @param[in, out] buffer Buffer.
+ * @param[out]     max    Maximum buffer usage in bytes.
+ *
+ * retval 0 if utilization data collected successfully.
+ * retval -ENOTSUP if Collecting utilization data is not supported.
+ */
+int mpsc_pbuf_get_max_utilization(struct mpsc_pbuf_buffer *buffer, uint32_t *max);
 /**
  * @}
  */
