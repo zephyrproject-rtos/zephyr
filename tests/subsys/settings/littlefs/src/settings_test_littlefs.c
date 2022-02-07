@@ -10,7 +10,7 @@
 #include "settings_test.h"
 #include "settings_priv.h"
 
-void config_setup_littlefs(void);
+void test_config_setup_littlefs(void);
 
 void test_main(void)
 {
