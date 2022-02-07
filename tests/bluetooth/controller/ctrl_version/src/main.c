@@ -62,7 +62,7 @@ static void setup(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_version_exchange_mas_loc(void)
+void test_version_exchange_cen_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -111,7 +111,7 @@ void test_version_exchange_mas_loc(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_version_exchange_mas_loc_2(void)
+void test_version_exchange_cen_loc_2(void)
 {
 	uint8_t err;
 
@@ -142,7 +142,7 @@ void test_version_exchange_mas_loc_2(void)
  *    |        |------------------>|
  *    |        |                   |
  */
-void test_version_exchange_mas_rem(void)
+void test_version_exchange_cen_rem(void)
 {
 	struct node_tx *tx;
 
@@ -209,7 +209,7 @@ void test_version_exchange_mas_rem(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_version_exchange_mas_rem_2(void)
+void test_version_exchange_cen_rem_2(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -284,7 +284,7 @@ void test_version_exchange_mas_rem_2(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_version_exchange_mas_loc_twice(void)
+void test_version_exchange_cen_loc_twice(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -356,15 +356,15 @@ void test_version_exchange_mas_loc_twice(void)
 void test_main(void)
 {
 	ztest_test_suite(version_exchange,
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc, setup,
+			 ztest_unit_test_setup_teardown(test_version_exchange_cen_loc, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc_2, setup,
+			 ztest_unit_test_setup_teardown(test_version_exchange_cen_loc_2, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_rem, setup,
+			 ztest_unit_test_setup_teardown(test_version_exchange_cen_rem, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_rem_2, setup,
+			 ztest_unit_test_setup_teardown(test_version_exchange_cen_rem_2, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc_twice, setup,
+			 ztest_unit_test_setup_teardown(test_version_exchange_cen_loc_twice, setup,
 							unit_test_noop));
 
 	ztest_run_test_suite(version_exchange);

@@ -61,11 +61,11 @@ struct llcp_enc {
 	 *	* Repurpose memory used by lll.ccm_tx/rx?
 	 */
 
-	/* Master: Rand and EDIV are input copies from
+	/* Central: Rand and EDIV are input copies from
 	 * HCI that only live until the LL_ENC_REQ has
 	 * been enqueued.
 	 *
-	 * Slave: Rand and EDIV are input copies from
+	 * Peripheral: Rand and EDIV are input copies from
 	 * the LL_ENC_REQ that only live until host
 	 * notification has been enqueued.
 	 */
