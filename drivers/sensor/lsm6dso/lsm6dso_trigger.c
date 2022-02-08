@@ -42,7 +42,7 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 		return -EIO;
 
 	lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
-	int2_route.int2_ctrl.int2_drdy_temp = enable;
+	int2_ctrl.int2_drdy_temp = enable;
 	return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
 				 (uint8_t *)&int2_ctrl, 1);
 }
