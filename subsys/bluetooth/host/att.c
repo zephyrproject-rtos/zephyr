@@ -142,6 +142,7 @@ struct bt_att_tx_meta_data {
 	uint16_t attr_count;
 	bt_gatt_complete_func_t func;
 	void *user_data;
+	enum bt_att_chan_opt chan_opt;
 };
 
 struct bt_att_tx_meta {
@@ -166,6 +167,7 @@ static inline void tx_meta_data_free(struct bt_att_tx_meta_data *data)
 	k_fifo_put(&free_att_tx_meta_data, data);
 }
 
+static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf);
 static bt_conn_tx_cb_t chan_cb(const struct net_buf *buf);
 static bt_conn_tx_cb_t att_cb(const struct net_buf *buf);
 
@@ -274,6 +276,21 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	return err;
 }
 
+static bool att_chan_matches_chan_opt(struct bt_att_chan *chan, enum bt_att_chan_opt chan_opt)
+{
+	__ASSERT_NO_MSG(chan_opt <= BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+
+	if (chan_opt == BT_ATT_CHAN_OPT_NONE) {
+		return true;
+	}
+
+	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		return (chan_opt & BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	} else {
+		return (chan_opt & BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	}
+}
+
 static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 {
 	struct net_buf *buf;
@@ -281,7 +298,7 @@ static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 
 	buf = net_buf_get(queue, K_NO_WAIT);
 	if (buf) {
-		err = chan_send(chan, buf);
+		err = bt_att_chan_send(chan, buf);
 		if (err) {
 			/* Push it back if it could not be send */
 			k_queue_prepend(&queue->_queue, buf);
@@ -313,7 +330,7 @@ static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 	buf = req->buf;
 	req->buf = NULL;
 
-	err = chan_send(chan, buf);
+	err = bt_att_chan_send(chan, buf);
 	if (err) {
 		/* We still have the ownership of the buffer */
 		req->buf = buf;
@@ -570,6 +587,11 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	BT_DBG("chan %p flags %lu code 0x%02x", chan, atomic_get(chan->flags),
 	       ((struct bt_att_hdr *)buf->data)->code);
 
+	if (IS_ENABLED(CONFIG_BT_EATT) &&
+	    !att_chan_matches_chan_opt(chan, bt_att_tx_meta_data(buf)->chan_opt)) {
+		return -EINVAL;
+	}
+
 	return chan_send(chan, buf);
 }
 
@@ -601,7 +623,7 @@ static void bt_att_chan_send_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 {
 	int err;
 
-	err = bt_att_chan_send(chan, buf);
+	err = chan_send(chan, buf);
 	if (err) {
 		/* Responses need to be sent back using the same channel */
 		net_buf_put(&chan->tx_queue, buf);
@@ -3752,13 +3774,15 @@ bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn)
 	return atomic_test_bit(att_chan->flags, ATT_OUT_OF_SYNC_SENT);
 }
 
-void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, void *user_data)
+void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, void *user_data,
+			     enum bt_att_chan_opt chan_opt)
 {
 	struct bt_att_tx_meta_data *data = bt_att_tx_meta_data(buf);
 
 	data->func = func;
 	data->user_data = user_data;
 	data->attr_count = 1;
+	data->chan_opt = chan_opt;
 }
 
 void bt_att_increment_tx_meta_data_attr_count(struct net_buf *buf, uint16_t attr_count)
@@ -3769,10 +3793,11 @@ void bt_att_increment_tx_meta_data_attr_count(struct net_buf *buf, uint16_t attr
 }
 
 bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
-			       const void *user_data)
+			       const void *user_data, enum bt_att_chan_opt chan_opt)
 {
 	return ((bt_att_tx_meta_data(buf)->func == func) &&
-		(bt_att_tx_meta_data(buf)->user_data == user_data));
+		(bt_att_tx_meta_data(buf)->user_data == user_data) &&
+		(bt_att_tx_meta_data(buf)->chan_opt == chan_opt));
 }
 
 void bt_att_free_tx_meta_data(const struct net_buf *buf)
