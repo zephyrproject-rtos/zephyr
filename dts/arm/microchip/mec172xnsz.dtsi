@@ -354,6 +354,7 @@
 			#gpio-cells=<2>;
 		};
 		wdog: watchdog@40000400 {
+			compatible = "microchip,xec-watchdog";
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
 			girqs = <21 2>;
