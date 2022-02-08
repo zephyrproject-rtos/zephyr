@@ -255,6 +255,11 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 
 #define MDM_MAX_SOCKETS 6
 
+/* Special value used to indicate that a socket is being created
+ * and that its actual ID hasn't been assigned yet.
+ */
+#define MDM_CREATE_SOCKET_ID (MDM_MAX_SOCKETS + 1)
+
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
 #define SIZE_OF_NUL 1
@@ -294,6 +299,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 
 #define DNS_WORK_DELAY_SECS 1
 #define IFACE_WORK_DELAY K_MSEC(500)
+#define SOCKET_CLEANUP_WORK_DELAY K_MSEC(100)
 #define WAIT_FOR_KSUP_RETRIES 5
 
 #define CGCONTRDP_RESPONSE_NUM_DELIMS 7
@@ -442,6 +448,13 @@ struct hl7800_socket {
 	void *recv_user_data;
 };
 
+struct stale_socket {
+	int reserved; /* first word of queue data item reserved for the kernel */
+	enum net_sock_type type;
+	uint8_t id;
+	bool allocated;
+};
+
 #define NO_ID_RESP_CMD_MAX_LENGTH 32
 
 struct hl7800_iface_ctx {
@@ -479,6 +492,8 @@ struct hl7800_iface_ctx {
 	struct hl7800_socket sockets[MDM_MAX_SOCKETS];
 	int last_socket_id;
 	int last_error;
+	struct stale_socket stale_sockets[MDM_MAX_SOCKETS];
+	struct k_queue stale_socket_queue;
 
 	/* semaphores */
 	struct k_sem response_sem;
@@ -491,6 +506,7 @@ struct hl7800_iface_ctx {
 	struct k_work mdm_vgpio_work;
 	struct k_work_delayable mdm_reset_work;
 	struct k_work_delayable allow_sleep_work;
+	struct k_work_delayable delete_untracked_socket_work;
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 	/* firmware update */
@@ -589,6 +605,55 @@ static void set_fota_state(enum mdm_hl7800_fota_state state);
 static void generate_fota_state_event(void);
 static void generate_fota_count_event(void);
 #endif
+
+static struct stale_socket *alloc_stale_socket(void)
+{
+	struct stale_socket *sock = NULL;
+
+	for (int i = 0; i < MDM_MAX_SOCKETS; i++) {
+		if (!ictx.stale_sockets[i].allocated) {
+			sock = &ictx.stale_sockets[i];
+			sock->allocated = true;
+			break;
+		}
+	}
+
+	return sock;
+}
+
+static void free_stale_socket(struct stale_socket *sock)
+{
+	if (sock != NULL) {
+		sock->allocated = false;
+	}
+}
+
+static int queue_stale_socket(enum net_sock_type type, uint8_t id)
+{
+	int ret = 0;
+	struct stale_socket *sock = NULL;
+
+	sock = alloc_stale_socket();
+	if (sock != NULL) {
+		sock->type = type;
+		sock->id = id;
+		k_queue_append(&ictx.stale_socket_queue, (void *)sock);
+	} else {
+		LOG_ERR("Could not alloc stale socket");
+		ret = -ENOMEM;
+	}
+
+	return ret;
+}
+
+static struct stale_socket *dequeue_stale_socket(void)
+{
+	struct stale_socket *sock = NULL;
+
+	sock = (struct stale_socket *)k_queue_get(&ictx.stale_socket_queue, K_NO_WAIT);
+
+	return sock;
+}
 
 static bool convert_time_string_to_struct(struct tm *tm, int32_t *offset,
 					  char *time_string);
@@ -1877,6 +1942,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		num_delims = 16;
 	}
 	search_start = addr_start;
+	sm_start = addr_start;
 	for (int i = 0; i < num_delims; i++) {
 		sm_start = strchr(search_start, '.');
 		if (!sm_start) {
@@ -3515,7 +3581,7 @@ static bool on_cmd_sockok(struct net_buf **buf, uint16_t len)
 }
 
 /* Handler: +KTCP_IND/+KUDP_IND */
-static bool on_cmd_sock_ind(struct net_buf **buf, uint16_t len)
+static bool on_cmd_sock_ind(struct net_buf **buf, uint16_t len, const char *const type)
 {
 	struct hl7800_socket *sock = NULL;
 	char *delim;
@@ -3531,12 +3597,12 @@ static bool on_cmd_sock_ind(struct net_buf **buf, uint16_t len)
 	/* find ',' because this is the format we expect */
 	delim = strchr(value, ',');
 	if (!delim) {
-		LOG_ERR("+K**P_IND could not find ','");
+		LOG_ERR("%s could not find ','", type);
 		goto done;
 	}
 
 	id = strtol(value, NULL, 10);
-	LOG_DBG("+K**P_IND ID: %d", id);
+	LOG_DBG("%s ID: %d", type, id);
 	sock = socket_from_id(id);
 	if (sock) {
 		k_sem_give(&sock->sock_send_sem);
@@ -3547,6 +3613,17 @@ static bool on_cmd_sock_ind(struct net_buf **buf, uint16_t len)
 done:
 	return true;
 }
+
+static bool on_cmd_ktcp_ind(struct net_buf **buf, uint16_t len)
+{
+	return on_cmd_sock_ind(buf, len, "+KTCP_IND");
+}
+
+static bool on_cmd_kudp_ind(struct net_buf **buf, uint16_t len)
+{
+	return on_cmd_sock_ind(buf, len, "+KUDP_IND");
+}
+
 
 /* Handler: ERROR */
 static bool on_cmd_sockerror(struct net_buf **buf, uint16_t len)
@@ -3688,8 +3765,34 @@ done:
 	return true;
 }
 
-/* Handler: +KTCPCFG/+KUDPCFG: <session_id> */
-static bool on_cmd_sockcreate(struct net_buf **buf, uint16_t len)
+static int delete_socket(struct hl7800_socket *sock, enum net_sock_type type, uint8_t id)
+{
+	char cmd[sizeof("AT+KUDPCLOSE=##")];
+
+	if (type == SOCK_STREAM) {
+		snprintk(cmd, sizeof(cmd), "AT+KTCPDEL=%d", id);
+	} else if (type == SOCK_DGRAM) {
+		snprintk(cmd, sizeof(cmd), "AT+KUDPCLOSE=%d", id);
+	}
+
+	return send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
+}
+
+static void delete_untracked_socket_work_cb(struct k_work *item)
+{
+	struct stale_socket *sock = NULL;
+
+	do {
+		sock = dequeue_stale_socket();
+		if (sock != NULL) {
+			LOG_DBG("Delete untracked socket [%d]", sock->id);
+			delete_socket(NULL, sock->type, sock->id);
+			free_stale_socket(sock);
+		}
+	} while (sock != NULL);
+}
+
+static bool on_cmd_sockcreate(enum net_sock_type type, struct net_buf **buf, uint16_t len)
 {
 	size_t out_len;
 	char value[MDM_MAX_RESP_SIZE];
@@ -3698,15 +3801,26 @@ static bool on_cmd_sockcreate(struct net_buf **buf, uint16_t len)
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
 	ictx.last_socket_id = strtol(value, NULL, 10);
-	LOG_DBG("+K**PCFG: %d", ictx.last_socket_id);
+	if (type == SOCK_STREAM) {
+		LOG_DBG("+KTCPCFG: %d", ictx.last_socket_id);
+	} else if (type == SOCK_DGRAM) {
+		LOG_DBG("+KUDPCFG: %d", ictx.last_socket_id);
+	}
 
 	/* check if the socket has been created already */
 	sock = socket_from_id(ictx.last_socket_id);
 	if (!sock) {
-		/* look up new socket by special id */
-		sock = socket_from_id(MDM_MAX_SOCKETS + 1);
+		LOG_DBG("look up new socket by creation id");
+		sock = socket_from_id(MDM_CREATE_SOCKET_ID);
 		if (!sock) {
-			LOG_ERR("No matching socket");
+			if (queue_stale_socket(type, ictx.last_socket_id) == 0) {
+				/* delay some time before socket cleanup in case there
+				 * are multiple sockets to cleanup
+				 */
+				k_work_reschedule_for_queue(&hl7800_workq,
+							    &ictx.delete_untracked_socket_work,
+							    SOCKET_CLEANUP_WORK_DELAY);
+			}
 			goto done;
 		}
 	}
@@ -3717,6 +3831,18 @@ static bool on_cmd_sockcreate(struct net_buf **buf, uint16_t len)
 	/* don't give back semaphore -- OK to follow */
 done:
 	return true;
+}
+
+/* Handler: +KTCPCFG: <session_id> */
+static bool on_cmd_sock_tcp_create(struct net_buf **buf, uint16_t len)
+{
+	return on_cmd_sockcreate(SOCK_STREAM, buf, len);
+}
+
+/* Handler: +KUDPCFG: <session_id> */
+static bool on_cmd_sock_udp_create(struct net_buf **buf, uint16_t len)
+{
+	return on_cmd_sockcreate(SOCK_DGRAM, buf, len);
 }
 
 static void sockreadrecv_cb_work(struct k_work *work)
@@ -4300,14 +4426,14 @@ static void hl7800_rx(void)
 		CMD_HANDLER("+CME ERROR: ", sock_error_code),
 		CMD_HANDLER("+CMS ERROR: ", sock_error_code),
 		CMD_HANDLER("+CEER: ", sockerror),
-		CMD_HANDLER("+KTCPCFG: ", sockcreate),
-		CMD_HANDLER("+KUDPCFG: ", sockcreate),
+		CMD_HANDLER("+KTCPCFG: ", sock_tcp_create),
+		CMD_HANDLER("+KUDPCFG: ", sock_udp_create),
 		CMD_HANDLER(CONNECT_STRING, connect),
 		CMD_HANDLER("NO CARRIER", sockerror),
 
 		/* UNSOLICITED SOCKET RESPONSES */
-		CMD_HANDLER("+KTCP_IND: ", sock_ind),
-		CMD_HANDLER("+KUDP_IND: ", sock_ind),
+		CMD_HANDLER("+KTCP_IND: ", ktcp_ind),
+		CMD_HANDLER("+KUDP_IND: ", kudp_ind),
 		CMD_HANDLER("+KTCP_NOTIF: ", sock_notif),
 		CMD_HANDLER("+KUDP_NOTIF: ", sock_notif),
 		CMD_HANDLER("+KTCP_DATA: ", sockdataind),
@@ -5069,6 +5195,12 @@ reboot:
 	/* Turn on EPS network registration status reporting */
 	SEND_AT_CMD_EXPECT_OK("AT+CEREG=4");
 
+	/* query all socket configs to cleanup any sockets that are not
+	 * tracked by the driver
+	 */
+	SEND_AT_CMD_EXPECT_OK("AT+KTCPCFG?");
+	SEND_AT_CMD_EXPECT_OK("AT+KUDPCFG?");
+
 	/* The modem has been initialized and now the network interface can be
 	 * started in the CEREG message handler.
 	 */
@@ -5220,9 +5352,14 @@ done:
 static int configure_TCP_socket(struct hl7800_socket *sock)
 {
 	int ret;
-	char cmd_cfg[sizeof("AT+KTCPCFG=#,#,\"" IPV6_ADDR_FORMAT "\",#####")];
+	char cmd_cfg[sizeof("AT+KTCPCFG=#,#,\"" IPV6_ADDR_FORMAT "\",#####,,,,#,,#")];
 	int dst_port = -1;
 	int af;
+	bool restore_on_boot = false;
+
+#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
+	restore_on_boot = true;
+#endif
 
 	if (sock->dst.sa_family == AF_INET6) {
 		af = MDM_HL7800_SOCKET_AF_IPV6;
@@ -5234,24 +5371,15 @@ static int configure_TCP_socket(struct hl7800_socket *sock)
 		return -EINVAL;
 	}
 
-	/* socket # needs assigning */
-	sock->socket_id = MDM_MAX_SOCKETS + 1;
+	sock->socket_id = MDM_CREATE_SOCKET_ID;
 
-	snprintk(cmd_cfg, sizeof(cmd_cfg), "AT+KTCPCFG=%d,%d,\"%s\",%u,,,,%d", 1, 0,
-		 hl7800_sprint_ip_addr(&sock->dst), dst_port, af);
+	snprintk(cmd_cfg, sizeof(cmd_cfg), "AT+KTCPCFG=%d,%d,\"%s\",%u,,,,%d,,%d", 1, 0,
+		 hl7800_sprint_ip_addr(&sock->dst), dst_port, af, restore_on_boot);
 	ret = send_at_cmd(sock, cmd_cfg, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
 		LOG_ERR("AT+KTCPCFG ret:%d", ret);
 		ret = -EIO;
 		goto done;
-	}
-
-	if (sock->state == SOCK_CONNECTED) {
-		/* if the socket was previously connected, reconnect */
-		ret = connect_TCP_socket(sock);
-		if (ret < 0) {
-			goto done;
-		}
 	}
 
 done:
@@ -5261,11 +5389,15 @@ done:
 static int configure_UDP_socket(struct hl7800_socket *sock)
 {
 	int ret = 0;
-	char cmd[sizeof("AT+KUDPCFG=1,0,,,,,0")];
+	char cmd[sizeof("AT+KUDPCFG=1,0,,,,,0,#")];
 	int af;
+	bool restore_on_boot = false;
 
-	/* socket # needs assigning */
-	sock->socket_id = MDM_MAX_SOCKETS + 1;
+#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
+	restore_on_boot = true;
+#endif
+
+	sock->socket_id = MDM_CREATE_SOCKET_ID;
 
 	if (sock->family == AF_INET) {
 		af = MDM_HL7800_SOCKET_AF_IPV4;
@@ -5275,7 +5407,7 @@ static int configure_UDP_socket(struct hl7800_socket *sock)
 		return -EINVAL;
 	}
 
-	snprintk(cmd, sizeof(cmd), "AT+KUDPCFG=1,0,,,,,%d", af);
+	snprintk(cmd, sizeof(cmd), "AT+KUDPCFG=1,0,,,,,%d,%d", af, restore_on_boot);
 	ret = send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
 		LOG_ERR("AT+KUDPCFG ret:%d", ret);
@@ -5294,37 +5426,6 @@ static int configure_UDP_socket(struct hl7800_socket *sock)
 	if (ret < 0) {
 		LOG_ERR("+KUDP_IND/NOTIF ret:%d", ret);
 		goto done;
-	}
-done:
-	return ret;
-}
-
-static int reconfigure_sockets(void)
-{
-	int i, ret = 0;
-	struct hl7800_socket *sock = NULL;
-
-	for (i = 0; i < MDM_MAX_SOCKETS; i++) {
-		sock = &ictx.sockets[i];
-		if ((sock->context != NULL) && sock->created &&
-		    sock->reconfig) {
-			/* reconfigure socket so it is ready for use */
-			if (sock->type == SOCK_DGRAM) {
-				LOG_DBG("Reconfig UDP socket %d",
-					sock->socket_id);
-				ret = configure_UDP_socket(sock);
-				if (ret < 0) {
-					goto done;
-				}
-			} else if (sock->type == SOCK_STREAM) {
-				LOG_DBG("Reconfig TCP socket %d",
-					sock->socket_id);
-				ret = configure_TCP_socket(sock);
-				if (ret < 0) {
-					goto done;
-				}
-			}
-		}
 	}
 done:
 	return ret;
@@ -5351,9 +5452,6 @@ static int reconfigure_IP_connection(void)
 		/* query all UDP socket configs */
 		ret = send_at_cmd(NULL, "AT+KUDPCFG?", MDM_CMD_SEND_TIMEOUT, 0,
 				  false);
-
-		/* reconfigure any sockets that were already setup */
-		ret = reconfigure_sockets();
 	}
 
 done:
@@ -5384,7 +5482,7 @@ static int offload_get(sa_family_t family, enum net_sock_type type,
 	sock->context = *context;
 	sock->reconfig = false;
 	sock->created = false;
-	sock->socket_id = MDM_MAX_SOCKETS + 1; /* socket # needs assigning */
+	sock->socket_id = MDM_CREATE_SOCKET_ID;
 
 	/* If UDP, create UDP socket now.
 	 * TCP socket needs to be created later once the
@@ -5656,8 +5754,7 @@ static int offload_recv(struct net_context *context, net_context_recv_cb_t cb,
 static int offload_put(struct net_context *context)
 {
 	struct hl7800_socket *sock;
-	char cmd1[sizeof("AT+KTCPCLOSE=##")];
-	char cmd2[sizeof("AT+KTCPDEL=##")];
+	char cmd[sizeof("AT+KTCPCLOSE=##")];
 
 	if (!context) {
 		return -EINVAL;
@@ -5676,21 +5773,20 @@ static int offload_put(struct net_context *context)
 
 	/* close connection */
 	if (sock->type == SOCK_STREAM) {
-		snprintk(cmd1, sizeof(cmd1), "AT+KTCPCLOSE=%d",
+		snprintk(cmd, sizeof(cmd), "AT+KTCPCLOSE=%d",
 			 sock->socket_id);
-		snprintk(cmd2, sizeof(cmd2), "AT+KTCPDEL=%d", sock->socket_id);
 	} else {
-		snprintk(cmd1, sizeof(cmd1), "AT+KUDPCLOSE=%d",
+		snprintk(cmd, sizeof(cmd), "AT+KUDPCLOSE=%d",
 			 sock->socket_id);
 	}
 
 	wakeup_hl7800();
 
-	send_at_cmd(sock, cmd1, MDM_CMD_SEND_TIMEOUT, 0, false);
+	send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
 
 	if (sock->type == SOCK_STREAM) {
 		/* delete session */
-		send_at_cmd(sock, cmd2, MDM_CMD_SEND_TIMEOUT, 0, false);
+		delete_socket(sock, sock->type, sock->socket_id);
 	}
 	allow_sleep(true);
 
@@ -5839,6 +5935,7 @@ static int hl7800_init(const struct device *dev)
 	k_work_init_delayable(&ictx.mdm_reset_work, mdm_reset_work_callback);
 	k_work_init_delayable(&ictx.allow_sleep_work,
 			      allow_sleep_work_callback);
+	k_work_init_delayable(&ictx.delete_untracked_socket_work, delete_untracked_socket_work_cb);
 
 #ifdef CONFIG_MODEM_HL7800_GPS
 	k_work_init_delayable(&ictx.gps_work, gps_work_callback);
@@ -5966,6 +6063,8 @@ static int hl7800_init(const struct device *dev)
 		LOG_ERR("Error registering modem receiver (%d)!", ret);
 		return ret;
 	}
+
+	k_queue_init(&ictx.stale_socket_queue);
 
 	/* start RX thread */
 	k_thread_name_set(
