@@ -25,6 +25,7 @@
 #include "transport.h"
 #include "host/ecc.h"
 #include "prov.h"
+#include "pb_gatt.h"
 #include "beacon.h"
 #include "foundation.h"
 #include "access.h"
