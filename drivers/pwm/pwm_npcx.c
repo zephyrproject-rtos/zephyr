@@ -97,22 +97,30 @@ static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
 	struct pwm_npcx_data *const data = dev->data;
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 	int prescaler;
+	uint32_t ctl;
+	uint32_t ctr;
+	uint32_t dcr;
+	uint32_t prsc;
 
-	if (pulse_cycles > period_cycles)
+	if (pulse_cycles > period_cycles) {
 		return -EINVAL;
+	}
 
-	/* Disable PWM before configuring */
-	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_PWR);
+	ctl = inst->PWMCTL | BIT(NPCX_PWMCTL_PWR);
 
 	/* Select PWM inverted polarity (ie. active-low pulse). */
-	if (flags & PWM_POLARITY_INVERTED)
-		inst->PWMCTL |= BIT(NPCX_PWMCTL_INVP);
-	else
-		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_INVP);
+	if (flags & PWM_POLARITY_INVERTED) {
+		ctl |= BIT(NPCX_PWMCTL_INVP);
+	} else {
+		ctl &= ~BIT(NPCX_PWMCTL_INVP);
+	}
 
-	/* If pulse_cycles is 0, return directly since PWM is already off */
-	if (pulse_cycles == 0)
+	/* If pulse_cycles is 0, switch PWM off and return. */
+	if (pulse_cycles == 0) {
+		ctl &= ~BIT(NPCX_PWMCTL_PWR);
+		inst->PWMCTL = ctl;
 		return 0;
+	}
 
 	/*
 	 * Calculate PWM prescaler that let period_cycles map to
@@ -120,24 +128,38 @@ static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
 	 * Then prescaler = ceil (period_cycles / pwm_max_period_cycles)
 	 */
 	prescaler = ceiling_fraction(period_cycles, NPCX_PWM_MAX_PERIOD_CYCLES);
-	if (prescaler > NPCX_PWM_MAX_PRESCALER)
+	if (prescaler > NPCX_PWM_MAX_PRESCALER) {
 		return -EINVAL;
+	}
 
-	/* Set PWM prescaler.*/
-	inst->PRSC = prescaler - 1;
+	/* Set PWM prescaler. */
+	prsc = prescaler - 1;
 
-	/* Set PWM period cycles */
-	inst->CTR = (period_cycles / prescaler) - 1;
+	/* Set PWM period cycles. */
+	ctr = (period_cycles / prescaler) - 1;
 
-	/* Set PWM pulse cycles */
-	inst->DCR = (pulse_cycles / prescaler) - 1;
+	/* Set PWM pulse cycles. */
+	dcr = (pulse_cycles / prescaler) - 1;
 
 	LOG_DBG("freq %d, pre %d, period %d, pulse %d",
-			data->cycles_per_sec / period_cycles,
-			inst->PRSC + 1, inst->CTR + 1, inst->DCR + 1);
+		data->cycles_per_sec / period_cycles, prsc, ctr, dcr);
 
-	/* Enable PWM now */
-	inst->PWMCTL |= BIT(NPCX_PWMCTL_PWR);
+	/* Reconfigure only if necessary. */
+	if (inst->PWMCTL != ctl || inst->PRSC != prsc || inst->CTR != ctr) {
+		/* Disable PWM before configuring. */
+		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_PWR);
+
+		inst->PRSC = prsc;
+		inst->CTR = ctr;
+		inst->DCR = dcr;
+
+		/* Enable PWM now. */
+		inst->PWMCTL = ctl;
+
+		return 0;
+	}
+
+	inst->DCR = dcr;
 
 	return 0;
 }
