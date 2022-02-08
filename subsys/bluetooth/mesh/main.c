@@ -382,7 +382,7 @@ int bt_mesh_start(void)
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROV) || !bt_mesh_prov_active() ||
 	    bt_mesh_prov_link.bearer->type == BT_MESH_PROV_ADV) {
 		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-			(void)bt_mesh_pb_gatt_disable();
+			(void)bt_mesh_pb_gatt_srv_disable();
 		}
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {

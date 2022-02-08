@@ -73,7 +73,7 @@ static int mesh_commit(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		(void)bt_mesh_pb_gatt_disable();
+		(void)bt_mesh_pb_gatt_srv_disable();
 	}
 
 	bt_mesh_net_settings_commit();
