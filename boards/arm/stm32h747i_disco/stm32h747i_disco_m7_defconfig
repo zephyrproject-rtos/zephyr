@@ -9,6 +9,9 @@ CONFIG_BOARD_STM32H747I_DISCO_M7=y
 # enable pinmux
 CONFIG_PINMUX=y
 
+# Enable the internal SMPS regulator
+CONFIG_POWER_SUPPLY_DIRECT_SMPS=y
+
 # enable GPIO
 CONFIG_GPIO=y
 

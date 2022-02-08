@@ -37,13 +37,13 @@ struct can_bus_err_cnt current_err_cnt;
 
 CAN_DEFINE_MSGQ(counter_msgq, 2);
 
-void tx_irq_callback(uint32_t error_flags, void *arg)
+void tx_irq_callback(int error, void *arg)
 {
 	char *sender = (char *)arg;
 
-	if (error_flags) {
+	if (error != 0) {
 		printk("Callback! error-code: %d\nSender: %s\n",
-		       error_flags, sender);
+		       error, sender);
 	}
 }
 

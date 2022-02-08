@@ -52,6 +52,19 @@ config UART_MCUX_LPUART
 	default y if HAS_MCUX_LPUART
 	depends on SERIAL
 
+if FLASH_MCUX_FLEXSPI_XIP
+
+# Avoid RWW hazards by defaulting logging to disabled
+choice FLASH_LOG_LEVEL_CHOICE
+	default FLASH_LOG_LEVEL_OFF
+endchoice
+
+choice MEMC_LOG_LEVEL_CHOICE
+	default MEMC_LOG_LEVEL_OFF
+endchoice
+
+endif
+
 if COUNTER
 
 config COUNTER_MCUX_GPT

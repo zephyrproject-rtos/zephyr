@@ -50,7 +50,7 @@ static int hw_wdt_channel;
 static bool hw_wdt_started;
 #endif
 
-static void schedule_next_timeout(uint32_t current_ticks)
+static void schedule_next_timeout(int64_t current_ticks)
 {
 	int next_channel_id;	/* channel which will time out next */
 	int64_t next_timeout;   /* timeout in absolute ticks of this channel */

@@ -5,7 +5,6 @@
 # A script to generate twister options based on modified files.
 
 import re, os
-import sh
 import argparse
 import glob
 import yaml
@@ -14,7 +13,7 @@ import fnmatch
 import subprocess
 import csv
 import logging
-from git import Git, Repo
+from git import Repo
 
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
@@ -97,19 +96,21 @@ class Filters:
         self.find_tags()
         self.find_excludes()
         self.find_tests()
-        self.find_archs()
+        if not self.platforms:
+            self.find_archs()
         self.find_boards()
 
-    def get_plan(self, options):
+    def get_plan(self, options, integration=False):
         fname = "_test_plan_partial.csv"
         cmd = ["scripts/twister", "-c"] + options + ["--save-tests", fname ]
-        if self.pull_request:
+        if integration:
             cmd.append("--integration")
 
-        p = subprocess.call(cmd)
+        logging.info(" ".join(cmd))
+        _ = subprocess.call(cmd)
         with open(fname, newline='') as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=',')
-            header = next(csv_reader)
+            _ = next(csv_reader)
             for e in csv_reader:
                 self.all_tests.append(e)
         if os.path.exists(fname):
@@ -139,7 +140,13 @@ class Filters:
 
         if _options:
             logging.info(f'Potential architecture filters...')
-            self.get_plan(_options)
+            if self.platforms:
+                for platform in self.platforms:
+                    _options.extend(["-p", platform])
+
+                self.get_plan(_options, True)
+            else:
+                self.get_plan(_options, False)
 
     def find_boards(self):
         boards = set()
@@ -191,7 +198,7 @@ class Filters:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
             else:
-                 _options.append("--all")
+                _options.append("--all")
             self.get_plan(_options)
 
     def find_tags(self):
@@ -256,8 +263,11 @@ class Filters:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
 
-            _options.extend(self.tag_options)
-            self.get_plan(_options)
+                _options.extend(self.tag_options)
+                self.get_plan(_options)
+            else:
+                _options.extend(self.tag_options)
+                self.get_plan(_options, True)
         else:
             logging.info(f'No twister needed or partial twister run only...')
 
@@ -274,6 +284,10 @@ def parse_args():
             help="This is a pull request")
     parser.add_argument('-p', '--platform', action="append",
             help="Limit this for a platform or a list of platforms.")
+    parser.add_argument('-t', '--tests_per_builder', default=700, type=int,
+            help="Number of tests per builder")
+    parser.add_argument('-n', '--default-matrix', default=10, type=int,
+            help="Number of tests per builder")
 
     return parser.parse_args()
 
@@ -307,6 +321,18 @@ if __name__ == "__main__":
             dup_free_set.add(tuple(x))
 
     logging.info(f'Total tests to be run: {len(dup_free)}')
+    with open(".testplan", "w") as tp:
+        total_tests = len(dup_free)
+        nodes = round(total_tests / args.tests_per_builder)
+        if total_tests % args.tests_per_builder != total_tests:
+            nodes = nodes + 1
+
+        if nodes > 5:
+            nodes = args.default_matrix
+
+        tp.write(f"TWISTER_TESTS={total_tests}\n")
+        tp.write(f"TWISTER_NODES={nodes}\n")
+
     header = ['test', 'arch', 'platform', 'status', 'extra_args', 'handler',
             'handler_time', 'ram_size', 'rom_size']
 

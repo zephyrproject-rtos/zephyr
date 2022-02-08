@@ -1,12 +1,12 @@
-.. _bt6x0:
+.. _bt610:
 
-Laird Connectivity Sentrius BT6x0 Sensor
+Laird Connectivity Sentrius BT610 Sensor
 ########################################
 
 Overview
 ********
 
-The Sentrius™ BT6x0 Sensor is a battery powered, Bluetooth v5 Long Range
+The Sentrius™ BT610 Sensor is a battery powered, Bluetooth v5 Long Range
 integrated sensor platform that uses a Nordic Semiconductor nRF52840 ARM
 Cortex-M4F CPU.
 
@@ -28,19 +28,19 @@ The sensor has the following features:
 * :abbr:`UART (Universal Asynchronous Receiver-Transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/bt6x0_front.jpg
+.. figure:: img/bt610_front.jpg
      :width: 500px
      :align: center
-     :alt: Sentrius BT6x0 Sensor, front view
+     :alt: Sentrius BT610 Sensor, front view
 
-     Sentrius BT6x0 Sensor, front view
+     Sentrius BT610 Sensor, front view
 
-.. figure:: img/bt6x0_back.jpg
+.. figure:: img/bt610_back.jpg
      :width: 500px
      :align: center
-     :alt: Sentrius BT6x0 Sensor, rear view
+     :alt: Sentrius BT610 Sensor, rear view
 
-     Sentrius BT6x0 Sensor, rear view
+     Sentrius BT610 Sensor, rear view
 
 More information about the board can be found at the
 `Sentrius BT610 website`_.
@@ -51,7 +51,7 @@ Hardware
 Supported Features
 ==================
 
-The BT6x0 Sensor supports the following
+The BT610 Sensor supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -89,12 +89,12 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-.. figure:: img/bt6x0_board.jpg
+.. figure:: img/bt610_board.jpg
      :width: 500px
      :align: center
-     :alt: Sentrius BT6x0 Sensor, board layout
+     :alt: Sentrius BT610 Sensor, board layout
 
-     Sentrius BT6x0 Sensor, board layout
+     Sentrius BT610 Sensor, board layout
 
 Connections and IOs
 ===================
@@ -102,7 +102,7 @@ Connections and IOs
 LED
 ---
 
-Two LEDs are visible through the BT6x0 housing lid. Note that the LEDs can be
+Two LEDs are visible through the BT610 housing lid. Note that the LEDs can be
 driven either directly, or via PWM. PWM should be used when current consumption
 is required to be minimised.
 
@@ -115,7 +115,7 @@ is required to be minimised.
 Push button
 ------------
 
-The BT6x0 incorporates three mechanical push buttons. Note these are only
+The BT610 incorporates three mechanical push buttons. Note these are only
 accessible with the housing cover removed.
 
 Two of the buttons are available for use via the board DTS file, as follows.
@@ -129,7 +129,7 @@ microcontroller.
 Magnetoresistive sensor
 -----------------------
 
-The BT6x0 incorporates a Honeywell SM351LT magnetoresistive sensor. Refer to
+The BT610 incorporates a Honeywell SM351LT magnetoresistive sensor. Refer to
 the `Honeywell SM351LT datasheet`_ for further details.
 
 * MAG_1 = SW2 = P1.15 (SM3531LT_0)
@@ -157,7 +157,7 @@ This can deliver up to 50mA peak and 20mA continuous current.
 Sensor connectivity
 -------------------
 
-The BT6x0 incorporates three terminal blocks J5, J6 & J7 that allow
+The BT610 incorporates three terminal blocks J5, J6 & J7 that allow
 connectivity to its sensor inputs, as follows.
 
 Terminal Block J5
@@ -485,12 +485,12 @@ Required pins are as follows.
 Programming and Debugging
 *************************
 
-Applications for the ``bt6x0`` board configuration can be
+Applications for the ``bt610`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); however, the standard
 debugging targets are not currently available.
 
-The BT6x0 features a 10 way header, J3, for connection of a
+The BT610 features a 10 way header, J3, for connection of a
 programmer/debugger, with pinout as follows.
 
 +-----------+------------+----------------------+
@@ -537,7 +537,7 @@ pinout as follows.
 +-----------+------------+----------------------+-----------+
 
 Note that pin 3 requires a solder bridge to be closed to enable powering of the
-BT6x0 board via the UART connector.
+BT610 board via the UART connector.
 
 Flashing
 ========
@@ -552,7 +552,7 @@ Here is an example for the :ref:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
-NOTE: On the BT6x0, the UART lines are at TTL levels and must be passed through
+NOTE: On the BT610, the UART lines are at TTL levels and must be passed through
 an appropriate line driver circuit for translation to RS232 levels. Refer to
 the `MAX3232 datasheet`_ for a suitable driver IC.
 
@@ -560,14 +560,14 @@ the `MAX3232 datasheet`_ for a suitable driver IC.
 
    $ minicom -D <tty_device> -b 115200
 
-Replace :code:`<tty_device>` with the port where the BT6x0 can be found. For
+Replace :code:`<tty_device>` with the port where the BT610 can be found. For
 example, under Linux, :code:`/dev/ttyUSB0`.
 
 Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bt6x0
+   :board: bt610
    :goals: build flash
 
 Note that an external debugger is required to perform application flashing.
@@ -575,14 +575,14 @@ Note that an external debugger is required to perform application flashing.
 Debugging
 =========
 
-The ``bt6x0`` board does not have an on-board J-Link debug IC
+The ``bt610`` board does not have an on-board J-Link debug IC
 as some nRF5x development boards, however, instructions from the
 :ref:`nordic_segger` page also apply to this board, with the additional step
 of connecting an external debugger.
 
-Testing Bluetooth on the BT6x0
+Testing Bluetooth on the BT610
 ***********************************
-Many of the Bluetooth examples will work on the BT6x0.
+Many of the Bluetooth examples will work on the BT610.
 Try them out:
 
 * :ref:`ble_peripheral`
@@ -590,7 +590,7 @@ Try them out:
 * :ref:`bluetooth-ibeacon-sample`
 
 
-Testing the LEDs and buttons on the BT6x0
+Testing the LEDs and buttons on the BT610
 *****************************************
 
 There are 2 samples that allow you to test that the buttons (switches) and LEDs
@@ -601,7 +601,7 @@ on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly
 on your board. The button, LED and sensor device definitions can be found in
-:zephyr_file:`boards/arm/bt6x0/bt6x0.dts`.
+:zephyr_file:`boards/arm/bt610/bt610.dts`.
 
 
 References

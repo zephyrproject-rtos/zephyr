@@ -295,6 +295,11 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 		radio_switch_complete_and_disable();
 	}
 
+	/* RSSI enable must be called after radio_switch_XXX function because it clears
+	 * RADIO->SHORTS register, thus disables all other shortcuts.
+	 */
+	radio_rssi_measure();
+
 	radio_isr_set(isr_rx_adv_sync_estab, lll);
 
 	DEBUG_RADIO_START_O(1);
@@ -349,6 +354,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 	{
 		radio_switch_complete_and_disable();
 	}
+
+	/* RSSI enable must be called after radio_switch_XXX function because it clears
+	 * RADIO->SHORTS register, thus disables all other shortcuts.
+	 */
+	radio_rssi_measure();
 
 	radio_isr_set(isr_rx_adv_sync, lll);
 
@@ -429,7 +439,6 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	radio_tmr_hcto_configure(hcto);
 
 	radio_tmr_end_capture();
-	radio_rssi_measure();
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	radio_gpio_lna_setup();

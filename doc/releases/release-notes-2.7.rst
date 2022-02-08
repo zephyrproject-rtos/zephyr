@@ -2,6 +2,61 @@
 
 .. _zephyr_2.7:
 
+.. _zephyr_2.7.1:
+
+Zephyr 2.7.1
+####################
+
+This is an LTS maintenance release with fixes.
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+* (N/A)
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 2.7.0 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+* :github:`36558` - Use of CMAKE_<lang>_COMPILER_FORCED on host-builds flag breaks third-party libraries
+* :github:`36852` - acrn_ehl_crb:  the test of tests/subsys/cpp/libcxx/ failed
+* :github:`38181` - tests/drivers/uart/uart_basic_api/drivers.uart.cdc_acm fails to build
+* :github:`38612` - Fault with assertions enabled prevents detailed output because of ISR() assertion check in shell function
+* :github:`38972` - logging: Cleaning references to tracing in logging
+* :github:`38999` - Bluetooth: Controller: Fix HCI command parameter check failures
+* :github:`39022` - tests/drivers/uart/uart_basic_api/drivers.uart.cdc_acm fails to build
+* :github:`39297` - Lorawan regression in v2.7rc4 for US915 and AU915 regions
+* :github:`39361` - BL5340 image is broken on documentation page
+* :github:`39409` - runners: canopen: program download fails with slow flash access and/or congested CAN nets
+* :github:`39523` - task watchdog crash/asset on NRF52840 - need to reorder task_wdt_feed() in task_wdt_add()
+* :github:`39541` - can: mcux_flexcan: wrong timing calculation
+* :github:`39575` - k_mutex_lock and k_sem_take with K_FOREVER return -EAGAIN value
+* :github:`39594` - Possible bug or undocumented behaviour of spi_write
+* :github:`39609` - spi: slave: division by zero in timeout calculation
+* :github:`39687` - sensor: qdec_nrfx: PM callback has incorrect signature
+* :github:`39704` - Using OpenThread makes the system unresponsive after 49.7 days
+* :github:`39817` - drivers: pwm: nxp: (potentially) Incorrect return value on API function
+* :github:`39851` - [Coverity CID: 240242] Dereference after null check in tests/bluetooth/tester/src/l2cap.c
+* :github:`39882` - Bluetooth Host qualification on 2.7 branch
+* :github:`40133` - mimxrt1060-evk flash shell command causes shell deadlock
+* :github:`40244` - hci_spi sample cannot be built for nrf51dk_nrf51422 and 96b_carbon_nrf51
+* :github:`40290` - CAN_STM32: Build error with CONFIG_CAN_AUTO_BUS_OFF_RECOVERY=n
+* :github:`40844` - gen_app_partitions scans object files unrelated to current image
+* :github:`41237` - drivers: ieee802154_dw1000: use dedicated workqueue
+
+.. _zephyr_2.7.0:
+
 Zephyr 2.7.0
 ############
 

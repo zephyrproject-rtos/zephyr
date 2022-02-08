@@ -27,7 +27,6 @@ config USB_DEVICE_NETWORK_EEM
 config USB_DEVICE_NETWORK_RNDIS
 	bool "USB Remote NDIS (RNDIS) Networking device"
 	select USB_DEVICE_NETWORK
-	select USB_COMPOSITE_DEVICE
 	help
 	  Remote NDIS (RNDIS) is commonly used Microsoft vendor protocol with
 	  Specification available from Microsoft web site.

@@ -17,17 +17,21 @@ jobs:
           access_token: ${{ github.token }}
 
   twister-build-prep:
+
     runs-on: zephyr_runner
     needs: twister-build-cleanup
     container:
       image: zephyrprojectrtos/ci:v0.18.4
       options: '--entrypoint /bin/bash'
+      volumes:
+        - /home/runners/zephyrproject:/github/cache/zephyrproject
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
     env:
-      MATRIX_SIZE: 15
-      DAILY_MATRIX_SIZE: 120
+      MATRIX_SIZE: 10
+      PUSH_MATRIX_SIZE: 15
+      DAILY_MATRIX_SIZE: 80
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       TESTS_PER_BUILDER: 700
@@ -68,47 +72,37 @@ jobs:
             echo "Your branch is not up to date, you need to rebase on top of latest HEAD of main branch"
             exit 1
           )
-          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
+          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request -t $TESTS_PER_BUILDER
+          if [ -s .testplan ]; then
+            cat .testplan >> $GITHUB_ENV
+          else
+            echo "TWISTER_NODES=${MATRIX_SIZE}" >> $GITHUB_ENV
+          fi
 
-          # get number of tests
-          if [ -s testplan.csv ]; then
-            lines=$(wc -l < testplan.csv)
-          else
-            lines=1
-          fi
-          if [ "$lines" = 1 ]; then
-            # no tests, so we need 0 nodes
-            nodes=0
-          else
-            nodes=$(( ${lines} / ${TESTS_PER_BUILDER}))
-            if [ "${nodes}" = 0 ]; then
-              # for less than TESTS_PER_BUILDER, we take at least 1 node
-              nodes=1
-            fi
-          fi
-          echo "::set-output name=calculated_matrix_size::${nodes}";
-          rm -f testplan.csv
+
+          rm -f testplan.csv .testplan
 
       - name: Determine matrix size
         id: output-services
         run: |
           if [ "${{github.event_name}}" = "pull_request_target" ]; then
-            if [ -n "${{steps.test-plan.outputs.calculated_matrix_size}}" ]; then
-              subset="[$(seq -s',' 1 ${{steps.test-plan.outputs.calculated_matrix_size}})]"
+            if [ -n "${TWISTER_NODES}" ]; then
+              subset="[$(seq -s',' 1 ${TWISTER_NODES})]"
             else
               subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
             fi
-            size=${{ steps.test-plan.outputs.calculated_matrix_size }}
+            size=${TWISTER_NODES}
           elif [ "${{github.event_name}}" = "push" ]; then
-            subset="[$(seq -s',' 1 ${MATRIX_SIZE})]"
+            subset="[$(seq -s',' 1 ${PUSH_MATRIX_SIZE})]"
             size=${MATRIX_SIZE}
-          elif [ "${{github.event_name}}" = "schedule" ]; then
+          elif [ "${{github.event_name}}" = "schedule" && "${{github.repository}}" = "zephyrproject-rtos/zephyr" ]; then
             subset="[$(seq -s',' 1 ${DAILY_MATRIX_SIZE})]"
             size=${DAILY_MATRIX_SIZE}
+          else
+            size=0
           fi
           echo "::set-output name=subset::${subset}";
           echo "::set-output name=size::${size}";
-
 
   twister-build:
     runs-on: zephyr_runner
@@ -117,6 +111,8 @@ jobs:
     container:
       image: zephyrprojectrtos/ci:v0.18.4
       options: '--entrypoint /bin/bash'
+      volumes:
+        - /home/runners/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
@@ -155,7 +151,7 @@ jobs:
 
           west init -l . || true
           west config --global update.narrow true
-          west update 2>&1 1> west.update.log || west update 2>&1 1> west.update.log
+          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
 
       - name: Check Environment
@@ -190,7 +186,7 @@ jobs:
 
       - name: ccache stats initial
         run: |
-          test -d github/home/.ccache && mv github/home/.ccache /github/home/.ccache
+          test -d github/home/.ccache && rm -rf /github/home/.ccache && mv github/home/.ccache /github/home/.ccache
           ccache -M 10G -s
 
       - if: github.event_name == 'push'
@@ -203,6 +199,7 @@ jobs:
       - if: github.event_name == 'pull_request_target'
         name: Run Tests with Twister (Pull Request)
         run: |
+          rm -f testplan.csv
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
@@ -224,7 +221,10 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Subset ${{ matrix.subset }})
-          path: twister-out/twister.xml
+          if-no-files-found: ignore
+          path: |
+            twister-out/twister.xml
+            testplan.csv
 
   twister-test-results:
     name: "Publish Unit Tests Results"

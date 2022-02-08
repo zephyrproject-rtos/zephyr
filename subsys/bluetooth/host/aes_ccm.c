@@ -223,7 +223,7 @@ int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
 		return -EINVAL;
 	}
 
-	ccm_auth(key, nonce, enc_data, len, aad, aad_len, mic, mic_size);
+	ccm_auth(key, nonce, plaintext, len, aad, aad_len, mic, mic_size);
 
 	ccm_crypt(key, nonce, plaintext, enc_data, len);
 

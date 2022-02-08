@@ -61,7 +61,7 @@
 	defined(CONFIG_BOARD_UBX_EVKNINAB1_NRF52832) || \
 	defined(CONFIG_BOARD_UBX_EVKNINAB3_NRF52840) || \
 	defined(CONFIG_BOARD_UBX_EVKNINAB4_NRF52833) || \
-	defined(CONFIG_BOARD_BT6X0)
+	defined(CONFIG_BOARD_BT610)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nordic_nrf_saadc))
