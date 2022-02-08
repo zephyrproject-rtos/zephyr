@@ -239,6 +239,9 @@ manifest:
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
+    - name: uoscore-uedhoc
+      revision: e8920192b66db4f909eb9cd3f155d5245c1ae825
+      path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: a0d6981f14d4001d6f0d608d1a427f9bc6bb6d02
       path: modules/lib/zcbor
