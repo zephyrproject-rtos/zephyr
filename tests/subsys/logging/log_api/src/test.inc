@@ -321,7 +321,7 @@ static size_t get_max_hexdump(void)
 			    HEXDUMP_BYTES_CONT_MSG * (msgs_in_buf - 1);
 }
 
-#if defined(__sparc__) || defined(CONFIG_ARCH_POSIX)
+#if defined(CONFIG_ARCH_POSIX)
 #define STR_SIZE(s) (strlen(s) + 2 * sizeof(char))
 #else
 #define STR_SIZE(s) 0

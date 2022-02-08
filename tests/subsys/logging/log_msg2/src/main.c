@@ -19,7 +19,7 @@
 #include <ztest.h>
 #include <sys/cbprintf.h>
 
-#if defined(__sparc__) || defined(CONFIG_ARCH_POSIX)
+#if defined(CONFIG_ARCH_POSIX)
 /* On some platforms all strings are considered RW, that impacts size of the
  * package.
  */
