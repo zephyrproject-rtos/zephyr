@@ -108,3 +108,5 @@ ZTEST_SUITE(printk, NULL, common_setup, NULL, NULL, NULL);
 
 ZTEST_SUITE(common_1cpu, NULL, common_setup,
 		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+
+ZTEST_SUITE(mb_api, NULL, common_setup, NULL, NULL, NULL);
