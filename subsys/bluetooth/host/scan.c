@@ -1088,11 +1088,17 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
 void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf)
 {
+	int err;
+
 	struct bt_df_per_adv_sync_iq_samples_report cte_report;
 	struct bt_le_per_adv_sync *per_adv_sync;
 	struct bt_le_per_adv_sync_cb *listener;
 
-	hci_df_prepare_connectionless_iq_report(buf, &cte_report, &per_adv_sync);
+	err = hci_df_prepare_connectionless_iq_report(buf, &cte_report, &per_adv_sync);
+	if (err) {
+		BT_ERR("Prepare CTE conn IQ report failed %d", err);
+		return;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
 		if (listener->cte_report_cb) {

@@ -368,16 +368,16 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 	return err;
 }
 
-void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
-					     struct bt_df_per_adv_sync_iq_samples_report *report,
-					     struct bt_le_per_adv_sync **per_adv_sync_to_report)
+int hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
+					    struct bt_df_per_adv_sync_iq_samples_report *report,
+					    struct bt_le_per_adv_sync **per_adv_sync_to_report)
 {
 	struct bt_hci_evt_le_connectionless_iq_report *evt;
 	struct bt_le_per_adv_sync *per_adv_sync;
 
 	if (buf->len < sizeof(*evt)) {
 		BT_ERR("Unexpected end of buffer");
-		return;
+		return -EINVAL;
 	}
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
@@ -387,17 +387,17 @@ void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 	if (!per_adv_sync) {
 		BT_ERR("Unknown handle 0x%04X for iq samples report",
 		       sys_le16_to_cpu(evt->sync_handle));
-		return;
+		return -EINVAL;
 	}
 
 	if (!atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED)) {
 		BT_ERR("Received PA CTE report when CTE receive disabled");
-		return;
+		return -EINVAL;
 	}
 
 	if (!(per_adv_sync->cte_types & BIT(evt->cte_type))) {
 		BT_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
-		return;
+		return -EINVAL;
 	}
 
 	report->chan_idx = evt->chan_idx;
@@ -411,6 +411,8 @@ void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 	report->sample = &evt->sample[0];
 
 	*per_adv_sync_to_report = per_adv_sync;
+
+	return 0;
 }
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
