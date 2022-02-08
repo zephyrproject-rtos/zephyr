@@ -654,8 +654,8 @@ struct _static_thread_data {
  * @param p3 3rd entry point parameter.
  * @param prio Thread priority.
  * @param options Thread options.
- * @param delay Scheduling delay (in milliseconds), zero for no delay.
- *
+ * @param delay Scheduling delay (in milliseconds), zero for no delay and K_FOREVER_TICKS for
+ *              delayed start.
  *
  * @internal It has been observed that the x86 compiler by default aligns
  * these _static_thread_data structures to 32-byte boundaries, thereby
