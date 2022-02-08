@@ -448,7 +448,7 @@ void helper_pdu_verify_feature_req(const char *file, uint32_t line, struct pdu_d
 }
 
 void helper_pdu_verify_peripheral_feature_req(const char *file, uint32_t line, struct pdu_data *pdu,
-					 void *param)
+					      void *param)
 {
 	struct pdu_data_llctrl_feature_req *feature_req = param;
 
