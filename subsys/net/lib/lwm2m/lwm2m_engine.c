@@ -2105,6 +2105,35 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 	return 0;
 }
 
+bool lwm2m_engine_path_is_observed(const char *pathstr)
+{
+	struct observe_node *obs;
+	struct lwm2m_obj_path path;
+	int ret;
+	int i;
+
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return false;
+	}
+
+	for (i = 0; i < sock_nfds; ++i) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&sock_ctx[i]->observer, obs, node) {
+			if (obs->path.level <= path.level &&
+			    (obs->path.obj_id == path.obj_id &&
+			     (obs->path.level < LWM2M_PATH_LEVEL_OBJECT_INST ||
+			      (obs->path.obj_inst_id == path.obj_inst_id &&
+			       (obs->path.level < LWM2M_PATH_LEVEL_RESOURCE ||
+				(obs->path.res_id == path.res_id &&
+				 (obs->path.level < LWM2M_PATH_LEVEL_RESOURCE_INST ||
+				  obs->path.res_inst_id == path.res_inst_id))))))) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 int lwm2m_engine_register_read_callback(const char *pathstr,
 					lwm2m_engine_get_data_cb_t cb)
 {
