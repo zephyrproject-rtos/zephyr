@@ -233,11 +233,6 @@ static const uint32_t table_samp_time[] = {
 };
 #endif
 
-/* Bugfix for STM32G4 HAL */
-#if !defined(ADC_CHANNEL_TEMPSENSOR)
-#define ADC_CHANNEL_TEMPSENSOR ADC_CHANNEL_TEMPSENSOR_ADC1
-#endif
-
 /* External channels (maximum). */
 #define STM32_CHANNEL_COUNT		20
 
@@ -801,6 +796,100 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 #endif
 }
 
+static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_id)
+{
+#if defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32MP1X)
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = config->base;
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32G4X)
+	/* In the G4 model, once can access internal temperature on ADCs 1 and 5. */
+	if ((adc == ADC1 &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id) ||
+		(adc == ADC5 &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	}
+	/* In the G4 model, once can access internal reference voltage on all ADCs besides 2. */
+	else if (adc != ADC2 &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32F3X)
+	/* Some F3X have ADC 1 and 2, some have 1, 2, 3 and 4.
+	 * Temperature can only be read on ADC1.
+	 * Refint can be read on all ADCs.
+	 */
+	if (adc == ADC1 &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+	if (adc == ADC1) {
+		if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_id) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+		}
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	if (adc == ADC3) {
+		if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_id) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+		}
+	}
+
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+	/* Temperature available on ADCs 1 and 3.
+	 * Refint available on ADC 1 only.
+	 */
+	if ((adc == ADC1 || adc == ADC3) &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	} else if (adc == ADC1 &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32L5X)
+	if (adc == ADC1) {
+		if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_id) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+		}
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+	if (adc == ADC2) {
+		if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_id) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+		}
+	}
+#else
+	/* For everything else, temperature and refint are available on all ADCs.
+	 * Most other models only have 1 ADC anyway.
+	 */
+	if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+	}
+#endif
+}
+
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
@@ -849,11 +938,7 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_cfg->channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-	} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_cfg->channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
-	}
+	adc_stm32_setup_channels(dev, channel_cfg->channel_id);
 
 	adc_stm32_setup_speed(dev, channel_cfg->channel_id,
 				  acq_time_index);
