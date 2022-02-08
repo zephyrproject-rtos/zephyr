@@ -11,7 +11,7 @@ This application blinks a LED using the :ref:`PWM API <pwm_api>`. See
 :ref:`blinky-sample` for a GPIO-based sample.
 
 The LED starts blinking at a 1 Hz frequency. The frequency doubles every 4
-seconds until it reaches 64 Hz. The frequency will then be halved every 4
+seconds until it reaches 128 Hz. The frequency will then be halved every 4
 seconds until it returns to 1 Hz, completing a single blinking cycle. This
 faster-then-slower blinking cycle then repeats forever.
 
