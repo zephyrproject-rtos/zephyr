@@ -282,7 +282,11 @@ void mdm_hl7800_wakeup(bool awake);
 int32_t mdm_hl7800_send_at_cmd(const uint8_t *data);
 
 /**
- * @brief Get the signal quality of the HL7800
+ * @brief Get the signal quality of the HL7800.
+ * If CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS is non-zero, then
+ * this function returns the value from the last periodic read.
+ * If CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS is 0, then this
+ * may cause the modem to be woken so that the values can be queried.
  *
  * @param rsrp Reference Signals Received Power (dBm)
  *             Range = -140 dBm to -44 dBm

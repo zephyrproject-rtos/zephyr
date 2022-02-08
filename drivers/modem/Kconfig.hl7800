@@ -357,4 +357,9 @@ config MODEM_HL7800_ALLOW_SLEEP_DELAY_MS
 	int "Milliseconds to delay before allowing modem to sleep"
 	default 5000
 
+config MODEM_HL7800_RSSI_RATE_SECONDS
+	int "Rate to automatically query RSSI"
+	default 0 if MODEM_HL7800_LOW_POWER_MODE
+	default 30
+
 endif # MODEM_HL7800
