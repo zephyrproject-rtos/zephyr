@@ -103,7 +103,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
  * +-----+                +-------+              +-----+
  *    |                       |                     |
  */
-void test_phy_update_cen_loc(void)
+void test_phy_update_central_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -219,7 +219,7 @@ void test_phy_update_cen_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_cen_loc_unsupp_feat(void)
+void test_phy_update_central_loc_unsupp_feat(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -270,7 +270,7 @@ void test_phy_update_cen_loc_unsupp_feat(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_cen_rem(void)
+void test_phy_update_central_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -369,7 +369,7 @@ void test_phy_update_cen_rem(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_per_loc(void)
+void test_phy_update_periph_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -463,7 +463,7 @@ void test_phy_update_per_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_per_rem(void)
+void test_phy_update_periph_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -567,7 +567,7 @@ void test_phy_update_per_rem(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_cen_loc_collision(void)
+void test_phy_update_central_loc_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -738,7 +738,7 @@ void test_phy_update_cen_loc_collision(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_cen_rem_collision(void)
+void test_phy_update_central_rem_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -911,7 +911,7 @@ void test_phy_update_cen_rem_collision(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_phy_update_per_loc_collision(void)
+void test_phy_update_periph_loc_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1044,17 +1044,17 @@ void test_main(void)
 {
 	ztest_test_suite(
 		phy,
-		ztest_unit_test_setup_teardown(test_phy_update_cen_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_cen_loc_unsupp_feat, setup,
+		ztest_unit_test_setup_teardown(test_phy_update_central_loc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_central_loc_unsupp_feat, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_cen_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_per_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_per_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_cen_loc_collision, setup,
+		ztest_unit_test_setup_teardown(test_phy_update_central_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_periph_loc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_periph_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_central_loc_collision, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_cen_rem_collision, setup,
+		ztest_unit_test_setup_teardown(test_phy_update_central_rem_collision, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_phy_update_per_loc_collision, setup,
+		ztest_unit_test_setup_teardown(test_phy_update_periph_loc_collision, setup,
 					       unit_test_noop));
 
 	ztest_run_test_suite(phy);

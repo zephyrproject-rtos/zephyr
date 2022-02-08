@@ -58,7 +58,7 @@ void helper_pdu_verify_ping_rsp(const char *file, uint32_t line, struct pdu_data
 void helper_pdu_verify_feature_req(const char *file, uint32_t line, struct pdu_data *pdu,
 				   void *param);
 void helper_pdu_verify_peripheral_feature_req(const char *file, uint32_t line, struct pdu_data *pdu,
-					 void *param);
+					      void *param);
 void helper_pdu_verify_feature_rsp(const char *file, uint32_t line, struct pdu_data *pdu,
 				   void *param);
 
