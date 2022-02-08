@@ -124,7 +124,7 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_mesh_pb_gatt_close(conn);
 
 	if (bt_mesh_is_provisioned()) {
-		(void)bt_mesh_pb_gatt_disable();
+		(void)bt_mesh_pb_gatt_srv_disable();
 	}
 }
 
@@ -174,7 +174,7 @@ static struct bt_gatt_attr prov_attrs[] = {
 
 static struct bt_gatt_service prov_svc = BT_GATT_SERVICE(prov_attrs);
 
-int bt_mesh_pb_gatt_enable(void)
+int bt_mesh_pb_gatt_srv_enable(void)
 {
 	BT_DBG("");
 
@@ -193,7 +193,7 @@ int bt_mesh_pb_gatt_enable(void)
 	return 0;
 }
 
-int bt_mesh_pb_gatt_disable(void)
+int bt_mesh_pb_gatt_srv_disable(void)
 {
 	BT_DBG("");
 
@@ -263,7 +263,7 @@ static int gatt_send(struct bt_conn *conn,
 	return bt_gatt_notify_cb(conn, &params);
 }
 
-int bt_mesh_pb_gatt_adv_start(void)
+int bt_mesh_pb_gatt_srv_adv_start(void)
 {
 	BT_DBG("");
 
