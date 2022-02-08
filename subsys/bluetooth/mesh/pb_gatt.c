@@ -11,6 +11,8 @@
 #include "adv.h"
 #include "host/ecc.h"
 #include "prov.h"
+#include "pb_gatt.h"
+#include "proxy_msg.h"
 #include "pb_gatt_srv.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
