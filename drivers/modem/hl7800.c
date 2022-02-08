@@ -294,7 +294,6 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_RESET_HIGH_TIME K_MSEC(10)
 #define MDM_WAIT_FOR_DATA_RETRIES 3
 
-#define RSSI_TIMEOUT_SECS 30
 #define RSSI_UNKNOWN -999
 
 #define DNS_WORK_DELAY_SECS 1
@@ -596,6 +595,7 @@ static int write_apn(char *access_point_name);
 static void mark_sockets_for_reconfig(void);
 #endif
 static void hl7800_build_mac(struct hl7800_iface_ctx *ictx);
+static void rssi_query(void);
 
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 static void initialize_sleep_level(void);
@@ -965,6 +965,10 @@ static void event_handler(enum mdm_hl7800_event event, void *event_data)
 
 void mdm_hl7800_get_signal_quality(int *rsrp, int *sinr)
 {
+	if (CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS == 0) {
+		rssi_query();
+	}
+
 	*rsrp = ictx.mdm_rssi;
 	*sinr = ictx.mdm_sinr;
 }
@@ -2716,6 +2720,9 @@ static int hl7800_query_rssi(void)
 
 static void hl7800_start_rssi_work(void)
 {
+	/* Rate is not checked here to allow one reading
+	 * when going from network down->up
+	 */
 	k_work_reschedule_for_queue(&hl7800_workq, &ictx.rssi_query_work,
 				    K_NO_WAIT);
 }
@@ -2730,17 +2737,24 @@ static void hl7800_stop_rssi_work(void)
 	}
 }
 
-static void hl7800_rssi_query_work(struct k_work *work)
+static void rssi_query(void)
 {
 	hl7800_lock();
 	wakeup_hl7800();
 	hl7800_query_rssi();
 	allow_sleep(true);
 	hl7800_unlock();
+}
+
+static void hl7800_rssi_query_work(struct k_work *work)
+{
+	rssi_query();
 
 	/* re-start RSSI query work */
-	k_work_reschedule_for_queue(&hl7800_workq, &ictx.rssi_query_work,
-				    K_SECONDS(RSSI_TIMEOUT_SECS));
+	if (CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS > 0) {
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.rssi_query_work,
+					    K_SECONDS(CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS));
+	}
 }
 
 #ifdef CONFIG_MODEM_HL7800_GPS
