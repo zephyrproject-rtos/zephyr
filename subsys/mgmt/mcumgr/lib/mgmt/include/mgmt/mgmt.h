@@ -234,10 +234,12 @@ typedef int (*mgmt_handler_fn)(struct mgmt_ctxt *ctxt);
 
 /**
  * @brief Read handler and write handler for a single command ID.
+ * Set use_custom_cbor_encoder to true when using zcbor.
  */
 struct mgmt_handler {
 	mgmt_handler_fn mh_read;
 	mgmt_handler_fn mh_write;
+	bool use_custom_cbor_encoder;
 };
 
 /**

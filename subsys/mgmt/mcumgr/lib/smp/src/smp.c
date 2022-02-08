@@ -139,10 +139,13 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 	/* Begin response payload.  Response fields are inserted into the root
 	 * map as key value pairs.
 	 */
-	rc = cbor_encoder_create_map(&cbuf->encoder, &payload_encoder, CborIndefiniteLength);
-	rc = mgmt_err_from_cbor(rc);
-	if (rc != 0) {
-		return rc;
+	if (!handler->use_custom_cbor_encoder) {
+		rc = cbor_encoder_create_map(&cbuf->encoder, &payload_encoder,
+					     CborIndefiniteLength);
+		rc = mgmt_err_from_cbor(rc);
+		if (rc != 0) {
+			return rc;
+		}
 	}
 
 	switch (req_hdr->nh_op) {
@@ -172,7 +175,9 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 	}
 
 	/* End response payload. */
-	rc = cbor_encoder_close_container(&cbuf->encoder, &payload_encoder);
+	if (!handler->use_custom_cbor_encoder) {
+		rc = cbor_encoder_close_container(&cbuf->encoder, &payload_encoder);
+	}
 	return mgmt_err_from_cbor(rc);
 }
 
