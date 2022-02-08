@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2022 Andrei-Edward Popa
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,10 @@
 #include <pm/device.h>
 #include <arch/cpu.h>
 #include <string.h>
+
+#if defined(CONFIG_PINCTRL)
+#include <drivers/pinctrl.h>
+#endif
 
 #include <soc.h>
 #include <errno.h>
@@ -615,6 +620,14 @@ static int i2c_dw_initialize(const struct device *dev)
 	struct i2c_dw_dev_config * const dw = dev->data;
 	union ic_con_register ic_con;
 	uint32_t reg_base = get_regs(dev);
+	int ret = 0;
+
+#if defined(CONFIG_PINCTRL)
+	ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret) {
+		return ret;
+	}
+#endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (rom->pcie) {
@@ -669,8 +682,16 @@ static int i2c_dw_initialize(const struct device *dev)
 
 	dw->state = I2C_DW_STATE_READY;
 
-	return 0;
+	return ret;
 }
+
+#if defined(CONFIG_PINCTRL)
+#define PINCTRL_DW_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
+#define PINCTRL_DW_CONFIG(n) .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define PINCTRL_DW_DEFINE(n)
+#define PINCTRL_DW_CONFIG(n)
+#endif
 
 #define I2C_DW_INIT_PCIE0(n)
 #define I2C_DW_INIT_PCIE1(n)                                                  \
@@ -721,15 +742,17 @@ static int i2c_dw_initialize(const struct device *dev)
 	_CONCAT(I2C_DW_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define I2C_DEVICE_INIT_DW(n)                                                 \
+	PINCTRL_DW_DEFINE(n);                                                 \
 	static void i2c_config_##n(const struct device *port);                \
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {           \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                         \
 		.config_func = i2c_config_##n,                                \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                  \
+		PINCTRL_DW_CONFIG(n)                                          \
 		I2C_DW_INIT_PCIE(n)                                           \
 	};                                                                    \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL,                    \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL,                 \
 			      &i2c_##n##_runtime, &i2c_config_dw_##n,         \
 			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,          \
 			      &funcs);                                        \
