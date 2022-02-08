@@ -94,6 +94,19 @@ size_t bt_eatt_count(struct bt_conn *conn);
 
 #endif /* CONFIG_BT_EATT */
 
+/** @brief ATT channel option bit field values.
+ * @note @ref BT_ATT_CHAN_OPT_UNENHANCED_ONLY and @ref BT_ATT_CHAN_OPT_ENHANCED_ONLY are mutually
+ * exclusive and both bits may not be set.
+ */
+enum bt_att_chan_opt {
+	/** Both Enhanced and Unenhanced channels can be used  */
+	BT_ATT_CHAN_OPT_NONE = 0x0,
+	/** Only Unenhanced channels will be used  */
+	BT_ATT_CHAN_OPT_UNENHANCED_ONLY = BIT(0),
+	/** Only Enhanced channels will be used  */
+	BT_ATT_CHAN_OPT_ENHANCED_ONLY = BIT(1),
+};
+
 #ifdef __cplusplus
 }
 #endif
