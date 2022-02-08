@@ -197,6 +197,41 @@ struct bt_codec_data {
 					  BT_CODEC_META_CONTEXT_RINGTONE | \
 					  BT_CODEC_META_CONTEXT_TV)
 
+/** Location values for BT Audio.
+ *
+ * These values are defined by the Generic Audio Assigned Numbers
+ */
+enum bt_audio_location {
+	BT_AUDIO_LOCATION_FRONT_LEFT = BIT(0),
+	BT_AUDIO_LOCATION_FRONT_RIGHT = BIT(1),
+	BT_AUDIO_LOCATION_FRONT_CENTER = BIT(2),
+	BT_AUDIO_LOCATION_LOW_FREQ_EFFECTS_1 = BIT(3),
+	BT_AUDIO_LOCATION_BACK_LEFT = BIT(4),
+	BT_AUDIO_LOCATION_BACK_RIGHT = BIT(5),
+	BT_AUDIO_LOCATION_FRONT_LEFT_OF_CENTER = BIT(6),
+	BT_AUDIO_LOCATION_FRONT_RIGHT_OF_CENTER = BIT(7),
+	BT_AUDIO_LOCATION_BACK_CENTER = BIT(8),
+	BT_AUDIO_LOCATION_LOW_FREQ_EFFECTS_2 = BIT(9),
+	BT_AUDIO_LOCATION_SIDE_LEFT = BIT(10),
+	BT_AUDIO_LOCATION_SIDE_RIGHT = BIT(11),
+	BT_AUDIO_LOCATION_TOP_FRONT_LEFT = BIT(12),
+	BT_AUDIO_LOCATION_TOP_FRONT_RIGHT = BIT(13),
+	BT_AUDIO_LOCATION_TOP_FRONT_CENTER = BIT(14),
+	BT_AUDIO_LOCATION_TOP_CENTER = BIT(15),
+	BT_AUDIO_LOCATION_TOP_BACK_LEFT = BIT(16),
+	BT_AUDIO_LOCATION_TOP_BECK_RIGHT = BIT(17),
+	BT_AUDIO_LOCATION_TOP_SIDE_LEFT = BIT(18),
+	BT_AUDIO_LOCATION_TOP_SIDE_RIGHT = BIT(19),
+	BT_AUDIO_LOCATION_TOP_BACK_CENTER = BIT(20),
+	BT_AUDIO_LOCATION_BOTTOM_FRONT_CENTER = BIT(21),
+	BT_AUDIO_LOCATION_BOTTOM_FRONT_LEFT = BIT(22),
+	BT_AUDIO_LOCATION_BOTTOM_FRONT_RIGHT = BIT(23),
+	BT_AUDIO_LOCATION_FRONT_LEFT_WIDE = BIT(24),
+	BT_AUDIO_LOCATION_FRONT_RIGHT_WIDE = BIT(25),
+	BT_AUDIO_LOCATION_LEFT_SURROUND = BIT(26),
+	BT_AUDIO_LOCATION_RIGHT_SURROUND = BIT(27),
+};
+
 /** @brief Codec structure. */
 struct bt_codec {
 	/** Codec ID */
@@ -1014,6 +1049,40 @@ struct bt_audio_unicast_server_cb {
 	 */
 	int (*publish_capability)(struct bt_conn *conn, uint8_t type,
 				  uint8_t index, struct bt_codec *const codec);
+
+	/** @brief Publish location callback
+	 *
+	 *  Publish location callback is called whenever a remote client
+	 *  requests to read the Published Audio Capabilities (PAC) location,
+	 *  or if the location needs to be notified.
+	 *
+	 *  @param[in]  conn      The connection that requests the location.
+	 *                        Will be NULL if the location is requested
+	 *                        for sending a notification, as a result of
+	 *                        callling
+	 *                        bt_audio_unicast_server_location_changed().
+	 *  @param[in]  type      Type of the endpoint.
+	 *  @param[out] location  Pointer to the location that needs to be set.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*publish_location)(struct bt_conn *conn,
+				enum bt_audio_pac_type type,
+				enum bt_audio_location *location);
+
+	/** @brief Write location callback
+	 *
+	 *  Write location callback is called whenever a remote client
+	 *  requests to write the Published Audio Capabilities (PAC) location.
+	 *
+	 *  @param conn      The connection that requests the write.
+	 *  @param type      Type of the endpoint.
+	 *  @param location  The location being written.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*write_location)(struct bt_conn *conn, enum bt_audio_pac_type type,
+			      enum bt_audio_location location);
 };
 
 /** Broadcast Audio Sink callback structure */
@@ -1237,6 +1306,14 @@ int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb 
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb);
+
+/** @brief Notify location changed
+ *
+ * Notify connected clients that the location has changed
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_unicast_server_location_changed(enum bt_audio_pac_type type);
 
 /**
  * @defgroup bt_audio_client Audio Client APIs

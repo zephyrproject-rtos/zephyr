@@ -261,6 +261,15 @@ int bt_audio_capability_register(struct bt_audio_capability *cap);
  */
 int bt_audio_capability_unregister(struct bt_audio_capability *cap);
 
+/** @brief Set the location for an endpoint type
+ *
+ * @param type     Type of the endpoint.
+ * @param location The location to be set.
+ *
+ */
+int bt_audio_capability_set_location(enum bt_audio_pac_type type,
+				     enum bt_audio_location location);
+
 #ifdef __cplusplus
 }
 #endif

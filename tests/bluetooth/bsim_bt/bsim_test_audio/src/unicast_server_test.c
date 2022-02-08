@@ -205,9 +205,37 @@ static void init(void)
 	}
 }
 
+static void set_location(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_SINK,
+						       BT_AUDIO_LOCATION_FRONT_CENTER);
+		if (err != 0) {
+			FAIL("Failed to set sink location (err %d)\n", err);
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_SINK,
+						       (BT_AUDIO_LOCATION_FRONT_LEFT |
+							BT_AUDIO_LOCATION_FRONT_RIGHT));
+		if (err != 0) {
+			FAIL("Failed to set source location (err %d)\n", err);
+			return;
+		}
+	}
+
+	printk("Location successfully set\n");
+}
+
 static void test_main(void)
 {
 	init();
+
+	set_location();
 
 	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
 
