@@ -2,6 +2,7 @@ sample:
   name: Modbus TCP Server Sample
 tests:
   sample.modbus.tcp_server:
+    build_only: true
     platform_allow: frdm_k64f
     tags: modbus
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and

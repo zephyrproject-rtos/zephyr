@@ -2,6 +2,7 @@ sample:
   name: Modbus RTU Server Sample
 tests:
   sample.modbus.rtu_server:
+    build_only: true
     platform_allow: nrf52840dk_nrf52840 frdm_k64f
     tags: uart modbus
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
