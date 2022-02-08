@@ -91,7 +91,7 @@ for example, with the :ref:`synchronization_sample`:
    :goals: run
 
 This will build an image with the synchronization sample app, boot it and
-display the following console output:
+display the following ram console output:
 
 .. code-block:: console
 
@@ -102,6 +102,15 @@ display the following console output:
     thread_a: Hello World from cpu 0 on imx8mm_evk!
     thread_b: Hello World from cpu 0 on imx8mm_evk!
     thread_a: Hello World from cpu 0 on imx8mm_evk!
+
+Use Jailhouse hypervisor, after root cell linux is up:
+
+.. code-block:: console
+
+    #jailhouse enable imx8mm.cell
+    #jailhouse cell create imx8mm-zephyr.cell
+    #jailhouse cell load 1 zephyr.bin -a 0x93c00000
+    #jailhouse cell start 1
 
 References
 ==========
