@@ -80,8 +80,29 @@ size_t bt_eatt_count(struct bt_conn *conn);
  * @retval 0 in case of success
  */
 int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels);
-
 #endif /* CONFIG_BT_EATT */
+
+/* EATT channel information */
+struct bt_eatt_chan_info {
+	/* The connection the EATT channel belongs to */
+	struct bt_conn *conn;
+};
+
+/** @brief EATT callback structure. */
+struct bt_eatt_cb {
+	/** @brief An EATT channel has been connected. */
+	void (*chan_connected)(const struct bt_eatt_chan_info *info);
+
+	sys_snode_t node;
+};
+
+/** @brief Register EATT callbacks.
+ *
+ *  Register callbacks to monitor the state of EATT.
+ *
+ *  @param cb Callback struct.
+ */
+void bt_eatt_cb_register(struct bt_eatt_cb *cb);
 
 #ifdef __cplusplus
 }
