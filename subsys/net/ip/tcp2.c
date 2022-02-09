@@ -377,14 +377,14 @@ static int tcp_conn_unref(struct tcp *conn)
 	}
 #endif /* CONFIG_NET_TEST_PROTOCOL */
 
-	k_mutex_lock(&tcp_lock, K_FOREVER);
-
 	ref_count = atomic_dec(&conn->ref_count) - 1;
-	if (ref_count) {
+	if (ref_count != 0) {
 		tp_out(net_context_get_family(conn->context), conn->iface,
 		       "TP_TRACE", "event", "CONN_DELETE");
-		goto unlock;
+		return ref_count;
 	}
+
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	/* If there is any pending data, pass that to application */
 	while ((pkt = k_fifo_get(&conn->recv_data, K_NO_WAIT)) != NULL) {
@@ -429,7 +429,6 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
 
-unlock:
 	k_mutex_unlock(&tcp_lock);
 out:
 	return ref_count;
