@@ -128,19 +128,35 @@ below and at http://developercertificate.org/.
         consistent with this project or the open source license(s)
         involved.
 
-DCO Sign-Off Methods
-====================
+DCO Sign-Off
+============
 
-The DCO requires a sign-off message in the following format appear on each
-commit in the pull request::
+The "sign-off" in the DCO is a "Signed-off-by:" line in each commit's log
+message. The Signed-off-by: line must be in the following format::
 
-   Signed-off-by: Zephyrus Zephyr <zephyrus@zephyrproject.org>
+   Signed-off-by: Your Name <your.email@example.com>
 
-The DCO text can either be manually added to your commit body, or you can add
-either ``-s`` or ``--signoff`` to your usual Git commit commands. If you forget
-to add the sign-off you can also amend a previous commit with the sign-off by
-running ``git commit --amend -s``. If you've pushed your changes to GitHub
-already you'll need to force push your branch after this with ``git push -f``.
+For your commits, replace:
+
+- ``Your Name`` with your legal name (pseudonyms, hacker handles, and the
+  names of groups are not allowed)
+
+- ``your.email@example.com`` with the same email address you are using to
+  author the commit (CI will fail if there is no match)
+
+You can automatically add the Signed-off-by: line to your commit body using
+``git commit -s``. Use other commits in the zephyr git history as examples.
+
+Additional requirements:
+
+- If you are altering an existing commit created by someone else, you must add
+  your Signed-off-by: line without removing the existing one.
+
+- If you forget to add the Signed-off-by: line, you can add it to your previous
+  commit by running ``git commit --amend -s``.
+
+- If you've pushed your changes to GitHub already you'll need to force push
+  your branch after this with ``git push -f``.
 
 Notes
 =====
