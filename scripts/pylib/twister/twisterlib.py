@@ -1793,9 +1793,8 @@ Tests should reference the category and subsystem with a dot as a separator.
                     )
         return unique
 
-    @staticmethod
-    def scan_file(inf_name):
-        suite_regex = re.compile(
+    def scan_file(self, inf_name):
+        regular_suite_regex = re.compile(
             # do not match until end-of-line, otherwise we won't allow
             # stc_regex below to catch the ones that are declared in the same
             # line--as we only search starting the end of this match
@@ -1804,6 +1803,9 @@ Tests should reference the category and subsystem with a dot as a separator.
         registered_suite_regex = re.compile(
             br"^\s*ztest_register_test_suite"
             br"\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
+            re.MULTILINE)
+        new_suite_regex = re.compile(
+            br"^\s*ZTEST_SUITE\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
             re.MULTILINE)
         # Checks if the file contains a definition of "void test_main(void)"
         # Since ztest provides a plain test_main implementation it is OK to:
@@ -1814,35 +1816,11 @@ Tests should reference the category and subsystem with a dot as a separator.
         test_main_regex = re.compile(
             br"^\s*void\s+test_main\(void\)",
             re.MULTILINE)
-        stc_regex = re.compile(
-            br"""^\s*  # empty space at the beginning is ok
-            # catch the case where it is declared in the same sentence, e.g:
-            #
-            # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
-            # ztest_register_test_suite(n, p, ztest_user_unit_test(TESTNAME),
-            (?:ztest_
-              (?:test_suite\(|register_test_suite\([a-zA-Z0-9_]+\s*,\s*)
-              [a-zA-Z0-9_]+\s*,\s*
-            )?
-            # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
-            ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?
-            # Consume the argument that becomes the extra testcase
-            \(\s*(?P<stc_name>[a-zA-Z0-9_]+)
-            # _setup_teardown() variant has two extra arguments that we ignore
-            (?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?
-            \s*\)""",
-            # We don't check how it finishes; we don't care
-            re.MULTILINE | re.VERBOSE)
-        suite_run_regex = re.compile(
-            br"^\s*ztest_run_test_suite\((?P<suite_name>[a-zA-Z0-9_]+)\)",
-            re.MULTILINE)
         registered_suite_run_regex = re.compile(
             br"^\s*ztest_run_registered_test_suites\("
             br"(\*+|&)?(?P<state_identifier>[a-zA-Z0-9_]+)\)",
             re.MULTILINE)
-        achtung_regex = re.compile(
-            br"(#ifdef|#endif)",
-            re.MULTILINE)
+
         warnings = None
         has_registered_test_suites = False
         has_run_registered_test_suites = False
@@ -1856,10 +1834,12 @@ Tests should reference the category and subsystem with a dot as a separator.
                              'offset': 0}
 
             with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
-                suite_regex_matches = \
-                    [m for m in suite_regex.finditer(main_c)]
+                regular_suite_regex_matches = \
+                    [m for m in regular_suite_regex.finditer(main_c)]
                 registered_suite_regex_matches = \
                     [m for m in registered_suite_regex.finditer(main_c)]
+                new_suite_regex_matches = \
+                    [m for m in new_suite_regex.finditer(main_c)]
 
                 if registered_suite_regex_matches:
                     has_registered_test_suites = True
@@ -1868,58 +1848,140 @@ Tests should reference the category and subsystem with a dot as a separator.
                 if test_main_regex.search(main_c):
                     has_test_main = True
 
-                if not suite_regex_matches and not has_registered_test_suites:
+                if regular_suite_regex_matches:
+                    ztest_suite_names = \
+                        self._extract_ztest_suite_names(regular_suite_regex_matches)
+                    testcase_names, warnings = \
+                        self._find_regular_ztest_testcases(main_c, regular_suite_regex_matches, has_registered_test_suites)
+                elif registered_suite_regex_matches:
+                    ztest_suite_names = \
+                        self._extract_ztest_suite_names(registered_suite_regex_matches)
+                    testcase_names, warnings = \
+                        self._find_regular_ztest_testcases(main_c, registered_suite_regex_matches, has_registered_test_suites)
+                elif new_suite_regex_matches:
+                    ztest_suite_names = \
+                        self._extract_ztest_suite_names(new_suite_regex_matches)
+                    testcase_names, warnings = \
+                        self._find_new_ztest_testcases(main_c)
+                else:
                     # can't find ztest_test_suite, maybe a client, because
                     # it includes ztest.h
-                    return ScanPathResult(
-                        matches=None,
-                        warnings=None,
-                        has_registered_test_suites=has_registered_test_suites,
-                        has_run_registered_test_suites=has_run_registered_test_suites,
-                        has_test_main=has_test_main,
-                        ztest_suite_names=[])
+                    ztest_suite_names = []
+                    testcase_names, warnings = None, None
 
-                suite_run_match = suite_run_regex.search(main_c)
-                if suite_regex_matches and not suite_run_match:
-                    raise ValueError("can't find ztest_run_test_suite")
-
-                if suite_regex_matches:
-                    search_start = suite_regex_matches[0].end()
-                    ztest_suite_names = \
-                        [m.group("suite_name") for m in suite_regex_matches]
-                else:
-                    search_start = registered_suite_regex_matches[0].end()
-                    ztest_suite_names = \
-                        [m.group("suite_name") for m in registered_suite_regex_matches]
-                ztest_suite_names = \
-                    [name.decode("UTF-8") for name in ztest_suite_names]
-
-                if suite_run_match:
-                    search_end = suite_run_match.start()
-                else:
-                    search_end = re.compile(br"\);", re.MULTILINE) \
-                        .search(main_c, search_start) \
-                        .end()
-                achtung_matches = re.findall(
-                    achtung_regex,
-                    main_c[search_start:search_end])
-                if achtung_matches:
-                    warnings = "found invalid %s in ztest_test_suite()" \
-                               % ", ".join(sorted({match.decode() for match in achtung_matches},reverse = True))
-                _matches = re.findall(
-                    stc_regex,
-                    main_c[search_start:search_end])
-                for match in _matches:
-                    if not match.decode().startswith("test_"):
-                        warnings = "Found a test that does not start with test_"
-                matches = [match.decode().replace("test_", "", 1) for match in _matches]
                 return ScanPathResult(
-                    matches=matches,
+                    matches=testcase_names,
                     warnings=warnings,
                     has_registered_test_suites=has_registered_test_suites,
                     has_run_registered_test_suites=has_run_registered_test_suites,
                     has_test_main=has_test_main,
                     ztest_suite_names=ztest_suite_names)
+
+    @staticmethod
+    def _extract_ztest_suite_names(suite_regex_matches):
+        ztest_suite_names = \
+            [m.group("suite_name") for m in suite_regex_matches]
+        ztest_suite_names = \
+            [name.decode("UTF-8") for name in ztest_suite_names]
+        return ztest_suite_names
+
+    def _find_regular_ztest_testcases(self, search_area, suite_regex_matches, is_registered_test_suite):
+        """
+        Find regular ztest testcases like "ztest_unit_test" or similar. Return
+        testcases' names and eventually found warnings.
+        """
+        testcase_regex = re.compile(
+            br"""^\s*  # empty space at the beginning is ok
+            # catch the case where it is declared in the same sentence, e.g:
+            #
+            # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
+            # ztest_register_test_suite(n, p, ztest_user_unit_test(TESTNAME),
+            (?:ztest_
+              (?:test_suite\(|register_test_suite\([a-zA-Z0-9_]+\s*,\s*)
+              [a-zA-Z0-9_]+\s*,\s*
+            )?
+            # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
+            ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?
+            # Consume the argument that becomes the extra testcase
+            \(\s*(?P<testcase_name>[a-zA-Z0-9_]+)
+            # _setup_teardown() variant has two extra arguments that we ignore
+            (?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?
+            \s*\)""",
+            # We don't check how it finishes; we don't care
+            re.MULTILINE | re.VERBOSE)
+        achtung_regex = re.compile(
+            br"(#ifdef|#endif)",
+            re.MULTILINE)
+
+        search_start, search_end = \
+            self._get_search_area_boundary(search_area, suite_regex_matches, is_registered_test_suite)
+        limited_search_area = search_area[search_start:search_end]
+        testcase_names, warnings = \
+            self._find_ztest_testcases(limited_search_area, testcase_regex)
+
+        achtung_matches = re.findall(achtung_regex, limited_search_area)
+        if achtung_matches and warnings is None:
+            achtung = ", ".join(sorted({match.decode() for match in achtung_matches},reverse = True))
+            warnings = f"found invalid {achtung} in ztest_test_suite()"
+
+        return testcase_names, warnings
+
+    @staticmethod
+    def _get_search_area_boundary(search_area, suite_regex_matches, is_registered_test_suite):
+        """
+        Get search area boundary based on "ztest_test_suite(...)",
+        "ztest_register_test_suite(...)" or "ztest_run_test_suite(...)"
+        functions occurrence.
+        """
+        suite_run_regex = re.compile(
+            br"^\s*ztest_run_test_suite\((?P<suite_name>[a-zA-Z0-9_]+)\)",
+            re.MULTILINE)
+
+        search_start = suite_regex_matches[0].end()
+
+        suite_run_match = suite_run_regex.search(search_area)
+        if suite_run_match:
+            search_end = suite_run_match.start()
+        elif not suite_run_match and not is_registered_test_suite:
+            raise ValueError("can't find ztest_run_test_suite")
+        else:
+            search_end = re.compile(br"\);", re.MULTILINE) \
+                .search(search_area, search_start) \
+                .end()
+
+        return search_start, search_end
+
+    def _find_new_ztest_testcases(self, search_area):
+        """
+        Find regular ztest testcases like "ZTEST" or "ZTEST_F". Return
+        testcases' names and eventually found warnings.
+        """
+        testcase_regex = re.compile(
+            br"^\s*(?:ZTEST|ZTEST_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+            br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
+            re.MULTILINE)
+
+        return self._find_ztest_testcases(search_area, testcase_regex)
+
+    @staticmethod
+    def _find_ztest_testcases(search_area, testcase_regex):
+        """
+        Parse search area and try to find testcases defined in testcase_regex
+        argument. Return testcase names and eventually found warnings.
+        """
+        testcase_regex_matches = \
+            [m for m in testcase_regex.finditer(search_area)]
+        testcase_names = \
+            [m.group("testcase_name") for m in testcase_regex_matches]
+        testcase_names = [name.decode("UTF-8") for name in testcase_names]
+        warnings = None
+        for testcase_name in testcase_names:
+            if not testcase_name.startswith("test_"):
+                warnings = "Found a test that does not start with test_"
+        testcase_names = \
+            [tc_name.replace("test_", "", 1) for tc_name in testcase_names]
+
+        return testcase_names, warnings
 
     def scan_path(self, path):
         subcases = []
