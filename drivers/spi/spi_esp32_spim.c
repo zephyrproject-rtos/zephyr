@@ -20,22 +20,12 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #else
 #include <drivers/interrupt_controller/intc_esp32c3.h>
 #endif
-#include <drivers/gpio/gpio_esp32.h>
 #include <drivers/clock_control.h>
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
 
 /* pins, signals and interrupts shall be placed into dts */
-#if defined(CONFIG_SOC_ESP32)
-#define MISO_IDX_2 HSPIQ_IN_IDX
-#define MISO_IDX_3 VSPIQ_IN_IDX
-#define MOSI_IDX_2 HSPID_OUT_IDX
-#define MOSI_IDX_3 VSPID_OUT_IDX
-#define SCLK_IDX_2 HSPICLK_OUT_IDX
-#define SCLK_IDX_3 VSPICLK_OUT_IDX
-#define CSEL_IDX_2 HSPICS0_OUT_IDX
-#define CSEL_IDX_3 VSPICS0_OUT_IDX
-#elif defined(CONFIG_SOC_ESP32S2)
+#if defined(CONFIG_SOC_ESP32S2)
 #define MISO_IDX_2 FSPIQ_IN_IDX
 #define MISO_IDX_3 SPI3_Q_IN_IDX
 #define MOSI_IDX_2 FSPID_OUT_IDX
@@ -157,42 +147,6 @@ static int spi_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static int spi_esp32_configure_pin(gpio_pin_t pin, int pin_sig,
-				   bool use_iomux,
-				   gpio_flags_t pin_mode)
-{
-	const char *device_name = gpio_esp32_get_gpio_for_pin(pin);
-	const struct device *gpio;
-	int ret;
-
-	if (!device_name) {
-		LOG_ERR("Could not find GPIO node on devicetree");
-		return -EINVAL;
-	}
-
-	gpio = device_get_binding(device_name);
-	if (!gpio) {
-		LOG_ERR("Could not bind to GPIO device");
-		return -EIO;
-	}
-
-	if (use_iomux) {
-		ret = gpio_pin_configure(gpio, pin, pin_mode);
-		if (ret < 0) {
-			LOG_ERR("SPI pin configuration failed");
-			return ret;
-		}
-	}
-
-	if (pin_mode == GPIO_INPUT) {
-		esp_rom_gpio_matrix_in(pin, pin_sig, false);
-	} else {
-		esp_rom_gpio_matrix_out(pin, pin_sig, false, false);
-	}
-
-	return 0;
-}
-
 static inline spi_ll_io_mode_t spi_esp32_get_io_mode(uint16_t operation)
 {
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
@@ -252,31 +206,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_esp32_configure_pin(cfg->pins.miso,
-				cfg->signals.miso_s,
-				cfg->use_iomux,
-				GPIO_INPUT);
-
-	spi_esp32_configure_pin(cfg->pins.mosi,
-				cfg->signals.mosi_s,
-				cfg->use_iomux,
-				GPIO_OUTPUT_LOW);
-
-	spi_esp32_configure_pin(cfg->pins.sclk,
-				cfg->signals.sclk_s,
-				cfg->use_iomux,
-				GPIO_OUTPUT);
-
-	if (ctx->config->cs == NULL) {
-		hal_dev->cs_setup = 1;
-		hal_dev->cs_hold = 1;
-		hal_dev->cs_pin_id = 0;
-
-		spi_esp32_configure_pin(cfg->pins.csel,
-					cfg->signals.csel_s,
-					cfg->use_iomux,
-					GPIO_OUTPUT | GPIO_ACTIVE_LOW);
-	}
+	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	/* input parameters to calculate timing configuration */
 	spi_hal_timing_param_t timing_param = {
@@ -421,7 +351,12 @@ static const struct spi_driver_api spi_api = {
 #define GET_AS_CS(idx)
 #endif
 
+#define SPI2_PINSTATE_IDX	0
+#define SPI3_PINSTATE_IDX	1
+
 #define ESP32_SPI_INIT(idx)	\
+				\
+PINCTRL_DT_INST_DEFINE(SPI##idx##_PINSTATE_IDX);	\
 										\
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
@@ -446,21 +381,7 @@ static const struct spi_driver_api spi_api = {
 		.duty_cycle = 0, \
 		.input_delay_ns = 0, \
 		.irq_source = DT_IRQN(DT_NODELABEL(spi##idx)), \
-		.use_iomux = DT_PROP(DT_NODELABEL(spi##idx), use_iomux), \
-		.signals = {	\
-			.miso_s = MISO_IDX_##idx,	\
-			.mosi_s = MOSI_IDX_##idx,	\
-			.sclk_s = SCLK_IDX_##idx,	\
-			.csel_s = CSEL_IDX_##idx	\
-		},	\
-			\
-		.pins = {	\
-			  .miso = DT_PROP(DT_NODELABEL(spi##idx), miso_pin),	\
-			  .mosi = DT_PROP(DT_NODELABEL(spi##idx), mosi_pin),	\
-			  .sclk = DT_PROP(DT_NODELABEL(spi##idx), sclk_pin),	\
-			  .csel = DT_PROP(DT_NODELABEL(spi##idx), csel_pin)	\
-		},	\
-			\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(SPI##idx##_PINSTATE_IDX),	\
 		.clock_subsys =	\
 			(clock_control_subsys_t)DT_CLOCKS_CELL(	\
 				DT_NODELABEL(spi##idx), offset),	\
