@@ -8,3 +8,19 @@ config I2C_ITE_IT8XXX2
 	  Enable I2C support on it8xxx2_evb.
 	  Supported Speeds: 100kHz, 400kHz and 1MHz.
 	  This driver supports repeated start.
+
+config I2C_ITE_ADJUST_SCL_LOW_PSC
+	int "Adjust SCL low period prescale"
+	depends on I2C_ITE_IT8XXX2
+	default 0
+	range 0 255
+	help
+	  This option is used to configure the I2C speed prescaler
+	  for the SCL low period. It only applies to I2C3/4/5 ports.
+	  When set to >= 1, it will increase the low period of the
+	  SCL clock and so reduce the signal frequency.
+	  The resulting SCL cycle time is given by the following
+	  formula:
+	  SCL cycle =
+	  2 * (psr + I2C_ADJUST_SCL_LOW_PRESCALE + 2) *
+	  SMBus clock cycle

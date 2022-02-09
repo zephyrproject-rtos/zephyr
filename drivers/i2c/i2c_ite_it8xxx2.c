@@ -302,6 +302,9 @@ static void i2c_enhanced_port_set_frequency(const struct device *dev,
 			psr = 0xFD;
 		}
 
+		/* Adjust SCL low period prescale */
+		psr += CONFIG_I2C_ITE_ADJUST_SCL_LOW_PSC;
+
 		/* Set I2C Speed */
 		IT83XX_I2C_PSR(base) = psr & 0xFF;
 		IT83XX_I2C_HSPR(base) = psr & 0xFF;
