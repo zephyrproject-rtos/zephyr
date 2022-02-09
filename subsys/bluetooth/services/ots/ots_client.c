@@ -18,8 +18,6 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/l2cap.h>
 
-#include "../../host/conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
-
 #include <bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_client_internal.h"
@@ -132,7 +130,7 @@ static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		    struct bt_conn *conn)
 {
 	/* Not doing any writes yet */
-	BT_ERR("Unexpected call, context: %p, conn: %p", l2cap_ctx, conn);
+	BT_ERR("Unexpected call, context: %p, conn: %p", l2cap_ctx, (void *)conn);
 }
 
 static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -145,7 +143,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	int cb_ret;
 
 	BT_DBG("Incoming L2CAP data, context: %p, conn: %p, len: %u, offset: %u",
-	       l2cap_ctx, conn, buf->len, offset);
+	       l2cap_ctx, (void *)conn, buf->len, offset);
 
 	cur_inst->rcvd_size += buf->len;
 
@@ -196,7 +194,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		   struct bt_conn *conn)
 {
-	BT_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, conn);
+	BT_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, (void *)conn);
 }
 /* End L2CAP callbacks */
 
