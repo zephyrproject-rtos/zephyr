@@ -80,6 +80,7 @@ config THREAD_ANALYZER_AUTO_INTERVAL
 
 config THREAD_ANALYZER_AUTO_STACK_SIZE
 	int "Stack size for the periodic thread analysis thread"
+	default 2048 if THREAD_ANALYZER_USE_LOG && LOG_MODE_IMMEDIATE && NO_OPTIMIZATIONS
 	default 1024
 
 endif # THREAD_ANALYZER_AUTO
