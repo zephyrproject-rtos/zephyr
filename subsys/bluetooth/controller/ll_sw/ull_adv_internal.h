@@ -48,6 +48,12 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 			    struct pdu_adv *pdu_scan);
 
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+/* helper function to handle adv done events */
+void ull_adv_done(struct node_rx_event_done *done);
+#endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 
 /* Enumeration provides flags for management of memory for extra_data
@@ -61,9 +67,6 @@ enum ull_adv_pdu_extra_data_flag {
 	/* Never allocate new memory for extra_data */
 	ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER
 };
-
-/* helper function to handle adv done events */
-void ull_adv_done(struct node_rx_event_done *done);
 
 /* Helper functions to initialise and reset ull_adv_aux module */
 int ull_adv_aux_init(void);
