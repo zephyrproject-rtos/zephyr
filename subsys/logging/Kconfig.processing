@@ -163,6 +163,7 @@ config LOG_TIMESTAMP_64BIT
 
 config LOG_SPEED
 	bool "Prefer performance over size"
+	depends on LOG_MODE_DEFERRED
 	help
 	  If enabled, logging may take more code size to get faster logging.
 endif # LOG2
