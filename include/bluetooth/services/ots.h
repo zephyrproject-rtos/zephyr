@@ -21,12 +21,14 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
 #include <sys/types.h>
 #include <sys/util.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
+#include <bluetooth/gatt.h>
 
 /** @brief Size of OTS object ID (in bytes). */
 #define BT_OTS_OBJ_ID_SIZE 6
@@ -778,6 +780,230 @@ int bt_ots_init(struct bt_ots *ots, struct bt_ots_init *ots_init);
  */
 struct bt_ots *bt_ots_free_instance_get(void);
 
+#define BT_OTS_STOP                       0
+#define BT_OTS_CONTINUE                   1
+
+/* TODO: Merge server and client instance as opaque type */
+/** @brief OTS client instance */
+struct bt_ots_client {
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint16_t feature_handle;
+	uint16_t obj_name_handle;
+	uint16_t obj_type_handle;
+	uint16_t obj_size_handle;
+	uint16_t obj_properties_handle;
+	uint16_t obj_created_handle;
+	uint16_t obj_modified_handle;
+	uint16_t obj_id_handle;
+	uint16_t oacp_handle;
+	uint16_t olcp_handle;
+
+	struct bt_gatt_subscribe_params oacp_sub_params;
+	struct bt_gatt_discover_params oacp_sub_disc_params;
+	struct bt_gatt_subscribe_params olcp_sub_params;
+	struct bt_gatt_discover_params olcp_sub_disc_params;
+
+	struct bt_gatt_write_params write_params;
+	struct bt_gatt_read_params read_proc;
+	struct bt_ots_client_cb *cb;
+
+	struct bt_ots_feat features;
+
+	struct bt_ots_obj_metadata cur_object;
+};
+
+/** OTS client callback structure */
+struct bt_ots_client_cb {
+	/** @brief Callback function when a new object is selected.
+	 *
+	 *  Called when the a new object is selected and the current
+	 *  object has changed. The `cur_object` in `ots_inst` will
+	 *  have been reset, and metadata should be read again with
+	 *  bt_ots_client_read_object_metadata().
+	 *
+	 *  @param conn              The connection to the peer device.
+	 *  @param err               Error code (bt_ots_olcp_res_code).
+	 *  @param ots_inst          Pointer to the OTC instance.
+	 */
+	void (*obj_selected)(struct bt_conn *conn, int err,
+			     struct bt_ots_client *ots_inst);
+
+
+	/** @brief Callback function for content of the selected object.
+	 *
+	 *  Called when the object content is received.
+	 *
+	 *  @param conn          The connection to the peer device.
+	 *  @param offset        Offset of the received data.
+	 *  @param len           Length of the received data.
+	 *  @param data_p        Pointer to the received data.
+	 *  @param is_complete   Indicate if the whole object has been received.
+	 *  @param ots_inst      Pointer to the OTC instance.
+	 *
+	 *  @return int          BT_OTS_STOP or BT_OTS_CONTINUE. BT_OTS_STOP can
+	 *                       be used to stop reading.
+	 */
+	int (*content_cb)(struct bt_conn *conn, uint32_t offset, uint32_t len,
+			  uint8_t *data_p, bool is_complete,
+			  struct bt_ots_client *ots_inst);
+
+	/** @brief Callback function for metadata of the selected object.
+	 *
+	 *  Called when metadata of the selected object are read. Not all of
+	 *  the metadata may have been initialized.
+	 *
+	 *  @param conn              The connection to the peer device.
+	 *  @param err               Error value. 0 on success,
+	 *                           GATT error or ERRNO on fail.
+	 *  @param ots_inst          Pointer to the OTC instance.
+	 *  @param metadata_read     Bitfield of the metadata that was
+	 *                           successfully read.
+	 */
+	void (*metadata_cb)(struct bt_conn *conn, int err,
+			    struct bt_ots_client *ots_inst,
+			    uint8_t metadata_read);
+};
+
+/** @brief Register an Object Transfer Service Instance.
+ *
+ *  Register an Object Transfer Service instance discovered on the peer.
+ *  Call this function when an OTS instance is discovered
+ *  (discovery is to be handled by the higher layer).
+ *
+ *  @param[in]  ots_inst      Discovered OTS instance.
+ *
+ *  @return int               0 if success, ERRNO on failure.
+ */
+int bt_ots_client_register(struct bt_ots_client *ots_inst);
+
+/** @brief OTS Indicate Handler function.
+ *
+ *  Set this function as callback for indicate handler when discovering OTS.
+ *
+ *   @param conn        Connection object. May be NULL, indicating that the
+ *                      peer is being unpaired.
+ *   @param params      Subscription parameters.
+ *   @param data        Attribute value data. If NULL then subscription was
+ *                      removed.
+ *   @param length      Attribute value length.
+ */
+uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
+				       struct bt_gatt_subscribe_params *params,
+				       const void *data, uint16_t length);
+
+/** @brief Read the OTS feature characteristic.
+ *
+ *  @param conn         Pointer to the connection object.
+ *  @param otc_inst     Pointer to the OTC instance.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_read_feature(struct bt_conn *conn,
+			       struct bt_ots_client *otc_inst);
+
+/** @brief Select an object by its Object ID.
+ *
+ *  @param conn         Pointer to the connection object.
+ *  @param obj_id       Object's ID.
+ *  @param otc_inst     Pointer to the OTC instance.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_select_id(struct bt_conn *conn,
+			    struct bt_ots_client *otc_inst,
+			    uint64_t obj_id);
+
+/** @brief Select the first object.
+ *
+ *  @param conn         Pointer to the connection object.
+ *  @param otc_inst     Pointer to the OTC instance.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_select_first(struct bt_conn *conn,
+			       struct bt_ots_client *otc_inst);
+
+/** @brief Select the last object.
+ *
+ *  @param conn         Pointer to the connection object.
+ *  @param otc_inst     Pointer to the OTC instance.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_select_last(struct bt_conn *conn,
+			      struct bt_ots_client *otc_inst);
+
+/** @brief Select the next object.
+ *
+ *  @param conn         Pointer to the connection object.
+ *  @param otc_inst     Pointer to the OTC instance.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_select_next(struct bt_conn *conn,
+			      struct bt_ots_client *otc_inst);
+
+/** @brief Select the previous object.
+ *
+ *  @param conn         Pointer to the connection object.
+ *  @param otc_inst     Pointer to the OTC instance.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_select_prev(struct bt_conn *conn,
+			      struct bt_ots_client *otc_inst);
+
+/** @brief Read the metadata of the current object.
+ *
+ *  @param conn         Pointer to the connection object.
+ *  @param otc_inst     Pointer to the OTC instance.
+ *  @param metadata     Bitfield (`BT_OTS_METADATA_REQ_*`) of the metadata
+ *                      to read.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_read_object_metadata(struct bt_conn *conn,
+				       struct bt_ots_client *otc_inst,
+				       uint8_t metadata);
+
+/** @brief Read the data of the current selected object.
+ *
+ *  This will trigger an OACP read operation for the current size of the object
+ *  with a 0 offset and then expect receiving the content via the L2CAP CoC.
+ *
+ *  @param conn         Pointer to the connection object.
+ *  @param otc_inst     Pointer to the OTC instance.
+ *
+ *  @return int         0 if success, ERRNO on failure.
+ */
+int bt_ots_client_read_object_data(struct bt_conn *conn,
+				   struct bt_ots_client *otc_inst);
+
+/** @brief Directory listing object metadata callback
+ *
+ * If a directory listing is decoded using bt_ots_client_decode_dirlisting(),
+ * this callback will be called for each object in the directory listing.
+ *
+ *  @param meta The metadata of the decoded object
+ *
+ *  @return int   BT_OTS_STOP or BT_OTS_CONTINUE. BT_OTS_STOP can be used to
+ *                stop the decoding.
+ */
+typedef int (*bt_ots_client_dirlisting_cb)(struct bt_ots_obj_metadata *meta);
+
+/** @brief Decode Directory Listing object into object metadata.
+ *
+ *  If the Directory Listing object contains multiple objects, then the
+ *  callback will be called for each of them.
+ *
+ *  @param data        The data received for the directory listing object.
+ *  @param length      Length of the data.
+ *  @param cb          The callback that will be called for each object.
+ */
+int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
+				    bt_ots_client_dirlisting_cb cb);
+
 /** @brief Converts binary OTS Object ID to string.
  *
  *  @param obj_id Object ID.
@@ -798,6 +1024,14 @@ static inline int bt_ots_obj_id_to_str(uint64_t obj_id, char *str, size_t len)
 	return snprintk(str, len, "0x%02X%02X%02X%02X%02X%02X",
 			id[5], id[4], id[3], id[2], id[1], id[0]);
 }
+
+/** @brief Displays one or more object metadata as text with BT_INFO.
+ *
+ * @param metadata Pointer to the first (or only) metadata in an array.
+ * @param count    Number of metadata objects to display information of.
+ */
+void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
+			     uint16_t count);
 
 #ifdef __cplusplus
 }
