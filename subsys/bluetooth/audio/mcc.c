@@ -1451,13 +1451,13 @@ int bt_mcc_init(struct bt_mcc_cb *cb)
 	/* TODO: Have one single content callback. */
 	/* For now: Use the icon callback for content - it is the first, */
 	/* and this will anyway be reset later. */
-	otc_cb.content_cb  = on_icon_content;
-	otc_cb.obj_selected = on_obj_selected;
-	otc_cb.metadata_cb = on_object_metadata;
+	otc_cb.obj_content_recv  = on_icon_content;
+	otc_cb.obj_selected      = on_obj_selected;
+	otc_cb.obj_metadata_recv = on_object_metadata;
 
-	BT_DBG("Current object selected callback: %p", otc_cb.obj_selected);
-	BT_DBG("Content callback: %p", otc_cb.content_cb);
-	BT_DBG("Metadata callback: %p", otc_cb.metadata_cb);
+	BT_DBG("Object selected callback: %p", otc_cb.obj_selected);
+	BT_DBG("Object content callback: %p", otc_cb.obj_content_recv);
+	BT_DBG("Object metadata callback: %p", otc_cb.obj_metadata_recv);
 #endif /* CONFIG_BT_MCC_OTS */
 
 	return 0;
@@ -2667,7 +2667,7 @@ int bt_mcc_otc_read_icon_object(struct bt_conn *conn)
 	int err;
 	/* TODO: Add handling for busy - either MCS or OTS */
 
-	cur_mcs_inst->otc.cb->content_cb = on_icon_content;
+	cur_mcs_inst->otc.cb->obj_content_recv = on_icon_content;
 
 	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
@@ -2684,7 +2684,7 @@ int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn)
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
-	cur_mcs_inst->otc.cb->content_cb = on_track_segments_content;
+	cur_mcs_inst->otc.cb->obj_content_recv = on_track_segments_content;
 
 	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
@@ -2701,7 +2701,7 @@ int bt_mcc_otc_read_current_track_object(struct bt_conn *conn)
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
-	cur_mcs_inst->otc.cb->content_cb = on_current_track_content;
+	cur_mcs_inst->otc.cb->obj_content_recv = on_current_track_content;
 
 	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
@@ -2718,7 +2718,7 @@ int bt_mcc_otc_read_next_track_object(struct bt_conn *conn)
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
-	cur_mcs_inst->otc.cb->content_cb = on_next_track_content;
+	cur_mcs_inst->otc.cb->obj_content_recv = on_next_track_content;
 
 	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
@@ -2737,7 +2737,7 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 
 	/* Reuse callback for current group */
-	cur_mcs_inst->otc.cb->content_cb = on_parent_group_content;
+	cur_mcs_inst->otc.cb->obj_content_recv = on_parent_group_content;
 
 	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
@@ -2754,7 +2754,7 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
-	cur_mcs_inst->otc.cb->content_cb = on_current_group_content;
+	cur_mcs_inst->otc.cb->obj_content_recv = on_current_group_content;
 
 	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {

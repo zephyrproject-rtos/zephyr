@@ -844,9 +844,9 @@ struct bt_ots_client_cb {
 	 *  @return int          BT_OTS_STOP or BT_OTS_CONTINUE. BT_OTS_STOP can
 	 *                       be used to stop reading.
 	 */
-	int (*content_cb)(struct bt_conn *conn, uint32_t offset, uint32_t len,
-			  uint8_t *data_p, bool is_complete,
-			  struct bt_ots_client *ots_inst);
+	int (*obj_content_recv)(struct bt_conn *conn, uint32_t offset,
+				uint32_t len, uint8_t *data_p, bool is_complete,
+				struct bt_ots_client *ots_inst);
 
 	/** @brief Callback function for metadata of the selected object.
 	 *
@@ -860,9 +860,9 @@ struct bt_ots_client_cb {
 	 *  @param metadata_read     Bitfield of the metadata that was
 	 *                           successfully read.
 	 */
-	void (*metadata_cb)(struct bt_conn *conn, int err,
-			    struct bt_ots_client *ots_inst,
-			    uint8_t metadata_read);
+	void (*obj_metadata_recv)(struct bt_conn *conn, int err,
+				  struct bt_ots_client *ots_inst,
+				  uint8_t metadata_read);
 };
 
 /** @brief Register an Object Transfer Service Instance.
