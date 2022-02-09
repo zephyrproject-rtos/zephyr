@@ -822,46 +822,46 @@ struct bt_ots_client_cb {
 	 *  have been reset, and metadata should be read again with
 	 *  bt_ots_client_read_object_metadata().
 	 *
+	 *  @param ots_inst          Pointer to the OTC instance.
 	 *  @param conn              The connection to the peer device.
 	 *  @param err               Error code (bt_ots_olcp_res_code).
-	 *  @param ots_inst          Pointer to the OTC instance.
 	 */
-	void (*obj_selected)(struct bt_conn *conn, int err,
-			     struct bt_ots_client *ots_inst);
+	void (*obj_selected)(struct bt_ots_client *ots_inst,
+			     struct bt_conn *conn, int err);
 
 
 	/** @brief Callback function for content of the selected object.
 	 *
 	 *  Called when the object content is received.
 	 *
+	 *  @param ots_inst      Pointer to the OTC instance.
 	 *  @param conn          The connection to the peer device.
 	 *  @param offset        Offset of the received data.
 	 *  @param len           Length of the received data.
 	 *  @param data_p        Pointer to the received data.
 	 *  @param is_complete   Indicate if the whole object has been received.
-	 *  @param ots_inst      Pointer to the OTC instance.
 	 *
 	 *  @return int          BT_OTS_STOP or BT_OTS_CONTINUE. BT_OTS_STOP can
 	 *                       be used to stop reading.
 	 */
-	int (*obj_content_recv)(struct bt_conn *conn, uint32_t offset,
-				uint32_t len, uint8_t *data_p, bool is_complete,
-				struct bt_ots_client *ots_inst);
+	int (*obj_content_recv)(struct bt_ots_client *ots_inst,
+				struct bt_conn *conn, uint32_t offset,
+				uint32_t len, uint8_t *data_p, bool is_complete);
 
 	/** @brief Callback function for metadata of the selected object.
 	 *
 	 *  Called when metadata of the selected object are read. Not all of
 	 *  the metadata may have been initialized.
 	 *
+	 *  @param ots_inst          Pointer to the OTC instance.
 	 *  @param conn              The connection to the peer device.
 	 *  @param err               Error value. 0 on success,
 	 *                           GATT error or ERRNO on fail.
-	 *  @param ots_inst          Pointer to the OTC instance.
 	 *  @param metadata_read     Bitfield of the metadata that was
 	 *                           successfully read.
 	 */
-	void (*obj_metadata_recv)(struct bt_conn *conn, int err,
-				  struct bt_ots_client *ots_inst,
+	void (*obj_metadata_recv)(struct bt_ots_client *ots_inst,
+				  struct bt_conn *conn, int err,
 				  uint8_t metadata_read);
 };
 
@@ -894,77 +894,77 @@ uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
 
 /** @brief Read the OTS feature characteristic.
  *
- *  @param conn         Pointer to the connection object.
  *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_ots_client_read_feature(struct bt_conn *conn,
-			       struct bt_ots_client *otc_inst);
+int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
+			       struct bt_conn *conn);
 
 /** @brief Select an object by its Object ID.
  *
+ *  @param otc_inst     Pointer to the OTC instance.
  *  @param conn         Pointer to the connection object.
  *  @param obj_id       Object's ID.
- *  @param otc_inst     Pointer to the OTC instance.
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_ots_client_select_id(struct bt_conn *conn,
-			    struct bt_ots_client *otc_inst,
+int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
+			    struct bt_conn *conn,
 			    uint64_t obj_id);
 
 /** @brief Select the first object.
  *
- *  @param conn         Pointer to the connection object.
  *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_ots_client_select_first(struct bt_conn *conn,
-			       struct bt_ots_client *otc_inst);
+int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
+			       struct bt_conn *conn);
 
 /** @brief Select the last object.
  *
- *  @param conn         Pointer to the connection object.
  *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_ots_client_select_last(struct bt_conn *conn,
-			      struct bt_ots_client *otc_inst);
+int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
+			      struct bt_conn *conn);
 
 /** @brief Select the next object.
  *
- *  @param conn         Pointer to the connection object.
  *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_ots_client_select_next(struct bt_conn *conn,
-			      struct bt_ots_client *otc_inst);
+int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
+			      struct bt_conn *conn);
 
 /** @brief Select the previous object.
  *
- *  @param conn         Pointer to the connection object.
  *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_ots_client_select_prev(struct bt_conn *conn,
-			      struct bt_ots_client *otc_inst);
+int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
+			      struct bt_conn *conn);
 
 /** @brief Read the metadata of the current object.
  *
- *  @param conn         Pointer to the connection object.
  *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
  *  @param metadata     Bitfield (`BT_OTS_METADATA_REQ_*`) of the metadata
  *                      to read.
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_ots_client_read_object_metadata(struct bt_conn *conn,
-				       struct bt_ots_client *otc_inst,
+int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
+				       struct bt_conn *conn,
 				       uint8_t metadata);
 
 /** @brief Read the data of the current selected object.
@@ -972,13 +972,13 @@ int bt_ots_client_read_object_metadata(struct bt_conn *conn,
  *  This will trigger an OACP read operation for the current size of the object
  *  with a 0 offset and then expect receiving the content via the L2CAP CoC.
  *
- *  @param conn         Pointer to the connection object.
  *  @param otc_inst     Pointer to the OTC instance.
+ *  @param conn         Pointer to the connection object.
  *
  *  @return int         0 if success, ERRNO on failure.
  */
-int bt_ots_client_read_object_data(struct bt_conn *conn,
-				   struct bt_ots_client *otc_inst);
+int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
+				   struct bt_conn *conn);
 
 /** @brief Directory listing object metadata callback
  *
