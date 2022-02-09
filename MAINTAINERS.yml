@@ -363,9 +363,9 @@ DFU:
 Devicetree:
     status: maintained
     maintainers:
-        - galak
-    collaborators:
         - mbolivar-nordic
+    collaborators:
+        - galak
     files:
         - scripts/dts/
         - dts/bindings/
