@@ -38,6 +38,14 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	add	w1, w1, #1
 	str	w1, [x0, #___cpu_t_nested_OFFSET]
 
+	/* If not nested: switch to IRQ stack and save current sp on it. */
+	cmp	w1, #1
+	bne	1f
+	ldr	x1, [x0, #___cpu_t_irq_stack_OFFSET]
+	mov	x2, sp
+	mov	sp, x1
+	str	x2, [sp, #-16]!
+1:
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	bl	z_sched_usage_stop
 #endif
@@ -106,6 +114,10 @@ spurious_continue:
 	subs	w1, w1, #1
 	str	w1, [x0, #___cpu_t_nested_OFFSET]
 	bne	exit
+
+	/* No more nested: retrieve the task's stack. */
+	ldr	x0, [sp]
+	mov	sp, x0
 
 	/*
 	 * z_arch_get_next_switch_handle() is returning:
