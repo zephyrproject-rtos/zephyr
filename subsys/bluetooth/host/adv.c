@@ -134,7 +134,9 @@ static uint8_t ad_stream_read(struct ad_stream *stream, uint8_t *buf, uint8_t bu
 			stream->current_ltv_offset++;
 			read_len++;
 		} else {
-			const size_t size_to_copy = MIN(buf_len, current_ltv->data_len);
+			const size_t remaining_data_len =
+					current_ltv->data_len - stream->current_ltv_offset + 2;
+			const size_t size_to_copy = MIN(buf_len - read_len, remaining_data_len);
 
 			(void)memcpy(&buf[read_len],
 				&current_ltv->data[stream->current_ltv_offset - 2],
