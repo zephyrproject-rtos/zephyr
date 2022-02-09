@@ -336,18 +336,8 @@ static inline void handle_tx_done(otInstance *aInstance)
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioTransmitDone(aInstance, &sTransmitFrame, tx_result);
 	} else {
-		if (sTransmitFrame.mPsdu[0] & IEEE802154_AR_FLAG_SET) {
-			if (ack_frame.mLength == 0) {
-				LOG_DBG("No ACK received.");
-				otPlatRadioTxDone(aInstance, &sTransmitFrame,
-						  NULL, OT_ERROR_NO_ACK);
-			} else {
-				otPlatRadioTxDone(aInstance, &sTransmitFrame,
-						  &ack_frame, tx_result);
-			}
-		} else {
-			otPlatRadioTxDone(aInstance, &sTransmitFrame, NULL, tx_result);
-		}
+		otPlatRadioTxDone(aInstance, &sTransmitFrame, ack_frame.mLength ? &ack_frame : NULL,
+				  tx_result);
 		ack_frame.mLength = 0;
 	}
 }

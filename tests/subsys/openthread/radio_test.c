@@ -430,8 +430,7 @@ static void test_tx_test(void)
 	ztest_expect_value(set_channel_mock, channel, chan);
 	ztest_expect_value(set_txpower_mock, dbm, power);
 	ztest_expect_value(start_mock, dev, &radio);
-	zassert_equal(otPlatRadioReceive(ot, chan), OT_ERROR_NONE,
-		      "Failed to receive.");
+	zassert_equal(otPlatRadioReceive(ot, chan), OT_ERROR_NONE, "Failed to receive.");
 
 	/* ACKed frame */
 	frm->mChannel = chan2;
@@ -442,8 +441,7 @@ static void test_tx_test(void)
 	ztest_expect_value(cca_mock, dev, &radio);
 	ztest_expect_value(tx_mock, frag->data, frm->mPsdu);
 	ztest_expect_value(set_txpower_mock, dbm, power);
-	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE,
-		      "Transmit failed.");
+	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE, "Transmit failed.");
 
 	create_ack_frame();
 	make_sure_sem_set(Z_TIMEOUT_MS(100));
@@ -460,26 +458,9 @@ static void test_tx_test(void)
 	ztest_expect_value(set_channel_mock, channel, chan2);
 	ztest_expect_value(tx_mock, frag->data, frm->mPsdu);
 	ztest_expect_value(set_txpower_mock, dbm, power);
-	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE,
-		      "Transmit failed.");
+	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE, "Transmit failed.");
 	make_sure_sem_set(Z_TIMEOUT_MS(100));
 	ztest_expect_value(otPlatRadioTxDone, aError, OT_ERROR_NONE);
-	platformRadioProcess(ot);
-
-	/* ACKed frame, no ACK */
-	frm->mChannel = --chan2;
-	frm->mInfo.mTxInfo.mCsmaCaEnabled = false;
-	frm->mPsdu[0] = IEEE802154_AR_FLAG_SET;
-
-	ztest_returns_value(set_channel_mock, 0);
-	ztest_expect_value(set_channel_mock, channel, chan2);
-	ztest_expect_value(tx_mock, frag->data, frm->mPsdu);
-	ztest_expect_value(set_txpower_mock, dbm, power);
-	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE,
-		      "Transmit failed.");
-	make_sure_sem_set(Z_TIMEOUT_MS(100));
-
-	ztest_expect_value(otPlatRadioTxDone, aError, OT_ERROR_NO_ACK);
 	platformRadioProcess(ot);
 }
 
