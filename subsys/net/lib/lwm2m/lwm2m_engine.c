@@ -918,6 +918,8 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 		coap_reply_clear(msg->reply);
 	}
 
+	sys_slist_find_and_remove(&msg->ctx->pending_sends, &msg->node);
+
 	if (release) {
 		(void)memset(msg, 0, sizeof(*msg));
 	} else {
