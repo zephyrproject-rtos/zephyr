@@ -35,8 +35,8 @@
 /* TODO: KConfig options */
 #define OTS_CLIENT_INST_COUNT     1
 
-#define BT_OTC_MAX_WRITE_SIZE    23
-#define BT_OTC_UNKNOWN_ID      0xFF
+#define OTS_CLIENT_MAX_WRITE_SIZE    23
+#define OTS_CLIENT_UNKNOWN_ID      0xFF
 
 struct dirlisting_record_t {
 	uint16_t                      len;
@@ -116,7 +116,7 @@ struct bt_otc_internal_instance_t {
  * will simply register any OTS instances as pointers, which is stored here.
  */
 static struct bt_otc_internal_instance_t otc_insts[OTS_CLIENT_INST_COUNT];
-NET_BUF_SIMPLE_DEFINE_STATIC(otc_tx_buf, BT_OTC_MAX_WRITE_SIZE);
+NET_BUF_SIMPLE_DEFINE_STATIC(otc_tx_buf, OTS_CLIENT_MAX_WRITE_SIZE);
 static struct bt_otc_internal_instance_t *cur_inst;
 
 static int oacp_read(struct bt_conn *conn,
@@ -247,7 +247,7 @@ static void on_object_selected(struct bt_conn *conn,
 			       struct bt_ots_client *otc_inst)
 {
 	memset(&otc_inst->cur_object, 0, sizeof(otc_inst->cur_object));
-	otc_inst->cur_object.id = BT_OTC_UNKNOWN_ID;
+	otc_inst->cur_object.id = OTS_CLIENT_UNKNOWN_ID;
 
 	if (otc_inst->cb->obj_selected) {
 		otc_inst->cb->obj_selected(conn, res, otc_inst);
@@ -807,7 +807,7 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 			(void)bt_ots_obj_id_to_str(obj_id, t, sizeof(t));
 			BT_DBG("Object Id : %s", log_strdup(t));
 
-			if (cur_object->id != BT_OTC_UNKNOWN_ID &&
+			if (cur_object->id != OTS_CLIENT_UNKNOWN_ID &&
 			    cur_object->id != obj_id) {
 				char str[BT_OTS_OBJ_ID_STR_LEN];
 
