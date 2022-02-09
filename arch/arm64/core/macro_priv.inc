@@ -30,28 +30,6 @@
 	and	\xreg0, \xreg0, #TPIDRROEL0_CURR_CPU
 .endm
 
-/*
- * Increment nested counter
- */
-
-.macro inc_nest_counter xreg0, xreg1
-	get_cpu	\xreg0
-	ldr	\xreg1, [\xreg0, #___cpu_t_nested_OFFSET]
-	add	\xreg1, \xreg1, #1
-	str	\xreg1, [\xreg0, #___cpu_t_nested_OFFSET]
-.endm
-
-/*
- * Decrement nested counter and update condition flags
- */
-
-.macro dec_nest_counter xreg0, xreg1
-	get_cpu	\xreg0
-	ldr	\xreg1, [\xreg0, #___cpu_t_nested_OFFSET]
-	subs	\xreg1, \xreg1, #1
-	str	\xreg1, [\xreg0, #___cpu_t_nested_OFFSET]
-.endm
-
 #endif /* _ASMLANGUAGE */
 
 #endif /* _MACRO_PRIV_INC_ */
