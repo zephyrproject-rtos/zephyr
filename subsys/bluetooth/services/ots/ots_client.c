@@ -21,7 +21,6 @@
 #include "../../host/conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
 
 #include <bluetooth/services/ots.h>
-#include <bluetooth/services/ots_client.h>
 #include "ots_internal.h"
 #include "ots_client_internal.h"
 #include "ots_l2cap_internal.h"
@@ -100,7 +99,7 @@ static const char * const lit_olcp_result[] = {
 };
 
 struct bt_otc_internal_instance_t {
-	struct bt_otc_instance_t *otc_inst;
+	struct bt_ots_client *otc_inst;
 	struct bt_gatt_ots_l2cap l2cap_ctx;
 	bool busy;
 	/** Bitfield that is used to determine how much metadata to read */
@@ -176,7 +175,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		}
 
 		cur_inst = NULL;
-	} else if (cb_ret == BT_OTC_STOP) {
+	} else if (cb_ret == BT_OTS_STOP) {
 		const uint32_t rcv_size = cur_object->size.cur;
 		int err;
 
@@ -245,7 +244,7 @@ static struct bt_otc_internal_instance_t *lookup_inst_by_handle(uint16_t handle)
 
 static void on_object_selected(struct bt_conn *conn,
 			       enum bt_gatt_ots_olcp_res_code res,
-			       struct bt_otc_instance_t *otc_inst)
+			       struct bt_ots_client *otc_inst)
 {
 	memset(&otc_inst->cur_object, 0, sizeof(otc_inst->cur_object));
 	otc_inst->cur_object.id = BT_OTC_UNKNOWN_ID;
@@ -258,7 +257,7 @@ static void on_object_selected(struct bt_conn *conn,
 }
 
 static void olcp_ind_handler(struct bt_conn *conn,
-			     struct bt_otc_instance_t *otc_inst,
+			     struct bt_ots_client *otc_inst,
 			     const void *data, uint16_t length)
 {
 	enum bt_gatt_ots_olcp_proc_type op_code;
@@ -324,7 +323,7 @@ static void olcp_ind_handler(struct bt_conn *conn,
 }
 
 static void oacp_ind_handler(struct bt_conn *conn,
-			     struct bt_otc_instance_t *otc_inst,
+			     struct bt_ots_client *otc_inst,
 			     const void *data, uint16_t length)
 {
 	enum bt_gatt_ots_oacp_proc_type op_code;
@@ -347,9 +346,9 @@ static void oacp_ind_handler(struct bt_conn *conn,
 	}
 }
 
-uint8_t bt_otc_indicate_handler(struct bt_conn *conn,
-				struct bt_gatt_subscribe_params *params,
-				const void *data, uint16_t length)
+uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
+				       struct bt_gatt_subscribe_params *params,
+				       const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
 	struct bt_otc_internal_instance_t *inst =
@@ -417,7 +416,7 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-int bt_otc_register(struct bt_otc_instance_t *otc_inst)
+int bt_ots_client_register(struct bt_ots_client *otc_inst)
 {
 	for (int i = 0; i < ARRAY_SIZE(otc_insts); i++) {
 		int err;
@@ -440,7 +439,7 @@ int bt_otc_register(struct bt_otc_instance_t *otc_inst)
 	return -ENOMEM;
 }
 
-int bt_otc_unregister(uint8_t index)
+int bt_ots_client_unregister(uint8_t index)
 {
 	if (index < ARRAY_SIZE(otc_insts)) {
 		memset(&otc_insts[index], 0, sizeof(otc_insts[index]));
@@ -451,8 +450,8 @@ int bt_otc_unregister(uint8_t index)
 	return 0;
 }
 
-int bt_otc_read_feature(struct bt_conn *conn,
-			struct bt_otc_instance_t *otc_inst)
+int bt_ots_client_read_feature(struct bt_conn *conn,
+			       struct bt_ots_client *otc_inst)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -537,8 +536,9 @@ static int write_olcp(struct bt_otc_internal_instance_t *inst,
 	return err;
 }
 
-int bt_otc_select_id(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst,
-		     uint64_t obj_id)
+int bt_ots_client_select_id(struct bt_conn *conn,
+			    struct bt_ots_client *otc_inst,
+			    uint64_t obj_id)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -576,8 +576,8 @@ int bt_otc_select_id(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst,
 	return -EOPNOTSUPP;
 }
 
-int bt_otc_select_first(struct bt_conn *conn,
-			struct bt_otc_instance_t *otc_inst)
+int bt_ots_client_select_first(struct bt_conn *conn,
+			       struct bt_ots_client *otc_inst)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -610,7 +610,8 @@ int bt_otc_select_first(struct bt_conn *conn,
 	return -EOPNOTSUPP;
 }
 
-int bt_otc_select_last(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
+int bt_ots_client_select_last(struct bt_conn *conn,
+			      struct bt_ots_client *otc_inst)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -644,7 +645,8 @@ int bt_otc_select_last(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 	return -EOPNOTSUPP;
 }
 
-int bt_otc_select_next(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
+int bt_ots_client_select_next(struct bt_conn *conn,
+			      struct bt_ots_client *otc_inst)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -677,7 +679,8 @@ int bt_otc_select_next(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 	return -EOPNOTSUPP;
 }
 
-int bt_otc_select_prev(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
+int bt_ots_client_select_prev(struct bt_conn *conn,
+			      struct bt_ots_client *otc_inst)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -1151,7 +1154,8 @@ static int oacp_read(struct bt_conn *conn,
 	return err;
 }
 
-int bt_otc_read_object_data(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
+int bt_ots_client_read_object_data(struct bt_conn *conn,
+				   struct bt_ots_client *otc_inst)
 {
 	struct bt_otc_internal_instance_t *inst;
 
@@ -1232,9 +1236,9 @@ static void read_next_metadata(struct bt_conn *conn,
 	}
 }
 
-int bt_otc_read_object_metadata(struct bt_conn *conn,
-				struct bt_otc_instance_t *otc_inst,
-				uint8_t metadata)
+int bt_ots_client_read_object_metadata(struct bt_conn *conn,
+				       struct bt_ots_client *otc_inst,
+				       uint8_t metadata)
 {
 	struct bt_otc_internal_instance_t *inst;
 
@@ -1430,8 +1434,8 @@ static int decode_record(struct net_buf_simple *buf,
 	return rec->len;
 }
 
-int bt_otc_decode_dirlisting(uint8_t *data, uint16_t length,
-			     bt_otc_dirlisting_cb cb)
+int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
+				    bt_ots_client_dirlisting_cb cb)
 {
 	struct net_buf_simple net_buf;
 	uint8_t count = 0;
@@ -1464,7 +1468,7 @@ int bt_otc_decode_dirlisting(uint8_t *data, uint16_t length,
 
 		ret = cb(&record.metadata);
 
-		if (ret == BT_OTC_STOP) {
+		if (ret == BT_OTS_STOP) {
 			break;
 		}
 	}

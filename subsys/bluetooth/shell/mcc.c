@@ -17,7 +17,7 @@
 
 #include "bt.h"
 
-#include <bluetooth/services/ots_client.h>
+#include <bluetooth/services/ots.h>
 #include "../services/ots/ots_client_internal.h"
 #include "../audio/media_proxy_internal.h"
 
@@ -1164,7 +1164,7 @@ int cmd_mcc_otc_read_features(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_read_feature(default_conn, bt_mcc_otc_inst());
+	result = bt_ots_client_read_feature(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1175,7 +1175,7 @@ int cmd_mcc_otc_read(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 
-	result = bt_otc_read_object_data(default_conn, bt_mcc_otc_inst());
+	result = bt_ots_client_read_object_data(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1187,8 +1187,9 @@ int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_read_object_metadata(default_conn, bt_mcc_otc_inst(),
-					     BT_OTS_METADATA_REQ_ALL);
+	result = bt_ots_client_read_object_metadata(default_conn,
+						    bt_mcc_otc_inst(),
+						    BT_OTS_METADATA_REQ_ALL);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1207,7 +1208,7 @@ int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	result = bt_otc_select_id(default_conn, bt_mcc_otc_inst(), id);
+	result = bt_ots_client_select_id(default_conn, bt_mcc_otc_inst(), id);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1219,7 +1220,7 @@ int cmd_mcc_otc_select_first(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_first(default_conn, bt_mcc_otc_inst());
+	result = bt_ots_client_select_first(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1231,7 +1232,7 @@ int cmd_mcc_otc_select_last(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_last(default_conn, bt_mcc_otc_inst());
+	result = bt_ots_client_select_last(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1243,7 +1244,7 @@ int cmd_mcc_otc_select_next(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_next(default_conn, bt_mcc_otc_inst());
+	result = bt_ots_client_select_next(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1255,7 +1256,7 @@ int cmd_mcc_otc_select_prev(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_prev(default_conn, bt_mcc_otc_inst());
+	result = bt_ots_client_select_prev(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1351,7 +1352,7 @@ int cmd_mcc_ots_select_first(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_first(default_conn, 0);
+	result = bt_ots_client_select_first(default_conn, 0);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1363,7 +1364,7 @@ int cmd_mcc_ots_select_last(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_last(default_conn, 0);
+	result = bt_ots_client_select_last(default_conn, 0);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1375,7 +1376,7 @@ int cmd_mcc_ots_select_next(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_next(default_conn, 0);
+	result = bt_ots_client_select_next(default_conn, 0);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -1387,7 +1388,7 @@ int cmd_mcc_ots_select_prev(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_prev(default_conn, 0);
+	result = bt_ots_client_select_prev(default_conn, 0);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
