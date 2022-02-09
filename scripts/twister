@@ -714,7 +714,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "verbosity.")
 
     parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
-                        help="Treat warning conditions as errors.")
+                        help="Do not treat warning conditions as errors.")
 
     parser.add_argument(
         "--west-flash", nargs='?', const=[],
