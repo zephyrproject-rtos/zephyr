@@ -67,8 +67,15 @@ static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 			gpio_ll_pulldown_en(&GPIO, pin);
 		} else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-			rtcio_hal_pullup_disable(rtc_io_num_map[pin]);
-			rtcio_hal_pulldown_enable(rtc_io_num_map[pin]);
+			int rtcio_num = rtc_io_num_map[pin];
+
+			if (rtc_io_desc[rtcio_num].pulldown) {
+				rtcio_hal_pulldown_disable(rtc_io_num_map[pin]);
+			} else if (rtc_io_desc[rtcio_num].pullup) {
+				rtcio_hal_pullup_enable(rtc_io_num_map[pin]);
+			} else {
+				return -ENOTSUP;
+			}
 #endif
 		}
 		break;
@@ -78,8 +85,15 @@ static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 			gpio_ll_pullup_en(&GPIO, pin);
 		} else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-			rtcio_hal_pulldown_disable(rtc_io_num_map[pin]);
-			rtcio_hal_pullup_enable(rtc_io_num_map[pin]);
+			int rtcio_num = rtc_io_num_map[pin];
+
+			if (rtc_io_desc[rtcio_num].pulldown) {
+				rtcio_hal_pulldown_disable(rtc_io_num_map[pin]);
+			} else if (rtc_io_desc[rtcio_num].pullup) {
+				rtcio_hal_pullup_enable(rtc_io_num_map[pin]);
+			} else {
+				return -ENOTSUP;
+			}
 #endif
 		}
 		break;
