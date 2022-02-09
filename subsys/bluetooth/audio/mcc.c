@@ -20,7 +20,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio/mcc.h>
 
-#include <bluetooth/services/ots_client.h>
+#include <bluetooth/services/ots.h>
 #include "../services/ots/ots_client_internal.h"
 
 /* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
@@ -143,7 +143,7 @@ struct mcs_instance_t {
 	bool busy;
 
 #ifdef CONFIG_BT_MCC_OTS
-	struct bt_otc_instance_t otc;
+	struct bt_ots_client otc;
 #endif /* CONFIG_BT_MCC_OTS */
 };
 
@@ -160,22 +160,22 @@ static bool subscribe_all;
 
 #ifdef CONFIG_BT_MCC_OTS
 NET_BUF_SIMPLE_DEFINE_STATIC(otc_obj_buf, CONFIG_BT_MCC_OTC_OBJ_BUF_SIZE);
-static struct bt_otc_cb otc_cb;
+static struct bt_ots_client_cb otc_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 
 
 
 #ifdef CONFIG_BT_MCC_OTS
 void on_obj_selected(struct bt_conn *conn, int err,
-		     struct bt_otc_instance_t *otc_inst);
+		     struct bt_ots_client *otc_inst);
 
 void on_object_metadata(struct bt_conn *conn, int err,
-			struct bt_otc_instance_t *otc_inst,
+			struct bt_ots_client *otc_inst,
 			uint8_t metadata_read);
 
 int on_icon_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 		    uint8_t *data_p,
-		    bool is_complete, struct bt_otc_instance_t *otc_inst);
+		    bool is_complete, struct bt_ots_client *otc_inst);
 #endif /* CONFIG_BT_MCC_OTS */
 
 
@@ -1105,7 +1105,7 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 			sub_params->end_handle = cur_mcs_inst->otc.end_handle;
 			sub_params->value = BT_GATT_CCC_INDICATE;
 			sub_params->value_handle = chrc->value_handle;
-			sub_params->notify = bt_otc_indicate_handler;
+			sub_params->notify = bt_ots_client_indicate_handler;
 
 			bt_gatt_subscribe(conn, sub_params);
 		}
@@ -1115,7 +1115,7 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 
 	/* No more attributes found */
 	cur_mcs_inst->otc.cb = &otc_cb;
-	bt_otc_register(&cur_mcs_inst->otc);
+	bt_ots_client_register(&cur_mcs_inst->otc);
 
 	BT_DBG("Setup complete for included OTS");
 	(void)memset(params, 0, sizeof(*params));
@@ -2300,7 +2300,7 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn)
 #ifdef CONFIG_BT_MCC_OTS
 
 void on_obj_selected(struct bt_conn *conn, int result,
-		     struct bt_otc_instance_t *otc_inst)
+		     struct bt_ots_client *otc_inst)
 {
 	BT_DBG("Current object selected");
 	/* TODO: Read metadata here? */
@@ -2320,7 +2320,7 @@ void on_obj_selected(struct bt_conn *conn, int result,
 /* Use a notion of the "active" object, as done in mpl.c, for tracking  */
 int on_icon_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 		    uint8_t *data_p, bool is_complete,
-		    struct bt_otc_instance_t *otc_inst)
+		    struct bt_ots_client *otc_inst)
 {
 	int cb_err = 0;
 
@@ -2348,7 +2348,7 @@ int on_icon_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 		net_buf_simple_reset(&otc_obj_buf);
 	}
 
-	return BT_OTC_CONTINUE;
+	return BT_OTS_CONTINUE;
 }
 
 #if CONFIG_BT_DEBUG_MCC
@@ -2405,7 +2405,7 @@ static void decode_track_segments(struct net_buf_simple *buff,
 
 int on_track_segments_content(struct bt_conn *conn, uint32_t offset,
 			      uint32_t len, uint8_t *data_p, bool is_complete,
-			      struct bt_otc_instance_t *otc_inst)
+			      struct bt_ots_client *otc_inst)
 {
 	int cb_err = 0;
 
@@ -2444,12 +2444,12 @@ int on_track_segments_content(struct bt_conn *conn, uint32_t offset,
 		net_buf_simple_reset(&otc_obj_buf);
 	}
 
-	return BT_OTC_CONTINUE;
+	return BT_OTS_CONTINUE;
 }
 
 int on_current_track_content(struct bt_conn *conn, uint32_t offset,
 			     uint32_t len, uint8_t *data_p, bool is_complete,
-			     struct bt_otc_instance_t *otc_inst)
+			     struct bt_ots_client *otc_inst)
 {
 	int cb_err = 0;
 
@@ -2476,12 +2476,12 @@ int on_current_track_content(struct bt_conn *conn, uint32_t offset,
 		net_buf_simple_reset(&otc_obj_buf);
 	}
 
-	return BT_OTC_CONTINUE;
+	return BT_OTS_CONTINUE;
 }
 
 int on_next_track_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 			  uint8_t *data_p, bool is_complete,
-			  struct bt_otc_instance_t *otc_inst)
+			  struct bt_ots_client *otc_inst)
 {
 	int cb_err = 0;
 
@@ -2508,7 +2508,7 @@ int on_next_track_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 		net_buf_simple_reset(&otc_obj_buf);
 	}
 
-	return BT_OTC_CONTINUE;
+	return BT_OTS_CONTINUE;
 }
 
 
@@ -2540,7 +2540,7 @@ static void decode_group(struct net_buf_simple *buff,
 
 int on_parent_group_content(struct bt_conn *conn, uint32_t offset,
 			    uint32_t len, uint8_t *data_p, bool is_complete,
-			    struct bt_otc_instance_t *otc_inst)
+			    struct bt_ots_client *otc_inst)
 {
 	int cb_err = 0;
 
@@ -2581,12 +2581,12 @@ int on_parent_group_content(struct bt_conn *conn, uint32_t offset,
 		net_buf_simple_reset(&otc_obj_buf);
 	}
 
-	return BT_OTC_CONTINUE;
+	return BT_OTS_CONTINUE;
 }
 
 int on_current_group_content(struct bt_conn *conn, uint32_t offset,
 			     uint32_t len, uint8_t *data_p, bool is_complete,
-			     struct bt_otc_instance_t *otc_inst)
+			     struct bt_ots_client *otc_inst)
 {
 	int cb_err = 0;
 
@@ -2627,11 +2627,11 @@ int on_current_group_content(struct bt_conn *conn, uint32_t offset,
 		net_buf_simple_reset(&otc_obj_buf);
 	}
 
-	return BT_OTC_CONTINUE;
+	return BT_OTS_CONTINUE;
 }
 
 void on_object_metadata(struct bt_conn *conn, int err,
-			struct bt_otc_instance_t *otc_inst,
+			struct bt_ots_client *otc_inst,
 			uint8_t metadata_read)
 {
 	BT_INFO("Object's meta data:");
@@ -2652,8 +2652,8 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn)
 {
 	int err;
 
-	err = bt_otc_read_object_metadata(conn, &cur_mcs_inst->otc,
-					  BT_OTS_METADATA_REQ_ALL);
+	err = bt_ots_client_read_object_metadata(conn, &cur_mcs_inst->otc,
+						 BT_OTS_METADATA_REQ_ALL);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2669,7 +2669,7 @@ int bt_mcc_otc_read_icon_object(struct bt_conn *conn)
 
 	cur_mcs_inst->otc.cb->content_cb = on_icon_content;
 
-	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
+	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2686,7 +2686,7 @@ int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 	cur_mcs_inst->otc.cb->content_cb = on_track_segments_content;
 
-	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
+	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2703,7 +2703,7 @@ int bt_mcc_otc_read_current_track_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 	cur_mcs_inst->otc.cb->content_cb = on_current_track_content;
 
-	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
+	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2720,7 +2720,7 @@ int bt_mcc_otc_read_next_track_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 	cur_mcs_inst->otc.cb->content_cb = on_next_track_content;
 
-	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
+	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2739,7 +2739,7 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 	/* Reuse callback for current group */
 	cur_mcs_inst->otc.cb->content_cb = on_parent_group_content;
 
-	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
+	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2756,7 +2756,7 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 	cur_mcs_inst->otc.cb->content_cb = on_current_group_content;
 
-	err = bt_otc_read_object_data(conn, &cur_mcs_inst->otc);
+	err = bt_ots_client_read_object_data(conn, &cur_mcs_inst->otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2765,7 +2765,7 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_MCC_SHELL)
-struct bt_otc_instance_t *bt_mcc_otc_inst(void)
+struct bt_ots_client *bt_mcc_otc_inst(void)
 {
 	return &cur_mcs_inst->otc;
 }
