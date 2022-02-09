@@ -551,11 +551,17 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 #if defined(CONFIG_BT_L2CAP_ECRED)
 	if (chan->ident) {
 		struct bt_l2cap_chan *echan[L2CAP_ECRED_CHAN_MAX];
-		struct bt_l2cap_le_chan *ch;
+		struct bt_l2cap_chan *ch;
 		int i = 0;
 
-		while ((ch = l2cap_remove_ident(chan->conn, chan->ident))) {
-			echan[i++] = &ch->chan;
+		SYS_SLIST_FOR_EACH_CONTAINER(&chan->conn->channels, ch, node) {
+			if (chan->ident == ch->ident) {
+				__ASSERT(i < L2CAP_ECRED_CHAN_MAX,
+					 "There can only be L2CAP_ECRED_CHAN_MAX channels "
+					 "from the same request.");
+				atomic_clear_bit(ch->status, BT_L2CAP_STATUS_ENCRYPT_PENDING);
+				echan[i++] = ch;
+			}
 		}
 
 		/* Retry ecred connect */
