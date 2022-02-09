@@ -147,13 +147,19 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	beq	offload
 	b	inv
 offload:
-	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	inc_nest_counter x0, x1
+	/* ++_current_cpu->nested to be checked by arch_is_in_isr() */
+	get_cpu x0
+	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
+	add	w1, w1, #1
+	str	w1, [x0, #___cpu_t_nested_OFFSET]
 
 	bl	z_irq_do_offload
 
-	/* --(_kernel->nested) */
-	dec_nest_counter x0, x1
+	/* --_current_cpu->nested */
+	get_cpu x0
+	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
+	sub	w1, w1, #1
+	str	w1, [x0, #___cpu_t_nested_OFFSET]
 	b	z_arm64_exit_exc
 #endif
 	b	inv
