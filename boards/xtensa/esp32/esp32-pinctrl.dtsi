@@ -37,4 +37,38 @@
 		bias-pull-up;
 	};
 
+	spim2_miso_gpio12: spim2_miso_gpio12 {
+		pinmux = <SPIM2_MISO_GPIO12>;
+	};
+
+	spim2_mosi_gpio13: spim2_mosi_gpio13 {
+		pinmux = <SPIM2_MOSI_GPIO13>;
+		output-low;
+	};
+
+	spim2_sclk_gpio14: spim2_sclk_gpio14 {
+		pinmux = <SPIM2_SCLK_GPIO14>;
+	};
+
+	spim2_csel_gpio15: spim2_csel_gpio15 {
+		pinmux = <SPIM2_CSEL_GPIO15>;
+	};
+
+	spim3_miso_gpio19: spim3_miso_gpio19 {
+		pinmux = <SPIM3_MISO_GPIO19>;
+	};
+
+	spim3_mosi_gpio23: spim3_mosi_gpio23 {
+		pinmux = <SPIM3_MOSI_GPIO23>;
+		output-low;
+	};
+
+	spim3_sclk_gpio18: spim3_sclk_gpio18 {
+		pinmux = <SPIM3_SCLK_GPIO18>;
+	};
+
+	spim3_csel_gpio5: spim3_csel_gpio5 {
+		pinmux = <SPIM3_CSEL_GPIO5>;
+	};
+
 };

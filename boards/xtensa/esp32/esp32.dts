@@ -77,20 +77,18 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	miso-pin = <12>;
-	mosi-pin = <13>;
-	sclk-pin = <14>;
-	csel-pin = <15>;
+	pinctrl-0 = <&spim2_miso_gpio12 &spim2_mosi_gpio13
+		     &spim2_sclk_gpio14 &spim2_csel_gpio15>;
+	pinctrl-names = "default";
 };
 
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	miso-pin = <19>;
-	mosi-pin = <23>;
-	sclk-pin = <18>;
-	csel-pin = <5>;
+	pinctrl-0 = <&spim3_miso_gpio19 &spim3_mosi_gpio23
+		     &spim3_sclk_gpio18 &spim3_csel_gpio5>;
+	pinctrl-names = "default";
 };
 
 &timer0 {
