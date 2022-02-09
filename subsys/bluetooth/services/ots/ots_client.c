@@ -156,10 +156,9 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			cur_inst->rcvd_size, cur_object->size.cur);
 	}
 
-
-	cb_ret = cur_inst->otc_inst->cb->obj_content_recv(conn, offset,
+	cb_ret = cur_inst->otc_inst->cb->obj_content_recv(0, conn, offset,
 							  buf->len, buf->data,
-							  is_complete, 0);
+							  is_complete);
 
 	if (is_complete) {
 		const uint32_t rcv_size = cur_object->size.cur;
@@ -248,7 +247,7 @@ static void on_object_selected(struct bt_conn *conn,
 	otc_inst->cur_object.id = OTS_CLIENT_UNKNOWN_ID;
 
 	if (otc_inst->cb->obj_selected) {
-		otc_inst->cb->obj_selected(conn, res, otc_inst);
+		otc_inst->cb->obj_selected(otc_inst, conn, res);
 	}
 
 	BT_DBG("Object selected");
@@ -448,8 +447,8 @@ int bt_ots_client_unregister(uint8_t index)
 	return 0;
 }
 
-int bt_ots_client_read_feature(struct bt_conn *conn,
-			       struct bt_ots_client *otc_inst)
+int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
+			       struct bt_conn *conn)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -534,8 +533,8 @@ static int write_olcp(struct bt_otc_internal_instance_t *inst,
 	return err;
 }
 
-int bt_ots_client_select_id(struct bt_conn *conn,
-			    struct bt_ots_client *otc_inst,
+int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
+			    struct bt_conn *conn,
 			    uint64_t obj_id)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
@@ -574,8 +573,8 @@ int bt_ots_client_select_id(struct bt_conn *conn,
 	return -EOPNOTSUPP;
 }
 
-int bt_ots_client_select_first(struct bt_conn *conn,
-			       struct bt_ots_client *otc_inst)
+int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
+			       struct bt_conn *conn)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -608,8 +607,8 @@ int bt_ots_client_select_first(struct bt_conn *conn,
 	return -EOPNOTSUPP;
 }
 
-int bt_ots_client_select_last(struct bt_conn *conn,
-			      struct bt_ots_client *otc_inst)
+int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
+			      struct bt_conn *conn)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -643,8 +642,8 @@ int bt_ots_client_select_last(struct bt_conn *conn,
 	return -EOPNOTSUPP;
 }
 
-int bt_ots_client_select_next(struct bt_conn *conn,
-			      struct bt_ots_client *otc_inst)
+int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
+			      struct bt_conn *conn)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -677,8 +676,8 @@ int bt_ots_client_select_next(struct bt_conn *conn,
 	return -EOPNOTSUPP;
 }
 
-int bt_ots_client_select_prev(struct bt_conn *conn,
-			      struct bt_ots_client *otc_inst)
+int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
+			      struct bt_conn *conn)
 {
 	if (OTS_CLIENT_INST_COUNT > 0) {
 		struct bt_otc_internal_instance_t *inst;
@@ -1152,8 +1151,8 @@ static int oacp_read(struct bt_conn *conn,
 	return err;
 }
 
-int bt_ots_client_read_object_data(struct bt_conn *conn,
-				   struct bt_ots_client *otc_inst)
+int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
+				   struct bt_conn *conn)
 {
 	struct bt_otc_internal_instance_t *inst;
 
@@ -1222,7 +1221,7 @@ static void read_next_metadata(struct bt_conn *conn,
 		inst->busy = false;
 		if (inst->otc_inst->cb->obj_metadata_recv) {
 			inst->otc_inst->cb->obj_metadata_recv(
-				conn, inst->metadata_err, inst->otc_inst,
+				inst->otc_inst, conn, inst->metadata_err,
 				inst->metadata_read);
 		}
 		return;
@@ -1234,8 +1233,8 @@ static void read_next_metadata(struct bt_conn *conn,
 	}
 }
 
-int bt_ots_client_read_object_metadata(struct bt_conn *conn,
-				       struct bt_ots_client *otc_inst,
+int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
+				       struct bt_conn *conn,
 				       uint8_t metadata)
 {
 	struct bt_otc_internal_instance_t *inst;

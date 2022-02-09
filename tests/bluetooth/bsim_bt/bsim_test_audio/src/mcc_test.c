@@ -592,7 +592,7 @@ static void select_read_meta(int64_t id)
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
 	UNSET_FLAG(object_selected);
-	err = bt_ots_client_select_id(default_conn, bt_mcc_otc_inst(), id);
+	err = bt_ots_client_select_id(bt_mcc_otc_inst(), default_conn, id);
 	if (err) {
 		FAIL("Failed to select object\n");
 		return;
@@ -603,7 +603,7 @@ static void select_read_meta(int64_t id)
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
 	UNSET_FLAG(metadata_read);
-	err = bt_ots_client_read_object_metadata(default_conn, bt_mcc_otc_inst(),
+	err = bt_ots_client_read_object_metadata(bt_mcc_otc_inst(), default_conn,
 						 BT_OTS_METADATA_REQ_ALL);
 	if (err) {
 		FAIL("Failed to read object metadata\n");
