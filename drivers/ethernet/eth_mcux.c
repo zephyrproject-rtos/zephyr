@@ -218,7 +218,7 @@ void eth_mcux_phy_stop(struct eth_context *context);
 static int eth_mcux_device_pm_action(const struct device *dev,
 				     enum pm_device_action action)
 {
-	struct eth_context *eth_ctx = (struct eth_context *)dev->data;
+	struct eth_context *eth_ctx = dev->data;
 	int ret = 0;
 
 	if (!eth_ctx->clock_dev) {
@@ -481,7 +481,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 				   (PHY_100BASETX_FULLDUPLEX_MASK |
 				    PHY_100BASETX_HALFDUPLEX_MASK |
 				    PHY_10BASETX_FULLDUPLEX_MASK |
-				    PHY_10BASETX_HALFDUPLEX_MASK | 0x1U));
+				    PHY_10BASETX_HALFDUPLEX_MASK |
+					PHY_IEEE802_3_SELECTOR_MASK));
 #endif
 		context->phy_state = eth_mcux_phy_state_autoneg;
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
@@ -945,14 +946,13 @@ static void eth_mcux_init(const struct device *dev)
 #endif
 
 	context->phy_state = eth_mcux_phy_state_initial;
-
 	context->phy_handle->mdioHandle->ops = &enet_ops;
 	context->phy_handle->ops = &phyksz8081_ops;
 
 #if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
 	sys_clock = CLOCK_GetFreq(kCLOCK_IpgClk);
-#elif defined(SOC_SERIES_IMX_RT11XX)
-	sys_clock = CLOCK_GetFreq(kCLOCK_Root_Bus);
+#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+	sys_clock = CLOCK_GetRootClockFreq(kCLOCK_Root_Bus);
 #else
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 #endif
@@ -963,6 +963,7 @@ static void eth_mcux_init(const struct device *dev)
 #if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 	enet_config.interrupt |= kENET_MiiInterrupt;
 #endif
+	enet_config.miiMode = kENET_RmiiMode;
 
 	if (IS_ENABLED(CONFIG_ETH_MCUX_PROMISCUOUS_MODE)) {
 		enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
@@ -1200,9 +1201,19 @@ static void eth_mcux_common_isr(const struct device *dev)
 	int irq_lock_key = irq_lock();
 
 	if (EIR & (kENET_RxBufferInterrupt | kENET_RxFrameInterrupt)) {
+#if FSL_FEATURE_ENET_QUEUE > 1
+		/* Only use ring 0 in this driver */
+		ENET_ReceiveIRQHandler(context->base, &context->enet_handle, 0);
+#else
 		ENET_ReceiveIRQHandler(context->base, &context->enet_handle);
+#endif
 	} else if (EIR & (kENET_TxBufferInterrupt | kENET_TxFrameInterrupt)) {
+#if FSL_FEATURE_ENET_QUEUE > 1
+		/* Only use ring 0 in this driver */
+		ENET_TransmitIRQHandler(context->base, &context->enet_handle, 0);
+#else
 		ENET_TransmitIRQHandler(context->base, &context->enet_handle);
+#endif
 	} else if (EIR & ENET_EIR_MII_MASK) {
 		k_work_submit(&context->phy_work);
 		ENET_ClearInterruptStatus(context->base, kENET_MiiInterrupt);
@@ -1251,8 +1262,10 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define NOCACHE
 #endif
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
 #define ETH_MCUX_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
+#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#define ETH_MCUX_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
 #define ETH_MCUX_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
 #else
@@ -1392,7 +1405,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 	static struct eth_context eth##n##_context = {			\
 		.base = (ENET_Type *)DT_INST_REG_ADDR(n),		\
 		.config_func = eth##n##_config_func,			\
-		.phy_addr = 0U,						\
+		.phy_addr = DT_INST_PROP(n, phy_addr),		\
 		.phy_duplex = kPHY_FullDuplex,				\
 		.phy_speed = kPHY_Speed100M,				\
 		.phy_handle = &eth##n##_phy_handle,			\
@@ -1436,7 +1449,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 									\
 	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
 			    eth_init,					\
-			    PM_DEVICE_DT_INST_REF(n),			\
+			    PM_DEVICE_DT_INST_GET(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
 			    CONFIG_ETH_INIT_PRIORITY,			\

@@ -137,7 +137,18 @@ struct bt_df_conn_cte_rx_param {
 	const uint8_t *ant_ids;
 };
 
+enum bt_df_conn_iq_report_err {
+	/** IQ samples report received successfully. */
+	BT_DF_IQ_REPORT_ERR_SUCCESS,
+	/** Received PDU without CTE. No valid data in report. */
+	BT_DF_IQ_REPORT_ERR_NO_CTE,
+	/** Peer rejected CTE request. No valid data in report. */
+	BT_DF_IQ_REPORT_ERR_PEER_REJECTED,
+};
+
 struct bt_df_conn_iq_samples_report {
+	/** Report receive failed reason. */
+	enum bt_df_conn_iq_report_err err;
 	/** PHY that was used to receive PDU with CTE that was sampled. */
 	uint8_t rx_phy;
 	/** Channel index used to receive PDU with CTE that was sampled. */
@@ -179,7 +190,7 @@ struct bt_df_conn_cte_req_params {
 	 * Value 0x0 means, run the procedure once. Other values are intervals in number of
 	 * connection events, to run the command periodically.
 	 */
-	uint8_t interval;
+	uint16_t interval;
 	/** Requested length of the CTE in 8 us units. */
 	uint8_t cte_length;
 	/**

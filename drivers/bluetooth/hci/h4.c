@@ -528,11 +528,29 @@ static int h4_open(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_HCI_SETUP)
+static int h4_setup(void)
+{
+	/* Extern bt_h4_vnd_setup function.
+	 * This function executes vendor-specific commands sequence to
+	 * initialize BT Controller before BT Host executes Reset sequence.
+	 * bt_h4_vnd_setup function must be implemented in vendor-specific HCI
+	 * extansion module if CONFIG_BT_HCI_SETUP is enabled.
+	 */
+	extern int bt_h4_vnd_setup(const struct device *dev);
+
+	return bt_h4_vnd_setup(h4_dev);
+}
+#endif
+
 static const struct bt_hci_driver drv = {
 	.name		= "H:4",
 	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h4_open,
 	.send		= h4_send,
+#if defined(CONFIG_BT_HCI_SETUP)
+	.setup		= h4_setup
+#endif
 };
 
 static int bt_uart_init(const struct device *unused)

@@ -353,7 +353,7 @@ do {\
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
-#elif defined(CONFIG_LOG2_MODE_IMMEDIATE) /* CONFIG_LOG2_ALWAYS_RUNTIME */
+#elif defined(CONFIG_LOG_MODE_IMMEDIATE) /* CONFIG_LOG2_ALWAYS_RUNTIME */
 #define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \

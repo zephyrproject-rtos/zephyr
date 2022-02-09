@@ -141,14 +141,14 @@ static int st7735r_reset_display(struct st7735r_data *data)
 
 static int st7735r_blanking_on(const struct device *dev)
 {
-	struct st7735r_data *data = (struct st7735r_data *)dev->data;
+	struct st7735r_data *data = dev->data;
 
 	return st7735r_transmit(data, ST7735R_CMD_DISP_OFF, NULL, 0);
 }
 
 static int st7735r_blanking_off(const struct device *dev)
 {
-	struct st7735r_data *data = (struct st7735r_data *)dev->data;
+	struct st7735r_data *data = dev->data;
 
 	return st7735r_transmit(data, ST7735R_CMD_DISP_ON, NULL, 0);
 }
@@ -196,7 +196,7 @@ static int st7735r_write(const struct device *dev,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	struct st7735r_data *data = (struct st7735r_data *)dev->data;
+	struct st7735r_data *data = dev->data;
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	struct spi_buf tx_buf;
 	struct spi_buf_set tx_bufs;
@@ -269,7 +269,7 @@ static int st7735r_set_contrast(const struct device *dev,
 static void st7735r_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
-	struct st7735r_config *config = (struct st7735r_config *)dev->config;
+	const struct st7735r_config *config = dev->config;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->width;
@@ -288,7 +288,7 @@ static void st7735r_get_capabilities(const struct device *dev,
 static int st7735r_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pixel_format)
 {
-	struct st7735r_config *config = (struct st7735r_config *)dev->config;
+	const struct st7735r_config *config = dev->config;
 
 	if ((pixel_format == PIXEL_FORMAT_RGB_565) &&
 	    (~config->madctl & ST7735R_MADCTL_BGR)) {
@@ -436,8 +436,8 @@ static int st7735r_lcd_init(struct st7735r_data *data)
 
 static int st7735r_init(const struct device *dev)
 {
-	struct st7735r_data *data = (struct st7735r_data *)dev->data;
-	struct st7735r_config *config = (struct st7735r_config *)dev->config;
+	struct st7735r_data *data = dev->data;
+	const struct st7735r_config *config = dev->config;
 	int ret;
 
 	if (!spi_is_ready(&config->bus)) {
@@ -499,7 +499,7 @@ static int st7735r_pm_action(const struct device *dev,
 			     enum pm_device_action action)
 {
 	int ret = 0;
-	struct st7735r_data *data = (struct st7735r_data *)dev->data;
+	struct st7735r_data *data = dev->data;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -577,7 +577,7 @@ static const struct display_driver_api st7735r_api = {
 										\
 	PM_DEVICE_DT_INST_DEFINE(inst, st7735r_pm_action);			\
 										\
-	DEVICE_DT_INST_DEFINE(inst, st7735r_init, PM_DEVICE_DT_INST_REF(inst),	\
+	DEVICE_DT_INST_DEFINE(inst, st7735r_init, PM_DEVICE_DT_INST_GET(inst),	\
 			      &st7735r_data_ ## inst, &st7735r_config_ ## inst,	\
 			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,	\
 			      &st7735r_api);

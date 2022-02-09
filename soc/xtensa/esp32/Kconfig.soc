@@ -20,6 +20,14 @@ config ESPTOOLPY_FLASHFREQ_80M
 	bool
 	default y
 
+config FLASH_SIZE
+	int
+	default $(dt_node_reg_size_int,/soc/flash-controller@3ff42000/flash@0,0)
+
+config FLASH_BASE_ADDRESS
+	hex
+	default $(dt_node_reg_addr_hex,/soc/flash-controller@3ff42000/flash@0)
+
 config ESP32_BT_RESERVE_DRAM
 	hex "Bluetooth controller reserved RAM region"
 	default 0xdb5c if BT

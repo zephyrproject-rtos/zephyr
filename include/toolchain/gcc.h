@@ -49,7 +49,7 @@
 
 
 /* C++11 has static_assert built in */
-#ifdef __cplusplus
+#if defined(__cplusplus) && (__cplusplus >= 201103L)
 #define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
 
 /*
@@ -295,7 +295,8 @@ do {                                                                    \
 #if defined(_ASMLANGUAGE)
 
 #if defined(CONFIG_ARM) || defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) \
-	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64)
+	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64) \
+	|| defined(CONFIG_MIPS)
 #define GTEXT(sym) .global sym; .type sym, %function
 #define GDATA(sym) .global sym; .type sym, %object
 #define WTEXT(sym) .weak sym; .type sym, %function
@@ -476,7 +477,8 @@ do {                                                                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",@object")
 
-#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_XTENSA)
+#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
+	defined(CONFIG_XTENSA) || defined(CONFIG_MIPS)
 
 /* No special prefixes necessary for constants in this arch AFAICT */
 #define GEN_ABSOLUTE_SYM(name, value)		\

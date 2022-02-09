@@ -403,8 +403,10 @@ static int tcp_conn_unref(struct tcp *conn)
 	}
 
 	if (conn->context->recv_cb) {
+		k_mutex_unlock(&tcp_lock);
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
 					-ECONNRESET, conn->recv_user_data);
+		k_mutex_lock(&tcp_lock, K_FOREVER);
 	}
 
 	conn->context->tcp = NULL;
@@ -507,7 +509,8 @@ out:
 
 static void tcp_send_process(struct k_work *work)
 {
-	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, send_timer);
 	bool unref;
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
@@ -1089,7 +1092,8 @@ static int tcp_send_queued_data(struct tcp *conn)
 
 static void tcp_cleanup_recv_queue(struct k_work *work)
 {
-	struct tcp *conn = CONTAINER_OF(work, struct tcp, recv_queue_timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, recv_queue_timer);
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
@@ -1105,7 +1109,8 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 
 static void tcp_resend_data(struct k_work *work)
 {
-	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_data_timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, send_data_timer);
 	bool conn_unref = false;
 	int ret;
 
@@ -1123,9 +1128,8 @@ static void tcp_resend_data(struct k_work *work)
 	conn->unacked_len = 0;
 
 	ret = tcp_send_data(conn);
+	conn->send_data_retries++;
 	if (ret == 0) {
-		conn->send_data_retries++;
-
 		if (conn->in_close && conn->send_data_total == 0) {
 			NET_DBG("TCP connection in active close, "
 				"not disposing yet (waiting %dms)",
@@ -1162,7 +1166,8 @@ static void tcp_resend_data(struct k_work *work)
 
 static void tcp_timewait_timeout(struct k_work *work)
 {
-	struct tcp *conn = CONTAINER_OF(work, struct tcp, timewait_timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, timewait_timer);
 
 	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
 
@@ -1180,7 +1185,8 @@ static void tcp_establish_timeout(struct tcp *conn)
 
 static void tcp_fin_timeout(struct k_work *work)
 {
-	struct tcp *conn = CONTAINER_OF(work, struct tcp, fin_timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, fin_timer);
 
 	if (conn->state == TCP_SYN_RECEIVED) {
 		tcp_establish_timeout(conn);

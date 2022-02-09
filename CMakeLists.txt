@@ -145,12 +145,6 @@ if(CONFIG_STACK_CANARIES)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries>)
 endif()
 
-if(BUILD_VERSION)
-  zephyr_compile_definitions(
-    BUILD_VERSION=${BUILD_VERSION}
-  )
-endif()
-
 # @Intent: Obtain compiler optimizations flags and store in variables
 # @details:
 #   Kconfig.zephyr "Optimization level" is a kconfig choice, ensuring
@@ -435,7 +429,23 @@ if(NOT EXISTS ${LINKER_SCRIPT})
   message(FATAL_ERROR "Could not find linker script: '${LINKER_SCRIPT}'. Corrupted configuration?")
 endif()
 
-configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
+if(DEFINED BUILD_VERSION)
+  set(build_version_argument "-DBUILD_VERSION=${BUILD_VERSION}")
+elseif(EXISTS ${ZEPHYR_BASE}/.git/index)
+  set(git_dependency ${ZEPHYR_BASE}/.git/index)
+else()
+  message(WARNING "ZEPHYR_BASE=${ZEPHYR_BASE} doesn't appear to be a git "
+    "repository, please specify '-DBUILD_VERSION=<version>'")
+endif()
+add_custom_command(
+  OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
+  COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
+    -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
+    ${build_version_argument}
+    -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
+  DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
+)
+add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
 # Error-out when the deprecated naming convention is found (until
 # after 1.14.0 has been released)
@@ -705,7 +715,7 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 
 add_custom_target(zephyr_generated_headers)
 add_dependencies(zephyr_generated_headers
-  offsets_h
+  offsets_h version_h
   )
 
 # Generate offsets.c.obj from offsets.c
@@ -1026,7 +1036,7 @@ if(CONFIG_USERSPACE)
     --rodata ${CONFIG_KOBJECT_RODATA_AREA_EXTRA_BYTES}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
-    kobj_prebuilt_hash_output_lib
+    kobj_prebuilt_hash_output_lib $<TARGET_OBJECTS:kobj_prebuilt_hash_output_lib>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
@@ -1153,7 +1163,7 @@ if(CONFIG_USERSPACE)
   # Use gperf to generate C code (KOBJECT_HASH_OUTPUT_SRC_PRE) which implements a
   # perfect hashtable based on KOBJECT_HASH_LIST
   add_custom_command(
-    OUTPUT ${KOBJECT_HASH_OUTPUT_SRC_PRE}
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC_PRE}
     COMMAND
     ${GPERF}
     --output-file ${KOBJECT_HASH_OUTPUT_SRC_PRE}
@@ -1181,7 +1191,7 @@ if(CONFIG_USERSPACE)
     -o ${KOBJECT_HASH_OUTPUT_SRC}
     -p "struct z_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS kobj_hash_output_src_pre ${KOBJECT_HASH_OUTPUT_SRC_PRE}
+    DEPENDS kobj_hash_output_src_pre ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(
@@ -1224,7 +1234,7 @@ if(CONFIG_USERSPACE)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_OBJECTS:kobj_hash_output_lib>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KOBJECT_HASH_OUTPUT_OBJ_RENAMED}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-    DEPENDS kobj_hash_output_lib
+    DEPENDS kobj_hash_output_lib $<TARGET_OBJECTS:kobj_hash_output_lib>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMAND_EXPAND_LISTS
     )
@@ -1393,6 +1403,18 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   endif()
 endif()
 
+if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
+  math(EXPR adjustment "${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT DECIMAL)
+  list(APPEND
+    post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>${adjustment}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_ELF_NAME}
+    )
+endif()
+
 if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(ihex IN_LIST elfconvert_formats)
@@ -1442,12 +1464,27 @@ if(CONFIG_BUILD_OUTPUT_BIN)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
+  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
+    set(flash_addr "${CONFIG_FLASH_BASE_ADDRESS}")
+  else()
+    set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
+  endif()
+
+  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_OFFSET)
+    # Note, the `+ 0` in formula below avoids errors in cases where a Kconfig
+    #       variable is undefined and thus expands to nothing.
+    math(EXPR flash_addr
+        "${flash_addr} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
+         OUTPUT_FORMAT HEXADECIMAL
+    )
+  endif()
+
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/uf2conv.py
             -c
             -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
-            -b ${CONFIG_FLASH_LOAD_OFFSET}
+            -b ${flash_addr}
             -o ${KERNEL_UF2_NAME}
             ${KERNEL_BIN_NAME}
   )
@@ -1576,6 +1613,20 @@ if(CONFIG_BUILD_OUTPUT_EXE)
     )
 endif()
 
+if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_image_info.py
+    --elf-file=${KERNEL_ELF_NAME}
+    --header-file=${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
+    $<$<BOOL:${adjustment}>:--adjusted-lma=${adjustment}>
+    )
+  list(APPEND
+    post_build_byproducts
+    ${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
+    )
+endif()
+
 # Generate and use MCUboot related artifacts as needed.
 if(CONFIG_BOOTLOADER_MCUBOOT)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
@@ -1611,7 +1662,7 @@ if(CONFIG_LOG_DICTIONARY_SUPPORT)
     ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
     ${KERNEL_ELF_NAME}
     ${LOG_DICT_DB_NAME}
-    --build ${BUILD_VERSION}
+    --build-header ${PROJECT_BINARY_DIR}/include/generated/version.h
     )
   list(APPEND
     post_build_byproducts

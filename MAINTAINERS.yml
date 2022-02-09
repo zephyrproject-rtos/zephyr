@@ -854,6 +854,7 @@ Documentation:
         - include/drivers/uart.h
         - include/drivers/uart/
         - dts/bindings/serial/
+        - samples/drivers/uart/
         - tests/drivers/uart/
     labels:
         - "area: UART"
@@ -1208,6 +1209,8 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
+    collaborators:
+        - SeppoTakalo
     files:
         - samples/net/lwm2m_client/
         - subsys/net/lib/lwm2m/
@@ -1789,7 +1792,6 @@ CI:
         - galak
     files:
         - .github/
-        - .buildkite/
         - scripts/ci/
         - .checkpatch.conf
         - scripts/gitlint/

@@ -32,15 +32,12 @@ struct mdio_sam_dev_config {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_DATA(dev) ((struct mdio_sam_dev_data *const)(dev)->data)
-#define DEV_CFG(dev) \
-	((const struct mdio_sam_dev_config *const)(dev)->config)
 
 static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 			 uint8_t rw, uint16_t data_in, uint16_t *data_out)
 {
-	const struct mdio_sam_dev_config *const cfg = DEV_CFG(dev);
-	struct mdio_sam_dev_data *const data = DEV_DATA(dev);
+	const struct mdio_sam_dev_config *const cfg = dev->config;
+	struct mdio_sam_dev_data *const data = dev->data;
 	int timeout = 50;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -100,21 +97,21 @@ static int mdio_sam_write(const struct device *dev, uint8_t prtad,
 
 static void mdio_sam_bus_enable(const struct device *dev)
 {
-	const struct mdio_sam_dev_config *const cfg = DEV_CFG(dev);
+	const struct mdio_sam_dev_config *const cfg = dev->config;
 
 	cfg->regs->GMAC_NCR |= GMAC_NCR_MPE;
 }
 
 static void mdio_sam_bus_disable(const struct device *dev)
 {
-	const struct mdio_sam_dev_config *const cfg = DEV_CFG(dev);
+	const struct mdio_sam_dev_config *const cfg = dev->config;
 
 	cfg->regs->GMAC_NCR &= ~GMAC_NCR_MPE;
 }
 
 static int mdio_sam_initialize(const struct device *dev)
 {
-	struct mdio_sam_dev_data *const data = DEV_DATA(dev);
+	struct mdio_sam_dev_data *const data = dev->data;
 
 	k_sem_init(&data->sem, 1, 1);
 

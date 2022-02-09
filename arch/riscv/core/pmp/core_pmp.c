@@ -68,7 +68,7 @@ struct riscv_pmp_region {
 };
 
 #ifdef CONFIG_USERSPACE
-extern ulong_t is_user_mode;
+extern uint32_t is_user_mode;
 #endif
 
 /*
@@ -294,11 +294,11 @@ static int riscv_pmp_set(unsigned int index, uint8_t cfg_val, ulong_t addr_val)
 	pmpcfg_csr = CSR_PMPCFG0 + PMPCFG_NUM(index);
 	pmpaddr_csr = CSR_PMPADDR0 + index;
 	shift = PMPCFG_SHIFT(index);
-	mask = 0xFF << shift;
+	mask = 0xFFUL << shift;
 
 	reg_val = csr_read_enum(pmpcfg_csr);
 	reg_val = reg_val & ~mask;
-	reg_val = reg_val | (cfg_val << shift);
+	reg_val = reg_val | ((ulong_t)cfg_val << shift);
 
 	csr_write_enum(pmpaddr_csr, addr_val);
 	csr_write_enum(pmpcfg_csr, reg_val);
@@ -321,7 +321,7 @@ static int riscv_pmp_get(unsigned int index, uint8_t *cfg_val, ulong_t *addr_val
 	pmpcfg_csr = CSR_PMPCFG0 + PMPCFG_NUM(index);
 	pmpaddr_csr = CSR_PMPADDR0 + index;
 	shift = PMPCFG_SHIFT(index);
-	mask = 0xFF << shift;
+	mask = 0xFFUL << shift;
 
 	reg_val = csr_read_enum(pmpcfg_csr);
 	*cfg_val = (reg_val & mask) >> shift;
@@ -353,11 +353,11 @@ void riscv_pmpcfg_set_range(uint8_t min_index, uint8_t max_index, uint8_t *u8_pm
 
 	for (int index = min_index; index <= max_index; index++) {
 		shift = PMPCFG_SHIFT(index);
-		cfg_mask |= (0xFF << shift);
+		cfg_mask |= (0xFFUL << shift);
 
 		/* If u8_pmpcfg is NULL, new_pmpcfg is always 0 to clear pmpcfg CSR. */
 		if (u8_pmpcfg != NULL) {
-			new_pmpcfg |= (u8_pmpcfg[index] << shift);
+			new_pmpcfg |= ((ulong_t) u8_pmpcfg[index]) << shift;
 		}
 
 		/* If index+1 is new CSR or it's last index, apply new_pmpcfg value to the CSR. */
@@ -789,7 +789,7 @@ static inline int is_in_region(uint32_t index, uint32_t start, uint32_t size)
 
 	size = size == 0U ? 0U : size - 1U;
 #ifdef CONFIG_64BIT
-	if (u64_add_overflow(start, size, &end)) {
+	if (u64_add_overflow(start, size, (uint64_t *)&end)) {
 		return 0;
 	}
 #else

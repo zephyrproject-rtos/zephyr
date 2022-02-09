@@ -38,23 +38,55 @@ extern "C" {
  */
 
 /**
- * @brief Generic function for computing CRC 16
+ * @brief Generic function for computing a CRC-16 without input or output
+ *        reflection.
  *
- * Compute CRC 16 by passing in the address of the input, the input length
- * and polynomial used in addition to the initial value.
+ * Compute CRC-16 by passing in the address of the input, the input length
+ * and polynomial used in addition to the initial value. This is O(n*8) where n
+ * is the length of the buffer provided. No reflection is performed.
  *
+ * @note If you are planning to use a CRC based on poly 0x1012 the functions
+ * crc16_itu_t() is faster and thus recommended over this one.
+ *
+ * @param poly The polynomial to use omitting the leading x^16
+ *             coefficient
+ * @param seed Initial value for the CRC computation
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
- * @param polynomial The polynomial to use omitting the leading x^16
- *        coefficient
- * @param initial_value Initial value for the CRC computation
- * @param pad Adds padding with zeros at the end of input bytes
  *
- * @return The computed CRC16 value
+ * @return The computed CRC16 value (without any XOR applied to it)
  */
-uint16_t crc16(const uint8_t *src, size_t len, uint16_t polynomial,
-	    uint16_t initial_value, bool pad);
+uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
 
+/**
+ * @brief Generic function for computing a CRC-16 with input and output
+ *        reflection.
+ *
+ * Compute CRC-16 by passing in the address of the input, the input length
+ * and polynomial used in addition to the initial value. This is O(n*8) where n
+ * is the length of the buffer provided. Both input and output are reflected.
+ *
+ * @note If you are planning to use a CRC based on poly 0x1012 the function
+ * crc16_ccitt() is faster and thus recommended over this one.
+ *
+ * The following checksums can, among others, be calculated by this function,
+ * depending on the value provided for the initial seed and the value the final
+ * calculated CRC is XORed with:
+ *
+ * - CRC-16/ANSI, CRC-16/MODBUS, CRC-16/USB, CRC-16/IBM
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-modbus
+ *   poly: 0x8005 (0xA001) initial seed: 0xffff, xor output: 0x0000
+ *
+ * @param poly The polynomial to use omitting the leading x^16
+ *             coefficient. Important: please reflect the poly. For example,
+ *             use 0xA001 instead of 0x8005 for CRC-16-MODBUS.
+ * @param seed Initial value for the CRC computation
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
 /**
  * @brief Generic function for computing CRC 8
  *
@@ -74,59 +106,80 @@ uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 	  bool reversed);
 
 /**
- * @brief Compute the CRC-16/CCITT checksum of a buffer.
+ * @brief Compute the checksum of a buffer with polynomial 0x1021, reflecting
+ *        input and output.
  *
- * See ITU-T Recommendation V.41 (November 1988).  Uses 0x1021 as the
- * polynomial, reflects the input, and reflects the output.
+ * This function is able to calculate any CRC that uses 0x1021 as it polynomial
+ * and requires reflecting both the input and the output. It is a fast variant
+ * that runs in O(n) time, where n is the length of the input buffer.
  *
- * To calculate the CRC across non-contiguous blocks use the return
- * value from block N-1 as the seed for block N.
+ * The following checksums can, among others, be calculated by this function,
+ * depending on the value provided for the initial seed and the value the final
+ * calculated CRC is XORed with:
  *
- * For CRC-16/CCITT, use 0 as the initial seed.  Other checksums in
- * the same family can be calculated by changing the seed and/or
- * XORing the final value.  Examples include:
+ * - CRC-16/CCITT, CRC-16/CCITT-TRUE, CRC-16/KERMIT
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-kermit
+ *   initial seed: 0x0000, xor output: 0x0000
  *
- * - X-25 (used in PPP): seed=0xffff, xor=0xffff, residual=0xf0b8
+ * - CRC-16/X-25, CRC-16/IBM-SDLC, CRC-16/ISO-HDLC
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-ibm-sdlc
+ *   initial seed: 0xffff, xor output: 0xffff
  *
- * @note API changed in Zephyr 1.11.
+ * @note To calculate the CRC across non-contiguous blocks use the return
+ *       value from block N-1 as the seed for block N.
+ *
+ * See ITU-T Recommendation V.41 (November 1988).
  *
  * @param seed Value to seed the CRC with
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
  *
- * @return The computed CRC16 value
+ * @return The computed CRC16 value (without any XOR applied to it)
  */
 uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len);
 
 /**
- * @brief Compute the CRC-16/XMODEM checksum of a buffer.
+ * @brief Compute the checksum of a buffer with polynomial 0x1021, no
+ *        reflection of input or output.
  *
- * The MSB first version of ITU-T Recommendation V.41 (November 1988).
- * Uses 0x1021 as the polynomial with no reflection.
+ * This function is able to calculate any CRC that uses 0x1021 as it polynomial
+ * and requires no reflection on  both the input and the output. It is a fast
+ * variant that runs in O(n) time, where n is the length of the input buffer.
  *
- * To calculate the CRC across non-contiguous blocks use the return
- * value from block N-1 as the seed for block N.
+ * The following checksums can, among others, be calculated by this function,
+ * depending on the value provided for the initial seed and the value the final
+ * calculated CRC is XORed with:
  *
- * For CRC-16/XMODEM, use 0 as the initial seed.  Other checksums in
- * the same family can be calculated by changing the seed and/or
- * XORing the final value.  Examples include:
+ * - CRC-16/XMODEM, CRC-16/ACORN, CRC-16/LTE
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-xmodem
+ *   initial seed: 0x0000, xor output: 0x0000
  *
- * - CCIITT-FALSE: seed=0xffff
- * - GSM: seed=0, xorout=0xffff, residue=0x1d0f
+ * - CRC16/CCITT-FALSE, CRC-16/IBM-3740, CRC-16/AUTOSAR
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-ibm-3740
+ *   initial seed: 0xffff, xor output: 0x0000
+ *
+ * - CRC-16/GSM
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-gsm
+ *   initial seed: 0x0000, xor output: 0xffff
+ *
+ * @note To calculate the CRC across non-contiguous blocks use the return
+ *       value from block N-1 as the seed for block N.
+ *
+ * See ITU-T Recommendation V.41 (November 1988) (MSB first).
  *
  * @param seed Value to seed the CRC with
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
  *
- * @return The computed CRC16 value
+ * @return The computed CRC16 value (without any XOR applied to it)
  */
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
 
 /**
- * @brief Compute ANSI variant of CRC 16
+ * @brief Compute the ANSI (or Modbus) variant of CRC-16
  *
- * ANSI variant of CRC 16 is using 0x8005 as its polynomial with the initial
- * value set to 0xffff.
+ * The ANSI variant of CRC-16 uses 0x8005 (0xA001 reflected) as its polynomial
+ * with the initial * value set to 0xffff.
  *
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
@@ -135,7 +188,7 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
  */
 static inline uint16_t crc16_ansi(const uint8_t *src, size_t len)
 {
-	return crc16(src, len, 0x8005, 0xffff, true);
+	return crc16_reflect(0xA001, 0xffff, src, len);
 }
 
 /**

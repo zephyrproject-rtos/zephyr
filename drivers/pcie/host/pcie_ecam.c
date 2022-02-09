@@ -41,8 +41,8 @@ struct pcie_ecam_data {
 
 static int pcie_ecam_init(const struct device *dev)
 {
-	const struct pcie_ctrl_config *cfg = (const struct pcie_ctrl_config *)dev->config;
-	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
+	const struct pcie_ctrl_config *cfg = dev->config;
+	struct pcie_ecam_data *data = dev->data;
 	int i;
 
 	/*
@@ -157,7 +157,7 @@ static int pcie_ecam_init(const struct device *dev)
 			data->regions[PCIE_REGION_MEM64].size);
 	}
 
-	/* Map config space to be used by the generic_pcie_ctrl_conf_read/write callbacks */
+	/* Map config space to be used by the pcie_generic_ctrl_conf_read/write callbacks */
 	device_map(&data->cfg_addr, data->cfg_phys_addr, data->cfg_size, K_MEM_CACHE_NONE);
 
 	LOG_DBG("Config space [0x%lx - 0x%lx, size 0x%lx]",
@@ -165,24 +165,24 @@ static int pcie_ecam_init(const struct device *dev)
 	LOG_DBG("Config mapped [0x%lx - 0x%lx, size 0x%lx]",
 		data->cfg_addr, (data->cfg_addr + data->cfg_size - 1), data->cfg_size);
 
-	generic_pcie_ctrl_enumerate(dev, PCIE_BDF(0, 0, 0));
+	pcie_generic_ctrl_enumerate(dev, PCIE_BDF(0, 0, 0));
 
 	return 0;
 }
 
 static uint32_t pcie_ecam_ctrl_conf_read(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
 {
-	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
+	struct pcie_ecam_data *data = dev->data;
 
-	return generic_pcie_ctrl_conf_read(data->cfg_addr, bdf, reg);
+	return pcie_generic_ctrl_conf_read(data->cfg_addr, bdf, reg);
 }
 
 static void pcie_ecam_ctrl_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned int reg,
 				      uint32_t reg_data)
 {
-	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
+	struct pcie_ecam_data *data = dev->data;
 
-	generic_pcie_ctrl_conf_write(data->cfg_addr, bdf, reg, reg_data);
+	pcie_generic_ctrl_conf_write(data->cfg_addr, bdf, reg, reg_data);
 }
 
 static bool pcie_ecam_region_allocate_type(struct pcie_ecam_data *data, pcie_bdf_t bdf,
@@ -207,7 +207,7 @@ static bool pcie_ecam_region_allocate(const struct device *dev, pcie_bdf_t bdf,
 				      bool mem, bool mem64, size_t bar_size,
 				      uintptr_t *bar_bus_addr)
 {
-	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
+	struct pcie_ecam_data *data = dev->data;
 	enum pcie_region_type type;
 
 	if (mem && !data->regions[PCIE_REGION_MEM64].size &&
@@ -240,11 +240,51 @@ static bool pcie_ecam_region_allocate(const struct device *dev, pcie_bdf_t bdf,
 	return pcie_ecam_region_allocate_type(data, bdf, bar_size, bar_bus_addr, type);
 }
 
-static bool pcie_ecam_region_xlate(const struct device *dev, pcie_bdf_t bdf,
-				   bool mem, bool mem64, uintptr_t bar_bus_addr,
-				   uintptr_t *bar_addr)
+static bool pcie_ecam_region_get_allocate_base(const struct device *dev, pcie_bdf_t bdf,
+					       bool mem, bool mem64, size_t align,
+					       uintptr_t *bar_base_addr)
 {
 	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
+	enum pcie_region_type type;
+
+	if (mem && !data->regions[PCIE_REGION_MEM64].size &&
+	    !data->regions[PCIE_REGION_MEM].size) {
+		LOG_DBG("bdf %x no mem region defined for allocation", bdf);
+		return false;
+	}
+
+	if (!mem && !data->regions[PCIE_REGION_IO].size) {
+		LOG_DBG("bdf %x no io region defined for allocation", bdf);
+		return false;
+	}
+
+	/*
+	 * Allocate into mem64 region if available or is the only available
+	 *
+	 * TOFIX:
+	 * - handle allocation from/to mem/mem64 when a region is full
+	 */
+	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+		    (data->regions[PCIE_REGION_MEM64].size &&
+		     !data->regions[PCIE_REGION_MEM].size))) {
+		type = PCIE_REGION_MEM64;
+	} else if (mem) {
+		type = PCIE_REGION_MEM;
+	} else {
+		type = PCIE_REGION_IO;
+	}
+
+	*bar_base_addr = (((data->regions[type].bus_start +
+			    data->regions[type].allocation_offset) - 1) | ((align) - 1)) + 1;
+
+	return true;
+}
+
+static bool pcie_ecam_region_translate(const struct device *dev, pcie_bdf_t bdf,
+				       bool mem, bool mem64, uintptr_t bar_bus_addr,
+				       uintptr_t *bar_addr)
+{
+	struct pcie_ecam_data *data = dev->data;
 	enum pcie_region_type type;
 
 	/* Means it hasn't been allocated */
@@ -270,7 +310,8 @@ static const struct pcie_ctrl_driver_api pcie_ecam_api = {
 	.conf_read = pcie_ecam_ctrl_conf_read,
 	.conf_write = pcie_ecam_ctrl_conf_write,
 	.region_allocate = pcie_ecam_region_allocate,
-	.region_xlate = pcie_ecam_region_xlate,
+	.region_get_allocate_base = pcie_ecam_region_get_allocate_base,
+	.region_translate = pcie_ecam_region_translate,
 };
 
 #define PCIE_ECAM_INIT(n)							\

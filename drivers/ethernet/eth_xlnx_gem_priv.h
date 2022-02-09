@@ -110,7 +110,7 @@
 #define ETH_XLNX_GEM_CKSUM_NOT_TCP_OR_UDP_ERROR		0x00000006
 #define ETH_XLNX_GEM_CKSUM_PREMATURE_END_ERROR		0x00000007
 
-#if defined(CONFIG_SOC_SERIES_XILINX_ZYNQ7000)
+#if defined(CONFIG_SOC_FAMILY_XILINX_ZYNQ7000)
 /*
  * Zynq-7000 TX clock configuration:
  *
@@ -152,7 +152,7 @@
 #define ETH_XLNX_CRL_APB_GEMX_REF_CTRL_DIVISOR0_SHIFT	8
 #define ETH_XLNX_CRL_APB_GEMX_REF_CTRL_RX_CLKACT_BIT    0x04000000
 #define ETH_XLNX_CRL_APB_GEMX_REF_CTRL_CLKACT_BIT       0x02000000
-#endif /* CONFIG_SOC_SERIES_XILINX_ZYNQ7000 || CONFIG_SOC_XILINX_ZYNQMP */
+#endif /* CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 || CONFIG_SOC_XILINX_ZYNQMP */
 
 /*
  * Register offsets within the respective GEM's address space:
@@ -410,12 +410,6 @@
 #define ETH_XLNX_GEM_PHY_MAINT_REGISTER_ID_SHIFT	18
 #define ETH_XLNX_GEM_PHY_MAINT_DATA_MASK		0x0000FFFF
 
-/* Device configuration / run-time data resolver macros */
-#define DEV_CFG(dev) \
-	((const struct eth_xlnx_gem_dev_cfg * const)(dev->config))
-#define DEV_DATA(dev) \
-	((struct eth_xlnx_gem_dev_data *)(dev->data))
-
 /* Device initialization macro */
 #define ETH_XLNX_GEM_NET_DEV_INIT(port) \
 ETH_NET_DEVICE_DT_INST_DEFINE(port,\
@@ -518,7 +512,7 @@ struct eth_xlnx_dma_area_gem##port {\
 };
 
 /* DMA memory area instantiation macro */
-#ifdef CONFIG_SOC_SERIES_XILINX_ZYNQ7000
+#ifdef CONFIG_SOC_FAMILY_XILINX_ZYNQ7000
 #define ETH_XLNX_GEM_DMA_AREA_INST(port) \
 static struct eth_xlnx_dma_area_gem##port eth_xlnx_gem##port##_dma_area\
 	__ocm_bss_section __aligned(4096);
@@ -603,7 +597,7 @@ enum eth_xlnx_mdc_clock_divider {
 	MDC_DIVIDER_16,
 	MDC_DIVIDER_32,
 	MDC_DIVIDER_48,
-#ifdef CONFIG_SOC_SERIES_XILINX_ZYNQ7000
+#ifdef CONFIG_SOC_FAMILY_XILINX_ZYNQ7000
 	/* Dividers > 48 are only available in the Zynq-7000 */
 	MDC_DIVIDER_64,
 	MDC_DIVIDER_96,

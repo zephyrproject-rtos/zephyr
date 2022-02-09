@@ -311,7 +311,6 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
 		code2str(code));
 
-	lwm2m_engine_context_close(client.ctx);
 	sm_handle_failure_state(ENGINE_IDLE);
 
 	return 0;
@@ -394,7 +393,6 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
 		code2str(code));
 
-	lwm2m_engine_context_close(client.ctx);
 	sm_handle_failure_state(ENGINE_IDLE);
 
 	return 0;
@@ -466,7 +464,6 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
 		code2str(code));
 
-	lwm2m_engine_context_close(client.ctx);
 	sm_handle_failure_state(ENGINE_IDLE);
 
 	return 0;
@@ -1004,6 +1001,9 @@ static void lwm2m_rd_client_service(struct k_work *work)
 	if (client.ctx) {
 		switch (get_sm_state()) {
 		case ENGINE_IDLE:
+			if (client.ctx->sock_fd > -1) {
+				lwm2m_engine_context_close(client.ctx);
+			}
 			break;
 
 		case ENGINE_INIT:
@@ -1111,9 +1111,6 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	if (sm_is_registered() && deregister) {
 		set_sm_state(ENGINE_DEREGISTER);
 	} else {
-		if (client.ctx->sock_fd > -1) {
-			lwm2m_engine_context_close(client.ctx);
-		}
 		set_sm_state(ENGINE_IDLE);
 	}
 

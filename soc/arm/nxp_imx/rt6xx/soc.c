@@ -172,11 +172,7 @@ static void usb_device_clock_init(void)
 #endif
 
 /**
- *
  * @brief Initialize the system clock
- *
- * @return N/A
- *
  */
 static ALWAYS_INLINE void clock_init(void)
 {

@@ -24,10 +24,6 @@
 
 LOG_MODULE_REGISTER(pmic_regulator, CONFIG_REGULATOR_LOG_LEVEL);
 
-struct regulator_data {
-	struct onoff_sync_service srv;
-};
-
 struct __packed voltage_range {
 	int uV; /* Voltage in uV */
 	int reg_val; /* Register value for voltage */
@@ -38,10 +34,14 @@ struct __packed current_range {
 	int reg_val; /* Register value for current limit */
 };
 
+struct regulator_data {
+	struct onoff_sync_service srv;
+	const struct voltage_range *voltages;
+	const struct current_range *current_levels;
+};
+
 struct regulator_config {
-	struct voltage_range *voltages;
 	int num_voltages;
-	struct current_range *current_levels;
 	int num_current_levels;
 	uint8_t vsel_reg;
 	uint8_t vsel_mask;
@@ -89,7 +89,9 @@ static int regulator_modify_register(const struct regulator_config *conf,
  */
 int regulator_count_voltages(const struct device *dev)
 {
-	return ((struct regulator_config *)dev->config)->num_voltages;
+	const struct regulator_config *config = dev->config;
+
+	return config->num_voltages;
 }
 
 /**
@@ -99,11 +101,12 @@ int regulator_count_voltages(const struct device *dev)
 int regulator_list_voltages(const struct device *dev, unsigned int selector)
 {
 	const struct regulator_config *config = dev->config;
+	struct regulator_data *data = dev->data;
 
 	if (config->num_voltages <= selector) {
 		return -ENODEV;
 	}
-	return config->voltages[selector].uV;
+	return data->voltages[selector].uV;
 }
 
 /**
@@ -125,6 +128,7 @@ int regulator_is_supported_voltage(const struct device *dev,
 int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
 {
 	const struct regulator_config *config = dev->config;
+	struct regulator_data *data = dev->data;
 	int i = 0;
 
 	if (!regulator_is_supported_voltage(dev, min_uV, max_uV) ||
@@ -132,10 +136,10 @@ int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
 		return -EINVAL;
 	}
 	/* Find closest supported voltage */
-	while (i < config->num_voltages && min_uV > config->voltages[i].uV) {
+	while (i < config->num_voltages && min_uV > data->voltages[i].uV) {
 		i++;
 	}
-	if (config->voltages[i].uV > max_uV) {
+	if (data->voltages[i].uV > max_uV) {
 		LOG_DBG("Regulator could not satisfy voltage range, too narrow");
 		return -EINVAL;
 	}
@@ -145,9 +149,9 @@ int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
 		return -EINVAL;
 	}
 	LOG_DBG("Setting regulator %s to %duV", dev->name,
-			config->voltages[i].uV);
+			data->voltages[i].uV);
 	return regulator_modify_register(config, config->vsel_reg,
-			config->vsel_mask, config->voltages[i].reg_val);
+			config->vsel_mask, data->voltages[i].reg_val);
 }
 
 /**
@@ -157,6 +161,7 @@ int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
 int regulator_get_voltage(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
+	struct regulator_data *data = dev->data;
 	int rc, i = 0;
 	uint8_t raw_reg;
 
@@ -168,14 +173,14 @@ int regulator_get_voltage(const struct device *dev)
 	raw_reg &= config->vsel_mask;
 	/* Locate the voltage value in the voltage table */
 	while (i < config->num_voltages &&
-		raw_reg != config->voltages[i].reg_val){
+		raw_reg != data->voltages[i].reg_val){
 		i++;
 	}
 	if (i == config->num_voltages) {
 		LOG_WRN("Regulator vsel reg has unknown value");
 		return -EIO;
 	}
-	return config->voltages[i].uV;
+	return data->voltages[i].uV;
 }
 
 /**
@@ -185,6 +190,7 @@ int regulator_get_voltage(const struct device *dev)
 int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA)
 {
 	const struct regulator_config *config = dev->config;
+	struct regulator_data *data = dev->data;
 	int i = 0;
 
 	if (config->num_current_levels == 0) {
@@ -193,16 +199,16 @@ int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA
 	}
 	/* Locate the desired current limit */
 	while (i < config->num_current_levels &&
-		min_uA > config->current_levels[i].uA) {
+		min_uA > data->current_levels[i].uA) {
 		i++;
 	}
 	if (i == config->num_current_levels ||
-		config->current_levels[i].uA > max_uA) {
+		data->current_levels[i].uA > max_uA) {
 		return -EINVAL;
 	}
 	/* Set the current limit */
 	return regulator_modify_register(config, config->ilim_reg,
-		config->ilim_mask, config->current_levels[i].reg_val);
+		config->ilim_mask, data->current_levels[i].reg_val);
 }
 
 /**
@@ -212,6 +218,7 @@ int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA
 int regulator_get_current_limit(const struct device *dev)
 {
 	const struct regulator_config *config = dev->config;
+	struct regulator_data *data = dev->data;
 	int rc, i = 0;
 	uint8_t raw_reg;
 
@@ -225,13 +232,13 @@ int regulator_get_current_limit(const struct device *dev)
 	}
 	raw_reg &= config->ilim_mask;
 	while (i < config->num_current_levels &&
-		config->current_levels[i].reg_val != raw_reg) {
+		data->current_levels[i].reg_val != raw_reg) {
 		i++;
 	}
 	if (i == config->num_current_levels) {
 		return -EIO;
 	}
-	return config->current_levels[i].uA;
+	return data->current_levels[i].uA;
 }
 
 
@@ -284,16 +291,17 @@ static int disable_regulator(const struct device *dev)
 
 static int pmic_reg_init(const struct device *dev)
 {
-	struct regulator_config *config = (struct regulator_config *)dev->config;
+	const struct regulator_config *config = dev->config;
+	struct regulator_data *data = dev->data;
 
 	/* Cast the voltage array set at compile time to the voltage range
 	 * struct
 	 */
-	config->voltages = (struct voltage_range *)config->voltage_array;
+	data->voltages = (struct voltage_range *)config->voltage_array;
 	/* Do the same cast for current limit ranges */
-	config->current_levels = (struct current_range *)config->current_array;
+	data->current_levels = (struct current_range *)config->current_array;
 	/* Check to verify we have a valid I2C device */
-	if (config->i2c_dev == NULL || !device_is_ready(config->i2c_dev)) {
+	if (!device_is_ready(config->i2c_dev)) {
 		return -ENODEV;
 	}
 	return 0;

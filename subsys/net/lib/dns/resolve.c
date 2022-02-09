@@ -1058,8 +1058,9 @@ int dns_resolve_cancel(struct dns_resolve_context *ctx, uint16_t dns_id)
 
 static void query_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct dns_pending_query *pending_query =
-		CONTAINER_OF(work, struct dns_pending_query, timer);
+		CONTAINER_OF(dwork, struct dns_pending_query, timer);
 	int ret;
 
 	/* We have to take the lock as we're inspecting protected content

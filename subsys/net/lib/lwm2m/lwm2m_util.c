@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <inttypes.h>
 #include "lwm2m_util.h"
 
 #define SHIFT_LEFT(v, o, m) (((v) << (o)) & (m))
@@ -355,6 +356,7 @@ int lwm2m_atof(const char *input, double *out)
 	val2 = 0;
 
 	if (!pos) {
+		*out = (double)val1;
 		return 0;
 	}
 
@@ -377,7 +379,8 @@ int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit)
 	int64_t val1 = (int64_t)*input;
 	int64_t val2 = (*input - (int64_t)*input) * PRECISION64;
 
-	len = snprintk(buf, sizeof(buf), "%0*lld", PRECISION64_LEN, llabs(val2));
+	len = snprintk(buf, sizeof(buf), "%0*lld", PRECISION64_LEN,
+		       (long long)llabs(val2));
 	if (len != PRECISION64_LEN) {
 		strcpy(buf, "0");
 	} else {
@@ -417,5 +420,5 @@ int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit)
 
 	return snprintk(out, outlen, "%s%lld.%s",
 			/* handle negative val2 when val1 is 0 */
-			(val1 == 0 && val2 < 0) ? "-" : "", val1, buf);
+			(val1 == 0 && val2 < 0) ? "-" : "", (long long)val1, buf);
 }

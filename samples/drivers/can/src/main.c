@@ -110,6 +110,8 @@ char *state_to_str(enum can_state state)
 	switch (state) {
 	case CAN_ERROR_ACTIVE:
 		return "error-active";
+	case CAN_ERROR_WARNING:
+		return "error-warning";
 	case CAN_ERROR_PASSIVE:
 		return "error-passive";
 	case CAN_BUS_OFF:
@@ -125,9 +127,16 @@ void poll_state_thread(void *unused1, void *unused2, void *unused3)
 	struct can_bus_err_cnt err_cnt_prev = {0, 0};
 	enum can_state state_prev = CAN_ERROR_ACTIVE;
 	enum can_state state;
+	int err;
 
 	while (1) {
-		state = can_get_state(can_dev, &err_cnt);
+		err = can_get_state(can_dev, &state, &err_cnt);
+		if (err != 0) {
+			printk("Failed to get CAN controller state: %d", err);
+			k_sleep(K_MSEC(100));
+			continue;
+		}
+
 		if (err_cnt.tx_err_cnt != err_cnt_prev.tx_err_cnt ||
 		    err_cnt.rx_err_cnt != err_cnt_prev.rx_err_cnt ||
 		    state_prev != state) {

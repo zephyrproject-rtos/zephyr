@@ -59,9 +59,6 @@ LOG_MODULE_REGISTER(lp503x);
 /* Expose channels starting from the bank registers. */
 #define LP503X_CHANNEL_BASE		LP503X_BANK_BRIGHTNESS
 
-#define DEV_CFG(dev)	((const struct lp503x_config *) ((dev)->config))
-#define DEV_DATA(dev)	((struct lp503x_data *) ((dev)->data))
-
 struct lp503x_config {
 	char *i2c_bus_label;
 	uint8_t i2c_addr;
@@ -92,7 +89,7 @@ lp503x_led_to_info(const struct lp503x_config *config, uint32_t led)
 static int lp503x_get_info(const struct device *dev, uint32_t led,
 			   const struct led_info **info)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
+	const struct lp503x_config *config = dev->config;
 	const struct led_info *led_info = lp503x_led_to_info(config, led);
 
 	if (!led_info) {
@@ -107,8 +104,8 @@ static int lp503x_get_info(const struct device *dev, uint32_t led,
 static int lp503x_set_brightness(const struct device *dev,
 				 uint32_t led, uint8_t value)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
-	struct lp503x_data *data = DEV_DATA(dev);
+	const struct lp503x_config *config = dev->config;
+	struct lp503x_data *data = dev->data;
 	const struct led_info *led_info = lp503x_led_to_info(config, led);
 	uint8_t buf[2];
 
@@ -135,8 +132,8 @@ static int lp503x_off(const struct device *dev, uint32_t led)
 static int lp503x_set_color(const struct device *dev, uint32_t led,
 			    uint8_t num_colors, const uint8_t *color)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
-	struct lp503x_data *data = DEV_DATA(dev);
+	const struct lp503x_config *config = dev->config;
+	struct lp503x_data *data = dev->data;
 	const struct led_info *led_info = lp503x_led_to_info(config, led);
 	uint8_t buf[4];
 
@@ -156,8 +153,8 @@ static int lp503x_write_channels(const struct device *dev,
 				 uint32_t start_channel,
 				 uint32_t num_channels, const uint8_t *buf)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
-	struct lp503x_data *data = DEV_DATA(dev);
+	const struct lp503x_config *config = dev->config;
+	struct lp503x_data *data = dev->data;
 
 	if (start_channel >= LP503X_NUM_CHANNELS ||
 	    start_channel + num_channels > LP503X_NUM_CHANNELS) {
@@ -177,8 +174,8 @@ static int lp503x_write_channels(const struct device *dev,
 
 static int lp503x_init(const struct device *dev)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
-	struct lp503x_data *data = DEV_DATA(dev);
+	const struct lp503x_config *config = dev->config;
+	struct lp503x_data *data = dev->data;
 	uint8_t buf[3];
 	int err;
 

@@ -97,7 +97,6 @@ static volatile uint32_t overflow_cycles;
 #endif
 
 /**
- *
  * @brief Get contents of Timer0 count register
  *
  * @return Current Timer0 count
@@ -108,10 +107,7 @@ static ALWAYS_INLINE uint32_t timer0_count_register_get(void)
 }
 
 /**
- *
  * @brief Set Timer0 count register to the specified value
- *
- * @return N/A
  */
 static ALWAYS_INLINE void timer0_count_register_set(uint32_t value)
 {
@@ -119,10 +115,9 @@ static ALWAYS_INLINE void timer0_count_register_set(uint32_t value)
 }
 
 /**
- *
  * @brief Get contents of Timer0 control register
  *
- * @return N/A
+ * @return Contents of Timer0 control register.
  */
 static ALWAYS_INLINE uint32_t timer0_control_register_get(void)
 {
@@ -130,10 +125,7 @@ static ALWAYS_INLINE uint32_t timer0_control_register_get(void)
 }
 
 /**
- *
  * @brief Set Timer0 control register to the specified value
- *
- * @return N/A
  */
 static ALWAYS_INLINE void timer0_control_register_set(uint32_t value)
 {
@@ -141,10 +133,9 @@ static ALWAYS_INLINE void timer0_control_register_set(uint32_t value)
 }
 
 /**
- *
  * @brief Get contents of Timer0 limit register
  *
- * @return N/A
+ * @return Contents of Timer0 limit register.
  */
 static ALWAYS_INLINE uint32_t timer0_limit_register_get(void)
 {
@@ -152,10 +143,7 @@ static ALWAYS_INLINE uint32_t timer0_limit_register_get(void)
 }
 
 /**
- *
  * @brief Set Timer0 limit register to the specified value
- *
- * @return N/A
  */
 static ALWAYS_INLINE void timer0_limit_register_set(uint32_t count)
 {
@@ -210,14 +198,11 @@ static uint32_t elapsed(void)
 #endif
 
 /**
- *
  * @brief System clock periodic tick handler
  *
  * This routine handles the system clock tick interrupt. It always
  * announces one tick when TICKLESS is not enabled, or multiple ticks
  * when TICKLESS is enabled.
- *
- * @return N/A
  */
 static void timer_int_handler(const void *unused)
 {

@@ -969,7 +969,7 @@ Libraries / Subsystems
   - Removed sys_log, which has been replaced by the new logging subsystem
     introduced in v1.13
   - Refactored log modules registration macros
-  - Improved synchronous operation (see :kconfig:`CONFIG_LOG_IMMEDIATE`)
+  - Improved synchronous operation (see ``CONFIG_LOG_IMMEDIATE``)
   - Added commands to control the logger using shell
   - Added :c:macro:`LOG_PANIC()` call to the fault handlers to ensure that
     logs are output on fault

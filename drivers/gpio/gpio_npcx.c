@@ -43,11 +43,8 @@ struct gpio_npcx_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct gpio_npcx_config *)(dev)->config)
-
-#define DRV_DATA(dev) ((struct gpio_npcx_data *)(dev)->data)
-
-#define HAL_INSTANCE(dev) (struct gpio_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev)                                                                          \
+	((struct gpio_reg *)((const struct gpio_npcx_config *)(dev)->config)->base)
 
 /* Platform specific GPIO functions */
 const struct device *npcx_get_gpio_dev(int port)
@@ -60,7 +57,7 @@ const struct device *npcx_get_gpio_dev(int port)
 
 void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	/*
@@ -74,7 +71,7 @@ void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
 
 void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	/*
@@ -90,7 +87,7 @@ void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 static int gpio_npcx_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t mask = BIT(pin);
 
@@ -214,7 +211,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 
 	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
 		LOG_ERR("Cannot configure GPIO(%x, %d)", config->port, pin);
@@ -272,7 +269,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 static int gpio_npcx_manage_callback(const struct device *dev,
 				      struct gpio_callback *callback, bool set)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 	struct miwu_io_callback *miwu_cb = (struct miwu_io_callback *)callback;
 	int pin = find_lsb_set(callback->pin_mask) - 1;
 
@@ -311,8 +308,9 @@ int gpio_npcx_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	__ASSERT(DRV_CONFIG(dev)->wui_size == NPCX_GPIO_PORT_PIN_NUM,
-			"wui_maps array size must equal to its pin number");
+	__ASSERT(((const struct gpio_npcx_config *)dev->config)->wui_size ==
+			 NPCX_GPIO_PORT_PIN_NUM,
+		 "wui_maps array size must equal to its pin number");
 	return 0;
 }
 

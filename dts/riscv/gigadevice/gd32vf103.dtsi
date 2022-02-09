@@ -6,6 +6,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/timer/riscv-machine-timer.h>
+#include <dt-bindings/i2c/i2c.h>
 
 #include <dt-bindings/pwm/pwm.h>
 
@@ -106,6 +107,20 @@
 			label = "DAC";
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		i2c0: i2c@40005400 {
+			compatible = "gd,gd32-i2c";
+			reg = <0x40005400 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <50 0>, <51 0>;
+			interrupt-names = "event", "error";
+			interrupt-parent = <&eclic>;
+			rcu-periph-clock = <0x715>;
+			status = "disabled";
+			label = "I2C_0";
 		};
 
 		afio: afio@40010000 {

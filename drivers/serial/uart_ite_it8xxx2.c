@@ -186,7 +186,7 @@ static int uart_it8xxx2_init(const struct device *dev)
 									       \
 	PM_DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_pm_action);                \
 	DEVICE_DT_INST_DEFINE(inst, &uart_it8xxx2_init,                        \
-			      PM_DEVICE_DT_INST_REF(inst),                     \
+			      PM_DEVICE_DT_INST_GET(inst),                     \
 			      &uart_it8xxx2_data_##inst,                       \
 			      &uart_it8xxx2_cfg_##inst,                        \
 			      PRE_KERNEL_1,                                    \

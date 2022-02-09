@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_TIMER_NRF_RTC_TIMER_H
 #define ZEPHYR_INCLUDE_DRIVERS_TIMER_NRF_RTC_TIMER_H
 
+#include <sys_clock.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,6 +64,18 @@ uint64_t z_nrf_rtc_timer_read(void);
  * @return Register address.
  */
 uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan);
+
+/** @brief Get CAPTURE task register address.
+ *
+ * Address can be used for (D)PPI.
+ *
+ * @note Not all platforms have CAPTURE task.
+ *
+ * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ *
+ * @return Register address.
+ */
+uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan);
 
 /** @brief Safely disable compare event interrupt.
  *
@@ -140,6 +154,18 @@ void z_nrf_rtc_timer_abort(int32_t chan);
  */
 uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t);
 
+/** @brief Get offset between nrf53 network cpu system clock and application cpu
+ * system clock.
+ *
+ * Returned value added to the current system tick on network cpu gives current
+ * application cpu system tick. Function can only be used on network cpu. It
+ * requires @ref CONFIG_NRF53_SYNC_RTC being enabled.
+ *
+ * @retval Non-negative offset given in RTC ticks.
+ * @retval -ENOSYS if operation is not supported.
+ * @retval -EBUSY if synchronization is not yet completed.
+ */
+int z_nrf_rtc_timer_nrf53net_offset_get(void);
 #ifdef __cplusplus
 }
 #endif

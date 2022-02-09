@@ -317,6 +317,10 @@ int sys_clock_driver_init(const struct device *dev)
 	base = (GPT_Type *)DT_REG_ADDR(GPT_INST);
 
 	GPT_GetDefaultConfig(&gpt_config);
+	/* Enable GPT timer to run in SOC low power states */
+	gpt_config.enableRunInStop = true;
+	gpt_config.enableRunInWait = true;
+	gpt_config.enableRunInDoze = true;
 	/* Use 32KHz clock frequency */
 	gpt_config.clockSource = kGPT_ClockSource_LowFreq;
 	gpt_config.enableFreeRun = false; /* Set GPT to reset mode */

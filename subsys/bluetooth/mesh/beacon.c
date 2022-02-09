@@ -39,7 +39,7 @@
 
 static struct k_work_delayable beacon_timer;
 
-static int cache_check(struct bt_mesh_subnet *sub, void *beacon_data)
+static bool beacon_cache_match(struct bt_mesh_subnet *sub, void *beacon_data)
 {
 	return !memcmp(sub->beacon_cache, beacon_data, 21);
 }
@@ -88,7 +88,7 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 #define BEACON_THRESHOLD(sub) \
 	((10 * ((sub)->beacons_last + 1)) * MSEC_PER_SEC - (5 * MSEC_PER_SEC))
 
-static int secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
+static bool secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	static const struct bt_mesh_send_cb send_cb = {
 		.end = beacon_complete,
@@ -102,14 +102,14 @@ static int secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 	time_diff = now - sub->beacon_sent;
 	if (time_diff < (600 * MSEC_PER_SEC) &&
 		time_diff < BEACON_THRESHOLD(sub)) {
-		return 0;
+		return false;
 	}
 
 	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_LOCAL_ADV,
 				 PROV_XMIT, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Unable to allocate beacon buffer");
-		return -ENOMEM;
+		return true; /* Bail out */
 	}
 
 	bt_mesh_beacon_create(sub, &buf->b);
@@ -117,7 +117,7 @@ static int secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 	bt_mesh_adv_send(buf, &send_cb, sub);
 	net_buf_unref(buf);
 
-	return 0;
+	return false;
 }
 
 static int unprovisioned_beacon_send(void)
@@ -289,7 +289,7 @@ static bool auth_match(struct bt_mesh_subnet_keys *keys,
 	return true;
 }
 
-static int subnet_by_id(struct bt_mesh_subnet *sub, void *cb_data)
+static bool subnet_by_id(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	struct beacon_params *params = cb_data;
 
@@ -314,7 +314,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 		return;
 	}
 
-	sub = bt_mesh_subnet_find(cache_check, buf->data);
+	sub = bt_mesh_subnet_find(beacon_cache_match, buf->data);
 	if (sub) {
 		/* We've seen this beacon before - just update the stats */
 		goto update_stats;

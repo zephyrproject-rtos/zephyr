@@ -20,6 +20,8 @@ enum llcp_proc {
 	PROC_CHAN_MAP_UPDATE,
 	PROC_DATA_LENGTH_UPDATE,
 	PROC_CTE_REQ,
+	/* A helper enum entry, to use in pause prcedure context */
+	PROC_NONE = 0x0,
 };
 #if ((CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM <\
 			(CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX *\
@@ -220,7 +222,21 @@ struct proc_ctx {
 			uint8_t type:2;
 			uint8_t min_len:5;
 		} cte_req;
+
+		struct llcp_df_cte_remote_rsp {
+			/* Storage for information that received LL_CTE_RSP PDU includes CTE */
+			uint8_t has_cte;
+		} cte_remote_rsp;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+		/* Use by CTE Response Procedure */
+		struct llcp_df_cte_remote_req {
+			uint8_t cte_type;
+			uint8_t min_cte_len;
+		} cte_remote_req;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 	} data;
 
 	struct {
@@ -432,6 +448,8 @@ void llcp_lr_abort(struct ll_conn *conn);
  */
 void llcp_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat);
 bool llcp_rr_get_collision(struct ll_conn *conn);
+void llcp_rr_set_paused_cmd(struct ll_conn *conn, enum llcp_proc);
+enum llcp_proc llcp_rr_get_paused_cmd(struct ll_conn *conn);
 struct proc_ctx *llcp_rr_peek(struct ll_conn *conn);
 void llcp_rr_pause(struct ll_conn *conn);
 void llcp_rr_resume(struct ll_conn *conn);
@@ -582,10 +600,17 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn,
  * Constant Tone Request Procedure Helper
  */
 void llcp_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-void llcp_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_pdu_encode_cte_rsp(struct pdu_data *pdu);
+void llcp_pdu_decode_cte_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu);
+void llcp_ntf_encode_cte_req(struct pdu_data *pdu);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+/*
+ * Constant Tone Response Procedure Helper
+ */
+void llcp_pdu_decode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ll_conn *conn);

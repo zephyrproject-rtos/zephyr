@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Space Cubics HRMEM (High-reliability Memory)
+
+compatible: "sc,hrmem"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true

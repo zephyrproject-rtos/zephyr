@@ -42,11 +42,8 @@ struct espi_npcx_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct espi_npcx_config *)(dev)->config)
-
-#define DRV_DATA(dev) ((struct espi_npcx_data *)(dev)->data)
-
-#define HAL_INSTANCE(dev) (struct espi_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev)                                                                          \
+	((struct espi_reg *)((const struct espi_npcx_config *)(dev)->config)->base)
 
 /* eSPI channels */
 #define NPCX_ESPI_CH_PC              0
@@ -208,7 +205,7 @@ static void espi_bus_cfg_update_isr(const struct device *dev)
 {
 	int chan;
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
-	struct espi_npcx_data *const data = DRV_DATA(dev);
+	struct espi_npcx_data *const data = dev->data;
 	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
 				  .evt_details = 0,
 				  .evt_data = 0 };
@@ -252,7 +249,7 @@ static void espi_bus_cfg_update_isr(const struct device *dev)
 #if defined(CONFIG_ESPI_OOB_CHANNEL)
 static void espi_bus_oob_rx_isr(const struct device *dev)
 {
-	struct espi_npcx_data *const data = DRV_DATA(dev);
+	struct espi_npcx_data *const data = dev->data;
 
 	LOG_DBG("%s", __func__);
 	k_sem_give(&data->oob_rx_lock);
@@ -338,7 +335,7 @@ static void espi_vw_config_output(const struct device *dev,
 static void espi_vw_notify_system_state(const struct device *dev,
 				enum espi_vwire_signal signal)
 {
-	struct espi_npcx_data *const data = DRV_DATA(dev);
+	struct espi_npcx_data *const data = dev->data;
 	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED, 0, 0 };
 	uint8_t wire = 0;
 
@@ -381,7 +378,7 @@ static void espi_vw_notify_host_warning(const struct device *dev,
 
 static void espi_vw_notify_plt_rst(const struct device *dev)
 {
-	struct espi_npcx_data *const data = DRV_DATA(dev);
+	struct espi_npcx_data *const data = dev->data;
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	struct espi_event evt = { ESPI_BUS_EVENT_VWIRE_RECEIVED,
 		ESPI_VWIRE_SIGNAL_PLTRST, 0
@@ -457,7 +454,7 @@ static void espi_vw_generic_isr(const struct device *dev, struct npcx_wui *wui)
 static void espi_vw_espi_rst_isr(const struct device *dev, struct npcx_wui *wui)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
-	struct espi_npcx_data *const data = DRV_DATA(dev);
+	struct espi_npcx_data *const data = dev->data;
 	struct espi_event evt = { ESPI_BUS_RESET, 0, 0 };
 
 	data->espi_rst_asserted = !IS_BIT_SET(inst->ESPISTS,
@@ -626,7 +623,7 @@ static int espi_npcx_receive_vwire(const struct device *dev,
 static int espi_npcx_manage_callback(const struct device *dev,
 				    struct espi_callback *callback, bool set)
 {
-	struct espi_npcx_data *const data = DRV_DATA(dev);
+	struct espi_npcx_data *const data = dev->data;
 
 	return espi_manage_callback(&data->callbacks, callback, set);
 }
@@ -722,7 +719,7 @@ static int espi_npcx_receive_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
-	struct espi_npcx_data *const data = DRV_DATA(dev);
+	struct espi_npcx_data *const data = dev->data;
 	uint8_t *oob_buf = pckt->buf;
 	uint32_t oob_data;
 	int idx_rx_buf, sz_oob_rx, ret;
@@ -850,8 +847,8 @@ DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, NULL,
 
 static int espi_npcx_init(const struct device *dev)
 {
-	const struct espi_npcx_config *const config = DRV_CONFIG(dev);
-	struct espi_npcx_data *const data = DRV_DATA(dev);
+	const struct espi_npcx_config *const config = dev->config;
+	struct espi_npcx_data *const data = dev->data;
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int i, ret;

@@ -353,15 +353,21 @@ static RXFIFO_DEFINE(done, sizeof(struct node_rx_event_done),
  * Increasing this by times the max. simultaneous connection count will permit
  * simultaneous parallel PHY update or Connection Update procedures amongst
  * active connections.
- * Minimum node rx of 2 that can be reserved happens when local central
- * initiated PHY Update reserves 2 node rx, one for PHY update complete and
- * another for Data Length Update complete notification. Otherwise, a
- * peripheral only needs 1 additional node rx to generate Data Length Update
- * complete when PHY Update completes; node rx for PHY update complete is
- * reserved as the received PHY Update Ind PDU.
+ * Minimum node rx of 2 that can be reserved happens when:
+ * - for legacy LLCPs:
+ *   Local central initiated PHY Update reserves 2 node rx,
+ *   one for PHY update complete and another for Data Length Update complete
+ *   notification. Otherwise, a peripheral only needs 1 additional node rx to
+ *   generate Data Length Update complete when PHY Update completes; node rx for
+ *   PHY update complete is reserved as the received PHY Update Ind PDU.
+ * - for new LLCPs:
+ *   Central and peripheral always use two new nodes for handling completion
+ *   notification one for PHY update complete and another for Data Length Update
+ *   complete.
  */
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_PHY) && \
-	defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY) &&  \
+	(defined(CONFIG_BT_LL_SW_LLCP_LEGACY) && defined(CONFIG_BT_CENTRAL) || \
+	 !defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 #define LL_PDU_RX_CNT (2 * (CONFIG_BT_CTLR_LLCP_CONN))
 #elif defined(CONFIG_BT_CONN)
 #define LL_PDU_RX_CNT (CONFIG_BT_CTLR_LLCP_CONN)
@@ -1198,17 +1204,13 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_CIS_ESTABLISHED:
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
-#if defined(CONFIG_BT_CTLR_ISO)
-	case NODE_RX_TYPE_ISO_PDU:
-#endif
-
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -1432,11 +1434,17 @@ void ll_rx_mem_release(void **node_rx)
 				/* pick the sync context before scan context
 				 * is cleanup of sync context association.
 				 */
-				sync = scan->per_scan.sync;
+				sync = scan->periodic.sync;
 
 				ull_sync_setup_complete(scan);
 
 				if (status != BT_HCI_ERR_SUCCESS) {
+					memq_link_t *link_sync_lost;
+
+					link_sync_lost =
+						sync->node_rx_lost.hdr.link;
+					ll_rx_link_release(link_sync_lost);
+
 					ull_sync_release(sync);
 				}
 
@@ -1483,7 +1491,7 @@ void ll_rx_mem_release(void **node_rx)
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 		case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 		case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
 		{
@@ -1494,7 +1502,7 @@ void ll_rx_mem_release(void **node_rx)
 			ull_df_rx_iq_report_alloc(report_cnt);
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_TERMINATE:
@@ -1694,6 +1702,7 @@ int ull_ticker_stop_with_mark(uint8_t ticker_handle, void *param,
 	uint32_t volatile ret_cb;
 	uint32_t ret;
 	void *mark;
+	int err;
 
 	mark = ull_disable_mark(param);
 	if (mark != param) {
@@ -1714,14 +1723,15 @@ int ull_ticker_stop_with_mark(uint8_t ticker_handle, void *param,
 		return -EALREADY;
 	}
 
-	ret = ull_disable(lll_disable);
-	if (ret) {
-		return -EBUSY;
-	}
+	err = ull_disable(lll_disable);
 
 	mark = ull_disable_unmark(param);
 	if (mark != param) {
 		return -ENOLCK;
+	}
+
+	if (err && (err != -EALREADY)) {
+		return err;
 	}
 
 	return 0;
@@ -1753,8 +1763,8 @@ int ull_disable(void *lll)
 	uint32_t ret;
 
 	hdr = HDR_LLL2ULL(lll);
-	if (!hdr || !ull_ref_get(hdr)) {
-		return 0;
+	if (!ull_ref_get(hdr)) {
+		return -EALREADY;
 	}
 
 	k_sem_init(&sem, 0, 1);
@@ -1772,7 +1782,7 @@ int ull_disable(void *lll)
 	 * care.
 	 */
 	if (!ull_ref_get(hdr)) {
-		return 0;
+		return -EALREADY;
 	}
 
 	mfy.param = lll;
@@ -2445,7 +2455,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
 	{
@@ -2454,7 +2464,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ll_rx_sched();
 	}
 	break;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
@@ -2538,44 +2548,6 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	* CONFIG_BT_CTLR_SCAN_INDICATION ||
 	* CONFIG_BT_CONN
 	*/
-
-#if defined(CONFIG_BT_CTLR_ISO)
-	case NODE_RX_TYPE_ISO_PDU:
-	{
-		/* Remove from receive-queue; ULL has received this now */
-		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
-
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-		struct node_rx_pdu *rx_pdu = (struct node_rx_pdu *)rx;
-		struct ll_conn_iso_stream *cis =
-			ll_conn_iso_stream_get(rx_pdu->hdr.handle);
-		struct ll_iso_datapath *dp = cis->hdr.datapath_out;
-		isoal_sink_handle_t sink = dp->sink_hdl;
-
-		if (dp->path_id != BT_HCI_DATAPATH_ID_HCI) {
-			/* If vendor specific datapath pass to ISO AL here,
-			 * in case of HCI destination it will be passed in
-			 * HCI context.
-			 */
-			struct isoal_pdu_rx pckt_meta = {
-				.meta = &rx_pdu->hdr.rx_iso_meta,
-				.pdu  = (struct pdu_iso *) &rx_pdu->pdu[0]
-			};
-
-			/* Pass the ISO PDU through ISO-AL */
-			isoal_status_t err =
-				isoal_rx_pdu_recombine(sink, &pckt_meta);
-
-			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
-		}
-#endif
-
-		/* Let ISO PDU start its long journey upwards */
-		ll_rx_put(link, rx);
-		ll_rx_sched();
-	}
-	break;
-#endif
 
 	default:
 	{

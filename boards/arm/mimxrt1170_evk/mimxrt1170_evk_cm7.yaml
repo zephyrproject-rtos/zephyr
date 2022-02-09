@@ -23,3 +23,5 @@ supported:
   - i2c
   - pwm
   - dma
+  - watchdog
+  - netif:eth

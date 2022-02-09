@@ -149,6 +149,14 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 
 	BT_DBG("code 0x%02x", hdr->code);
 
+	if (IS_ENABLED(CONFIG_BT_EATT) && hdr->code == BT_ATT_OP_MTU_REQ &&
+	    chan->chan.tx.cid != BT_L2CAP_CID_ATT) {
+		/* The Exchange MTU sub-procedure shall only be supported on
+		 * the LE Fixed Channel Unenhanced ATT bearer
+		 */
+		return -ENOTSUP;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_EATT) &&
 	    atomic_test_bit(chan->flags, ATT_ENHANCED)) {
 		/* Check if sent is pending already, if it does it cannot be
@@ -2622,8 +2630,6 @@ static void att_reset(struct bt_att *att)
 		net_buf_unref(buf);
 	}
 
-	att->conn = NULL;
-
 	/* Notify pending requests */
 	while (!sys_slist_is_empty(&att->reqs)) {
 		struct bt_att_req *req;
@@ -2632,13 +2638,17 @@ static void att_reset(struct bt_att *att)
 		node = sys_slist_get_not_empty(&att->reqs);
 		req = CONTAINER_OF(node, struct bt_att_req, node);
 		if (req->func) {
-			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0,
+			req->func(att->conn, BT_ATT_ERR_UNLIKELY, NULL, 0,
 				  req->user_data);
 		}
 
 		bt_att_req_free(req);
 	}
 
+	/* FIXME: `att->conn` is not reference counted. Consider using `bt_conn_ref`
+	 * and `bt_conn_unref` to follow convention.
+	 */
+	att->conn = NULL;
 	k_mem_slab_free(&att_slab, (void **)&att);
 }
 
@@ -2665,7 +2675,8 @@ static void att_chan_detach(struct bt_att_chan *chan)
 
 static void att_timeout(struct k_work *work)
 {
-	struct bt_att_chan *chan = CONTAINER_OF(work, struct bt_att_chan,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_att_chan *chan = CONTAINER_OF(dwork, struct bt_att_chan,
 						timeout_work);
 
 	BT_ERR("ATT Timeout");
@@ -3112,6 +3123,13 @@ static void att_chan_mtu_updated(struct bt_att_chan *updated_chan)
 struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout)
 {
 	struct bt_att_req *req = NULL;
+
+	if (k_current_get() == bt_recv_thread_id) {
+		/* No req will be fulfilled while blocking on the bt_recv thread.
+		 * Blocking would cause deadlock.
+		 */
+		timeout = K_NO_WAIT;
+	}
 
 	/* Reserve space for request */
 	if (k_mem_slab_alloc(&req_slab, (void **)&req, timeout)) {

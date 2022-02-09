@@ -76,12 +76,9 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  */
 
 /**
- *
  * @brief Clear BSS
  *
  * This routine clears the BSS region, so all bytes are 0.
- *
- * @return N/A
  */
 __boot_func
 void z_bss_zero(void)
@@ -158,13 +155,10 @@ bool z_sys_post_kernel;
 extern void boot_banner(void);
 
 /**
- *
  * @brief Mainline for kernel's background thread
  *
  * This routine completes kernel initialization by invoking the remaining
  * init functions, then invokes application's main() routine.
- *
- * @return N/A
  */
 __boot_func
 static void bg_thread_main(void *unused1, void *unused2, void *unused3)
@@ -406,10 +400,10 @@ FUNC_NORETURN void z_cstart(void)
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
 
-	LOG_CORE_INIT();
-
 	/* perform any architecture-specific initialization */
 	arch_kernel_init();
+
+	LOG_CORE_INIT();
 
 #if defined(CONFIG_MULTITHREADING)
 	/* Note: The z_ready_thread() call in prepare_multithreading() requires

@@ -14,19 +14,6 @@
 #include "mgmt/mgmt.h"
 #include "smp/smp.h"
 
-static int
-smp_align4(int x)
-{
-	int rem;
-
-	rem = x % 4;
-	if (rem == 0) {
-		return x;
-	} else {
-		return x - rem + 4;
-	}
-}
-
 /**
  * Converts a request opcode to its corresponding response opcode.
  */
@@ -289,7 +276,9 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
  * @param streamer	The streamer to use for reading, writing, and transmitting.
  * @param req		A buffer containing the request packet.
  *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
+ * @return 0 on success, MGMT_ERR_ECORRUPT if buffer starts with non SMP data header
+ *                       or there is not enough bytes to process header,
+ *                       or other MGMT_ERR_[...] code on failure.
  */
 int
 smp_process_request_packet(struct smp_streamer *streamer, void *req)
@@ -298,28 +287,33 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 	struct mgmt_evt_op_cmd_done_arg cmd_done_arg;
 	void *rsp;
 	bool valid_hdr, handler_found;
-	int rc;
+	int rc = 0;
 
 	rsp = NULL;
-	valid_hdr = true;
 
-	while (1) {
+	mgmt_streamer_init_reader(&streamer->mgmt_stmr, req);
+
+	while (streamer->mgmt_stmr.reader->message_size > 0) {
 		handler_found = false;
-
-		rc = mgmt_streamer_init_reader(&streamer->mgmt_stmr, req);
-		if (rc != 0) {
-			valid_hdr = false;
-			break;
-		}
+		valid_hdr = false;
 
 		/* Read the management header and strip it from the request. */
 		rc = smp_read_hdr(streamer, &req_hdr);
 		if (rc != 0) {
-			valid_hdr = false;
+			rc = MGMT_ERR_ECORRUPT;
 			break;
+		} else {
+			valid_hdr = true;
 		}
 		mgmt_ntoh_hdr(&req_hdr);
+		/* Does buffer contain whole message? */
+		if (streamer->mgmt_stmr.reader->message_size < (req_hdr.nh_len + MGMT_HDR_SIZE)) {
+			rc = MGMT_ERR_ECORRUPT;
+			break;
+		}
+
 		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, MGMT_HDR_SIZE);
+		streamer->mgmt_stmr.reader->message_size -= MGMT_HDR_SIZE;
 
 		rsp = mgmt_streamer_alloc_rsp(&streamer->mgmt_stmr, req);
 		if (rsp == NULL) {
@@ -346,7 +340,8 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		}
 
 		/* Trim processed request to free up space for subsequent responses. */
-		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, smp_align4(req_hdr.nh_len));
+		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, req_hdr.nh_len);
+		streamer->mgmt_stmr.reader->message_size -= req_hdr.nh_len;
 
 		cmd_done_arg.err = MGMT_ERR_EOK;
 		mgmt_evt(MGMT_EVT_OP_CMD_DONE, req_hdr.nh_group, req_hdr.nh_id,
@@ -367,5 +362,5 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 
 	mgmt_streamer_free_buf(&streamer->mgmt_stmr, req);
 	mgmt_streamer_free_buf(&streamer->mgmt_stmr, rsp);
-	return 0;
+	return rc;
 }

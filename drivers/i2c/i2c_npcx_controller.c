@@ -150,14 +150,11 @@ struct i2c_ctrl_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct i2c_ctrl_config *)(dev)->config)
+#define HAL_I2C_INSTANCE(dev)                                                                      \
+	((struct smb_reg *)((const struct i2c_ctrl_config *)(dev)->config)->base)
 
-#define DRV_DATA(dev) ((struct i2c_ctrl_data *)(dev)->data)
-
-#define HAL_I2C_INSTANCE(dev) (struct smb_reg *)(DRV_CONFIG(dev)->base)
-
-#define HAL_I2C_FIFO_INSTANCE(dev) \
-	(struct smb_fifo_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_I2C_FIFO_INSTANCE(dev)                                                                 \
+	((struct smb_fifo_reg *)((const struct i2c_ctrl_config *)(dev)->config)->base)
 
 /* Recommended I2C timing values are based on 15 MHz */
 static const struct npcx_i2c_timing_cfg npcx_15m_speed_confs[] = {
@@ -207,7 +204,7 @@ static inline void i2c_ctrl_bank_sel(const struct device *dev, int bank)
 
 static inline void i2c_ctrl_irq_enable(const struct device *dev, int enable)
 {
-	const struct i2c_ctrl_config *const config = DRV_CONFIG(dev);
+	const struct i2c_ctrl_config *const config = dev->config;
 
 	if (enable) {
 		irq_enable(config->irq);
@@ -338,7 +335,7 @@ static void i2c_ctrl_config_bus_freq(const struct device *dev,
 						enum npcx_i2c_freq bus_freq)
 {
 	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 	const struct npcx_i2c_timing_cfg bus_cfg =
 						data->ptr_speed_confs[bus_freq];
 
@@ -423,7 +420,7 @@ static int i2c_ctrl_wait_idle_completed(const struct device *dev, int timeout)
 static int i2c_ctrl_recovery(const struct device *dev)
 {
 	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 	int ret;
 
 	if (data->oper_state != NPCX_I2C_ERROR_RECOVERY) {
@@ -471,7 +468,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 
 static void i2c_ctrl_notify(const struct device *dev, int error)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 
 	data->trans_err = error;
 	k_sem_give(&data->sync_sem);
@@ -479,7 +476,7 @@ static void i2c_ctrl_notify(const struct device *dev, int error)
 
 static int i2c_ctrl_wait_completion(const struct device *dev)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 
 	if (k_sem_take(&data->sync_sem, I2C_TRANS_TIMEOUT) == 0) {
 		return data->trans_err;
@@ -490,7 +487,7 @@ static int i2c_ctrl_wait_completion(const struct device *dev)
 
 size_t i2c_ctrl_calculate_msg_remains(const struct device *dev)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 	uint8_t *buf_end = data->msg->buf + data->msg->len;
 
 	return (buf_end > data->ptr_msg) ? (buf_end - data->ptr_msg) : 0;
@@ -498,7 +495,7 @@ size_t i2c_ctrl_calculate_msg_remains(const struct device *dev)
 
 static void i2c_ctrl_handle_write_int_event(const struct device *dev)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 
 	/* START condition is issued */
 	if (data->oper_state == NPCX_I2C_WAIT_START) {
@@ -546,7 +543,7 @@ static void i2c_ctrl_handle_write_int_event(const struct device *dev)
 
 static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 
 	/* START or RESTART condition is issued */
 	if (data->oper_state == NPCX_I2C_WAIT_START ||
@@ -621,7 +618,7 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 static int i2c_ctrl_proc_write_msg(const struct device *dev,
 							struct i2c_msg *msg)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 
 	data->is_write = 1;
 	data->ptr_msg = msg->buf;
@@ -648,7 +645,7 @@ static int i2c_ctrl_proc_write_msg(const struct device *dev,
 
 static int i2c_ctrl_proc_read_msg(const struct device *dev, struct i2c_msg *msg)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 
 	data->is_write = 0;
 	data->ptr_msg = msg->buf;
@@ -692,7 +689,7 @@ static int i2c_ctrl_proc_read_msg(const struct device *dev, struct i2c_msg *msg)
 static void i2c_ctrl_isr(const struct device *dev)
 {
 	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	struct i2c_ctrl_data *const data = dev->data;
 	uint8_t status, tmp;
 
 	status = inst_fifo->SMBST & NPCX_VALID_SMBST_MASK;
@@ -750,21 +747,21 @@ static void i2c_ctrl_isr(const struct device *dev)
 /* NPCX specific I2C controller functions */
 void npcx_i2c_ctrl_mutex_lock(const struct device *i2c_dev)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(i2c_dev);
+	struct i2c_ctrl_data *const data = i2c_dev->data;
 
 	k_sem_take(&data->lock_sem, K_FOREVER);
 }
 
 void npcx_i2c_ctrl_mutex_unlock(const struct device *i2c_dev)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(i2c_dev);
+	struct i2c_ctrl_data *const data = i2c_dev->data;
 
 	k_sem_give(&data->lock_sem);
 }
 
 int npcx_i2c_ctrl_configure(const struct device *i2c_dev, uint32_t dev_config)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(i2c_dev);
+	struct i2c_ctrl_data *const data = i2c_dev->data;
 
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
@@ -788,7 +785,7 @@ int npcx_i2c_ctrl_configure(const struct device *i2c_dev, uint32_t dev_config)
 
 int npcx_i2c_ctrl_get_speed(const struct device *i2c_dev, uint32_t *speed)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(i2c_dev);
+	struct i2c_ctrl_data *const data = i2c_dev->data;
 
 	if (!data->is_configured) {
 		return -EIO;
@@ -814,7 +811,7 @@ int npcx_i2c_ctrl_get_speed(const struct device *i2c_dev, uint32_t *speed)
 int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr, int port)
 {
-	struct i2c_ctrl_data *const data = DRV_DATA(i2c_dev);
+	struct i2c_ctrl_data *const data = i2c_dev->data;
 	int ret = 0;
 	uint8_t i;
 
@@ -887,8 +884,8 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 /* I2C controller driver registration */
 static int i2c_ctrl_init(const struct device *dev)
 {
-	const struct i2c_ctrl_config *const config = DRV_CONFIG(dev);
-	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	const struct i2c_ctrl_config *const config = dev->config;
+	struct i2c_ctrl_data *const data = dev->data;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	uint32_t i2c_rate;
 

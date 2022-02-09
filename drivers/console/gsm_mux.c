@@ -610,7 +610,8 @@ static void ctrl_msg_cleanup(struct gsm_control_msg *entry, bool pending)
 /* T2 timeout is for control message retransmits */
 static void gsm_mux_t2_timeout(struct k_work *work)
 {
-	struct gsm_mux *mux = CONTAINER_OF(work, struct gsm_mux, t2_timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_mux *mux = CONTAINER_OF(dwork, struct gsm_mux, t2_timer);
 	uint32_t current_time = k_uptime_get_32();
 	struct gsm_control_msg *entry, *next;
 

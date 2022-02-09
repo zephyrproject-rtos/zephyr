@@ -50,6 +50,7 @@ source "drivers/i2c/Kconfig.npcx"
 source "drivers/i2c/Kconfig.test"
 source "drivers/i2c/Kconfig.rcar"
 source "drivers/i2c/Kconfig.tca954x"
+source "drivers/i2c/Kconfig.gd32"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"

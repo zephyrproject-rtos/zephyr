@@ -79,7 +79,7 @@ int pm_device_state_set(const struct device *dev,
 }
 
 int pm_device_action_run(const struct device *dev,
-			enum pm_device_action action)
+			 enum pm_device_action action)
 {
 	int ret;
 	enum pm_device_state state;
@@ -119,18 +119,69 @@ int pm_device_action_run(const struct device *dev,
 
 		state = PM_DEVICE_STATE_OFF;
 		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		if (pm->state != PM_DEVICE_STATE_OFF) {
+			return -ENOTSUP;
+		}
+
+		state = PM_DEVICE_STATE_SUSPENDED;
+		break;
 	default:
 		return -ENOTSUP;
 	}
 
 	ret = pm->action_cb(dev, action);
 	if (ret < 0) {
+		/*
+		 * TURN_ON and TURN_OFF are actions triggered by a power domain
+		 * when it is resumed or suspended, which means that the energy
+		 * to the device will be removed or added. For this reason, even
+		 * if the device does not handle these actions its state needs to
+		 * updated to reflect its physical behavior.
+		 *
+		 * The function will still return the error code so the domain
+		 * can take whatever action is more appropriated.
+		 */
+		if ((ret == -ENOTSUP) && ((action == PM_DEVICE_ACTION_TURN_ON)
+				  || (action == PM_DEVICE_ACTION_TURN_OFF))) {
+			pm->state = state;
+		}
 		return ret;
 	}
 
 	pm->state = state;
 
 	return 0;
+}
+
+void pm_device_children_action_run(const struct device *dev,
+				   enum pm_device_action action,
+				   pm_device_action_failed_cb_t failure_cb)
+{
+	const device_handle_t *handles;
+	size_t handle_count = 0U;
+	int rc = 0;
+
+	/*
+	 * We don't use device_supported_foreach here because we don't want the
+	 * early exit behaviour of that function. Even if the N'th device fails
+	 * to PM_DEVICE_ACTION_TURN_ON for example, we still want to run the
+	 * action on the N+1'th device.
+	 */
+	handles = device_supported_handles_get(dev, &handle_count);
+
+	for (size_t i = 0U; i < handle_count; ++i) {
+		device_handle_t dh = handles[i];
+		const struct device *cdev = device_from_handle(dh);
+
+		rc = pm_device_action_run(cdev, action);
+		if ((failure_cb != NULL) && (rc < 0)) {
+			/* Stop the iteration if the callback requests it */
+			if (!failure_cb(cdev, rc)) {
+				break;
+			}
+		}
+	}
 }
 
 int pm_device_state_get(const struct device *dev,
@@ -211,7 +262,7 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 		return false;
 	}
 
-	flags =	atomic_get(&pm->flags);
+	flags = atomic_get(&pm->flags);
 
 	if ((flags & BIT(PM_DEVICE_FLAG_WS_CAPABLE)) == 0U) {
 		return false;
@@ -219,7 +270,7 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 
 	if (enable) {
 		new_flags = flags |
-			BIT(PM_DEVICE_FLAG_WS_ENABLED);
+			    BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	} else {
 		new_flags = flags & ~BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	}
@@ -279,4 +330,18 @@ bool pm_device_state_is_locked(const struct device *dev)
 
 	return atomic_test_bit(&pm->flags,
 			       PM_DEVICE_FLAG_STATE_LOCKED);
+}
+
+bool pm_device_on_power_domain(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+	struct pm_device *pm = dev->pm;
+
+	if (pm == NULL) {
+		return false;
+	}
+	return pm->domain != NULL;
+#else
+	return false;
+#endif
 }

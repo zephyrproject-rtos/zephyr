@@ -204,7 +204,7 @@ static int stmpe1600_port_get_raw(const struct device *dev, uint32_t *value)
 static int stmpe1600_port_set_masked_raw(const struct device *dev,
 					 uint32_t mask, uint32_t value)
 {
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
+	struct stmpe1600_drvdata *const drvdata = dev->data;
 	uint16_t GPSR;
 	int ret;
 
@@ -235,7 +235,7 @@ static int stmpe1600_port_clear_bits_raw(const struct device *dev, uint32_t mask
 
 static int stmpe1600_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
+	struct stmpe1600_drvdata *const drvdata = dev->data;
 	uint16_t GPSR;
 	int ret;
 

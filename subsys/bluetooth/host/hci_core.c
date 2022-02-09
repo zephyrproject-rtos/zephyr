@@ -2229,6 +2229,11 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTION_IQ_REPORT, bt_hci_le_df_connection_iq_report,
 		      sizeof(struct bt_hci_evt_le_connection_iq_report)),
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
+	EVENT_HANDLER(BT_HCI_EVT_LE_CTE_REQUEST_FAILED, bt_hci_le_df_cte_req_failed,
+		      sizeof(struct bt_hci_evt_le_cte_req_failed)),
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
+
 };
 
 static void hci_le_meta_event(struct net_buf *buf)
@@ -3276,6 +3281,14 @@ static void hci_vs_init(void)
 static int hci_init(void)
 {
 	int err;
+#if defined(CONFIG_BT_HCI_SETUP)
+	if (bt_dev.drv->setup) {
+		err = bt_dev.drv->setup();
+		if (err) {
+			return err;
+		}
+	}
+#endif /* defined(CONFIG_BT_HCI_SETUP) */
 
 	err = common_init();
 	if (err) {
@@ -3374,8 +3387,14 @@ void hci_event_prio(struct net_buf *buf)
 	}
 }
 
+k_tid_t bt_recv_thread_id;
+
 int bt_recv(struct net_buf *buf)
 {
+	if (bt_recv_thread_id == NULL) {
+		bt_recv_thread_id = k_current_get();
+	}
+
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);

@@ -15,8 +15,8 @@
 
 	chosen {
 		zephyr,sram = &sdram0;
-		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
@@ -113,4 +113,11 @@
 
 &edma0 {
 	status = "okay";
+};
+
+&enet {
+	status = "okay";
+	ptp {
+		status = "okay";
+	};
 };

@@ -236,7 +236,7 @@ static int flash_flexspi_nor_erase_sector(const struct device *dev,
 		.dataSize = 0,
 	};
 
-	LOG_DBG("Erasing sector at 0x%08x", offset);
+	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t) offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }
@@ -277,7 +277,7 @@ static int flash_flexspi_nor_page_program(const struct device *dev,
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08x", len, offset);
+	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t) offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }
@@ -560,7 +560,7 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 			      &flash_flexspi_nor_data_##n,		\
 			      &flash_flexspi_nor_config_##n,		\
 			      POST_KERNEL,				\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      CONFIG_FLASH_INIT_PRIORITY,		\
 			      &flash_flexspi_nor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_FLEXSPI_NOR)

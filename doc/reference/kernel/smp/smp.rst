@@ -297,3 +297,8 @@ Note that while SMP requires :kconfig:`CONFIG_USE_SWITCH`, the reverse is not
 true.  A uniprocessor architecture built with :kconfig:`CONFIG_SMP` set to No might
 still decide to implement its context switching using
 :c:func:`arch_switch`.
+
+API Reference
+**************
+
+.. doxygengroup:: spinlock_apis

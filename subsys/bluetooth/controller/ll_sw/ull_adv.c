@@ -1025,10 +1025,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_CTLR_CONN_META)
 		memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
 #endif /* CONFIG_BT_CTLR_CONN_META */
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+		conn_lll->df_rx_cfg.is_initialized = 0U;
 		conn_lll->df_rx_cfg.hdr.elem_size = sizeof(struct lll_df_conn_rx_params);
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
-
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+		conn_lll->df_tx_cfg.is_initialized = 0U;
+		conn_lll->df_tx_cfg.cte_rsp_en = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 		conn->connect_expire = 6;
 		conn->supervision_expire = 0;
 		conn->procedure_expire = 0;
@@ -2519,8 +2523,9 @@ static inline uint8_t disable(uint8_t handle)
 {
 	uint32_t volatile ret_cb;
 	struct ll_adv_set *adv;
-	void *mark;
 	uint32_t ret;
+	void *mark;
+	int err;
 
 	adv = ull_adv_is_enabled_get(handle);
 	if (!adv) {
@@ -2581,8 +2586,8 @@ static inline uint8_t disable(uint8_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ret = ull_disable(&adv->lll);
-	LL_ASSERT(!ret);
+	err = ull_disable(&adv->lll);
+	LL_ASSERT(!err || (err == -EALREADY));
 
 	mark = ull_disable_unmark(adv);
 	LL_ASSERT(mark == adv);
@@ -2592,13 +2597,12 @@ static inline uint8_t disable(uint8_t handle)
 
 	if (lll_aux) {
 		struct ll_adv_aux_set *aux;
-		uint8_t err;
 
 		aux = HDR_LLL2ULL(lll_aux);
 
 		err = ull_adv_aux_stop(aux);
-		if (err) {
-			return err;
+		if (err && (err != -EALREADY)) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */

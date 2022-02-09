@@ -80,6 +80,12 @@ The board configuration supports the following hardware features:
    * - DAC
      - :kconfig:`CONFIG_DAC`
      - :dtcompatible:`gd,gd32-dac`
+   * - I2C
+     - :kconfig:`CONFIG_I2C`
+     - :dtcompatible:`gd,gd32-i2c`
+   * - EEPROM
+     - :kconfig:`CONFIG_EEPROM`
+     - :dtcompatible:`atmel,at24`
 
 Serial Port
 ===========

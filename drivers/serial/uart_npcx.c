@@ -57,11 +57,8 @@ struct uart_npcx_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct uart_npcx_config *)(dev)->config)
-
-#define DRV_DATA(dev) ((struct uart_npcx_data *)(dev)->data)
-
-#define HAL_INSTANCE(dev) (struct uart_reg *)(DRV_CONFIG(dev)->uconf.base)
+#define HAL_INSTANCE(dev)                                                                          \
+	((struct uart_reg *)((const struct uart_npcx_config *)(dev)->config)->uconf.base)
 
 #if defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
 static void uart_npcx_pm_constraint_set(struct uart_npcx_data *data,
@@ -147,7 +144,7 @@ static int uart_npcx_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 	while ((size - tx_bytes > 0) && uart_npcx_tx_fifo_ready(dev)) {
 		/* Put a character into Tx FIFO */
 #ifdef CONFIG_PM
-		struct uart_npcx_data *data = DRV_DATA(dev);
+		struct uart_npcx_data *data = dev->data;
 
 		uart_npcx_pm_constraint_set(data, UART_PM_CONSTRAINT_TX_FLAG);
 		inst->UTBUF = tx_data[tx_bytes++];
@@ -249,7 +246,7 @@ static int uart_npcx_irq_update(const struct device *dev)
 static void uart_npcx_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				       void *cb_data)
 {
-	struct uart_npcx_data *data = DRV_DATA(dev);
+	struct uart_npcx_data *data = dev->data;
 
 	data->user_cb = cb;
 	data->user_data = cb_data;
@@ -257,7 +254,7 @@ static void uart_npcx_irq_callback_set(const struct device *dev, uart_irq_callba
 
 static void uart_npcx_isr(const struct device *dev)
 {
-	struct uart_npcx_data *data = DRV_DATA(dev);
+	struct uart_npcx_data *data = dev->data;
 
 	/*
 	 * Set pm constraint to prevent the system enter suspend state within
@@ -364,7 +361,7 @@ static __unused void uart_npcx_rx_wk_isr(const struct device *dev, struct npcx_w
 	 * the CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT period.
 	 */
 #ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
-	struct uart_npcx_data *data = DRV_DATA(dev);
+	struct uart_npcx_data *data = dev->data;
 	k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
 
 	uart_npcx_pm_constraint_set(data, UART_PM_CONSTRAINT_RX_FLAG);
@@ -413,8 +410,8 @@ static const struct uart_driver_api uart_npcx_driver_api = {
 
 static int uart_npcx_init(const struct device *dev)
 {
-	const struct uart_npcx_config *const config = DRV_CONFIG(dev);
-	struct uart_npcx_data *const data = DRV_DATA(dev);
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_npcx_data *const data = dev->data;
 	struct uart_reg *const inst = HAL_INSTANCE(dev);
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	uint32_t uart_rate;

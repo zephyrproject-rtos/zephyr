@@ -14,6 +14,7 @@
 #include <kernel_internal.h>
 #include <string.h>
 #include <arch/xtensa/cache.h>
+#include <zsr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,13 +38,14 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 
 	cpu0->nested = 0;
 
-	/* The asm2 scheme keeps the kernel pointer in MISC0 for easy
-	 * access.  That saves 4 bytes of immediate value to store the
-	 * address when compared to the legacy scheme.  But in SMP
-	 * this record is a per-CPU thing and having it stored in a SR
-	 * already is a big win.
+	/* The asm2 scheme keeps the kernel pointer in a scratch SR
+	 * (see zsr.h for generation specifics) for easy access.  That
+	 * saves 4 bytes of immediate value to store the address when
+	 * compared to the legacy scheme.  But in SMP this record is a
+	 * per-CPU thing and having it stored in a SR already is a big
+	 * win.
 	 */
-	WSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR, cpu0);
+	WSR(ZSR_CPU_STR, cpu0);
 
 #ifdef CONFIG_INIT_STACKS
 	memset(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
@@ -135,12 +137,9 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 		z_xtensa_cache_flush((void *)osp, 1);
 		z_xtensa_cache_inv((void *)ostack, osp - ostack);
 
-		/* FIXME: hardcoding EXCSAVE3 is bad, should be
-		 * configurable a-la XTENSA_KERNEL_CPU_PTR_SR.
-		 */
 		uint32_t end = ostack + osz;
 
-		__asm__ volatile("wsr.EXCSAVE3 %0" :: "r"(end));
+		__asm__ volatile("wsr %0, " ZSR_FLUSH_STR :: "r"(end));
 	}
 }
 #endif

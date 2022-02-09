@@ -66,8 +66,22 @@ struct lll_df_adv_cfg {
 #define IQ_SAMPLE_CNT (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define RSSI_DBM_TO_DECI_DBM(x) (-(x) * 10)
-#define IQ_SHIFT_12_TO_8_BIT(x) ((int8_t)((x) >> 4))
+/* Macro that represents out of range IQ sample (saturated). Value provided by Radio specifications.
+ * It is not defined by Bluetooth Core specification. This is the vendor specific value.
+ *
+ * Nordic Semiconductor Radio peripheral provides 16 bit wide IQ samples.
+ * BT 5.3 Core specification Vol 4, Part E sectons 7.7.65.21 and 7.7.65.22 limit size of
+ * IQ samples to 8 bits.
+ * To mitigate the limited accuratcy and losing information about saturated IQ samples a 0x80 value
+ * is selected to serve the purpose.
+ */
+#define IQ_SAMPLE_STATURATED_16_BIT 0x8000
+#define IQ_SAMPLE_STATURATED_8_BIT 0x80
 
+#define IQ_SHIFT_12_TO_8_BIT(x) ((int8_t)((x) >> 4))
+#define IQ_CONVERT_12_TO_8_BIT(x)                                                                  \
+	(((x) == IQ_SAMPLE_STATURATED_16_BIT) ? IQ_SAMPLE_STATURATED_8_BIT :                       \
+						      IQ_SHIFT_12_TO_8_BIT((x)))
 /* Structure to store an single IQ sample */
 struct iq_sample {
 	int16_t i;
@@ -108,11 +122,6 @@ struct lll_df_sync {
 	struct lll_df_sync_cfg cfg[DOUBLE_BUFFER_SIZE];
 };
 
-/* Names for allowed states for CTE transmit parameters in connected mode */
-enum df_cte_tx_state {
-	DF_CTE_CONN_TX_PARAMS_UNINITIALIZED,
-	DF_CTE_CONN_TX_PARAMS_SET,
-};
 /* Parameters for reception of Constant Tone Extension in connected mode */
 struct lll_df_conn_rx_params {
 	uint8_t is_enabled:1;
@@ -154,10 +163,12 @@ struct cte_conn_iq_report {
 
 /* Configuration for transmission of Constant Tone Extension in connected mode */
 struct lll_df_conn_tx_cfg {
-	uint8_t state:1;
+	/* Stores information if the TX configuration was set at least once.
+	 * It is required for handling HCI_LE_Connection_CTE_Response_Enable HCI command.
+	 * See BT 5.3 Core specification Vol 4, Part E, sec. 7.8.86.
+	 */
+	uint8_t is_initialized:1;
 	uint8_t ant_sw_len:7;
-	uint8_t cte_type:2;
-	uint8_t cte_length:6; /* Length of CTE in 8us units */
 	uint8_t cte_rsp_en:1; /* CTE response is enabled */
 	uint8_t cte_types_allowed:3; /* Bitfield with allowed CTE types */
 	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];

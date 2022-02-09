@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2021 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi2 {
+	pinctrl-0 = <&spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	dmas = <&dma1 4 0 0x28440 0x03
+		&dma1 3 0 0x28480 0x03>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};

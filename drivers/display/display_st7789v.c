@@ -104,17 +104,17 @@ static void st7789v_exit_sleep(const struct device *dev)
 
 static void st7789v_reset_display(const struct device *dev)
 {
-	struct st7789v_data *data = dev->data;
-
 	LOG_DBG("Resetting display");
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	struct st7789v_data *data = dev->data;
+
 	k_sleep(K_MSEC(1));
 	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 1);
 	k_sleep(K_MSEC(6));
 	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 0);
 	k_sleep(K_MSEC(20));
 #else
-	st7789v_transmit(data, ST7789V_CMD_SW_RESET, NULL, 0);
+	st7789v_transmit(dev, ST7789V_CMD_SW_RESET, NULL, 0);
 	k_sleep(K_MSEC(5));
 #endif
 }
@@ -447,5 +447,5 @@ static struct st7789v_data st7789v_data = {
 PM_DEVICE_DT_INST_DEFINE(0, st7789v_pm_action);
 
 DEVICE_DT_INST_DEFINE(0, &st7789v_init,
-	      PM_DEVICE_DT_INST_REF(0), &st7789v_data, NULL, POST_KERNEL,
+	      PM_DEVICE_DT_INST_GET(0), &st7789v_data, NULL, POST_KERNEL,
 	      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);

@@ -51,6 +51,10 @@
 	status = "okay";
 };
 
+&clk_lse {
+	status = "okay";
+};
+
 &pll {
 	div-m = <5>;
 	mul-n = <110>;
@@ -112,4 +116,8 @@
 		     &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
+};
+
+&lptim1 {
+	status = "okay";
 };

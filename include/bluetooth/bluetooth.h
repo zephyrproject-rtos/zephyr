@@ -1317,7 +1317,8 @@ struct bt_le_per_adv_sync_param {
 	 * @brief Maximum event skip
 	 *
 	 * Maximum number of periodic advertising events that can be
-	 * skipped after a successful receive
+	 * skipped after a successful receive.
+	 * Range: 0x0000 to 0x01F3
 	 */
 	uint16_t skip;
 

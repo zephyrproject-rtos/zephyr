@@ -54,8 +54,6 @@ const pll_setup_t pll0Setup = {
  *
  * @brief Initialize the system clock
  *
- * @return N/A
- *
  */
 
 static ALWAYS_INLINE void clock_init(void)
@@ -234,7 +232,9 @@ SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
  * @brief Second Core Init
  *
  * This routine boots the secondary core
- * @return N/A
+ *
+ * @retval 0 on success.
+ *
  */
 /* This function is also called at deep sleep resume. */
 int _second_core_init(const struct device *arg)

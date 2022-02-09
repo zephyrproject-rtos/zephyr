@@ -36,9 +36,6 @@ static CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
 
 /**
  * @brief Initialize the system clock
- *
- * @return N/A
- *
  */
 static ALWAYS_INLINE void clock_init(void)
 {

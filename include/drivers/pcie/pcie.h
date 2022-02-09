@@ -298,6 +298,67 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 	 (((w) & 0x00000006U) == 0x00000002U))
 
 /*
+ * Type 1 Header has files related to bus management
+ */
+#define PCIE_BUS_NUMBER         6U
+
+#define PCIE_BUS_PRIMARY_NUMBER(w)      ((w) & 0xffUL)
+#define PCIE_BUS_SECONDARY_NUMBER(w)    (((w) >> 8) & 0xffUL)
+#define PCIE_BUS_SUBORDINATE_NUMBER(w)  (((w) >> 16) & 0xffUL)
+#define PCIE_SECONDARY_LATENCY_TIMER(w) (((w) >> 24) & 0xffUL)
+
+#define PCIE_BUS_NUMBER_VAL(prim, sec, sub, lat) \
+	(((prim) & 0xffUL) |			 \
+	 (((sec) & 0xffUL) << 8) |		 \
+	 (((sub) & 0xffUL) << 16) |		 \
+	 (((lat) & 0xffUL) << 24))
+
+/*
+ * Type 1 words 7 to 12 setups Bridge Memory base and limits
+ */
+#define PCIE_IO_SEC_STATUS      7U
+
+#define PCIE_IO_BASE(w)         ((w) & 0xffUL)
+#define PCIE_IO_LIMIT(w)        (((w) >> 8) & 0xffUL)
+#define PCIE_SEC_STATUS(w)      (((w) >> 16) & 0xffffUL)
+
+#define PCIE_IO_SEC_STATUS_VAL(iob, iol, sec_status) \
+	(((iob) & 0xffUL) |			     \
+	 (((iol) & 0xffUL) << 8) |		     \
+	 (((sec_status) & 0xffffUL) << 16))
+
+#define PCIE_MEM_BASE_LIMIT     8U
+
+#define PCIE_MEM_BASE(w)        ((w) & 0xffffUL)
+#define PCIE_MEM_LIMIT(w)       (((w) >> 16) & 0xffffUL)
+
+#define PCIE_MEM_BASE_LIMIT_VAL(memb, meml) \
+	(((memb) & 0xffffUL) |		    \
+	 (((meml) & 0xffffUL) << 16))
+
+#define PCIE_PREFETCH_BASE_LIMIT        9U
+
+#define PCIE_PREFETCH_BASE(w)   ((w) & 0xffffUL)
+#define PCIE_PREFETCH_LIMIT(w)  (((w) >> 16) & 0xffffUL)
+
+#define PCIE_PREFETCH_BASE_LIMIT_VAL(pmemb, pmeml) \
+	(((pmemb) & 0xffffUL) |			   \
+	 (((pmeml) & 0xffffUL) << 16))
+
+#define PCIE_PREFETCH_BASE_UPPER        10U
+
+#define PCIE_PREFETCH_LIMIT_UPPER       11U
+
+#define PCIE_IO_BASE_LIMIT_UPPER        12U
+
+#define PCIE_IO_BASE_UPPER(w)   ((w) & 0xffffUL)
+#define PCIE_IO_LIMIT_UPPER(w)  (((w) >> 16) & 0xffffUL)
+
+#define PCIE_IO_BASE_LIMIT_UPPER_VAL(iobu, iolu) \
+	(((iobu) & 0xffffUL) |			 \
+	 (((iolu) & 0xffffUL) << 16))
+
+/*
  * Word 15 contains information related to interrupts.
  *
  * We're only interested in the low byte, which is [supposed to be] set by

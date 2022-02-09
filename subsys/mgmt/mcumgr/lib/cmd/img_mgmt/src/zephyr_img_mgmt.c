@@ -23,11 +23,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <img_mgmt/image.h>
 #include "img_mgmt_priv.h"
 
-BUILD_ASSERT(IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1 ||
-		 (IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 &&
-		  FLASH_AREA_LABEL_EXISTS(image_2) &&
-		  FLASH_AREA_LABEL_EXISTS(image_3)),
-		  "Missing partitions?");
+BUILD_ASSERT(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1 ||
+	     (CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 && FLASH_AREA_LABEL_EXISTS(image_2) &&
+	      FLASH_AREA_LABEL_EXISTS(image_3)),
+	     "Missing partitions?");
 
 static int
 zephyr_img_mgmt_slot_to_image(int slot)
@@ -140,7 +139,7 @@ zephyr_img_mgmt_flash_area_id(int slot)
 	return fa_id;
 }
 
-#if IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1
+#if CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1
 /**
  * In normal operation this function will select between first two slot
  * (in reality it just checks whether second slot can be used), ignoring the
@@ -191,7 +190,7 @@ img_mgmt_get_unused_slot_area_id(int slot)
 #endif
 }
 
-#elif IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2
+#elif CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2
 static int
 img_mgmt_get_unused_slot_area_id(int image)
 {
@@ -278,7 +277,7 @@ img_mgmt_impl_write_pending(int slot, bool permanent)
 {
 	int rc;
 
-	if (slot != 1 && !(IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 && slot == 3)) {
+	if (slot != 1 && !(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 && slot == 3)) {
 		return MGMT_ERR_EINVAL;
 	}
 
@@ -480,7 +479,7 @@ end:
 	return rc;
 }
 
-#if IMG_MGMT_LAZY_ERASE
+#if CONFIG_IMG_ERASE_PROGRESSIVELY
 int img_mgmt_impl_erase_if_needed(uint32_t off, uint32_t len)
 {
 	/* This is done internally to the flash_img API. */
@@ -526,9 +525,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 				 struct img_mgmt_upload_action *action, const char **errstr)
 {
 	const struct image_header *hdr;
-	const struct flash_area *fa;
 	struct image_version cur_ver;
-	uint8_t rem_bytes;
 	bool empty;
 	int rc;
 
@@ -619,7 +616,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 			}
 		}
 
-#if IMG_MGMT_LAZY_ERASE
+#if CONFIG_IMG_ERASE_PROGRESSIVELY
 		(void) empty;
 #else
 		rc = zephyr_img_mgmt_flash_check_empty(action->area_id, &empty);
@@ -643,27 +640,9 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		}
 	}
 
-	/* Calculate size of flash write. */
 	action->write_bytes = req->data_len;
-	if (req->off + req->data_len < action->size) {
-		/*
-		 * Respect flash write alignment if not in the last block
-		 */
-		rc = flash_area_open(action->area_id, &fa);
-		if (rc) {
-			*errstr = img_mgmt_err_str_flash_open_failed;
-			return MGMT_ERR_EUNKNOWN;
-		}
-
-		rem_bytes = req->data_len % flash_area_align(fa);
-		flash_area_close(fa);
-
-		if (rem_bytes) {
-			action->write_bytes -= rem_bytes;
-		}
-	}
-
 	action->proceed = true;
+
 	return 0;
 }
 

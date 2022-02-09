@@ -1530,7 +1530,8 @@ static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 
 static void deferred_work(struct k_work *work)
 {
-	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, deferred_work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_conn *conn = CONTAINER_OF(dwork, struct bt_conn, deferred_work);
 	const struct bt_le_conn_param *param;
 
 	BT_DBG("conn %p", conn);
@@ -2240,7 +2241,8 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #endif
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
-		if (!conn->iso.is_bis) {
+		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
+		    conn->iso.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 			info->le.dst = &conn->iso.acl->le.dst;
 			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
 		} else {
@@ -2949,7 +2951,40 @@ void bt_hci_le_df_connection_iq_report(struct net_buf *buf)
 			cb->cte_report_cb(conn, &iq_report);
 		}
 	}
+
+	bt_conn_unref(conn);
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
+void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
+{
+	struct bt_df_conn_iq_samples_report iq_report;
+	struct bt_conn *conn;
+	struct bt_conn_cb *cb;
+	int err;
+
+	err = hci_df_prepare_conn_cte_req_failed(buf, &iq_report, &conn);
+	if (err) {
+		BT_ERR("Prepare CTE REQ failed IQ report failed %d", err);
+		return;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->cte_report_cb) {
+			cb->cte_report_cb(conn, &iq_report);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->cte_report_cb) {
+			cb->cte_report_cb(conn, &iq_report);
+		}
+	}
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
 
 #endif /* CONFIG_BT_CONN */

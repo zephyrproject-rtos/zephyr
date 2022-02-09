@@ -9,17 +9,6 @@
 #include <dt-bindings/ethernet/xlnx_gem.h>
 
 / {
-	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		cpu@0 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a9";
-			reg = <0>;
-		};
-	};
-
 	soc {
 		interrupt-parent = <&gic>;
 

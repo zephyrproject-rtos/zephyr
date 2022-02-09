@@ -509,16 +509,6 @@ struct bmi160_data {
 #endif /* CONFIG_BMI160_TRIGGER */
 };
 
-static inline struct bmi160_data *to_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct bmi160_cfg *to_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 int bmi160_read(const struct device *dev, uint8_t reg_addr,
 		void *data, uint8_t len);
 int bmi160_byte_read(const struct device *dev, uint8_t reg_addr,

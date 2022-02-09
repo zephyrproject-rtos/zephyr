@@ -3,8 +3,11 @@
 # Copyright (c) 2020 IoT.bzh
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_RENESAS_RCAR_GPIO := renesas,rcar-gpio
+
 config GPIO_RCAR
-	bool "Renesas RCAR GPIO"
-	depends on SOC_SERIES_RCAR_GEN3
+	bool "Renesas R-Car GPIO"
+	depends on SOC_FAMILY_RCAR
+	default $(dt_compat_enabled,$(DT_COMPAT_RENESAS_RCAR_GPIO))
 	help
 	  Enable Renesas RCAR GPIO driver.

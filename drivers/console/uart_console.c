@@ -566,10 +566,7 @@ void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 #endif
 
 /**
- *
  * @brief Install printk/stdout hook for UART console output
- *
- * @return N/A
  */
 
 static void uart_console_hook_install(void)
@@ -583,7 +580,6 @@ static void uart_console_hook_install(void)
 }
 
 /**
- *
  * @brief Initialize one UART as the console/debug port
  *
  * @return 0 if successful, otherwise failed.

@@ -220,7 +220,7 @@ static int ppp_async_uart_rx_enable(struct ppp_driver_context *context)
 	}
 
 	err = uart_rx_enable(context->dev, context->buf, sizeof(context->buf),
-			     CONFIG_NET_PPP_ASYNC_UART_RX_ENABLE_TIMEOUT);
+			     CONFIG_NET_PPP_ASYNC_UART_RX_ENABLE_TIMEOUT * USEC_PER_MSEC);
 	if (err) {
 		LOG_ERR("uart_rx_enable() failed, err %d", err);
 	} else {
@@ -370,7 +370,8 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 
 		k_sem_take(&uarte_tx_finished, K_FOREVER);
 
-		ret = uart_tx(ppp->dev, buf, off, CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT);
+		ret = uart_tx(ppp->dev, buf, off,
+			      CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT * USEC_PER_MSEC);
 		if (ret) {
 			LOG_ERR("uart_tx() failed, err %d", ret);
 			k_sem_give(&uarte_tx_finished);

@@ -38,8 +38,8 @@ Building and Running for Linux kernels released before 4.12
 
    For hosts using kernels released before 4.12,
    option :kconfig:`CONFIG_NET_L2_BT_ZEP1656`
-   must be selected. For more information, see `Zephyr issue #3111
-   <https://github.com/zephyrproject-rtos/zephyr/issues/3111>`_
+   must be selected. For more information, see :github:`Zephyr issue #3111
+   <3111>`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/ipsp

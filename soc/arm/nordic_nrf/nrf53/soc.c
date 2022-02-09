@@ -26,6 +26,7 @@
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_nvmc.h>
 #endif
+#include <soc_secure.h>
 
 #define PIN_XL1 0
 #define PIN_XL2 1
@@ -57,14 +58,18 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 	key = irq_lock();
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_NRF_ENABLE_CACHE)
-	/* Enable the instruction & data cache */
+#if !defined(CONFIG_BUILD_WITH_TFM)
+	/* Enable the instruction & data cache.
+	 * This can only be done from secure code.
+	 * This is handled by the TF-M platform so we skip it when TF-M is
+	 * enabled.
+	 */
 	nrf_cache_enable(NRF_CACHE);
+#endif
 #elif defined(CONFIG_SOC_NRF5340_CPUNET) && defined(CONFIG_NRF_ENABLE_CACHE)
 	nrf_nvmc_icache_config_set(NRF_NVMC, NRF_NVMC_ICACHE_ENABLE);
 #endif
 
-#if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
-	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #if defined(CONFIG_SOC_ENABLE_LFXO)
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS,
 		IS_ENABLED(CONFIG_SOC_LFXO_CAP_INT_6PF) ?
@@ -74,13 +79,18 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 		IS_ENABLED(CONFIG_SOC_LFXO_CAP_INT_9PF) ?
 			NRF_OSCILLATORS_LFXO_CAP_9PF :
 			NRF_OSCILLATORS_LFXO_CAP_EXTERNAL);
-	/* This can only be done from secure code. */
+#if !defined(CONFIG_BUILD_WITH_TFM)
+	/* This can only be done from secure code.
+	 * This is handled by the TF-M platform so we skip it when TF-M is
+	 * enabled.
+	 */
 	nrf_gpio_pin_mcu_select(PIN_XL1, NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
 	nrf_gpio_pin_mcu_select(PIN_XL2, NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
-#endif
+#endif /* !defined(CONFIG_BUILD_WITH_TFM) */
+#endif /* defined(CONFIG_SOC_ENABLE_LFXO) */
 #if defined(CONFIG_SOC_HFXO_CAP_INTERNAL)
 	/* This register is only accessible from secure code. */
-	uint32_t xosc32mtrim = NRF_FICR->XOSC32MTRIM;
+	uint32_t xosc32mtrim = soc_secure_read_xosc32mtrim();
 	/* As specified in the nRF5340 PS:
 	 * CAPVALUE = (((FICR->XOSC32MTRIM.SLOPE+56)*(CAPACITANCE*2-14))
 	 *            +((FICR->XOSC32MTRIM.OFFSET-8)<<4)+32)>>6;
@@ -99,7 +109,6 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 #elif defined(CONFIG_SOC_HFXO_CAP_EXTERNAL)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
 #endif
-#endif /* defined(CONFIG_SOC_NRF5340_CPUAPP) && ... */
 
 #if defined(CONFIG_SOC_DCDC_NRF53X_APP)
 	nrf_regulators_dcdcen_set(NRF_REGULATORS, true);

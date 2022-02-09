@@ -1649,6 +1649,33 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	if (conn->llcp.cte_req.req_expire != 0U) {
+		if (conn->llcp.cte_req.req_expire > elapsed_event) {
+			conn->llcp.cte_req.req_expire -= elapsed_event;
+		} else {
+			uint8_t err;
+
+			conn->llcp.cte_req.req_expire = 0U;
+
+			err = ull_cp_cte_req(conn, conn->llcp.cte_req.min_cte_len,
+					     conn->llcp.cte_req.cte_type);
+
+			if (err == BT_HCI_ERR_CMD_DISALLOWED) {
+				/* Conditions has changed e.g. PHY was changed to CODED.
+				 * New CTE REQ is not possible. Disable the periodic requests.
+				 *
+				 * If the CTE REQ is in active state, let it complete and disable
+				 * in regular control procedure way.
+				 */
+				if (!conn->llcp.cte_req.is_active) {
+					ull_cp_cte_req_set_disable(conn);
+				}
+			}
+		}
+	}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 	/* generate RSSI event */
 	if (lll->rssi_sample_count == 0U) {
@@ -2053,19 +2080,14 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 /**
  * @brief Initialize pdu_data members that are read only in lower link layer.
  *
- * @param pdu_tx Pointer to pdu_data object to be initialized
+ * @param pdu Pointer to pdu_data object to be initialized
  */
-void ull_pdu_data_init(struct pdu_data *pdu_tx)
+void ull_pdu_data_init(struct pdu_data *pdu)
 {
-	LL_ASSERT(pdu_tx);
-
-	pdu_tx->cp = false;
-	pdu_tx->rfu = 0U;
-#if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
-#if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-	pdu_tx->resv = 0U;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
-#endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	pdu->cp = 0U;
+	pdu->resv = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 }
 
 static int init_reset(void)

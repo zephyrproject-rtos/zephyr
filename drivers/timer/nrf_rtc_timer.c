@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2021 Nordic Semiconductor ASA
  * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -121,6 +121,23 @@ uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan < CHAN_COUNT);
 	return nrf_rtc_event_address_get(RTC, nrf_rtc_compare_event_get(chan));
+}
+
+uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan)
+{
+#if defined(RTC_TASKS_CAPTURE_TASKS_CAPTURE_Msk)
+	__ASSERT_NO_MSG(chan < CHAN_COUNT);
+	if (chan == 0) {
+		return 0;
+	}
+
+	nrf_rtc_task_t task = offsetof(NRF_RTC_Type, TASKS_CAPTURE[chan]);
+
+	return nrf_rtc_task_address_get(RTC, task);
+#else
+	ARG_UNUSED(chan);
+	return 0;
+#endif
 }
 
 static bool compare_int_lock(int32_t chan)

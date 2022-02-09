@@ -16,8 +16,6 @@ extern func_ptr __init_array_end[];
 
 /**
  * @brief Execute initialization routines referenced in .init_array section
- *
- * @return N/A
  */
 void __do_init_array_aux(void)
 {

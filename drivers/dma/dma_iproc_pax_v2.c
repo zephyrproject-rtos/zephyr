@@ -26,12 +26,6 @@ LOG_MODULE_REGISTER(dma_iproc_pax_v2);
 
 #define PAX_DMA_DEV_NAME(dev)	((dev)->name)
 
-#define PAX_DMA_DEV_CFG(dev)	\
-			((struct dma_iproc_pax_cfg *)(dev)->config)
-
-#define PAX_DMA_DEV_DATA(dev)	\
-			((struct dma_iproc_pax_data *)(dev)->data)
-
 /* Driver runtime data for PAX DMA and RM */
 static struct dma_iproc_pax_data pax_dma_data;
 
@@ -512,7 +506,7 @@ err:
 static int poll_on_write_sync(const struct device *dev,
 			      struct dma_iproc_pax_ring_data *ring)
 {
-	struct dma_iproc_pax_cfg *cfg = PAX_DMA_DEV_CFG(dev);
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
 	const struct device *pcidev;
 	struct dma_iproc_pax_write_sync_data sync_rd, *recv, *sent;
 	uint64_t pci_addr;
@@ -563,7 +557,7 @@ static int poll_on_write_sync(const struct device *dev,
 static int process_cmpl_event(const struct device *dev,
 			      enum ring_idx idx, uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t wr_offs, rd_offs, ret = 0;
 	struct dma_iproc_pax_ring_data *ring = &(pd->ring[idx]);
 	struct cmpl_pkt *c;
@@ -625,7 +619,7 @@ static int process_cmpl_event(const struct device *dev,
 static int peek_ring_cmpl(const struct device *dev,
 			  enum ring_idx idx, uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t wr_offs, rd_offs, timeout = PAX_DMA_MAX_POLL_WAIT;
 	struct dma_iproc_pax_ring_data *ring = &(pd->ring[idx]);
 
@@ -656,7 +650,7 @@ static void rm_isr(void *arg)
 {
 	uint32_t status, err_stat, idx;
 	const struct device *dev = arg;
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 
 	err_stat =
 	sys_read32(RM_COMM_REG(pd,
@@ -682,8 +676,8 @@ static void rm_isr(void *arg)
 
 static int dma_iproc_pax_init(const struct device *dev)
 {
-	struct dma_iproc_pax_cfg *cfg = PAX_DMA_DEV_CFG(dev);
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
+	struct dma_iproc_pax_data *pd = dev->data;
 	int r;
 	uintptr_t mem_aligned;
 
@@ -891,7 +885,7 @@ static void set_pkt_count(const struct device *dev,
 			  enum ring_idx idx,
 			  uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t val;
 
 	/* program packet count for interrupt assertion */
@@ -907,7 +901,7 @@ static int wait_for_pkt_completion(const struct device *dev,
 				   enum ring_idx idx,
 				   uint32_t pl_len)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	struct dma_iproc_pax_ring_data *ring;
 
 	ring = &(pd->ring[idx]);
@@ -925,8 +919,8 @@ static int dma_iproc_pax_process_dma_blocks(const struct device *dev,
 					    enum ring_idx idx,
 					    struct dma_config *config)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
-	struct dma_iproc_pax_cfg *cfg = PAX_DMA_DEV_CFG(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
+	const struct dma_iproc_pax_cfg *cfg = dev->config;
 	int ret = 0;
 	struct dma_iproc_pax_ring_data *ring;
 	uint32_t toggle_bit, non_hdr_bd_count = 0;
@@ -1003,7 +997,7 @@ err:
 static int dma_iproc_pax_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *cfg)
 {
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	struct dma_iproc_pax_ring_data *ring;
 	int ret = 0;
 
@@ -1046,7 +1040,7 @@ static int dma_iproc_pax_transfer_start(const struct device *dev,
 					uint32_t channel)
 {
 	int ret = 0;
-	struct dma_iproc_pax_data *pd = PAX_DMA_DEV_DATA(dev);
+	struct dma_iproc_pax_data *pd = dev->data;
 	struct dma_iproc_pax_ring_data *ring;
 
 	if (channel >= PAX_DMA_RINGS_MAX) {

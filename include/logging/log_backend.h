@@ -30,9 +30,11 @@ struct log_backend;
  * @brief Logger backend API.
  */
 struct log_backend_api {
+	/* Logging v2 function. */
 	void (*process)(const struct log_backend *const backend,
 			union log_msg2_generic *msg);
 
+	/* DEPRECATED! Functions used for logging v1. */
 	void (*put)(const struct log_backend *const backend,
 		    struct log_msg *msg);
 	void (*put_sync_string)(const struct log_backend *const backend,
@@ -42,6 +44,7 @@ struct log_backend_api {
 			 struct log_msg_ids src_level, uint32_t timestamp,
 			 const char *metadata, const uint8_t *data, uint32_t len);
 
+	/* Functions used by v1 and v2 */
 	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
 	void (*init)(const struct log_backend *const backend);
@@ -98,6 +101,8 @@ extern const struct log_backend __log_backends_end[];
 /**
  * @brief Put message with log entry to the backend.
  *
+ * @warning DEPRECATED. Use logging v2.
+ *
  * @param[in] backend  Pointer to the backend instance.
  * @param[in] msg      Pointer to message with log entry.
  */
@@ -109,6 +114,15 @@ static inline void log_backend_put(const struct log_backend *const backend,
 	backend->api->put(backend, msg);
 }
 
+/**
+ * @brief Process message.
+ *
+ * Function is used in deferred and immediate mode. On return, message content
+ * is processed by the backend and memory can be freed.
+ *
+ * @param[in] backend  Pointer to the backend instance.
+ * @param[in] msg      Pointer to message with log entry.
+ */
 static inline void log_backend_msg2_process(
 					const struct log_backend *const backend,
 					union log_msg2_generic *msg)
@@ -121,6 +135,8 @@ static inline void log_backend_msg2_process(
 
 /**
  * @brief Synchronously process log message.
+ *
+ * @warning DEPRECATED. Use logging v2.
  *
  * @param[in] backend   Pointer to the backend instance.
  * @param[in] src_level Message details.
@@ -144,6 +160,8 @@ static inline void log_backend_put_sync_string(
 
 /**
  * @brief Synchronously process log hexdump_message.
+ *
+ * @warning DEPRECATED. Use logging v2.
  *
  * @param[in] backend   Pointer to the backend instance.
  * @param[in] src_level Message details.

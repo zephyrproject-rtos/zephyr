@@ -329,6 +329,16 @@
 #endif /* CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON */
 
 /**
+ * @def OPENTHREAD_CONFIG_PLATFORM_CSL_UNCERT
+ *
+ * The Uncertainty of the scheduling CSL of transmission by the parent, in ±10 us units.
+ */
+
+#ifdef CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT
+#define OPENTHREAD_CONFIG_PLATFORM_CSL_UNCERT CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT */
+
+/**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE
  *
  * Set to 1 to enable software transmission security logic.

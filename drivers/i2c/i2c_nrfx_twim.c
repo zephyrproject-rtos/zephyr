@@ -31,23 +31,12 @@ struct i2c_nrfx_twim_config {
 	uint16_t flash_buf_max_size;
 };
 
-static inline struct i2c_nrfx_twim_data *get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline
-const struct i2c_nrfx_twim_config *get_dev_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 static int i2c_nrfx_twim_transfer(const struct device *dev,
 				  struct i2c_msg *msgs,
 				  uint8_t num_msgs, uint16_t addr)
 {
-	struct i2c_nrfx_twim_data *dev_data = get_dev_data(dev);
-	const struct i2c_nrfx_twim_config *dev_config = get_dev_config(dev);
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	const struct i2c_nrfx_twim_config *dev_config = dev->config;
 	int ret = 0;
 	uint8_t *msg_buf = dev_data->msg_buf;
 	uint16_t msg_buf_used = 0;
@@ -238,7 +227,9 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 static int i2c_nrfx_twim_configure(const struct device *dev,
 				   uint32_t dev_config)
 {
-	nrfx_twim_t const *inst = &(get_dev_config(dev)->twim);
+	const struct i2c_nrfx_twim_config *config = dev->config;
+	struct i2c_nrfx_twim_data *data = dev->data;
+	nrfx_twim_t const *inst = &config->twim;
 
 	if (I2C_ADDR_10_BITS & dev_config) {
 		return -EINVAL;
@@ -255,15 +246,17 @@ static int i2c_nrfx_twim_configure(const struct device *dev,
 		LOG_ERR("unsupported speed");
 		return -EINVAL;
 	}
-	get_dev_data(dev)->dev_config = dev_config;
+	data->dev_config = dev_config;
 
 	return 0;
 }
 
 static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 {
-	nrfx_err_t err = nrfx_twim_bus_recover(get_dev_config(dev)->config.scl,
-					       get_dev_config(dev)->config.sda);
+	const struct i2c_nrfx_twim_config *config = dev->config;
+
+	nrfx_err_t err = nrfx_twim_bus_recover(config->config.scl,
+					       config->config.sda);
 
 	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
 }
@@ -276,11 +269,10 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 
 static int init_twim(const struct device *dev)
 {
-	struct i2c_nrfx_twim_data *dev_data = get_dev_data(dev);
-	nrfx_err_t result = nrfx_twim_init(&get_dev_config(dev)->twim,
-					   &get_dev_config(dev)->config,
-					   event_handler,
-					   dev_data);
+	const struct i2c_nrfx_twim_config *config = dev->config;
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	nrfx_err_t result = nrfx_twim_init(&config->twim, &config->config,
+					   event_handler, dev_data);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
 			dev->name);
@@ -294,19 +286,20 @@ static int init_twim(const struct device *dev)
 static int twim_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
+	const struct i2c_nrfx_twim_config *config = dev->config;
+	struct i2c_nrfx_twim_data *data = dev->data;
 	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		init_twim(dev);
-		if (get_dev_data(dev)->dev_config) {
-			i2c_nrfx_twim_configure(dev,
-						get_dev_data(dev)->dev_config);
+		if (data->dev_config) {
+			i2c_nrfx_twim_configure(dev, data->dev_config);
 		}
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		nrfx_twim_uninit(&get_dev_config(dev)->twim);
+		nrfx_twim_uninit(&config->twim);
 		break;
 
 	default:
@@ -374,7 +367,7 @@ static int twim_nrfx_pm_action(const struct device *dev,
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);		       \
 	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twim_##idx##_init,				       \
-		      PM_DEVICE_DT_REF(I2C(idx)),			       \
+		      PM_DEVICE_DT_GET(I2C(idx)),			       \
 		      &twim_##idx##_data,				       \
 		      &twim_##idx##z_config,				       \
 		      POST_KERNEL,					       \

@@ -21,6 +21,10 @@ if(CONFIG_DEVICE_CONFIGURATION_DATA)
   set(boot_hdr_dcd_data_section ".boot_hdr.dcd_data")
 endif()
 
+if(CONFIG_PM)
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMX_RT11XX power_rt11xx.c)
+endif()
+
 zephyr_linker_section_configure(
   SECTION .rom_start
   INPUT ".boot_hdr.ivt"

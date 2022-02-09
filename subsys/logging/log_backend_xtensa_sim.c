@@ -15,7 +15,7 @@
 #include <logging/log_backend_std.h>
 #include <xtensa/simcall.h>
 
-#define CHAR_BUF_SIZE (IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? \
+#define CHAR_BUF_SIZE (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? \
 		1 : CONFIG_LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE)
 
 static uint8_t xtensa_log_buf[CHAR_BUF_SIZE];
@@ -82,13 +82,13 @@ static void sync_hexdump(const struct log_backend *const backend,
 
 const struct log_backend_api log_backend_xtensa_sim_api = {
 	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 			sync_hexdump : NULL,
 	.panic = panic,
-	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
+	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 };
 
 LOG_BACKEND_DEFINE(log_backend_xtensa_sim, log_backend_xtensa_sim_api, true);

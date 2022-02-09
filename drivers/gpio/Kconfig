@@ -77,6 +77,8 @@ source "drivers/gpio/Kconfig.xec"
 
 source "drivers/gpio/Kconfig.stellaris"
 
+source "drivers/gpio/Kconfig.rpi_pico"
+
 source "drivers/gpio/Kconfig.rv32m1"
 
 source "drivers/gpio/Kconfig.lmp90xxx"

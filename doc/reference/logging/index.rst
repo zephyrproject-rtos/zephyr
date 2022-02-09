@@ -50,6 +50,12 @@ Logging v2 introduces following changes:
 - No change in logging API
 - Logging backend API exteded with function for processing v2 messages.
 
+.. note::
+   Logging v1 is deprecated! Version 2 supports same set of features with extensions
+   listed above. However, logging backend API is different. All backends in
+   the tree support version 2 API. Any custom backend must be adapted to version 2.
+   Version 1 support will be removed after 3.1 release.
+
 Logging API is highly configurable at compile time as well as at run time. Using
 Kconfig options (see :ref:`logging_kconfig`) logs can be gradually removed from
 compilation to reduce image size and execution time when logs are not needed.
@@ -111,13 +117,11 @@ Mode of operations:
 
 :kconfig:`CONFIG_LOG_MODE_DEFERRED`: Deferred mode.
 
-:kconfig:`CONFIG_LOG2_MODE_DEFERRED`: Deferred mode v2.
-
 :kconfig:`CONFIG_LOG_MODE_IMMEDIATE`: Immediate (synchronous) mode.
 
-:kconfig:`CONFIG_LOG2_MODE_IMMEDIATE`: Immediate (synchronous) mode v2.
-
 :kconfig:`CONFIG_LOG_MODE_MINIMAL`: Minimal footprint mode.
+
+:kconfig:`CONFIG_LOG1`: Use deprecated version of logging.
 
 Filtering options:
 

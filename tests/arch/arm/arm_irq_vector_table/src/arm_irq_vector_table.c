@@ -83,7 +83,6 @@ struct k_sem sem[3];
  *
  * @brief ISR for IRQ0
  *
- * @return N/A
  */
 
 void isr0(void)
@@ -97,7 +96,6 @@ void isr0(void)
  *
  * @brief ISR for IRQ1
  *
- * @return N/A
  */
 
 void isr1(void)
@@ -111,7 +109,6 @@ void isr1(void)
  *
  * @brief ISR for IRQ2
  *
- * @return N/A
  */
 
 void isr2(void)
@@ -230,7 +227,8 @@ vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0,
 	rtc_isr
 };
-#elif defined(CONFIG_SOC_SERIES_IMX_RT6XX) && defined(CONFIG_MCUX_OS_TIMER)
+#elif defined(CONFIG_SOC_SERIES_IMX_RT6XX) || defined(CONFIG_SOC_SERIES_IMX_RT5XX) && \
+	defined(CONFIG_MCUX_OS_TIMER)
 /* MXRT685 employs a OS Event timer to implement the Kernel system
  * timer, instead of the ARM Cortex-M SysTick. Therefore, a pointer to
  * the timer ISR needs to be added in the custom vector table to handle

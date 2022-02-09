@@ -2,6 +2,14 @@
 # Only select whether gcc or clang flags should be inherited.
 if(CC STREQUAL "clang")
   include(${ZEPHYR_BASE}/cmake/compiler/clang/compiler_flags.cmake)
+
+  # Now, let's overwrite the flags that are different in xcc/clang.
+  if($ENV{XCC_NO_G_FLAG})
+    # Older xcc/clang cannot use "-g" due to this bug:
+    # https://bugs.llvm.org/show_bug.cgi?id=11740.
+    # Clear the related flag(s) here so it won't cause issues.
+    set_compiler_property(PROPERTY debug)
+  endif()
 else()
   include(${ZEPHYR_BASE}/cmake/compiler/gcc/compiler_flags.cmake)
 

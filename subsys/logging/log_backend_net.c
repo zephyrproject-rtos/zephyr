@@ -257,11 +257,11 @@ const struct log_backend_api log_backend_net_api = {
 	.panic = panic,
 	.init = init_net,
 	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? send_output : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? send_output : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 							sync_string : NULL,
 	/* Currently we do not send hexdumps over network to remote server
-	 * in CONFIG_LOG_IMMEDIATE mode. This is just to save resources,
+	 * if CONFIG_LOG_MODE_IMMEDIATE is used. This is just to save resources,
 	 * this can be revisited if needed.
 	 */
 	.put_sync_hexdump = NULL,

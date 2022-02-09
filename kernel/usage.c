@@ -47,7 +47,9 @@ static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
 	}
 #endif
 
-	cpu->usage.total += cycles;
+	if (cpu->current != cpu->idle_thread) {
+		cpu->usage.total += cycles;
+	}
 }
 #else
 #define sched_cpu_update_usage(cpu, cycles)   do { } while (0)

@@ -135,6 +135,11 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 
 	/* Get reference to extended header */
 	pri_com_hdr = (void *)&pdu->adv_ext_ind;
+	if (!pdu->len || !pri_com_hdr->ext_hdr_len) {
+		return 0U;
+	}
+
+	/* Get reference to flags and contents */
 	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
 	pri_dptr = pri_hdr->data;
 
@@ -424,16 +429,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_aux = p->param;
 	lll = ull_scan_aux_lll_parent_get(lll_aux, &is_lll_scan);
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* Check if this aux scan is for periodic advertising train */
-	if (!is_lll_scan) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && !is_lll_scan) {
 		lll_sync_aux_prepare_cb((void *)lll, lll_aux);
 
 		lll = NULL;
 
 		goto sync_aux_prepare_done;
 	}
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Check if stopped (on connection establishment race between
@@ -514,9 +517,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 				       (uint8_t *)fal->bdaddr);
 	}
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 sync_aux_prepare_done:
-#endif
 	/* Calculate event timings, coarse and fine */
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll_aux);
@@ -621,11 +622,38 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 static void isr_done(void *param)
 {
-	struct event_done_extra *e;
+	struct lll_sync *lll;
+	uint8_t is_lll_scan;
 
 	lll_isr_status_reset();
 
-	if (!trx_cnt) {
+	if (param) {
+		lll = ull_scan_aux_lll_parent_get(param, &is_lll_scan);
+	} else {
+		lll = NULL;
+	}
+
+	/* Check if this aux scan is for periodic advertising train */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && lll && !is_lll_scan) {
+		struct node_rx_pdu *node_rx;
+
+		/* Generate message to release aux context and flag the report
+		 * generated thereafter by HCI as incomplete.
+		 */
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll;
+		node_rx->hdr.rx_ftr.aux_failed = 1U;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+
+	} else if (!trx_cnt) {
+		struct event_done_extra *e;
+
 		e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 		LL_ASSERT(e);
 	}
@@ -768,7 +796,7 @@ isr_rx_do_close:
 		radio_isr_set(isr_done, NULL);
 	} else {
 		/* Send message to flush Auxiliary PDU list */
-		if (err != -ECANCELED) {
+		if (lll->is_aux_sched && err != -ECANCELED) {
 			struct node_rx_pdu *node_rx;
 
 			node_rx = ull_pdu_rx_alloc();
@@ -1420,12 +1448,21 @@ static void isr_rx_connect_rsp(void *param)
 	struct lll_conn *conn_lll = lll->conn;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
 				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
 						  lll_aux->phy));
 	conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
 				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
 						  lll_aux->phy));
+#else
+	conn_lll->dle.eff.max_tx_time = MAX(conn_lll->dle.eff.max_tx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+							  lll_aux->phy));
+	conn_lll->dle.eff.max_rx_time = MAX(conn_lll->dle.eff.max_rx_time,
+					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+							  lll_aux->phy));
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH*/
 
 	conn_lll->phy_tx = lll_aux->phy;
@@ -1468,7 +1505,7 @@ isr_rx_do_close:
 
 		radio_isr_set(lll_scan_isr_resume, lll);
 	} else {
-		radio_isr_set(isr_done, lll_aux);
+		radio_isr_set(isr_done, NULL);
 	}
 
 	radio_disable();

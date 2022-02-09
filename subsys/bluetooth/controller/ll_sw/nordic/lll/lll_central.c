@@ -88,10 +88,10 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	struct lll_df_conn_rx_params *df_rx_params;
 	struct lll_df_conn_rx_cfg *df_rx_cfg;
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 	struct pdu_data *pdu_data_tx;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
@@ -158,9 +158,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	if (pdu_data_tx->cp) {
-		lll_df_conn_cte_tx_enable(&lll->df_tx_cfg);
-
 		cte_len = CTE_LEN_US(pdu_data_tx->cte_info.time);
+
+		lll_df_cte_tx_configure(pdu_data_tx->cte_info.type, pdu_data_tx->cte_info.time,
+					lll->df_tx_cfg.ant_sw_len, lll->df_tx_cfg.ant_ids);
 	} else
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 	{
@@ -184,7 +185,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	/* If CTE RX is enabled and the PHY is not CODED, store channel used for
 	 * the connection event to report it with collected IQ samples.
 	 * The configuration of the CTE receive may not change during the event,
@@ -198,7 +199,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 			lll->df_rx_cfg.chan = data_chan_use;
 		}
 	}
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(lll->phy_rx);

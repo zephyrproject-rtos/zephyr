@@ -81,8 +81,6 @@ static const sim_clock_config_t simConfig = {
  * PLL Engaged External (PEE) mode and generate the maximum 120 MHz system
  * clock.
  *
- * @return N/A
- *
  */
 static ALWAYS_INLINE void clock_init(void)
 {

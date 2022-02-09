@@ -37,8 +37,6 @@ static void tfm_ipc_test_01(void)
 
 /**
  * Retrieve the minor version of a RoT Service.
- *
- * @return N/A
  */
 static void tfm_ipc_test_02(void)
 {
@@ -57,8 +55,6 @@ static void tfm_ipc_test_02(void)
 
 /**
  * Connect to a RoT Service by its SID.
- *
- * @return N/A
  */
 static void tfm_ipc_test_03(void)
 {

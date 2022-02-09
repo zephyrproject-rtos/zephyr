@@ -101,8 +101,7 @@ log_backend_std_sync_string(const struct log_output *const output,
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
-		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
 		/* In order to ensure that one log processing is not interrupted
 		 * by another one, lock context for whole log processing.
 		 */
@@ -111,8 +110,7 @@ log_backend_std_sync_string(const struct log_output *const output,
 
 	log_output_string(output, src_level, timestamp, fmt, ap, flags);
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
-		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
 		irq_unlock(key);
 	}
 }
@@ -144,8 +142,7 @@ log_backend_std_sync_hexdump(const struct log_output *const output,
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
-		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
 		/* In order to ensure that one log processing is not interrupted
 		 * by another one, lock context for whole log processing.
 		 */
@@ -155,8 +152,7 @@ log_backend_std_sync_hexdump(const struct log_output *const output,
 	log_output_hexdump(output, src_level, timestamp,
 			metadata, data, length, flags);
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
-		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
 		irq_unlock(key);
 	}
 }

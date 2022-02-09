@@ -52,16 +52,12 @@ struct pwm_npcx_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct pwm_npcx_config *)(dev)->config)
-
-#define DRV_DATA(dev) ((struct pwm_npcx_data *)(dev)->data)
-
-#define HAL_INSTANCE(dev) (struct pwm_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct pwm_reg *)((const struct pwm_npcx_config *)(dev)->config)->base)
 
 /* PWM local functions */
 static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 {
-	const struct pwm_npcx_config *const config = DRV_CONFIG(dev);
+	const struct pwm_npcx_config *const config = dev->config;
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 
 	/* Disable PWM for module configuration first */
@@ -98,7 +94,7 @@ static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
 {
 	/* Single channel for each pwm device */
 	ARG_UNUSED(pwm);
-	struct pwm_npcx_data *const data = DRV_DATA(dev);
+	struct pwm_npcx_data *const data = dev->data;
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 	int prescaler;
 
@@ -151,7 +147,7 @@ static int pwm_npcx_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 {
 	/* Single channel for each pwm device */
 	ARG_UNUSED(pwm);
-	struct pwm_npcx_data *const data = DRV_DATA(dev);
+	struct pwm_npcx_data *const data = dev->data;
 
 	*cycles = data->cycles_per_sec;
 	return 0;
@@ -165,8 +161,8 @@ static const struct pwm_driver_api pwm_npcx_driver_api = {
 
 static int pwm_npcx_init(const struct device *dev)
 {
-	const struct pwm_npcx_config *const config = DRV_CONFIG(dev);
-	struct pwm_npcx_data *const data = DRV_DATA(dev);
+	const struct pwm_npcx_config *const config = dev->config;
+	struct pwm_npcx_data *const data = dev->data;
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;

@@ -2,7 +2,7 @@ description: Renesas R-Car CAN controller
 
 compatible: "renesas,rcar-can"
 
-include: can-controller.yaml
+include: [can-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

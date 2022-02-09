@@ -16,6 +16,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/l2cap.h>
 #include <drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_L2CAP)
@@ -2143,10 +2144,28 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 	}
 }
 
+/** @brief Get @c chan->state.
+ *
+ * This field does not exist when @kconfig{CONFIG_BT_L2CAP_DYNAMIC_CHANNEL} is
+ * disabled. In that case, this function returns @ref BT_L2CAP_CONNECTED since
+ * the struct can only represent static channels in that case and static
+ * channels are always connected.
+ */
+static inline bt_l2cap_chan_state_t bt_l2cap_chan_get_state(struct bt_l2cap_chan *chan)
+{
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	return chan->state;
+#else
+	return BT_L2CAP_CONNECTED;
+#endif
+}
+
 static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 				    struct net_buf *buf, uint16_t credits)
 {
 	struct bt_l2cap_le_credits *ev;
+
+	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 
 	/* Cap the number of credits given */
 	if (credits > chan->rx.init_credits) {
@@ -2245,6 +2264,8 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 
 	BT_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
+	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
+
 	/* Receiving complete SDU, notify channel and reset SDU buf */
 	err = chan->chan.ops->recv(&chan->chan, buf);
 	if (err < 0) {
@@ -2256,7 +2277,10 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	l2cap_chan_send_credits(chan, buf, seg);
+	if (bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED) {
+		l2cap_chan_send_credits(chan, buf, seg);
+	}
+
 	net_buf_unref(buf);
 }
 

@@ -487,8 +487,6 @@ int modbus_raw_submit_rx(const int iface, const struct modbus_adu *adu);
  * @param adu        Pointer to the RAW ADU struct
  * @param header     Pointer to the buffer in which MBAP header
  *                   will be placed.
- *
- * @retval           0 If transfer was successful
  */
 void modbus_raw_put_header(const struct modbus_adu *adu, uint8_t *header);
 
@@ -497,8 +495,6 @@ void modbus_raw_put_header(const struct modbus_adu *adu, uint8_t *header);
  *
  * @param adu        Pointer to the RAW ADU struct
  * @param header     Pointer to the buffer containing MBAP header
- *
- * @retval           0 If transfer was successful
  */
 void modbus_raw_get_header(struct modbus_adu *adu, const uint8_t *header);
 

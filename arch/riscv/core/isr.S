@@ -733,7 +733,7 @@ call_irq:
 	RV_OP_LOADREG t1, RV_REGSIZE(t0)
 
 	/* Call ISR function */
-	jalr ra, t1
+	jalr ra, t1, 0
 
 on_thread_stack:
 	/* Get reference to _kernel */

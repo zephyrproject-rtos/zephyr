@@ -52,8 +52,8 @@ void init_datagram_queue(struct phdr_desc_queue *queue, int queue_num)
 		/* Compute crc for further comparisson */
 		uint16_t crc;
 
-		crc = crc16(descriptors[queue_num][i].ptr, SIZE_OF_HEADER,
-					POLYNOMIAL, 0, 0);
+		crc = crc16(POLYNOMIAL, 0x0000,
+			    descriptors[queue_num][i].ptr, SIZE_OF_HEADER);
 
 		/* Save crc value in header[CRC_BYTE_1-CRC_BYTE_2] field */
 		descriptors[queue_num][i].ptr[CRC_BYTE_1] = (uint8_t)(crc >> 8);
@@ -84,7 +84,7 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 		/* Crc field should be zero before crc calculation */
 		qin_ptr->ptr[CRC_BYTE_1] = 0;
 		qin_ptr->ptr[CRC_BYTE_2] = 0;
-		crc = crc16(qin_ptr->ptr, SIZE_OF_HEADER, POLYNOMIAL, 0, 0);
+		crc = crc16(POLYNOMIAL, 0x0000, qin_ptr->ptr, SIZE_OF_HEADER);
 
 		/* Compare computed crc with crc from phdr_desc->crc */
 		if (crc == crc_orig) {

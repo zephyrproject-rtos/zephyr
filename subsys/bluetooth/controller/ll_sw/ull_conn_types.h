@@ -367,6 +367,9 @@ struct llcp_struct {
 		uint8_t collision;
 		uint8_t incompat;
 		uint8_t reject_opcode;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+		uint8_t paused_cmd;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP || CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	} remote;
 
 	/* Prepare parameters */
@@ -417,26 +420,29 @@ struct llcp_struct {
 		/* Procedure may be active periodically, active state must be stored.
 		 * If procedure is active, request parameters update may not be issued.
 		 */
-		uint8_t is_enabled;
+		uint8_t is_enabled:1;
+		uint8_t is_active:1;
 		uint8_t cte_type;
 		/* Minimum requested CTE length in 8us units */
 		uint8_t min_cte_len;
 		uint16_t req_interval;
+		uint16_t req_expire;
+		void *disable_param;
+		void (*disable_cb)(void *param);
 	} cte_req;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
-	/* TODO (ppryga): Consided move of the type of structure to ull_df_types.h or
-	 * lll_df_types.h. To have single definition of the type and share it wish LLL.
-	 */
 	struct llcp_df_rsp_cfg {
-		uint8_t is_enabled;
+		uint8_t is_enabled:1;
+		uint8_t is_active:1;
 		uint8_t cte_types;
 		uint8_t max_cte_len;
-		uint8_t ant_sw_len;
-		/* TODO (ppryga): Update to use the same macro as in lll_df_types.h */
-		uint8_t ant_ids[CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+		void *disable_param;
+		void (*disable_cb)(void *param);
 	} cte_rsp;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 #if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) &&\
 	(CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM <\
 	CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX)

@@ -23,87 +23,6 @@ extern "C" {
  */
 
 /**
- * @brief Get a label property from a pwms property at an index
- *
- * It's an error if the PWM controller node referenced by the phandle
- * in node_id's pwms property at index "idx" has no label property.
- *
- * Example devicetree fragment:
- *
- *     pwm1: pwm-controller@... {
- *             label = "PWM_1";
- *     };
- *
- *     pwm2: pwm-controller@... {
- *             label = "PWM_2";
- *     };
- *
- *     n: node {
- *             pwms = <&pwm1 1 PWM_POLARITY_NORMAL>,
- *                    <&pwm2 3 PWM_POLARITY_INVERTED>;
- *     };
- *
- * Example usage:
- *
- *     DT_PWMS_LABEL_BY_IDX(DT_NODELABEL(n), 0) // "PWM_1"
- *     DT_PWMS_LABEL_BY_IDX(DT_NODELABEL(n), 1) // "PWM_2"
- *
- * @param node_id node identifier for a node with a pwms property
- * @param idx logical index into pwms property
- * @return the label property of the node referenced at index "idx"
- * @see DT_PROP_BY_PHANDLE_IDX()
- */
-#define DT_PWMS_LABEL_BY_IDX(node_id, idx) \
-	__DEPRECATED_MACRO \
-	DT_PROP_BY_PHANDLE_IDX(node_id, pwms, idx, label)
-
-/**
- * @brief Get a label property from a pwms property by name
- *
- * It's an error if the PWM controller node referenced by the
- * phandle in node_id's pwms property at the element named "name"
- * has no label property.
- *
- * Example devicetree fragment:
- *
- *     pwm1: pwm-controller@... {
- *             label = "PWM_1";
- *     };
- *
- *     pwm2: pwm-controller@... {
- *             label = "PWM_2";
- *     };
- *
- *     n: node {
- *             pwms = <&pwm1 1 PWM_POLARITY_NORMAL>,
- *                    <&pwm2 3 PWM_POLARITY_INVERTED>;
- *             pwm-names = "alpha", "beta";
- *     };
- *
- * Example usage:
- *
- *     DT_PWMS_LABEL_BY_NAME(DT_NODELABEL(n), alpha) // "PWM_1"
- *     DT_PWMS_LABEL_BY_NAME(DT_NODELABEL(n), beta)  // "PWM_2"
- *
- * @param node_id node identifier for a node with a pwms property
- * @param name lowercase-and-underscores name of a pwms element
- *             as defined by the node's pwm-names property
- * @return the label property of the node referenced at the named element
- * @see DT_PHANDLE_BY_NAME()
- */
-#define DT_PWMS_LABEL_BY_NAME(node_id, name) \
-	__DEPRECATED_MACRO \
-	DT_PROP(DT_PHANDLE_BY_NAME(node_id, pwms, name), label)
-
-/**
- * @brief Equivalent to DT_PWMS_LABEL_BY_IDX(node_id, 0)
- * @param node_id node identifier for a node with a pwms property
- * @return the label property of the node referenced at index 0
- * @see DT_PWMS_LABEL_BY_IDX()
- */
-#define DT_PWMS_LABEL(node_id) __DEPRECATED_MACRO DT_PWMS_LABEL_BY_IDX(node_id, 0)
-
-/**
  * @brief Get the node identifier for the PWM controller from a
  *        pwms property at an index
  *
@@ -402,39 +321,6 @@ extern "C" {
  * @see DT_PWMS_FLAGS_BY_IDX()
  */
 #define DT_PWMS_FLAGS(node_id) DT_PWMS_FLAGS_BY_IDX(node_id, 0)
-
-/**
- * @brief Get a label property from a DT_DRV_COMPAT instance's pwms
- *        property by name
- * @param inst DT_DRV_COMPAT instance number
- * @param idx logical index into pwms property
- * @return the label property of the node referenced at index "idx"
- * @see DT_PWMS_LABEL_BY_IDX()
- */
-#define DT_INST_PWMS_LABEL_BY_IDX(inst, idx) \
-	__DEPRECATED_MACRO \
-	DT_PWMS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
-
-/**
- * @brief Get a label property from a DT_DRV_COMPAT instance's pwms
- *        property by name
- * @param inst DT_DRV_COMPAT instance number
- * @param name lowercase-and-underscores name of a pwms element
- *             as defined by the node's pwm-names property
- * @return the label property of the node referenced at the named element
- * @see DT_PWMS_LABEL_BY_NAME()
- */
-#define DT_INST_PWMS_LABEL_BY_NAME(inst, name) \
-	__DEPRECATED_MACRO \
-	DT_PWMS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
-
-/**
- * @brief Equivalent to DT_INST_PWMS_LABEL_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
- * @return the label property of the node referenced at index 0
- * @see DT_PWMS_LABEL_BY_IDX()
- */
-#define DT_INST_PWMS_LABEL(inst) __DEPRECATED_MACRO DT_INST_PWMS_LABEL_BY_IDX(inst, 0)
 
 /**
  * @brief Get the node identifier for the PWM controller from a

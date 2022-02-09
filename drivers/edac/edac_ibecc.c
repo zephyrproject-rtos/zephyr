@@ -334,6 +334,8 @@ static int edac_ibecc_init(const struct device *dev)
 	/* Enable Host Bridge generated SERR event */
 	ibecc_errcmd_setup(bdf, true);
 
+	LOG_INF("IBECC driver initialized");
+
 	return 0;
 }
 

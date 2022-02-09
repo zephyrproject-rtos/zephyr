@@ -55,10 +55,11 @@ static struct bt_mesh_proxy_role roles[CONFIG_BT_MAX_CONN];
 static void proxy_sar_timeout(struct k_work *work)
 {
 	struct bt_mesh_proxy_role *role;
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 
 	BT_WARN("Proxy SAR timeout");
 
-	role = CONTAINER_OF(work, struct bt_mesh_proxy_role, sar_timer);
+	role = CONTAINER_OF(dwork, struct bt_mesh_proxy_role, sar_timer);
 	if (role->conn) {
 		bt_conn_disconnect(role->conn,
 				   BT_HCI_ERR_REMOTE_USER_TERM_CONN);

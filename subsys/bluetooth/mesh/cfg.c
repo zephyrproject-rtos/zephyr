@@ -82,7 +82,7 @@ static enum bt_mesh_feat_state feature_get(int feature_flag)
 		       BT_MESH_FEATURE_DISABLED;
 }
 
-static int node_id_is_running(struct bt_mesh_subnet *sub, void *cb_data)
+static bool node_id_is_running(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	return sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING;
 }
@@ -100,8 +100,9 @@ int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy)
 		return err;
 	}
 
-	if (gatt_proxy == BT_MESH_FEATURE_DISABLED &&
-	    !bt_mesh_subnet_find(node_id_is_running, NULL)) {
+	if ((gatt_proxy == BT_MESH_FEATURE_ENABLED) ||
+	    (gatt_proxy == BT_MESH_FEATURE_DISABLED &&
+	     !bt_mesh_subnet_find(node_id_is_running, NULL))) {
 		bt_mesh_adv_gatt_update();
 	}
 

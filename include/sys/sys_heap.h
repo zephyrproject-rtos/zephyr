@@ -10,6 +10,10 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Simple, fast heap implementation.
  *
  * A more or less conventional segregated fit allocator with
@@ -208,7 +212,7 @@ bool sys_heap_validate(struct sys_heap *heap);
  * target_percent full.  Allocation and free operations are provided
  * by the caller as callbacks (i.e. this can in theory test any heap).
  * Results, including counts of frees and successful/unsuccessful
- * allocations, are returnewd via the @result struct.
+ * allocations, are returned via the @a result struct.
  *
  * @param alloc_fn Callback to perform an allocation.  Passes back the @a
  *              arg parameter as a context handle.
@@ -245,5 +249,10 @@ void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
  * @param dump_chunks True to print the entire heap chunk list
  */
 void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_SYS_HEAP_H_ */

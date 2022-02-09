@@ -20,12 +20,6 @@
 #define GET_UART(dev)      ((volatile struct uart_b91_t *) \
 			    ((const struct uart_b91_config *)dev->config)->uart_addr)
 
-/* Get UART configuration */
-#define GET_CFG(dev)       ((const struct uart_b91_config *)dev->config)
-
-/* Get instance data */
-#define DEV_DATA(dev)      ((struct uart_b91_data *const)dev->data)
-
 /* UART TX buffer count max value */
 #define UART_TX_BUF_CNT    ((uint8_t)8u)
 
@@ -236,7 +230,7 @@ static void uart_b91_irq_handler(const struct device *dev)
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 	ARG_UNUSED(dev);
 #else
-	struct uart_b91_data *data = DEV_DATA(dev);
+	struct uart_b91_data *data = dev->data;
 
 	if (data->callback != NULL) {
 		data->callback(dev, data->cb_data);
@@ -248,6 +242,7 @@ static void uart_b91_irq_handler(const struct device *dev)
 static int uart_b91_configure(const struct device *dev,
 			      const struct uart_config *cfg)
 {
+	struct uart_b91_data *data = dev->data;
 	uint16_t divider;
 	uint8_t bwpc;
 	uint8_t parity;
@@ -287,7 +282,7 @@ static int uart_b91_configure(const struct device *dev,
 	uart_b91_init(uart, divider, bwpc, parity, stop_bits);
 
 	/* save configuration */
-	DEV_DATA(dev)->cfg = *cfg;
+	data->cfg = *cfg;
 
 	return 0;
 }
@@ -296,7 +291,8 @@ static int uart_b91_configure(const struct device *dev,
 static int uart_b91_config_get(const struct device *dev,
 			       struct uart_config *cfg)
 {
-	*cfg = DEV_DATA(dev)->cfg;
+	struct uart_b91_data *data = dev->data;
+	*cfg = data->cfg;
 
 	return 0;
 }
@@ -308,7 +304,7 @@ static int uart_b91_driver_init(const struct device *dev)
 	uint8_t bwpc = 0u;
 	const struct device *pinmux;
 	volatile struct uart_b91_t *uart = GET_UART(dev);
-	const struct uart_b91_config *cfg = GET_CFG(dev);
+	const struct uart_b91_config *cfg = dev->config;
 
 	pinmux = DEVICE_DT_GET(DT_NODELABEL(pinmux));
 	if (!device_is_ready(pinmux)) {
@@ -334,7 +330,7 @@ static int uart_b91_driver_init(const struct device *dev)
 static void uart_b91_poll_out(const struct device *dev, uint8_t c)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
-	struct uart_b91_data *data = DEV_DATA(dev);
+	struct uart_b91_data *data = dev->data;
 
 	while (uart_b91_get_tx_bufcnt(uart) >= UART_TX_BUF_CNT) {
 	};
@@ -347,7 +343,7 @@ static void uart_b91_poll_out(const struct device *dev, uint8_t c)
 static int uart_b91_poll_in(const struct device *dev, unsigned char *c)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
-	struct uart_b91_data *data = DEV_DATA(dev);
+	struct uart_b91_data *data = dev->data;
 
 	if (uart_b91_get_rx_bufcnt(uart) == 0) {
 		return -1;
@@ -510,7 +506,7 @@ static void uart_b91_irq_callback_set(const struct device *dev,
 				      uart_irq_callback_user_data_t cb,
 				      void *cb_data)
 {
-	struct uart_b91_data *data = DEV_DATA(dev);
+	struct uart_b91_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;

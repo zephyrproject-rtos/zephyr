@@ -37,30 +37,6 @@
  * @{
  */
 
-#if defined(CONFIG_PERCEPIO_TRACERECORDER)
-#include "tracing_tracerecorder.h"
-#else
-/**
- * @brief Called when entering an ISR
- */
-void sys_trace_isr_enter(void);
-
-/**
- * @brief Called when exiting an ISR
- */
-void sys_trace_isr_exit(void);
-
-/**
- * @brief Called when exiting an ISR and switching to scheduler
- */
-void sys_trace_isr_exit_to_scheduler(void);
-
-/**
- * @brief Called when the cpu enters the idle state
- */
-void sys_trace_idle(void);
-#endif /* CONFIG_PERCEPIO_TRACERECORDER */
-
 /**
  * @brief Thread Tracing APIs
  * @defgroup subsys_tracing_apis_thread Thread Tracing APIs
@@ -2027,6 +2003,30 @@ void sys_trace_idle(void);
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
 /** @} */ /* end of subsys_tracing_apis_pm_device_runtime */
+
+#if defined(CONFIG_PERCEPIO_TRACERECORDER)
+#include "tracing_tracerecorder.h"
+#else
+/**
+ * @brief Called when entering an ISR
+ */
+void sys_trace_isr_enter(void);
+
+/**
+ * @brief Called when exiting an ISR
+ */
+void sys_trace_isr_exit(void);
+
+/**
+ * @brief Called when exiting an ISR and switching to scheduler
+ */
+void sys_trace_isr_exit_to_scheduler(void);
+
+/**
+ * @brief Called when the cpu enters the idle state
+ */
+void sys_trace_idle(void);
+#endif /* CONFIG_PERCEPIO_TRACERECORDER */
 
 /** @} */ /* end of subsys_tracing_apis */
 

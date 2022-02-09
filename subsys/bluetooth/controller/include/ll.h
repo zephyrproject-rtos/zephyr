@@ -303,8 +303,11 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 				     uint8_t slot_durations, uint8_t switch_pattern_len,
 				     const uint8_t *ant_ids);
 /* Enables or disables CTE request control procedure in direction fingin connected mode. */
-uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t cte_request_interval,
-				      uint8_t requested_cte_length, uint8_t requested_cte_type);
+uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
+				      uint16_t cte_request_interval, uint8_t requested_cte_length,
+				      uint8_t requested_cte_type);
+/* Enables or disables CTE response control procedure in direction fingin connected mode. */
+uint8_t ll_df_set_conn_cte_rsp_enable(uint16_t handle, uint8_t enable);
 /* Enables or disables CTE sampling in periodic advertising scan */
 uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 					uint8_t sampling_enable,
@@ -327,6 +330,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *node_tx);
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle);
 void ll_rx_dequeue(void);
 void ll_rx_mem_release(void **node_rx);
+void ll_iso_rx_mem_release(void **node_rx);
 
 /* Downstream - ISO Data */
 void *ll_iso_tx_mem_acquire(void);

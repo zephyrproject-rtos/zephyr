@@ -40,6 +40,12 @@ void imxrt_usdhc_dat3_pull(bool pullup);
 
 #endif
 
+#if CONFIG_I2S_MCUX_SAI
+void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
+					uint32_t clk_pre_div, uint32_t clk_src_div);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
