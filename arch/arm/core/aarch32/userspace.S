@@ -524,9 +524,6 @@ dispatch_syscall:
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* set stack back to unprivileged stack */
     ldr ip, [sp,#12]
-#endif
-
-#if !defined(CONFIG_ARMV7_R)
     msr PSP, ip
 #endif
 
