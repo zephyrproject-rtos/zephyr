@@ -91,7 +91,7 @@ static int gpio_esp32_config(const struct device *dev,
 {
 	const struct gpio_esp32_config *const cfg = dev->config;
 	struct gpio_esp32_data *data = dev->data;
-	uint32_t io_pin = (uint32_t) pin;
+	uint32_t io_pin = (uint32_t) pin + (cfg->gpio_port == 1 ? 32 : 0);
 	uint32_t key;
 	int ret = 0;
 
@@ -329,7 +329,7 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 					      enum gpio_int_trig trig)
 {
 	const struct gpio_esp32_config *const cfg = port->config;
-	uint32_t io_pin = (uint32_t) pin;
+	uint32_t io_pin = (uint32_t) pin + (cfg->gpio_port == 1 ? 32 : 0);
 	int intr_trig_mode = convert_int_type(mode, trig);
 	uint32_t key;
 
