@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* LLCP Memory Pool Descriptor */
+struct llcp_mem_pool {
+	void *free;
+	uint8_t *pool;
+};
+
 /* LLCP Procedure */
 enum llcp_proc {
 	PROC_UNKNOWN,
@@ -113,6 +119,9 @@ struct llcp_enc {
 struct proc_ctx {
 	/* Must be the first for sys_slist to work */
 	sys_snode_t node;
+
+	/* llcp_mem_pool owner of this context */
+	struct llcp_mem_pool *owner;
 
 	/* PROC_ */
 	enum llcp_proc proc;
@@ -335,6 +344,7 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc);
 bool llcp_tx_alloc_peek(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_tx_alloc_unpeek(struct proc_ctx *ctx);
 struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_proc_ctx_release(struct proc_ctx *ctx);
 
 /*
  * ULL -> LLL Interface
@@ -571,7 +581,6 @@ void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-void llcp_proc_ctx_release(struct proc_ctx *ctx);
 
 /*
  * Remote Channel Map Update Procedure Helper
