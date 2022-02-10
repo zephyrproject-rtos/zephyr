@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT fsl_imx6sx_lcdif
+#define DT_DRV_COMPAT nxp_imx_elcdif
 
 #include <drivers/display.h>
 #include <fsl_elcdif.h>
