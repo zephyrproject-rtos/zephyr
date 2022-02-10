@@ -1,11 +1,12 @@
 # Copyright (c) 2019 Mohamed ElShahawi (ExtremeGTX@hotmail.com)
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 description: ESP32 I2C
 
 compatible: "espressif,esp32-i2c"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -13,6 +14,12 @@ properties:
 
     interrupts:
       required: false
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
 
     sda-pin:
       type: int
