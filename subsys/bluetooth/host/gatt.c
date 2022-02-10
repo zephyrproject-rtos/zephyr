@@ -5058,6 +5058,8 @@ void bt_gatt_connected(struct bt_conn *conn)
 		settings_load_subtree_direct(key, ccc_set_direct, (void *)key);
 	}
 
+	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
+
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part C page 2192:
 	 *
 	 * 10.3.1.1 Handling of GATT indications and notifications
