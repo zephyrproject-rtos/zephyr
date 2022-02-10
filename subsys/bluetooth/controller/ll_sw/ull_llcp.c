@@ -59,7 +59,8 @@ static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * LLCP_TX_CTRL_BUF_COUNT];
 static struct llcp_mem_pool mem_tx = { .pool = buffer_mem_tx };
 
 /* TODO: Determine 'correct' number of ctx */
-static uint8_t buffer_mem_local_ctx[PROC_CTX_BUF_SIZE * CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM];
+static uint8_t buffer_mem_local_ctx[PROC_CTX_BUF_SIZE *
+				    CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_local_ctx = { .pool = buffer_mem_local_ctx };
 
 /* TODO(thoh-ot): Determine 'correct' number of ctx */
@@ -428,7 +429,8 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 
 void ull_cp_init(void)
 {
-	mem_init(mem_local_ctx.pool, PROC_CTX_BUF_SIZE, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	mem_init(mem_local_ctx.pool, PROC_CTX_BUF_SIZE,
+		 CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM,
 		 &mem_local_ctx.free);
 	mem_init(mem_remote_ctx.pool, PROC_CTX_BUF_SIZE,
 		 CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM,
@@ -1057,10 +1059,10 @@ void test_int_mem_proc_ctx(void)
 	ull_cp_init();
 
 	nr_of_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM +
+	zassert_equal(nr_of_free_ctx, CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM +
 		      CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM, NULL);
 
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM; i++) {
+	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
 		ctx1 = proc_ctx_acquire(&mem_local_ctx);
 
 		/* The previous acquire should be valid */
@@ -1163,7 +1165,7 @@ void test_int_create_proc(void)
 	zassert_equal(ctx->collision, 0, NULL);
 	zassert_equal(ctx->pause, 0, NULL);
 
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM; i++) {
+	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
 		zassert_not_null(ctx, NULL);
 		ctx = create_procedure(PROC_VERSION_EXCHANGE, &mem_local_ctx);
 	}

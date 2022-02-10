@@ -532,7 +532,7 @@ config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 	  procedures/connections with allocation through a fifo queue.
 	  Configure between 0 and (4 - BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) * BT_CTLR_LLCP_CONN
 
-config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
+config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
 	int "Number of local control procedure contexts to be available across all connections"
 	default 2 if BT_CTLR_LLCP_CONN = 1
 	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1

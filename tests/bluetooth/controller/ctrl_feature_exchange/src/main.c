@@ -140,14 +140,14 @@ void test_feat_exchange_central_loc_2(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	err = ull_cp_feature_exchange(&conn);
-	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM; i++) {
+	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 		err = ull_cp_feature_exchange(&conn);
 	}
 
 	zassert_not_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 	zassert_equal(ctx_buffers_free(),
-		      test_ctx_buffers_cnt() - CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      test_ctx_buffers_cnt() - CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM,
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
