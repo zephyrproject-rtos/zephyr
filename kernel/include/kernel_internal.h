@@ -26,6 +26,9 @@ extern "C" {
 
 /* Early boot functions */
 
+void z_early_memset(void *dst, int c, size_t n);
+void z_early_memcpy(void *dst, const void *src, size_t n);
+
 void z_bss_zero(void);
 #ifdef CONFIG_XIP
 void z_data_copy(void);

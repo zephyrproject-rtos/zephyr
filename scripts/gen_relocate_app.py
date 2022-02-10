@@ -109,7 +109,7 @@ SOURCE_CODE_INCLUDES = """
 #include <zephyr.h>
 #include <linker/linker-defs.h>
 #include <kernel_structs.h>
-#include <string.h>
+#include <kernel_internal.h>
 """
 
 EXTERN_LINKER_VAR_DECLARATION = """
@@ -134,14 +134,14 @@ void bss_zeroing_relocation(void)
 """
 
 MEMCPY_TEMPLATE = """
-	(void)memcpy(&__{0}_{1}_start, &__{0}_{1}_rom_start,
-		     (uint32_t) &__{0}_{1}_size);
+	z_early_memcpy(&__{0}_{1}_start, &__{0}_{1}_rom_start,
+		           (size_t) &__{0}_{1}_size);
 
 """
 
 MEMSET_TEMPLATE = """
- 	(void)memset(&__{0}_bss_start, 0,
-		     (uint32_t) &__{0}_bss_size);
+ 	z_early_memset(&__{0}_bss_start, 0,
+		           (size_t) &__{0}_bss_size);
 """
 
 
