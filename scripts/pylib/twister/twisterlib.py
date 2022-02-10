@@ -681,16 +681,19 @@ class DeviceHandler(Handler):
             # is available yet.
             if serial_line:
                 sl = serial_line.decode('utf-8', 'ignore').lstrip()
-                logger.debug("DEVICE: {0}".format(sl.rstrip()))
+                try:
+                    logger.debug("DEVICE: {0}".format(sl.rstrip()))
+                    log_out_fp.write(sl)
+                except UnicodeEncodeError:
+                    pass
 
-                log_out_fp.write(sl)
                 log_out_fp.flush()
                 harness.handle(sl.rstrip())
 
-            if harness.state:
-                if not harness.capture_coverage:
-                    ser.close()
-                    break
+                if harness.state:
+                    if not harness.capture_coverage:
+                        ser.close()
+                        break
 
         log_out_fp.close()
 
@@ -2219,7 +2222,10 @@ class CMake():
         if out:
             with open(os.path.join(self.build_dir, self.log), "a") as log:
                 log_msg = out.decode(sys.getdefaultencoding())
-                log.write(log_msg)
+                try:
+                    log.write(log_msg)
+                except UnicodeEncodeError:
+                    pass
 
         return results
 
