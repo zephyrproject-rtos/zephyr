@@ -11,7 +11,8 @@
 #include <drivers/can.h>
 
 #define MCP2515_RX_CNT                   2
-#define MCP2515_TX_CNT                   3
+/* Reduce the number of Tx buffers to 1 in order to avoid priority inversion. */
+#define MCP2515_TX_CNT                   1
 #define MCP2515_FRAME_LEN               13
 
 struct mcp2515_tx_cb {
