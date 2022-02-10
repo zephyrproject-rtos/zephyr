@@ -1,18 +1,22 @@
-common:
-  integration_platforms:
-    - native_posix
-
 tests:
   logging.add.async:
     tags: logging
     extra_args: CONF_FILE=log2.conf
+    integration_platforms:
+      - native_posix
   logging.add.sync:
     tags: logging
     extra_args: CONF_FILE=log_sync.conf
+    integration_platforms:
+      - native_posix
   logging.add.log1_user:
     tags: logging
     filter: CONFIG_USERSPACE
     extra_args: CONF_FILE=log_user.conf USERSPACE_TEST=1
+    integration_platforms:
+      - qemu_x86
   logging.add.log1:
     tags: logging
     extra_args: CONF_FILE=prj.conf
+    integration_platforms:
+      - native_posix
