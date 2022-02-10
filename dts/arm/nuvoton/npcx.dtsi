@@ -66,6 +66,7 @@
 		 *   flag = <NPCX_PSL_FALLING_EDGE>;
 		 */
 		psl-in-pads = <>;
+		status = "disabled";
 	};
 
 	soc {
