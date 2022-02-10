@@ -67,7 +67,7 @@
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /submanifests/*                           @mbolivar-nordic
-/arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
+/arch/x86/                                @jhedberg @nashif @enjiamai @aasthagr
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
 /arch/riscv/                              @kgugala @pgielda
@@ -78,7 +78,7 @@
 /soc/riscv/riscv-privilege/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
 /soc/riscv/riscv-privilege/neorv32/       @henrikbrixandersen
 /soc/riscv/riscv-privilege/gd32vf103/     @soburi
-/soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
+/soc/x86/                                 @dcpleung @nashif @enjiamai @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
 /arch/sparc/                              @martin-aberg
@@ -168,7 +168,7 @@
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
 /boards/shields/inventek_eswifi/          @nandojve
-/boards/x86/                              @dcpleung @nashif @jenmwms @aasthagr
+/boards/x86/                              @dcpleung @nashif @enjiamai @aasthagr
 /boards/x86/acrn/                         @enjiamai
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
