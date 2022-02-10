@@ -14,15 +14,12 @@ config LS0XX
 if LVGL
 
 config LVGL_VDB_SIZE
-	int "Display buffer percentage"
 	default 16
 
 config LVGL_DPI
-	int "Dots per inch"
 	default 150
 
 config LVGL_BITS_PER_PIXEL
-	int "Number of bits per pixel"
 	default 1
 
 choice LVGL_COLOR_DEPTH
