@@ -19,3 +19,6 @@ mypy
 
 # used for mocking functions in pytest
 mock>=4.0.1
+
+# for CI testing
+futures

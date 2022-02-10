@@ -4,16 +4,23 @@
 
 # A script to generate twister options based on modified files.
 
-import re, os
+import re
+import os
 import argparse
 import yaml
 import json
 import fnmatch
 import subprocess
 import csv
+from pathlib import Path
 import logging
 import sys
+
+import concurrent.futures
+
 from git import Repo
+
+
 
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
@@ -23,6 +30,115 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 sys.path.append(os.path.join(repository_path, 'scripts'))
 import list_boards
+
+def _procee_maintainer_file(node, zephyr_base_dir, target_files):
+    ''' procee_maintainer_file
+
+        1. We search maintainer node["files"] folder and filter out
+        tests/samples to be added test plan.
+        if there is wildcard '*' like tests/bluetooth/mesh*/,
+        we search the folders with *, otherwise we search all files
+        in given folder.
+        2. if the modified file is in the node['files']
+            [ e for e in __f if e in target_files ]
+        3. if the node files match the modfied target file,
+           add the corresponding test app to test plan.
+
+        :param node: items to run in multi-process
+        :type node: Hash
+
+        :param zephyr_base_dir: zephyr base dir
+        :type zephyr_base_dir: string
+
+        :param target_files: target files
+        :type target_files: array
+
+        :return Array of matched application path, otherwise empty array
+    '''
+    matched = False
+    test_apps_path = []
+
+    if "files" in node:
+        _test_apps_path = []
+        for item in node["files"]:
+            logging.info(item)
+            if re.match('^tests', item) or re.match('^samples', item):
+                _test_apps_path.append(item)
+                continue
+            if os.path.isfile(os.path.join(zephyr_base_dir, item)):
+                __f = os.path.basename(item)
+                if __f in target_files:
+                    matched = True
+            else:
+                if '*' in item:
+                    _files = Path(zephyr_base_dir).rglob(item)
+                else:
+                    _files = Path(os.path.join(zephyr_base_dir, item)).rglob("*")
+                _files = list(set(_files))
+                __f = [os.path.basename(i) for i in _files]
+
+                if [ e for e in __f if e in target_files ]:
+                    matched = True
+
+        if not matched:
+            _test_apps_path.clear()
+        else:
+            test_apps_path += _test_apps_path
+
+
+    return test_apps_path
+
+def _match_tests_with_file(zephyr_base_dir, target_files):
+    ''' match_tests_with_file
+        match related applications with given modified files
+        based on MAINTAINERS.yml
+
+        :param zephyr_base_dir: zephyr base directory
+        :type zephyr_base_dir: string
+
+        :param target_files: target files without path
+        :type target_files: array
+    '''
+    test_apps_path = []
+    filtered_target_files = []
+
+    for file in target_files:
+        extension = os.path.splitext(file)[1]
+        if extension in ['.c', '.h']:
+            filtered_target_files.append(file)
+
+    for path in Path(zephyr_base_dir).rglob('MAINTAINERS.yml'):
+        # only porocess the first found
+        with open(path, "r", encoding='UTF-8') as stream:
+            try:
+                data_loaded = yaml.safe_load(stream)
+                break
+            except yaml.YAMLError as exc:
+                logging.debug(exc)
+                return set()
+
+    items = data_loaded.items()
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        futures = [executor.submit(_procee_maintainer_file, item,
+                    zephyr_base_dir, filtered_target_files) for _k, item in items]
+        for future in concurrent.futures.as_completed(futures):
+            test_apps_path += future.result()
+
+    logging.info(test_apps_path)
+    # find all applications in test_apps_path
+    test_path_list = []
+    for _tp in test_apps_path:
+        _apps_path = os.path.join(zephyr_base_dir, _tp)
+        for path in Path(_apps_path).rglob("testcase.yaml"):
+            _tp = os.path.relpath(path, zephyr_base_dir)
+            test_path_list.append(os.path.dirname(_tp))
+        for path in Path(_apps_path).rglob("sample.yaml"):
+            _tp = os.path.relpath(path, zephyr_base_dir)
+            test_path_list.append(os.path.dirname(_tp))
+
+    logging.info(test_path_list)
+    return set(test_path_list)
 
 def _get_match_fn(globs, regexes):
     # Constructs a single regex that tests for matches against the globs in
@@ -192,6 +308,10 @@ class Filters:
                     break
                 else:
                     d = os.path.dirname(d)
+
+        add_tests = _match_tests_with_file(repository_path, self.modified_files)
+        for _ad in add_tests:
+            tests.add(_ad)
 
         _options = []
         for t in tests:
