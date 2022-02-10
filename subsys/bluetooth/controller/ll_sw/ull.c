@@ -219,17 +219,17 @@
 #endif
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
-#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX)
 /* Note: Need node for PDU and CTE sample */
 #define BT_CTLR_ADV_EXT_RX_CNT  (CONFIG_BT_CTLR_SCAN_AUX_SET * \
 				 CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX * 2)
 #else
 /* Note: Assume up to 7 PDUs per advertising train (max data length) */
 #define BT_CTLR_ADV_EXT_RX_CNT  (CONFIG_BT_CTLR_SCAN_AUX_SET * 7)
-#endif
+#endif /* CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX */
 #else
 #define BT_CTLR_ADV_EXT_RX_CNT  0
-#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_OBSERVER */
 
 #if !defined(TICKER_USER_LLL_VENDOR_OPS)
 #define TICKER_USER_LLL_VENDOR_OPS 0
