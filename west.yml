@@ -173,7 +173,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 399720d1cabd26c4356445d351f263b31e942961
+      revision: 89936c338e46f43cb177a8b928cd80b90f3ace8f
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
