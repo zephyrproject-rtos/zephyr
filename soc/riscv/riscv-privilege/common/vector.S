@@ -24,22 +24,25 @@ SECTION_FUNC(vectors, __start)
 	 */
 	la t0, __irq_wrapper
 	csrw mtvec, t0
-#if defined(CONFIG_BOARD_HART_TO_USE) && (CONFIG_BOARD_HART_TO_USE != 0)
+
+#if CONFIG_SUPERVISOR_MODE_CAPABLE
     /* Set up dummy vector routine to catch supervisor traps in case of
      * problems.
      */
-#if defined(CONFIG_SOC_MPFS)
+#if CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR
     /*
-     * For MPFS and FU540 only allow setting STVEC on U54 as E51 does not have
-     * this register. On these SOCs, not setting STVEC can cause unexpected traps...
+     * For MPFS and FU540 type systems only allow setting STVEC on application
+     * harts as monitor hart does not have this register. On these SOCs, 
+     * not setting STVEC can cause unexpected traps...
      */
+    li t1, CONFIG_MONITOR_HART_ID
     csrr t0, mhartid
-    beqz t0, skip_svect
-#endif
+    beq t0, t1, skip_svect
+#endif /* CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR */
+	la t0, __irq_wrapper_s
+	csrw stvec, t0
 
-	//* Jump to __reset */
-	//tail __reset
     skip_svect:
-#endif
+#endif /* CONFIG_SUPERVISOR_MODE_CAPABLE */
 	/* Jump to __initialize */
 	tail __initialize
