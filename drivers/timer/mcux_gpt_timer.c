@@ -192,7 +192,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	/* Clamp ticks */
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP((ticks - 1), 0, (int32_t)MAX_TICKS);
 
 	key = k_spin_lock(&lock);
 
@@ -220,6 +220,13 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		reload_value =
 			((reload_value + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
 		reload_value -= unannounced_cycles;
+		if (reload_value == ticks * CYC_PER_TICK) {
+			/* We are on a tick boundary. Since we subtracted from
+			 * 'ticks' earlier, we need to add one tick worth of
+			 * cycles to announce to the kernel at the right time.
+			 */
+			reload_value += CYC_PER_TICK;
+		}
 		/* Clamp reload value */
 		reload_value = CLAMP(reload_value, MIN_DELAY, MAX_CYCLES);
 	}
