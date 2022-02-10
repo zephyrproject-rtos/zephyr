@@ -508,30 +508,52 @@ bool pm_device_state_is_locked(const struct device *dev);
 bool pm_device_on_power_domain(const struct device *dev);
 
 #else
-static inline void pm_device_busy_set(const struct device *dev) {}
-static inline void pm_device_busy_clear(const struct device *dev) {}
+static inline void pm_device_busy_set(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+static inline void pm_device_busy_clear(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
 static inline bool pm_device_is_any_busy(void) { return false; }
-static inline bool pm_device_is_busy(const struct device *dev) { return false; }
+static inline bool pm_device_is_busy(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return false;
+}
 static inline bool pm_device_wakeup_enable(struct device *dev, bool enable)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
 	return false;
 }
 static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
 {
+	ARG_UNUSED(dev);
 	return false;
 }
 static inline bool pm_device_wakeup_is_capable(const struct device *dev)
 {
+	ARG_UNUSED(dev);
 	return false;
 }
-static inline void pm_device_state_lock(const struct device *dev) {}
-static inline void pm_device_state_unlock(const struct device *dev) {}
+static inline void pm_device_state_lock(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+static inline void pm_device_state_unlock(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
 static inline bool pm_device_state_is_locked(const struct device *dev)
 {
+	ARG_UNUSED(dev);
 	return false;
 }
 static inline bool pm_device_on_power_domain(const struct device *dev)
 {
+	ARG_UNUSED(dev);
 	return false;
 }
 #endif /* CONFIG_PM_DEVICE */
