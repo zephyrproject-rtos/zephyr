@@ -723,8 +723,10 @@ class DeviceHandler(Handler):
     def run_custom_script(script, timeout):
         with subprocess.Popen(script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
             try:
-                stdout, _ = proc.communicate(timeout=timeout)
+                stdout, stderr = proc.communicate(timeout=timeout)
                 logger.debug(stdout.decode())
+                if proc.returncode != 0:
+                    logger.error(f"Custom script failure: {stderr.decode(errors='ignore')}")
 
             except subprocess.TimeoutExpired:
                 proc.kill()
