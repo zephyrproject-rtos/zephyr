@@ -97,14 +97,19 @@ not_e51:
     /*
      * This will boot master core which is lowest numbered, just halt other cores.
      *
-     * Not MPFS E51 so assume supervisor supported so safe to clear these...
-     * Probably makes more sense to add specific supervisor support flag for this.
-     * Also, if not in master mode this is a bad thing to do.
+     * Note. For systems with monitor hart we assume no supervisor supported on monitor
+	 * hart so if this is selected as the hart to use we don't touch mxdeleg registers.
+	 * Also, if not in master mode this is a bad thing to do...
      */
-#if defined(CONFIG_SOC_MPFS) && (CONFIG_BOARD_HART_TO_USE != 0)
+#if NO_SUPERVISOR_DELEGATION
+#if CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR
+	bne a0, a1, not_super_capable /* regs set up earlier... */
+#endif /* CONFIG_HAS_MONITOR_HART && !CONFIG_MONITOR_HART_SUPERVISOR */
     csrw mideleg,0
     csrw medeleg,0
-#endif
+
+not_super_capable:
+#endif /* NO_SUPERVISOR_DELEGATION */
 
 #ifdef CONFIG_FPU
 	/*

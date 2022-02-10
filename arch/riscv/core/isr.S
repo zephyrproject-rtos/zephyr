@@ -298,12 +298,16 @@ GTEXT(__irq_wrapper_s)
  * In this architecture, system call (ECALL) is used to perform context
  * switching using the Zephyr arch_switch method or IRQ offloading (when enabled).
  */
+
+#if CONFIG_SUPERVISOR_MODE_CAPABLE
+/* Catch for errant supervisor exceptions as we arn't using supervisor mode */
 SECTION_FUNC(exception.entry, __irq_wrapper_s)
 endless:
     nop
     nop
     nop
     beqz x0, endless
+#endif /* CONFIG_SUPERVISOR_MODE_CAPABLE */
 
 SECTION_FUNC(exception.entry, __irq_wrapper)
 
@@ -741,14 +745,16 @@ GTEXT(__irq_wrapper_s)
  * In this architecture, system call (ECALL) is used to perform context
  * switching or IRQ offloading (when enabled).
  */
+
+#if CONFIG_SUPERVISOR_MODE_CAPABLE
+/* Catch for errant supervisor exceptions as we arn't using supervisor mode */
 SECTION_FUNC(exception.entry, __irq_wrapper_s)
 endless:
     nop
     nop
     nop
     beqz x0, endless
-
-
+#endif /* CONFIG_SUPERVISOR_MODE_CAPABLE */
 
 SECTION_FUNC(exception.entry, __irq_wrapper)
 
@@ -763,9 +769,6 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	 * floating-point registers should be accounted for when corresponding
 	 * config variable is set
 	 */
-loops:
-//	 la a0, 1
-//	 beqz a0, loops
 	STORE_CALLER_SAVED()
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
