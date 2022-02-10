@@ -796,6 +796,37 @@ from userspace. It is at the cost of larger memory footprint for a log message.
 
 .. [#f4] Avarage size of a log message (excluding string) with 2 arguments on ``Cortex M3``
 
+Stack usage
+***********
+
+When logging is enabled it impacts stack usage of the context that uses logging API. If stack
+is optimized it may lead to stack overflow. Stack usage depends on mode and optimization. It
+also significantly varies between platforms. In general, when :kconfig:`CONFIG_LOG_MODE_DEFERRED`
+is used stack usage is smaller since logging is limited to creating and storing log message.
+When :kconfig:`CONFIG_LOG_MODE_IMMEDIATE` is used then log message is processed by the backend
+which includes string formatting. In case of that mode, stack usage will depend on which backends
+are used.
+
+:zephyr_file:`tests/subsys/logging/log_stack` test is used to characterize stack usage depending
+on mode, optimization and platform used. Test is using only the default backend.
+
+Some of the platorms characterization for log message with two ``integer`` arguments listed below:
+
++---------------+----------+----------------------------+-----------+-----------------------------+
+| Platform      | Deferred | Deferred (no optimization) | Immediate | Immediate (no optimization) |
++===============+==========+============================+===========+=============================+
+| ARM Cortex-M3 | 40       | 152                        | 412       | 783                         |
++---------------+----------+----------------------------+-----------+-----------------------------+
+| x86           | 12       | 224                        | 388       | 796                         |
++---------------+----------+----------------------------+-----------+-----------------------------+
+| riscv32       | 24       | 208                        | 456       | 844                         |
++---------------+----------+----------------------------+-----------+-----------------------------+
+| xtensa        | 72       | 336                        | 504       | 944                         |
++---------------+----------+----------------------------+-----------+-----------------------------+
+| x86_64        | 32       | 528                        | 1088      | 1440                        |
++---------------+----------+----------------------------+-----------+-----------------------------+
+
+
 API Reference
 *************
 
