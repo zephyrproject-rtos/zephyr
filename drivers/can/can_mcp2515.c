@@ -839,15 +839,18 @@ static int mcp2515_init(const struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
-	int ret;
 	struct can_timing timing;
+	int ret;
+	int i;
 
 	k_sem_init(&dev_data->int_sem, 0, 1);
 	k_mutex_init(&dev_data->mutex);
 	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);
-	k_sem_init(&dev_data->tx_cb[0].sem, 0, 1);
-	k_sem_init(&dev_data->tx_cb[1].sem, 0, 1);
-	k_sem_init(&dev_data->tx_cb[2].sem, 0, 1);
+
+	for (i = 0; i < MCP2515_TX_CNT; i++) {
+		k_sem_init(&dev_data->tx_cb[i].sem, 0, 1);
+		dev_data->tx_cb[i].cb = NULL;
+	}
 
 	if (!spi_is_ready(&dev_cfg->bus)) {
 		LOG_ERR("SPI bus %s not ready", dev_cfg->bus.bus->name);
@@ -934,9 +937,6 @@ static K_KERNEL_STACK_DEFINE(mcp2515_int_thread_stack,
 
 static struct mcp2515_data mcp2515_data_1 = {
 	.int_thread_stack = mcp2515_int_thread_stack,
-	.tx_cb[0].cb = NULL,
-	.tx_cb[1].cb = NULL,
-	.tx_cb[2].cb = NULL,
 	.tx_busy_map = 0U,
 	.filter_usage = 0U,
 };
