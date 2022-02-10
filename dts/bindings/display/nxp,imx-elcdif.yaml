@@ -1,9 +1,9 @@
-# Copyright (c) 2019, NXP
+# Copyright (c) 2022, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP i.MX eLCDIF (Enhanced LCD Interface) controller
 
-compatible: "fsl,imx6sx-lcdif"
+compatible: "nxp,imx-elcdif"
 
 include: base.yaml
 
