@@ -52,6 +52,7 @@
 
 	vsby-psl-in-list {
 		psl-in-pads = <&psl_in1>; /* Use PSL_IN1 as detection pins */
+		status = "okay";
 	};
 };
 
