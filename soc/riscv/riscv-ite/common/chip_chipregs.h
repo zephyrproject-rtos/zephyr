@@ -1640,6 +1640,7 @@ enum chip_pll_mode {
 #define IT83XX_SMB_CHSEF		ECREG(IT83XX_SMB_BASE+0x11)
 #define IT83XX_SMB_CHSAB		ECREG(IT83XX_SMB_BASE+0x20)
 #define IT83XX_SMB_CHSCD		ECREG(IT83XX_SMB_BASE+0x21)
+#define IT8XXX2_SMB_SFFCTL		ECREG(IT83XX_SMB_BASE+0x55)
 #define IT83XX_SMB_HOSTA(base)	ECREG(base+0x00)
 #define IT83XX_SMB_HOCTL(base)	ECREG(base+0x01)
 #define IT83XX_SMB_HOCMD(base)	ECREG(base+0x02)
@@ -1680,6 +1681,8 @@ enum chip_pll_mode {
 #define IT83XX_I2C_CMD_ADDH2(base)	ECREG(base+0x52)
 
 /* SMBus/I2C register fields */
+/* 0x55: Slave A FIFO Control */
+#define IT8XXX2_SMB_HSAPE		BIT(1)
 /* 0x07: Time Out Status */
 #define IT8XXX2_I2C_SCL_IN		BIT(2)
 #define IT8XXX2_I2C_SDA_IN		BIT(0)
