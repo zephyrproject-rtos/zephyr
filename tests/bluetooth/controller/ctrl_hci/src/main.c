@@ -136,7 +136,7 @@ void test_hci_feature_exchange_wrong_handle(void)
 		ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM + 1,
+	zassert_equal(ctx_counter, test_ctx_buffers_cnt() + 1,
 				  "Error in setup of test\n");
 
 	err = ll_feature_req_send(conn_handle);
@@ -203,7 +203,7 @@ void test_hci_version_ind_wrong_handle(void)
 		ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM + 1,
+	zassert_equal(ctx_counter, test_ctx_buffers_cnt() + 1,
 				  "Error in setup of test\n");
 
 	err = ll_version_ind_send(conn_handle);
