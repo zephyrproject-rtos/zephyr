@@ -194,6 +194,15 @@
 			peripheral-id = <1>;
 			user-nrst;
 		};
+
+		smc: smc@400e0000 {
+			compatible = "atmel,sam-smc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400e0000 0x200>;
+			peripheral-id = <10>;
+			status = "disabled";
+		};
 	};
 };
 
