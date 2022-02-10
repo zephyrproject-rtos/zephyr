@@ -626,5 +626,5 @@ bool lr_is_disconnected(struct ll_conn *conn);
 bool lr_is_idle(struct ll_conn *conn);
 bool rr_is_disconnected(struct ll_conn *conn);
 bool rr_is_idle(struct ll_conn *conn);
-int ctx_buffers_free(void);
+uint16_t ctx_buffers_free(void);
 #endif

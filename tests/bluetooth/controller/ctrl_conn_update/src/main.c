@@ -274,7 +274,7 @@ void test_conn_update_central_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -344,7 +344,7 @@ void test_conn_update_central_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -467,7 +467,7 @@ void test_conn_update_central_loc_remote_legacy(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -590,7 +590,7 @@ void test_conn_update_central_loc_unsupp_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -689,7 +689,7 @@ void test_conn_update_central_loc_unsupp_w_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -854,7 +854,7 @@ void test_conn_update_central_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -974,7 +974,7 @@ void test_conn_update_central_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1051,7 +1051,7 @@ void test_conn_update_central_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1314,7 +1314,7 @@ void test_conn_update_central_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1416,7 +1416,7 @@ void test_conn_update_periph_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1495,7 +1495,7 @@ void test_conn_update_periph_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1574,7 +1574,7 @@ void test_conn_update_periph_loc_unsupp_feat_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1622,7 +1622,7 @@ void test_conn_update_periph_loc_unsupp_feat_w_feat_exch(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1800,7 +1800,7 @@ void test_conn_update_periph_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1930,7 +1930,7 @@ void test_conn_update_periph_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -2010,7 +2010,7 @@ void test_conn_update_periph_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -2261,7 +2261,7 @@ void test_conn_update_periph_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
@@ -2373,7 +2373,7 @@ void test_conn_update_central_loc_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -2430,7 +2430,7 @@ void test_conn_update_central_rem_accept_no_param_req(void)
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -2521,7 +2521,7 @@ void test_conn_update_periph_rem_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -2566,7 +2566,7 @@ void test_conn_update_periph_loc_disallowed_no_param_req(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
