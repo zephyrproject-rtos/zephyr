@@ -1,0 +1,84 @@
+# Keyboard scan matrix configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config KSCAN_MATRIX
+	bool "keyboard scan matrix"
+	help
+	  A matrix circuit is used in most computer keyboards where the key
+	  switches are connected by a grid of wires, similar to a diode matrix.
+
+if KSCAN_MATRIX
+
+config KSCAN_MATRIX_MAX_COLUMNS
+	int "keyboard matrix max column"
+	default 18
+	help
+	  Maximum columns of the matrix circuit.
+
+config KSCAN_MATRIX_MAX_ROWS
+	int "keyboard matrix max row"
+	default 8
+	help
+	  Maximum rows of the matrix circuit.
+
+config KSCAN_MATRIX_DRIVER
+	bool "Keyboard matrix driver for scanning"
+	help
+	  Keyboard Scan Matrix Driver Support
+
+if KSCAN_MATRIX_DRIVER
+
+config KSCAN_MATRIX_DRV_NAME
+	string "Keyboard Scan Matrix Driver name"
+	default "kscan_matrix"
+	help
+	  Device name for Kscan Matrix Pseudo device.
+
+config KSCAN_MATRIX_TASK_INIT_PRIORITY
+	int "Keyboard matrix task init priority"
+	default 95
+	help
+	  Keyboard matrix task initialization priority.
+
+config KSCAN_MATRIX_THREAD_STACK_SIZE
+	int "Stack size for the kscan matrix thread"
+	default 1024
+	help
+	  Size of the stack used for the kscan matrix thread.
+
+config KSCAN_MATRIX_THREAD_PRIO
+	int "Keyboard matrix thread priority"
+	default 0
+	help
+	  Priority level for kscan matrix polling thread.
+
+config KSCAN_MATRIX_DEBOUNCE_DOWN
+	int "keyboard matrix debounce down"
+	default 10
+	help
+	  Determines the time in msecs for debouncing a key press.
+
+config KSCAN_MATRIX_DEBOUNCE_UP
+	int "keyboard matrix debounce up"
+	default 20
+	help
+	  Determines the time in msecs for debouncing a key release.
+
+config KSCAN_MATRIX_POLL_PERIOD
+	int "keyboard matrix poll period"
+	default 5
+	help
+	  Defines the poll period in msecs between between matrix scans
+
+config KSCAN_MATRIX_POLL_COL_OUTPUT_SETTLE_TIME
+	int "keyboard matrix poll column output settle time"
+	default 50
+	help
+	  Delay (us) between setting column output and waiting for it
+	  to settle
+
+endif # KSCAN_MATRIX_DRIVER
+
+endif # KSCAN_MATRIX
