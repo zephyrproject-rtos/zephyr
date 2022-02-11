@@ -31,6 +31,12 @@ config CAN_SHELL
 	help
 	  Enable CAN Shell for testing.
 
+config CAN_STATS
+	bool "Enable CAN controller device statistics"
+	depends on STATS
+	help
+	  Enable CAN controller device statistics.
+
 config CAN_HAS_CANFD
 	bool
 	help
