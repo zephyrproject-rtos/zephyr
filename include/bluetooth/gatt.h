@@ -1668,6 +1668,13 @@ struct bt_gatt_subscribe_params {
 #endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
 	/** Subscribe value */
 	uint16_t value;
+#if defined(CONFIG_BT_SMP)
+	/** Minimum required security for received notification. Notifications
+	 * and indications received over a connection with a lower security
+	 * level are silently discarded.
+	 */
+	bt_security_t min_security;
+#endif
 	/** Subscription flags */
 	ATOMIC_DEFINE(flags, BT_GATT_SUBSCRIBE_NUM_FLAGS);
 
