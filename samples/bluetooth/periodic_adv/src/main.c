@@ -18,7 +18,7 @@
 				    0x0010, \
 				    BT_LE_PER_ADV_OPT_NONE)
 
-static uint8_t mfg_data[] = { 0xff, 0xff, 0x00 };
+static uint8_t mfg_data[189] = { 0xff, 0xff, 0x00 };
 
 static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, ARRAY_SIZE(mfg_data)),
