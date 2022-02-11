@@ -276,8 +276,14 @@ def load_firmware(fw_file):
 # array seems to be unreliable on one of my machines (python 3.6.9 on
 # Ubuntu 18.04).  Read out bytes individually.
 def win_read(start, length):
-    return b''.join(bar4_mmap[x + WINSTREAM_OFFSET].to_bytes(1, 'little')
-                    for x in range(start, start + length))
+    try:
+        return b''.join(bar4_mmap[WINSTREAM_OFFSET + x].to_bytes(1, 'little')
+                        for x in range(start, start + length))
+    except IndexError as ie:
+        # A FW in a bad state may cause winstream garbage
+        log.error("IndexError in bar4_mmap[%d + %d]", WINSTREAM_OFFSET, start)
+        log.error("bar4_mmap.size()=%d", bar4_mmap.size())
+        raise ie
 
 def win_hdr():
     return struct.unpack("<IIII", win_read(0, 16))
