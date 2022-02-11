@@ -18,6 +18,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(can_mcux_flexcan);
 
+#include "can_stats.h"
+
 #define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
 
 /* Macro to exclude the sample point algorithm from compilation if not used
@@ -119,6 +121,8 @@ struct mcux_flexcan_data {
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
 	struct can_timing timing;
+
+	struct stats_can stats;
 };
 
 static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -545,24 +549,28 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
 
-	if ((error & (kFLEXCAN_Bit0Error & kFLEXCAN_Bit1Error)) != 0U) {
-		LOG_DBG("TX arbitration lost (error 0x%016llx)", error);
+	if ((error & kFLEXCAN_Bit0Error) != 0U) {
+		CAN_STATS_BIT0_ERROR_INC(data->stats);
+	}
+
+	if ((error & kFLEXCAN_Bit1Error) != 0U) {
+		CAN_STATS_BIT1_ERROR_INC(data->stats);
 	}
 
 	if ((error & kFLEXCAN_AckError) != 0U) {
-		LOG_DBG("TX no ACK received (error 0x%016llx)", error);
+		CAN_STATS_ACK_ERROR_INC(data->stats);
 	}
 
 	if ((error & kFLEXCAN_StuffingError) != 0U) {
-		LOG_DBG("RX stuffing error (error 0x%016llx)", error);
+		CAN_STATS_STUFF_ERROR_INC(data->stats);
 	}
 
 	if ((error & kFLEXCAN_FormError) != 0U) {
-		LOG_DBG("RX form error (error 0x%016llx)", error);
+		CAN_STATS_FORM_ERROR_INC(data->stats);
 	}
 
 	if ((error & kFLEXCAN_CrcError) != 0U) {
-		LOG_DBG("RX CRC error (error 0x%016llx)", error);
+		CAN_STATS_CRC_ERROR_INC(data->stats);
 	}
 
 	(void)mcux_flexcan_get_state(dev, &state, &err_cnt);
@@ -712,6 +720,7 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	k_mutex_init(&data->rx_mutex);
 	k_sem_init(&data->tx_allocs_sem, 0, 1);
+	can_stats_init(dev, &data->stats);
 
 	for (i = 0; i < ARRAY_SIZE(data->tx_cbs); i++) {
 		k_sem_init(&data->tx_cbs[i].done, 0, 1);
