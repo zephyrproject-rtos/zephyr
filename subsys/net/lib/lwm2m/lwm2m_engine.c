@@ -2018,9 +2018,69 @@ void lwm2m_engine_get_binding(char *binding)
 	}
 }
 
+static int lwm2m_engine_allocate_resource_instance(struct lwm2m_engine_res *res,
+						   struct lwm2m_engine_res_inst **res_inst,
+						   uint8_t resource_instance_id)
+{
+	int i;
+
+	if (!res->res_instances || res->res_inst_count == 0) {
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < res->res_inst_count; i++) {
+		if (res->res_instances[i].res_inst_id ==
+		    RES_INSTANCE_NOT_CREATED) {
+			break;
+		}
+	}
+
+	if (i >= res->res_inst_count) {
+		return -ENOMEM;
+	}
+
+	res->res_instances[i].res_inst_id = resource_instance_id;
+	*res_inst = &res->res_instances[i];
+	return 0;
+}
+
+int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_engine_res **res,
+				     struct lwm2m_engine_res_inst **res_inst)
+{
+	int ret;
+	struct lwm2m_engine_res *r = NULL;
+	struct lwm2m_engine_res_inst *r_i = NULL;
+
+	ret = path_to_objs(path, NULL, NULL, &r, &r_i);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!r) {
+		return -ENOENT;
+	}
+	/* Store resource pointer */
+	*res = r;
+
+	if (!r_i) {
+		if (path->level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
+			return -EINVAL;
+		}
+
+		ret = lwm2m_engine_allocate_resource_instance(r, &r_i, path->res_inst_id);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* Store resource instance pointer */
+	*res_inst = r_i;
+	return 0;
+}
+
 int lwm2m_engine_create_res_inst(const char *pathstr)
 {
-	int ret, i;
+	int ret;
 	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_obj_path path;
@@ -2050,25 +2110,7 @@ int lwm2m_engine_create_res_inst(const char *pathstr)
 		return -EINVAL;
 	}
 
-	if (!res->res_instances || res->res_inst_count == 0) {
-		LOG_ERR("no available res instances");
-		return -ENOMEM;
-	}
-
-	for (i = 0; i < res->res_inst_count; i++) {
-		if (res->res_instances[i].res_inst_id ==
-		    RES_INSTANCE_NOT_CREATED) {
-			break;
-		}
-	}
-
-	if (i >= res->res_inst_count) {
-		LOG_ERR("no available res instances");
-		return -ENOMEM;
-	}
-
-	res->res_instances[i].res_inst_id = path.res_inst_id;
-	return 0;
+	return lwm2m_engine_allocate_resource_instance(res, &res_inst, path.res_inst_id);
 }
 
 int lwm2m_engine_delete_res_inst(const char *pathstr)
@@ -3511,6 +3553,31 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 	}
 
 	return ret;
+}
+
+int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
+				       struct lwm2m_engine_obj_inst *obj_inst,
+				       struct lwm2m_engine_obj_field **obj_field)
+{
+	struct lwm2m_engine_obj_field *o_f;
+
+	o_f = lwm2m_get_engine_obj_field(obj_inst->obj, msg->path.res_id);
+	if (!o_f) {
+		return -ENOENT;
+	}
+
+	*obj_field = o_f;
+
+	if (!LWM2M_HAS_PERM(o_f, LWM2M_PERM_W) &&
+	    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
+		return -EPERM;
+	}
+
+	if (!obj_inst->resources || obj_inst->resource_count == 0U) {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 struct lwm2m_engine_obj *lwm2m_engine_get_obj(

@@ -69,6 +69,13 @@ int  lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id);
 int  lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 				    struct lwm2m_engine_obj_inst **obj_inst,
 				    uint8_t *created);
+/* Validate write access to object. */
+int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
+				       struct lwm2m_engine_obj_inst *obj_inst,
+				       struct lwm2m_engine_obj_field **obj_field);
+/* Create or Allocate resource instance. */
+int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_engine_res **res,
+				     struct lwm2m_engine_res_inst **res_inst);
 
 struct lwm2m_engine_obj *lwm2m_engine_get_obj(
 					const struct lwm2m_obj_path *path);
