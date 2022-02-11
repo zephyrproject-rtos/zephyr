@@ -66,7 +66,7 @@ rimage
 To create a signed binary with the rimage tool, run this from your build
 directory:
 
-   west sign -t rimage -- -k YOUR_SIGNING_KEY.pem
+   west sign -t rimage -- -k YOUR_SIGNING_KEY.pem [-c adsp_desc]
 
 For this to work, either rimage must be installed or you must pass
 the path to rimage using the -p option.'''
@@ -407,9 +407,17 @@ class RimageSigner(Signer):
         b = pathlib.Path(build_dir)
         cache = CMakeCache.from_build_dir(build_dir)
 
+        # warning: RIMAGE_TARGET is a duplicate of CONFIG_RIMAGE_SIGNING_SCHEMA
         target = cache.get('RIMAGE_TARGET')
         if not target:
             log.die('rimage target not defined')
+
+        # user specified signing schema take precedence of the default one
+        # in boards/xtensa/intel_adsp_cavs*/board.cmake
+        if '-c' in args.tool_args:
+            arg_index = args.tool_args.index('-c')
+            target = args.tool_args.pop(arg_index + 1)
+            args.tool_args.remove('-c')
 
         conf = target + '.toml'
         log.inf('Signing for SOC target ' + target + ' using ' + conf)
