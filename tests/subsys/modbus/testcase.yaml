@@ -4,8 +4,8 @@ tests:
     platform_allow: frdm_k64f
     harness_config:
       # MODBUS test fixture for FRDM-K64F:
-      # UART1(PTB16)-RX <-> UART2(PTD3)-TX
-      # UART1(PTB17)-TX <-> UART2(PTD2)-RX
+      # UART3(PTC16)-RX <-> UART2(PTD3)-TX
+      # UART3(PTC17)-TX <-> UART2(PTD2)-RX
       fixture: uart_loopback
   subsys.modbus.rtu.build_only:
     build_only: true
