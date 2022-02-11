@@ -9,6 +9,7 @@
 #include <drivers/gpio.h>
 #include <bluetooth/bluetooth.h>
 
+#define TIMEOUT_SYNC_SCAN   K_SECONDS(10)
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
 #define NAME_LEN            30
 
@@ -18,7 +19,10 @@ static uint8_t      per_sid;
 
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
+
+#if (CONFIG_BT_PER_ADV_SYNC_MAX == 1U)
 static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
+#endif /* (CONFIG_BT_PER_ADV_SYNC_MAX == 1U) */
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
@@ -105,6 +109,8 @@ static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
 };
 
+static atomic_t sync_count;
+
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)
 {
@@ -116,6 +122,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 	       "Interval 0x%04x (%u ms), PHY %s\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr,
 	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
+
+	atomic_inc(&sync_count);
 
 	k_sem_give(&sem_per_sync);
 }
@@ -130,7 +138,11 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
 
+	atomic_dec(&sync_count);
+
+#if (CONFIG_BT_PER_ADV_SYNC_MAX == 1U)
 	k_sem_give(&sem_per_sync_lost);
+#endif /* (CONFIG_BT_PER_ADV_SYNC_MAX == 1U) */
 }
 
 static void recv_cb(struct bt_le_per_adv_sync *sync,
@@ -206,6 +218,8 @@ void main(void)
 	printk("success.\n");
 
 	do {
+		uint8_t sync_count_prev;
+
 #if defined(HAS_LED)
 		struct k_work_sync work_sync;
 
@@ -217,23 +231,61 @@ void main(void)
 
 		printk("Waiting for periodic advertising...\n");
 		per_adv_found = false;
-		err = k_sem_take(&sem_per_adv, K_FOREVER);
+		err = k_sem_take(&sem_per_adv, TIMEOUT_SYNC_SCAN);
 		if (err) {
-			printk("failed (err %d)\n", err);
-			return;
+			if (err != -EAGAIN) {
+				printk("failed (err %d)\n", err);
+				return;
+			}
+
+			printk("Stop scanning...");
+			err = bt_le_scan_stop();
+			if (err) {
+				printk("failed (err %d)\n", err);
+				return;
+			}
+			printk("success.\n");
+
+			printk("Start scanning...");
+			err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
+			if (err) {
+				printk("failed (err %d)\n", err);
+				return;
+			}
+			printk("success.\n");
+
+			continue;
 		}
 		printk("Found periodic advertising.\n");
+
+		if (bt_le_per_adv_sync_lookup_addr(&per_addr, per_sid)) {
+			printk("Already synchronized.\n");
+
+			continue;
+		}
+
+		/* Remember the current sync_count, to restore when sync
+		 * fails to be established (sync_count is decremented there).
+		 */
+		sync_count_prev = atomic_get(&sync_count);
+
+		if (sync_count_prev >= CONFIG_BT_PER_ADV_SYNC_MAX) {
+			printk("Max supported synchronizations reached.\n");
+
+			continue;
+		}
 
 		printk("Creating Periodic Advertising Sync...");
 		bt_addr_le_copy(&sync_create_param.addr, &per_addr);
 		sync_create_param.options = 0;
 		sync_create_param.sid = per_sid;
 		sync_create_param.skip = 0;
-		sync_create_param.timeout = 0xa;
+		sync_create_param.timeout = 0x64;
 		err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 		if (err) {
 			printk("failed (err %d)\n", err);
-			return;
+
+			continue;
 		}
 		printk("success.\n");
 
@@ -246,8 +298,13 @@ void main(void)
 			err = bt_le_per_adv_sync_delete(sync);
 			if (err) {
 				printk("failed (err %d)\n", err);
-				return;
+				continue;
 			}
+			printk("success.\n");
+
+			/* Restore sync_count */
+			atomic_set(&sync_count, sync_count_prev);
+
 			continue;
 		}
 		printk("Periodic sync established.\n");
@@ -261,6 +318,7 @@ void main(void)
 		gpio_pin_set(led.port, led.pin, (int)led_is_on);
 #endif /* HAS_LED */
 
+#if (CONFIG_BT_PER_ADV_SYNC_MAX == 1U)
 		printk("Waiting for periodic sync lost...\n");
 		err = k_sem_take(&sem_per_sync_lost, K_FOREVER);
 		if (err) {
@@ -268,5 +326,7 @@ void main(void)
 			return;
 		}
 		printk("Periodic sync lost.\n");
+#endif /* (CONFIG_BT_PER_ADV_SYNC_MAX == 1U) */
+
 	} while (true);
 }
