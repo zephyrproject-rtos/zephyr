@@ -1648,6 +1648,15 @@ enum {
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING,
 
+	/** @brief Required security check for notification/indication
+	 *
+	 *  If set, indicates that application explicitly provided minimum
+	 *  required security level in min_security parameter. If this flag is
+	 *  not set minimum required security level is implicitly set to
+	 *  security level from the time of subscription.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_MIN_SECURITY,
+
 	BT_GATT_SUBSCRIBE_NUM_FLAGS
 };
 
@@ -1669,6 +1678,13 @@ struct bt_gatt_subscribe_params {
 #endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
 	/** Subscribe value */
 	uint16_t value;
+#if defined(CONFIG_BT_SMP)
+	/** Minimum required security for received notification. Upon reception
+	 * host verifies if current security level meets minimum requirements
+	 * before passing it to application.
+	 */
+	bt_security_t min_security;
+#endif
 	/** Subscription flags */
 	ATOMIC_DEFINE(flags, BT_GATT_SUBSCRIBE_NUM_FLAGS);
 

@@ -2950,6 +2950,15 @@ static struct gatt_sub *gatt_sub_add_by_addr(uint8_t id,
 	return sub;
 }
 
+static bool check_subscribe_security_level(struct bt_conn *conn,
+					   const struct bt_gatt_subscribe_params *params)
+{
+#if defined(CONFIG_BT_SMP)
+	return conn->sec_level >= params->min_security;
+#endif
+	return true;
+}
+
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			  const void *data, uint16_t length)
 {
@@ -2968,9 +2977,11 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 			continue;
 		}
 
-		if (params->notify(conn, params, data, length) ==
-		    BT_GATT_ITER_STOP) {
-			bt_gatt_unsubscribe(conn, params);
+		if (check_subscribe_security_level(conn, params)) {
+			if (params->notify(conn, params, data, length) ==
+			    BT_GATT_ITER_STOP) {
+				bt_gatt_unsubscribe(conn, params);
+			}
 		}
 	}
 }
@@ -3014,9 +3025,11 @@ void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
 				continue;
 			}
 
-			if (params->notify(conn, params, nfy->value, len) ==
-			    BT_GATT_ITER_STOP) {
-				bt_gatt_unsubscribe(conn, params);
+			if (check_subscribe_security_level(conn, params)) {
+				if (params->notify(conn, params, nfy->value, len) ==
+					BT_GATT_ITER_STOP) {
+					bt_gatt_unsubscribe(conn, params);
+				}
 			}
 		}
 
@@ -4652,6 +4665,15 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	if (!sub) {
 		return -ENOMEM;
 	}
+
+#if defined(CONFIG_BT_SMP)
+	/* use current security level if min security level is not explicitly
+	 * provided by application
+	 */
+	if (!atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_MIN_SECURITY)) {
+		params->min_security = conn->sec_level;
+	}
+#endif /* CONFIG_BT_SMP */
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
