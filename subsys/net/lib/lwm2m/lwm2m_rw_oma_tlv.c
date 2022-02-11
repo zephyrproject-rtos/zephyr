@@ -807,49 +807,21 @@ static int do_write_op_tlv_item(struct lwm2m_message *msg)
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_engine_obj_field *obj_field = NULL;
 	uint8_t created = 0U;
-	int ret, i;
+	int ret;
 
 	ret = lwm2m_get_or_create_engine_obj(msg, &obj_inst, &created);
 	if (ret < 0) {
 		goto error;
 	}
 
-	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj,
-					       msg->path.res_id);
-	if (!obj_field) {
-		ret = -ENOENT;
+	ret = lwm2m_engine_validate_write_access(msg, obj_inst, &obj_field);
+	if (ret < 0) {
 		goto error;
 	}
 
-	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W) &&
-	    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
-		ret = -EPERM;
-		goto error;
-	}
+	ret = lwm2m_engine_get_create_res_inst(&msg->path, &res, &res_inst);
 
-	if (!obj_inst->resources || obj_inst->resource_count == 0U) {
-		ret = -EINVAL;
-		goto error;
-	}
-
-	for (i = 0; i < obj_inst->resource_count; i++) {
-		if (obj_inst->resources[i].res_id == msg->path.res_id) {
-			res = &obj_inst->resources[i];
-			break;
-		}
-	}
-
-	if (res) {
-		for (i = 0; i < res->res_inst_count; i++) {
-			if (res->res_instances[i].res_inst_id ==
-			    msg->path.res_inst_id) {
-				res_inst = &res->res_instances[i];
-				break;
-			}
-		}
-	}
-
-	if (!res || !res_inst) {
+	if (ret < 0) {
 		/* if OPTIONAL and BOOTSTRAP-WRITE or CREATE use ENOTSUP */
 		if ((msg->ctx->bootstrap_mode ||
 		     msg->operation == LWM2M_OP_CREATE) &&
