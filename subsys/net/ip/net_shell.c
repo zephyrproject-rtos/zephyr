@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include "ipv6.h"
 
 #if defined(CONFIG_NET_ARP)
-#include "ethernet/arp.h"
+#include "../l2/ethernet/arp.h"
 #endif
 
 #if defined(CONFIG_NET_L2_ETHERNET)
@@ -64,23 +64,23 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_NET_GPTP)
 #include <net/gptp.h>
-#include "ethernet/gptp/gptp_messages.h"
-#include "ethernet/gptp/gptp_md.h"
-#include "ethernet/gptp/gptp_state.h"
-#include "ethernet/gptp/gptp_data_set.h"
-#include "ethernet/gptp/gptp_private.h"
+#include "../l2/ethernet/gptp/gptp_messages.h"
+#include "../l2/ethernet/gptp/gptp_md.h"
+#include "../l2/ethernet/gptp/gptp_state.h"
+#include "../l2/ethernet/gptp/gptp_data_set.h"
+#include "../l2/ethernet/gptp/gptp_private.h"
 #endif
 
 #if defined(CONFIG_NET_L2_PPP)
 #include <net/ppp.h>
-#include "ppp/ppp_internal.h"
+#include "../l2/ppp/ppp_internal.h"
 #endif
 
 #include "net_shell.h"
 #include "net_stats.h"
 
 #include <sys/fdtable.h>
-#include "websocket/websocket_internal.h"
+#include "../lib/websocket/websocket_internal.h"
 
 #define PR(fmt, ...)						\
 	shell_fprintf(shell, SHELL_NORMAL, fmt, ##__VA_ARGS__)
