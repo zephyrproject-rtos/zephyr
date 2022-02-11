@@ -43,12 +43,12 @@ __subsystem struct crypto_driver_api {
 	int (*query_hw_caps)(const struct device *dev);
 
 	/* Setup a crypto session */
-	int (*begin_session)(const struct device *dev, struct cipher_ctx *ctx,
+	int (*cipher_begin_session)(const struct device *dev, struct cipher_ctx *ctx,
 			     enum cipher_algo algo, enum cipher_mode mode,
 			     enum cipher_op op_type);
 
 	/* Tear down an established session */
-	int (*free_session)(const struct device *dev, struct cipher_ctx *ctx);
+	int (*cipher_free_session)(const struct device *dev, struct cipher_ctx *ctx);
 
 	/* Register async crypto op completion callback with the driver */
 	int (*crypto_async_callback_set)(const struct device *dev,
@@ -141,7 +141,7 @@ static inline int cipher_begin_session(const struct device *dev,
 	__ASSERT(flags != (CAP_SYNC_OPS |  CAP_ASYNC_OPS),
 			"conflicting options for sync/async");
 
-	return api->begin_session(dev, ctx, algo, mode, optype);
+	return api->cipher_begin_session(dev, ctx, algo, mode, optype);
 }
 
 /**
@@ -162,7 +162,7 @@ static inline int cipher_free_session(const struct device *dev,
 
 	api = (struct crypto_driver_api *) dev->api;
 
-	return api->free_session(dev, ctx);
+	return api->cipher_free_session(dev, ctx);
 }
 
 /**
