@@ -252,13 +252,7 @@ def load_firmware(fw_file):
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
     sd.CTL |= 2 # START flag
 
-    log.info(f"Waiting for firmware handoff, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
-    for _ in range(200):
-        alive = dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
-        if alive: break
-        time.sleep(0.01)
-    if not alive:
-        log.warning(f"Load failed?  FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
+    wait_fw_entered()
 
     # Turn DMA off and reset the stream.  Clearing START first is a
     # noop per the spec, but absolutely required for stability.
@@ -271,6 +265,18 @@ def load_firmware(fw_file):
     time.sleep(0.1)
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
+
+
+def wait_fw_entered():
+    log.info("Waiting for firmware handoff, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+    for _ in range(200):
+        alive = dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
+        if alive:
+            break
+        time.sleep(0.01)
+    if not alive:
+        log.warning("Load failed?  FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+
 
 # This SHOULD be just "mem[start:start+length]", but slicing an mmap
 # array seems to be unreliable on one of my machines (python 3.6.9 on
@@ -320,7 +326,9 @@ async def main():
 
     log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
 
-    if not args.log_only:
+    if args.log_only:
+        wait_fw_entered()
+    else:
         if not args.fw_file:
             log.error("Firmware file argument missing")
             sys.exit(1)
