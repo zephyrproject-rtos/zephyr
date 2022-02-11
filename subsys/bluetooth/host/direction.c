@@ -282,7 +282,7 @@ prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_s
 	uint8_t switch_pattern_len;
 
 	if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
-		switch_pattern_len = cp->switch_pattern_len;
+		switch_pattern_len = params->num_ant_ids;
 	} else {
 		switch_pattern_len = ARRAY_SIZE(df_dummy_switch_pattern);
 	}
@@ -524,7 +524,7 @@ static int prepare_conn_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt
 	uint8_t switch_pattern_len;
 
 	if (params->cte_types & BT_DF_CTE_TYPE_AOA) {
-		switch_pattern_len = cp->switch_pattern_len;
+		switch_pattern_len = params->num_ant_ids;
 	} else {
 		switch_pattern_len = ARRAY_SIZE(df_dummy_switch_pattern);
 	}
