@@ -23,13 +23,21 @@ properties:
 
     sda-pin:
       type: int
-      description: SDA pin
-      required: true
+      required: false
+      description: |
+        SDA pin information is only required if
+        the target SoC does not have support in
+        hardware for clearing the I2C bus in case
+        of communication failure
 
     scl-pin:
       type: int
-      description: SCL pin
-      required: true
+      required: false
+      description: |
+        SCL pin information is only required if
+        the target SoC does not have support in
+        hardware for clearing the I2C bus in case
+        of communication failure
 
     tx-lsb:
       type: boolean
