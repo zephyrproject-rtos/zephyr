@@ -398,6 +398,207 @@ __subsystem struct can_driver_api {
 
 /** @endcond */
 
+#if defined(CONFIG_CAN_STATS) || defined(__DOXYGEN__)
+
+#include <stats/stats.h>
+
+/** @cond INTERNAL_HIDDEN */
+
+STATS_SECT_START(can)
+STATS_SECT_ENTRY32(bit0_error)
+STATS_SECT_ENTRY32(bit1_error)
+STATS_SECT_ENTRY32(stuff_error)
+STATS_SECT_ENTRY32(crc_error)
+STATS_SECT_ENTRY32(form_error)
+STATS_SECT_ENTRY32(ack_error)
+STATS_SECT_END;
+
+STATS_NAME_START(can)
+STATS_NAME(can, bit0_error)
+STATS_NAME(can, bit1_error)
+STATS_NAME(can, stuff_error)
+STATS_NAME(can, crc_error)
+STATS_NAME(can, form_error)
+STATS_NAME(can, ack_error)
+STATS_NAME_END(can);
+
+/** @endcond */
+
+/**
+ * @brief CAN specific device state which allows for CAN device class specific
+ * additions
+ */
+struct can_device_state {
+	struct device_state devstate;
+	struct stats_can stats;
+};
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Get pointer to CAN statistics structure
+ */
+#define Z_CAN_GET_STATS(dev_)				\
+	CONTAINER_OF(dev_->state, struct can_device_state, devstate)->stats
+
+/** @endcond */
+
+/**
+ * @brief Increment the bit0 error counter for a CAN device
+ *
+ * The bit0 error counter is incremented when the CAN controller is unable to
+ * transmit a dominant bit.
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_BIT0_ERROR_INC(dev_)			\
+	STATS_INC(Z_CAN_GET_STATS(dev_), bit0_error)
+
+/**
+ * @brief Increment the bit1 (recessive) error counter for a CAN device
+ *
+ * The bit1 error counter is incremented when the CAN controller is unable to
+ * transmit a recessive bit.
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_BIT1_ERROR_INC(dev_)			\
+	STATS_INC(Z_CAN_GET_STATS(dev_), bit1_error)
+
+/**
+ * @brief Increment the stuffing error counter for a CAN device
+ *
+ * The stuffing error counter is incremented when the CAN controller detects a
+ * bit stuffing error.
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_STUFF_ERROR_INC(dev_)			\
+	STATS_INC(Z_CAN_GET_STATS(dev_), stuff_error)
+
+/**
+ * @brief Increment the CRC error counter for a CAN device
+ *
+ * The CRC error counter is incremented when the CAN controller detects a frame
+ * with an invalid CRC.
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_CRC_ERROR_INC(dev_)			\
+	STATS_INC(Z_CAN_GET_STATS(dev_), crc_error)
+
+/**
+ * @brief Increment the form error counter for a CAN device
+ *
+ * The form error counter is incremented when the CAN controller detects a
+ * fixed-form bit field containing illegal bits.
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_FORM_ERROR_INC(dev_)			\
+	STATS_INC(Z_CAN_GET_STATS(dev_), form_error)
+
+/**
+ * @brief Increment the acknowledge error counter for a CAN device
+ *
+ * The acknowledge error counter is incremented when the CAN controller does not
+ * monitor a dominant bit in the ACK slot.
+ *
+ * @param dev_ Pointer to the device structure for the driver instance.
+ */
+#define CAN_STATS_ACK_ERROR_INC(dev_)			\
+	STATS_INC(Z_CAN_GET_STATS(dev_), ack_error)
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Define a statically allocated and section assigned CAN device state
+ */
+#define Z_CAN_DEVICE_STATE_DEFINE(node_id, dev_name)			\
+	static struct can_device_state Z_DEVICE_STATE_NAME(dev_name)	\
+	__attribute__((__section__(".z_devstate")));
+
+/**
+ * @brief Define a CAN device init wrapper function
+ *
+ * This does device instance specific initialization of common data (such as stats)
+ * and calls the given init_fn
+ */
+#define Z_CAN_INIT_FN(dev_name, init_fn)				\
+	static inline int UTIL_CAT(dev_name, _init)(const struct device *dev) \
+	{								\
+		struct can_device_state *state =			\
+			CONTAINER_OF(dev->state, struct can_device_state, devstate); \
+		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 6,	\
+			   STATS_NAME_INIT_PARMS(can));			\
+		stats_register(dev->name, &(state->stats.s_hdr));	\
+		return init_fn(dev);					\
+	}
+
+/** @endcond */
+
+/**
+ * @brief Like DEVICE_DT_DEFINE() with CAN device specifics.
+ *
+ * @details Defines a device which implements the CAN API. May generate a custom
+ * device_state container struct and init_fn wrapper when needed depending on
+ * @kconfig{CONFIG_CAN_STATS}.
+ *
+ * @param node_id   The devicetree node identifier.
+ * @param init_fn   Name of the init function of the driver.
+ * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param data_ptr  Pointer to the device's private data.
+ * @param cfg_ptr   The address to the structure containing the configuration
+ *                  information for this instance of the driver.
+ * @param level     The initialization level. See SYS_INIT() for
+ *                  details.
+ * @param prio      Priority within the selected initialization level. See
+ *                  SYS_INIT() for details.
+ * @param api_ptr   Provides an initial pointer to the API function struct
+ *                  used by the driver. Can be NULL.
+ */
+#define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
+			     data_ptr, cfg_ptr, level, prio,		\
+			     api_ptr, ...)				\
+	Z_CAN_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
+	Z_CAN_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
+			DEVICE_DT_NAME(node_id),			\
+			&UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _init), \
+			pm_device,					\
+			data_ptr, cfg_ptr, level, prio,			\
+			api_ptr,					\
+			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
+			__VA_ARGS__)
+
+#else /* CONFIG_CAN_STATS */
+
+#define CAN_STATS_BIT0_ERROR_INC(dev_)
+#define CAN_STATS_BIT1_ERROR_INC(dev_)
+#define CAN_STATS_STUFF_ERROR_INC(dev_)
+#define CAN_STATS_CRC_ERROR_INC(dev_)
+#define CAN_STATS_FORM_ERROR_INC(dev_)
+#define CAN_STATS_ACK_ERROR_INC(dev_)
+
+#define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
+			     data_ptr, cfg_ptr, level, prio,		\
+			     api_ptr, ...)				\
+	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
+			     data_ptr, cfg_ptr, level, prio,		\
+			     api_ptr, __VA_ARGS__)
+
+#endif /* CONFIG_CAN_STATS */
+
+/**
+ * @brief Like CAN_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
+ *
+ * @param inst Instance number. This is replaced by <tt>DT_DRV_COMPAT(inst)</tt>
+ *             in the call to CAN_DEVICE_DT_DEFINE().
+ * @param ...  Other parameters as expected by CAN_DEVICE_DT_DEFINE().
+ */
+#define CAN_DEVICE_DT_INST_DEFINE(inst, ...)			\
+	CAN_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
 /**
  * @name CAN controller configuration
  *
