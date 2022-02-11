@@ -205,11 +205,6 @@ struct can_rcar_data {
 	enum can_state state;
 };
 
-#define DEV_CAN_CFG(dev) \
-	((const struct can_rcar_cfg *)(dev)->config)
-
-#define DEV_CAN_DATA(dev) ((struct can_rcar_data *const)(dev)->data)
-
 static inline uint16_t can_rcar_read16(const struct can_rcar_cfg *config,
 				       uint32_t offs)
 {
@@ -224,7 +219,7 @@ static inline void can_rcar_write16(const struct can_rcar_cfg *config,
 
 static void can_rcar_tx_done(const struct device *dev)
 {
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	struct can_rcar_data *data = dev->data;
 	struct can_rcar_tx_cb *tx_cb;
 
 	tx_cb =	&data->tx_cb[data->tx_tail];
@@ -251,8 +246,8 @@ static void can_rcar_get_error_count(const struct can_rcar_cfg *config,
 
 static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 	const can_state_change_callback_t cb = data->state_change_cb;
 	void *state_change_cb_data = data->state_change_cb_data;
 	struct can_bus_err_cnt err_cnt;
@@ -274,7 +269,7 @@ static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 
 static void can_rcar_error(const struct device *dev)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
+	const struct can_rcar_cfg *config = dev->config;
 	uint8_t eifr, ecsr;
 
 	eifr = sys_read8(config->reg_addr + RCAR_CAN_EIFR);
@@ -394,8 +389,8 @@ static void can_rcar_rx_filter_isr(struct can_rcar_data *data,
 
 static void can_rcar_rx_isr(const struct device *dev)
 {
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 	struct zcan_frame frame;
 	uint32_t val;
 	int i;
@@ -445,8 +440,8 @@ static void can_rcar_rx_isr(const struct device *dev)
 
 static void can_rcar_isr(const struct device *dev)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 	uint8_t isr, unsent;
 
 	isr = sys_read8(config->reg_addr + RCAR_CAN_ISR);
@@ -570,8 +565,8 @@ static int can_rcar_enter_operation_mode(const struct can_rcar_cfg *config)
 
 int can_rcar_set_mode(const struct device *dev, enum can_mode mode)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 	uint8_t tcr = 0;
 	int ret = 0;
 
@@ -637,8 +632,8 @@ int can_rcar_set_timing(const struct device *dev,
 			const struct can_timing *timing,
 			const struct can_timing *timing_data)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 	int ret = 0;
 
 	ARG_UNUSED(timing_data);
@@ -665,7 +660,7 @@ static void can_rcar_set_state_change_callback(const struct device *dev,
 					       can_state_change_callback_t cb,
 					       void *user_data)
 {
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	struct can_rcar_data *data = dev->data;
 
 	data->state_change_cb = cb;
 	data->state_change_cb_data = user_data;
@@ -674,8 +669,8 @@ static void can_rcar_set_state_change_callback(const struct device *dev,
 static int can_rcar_get_state(const struct device *dev, enum can_state *state,
 			      struct can_bus_err_cnt *err_cnt)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 
 	if (state != NULL) {
 		*state = data->state;
@@ -691,8 +686,8 @@ static int can_rcar_get_state(const struct device *dev, enum can_state *state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 	int64_t start_time;
 	int ret;
 
@@ -728,8 +723,8 @@ int can_rcar_send(const struct device *dev, const struct zcan_frame *frame,
 		  k_timeout_t timeout, can_tx_callback_t callback,
 		  void *user_data)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 	struct can_rcar_tx_cb *tx_cb;
 	uint32_t identifier;
 	int i;
@@ -809,7 +804,7 @@ static inline int can_rcar_add_rx_filter_unlocked(const struct device *dev,
 						  void *cb_arg,
 						  const struct zcan_filter *filter)
 {
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	struct can_rcar_data *data = dev->data;
 	int i;
 
 	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTER; i++) {
@@ -828,7 +823,7 @@ static inline int can_rcar_add_rx_filter_unlocked(const struct device *dev,
 int can_rcar_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
 			   void *cb_arg, const struct zcan_filter *filter)
 {
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	struct can_rcar_data *data = dev->data;
 	int filter_id;
 
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
@@ -839,7 +834,7 @@ int can_rcar_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
 
 void can_rcar_remove_rx_filter(const struct device *dev, int filter_id)
 {
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	struct can_rcar_data *data = dev->data;
 
 	if (filter_id >= CONFIG_CAN_RCAR_MAX_FILTER) {
 		return;
@@ -853,8 +848,8 @@ void can_rcar_remove_rx_filter(const struct device *dev, int filter_id)
 
 static int can_rcar_init(const struct device *dev)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
-	struct can_rcar_data *data = DEV_CAN_DATA(dev);
+	const struct can_rcar_cfg *config = dev->config;
+	struct can_rcar_data *data = dev->data;
 	struct can_timing timing;
 	int ret;
 	uint16_t ctlr;
@@ -994,7 +989,7 @@ static int can_rcar_init(const struct device *dev)
 
 static int can_rcar_get_core_clock(const struct device *dev, uint32_t *rate)
 {
-	const struct can_rcar_cfg *config = DEV_CAN_CFG(dev);
+	const struct can_rcar_cfg *config = dev->config;
 
 	*rate = config->bus_clk.rate;
 	return 0;
