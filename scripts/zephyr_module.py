@@ -476,6 +476,9 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
         modules = ([p.posixpath for p in west_projs['projects']]
                    if west_projs else [])
 
+    if (zephyr_base not in modules) and (zephyr_base is not None):
+        modules.insert(0, zephyr_base)
+
     if extra_modules is None:
         extra_modules = []
 
@@ -490,10 +493,6 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
     sorted_modules = []
 
     for project in modules + extra_modules:
-        # Avoid including Zephyr base project as module.
-        if project == zephyr_base:
-            continue
-
         meta = process_module(project)
         if meta:
             depends = meta.get('build', {}).get('depends', [])

@@ -1,0 +1,4 @@
+tests:
+  cmake.zephyr_as_module:
+    platform_allow: native_posix
+    build_only: true

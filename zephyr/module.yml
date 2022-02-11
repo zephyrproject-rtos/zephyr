@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Legrand North America, LLC.
+#
+# Zephyr module interface file
+#
+# This file enforces that the name of this module is not changeable.
+# Since the mounting location is controlled by manifest files,
+# explicitly setting the name here is necessary to support constructing
+# absolute references to files in this repository via
+# `${ZEPHYR_ZEPHYR_MODULE_DIR}`.
+#
+name: zephyr
+build:
+  cmake: zephyr             # contains CMakeLists.txt for module
+  kconfig: zephyr/Kconfig
+  settings:
+    board_root: .
+    dts_root: .
+tests:
+  - tests
+samples:
+  - samples
+boards:
+  - boards
