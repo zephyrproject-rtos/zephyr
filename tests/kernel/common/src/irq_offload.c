@@ -142,13 +142,6 @@ __no_optimization void test_nop(void)
 	 */
 	ztest_test_skip();
 #endif
-#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
-	defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	/* do 4 nop instructions more to cost cycles */
-	arch_nop();
-	arch_nop();
-	arch_nop();
-	arch_nop();
 #elif defined(CONFIG_ARC)
 	/* do 7 nop instructions more to cost cycles */
 	arch_nop();
@@ -169,10 +162,10 @@ __no_optimization void test_nop(void)
 	arch_nop();
 	arch_nop();
 	arch_nop();
-
-#elif defined(CONFIG_ARMV8_A) || defined(CONFIG_BOARD_EHL_CRB)	\
-	|| (CONFIG_BOARD_UP_SQUARED) || (CONFIG_SOC_FAMILY_INTEL_ADSP)
-	/* the ARMv8-A ARM states the following:
+#elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)			\
+	|| defined(CONFIG_BOARD_EHL_CRB) || (CONFIG_BOARD_UP_SQUARED)	\
+	|| (CONFIG_SOC_FAMILY_INTEL_ADSP)
+	/* ARM states the following:
 	 * No Operation does nothing, other than advance the value of
 	 * the program counter by 4. This instruction can be used for
 	 * instruction alignment purposes.
