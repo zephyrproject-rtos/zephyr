@@ -21,8 +21,8 @@
 /*
  * Integration platform for this test is FRDM-K64F.
  * The board must be prepared accordingly:
- * UART1(PTB16)-RX <-> UART2(PTD3)-TX pins and
- * UART1(PTB17)-TX <-> UART2(PTD2)-RX pins have to be connected.
+ * UART3(PTC16)-RX <-> UART2(PTD3)-TX pins and
+ * UART3(PTC17)-TX <-> UART2(PTD2)-RX pins have to be connected.
  */
 
 uint8_t test_get_client_iface(void);
