@@ -2393,11 +2393,6 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
 		return -EALREADY;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE)) {
-		return -EAGAIN;
-	}
-
 	return bt_le_set_data_len(conn, param->tx_max_len, param->tx_max_time);
 }
 #endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
@@ -2407,11 +2402,6 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
 			  const struct bt_conn_le_phy_param *param)
 {
 	uint8_t phy_opts, all_phys;
-
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE)) {
-		return -EAGAIN;
-	}
 
 	if ((param->options & BT_CONN_LE_PHY_OPT_CODED_S2) &&
 	    (param->options & BT_CONN_LE_PHY_OPT_CODED_S8)) {
