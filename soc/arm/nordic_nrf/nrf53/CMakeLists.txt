@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_sources(
+zephyr_library_sources(
   soc.c
   )
 
