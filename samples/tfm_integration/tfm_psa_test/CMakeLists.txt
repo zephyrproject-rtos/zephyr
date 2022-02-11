@@ -12,6 +12,4 @@ project(tfm_psa_storage_test)
 
 target_sources(app PRIVATE src/main.c)
 
-target_include_directories(app PRIVATE
-  $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
-)
+zephyr_library_link_libraries(tfm_api)

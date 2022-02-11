@@ -13,7 +13,5 @@ zephyr_library_sources_ifdef(CONFIG_NRF53_SYNC_RTC
   )
 
 if (CONFIG_BUILD_WITH_TFM)
-  zephyr_library_include_directories(
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
-  )
+  zephyr_library_link_libraries(tfm_api)
 endif()

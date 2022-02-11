@@ -29,9 +29,7 @@ zephyr_library_sources(
   src/dummy_partition.c
 )
 
-target_include_directories(app PRIVATE
-  $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
-)
+zephyr_library_link_libraries(tfm_api)
 
 zephyr_library_compile_definitions(
   TFM_PARTITION_DUMMY_PARTITION

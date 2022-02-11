@@ -320,7 +320,7 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_GENERATED_INCLUDES}
     )
 
-  target_include_directories(tfm_api PRIVATE
+  target_include_directories(tfm_api PUBLIC
     ${TFM_BINARY_DIR}/install/interface/include
     )
 

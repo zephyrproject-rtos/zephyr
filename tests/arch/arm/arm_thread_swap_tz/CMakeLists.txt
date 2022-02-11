@@ -13,7 +13,5 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
 if (CONFIG_BUILD_WITH_TFM)
-  target_include_directories(app PRIVATE
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
-  )
+  zephyr_library_link_libraries(tfm_api)
 endif()
