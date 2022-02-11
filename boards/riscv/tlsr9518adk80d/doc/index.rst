@@ -57,7 +57,7 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 | RISC-V Machine | on-chip    | timer                        |
 | Timer (32 KHz) |            |                              |
 +----------------+------------+------------------------------+
-| PINMUX         | on-chip    | pinmux                       |
+| PINCTRL        | on-chip    | pinctrl                      |
 +----------------+------------+------------------------------+
 | GPIO           | on-chip    | gpio                         |
 +----------------+------------+------------------------------+
