@@ -6,14 +6,15 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(tfm_psa_crypto)
 
-# Source files in this sample
-target_sources(app PRIVATE src/main.c)
-target_sources(app PRIVATE src/psa_attestation.c)
-target_sources(app PRIVATE src/psa_crypto.c)
-target_sources(app PRIVATE src/shell.c)
-target_sources(app PRIVATE src/util_app_cfg.c)
-target_sources(app PRIVATE src/util_app_log.c)
-target_sources(app PRIVATE src/util_sformat.c)
+target_sources(app PRIVATE
+  src/main.c
+  src/psa_attestation.c
+  src/psa_crypto.c
+  src/shell.c
+  src/util_app_cfg.c
+  src/util_app_log.c
+  src/util_sformat.c
+  )
 
 target_include_directories(app PRIVATE
   $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
@@ -26,4 +27,4 @@ set_property(TARGET zephyr_property_target
              -DCRYPTO_ENGINE_BUF_SIZE=0x2400
 )
 
-zephyr_include_directories(${APPLICATION_SOURCE_DIR}/src/tls_config)
+zephyr_include_directories(src/tls_config)

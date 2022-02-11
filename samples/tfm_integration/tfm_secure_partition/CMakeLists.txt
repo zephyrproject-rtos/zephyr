@@ -8,7 +8,9 @@ cmake_minimum_required(VERSION 3.20)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
+# TFM_BINARY_DIR is used by configure_file
 get_target_property(TFM_BINARY_DIR tfm TFM_BINARY_DIR)
+
 configure_file(
   ${CMAKE_CURRENT_LIST_DIR}/dummy_partition/tfm_manifest_list.yaml.in
   ${CMAKE_CURRENT_BINARY_DIR}/dummy_partition/tfm_manifest_list.yaml
@@ -22,7 +24,7 @@ set_property(TARGET zephyr_property_target
 
 project(tfm_secure_partition)
 
-target_sources(app PRIVATE
+zephyr_library_sources(
   src/main.c
   src/dummy_partition.c
 )
@@ -31,6 +33,6 @@ target_include_directories(app PRIVATE
   $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
 )
 
-target_compile_definitions(app
-    PRIVATE TFM_PARTITION_DUMMY_PARTITION
+zephyr_library_compile_definitions(
+  TFM_PARTITION_DUMMY_PARTITION
 )
