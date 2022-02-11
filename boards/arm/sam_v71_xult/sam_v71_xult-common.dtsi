@@ -25,6 +25,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &can1;
 	};
 
 	leds {
@@ -283,6 +284,17 @@ zephyr_udc0: &usbhs {
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
 	pinctrl-0 = <&pd24b_ssc_rf &pa22a_ssc_rk &pa10c_ssc_rd
 		     &pb0d_ssc_tf &pb1d_ssc_tk &pb5d_ssc_td>;
+};
+
+&can1 {
+	status = "okay";
+	pinctrl-0 = <&pc12c_can1_rx1 &pc14c_can1_tx1>;
+	bus-speed = <125000>;
+	sjw = <1>;
+	sample-point = <875>;
+	bus-speed-data = <1000000>;
+	sjw-data = <1>;
+	sample-point-data = <875>;
 };
 
 ext1_spi: &spi0 {
