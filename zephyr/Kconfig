@@ -1,0 +1,14 @@
+# General configuration options
+
+# Copyright (c) 2022 Legrand North America, LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+
+source "boards/Kconfig"
+source "soc/Kconfig"
+source "arch/Kconfig"
+source "kernel/Kconfig"
+source "dts/Kconfig"
+source "drivers/Kconfig"
+source "lib/Kconfig"
+source "subsys/Kconfig"

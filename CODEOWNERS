@@ -777,6 +777,7 @@
 /tests/subsys/fs/                         @nashif @nvlsianpu @de-nordic
 /tests/subsys/settings/                   @nvlsianpu
 /tests/subsys/shell/                      @jakub-uC @nordic-krch
+/zephyr/                                  @tejlmand @nashif
 # Get all docs reviewed
 *.rst                                     @nashif
 /doc/reference/kernel/                    @andyross @nashif

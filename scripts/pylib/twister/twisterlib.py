@@ -2742,6 +2742,12 @@ class TestSuite(DisablePyTestCollectionMixin):
         else:
             self.board_roots = board_root_list
 
+        unique_board_roots = []
+        [unique_board_roots.append(os.path.realpath(x))
+                for x in self.board_roots
+                if os.path.realpath(x) not in unique_board_roots]
+        self.board_roots = unique_board_roots
+
         # Testsuite Options
         self.coverage_platform = []
         self.build_only = False

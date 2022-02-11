@@ -34,15 +34,6 @@ source "modules/Kconfig"
 
 endmenu
 
-source "boards/Kconfig"
-source "soc/Kconfig"
-source "arch/Kconfig"
-source "kernel/Kconfig"
-source "dts/Kconfig"
-source "drivers/Kconfig"
-source "lib/Kconfig"
-source "subsys/Kconfig"
-
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
 
 menu "Build and Link Features"
