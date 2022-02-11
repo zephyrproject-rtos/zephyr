@@ -1383,8 +1383,8 @@ static int cc2520_crypto_init(const struct device *dev)
 
 struct crypto_driver_api cc2520_crypto_api = {
 	.query_hw_caps			= cc2520_crypto_hw_caps,
-	.begin_session			= cc2520_crypto_begin_session,
-	.free_session			= cc2520_crypto_free_session,
+	.cipher_begin_session			= cc2520_crypto_begin_session,
+	.cipher_free_session			= cc2520_crypto_free_session,
 	.crypto_async_callback_set	= NULL
 };
 

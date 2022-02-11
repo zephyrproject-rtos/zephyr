@@ -890,8 +890,8 @@ const struct ataes132a_device_config ataes132a_config = {
 };
 
 static struct crypto_driver_api crypto_enc_funcs = {
-	.begin_session = ataes132a_session_setup,
-	.free_session = ataes132a_session_free,
+	.cipher_begin_session = ataes132a_session_setup,
+	.cipher_free_session = ataes132a_session_free,
 	.crypto_async_callback_set = NULL,
 	.query_hw_caps = ataes132a_query_caps,
 };
