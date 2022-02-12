@@ -181,6 +181,9 @@ static int wdt_esp32_set_config(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
+	/* Enable the watchdog */
+	v |= BIT(TIMG_WDT_EN_S)	
+	
 	wdt_esp32_unseal(dev);
 	DEV_BASE(dev)->config0 = v;
 	adjust_timeout(dev, data->timeout);
