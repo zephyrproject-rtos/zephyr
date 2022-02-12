@@ -29,7 +29,7 @@
 #include <errno.h>
 #include <sys/util.h>
 #include <sys/__assert.h>
-#include "cipher_structs.h"
+#include "cipher.h"
 
 
 /* The API a crypto driver should implement */

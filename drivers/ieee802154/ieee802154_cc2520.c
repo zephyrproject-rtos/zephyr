@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #ifdef CONFIG_IEEE802154_CC2520_CRYPTO
 
 #include <crypto/crypto.h>
-#include <crypto/cipher_structs.h>
+#include <crypto/cipher.h>
 
 #endif /* CONFIG_IEEE802154_CC2520_CRYPTO */
 
