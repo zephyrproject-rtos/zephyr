@@ -73,7 +73,7 @@ __subsystem struct crypto_driver_api {
  *
  * @return bitmask of supported options.
  */
-static inline int cipher_query_hwcaps(const struct device *dev)
+static inline int crypto_query_hwcaps(const struct device *dev)
 {
 	struct crypto_driver_api *api;
 	int tmp;

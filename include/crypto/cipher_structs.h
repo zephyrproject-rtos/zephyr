@@ -164,14 +164,14 @@ struct cipher_ctx {
 	 * (A bitmask of CAP_* below.)
 	 * To be populated by the app before calling begin_session().
 	 * An app can obtain the capability flags supported by a hw/driver
-	 * by calling cipher_query_hwcaps().
+	 * by calling crypto_query_hwcaps().
 	 */
 	uint16_t flags;
 };
 
 /* cipher_ctx.flags values. Not all drivers support all flags.
  * A user app can query the supported hw / driver
- * capabilities via provided API (cipher_query_hwcaps()), and choose a
+ * capabilities via provided API (crypto_query_hwcaps()), and choose a
  * supported config during the session setup.
  */
 #define CAP_OPAQUE_KEY_HNDL		BIT(0)
