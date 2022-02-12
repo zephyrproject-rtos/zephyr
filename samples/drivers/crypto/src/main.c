@@ -11,7 +11,7 @@
 #include <device.h>
 #include <zephyr.h>
 #include <string.h>
-#include <crypto/cipher.h>
+#include <crypto/crypto.h>
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <logging/log.h>

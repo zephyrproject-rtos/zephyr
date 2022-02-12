@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <crypto/cipher.h>
+#include <crypto/crypto.h>
 #include <logging/log.h>
 #include <hal/nrf_ecb.h>
 
