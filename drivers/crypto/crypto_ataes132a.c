@@ -10,7 +10,7 @@
 #include <device.h>
 #include <drivers/i2c.h>
 #include <sys/__assert.h>
-#include <crypto/cipher.h>
+#include <crypto/crypto.h>
 
 #include "crypto_ataes132a_priv.h"
 
