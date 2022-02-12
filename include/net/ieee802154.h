@@ -14,7 +14,7 @@
 
 #include <limits.h>
 #include <net/net_mgmt.h>
-#include <crypto/cipher_structs.h>
+#include <crypto/cipher.h>
 
 #ifdef __cplusplus
 extern "C" {
