@@ -179,7 +179,7 @@ static inline int cipher_free_session(const struct device *dev,
  * @return 0 on success, -ENOTSUP if the driver does not support async op,
  *			  negative errno code on other error.
  */
-static inline int cipher_callback_set(const struct device *dev,
+static inline int crypto_callback_set(const struct device *dev,
 				      crypto_completion_cb cb)
 {
 	struct crypto_driver_api *api;
