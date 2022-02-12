@@ -14,8 +14,8 @@
  * as a part of ongoing development.
  */
 
-#ifndef ZEPHYR_INCLUDE_CRYPTO_CIPHER_STRUCTS_H_
-#define ZEPHYR_INCLUDE_CRYPTO_CIPHER_STRUCTS_H_
+#ifndef ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
+#define ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
 
 #include <device.h>
 #include <sys/util.h>
@@ -275,4 +275,4 @@ typedef void (*crypto_completion_cb)(struct cipher_pkt *completed, int status);
 /**
  * @}
  */
-#endif /* ZEPHYR_INCLUDE_CRYPTO_CIPHER_STRUCTS_H_ */
+#endif /* ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_ */
