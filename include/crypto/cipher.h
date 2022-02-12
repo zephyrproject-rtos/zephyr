@@ -14,21 +14,6 @@
  * as a part of ongoing development.
  */
 
-/**
- * @brief Crypto APIs
- * @defgroup crypto Crypto
- * @{
- * @}
- */
-
-
-/**
- * @brief Crypto Cipher APIs
- * @defgroup crypto_cipher Cipher
- * @ingroup crypto
- * @{
- */
-
 #ifndef ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
 #define ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
 
@@ -38,7 +23,13 @@
 #include <sys/__assert.h>
 #include "cipher_structs.h"
 
-/* The API a crypto driver should implement */
+/**
+ * @brief Crypto APIs
+ * @defgroup crypto Crypto
+ * @{
+ */
+
+/** @brief Crypto driver API definition. */
 __subsystem struct crypto_driver_api {
 	int (*query_hw_caps)(const struct device *dev);
 
@@ -93,6 +84,17 @@ static inline int crypto_query_hwcaps(const struct device *dev)
 	return tmp;
 
 }
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Crypto Cipher APIs
+ * @defgroup crypto_cipher Cipher
+ * @ingroup crypto
+ * @{
+ */
 
 /**
  * @brief Setup a crypto session
@@ -170,7 +172,7 @@ static inline int cipher_free_session(const struct device *dev,
  *
  * The application can register an async crypto op completion callback handler
  * to be invoked by the driver, on completion of a prior request submitted via
- * crypto_do_op(). Based on crypto device hardware semantics, this is likely to
+ * cipher_do_op(). Based on crypto device hardware semantics, this is likely to
  * be invoked from an ISR context.
  *
  * @param  dev   Pointer to the device structure for the driver instance.
