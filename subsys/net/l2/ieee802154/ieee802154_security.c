@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_ieee802154_security,
 		    CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include <crypto/cipher.h>
+#include <crypto/crypto.h>
 #include <net/net_core.h>
 
 #include "ieee802154_frame.h"

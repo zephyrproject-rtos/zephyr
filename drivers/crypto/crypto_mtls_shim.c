@@ -12,7 +12,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <errno.h>
-#include <crypto/cipher.h>
+#include <crypto/crypto.h>
 
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
