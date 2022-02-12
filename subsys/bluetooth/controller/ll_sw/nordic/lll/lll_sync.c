@@ -168,14 +168,21 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	struct lll_df_sync_cfg *cfg;
 
-	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
+	cfg = lll_df_sync_cfg_curr_get(&lll->df_cfg);
 
 	if (cfg->is_enabled) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  lll_aux->chan, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
+
+#else /* !CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	if (false) {
+#endif /* !CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_DF_SUPPORT)) {
+		radio_df_cte_inline_set_enabled(false);
 	}
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 	radio_switch_complete_and_disable();
 }
 
@@ -273,16 +280,16 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	struct lll_df_sync_cfg *cfg;
 
 	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-	if (false) {
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	} else if (cfg->is_enabled) {
-
+	if (cfg->is_enabled) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  chan_idx, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#else /* !CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	if (false) {
+#endif /* !CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_DF_SUPPORT)) {
 		radio_df_cte_inline_set_enabled(false);
 	}
@@ -341,8 +348,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  chan_idx, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
+
+#else /* !CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	if (false) {
+#endif /* !CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_DF_SUPPORT)) {
+		radio_df_cte_inline_set_enabled(false);
 	}
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 	radio_switch_complete_and_disable();
 
@@ -566,13 +579,21 @@ static void isr_aux_setup(void *param)
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	struct lll_df_sync_cfg *cfg;
 
-	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
+	cfg = lll_df_sync_cfg_curr_get(&lll->df_cfg);
 
 	if (cfg->is_enabled && is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD);
+		cfg->cte_count = 0;
+
+#else /* !CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	if (false) {
+#endif /* !CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_DF_SUPPORT)) {
+		radio_df_cte_inline_set_enabled(false);
 	}
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 	radio_switch_complete_and_disable();
 
 	/* Setup radio rx on micro second offset. Note that radio_end_us stores
