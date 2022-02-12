@@ -22,13 +22,6 @@
  */
 
 
-/**
- * @brief Crypto Cipher APIs
- * @defgroup crypto_cipher Cipher
- * @ingroup crypto
- * @{
- */
-
 #ifndef ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
 #define ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
 
@@ -37,6 +30,7 @@
 #include <sys/util.h>
 #include <sys/__assert.h>
 #include "cipher_structs.h"
+
 
 /* The API a crypto driver should implement */
 __subsystem struct crypto_driver_api {
@@ -93,6 +87,43 @@ static inline int crypto_query_hwcaps(const struct device *dev)
 	return tmp;
 
 }
+
+/**
+ * @brief Registers an async crypto op completion callback with the driver
+ *
+ * The application can register an async crypto op completion callback handler
+ * to be invoked by the driver, on completion of a prior request submitted via
+ * crypto_do_op(). Based on crypto device hardware semantics, this is likely to
+ * be invoked from an ISR context.
+ *
+ * @param  dev   Pointer to the device structure for the driver instance.
+ * @param  cb    Pointer to application callback to be called by the driver.
+ *
+ * @return 0 on success, -ENOTSUP if the driver does not support async op,
+ *			  negative errno code on other error.
+ */
+static inline int crypto_callback_set(const struct device *dev,
+				      crypto_completion_cb cb)
+{
+	struct crypto_driver_api *api;
+
+	api = (struct crypto_driver_api *) dev->api;
+
+	if (api->crypto_async_callback_set) {
+		return api->crypto_async_callback_set(dev, cb);
+	}
+
+	return -ENOTSUP;
+
+}
+
+/**
+ * @brief Crypto Cipher APIs
+ * @defgroup crypto_cipher Cipher
+ * @ingroup crypto
+ * @{
+ */
+
 
 /**
  * @brief Setup a crypto session
@@ -163,35 +194,6 @@ static inline int cipher_free_session(const struct device *dev,
 	api = (struct crypto_driver_api *) dev->api;
 
 	return api->cipher_free_session(dev, ctx);
-}
-
-/**
- * @brief Registers an async crypto op completion callback with the driver
- *
- * The application can register an async crypto op completion callback handler
- * to be invoked by the driver, on completion of a prior request submitted via
- * crypto_do_op(). Based on crypto device hardware semantics, this is likely to
- * be invoked from an ISR context.
- *
- * @param  dev   Pointer to the device structure for the driver instance.
- * @param  cb    Pointer to application callback to be called by the driver.
- *
- * @return 0 on success, -ENOTSUP if the driver does not support async op,
- *			  negative errno code on other error.
- */
-static inline int crypto_callback_set(const struct device *dev,
-				      crypto_completion_cb cb)
-{
-	struct crypto_driver_api *api;
-
-	api = (struct crypto_driver_api *) dev->api;
-
-	if (api->crypto_async_callback_set) {
-		return api->crypto_async_callback_set(dev, cb);
-	}
-
-	return -ENOTSUP;
-
 }
 
 /**
