@@ -14,8 +14,8 @@
  * as a part of ongoing development.
  */
 
-#ifndef ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
-#define ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
+#ifndef ZEPHYR_INCLUDE_CRYPTO_H_
+#define ZEPHYR_INCLUDE_CRYPTO_H_
 
 #include <device.h>
 #include <errno.h>
@@ -311,4 +311,4 @@ static inline int cipher_gcm_op(struct cipher_ctx *ctx,
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_ */
+#endif /* ZEPHYR_INCLUDE_CRYPTO_H_ */
