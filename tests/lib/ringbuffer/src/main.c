@@ -791,19 +791,14 @@ void test_reset(void)
 	zassert_true(granted == RINGBUFFER_SIZE, NULL);
 }
 
-#ifdef CONFIG_64BIT
-static uint64_t ringbuf_stored[RINGBUFFER_SIZE];
-#else
 static uint32_t ringbuf_stored[RINGBUFFER_SIZE];
-#endif
 
 /**
  * @brief verify the array stored by ringbuf
  *
  * @details
  * Test Objective:
- * - Define a buffer stored by ringbuffer and keep that the buffer's size
- * is always equal to the pointer's size. Verify that the address
+ * - Define a buffer stored by ringbuffer. Verify that the address
  * of the buffer is contiguous.And also verify that data can pass
  * between buffer and ringbuffer.
  *
@@ -825,8 +820,6 @@ static uint32_t ringbuf_stored[RINGBUFFER_SIZE];
  * -# Check if the address stored by ringbuf is contiguous.
  * -# Get data from the ringbuffer and put them into output buffer
  * and check if getting data are successful.
- * -# Then check if the size of array stored by ringbuf is
- * equal to the size of pointer
  *
  * Expected Test Result:
  * - All assertions can pass.
@@ -848,7 +841,6 @@ void test_ringbuffer_array_perf(void)
 	uint32_t output[3] = {0};
 	uint16_t type = 0;
 	uint8_t value = 0, size = 3;
-	void *tp;
 
 	ring_buf_init(&buf_ii, RINGBUFFER_SIZE, ringbuf_stored);
 
@@ -868,9 +860,6 @@ void test_ringbuffer_array_perf(void)
 	for (int i = 0; i < 3; i++) {
 		zassert_equal(input[i], output[i], NULL);
 	}
-
-	/*The size of array stored by ringbuf is equal to the size of pointer*/
-	zassert_equal(sizeof(tp), sizeof(ringbuf_stored[0]), NULL);
 }
 
 void test_ringbuffer_partial_putting(void)
