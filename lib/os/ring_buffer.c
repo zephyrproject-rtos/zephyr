@@ -78,97 +78,85 @@ uint32_t ring_buf_space_get(struct ring_buf *buf)
 }
 
 int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
-		      uint32_t *data, uint8_t size32)
+		      uint32_t *data32, uint8_t size32)
 {
-	uint32_t i, space, index, rc;
-	uint32_t threshold = ring_buf_get_rewind_threshold();
-	uint32_t rew;
+	uint8_t *dst, *data = (uint8_t *)data32;
+	struct ring_element *header;
+	uint32_t space, size, partial_size, total_size;
+	int ret;
 
 	space = ring_buf_space_get(buf);
-	if (space >= (size32 + 1)) {
-		struct ring_element *header =
-		    (struct ring_element *)&buf->buf.buf32[mod(buf, buf->tail)];
-
-		header->type = type;
-		header->length = size32;
-		header->value = value;
-
-		if (likely(buf->mask)) {
-			for (i = 0U; i < size32; ++i) {
-				index = (i + buf->tail + 1) & buf->mask;
-				buf->buf.buf32[index] = data[i];
-			}
-		} else {
-			for (i = 0U; i < size32; ++i) {
-				index = (i + buf->tail + 1) % buf->size;
-				buf->buf.buf32[index] = data[i];
-			}
-		}
-
-		/* Check if indexes shall be rewound. */
-		if (buf->tail > threshold) {
-			rew = get_rewind_value(buf->size, threshold);
-		} else {
-			rew = 0;
-		}
-
-		buf->tail = buf->tail + (size32 + 1 - rew);
-		rc = 0U;
-	} else {
-		buf->misc.item_mode.dropped_put_count++;
-		rc = -EMSGSIZE;
+	size = size32 * 4;
+	if (size + sizeof(struct ring_element) > space) {
+		return -EMSGSIZE;
 	}
 
-	return rc;
+	ret = ring_buf_put_claim(buf, &dst, sizeof(struct ring_element));
+	__ASSERT_NO_MSG(ret == sizeof(struct ring_element));
+
+	header = (struct ring_element *)dst;
+	header->type = type;
+	header->length = size32;
+	header->value = value;
+	total_size = sizeof(struct ring_element);
+
+	do {
+		partial_size = ring_buf_put_claim(buf, &dst, size);
+		memcpy(dst, data, partial_size);
+		size -= partial_size;
+		total_size += partial_size;
+		data += partial_size;
+	} while (size && partial_size);
+	__ASSERT_NO_MSG(size == 0);
+
+	ret = ring_buf_put_finish(buf, total_size);
+	__ASSERT_NO_MSG(ret == 0);
+
+	return 0;
 }
 
 int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
-		      uint32_t *data, uint8_t *size32)
+		      uint32_t *data32, uint8_t *size32)
 {
+	uint8_t *src, *data = (uint8_t *)data32;
 	struct ring_element *header;
-	uint32_t i, index;
-	uint32_t tail = buf->tail;
-	uint32_t rew;
+	uint32_t size, partial_size, total_size;
+	int ret;
 
-	/* Tail is always ahead, if it is not, it's only because it got rewound. */
-	if (tail < buf->head) {
-		/* Locally undo rewind to get tail aligned with head. */
-		rew = get_rewind_value(buf->size,
-				       ring_buf_get_rewind_threshold());
-		tail += rew;
-	} else if (ring_buf_is_empty(buf)) {
+	if (ring_buf_is_empty(buf)) {
 		return -EAGAIN;
-	} else {
-		rew = 0;
 	}
 
-	header = (struct ring_element *) &buf->buf.buf32[mod(buf, buf->head)];
+	ret = ring_buf_get_claim(buf, &src, sizeof(struct ring_element));
+	__ASSERT_NO_MSG(ret == sizeof(struct ring_element));
+
+	header = (struct ring_element *)src;
 
 	if (data && (header->length > *size32)) {
 		*size32 = header->length;
+		ring_buf_get_finish(buf, 0);
 		return -EMSGSIZE;
 	}
 
 	*size32 = header->length;
 	*type = header->type;
 	*value = header->value;
+	total_size = sizeof(struct ring_element);
 
-	if (data) {
-		if (likely(buf->mask)) {
-			for (i = 0U; i < header->length; ++i) {
-				index = (i + buf->head + 1) & buf->mask;
-				data[i] = buf->buf.buf32[index];
-			}
-		} else {
-			for (i = 0U; i < header->length; ++i) {
-				index = (i + buf->head + 1) % buf->size;
-				data[i] = buf->buf.buf32[index];
-			}
+	size = *size32 * 4;
+
+	do {
+		partial_size = ring_buf_get_claim(buf, &src, size);
+		if (data) {
+			memcpy(data, src, partial_size);
+			data += partial_size;
 		}
-	}
+		total_size += partial_size;
+		size -= partial_size;
+	} while (size && partial_size);
 
-	/* Include potential rewinding */
-	buf->head = buf->head + header->length + 1 - rew;
+	ret = ring_buf_get_finish(buf, total_size);
+	__ASSERT_NO_MSG(ret == 0);
 
 	return 0;
 }
@@ -195,7 +183,7 @@ uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 
 	/* Limit allocated size to trail size. */
 	allocated = MIN(trail_size, size);
-	*data = &buf->buf.buf8[tmp_trail_mod];
+	*data = &buf->buffer[tmp_trail_mod];
 
 	buf->misc.byte_mode.tmp_tail =
 		buf->misc.byte_mode.tmp_tail + allocated;
@@ -268,7 +256,7 @@ uint32_t ring_buf_get_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 	/* Limit allocated size to trail size. */
 	granted_size = MIN(trail_size, granted_size);
 
-	*data = &buf->buf.buf8[tmp_head_mod];
+	*data = &buf->buffer[tmp_head_mod];
 	buf->misc.byte_mode.tmp_head += granted_size;
 
 	return granted_size;

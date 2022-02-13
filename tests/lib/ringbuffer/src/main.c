@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(test);
  * to trigger rewind algorithm.
  */
 #undef RING_BUFFER_MAX_SIZE
-#define RING_BUFFER_MAX_SIZE 0x00000200
+#define RING_BUFFER_MAX_SIZE 0x00000800
 
 /* Use global variable that can be modified by the test. */
 uint32_t test_rewind_threshold = RING_BUFFER_MAX_SIZE;
@@ -146,7 +146,7 @@ void test_ring_buffer_main(void)
 		zassert_true((ret == 0), "Couldn't retrieve a stored value");
 		LOG_DBG("got %u chunks of type %u and val %u, %u remaining",
 			    getsize, gettype, getval,
-			    ring_buf_space_get(&ring_buf1));
+			    ring_buf_item_space_get(&ring_buf1));
 
 		zassert_true((memcmp((char *)getdata, rb_data,
 			getsize * sizeof(uint32_t)) == 0), "data corrupted");
@@ -232,22 +232,22 @@ static void tringbuf_get_discard(const void *p)
 /*test cases*/
 void test_ringbuffer_init(void)
 {
-	/**TESTPOINT: init via ring_buf_init*/
-	ring_buf_init(&ringbuf, RINGBUFFER_SIZE, buffer);
+	/**TESTPOINT: init via ring_buf_item_init*/
+	ring_buf_item_init(&ringbuf, RINGBUFFER_SIZE, buffer);
 	zassert_true(ring_buf_is_empty(&ringbuf), NULL);
-	zassert_equal(ring_buf_space_get(&ringbuf), RINGBUFFER_SIZE, NULL);
+	zassert_equal(ring_buf_item_space_get(&ringbuf), RINGBUFFER_SIZE, NULL);
 }
 
 void test_ringbuffer_declare_pow2(void)
 {
 	zassert_true(ring_buf_is_empty(&ringbuf_pow2), NULL);
-	zassert_equal(ring_buf_space_get(&ringbuf_pow2), (1 << POW), NULL);
+	zassert_equal(ring_buf_item_space_get(&ringbuf_pow2), (1 << POW), NULL);
 }
 
 void test_ringbuffer_declare_size(void)
 {
 	zassert_true(ring_buf_is_empty(&ringbuf_size), NULL);
-	zassert_equal(ring_buf_space_get(&ringbuf_size), RINGBUFFER_SIZE,
+	zassert_equal(ring_buf_item_space_get(&ringbuf_size), RINGBUFFER_SIZE,
 		      NULL);
 }
 
@@ -563,7 +563,7 @@ void test_ringbuffer_alloc_put(void)
 	uint8_t *data;
 	int err;
 
-	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buf.buf8);
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buffer);
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data, 1);
 	sum_allocated = allocated;
@@ -628,7 +628,7 @@ void test_byte_put_free(void)
 	uint32_t granted;
 	uint8_t *data;
 
-	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buf.buf8);
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buffer);
 
 	/* Ring buffer is empty */
 	granted = ring_buf_get_claim(&ringbuf_raw, &data, RINGBUFFER_SIZE);
@@ -672,7 +672,7 @@ void test_capacity(void)
 {
 	uint32_t capacity;
 
-	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buf.buf8);
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buffer);
 
 	capacity = ring_buf_capacity_get(&ringbuf_raw);
 	zassert_equal(RINGBUFFER_SIZE, capacity,
@@ -684,7 +684,7 @@ void test_size(void)
 	uint32_t size;
 	static uint8_t buf[RINGBUFFER_SIZE];
 
-	ring_buf_init(&ringbuf_raw, sizeof(buf), ringbuf_raw.buf.buf8);
+	ring_buf_init(&ringbuf_raw, sizeof(buf), ringbuf_raw.buffer);
 
 	/* Test 0 */
 	size = ring_buf_size_get(&ringbuf_raw);
@@ -717,7 +717,7 @@ void test_peek(void)
 	uint8_t byte = 0x42;
 	static uint8_t buf[RINGBUFFER_SIZE];
 
-	ring_buf_init(&ringbuf_raw, sizeof(buf), ringbuf_raw.buf.buf8);
+	ring_buf_init(&ringbuf_raw, sizeof(buf), ringbuf_raw.buffer);
 
 	/* Test 0 */
 	size = ring_buf_peek(&ringbuf_raw, (uint8_t *)0x1, 42424242);
@@ -747,10 +747,10 @@ void test_peek(void)
 		      size);
 
 	for (size = 0; size < sizeof(buf); ++size) {
-		ringbuf_raw.buf.buf8[size] = 'A' + (size % ('Z' - 'A' + 1));
+		ringbuf_raw.buffer[size] = 'A' + (size % ('Z' - 'A' + 1));
 	}
 
-	zassert_equal(0, memcmp(buf, ringbuf_raw.buf.buf8, sizeof(buf)),
+	zassert_equal(0, memcmp(buf, ringbuf_raw.buffer, sizeof(buf)),
 		      "content validation failed");
 }
 
@@ -764,7 +764,7 @@ void test_reset(void)
 	uint32_t granted;
 	uint32_t space;
 
-	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buf.buf8);
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buffer);
 
 	len = 3;
 	out_len = ring_buf_put(&ringbuf_raw, indata, len);
@@ -839,14 +839,16 @@ void test_ringbuffer_array_perf(void)
 	uint16_t type = 0;
 	uint8_t value = 0, size = 3;
 
-	ring_buf_init(&buf_ii, RINGBUFFER_SIZE, ringbuf_stored);
+	ring_buf_item_init(&buf_ii, RINGBUFFER_SIZE, ringbuf_stored);
 
 	/*Data from the beginning of the array can be copied into the ringbuf*/
 	zassert_true(ring_buf_item_put(&buf_ii, 1, 2, input, 3) == 0, NULL);
 
 	/*Verify the address stored by ringbuf is contiguous*/
 	for (int i = 0; i < 3; i++) {
-		zassert_equal(input[i], buf_ii.buf.buf32[i+1], NULL);
+		uint32_t *buf32 = (uint32_t *)buf_ii.buffer;
+
+		zassert_equal(input[i], buf32[i+1], NULL);
 	}
 
 	/*Data from the end of the ringbuf can be copied into the array*/
