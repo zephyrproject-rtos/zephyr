@@ -56,13 +56,10 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 			    struct pdu_adv *pdu_scan);
 
-
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 /* helper function to handle adv done events */
 void ull_adv_done(struct node_rx_event_done *done);
 #endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
 
 /* Enumeration provides flags for management of memory for extra_data
  * related with advertising PDUs.
@@ -141,6 +138,7 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags);
 /* helper to add cte_info field to extended advertising header */
 uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 /* helper to get information whether ADI field is avaialbe in extended advertising PDU */
 static inline bool ull_adv_sync_pdu_had_adi(const struct pdu_adv *pdu)
 {
@@ -172,8 +170,8 @@ static inline void
 ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 {
 	com_hdr->ext_hdr_len = len - PDU_AC_EXT_HEADER_SIZE_MIN;
-
 }
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 /* helper function to get next unique DID value */
 uint16_t ull_adv_aux_did_next_unique_get(uint8_t sid);
@@ -271,5 +269,3 @@ void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso);
 /* helper function to release unused DF configuration memory */
 void ull_df_adv_cfg_release(struct lll_df_adv_cfg *df_adv_cfg);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
