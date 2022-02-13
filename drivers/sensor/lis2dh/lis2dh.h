@@ -173,20 +173,13 @@ union lis2dh_sample {
 	} __packed;
 };
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-struct lis2dh_spi_cfg {
-	struct spi_config spi_conf;
-	const char *cs_gpios_label;
-};
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
 union lis2dh_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	uint16_t i2c_slv_addr;
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	const struct lis2dh_spi_cfg *spi_cfg;
+	struct spi_dt_spec spi;
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
@@ -256,10 +249,6 @@ struct lis2dh_data {
 #endif
 
 #endif /* CONFIG_LIS2DH_TRIGGER */
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_cs_control cs_ctrl;
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
