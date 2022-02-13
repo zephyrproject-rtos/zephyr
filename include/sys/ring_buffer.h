@@ -24,10 +24,11 @@ extern "C" {
 /* The limit is used by algorithm for distinguishing between empty and full
  * state.
  */
-#define RING_BUFFER_MAX_SIZE 0x80000000
+#define RING_BUFFER_MAX_SIZE 0x80000000U
 
 #define RING_BUFFER_SIZE_ASSERT_MSG \
 	"Size too big, if it is the ring buffer test check custom max size"
+
 /**
  * @brief A structure to represent a ring buffer
  */
@@ -46,12 +47,8 @@ struct ring_buf {
 			uint32_t tmp_head;
 		} byte_mode;
 	} misc;
-	uint32_t size;   /**< Size of buf in 32-bit chunks */
-
-	union ring_buf_buffer {
-		uint32_t *buf32; /**< Memory region for stored entries */
-		uint8_t *buf8;
-	} buf;
+	uint32_t size;
+	uint8_t *buffer;
 	uint32_t mask;   /**< Modulo mask if size is a power of 2 */
 
 	struct k_spinlock lock;
@@ -64,12 +61,15 @@ struct ring_buf {
  */
 
 /**
- * @brief Define and initialize a high performance ring buffer.
+ * @brief Define and initialize an "item based" high performance ring buffer.
  *
  * This macro establishes a ring buffer whose size must be a power of 2;
  * that is, the ring buffer contains 2^pow 32-bit words, where @a pow is
  * the specified ring buffer size exponent. A high performance ring buffer
  * doesn't require the use of modulo arithmetic operations to maintain itself.
+ *
+ * Each data item is an array of 32-bit words (from zero to 1020 bytes in
+ * length), coupled with a 16-bit type identifier and an 8-bit integer value.
  *
  * The ring buffer can be accessed outside the module where it is defined
  * using:
@@ -80,13 +80,13 @@ struct ring_buf {
  * @param pow Ring buffer size exponent.
  */
 #define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
-	BUILD_ASSERT((1 << pow) < RING_BUFFER_MAX_SIZE,\
+	BUILD_ASSERT(BIT(pow) < RING_BUFFER_MAX_SIZE / 4,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
 	static uint32_t __noinit _ring_buffer_data_##name[BIT(pow)]; \
 	struct ring_buf name = { \
-		.size = (BIT(pow)),	  \
-		.mask = (BIT(pow)) - 1, \
-		.buf = { .buf32 = _ring_buffer_data_##name } \
+		.size = 4 * BIT(pow),	\
+		.mask = (4 * BIT(pow)) - 1, \
+		.buffer = (uint8_t *) _ring_buffer_data_##name \
 	}
 
 /**
@@ -104,18 +104,19 @@ struct ring_buf {
  * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
-	BUILD_ASSERT(size32 < RING_BUFFER_MAX_SIZE,\
+	BUILD_ASSERT((size32) < RING_BUFFER_MAX_SIZE / 4,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
 	static uint32_t __noinit _ring_buffer_data_##name[size32]; \
 	struct ring_buf name = { \
-		.size = size32, \
-		.buf = { .buf32 = _ring_buffer_data_##name} \
+		.size = 4 * (size32), \
+		.buffer = (uint8_t *) _ring_buffer_data_##name \
 	}
 
 /**
  * @brief Define and initialize a ring buffer for byte data.
  *
  * This macro establishes a ring buffer of an arbitrary size.
+ * The basic storage unit is a byte.
  *
  * The ring buffer can be accessed outside the module where it is defined
  * using:
@@ -131,40 +132,63 @@ struct ring_buf {
 	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
 	struct ring_buf name = { \
 		.size = size8, \
-		.buf = { .buf8 = _ring_buffer_data_##name} \
+		.buffer = _ring_buffer_data_##name \
 	}
 
-
 /**
- * @brief Initialize a ring buffer.
+ * @brief Initialize a ring buffer for byte data.
  *
  * This routine initializes a ring buffer, prior to its first use. It is only
- * used for ring buffers not defined using RING_BUF_DECLARE,
- * RING_BUF_ITEM_DECLARE_POW2 or RING_BUF_ITEM_DECLARE_SIZE.
+ * used for ring buffers not defined using RING_BUF_DECLARE.
  *
  * Setting @a size to a power of 2 establishes a high performance ring buffer
  * that doesn't require the use of modulo arithmetic operations to maintain
  * itself.
  *
  * @param buf Address of ring buffer.
- * @param size Ring buffer size (in 32-bit words or bytes).
- * @param data Ring buffer data area (uint32_t data[size] or uint8_t data[size]
- *	       for bytes mode).
+ * @param size Ring buffer size (in bytes).
+ * @param data Ring buffer data area (uint8_t data[size]).
  */
 static inline void ring_buf_init(struct ring_buf *buf,
 				 uint32_t size,
-				 void *data)
+				 uint8_t *data)
 {
 	__ASSERT(size < RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);
 
 	memset(buf, 0, sizeof(struct ring_buf));
 	buf->size = size;
-	buf->buf.buf32 = (uint32_t *)data;
+	buf->buffer = data;
 	if (is_power_of_two(size)) {
 		buf->mask = size - 1U;
 	} else {
 		buf->mask = 0U;
 	}
+}
+
+/**
+ * @brief Initialize an "item based" ring buffer.
+ *
+ * This routine initializes a ring buffer, prior to its first use. It is only
+ * used for ring buffers not defined using RING_BUF_ITEM_DECLARE_POW2 or
+ * RING_BUF_ITEM_DECLARE_SIZE.
+ *
+ * Setting @a size to a power of 2 establishes a high performance ring buffer
+ * that doesn't require the use of modulo arithmetic operations to maintain
+ * itself.
+ *
+ * Each data item is an array of 32-bit words (from zero to 1020 bytes in
+ * length), coupled with a 16-bit type identifier and an 8-bit integer value.
+ *
+ * @param buf Address of ring buffer.
+ * @param size Ring buffer size (in 32-bit words)
+ * @param data Ring buffer data area (uint32_t data[size]).
+ */
+static inline void ring_buf_item_init(struct ring_buf *buf,
+				      uint32_t size,
+				      uint32_t *data)
+{
+	__ASSERT(size < RING_BUFFER_MAX_SIZE / 4, RING_BUFFER_SIZE_ASSERT_MSG);
+	ring_buf_init(buf, 4 * size, (uint8_t *)data);
 }
 
 /**
@@ -193,16 +217,28 @@ static inline void ring_buf_reset(struct ring_buf *buf)
  *
  * @param buf Address of ring buffer.
  *
- * @return Ring buffer free space (in 32-bit words or bytes).
+ * @return Ring buffer free space (in bytes).
  */
 uint32_t ring_buf_space_get(struct ring_buf *buf);
+
+/**
+ * @brief Determine free space in an "item based" ring buffer.
+ *
+ * @param buf Address of ring buffer.
+ *
+ * @return Ring buffer free space (in 32-bit words).
+ */
+static inline uint32_t ring_buf_item_space_get(struct ring_buf *buf)
+{
+	return ring_buf_space_get(buf) / 4;
+}
 
 /**
  * @brief Return ring buffer capacity.
  *
  * @param buf Address of ring buffer.
  *
- * @return Ring buffer capacity (in 32-bit words or bytes).
+ * @return Ring buffer capacity (in bytes).
  */
 static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
 {
@@ -214,7 +250,7 @@ static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
  *
  * @param buf Address of ring buffer.
  *
- * @return Ring buffer space used (in 32-bit words or bytes).
+ * @return Ring buffer space used (in bytes).
  */
 uint32_t ring_buf_size_get(struct ring_buf *buf);
 

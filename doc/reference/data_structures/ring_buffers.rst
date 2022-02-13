@@ -103,8 +103,8 @@ transfer; it will return an error in the case where the provided data
 does not fit in its entirety.
 
 The user can manage the capacity of a ring buffer without modifying it
-using the :c:func:`ring_buf_space_get` call (which returns a value of
-either bytes or items depending on how the ring buffer has been used),
+using either :c:func:`ring_buf_space_get` or :c:func:`ring_buf_item_space_get`
+which returns the number of free bytes or free items respectively,
 or by testing the :c:func:`ring_buf_is_empty` predicate.
 
 Finally, a :c:func:`ring_buf_reset` call exists to immediately empty a
@@ -213,7 +213,8 @@ Defining a Ring Buffer
 ======================
 
 A ring buffer is defined using a variable of type :c:type:`ring_buf`.
-It must then be initialized by calling :c:func:`ring_buf_init`.
+It must then be initialized by calling :c:func:`ring_buf_init` or
+c:func:`ring_buf_item_init`.
 
 The following code defines and initializes an empty **data item mode** ring
 buffer (which is part of a larger data structure). The ring buffer's data buffer
@@ -231,7 +232,7 @@ is capable of holding 64 words of data and metadata information.
     struct my_struct ms;
 
     void init_my_struct {
-        ring_buf_init(&ms.rb, MY_RING_BUF_WORDS, ms.buffer);
+        ring_buf_item_init(&ms.rb, MY_RING_BUF_WORDS, ms.buffer);
         ...
     }
 

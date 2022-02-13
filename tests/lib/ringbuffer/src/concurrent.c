@@ -265,7 +265,7 @@ static void test_ztress(ztress_handler high_handler,
 
 	test_rewind_threshold = 256;
 	if (item_mode) {
-		ring_buf_init(&ringbuf, ARRAY_SIZE(buf32), buf32);
+		ring_buf_item_init(&ringbuf, ARRAY_SIZE(buf32), buf32);
 	} else {
 		ring_buf_init(&ringbuf, ARRAY_SIZE(buf), buf);
 	}
