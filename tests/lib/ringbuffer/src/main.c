@@ -674,9 +674,6 @@ void test_capacity(void)
 
 	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buf.buf8);
 
-	/* capacity equals buffer size dedicated for ring buffer - 1 because
-	 * 1 byte is used for distinguishing between full and empty state.
-	 */
 	capacity = ring_buf_capacity_get(&ringbuf_raw);
 	zassert_equal(RINGBUFFER_SIZE, capacity,
 			"Unexpected capacity");
