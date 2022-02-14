@@ -6,18 +6,6 @@
 menu "XTENSA Options"
 	depends on XTENSA
 
-menu "Specific core configuration"
-
-config IRQ_OFFLOAD_INTNUM
-	int "IRQ offload SW interrupt index"
-	help
-	  The index of the software interrupt to be used for IRQ offload.
-
-	  Please note that in order for IRQ offload to work correctly the selected
-	  interrupt shall have its priority shall not exceed XCHAL_EXCM_LEVEL.
-
-endmenu
-
 config ARCH
 	default "xtensa"
 
