@@ -45,6 +45,9 @@ extern "C" {
 /** I2C Ultra Fast Speed: 5 MHz */
 #define I2C_SPEED_ULTRA			(0x5U)
 
+/** Device Tree specified speed */
+#define I2C_SPEED_DT			(0x7U)
+
 #define I2C_SPEED_SHIFT			(1U)
 #define I2C_SPEED_SET(speed)		(((speed) << I2C_SPEED_SHIFT) \
 						& I2C_SPEED_MASK)
