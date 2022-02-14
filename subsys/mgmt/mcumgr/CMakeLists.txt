@@ -15,5 +15,10 @@ zephyr_library_link_libraries(MCUMGR)
 
 if (CONFIG_MCUMGR_SMP_SHELL OR CONFIG_MCUMGR_SMP_UART)
     zephyr_library_sources(serial_util.c)
+endif()
 
-endif ()
+if (CONFIG_FS_MGMT_CHECKSUM_HASH AND CONFIG_FS_MGMT_HASH_SHA256)
+    if (NOT CONFIG_TINYCRYPT)
+        zephyr_link_libraries(mbedTLS)
+    endif()
+endif()
