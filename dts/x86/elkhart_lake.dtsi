@@ -688,5 +688,13 @@
 
 			status = "okay";
 		};
+
+		counter: counter@70 {
+			label = "CMOS";
+			compatible = "motorola,mc146818";
+			reg = <0x70 0x0D 0x71 0x0D>;
+
+			status = "okay";
+		};
 	};
 };
