@@ -211,7 +211,6 @@
 			label = "SPI_2";
 			clocks = <&rtc ESP32_FSPI_MODULE>;
 			status = "disabled";
-			use-iomux;
 		};
 
 		spi3: spi@3f425000 {
