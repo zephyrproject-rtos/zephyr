@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 Intel Corp.
+ */
+
+/ {
+	zephyr,user {
+		/* EXT-1, pin 3 ADC(+) */
+		io-channels = <&adc0 8>;
+	};
+	adc-comparator {
+		compatible = "nuvoton,adc-cmp";
+		io-channels = <&adc0 8>;
+		comparison = "ADC_CMP_NPCX_GREATER";
+		threshold-mv = <1000>;
+	};
+};

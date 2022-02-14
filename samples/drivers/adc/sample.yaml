@@ -12,3 +12,7 @@ tests:
       type: one_line
       regex:
         - "ADC reading: (.*)"
+  sample.drivers.adc.npcx:
+    tags: ADC
+    platform_allow: npcx9m6f_evb
+    extra_args: CONF_FILE=prj_npcx9m6f_evb.conf
