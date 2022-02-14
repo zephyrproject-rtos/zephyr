@@ -30,6 +30,7 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_CHOSEN(zephyr_ocm)),
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 	/* ARM Arch timer, GIC are covered by the MPCore mapping */
+
 /* UARTs */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 	MMU_REGION_FLAT_ENTRY("uart0",
@@ -57,6 +58,15 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_NODELABEL(gem1)),
 			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
 #endif
+
+/* GPIO controller */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(psgpio), okay)
+	MMU_REGION_FLAT_ENTRY("psgpio",
+			      DT_REG_ADDR(DT_NODELABEL(psgpio)),
+			      DT_REG_SIZE(DT_NODELABEL(psgpio)),
+			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
+#endif
+
 };
 
 const struct arm_mmu_config mmu_config = {
