@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <sys/util.h>
 #include <sys/__assert.h>
+#include <crypto/hash.h>
 #include "cipher.h"
 
 /**
@@ -75,6 +76,15 @@ __subsystem struct crypto_driver_api {
 	/* Register async crypto op completion callback with the driver */
 	int (*cipher_async_callback_set)(const struct device *dev,
 					 cipher_completion_cb cb);
+
+	/* Setup a hash session */
+	int (*hash_begin_session)(const struct device *dev, struct hash_ctx *ctx,
+				  enum hash_algo algo);
+	/* Tear down an established hash session */
+	int (*hash_free_session)(const struct device *dev, struct hash_ctx *ctx);
+	/* Register async hash op completion callback with the driver */
+	int (*hash_async_callback_set)(const struct device *dev,
+					 hash_completion_cb cb);
 };
 
 /* Following are the public API a user app may call.
@@ -337,6 +347,127 @@ static inline int cipher_gcm_op(struct cipher_ctx *ctx,
 	pkt->pkt->ctx = ctx;
 	return ctx->ops.gcm_crypt_hndlr(ctx, pkt, nonce);
 }
+
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Crypto Hash APIs
+ * @defgroup crypto_hash Hash
+ * @ingroup crypto
+ * @{
+ */
+
+
+/**
+ * @brief Setup a hash session
+ *
+ * Initializes one time parameters, like the algorithm which may
+ * remain constant for all operations in the session. The state may be
+ * cached in hardware and/or driver data state variables.
+ *
+ * @param  dev      Pointer to the device structure for the driver instance.
+ * @param  ctx      Pointer to the context structure. Various one time
+ *			parameters like session capabilities and algorithm are
+ *			supplied via this structure. The structure documentation
+ *			specifies which fields are to be populated by the app
+ *			before making this call.
+ * @param  algo     The hash algorithm to be used in this session. e.g sha256
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int hash_begin_session(const struct device *dev,
+				     struct hash_ctx *ctx,
+				     enum hash_algo algo)
+{
+	uint32_t flags;
+	struct crypto_driver_api *api;
+
+	api = (struct crypto_driver_api *) dev->api;
+	ctx->device = dev;
+	ctx->device = dev;
+
+	flags = (ctx->flags & (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS));
+	__ASSERT(flags != 0U, "IO buffer type missing");
+	__ASSERT(flags != (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS),
+			"conflicting options for IO buffer type");
+
+	flags = (ctx->flags & (CAP_SYNC_OPS | CAP_ASYNC_OPS));
+	__ASSERT(flags != 0U, "sync/async type missing");
+	__ASSERT(flags != (CAP_SYNC_OPS |  CAP_ASYNC_OPS),
+			"conflicting options for sync/async");
+
+
+	return api->hash_begin_session(dev, ctx, algo);
+}
+
+/**
+ * @brief Cleanup a hash session
+ *
+ * Clears the hardware and/or driver state of a session. @see hash_begin_session
+ *
+ * @param  dev      Pointer to the device structure for the driver instance.
+ * @param  ctx      Pointer to the crypto hash  context structure of the session
+ *		    to be freed.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int hash_free_session(const struct device *dev,
+				    struct hash_ctx *ctx)
+{
+	struct crypto_driver_api *api;
+
+	api = (struct crypto_driver_api *) dev->api;
+
+	return api->hash_free_session(dev, ctx);
+}
+
+/**
+ * @brief Registers an async hash completion callback with the driver
+ *
+ * The application can register an async hash completion callback handler
+ * to be invoked by the driver, on completion of a prior request submitted via
+ * hash_compute(). Based on crypto device hardware semantics, this is likely to
+ * be invoked from an ISR context.
+ *
+ * @param  dev   Pointer to the device structure for the driver instance.
+ * @param  cb    Pointer to application callback to be called by the driver.
+ *
+ * @return 0 on success, -ENOTSUP if the driver does not support async op,
+ *			  negative errno code on other error.
+ */
+static inline int hash_callback_set(const struct device *dev,
+				    hash_completion_cb cb)
+{
+	struct crypto_driver_api *api;
+
+	api = (struct crypto_driver_api *) dev->api;
+
+	if (api->hash_async_callback_set) {
+		return api->hash_async_callback_set(dev, cb);
+	}
+
+	return -ENOTSUP;
+
+}
+
+/**
+ * @brief Perform  a cryptographic hash function.
+ *
+ * @param  ctx       Pointer to the hash context of this op.
+ * @param  pkt       Structure holding the input/output.
+
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt)
+{
+	pkt->ctx = ctx;
+
+	return ctx->hash_hndlr(ctx, pkt);
+}
+
 
 /**
  * @}
