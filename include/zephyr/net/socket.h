@@ -164,13 +164,21 @@ struct zsock_pollfd {
  *  This option accepts any value.
  */
 #define TLS_SESSION_CACHE_PURGE 13
-
 /** Socket option to set DTLS Connection ID to be used for the DTLS session.
  *  The option accepts an byte array, holding the CID to use.
  *  Setting an empty CID (option length set to 0) indicates that the socket is
  *  willing to handle CID from a peer, but does not specify its own CID.
  */
 #define TLS_DTLS_CONNECTION_ID 14
+/** Socket option to get DTLS Connection ID from peer.  It is read-only.
+ *  The option returns a struct tls_dtls_peer_cid.
+ *  The option length passed in must be equal to the size of that struct.
+ *  If the getsockopt() call returns 0, and the enabled field returned
+ *  is also 0, the peer does not support DTLS Connection ID.  If enabled
+ *  is instead 1, and the peer_cid_len is 0, the peer does support DTLS
+ *  Connection ID but does not require the device to send one back.
+ */
+#define TLS_DTLS_PEER_CONNECTION_ID 15
 
 /** @} */
 
@@ -203,6 +211,12 @@ struct zsock_addrinfo {
 
 	struct sockaddr _ai_addr;
 	char _ai_canonname[DNS_MAX_NAME_SIZE + 1];
+};
+
+struct tls_dtls_peer_cid {
+	int enabled;
+	unsigned char peer_cid[32];
+	size_t peer_cid_len;
 };
 
 /**

@@ -1591,6 +1591,28 @@ static int tls_opt_dtls_connection_id_set(struct tls_context *context,
 	return -ENOPROTOOPT;
 #endif /* CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID */
 }
+
+static int tls_opt_dtls_peer_connection_id_get(struct tls_context *context,
+					  void *optval, socklen_t *optlen)
+{
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+	struct tls_dtls_peer_cid *val = (struct tls_dtls_peer_cid *)optval;
+
+	BUILD_ASSERT(sizeof(val->peer_cid) == MBEDTLS_SSL_CID_OUT_LEN_MAX,
+		     "peer cid size mismatch");
+
+	if (sizeof(struct tls_dtls_peer_cid) != *optlen) {
+		return -EINVAL;
+	}
+
+	return mbedtls_ssl_get_peer_cid(&context->ssl, &val->enabled,
+					val->peer_cid,
+					&val->peer_cid_len);
+#else
+	return -ENOPROTOOPT;
+#endif
+}
+
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static int tls_opt_alpn_list_get(struct tls_context *context,
@@ -2837,6 +2859,10 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 	case TLS_DTLS_HANDSHAKE_TIMEOUT_MAX:
 		err = tls_opt_dtls_handshake_timeout_get(ctx, optval,
 							 optlen, true);
+		break;
+
+	case TLS_DTLS_PEER_CONNECTION_ID:
+		err = tls_opt_dtls_peer_connection_id_get(ctx, optval, optlen);
 		break;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
