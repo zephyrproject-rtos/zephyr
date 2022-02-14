@@ -1,0 +1,19 @@
+description: |
+  Leuze ODSL8 Optical Laser Distance Sensor
+
+compatible: "leuze,odsl8"
+
+include: base.yaml
+
+properties:
+
+  io-channels:
+    required: true
+    description: ADC channel for analog distance signal
+
+  meas-resistor:
+    type: int
+    required: true
+    description: |
+      Sensing resistor value for current driven sensor output
+
