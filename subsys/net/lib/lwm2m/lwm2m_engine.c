@@ -3182,15 +3182,16 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	uint8_t num_read = 0U;
 
 	if (msg->path.level >= 2U) {
-		obj_inst = get_engine_obj_inst(msg->path.obj_id,
-					       msg->path.obj_inst_id);
+		obj_inst = get_engine_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
+		if (!obj_inst) {
+			/* When Object instace is indicated error have to be reported */
+			return -ENOENT;
+		}
 	} else if (msg->path.level == 1U) {
-		/* find first obj_inst with path's obj_id */
+		/* find first obj_inst with path's obj_id.
+		 * Path level 1 can accept NULL. It define empty payload to response.
+		 */
 		obj_inst = next_engine_obj_inst(msg->path.obj_id, -1);
-	}
-
-	if (!obj_inst) {
-		return -ENOENT;
 	}
 
 	/* set output content-format */
