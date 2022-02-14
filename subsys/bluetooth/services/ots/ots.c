@@ -174,9 +174,10 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_GATT_OTS_WRITE_REQUEST_REJECTED);
 	}
 
-	/* Construct a temporary name for duplication detection */
+	/* Construct a valid UTF-8 temporary name for duplication detection */
 	memcpy(name, buf, len);
 	name[len] = '\0';
+	utf8_trunc(name);
 
 	rc = bt_gatt_ots_obj_manager_first_obj_get(ots->obj_manager, &obj);
 	while (rc == 0) {

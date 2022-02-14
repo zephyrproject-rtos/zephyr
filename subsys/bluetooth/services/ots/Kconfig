@@ -9,6 +9,7 @@ config BT_OTS
 	select BT_GATT_DYNAMIC_DB
 	select BT_SMP
 	select EXPERIMENTAL
+	select UTF8
 	help
 	  Enable Object Transfer Service.
 
