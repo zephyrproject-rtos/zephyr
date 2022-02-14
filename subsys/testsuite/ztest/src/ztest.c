@@ -97,25 +97,27 @@ static int cleanup_test(struct unit_test *test)
 #endif
 #define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-static struct k_thread cpuhold_threads[NUM_CPUHOLD];
-K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
+static struct k_thread cpuhold_threads[CONFIG_MP_NUM_CPUS];
+K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, CONFIG_MP_NUM_CPUS, CPUHOLD_STACK_SZ);
 static struct k_sem cpuhold_sem;
+atomic_t cpuhold_holding;
 volatile int cpuhold_active;
+#endif
 
 /* "Holds" a CPU for use with the "1cpu" test cases.  Note that we
  * can't use tools like the cpumask feature because we have tests that
  * may need to control that configuration themselves.  We do this at
  * the lowest level, but locking interrupts directly and spinning.
  */
-static void cpu_hold(void *arg1, void *arg2, void *arg3)
+static inline void cpu_hold(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
 	unsigned int key = arch_irq_lock();
 	uint32_t dt, start_ms = k_uptime_get_32();
-
-	k_sem_give(&cpuhold_sem);
 
 #if defined(CONFIG_ARM64) && defined(CONFIG_FPU_SHARING)
 	/*
@@ -128,6 +130,26 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	z_arm64_flush_local_fpu();
 #endif
 
+	/* One of these threads will end up on cpu 0.  Its job is to
+	 * wait for the others to start holding their CPUs, then wake
+	 * up the main test thread and exit, so that the test starts
+	 * running on cpu 0. Note that the spinning here is a
+	 * CPU-local loop, not k_busy_wait(), which tends to involve
+	 * the timer driver and cause performance weirdness in SMP
+	 * situations.
+	 */
+	if (arch_curr_cpu()->id == 0) {
+		while (atomic_get(&cpuhold_holding) < (CONFIG_MP_NUM_CPUS - 1)) {
+			for (volatile int i = 0; i < 10000; i++) {
+			}
+		}
+
+		k_sem_give(&cpuhold_sem);
+		arch_irq_unlock(key);
+		return;
+	}
+
+	atomic_inc(&cpuhold_holding);
 	while (cpuhold_active) {
 		k_busy_wait(1000);
 	}
@@ -141,24 +163,23 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	zassert_true(dt < 3000,
 		     "1cpu test took too long (%d ms)", dt);
 	arch_irq_unlock(key);
+#endif
 }
 
 void z_impl_z_test_1cpu_start(void)
 {
-	cpuhold_active = 1;
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
 #ifdef CONFIG_THREAD_NAME
 	char tname[CONFIG_THREAD_MAX_NAME_LEN];
 #endif
+	cpuhold_active = 1;
 	k_sem_init(&cpuhold_sem, 0, 999);
+	atomic_set(&cpuhold_holding, 0);
 
-	/* Spawn N-1 threads to "hold" the other CPUs, waiting for
-	 * each to signal us that it's locked and spinning.
-	 *
-	 * Note that NUM_CPUHOLD can be a value that causes coverity
-	 * to flag the following loop as DEADCODE so suppress the warning.
+	/* Spawn threads to "hold" the other CPUs, waiting for each to
+	 * signal us that it's locked and spinning.
 	 */
-	/* coverity[DEADCODE] */
-	for (int i = 0; i < NUM_CPUHOLD; i++)  {
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++)  {
 		k_thread_create(&cpuhold_threads[i],
 				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
 				(k_thread_entry_t) cpu_hold, NULL, NULL, NULL,
@@ -167,21 +188,23 @@ void z_impl_z_test_1cpu_start(void)
 		snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", i);
 		k_thread_name_set(&cpuhold_threads[i], tname);
 #endif
-		k_sem_take(&cpuhold_sem, K_FOREVER);
 	}
+
+	/* Sleep, waiting to be woken up on cpu0 */
+	k_sem_take(&cpuhold_sem, K_FOREVER);
+	__ASSERT(arch_curr_cpu()->id == 0, "1cpu case running on wrong cpu");
+#endif
 }
 
 void z_impl_z_test_1cpu_stop(void)
 {
+#if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
 	cpuhold_active = 0;
 
-	/* Note that NUM_CPUHOLD can be a value that causes coverity
-	 * to flag the following loop as DEADCODE so suppress the warning.
-	 */
-	/* coverity[DEADCODE] */
-	for (int i = 0; i < NUM_CPUHOLD; i++)  {
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++)  {
 		k_thread_abort(&cpuhold_threads[i]);
 	}
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
