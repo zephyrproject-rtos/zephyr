@@ -19,6 +19,7 @@
 
 	fpga0: fpga {
 		status = "okay";
+		compatible = "xlnx,fpga";
 	};
 };
 
