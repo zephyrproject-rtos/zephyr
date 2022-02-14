@@ -13,7 +13,6 @@
 #include <kernel.h>
 #include <sys/util.h>
 #include <errno.h>
-#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,31 +26,20 @@ extern "C" {
 #define RING_BUFFER_MAX_SIZE 0x80000000U
 
 #define RING_BUFFER_SIZE_ASSERT_MSG \
-	"Size too big, if it is the ring buffer test check custom max size"
+	"Size too big"
 
 /**
  * @brief A structure to represent a ring buffer
  */
 struct ring_buf {
-	uint32_t head;	 /**< Index in buf for the head element */
-	uint32_t tail;	 /**< Index in buf for the tail element */
-	union ring_buf_misc {
-		struct ring_buf_misc_item_mode {
-			uint32_t dropped_put_count; /**< Running tally of the
-						     * number of failed put
-						     * attempts.
-						     */
-		} item_mode;
-		struct ring_buf_misc_byte_mode {
-			uint32_t tmp_tail;
-			uint32_t tmp_head;
-		} byte_mode;
-	} misc;
-	uint32_t size;
 	uint8_t *buffer;
-	uint32_t mask;   /**< Modulo mask if size is a power of 2 */
-
-	struct k_spinlock lock;
+	int32_t put_head;
+	int32_t put_tail;
+	int32_t put_base;
+	int32_t get_head;
+	int32_t get_tail;
+	int32_t get_base;
+	uint32_t size;
 };
 
 /**
@@ -61,39 +49,24 @@ struct ring_buf {
  */
 
 /**
- * @brief Define and initialize an "item based" high performance ring buffer.
+ * @brief Define and initialize an "item based" ring buffer with a power of 2.
  *
- * This macro establishes a ring buffer whose size must be a power of 2;
- * that is, the ring buffer contains 2^pow 32-bit words, where @a pow is
- * the specified ring buffer size exponent. A high performance ring buffer
- * doesn't require the use of modulo arithmetic operations to maintain itself.
- *
- * Each data item is an array of 32-bit words (from zero to 1020 bytes in
- * length), coupled with a 16-bit type identifier and an 8-bit integer value.
- *
- * The ring buffer can be accessed outside the module where it is defined
- * using:
- *
- * @code extern struct ring_buf <name>; @endcode
+ * This macro establishes an "item based" ring buffer by specifying its
+ * size using a power of 2. This exists mainly for backward compatibility
+ * reasons. @ref RING_BUF_ITEM_DECLARE should be used instead.
  *
  * @param name Name of the ring buffer.
  * @param pow Ring buffer size exponent.
  */
 #define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
-	BUILD_ASSERT(BIT(pow) < RING_BUFFER_MAX_SIZE / 4,\
-		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint32_t __noinit _ring_buffer_data_##name[BIT(pow)]; \
-	struct ring_buf name = { \
-		.size = 4 * BIT(pow),	\
-		.mask = (4 * BIT(pow)) - 1, \
-		.buffer = (uint8_t *) _ring_buffer_data_##name \
-	}
+	RING_BUF_ITEM_DECLARE(name, BIT(pow))
 
 /**
- * @brief Define and initialize a standard ring buffer.
+ * @brief Define and initialize an "item based" ring buffer.
  *
- * This macro establishes a ring buffer of an arbitrary size. A standard
- * ring buffer uses modulo arithmetic operations to maintain itself.
+ * This macro establishes an "item based" ring buffer. Each data item is
+ * an array of 32-bit words (from zero to 1020 bytes in length), coupled
+ * with a 16-bit type identifier and an 8-bit integer value.
  *
  * The ring buffer can be accessed outside the module where it is defined
  * using:
@@ -103,7 +76,7 @@ struct ring_buf {
  * @param name Name of the ring buffer.
  * @param size32 Size of ring buffer (in 32-bit words).
  */
-#define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
+#define RING_BUF_ITEM_DECLARE(name, size32) \
 	BUILD_ASSERT((size32) < RING_BUFFER_MAX_SIZE / 4,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
 	static uint32_t __noinit _ring_buffer_data_##name[size32]; \
@@ -111,6 +84,18 @@ struct ring_buf {
 		.size = 4 * (size32), \
 		.buffer = (uint8_t *) _ring_buffer_data_##name \
 	}
+
+/**
+ * @brief Define and initialize an "item based" ring buffer.
+ *
+ * This exists for backward compatibility reasons. @ref RING_BUF_ITEM_DECLARE
+ * should be used instead.
+ *
+ * @param name Name of the ring buffer.
+ * @param size32 Size of ring buffer (in 32-bit words).
+ */
+#define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
+	RING_BUF_ITEM_DECLARE(name, size32)
 
 /**
  * @brief Define and initialize a ring buffer for byte data.
@@ -141,10 +126,6 @@ struct ring_buf {
  * This routine initializes a ring buffer, prior to its first use. It is only
  * used for ring buffers not defined using RING_BUF_DECLARE.
  *
- * Setting @a size to a power of 2 establishes a high performance ring buffer
- * that doesn't require the use of modulo arithmetic operations to maintain
- * itself.
- *
  * @param buf Address of ring buffer.
  * @param size Ring buffer size (in bytes).
  * @param data Ring buffer data area (uint8_t data[size]).
@@ -155,26 +136,20 @@ static inline void ring_buf_init(struct ring_buf *buf,
 {
 	__ASSERT(size < RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);
 
-	memset(buf, 0, sizeof(struct ring_buf));
 	buf->size = size;
 	buf->buffer = data;
-	if (is_power_of_two(size)) {
-		buf->mask = size - 1U;
-	} else {
-		buf->mask = 0U;
-	}
+	buf->put_head = buf->put_tail = buf->put_base = 0;
+	buf->get_head = buf->get_tail = buf->get_base = 0;
 }
 
 /**
  * @brief Initialize an "item based" ring buffer.
  *
  * This routine initializes a ring buffer, prior to its first use. It is only
- * used for ring buffers not defined using RING_BUF_ITEM_DECLARE_POW2 or
- * RING_BUF_ITEM_DECLARE_SIZE.
+ * used for ring buffers not defined using RING_BUF_ITEM_DECLARE.
  *
- * Setting @a size to a power of 2 establishes a high performance ring buffer
- * that doesn't require the use of modulo arithmetic operations to maintain
- * itself.
+ * Each data item is an array of 32-bit words (from zero to 1020 bytes in
+ * length), coupled with a 16-bit type identifier and an 8-bit integer value.
  *
  * Each data item is an array of 32-bit words (from zero to 1020 bytes in
  * length), coupled with a 16-bit type identifier and an 8-bit integer value.
@@ -196,9 +171,12 @@ static inline void ring_buf_item_init(struct ring_buf *buf,
  *
  * @param buf Address of ring buffer.
  *
- * @return 1 if the ring buffer is empty, or 0 if not.
+ * @return true if the ring buffer is empty, or false if not.
  */
-int ring_buf_is_empty(struct ring_buf *buf);
+static inline bool ring_buf_is_empty(struct ring_buf *buf)
+{
+	return buf->get_head == buf->put_tail;
+}
 
 /**
  * @brief Reset ring buffer state.
@@ -207,9 +185,8 @@ int ring_buf_is_empty(struct ring_buf *buf);
  */
 static inline void ring_buf_reset(struct ring_buf *buf)
 {
-	buf->head = 0;
-	buf->tail = 0;
-	memset(&buf->misc, 0, sizeof(buf->misc));
+	buf->put_head = buf->put_tail = buf->put_base = 0;
+	buf->get_head = buf->get_tail = buf->get_base = 0;
 }
 
 /**
@@ -219,7 +196,10 @@ static inline void ring_buf_reset(struct ring_buf *buf)
  *
  * @return Ring buffer free space (in bytes).
  */
-uint32_t ring_buf_space_get(struct ring_buf *buf);
+static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
+{
+	return buf->size - (buf->put_head - buf->get_tail);
+}
 
 /**
  * @brief Determine free space in an "item based" ring buffer.
@@ -252,7 +232,10 @@ static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
  *
  * @return Ring buffer space used (in bytes).
  */
-uint32_t ring_buf_size_get(struct ring_buf *buf);
+static inline uint32_t ring_buf_size_get(struct ring_buf *buf)
+{
+	return buf->put_tail - buf->get_head;
+}
 
 /**
  * @brief Write a data item to a ring buffer.

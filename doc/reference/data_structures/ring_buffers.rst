@@ -60,13 +60,8 @@ buffer will be used later.  Macros for combining these steps in a
 single static declaration exist for convenience.
 :c:macro:`RING_BUF_DECLARE` will declare and statically initialize a ring
 buffer with a specified byte count, where
-:c:macro:`RING_BUF_ITEM_DECLARE_SIZE` will declare and statically
+:c:macro:`RING_BUF_ITEM_DECLARE` will declare and statically
 initialize a buffer with a given count of 32 bit words.
-:c:macro:`RING_BUF_ITEM_DECLARE_POW2` can be used to initialize an
-items-mode buffer with a memory region guaranteed to be a power of
-two, which enables various optimizations internal to the
-implementation.  No power-of-two initialization is available for
-bytes-mode ring buffers.
 
 "Bytes" data may be copied into the ring buffer using
 :c:func:`ring_buf_put`, passing a data pointer and byte count.  These
@@ -104,7 +99,7 @@ does not fit in its entirety.
 
 The user can manage the capacity of a ring buffer without modifying it
 using either :c:func:`ring_buf_space_get` or :c:func:`ring_buf_item_space_get`
-which returns the number of free bytes or free items respectively,
+which returns the number of free bytes or free 32-bit item words respectively,
 or by testing the :c:func:`ring_buf_is_empty` predicate.
 
 Finally, a :c:func:`ring_buf_reset` call exists to immediately empty a
@@ -117,8 +112,7 @@ Data item mode
 ==============
 
 A **data item mode** ring buffer instance is declared using
-:c:macro:`RING_BUF_ITEM_DECLARE_POW2()` or
-:c:macro:`RING_BUF_ITEM_DECLARE_SIZE()` and accessed using
+:c:macro:`RING_BUF_ITEM_DECLARE()` and accessed using
 :c:func:`ring_buf_item_put` and :c:func:`ring_buf_item_get`.
 
 A ring buffer **data item** is an array of 32-bit words from 0 to 1020 bytes
@@ -174,36 +168,25 @@ mutexes and/or use semaphores to notify consumers that there is data to
 read.
 
 For the trivial case of one producer and one consumer, concurrency
-shouldn't be needed.
+control shouldn't be needed.
 
 Internal Operation
 ==================
-
-If the size of the data buffer is a power of two, the ring buffer
-uses efficient masking operations instead of expensive modulo operations
-when enqueuing and dequeuing data items. This option is applicable only for
-data item mode.
 
 Data streamed through a ring buffer is always written to the next byte
 within the buffer, wrapping around to the first element after reaching
 the end, thus the "ring" structure.  Internally, the ``struct
 ring_buf`` contains its own buffer pointer and its size, and also a
-"head" and "tail" index representing where the next read and write
+set of "head" and "tail" indices representing where the next read and write
+operations may occur.
 
 This boundary is invisible to the user using the normal put/get APIs,
 but becomes a barrier to the "claim" API, because obviously no
 contiguous region can be returned that crosses the end of the buffer.
 This can be surprising to application code, and produce performance
-artifacts when transfers need to alias closely to the size of the
-buffer, as the number of calls to claim/finish need to double for such
+artifacts when transfers need to happen close to the end of the
+buffer, as the number of calls to claim/finish needs to double for such
 transfers.
-
-When running in items mode (only), the ring buffer contains two
-implementations for the modular arithmetic required to compute "next
-element" offsets.  One is used for arbitrary sized buffers, but the
-other is optimized for power of two sizes and can replace the compare
-and subtract steps with a simple bitmask in several places, at the
-cost of testing the "mask" value for each call.
 
 
 Implementation
@@ -240,26 +223,14 @@ Alternatively, a ring buffer can be defined and initialized at compile time
 using one of two macros at file scope. Each macro defines both the ring
 buffer itself and its data buffer.
 
-The following code defines and initializes an empty **data item mode**
-ring with a power-of-two sized data buffer, which can be accessed using
-efficient masking operations.
-
-.. code-block:: c
-
-    /* Buffer with 2^8 (or 256) words */
-    RING_BUF_ITEM_DECLARE_POW2(my_ring_buf, 8);
-
-The following code defines a **data item mode** ring with an arbitrary-sized
-data buffer:
+The following code defines a **data item mode** ring buffer:
 
 .. code-block:: c
 
     #define MY_RING_BUF_WORDS 93
-    RING_BUF_ITEM_DECLARE_SIZE(my_ring_buf, MY_RING_BUF_WORDS);
+    RING_BUF_ITEM_DECLARE(my_ring_buf, MY_RING_BUF_WORDS);
 
-The following code defines a ring buffer with an arbitrary-sized data buffer,
-which can be accessed using less efficient modulo operations. Ring buffer is
-intended to be used for raw bytes.
+The following code defines a ring buffer intended to be used for raw bytes:
 
 .. code-block:: c
 
