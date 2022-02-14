@@ -21,20 +21,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test);
 
-/* Max size is used internally in the algorithm. Value is decreased in the test
- * to trigger rewind algorithm.
- */
-#undef RING_BUFFER_MAX_SIZE
-#define RING_BUFFER_MAX_SIZE 0x00000800
-
-/* Use global variable that can be modified by the test. */
-uint32_t test_rewind_threshold = RING_BUFFER_MAX_SIZE;
-
-uint32_t ring_buf_get_rewind_threshold(void)
-{
-	return test_rewind_threshold;
-}
-
 /**
  * @defgroup lib_ringbuffer_tests Ringbuffer
  * @ingroup all_tests
@@ -163,13 +149,13 @@ void test_ring_buffer_main(void)
 /**TESTPOINT: init via RING_BUF_ITEM_DECLARE_POW2*/
 RING_BUF_ITEM_DECLARE_POW2(ringbuf_pow2, POW);
 
-/**TESTPOINT: init via RING_BUF_ITEM_DECLARE_SIZE*/
+/**TESTPOINT: init via RING_BUF_ITEM_DECLARE*/
 /**
  * @brief define a ring buffer with arbitrary size
  *
- * @see RING_BUF_ITEM_DECLARE_SIZE(),RING_BUF_DECLARE()
+ * @see RING_BUF_ITEM_DECLARE(), RING_BUF_DECLARE()
  */
-RING_BUF_ITEM_DECLARE_SIZE(ringbuf_size, RINGBUFFER_SIZE);
+RING_BUF_ITEM_DECLARE(ringbuf_size, RINGBUFFER_SIZE);
 
 RING_BUF_DECLARE(ringbuf_raw, RINGBUFFER_SIZE);
 
@@ -402,7 +388,7 @@ void test_ringbuffer_pow2_put_get_thread_isr(void)
  *
  * @details
  * Test Objective:
- * - define and initialize a ring buffer by macro RING_BUF_ITEM_DECLARE_SIZE,
+ * - define and initialize a ring buffer by macro RING_BUF_ITEM_DECLARE,
  * then passing data by thread and isr to verify the ringbuffer
  * if it works to be placed in any user-controlled memory.
  *
@@ -412,7 +398,7 @@ void test_ringbuffer_pow2_put_get_thread_isr(void)
  * - Structural test coverage(entry points,statements,branches)
  *
  * Prerequisite Conditions:
- * - Define and initialize a ringbuffer by RING_BUF_ITEM_DECLARE_SIZE
+ * - Define and initialize a ringbuffer by RING_BUF_ITEM_DECLARE
  * - Define a pointer of ring buffer type.
  *
  * Input Specifications:

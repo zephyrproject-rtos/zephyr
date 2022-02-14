@@ -24,7 +24,7 @@
 #define TYPE				0xc
 
 static ZTEST_BMEM SYS_MUTEX_DEFINE(mutex);
-RING_BUF_ITEM_DECLARE_SIZE(ringbuf, RINGBUFFER);
+RING_BUF_ITEM_DECLARE(ringbuf, RINGBUFFER);
 static uint32_t output[LENGTH];
 static uint32_t databuffer1[LENGTH];
 static uint32_t databuffer2[LENGTH];
@@ -252,18 +252,14 @@ static bool consume(void *user_data, uint32_t iter_cnt, bool last, int prio)
 	return true;
 }
 
-extern uint32_t test_rewind_threshold;
-
 static void test_ztress(ztress_handler high_handler,
 			ztress_handler low_handler,
 			bool item_mode)
 {
 	uint8_t buf[32];
 	uint32_t buf32[32];
-	uint32_t old_rewind_threshold = test_rewind_threshold;
 	k_timeout_t timeout;
 
-	test_rewind_threshold = 256;
 	if (item_mode) {
 		ring_buf_item_init(&ringbuf, ARRAY_SIZE(buf32), buf32);
 	} else {
@@ -276,8 +272,6 @@ static void test_ztress(ztress_handler high_handler,
 	ztress_set_timeout(timeout);
 	ZTRESS_EXECUTE(ZTRESS_THREAD(high_handler, NULL, 0, 0, Z_TIMEOUT_TICKS(20)),
 		       ZTRESS_THREAD(low_handler, NULL, 0, 2000, Z_TIMEOUT_TICKS(20)));
-	test_rewind_threshold = old_rewind_threshold;
-
 }
 
 void test_ringbuffer_stress(ztress_handler produce_handler,
