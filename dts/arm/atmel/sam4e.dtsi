@@ -232,6 +232,15 @@
 			peripheral-id = <27 28 29>;
 			status = "disabled";
 		};
+
+		smc: smc@40060000 {
+			compatible = "atmel,sam-smc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40060000 0x200>;
+			peripheral-id = <8>;
+			status = "disabled";
+		};
 	};
 };
 
