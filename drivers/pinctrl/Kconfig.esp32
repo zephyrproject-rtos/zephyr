@@ -4,8 +4,8 @@
 DT_COMPAT_ESP32_PINCTRL := espressif,esp32-pinctrl
 
 config PINCTRL_ESP32
-	bool "Pin controller driver for ESP32 SoC"
-	depends on SOC_ESP32
+	bool "ESP32 pin controller"
+	depends on SOC_ESP32 || SOC_ESP32S2
 	default $(dt_compat_enabled,$(DT_COMPAT_ESP32_PINCTRL))
 	help
-	  Enable pin controller driver for ESP32 SoC
+	  Enables ESP32 pin controller
