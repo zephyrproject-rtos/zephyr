@@ -977,9 +977,15 @@ static void eth_tx_thread(void *arg1, void *unused1, void *unused2)
 				enet_handle_t *handle = &context->enet_handle;
 
 				if (handle->callback != NULL) {
+#if FSL_FEATURE_ENET_QUEUE > 1
+					handle->callback(context->base,
+						handle, 0, kENET_TxEvent,
+						NULL, handle->userData);
+#else
 					handle->callback(context->base,
 						handle, kENET_TxEvent,
 						NULL, handle->userData);
+#endif
 				}
 			}
 			ENET_EnableInterrupts(context->base,
