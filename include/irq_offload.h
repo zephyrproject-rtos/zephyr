@@ -25,6 +25,13 @@ typedef void (*irq_offload_routine_t)(const void *parameter);
  * which needs to show that kernel objects work correctly in interrupt
  * context.
  *
+ * Additionally, when CONFIG_IRQ_OFFLOAD_NESTED is set by the
+ * architecture, this routine works to synchronously invoke a nested
+ * interrupt when called from an ISR context (i.e. when k_is_in_isr()
+ * is true).  Note that not all platforms will have hardware support
+ * for this capability, and even on those some interrupts may be
+ * running at unpreemptible priorities.
+ *
  * @param routine The function to run
  * @param parameter Argument to pass to the function when it is run as an
  * interrupt
