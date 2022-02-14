@@ -26,9 +26,15 @@ properties:
 
     "#pwm-cells":
       const: 3
+      description: |
+        Number of items to expect in a PWM
+        - channel of the timer used for PWM
+        - period to set in ns
+        - flags : combination of standard flags like PWM_POLARITY_NORMAL
+          or specific flags like PWM_STM32_COMPLEMENTARY. As an example for channel2:
+           <&pwm1 2 100 (PWM_POLARITY_NORMAL | PWM_STM32_COMPLEMENTARY)>;
 
 pwm-cells:
   - channel
-# period in terms of nanoseconds
   - period
   - flags
