@@ -1119,43 +1119,13 @@ static int lwm2m_senml_write_operation(struct lwm2m_message *msg, struct json_in
 		return ret;
 	}
 
-	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj, msg->path.res_id);
-	/*
-	 * if obj_field is not found,
-	 * treat as an optional resource
-	 */
-	if (!obj_field) {
-		return -ENOENT;
+	ret = lwm2m_engine_validate_write_access(msg, obj_inst, &obj_field);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W) &&
-	    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
-		return -EPERM;
-	}
-
-	if (!obj_inst->resources || obj_inst->resource_count == 0U) {
-		return -EINVAL;
-	}
-
-	for (int index = 0; index < obj_inst->resource_count; index++) {
-		if (obj_inst->resources[index].res_id == msg->path.res_id) {
-			res = &obj_inst->resources[index];
-			break;
-		}
-	}
-
-	if (!res) {
-		return -ENOENT;
-	}
-
-	for (int index = 0; index < res->res_inst_count; index++) {
-		if (res->res_instances[index].res_inst_id == msg->path.res_inst_id) {
-			res_inst = &res->res_instances[index];
-			break;
-		}
-	}
-
-	if (!res_inst) {
+	ret = lwm2m_engine_get_create_res_inst(&msg->path, &res, &res_inst);
+	if (ret < 0) {
 		return -ENOENT;
 	}
 
