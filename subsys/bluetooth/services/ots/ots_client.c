@@ -34,7 +34,8 @@
 #define OTS_CLIENT_INST_COUNT     1
 
 #define OTS_CLIENT_MAX_WRITE_SIZE    23
-#define OTS_CLIENT_UNKNOWN_ID      0xFF
+/* 64-bit value, outside of 48-bit Object ID range */
+#define OTS_CLIENT_UNKNOWN_ID      0x0001000000000000
 
 struct dirlisting_record_t {
 	uint16_t                      len;
