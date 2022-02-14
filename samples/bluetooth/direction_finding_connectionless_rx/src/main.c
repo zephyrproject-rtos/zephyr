@@ -33,6 +33,8 @@ static struct bt_le_per_adv_sync *sync;
 static bt_addr_le_t per_addr;
 static bool per_adv_found;
 static bool scan_enabled;
+static bool sync_wait;
+static bool sync_terminated;
 static uint8_t per_sid;
 static uint32_t sync_create_timeout_ms;
 
@@ -154,7 +156,12 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
 
-	k_sem_give(&sem_per_sync_lost);
+	if (sync_wait) {
+		sync_terminated = true;
+		k_sem_give(&sem_per_sync);
+	} else {
+		k_sem_give(&sem_per_sync_lost);
+	}
 }
 
 static void recv_cb(struct bt_le_per_adv_sync *sync,
@@ -356,19 +363,31 @@ void main(void)
 		}
 		printk("success. Found periodic advertising.\n");
 
+		sync_wait = true;
+		sync_terminated = false;
+
 		create_sync();
 
 		printk("Waiting for periodic sync...\n");
 		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout_ms));
-		if (err != 0) {
-			printk("failed (err %d)\n", err);
+		if (err != 0 || sync_terminated) {
+			if (err != 0) {
+				printk("failed (err %d)\n", err);
+			} else {
+				printk("terminated\n");
+			}
+
+			sync_wait = false;
+
 			err = delete_sync();
 			if (err != 0) {
 				return;
 			}
+
 			continue;
 		}
 		printk("success. Periodic sync established.\n");
+		sync_wait = false;
 
 		enable_cte_rx();
 
