@@ -54,7 +54,7 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 	ep->stream = stream;
 
 	if (stream->iso == NULL) {
-		stream->iso = &ep->iso;
+		stream->iso = &ep->iso->iso_chan;
 	}
 }
 
@@ -566,6 +566,8 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 				 stream->ep->dir);
 			return -EINVAL;
 		}
+
+		BT_ERR("iso_qos %p, io %p, qos %p", iso_qos, io, qos);
 
 		err = bt_audio_codec_qos_to_iso_qos(io, qos);
 		if (err) {
