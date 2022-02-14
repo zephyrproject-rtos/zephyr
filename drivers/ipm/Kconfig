@@ -129,6 +129,14 @@ config IPM_STM32_HSEM_CPU
 	help
 	  use to define the CPU ID used by HSEM
 
+config IPM_CALLBACK_ASYNC
+	bool "Deliver callbacks asynchronously"
+	help
+	  When selected, the driver supports "asynchronous" command
+	  delivery.  Commands will stay active after the ISR returns,
+	  until the application expressly "completes" the command
+	  later.
+
 module = IPM
 module-str = ipm
 source "subsys/logging/Kconfig.template.log_config"
