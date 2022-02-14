@@ -4123,12 +4123,25 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 
 	LOG_DBG("checking for reply from [%s]",
 		log_strdup(lwm2m_sprint_ip_addr(from_addr)));
-	reply = coap_response_received(&response, from_addr,
-				       client_ctx->replies,
-				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
-	if (reply) {
-		msg = find_msg(NULL, reply);
 
+	reply = client_ctx->replies;
+
+	do {
+		reply = coap_response_received(&response,
+				from_addr,
+				reply,
+				CONFIG_LWM2M_ENGINE_MAX_REPLIES - (reply - client_ctx->replies));
+		if (!reply) {
+			break;
+		}
+
+		msg = find_msg(NULL, reply);
+		if (msg && client_ctx == msg->ctx) {
+			break;
+		}
+	} while (++reply < (client_ctx->replies + CONFIG_LWM2M_ENGINE_MAX_REPLIES));
+
+	if (reply) {
 		if (coap_header_get_type(&response) == COAP_TYPE_CON) {
 			r = lwm2m_send_empty_ack(client_ctx,
 						 coap_header_get_id(&response));
