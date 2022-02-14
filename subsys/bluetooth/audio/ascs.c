@@ -51,6 +51,10 @@ struct bt_ascs {
 	uint8_t id;
 	bt_addr_le_t peer;
 	struct bt_ascs_ase ases[ASE_COUNT];
+	/* A single iso_channel may be used for 1 or 2 ases.
+	 * Controlled by the client.
+	 */
+	struct bt_audio_iso isos[ASE_COUNT];
 	struct bt_gatt_notify_params params;
 	uint16_t handle;
 };
@@ -286,8 +290,17 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 			  const struct bt_iso_recv_info *info,
 			  struct net_buf *buf)
 {
-	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
-	struct bt_audio_stream_ops *ops = ep->stream->ops;
+	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
+						      iso_chan);
+	struct bt_audio_ep *ep = audio_iso->ep;
+	const struct bt_audio_stream_ops *ops;
+
+	if (ep == NULL) {
+		BT_ERR("Could not lookup ep by iso %p", chan);
+		return;
+	}
+
+	ops = ep->stream->ops;
 
 	BT_DBG("stream %p ep %p len %zu", chan, ep, net_buf_frags_len(buf));
 
@@ -312,7 +325,14 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 
 static void ascs_iso_connected(struct bt_iso_chan *chan)
 {
-	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
+						      iso_chan);
+	struct bt_audio_ep *ep = audio_iso->ep;
+
+	if (ep == NULL) {
+		BT_ERR("Could not lookup ep by iso %p", chan);
+		return;
+	}
 
 	BT_DBG("stream %p ep %p dir %u", chan, ep, ep != NULL ? ep->dir : 0);
 
@@ -327,9 +347,19 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 
 static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
-	struct bt_audio_stream *stream = ep->stream;
-	struct bt_audio_stream_ops *ops = stream->ops;
+	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
+						      iso_chan);
+	struct bt_audio_ep *ep = audio_iso->ep;
+	const struct bt_audio_stream_ops *ops;
+	struct bt_audio_stream *stream;
+
+	if (ep == NULL) {
+		BT_ERR("Could not lookup ep by iso %p", chan);
+		return;
+	}
+
+	ops = ep->stream->ops;
+	stream = ep->stream;
 
 	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
 
@@ -694,7 +724,7 @@ static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	ase->ep.stream = stream;
 	stream->conn = ascs->conn;
 	stream->ep = &ase->ep;
-	stream->iso = &ase->ep.iso;
+	stream->iso = &ase->ep.iso->iso_chan;
 }
 
 static void ascs_attach(struct bt_ascs *ascs, struct bt_conn *conn)
@@ -781,23 +811,40 @@ static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void ascs_ep_init(struct bt_audio_ep *ep, uint8_t id)
+void ascs_ep_init(struct bt_audio_ep *ep, struct bt_audio_iso *iso, uint8_t id)
 {
+	struct bt_iso_chan *iso_chan = &ep->iso->iso_chan;
+
 	BT_DBG("ep %p id 0x%02x", ep, id);
 
 	memset(ep, 0, sizeof(*ep));
 	ep->status.id = id;
-	ep->iso.ops = &ascs_iso_ops;
-	ep->iso.qos = &ep->iso_qos;
-	ep->iso.qos->rx = &ep->iso_rx;
-	ep->iso.qos->tx = &ep->iso_tx;
+	ep->iso = iso;
 	ep->dir = ASE_DIR(id);
+	iso->ep = ep;
+
+	iso_chan = &ep->iso->iso_chan;
+
+	iso_chan->ops = &ascs_iso_ops;
+	iso_chan->qos = &ep->iso->iso_qos;
+
+
+	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+		iso_chan->qos->tx = &ep->iso_io_qos;
+		iso_chan->qos->rx = NULL;
+	} else if (ep->dir == BT_AUDIO_DIR_SINK) {
+		iso_chan->qos->tx = NULL;
+		iso_chan->qos->rx = &ep->iso_io_qos;
+	} else {
+		__ASSERT(false, "Invalid ep->dir: %u", ep->dir);
+	}
 }
 
-static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
+static void ase_init(struct bt_ascs_ase *ase, struct bt_audio_iso *iso,
+		     uint8_t id)
 {
 	memset(ase, 0, sizeof(*ase));
-	ascs_ep_init(&ase->ep, id);
+	ascs_ep_init(&ase->ep, iso, id);
 	bt_gatt_foreach_attr_type(0x0001, 0xffff, ASE_UUID(id),
 				  UINT_TO_POINTER(id), 1, ase_attr_cb, ase);
 	k_work_init(&ase->work, ase_process);
@@ -806,6 +853,7 @@ static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
 static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 {
 	struct bt_ascs_ase *ase;
+	struct bt_audio_iso *iso;
 	int i;
 
 	if (id) {
@@ -814,11 +862,13 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 		}
 		i = id;
 		ase = &ascs->ases[i - 1];
+		iso = &ascs->isos[i - 1];
 		goto done;
 	}
 
 	for (i = 0; i < ASE_COUNT; i++) {
 		ase = &ascs->ases[i];
+		iso = &ascs->isos[i];
 
 		if (!ase->ep.status.id) {
 			i++;
@@ -829,7 +879,7 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 	return NULL;
 
 done:
-	ase_init(ase, i);
+	ase_init(ase, iso, i);
 	ase->ascs = ascs;
 
 	return ase;
