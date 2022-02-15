@@ -202,6 +202,7 @@
 /boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
 /boards/Kconfig                           @tejlmand @galak @nashif @nordicjm
+/boards/arm64/intel_socfpga_agilex5_socdk/ @chongteikheng
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
 /cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand
