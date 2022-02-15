@@ -47,6 +47,8 @@
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
 				label = "FLASH0";
+
+				write-block-size = <1>;
 			};
 		};
 
