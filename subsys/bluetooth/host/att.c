@@ -17,6 +17,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/uuid.h>
+#include <bluetooth/att.h>
 #include <bluetooth/gatt.h>
 #include <drivers/bluetooth/hci_driver.h>
 
@@ -3459,4 +3460,13 @@ struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void
 	}
 
 	return NULL;
+}
+
+bool bt_att_fixed_chan_only(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_EATT)
+	return bt_eatt_count(conn) == 0;
+#else
+	return true;
+#endif /* CONFIG_BT_EATT */
 }
