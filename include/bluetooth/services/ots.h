@@ -830,9 +830,11 @@ struct bt_ots_client_cb {
 			     struct bt_conn *conn, int err);
 
 
-	/** @brief Callback function for content of the selected object.
+	/** @brief Callback function for the data of the selected
+	 * object.
 	 *
-	 *  Called when the object content is received.
+	 *  Called when the data of the selected object are read using
+	 *  bt_ots_client_read_object_data().
 	 *
 	 *  @param ots_inst      Pointer to the OTC instance.
 	 *  @param conn          The connection to the peer device.
@@ -844,14 +846,15 @@ struct bt_ots_client_cb {
 	 *  @return int          BT_OTS_STOP or BT_OTS_CONTINUE. BT_OTS_STOP can
 	 *                       be used to stop reading.
 	 */
-	int (*obj_content_recv)(struct bt_ots_client *ots_inst,
-				struct bt_conn *conn, uint32_t offset,
-				uint32_t len, uint8_t *data_p, bool is_complete);
+	int (*obj_data_read)(struct bt_ots_client *ots_inst,
+			     struct bt_conn *conn, uint32_t offset,
+			     uint32_t len, uint8_t *data_p, bool is_complete);
 
 	/** @brief Callback function for metadata of the selected object.
 	 *
-	 *  Called when metadata of the selected object are read. Not all of
-	 *  the metadata may have been initialized.
+	 *  Called when metadata of the selected object are read using
+	 *  bt_ots_client_read_object_metadata().
+	 *  Not all of the metadata may have been initialized.
 	 *
 	 *  @param ots_inst          Pointer to the OTC instance.
 	 *  @param conn              The connection to the peer device.
@@ -860,7 +863,7 @@ struct bt_ots_client_cb {
 	 *  @param metadata_read     Bitfield of the metadata that was
 	 *                           successfully read.
 	 */
-	void (*obj_metadata_recv)(struct bt_ots_client *ots_inst,
+	void (*obj_metadata_read)(struct bt_ots_client *ots_inst,
 				  struct bt_conn *conn, int err,
 				  uint8_t metadata_read);
 };
@@ -956,6 +959,8 @@ int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
 
 /** @brief Read the metadata of the current object.
  *
+ *  The metadata are returned in the obj_metadata_read() callback.
+ *
  *  @param otc_inst     Pointer to the OTC instance.
  *  @param conn         Pointer to the connection object.
  *  @param metadata     Bitfield (`BT_OTS_METADATA_REQ_*`) of the metadata
@@ -971,6 +976,8 @@ int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
  *
  *  This will trigger an OACP read operation for the current size of the object
  *  with a 0 offset and then expect receiving the content via the L2CAP CoC.
+ *
+ *  The data of the object are returned in the obj_data_read() callback.
  *
  *  @param otc_inst     Pointer to the OTC instance.
  *  @param conn         Pointer to the connection object.
