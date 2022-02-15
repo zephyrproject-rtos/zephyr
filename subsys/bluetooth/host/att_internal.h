@@ -308,3 +308,6 @@ int bt_eatt_disconnect(struct bt_conn *conn);
  *  @return The found request. NULL if not found.
  */
 struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void *user_data);
+
+/* Checks if only the fixed ATT channel is connected */
+bool bt_att_fixed_chan_only(struct bt_conn *conn);
