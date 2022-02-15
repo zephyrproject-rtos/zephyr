@@ -20,10 +20,17 @@ config IPM_IMX
 	help
 	  Driver for NXP i.MX messaging unit
 
+config IPM_IMX_REV2
+	bool "IMX IPM driver (rev 2)"
+	depends on HAS_MCUX
+	depends on !IPM_IMX
+	help
+	  Rev 2 driver for NXP i.MX messaging unit (MCUX-based)
+
 choice
 	prompt "IMX IPM max data size"
 	default IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX
+	depends on IPM_IMX || IPM_IMX_REV2
 	help
 	  Select maximum message size for NXP i.MX messaging unit.
 
@@ -53,7 +60,7 @@ config IPM_IMX_MAX_DATA_SIZE
 	default 4 if IPM_IMX_MAX_DATA_SIZE_4
 	default 8 if IPM_IMX_MAX_DATA_SIZE_8
 	default 16 if IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX
+	depends on IPM_IMX || IPM_IMX_REV2
 
 config IPM_IMX_MAX_ID_VAL
 	int
@@ -61,7 +68,7 @@ config IPM_IMX_MAX_ID_VAL
 	default 3 if IPM_IMX_MAX_DATA_SIZE_4
 	default 1 if IPM_IMX_MAX_DATA_SIZE_8
 	default 0 if IPM_IMX_MAX_DATA_SIZE_16
-	depends on IPM_IMX
+	depends on IPM_IMX || IPM_IMX_REV2
 
 config IPM_MHU
 	bool "IPM MHU driver"
