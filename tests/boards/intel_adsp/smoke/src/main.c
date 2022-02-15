@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include "tests.h"
 
+cavs_ipc_handler_t ipm_handler;
+
 static bool clock_msg(const struct device *dev, void *arg,
 		      uint32_t data, uint32_t ext_data)
 {
@@ -42,13 +44,18 @@ void test_clock_calibrate(void)
 
 void test_main(void)
 {
+	struct cavs_ipc_data *devdata = CAVS_HOST_DEV->data;
+
+	ipm_handler = devdata->handle_message;
+
 	ztest_test_suite(intel_adsp,
 			 ztest_unit_test(test_smp_boot_delay),
 			 ztest_unit_test(test_cpu_halt),
 			 ztest_unit_test(test_post_boot_ipi),
 			 ztest_unit_test(test_cpu_behavior),
 			 ztest_unit_test(test_host_ipc),
-			 ztest_unit_test(test_clock_calibrate)
+			 ztest_unit_test(test_clock_calibrate),
+			 ztest_unit_test(test_ipm_cavs_host)
 			 );
 
 	ztest_run_test_suite(intel_adsp);
