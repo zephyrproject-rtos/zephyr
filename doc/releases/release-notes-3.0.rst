@@ -216,18 +216,83 @@ Architectures
 Bluetooth
 *********
 
+* Updated all experimental features in Bluetooth to use the new `EXPERIMENTAL`
+  selectable Kconfig option
+* Bluetooth now uses logging v2 as with the rest of the tree
+
 * Audio
+
+  * Implemented the Content Control ID module (CCID)
+  * Added support for the Coordinated Set Identification Service (CSIS)
+  * Added a Temporary Object Transfer client implementation
+  * Added a Media Control client implementation
+  * Added a Media Control Server implementation
+  * Implemented the Media Proxy API
+  * Implemented CIG reconfiguration and state handling
+  * Updated the CSIS API for both server and client
+  * Added Basic Audio Profile (BAP) unicast and broadcast server support
+
+* Direction Finding
+
+  * Added support for for filtering of periodic advertisements synch by CTE type
+  * Added additional handling logic for Periodic Advertising Sync Establishemnt
+  * Added CTE RX, sampling and IQ report handling in DF connected mode
+  * Added support for CTE configuration in connected mode
+  * Direction Finding connection mode now uses the newly refactored LLCP
+    implementation
 
 * Host
 
-  * The :kconfig:`CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE` is enabled by default.
-    Storing CCC right after it's written reduces risk of inconsistency of CCC values between bonded peers.
+  * The :kconfig:`CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE` is now enabled by default.
+    Storing CCC right after it's written reduces risk of inconsistency of CCC values between bonded peers
+  * Added support for L2CAP channel reconfiguration.
+  * Added support for SMP error code 0xF, where the peer rejects a distributed
+    key
+  * Added `bt_gatt_service_is_registered()` to verify sevice registration
+  * Added create an delete procedures to the Object Transfer Service
+    implementation
+  * Added support for reassembling extended advertising reports
+  * Added support for reassembling periodic advertising reports
+  * Added support for setting long periodic advertising data
+  * Implemented GATT Long Writes reassembly before forwarding them up to the
+    application
+  * The GATT Server DB hash calculation logic has been corrected
+  * Added storing of the CCC data upon paring complete
 
 * Mesh
 
-* Bluetooth LE split software Controller
+  * Split out the Proxy services, which can now be compiled out
+  * Added an option to call back on every retransmission
+  * Added support for multiple Advertising Sets
+  * Refactored he Config Client and Health Client API to allow async use
+
+* Controller
+
+  * Added support for a brand new implementation of LL Control Procedures
+    (LLCP), currently disabled by default, can be enabled using the
+    `BT_LL_SW_LLCP_IMPL` Kconfig choice
+  * Added initial support for Broadcast Isochronous Groups (BIG)
+  * Integrated ISO Sync RX datapath
+  * Transitioned FEM configurations (PA/LNA) from Kconfig to Devicetree
+  * Updated the supported Bluetooth HCI version to 5.3
+  * Added support for Periodic Advertiser List
+  * Added support for Periodic Advertising Synchronization Receive Enable
+  * Added support for filter access list filtering for exended scanning
+  * Added support for Advertising Extensions dynamic TX power control
+  * Added handling of direct address type in extended adv reports
+  * Implemented auxiliary PDU device address matching
+  * Implemented fragmentation of extended advertising reports over HCI
+  * Implemented Extended Advertising and Scan report back-to-back chaining
+  * Implemented Periodic Advertising ADI support,including duplicate filtering
+  * Introduced a new preferred central connection spacing feature
+
 
 * HCI Driver
+
+  * Added support for a new optional `setup()` function for vendor-specific
+    setup code required to bring up the controller
+  * Fixed DTM mode not being reset correctly with the HCI Reset command
+  * Limited the maximum ACL TX buffer size to 251 bytes
 
 Boards & SoC Support
 ********************
