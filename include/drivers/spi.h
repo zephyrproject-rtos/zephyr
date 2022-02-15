@@ -443,6 +443,137 @@ struct spi_buf_set {
 };
 
 /**
+ * @brief SPI asynchronous objects identifiers
+ */
+enum spi_async_mode {
+	/** A k_poll_signal will be used as a notifier, note that transaction
+	 * status will be embedded.
+	 */
+	SPI_ASYNC_MODE_SIGNAL = 0,
+	/** A semaphore will be used as a notifier, the transaction status will
+	 * be set in @see struct spi_async_method.
+	 */
+	SPI_ASYNC_MODE_SEMAPHORE,
+	/** A mutex will be used as a notifier, the transaction status will
+	 * be set in @see struct spi_async_method.
+	 */
+	SPI_ASYNC_MODE_MUTEX,
+	/** A k_work will be used as a notifier, the transaction status will
+	 * be set in @see struct spi_async_method.
+	 */
+	SPI_ASYNC_MODE_WORK,
+	/** A direct callback will be used as a notifier, note that transaction
+	 * status will be given to callback. @see spi_async_callback_t
+	 * WARNING: Do NOT use this mode unless you really have to!
+	 * This will be running in ISR context and thus will bring all the
+	 * limitations with it. In most cases, other modes will be enough.
+	 */
+	SPI_ASYNC_MODE_CALLBACK,
+	SPI_ASYNC_MODE_MAX,
+};
+
+/**
+ * @brief SPI asynchronous callback type
+ */
+typedef struct _spi_async_callback {
+	void (*spi_async_callback)(int status,
+				   void *user_data);
+	void *user_data;
+} spi_async_callback_t;
+
+/**
+ * @brief SPI asynchronous method for transaction end notification
+ *
+ * @param mode the selected mode for transaction end notification
+ *        @see enum spi_async_mode.
+ * @param status transaction result code (mainly for SPI_ASYNC_MODE_SEMAPHORE,
+ *        SPI_ASYNC_MODE_MUTEX and SPI_ASYNC_MODE_WORK).
+ * @param object dedicated objects for each mode
+ */
+struct spi_async_method {
+	enum spi_async_mode mode;
+	struct {
+		int status;
+		union {
+			struct k_poll_signal *signal;
+			struct k_sem *semaphore;
+			struct k_mutex *mutex;
+			struct k_work *work;
+			spi_async_callback_t callback;
+		};
+	} object;
+};
+
+/**
+ * @brief Initialize a struct spi_async_method for SPI_ASYNC_MODE_SIGNAL
+ *
+ * @param _method_name name of the struct spi_async_method object
+ * @param _sig_name name of the k_poll_signal object
+ */
+#define SPI_ASYNC_METHOD_SIGNAL_DEFINE(_method_name, _sig_name)		\
+	struct k_poll_signal _sig_name =				\
+		K_POLL_SIGNAL_INITIALIZER(_sig_name);			\
+	struct spi_async_method _method_name = {			\
+		.mode = SPI_ASYNC_MODE_SIGNAL,				\
+		.object.signal = &_sig_name,				\
+	}
+
+/**
+ * @brief Initialize a struct spi_async_method for SPI_ASYNC_MODE_SEMAPHORE
+ *
+ * @param _method_name name of the struct spi_async_method object
+ * @param _sem_name name of the k_sem object
+ */
+#define SPI_ASYNC_METHOD_SEMAPHORE_DEFINE(_method_name, _sem_name)	\
+	K_SEM_DEFINE(_sem_name, 0, 1);					\
+	struct spi_async_method _method_name = {			\
+		.mode = SPI_ASYNC_MODE_SEMAPHORE,			\
+		.object.semaphore = &_sem_name,				\
+	}
+
+/**
+ * @brief Initialize a struct spi_async_method for SPI_ASYNC_MODE_MUTEX
+ *
+ * @param _method_name name of the struct spi_async_method object
+ * @param _mutex_name name of the _mutex_name
+ */
+#define SPI_ASYNC_METHOD_MUTEX_DEFINE(_method_name, _mutex_name)	\
+	K_MUTEX_DEFINE(_mutex_name);					\
+	struct spi_async_method _method_name = {			\
+		.mode = SPI_ASYNC_MODE_MUTEX,				\
+		.object.mutex = &_mutex_name,				\
+	}
+
+/**
+ * @brief Initialize a struct spi_async_method for SPI_ASYNC_MODE_WORK
+ *
+ * @param _method_name name of the struct spi_async_method object
+ * @param _work_name name of the k_work object
+ * @param _work_handler the k_work_handler_t to use
+ */
+#define SPI_ASYNC_METHOD_WORK_DEFINE(_method_name, _work_name, _work_handler) \
+	K_WORK_DEFINE(_work_name, _work_handler);			\
+	struct spi_async_method _method_name = {			\
+		.mode = SPI_ASYNC_MODE_WORK,				\
+		.object.work = &_work_name,				\
+	}
+
+/**
+ * @brief Initialize a struct spi_async_method for SPI_ASYNC_MODE_CALLBACK
+ *
+ * @param _method_name name of the struct spi_async_method object
+ * @param _callback the callback function to use
+ * @param _user_data a pointer to some user data that will be given to the
+ *        callback or NULL
+ */
+#define SPI_ASYNC_METHOD_CALLBACK_DEFINE(_method_name, _callback, _user_data) \
+	struct spi_async_method _method_name = {			\
+		.mode = SPI_ASYNC_MODE_CALLBACK,			\
+		.object.callback.spi_async_callback = _callback,	\
+		.object.callback.user_data = _user_data,		\
+	}
+
+/**
  * @typedef spi_api_io
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
@@ -461,7 +592,7 @@ typedef int (*spi_api_io_async)(const struct device *dev,
 				const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs,
-				struct k_poll_signal *async);
+				struct spi_async_method *async);
 
 /**
  * @typedef spi_api_release
@@ -663,10 +794,9 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  *        or NULL if none.
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
- * @param async A pointer to a valid and ready to be signaled
- *        struct k_poll_signal. (Note: if NULL this function will not
- *        notify the end of the transaction, and whether it went
- *        successfully or not).
+ * @param async A pointer to a valid spi_async_method structure.
+ *        (Note: if NULL this function will not notify the end of the
+ *         transaction, and whether it went successfully or not).
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful in master mode.
@@ -676,7 +806,7 @@ static inline int spi_transceive_async(const struct device *dev,
 				       const struct spi_config *config,
 				       const struct spi_buf_set *tx_bufs,
 				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *async)
+				       struct spi_async_method *async)
 {
 	const struct spi_driver_api *api =
 		(const struct spi_driver_api *)dev->api;
@@ -699,10 +829,9 @@ static inline int spi_transceive_async(const struct device *dev,
  *        Pointer-comparison may be used to detect changes from
  *        previous operations.
  * @param rx_bufs Buffer array where data to be read will be written to.
- * @param async A pointer to a valid and ready to be signaled
- *        struct k_poll_signal. (Note: if NULL this function will not
- *        notify the end of the transaction, and whether it went
- *        successfully or not).
+ * @param async A pointer to a valid spi_async_method structure.
+ *        (Note: if NULL this function will not notify the end of the
+ *         transaction, and whether it went successfully or not).
  *
  * @retval 0 If successful
  * @retval -errno Negative errno code on failure.
@@ -710,7 +839,7 @@ static inline int spi_transceive_async(const struct device *dev,
 static inline int spi_read_async(const struct device *dev,
 				 const struct spi_config *config,
 				 const struct spi_buf_set *rx_bufs,
-				 struct k_poll_signal *async)
+				 struct spi_async_method *async)
 {
 	return spi_transceive_async(dev, config, NULL, rx_bufs, async);
 }
@@ -730,10 +859,9 @@ static inline int spi_read_async(const struct device *dev,
  *        Pointer-comparison may be used to detect changes from
  *        previous operations.
  * @param tx_bufs Buffer array where data to be sent originates from.
- * @param async A pointer to a valid and ready to be signaled
- *        struct k_poll_signal. (Note: if NULL this function will not
- *        notify the end of the transaction, and whether it went
- *        successfully or not).
+ * @param async A pointer to a valid spi_async_method structure.
+ *        (Note: if NULL this function will not notify the end of the
+ *         transaction, and whether it went successfully or not).
  *
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
@@ -741,7 +869,7 @@ static inline int spi_read_async(const struct device *dev,
 static inline int spi_write_async(const struct device *dev,
 				  const struct spi_config *config,
 				  const struct spi_buf_set *tx_bufs,
-				  struct k_poll_signal *async)
+				  struct spi_async_method *async)
 {
 	return spi_transceive_async(dev, config, tx_bufs, NULL, async);
 }

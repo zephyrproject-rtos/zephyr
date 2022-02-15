@@ -35,7 +35,7 @@ struct spi_context {
 	int sync_status;
 
 #ifdef CONFIG_SPI_ASYNC
-	struct k_poll_signal *signal;
+	struct spi_async_method *async;
 	bool asynchronous;
 #endif /* CONFIG_SPI_ASYNC */
 	const struct spi_buf *current_tx;
@@ -86,7 +86,7 @@ static inline bool spi_context_is_slave(struct spi_context *ctx)
 
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
-				    struct k_poll_signal *signal,
+				    struct spi_asyn_method *async,
 				    const struct spi_config *spi_cfg)
 {
 	if ((spi_cfg->operation & SPI_LOCK_ON) &&
@@ -100,7 +100,7 @@ static inline void spi_context_lock(struct spi_context *ctx,
 
 #ifdef CONFIG_SPI_ASYNC
 	ctx->asynchronous = asynchronous;
-	ctx->signal = signal;
+	ctx->async = async;
 #endif /* CONFIG_SPI_ASYNC */
 }
 
@@ -178,7 +178,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 		ctx->sync_status = status;
 		k_sem_give(&ctx->sync);
 	} else {
-		if (ctx->signal) {
+		if (ctx->async) {
 #ifdef CONFIG_SPI_SLAVE
 			if (spi_context_is_slave(ctx) && !status) {
 				/* Let's update the status so it tells
