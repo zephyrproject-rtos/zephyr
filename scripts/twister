@@ -990,6 +990,11 @@ def main():
                              --device-serial or --device-serial-pty,
                              only one platform is allowed""")
 
+    # the fixtures given by twister command explicitly should be assigned to each DUTs
+    if suite.fixtures:
+        for d in suite.duts:
+            d.fixtures.extend(suite.fixtures)
+
     if suite.load_errors:
         sys.exit(1)
 
