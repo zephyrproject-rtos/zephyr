@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Micron QSPI Flash
+
+compatible: "micron,mt25qu02g"
+
+include: flash-controller.yaml
+
+properties:
+    size:
+      type: int
+      description: Flash memory size in bit.
