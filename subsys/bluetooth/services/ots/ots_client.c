@@ -157,9 +157,9 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			cur_inst->rcvd_size, cur_object->size.cur);
 	}
 
-	cb_ret = cur_inst->otc_inst->cb->obj_content_recv(0, conn, offset,
-							  buf->len, buf->data,
-							  is_complete);
+	cb_ret = cur_inst->otc_inst->cb->obj_data_read(0, conn, offset,
+						       buf->len, buf->data,
+						       is_complete);
 
 	if (is_complete) {
 		const uint32_t rcv_size = cur_object->size.cur;
@@ -1220,8 +1220,8 @@ static void read_next_metadata(struct bt_conn *conn,
 				read_obj_properties_cb);
 	} else {
 		inst->busy = false;
-		if (inst->otc_inst->cb->obj_metadata_recv) {
-			inst->otc_inst->cb->obj_metadata_recv(
+		if (inst->otc_inst->cb->obj_metadata_read) {
+			inst->otc_inst->cb->obj_metadata_read(
 				inst->otc_inst, conn, inst->metadata_err,
 				inst->metadata_read);
 		}
