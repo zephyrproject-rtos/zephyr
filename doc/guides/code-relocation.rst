@@ -91,6 +91,23 @@ This section shows additional configuration options that can be set in
 * Multiple regions can also be appended together such as: SRAM2_DATA_BSS.
   This will place data and bss inside SRAM2.
 
+NOCOPY flag
+===========
+
+When a ``NOCOPY`` option is passed to the ``zephyr_code_relocate()`` function,
+the relocation code is not generated in ``code_relocation.c``. This flag can be
+used when we want to move the content of a specific file (or set of files) to a
+XIP area.
+
+This example will place the .text section of the ``xip_external_flash.c`` file
+to the ``EXTFLASH`` memory region where it will be executed from (XIP). The
+.data will be relocated as usual into SRAM.
+
+  .. code-block:: none
+
+     zephyr_code_relocate(src/xip_external_flash.c EXTFLASH_TEXT NOCOPY)
+     zephyr_code_relocate(src/xip_external_flash.c SRAM_DATA)
+
 Sample
 ======
 A sample showcasing this feature is provided at
@@ -100,3 +117,6 @@ This is an example of using the code relocation feature.
 
 This example will place .text, .data, .bss from 3 files to various parts in the SRAM
 using a custom linker file derived from ``include/arch/arm/aarch32/cortex_m/scripts/linker.ld``
+
+A sample showcasing the NOCOPY flag is provided at
+``$ZEPHYR_BASE/samples/application_development/code_relocation_nocopy/``
