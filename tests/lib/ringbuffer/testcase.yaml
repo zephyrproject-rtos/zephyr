@@ -6,6 +6,7 @@ tests:
   libraries.ring_buffer:
     integration_platforms:
       - native_posix
+      - native_posix_64
     extra_configs:
       - CONFIG_MP_NUM_CPUS=1
 

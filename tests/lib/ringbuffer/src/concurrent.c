@@ -8,6 +8,7 @@
 #include <sys/ring_buffer.h>
 #include <sys/mutex.h>
 #include <random/rand32.h>
+#include <stdint.h>
 
 /**
  * @defgroup lib_ringbuffer_tests Ringbuffer
@@ -256,15 +257,22 @@ static void test_ztress(ztress_handler high_handler,
 			ztress_handler low_handler,
 			bool item_mode)
 {
-	uint8_t buf[32];
-	uint32_t buf32[32];
+	union {
+		uint8_t buf8[32];
+		uint32_t buf32[32];
+	} buf;
 	k_timeout_t timeout;
+	int32_t offset;
 
 	if (item_mode) {
-		ring_buf_item_init(&ringbuf, ARRAY_SIZE(buf32), buf32);
+		ring_buf_item_init(&ringbuf, ARRAY_SIZE(buf.buf32), buf.buf32);
 	} else {
-		ring_buf_init(&ringbuf, ARRAY_SIZE(buf), buf);
+		ring_buf_init(&ringbuf, ARRAY_SIZE(buf.buf8), buf.buf8);
 	}
+
+	/* force internal 32-bit index roll-over */
+	offset = INT32_MAX - ring_buf_capacity_get(&ringbuf)/2;
+	ring_buf_internal_reset(&ringbuf, offset);
 
 	/* Timeout after 5 seconds. */
 	timeout =  (CONFIG_SYS_CLOCK_TICKS_PER_SEC < 10000) ? K_MSEC(1000) : K_MSEC(10000);
