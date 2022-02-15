@@ -10,6 +10,7 @@
 
 config BT_MCS
 	bool "Media Control Service Support"
+	depends on MCTL_LOCAL_PLAYER_REMOTE_CONTROL
 	select BT_CCID
 	select EXPERIMENTAL
 	help
@@ -135,11 +136,5 @@ config BT_MCS_SEGMENT_NAME_MAX
 	help
 	  Sets the the maximum number of bytes (including the null termination)
 	  of the name of any track segment in the media player.
-
-config BT_DEBUG_MEDIA_PROXY
-	bool "Media Proxy debug"
-	help
-	  Use this option to enable Media Proxy debug logs for the
-	  Bluetooth Audio functionality.
 
 endif # BT_MCS || BT_MCC
