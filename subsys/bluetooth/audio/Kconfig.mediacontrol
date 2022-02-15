@@ -1,0 +1,53 @@
+# Bluetooth Audio - Media control configuration options
+
+#
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BT_AUDIO
+
+config BT_MEDIACONTROL
+	bool "Support for media player control"
+	help
+	  Enables support for control of local and remote media players
+	  To enable support for control of a local media player, support for
+	  local media player must be enabled
+	  # TODO: Reference config for local media player
+
+if BT_MEDIACONTROL
+
+config BT_MEDIACONTROL_LOCAL_PLAYER_CONTROL
+	bool "Support for control of local media player"
+	# TODO: Move MPL out of BT susbystem
+	depends on BT_MPL
+	help
+	  This option enables support for control of a local media player
+
+config BT_MEDIACONTROL_LOCAL_PLAYER_LOCAL_CONTROL
+	bool "Support for local control of local media player"
+	depends on BT_MEDIACONTROL_LOCAL_PLAYER_CONTROL
+	help
+	  This option enables support for local application control of local
+	   media players
+
+config BT_MEDIACONTROL_LOCAL_PLAYER_REMOTE_CONTROL
+	bool "Support for remote control of local media player"
+	depends on BT_MEDIACONTROL_LOCAL_PLAYER_CONTROL
+	select BT_MCS
+	help
+	  This option enables support for remote control of local media
+	   players, using GATT and the Media Control Service
+
+config BT_MEDIACONTROL_REMOTE_PLAYER_CONTROL
+	bool "Support for control of remote media player"
+	default y
+	select BT_MCC
+	help
+	  This options enables support for control of a remote media player,
+	  using GATT and the Media Control Client
+
+endif # BT_MEDIACONTROL
+
+endif # BT_AUDIO
