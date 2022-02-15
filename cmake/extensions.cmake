@@ -1261,14 +1261,22 @@ endfunction(zephyr_linker_sources)
 
 
 # Helper function for CONFIG_CODE_DATA_RELOCATION
-# Call this function with 2 arguments file and then memory location
+# Call this function with 2 arguments file and then memory location.
+# One optional [NOCOPY] flag can be used.
 function(zephyr_code_relocate file location)
+  set(options NOCOPY)
+  cmake_parse_arguments(CODE_REL "${options}" "" "" ${ARGN})
   if(NOT IS_ABSOLUTE ${file})
     set(file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
   endif()
+  if(NOT CODE_REL_NOCOPY)
+    set(copy_flag COPY)
+  else()
+    set(copy_flag NOCOPY)
+  endif()
   set_property(TARGET code_data_relocation_target
     APPEND PROPERTY COMPILE_DEFINITIONS
-    "${location}:${file}")
+    "${location}:${file}:${copy_flag}")
 endfunction()
 
 # Usage:
