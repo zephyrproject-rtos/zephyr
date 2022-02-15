@@ -38,6 +38,9 @@ enum cavstool_cmd {
 
 	/* The host emits a (real/host time) timestamp into the log stream */
 	IPCCMD_TIMESTAMP,
+
+	/* The host copies OUTBOX[ext_data >> 16] to INBOX[ext_data & 0xffff] */
+	IPCCMD_WINCOPY,
 };
 
 void test_post_boot_ipi(void);
@@ -45,5 +48,12 @@ void test_smp_boot_delay(void);
 void test_host_ipc(void);
 void test_cpu_behavior(void);
 void test_cpu_halt(void);
+void test_ipm_cavs_host(void);
+
+/* Cached copy of the ipm_cavs_host driver's handler.  We save it at
+ * the start of the test because we want to do unit testing on the
+ * underlying cavs_ipc device, then recover it later.
+ */
+extern cavs_ipc_handler_t ipm_handler;
 
 #endif /* ZEPHYR_TESTS_INTEL_ADSP_TESTS_H */

@@ -20,7 +20,14 @@ PAGESZ = 4096
 HUGEPAGESZ = 2 * 1024 * 1024
 HUGEPAGE_FILE = "/dev/hugepages/cavs-fw-dma.tmp"
 
-# Log is in the fourth window, they appear in 128k regions starting at 512k
+# SRAM windows.  Each appears in a 128k region starting at 512k.
+#
+# Window 0 is the FW_STATUS area, and 4k after that the IPC "outbox"
+# Window 1 is the IPC "inbox" (host-writable memory, just 384 bytes currently)
+# Window 2 is unused by this script
+# Window 3 is winstream-formatted log output
+OUTBOX_OFFSET    = (512 + (0 * 128)) * 1024 + 4096
+INBOX_OFFSET     = (512 + (1 * 128)) * 1024
 WINSTREAM_OFFSET = (512 + (3 * 128)) * 1024
 
 def map_regs():
@@ -346,6 +353,11 @@ def ipc_command(data, ext_data):
         ext_data = t - ipc_timestamp
         ipc_timestamp = t
         send_msg = True
+    elif data == 5: # copy word at outbox[ext_data >> 16] to inbox[ext_data & 0xffff]
+        src = OUTBOX_OFFSET + 4 * (ext_data >> 16)
+        dst =  INBOX_OFFSET + 4 * (ext_data & 0xffff)
+        for i in range(4):
+            bar4_mmap[dst + i] = bar4_mmap[src + i]
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
 
