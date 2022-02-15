@@ -43,6 +43,17 @@ struct ring_buf {
 };
 
 /**
+ * @brief Function to force ring_buf internal states to given value
+ *
+ * Any value other than 0 makes sense only in validation testing context.
+ */
+static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
+{
+	buf->put_head = buf->put_tail = buf->put_base = value;
+	buf->get_head = buf->get_tail = buf->get_base = value;
+}
+
+/**
  * @defgroup ring_buffer_apis Ring Buffer APIs
  * @ingroup datastructure_apis
  * @{
@@ -138,8 +149,7 @@ static inline void ring_buf_init(struct ring_buf *buf,
 
 	buf->size = size;
 	buf->buffer = data;
-	buf->put_head = buf->put_tail = buf->put_base = 0;
-	buf->get_head = buf->get_tail = buf->get_base = 0;
+	ring_buf_internal_reset(buf, 0);
 }
 
 /**
@@ -185,8 +195,7 @@ static inline bool ring_buf_is_empty(struct ring_buf *buf)
  */
 static inline void ring_buf_reset(struct ring_buf *buf)
 {
-	buf->put_head = buf->put_tail = buf->put_base = 0;
-	buf->get_head = buf->get_tail = buf->get_base = 0;
+	ring_buf_internal_reset(buf, 0);
 }
 
 /**
