@@ -15,6 +15,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/uuid.h>
+#include <bluetooth/l2cap.h>
 #include <sys/byteorder.h>
 #include <sys/printk.h>
 #include <sys/__assert.h>
@@ -1657,8 +1658,10 @@ fail:
 
 static struct bt_gatt_subscribe_params subscribe_params;
 
-/* ev header + default MTU_ATT-3 */
-static uint8_t ev_buf[33];
+/* TODO there should be better way of determining max supported MTU */
+#define MAX_NOTIF_DATA (MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU) - 3)
+
+static uint8_t ev_buf[sizeof(struct gatt_notification_ev) + MAX_NOTIF_DATA];
 
 static uint8_t notify_func(struct bt_conn *conn,
 			   struct bt_gatt_subscribe_params *params,
@@ -1675,6 +1678,9 @@ static uint8_t notify_func(struct bt_conn *conn,
 	addr = bt_conn_get_dst(conn);
 	ev->type = (uint8_t) subscribe_params.value;
 	ev->handle = sys_cpu_to_le16(subscribe_params.value_handle);
+
+	length = MIN(length, MAX_NOTIF_DATA);
+
 	ev->data_length = sys_cpu_to_le16(length);
 	memcpy(ev->data, data, length);
 	memcpy(ev->address, addr->a.val, sizeof(ev->address));
