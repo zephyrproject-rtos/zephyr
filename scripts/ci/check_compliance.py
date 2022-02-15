@@ -231,6 +231,7 @@ class KconfigCheck(ComplianceTest):
         self.check_top_menu_not_too_long(kconf)
         self.check_no_pointless_menuconfigs(kconf)
         self.check_no_undef_within_kconfig(kconf)
+        self.check_no_redefined_in_defconfig(kconf)
         if full:
             self.check_no_undef_outside_kconfig(kconf)
 
@@ -343,6 +344,17 @@ Expected no more than {} potentially visible items (items with prompts) in the
 top-level Kconfig menu, found {} items. If you're deliberately adding new
 entries, then bump the 'max_top_items' variable in {}.
 """.format(max_top_items, n_top_items, __file__))
+
+    def check_no_redefined_in_defconfig(self, kconf):
+        # Checks that no symbols are (re)defined in defconfigs.
+
+        for node in kconf.node_iter():
+            if "defconfig" in node.filename and (node.prompt or node.help):
+                self.add_failure(f"""
+Kconfig node '{node.item.name}' found with prompt or help in {node.filename}.
+Options must not be defined in defconfig files.
+""")
+                continue
 
     def check_no_pointless_menuconfigs(self, kconf):
         # Checks that there are no pointless 'menuconfig' symbols without
