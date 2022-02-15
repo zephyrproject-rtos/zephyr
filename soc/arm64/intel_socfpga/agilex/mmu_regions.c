@@ -25,6 +25,16 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE(DT_NODELABEL(clock)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
 
+	MMU_REGION_FLAT_ENTRY("QSPI_REG",
+			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(qspi), 0),
+			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(qspi), 0),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
+
+	MMU_REGION_FLAT_ENTRY("QSPI_DATA",
+			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(qspi), 1),
+			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(qspi), 1),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
+
 	/* Peripheral to cover UART, I2C, I2C EMAC and Timer SP */
 	MMU_REGION_FLAT_ENTRY("PERIPHERAL",
 			      DT_REG_ADDR(DT_NODELABEL(periph)),
