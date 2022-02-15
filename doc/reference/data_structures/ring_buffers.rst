@@ -138,7 +138,7 @@ Byte mode
 =========
 
 A **byte mode** ring buffer instance is declared using
-:c:macro:`RING_BUF_ITEM_DECLARE_SIZE()` and accessed using:
+:c:macro:`RING_BUF_DECLARE()` and accessed using:
 :c:func:`ring_buf_put_claim`, :c:func:`ring_buf_put_finish`,
 :c:func:`ring_buf_get_claim`, :c:func:`ring_buf_get_finish`,
 :c:func:`ring_buf_put` and :c:func:`ring_buf_get`.
@@ -156,8 +156,7 @@ directly by the user. In the latter case, the operation is split into three stag
 
 Data can be retrieved from a ring buffer through copying
 (see :c:func:`ring_buf_get`) or accessed directly by address. In the latter
-case, the operation is split
-into three stages:
+case, the operation is split into three stages:
 
 1. retrieving source location with valid data written to a ring buffer
    (see :c:func:`ring_buf_get_claim`).
@@ -222,17 +221,17 @@ is capable of holding 64 words of data and metadata information.
 
 .. code-block:: c
 
-    #define MY_RING_BUF_SIZE 64
+    #define MY_RING_BUF_WORDS 64
 
     struct my_struct {
         struct ring_buf rb;
-        uint32_t buffer[MY_RING_BUF_SIZE];
+        uint32_t buffer[MY_RING_BUF_WORDS];
         ...
     };
     struct my_struct ms;
 
     void init_my_struct {
-        ring_buf_init(&ms.rb, sizeof(ms.buffer), ms.buffer);
+        ring_buf_init(&ms.rb, MY_RING_BUF_WORDS, ms.buffer);
         ...
     }
 
@@ -240,16 +239,17 @@ Alternatively, a ring buffer can be defined and initialized at compile time
 using one of two macros at file scope. Each macro defines both the ring
 buffer itself and its data buffer.
 
-The following code defines a ring buffer with a power-of-two sized data buffer,
-which can be accessed using efficient masking operations.
+The following code defines and initializes an empty **data item mode**
+ring with a power-of-two sized data buffer, which can be accessed using
+efficient masking operations.
 
 .. code-block:: c
 
     /* Buffer with 2^8 (or 256) words */
     RING_BUF_ITEM_DECLARE_POW2(my_ring_buf, 8);
 
-The following code defines an application-specific sized **byte mode** ring
-buffer enqueued and dequeued as raw bytes:
+The following code defines a **data item mode** ring with an arbitrary-sized
+data buffer:
 
 .. code-block:: c
 
@@ -263,7 +263,7 @@ intended to be used for raw bytes.
 .. code-block:: c
 
     #define MY_RING_BUF_BYTES 93
-    RING_BUF_DECLARE_SIZE(my_ring_buf, MY_RING_BUF_BYTES);
+    RING_BUF_DECLARE(my_ring_buf, MY_RING_BUF_BYTES);
 
 Enqueuing Data
 ==============
@@ -276,7 +276,7 @@ A data item is added to a ring buffer by calling
     uint32_t data[MY_DATA_WORDS];
     int ret;
 
-    ret = ring_buf_item_put(&ring_buf, TYPE_FOO, 0, data, SIZE32_OF(data));
+    ret = ring_buf_item_put(&ring_buf, TYPE_FOO, 0, data, MY_DATA_WORDS);
     if (ret == -EMSGSIZE) {
         /* not enough room for the data item */
 	...
@@ -304,8 +304,8 @@ Bytes are copied to a **byte mode** ring buffer by calling
     uint8_t my_data[MY_RING_BUF_BYTES];
     uint32_t ret;
 
-    ret = ring_buf_put(&ring_buf, my_data, SIZE_OF(my_data));
-    if (ret != SIZE_OF(my_data)) {
+    ret = ring_buf_put(&ring_buf, my_data, MY_RING_BUF_BYTES);
+    if (ret != MY_RING_BUF_BYTES) {
         /* not enough room, partial copy. */
 	...
     }
@@ -329,7 +329,7 @@ ring buffer's memory.  For example:
     /* Indicate amount of valid data. rx_size can be equal or less than size. */
     err = ring_buf_put_finish(&ring_buf, rx_size);
     if (err != 0) {
-        /* No space to put requested amount of data to ring buffer. */
+        /* This shouldn't happen unless rx_size > size */
 	...
     }
 
@@ -347,7 +347,7 @@ A data item is removed from a ring buffer by calling
     uint8_t  my_size;
     int ret;
 
-    my_size = SIZE32_OF(my_data);
+    my_size = MY_DATA_WORDS;
     ret = ring_buf_item_get(&ring_buf, &my_type, &my_value, my_data, &my_size);
     if (ret == -EMSGSIZE) {
         printk("Buffer is too small, need %d uint32_t\n", my_size);
@@ -368,8 +368,8 @@ Data bytes are copied out from a **byte mode** ring buffer by calling
     size_t  ret;
 
     ret = ring_buf_get(&ring_buf, my_data, sizeof(my_data));
-    if (ret != sizeof(my_size)) {
-        /* Less bytes copied. */
+    if (ret != sizeof(my_data)) {
+        /* Fewer bytes copied. */
     } else {
         /* Requested amount of bytes retrieved. */
         ...
