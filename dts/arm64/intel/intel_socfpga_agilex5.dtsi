@@ -1,0 +1,107 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (C) 2022, Intel Corporation
+ *
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells= <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0>;
+		};
+	};
+
+	gic: interrupt-controller@1d000000  {
+		compatible = "arm,gic";
+		reg = <0x1d000000 0x10000>,
+			  <0x1d060000 0x20000>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		label = "GIC";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		its: msi-controller@1d040000 {
+			compatible = "arm,gic-v3-its";
+			reg = <0x1d040000 0x20000>;
+			label = "ITS";
+			status = "disabled";
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 29 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 30 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 27 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 26 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		label = "arch_timer";
+	};
+
+	sysmgr: sysmgr@10d12000 {
+		compatible = "syscon";
+		reg = <0x10d12000 0x1000>;
+		label = "sysmgr";
+	};
+
+	rstmgr: rstmgr@10d11000 {
+		compatible = "syscon";
+		reg = <0x10d11000 0x1000>;
+		label = "rstmgr";
+	};
+
+	clock: clock@10d10000 {
+		compatible = "intel,agilex-clock";
+		reg = <0x10d10000 0x1000>;
+		#clock-cells = <1>;
+		label = "clock";
+	};
+
+	/* This periph setting is for setting the MMU region
+	 * to cover the following register map due to
+	 * MMU requirement of 4K alignment
+	 * Uart		<0x10c02000 0x300>
+	 * I2C		<0x10c02800 0x500>
+	 * Timer SP	<0x10c03000 0x200>
+	 * Gpio		<0x10c03200 0x200>
+	 */
+	periph: periph@10c02000 {
+		compatible = "syscon";
+		reg = <0x10c02000 0x2000>;
+		label = "periph";
+	};
+
+	mem0: memory@80100000 {
+		device_type = "memory";
+		reg = <0x80100000 0x10000000>;
+		label = "mem_0";
+	};
+
+	uart0: uart@10c02000 {
+		compatible = "ns16550";
+		reg-shift = <2>;
+		reg = <0x10c02000 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clock-frequency = <100000000>;
+		label = "uart_0";
+		status = "disabled";
+	};
+};
