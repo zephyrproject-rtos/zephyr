@@ -317,7 +317,7 @@ static int tc_shim_init(const struct device *dev)
 static struct crypto_driver_api crypto_enc_funcs = {
 	.cipher_begin_session = tc_session_setup,
 	.cipher_free_session = tc_session_free,
-	.crypto_async_callback_set = NULL,
+	.cipher_async_callback_set = NULL,
 	.query_hw_caps = tc_query_caps,
 };
 
