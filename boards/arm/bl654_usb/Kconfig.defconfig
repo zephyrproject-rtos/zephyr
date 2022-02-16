@@ -26,12 +26,6 @@ config FLASH_LOAD_OFFSET
 config USB_CDC_ACM
 	default n if USB_DEVICE_BLUETOOTH
 
-config BL654_USB_SERIAL_BACKEND_CDCACM
-	bool "Use CDC ACM UART as backend for BL654 USB adapter"
-	default y if !USB_DEVICE_BLUETOOTH
-	help
-	  Use CDC ACM UART as backend for console or shell.
-
 if BL654_USB_SERIAL_BACKEND_CDCACM
 
 config UART_CONSOLE
