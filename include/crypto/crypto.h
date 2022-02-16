@@ -73,8 +73,8 @@ __subsystem struct crypto_driver_api {
 	int (*cipher_free_session)(const struct device *dev, struct cipher_ctx *ctx);
 
 	/* Register async crypto op completion callback with the driver */
-	int (*crypto_async_callback_set)(const struct device *dev,
-					 crypto_completion_cb cb);
+	int (*cipher_async_callback_set)(const struct device *dev,
+					 cipher_completion_cb cb);
 };
 
 /* Following are the public API a user app may call.
@@ -213,14 +213,14 @@ static inline int cipher_free_session(const struct device *dev,
  *			  negative errno code on other error.
  */
 static inline int cipher_callback_set(const struct device *dev,
-				      crypto_completion_cb cb)
+				      cipher_completion_cb cb)
 {
 	struct crypto_driver_api *api;
 
 	api = (struct crypto_driver_api *) dev->api;
 
-	if (api->crypto_async_callback_set) {
-		return api->crypto_async_callback_set(dev, cb);
+	if (api->cipher_async_callback_set) {
+		return api->cipher_async_callback_set(dev, cb);
 	}
 
 	return -ENOTSUP;

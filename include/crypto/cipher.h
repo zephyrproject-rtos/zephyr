@@ -239,7 +239,7 @@ struct cipher_aead_pkt {
  * accessed via container_of(). The type of a packet can be determined via
  * pkt->ctx.ops.mode .
  */
-typedef void (*crypto_completion_cb)(struct cipher_pkt *completed, int status);
+typedef void (*cipher_completion_cb)(struct cipher_pkt *completed, int status);
 
 /**
  * @}

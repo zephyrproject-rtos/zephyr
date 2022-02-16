@@ -1385,7 +1385,7 @@ struct crypto_driver_api cc2520_crypto_api = {
 	.query_hw_caps			= cc2520_crypto_hw_caps,
 	.cipher_begin_session			= cc2520_crypto_begin_session,
 	.cipher_free_session			= cc2520_crypto_free_session,
-	.crypto_async_callback_set	= NULL
+	.cipher_async_callback_set	= NULL
 };
 
 DEVICE_DEFINE(cc2520_crypto, CONFIG_IEEE802154_CC2520_CRYPTO_DRV_NAME,
