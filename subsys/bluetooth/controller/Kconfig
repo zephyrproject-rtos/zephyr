@@ -3,8 +3,6 @@
 # Copyright (c) 2016-2017 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-comment "BLE Controller support"
-
 # The following symbols are enabled depending if the controller actually
 # supports the respective features.
 
