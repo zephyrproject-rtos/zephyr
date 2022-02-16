@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BT_AUDIO
-
 ##################### Volume Control Service #####################
 
 config BT_VCS
@@ -112,5 +110,3 @@ config BT_DEBUG_VCS_CLIENT
 	  Bluetooth Audio functionality.
 
 endif # BT_VCS_CLIENT
-
-endif # BT_AUDIO

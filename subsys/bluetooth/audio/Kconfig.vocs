@@ -5,8 +5,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BT_AUDIO
-
 ##################### Volume Offset Control Service #####################
 
 config BT_VOCS_MAX_INSTANCE_COUNT
@@ -74,5 +72,3 @@ config BT_DEBUG_VOCS_CLIENT
 	  logs for the Bluetooth Audio functionality.
 
 endif # BT_VOCS_CLIENT
-
-endif # BT_AUDIO
