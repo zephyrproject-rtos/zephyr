@@ -428,7 +428,9 @@ struct lwm2m_senml_json_context senml_json_ctx;
 	uint8_t token[8];
 	uint8_t tkl;
 	bool last_block : 1;
+	uint8_t  level;  /* 3/4 (4 = resource instance) */
 	uint16_t res_id;
+	uint16_t res_inst_id;
 };
 
 struct lwm2m_output_context {
