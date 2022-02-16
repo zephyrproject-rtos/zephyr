@@ -216,7 +216,7 @@ Architectures
 Bluetooth
 *********
 
-* Updated all experimental features in Bluetooth to use the new `EXPERIMENTAL`
+* Updated all experimental features in Bluetooth to use the new ``EXPERIMENTAL``
   selectable Kconfig option
 * Bluetooth now uses logging v2 as with the rest of the tree
 
@@ -234,7 +234,7 @@ Bluetooth
 
 * Direction Finding
 
-  * Added support for for filtering of periodic advertisements synch by CTE type
+  * Added support for filtering of Periodic Advertising Sync by CTE type
   * Added additional handling logic for Periodic Advertising Sync Establishemnt
   * Added CTE RX, sampling and IQ report handling in DF connected mode
   * Added support for CTE configuration in connected mode
@@ -248,7 +248,7 @@ Bluetooth
   * Added support for L2CAP channel reconfiguration.
   * Added support for SMP error code 0xF, where the peer rejects a distributed
     key
-  * Added `bt_gatt_service_is_registered()` to verify sevice registration
+  * Added ``bt_gatt_service_is_registered()`` to verify sevice registration
   * Added create an delete procedures to the Object Transfer Service
     implementation
   * Added support for reassembling extended advertising reports
@@ -270,7 +270,7 @@ Bluetooth
 
   * Added support for a brand new implementation of LL Control Procedures
     (LLCP), currently disabled by default, can be enabled using the
-    `BT_LL_SW_LLCP_IMPL` Kconfig choice
+    ``CONFIG_BT_LL_SW_LLCP_IMPL`` Kconfig choice
   * Added initial support for Broadcast Isochronous Groups (BIG)
   * Integrated ISO Sync RX datapath
   * Transitioned FEM configurations (PA/LNA) from Kconfig to Devicetree
@@ -289,7 +289,7 @@ Bluetooth
 
 * HCI Driver
 
-  * Added support for a new optional `setup()` function for vendor-specific
+  * Added support for a new optional ``setup()`` function for vendor-specific
     setup code required to bring up the controller
   * Fixed DTM mode not being reset correctly with the HCI Reset command
   * Limited the maximum ACL TX buffer size to 251 bytes
