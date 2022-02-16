@@ -637,14 +637,24 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		ull_adv_sync_info_fill(sync, sync_info);
 
 		if (lll_aux) {
-			/* FIXME: Find absolute ticks until after auxiliary PDU
-			 *        on air to place the periodic advertising PDU.
+			/* Auxiliary set already active (due to other fields
+			 * being already present or being started prior).
 			 */
+			aux = NULL;
 			ticks_anchor_aux = 0U; /* unused in this path */
 			ticks_slot_overhead_aux = 0U; /* unused in this path */
+
+			/* TODO: Find the anchor after the group of active
+			 *       auxiliary sets such that Periodic Advertising
+			 *       events are placed in non-overlapping timeline
+			 *       when auxiliary and Periodic Advertising have
+			 *       similar event interval.
+			 */
 			ticks_anchor_sync = ticker_ticks_now_get();
-			aux = NULL;
 		} else {
+			/* Auxiliary set will be started due to inclusion of
+			 * sync info field.
+			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
 			ticks_anchor_aux = ticker_ticks_now_get();
@@ -806,7 +816,6 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	} else {
 		ticks_slot_overhead = 0U;
 	}
-	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	interval_us = (uint32_t)sync->interval * CONN_INT_UNIT_US;
 
@@ -815,7 +824,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_SYNC_BASE + sync_handle),
-			   (ticks_anchor - ticks_slot_offset), 0U,
+			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
