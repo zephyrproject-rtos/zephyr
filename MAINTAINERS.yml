@@ -129,7 +129,7 @@ ARC arch:
 ARM arch:
     status: maintained
     maintainers:
-        - ioannisg
+        - microbuilder
     collaborators:
         - carlocaione
         - galak
