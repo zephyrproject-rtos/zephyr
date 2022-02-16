@@ -1409,6 +1409,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 				sync_is_started = 1U;
 
 				lll_adv_data_enqueue(lll, pri_idx);
+			} else {
+				/* TODO: Find the anchor before the group of
+				 *       active Periodic Advertising events, so
+				 *       that auxiliary sets are grouped such
+				 *       that auxiliary sets and Periodic
+				 *       Advertising sets are non-overlapping
+				 *       for the same event interval.
+				 */
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 

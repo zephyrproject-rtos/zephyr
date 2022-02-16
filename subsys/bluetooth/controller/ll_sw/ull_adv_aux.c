@@ -149,8 +149,12 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 						ULL_ADV_RANDOM_DELAY) /
 						ADV_INT_UNIT_US);
 
-			/* FIXME: Find absolute ticks until after primary PDU
-			 *        on air to place the auxiliary advertising PDU.
+			/* TODO: Find the anchor before the group of
+			 *       active Periodic Advertising events, so
+			 *       that auxiliary sets are grouped such
+			 *       that auxiliary sets and Periodic
+			 *       Advertising sets are non-overlapping
+			 *       for the same event interval.
 			 */
 			ticks_anchor = ticker_ticks_now_get();
 
