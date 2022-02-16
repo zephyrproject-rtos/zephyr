@@ -42,6 +42,8 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+typedef struct ull_hdr *(*ull_hdr_get_func)(uint8_t ticker_id);
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
@@ -50,134 +52,40 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 			    uint8_t *win_offset);
 #endif
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
+				    ticker_op_match_func ticker_match_op_cb,
+				    ull_hdr_get_func ull_hdr_get_cb,
+				    uint32_t *ticks_anchor,
+				    uint32_t *ticks_to_expire_match,
+				    uint32_t *ticks_slot_match);
+static bool ticker_conn_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+				    uint32_t ticks_to_expire, void *op_context);
+static struct ull_hdr *conn_ull_hdr_get_cb(uint8_t ticker_id);
 static void after_mstr_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 				  uint32_t ticks_anchor,
 				  uint32_t *win_offset_us);
 static void ticker_op_cb(uint32_t status, void *param);
 
-#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
-bool ticker_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
-			uint32_t ticks_to_expire, void *op_context)
+int ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
+				  uint32_t *ticks_anchor, uint32_t *us_offset)
 {
-	ARG_UNUSED(ticks_slot);
-	ARG_UNUSED(ticks_to_expire);
-	ARG_UNUSED(op_context);
-
-	bool match = ticker_id >= TICKER_ID_CONN_BASE &&
-		     ticker_id <= TICKER_ID_CONN_LAST;
-	return match;
-}
-#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
-
-void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
-				   uint32_t *ticks_anchor, uint32_t *us_offset)
-{
-	uint32_t ticks_to_expire_prev;
-	uint32_t ticks_slot_abs_prev;
 	uint32_t ticks_to_expire;
-	uint8_t ticker_id_prev;
+	uint32_t ticks_slot;
 	uint8_t ticker_id;
 
-	ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US << 3);
-
-	ticker_id = ticker_id_prev = 0xff;
-	ticks_to_expire = ticks_to_expire_prev = *us_offset = 0U;
-	ticks_slot_abs_prev = 0U;
-	while (1) {
-		uint32_t ticks_slot_abs_curr = 0;
-		uint32_t ticks_to_expire_normal;
-		uint32_t volatile ret_cb;
-		struct ll_conn *conn;
-		struct ull_hdr *hdr;
-		uint32_t ret;
-		bool success;
-
-		ret_cb = TICKER_STATUS_BUSY;
-#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
-		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR, user_id,
-					       &ticker_id, ticks_anchor,
-					       &ticks_to_expire,
-					       NULL, /* lazy */
-					       ticker_match_op_cb,
-					       NULL, /* match_op_context */
-					       ticker_op_cb, (void *)&ret_cb);
-#else
-		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR, user_id,
-					   &ticker_id, ticks_anchor,
-					   &ticks_to_expire,
-					   ticker_op_cb, (void *)&ret_cb);
-#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
-		if (ret == TICKER_STATUS_BUSY) {
-			while (ret_cb == TICKER_STATUS_BUSY) {
-				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
-						 user_id);
-			}
-		}
-
-		success = (ret_cb == TICKER_STATUS_SUCCESS);
-		LL_ASSERT(success);
-
-		if (ticker_id == 0xff) {
-			break;
-		}
-
-#if !defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
-		if ((ticker_id < TICKER_ID_CONN_BASE) ||
-		    (ticker_id > TICKER_ID_CONN_LAST)) {
-			continue;
-		}
-#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
-
-		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
-		if (!conn || conn->lll.role) {
-			continue;
-		}
-
-		hdr = &conn->ull;
-
-		ticks_to_expire_normal = ticks_to_expire;
-
-#if defined(CONFIG_BT_CTLR_LOW_LAT)
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (hdr->ticks_prepare_to_start & XON_BITMASK) {
-			uint32_t ticks_prepare_to_start =
-				MAX(hdr->ticks_active_to_start,
-				    hdr->ticks_preempt_to_start);
-
-			ticks_slot_abs_curr = hdr->ticks_prepare_to_start &
-					      ~XON_BITMASK;
-			ticks_to_expire_normal -= ticks_slot_abs_curr -
-						  ticks_prepare_to_start;
-		} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-		{
-			uint32_t ticks_prepare_to_start =
-				MAX(hdr->ticks_active_to_start,
-				    hdr->ticks_prepare_to_start);
-
-			ticks_slot_abs_curr = ticks_prepare_to_start;
-		}
-#endif
-
-		ticks_slot_abs_curr += hdr->ticks_slot;
-
-		if ((ticker_id_prev != 0xff) &&
-		    (ticker_ticks_diff_get(ticks_to_expire_normal,
-					   ticks_to_expire_prev) >
-		     (ticks_slot_abs_prev + ticks_slot_abs))) {
-			break;
-		}
-
-		ticker_id_prev = ticker_id;
-		ticks_to_expire_prev = ticks_to_expire_normal;
-		ticks_slot_abs_prev = ticks_slot_abs_curr;
-	}
-
-	if (ticker_id_prev != 0xff) {
-		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire_prev +
-						    ticks_slot_abs_prev) +
+	ticker_id = after_match_slot_get(user_id, ticks_slot_abs,
+					 ticker_conn_match_op_cb,
+					 conn_ull_hdr_get_cb, ticks_anchor,
+					 &ticks_to_expire, &ticks_slot);
+	if (ticker_id != 0xff) {
+		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire +
+						    ticks_slot) +
 						    (EVENT_JITTER_US << 3);
+		return 0;
 	}
+
+	return -ECHILD;
 }
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -604,16 +512,152 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
+				    ticker_op_match_func ticker_match_op_cb,
+				    ull_hdr_get_func ull_hdr_get_cb,
+				    uint32_t *ticks_anchor,
+				    uint32_t *ticks_to_expire_match,
+				    uint32_t *ticks_slot_match)
+{
+	uint32_t ticks_to_expire_prev;
+	uint32_t ticks_slot_abs_prev;
+	uint32_t ticks_to_expire;
+	uint8_t ticker_id_prev;
+	uint8_t ticker_id;
+
+	ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US << 3);
+
+	ticker_id = ticker_id_prev = 0xff;
+	ticks_to_expire = ticks_to_expire_prev = 0U;
+	ticks_slot_abs_prev = 0U;
+	while (1) {
+		uint32_t ticks_slot_abs_curr = 0;
+		uint32_t ticks_to_expire_normal;
+		uint32_t volatile ret_cb;
+		struct ull_hdr *hdr;
+		uint32_t ret;
+		bool success;
+
+		ret_cb = TICKER_STATUS_BUSY;
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR, user_id,
+					       &ticker_id, ticks_anchor,
+					       &ticks_to_expire,
+					       NULL, /* lazy */
+					       ticker_match_op_cb,
+					       NULL, /* match_op_context */
+					       ticker_op_cb, (void *)&ret_cb);
+#else
+		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR, user_id,
+					   &ticker_id, ticks_anchor,
+					   &ticks_to_expire,
+					   ticker_op_cb, (void *)&ret_cb);
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
+						 user_id);
+			}
+		}
+
+		success = (ret_cb == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(success);
+
+		if (ticker_id == 0xff) {
+			break;
+		}
+
+#if !defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
+		if (!ticker_match_op_cb(ticker_id, 0, 0, NULL)) {
+			continue;
+		}
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
+
+		hdr = ull_hdr_get_cb(ticker_id);
+		if (!hdr) {
+			continue;
+		}
+
+		ticks_to_expire_normal = ticks_to_expire;
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+		if (hdr->ticks_prepare_to_start & XON_BITMASK) {
+			uint32_t ticks_prepare_to_start =
+				MAX(hdr->ticks_active_to_start,
+				    hdr->ticks_preempt_to_start);
+
+			ticks_slot_abs_curr = hdr->ticks_prepare_to_start &
+					      ~XON_BITMASK;
+			ticks_to_expire_normal -= ticks_slot_abs_curr -
+						  ticks_prepare_to_start;
+		} else
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+		{
+			uint32_t ticks_prepare_to_start =
+				MAX(hdr->ticks_active_to_start,
+				    hdr->ticks_prepare_to_start);
+
+			ticks_slot_abs_curr = ticks_prepare_to_start;
+		}
+#endif
+
+		ticks_slot_abs_curr += hdr->ticks_slot;
+
+		if ((ticker_id_prev != 0xff) &&
+		    (ticker_ticks_diff_get(ticks_to_expire_normal,
+					   ticks_to_expire_prev) >
+		     (ticks_slot_abs_prev + ticks_slot_abs))) {
+			break;
+		}
+
+		ticker_id_prev = ticker_id;
+		ticks_to_expire_prev = ticks_to_expire_normal;
+		ticks_slot_abs_prev = ticks_slot_abs_curr;
+	}
+
+	if (ticker_id_prev != 0xff) {
+		*ticks_to_expire_match = ticks_to_expire_prev;
+		*ticks_slot_match = ticks_slot_abs_prev;
+	}
+
+	return ticker_id_prev;
+}
+
+static bool ticker_conn_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+				    uint32_t ticks_to_expire, void *op_context)
+{
+	ARG_UNUSED(ticks_slot);
+	ARG_UNUSED(ticks_to_expire);
+	ARG_UNUSED(op_context);
+
+	return (ticker_id >= TICKER_ID_CONN_BASE) &&
+	       (ticker_id <= TICKER_ID_CONN_LAST);
+}
+
+static struct ull_hdr *conn_ull_hdr_get_cb(uint8_t ticker_id)
+{
+	struct ll_conn *conn;
+
+	conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
+	if (!conn || conn->lll.role) {
+		return NULL;
+	}
+
+	return &conn->ull;
+}
+
 static void after_mstr_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 				  uint32_t ticks_anchor,
 				  uint32_t *win_offset_us)
 {
 	uint32_t ticks_anchor_offset = ticks_anchor;
+	int err;
 
-	ull_sched_after_mstr_slot_get(TICKER_USER_ID_ULL_LOW, ticks_slot,
-				      &ticks_anchor_offset, win_offset_us);
-
-	if (!*win_offset_us) {
+	err = ull_sched_after_mstr_slot_get(TICKER_USER_ID_ULL_LOW, ticks_slot,
+					    &ticks_anchor_offset,
+					    win_offset_us);
+	if (err) {
 		return;
 	}
 
