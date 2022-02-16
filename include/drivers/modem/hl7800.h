@@ -135,10 +135,12 @@ enum mdm_hl7800_network_state {
 	HL7800_UNABLE_TO_CONFIGURE = 0xf0
 };
 
-enum mdm_hl7800_sleep_state {
-	HL7800_SLEEP_STATE_UNINITIALIZED = 0,
-	HL7800_SLEEP_STATE_ASLEEP,
-	HL7800_SLEEP_STATE_AWAKE
+enum mdm_hl7800_sleep {
+	HL7800_SLEEP_UNINITIALIZED = 0,
+	HL7800_SLEEP_HIBERNATE,
+	HL7800_SLEEP_AWAKE,
+	HL7800_SLEEP_LITE_HIBERNATE,
+	HL7800_SLEEP_SLEEP,
 };
 
 enum mdm_hl7800_fota_state {
@@ -454,6 +456,14 @@ int32_t mdm_hl7800_polte_locate(void);
  * @retval negative error code, 0 on success
  */
 int32_t mdm_hl7800_perform_site_survey(void);
+
+/**
+ * @brief Set desired sleep level. Requires MODEM_HL7800_LOW_POWER_MODE
+ *
+ * @param level (sleep, lite hibernate, or hibernate)
+ * @return int negative errno, 0 on success
+ */
+int mdm_hl7800_set_desired_sleep_level(enum mdm_hl7800_sleep level);
 
 #ifdef __cplusplus
 }
