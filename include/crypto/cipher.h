@@ -169,37 +169,6 @@ struct cipher_ctx {
 	uint16_t flags;
 };
 
-/* cipher_ctx.flags values. Not all drivers support all flags.
- * A user app can query the supported hw / driver
- * capabilities via provided API (crypto_query_hwcaps()), and choose a
- * supported config during the session setup.
- */
-#define CAP_OPAQUE_KEY_HNDL		BIT(0)
-#define CAP_RAW_KEY			BIT(1)
-
-/* TBD to define */
-#define CAP_KEY_LOADING_API		BIT(2)
-
-/** Whether the output is placed in separate buffer or not */
-#define CAP_INPLACE_OPS			BIT(3)
-#define CAP_SEPARATE_IO_BUFS		BIT(4)
-
-/**
- * These denotes if the output (completion of a cipher_xxx_op) is conveyed
- * by the op function returning, or it is conveyed by an async notification
- */
-#define CAP_SYNC_OPS			BIT(5)
-#define CAP_ASYNC_OPS			BIT(6)
-
-/** Whether the hardware/driver supports autononce feature */
-#define CAP_AUTONONCE			BIT(7)
-
-/** Don't prefix IV to cipher blocks */
-#define CAP_NO_IV_PREFIX		BIT(8)
-
-/* More flags to be added as necessary */
-
-
 /**
  * Structure encoding IO parameters of one cryptographic
  * operation like encrypt/decrypt.
