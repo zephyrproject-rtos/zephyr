@@ -1274,8 +1274,6 @@ enum bt_audio_pac_type {
  *
  *  @param stream Stream object.
  *  @param ops    Stream operations structure.
- *
- *  @return 0 in case of success or negative value in case of error.
  */
 void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
 				 struct bt_audio_stream_ops *ops);
