@@ -770,6 +770,7 @@ scripts/gen_image_info.py                 @tejlmand
 /subsys/shell/backends/shell_mqtt.c       @ycsin
 /subsys/stats/                            @nvlsianpu
 /subsys/storage/                          @nvlsianpu
+/subsys/sd/                               @danieldegrasse
 /subsys/task_wdt/                         @martinjaeger
 /subsys/testsuite/                        @nashif
 /subsys/testsuite/ztest/*/ztress*         @nordic-krch
