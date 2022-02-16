@@ -478,9 +478,9 @@ Application Configuration Directory
 Zephyr will use configuration files from the application's configuration
 directory except for files with an absolute path provided by the arguments
 described earlier, for example ``CONF_FILE``, ``OVERLAY_CONFIG``, and
-``DTC_OVERLAY_FILE``.  A file in a Zephyr module can be referred by
+``DTC_OVERLAY_FILE``. A file in a Zephyr module can be referred by
 escaping the Zephyr module dir variable like this
-``\${ZEPHYR_<modulename>_MODULE_DIR}/<path-to>/<file>``
+``\${ZEPHYR_<module>_MODULE_DIR}/<path-to>/<file>``
 when setting any of said variables.
 
 The application configuration directory is defined by the
