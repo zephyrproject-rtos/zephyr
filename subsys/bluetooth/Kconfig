@@ -96,28 +96,18 @@ config BT_CENTRAL
 	help
 	  Select this for LE Central role support.
 
-menu "Broadcaster"
-	visible if !BT_PERIPHERAL
-
 config BT_BROADCASTER
 	bool "Broadcaster Role support"
 	default y if !BT_OBSERVER
 	help
 	  Select this for LE Broadcaster role support.
 
-endmenu
-
-rsource "Kconfig.adv"
-
-menu "Observer"
-	visible if !BT_CENTRAL
-
 config BT_OBSERVER
 	bool "Observer Role support"
 	help
 	  Select this for LE Observer role support.
 
-endmenu
+rsource "Kconfig.adv"
 
 config BT_CONN
 	bool
