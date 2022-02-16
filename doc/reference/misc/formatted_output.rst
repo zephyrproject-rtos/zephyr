@@ -95,7 +95,9 @@ formatting since address changes whenever package is copied.
 +------------------+-------------------------------------------------------------------------+
 | Header           | 1 byte: Argument list size including header and *fmt* (in 32 bit words) |
 |                  +-------------------------------------------------------------------------+
-| | sizeof(void \*)| 1 byte: Number of appended strings                                      |
+| | sizeof(void \*)| 1 byte: Number of appended strings in writable memory                   |
+|                  +-------------------------------------------------------------------------+
+|                  | 1 byte: Number of appended strings in read-only memory                  |
 |                  +-------------------------------------------------------------------------+
 |                  | platform specific padding to sizeof(void \*)                            |
 +------------------+-------------------------------------------------------------------------+
