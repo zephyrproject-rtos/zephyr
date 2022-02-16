@@ -50,16 +50,7 @@ config 2ND_LEVEL_INTERRUPTS
 config DYNAMIC_INTERRUPTS
 	default y
 
-config LOG
-	default y
-
-# To prevent test uses TEST_LOGGING_MINIMAL
-config TEST_LOGGING_DEFAULTS
-	default n
-	depends on TEST
-
 if LOG
-
 config LOG_BACKEND_ADSP
 	default y
 
