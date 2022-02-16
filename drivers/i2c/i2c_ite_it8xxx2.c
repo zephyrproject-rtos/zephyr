@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT ite_it8xxx2_i2c
 
 #include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <drivers/pinmux.h>
 #include <errno.h>
 #include <logging/log.h>
@@ -1077,7 +1077,7 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 	\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##idx;	               \
 	\
-	I2C_DEVICE_DT_INST_DEFINE(idx,				               \
+	DEVICE_DT_INST_DEFINE(idx,				               \
 			i2c_it8xxx2_init, NULL,				       \
 			&i2c_it8xxx2_data_##idx,	                       \
 			&i2c_it8xxx2_cfg_##idx, POST_KERNEL,		       \

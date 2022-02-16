@@ -26,10 +26,9 @@
  * SCL pin may be a push/pull output.
  */
 
-#include <device.h>
+#include "i2c_context.h"
 #include <errno.h>
 #include <drivers/gpio.h>
-#include <drivers/i2c.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_gpio);
@@ -182,7 +181,7 @@ static const struct i2c_gpio_config i2c_gpio_dev_cfg_##_num = {		\
 	.bitrate	= DT_INST_PROP(_num, clock_frequency),		\
 };									\
 									\
-I2C_DEVICE_DT_INST_DEFINE(_num,						\
+DEVICE_DT_INST_DEFINE(_num,						\
 	    i2c_gpio_init,						\
 	    NULL,							\
 	    &i2c_gpio_dev_data_##_num,					\

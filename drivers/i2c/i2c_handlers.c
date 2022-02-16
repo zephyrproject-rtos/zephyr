@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <string.h>
 #include <syscall_handler.h>
 

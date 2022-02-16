@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <devicetree.h>
 #include <drivers/pinctrl.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <soc.h>
 
 #include <logging/log.h>
@@ -715,7 +715,7 @@ static int i2c_gd32_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 		.irq_cfg_func = i2c_gd32_irq_cfg_func_##inst,			\
 	};									\
-	I2C_DEVICE_DT_INST_DEFINE(inst,						\
+	DEVICE_DT_INST_DEFINE(inst,						\
 				  i2c_gd32_init, NULL,				\
 				  &i2c_gd32_data_##inst, &i2c_gd32_cfg_##inst,	\
 				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\

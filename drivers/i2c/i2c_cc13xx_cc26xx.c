@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT ti_cc13xx_cc26xx_i2c
 
 #include <kernel.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <pm/device.h>
 #include <pm/pm.h>
 
@@ -437,7 +437,7 @@ static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
 
 PM_DEVICE_DT_INST_DEFINE(0, i2c_cc13xx_cc26xx_pm_action);
 
-I2C_DEVICE_DT_INST_DEFINE(0,
+DEVICE_DT_INST_DEFINE(0,
 		i2c_cc13xx_cc26xx_init,
 		PM_DEVICE_DT_INST_GET(0),
 		&i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config,

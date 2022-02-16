@@ -16,10 +16,9 @@
 #include <errno.h>
 #include <sys/__assert.h>
 #include <kernel.h>
-#include <device.h>
+#include "i2c_context.h"
 #include <init.h>
 #include <soc.h>
-#include <drivers/i2c.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
@@ -343,7 +342,7 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 									\
 	static struct i2c_sam_twihs_dev_data i2c##n##_sam_data;		\
 									\
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sam_twihs_initialize,	\
+	DEVICE_DT_INST_DEFINE(n, i2c_sam_twihs_initialize,	\
 			    NULL,					\
 			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\

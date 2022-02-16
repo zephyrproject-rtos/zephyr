@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nxp_kinetis_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <soc.h>
 #include <fsl_i2c.h>
 #include <fsl_clock.h>
@@ -226,7 +226,7 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 									\
 	static struct i2c_mcux_data i2c_mcux_data_ ## n;		\
 									\
-	I2C_DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_DT_INST_DEFINE(n,					\
 			i2c_mcux_init, NULL,				\
 			&i2c_mcux_data_ ## n,				\
 			&i2c_mcux_config_ ## n, POST_KERNEL,		\

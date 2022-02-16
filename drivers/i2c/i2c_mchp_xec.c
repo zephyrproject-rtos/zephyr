@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 

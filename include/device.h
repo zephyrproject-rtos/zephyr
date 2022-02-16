@@ -30,27 +30,11 @@
 #include <linker/sections.h>
 #include <sys/device_mmio.h>
 #include <sys/util.h>
+#include <device_structs.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Type used to represent a "handle" for a device.
- *
- * Every struct device has an associated handle. You can get a pointer
- * to a device structure from its handle and vice versa, but the
- * handle uses less space than a pointer. The device.h API mainly uses
- * handles to store lists of multiple devices in a compact way.
- *
- * The extreme values and zero have special significance. Negative
- * values identify functionality that does not correspond to a Zephyr
- * device, such as the system clock or a SYS_INIT() function.
- *
- * @see device_handle_get()
- * @see device_from_handle()
- */
-typedef int16_t device_handle_t;
 
 /** @brief Flag value used in lists of device handles to separate
  * distinct groups.
@@ -125,6 +109,14 @@ typedef int16_t device_handle_t;
  */
 #define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
 
+/*
+ * Define the type of the device state, this may be defined prior to including
+ * device.h to have device class specific wrapper types
+ */
+#ifndef Z_DEVICE_STATE_TYPE
+#define Z_DEVICE_STATE_TYPE struct device_state
+#endif
+
 /**
  * @brief Utility macro to define and initialize the device state.
  *
@@ -132,7 +124,7 @@ typedef int16_t device_handle_t;
  * @param dev_name Device name.
  */
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
+	static Z_DEVICE_STATE_TYPE Z_DEVICE_STATE_NAME(dev_name)	\
 	__attribute__((__section__(".z_devstate")));
 
 /**
@@ -417,60 +409,6 @@ typedef int16_t device_handle_t;
  * @param name Device name
  */
 #define DEVICE_DECLARE(name) static const struct device DEVICE_NAME_GET(name)
-
-/**
- * @brief Runtime device dynamic structure (in RAM) per driver instance
- *
- * Fields in this are expected to be default-initialized to zero. The
- * kernel driver infrastructure and driver access functions are
- * responsible for ensuring that any non-zero initialization is done
- * before they are accessed.
- */
-struct device_state {
-	/** Non-negative result of initializing the device.
-	 *
-	 * The absolute value returned when the device initialization
-	 * function was invoked, or `UINT8_MAX` if the value exceeds
-	 * an 8-bit integer. If initialized is also set, a zero value
-	 * indicates initialization succeeded.
-	 */
-	unsigned int init_res : 8;
-
-	/** Indicates the device initialization function has been
-	 * invoked.
-	 */
-	bool initialized : 1;
-};
-
-struct pm_device;
-
-/**
- * @brief Runtime device structure (in ROM) per driver instance
- */
-struct device {
-	/** Name of the device instance */
-	const char *name;
-	/** Address of device instance config information */
-	const void *config;
-	/** Address of the API structure exposed by the device instance */
-	const void *api;
-	/** Address of the common device state */
-	struct device_state * const state;
-	/** Address of the device instance private data */
-	void * const data;
-	/** optional pointer to handles associated with the device.
-	 *
-	 * This encodes a sequence of sets of device handles that have
-	 * some relationship to this node. The individual sets are
-	 * extracted with dedicated API, such as
-	 * device_required_handles_get().
-	 */
-	const device_handle_t *const handles;
-#ifdef CONFIG_PM_DEVICE
-	/** Reference to the device PM resources. */
-	struct pm_device * const pm;
-#endif
-};
 
 /**
  * @brief Get the handle for a given device
@@ -821,16 +759,6 @@ __deprecated static inline int device_usable_check(const struct device *dev)
 #define Z_DEVICE_EXTRA_HANDLES(...)				\
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
-/*
- * Utility macro to define and initialize the device state.
- *
- * @param node_id Devicetree node id of the device.
- * @param dev_name Device name.
- */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
-
 /* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.
  */
@@ -900,12 +828,21 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 #define Z_DEVICE_DEFINE_INIT(node_id, dev_name)				\
 	.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),
 
+/* A macro to allow for intercepting device init and enabling a device
+ * class specific init_fn to wrap the driver init_fn
+ */
+#ifndef Z_DEVICE_INIT_WRAPPER
+#define Z_DEVICE_INIT_WRAPPER_DEFINE(dev_name, init_fn)
+#define Z_DEVICE_INIT_WRAPPER(dev_name, init_fn) init_fn
+#endif
+
 /* Like DEVICE_DEFINE but takes a node_id AND a dev_name, and trailing
  * dependency handles that come from outside devicetree.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,\
 			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr, ...)	\
 	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
+	Z_DEVICE_INIT_WRAPPER_DEFINE(dev_name, init_fn)			\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
@@ -913,15 +850,16 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
-		.state = (state_ptr),					\
+		.state = (struct device_state *)(state_ptr),					\
 		.data = (data_ptr),					\
 		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_device,), ())	\
 		Z_DEVICE_DEFINE_INIT(node_id, dev_name)			\
 	};								\
 	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
 		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
-	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
-		(&DEVICE_NAME_GET(dev_name)), level, prio)
+	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name),			\
+			    Z_DEVICE_INIT_WRAPPER(dev_name, init_fn),		\
+			    (&DEVICE_NAME_GET(dev_name)), level, prio)
 
 #ifdef __cplusplus
 }

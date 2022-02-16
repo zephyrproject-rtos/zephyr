@@ -30,7 +30,7 @@
 
 #include <assert.h>
 #include <drivers/clock_control.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <dt-bindings/i2c/i2c.h>
 #include <soc.h>
 

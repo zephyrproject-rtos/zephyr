@@ -8,7 +8,7 @@
 #define DT_DRV_COMPAT nxp_imx_lpi2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <drivers/clock_control.h>
 #include <fsl_lpi2c.h>
 
@@ -260,7 +260,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 									\
 	static struct mcux_lpi2c_data mcux_lpi2c_data_##n;		\
 									\
-	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL,		\
+	DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL,		\
 			    &mcux_lpi2c_data_##n,			\
 			    &mcux_lpi2c_config_##n, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

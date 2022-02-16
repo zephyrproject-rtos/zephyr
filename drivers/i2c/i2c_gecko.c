@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT silabs_gecko_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <sys/util.h>
 #include <em_cmu.h>
 #include <em_i2c.h>
@@ -222,7 +222,7 @@ static const struct i2c_gecko_config i2c_gecko_config_##idx = { \
 \
 static struct i2c_gecko_data i2c_gecko_data_##idx; \
 \
-I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, \
+DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, \
 		 NULL, \
 		 &i2c_gecko_data_##idx, &i2c_gecko_config_##idx, \
 		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \

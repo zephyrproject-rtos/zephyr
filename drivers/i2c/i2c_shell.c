@@ -6,7 +6,7 @@
 
 #include <shell/shell.h>
 #include <stdlib.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <string.h>
 #include <sys/util.h>
 #include <stdlib.h>

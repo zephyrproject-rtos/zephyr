@@ -10,7 +10,7 @@
 
 #include <kernel.h>
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <soc.h>
 
 /* Driverlib includes */
@@ -378,7 +378,7 @@ static const struct i2c_cc32xx_config i2c_cc32xx_config = {
 
 static struct i2c_cc32xx_data i2c_cc32xx_data;
 
-I2C_DEVICE_DT_INST_DEFINE(0, i2c_cc32xx_init, NULL,
+DEVICE_DT_INST_DEFINE(0, i2c_cc32xx_init, NULL,
 		    &i2c_cc32xx_data, &i2c_cc32xx_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_cc32xx_driver_api);

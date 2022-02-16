@@ -18,7 +18,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <drivers/interrupt_controller/intc_esp32.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
@@ -710,7 +710,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	.bitrate = I2C_FREQUENCY(idx),	\
 	.default_config = I2C_MODE_MASTER,				\
 	};								       \
-	I2C_DEVICE_DT_DEFINE(DT_NODELABEL(i2c##idx),					       \
+	DEVICE_DT_DEFINE(DT_NODELABEL(i2c##idx),					       \
 		      i2c_esp32_init,					       \
 		      NULL,				       \
 		      &i2c_esp32_data_##idx,				       \

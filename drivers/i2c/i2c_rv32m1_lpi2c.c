@@ -10,7 +10,7 @@
 
 #define DT_DRV_COMPAT openisa_rv32m1_lpi2c
 
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <drivers/clock_control.h>
 #include <fsl_lpi2c.h>
 #include <logging/log.h>
@@ -264,7 +264,7 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 		.completion_sync = Z_SEM_INITIALIZER(                          \
 			rv32m1_lpi2c_##id##_data.completion_sync, 0, 1),       \
 	};                                                                     \
-	I2C_DEVICE_DT_INST_DEFINE(id,                                          \
+	DEVICE_DT_INST_DEFINE(id,                                          \
 			    rv32m1_lpi2c_init,                                 \
 			    NULL,                                              \
 			    &rv32m1_lpi2c_##id##_data,                         \

@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nxp_lpc11u6x_i2c
 
 #include <kernel.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <drivers/pinmux.h>
 #include <drivers/clock_control.h>
 #include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
@@ -400,7 +400,7 @@ static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {		      \
 									      \
 static struct lpc11u6x_i2c_data i2c_data_##idx;			              \
 									      \
-I2C_DEVICE_DT_INST_DEFINE(idx,						      \
+DEVICE_DT_INST_DEFINE(idx,						      \
 		    lpc11u6x_i2c_init,					      \
 		    NULL,						      \
 		    &i2c_data_##idx, &i2c_cfg_##idx,			      \

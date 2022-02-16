@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT fsl_imx21_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <soc.h>
 #include <i2c_imx.h>
 #include <sys/util.h>
@@ -367,7 +367,7 @@ static const struct i2c_driver_api i2c_imx_driver_api = {
 									\
 	static struct i2c_imx_data i2c_imx_data_##n;			\
 									\
-	I2C_DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_DT_INST_DEFINE(n,					\
 				i2c_imx_init,				\
 				NULL,					\
 				&i2c_imx_data_##n, &i2c_imx_config_##n,	\

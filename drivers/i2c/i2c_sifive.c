@@ -10,8 +10,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_sifive);
 
-#include <device.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <sys/sys_io.h>
 
 #include "i2c-priv.h"
@@ -329,7 +328,7 @@ static struct i2c_driver_api i2c_sifive_api = {
 		.f_sys = DT_INST_PROP(n, input_frequency), \
 		.f_bus = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	I2C_DEVICE_DT_INST_DEFINE(n, \
+	DEVICE_DT_INST_DEFINE(n, \
 			    i2c_sifive_init, \
 			    NULL, \
 			    NULL, \

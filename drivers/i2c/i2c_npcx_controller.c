@@ -68,7 +68,7 @@
 
 #include <assert.h>
 #include <drivers/clock_control.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <soc.h>
 
 #include <logging/log.h>
@@ -961,7 +961,7 @@ static int i2c_ctrl_init(const struct device *dev)
 									       \
 	static struct i2c_ctrl_data i2c_ctrl_data_##inst;                      \
 									       \
-	I2C_DEVICE_DT_INST_DEFINE(inst,                                        \
+	DEVICE_DT_INST_DEFINE(inst,                                        \
 			    NPCX_I2C_CTRL_INIT_FUNC(inst),                     \
 			    NULL,                                              \
 			    &i2c_ctrl_data_##inst, &i2c_ctrl_cfg_##inst,       \

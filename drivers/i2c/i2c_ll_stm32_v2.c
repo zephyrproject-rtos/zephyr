@@ -16,7 +16,7 @@
 #include <soc.h>
 #include <stm32_ll_i2c.h>
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include "i2c_ll_stm32.h"
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL

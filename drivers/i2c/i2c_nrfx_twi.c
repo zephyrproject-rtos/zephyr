@@ -5,7 +5,7 @@
  */
 
 
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <dt-bindings/i2c/i2c.h>
 #include <pm/device.h>
 #include <nrfx_twi.h>
@@ -281,7 +281,7 @@ static int twi_nrfx_pm_action(const struct device *dev,
 		}							       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twi_nrfx_pm_action);		       \
-	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
+	DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twi_##idx##_init,					       \
 		      PM_DEVICE_DT_GET(I2C(idx)),			       \
 		      &twi_##idx##_data,				       \

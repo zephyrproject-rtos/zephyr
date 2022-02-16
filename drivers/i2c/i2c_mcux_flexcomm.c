@@ -8,7 +8,7 @@
 #define DT_DRV_COMPAT nxp_lpc_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <drivers/clock_control.h>
 #include <fsl_i2c.h>
 
@@ -225,7 +225,7 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
-	I2C_DEVICE_DT_INST_DEFINE(id,					\
+	DEVICE_DT_INST_DEFINE(id,					\
 			    mcux_flexcomm_init,				\
 			    NULL,					\
 			    &mcux_flexcomm_data_##id,			\

@@ -5,10 +5,9 @@
  */
 
 #include <zephyr.h>
-#include <device.h>
+#include "i2c_context.h"
 #include <devicetree.h>
 #include <drivers/gpio.h>
-#include <drivers/i2c.h>
 #include <logging/log.h>
 #include <stdint.h>
 
@@ -182,7 +181,7 @@ const struct i2c_driver_api tca954x_api_funcs = {
 	static struct tca954x_root_data tca##n##a_data_##inst = {		  \
 		.lock = Z_MUTEX_INITIALIZER(tca##n##a_data_##inst.lock),	  \
 	};									  \
-	I2C_DEVICE_DT_DEFINE(DT_INST(inst, ti_tca##n##a),			  \
+	DEVICE_DT_DEFINE(DT_INST(inst, ti_tca##n##a),			  \
 			      tca954x_root_init, NULL,				  \
 			      &tca##n##a_data_##inst, &tca##n##a_cfg_##inst,	  \
 			      POST_KERNEL, CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,	  \

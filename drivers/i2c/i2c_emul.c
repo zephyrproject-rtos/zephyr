@@ -15,9 +15,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_emul_ctlr);
 
-#include <device.h>
+#include "i2c_context.h"
 #include <drivers/emul.h>
-#include <drivers/i2c.h>
 #include <drivers/i2c_emul.h>
 
 /** Working data for the device */
@@ -153,7 +152,7 @@ static struct i2c_driver_api i2c_emul_api = {
 		.num_children = ARRAY_SIZE(emuls_##n), \
 	}; \
 	static struct i2c_emul_data i2c_emul_data_##n; \
-	I2C_DEVICE_DT_INST_DEFINE(n, \
+	DEVICE_DT_INST_DEFINE(n, \
 			    i2c_emul_init, \
 			    NULL, \
 			    &i2c_emul_data_##n, \

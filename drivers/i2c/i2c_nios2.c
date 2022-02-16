@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT altr_nios2_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <soc.h>
 #include <sys/util.h>
 #include <altera_common.h>
@@ -162,7 +162,7 @@ static struct i2c_nios2_config i2c_nios2_cfg = {
 	},
 };
 
-I2C_DEVICE_DT_INST_DEFINE(0, i2c_nios2_init, NULL,
+DEVICE_DT_INST_DEFINE(0, i2c_nios2_init, NULL,
 		    NULL, &i2c_nios2_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_nios2_driver_api);

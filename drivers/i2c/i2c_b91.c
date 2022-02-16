@@ -12,7 +12,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_telink);
 
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include "i2c-priv.h"
 #include <drivers/pinmux.h>
 #include <dt-bindings/pinctrl/b91-pinctrl.h>
@@ -177,7 +177,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 		.pinctrl_list = i2c_pins_##inst			  \
 	};							  \
 								  \
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		  \
+	DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		  \
 			      NULL,				  \
 			      &i2c_b91_data_##inst,		  \
 			      &i2c_b91_cfg_##inst,		  \

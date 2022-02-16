@@ -13,7 +13,7 @@
 #include <stm32_ll_i2c.h>
 #include <stm32_ll_rcc.h>
 #include <errno.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <drivers/pinctrl.h>
 #include "i2c_ll_stm32.h"
 
@@ -343,7 +343,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\
 									\
-I2C_DEVICE_DT_DEFINE(DT_NODELABEL(name), i2c_stm32_init,		\
+DEVICE_DT_DEFINE(DT_NODELABEL(name), i2c_stm32_init,		\
 		    NULL, &i2c_stm32_dev_data_##name,			\
 		    &i2c_stm32_cfg_##name,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\

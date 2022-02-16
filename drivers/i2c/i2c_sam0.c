@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT atmel_sam0_i2c
 
 #include <errno.h>
-#include <device.h>
+#include "i2c_context.h"
 #include <init.h>
 #include <soc.h>
-#include <drivers/i2c.h>
+#include "i2c_context.h"
 #include <drivers/dma.h>
 
 #include <logging/log.h>
@@ -808,7 +808,7 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	static void i2c_sam0_irq_config_##n(const struct device *dev);	\
 	I2C_SAM0_CONFIG(n);						\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\
-	I2C_DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    i2c_sam0_initialize,			\
 			    NULL,					\
 			    &i2c_sam0_dev_data_##n,			\
