@@ -189,3 +189,6 @@ set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
 if (NOT COMPILER STREQUAL "xcc")
 set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
 endif()
+
+# Compiler flag for disabling pointer arithmetic warnings
+set_compiler_property(PROPERTY warning_no_pointer_arithmetic "-Wno-pointer-arith")
