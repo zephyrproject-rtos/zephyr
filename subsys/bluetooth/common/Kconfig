@@ -4,6 +4,8 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+menu "Bluetooth buffer configuration"
+
 config BT_BUF_ACL_TX_SIZE
 	int "Maximum supported ACL size for outgoing data"
 	range 27 65535
@@ -185,6 +187,8 @@ config BT_BUF_CMD_TX_COUNT
 	range 2 64
 	help
 	  Number of buffers available for outgoing HCI commands from the Host.
+
+endmenu
 
 config BT_HAS_HCI_VS
 	bool
