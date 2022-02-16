@@ -4,4 +4,5 @@
 zephyr_sources(
   soc.c
 )
-zephyr_library_sources_ifdef(CONFIG_SOC_R8A77951 pfc_r8a77951.c)
+
+zephyr_library_sources_ifdef(CONFIG_SOC_R8A77951 pfc_r8a77951.c cpg_r8a77951.c)
