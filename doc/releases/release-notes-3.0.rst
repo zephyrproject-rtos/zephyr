@@ -25,7 +25,8 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 * CVE-2021-3861: `Zephyr project bug tracker GHSA-hvfp-w4h8-gxvj
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hvfp-w4h8-gxvj>`_
 
-* CVE-2021-3966: Under embargo until 2021-02-12
+* CVE-2021-3966: `Zephyr project bug tracker GHSA-hfxq-3w6x-fv2m
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hfxq-3w6x-fv2m>`_
 
 Known issues
 ************
