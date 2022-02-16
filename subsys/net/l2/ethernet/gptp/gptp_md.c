@@ -52,6 +52,7 @@ static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
 	hdr->correction_field *= sync_send->rate_ratio;
 	hdr->correction_field += sync_send->follow_up_correction_field;
 	hdr->correction_field <<= 16;
+	hdr->correction_field = htonll(hdr->correction_field);
 
 	memcpy(&hdr->port_id.clk_id, &sync_send->src_port_id.clk_id,
 	       GPTP_CLOCK_ID_LEN);
