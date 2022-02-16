@@ -18,4 +18,6 @@ else()
   # time.  Suppress the warning, it's the best we can do given that
   # it's a legacy compiler.
   set_compiler_property(APPEND PROPERTY warning_base "-fgnu89-inline")
+
+  set_compiler_property(PROPERTY warning_error_misra_sane)
 endif()
