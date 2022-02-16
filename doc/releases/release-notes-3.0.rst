@@ -106,6 +106,7 @@ Removed APIs in this release
 * Removed ``DT_CHOSEN_ZEPHYR_CANBUS_LABEL`` in favor of utilizing
   :c:macro:`DEVICE_DT_GET`.
 
+* Removed ``CONFIG_LOG_MINIMAL``. Use ``CONFIG_LOG_MODE_MINIMAL`` instead.
 
 Deprecated in this release
 ==========================
