@@ -119,8 +119,6 @@ config BT_OBSERVER
 
 endmenu
 
-rsource "services/Kconfig"
-
 config BT_CONN
 	bool
 
