@@ -9,102 +9,6 @@
 #include <sys/ring_buffer.h>
 #include <string.h>
 
-/**
- * Internal data structure for a buffer header.
- *
- * We want all of this to fit in a single uint32_t. Every item stored in the
- * ring buffer will be one of these headers plus any extra data supplied
- */
-struct ring_element {
-	uint32_t  type   :16; /**< Application-specific */
-	uint32_t  length :8;  /**< length in 32-bit chunks */
-	uint32_t  value  :8;  /**< Room for small integral values */
-};
-
-int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
-		      uint32_t *data32, uint8_t size32)
-{
-	uint8_t *dst, *data = (uint8_t *)data32;
-	struct ring_element *header;
-	uint32_t space, size, partial_size, total_size;
-	int ret;
-
-	space = ring_buf_space_get(buf);
-	size = size32 * 4;
-	if (size + sizeof(struct ring_element) > space) {
-		return -EMSGSIZE;
-	}
-
-	ret = ring_buf_put_claim(buf, &dst, sizeof(struct ring_element));
-	__ASSERT_NO_MSG(ret == sizeof(struct ring_element));
-
-	header = (struct ring_element *)dst;
-	header->type = type;
-	header->length = size32;
-	header->value = value;
-	total_size = sizeof(struct ring_element);
-
-	do {
-		partial_size = ring_buf_put_claim(buf, &dst, size);
-		memcpy(dst, data, partial_size);
-		size -= partial_size;
-		total_size += partial_size;
-		data += partial_size;
-	} while (size && partial_size);
-	__ASSERT_NO_MSG(size == 0);
-
-	ret = ring_buf_put_finish(buf, total_size);
-	__ASSERT_NO_MSG(ret == 0);
-
-	return 0;
-}
-
-int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
-		      uint32_t *data32, uint8_t *size32)
-{
-	uint8_t *src, *data = (uint8_t *)data32;
-	struct ring_element *header;
-	uint32_t size, partial_size, total_size;
-	int ret;
-
-	if (ring_buf_is_empty(buf)) {
-		return -EAGAIN;
-	}
-
-	ret = ring_buf_get_claim(buf, &src, sizeof(struct ring_element));
-	__ASSERT_NO_MSG(ret == sizeof(struct ring_element));
-
-	header = (struct ring_element *)src;
-
-	if (data && (header->length > *size32)) {
-		*size32 = header->length;
-		ring_buf_get_finish(buf, 0);
-		return -EMSGSIZE;
-	}
-
-	*size32 = header->length;
-	*type = header->type;
-	*value = header->value;
-	total_size = sizeof(struct ring_element);
-
-	size = *size32 * 4;
-
-	do {
-		partial_size = ring_buf_get_claim(buf, &src, size);
-		if (data) {
-			memcpy(data, src, partial_size);
-			data += partial_size;
-		}
-		total_size += partial_size;
-		size -= partial_size;
-	} while (size && partial_size);
-
-	ret = ring_buf_get_finish(buf, total_size);
-	__ASSERT_NO_MSG(ret == 0);
-
-	return 0;
-}
-
 uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)
 {
 	uint32_t free_space, wrap_size;
@@ -272,4 +176,100 @@ uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size)
 	__ASSERT_NO_MSG(err == 0);
 
 	return total_size;
+}
+
+/**
+ * Internal data structure for a buffer header.
+ *
+ * We want all of this to fit in a single uint32_t. Every item stored in the
+ * ring buffer will be one of these headers plus any extra data supplied
+ */
+struct ring_element {
+	uint32_t  type   :16; /**< Application-specific */
+	uint32_t  length :8;  /**< length in 32-bit chunks */
+	uint32_t  value  :8;  /**< Room for small integral values */
+};
+
+int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
+		      uint32_t *data32, uint8_t size32)
+{
+	uint8_t *dst, *data = (uint8_t *)data32;
+	struct ring_element *header;
+	uint32_t space, size, partial_size, total_size;
+	int ret;
+
+	space = ring_buf_space_get(buf);
+	size = size32 * 4;
+	if (size + sizeof(struct ring_element) > space) {
+		return -EMSGSIZE;
+	}
+
+	ret = ring_buf_put_claim(buf, &dst, sizeof(struct ring_element));
+	__ASSERT_NO_MSG(ret == sizeof(struct ring_element));
+
+	header = (struct ring_element *)dst;
+	header->type = type;
+	header->length = size32;
+	header->value = value;
+	total_size = sizeof(struct ring_element);
+
+	do {
+		partial_size = ring_buf_put_claim(buf, &dst, size);
+		memcpy(dst, data, partial_size);
+		size -= partial_size;
+		total_size += partial_size;
+		data += partial_size;
+	} while (size && partial_size);
+	__ASSERT_NO_MSG(size == 0);
+
+	ret = ring_buf_put_finish(buf, total_size);
+	__ASSERT_NO_MSG(ret == 0);
+
+	return 0;
+}
+
+int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
+		      uint32_t *data32, uint8_t *size32)
+{
+	uint8_t *src, *data = (uint8_t *)data32;
+	struct ring_element *header;
+	uint32_t size, partial_size, total_size;
+	int ret;
+
+	if (ring_buf_is_empty(buf)) {
+		return -EAGAIN;
+	}
+
+	ret = ring_buf_get_claim(buf, &src, sizeof(struct ring_element));
+	__ASSERT_NO_MSG(ret == sizeof(struct ring_element));
+
+	header = (struct ring_element *)src;
+
+	if (data && (header->length > *size32)) {
+		*size32 = header->length;
+		ring_buf_get_finish(buf, 0);
+		return -EMSGSIZE;
+	}
+
+	*size32 = header->length;
+	*type = header->type;
+	*value = header->value;
+	total_size = sizeof(struct ring_element);
+
+	size = *size32 * 4;
+
+	do {
+		partial_size = ring_buf_get_claim(buf, &src, size);
+		if (data) {
+			memcpy(data, src, partial_size);
+			data += partial_size;
+		}
+		total_size += partial_size;
+		size -= partial_size;
+	} while (size && partial_size);
+
+	ret = ring_buf_get_finish(buf, total_size);
+	__ASSERT_NO_MSG(ret == 0);
+
+	return 0;
 }
