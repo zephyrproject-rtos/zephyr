@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel cAVS HDA Host In controller
+
+compatible: "intel,cavs-hda-host-in"
+
+include: intel,cavs-hda.yaml

@@ -13,6 +13,7 @@
 
 void test_hda_host_in_smoke(void);
 void test_hda_host_out_smoke(void);
+void test_hda_host_in_dma(void);
 
 static inline void hda_ipc_msg(const struct device *dev, uint32_t data,
 			       uint32_t ext, k_timeout_t timeout)
