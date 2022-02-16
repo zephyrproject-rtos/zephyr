@@ -442,6 +442,21 @@ config LWM2M_RW_CBOR_SUPPORT
 	help
 	  Include support for writing CBOR data
 
+config LWM2M_RW_SENML_CBOR_SUPPORT
+	bool "support for SenML CBOR writer"
+	depends on ZCBOR
+	depends on ZCBOR_CANONICAL
+	help
+	  Include support for writing SenML CBOR data
+
+config LWM2M_RW_SENML_CBOR_RECORDS
+	int "Maximum # of SenML records packed into a CBOR binary"
+	depends on LWM2M_RW_SENML_CBOR_SUPPORT
+	default 30
+	help
+	  The CBOR library requires you to set an upper limit for the records when encoder
+	  and decoder do get generated.
+
 config LWM2M_DEVICE_PWRSRC_MAX
 	int "Maximum # of device power source records"
 	default 5
