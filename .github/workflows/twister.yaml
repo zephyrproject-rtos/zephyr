@@ -8,8 +8,8 @@ on:
     branches:
       - main
   schedule:
-    # Run at 00:00 on Saturday
-    - cron: '0 0 * * 6'
+    # Run at 00:00 on Wednesday and Saturday
+    - cron: '0 0 * * 3,6'
 
 jobs:
   twister-build-cleanup:
