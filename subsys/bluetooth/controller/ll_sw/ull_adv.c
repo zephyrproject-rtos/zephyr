@@ -1422,11 +1422,18 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 			/* Keep aux interval equal or higher than primary PDU
 			 * interval.
+			 * Use periodic interval units to represent the
+			 * periodic behavior of scheduling of AUX_ADV_IND PDUs
+			 * so that it is grouped with similar interval units
+			 * used for ACL Connections, Periodic Advertising and
+			 * BIG radio events.
 			 */
-			aux->interval = adv->interval +
-					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY) /
-						ADV_INT_UNIT_US);
+			aux->interval =
+				ceiling_fraction(((uint64_t)adv->interval *
+						  ADV_INT_UNIT_US) +
+						 HAL_TICKER_TICKS_TO_US(
+							ULL_ADV_RANDOM_DELAY),
+						 PERIODIC_INT_UNIT_US);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);

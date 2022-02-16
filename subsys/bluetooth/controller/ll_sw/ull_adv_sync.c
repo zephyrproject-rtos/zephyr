@@ -853,7 +853,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 		ticks_slot_overhead = 0U;
 	}
 
-	interval_us = (uint32_t)sync->interval * CONN_INT_UNIT_US;
+	interval_us = (uint32_t)sync->interval * PERIODIC_INT_UNIT_US;
 
 	sync_handle = sync_handle_get(sync);
 
