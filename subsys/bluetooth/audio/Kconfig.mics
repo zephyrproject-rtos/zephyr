@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BT_AUDIO
-
 ##################### Microphone Input Control Service #####################
 
 config BT_MICS
@@ -82,5 +80,3 @@ config BT_DEBUG_MICS_CLIENT
 	  the Bluetooth Audio functionality.
 
 endif # BT_MICS_CLIENT
-
-endif # BT_AUDIO
