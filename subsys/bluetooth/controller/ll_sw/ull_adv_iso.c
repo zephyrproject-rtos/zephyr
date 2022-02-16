@@ -377,8 +377,14 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* Initialise LLL header members */
 	lll_hdr_init(lll_adv_iso, adv_iso);
 
-	/* Start sending BIS empty data packet for each BIS */
+	/* TODO: Find the anchor after the group of active Periodic Advertising
+	 *       events such that BIG events are placed in non-overlapping
+	 *       timeline when auxiliary sets, Periodic Advertising and BIG
+	 *       events have similar event interval.
+	 */
 	ticks_anchor_iso = ticker_ticks_now_get();
+
+	/* Start sending BIS empty data packet for each BIS */
 	ret = adv_iso_start(adv_iso, ticks_anchor_iso, iso_interval_us);
 	if (ret) {
 		/* FIXME: release resources */
@@ -778,7 +784,6 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	} else {
 		ticks_slot_overhead = 0U;
 	}
-	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	/* setup to use ISO create prepare function for first radio event */
 	mfy_lll_prepare.fp = lll_adv_iso_create_prepare;
@@ -786,7 +791,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
-			   (ticks_anchor - ticks_slot_offset), 0U,
+			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
 			   TICKER_NULL_LAZY,
