@@ -135,7 +135,7 @@ static int nrf_ecb_session_free(const struct device *dev,
 static const struct crypto_driver_api crypto_enc_funcs = {
 	.cipher_begin_session = nrf_ecb_session_setup,
 	.cipher_free_session = nrf_ecb_session_free,
-	.crypto_async_callback_set = NULL,
+	.cipher_async_callback_set = NULL,
 	.query_hw_caps = nrf_ecb_query_caps,
 };
 

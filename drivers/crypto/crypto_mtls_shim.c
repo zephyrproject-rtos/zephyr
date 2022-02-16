@@ -464,7 +464,7 @@ static int mtls_shim_init(const struct device *dev)
 static struct crypto_driver_api mtls_crypto_funcs = {
 	.cipher_begin_session = mtls_session_setup,
 	.cipher_free_session = mtls_session_free,
-	.crypto_async_callback_set = NULL,
+	.cipher_async_callback_set = NULL,
 	.query_hw_caps = mtls_query_caps,
 };
 
