@@ -614,6 +614,7 @@
 /include/zephyr/shell/                           @jakub-uC @nordic-krch
 /include/zephyr/shell/shell_mqtt.h               @ycsin
 /include/zephyr/sw_isr_table.h                   @dcpleung @nashif @andyross
+/include/zephyr/sd/                              @danieldegrasse
 /include/zephyr/sys_clock.h                      @dcpleung @nashif @andyross
 /include/zephyr/sys/sys_io.h                     @dcpleung @nashif @andyross
 /include/zephyr/sys/kobject.h                    @dcpleung @nashif
