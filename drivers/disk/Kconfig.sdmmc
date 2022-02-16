@@ -5,6 +5,7 @@
 DT_COMPAT_ZEPHYR_MMC_SPI_SLOT := zephyr,mmc-spi-slot
 DT_COMPAT_NXP_USDHC := nxp,imx-usdhc
 DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
+DT_COMPAT_ZEPHYR_MMC := zephyr,sdmmc-disk
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
@@ -32,6 +33,14 @@ config SDMMC_OVER_SPI
 	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_MMC_SPI_SLOT))
 	help
 	  File system on a SDHC card accessed over SPI.
+
+config SDMMC_SUBSYS
+	bool "SDMMC access via SD subsystem"
+	select SD_STACK
+	select SDHC
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_MMC))
+	help
+	  Enable SDMMC access via SD subsystem
 
 config SDMMC_USDHC
 	bool "NXP i.MXRT USDHC driver"
