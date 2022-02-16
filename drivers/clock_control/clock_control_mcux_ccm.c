@@ -96,14 +96,14 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
 	case IMX_CCM_USDHC1_CLK:
 		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
 				(CLOCK_GetDiv(kCLOCK_Usdhc1Div) + 1U);
 		break;
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay) && CONFIG_DISK_DRIVER_SDMMC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay) && CONFIG_IMX_USDHC
 	case IMX_CCM_USDHC2_CLK:
 		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
 				(CLOCK_GetDiv(kCLOCK_Usdhc2Div) + 1U);
