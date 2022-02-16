@@ -1,4 +1,4 @@
-# Copyright (c) 2022 NXP
+# Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 # SD stack configuration options
@@ -48,7 +48,11 @@ config SD_DATA_TIMEOUT
 
 config SD_BUFFER_SIZE
 	int
-	default 512
+	# If SDHC required buffer alignment, we need a full block size in
+	# internal buffer
+	default 512 if SDHC_BUFFER_ALIGNMENT != 1
+	# Otherwise, we only need 64 bytes to read SD switch function
+	default 64
 	help
 	  Size in bytes of internal buffer SD card uses for unaligned reads and
 	  internal data reads during initialization
