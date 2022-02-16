@@ -193,6 +193,17 @@ config BT_FILTER_ACCEPT_LIST
 	  This options deprecates the bt_le_set_auto_conn API in favor of the
 	  bt_conn_create_aute_le API.
 
+config BT_LIM_ADV_TIMEOUT
+	int "Timeout for limited advertising in 1s units"
+	default 30
+	range 1 180
+	depends on BT_BROADCASTER
+	help
+	  After this timeout is reached, advertisement with BT_LE_AD_LIMITED flag
+	  set shall be terminated. As per BT Core Spec 5.2, Vol 3, Part C,
+	  Appendix A (NORMATIVE): TIMERS AND CONSTANTS it's required to be no more
+	  than 180s.
+
 if BT_CONN
 
 config BT_CONN_TX_MAX
