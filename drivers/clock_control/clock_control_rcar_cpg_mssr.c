@@ -1,15 +1,17 @@
 /*
- * Copyright (c) 2020 IoT.bzh
+ * Copyright (c) 2020-2022 IoT.bzh
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT renesas_rcar_cpg_mssr
+
 #include <errno.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/rcar_clock_control.h>
-#include <dt-bindings/clock/renesas_rcar_cpg.h>
+#include <dt-bindings/clock/renesas/renesas-cpg-mssr.h>
+#include <dt-bindings/clock/renesas/r8a77951-cpg-mssr.h>
 
 struct rcar_mssr_config {
 	uint32_t base_address;
@@ -72,7 +74,7 @@ static int cpg_core_clock_endisable(const struct device *dev,
 	int ret;
 
 	/* Only support CANFD core clock at the moment */
-	if (module != CPG_CORE_CLK_CANFD) {
+	if (module != R8A7795_CLK_CANFD) {
 		return -EINVAL;
 	}
 
@@ -178,7 +180,7 @@ static int cpg_get_rate(const struct device *dev,
 	}
 
 	switch (clk->module) {
-	case CPG_CORE_CLK_CANFD:
+	case R8A7795_CLK_CANFD:
 		val = sys_read32(config->base_address + CANFDCKCR);
 		if (val & CANFDCKCR_CKSTP) {
 			*rate = 0;
@@ -187,7 +189,7 @@ static int cpg_get_rate(const struct device *dev,
 			*rate = CANFDCKCR_PARENT_CLK_RATE / (val + 1);
 		}
 		break;
-	case CPG_CORE_CLK_S3D4:
+	case R8A7795_CLK_S3D4:
 		*rate = S3D4_CLK_RATE;
 		break;
 	default:

@@ -10,7 +10,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RCAR_CLOCK_CONTROL_H_
 
 #include <drivers/clock_control.h>
-#include <dt-bindings/clock/renesas_rcar_cpg.h>
+#include <dt-bindings/clock/renesas/renesas-cpg-mssr.h>
 
 struct rcar_cpg_clk {
 	uint32_t domain;
