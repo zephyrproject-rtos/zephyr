@@ -56,6 +56,13 @@ config LOG2_FMT_SECTION
 	  removing strings from final binary and should be used for dictionary
 	  logging.
 
+config LOG2_RUNTIME_USE_TAGGED_ARGUMENTS
+	bool "Using tagged arguments for runtime packaging"
+	select CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
+	depends on !LOG_PRINTK
+	help
+	  If enabled, runtime packaging uses tagged arguments.
+
 config LOG_MEM_UTILIZATION
 	bool "Enable tracking maximum memory utilization"
 	depends on LOG_MODE_DEFERRED
