@@ -108,3 +108,6 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
 
 # Required ASM flags when compiling
 set_property(TARGET asm PROPERTY required)
+
+# Compiler flag for disabling pointer arithmetic warnings
+set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
