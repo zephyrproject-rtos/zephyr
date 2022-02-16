@@ -21,9 +21,10 @@
 #define EVENT_DONE_LINK_CNT 1
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
-#define ADV_INT_UNIT_US  625U
-#define SCAN_INT_UNIT_US 625U
-#define CONN_INT_UNIT_US 1250U
+#define ADV_INT_UNIT_US      625U
+#define SCAN_INT_UNIT_US     625U
+#define CONN_INT_UNIT_US     1250U
+#define PERIODIC_INT_UNIT_US 1250U
 
 /* Intervals after which connection or sync establishment is considered lost */
 #define CONN_ESTAB_COUNTDOWN 6U
