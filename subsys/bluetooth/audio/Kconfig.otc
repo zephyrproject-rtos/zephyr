@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BT_AUDIO
-
 #### Object Transfer Service Client ################################
 
 config BT_OTC
@@ -31,5 +29,3 @@ config BT_DEBUG_OTC
 	  Bluetooth Audio functionality.
 
 endif # BTC
-
-endif # BT_AUDIO
