@@ -4,8 +4,6 @@
 # Copyright (c) 2015-2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-comment "Host Stack Configuration"
-
 config BT_HCI_HOST
 	# Hidden option to make the conditions more intuitive
 	bool
@@ -107,6 +105,8 @@ config BT_DRIVER_RX_HIGH_PRIO
 	# Hidden option for Co-Operative HCI driver RX thread priority
 	int
 	default 6
+
+menu "Bluetooth Host"
 
 if BT_HCI_HOST
 
@@ -882,3 +882,5 @@ config BT_HCI_VS_EVT_USER
 	help
 	  Enable registering a callback for delegating to the user the handling of
 	  VS events that are not known to the stack
+
+endmenu
