@@ -918,7 +918,7 @@ struct net_socket_register {
 #define NET_SOCKET_DEFAULT_PRIO CONFIG_NET_SOCKETS_PRIORITY_DEFAULT
 
 #define NET_SOCKET_GET_NAME(socket_name, prio)	\
-	(__net_socket_register_##prio##_##socket_name)
+	__net_socket_register_##prio##_##socket_name
 
 #define NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler) \
 	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
