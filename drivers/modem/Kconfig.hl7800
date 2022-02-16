@@ -240,6 +240,39 @@ config MODEM_HL7800_PSM_ACTIVE_TIME
 
 endif # MODEM_HL7800_PSM
 
+choice
+	prompt "Default Sleep Level"
+	default MODEM_HL7800_SLEEP_LEVEL_HIBERNATE
+	help
+	  The application can override this setting
+
+config MODEM_HL7800_SLEEP_LEVEL_HIBERNATE
+	bool "Hibernate"
+	help
+	  Lowest power consumption
+	  IO state not retained
+	  Application subsystem OFF
+
+config MODEM_HL7800_SLEEP_LEVEL_LITE_HIBERNATE
+	bool "Lite Hibernate"
+	help
+	  IO state retained
+	  Application subsystem OFF
+
+config MODEM_HL7800_SLEEP_LEVEL_SLEEP
+	bool "Sleep"
+	help
+	  Highest power consumption of modem sleep states
+	  IO state retained
+	  Application subsystem ON
+	  Allows sockets to remain open
+
+endchoice
+
+config MODEM_HL7800_SLEEP_DELAY_AFTER_REBOOT
+	int "Delay in seconds before sleep after reboot"
+	default 10
+
 endif # MODEM_HL7800_LOW_POWER_MODE
 
 config MODEM_HL7800_RX_STACK_SIZE
@@ -319,5 +352,9 @@ config MODEM_HL7800_ADDRESS_FAMILY_IPV4V6
 	bool "IPv4v6"
 
 endchoice
+
+config MODEM_HL7800_ALLOW_SLEEP_DELAY_MS
+	int "Milliseconds to delay before allowing modem to sleep"
+	default 5000
 
 endif # MODEM_HL7800

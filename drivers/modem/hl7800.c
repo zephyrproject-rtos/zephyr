@@ -282,6 +282,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_DEFAULT_AT_CMD_RETRIES 3
 #define MDM_WAKEUP_TIME K_SECONDS(12)
 #define MDM_BOOT_TIME K_SECONDS(12)
+#define MDM_WAKE_TO_CHECK_CTS_DELAY_MS K_MSEC(20)
 
 #define MDM_WAIT_FOR_DATA_TIME K_MSEC(50)
 #define MDM_RESET_LOW_TIME K_MSEC(50)
@@ -294,7 +295,6 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define DNS_WORK_DELAY_SECS 1
 #define IFACE_WORK_DELAY K_MSEC(500)
 #define WAIT_FOR_KSUP_RETRIES 5
-#define ALLOW_SLEEP_DELAY_SECS K_SECONDS(5)
 
 #define CGCONTRDP_RESPONSE_NUM_DELIMS 7
 #define COPS_RESPONSE_NUM_DELIMS 2
@@ -534,7 +534,8 @@ struct hl7800_iface_ctx {
 	/* modem state */
 	bool allow_sleep;
 	bool uart_on;
-	enum mdm_hl7800_sleep_state sleep_state;
+	enum mdm_hl7800_sleep desired_sleep_level;
+	enum mdm_hl7800_sleep sleep_state;
 	enum hl7800_lpm low_power_mode;
 	enum mdm_hl7800_network_state network_state;
 	enum net_operator_status operator_status;
@@ -561,10 +562,10 @@ static struct hl7800_iface_ctx ictx;
 static size_t hl7800_read_rx(struct net_buf **buf);
 static char *get_network_state_string(enum mdm_hl7800_network_state state);
 static char *get_startup_state_string(enum mdm_hl7800_startup_state state);
-static char *get_sleep_state_string(enum mdm_hl7800_sleep_state state);
+static char *get_sleep_state_string(enum mdm_hl7800_sleep state);
 static void set_network_state(enum mdm_hl7800_network_state state);
 static void set_startup_state(enum mdm_hl7800_startup_state state);
-static void set_sleep_state(enum mdm_hl7800_sleep_state state);
+static void set_sleep_state(enum mdm_hl7800_sleep state);
 static void generate_network_state_event(void);
 static void generate_startup_state_event(void);
 static void generate_sleep_state_event(void);
@@ -576,6 +577,11 @@ static int write_apn(char *access_point_name);
 static void mark_sockets_for_reconfig(void);
 #endif
 static void hl7800_build_mac(struct hl7800_iface_ctx *ictx);
+
+#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
+static void initialize_sleep_level(void);
+static int set_sleep_level(void);
+#endif
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 static char *get_fota_state_string(enum mdm_hl7800_fota_state state);
@@ -612,24 +618,29 @@ static void check_hl7800_awake(void)
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 	bool is_cmd_rdy = is_cmd_ready();
 
-	if (is_cmd_rdy && (ictx.sleep_state != HL7800_SLEEP_STATE_AWAKE) &&
+	if (is_cmd_rdy && (ictx.sleep_state != HL7800_SLEEP_AWAKE) &&
 	    !ictx.allow_sleep && !ictx.wait_for_KSUP) {
 		PRINT_AWAKE_MSG;
-		set_sleep_state(HL7800_SLEEP_STATE_AWAKE);
+		set_sleep_state(HL7800_SLEEP_AWAKE);
 		k_sem_give(&ictx.mdm_awake);
-	} else if (!is_cmd_rdy &&
-		   ictx.sleep_state == HL7800_SLEEP_STATE_AWAKE &&
+	} else if (!is_cmd_rdy && ictx.sleep_state == HL7800_SLEEP_AWAKE &&
 		   ictx.allow_sleep) {
 		PRINT_NOT_AWAKE_MSG;
-		/* If the device is sleeping (not ready to receive commands)
-		 *  then the device may send +KSUP when waking up.
-		 *  We should wait for it.
-		 */
-		ictx.wait_for_KSUP = true;
-		ictx.wait_for_KSUP_tries = 0;
 
-		set_sleep_state(HL7800_SLEEP_STATE_ASLEEP);
-		k_sem_reset(&ictx.mdm_awake);
+		if (ictx.desired_sleep_level == HL7800_SLEEP_HIBERNATE ||
+		    ictx.desired_sleep_level == HL7800_SLEEP_LITE_HIBERNATE) {
+			/* If the device is sleeping (not ready to receive commands)
+			 * then the device may send +KSUP when waking up.
+			 * We should wait for it.
+			 */
+			ictx.wait_for_KSUP = true;
+			ictx.wait_for_KSUP_tries = 0;
+
+			set_sleep_state(ictx.desired_sleep_level);
+
+		} else if (ictx.desired_sleep_level == HL7800_SLEEP_SLEEP) {
+			set_sleep_state(HL7800_SLEEP_SLEEP);
+		}
 	}
 #endif
 }
@@ -827,6 +838,7 @@ static void allow_sleep_work_callback(struct k_work *item)
 	ARG_UNUSED(item);
 	LOG_DBG("Allow sleep");
 	ictx.allow_sleep = true;
+	set_sleep_state(ictx.desired_sleep_level);
 	modem_assert_wake(false);
 }
 
@@ -836,7 +848,7 @@ static void allow_sleep(bool allow)
 	if (allow) {
 		k_work_reschedule_for_queue(&hl7800_workq,
 					    &ictx.allow_sleep_work,
-					    ALLOW_SLEEP_DELAY_SECS);
+					    K_MSEC(CONFIG_MODEM_HL7800_ALLOW_SLEEP_DELAY_MS));
 	} else {
 		LOG_DBG("Keep awake");
 		k_work_cancel_delayable(&ictx.allow_sleep_work);
@@ -922,6 +934,14 @@ static int wakeup_hl7800(void)
 	int ret;
 
 	allow_sleep(false);
+
+	/* If modem is in sleep mode (not hibernate),
+	 * then it can respond in ~10 ms.
+	 */
+	if (ictx.desired_sleep_level == HL7800_SLEEP_SLEEP) {
+		k_sleep(MDM_WAKE_TO_CHECK_CTS_DELAY_MS);
+	}
+
 	if (!is_cmd_ready()) {
 		LOG_DBG("Waiting to wakeup");
 		ret = k_sem_take(&ictx.mdm_awake, MDM_WAKEUP_TIME);
@@ -2190,22 +2210,107 @@ static void generate_startup_state_event(void)
 	event_handler(HL7800_EVENT_STARTUP_STATE_CHANGE, &event);
 }
 
-static char *get_sleep_state_string(enum mdm_hl7800_sleep_state state)
+int mdm_hl7800_set_desired_sleep_level(enum mdm_hl7800_sleep level)
+{
+	int r = -EPERM;
+
+#if CONFIG_MODEM_HL7800_LOW_POWER_MODE
+	switch (level) {
+	case HL7800_SLEEP_AWAKE:
+	case HL7800_SLEEP_HIBERNATE:
+	case HL7800_SLEEP_LITE_HIBERNATE:
+	case HL7800_SLEEP_SLEEP:
+		ictx.desired_sleep_level = level;
+		r = 0;
+		break;
+	default:
+		r = -EINVAL;
+	}
+
+	if (r == 0) {
+		hl7800_lock();
+		wakeup_hl7800();
+		r = set_sleep_level();
+		allow_sleep(true);
+		hl7800_unlock();
+	}
+#endif
+
+	return r;
+}
+
+#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
+
+static void initialize_sleep_level(void)
+{
+	if (ictx.desired_sleep_level == HL7800_SLEEP_UNINITIALIZED) {
+		if (IS_ENABLED(CONFIG_MODEM_HL7800_SLEEP_LEVEL_HIBERNATE)) {
+			ictx.desired_sleep_level = HL7800_SLEEP_HIBERNATE;
+		} else if (IS_ENABLED(CONFIG_MODEM_HL7800_SLEEP_LEVEL_LITE_HIBERNATE)) {
+			ictx.desired_sleep_level = HL7800_SLEEP_LITE_HIBERNATE;
+		} else if (IS_ENABLED(CONFIG_MODEM_HL7800_SLEEP_LEVEL_SLEEP)) {
+			ictx.desired_sleep_level = HL7800_SLEEP_SLEEP;
+		} else {
+			ictx.desired_sleep_level = HL7800_SLEEP_AWAKE;
+		}
+	}
+}
+
+static int set_sleep_level(void)
+{
+	char cmd[sizeof("AT+KSLEEP=#,#,##")];
+	static const char SLEEP_CMD_FMT[] = "AT+KSLEEP=%d,%d,%d";
+	int delay = CONFIG_MODEM_HL7800_SLEEP_DELAY_AFTER_REBOOT;
+	int ret = 0;
+
+	/* AT+KSLEEP= <management>[,<level>[,<delay to sleep after reboot>]]
+	 * management 1 means the HL7800 decides when it enters sleep mode
+	 */
+	switch (ictx.desired_sleep_level) {
+	case HL7800_SLEEP_HIBERNATE:
+		snprintk(cmd, sizeof(cmd), SLEEP_CMD_FMT, 1, 2, delay);
+		break;
+	case HL7800_SLEEP_LITE_HIBERNATE:
+		snprintk(cmd, sizeof(cmd), SLEEP_CMD_FMT, 1, 1, delay);
+		break;
+	case HL7800_SLEEP_SLEEP:
+		snprintk(cmd, sizeof(cmd), SLEEP_CMD_FMT, 1, 0, delay);
+		break;
+	default:
+		/* don't sleep */
+		snprintk(cmd, sizeof(cmd), SLEEP_CMD_FMT, 2, 0, delay);
+		break;
+	}
+
+	SEND_AT_CMD_EXPECT_OK(cmd);
+
+error:
+	return ret;
+}
+
+#endif /* CONFIG_MODEM_HL7800_LOW_POWER_MODE */
+
+static char *get_sleep_state_string(enum mdm_hl7800_sleep state)
 {
 	/* clang-format off */
 	switch (state) {
-		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_SLEEP_STATE, UNINITIALIZED);
-		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_SLEEP_STATE, ASLEEP);
-		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_SLEEP_STATE, AWAKE);
+		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_SLEEP, UNINITIALIZED);
+		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_SLEEP, HIBERNATE);
+		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_SLEEP, LITE_HIBERNATE);
+		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_SLEEP, SLEEP);
+		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_SLEEP, AWAKE);
 	default:
 		return "UNKNOWN";
 	}
 	/* clang-format on */
 }
 
-static void set_sleep_state(enum mdm_hl7800_sleep_state state)
+static void set_sleep_state(enum mdm_hl7800_sleep state)
 {
 	ictx.sleep_state = state;
+	if (ictx.sleep_state != HL7800_SLEEP_AWAKE) {
+		k_sem_reset(&ictx.mdm_awake);
+	}
 	generate_sleep_state_event();
 }
 
@@ -2296,7 +2401,7 @@ static bool on_cmd_startup_report(struct net_buf **buf, uint16_t len)
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 		mark_sockets_for_reconfig();
 #endif
-		set_sleep_state(HL7800_SLEEP_STATE_AWAKE);
+		set_sleep_state(HL7800_SLEEP_AWAKE);
 		k_sem_give(&ictx.mdm_awake);
 	}
 
@@ -4412,8 +4517,13 @@ static void mdm_vgpio_work_cb(struct k_work *item)
 
 	hl7800_lock();
 	if (!ictx.vgpio_state) {
-		if (ictx.sleep_state != HL7800_SLEEP_STATE_ASLEEP) {
-			set_sleep_state(HL7800_SLEEP_STATE_ASLEEP);
+		if (ictx.desired_sleep_level == HL7800_SLEEP_HIBERNATE ||
+		    ictx.desired_sleep_level == HL7800_SLEEP_LITE_HIBERNATE) {
+			if (ictx.sleep_state != ictx.desired_sleep_level) {
+				set_sleep_state(ictx.desired_sleep_level);
+			} else {
+				LOG_WRN("Unexpected sleep condition");
+			}
 		}
 		if (ictx.iface && ictx.initialized && net_if_is_up(ictx.iface) &&
 		    ictx.low_power_mode != HL7800_LPM_PSM) {
@@ -4525,7 +4635,7 @@ static void modem_reset(void)
 	k_sleep(MDM_RESET_LOW_TIME);
 
 	ictx.mdm_startup_reporting_on = false;
-	set_sleep_state(HL7800_SLEEP_STATE_UNINITIALIZED);
+	set_sleep_state(HL7800_SLEEP_UNINITIALIZED);
 	check_hl7800_awake();
 	set_network_state(HL7800_NOT_REGISTERED);
 	set_startup_state(HL7800_STARTUP_STATE_UNKNOWN);
@@ -4860,8 +4970,11 @@ reboot:
 	/* enable GPIO6 low power monitoring */
 	SEND_AT_CMD_EXPECT_OK("AT+KHWIOCFG=3,1,6");
 
-	/* Turn on sleep mode */
-	SEND_AT_CMD_EXPECT_OK("AT+KSLEEP=1,2,10");
+	initialize_sleep_level();
+	ret = set_sleep_level();
+	if (ret < 0) {
+		goto error;
+	}
 
 #if CONFIG_MODEM_HL7800_PSM
 	ictx.low_power_mode = HL7800_LPM_PSM;
