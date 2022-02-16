@@ -113,8 +113,9 @@ static void isr_tx(void *param)
 	/* Set timer capture in the future. */
 	radio_tmr_sample();
 	s = radio_tmr_sample_get();
-	while (t < s) {
-		t += SCAN_INT_UNIT_US;
+	/*Previous calculation in while loop can take too long time and can rollout the timer*/
+	if (t < s){
+		t+=((((s - t) / SCAN_INT_UNIT_US) + 1) * SCAN_INT_UNIT_US);
 	}
 
 	/* Setup next Tx */
