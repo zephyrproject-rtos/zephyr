@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,8 +84,11 @@ void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	ticks_to_expire = ticks_to_expire_prev = *us_offset = 0U;
 	ticks_slot_abs_prev = 0U;
 	while (1) {
+		uint32_t ticks_slot_abs_curr = 0;
+		uint32_t ticks_to_expire_normal;
 		uint32_t volatile ret_cb;
 		struct ll_conn *conn;
+		struct ull_hdr *hdr;
 		uint32_t ret;
 		bool success;
 
@@ -126,46 +129,48 @@ void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 #endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 
 		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
-		if (conn && !conn->lll.role) {
-			uint32_t ticks_to_expire_normal = ticks_to_expire;
-			uint32_t ticks_slot_abs_curr = 0;
+		if (!conn || conn->lll.role) {
+			continue;
+		}
+
+		hdr = &conn->ull;
+
+		ticks_to_expire_normal = ticks_to_expire;
+
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-			if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
-				uint32_t ticks_prepare_to_start =
-					MAX(conn->ull.ticks_active_to_start,
-					    conn->ull.ticks_preempt_to_start);
+		if (hdr->ticks_prepare_to_start & XON_BITMASK) {
+			uint32_t ticks_prepare_to_start =
+				MAX(hdr->ticks_active_to_start,
+				    hdr->ticks_preempt_to_start);
 
-				ticks_slot_abs_curr =
-					conn->ull.ticks_prepare_to_start &
-					~XON_BITMASK;
-				ticks_to_expire_normal -=
-					ticks_slot_abs_curr -
-					ticks_prepare_to_start;
-			} else
+			ticks_slot_abs_curr = hdr->ticks_prepare_to_start &
+					      ~XON_BITMASK;
+			ticks_to_expire_normal -= ticks_slot_abs_curr -
+						  ticks_prepare_to_start;
+		} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-			{
-				uint32_t ticks_prepare_to_start =
-					MAX(conn->ull.ticks_active_to_start,
-					    conn->ull.ticks_prepare_to_start);
+		{
+			uint32_t ticks_prepare_to_start =
+				MAX(hdr->ticks_active_to_start,
+				    hdr->ticks_prepare_to_start);
 
-				ticks_slot_abs_curr = ticks_prepare_to_start;
-			}
+			ticks_slot_abs_curr = ticks_prepare_to_start;
+		}
 #endif
 
-			ticks_slot_abs_curr += conn->ull.ticks_slot;
+		ticks_slot_abs_curr += hdr->ticks_slot;
 
-			if ((ticker_id_prev != 0xff) &&
-			    (ticker_ticks_diff_get(ticks_to_expire_normal,
-						   ticks_to_expire_prev) >
-			     (ticks_slot_abs_prev + ticks_slot_abs))) {
-				break;
-			}
-
-			ticker_id_prev = ticker_id;
-			ticks_to_expire_prev = ticks_to_expire_normal;
-			ticks_slot_abs_prev = ticks_slot_abs_curr;
+		if ((ticker_id_prev != 0xff) &&
+		    (ticker_ticks_diff_get(ticks_to_expire_normal,
+					   ticks_to_expire_prev) >
+		     (ticks_slot_abs_prev + ticks_slot_abs))) {
+			break;
 		}
+
+		ticker_id_prev = ticker_id;
+		ticks_to_expire_prev = ticks_to_expire_normal;
+		ticks_slot_abs_prev = ticks_slot_abs_curr;
 	}
 
 	if (ticker_id_prev != 0xff) {
