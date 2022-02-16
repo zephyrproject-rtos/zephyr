@@ -276,6 +276,41 @@ do { \
 		(NULL), \
 		(Z_LOG_FMT_ARGS_2(_name, ##__VA_ARGS__)))
 
+#if defined(CONFIG_LOG2_USE_TAGGED_ARGUMENTS)
+
+#define Z_LOG_FMT_TAGGED_ARGS_2(_name, ...) \
+	COND_CODE_1(CONFIG_LOG2_FMT_SECTION, \
+		    (_name, Z_CBPRINTF_TAGGED_ARGS(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+						   GET_ARGS_LESS_N(1, __VA_ARGS__))), \
+		    (GET_ARG_N(1, __VA_ARGS__), \
+		     Z_CBPRINTF_TAGGED_ARGS(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+					    GET_ARGS_LESS_N(1, __VA_ARGS__))))
+
+/** @brief Wrapper for log message string with tagged arguments.
+ *
+ * Wrapper is replacing first argument with a variable from a dedicated memory
+ * section if option is enabled. Macro handles the case when there is no
+ * log message provided. Each subsequent arguments are tagged by preceding
+ * each argument with its type value.
+ *
+ * @param _name Name of the variable with log message string. It is optionally used.
+ * @param ... Optional log message with arguments (may be empty).
+ */
+#define Z_LOG_FMT_TAGGED_ARGS(_name, ...) \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
+		(Z_CBPRINTF_TAGGED_ARGS(0)), \
+		(Z_LOG_FMT_TAGGED_ARGS_2(_name, ##__VA_ARGS__)))
+
+#define Z_LOG_FMT_RUNTIME_ARGS(...) \
+	Z_LOG_FMT_TAGGED_ARGS(__VA_ARGS__)
+
+#else
+
+#define Z_LOG_FMT_RUNTIME_ARGS(...) \
+	Z_LOG_FMT_ARGS(__VA_ARGS__)
+
+#endif /* CONFIG_LOG2_USE_TAGGED_ARGUMENTS */
+
 /* Macro handles case when there is no string provided, in that case variable
  * is not created.
  */
@@ -345,8 +380,10 @@ do {\
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__) \
 	z_log_msg2_runtime_create(_domain_id, (void *)_source, \
 				  _level, (uint8_t *)_data, _dlen,\
-				  Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
-				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
+				  Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) | \
+				  (IS_ENABLED(CONFIG_LOG2_USE_TAGGED_ARGUMENTS) ? \
+				   CBPRINTF_PACKAGE_ARGS_ARE_TAGGED : 0), \
+				  Z_LOG_FMT_RUNTIME_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
 #else /* CONFIG_LOG2_ALWAYS_RUNTIME */
