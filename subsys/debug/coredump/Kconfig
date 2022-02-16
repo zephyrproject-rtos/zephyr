@@ -50,6 +50,15 @@ config DEBUG_COREDUMP_MEMORY_DUMP_MIN
 	  Don't use this unless you want absolutely
 	  minimum core dump.
 
+config DEBUG_COREDUMP_MEMORY_DUMP_SELECT
+	bool "Registered memory dump regions"
+	select THREAD_STACK_INFO
+	help
+	  Dumps the bare minimum memory content that
+	  would be included with DEBUG_COREDUMP_MEMORY_DUMP_MIN
+	  plus any additional memory regions that were registered
+	  for collection.
+
 config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 	bool "RAM defined by linker section"
 	help

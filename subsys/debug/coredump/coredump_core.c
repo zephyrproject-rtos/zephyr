@@ -52,7 +52,9 @@ static void dump_header(unsigned int reason)
 
 static void dump_thread(struct k_thread *thread)
 {
-#ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN
+#if defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN) || \
+	defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_SELECT)
+
 	uintptr_t end_addr;
 
 	/*
@@ -91,6 +93,15 @@ void process_memory_region_list(void)
 		coredump_memory_dump(r->start, r->end);
 
 		idx++;
+	}
+#elif CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_SELECT
+	sys_snode_t *node;
+
+	SYS_SLIST_FOR_EACH_NODE(&z_coredump_memory_region_list, node) {
+		struct coredump_mem_region_node_t *region;
+
+		region = CONTAINER_OF(node, struct coredump_mem_region_node_t, node);
+		coredump_memory_dump(region->start, region->end);
 	}
 #endif
 }
@@ -192,3 +203,15 @@ int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg)
 
 	return ret;
 }
+
+#ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_SELECT
+void coredump_register_memory_region(struct coredump_mem_region_node_t *region)
+{
+	sys_slist_append(&z_coredump_memory_region_list, &region->node);
+}
+
+bool coredump_unregister_memory_region(struct coredump_mem_region_node_t *region)
+{
+	return sys_slist_find_and_remove(&z_coredump_memory_region_list, &region->node);
+}
+#endif /* CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_SELECT */

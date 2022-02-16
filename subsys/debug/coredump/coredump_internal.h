@@ -33,6 +33,10 @@ struct z_coredump_memory_region_t {
 
 extern struct z_coredump_memory_region_t z_coredump_memory_regions[];
 
+#ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_SELECT
+extern sys_slist_t z_coredump_memory_region_list;
+#endif
+
 /**
  * @brief Mark the start of coredump
  *

@@ -28,6 +28,12 @@ Here are the choices regarding memory dump:
   walking the stack in the debugger. Use this only if absolute minimum of data
   dump is desired.
 
+* ``DEBUG_COREDUMP_MEMORY_DUMP_SELECT``: dumps the bare minimum memory content
+  that would be included with ``DEBUG_COREDUMP_MEMORY_DUMP_MIN`` plus any
+  additional memory regions that were registered for collection. Additional
+  memory can be registered at runtime using the coredump_register_memory_region
+  API
+
 Usage
 *****
 

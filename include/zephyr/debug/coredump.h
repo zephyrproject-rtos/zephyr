@@ -161,6 +161,48 @@ void coredump_buffer_output(uint8_t *buf, size_t buflen);
 int coredump_query(enum coredump_query_id query_id, void *arg);
 int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg);
 
+#ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_SELECT
+
+#include <sys/slist.h>
+
+/**
+ * Coredump memory region node
+ */
+struct coredump_mem_region_node_t {
+	/**
+	 * Node of single-linked list
+	 */
+	sys_snode_t	node;
+
+	/**
+	 * Address of start of memory region
+	 */
+	uintptr_t	start;
+
+	/**
+	 * Address of end of memory region
+	 */
+	uintptr_t	end;
+};
+
+/**
+ * @brief Register memory region for collection in dump
+ *
+ * @param region Struct containing start and end address of memory to be collected
+ */
+void coredump_register_memory_region(struct coredump_mem_region_node_t *region);
+
+/**
+ * @brief Unregister memory region for collection in dump
+ *
+ * @param region Struct containing start and end address of memory to no longer be collected
+ * @retval true If region was removed
+ * @retval false If region was not removed
+ */
+bool coredump_unregister_memory_region(struct coredump_mem_region_node_t *region);
+
+#endif /* CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_SELECT */
+
 #else
 
 void coredump(unsigned int reason, const z_arch_esf_t *esf,
