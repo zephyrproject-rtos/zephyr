@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BT_AUDIO
-
 #### Media Control Service ################################
 
 config BT_MCS
@@ -203,5 +201,3 @@ config BT_DEBUG_MEDIA_PROXY
 	  Bluetooth Audio functionality.
 
 endif # BT_MCS || BT_MCC
-
-endif # BT_AUDIO
