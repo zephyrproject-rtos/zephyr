@@ -48,6 +48,7 @@ config LOG2_ALWAYS_RUNTIME
 
 config LOG2_FMT_SECTION
 	bool "Keep log strings in dedicated section"
+	imply CBPRINTF_PACKAGE_RUNTIME_USE_TAGGED_ARGUMENTS if !LOG_PRINTK
 	help
 	  When enabled, logs are kept in dedicated memory section. It allows
 	  removing strings from final binary and should be used for dictionary
