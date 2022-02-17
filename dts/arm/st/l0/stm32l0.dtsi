@@ -63,7 +63,7 @@
 		clk_lsi: clk-lsi {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_K(32)>;
+			clock-frequency = <DT_FREQ_K(37)>;
 			status = "disabled";
 		};
 
