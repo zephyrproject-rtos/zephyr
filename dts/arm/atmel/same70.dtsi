@@ -492,6 +492,13 @@
 				label = "CAN_1";
 			};
 		};
+
+		rstc: rstc@400e1800 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1800 0x10>;
+			peripheral-id = <1>;
+			label = "RSTC";
+		};
 	};
 };
 
