@@ -18,6 +18,19 @@
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
+#if CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP
+
+/*
+ * nRF5340dk is shipping a QSPI external flash mapped at 0x1000_0000 that can
+ * be used for XIP
+ */
+MEMORY
+{
+     EXTFLASH (wx) : ORIGIN = 0x10000000, LENGTH = 0x800000
+}
+
+#else
+
 /*
  * Add another fake portion of FLASH to simulate a secondary or external FLASH
  * that we can do XIP from.
@@ -29,5 +42,7 @@ MEMORY
 {
      EXTFLASH (wx) : ORIGIN = 0x5000, LENGTH = EXTFLASH_SIZE
 }
+
+#endif /* CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP */
 
 #include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
