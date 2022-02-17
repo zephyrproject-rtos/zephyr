@@ -1276,10 +1276,13 @@ void test_alloc_kobjects(void)
 	zassert_not_null(t, "alloc obj (0x%lx)\n", (uintptr_t)t);
 	p = k_object_alloc(K_OBJ_PIPE);
 	zassert_not_null(p, "alloc obj (0x%lx)\n", (uintptr_t)p);
+	k_pipe_init(p, NULL, 0);
 	s = k_object_alloc(K_OBJ_STACK);
 	zassert_not_null(s, "alloc obj (0x%lx)\n", (uintptr_t)s);
+	k_stack_init(s, NULL, 0);
 	m = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(m, "alloc obj (0x%lx)\n", (uintptr_t)m);
+	k_msgq_init(m, NULL, 0, 0);
 	q = k_object_alloc(K_OBJ_QUEUE);
 	zassert_not_null(q, "alloc obj (0x%lx)\n", (uintptr_t)q);
 
