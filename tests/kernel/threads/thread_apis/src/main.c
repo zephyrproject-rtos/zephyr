@@ -48,7 +48,7 @@ extern void test_abort_from_isr_not_self(void);
 extern void test_essential_thread_abort(void);
 
 struct k_thread tdata;
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 size_t tstack_size = K_THREAD_STACK_SIZEOF(tstack);
 

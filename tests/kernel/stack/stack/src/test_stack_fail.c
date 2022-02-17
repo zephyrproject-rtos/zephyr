@@ -9,7 +9,7 @@
 #include <ztest_error_hook.h>
 
 #define TIMEOUT K_MSEC(100)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_LEN 2
 
 static ZTEST_BMEM stack_data_t data[STACK_LEN];

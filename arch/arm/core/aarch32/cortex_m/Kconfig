@@ -336,7 +336,7 @@ config CORTEX_M_DWT
 # Additional stack for tests when building with FPU_SHARING
 # enabled, which may increase ESF stacking requirements for
 # threads.
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	default 512 if TEST_ARM_CORTEX_M && FPU_SHARING
 
 endmenu

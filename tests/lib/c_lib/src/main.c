@@ -33,7 +33,7 @@
 #include <time.h>
 #include <ztest_error_hook.h>
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
