@@ -837,6 +837,10 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		 */
 		rx->type = NODE_RX_TYPE_SYNC_REPORT;
 		ull_scan_aux_setup(link, rx);
+	} else {
+		rx->type = NODE_RX_TYPE_RELEASE;
+		ll_rx_put(link, rx);
+		ll_rx_sched();
 	}
 }
 
