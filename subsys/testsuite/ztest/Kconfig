@@ -16,7 +16,7 @@ config ZTEST_NEW_API
 	  Enables the new Ztest APIs for creating suites and unit tests in
 	  separate compilational units as well as the new 'rules' API.
 
-config ZTEST_STACKSIZE
+config ZTEST_STACK_SIZE
 	int "Test function thread stack size"
 	default 2048 if COVERAGE_GCOV
 	default 1024
