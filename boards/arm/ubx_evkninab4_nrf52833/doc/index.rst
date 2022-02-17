@@ -130,7 +130,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: ubx_evknina4_nrf52833
+   :board: ubx_evkninab4_nrf52833
    :goals: build flash
 
 Debugging
@@ -169,7 +169,7 @@ more than one UART for connecting peripheral devices:
 
    .. code-block:: console
 
-      $ cat ubx_evk_ninab4nrf52833.overlay
+      $ cat ubx_evkninab4_nrf52833.overlay
       &uart1 {
         compatible = "nordic,nrf-uarte";
         current-speed = <115200>;
@@ -180,7 +180,7 @@ more than one UART for connecting peripheral devices:
 
    In the overlay file above, pin P0.16 is used for RX and P0.14 is used for TX
 
-2. Use the UART1 as ``device_get_binding("UART_1")``
+2. Use the UART1 as ``DEVICE_DT_GET(DT_NODELABEL(uart1))``
 
 Overlay file naming
 ===================
