@@ -8,12 +8,18 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/linker/utils.h>
 #include <zephyr/sys/cbprintf.h>
 #include <sys/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 
+#if defined(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS) && \
+	!Z_C_GENERIC
+#error "CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS " \
+	"requires toolchain to support _Generic!"
+#endif
 
 /**
  * @brief Check if address is in read only section.
@@ -256,6 +262,8 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * fixed prefix appended to all strings.
 	 */
 	int fros_cnt = 1 + Z_CBPRINTF_PACKAGE_FIRST_RO_STR_CNT_GET(flags);
+	bool is_str_arg = false;
+	union cbprintf_package_hdr *pkg_hdr = packaged;
 
 	/* Buffer must be aligned at least to size of a pointer. */
 	if ((uintptr_t)packaged % sizeof(void *)) {
@@ -270,14 +278,19 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 #endif
 
 	/*
-	 * Make room to store the arg list size and the number of
-	 * appended strings. They both occupy 1 byte each.
+	 * Make room to store the arg list size, the number of
+	 * appended writable strings and the number of appended
+	 * read-only strings. They both occupy 1 byte each.
+	 * Skip a byte. Then a uint32_t to store flags used to
+	 * create the package.
 	 *
 	 * Given the next value to store is the format string pointer
 	 * which is guaranteed to be at least 4 bytes, we just reserve
-	 * a pointer size for the above to preserve alignment.
+	 * multiple of pointer size for the above to preserve alignment.
+	 *
+	 * Refer to union cbprintf_package_hdr for more details.
 	 */
-	buf += sizeof(char *);
+	buf += sizeof(*pkg_hdr);
 
 	/*
 	 * When buf0 is NULL we don't store anything.
@@ -323,132 +336,263 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	size = sizeof(char *);
 	goto process_string;
 
-	/* Scan the format string */
-	while (*++fmt != '\0') {
-		if (!parsing) {
-			if (*fmt == '%') {
-				parsing = true;
+	while (true) {
+
+#if defined(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
+		if ((flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED)
+		    == CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) {
+			int arg_tag = va_arg(ap, int);
+
+			/*
+			 * Here we copy the tag over to the package.
+			 */
+			align = VA_STACK_ALIGN(int);
+			size = sizeof(int);
+
+			/* align destination buffer location */
+			buf = (void *)ROUND_UP(buf, align);
+
+			/* make sure the data fits */
+			if (buf0 != NULL && BUF_OFFSET + size > len) {
+				return -ENOSPC;
+			}
+
+			if (buf0 != NULL) {
+				*(int *)buf = arg_tag;
+			}
+
+			buf += sizeof(int);
+
+			if (arg_tag == CBPRINTF_PACKAGE_ARG_TYPE_END) {
+				/* End of arguments */
+				break;
+			}
+
+			/*
+			 * There are lots of __fallthrough here since
+			 * quite a few of the data types have the same
+			 * storage size.
+			 */
+			switch (arg_tag) {
+			case CBPRINTF_PACKAGE_ARG_TYPE_CHAR:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_CHAR:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_SHORT:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_SHORT:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_INT:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_INT:
 				align = VA_STACK_ALIGN(int);
 				size = sizeof(int);
-			}
-			continue;
-		}
-		switch (*fmt) {
-		case '%':
-			parsing = false;
-			continue;
+				break;
 
-		case '#':
-		case '-':
-		case '+':
-		case ' ':
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		case '.':
-		case 'h':
-		case 'l':
-		case 'L':
-			continue;
+			case CBPRINTF_PACKAGE_ARG_TYPE_LONG:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG:
+				align = VA_STACK_ALIGN(long);
+				size = sizeof(long);
+				break;
 
-		case '*':
-			break;
+			case CBPRINTF_PACKAGE_ARG_TYPE_LONG_LONG:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG_LONG:
+				align = VA_STACK_ALIGN(long long);
+				size = sizeof(long long);
+				break;
 
-		case 'j':
-			align = VA_STACK_ALIGN(intmax_t);
-			size = sizeof(intmax_t);
-			continue;
+			case CBPRINTF_PACKAGE_ARG_TYPE_FLOAT:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_DOUBLE:
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE: {
+				/*
+				 * Handle floats separately as they may be
+				 * held in a different register set.
+				 */
+				union { double d; long double ld; } v;
 
-		case 'z':
-			align = VA_STACK_ALIGN(size_t);
-			size = sizeof(size_t);
-			continue;
-
-		case 't':
-			align = VA_STACK_ALIGN(ptrdiff_t);
-			size = sizeof(ptrdiff_t);
-			continue;
-
-		case 'c':
-		case 'd':
-		case 'i':
-		case 'o':
-		case 'u':
-		case 'x':
-		case 'X':
-			if (fmt[-1] == 'l') {
-				if (fmt[-2] == 'l') {
-					align = VA_STACK_ALIGN(long long);
-					size = sizeof(long long);
+				if (arg_tag == CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE) {
+					v.ld = va_arg(ap, long double);
+					align = VA_STACK_ALIGN(long double);
+					size = sizeof(long double);
 				} else {
-					align = VA_STACK_ALIGN(long);
-					size = sizeof(long);
+					v.d = va_arg(ap, double);
+					align = VA_STACK_ALIGN(double);
+					size = sizeof(double);
 				}
-			}
-			parsing = false;
-			break;
 
-		case 's':
-		case 'p':
-		case 'n':
-			align = VA_STACK_ALIGN(void *);
-			size = sizeof(void *);
-			parsing = false;
-			break;
-
-		case 'a':
-		case 'A':
-		case 'e':
-		case 'E':
-		case 'f':
-		case 'F':
-		case 'g':
-		case 'G': {
-			/*
-			 * Handle floats separately as they may be
-			 * held in a different register set.
-			 */
-			union { double d; long double ld; } v;
-
-			if (fmt[-1] == 'L') {
-				v.ld = va_arg(ap, long double);
-				align = VA_STACK_ALIGN(long double);
-				size = sizeof(long double);
-			} else {
-				v.d = va_arg(ap, double);
-				align = VA_STACK_ALIGN(double);
-				size = sizeof(double);
-			}
-			/* align destination buffer location */
-			buf = (void *) ROUND_UP(buf, align);
-			if (buf0 != NULL) {
-				/* make sure it fits */
-				if (BUF_OFFSET + size > len) {
-					return -ENOSPC;
+				/* align destination buffer location */
+				buf = (void *) ROUND_UP(buf, align);
+				if (buf0 != NULL) {
+					/* make sure it fits */
+					if (BUF_OFFSET + size > len) {
+						return -ENOSPC;
+					}
+					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
+						memcpy(buf, &v, size);
+					} else if (fmt[-1] == 'L') {
+						*(long double *)buf = v.ld;
+					} else {
+						*(double *)buf = v.d;
+					}
 				}
-				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-					memcpy(buf, &v, size);
-				} else if (fmt[-1] == 'L') {
-					*(long double *)buf = v.ld;
+				buf += size;
+				parsing = false;
+				continue;
+			}
+
+			case CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR:
+				is_str_arg = true;
+
+				__fallthrough;
+			case CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID:
+				align = VA_STACK_ALIGN(void *);
+				size = sizeof(void *);
+				break;
+
+			default:
+				return -EINVAL;
+			}
+
+		} else
+#endif /* CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS */
+		{
+			/* Scan the format string */
+			if (*++fmt == '\0') {
+				break;
+			}
+
+			if (!parsing) {
+				if (*fmt == '%') {
+					parsing = true;
+					align = VA_STACK_ALIGN(int);
+					size = sizeof(int);
+				}
+				continue;
+			}
+			switch (*fmt) {
+			case '%':
+				parsing = false;
+				continue;
+
+			case '#':
+			case '-':
+			case '+':
+			case ' ':
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+			case '.':
+			case 'h':
+			case 'l':
+			case 'L':
+				continue;
+
+			case '*':
+				break;
+
+			case 'j':
+				align = VA_STACK_ALIGN(intmax_t);
+				size = sizeof(intmax_t);
+				continue;
+
+			case 'z':
+				align = VA_STACK_ALIGN(size_t);
+				size = sizeof(size_t);
+				continue;
+
+			case 't':
+				align = VA_STACK_ALIGN(ptrdiff_t);
+				size = sizeof(ptrdiff_t);
+				continue;
+
+			case 'c':
+			case 'd':
+			case 'i':
+			case 'o':
+			case 'u':
+			case 'x':
+			case 'X':
+				if (fmt[-1] == 'l') {
+					if (fmt[-2] == 'l') {
+						align = VA_STACK_ALIGN(long long);
+						size = sizeof(long long);
+					} else {
+						align = VA_STACK_ALIGN(long);
+						size = sizeof(long);
+					}
+				}
+				parsing = false;
+				break;
+
+			case 's':
+				is_str_arg = true;
+
+				__fallthrough;
+			case 'p':
+			case 'n':
+				align = VA_STACK_ALIGN(void *);
+				size = sizeof(void *);
+				parsing = false;
+				break;
+
+			case 'a':
+			case 'A':
+			case 'e':
+			case 'E':
+			case 'f':
+			case 'F':
+			case 'g':
+			case 'G': {
+				/*
+				 * Handle floats separately as they may be
+				 * held in a different register set.
+				 */
+				union { double d; long double ld; } v;
+
+				if (fmt[-1] == 'L') {
+					v.ld = va_arg(ap, long double);
+					align = VA_STACK_ALIGN(long double);
+					size = sizeof(long double);
 				} else {
-					*(double *)buf = v.d;
+					v.d = va_arg(ap, double);
+					align = VA_STACK_ALIGN(double);
+					size = sizeof(double);
 				}
+				/* align destination buffer location */
+				buf = (void *) ROUND_UP(buf, align);
+				if (buf0 != NULL) {
+					/* make sure it fits */
+					if (BUF_OFFSET + size > len) {
+						return -ENOSPC;
+					}
+					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
+						memcpy(buf, &v, size);
+					} else if (fmt[-1] == 'L') {
+						*(long double *)buf = v.ld;
+					} else {
+						*(double *)buf = v.d;
+					}
+				}
+				buf += size;
+				parsing = false;
+				continue;
 			}
-			buf += size;
-			parsing = false;
-			continue;
-		}
 
-		default:
-			parsing = false;
-			continue;
+			default:
+				parsing = false;
+				continue;
+			}
 		}
 
 		/* align destination buffer location */
@@ -460,7 +604,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		}
 
 		/* copy va_list data over to our buffer */
-		if (*fmt == 's') {
+		if (is_str_arg) {
 			s = va_arg(ap, char *);
 process_string:
 			if (buf0 != NULL) {
@@ -521,6 +665,8 @@ process_string:
 				s_idx++;
 			}
 			buf += sizeof(char *);
+
+			is_str_arg = false;
 		} else if (size == sizeof(int)) {
 			int v = va_arg(ap, int);
 
@@ -575,19 +721,23 @@ process_string:
 	*(char **)buf0 = NULL;
 
 	/* Record end of argument list. */
-	buf0[0] = BUF_OFFSET / sizeof(int);
+	pkg_hdr->desc.len = BUF_OFFSET / sizeof(int);
 
 	if (rws_pos_en) {
 		/* Strings are appended, update location counter. */
-		buf0[1] = 0;
-		buf0[3] = s_rw_cnt;
+		pkg_hdr->desc.str_cnt = 0;
+		pkg_hdr->desc.rw_str_cnt = s_rw_cnt;
 	} else {
 		/* Strings are appended, update append counter. */
-		buf0[1] = s_rw_cnt;
-		buf0[3] = 0;
+		pkg_hdr->desc.str_cnt = s_rw_cnt;
+		pkg_hdr->desc.rw_str_cnt = 0;
 	}
 
-	buf0[2] = s_ro_cnt;
+	pkg_hdr->desc.ro_str_cnt = s_ro_cnt;
+
+#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	pkg_hdr->desc.pkg_flags = flags;
+#endif
 
 	/* Store strings pointer locations of read only strings. */
 	if (s_ro_cnt) {
@@ -665,7 +815,8 @@ int cbpprintf_external(cbprintf_cb out,
 		       void *ctx, void *packaged)
 {
 	uint8_t *buf = packaged;
-	char *fmt, *s, **ps;
+	struct cbprintf_package_hdr_ext *hdr = packaged;
+	char *s, **ps;
 	unsigned int i, args_size, s_nbr, ros_nbr, rws_nbr, s_idx;
 
 	if (buf == NULL) {
@@ -673,10 +824,10 @@ int cbpprintf_external(cbprintf_cb out,
 	}
 
 	/* Retrieve the size of the arg list and number of strings. */
-	args_size = buf[0] * sizeof(int);
-	s_nbr     = buf[1];
-	ros_nbr   = buf[2];
-	rws_nbr   = buf[3];
+	args_size = hdr->hdr.desc.len * sizeof(int);
+	s_nbr     = hdr->hdr.desc.str_cnt;
+	ros_nbr   = hdr->hdr.desc.ro_str_cnt;
+	rws_nbr   = hdr->hdr.desc.rw_str_cnt;
 
 	/* Locate the string table */
 	s = (char *)(buf + args_size + ros_nbr + rws_nbr);
@@ -694,14 +845,11 @@ int cbpprintf_external(cbprintf_cb out,
 		s += strlen(s) + 1;
 	}
 
-	/* Retrieve format string */
-	fmt = ((char **)buf)[1];
-
-	/* skip past format string pointer */
-	buf += sizeof(char *) * 2;
+	/* Skip past the header */
+	buf += sizeof(*hdr);
 
 	/* Turn this into a va_list and  print it */
-	return cbprintf_via_va_list(out, formatter, ctx, fmt, buf);
+	return cbprintf_via_va_list(out, formatter, ctx, hdr->fmt, buf);
 }
 
 int cbprintf_package_convert(void *in_packaged,
@@ -719,7 +867,7 @@ int cbprintf_package_convert(void *in_packaged,
 	unsigned int args_size, ros_nbr, rws_nbr;
 	bool rw_cpy;
 	bool ro_cpy;
-	struct z_cbprintf_desc *in_desc = in_packaged;
+	struct cbprintf_package_desc *in_desc = in_packaged;
 
 	in_len = in_len != 0 ? in_len : get_package_len(in_packaged);
 
@@ -817,7 +965,7 @@ int cbprintf_package_convert(void *in_packaged,
 		return out_len;
 	}
 
-	struct z_cbprintf_desc out_desc;
+	struct cbprintf_package_desc out_desc;
 	/* At least one is copied in. */
 	uint8_t cpy_str_pos[16];
 	/* Up to one will be kept since if both types are kept it returns earlier. */
@@ -887,7 +1035,7 @@ int cbprintf_package_convert(void *in_packaged,
 			((flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) ? keep_cnt : 0);
 
 	/* Temporary overwrite input descriptor to allow bulk transfer */
-	struct z_cbprintf_desc in_desc_backup = *in_desc;
+	struct cbprintf_package_desc in_desc_backup = *in_desc;
 	*in_desc = out_desc;
 
 	/* Copy package header and arguments. */

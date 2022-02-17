@@ -133,3 +133,20 @@ config CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT
 	  When enabled, CBPRINTF_STATIC_PACKAGE asserts when buffer is not
 	  properly aligned. If macro is widely used then assert may impact
 	  memory footprint.
+
+config CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	bool
+	help
+	  Enable this option to store the flags used to create the package
+	  into the package itself.
+
+config CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
+	bool
+	select CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	help
+	  Hidden option to support tagged arguments in cbvprint_package().
+	  If enabled and cbvprint_package() is called with the corresponding
+	  flag, the packaging function no longer looks at the format strings
+	  to determine the types of arguments, but instead, each argument is
+	  tagged with a type by preceding it with another argument as type
+	  (integer).

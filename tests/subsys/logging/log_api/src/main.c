@@ -10,6 +10,7 @@
 #include <ztest.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/cbprintf.h>
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
 #define CONFIG_LOG_BUFFER_SIZE 4
@@ -22,7 +23,8 @@
 LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 
 #define LOG2_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg2_hdr) + 2 * sizeof(void *), sizeof(long long))
+	ROUND_UP(sizeof(struct log_msg2_hdr) + \
+		 sizeof(struct cbprintf_package_hdr_ext), sizeof(long long))
 
 #ifdef CONFIG_LOG_TIMESTAMP_64BIT
 #define TIMESTAMP_INIT_VAL 0x100000000
