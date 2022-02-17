@@ -130,7 +130,7 @@ static void isr_tx(void *param)
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
-	radio_gpio_pa_lna_enable(t + radio_tx_ready_delay_get(test_phy,
+	radio_gpio_pa_lna_enable(transmit_time + radio_tx_ready_delay_get(test_phy,
 							      test_phy_flags) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
