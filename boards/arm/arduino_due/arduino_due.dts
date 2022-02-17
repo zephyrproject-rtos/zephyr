@@ -56,3 +56,5 @@
 &pa8a_uart_urxd {
 	bias-pull-up;
 };
+
+arduino_i2c: &twi1 { };
