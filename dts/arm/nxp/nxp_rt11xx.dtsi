@@ -74,6 +74,12 @@
 		};
 	};
 
+	xtal: xtal-osc {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		flexspi: spi@400cc000 {
 			compatible = "nxp,imx-flexspi";
@@ -704,6 +710,7 @@
 			reg = <0x40430000 0x200>;
 			interrupts = <136 1>;
 			interrupt-names = "usb_otg";
+			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
 			maximum-speed = "full-speed";
 			status = "disabled";
@@ -715,6 +722,7 @@
 			reg = <0x4042c000 0x200>;
 			interrupts = <135 1>;
 			interrupt-names = "usb_otg";
+			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
 			maximum-speed = "full-speed";
 			status = "disabled";
