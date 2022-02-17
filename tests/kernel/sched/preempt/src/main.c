@@ -48,7 +48,7 @@ const enum { METAIRQ, COOP, PREEMPTIBLE } worker_priorities[] = {
 
 #define NUM_THREADS ARRAY_SIZE(worker_priorities)
 
-#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 k_tid_t last_thread;
 

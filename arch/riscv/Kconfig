@@ -152,7 +152,7 @@ endmenu
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	default 1024
 
 config CMSIS_THREAD_MAX_STACK_SIZE

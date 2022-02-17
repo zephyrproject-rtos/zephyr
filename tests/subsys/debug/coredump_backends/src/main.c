@@ -13,7 +13,7 @@
 
 #include <debug/coredump.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread dump_thread;
 static K_THREAD_STACK_DEFINE(dump_stack, STACK_SIZE);

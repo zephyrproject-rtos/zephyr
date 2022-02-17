@@ -46,7 +46,7 @@ config IDLE_STACK_SIZE
 	int
 	default 1536
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	int
 	default 1024
 

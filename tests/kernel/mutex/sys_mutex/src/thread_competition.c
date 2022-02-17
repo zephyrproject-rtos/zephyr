@@ -11,7 +11,7 @@
 #define HIGH_T2	 0xbbb
 #define LOW_PRO	 0xccc
 
-#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(thread_low_stack, STACKSIZE);
 static struct k_thread thread_low_data;

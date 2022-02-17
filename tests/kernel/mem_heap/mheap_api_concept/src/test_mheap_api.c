@@ -10,7 +10,7 @@
 #include <sys/multi_heap.h>
 #include "test_mheap.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define OVERFLOW_SIZE    SIZE_MAX
 
 K_SEM_DEFINE(thread_sem, 0, 1);

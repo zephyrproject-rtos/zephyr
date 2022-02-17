@@ -50,7 +50,7 @@
 #include <ztest.h>
 #include <sys/mutex.h>
 
-#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static ZTEST_DMEM int tc_rc = TC_PASS;         /* test case return code */
 
