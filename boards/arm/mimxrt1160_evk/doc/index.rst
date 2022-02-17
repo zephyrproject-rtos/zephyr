@@ -117,6 +117,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB Device                          |
 +-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1160_evk/mimxrt1160_evk_cm7_defconfig``
