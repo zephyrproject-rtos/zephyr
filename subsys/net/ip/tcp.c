@@ -730,6 +730,8 @@ static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size_t *len)
 
 		net_pkt_skip(up, net_pkt_get_len(up) - *len);
 
+		net_context_update_recv_wnd(conn->context, -*len);
+
 		/* Do not pass data to application with TCP conn
 		 * locked as there could be an issue when the app tries
 		 * to send the data and the conn is locked. So the recv
@@ -2146,10 +2148,21 @@ int net_tcp_listen(struct net_context *context)
 
 int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta)
 {
-	ARG_UNUSED(context);
-	ARG_UNUSED(delta);
+	int32_t new_win;
 
-	return -EPROTONOSUPPORT;
+	if (!context->tcp) {
+		NET_ERR("context->tcp == NULL");
+		return -EPROTOTYPE;
+	}
+
+	new_win = ((struct tcp *)context->tcp)->recv_win + delta;
+	if (new_win < 0 || new_win > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	((struct tcp *)context->tcp)->recv_win = new_win;
+
+	return 0;
 }
 
 /* net_context queues the outgoing data for the TCP connection */
