@@ -2640,6 +2640,12 @@ static void att_reset(struct bt_att *att)
 	}
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
+#if defined(CONFIG_BT_EATT)
+	struct k_work_sync sync;
+
+	(void)k_work_cancel_delayable_sync(&att->connection_work, &sync);
+#endif /* CONFIG_BT_EATT */
+
 	while ((buf = net_buf_get(&att->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
