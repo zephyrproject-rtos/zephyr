@@ -19,7 +19,7 @@ static struct fd_op_vtable fd_vtable = { 0 };
 
 #define VTABLE_INIT (&fd_vtable)
 
-K_THREAD_STACK_DEFINE(fd_thread_stack, CONFIG_ZTEST_STACKSIZE +
+K_THREAD_STACK_DEFINE(fd_thread_stack, CONFIG_ZTEST_STACK_SIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
 
 void test_z_reserve_fd(void)
