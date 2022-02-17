@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
+#include <toolchain.h>
 #include <sys/cbprintf.h>
 #include <sys/types.h>
 #include <sys/util.h>
@@ -218,6 +219,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	unsigned int i;
 	const char *s;
 	bool parsing = false;
+	bool is_str_arg = false;
 
 	/* Buffer must be aligned at least to size of a pointer. */
 	if ((uintptr_t)packaged % sizeof(void *)) {
@@ -285,6 +287,97 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	size = sizeof(char *);
 	goto process_string;
 
+#if defined(CONFIG_CBPRINTF_PACKAGE_RUNTIME_USE_TAGGED_ARGUMENTS)
+
+#if !Z_C_GENERIC
+#error "CONFIG_CBPRINTF_PACKAGE_RUNTIME_USE_TAGGED_ARGUMENTS " \
+	"requires toolchain to support _Generic!"
+#endif
+
+	while (true) {
+		int arg_tag = va_arg(ap, int);
+
+		if (arg_tag == CBPRINTF_PACKAGE_ARG_TYPE_END) {
+			break;
+		}
+
+		switch (arg_tag) {
+		case CBPRINTF_PACKAGE_ARG_TYPE_CHAR:
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_CHAR:
+
+		case CBPRINTF_PACKAGE_ARG_TYPE_SHORT:
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_SHORT:
+
+		case CBPRINTF_PACKAGE_ARG_TYPE_INT:
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_INT:
+			align = VA_STACK_ALIGN(int);
+			size = sizeof(int);
+			break;
+
+		case CBPRINTF_PACKAGE_ARG_TYPE_LONG:
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG:
+			align = VA_STACK_ALIGN(long);
+			size = sizeof(long);
+			break;
+
+		case CBPRINTF_PACKAGE_ARG_TYPE_LONG_LONG:
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG_LONG:
+			align = VA_STACK_ALIGN(long long);
+			size = sizeof(long long);
+			break;
+
+		case CBPRINTF_PACKAGE_ARG_TYPE_FLOAT:
+		case CBPRINTF_PACKAGE_ARG_TYPE_DOUBLE:
+		case CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE: {
+			/*
+			 * Handle floats separately as they may be
+			 * held in a different register set.
+			 */
+			union { double d; long double ld; } v;
+
+			if (arg_tag == CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE) {
+				v.ld = va_arg(ap, long double);
+				align = VA_STACK_ALIGN(long double);
+				size = sizeof(long double);
+			} else {
+				v.d = va_arg(ap, double);
+				align = VA_STACK_ALIGN(double);
+				size = sizeof(double);
+			}
+
+			/* align destination buffer location */
+			buf = (void *) ROUND_UP(buf, align);
+			if (buf0 != NULL) {
+				/* make sure it fits */
+				if (BUF_OFFSET + size > len) {
+					return -ENOSPC;
+				}
+				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
+					memcpy(buf, &v, size);
+				} else if (fmt[-1] == 'L') {
+					*(long double *)buf = v.ld;
+				} else {
+					*(double *)buf = v.d;
+				}
+			}
+			buf += size;
+			parsing = false;
+			continue;
+		}
+
+		case CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR:
+			is_str_arg = true;
+
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID:
+			align = VA_STACK_ALIGN(void *);
+			size = sizeof(void *);
+			break;
+
+		default:
+			return -EINVAL;
+		}
+#else /* CONFIG_CBPRINTF_PACKAGE_RUNTIME_USE_TAGGED_ARGUMENTS */
 	/* Scan the format string */
 	while (*++fmt != '\0') {
 		if (!parsing) {
@@ -358,6 +451,9 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			break;
 
 		case 's':
+			is_str_arg = true;
+
+			__fallthrough;
 		case 'p':
 		case 'n':
 			align = VA_STACK_ALIGN(void *);
@@ -412,6 +508,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			parsing = false;
 			continue;
 		}
+#endif /* CONFIG_CBPRINTF_PACKAGE_RUNTIME_USE_TAGGED_ARGUMENTS */
 
 		/* align destination buffer location */
 		buf = (void *) ROUND_UP(buf, align);
@@ -422,7 +519,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		}
 
 		/* copy va_list data over to our buffer */
-		if (*fmt == 's') {
+		if (is_str_arg) {
 			s = va_arg(ap, char *);
 process_string:
 			if (buf0 != NULL) {
@@ -483,6 +580,8 @@ process_string:
 				s_idx++;
 			}
 			buf += sizeof(char *);
+
+			is_str_arg = false;
 		} else if (size == sizeof(int)) {
 			int v = va_arg(ap, int);
 
