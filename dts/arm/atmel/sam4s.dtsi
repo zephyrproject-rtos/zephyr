@@ -210,6 +210,13 @@
 			label = "TC1";
 			pinctrl-0 = <>;
 		};
+
+		rstc: rstc@400e1400 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1400 0x10>;
+			peripheral-id = <1>;
+			label = "RSTC";
+		};
 	};
 };
 
