@@ -317,7 +317,7 @@ out:
 #define FAIL_FAST 0
 #endif
 
-K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE + CONFIG_TEST_EXTRA_STACKSIZE);
+K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACKSIZE);
 static ZTEST_BMEM int test_result;
 
 static void test_finalize(void)
