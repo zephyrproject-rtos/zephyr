@@ -1054,9 +1054,9 @@ static uint16_t l2cap_check_security(struct bt_conn *conn,
 
 	if (keys) {
 		if (conn->role == BT_HCI_ROLE_CENTRAL) {
-			ltk_present = keys->id & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
+			ltk_present = keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
 		} else {
-			ltk_present = keys->id & (BT_KEYS_LTK_P256 | BT_KEYS_LTK);
+			ltk_present = keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK);
 		}
 	} else {
 		ltk_present = false;
