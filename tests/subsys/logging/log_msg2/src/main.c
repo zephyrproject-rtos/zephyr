@@ -121,6 +121,32 @@ union log_msg2_generic *msg_copy_and_free(union log_msg2_generic *msg,
 	return (union log_msg2_generic *)buf;
 }
 
+void clear_pkg_flags(struct log_msg2 *msg)
+{
+#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	/*
+	 * The various tests create cbprintf packages differently
+	 * for the same log message. This results in different
+	 * package flags stored in those packages. These package
+	 * flags can be ignored as we only want to make sure
+	 * the remaining header bits, the format string, and
+	 * the format arguments are all the same.
+	 */
+
+	uint8_t *d;
+	size_t len;
+
+	d = log_msg2_get_package(msg, &len);
+	if (len > 0) {
+		union cbprintf_package_hdr *hdr = (void *)d;
+
+		hdr->desc.pkg_flags = 0U;
+	}
+#else
+	ARG_UNUSED(msg);
+#endif
+}
+
 void validate_base_message_set(const struct log_source_const_data *source,
 				uint8_t domain, uint8_t level,
 				log_timestamp_t t, const void *data,
@@ -136,16 +162,19 @@ void validate_base_message_set(const struct log_source_const_data *source,
 	zassert_true(msg0, "Unexpected null message");
 	len0 = log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg0);
 	msg0 = msg_copy_and_free(msg0, buf0, sizeof(buf0));
+	clear_pkg_flags(&msg0->log);
 
 	msg1 = z_log_msg2_claim();
 	zassert_true(msg1, "Unexpected null message");
 	len1 = log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg1);
 	msg1 = msg_copy_and_free(msg1, buf1, sizeof(buf1));
+	clear_pkg_flags(&msg1->log);
 
 	msg2 = z_log_msg2_claim();
 	zassert_true(msg2, "Unexpected null message");
 	len2 = log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg2);
 	msg2 = msg_copy_and_free(msg2, buf2, sizeof(buf2));
+	clear_pkg_flags(&msg2->log);
 
 	print_msg(&msg0->log);
 	print_msg(&msg1->log);
@@ -362,7 +391,7 @@ void test_mode_size_plain_string(void)
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = offsetof(struct log_msg2, data) +
-			 /* package */2 * sizeof(const char *);
+			 /* package */sizeof(struct cbprintf_package_hdr_ext);
 
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 	get_msg_validate_length(exp_len);
@@ -421,7 +450,7 @@ void test_mode_size_plain_str_data(void)
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = offsetof(struct log_msg2, data) + sizeof(data) +
-		  /* package */2 * sizeof(char *);
+		  /* package */sizeof(struct cbprintf_package_hdr_ext);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 	get_msg_validate_length(exp_len);
 }
@@ -455,7 +484,8 @@ void test_mode_size_str_with_strings(void)
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = offsetof(struct log_msg2, data) +
-			 /* package */3 * sizeof(const char *);
+			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
+				      sizeof(const char *);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 
 	get_msg_validate_length(exp_len);
@@ -496,7 +526,8 @@ void test_mode_size_str_with_2strings(void)
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = offsetof(struct log_msg2, data) +
-			 /* package */4 * sizeof(const char *) + 2 + strlen(sufix);
+			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
+				      2 * sizeof(const char *) + 2 + strlen(sufix);
 
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 
