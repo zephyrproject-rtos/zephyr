@@ -26,6 +26,10 @@ struct dw_sdmmc_priv {
 
 static int dw_sdmmc_access_init(struct disk_info *disk)
 {
+	if (disk == NULL) {
+		return -EINVAL;
+	}
+
 	const struct device *dev = disk->dev;
 	struct dw_sdmmc_priv *priv = dev->data;
 
@@ -41,13 +45,16 @@ static int dw_sdmmc_access_init(struct disk_info *disk)
 	dw_mmc_init(&priv->params, &priv->info);
 
 	priv->sector_count = priv->info.device_size / priv->info.block_size;
-
 	priv->status = DISK_STATUS_OK;
 	return 0;
 }
 
 static int dw_sdmmc_access_status(struct disk_info *disk)
 {
+	if (disk == NULL) {
+		return -EINVAL;
+	}
+
 	const struct device *dev = disk->dev;
 	struct dw_sdmmc_priv *priv = dev->data;
 
@@ -57,6 +64,10 @@ static int dw_sdmmc_access_status(struct disk_info *disk)
 static int dw_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 				   uint32_t start_sector, uint32_t num_sector)
 {
+	if ((disk == NULL) || (data_buf == NULL) || (num_sector == 0)) {
+		return -EINVAL;
+	}
+
 	const struct device *dev = disk->dev;
 	struct dw_sdmmc_priv *priv = dev->data;
 
@@ -65,16 +76,21 @@ static int dw_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	data_size = num_sector * priv->info.block_size;
 
 	/* Return as size */
-	mmc_read_blocks(start_sector, (uintptr_t)data_buf, data_size);
+	if ((mmc_read_blocks(start_sector, (uintptr_t)data_buf, data_size)) == 0) {
+		return -EIO;
+	}
 
 	return 0;
-
 }
 
 static int dw_sdmmc_access_write(struct disk_info *disk,
 				    const uint8_t *data_buf,
 				    uint32_t start_sector, uint32_t num_sector)
 {
+	if ((disk == NULL) || (data_buf == NULL) || (num_sector == 0)) {
+		return -EINVAL;
+	}
+
 	const struct device *dev = disk->dev;
 	struct dw_sdmmc_priv *priv = dev->data;
 
@@ -83,15 +99,20 @@ static int dw_sdmmc_access_write(struct disk_info *disk,
 	data_size = num_sector * priv->info.block_size;
 
 	/* Return as size */
-	mmc_write_blocks(start_sector, (uintptr_t)data_buf, data_size);
+	if ((mmc_write_blocks(start_sector, (uintptr_t)data_buf, data_size)) == 0) {
+		return -EIO;
+	}
 
 	return 0;
-
 }
 
 static int dw_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd,
 				    void *buff)
 {
+	if ((disk == NULL) || (buff == NULL)) {
+		return -EINVAL;
+	}
+
 	const struct device *dev = disk->dev;
 	struct dw_sdmmc_priv *priv = dev->data;
 
@@ -112,7 +133,6 @@ static int dw_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd,
 		return -EINVAL;
 	}
 	return 0;
-
 }
 
 static const struct disk_operations dw_sdmmc_ops = {
@@ -130,6 +150,9 @@ static struct disk_info dw_sdmmc_info = {
 
 static int disk_dw_sdmmc_init(const struct device *dev)
 {
+	if (dev == NULL) {
+		return -EINVAL;
+	}
 
 	struct dw_sdmmc_priv *priv = dev->data;
 	int err;
