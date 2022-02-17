@@ -212,14 +212,14 @@ ZTEST(cbprintf_package, test_cbprintf_rw_str_indexes)
 				test_str, 100, test_str1);
 	zassert_equal(len0 + 2, len2, NULL);
 
-	struct z_cbprintf_desc *desc0 = (struct z_cbprintf_desc *)package0;
-	struct z_cbprintf_desc *desc1 = (struct z_cbprintf_desc *)package1;
-	struct z_cbprintf_desc *desc2 = (struct z_cbprintf_desc *)package2;
+	union cbprintf_package_hdr *desc0 = (union cbprintf_package_hdr *)package0;
+	union cbprintf_package_hdr *desc1 = (union cbprintf_package_hdr *)package1;
+	union cbprintf_package_hdr *desc2 = (union cbprintf_package_hdr *)package2;
 
 	/* Compare descriptor content. Second package has one ro string index. */
-	zassert_equal(desc0->ro_str_cnt, 0, NULL);
-	zassert_equal(desc1->ro_str_cnt, 2, NULL);
-	zassert_equal(desc2->ro_str_cnt, 2, NULL);
+	zassert_equal(desc0->desc.ro_str_cnt, 0, NULL);
+	zassert_equal(desc1->desc.ro_str_cnt, 2, NULL);
+	zassert_equal(desc2->desc.ro_str_cnt, 2, NULL);
 
 	int *p = (int *)package1;
 
@@ -261,10 +261,10 @@ ZTEST(cbprintf_package, test_cbprintf_fsc_package)
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
 
-	struct z_cbprintf_desc *desc = (struct z_cbprintf_desc *)package;
+	union cbprintf_package_hdr *desc = (union cbprintf_package_hdr *)package;
 
-	zassert_equal(desc->ro_str_cnt, 2, NULL);
-	zassert_equal(desc->str_cnt, 0, NULL);
+	zassert_equal(desc->desc.ro_str_cnt, 2, NULL);
+	zassert_equal(desc->desc.str_cnt, 0, NULL);
 
 	/* Get length of fsc package. */
 	fsc_len = cbprintf_fsc_package(package, len, NULL, 0);
@@ -282,12 +282,12 @@ ZTEST(cbprintf_package, test_cbprintf_fsc_package)
 	zassert_equal((int)sizeof(fsc_package), fsc_len, NULL);
 
 	/* New package has no RO string locations, only copied one. */
-	desc = (struct z_cbprintf_desc *)fsc_package;
-	zassert_equal(desc->ro_str_cnt, 0, NULL);
-	zassert_equal(desc->str_cnt, 2, NULL);
+	desc = (union cbprintf_package_hdr *)fsc_package;
+	zassert_equal(desc->desc.ro_str_cnt, 0, NULL);
+	zassert_equal(desc->desc.str_cnt, 2, NULL);
 
 	/* Get pointer to the first string in the package. */
-	addr = (char *)&fsc_package[desc->len * sizeof(int) + 1];
+	addr = (char *)&fsc_package[desc->desc.len * sizeof(int) + 1];
 
 	zassert_equal(strcmp(test_str, addr), 0, NULL);
 
@@ -332,6 +332,15 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc)
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[slen];
+
+	/*
+	 * Since memcpy() is being done below, it is better to zero out
+	 * both arrays as there might a paddings in the package headers
+	 * which are not touched by packaging functions, where those bytes
+	 * have whatever is in the stack.
+	 */
+	memset(package, 0, len);
+	memset(spackage, 0, slen);
 
 	len = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
 	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen, ALIGN_OFFSET, flags, TEST_FMT);

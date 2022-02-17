@@ -202,5 +202,55 @@ static inline size_t z_cbprintf_cxx_alignment(T arg)
 	return MAX(__alignof__(arg), VA_STACK_MIN_ALIGN);
 }
 
+/* C++ version for checking if two arguments are same type */
+template < typename T1, typename T2 >
+struct z_cbprintf_cxx_is_same_type {
+	enum {
+		value = false
+	};
+};
+
+template < typename T >
+struct z_cbprintf_cxx_is_same_type < T, T > {
+	enum {
+		value = true
+	};
+};
+
+template < typename T >
+struct z_cbprintf_cxx_remove_reference {
+	typedef T type;
+};
+
+template < typename T >
+struct z_cbprintf_cxx_remove_reference < T & > {
+	typedef T type;
+};
+
+template < typename T >
+struct z_cbprintf_cxx_remove_reference < T && > {
+	typedef T type;
+};
+
+template < typename T >
+struct z_cbprintf_cxx_remove_cv {
+	typedef T type;
+};
+
+template < typename T >
+struct z_cbprintf_cxx_remove_cv < const T > {
+	typedef T type;
+};
+
+template < typename T >
+struct z_cbprintf_cxx_remove_cv < volatile T > {
+	typedef T type;
+};
+
+template < typename T >
+struct z_cbprintf_cxx_remove_cv < const volatile T > {
+	typedef T type;
+};
+
 #endif /* __cplusplus */
 #endif /* ZEPHYR_INCLUDE_SYS_CBPRINTF_CXX_H_ */
