@@ -793,6 +793,18 @@ Documentation:
     labels:
         - "area: PECI"
 
+"Drivers: Pin Control":
+    status: maintained
+    maintainers:
+        - gmarull
+    files:
+        - doc/reference/pinctrl/
+        - include/drivers/pinctrl/
+        - include/drivers/pinctrl.h
+        - drivers/pinctrl/
+    labels:
+        - "area: Pinctrl"
+
 "Drivers: Pinmux":
     status: maintained
     maintainers:
