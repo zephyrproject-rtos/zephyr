@@ -56,6 +56,8 @@ source "subsys/sd/Kconfig"
 
 source "subsys/usb/device_next/Kconfig"
 
+source "subsys/usb/host/Kconfig"
+
 source "subsys/dfu/Kconfig"
 
 source "subsys/random/Kconfig"
