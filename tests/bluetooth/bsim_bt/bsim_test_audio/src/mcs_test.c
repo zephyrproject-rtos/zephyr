@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_MCS
+#ifdef CONFIG_BT_AUDIO_MCS
 
 #include <zephyr.h>
 #include <sys/printk.h>
@@ -117,4 +117,4 @@ struct bst_test_list *test_mcs_install(struct bst_test_list *tests)
 	return tests;
 }
 
-#endif /* CONFIG_BT_MCS */
+#endif /* CONFIG_BT_AUDIO_MCS */

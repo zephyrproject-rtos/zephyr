@@ -20,7 +20,7 @@
 #include <bluetooth/audio/media_proxy.h>
 #include "../audio/media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_media_controller_shell
 #include "common/log.h"
 
@@ -478,7 +478,7 @@ static int cmd_media_show_players(const struct shell *sh, size_t argc, char *arg
 	return 0;
 }
 
-#ifdef CONFIG_BT_MCC
+#ifdef CONFIG_BT_AUDIO_MCC
 static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_discover_player(default_conn);
@@ -489,7 +489,7 @@ static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *
 
 	return err;
 }
-#endif /* CONFIG_BT_MCC */
+#endif /* CONFIG_BT_AUDIO_MCC */
 
 static int cmd_media_read_player_name(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -813,10 +813,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(media_cmds,
 		      cmd_media_set_player, 2, 0),
 	SHELL_CMD_ARG(show_players, NULL, "Show local, remote and current player",
 		      cmd_media_show_players, 1, 0),
-#ifdef CONFIG_BT_MCC
+#ifdef CONFIG_BT_AUDIO_MCC
 	SHELL_CMD_ARG(discover_player, NULL, "Discover remote media player",
 		      cmd_media_discover_player, 1, 0),
-#endif /* CONFIG_BT_MCC */
+#endif /* CONFIG_BT_AUDIO_MCC */
 	SHELL_CMD_ARG(read_player_name, NULL, "Read Media Player Name",
 		      cmd_media_read_player_name, 1, 0),
 #ifdef CONFIG_BT_OTS

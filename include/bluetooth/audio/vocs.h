@@ -191,11 +191,11 @@ struct bt_vocs_cb {
 	bt_vocs_location_cb             location;
 	bt_vocs_description_cb          description;
 
-#if defined(CONFIG_BT_VOCS_CLIENT)
+#if defined(CONFIG_BT_AUDIO_VOCS_CLIENT)
 	/* Client only */
 	bt_vocs_discover_cb             discover;
 	bt_vocs_set_offset_cb           set_offset;
-#endif /* CONFIG_BT_VOCS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_VOCS_CLIENT */
 };
 
 /**

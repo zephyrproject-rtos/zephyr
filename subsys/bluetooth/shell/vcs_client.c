@@ -115,7 +115,7 @@ static void vcs_flags_cb(struct bt_vcs *vcs, int err, uint8_t flags)
 	}
 }
 
-#if CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0
+#if CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0
 static void vcs_aics_set_gain_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
@@ -234,9 +234,9 @@ static void vcs_aics_description_cb(struct bt_aics *inst, int err,
 			    inst, description);
 	}
 }
-#endif /* CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0 */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0 */
 
-#if CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0
+#if CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0
 static void vcs_vocs_set_offset_cb(struct bt_vocs *inst, int err)
 {
 	if (err != 0) {
@@ -282,7 +282,7 @@ static void vcs_vocs_description_cb(struct bt_vocs *inst, int err,
 			    inst, description);
 	}
 }
-#endif /* CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0 */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0 */
 
 static struct bt_vcs_cb vcs_cbs = {
 	.discover = vcs_discover_cb,
@@ -298,7 +298,7 @@ static struct bt_vcs_cb vcs_cbs = {
 	.flags = vcs_flags_cb,
 
 	/* Audio Input Control Service */
-#if CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0
+#if CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0
 	.aics_cb = {
 		.state = vcs_aics_state_cb,
 		.gain_setting = vcs_aics_gain_setting_cb,
@@ -311,15 +311,15 @@ static struct bt_vcs_cb vcs_cbs = {
 		.set_manual_mode = vcs_aics_set_manual_mode_cb,
 		.set_auto_mode = vcs_aics_automatic_mode_cb,
 	},
-#endif /* CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0 */
-#if CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0 */
+#if CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0
 	.vocs_cb = {
 		.state = vcs_vocs_state_cb,
 		.location = vcs_vocs_location_cb,
 		.description = vcs_vocs_description_cb,
 		.set_offset = vcs_vocs_set_offset_cb,
 	}
-#endif /* CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0 */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0 */
 };
 
 static int cmd_vcs_client_discover(const struct shell *sh, size_t argc,

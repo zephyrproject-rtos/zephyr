@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_VCS
+#ifdef CONFIG_BT_AUDIO_VCS
 #include "bluetooth/audio/vcs.h"
 #include "common.h"
 
 extern enum bst_result_t bst_result;
 
-#if defined(CONFIG_BT_VOCS)
-#define VOCS_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
+#if defined(CONFIG_BT_AUDIO_VOCS)
+#define VOCS_DESC_SIZE CONFIG_BT_AUDIO_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 #else
 #define VOCS_DESC_SIZE 0
-#endif /* CONFIG_BT_VOCS */
+#endif /* CONFIG_BT_AUDIO_VOCS */
 
-#if defined(CONFIG_BT_AICS)
-#define AICS_DESC_SIZE CONFIG_BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
+#if defined(CONFIG_BT_AUDIO_AICS)
+#define AICS_DESC_SIZE CONFIG_BT_AUDIO_AICS_MAX_INPUT_DESCRIPTION_SIZE
 #else
 #define AICS_DESC_SIZE 0
-#endif /* CONFIG_BT_AICS */
+#endif /* CONFIG_BT_AUDIO_AICS */
 
 static struct bt_vcs *vcs;
 static struct bt_vcs_included vcs_included;
@@ -435,8 +435,8 @@ static void test_standalone(void)
 {
 	int err;
 	struct bt_vcs_register_param vcs_param;
-	char input_desc[CONFIG_BT_VCS_AICS_INSTANCE_COUNT][16];
-	char output_desc[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT][16];
+	char input_desc[CONFIG_BT_AUDIO_VCS_AICS_INSTANCE_COUNT][16];
+	char output_desc[CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT][16];
 	const uint8_t volume_step = 5;
 	uint8_t expected_volume;
 	uint8_t expected_mute;
@@ -615,13 +615,13 @@ static void test_standalone(void)
 	WAIT_FOR(expected_volume == g_volume);
 	printk("VCS volume set\n");
 
-	if (CONFIG_BT_VCS_VOCS_INSTANCE_COUNT > 0) {
+	if (CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT > 0) {
 		if (test_vocs_standalone()) {
 			return;
 		}
 	}
 
-	if (CONFIG_BT_VCS_AICS_INSTANCE_COUNT > 0) {
+	if (CONFIG_BT_AUDIO_VCS_AICS_INSTANCE_COUNT > 0) {
 		if (test_aics_standalone()) {
 			return;
 		}
@@ -634,8 +634,8 @@ static void test_main(void)
 {
 	int err;
 	struct bt_vcs_register_param vcs_param;
-	char input_desc[CONFIG_BT_VCS_AICS_INSTANCE_COUNT][16];
-	char output_desc[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT][16];
+	char input_desc[CONFIG_BT_AUDIO_VCS_AICS_INSTANCE_COUNT][16];
+	char output_desc[CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT][16];
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -728,4 +728,4 @@ struct bst_test_list *test_vcs_install(struct bst_test_list *tests)
 	return tests;
 }
 
-#endif /* CONFIG_BT_VCS */
+#endif /* CONFIG_BT_AUDIO_VCS */

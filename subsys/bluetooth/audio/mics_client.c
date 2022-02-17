@@ -22,7 +22,7 @@
 
 #include "mics_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MICS_CLIENT)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MICS_CLIENT)
 #define LOG_MODULE_NAME bt_mics_client
 #include "common/log.h"
 
@@ -134,7 +134,7 @@ static void mics_client_write_mics_mute_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-#if defined(CONFIG_BT_MICS_CLIENT_AICS)
+#if defined(CONFIG_BT_AUDIO_MICS_CLIENT_AICS)
 static struct bt_mics *lookup_mics_by_aics(const struct bt_aics *aics)
 {
 	__ASSERT(aics != NULL, "AICS pointer cannot be NULL");
@@ -168,7 +168,7 @@ static void aics_discover_cb(struct bt_aics *inst, int err)
 		}
 	}
 }
-#endif /* CONFIG_BT_MICS_CLIENT_AICS */
+#endif /* CONFIG_BT_AUDIO_MICS_CLIENT_AICS */
 
 static uint8_t mics_discover_include_func(
 	struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -197,7 +197,7 @@ static uint8_t mics_discover_include_func(
 		BT_DBG("Include UUID %s", bt_uuid_str(include->uuid));
 
 		if (bt_uuid_cmp(include->uuid, BT_UUID_AICS) == 0 &&
-		    mics_inst->cli.aics_inst_cnt < CONFIG_BT_MICS_CLIENT_MAX_AICS_INST) {
+		    mics_inst->cli.aics_inst_cnt < CONFIG_BT_AUDIO_MICS_CLIENT_MAX_AICS_INST) {
 			uint8_t inst_idx;
 			int err;
 			struct bt_aics_discover_param param = {
@@ -244,7 +244,7 @@ static uint8_t mics_discover_func(struct bt_conn *conn,
 
 		BT_DBG("Setup complete for MICS");
 		(void)memset(params, 0, sizeof(*params));
-		if (CONFIG_BT_MICS_CLIENT_MAX_AICS_INST > 0) {
+		if (CONFIG_BT_AUDIO_MICS_CLIENT_MAX_AICS_INST > 0) {
 			/* Discover included services */
 			mics_inst->cli.discover_params.start_handle = mics_inst->cli.start_handle;
 			mics_inst->cli.discover_params.end_handle = mics_inst->cli.end_handle;
@@ -395,8 +395,8 @@ int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 		     sizeof(mics_inst->cli.discover_params));
 	mics_client_reset(mics_inst);
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) &&
-	    CONFIG_BT_MICS_CLIENT_MAX_AICS_INST > 0) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) &&
+	    CONFIG_BT_AUDIO_MICS_CLIENT_MAX_AICS_INST > 0) {
 		for (int i = 0; i < ARRAY_SIZE(mics_inst->cli.aics); i++) {
 			if (!initialized) {
 				mics_inst->cli.aics[i] = bt_aics_client_free_instance_get();
@@ -431,7 +431,7 @@ int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 
 int bt_mics_client_cb_register(struct bt_mics_cb *cb)
 {
-#if defined(CONFIG_BT_MICS_CLIENT_AICS)
+#if defined(CONFIG_BT_AUDIO_MICS_CLIENT_AICS)
 	struct bt_aics_cb *aics_cb = NULL;
 
 	if (cb != NULL) {
@@ -453,7 +453,7 @@ int bt_mics_client_cb_register(struct bt_mics_cb *cb)
 			}
 		}
 	}
-#endif /* CONFIG_BT_MICS_CLIENT_AICS */
+#endif /* CONFIG_BT_AUDIO_MICS_CLIENT_AICS */
 
 	mics_client_cb = cb;
 

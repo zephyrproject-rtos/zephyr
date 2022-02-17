@@ -18,7 +18,7 @@
 #include <tinycrypt/ccm_mode.h>
 #include <sys/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS_CRYPTO)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CSIS_CRYPTO)
 #define LOG_MODULE_NAME bt_csis_crypto
 #include "common/log.h"
 

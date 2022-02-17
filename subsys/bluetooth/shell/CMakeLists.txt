@@ -26,39 +26,39 @@ zephyr_library_sources_ifdef(
   iso.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_VCS
+  CONFIG_BT_AUDIO_VCS
   vcs.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_VCS_CLIENT
+  CONFIG_BT_AUDIO_VCS_CLIENT
   vcs_client.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MICS
+  CONFIG_BT_AUDIO_MICS
   mics.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MICS_CLIENT
+  CONFIG_BT_AUDIO_MICS_CLIENT
   mics_client.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_CSIS
+  CONFIG_BT_AUDIO_CSIS
   csis.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_CSIS_CLIENT
+  CONFIG_BT_AUDIO_CSIS_CLIENT
   csis_client.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MCS
+  CONFIG_BT_AUDIO_MCS
   mpl.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MCC
+  CONFIG_BT_AUDIO_MCC
   mcc.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MCS
+  CONFIG_BT_AUDIO_MCS
   media_controller.c
   )
 # We use BT_AUDIO_STREAM as a common ground for audio, as that is set whenever

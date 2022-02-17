@@ -23,11 +23,12 @@
 
 #include "aics_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_AICS_CLIENT)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_AICS_CLIENT)
 #define LOG_MODULE_NAME bt_aics_client
 #include "common/log.h"
 
-static struct bt_aics aics_insts[CONFIG_BT_MAX_CONN * CONFIG_BT_AICS_CLIENT_MAX_INSTANCE_COUNT];
+static struct bt_aics aics_insts[CONFIG_BT_MAX_CONN *
+				 CONFIG_BT_AUDIO_AICS_CLIENT_MAX_INSTANCE_COUNT];
 
 static int aics_client_common_control(uint8_t opcode, struct bt_aics *inst);
 

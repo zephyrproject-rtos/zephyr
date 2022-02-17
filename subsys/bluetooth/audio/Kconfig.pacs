@@ -5,21 +5,21 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config BT_PACS
+config BT_AUDIO_PACS
 	bool "Published Audio Capabilities Service Support"
 	select BT_SMP_SC_PAIR_ONLY
 	help
 	  This option enables support for Published Audio Capabilities Service.
 
-if BT_PACS
-config BT_PAC_SNK
+if BT_AUDIO_PACS
+config BT_AUDIO_PAC_SNK
 	bool "Sink PAC Characteristic Support"
-	default y if BT_ASCS
+	default y if BT_AUDIO_ASCS
 	help
 	  This option enables support for Sink PAC Characteristic.
 
-if BT_PAC_SNK
-config BT_PAC_SNK_LOC
+if BT_AUDIO_PAC_SNK
+config BT_AUDIO_PAC_SNK_LOC
 	hex "Sink PAC Locations Characteristic Support"
 	default 0x00000000
 	range 0x00000000 0x0ffffff
@@ -57,7 +57,7 @@ config BT_PAC_SNK_LOC
 	  0x01000000: Left Surround
 	  0x02000000: Right Surround
 
-config BT_PACS_SNK_CONTEXT
+config BT_AUDIO_PACS_SNK_CONTEXT
 	hex "Supported Sink Contexts"
 	default 0x03ff
 	range 0x0000 0x03ff
@@ -75,17 +75,17 @@ config BT_PACS_SNK_CONTEXT
 	  0x0100: Ringtone
 	  0x0200: TV
 
-endif # BT_PACS_SNK
+endif # BT_AUDIO_PACS_SNK
 
-config BT_PAC_SRC
+config BT_AUDIO_PAC_SRC
 	bool "Source PAC Characteristic Support"
-	default y if BT_ASCS
+	default y if BT_AUDIO_ASCS
 	default y
 	help
 	  This option enables support for Source PAC Characteristic.
 
-if BT_PAC_SRC
-config BT_PAC_SRC_LOC
+if BT_AUDIO_PAC_SRC
+config BT_AUDIO_PAC_SRC_LOC
 	hex "Source PAC Locations Characteristic Support"
 	default 0x00000000
 	range 0x00000000 0x0ffffff
@@ -123,7 +123,7 @@ config BT_PAC_SRC_LOC
 	  0x01000000: Left Surround
 	  0x02000000: Right Surround
 
-config BT_PACS_SRC_CONTEXT
+config BT_AUDIO_PACS_SRC_CONTEXT
 	hex "Supported Source Contexts"
 	default 0x03ff
 	range 0x0000 0x03ff
@@ -141,5 +141,5 @@ config BT_PACS_SRC_CONTEXT
 	  0x0100: Ringtone
 	  0x0200: TV
 
-endif # BT_PAC_SRC
-endif # BT_PACS
+endif # BT_AUDIO_PAC_SRC
+endif # BT_AUDIO_PACS

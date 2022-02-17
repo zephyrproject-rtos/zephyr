@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_MICS_CLIENT
+#ifdef CONFIG_BT_AUDIO_MICS_CLIENT
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/audio/mics.h>
@@ -462,7 +462,7 @@ static void test_main(void)
 	WAIT_FOR(g_mute == expected_mute && g_cb && g_write_complete);
 	printk("MICS unmuted\n");
 
-	if (CONFIG_BT_MICS_CLIENT_MAX_AICS_INST > 0 && g_aics_count > 0) {
+	if (CONFIG_BT_AUDIO_MICS_CLIENT_MAX_AICS_INST > 0 && g_aics_count > 0) {
 		if (test_aics()) {
 			return;
 		}
@@ -493,4 +493,4 @@ struct bst_test_list *test_mics_client_install(struct bst_test_list *tests)
 	return tests;
 }
 
-#endif /* CONFIG_BT_MICS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_MICS_CLIENT */

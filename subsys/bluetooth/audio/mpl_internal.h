@@ -31,7 +31,7 @@ extern "C" {
 /* Track segments */
 struct mpl_tseg {
 	uint8_t            name_len;
-	char		   name[CONFIG_BT_MCS_SEGMENT_NAME_MAX];
+	char		   name[CONFIG_BT_AUDIO_MCS_SEGMENT_NAME_MAX];
 	int32_t            pos;
 	struct mpl_tseg   *prev;
 	struct mpl_tseg   *next;
@@ -42,7 +42,7 @@ struct mpl_track {
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t             id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	char                 title[CONFIG_BT_MCS_TRACK_TITLE_MAX];
+	char                 title[CONFIG_BT_AUDIO_MCS_TRACK_TITLE_MAX];
 	int32_t              duration;
 	struct mpl_tseg     *segment;
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
@@ -57,7 +57,7 @@ struct mpl_group {
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t             id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	char                 title[CONFIG_BT_MCS_GROUP_TITLE_MAX];
+	char                 title[CONFIG_BT_AUDIO_MCS_GROUP_TITLE_MAX];
 	struct mpl_track    *track;
 	struct mpl_group    *parent;
 	struct mpl_group    *prev;
@@ -66,11 +66,11 @@ struct mpl_group {
 
 /** @brief Media Player */
 struct mpl_mediaplayer   {
-	char                name[CONFIG_BT_MCS_MEDIA_PLAYER_NAME_MAX];
+	char                name[CONFIG_BT_AUDIO_MCS_MEDIA_PLAYER_NAME_MAX];
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t            icon_id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	char                icon_url[CONFIG_BT_MCS_ICON_URL_MAX];
+	char                icon_url[CONFIG_BT_AUDIO_MCS_ICON_URL_MAX];
 	struct mpl_group   *group;
 	int32_t             track_pos;
 	uint8_t             state;

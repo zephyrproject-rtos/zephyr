@@ -18,7 +18,7 @@
 /* Takes a text and a 64-bit integer as input */
 #define BT_DBG_OBJ_ID(text, id64) \
 	do { \
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) { \
+		if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) { \
 			char t[BT_OTS_OBJ_ID_STR_LEN]; \
 			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
 			BT_DBG(text "0x%s", log_strdup(t)); \

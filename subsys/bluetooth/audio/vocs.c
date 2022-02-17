@@ -19,13 +19,13 @@
 
 #include "vocs_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_VOCS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_VOCS)
 #define LOG_MODULE_NAME bt_vocs
 #include "common/log.h"
 
 #define VALID_VOCS_OPCODE(opcode)	((opcode) == BT_VOCS_OPCODE_SET_OFFSET)
 
-#if defined(CONFIG_BT_VOCS)
+#if defined(CONFIG_BT_AUDIO_VOCS)
 static void offset_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);
@@ -46,7 +46,7 @@ static void location_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value
 	BT_DBG("value 0x%04x", value);
 }
 
-#endif /* CONFIG_BT_VOCS */
+#endif /* CONFIG_BT_AUDIO_VOCS */
 
 static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
@@ -79,7 +79,7 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 	return len;
 }
 
-#if defined(CONFIG_BT_VOCS)
+#if defined(CONFIG_BT_AUDIO_VOCS)
 static ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
@@ -89,7 +89,7 @@ static ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *at
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.location,
 				 sizeof(inst->srv.location));
 }
-#endif /* CONFIG_BT_VOCS */
+#endif /* CONFIG_BT_AUDIO_VOCS */
 
 static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				  const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
@@ -156,12 +156,12 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 	return len;
 }
 
-#if defined(CONFIG_BT_VOCS)
+#if defined(CONFIG_BT_AUDIO_VOCS)
 static void output_desc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 }
-#endif /* CONFIG_BT_VOCS */
+#endif /* CONFIG_BT_AUDIO_VOCS */
 
 static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
@@ -198,7 +198,7 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 	return len;
 }
 
-#if defined(CONFIG_BT_VOCS)
+#if defined(CONFIG_BT_AUDIO_VOCS)
 static ssize_t read_output_desc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
@@ -235,15 +235,16 @@ static ssize_t read_output_desc(struct bt_conn *conn, const struct bt_gatt_attr 
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT) \
 	}
 
-static struct bt_vocs vocs_insts[CONFIG_BT_VOCS_MAX_INSTANCE_COUNT];
-BT_GATT_SERVICE_INSTANCE_DEFINE(vocs_service_list, vocs_insts, CONFIG_BT_VOCS_MAX_INSTANCE_COUNT,
+static struct bt_vocs vocs_insts[CONFIG_BT_AUDIO_VOCS_MAX_INSTANCE_COUNT];
+BT_GATT_SERVICE_INSTANCE_DEFINE(vocs_service_list, vocs_insts,
+				CONFIG_BT_AUDIO_VOCS_MAX_INSTANCE_COUNT,
 				BT_VOCS_SERVICE_DEFINITION);
 
 struct bt_vocs *bt_vocs_free_instance_get(void)
 {
 	static uint32_t instance_cnt;
 
-	if (instance_cnt >= CONFIG_BT_VOCS_MAX_INSTANCE_COUNT) {
+	if (instance_cnt >= CONFIG_BT_AUDIO_VOCS_MAX_INSTANCE_COUNT) {
 		return NULL;
 	}
 
@@ -309,7 +310,7 @@ int bt_vocs_register(struct bt_vocs *vocs,
 			sizeof(vocs->srv.output_desc) - 1);
 		/* strncpy may not always null-terminate */
 		vocs->srv.output_desc[sizeof(vocs->srv.output_desc) - 1] = '\0';
-		if (IS_ENABLED(CONFIG_BT_DEBUG_VOCS) &&
+		if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_VOCS) &&
 		    strcmp(vocs->srv.output_desc, param->output_desc)) {
 			BT_DBG("Output desc clipped to %s", log_strdup(vocs->srv.output_desc));
 		}
@@ -349,7 +350,7 @@ int bt_vocs_register(struct bt_vocs *vocs,
 	vocs->srv.initialized = true;
 	return 0;
 }
-#endif /* CONFIG_BT_VOCS */
+#endif /* CONFIG_BT_AUDIO_VOCS */
 
 int bt_vocs_state_get(struct bt_vocs *inst)
 {
@@ -358,9 +359,9 @@ int bt_vocs_state_get(struct bt_vocs *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_state_get(inst);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->state) {
 			inst->srv.cb->state(inst, 0, inst->srv.state.offset);
 		}
@@ -377,9 +378,9 @@ int bt_vocs_location_get(struct bt_vocs *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_location_get(inst);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->location) {
 			inst->srv.cb->location(inst, 0, inst->srv.location);
 		}
@@ -396,9 +397,9 @@ int bt_vocs_location_set(struct bt_vocs *inst, uint32_t location)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_location_set(inst, location);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		int err;
 
@@ -419,9 +420,9 @@ int bt_vocs_state_set(struct bt_vocs *inst, int16_t offset)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_state_set(inst, offset);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_vocs_control cp;
 		int err;
@@ -447,9 +448,9 @@ int bt_vocs_description_get(struct bt_vocs *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_description_get(inst);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->description) {
 			inst->srv.cb->description(inst, 0, inst->srv.output_desc);
 		}
@@ -471,9 +472,9 @@ int bt_vocs_description_set(struct bt_vocs *inst, const char *description)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS_CLIENT) && inst->client_instance) {
 		return bt_vocs_client_description_set(inst, description);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		int err;
 

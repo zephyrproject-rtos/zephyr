@@ -14,7 +14,7 @@
 
 #include "media_proxy_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MEDIA_PROXY)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MEDIA_PROXY)
 #define LOG_MODULE_NAME media_proxy
 #include "common/log.h"
 
@@ -53,9 +53,9 @@ struct mprx {
 };
 
 static struct mprx mprx = { 0 };
-#ifdef CONFIG_BT_MCC
+#ifdef CONFIG_BT_AUDIO_MCC
 static struct bt_mcc_cb mcc_cbs;
-#endif /* CONFIG_BT_MCC */
+#endif /* CONFIG_BT_AUDIO_MCC */
 
 /* Synchronous controller calls ***********************************************/
 
@@ -216,7 +216,7 @@ uint8_t media_proxy_sctrl_get_content_ctrl_id(void)
 
 /* Media control client callbacks *********************************************/
 
-#ifdef CONFIG_BT_MCC
+#ifdef CONFIG_BT_AUDIO_MCC
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
@@ -248,7 +248,7 @@ static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *n
 	}
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	BT_DBG("Icon Object ID callback");
@@ -263,7 +263,7 @@ static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 		BT_DBG("No callback");
 	}
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 {
@@ -383,7 +383,7 @@ static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err, int8_t spee
 	}
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
@@ -455,7 +455,7 @@ static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err, uint
 
 /* TODO: current group set callback - must be added to MCC first */
 
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
@@ -551,7 +551,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err, uint32_
 	}
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static void mcc_send_search_cb(struct bt_conn *conn, int err, struct mpl_search search)
 {
 	if (err) {
@@ -591,7 +591,7 @@ static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err, uin
 		BT_DBG("No callback");
 	}
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_t ccid)
 {
@@ -606,7 +606,7 @@ static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_
 	}
 }
 
-#endif /* CONFIG_BT_MCC */
+#endif /* CONFIG_BT_AUDIO_MCC */
 
 
 /* Asynchronous controller calls **********************************************/
@@ -630,7 +630,7 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 	return 0;
 };
 
-#ifdef CONFIG_BT_MCC
+#ifdef CONFIG_BT_AUDIO_MCC
 int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 {
 	int err;
@@ -643,9 +643,9 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 	/* Initialize MCC */
 	mcc_cbs.discover_mcs                  = mcc_discover_mcs_cb;
 	mcc_cbs.read_player_name              = mcc_read_player_name_cb;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	mcc_cbs.read_icon_obj_id              = mcc_read_icon_obj_id_cb;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	mcc_cbs.read_icon_url                 = mcc_read_icon_url_cb;
 	mcc_cbs.track_changed_ntf             = mcc_track_changed_ntf_cb;
 	mcc_cbs.read_track_title              = mcc_read_track_title_cb;
@@ -655,13 +655,13 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 	mcc_cbs.read_playback_speed           = mcc_read_playback_speed_cb;
 	mcc_cbs.set_playback_speed            = mcc_set_playback_speed_cb;
 	mcc_cbs.read_seeking_speed            = mcc_read_seeking_speed_cb;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	mcc_cbs.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
 	mcc_cbs.read_current_track_obj_id     = mcc_read_current_track_obj_id_cb;
 	mcc_cbs.read_next_track_obj_id        = mcc_read_next_track_obj_id_cb;
 	mcc_cbs.read_parent_group_obj_id      = mcc_read_parent_group_obj_id_cb;
 	mcc_cbs.read_current_group_obj_id     = mcc_read_current_group_obj_id_cb;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	mcc_cbs.read_playing_order	      = mcc_read_playing_order_cb;
 	mcc_cbs.set_playing_order             = mcc_set_playing_order_cb;
 	mcc_cbs.read_playing_orders_supported = mcc_read_playing_orders_supported_cb;
@@ -669,11 +669,11 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 	mcc_cbs.send_cmd                      = mcc_send_cmd_cb;
 	mcc_cbs.cmd_ntf                       = mcc_cmd_ntf_cb;
 	mcc_cbs.read_opcodes_supported        = mcc_read_opcodes_supported_cb;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	mcc_cbs.send_search                   = mcc_send_search_cb;
 	mcc_cbs.search_ntf                    = mcc_search_ntf_cb;
 	mcc_cbs.read_search_results_obj_id    = mcc_read_search_results_obj_id_cb;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	mcc_cbs.read_content_control_id       = mcc_read_content_control_id_cb;
 
 	err = bt_mcc_init(&mcc_cbs);
@@ -694,7 +694,7 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 
 	return 0;
 }
-#endif /* CONFIG_BT_MCC	*/
+#endif /* CONFIG_BT_AUDIO_MCC	*/
 
 int media_proxy_ctrl_get_player_name(struct media_player *player)
 {
@@ -721,7 +721,7 @@ int media_proxy_ctrl_get_player_name(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		BT_DBG("Remote player");
 		return bt_mcc_read_player_name(mprx.remote_player.conn);
@@ -754,7 +754,7 @@ int media_proxy_ctrl_get_icon_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_icon_obj_id(mprx.remote_player.conn);
 	}
@@ -786,7 +786,7 @@ int media_proxy_ctrl_get_icon_url(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_icon_url(mprx.remote_player.conn);
 	}
@@ -818,7 +818,7 @@ int media_proxy_ctrl_get_track_title(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_track_title(mprx.remote_player.conn);
 	}
@@ -849,7 +849,7 @@ int media_proxy_ctrl_get_track_duration(struct media_player *player)
 		BT_DBG("No call");
 		return -EOPNOTSUPP;
 	}
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_track_duration(mprx.remote_player.conn);
 	}
@@ -881,7 +881,7 @@ int media_proxy_ctrl_get_track_position(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_track_position(mprx.remote_player.conn);
 	}
@@ -913,7 +913,7 @@ int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t pos
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_set_track_position(mprx.remote_player.conn, position);
 	}
@@ -945,7 +945,7 @@ int media_proxy_ctrl_get_playback_speed(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_playback_speed(mprx.remote_player.conn);
 	}
@@ -977,7 +977,7 @@ int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t spee
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_set_playback_speed(mprx.remote_player.conn, speed);
 	}
@@ -1009,7 +1009,7 @@ int media_proxy_ctrl_get_seeking_speed(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_seeking_speed(mprx.remote_player.conn);
 	}
@@ -1041,7 +1041,7 @@ int media_proxy_ctrl_get_track_segments_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_segments_obj_id(mprx.remote_player.conn);
 	}
@@ -1073,7 +1073,7 @@ int media_proxy_ctrl_get_current_track_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_current_track_obj_id(mprx.remote_player.conn);
 	}
@@ -1110,7 +1110,7 @@ int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t 
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		/* TODO: Uncomment when function is implemented */
 		/* return bt_mcc_set_current_track_obj_id(mprx.remote_player.conn, position); */
@@ -1143,7 +1143,7 @@ int media_proxy_ctrl_get_next_track_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_next_track_obj_id(mprx.remote_player.conn);
 	}
@@ -1180,7 +1180,7 @@ int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		/* TODO: Uncomment when function is implemented */
 		/* return bt_mcc_set_next_track_obj_id(mprx.remote_player.conn, position); */
@@ -1213,7 +1213,7 @@ int media_proxy_ctrl_get_parent_group_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_parent_group_obj_id(mprx.remote_player.conn);
 	}
@@ -1245,7 +1245,7 @@ int media_proxy_ctrl_get_current_group_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_current_group_obj_id(mprx.remote_player.conn);
 	}
@@ -1282,7 +1282,7 @@ int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t 
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		/* TODO: Uncomment when function is implemented */
 		/* return bt_mcc_set_current_group_obj_id(mprx.remote_player.conn, position); */
@@ -1315,7 +1315,7 @@ int media_proxy_ctrl_get_playing_order(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		BT_DBG("Remote player");
 		return bt_mcc_read_playing_order(mprx.remote_player.conn);
@@ -1348,7 +1348,7 @@ int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t orde
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_set_playing_order(mprx.remote_player.conn, order);
 	}
@@ -1380,7 +1380,7 @@ int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_playing_orders_supported(mprx.remote_player.conn);
 	}
@@ -1412,7 +1412,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_media_state(mprx.remote_player.conn);
 	}
@@ -1444,7 +1444,7 @@ int media_proxy_ctrl_send_command(struct media_player *player, struct mpl_cmd cm
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_send_cmd(mprx.remote_player.conn, cmd);
 	}
@@ -1476,7 +1476,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_opcodes_supported(mprx.remote_player.conn);
 	}
@@ -1508,7 +1508,7 @@ int media_proxy_ctrl_send_search(struct media_player *player, struct mpl_search 
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_send_search(mprx.remote_player.conn, search);
 	}
@@ -1540,7 +1540,7 @@ int media_proxy_ctrl_get_search_results_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_search_results_obj_id(mprx.remote_player.conn);
 	}
@@ -1572,7 +1572,7 @@ uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC) &&
+	if (IS_ENABLED(CONFIG_BT_AUDIO_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_content_control_id(mprx.remote_player.conn);
 	}

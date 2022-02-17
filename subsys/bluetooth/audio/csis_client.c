@@ -35,7 +35,7 @@
 #include "csis_internal.h"
 #include "../host/conn_internal.h"
 #include "../host/keys.h"
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS_CLIENT)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CSIS_CLIENT)
 #define LOG_MODULE_NAME bt_csis_client
 #include "common/log.h"
 
@@ -59,7 +59,7 @@ static struct active_members {
 
 struct bt_csis_client_inst {
 	uint8_t inst_count;
-	struct bt_csis csis_insts[CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES];
+	struct bt_csis csis_insts[CONFIG_BT_AUDIO_CSIS_CLIENT_MAX_CSIS_INSTANCES];
 	struct bt_csis_client_set_member *set_member;
 };
 
@@ -113,9 +113,9 @@ static struct bt_csis *lookup_instance_by_index(struct bt_conn *conn,
 	struct bt_csis_client_inst *client;
 
 	__ASSERT(conn, "NULL conn");
-	__ASSERT(idx < CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES,
+	__ASSERT(idx < CONFIG_BT_AUDIO_CSIS_CLIENT_MAX_CSIS_INSTANCES,
 		 "Index shall be less than maximum number of instances %u (was %u)",
-		 CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES, idx);
+		 CONFIG_BT_AUDIO_CSIS_CLIENT_MAX_CSIS_INSTANCES, idx);
 
 	conn_index = bt_conn_index(conn);
 	client = &client_insts[conn_index];
@@ -147,7 +147,7 @@ static int sirk_decrypt(struct bt_conn *conn,
 	int err;
 	uint8_t *k;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_CLIENT_TEST_SAMPLE_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_CSIS_CLIENT_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static uint8_t test_k[] = {0x67, 0x6e, 0x1b, 0x9b,
 					   0xd4, 0x48, 0x69, 0x6f,
@@ -205,7 +205,7 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 
 			/* Assuming not connected to other set devices */
 			if (sirk->type == BT_CSIS_SIRK_TYPE_ENCRYPTED) {
-				if (IS_ENABLED(CONFIG_BT_CSIS_CLIENT_ENC_SIRK_SUPPORT)) {
+				if (IS_ENABLED(CONFIG_BT_AUDIO_CSIS_CLIENT_ENC_SIRK_SUPPORT)) {
 					int err;
 
 					BT_HEXDUMP_DBG(sirk->value,
@@ -382,7 +382,7 @@ static int read_set_sirk(struct bt_csis *csis)
 static int csis_client_read_set_size(struct bt_conn *conn, uint8_t inst_idx,
 				     bt_gatt_read_func_t cb)
 {
-	if (inst_idx >= CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
+	if (inst_idx >= CONFIG_BT_AUDIO_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
 		return -EINVAL;
 	} else if (cur_inst != NULL) {
 		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
@@ -413,7 +413,7 @@ static int csis_client_read_set_size(struct bt_conn *conn, uint8_t inst_idx,
 static int csis_client_read_rank(struct bt_conn *conn, uint8_t inst_idx,
 				 bt_gatt_read_func_t cb)
 {
-	if (inst_idx >= CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
+	if (inst_idx >= CONFIG_BT_AUDIO_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
 		return -EINVAL;
 	} else if (cur_inst != NULL) {
 		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
@@ -574,7 +574,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 	struct bt_csis_client_inst *client = &client_insts[bt_conn_index(conn)];
 
 	if (attr == NULL ||
-	    client->inst_count == CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
+	    client->inst_count == CONFIG_BT_AUDIO_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
 		BT_DBG("Discover complete, found %u instances",
 		       client->inst_count);
 		(void)memset(params, 0, sizeof(*params));
@@ -757,7 +757,7 @@ static int parse_sirk(struct bt_csis_client_set_member *member,
 		       sirk->type == BT_CSIS_SIRK_TYPE_PLAIN ? "not " : "");
 		/* Assuming not connected to other set devices */
 		if (sirk->type == BT_CSIS_SIRK_TYPE_ENCRYPTED) {
-			if (IS_ENABLED(CONFIG_BT_CSIS_CLIENT_ENC_SIRK_SUPPORT)) {
+			if (IS_ENABLED(CONFIG_BT_AUDIO_CSIS_CLIENT_ENC_SIRK_SUPPORT)) {
 				int err;
 
 				BT_HEXDUMP_DBG(sirk->value, sizeof(sirk->value),

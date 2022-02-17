@@ -19,7 +19,7 @@ menuconfig BT_AUDIO
 
 if BT_AUDIO
 
-config BT_CCID
+config BT_AUDIO_CCID
 	bool
 	help
 	  This hidden option is enabled when any of the content control

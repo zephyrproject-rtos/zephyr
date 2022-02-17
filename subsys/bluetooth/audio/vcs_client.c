@@ -22,7 +22,7 @@
 
 #include "vcs_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_VCS_CLIENT)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_VCS_CLIENT)
 #define LOG_MODULE_NAME bt_vcs_client
 #include "common/log.h"
 
@@ -332,7 +332,8 @@ static void vcs_client_write_vcs_cp_cb(struct bt_conn *conn, uint8_t err,
 	vcs_cp_notify_app(vcs_inst, opcode, err);
 }
 
-#if (CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0 || CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0)
+#if (CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0 || \
+	CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0)
 static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 struct bt_gatt_discover_params *params)
@@ -367,9 +368,9 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 		include = (struct bt_gatt_include *)attr->user_data;
 		BT_DBG("Include UUID %s", bt_uuid_str(include->uuid));
 
-#if CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0
+#if CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0
 		if (bt_uuid_cmp(include->uuid, BT_UUID_AICS) == 0 &&
-		    vcs_inst->cli.aics_inst_cnt < CONFIG_BT_VCS_CLIENT_MAX_AICS_INST) {
+		    vcs_inst->cli.aics_inst_cnt < CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST) {
 			struct bt_aics_discover_param param = {
 				.start_handle = include->start_handle,
 				.end_handle = include->end_handle,
@@ -394,10 +395,10 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 
 			return BT_GATT_ITER_STOP;
 		}
-#endif /* CONFIG_BT_VCS_CLIENT_MAX_AICS_INST */
-#if CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST */
+#if CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0
 		if (bt_uuid_cmp(include->uuid, BT_UUID_VOCS) == 0 &&
-		    vcs_inst->cli.vocs_inst_cnt < CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST) {
+		    vcs_inst->cli.vocs_inst_cnt < CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST) {
 			struct bt_vocs_discover_param param = {
 				.start_handle = include->start_handle,
 				.end_handle = include->end_handle,
@@ -422,12 +423,14 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 
 			return BT_GATT_ITER_STOP;
 		}
-#endif /* CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST */
 	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
-#endif /* (CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0 || CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0) */
+#endif /* (CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0 ||
+	*  CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0)
+	*/
 
 /**
  * @brief This will discover all characteristics on the server, retrieving the
@@ -446,7 +449,7 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 	if (attr == NULL) {
 		BT_DBG("Setup complete for VCS");
 		(void)memset(params, 0, sizeof(*params));
-#if (CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0 || CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0)
+#if (CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0 || CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0)
 		/* Discover included services */
 		vcs_inst->cli.discover_params.start_handle = vcs_inst->cli.start_handle;
 		vcs_inst->cli.discover_params.end_handle = vcs_inst->cli.end_handle;
@@ -464,7 +467,9 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 		if (vcs_client_cb && vcs_client_cb->discover) {
 			vcs_client_cb->discover(vcs_inst, err, 0, 0);
 		}
-#endif /* (CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0 || CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0) */
+#endif /* (CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0 ||
+	* CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0)
+	*/
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -595,7 +600,7 @@ static int vcs_client_common_vcs_cp(struct bt_vcs *vcs, uint8_t opcode)
 	return err;
 }
 
-#if defined(CONFIG_BT_VCS_CLIENT_AICS)
+#if defined(CONFIG_BT_AUDIO_VCS_CLIENT_AICS)
 static struct bt_vcs *lookup_vcs_by_aics(const struct bt_aics *aics)
 {
 	__ASSERT(aics != NULL, "aics pointer cannot be NULL");
@@ -628,9 +633,9 @@ static void aics_discover_cb(struct bt_aics *inst, int err)
 		}
 	}
 }
-#endif /* CONFIG_BT_VCS_CLIENT_AICS */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_AICS */
 
-#if defined(CONFIG_BT_VCS_CLIENT_VOCS)
+#if defined(CONFIG_BT_AUDIO_VCS_CLIENT_VOCS)
 static struct bt_vcs *lookup_vcs_by_vocs(const struct bt_vocs *vocs)
 {
 	__ASSERT(vocs != NULL, "VOCS pointer cannot be NULL");
@@ -675,7 +680,7 @@ static void vocs_discover_cb(struct bt_vocs *inst, int err)
 		}
 	}
 }
-#endif /* CONFIG_BT_VCS_CLIENT_VOCS */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_VOCS */
 
 static void vcs_client_reset(struct bt_conn *conn)
 {
@@ -702,8 +707,8 @@ static void bt_vcs_client_init(void)
 {
 	int i, j;
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) &&
-	    CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_VOCS_CLIENT) &&
+	    CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST > 0) {
 		for (i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
 			for (j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.vocs); j++) {
 				vcs_insts[i].cli.vocs[j] = bt_vocs_client_free_instance_get();
@@ -717,8 +722,8 @@ static void bt_vcs_client_init(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) &&
-	    CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) &&
+	    CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0) {
 		for (i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
 			for (j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.aics); j++) {
 				vcs_insts[i].cli.aics[j] = bt_aics_client_free_instance_get();
@@ -786,7 +791,7 @@ int bt_vcs_discover(struct bt_conn *conn, struct bt_vcs **vcs)
 
 int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
 {
-#if defined(CONFIG_BT_VCS_CLIENT_VOCS)
+#if defined(CONFIG_BT_AUDIO_VCS_CLIENT_VOCS)
 	struct bt_vocs_cb *vocs_cb = NULL;
 
 	if (cb != NULL) {
@@ -808,9 +813,9 @@ int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
 			}
 		}
 	}
-#endif /* CONFIG_BT_VCS_CLIENT_VOCS */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_VOCS */
 
-#if defined(CONFIG_BT_VCS_CLIENT_AICS)
+#if defined(CONFIG_BT_AUDIO_VCS_CLIENT_AICS)
 	struct bt_aics_cb *aics_cb = NULL;
 
 	if (cb != NULL) {
@@ -832,7 +837,7 @@ int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
 			}
 		}
 	}
-#endif /* CONFIG_BT_VCS_CLIENT_AICS */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT_AICS */
 
 	vcs_client_cb = cb;
 

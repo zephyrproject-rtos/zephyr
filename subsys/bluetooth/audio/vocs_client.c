@@ -21,11 +21,12 @@
 
 #include "vocs_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_VOCS_CLIENT)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_VOCS_CLIENT)
 #define LOG_MODULE_NAME bt_vocs_client
 #include "common/log.h"
 
-static struct bt_vocs vocs_insts[CONFIG_BT_MAX_CONN * CONFIG_BT_VOCS_CLIENT_MAX_INSTANCE_COUNT];
+static struct bt_vocs vocs_insts[CONFIG_BT_MAX_CONN *
+				 CONFIG_BT_AUDIO_VOCS_CLIENT_MAX_INSTANCE_COUNT];
 
 static struct bt_vocs *lookup_vocs_by_handle(struct bt_conn *conn, uint16_t handle)
 {

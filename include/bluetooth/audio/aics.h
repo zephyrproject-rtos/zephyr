@@ -259,14 +259,14 @@ struct bt_aics_cb {
 	bt_aics_status_cb                status;
 	bt_aics_description_cb           description;
 
-#if defined(CONFIG_BT_AICS_CLIENT)
+#if defined(CONFIG_BT_AUDIO_AICS_CLIENT)
 	bt_aics_discover_cb              discover;
 	bt_aics_write_cb                 set_gain;
 	bt_aics_write_cb                 unmute;
 	bt_aics_write_cb                 mute;
 	bt_aics_write_cb                 set_manual_mode;
 	bt_aics_write_cb                 set_auto_mode;
-#endif /* CONFIG_BT_AICS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_AICS_CLIENT */
 };
 
 

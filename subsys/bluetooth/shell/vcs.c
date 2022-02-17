@@ -161,8 +161,8 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int result;
 	struct bt_vcs_register_param vcs_param;
-	char input_desc[CONFIG_BT_VCS_AICS_INSTANCE_COUNT][16];
-	char output_desc[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT][16];
+	char input_desc[CONFIG_BT_AUDIO_VCS_AICS_INSTANCE_COUNT][16];
+	char output_desc[CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT][16];
 
 	if (!ctx_shell) {
 		ctx_shell = sh;
@@ -357,9 +357,9 @@ static int cmd_vcs_vocs_state_get(const struct shell *sh, size_t argc,
 
 	/* TODO: For here, and the following VOCS and AICS, default index to 0 */
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
@@ -377,9 +377,9 @@ static int cmd_vcs_vocs_location_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
@@ -398,9 +398,9 @@ static int cmd_vcs_vocs_location_set(const struct shell *sh, size_t argc,
 	int index = strtol(argv[1], NULL, 0);
 	int location = strtol(argv[2], NULL, 0);
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 	if (location > UINT16_MAX || location < 0) {
@@ -426,9 +426,9 @@ static int cmd_vcs_vocs_offset_set(const struct shell *sh, size_t argc,
 	int index = strtol(argv[1], NULL, 0);
 	int offset = strtol(argv[2], NULL, 0);
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
@@ -452,9 +452,9 @@ static int cmd_vcs_vocs_output_description_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 
@@ -473,9 +473,9 @@ static int cmd_vcs_vocs_output_description_set(const struct shell *sh,
 	int index = strtol(argv[1], NULL, 0);
 	char *description = argv[2];
 
-	if (index > CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
+	if (index > CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT) {
 		shell_error(sh, "Index out of range; 0-%u, was %u",
-			    CONFIG_BT_VCS_VOCS_INSTANCE_COUNT, index);
+			    CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT, index);
 		return -ENOEXEC;
 	}
 

@@ -28,7 +28,7 @@
 static sys_slist_t snks;
 static sys_slist_t srcs;
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_AUDIO_ASCS)
 /* TODO: The unicast server callbacks uses `const` for many of the pointers,
  * wheras the capabilities callbacks do no. The latter should be updated to use
  * `const` where possible.
@@ -270,7 +270,7 @@ static struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.release = unicast_server_release_cb,
 	.publish_capability = publish_capability_cb,
 };
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_AUDIO_ASCS */
 
 sys_slist_t *bt_audio_capability_get(uint8_t type)
 {
@@ -302,7 +302,7 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 	       "codec vid 0x%04x", cap, cap->type, cap->codec->id,
 	       cap->codec->cid, cap->codec->vid);
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_AUDIO_ASCS)
 	/* Using the capabilities instead of the unicast server directly will
 	 * require the capabilities to register the callbacks, which not only
 	 * will forward the unicast server callbacks, but also ensure that the
@@ -322,13 +322,13 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 
 		unicast_server_cb_registered = true;
 	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_AUDIO_ASCS */
 
 	sys_slist_append(lst, &cap->node);
 
-#if defined(CONFIG_BT_PACS)
+#if defined(CONFIG_BT_AUDIO_PACS)
 	bt_pacs_add_capability(cap->type);
-#endif /* CONFIG_BT_PACS */
+#endif /* CONFIG_BT_AUDIO_PACS */
 
 	return 0;
 }
@@ -353,7 +353,7 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 		return -ENOENT;
 	}
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_AUDIO_ASCS)
 	/* If we are removing the last audio capability as the unicast
 	 * server, we unregister the callbacks.
 	 */
@@ -367,11 +367,11 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 			return err;
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_AUDIO_ASCS */
 
-#if defined(CONFIG_BT_PACS)
+#if defined(CONFIG_BT_AUDIO_PACS)
 	bt_pacs_remove_capability(cap->type);
-#endif /* CONFIG_BT_PACS */
+#endif /* CONFIG_BT_AUDIO_PACS */
 
 	return 0;
 }

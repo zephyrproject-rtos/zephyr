@@ -1,13 +1,14 @@
 # Bluetooth Audio - Volume Offset Control Service options
 #
 # Copyright (c) 2020 Bose Corporation
+# Copyright (c) 2022 Nordic Semiconductor
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 ##################### Volume Offset Control Service #####################
 
-config BT_VOCS_MAX_INSTANCE_COUNT
+config BT_AUDIO_VOCS_MAX_INSTANCE_COUNT
 	int "Volume Offset Control Service max instance count [EXPERIMENTAL]"
 	default 0
 	range 0 15
@@ -15,16 +16,16 @@ config BT_VOCS_MAX_INSTANCE_COUNT
 	  This option sets the maximum number of instances of Volume Offset
 	  Control Services.
 
-config BT_VOCS
+config BT_AUDIO_VOCS
 	bool # hidden
-	default y if BT_VOCS_MAX_INSTANCE_COUNT > 0
+	default y if BT_AUDIO_VOCS_MAX_INSTANCE_COUNT > 0
 	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Volume Control Service.
 
-if BT_VOCS
+if BT_AUDIO_VOCS
 
-config BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
+config BT_AUDIO_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 	int "Volume Offset Control Service max output description size"
 	default 32
 	range 0 512
@@ -33,17 +34,17 @@ config BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 
 ############# DEBUG #############
 
-config BT_DEBUG_VOCS
+config BT_AUDIO_DEBUG_VOCS
 	bool "Volume Offset Control Service debug"
 	help
 	  Use this option to enable Volume Offset Control Service debug logs for
 	  the Bluetooth Audio functionality.
 
-endif # BT_VOCS
+endif # BT_AUDIO_VOCS
 
 ##################### Volume Offset Control Service Client #####################
 
-config BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
+config BT_AUDIO_VOCS_CLIENT_MAX_INSTANCE_COUNT
 	int "Volume Offset Control Service client max instance count [EXPERIMENTAL]"
 	default 0
 	range 0 15
@@ -51,22 +52,22 @@ config BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
 	  This option sets the maximum number of instances of Volume Offset
 	  Control Service clients.
 
-config BT_VOCS_CLIENT
+config BT_AUDIO_VOCS_CLIENT
 	bool # hidden
-	default y if BT_VOCS_CLIENT_MAX_INSTANCE_COUNT > 0
+	default y if BT_AUDIO_VOCS_CLIENT_MAX_INSTANCE_COUNT > 0
 	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Volume Offset Control Service.
 
 
-if BT_VOCS_CLIENT
+if BT_AUDIO_VOCS_CLIENT
 
 ############# DEBUG #############
 
-config BT_DEBUG_VOCS_CLIENT
+config BT_AUDIO_DEBUG_VOCS_CLIENT
 	bool "Volume Offset Control Service client debug"
 	help
 	  Use this option to enable Volume Offset Control Service client debug
 	  logs for the Bluetooth Audio functionality.
 
-endif # BT_VOCS_CLIENT
+endif # BT_AUDIO_VOCS_CLIENT

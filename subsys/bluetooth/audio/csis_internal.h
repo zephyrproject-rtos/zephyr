@@ -85,11 +85,11 @@ struct bt_csis_server {
 struct bt_csis {
 	bool client_instance;
 	union {
-#if defined(CONFIG_BT_CSIS)
+#if defined(CONFIG_BT_AUDIO_CSIS)
 		struct bt_csis_server srv;
-#endif /* CONFIG_BT_CSIS */
-#if defined(CONFIG_BT_CSIS_CLIENT)
+#endif /* CONFIG_BT_AUDIO_CSIS */
+#if defined(CONFIG_BT_AUDIO_CSIS_CLIENT)
 		struct bt_csis_client_svc_inst cli;
-#endif /* CONFIG_BT_CSIS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_CSIS_CLIENT */
 	};
 };

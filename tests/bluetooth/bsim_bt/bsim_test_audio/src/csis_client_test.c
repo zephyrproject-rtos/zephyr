@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifdef CONFIG_BT_CSIS_CLIENT
+#ifdef CONFIG_BT_AUDIO_CSIS_CLIENT
 #include <bluetooth/addr.h>
 #include <bluetooth/audio/csis.h>
 #include "common.h"
@@ -415,4 +415,4 @@ struct bst_test_list *test_csis_client_install(struct bst_test_list *tests)
 	return tests;
 }
 
-#endif /* CONFIG_BT_CSIS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_CSIS_CLIENT */

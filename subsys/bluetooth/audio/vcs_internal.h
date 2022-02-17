@@ -36,7 +36,7 @@ struct vcs_control_vol {
 	uint8_t volume;
 } __packed;
 
-#if defined(CONFIG_BT_VCS_CLIENT)
+#if defined(CONFIG_BT_AUDIO_VCS_CLIENT)
 struct bt_vcs_client {
 	struct vcs_state state;
 	uint8_t flags;
@@ -61,13 +61,13 @@ struct bt_vcs_client {
 	struct bt_conn *conn;
 
 	uint8_t vocs_inst_cnt;
-	struct bt_vocs *vocs[CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST];
+	struct bt_vocs *vocs[CONFIG_BT_AUDIO_VCS_CLIENT_MAX_VOCS_INST];
 	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_VCS_CLIENT_MAX_AICS_INST];
+	struct bt_aics *aics[CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST];
 };
-#endif /* CONFIG_BT_VCS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT */
 
-#if defined(CONFIG_BT_VCS)
+#if defined(CONFIG_BT_AUDIO_VCS)
 struct bt_vcs_server {
 	struct vcs_state state;
 	uint8_t flags;
@@ -75,21 +75,21 @@ struct bt_vcs_server {
 	uint8_t volume_step;
 
 	struct bt_gatt_service *service_p;
-	struct bt_vocs *vocs_insts[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT];
-	struct bt_aics *aics_insts[CONFIG_BT_VCS_AICS_INSTANCE_COUNT];
+	struct bt_vocs *vocs_insts[CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT];
+	struct bt_aics *aics_insts[CONFIG_BT_AUDIO_VCS_AICS_INSTANCE_COUNT];
 };
-#endif /* CONFIG_BT_VCS */
+#endif /* CONFIG_BT_AUDIO_VCS */
 
 /* Struct used as a common type for the api */
 struct bt_vcs {
 	bool client_instance;
 	union {
-#if defined(CONFIG_BT_VCS)
+#if defined(CONFIG_BT_AUDIO_VCS)
 		struct bt_vcs_server srv;
-#endif /* CONFIG_BT_VCS */
-#if defined(CONFIG_BT_VCS_CLIENT)
+#endif /* CONFIG_BT_AUDIO_VCS */
+#if defined(CONFIG_BT_AUDIO_VCS_CLIENT)
 		struct bt_vcs_client cli;
-#endif /* CONFIG_BT_VCS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT */
 	};
 };
 

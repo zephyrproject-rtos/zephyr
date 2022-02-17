@@ -19,7 +19,7 @@
 
 #include "aics_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_AICS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_AICS)
 #define LOG_MODULE_NAME bt_aics
 #include "common/log.h"
 
@@ -40,7 +40,7 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 				  const void *buf, uint16_t len,
 				  uint16_t offset, uint8_t flags);
 
-#if defined(CONFIG_BT_AICS)
+#if defined(CONFIG_BT_AUDIO_AICS)
 static void aics_state_cfg_changed(const struct bt_gatt_attr *attr,
 				   uint16_t value);
 static ssize_t read_aics_state(struct bt_conn *conn,
@@ -98,10 +98,10 @@ static ssize_t read_description(struct bt_conn *conn,
 	}
 
 
-static struct bt_aics aics_insts[CONFIG_BT_AICS_MAX_INSTANCE_COUNT];
+static struct bt_aics aics_insts[CONFIG_BT_AUDIO_AICS_MAX_INSTANCE_COUNT];
 static uint32_t instance_cnt;
 BT_GATT_SERVICE_INSTANCE_DEFINE(aics_service_list, aics_insts,
-				CONFIG_BT_AICS_MAX_INSTANCE_COUNT,
+				CONFIG_BT_AUDIO_AICS_MAX_INSTANCE_COUNT,
 				BT_AICS_SERVICE_DEFINITION);
 
 static void aics_state_cfg_changed(const struct bt_gatt_attr *attr,
@@ -168,7 +168,7 @@ static ssize_t read_input_status(struct bt_conn *conn,
 				 sizeof(inst->srv.status));
 }
 
-#endif /* CONFIG_BT_AICS */
+#endif /* CONFIG_BT_AUDIO_AICS */
 
 static ssize_t write_aics_control(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
@@ -284,13 +284,13 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 	return len;
 }
 
-#if defined(CONFIG_BT_AICS)
+#if defined(CONFIG_BT_AUDIO_AICS)
 static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 					 uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 }
-#endif /* CONFIG_BT_AICS */
+#endif /* CONFIG_BT_AUDIO_AICS */
 
 static ssize_t write_description(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
@@ -327,7 +327,7 @@ static ssize_t write_description(struct bt_conn *conn,
 	return len;
 }
 
-#if defined(CONFIG_BT_AICS)
+#if defined(CONFIG_BT_AUDIO_AICS)
 static ssize_t read_description(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
@@ -430,7 +430,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 			sizeof(aics->srv.description) - 1);
 		/* strncpy may not always null-terminate */
 		aics->srv.description[sizeof(aics->srv.description) - 1] = '\0';
-		if (IS_ENABLED(CONFIG_BT_DEBUG_AICS) &&
+		if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_AICS) &&
 		    strcmp(aics->srv.description, param->description)) {
 			BT_DBG("Input desc clipped to %s",
 			       log_strdup(aics->srv.description));
@@ -477,7 +477,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 
 struct bt_aics *bt_aics_free_instance_get(void)
 {
-	if (instance_cnt >= CONFIG_BT_AICS_MAX_INSTANCE_COUNT) {
+	if (instance_cnt >= CONFIG_BT_AUDIO_AICS_MAX_INSTANCE_COUNT) {
 		return NULL;
 	}
 
@@ -537,7 +537,7 @@ int bt_aics_activate(struct bt_aics *inst)
 	return 0;
 }
 
-#endif /* CONFIG_BT_AICS */
+#endif /* CONFIG_BT_AUDIO_AICS */
 
 int bt_aics_state_get(struct bt_aics *inst)
 {
@@ -546,9 +546,9 @@ int bt_aics_state_get(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_state_get(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->state) {
 			inst->srv.cb->state(inst, 0, inst->srv.state.gain,
 					    inst->srv.state.mute,
@@ -569,9 +569,9 @@ int bt_aics_gain_setting_get(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_gain_setting_get(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->gain_setting) {
 			inst->srv.cb->gain_setting(inst, 0,
 						   inst->srv.gain_settings.units,
@@ -593,9 +593,9 @@ int bt_aics_type_get(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_type_get(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->type) {
 			inst->srv.cb->type(inst, 0, inst->srv.type);
 		} else {
@@ -614,9 +614,9 @@ int bt_aics_status_get(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_status_get(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->status) {
 			inst->srv.cb->status(inst, 0, inst->srv.status);
 		} else {
@@ -635,9 +635,9 @@ int bt_aics_unmute(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_unmute(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
 		int err;
@@ -662,9 +662,9 @@ int bt_aics_mute(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_mute(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
 		int err;
@@ -689,9 +689,9 @@ int bt_aics_manual_gain_set(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_manual_gain_set(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
 		int err;
@@ -716,9 +716,9 @@ int bt_aics_automatic_gain_set(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_automatic_gain_set(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
 		int err;
@@ -743,9 +743,9 @@ int bt_aics_gain_set(struct bt_aics *inst, int8_t gain)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_gain_set(inst, gain);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_gain_control cp;
 		int err;
@@ -771,9 +771,9 @@ int bt_aics_description_get(struct bt_aics *inst)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_description_get(inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->description) {
 			inst->srv.cb->description(inst, 0,
 						  inst->srv.description);
@@ -798,9 +798,9 @@ int bt_aics_description_set(struct bt_aics *inst, const char *description)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_description_set(inst, description);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		int err;
 

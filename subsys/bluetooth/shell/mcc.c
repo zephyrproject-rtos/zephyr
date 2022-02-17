@@ -20,13 +20,13 @@
 #include "../audio/otc.h"
 #include "../audio/media_proxy_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCC)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCC)
 #define LOG_MODULE_NAME bt_mcc_shell
 #include "common/log.h"
 
 static struct bt_mcc_cb cb;
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 struct object_ids_t {
 	uint64_t icon_obj_id;
 	uint64_t track_segments_obj_id;
@@ -37,7 +37,7 @@ struct object_ids_t {
 	uint64_t search_results_obj_id;
 };
 static struct object_ids_t obj_ids;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
@@ -60,7 +60,7 @@ static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *n
 	shell_print(ctx_shell, "Player name: %s", name);
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	char str[BT_OTS_OBJ_ID_STR_LEN];
@@ -75,7 +75,7 @@ static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 
 	obj_ids.icon_obj_id = id;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 {
@@ -170,7 +170,7 @@ static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err,
 }
 
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err,
 					uint64_t id)
 {
@@ -307,7 +307,7 @@ static void mcc_set_current_group_obj_id_cb(struct bt_conn *conn, int err,
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
 	shell_print(ctx_shell, "Current Group Object ID written: %s", str);
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 
 static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
@@ -390,7 +390,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 	shell_print(ctx_shell, "Opcodes supported: %d", opcodes);
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static void mcc_send_search_cb(struct bt_conn *conn, int err,
 			       struct mpl_search search)
 {
@@ -436,7 +436,7 @@ static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err,
 
 	obj_ids.search_results_obj_id = id;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_t ccid)
 {
@@ -448,7 +448,7 @@ static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_
 	shell_print(ctx_shell, "Content Control ID: %d", ccid);
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 /**** Callback functions for the included Object Transfer service *************/
 static void mcc_otc_obj_selected_cb(struct bt_conn *conn, int err)
 {
@@ -551,7 +551,7 @@ static void mcc_otc_read_current_group_object_cb(struct bt_conn *conn, int err,
 	shell_hexdump(ctx_shell, buf->data, buf->len);
 }
 
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 
 int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
@@ -565,9 +565,9 @@ int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 	/* Set up the callbacks */
 	cb.discover_mcs                  = mcc_discover_mcs_cb;
 	cb.read_player_name              = mcc_read_player_name_cb;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	cb.read_icon_obj_id              = mcc_read_icon_obj_id_cb;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	cb.read_icon_url                 = mcc_read_icon_url_cb;
 	cb.track_changed_ntf             = mcc_track_changed_ntf_cb;
 	cb.read_track_title              = mcc_read_track_title_cb;
@@ -577,7 +577,7 @@ int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 	cb.read_playback_speed           = mcc_read_playback_speed_cb;
 	cb.set_playback_speed            = mcc_set_playback_speed_cb;
 	cb.read_seeking_speed            = mcc_read_seeking_speed_cb;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	cb.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
 	cb.read_current_track_obj_id     = mcc_read_current_track_obj_id_cb;
 	cb.set_current_track_obj_id      = mcc_set_current_track_obj_id_cb;
@@ -586,7 +586,7 @@ int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 	cb.read_parent_group_obj_id      = mcc_read_parent_group_obj_id_cb;
 	cb.read_current_group_obj_id     = mcc_read_current_group_obj_id_cb;
 	cb.set_current_group_obj_id      = mcc_set_current_group_obj_id_cb;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	cb.read_playing_order            = mcc_read_playing_order_cb;
 	cb.set_playing_order             = mcc_set_playing_order_cb;
 	cb.read_playing_orders_supported = mcc_read_playing_orders_supported_cb;
@@ -594,13 +594,13 @@ int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 	cb.send_cmd                      = mcc_send_cmd_cb;
 	cb.cmd_ntf                       = mcc_cmd_ntf_cb;
 	cb.read_opcodes_supported        = mcc_read_opcodes_supported_cb;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	cb.send_search                   = mcc_send_search_cb;
 	cb.search_ntf                    = mcc_search_ntf_cb;
 	cb.read_search_results_obj_id    = mcc_read_search_results_obj_id_cb;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	cb.read_content_control_id       = mcc_read_content_control_id_cb;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	cb.otc_obj_selected              = mcc_otc_obj_selected_cb;
 	cb.otc_obj_metadata              = mcc_otc_obj_metadata_cb;
 	cb.otc_icon_object               = mcc_icon_object_read_cb;
@@ -609,7 +609,7 @@ int cmd_mcc_init(const struct shell *sh, size_t argc, char **argv)
 	cb.otc_next_track_object         = mcc_otc_read_next_track_object_cb;
 	cb.otc_parent_group_object       = mcc_otc_read_parent_group_object_cb;
 	cb.otc_current_group_object      = mcc_otc_read_current_group_object_cb;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 	/* Initialize the module */
 	result = bt_mcc_init(&cb);
@@ -653,7 +653,7 @@ int cmd_mcc_read_player_name(const struct shell *sh, size_t argc,
 	return result;
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 int cmd_mcc_read_icon_obj_id(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
@@ -665,7 +665,7 @@ int cmd_mcc_read_icon_obj_id(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 int cmd_mcc_read_icon_url(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -769,7 +769,7 @@ int cmd_mcc_read_seeking_speed(const struct shell *sh, size_t argc,
 }
 
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 int cmd_mcc_read_track_segments_obj_id(const struct shell *sh,
 				       size_t argc, char *argv[])
 {
@@ -875,7 +875,7 @@ int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 int cmd_mcc_read_playing_order(const struct shell *sh, size_t argc,
 			       char *argv[])
@@ -966,7 +966,7 @@ int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
 	return result;
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
@@ -1082,7 +1082,7 @@ int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
 	return result;
 }
 
-#if defined(CONFIG_BT_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
+#if defined(CONFIG_BT_AUDIO_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
 int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
 					      size_t argc, char *argv[])
 {
@@ -1129,7 +1129,7 @@ int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
 
 	return result;
 }
-#endif /* CONFIG_BT_DEBUG_MCC && CONFIG_BT_TESTING */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCC && CONFIG_BT_TESTING */
 
 int cmd_mcc_read_search_results_obj_id(const struct shell *sh, size_t argc,
 				       char *argv[])
@@ -1142,7 +1142,7 @@ int cmd_mcc_read_search_results_obj_id(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 int cmd_mcc_read_content_control_id(const struct shell *sh, size_t argc,
 				     char *argv[])
@@ -1157,7 +1157,7 @@ int cmd_mcc_read_content_control_id(const struct shell *sh, size_t argc,
 }
 
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 int cmd_mcc_otc_read_features(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
@@ -1392,7 +1392,7 @@ int cmd_mcc_ots_select_prev(const struct shell *sh, size_t argc,
 	}
 	return result;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 
 static int cmd_mcc(const struct shell *sh, size_t argc, char **argv)
@@ -1410,10 +1410,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 		      cmd_mcc_discover_mcs, 1, 1),
 	SHELL_CMD_ARG(read_player_name, NULL, "Read Media Player Name",
 		      cmd_mcc_read_player_name, 1, 0),
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	SHELL_CMD_ARG(read_icon_obj_id, NULL, "Read Icon Object ID",
 		      cmd_mcc_read_icon_obj_id, 1, 0),
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	SHELL_CMD_ARG(read_icon_url, NULL, "Read Icon URL",
 		      cmd_mcc_read_icon_url, 1, 0),
 	SHELL_CMD_ARG(read_track_title, NULL, "Read Track Title",
@@ -1430,7 +1430,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 		      cmd_mcc_set_playback_speed, 2, 0),
 	SHELL_CMD_ARG(read_seeking_speed, NULL, "Read Seeking Speed",
 		      cmd_mcc_read_seeking_speed, 1, 0),
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	SHELL_CMD_ARG(read_track_segments_obj_id, NULL,
 		      "Read Track Segments Object ID",
 		      cmd_mcc_read_track_segments_obj_id, 1, 0),
@@ -1455,7 +1455,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 	SHELL_CMD_ARG(set_current_group_obj_id, NULL,
 		      "Set Current Group Object ID <id: 48 bits or less>",
 		      cmd_mcc_set_current_group_obj_id, 2, 0),
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	SHELL_CMD_ARG(read_playing_order, NULL, "Read Playing Order",
 		      cmd_mcc_read_playing_order, 1, 0),
 	SHELL_CMD_ARG(set_playing_order, NULL, "Set Playing Order <order>",
@@ -1469,27 +1469,27 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 		      cmd_mcc_set_cp, 2, 1),
 	SHELL_CMD_ARG(read_opcodes_supported, NULL, "Read Opcodes Supported",
 		      cmd_mcc_read_opcodes_supported, 1, 0),
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	SHELL_CMD_ARG(send_search_raw, NULL, "Send search <search control item sequence>",
 		      cmd_mcc_send_search_raw, 2, 0),
 	SHELL_CMD_ARG(send_search_scp_ioptest, NULL,
 		      "Send search - IOP test round as input <round number>",
 		      cmd_mcc_send_search_ioptest, 2, 0),
-#if defined(CONFIG_BT_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
+#if defined(CONFIG_BT_AUDIO_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
 	SHELL_CMD_ARG(test_send_search_iop_invalid_type, NULL,
 		      "Send search - IOP test, invalid type value (test)",
 		      cmd_mcc_test_send_search_iop_invalid_type, 1, 0),
 	SHELL_CMD_ARG(test_send_Search_invalid_sci_len, NULL,
 		      "Send search - invalid sci length (test)",
 		      cmd_mcc_test_send_search_invalid_sci_len, 1, 0),
-#endif /* CONFIG_BT_DEBUG_MCC && CONFIG_BT_TESTING */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCC && CONFIG_BT_TESTING */
 	SHELL_CMD_ARG(read_search_results_obj_id, NULL,
 		      "Read Search Results Object ID",
 		      cmd_mcc_read_search_results_obj_id, 1, 0),
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	SHELL_CMD_ARG(read_content_control_id, NULL, "Read Content Control ID",
 		      cmd_mcc_read_content_control_id, 1, 0),
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	SHELL_CMD_ARG(ots_read_features, NULL, "Read OTC Features",
 		      cmd_mcc_otc_read_features, 1, 0),
 	SHELL_CMD_ARG(ots_oacp_read, NULL, "Read current object",
@@ -1523,7 +1523,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 		      cmd_mcc_otc_select_next, 1, 0),
 	SHELL_CMD_ARG(ots_select_previous, NULL, "Select previous object",
 		      cmd_mcc_otc_select_prev, 1, 0),
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	SHELL_SUBCMD_SET_END
 );
 

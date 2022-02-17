@@ -27,13 +27,13 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BT_VCS)
-#define BT_VCS_VOCS_CNT CONFIG_BT_VCS_VOCS_INSTANCE_COUNT
-#define BT_VCS_AICS_CNT CONFIG_BT_VCS_AICS_INSTANCE_COUNT
+#if defined(CONFIG_BT_AUDIO_VCS)
+#define BT_VCS_VOCS_CNT CONFIG_BT_AUDIO_VCS_VOCS_INSTANCE_COUNT
+#define BT_VCS_AICS_CNT CONFIG_BT_AUDIO_VCS_AICS_INSTANCE_COUNT
 #else
 #define BT_VCS_VOCS_CNT 0
 #define BT_VCS_AICS_CNT 0
-#endif /* CONFIG_BT_VCS */
+#endif /* CONFIG_BT_AUDIO_VCS */
 
 /** Volume Control Service Error codes */
 #define BT_VCS_ERR_INVALID_COUNTER             0x80
@@ -188,7 +188,7 @@ struct bt_vcs_cb {
 	/* Volume Control Service */
 	bt_vcs_state_cb               state;
 	bt_vcs_flags_cb               flags;
-#if defined(CONFIG_BT_VCS_CLIENT)
+#if defined(CONFIG_BT_AUDIO_VCS_CLIENT)
 	bt_vcs_discover_cb            discover;
 	bt_vcs_write_cb               vol_down;
 	bt_vcs_write_cb               vol_up;
@@ -203,7 +203,7 @@ struct bt_vcs_cb {
 
 	/* Audio Input Control Service */
 	struct bt_aics_cb             aics_cb;
-#endif /* CONFIG_BT_VCS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT */
 };
 
 /**

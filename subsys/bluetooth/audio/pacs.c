@@ -22,7 +22,7 @@
 #include <bluetooth/audio/capabilities.h>
 #include "../host/conn_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_PACS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_PACS)
 #define LOG_MODULE_NAME bt_pacs
 #include "common/log.h"
 
@@ -31,7 +31,7 @@
 
 #define PAC_INDICATE_TIMEOUT	K_MSEC(10)
 
-#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
+#if defined(CONFIG_BT_AUDIO_PAC_SNK) || defined(CONFIG_BT_AUDIO_PAC_SRC)
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
@@ -151,11 +151,11 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 				      void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_pacs_context context = {
-#if defined(CONFIG_BT_PAC_SNK)
-		.snk = sys_cpu_to_le16(CONFIG_BT_PACS_SNK_CONTEXT),
+#if defined(CONFIG_BT_AUDIO_PAC_SNK)
+		.snk = sys_cpu_to_le16(CONFIG_BT_AUDIO_PACS_SNK_CONTEXT),
 #endif
-#if defined(CONFIG_BT_PAC_SRC)
-		.src = sys_cpu_to_le16(CONFIG_BT_PACS_SRC_CONTEXT),
+#if defined(CONFIG_BT_AUDIO_PAC_SRC)
+		.src = sys_cpu_to_le16(CONFIG_BT_AUDIO_PACS_SRC_CONTEXT),
 #endif
 	};
 
@@ -165,11 +165,11 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &context,
 				 sizeof(context));
 }
-#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
+#endif /* CONFIG_BT_AUDIO_PAC_SNK || CONFIG_BT_AUDIO_PAC_SRC */
 
-#if defined(CONFIG_BT_PAC_SNK)
+#if defined(CONFIG_BT_AUDIO_PAC_SNK)
 static struct k_work_delayable snks_work;
-static uint32_t snk_loc = CONFIG_BT_PAC_SNK_LOC;
+static uint32_t snk_loc = CONFIG_BT_AUDIO_PAC_SNK_LOC;
 
 static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -217,11 +217,11 @@ static void snk_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
-#endif /* CONFIG_BT_PAC_SNK */
+#endif /* CONFIG_BT_AUDIO_PAC_SNK */
 
-#if defined(CONFIG_BT_PAC_SRC)
+#if defined(CONFIG_BT_AUDIO_PAC_SRC)
 static struct k_work_delayable srcs_work;
-static uint32_t src_loc = CONFIG_BT_PAC_SRC_LOC;
+static uint32_t src_loc = CONFIG_BT_AUDIO_PAC_SRC_LOC;
 
 static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -269,12 +269,12 @@ static void src_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
-#endif /* CONFIG_BT_PAC_SRC */
+#endif /* CONFIG_BT_AUDIO_PAC_SRC */
 
-#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
+#if defined(CONFIG_BT_AUDIO_PAC_SNK) || defined(CONFIG_BT_AUDIO_PAC_SRC)
 BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_PACS),
-#if defined(CONFIG_BT_PAC_SNK)
+#if defined(CONFIG_BT_AUDIO_PAC_SNK)
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SNK,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT,
@@ -289,8 +289,8 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 			       snk_loc_read, snk_loc_write, NULL),
 	BT_GATT_CCC(snk_loc_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
-#endif /* CONFIG_BT_PAC_SNK */
-#if defined(CONFIG_BT_PAC_SRC)
+#endif /* CONFIG_BT_AUDIO_PAC_SNK */
+#if defined(CONFIG_BT_AUDIO_PAC_SRC)
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SRC,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_READ_ENCRYPT,
@@ -305,7 +305,7 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 			       src_loc_read, src_loc_write, NULL),
 	BT_GATT_CCC(src_loc_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
-#endif /* CONFIG_BT_PAC_SNK */
+#endif /* CONFIG_BT_AUDIO_PAC_SNK */
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_CONTEXT,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT,
@@ -319,19 +319,19 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_GATT_CCC(supported_context_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
 );
-#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
+#endif /* CONFIG_BT_AUDIO_PAC_SNK || CONFIG_BT_AUDIO_PAC_SRC */
 
 static struct k_work_delayable *bt_pacs_get_work(uint8_t type)
 {
 	switch (type) {
-#if defined(CONFIG_BT_PAC_SNK)
+#if defined(CONFIG_BT_AUDIO_PAC_SNK)
 	case BT_AUDIO_SINK:
 		return &snks_work;
-#endif /* CONFIG_BT_PAC_SNK */
-#if defined(CONFIG_BT_PAC_SRC)
+#endif /* CONFIG_BT_AUDIO_PAC_SNK */
+#if defined(CONFIG_BT_AUDIO_PAC_SRC)
 	case BT_AUDIO_SOURCE:
 		return &srcs_work;
-#endif /* CONFIG_BT_PAC_SNK */
+#endif /* CONFIG_BT_AUDIO_PAC_SNK */
 	}
 
 	return NULL;
@@ -339,25 +339,25 @@ static struct k_work_delayable *bt_pacs_get_work(uint8_t type)
 
 static void pac_indicate(struct k_work *work)
 {
-#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
+#if defined(CONFIG_BT_AUDIO_PAC_SNK) || defined(CONFIG_BT_AUDIO_PAC_SRC)
 	struct bt_gatt_indicate_params params;
 
-#if defined(CONFIG_BT_PAC_SNK)
+#if defined(CONFIG_BT_AUDIO_PAC_SNK)
 	if (work == &snks_work.work) {
 		params.uuid = BT_UUID_PACS_SNK;
 	}
-#endif /* CONFIG_BT_PAC_SNK */
+#endif /* CONFIG_BT_AUDIO_PAC_SNK */
 
-#if defined(CONFIG_BT_PAC_SRC)
+#if defined(CONFIG_BT_AUDIO_PAC_SRC)
 	if (work == &srcs_work.work) {
 		params.uuid = BT_UUID_PACS_SRC;
 	}
-#endif /* CONFIG_BT_PAC_SRC */
+#endif /* CONFIG_BT_AUDIO_PAC_SRC */
 
 	params.attr = pacs_svc.attrs;
 
 	bt_gatt_indicate(NULL, &params);
-#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
+#endif /* CONFIG_BT_AUDIO_PAC_SNK || CONFIG_BT_AUDIO_PAC_SRC */
 }
 
 void bt_pacs_add_capability(uint8_t type)

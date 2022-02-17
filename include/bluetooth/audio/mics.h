@@ -26,11 +26,11 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_BT_MICS)
-#define BT_MICS_AICS_CNT CONFIG_BT_MICS_AICS_INSTANCE_COUNT
+#if defined(CONFIG_BT_AUDIO_MICS)
+#define BT_MICS_AICS_CNT CONFIG_BT_AUDIO_MICS_AICS_INSTANCE_COUNT
 #else
 #define BT_MICS_AICS_CNT 0
-#endif /* CONFIG_BT_MICS */
+#endif /* CONFIG_BT_AUDIO_MICS */
 
 /** Application error codes */
 #define BT_MICS_ERR_MUTE_DISABLED                  0x80
@@ -148,14 +148,14 @@ typedef void (*bt_mics_mute_write_cb)(struct bt_mics *mics, int err);
 struct bt_mics_cb {
 	bt_mics_mute_read_cb            mute;
 
-#if defined(CONFIG_BT_MICS_CLIENT)
+#if defined(CONFIG_BT_AUDIO_MICS_CLIENT)
 	bt_mics_discover_cb             discover;
 	bt_mics_mute_write_cb           mute_write;
 	bt_mics_mute_write_cb           unmute_write;
 
 	/** Audio Input Control Service client callback */
 	struct bt_aics_cb               aics_cb;
-#endif /* CONFIG_BT_MICS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_MICS_CLIENT */
 };
 
 /**

@@ -14,7 +14,7 @@
 #include "media_proxy_internal.h"
 #include "mpl_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mpl
 #include "common/log.h"
 #include "ccid_internal.h"
@@ -225,8 +225,8 @@ static struct mpl_group group_p = {
 };
 
 static struct mpl_mediaplayer pl = {
-	.name			  = CONFIG_BT_MCS_MEDIA_PLAYER_NAME,
-	.icon_url		  = CONFIG_BT_MCS_ICON_URL,
+	.name			  = CONFIG_BT_AUDIO_MCS_MEDIA_PLAYER_NAME,
+	.icon_url		  = CONFIG_BT_AUDIO_MCS_ICON_URL,
 	.group			  = &group_1,
 	.track_pos		  = 0,
 	.state			  = BT_MCS_MEDIA_STATE_PAUSED,
@@ -287,7 +287,7 @@ static struct obj_t obj = {
 	.busy = false,
 	.add_track = NULL,
 	.add_group = NULL,
-	.content = NET_BUF_SIMPLE(CONFIG_BT_MCS_MAX_OBJ_SIZE)
+	.content = NET_BUF_SIMPLE(CONFIG_BT_AUDIO_MCS_MAX_OBJ_SIZE)
 };
 
 /* Set up content buffer for the icon object */
@@ -303,8 +303,8 @@ static int setup_icon_object(void)
 
 	/* Size may be larger than what fits in 8 bits, use 16-bit for index */
 	for (index = 0, k = 0;
-	     index < MIN(CONFIG_BT_MCS_MAX_OBJ_SIZE,
-			 CONFIG_BT_MCS_ICON_BITMAP_SIZE);
+	     index < MIN(CONFIG_BT_AUDIO_MCS_MAX_OBJ_SIZE,
+			 CONFIG_BT_AUDIO_MCS_ICON_BITMAP_SIZE);
 	     index++, k++) {
 		net_buf_simple_add_u8(obj.content, k);
 	}
@@ -366,8 +366,8 @@ static uint32_t setup_track_object(struct mpl_track *track)
 
 	/* Size may be larger than what fits in 8 bits, use 16-bit for index */
 	for (index = 0, k = 0;
-	     index < MIN(CONFIG_BT_MCS_MAX_OBJ_SIZE,
-			 CONFIG_BT_MCS_TRACK_MAX_SIZE);
+	     index < MIN(CONFIG_BT_AUDIO_MCS_MAX_OBJ_SIZE,
+			 CONFIG_BT_AUDIO_MCS_TRACK_MAX_SIZE);
 	     index++, k++) {
 		net_buf_simple_add_u8(obj.content, k);
 	}
@@ -819,7 +819,7 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 	}
 	obj.busy = true;
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		char t[BT_OTS_OBJ_ID_STR_LEN];
 		(void)bt_ots_obj_id_to_str(id, t, sizeof(t));
 		BT_DBG("Object Id %s, offset %lu, length %zu", log_strdup(t),
@@ -844,7 +844,7 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		if (len > obj.content->len - offset) {
 			BT_DBG("Requested len too large");
 		}
@@ -1401,7 +1401,7 @@ void inactive_state_command_handler(struct mpl_cmd command,
 				    struct mpl_cmd_ntf ntf)
 {
 	BT_DBG("Command opcode: %d", command.opcode);
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		if (command.use_param) {
 			BT_DBG("Command parameter: %d", command.param);
 		}
@@ -1561,7 +1561,7 @@ void playing_state_command_handler(struct mpl_cmd command,
 				   struct mpl_cmd_ntf ntf)
 {
 	BT_DBG("Command opcode: %d", command.opcode);
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		if (command.use_param) {
 			BT_DBG("Command parameter: %d", command.param);
 		}
@@ -1787,7 +1787,7 @@ void paused_state_command_handler(struct mpl_cmd command,
 				  struct mpl_cmd_ntf ntf)
 {
 	BT_DBG("Command opcode: %d", command.opcode);
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		if (command.use_param) {
 			BT_DBG("Command parameter: %d", command.param);
 		}
@@ -2013,7 +2013,7 @@ void seeking_state_command_handler(struct mpl_cmd command,
 				   struct mpl_cmd_ntf ntf)
 {
 	BT_DBG("Command opcode: %d", command.opcode);
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		if (command.use_param) {
 			BT_DBG("Command parameter: %d", command.param);
 		}
@@ -2775,7 +2775,7 @@ int media_proxy_pl_init(void)
 	return 0;
 }
 
-#if CONFIG_BT_DEBUG_MCS /* Special commands for debugging */
+#if CONFIG_BT_AUDIO_DEBUG_MCS /* Special commands for debugging */
 
 void mpl_debug_dump_state(void)
 {
@@ -2862,10 +2862,11 @@ void mpl_debug_dump_state(void)
 	}
 #endif /* CONFIG_BT_OTS */
 }
-#endif /* CONFIG_BT_DEBUG_MCS */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCS */
 
 
-#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING) /* Special commands for testing */
+/* Special commands for testing */
+#if defined(CONFIG_BT_AUDIO_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
 
 #if CONFIG_BT_OTS
 void mpl_test_unset_parent_group(void)
@@ -2955,4 +2956,4 @@ void mpl_test_search_results_changed_cb(void)
 }
 #endif /* CONFIG_BT_OTS */
 
-#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCS && CONFIG_BT_TESTING */

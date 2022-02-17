@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_VCS_CLIENT
+#ifdef CONFIG_BT_AUDIO_VCS_CLIENT
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/audio/vcs.h>
@@ -730,13 +730,13 @@ static void test_main(void)
 	WAIT_FOR(g_mute == expected_mute && g_cb && g_write_complete);
 	printk("VCS volume unmuted\n");
 
-	if (CONFIG_BT_VCS_CLIENT_VOCS > 0) {
+	if (CONFIG_BT_AUDIO_VCS_CLIENT_VOCS > 0) {
 		if (test_vocs()) {
 			return;
 		}
 	}
 
-	if (CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0) {
+	if (CONFIG_BT_AUDIO_VCS_CLIENT_MAX_AICS_INST > 0) {
 		if (test_aics()) {
 			return;
 		}
@@ -767,4 +767,4 @@ struct bst_test_list *test_vcs_client_install(struct bst_test_list *tests)
 	return tests;
 }
 
-#endif /* CONFIG_BT_VCS_CLIENT */
+#endif /* CONFIG_BT_AUDIO_VCS_CLIENT */

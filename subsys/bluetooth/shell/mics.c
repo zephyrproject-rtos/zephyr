@@ -105,7 +105,7 @@ static int cmd_mics_param(const struct shell *sh, size_t argc, char **argv)
 {
 	int result;
 	struct bt_mics_register_param mics_param;
-	char input_desc[CONFIG_BT_MICS_AICS_INSTANCE_COUNT][16];
+	char input_desc[CONFIG_BT_AUDIO_MICS_AICS_INSTANCE_COUNT][16];
 
 	if (ctx_shell == NULL) {
 		ctx_shell = sh;

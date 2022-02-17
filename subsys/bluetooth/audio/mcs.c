@@ -24,7 +24,7 @@
 
 #include "media_proxy_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mcs
 #include "common/log.h"
 
@@ -271,7 +271,7 @@ static ssize_t write_current_track_id(struct bt_conn *conn,
 
 	id = sys_get_le48((uint8_t *)buf);
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		char str[BT_OTS_OBJ_ID_STR_LEN];
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
 		BT_DBG("Current track write: offset: %d, len: %d, track ID: %s",
@@ -326,7 +326,7 @@ static ssize_t write_next_track_id(struct bt_conn *conn,
 
 	id = sys_get_le48((uint8_t *)buf);
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		char str[BT_OTS_OBJ_ID_STR_LEN];
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
 		BT_DBG("Next  track write: offset: %d, len: %d, track ID: %s",
@@ -391,7 +391,7 @@ static ssize_t write_current_group_id(struct bt_conn *conn,
 
 	id = sys_get_le48((uint8_t *)buf);
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) {
 		char str[BT_OTS_OBJ_ID_STR_LEN];
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
 		BT_DBG("Current group ID write: offset: %d, len: %d, track ID: %s",

@@ -377,7 +377,7 @@ static int cmd_csis_client_lock_get(const struct shell *sh, size_t argc,
 	if (argc > 2) {
 		idx = strtol(argv[2], NULL, 0);
 
-		if (idx < 0 || idx > CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
+		if (idx < 0 || idx > CONFIG_BT_AUDIO_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
 			shell_error(sh, "Invalid index %ld", idx);
 			return -ENOEXEC;
 		}

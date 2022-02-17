@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_MICS
+#ifdef CONFIG_BT_AUDIO_MICS
 #include "bluetooth/audio/mics.h"
 #include "common.h"
 
 extern enum bst_result_t bst_result;
 
-#if defined(CONFIG_BT_AICS)
-#define AICS_DESC_SIZE CONFIG_BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
+#if defined(CONFIG_BT_AUDIO_AICS)
+#define AICS_DESC_SIZE CONFIG_BT_AUDIO_AICS_MAX_INPUT_DESCRIPTION_SIZE
 #else
 #define AICS_DESC_SIZE 0
-#endif /* CONFIG_BT_AICS */
+#endif /* CONFIG_BT_AUDIO_AICS */
 
 static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
@@ -300,7 +300,7 @@ static void test_server_only(void)
 {
 	int err;
 	struct bt_mics_register_param mics_param;
-	char input_desc[CONFIG_BT_MICS_AICS_INSTANCE_COUNT][16];
+	char input_desc[CONFIG_BT_AUDIO_MICS_AICS_INSTANCE_COUNT][16];
 	uint8_t expected_mute;
 
 	err = bt_enable(NULL);
@@ -381,7 +381,7 @@ static void test_server_only(void)
 	WAIT_FOR(expected_mute == g_mute);
 	printk("MICS disable set\n");
 
-	if (CONFIG_BT_MICS_AICS_INSTANCE_COUNT > 0) {
+	if (CONFIG_BT_AUDIO_MICS_AICS_INSTANCE_COUNT > 0) {
 		if (test_aics_server_only()) {
 			return;
 		}
@@ -394,7 +394,7 @@ static void test_main(void)
 {
 	int err;
 	struct bt_mics_register_param mics_param;
-	char input_desc[CONFIG_BT_MICS_AICS_INSTANCE_COUNT][16];
+	char input_desc[CONFIG_BT_AUDIO_MICS_AICS_INSTANCE_COUNT][16];
 
 	err = bt_enable(NULL);
 	if (err != 0) {
@@ -474,4 +474,4 @@ struct bst_test_list *test_mics_install(struct bst_test_list *tests)
 	return tests;
 }
 
-#endif /* CONFIG_BT_MICS */
+#endif /* CONFIG_BT_AUDIO_MICS */

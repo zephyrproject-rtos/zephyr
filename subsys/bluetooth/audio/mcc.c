@@ -29,7 +29,7 @@
 /* Takes a text and a 64-bit integer as input */
 #define BT_DBG_OBJ_ID(text, id64) \
 	do { \
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) { \
+		if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCS)) { \
 			char t[BT_OTS_OBJ_ID_STR_LEN]; \
 			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
 			BT_DBG(text "0x%s", log_strdup(t)); \
@@ -37,7 +37,7 @@
 	} while (0)
 
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCC)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_MCC)
 #define LOG_MODULE_NAME bt_mcc
 #include "common/log.h"
 
@@ -48,9 +48,9 @@ struct mcs_instance_t {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint16_t player_name_handle;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	uint16_t icon_obj_id_handle;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	uint16_t icon_url_handle;
 	uint16_t track_changed_handle;
 	uint16_t track_title_handle;
@@ -58,22 +58,22 @@ struct mcs_instance_t {
 	uint16_t track_position_handle;
 	uint16_t playback_speed_handle;
 	uint16_t seeking_speed_handle;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	uint16_t segments_obj_id_handle;
 	uint16_t current_track_obj_id_handle;
 	uint16_t next_track_obj_id_handle;
 	uint16_t current_group_obj_id_handle;
 	uint16_t parent_group_obj_id_handle;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	uint16_t playing_order_handle;
 	uint16_t playing_orders_supported_handle;
 	uint16_t media_state_handle;
 	uint16_t cp_handle;
 	uint16_t opcodes_supported_handle;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	uint16_t scp_handle;
 	uint16_t search_results_obj_id_handle;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	uint16_t content_control_id_handle;
 
 	struct bt_gatt_subscribe_params player_name_sub_params;
@@ -90,7 +90,7 @@ struct mcs_instance_t {
 	struct bt_gatt_discover_params playback_speed_sub_disc_params;
 	struct bt_gatt_subscribe_params seeking_speed_sub_params;
 	struct bt_gatt_discover_params seeking_speed_sub_disc_params;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	struct bt_gatt_subscribe_params current_track_obj_sub_params;
 	struct bt_gatt_discover_params current_track_sub_disc_params;
 	struct bt_gatt_subscribe_params next_track_obj_sub_params;
@@ -99,7 +99,7 @@ struct mcs_instance_t {
 	struct bt_gatt_discover_params parent_group_obj_sub_disc_params;
 	struct bt_gatt_subscribe_params current_group_obj_sub_params;
 	struct bt_gatt_discover_params current_group_obj_sub_disc_params;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 	struct bt_gatt_subscribe_params playing_order_sub_params;
 	struct bt_gatt_discover_params playing_order_sub_disc_params;
 	struct bt_gatt_subscribe_params media_state_sub_params;
@@ -108,12 +108,12 @@ struct mcs_instance_t {
 	struct bt_gatt_discover_params cp_sub_disc_params;
 	struct bt_gatt_subscribe_params opcodes_supported_sub_params;
 	struct bt_gatt_discover_params opcodes_supported_sub_disc_params;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	struct bt_gatt_subscribe_params scp_sub_params;
 	struct bt_gatt_discover_params scp_sub_disc_params;
 	struct bt_gatt_subscribe_params search_results_obj_sub_params;
 	struct bt_gatt_discover_params search_results_obj_sub_disc_params;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 	/* The write buffer is used for
 	 * - track position    (4 octets)
@@ -129,7 +129,7 @@ struct mcs_instance_t {
 	 * If there is no OTC, the largest is control point
 	 * If OTC is included, the largest is the search control point
 	 */
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	char write_buf[SEARCH_LEN_MAX];
 #else
 	/* Trick to be able to use sizeof on members of a struct type */
@@ -137,14 +137,14 @@ struct mcs_instance_t {
 	/* separately, and the opcode and param alone as a struct */
 	char write_buf[sizeof(((struct mpl_cmd *)0)->opcode) +
 		       sizeof(((struct mpl_cmd *)0)->param)];
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 	struct bt_gatt_write_params     write_params;
 	bool busy;
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	struct bt_otc_instance_t otc;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 };
 
 static struct bt_gatt_discover_params  discover_params;
@@ -158,14 +158,14 @@ static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_mcc_cb *mcc_cb;
 static bool subscribe_all;
 
-#ifdef CONFIG_BT_MCC_OTS
-NET_BUF_SIMPLE_DEFINE_STATIC(otc_obj_buf, CONFIG_BT_MCC_OTC_OBJ_BUF_SIZE);
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
+NET_BUF_SIMPLE_DEFINE_STATIC(otc_obj_buf, CONFIG_BT_AUDIO_MCC_OTC_OBJ_BUF_SIZE);
 static struct bt_otc_cb otc_cb;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 void on_obj_selected(struct bt_conn *conn, int err,
 		     struct bt_otc_instance_t *otc_inst);
 
@@ -176,7 +176,7 @@ void on_object_metadata(struct bt_conn *conn, int err,
 int on_icon_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 		    uint8_t *data_p,
 		    bool is_complete, struct bt_otc_instance_t *otc_inst);
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 
 static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
@@ -184,7 +184,7 @@ static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 				       const void *data, uint16_t length)
 {
 	int cb_err = err;
-	char name[CONFIG_BT_MCS_MEDIA_PLAYER_NAME_MAX];
+	char name[CONFIG_BT_AUDIO_MCS_MEDIA_PLAYER_NAME_MAX];
 
 	cur_mcs_inst->busy = false;
 	BT_DBG("err: 0x%02x, length: %d, data: %p", err, length, data);
@@ -213,7 +213,7 @@ static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 }
 
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_read_params *params,
 				       const void *data, uint16_t length)
@@ -240,14 +240,14 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 static uint8_t mcc_read_icon_url_cb(struct bt_conn *conn, uint8_t err,
 				    struct bt_gatt_read_params *params,
 				    const void *data, uint16_t length)
 {
 	int cb_err = err;
-	char url[CONFIG_BT_MCS_ICON_URL_MAX];
+	char url[CONFIG_BT_AUDIO_MCS_ICON_URL_MAX];
 
 	cur_mcs_inst->busy = false;
 	BT_DBG("err: 0x%02x, length: %d, data: %p", err, length, data);
@@ -276,7 +276,7 @@ static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
 				       const void *data, uint16_t length)
 {
 	int cb_err = err;
-	char title[CONFIG_BT_MCS_TRACK_TITLE_MAX];
+	char title[CONFIG_BT_AUDIO_MCS_TRACK_TITLE_MAX];
 
 	cur_mcs_inst->busy = false;
 	if (err) {
@@ -451,7 +451,7 @@ static uint8_t mcc_read_seeking_speed_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 					   struct bt_gatt_read_params *params,
 					   const void *data, uint16_t length)
@@ -658,7 +658,7 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		mcc_cb->set_current_group_obj_id(conn, cb_err, obj_id);
 	}
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 static uint8_t mcc_read_playing_order_cb(struct bt_conn *conn, uint8_t err,
 					 struct bt_gatt_read_params *params,
@@ -821,7 +821,7 @@ static uint8_t mcc_read_opcodes_supported_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 			     struct bt_gatt_write_params *params)
 {
@@ -876,7 +876,7 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 static uint8_t mcc_read_content_control_id_cb(struct bt_conn *conn, uint8_t err,
 					      struct bt_gatt_read_params *params,
@@ -956,7 +956,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			BT_DBG("Seeking Speed notification");
 			mcc_read_seeking_speed_cb(conn, 0, NULL, data, length);
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 		} else if (handle == cur_mcs_inst->current_track_obj_id_handle) {
 			BT_DBG("Current Track notification");
 			mcc_read_current_track_obj_id_cb(conn, 0, NULL, data,
@@ -976,7 +976,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			BT_DBG("Current Group notification");
 			mcc_read_current_group_obj_id_cb(conn, 0, NULL, data,
 							 length);
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 		} else if (handle == cur_mcs_inst->playing_order_handle) {
 			BT_DBG("Playing Order notification");
@@ -1014,7 +1014,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			mcc_read_opcodes_supported_cb(conn, 0, NULL, data,
 						      length);
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 		} else if (handle == cur_mcs_inst->scp_handle) {
 			/* The search control point is a special case - only */
 			/* writable and notifiable.  Handle directly here. */
@@ -1039,7 +1039,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			BT_DBG("Search Results notification");
 			mcc_read_search_results_obj_id_cb(conn, 0, NULL, data,
 							  length);
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 		} else {
 			BT_DBG("Unknown handle: %d (0x%04X)", handle, handle);
@@ -1048,7 +1048,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 static uint8_t discover_otc_char_func(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      struct bt_gatt_discover_params *params)
@@ -1126,10 +1126,10 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 /* This function is called when an included service is found.
  * The function will store the start and end handle for the service,
  * and continue the search for more instances of included services.
@@ -1192,7 +1192,7 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 	}
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 
 /* This function is called when characteristics are found.
@@ -1226,11 +1226,11 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			cur_mcs_inst->player_name_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->player_name_sub_params;
 			sub_params->disc_params = &cur_mcs_inst->player_name_sub_disc_params;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_OBJ_ID)) {
 			BT_DBG("Icon Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->icon_obj_id_handle = chrc->value_handle;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_URL)) {
 			BT_DBG("Icon URL, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->icon_url_handle = chrc->value_handle;
@@ -1264,7 +1264,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			cur_mcs_inst->seeking_speed_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->seeking_speed_sub_params;
 			sub_params->disc_params = &cur_mcs_inst->seeking_speed_sub_disc_params;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID)) {
 			BT_DBG("Track Segments Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->segments_obj_id_handle = chrc->value_handle;
@@ -1288,7 +1288,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			cur_mcs_inst->current_group_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->current_group_obj_sub_params;
 			sub_params->disc_params = &cur_mcs_inst->current_group_obj_sub_disc_params;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDER)) {
 			BT_DBG("Playing Order, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playing_order_handle = chrc->value_handle;
@@ -1313,7 +1313,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			cur_mcs_inst->opcodes_supported_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->opcodes_supported_sub_params;
 			sub_params->disc_params = &cur_mcs_inst->opcodes_supported_sub_disc_params;
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_CONTROL_POINT)) {
 			BT_DBG("Search control point, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->scp_handle = chrc->value_handle;
@@ -1324,7 +1324,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			cur_mcs_inst->search_results_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->search_results_obj_sub_params;
 			sub_params->disc_params = &cur_mcs_inst->search_results_obj_sub_disc_params;
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CCID)) {
 			BT_DBG("Content Control ID, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->content_control_id_handle = chrc->value_handle;
@@ -1351,7 +1351,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 	BT_DBG("Setup complete for GMCS");
 	(void)memset(params, 0, sizeof(*params));
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 
 	/* Discover included services */
 	discover_params.start_handle = cur_mcs_inst->start_handle;
@@ -1375,7 +1375,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		mcc_cb->discover_mcs(conn, err);
 	}
 
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 	return BT_GATT_ITER_STOP;
 }
@@ -1446,7 +1446,7 @@ int bt_mcc_init(struct bt_mcc_cb *cb)
 {
 	mcc_cb = cb;
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 	/* Set up the callbacks from OTC */
 	/* TODO: Have one single content callback. */
 	/* For now: Use the icon callback for content - it is the first, */
@@ -1458,7 +1458,7 @@ int bt_mcc_init(struct bt_mcc_cb *cb)
 	BT_DBG("Current object selected callback: %p", otc_cb.obj_selected);
 	BT_DBG("Content callback: %p", otc_cb.content_cb);
 	BT_DBG("Metadata callback: %p", otc_cb.metadata_cb);
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 	return 0;
 }
@@ -1526,7 +1526,7 @@ int bt_mcc_read_player_name(struct bt_conn *conn)
 }
 
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 {
 	int err;
@@ -1553,7 +1553,7 @@ int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 	}
 	return err;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 int bt_mcc_read_icon_url(struct bt_conn *conn)
 {
@@ -1783,7 +1783,7 @@ int bt_mcc_read_seeking_speed(struct bt_conn *conn)
 	return err;
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 int bt_mcc_read_segments_obj_id(struct bt_conn *conn)
 {
 	int err;
@@ -2026,7 +2026,7 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
 	}
 	return err;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 int bt_mcc_read_playing_order(struct bt_conn *conn)
 {
@@ -2208,7 +2208,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 	return err;
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search search)
 {
 	int err;
@@ -2268,7 +2268,7 @@ int bt_mcc_read_search_results_obj_id(struct bt_conn *conn)
 	}
 	return err;
 }
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */
 
 int bt_mcc_read_content_control_id(struct bt_conn *conn)
 {
@@ -2297,7 +2297,7 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn)
 	return err;
 }
 
-#ifdef CONFIG_BT_MCC_OTS
+#ifdef CONFIG_BT_AUDIO_MCC_OTS
 
 void on_obj_selected(struct bt_conn *conn, int result,
 		     struct bt_otc_instance_t *otc_inst)
@@ -2351,16 +2351,16 @@ int on_icon_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 	return BT_OTC_CONTINUE;
 }
 
-#if CONFIG_BT_DEBUG_MCC
+#if CONFIG_BT_AUDIO_DEBUG_MCC
 struct track_seg_t {
 	uint8_t            name_len;
-	char               name[CONFIG_BT_MCS_SEGMENT_NAME_MAX];
+	char               name[CONFIG_BT_AUDIO_MCS_SEGMENT_NAME_MAX];
 	int32_t            pos;
 };
 
 struct track_segs_t {
 	uint16_t              cnt;
-	struct track_seg_t    segs[CONFIG_BT_MCC_TRACK_SEGS_MAX_CNT];
+	struct track_seg_t    segs[CONFIG_BT_AUDIO_MCC_TRACK_SEGS_MAX_CNT];
 };
 
 static void decode_track_segments(struct net_buf_simple *buff,
@@ -2375,7 +2375,7 @@ static void decode_track_segments(struct net_buf_simple *buff,
 	net_buf_simple_clone(buff, &tmp_buf);
 
 	while (tmp_buf.len &&
-	       track_segs->cnt < CONFIG_BT_MCC_TRACK_SEGS_MAX_CNT) {
+	       track_segs->cnt < CONFIG_BT_AUDIO_MCC_TRACK_SEGS_MAX_CNT) {
 
 		i = track_segs->cnt++;
 		seg = &track_segs->segs[i];
@@ -2390,9 +2390,9 @@ static void decode_track_segments(struct net_buf_simple *buff,
 
 			name = net_buf_simple_pull_mem(&tmp_buf, seg->name_len);
 
-			if (seg->name_len >= CONFIG_BT_MCS_SEGMENT_NAME_MAX) {
+			if (seg->name_len >= CONFIG_BT_AUDIO_MCS_SEGMENT_NAME_MAX) {
 				seg->name_len =
-					CONFIG_BT_MCS_SEGMENT_NAME_MAX - 1;
+					CONFIG_BT_AUDIO_MCS_SEGMENT_NAME_MAX - 1;
 			}
 			memcpy(seg->name, name, seg->name_len);
 		}
@@ -2401,7 +2401,7 @@ static void decode_track_segments(struct net_buf_simple *buff,
 		track_segs->segs[i].pos = (int32_t)net_buf_simple_pull_le32(&tmp_buf);
 	}
 }
-#endif /* CONFIG_BT_DEBUG_MCC */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCC */
 
 int on_track_segments_content(struct bt_conn *conn, uint32_t offset,
 			      uint32_t len, uint8_t *data_p, bool is_complete,
@@ -2423,7 +2423,7 @@ int on_track_segments_content(struct bt_conn *conn, uint32_t offset,
 	if (is_complete) {
 		BT_DBG("Track segment object received");
 
-#if CONFIG_BT_DEBUG_MCC
+#if CONFIG_BT_AUDIO_DEBUG_MCC
 		struct track_segs_t track_segments;
 
 		track_segments.cnt = 0;
@@ -2434,7 +2434,7 @@ int on_track_segments_content(struct bt_conn *conn, uint32_t offset,
 			       log_strdup(track_segments.segs[i].name));
 			BT_DBG("\t-Position\t:%d", track_segments.segs[i].pos);
 		}
-#endif /* CONFIG_BT_DEBUG_MCC */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCC */
 
 		if (mcc_cb && mcc_cb->otc_track_segments_object) {
 			mcc_cb->otc_track_segments_object(conn,
@@ -2512,14 +2512,14 @@ int on_next_track_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 }
 
 
-#if CONFIG_BT_DEBUG_MCC
+#if CONFIG_BT_AUDIO_DEBUG_MCC
 struct id_list_elem_t {
 	uint8_t  type;
 	uint64_t id;
 };
 
 struct id_list_t {
-	struct id_list_elem_t ids[CONFIG_BT_MCC_GROUP_RECORDS_MAX];
+	struct id_list_elem_t ids[CONFIG_BT_AUDIO_MCC_GROUP_RECORDS_MAX];
 	uint16_t cnt;
 };
 
@@ -2531,12 +2531,12 @@ static void decode_group(struct net_buf_simple *buff,
 	/* Copy the buf, to not consume the original in this debug function */
 	net_buf_simple_clone(buff, &tmp_buf);
 
-	while ((tmp_buf.len) && (ids->cnt < CONFIG_BT_MCC_GROUP_RECORDS_MAX)) {
+	while ((tmp_buf.len) && (ids->cnt < CONFIG_BT_AUDIO_MCC_GROUP_RECORDS_MAX)) {
 		ids->ids[ids->cnt].type = net_buf_simple_pull_u8(&tmp_buf);
 		ids->ids[ids->cnt++].id = net_buf_simple_pull_le48(&tmp_buf);
 	}
 }
-#endif /* CONFIG_BT_DEBUG_MCC */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCC */
 
 int on_parent_group_content(struct bt_conn *conn, uint32_t offset,
 			    uint32_t len, uint8_t *data_p, bool is_complete,
@@ -2560,7 +2560,7 @@ int on_parent_group_content(struct bt_conn *conn, uint32_t offset,
 	if (is_complete) {
 		BT_DBG("Parent Group object received");
 
-#if CONFIG_BT_DEBUG_MCC
+#if CONFIG_BT_AUDIO_DEBUG_MCC
 		struct id_list_t group = {0};
 
 		decode_group(&otc_obj_buf, &group);
@@ -2572,7 +2572,7 @@ int on_parent_group_content(struct bt_conn *conn, uint32_t offset,
 			BT_DBG("Object type: %d, object  ID: %s",
 			       group.ids[i].type, log_strdup(t));
 		}
-#endif /* CONFIG_BT_DEBUG_MCC */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCC */
 
 		if (mcc_cb && mcc_cb->otc_parent_group_object) {
 			mcc_cb->otc_parent_group_object(conn, cb_err, &otc_obj_buf);
@@ -2606,7 +2606,7 @@ int on_current_group_content(struct bt_conn *conn, uint32_t offset,
 	if (is_complete) {
 		BT_DBG("Current Group object received");
 
-#if CONFIG_BT_DEBUG_MCC
+#if CONFIG_BT_AUDIO_DEBUG_MCC
 		struct id_list_t group = {0};
 
 		decode_group(&otc_obj_buf, &group);
@@ -2618,7 +2618,7 @@ int on_current_group_content(struct bt_conn *conn, uint32_t offset,
 			BT_DBG("Object type: %d, object  ID: %s",
 			       group.ids[i].type, log_strdup(t));
 		}
-#endif /* CONFIG_BT_DEBUG_MCC */
+#endif /* CONFIG_BT_AUDIO_DEBUG_MCC */
 
 		if (mcc_cb && mcc_cb->otc_current_group_object) {
 			mcc_cb->otc_current_group_object(conn, cb_err, &otc_obj_buf);
@@ -2764,11 +2764,11 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
 	return err;
 }
 
-#if defined(CONFIG_BT_MCC_SHELL)
+#if defined(CONFIG_BT_AUDIO_MCC_SHELL)
 struct bt_otc_instance_t *bt_mcc_otc_inst(void)
 {
 	return &cur_mcs_inst->otc;
 }
-#endif /* defined(CONFIG_BT_MCC_SHELL) */
+#endif /* defined(CONFIG_BT_AUDIO_MCC_SHELL) */
 
-#endif /* CONFIG_BT_MCC_OTS */
+#endif /* CONFIG_BT_AUDIO_MCC_OTS */

@@ -17,7 +17,8 @@ extern enum bst_result_t bst_result;
 /* Mandatory support preset by both client and server */
 static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
-static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_audio_stream streams[CONFIG_BT_AUDIO_ASCS_ASE_SNK_COUNT +
+				      CONFIG_BT_AUDIO_ASCS_ASE_SRC_COUNT];
 
 /* TODO: Expand with BAP data */
 static const struct bt_data unicast_server_ad[] = {

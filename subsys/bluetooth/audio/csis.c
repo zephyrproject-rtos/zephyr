@@ -42,7 +42,7 @@
 #define CSIS_ADV_TIME  0
 #endif /* CONFIG_BT_PRIVACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CSIS)
 #define LOG_MODULE_NAME bt_csis
 #include "common/log.h"
 
@@ -54,7 +54,7 @@
 
 static struct bt_csis_cb *csis_cbs;
 
-static struct bt_csis csis_insts[CONFIG_BT_CSIS_MAX_INSTANCE_COUNT];
+static struct bt_csis csis_insts[CONFIG_BT_AUDIO_CSIS_MAX_INSTANCE_COUNT];
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
 
 struct csis_notify_foreach {
@@ -145,7 +145,7 @@ static int sirk_encrypt(struct bt_conn *conn,
 	int err;
 	uint8_t *k;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_CSIS_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static uint8_t test_k[] = {0x67, 0x6e, 0x1b, 0x9b,
 					   0xd4, 0x48, 0x69, 0x6f,
@@ -206,7 +206,7 @@ static int csis_update_psri(struct bt_csis *csis)
 	uint32_t prand;
 	uint32_t hash;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_CSIS_TEST_SAMPLE_DATA)) {
 		/* prand is from the sample data from A.2 in the CSIS spec */
 		prand = 0x69f563;
 	} else {
@@ -311,7 +311,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 
 		if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT) {
 			sirk = &csis->srv.set_sirk;
-		} else if (IS_ENABLED(CONFIG_BT_CSIS_ENC_SIRK_SUPPORT) &&
+		} else if (IS_ENABLED(CONFIG_BT_AUDIO_CSIS_ENC_SIRK_SUPPORT) &&
 			   cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT_ENC) {
 			int err;
 
@@ -829,7 +829,7 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 	}
 
 BT_GATT_SERVICE_INSTANCE_DEFINE(csis_service_list, csis_insts,
-				CONFIG_BT_CSIS_MAX_INSTANCE_COUNT,
+				CONFIG_BT_AUDIO_CSIS_MAX_INSTANCE_COUNT,
 				BT_CSIS_SERVICE_DEFINITION);
 
 /****************************** Public API ******************************/
@@ -900,7 +900,7 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 	inst->srv.set_lock = BT_CSIS_RELEASE_VALUE;
 	inst->srv.set_sirk.type = BT_CSIS_SIRK_TYPE_PLAIN;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_AUDIO_CSIS_TEST_SAMPLE_DATA)) {
 		uint8_t test_sirk[] = {
 			0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 			0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45,

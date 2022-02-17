@@ -14,11 +14,11 @@
 #include <zephyr/types.h>
 #include <bluetooth/gatt.h>
 
-#if defined(CONFIG_BT_AICS)
-#define BT_AICS_MAX_DESC_SIZE CONFIG_BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
+#if defined(CONFIG_BT_AUDIO_AICS)
+#define BT_AICS_MAX_DESC_SIZE CONFIG_BT_AUDIO_AICS_MAX_INPUT_DESCRIPTION_SIZE
 #else
 #define BT_AICS_MAX_DESC_SIZE 1
-#endif /* CONFIG_BT_AICS */
+#endif /* CONFIG_BT_AUDIO_AICS */
 
 /* AICS opcodes */
 #define BT_AICS_OPCODE_SET_GAIN                    0x01

@@ -1,14 +1,14 @@
 # Bluetooth Audio - Audio Input Control Service options
 #
 # Copyright (c) 2020 Bose Corporation
-# Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2020-2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 ##################### Audio Input Control Service #####################
 
-config BT_AICS_MAX_INSTANCE_COUNT
+config BT_AUDIO_AICS_MAX_INSTANCE_COUNT
 	int "Audio Input Control Service max instance count [EXPERIMENTAL]"
 	default 0
 	range 0 15
@@ -16,16 +16,16 @@ config BT_AICS_MAX_INSTANCE_COUNT
 	  This option sets the maximum number of instances of Audio Input
 	  Control Services.
 
-config BT_AICS
+config BT_AUDIO_AICS
 	bool # hidden
-	default y if BT_AICS_MAX_INSTANCE_COUNT > 0
+	default y if BT_AUDIO_AICS_MAX_INSTANCE_COUNT > 0
 	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Audio Input Control Service.
 
-if BT_AICS
+if BT_AUDIO_AICS
 
-config BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
+config BT_AUDIO_AICS_MAX_INPUT_DESCRIPTION_SIZE
 	int "Audio Input Control Service max input description size"
 	default 32
 	range 0 512
@@ -33,17 +33,17 @@ config BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
 	  This option sets the maximum input description size in octets.
 ############# DEBUG #############
 
-config BT_DEBUG_AICS
+config BT_AUDIO_DEBUG_AICS
 	bool "Audio Input Control Service debug"
 	help
 	  Use this option to enable Audio Input Control Service debug logs for
 	  the Bluetooth Audio functionality.
 
-endif # BT_AICS
+endif # BT_AUDIO_AICS
 
 ##################### Audio Input Control Service Client #####################
 
-config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
+config BT_AUDIO_AICS_CLIENT_MAX_INSTANCE_COUNT
 	int "Audio Input Control Service client max instance count [EXPERIMENTAL]"
 	default 0
 	range 0 15
@@ -51,22 +51,22 @@ config BT_AICS_CLIENT_MAX_INSTANCE_COUNT
 	  This option sets the maximum number of instances of Audio Input
 	  Control Services.
 
-config BT_AICS_CLIENT
+config BT_AUDIO_AICS_CLIENT
 	bool # hidden
-	default y if BT_AICS_CLIENT_MAX_INSTANCE_COUNT > 0
+	default y if BT_AUDIO_AICS_CLIENT_MAX_INSTANCE_COUNT > 0
 	select EXPERIMENTAL
 	help
 	  This hidden option enables support for Audio Input Control Service.
 
 
-if BT_AICS_CLIENT
+if BT_AUDIO_AICS_CLIENT
 
 ############# DEBUG #############
 
-config BT_DEBUG_AICS_CLIENT
+config BT_AUDIO_DEBUG_AICS_CLIENT
 	bool "Audio Input Control Service client debug"
 	help
 	  Use this option to enable Audio Input Control Service client debug
 	  logs for the Bluetooth Audio functionality.
 
-endif # BT_AICS_CLIENT
+endif # BT_AUDIO_AICS_CLIENT
