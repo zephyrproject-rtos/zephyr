@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 

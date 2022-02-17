@@ -21,7 +21,7 @@
 #define TOTAL_THREADS_WAITING (3)
 #define PRIO_WAIT (CONFIG_ZTEST_THREAD_PRIORITY - 1)
 #define PRIO_WAKE (CONFIG_ZTEST_THREAD_PRIORITY - 2)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PRIORITY 5
 
 /******************************************************************************/

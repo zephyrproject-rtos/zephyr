@@ -9,7 +9,7 @@
 #include <irq_offload.h>
 #include <ztest_error_hook.h>
 
-#define STACK_SIZE     (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE     (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #define PRIO_WAIT (CONFIG_ZTEST_THREAD_PRIORITY + 2)
 #define PRIO_WAKE (CONFIG_ZTEST_THREAD_PRIORITY + 1)

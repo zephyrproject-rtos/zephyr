@@ -14,7 +14,7 @@ config TEST
 	  Mark a project or an application as a test. This will enable a few
 	  test defaults.
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	int "Test function extra thread stack size"
 	default 2048 if COVERAGE_GCOV
 	default 768 if XTENSA

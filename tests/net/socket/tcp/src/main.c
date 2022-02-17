@@ -879,7 +879,7 @@ void test_v6_msg_waitall(void)
 }
 
 #ifdef CONFIG_USERSPACE
-#define CHILD_STACK_SZ		(2048 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define CHILD_STACK_SZ		(2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 struct k_thread child_thread;
 K_THREAD_STACK_DEFINE(child_stack, CHILD_STACK_SZ);
 ZTEST_BMEM volatile int result;

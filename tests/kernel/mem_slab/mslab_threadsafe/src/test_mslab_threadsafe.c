@@ -8,7 +8,7 @@
 #include <sys/atomic.h>
 
 #define LOOP 10
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_NUM 4
 #define SLAB_NUM 2
 #define TIMEOUT K_MSEC(200)
