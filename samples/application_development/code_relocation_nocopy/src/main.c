@@ -27,12 +27,18 @@ void disable_mpu_rasr_xn(void)
 	 */
 	for (index = 0U; index < 8; index++) {
 		MPU->RNR = index;
+#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
+		if (MPU->RBAR & MPU_RBAR_XN_Msk) {
+			MPU->RBAR ^= MPU_RBAR_XN_Msk;
+		}
+#else
 		if (MPU->RASR & MPU_RASR_XN_Msk) {
 			MPU->RASR ^= MPU_RASR_XN_Msk;
 		}
+#endif /* CONFIG_ARMV8_M_BASELINE || CONFIG_ARMV8_M_MAINLINE */
 	}
 }
-#endif	/* CONFIG_ARM_MPU */
+#endif /* CONFIG_ARM_MPU */
 
 extern void function_in_ext_flash(void);
 extern void function_in_sram(void);
