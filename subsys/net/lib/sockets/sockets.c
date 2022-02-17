@@ -757,18 +757,49 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 			  int flags)
 {
 	k_timeout_t timeout = K_FOREVER;
+	uint64_t buf_timeout = 0;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
 	} else {
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
+		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
 	}
 
-	status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
-	if (status < 0) {
-		errno = -status;
-		return -1;
+	while (1) {
+		status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
+		if (status < 0) {
+			if (((status == -ENOBUFS) || (status == -EAGAIN)) &&
+			    K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+				/* If we cannot get any buffers in reasonable
+				 * amount of time, then do not wait forever as
+				 * there might be some bigger issue.
+				 * If we get -EAGAIN and cannot recover, then
+				 * it means that the sending window is blocked
+				 * and we just cannot send anything.
+				 */
+				int64_t remaining = buf_timeout - sys_clock_tick_get();
+
+				if (remaining <= 0) {
+					if (status == -ENOBUFS) {
+						errno = ENOMEM;
+					} else {
+						errno = ENOBUFS;
+					}
+
+					return -1;
+				}
+
+				k_sleep(WAIT_BUFS);
+				continue;
+			} else {
+				errno = -status;
+				return -1;
+			}
+		}
+
+		break;
 	}
 
 	return status;
