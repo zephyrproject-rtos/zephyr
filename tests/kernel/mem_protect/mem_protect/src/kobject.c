@@ -80,14 +80,23 @@ void test_kobject_access_grant_error(void)
  */
 void test_kobject_access_grant_error_user(void)
 {
-	struct k_msgq *m;
+	struct k_queue *q;
 
-	m = k_object_alloc(K_OBJ_MSGQ);
-	k_object_access_grant(m, k_current_get());
+	/*
+	 * avoid using K_OBJ_PIPE, K_OBJ_MSGQ, or K_OBJ_STACK because the
+	 * k_object_alloc() returns an uninitialized kernel object and these
+	 * objects are types that can have additional memory allocations that
+	 * need to be freed. This becomes a problem on the fault handler clean
+	 * up because when it is freeing this uninitialized object the random
+	 * data in the object can cause the clean up to try to free random
+	 * data resulting in a secondary fault that fails the test.
+	 */
+	q = k_object_alloc(K_OBJ_QUEUE);
+	k_object_access_grant(q, k_current_get());
 
 	set_fault_valid(true);
 	/* a K_ERR_KERNEL_OOPS expected */
-	k_object_access_grant(m, NULL);
+	k_object_access_grant(q, NULL);
 }
 
 /**
