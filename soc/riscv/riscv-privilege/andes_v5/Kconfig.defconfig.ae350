@@ -15,7 +15,7 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 1536
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	default 1024
 
 endif # SOC_RISCV_ANDES_AE350

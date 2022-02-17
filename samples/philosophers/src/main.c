@@ -83,7 +83,7 @@
 /* end - control behaviour of the demo */
 /***************************************/
 
-#define STACK_SIZE (768 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (768 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #include "phil_obj_abstract.h"
 

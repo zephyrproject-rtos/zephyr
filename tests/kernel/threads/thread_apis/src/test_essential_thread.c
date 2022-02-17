@@ -10,7 +10,7 @@
 
 struct k_thread kthread_thread;
 
-#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(kthread_stack, STACKSIZE);
 K_SEM_DEFINE(sync_sem, 0, 1);
 

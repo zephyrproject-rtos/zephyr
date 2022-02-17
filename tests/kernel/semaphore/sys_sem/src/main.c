@@ -8,7 +8,7 @@
 #include <ztest_error_hook.h>
 
 /* Macro declarations */
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define SEM_INIT_VAL (0U)
 #define SEM_MAX_VAL  (3U)
 #define TOTAL_MAX (4U)

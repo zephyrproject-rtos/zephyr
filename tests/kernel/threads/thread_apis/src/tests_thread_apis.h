@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_EXTERN(tstack);
 extern size_t tstack_size;
 extern struct k_thread tdata;

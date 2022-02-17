@@ -12,7 +12,7 @@
 #define SEM_INIT_VAL (0U)
 #define SEM_MAX_VAL  (10U)
 #define SEM_TIMEOUT (K_MSEC(100))
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define TOTAL_THREADS_WAITING (3)
 
 /******************************************************************************/

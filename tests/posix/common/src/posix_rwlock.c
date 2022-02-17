@@ -9,7 +9,7 @@
 #include <sys/util.h>
 
 #define N_THR 3
-#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 K_THREAD_STACK_ARRAY_DEFINE(stack, N_THR, STACKSZ);
 pthread_rwlock_t rwlock;

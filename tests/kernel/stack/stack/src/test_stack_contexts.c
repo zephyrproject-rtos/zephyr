@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_LEN 4
 #define HIGH_T1			0xaaa
 #define HIGH_T2			0xbbb

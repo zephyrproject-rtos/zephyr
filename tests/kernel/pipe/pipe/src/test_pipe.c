@@ -11,7 +11,7 @@
  * @brief Define and initialize test_pipe at compile time
  */
 K_PIPE_DEFINE(test_pipe, 256, 4);
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PIPE_SIZE (256)
 
 K_PIPE_DEFINE(small_pipe, 10, 4);

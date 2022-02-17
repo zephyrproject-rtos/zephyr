@@ -17,7 +17,7 @@
 #define sem_take_from_isr(sema) irq_offload(isr_sem_take, (const void *)sema)
 
 #define SEM_TIMEOUT (K_MSEC(100))
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define TOTAL_THREADS_WAITING (5)
 
 #define SEC2MS(s) ((s) * 1000)
