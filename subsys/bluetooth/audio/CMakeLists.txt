@@ -36,9 +36,14 @@ zephyr_library_sources_ifdef(CONFIG_BT_MCC mcc.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MCS mcs.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MCS mpl.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MPL mpl.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MCS media_proxy.c)
+if (CONFIG_BT_MCS OR CONFIG_BT_MPL)
+	# TODO: Remove dependencies between mpl.c and mcs.c
+	zephyr_library_sources(media_proxy.c)
+	zephyr_library_sources(mpl.c)
+	zephyr_library_sources(mcs.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_BT_ASCS ascs.c)
 zephyr_library_sources_ifdef(CONFIG_BT_PACS pacs.c)
