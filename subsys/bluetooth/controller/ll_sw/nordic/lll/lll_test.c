@@ -87,7 +87,7 @@ static uint8_t volatile tx_ack;
 
 static void isr_tx(void *param)
 {
-	uint32_t l, i, s, t;
+	uint32_t packet_radio_time, interval, sampled_time, transmit_time; 
 
 	/* Clear radio status and events */
 	radio_status_reset();
@@ -105,22 +105,24 @@ static void isr_tx(void *param)
 	}
 
 	/* LE Test Packet Interval */
-	l = radio_tmr_end_get() - radio_tmr_ready_get();
-	i = ceiling_fraction((l + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
-	t = radio_tmr_end_get() - l + i;
-	t -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
+	packet_radio_time = radio_tmr_end_get() - radio_tmr_ready_get();
+	interval = ceiling_fraction((packet_radio_time + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
+	transmit_time = radio_tmr_end_get() - packet_radio_time + interval;
+	transmit_time -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
 
 	/* Set timer capture in the future. */
 	radio_tmr_sample();
-	s = radio_tmr_sample_get();
+	sampled_time = radio_tmr_sample_get();
 	/*Previous calculation in while loop can take too long time and can rollout the timer*/
-	if (t < s){
-		t+=((((s - t) / SCAN_INT_UNIT_US) + 1) * SCAN_INT_UNIT_US);
+	if (transmit_time < sampled_time){
+		transmit_time+=((((sampled_time - transmit_time) / SCAN_INT_UNIT_US) + 1) * SCAN_INT_UNIT_US);
 	}
+	/* Handle rollover case here, timer is configured to 24-bits */
+	transmit_time=transmit_time&0xffffff;
 
 	/* Setup next Tx */
 	radio_switch_complete_and_disable();
-	radio_tmr_start_us(1, t);
+	radio_tmr_start_us(1, transmit_time);
 	radio_tmr_aa_capture();
 	radio_tmr_end_capture();
 
