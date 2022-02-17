@@ -1043,6 +1043,13 @@
 			label = "I2S_3";
 		};
 
+		src: reset-controller@40c04000 {
+			compatible = "nxp,imx-src-rev2";
+			reg = <0x40c04000 0x4000>;
+			status = "okay";
+			label = "SRC";
+		};
+
 	};
 };
 
