@@ -35,7 +35,6 @@ config BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 
 config BT_DEBUG_VOCS
 	bool "Volume Offset Control Service debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Volume Offset Control Service debug logs for
 	  the Bluetooth Audio functionality.
@@ -66,7 +65,6 @@ if BT_VOCS_CLIENT
 
 config BT_DEBUG_VOCS_CLIENT
 	bool "Volume Offset Control Service client debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Volume Offset Control Service client debug
 	  logs for the Bluetooth Audio functionality.
