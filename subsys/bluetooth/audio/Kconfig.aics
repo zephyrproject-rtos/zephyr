@@ -35,7 +35,6 @@ config BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
 
 config BT_DEBUG_AICS
 	bool "Audio Input Control Service debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Audio Input Control Service debug logs for
 	  the Bluetooth Audio functionality.
@@ -66,7 +65,6 @@ if BT_AICS_CLIENT
 
 config BT_DEBUG_AICS_CLIENT
 	bool "Audio Input Control Service client debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Audio Input Control Service client debug
 	  logs for the Bluetooth Audio functionality.
