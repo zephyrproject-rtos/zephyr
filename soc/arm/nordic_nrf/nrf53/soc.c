@@ -23,6 +23,7 @@
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_regulators.h>
+#include <hal/nrf_clock.h>
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_nvmc.h>
 #endif
@@ -56,6 +57,20 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 	ARG_UNUSED(arg);
 
 	key = irq_lock();
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(NRF_DOUBLE_CPU_SPEED)
+#if defined(CONFIG_BUILD_WITH_TFM)
+	/*
+	 * When TF-M is enabled we rely on it having configured this for us already.
+	 */
+#else
+	/* Configure the CPU for full speed (128MHz). */
+	nrf_clock_hfclk_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_1);
+
+	/* Update the SystemCoreClock variable in case anyone relies on it. */
+	SystemCoreClockUpdate();
+#endif
+#endif
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_NRF_ENABLE_CACHE)
 #if !defined(CONFIG_BUILD_WITH_TFM)
