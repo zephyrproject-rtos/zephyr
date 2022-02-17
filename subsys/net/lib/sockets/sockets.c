@@ -380,10 +380,6 @@ static void zsock_received_cb(struct net_context *ctx,
 	/* Normal packet */
 	net_pkt_set_eof(pkt, false);
 
-	if (net_context_get_type(ctx) == SOCK_STREAM) {
-		net_context_update_recv_wnd(ctx, -net_pkt_remaining_data(pkt));
-	}
-
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
 	k_fifo_put(&ctx->recv_q, pkt);
