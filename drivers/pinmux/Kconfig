@@ -24,8 +24,6 @@ config PINMUX_INIT_PRIORITY
 	  rule for particular boards. Don't change this value unless you
 	  know what you are doing.
 
-source "drivers/pinmux/Kconfig.b91"
-
 source "drivers/pinmux/Kconfig.beetle"
 
 source "drivers/pinmux/Kconfig.cc13xx_cc26xx"
