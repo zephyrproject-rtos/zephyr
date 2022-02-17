@@ -1335,7 +1335,8 @@ static int outs(cbprintf_cb out,
 	return (int)count;
 }
 
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
+int cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp, va_list ap,
+		   bool tagged_ap)
 {
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
@@ -1372,6 +1373,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		if (*fp != '%') {
 			OUTC(*fp++);
 			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
+		    && tagged_ap) {
+			/* Skip over the argument tag as it is not being
+			 * used here.
+			 */
+			(void)va_arg(ap, int);
 		}
 
 		/* Force union into RAM with conversion state to

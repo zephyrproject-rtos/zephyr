@@ -6,7 +6,10 @@
 
 #ifndef ZEPHYR_INCLUDE_SYS_CBPRINTF_CXX_H_
 #define ZEPHYR_INCLUDE_SYS_CBPRINTF_CXX_H_
+
 #ifdef __cplusplus
+
+#include <sys/cbprintf_enums.h>
 
 /* C++ version for detecting a pointer to a string. */
 static inline int z_cbprintf_cxx_is_pchar(char *, bool const_as_fixed)
@@ -200,6 +203,127 @@ template < typename T >
 static inline size_t z_cbprintf_cxx_alignment(T arg)
 {
 	return MAX(__alignof__(arg), VA_STACK_MIN_ALIGN);
+}
+
+/* C++ version for returning argument type enum value. */
+static inline size_t z_cbprintf_cxx_arg_type(char arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_CHAR;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(unsigned char arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_CHAR;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(short arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_SHORT;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(unsigned short arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_SHORT;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(int arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_INT;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(unsigned int arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_INT;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(long arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_LONG;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(unsigned long arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(long long arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_LONG_LONG;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(unsigned long long arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG_LONG;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(float arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_FLOAT;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(double arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_DOUBLE;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(long double arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(const char *arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_PTR_CONST_CHAR;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(char *arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR;
+}
+
+static inline size_t z_cbprintf_cxx_arg_type(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID;
+}
+
+template < typename T >
+static inline size_t z_cbprintf_cxx_arg_type(T arg)
+{
+	ARG_UNUSED(arg);
+
+	return CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID;
 }
 
 #endif /* __cplusplus */

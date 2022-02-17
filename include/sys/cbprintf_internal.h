@@ -128,9 +128,14 @@ extern "C" {
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, flags, ...) ({\
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
-	int _rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+	int _rv = IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS) ? \
+			(((flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) \
+			  == CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) ? 1 : 0) : 0; \
+	if (_rv == 0) { \
+		_rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
 			(0), \
 			(((Z_CBPRINTF_HAS_PCHAR_ARGS(flags, __VA_ARGS__) - skip) > 0))); \
+	} \
 	_Pragma("GCC diagnostic pop")\
 	_rv; \
 })
@@ -292,24 +297,6 @@ do { \
 	Z_CBPRINTF_PACK_ARG2(_pbuf, _pkg_len, _pkg_offset, _pmax, _flags, \
 			     _s_cnt, _s_buffer, arg)
 
-/** @brief Package descriptor.
- *
- * @param len Package length.
- *
- * @param str_cnt Number of strings stored in the package.
- */
-struct z_cbprintf_desc {
-	uint8_t len;
-	uint8_t str_cnt;
-	uint8_t ro_str_cnt;
-};
-
-/** @brief Package header. */
-union z_cbprintf_hdr {
-	struct z_cbprintf_desc desc;
-	void *raw;
-};
-
 /* When using clang additional warning needs to be suppressed since each
  * argument of fmt string is used for sizeof() which results in the warning
  * if argument is a stirng literal. Suppression is added here instead of
@@ -360,15 +347,15 @@ do { \
 	int _pkg_len = 0; \
 	int _total_len = 0; \
 	int _pkg_offset = _align_offset; \
-	union z_cbprintf_hdr *_len_loc; \
+	struct cbprintf_package_hdr *_len_loc; \
 	/* package starts with string address and field with length */ \
-	if (_pmax < sizeof(union z_cbprintf_hdr)) { \
+	if (_pmax < sizeof(struct cbprintf_package_hdr)) { \
 		_outlen = -ENOSPC; \
 		break; \
 	} \
-	_len_loc = (union z_cbprintf_hdr *)_pbuf; \
-	_pkg_len += sizeof(union z_cbprintf_hdr); \
-	_pkg_offset += sizeof(union z_cbprintf_hdr); \
+	_len_loc = (struct cbprintf_package_hdr *)_pbuf; \
+	_pkg_len += sizeof(struct cbprintf_package_hdr); \
+	_pkg_offset += sizeof(struct cbprintf_package_hdr); \
 	/* Pack remaining arguments */\
 	FOR_EACH(Z_CBPRINTF_PACK_ARG, (;), __VA_ARGS__);\
 	_total_len = _pkg_len; \
@@ -384,12 +371,11 @@ do { \
 	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf) { \
-		union z_cbprintf_hdr hdr = { \
-			.desc = { \
-				.len = (uint8_t)(_pkg_len / sizeof(int)), \
-				.str_cnt = 0, \
-				.ro_str_cnt = str_idxs ? _s_cnt : (uint8_t)0, \
-			} \
+		struct cbprintf_package_hdr hdr = { \
+			.len = (uint8_t)(_pkg_len / sizeof(int)), \
+			.rw_str_cnt = 0, \
+			.ro_str_cnt = str_idxs ? _s_cnt : (uint8_t)0, \
+			.pkg_flags = _flags, \
 		}; \
 		*_len_loc = hdr; \
 	} \

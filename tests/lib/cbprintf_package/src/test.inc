@@ -210,9 +210,9 @@ void test_cbprintf_rw_str_indexes(void)
 				test_str, 100, test_str1);
 	zassert_equal(len0 + 2, len2, NULL);
 
-	struct z_cbprintf_desc *desc0 = (struct z_cbprintf_desc *)package0;
-	struct z_cbprintf_desc *desc1 = (struct z_cbprintf_desc *)package1;
-	struct z_cbprintf_desc *desc2 = (struct z_cbprintf_desc *)package2;
+	struct cbprintf_package_hdr *desc0 = (struct cbprintf_package_hdr *)package0;
+	struct cbprintf_package_hdr *desc1 = (struct cbprintf_package_hdr *)package1;
+	struct cbprintf_package_hdr *desc2 = (struct cbprintf_package_hdr *)package2;
 
 	/* Compare descriptor content. Second package has one ro string index. */
 	zassert_equal(desc0->ro_str_cnt, 0, NULL);
@@ -259,10 +259,10 @@ static void test_cbprintf_fsc_package(void)
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
 
-	struct z_cbprintf_desc *desc = (struct z_cbprintf_desc *)package;
+	struct cbprintf_package_hdr *desc = (struct cbprintf_package_hdr *)package;
 
 	zassert_equal(desc->ro_str_cnt, 2, NULL);
-	zassert_equal(desc->str_cnt, 0, NULL);
+	zassert_equal(desc->rw_str_cnt, 0, NULL);
 
 	/* Get length of fsc package. */
 	fsc_len = cbprintf_fsc_package(package, len, NULL, 0);
@@ -280,9 +280,9 @@ static void test_cbprintf_fsc_package(void)
 	zassert_equal((int)sizeof(fsc_package), fsc_len, NULL);
 
 	/* New package has no RO string locations, only copied one. */
-	desc = (struct z_cbprintf_desc *)fsc_package;
+	desc = (struct cbprintf_package_hdr *)fsc_package;
 	zassert_equal(desc->ro_str_cnt, 0, NULL);
-	zassert_equal(desc->str_cnt, 2, NULL);
+	zassert_equal(desc->rw_str_cnt, 2, NULL);
 
 	/* Get pointer to the first string in the package. */
 	addr = (char *)&fsc_package[desc->len * sizeof(int) + 1];

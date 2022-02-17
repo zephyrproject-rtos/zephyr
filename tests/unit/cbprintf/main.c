@@ -1268,8 +1268,8 @@ static void test_cbprintf_package_rw_string_indexes(void)
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
 
-	struct z_cbprintf_desc *desc0 = (struct z_cbprintf_desc *)package0;
-	struct z_cbprintf_desc *desc1 = (struct z_cbprintf_desc *)package1;
+	struct cbprintf_package_hdr *desc0 = (struct cbprintf_package_hdr *)package0;
+	struct cbprintf_package_hdr *desc1 = (struct cbprintf_package_hdr *)package1;
 
 	/* Compare descriptor content. Second package has one ro string index. */
 	zassert_equal(desc0->ro_str_cnt, 0, NULL);

@@ -36,6 +36,63 @@
 #endif
 #endif
 
+/** @brief cbprintf package header
+ *
+ * cbprintf package header, without the format string pointer.
+ */
+struct cbprintf_package_hdr {
+	/**
+	 * Argument list size including header
+	 * and *fmt* (in 32 bit words)
+	 */
+	uint8_t len;
+
+	/** Number of appended strings in writable memory */
+	uint8_t rw_str_cnt;
+
+	/** Number of appended strings in read-only memory */
+	uint8_t ro_str_cnt;
+
+	/** Padding to be of size uint32_t at this point */
+	uint8_t padding;
+
+	/** Flags used to create the package */
+	uint32_t pkg_flags;
+
+	/*
+	 * When extending this struct, make sure this align
+	 * to pointer size.
+	 */
+
+#ifdef __xtensa__
+	/*
+	 * On Xtensa, the first argument needs to be aligned to 8-byte.
+	 * With 32-bit pointers, we need another 4 bytes padding so
+	 * that whole struct cbprintf_package_hdr_ext is of multiple of
+	 * 8 bytes.
+	 */
+	uint32_t xtensa_padding;
+#endif
+
+};
+
+/** @brief cbprintf package header with format string pointer.
+ *
+ * cbprintf package header with format string pointer.
+ */
+struct cbprintf_package_hdr_ext {
+	/** Header of package */
+	struct cbprintf_package_hdr hdr;
+
+	/** Pointer to format string */
+	char *fmt;
+
+	/*
+	 * When extending this struct, make sure this align
+	 * to pointer size.
+	 */
+};
+
 /* Z_C_GENERIC is used there */
 #include <sys/cbprintf_internal.h>
 
@@ -77,6 +134,13 @@ extern "C" {
  */
 #define CBPRINTF_PACKAGE_ADD_STRING_IDXS BIT(0)
 
+/** @brief Indicate the incoming arguments are tagged.
+ *
+ * When set, this indicates that the incoming arguments are tagged, and
+ * need to be processed accordingly.
+ */
+#define CBPRINTF_PACKAGE_ARGS_ARE_TAGGED BIT(1)
+
 /**@} */
 
 /**@defgroup CBPRINTF_MUST_RUNTIME_PACKAGE_FLAGS Package flags.
@@ -91,6 +155,8 @@ extern "C" {
 #define CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR BIT(0)
 
 /**@} */
+
+#include <sys/cbprintf_enums.h>
 
 /** @brief Signature for a cbprintf callback function.
  *
@@ -384,10 +450,78 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
  *
  * @param ap a reference to the values to be converted.
  *
+ * @param tagged_ap true if arguments are tagged.
+ *
  * @return the number of characters generated, or a negative error value
  * returned from invoking @p out.
  */
-int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
+int cbvprintf_impl(cbprintf_cb out, void *ctx, const char *format, va_list ap,
+		   bool tagged_ap);
+
+/** @brief varargs-aware *printf-like output through a callback.
+ *
+ * This is essentially vsprintf() except the output is generated
+ * character-by-character using the provided @p out function.  This allows
+ * formatting text of unbounded length without incurring the cost of a
+ * temporary buffer.
+ *
+ * @note This function is available only when
+ * @kconfig{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
+ *
+ * @note The functionality of this function is significantly reduced when
+ * @kconfig{CONFIG_CBPRINTF_NANO} is selected.
+ *
+ * @param out the function used to emit each generated character.
+ *
+ * @param ctx context provided when invoking out
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap a reference to the values to be converted.
+ *
+ * @return the number of characters generated, or a negative error value
+ * returned from invoking @p out.
+ */
+static inline
+int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
+{
+	return cbvprintf_impl(out, ctx, format, ap, false);
+}
+
+/** @brief varargs-aware *printf-like output through a callback with tagged arguments.
+ *
+ * This is essentially vsprintf() except the output is generated
+ * character-by-character using the provided @p out function.  This allows
+ * formatting text of unbounded length without incurring the cost of a
+ * temporary buffer.
+ *
+ * Note that the argument list @p ap are tagged.
+ *
+ * @note This function is available only when
+ * @kconfig{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
+ *
+ * @note The functionality of this function is significantly reduced when
+ * @kconfig{CONFIG_CBPRINTF_NANO} is selected.
+ *
+ * @param out the function used to emit each generated character.
+ *
+ * @param ctx context provided when invoking out
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap a reference to the values to be converted.
+ *
+ * @return the number of characters generated, or a negative error value
+ * returned from invoking @p out.
+ */
+static inline
+int cbvprintf_tagged_args(cbprintf_cb out, void *ctx,
+			  const char *format, va_list ap)
+{
+	return cbvprintf_impl(out, ctx, format, ap, true);
+}
 
 /** @brief Generate the output for a previously captured format
  * operation.
@@ -409,6 +543,17 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
 static inline
 int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 {
+#if defined(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
+	struct cbprintf_package_hdr *hdr =
+		(struct cbprintf_package_hdr *)packaged;
+
+	if ((hdr->pkg_flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED)
+	    == CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) {
+		return cbpprintf_external(out, cbvprintf_tagged_args,
+					  ctx, packaged);
+	}
+#endif
+
 	return cbpprintf_external(out, cbvprintf, ctx, packaged);
 }
 

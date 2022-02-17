@@ -371,7 +371,7 @@ void test_mode_size_plain_string(void)
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = sizeof(struct log_msg2_hdr) +
-			 /* package */2 * sizeof(const char *);
+			 /* package */sizeof(struct cbprintf_package_hdr_ext);
 	if (mode == Z_LOG_MSG2_MODE_RUNTIME && TEST_LOG_MSG2_RW_STRINGS) {
 		exp_len += 2 + strlen("test str");
 	}
@@ -433,7 +433,7 @@ void test_mode_size_plain_str_data(void)
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = sizeof(struct log_msg2_hdr) + sizeof(data) +
-		  /* package */2 * sizeof(char *);
+		  /* package */sizeof(struct cbprintf_package_hdr_ext);
 	if (mode == Z_LOG_MSG2_MODE_RUNTIME && TEST_LOG_MSG2_RW_STRINGS) {
 		exp_len += 2 + strlen("test str");
 	}
@@ -470,7 +470,8 @@ void test_mode_size_str_with_strings(void)
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = sizeof(struct log_msg2_hdr) +
-			 /* package */3 * sizeof(const char *);
+			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
+				      sizeof(const char *);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 
 	get_msg_validate_length(exp_len);
@@ -510,7 +511,8 @@ void test_mode_size_str_with_2strings(void)
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = sizeof(struct log_msg2_hdr) +
-			 /* package */4 * sizeof(const char *);
+			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
+				      2 * sizeof(const char *);
 	if (TEST_LOG_MSG2_RW_STRINGS) {
 		exp_len += strlen("sufix") + 2 /* null + header */ +
 			  strlen(prefix) + 2 /* null + header */+
