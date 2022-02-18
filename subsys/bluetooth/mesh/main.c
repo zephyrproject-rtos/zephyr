@@ -46,6 +46,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		      const uint8_t dev_key[16])
 {
 	int err;
+	struct bt_mesh_cdb_subnet *subnet = NULL;
 
 	BT_INFO("Primary Element: 0x%04x", addr);
 	BT_DBG("net_idx 0x%04x flags 0x%02x iv_index 0x%04x",
@@ -55,10 +56,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		return -EALREADY;
 	}
 
-	/*
-	 * FIXME:
-	 * Should net_key and iv_index be over-ridden?
-	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_CDB) &&
 	    atomic_test_bit(bt_mesh_cdb.flags, BT_MESH_CDB_VALID)) {
 		const struct bt_mesh_comp *comp;
@@ -72,7 +69,8 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 			return -EINVAL;
 		}
 
-		if (!bt_mesh_cdb_subnet_get(net_idx)) {
+		subnet = bt_mesh_cdb_subnet_get(net_idx);
+		if (!subnet) {
 			BT_ERR("No subnet with idx %d", net_idx);
 			atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 			return -ENOENT;
@@ -87,8 +85,18 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 			return -ENOMEM;
 		}
 
+		if (BT_MESH_KEY_REFRESH(flags)) {
+			memcpy(subnet->keys[1].net_key, net_key, 16);
+			subnet->kr_phase = BT_MESH_KR_PHASE_2;
+		} else {
+			memcpy(subnet->keys[0].net_key, net_key, 16);
+			subnet->kr_phase = BT_MESH_KR_NORMAL;
+		}
+		bt_mesh_cdb_subnet_store(subnet);
+
 		addr = node->addr;
-		iv_index = bt_mesh_cdb.iv_index;
+		bt_mesh_cdb_iv_update(iv_index, BT_MESH_IV_UPDATE(flags));
+
 		memcpy(node->dev_key, dev_key, 16);
 
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
