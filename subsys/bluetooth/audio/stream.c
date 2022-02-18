@@ -126,23 +126,9 @@ done:
 	return -ENOSPC;
 }
 
-int bt_audio_codec_qos_to_iso_qos(struct bt_audio_stream *stream,
+int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 				  const struct bt_codec_qos *codec)
 {
-	struct bt_iso_chan_qos *qos = stream->iso->qos;
-	struct bt_iso_chan_io_qos *io;
-
-	switch (stream->ep->dir) {
-	case BT_AUDIO_SINK:
-		io = qos->rx;
-		break;
-	case BT_AUDIO_SOURCE:
-		io = qos->tx;
-		break;
-	default:
-		return -EINVAL;
-	}
-
 	io->sdu = codec->sdu;
 	io->phy = codec->phy;
 	io->rtn = codec->rtn;
@@ -511,6 +497,9 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 	/* Validate streams before starting the QoS execution */
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+		struct bt_iso_chan_io_qos *io;
+		struct bt_iso_chan_qos *iso_qos;
+
 		if (stream->ep == NULL) {
 			BT_DBG("stream->ep is NULL");
 			return -EINVAL;
@@ -544,7 +533,26 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		err = bt_audio_codec_qos_to_iso_qos(stream, qos);
+		iso_qos = stream->iso->qos;
+		if (stream->ep->dir == BT_AUDIO_SINK) {
+			/* If the endpoint is a sink, then we need to
+			 * configure our TX parameters
+			 */
+			io = iso_qos->tx;
+			iso_qos->rx = NULL;
+		} else if (stream->ep->dir == BT_AUDIO_SOURCE) {
+			/* If the endpoint is a source, then we need to
+			 * configure our RX parameters
+			 */
+			io = iso_qos->rx;
+			iso_qos->tx = NULL;
+		} else {
+			__ASSERT(false, "invalid endpoint dir: %u",
+				 stream->ep->dir);
+			return -EINVAL;
+		}
+
+		err = bt_audio_codec_qos_to_iso_qos(io, qos);
 		if (err) {
 			BT_DBG("Unable to convert codec QoS to ISO QoS: %d",
 			       err);

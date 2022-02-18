@@ -220,7 +220,8 @@ static int bt_audio_broadcast_source_setup_stream(uint8_t index,
 
 	bt_audio_stream_attach(NULL, stream, ep, codec);
 	stream->qos = qos;
-	err = bt_audio_codec_qos_to_iso_qos(stream, qos);
+	stream->iso->qos->rx = NULL;
+	err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos->tx, qos);
 	if (err) {
 		BT_ERR("Unable to convert codec QoS to ISO QoS");
 		return err;
