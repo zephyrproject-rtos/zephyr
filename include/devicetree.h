@@ -800,6 +800,23 @@
 	DT_CAT4(node_id, _P_, prop, _STRING_TOKEN)
 
 /**
+ * @brief Like DT_STRING_TOKEN(), but with a fallback to default_value
+ *
+ * If the value exists, this expands to DT_STRING_TOKEN(node_id, prop).
+ * The default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value or default_value
+ */
+#define DT_STRING_TOKEN_OR(node_id, prop, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_TOKEN(node_id, prop)), (default_value))
+
+/**
  * @brief Like DT_STRING_TOKEN(), but uppercased.
  *
  * This removes "the quotes and capitalize" from string-valued properties, and
@@ -2695,6 +2712,17 @@
  *         0 otherwise
  */
 #define DT_INST_ON_BUS(inst, bus) DT_ON_BUS(DT_DRV_INST(inst), bus)
+
+/**
+ * @brief Tests if DT_DRV_COMPAT's has string property, returns string token if
+ *        found, otherwise returns default_value.
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value or default_value
+ */
+#define DT_INST_STRING_TOKEN_OR(inst, name, default_value) \
+	DT_STRING_TOKEN_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
  * @brief Test if any DT_DRV_COMPAT node is on a bus of a given type

@@ -475,5 +475,20 @@
 				         <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
 			};
 		};
+
+		test_string_token_0: string-token-0 {
+			compatible = "vnd,string-token";
+			val = "token_zero";
+		};
+
+		test_string_token_1: string-token-1 {
+			compatible = "vnd,string-token";
+			val = "token_one";
+		};
+
+		test_string_token_2: string-token-2 {
+			compatible = "vnd,string-token";
+			val = "token_two";
+		};
 	};
 };
