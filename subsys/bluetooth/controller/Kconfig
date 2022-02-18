@@ -497,6 +497,12 @@ config BT_CTLR_ADV_EXT
 	prompt "LE Advertising Extensions [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
+config PROMPT_ADJUSTMENT_WORKAROUND
+	bool
+	help
+	  Unused and hidden Kconfig symbol to allow prompt adjustment.
+	  Work around for https://github.com/ulfalizer/Kconfiglib/issues/117
+
 if BT_CTLR_ADV_EXT
 
 config BT_CTLR_ADV_SET
@@ -541,6 +547,9 @@ config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
+config PROMPT_ADJUSTMENT_WORKAROUND
+	bool
+
 config BT_CTLR_ADV_PERIODIC_ADI_SUPPORT
 	bool "Periodic Advertising ADI support"
 	depends on BT_CTLR_ADV_PERIODIC
@@ -560,6 +569,9 @@ config BT_CTLR_SYNC_PERIODIC
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
+
+config PROMPT_ADJUSTMENT_WORKAROUND
+	bool
 
 config BT_CTLR_SYNC_PERIODIC_ADV_LIST
 	bool "LE Periodic Advertiser List support"
