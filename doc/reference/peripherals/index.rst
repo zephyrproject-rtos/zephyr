@@ -32,6 +32,7 @@ Peripherals
    rtc.rst
    sensor.rst
    spi.rst
+   tcpc.rst
    uart.rst
    mdio.rst
    watchdog.rst
