@@ -70,6 +70,9 @@ hardware features:
    * - Watchdog Timer (WDT)
      - :kconfig:option:`CONFIG_WATCHDOG`
      - :dtcompatible:`raspberrypi,pico-watchdog`
+   * - PWM
+     - :kconfig: `CONFIG_PWM`
+     - :dtcompatible: `raspberrypi,pico-pwm`
 
 Programming and Debugging
 *************************
