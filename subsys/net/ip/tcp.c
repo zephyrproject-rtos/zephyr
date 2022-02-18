@@ -33,7 +33,12 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
-static int tcp_window = NET_IPV6_MTU;
+static int tcp_window =
+#if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
+	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
+#else
+	(CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3;
+#endif
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
