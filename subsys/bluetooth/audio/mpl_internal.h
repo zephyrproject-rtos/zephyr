@@ -10,22 +10,21 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MPL_INTERNAL_
 #define ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MPL_INTERNAL_
 
-#include <bluetooth/audio/media_proxy.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /* Offset into a segment/track before the "previous" command goes to start of */
 /* current segment/track instead to previous */
 #define PREV_MARGIN           500  /* 500 * 0.01 = 5 seconds */
 
 /* Increase/decrease in seeking sped factor for fast rewind/forward commands
+ * The media control specification has a requirement that the speed factor
+ * shall be [-64, -4], 0, [4, 64].  I.e., values between 0 and +/- 4 are not allowed.
  * Set this equal to the minimum speed factor, to ensure only valid speed factors
  * are used when changing to/from zero
  */
-#define MPL_SEEKING_SPEED_FACTOR_STEP  BT_MCS_SEEKING_SPEED_FACTOR_MIN
+#define MPL_SEEKING_SPEED_FACTOR_STEP  4
 
 
 /* Track segments */
