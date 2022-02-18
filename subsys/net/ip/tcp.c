@@ -1671,6 +1671,10 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 static bool tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 			      size_t *len)
 {
+	if (*len == 0) {
+		return false;
+	}
+
 	if (tcp_data_get(conn, pkt, len) < 0) {
 		return false;
 	}
@@ -1686,6 +1690,10 @@ static void tcp_out_of_order_data(struct tcp *conn, struct net_pkt *pkt,
 				  size_t data_len, uint32_t seq)
 {
 	size_t headers_len;
+
+	if (data_len == 0) {
+		return;
+	}
 
 	headers_len = net_pkt_get_len(pkt) - data_len;
 
@@ -1954,7 +1962,7 @@ next_state:
 			}
 		}
 
-		if (th && len) {
+		if (th) {
 			if (th_seq(th) == conn->ack) {
 				if (!tcp_data_received(conn, pkt, &len)) {
 					break;
