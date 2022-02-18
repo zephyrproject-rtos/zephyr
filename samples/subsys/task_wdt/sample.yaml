@@ -12,7 +12,7 @@ tests:
         - "Control thread started."
         - "Main thread still alive..."
         - "Control thread getting stuck..."
-        - "Task watchdog channel 1 callback, thread: control"
+        - "Task watchdog channel (.*) callback, thread: control"
         - "Resetting device...(.*)"
         - "Task watchdog sample application."
     depends_on: watchdog
