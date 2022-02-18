@@ -184,6 +184,10 @@ int ull_adv_sync_reset_finalize(void);
 /* helper function to release periodic advertising instance */
 void ull_adv_sync_release(struct ll_adv_sync_set *sync);
 
+/* helper function to return event time reservation */
+uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
+			       uint8_t pdu_len);
+
 /* helper function to start periodic advertising */
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,

@@ -54,8 +54,6 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 static uint8_t sync_chm_update(uint8_t handle);
-static uint32_t sync_time_get(struct ll_adv_sync_set *sync,
-			      struct pdu_adv *pdu);
 
 static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
@@ -779,6 +777,35 @@ void ull_adv_sync_release(struct ll_adv_sync_set *sync)
 	sync_release(sync);
 }
 
+uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
+			       uint8_t pdu_len)
+{
+	const struct lll_adv_sync *lll_sync = &sync->lll;
+	const struct lll_adv *lll = lll_sync->adv;
+	uint32_t time_us;
+
+	/* NOTE: 16-bit values are sufficient for minimum radio event time
+	 *       reservation, 32-bit are used here so that reservations for
+	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       the required microseconds could overflow 16-bits, example,
+	 *       back-to-back chained Coded PHY PDUs.
+	 */
+
+	time_us = PDU_AC_US(pdu_len, lll->phy_s, lll->phy_flags) +
+		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
+	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
+
+	if (df_cfg && df_cfg->is_enabled) {
+		time_us += CTE_LEN_US(df_cfg->cte_length);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	return time_us;
+}
+
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor)
@@ -799,7 +826,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
 
 	/* Calculate the PDU Tx Time and hence the radio event length */
-	time_us = sync_time_get(sync, ter_pdu);
+	time_us = ull_adv_sync_time_get(sync, ter_pdu->len);
 
 	/* TODO: active_to_start feature port */
 	sync->ull.ticks_active_to_start = 0U;
@@ -845,7 +872,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
 	uint32_t time_us;
 	uint32_t ret;
 
-	time_us = sync_time_get(sync, pdu);
+	time_us = ull_adv_sync_time_get(sync, pdu->len);
 	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (sync->ull.ticks_slot > time_ticks) {
 		ticks_minus = sync->ull.ticks_slot - time_ticks;
@@ -1586,37 +1613,6 @@ static uint8_t sync_chm_update(uint8_t handle)
 	lll_sync->chm_last = chm_last;
 
 	return 0;
-}
-
-static uint32_t sync_time_get(struct ll_adv_sync_set *sync,
-			      struct pdu_adv *pdu)
-{
-	struct lll_adv_sync *lll_sync;
-	struct lll_adv *lll;
-	uint32_t time_us;
-
-	/* NOTE: 16-bit values are sufficient for minimum radio event time
-	 *       reservation, 32-bit are used here so that reservations for
-	 *       whole back-to-back chaining of PDUs can be accomodated where
-	 *       the required microseconds could overflow 16-bits, example,
-	 *       back-to-back chained Coded PHY PDUs.
-	 */
-
-	lll_sync = &sync->lll;
-	lll = lll_sync->adv;
-	time_us = PDU_AC_US(pdu->len, lll->phy_s, lll->phy_flags) +
-		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
-	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
-
-	if (df_cfg && df_cfg->is_enabled) {
-		time_us += CTE_LEN_US(df_cfg->cte_length);
-	}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-	return time_us;
 }
 
 static void mfy_sync_offset_get(void *param)
