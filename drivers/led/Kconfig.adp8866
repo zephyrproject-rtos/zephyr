@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Pat Deegan, https://psychogenic.com
+# SPDX-License-Identifier: Apache-2.0
+
+config ADP8866
+	bool "ADP8866 LED driver"
+	depends on I2C
+	help
+	  Enable LED driver for ADP8866.
+
+	  ADP8866 LED driver has 9 channels,
+	  Each channel can drive up to
+	  25 mA per LED, with 7 bits (128 levels) of 
+	  nonlinear current settings.
+	  
