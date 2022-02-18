@@ -1,0 +1,14 @@
+# Copyright (c) 2022, Joep Buruma
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_RPI_PICO_PWM := raspberrypi,pico-pwm
+
+config PWM_RPI_PICO
+	bool "RPi Pico PWM"
+	default $(dt_compat_enabled,$(DT_COMPAT_RPI_PICO_PWM))
+	depends on SOC_SERIES_RP2XXX
+	depends on RESET
+	select PICOSDK_USE_PWM
+	help
+	  Enable PWM driver for RPi Pico family of MCUs
