@@ -431,6 +431,18 @@ config NET_TCP_MAX_SEND_WINDOW_SIZE
 	  size. The default value 0 lets the TCP stack select the value
 	  according to amount of network buffers configured in the system.
 
+config NET_TCP_MAX_RECV_WINDOW_SIZE
+	int "Maximum receive window size to use"
+	depends on NET_TCP
+	default 0
+	range 0 65535
+	help
+	  This value defines the maximum TCP receive window size. Increasing
+	  this value can improve connection throughput, but requires more
+	  receive buffers avaialble in the system for efficient operation.
+	  The default value 0 lets the TCP stack select the value
+	  according to amount of network buffers configured in the system.
+
 config NET_TCP_RECV_QUEUE_TIMEOUT
 	int "How long to queue received data (in ms)"
 	depends on NET_TCP
