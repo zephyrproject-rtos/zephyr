@@ -18,3 +18,8 @@ config PICOSDK_USE_FLASH
 	bool
 	help
 	  Use the flash driver from pico-sdk
+
+config PICOSDK_USE_PWM
+	bool
+	help
+	  Use the PWM driver from pico-sdk
