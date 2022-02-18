@@ -179,6 +179,39 @@ New APIs in this release
     * :c:macro:`DT_INST_ENUM_IDX_OR`
     * :c:macro:`DT_INST_PARENT`
 
+  * New :ref:`devicetree-ranges-property` APIs
+
+  * Removed: ``DT_CHOSEN_ZEPHYR_CANBUS_LABEL``; use
+    ``DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))`` to get the device instead, and
+    read the name from the device structure if needed.
+
+  * Removed deprecated macros:
+
+    * ``DT_CLOCKS_LABEL_BY_IDX``
+    * ``DT_CLOCKS_LABEL``
+    * ``DT_INST_CLOCKS_LABEL_BY_IDX``
+    * ``DT_INST_CLOCKS_LABEL_BY_NAME``
+    * ``DT_INST_CLOCKS_LABEL``
+    * ``DT_PWMS_LABEL_BY_IDX``
+    * ``DT_PWMS_LABEL_BY_NAME``
+    * ``DT_PWMS_LABEL``
+    * ``DT_INST_PWMS_LABEL_BY_IDX``
+    * ``DT_INST_PWMS_LABEL_BY_NAME``
+    * ``DT_INST_PWMS_LABEL``
+    * ``DT_IO_CHANNELS_LABEL_BY_IDX``
+    * ``DT_IO_CHANNELS_LABEL_BY_NAME``
+    * ``DT_IO_CHANNELS_LABEL``
+    * ``DT_INST_IO_CHANNELS_LABEL_BY_IDX``
+    * ``DT_INST_IO_CHANNELS_LABEL_BY_NAME``
+    * ``DT_INST_IO_CHANNELS_LABEL``
+    * ``DT_DMAS_LABEL_BY_IDX``
+    * ``DT_INST_DMAS_LABEL_BY_IDX``
+    * ``DT_DMAS_LABEL_BY_NAME``
+    * ``DT_INST_DMAS_LABEL_BY_NAME``
+    * ``DT_ENUM_TOKEN``
+    * ``DT_ENUM_UPPER_TOKEN``
+
+
 * CAN
 
   * Added :c:func:`can_get_max_filters` for retrieving the maximum number of RX
