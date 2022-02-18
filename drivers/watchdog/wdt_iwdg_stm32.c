@@ -84,6 +84,7 @@ static void iwdg_stm32_convert_timeout(uint32_t timeout,
 	*reload = (uint32_t)(ticks / divider) - 1U;
 }
 
+/* function to enable the IWDG */
 static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
@@ -109,6 +110,8 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 	}
 
 	LL_IWDG_Enable(iwdg);
+	LL_IWDG_ReloadCounter(iwdg); /* Reload counter just before leaving */
+
 	return 0;
 }
 
@@ -120,6 +123,7 @@ static int iwdg_stm32_disable(const struct device *dev)
 	return -EPERM;
 }
 
+/* installing the IWDG timeout comes before the setup */
 static int iwdg_stm32_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *config)
 {
@@ -133,6 +137,19 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	/*
+	 * if a previous timeout install was not followed by a setup,
+	 * then this new install cannot be completed.
+	 */
+	tickstart = k_uptime_get_32();
+
+	/* Wait for any previous update operation completed : IWDG to be ready */
+	while (LL_IWDG_IsReady(iwdg) != 1) {
+		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
+			return -ENOMEM; /* no more timeouts can be installed */
+		}
+	}
+
 	iwdg_stm32_convert_timeout(timeout, &prescaler, &reload);
 
 	if (!(IS_IWDG_TIMEOUT(timeout) && IS_IWDG_PRESCALER(prescaler) &&
@@ -141,23 +158,14 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
-	tickstart = k_uptime_get_32();
-
 	LL_IWDG_EnableWriteAccess(iwdg);
-
+	/* the IWDG is not enabled yet */
 	LL_IWDG_SetPrescaler(iwdg, prescaler);
 	LL_IWDG_SetReloadCounter(iwdg, reload);
-
-	/* Wait for the update operation completed */
-	while (LL_IWDG_IsReady(iwdg) != 0) {
-		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
-			return -ENODEV;
-		}
-	}
-
-	/* Reload counter just before leaving */
-	LL_IWDG_ReloadCounter(iwdg);
-
+	/*
+	 * here, PVU, RVU bits of the IWDG status reg. show that
+	 * the update operation is still on-going until setup (IDWG enable)
+	 */
 	return 0;
 }
 
