@@ -2181,6 +2181,51 @@ static void test_mbox(void)
 				  DT_NODELABEL(test_mbox_zero_cell)), "");
 }
 
+static void test_string_token(void)
+{
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_string_token
+	enum {
+		token_zero,
+		token_one,
+		token_two,
+		token_max,
+		token_no_inst,
+	};
+	int i;
+
+	/* Test DT_INST_STRING_TOKEN_OR when property is found */
+	int array_inst[] = {
+#define STRING_TOKEN_TEST_INST_EXPANSION(inst)                                \
+	DT_INST_STRING_TOKEN_OR(inst, val, token_no_inst),
+	DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_TEST_INST_EXPANSION)
+	};
+
+	for (i = 0; i < ARRAY_SIZE(array_inst); i++) {
+		zassert_true(array_inst[i] != token_no_inst, "");
+	}
+
+	/* Test DT_STRING_TOKEN_OR when property is found */
+	zassert_equal(DT_STRING_TOKEN_OR(DT_NODELABEL(test_string_token_0),
+		val, token_one), token_zero, "");
+	zassert_equal(DT_STRING_TOKEN_OR(DT_NODELABEL(test_string_token_1),
+		val, token_two), token_one, "");
+
+	/* Test DT_STRING_TOKEN_OR is not found */
+	zassert_equal(DT_STRING_TOKEN_OR(DT_NODELABEL(test_string_token_1),
+		no_inst, token_zero), token_zero, "");
+
+	/* Test DT_INST_STRING_TOKEN_OR when property is not found */
+	int array_no_inst[] = {
+#define STRING_TOKEN_TEST_NO_INST_EXPANSION(inst)                             \
+	DT_INST_STRING_TOKEN_OR(inst, no_inst, token_no_inst),
+	DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_TEST_NO_INST_EXPANSION)
+	};
+	for (i = 0; i < ARRAY_SIZE(array_no_inst); i++) {
+		zassert_true(array_no_inst[i] == token_no_inst, "");
+	}
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -2227,7 +2272,8 @@ void test_main(void)
 			 ztest_unit_test(test_node_name),
 			 ztest_unit_test(test_same_node),
 			 ztest_unit_test(test_pinctrl),
-			 ztest_unit_test(test_mbox)
+			 ztest_unit_test(test_mbox),
+			 ztest_unit_test(test_string_token)
 		);
 	ztest_run_test_suite(devicetree_api);
 }
