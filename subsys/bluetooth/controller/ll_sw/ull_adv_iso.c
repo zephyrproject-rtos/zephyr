@@ -36,6 +36,7 @@
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_chan_internal.h"
+#include "ull_sched_internal.h"
 
 #include "ll.h"
 #include "ll_feat.h"
@@ -53,7 +54,7 @@ static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream);
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
 			uint32_t latency_packing, uint32_t ctrl_spacing);
 static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
-			      uint32_t ticks_anchor, uint32_t iso_interval_us);
+			      uint32_t iso_interval_us);
 static uint8_t adv_iso_chm_update(uint8_t big_handle);
 static void adv_iso_chm_complete_commit(struct lll_adv_iso *lll_iso);
 static void mfy_iso_offset_get(void *param);
@@ -93,7 +94,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct pdu_adv *pdu_prev, *pdu;
 	struct pdu_big_info *big_info;
 	uint8_t pdu_big_info_size;
-	uint32_t ticks_anchor_iso;
 	uint32_t iso_interval_us;
 	memq_link_t *link_cmplt;
 	memq_link_t *link_term;
@@ -377,15 +377,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* Initialise LLL header members */
 	lll_hdr_init(lll_adv_iso, adv_iso);
 
-	/* TODO: Find the anchor after the group of active Periodic Advertising
-	 *       events such that BIG events are placed in non-overlapping
-	 *       timeline when auxiliary sets, Periodic Advertising and BIG
-	 *       events have similar event interval.
-	 */
-	ticks_anchor_iso = ticker_ticks_now_get();
-
 	/* Start sending BIS empty data packet for each BIS */
-	ret = adv_iso_start(adv_iso, ticks_anchor_iso, iso_interval_us);
+	ret = adv_iso_start(adv_iso, iso_interval_us);
 	if (ret) {
 		/* FIXME: release resources */
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -756,13 +749,16 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t latency_pdu,
 }
 
 static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
-			      uint32_t ticks_anchor, uint32_t iso_interval_us)
+			      uint32_t iso_interval_us)
 {
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
 	uint32_t volatile ret_cb;
+	uint32_t ticks_anchor;
+	uint32_t ticks_slot;
 	uint32_t slot_us;
 	uint32_t ret;
+	int err;
 
 	ull_hdr_init(&adv_iso->ull);
 
@@ -784,6 +780,14 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	} else {
 		ticks_slot_overhead = 0U;
 	}
+	ticks_slot = adv_iso->ull.ticks_slot + ticks_slot_overhead;
+
+	/* Find the slot after Periodic Advertisings events */
+	err = ull_sched_after_adv_sync_slot_get(TICKER_USER_ID_THREAD,
+						ticks_slot, &ticks_anchor);
+	if (err) {
+		ticks_anchor = ticker_ticks_now_get();
+	}
 
 	/* setup to use ISO create prepare function for first radio event */
 	mfy_lll_prepare.fp = lll_adv_iso_create_prepare;
@@ -794,9 +798,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
-			   TICKER_NULL_LAZY,
-			   (adv_iso->ull.ticks_slot + ticks_slot_overhead),
-			   ticker_cb, adv_iso,
+			   TICKER_NULL_LAZY, ticks_slot, ticker_cb, adv_iso,
 			   ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
 

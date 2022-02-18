@@ -766,6 +766,15 @@ int ull_adv_sync_reset_finalize(void)
 	return 0;
 }
 
+struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_SYNC_SET) {
+		return NULL;
+	}
+
+	return &ll_adv_sync_pool[handle];
+}
+
 uint16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
 {
 	return sync_handle_get((void *)lll->hdr.parent);
