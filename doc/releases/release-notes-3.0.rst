@@ -187,6 +187,7 @@ New APIs in this release
 Kernel
 ******
 
+  * Fixed timeout issues when SYSTEM_CLOCK_SLOPPY_IDLE is configured.
 
 Architectures
 *************
