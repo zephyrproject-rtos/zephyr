@@ -23,6 +23,10 @@
 
 #include "lll.h"
 #include "lll/lll_vendor.h"
+#include "lll/lll_adv_types.h"
+#include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
+#include "lll_adv_sync.h"
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
@@ -31,10 +35,12 @@
 #include "ull_tx_queue.h"
 #endif
 
+#include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
 
 #include "ull_internal.h"
+#include "ull_adv_internal.h"
 #include "ull_conn_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -59,14 +65,52 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    uint32_t *ticks_anchor,
 				    uint32_t *ticks_to_expire_match,
 				    uint32_t *ticks_slot_match);
+static void ticker_op_cb(uint32_t status, void *param);
+
+#if defined(CONFIG_BT_CONN)
 static bool ticker_conn_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
 				    uint32_t ticks_to_expire, void *op_context);
 static struct ull_hdr *conn_ull_hdr_get_cb(uint8_t ticker_id);
 static void after_mstr_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 				  uint32_t ticks_anchor,
 				  uint32_t *win_offset_us);
-static void ticker_op_cb(uint32_t status, void *param);
+#endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+static bool ticker_adv_sync_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+					uint32_t ticks_to_expire,
+					void *op_context);
+static struct ull_hdr *adv_sync_ull_hdr_get_cb(uint8_t ticker_id);
+
+int ull_sched_after_adv_sync_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
+				      uint32_t *ticks_anchor)
+{
+	uint32_t ticks_to_expire;
+	uint32_t ticks_slot;
+	uint8_t ticker_id;
+
+	ticker_id = after_match_slot_get(user_id, ticks_slot_abs,
+					 ticker_adv_sync_match_op_cb,
+					 adv_sync_ull_hdr_get_cb, ticks_anchor,
+					 &ticks_to_expire, &ticks_slot);
+	if (ticker_id != TICKER_NULL) {
+		const struct ll_adv_sync_set *sync =
+				(void *)adv_sync_ull_hdr_get_cb(ticker_id);
+		uint32_t time_us;
+
+		time_us = ull_adv_sync_time_get(sync, PDU_AC_PAYLOAD_SIZE_MAX);
+
+		*ticks_anchor += ticks_to_expire;
+		*ticks_anchor += HAL_TICKER_US_TO_TICKS(time_us);
+
+		return 0;
+	}
+
+	return -ECHILD;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+#if defined(CONFIG_BT_CONN)
 int ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				  uint32_t *ticks_anchor, uint32_t *us_offset)
 {
@@ -281,7 +325,6 @@ void ull_sched_mfy_win_offset_select(void *param)
 #undef OFFSET_M_MAX
 }
 
-
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 			    uint32_t *ticks_to_offset_next,
@@ -351,6 +394,12 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 			}
 		}
 
+		/* Using a local variable to address the Coverity rule:
+		 * Incorrect expression  (ASSERT_SIDE_EFFECT)
+		 * Argument "ret_cb" of LL_ASSERT() has a side effect
+		 * because the variable is volatile.  The containing function
+		 * might work differently in a non-debug build.
+		 */
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
 		LL_ASSERT(success);
 
@@ -509,8 +558,8 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 	*offset_max = offset_index;
 }
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+#endif /* CONFIG_BT_CONN */
 
 static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				    ticker_op_match_func ticker_match_op_cb,
@@ -531,7 +580,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	ticks_to_expire = ticks_to_expire_prev = 0U;
 	ticks_slot_abs_prev = 0U;
 	while (1) {
-		uint32_t ticks_slot_abs_curr = 0;
+		uint32_t ticks_slot_abs_curr = 0U;
 		uint32_t ticks_to_expire_normal;
 		uint32_t volatile ret_cb;
 		struct ull_hdr *hdr;
@@ -547,12 +596,12 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 					       ticker_match_op_cb,
 					       NULL, /* match_op_context */
 					       ticker_op_cb, (void *)&ret_cb);
-#else
+#else /* !CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR, user_id,
 					   &ticker_id, ticks_anchor,
 					   &ticks_to_expire,
 					   ticker_op_cb, (void *)&ret_cb);
-#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
+#endif /* !CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
@@ -560,6 +609,12 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 			}
 		}
 
+		/* Using a local variable to address the Coverity rule:
+		 * Incorrect expression  (ASSERT_SIDE_EFFECT)
+		 * Argument "ret_cb" of LL_ASSERT() has a side effect
+		 * because the variable is volatile.  The containing function
+		 * might work differently in a non-debug build.
+		 */
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
 		LL_ASSERT(success);
 
@@ -583,7 +638,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 		if (hdr->ticks_prepare_to_start & XON_BITMASK) {
-			uint32_t ticks_prepare_to_start =
+			const uint32_t ticks_prepare_to_start =
 				MAX(hdr->ticks_active_to_start,
 				    hdr->ticks_preempt_to_start);
 
@@ -594,7 +649,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 		{
-			uint32_t ticks_prepare_to_start =
+			const uint32_t ticks_prepare_to_start =
 				MAX(hdr->ticks_active_to_start,
 				    hdr->ticks_prepare_to_start);
 
@@ -624,6 +679,12 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	return ticker_id_prev;
 }
 
+static void ticker_op_cb(uint32_t status, void *param)
+{
+	*((uint32_t volatile *)param) = status;
+}
+
+#if defined(CONFIG_BT_CONN)
 static bool ticker_conn_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
 				    uint32_t ticks_to_expire, void *op_context)
 {
@@ -679,8 +740,30 @@ static void after_mstr_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 		}
 	}
 }
+#endif /* CONFIG_BT_CONN */
 
-static void ticker_op_cb(uint32_t status, void *param)
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+static bool ticker_adv_sync_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+					uint32_t ticks_to_expire,
+					void *op_context)
 {
-	*((uint32_t volatile *)param) = status;
+	ARG_UNUSED(ticks_slot);
+	ARG_UNUSED(ticks_to_expire);
+	ARG_UNUSED(op_context);
+
+	return (ticker_id >= TICKER_ID_ADV_SYNC_BASE) &&
+	       (ticker_id <= TICKER_ID_ADV_SYNC_LAST);
 }
+
+static struct ull_hdr *adv_sync_ull_hdr_get_cb(uint8_t ticker_id)
+{
+	struct ll_adv_sync_set *sync;
+
+	sync = ull_adv_sync_get(ticker_id - TICKER_ID_ADV_SYNC_BASE);
+	if (!sync) {
+		return NULL;
+	}
+
+	return &sync->ull;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */

@@ -181,6 +181,9 @@ int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 int ull_adv_sync_reset_finalize(void);
 
+/* Return ll_adv_sync_set context (unconditional) */
+struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle);
+
 /* helper function to release periodic advertising instance */
 void ull_adv_sync_release(struct ll_adv_sync_set *sync);
 
