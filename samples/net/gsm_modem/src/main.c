@@ -90,12 +90,31 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
+static void modem_on_cb(const struct device *dev, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(user_data);
+
+	LOG_INF("GSM modem on callback fired");
+}
+
+static void modem_off_cb(const struct device *dev, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(user_data);
+
+	LOG_INF("GSM modem off callback fired");
+}
+
 int main(void)
 {
 	const struct device *uart_dev =
 		DEVICE_DT_GET(DT_BUS(DT_INST(0, zephyr_gsm_ppp)));
 
 	gsm_dev = DEVICE_DT_GET(DT_INST(0, zephyr_gsm_ppp));
+
+	/* Optional register modem power callbacks */
+	gsm_ppp_register_modem_power_callback(gsm_dev, modem_on_cb, modem_off_cb, NULL);
 
 	LOG_INF("Board '%s' APN '%s' UART '%s' device %p (%s)",
 		CONFIG_BOARD, CONFIG_MODEM_GSM_APN,
