@@ -96,12 +96,6 @@ struct dwt_hi_cfg {
 	const char *rst_port;
 	uint8_t rst_pin;
 	gpio_dt_flags_t rst_flags;
-	const char *spi_port;
-	uint8_t spi_cs_pin;
-	gpio_dt_flags_t spi_cs_flags;
-	const char *spi_cs_port;
-	uint32_t spi_freq;
-	uint8_t spi_slave;
 };
 
 #define DWT_STATE_TX		0
@@ -112,11 +106,9 @@ struct dwt_context {
 	struct net_if *iface;
 	const struct device *irq_gpio;
 	const struct device *rst_gpio;
-	const struct device *spi;
-	struct spi_cs_control spi_cs;
-	struct spi_config *spi_cfg;
-	struct spi_config spi_cfg_slow;
-	struct spi_config spi_cfg_fast;
+	const struct spi_dt_spec *spi;
+	struct spi_dt_spec spi_slow;
+	struct spi_dt_spec spi_fast;
 	struct gpio_callback gpio_cb;
 	struct k_sem dev_lock;
 	struct k_sem phy_sem;
@@ -136,19 +128,13 @@ static const struct dwt_hi_cfg dw1000_0_config = {
 	.rst_port = DT_INST_GPIO_LABEL(0, reset_gpios),
 	.rst_pin = DT_INST_GPIO_PIN(0, reset_gpios),
 	.rst_flags = DT_INST_GPIO_FLAGS(0, reset_gpios),
-	.spi_port = DT_INST_BUS_LABEL(0),
-	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
-	.spi_slave = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.spi_cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-#endif
 };
 
 static struct dwt_context dwt_0_context = {
 	.dev_lock = Z_SEM_INITIALIZER(dwt_0_context.dev_lock, 1,  1),
 	.phy_sem = Z_SEM_INITIALIZER(dwt_0_context.phy_sem, 0,  1),
+	.spi_slow = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.spi_fast = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
 	.rf_cfg = {
 		.channel = 5,
 		.dr = DWT_BR_6M8,
@@ -206,7 +192,7 @@ static int dwt_spi_read(struct dwt_context *ctx,
 		(uint16_t)hdr_len, (uint32_t)data_len);
 	LOG_HEXDUMP_DBG(hdr_buf, (uint16_t)hdr_len, "rd: header");
 
-	if (spi_transceive(ctx->spi, ctx->spi_cfg, &tx, &rx)) {
+	if (spi_transceive_dt(ctx->spi, &tx, &rx)) {
 		LOG_ERR("SPI transfer failed");
 		return -EIO;
 	}
@@ -232,7 +218,7 @@ static int dwt_spi_write(struct dwt_context *ctx,
 	LOG_HEXDUMP_DBG(hdr_buf, (uint16_t)hdr_len, "wr: header");
 	LOG_HEXDUMP_DBG(data, (uint32_t)data_len, "wr: data");
 
-	if (spi_write(ctx->spi, ctx->spi_cfg, &buf_set)) {
+	if (spi_write_dt(ctx->spi, &buf_set)) {
 		LOG_ERR("SPI read failed");
 		return -EIO;
 	}
@@ -985,14 +971,14 @@ static int dwt_hw_reset(const struct device *dev)
  */
 static void dwt_set_spi_slow(struct dwt_context *ctx, const uint32_t freq)
 {
-	ctx->spi_cfg_slow.frequency = freq;
-	ctx->spi_cfg = &ctx->spi_cfg_slow;
+	ctx->spi_slow.config.frequency = freq;
+	ctx->spi = &ctx->spi_slow;
 }
 
 /* SPI speed in IDLE, RX, and TX state */
 static void dwt_set_spi_fast(struct dwt_context *ctx)
 {
-	ctx->spi_cfg = &ctx->spi_cfg_fast;
+	ctx->spi = &ctx->spi_fast;
 }
 
 static void dwt_set_rx_mode(struct dwt_context *ctx)
@@ -1497,34 +1483,10 @@ static int dw1000_init(const struct device *dev)
 	LOG_INF("Initialize DW1000 Transceiver");
 	k_sem_init(&ctx->phy_sem, 0, 1);
 
-	/* SPI config */
-	ctx->spi_cfg_slow.operation = SPI_WORD_SET(8);
-	ctx->spi_cfg_slow.frequency = DWT_SPI_SLOW_FREQ;
-	ctx->spi_cfg_slow.slave = hi_cfg->spi_slave;
-
-	ctx->spi_cfg_fast.operation = SPI_WORD_SET(8);
-	ctx->spi_cfg_fast.frequency = hi_cfg->spi_freq;
-	ctx->spi_cfg_fast.slave = hi_cfg->spi_slave;
-
-	ctx->spi = device_get_binding((char *)hi_cfg->spi_port);
-	if (!ctx->spi) {
-		LOG_ERR("SPI master port %s not found", hi_cfg->spi_port);
-		return -EINVAL;
-	}
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	ctx->spi_cs.gpio_dev =
-		device_get_binding((char *)hi_cfg->spi_cs_port);
-	if (!ctx->spi_cs.gpio_dev) {
-		LOG_ERR("SPI CS port %s not found", hi_cfg->spi_cs_port);
-		return -EINVAL;
-	}
-
-	ctx->spi_cs.gpio_pin = hi_cfg->spi_cs_pin;
-	ctx->spi_cs.gpio_dt_flags = hi_cfg->spi_cs_flags;
-	ctx->spi_cfg_slow.cs = &ctx->spi_cs;
-	ctx->spi_cfg_fast.cs = &ctx->spi_cs;
-#endif
+	if (!spi_is_ready(&ctx->spi_slow) || !spi_is_ready(&ctx->spi_fast)) {
+		LOG_ERR("SPI bus is not ready");
+		return -ENODEV;
+	};
 
 	dwt_set_spi_slow(ctx, DWT_SPI_SLOW_FREQ);
 
