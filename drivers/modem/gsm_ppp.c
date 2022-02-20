@@ -761,8 +761,8 @@ attaching:
 			}
 		}
 		modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
-		k_work_schedule(&gsm->rssi_work_handle,
-				K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
+		(void)gsm_work_reschedule(&gsm->rssi_work_handle,
+					  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 	}
 }
 
