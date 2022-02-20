@@ -308,6 +308,7 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * GigaDevice GD32VF103, GD32F3X0, GD32F403 and GD32F450.
+  * Raspberry Pi RP2040
   * NXP i.MXRT595, i.MX8MQ, i.MX8MP
 
 * Removed support for these SoC series:
@@ -330,6 +331,7 @@ Boards & SoC Support
   * NXP MIMXRT595-EVK
   * NXP MIMX8MQ-EVK
   * NXP MIMX8MP-EVK
+  * Raspberry Pi Pico
   * ST Nucleo G031K8
   * ST Nucleo H7A3ZI Q
   * ST STM32G081B Evaluation
