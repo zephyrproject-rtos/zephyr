@@ -56,8 +56,6 @@ struct i2c_sam0_dev_data {
 	uint8_t num_msgs;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static void wait_synchronization(SercomI2cm *regs)
 {
 #if defined(SERCOM_I2CM_SYNCBUSY_MASK)
@@ -209,7 +207,7 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 	}
 
 	if (error_code < 0) {
-		LOG_ERR("DMA write error on %s: %d", DEV_NAME(dev), error_code);
+		LOG_ERR("DMA write error on %s: %d", dev->name, error_code);
 		i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 		irq_unlock(key);
 
@@ -267,14 +265,14 @@ static bool i2c_sam0_dma_write_start(const struct device *dev)
 	retval = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (retval != 0) {
 		LOG_ERR("Write DMA configure on %s failed: %d",
-			DEV_NAME(dev), retval);
+			dev->name, retval);
 		return false;
 	}
 
 	retval = dma_start(cfg->dma_dev, cfg->dma_channel);
 	if (retval != 0) {
 		LOG_ERR("Write DMA start on %s failed: %d",
-			DEV_NAME(dev), retval);
+			dev->name, retval);
 		return false;
 	}
 
@@ -300,7 +298,7 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 	}
 
 	if (error_code < 0) {
-		LOG_ERR("DMA read error on %s: %d", DEV_NAME(dev), error_code);
+		LOG_ERR("DMA read error on %s: %d", dev->name, error_code);
 		i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 		irq_unlock(key);
 
@@ -360,14 +358,14 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 	retval = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (retval != 0) {
 		LOG_ERR("Read DMA configure on %s failed: %d",
-			DEV_NAME(dev), retval);
+			dev->name, retval);
 		return false;
 	}
 
 	retval = dma_start(cfg->dma_dev, cfg->dma_channel);
 	if (retval != 0) {
 		LOG_ERR("Read DMA start on %s failed: %d",
-			DEV_NAME(dev), retval);
+			dev->name, retval);
 		return false;
 	}
 
@@ -482,12 +480,12 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
-					DEV_NAME(dev));
+					dev->name);
 				return -EAGAIN;
 			}
 
 			LOG_ERR("Transaction error on %s: %08X",
-				DEV_NAME(dev), data->msg.status);
+				dev->name, data->msg.status);
 			return -EIO;
 		}
 
@@ -547,7 +545,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		}
 
 		LOG_DBG("Setting %s to standard mode with divisor %u",
-			DEV_NAME(dev), baud);
+			dev->name, baud);
 
 		i2c->BAUD.reg = SERCOM_I2CM_BAUD_BAUD(baud);
 		break;
@@ -564,7 +562,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		}
 
 		LOG_DBG("Setting %s to fast mode with divisor %u",
-			DEV_NAME(dev), baud);
+			dev->name, baud);
 
 		i2c->BAUD.reg = SERCOM_I2CM_BAUD_BAUD(baud);
 		break;
@@ -595,7 +593,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		}
 
 		LOG_DBG("Setting %s to fast mode plus with divisors %u/%u",
-			DEV_NAME(dev), baud_high, baud_low);
+			dev->name, baud_high, baud_low);
 
 		i2c->BAUD.reg = SERCOM_I2CM_BAUD_BAUD(baud_high) |
 				SERCOM_I2CM_BAUD_BAUDLOW(baud_low);
@@ -627,7 +625,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 
 #ifdef SERCOM_I2CM_BAUD_HSBAUD
 		LOG_DBG("Setting %s to high speed with divisors %u/%u",
-			DEV_NAME(dev), baud_high, baud_low);
+			dev->name, baud_high, baud_low);
 
 		/*
 		 * 48 is just from the app notes, but the datasheet says

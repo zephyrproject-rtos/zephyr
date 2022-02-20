@@ -102,8 +102,6 @@ struct i2c_sam_twim_dev_data {
 	bool cur_need_rs;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static int i2c_clk_set(const struct device *dev, uint32_t speed)
 {
 	const struct i2c_sam_twim_dev_cfg *const cfg = dev->config;
@@ -572,14 +570,14 @@ static int i2c_sam_twim_initialize(const struct device *dev)
 
 	ret = i2c_sam_twim_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize %s device", DEV_NAME(dev));
+		LOG_ERR("Failed to initialize %s device", dev->name);
 		return ret;
 	}
 
 	/* Enable module's IRQ */
 	irq_enable(cfg->irq_id);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }
