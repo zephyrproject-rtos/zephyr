@@ -66,8 +66,6 @@ struct i2c_sam_twihs_dev_data {
 	struct twihs_msg msg;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static int i2c_clk_set(Twihs *const twihs, uint32_t speed)
 {
 	uint32_t ck_div = 0U;
@@ -304,14 +302,14 @@ static int i2c_sam_twihs_initialize(const struct device *dev)
 
 	ret = i2c_sam_twihs_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize %s device", DEV_NAME(dev));
+		LOG_ERR("Failed to initialize %s device", dev->name);
 		return ret;
 	}
 
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }
