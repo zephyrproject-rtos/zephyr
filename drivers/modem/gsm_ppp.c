@@ -1037,7 +1037,9 @@ void gsm_ppp_stop(const struct device *dev)
 	struct k_work_sync work_sync;
 
 	(void)k_work_cancel_delayable_sync(&gsm->gsm_configure_work, &work_sync);
-	(void)k_work_cancel_delayable_sync(&gsm->rssi_work_handle, &work_sync);
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		(void)k_work_cancel_delayable_sync(&gsm->rssi_work_handle, &work_sync);
+	}
 
 	net_if_l2(iface)->enable(iface, false);
 
