@@ -10,7 +10,50 @@
 
 #include <zephyr/types.h>
 #include <device.h>
+#include <devicetree.h>
+#include <drivers/spi.h>
 #include <drivers/i2c.h>
+
+#define DT_DRV_COMPAT bosch_bme680
+
+#define BME680_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BME680_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+
+union bme680_bus {
+#if BME680_BUS_SPI
+	struct spi_dt_spec spi;
+#endif
+#if BME680_BUS_I2C
+	struct i2c_dt_spec i2c;
+#endif
+};
+
+typedef int (*bme680_bus_check_fn)(const union bme680_bus *bus);
+typedef int (*bme680_reg_read_fn)(const struct device *dev,
+				  uint8_t start, uint8_t *buf, int size);
+typedef int (*bme680_reg_write_fn)(const struct device *dev,
+				   uint8_t reg, uint8_t val);
+
+struct bme680_bus_io {
+	bme680_bus_check_fn check;
+	bme680_reg_read_fn read;
+	bme680_reg_write_fn write;
+};
+
+#if BME680_BUS_SPI
+#define BME680_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL \
+		| SPI_MODE_CPHA | SPI_OP_MODE_MASTER)
+extern const struct bme680_bus_io bme680_bus_io_spi;
+#endif
+
+#if BME680_BUS_I2C
+extern const struct bme680_bus_io bme680_bus_io_i2c;
+#endif
+
+struct bme680_config {
+	union bme680_bus bus;
+	const struct bme680_bus_io *bus_io;
+};
 
 #define BME680_CHIP_ID                  0x61
 
@@ -43,6 +86,12 @@
 #define BME680_MSK_RH_RANGE             0x30
 #define BME680_MSK_RANGE_SW_ERR         0xf0
 #define BME680_MSK_HEATR_STAB           0x10
+
+#define BME680_SPI_READ_BIT		0x80
+#define BME680_SPI_WRITE_MSK		0x7f
+
+#define BME680_MEM_PAGE1		0x00
+#define BME680_MEM_PAGE0		0x10
 
 #if defined CONFIG_BME680_TEMP_OVER_1X
 #define BME680_TEMP_OVER                (1 << 5)
@@ -163,10 +212,10 @@ struct bme680_data {
 	int32_t t_fine;
 
 	uint8_t chip_id;
-};
 
-struct bme680_config {
-	struct i2c_dt_spec bus;
+#if BME680_BUS_SPI
+	uint8_t mem_page;
+#endif
 };
 
 #endif /* __ZEPHYR_DRIVERS_SENSOR_BME680_H__ */
