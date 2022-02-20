@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
+ * Copyright (c) 2022, Leonard Pollak
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -342,10 +343,16 @@ static int bme680_read_compensation(const struct device *dev)
 	return 0;
 }
 
-static int bme680_chip_init(const struct device *dev)
+static int bme680_init(const struct device *dev)
 {
 	struct bme680_data *data = dev->data;
+	const struct bme680_config *config = dev->config;
 	int err;
+
+	if (!device_is_ready(config->bus.bus)) {
+		LOG_ERR("I2C master %s not ready", config->bus.bus->name);
+		return -EINVAL;
+	}
 
 	err = bme680_reg_read(dev, BME680_REG_CHIP_ID, &data->chip_id, 1);
 	if (err < 0) {
@@ -355,7 +362,7 @@ static int bme680_chip_init(const struct device *dev)
 	if (data->chip_id == BME680_CHIP_ID) {
 		LOG_DBG("BME680 chip detected");
 	} else {
-		LOG_ERR("Bad BME680 chip id 0x%x", data->chip_id);
+		LOG_ERR("Bad BME680 chip id: 0x%x", data->chip_id);
 		return -ENOTSUP;
 	}
 
@@ -394,27 +401,8 @@ static int bme680_chip_init(const struct device *dev)
 
 	err = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
 			       BME680_CTRL_MEAS_VAL);
-	if (err < 0) {
-		return err;
-	}
 
-	return 0;
-}
-
-static int bme680_init(const struct device *dev)
-{
-	const struct bme680_config *config = dev->config;
-
-	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C master %s not ready", config->bus.bus->name);
-		return -EINVAL;
-	}
-
-	if (bme680_chip_init(dev) < 0) {
-		return -EINVAL;
-	}
-
-	return 0;
+	return err;
 }
 
 static const struct sensor_driver_api bme680_api_funcs = {
