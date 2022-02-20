@@ -51,7 +51,7 @@ config HAWKBIT_PORT
 	help
 	  Configure the hawkbit port number.
 
-choice
+choice HAWKBIT_DDI_SECURITY
 	prompt "Hawkbit DDI API authentication modes"
 	default HAWKBIT_DDI_NO_SECURITY
 
