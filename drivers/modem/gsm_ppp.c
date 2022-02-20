@@ -621,30 +621,47 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 	}
 }
 
-static void rssi_handler(struct k_work *work)
+static void query_rssi(struct gsm_modem *gsm, bool lock)
 {
 	int ret;
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem, rssi_work_handle);
+
 #if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&read_rssi_cmd, 1, "AT+CESQ", &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+	ret = modem_cmd_send_ext(&gsm->context.iface, &gsm->context.cmd_handler, &read_rssi_cmd, 1,
+				 "AT+CESQ", &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT,
+				 lock ? 0 : MODEM_NO_TX_LOCK);
 #else
-	ret = modem_cmd_send_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
-		&read_rssi_cmd, 1, "AT+CSQ", &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+	ret = modem_cmd_send_ext(&gsm->context.iface, &gsm->context.cmd_handler, &read_rssi_cmd, 1,
+				 "AT+CSQ", &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT,
+				 lock ? 0 : MODEM_NO_TX_LOCK);
 #endif
 
 	if (ret < 0) {
 		LOG_DBG("No answer to RSSI readout, %s", "ignoring...");
 	}
+}
 
-	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+static inline void query_rssi_lock(struct gsm_modem *gsm)
+{
+	query_rssi(gsm, true);
+}
+
+static inline void query_rssi_nolock(struct gsm_modem *gsm)
+{
+	query_rssi(gsm, false);
+}
+
+static void rssi_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem, rssi_work_handle);
+
+	query_rssi_lock(gsm);
+
 #if defined(CONFIG_MODEM_CELL_INFO)
-		(void)gsm_query_cellinfo(gsm);
+	(void)gsm_query_cellinfo(gsm);
 #endif
-		(void)gsm_work_reschedule(&gsm->rssi_work_handle,
-					  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
-	}
+	(void)gsm_work_reschedule(&gsm->rssi_work_handle,
+				  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 }
 
 static void gsm_finalize_connection(struct k_work *work)
@@ -782,7 +799,7 @@ attaching:
 
 	if (!IS_ENABLED(CONFIG_GSM_MUX)) {
 		/* Read connection quality (RSSI) before PPP carrier is ON */
-		rssi_handler(&gsm->rssi_work_handle.work);
+		query_rssi_nolock(gsm);
 
 		if (!(gsm->minfo.mdm_rssi && gsm->minfo.mdm_rssi != GSM_RSSI_INVALID &&
 			gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL)) {
