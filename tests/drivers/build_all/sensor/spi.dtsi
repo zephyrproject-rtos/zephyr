@@ -337,3 +337,10 @@ test_spi_icm42670: icm42670@3c {
 	gyro-hz = <800>;
 	gyro-fs = <2000>;
 };
+
+test_spi_bme680: bme680@3c {
+	compatible = "bosch,bme680";
+	label = "BME680";
+	reg = <0x3c>;
+	spi-max-frequency = <0>;
+};
