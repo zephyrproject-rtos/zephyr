@@ -292,7 +292,7 @@ static int bme680_read_compensation(const struct device *dev)
 	}
 
 	err = bme680_reg_read(dev, BME680_REG_COEFF2, &buff[BME680_LEN_COEFF1],
-			      16);
+			      BME680_LEN_COEFF2);
 	if (err < 0) {
 		return err;
 	}
