@@ -560,6 +560,7 @@ Build the :ref:`blinky-sample` with :ref:`west build <west-building>`, changing
       .. code-block:: bash
 
          cd ~/zephyrproject/zephyr
+         source zephyr-env.sh
          west build -p auto -b <your-board-name> samples/basic/blinky
 
    .. group-tab:: macOS
@@ -567,6 +568,7 @@ Build the :ref:`blinky-sample` with :ref:`west build <west-building>`, changing
       .. code-block:: bash
 
          cd ~/zephyrproject/zephyr
+         source zephyr-env.sh
          west build -p auto -b <your-board-name> samples/basic/blinky
 
    .. group-tab:: Windows
@@ -574,6 +576,7 @@ Build the :ref:`blinky-sample` with :ref:`west build <west-building>`, changing
       .. code-block:: bat
 
          cd %HOMEPATH%\zephyrproject\zephyr
+         zephyr-env.cmd
          west build -p auto -b <your-board-name> samples\basic\blinky
 
 The ``-p auto`` option automatically cleans byproducts from a previous build
