@@ -588,14 +588,13 @@ static void rssi_handler(struct k_work *work)
 		LOG_DBG("No answer to RSSI readout, %s", "ignoring...");
 	}
 
-#if defined(CONFIG_GSM_MUX)
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 #if defined(CONFIG_MODEM_CELL_INFO)
-	(void)gsm_query_cellinfo(gsm);
+		(void)gsm_query_cellinfo(gsm);
 #endif
-	(void)gsm_work_reschedule(&gsm->rssi_work_handle,
-				  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
-#endif
-
+		(void)gsm_work_reschedule(&gsm->rssi_work_handle,
+					  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
+	}
 }
 
 static void gsm_finalize_connection(struct k_work *work)
@@ -1179,9 +1178,9 @@ static int gsm_init(const struct device *dev)
 			   K_PRIO_COOP(7), NULL);
 	k_thread_name_set(&gsm->workq.thread, "gsm_workq");
 
-#if defined(CONFIG_GSM_MUX)
-	k_work_init_delayable(&gsm->rssi_work_handle, rssi_handler);
-#endif
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		k_work_init_delayable(&gsm->rssi_work_handle, rssi_handler);
+	}
 
 	gsm->iface = ppp_net_if();
 	if (!gsm->iface) {
