@@ -1,12 +1,14 @@
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
+ * Copyright (c) 2022, Leonard Pollak
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SENSOR_BME680_H__
-#define __SENSOR_BME680_H__
+#ifndef __ZEPHYR_DRIVERS_SENSOR_BME680_H__
+#define __ZEPHYR_DRIVERS_SENSOR_BME680_H__
 
+#include <zephyr/types.h>
 #include <device.h>
 #include <drivers/i2c.h>
 
@@ -32,9 +34,9 @@
 #define BME680_REG_MEM_PAGE             0x73
 #define BME680_REG_UNIQUE_ID            0x83
 #define BME680_REG_COEFF1               0x8a
-#define BME680_REG_CHIP_ID              0xd0
-#define BME680_REG_SOFT_RESET           0xe0
 #define BME680_REG_COEFF2               0xe1
+#define BME680_REG_CHIP_ID		0xd0
+#define BME680_REG_SOFT_RESET           0xe0
 
 #define BME680_MSK_NEW_DATA             0x80
 #define BME680_MSK_GAS_RANGE            0x0f
@@ -167,4 +169,4 @@ struct bme680_config {
 	struct i2c_dt_spec bus;
 };
 
-#endif /* __SENSOR_BME680_H__ */
+#endif /* __ZEPHYR_DRIVERS_SENSOR_BME680_H__ */
