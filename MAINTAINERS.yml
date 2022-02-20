@@ -390,9 +390,7 @@ Disk:
         - "area: Disk Access"
 
 Display drivers:
-    status: maintained
-    maintainers:
-        - vanwinkeljan
+    status: orphaned
     collaborators:
         - jfischer-no
         - gmarull
