@@ -81,6 +81,14 @@ config MODEM_GSM_ATTACH_TIMEOUT
 	  using AT+CGATT. This setting dictates how much time in seconds
 	  we give the modem before giving up.
 
+config MODEM_GSM_REGISTER_TIMEOUT
+	int "Timeout for registering to cellular tower"
+	default 300
+	help
+	  Before attachment to packet service, modem is checked if it is
+	  connected to the cellular tower. This setting dictates how much
+	  time in seconds we give the modem before giving up.
+
 config MODEM_GSM_MANUAL_MCCMNO
 	string "MCC/MNO for establishing network connection"
 	help
