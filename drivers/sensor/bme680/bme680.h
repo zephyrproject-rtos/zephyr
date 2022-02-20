@@ -29,7 +29,7 @@
 #define BME680_REG_CTRL_HUM             0x72
 #define BME680_REG_CTRL_MEAS            0x74
 #define BME680_REG_CONFIG               0x75
-#define BME680_REG_MEM_PAGE             0xf3
+#define BME680_REG_MEM_PAGE             0x73
 #define BME680_REG_UNIQUE_ID            0x83
 #define BME680_REG_COEFF1               0x8a
 #define BME680_REG_CHIP_ID              0xd0
