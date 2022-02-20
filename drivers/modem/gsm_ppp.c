@@ -408,8 +408,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		LOG_INF("RSSI: %d", rssi);
 	}
 
-	k_sem_give(&gsm.sem_response);
-
 	return 0;
 }
 #endif
