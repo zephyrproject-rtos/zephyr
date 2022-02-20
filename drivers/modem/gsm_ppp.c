@@ -1061,6 +1061,8 @@ void gsm_ppp_stop(const struct device *dev)
 	if (gsm->modem_off_cb) {
 		gsm->modem_off_cb(gsm->dev, gsm->user_data);
 	}
+
+	gsm->attached = false;
 }
 
 void gsm_ppp_register_modem_power_callback(const struct device *dev,
