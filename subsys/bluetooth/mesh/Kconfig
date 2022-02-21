@@ -814,8 +814,15 @@ config BT_MESH_SEQ_STORE_RATE
 	  off with a value that's guaranteed to be larger than the last
 	  one used before power off.
 
+config BT_MESH_RPL_STORE
+	bool "Enable storing RPL entries"
+	default y
+	help
+	  Enable storing RPL in persistent memory using settings subsystem.
+
 config BT_MESH_RPL_STORE_TIMEOUT
 	int "Minimum interval after which unsaved RPL entries are updated in storage"
+	depends on BT_MESH_RPL_STORE
 	range -1 1000000
 	default 5
 	help

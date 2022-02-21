@@ -96,7 +96,7 @@ void bt_mesh_rpl_update(struct bt_mesh_rpl *rpl,
 	rpl->seq = rx->seq;
 	rpl->old_iv = rx->old_iv;
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORE)) {
 		schedule_rpl_store(rpl, false);
 	}
 }
@@ -164,13 +164,14 @@ void bt_mesh_rpl_clear(void)
 {
 	BT_DBG("");
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORE)) {
 		schedule_rpl_clear();
 	} else {
 		(void)memset(replay_list, 0, sizeof(replay_list));
 	}
 }
 
+#ifdef CONFIG_BT_MESH_RPL_STORE
 static struct bt_mesh_rpl *bt_mesh_rpl_find(uint16_t src)
 {
 	int i;
@@ -183,6 +184,7 @@ static struct bt_mesh_rpl *bt_mesh_rpl_find(uint16_t src)
 
 	return NULL;
 }
+#endif
 
 static struct bt_mesh_rpl *bt_mesh_rpl_alloc(uint16_t src)
 {
@@ -210,7 +212,7 @@ void bt_mesh_rpl_reset(void)
 
 		if (rpl->src) {
 			if (rpl->old_iv) {
-				if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+				if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORE)) {
 					clear_rpl(rpl);
 				} else {
 					(void)memset(rpl, 0, sizeof(*rpl));
@@ -218,7 +220,7 @@ void bt_mesh_rpl_reset(void)
 			} else {
 				rpl->old_iv = true;
 
-				if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+				if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORE)) {
 					schedule_rpl_store(rpl, true);
 				}
 			}
@@ -226,6 +228,7 @@ void bt_mesh_rpl_reset(void)
 	}
 }
 
+#ifdef CONFIG_BT_MESH_RPL_STORE
 static int rpl_set(const char *name, size_t len_rd,
 		   settings_read_cb read_cb, void *cb_arg)
 {
@@ -277,6 +280,7 @@ static int rpl_set(const char *name, size_t len_rd,
 }
 
 BT_MESH_SETTINGS_DEFINE(rpl, "RPL", rpl_set);
+#endif
 
 static void store_rpl(struct bt_mesh_rpl *entry)
 {
@@ -317,7 +321,7 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 {
 	int i;
 
-	if (!IS_ENABLED(CONFIG_BT_SETTINGS) ||
+	if (!IS_ENABLED(CONFIG_BT_MESH_RPL_STORE) ||
 	    (!BT_MESH_ADDR_IS_UNICAST(addr) &&
 	     addr != BT_MESH_ADDR_ALL_NODES)) {
 		return;
@@ -343,4 +347,40 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 			break;
 		}
 	}
+}
+
+size_t bt_mesh_rpl_get(void (*cb)(const struct bt_mesh_rpl *rpl_entry))
+{
+	struct bt_mesh_rpl entry;
+	size_t count = 0;
+
+	if (!cb) {
+		return 0;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(replay_list); i++) {
+		if (replay_list[i].src) {
+			entry = replay_list[i];
+		} else {
+			break;
+		}
+
+		cb(&entry);
+		count++;
+	}
+
+	return count;
+}
+
+int bt_mesh_rpl_set(struct bt_mesh_rpl *rpl_entry)
+{
+	struct bt_mesh_rpl *entry = bt_mesh_rpl_alloc(rpl_entry->src);
+
+	if (!entry) {
+		return -ENOMEM;
+	}
+
+	memcpy(entry, rpl_entry, sizeof(struct bt_mesh_rpl));
+
+	return 0;
 }
