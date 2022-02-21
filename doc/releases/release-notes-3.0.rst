@@ -240,6 +240,13 @@ Architectures
 
   * AARCH64
 
+    * Fixed out-of-bounds error when large number of IRQs are enabled and ignore
+      special INTDs between 1020 and 1023
+    * Added MPU code for ARMv8R
+    * Various MMU fixes
+    * Added nocache memory segment support
+    * Added Xen hypercall interface for ARM64
+    * Fixed race condition on SMP scheduling code.
 
 * x86
 
@@ -371,6 +378,7 @@ Boards & SoC Support
 
 * Added support for these ARM64 boards:
 
+  * Intel SoC FPGA Agilex development kit
 
 * Removed support for these ARM boards:
 
@@ -516,6 +524,9 @@ Drivers and Sensors
 
 * LoRa
 
+* MBOX
+
+  * Added MBOX NRFX IPC driver
 
 * MEMC
 
@@ -731,6 +742,9 @@ Libraries / Subsystems
 
 * OS
 
+* IPC
+
+  * Added IPC service support and RPMsg with static VRINGs backend
 
 HALs
 ****
