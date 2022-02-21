@@ -83,7 +83,9 @@
 	status = "okay";
 	current-speed = <115200>;
 	/* Use UART1_SL2 ie. PIN64.65 */
-	pinctrl-0 = <&altj_cr_sin1_sl2 &altj_cr_sout1_sl2>;
+	pinctrl-0 = <&uart1_2_sin_gp64
+		     &uart1_2_sout_gp65>;
+	pinctrl-names = "default";
 };
 
 &pwm6 {
