@@ -220,6 +220,13 @@ New APIs in this release
 Kernel
 ******
 
+  * Added support for event objects.  Threads may wait on an event object such
+    that any events posted to that event object may wake a waiting thread if the
+    posting satisfies the waiting threads' event conditions.
+  * Extended CPU runtime stats to track current, total, peak and average usage
+    (as bounded by the scheduling of the idle thread).  This permits a developer
+    to obtain more system information if desired to tune the system.
+  * Added "thread_usage" API for thread runtime cycle monitoring.
   * Fixed timeout issues when SYSTEM_CLOCK_SLOPPY_IDLE is configured.
 
 Architectures
