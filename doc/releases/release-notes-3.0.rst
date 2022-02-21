@@ -232,9 +232,6 @@ Kernel
 Architectures
 *************
 
-* ARC
-
-
 * ARM
 
   * AARCH32
@@ -254,8 +251,6 @@ Architectures
     * Added nocache memory segment support
     * Added Xen hypercall interface for ARM64
     * Fixed race condition on SMP scheduling code.
-
-* x86
 
 * Xtensa
 
@@ -415,9 +410,6 @@ Drivers and Sensors
   * Added support for stm32u5 series
   * stm32: Added shared IRQ support
 
-* Bluetooth
-
-
 * CAN
 
   * Renamed ``zephyr,can-primary`` chosen property to ``zephyr,canbus``.
@@ -433,12 +425,6 @@ Drivers and Sensors
   * Converted the emulated CAN loopback driver to be configured through
     devicetree instead of Kconfig.
 
-* Clock Control
-
-
-* Console
-
-
 * Counter
 
   * stm32: Added timer based counter driver (stm32f4 only for now).
@@ -452,12 +438,6 @@ Drivers and Sensors
 
   * stm32 sdmmc: Converted from polling to IT driven mode and added Hardware
     Flow Control option
-
-* Display
-
-
-* Disk
-
 
 * DMA
 
@@ -474,9 +454,6 @@ Drivers and Sensors
 * Entropy
 
   * Added support for stm32u5 series
-
-* ESPI
-
 
 * Ethernet
 
@@ -503,9 +480,6 @@ Drivers and Sensors
 
   * Added driver for GigaDevice GD32 SoCs
 
-* Hardware Info
-
-
 * I2C
 
   * Added driver for GigaDevice GD32 SoCs
@@ -518,18 +492,10 @@ Drivers and Sensors
   * mimxrt10xx: Added support for I2S
   * mimxrt11xx: Added support for I2S
 
-* IEEE 802.15.4
-
-
 * Interrupt Controller
 
   * Added ECLIC driver for GigaDevice RISC-V GD32 SoCs
   * Added EXTI driver for GigaDevice GD32 SoCs
-
-* LED
-
-
-* LoRa
 
 * MBOX
 
@@ -538,8 +504,6 @@ Drivers and Sensors
 * MEMC
 
   *  Added support for stm32f7 series
-
-* Modem
 
 * Pin control
 
@@ -606,45 +570,13 @@ Drivers and Sensors
   * Added support for stm32u5 series (Independent and Window)
   * mimxrt1170: Added support for watchdog on CM7
 
-* WiFi
-
 
 Networking
 **********
 
-* CoAP:
-
-
-* DHCPv4:
-
-
-* DNS:
-
-
-* HTTP:
-
-
-* IPv4:
-
-
-* LwM2M:
-
-
 * Misc:
 
   * gptp: clock sync ratio as double, not float
-
-* OpenThread:
-
-
-* Socket:
-
-
-* TCP:
-
-
-* TLS:
-
 
 USB
 ***
@@ -682,16 +614,10 @@ Build and Infrastructure
 Libraries / Subsystems
 **********************
 
-* Disk
-
-
 * Management
 
   * Fixed the mcumgr SMP protocol over serial not adding the length of the CRC16 to packet length.
   * Kconfig option OS_MGMT_TASKSTAT is now disabled by default.
-
-* CMSIS subsystem
-
 
 * Power management
 
@@ -728,26 +654,10 @@ Libraries / Subsystems
   * Proper multicore support. Devices are suspended only when the last
     active CPU. A cpu parameter was added to Policy and SoC interfaces.
 
-* Logging
-
-
-* Shell
-
-
-* Storage
-
-
-* Task Watchdog
-
-
 * Tracing
 
   * Support all syscalls being traced using the python syscall generator to
     introduce a tracing hook call.
-
-* Debug
-
-* OS
 
 * IPC
 
