@@ -46,8 +46,8 @@ typedef uint8_t isoal_sdu_status_t;
 /** PDU status codes */
 typedef uint8_t isoal_pdu_status_t;
 #define ISOAL_PDU_STATUS_VALID         ((isoal_pdu_status_t) 0x00)
-#define ISOAL_PDU_STATUS_LOST_DATA     ((isoal_pdu_status_t) 0x01)
-#define ISOAL_PDU_STATUS_ERRORS        ((isoal_pdu_status_t) 0x02)
+#define ISOAL_PDU_STATUS_ERRORS        ((isoal_pdu_status_t) 0x01)
+#define ISOAL_PDU_STATUS_LOST_DATA     ((isoal_pdu_status_t) 0x02)
 
 /** Production mode */
 typedef uint8_t isoal_production_mode_t;
@@ -95,7 +95,12 @@ struct isoal_sdu_buffer {
 
 /** @brief Produced ISO SDU frame with associated meta data */
 struct isoal_sdu_produced {
-	/** Status of contents, if valid or SDU was lost */
+	/** Status of contents, if valid or SDU was lost.
+	 * This maps directly to the HCI ISO Data packet Packet_Status_Flag.
+	 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+	 * 5.4.5 HCI ISO Data packets : Table 5.2 :
+	 * Packet_Status_Flag (in packets sent by the Controller)
+	 */
 	isoal_sdu_status_t      status;
 	/** Regardless of status, we always have timing */
 	isoal_time_t            timestamp;
