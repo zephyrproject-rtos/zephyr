@@ -210,87 +210,90 @@ environment is recommended to avoid interfering with your system Python.
 Install the Zephyr Software Development Kit (SDK)
 *************************************************
 
-Use of the Zephyr SDK is optional, but recommended. Some of the dependencies
-installed above are only needed for installing the SDK.
+The Zephyr Software Development Kit (SDK) contains toolchains for each of
+Zephyr's supported architectures. It also includes additional host tools, such
+as custom QEMU and OpenOCD.
 
-Zephyr's :abbr:`SDK (Software Development Kit)` contains all necessary tools to
-build Zephyr on all supported architectures. Additionally, it includes host
-tools such as custom QEMU binaries and a host compiler. The SDK supports the
-following target architectures:
+Use of the Zephyr SDK is highly recommended and may even be required under
+certain conditions (for example, running tests in QEMU for some architectures).
 
-* :abbr:`X86 (Intel Architecture 32 bits)`
+The Zephyr SDK supports the following target architectures:
 
-* :abbr:`Arm (Advanced RISC Machine)`
-
-* :abbr:`ARC (Argonaut RISC Core)`
-
-* :abbr:`MIPS (Microprocessor without Interlocked Pipeline Stages)`
-
-* :abbr:`Nios II`
-
-* :abbr:`RISC-V`
-
-* :abbr:`SPARC`
-
-* :abbr:`Xtensa`
+* ARC (32-bit and 64-bit; ARCv1, ARCv2, ARCv3)
+* ARM (32-bit and 64-bit; ARMv6, ARMv7, ARMv8; A/R/M Profiles)
+* MIPS (32-bit and 64-bit)
+* Nios II
+* RISC-V (32-bit and 64-bit; RV32I, RV32E, RV64I)
+* x86 (32-bit and 64-bit)
+* Xtensa
 
 Follow these steps to install the Zephyr SDK:
 
-#. Download the `latest SDK
-   <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_ as a
-   self-extracting installation binary:
+#. Download and verify the `latest Zephyr SDK bundle
+   <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
 
-   .. code-block:: console
+   .. code-block:: bash
 
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.13.2/zephyr-sdk-0.13.2-linux-x86_64-setup.run
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.0/zephyr-sdk-0.14.0_linux-x86_64.tar.gz
+      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.0/sha256.sum | shasum --check --ignore-missing
 
-   (You can change *0.13.2* to another version if needed; the `Zephyr
-   Downloads`_ page contains all available SDK releases.)
+   You can change ``0.14.0`` to another version if needed; the `Zephyr SDK
+   Releases`_ page contains all available SDK releases.
 
-#. Run the installation binary, installing the SDK at
-   :file:`~/zephyr-sdk-0.13.2`:
+   If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace
+   ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
 
-   .. code-block:: console
+#. Extract the Zephyr SDK bundle archive:
+
+   .. code-block:: bash
 
       cd <sdk download directory>
-      chmod +x zephyr-sdk-0.13.2-linux-x86_64-setup.run
-      ./zephyr-sdk-0.13.2-linux-x86_64-setup.run -- -d ~/zephyr-sdk-0.13.2
+      tar xvf zephyr-sdk-0.14.0_linux-x86_64.tar.gz
 
-   You can pick another directory if you want. If this fails, make sure
-   Zephyr's dependencies were installed as described in `Install Requirements
-   and Dependencies`_.
+#. Run the Zephyr SDK bundle setup script:
 
-If you ever want to uninstall the SDK, just remove the directory where you
-installed it.
+   .. code-block:: bash
+
+      cd zephyr-sdk-0.14.0
+      ./setup.sh
+
+   If this fails, make sure Zephyr's dependencies were installed as described
+   in `Install Requirements and Dependencies`_.
+
+If you want to uninstall the SDK, remove the directory where you installed it.
+If you relocate the SDK directory, you need to re-run the setup script.
 
 .. note::
-   It is recommended to install the Zephyr SDK at one of the following locations:
+   It is recommended to extract the Zephyr SDK bundle at one of the following locations:
 
-   * ``$HOME/zephyr-sdk[-x.y.z]``
-   * ``$HOME/.local/zephyr-sdk[-x.y.z]``
-   * ``$HOME/.local/opt/zephyr-sdk[-x.y.z]``
-   * ``$HOME/bin/zephyr-sdk[-x.y.z]``
-   * ``/opt/zephyr-sdk[-x.y.z]``
-   * ``/usr/zephyr-sdk[-x.y.z]``
-   * ``/usr/local/zephyr-sdk[-x.y.z]``
+   * ``$HOME``
+   * ``$HOME/.local``
+   * ``$HOME/.local/opt``
+   * ``$HOME/bin``
+   * ``/opt``
+   * ``/usr/local``
 
-   where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.13.2``.
+   The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.0`` directory and, when
+   extracted under ``$HOME``, the resulting installation path will be
+   ``$HOME/zephyr-sdk-0.14.0``.
 
-   If you install the Zephyr SDK outside any of those locations, then it is
-   required to register the Zephyr SDK in the CMake package registry during
-   installation or set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to point to the Zephyr
-   SDK installation folder.
+   If you install the Zephyr SDK outside any of these locations, you must
+   register the Zephyr SDK in the CMake package registry by running the setup
+   script, or set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to point to the Zephyr SDK
+   installation directory.
 
-   :envvar:`ZEPHYR_SDK_INSTALL_DIR` can also be used for pointing to a folder
-   containing multiple Zephyr SDKs, allowing for automatic toolchain selection,
-   for example: ``ZEPHYR_SDK_INSTALL_DIR=/company/tools``
+   You can also use :envvar:`ZEPHYR_SDK_INSTALL_DIR` for pointing to a
+   directory containing multiple Zephyr SDKs, allowing for automatic toolchain
+   selection. For example, ``ZEPHYR_SDK_INSTALL_DIR=/company/tools``, where
+   the ``company/tools`` folder contains the following subfolders:
 
    * ``/company/tools/zephyr-sdk-0.13.2``
    * ``/company/tools/zephyr-sdk-a.b.c``
    * ``/company/tools/zephyr-sdk-x.y.z``
 
-   this allow Zephyr to pick the right toolchain, while allowing multiple Zephyr
-   SDKs to be grouped together at a custom location.
+   This allows the Zephyr build system to choose the correct version of the
+   SDK, while allowing multiple Zephyr SDKs to be grouped together at a
+   specific path.
 
 .. _sdkless_builds:
 
@@ -316,5 +319,5 @@ To make sure this variable is unset, run:
 
    unset ZEPHYR_SDK_INSTALL_DIR
 
-.. _Zephyr Downloads: https://github.com/zephyrproject-rtos/sdk-ng/releases
+.. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/releases
 .. _CMake Downloads: https://cmake.org/download
