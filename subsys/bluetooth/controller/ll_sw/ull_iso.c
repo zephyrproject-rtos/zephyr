@@ -488,12 +488,16 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 	if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
 		dp = hdr->datapath_in;
 		if (dp) {
+			isoal_source_destroy(dp->source_hdl);
+
 			hdr->datapath_in = NULL;
 			ull_iso_datapath_release(dp);
 		}
 	} else if (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
 		dp = hdr->datapath_out;
 		if (dp) {
+			isoal_sink_destroy(dp->sink_hdl);
+
 			hdr->datapath_out = NULL;
 			ull_iso_datapath_release(dp);
 		}
@@ -523,6 +527,8 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 
 	dp = stream->dp;
 	if (dp) {
+		isoal_sink_destroy(dp->sink_hdl);
+
 		stream->dp = NULL;
 		ull_iso_datapath_release(dp);
 	}

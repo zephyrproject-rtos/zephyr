@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/byteorder.h>
+#include <bluetooth/bluetooth.h>
 
 #include "util/mem.h"
 #include "util/memq.h"
@@ -28,6 +29,8 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_internal.h"
 #include "lll/lll_vendor.h"
+
+#include "ll.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_conn_iso
@@ -518,6 +521,12 @@ static void cis_disabled_cb(void *param)
 			conn = ll_conn_get(cis->lll.acl_handle);
 			cis_released_cb = cis->released_cb;
 
+			/* Remove data path and ISOAL sink/source associated with this CIS
+			 * for both directions.
+			 */
+			ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+			ll_remove_iso_path(cis->lll.handle, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	
 			ll_conn_iso_stream_release(cis);
 			cig->lll.num_cis--;
 
