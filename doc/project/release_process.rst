@@ -14,29 +14,28 @@ the features that have actually been implemented, allowing the project to
 maintain the quality of the overall release without delays because of one or two
 features that are not ready yet.
 
-The Zephyr release model is loosely based on the Linux kernel model:
+The Zephyr release model was loosely based on the Linux kernel model:
 
 - Release tagging procedure:
 
   - linear mode on main branch,
   - release branches for maintenance after release tagging.
-- Each release period will consist of a merge window period followed by one or
-  more release candidates on which only stabilization changes, bug fixes, and
-  documentation can be merged in.
+- Each release period will consist of a development phase followed by a
+  stabilization phase. Release candidates will be tagged during the
+  stabilization phase. During the stabilization phase, only stabilization
+  changes such as bug fixes and documentation will be merged unless granted a
+  special exemption by the Technical Steering Committee.
 
-  - Merge window mode: all changes are accepted (subject to approval from the
-    respective maintainers.)
-  - When the merge window is closed, the release owner lays a vN-rc1 tag and the
-    tree enters the release candidate phase
-  - CI sees the tag, builds and runs tests; QA analyses the report from the
-    build and test run and gives an ACK/NAK to the build
-  - The release owner, with QA and any other needed input, determines if the
+  - Development phase: all changes are accepted (subject to approval from the
+    respective maintainers).
+  - Stabilisation phase: the release manager creates a vN-rc1 tag and the tree
+    enters the stabilization phase
+  - CI sees the tag, builds and runs tests; Test teams analyse the report from the
+    build and test run and give an ACK/NAK to the build
+  - The release owner, with test teams and any other needed input, determines if the
     release candidate is a go for release
   - If it is a go for a release, the release owner lays a tag release vN at the
     same point
-- Development on new features continues in topic branches. Once features are
-  ready, they are submitted to mainline during the merge window period and after
-  the release is tagged.
 
 .. figure:: release_cycle.png
     :align: center
@@ -46,38 +45,41 @@ The Zephyr release model is loosely based on the Linux kernel model:
 
     Release Cycle
 
-Merge Window
-*************
+Development Phase
+*****************
 
 A relatively straightforward discipline is followed with regard to the merging
 of patches for each release.  At the beginning of each development cycle, the
-"merge window" is said to be open.  At that time, code which is deemed to be
-sufficiently stable (and which is accepted by the development community) is
+main branch is said to be open for development.  At that time, code which is deemed to be
+sufficiently stable (and which is accepted by the maintainers and the wide community) is
 merged into the mainline tree.  The bulk of changes for a new development cycle
 (and all of the major changes) will be merged during this time.
 
-The merge window lasts for approximately two months.  At the end of this time,
-the release owner will declare that the window is closed and release the first
+The development phase lasts for approximately two months.  At the end of this time,
+the release owner will declare that the development phase is over and releases the first
 of the release candidates.  For the codebase release which is destined to be
-0.4.0, for example, the release which happens at the end of the merge window
-will be called 0.4.0-rc1.  The -rc1 release is the signal that the time to merge
+3.1.0, for example, the release which happens at the end of the development phase
+will be called 3.1.0-rc1.  The -rc1 release is the signal that the time to merge
 new features has passed, and that the time to stabilize the next release of the
 code base has begun.
+
+Stabilization Phase
+*******************
 
 Over the next weeks, only patches which fix problems should be submitted to the
 mainline.  On occasion, a more significant change will be allowed, but such
 occasions are rare and require a TSC approval (Change Control Board). As a
-general rule, if you miss the merge window for a given feature, the best thing
-to do is to wait for the next development cycle.  (An occasional exception is
-made for drivers for previously unsupported hardware; if they do not touch any
-other in-tree code, they cannot cause regressions and should be safe to add at
-any time).
+general rule, if you miss submitting your code during the development phase for
+a given feature, the best thing to do is to wait for the next development cycle.
+(An occasional exception is made for drivers for previously unsupported
+hardware; if they do not touch any other in-tree code, they cannot cause
+regressions and should be safe to add at any time).
 
 As fixes make their way into the mainline, the patch rate will slow over time.
 The mainline release owner releases new -rc drops once or twice a week; a normal
 series will get up to somewhere between -rc4 and -rc6 before the code base is
-considered to be sufficiently stable and the quality metrics have been achieved
-at which point the final 0.4.x release is made.
+considered to be sufficiently stable and the release criteria have been achieved
+at which point the final 3.1.0 release is made.
 
 At that point, the whole process starts over again.
 
@@ -182,7 +184,7 @@ Extended Stabilisation Period
 
 Zephyr LTS development cycle differs from regular releases and has an extended
 stabilization period. Feature freeze of regular releases happens 3-4 weeks
-before the scheduled release date. The stabilisation period for LTS is extended
+before the scheduled release date. The stabilization period for LTS is extended
 by 3 weeks with the feature freeze occurring 6-7 weeks before the anticipated
 release date. The time between code freeze and release date is extended in this case.
 
@@ -192,7 +194,7 @@ Stable APIs
 Zephyr LTS provides a stable and long-lived foundation for developing
 products. To guarantee stability of the APIs and the implementation of such
 APIs it is required that any release software that makes the core of the OS
-went through the Zephyr API lifecycle and stabilised over at least 2 releases.
+went through the Zephyr API lifecycle and stabilized over at least 2 releases.
 This guarantees that we release many of the highlighted and core features with
 mature and well-established implementations with stable APIs that are
 supported during the lifetime of the release LTS.
