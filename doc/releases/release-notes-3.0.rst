@@ -692,8 +692,8 @@ MCUboot
 * Fixed support for single application slot with serial recovery.
 * Added various hooks to be able to change how image data is accessed, see
   ``CONFIG_BOOT_IMAGE_ACCESS_HOOKS``.
-* Added custom commands support in serila recovery (PERUSER_MGMT_GROUP): storage
-  erase ``CONFIG_BOOT_MGMT_CUSTOM_STORAGE_ERASE``, custo image status
+* Added custom commands support in serial recovery (PERUSER_MGMT_GROUP): storage
+  erase ``CONFIG_BOOT_MGMT_CUSTOM_STORAGE_ERASE``, custom image status
   ``CONFIG_BOOT_MGMT_CUSTOM_IMG_LIST``.
 * Added support for direct image upload, see
   ``CONFIG_MCUBOOT_SERIAL_DIRECT_IMAGE_UPLOAD`` in serial recovery.
