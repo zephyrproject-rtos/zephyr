@@ -97,7 +97,7 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *ep = audio_iso->ep;
+	struct bt_audio_ep *ep = audio_iso->sink_ep;
 	const struct bt_audio_stream_ops *ops;
 
 	if (ep == NULL) {
@@ -120,7 +120,7 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *ep = audio_iso->ep;
+	struct bt_audio_ep *ep = audio_iso->sink_ep;
 	const struct bt_audio_stream_ops *ops;
 
 	if (ep == NULL) {
@@ -146,7 +146,7 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *ep = audio_iso->ep;
+	struct bt_audio_ep *ep = audio_iso->sink_ep;
 	const struct bt_audio_stream_ops *ops;
 	struct bt_audio_stream *stream;
 
@@ -812,7 +812,7 @@ static void broadcast_sink_ep_init(struct bt_audio_ep *ep,
 	(void)memset(ep, 0, sizeof(*ep));
 	ep->dir = BT_AUDIO_DIR_SINK;
 	ep->iso = iso;
-	iso->ep = ep;
+	iso->sink_ep = ep;
 
 	iso_chan = &ep->iso->iso_chan;
 
