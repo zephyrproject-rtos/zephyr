@@ -9,6 +9,7 @@ tests:
     harness: console
     timeout: 10
     harness_config:
-      type: one_line
+      type: multi_line
       regex:
-        - "ADC reading: (.*)"
+        - "ADC reading:"
+        - " - .+, channel \\d+: \\d+"
