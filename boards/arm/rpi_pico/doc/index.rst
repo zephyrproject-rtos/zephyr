@@ -60,6 +60,9 @@ hardware features:
    * - I2C
      - :kconfig:option:`CONFIG_I2C`
      - :dtcompatible:`rpi,pico-i2c`
+   * - HWINFO
+     - :kconfig:option:`CONFIG_HWINFO`
+     - N/A
 
 Programming and Debugging
 *************************
