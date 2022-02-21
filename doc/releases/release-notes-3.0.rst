@@ -990,7 +990,7 @@ release:
 * :github:`41289` - shell: infinite error loop upon LOG_ERR in ISR context
 * :github:`41284` - pthread_cond_wait return value incorrect
 * :github:`41272` - ci: twister: mcuboot: MCUboot tests are no longer executed in the CI
-* :github:`41268`` - 'bt_gatt_cancel' type mismatch
+* :github:`41268` - 'bt_gatt_cancel' type mismatch
 * :github:`41256` - Zero Latency Interrupts conflicts
 * :github:`41255` - drivers/can/can_mcan.c: address-of-packed-member warnings
 * :github:`41251` - RT1170 EVK Can does not send data
