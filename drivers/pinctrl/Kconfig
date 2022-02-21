@@ -35,5 +35,6 @@ source "drivers/pinctrl/Kconfig.nrf"
 source "drivers/pinctrl/Kconfig.rcar"
 source "drivers/pinctrl/Kconfig.rpi_pico"
 source "drivers/pinctrl/Kconfig.stm32"
+source "drivers/pinctrl/Kconfig.kinetis"
 
 endif # PINCTRL
