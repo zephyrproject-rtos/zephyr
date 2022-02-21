@@ -807,14 +807,39 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 				(lazy_next - ticker_next->priority) >
 				(lazy_current - ticker->priority);
 
+			/* Can the current ticker with ticks_slot_window be
+			 * scheduled after the colliding ticker?
+			 */
+			uint8_t curr_has_ticks_slot_window =
+					(ticker->ext_data &&
+					 ticker->ext_data->ticks_slot_window &&
+					 ((acc_ticks_to_expire +
+					   ticker_next->ticks_slot) <
+					  (ticker->ext_data->ticks_slot_window -
+					   ticker->ticks_slot)));
+
+			/* Colliding next ticker does not use ticks_slot_window
+			 * or it does not fit after the current ticker within
+			 * the ticks_slot_window.
+			 */
+			uint8_t next_not_ticks_slot_window =
+					(!ticker_next->ext_data ||
+					 !ticker_next->ext_data->ticks_slot_window ||
+					 ((acc_ticks_to_expire +
+					   ticker_next->ext_data->ticks_slot_window -
+					   ticker_next->ticks_slot) <
+					  ticker->ticks_slot));
+
 			/* Check if next node is within this reservation slot
 			 * and wins conflict resolution
 			 */
-			if (!lazy_next_periodic_skip &&
-			    (next_force ||
-			     next_is_critical ||
-			     (next_has_priority && !current_is_older) ||
-			     (equal_priority && next_is_older))) {
+			if (curr_has_ticks_slot_window ||
+			    (!lazy_next_periodic_skip &&
+			     (next_force ||
+			      next_is_critical ||
+			      (next_has_priority && !current_is_older) ||
+			      (equal_priority && next_is_older &&
+			       next_not_ticks_slot_window)))) {
 				/* This node must be skipped - check window */
 				return 1U;
 			}
