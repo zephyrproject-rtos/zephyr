@@ -13,114 +13,159 @@
 #error "No suitable devicetree overlay specified"
 #endif
 
-#define ADC_NUM_CHANNELS	DT_PROP_LEN(DT_PATH(zephyr_user), io_channels)
+#define DT_SPEC_AND_COMMA(node_id, prop, idx) \
+	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
 
-#if ADC_NUM_CHANNELS > 2
-#error "Currently only 1 or 2 channels supported in this sample"
-#endif
+/* Data of ADC io-channels specified in devicetree. */
+static const struct adc_dt_spec adc_channels[] = {
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
+			     DT_SPEC_AND_COMMA)
+};
 
-#if ADC_NUM_CHANNELS == 2 && !DT_SAME_NODE( \
-	DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), io_channels, 0), \
-	DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), io_channels, 1))
-#error "Channels have to use the same ADC."
-#endif
+#define LABEL_AND_COMMA(node_id, prop, idx) \
+	DT_LABEL(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx)),
 
-#define ADC_NODE		DT_PHANDLE(DT_PATH(zephyr_user), io_channels)
+/* Labels of ADC controllers referenced by the above io-channels. */
+static const char *const adc_labels[] = {
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
+			     LABEL_AND_COMMA)
+};
 
-/* Common settings supported by most ADCs */
+/*
+ * Common settings supported by most ADCs.
+ * If for a given channel a configuration is available in devicetree, values
+ * for gain, reference, and acquisition time are taken from there instead of
+ * those below. Also resolution can be optionally specified together with
+ * the channel configuration in devicetree. If it is, that value is used
+ * instead of the default one below.
+ */
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 
-#ifdef CONFIG_ADC_NRFX_SAADC
-#define ADC_INPUT_POS_OFFSET SAADC_CH_PSELP_PSELP_AnalogInput0
-#else
-#define ADC_INPUT_POS_OFFSET 0
-#endif
+static void configure_channel(const struct adc_dt_spec *dt_spec,
+			      uint16_t *vref_mv)
+{
+	/* If a configuration for the channel is specified in devicetree,
+	 * use it, otherwise use default settings that should be suitable
+	 * for most ADCs.
+	 */
+	if (dt_spec->channel_cfg_dt_node_exists) {
+		adc_channel_setup(dt_spec->dev, &dt_spec->channel_cfg);
 
-/* Get the numbers of up to two channels */
-static uint8_t channel_ids[ADC_NUM_CHANNELS] = {
-	DT_IO_CHANNELS_INPUT_BY_IDX(DT_PATH(zephyr_user), 0),
-#if ADC_NUM_CHANNELS == 2
-	DT_IO_CHANNELS_INPUT_BY_IDX(DT_PATH(zephyr_user), 1)
-#endif
-};
+		/* For the internal reference, use the voltage value returned
+		 * by the dedicated API function. For others, use the value
+		 * from devicetree if available.
+		 */
+		if (dt_spec->channel_cfg.reference == ADC_REF_INTERNAL) {
+			*vref_mv = adc_ref_internal(dt_spec->dev);
+		} else if (dt_spec->vref_mv > 0) {
+			*vref_mv = dt_spec->vref_mv;
+		}
+	} else {
+		struct adc_channel_cfg channel_cfg = {
+			.channel_id       = dt_spec->channel_id,
+			.gain             = ADC_GAIN,
+			.reference        = ADC_REFERENCE,
+			.acquisition_time = ADC_ACQUISITION_TIME,
+		};
 
-static int16_t sample_buffer[ADC_NUM_CHANNELS];
+		adc_channel_setup(dt_spec->dev, &channel_cfg);
 
-struct adc_channel_cfg channel_cfg = {
-	.gain = ADC_GAIN,
-	.reference = ADC_REFERENCE,
-	.acquisition_time = ADC_ACQUISITION_TIME,
-	/* channel ID will be overwritten below */
-	.channel_id = 0,
-	.differential = 0
-};
+		*vref_mv = adc_ref_internal(dt_spec->dev);
+	}
+}
 
-struct adc_sequence sequence = {
-	/* individual channels will be added below */
-	.channels    = 0,
-	.buffer      = sample_buffer,
-	/* buffer size in bytes, not number of samples */
-	.buffer_size = sizeof(sample_buffer),
-	.resolution  = ADC_RESOLUTION,
-};
+static void prepare_sequence(struct adc_sequence *sequence,
+			     const struct adc_dt_spec *dt_spec)
+{
+	sequence->channels     = BIT(dt_spec->channel_id);
+	sequence->resolution   = ADC_RESOLUTION;
+	sequence->oversampling = 0;
+
+	if (dt_spec->channel_cfg_dt_node_exists) {
+		if (dt_spec->resolution) {
+			sequence->resolution = dt_spec->resolution;
+		}
+		if (dt_spec->oversampling) {
+			sequence->oversampling = dt_spec->oversampling;
+		}
+	}
+}
+
+static void print_millivolts(int32_t value,
+			     uint16_t vref_mv,
+			     uint8_t resolution,
+			     const struct adc_dt_spec *dt_spec)
+{
+	enum adc_gain gain = ADC_GAIN;
+
+	if (dt_spec->channel_cfg_dt_node_exists) {
+		gain = dt_spec->channel_cfg.gain;
+
+		/*
+		 * For differential channels, one bit less needs to be specified
+		 * for resolution to achieve correct conversion.
+		 */
+		if (dt_spec->channel_cfg.differential) {
+			resolution -= 1;
+		}
+	}
+
+	adc_raw_to_millivolts(vref_mv, gain, resolution, &value);
+	printk(" = %d mV", value);
+}
 
 void main(void)
 {
 	int err;
-	const struct device *dev_adc = DEVICE_DT_GET(ADC_NODE);
+	int16_t sample_buffer[1];
+	struct adc_sequence sequence = {
+		.buffer      = sample_buffer,
+		/* buffer size in bytes, not number of samples */
+		.buffer_size = sizeof(sample_buffer),
+	};
+	uint16_t vref_mv[ARRAY_SIZE(adc_channels)] = { 0 };
 
-	if (!device_is_ready(dev_adc)) {
-		printk("ADC device not found\n");
-		return;
-	}
-
-	/*
-	 * Configure channels individually prior to sampling
-	 */
-	for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) {
-		channel_cfg.channel_id = channel_ids[i];
-#ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
-		channel_cfg.input_positive = ADC_INPUT_POS_OFFSET + channel_ids[i];
-#endif
-
-		adc_channel_setup(dev_adc, &channel_cfg);
-
-		sequence.channels |= BIT(channel_ids[i]);
-	}
-
-	int32_t adc_vref = adc_ref_internal(dev_adc);
-
-	while (1) {
-		/*
-		 * Read sequence of channels (fails if not supported by MCU)
-		 */
-		err = adc_read(dev_adc, &sequence);
-		if (err != 0) {
-			printk("ADC reading failed with error %d.\n", err);
+	/* Configure channels individually prior to sampling. */
+	for (uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++) {
+		if (!device_is_ready(adc_channels[i].dev)) {
+			printk("ADC device not found\n");
 			return;
 		}
 
-		printk("ADC reading:");
-		for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) {
-			int32_t raw_value = sample_buffer[i];
+		configure_channel(&adc_channels[i], &vref_mv[i]);
+	}
 
-			printk(" %d", raw_value);
-			if (adc_vref > 0) {
-				/*
-				 * Convert raw reading to millivolts if driver
-				 * supports reading of ADC reference voltage
-				 */
-				int32_t mv_value = raw_value;
+	while (1) {
+		printk("ADC reading:\n");
+		for (uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++) {
+			printk(" - %s, channel %d: ",
+				adc_labels[i], adc_channels[i].channel_id);
 
-				adc_raw_to_millivolts(adc_vref, ADC_GAIN,
-					ADC_RESOLUTION, &mv_value);
-				printk(" = %d mV  ", mv_value);
+			prepare_sequence(&sequence, &adc_channels[i]);
+
+			err = adc_read(adc_channels[i].dev, &sequence);
+			if (err < 0) {
+				printk("error %d\n", err);
+				continue;
+			} else {
+				printk("%d", sample_buffer[0]);
 			}
+
+			/*
+			 * Convert raw reading to millivolts if the reference
+			 * voltage is known.
+			 */
+			if (vref_mv[i] > 0) {
+				print_millivolts(sample_buffer[0],
+						 vref_mv[i],
+						 sequence.resolution,
+						 &adc_channels[i]);
+			}
+			printk("\n");
 		}
-		printk("\n");
 
 		k_sleep(K_MSEC(1000));
 	}
