@@ -38,6 +38,43 @@ config BT_MCC
 
 if BT_MCC
 
+config BT_MCC_MEDIA_PLAYER_NAME_MAX
+	int "Max length of media player name"
+	default 20
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the name of the media player.  If the name is longer, the media
+	  control client will truncate the name when reading it.
+
+config BT_MCC_ICON_URL_MAX
+	int "Max length of media player icon URL"
+	default 30
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the media player icon URL.  If the URL is longer, the media control
+	  client will truncate the name when reading it.
+
+config BT_MCC_TRACK_TITLE_MAX
+	int "Max length of the title of a track"
+	default 25
+	range 1 255
+	help
+	  Sets the maximum number of bytes (including the null termination) of
+	  the title of any track in the media player.  If the title is longer,
+	  the media control client will truncate the title when reading it.
+
+config BT_MCC_SEGMENT_NAME_MAX
+	int "Max length of the name of a track segment"
+	default 25
+	range 1 255
+	help
+	  Sets the the maximum number of bytes (including the null termination)
+	  of the name of any track segment in the media player. If the name is
+	  longer, the media control client will truncate the name when reading
+	  it.
+
 config BT_MCC_OTS
 	bool "Media Control Client support for Object Transfer Service"
 	depends on BT_OTS_CLIENT
@@ -101,40 +138,3 @@ config BT_DEBUG_MCC
 	  Bluetooth Audio functionality.
 
 endif # BT_MCC
-
-
-if BT_MCS || BT_MCC
-
-config BT_MCS_MEDIA_PLAYER_NAME_MAX
-	int "Max length of media player name"
-	default 20
-	range 1 255
-	help
-	  Sets the maximum number of bytes (including the null termination) of
-	  the name of the media player.
-
-config BT_MCS_ICON_URL_MAX
-	int "Max length of media player icon URL"
-	default 30
-	range 1 255
-	help
-	  Sets the maximum number of bytes (including the null termination) of
-	  the media player icon URL.
-
-config BT_MCS_TRACK_TITLE_MAX
-	int "Max length of the title of a track"
-	default 25
-	range 1 255
-	help
-	  Sets the maximum number of bytes (including the null termination) of
-	  the title of any track in the media player.
-
-config BT_MCS_SEGMENT_NAME_MAX
-	int "Max length of the name of a track segment"
-	default 25
-	range 1 255
-	help
-	  Sets the the maximum number of bytes (including the null termination)
-	  of the name of any track segment in the media player.
-
-endif # BT_MCS || BT_MCC
