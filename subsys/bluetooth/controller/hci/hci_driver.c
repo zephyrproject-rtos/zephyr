@@ -162,6 +162,14 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 		hdr->len = sys_cpu_to_le16(len);
 
 		packet_status_flag = valid_sdu->status;
+		/* TODO: Validity of length might need to be reconsidered here. Not handled in
+		 * ISO-AL.
+		 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+		 * 5.4.5 HCI ISO Data packets
+		 * If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
+		 * When Packet_Status_Flag is set to 0b10 in packets from the Controller to the
+		 * Host, there is no data and ISO_SDU_Length shall be set to zero.
+		 */
 		slen = sink_ctx->sdu_production.sdu_written;
 		slen_packed = bt_iso_pkt_len_pack(slen, packet_status_flag);
 

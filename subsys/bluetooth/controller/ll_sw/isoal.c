@@ -438,6 +438,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	uint8_t next_state;
 	isoal_status_t err;
 	bool pdu_padding;
+	uint8_t length;
 	bool last_pdu;
 	bool pdu_err;
 	bool seq_err;
@@ -451,9 +452,17 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	err = ISOAL_STATUS_OK;
 	next_state = ISOAL_START;
 
+	/* If status is not ISOAL_PDU_STATUS_VALID, length and LLID cannot be trusted */
 	llid = pdu_meta->pdu->ll_id;
 	pdu_err = (pdu_meta->meta->status != ISOAL_PDU_STATUS_VALID);
-	pdu_padding = (pdu_meta->pdu->length == 0) && (llid == PDU_BIS_LLID_START_CONTINUE);
+	length = pdu_err ? 0 : pdu_meta->pdu->length;
+	/* A zero length PDU with LLID 0b01 (PDU_BIS_LLID_START_CONTINUE) would be a padding PDU.
+	 * However if there are errors in the PDU, it could be an incorrectly receive non-padding
+	 * PDU. Therefore only consider a PDU with errors as padding if received after the end
+	 * fragment is seen when padding PDUs are expected.
+	 */
+	pdu_padding = (length == 0) && (llid == PDU_BIS_LLID_START_CONTINUE) &&
+		      (!pdu_err || sp->fsm == ISOAL_ERR_SPOOL);
 
 	if (sp->fsm == ISOAL_START) {
 		struct isoal_sdu_produced *sdu;
@@ -478,7 +487,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	}
 
 	last_pdu = (sp->pdu_cnt == session->pdus_per_sdu);
-	end_of_packet = (llid == PDU_BIS_LLID_COMPLETE_END) || last_pdu;
+	end_of_packet = (llid == PDU_BIS_LLID_COMPLETE_END) || last_pdu || pdu_err;
 
 	switch (sp->fsm) {
 	case ISOAL_START:
@@ -542,8 +551,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	/* Append valid PDU to SDU */
 	if (!pdu_padding) {
 		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0,
-					      pdu_meta->pdu->length,
-					      end_of_packet);
+					      length, end_of_packet);
 	}
 
 	/* Update next state */
@@ -609,6 +617,18 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		/* Update next state */
 		sink->sdu_production.fsm = next_state;
 
+		/* This maps directly to the HCI ISO Data packet Packet_Status_Flag by way of the
+		 * sdu_status in the SDU emitted.
+		 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+		 * 5.4.5 HCI ISO Data packets : Table 5.2 :
+		 * Packet_Status_Flag (in packets sent by the Controller)
+		 *   0b00  Valid data. The complete SDU was received correctly.
+		 *   0b01  Possibly invalid data. The contents of the ISO_SDU_Fragment may contain
+		 *         errors or part of the SDU may be missing. This is reported as "data with
+		 *         possible errors".
+		 *   0b10  Part(s) of the SDU were not received correctly. This is reported as
+		 *         "lost data".
+		 */
 		if (pdu_err) {
 			sp->sdu_status |= meta->status;
 		} else if (seq_err) {
@@ -707,6 +727,23 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 				/* Start not found yet, stay in Error state */
 				append = false;
 				next_state = ISOAL_ERR_SPOOL;
+			}
+
+			/* TODO: Confirm if the sequence number must be updated even for an SDU
+			 * with errors.
+			 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+			 * 2 ISOAL Features :
+			 * The sequence number shall be incremented for each SDU_Interval,
+			 * whether or not an SDU was received from or sent to the upper layer.
+			 */
+
+			if (next_state != ISOAL_ERR_SPOOL) {
+				/* While in the Error state, received a valid start of the next SDU,
+				 * so SDU status and sequence number should be updated.
+				 */
+				sp->sdu_status = ISOAL_SDU_STATUS_VALID;
+				/* sp->sdu_state will be set by next_state decided above */
+				session->seqn++;
 			}
 			break;
 		}
