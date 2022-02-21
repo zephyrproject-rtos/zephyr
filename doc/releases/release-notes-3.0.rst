@@ -860,7 +860,6 @@ release:
 * :github:`42279` - The pthreads are not working on user space. ARM64 cortex_a53 but generic requirement.
 * :github:`42278` - USB CDC-ACM non-functional after host reboot
 * :github:`42272` - doc: "Building on Linux without the Zephyr SDK" does not describe how to actually do it
-* :github:`42271` - [Backport v2.7-branch] drivers: can: m_can: The can_set_bitrate() function doesn't work.
 * :github:`42269` - impossible to run west flash. NoneType error
 * :github:`42228` - hal_stm32: Wrong symbol definition
 * :github:`42227` - Teensy41 support SDHC - Storage init Error
@@ -955,7 +954,6 @@ release:
 * :github:`41582` - stm32h7: CSI as PLL source is broken
 * :github:`41581` - STM32 subghzspi fails pinctrl setup
 * :github:`41557` - ESP32 Uart 2-bit Stop Register Setting
-* :github:`41536` - Backport STM32 SMPS Support to v2.7.0
 * :github:`41526` - ESP32 UART driver tx_complete fires before last byte sent
 * :github:`41525` - tests: drivers: : ethernet: fails to link for sam_v71_xult and sam_v71b_xult
 * :github:`41524` - drivers: dma: dma_mcux_edma: unused variables cause daily build failures
@@ -1006,7 +1004,6 @@ release:
 * :github:`41097` - west init issue
 * :github:`41095` - libc: newlib: 'gettimeofday' causes stack overflow on non-POSIX builds
 * :github:`41093` - Kconfig.defconfig:11: error: couldn't parse 'default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)'
-* :github:`41089` - [backport v2.7-branch] backport of #40862 (power modes for STM32H7)
 * :github:`41077` - console: gsm_mux: could not send more than 128 bytes of data on dlci
 * :github:`41074` - can_mcan_send sends corrupted CAN frames with a byte-by-byte memcpy implementation
 * :github:`41066` - twister --generate-map is broken
@@ -1077,7 +1074,6 @@ release:
 * :github:`40546` - Bluetooh:host: GATT notify multiple feature not working properly
 * :github:`40538` - mcuboot build fails with nrf52 internal RC oscillator
 * :github:`40517` - msgq: NULL handler assertion with data cache enabled
-* :github:`40500` - Backport Bluetooth: Host: Set SID in bt_le_per_adv_sync_recv_info to v2.7 branch
 * :github:`40483` - ESP32: display sample over i2c not working
 * :github:`40464` - Dereferencing NULL with getsockname() on TI Simplelink Platform
 * :github:`40456` - Bluetooth: L2CAP tester application is missing preprocessor flags for ECFC function call
@@ -1246,7 +1242,6 @@ release:
 * :github:`39024` - drivers: sensors: FXOS8700: Interrupt pin routing configuration must be changed in standby power mode
 * :github:`38988` - MCP2515 driver CS gpio active high support issue
 * :github:`38987` - Unable to build ESP32 example code using west tool - zephyr
-* :github:`38972` - [backport v2.7-branch] backport of #38965 failed
 * :github:`38954` - Can't get FlexPWM working for imxrt1060
 * :github:`38631` - printk to console fails for freescale kinetis 8.2.0 (Zephyr 2.6.0) on FRDM-K64F
 * :github:`38624` - mcuboot gets the wrong value of DT_FIXED_PARTITION_ID
