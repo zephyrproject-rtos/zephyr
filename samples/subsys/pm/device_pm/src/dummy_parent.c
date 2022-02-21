@@ -14,8 +14,6 @@ static uint32_t store_value;
 static int dummy_transfer(const struct device *dev, uint32_t cmd,
 			  uint32_t *val)
 {
-	printk("transfer()\n");
-
 	if (cmd == DUMMY_PARENT_WR) {
 		store_value = *val;
 	} else {
