@@ -119,7 +119,7 @@ The current minimum required version for the main dependencies are:
 
          .. code-block:: bash
 
-            brew install cmake ninja gperf python3 ccache qemu dtc
+            brew install cmake ninja gperf python3 ccache qemu dtc wget
 
    .. group-tab:: Windows
 
@@ -163,7 +163,7 @@ The current minimum required version for the main dependencies are:
          .. code-block:: console
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python git dtc-msys2
+            choco install ninja gperf python git dtc-msys2 wget
 
       #. Close the window and open a new ``cmd.exe`` window **as a regular user** to continue.
 
