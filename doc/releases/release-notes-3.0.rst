@@ -1263,7 +1263,6 @@ release:
 * :github:`36766` - tests-ci :kernel.tickless.concept.tickless_slice : test failed
 * :github:`34732` - stm32h747i_disco: Wrong Power supply setting LDO
 * :github:`34375` - drivers: can: CAN configure fails when  CONFIG_CAN_FD_MODE is enabled
-* :github:`33882` - [backport v1.14-branch] backport of #33340 failed
 * :github:`31748` - boards:lpcxpresso55s69: Manual toggling of CS required with ETH Click shield
 * :github:`23052` - nrf52840_pca10056: Spurious RTS pulse and incorrect line level with hardware flow control disabled
 * :github:`16587` - build failures with gcc 9.x
