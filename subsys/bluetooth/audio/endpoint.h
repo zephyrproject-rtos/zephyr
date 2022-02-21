@@ -32,7 +32,8 @@ struct bt_audio_ep;
 struct bt_audio_iso {
 	struct bt_iso_chan iso_chan;
 	struct bt_iso_chan_qos iso_qos;
-	struct bt_audio_ep *ep;
+	struct bt_audio_ep *sink_ep;
+	struct bt_audio_ep *source_ep;
 };
 
 struct bt_audio_ep {
