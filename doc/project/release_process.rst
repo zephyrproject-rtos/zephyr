@@ -37,7 +37,7 @@ The Zephyr release model was loosely based on the Linux kernel model:
   - If it is a go for a release, the release owner lays a tag release vN at the
     same point
 
-.. figure:: release_cycle.png
+.. figure:: release_cycle.svg
     :align: center
     :alt: Release Cycle
     :figclass: align-center
@@ -102,6 +102,53 @@ gate the final release. The following counts shall be used:
 
    The "low" bug count target of <50 will be a phased approach starting with 150
    for release 2.4.0, 100 for release 2.5.0, and 50 for release 2.6.0
+
+
+
+Release Milestones
+*******************
+
+
+.. list-table:: Release Milestones
+   :widths: 15 25 100 25
+   :header-rows: 1
+
+   * - Timeline
+     - Checkpoint
+     - Description
+     - Owner
+   * - T-5M
+     - Planning
+     - Finalize dates for release, Assign release owner and agree on project wide goals for this release.
+     - TSC
+   * - T-7W
+     - Review target milestones
+     - Finalize target milestones for features in flight.
+     - Release Engineering
+   * - T-4W
+     - Release Announcement
+     - Release owner announces feature freeze and timeline for release.
+     - Release Manager
+   * - T-3W
+     - Feature Freeze (RC1)
+     - No new features, ONLY stabilization and cosmetic changes, bug and doc fixes are allowed.
+     - Release Engineering
+   * - T-2W
+     - 2nd Release Candidate
+     - No new features, ONLY stabilization and cosmetic changes, bug and doc fixes are allowed.
+     - Release Manager
+   * - T-1W
+     - Hard Freeze (RC3)
+     - Only blocker bug fixes, documentation and changes to release notes are allowed.
+       Release notes need to be complete by this checkpoint. Release Criteria is
+       met.
+     - Release Manager
+   * - T-0W
+     - Release
+     -
+     - Release Manager
+
+
 
 
 Releases
@@ -235,7 +282,7 @@ independently from the main tree for at least 2.5 years after it was
 released. Support and maintenance for an LTS release stops at least half a year
 after the following LTS release is published.
 
-.. figure:: lts.png
+.. figure:: lts.svg
     :align: center
     :alt: Long Term Support Release
     :figclass: align-center
@@ -274,47 +321,6 @@ Release Procedure
 
 This section documents the Release manager responsibilities so that it serves as
 a knowledge repository for Release managers.
-
-Milestones
-==========
-
-The following graphic shows the timeline of phases and milestones associated
-with each release:
-
-.. figure:: milestones.jpg
-    :align: center
-    :alt: Release Milestones
-    :figclass: align-center
-    :width: 80%
-
-    Release milestones
-
-This shows how the phases and milestones of one release overlap with those of
-the next release:
-
-
-.. figure:: milestones2.jpg
-    :align: center
-    :alt: Release Milestones
-    :figclass: align-center
-    :width: 80%
-
-    Release milestones with planning
-
-
-.. csv-table:: Milestone Description
-   :header: "Milestone", "Description", "Definition"
-   :widths: auto
-
-
-   "P0","Planning Kickoff","Start Entering Requirements"
-   "P1","","TSC Agrees on Major Features and Schedule"
-   "M0","Merge Window Open","All features, Sized, and AssignedMerge Window Is Opened"
-   "M1","M1 Checkpoint","Major Features Ready for Code Reviews |br| Test Plans Reviewed and Approved"
-   "M2","Feature Merge Window Close","Feature Freeze |br| Feature Development Complete (including Code Reviews and Unit Tests Passing) |br| P1 Stories Implemented |br| Feature Merge Window Is Closed |br| Test Development Complete |br| Technical Documentation Created/Updated and Ready for Review |br| CCB Control Starts"
-   "M3","Code Freeze","Code Freeze |br| RC3 Tagged and Built"
-   "M4","Release","TSC Reviews the Release Criteria Report and Approves Release
-   |br| Final RC Tagged |br| Make the Release"
 
 Release Checklist
 =================
