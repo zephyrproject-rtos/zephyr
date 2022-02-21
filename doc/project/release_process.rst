@@ -83,24 +83,6 @@ at which point the final 3.1.0 release is made.
 
 At that point, the whole process starts over again.
 
-Here is the description of the various moderation levels:
-
-- Low:
-
-  - Major New Features
-  - Bug Fixes
-  - Refactoring
-  - Structure/Directory Changes
-- Medium:
-
-  - Bug Fixes, all priorities
-  - Enhancements
-  - Minor "self-contained" New Features
-- High:
-
-  - Bug Fixes: P1 and P2
-  - Documentation + Test Coverage
-
 .. _release_quality_criteria:
 
 Release Quality Criteria
