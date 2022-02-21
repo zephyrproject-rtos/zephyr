@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nuvoton/npcx9m6f.dtsi>
+#include <nuvoton/npcx/npcx9/npcx9-pinctrl.dtsi>
 
 / {
 	model = "Nuvoton NPCX9M6F evaluation board";
