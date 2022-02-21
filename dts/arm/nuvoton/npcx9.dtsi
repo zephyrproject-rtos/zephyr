@@ -77,7 +77,6 @@
 			reg = <0x400E0000 0x2000>;
 			interrupts = <33 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4>;
-			pinctrl-0 = <&altj_cr_sin1_sl1 &altj_cr_sout1_sl1>; /* PIN10.11 */
 			uart-rx = <&wui_cr_sin1>;
 			status = "disabled";
 			label = "UART_1";
@@ -88,7 +87,6 @@
 			reg = <0x400E2000 0x2000>;
 			interrupts = <32 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6>;
-			pinctrl-0 = <&altj_cr_sin2_sl &altj_cr_sout2_sl>; /* PIN75.86 */
 			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
 			label = "UART_2";
@@ -99,7 +97,6 @@
 			reg = <0x400E4000 0x2000>;
 			interrupts = <38 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4>;
-			pinctrl-0 = <&altj_cr_sin3_sl &altj_cr_sout3_sl>; /* PIND3.D6 */
 			uart-rx = <&wui_cr_sin3>;
 			status = "disabled";
 			label = "UART_3";
@@ -110,7 +107,6 @@
 			reg = <0x400E6000 0x2000>;
 			interrupts = <39 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3>;
-			pinctrl-0 = <&alte_cr_sin4_sl &alte_cr_sout4_sl>; /* PIN17.35 */
 			uart-rx = <&wui_cr_sin4>;
 			status = "disabled";
 			label = "UART_4";
