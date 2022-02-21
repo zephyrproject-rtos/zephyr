@@ -25,6 +25,12 @@ static int dummy_open(const struct device *dev)
 		return ret;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		(void)pm_device_runtime_put(parent);
+		return ret;
+	}
+
 	(void)pm_device_state_get(dev, &state);
 	if (state == PM_DEVICE_STATE_ACTIVE) {
 		printk("Dummy device resumed\n");
