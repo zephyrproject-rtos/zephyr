@@ -192,6 +192,16 @@ static inline uint32_t npcx_devalt_offset(uint32_t alt_no)
 	return 0x010 + alt_no;
 }
 
+static inline uint32_t npcx_devalt_lk_offset(uint32_t alt_lk_no)
+{
+	return 0x210 + alt_lk_no;
+}
+
+static inline uint32_t npcx_pupd_en_offset(uint32_t pupd_en_no)
+{
+	return 0x28 + pupd_en_no;
+}
+
 static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
 {
 	if (ctl_no < 5) {
@@ -204,6 +214,10 @@ static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
 /* Macro functions for SCFG multi-registers */
 #define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
 						npcx_devalt_offset(n)))
+#define NPCX_DEVALT_LK(base, n) (*(volatile uint8_t *)(base + \
+						npcx_devalt_lk_offset(n)))
+#define NPCX_PUPD_EN(base, n) (*(volatile uint8_t *)(base + \
+						npcx_pupd_en_offset(n)))
 #define NPCX_LV_GPIO_CTL(base, n) (*(volatile uint8_t *)(base + \
 						npcx_lv_gpio_ctl_offset(n)))
 

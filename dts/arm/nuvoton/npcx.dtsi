@@ -69,6 +69,14 @@
 		status = "disabled";
 	};
 
+	/** Dummy pinctrl node. It will be initialized with defaults based on the SoC series.
+	 *  Then, the user can override the pin control options at the board level.
+	 */
+	pinctrl: pinctrl {
+		compatible = "nuvoton,npcx-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		bbram: bb-ram@400af000 {
 			compatible = "nuvoton,npcx-bbram";
