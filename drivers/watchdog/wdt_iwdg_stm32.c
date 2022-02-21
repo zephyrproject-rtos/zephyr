@@ -14,9 +14,18 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_iwdg.h>
 #include <stm32_ll_system.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <errno.h>
 
 #include "wdt_iwdg_stm32.h"
+
+/* iwdg_stm32_convert_timeout value requires the MAX LSI freq from DTS */
+#if DT_PROP(DT_NODELABEL(clk_lsi), max_clock_frequency)
+#define STM32_MAX_LSI_FREQ		DT_PROP(DT_NODELABEL(clk_lsi), max_clock_frequency)
+#else
+/* MAX LSI freq should be in device tree as typical value */
+#define STM32_MAX_LSI_FREQ STM32_LSI_FREQ
+#endif
 
 #define IWDG_PRESCALER_MIN	(4U)
 #define IWDG_PRESCALER_MAX	(256U)
@@ -26,12 +35,12 @@
 
 /* Minimum timeout in microseconds. */
 #define IWDG_TIMEOUT_MIN	(IWDG_PRESCALER_MIN * (IWDG_RELOAD_MIN + 1U) \
-				 * USEC_PER_SEC / LSI_VALUE)
+				 * USEC_PER_SEC / STM32_LSI_FREQ)
 
 /* Maximum timeout in microseconds. */
 #define IWDG_TIMEOUT_MAX	((uint64_t)IWDG_PRESCALER_MAX * \
 				 (IWDG_RELOAD_MAX + 1U) * \
-				 USEC_PER_SEC / LSI_VALUE)
+				 USEC_PER_SEC / STM32_LSI_FREQ)
 
 #define IS_IWDG_TIMEOUT(__TIMEOUT__)		\
 	(((__TIMEOUT__) >= IWDG_TIMEOUT_MIN) &&	\
@@ -43,7 +52,7 @@
  * maximum 6 cycles (48 ms at 32 kHz) for register update.
  */
 #define IWDG_SR_UPDATE_TIMEOUT	(6U * IWDG_PRESCALER_MAX * \
-				 MSEC_PER_SEC / LSI_VALUE)
+				 MSEC_PER_SEC / STM32_LSI_FREQ)
 
 /**
  * @brief Calculates prescaler & reload values.
@@ -60,7 +69,7 @@ static void iwdg_stm32_convert_timeout(uint32_t timeout,
 	uint8_t shift = 0U;
 
 	/* Convert timeout to LSI clock ticks. */
-	uint32_t ticks = (uint64_t)timeout * LSI_VALUE / USEC_PER_SEC;
+	uint32_t ticks = (uint64_t)timeout * STM32_MAX_LSI_FREQ / USEC_PER_SEC;
 
 	while ((ticks / divider) > IWDG_RELOAD_MAX) {
 		shift++;
