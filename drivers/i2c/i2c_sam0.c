@@ -50,6 +50,7 @@ struct i2c_sam0_msg {
 };
 
 struct i2c_sam0_dev_data {
+	struct k_sem lock;
 	struct k_sem sem;
 	struct i2c_sam0_msg msg;
 	struct i2c_msg *msgs;
@@ -381,6 +382,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t addr_reg;
+	int ret;
 
 	if (!num_msgs) {
 		return 0;
@@ -388,10 +390,13 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	data->num_msgs = num_msgs;
 	data->msgs = msgs;
 
+	k_sem_take(&data->lock, K_FOREVER);
+
 	for (; data->num_msgs > 0;) {
 		if (!data->msgs->len) {
 			if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-				return -EINVAL;
+				ret = -EINVAL;
+				goto unlock;
 			}
 		}
 
@@ -423,7 +428,8 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 #ifdef SERCOM_I2CM_ADDR_TENBITEN
 			addr_reg |= SERCOM_I2CM_ADDR_TENBITEN;
 #else
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto unlock;
 #endif
 		}
 
@@ -481,12 +487,14 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					dev->name);
-				return -EAGAIN;
+				ret = -EAGAIN;
+				goto unlock;
 			}
 
 			LOG_ERR("Transaction error on %s: %08X",
 				dev->name, data->msg.status);
-			return -EIO;
+			ret = -EIO;
+			goto unlock;
 		}
 
 		/*
@@ -510,7 +518,11 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		data->msgs++;
 	}
 
-	return 0;
+	ret = 0;
+unlock:
+	k_sem_give(&data->lock);
+
+	return ret;
 }
 
 static int i2c_sam0_set_apply_bitrate(const struct device *dev,
@@ -717,6 +729,7 @@ static int i2c_sam0_initialize(const struct device *dev)
 		return retval;
 	}
 
+	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->sem, 0, 1);
 
 	cfg->irq_config_func(dev);
