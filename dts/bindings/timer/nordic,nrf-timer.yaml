@@ -22,4 +22,4 @@ properties:
   prescaler:
     type: int
     required: true
-    description: Prescaler value determines frequency (16MHz/2^prescaler)
+    description: Prescaler value determines frequency (base_frequency/2^prescaler)
