@@ -184,7 +184,7 @@ static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 				       const void *data, uint16_t length)
 {
 	int cb_err = err;
-	char name[CONFIG_BT_MCS_MEDIA_PLAYER_NAME_MAX];
+	char name[CONFIG_BT_MCC_MEDIA_PLAYER_NAME_MAX];
 
 	cur_mcs_inst->busy = false;
 	BT_DBG("err: 0x%02x, length: %d, data: %p", err, length, data);
@@ -247,7 +247,7 @@ static uint8_t mcc_read_icon_url_cb(struct bt_conn *conn, uint8_t err,
 				    const void *data, uint16_t length)
 {
 	int cb_err = err;
-	char url[CONFIG_BT_MCS_ICON_URL_MAX];
+	char url[CONFIG_BT_MCC_ICON_URL_MAX];
 
 	cur_mcs_inst->busy = false;
 	BT_DBG("err: 0x%02x, length: %d, data: %p", err, length, data);
@@ -276,7 +276,7 @@ static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
 				       const void *data, uint16_t length)
 {
 	int cb_err = err;
-	char title[CONFIG_BT_MCS_TRACK_TITLE_MAX];
+	char title[CONFIG_BT_MCC_TRACK_TITLE_MAX];
 
 	cur_mcs_inst->busy = false;
 	if (err) {
@@ -2354,7 +2354,7 @@ int on_icon_content(struct bt_ots_client *otc_inst, struct bt_conn *conn,
 #if CONFIG_BT_DEBUG_MCC
 struct track_seg_t {
 	uint8_t            name_len;
-	char               name[CONFIG_BT_MCS_SEGMENT_NAME_MAX];
+	char               name[CONFIG_BT_MCC_SEGMENT_NAME_MAX];
 	int32_t            pos;
 };
 
@@ -2390,9 +2390,9 @@ static void decode_track_segments(struct net_buf_simple *buff,
 
 			name = net_buf_simple_pull_mem(&tmp_buf, seg->name_len);
 
-			if (seg->name_len >= CONFIG_BT_MCS_SEGMENT_NAME_MAX) {
+			if (seg->name_len >= CONFIG_BT_MCC_SEGMENT_NAME_MAX) {
 				seg->name_len =
-					CONFIG_BT_MCS_SEGMENT_NAME_MAX - 1;
+					CONFIG_BT_MCC_SEGMENT_NAME_MAX - 1;
 			}
 			memcpy(seg->name, name, seg->name_len);
 		}
