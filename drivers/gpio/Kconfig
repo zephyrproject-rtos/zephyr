@@ -37,6 +37,13 @@ config GPIO_GET_DIRECTION
 	  via gpio_port_get_direction(), gpio_pin_is_input(), and
 	  gpio_pin_is_output().
 
+config GPIO_GET_CONFIG
+	bool "Support for get configuration function [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the support for getting the current configurations
+	  of GPIOs. The driver must implement it to work.
+
 source "drivers/gpio/Kconfig.b91"
 
 source "drivers/gpio/Kconfig.dw"
