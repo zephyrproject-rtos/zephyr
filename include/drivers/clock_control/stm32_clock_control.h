@@ -164,11 +164,15 @@
 #define STM32_CSI_FREQ		0
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lsi), fixed_clock, okay)
-#define STM32_LSI_ENABLED	1
+/* the STM32_LSI_FREQ is given by the LSI RC oscillator, even if not enabled */
+#if DT_PROP(DT_NODELABEL(clk_lsi), clock_frequency)
 #define STM32_LSI_FREQ		DT_PROP(DT_NODELABEL(clk_lsi), clock_frequency)
 #else
-#define STM32_LSI_FREQ		0
+/* LSI clock freq should be in device tree, not from stm32Cube LSI_VALUE */
+#define STM32_LSI_FREQ		LSI_VALUE
+#endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lsi), fixed_clock, okay)
+#define STM32_LSI_ENABLED	1
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32h7_hsi_clock, okay)
