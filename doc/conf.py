@@ -221,7 +221,6 @@ html_redirect_pages = redirects.REDIRECTS
 # -- Options for zephyr.warnings_filter -----------------------------------
 
 warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
-warnings_filter_silent = False
 
 # -- Options for notfound.extension ---------------------------------------
 
