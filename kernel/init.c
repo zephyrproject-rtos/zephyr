@@ -121,8 +121,9 @@ void z_bss_zero(void)
 		       - (uintptr_t) &__dtcm_bss_start);
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
-	(void)memset(&__ocm_bss_start, 0,
-		     ((uint32_t) &__ocm_bss_end - (uint32_t) &__ocm_bss_start));
+	z_early_memset(&__ocm_bss_start, 0,
+		       (uintptr_t) &__ocm_bss_end
+		       - (uintptr_t) &__ocm_bss_start);
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void bss_zeroing_relocation(void);
