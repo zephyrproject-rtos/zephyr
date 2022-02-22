@@ -95,11 +95,11 @@ enum {
 	/** Channel disconnected */
 	BT_ISO_DISCONNECTED,
 	/** Channel in connecting state */
-	BT_ISO_CONNECT,
+	BT_ISO_CONNECTING,
 	/** Channel ready for upper layer traffic on it */
 	BT_ISO_CONNECTED,
 	/** Channel in disconnecting state */
-	BT_ISO_DISCONNECT,
+	BT_ISO_DISCONNECTING,
 };
 
 

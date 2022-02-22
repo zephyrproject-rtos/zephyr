@@ -1553,7 +1553,8 @@ static void deferred_work(struct k_work *work)
 			struct bt_iso_chan *chan = iso->iso.chan;
 
 			if (chan != NULL) {
-				bt_iso_chan_set_state(chan, BT_ISO_DISCONNECT);
+				bt_iso_chan_set_state(chan,
+						      BT_ISO_DISCONNECTING);
 			}
 
 			bt_iso_cleanup_acl(iso);
