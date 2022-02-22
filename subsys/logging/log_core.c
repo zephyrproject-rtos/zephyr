@@ -399,7 +399,7 @@ void z_log_vprintk(const char *fmt, va_list ap)
 
 	if (!IS_ENABLED(CONFIG_LOG1)) {
 		z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL,
-					   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0,
+					   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, 0,
 					   fmt, ap);
 		return;
 	}
