@@ -177,10 +177,6 @@
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
-	sjw = <1>;
-	sample-point = <875>;
 	bus-speed-data = <1000000>;
-	sjw-data = <1>;
-	sample-point-data = <875>;
 	status = "okay";
 };

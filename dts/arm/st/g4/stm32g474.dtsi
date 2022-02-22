@@ -17,6 +17,10 @@
 				interrupt-names = "LINE_0", "LINE_1";
 				status = "disabled";
 				label = "CAN_2";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
 			};
 
 			can3: can@40006C00 {
@@ -27,6 +31,10 @@
 				interrupt-names = "LINE_0", "LINE_1";
 				status = "disabled";
 				label = "CAN_3";
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
 			};
 		};
 
