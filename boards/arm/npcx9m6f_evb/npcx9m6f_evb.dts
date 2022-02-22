@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nuvoton/npcx9m6f.dtsi>
-#include <nuvoton/npcx/npcx9/npcx9-pinctrl.dtsi>
+#include "npcx9m6f_evb-pinctrl.dtsi"
 
 / {
 	model = "Nuvoton NPCX9M6F evaluation board";
@@ -104,6 +104,8 @@
 
 &i2c0_0 {
 	status = "okay";
+	pinctrl-0 = <&i2c0_0_sda_scl_gpb4_b5>;
+	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
