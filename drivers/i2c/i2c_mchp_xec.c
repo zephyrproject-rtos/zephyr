@@ -8,8 +8,10 @@
 
 #include <drivers/clock_control.h>
 #include <kernel.h>
+#include <assert.h>
 #include <soc.h>
 #include <errno.h>
+#include <drivers/gpio.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
@@ -20,10 +22,15 @@ LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 
 #define EC_OWN_I2C_ADDR		0x7F
 #define RESET_WAIT_US		20
+#define BUS_IDLE_US_DFLT	5
 
-/* I2C timeout is  10 ms (WAIT_INTERVAL * WAIT_COUNT) */
+/* I2C timeout is 10 ms (WAIT_INTERVAL * WAIT_COUNT) */
 #define WAIT_INTERVAL		50
 #define WAIT_COUNT		200
+
+/* Line High Timeout is 2.5 ms (WAIT_LINE_HIGH_USEC * WAIT_LINE_HIGH_COUNT) */
+#define WAIT_LINE_HIGH_USEC	25
+#define WAIT_LINE_HIGH_COUNT	100
 
 /* I2C Read/Write bit pos */
 #define I2C_READ_WRITE_POS  0
@@ -41,12 +48,21 @@ struct i2c_xec_config {
 	uint32_t base_addr;
 	uint8_t girq_id;
 	uint8_t girq_bit;
+	uint8_t sda_pos;
+	uint8_t scl_pos;
+	const char *sda_gpio_label;
+	const char *scl_gpio_label;
 	void (*irq_config_func)(void);
 };
 
 struct i2c_xec_data {
 	uint32_t pending_stop;
+	uint32_t error_seen;
+	uint32_t timeout_seen;
+	uint32_t previously_in_read;
 	uint32_t speed_id;
+	const struct device *sda_gpio;
+	const struct device *scl_gpio;
 	struct i2c_slave_config *slave_cfg;
 	bool slave_attached;
 	bool slave_read;
@@ -182,7 +198,6 @@ static void recover_from_error(const struct device *dev)
 	i2c_xec_reset_config(dev);
 }
 
-
 static int wait_bus_free(const struct device *dev)
 {
 	const struct i2c_xec_config *config =
@@ -208,6 +223,25 @@ static int wait_bus_free(const struct device *dev)
 	return 0;
 }
 
+/*
+ * Wait with timeout for I2C controller to finish transmit/receive of one
+ * byte(address or data).
+ * When transmit/receive operation is started the I2C PIN status is 1. Upon
+ * normal completion I2C PIN status asserts(0).
+ * We loop checking I2C status for the following events:
+ * Bus Error:
+ *      Reset controller and return -EBUSY
+ * Lost Arbitration:
+ *      Return -EPERM. We lost bus to another controller. No reset.
+ * PIN == 0: I2C Status LRB is valid and contains ACK/NACK data on 9th clock.
+ *      ACK return 0 (success)
+ *      NACK Issue STOP, wait for bus minimum idle time, return -EIO.
+ * Timeout:
+ *      Reset controller and return -ETIMEDOUT
+ *
+ * NOTE: After generating a STOP the controller will not generate a START until
+ * Bus Minimum Idle time has expired.
+ */
 static int wait_completion(const struct device *dev)
 {
 	const struct i2c_xec_config *config =
@@ -216,37 +250,71 @@ static int wait_completion(const struct device *dev)
 	int counter = 0;
 	uint32_t ba = config->base_addr;
 
-	/* Wait for transaction to be completed */
-	while (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_PIN) {
-		ret = xec_spin_yield(&counter);
+	while (1) {
+		uint8_t status = MCHP_I2C_SMB_STS_RO(ba);
 
-		if (ret < 0) {
-			if (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_PIN) {
-				recover_from_error(dev);
-				return ret;
-			}
+		/* Is bus error ? */
+		if (status & MCHP_I2C_SMB_STS_BER) {
+			recover_from_error(dev);
+			return -EBUSY;
 		}
-	}
 
-	/* Check if Slave send ACK/NACK */
-	if (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_LRB_AD0) {
-		recover_from_error(dev);
-		return -EIO;
-	}
+		/* Is Lost arbitration ? */
+		status = MCHP_I2C_SMB_STS_RO(ba);
+		if (status & MCHP_I2C_SMB_STS_LAB) {
+			return -EPERM;
+		}
 
-	/* Check for bus error */
-	if (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_BER) {
-		recover_from_error(dev);
-		return -EBUSY;
+		status = MCHP_I2C_SMB_STS_RO(ba);
+		/* PIN -> 0 indicates I2C is done */
+		if (!(status & MCHP_I2C_SMB_STS_PIN)) {
+			/* PIN == 0. LRB contains state of 9th bit */
+			if (status & MCHP_I2C_SMB_STS_LRB_AD0) { /* NACK? */
+				/* Send STOP */
+				MCHP_I2C_SMB_CTRL_WO(ba) =
+						MCHP_I2C_SMB_CTRL_PIN |
+						MCHP_I2C_SMB_CTRL_ESO |
+						MCHP_I2C_SMB_CTRL_STO |
+						MCHP_I2C_SMB_CTRL_ACK;
+				k_busy_wait(BUS_IDLE_US_DFLT);
+				return -EIO;
+			}
+			break; /* success: ACK */
+		}
+
+		ret = xec_spin_yield(&counter);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return 0;
 }
 
-static bool check_lines(uint32_t ba)
+/*
+ * Call GPIO driver to read state of pins.
+ * Return boolean true if both lines HIGH else return boolean false
+ */
+static bool check_lines_high(const struct device *dev)
 {
-	return ((!(MCHP_I2C_SMB_BB_CTRL(ba) & MCHP_I2C_SMB_BB_CLKI_RO)) ||
-		(!(MCHP_I2C_SMB_BB_CTRL(ba) & MCHP_I2C_SMB_BB_DATI_RO)));
+	const struct i2c_xec_config *config =
+		(const struct i2c_xec_config *const)(dev->config);
+	struct i2c_xec_data *data = (struct i2c_xec_data *const)(dev->data);
+	gpio_port_value_t sda = 0, scl = 0;
+
+	if (gpio_port_get_raw(data->sda_gpio, &sda)) {
+		LOG_DBG("gpio_port_get_raw for %s SDA failed", dev->name);
+		return false;
+	}
+
+	if (gpio_port_get_raw(data->scl_gpio, &scl)) {
+		LOG_DBG("gpio_port_get_raw for %s SCL failed",
+			dev->name);
+		return false;
+	}
+
+	return (sda & BIT(config->sda_pos)) && (scl & BIT(config->scl_pos));
+
 }
 
 static int i2c_xec_configure(const struct device *dev,
@@ -290,17 +358,86 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
 	uint32_t ba = config->base_addr;
+	uint8_t i2c_timer = 0, byte, error = 0;
 	int ret;
 
-	if (data->pending_stop == 0) {
-		/* Check clock and data lines */
-		if (check_lines(ba)) {
-			return -EBUSY;
+	if (data->timeout_seen == 1) {
+		/* Wait to see if the slave has released the CLK */
+		ret = wait_completion(dev);
+		switch (ret) {
+		case 0:	/* Success */
+			break;
+
+		case -ETIMEDOUT:
+			data->timeout_seen = 1;
+			LOG_ERR("%s: %s wait_completion Timeout %d\n",
+				__func__, dev->name, ret);
+			return ret;
+
+		default:
+			error = 1;
+			break;
+		}
+
+		data->timeout_seen = 0;
+
+		/* If we are here, it means the slave has finally released
+		 * the CLK. The master needs to end that transaction
+		 * gracefully by sending a STOP on the bus.
+		 */
+		LOG_DBG("%s: %s Force Stop", __func__, dev->name);
+		MCHP_I2C_SMB_CTRL_WO(ba) =
+					MCHP_I2C_SMB_CTRL_PIN |
+					MCHP_I2C_SMB_CTRL_ESO |
+					MCHP_I2C_SMB_CTRL_STO |
+					MCHP_I2C_SMB_CTRL_ACK;
+		k_busy_wait(BUS_IDLE_US_DFLT);
+		data->pending_stop = 0;
+
+		/* If the timeout had occurred while the master was reading
+		 * something from the slave, that read needs to be completed
+		 * to clear the bus.
+		 */
+		if (data->previously_in_read == 1) {
+			data->previously_in_read = 0;
+			byte = MCHP_I2C_SMB_DATA(ba);
+		}
+
+		if (error) {
+			LOG_DBG("%s: Recovering %s previously in error",
+				__func__, dev->name);
+			recover_from_error(dev);
+		}
+
+		return -EBUSY;
+	}
+
+	if ((data->pending_stop == 0) || (data->error_seen == 1)) {
+		/* Wait till clock and data lines are HIGH */
+		while (check_lines_high(dev) == false) {
+			if (i2c_timer >= WAIT_LINE_HIGH_COUNT) {
+				LOG_DBG("%s: %s not high",
+					__func__, dev->name);
+				data->error_seen = 1;
+				return -EBUSY;
+			}
+			k_busy_wait(WAIT_LINE_HIGH_USEC);
+			i2c_timer++;
+		}
+
+		if (data->error_seen) {
+			LOG_DBG("%s: Recovering %s previously in error",
+				__func__, dev->name);
+			data->error_seen = 0;
+			recover_from_error(dev);
 		}
 
 		/* Wait until bus is free */
 		ret = wait_bus_free(dev);
 		if (ret) {
+			data->error_seen = 1;
+			LOG_DBG("%s: %s wait_bus_free failure",
+				__func__, dev->name);
 			return ret;
 		}
 
@@ -313,7 +450,25 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 				MCHP_I2C_SMB_CTRL_ACK;
 
 		ret = wait_completion(dev);
-		if (ret) {
+		switch (ret) {
+		case 0:	/* Success */
+			break;
+
+		case -EIO:
+			LOG_WRN("%s: No Addr ACK from Slave 0x%x on %s",
+				__func__, addr >> 1, dev->name);
+			return ret;
+
+		case -ETIMEDOUT:
+			data->timeout_seen = 1;
+			LOG_ERR("%s: Addr Clk stretch Timeout - Slave 0x%x on %s",
+				__func__, addr >> 1, dev->name);
+			return ret;
+
+		default:
+			data->error_seen = 1;
+			LOG_ERR("%s: %s wait_comp error for addr send",
+				__func__, dev->name);
 			return ret;
 		}
 	}
@@ -322,24 +477,41 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 	for (int i = 0U; i < msg.len; i++) {
 		MCHP_I2C_SMB_DATA(ba) = msg.buf[i];
 		ret = wait_completion(dev);
-		if (ret) {
+
+		switch (ret) {
+		case 0:	/* Success */
+			break;
+
+		case -EIO:
+			LOG_ERR("%s: No Data ACK from Slave 0x%x on %s",
+				__func__, addr >> 1, dev->name);
+			return ret;
+
+		case -ETIMEDOUT:
+			data->timeout_seen = 1;
+			LOG_ERR("%s: Clk stretch Timeout - Slave 0x%x on %s",
+				__func__, addr >> 1, dev->name);
+			return ret;
+
+		default:
+			data->error_seen = 1;
+			LOG_ERR("%s: %s wait_completion error for data send",
+				__func__, dev->name);
 			return ret;
 		}
+	}
 
-		/* Handle stop bit for last byte to write */
-		if (i == (msg.len - 1)) {
-			if (msg.flags & I2C_MSG_STOP) {
-				/* Send stop and ack bits */
-				MCHP_I2C_SMB_CTRL_WO(ba) =
-						MCHP_I2C_SMB_CTRL_PIN |
-						MCHP_I2C_SMB_CTRL_ESO |
-						MCHP_I2C_SMB_CTRL_STO |
-						MCHP_I2C_SMB_CTRL_ACK;
-				data->pending_stop = 0;
-			} else {
-				data->pending_stop = 1;
-			}
-		}
+	/* Handle stop bit for last byte to write */
+	if (msg.flags & I2C_MSG_STOP) {
+		/* Send stop and ack bits */
+		MCHP_I2C_SMB_CTRL_WO(ba) =
+				MCHP_I2C_SMB_CTRL_PIN |
+				MCHP_I2C_SMB_CTRL_ESO |
+				MCHP_I2C_SMB_CTRL_STO |
+				MCHP_I2C_SMB_CTRL_ACK;
+		data->pending_stop = 0;
+	} else {
+		data->pending_stop = 1;
 	}
 
 	return 0;
@@ -353,18 +525,75 @@ static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
 	uint32_t ba = config->base_addr;
-	uint8_t byte, ctrl;
+	uint8_t byte, ctrl, i2c_timer = 0, error = 0;
 	int ret;
 
-	if (!(msg.flags & I2C_MSG_RESTART)) {
-		/* Check clock and data lines */
-		if (check_lines(ba)) {
-			return -EBUSY;
+	if (data->timeout_seen == 1) {
+		/* Wait to see if the slave has released the CLK */
+		ret = wait_completion(dev);
+		switch (ret) {
+		case 0:	/* Success */
+			break;
+
+		case -ETIMEDOUT:
+			data->timeout_seen = 1;
+			LOG_ERR("%s: %s wait_completion Timeout %d\n",
+				__func__, dev->name, ret);
+			return ret;
+
+		default:
+			error = 1;
+			break;
+		}
+
+		data->timeout_seen = 0;
+
+		/* If we are here, it means the slave has finally released
+		 * the CLK. The master needs to end that transaction
+		 * gracefully by sending a STOP on the bus.
+		 */
+		LOG_DBG("%s: %s Force Stop", __func__, dev->name);
+		MCHP_I2C_SMB_CTRL_WO(ba) =
+					MCHP_I2C_SMB_CTRL_PIN |
+					MCHP_I2C_SMB_CTRL_ESO |
+					MCHP_I2C_SMB_CTRL_STO |
+					MCHP_I2C_SMB_CTRL_ACK;
+		k_busy_wait(BUS_IDLE_US_DFLT);
+
+		if (error) {
+			LOG_DBG("%s: Recovering %s previously in error",
+				__func__, dev->name);
+			recover_from_error(dev);
+		}
+		return -EBUSY;
+	}
+
+	if (!(msg.flags & I2C_MSG_RESTART) || (data->error_seen == 1)) {
+		/* Wait till clock and data lines are HIGH */
+		while (check_lines_high(dev) == false) {
+			if (i2c_timer >= WAIT_LINE_HIGH_COUNT) {
+				LOG_DBG("%s: %s not high",
+					__func__, dev->name);
+				data->error_seen = 1;
+				return -EBUSY;
+			}
+			k_busy_wait(WAIT_LINE_HIGH_USEC);
+			i2c_timer++;
+		}
+
+		if (data->error_seen) {
+			LOG_DBG("%s: Recovering %s previously in error",
+				__func__, dev->name);
+			data->error_seen = 0;
+			recover_from_error(dev);
 		}
 
 		/* Wait until bus is free */
 		ret = wait_bus_free(dev);
 		if (ret) {
+			data->error_seen = 1;
+			LOG_DBG("%s: %s wait_bus_free failure",
+				__func__, dev->name);
 			return ret;
 		}
 	}
@@ -379,7 +608,27 @@ static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 	MCHP_I2C_SMB_DATA(ba) = (addr | BIT(0));
 
 	ret = wait_completion(dev);
-	if (ret) {
+	switch (ret) {
+	case 0:	/* Success */
+		break;
+
+	case -EIO:
+		data->error_seen = 1;
+		LOG_WRN("%s: No Addr ACK from Slave 0x%x on %s",
+			__func__, addr >> 1, dev->name);
+		return ret;
+
+	case -ETIMEDOUT:
+		data->previously_in_read = 1;
+		data->timeout_seen = 1;
+		LOG_ERR("%s: Clk stretch Timeout - Slave 0x%x on %s",
+			__func__, addr >> 1, dev->name);
+		return ret;
+
+	default:
+		data->error_seen = 1;
+		LOG_ERR("%s: %s wait_completion error for address send",
+			__func__, dev->name);
 		return ret;
 	}
 
@@ -390,17 +639,30 @@ static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 
 	/* Read dummy byte */
 	byte = MCHP_I2C_SMB_DATA(ba);
-	ret = wait_completion(dev);
-	if (ret) {
-		return ret;
-	}
 
 	for (int i = 0U; i < msg.len; i++) {
-		while (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_PIN) {
-			if (MCHP_I2C_SMB_STS_RO(ba) & MCHP_I2C_SMB_STS_BER) {
-				recover_from_error(dev);
-				return -EBUSY;
-			}
+		ret = wait_completion(dev);
+		switch (ret) {
+		case 0:	/* Success */
+			break;
+
+		case -EIO:
+			LOG_ERR("%s: No Data ACK from Slave 0x%x on %s",
+				__func__, addr >> 1, dev->name);
+			return ret;
+
+		case -ETIMEDOUT:
+			data->previously_in_read = 1;
+			data->timeout_seen = 1;
+			LOG_ERR("%s: Clk stretch Timeout - Slave 0x%x on %s",
+				__func__, addr >> 1, dev->name);
+			return ret;
+
+		default:
+			data->error_seen = 1;
+			LOG_ERR("%s: %s wait_completion error for data send",
+				__func__, dev->name);
+			return ret;
 		}
 
 		if (i == (msg.len - 1)) {
@@ -432,7 +694,7 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 	struct i2c_xec_data *data = dev->data;
 
 	if (data->slave_attached) {
-		LOG_ERR("Device is registered as slave");
+		LOG_ERR("%s Device is registered as slave", dev->name);
 		return -EBUSY;
 	}
 #endif
@@ -442,13 +704,13 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 			ret = i2c_xec_poll_write(dev, msgs[i], addr);
 			if (ret) {
-				LOG_ERR("Write error: %d", ret);
+				LOG_ERR("%s Write error: %d", dev->name, ret);
 				return ret;
 			}
 		} else {
 			ret = i2c_xec_poll_read(dev, msgs[i], addr);
 			if (ret) {
-				LOG_ERR("Read error: %d", ret);
+				LOG_ERR("%s Read error: %d", dev->name, ret);
 				return ret;
 			}
 		}
@@ -617,6 +879,7 @@ static const struct i2c_driver_api i2c_xec_driver_api = {
 
 static int i2c_xec_init(const struct device *dev)
 {
+	const struct i2c_xec_config *cfg = dev->config;
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
 	int ret;
@@ -624,12 +887,27 @@ static int i2c_xec_init(const struct device *dev)
 	data->pending_stop = 0;
 	data->slave_attached = false;
 
+	data->sda_gpio = device_get_binding(cfg->sda_gpio_label);
+	if (!data->sda_gpio) {
+		LOG_ERR("%s configure failed to bind SDA GPIO", dev->name);
+		return -ENXIO;
+	}
+
+	data->scl_gpio = device_get_binding(cfg->scl_gpio_label);
+	if (!data->scl_gpio) {
+		LOG_ERR("%s configure failed to bind SCL GPIO", dev->name);
+		return -ENXIO;
+	}
+
+	__ASSERT(data->sda_gpio != data->scl_gpio,
+				"Both i2c pins on same GPIO");
+
 	/* Default configuration */
 	ret = i2c_xec_configure(dev,
 				I2C_MODE_MASTER |
 				I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	if (ret) {
-		LOG_ERR("i2c configure failed %d", ret);
+		LOG_ERR("%s configure failed %d", dev->name, ret);
 		return ret;
 	}
 
@@ -652,9 +930,13 @@ static int i2c_xec_init(const struct device *dev)
 		.port_sel = DT_INST_PROP(n, port_sel),			\
 		.girq_id = DT_INST_PROP(n, girq),			\
 		.girq_bit = DT_INST_PROP(n, girq_bit),			\
+		.sda_pos = DT_INST_GPIO_PIN(n, sda_gpios),		\
+		.scl_pos = DT_INST_GPIO_PIN(n, scl_gpios),		\
+		.sda_gpio_label = DT_INST_GPIO_LABEL(n, sda_gpios),	\
+		.scl_gpio_label = DT_INST_GPIO_LABEL(n, scl_gpios),	\
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, &i2c_xec_init, NULL,			\
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_init, NULL,	\
 		&i2c_xec_data_##n, &i2c_xec_config_##n,			\
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
 		&i2c_xec_driver_api);					\
