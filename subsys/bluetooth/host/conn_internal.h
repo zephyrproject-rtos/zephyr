@@ -14,13 +14,13 @@
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_DISCONNECT_COMPLETE,
-	BT_CONN_CONNECT_SCAN,
-	BT_CONN_CONNECT_AUTO,
-	BT_CONN_CONNECT_ADV,
-	BT_CONN_CONNECT_DIR_ADV,
-	BT_CONN_CONNECT,
+	BT_CONN_CONNECTING_SCAN,
+	BT_CONN_CONNECTING_AUTO,
+	BT_CONN_CONNECTING_ADV,
+	BT_CONN_CONNECTING_DIR_ADV,
+	BT_CONN_CONNECTING,
 	BT_CONN_CONNECTED,
-	BT_CONN_DISCONNECT,
+	BT_CONN_DISCONNECTING,
 } bt_conn_state_t;
 
 /* bt_conn flags: the flags defined here represent connection parameters */
@@ -308,10 +308,10 @@ static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 {
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
-	case BT_CONN_DISCONNECT:
+	case BT_CONN_DISCONNECTING:
 	case BT_CONN_DISCONNECT_COMPLETE:
 		return true;
-	case BT_CONN_CONNECT:
+	case BT_CONN_CONNECTING:
 		/* ISO connection handle assigned at connect state */
 		if (IS_ENABLED(CONFIG_BT_ISO) &&
 		    conn->type == BT_CONN_TYPE_ISO) {

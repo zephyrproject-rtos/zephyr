@@ -1024,7 +1024,7 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	iso->handle = cis_handle;
 	iso->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(iso, BT_CONN_CONNECT);
+	bt_conn_set_state(iso, BT_CONN_CONNECTING);
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
@@ -1593,7 +1593,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 		struct bt_iso_cig *cig;
 
 		iso_chan->iso->iso.acl = bt_conn_ref(param[i].acl);
-		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECT);
+		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECTING);
 		bt_iso_chan_set_state(iso_chan, BT_ISO_CONNECT);
 
 		cig = get_cig(iso_chan);
