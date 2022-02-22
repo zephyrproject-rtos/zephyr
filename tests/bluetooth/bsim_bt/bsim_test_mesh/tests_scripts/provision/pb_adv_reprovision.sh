@@ -4,6 +4,7 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-RunTest mesh_provision_pb_adv_reprovision \
-	prov_device_pb_adv_reprovision \
-	prov_provisioner_pb_adv_reprovision
+# TODO: Disabled as a hotfix
+# RunTest mesh_provision_pb_adv_reprovision \
+# 	prov_device_pb_adv_reprovision \
+# 	prov_provisioner_pb_adv_reprovision
