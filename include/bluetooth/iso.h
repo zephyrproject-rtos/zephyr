@@ -93,13 +93,13 @@ extern "C" {
  */
 enum {
 	/** Channel disconnected */
-	BT_ISO_DISCONNECTED,
+	BT_ISO_STATE_DISCONNECTED,
 	/** Channel in connecting state */
-	BT_ISO_CONNECTING,
+	BT_ISO_STATE_CONNECTING,
 	/** Channel ready for upper layer traffic on it */
-	BT_ISO_CONNECTED,
+	BT_ISO_STATE_CONNECTED,
 	/** Channel in disconnecting state */
-	BT_ISO_DISCONNECTING,
+	BT_ISO_STATE_DISCONNECTING,
 };
 
 

@@ -363,7 +363,7 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 	       stream->qos->pd);
 
 	/* Disconnect ISO if connected */
-	if (stream->iso->state == BT_ISO_CONNECTED) {
+	if (stream->iso->state == BT_ISO_STATE_CONNECTED) {
 		bt_audio_stream_disconnect(stream);
 	}
 
