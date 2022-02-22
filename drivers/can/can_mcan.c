@@ -10,9 +10,9 @@
 #include <drivers/can.h>
 #include "can_mcan.h"
 #include "can_mcan_int.h"
-
 #include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
+
+LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT (100)
 #define CAN_DIV_CEIL(val, div) (((val) + (div) - 1) / (div))

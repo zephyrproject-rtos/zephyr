@@ -7,10 +7,9 @@
 #include <drivers/can.h>
 #include <kernel.h>
 #include <sys/util.h>
-
-#define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(can_driver);
+
+LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_SYNC_SEG 1
 
