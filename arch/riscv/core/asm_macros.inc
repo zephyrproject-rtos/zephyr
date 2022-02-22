@@ -29,3 +29,25 @@
 	.endm
 
 #endif
+
+#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
+
+	.macro flr, rd, mem
+	fld \rd, \mem
+	.endm
+
+	.macro fsr, rs, mem
+	fsd \rs, \mem
+	.endm
+
+#else
+
+	.macro flr, rd, mem
+	flw \rd, \mem
+	.endm
+
+	.macro fsr, rs, mem
+	fsw \rs, \mem
+	.endm
+
+#endif
