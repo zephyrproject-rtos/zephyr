@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1510,6 +1510,14 @@ struct adc_it8xxx2_regs {
 #define IT8XXX2_ADC_VCHEN			BIT(4)
 /* Automatic hardware calibration enable */
 #define IT8XXX2_ADC_AHCE			BIT(7)
+/* 0x046, 0x049, 0x04c, 0x06e, 0x071, 0x074: Voltage comparator x control */
+#define IT8XXX2_VCMP_CMPEN			BIT(7)
+#define IT8XXX2_VCMP_CMPINTEN			BIT(6)
+#define IT8XXX2_VCMP_GREATER_THRESHOLD		BIT(5)
+#define IT8XXX2_VCMP_EDGE_TRIGGER		BIT(4)
+#define IT8XXX2_VCMP_GPIO_ACTIVE_LOW		BIT(3)
+/* 0x077~0x07c: Voltage comparator x channel select MSB */
+#define IT8XXX2_VCMP_VCMPXCSELM			BIT(0)
 
 /**
  *

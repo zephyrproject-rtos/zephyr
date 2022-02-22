@@ -103,6 +103,7 @@ add_subdirectory_ifdef(CONFIG_ITDS		wsen_itds)
 add_subdirectory_ifdef(CONFIG_MCUX_ACMP		mcux_acmp)
 add_subdirectory_ifdef(CONFIG_TACH_NPCX		nuvoton_tach_npcx)
 add_subdirectory_ifdef(CONFIG_TACH_IT8XXX2	ite_tach_it8xxx2)
+add_subdirectory_ifdef(CONFIG_VCMP_IT8XXX2	ite_vcmp_it8xxx2)
 
 if(CONFIG_USERSPACE OR CONFIG_SENSOR_SHELL OR CONFIG_SENSOR_SHELL_BATTERY)
 # The above if() is needed or else CMake would complain about
