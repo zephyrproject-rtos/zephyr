@@ -810,39 +810,6 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 }
 
 /**
- * @brief Determine whether a device is ready for use
- *
- * This is equivalent to device_usable_check(), without the overhead of a
- * syscall wrapper.
- *
- * @deprecated Use z_device_is_ready() instead.
- *
- * @param dev Device instance.
- *
- * @retval 0 If device is usable.
- * @retval -ENODEV If device is not usable.
- */
-__deprecated static inline int z_device_usable_check(const struct device *dev)
-{
-	return z_device_is_ready(dev) ? 0 : -ENODEV;
-}
-
-/**
- * @brief Determine whether a device is ready for use
- *
- * @deprecated Use device_is_ready() instead.
- *
- * @param dev Device instance.
- *
- * @retval 0 If device is usable.
- * @retval -ENODEV If device is not usable.
- */
-__deprecated static inline int device_usable_check(const struct device *dev)
-{
-	return device_is_ready(dev) ? 0 : -ENODEV;
-}
-
-/**
  * @}
  */
 
