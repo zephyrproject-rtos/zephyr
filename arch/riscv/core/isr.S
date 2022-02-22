@@ -60,18 +60,18 @@
 	op fs11, _thread_offset_to_fs11(reg) ;
 
 #define STORE_FP_CALLEE_SAVED(reg) \
-	frcsr t2				       ;\
-	RV_OP_STOREREG t2, _thread_offset_to_fcsr(reg) ;\
+	frcsr t2				;\
+	sw t2, _thread_offset_to_fcsr(reg)	;\
 	DO_FP_CALLEE_SAVED(RV_OP_STOREFPREG, reg)
 
 #define LOAD_FP_CALLEE_SAVED(reg) \
-	RV_OP_LOADREG t2, _thread_offset_to_fcsr(reg) ;\
-	fscsr t2				      ;\
+	lw t2, _thread_offset_to_fcsr(reg)	;\
+	fscsr t2				;\
 	DO_FP_CALLEE_SAVED(RV_OP_LOADFPREG, reg)
 
 #define COPY_ESF_FP_STATE(to_reg, from_reg, temp)			\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fp_state_OFFSET(from_reg)	;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fp_state_OFFSET(to_reg)	;
+	lb temp, __z_arch_esf_t_fp_state_OFFSET(from_reg)	;\
+	sb temp, __z_arch_esf_t_fp_state_OFFSET(to_reg)	;
 
 #define COPY_ESF_FP(to_reg, from_reg, temp)				\
 	RV_OP_LOADREG temp, __z_arch_esf_t_ft0_OFFSET(from_reg)		;\
@@ -304,9 +304,9 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	/* Assess whether floating-point registers need to be saved. */
 	la t0, _kernel
 	RV_OP_LOADREG t0, _kernel_offset_to_current(t0)
-	RV_OP_LOADREG t0, _thread_offset_to_user_options(t0)
+	lb t0, _thread_offset_to_user_options(t0)
 	andi t0, t0, K_FP_REGS
-	RV_OP_STOREREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
+	sb t0, __z_arch_esf_t_fp_state_OFFSET(sp)
 	beqz t0, skip_store_fp_caller_saved
 	STORE_FP_CALLER_SAVED(sp)
 
@@ -352,7 +352,7 @@ skip_store_fp_caller_saved:
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
-	RV_OP_LOADREG t2, _thread_offset_to_user_options(t1)
+	lb t2, _thread_offset_to_user_options(t1)
 	andi t2, t2, K_FP_REGS
 	beqz t2, skip_store_fp_callee_saved_user
 	STORE_FP_CALLEE_SAVED(t1)
@@ -362,7 +362,7 @@ skip_store_fp_callee_saved_user:
 is_priv_sp:
 	/* Clear user mode variable */
 	la t0, is_user_mode
-	sb zero, 0(t0)
+	sw zero, 0(t0)
 #endif /* CONFIG_USERSPACE */
 
 	/*
@@ -489,7 +489,7 @@ not_user_syscall:
 	csrr t0, mscratch
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	RV_OP_LOADREG t1, __z_arch_esf_t_fp_state_OFFSET(t0)
+	lb t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_move_kernel_syscall
 	COPY_ESF_FP(sp, t0, t1)
 skip_fp_move_kernel_syscall:
@@ -562,7 +562,7 @@ is_user_syscall:
 	csrr t0, mscratch
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	RV_OP_LOADREG t1, __z_arch_esf_t_fp_state_OFFSET(t0)
+	lb t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_copy_user_syscall
 	COPY_ESF_FP(sp, t0, t1)
 skip_fp_copy_user_syscall:
@@ -636,7 +636,7 @@ no_reschedule_user_fault:
 	csrr t0, mscratch
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	RV_OP_LOADREG t1, __z_arch_esf_t_fp_state_OFFSET(t0)
+	lb t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_copy_return_user_syscall
 	COPY_ESF_FP(sp, t0, t1)
 skip_fp_copy_return_user_syscall:
@@ -785,7 +785,7 @@ on_thread_stack:
 	csrr t0, mscratch
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	RV_OP_LOADREG t1, __z_arch_esf_t_fp_state_OFFSET(t0)
+	lb t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_move_irq
 	COPY_ESF_FP(sp, t0, t1)
 skip_fp_move_irq:
@@ -859,7 +859,7 @@ reschedule:
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
-	RV_OP_LOADREG t2, _thread_offset_to_user_options(t1)
+	lb t2, _thread_offset_to_user_options(t1)
 	andi t2, t2, K_FP_REGS
 	beqz t2, skip_store_fp_callee_saved
 	STORE_FP_CALLEE_SAVED(t1)
@@ -905,7 +905,7 @@ skip_callee_saved_reg:
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Determine if we need to restore floating-point registers. */
-	RV_OP_LOADREG t2, _thread_offset_to_user_options(t1)
+	lb t2, _thread_offset_to_user_options(t1)
 	andi t2, t2, K_FP_REGS
 	beqz t2, skip_load_fp_callee_saved
 
@@ -956,7 +956,7 @@ skip_load_fp_callee_saved:
 	/* Set user mode variable */
 	li t2, 0x1
 	la t3, is_user_mode
-	sb t2, 0(t3)
+	sw t2, 0(t3)
 
 kernel_swap:
 #endif /* CONFIG_USERSPACE */
@@ -994,7 +994,7 @@ no_reschedule_resched:
 	 * to happen before restoring integer registers to avoid stomping on
 	 * t0.
 	 */
-	RV_OP_LOADREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
+	lb t0, __z_arch_esf_t_fp_state_OFFSET(sp)
 	beqz t0, skip_load_fp_caller_saved_resched
 	LOAD_FP_CALLER_SAVED(sp)
 
@@ -1025,7 +1025,7 @@ no_reschedule:
 	/* Set user mode variable */
 	li t1, 0x1
 	la t0, is_user_mode
-	sb t1, 0(t0)
+	sw t1, 0(t0)
 
 	la t0, irq_flag
 	lb t0, 0(t0)
@@ -1059,7 +1059,7 @@ no_enter_user:
 	 * to happen before restoring integer registers to avoid stomping on
 	 * t0.
 	 */
-	RV_OP_LOADREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
+	lb t0, __z_arch_esf_t_fp_state_OFFSET(sp)
 	beqz t0, skip_load_fp_caller_saved
 	LOAD_FP_CALLER_SAVED(sp)
 
