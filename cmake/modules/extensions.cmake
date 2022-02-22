@@ -3669,7 +3669,7 @@ endmacro()
 #
 #
 # Define an output section which will set up an iterable area
-# of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+# of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE.
 # Input sections will be sorted by name in lexicographical order.
 #
 # Each list for an input section will define the following linker symbols:
