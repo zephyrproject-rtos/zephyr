@@ -383,11 +383,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		dma1: dma@40020000 {
