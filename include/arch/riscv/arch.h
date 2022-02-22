@@ -195,14 +195,6 @@
 #define RV_REGSHIFT 2
 #endif
 
-#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
-#define RV_OP_LOADFPREG fld
-#define RV_OP_STOREFPREG fsd
-#else
-#define RV_OP_LOADFPREG flw
-#define RV_OP_STOREFPREG fsw
-#endif
-
 /* Common mstatus bits. All supported cores today have the same
  * layouts.
  */
