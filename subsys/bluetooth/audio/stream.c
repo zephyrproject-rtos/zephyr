@@ -64,7 +64,8 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf)
 	}
 
 	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
-		BT_DBG("Channel not ready for streaming");
+		BT_DBG("Channel %p not ready for streaming (state: %s)",
+		       stream, bt_audio_ep_state_str(stream->ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -452,6 +453,21 @@ static int bt_audio_cig_reconfigure(struct bt_audio_unicast_group *group,
 	return 0;
 }
 
+static void audio_stream_qos_cleanup(const struct bt_conn *conn,
+				     struct bt_audio_unicast_group *group)
+{
+	struct bt_audio_stream *stream;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+		if (stream->conn != conn && stream->ep != NULL) {
+			/* Channel not part of this ACL, skip */
+			continue;
+		}
+
+		bt_unicast_client_ep_unbind_audio_iso(stream->ep);
+	}
+}
+
 int bt_audio_stream_qos(struct bt_conn *conn,
 			struct bt_audio_unicast_group *group,
 			struct bt_codec_qos *qos)
@@ -510,8 +526,11 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 	/* Validate streams before starting the QoS execution */
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
-		struct bt_iso_chan_io_qos *io;
-		struct bt_iso_chan_qos *iso_qos;
+		if (stream->conn != conn) {
+			/* Channel not part of this ACL, skip */
+			continue;
+		}
+		conn_stream_found = true;
 
 		if (stream->conn != conn) {
 			/* Channel not part of this ACL, skip */
@@ -519,7 +538,8 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 		}
 		conn_stream_found = true;
 
-		if (stream->ep == NULL) {
+		ep = stream->ep;
+		if (ep == NULL) {
 			BT_DBG("stream->ep is NULL");
 			return -EINVAL;
 		}
@@ -527,7 +547,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 		/* Can only be done if all the streams are in the codec
 		 * configured state or the QoS configured state
 		 */
-		switch (stream->ep->status.state) {
+		switch (ep->status.state) {
 		case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 			break;
@@ -541,33 +561,15 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		if (stream->iso == NULL) {
-			BT_DBG("stream->iso is NULL");
+		/* Verify ep->dir */
+		switch (ep->dir) {
+		case BT_AUDIO_DIR_SINK:
+		case BT_AUDIO_DIR_SOURCE:
+			break;
+		default:
+			__ASSERT(false, "invalid endpoint dir: %u", ep->dir);
 			return -EINVAL;
 		}
-
-		iso_qos = stream->iso->qos;
-		if (stream->ep->dir == BT_AUDIO_DIR_SINK) {
-			/* If the endpoint is a sink, then we need to
-			 * configure our TX parameters
-			 */
-			io = iso_qos->tx;
-			iso_qos->rx = NULL;
-		} else if (stream->ep->dir == BT_AUDIO_DIR_SOURCE) {
-			/* If the endpoint is a source, then we need to
-			 * configure our RX parameters
-			 */
-			io = iso_qos->rx;
-			iso_qos->tx = NULL;
-		} else {
-			__ASSERT(false, "invalid endpoint dir: %u",
-				 stream->ep->dir);
-			return -EINVAL;
-		}
-
-		BT_ERR("iso_qos %p, io %p, qos %p", iso_qos, io, qos);
-
-		bt_audio_codec_qos_to_iso_qos(io, qos);
 	}
 
 	if (!conn_stream_found) {
@@ -575,17 +577,67 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	/* Setup streams before starting the QoS execution */
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+		struct bt_iso_chan_qos *iso_qos;
+		struct bt_audio_iso *audio_iso;
+		struct bt_iso_chan_io_qos *io;
+
+		if (stream->conn != conn) {
+			/* Channel not part of this ACL, skip */
+			continue;
+		}
+
+		ep = stream->ep;
+		if (ep->iso != NULL) {
+			/* already setup */
+			continue;
+		}
+
+		audio_iso = bt_unicast_client_new_audio_iso(stream);
+		if (audio_iso == NULL) {
+			audio_stream_qos_cleanup(conn, group);
+			return -ENOMEM;
+		}
+
+		bt_unicast_client_ep_bind_audio_iso(ep, audio_iso);
+
+		iso_qos = stream->iso->qos;
+
+		if (ep->dir == BT_AUDIO_DIR_SINK) {
+			/* If the endpoint is a sink, then we need to
+			 * configure our TX parameters
+			 */
+			io = iso_qos->tx;
+			iso_qos->rx = NULL;
+		} else {
+			/* If the endpoint is a source, then we need to
+			 * configure our RX parameters
+			 */
+			io = iso_qos->rx;
+			iso_qos->tx = NULL;
+		}
+
+		BT_ERR("iso_qos %p, io %p, qos %p", iso_qos, io, qos);
+
+		bt_audio_codec_qos_to_iso_qos(io, qos);
+	}
+
 	/* Create or reconfigure the CIG */
 	if (group->cig == NULL) {
 		err = bt_audio_cig_create(group, qos);
 		if (err != 0) {
 			BT_DBG("bt_audio_cig_create failed: %d", err);
+			audio_stream_qos_cleanup(conn, group);
+
 			return err;
 		}
 	} else {
 		err = bt_audio_cig_reconfigure(group, qos);
 		if (err != 0) {
 			BT_DBG("bt_audio_cig_reconfigure failed: %d", err);
+			audio_stream_qos_cleanup(conn, group);
+
 			return err;
 		}
 	}
@@ -607,6 +659,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 		err = bt_unicast_client_ep_qos(stream->ep, buf, qos);
 		if (err) {
+			audio_stream_qos_cleanup(conn, group);
 			return err;
 		}
 
@@ -618,6 +671,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	err = bt_unicast_client_ep_send(conn, ep, buf);
 	if (err != 0) {
 		BT_DBG("Could not send config QoS: %d", err);
+		audio_stream_qos_cleanup(conn, group);
 		return err;
 	}
 
