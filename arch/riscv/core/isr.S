@@ -14,6 +14,7 @@
 #include <kernel.h>
 #include <syscall.h>
 #include <arch/riscv/csr.h>
+#include "asm_macros.inc"
 
 /* Convenience macros for loading/storing register states. */
 
@@ -74,86 +75,86 @@
 	sb temp, __z_arch_esf_t_fp_state_OFFSET(to_reg)	;
 
 #define COPY_ESF_FP(to_reg, from_reg, temp)				\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft0_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft0_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft1_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft1_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft2_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft2_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft3_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft3_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft4_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft4_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft5_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft5_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft6_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft6_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft7_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft7_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft8_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft8_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft9_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft9_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft10_OFFSET(from_reg)	;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft10_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ft11_OFFSET(from_reg)	;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ft11_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fa0_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fa0_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fa1_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fa1_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fa2_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fa2_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fa3_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fa3_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fa4_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fa4_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fa5_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fa5_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fa6_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fa6_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_fa7_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_fa7_OFFSET(to_reg)		;
+	lr temp, __z_arch_esf_t_ft0_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft0_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft1_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft1_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft2_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft2_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft3_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft3_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft4_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft4_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft5_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft5_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft6_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft6_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft7_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft7_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft8_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft8_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft9_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ft9_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft10_OFFSET(from_reg)	;\
+	sr temp, __z_arch_esf_t_ft10_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ft11_OFFSET(from_reg)	;\
+	sr temp, __z_arch_esf_t_ft11_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_fa0_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_fa0_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_fa1_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_fa1_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_fa2_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_fa2_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_fa3_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_fa3_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_fa4_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_fa4_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_fa5_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_fa5_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_fa6_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_fa6_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_fa7_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_fa7_OFFSET(to_reg)		;
 
-#define COPY_ESF(to_reg, from_reg, temp)				\
-	RV_OP_LOADREG temp, __z_arch_esf_t_mepc_OFFSET(from_reg)	;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_mepc_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_mstatus_OFFSET(from_reg)	;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_mstatus_OFFSET(to_reg)	;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_ra_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_ra_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_tp_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_tp_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_t0_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_t0_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_t1_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_t1_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_t2_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_t2_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_t3_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_t3_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_t4_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_t4_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_t5_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_t5_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_t6_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_t6_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_a0_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_a0_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_a1_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_a1_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_a2_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_a2_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_a3_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_a3_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_a4_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_a4_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_a5_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_a5_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_a6_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_a6_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_a7_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_a7_OFFSET(to_reg)		;
+#define COPY_ESF(to_reg, from_reg, temp)			\
+	lr temp, __z_arch_esf_t_mepc_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_mepc_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_mstatus_OFFSET(from_reg)	;\
+	sr temp, __z_arch_esf_t_mstatus_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_ra_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_ra_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_tp_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_tp_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_t0_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_t0_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_t1_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_t1_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_t2_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_t2_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_t3_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_t3_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_t4_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_t4_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_t5_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_t5_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_t6_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_t6_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_a0_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_a0_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_a1_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_a1_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_a2_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_a2_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_a3_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_a3_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_a4_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_a4_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_a5_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_a5_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_a6_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_a6_OFFSET(to_reg)		;\
+	lr temp, __z_arch_esf_t_a7_OFFSET(from_reg)		;\
+	sr temp, __z_arch_esf_t_a7_OFFSET(to_reg)
 
 #define DO_CALLEE_SAVED(op, reg) \
 	op s0, _thread_offset_to_s0(reg)		;\
@@ -170,10 +171,10 @@
 	op s11, _thread_offset_to_s11(reg)		;
 
 #define STORE_CALLEE_SAVED(reg) \
-	DO_CALLEE_SAVED(RV_OP_STOREREG, reg)
+	DO_CALLEE_SAVED(sr, reg)
 
 #define LOAD_CALLEE_SAVED(reg) \
-	DO_CALLEE_SAVED(RV_OP_LOADREG, reg)
+	DO_CALLEE_SAVED(lr, reg)
 
 #define DO_CALLER_SAVED(op) \
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
@@ -196,10 +197,10 @@
 
 #define STORE_CALLER_SAVED() \
 	addi sp, sp, -__z_arch_esf_t_SIZEOF	;\
-	DO_CALLER_SAVED(RV_OP_STOREREG)		;
+	DO_CALLER_SAVED(sr)		;
 
 #define LOAD_CALLER_SAVED() \
-	DO_CALLER_SAVED(RV_OP_LOADREG)		;\
+	DO_CALLER_SAVED(lr)			;\
 	addi sp, sp, __z_arch_esf_t_SIZEOF	;
 
 /*
@@ -211,7 +212,7 @@
  * @return 0 if previous mode is user.
  */
 #define WAS_NOT_USER(ret, temp) \
-	RV_OP_LOADREG ret, __z_arch_esf_t_mstatus_OFFSET(sp)	;\
+	lr ret, __z_arch_esf_t_mstatus_OFFSET(sp)	;\
 	li temp, MSTATUS_MPP					;\
 	and ret, ret, temp					;
 
@@ -303,7 +304,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
 	la t0, _kernel
-	RV_OP_LOADREG t0, _kernel_offset_to_current(t0)
+	lr t0, _kernel_offset_to_current(t0)
 	lb t0, _thread_offset_to_user_options(t0)
 	andi t0, t0, K_FP_REGS
 	sb t0, __z_arch_esf_t_fp_state_OFFSET(sp)
@@ -315,11 +316,11 @@ skip_store_fp_caller_saved:
 
 	/* Save MEPC register */
 	csrr t0, mepc
-	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	sr t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 	/* Save SOC-specific MSTATUS register */
 	csrr t0, mstatus
-	RV_OP_STOREREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	sr t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Handle context saving at SOC level. */
@@ -333,7 +334,7 @@ skip_store_fp_caller_saved:
 	bnez t0, is_priv_sp
 
 	la t0, _kernel
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+	lr t1, _kernel_offset_to_current(t0)
 
 	/* Save user stack pointer */
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -341,7 +342,7 @@ skip_store_fp_caller_saved:
 #else
 	mv t2, sp
 #endif /* CONFIG_PMP_STACK_GUARD */
-	RV_OP_STOREREG t2, _thread_offset_to_user_sp(t1)
+	sr t2, _thread_offset_to_user_sp(t1)
 	/*
 	 * Save callee-saved registers of user thread here
 	 * because rescheduling will occur in nested ecall,
@@ -433,9 +434,9 @@ user_fault:
 
 	/* Switch to privilege stack */
 	la t0, _kernel
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-	RV_OP_LOADREG t0, _thread_offset_to_priv_stack_start(t1)
-	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Update user SP */
+	lr t1, _kernel_offset_to_current(t0)
+	lr t0, _thread_offset_to_priv_stack_start(t1)
+	sr sp, _thread_offset_to_user_sp(t1) /* Update user SP */
 	addi sp, t0, CONFIG_PRIVILEGED_STACK_SIZE
 	tail _Fault
 
@@ -464,9 +465,9 @@ not_user_syscall:
 	 * It's safe to always increment by 4, even with compressed
 	 * instructions, because the ecall instruction is always 4 bytes.
 	 */
-	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	lr t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	addi t0, t0, 4
-	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	sr t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
@@ -476,7 +477,7 @@ not_user_syscall:
 	 * jump to is_interrupt to handle the IRQ offload.
 	 */
 	la t0, _offload_routine
-	RV_OP_LOADREG t1, 0x00(t0)
+	lr t1, 0(t0)
 	bnez t1, is_interrupt
 #endif /* CONFIG_IRQ_OFFLOAD */
 
@@ -509,16 +510,16 @@ skip_fp_move_kernel_syscall:
 	li t0, FORCE_SYSCALL_ID
 	bne a7, t0, reschedule
 
-	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
+	lr a0, __z_arch_esf_t_a0_OFFSET(sp)
 
 	/* Check for user_mode_enter function */
 	la t0, arch_user_mode_enter
 	bne t0, a0, reschedule
 
-	RV_OP_LOADREG a0, __z_arch_esf_t_a1_OFFSET(sp)
-	RV_OP_LOADREG a1, __z_arch_esf_t_a2_OFFSET(sp)
-	RV_OP_LOADREG a2, __z_arch_esf_t_a3_OFFSET(sp)
-	RV_OP_LOADREG a3, __z_arch_esf_t_a4_OFFSET(sp)
+	lr a0, __z_arch_esf_t_a1_OFFSET(sp)
+	lr a1, __z_arch_esf_t_a2_OFFSET(sp)
+	lr a2, __z_arch_esf_t_a3_OFFSET(sp)
+	lr a3, __z_arch_esf_t_a4_OFFSET(sp)
 
 	/*
 	 * MRET will be done in the following function because
@@ -537,7 +538,7 @@ is_user_syscall:
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	la t0, _kernel
-	RV_OP_LOADREG a0, _kernel_offset_to_current(t0)
+	lr a0, _kernel_offset_to_current(t0)
 	jal ra, z_riscv_configure_stack_guard
 #endif /* CONFIG_PMP_STACK_GUARD */
 
@@ -550,9 +551,9 @@ is_user_syscall:
 	 * It is safe to always increment by 4, even with compressed
 	 * instructions, because the ecall instruction is always 4 bytes.
 	 */
-	RV_OP_LOADREG t1, __z_arch_esf_t_mepc_OFFSET(sp)
+	lr t1, __z_arch_esf_t_mepc_OFFSET(sp)
 	addi t1, t1, 4
-	RV_OP_STOREREG t1, __z_arch_esf_t_mepc_OFFSET(sp)
+	sr t1, __z_arch_esf_t_mepc_OFFSET(sp)
 #ifdef CONFIG_PMP_STACK_GUARD
 	/*
 	 * Copy ESF to user stack in case of rescheduling
@@ -571,20 +572,20 @@ skip_fp_copy_user_syscall:
 	COPY_ESF(sp, t0, t1)
 #endif /* CONFIG_PMP_STACK_GUARD */
 	/* Restore argument registers from user stack */
-	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
-	RV_OP_LOADREG a1, __z_arch_esf_t_a1_OFFSET(sp)
-	RV_OP_LOADREG a2, __z_arch_esf_t_a2_OFFSET(sp)
-	RV_OP_LOADREG a3, __z_arch_esf_t_a3_OFFSET(sp)
-	RV_OP_LOADREG a4, __z_arch_esf_t_a4_OFFSET(sp)
-	RV_OP_LOADREG a5, __z_arch_esf_t_a5_OFFSET(sp)
+	lr a0, __z_arch_esf_t_a0_OFFSET(sp)
+	lr a1, __z_arch_esf_t_a1_OFFSET(sp)
+	lr a2, __z_arch_esf_t_a2_OFFSET(sp)
+	lr a3, __z_arch_esf_t_a3_OFFSET(sp)
+	lr a4, __z_arch_esf_t_a4_OFFSET(sp)
+	lr a5, __z_arch_esf_t_a5_OFFSET(sp)
 	mv a6, sp
-	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
+	lr a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Switch to privilege stack */
 	la t0, _kernel
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-	RV_OP_LOADREG t0, _thread_offset_to_priv_stack_start(t1)
-	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Update user SP */
+	lr t1, _kernel_offset_to_current(t0)
+	lr t0, _thread_offset_to_priv_stack_start(t1)
+	sr sp, _thread_offset_to_user_sp(t1) /* Update user SP */
 	addi sp, t0, CONFIG_PRIVILEGED_STACK_SIZE
 
 	/* validate syscall limit */
@@ -611,16 +612,16 @@ return_from_syscall:
 	 * Retrieve a0 (return value) from privilege stack
 	 * (or IRQ stack if stack guard is enabled).
 	 */
-	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
+	lr a0, __z_arch_esf_t_a0_OFFSET(sp)
 
 no_reschedule_user_fault:
 	/* Restore user stack */
 	la t0, _kernel
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
-	RV_OP_LOADREG sp, _thread_offset_to_user_sp(t1)
+	lr t1, _kernel_offset_to_current(t0)
+	lr sp, _thread_offset_to_user_sp(t1)
 
 	/* Update a0 (return value) to user stack. */
-	RV_OP_STOREREG a0, __z_arch_esf_t_a0_OFFSET(sp)
+	sr a0, __z_arch_esf_t_a0_OFFSET(sp)
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	/* Move to IRQ stack start */
@@ -668,14 +669,14 @@ is_interrupt:
 
 	/* Switch to interrupt stack */
 	la t2, _kernel
-	RV_OP_LOADREG sp, _kernel_offset_to_irq_stack(t2)
+	lr sp, _kernel_offset_to_irq_stack(t2)
 
 	/*
 	 * Save thread stack pointer on interrupt stack
 	 * In RISC-V, stack pointer needs to be 16-byte aligned
 	 */
 	addi sp, sp, -16
-	RV_OP_STOREREG t0, 0x00(sp)
+	sr t0, 0(sp)
 #else
 	la t2, _kernel
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
@@ -727,10 +728,10 @@ call_irq:
 	add t0, t0, a0
 
 	/* Load argument in a0 register */
-	RV_OP_LOADREG a0, 0x00(t0)
+	lr a0, 0(t0)
 
 	/* Load ISR function address in register t1 */
-	RV_OP_LOADREG t1, RV_REGSIZE(t0)
+	lr t1, RV_REGSIZE(t0)
 
 	/* Call ISR function */
 	jalr ra, t1, 0
@@ -746,7 +747,7 @@ on_thread_stack:
 
 #if !defined(CONFIG_USERSPACE) && !defined(CONFIG_PMP_STACK_GUARD)
 	/* Restore thread stack pointer */
-	RV_OP_LOADREG t0, 0x00(sp)
+	lr t0, 0(sp)
 	mv sp, t0
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
 
@@ -761,20 +762,20 @@ on_thread_stack:
 	 */
 
 	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG t2, _kernel_offset_to_current(t1)
+	lr t2, _kernel_offset_to_current(t1)
 
 	/*
 	 * Check if next thread to schedule is current thread.
 	 * If yes do not perform a reschedule
 	 */
-	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t1)
+	lr t3, _kernel_offset_to_ready_q_cache(t1)
 	beq t3, t2, no_reschedule
 #else
 	j no_reschedule
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 #ifdef CONFIG_PMP_STACK_GUARD
-	RV_OP_LOADREG a0, _kernel_offset_to_current(t1)
+	lr a0, _kernel_offset_to_current(t1)
 	jal ra, z_riscv_configure_stack_guard
 
 	/*
@@ -805,8 +806,8 @@ skip_fp_move_irq:
 	 * Switch to privilege stack because we want
 	 * this starting point after reschedule.
 	 */
-	RV_OP_LOADREG t3, _thread_offset_to_priv_stack_start(t2)
-	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t2) /* Save user SP */
+	lr t3, _thread_offset_to_priv_stack_start(t2)
+	sr sp, _thread_offset_to_user_sp(t2) /* Save user SP */
 	mv t0, sp
 	addi sp, t3, CONFIG_PRIVILEGED_STACK_SIZE
 
@@ -829,8 +830,8 @@ reschedule:
 	 *   target thread will be the same.
 	 */
 	la t0, _kernel
-	RV_OP_LOADREG t2, _kernel_offset_to_current(t0)
-	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t0)
+	lr t2, _kernel_offset_to_current(t0)
+	lr t3, _kernel_offset_to_ready_q_cache(t0)
 	beq t2, t3, no_reschedule_resched
 
 #if CONFIG_INSTRUMENT_THREAD_SWITCHING
@@ -840,7 +841,7 @@ reschedule:
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+	lr t1, _kernel_offset_to_current(t0)
 
 #ifdef CONFIG_USERSPACE
 	/*
@@ -884,21 +885,21 @@ skip_callee_saved_reg:
 	 * Save stack pointer of current thread and set the default return value
 	 * of z_swap to _k_neg_eagain for the thread.
 	 */
-	RV_OP_STOREREG sp, _thread_offset_to_sp(t1)
+	sr sp, _thread_offset_to_sp(t1)
 	la t2, _k_neg_eagain
 	lw t3, 0(t2)
 	sw t3, _thread_offset_to_swap_return_value(t1)
 
 	/* Get next thread to schedule. */
-	RV_OP_LOADREG t1, _kernel_offset_to_ready_q_cache(t0)
+	lr t1, _kernel_offset_to_ready_q_cache(t0)
 
 	/*
 	 * Set _kernel.current to new thread loaded in t1
 	 */
-	RV_OP_STOREREG t1, _kernel_offset_to_current(t0)
+	sr t1, _kernel_offset_to_current(t0)
 
 	/* Switch to new thread stack */
-	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)
+	lr sp, _thread_offset_to_sp(t1)
 
 	/* Restore callee-saved registers of new thread */
 	LOAD_CALLEE_SAVED(t1)
@@ -928,11 +929,11 @@ skip_load_fp_callee_saved:
 
 	/* Save t0/t1 caller registers for function call */
 	addi sp, sp, -16
-	RV_OP_STOREREG t0, 0(sp)
-	RV_OP_STOREREG t1, 8(sp)
+	sr t0, 0(sp)
+	sr t1, 8(sp)
 	jal ra, z_riscv_configure_stack_guard
-	RV_OP_LOADREG t0, 0(sp)
-	RV_OP_LOADREG t1, 8(sp)
+	lr t0, 0(sp)
+	lr t1, 8(sp)
 	addi sp, sp, 16
 #endif /* CONFIG_PMP_STACK_GUARD */
 
@@ -945,7 +946,7 @@ skip_load_fp_callee_saved:
 	bnez t2, kernel_swap
 
 	/* Switch to user stack */
-	RV_OP_LOADREG sp, _thread_offset_to_user_sp(t1)
+	lr sp, _thread_offset_to_user_sp(t1)
 
 	/* Setup User allowed stack */
 	li t0, MSTATUS_MPRV
@@ -981,11 +982,11 @@ no_reschedule_resched:
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 	/* Restore MEPC register */
-	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	lr t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	csrw mepc, t0
 
 	/* Restore SOC-specific MSTATUS register */
-	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	lr t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 	csrw mstatus, t0
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
@@ -1019,7 +1020,7 @@ no_reschedule:
 	csrc mstatus, t0
 
 	la t0, _kernel
-	RV_OP_LOADREG a0, _kernel_offset_to_current(t0)
+	lr a0, _kernel_offset_to_current(t0)
 	jal ra, z_riscv_configure_user_allowed_stack
 
 	/* Set user mode variable */
@@ -1046,11 +1047,11 @@ no_enter_user:
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 	/* Restore MEPC register */
-	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
+	lr t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	csrw mepc, t0
 
 	/* Restore SOC-specific MSTATUS register */
-	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	lr t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 	csrw mstatus, t0
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
