@@ -14,6 +14,7 @@
 #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/pwm/it8xxx2_pwm.h>
+#include <dt-bindings/sensor/it8xxx2_vcmp.h>
 #include <dt-bindings/sensor/it8xxx2_tach.h>
 #include "it8xxx2-alts-map.dtsi"
 #include "ite/it8xxx2-wuc-map.dtsi"
@@ -823,6 +824,96 @@
 				     &pinctrl_adc14  /* ADC14*/
 				     &pinctrl_adc15  /* ADC15*/
 				     &pinctrl_adc16>;/* ADC16*/
+		};
+		vcmp0: vcmp@f01946 {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf01946 0x01   /* VCMP0CTL */
+			       0xf01977 0x01   /* VCMP0CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf01947 0x01   /* VCMP0THRDATM */
+			       0xf01948 0x01   /* VCMP0THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			label = "VCMP_0";
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_0>;
+			status = "disabled";
+		};
+		vcmp1: vcmp@f01949 {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf01949 0x01   /* VCMP1CTL */
+			       0xf01978 0x01   /* VCMP1CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf0194a 0x01   /* VCMP1THRDATM */
+			       0xf0194b 0x01   /* VCMP1THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			label = "VCMP_1";
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_1>;
+			status = "disabled";
+		};
+		vcmp2: vcmp@f0194c {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf0194c 0x01   /* VCMP2CTL */
+			       0xf01979 0x01   /* VCMP2CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf0194d 0x01   /* VCMP2THRDATM */
+			       0xf0194e 0x01   /* VCMP2THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			label = "VCMP_2";
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_2>;
+			status = "disabled";
+		};
+		vcmp3: vcmp@f0196e {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf0196e 0x01   /* VCMP3CTL */
+			       0xf0197a 0x01   /* VCMP3CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf0196f 0x01   /* VCMP3THRDATM */
+			       0xf01970 0x01   /* VCMP3THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			label = "VCMP_3";
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_3>;
+			status = "disabled";
+		};
+		vcmp4: vcmp@f01971 {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf01971 0x01   /* VCMP4CTL */
+			       0xf0197b 0x01   /* VCMP4CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf01972 0x01   /* VCMP4THRDATM */
+			       0xf01973 0x01   /* VCMP4THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			label = "VCMP_4";
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_4>;
+			status = "disabled";
+		};
+		vcmp5: vcmp@f01974 {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf01974 0x01   /* VCMP5CTL */
+			       0xf0197c 0x01   /* VCMP5CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf01975 0x01   /* VCMP5THRDATM */
+			       0xf01976 0x01   /* VCMP5THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			label = "VCMP_5";
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_5>;
+			status = "disabled";
 		};
 
 		i2c0: i2c@f01c40 {

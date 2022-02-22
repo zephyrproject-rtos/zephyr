@@ -137,6 +137,7 @@
 #define IT8XXX2_IRQ_WU124       145
 #define IT8XXX2_IRQ_WU125       146
 #define IT8XXX2_IRQ_WU126       147
+#define IT8XXX2_IRQ_V_CMP       151
 /* Group 19 */
 #define IT8XXX2_IRQ_SMB_E       152
 #define IT8XXX2_IRQ_SMB_F       153
