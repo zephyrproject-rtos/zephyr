@@ -12,9 +12,9 @@
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/rcar_clock_control.h>
 #include <drivers/pinctrl.h>
-
 #include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
+
+LOG_MODULE_REGISTER(can_rcar, CONFIG_CAN_LOG_LEVEL);
 
 #include "can_utils.h"
 

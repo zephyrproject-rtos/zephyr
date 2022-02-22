@@ -10,10 +10,11 @@
 #include <drivers/pinctrl.h>
 #include <kernel.h>
 #include <stm32_ll_rcc.h>
+#include <logging/log.h>
+
 #include "can_mcan.h"
 
-#include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(can_stm32h7, CONFIG_CAN_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32h7_fdcan
 

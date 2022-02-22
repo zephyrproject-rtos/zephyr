@@ -10,10 +10,9 @@
 #include <device.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-
-#define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(mcp2515_can);
+
+LOG_MODULE_REGISTER(can_mcp2515, CONFIG_CAN_LOG_LEVEL);
 
 #include "can_mcp2515.h"
 #include "can_utils.h"
