@@ -66,7 +66,7 @@
 
 #define LOAD_FP_CALLEE_SAVED(reg) \
 	RV_OP_LOADREG t2, _thread_offset_to_fcsr(reg) ;\
-	fscsr x0, t2				      ;\
+	fscsr t2				      ;\
 	DO_FP_CALLEE_SAVED(RV_OP_LOADFPREG, reg)
 
 #define COPY_ESF_FP_STATE(to_reg, from_reg, temp)			\
@@ -362,7 +362,7 @@ skip_store_fp_callee_saved_user:
 is_priv_sp:
 	/* Clear user mode variable */
 	la t0, is_user_mode
-	sb zero, 0x00(t0)
+	sb zero, 0(t0)
 #endif /* CONFIG_USERSPACE */
 
 	/*
@@ -378,13 +378,13 @@ is_priv_sp:
 	jal ra, __soc_is_irq
 
 	/* If a0 != 0, jump to is_interrupt */
-	addi t1, x0, 0
+	mv t1, zero
 	bnez a0, is_interrupt
 
 #ifdef CONFIG_USERSPACE
 	/* Reset IRQ flag */
 	la t1, irq_flag
-	sb zero, 0x00(t1)
+	sb zero, 0(t1)
 #endif /* CONFIG_USERSPACE */
 
 	/*
@@ -420,7 +420,7 @@ is_priv_sp:
 	 * If _Fault shall return, set return address to
 	 * no_reschedule to restore stack.
 	 */
-	addi a0, sp, 0
+	mv a0, sp
 
 #ifdef CONFIG_USERSPACE
 	/* Check if we are in user thread */
@@ -654,7 +654,7 @@ is_interrupt:
 #ifdef CONFIG_USERSPACE
 	la t0, irq_flag
 	li t2, 0x1
-	sb t2, 0x00(t0)
+	sb t2, 0(t0)
 #endif /* CONFIG_USERSPACE */
 
 #if (CONFIG_USERSPACE == 0) && (CONFIG_PMP_STACK_GUARD == 0)
@@ -664,7 +664,7 @@ is_interrupt:
 	 */
 
 	/* Save thread stack pointer to temp register t0 */
-	addi t0, sp, 0
+	mv t0, sp
 
 	/* Switch to interrupt stack */
 	la t2, _kernel
@@ -747,7 +747,7 @@ on_thread_stack:
 #if !defined(CONFIG_USERSPACE) && !defined(CONFIG_PMP_STACK_GUARD)
 	/* Restore thread stack pointer */
 	RV_OP_LOADREG t0, 0x00(sp)
-	addi sp, t0, 0
+	mv sp, t0
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_STACK_SENTINEL
@@ -886,7 +886,7 @@ skip_callee_saved_reg:
 	 */
 	RV_OP_STOREREG sp, _thread_offset_to_sp(t1)
 	la t2, _k_neg_eagain
-	lw t3, 0x00(t2)
+	lw t3, 0(t2)
 	sw t3, _thread_offset_to_swap_return_value(t1)
 
 	/* Get next thread to schedule. */
@@ -916,7 +916,7 @@ skip_callee_saved_reg:
 	 * mstatus will be restored later on.
 	 */
 	li t2, MSTATUS_FS_INIT
-	csrrs x0, mstatus, t2
+	csrs mstatus, t2
 
 	LOAD_FP_CALLEE_SAVED(t1)
 
@@ -956,7 +956,7 @@ skip_load_fp_callee_saved:
 	/* Set user mode variable */
 	li t2, 0x1
 	la t3, is_user_mode
-	sb t2, 0x00(t3)
+	sb t2, 0(t3)
 
 kernel_swap:
 #endif /* CONFIG_USERSPACE */
@@ -1025,10 +1025,10 @@ no_reschedule:
 	/* Set user mode variable */
 	li t1, 0x1
 	la t0, is_user_mode
-	sb t1, 0x00(t0)
+	sb t1, 0(t0)
 
 	la t0, irq_flag
-	lb t0, 0x00(t0)
+	lb t0, 0(t0)
 	bnez t0, no_enter_user
 
 	/* Clear ESF saved in User Stack */
