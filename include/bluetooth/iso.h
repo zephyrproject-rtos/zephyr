@@ -91,7 +91,7 @@ extern "C" {
  *  dealing with setting channel to proper state depending on operational
  *  context.
  */
-enum {
+enum bt_iso_state {
 	/** Channel disconnected */
 	BT_ISO_STATE_DISCONNECTED,
 	/** Channel in connecting state */
@@ -118,7 +118,7 @@ struct bt_iso_chan {
 	struct bt_iso_chan_ops		*ops;
 	/** Channel QoS reference */
 	struct bt_iso_chan_qos		*qos;
-	uint8_t				state;
+	enum bt_iso_state		state;
 	bt_security_t			required_sec_level;
 	/** Node used internally by the stack */
 	sys_snode_t node;
