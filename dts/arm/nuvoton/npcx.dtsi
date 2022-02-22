@@ -609,7 +609,6 @@
 			#size-cells = <0>;
 			port = <0x00>;
 			controller = <&i2c_ctrl0>;
-			pinctrl-0 = <&alt2_i2c0_0_sl>; /* PINB5.B4 */
 			label = "I2C_0_PORT_0";
 			status = "disabled";
 		};
@@ -620,7 +619,6 @@
 			#size-cells = <0>;
 			port = <0x10>;
 			controller = <&i2c_ctrl1>;
-			pinctrl-0 = <&alt2_i2c1_0_sl>; /* PIN90.87 */
 			label = "I2C_1_PORT_0";
 			status = "disabled";
 		};
@@ -631,7 +629,6 @@
 			#size-cells = <0>;
 			port = <0x20>;
 			controller = <&i2c_ctrl2>;
-			pinctrl-0 = <&alt2_i2c2_0_sl>; /* PIN92.91 */
 			label = "I2C_2_PORT_0";
 			status = "disabled";
 		};
@@ -642,7 +639,6 @@
 			#size-cells = <0>;
 			port = <0x30>;
 			controller = <&i2c_ctrl3>;
-			pinctrl-0 = <&alt2_i2c3_0_sl>; /* PIND1.D0 */
 			label = "I2C_3_PORT_0";
 			status = "disabled";
 		};
@@ -653,7 +649,6 @@
 			#size-cells = <0>;
 			port = <0x41>;
 			controller = <&i2c_ctrl4>;
-			pinctrl-0 = <&alt6_i2c4_1_sl>; /* PINF3.F2 */
 			label = "I2C_4_PORT_1";
 			status = "disabled";
 		};
@@ -664,7 +659,6 @@
 			#size-cells = <0>;
 			port = <0x50>;
 			controller = <&i2c_ctrl5>;
-			pinctrl-0 = <&alt2_i2c5_0_sl>; /* PIN33.36 */
 			label = "I2C_5_PORT_0";
 			status = "disabled";
 		};
@@ -675,7 +669,6 @@
 			#size-cells = <0>;
 			port = <0x51>;
 			controller = <&i2c_ctrl5>;
-			pinctrl-0 = <&alt6_i2c5_1_sl>; /* PINF5.F4 */
 			label = "I2C_5_PORT_1";
 			status = "disabled";
 		};
@@ -686,7 +679,6 @@
 			#size-cells = <0>;
 			port = <0x60>;
 			controller = <&i2c_ctrl6>;
-			pinctrl-0 = <&alt2_i2c6_0_sl>; /* PINC2.C1 */
 			label = "I2C_6_PORT_0";
 			status = "disabled";
 		};
@@ -697,7 +689,6 @@
 			#size-cells = <0>;
 			port = <0x61>;
 			controller = <&i2c_ctrl6>;
-			pinctrl-0 = <&alt6_i2c6_1_sl>; /* PINE4.E3 */
 			label = "I2C_6_PORT_1";
 			status = "disabled";
 		};
@@ -708,7 +699,6 @@
 			#size-cells = <0>;
 			port = <0x70>;
 			controller = <&i2c_ctrl7>;
-			pinctrl-0 = <&alt2_i2c7_0_sl>; /* PINB3.B2 */
 			label = "I2C_7_PORT_0";
 			status = "disabled";
 		};
