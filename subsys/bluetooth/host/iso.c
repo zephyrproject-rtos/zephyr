@@ -522,7 +522,8 @@ const char *bt_iso_chan_state_str(uint8_t state)
 	}
 }
 
-void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
+void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan,
+				 enum bt_iso_state state,
 				 const char *func, int line)
 {
 	BT_DBG("chan %p iso %p %s -> %s", chan, chan->iso,
@@ -557,7 +558,7 @@ void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
 	chan->state = state;
 }
 #else
-void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state)
+void bt_iso_chan_set_state(struct bt_iso_chan *chan, enum bt_iso_state state)
 {
 	chan->state = state;
 }
