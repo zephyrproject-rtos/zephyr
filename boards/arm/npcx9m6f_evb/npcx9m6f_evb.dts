@@ -95,8 +95,11 @@
 };
 
 &adc0 {
-	/* ADC pinmux is changed only if related channel is configured. */
 	status = "okay";
+	/* Use adc0 channel 0 and 2 for 'adc_api' driver tests */
+	pinctrl-0 = <&adc0_chan0_gp45
+		     &adc0_chan2_gp43>;
+	pinctrl-names = "default";
 };
 
 &espi0 {
