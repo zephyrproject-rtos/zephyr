@@ -369,7 +369,7 @@ static void broadcast_source_cleanup(struct bt_audio_broadcast_source *source)
 }
 
 int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
-				     uint8_t num_stream,
+				     size_t num_stream,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
 				     struct bt_audio_broadcast_source **out_source)

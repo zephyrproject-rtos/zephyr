@@ -620,10 +620,10 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 
 static void unicast_client_codec_data_add(struct net_buf_simple *buf,
 					  const char *prefix,
-					  uint8_t num,
+					  size_t num,
 					  struct bt_codec_data *data)
 {
-	for (uint8_t i = 0; i < num; i++) {
+	for (size_t i = 0; i < num; i++) {
 		struct bt_data *d = &data[i].data;
 		struct bt_ascs_codec_config *cc;
 
@@ -1078,12 +1078,12 @@ int bt_unicast_client_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 static int unicast_client_ep_enable(struct bt_audio_ep *ep,
 				    struct net_buf_simple *buf,
-				    uint8_t meta_count,
+				    size_t meta_count,
 				    struct bt_codec_data *meta)
 {
 	struct bt_ascs_metadata *req;
 
-	BT_DBG("ep %p buf %p metadata count %u", ep, buf, meta_count);
+	BT_DBG("ep %p buf %p metadata count %zu", ep, buf, meta_count);
 
 	if (!ep) {
 		return -EINVAL;
@@ -1109,12 +1109,12 @@ static int unicast_client_ep_enable(struct bt_audio_ep *ep,
 
 static int unicast_client_ep_metadata(struct bt_audio_ep *ep,
 				      struct net_buf_simple *buf,
-				      uint8_t meta_count,
+				      size_t meta_count,
 				      struct bt_codec_data *meta)
 {
 	struct bt_ascs_metadata *req;
 
-	BT_DBG("ep %p buf %p metadata count %u", ep, buf, meta_count);
+	BT_DBG("ep %p buf %p metadata count %zu", ep, buf, meta_count);
 
 	if (!ep) {
 		return -EINVAL;
@@ -1357,7 +1357,7 @@ int bt_unicast_client_config(struct bt_audio_stream *stream,
 	return 0;
 }
 
-int bt_unicast_client_enable(struct bt_audio_stream *stream, uint8_t meta_count,
+int bt_unicast_client_enable(struct bt_audio_stream *stream, size_t meta_count,
 			     struct bt_codec_data *meta)
 {
 	struct bt_audio_ep *ep = stream->ep;
@@ -1381,7 +1381,7 @@ int bt_unicast_client_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 }
 
 int bt_unicast_client_metadata(struct bt_audio_stream *stream,
-			       uint8_t meta_count,
+			       size_t meta_count,
 			       struct bt_codec_data *meta)
 {
 	struct bt_audio_ep *ep = stream->ep;

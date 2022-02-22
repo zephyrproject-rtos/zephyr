@@ -362,9 +362,9 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 }
 
 static int lc3_enable(struct bt_audio_stream *stream,
-		      uint8_t meta_count, struct bt_codec_data *meta)
+		      size_t meta_count, struct bt_codec_data *meta)
 {
-	shell_print(ctx_shell, "Enable: stream %p meta_count %u", stream,
+	shell_print(ctx_shell, "Enable: stream %p meta_count %zu", stream,
 		    meta_count);
 
 	return 0;
@@ -378,9 +378,9 @@ static int lc3_start(struct bt_audio_stream *stream)
 }
 
 static int lc3_metadata(struct bt_audio_stream *stream,
-			uint8_t meta_count, struct bt_codec_data *meta)
+			size_t meta_count, struct bt_codec_data *meta)
 {
-	shell_print(ctx_shell, "Metadata: stream %p meta_count %u", stream,
+	shell_print(ctx_shell, "Metadata: stream %p meta_count %zu", stream,
 		    meta_count);
 
 	return 0;

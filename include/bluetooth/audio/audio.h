@@ -206,11 +206,11 @@ struct bt_codec {
 	/** Codec Company Vendor ID */
 	uint16_t vid;
 	/** Codec Specific Data count */
-	uint8_t  data_count;
+	size_t   data_count;
 	/** Codec Specific Data */
 	struct bt_codec_data data[CONFIG_BT_CODEC_MAX_DATA_COUNT];
 	/** Codec Specific Metadata count */
-	uint8_t  meta_count;
+	size_t   meta_count;
 	/** Codec Specific Metadata */
 	struct bt_codec_data meta[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
 };
@@ -222,7 +222,7 @@ struct bt_audio_base_bis_data {
 	 *
 	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
 	 */
-	uint8_t  data_count;
+	size_t   data_count;
 	/** Codec Specific Data
 	 *
 	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
@@ -232,7 +232,7 @@ struct bt_audio_base_bis_data {
 
 struct bt_audio_base_subgroup {
 	/* Number of BIS in the subgroup */
-	uint8_t bis_count;
+	size_t bis_count;
 	/** Codec information for the subgroup
 	 *
 	 *  If the data_count of the codec is 0, then codec specific data may be
@@ -245,7 +245,7 @@ struct bt_audio_base_subgroup {
 
 struct bt_audio_base {
 	/* Number of subgroups in the BASE */
-	uint8_t subgroup_count;
+	size_t subgroup_count;
 	/* Array of subgroups in the BASE */
 	struct bt_audio_base_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
 };
@@ -987,7 +987,7 @@ struct bt_audio_unicast_server_cb {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*enable)(struct bt_audio_stream *stream, uint8_t meta_count,
+	int (*enable)(struct bt_audio_stream *stream, size_t meta_count,
 		      const struct bt_codec_data *meta);
 
 	/** @brief Stream Start request callback
@@ -1012,7 +1012,7 @@ struct bt_audio_unicast_server_cb {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*metadata)(struct bt_audio_stream *stream, uint8_t meta_count,
+	int (*metadata)(struct bt_audio_stream *stream, size_t meta_count,
 			const struct bt_codec_data *meta);
 
 	/** @brief Stream Disable request callback
@@ -1399,7 +1399,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_stream_enable(struct bt_audio_stream *stream,
-			   uint8_t meta_count, struct bt_codec_data *meta);
+			   size_t meta_count, struct bt_codec_data *meta);
 
 /** @brief Change Audio Stream Metadata
  *
@@ -1412,7 +1412,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_stream_metadata(struct bt_audio_stream *stream,
-			     uint8_t meta_count, struct bt_codec_data *meta);
+			     size_t meta_count, struct bt_codec_data *meta);
 
 /** @brief Disable Audio Stream
  *
@@ -1500,7 +1500,7 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
-				  uint8_t num_stream,
+				  size_t num_stream,
 				  struct bt_audio_unicast_group **unicast_group);
 
 /** @brief Add streams to a unicast group as a unicast client
@@ -1521,7 +1521,7 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
  */
 int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
 				       struct bt_audio_stream *streams,
-				       uint8_t num_stream);
+				       size_t num_stream);
 
 /** @brief Remove streams from a unicast group as a unicast client
  *
@@ -1540,7 +1540,7 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
  */
 int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast_group,
 					  struct bt_audio_stream *streams,
-					  uint8_t num_stream);
+					  size_t num_stream);
 
 /** @brief Delete audio unicast group.
  *
@@ -1575,7 +1575,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
-				     uint8_t num_stream,
+				     size_t num_stream,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
 				     struct bt_audio_broadcast_source **source);

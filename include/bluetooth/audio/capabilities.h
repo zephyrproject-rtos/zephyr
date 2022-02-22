@@ -155,7 +155,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*enable)(struct bt_audio_stream *stream, uint8_t meta_count,
+	int (*enable)(struct bt_audio_stream *stream, size_t meta_count,
 		      struct bt_codec_data *meta);
 
 	/** @brief Capability Start callback
@@ -180,7 +180,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*metadata)(struct bt_audio_stream *stream, uint8_t meta_count,
+	int (*metadata)(struct bt_audio_stream *stream, size_t meta_count,
 			struct bt_codec_data *meta);
 
 	/** @brief Capability Disable callback

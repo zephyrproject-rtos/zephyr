@@ -272,7 +272,7 @@ static int configure_stream(struct bt_audio_stream *stream,
 static void test_main(void)
 {
 	struct bt_audio_unicast_group *unicast_group;
-	uint8_t stream_cnt;
+	size_t stream_cnt;
 	int err;
 
 	init();
@@ -292,7 +292,7 @@ static void test_main(void)
 		err = configure_stream(&g_streams[stream_cnt],
 				       g_sinks[stream_cnt]);
 		if (err != 0) {
-			FAIL("Unable to configure stream[%u]: %d",
+			FAIL("Unable to configure stream[%zu]: %d",
 			     stream_cnt, err);
 			return;
 		}
