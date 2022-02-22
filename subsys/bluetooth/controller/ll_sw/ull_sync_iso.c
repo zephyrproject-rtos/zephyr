@@ -28,8 +28,11 @@
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 
+#include "isoal.h"
+
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
+#include "ull_iso_types.h"
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
@@ -295,6 +298,8 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 
 		dp = stream->dp;
 		if (dp) {
+			stream->dp = NULL;
+			isoal_sink_destroy(dp->sink_hdl);
 			ull_iso_datapath_release(dp);
 		}
 
