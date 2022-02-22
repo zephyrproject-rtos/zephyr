@@ -89,7 +89,6 @@ static atomic_t log_strdup_in_use;
 static uint32_t log_strdup_max;
 static uint32_t log_strdup_longest;
 static struct k_timer log_process_thread_timer;
-static struct k_spinlock list_lock;
 
 static log_timestamp_t dummy_timestamp(void);
 static log_timestamp_get_t timestamp_func = dummy_timestamp;
@@ -229,50 +228,43 @@ static void detect_missed_strdup(struct log_msg *msg)
 
 static void z_log_msg_post_finalize(void)
 {
+	atomic_val_t cnt = atomic_inc(&buffered_cnt);
 
 	if (panic_mode) {
-		static struct k_spinlock process_lock;
-		k_spinlock_key_t key = k_spin_lock(&process_lock);
-
+		unsigned int key = irq_lock();
 		(void)log_process(false);
-		k_spin_unlock(&process_lock, key);
-	} else if (proc_tid != NULL) {
-		static atomic_t reentry_flag;
-		atomic_val_t cnt = atomic_inc(&buffered_cnt);
-
-		if (cnt == 0) {
-			if (atomic_inc(&reentry_flag) == 0) {
-				k_timer_start(&log_process_thread_timer,
-				      K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS),
-				      K_NO_WAIT);
-			}
-			atomic_dec(&reentry_flag);
-		} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
-			   cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+		irq_unlock(key);
+	} else if (proc_tid != NULL && cnt == 0) {
+		k_timer_start(&log_process_thread_timer,
+			K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS), K_NO_WAIT);
+	} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+		if ((cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
+		    (proc_tid != NULL)) {
 			k_timer_stop(&log_process_thread_timer);
 			k_sem_give(&log_process_thread_sem);
-		} else {
-			/* No action needed. Message processing will be triggered by the
-			 * timeout or when number of upcoming messages exceeds the
-			 * threshold.
-			 */
 		}
+	} else {
+		/* No action needed. Message processing will be triggered by the
+		 * timeout or when number of upcoming messages exceeds the
+		 * threshold.
+		 */
+		;
 	}
 }
 
 static inline void msg_finalize(struct log_msg *msg,
 				struct log_msg_ids src_level)
 {
-	k_spinlock_key_t key;
+	unsigned int key;
 
 	msg->hdr.ids = src_level;
 	msg->hdr.timestamp = timestamp_func();
 
-	key = k_spin_lock(&list_lock);
+	key = irq_lock();
 
 	log_list_add_tail(&list, msg);
 
-	k_spin_unlock(&list_lock, key);
+	irq_unlock(key);
 
 	z_log_msg_post_finalize();
 }
@@ -793,10 +785,10 @@ union log_msgs get_msg(void)
 		return msg;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&list_lock);
+	int key = irq_lock();
 
 	msg.msg = log_list_head_get(&list);
-	k_spin_unlock(&list_lock, key);
+	irq_unlock(key);
 
 	return msg;
 }
@@ -912,14 +904,14 @@ char *z_log_strdup(const char *str)
 
 	if (IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING)) {
 		size_t slen = strlen(str);
-		static struct k_spinlock strdup_lock;
+		static struct k_spinlock lock;
 		k_spinlock_key_t key;
 
-		key = k_spin_lock(&strdup_lock);
+		key = k_spin_lock(&lock);
 		log_strdup_in_use++;
 		log_strdup_max = MAX(log_strdup_in_use, log_strdup_max);
 		log_strdup_longest = MAX(slen, log_strdup_longest);
-		k_spin_unlock(&strdup_lock, key);
+		k_spin_unlock(&lock, key);
 	}
 
 	/* Set 'allocated' flag. */
