@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztress.h>
-#include <ztest_test.h>
 #include <sys/printk.h>
 #include <random/rand32.h>
 #include <string.h>
@@ -318,14 +317,6 @@ int ztress_execute(struct ztress_context_data *timer_data,
 
 	if (cnt + 2 > CONFIG_NUM_PREEMPT_PRIORITIES) {
 		return -EINVAL;
-	}
-
-	/* Skip test if system clock is set too high compared to CPU frequency.
-	 * It can happen when system clock is set globally for the test which is
-	 * run on various platforms. 1000 factor is an arbitrary value.
-	 */
-	if ((sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC) < 1000) {
-		ztest_test_skip();
 	}
 
 	ztress_init(thread_data);
