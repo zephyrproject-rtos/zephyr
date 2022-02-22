@@ -41,10 +41,10 @@
 	op fa7, __z_arch_esf_t_fa7_OFFSET(reg)	 ;
 
 #define STORE_FP_CALLER_SAVED(reg) \
-	DO_FP_CALLER_SAVED(RV_OP_STOREFPREG, reg)
+	DO_FP_CALLER_SAVED(fsr, reg)
 
 #define LOAD_FP_CALLER_SAVED(reg) \
-	DO_FP_CALLER_SAVED(RV_OP_LOADFPREG, reg)
+	DO_FP_CALLER_SAVED(flr, reg)
 
 #define DO_FP_CALLEE_SAVED(op, reg) \
 	op fs0, _thread_offset_to_fs0(reg)   ;\
@@ -63,58 +63,58 @@
 #define STORE_FP_CALLEE_SAVED(reg) \
 	frcsr t2				;\
 	sw t2, _thread_offset_to_fcsr(reg)	;\
-	DO_FP_CALLEE_SAVED(RV_OP_STOREFPREG, reg)
+	DO_FP_CALLEE_SAVED(fsr, reg)
 
 #define LOAD_FP_CALLEE_SAVED(reg) \
 	lw t2, _thread_offset_to_fcsr(reg)	;\
 	fscsr t2				;\
-	DO_FP_CALLEE_SAVED(RV_OP_LOADFPREG, reg)
+	DO_FP_CALLEE_SAVED(flr, reg)
 
 #define COPY_ESF_FP_STATE(to_reg, from_reg, temp)			\
 	lb temp, __z_arch_esf_t_fp_state_OFFSET(from_reg)	;\
 	sb temp, __z_arch_esf_t_fp_state_OFFSET(to_reg)	;
 
 #define COPY_ESF_FP(to_reg, from_reg, temp)				\
-	lr temp, __z_arch_esf_t_ft0_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft0_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft1_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft1_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft2_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft2_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft3_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft3_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft4_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft4_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft5_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft5_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft6_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft6_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft7_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft7_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft8_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft8_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft9_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_ft9_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft10_OFFSET(from_reg)	;\
-	sr temp, __z_arch_esf_t_ft10_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_ft11_OFFSET(from_reg)	;\
-	sr temp, __z_arch_esf_t_ft11_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_fa0_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_fa0_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_fa1_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_fa1_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_fa2_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_fa2_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_fa3_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_fa3_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_fa4_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_fa4_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_fa5_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_fa5_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_fa6_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_fa6_OFFSET(to_reg)		;\
-	lr temp, __z_arch_esf_t_fa7_OFFSET(from_reg)		;\
-	sr temp, __z_arch_esf_t_fa7_OFFSET(to_reg)		;
+	flr temp, __z_arch_esf_t_ft0_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft0_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft1_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft1_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft2_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft2_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft3_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft3_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft4_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft4_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft5_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft5_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft6_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft6_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft7_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft7_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft8_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft8_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft9_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft9_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft10_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft10_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_ft11_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_ft11_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_fa0_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_fa0_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_fa1_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_fa1_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_fa2_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_fa2_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_fa3_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_fa3_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_fa4_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_fa4_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_fa5_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_fa5_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_fa6_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_fa6_OFFSET(to_reg)		;\
+	flr temp, __z_arch_esf_t_fa7_OFFSET(from_reg)		;\
+	fsr temp, __z_arch_esf_t_fa7_OFFSET(to_reg)
 
 #define COPY_ESF(to_reg, from_reg, temp)			\
 	lr temp, __z_arch_esf_t_mepc_OFFSET(from_reg)		;\
@@ -492,7 +492,7 @@ not_user_syscall:
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	lb t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_move_kernel_syscall
-	COPY_ESF_FP(sp, t0, t1)
+	COPY_ESF_FP(sp, t0, ft0)
 skip_fp_move_kernel_syscall:
 	COPY_ESF_FP_STATE(sp, t0, t1)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
@@ -565,7 +565,7 @@ is_user_syscall:
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	lb t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_copy_user_syscall
-	COPY_ESF_FP(sp, t0, t1)
+	COPY_ESF_FP(sp, t0, ft0)
 skip_fp_copy_user_syscall:
 	COPY_ESF_FP_STATE(sp, t0, t1)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
@@ -639,7 +639,7 @@ no_reschedule_user_fault:
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	lb t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_copy_return_user_syscall
-	COPY_ESF_FP(sp, t0, t1)
+	COPY_ESF_FP(sp, t0, ft0)
 skip_fp_copy_return_user_syscall:
 	COPY_ESF_FP_STATE(sp, t0, t1)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
@@ -788,7 +788,7 @@ on_thread_stack:
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	lb t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_move_irq
-	COPY_ESF_FP(sp, t0, t1)
+	COPY_ESF_FP(sp, t0, ft0)
 skip_fp_move_irq:
 	COPY_ESF_FP_STATE(sp, t0, t1)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
