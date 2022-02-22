@@ -8,6 +8,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
+#include "asm_macros.inc"
 
 /* exports */
 GTEXT(__initialize)
@@ -98,13 +99,13 @@ aa_loop:
 
 boot_secondary_core:
 	la t0, riscv_cpu_wake_flag
-	RV_OP_LOADREG t0, 0x00(t0)
+	lr t0, 0(t0)
 	bne a0, t0, boot_secondary_core
 
 	/* Set up stack */
 	la t0, riscv_cpu_sp
-	RV_OP_LOADREG sp, 0x00(t0)
+	lr sp, 0(t0)
 
 	la t0, riscv_cpu_wake_flag
-	RV_OP_STOREREG x0, 0x00(t0)
+	sr zero, 0(t0)
 	j z_riscv_secondary_cpu_init

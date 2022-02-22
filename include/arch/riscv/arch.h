@@ -188,13 +188,9 @@
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_64BIT
-#define RV_OP_LOADREG ld
-#define RV_OP_STOREREG sd
 #define RV_REGSIZE 8
 #define RV_REGSHIFT 3
 #else
-#define RV_OP_LOADREG lw
-#define RV_OP_STOREREG sw
 #define RV_REGSIZE 4
 #define RV_REGSHIFT 2
 #endif
