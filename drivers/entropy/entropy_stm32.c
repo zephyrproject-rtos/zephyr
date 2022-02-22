@@ -361,6 +361,18 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 		irq_disable(IRQN);
 		irq_unlock(key);
 
+		/* do not proceed if a Seed error occurred */
+		if (LL_RNG_IsActiveFlag_SECS(entropy_stm32_rng_data.rng) ||
+			LL_RNG_IsActiveFlag_SEIS(entropy_stm32_rng_data.rng)) {
+
+			(void)random_byte_get(); /* this will recover the error */
+			/* restore irq as we enter */
+			if (irq_enabled) {
+				irq_enable(IRQN);
+			}
+			return 0; /* return cnt is null : no random data available */
+		}
+
 		/* Clear NVIC pending bit. This ensures that a subsequent
 		 * RNG event will set the Cortex-M single-bit event register
 		 * to 1 (the bit is set when NVIC pending IRQ status is
