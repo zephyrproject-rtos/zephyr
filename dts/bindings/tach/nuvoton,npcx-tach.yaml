@@ -5,7 +5,7 @@ description: Nuvoton, NPCX-Tachometer node
 
 compatible: "nuvoton,npcx-tach"
 
-include: tach.yaml
+include: [tach.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -13,9 +13,9 @@ properties:
     clocks:
         required: true
     pinctrl-0:
-        type: phandles
-        required: false
-        description: configurations of pinmux controllers in tachometers
+        required: true
+    pinctrl-names:
+        required: true
     sample-clk:
         type: int
         required: false
