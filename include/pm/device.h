@@ -315,30 +315,6 @@ struct pm_device {
 const char *pm_device_state_str(enum pm_device_state state);
 
 /**
- * @brief Set the power state of a device.
- *
- * @deprecated Use pm_device_action_run() instead.
- *
- * This function calls the device PM control callback so that the device does
- * the necessary operations to put the device into the given state.
- *
- * @note Some devices may not support all device power states.
- *
- * @param dev Device instance.
- * @param state Device power state to be set.
- *
- * @retval 0 If successful.
- * @retval -ENOTSUP If requested state is not supported.
- * @retval -EALREADY If device is already at the requested state.
- * @retval -EBUSY If device is changing its state.
- * @retval -ENOSYS If device does not support PM.
- * @retval -EPERM If device has power state locked.
- * @retval Errno Other negative errno on failure.
- */
-__deprecated int pm_device_state_set(const struct device *dev,
-			enum pm_device_state state);
-
-/**
  * @brief Obtain the power state of a device.
  *
  * @param dev Device instance.
@@ -557,58 +533,6 @@ static inline bool pm_device_on_power_domain(const struct device *dev)
 	return false;
 }
 #endif /* CONFIG_PM_DEVICE */
-
-/**
- * Mark a device as busy.
- *
- * @deprecated Use pm_device_busy_set() instead
- *
- * @param dev Device instance.
- */
-__deprecated static inline void device_busy_set(const struct device *dev)
-{
-	pm_device_busy_set(dev);
-}
-
-/**
- * @brief Clear busy status of a device.
- *
- * @deprecated Use pm_device_busy_clear() instead
- *
- * @param dev Device instance.
- */
-__deprecated static inline void device_busy_clear(const struct device *dev)
-{
-	pm_device_busy_clear(dev);
-}
-
-/**
- * @brief Check if any device is busy.
- *
- * @deprecated Use pm_device_is_any_busy() instead
- *
- * @retval 0 No devices are busy.
- * @retval -EBUSY One or more devices are busy.
- */
-__deprecated static inline int device_any_busy_check(void)
-{
-	return pm_device_is_any_busy() ? -EBUSY : 0;
-}
-
-/**
- * @brief Check if a device is busy.
- *
- * @deprecated Use pm_device_is_busy() instead
- *
- * @param dev Device instance.
- *
- * @retval 0 Device is not busy.
- * @retval -EBUSY Device is busy.
- */
-__deprecated static inline int device_busy_check(const struct device *dev)
-{
-	return pm_device_is_busy(dev) ? -EBUSY : 0;
-}
 
 /** @} */
 
