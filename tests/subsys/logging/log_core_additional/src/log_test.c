@@ -522,10 +522,10 @@ void test_log_msg2_create(void)
 		level = 2;
 
 		z_log_msg2_runtime_create(domain, __log_current_const_data,
-					  level, &msg_data,
+					  level, &msg_data, 0,
 					  sizeof(msg_data), NULL);
 		/* try z_log_msg2_static_create() */
-		Z_LOG_MSG2_STACK_CREATE(domain, __log_current_const_data,
+		Z_LOG_MSG2_STACK_CREATE(0, domain, __log_current_const_data,
 					level, &msg_data,
 					sizeof(msg_data), NULL);
 
@@ -547,10 +547,10 @@ void test_log_msg2_create_user(void)
 		level = 2;
 
 		z_log_msg2_runtime_create(domain, NULL,
-					  level, &msg_data,
+					  level, &msg_data, 0,
 					  sizeof(msg_data), test_msg_usr);
 		/* try z_log_msg2_static_create() */
-		Z_LOG_MSG2_STACK_CREATE(domain, NULL,
+		Z_LOG_MSG2_STACK_CREATE(0, domain, NULL,
 					level, &msg_data,
 					sizeof(msg_data), test_msg_usr);
 

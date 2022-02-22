@@ -86,21 +86,35 @@ extern "C" {
  */
 #ifdef __cplusplus
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
-	z_cbprintf_cxx_is_pchar(x, flags & CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR)
+	z_cbprintf_cxx_is_pchar(x, (flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO)
 #else
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic((x) + 0, \
 		char * : 1, \
-		const char * : (flags & CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR) ? 0 : 1, \
+		const char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile char * : 1, \
 		const volatile char * : 1, \
 		wchar_t * : 1, \
-		const wchar_t * : (flags & CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR) ? 0 : 1, \
+		const wchar_t * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile wchar_t * : 1, \
 		const volatile wchar_t * : 1, \
 		default : \
 			0)
 #endif
+
+/* @brief Check if argument is a certain type of char pointer. What exectly is checked
+ * depends on @p flags. If flags is 0 then 1 is returned if @p x is a char pointer.
+ *
+ * @param idx Argument index.
+ * @param x Argument.
+ * @param flags Flags. See @p CBPRINTF_PACKAGE_FLAGS.
+ *
+ * @retval 1 if @p x is char pointer meeting criteria identified by @p flags.
+ * @retval 0 otherwise.
+ */
+#define Z_CBPRINTF_IS_X_PCHAR(idx, x, flags) \
+	  (idx < Z_CBPRINTF_PACKAGE_FIRST_RO_STR_CNT_GET(flags) ? \
+		0 : Z_CBPRINTF_IS_PCHAR(x, flags))
 
 /** @brief Calculate number of char * or wchar_t * arguments in the arguments.
  *
@@ -111,13 +125,15 @@ extern "C" {
  * @return number of arguments which are char * or wchar_t *.
  */
 #define Z_CBPRINTF_HAS_PCHAR_ARGS(flags, fmt, ...) \
-	(FOR_EACH_FIXED_ARG(Z_CBPRINTF_IS_PCHAR, (+), flags, __VA_ARGS__))
+	(FOR_EACH_IDX_FIXED_ARG(Z_CBPRINTF_IS_X_PCHAR, (+), flags, __VA_ARGS__))
+
+#define Z_CBPRINTF_PCHAR_COUNT(flags, ...) \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+		    (0), \
+		    (Z_CBPRINTF_HAS_PCHAR_ARGS(flags, __VA_ARGS__)))
 
 /**
  * @brief Check if formatted string must be packaged in runtime.
- *
- * @param skip number of char/wchar_t pointers in the argument list which are
- * accepted for static packaging.
  *
  * @param ... String with arguments (fmt, ...).
  *
@@ -125,17 +141,20 @@ extern "C" {
  * @retval 0 if string can be statically packaged.
  */
 #if Z_C_GENERIC
-#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, flags, ...) ({\
+#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) ({\
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
-	int _rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
-			(0), \
-			(((Z_CBPRINTF_HAS_PCHAR_ARGS(flags, __VA_ARGS__) - skip) > 0))); \
+	int _rv; \
+	if ((flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS) { \
+		_rv = 0; \
+	} else { \
+		_rv = Z_CBPRINTF_PCHAR_COUNT(flags, __VA_ARGS__) > 0 ? 1 : 0; \
+	} \
 	_Pragma("GCC diagnostic pop")\
 	_rv; \
 })
 #else
-#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, flags, ...) 1
+#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) 1
 #endif
 
 /** @brief Get storage size for given argument.
@@ -260,8 +279,7 @@ extern "C" {
  *
  * @param _arg argument.
  */
-#define Z_CBPRINTF_PACK_ARG2(_buf, _idx, _align_offset, _max, \
-			     _cfg_flags, _s_idx, _s_buf, _arg) \
+#define Z_CBPRINTF_PACK_ARG2(arg_idx, _buf, _idx, _align_offset, _max, _arg) \
 do { \
 	BUILD_ASSERT(!((sizeof(double) < VA_STACK_ALIGN(long double)) && \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
@@ -272,8 +290,25 @@ do { \
 		_align_offset += sizeof(int); \
 	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
-	if (Z_CBPRINTF_IS_PCHAR(_arg, 0)) { \
-		_s_buf[_s_idx++] = _idx / sizeof(int); \
+	uint32_t _loc = _idx / sizeof(int); \
+	if (arg_idx < 1 + _fros_cnt) { \
+		if (_ros_pos_en) { \
+			_ros_pos_buf[_ros_pos_idx++] = _loc; \
+		} \
+	} else if (Z_CBPRINTF_IS_PCHAR(_arg, 0)) { \
+		if (_cros_en) { \
+			if (Z_CBPRINTF_IS_X_PCHAR(arg_idx, _arg, _flags)) { \
+				if (_rws_pos_en) { \
+					_rws_buffer[_rws_pos_idx++] = _loc; \
+				} \
+			} else { \
+				if (_ros_pos_en) { \
+					_ros_pos_buf[_ros_pos_idx++] = _loc; \
+				} \
+			} \
+		} else if (_rws_pos_en) { \
+			_rws_buffer[_rws_pos_idx++] = _idx / sizeof(int); \
+		} \
 	} \
 	if (_buf && _idx < (int)_max) { \
 		Z_CBPRINTF_STORE_ARG(&_buf[_idx], _arg); \
@@ -288,9 +323,8 @@ do { \
  *
  * @param arg argument.
  */
-#define Z_CBPRINTF_PACK_ARG(arg) \
-	Z_CBPRINTF_PACK_ARG2(_pbuf, _pkg_len, _pkg_offset, _pmax, _flags, \
-			     _s_cnt, _s_buffer, arg)
+#define Z_CBPRINTF_PACK_ARG(arg_idx, arg) \
+	Z_CBPRINTF_PACK_ARG2(arg_idx, _pbuf, _pkg_len, _pkg_offset, _pmax, arg)
 
 /** @brief Package descriptor.
  *
@@ -300,8 +334,9 @@ do { \
  */
 struct z_cbprintf_desc {
 	uint8_t len;
-	uint8_t str_cnt;
-	uint8_t ro_str_cnt;
+	uint8_t str_cnt;    /* Number of appended strings in the package. */
+	uint8_t ro_str_cnt; /* Number of read-only strings, indexes appended to the package.*/
+	uint8_t rw_str_cnt; /* Number of read-write strings, indexes appended to the package.*/
 };
 
 /** @brief Package header. */
@@ -333,12 +368,12 @@ union z_cbprintf_hdr {
  * @param _align_offset Input buffer alignment offset in words. Where offset 0
  * means that buffer is aligned to CBPRINTF_PACKAGE_ALIGNMENT.
  *
- * @param _flags Option flags. See @ref CBPRINTF_PACKAGE_FLAGS.
+ * @param flags Option flags. See @ref CBPRINTF_PACKAGE_FLAGS.
  *
  * @param ... String with variable list of arguments.
  */
 #define Z_CBPRINTF_STATIC_PACKAGE_GENERIC(buf, _inlen, _outlen, _align_offset, \
-					  _flags, ... /* fmt, ... */) \
+					  flags, ... /* fmt, ... */) \
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
@@ -352,15 +387,32 @@ do { \
 	IF_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT, \
 		(__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
 			  "Buffer must be aligned.");)) \
-	bool str_idxs = _flags & CBPRINTF_PACKAGE_ADD_STRING_IDXS; \
+	uint32_t _flags = flags; \
+	bool _ros_pos_en = (_flags) & CBPRINTF_PACKAGE_ADD_RO_STR_POS; \
+	bool _rws_pos_en = (_flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
+	bool _cros_en = (_flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO; \
 	uint8_t *_pbuf = buf; \
-	uint8_t _s_cnt = 0; \
-	uint16_t _s_buffer[16]; \
+	uint8_t _rws_pos_idx = 0; \
+	uint8_t _ros_pos_idx = 0; \
+	/* Variable holds count of all string pointer arguments. */ \
+	uint8_t _alls_cnt = Z_CBPRINTF_PCHAR_COUNT(0, __VA_ARGS__); \
+	uint8_t _fros_cnt = Z_CBPRINTF_PACKAGE_FIRST_RO_STR_CNT_GET(_flags); \
+	/* Variable holds count of non const string pointers. */ \
+	uint8_t _rws_cnt = _cros_en ? \
+		Z_CBPRINTF_PCHAR_COUNT(_flags, __VA_ARGS__) : _alls_cnt - _fros_cnt; \
+	uint8_t _ros_cnt = 1 + _alls_cnt - _rws_cnt; \
+	uint8_t _ros_pos_buf[_ros_pos_en ? _ros_cnt : 0]; \
+	uint8_t _rws_buffer[_rws_cnt]; \
 	size_t _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
 	int _pkg_len = 0; \
 	int _total_len = 0; \
 	int _pkg_offset = _align_offset; \
 	union z_cbprintf_hdr *_len_loc; \
+	/* If string has rw string arguments CBPRINTF_PACKAGE_ADD_RW_STR_POS is a must. */ \
+	if (_rws_cnt && !((_flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS)) { \
+		_outlen = -EINVAL; \
+		break; \
+	} \
 	/* package starts with string address and field with length */ \
 	if (_pmax < sizeof(union z_cbprintf_hdr)) { \
 		_outlen = -ENOSPC; \
@@ -370,14 +422,21 @@ do { \
 	_pkg_len += sizeof(union z_cbprintf_hdr); \
 	_pkg_offset += sizeof(union z_cbprintf_hdr); \
 	/* Pack remaining arguments */\
-	FOR_EACH(Z_CBPRINTF_PACK_ARG, (;), __VA_ARGS__);\
+	FOR_EACH_IDX(Z_CBPRINTF_PACK_ARG, (;), __VA_ARGS__);\
 	_total_len = _pkg_len; \
-	if (str_idxs) {\
-		_total_len += _s_cnt; \
-		if (_pbuf) { \
-			for (int i = 0; i < _s_cnt; i++) { \
-				_pbuf[_pkg_len + i] = _s_buffer[i]; \
-			} \
+	/* Append string indexes to the package. */ \
+	if (_ros_pos_en) { \
+		_total_len += sizeof(_ros_pos_buf); \
+	} \
+	_total_len += sizeof(_rws_buffer); \
+	if (_pbuf) { \
+		/* Append string locations. */ \
+		uint8_t *_pbuf_loc = &_pbuf[_pkg_len]; \
+		for (size_t i = 0; i < sizeof(_ros_pos_buf); i++) { \
+			*_pbuf_loc++ = _ros_pos_buf[i]; \
+		} \
+		for (size_t i = 0; i < sizeof(_rws_buffer); i++) { \
+			*_pbuf_loc++ = _rws_buffer[i]; \
 		} \
 	} \
 	/* Store length */ \
@@ -388,7 +447,8 @@ do { \
 			.desc = { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
 				.str_cnt = 0, \
-				.ro_str_cnt = str_idxs ? _s_cnt : (uint8_t)0, \
+				.ro_str_cnt = (uint8_t)sizeof(_ros_pos_buf), \
+				.rw_str_cnt = (uint8_t)sizeof(_rws_buffer), \
 			} \
 		}; \
 		*_len_loc = hdr; \

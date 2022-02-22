@@ -54,7 +54,7 @@ static inline void z_vrfy_z_log_msg2_static_create(const void *source,
 
 void z_impl_z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 				uint8_t level, const void *data, size_t dlen,
-				const char *fmt, va_list ap)
+				uint32_t package_flags, const char *fmt, va_list ap)
 {
 	int plen;
 
@@ -62,8 +62,8 @@ void z_impl_z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 		va_list ap2;
 
 		va_copy(ap2, ap);
-		plen = cbvprintf_package(NULL, Z_LOG_MSG2_ALIGN_OFFSET, 0,
-					 fmt, ap2);
+		plen = cbvprintf_package(NULL, Z_LOG_MSG2_ALIGN_OFFSET,
+					 package_flags, fmt, ap2);
 		__ASSERT_NO_MSG(plen >= 0);
 		va_end(ap2);
 	} else {
@@ -82,7 +82,7 @@ void z_impl_z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 	}
 
 	if (msg && fmt) {
-		plen = cbvprintf_package(msg->data, (size_t)plen, 0, fmt, ap);
+		plen = cbvprintf_package(msg->data, (size_t)plen, package_flags, fmt, ap);
 		__ASSERT_NO_MSG(plen >= 0);
 	}
 
@@ -93,10 +93,10 @@ void z_impl_z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 static inline void z_vrfy_z_log_msg2_runtime_vcreate(uint8_t domain_id,
 				const void *source,
 				uint8_t level, const void *data, size_t dlen,
-				const char *fmt, va_list ap)
+				uint32_t package_flags, const char *fmt, va_list ap)
 {
 	return z_impl_z_log_msg2_runtime_vcreate(domain_id, source, level, data,
-						dlen, fmt, ap);
+						dlen, package_flags, fmt, ap);
 }
 #include <syscalls/z_log_msg2_runtime_vcreate_mrsh.c>
 #endif
