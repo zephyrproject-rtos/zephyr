@@ -10,6 +10,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/adc_npcx_threshold.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
 
@@ -26,7 +27,7 @@ LOG_MODULE_REGISTER(adc_npcx, CONFIG_ADC_LOG_LEVEL);
 #define ADC_REGULAR_MEAST_VAL	0x0001
 
 /* ADC channel number */
-#define NPCX_ADC_CH_COUNT DT_INST_NUM_PINCTRLS_BY_IDX(0, 0)
+#define NPCX_ADC_CH_COUNT DT_INST_PROP(0, channel_count)
 
 /* ADC targeted operating frequency (2MHz) */
 #define NPCX_ADC_CLK 2000000
@@ -49,12 +50,11 @@ struct adc_npcx_config {
 	uintptr_t base;
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
-	/* pinmux configuration */
-	const struct npcx_alt *alts_list;
 	/* amount of thresholds supported */
 	const uint8_t threshold_count;
 	/* threshold control register offset */
 	const uint16_t threshold_reg_offset;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct adc_npcx_threshold_control {
@@ -328,7 +328,6 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 static int adc_npcx_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
-	const struct adc_npcx_config *const config = dev->config;
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_id >= NPCX_ADC_CH_COUNT) {
@@ -356,13 +355,7 @@ static int adc_npcx_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Configure pin-mux for ADC channel */
-	npcx_pinctrl_mux_configure(config->alts_list + channel_cfg->channel_id,
-			1, 1);
-	LOG_DBG("ADC channel %d, alts(%d,%d)", channel_cfg->channel_id,
-			config->alts_list[channel_cfg->channel_id].group,
-			config->alts_list[channel_cfg->channel_id].bit);
-
+	LOG_DBG("ADC channel %d configured", channel_cfg->channel_id);
 	return 0;
 }
 
@@ -679,14 +672,16 @@ static const struct adc_driver_api adc_npcx_driver_api = {
 
 static int adc_npcx_init(const struct device *dev);
 
-static const struct npcx_alt adc_alts[] = NPCX_DT_ALT_ITEMS_LIST(0);
+PINCTRL_DT_INST_DEFINE(0);
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+	"only one 'nuvoton_npcx_adc' compatible node may be present");
 
 static const struct adc_npcx_config adc_npcx_cfg_0 = {
 	.base = DT_INST_REG_ADDR(0),
 	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
-	.alts_list = adc_alts,
 	.threshold_count = DT_INST_PROP(0, threshold_count),
 	.threshold_reg_offset = DT_INST_PROP(0, threshold_reg_offset),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct adc_npcx_threshold_data threshold_data_0;
@@ -758,7 +753,12 @@ static int adc_npcx_init(const struct device *dev)
 	/* Initialize mutex of ADC channels */
 	adc_context_unlock_unconditionally(&data->ctx);
 
+	/* Configure pin-mux for ADC device */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("ADC pinctrl setup failed (%d)", ret);
+		return ret;
+	}
+
 	return 0;
 }
-BUILD_ASSERT(ARRAY_SIZE(adc_alts) == NPCX_ADC_CH_COUNT,
-	"The number of ADC channels and pin-mux configurations don't match!");

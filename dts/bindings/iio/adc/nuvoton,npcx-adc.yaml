@@ -5,7 +5,7 @@ description: Nuvoton, NPCX-ADC node
 
 compatible: "nuvoton,npcx-adc"
 
-include: [adc-controller.yaml]
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -15,9 +15,13 @@ properties:
     label:
         required: true
     pinctrl-0:
-        type: phandles
         required: true
-        description: configurations of pinmux controllers
+    pinctrl-names:
+        required: true
+    channel-count:
+        type: int
+        required: true
+        description: the number of ADC channels
     threshold-reg-offset:
         type: int
         required: true
