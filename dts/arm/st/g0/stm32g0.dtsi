@@ -20,6 +20,10 @@
 		zephyr,flash-controller = &flash;
 	};
 
+	aliases {
+		gpio-controller-parent = &pinctrl;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

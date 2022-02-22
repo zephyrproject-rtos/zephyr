@@ -57,5 +57,6 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_TEST       gpio_test.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_GD32       gpio_gd32.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_NAME       gpio_name.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   gpio_handlers.c)

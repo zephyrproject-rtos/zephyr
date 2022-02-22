@@ -21,6 +21,12 @@ config GPIO_SHELL
 	help
 	  Enable GPIO Shell for testing.
 
+config GPIO_NAME
+	bool "Enable GPIO names"
+	default y if GPIO_SHELL
+	help
+	  Use gpio-line-names to display and select GPIOs.
+
 config GPIO_INIT_PRIORITY
 	int "GPIO init priority"
 	default KERNEL_INIT_PRIORITY_DEFAULT
