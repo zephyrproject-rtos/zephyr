@@ -122,7 +122,7 @@ int ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 					 ticker_conn_match_op_cb,
 					 conn_ull_hdr_get_cb, ticks_anchor,
 					 &ticks_to_expire, &ticks_slot);
-	if (ticker_id != 0xff) {
+	if (ticker_id != TICKER_NULL) {
 		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire +
 						    ticks_slot) +
 						    (EVENT_JITTER_US << 3);
@@ -371,7 +371,7 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 		ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_TIES_US);
 	}
 
-	ticker_id = ticker_id_prev = ticker_id_other = 0xff;
+	ticker_id = ticker_id_prev = ticker_id_other = TICKER_NULL;
 	ticks_to_expire = ticks_to_expire_prev = ticks_anchor =
 		ticks_anchor_prev = offset_index = offset = 0U;
 	ticks_slot_abs_prev = 0U;
@@ -403,12 +403,12 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
 		LL_ASSERT(success);
 
-		if (ticker_id == 0xff) {
+		if (ticker_id == TICKER_NULL) {
 			break;
 		}
 
 		/* ticks_anchor shall not change during this loop */
-		if ((ticker_id_prev != 0xff) &&
+		if ((ticker_id_prev != TICKER_NULL) &&
 		    (ticks_anchor != ticks_anchor_prev)) {
 			LL_ASSERT(0);
 		}
@@ -439,7 +439,7 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 		/* TODO: handle scanner; for now we exit with as much we
 		 * where able to fill (offsets).
 		 */
-		if (ticker_id_other != 0xff) {
+		if (ticker_id_other != TICKER_NULL) {
 			break;
 		}
 
@@ -530,7 +530,7 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 		}
 	} while (offset_index < *offset_max);
 
-	if (ticker_id == 0xff) {
+	if (ticker_id == TICKER_NULL) {
 		if (ticks_to_expire_prev < *ticks_to_offset_next) {
 			ticks_to_expire_prev = *ticks_to_offset_next;
 		}
@@ -576,7 +576,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 	ticks_slot_abs += HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US << 3);
 
-	ticker_id = ticker_id_prev = 0xff;
+	ticker_id = ticker_id_prev = TICKER_NULL;
 	ticks_to_expire = ticks_to_expire_prev = 0U;
 	ticks_slot_abs_prev = 0U;
 	while (1) {
@@ -618,7 +618,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
 		LL_ASSERT(success);
 
-		if (ticker_id == 0xff) {
+		if (ticker_id == TICKER_NULL) {
 			break;
 		}
 
@@ -659,7 +659,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 
 		ticks_slot_abs_curr += hdr->ticks_slot;
 
-		if ((ticker_id_prev != 0xff) &&
+		if ((ticker_id_prev != TICKER_NULL) &&
 		    (ticker_ticks_diff_get(ticks_to_expire_normal,
 					   ticks_to_expire_prev) >
 		     (ticks_slot_abs_prev + ticks_slot_abs))) {
@@ -671,7 +671,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		ticks_slot_abs_prev = ticks_slot_abs_curr;
 	}
 
-	if (ticker_id_prev != 0xff) {
+	if (ticker_id_prev != TICKER_NULL) {
 		*ticks_to_expire_match = ticks_to_expire_prev;
 		*ticks_slot_match = ticks_slot_abs_prev;
 	}
