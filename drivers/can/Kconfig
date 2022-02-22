@@ -75,13 +75,6 @@ config CAN_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
-config CAN_WORKQ_FRAMES_BUF_CNT
-	int "Work queue buffer frame count (DEPRECATED)"
-	default 4
-	range 1 65534
-	help
-	  Number of frames in the buffer of a zcan_work.
-
 config CAN_RX_TIMESTAMP
 	bool "Enable receiving timestamps"
 	depends on CAN_HAS_RX_TIMESTAMP
