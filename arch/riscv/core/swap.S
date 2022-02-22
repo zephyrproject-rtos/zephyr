@@ -8,6 +8,7 @@
 #include <linker/sections.h>
 #include <offsets_short.h>
 #include <arch/cpu.h>
+#include "asm_macros.inc"
 
 /* exports */
 GTEXT(arch_swap)
@@ -38,7 +39,7 @@ SECTION_FUNC(exception.other, arch_swap)
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+	lr t1, _kernel_offset_to_current(t0)
 
 	/* Load return value of arch_swap function in temp register t2 */
 	lw t2, _thread_offset_to_swap_return_value(t1)

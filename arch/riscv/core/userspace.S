@@ -13,6 +13,7 @@
 #include <syscall.h>
 #include <kernel_structs.h>
 #include <arch/riscv/csr.h>
+#include "asm_macros.inc"
 
 /* exports */
 GTEXT(z_riscv_do_syscall)
@@ -31,7 +32,7 @@ SECTION_FUNC(TEXT,z_riscv_do_syscall)
 
 	slli	t1, a7, RV_REGSHIFT	# Determine offset from indice value
 	add	t0, t0, t1		# Table addr + offset = function addr
-	RV_OP_LOADREG t3, 0x00(t0)	# Load function address
+	lr	t3, 0(t0)	# Load function address
 
 	/* Execute syscall function */
 	jalr 	t3
