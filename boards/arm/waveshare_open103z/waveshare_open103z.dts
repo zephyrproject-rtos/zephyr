@@ -148,10 +148,6 @@
 	 */
 	status = "disabled";
 	bus-speed = <125000>;
-	sjw = <1>;
-	prop-seg = <0>;
-	phase-seg1 = <5>;
-	phase-seg2 = <6>;
 };
 
 zephyr_udc0: &usb {

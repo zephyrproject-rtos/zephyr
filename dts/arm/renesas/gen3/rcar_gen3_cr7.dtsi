@@ -99,11 +99,8 @@
 					IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 916>,
 				<&cpg CPG_CORE CPG_CORE_CLK_CANFD>;
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <8>;
-			phase-seg1 = <8>;
-			phase-seg2 = <3>;
+			sample-point = <875>;
 			status = "disabled";
 			label = "can0";
 		};

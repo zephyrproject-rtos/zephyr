@@ -75,11 +75,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
-			bus-speed = <250000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		dac1: dac@40007400 {

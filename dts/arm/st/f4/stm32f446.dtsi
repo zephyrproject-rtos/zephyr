@@ -58,11 +58,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		can2: can@40006800 {
@@ -74,11 +71,8 @@
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 			label = "CAN_2";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		usbotg_fs: usb@50000000 {
