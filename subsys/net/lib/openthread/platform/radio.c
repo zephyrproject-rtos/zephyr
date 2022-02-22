@@ -346,6 +346,7 @@ static void openthread_handle_received_frame(otInstance *instance,
 					     struct net_pkt *pkt)
 {
 	otRadioFrame recv_frame;
+	memset(&recv_frame, 0, sizeof(otRadioFrame));
 
 	recv_frame.mPsdu = net_buf_frag_last(pkt->buffer)->data;
 	/* Length inc. CRC. */
