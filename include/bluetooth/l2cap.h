@@ -98,13 +98,13 @@ typedef enum bt_l2cap_chan_state {
 	/** Channel disconnected */
 	BT_L2CAP_DISCONNECTED,
 	/** Channel in connecting state */
-	BT_L2CAP_CONNECT,
+	BT_L2CAP_CONNECTING,
 	/** Channel in config state, BR/EDR specific */
 	BT_L2CAP_CONFIG,
 	/** Channel ready for upper layer traffic on it */
 	BT_L2CAP_CONNECTED,
 	/** Channel in disconnecting state */
-	BT_L2CAP_DISCONNECT,
+	BT_L2CAP_DISCONNECTING,
 
 } __packed bt_l2cap_chan_state_t;
 
