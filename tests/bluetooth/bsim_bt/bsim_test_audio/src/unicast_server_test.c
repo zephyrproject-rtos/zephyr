@@ -14,8 +14,12 @@
 
 extern enum bst_result_t bst_result;
 
-/* Mandatory support preset by both client and server */
-static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
+#define CHANNEL_COUNT_1 BIT(0)
+
+static struct bt_codec lc3_codec =
+	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_16KHZ, BT_CODEC_LC3_DURATION_10, CHANNEL_COUNT_1, 40u, 40u,
+		     1u, (BT_CODEC_META_CONTEXT_VOICE | BT_CODEC_META_CONTEXT_MEDIA),
+		     BT_CODEC_META_CONTEXT_NONE);
 
 static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
@@ -178,7 +182,7 @@ static void init(void)
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000),
-		.codec = &preset_16_2_1.codec,
+		.codec = &lc3_codec,
 		.ops = &lc3_ops,
 	};
 	int err;
