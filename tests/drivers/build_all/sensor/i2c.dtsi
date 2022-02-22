@@ -647,3 +647,8 @@ test_i2c_as5600: as5600@64 {
 	compatible = "ams,as5600";
 	reg = <0x64>;
 };
+
+test_i2c_bh1750: bh1750@65 {
+	compatible = "rohm,bh1750";
+	reg = <0x65>;
+};
