@@ -171,14 +171,14 @@ const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state)
 	switch (state) {
 	case BT_L2CAP_DISCONNECTED:
 		return "disconnected";
-	case BT_L2CAP_CONNECT:
-		return "connect";
+	case BT_L2CAP_CONNECTING:
+		return "connecting";
 	case BT_L2CAP_CONFIG:
 		return "config";
 	case BT_L2CAP_CONNECTED:
 		return "connected";
-	case BT_L2CAP_DISCONNECT:
-		return "disconnect";
+	case BT_L2CAP_DISCONNECTING:
+		return "disconnecting";
 	default:
 		return "unknown";
 	}
@@ -199,23 +199,23 @@ void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 	case BT_L2CAP_DISCONNECTED:
 		/* regardless of old state always allows this state */
 		break;
-	case BT_L2CAP_CONNECT:
+	case BT_L2CAP_CONNECTING:
 		if (chan->state != BT_L2CAP_DISCONNECTED) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
 	case BT_L2CAP_CONFIG:
-		if (chan->state != BT_L2CAP_CONNECT) {
+		if (chan->state != BT_L2CAP_CONNECTING) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
 	case BT_L2CAP_CONNECTED:
 		if (chan->state != BT_L2CAP_CONFIG &&
-		    chan->state != BT_L2CAP_CONNECT) {
+		    chan->state != BT_L2CAP_CONNECTING) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
-	case BT_L2CAP_DISCONNECT:
+	case BT_L2CAP_DISCONNECTING:
 		if (chan->state != BT_L2CAP_CONFIG &&
 		    chan->state != BT_L2CAP_CONNECTED) {
 			BT_WARN("%s()%d: invalid transition", func, line);
@@ -345,7 +345,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	if (L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
 		k_work_init(&ch->rx_work, l2cap_rx_process);
 		k_fifo_init(&ch->rx_queue);
-		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
+		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTING);
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -2425,7 +2425,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 				  struct net_buf *buf)
 {
-	if (chan->chan.state == BT_L2CAP_DISCONNECT) {
+	if (chan->chan.state == BT_L2CAP_DISCONNECTING) {
 		BT_WARN("Ignoring data received while disconnecting");
 		net_buf_unref(buf);
 		return;
@@ -2859,7 +2859,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	req->scid = sys_cpu_to_le16(ch->rx.cid);
 
 	l2cap_chan_send_req(chan, buf, L2CAP_DISC_TIMEOUT);
-	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECT);
+	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
 
 	return 0;
 }
