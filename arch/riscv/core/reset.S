@@ -52,14 +52,14 @@ boot_first_core:
 	/*
 	 * Enable floating-point.
 	 */
-	li  t0, MSTATUS_FS_INIT
-	csrrs x0, mstatus, t0
+	li t0, MSTATUS_FS_INIT
+	csrs mstatus, t0
 
 	/*
 	 * Floating-point rounding mode set to IEEE-754 default, and clear
 	 * all exception flags.
 	 */
-	fscsr x0, x0
+	fscsr zero
 #endif
 
 #ifdef CONFIG_INIT_STACKS
