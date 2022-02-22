@@ -1005,7 +1005,7 @@ int bt_audio_stream_connect(struct bt_audio_stream *stream)
 	switch (stream->iso->state) {
 	case BT_ISO_DISCONNECTED:
 		return bt_iso_chan_connect(&param, 1);
-	case BT_ISO_CONNECT:
+	case BT_ISO_CONNECTING:
 		return 0;
 	case BT_ISO_CONNECTED:
 		return -EALREADY;
