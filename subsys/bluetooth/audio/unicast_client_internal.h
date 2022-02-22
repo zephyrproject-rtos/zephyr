@@ -9,11 +9,11 @@
 int bt_unicast_client_config(struct bt_audio_stream *stream,
 		  struct bt_codec *codec);
 
-int bt_unicast_client_enable(struct bt_audio_stream *stream, uint8_t meta_count,
+int bt_unicast_client_enable(struct bt_audio_stream *stream, size_t meta_count,
 		  struct bt_codec_data *meta);
 
 int bt_unicast_client_metadata(struct bt_audio_stream *stream,
-		    uint8_t meta_count, struct bt_codec_data *meta);
+			       size_t meta_count, struct bt_codec_data *meta);
 
 int bt_unicast_client_disable(struct bt_audio_stream *stream);
 

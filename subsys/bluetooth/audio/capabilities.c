@@ -156,7 +156,7 @@ static int unicast_server_qos_cb(struct bt_audio_stream *stream,
 }
 
 static int unicast_server_enable_cb(struct bt_audio_stream *stream,
-				    uint8_t meta_count,
+				    size_t meta_count,
 				    const struct bt_codec_data *meta)
 {
 	struct bt_audio_capability *cap = stream->user_data;
@@ -181,7 +181,7 @@ static int unicast_server_start_cb(struct bt_audio_stream *stream)
 }
 
 static int unicast_server_metadata_cb(struct bt_audio_stream *stream,
-				      uint8_t meta_count,
+				      size_t meta_count,
 				      const struct bt_codec_data *meta)
 {
 	struct bt_audio_capability *cap = stream->user_data;
