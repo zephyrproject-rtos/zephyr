@@ -136,6 +136,10 @@
 	ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
 #endif
 
+#if defined(CONFIG_BT_IAS)
+	ITERABLE_SECTION_ROM(bt_ias_cb, 4)
+#endif
+
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	ITERABLE_SECTION_ROM(bt_mesh_proxy_cb, 4)
 #endif
