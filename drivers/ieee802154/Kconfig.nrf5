@@ -83,4 +83,14 @@ config IEEE802154_NRF5_DELAY_TRX_ACC
 	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
 	  or delayed reception), in ppm.
 
+config IEEE802154_NRF5_LOG_RX_FAILURES
+	bool "Frame reception failures logging"
+	help
+	  There are few cases where the frame reception failure can happen because of
+	  internal cause. These cases are reported forward by general code error.
+
+	  This options enables logging the reason of frame reception failure.
+	  It can be helpful for the network traffic analyze but it generates also
+	  a lot of log records in a stress environment.
+
 endif
