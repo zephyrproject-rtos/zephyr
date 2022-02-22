@@ -76,8 +76,9 @@
 };
 
 &pwm6 {
-	drive-open-drain;
 	status = "okay";
+	pinctrl-0 = <&pwm6_gpc0>;
+	pinctrl-names = "default";
 };
 
 &adc0 {
