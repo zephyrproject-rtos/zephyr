@@ -242,10 +242,10 @@ static void i2c_standard_port_timing_regs_400khz(uint8_t port)
 	/* Port clock frequency depends on setting of timing registers. */
 	IT83XX_SMB_SCLKTS(port) = 0;
 	/* Suggested setting of timing registers of 400kHz. */
-	IT83XX_SMB_4P7USL = 0x6;
+	IT83XX_SMB_4P7USL = 0x3;
 	IT83XX_SMB_4P0USL = 0;
 	IT83XX_SMB_300NS = 0x1;
-	IT83XX_SMB_250NS = 0x2;
+	IT83XX_SMB_250NS = 0x5;
 	IT83XX_SMB_45P3USL = 0x6a;
 	IT83XX_SMB_45P3USH = 0x1;
 	IT83XX_SMB_4P7A4P0H = 0;
