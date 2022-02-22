@@ -51,7 +51,7 @@ SECTION_FUNC(exception.other, arch_swap)
 	csrrs t0, mstatus, a0
 
 	/* Set value of return register a0 to value of register t2 */
-	addi a0, t2, 0
+	mv a0, t2
 
 	/* Return */
 	ret
@@ -72,4 +72,4 @@ SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	 * return address set to 0 to indicate a non-returning function call.
 	 */
 
-	jal x0, z_thread_entry
+	j z_thread_entry
