@@ -65,9 +65,7 @@ static int init_reset(void);
 /* Allocate data path pools for RX/TX directions for each stream */
 #define BT_CTLR_ISO_STREAMS ((2 * (BT_CTLR_CONN_ISO_STREAMS)) + \
 			     BT_CTLR_SYNC_ISO_STREAMS)
-#if BT_CTLR_ISO_STREAMS
 static struct ll_iso_datapath datapath_pool[BT_CTLR_ISO_STREAMS];
-#endif
 
 static void *datapath_free;
 
@@ -429,6 +427,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 	dp = stream->dp;
 	if (dp) {
 		stream->dp = NULL;
+		isoal_sink_destroy(dp->sink_hdl);
 		ull_iso_datapath_release(dp);
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
@@ -839,11 +838,9 @@ static int init_reset(void)
 		 CONFIG_BT_CTLR_ISO_TX_BUFFERS, &mem_link_tx.free);
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
-#if BT_CTLR_ISO_STREAMS
 	/* Initialize ISO Datapath pool */
 	mem_init(datapath_pool, sizeof(struct ll_iso_datapath),
 		 sizeof(datapath_pool) / sizeof(struct ll_iso_datapath), &datapath_free);
-#endif
 
 	return 0;
 }
