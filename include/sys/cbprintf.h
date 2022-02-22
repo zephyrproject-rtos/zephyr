@@ -69,27 +69,76 @@ extern "C" {
  * @{
  */
 
+/** @brief Assume that const char pointer a pointing to read only (constant) strings.
+ *
+ * Flag is valid only for @ref CBPRINTF_STATIC_PACKAGE.
+ */
+#define CBPRINTF_PACKAGE_CONST_CHAR_RO BIT(0)
+
+/** @brief Append locations (within the package) of read-only string pointers.`*/
+#define CBPRINTF_PACKAGE_ADD_RO_STR_POS BIT(1)
+
+/** @brief Append locations (within the package) of read-write string pointers.
+ *
+ * When this flag is not used then read-write strings are appended to the package.
+ */
+#define CBPRINTF_PACKAGE_ADD_RW_STR_POS BIT(2)
+
+#define Z_CBPRINTF_PACKAGE_FIRST_RO_STR_BITS 3
+#define Z_CBPRINTF_PACKAGE_FIRST_RO_STR_OFFSET 3
+#define Z_CBPRINTF_PACKAGE_FIRST_RO_STR_MASK BIT_MASK(Z_CBPRINTF_PACKAGE_FIRST_RO_STR_BITS)
+
+/** @brief Indicate that @p n first string format arguments are char pointers to
+ * read-honly location.
+ *
+ * Runtime algorithm (address analysis) is skipped for those strings.
+ *
+ * @param n Number of string arguments considered as read-only.
+ */
+#define CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(n) \
+	(n << Z_CBPRINTF_PACKAGE_FIRST_RO_STR_OFFSET)
+
+/** @brief Get number of first format string arguments which are known to be read-only
+ * string.
+ */
+#define Z_CBPRINTF_PACKAGE_FIRST_RO_STR_CNT_GET(flags) \
+	(((flags) >> Z_CBPRINTF_PACKAGE_FIRST_RO_STR_OFFSET) & Z_CBPRINTF_PACKAGE_FIRST_RO_STR_MASK)
+
 /** @brief Append indexes of read-only string arguments in the package.
  *
  * When used, package contains locations of read-only string arguments. Package
  * with that information can be converted to fully self-contain package using
  * @ref cbprintf_fsc_package.
  */
-#define CBPRINTF_PACKAGE_ADD_STRING_IDXS BIT(0)
+#define CBPRINTF_PACKAGE_ADD_STRING_IDXS \
+	(CBPRINTF_PACKAGE_ADD_RO_STR_POS | CBPRINTF_PACKAGE_CONST_CHAR_RO)
 
 /**@} */
 
-/**@defgroup CBPRINTF_MUST_RUNTIME_PACKAGE_FLAGS Package flags.
+/**@defgroup CBPRINTF_PACKAGE_COPY_FLAGS Package flags.
  * @{
  */
 
-/** @brief Consider constant string pointers as pointing to fixed strings.
+/** @brief Append read-only strings from source package to destination package.
  *
- * When flag is set then const (w)char pointers arguments in the string does
- * not trigger runtime packaging.
+ * If package was created with @ref CBPRINTF_PACKAGE_ADD_RO_STR_POS
+ * or @ref CBPRINTF_PACKAGE_ADD_RW_STR_POS it contains arrays of indexes where
+ * string address can be found in the package. When flag is set, read-only strings
+ * are copied into destination package. Address of strings indicated as read-write
+ * are also checked and if determined to be read-only they are also copied.
  */
-#define CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR BIT(0)
+#define CBPRINTF_PACKAGE_COPY_RO_STR BIT(0)
 
+/** @brief Append read-write strings from source package to destination package.
+ *
+ * If package was created with @ref CBPRINTF_PACKAGE_ADD_RW_STR_POS it contains
+ * arrays of indexes where string address can be found in the package. When flag
+ * is set, list of read-write strings is examined and if they are not determined
+ * to be read-only, they are copied into the destination package.
+ * If @ref CBPRINTF_PACKAGE_COPY_RO_STR is not set, remaining string locations
+ * are considered as pointing to read-only location.
+ */
+#define CBPRINTF_PACKAGE_COPY_RW_STR BIT(1)
 /**@} */
 
 /** @brief Signature for a cbprintf callback function.
@@ -141,20 +190,16 @@ typedef int (*cbvprintf_exteral_formatter_func)(cbprintf_cb out, void *ctx,
  *
  * @note By default any char pointers are considered to be pointing at transient
  * strings. This can be narrowed down to non const pointers by using
- * @ref CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR.
- *
- * @param skip number of read only string arguments in the parameter list. It
- * shall be non-zero if there are known read only string arguments present
- * in the string (e.g. function name prefix in the log message).
+ * @ref CBPRINTF_PACKAGE_CONST_CHAR_RO.
  *
  * @param ... String with arguments.
- * @param flags option flags. See @ref CBPRINTF_MUST_RUNTIME_PACKAGE_FLAGS.
+ * @param flags option flags. See @ref CBPRINTF_PACKAGE_FLAGS.
  *
  * @retval 1 if string must be packaged in run time.
  * @retval 0 string can be statically packaged.
  */
-#define CBPRINTF_MUST_RUNTIME_PACKAGE(skip, flags, ... /* fmt, ... */) \
-	Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, flags, __VA_ARGS__)
+#define CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ... /* fmt, ... */) \
+	Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, __VA_ARGS__)
 
 /** @brief Statically package string.
  *
@@ -277,17 +322,61 @@ int cbvprintf_package(void *packaged,
 		      const char *format,
 		      va_list ap);
 
+/** @brief Copy package with optional appending of strings.
+ *
+ * Copying may including appending strings used in the package to the package body.
+ * If input package was created with @ref CBPRINTF_PACKAGE_ADD_RO_STR_POS or
+ * @ref CBPRINTF_PACKAGE_ADD_RW_STR_POS, it contains information where strings
+ * are located within the package. This information can be used to copy strings
+ * into the output package.
+ *
+ * @param in_packaged Input package.
+ *
+ * @param in_len Input package length. If 0 package length will be retrieved
+ * from the @p in_packaged
+ *
+ * @param[out] packaged Output package. If null only length of the output package
+ * is calculated.
+ *
+ * @param len Available space in the location pointed by @p packaged. Not used when
+ * @p packaged is null.
+ *
+ * @param flags Flags. See @ref CBPRINTF_PACKAGE_COPY_FLAGS.
+ *
+ * @param[in, out] strl if @p packaged is null, it is a pointer to the array where
+ * @p strl_len first string lengths will is stored. If @p packaged is not null,
+ * it contains legths of first @p strl_len strings. It can be used to optimize
+ * copying so that string length is calculated only once (at length calculation
+ * phase when @p packaged is null.
+ *
+ * @param strl_len Number of elements in @p strl array.
+ *
+ * @retval Positive Output package size.
+ * @retval -ENOSPC if @p packaged was not null and the space required to store
+ * exceed @p len.
+ */
+int cbprintf_package_copy(void *in_packaged,
+			  size_t in_len,
+			  void *packaged,
+			  size_t len,
+			  uint32_t flags,
+			  uint16_t *strl,
+			  size_t strl_len);
+
 /** @brief Convert package to fully self-contained (fsc) package.
  *
- * By default, package does not contain read only strings. However, if needed
- * it may be converted to a fully self-contained package which contains all
- * strings. In order to allow such conversion, original package must be created
- * with @ref CBPRINTF_PACKAGE_ADD_STRING_IDXS flag. Such package will contain
- * necessary data to find read only strings in the package and copy them into
- * package body.
+ * Package may not be self contain since strings by default are stored by address.
+ * Package may be partially self-contained when transient (not read only) strings
+ * are appended to the package. Such package can be decoded only when there is an
+ * access to read-only strings.
+ *
+ * Fully self-contained has (fsc) contains all strings used in the package. A package
+ * can be converted to fsc package if it was create with @ref CBPRINTF_PACKAGE_ADD_RO_STR_POS
+ * flag. Such package will contain necessary data to find read only strings in
+ * the package and copy them into the package body.
  *
  * @param in_packaged pointer to original package created with
- * @ref CBPRINTF_PACKAGE_ADD_STRING_IDXS.
+ * @ref CBPRINTF_PACKAGE_ADD_RO_STR_POS.
  *
  * @param in_len @p in_packaged length.
  *
@@ -303,10 +392,15 @@ int cbvprintf_package(void *packaged,
  * exceed @p len.
  * @retval -EINVAL if @p in_packaged is null.
  */
-int cbprintf_fsc_package(void *in_packaged,
-			 size_t in_len,
-			 void *packaged,
-			 size_t len);
+static inline int cbprintf_fsc_package(void *in_packaged,
+				       size_t in_len,
+				       void *packaged,
+				       size_t len)
+{
+	return cbprintf_package_copy(in_packaged, in_len, packaged, len,
+				     CBPRINTF_PACKAGE_COPY_RO_STR |
+				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+}
 
 /** @brief Generate the output for a previously captured format
  * operation using an external formatter.

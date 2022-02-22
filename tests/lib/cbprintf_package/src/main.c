@@ -57,7 +57,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 }
 
 #define TEST_PACKAGING(flags, fmt, ...) do { \
-	int must_runtime = CBPRINTF_MUST_RUNTIME_PACKAGE(0, flags, fmt, __VA_ARGS__); \
+	int must_runtime = CBPRINTF_MUST_RUNTIME_PACKAGE(flags, fmt, __VA_ARGS__); \
 	zassert_equal(must_runtime, !Z_C_GENERIC, NULL); \
 	snprintfcb(compare_buf, sizeof(compare_buf), fmt, __VA_ARGS__); \
 	printk("-----------------------------------------\n"); \
@@ -82,13 +82,13 @@ static void unpack(const char *desc, struct out_buffer *buf,
 	struct out_buffer st_buf = { \
 		.buf = static_buf, .idx = 0, .size = sizeof(static_buf) \
 	}; \
-	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, ALIGN_OFFSET, 0, fmt, __VA_ARGS__); \
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, ALIGN_OFFSET, flags, fmt, __VA_ARGS__); \
 	zassert_true(len > 0, "CBPRINTF_STATIC_PACKAGE() returned %d", len); \
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) \
 		package[len + ALIGN_OFFSET];\
 	int outlen; \
 	pkg = &package[ALIGN_OFFSET]; \
-	CBPRINTF_STATIC_PACKAGE(pkg, len, outlen, ALIGN_OFFSET, 0, fmt, __VA_ARGS__);\
+	CBPRINTF_STATIC_PACKAGE(pkg, len, outlen, ALIGN_OFFSET, flags, fmt, __VA_ARGS__);\
 	zassert_equal(len, outlen, NULL); \
 	dump("static", pkg, len); \
 	unpack("static", &st_buf, pkg, len); \
@@ -123,19 +123,19 @@ void test_cbprintf_package(void)
 	TEST_PACKAGING(0, "test %c %p", c, vp);
 
 	/* Runtime packaging is still possible when const strings are used. */
-	TEST_PACKAGING(CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR,
+	TEST_PACKAGING(CBPRINTF_PACKAGE_CONST_CHAR_RO,
 			"test %s %s", str, (const char *)pstr);
 
 	/* When flag is set but argument is char * runtime packaging must be used. */
-	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR,
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_CONST_CHAR_RO,
 					   "test %s %s", str, pstr);
 	zassert_true(rv != 0, "Unexpected value %d", rv);
 
 	/* When const char * are used but flag is not used then runtime packaging must be used. */
-	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, 0, "test %s %s", str, (const char *)pstr);
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, "test %s %s", str, (const char *)pstr);
 	zassert_true(rv != 0, "Unexpected value %d", rv);
 
-	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, CBPRINTF_MUST_RUNTIME_PACKAGE_CONST_CHAR,
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_CONST_CHAR_RO,
 					   "test %s", (char *)str);
 	zassert_true(rv != 0, "Unexpected value %d", rv);
 
