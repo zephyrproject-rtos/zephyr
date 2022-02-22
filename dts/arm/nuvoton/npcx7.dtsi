@@ -182,18 +182,9 @@
 				    &wui_iof4 &wui_iof5 &wui_none &wui_none>;
 		};
 
-		/* Supported channels for ADC0 in npcx7 series */
+		/* ADC0 comparator configuration in npcx7 series */
 		adc0: adc@400d1000 {
-			pinctrl-0 = <&alt6_adc0_sl   /* ADC0 - PIN45 */
-				     &alt6_adc1_sl   /* ADC1 - PIN44 */
-				     &alt6_adc2_sl   /* ADC2 - PIN43 */
-				     &alt6_adc3_sl   /* ADC3 - PIN42 */
-				     &alt6_adc4_sl   /* ADC4 - PIN41 */
-				     &altf_adc5_sl   /* ADC5 - PIN37 */
-				     &altf_adc6_sl   /* ADC6 - PIN34 */
-				     &altf_adc7_sl   /* ADC7 - PINE1 */
-				     &altf_adc8_sl   /* ADC8 - PINF1 */
-				     &altf_adc9_sl>; /* ADC9 - PINF0 */
+			channel-count = <10>;
 			threshold-reg-offset = <0x14>;
 			threshold-count = <3>;
 		};
