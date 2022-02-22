@@ -297,8 +297,20 @@ static void openthread_process(struct k_work *work)
 	openthread_api_mutex_unlock(ot_context);
 }
 
-static enum net_verdict openthread_recv(struct net_if *iface,
-					struct net_pkt *pkt)
+static bool is_ipv6_frag(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *hdr;
+
+	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+	if (!hdr) {
+		return false;
+	}
+
+	return hdr->nexthdr == NET_IPV6_NEXTHDR_FRAG ? true : false;
+}
+
+static enum net_verdict openthread_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
@@ -308,6 +320,10 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 
 		if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
 			net_pkt_hexdump(pkt, "Injected IPv6 packet");
+		}
+
+		if (IS_ENABLED(CONFIG_OPENTHREAD_IP6_FRAGM) && is_ipv6_frag(pkt)) {
+			return NET_DROP;
 		}
 
 		return NET_CONTINUE;
