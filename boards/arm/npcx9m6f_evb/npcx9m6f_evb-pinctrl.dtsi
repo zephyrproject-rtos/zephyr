@@ -10,3 +10,7 @@
 	bias-pull-up; /* Enable internal pull-up for i2c0_0 */
 	pinmux-locked; /* Lock pinmuxing */
 };
+
+&pwm6_gpc0 {
+	drive-open-drain;
+};

@@ -5,7 +5,7 @@ description: Nuvoton, NPCX Pulse Width Modulator (PWM) node
 
 compatible: "nuvoton,npcx-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -15,9 +15,9 @@ properties:
     label:
         required: true
     pinctrl-0:
-        type: phandles
         required: true
-        description: configurations of pinmux controllers
+    pinctrl-names:
+        required: true
     drive-open-drain:
         type: boolean
         description: |
