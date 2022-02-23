@@ -284,25 +284,6 @@ int sip_svc_ll_unregister(struct sip_svc_controller *ctrl, uint32_t c_token)
 	return 0;
 }
 
-static void sip_svc_ll_active_client_wdt_handler(struct k_timer *timer)
-{
-	struct sip_svc_controller *ctrl = k_timer_user_data_get(timer);
-
-	if (!ctrl)
-		return;
-
-	/* Terminate the opened channel */
-	if (k_mutex_lock(&ctrl->data_mutex, K_FOREVER) == 0) {
-		if (ctrl->active_client_index != SIP_SVC_ID_INVALID) {
-			ctrl->clients[ctrl->active_client_index].state =
-				SIP_SVC_CLIENT_ST_IDLE;
-			ctrl->active_client_index = SIP_SVC_ID_INVALID;
-		}
-		k_mutex_unlock(&ctrl->open_mutex);
-		k_mutex_unlock(&ctrl->data_mutex);
-	}
-}
-
 int sip_svc_ll_open(struct sip_svc_controller *ctrl, uint32_t c_token, uint32_t timeout_us)
 {
 	k_timeout_t k_timeout;
@@ -343,10 +324,6 @@ int sip_svc_ll_open(struct sip_svc_controller *ctrl, uint32_t c_token, uint32_t 
 			ctrl->active_client_index = c_idx;
 			ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_OPEN;
 
-			k_timer_start(&ctrl->active_client_wdt,
-				K_MSEC(CONFIG_ARM_SIP_SVC_OPEN_WDT_TIMEOUT_MS),
-				K_NO_WAIT);
-
 			k_mutex_unlock(&ctrl->data_mutex);
 		}
 	}
@@ -371,8 +348,6 @@ int sip_svc_ll_close(struct sip_svc_controller *ctrl, uint32_t c_token)
 
 		if (ctrl->active_client_index == c_idx &&
 		    ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_OPEN) {
-			k_timer_stop(&ctrl->active_client_wdt);
-
 			if (ctrl->clients[c_idx].active_trans_cnt)
 				ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_ABORT;
 			else
@@ -445,11 +420,7 @@ static void sip_svc_ll_callback(struct sip_svc_controller *ctrl,
 			return;
 		}
 
-		if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_OPEN) {
-			k_timer_start(&ctrl->active_client_wdt,
-				K_MSEC(CONFIG_ARM_SIP_SVC_OPEN_WDT_TIMEOUT_MS),
-				K_NO_WAIT);
-		} else if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_ABORT) {
+		if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_ABORT) {
 			ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_IDLE;
 		}
 
@@ -513,11 +484,7 @@ static int sip_svc_ll_cancel_w_callback(struct sip_svc_controller *ctrl,
 			return 0;
 		}
 
-		if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_OPEN) {
-			k_timer_start(&ctrl->active_client_wdt,
-				K_MSEC(CONFIG_ARM_SIP_SVC_OPEN_WDT_TIMEOUT_MS),
-				K_NO_WAIT);
-		} else if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_ABORT) {
+		if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_ABORT) {
 			ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_IDLE;
 		}
 
@@ -879,9 +846,6 @@ int sip_svc_ll_send(struct sip_svc_controller *ctrl,
 		}
 		ctrl->clients[c_idx].active_trans_cnt++;
 
-		/* Stop opened channel watchdog timer since receive request */
-		k_timer_stop(&ctrl->active_client_wdt);
-
 		/* Create and run the thread */
 		if (!ctrl->tid) {
 			ctrl->tid = k_thread_create(&ctrl->thread, ctrl->stack,
@@ -948,9 +912,8 @@ void sip_svc_ll_print_info(struct sip_svc_controller *ctrl)
 	if (ctrl->active_client_index == SIP_SVC_ID_INVALID)
 		printk("opened client          N/A\n");
 	else
-		printk("opened client          %08x (Watchdog status: %d)\n",
-		       ctrl->clients[ctrl->active_client_index].token,
-		       k_timer_status_get(&ctrl->active_client_wdt));
+		printk("opened client          %08x\n",
+		       ctrl->clients[ctrl->active_client_index].token);
 
 	printk("active job cnt         %d\n", ctrl->active_job_cnt);
 	printk("active async job cnt   %d\n", ctrl->active_async_job_cnt);
@@ -1046,13 +1009,6 @@ int sip_svc_ll_init(struct sip_svc_controller *ctrl)
 	/* Initialize mutex */
 	k_mutex_init(&ctrl->open_mutex);
 	k_mutex_init(&ctrl->data_mutex);
-
-	/* Initialize active client watchdog timer */
-	k_timer_init(&ctrl->active_client_wdt,
-		     sip_svc_ll_active_client_wdt_handler,
-		     NULL);
-	k_timer_user_data_set(&ctrl->active_client_wdt,
-			      (void *)ctrl);
 
 	return 0;
 }

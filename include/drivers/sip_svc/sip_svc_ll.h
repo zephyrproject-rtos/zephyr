@@ -66,7 +66,6 @@ struct sip_svc_controller {
 	struct k_mutex data_mutex;
 	struct sip_svc_client clients[CONFIG_ARM_SIP_SVC_MAX_CLIENT_COUNT];
 	uint32_t active_client_index;
-	struct k_timer active_client_wdt;
 
 	uint32_t active_job_cnt;
 	uint32_t active_async_job_cnt;
