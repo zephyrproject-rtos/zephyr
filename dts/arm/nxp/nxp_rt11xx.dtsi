@@ -376,6 +376,19 @@
 			status = "disabled";
 		};
 
+		mipi_dsi: mipi-dsi@4080c000 {
+			compatible = "nxp,imx-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4080c000 0x200>,
+			      <0x4080c200 0x80>,
+			      <0x4080c280 0x80>,
+			      <0x4080c300 0x200>;
+			interrupts = <59 1>;
+			status = "disabled";
+			label = "MIPI_DSI";
+		};
+
 		lpspi1: spi@40114000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x40114000 0x4000>;

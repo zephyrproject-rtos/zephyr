@@ -406,6 +406,12 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
+#ifdef CONFIG_DISPLAY_MCUX_ELCDIF
+	rootCfg.mux = kCLOCK_LCDIF_ClockRoot_MuxSysPll2Out;
+	rootCfg.div = 9;
+	CLOCK_SetRootClock(kCLOCK_Root_Lcdif, &rootCfg);
+#endif
+
 #ifdef CONFIG_COUNTER_MCUX_GPT
 	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
@@ -490,6 +496,63 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 		return;
 	}
 }
+#endif
+
+#if CONFIG_MIPI_DSI
+void imxrt_pre_init_display_interface(void)
+{
+	/* elcdif output to MIPI DSI */
+	CLOCK_EnableClock(kCLOCK_Video_Mux);
+	VIDEO_MUX->VID_MUX_CTRL.CLR = VIDEO_MUX_VID_MUX_CTRL_MIPI_DSI_SEL_MASK;
+
+	/* Power on and isolation off. */
+	PGMC_BPC4->BPC_POWER_CTRL |= (PGMC_BPC_BPC_POWER_CTRL_PSW_ON_SOFT_MASK |
+				PGMC_BPC_BPC_POWER_CTRL_ISO_OFF_SOFT_MASK);
+
+	/* Assert MIPI reset. */
+	IOMUXC_GPR->GPR62 &= ~(IOMUXC_GPR_GPR62_MIPI_DSI_PCLK_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_ESC_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_BYTE_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_DPI_SOFT_RESET_N_MASK);
+
+	/* setup clock */
+	const clock_root_config_t mipiEscClockConfig = {
+		.clockOff = false,
+		.mux = 4,
+		.div = 11,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_Mipi_Esc, &mipiEscClockConfig);
+
+	/* TX esc clock */
+	const clock_group_config_t mipiEscClockGroupConfig = {
+		.clockOff = false,
+		.resetDiv = 2,
+		.div0 = 2,
+	};
+
+	CLOCK_SetGroupConfig(kCLOCK_Group_MipiDsi, &mipiEscClockGroupConfig);
+
+	const clock_root_config_t mipiDphyRefClockConfig = {
+		.clockOff = false,
+		.mux = 1,
+		.div = 1,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_Mipi_Ref, &mipiDphyRefClockConfig);
+
+	/* Deassert PCLK and ESC reset. */
+	IOMUXC_GPR->GPR62 |= (IOMUXC_GPR_GPR62_MIPI_DSI_PCLK_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_ESC_SOFT_RESET_N_MASK);
+}
+
+void imxrt_post_init_display_interface(void)
+{
+	/* deassert BYTE and DBI reset */
+	IOMUXC_GPR->GPR62 |= (IOMUXC_GPR_GPR62_MIPI_DSI_BYTE_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_DPI_SOFT_RESET_N_MASK);
+}
+
 #endif
 
 /**
