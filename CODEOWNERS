@@ -239,6 +239,7 @@
 /drivers/counter/counter_ll_stm32_timer.c @kentjhall
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
 /drivers/display/display_framebuf.c       @dcpleung
+/drivers/display/*rm68200*                @mmahadevan108
 /drivers/dac/                             @martinjaeger
 /drivers/dai/                             @juimonen
 /drivers/dai/intel/                       @juimonen
