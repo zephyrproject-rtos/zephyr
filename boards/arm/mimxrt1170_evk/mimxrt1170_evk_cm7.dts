@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021-22, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,10 @@
 	model = "NXP MIMXRT1170-EVK board";
 	compatible = "nxp,mimxrt1176";
 
+	aliases {
+		mipi-dsi = &mipi_dsi;
+	};
+
 	chosen {
 		zephyr,sram = &sdram0;
 		zephyr,dtcm = &dtcm;
@@ -23,12 +27,60 @@
 		zephyr,flash-controller = &flexspi;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &lcdif;
 	};
 
 	sdram0: memory@80000000 {
 		/* Winbond W9825G6KH-5I */
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(64)>;
+	};
+
+	en_mipi_display: enable-mipi-display {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "en_mipi_display";
+		regulator-name = "en_mipi_display";
+		enable-gpios = <&gpio11 16 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+
+&lcdif {
+	status = "okay";
+	width = <720>;
+	height = <1280>;
+	hsync = <8>;
+	hfp = <32>;
+	hbp = <32>;
+	vsync = <2>;
+	vfp = <16>;
+	vbp = <14>;
+	polarity = <3>;
+	pixel-format = "bgr-565";
+	data-buswidth = "24-bit";
+	backlight-gpios = <&gpio9 29 GPIO_ACTIVE_HIGH>;
+};
+
+&mipi_dsi {
+	status = "okay";
+	nxp,lcdif = <&lcdif>;
+	dpi-color-coding = "24-bit";
+	dpi-pixel-packet = "24-bit";
+	dpi-video-mode = "burst";
+	dpi-bllp-mode = "low-power";
+	autoinsert-eotp;
+	dphy-ref-frequency = <24000000>;
+
+	rm68200@0 {
+		status = "okay";
+		compatible = "raydium,rm68200";
+		reg = <0x0>;
+		label = "RM68200";
+		reset-gpios = <&gpio9 1 GPIO_ACTIVE_HIGH>;
+		data-lanes = <2>;
+		width = <720>;
+		height = <1280>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
 	};
 };
 
