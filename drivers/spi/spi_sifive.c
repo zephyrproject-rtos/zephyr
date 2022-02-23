@@ -237,6 +237,17 @@ int spi_sifive_transceive(const struct device *dev,
 	return rc;
 }
 
+#ifdef CONFIG_SPI_ASYNC
+int spi_sifive_transceive_async(const struct device *dev,
+				const struct spi_config *config,
+				const struct spi_buf_set *tx_bufs,
+				const struct spi_buf_set *rx_bufs,
+				struct spi_async_method *async)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_SPI_ASYNC */
+
 int spi_sifive_release(const struct device *dev,
 		       const struct spi_config *config)
 {
@@ -248,6 +259,9 @@ int spi_sifive_release(const struct device *dev,
 
 static struct spi_driver_api spi_sifive_api = {
 	.transceive = spi_sifive_transceive,
+#ifdef CONFIG_SPI_ASYNC
+	.transceive_async = spi_sifive_transceive_async,
+#endif
 	.release = spi_sifive_release,
 };
 

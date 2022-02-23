@@ -84,6 +84,23 @@ static int spi_emul_io(const struct device *dev,
 	return api->io(emul, config, tx_bufs, rx_bufs);
 }
 
+#ifdef CONFIG_SPI_ASYNC
+static int spi_emul_io(const struct device *dev,
+		       const struct spi_config *config,
+		       const struct spi_buf_set *tx_bufs,
+		       const struct spi_buf_set *rx_bufs,
+		       struct spi_async_method *async)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_SPI_ASYNC */
+
+static int spi_emul_release(const struct device *dev,
+			    const struct spi_config *config)
+{
+	return -ENOTSUP;
+}
+
 /**
  * Set up a new emulator and add it to the list
  *
@@ -115,6 +132,10 @@ int spi_emul_register(const struct device *dev, const char *name,
 
 static struct spi_driver_api spi_emul_api = {
 	.transceive = spi_emul_io,
+#ifdef CONFIG_SPI_ASYNC
+	.transceive_async = spi_emul_io_async,
+#endif
+	.release = spi_emul_release
 };
 
 #define EMUL_LINK_AND_COMMA(node_id) {		\

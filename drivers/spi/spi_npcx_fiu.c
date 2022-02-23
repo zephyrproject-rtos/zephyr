@@ -125,6 +125,17 @@ static int spi_npcx_fiu_transceive(const struct device *dev,
 	return error;
 }
 
+#ifdef CONFIG_SPI_ASYNC
+static int spi_npcx_fiu_transceive_async(const struct device *dev,
+					 const struct spi_config *spi_cfg,
+					 const struct spi_buf_set *tx_bufs,
+					 const struct spi_buf_set *rx_bufs,
+					 struct spi_async_method *async)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_SPI_ASYNC */
+
 int spi_npcx_fiu_release(const struct device *dev,
 			 const struct spi_config *config)
 {
@@ -166,6 +177,9 @@ static int spi_npcx_fiu_init(const struct device *dev)
 
 static struct spi_driver_api spi_npcx_fiu_api = {
 	.transceive = spi_npcx_fiu_transceive,
+#ifdef CONFIG_SPI_ASYNC
+	.transceive_async = spi_npcx_fiu_transceive_async,
+#endif
 	.release = spi_npcx_fiu_release,
 };
 

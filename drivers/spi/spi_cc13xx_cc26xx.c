@@ -184,6 +184,18 @@ done:
 	return err;
 }
 
+#ifdef CONFIG_SPI_ASYNC
+static int spi_cc13xx_cc26xx_transceive_async(const struct device *dev,
+					      const struct spi_config *spi_cfg,
+					      const struct spi_buf_set *tx_bufs,
+					      const struct spi_buf_set *rx_bufs,
+					      struct spi_async_method *async)
+{
+	return -ENOTSUP;
+}
+#endif
+
+
 static int spi_cc13xx_cc26xx_release(const struct device *dev,
 				     const struct spi_config *config)
 {
@@ -240,6 +252,9 @@ static int spi_cc13xx_cc26xx_pm_action(const struct device *dev,
 
 static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 	.transceive = spi_cc13xx_cc26xx_transceive,
+#ifdef CONFIG_SPI_ASYNC
+	.transceive_async = spi_cc13xx_cc26xx_transceive_async,
+#endif
 	.release = spi_cc13xx_cc26xx_release,
 };
 
