@@ -2,8 +2,8 @@
 
 .. _zephyr_3.0:
 
-Zephyr 3.0.0 (Working draft)
-############################
+Zephyr 3.0.0
+############
 
 We are pleased to announce the release of Zephyr RTOS version 3.0.0.
 
