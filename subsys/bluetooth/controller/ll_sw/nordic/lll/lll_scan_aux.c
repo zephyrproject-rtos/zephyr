@@ -571,19 +571,19 @@ sync_aux_prepare_done:
 		 */
 		if (lll && lll->conn) {
 			static memq_link_t link;
-			static struct mayfly mfy_after_mstr_offset_get = {
+			static struct mayfly mfy_after_cen_offset_get = {
 				0, 0, &link, NULL,
-				ull_sched_mfy_after_mstr_offset_get};
+				ull_sched_mfy_after_cen_offset_get};
 
 			/* NOTE: LLL scan instance passed, as done when
 			 *       establishing legacy connections.
 			 */
 			p->param = lll;
-			mfy_after_mstr_offset_get.param = p;
+			mfy_after_cen_offset_get.param = p;
 
 			ret = mayfly_enqueue(TICKER_USER_ID_LLL,
 					     TICKER_USER_ID_ULL_LOW, 1,
-					     &mfy_after_mstr_offset_get);
+					     &mfy_after_cen_offset_get);
 			LL_ASSERT(!ret);
 		}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
