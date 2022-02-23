@@ -387,6 +387,8 @@ device.
        interprocess-communication (IPC)
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,ocm
+     - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
    * - zephyr,ot-uart
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
