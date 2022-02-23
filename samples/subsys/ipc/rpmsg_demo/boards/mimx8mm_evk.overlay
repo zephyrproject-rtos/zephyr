@@ -1,0 +1,37 @@
+/ {
+    chosen {
+        zephyr,ipc = &mub;
+        zephyr,ipc_shm = &vdevbuffer;
+    };
+
+    soc {
+        mub: mu@30ab0000 {
+            compatible = "nxp,imx-mu";
+            reg = <0x30ab0000 DT_SIZE_K(64)>;
+            interrupts = <97 0>;
+            rdc = < 0xf >;
+            label = "MU_B";
+            status = "okay";
+        };
+    };
+
+    vdev0vring0: memory@b8000000 {
+        compatible = "mmio-sram";
+        reg = <0xb8000000 DT_SIZE_K(32)>;
+    };
+
+    vdev0vring1: memory@b8008000 {
+        compatible = "mmio-sram";
+        reg = <0xb8008000 DT_SIZE_K(32)>;
+    };
+
+    vdevbuffer: memory@b8400000 {
+        compatible = "mmio-sram";
+        reg = <0xb8400000 DT_SIZE_M(1)>;
+    };
+
+    unused_ram_atm: memory@80000000 {
+        compatible = "mmio-sram";
+        reg = <0x80000000 DT_SIZE_M(16)>;
+    };
+};
