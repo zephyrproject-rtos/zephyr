@@ -71,9 +71,9 @@ static void ticker_op_cb(uint32_t status, void *param);
 static bool ticker_conn_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
 				    uint32_t ticks_to_expire, void *op_context);
 static struct ull_hdr *conn_ull_hdr_get_cb(uint8_t ticker_id);
-static void after_mstr_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
-				  uint32_t ticks_anchor,
-				  uint32_t *win_offset_us);
+static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
+				 uint32_t ticks_anchor,
+				 uint32_t *win_offset_us);
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
@@ -111,8 +111,8 @@ int ull_sched_after_adv_sync_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if defined(CONFIG_BT_CONN)
-int ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
-				  uint32_t *ticks_anchor, uint32_t *us_offset)
+int ull_sched_after_cen_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
+				 uint32_t *ticks_anchor, uint32_t *us_offset)
 {
 	uint32_t ticks_to_expire;
 	uint32_t ticks_slot;
@@ -133,7 +133,7 @@ int ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-void ull_sched_mfy_after_mstr_offset_get(void *param)
+void ull_sched_mfy_after_cen_offset_get(void *param)
 {
 	struct lll_prepare_param *p = param;
 	struct lll_scan *lll = p->param;
@@ -148,9 +148,9 @@ void ull_sched_mfy_after_mstr_offset_get(void *param)
 		ticks_slot_overhead = 0U;
 	}
 
-	after_mstr_offset_get(lll->conn->interval,
-			      (ticks_slot_overhead + conn->ull.ticks_slot),
-			      p->ticks_at_expire, &lll->conn_win_offset_us);
+	after_cen_offset_get(lll->conn->interval,
+			     (ticks_slot_overhead + conn->ull.ticks_slot),
+			     p->ticks_at_expire, &lll->conn_win_offset_us);
 }
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -177,10 +177,10 @@ void ull_sched_mfy_win_offset_use(void *param)
 	 * TODO: update when updating the connection update procedure
 	 */
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	after_mstr_offset_get(conn->lll.interval,
-			      (ticks_slot_overhead + conn->ull.ticks_slot),
-			      conn->llcp.conn_upd.ticks_anchor,
-			      &conn->llcp_cu.win_offset_us);
+	after_cen_offset_get(conn->lll.interval,
+			     (ticks_slot_overhead + conn->ull.ticks_slot),
+			     conn->llcp.conn_upd.ticks_anchor,
+			     &conn->llcp_cu.win_offset_us);
 
 	win_offset = conn->llcp_cu.win_offset_us / CONN_INT_UNIT_US;
 
@@ -708,16 +708,16 @@ static struct ull_hdr *conn_ull_hdr_get_cb(uint8_t ticker_id)
 	return &conn->ull;
 }
 
-static void after_mstr_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
-				  uint32_t ticks_anchor,
-				  uint32_t *win_offset_us)
+static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
+				 uint32_t ticks_anchor,
+				 uint32_t *win_offset_us)
 {
 	uint32_t ticks_anchor_offset = ticks_anchor;
 	int err;
 
-	err = ull_sched_after_mstr_slot_get(TICKER_USER_ID_ULL_LOW, ticks_slot,
-					    &ticks_anchor_offset,
-					    win_offset_us);
+	err = ull_sched_after_cen_slot_get(TICKER_USER_ID_ULL_LOW, ticks_slot,
+					   &ticks_anchor_offset,
+					   win_offset_us);
 	if (err) {
 		return;
 	}
