@@ -17,6 +17,12 @@
 	pinctrl-names = "default", "sleep";
 };
 
+/* Disable uart1 so that it is not left without any pins assigned. */
+/* TODO: remove once all boards enable pinctrl by default */
+&uart1 {
+	status = "disabled";
+};
+
 &pinctrl {
 	/* pin configuration for UART0 */
 	/* TODO: move to board dts once all boards enable pinctrl by default */
