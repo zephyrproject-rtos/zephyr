@@ -903,6 +903,15 @@ struct pdu_iso_sdu_sh {
 #endif /* __BYTE_ORDER__ */
 } __packed;
 
+enum pdu_cis_llid {
+	/** Unframed complete or end fragment */
+	PDU_CIS_LLID_COMPLETE_END = 0x00,
+	/** Unframed start or continuation fragment */
+	PDU_CIS_LLID_START_CONTINUE = 0x01,
+	/** Framed; one or more segments of a SDU */
+	PDU_CIS_LLID_FRAMED = 0x02
+};
+
 struct pdu_cis {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t ll_id:2;

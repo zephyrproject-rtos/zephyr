@@ -154,6 +154,14 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.tx.flush_timeout = req->p_ft;
 	cis->lll.tx.max_octets = sys_le16_to_cpu(req->p_max_pdu);
 
+	if (!cis->lll.link_tx_free) {
+		cis->lll.link_tx_free = &cis->lll.link_tx;
+	}
+
+	memq_init(cis->lll.link_tx_free, &cis->lll.memq_tx.head,
+		  &cis->lll.memq_tx.tail);
+	cis->lll.link_tx_free = NULL;
+
 	*cis_handle = ll_conn_iso_stream_handle_get(cis);
 	cig->lll.num_cis++;
 

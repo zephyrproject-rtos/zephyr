@@ -658,6 +658,22 @@ static int acl_handle(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_ISO)
+static int iso_handle(struct net_buf *buf)
+{
+	struct net_buf *evt;
+	int err;
+
+	err = hci_iso_handle(buf, &evt);
+	if (evt) {
+		BT_DBG("Replying with event of %u bytes", evt->len);
+		bt_recv_prio(evt);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_ISO */
+
 static int hci_driver_send(struct net_buf *buf)
 {
 	uint8_t type;
@@ -680,6 +696,11 @@ static int hci_driver_send(struct net_buf *buf)
 	case BT_BUF_CMD:
 		err = cmd_handle(buf);
 		break;
+#if defined(CONFIG_BT_CTLR_ISO)
+	case BT_BUF_ISO_OUT:
+		err = iso_handle(buf);
+		break;
+#endif /* CONFIG_BT_CTLR_ISO */
 	default:
 		BT_ERR("Unknown HCI type %u", type);
 		return -EINVAL;

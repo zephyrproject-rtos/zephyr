@@ -44,6 +44,7 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf);
 void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num);
 #endif
 #if defined(CONFIG_BT_CTLR_ISO)
+int hci_iso_handle(struct net_buf *acl, struct net_buf **evt);
 void hci_iso_encode(struct net_buf *buf, uint16_t handle, uint8_t flags);
 #endif
 int hci_vendor_cmd_handle(uint16_t ocf, struct net_buf *cmd,

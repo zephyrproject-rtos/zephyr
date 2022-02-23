@@ -25,6 +25,9 @@
 #define IS_CIS_HANDLE(_handle) 0
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
+/* ISO LL conformance tests require a PDU size of maximum 251 bytes */
+#define ISO_TX_BUFFER_SIZE 251
+
 /* Common memebers for ll_conn_iso_stream and ll_broadcast_iso_stream */
 struct ll_iso_stream_hdr {
 	struct ll_iso_datapath *datapath_in;

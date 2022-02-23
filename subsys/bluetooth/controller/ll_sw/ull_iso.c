@@ -101,15 +101,23 @@ static void iso_rx_demux(void *param);
 #endif /* CONFIG_BT_CTLR_SYNC_ISO) || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-static MFIFO_DEFINE(iso_tx, sizeof(struct lll_tx),
-		    CONFIG_BT_CTLR_ISO_TX_BUFFERS);
+#define NODE_TX_BUFFER_SIZE MROUND(offsetof(struct node_tx_iso, pdu) + \
+				   offsetof(struct pdu_iso, payload) + \
+				   ISO_TX_BUFFER_SIZE)
 
 static struct {
 	void *free;
-	uint8_t pool[CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE *
-			CONFIG_BT_CTLR_ISO_TX_BUFFERS];
+	uint8_t pool[NODE_TX_BUFFER_SIZE * CONFIG_BT_CTLR_ISO_TX_BUFFERS];
 } mem_iso_tx;
+
+static struct {
+	void *free;
+	uint8_t pool[sizeof(memq_link_t) * CONFIG_BT_CTLR_ISO_TX_BUFFERS];
+} mem_link_iso_tx;
+
+
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
 
 /* Must be implemented by vendor */
 __weak bool ll_data_path_configured(uint8_t data_path_dir,
@@ -605,24 +613,6 @@ void ll_iso_tx_mem_release(void *node_tx)
 {
 	mem_release(node_tx, &mem_iso_tx.free);
 }
-
-int ll_iso_tx_mem_enqueue(uint16_t handle, void *node_tx)
-{
-	struct lll_tx *tx;
-	uint8_t idx;
-
-	idx = MFIFO_ENQUEUE_GET(iso_tx, (void **) &tx);
-	if (!tx) {
-		return -ENOBUFS;
-	}
-
-	tx->handle = handle;
-	tx->node = node_tx;
-
-	MFIFO_ENQUEUE(iso_tx, idx);
-
-	return 0;
-}
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 int ull_iso_init(void)
@@ -641,10 +631,6 @@ int ull_iso_reset(void)
 {
 	int err;
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-	/* Re-initialize the Tx mfifo */
-	MFIFO_INIT(iso_tx);
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 	err = init_reset();
 	if (err) {
@@ -683,6 +669,21 @@ void ull_iso_rx_sched(void)
 
 	/* Kick the ULL (using the mayfly, tailchain it) */
 	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &mfy);
+}
+
+void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_iso_datapath *dp;
+	memq_link_t *link;
+
+	cis  = ll_conn_iso_stream_get(handle);
+	dp   = cis->hdr.datapath_in;
+	link = node_tx->link;
+
+	if (dp) {
+		isoal_tx_pdu_release(dp->source_hdl, node_tx);
+	}
 }
 
 static void iso_rx_demux(void *param)
@@ -891,6 +892,137 @@ static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
 }
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+void ll_iso_link_tx_release(memq_link_t *link)
+{
+	mem_release(link, &mem_link_iso_tx.free);
+}
+
+int ll_iso_tx_mem_enqueue(uint16_t handle, void *node_tx, memq_link_t *link)
+{
+	struct ll_conn_iso_stream *cis;
+
+	if (IS_CIS_HANDLE(handle)) {
+		cis = ll_conn_iso_stream_get(handle);
+	} else {
+		/*TODO: We only support CIS for now */
+		return -EINVAL;
+	}
+
+	memq_enqueue(link, node_tx, &cis->lll.memq_tx.tail);
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+/**
+ * Allocate a PDU from the LL and store the details in the given buffer. Allocation
+ * is not expected to fail as there must always be sufficient PDU buffers. Any
+ * failure will trigger the assert.
+ * @param[in]  pdu_buffer Buffer to store PDU details in
+ * @return     Error status of operation
+ */
+static isoal_status_t ll_iso_pdu_alloc(struct isoal_pdu_buffer *pdu_buffer)
+{
+	struct node_tx_iso *node_tx;
+
+	node_tx = ll_iso_tx_mem_acquire();
+	if (!node_tx) {
+		BT_ERR("Tx Buffer Overflow");
+		/* TODO: Report overflow to HCI and remove assert
+		 * data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO)
+		 */
+		LL_ASSERT(0);
+		return ISOAL_STATUS_ERR_PDU_ALLOC;
+	}
+
+	/* node_tx handle will be required to emit the PDU later */
+	pdu_buffer->handle = (void *)node_tx;
+	pdu_buffer->pdu    = (void *)node_tx->pdu;
+
+	/* Use TX buffer size as the limit here. Actual size will be decided in
+	 * the ISOAL based on the minimum of the buffer size and the respective
+	 * Max_PDU_C_To_P or Max_PDU_P_To_C.
+	 */
+	pdu_buffer->size = ISO_TX_BUFFER_SIZE;
+
+	return ISOAL_STATUS_OK;
+}
+
+/**
+ * Write the given SDU payload to the target PDU buffer at the given offset.
+ * @param[in,out]  pdu_buffer  Target PDU buffer
+ * @param[in]      pdu_offset  Offset / current write position within PDU
+ * @param[in]      sdu_payload Location of source data
+ * @param[in]      consume_len Length of data to copy
+ * @return         Error status of write operation
+ */
+static isoal_status_t ll_iso_pdu_write(struct isoal_pdu_buffer *pdu_buffer,
+				       const size_t  pdu_offset,
+				       const uint8_t *sdu_payload,
+				       const size_t  consume_len)
+{
+	LL_ASSERT(pdu_buffer);
+	LL_ASSERT(pdu_buffer->pdu);
+	LL_ASSERT(sdu_payload);
+
+	if ((pdu_offset + consume_len) > pdu_buffer->size) {
+		/* Exceeded PDU buffer */
+		return ISOAL_STATUS_ERR_UNSPECIFIED;
+	}
+
+	/* Copy source to destination at given offset */
+	memcpy(&pdu_buffer->pdu->payload[pdu_offset], sdu_payload, consume_len);
+
+	return ISOAL_STATUS_OK;
+}
+
+/**
+ * Emit the encoded node to the transmission queue
+ * @param node_tx TX node to enqueue
+ * @param handle  CIS/BIS handle
+ * @return        Error status of enqueue operation
+ */
+static isoal_status_t ll_iso_pdu_emit(struct node_tx_iso *node_tx,
+				      const uint16_t handle)
+{
+	memq_link_t *link;
+
+	link = mem_acquire(&mem_link_iso_tx.free);
+	LL_ASSERT(link);
+
+	if (ll_iso_tx_mem_enqueue(handle, node_tx, link)) {
+		return ISOAL_STATUS_ERR_PDU_EMIT;
+	}
+
+	return ISOAL_STATUS_OK;
+}
+
+/**
+ * Release the given payload back to the memory pool.
+ * @param node_tx TX node to release or forward
+ * @param handle  CIS/BIS handle
+ * @param status  Reason for release
+ * @return        Error status of release operation
+ */
+static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
+					 const uint16_t handle,
+					 const isoal_status_t status)
+{
+	if (status == ISOAL_STATUS_OK) {
+		/* Process as TX ack */
+		ll_tx_ack_put(handle, (void *)node_tx);
+		ll_rx_sched();
+	} else {
+		/* Release back to memory pool */
+		ll_iso_tx_mem_release(node_tx);
+	}
+
+	return ISOAL_STATUS_OK;
+}
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
 static int init_reset(void)
 {
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
@@ -919,8 +1051,13 @@ static int init_reset(void)
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Initialize tx pool. */
-	mem_init(mem_iso_tx.pool, CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
+	mem_init(mem_iso_tx.pool, NODE_TX_BUFFER_SIZE,
 		 CONFIG_BT_CTLR_ISO_TX_BUFFERS, &mem_iso_tx.free);
+
+	/* Initialize tx link pool. */
+	mem_init(mem_link_iso_tx.pool, sizeof(memq_link_t),
+		 CONFIG_BT_CTLR_ISO_TX_BUFFERS,
+		 &mem_link_iso_tx.free);
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if BT_CTLR_ISO_STREAMS
