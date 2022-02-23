@@ -37,4 +37,20 @@ config USB_DFU_ENABLE_UPLOAD
 	  the executable image is always decrypted despite the image
 	  encryption is enabled.
 
+config USB_DFU_REBOOT
+	bool "Reboot after download"
+	select REBOOT
+	help
+	  When enabled the device will automatically reboot after a download
+	  so the bootloader can swap the images.
+
+config USB_DFU_PERMANENT_DOWNLOAD
+	bool "Mark slot 1 as permanent after download"
+	help
+	  When enabled the image written to slot 1 will be marked as permanent.
+	  WARNING: This bypasses Mcuboot's test-confirm mechanism!
+	  Downloading the wrong image will cause a bricked device.
+	  Make sure there is some kind of recovery mechanism.
+
+
 endif # USB_DFU_CLASS
