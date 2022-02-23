@@ -346,7 +346,7 @@ struct bt_codec_lc3_frame_len {
  */
 #define BT_CODEC_LC3_CONFIG_48_3 \
 	BT_CODEC_LC3_CONFIG(BT_CODEC_CONFIG_LC3_FREQ_48KHZ, \
-			    BT_CODEC_LC3_DURATION_7_5, 90u, \
+			    BT_CODEC_CONFIG_LC3_DURATION_7_5, 90u, \
 			    BT_CODEC_META_CONTEXT_MEDIA)
 /** @def BT_CODEC_LC3_CONFIG_48_4
  *  @brief Helper to declare LC3 48.4 codec configuration
