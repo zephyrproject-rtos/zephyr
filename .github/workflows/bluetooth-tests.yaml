@@ -1,7 +1,7 @@
 name: Bluetooth Tests
 
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - "west.yml"
       - "subsys/bluetooth/**"
@@ -39,9 +39,6 @@ jobs:
 
       - name: checkout
         uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
 
       - name: west setup
         run: |
@@ -60,26 +57,15 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: Bluetooth Test Results
-          path: ./bsim_bt_out/bsim_results.xml
+          name: bluetooth-test-results
+          path: |
+            ./bsim_bt_out/bsim_results.xml
+            ${{ github.event_path }}
 
-  bluetooth-test-results:
-    name: "Publish Bluetooth Test Results"
-    needs: bluetooth-test-build
-    runs-on: ubuntu-20.04
-      # the build-and-test job might be skipped, we don't need to run this job then
-    if: success() || failure()
-
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v2
+      - name: Upload Event Details
+        if: always()
+        uses: actions/upload-artifact@v2
         with:
-          path: artifacts
-
-      - name: Publish Bluetooth Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          check_name: Bluetooth Test Results
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          files: "**/bsim_results.xml"
-          comment_mode: off
+          name: event
+          path: |
+            ${{ github.event_path }}
