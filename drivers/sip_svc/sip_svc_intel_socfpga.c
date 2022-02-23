@@ -14,7 +14,7 @@
 
 bool sip_svc_plat_func_id_valid(uint32_t command, uint32_t func_id)
 {
-	if (command > SIP_SVC_PROTO_CMD_CANCEL)
+	if (command > SIP_SVC_PROTO_CMD_MAX)
 		return false;
 
 	if (command == SIP_SVC_PROTO_CMD_SYNC) {

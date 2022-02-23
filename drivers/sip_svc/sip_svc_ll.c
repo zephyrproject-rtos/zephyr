@@ -134,7 +134,7 @@ LOG_MODULE_REGISTER(sip_svc_ll);
 
 __weak bool sip_svc_plat_func_id_valid(uint32_t command, uint32_t func_id)
 {
-	if (command <= SIP_SVC_PROTO_CMD_CANCEL)
+	if (command <= SIP_SVC_PROTO_CMD_MAX)
 		return true;
 	else
 		return false;
@@ -393,7 +393,6 @@ static void sip_svc_ll_callback(struct sip_svc_controller *ctrl,
 		ctrl->clients[c_idx].active_trans_cnt--;
 
 		if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_OPEN &&
-		    !(trans_id_item->flag & SIP_SVC_ID_FLAG_CANCEL) &&
 		    trans_id_item->arg1) {
 
 			((sip_svc_cb_fn)(trans_id_item->arg1))(
@@ -428,78 +427,11 @@ static void sip_svc_ll_callback(struct sip_svc_controller *ctrl,
 	}
 }
 
-static int sip_svc_ll_cancel_w_callback(struct sip_svc_controller *ctrl,
-					uint32_t trans_id,
-					uint32_t cancel_trans_id,
-					char *sip_svc_response,
-					uint32_t size)
-{
-	struct sip_svc_id_map_item *trans_id_item;
-	struct sip_svc_id_map_item *cancel_id_item;
-	uint32_t c_idx;
-
-	if (!ctrl)
-		return -EINVAL;
-
-	if (trans_id >= CONFIG_ARM_SIP_SVC_MAX_TRANSACTION_COUNT ||
-	    cancel_trans_id >= CONFIG_ARM_SIP_SVC_MAX_TRANSACTION_COUNT)
-		return -EINVAL;
-
-	if (k_mutex_lock(&ctrl->data_mutex, K_FOREVER) == 0) {
-
-		/* get callback function based on trans id */
-		trans_id_item = sip_svc_ll_id_map_query_item(ctrl->trans_id_map,
-							     trans_id);
-
-		if (!trans_id_item) {
-			k_mutex_unlock(&ctrl->data_mutex);
-			return -ENOENT;
-		}
-
-		/* set cancel flag of cancel trans id */
-		cancel_id_item = sip_svc_ll_id_map_query_item(ctrl->trans_id_map,
-							      cancel_trans_id);
-
-		if (cancel_id_item && cancel_id_item->id != SIP_SVC_ID_INVALID)
-			cancel_id_item->flag |= SIP_SVC_ID_FLAG_CANCEL;
-
-		c_idx = trans_id_item->id;
-
-		ctrl->clients[c_idx].active_trans_cnt--;
-
-		if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_OPEN &&
-			!(trans_id_item->flag & SIP_SVC_ID_FLAG_CANCEL) &&
-			trans_id_item->arg1) {
-			((sip_svc_cb_fn)(trans_id_item->arg1))(
-					ctrl->clients[c_idx].token,
-					sip_svc_response, size);
-		}
-
-		/* Free trans id */
-		sip_svc_ll_id_map_remove_item(ctrl->trans_id_map, trans_id);
-		sip_svc_ll_id_mgr_free(ctrl->trans_id_pool, trans_id);
-
-		if (ctrl->clients[c_idx].active_trans_cnt != 0) {
-			k_mutex_unlock(&ctrl->data_mutex);
-			return 0;
-		}
-
-		if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_ABORT) {
-			ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_IDLE;
-		}
-
-		k_mutex_unlock(&ctrl->data_mutex);
-	}
-
-	return 0;
-}
-
 static int sip_svc_ll_request_handler(struct sip_svc_controller *ctrl)
 {
 	struct arm_smccc_res res;
 	struct sip_svc_request request;
 	struct sip_svc_response response;
-	struct sip_svc_id_map_item *trans_id_item;
 	uint32_t trans_id;
 	uint32_t cmd_code;
 	uint32_t error_code;
@@ -528,53 +460,7 @@ static int sip_svc_ll_request_handler(struct sip_svc_controller *ctrl)
 	/* Get trans_id from request header */
 	trans_id = SIP_SVC_PROTO_HEADER_GET_TRANS_ID(request.header);
 
-	/* Scenario #1: Check if transaction had been cancelled */
-	trans_id_item = sip_svc_ll_id_map_query_item(ctrl->trans_id_map,
-						     trans_id);
-	if (!trans_id_item)
-		return -ENOENT;
-
-	if (trans_id_item->id != SIP_SVC_ID_INVALID &&
-	    trans_id_item->flag & SIP_SVC_ID_FLAG_CANCEL) {
-
-		/* If the transaction had been cancelled,
-		 * release async command data dynamic memory
-		 */
-		if (cmd_code == SIP_SVC_PROTO_CMD_ASYNC)
-			sip_svc_plat_free_async_memory(&request);
-
-		/* Then, drop the request and directly goto callback
-		 * process to release the trans_id
-		 */
-		sip_svc_ll_callback(
-			ctrl,
-			trans_id,
-			(char *)&response,
-			sizeof(struct sip_svc_response));
-
-		return -EINPROGRESS;
-	}
-
-	/* Scenario #2: Handle cancel command */
-	if (cmd_code == SIP_SVC_PROTO_CMD_CANCEL) {
-		response.header = SIP_SVC_PROTO_HEADER(0, trans_id);
-		response.a0 = 0;
-		response.a1 = 0;
-		response.a2 = 0;
-		response.a3 = 0;
-		response.resp_data_addr = 0;
-		response.resp_data_size = 0;
-		response.priv_data = request.priv_data;
-
-		return sip_svc_ll_cancel_w_callback(
-			ctrl,
-			trans_id,
-			request.a0,
-			(char *)&response,
-			sizeof(struct sip_svc_response));
-	}
-
-	/* Scenario #3: Process the request, trigger smc/hvc call */
+	/* Process the request, trigger smc/hvc call */
 	if (cmd_code == SIP_SVC_PROTO_CMD_ASYNC)
 		sip_svc_plat_update_trans_id(&request, trans_id);
 

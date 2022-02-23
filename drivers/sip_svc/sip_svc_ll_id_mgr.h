@@ -13,8 +13,6 @@
  *
  */
 
-#define SIP_SVC_ID_FLAG_CANCEL BIT(0)
-
 struct sip_svc_id_pool {
 	uint32_t size;
 	uint32_t head;
@@ -25,7 +23,6 @@ struct sip_svc_id_pool {
 
 struct sip_svc_id_map_item {
 	uint32_t id;
-	uint32_t flag;
 	void *arg1;	/* cb */
 	void *arg2;	/* high resp data address */
 	void *arg3;	/* low resp data address */

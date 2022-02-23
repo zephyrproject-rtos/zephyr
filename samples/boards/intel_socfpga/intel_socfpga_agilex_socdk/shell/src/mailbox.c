@@ -324,65 +324,6 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static void cmd_cancel_callback(uint32_t c_token, char *res, int size)
-{
-	struct sip_svc_response *response =
-		(struct sip_svc_response *) res;
-
-	printk("sip_svc cancel command callback\n");
-
-	if ((size_t)size != sizeof(struct sip_svc_response)) {
-		printk("Invalid response size (%d), expects (%ld)",
-			size, sizeof(struct sip_svc_response));
-		return;
-	}
-
-	printk("\theader=%08x\n", response->header);
-	printk("\ta0=%016lx\n", response->a0);
-	printk("\ta1=%016lx\n", response->a1);
-	printk("\ta2=%016lx\n", response->a2);
-	printk("\ta3=%016lx\n", response->a3);
-}
-
-static int cmd_cancel(const struct shell *sh, size_t argc, char **argv)
-{
-	struct sip_svc_request request;
-	uint32_t trans_id;
-	int err;
-
-	if (!mb_smc_dev) {
-		shell_print(sh, "Mailbox client is not registered");
-		return 0;
-	}
-
-	request.header = SIP_SVC_PROTO_HEADER(SIP_SVC_PROTO_CMD_CANCEL, 0);
-	request.a0 = atoi(argv[1]);
-	request.a1 = 0;
-	request.a2 = 0;
-	request.a3 = 0;
-	request.a4 = 0;
-	request.a5 = 0;
-	request.a6 = 0;
-	request.a7 = 0;
-	request.resp_data_addr = 0;
-	request.resp_data_size = 0;
-	request.priv_data = NULL;
-
-	trans_id = sip_svc_send(mb_smc_dev, mb_c_token, (uint8_t *)&request,
-				sizeof(struct sip_svc_request),
-				cmd_cancel_callback);
-
-	if (trans_id == SIP_SVC_ID_INVALID) {
-		shell_error(sh, "Mailbox send cancel fail");
-		err = -EBUSY;
-	} else {
-		shell_print(sh, "Mailbox send cancel success: trans_id %d", trans_id);
-		err = 0;
-	}
-
-	return err;
-}
-
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_mailbox,
 	SHELL_CMD_ARG(reg, NULL, "<device>",
@@ -395,8 +336,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_close, 1, 0),
 	SHELL_CMD_ARG(send, NULL, "<hex list, example (SYNC): \"2001 11223344 aabbccdd\">",
 		      cmd_send, 2, 0),
-	SHELL_CMD_ARG(cancel, NULL, "<trans_id in decimal>",
-		      cmd_cancel, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(mailbox, &sub_mailbox, "Intel SoC FPGA SDM mailbox client commands",

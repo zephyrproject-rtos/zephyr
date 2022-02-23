@@ -154,7 +154,6 @@ struct sip_svc_id_map *sip_svc_ll_id_map_create(uint32_t size)
 	id_map->size = size;
 	for (i = 0; i < size; i++) {
 		id_map->items[i].id = SIP_SVC_ID_INVALID;
-		id_map->items[i].flag = 0;
 		id_map->items[i].arg1 = NULL;
 		id_map->items[i].arg2 = NULL;
 		id_map->items[i].arg3 = NULL;
@@ -211,7 +210,6 @@ int sip_svc_ll_id_map_remove_item(struct sip_svc_id_map *id_map,
 	}
 
 	id_map->items[id].id = SIP_SVC_ID_INVALID;
-	id_map->items[id].flag = 0;
 	id_map->items[id].arg1 = NULL;
 	id_map->items[id].arg2 = NULL;
 	id_map->items[id].arg3 = NULL;

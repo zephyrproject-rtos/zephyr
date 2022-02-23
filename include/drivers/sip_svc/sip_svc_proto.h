@@ -65,15 +65,11 @@
  *     - Asynchronous request. Driver is required to poll the response via a
  *       separate SMC/HVC call. Use this method if the request requires longer
  *       processing in EL3/EL2.
- *
- * SIP_SVC_PROTO_CMD_CANCEL
- *     - Cancel a transaction. Driver will drop the response data and don't
- *       callback if the transaction have been cancaled by client.
  */
 
 #define SIP_SVC_PROTO_CMD_SYNC			0x0
 #define SIP_SVC_PROTO_CMD_ASYNC			0x1
-#define SIP_SVC_PROTO_CMD_CANCEL		0x2
+#define SIP_SVC_PROTO_CMD_MAX			SIP_SVC_PROTO_CMD_ASYNC
 
 /** @brief Error code in response header
  *
