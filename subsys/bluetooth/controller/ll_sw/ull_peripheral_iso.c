@@ -143,6 +143,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.sn = 0;
 	cis->lll.nesn = 0;
 	cis->lll.cie = 0;
+	cis->lll.flushed = 0;
 
 	cis->lll.rx.phy = req->c_phy;
 	cis->lll.rx.burst_number = req->c_bn;

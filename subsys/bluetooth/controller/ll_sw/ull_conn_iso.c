@@ -10,9 +10,11 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/mfifo.h"
 #include "ticker/ticker.h"
 #include "hal/ccm.h"
 #include "hal/ticker.h"
+#include "hal/cpu.h"
 
 #include "pdu.h"
 #include "lll.h"
@@ -32,6 +34,16 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+/* Used by UTIL_LISTIFY */
+#define _INIT_MAYFLY_ARRAY(_i, _l, _fp) \
+	{ ._link = &_l[_i], .fp = _fp },
+
+/* Declare static initialized array of mayflies with associated link element */
+#define DECLARE_MAYFLY_ARRAY(_name, _fp, _cnt) \
+	static memq_link_t _links[_cnt]; \
+	static struct mayfly _name[_cnt] = \
+		{ UTIL_LISTIFY(_cnt, _INIT_MAYFLY_ARRAY, _links, _fp) }
+
 
 static int init_reset(void);
 static void ticker_update_cig_op_cb(uint32_t status, void *param);
@@ -43,6 +55,8 @@ static void cis_disabled_cb(void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void cig_disable(void *param);
 static void cig_disabled_cb(void *param);
+static void disable(uint16_t handle);
+static void cis_tx_lll_flush(void *param);
 
 static struct ll_conn_iso_stream cis_pool[CONFIG_BT_CTLR_CONN_ISO_STREAMS];
 static void *cis_free;
@@ -295,6 +309,7 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 		/* Teardown already started */
 		return;
 	}
+
 	cis->teardown = 1;
 	cis->released_cb = cis_released_cb;
 	cis->terminate_reason = reason;
@@ -496,15 +511,32 @@ static void cis_disabled_cb(void *param)
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
 		LL_ASSERT(cis);
 
-		if (cis->teardown) {
+		if (cis->lll.flushed) {
 			ll_iso_stream_released_cb_t cis_released_cb;
-			struct node_rx_pdu *node_terminate;
 			struct ll_conn *conn;
 
 			conn = ll_conn_get(cis->lll.acl_handle);
 			cis_released_cb = cis->released_cb;
 
-			/* Create and enqueue termination node */
+			ll_conn_iso_stream_release(cis);
+			cig->lll.num_cis--;
+
+			/* Check if removed CIS has an ACL disassociation callback. Invoke
+			 * the callback to allow cleanup.
+			 */
+			if (cis_released_cb) {
+				/* CIS removed - notify caller */
+				cis_released_cb(conn);
+			}
+		} else if (cis->teardown) {
+			DECLARE_MAYFLY_ARRAY(mfys, cis_tx_lll_flush,
+				CONFIG_BT_CTLR_CONN_ISO_GROUPS);
+			struct node_rx_pdu *node_terminate;
+			uint32_t ret;
+
+			/* Create and enqueue termination node. This shall prevent
+			 * further enqueuing of TX nodes for terminating CIS.
+			 */
 			node_terminate = ull_pdu_rx_alloc();
 			LL_ASSERT(node_terminate);
 			node_terminate->hdr.handle = cis->lll.handle;
@@ -514,16 +546,27 @@ static void cis_disabled_cb(void *param)
 			ll_rx_put(node_terminate->hdr.link, node_terminate);
 			ll_rx_sched();
 
-			ll_conn_iso_stream_release(cis);
-			cig->lll.num_cis--;
+			if (cig->lll.resume_cis == cis->lll.handle) {
+				/* Resume pending for terminating CIS - stop ticker */
+				(void)ticker_stop(TICKER_INSTANCE_ID_CTLR,
+						  TICKER_USER_ID_ULL_HIGH,
+						  TICKER_ID_CONN_ISO_RESUME_BASE +
+						  ll_conn_iso_group_handle_get(cig),
+						  NULL, NULL);
 
-			/* Check if removed CIS had an ACL disassociation callback. Invoke
-			 * the callback to allow cleanup.
-			 */
-			if (cis_released_cb) {
-				/* CIS removed - notify caller */
-				cis_released_cb(conn);
+				cig->lll.resume_cis = LLL_HANDLE_INVALID;
 			}
+
+			/* We need to flush TX nodes in LLL before releasing the stream.
+			 * More than one CIG may be terminating at the same time, so
+			 * enqueue a mayfly instance for this CIG.
+			 */
+			mfys[cig->lll.handle].param = &cis->lll;
+			ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+					     TICKER_USER_ID_LLL, 1, &mfys[cig->lll.handle]);
+			LL_ASSERT(!ret);
+
+			return;
 		}
 	}
 
@@ -541,6 +584,44 @@ static void cis_disabled_cb(void *param)
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 	}
+}
+
+static void cis_tx_lll_flush(void *param)
+{
+	DECLARE_MAYFLY_ARRAY(mfys, cis_disabled_cb, CONFIG_BT_CTLR_CONN_ISO_GROUPS);
+
+	struct lll_conn_iso_stream *lll;
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+	struct node_tx *tx;
+	memq_link_t *link;
+	uint32_t ret;
+
+	lll = param;
+	lll->flushed = 1;
+
+	cis = ll_conn_iso_stream_get(lll->handle);
+	cig = cis->group;
+
+	/* Flush in LLL - may return TX nodes to ack queue */
+	lll_conn_iso_flush(lll->handle, lll);
+
+	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head, (void **)&tx);
+	while (link) {
+		/* Create instant NACK */
+		ll_tx_ack_put(lll->handle, tx);
+		link->next = tx->next;
+		tx->next = link;
+
+		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+				    (void **)&tx);
+	}
+
+	/* Resume CIS teardown in ULL_HIGH context */
+	mfys[cig->lll.handle].param = &cig->lll;
+	ret = mayfly_enqueue(TICKER_USER_ID_LLL,
+			     TICKER_USER_ID_ULL_HIGH, 1, &mfys[cig->lll.handle]);
+	LL_ASSERT(!ret);
 }
 
 static void ticker_stop_op_cb(uint32_t status, void *param)
@@ -598,6 +679,4 @@ static void cig_disabled_cb(void *param)
 	cig = HDR_LLL2ULL(param);
 
 	ll_conn_iso_group_release(cig);
-
-	/* TODO: Flush pending TX in LLL */
 }

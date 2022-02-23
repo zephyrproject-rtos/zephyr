@@ -43,6 +43,7 @@ struct lll_conn_iso_stream {
 	uint8_t sn:1;               /* Sequence number */
 	uint8_t nesn:1;             /* Next expected sequence number */
 	uint8_t cie:1;              /* Close isochronous event */
+	uint8_t flushed:1;          /* 1 if CIS LLL has been flushed */
 
 	/* Resumption information */
 	uint8_t next_subevent;      /* Next subevent to schedule */
@@ -70,3 +71,4 @@ int lll_conn_iso_reset(void);
 void lll_conn_iso_done(struct lll_conn_iso_group *cig, uint8_t trx_cnt,
 		       uint16_t prog_to_anchor_us, uint8_t mic_state);
 void lll_conn_iso_flush(uint16_t handle, struct lll_conn_iso_stream *lll);
+
