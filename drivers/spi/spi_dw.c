@@ -339,7 +339,7 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      struct spi_async_method *async)
 {
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
@@ -347,7 +347,7 @@ static int transceive(const struct device *dev,
 	uint32_t reg_data;
 	int ret;
 
-	spi_context_lock(&spi->ctx, asynchronous, signal, config);
+	spi_context_lock(&spi->ctx, asynchronous, async, config);
 
 #ifdef CONFIG_PM_DEVICE
 	if (!pm_device_is_busy(dev)) {
@@ -460,7 +460,7 @@ static int spi_dw_transceive_async(const struct device *dev,
 				   const struct spi_config *config,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
-				   struct k_poll_signal *async)
+				   struct spi_async_method *async)
 {
 	LOG_DBG("%p, %p, %p, %p", dev, tx_bufs, rx_bufs, async);
 

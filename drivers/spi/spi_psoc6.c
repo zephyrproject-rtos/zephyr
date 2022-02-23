@@ -296,13 +296,13 @@ static int spi_psoc6_transceive(const struct device *dev,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs,
 				bool asynchronous,
-				struct k_poll_signal *signal)
+				struct spi_async_method *async)
 {
 	const struct spi_psoc6_config *config = dev->config;
 	struct spi_psoc6_data *data = dev->data;
 	int ret;
 
-	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&data->ctx, asynchronous, async, spi_cfg);
 
 	LOG_DBG("\n\n");
 
@@ -352,7 +352,7 @@ static int spi_psoc6_transceive_async(const struct device *dev,
 				      const struct spi_config *spi_cfg,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
-				      struct k_poll_signal *async)
+				      struct spi_async_method *async)
 {
 	return spi_psoc6_transceive(dev, spi_cfg, tx_bufs,
 				    rx_bufs, true, async);

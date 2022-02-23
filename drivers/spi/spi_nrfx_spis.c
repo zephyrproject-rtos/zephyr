@@ -139,12 +139,12 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      struct spi_async_method *async)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
 	int error;
 
-	spi_context_lock(&dev_data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&dev_data->ctx, asynchronous, async, spi_cfg);
 
 	error = configure(dev, spi_cfg);
 	if (error != 0) {
@@ -185,7 +185,7 @@ static int spi_nrfx_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     struct spi_async_method *async)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
 }

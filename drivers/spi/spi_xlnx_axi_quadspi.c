@@ -315,14 +315,15 @@ static int xlnx_quadspi_transceive(const struct device *dev,
 				   const struct spi_config *spi_cfg,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
-				   bool async, struct k_poll_signal *signal)
+				   bool asynchronous,
+				   struct spi_async_method *async)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 
-	spi_context_lock(ctx, async, signal, spi_cfg);
+	spi_context_lock(ctx, asynchronous, async, spi_cfg);
 
 	ret = xlnx_quadspi_configure(dev, spi_cfg);
 	if (ret) {
@@ -357,10 +358,10 @@ static int xlnx_quadspi_transceive_async(const struct device *dev,
 					 const struct spi_config *spi_cfg,
 					 const struct spi_buf_set *tx_bufs,
 					 const struct spi_buf_set *rx_bufs,
-					 struct k_poll_signal *signal)
+					 struct spi_async_method *async)
 {
 	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true,
-				       signal);
+				       async);
 }
 #endif /* CONFIG_SPI_ASYNC */
 

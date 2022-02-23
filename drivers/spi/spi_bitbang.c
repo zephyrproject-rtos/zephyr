@@ -208,7 +208,7 @@ static int spi_bitbang_transceive_async(const struct device *dev,
 				    const struct spi_config *spi_cfg,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs,
-				    struct k_poll_signal *async)
+				    struct spi_async_method *async)
 {
 	return -ENOTSUP;
 }

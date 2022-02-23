@@ -34,10 +34,6 @@ struct spi_context {
 	struct k_sem sync;
 	int sync_status;
 
-#ifdef CONFIG_SPI_ASYNC
-	struct spi_async_method *async;
-	bool asynchronous;
-#endif /* CONFIG_SPI_ASYNC */
 	const struct spi_buf *current_tx;
 	size_t tx_count;
 	const struct spi_buf *current_rx;
@@ -51,6 +47,11 @@ struct spi_context {
 #ifdef CONFIG_SPI_SLAVE
 	int recv_frames;
 #endif /* CONFIG_SPI_SLAVE */
+
+#ifdef CONFIG_SPI_ASYNC
+	struct spi_async_method *async;
+	bool asynchronous;
+#endif /* CONFIG_SPI_ASYNC */
 };
 
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
@@ -86,7 +87,7 @@ static inline bool spi_context_is_slave(struct spi_context *ctx)
 
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
-				    struct spi_asyn_method *async,
+				    struct spi_async_method *async,
 				    const struct spi_config *spi_cfg)
 {
 	if ((spi_cfg->operation & SPI_LOCK_ON) &&
@@ -171,6 +172,33 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 	return status;
 }
 
+#ifdef CONFIG_SPI_ASYNC
+static inline void async_notify(struct spi_context *ctx, int status)
+{
+	ctx->async->object.status = status;
+
+	switch (ctx->async->mode) {
+	case SPI_ASYNC_MODE_SIGNAL:
+		k_poll_signal_raise(ctx->async->object.signal, status);
+		break;
+	case SPI_ASYNC_MODE_SEMAPHORE:
+		k_sem_give(ctx->async->object.semaphore);
+		break;
+	case SPI_ASYNC_MODE_MUTEX:
+		k_mutex_unlock(ctx->async->object.mutex);
+		break;
+	case SPI_ASYNC_MODE_WORK:
+		k_work_submit(ctx->async->object.work);
+		break;
+	case SPI_ASYNC_MODE_CALLBACK:
+		ctx->async->object.callback.spi_async_callback(
+			status, ctx->async->object.callback.user_data);
+	default:
+		break;
+	}
+}
+#endif /* CONFIG_SPI_ASYNC */
+
 static inline void spi_context_complete(struct spi_context *ctx, int status)
 {
 #ifdef CONFIG_SPI_ASYNC
@@ -187,7 +215,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 				status = ctx->recv_frames;
 			}
 #endif /* CONFIG_SPI_SLAVE */
-			k_poll_signal_raise(ctx->signal, status);
+			async_notify(ctx, status);
 		}
 
 		if (!(ctx->config->operation & SPI_LOCK_ON)) {

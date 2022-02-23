@@ -598,7 +598,8 @@ static int transceive(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous, struct k_poll_signal *signal)
+		      bool asynchronous,
+		      struct spi_async_method *async)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -615,7 +616,7 @@ static int transceive(const struct device *dev,
 	}
 #endif
 
-	spi_context_lock(&data->ctx, asynchronous, signal, config);
+	spi_context_lock(&data->ctx, asynchronous, async, config);
 
 	ret = spi_stm32_configure(dev, config);
 	if (ret) {
@@ -697,7 +698,8 @@ static int transceive_dma(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous, struct k_poll_signal *signal)
+		      bool asynchronous,
+			  struct spi_async_method *async)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -712,7 +714,7 @@ static int transceive_dma(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_context_lock(&data->ctx, asynchronous, signal, config);
+	spi_context_lock(&data->ctx, asynchronous, async, config);
 
 	k_sem_reset(&data->status_sem);
 
@@ -828,7 +830,7 @@ static int spi_stm32_transceive_async(const struct device *dev,
 				      const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
-				      struct k_poll_signal *async)
+				      struct spi_async_method *async)
 {
 	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
 }
