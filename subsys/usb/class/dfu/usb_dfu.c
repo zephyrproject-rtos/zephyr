@@ -47,6 +47,7 @@
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
 #include <sys/byteorder.h>
+#include <sys/reboot.h>
 #include <usb/usb_device.h>
 #include <usb/class/usb_dfu.h>
 #include <usb_descriptor.h>
@@ -65,14 +66,21 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 #define INTERMITTENT_CHECK_DELAY	50
 
-#if IS_ENABLED(CONFIG_USB_DFU_ENABLE_UPLOAD)
-#define DFU_DESC_ATTRIBUTES		(DFU_ATTR_CAN_DNLOAD | \
-					 DFU_ATTR_CAN_UPLOAD | \
-					 DFU_ATTR_MANIFESTATION_TOLERANT)
+#if IS_ENABLED(CONFIG_USB_DFU_REBOOT)
+#define DFU_DESC_ATTRIBUTES_MANIF_TOL 0
 #else
-#define DFU_DESC_ATTRIBUTES		(DFU_ATTR_CAN_DNLOAD | \
-					 DFU_ATTR_MANIFESTATION_TOLERANT)
+#define DFU_DESC_ATTRIBUTES_MANIF_TOL DFU_ATTR_MANIFESTATION_TOLERANT
 #endif
+
+#if IS_ENABLED(CONFIG_USB_DFU_ENABLE_UPLOAD)
+#define DFU_DESC_ATTRIBUTES_CAN_UPLOAD	 DFU_ATTR_CAN_UPLOAD
+#else
+#define DFU_DESC_ATTRIBUTES_CAN_UPLOAD 0
+#endif
+
+#define DFU_DESC_ATTRIBUTES		(DFU_ATTR_CAN_DNLOAD | \
+					 DFU_DESC_ATTRIBUTES_CAN_UPLOAD |\
+					 DFU_DESC_ATTRIBUTES_MANIF_TOL)
 
 static struct k_poll_event dfu_event;
 static struct k_poll_signal dfu_signal;
@@ -371,10 +379,14 @@ static void dfu_flash_write(uint8_t *data, size_t len)
 		dfu_data.state = dfuERROR;
 		dfu_data.status = errWRITE;
 	} else if (!len) {
+		const bool should_confirm = IS_ENABLED(CONFIG_USB_DFU_PERMANENT_DOWNLOAD);
+
 		LOG_DBG("flash write done");
 		dfu_data.state = dfuMANIFEST_SYNC;
 		dfu_reset_counters();
-		if (boot_request_upgrade(false)) {
+
+		LOG_DBG("Should confirm: %d", should_confirm);
+		if (boot_request_upgrade(should_confirm)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errWRITE;
 		}
@@ -394,6 +406,28 @@ static void dfu_timer_expired(struct k_timer *timer)
 	}
 }
 
+#ifdef CONFIG_USB_DFU_REBOOT
+static struct k_work_delayable reboot_work;
+
+static void reboot_work_handler(struct k_work *item)
+{
+	ARG_UNUSED(item);
+
+	sys_reboot(SYS_REBOOT_WARM);
+}
+
+static void reboot_schedule(void)
+{
+	LOG_DBG("Scheduling reboot in 500ms");
+
+	/*
+	 * Reboot with a delay,
+	 * so there is some time to send the status to the host
+	 */
+	k_work_schedule_for_queue(&USB_WORK_Q, &reboot_work, K_MSEC(500));
+}
+#endif
+
 static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 				    int32_t *data_len, uint8_t **data)
 {
@@ -407,7 +441,13 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 			dfu_data.status, dfu_data.state);
 
 		if (dfu_data.state == dfuMANIFEST_SYNC) {
+
+#if IS_ENABLED(CONFIG_USB_DFU_REBOOT)
+			dfu_data.state = dfuMANIFEST_WAIT_RST;
+			reboot_schedule();
+#else
 			dfu_data.state = dfuIDLE;
+#endif
 		}
 
 		/* bStatus */
@@ -836,6 +876,10 @@ static int usb_dfu_init(const struct device *dev)
 	k_work_init(&dfu_work, dfu_work_handler);
 	k_poll_signal_init(&dfu_signal);
 	k_timer_init(&dfu_timer, dfu_timer_expired, NULL);
+
+#ifdef CONFIG_USB_DFU_REBOOT
+	k_work_init_delayable(&reboot_work, reboot_work_handler);
+#endif
 
 	if (flash_area_open(dfu_data.flash_area_id, &fa)) {
 		return -EIO;
