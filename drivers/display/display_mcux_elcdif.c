@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NXP
+ * Copyright 2019-22, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +41,7 @@ struct mcux_mem_block {
 };
 
 struct mcux_elcdif_data {
-	struct mcux_mem_block fb[2];
+	struct mcux_mem_block fb[CONFIG_MCUX_ELCDIF_POOL_BLOCK_NUM];
 	struct k_sem sem;
 	size_t pixel_bytes;
 	size_t fb_bytes;
