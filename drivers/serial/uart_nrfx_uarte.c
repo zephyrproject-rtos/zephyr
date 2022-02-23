@@ -14,6 +14,7 @@
 #include <nrfx_timer.h>
 #include <sys/util.h>
 #include <kernel.h>
+#include <soc.h>
 #include <logging/log.h>
 #include <helpers/nrfx_gppi.h>
 LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
@@ -2047,6 +2048,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 #endif /* CONFIG_PINCTRL */
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
+	NRF_DT_ENSURE_PINS_ASSIGNED(UARTE(idx), tx_pin, rx_pin);	       \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(UARTE(idx));))	       \
