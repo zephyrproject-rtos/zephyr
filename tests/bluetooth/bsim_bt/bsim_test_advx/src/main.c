@@ -15,6 +15,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
+#include "../util/memq.h"
 #include "ll.h"
 
 #include "bs_types.h"

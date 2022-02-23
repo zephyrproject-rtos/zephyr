@@ -17,8 +17,8 @@
 #include <bluetooth/iso.h>
 
 #include "subsys/bluetooth/host/hci_core.h"
-#include "subsys/bluetooth/controller/include/ll.h"
 #include "subsys/bluetooth/controller/util/memq.h"
+#include "subsys/bluetooth/controller/include/ll.h"
 #include "subsys/bluetooth/controller/ll_sw/lll.h"
 
 #include "bs_types.h"
