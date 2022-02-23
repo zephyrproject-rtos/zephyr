@@ -229,7 +229,6 @@
 /drivers/counter/counter_cmos.c           @dcpleung
 /drivers/counter/counter_ll_stm32_timer.c @kentjhall
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
-/drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @dcpleung
 /drivers/dac/                             @martinjaeger
 /drivers/dma/*dw*                         @tbursztyka
@@ -237,6 +236,7 @@
 /drivers/dma/dma_stm32*                   @cybertale @lowlander
 /drivers/dma/*pl330*                      @raveenp
 /drivers/dma/*iproc_pax*                  @raveenp
+/drivers/dma/*cavs*                       @teburd
 /drivers/ec_host_cmd_periph/              @jettr
 /drivers/edac/                            @finikorg
 /drivers/eeprom/                          @henrikbrixandersen
@@ -318,7 +318,6 @@
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @sjvasanth1
 /drivers/pinctrl/                         @gmarull
-/drivers/pinmux/*b91*                     @yurvyn
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
 /drivers/pinmux/*esp32*                   @glaubermaroto
@@ -504,7 +503,7 @@
 /dts/bindings/*/neorv32*                  @henrikbrixandersen
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
-/dts/posix/                               @aescolar @vanwinkeljan @daor-oti
+/dts/posix/                               @aescolar @daor-oti
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/*ina23*              @bbilas
 /dts/bindings/sensor/st*                  @avisconti
@@ -515,7 +514,6 @@
 /include/drivers/can.h                    @alexanderwachter
 /include/drivers/counter.h                @nordic-krch
 /include/drivers/dac.h                    @martinjaeger
-/include/drivers/display.h                @vanwinkeljan
 /include/drivers/espi.h                   @albertofloyd @franciscomunoz @sjvasanth1
 /include/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
 /include/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
@@ -563,7 +561,6 @@
 /include/debug/gdbstub.h                  @ceolin
 /include/device.h                         @tbursztyka @nashif
 /include/devicetree.h                     @galak
-/include/display/                         @vanwinkeljan
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
@@ -604,7 +601,6 @@
 /lib/smf/                                 @sambhurst
 /lib/util/                                @carlescufi @jakub-uC
 /lib/util/fnmatch/                        @carlescufi @jakub-uC
-/lib/gui/                                 @vanwinkeljan
 /lib/open-amp/                            @arnopo
 /lib/os/                                  @dcpleung @nashif @andyross
 /lib/os/cbprintf_packaged.c               @npitre
@@ -626,11 +622,9 @@
 /samples/basic/servo_motor/boards/*microbit* @jhe
 /samples/bluetooth/                       @jhedberg @Vudentz @alwa-nordic
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
-/samples/subsys/display/                  @vanwinkeljan
 /samples/compression/                     @Navin-Sankar
 /samples/drivers/can/                     @alexanderwachter
 /samples/drivers/clock_control_litex/     @mateusz-holenko @kgugala @pgielda
-/samples/drivers/display/                 @vanwinkeljan
 /samples/drivers/eeprom/                  @henrikbrixandersen
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
@@ -701,7 +695,6 @@ scripts/gen_image_info.py                 @tejlmand
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @alwa-nordic @Vudentz @LingaoM
 /subsys/canbus/                           @alexanderwachter
-/subsys/cpp/                              @vanwinkeljan
 /subsys/debug/                            @nashif
 /subsys/debug/coredump/                   @dcpleung
 /subsys/debug/gdbstub/                    @ceolin
@@ -709,13 +702,12 @@ scripts/gen_image_info.py                 @tejlmand
 /subsys/dfu/                              @nvlsianpu
 /subsys/disk/                             @jfischer-no
 /subsys/tracing/                          @nashif
-/subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar @daor-oti
+/subsys/debug/asan_hacks.c                @aescolar @daor-oti
 /subsys/demand_paging/                    @dcpleung @nashif
 /subsys/emul/                             @sjg20
 /subsys/fb/                               @jfischer-no
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu
-/subsys/fs/fuse_fs_access.c               @vanwinkeljan
 /subsys/fs/nvs/                           @Laczen
 /subsys/ipc/                              @carlocaione
 /subsys/logging/                          @nordic-krch

@@ -74,7 +74,7 @@ static void setup(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_hci_feature_exchange_mas_loc(void)
+void test_hci_feat_exchange_central_loc(void)
 {
 	uint64_t err;
 	uint64_t set_featureset[] = {
@@ -137,7 +137,7 @@ void test_hci_feature_exchange_mas_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_hci_feature_exchange_wrong_handle(void)
+void test_hci_feat_exchange_wrong_handle(void)
 {
 	uint16_t conn_handle;
 	uint64_t err;
@@ -166,13 +166,13 @@ void test_hci_feature_exchange_wrong_handle(void)
 
 void test_hci_main(void)
 {
-	ztest_test_suite(hci_feature_exchange_master,
-			 ztest_unit_test_setup_teardown(test_hci_feature_exchange_mas_loc, setup,
+	ztest_test_suite(hci_feat_exchange_central,
+			 ztest_unit_test_setup_teardown(test_hci_feat_exchange_central_loc, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle,
+			 ztest_unit_test_setup_teardown(test_hci_feat_exchange_wrong_handle,
 							setup, unit_test_noop)
 
 	);
 
-	ztest_run_test_suite(hci_feature_exchange_master);
+	ztest_run_test_suite(hci_feat_exchange_central);
 }

@@ -319,7 +319,7 @@ void test_more_args(void)
 }
 
 #define NR_THREADS	(CONFIG_MP_NUM_CPUS * 4)
-#define STACK_SZ	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SZ	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 struct k_thread torture_threads[NR_THREADS];
 K_THREAD_STACK_ARRAY_DEFINE(torture_stacks, NR_THREADS, STACK_SZ);

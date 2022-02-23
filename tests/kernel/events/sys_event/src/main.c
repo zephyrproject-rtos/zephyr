@@ -13,7 +13,7 @@
 #define SHORT_TIMEOUT K_MSEC(100)
 #define LONG_TIMEOUT  K_MSEC(1000)
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread treceiver;
 static struct k_thread textra1;

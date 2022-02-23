@@ -4839,8 +4839,6 @@ __syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
  * writers that were previously pended become unpended.
  *
  * @param pipe Address of the pipe.
- *
- * @return N/A
  */
 __syscall void k_pipe_flush(struct k_pipe *pipe);
 
@@ -4854,8 +4852,6 @@ __syscall void k_pipe_flush(struct k_pipe *pipe);
  * up the pipe's emptied buffer.
  *
  * @param pipe Address of the pipe.
- *
- * @return N/A
  */
 __syscall void k_pipe_buffer_flush(struct k_pipe *pipe);
 
@@ -5853,8 +5849,6 @@ extern int k_thread_runtime_stats_disable(k_tid_t thread);
  * This routine enables the gathering of system runtime statistics. Note that
  * it does not affect the gathering of similar statistics for individual
  * threads.
- *
- * @return N/A
  */
 extern void k_sys_runtime_stats_enable(void);
 
@@ -5864,8 +5858,6 @@ extern void k_sys_runtime_stats_enable(void);
  * This routine disables the gathering of system runtime statistics. Note that
  * it does not affect the gathering of similar statistics for individual
  * threads.
- *
- * @return N/A
  */
 extern void k_sys_runtime_stats_disable(void);
 

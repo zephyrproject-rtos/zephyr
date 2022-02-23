@@ -23,7 +23,7 @@
 /* number of context switches */
 #define NCTXSWITCH 10000
 #ifndef STACKSIZE
-#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #endif
 
 /* stack used by the threads */

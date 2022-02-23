@@ -32,9 +32,20 @@ GDATA(_sw_isr_table)
 GTEXT(_isr_wrapper)
 SECTION_FUNC(TEXT, _isr_wrapper)
 
-	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	inc_nest_counter x0, x1
+	/* ++_current_cpu->nested to be checked by arch_is_in_isr() */
+	get_cpu	x0
+	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
+	add	w1, w1, #1
+	str	w1, [x0, #___cpu_t_nested_OFFSET]
 
+	/* If not nested: switch to IRQ stack and save current sp on it. */
+	cmp	w1, #1
+	bne	1f
+	ldr	x1, [x0, #___cpu_t_irq_stack_OFFSET]
+	mov	x2, sp
+	mov	sp, x1
+	str	x2, [sp, #-16]!
+1:
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	bl	z_sched_usage_stop
 #endif
@@ -97,10 +108,16 @@ spurious_continue:
 	bl	sys_trace_isr_exit
 #endif
 
-	/* if (--(_kernel->nested) != 0) exit */
-	dec_nest_counter x0, x1
-
+	/* if (--_current_cpu->nested != 0) exit */
+	get_cpu	x0
+	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
+	subs	w1, w1, #1
+	str	w1, [x0, #___cpu_t_nested_OFFSET]
 	bne	exit
+
+	/* No more nested: retrieve the task's stack. */
+	ldr	x0, [sp]
+	mov	sp, x0
 
 	/*
 	 * z_arch_get_next_switch_handle() is returning:

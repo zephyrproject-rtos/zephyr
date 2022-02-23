@@ -1,5 +1,0 @@
-# Copyright (c) 2019 Linaro Limited
-# SPDX-License-Identifier: Apache-2.0
-
-config SHIELD_DFROBOT_CAN_BUS_V2_0
-	def_bool $(shields_list_contains,dfrobot_can_bus_v2_0)

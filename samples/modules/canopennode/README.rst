@@ -61,6 +61,25 @@ The sample can be built and executed for the FRDM-K64F as follows:
 Pressing the button labelled ``SW3`` will increment the button press
 counter object at index ``0x2102`` in the object dictionary.
 
+Building and Running for STM32F072RB Discovery
+==============================================
+The :ref:`stm32f072b_disco_board` board does not come with an onboard CAN
+transceiver. In order to use the CAN bus on the STM32F072RB Discovery board, an
+external CAN bus tranceiver must be connected to ``PB8`` (``CAN_RX``) and
+``PB9`` (``CAN_TX``). This board supports CANopen LED indicators (red and green
+LEDs)
+
+The sample can be built and executed for the STM32F072RB Discovery as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/canopennode
+   :board: stm32f072b_disco
+   :goals: build flash
+   :compact:
+
+Pressing the button labelled ``USER`` will increment the button press counter
+object at index ``0x2102`` in the object dictionary.
+
 Building and Running for STM32F3 Discovery
 ==========================================
 The :ref:`stm32f3_disco_board` board does not come with an onboard CAN

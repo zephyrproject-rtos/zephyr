@@ -33,7 +33,7 @@
  * preempt thread submit alternatively.
  */
 #define SUBMIT_WAIT	50
-#define STACK_SIZE      (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE      (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 /* How long to wait for the full test suite to complete.  Allow for a
  * little slop

@@ -9,10 +9,11 @@
 #include <kernel.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
+#include <logging/log.h>
+
 #include "can_stm32fd.h"
 
-#include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
 
 #if CONFIG_CAN_STM32_CLOCK_DIVISOR != 1 && CONFIG_CAN_STM32_CLOCK_DIVISOR & 0x01
 #error CAN_STM32_CLOCK_DIVISOR invalid.\

@@ -11,17 +11,48 @@
 # It will be empty if not set in environment.
 
 macro(include_boilerplate location)
+  list(PREPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/cmake/modules)
   if(ZEPHYR_UNITTEST)
+    message(WARNING "The ZephyrUnittest CMake package has been deprecated.\n"
+                    "ZephyrUnittest has been replaced with Zephyr CMake module 'unittest' \n"
+                    "and can be loaded as: 'find_package(Zephyr COMPONENTS unittest)'"
+    )
     set(ZephyrUnittest_FOUND True)
-    set(BOILERPLATE_FILE ${ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
+    set(Zephyr_FIND_COMPONENTS unittest)
   else()
     set(Zephyr_FOUND True)
-    set(BOILERPLATE_FILE ${ZEPHYR_BASE}/cmake/app/boilerplate.cmake)
   endif()
 
+  if(NOT DEFINED APPLICATION_SOURCE_DIR)
+    set(APPLICATION_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH
+        "Application Source Directory"
+    )
+  endif()
+
+  if(NOT DEFINED APPLICATION_BINARY_DIR)
+    set(APPLICATION_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH
+        "Application Binary Directory"
+    )
+  endif()
+
+  set(__build_dir ${APPLICATION_BINARY_DIR}/zephyr)
+  set(PROJECT_BINARY_DIR ${__build_dir})
+
   if(NOT NO_BOILERPLATE)
-    message("Including boilerplate (${location}): ${BOILERPLATE_FILE}")
-    include(${BOILERPLATE_FILE} NO_POLICY_SCOPE)
+    list(LENGTH Zephyr_FIND_COMPONENTS components_length)
+    if(components_length EQUAL 0)
+      message("Loading Zephyr default modules (${location}).")
+      include(zephyr_default NO_POLICY_SCOPE)
+    else()
+      message("Loading Zephyr module(s) (${location}): ${Zephyr_FIND_COMPONENTS}")
+      foreach(component ${Zephyr_FIND_COMPONENTS})
+        include(${component})
+      endforeach()
+    endif()
+  else()
+    message(WARNING "The NO_BOILERPLATE setting has been deprecated.\n"
+                    "Please use: 'find_package(Zephyr COMPONENTS <components>)'"
+    )
   endif()
 endmacro()
 

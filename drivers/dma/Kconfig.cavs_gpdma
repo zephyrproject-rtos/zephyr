@@ -1,0 +1,9 @@
+# cAVS GPDMA configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_CAVS_GPDMA
+	bool "Enable cAVS GPDMA DMA driver"
+	help
+	  Intel cAVS GPDMA DMA driver.

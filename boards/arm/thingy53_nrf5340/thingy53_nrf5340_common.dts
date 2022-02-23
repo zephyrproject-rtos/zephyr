@@ -59,6 +59,15 @@
 		};
 	};
 
+	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "npm1100_force_pwm_mode";
+		regulator-name = "npm1100_force_pwm_mode";
+		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+		regulator-boot-on;
+	};
+
 	vbatt {
 		compatible = "voltage-divider";
 		io-channels = <&adc 2>;
@@ -83,13 +92,18 @@
 		regulator-boot-on;
 	};
 
-	nrf_radio_fem: fem {
-		compatible = "nordic,nrf21540-fem";
-		rx-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
-		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
-		spi-if = <&nrf_radio_fem_spi>;
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+		fem-gpio-if {
+			gpios = <&gpio1 11 0>,
+				<&gpio1 12 0>,
+				<&gpio1 10 0>,
+				<&gpio0 30 0>;
+		};
+		fem-spi-if {
+			gpios = <&gpio0 24 0>;
+		};
 	};
 
 	aliases {

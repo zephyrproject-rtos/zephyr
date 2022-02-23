@@ -252,13 +252,7 @@ def load_firmware(fw_file):
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
     sd.CTL |= 2 # START flag
 
-    log.info(f"Waiting for firmware handoff, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
-    for _ in range(200):
-        alive = dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
-        if alive: break
-        time.sleep(0.01)
-    if not alive:
-        log.warning(f"Load failed?  FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
+    wait_fw_entered()
 
     # Turn DMA off and reset the stream.  Clearing START first is a
     # noop per the spec, but absolutely required for stability.
@@ -272,12 +266,30 @@ def load_firmware(fw_file):
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
 
+
+def wait_fw_entered():
+    log.info("Waiting for firmware handoff, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+    for _ in range(200):
+        alive = dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
+        if alive:
+            break
+        time.sleep(0.01)
+    if not alive:
+        log.warning("Load failed?  FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+
+
 # This SHOULD be just "mem[start:start+length]", but slicing an mmap
 # array seems to be unreliable on one of my machines (python 3.6.9 on
 # Ubuntu 18.04).  Read out bytes individually.
 def win_read(start, length):
-    return b''.join(bar4_mmap[x + WINSTREAM_OFFSET].to_bytes(1, 'little')
-                    for x in range(start, start + length))
+    try:
+        return b''.join(bar4_mmap[WINSTREAM_OFFSET + x].to_bytes(1, 'little')
+                        for x in range(start, start + length))
+    except IndexError as ie:
+        # A FW in a bad state may cause winstream garbage
+        log.error("IndexError in bar4_mmap[%d + %d]", WINSTREAM_OFFSET, start)
+        log.error("bar4_mmap.size()=%d", bar4_mmap.size())
+        raise ie
 
 def win_hdr():
     return struct.unpack("<IIII", win_read(0, 16))
@@ -314,7 +326,9 @@ async def main():
 
     log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
 
-    if not args.log_only:
+    if args.log_only:
+        wait_fw_entered()
+    else:
         if not args.fw_file:
             log.error("Firmware file argument missing")
             sys.exit(1)

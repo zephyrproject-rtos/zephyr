@@ -618,6 +618,11 @@ and these tests will be executed on the boards that provide this fixture.
 .. figure:: fixtures.svg
    :figclass: align-center
 
+Fixtures can also be provided via twister command option ``--fixture``, this option
+can be used multiple times and all given fixtures will be appended as a list. And the
+given fixtures will be assigned to all boards, this means that all boards set by
+current twister command can run those testcases which request the same fixtures.
+
 Notes
 +++++
 

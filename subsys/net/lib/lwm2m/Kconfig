@@ -17,6 +17,21 @@ module-dep = LOG
 module-str = Log level for LWM2M library
 source "subsys/net/Kconfig.template.log_config.net"
 
+choice
+	prompt "LwM2M protocol version"
+	default LWM2M_VERSION_1_0
+	help
+	  Select which version of the LwM2M protocol is used
+
+config LWM2M_VERSION_1_0
+	bool "LwM2M version 1.0"
+
+config LWM2M_VERSION_1_1
+	bool "LwM2M version 1.1 [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+endchoice
+
 config LWM2M_DTLS_SUPPORT
 	bool "Enable DTLS support in the LwM2M client"
 	select TLS_CREDENTIALS
@@ -25,7 +40,8 @@ config LWM2M_DTLS_SUPPORT
 
 choice
 	prompt "LwM2M Security object version"
-	default LWM2M_SECURITY_OBJECT_VERSION_1_0
+	default LWM2M_SECURITY_OBJECT_VERSION_1_0 if LWM2M_VERSION_1_0
+	default LWM2M_SECURITY_OBJECT_VERSION_1_1 if LWM2M_VERSION_1_1
 	help
 	  Select which version of the security object should be used.
 
@@ -40,7 +56,8 @@ endchoice
 
 choice
 	prompt "LwM2M Server object version"
-	default LWM2M_SERVER_OBJECT_VERSION_1_0
+	default LWM2M_SERVER_OBJECT_VERSION_1_0 if LWM2M_VERSION_1_0
+	default LWM2M_SERVER_OBJECT_VERSION_1_1 if LWM2M_VERSION_1_1
 	help
 	  Select which version of the Server object should be used.
 
@@ -273,7 +290,8 @@ config LWM2M_CONN_MON_OBJ_SUPPORT
 
 choice
 	prompt "LwM2M Connectivity Monitor object version"
-	default LWM2M_CONNMON_OBJECT_VERSION_1_0
+	default LWM2M_CONNMON_OBJECT_VERSION_1_0 if LWM2M_VERSION_1_0
+	default LWM2M_CONNMON_OBJECT_VERSION_1_2 if LWM2M_VERSION_1_1
 	depends on LWM2M_CONN_MON_OBJ_SUPPORT
 	help
 	  Select Which version of the Connectivity Monitor object should be used.
@@ -339,6 +357,11 @@ config LWM2M_SWMGMT_OBJ_SUPPORT
 	bool "Software management object support"
 	help
 	  Include support for LWM2M Software Management Object (ID 9)
+
+config LWM2M_PORTFOLIO_OBJ_SUPPORT
+	bool "LwM2M Portfolio object ID support for Conformance test"
+	help
+	  Include support for LWM2M Portfolio Object (ID 16).
 
 config LWM2M_SWMGMT_MAX_INSTANCE_COUNT
 	int "Maximum # of object instances"

@@ -57,7 +57,7 @@ static void setup(void)
  *    |                            |                         |
  *    |                            |                         |
  */
-void test_min_used_chans_sla_loc(void)
+void test_min_used_chans_periph_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -104,7 +104,7 @@ void test_min_used_chans_sla_loc(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_min_used_chans_mas_loc(void)
+void test_min_used_chans_central_loc(void)
 {
 	uint8_t err;
 
@@ -122,7 +122,7 @@ void test_min_used_chans_mas_loc(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_min_used_chans_mas_rem(void)
+void test_min_used_chans_central_rem(void)
 {
 	struct pdu_data_llctrl_min_used_chans_ind remote_muc_ind = { .phys = 1,
 		.min_used_chans = 2 };
@@ -170,9 +170,13 @@ void test_main(void)
 {
 	ztest_test_suite(
 		muc,
-		ztest_unit_test_setup_teardown(test_min_used_chans_sla_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_min_used_chans_mas_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_min_used_chans_mas_rem, setup, unit_test_noop));
+		ztest_unit_test_setup_teardown(test_min_used_chans_periph_loc, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_min_used_chans_central_loc, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_min_used_chans_central_rem, setup,
+					       unit_test_noop)
+		);
 
 	ztest_run_test_suite(muc);
 }

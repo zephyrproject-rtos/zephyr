@@ -32,19 +32,13 @@ enum {
 	BT_CONN_BR_NOBOND,		/* SSP no bond pairing tracker */
 	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
 	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
-	BT_CONN_AUTO_PHY_UPDATE,        /* Auto-update PHY */
 	BT_CONN_PERIPHERAL_PARAM_UPDATE,/* If periph param update timer fired */
 	BT_CONN_PERIPHERAL_PARAM_SET,	/* If periph param were set from app */
 	BT_CONN_PERIPHERAL_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
 
-	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
 	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
-
-	/* Auto-initiated Data Length done. Auto-initiated Data Length Update
-	 * is only needed for controllers with BT_QUIRK_NO_AUTO_DLE. */
-	BT_CONN_AUTO_DATA_LEN_COMPLETE,
 
 	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
 	BT_CONN_CTE_RX_PARAMS_SET,       /* CTE parameters are set */

@@ -50,7 +50,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
 }
 
-void test_channel_map_update_mas_loc(void)
+void test_channel_map_update_central_loc(void)
 {
 	uint8_t chm[5] = { 0x00, 0x04, 0x05, 0x06, 0x00 };
 	/* TODO should test setup set this to valid value? */
@@ -129,7 +129,7 @@ void test_channel_map_update_mas_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_channel_map_update_sla_rem(void)
+void test_channel_map_update_periph_rem(void)
 {
 	uint8_t chm[5] = { 0x00, 0x04, 0x05, 0x06, 0x00 };
 	/* TODO should test setup set this to valid value? */
@@ -197,7 +197,7 @@ void test_channel_map_update_sla_rem(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_channel_map_update_sla_loc(void)
+void test_channel_map_update_periph_loc(void)
 {
 	uint8_t err;
 	uint8_t chm[5] = { 0x00, 0x06, 0x06, 0x06, 0x00 };
@@ -218,11 +218,11 @@ void test_channel_map_update_sla_loc(void)
 void test_main(void)
 {
 	ztest_test_suite(chmu,
-			 ztest_unit_test_setup_teardown(test_channel_map_update_mas_loc, setup,
+			 ztest_unit_test_setup_teardown(test_channel_map_update_central_loc, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_channel_map_update_sla_rem, setup,
+			 ztest_unit_test_setup_teardown(test_channel_map_update_periph_rem, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_channel_map_update_sla_loc, setup,
+			 ztest_unit_test_setup_teardown(test_channel_map_update_periph_loc, setup,
 							unit_test_noop));
 
 	ztest_run_test_suite(chmu);

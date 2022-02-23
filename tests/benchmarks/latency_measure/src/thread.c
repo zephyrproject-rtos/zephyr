@@ -7,7 +7,7 @@
 #include <timing/timing.h>
 #include "utils.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 /* stack used by the threads */
 static K_THREAD_STACK_DEFINE(t1_stack, STACK_SIZE);
 

@@ -20,6 +20,7 @@ mkdir -p ${WORK_DIR}
 
 source ${ZEPHYR_BASE}/tests/bluetooth/bsim_bt/compile.source
 
+app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_collision.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split.conf \
 	compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_privacy.conf \

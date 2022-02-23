@@ -14,7 +14,7 @@ tests:
     tags: introduction
   sample.modules.canopennode.program_download:
     build_only: true
-    platform_exclude: stm32f3_disco
+    platform_exclude: stm32f3_disco stm32f072b_disco
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
   sample.modules.canopennode.no_storage:

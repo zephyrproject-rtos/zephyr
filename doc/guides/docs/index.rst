@@ -248,12 +248,12 @@ Developer-mode Document Building
 Building the documentation for all the Kconfig options significantly
 adds to the total doc build time.  When making and testing major changes
 to the documentation, we provide an option to temporarily stub-out
-the auto-generated configuration documentation so the doc build process
-runs much faster.
+the auto-generated configuration and Devicetree bindings documentation so the
+doc build process runs much faster.
 
 To enable this mode, set the following option when invoking cmake::
 
-   -DKCONFIG_TURBO_MODE=1
+   -DKCONFIG_TURBO_MODE=1 -DDT_TURBO_MODE=1
 
 or invoke make with the following target::
 

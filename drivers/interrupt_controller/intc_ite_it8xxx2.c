@@ -203,7 +203,7 @@ uint8_t get_irq(void *arg)
 	return intc_irq;
 }
 
-static int ite_intc_init(const struct device *dev)
+void ite_intc_init(void)
 {
 	/* Ensure interrupts of soc are disabled at default */
 	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++)
@@ -211,8 +211,4 @@ static int ite_intc_init(const struct device *dev)
 
 	/* Enable M-mode external interrupt */
 	csr_set(mie, MIP_MEIP);
-
-	return 0;
 }
-
-SYS_INIT(ite_intc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

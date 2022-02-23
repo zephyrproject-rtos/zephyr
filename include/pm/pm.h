@@ -77,7 +77,7 @@ struct pm_notifier {
  * @param info Power state which should be used in the ongoing
  *	suspend operation.
  */
-bool pm_power_state_force(uint8_t cpu, struct pm_state_info info);
+bool pm_power_state_force(uint8_t cpu, const struct pm_state_info *info);
 
 /**
  * @brief Register a power management notifier
@@ -111,7 +111,7 @@ int pm_notifier_unregister(struct pm_notifier *notifier);
  * @param cpu CPU index.
  * @return next pm_state_info that will be used
  */
-struct pm_state_info pm_power_state_next_get(uint8_t cpu);
+const struct pm_state_info *pm_power_state_next_get(uint8_t cpu);
 
 /**
  * @}
@@ -179,10 +179,10 @@ bool pm_constraint_get(enum pm_state state);
  * This function implements the SoC specific details necessary
  * to put the processor into available power states.
  *
- * @param info Power state which should be used in the ongoing
- *	suspend operation.
+ * @param state Power state.
+ * @param substate_id Power substate id.
  */
-void pm_power_state_set(struct pm_state_info info);
+void pm_power_state_set(enum pm_state state, uint8_t substate_id);
 
 /**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
@@ -192,9 +192,10 @@ void pm_power_state_set(struct pm_state_info info);
  * interrupts after resuming from sleep state. In future, the enabling
  * of interrupts may be moved into the kernel.
  *
- * @param info Power state that the given cpu is leaving.
+ * @param state Power state.
+ * @param substate_id Power substate id.
  */
-void pm_power_state_exit_post_ops(struct pm_state_info info);
+void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 
 /**
  * @}
@@ -209,10 +210,10 @@ void pm_power_state_exit_post_ops(struct pm_state_info info);
 #define pm_constraint_release(pm_state)
 #define pm_constraint_get(pm_state) (true)
 
-#define pm_power_state_set(info)
-#define pm_power_state_exit_post_ops(info)
+#define pm_power_state_set(state, substate_id)
+#define pm_power_state_exit_post_ops(state, substate_id)
 #define pm_power_state_next_get(cpu) \
-	((struct pm_state_info){PM_STATE_ACTIVE, 0, 0})
+	(&(struct pm_state_info){PM_STATE_ACTIVE, 0, 0})
 
 #endif /* CONFIG_PM */
 

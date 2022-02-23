@@ -17,9 +17,11 @@ static void ite_power_soc_deep_doze(void)
 }
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 {
-	switch (info.state) {
+	ARG_UNUSED(substate_id);
+
+	switch (state) {
 	/* Deep doze mode */
 	case PM_STATE_STANDBY:
 		ite_power_soc_deep_doze();
@@ -30,7 +32,8 @@ __weak void pm_power_state_set(struct pm_state_info info)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(info);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 }

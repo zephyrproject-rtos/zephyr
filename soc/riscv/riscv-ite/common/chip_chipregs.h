@@ -1372,39 +1372,43 @@ enum ext_timer_idx {
 #define TMRCE			ECREG(EC_REG_BASE_ADDR + 0x290B)
 #define TMEIE			ECREG(EC_REG_BASE_ADDR + 0x290C)
 
-/**
- *
+/*
  * (2Cxxh) Platform Environment Control Interface (PECI)
- *
  */
-#define HOSTAR			ECREG(EC_REG_BASE_ADDR + 0x2C00)
-#define TEMPERR			BIT(7)
-#define BUSERR			BIT(6)
-#define EXTERR			BIT(5)
-#define WR_FCS_ERR		BIT(3)
-#define RD_FCS_ERR		BIT(2)
-#define FINISH			BIT(1)
-#define HOBY			BIT(0)
-#define HOCTLR			ECREG(EC_REG_BASE_ADDR + 0x2C01)
-#define FIFOCLR			BIT(5)
-#define FCSERR_ABT		BIT(4)
-#define PECIHEN			BIT(3)
-#define CONCTRL			BIT(2)
-#define AWFCS_EN		BIT(1)
-#define PECISTART		BIT(0)
-#define HOCMDR			ECREG(EC_REG_BASE_ADDR + 0x2C02)
-#define HOTRADDR		ECREG(EC_REG_BASE_ADDR + 0x2C03)
-#define HOWRLR			ECREG(EC_REG_BASE_ADDR + 0x2C04)
-#define HORDLR			ECREG(EC_REG_BASE_ADDR + 0x2C05)
-#define HOWRDR			ECREG(EC_REG_BASE_ADDR + 0x2C06)
-#define HORDDR			ECREG(EC_REG_BASE_ADDR + 0x2C07)
-#define HOCTL2R			ECREG(EC_REG_BASE_ADDR + 0x2C08)
-#define RWFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C09)
-#define RRFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C0A)
-#define WFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C0B)
-#define RFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C0C)
-#define AWFCSV			ECREG(EC_REG_BASE_ADDR + 0x2C0D)
-#define PADCTLR			ECREG(EC_REG_BASE_ADDR + 0x2C0E)
+#ifndef __ASSEMBLER__
+struct peci_it8xxx2_regs {
+	/* 0x00: Host Status */
+	volatile uint8_t HOSTAR;
+	/* 0x01: Host Control */
+	volatile uint8_t HOCTLR;
+	/* 0x02: Host Command */
+	volatile uint8_t HOCMDR;
+	/* 0x03: Host Target Address */
+	volatile uint8_t HOTRADDR;
+	/* 0x04: Host Write Length */
+	volatile uint8_t HOWRLR;
+	/* 0x05: Host Read Length */
+	volatile uint8_t HORDLR;
+	/* 0x06: Host Write Data */
+	volatile uint8_t HOWRDR;
+	/* 0x07: Host Read Data */
+	volatile uint8_t HORDDR;
+	/* 0x08: Host Control 2 */
+	volatile uint8_t HOCTL2R;
+	/* 0x09: Received Write FCS value */
+	volatile uint8_t RWFCSV;
+	/* 0x0A: Received Read FCS value */
+	volatile uint8_t RRFCSV;
+	/* 0x0B: Write FCS Value */
+	volatile uint8_t WFCSV;
+	/* 0x0C: Read FCS Value */
+	volatile uint8_t RFCSV;
+	/* 0x0D: Assured Write FCS Value */
+	volatile uint8_t AWFCSV;
+	/* 0x0E: Pad Control */
+	volatile uint8_t PADCTLR;
+};
+#endif /* !__ASSEMBLER__ */
 
 /**
  *
@@ -1455,6 +1459,7 @@ enum ext_timer_idx {
 /* Shared Memory Flash Interface Bridge (SMFI) registers */
 
 #ifndef __ASSEMBLER__
+/* TODO: rename flash_it8xxx2_regs to smfi_regs */
 struct flash_it8xxx2_regs {
 	volatile uint8_t reserved1[59];
 	/* 0x3B: EC-Indirect memory address 0 */
@@ -1473,9 +1478,21 @@ struct flash_it8xxx2_regs {
 	volatile uint8_t SMFI_SCAR0M;
 	/* 0x42: Scratch SRAM 0 address high byte */
 	volatile uint8_t SMFI_SCAR0H;
-	volatile uint8_t reserved2[95];
+	volatile uint8_t reserved1_1[23];
+	/* 0x5A: Host RAM Window Control */
+	volatile uint8_t SMFI_HRAMWC;
+	/* 0x5B: Host RAM Window 0 Base Address [11:4] */
+	volatile uint8_t SMFI_HRAMW0BA;
+	/* 0x5C: Host RAM Window 1 Base Address [11:4] */
+	volatile uint8_t SMFI_HRAMW1BA;
+	/* 0x5D: Host RAM Window 0 Access Allow Size */
+	volatile uint8_t SMFI_HRAMW0AAS;
+	/* 0x5E: Host RAM Window 1 Access Allow Size */
+	volatile uint8_t SMFI_HRAMW1AAS;
+	volatile uint8_t reserved2[67];
 	/* 0xA2: Flash control 6 */
 	volatile uint8_t SMFI_FLHCTRL6R;
+	volatile uint8_t reserved3[46];
 };
 #endif /* !__ASSEMBLER__ */
 
@@ -1489,6 +1506,16 @@ struct flash_it8xxx2_regs {
 #define IT8XXX2_SMFI_SC0A19 BIT(7)
 /* Scratch SRAM enable */
 #define IT8XXX2_SMFI_SCAR0H_ENABLE BIT(3)
+
+/* H2RAM Path Select. 1b: H2RAM through LPC IO cycle. */
+#define SMFI_H2RAMPS           BIT(4)
+/* H2RAM Window 1 Enable */
+#define SMFI_H2RAMW1E          BIT(1)
+/* H2RAM Window 0 Enable */
+#define SMFI_H2RAMW0E          BIT(0)
+
+/* Host RAM Window x Write Protect Enable (All protected) */
+#define SMFI_HRAMWXWPE_ALL     (BIT(5) | BIT(4))
 
 /* --- GPIO --- */
 #define IT8XXX2_GPIO_BASE  0x00F01600
@@ -1613,6 +1640,7 @@ enum chip_pll_mode {
 #define IT83XX_SMB_CHSEF		ECREG(IT83XX_SMB_BASE+0x11)
 #define IT83XX_SMB_CHSAB		ECREG(IT83XX_SMB_BASE+0x20)
 #define IT83XX_SMB_CHSCD		ECREG(IT83XX_SMB_BASE+0x21)
+#define IT8XXX2_SMB_SFFCTL		ECREG(IT83XX_SMB_BASE+0x55)
 #define IT83XX_SMB_HOSTA(base)	ECREG(base+0x00)
 #define IT83XX_SMB_HOCTL(base)	ECREG(base+0x01)
 #define IT83XX_SMB_HOCMD(base)	ECREG(base+0x02)
@@ -1653,6 +1681,8 @@ enum chip_pll_mode {
 #define IT83XX_I2C_CMD_ADDH2(base)	ECREG(base+0x52)
 
 /* SMBus/I2C register fields */
+/* 0x55: Slave A FIFO Control */
+#define IT8XXX2_SMB_HSAPE		BIT(1)
 /* 0x07: Time Out Status */
 #define IT8XXX2_I2C_SCL_IN		BIT(2)
 #define IT8XXX2_I2C_SDA_IN		BIT(0)
@@ -2101,8 +2131,30 @@ struct pmc_regs {
 	volatile uint8_t PM1IE;
 	/* 0x09-0x0f: Reserved1 */
 	volatile uint8_t reserved1[7];
-	/* 0x10-0xff: Reserved2 */
-	volatile uint8_t reserved2[0xf0];
+	/* 0x10: Host Interface PM Channel 2 Status */
+	volatile uint8_t PM2STS;
+	/* 0x11: Host Interface PM Channel 2 Data Out Port */
+	volatile uint8_t PM2DO;
+	/* 0x12: Host Interface PM Channel 2 Data Out Port with SCI# */
+	volatile uint8_t PM2DOSCI;
+	/* 0x13: Host Interface PM Channel 2 Data Out Port with SMI# */
+	volatile uint8_t PM2DOSMI;
+	/* 0x14: Host Interface PM Channel 2 Data In Port */
+	volatile uint8_t PM2DI;
+	/* 0x15: Host Interface PM Channel 2 Data In Port with SCI# */
+	volatile uint8_t PM2DISCI;
+	/* 0x16: Host Interface PM Channel 2 Control */
+	volatile uint8_t PM2CTL;
+	/* 0x17: Host Interface PM Channel 2 Interrupt Control */
+	volatile uint8_t PM2IC;
+	/* 0x18: Host Interface PM Channel 2 Interrupt Enable */
+	volatile uint8_t PM2IE;
+	/* 0x19: Mailbox Control */
+	volatile uint8_t MBXCTRL;
+	/* 0x1a-0x1f: Reserved2 */
+	volatile uint8_t reserved2[6];
+	/* 0x20-0xff: Reserved3 */
+	volatile uint8_t reserved3[0xe0];
 };
 
 /* Input Buffer Full Interrupt Enable */
@@ -2115,6 +2167,24 @@ struct pmc_regs {
 #define PMC_PM1STS_GPF      BIT(2)
 /* A2 Address (A2) */
 #define PMC_PM1STS_A2_ADDR  BIT(3)
+
+/* PMC2 Input Buffer Full Interrupt Enable */
+#define PMC_PM2CTL_IBFIE    BIT(0)
+/* General Purpose Flag */
+#define PMC_PM2STS_GPF      BIT(2)
+
+/*
+ * Dedicated Interrupt
+ * 0b:
+ * INT3: PMC Output Buffer Empty Int
+ * INT25: PMC Input Buffer Full Int
+ * 1b:
+ * INT3: PMC1 Output Buffer Empty Int
+ * INT25: PMC1 Input Buffer Full Int
+ * INT26: PMC2 Output Buffer Empty Int
+ * INT27: PMC2 Input Buffer Full Int
+ */
+#define PMC_MBXCTRL_DINT    BIT(5)
 
 /*
  * eSPI slave registers

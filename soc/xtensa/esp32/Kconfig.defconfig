@@ -25,9 +25,6 @@ endif
 config SOC
 	default "esp32"
 
-config IRQ_OFFLOAD_INTNUM
-	default 7
-
 if SMP
 
 config SCHED_IPI_SUPPORTED

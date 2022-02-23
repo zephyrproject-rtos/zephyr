@@ -130,10 +130,13 @@ typedef void (*bt_ready_cb_t)(int err);
  * Enable Bluetooth. Must be the called before any calls that
  * require communication with the local Bluetooth hardware.
  *
- * When @kconfig{CONFIG_BT_SETTINGS} has been enabled and the application is not
- * managing identities of the stack itself then the application must call
- * @ref settings_load() before the stack is fully enabled.
- * See @ref bt_id_create() for more information.
+ * When @kconfig{CONFIG_BT_SETTINGS} is enabled, the application must load the
+ * Bluetooth settings after this API call successfully completes before
+ * Bluetooth APIs can be used. Loading the settings before calling this function
+ * is insufficient. Bluetooth settings can be loaded with settings_load() or
+ * settings_load_subtree() with argument "bt". The latter selectively loads only
+ * Bluetooth settings and is recommended if settings_load() has been called
+ * earlier.
  *
  * @param cb Callback to notify completion or NULL to perform the
  * enabling synchronously.
@@ -1300,6 +1303,7 @@ struct bt_le_per_adv_sync_param {
 	 * @brief Periodic Advertiser Address
 	 *
 	 * Only valid if not using the periodic advertising list
+	 * (BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST)
 	 */
 	bt_addr_le_t addr;
 
@@ -1307,6 +1311,7 @@ struct bt_le_per_adv_sync_param {
 	 * @brief Advertiser SID
 	 *
 	 * Only valid if not using the periodic advertising list
+	 * (BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST)
 	 */
 	uint8_t sid;
 

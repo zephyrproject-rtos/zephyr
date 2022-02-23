@@ -827,6 +827,7 @@ const struct lwm2m_writer json_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float = put_float,
+	.put_time = put_s64,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -835,6 +836,7 @@ const struct lwm2m_reader json_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
+	.get_time = get_s64,
 	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
@@ -910,7 +912,7 @@ int do_write_op_json(struct lwm2m_message *msg)
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_obj_path orig_path;
 	struct json_in_formatter_data fd;
-	int ret = 0, index;
+	int ret = 0;
 	uint8_t value[TOKEN_BUF_LEN];
 	uint8_t base_name[MAX_RESOURCE_LEN];
 	uint8_t full_name[MAX_RESOURCE_LEN];
@@ -1011,60 +1013,14 @@ int do_write_op_json(struct lwm2m_message *msg)
 				break;
 			}
 
-			obj_field = lwm2m_get_engine_obj_field(
-							obj_inst->obj,
-							msg->path.res_id);
-			/*
-			 * if obj_field is not found,
-			 * treat as an optional resource
-			 */
-			if (!obj_field) {
-				ret = -ENOENT;
-				break;
+			ret = lwm2m_engine_validate_write_access(msg, obj_inst, &obj_field);
+			if (ret < 0) {
+				return ret;
 			}
 
-			/*
-			 * TODO: support BOOTSTRAP WRITE where optional
-			 * resources are ignored
-			 */
-
-			if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W) &&
-			    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
-				ret = -EPERM;
-				break;
-			}
-
-			if (!obj_inst->resources ||
-			    obj_inst->resource_count == 0U) {
-				ret = -EINVAL;
-				break;
-			}
-
-			for (index = 0; index < obj_inst->resource_count;
-			     index++) {
-				if (obj_inst->resources[index].res_id ==
-				    msg->path.res_id) {
-					res = &obj_inst->resources[index];
-					break;
-				}
-			}
-
-			if (!res) {
-				ret = -ENOENT;
-				break;
-			}
-
-			for (index = 0; index < res->res_inst_count; index++) {
-				if (res->res_instances[index].res_inst_id ==
-				    msg->path.res_inst_id) {
-					res_inst = &res->res_instances[index];
-					break;
-				}
-			}
-
-			if (!res_inst) {
-				ret = -ENOENT;
-				break;
+			ret = lwm2m_engine_get_create_res_inst(&msg->path, &res, &res_inst);
+			if (ret < 0) {
+				return -ENOENT;
 			}
 
 			/* Write the resource value */

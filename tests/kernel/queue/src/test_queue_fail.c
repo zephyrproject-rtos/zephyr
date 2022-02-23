@@ -7,7 +7,7 @@
 #include "test_queue.h"
 
 #define TIMEOUT K_MSEC(100)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);

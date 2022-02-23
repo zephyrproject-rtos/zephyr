@@ -167,7 +167,7 @@ int lll_csrand_get(void *buf, size_t len)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_encryption_start_mas_loc(void)
+void test_encryption_start_central_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -329,7 +329,7 @@ void test_encryption_start_mas_loc(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_encryption_start_mas_loc_limited_memory(void)
+void test_encryption_start_central_loc_limited_memory(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -549,7 +549,7 @@ void test_encryption_start_mas_loc_limited_memory(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_encryption_start_mas_loc_no_ltk(void)
+void test_encryption_start_central_loc_no_ltk(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -665,7 +665,7 @@ void test_encryption_start_mas_loc_no_ltk(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_encryption_start_mas_loc_no_ltk_2(void)
+void test_encryption_start_central_loc_no_ltk_2(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -789,7 +789,7 @@ void test_encryption_start_mas_loc_no_ltk_2(void)
  *    |     |---------------| |                     |
  *    |                       |                     |
  */
-void test_encryption_start_sla_rem(void)
+void test_encryption_start_periph_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1010,7 +1010,7 @@ void test_encryption_start_sla_rem(void)
  *    |     |---------------| |                     |
  *    |                       |                     |
  */
-void test_encryption_start_sla_rem_limited_memory(void)
+void test_encryption_start_periph_rem_limited_memory(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1294,7 +1294,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
  *    |                       | LL_REJECT_EXT_IND   |
  *    |                       |-------------------->|
  */
-void test_encryption_start_sla_rem_no_ltk(void)
+void test_encryption_start_periph_rem_no_ltk(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1419,7 +1419,7 @@ void test_encryption_start_sla_rem_no_ltk(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_encryption_pause_mas_loc(void)
+void test_encryption_pause_central_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1570,7 +1570,7 @@ void test_encryption_pause_mas_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_encryption_pause_sla_rem(void)
+void test_encryption_pause_periph_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1750,25 +1750,25 @@ void test_main(void)
 {
 	ztest_test_suite(
 		encryption_start,
-		ztest_unit_test_setup_teardown(test_encryption_start_mas_loc, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_limited_memory, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_limited_memory,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_no_ltk, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_no_ltk, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_central_loc_no_ltk_2, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_no_ltk_2, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_periph_rem, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_sla_rem, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_sla_rem_limited_memory, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_encryption_start_sla_rem_no_ltk, setup,
+		ztest_unit_test_setup_teardown(test_encryption_start_periph_rem_limited_memory,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_encryption_start_periph_rem_no_ltk, setup,
 					       unit_test_noop));
 
 	ztest_test_suite(encryption_pause,
-			 ztest_unit_test_setup_teardown(test_encryption_pause_mas_loc, setup,
+			 ztest_unit_test_setup_teardown(test_encryption_pause_central_loc, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_encryption_pause_sla_rem, setup,
+			 ztest_unit_test_setup_teardown(test_encryption_pause_periph_rem, setup,
 							unit_test_noop));
 
 	ztest_run_test_suite(encryption_start);

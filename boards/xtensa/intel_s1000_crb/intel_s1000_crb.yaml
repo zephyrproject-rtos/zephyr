@@ -1,5 +1,5 @@
 identifier: intel_s1000_crb
-name: Intel S1000 using CAVS (Connected Audio Voice and Speech)
+name: Intel S1000 using cAVS (converged Audio Voice and Speech)
 type: mcu
 arch: xtensa
 toolchain:

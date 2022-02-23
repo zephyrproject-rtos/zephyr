@@ -16,12 +16,17 @@
  * operations, and so is a good fit for use with heterogenous shared
  * memory environments (for example, where Zephyr needs to talk to
  * other CPUs in the system running their own software).
+ *
+ * This object does not keep track of the last sequence number read: the
+ * reader must keep that state and provide it on every read
+ * operation. After reaching "steady state", 'end' and 'start' are one
+ * byte apart because the buffer is always full.
  */
 struct sys_winstream {
 	uint32_t len;   /* Length of data[] in bytes */
 	uint32_t start; /* Index of first valid byte in data[] */
 	uint32_t end;   /* Index of next byte in data[] to write */
-	uint32_t seq;   /* Mod-2^32 index of end since stream init */
+	uint32_t seq;   /* Mod-2^32 index of 'end' since stream init */
 	uint8_t data[];
 };
 
@@ -78,8 +83,8 @@ void sys_winstream_write(struct sys_winstream *ws,
  * @param ws A sys_winstream from which to read
  * @param seq A pointer to an integer containing the last sequence
  *            number read from the stream, or zero to indicate "start
- *            of stream".  The current state of the stream will be
- *            returned in the pointer for use in future calls.
+ *            of stream". It is updated in place and returned for
+ *            future calls and for detecting underflows.
  * @param buf A buffer into which to store the data read
  * @param buflen The length of buf in bytes
  * @return The number of bytes written into the buffer

@@ -3,8 +3,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
-set(NO_BOILERPLATE TRUE)
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} ..)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} .. COMPONENTS doc)
 
 file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
@@ -14,6 +13,7 @@ message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
 set(SPHINXOPTS "-j auto" CACHE STRING "Default Sphinx Options")
 set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
+set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
 
@@ -35,11 +35,6 @@ find_program(LATEXMK latexmk)
 if(NOT LATEX_PDFLATEX_FOUND OR NOT LATEXMK)
   message(WARNING "LaTeX components not found. PDF build will not be available.")
 endif()
-
-include(${ZEPHYR_BASE}/cmake/python.cmake)
-
-# Find west to (optionally) process modules for Kconfig
-find_program(WEST west)
 
 #-------------------------------------------------------------------------------
 # Environment & Paths
@@ -103,11 +98,6 @@ set_target_properties(
 # kconfig
 
 set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
-list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
-file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
-
-include(${ZEPHYR_BASE}/cmake/extensions.cmake)
-include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 foreach(module_name ${ZEPHYR_MODULE_NAMES})
   zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
@@ -170,10 +160,14 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_KCONFIG_RES
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
 
-set(DTS_ROOT_ARGS)
+set(DTS_ARGS)
 foreach(root ${DTS_ROOTS})
-  list(APPEND DTS_ROOT_ARGS --dts-root ${root})
+  list(APPEND DTS_ARGS --dts-root ${root})
 endforeach()
+
+if(DT_TURBO_MODE)
+  list(APPEND DTS_ARGS --turbo-mode)
+endif()
 
 add_custom_target(
   devicetree
@@ -182,7 +176,7 @@ add_custom_target(
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
     --vendor-prefixes ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt
-    ${DTS_ROOT_ARGS}
+    ${DTS_ARGS}
     ${DOCS_SRC_DIR}/reference/devicetree
   VERBATIM
   USES_TERMINAL

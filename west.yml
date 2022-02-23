@@ -42,7 +42,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 09a9d913c61dccbb8ff92d8943b452c614ac5292
+      revision: 9237454a30bcf6e14a89db174e8dbeb8f31831d2
       path: modules/fs/fatfs
       groups:
         - fs
@@ -57,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 9f78f520f6cbb997e5b44fe8ab17dd5bf2448095
+      revision: 7c24242679372edc81cc1f9968e02b51127d3677
       path: modules/hal/atmel
       groups:
         - hal

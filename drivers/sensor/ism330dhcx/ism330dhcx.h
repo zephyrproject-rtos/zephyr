@@ -47,12 +47,7 @@ struct ism330dhcx_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	uint16_t i2c_slv_addr;
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_config spi_conf;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const char *gpio_cs_port;
-	uint8_t cs_gpio;
-	uint8_t cs_gpio_flags;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
+	struct spi_dt_spec spi;
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 };
 
@@ -131,10 +126,6 @@ struct ism330dhcx_data {
 	struct k_work work;
 #endif
 #endif /* CONFIG_ISM330DHCX_TRIGGER */
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif
 };
 
 int ism330dhcx_spi_init(const struct device *dev);

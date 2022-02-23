@@ -117,9 +117,6 @@ enum z_log_msg2_mode {
 	 * more code size.
 	 */
 	Z_LOG_MSG2_MODE_ZERO_COPY,
-
-	/* Mode used when synchronous logging is enabled. */
-	Z_LOG_MSG2_MODE_SYNC
 };
 
 #define Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, _dlen) \
@@ -193,23 +190,6 @@ enum z_log_msg2_mode {
 	ceiling_fraction(ROUND_UP(Z_LOG_MSG2_LEN(pkg_len, data_len), \
 				  Z_LOG_MSG2_ALIGNMENT), \
 			 sizeof(uint32_t))
-
-#define Z_LOG_MSG2_SYNC(_domain_id, _source, _level, _data, _dlen, ...) do { \
-	int _plen; \
-	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-				0, __VA_ARGS__); \
-	struct log_msg2 *_msg; \
-	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, _dlen)); \
-	if (_plen) {\
-		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
-					Z_LOG_MSG2_ALIGN_OFFSET, \
-					0, __VA_ARGS__); \
-	} \
-	struct log_msg2_desc _desc = \
-		     Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
-			   (uint32_t)_plen, _dlen); \
-	z_log_msg2_finalize(_msg, _source, _desc, _data); \
-} while (0)
 
 #define Z_LOG_MSG2_STACK_CREATE(_domain_id, _source, _level, _data, _dlen, ...)\
 do { \
@@ -353,25 +333,8 @@ do {\
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
-#elif defined(CONFIG_LOG_MODE_IMMEDIATE) /* CONFIG_LOG2_ALWAYS_RUNTIME */
-#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
-			  _level, _data, _dlen, ...) \
-do { \
-	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
-	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, 0, __VA_ARGS__)) { \
-		LOG_MSG2_DBG("create runtime message\n");\
-		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
-					  _level, (uint8_t *)_data, _dlen,\
-					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
-		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
-	} else {\
-		Z_LOG_MSG2_SYNC(_domain_id, _source, _level, \
-				_data, _dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG2_MODE_SYNC; \
-	} \
-} while (0)
 #else /* CONFIG_LOG2_ALWAYS_RUNTIME */
-#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+#define Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
@@ -394,7 +357,39 @@ do { \
 	} \
 	(void)_mode; \
 } while (0)
+
+#if defined(__cplusplus)
+#define Z_AUTO_TYPE auto
+#else
+#define Z_AUTO_TYPE __auto_type
+#endif
+
+/* Macro for getting name of a local variable with the exception of the first argument
+ * which is a formatted string in log message.
+ */
+#define Z_LOG_LOCAL_ARG_NAME(idx, arg) COND_CODE_0(idx, (arg), (_v##idx))
+
+/* Create local variable from input variable (expect for the first (fmt) argument). */
+#define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
+	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg) + 0))
+
+/* First level of processing creates stack variables to be passed for further processing.
+ * This is done to prevent multiple evaluations of input arguments (in case argument
+ * evaluation has side effects, e.g. it is a non-pure function call).
+ */
+#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
+			   _level, _data, _dlen, ...) \
+do { \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	FOR_EACH_IDX(Z_LOG_LOCAL_ARG_CREATE, (;), __VA_ARGS__); \
+	_Pragma("GCC diagnostic pop") \
+	Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+			   _level, _data, _dlen, \
+			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
+} while (0)
 #endif /* CONFIG_LOG2_ALWAYS_RUNTIME */
+
 
 #define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
 			  _level, _data, _dlen, ...) \

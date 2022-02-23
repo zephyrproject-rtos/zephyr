@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include <device.h>
+#include <drivers/gpio.h>
 #include <kernel.h>
 #include <errno.h>
 #include <sys/util.h>
@@ -639,22 +640,18 @@ static int dsa_ksz8794_set_lowspeed_drivestrength(struct ksz8xxx_data *pdev)
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-static int dsa_ksz8xxx_gpio_reset(struct ksz8xxx_data *pdev)
+static int dsa_ksz8xxx_gpio_reset(void)
 {
-	const struct device *reset_dev =
-		device_get_binding(DT_INST_GPIO_LABEL(0, reset_gpios));
-	const uint32_t reset_pin = DT_INST_GPIO_PIN(0, reset_gpios);
+	struct gpio_dt_spec reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios);
 
-	if (reset_dev == NULL) {
-		LOG_ERR("Could not get RESET device for KSZ8794");
-		return -EINVAL;
+	if (!device_is_ready(reset_gpio.port)) {
+		LOG_ERR("Reset GPIO device not ready");
+		return -ENODEV;
 	}
-	gpio_pin_configure(reset_dev, reset_pin,
-			   DT_INST_GPIO_FLAGS(0, reset_gpios) |
-			   GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&reset_gpio, GPIO_OUTPUT_ACTIVE);
 	k_msleep(10);
 
-	gpio_pin_set(reset_dev, reset_pin, 0);
+	gpio_pin_set_dt(&reset_gpio, 0);
 
 	return 0;
 }
@@ -694,7 +691,7 @@ int dsa_hw_init(struct ksz8xxx_data *pdev)
 
 	/* Hard reset */
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	dsa_ksz8xxx_gpio_reset(pdev);
+	dsa_ksz8xxx_gpio_reset();
 
 	/* Time needed for chip to completely power up (100ms) */
 	k_busy_wait(KSZ8XXX_HARD_RESET_WAIT);
@@ -991,9 +988,7 @@ static void dsa_iface_init(struct net_if *iface)
 
 	/* Find master port for ksz8794 switch */
 	if (context->iface_master == NULL) {
-		dm = device_get_binding(DT_INST_PROP_BY_PHANDLE(0,
-								dsa_master_port,
-								label));
+		dm = DEVICE_DT_GET(DT_INST_PHANDLE(0, dsa_master_port));
 		context->iface_master = net_if_lookup_by_dev(dm);
 		if (context->iface_master == NULL) {
 			LOG_ERR("DSA: Master iface NOT found!");

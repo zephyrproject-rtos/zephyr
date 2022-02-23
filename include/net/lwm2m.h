@@ -45,6 +45,7 @@
 #define LWM2M_OBJECT_LOCATION_ID                6
 #define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID 7
 #define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID     9
+#define LWM2M_OBJECT_PORTFOLIO_ID               16
 #define LWM2M_OBJECT_GATEWAY_ID                 25
 /* clang-format on */
 
@@ -1061,6 +1062,19 @@ int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_update_device_service_period(uint32_t period_ms);
+
+/**
+ * @brief Check whether a path is observed
+ *
+ * @param[in] pathstr LwM2M path string to check, e.g. "3/0/1"
+ *
+ * @return true when there exists an observation of the same level
+ *         or lower as the given path, false if it doesn't or path is not a
+ *         valid LwM2M-path.
+ *         E.g. true if path refers to a resource and the parent object has an
+ *         observation, false for the inverse.
+ */
+bool lwm2m_engine_path_is_observed(const char *pathstr);
 
 /**
  * @brief Start the LwM2M engine

@@ -16,11 +16,11 @@ static const struct device *dev;
 static uint8_t sleep_count;
 
 
-void pm_power_state_set(struct pm_state_info info)
+void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(info);
+	ARG_UNUSED(substate_id);
 
-	enum pm_device_state state;
+	enum pm_device_state dev_state;
 
 	switch (sleep_count) {
 	case 1:
@@ -28,10 +28,10 @@ void pm_power_state_set(struct pm_state_info info)
 		 * Devices are suspended before SoC on PM_STATE_SUSPEND_TO_RAM, that is why
 		 * we can check the device state here.
 		 */
-		zassert_equal(info.state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
+		zassert_equal(state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
 
-		(void)pm_device_state_get(dev, &state);
-		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, "Wrong device state");
+		(void)pm_device_state_get(dev, &dev_state);
+		zassert_equal(dev_state, PM_DEVICE_STATE_SUSPENDED, "Wrong device state");
 
 		/* Enable wakeup source. Next time the system is called
 		 * to sleep, this device will still be active.
@@ -39,21 +39,24 @@ void pm_power_state_set(struct pm_state_info info)
 		(void)pm_device_wakeup_enable((struct device *)dev, true);
 		break;
 	case 2:
-		zassert_equal(info.state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
+		zassert_equal(state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
 
 		/* Second time this function is called, the system is asked to standby
 		 * and devices were suspended.
 		 */
-		(void)pm_device_state_get(dev, &state);
-		zassert_equal(state, PM_DEVICE_STATE_ACTIVE, "Wrong device state");
+		(void)pm_device_state_get(dev, &dev_state);
+		zassert_equal(dev_state, PM_DEVICE_STATE_ACTIVE, "Wrong device state");
 		break;
 	default:
 		break;
 	}
 }
 
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
 	irq_unlock(0);
 }
 

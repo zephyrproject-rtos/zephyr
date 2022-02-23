@@ -85,10 +85,18 @@
 			label = "RTIMER";
 			girqs = <23 10>;
 		};
+		bbram: bb-ram@4000a800 {
+			compatible = "microchip,xec-bbram";
+			reg = <0x4000a800 0x80>;
+			reg-names = "memory";
+			label = "BBRAM";
+		};
 		wdog: watchdog@40000400 {
 			compatible = "microchip,xec-watchdog";
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
+			girqs = <21 2>;
+			pcrs = <1 9>;
 			label = "WDT_0";
 		};
 		uart0: uart@400f2400 {

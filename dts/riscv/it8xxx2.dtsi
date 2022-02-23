@@ -603,13 +603,15 @@
 			       0x00f03400 0xc0    /* eSPI Queue 1 */
 			       0x00f01200 6       /* EC2I bridge */
 			       0x00f01300 11      /* Host KBC */
-			       0x00f01500 0x100>; /* Host PMC */
+			       0x00f01500 0x100   /* Host PMC */
+			       0x00f01000 0xd1>;  /* SMFI */
 			interrupts = <IT8XXX2_IRQ_ESPI IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_ESPI_VW IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_KBC_IBF IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_KBC_OBE IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_PMC1_IBF IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_PCH_P80 IRQ_TYPE_LEVEL_HIGH>;
+				      IT8XXX2_IRQ_PCH_P80 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PMC2_IBF IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			label = "ESPI_0";
 			#address-cells = <1>;
@@ -883,6 +885,17 @@
 			compatible = "ite,it8xxx2-gctrl";
 			reg = <0x00f02000 0x100>;
 			label = "GCTRL";
+		};
+
+		peci0: peci@f02c00 {
+			compatible = "ite,peci-it8xxx2";
+			reg = <0x00f02c00 15>;
+			label = "PECI_0";
+			#address-cells=<1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intc>;
+			interrupts = <160 IRQ_TYPE_LEVEL_HIGH>;
+			pinctrl-0 = <&pinctrl_peci>;
 		};
 
 		kscan0: kscan@f01d00 {

@@ -20,14 +20,14 @@
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
+	if (info->state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power state %u", state);
 		return;
 	}
 
-	switch (info.substate_id) {
+	switch (substate_id) {
 	case 1: /* this corresponds to the STOP0 mode: */
 		/* enter STOP0 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
@@ -44,18 +44,18 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		break;
 	default:
 		LOG_DBG("Unsupported power state substate-id %u",
-			info.substate_id);
+			substate_id);
 		break;
 	}
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power substate %u", info.state);
+	if (state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power substate %u", state);
 	} else {
-		switch (info.substate_id) {
+		switch (substate_id) {
 		case 1:	/* STOP0 */
 			__fallthrough;
 		case 2:	/* STOP1 */
@@ -65,7 +65,7 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
-				info.substate_id);
+				substate_id);
 			break;
 		}
 		/* need to restore the clock */

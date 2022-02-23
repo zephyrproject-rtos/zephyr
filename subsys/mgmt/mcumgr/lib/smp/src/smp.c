@@ -321,10 +321,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 			break;
 		}
 
-		rc = mgmt_streamer_init_writer(&streamer->mgmt_stmr, rsp);
-		if (rc != 0) {
-			break;
-		}
+		mgmt_streamer_init_writer(&streamer->mgmt_stmr, rsp);
 
 		/* Process the request payload and build the response. */
 		rc = smp_handle_single_req(streamer, &req_hdr, &handler_found);

@@ -9,6 +9,8 @@
 #include <rpi_pico/rp2040.dtsi>
 #include "rpi_pico-pinctrl.dtsi"
 
+#include <dt-bindings/i2c/i2c.h>
+
 / {
 	chosen {
 		zephyr,sram = &sram0;
@@ -67,4 +69,18 @@
 
 &gpio0 {
 	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
 };

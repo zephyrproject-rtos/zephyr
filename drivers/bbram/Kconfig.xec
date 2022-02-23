@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Google Inc
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ST_BBRAM_XEC := microchip,xec-bbram
+
+config BBRAM_XEC
+	bool "Microchip XEC Battery-backed RAM drivers"
+	depends on SOC_FAMILY_MEC
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_BBRAM_XEC))
+	help
+	  This option enables the BBRAM driver for Microchip XEC family of
+	  processors.

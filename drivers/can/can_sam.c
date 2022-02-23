@@ -9,9 +9,10 @@
 #include <drivers/can.h>
 #include <soc.h>
 #include <kernel.h>
-
 #include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
+
+LOG_MODULE_REGISTER(can_sam, CONFIG_CAN_LOG_LEVEL);
+
 #define DT_DRV_COMPAT atmel_sam_can
 
 struct can_sam_config {

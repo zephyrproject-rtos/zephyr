@@ -5,3 +5,4 @@ tests:
     timeout: 300
     integration_platforms:
       - native_posix
+    toolchain_exclude: xcc

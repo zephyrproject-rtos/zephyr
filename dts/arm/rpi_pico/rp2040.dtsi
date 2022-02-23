@@ -45,6 +45,12 @@
 			#clock-cells = <0>;
 		};
 
+		system_clk: system-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <125000000>;
+			#clock-cells = <0>;
+		};
+
 		pinctrl: pin-controller@40014000 {
 			compatible = "raspberrypi,pico-pinctrl";
 			reg = <0x40014000 DT_SIZE_K(4)>;
@@ -79,6 +85,30 @@
 			interrupts = <21 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "uart1";
 			label = "UART_1";
+			status = "disabled";
+		};
+
+		i2c0: i2c@40044000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40044000 DT_SIZE_K(4)>;
+			clocks = <&system_clk>;
+			interrupts = <23 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "i2c0";
+			label = "I2C_0";
+			status = "disabled";
+		};
+
+		i2c1: i2c@40048000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40048000 DT_SIZE_K(4)>;
+			clocks = <&system_clk>;
+			interrupts = <24 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "i2c1";
+			label = "I2C_1";
 			status = "disabled";
 		};
 	};

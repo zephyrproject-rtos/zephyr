@@ -76,6 +76,32 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  */
 
 /**
+ * @brief equivalent of memset() for early boot usage
+ *
+ * Architectures that can't safely use the regular (optimized) memset very
+ * early during boot because e.g. hardware isn't yet sufficiently initialized
+ * may override this with their own safe implementation.
+ */
+__boot_func
+void __weak z_early_memset(void *dst, int c, size_t n)
+{
+	(void) memset(dst, c, n);
+}
+
+/**
+ * @brief equivalent of memcpy() for early boot usage
+ *
+ * Architectures that can't safely use the regular (optimized) memcpy very
+ * early during boot because e.g. hardware isn't yet sufficiently initialized
+ * may override this with their own safe implementation.
+ */
+__boot_func
+void __weak z_early_memcpy(void *dst, const void *src, size_t n)
+{
+	(void) memcpy(dst, src, n);
+}
+
+/**
  * @brief Clear BSS
  *
  * This routine clears the BSS region, so all bytes are 0.
@@ -83,14 +109,21 @@ extern void idle(void *unused1, void *unused2, void *unused3);
 __boot_func
 void z_bss_zero(void)
 {
-	(void)memset(__bss_start, 0, __bss_end - __bss_start);
+	z_early_memset(__bss_start, 0, __bss_end - __bss_start);
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-	(void)memset(&__ccm_bss_start, 0,
-		     ((uint32_t) &__ccm_bss_end - (uint32_t) &__ccm_bss_start));
+	z_early_memset(&__ccm_bss_start, 0,
+		       (uintptr_t) &__ccm_bss_end
+		       - (uintptr_t) &__ccm_bss_start);
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-	(void)memset(&__dtcm_bss_start, 0,
-		     ((uint32_t) &__dtcm_bss_end - (uint32_t) &__dtcm_bss_start));
+	z_early_memset(&__dtcm_bss_start, 0,
+		       (uintptr_t) &__dtcm_bss_end
+		       - (uintptr_t) &__dtcm_bss_start);
+#endif
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+	z_early_memset(&__ocm_bss_start, 0,
+		       (uintptr_t) &__ocm_bss_end
+		       - (uintptr_t) &__ocm_bss_start);
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void bss_zeroing_relocation(void);
@@ -98,8 +131,8 @@ void z_bss_zero(void)
 	bss_zeroing_relocation();
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_COVERAGE_GCOV
-	(void)memset(&__gcov_bss_start, 0,
-		 ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
+	z_early_memset(&__gcov_bss_start, 0,
+		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif
 }
 
@@ -115,9 +148,9 @@ void z_bss_zero(void)
 __boot_func
 void z_bss_zero_boot(void)
 {
-	(void)memset(&lnkr_boot_bss_start, 0,
-		     (uintptr_t)&lnkr_boot_bss_end
-		     - (uintptr_t)&lnkr_boot_bss_start);
+	z_early_memset(&lnkr_boot_bss_start, 0,
+		       (uintptr_t)&lnkr_boot_bss_end
+		       - (uintptr_t)&lnkr_boot_bss_start);
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
@@ -137,9 +170,9 @@ __pinned_func
 #endif
 void z_bss_zero_pinned(void)
 {
-	(void)memset(&lnkr_pinned_bss_start, 0,
-		(uintptr_t)&lnkr_pinned_bss_end
-		- (uintptr_t)&lnkr_pinned_bss_start);
+	z_early_memset(&lnkr_pinned_bss_start, 0,
+		       (uintptr_t)&lnkr_pinned_bss_end
+		       - (uintptr_t)&lnkr_pinned_bss_start);
 }
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 

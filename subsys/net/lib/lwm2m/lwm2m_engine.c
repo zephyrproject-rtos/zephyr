@@ -67,6 +67,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define	COAP_OPTION_BUF_LEN	13
 #endif
 
+#define BINDING_OPT_MAX_LEN	3 /* "UQ" */
+#define QUEUE_OPT_MAX_LEN	2 /* "Q" */
 #define MAX_TOKEN_LEN		8
 
 struct observe_node {
@@ -139,6 +141,13 @@ static struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id,
 
 /* Shared set of in-flight LwM2M messages */
 static struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
+
+/* Forward declarations. */
+static int path_to_objs(const struct lwm2m_obj_path *path,
+			struct lwm2m_engine_obj_inst **obj_inst,
+			struct lwm2m_engine_obj_field **obj_field,
+			struct lwm2m_engine_res **res,
+			struct lwm2m_engine_res_inst **res_inst);
 
 /* for debugging: to print IP addresses */
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
@@ -381,6 +390,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	struct lwm2m_engine_obj *obj = NULL;
 	struct lwm2m_engine_obj_field *obj_field = NULL;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct observe_node *obs;
 	struct notification_attrs attrs = {
 		.flags = BIT(LWM2M_ATTR_PMIN) | BIT(LWM2M_ATTR_PMAX),
@@ -435,7 +445,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	}
 
 	/* check if object instance exists */
-	if (msg->path.level >= 2U) {
+	if (msg->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST) {
 		obj_inst = get_engine_obj_inst(msg->path.obj_id,
 					       msg->path.obj_inst_id);
 		if (!obj_inst) {
@@ -451,7 +461,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	}
 
 	/* check if resource exists */
-	if (msg->path.level >= 3U) {
+	if (msg->path.level >= LWM2M_PATH_LEVEL_RESOURCE) {
 		for (i = 0; i < obj_inst->resource_count; i++) {
 			if (obj_inst->resources[i].res_id == msg->path.res_id) {
 				break;
@@ -486,6 +496,24 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		}
 	}
 
+	/* check if resource instance exists */
+	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+	    msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		ret = path_to_objs(&msg->path, NULL, NULL, NULL, &res_inst);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (res_inst == NULL) {
+			return -ENOENT;
+		}
+
+		ret = update_attrs(res_inst, &attrs);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* find an unused observer index node */
 	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_OBSERVER; i++) {
 		if (!observe_node_data[i].tkl) {
@@ -506,16 +534,16 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	observe_node_data[i].event_timestamp =
 			observe_node_data[i].last_timestamp;
 	observe_node_data[i].min_period_sec = attrs.pmin;
-	observe_node_data[i].max_period_sec = (attrs.pmax > 0) ? MAX(attrs.pmax, attrs.pmin)
-							       : attrs.pmax;
+	observe_node_data[i].max_period_sec = (attrs.pmax >= attrs.pmin) ?
+						(uint32_t)attrs.pmax : 0UL;
 	observe_node_data[i].format = format;
 	observe_node_data[i].counter = OBSERVE_COUNTER_START;
 	sys_slist_append(&msg->ctx->observer,
 			 &observe_node_data[i].node);
 
-	LOG_DBG("OBSERVER ADDED %u/%u/%u(%u) token:'%s' addr:%s",
+	LOG_DBG("OBSERVER ADDED %u/%u/%u/%u(%u) token:'%s' addr:%s",
 		msg->path.obj_id, msg->path.obj_inst_id,
-		msg->path.res_id, msg->path.level,
+		msg->path.res_id, msg->path.res_inst_id, msg->path.level,
 		log_strdup(sprint_token(token, tkl)),
 		log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
 
@@ -917,6 +945,8 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 		/* make sure we want to clear the reply */
 		coap_reply_clear(msg->reply);
 	}
+
+	sys_slist_find_and_remove(&msg->ctx->pending_sends, &msg->node);
 
 	if (release) {
 		(void)memset(msg, 0, sizeof(*msg));
@@ -2010,17 +2040,89 @@ int lwm2m_engine_update_observer_max_period(const char *pathstr, uint32_t period
 
 void lwm2m_engine_get_binding(char *binding)
 {
+	/* Defaults to UDP. */
+	strncpy(binding, "U", BINDING_OPT_MAX_LEN);
+#if CONFIG_LWM2M_VERSION_1_0
+	/* In LwM2M 1.0 binding and queue mode are in same parameter */
+	char queue[QUEUE_OPT_MAX_LEN];
+
+	lwm2m_engine_get_queue_mode(queue);
+	strncat(binding, queue, QUEUE_OPT_MAX_LEN);
+#endif
+}
+
+void lwm2m_engine_get_queue_mode(char *queue)
+{
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		strcpy(binding, "UQ");
+		strncpy(queue, "Q", QUEUE_OPT_MAX_LEN);
 	} else {
-		/* Defaults to UDP. */
-		strcpy(binding, "U");
+		strncpy(queue, "", QUEUE_OPT_MAX_LEN);
 	}
+}
+
+static int lwm2m_engine_allocate_resource_instance(struct lwm2m_engine_res *res,
+						   struct lwm2m_engine_res_inst **res_inst,
+						   uint8_t resource_instance_id)
+{
+	int i;
+
+	if (!res->res_instances || res->res_inst_count == 0) {
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < res->res_inst_count; i++) {
+		if (res->res_instances[i].res_inst_id ==
+		    RES_INSTANCE_NOT_CREATED) {
+			break;
+		}
+	}
+
+	if (i >= res->res_inst_count) {
+		return -ENOMEM;
+	}
+
+	res->res_instances[i].res_inst_id = resource_instance_id;
+	*res_inst = &res->res_instances[i];
+	return 0;
+}
+
+int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_engine_res **res,
+				     struct lwm2m_engine_res_inst **res_inst)
+{
+	int ret;
+	struct lwm2m_engine_res *r = NULL;
+	struct lwm2m_engine_res_inst *r_i = NULL;
+
+	ret = path_to_objs(path, NULL, NULL, &r, &r_i);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!r) {
+		return -ENOENT;
+	}
+	/* Store resource pointer */
+	*res = r;
+
+	if (!r_i) {
+		if (path->level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
+			return -EINVAL;
+		}
+
+		ret = lwm2m_engine_allocate_resource_instance(r, &r_i, path->res_inst_id);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* Store resource instance pointer */
+	*res_inst = r_i;
+	return 0;
 }
 
 int lwm2m_engine_create_res_inst(const char *pathstr)
 {
-	int ret, i;
+	int ret;
 	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_obj_path path;
@@ -2050,25 +2152,7 @@ int lwm2m_engine_create_res_inst(const char *pathstr)
 		return -EINVAL;
 	}
 
-	if (!res->res_instances || res->res_inst_count == 0) {
-		LOG_ERR("no available res instances");
-		return -ENOMEM;
-	}
-
-	for (i = 0; i < res->res_inst_count; i++) {
-		if (res->res_instances[i].res_inst_id ==
-		    RES_INSTANCE_NOT_CREATED) {
-			break;
-		}
-	}
-
-	if (i >= res->res_inst_count) {
-		LOG_ERR("no available res instances");
-		return -ENOMEM;
-	}
-
-	res->res_instances[i].res_inst_id = path.res_inst_id;
-	return 0;
+	return lwm2m_engine_allocate_resource_instance(res, &res_inst, path.res_inst_id);
 }
 
 int lwm2m_engine_delete_res_inst(const char *pathstr)
@@ -2103,6 +2187,35 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 	res_inst->res_inst_id = RES_INSTANCE_NOT_CREATED;
 
 	return 0;
+}
+
+bool lwm2m_engine_path_is_observed(const char *pathstr)
+{
+	struct observe_node *obs;
+	struct lwm2m_obj_path path;
+	int ret;
+	int i;
+
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return false;
+	}
+
+	for (i = 0; i < sock_nfds; ++i) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&sock_ctx[i]->observer, obs, node) {
+			if (obs->path.level <= path.level &&
+			    (obs->path.obj_id == path.obj_id &&
+			     (obs->path.level < LWM2M_PATH_LEVEL_OBJECT_INST ||
+			      (obs->path.obj_inst_id == path.obj_inst_id &&
+			       (obs->path.level < LWM2M_PATH_LEVEL_RESOURCE ||
+				(obs->path.res_id == path.res_id &&
+				 (obs->path.level < LWM2M_PATH_LEVEL_RESOURCE_INST ||
+				  obs->path.res_inst_id == path.res_inst_id))))))) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 int lwm2m_engine_register_read_callback(const char *pathstr,
@@ -2302,7 +2415,6 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			break;
 
 		case LWM2M_RES_TYPE_U32:
-		case LWM2M_RES_TYPE_TIME:
 			ret = engine_put_s64(&msg->out, &msg->path,
 					     (int64_t)*(uint32_t *)data_ptr);
 			break;
@@ -2335,6 +2447,11 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		case LWM2M_RES_TYPE_S8:
 			ret = engine_put_s8(&msg->out, &msg->path,
 					    *(int8_t *)data_ptr);
+			break;
+
+		case LWM2M_RES_TYPE_TIME:
+			ret = engine_put_time(&msg->out, &msg->path,
+					       (int64_t)*(uint32_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_BOOL:
@@ -2588,8 +2705,16 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			len = strlen((char *)write_buf);
 			break;
 
-		case LWM2M_RES_TYPE_U32:
 		case LWM2M_RES_TYPE_TIME:
+			ret = engine_get_time(&msg->in, &temp64);
+			if (ret < 0) {
+				break;
+			}
+			*(uint32_t *)write_buf = temp64;
+			len = 4;
+			break;
+
+		case LWM2M_RES_TYPE_U32:
 			ret = engine_get_s64(&msg->in, &temp64);
 			if (ret < 0) {
 				break;
@@ -2731,6 +2856,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	struct coap_option options[NR_LWM2M_ATTR];
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_res *res = NULL;
+	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_attr *attr;
 	struct notification_attrs nattrs = { 0 };
 	struct observe_node *obs;
@@ -2758,16 +2884,9 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	}
 
 	/* get lwm2m_attr slist */
-	if (msg->path.level == 3U) {
-		ret = path_to_objs(&msg->path, NULL, NULL, &res, NULL);
-		if (ret < 0) {
-			return ret;
-		}
-
-		ref = res;
-	} else if (msg->path.level == 1U) {
+	if (msg->path.level == LWM2M_PATH_LEVEL_OBJECT) {
 		ref = obj;
-	} else if (msg->path.level == 2U) {
+	} else if (msg->path.level == LWM2M_PATH_LEVEL_OBJECT_INST) {
 		obj_inst = get_engine_obj_inst(msg->path.obj_id,
 					       msg->path.obj_inst_id);
 		if (!obj_inst) {
@@ -2775,6 +2894,22 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		}
 
 		ref = obj_inst;
+	} else if (msg->path.level == LWM2M_PATH_LEVEL_RESOURCE) {
+		ret = path_to_objs(&msg->path, NULL, NULL, &res, NULL);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ref = res;
+	} else if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+		   msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+
+		ret = path_to_objs(&msg->path, NULL, NULL, NULL, &res_inst);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ref = res_inst;
 	} else {
 		/* bad request */
 		return -EEXIST;
@@ -2939,7 +3074,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		}
 	}
 
-	/* add attribute to obj/obj_inst/res */
+	/* add attribute to obj/obj_inst/res/res_inst */
 	for (type = 0U; nattrs.flags && type < NR_LWM2M_ATTR; type++) {
 		if (!(BIT(type) & nattrs.flags)) {
 			continue;
@@ -3002,8 +3137,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			return ret;
 		}
 
-		if (obs->path.level > 1) {
-			if (msg->path.level > 1 &&
+		if (obs->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST) {
+			if (msg->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST &&
 			    msg->path.obj_inst_id != obs->path.obj_inst_id) {
 				continue;
 			}
@@ -3025,8 +3160,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			}
 		}
 
-		if (obs->path.level > 2) {
-			if (msg->path.level > 2 &&
+		if (obs->path.level >= LWM2M_PATH_LEVEL_RESOURCE) {
+			if (msg->path.level >= LWM2M_PATH_LEVEL_RESOURCE &&
 			    msg->path.res_id != obs->path.res_id) {
 				continue;
 			}
@@ -3045,11 +3180,34 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			}
 		}
 
-		LOG_DBG("%d/%d/%d(%d) updated from %d/%d to %u/%u",
+		if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+		    obs->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+			if (msg->path.level == LWM2M_PATH_LEVEL_RESOURCE_INST &&
+			    msg->path.res_inst_id != obs->path.res_inst_id) {
+				continue;
+			}
+
+			if (!res_inst || res_inst->res_inst_id != obs->path.res_inst_id) {
+				ret = path_to_objs(&obs->path, NULL, NULL, NULL,
+						   &res_inst);
+				if (ret < 0) {
+					return ret;
+				}
+			}
+
+			ret = update_attrs(res_inst, &nattrs);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		LOG_DBG("%d/%d/%d/%d(%d) updated from %d/%d to %u/%u",
 			obs->path.obj_id, obs->path.obj_inst_id,
-			obs->path.res_id, obs->path.level,
-			obs->min_period_sec, obs->max_period_sec,
-			nattrs.pmin, MAX(nattrs.pmin, nattrs.pmax));
+			obs->path.res_id, obs->path.res_inst_id,
+			obs->path.level, obs->min_period_sec,
+			obs->max_period_sec, nattrs.pmin,
+			(nattrs.pmax >= nattrs.pmin) ? nattrs.pmax : 0);
+
 		obs->min_period_sec = (uint32_t)nattrs.pmin;
 		/* Ignore pmax value if pmax < pmin. */
 		obs->max_period_sec = (nattrs.pmax >= nattrs.pmin) ?
@@ -3153,15 +3311,16 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	uint8_t num_read = 0U;
 
 	if (msg->path.level >= 2U) {
-		obj_inst = get_engine_obj_inst(msg->path.obj_id,
-					       msg->path.obj_inst_id);
+		obj_inst = get_engine_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
+		if (!obj_inst) {
+			/* When Object instace is indicated error have to be reported */
+			return -ENOENT;
+		}
 	} else if (msg->path.level == 1U) {
-		/* find first obj_inst with path's obj_id */
+		/* find first obj_inst with path's obj_id.
+		 * Path level 1 can accept NULL. It define empty payload to response.
+		 */
 		obj_inst = next_engine_obj_inst(msg->path.obj_id, -1);
-	}
-
-	if (!obj_inst) {
-		return -ENOENT;
 	}
 
 	/* set output content-format */
@@ -3299,6 +3458,54 @@ move_forward:
 	return ret;
 }
 
+static int lwm2m_discover_add_res(struct lwm2m_message *msg,
+				  struct lwm2m_engine_obj_inst *obj_inst,
+				  struct lwm2m_engine_res *res)
+{
+	int ret;
+	struct lwm2m_obj_path path = {
+		.obj_id = obj_inst->obj->obj_id,
+		.obj_inst_id = obj_inst->obj_inst_id,
+		.res_id = res->res_id,
+		.level = LWM2M_PATH_LEVEL_RESOURCE,
+	};
+
+	ret = engine_put_corelink(&msg->out, &path);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Report resource instances, if applicable. */
+	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+	    msg->path.level == LWM2M_PATH_LEVEL_RESOURCE &&
+	    res->multi_res_inst) {
+		for (int i = 0; i < res->res_inst_count; i++) {
+			struct lwm2m_engine_res_inst *res_inst =
+						&res->res_instances[i];
+
+			if (res_inst->res_inst_id ==
+				RES_INSTANCE_NOT_CREATED) {
+				continue;
+			}
+
+			path = (struct lwm2m_obj_path){
+				.obj_id = obj_inst->obj->obj_id,
+				.obj_inst_id = obj_inst->obj_inst_id,
+				.res_id = res->res_id,
+				.res_inst_id = res_inst->res_inst_id,
+				.level = LWM2M_PATH_LEVEL_RESOURCE_INST,
+			};
+
+			ret = engine_put_corelink(&msg->out, &path);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	return 0;
+}
+
 int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 {
 	struct lwm2m_engine_obj *obj;
@@ -3415,14 +3622,8 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 					continue;
 				}
 
-				struct lwm2m_obj_path path = {
-					.obj_id = obj_inst->obj->obj_id,
-					.obj_inst_id = obj_inst->obj_inst_id,
-					.res_id = obj_inst->resources[i].res_id,
-					.level = LWM2M_PATH_LEVEL_RESOURCE,
-				};
-
-				ret = engine_put_corelink(&msg->out, &path);
+				ret = lwm2m_discover_add_res(msg, obj_inst,
+							     &obj_inst->resources[i]);
 				if (ret < 0) {
 					return ret;
 				}
@@ -3483,6 +3684,31 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 	return ret;
 }
 
+int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
+				       struct lwm2m_engine_obj_inst *obj_inst,
+				       struct lwm2m_engine_obj_field **obj_field)
+{
+	struct lwm2m_engine_obj_field *o_f;
+
+	o_f = lwm2m_get_engine_obj_field(obj_inst->obj, msg->path.res_id);
+	if (!o_f) {
+		return -ENOENT;
+	}
+
+	*obj_field = o_f;
+
+	if (!LWM2M_HAS_PERM(o_f, LWM2M_PERM_W) &&
+	    !lwm2m_engine_bootstrap_override(msg->ctx, &msg->path)) {
+		return -EPERM;
+	}
+
+	if (!obj_inst->resources || obj_inst->resource_count == 0U) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 struct lwm2m_engine_obj *lwm2m_engine_get_obj(
 					const struct lwm2m_obj_path *path)
 {
@@ -3519,6 +3745,24 @@ struct lwm2m_engine_res *lwm2m_engine_get_res(
 	}
 
 	return res;
+}
+
+struct lwm2m_engine_res_inst *lwm2m_engine_get_res_inst(
+					const struct lwm2m_obj_path *path)
+{
+	struct lwm2m_engine_res_inst *res_inst = NULL;
+	int ret;
+
+	if (path->level != LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		return NULL;
+	}
+
+	ret = path_to_objs(path, NULL, NULL, NULL, &res_inst);
+	if (ret < 0) {
+		return NULL;
+	}
+
+	return res_inst;
 }
 
 bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj)

@@ -13,12 +13,6 @@
 
 LOG_MODULE_REGISTER(nrf5340dk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 
-/* TODO: This should come from DTS, possibly an overlay. */
-#define CPUNET_UARTE_PIN_TX 33
-#define CPUNET_UARTE_PIN_RX 32
-#define CPUNET_UARTE_PIN_RTS 11
-#define CPUNET_UARTE_PIN_CTS 10
-
 #if defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
 #include <../subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/debug.h>
 #else
@@ -28,15 +22,6 @@ LOG_MODULE_REGISTER(nrf5340dk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 static void remoteproc_mgr_config(void)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM)
-	/* UARTE */
-	/* Assign specific GPIOs that will be used to get UARTE from
-	 * nRF5340 Network MCU.
-	 */
-	soc_secure_gpio_pin_mcu_select(CPUNET_UARTE_PIN_TX, NRF_GPIO_PIN_MCUSEL_NETWORK);
-	soc_secure_gpio_pin_mcu_select(CPUNET_UARTE_PIN_RX, NRF_GPIO_PIN_MCUSEL_NETWORK);
-	soc_secure_gpio_pin_mcu_select(CPUNET_UARTE_PIN_RTS, NRF_GPIO_PIN_MCUSEL_NETWORK);
-	soc_secure_gpio_pin_mcu_select(CPUNET_UARTE_PIN_CTS, NRF_GPIO_PIN_MCUSEL_NETWORK);
-
 	/* Route Bluetooth Controller Debug Pins */
 	DEBUG_SETUP();
 #endif /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM) */

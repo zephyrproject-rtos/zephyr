@@ -29,7 +29,7 @@
 #include <ztest.h>
 
 /* size of stack area used by each thread */
-#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 /* Number of memory blocks. The minimum number of blocks needed to run the
  * test is 2

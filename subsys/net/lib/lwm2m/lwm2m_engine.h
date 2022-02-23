@@ -11,7 +11,11 @@
 #include "lwm2m_object.h"
 
 #define LWM2M_PROTOCOL_VERSION_MAJOR 1
+#if CONFIG_LWM2M_VERSION_1_1
+#define LWM2M_PROTOCOL_VERSION_MINOR 1
+#else
 #define LWM2M_PROTOCOL_VERSION_MINOR 0
+#endif
 
 #define LWM2M_PROTOCOL_VERSION_STRING STRINGIFY(LWM2M_PROTOCOL_VERSION_MAJOR) \
 				      "." \
@@ -69,12 +73,21 @@ int  lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id);
 int  lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 				    struct lwm2m_engine_obj_inst **obj_inst,
 				    uint8_t *created);
+/* Validate write access to object. */
+int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
+				       struct lwm2m_engine_obj_inst *obj_inst,
+				       struct lwm2m_engine_obj_field **obj_field);
+/* Create or Allocate resource instance. */
+int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_engine_res **res,
+				     struct lwm2m_engine_res_inst **res_inst);
 
 struct lwm2m_engine_obj *lwm2m_engine_get_obj(
 					const struct lwm2m_obj_path *path);
 struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(
 					const struct lwm2m_obj_path *path);
 struct lwm2m_engine_res *lwm2m_engine_get_res(
+					const struct lwm2m_obj_path *path);
+struct lwm2m_engine_res_inst *lwm2m_engine_get_res_inst(
 					const struct lwm2m_obj_path *path);
 
 bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj);
@@ -116,6 +129,7 @@ int lwm2m_engine_get_resource(const char *pathstr,
 			      struct lwm2m_engine_res **res);
 
 void lwm2m_engine_get_binding(char *binding);
+void lwm2m_engine_get_queue_mode(char *queue);
 
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 				    uint8_t *buf, size_t buflen,

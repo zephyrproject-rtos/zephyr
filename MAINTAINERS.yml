@@ -390,9 +390,7 @@ Disk:
         - "area: Disk Access"
 
 Display drivers:
-    status: maintained
-    maintainers:
-        - vanwinkeljan
+    status: orphaned
     collaborators:
         - jfischer-no
         - gmarull
@@ -957,7 +955,6 @@ Filesystems:
         - de-nordic
         - Laczen
         - nashif
-        - vanwinkeljan
     files:
         - include/fs/
         - samples/subsys/fs/

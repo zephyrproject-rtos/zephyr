@@ -144,12 +144,12 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 }
 
 /* Invoke when enter "Suspend/Low Power" mode. */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
+	if (state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power state %u", state);
 	} else {
-		switch (info.substate_id) {
+		switch (substate_id) {
 		case 0:	/* Sub-state 0: Deep sleep with instant wake-up */
 			npcx_power_enter_system_sleep(NPCX_DEEP_SLEEP,
 							NPCX_INSTANT_WAKE_UP);
@@ -166,19 +166,19 @@ __weak void pm_power_state_set(struct pm_state_info info)
 			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
-				info.substate_id);
+				substate_id);
 			break;
 		}
 	}
 }
 
 /* Handle soc specific activity after exiting "Suspend/Low Power" mode. */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
+	if (state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power state %u", state);
 	} else {
-		switch (info.substate_id) {
+		switch (substate_id) {
 		case 0:	/* Sub-state 0: Deep sleep with instant wake-up */
 			/* Restore interrupts */
 			__enable_irq();
@@ -189,7 +189,7 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
-				info.substate_id);
+				substate_id);
 			break;
 		}
 	}

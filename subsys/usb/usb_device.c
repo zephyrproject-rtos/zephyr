@@ -249,7 +249,7 @@ static void usb_data_to_host(void)
 		 * last chunk is wMaxPacketSize long, to indicate the last
 		 * packet.
 		 */
-		if (!usb_dev.data_buf_residue &&
+		if (!usb_dev.data_buf_residue && chunk &&
 		    usb_dev.setup.wLength > usb_dev.data_buf_len) {
 			/* Send less data as requested during the Setup stage */
 			if (!(usb_dev.data_buf_len % USB_MAX_CTRL_MPS)) {

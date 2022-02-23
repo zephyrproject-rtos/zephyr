@@ -14,10 +14,11 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <drivers/can.h>
+#include <logging/log.h>
+
 #include "can_stm32.h"
 
-#include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 
@@ -481,11 +482,8 @@ static int can_stm32_init(const struct device *dev)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	master_can->FMR &= ~CAN_FMR_CAN2SB; /* Assign all filters to CAN2 */
 #endif
-
-	/* Set TX priority to chronological order */
-	can->MCR |= CAN_MCR_TXFP;
 	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_ABOM & ~CAN_MCR_AWUM &
-		    ~CAN_MCR_NART & ~CAN_MCR_RFLM;
+		    ~CAN_MCR_NART & ~CAN_MCR_RFLM & ~CAN_MCR_TXFP;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	can->MCR |= CAN_MCR_TTCM;
 #endif

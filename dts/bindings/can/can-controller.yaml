@@ -2,8 +2,6 @@
 
 include: base.yaml
 
-bus: can
-
 properties:
     bus-speed:
       type: int

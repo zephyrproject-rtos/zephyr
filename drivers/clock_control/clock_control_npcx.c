@@ -213,13 +213,18 @@ static int npcx_clock_control_init(const struct device *dev)
 	 * Power-down (turn off clock) the modules initially for better
 	 * power consumption.
 	 */
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL1) = 0xF9; /* No SDP_PD/FIU_PD */
+	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL1) = 0xFB; /* No SDP_PD/FIU_PD */
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL2) = 0xFF;
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL3) = 0x1F; /* No GDMA_PD */
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL4) = 0xFF;
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL5) = 0xFA;
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0xFF;
+#if defined(CONFIG_SOC_SERIES_NPCX7)
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL7) = 0xE7;
+#elif defined(CONFIG_SOC_SERIES_NPCX9)
+	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL7) = 0xFF;
+	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL8) = 0x31;
+#endif
 
 	return 0;
 }

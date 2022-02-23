@@ -569,7 +569,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument(
         "-N", "--ninja", action="store_true",
-        help="Use the Ninja generator with CMake.")
+        help="Use the Ninja generator with CMake.",
+        required="--short-build-path" in sys.argv)
 
     parser.add_argument(
         "-n", "--no-clean", action="store_true",
@@ -683,6 +684,16 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-S", "--enable-slow", action="store_true",
         help="Execute time-consuming test cases that have been marked "
              "as 'slow' in testcase.yaml. Normally these are only built.")
+
+    parser.add_argument(
+        "--short-build-path",
+        action="store_true",
+        help="Create shorter build directory paths based on symbolic links. "
+             "The shortened build path will be used by CMake for generating "
+             "the build system and executing the build. Use this option if "
+             "you experience build failures related to path length, for "
+             "example on Windows OS. This option can be used only with "
+             "'--ninja' argument (to use Ninja build generator).")
 
     parser.add_argument(
         "--show-footprint", action="store_true",
@@ -979,6 +990,11 @@ def main():
                              --device-serial or --device-serial-pty,
                              only one platform is allowed""")
 
+    # the fixtures given by twister command explicitly should be assigned to each DUTs
+    if suite.fixtures:
+        for d in suite.duts:
+            d.fixtures.extend(suite.fixtures)
+
     if suite.load_errors:
         sys.exit(1)
 
@@ -1235,6 +1251,9 @@ def main():
         duration = time.time() - start_time
         logger.info("Completed in %d seconds" % (duration))
         return
+
+    if options.short_build_path:
+        suite.create_build_dir_links()
 
     retries = options.retry_failed + 1
     completed = 0

@@ -81,7 +81,7 @@ MEMORY
 {
     FLASH    (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM     (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
-    LINKER_DT_REGION_FROM_NODE(DT_CHOSEN(zephyr_ocm), rw)
+    LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }

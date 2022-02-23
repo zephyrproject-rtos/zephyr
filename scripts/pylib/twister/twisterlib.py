@@ -723,8 +723,10 @@ class DeviceHandler(Handler):
     def run_custom_script(script, timeout):
         with subprocess.Popen(script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
             try:
-                stdout, _ = proc.communicate(timeout=timeout)
+                stdout, stderr = proc.communicate(timeout=timeout)
                 logger.debug(stdout.decode())
+                if proc.returncode != 0:
+                    logger.error(f"Custom script failure: {stderr.decode(errors='ignore')}")
 
             except subprocess.TimeoutExpired:
                 proc.kill()
@@ -1977,7 +1979,7 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         target_ready = bool(self.testcase.type == "unit" or \
                         self.platform.type == "native" or \
-                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp"] or \
+                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim"] or \
                         filter == 'runnable')
 
         if self.platform.simulation == "nsim":
@@ -2442,6 +2444,9 @@ class ProjectBuilder(FilterBuilder):
         elif instance.platform.simulation == "armfvp":
             instance.handler = BinaryHandler(instance, "armfvp")
             instance.handler.call_make_run = True
+        elif instance.platform.simulation == "xt-sim":
+            instance.handler = BinaryHandler(instance, "xt-sim")
+            instance.handler.call_make_run = True
 
         if instance.handler:
             instance.handler.args = args
@@ -2812,6 +2817,9 @@ class TestSuite(DisablePyTestCollectionMixin):
         # run integration tests only
         self.integration = False
 
+        # used during creating shorter build paths
+        self.link_dir_counter = 0
+
         self.pipeline = None
         self.version = "NA"
 
@@ -3047,7 +3055,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     @staticmethod
     def get_toolchain():
-        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
+        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/modules/verify-toolchain.cmake')
         result = CMake.run_cmake_script([toolchain_script, "FORMAT=json"])
 
         try:
@@ -3897,6 +3905,48 @@ class TestSuite(DisablePyTestCollectionMixin):
             else:
                 logger.error(f"{log_info} - unrecognized platform - {platform}")
                 sys.exit(2)
+
+    def create_build_dir_links(self):
+        """
+        Iterate through all no-skipped instances in suite and create links
+        for each one build directories. Those links will be passed in the next
+        steps to the CMake command.
+        """
+
+        links_dir_name = "twister_links"  # folder for all links
+        links_dir_path = os.path.join(self.outdir, links_dir_name)
+        if not os.path.exists(links_dir_path):
+            os.mkdir(links_dir_path)
+
+        for instance in self.instances.values():
+            if instance.status != "skipped":
+                self._create_build_dir_link(links_dir_path, instance)
+
+    def _create_build_dir_link(self, links_dir_path, instance):
+        """
+        Create build directory with original "long" path. Next take shorter
+        path and link them with original path - create link. At the end
+        replace build_dir to created link. This link will be passed to CMake
+        command. This action helps to limit path length which can be
+        significant during building by CMake on Windows OS.
+        """
+
+        os.makedirs(instance.build_dir, exist_ok=True)
+
+        link_name = f"test_{self.link_dir_counter}"
+        link_path = os.path.join(links_dir_path, link_name)
+
+        if os.name == "nt":  # if OS is Windows
+            command = ["mklink", "/J", f"{link_path}", f"{instance.build_dir}"]
+            subprocess.call(command, shell=True)
+        else:  # for Linux and MAC OS
+            os.symlink(instance.build_dir, link_path)
+
+        # Here original build directory is replaced with symbolic link. It will
+        # be passed to CMake command
+        instance.build_dir = link_path
+
+        self.link_dir_counter += 1
 
 
 class CoverageTool:

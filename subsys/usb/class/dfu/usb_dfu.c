@@ -65,6 +65,15 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 #define INTERMITTENT_CHECK_DELAY	50
 
+#if IS_ENABLED(CONFIG_USB_DFU_ENABLE_UPLOAD)
+#define DFU_DESC_ATTRIBUTES		(DFU_ATTR_CAN_DNLOAD | \
+					 DFU_ATTR_CAN_UPLOAD | \
+					 DFU_ATTR_MANIFESTATION_TOLERANT)
+#else
+#define DFU_DESC_ATTRIBUTES		(DFU_ATTR_CAN_DNLOAD | \
+					 DFU_ATTR_MANIFESTATION_TOLERANT)
+#endif
+
 static struct k_poll_event dfu_event;
 static struct k_poll_signal dfu_signal;
 static struct k_timer dfu_timer;
@@ -100,9 +109,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_dfu_config dfu_cfg = {
 	.dfu_descr = {
 		.bLength = sizeof(struct dfu_runtime_descriptor),
 		.bDescriptorType = DFU_FUNC_DESC,
-		.bmAttributes = DFU_ATTR_CAN_DNLOAD |
-				DFU_ATTR_CAN_UPLOAD |
-				DFU_ATTR_MANIFESTATION_TOLERANT,
+		.bmAttributes = DFU_DESC_ATTRIBUTES,
 		.wDetachTimeOut =
 			sys_cpu_to_le16(CONFIG_USB_DFU_DETACH_TIMEOUT),
 		.wTransferSize =
@@ -191,9 +198,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 		.dfu_descr = {
 			.bLength = sizeof(struct dfu_runtime_descriptor),
 			.bDescriptorType = DFU_FUNC_DESC,
-			.bmAttributes = DFU_ATTR_CAN_DNLOAD |
-					DFU_ATTR_CAN_UPLOAD |
-					DFU_ATTR_MANIFESTATION_TOLERANT,
+			.bmAttributes = DFU_DESC_ATTRIBUTES,
 			.wDetachTimeOut =
 				sys_cpu_to_le16(CONFIG_USB_DFU_DETACH_TIMEOUT),
 			.wTransferSize =
@@ -308,16 +313,16 @@ struct dfu_data_t {
 };
 
 #if FLASH_AREA_LABEL_EXISTS(image_1)
-	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_1)
+	#define DOWNLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_1)
 #else
-	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_0)
+	#define DOWNLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_0)
 #endif
 
 
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_area_id = UPLOAD_FLASH_AREA_ID,
+	.flash_area_id = DOWNLOAD_FLASH_AREA_ID,
 	.alt_setting = 0,
 	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
 };
@@ -426,6 +431,13 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 	case DFU_UPLOAD:
 		LOG_DBG("DFU_UPLOAD block %d, len %d, state %d",
 			setup->wValue, setup->wLength, dfu_data.state);
+
+		if (!IS_ENABLED(CONFIG_USB_DFU_ENABLE_UPLOAD)) {
+			LOG_WRN("Firmware uploading is not enabled");
+			dfu_data.status = errSTALLEDPKT;
+			dfu_data.state = dfuERROR;
+			return -ENOTSUP;
+		}
 
 		if (dfu_check_app_state()) {
 			return -EINVAL;
@@ -562,7 +574,7 @@ static int dfu_class_handle_to_device(struct usb_setup_packet *setup,
 			dfu_reset_counters();
 			k_poll_signal_reset(&dfu_signal);
 
-			if (dfu_data.flash_area_id != UPLOAD_FLASH_AREA_ID) {
+			if (dfu_data.flash_area_id != DOWNLOAD_FLASH_AREA_ID) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
 				LOG_ERR("This area can not be overwritten");
@@ -730,8 +742,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *setup,
 			break;
 #if FLASH_AREA_LABEL_EXISTS(image_1)
 		case 1:
-			dfu_data.flash_area_id =
-			    UPLOAD_FLASH_AREA_ID;
+			dfu_data.flash_area_id = DOWNLOAD_FLASH_AREA_ID;
 			break;
 #endif
 		default:
@@ -800,7 +811,7 @@ static void dfu_work_handler(struct k_work *item)
  * image collection, so not erase whole bank at DFU beginning
  */
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		if (boot_erase_img_bank(UPLOAD_FLASH_AREA_ID)) {
+		if (boot_erase_img_bank(DOWNLOAD_FLASH_AREA_ID)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;

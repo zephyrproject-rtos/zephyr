@@ -34,8 +34,8 @@
 #include <soc.h>
 #endif
 
-#define THREAD_STACKSIZE    (512 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define THREAD_STACKSIZE2   (384 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define THREAD_STACKSIZE    (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define THREAD_STACKSIZE2   (384 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_PRIORITY     4
 
 #define THREAD_SELF_CMD    0
@@ -557,7 +557,7 @@ static void test_kernel_interrupts(void)
 {
 	/* IRQ locks don't prevent ticks from advancing in tickless mode */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
+		ztest_test_skip();
 	}
 
 	_test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
@@ -620,7 +620,7 @@ static void test_kernel_interrupts(void)
  */
 static void test_kernel_timer_interrupts(void)
 {
-#ifdef TICK_IRQ
+#if (defined(TICK_IRQ) && defined(CONFIG_TICKLESS_KERNEL))
 	/* Disable interrupts coming from the timer. */
 	_test_kernel_interrupts(irq_disable_wrapper, irq_enable_wrapper, TICK_IRQ);
 #else

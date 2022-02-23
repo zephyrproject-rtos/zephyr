@@ -575,7 +575,7 @@ static struct uart_esp32_data uart_esp32_data_##idx = {			       \
 	},								       \
 	.hal = {							       \
 		.dev =							       \
-		    (uart_dev_t *)DT_REG_ADDR(DT_NODELABEL(uart##idx)), \
+		    (uart_dev_t *)DT_INST_REG_ADDR(idx), \
 	},								       \
 };									       \
 									       \

@@ -183,14 +183,6 @@ config BT_AUDIO_BROADCAST_SNK_STREAM_COUNT
 
 endif # BT_AUDIO_BROADCAST_SINK
 
-config BT_AUDIO_DEBUG
-	bool "Enable debug logs"
-	depends on BT_DEBUG
-	help
-	  Use this option to enable debug logs for the Bluetooth
-	  Audio functionality.
-
-if BT_AUDIO_DEBUG
 
 config BT_DEBUG_PACS
 	bool "Published Audio Capabilities Service debug"
@@ -248,7 +240,6 @@ config BT_AUDIO_DEBUG_BROADCAST_SINK
 	  Use this option to enable Bluetooth Audio Broadcast Sink debug logs
 	  for the Bluetooth Audio functionality.
 
-endif # BT_AUDIO_DEBUG
 
 config BT_AUDIO_STREAM
 	# Virtual/hidden option
