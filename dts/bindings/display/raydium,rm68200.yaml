@@ -1,0 +1,29 @@
+#
+# Copyright 2022, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Raydium RM68200 Panel
+
+compatible: "raydium,rm68200"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+    label:
+      required: true
+
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The RESETn pin is asserted to disable the sensor causing a hard
+        reset.  The sensor receives this as an active-low signal.
+
+    bl-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The BLn pin is asserted to control the backlight of the panel.
+        The sensor receives this as an active-high signal.
