@@ -1,6 +1,6 @@
 name: Build with Clang/LLVM
 
-on: pull_request_target
+on: pull_request
 
 jobs:
   clang-build-prep:
@@ -27,18 +27,14 @@ jobs:
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
-    outputs:
-      report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
       - name: Cleanup
         run: |
           # hotfix, until we have a better way to deal with existing data
           rm -rf zephyr zephyr-testing
+
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
 
       - name: Environment Setup
         run: |
@@ -76,51 +72,22 @@ jobs:
 
           # We can limit scope to just what has changed
           if [ -s testplan.csv ]; then
-            echo "::set-output name=report_needed::1";
             # Full twister but with options based on changes
             ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2
-          else
-            # if nothing is run, skip reporting step
-            echo "::set-output name=report_needed::0";
           fi
 
       - name: Upload Unit Test Results
-        if: always() && steps.twister.outputs.report_needed != 0
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Subset ${{ matrix.platform }})
           path: twister-out/twister.xml
+          if-no-files-found: ignore
 
-  clang-build-results:
-    name: "Publish Unit Tests Results"
-    needs: clang-build
-    runs-on: ubuntu-20.04
-    if: (success() || failure() ) && needs.clang-build.outputs.report_needed != 0
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: artifacts
-      - name: Merge Test Results
-        run: |
-          pip3 install junitparser junit2html
-          junitparser merge artifacts/*/twister.xml junit.xml
-          junit2html junit.xml junit-clang.html
-
-      - name: Upload Unit Test Results in HTML
+      - name: Upload Event Details
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: HTML Unit Test Results
-          if-no-files-found: ignore
+          name: event
           path: |
-            junit-clang.html
-
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        if: always()
-        with:
-          check_name: Unit Test Results
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          files: "**/twister.xml"
-          comment_mode: off
+            ${{ github.event_path }}
