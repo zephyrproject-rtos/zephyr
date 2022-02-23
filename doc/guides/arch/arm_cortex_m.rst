@@ -440,11 +440,44 @@ are programmed during system boot.
   SRAM. (An exception to this setting is when :kconfig:option:`CONFIG_MPU_GAP_FILLING` is disabled (Arm v8-M only);
   in that case no SRAM MPU programming is done so the access is determined by the default
   Arm memory map policies, allowing for privileged-only RWX permissions on SRAM).
+* All the memory regions defined in the devicetree with the compatible
+  :dtcompatible:`zephyr,memory-region` and at least the property
+  ``zephyr,memory-region-mpu`` defining the MPU permissions for the memory region.
+  See the next section for more details.
 
 The above MPU regions are defined in :file:`soc/arm/common/arm_mpu_regions.c`.
 Alternative MPU configurations are allowed by enabling :kconfig:option:`CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS`.
 When enabled, this option signifies that the Cortex-M SoC will define and
 configure its own fixed MPU regions in the SoC definition.
+
+Fixed MPU regions defined in devicetree
+---------------------------------------
+
+The user can define memory regions to be allocated and created in the linker
+script using nodes with the :dtcompatible:`zephyr,memory-region` devicetree
+compatible. When the property ``zephyr,memory-region-mpu`` is present in such
+a node, a new MPU region will be allocated and programmed during system
+boot.
+
+The property ``zephyr,memory-region-mpu`` is a string carrying the attributes
+for the MPU region. It is converted to a C token for use defining the attributes
+of the MPU region.
+
+For example, to define a new non-cacheable memory region in devicetree:
+
+.. code-block:: devicetree
+
+   sram_no_cache: memory@20300000 {
+        compatible = "zephyr,memory-region", "mmio-sram";
+        reg = <0x20300000 0x100000>;
+        zephyr,memory-region = "SRAM_NO_CACHE";
+        zephyr,memory-region-mpu = "RAM_NOCACHE";
+   };
+
+This will automatically create a new MPU entry in
+:zephyr_file:`soc/arm/common/arm_mpu_regions.c` with the correct name, base,
+size and attributes gathered directly from the devicetree. See
+:zephyr_file:`include/linker/devicetree_regions.h` for more details.
 
 Static MPU regions
 ------------------
