@@ -781,6 +781,10 @@ void z_phys_unmap(uint8_t *virt, size_t size)
 		 aligned_virt, aligned_size);
 
 	key = k_spin_lock(&z_mm_lock);
+
+	LOG_DBG("arch_mem_unmap(0x%lx, %zu) offset %lu",
+		aligned_virt, aligned_size, addr_offset);
+
 	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
 	virt_region_free(virt, size);
 	k_spin_unlock(&z_mm_lock, key);
