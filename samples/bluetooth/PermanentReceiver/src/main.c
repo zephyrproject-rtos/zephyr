@@ -68,9 +68,9 @@ void main(void)
 
 	struct bt_le_scan_param param = {
         .type = BT_LE_SCAN_TYPE_PASSIVE,
-        .options = BT_LE_SCAN_OPT_CODED | BT_LE_SCAN_OPT_NO_1M | BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-        .interval = 0x0030  /* 30 ms */,
-        .window = 0x0030 /* 30ms */,
+        .options = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+        .interval = 0x0040  /* 40 ms */,
+        .window = 0x0040 /* 40 */,
 		.timeout = 0,
 		.interval_coded = 0,
         .window_coded = 0,

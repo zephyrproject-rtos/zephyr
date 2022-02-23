@@ -43,6 +43,8 @@ void sent_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_sent_info *info)
 
 	packet_id++;
 
+	k_sleep(K_MSEC(20));
+
 	err = bt_le_ext_adv_start(adv, &ext_adv_start_param);
 	if (err) {
 		printk("Failed to start extended advertising (err %d)\n", err);
@@ -66,7 +68,7 @@ void main(void)
 	}
 
 	struct bt_le_adv_param param = {
-		.options =  BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CODED,
+		.options =  BT_LE_ADV_OPT_EXT_ADV,
 		.interval_min = 0x0020 /* 20ms */,
 		.interval_max = 0x0020 /* 20ms */,
 		.secondary_max_skip = 0,
