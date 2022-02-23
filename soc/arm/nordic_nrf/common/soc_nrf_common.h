@@ -127,9 +127,8 @@
  *     NRF_DT_GPIOS_TO_PSEL_BY_IDX(DT_NODELABEL(foo), rx_gpios, 1) // 32 + 5 = 37
  */
 #define NRF_DT_GPIOS_TO_PSEL_BY_IDX(node_id, prop, idx)			\
-	NRF_GPIO_PIN_MAP(						\
-		DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx, port),	\
-		DT_GPIO_PIN_BY_IDX(node_id, prop, idx))
+	((DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx, port) << 5) |	\
+	 (DT_GPIO_PIN_BY_IDX(node_id, prop, idx) & 0x1F))
 
 
 /**
