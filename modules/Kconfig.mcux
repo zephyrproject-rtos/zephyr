@@ -63,6 +63,11 @@ config HAS_MCUX_ELCDIF
 	  Set if the enhanced LCD interface (eLCDIF) module is present in the
 	  SoC.
 
+config HAS_MCUX_MIPI_DSI
+	bool
+	help
+	  Set if the MIPI DSI module is present in the SoC.
+
 config HAS_MCUX_ENET
 	bool
 	help
