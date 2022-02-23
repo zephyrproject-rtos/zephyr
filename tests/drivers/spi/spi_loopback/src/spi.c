@@ -487,7 +487,8 @@ static int spi_rx_every_4(const struct device *dev,
 }
 
 #if (CONFIG_SPI_ASYNC)
-static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
+SPI_ASYNC_METHOD_SIGNAL_DEFINE(async_meth, async_sig);
+
 static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 				 K_POLL_MODE_NOTIFY_ONLY,
@@ -544,7 +545,7 @@ static int spi_async_call(const struct device *dev,
 
 	LOG_INF("Start async call");
 
-	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_sig);
+	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_meth);
 	if (ret == -ENOTSUP) {
 		LOG_DBG("Not supported");
 		return 0;
