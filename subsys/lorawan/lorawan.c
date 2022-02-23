@@ -75,6 +75,9 @@ static LoRaMacEventInfoStatus_t last_mlme_indication_status;
 static uint8_t (*getBatteryLevelUser)(void);
 static void (*dr_change_cb)(enum lorawan_datarate dr);
 
+static void mac_process_work_handler(struct k_work *work);
+static K_WORK_DEFINE(mac_process_work, mac_process_work_handler);
+
 void BoardGetUniqueId(uint8_t *id)
 {
 	/* Do not change the default value */
@@ -89,9 +92,16 @@ static uint8_t getBatteryLevelLocal(void)
 	return 255;
 }
 
+static void mac_process_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	LoRaMacProcess();
+}
+
 static void OnMacProcessNotify(void)
 {
-	LoRaMacProcess();
+	k_work_submit(&mac_process_work);
 }
 
 static void datarate_observe(bool force_notification)
