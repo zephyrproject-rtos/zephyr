@@ -33,7 +33,7 @@ extern "C" {
  * If buffer is full and packet cannot be allocated then null is returned unless
  * overwrite mode is selected. In that mode, oldest entry are dropped (user is
  * notified) until allocation succeeds. It can happen that candidate for
- * dropping is currently being claimed. In that case, it is ommited and next
+ * dropping is currently being claimed. In that case, it is omitted and next
  * packet is dropped and claimed packet is marked as invalid when freeing.
  *
  * Reading packets is performed in two steps. First packet is claimed. Claiming
@@ -137,7 +137,7 @@ struct mpsc_pbuf_buffer_config {
 	uint32_t flags;
 };
 
-/** @brief Initnialize a packet buffer.
+/** @brief Initialize a packet buffer.
  *
  * @param buffer Buffer.
  *

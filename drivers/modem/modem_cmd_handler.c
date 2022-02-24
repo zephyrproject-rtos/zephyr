@@ -151,7 +151,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 		argv[*argc] = &data->match_buf[begin];
 		/* end parameter with NUL char
 		 * NOTE: if this is at the end of match_len will probably
-		 * be overwriting a NUL that's already ther
+		 * be overwriting a NUL that's already there
 		 */
 		data->match_buf[end] = '\0';
 		(*argc)++;

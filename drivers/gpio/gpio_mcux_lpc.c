@@ -236,7 +236,7 @@ static uint32_t attach_pin_to_isr(uint32_t port, uint32_t pin, uint32_t isr_no)
 	/* Connect trigger sources to PINT */
 	INPUTMUX_Init(INPUTMUX);
 
-	/* Code asumes PIN_INT values are grouped [0..3] and [4..7].
+	/* Code assumes PIN_INT values are grouped [0..3] and [4..7].
 	 * This scenario is true in LPC54xxx/LPC55xxx.
 	 */
 	if (isr_no < PIN_INT4_IRQn) {

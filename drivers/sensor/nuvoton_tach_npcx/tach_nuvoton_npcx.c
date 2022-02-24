@@ -293,7 +293,7 @@ static int tach_npcx_channel_get(const struct device *dev,
 		/*
 		 * RPM = (f * 60) / (n * TACH)
 		 *   n = Pulses per round
-		 *   f = Tachometer operation freqency (Hz)
+		 *   f = Tachometer operation frequency (Hz)
 		 *   TACH = Captured counts of tachometer
 		 */
 		val->val1 = (config->sample_clk * 60) /

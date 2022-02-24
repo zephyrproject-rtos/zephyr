@@ -158,8 +158,8 @@ static void entropy_cc13xx_cc26xx_isr(const void *arg)
 		k_sem_give(&data->sync);
 	}
 
-	/* Change the shutdown FROs' oscillating frequncy in an attempt to
-	 * prevent further locking on to the sampling clock frequncy.
+	/* Change the shutdown FROs' oscillating frequency in an attempt to
+	 * prevent further locking on to the sampling clock frequency.
 	 */
 	if (src & TRNG_FRO_SHUTDOWN) {
 		handle_shutdown_ovf();

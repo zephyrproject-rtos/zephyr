@@ -118,5 +118,5 @@ not implemented or optional:
 
 - When an API is implemented, but the particular combination of options
   requested in the call cannot be satisfied by the implementation the call shall
-  return -ENOTSUP. (For example, a request for a level-triggered GPIO interrupt on
+  return ``-ENOTSUP``. (For example, a request for a level-triggered GPIO interrupt on
   hardware that supports only edge-triggered interrupts)

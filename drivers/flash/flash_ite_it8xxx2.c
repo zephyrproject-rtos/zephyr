@@ -60,7 +60,7 @@ struct flash_it8xxx2_dev_data {
 
 /* page program command  */
 #define FLASH_CMD_PAGE_WRITE   0x2
-/* ector erase command (erase size is 4KB) */
+/* sector erase command (erase size is 4KB) */
 #define FLASH_CMD_SECTOR_ERASE 0x20
 /* command for flash write */
 #define FLASH_CMD_WRITE        FLASH_CMD_PAGE_WRITE

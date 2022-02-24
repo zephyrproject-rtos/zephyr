@@ -193,7 +193,7 @@ static inline uint32_t sys_notify_get_method(const struct sys_notify *notify)
  * async notify API init functions like sys_notify_init_callback()).
  * It may fail to recognize that an uninitialized structure has been
  * passed because only method bits of flags are tested against method
- * settings.  To reduce the chance of accepting an uninititalized
+ * settings.  To reduce the chance of accepting an uninitialized
  * operation service validation of structures that contain an
  * sys_notify instance should confirm that the extension bits are
  * set or cleared as expected.

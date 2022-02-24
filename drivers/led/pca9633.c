@@ -103,7 +103,7 @@ static int pca9633_led_blink(const struct device *dev, uint32_t led,
 		return -EIO;
 	}
 
-	/* Select the GRPPWM source to drive the LED outpout */
+	/* Select the GRPPWM source to drive the LED output */
 	if (i2c_reg_update_byte_dt(&config->i2c,
 				PCA9633_LEDOUT,
 				PCA9633_MASK << (led << 1),

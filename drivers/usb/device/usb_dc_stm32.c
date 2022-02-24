@@ -865,7 +865,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		return -EINVAL;
 	}
 
-	/* When both buffer and max data to read are zero, just ingore reading
+	/* When both buffer and max data to read are zero, just ignore reading
 	 * and return available data in buffer. Otherwise, return data
 	 * previously stored in the buffer.
 	 */

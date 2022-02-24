@@ -311,7 +311,7 @@ struct bt_gatt_ccc {
  */
 #define BT_GATT_SCC_BROADCAST                   0x0001
 
-/** Server Characterestic Configuration Attribute Value */
+/** Server Characteristic Configuration Attribute Value */
 struct bt_gatt_scc {
 	/** Server Characteristic Configuration flags */
 	uint16_t flags;
@@ -555,7 +555,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *                       attribute callbacks.
  *  @param _instance_num Number of elements in instance array.
  *  @param _attrs_def    Macro provided by the user that defines attribute
- *                       array for the serivce. This macro should accept single
+ *                       array for the service. This macro should accept single
  *                       parameter which is the instance context.
  */
 #define BT_GATT_SERVICE_INSTANCE_DEFINE(				 \
@@ -1303,7 +1303,7 @@ enum {
 	BT_GATT_DISCOVER_ATTRIBUTE,
 	/** @brief Discover standard characteristic descriptor values.
 	 *
-	 *  Discover standard characterestic descriptor values and their
+	 *  Discover standard characteristic descriptor values and their
 	 *  properties.
 	 *  Supported descriptors:
 	 *   - Characteristic Extended Properties

@@ -62,7 +62,7 @@ static inline void rm_write_header_desc(void *desc, uint32_t toggle,
 	struct rm_header *r = (struct rm_header *)desc;
 
 	r->opq = opq;
-	/* DMA descriptor count init vlaue */
+	/* DMA descriptor count init value */
 	r->bdcount = bdcount;
 	r->prot = 0x0;
 	/* No packet extension, start and end set to '1' */

@@ -68,7 +68,7 @@ int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 		return -EINVAL;
 	}
 
-	/* We interprept a fan stopped or jammed as 0 */
+	/* We interpret a fan stopped or jammed as 0 */
 	if (data->count == FAN_STOPPED) {
 		data->count = 0U;
 	}

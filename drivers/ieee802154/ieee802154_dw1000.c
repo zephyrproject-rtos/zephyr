@@ -439,7 +439,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 	 */
 	ttcki = sys_get_le32(rx_inf_reg.rx_ttcki);
 	ttcko = sys_get_le32(rx_inf_reg.rx_ttcko) & DWT_RX_TTCKO_RXTOFS_MASK;
-	/* Traking offset value is a 19-bit signed integer */
+	/* Tracking offset value is a 19-bit signed integer */
 	if (ttcko & BIT(18)) {
 		ttcko |= ~DWT_RX_TTCKO_RXTOFS_MASK;
 	}
@@ -1210,7 +1210,7 @@ static int dwt_initialise_dev(const struct device *dev)
 	 *  - On wake-up load configurations from the AON memory
 	 *  - preserve sleep mode configuration
 	 *  - On Wake-up load the LDE microcode
-	 *  - When avaiable, on wake-up load the LDO tune value
+	 *  - When available, on wake-up load the LDO tune value
 	 */
 	ctx->sleep_mode |= DWT_AON_WCFG_ONW_LDC |
 			   DWT_AON_WCFG_PRES_SLEEP;

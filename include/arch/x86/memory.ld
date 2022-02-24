@@ -96,7 +96,7 @@ MEMORY
 #else
     /*
      * On 32-bit x86, fake memory area for build-time IDT generation data.
-     * 64-bit doesn't use this, interrupts are all manaaged at runtime.
+     * 64-bit doesn't use this, interrupts are all managed at runtime.
      *
      * It doesn't matter where this region goes as it is stripped from the
      * final ELF image. The address doesn't even have to be valid on the

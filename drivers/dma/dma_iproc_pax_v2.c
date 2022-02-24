@@ -65,7 +65,7 @@ static inline void rm_write_header_desc(void *desc, uint32_t toggle,
 	r->opq = opq;
 	r->bdf = 0x0;
 	r->res1 = 0x0;
-	/* DMA descriptor count init vlaue */
+	/* DMA descriptor count init value */
 	r->bdcount = bdcount;
 	r->prot = 0x0;
 	r->res2 = 0x0;
@@ -105,7 +105,7 @@ static inline void rm_write_pcie_desc(void *desc,
 }
 
 /**
- * @brief Populate src/destionation descriptor
+ * @brief Populate src/destination descriptor
  */
 static inline void rm_write_src_dst_desc(void *desc_ptr,
 				bool is_mega,

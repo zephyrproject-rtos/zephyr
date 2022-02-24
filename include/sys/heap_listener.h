@@ -173,7 +173,7 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 /**
  * @brief Construct heap identifier from heap pointer
  *
- * Construct a heap identifer from a pointer to the heap object, such as
+ * Construct a heap identifier from a pointer to the heap object, such as
  * sys_heap.
  *
  * @param heap_pointer Pointer to the heap object

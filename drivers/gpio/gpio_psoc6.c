@@ -178,7 +178,7 @@ static int gpio_psoc6_pin_interrupt_configure(const struct device *dev,
 	Cy_GPIO_SetInterruptEdge(port, pin, lv_trg);
 	Cy_GPIO_SetInterruptMask(port, pin, is_enabled);
 	/**
-	 * The driver will set 50ns glich free filter for any interrupt.
+	 * The driver will set 50ns glitch free filter for any interrupt.
 	 */
 	Cy_GPIO_SetFilter(port, pin);
 

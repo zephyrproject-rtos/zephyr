@@ -695,7 +695,7 @@ static void usb_dw_isr_handler(const void *unused)
 
 		if (int_status & USB_DW_GINTSTS_OEP_INT) {
 			/* No OUT interrupt expected in FIFO mode,
-			 * just clear interruot
+			 * just clear interrupt
 			 */
 			usb_dw_int_oep_handler();
 		}

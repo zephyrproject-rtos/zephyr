@@ -149,7 +149,7 @@ static int mcux_pit_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 
 	if (ticks > mcux_pit_get_top_value(dev)) {
-		LOG_ERR("Invalid tciks");
+		LOG_ERR("Invalid ticks");
 		return -EINVAL;
 	}
 

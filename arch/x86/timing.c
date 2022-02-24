@@ -30,7 +30,7 @@ void arch_timing_x86_init(void)
 
 		/*
 		 * cycles are in 32-bit, and delta must be
-		 * calculated in 32-bit percision. Or it would
+		 * calculated in 32-bit precision. Or it would be
 		 * wrapping around in 64-bit.
 		 */
 		dcyc = (uint32_t)cyc_end - (uint32_t)cyc_start;

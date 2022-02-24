@@ -26,5 +26,5 @@ config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
 
 	  This parameter usually depends on the hardware configuration.
 	  The division ratio should define in devicetree,
-	  and it is desireble usage that references it with using a function such as
+	  and it is desirable usage that references it with using a function such as
 	  dt_node_int_prop_int from Kconfig. (Tune in the conf file is not preferable.)

@@ -22,7 +22,7 @@ extern "C" {
  * @brief DNS Service Discovery
  *
  * @details This API enables services to be advertised via DNS. To
- * advvertise a service, system or application code should use
+ * advertise a service, system or application code should use
  * @ref DNS_SD_REGISTER_TCP_SERVICE or
  * @ref DNS_SD_REGISTER_UDP_SERVICE.
  *
@@ -53,7 +53,7 @@ extern "C" {
 /**
  * Minimum number of segments in a fully-qualified name
  *
- * This reqpresents FQN's of the form below
+ * This represents FQN's of the form below
  * ```
  * <sn>._tcp.<domain>.
  * ```
@@ -68,7 +68,7 @@ extern "C" {
 /**
  * Maximum number of segments in a fully-qualified name
  *
- * This reqpresents FQN's of the form below
+ * This represents FQN's of the form below
  * ```
  * <instance>.<sn>._tcp.<domain>.
  * ```
@@ -207,7 +207,7 @@ extern "C" {
  * need to be accessed directly from application code.
  *
  * The @a port pointer must be non-NULL. When the value in @a port
- * is non-zero, the service is advertized as being on that particular
+ * is non-zero, the service is advertised as being on that particular
  * port. When the value in @a port is zero, then the service is not
  * advertised.
  *

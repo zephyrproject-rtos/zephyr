@@ -22,7 +22,7 @@
  *   int x = 3;
  *   LWM2M_PATH(x, 0, 1)
  *
- * evalutes to "x/0/1".
+ * evaluates to "x/0/1".
  */
 #define LWM2M_PATH(...) \
 	LWM2M_PATH_MACRO(__VA_ARGS__, LWM2M_PATH4, LWM2M_PATH3,	\

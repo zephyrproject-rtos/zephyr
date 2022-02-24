@@ -918,7 +918,7 @@ MODEM_CMD_DEFINE(on_urc_ftpget)
 }
 
 /*
- * Read manufacurer identification.
+ * Read manufacturer identification.
  */
 MODEM_CMD_DEFINE(on_cmd_cgmi)
 {
@@ -1283,7 +1283,7 @@ static int modem_autobaud(void)
  * Get the next parameter from the gnss phrase.
  *
  * @param src The source string supported on first call.
- * @param delim The delimeter of the parameter list.
+ * @param delim The delimiter of the parameter list.
  * @param saveptr Pointer for subsequent parses.
  * @return On success a pointer to the parameter. On failure
  *         or end of string NULL is returned.
@@ -1873,7 +1873,7 @@ static int mdm_decode_pdu(const char *pdu, size_t pdu_len, struct sim7080_sms *t
 		return -1;
 	}
 
-	/* read protocol idenifier */
+	/* read protocol identifier */
 	target_buf->tp_pid = mdm_pdu_read_byte(pdu, index++);
 
 	if (index >= pdu_len) {

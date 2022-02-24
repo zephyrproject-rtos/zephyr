@@ -419,7 +419,7 @@ static void dps310_scale_temperature(int32_t tmp_raw, struct dps310_data *data)
 	/* first term, rescaled to micro °C */
 	int32_t tmp_p0 = (1000000 / 2) * comp->c0;
 
-	/* second term, rescaled to mirco °C */
+	/* second term, rescaled to micro °C */
 	int32_t tmp_p1 =
 		(((int64_t)1000000) * comp->c1 * tmp_raw) / IFX_DPS310_SF_TMP;
 

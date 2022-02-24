@@ -28,7 +28,7 @@
 				(0xffUL << (MT_NORMAL * 8))	  |	\
 				(0xbbUL << (MT_NORMAL_WT * 8)))
 
-/* More flags from user's perpective are supported using remaining bits
+/* More flags from user's perspective are supported using remaining bits
  * of "attrs" field, i.e. attrs[31:3], underlying code will take care
  * of setting PTE fields correctly.
  *

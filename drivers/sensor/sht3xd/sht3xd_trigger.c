@@ -212,7 +212,7 @@ int sht3xd_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	/* set alert thresholds to match reamsurement ranges */
+	/* set alert thresholds to match measurement ranges */
 	data->t_low = 0U;
 	data->rh_low = 0U;
 	data->t_high = 0xFFFF;

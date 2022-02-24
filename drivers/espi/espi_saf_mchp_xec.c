@@ -659,7 +659,7 @@ static int check_ecp_access_size(uint32_t reqlen)
 }
 
 /*
- * EC access (read/erase/write) to SAF atttached flash array
+ * EC access (read/erase/write) to SAF attached flash array
  * cmd  0 = read
  *	1 = write
  *	2 = erase

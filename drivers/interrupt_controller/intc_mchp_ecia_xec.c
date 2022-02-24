@@ -76,7 +76,7 @@ struct xec_girq_src_data {
 	((struct xec_girq_src_data *const)(girq_dev)->data)
 
 /*
- * Enable/disable specified GIRQ's aggregated output. Aggrated output is the
+ * Enable/disable specified GIRQ's aggregated output. Aggregated output is the
  * bit-wise or of all the GIRQ's result bits.
  */
 void mchp_xec_ecia_girq_aggr_en(uint8_t girq_num, uint8_t enable)
@@ -229,7 +229,7 @@ uint32_t mchp_xec_ecia_info_girq_result(int ecia_info)
 
 /*
  * Clear NVIC pending status given GIRQ source information encoded by macro
- * MCHP_XEC_ECIA. For aggregated only sources the ecoding sets direct NVIC
+ * MCHP_XEC_ECIA. For aggregated only sources the encoding sets direct NVIC
  * number equal to aggregated NVIC number.
  */
 void mchp_xec_ecia_info_nvic_clr_pend(int ecia_info)

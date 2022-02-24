@@ -983,7 +983,7 @@
 
 // </e>
 
-// <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver
+// <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER peripheral driver
 //==========================================================
 #ifndef NRFX_TIMER_ENABLED
 #define NRFX_TIMER_ENABLED 0

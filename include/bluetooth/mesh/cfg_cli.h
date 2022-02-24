@@ -1073,7 +1073,7 @@ struct bt_mesh_cfg_hb_sub {
 int bt_mesh_cfg_hb_sub_set(uint16_t net_idx, uint16_t addr,
 			   struct bt_mesh_cfg_hb_sub *sub, uint8_t *status);
 
-/** @brief Get the target node's Heartbeta subscription parameters.
+/** @brief Get the target node's Heartbeat subscription parameters.
  *
  *  This method can be used asynchronously by setting @p status
  *  and @p sub as NULL. This way the method will not wait for response

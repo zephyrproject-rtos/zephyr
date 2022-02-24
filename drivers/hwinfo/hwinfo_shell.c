@@ -160,7 +160,7 @@ static int cmd_supported_reset_cause(const struct shell *sh, size_t argc,
 		shell_print(sh, "supported reset causes:");
 		print_all_reset_causes(sh, cause);
 	} else {
-		shell_print(sh, "No causes supporte");
+		shell_print(sh, "No causes supported");
 	}
 
 	return 0;

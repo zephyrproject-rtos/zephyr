@@ -54,7 +54,7 @@ extern "C" {
 #define SHELL_OPT_ARG_RAW	(0xFE)
 
 /**
- * @brief Flag indicateding that number of optional arguments is not limited.
+ * @brief Flag indicating that number of optional arguments is not limited.
  */
 #define SHELL_OPT_ARG_CHECK_SKIP (0xFF)
 
@@ -180,7 +180,7 @@ struct shell_static_entry {
  * @param[in] subcmd	Pointer to a subcommands array.
  * @param[in] help	Pointer to a command help string.
  * @param[in] handler	Pointer to a function handler.
- * @param[in] mandatory	Number of mandatory arguments includig command name.
+ * @param[in] mandatory	Number of mandatory arguments including command name.
  * @param[in] optional	Number of optional arguments.
  */
 #define SHELL_CMD_ARG_REGISTER(syntax, subcmd, help, handler,		   \
@@ -212,7 +212,7 @@ struct shell_static_entry {
  * @param[in] subcmd	Pointer to a subcommands array.
  * @param[in] help	Pointer to a command help string.
  * @param[in] handler	Pointer to a function handler.
- * @param[in] mandatory	Number of mandatory arguments includig command name.
+ * @param[in] mandatory	Number of mandatory arguments including command name.
  * @param[in] optional	Number of optional arguments.
  */
 #define SHELL_COND_CMD_ARG_REGISTER(flag, syntax, subcmd, help, handler, \
@@ -313,7 +313,7 @@ struct shell_static_entry {
  * @param[in] subcmd	 Pointer to a subcommands array.
  * @param[in] help	 Pointer to a command help string.
  * @param[in] handler	 Pointer to a function handler.
- * @param[in] mand	 Number of mandatory arguments includig command name.
+ * @param[in] mand	 Number of mandatory arguments including command name.
  * @param[in] opt	 Number of optional arguments.
  */
 #define SHELL_CMD_ARG(syntax, subcmd, help, handler, mand, opt) \
@@ -335,7 +335,7 @@ struct shell_static_entry {
  * @param[in] subcmd	 Pointer to a subcommands array.
  * @param[in] help	 Pointer to a command help string.
  * @param[in] handler	 Pointer to a function handler.
- * @param[in] mand	 Number of mandatory arguments includig command name.
+ * @param[in] mand	 Number of mandatory arguments including command name.
  * @param[in] opt	 Number of optional arguments.
  */
 #define SHELL_COND_CMD_ARG(flag, syntax, subcmd, help, handler, mand, opt) \
@@ -358,7 +358,7 @@ struct shell_static_entry {
  * @param[in] _subcmd	 Pointer to a subcommands array.
  * @param[in] _help	 Pointer to a command help string.
  * @param[in] _handler	 Pointer to a function handler.
- * @param[in] _mand	 Number of mandatory arguments includig command name.
+ * @param[in] _mand	 Number of mandatory arguments including command name.
  * @param[in] _opt	 Number of optional arguments.
  */
 #define SHELL_EXPR_CMD_ARG(_expr, _syntax, _subcmd, _help, _handler, \

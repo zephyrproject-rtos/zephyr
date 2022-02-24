@@ -33,7 +33,7 @@ config MODEM_SIMCOM_SIM7080_INIT_PRIORITY
 	int "simcom sim7080 driver init priority"
 	default 80
 	help
-	  simcom sim7080 druver initialization priority.
+	  simcom sim7080 driver initialization priority.
 
 config MODEM_SIMCOM_SIM7080_LTE_BANDS
 	string "LTE bands the driver can use"

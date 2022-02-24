@@ -299,7 +299,7 @@ static inline bool z_impl_espi_saf_get_channel_status(
  * component shared between the eSPI master and eSPI slaves.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param pckt Adddress of the representation of read flash transaction.
+ * @param pckt Address of the representation of read flash transaction.
  *
  * @retval -ENOTSUP eSPI flash logical channel transactions not supported.
  * @retval -EBUSY eSPI flash channel is not ready or disabled by master.

@@ -34,7 +34,7 @@ static void _default_sjli_entry(void)
 }
 
 /*
- * @brief initializaiton of sjli related functions
+ * @brief initialization of sjli related functions
  *
  */
 static void sjli_table_init(void)
@@ -46,7 +46,7 @@ static void sjli_table_init(void)
 }
 
 /*
- * @brief initializaiton of secureshield related functions.
+ * @brief initialization of secureshield related functions.
  */
 static int arc_secureshield_init(const struct device *arg)
 {

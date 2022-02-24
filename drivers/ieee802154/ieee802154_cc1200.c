@@ -242,7 +242,7 @@ static bool write_reg_freq(const struct device *dev, uint32_t freq)
  * limits us to unsigned integers of 32 bits. Instead, "slicing" it to
  * parts that fits in such limit is a solution which is applied below.
  *
- * The original formula being (freqoff is neglegted):
+ * The original formula being (freqoff is neglected):
  * Freq = ( RF * Lo_Div * 2^16 ) / Xtal
  *
  * RF and Xtal are, from here, expressed in KHz.

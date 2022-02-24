@@ -343,7 +343,7 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	 * to just testing that key is nonzero (because it should only
 	 * have the single bit set).  But there is a mask applied to
 	 * the argument in arch_irq_unlock() that has me worried
-	 * that something elseswhere might try to set a bit?  Do it
+	 * that something elsewhere might try to set a bit?  Do it
 	 * the safe way for now.
 	 */
 	return (key & MSTATUS_IEN) == MSTATUS_IEN;
