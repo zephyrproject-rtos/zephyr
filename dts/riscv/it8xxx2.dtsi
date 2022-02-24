@@ -9,6 +9,7 @@
 #include <dt-bindings/dt-util.h>
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/i2c/it8xxx2-i2c.h>
 #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/pwm/it8xxx2_pwm.h>
@@ -660,87 +661,99 @@
 				     &pinctrl_adc15  /* ADC15*/
 				     &pinctrl_adc16>;/* ADC16*/
 		};
+
 		i2c0: i2c@f01c40 {
 			compatible = "ite,it8xxx2-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00f01c40 0x0040>;
-			interrupts = <9 IRQ_TYPE_EDGE_FALLING>;
+			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			label = "I2C_0";
 			port-num = <0>;
 			gpio-dev = <&gpiob>;
+			clock-gate-offset = <CGC_OFFSET_SMBA>;
 			pinctrl-0 = <&pinctrl_i2c_clk0    /* GPB3 */
 				     &pinctrl_i2c_data0>; /* GPB4 */
 		};
+
 		i2c1: i2c@f01c80 {
 			compatible = "ite,it8xxx2-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00f01c80 0x0040>;
-			interrupts = <10 IRQ_TYPE_EDGE_FALLING>;
+			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			label = "I2C_1";
 			port-num = <1>;
 			gpio-dev = <&gpioc>;
+			clock-gate-offset = <CGC_OFFSET_SMBB>;
 			pinctrl-0 = <&pinctrl_i2c_clk1    /* GPC1 */
 				     &pinctrl_i2c_data1>; /* GPC2 */
 		};
+
 		i2c2: i2c@f01cc0 {
 			compatible = "ite,it8xxx2-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00f01cc0 0x0040>;
-			interrupts = <16 IRQ_TYPE_EDGE_FALLING>;
+			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			label = "I2C_2";
 			port-num = <2>;
 			gpio-dev = <&gpiof>;
+			clock-gate-offset = <CGC_OFFSET_SMBC>;
 			pinctrl-0 = <&pinctrl_i2c_clk2    /* GPF6 */
 				     &pinctrl_i2c_data2>; /* GPF7 */
 		};
+
 		i2c3: i2c@f03680 {
-			compatible = "ite,it8xxx2-i2c";
+			compatible = "ite,enhance-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00f03680 0x0080>;
-			interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
+			interrupts = <IT8XXX2_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			label = "I2C_3";
 			port-num = <3>;
 			gpio-dev = <&gpioh>;
+			clock-gate-offset = <CGC_OFFSET_SMBD>;
 			pinctrl-0 = <&pinctrl_i2c_clk3_gph1    /* GPH1 */
 				     &pinctrl_i2c_data3_gph2>; /* GPH2 */
 		};
+
 		i2c4: i2c@f03500 {
-			compatible = "ite,it8xxx2-i2c";
+			compatible = "ite,enhance-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00f03500 0x0080>;
-			interrupts = <152 IRQ_TYPE_EDGE_FALLING>;
+			interrupts = <IT8XXX2_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			label = "I2C_4";
 			port-num = <4>;
 			gpio-dev = <&gpioe>;
+			clock-gate-offset = <CGC_OFFSET_SMBE>;
 			pinctrl-0 = <&pinctrl_i2c_clk4    /* GPE0 */
 				     &pinctrl_i2c_data4>; /* GPE7 */
 		};
+
 		i2c5: i2c@f03580 {
-			compatible = "ite,it8xxx2-i2c";
+			compatible = "ite,enhance-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00f03580 0x0080>;
-			interrupts = <153 IRQ_TYPE_EDGE_FALLING>;
+			interrupts = <IT8XXX2_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			label = "I2C_5";
 			port-num = <5>;
 			gpio-dev = <&gpioa>;
+			clock-gate-offset = <CGC_OFFSET_SMBF>;
 			pinctrl-0 = <&pinctrl_i2c_clk5    /* GPA4 */
 				     &pinctrl_i2c_data5>; /* GPA5 */
 		};

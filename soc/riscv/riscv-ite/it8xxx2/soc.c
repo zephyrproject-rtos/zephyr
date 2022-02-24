@@ -51,6 +51,42 @@ static const struct pll_config_t pll_configuration[] = {
 	 .div_usbpd = 5}
 };
 
+uint32_t chip_get_pll_freq(void)
+{
+	uint32_t pllfreq;
+
+	switch (IT8XXX2_ECPM_PLLFREQR & 0x0F) {
+	case 0:
+		pllfreq = MHZ(8);
+		break;
+	case 1:
+		pllfreq = MHZ(16);
+		break;
+	case 2:
+		pllfreq = MHZ(24);
+		break;
+	case 3:
+		pllfreq = MHZ(32);
+		break;
+	case 4:
+		pllfreq = MHZ(48);
+		break;
+	case 5:
+		pllfreq = MHZ(64);
+		break;
+	case 6:
+		pllfreq = MHZ(72);
+		break;
+	case 7:
+		pllfreq = MHZ(96);
+		break;
+	default:
+		return -ERANGE;
+	}
+
+	return pllfreq;
+}
+
 void __intc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 {
 	volatile uint8_t _pll_ctrl __unused;
