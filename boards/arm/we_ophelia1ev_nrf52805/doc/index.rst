@@ -8,7 +8,7 @@ Overview
 
 The we_ophelia1ev_nrf52805 board is a evaluation board of the Ophelia-I radio module.
 
-.. figure:: img/we_ophelia1EV_nrf52805.jpg
+.. figure:: img/we_ophelia1ev_nrf52805.jpg
      :width: 4000px
      :align: center
      :alt: Ophelia-I EV

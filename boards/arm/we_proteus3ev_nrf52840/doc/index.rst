@@ -184,7 +184,7 @@ To select the pin numbers for tx-pin and rx-pin:
 
    tx-pin = <pin_no>
 
-Open the `nRF52840 Product Specification`_, and check for the pins marked as 
+Open the `nRF52840 Product Specification`_, and check for the pins marked as
 'General purpose I/O'.  Note that pins marked as 'low frequency I/O only' can only be used
 in under-10KHz applications. They are not suitable for 115200 speed of UART.
 

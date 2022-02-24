@@ -7,6 +7,6 @@ config BOARD
 	default "we_proteus3ev_nrf52840"
 
 config BT_CTLR
-   default BT
+	default BT
 
 endif

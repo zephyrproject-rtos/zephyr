@@ -7,6 +7,6 @@ config BOARD
 	default "we_ophelia1ev_nrf52805"
 
 config BT_CTLR
-   default BT
+	default BT
 
 endif
