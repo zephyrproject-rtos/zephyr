@@ -3336,15 +3336,15 @@ done:
 
 static bool on_cmd_modem_functionality(struct net_buf **buf, uint16_t len)
 {
-	struct net_buf *frag = NULL;
+	struct net_buf *frag;
 	size_t out_len;
 	char rsp[MDM_HL7800_MODEM_FUNCTIONALITY_SIZE];
 
 	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf),
 					MDM_HL7800_MODEM_FUNCTIONALITY_SIZE);
 
-	len = net_buf_findcrlf(*buf, &frag);
 	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
 		LOG_ERR("Unable to find end of response");
 		goto done;
