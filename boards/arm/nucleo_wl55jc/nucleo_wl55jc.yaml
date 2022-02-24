@@ -17,3 +17,4 @@ supported:
   - arduino_spi
   - adc
   - pwm
+  - dma
