@@ -135,6 +135,16 @@
 	status = "okay";
 };
 
+&timers2 {
+	status = "okay";
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pb11>;
+		pinctrl-names = "default";
+	};
+};
+
+
 &adc1 {
 	pinctrl-0 = <&adc_in5_pb1>;
 	pinctrl-names = "default";
