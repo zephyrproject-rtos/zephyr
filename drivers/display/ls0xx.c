@@ -291,7 +291,7 @@ static int ls0xx_init(const struct device *dev)
 						  vcom_toggle_stack,
 						  K_THREAD_STACK_SIZEOF(vcom_toggle_stack),
 						  ls0xx_vcom_toggle,
-						  config, NULL, NULL,
+						  (void *)config, NULL, NULL,
 						  3, 0, K_NO_WAIT);
 	k_thread_name_set(vcom_toggle_tid, "ls0xx_vcom");
 #endif  /* DT_INST_NODE_HAS_PROP(0, extcomin_gpios) */
