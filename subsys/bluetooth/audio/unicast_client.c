@@ -113,7 +113,6 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 	struct bt_audio_ep *ep = EP_ISO(chan);
 	struct bt_audio_stream *stream = ep->stream;
 	struct bt_audio_stream_ops *ops = stream->ops;
-	int err;
 
 	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
 
@@ -124,11 +123,6 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 	}
 
 	bt_unicast_client_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
-
-	err = bt_audio_stream_iso_listen(stream);
-	if (err != 0) {
-		BT_ERR("Could not make stream listen: %d", err);
-	}
 }
 
 static struct bt_iso_chan_ops unicast_client_iso_ops = {
