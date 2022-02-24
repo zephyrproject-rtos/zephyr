@@ -26,4 +26,6 @@ config RF_MAX_PACKET_SIZE
 	Received packages larger that this will be discarded.
 	Trying to send packages larger that this will result in -ENOMSG.
 
+rsource "cc1101/Kconfig"
+
 endif # RF

@@ -1,0 +1,66 @@
+# Copyright (c) 2021 Leonard Pollak
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CC1101
+	depends on SPI && GPIO && RF
+	bool "CC1101 Driver"
+
+if CC1101
+
+config CC1101_THREAD_PRIORITY
+	int "CC1101 worker thread priority"
+	default 10
+
+config CC1101_RX_MSG_QUEUE_DEPTH
+	int "RX Message Queue depth"
+	default 8
+	help
+	Message queue depth for incoming packages.
+
+config CC1101_MAX_PACKET_SIZE
+	int "CC1101 max packet size in bytes"
+	default 253
+	help
+	Maximum Packet size.
+	This is the size that will be allocated for each package on the message queue.
+	Received packages larger that this will be discarded.
+	Trying to send packages larger that this will result in -ENOMSG.
+
+config CC1101_ADDITIONAL_THREAD_STACK_SIZE
+	int "CC1101 additional worker thread stack size"
+	default 256
+	help
+	This is the size that will be added to the total soze of the
+	message queue to yield the total RX thread stack size.
+
+config CC1101_WAIT_RETRIES
+	int "Number of retries in wait loops"
+	default 27
+	help
+	See: Chapter 19.6 Timing of the datasheet.
+
+config CC1101_WAIT_INTERVAL_US
+	int "Delay for wait loops"
+	default 30
+	help
+	See: Chapter 19.6 Timing of the datasheet.
+
+config CC1101_INITIAL_CALIBRATION
+	bool "Initial calibration"
+	default y
+	help
+	Perform calibration when initializing the device.
+
+config CC1101_XOSC
+	int "Value of the Crystal oscillator in kHz"
+	default 26000
+	help
+	  This sets the XOSC value, it should be either 26000 or 27000.
+	  This value should also be set in the settings of the SmartRF tool.
+	  Do not touch this unless you know what you are doing.
+
+module = CC1101
+module-str = cc1101
+rsource "../Kconfig.template.rf_mode"
+
+endif # CC1101
