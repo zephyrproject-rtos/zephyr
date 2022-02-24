@@ -140,6 +140,17 @@ __weak bool sip_svc_plat_func_id_valid(uint32_t command, uint32_t func_id)
 		return false;
 }
 
+__weak uint32_t sip_svc_plat_format_trans_id(uint32_t client_idx,
+				uint32_t trans_idx)
+{
+	return (((client_idx & 0xF) << 4) | (trans_idx & 0xF));
+}
+
+__weak uint32_t sip_svc_plat_get_trans_idx(uint32_t trans_id)
+{
+	return (trans_id & 0xF);
+}
+
 __weak void sip_svc_plat_update_trans_id(struct sip_svc_request *request,
 				uint32_t trans_id)
 {
@@ -412,7 +423,8 @@ static void sip_svc_ll_callback(struct sip_svc_controller *ctrl,
 
 		/* Free trans id */
 		sip_svc_ll_id_map_remove_item(ctrl->trans_id_map, trans_id);
-		sip_svc_ll_id_mgr_free(ctrl->trans_id_pool, trans_id);
+		sip_svc_ll_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool,
+					sip_svc_plat_get_trans_idx(trans_id));
 
 		if (ctrl->clients[c_idx].active_trans_cnt != 0) {
 			k_mutex_unlock(&ctrl->data_mutex);
@@ -667,6 +679,7 @@ int sip_svc_ll_send(struct sip_svc_controller *ctrl,
 	struct sip_svc_request *request =
 		(struct sip_svc_request *)sip_svc_request;
 	uint32_t trans_id = SIP_SVC_ID_INVALID;
+	uint32_t trans_idx = SIP_SVC_ID_INVALID;
 	uint32_t c_idx;
 
 	if (!ctrl)
@@ -690,12 +703,13 @@ int sip_svc_ll_send(struct sip_svc_controller *ctrl,
 	if (k_mutex_lock(&ctrl->data_mutex, K_FOREVER) == 0) {
 
 		/* Allocate a trans id for the request */
-		trans_id = sip_svc_ll_id_mgr_alloc(ctrl->trans_id_pool);
-		if (trans_id == SIP_SVC_ID_INVALID) {
+		trans_idx = sip_svc_ll_id_mgr_alloc(ctrl->clients[c_idx].trans_idx_pool);
+		if (trans_idx == SIP_SVC_ID_INVALID) {
 			LOG_ERR("Fail to allocate transaction id");
 			k_mutex_unlock(&ctrl->data_mutex);
 			return SIP_SVC_ID_INVALID;
 		}
+		trans_id = sip_svc_plat_format_trans_id(c_idx, trans_idx);
 
 		/* Assign the trans id of this request */
 		SIP_SVC_PROTO_HEADER_SET_TRANS_ID(request->header, trans_id);
@@ -711,7 +725,8 @@ int sip_svc_ll_send(struct sip_svc_controller *ctrl,
 			(void *)(uint64_t)c_idx) != 0) {
 
 			LOG_ERR("Fail to insert transaction id to map");
-			sip_svc_ll_id_mgr_free(ctrl->trans_id_pool, trans_id);
+			sip_svc_ll_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool,
+						trans_idx);
 			k_mutex_unlock(&ctrl->data_mutex);
 			return SIP_SVC_ID_INVALID;
 		}
@@ -723,7 +738,8 @@ int sip_svc_ll_send(struct sip_svc_controller *ctrl,
 				K_NO_WAIT) != 0) {
 				LOG_ERR("Request msgq full");
 				sip_svc_ll_id_map_remove_item(ctrl->trans_id_map, trans_id);
-				sip_svc_ll_id_mgr_free(ctrl->trans_id_pool, trans_id);
+				sip_svc_ll_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool,
+							trans_idx);
 				k_mutex_unlock(&ctrl->req_msgq_mutex);
 				k_mutex_unlock(&ctrl->data_mutex);
 				return SIP_SVC_ID_INVALID;
@@ -742,7 +758,8 @@ int sip_svc_ll_send(struct sip_svc_controller *ctrl,
 			if (!ctrl->tid) {
 				LOG_ERR("Fail to spawn sip_svp thread");
 				sip_svc_ll_id_map_remove_item(ctrl->trans_id_map, trans_id);
-				sip_svc_ll_id_mgr_free(ctrl->trans_id_pool, trans_id);
+				sip_svc_ll_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool,
+							trans_idx);
 				k_mutex_unlock(&ctrl->data_mutex);
 				return SIP_SVC_ID_INVALID;
 			}
@@ -826,7 +843,9 @@ int sip_svc_ll_init(struct sip_svc_controller *ctrl)
 	size_t msgq_size = sizeof(struct sip_svc_request) *
 				CONFIG_ARM_SIP_SVC_MSGQ_DEPTH;
 	char *msgq_buf = NULL;
+	struct sip_svc_client *client = NULL;
 	uint32_t i;
+	int ret = 0;
 
 	if (!ctrl)
 		return -EINVAL;
@@ -846,18 +865,11 @@ int sip_svc_ll_init(struct sip_svc_controller *ctrl)
 	if (!ctrl->client_id_pool)
 		return -ENOMEM;
 
-	ctrl->trans_id_pool = sip_svc_ll_id_mgr_create(
-					CONFIG_ARM_SIP_SVC_MAX_TRANSACTION_COUNT);
-	if (!ctrl->trans_id_pool) {
-		sip_svc_ll_id_mgr_delete(ctrl->client_id_pool);
-		return -ENOMEM;
-	}
 
 	ctrl->trans_id_map = sip_svc_ll_id_map_create(
-					CONFIG_ARM_SIP_SVC_MAX_TRANSACTION_COUNT);
+				CONFIG_ARM_SIP_SVC_MSGQ_DEPTH);
 	if (!ctrl->trans_id_map) {
 		sip_svc_ll_id_mgr_delete(ctrl->client_id_pool);
-		sip_svc_ll_id_mgr_delete(ctrl->trans_id_pool);
 		return -ENOMEM;
 	}
 
@@ -865,7 +877,6 @@ int sip_svc_ll_init(struct sip_svc_controller *ctrl)
 	msgq_buf = k_malloc(msgq_size);
 	if (!msgq_buf) {
 		sip_svc_ll_id_mgr_delete(ctrl->client_id_pool);
-		sip_svc_ll_id_mgr_delete(ctrl->trans_id_pool);
 		k_free(ctrl->trans_id_map);
 		return -ENOMEM;
 	}
@@ -883,11 +894,34 @@ int sip_svc_ll_init(struct sip_svc_controller *ctrl)
 
 	/* Initialize client contents */
 	for (i = 0; i < CONFIG_ARM_SIP_SVC_MAX_CLIENT_COUNT; i++) {
-		ctrl->clients[i].id = SIP_SVC_ID_INVALID;
-		ctrl->clients[i].token = SIP_SVC_ID_INVALID;
-		ctrl->clients[i].state = SIP_SVC_CLIENT_ST_INVALID;
-		ctrl->clients[i].active_trans_cnt = 0;
+		client = &ctrl->clients[i];
+		client->id = SIP_SVC_ID_INVALID;
+		client->token = SIP_SVC_ID_INVALID;
+		client->state = SIP_SVC_CLIENT_ST_INVALID;
+		client->active_trans_cnt = 0;
+
+		client->trans_idx_pool = sip_svc_ll_id_mgr_create(
+					CONFIG_ARM_SIP_SVC_MAX_TRANSACTION_COUNT);
+		if (!client->trans_idx_pool) {
+			ret = -ENOMEM;
+			break;
+		}
 	}
+
+	if (ret != 0)
+	{
+		sip_svc_ll_id_mgr_delete(ctrl->client_id_pool);
+		k_free(ctrl->trans_id_map);
+		k_free(msgq_buf);
+
+		for (i = 0; i < CONFIG_ARM_SIP_SVC_MAX_CLIENT_COUNT; i++) {
+			client = &ctrl->clients[i];
+			if (client->trans_idx_pool)
+				sip_svc_ll_id_mgr_delete(client->trans_idx_pool);
+		}
+		return ret;
+	}
+
 	ctrl->active_client_index = SIP_SVC_ID_INVALID;
 	ctrl->active_job_cnt = 0;
 	ctrl->active_async_job_cnt = 0;

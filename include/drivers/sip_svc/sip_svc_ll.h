@@ -41,6 +41,8 @@ struct sip_svc_client {
 	uint32_t state;
 	uint32_t active_trans_cnt;
 	void *priv_data;
+
+	struct sip_svc_id_pool *trans_idx_pool;
 };
 
 /** @brief Arm SiP Services driver controller data.
@@ -51,7 +53,6 @@ struct sip_svc_controller {
 	sip_svc_fn *invoke_fn;
 
 	struct sip_svc_id_pool *client_id_pool;
-	struct sip_svc_id_pool *trans_id_pool;
 	struct sip_svc_id_map *trans_id_map;
 
 	struct k_mutex req_msgq_mutex;
