@@ -446,6 +446,63 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_TXTIME_PARAM,
 				  ethernet_get_config);
 
+static int ethernet_filter(uint32_t mgmt_request,
+			   struct net_if *iface,
+			   void *data, size_t len)
+{
+	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
+	struct ethernet_config config = { 0 };
+
+	if (!api) {
+		return -ENOENT;
+	}
+
+	if (!api->set_config) {
+		return -ENOTSUP;
+	}
+
+	if (!data || (len != sizeof(struct ethernet_req_params))) {
+		return -EINVAL;
+	}
+
+	memcpy(&config.filter.mac_address, &params->mac_address,
+	       sizeof(struct net_eth_addr));
+
+	if (mgmt_request == NET_REQUEST_ETHERNET_ADD_FILTER_SRC_MAC) {
+		config.filter.type = ETHERNET_FILTER_TYPE_SRC_MAC_ADDRESS;
+		config.filter.set = true;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_DEL_FILTER_SRC_MAC) {
+		config.filter.type = ETHERNET_FILTER_TYPE_SRC_MAC_ADDRESS;
+		config.filter.set = false;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_ADD_FILTER_DST_MAC) {
+		config.filter.type = ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS;
+		config.filter.set = true;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_DEL_FILTER_DST_MAC) {
+		config.filter.type = ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS;
+		config.filter.set = false;
+	} else {
+		return -EINVAL;
+	}
+
+	return api->set_config(net_if_get_device(iface),
+			       ETHERNET_CONFIG_TYPE_FILTER, &config);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_ADD_FILTER_SRC_MAC,
+				  ethernet_filter);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_DEL_FILTER_SRC_MAC,
+				  ethernet_filter);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_ADD_FILTER_DST_MAC,
+				  ethernet_filter);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_DEL_FILTER_DST_MAC,
+				  ethernet_filter);
+
+
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)
 {
 	net_mgmt_event_notify(NET_EVENT_ETHERNET_CARRIER_ON, iface);
