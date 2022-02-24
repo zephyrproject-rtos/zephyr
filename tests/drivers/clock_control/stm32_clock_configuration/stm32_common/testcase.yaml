@@ -1,0 +1,13 @@
+common:
+    timeout: 5
+    platform_exclude: nucleo_h723zg b_u585i_iot02a
+tests:
+  drivers.stm32_clock_configuration.common.sysclksrc_pll_64_hse_8:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_64_hse_8.overlay"
+    platform_allow: nucleo_g071rb
+  drivers.stm32_clock_configuration.common.sysclksrc_pll_64_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_64_hsi_16.overlay"
+    platform_allow: nucleo_g071rb
+  drivers.stm32_clock_configuration.common.sysclksrc_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_16.overlay"
+    platform_allow: nucleo_g071rb
