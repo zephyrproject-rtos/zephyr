@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RF
+	bool "RF Driver"
+	help
+	Enable support for RF drivers.
+
+if RF
+
+module = RF
+module-str = rf
+source "subsys/logging/Kconfig.template.log_config"
+
+config RF_INIT_PRIORITY
+	int "RF Init priority"
+	default 90
+	help
+	  RF device driver initialization priority.
+
+config RF_MAX_PACKET_SIZE
+	int "Max packet size"
+	default 253
+	help
+	Maximum Packet size.
+	This is the size that will be allocated for each package on the message queue.
+	Received packages larger that this will be discarded.
+	Trying to send packages larger that this will result in -ENOMSG.
+
+endif # RF

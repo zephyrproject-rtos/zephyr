@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: Apache-2.0
+
+choice "$(module)_INITIAL_RF_MODE"
+	prompt "Initial mode"
+	default $(module)_RF_MODE_IDLE
+	depends on RF
+
+config $(module)_RF_MODE_CALIBRATE
+	bool "Calibrate"
+
+config $(module)_RF_MODE_POWER_OFF
+	bool "Power off"
+
+config $(module)_RF_MODE_SLEEP
+	bool "Sleep"
+
+config $(module)_RF_MODE_IDLE
+	bool "Idle"
+
+config $(module)_RF_MODE_WAKE_ON_EVENT
+	bool "Wake on event"
+
+config $(module)_RF_MODE_WAKE_PERIODIC
+	bool "Periodic wakeup"
+
+config $(module)_RF_MODE_RX
+	bool "Receive"
+
+config $(module)_RF_MODE_TX
+	bool "Transmit"
+
+endchoice
+
+config $(module)_INITIAL_RF_MODE
+	int
+	depends on RF
+	default 0 if $(module)_RF_MODE_CALIBRATE
+	default 1 if $(module)_RF_MODE_POWER_OFF
+	default 2 if $(module)_RF_MODE_SLEEP
+	default 3 if $(module)_RF_MODE_IDLE
+	default 4 if $(module)_RF_MODE_WAKE_ON_EVENT
+	default 5 if $(module)_RF_MODE_WAKE_PERIODIC
+	default 6 if $(module)_RF_MODE_RX
+	default 7 if $(module)_RF_MODE_TX
