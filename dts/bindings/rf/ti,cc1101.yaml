@@ -1,0 +1,44 @@
+# Copyright (c) 2021 Leonard Pollak
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments CC1101 SPI Low-power Sub-1 GHz wireless transceiver
+
+compatible: "ti,cc1101"
+
+include: spi-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  gdo2-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to GDO2.
+      Used to check CHIP_RDY when initializing...
+      Used to check start/end of packet in rx/tx...
+
+  gdo0-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to GDO0.
+      Configurable interrupt used for:
+      The RX FIFO: Asserts when RX FIFO is filled at or above the RX FIFO
+      threshold or the end of packet is reached. De-asserts when the RX FIFO is empty.
+      The TX FIFO: Asserts when TX FIFO is filled at or above the TX FIFO
+      threshold or the end of packet is reached. De-asserts when the TX FIFO is empty.
+
+  initial-config:
+    type: uint8-array
+    required: true
+    description: |
+      Configuration Register Array given by SmartRF Studio
+      IOCFG0 (0x00) - TEST0 (0x2E)
+
+  initial-patable:
+    type: uint8-array
+    required: true
+    description: |
+      PATABLE 0 - 7
