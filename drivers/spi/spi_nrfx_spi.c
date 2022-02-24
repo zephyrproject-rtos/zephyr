@@ -8,10 +8,8 @@
 #include <pm/device.h>
 #include <nrfx_spi.h>
 
-#define LOG_DOMAIN "spi_nrfx_spi"
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(spi_nrfx_spi);
+LOG_MODULE_REGISTER(spi_nrfx_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
@@ -149,7 +147,7 @@ static int configure(const struct device *dev,
 
 static void transfer_next_chunk(const struct device *dev)
 {
-	const struct spi_nrfx_config *config = dev->config;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_nrfx_data *dev_data = dev->data;
 	struct spi_context *ctx = &dev_data->ctx;
 	int error = 0;
@@ -166,7 +164,7 @@ static void transfer_next_chunk(const struct device *dev)
 		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
 		xfer.p_rx_buffer = ctx->rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
-		result = nrfx_spi_xfer(&config->spi, &xfer, 0);
+		result = nrfx_spi_xfer(&dev_config->spi, &xfer, 0);
 		if (result == NRFX_SUCCESS) {
 			return;
 		}
@@ -274,8 +272,8 @@ static int spi_nrfx_pm_action(const struct device *dev,
 			      enum pm_device_action action)
 {
 	int ret = 0;
-	struct spi_nrfx_data *data = dev->data;
-	const struct spi_nrfx_config *config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -285,9 +283,9 @@ static int spi_nrfx_pm_action(const struct device *dev,
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (data->initialized) {
-			nrfx_spi_uninit(&config->spi);
-			data->initialized = false;
+		if (dev_data->initialized) {
+			nrfx_spi_uninit(&dev_config->spi);
+			dev_data->initialized = false;
 		}
 		break;
 
@@ -326,15 +324,15 @@ static int spi_nrfx_pm_action(const struct device *dev,
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
-		struct spi_nrfx_data *data = dev->data;                        \
-		int err;                                                       \
+		struct spi_nrfx_data *dev_data = dev->data;		       \
+		int err;						       \
 		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
 			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \
-		err = spi_context_cs_configure_all(&data->ctx);                \
-		if (err < 0) {                                                 \
-			return err;                                            \
-		}                                                              \
-		spi_context_unlock_unconditionally(&data->ctx);                \
+		err = spi_context_cs_configure_all(&dev_data->ctx);	       \
+		if (err < 0) {						       \
+			return err;					       \
+		}							       \
+		spi_context_unlock_unconditionally(&dev_data->ctx);	       \
 		return 0;						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \

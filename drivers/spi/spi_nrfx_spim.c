@@ -14,10 +14,8 @@
 #include <hal/nrf_clock.h>
 #include <string.h>
 
-#define LOG_DOMAIN "spi_nrfx_spim"
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(spi_nrfx_spim);
+LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
@@ -247,26 +245,26 @@ static void anomaly_58_workaround_clear(struct spi_nrfx_data *dev_data)
 
 static int anomaly_58_workaround_init(const struct device *dev)
 {
-	struct spi_nrfx_data *data = dev->data;
-	const struct spi_nrfx_config *config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 	nrfx_err_t err_code;
 
-	data->anomaly_58_workaround_active = false;
+	dev_data->anomaly_58_workaround_active = false;
 
-	if (config->anomaly_58_workaround) {
-		err_code = nrfx_ppi_channel_alloc(&data->ppi_ch);
+	if (dev_config->anomaly_58_workaround) {
+		err_code = nrfx_ppi_channel_alloc(&dev_data->ppi_ch);
 		if (err_code != NRFX_SUCCESS) {
 			LOG_ERR("Failed to allocate PPI channel");
 			return -ENODEV;
 		}
 
-		err_code = nrfx_gpiote_channel_alloc(&data->gpiote_ch);
+		err_code = nrfx_gpiote_channel_alloc(&dev_data->gpiote_ch);
 		if (err_code != NRFX_SUCCESS) {
 			LOG_ERR("Failed to allocate GPIOTE channel");
 			return -ENODEV;
 		}
 		LOG_DBG("PAN 58 workaround enabled for %s: ppi %u, gpiote %u",
-			dev->name, data->ppi_ch, data->gpiote_ch);
+			dev->name, dev_data->ppi_ch, dev_data->gpiote_ch);
 	}
 
 	return 0;
@@ -432,8 +430,8 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
 	int ret = 0;
-	struct spi_nrfx_data *data = dev->data;
-	const struct spi_nrfx_config *config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -443,9 +441,9 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (data->initialized) {
-			nrfx_spim_uninit(&config->spim);
-			data->initialized = false;
+		if (dev_data->initialized) {
+			nrfx_spim_uninit(&dev_config->spim);
+			dev_data->initialized = false;
 		}
 		break;
 
@@ -492,16 +490,16 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
-		struct spi_nrfx_data *data = dev->data;                        \
-		int err;                                                       \
+		struct spi_nrfx_data *dev_data = dev->data;		       \
+		int err;						       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
-		err = spi_context_cs_configure_all(&data->ctx);                \
-		if (err < 0) {                                                 \
-			return err;                                            \
-		}                                                              \
-		spi_context_unlock_unconditionally(&data->ctx);                \
+		err = spi_context_cs_configure_all(&dev_data->ctx);	       \
+		if (err < 0) {						       \
+			return err;					       \
+		}							       \
+		spi_context_unlock_unconditionally(&dev_data->ctx);	       \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 		(return anomaly_58_workaround_init(dev);),		       \
 		(return 0;))						       \
