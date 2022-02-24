@@ -59,6 +59,24 @@
 #define NRF_FUN_UART_RTS 2U
 /** UART CTS */
 #define NRF_FUN_UART_CTS 3U
+/** SPI master SCK */
+#define NRF_FUN_SPIM_SCK 4U
+/** SPI master MOSI */
+#define NRF_FUN_SPIM_MOSI 5U
+/** SPI master MISO */
+#define NRF_FUN_SPIM_MISO 6U
+/** SPI slave SCK */
+#define NRF_FUN_SPIS_SCK 7U
+/** SPI slave MOSI */
+#define NRF_FUN_SPIS_MOSI 8U
+/** SPI slave MISO */
+#define NRF_FUN_SPIS_MISO 9U
+/** SPI slave CSN */
+#define NRF_FUN_SPIS_CSN 10U
+/** TWI master SCL */
+#define NRF_FUN_TWIM_SCL 11U
+/** TWI master SDA */
+#define NRF_FUN_TWIM_SDA 12U
 
 /** @} */
 
