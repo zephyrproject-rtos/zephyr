@@ -546,14 +546,16 @@ struct lwm2m_objlnk {
  * LwM2M clients use this function to modify the pmin attribute
  * for an observation being made.
  * Example to update the pmin of a temperature sensor value being observed:
- * lwm2m_engine_update_observer_min_period("3303/0/5700",5);
+ * lwm2m_engine_update_observer_min_period("client_ctx, 3303/0/5700", 5);
  *
+ * @param[in] client_ctx LwM2M context
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res"
  * @param[in] period_s Value of pmin to be given (in seconds).
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_update_observer_min_period(const char *pathstr, uint32_t period_s);
+int lwm2m_engine_update_observer_min_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
+					    uint32_t period_s);
 
 /**
  * @brief Change an observer's pmax value.
@@ -561,14 +563,16 @@ int lwm2m_engine_update_observer_min_period(const char *pathstr, uint32_t period
  * LwM2M clients use this function to modify the pmax attribute
  * for an observation being made.
  * Example to update the pmax of a temperature sensor value being observed:
- * lwm2m_engine_update_observer_max_period("3303/0/5700",5);
+ * lwm2m_engine_update_observer_max_period("client_ctx, 3303/0/5700", 5);
  *
+ * @param[in] client_ctx LwM2M context
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res"
  * @param[in] period_s Value of pmax to be given (in seconds).
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_update_observer_max_period(const char *pathstr, uint32_t period_s);
+int lwm2m_engine_update_observer_max_period(struct lwm2m_ctx *client_ctx, const char *pathstr,
+					    uint32_t period_s);
 
 /**
  * @brief Create an LwM2M object instance.
