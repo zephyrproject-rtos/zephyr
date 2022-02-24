@@ -349,8 +349,8 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 		connecting = false;
 
 		err = bt_audio_stream_enable(stream,
-					     default_preset->preset.codec.meta_count,
-					     default_preset->preset.codec.meta);
+					     default_preset->preset.codec.meta,
+					     default_preset->preset.codec.meta_count);
 		if (err) {
 			shell_error(ctx_shell, "Unable to enable Channel");
 			return -ENOEXEC;
@@ -362,7 +362,8 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 }
 
 static int lc3_enable(struct bt_audio_stream *stream,
-		      size_t meta_count, struct bt_codec_data *meta)
+		      struct bt_codec_data *meta,
+		      size_t meta_count)
 {
 	shell_print(ctx_shell, "Enable: stream %p meta_count %zu", stream,
 		    meta_count);
@@ -378,7 +379,8 @@ static int lc3_start(struct bt_audio_stream *stream)
 }
 
 static int lc3_metadata(struct bt_audio_stream *stream,
-			size_t meta_count, struct bt_codec_data *meta)
+			struct bt_codec_data *meta,
+			size_t meta_count)
 {
 	shell_print(ctx_shell, "Metadata: stream %p meta_count %zu", stream,
 		    meta_count);
@@ -759,8 +761,8 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_audio_stream_enable(default_stream,
-				     default_preset->preset.codec.meta_count,
-				     default_preset->preset.codec.meta);
+				     default_preset->preset.codec.meta,
+				     default_preset->preset.codec.meta_count);
 	if (err) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
@@ -822,8 +824,8 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_audio_stream_metadata(default_stream,
-				       default_preset->preset.codec.meta_count,
-				       default_preset->preset.codec.meta);
+				       default_preset->preset.codec.meta,
+				       default_preset->preset.codec.meta_count);
 	if (err) {
 		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;

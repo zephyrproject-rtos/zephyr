@@ -1078,8 +1078,8 @@ int bt_unicast_client_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 static int unicast_client_ep_enable(struct bt_audio_ep *ep,
 				    struct net_buf_simple *buf,
-				    size_t meta_count,
-				    struct bt_codec_data *meta)
+				    struct bt_codec_data *meta,
+				    size_t meta_count)
 {
 	struct bt_ascs_metadata *req;
 
@@ -1109,8 +1109,8 @@ static int unicast_client_ep_enable(struct bt_audio_ep *ep,
 
 static int unicast_client_ep_metadata(struct bt_audio_ep *ep,
 				      struct net_buf_simple *buf,
-				      size_t meta_count,
-				      struct bt_codec_data *meta)
+				      struct bt_codec_data *meta,
+				      size_t meta_count)
 {
 	struct bt_ascs_metadata *req;
 
@@ -1357,8 +1357,9 @@ int bt_unicast_client_config(struct bt_audio_stream *stream,
 	return 0;
 }
 
-int bt_unicast_client_enable(struct bt_audio_stream *stream, size_t meta_count,
-			     struct bt_codec_data *meta)
+int bt_unicast_client_enable(struct bt_audio_stream *stream,
+			     struct bt_codec_data *meta,
+			     size_t meta_count)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -1372,7 +1373,7 @@ int bt_unicast_client_enable(struct bt_audio_stream *stream, size_t meta_count,
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
 
-	err = unicast_client_ep_enable(ep, buf, meta_count, meta);
+	err = unicast_client_ep_enable(ep, buf, meta, meta_count);
 	if (err) {
 		return err;
 	}
@@ -1381,8 +1382,8 @@ int bt_unicast_client_enable(struct bt_audio_stream *stream, size_t meta_count,
 }
 
 int bt_unicast_client_metadata(struct bt_audio_stream *stream,
-			       size_t meta_count,
-			       struct bt_codec_data *meta)
+			       struct bt_codec_data *meta,
+			       size_t meta_count)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
@@ -1396,7 +1397,7 @@ int bt_unicast_client_metadata(struct bt_audio_stream *stream,
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->num_ases = 0x01;
 
-	err = unicast_client_ep_metadata(ep, buf, meta_count, meta);
+	err = unicast_client_ep_metadata(ep, buf, meta, meta_count);
 	if (err) {
 		return err;
 	}

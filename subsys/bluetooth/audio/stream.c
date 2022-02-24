@@ -636,7 +636,8 @@ static bool bt_audio_stream_enabling(struct bt_audio_stream *stream)
 }
 
 int bt_audio_stream_enable(struct bt_audio_stream *stream,
-			   size_t meta_count, struct bt_codec_data *meta)
+			   struct bt_codec_data *meta,
+			   size_t meta_count)
 {
 	uint8_t role;
 	int err;
@@ -661,7 +662,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	err = bt_unicast_client_enable(stream, meta_count, meta);
+	err = bt_unicast_client_enable(stream, meta, meta_count);
 	if (err != 0) {
 		BT_DBG("Failed to enable stream: %d", err);
 		return err;
@@ -691,7 +692,8 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 }
 
 int bt_audio_stream_metadata(struct bt_audio_stream *stream,
-			     size_t meta_count, struct bt_codec_data *meta)
+			     struct bt_codec_data *meta,
+			     size_t meta_count)
 {
 	uint8_t role;
 	int err;
@@ -721,7 +723,7 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	err = bt_unicast_client_metadata(stream, meta_count, meta);
+	err = bt_unicast_client_metadata(stream, meta, meta_count);
 	if (err != 0) {
 		BT_DBG("Updating metadata failed: %d", err);
 		return err;
