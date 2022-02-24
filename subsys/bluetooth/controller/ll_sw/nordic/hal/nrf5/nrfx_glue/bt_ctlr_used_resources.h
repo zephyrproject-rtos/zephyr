@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "radio_nrf5_fem.h"
+#include "../radio/radio_nrf5_fem.h"
 
 #ifdef DPPI_PRESENT
-#include "radio_nrf5_dppi_resources.h"
+#include "../radio/radio_nrf5_dppi_resources.h"
 #else
-#include "radio_nrf5_ppi_resources.h"
+#include "../radio/radio_nrf5_ppi_resources.h"
 #endif
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || \
