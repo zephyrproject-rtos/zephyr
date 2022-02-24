@@ -245,8 +245,8 @@ do { \
 #define Z_LOG_MSG2_SIMPLE_CREATE(...)
 #endif
 
-/* Macro handles case when local variable with log message string is created.It
- * replaces origing string literal with that variable.
+/* Macro handles case when local variable with log message string is created. It
+ * replaces original string literal with that variable.
  */
 #define Z_LOG_FMT_ARGS_2(_name, ...) \
 	COND_CODE_1(CONFIG_LOG2_FMT_SECTION, \

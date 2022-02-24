@@ -47,7 +47,7 @@ struct nrf5_802154_data {
 	/* Frame pending bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_fpb;
 
-	/* CCA complete sempahore. Unlocked when CCA is complete. */
+	/* CCA complete semaphore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
 
 	/* CCA result. Holds information whether channel is free or not. */

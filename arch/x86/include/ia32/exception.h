@@ -33,7 +33,7 @@
 /* Unfortunately, GCC extended asm doesn't work at toplevel so we need
  * to stringify stuff.
  *
- * What we are doing here is generating entires in the .intList section
+ * What we are doing here is generating entries in the .intList section
  * and also the assembly language stubs for the exception. We use
  * .gnu.linkonce section prefix so that the linker only includes the
  * first one of these it encounters for a particular vector. In this

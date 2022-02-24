@@ -162,7 +162,7 @@ static uint8_t read_keyboard_row(const struct device *dev)
 
 static bool is_matrix_ghosting(const uint8_t *state)
 {
-	/* matrix keyboard designs are suceptible to ghosting.
+	/* matrix keyboard designs are susceptible to ghosting.
 	 * An extra key appears to be pressed when 3 keys
 	 * belonging to the same block are pressed.
 	 * for example, in the following block
@@ -186,7 +186,7 @@ static bool is_matrix_ghosting(const uint8_t *state)
 			 * flowing from a key which was never pressed. in our
 			 * case, current flowing is a bit set to 1 as we
 			 * flipped the bits when the matrix was scanned.
-			 * now we or the colums using z&(z-1) which is
+			 * now we or the columns using z&(z-1) which is
 			 * non-zero only if z has more than one bit set.
 			 */
 			uint8_t common_row_bits = state[c] & state[c_n];

@@ -757,7 +757,7 @@ static int adc_stm32_check_acq_time(uint16_t acq_time)
 		return 0;
 	}
 
-	LOG_ERR("Conversion time not supportted.");
+	LOG_ERR("Conversion time not supported.");
 	return -EINVAL;
 }
 

@@ -174,7 +174,7 @@ static void ps2_xec_isr(const struct device *dev)
 	}
 
 	/* The control register reverts to RX automatically after
-	 * transmiting the data
+	 * transmitting the data
 	 */
 	base->CTRL = MCHP_PS2_CTRL_EN;
 }

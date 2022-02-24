@@ -56,7 +56,7 @@
 #define	GICD_IGROUPRn		(GIC_DIST_BASE +  0x80)
 
 /*
- * 0x100  Interrupt Set-Enable Reigsters
+ * 0x100  Interrupt Set-Enable Registers
  * v1		ICDISERn
  * v2/v3	GICD_ISENABLERn
  */
@@ -249,7 +249,7 @@
 #define GIC_PRI_MASK			0xff
 
 /*
- * '0xa0'is used to initialize each interrtupt default priority.
+ * '0xa0'is used to initialize each interrupt default priority.
  * This is an arbitrary value in current context.
  * Any value '0x80' to '0xff' will work for both NS and S state.
  * The values of individual interrupt and default has to be chosen

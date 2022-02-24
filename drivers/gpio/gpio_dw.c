@@ -511,7 +511,7 @@ static int gpio_dw_initialize(const struct device *port)
 	return 0;
 }
 
-/* Bindings to the plaform */
+/* Bindings to the platform */
 #ifdef CONFIG_GPIO_DW_0
 static void gpio_config_0_irq(const struct device *port);
 

@@ -38,7 +38,7 @@
  * @bus_name: Pointer to bus master identifier.
  * @pm: Power mode (lis2dh_powermode).
  * @int_gpio_port: Pointer to GPIO PORT identifier.
- * @int_gpio_pin: GPIO pin number connecter to sensor int pin.
+ * @int_gpio_pin: GPIO pin number connected to sensor int pin.
  */
 struct iis2dh_device_config {
 	const char *bus_name;

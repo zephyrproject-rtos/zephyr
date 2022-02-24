@@ -1462,7 +1462,7 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync);
  * @brief Register periodic advertising sync callbacks.
  *
  * Adds the callback structure to the list of callback structures for periodic
- * adverising syncs.
+ * advertising syncs.
  *
  * This callback will be called for all periodic advertising sync activity,
  * such as synced, terminated and when data is received.

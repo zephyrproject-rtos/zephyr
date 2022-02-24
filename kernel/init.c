@@ -245,7 +245,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	main();
 
-	/* Mark nonessenrial since main() has no more work to do */
+	/* Mark nonessential since main() has no more work to do */
 	z_main_thread.base.user_options &= ~K_ESSENTIAL;
 
 #ifdef CONFIG_COVERAGE_DUMP

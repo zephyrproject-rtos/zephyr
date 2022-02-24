@@ -512,7 +512,7 @@ static int si7210_init(const struct device *dev)
 	data->scale = (part_variant == 5 || part_variant == 15) ?
 		      si7210_scale_2000G : si7210_scale_200G;
 
-	/* Read temperature adjustement values */
+	/* Read temperature adjustment values */
 	rc = si7210_otp_reg_read_byte(dev, SI7210_OTPREG_TEMP_OFFSET, &data->otp_temp_offset);
 	if (rc < 0) {
 		return rc;

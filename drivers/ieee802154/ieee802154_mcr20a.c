@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "MCR20Overwrites.h"
 
 /*
- * max. TX duraton = (PR + SFD + FLI + PDU + FCS)
+ * max. TX duration = (PR + SFD + FLI + PDU + FCS)
  *                 + RX_warmup + cca + TX_warmup
  * TODO: Calculate the value from frame length.
  * Invalid for the SLOTTED mode.

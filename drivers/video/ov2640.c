@@ -343,7 +343,7 @@ static const struct ov2640_reg default_regs[] = {
 
 static const struct ov2640_reg uxga_regs[] = {
 	{ BANK_SEL, BANK_SEL_SENSOR },
-	/* DSP input image resoultion and window size control */
+	/* DSP input image resolution and window size control */
 	{ COM7,    COM7_RES_UXGA},
 	{ COM1,    0x0F }, /* UXGA=0x0F, SVGA=0x0A, CIF=0x06 */
 	{ REG32,   REG32_UXGA }, /* UXGA=0x36, SVGA/CIF=0x09 */

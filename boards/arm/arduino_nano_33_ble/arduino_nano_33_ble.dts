@@ -124,7 +124,7 @@ zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };
-// All PWM's should be enaled
+// All PWM's should be enabled
 &pwm0 {
 	status = "okay";
 };

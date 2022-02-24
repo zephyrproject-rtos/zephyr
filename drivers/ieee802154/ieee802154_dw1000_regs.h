@@ -1483,7 +1483,7 @@
 #define DWT_AON_CFG0_SLEEP_TIM_OFFSET   2
 #define DWT_AON_CFG1_OFFSET         0x0A
 #define DWT_AON_CFG1_LEN            2
-/* aceess mask to AON_CFG1 */
+/* access mask to AON_CFG1 */
 #define DWT_AON_CFG1_MASK           0x0007
 /* This bit enables the sleep counter */
 #define DWT_AON_CFG1_SLEEP_CEN      0x0001

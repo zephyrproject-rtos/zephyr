@@ -45,11 +45,11 @@ typedef enum ec_host_cmd_status (*ec_host_cmd_handler_cb)(
 struct ec_host_cmd_handler {
 	/** Callback routine to process commands that match @a id. */
 	ec_host_cmd_handler_cb handler;
-	/** The numberical command id used as the lookup for commands. */
+	/** The numerical command id used as the lookup for commands. */
 	uint16_t id;
 	/** The bitfield of all versions that the @a handler supports, where
 	 *  each bit value represents that the @a handler supports that version.
-	 *  E.g. BIT(0) corresponse to version 0.
+	 *  E.g. BIT(0) corresponds to version 0.
 	 */
 	uint16_t version_mask;
 	/** The minimum @a input_buf_size enforced by the framework before
@@ -72,7 +72,7 @@ struct ec_host_cmd_handler {
  * @param _function Name of handler function.
  * @param _id Id of host command to handle request for.
  * @param _version_mask The bitfield of all versions that the @a _function
- *        supports. E.g. BIT(0) corresponse to version 0.
+ *        supports. E.g. BIT(0) corresponds to version 0.
  * @param _request_type The datatype of the request parameters for @a _function.
  * @param _response_type The datatype of the response parameters for
  *        @a _function.
@@ -97,7 +97,7 @@ struct ec_host_cmd_handler {
  * @param _function Name of handler function.
  * @param _id Id of host command to handle request for.
  * @param _version_mask The bitfield of all versions that the @a _function
- *        supports. E.g. BIT(0) corresponse to version 0.
+ *        supports. E.g. BIT(0) corresponds to version 0.
  */
 #define EC_HOST_CMD_HANDLER_UNBOUND(_function, _id, _version_mask)             \
 	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {     \

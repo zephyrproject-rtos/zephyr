@@ -1,4 +1,4 @@
-/* ieee802154_rf2xx_regs.h - ATMEL RF2XX transceicer registers */
+/* ieee802154_rf2xx_regs.h - ATMEL RF2XX transceiver registers */
 
 /*
  * Copyright (c) 2019 Gerson Fernando Budke

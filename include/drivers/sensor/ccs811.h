@@ -50,7 +50,7 @@ struct ccs811_result_type {
 	uint16_t co2;
 
 	/**
-	 * Equivalent total volatile organic compounts in
+	 * Equivalent total volatile organic compounds in
 	 * parts-per-billion volume.
 	 */
 	uint16_t voc;

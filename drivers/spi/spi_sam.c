@@ -36,7 +36,7 @@ static int spi_slave_to_mr_pcs(int slave)
 {
 	int pcs[SAM_SPI_CHIP_SELECT_COUNT] = {0x0, 0x1, 0x3, 0x7};
 
-	/* SPI worked in fixed perieral mode(SPI_MR.PS = 0) and disabled chip
+	/* SPI worked in fixed peripheral mode(SPI_MR.PS = 0) and disabled chip
 	 * select decode(SPI_MR.PCSDEC = 0), based on Atmel | SMART ARM-based
 	 * Flash MCU DATASHEET 40.8.2 SPI Mode Register:
 	 * PCS = xxx0    NPCS[3:0] = 1110

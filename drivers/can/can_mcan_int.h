@@ -42,7 +42,7 @@
 #define CAN_MCAN_CREL_REL            CAN_MCAN_CREL_REL_MSK
 
 /****************  Bit definition for CAN_MCAN_ENDN register  *****************/
-/* Endiannes Test Value */
+/* Endianness Test Value */
 #define CAN_MCAN_ENDN_ETV_POS        (0U)
 #define CAN_MCAN_ENDN_ETV_MSK        (0xFFFFFFFFUL << CAN_MCAN_ENDN_ETV_POS)
 #define CAN_MCAN_ENDN_ETV            CAN_MCAN_ENDN_ETV_MSK

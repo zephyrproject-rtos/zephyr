@@ -29,7 +29,7 @@
  * @{
  *
  * 2 frame formats are exposed: Motorola and TI.
- * The main difference is the behavior of the CS line. In Motorala it stays
+ * The main difference is the behavior of the CS line. In Motorola it stays
  * active the whole transfer. In TI, it's active only one serial clock period
  * prior to actually make the transfer, it is thus inactive during the transfer,
  * which ends when the clocks ends as well.

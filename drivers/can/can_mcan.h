@@ -77,7 +77,7 @@ struct can_mcan_tx_buffer_hdr {
 	union {
 		struct {
 			volatile uint32_t ext_id : 29; /* Identifier */
-			volatile uint32_t rtr    :  1; /* Retmote Transmission Request*/
+			volatile uint32_t rtr    :  1; /* Remote Transmission Request*/
 			volatile uint32_t xtd    :  1; /* Extended identifier */
 			volatile uint32_t esi    :  1; /* Error state indicator */
 		};
@@ -109,7 +109,7 @@ struct can_mcan_tx_buffer {
 
 struct can_mcan_tx_event_fifo {
 	volatile uint32_t id   : 29; /* Identifier */
-	volatile uint32_t rtr  :  1; /* Retmote Transmission Request*/
+	volatile uint32_t rtr  :  1; /* Remote Transmission Request*/
 	volatile uint32_t xtd  :  1; /* Extended identifier */
 	volatile uint32_t esi  :  1; /* Error state indicator */
 

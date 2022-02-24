@@ -1123,7 +1123,7 @@ void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	if (!CAN_BANK_IS_EMPTY(data->filter_usage, bank_nr)) {
 		can->FA1R |= bank_bit;
 	} else {
-		LOG_DBG("Bank number %d is empty -> deakivate", bank_nr);
+		LOG_DBG("Bank number %d is empty -> deactivate", bank_nr);
 	}
 
 	can->FMR &= ~(CAN_FMR_FINIT);

@@ -45,7 +45,7 @@ void posix_print_trace(const char *format, ...)
 }
 
 /**
- * Are stdout and stderr connectd to a tty
+ * Are stdout and stderr connected to a tty
  * 0  = no
  * 1  = yes
  * -1 = we do not know yet

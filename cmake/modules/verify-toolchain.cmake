@@ -100,7 +100,7 @@ if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
     set(error_msg "ZEPHYR_TOOLCHAIN_VARIANT not specified and no Zephyr SDK is installed.\n")
     string(APPEND error_msg "Please set ZEPHYR_TOOLCHAIN_VARIANT to the toolchain to use or install the Zephyr SDK.")
   else()
-    #  Note: When CMake mimimun version becomes >= 3.17, change this loop into:
+    #  Note: When CMake minimum version becomes >= 3.17, change this loop into:
     #    foreach(version config IN ZIP_LISTS Zephyr-sdk_CONSIDERED_VERSIONS Zephyr-sdk_CONSIDERED_CONFIGS)
     set(error_msg "The Zephyr SDK version you are using is not supported, please update your SDK.\n")
     set(missing_version "You need SDK version ${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION} or newer.")

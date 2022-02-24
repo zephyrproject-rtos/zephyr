@@ -424,7 +424,7 @@ int usb_dc_ep_read_continue(uint8_t ep);
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
  *
- * @return Enpoint max packet size (mps)
+ * @return Endpoint max packet size (mps)
  */
 int usb_dc_ep_mps(uint8_t ep);
 

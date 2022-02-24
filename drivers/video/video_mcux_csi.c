@@ -230,7 +230,7 @@ static int video_mcux_csi_flush(const struct device *dev,
 			k_sleep(K_MSEC(1));
 		} while (!k_fifo_is_empty(&data->fifo_in));
 	} else {
-		/* Flush driver ouput queue */
+		/* Flush driver output queue */
 		do {
 			ret = CSI_TransferGetFullBuffer(config->base,
 							&(data->csi_handle),

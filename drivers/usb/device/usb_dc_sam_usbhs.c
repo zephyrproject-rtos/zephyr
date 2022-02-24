@@ -542,7 +542,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 
 	/* Check that the endpoint is correctly configured */
 	if (!usb_dc_ep_is_configured(ep_idx)) {
-		LOG_ERR("endpoint configurationf failed");
+		LOG_ERR("endpoint configuration failed");
 		return -EINVAL;
 	}
 

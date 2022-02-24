@@ -583,7 +583,7 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 #else
 
 	/* We are going to skip the full partition of the background areas.
-	 * So we can disable MPU regions inside which dynamic memroy regions
+	 * So we can disable MPU regions inside which dynamic memory regions
 	 * may be programmed.
 	 */
 	for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {

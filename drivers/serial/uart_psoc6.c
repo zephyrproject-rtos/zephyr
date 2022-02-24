@@ -99,7 +99,7 @@ static const cy_stc_scb_uart_config_t uartConfig = {
 /**
  * Function Name: uart_psoc6_init()
  *
- *  Peforms hardware initialization: debug UART.
+ *  Performs hardware initialization: debug UART.
  *
  */
 static int uart_psoc6_init(const struct device *dev)

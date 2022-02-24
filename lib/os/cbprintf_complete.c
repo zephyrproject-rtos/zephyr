@@ -1013,7 +1013,7 @@ static char *encode_float(double value,
 			*--sp = '0';
 		}
 
-		/* Append the leading sigificant "digits". */
+		/* Append the leading significant "digits". */
 		while ((sp < spe) && (precision > 0)) {
 			*buf++ = *sp++;
 			--precision;

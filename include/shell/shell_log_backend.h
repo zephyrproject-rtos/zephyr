@@ -49,7 +49,7 @@ struct shell_log_backend_msg {
 	uint32_t timestamp;
 };
 
-/** @brief Prototype of function outputing processed data. */
+/** @brief Prototype of function outputting processed data. */
 int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx);
 
 /** @def Z_SHELL_LOG_BACKEND_DEFINE

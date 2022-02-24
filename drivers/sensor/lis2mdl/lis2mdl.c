@@ -238,7 +238,7 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 			 * cancellation is enabled in the single mode. Then the
 			 * average of the first measurement done above and this
 			 * one would be the final value. This process is not
-			 * needed in continuous mode since it has beed taken
+			 * needed in continuous mode since it has been taken
 			 * care by lis2mdl itself automatically. Please refer
 			 * to the application note for more details.
 			 */
@@ -398,7 +398,7 @@ static int lis2mdl_init(const struct device *dev)
 		rc = lis2mdl_set_rst_sensor_single_set(ctx,
 							PROPERTY_ENABLE);
 		if (rc) {
-			LOG_ERR("Set offset cancelaltion failed");
+			LOG_ERR("Set offset cancellation failed");
 			return rc;
 		}
 	}

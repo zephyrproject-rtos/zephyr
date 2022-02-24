@@ -142,7 +142,7 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 		return -ENOTSUP;
 	}
 
-	/* Check if PWM pin is one of the predefiend DTS config pins.
+	/* Check if PWM pin is one of the predefined DTS config pins.
 	 * Return its array index (channel number),
 	 * or NRF_PWM_CHANNEL_COUNT if not initialized through DTS.
 	 */

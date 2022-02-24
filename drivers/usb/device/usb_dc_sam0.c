@@ -304,7 +304,7 @@ int usb_dc_reset(void)
 }
 
 /* Queue a change in address.  This is processed later when the
- * current transfers are compelete.
+ * current transfers are complete.
  */
 int usb_dc_set_address(const uint8_t addr)
 {

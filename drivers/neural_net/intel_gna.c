@@ -82,7 +82,7 @@ static void intel_gna_interrupt_handler(const struct device *dev)
 	} else {
 		SOC_DCACHE_INVALIDATE(pending_req.model->output,
 				pending_req.output_len);
-		/* copy output from the model buffer to applciation buffer */
+		/* copy output from the model buffer to application buffer */
 		memcpy(pending_req.output, pending_req.model->output,
 				pending_req.output_len);
 		pending_resp.response.output = pending_req.output;

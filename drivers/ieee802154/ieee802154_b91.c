@@ -313,7 +313,7 @@ static void b91_rf_rx_isr(void)
 			goto exit;
 		}
 
-		/* update RSSI and LQI prameters */
+		/* update RSSI and LQI parameters */
 		b91_update_rssi_and_lqi(pkt);
 
 		/* transfer data to NET stack */

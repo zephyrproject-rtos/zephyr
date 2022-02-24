@@ -9,7 +9,7 @@
 
 /*
  * Some gcc versions and/or configurations as found in the Zephyr SDK
- * (questionably) define __INT32_TYPE__ and derrivatives as a long int
+ * (questionably) define __INT32_TYPE__ and derivatives as a long int
  * which makes the printf format checker to complain about long vs int
  * mismatch when %u is given a uint32_t argument, and uint32_t pointers not
  * being compatible with int pointers. Let's redefine them to follow

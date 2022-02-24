@@ -29,7 +29,7 @@ enum k_objects {
 
 	/** @cond
 	 *  Doxygen should ignore this build-time generated include file
-	 *  when genrating API documentation.  Enumeration values are
+	 *  when generating API documentation.  Enumeration values are
 	 *  generated during build by gen_kobject_list.py.  It includes
 	 *  basic kernel objects (e.g.  pipes and mutexes) and driver types.
 	 */

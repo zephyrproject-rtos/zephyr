@@ -54,7 +54,7 @@
  * @bus_name: Pointer to bus master identifier.
  * @pm: Power mode (lis2dh_powermode).
  * @irq_dev_name: Pointer to GPIO PORT identifier.
- * @irq_pin: GPIO pin number connecter to sensor int pin.
+ * @irq_pin: GPIO pin number connected to sensor int pin.
  * @drdy_int: Sensor drdy int (int1/int2).
  */
 struct iis2dlpc_config {

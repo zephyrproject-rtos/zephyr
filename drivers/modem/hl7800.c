@@ -384,7 +384,7 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 	} while (0)
 
 /* Complex has "no_id_resp" set to true because the sending command
- * is the command used to process the respone
+ * is the command used to process the response
  */
 #define SEND_COMPLEX_AT_CMD(c)                                                 \
 	do {                                                                   \
@@ -5275,7 +5275,7 @@ reboot:
 	}
 
 	/* Query PDP authentication context to get APN username/password.
-	 * Temporary Workaroud - Ignore error
+	 * Temporary Workaround - Ignore error
 	 * On some modules this is returning an error and the response data.
 	 */
 	SEND_AT_CMD_IGNORE_ERROR("AT+WPPP?");
@@ -5435,7 +5435,7 @@ static int connect_TCP_socket(struct hl7800_socket *sock)
 		goto done;
 	}
 	/* Now wait for +KTCP_IND or +KTCP_NOTIF to ensure
-	 * the connection succeded or failed.
+	 * the connection succeeded or failed.
 	 */
 	ret = k_sem_take(&sock->sock_send_sem, MDM_CMD_CONN_TIMEOUT);
 	if (ret == 0) {

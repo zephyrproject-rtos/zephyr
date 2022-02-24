@@ -266,7 +266,7 @@ static uint32_t set_absolute_alarm(int32_t chan, uint32_t abs_val)
 		/* Rerun the algorithm if counter progressed during execution
 		 * and cc_val is in the past or one tick from now. In such
 		 * scenario, it is possible that event will not be generated.
-		 * Reruning the algorithm will delay the alarm but ensure that
+		 * Rerunning the algorithm will delay the alarm but ensure that
 		 * event will be generated at the moment indicated by value in
 		 * CC register.
 		 */
