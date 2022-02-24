@@ -372,7 +372,7 @@ static void sip_svc_ll_callback(struct sip_svc_controller *ctrl,
 {
 	struct sip_svc_id_map_item *trans_id_item;
 	uint64_t data_addr;
-	uint32_t c_idx;
+	uint64_t c_idx;
 
 	if (!ctrl)
 		return;
@@ -388,7 +388,7 @@ static void sip_svc_ll_callback(struct sip_svc_controller *ctrl,
 			return;
 		}
 
-		c_idx = trans_id_item->id;
+		c_idx = (uint64_t)trans_id_item->arg6;
 
 		ctrl->clients[c_idx].active_trans_cnt--;
 
@@ -703,12 +703,12 @@ int sip_svc_ll_send(struct sip_svc_controller *ctrl,
 		/* Map trans id to client, callback, response data addr */
 		if (sip_svc_ll_id_map_insert_item(ctrl->trans_id_map,
 			trans_id,
-			c_idx,
 			(void *)cb,
 			(void *)(request->resp_data_addr & 0xFFFFFFFF),
 			(void *)((request->resp_data_addr >> 32) & 0xFFFFFFFF),
 			(void *)(uint64_t)request->resp_data_size,
-			request->priv_data) != 0) {
+			request->priv_data,
+			(void *)(uint64_t)c_idx) != 0) {
 
 			LOG_ERR("Fail to insert transaction id to map");
 			sip_svc_ll_id_mgr_free(ctrl->trans_id_pool, trans_id);

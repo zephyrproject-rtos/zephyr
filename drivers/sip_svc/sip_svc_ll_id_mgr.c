@@ -159,6 +159,7 @@ struct sip_svc_id_map *sip_svc_ll_id_map_create(uint32_t size)
 		id_map->items[i].arg3 = NULL;
 		id_map->items[i].arg4 = NULL;
 		id_map->items[i].arg5 = NULL;
+		id_map->items[i].arg6 = NULL;
 	}
 
 	return id_map;
@@ -172,28 +173,51 @@ void sip_svc_ll_id_map_delete(struct sip_svc_id_map *id_map)
 	}
 }
 
-int sip_svc_ll_id_map_insert_item(struct sip_svc_id_map *id_map,
-				uint32_t id,
-				uint32_t map_id,
-				void *arg1,
-				void *arg2,
-				void *arg3,
-				void *arg4,
-				void *arg5)
+static int sip_svc_ll_id_map_get_idx(struct sip_svc_id_map *id_map,
+				uint32_t id)
 {
+	int i;
+
 	if (!id_map) {
 		return -EINVAL;
 	}
 
-	if (id >= id_map->size)
-		return -EINVAL;
+	for (i = 0; i < id_map->size; i++) {
+		if (id_map->items[i].id == id) {
+			return i;
+		}
+	}
 
-	id_map->items[id].id = map_id;
-	id_map->items[id].arg1 = arg1;
-	id_map->items[id].arg2 = arg2;
-	id_map->items[id].arg3 = arg3;
-	id_map->items[id].arg4 = arg4;
-	id_map->items[id].arg5 = arg5;
+	return -EINVAL;
+}
+
+int sip_svc_ll_id_map_insert_item(struct sip_svc_id_map *id_map,
+				uint32_t id,
+				void *arg1,
+				void *arg2,
+				void *arg3,
+				void *arg4,
+				void *arg5,
+				void *arg6)
+{
+	int i;
+
+	if (!id_map) {
+		return -EINVAL;
+	}
+
+	i = sip_svc_ll_id_map_get_idx(id_map, SIP_SVC_ID_INVALID);
+	if (i < 0) {
+		return -EINVAL;
+	}
+
+	id_map->items[i].id = id;
+	id_map->items[i].arg1 = arg1;
+	id_map->items[i].arg2 = arg2;
+	id_map->items[i].arg3 = arg3;
+	id_map->items[i].arg4 = arg4;
+	id_map->items[i].arg5 = arg5;
+	id_map->items[i].arg6 = arg6;
 
 	return 0;
 }
@@ -201,20 +225,24 @@ int sip_svc_ll_id_map_insert_item(struct sip_svc_id_map *id_map,
 int sip_svc_ll_id_map_remove_item(struct sip_svc_id_map *id_map,
 				uint32_t id)
 {
+	int i;
+
 	if (!id_map) {
 		return -EINVAL;
 	}
 
-	if (id >= id_map->size) {
+	i = sip_svc_ll_id_map_get_idx(id_map, id);
+	if (i < 0) {
 		return -EINVAL;
 	}
 
-	id_map->items[id].id = SIP_SVC_ID_INVALID;
-	id_map->items[id].arg1 = NULL;
-	id_map->items[id].arg2 = NULL;
-	id_map->items[id].arg3 = NULL;
-	id_map->items[id].arg4 = NULL;
-	id_map->items[id].arg5 = NULL;
+	id_map->items[i].id = SIP_SVC_ID_INVALID;
+	id_map->items[i].arg1 = NULL;
+	id_map->items[i].arg2 = NULL;
+	id_map->items[i].arg3 = NULL;
+	id_map->items[i].arg4 = NULL;
+	id_map->items[i].arg5 = NULL;
+	id_map->items[i].arg6 = NULL;
 
 	return 0;
 }
@@ -223,13 +251,16 @@ struct sip_svc_id_map_item *sip_svc_ll_id_map_query_item(
 				struct sip_svc_id_map *id_map,
 				uint32_t id)
 {
+	int i;
+
 	if (!id_map) {
 		return NULL;
 	}
 
-	if (id >= id_map->size) {
+	i = sip_svc_ll_id_map_get_idx(id_map, id);
+	if (i < 0) {
 		return NULL;
 	}
 
-	return &id_map->items[id];
+	return &id_map->items[i];
 }

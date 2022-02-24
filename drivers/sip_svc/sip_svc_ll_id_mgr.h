@@ -23,11 +23,12 @@ struct sip_svc_id_pool {
 
 struct sip_svc_id_map_item {
 	uint32_t id;
-	void *arg1;	/* cb */
+	void *arg1;	/* callback function pointer */
 	void *arg2;	/* high resp data address */
 	void *arg3;	/* low resp data address */
 	void *arg4;	/* maximun resp data addr size */
 	void *arg5;	/* pointer to private data */
+	void *arg6;	/* client index */
 };
 
 struct sip_svc_id_map {
@@ -49,12 +50,12 @@ void sip_svc_ll_id_map_delete(struct sip_svc_id_map *id_map);
 
 int sip_svc_ll_id_map_insert_item(struct sip_svc_id_map *id_map,
 				uint32_t id,
-				uint32_t map_id,
 				void *arg1,
 				void *arg2,
 				void *arg3,
 				void *arg4,
-				void *arg5);
+				void *arg5,
+				void *arg6);
 
 int sip_svc_ll_id_map_remove_item(struct sip_svc_id_map *id_map,
 				uint32_t id);
