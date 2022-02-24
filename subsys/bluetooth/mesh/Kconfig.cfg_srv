@@ -1,0 +1,80 @@
+# Bluetooth mesh Configuration Server options
+
+# Copyright (c) 2021 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Configuration Server procedures"
+
+config BT_MESH_CFG_SRV_PROC_DEV_COMP
+	bool "Support Composition data procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_APP_KEY
+	bool "Support Appkey List procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_BEACON
+	bool "Support Secure Network Beacon procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_DEFAULT_TTL
+	bool "Support Default TTL procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_GATT_PROXY
+	bool "Support GATT Proxy procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_NET_TRANSMIT
+	bool "Support Network Transmit procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_RELAY
+	bool "Support Relay procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_MOD_PUB
+	bool "Support Model Publication procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_MOD_SUB
+	bool "Support Model Sublication procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_NET_KEY
+	bool "Support NetKey List procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_NODE_IDENTITY
+	bool "Support Node Identity procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_MOD_APP
+	bool "Support Model to AppKey List procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_NODE_RESET
+	bool "Support Reset procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_FRIEND
+	bool "Support Friend procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_LPN_TIMEOUT
+	bool "Support PollTimeout List procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_KRP
+	bool "Support Key Refresh Phase procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_HEARTBEAT_PUB
+	bool "Support Heartbeat Publication procedure"
+	default y
+
+config BT_MESH_CFG_SRV_PROC_HEARTBEAT_SUB
+	bool "Support Heartbeat Subscription procedure"
+	default y
+
+endmenu

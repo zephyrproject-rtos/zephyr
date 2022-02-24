@@ -734,6 +734,8 @@ config BT_MESH_FRIEND_SEG_RX
 
 endif # BT_MESH_FRIEND
 
+rsource "Kconfig.cfg_srv"
+
 config BT_MESH_CFG_CLI
 	bool "Support for Configuration Client Model"
 	help

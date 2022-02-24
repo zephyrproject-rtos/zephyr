@@ -2462,24 +2462,41 @@ static int heartbeat_sub_set(struct bt_mesh_model *model,
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_DEV_COMP)
 	{ OP_DEV_COMP_DATA_GET,        BT_MESH_LEN_EXACT(1),   dev_comp_data_get },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_DEV_COMP */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_APP_KEY)
 	{ OP_APP_KEY_ADD,              BT_MESH_LEN_EXACT(19),  app_key_add },
 	{ OP_APP_KEY_UPDATE,           BT_MESH_LEN_EXACT(19),  app_key_update },
 	{ OP_APP_KEY_DEL,              BT_MESH_LEN_EXACT(3),   app_key_del },
 	{ OP_APP_KEY_GET,              BT_MESH_LEN_EXACT(2),   app_key_get },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_APP_KEY */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_BEACON)
 	{ OP_BEACON_GET,               BT_MESH_LEN_EXACT(0),   beacon_get },
 	{ OP_BEACON_SET,               BT_MESH_LEN_EXACT(1),   beacon_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_BEACON */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_DEFAULT_TTL)
 	{ OP_DEFAULT_TTL_GET,          BT_MESH_LEN_EXACT(0),   default_ttl_get },
 	{ OP_DEFAULT_TTL_SET,          BT_MESH_LEN_EXACT(1),   default_ttl_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_DEFAULT_TTL */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_GATT_PROXY)
 	{ OP_GATT_PROXY_GET,           BT_MESH_LEN_EXACT(0),   gatt_proxy_get },
 	{ OP_GATT_PROXY_SET,           BT_MESH_LEN_EXACT(1),   gatt_proxy_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_GATT_PROXY */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_NET_TRANSMIT)
 	{ OP_NET_TRANSMIT_GET,         BT_MESH_LEN_EXACT(0),   net_transmit_get },
 	{ OP_NET_TRANSMIT_SET,         BT_MESH_LEN_EXACT(1),   net_transmit_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_NET_TRANSMIT */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_RELAY)
 	{ OP_RELAY_GET,                BT_MESH_LEN_EXACT(0),   relay_get },
 	{ OP_RELAY_SET,                BT_MESH_LEN_EXACT(2),   relay_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_RELAY */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_MOD_PUB)
 	{ OP_MOD_PUB_GET,              BT_MESH_LEN_MIN(4),     mod_pub_get },
 	{ OP_MOD_PUB_SET,              BT_MESH_LEN_MIN(11),    mod_pub_set },
 	{ OP_MOD_PUB_VA_SET,           BT_MESH_LEN_MIN(25),    mod_pub_va_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_MOD_PUB */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_MOD_SUB)
 	{ OP_MOD_SUB_ADD,              BT_MESH_LEN_MIN(6),     mod_sub_add },
 	{ OP_MOD_SUB_VA_ADD,           BT_MESH_LEN_MIN(20),    mod_sub_va_add },
 	{ OP_MOD_SUB_DEL,              BT_MESH_LEN_MIN(6),     mod_sub_del },
@@ -2489,26 +2506,45 @@ const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
 	{ OP_MOD_SUB_DEL_ALL,          BT_MESH_LEN_MIN(4),     mod_sub_del_all },
 	{ OP_MOD_SUB_GET,              BT_MESH_LEN_EXACT(4),   mod_sub_get },
 	{ OP_MOD_SUB_GET_VND,          BT_MESH_LEN_EXACT(6),   mod_sub_get_vnd },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_MOD_SUB */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_NET_KEY)
 	{ OP_NET_KEY_ADD,              BT_MESH_LEN_EXACT(18),  net_key_add },
 	{ OP_NET_KEY_UPDATE,           BT_MESH_LEN_EXACT(18),  net_key_update },
 	{ OP_NET_KEY_DEL,              BT_MESH_LEN_EXACT(2),   net_key_del },
 	{ OP_NET_KEY_GET,              BT_MESH_LEN_EXACT(0),   net_key_get },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_NET_KEY */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_NODE_IDENTITY)
 	{ OP_NODE_IDENTITY_GET,        BT_MESH_LEN_EXACT(2),   node_identity_get },
 	{ OP_NODE_IDENTITY_SET,        BT_MESH_LEN_EXACT(3),   node_identity_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_NODE_IDENTITY */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_MOD_APP)
 	{ OP_MOD_APP_BIND,             BT_MESH_LEN_MIN(6),     mod_app_bind },
 	{ OP_MOD_APP_UNBIND,           BT_MESH_LEN_MIN(6),     mod_app_unbind },
 	{ OP_SIG_MOD_APP_GET,          BT_MESH_LEN_MIN(4),     mod_app_get },
 	{ OP_VND_MOD_APP_GET,          BT_MESH_LEN_MIN(6),     mod_app_get },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_MOD_APP */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_NODE_RESET)
 	{ OP_NODE_RESET,               BT_MESH_LEN_EXACT(0),   node_reset },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_NODE_RESET */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_FRIEND)
 	{ OP_FRIEND_GET,               BT_MESH_LEN_EXACT(0),   friend_get },
 	{ OP_FRIEND_SET,               BT_MESH_LEN_EXACT(1),   friend_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_FRIEND */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_LPN_TIMEOUT)
 	{ OP_LPN_TIMEOUT_GET,          BT_MESH_LEN_EXACT(2),   lpn_timeout_get },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_LPN_TIMEOUT */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_KRP)
 	{ OP_KRP_GET,                  BT_MESH_LEN_EXACT(2),   krp_get },
 	{ OP_KRP_SET,                  BT_MESH_LEN_EXACT(3),   krp_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_KRP */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_HEARTBEAT_PUB)
 	{ OP_HEARTBEAT_PUB_GET,        BT_MESH_LEN_EXACT(0),   heartbeat_pub_get },
 	{ OP_HEARTBEAT_PUB_SET,        BT_MESH_LEN_EXACT(9),   heartbeat_pub_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_HEARTBEAT_PUB */
+#if defined(CONFIG_BT_MESH_CFG_SRV_PROC_HEARTBEAT_SUB)
 	{ OP_HEARTBEAT_SUB_GET,        BT_MESH_LEN_EXACT(0),   heartbeat_sub_get },
 	{ OP_HEARTBEAT_SUB_SET,        BT_MESH_LEN_EXACT(5),   heartbeat_sub_set },
+#endif /* CONFIG_BT_MESH_CFG_SRV_PROC_HEARTBEAT_SUB */
 	BT_MESH_MODEL_OP_END,
 };
 
