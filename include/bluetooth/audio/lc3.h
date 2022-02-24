@@ -195,11 +195,11 @@ struct bt_codec_lc3_frame_len {
  */
 #define BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max) \
 { \
-	 BT_CODEC_DATA(BT_CODEC_LC3_FREQ, _freq, _freq >> 8), \
+	 BT_CODEC_DATA(BT_CODEC_LC3_FREQ, (_freq) & 0xffu, (_freq) >> 8), \
 	 BT_CODEC_DATA(BT_CODEC_LC3_DURATION, _duration), \
 	 BT_CODEC_DATA(BT_CODEC_LC3_CHAN_COUNT, _chan_count), \
-	 BT_CODEC_DATA(BT_CODEC_LC3_FRAME_LEN, _len_min, _len_min >> 8, \
-		       _len_max, _len_max >> 8,) \
+	 BT_CODEC_DATA(BT_CODEC_LC3_FRAME_LEN, (_len_min) & 0xffu, (_len_min) >> 8, \
+		       (_len_max) & 0xffu, (_len_max) >> 8) \
 }
 
 /** @def BT_CODEC_LC3_META
@@ -207,9 +207,9 @@ struct bt_codec_lc3_frame_len {
  */
 #define BT_CODEC_LC3_META(_prefer_context, _context) \
 { \
-	 BT_CODEC_DATA(BT_CODEC_META_PREFER_CONTEXT, _prefer_context & 0xff, \
-		       _prefer_context >> 8), \
-	 BT_CODEC_DATA(BT_CODEC_META_CONTEXT, _context & 0xff, _context >> 8) \
+	 BT_CODEC_DATA(BT_CODEC_META_PREFER_CONTEXT, (_prefer_context) & 0xffu, \
+		       (_prefer_context) >> 8), \
+	 BT_CODEC_DATA(BT_CODEC_META_CONTEXT, (_context) & 0xffu, (_context) >> 8) \
 }
 
 /** @def BT_CODEC_LC3
@@ -229,9 +229,9 @@ struct bt_codec_lc3_frame_len {
 { \
 	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, _freq), \
 	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_DURATION, _duration), \
-	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_CHAN_ALLOC, _loc, _loc >> 8, \
-		       _loc >> 16, _loc >> 24), \
-	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_LEN, _len, _len >> 8) \
+	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_CHAN_ALLOC, (_loc) & 0xffu, ((_loc) >> 8) & 0xffu, \
+		       ((_loc) >> 16) & 0xffu, (_loc) >> 24), \
+	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_LEN, (_len) & 0xffu, (_len) >> 8) \
 }
 
 /** @def BT_CODEC_LC3_CONFIG_DATA
