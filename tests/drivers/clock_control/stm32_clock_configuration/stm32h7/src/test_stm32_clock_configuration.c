@@ -67,7 +67,7 @@ static void test_pll_src(void)
 			RCC_PLLSOURCE_HSI, pll_src);
 #elif STM32_PLL_SRC_CSI
 	zassert_equal(RCC_PLLSOURCE_CSI, pll_src,
-			"Expected PLL src: MSI (%d). Actual PLL src: %d",
+			"Expected PLL src: CSI (%d). Actual PLL src: %d",
 			RCC_PLLSOURCE_CSI, pll_src);
 #else
 	zassert_equal(RCC_PLLSOURCE_NONE, pll_src,
