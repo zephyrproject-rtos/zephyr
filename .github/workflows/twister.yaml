@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  pull_request_target:
+  pull_request:
     branches:
       - main
   schedule:
@@ -49,14 +49,11 @@ jobs:
           rm -rf zephyr zephyr-testing
 
       - name: Checkout
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
 
       - name: Environment Setup
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         run: |
           pip3 install GitPython
           git config --global user.email "bot@zephyrproject.org"
@@ -68,7 +65,7 @@ jobs:
           # no need for west update here
 
       - name: Generate Test Plan with Twister
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         id: test-plan
         run: |
           export ZEPHYR_BASE=${PWD}
@@ -84,7 +81,7 @@ jobs:
       - name: Determine matrix size
         id: output-services
         run: |
-          if [ "${{github.event_name}}" = "pull_request_target" ]; then
+          if [ "${{github.event_name}}" = "pull_request" ]; then
             if [ -n "${TWISTER_NODES}" ]; then
               subset="[$(seq -s',' 1 ${TWISTER_NODES})]"
             else
@@ -134,14 +131,11 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
 
       - name: Environment Setup
         run: |
           pip3 install GitPython
-          if [ "${{github.event_name}}" = "pull_request_target" ]; then
+          if [ "${{github.event_name}}" = "pull_request" ]; then
             git config --global user.email "bot@zephyrproject.org"
             git config --global user.name "Zephyr Builder"
             rm -fr ".git/rebase-apply"
@@ -178,7 +172,7 @@ jobs:
             fi
           fi
 
-      - if: github.event_name == 'pull_request_target'
+      - if: github.event_name == 'pull_request'
         name: Run Tests with Twister (Pull Request)
         run: |
           rm -f testplan.csv
@@ -215,39 +209,3 @@ jobs:
           path: |
             twister-out/twister.xml
             testplan.csv
-
-  twister-test-results:
-    name: "Publish Unit Tests Results"
-    needs: twister-build
-    runs-on: ubuntu-latest
-      # the build-and-test job might be skipped, we don't need to run this job then
-    if: success() || failure()
-
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: artifacts
-
-      - name: Merge Test Results
-        run: |
-          pip3 install junitparser junit2html
-          junitparser merge artifacts/*/*/twister.xml junit.xml
-          junit2html junit.xml junit.html
-
-      - name: Upload Unit Test Results in HTML
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: HTML Unit Test Results
-          if-no-files-found: ignore
-          path: |
-            junit.html
-
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          check_name: Unit Test Results
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          files: "**/twister.xml"
-          comment_mode: off

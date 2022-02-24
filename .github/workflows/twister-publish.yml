@@ -1,0 +1,56 @@
+name: Publish Twister Results
+
+on:
+  workflow_run:
+    workflows: ["Run tests with twister"]
+    types:
+      - completed
+
+jobs:
+  twister-publish:
+    name: "Publish Twister Results"
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion != 'skipped'
+
+    steps:
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: twister.yaml
+          path: artifacts
+          run_id: ${{ github.event.workflow_run.id }}
+
+      - name: Check for reports
+        id: check-reports
+        run: |
+          # Check if any report was generated
+          if find artifacts -name twister.xml | grep .; then
+            echo "::set-output name=report_needed::1";
+          else
+            echo "::set-output name=report_needed::0";
+          fi
+
+      - name: Merge Test Results
+        if: steps.check-reports.outputs.report_needed != 0
+        run: |
+          pip3 install junitparser junit2html
+          junitparser merge artifacts/*/twister.xml junit.xml
+          junit2html junit.xml junit.html
+
+      - name: Upload Unit Test Results in HTML
+        if: steps.check-reports.outputs.report_needed != 0
+        uses: actions/upload-artifact@v2
+        with:
+          name: HTML Unit Test Results
+          path: junit.html
+
+      - name: Publish Unit Test Results
+        if: steps.check-reports.outputs.report_needed != 0
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          check_name: Unit Test Results
+          comment_mode: off
+          commit: ${{ github.event.workflow_run.head_sha }}
+          event_file: artifacts/event/event.json
+          event_name: ${{ github.event.workflow_run.event }}
+          files: "**/twister.xml"
