@@ -369,10 +369,13 @@ harness_config: <harness configuration options>
 
         Only one fixture can be defined per testcase.
 
-    pytest_root: <pytest dirctory> (default pytest)
+    pytest_root: <pytest directory> (default pytest)
         Specify a pytest directory which need to excute when test case begin to running,
         default pytest directory name is pytest, after pytest finished, twister will
         check if this case pass or fail according the pytest report.
+
+    pytest_args: <list of arguments> (default empty)
+        Specify a list of additional arguments to pass to ``pytest``.
 
     The following is an example yaml file with a few harness_config options.
 
