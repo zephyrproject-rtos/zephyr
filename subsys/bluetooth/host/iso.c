@@ -957,10 +957,6 @@ static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 
 	BT_DBG("%p", iso);
 
-	if (!iso_server) {
-		return -ENOMEM;
-	}
-
 	accept_info.acl = acl;
 	accept_info.cig_id = iso->iso.cig_id;
 	accept_info.cis_id = iso->iso.cis_id;
@@ -1054,6 +1050,12 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	BT_DBG("acl_handle %u cis_handle %u cig_id %u cis %u",
 		acl_handle, cis_handle, evt->cig_id, evt->cis_id);
+
+	if (iso_server == NULL) {
+		BT_DBG("No ISO server registered");
+		hci_le_reject_cis(cis_handle, BT_HCI_ERR_UNSPECIFIED);
+		return;
+	}
 
 	/* Lookup existing connection with same handle */
 	iso = bt_conn_lookup_handle(cis_handle);
