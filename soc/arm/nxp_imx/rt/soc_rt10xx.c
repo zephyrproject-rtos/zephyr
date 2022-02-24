@@ -164,12 +164,20 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_LcdifDiv, 1);
 #endif
 
-#if CONFIG_USB_DC_NXP_EHCI
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
 	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
-		DT_PROP_BY_PHANDLE(DT_INST(0, nxp_mcux_usbd), clocks, clock_frequency));
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
 	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
-		DT_PROP_BY_PHANDLE(DT_INST(0, nxp_mcux_usbd), clocks, clock_frequency));
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
 	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay) && CONFIG_USB_DC_NXP_EHCI
+	CLOCK_EnableUsbhs1PhyPllClock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
