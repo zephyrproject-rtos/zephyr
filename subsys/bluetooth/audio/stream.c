@@ -77,10 +77,12 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf)
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)
-static struct bt_audio_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static struct bt_audio_unicast_group unicast_groups[UNICAST_GROUP_CNT];
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+static struct bt_audio_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
 
 static int bt_audio_stream_iso_accept(const struct bt_iso_accept_info *info,
 				      struct bt_iso_chan **iso_chan)
@@ -150,6 +152,7 @@ done:
 
 	return -ENOSPC;
 }
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 
 bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 {
@@ -235,21 +238,21 @@ void bt_audio_stream_detach(struct bt_audio_stream *stream)
 
 int bt_audio_stream_disconnect(struct bt_audio_stream *stream)
 {
-	int i;
-
 	BT_DBG("stream %p iso %p", stream, stream->iso);
 
 	if (stream == NULL) {
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 	/* Stop listening */
-	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(enabling); i++) {
 		if (enabling[i] == stream) {
 			enabling[i] = NULL;
 			break;
 		}
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 
 	if (stream->iso == NULL || stream->iso->iso == NULL) {
 		return -ENOTCONN;
