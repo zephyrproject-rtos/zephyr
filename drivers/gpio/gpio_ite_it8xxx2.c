@@ -428,6 +428,69 @@ static int gpio_ite_configure(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_ite_get_config(const struct device *dev,
+			       gpio_pin_t pin,
+			       gpio_flags_t *out_flags)
+{
+	const struct gpio_ite_cfg *gpio_config = DEV_GPIO_CFG(dev);
+
+	volatile uint8_t *reg_gpdr = (uint8_t *)gpio_config->reg_gpdr;
+	volatile uint8_t *reg_gpcr = (uint8_t *)(gpio_config->reg_gpcr + pin);
+	volatile uint8_t *reg_gpotr = (uint8_t *)gpio_config->reg_gpotr;
+	volatile uint8_t *reg_1p8v;
+	volatile uint8_t mask_1p8v;
+	uint8_t mask = BIT(pin);
+	gpio_flags_t flags = 0;
+
+	__ASSERT(gpio_config->index < GPIO_GROUP_COUNT,
+		"Invalid GPIO group index");
+
+	/* push-pull or open-drain */
+	if (*reg_gpotr & mask)
+		flags |= GPIO_OPEN_DRAIN;
+
+	/* 1.8V or 3.3V */
+	reg_1p8v = &IT8XXX2_GPIO_GCRX(
+			gpio_1p8v[gpio_config->index][pin].offset);
+	mask_1p8v = gpio_1p8v[gpio_config->index][pin].mask_1p8v;
+	if (*reg_1p8v & mask_1p8v) {
+		flags |= GPIO_VOLTAGE_1P8;
+	} else {
+		flags |= GPIO_VOLTAGE_3P3;
+	}
+
+	/* set input or output. */
+	if (*reg_gpcr & GPCR_PORT_PIN_MODE_OUTPUT) {
+		flags |= GPIO_OUTPUT;
+
+		/* set level */
+		if (*reg_gpdr & mask) {
+			flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			flags |= GPIO_OUTPUT_LOW;
+		}
+	}
+
+	if (*reg_gpcr & GPCR_PORT_PIN_MODE_INPUT) {
+		flags |= GPIO_INPUT;
+
+		/* pullup / pulldown */
+		if (*reg_gpcr & GPCR_PORT_PIN_MODE_PULLUP) {
+			flags |= GPIO_PULL_UP;
+		}
+
+		if (*reg_gpcr & GPCR_PORT_PIN_MODE_PULLDOWN) {
+			flags |= GPIO_PULL_DOWN;
+		}
+	}
+
+	*out_flags = flags;
+
+	return 0;
+}
+#endif
+
 static int gpio_ite_port_get_raw(const struct device *dev,
 					gpio_port_value_t *value)
 {
@@ -566,6 +629,9 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 
 static const struct gpio_driver_api gpio_ite_driver_api = {
 	.pin_configure = gpio_ite_configure,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_ite_get_config,
+#endif
 	.port_get_raw = gpio_ite_port_get_raw,
 	.port_set_masked_raw = gpio_ite_port_set_masked_raw,
 	.port_set_bits_raw = gpio_ite_port_set_bits_raw,
