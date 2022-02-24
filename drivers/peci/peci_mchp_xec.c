@@ -313,6 +313,12 @@ static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 			/* Get write block FCS just for debug */
 			tx_fcs = regs->RD_DATA;
 			LOG_DBG("TX FCS %x", tx_fcs);
+
+			/* If a Ping is done, write Tx fcs to rx buffer*/
+			if (msg->cmd_code == PECI_CMD_PING) {
+				rx_buf->buf[0] = tx_fcs;
+				break;
+			}
 		} else if (i == (rx_buf->len + 1)) {
 			/* Get read block FCS, but don't count it */
 			rx_buf->buf[i-1] = regs->RD_DATA;
@@ -353,8 +359,9 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 
 	/* If a PECI transmission is successful, it may or not involve
 	 * a read operation, check if transaction expects a response
+	 * Also perform a read when PECI cmd is Ping to get Write FCS
 	 */
-	if (msg->rx_buffer.len) {
+	if (msg->rx_buffer.len || (msg->cmd_code == PECI_CMD_PING)) {
 		ret = peci_xec_read(dev, msg);
 		if (ret) {
 			return ret;
