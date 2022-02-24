@@ -12,6 +12,7 @@
 #include <sys/atomic.h>
 #include <sys/util.h>
 #include <string.h>
+#include <toolchain.h>
 
 #ifdef __GNUC__
 #ifndef alloca
@@ -323,7 +324,9 @@ do { \
  *
  * @param ...  Optional string with arguments (fmt, ...). It may be empty.
  */
-#ifdef CONFIG_LOG2_ALWAYS_RUNTIME
+#if defined(CONFIG_LOG2_ALWAYS_RUNTIME) || \
+	(!defined(CONFIG_LOG) && \
+		(!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
 #define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do {\
@@ -388,7 +391,9 @@ do { \
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
 } while (0)
-#endif /* CONFIG_LOG2_ALWAYS_RUNTIME */
+#endif /* CONFIG_LOG2_ALWAYS_RUNTIME ||
+	* (!LOG && (!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
+	*/
 
 
 #define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
