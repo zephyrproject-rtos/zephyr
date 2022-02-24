@@ -293,7 +293,7 @@
 /drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/ipm/Kconfig.nrfx                 @masz-nordic
 /drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic
-/drivers/ipm/ipm_cavs_idc*                @dcpleung
+/drivers/ipm/ipm_cavs*                    @dcpleung @andyross
 /drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
