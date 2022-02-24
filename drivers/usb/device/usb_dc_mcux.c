@@ -88,7 +88,12 @@ static const usb_device_controller_interface_struct_t mcux_usb_iface = {
 	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
 #define CONTROLLER_ID kUSB_ControllerEhci0
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay) && CONFIG_USB_DC_NXP_EHCI
+#define CONTROLLER_ID kUSB_ControllerEhci1
+#endif
 
 extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 
