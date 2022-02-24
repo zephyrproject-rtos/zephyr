@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_CC1101
+	bool "TI CC1101 Driver support"
+	depends on NETWORKING
+	select NET_L2_IEEE802154_SUB_GHZ
+
+if IEEE802154_CC1101
+
+config IEEE802154_CC1101_DRV_NAME
+	string "TI CC1101 Driver's name"
+	default "cc1101"
+	help
+	  This option sets the driver name
+
+config IEEE802154_CC1101_RANDOM_MAC
+	bool "Random MAC address"
+	default y
+	help
+	  Generate a random MAC address dynamically.
+
+if ! IEEE802154_CC1101_RANDOM_MAC
+
+config IEEE802154_CC1101_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 4 of the MAC address.
+
+config IEEE802154_CC1101_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 5 of the MAC address.
+
+config IEEE802154_CC1101_MAC6
+	hex "MAC Address Byte 6"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 6 of the MAC address.
+
+config IEEE802154_CC1101_MAC7
+	hex "MAC Address Byte 7"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 7 of the MAC address.
+
+endif # IEEE802154_CC1101_RANDOM_MAC
+
+endif # IEEE802154_CC1101
