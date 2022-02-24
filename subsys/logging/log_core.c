@@ -60,7 +60,7 @@ LOG_MODULE_REGISTER(log);
 #endif
 
 #ifndef CONFIG_LOG1
-log_format_func_t format_table[] = {
+static const log_format_func_t format_table[] = {
 	[LOG_OUTPUT_TEXT] = log_output_msg2_process,
 	[LOG_OUTPUT_SYST] = IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) ?
 						log_output_msg2_syst_process : NULL,
