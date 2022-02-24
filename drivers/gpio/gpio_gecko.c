@@ -129,6 +129,77 @@ static int gpio_gecko_configure(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_gecko_get_config(const struct device *dev,
+				 gpio_pin_t pin,
+				 gpio_flags_t *out_flags)
+{
+	const struct gpio_gecko_config *config = dev->config;
+	GPIO_Port_TypeDef gpio_index = config->gpio_index;
+	GPIO_Mode_TypeDef mode;
+	unsigned int out;
+	gpio_flags_t flags = 0;
+
+	mode = GPIO_PinModeGet(gpio_index, pin);
+	out = GPIO_PinOutGet(gpio_index, pin);
+
+	switch (mode) {
+	case gpioModeWiredAnd:
+		flags = GPIO_OUTPUT | GPIO_OPEN_DRAIN;
+
+		if (out) {
+			flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			flags |= GPIO_OUTPUT_LOW;
+		}
+
+		break;
+	case gpioModeWiredOr:
+		flags = GPIO_OUTPUT | GPIO_OPEN_SOURCE;
+
+		if (out) {
+			flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			flags |= GPIO_OUTPUT_LOW;
+		}
+
+		break;
+	case gpioModePushPull:
+		flags = GPIO_OUTPUT | GPIO_PUSH_PULL;
+
+		if (out) {
+			flags |= GPIO_OUTPUT_HIGH;
+		} else {
+			flags |= GPIO_OUTPUT_LOW;
+		}
+
+		break;
+	case gpioModeInputPull:
+		flags = GPIO_INPUT;
+
+		if (out) {
+			flags |= GPIO_PULL_UP;
+		} else {
+			flags |= GPIO_PULL_DOWN;
+		}
+
+		break;
+	case gpioModeInput:
+		flags = GPIO_INPUT;
+		break;
+	case gpioModeDisabled:
+		flags = GPIO_DISCONNECTED;
+		break;
+	default:
+		break;
+	}
+
+	*out_flags = flags;
+
+	return 0;
+}
+#endif
+
 static int gpio_gecko_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_gecko_config *config = dev->config;
@@ -267,6 +338,9 @@ static void gpio_gecko_common_isr(const struct device *dev)
 
 static const struct gpio_driver_api gpio_gecko_driver_api = {
 	.pin_configure = gpio_gecko_configure,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_gecko_get_config,
+#endif
 	.port_get_raw = gpio_gecko_port_get_raw,
 	.port_set_masked_raw = gpio_gecko_port_set_masked_raw,
 	.port_set_bits_raw = gpio_gecko_port_set_bits_raw,
