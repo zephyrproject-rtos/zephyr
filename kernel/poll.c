@@ -457,7 +457,7 @@ void z_impl_k_poll_signal_init(struct k_poll_signal *sig)
 {
 	sys_dlist_init(&sig->poll_events);
 	sig->signaled = 0U;
-	/* signal->result is left unitialized */
+	/* signal->result is left uninitialized */
 	z_object_init(sig);
 
 	SYS_PORT_TRACING_FUNC(k_poll_api, signal_init, sig);

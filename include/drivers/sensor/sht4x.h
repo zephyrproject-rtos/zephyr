@@ -22,7 +22,7 @@ extern "C" {
 
 #include <drivers/sensor.h>
 
-/* Maximum teperature above which the heater should not be used */
+/* Maximum temperature above which the heater should not be used */
 #define SHT4X_HEATER_MAX_TEMP 65
 
 enum sensor_attribute_sht4x {

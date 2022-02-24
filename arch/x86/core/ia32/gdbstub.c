@@ -196,7 +196,7 @@ size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
 
 	if (regno == GDB_ORIG_EAX) {
 		/* GDB requires orig_eax that seems to be
-		 * Linux specific. Unfortunely if we just
+		 * Linux specific. Unfortunately if we just
 		 * return error, GDB will stop working.
 		 * So just fake an OK response by saying
 		 * that we have processed the hex string.

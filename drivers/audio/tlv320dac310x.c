@@ -268,7 +268,7 @@ static int codec_configure_clocks(const struct device *dev,
 			i2s->frame_clk_freq);
 
 	if (cfg->mclk_freq <= DAC_PROC_CLK_FREQ_MAX) {
-		/* use MCLK frequecy as the DAC processing clock */
+		/* use MCLK frequency as the DAC processing clock */
 		ndac = 1;
 	} else {
 		ndac = cfg->mclk_freq / DAC_PROC_CLK_FREQ_MAX;

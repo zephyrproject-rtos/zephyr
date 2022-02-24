@@ -188,7 +188,7 @@ SECTIONS
 
 	/* For non-XIP system, __rom_region_end symbol should be set to
 	 * the end of common ROMABLE_REGIONs (text and rodata) instead of
-	 * the linker script end, so it wouldn't mistakely contain
+	 * the linker script end, so it wouldn't mistakenly contain
 	 * RAMABLE_REGION in it.
 	 */
 #ifndef CONFIG_XIP
@@ -377,7 +377,7 @@ GROUP_END(DTCM)
 
 /* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid
  * to set __rom_region_end symbol at the end of linker script and
- * doesn't mistakely contain the RAMABLE_REGION in it.
+ * doesn't mistakenly contain the RAMABLE_REGION in it.
  */
 #ifdef CONFIG_XIP
 /* Must be last in romable region */

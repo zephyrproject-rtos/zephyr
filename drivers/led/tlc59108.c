@@ -140,7 +140,7 @@ static int tlc59108_led_blink(const struct device *dev, uint32_t led,
 		return -EIO;
 	}
 
-	/* Select the GRPPWM source to drive the LED outpout */
+	/* Select the GRPPWM source to drive the LED output */
 	return tlc59108_set_ledout(dev, led, TLC59108_LED_GRP_PWM);
 }
 

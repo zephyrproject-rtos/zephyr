@@ -43,7 +43,7 @@ config HAS_MCUX_CCM
 config HAS_MCUX_CCM_REV2
 	bool
 	help
-	  Set if the revison 2 of clock control module (CCM) module is present in the SoC.
+	  Set if the revision 2 of clock control module (CCM) module is present in the SoC.
 	  This is present in SoC's such as RT1170
 
 config HAS_MCUX_SYSCON
@@ -97,7 +97,7 @@ config HAS_MCUX_FTM
 config HAS_MCUX_IAP
 	bool
 	help
-	  Set if the flash memory In Applcation Programming is present in
+	  Set if the flash memory In Application Programming is present in
 	  the LPC55xxx family SoCs.
 
 config HAS_MCUX_IAP_LEGACY

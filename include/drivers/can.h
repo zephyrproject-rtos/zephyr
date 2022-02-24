@@ -629,7 +629,7 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
  *
  * Calculate the timing parameters from a given bitrate in bits/s and the
  * sampling point in permill (1/1000) of the entire bit time. The bitrate must
- * alway match perfectly. If no result can be reached for the given parameters,
+ * always match perfectly. If no result can be reached for the given parameters,
  * -EINVAL is returned.
  *
  * @note The requested ``sample_pnt`` will not always be matched perfectly. The
@@ -676,7 +676,7 @@ int can_calc_timing_data(const struct device *dev, struct can_timing *res,
  * Fill the prescaler value in the timing struct. The sjw, prop_seg, phase_seg1
  * and phase_seg2 must be given.
  *
- * The returned bitrate error is reminder of the devision of the clock rate by
+ * The returned bitrate error is remainder of the division of the clock rate by
  * the bitrate times the timing segments.
  *
  * @param dev     Pointer to the device structure for the driver instance.

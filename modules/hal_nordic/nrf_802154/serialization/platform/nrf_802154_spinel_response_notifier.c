@@ -51,7 +51,7 @@ void nrf_802154_spinel_response_notifier_lock_before_request(spinel_prop_key_t p
 	/*
 	 * Only one thread can await response.
 	 * TODO: Implement matching responses to requests and allow multiple threads
-	 *       to await simulatneously
+	 *       to await simultaneously
 	 */
 
 	LOG_DBG("Locking response notifier");
@@ -89,7 +89,7 @@ nrf_802154_spinel_notify_buff_t *nrf_802154_spinel_response_notifier_property_aw
 	ret = k_mutex_unlock(&await_mutex);
 	assert(ret == 0);
 	(void)ret;
-	LOG_DBG("Unlockling response notifier");
+	LOG_DBG("Unlocking response notifier");
 
 	return result;
 }

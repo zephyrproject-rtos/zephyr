@@ -232,7 +232,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev,
 		if (ret || status) {
 		/*
 		 * DMA encountered an error (status != 0)
-		 * or No bufers in input queue
+		 * or No buffers in input queue
 		 */
 			LOG_ERR("DMA status %08x chan %u get ret %d",
 				status, channel, ret);

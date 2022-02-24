@@ -74,7 +74,7 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
  * - We expect the supplied exception stack frame to always be a valid
  *   frame. That is because, if the ESF cannot be stacked during an SVC,
  *   a processor fault (e.g. stacking error) will be generated, and the
- *   fault handler will executed insted of the SVC.
+ *   fault handler will executed instead of the SVC.
  *
  * @param esf exception frame
  */

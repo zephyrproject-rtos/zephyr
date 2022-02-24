@@ -161,7 +161,7 @@
 	/* LM75ADP temperature sensor on addr 0x48 */
 };
 
-/* Attention!: the spi-sck pin is in confict with the boot_button on pb13 */
+/* Attention!: the spi-sck pin is in conflict with the boot_button on pb13 */
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pa10>;

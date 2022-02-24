@@ -65,7 +65,7 @@
 	flag = <NPCX_PSL_FALLING_EDGE>;
 };
 
-/* Overwirte default device properties with overlays in board dt file here. */
+/* Overwrite default device properties with overlays in board dt file here. */
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;

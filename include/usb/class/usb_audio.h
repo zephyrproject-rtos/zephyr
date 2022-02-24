@@ -197,7 +197,7 @@ typedef void (*usb_audio_data_completion_cb_t)(const struct device *dev,
  *
  * @param dev USB Audio device
  * @param evt Pointer to an event to be parsed by the App.
- *	      Pointer sturct is temporary and is valid only during the
+ *	      Pointer struct is temporary and is valid only during the
  *	      execution of this callback.
  */
 typedef void (*usb_audio_feature_updated_cb_t)(const struct device *dev,
@@ -270,9 +270,9 @@ void usb_audio_register(const struct device *dev,
  *		 responsible for managing the buffer for Input devices. In case
  *		 of sending error user must decide if the buffer should be
  *		 dropped or retransmitted.
- *		 Afther the buffer was sent successfully it is passed to the
+ *		 After the buffer was sent successfully it is passed to the
  *		 data_written_cb callback if the application uses one or
- *		 automatically freed otherwse.
+ *		 automatically freed otherwise.
  *		 User must provide proper net_buf chunk especially when
  *		 it comes to its size. This information can be obtained
  *		 using usb_audio_get_in_frame_size() API function.

@@ -2506,7 +2506,7 @@ struct bt_hci_evt_le_connection_iq_report {
 struct bt_hci_evt_le_cte_req_failed {
 	/* According to BT 5.3 Core Spec the status field may have following
 	 * values:
-	 * - BT_HCI_CTE_REQ_STATUS_RSP_WIHOUT_CTE when received LL_CTE_RSP_PDU without CTE.
+	 * - BT_HCI_CTE_REQ_STATUS_RSP_WITHOUT_CTE when received LL_CTE_RSP_PDU without CTE.
 	 * - Other Controller error code for peer rejected request.
 	 */
 	uint8_t  status;

@@ -101,7 +101,7 @@ extern "C" {
  *
  * In C++, due to language limitations, this will accept as @p array
  * any type that implements <tt>operator[]</tt>. The results may not be
- * particulary meaningful in this case.
+ * particularly meaningful in this case.
  *
  * In C, passing a pointer as @p array causes a compile error.
  */

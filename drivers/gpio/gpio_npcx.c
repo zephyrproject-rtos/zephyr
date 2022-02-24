@@ -61,7 +61,7 @@ void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	/*
-	 * If this pin is configurred as a GPIO interrupt source, do not
+	 * If this pin is configured as a GPIO interrupt source, do not
 	 * implement bypass. Or ec cannot wake up via this event.
 	 */
 	if (pin < NPCX_GPIO_PORT_PIN_NUM && !npcx_miwu_irq_get_state(io_wui)) {
@@ -75,7 +75,7 @@ void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	/*
-	 * If this pin is configurred as a GPIO interrupt source, do not
+	 * If this pin is configured as a GPIO interrupt source, do not
 	 * implement bypass. Or ec cannot wake up via this event.
 	 */
 	if (pin < NPCX_GPIO_PORT_PIN_NUM && !npcx_miwu_irq_get_state(io_wui)) {

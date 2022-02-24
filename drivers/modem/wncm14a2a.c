@@ -1251,7 +1251,7 @@ static int modem_pin_init(void)
 			 pinconfig[SHLD_3V3_1V8_SIG_TRANS_ENA].pin,
 			 SHLD_3V3_1V8_SIG_TRANS_DISABLED);
 
-	/* While the level translator is disabled and ouptut pins
+	/* While the level translator is disabled and output pins
 	 * are tristated, make sure the inputs are in the same state
 	 * as the WNC Module pins so that when the level translator is
 	 * enabled, there are no differences.

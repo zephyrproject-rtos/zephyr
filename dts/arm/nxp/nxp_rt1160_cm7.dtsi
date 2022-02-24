@@ -14,7 +14,7 @@
 	 * ITCM & DTCM are available only to the M7 core. EDMA interrupts are connected
 	 * to the M7 core alone, hence this EDMA controller has been designated M7 only.
 	 * GPIO 6 is available to both M4 and M7 cores, however the GPIO interrupt is
-	 * only accesssible to the M7.
+	 * only accessible to the M7.
 	 *
 	 * Refer to Chapter 3 of the Reference Manual
 	 */

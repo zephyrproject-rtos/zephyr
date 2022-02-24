@@ -17,7 +17,7 @@
 #define AMG88XX_INTC		0x03 /* Setting interrupt control register */
 #define AMG88XX_STAT		0x04 /* Status register */
 #define AMG88XX_SCLR		0x05 /* Status clear register */
-#define AMG88XX_AVE		0x07 /* Setting verage register */
+#define AMG88XX_AVE		0x07 /* Setting average register */
 #define AMG88XX_INTHL		0x08 /* Interrupt level upper limit [7:0] */
 #define AMG88XX_INTHH		0x09 /* Interrupt level upper limit [11:8] */
 #define AMG88XX_INTLL		0x0a /* Interrupt level lower limit [7:0] */
@@ -38,7 +38,7 @@
 #define AMG88XX_OUTPUT_BASE	0x80 /* Base address for the output values */
 
 #define AMG88XX_PCLT_NORMAL_MODE	0x00
-#define AMG88XX_PCLT_SLEEEP_MODE	0x10
+#define AMG88XX_PCLT_SLEEP_MODE		0x10
 #define AMG88XX_PCLT_STAND_BY_60S_MODE	0x20
 #define AMG88XX_PCLT_STAND_BY_10S_MODE	0x21
 

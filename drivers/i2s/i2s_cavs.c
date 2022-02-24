@@ -147,7 +147,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg,
 			/*
 			 * DMA encountered an error (status != 0)
 			 * or
-			 * No bufers in input queue
+			 * No buffers in input queue
 			 */
 			LOG_ERR("DMA status %08x channel %u k_msgq_get ret %d",
 					status, channel, ret);
@@ -588,7 +588,7 @@ static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 	unsigned int key;
 
 	/*
-	 * Enable transmit undderrun interrupt to allow notification
+	 * Enable transmit underrun interrupt to allow notification
 	 * upon transmit FIFO being emptied.
 	 * Defer disabling of TX to the underrun processing in ISR
 	 */

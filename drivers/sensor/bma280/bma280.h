@@ -41,7 +41,7 @@
 #endif
 
 /*
- * BMA280_PMU_FULL_RANGE measured in mili-m/s^2 instead
+ * BMA280_PMU_FULL_RANGE measured in milli-m/s^2 instead
  * of m/s^2 to avoid using struct sensor_value for it
  */
 #define BMA280_REG_PMU_RANGE		0x0F

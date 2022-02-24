@@ -128,7 +128,7 @@ static void baudrate_set(const struct device *dev,
 	const struct uart_stellaris_config *config = dev->config;
 	uint32_t brdi, brdf, div, rem;
 
-	/* upon reset, the system clock uses the intenal OSC @ 12MHz */
+	/* upon reset, the system clock uses the internal OSC @ 12MHz */
 
 	div = (baudrate * 16U);
 	rem = sys_clk_freq_hz % div;

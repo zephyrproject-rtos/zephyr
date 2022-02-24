@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(usb_dc_sam_usbc, CONFIG_USB_DRIVER_LOG_LEVEL);
 /**
  * @brief USB Driver Control Endpoint Finite State Machine states
  *
- * FSM states to keep tracking of control endpoint hiden states.
+ * FSM states to keep tracking of control endpoint hidden states.
  */
 enum usb_dc_epctrl_state {
 	/* Wait a SETUP packet */

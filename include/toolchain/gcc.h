@@ -437,7 +437,7 @@ do {                                                                    \
  * and toolchain, may restrict the range of values permitted
  * for assignment to the named symbol.
  *
- * For example, on x86, "value" is interpreated as signed
+ * For example, on x86, "value" is interpreted as signed
  * 32-bit integer. Passing in an unsigned 32-bit integer
  * with MSB set would result in a negative integer.
  * Moreover, GCC would error out if an integer larger

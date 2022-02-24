@@ -130,7 +130,7 @@ static uint8_t read_keyboard_row(const struct device *dev)
 static bool is_matrix_ghosting(const uint8_t *state)
 {
 	/*
-	 * Matrix keyboard designs are suceptible to ghosting.
+	 * Matrix keyboard designs are susceptible to ghosting.
 	 * An extra key appears to be pressed when 3 keys
 	 * belonging to the same block are pressed.
 	 * for example, in the following block

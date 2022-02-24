@@ -307,7 +307,7 @@ function(process_flags lang input output)
           #             $<$<OTHER_EXPRESSION:$<COMPILE_LANGUAGE:C>:something>>
           string(REGEX MATCH "(\\\$<)[^\\\$]*(\\\$<)[^\\\$]*(\\\$<)" IGNORE_RESULT ${flag})
           if(CMAKE_MATCH_2)
-            # Nested generator expressions are used, just substitue `$<COMPILE_LANGUAGE:${l}>` to `1`
+            # Nested generator expressions are used, just substitute `$<COMPILE_LANGUAGE:${l}>` to `1`
             string(REGEX REPLACE "\\\$<COMPILE_LANGUAGE:${l}>" "1" updated_flag ${flag})
           endif()
           list(APPEND tmp_list ${updated_flag})
@@ -317,7 +317,7 @@ function(process_flags lang input output)
     endforeach()
 
     if(NOT is_compile_lang_generator_expression)
-      # SHELL is used to avoid de-deplucation, but when process flags
+      # SHELL is used to avoid de-duplication, but when process flags
       # then this tag must be removed to return real compile/linker flags.
       if(flag MATCHES "SHELL:[ ]*(.*)")
         separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
@@ -436,7 +436,7 @@ endmacro()
 # ZEPHYR_MODULE/drivers/entropy/CMakeLists.txt
 # with content:
 # zephyr_library_amend()
-# zephyr_libray_add_sources(...)
+# zephyr_library_add_sources(...)
 #
 # It is also possible to use generator expression when amending to Zephyr
 # libraries.
@@ -524,7 +524,7 @@ endfunction()
 
 # Add the existing CMake library 'library' to the global list of
 # Zephyr CMake libraries. This is done automatically by the
-# constructor but must called explicitly on CMake libraries that do
+# constructor but must be called explicitly on CMake libraries that do
 # not use a zephyr library constructor.
 function(zephyr_append_cmake_library library)
   if(TARGET zephyr_prebuilt)
@@ -555,7 +555,7 @@ endfunction()
 # The partition argument is the name of the partition where the library shall
 # be placed.
 #
-# Note: Ensure the given partition has been define using
+# Note: Ensure the given partition has been defined using
 #       K_APPMEM_PARTITION_DEFINE in source code.
 function(zephyr_library_app_memory partition)
   set_property(TARGET zephyr_property_target
@@ -595,7 +595,7 @@ endfunction()
 # files of this library will be accessible to the 'app' library.
 #
 # This is done because when a user uses Kconfig to enable a library he
-# expects to be able to include it's header files and call it's
+# expects to be able to include its header files and call its
 # functions out-of-the box.
 #
 # A Zephyr interface library should be used when there exists some
@@ -2073,7 +2073,7 @@ endfunction()
 #   zephyr_file(<mode> <arg> ...)
 #
 # Zephyr file function extension.
-# This function currently support the following <modes>
+# This function currently supports the following <modes>
 #
 # APPLICATION_ROOT <path>: Check all paths in provided variable, and convert
 #                          those paths that are defined with `-D<path>=<val>`
@@ -3798,8 +3798,8 @@ endfunction()
 # Configure an output section with additional input sections.
 # An output section can be configured with additional input sections besides its
 # default section.
-# For example, adding the input section `foo` to the output section bar, with KEEP
-# attribute, then call:
+# For example, to add the input section `foo` to the output section bar, with KEEP
+# attribute, call:
 #   zephyr_linker_section_configure(SECTION bar INPUT foo KEEP)
 #
 # ALIGN <alignment>   : Will align the input section placement inside the load
@@ -3808,14 +3808,14 @@ endfunction()
 #                       first section in output.
 # SORT <NAME>         : Sort the input sections according to <type>.
 #                       Currently only `NAME` is supported.
-# KEEP                : Do no eliminate input section during linking
+# KEEP                : Do not eliminate input section during linking
 # PRIO                : The priority of the input section. Per default, input
 #                       sections order is not guaranteed by all linkers, but
-#                       using priority, then Zephyr CMake linker will create
-#                       sections so order can be guaranteed. All unprioritized
+#                       using priority Zephyr CMake linker will create sections
+#                       such that order can be guaranteed. All unprioritized
 #                       sections will internally be given a CMake process order
 #                       priority counting from 100, so first unprioritized section
-#                       is handles internal pri0 100, next 101, and so on.
+#                       is handled internal prio 100, next 101, and so on.
 #                       To ensure a specific input section come before those,
 #                       you may use `PRIO 50`, `PRIO 20` and so on.
 #                       To ensure an input section is at the end, it is advised

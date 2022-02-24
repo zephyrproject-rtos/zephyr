@@ -351,7 +351,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  *      struct json_obj_descr person_height_array_descr[] = {
  *          JSON_OBJ_DESCR_OBJECT(struct person_heights_array,
- *                                heights, person_heigth_descr),
+ *                                heights, person_height_descr),
  *      };
  *
  *      struct json_obj_descr array_array[] = {

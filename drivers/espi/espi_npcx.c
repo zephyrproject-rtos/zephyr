@@ -171,7 +171,7 @@ static void espi_init_wui_callback(const struct device *dev,
 	npcx_miwu_init_dev_callback(callback, wui, handler, dev);
 	npcx_miwu_manage_dev_callback(callback, 1);
 
-	/* Congiure MIWU setting and enable its interrupt */
+	/* Configure MIWU setting and enable its interrupt */
 	npcx_miwu_interrupt_configure(wui, NPCX_MIWU_MODE_EDGE,
 							NPCX_MIWU_TRIG_BOTH);
 	npcx_miwu_irq_enable(wui);
@@ -390,7 +390,7 @@ static void espi_vw_notify_plt_rst(const struct device *dev)
 	if (wire) {
 		/* Set Peripheral Channel ready when PLTRST is de-asserted */
 		inst->ESPICFG |= BIT(NPCX_ESPICFG_PCHANEN);
-		/* Configure all host sub-modules in host doamin */
+		/* Configure all host sub-modules in host domain */
 		npcx_host_init_subs_host_domain();
 	}
 

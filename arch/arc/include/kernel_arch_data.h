@@ -159,7 +159,7 @@ struct _callee_saved_stack {
 
 #endif
 	/*
-	 * No need to save r31 (blink), it's either alread pushed as the pc or
+	 * No need to save r31 (blink), it's either already pushed as the pc or
 	 * blink on an irq stack frame.
 	 */
 };

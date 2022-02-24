@@ -421,7 +421,7 @@ void eth_mcux_phy_stop(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_wait:
 		k_work_cancel_delayable(&context->delayed_phy_work);
-		/* @todo, actually power downt he PHY ? */
+		/* @todo, actually power down the PHY ? */
 		context->phy_state = eth_mcux_phy_state_initial;
 		break;
 	case eth_mcux_phy_state_closing:

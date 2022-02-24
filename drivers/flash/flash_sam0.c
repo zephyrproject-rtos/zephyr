@@ -291,7 +291,7 @@ static int flash_sam0_write(const struct device *dev, off_t offset,
 	}
 
 	if ((offset % FLASH_PAGE_SIZE) != 0) {
-		LOG_WRN("0x%lx: not on a write block boundrary", (long)offset);
+		LOG_WRN("0x%lx: not on a write block boundary", (long)offset);
 		return -EINVAL;
 	}
 
@@ -352,7 +352,7 @@ static int flash_sam0_erase(const struct device *dev, off_t offset,
 	}
 
 	if ((offset % ROW_SIZE) != 0) {
-		LOG_WRN("0x%lx: not on a page boundrary", (long)offset);
+		LOG_WRN("0x%lx: not on a page boundary", (long)offset);
 		return -EINVAL;
 	}
 

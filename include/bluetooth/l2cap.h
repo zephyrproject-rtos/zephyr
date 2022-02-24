@@ -50,7 +50,7 @@ extern "C" {
 /** @brief Maximum Transmission Unit for an unsegmented outgoing L2CAP SDU.
  *
  *  The Maximum Transmission Unit for an outgoing L2CAP SDU when sent without
- *  segmentation, i.e a single L2CAP SDU will fit inside a single L2CAP PDU.
+ *  segmentation, i.e. a single L2CAP SDU will fit inside a single L2CAP PDU.
  *
  *  The MTU for outgoing L2CAP SDUs with segmentation is defined by the
  *  size of the application buffer pool.
@@ -60,7 +60,7 @@ extern "C" {
 /** @brief Maximum Transmission Unit for an unsegmented incoming L2CAP SDU.
  *
  *  The Maximum Transmission Unit for an incoming L2CAP SDU when sent without
- *  segmentation, i.e a single L2CAP SDU will fit inside a single L2CAP PDU.
+ *  segmentation, i.e. a single L2CAP SDU will fit inside a single L2CAP PDU.
  *
  *  The MTU for incoming L2CAP SDUs with segmentation is defined by the
  *  size of the application buffer pool. The application will have to define

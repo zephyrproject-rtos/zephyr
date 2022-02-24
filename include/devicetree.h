@@ -484,7 +484,7 @@
  * The expansion evaluates to 0 or 1, but may not be a literal integer
  * 0 or 1.
  *
- * @param node_id1 first node identifer
+ * @param node_id1 first node identifier
  * @param node_id2 second node identifier
  * @return an expression that evaluates to 1 if the node identifiers
  *         refer to the same node, and evaluates to 0 otherwise
@@ -738,7 +738,7 @@
  * @param prop lowercase-and-underscores property name
  * @param default_idx_value a fallback index value to expand to
  * @return zero-based index of the property's value in its enum if present,
- *         default_idx_value ohterwise
+ *         default_idx_value otherwise
  */
 #define DT_ENUM_IDX_OR(node_id, prop, default_idx_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
@@ -2400,7 +2400,7 @@
  * @param prop lowercase-and-underscores property name
  * @param default_idx_value a fallback index value to expand to
  * @return zero-based index of the property's value in its enum if present,
- *         default_idx_value ohterwise
+ *         default_idx_value otherwise
  */
 #define DT_INST_ENUM_IDX_OR(inst, prop, default_idx_value) \
 	DT_ENUM_IDX_OR(DT_DRV_INST(inst), prop, default_idx_value)

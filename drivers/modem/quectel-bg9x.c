@@ -930,7 +930,7 @@ static const struct setup_cmd setup_cmds[] = {
 /* Func: modem_pdp_context_active
  * Desc: This helper function is called from modem_setup, and is
  * used to open the PDP context. If there is trouble activating the
- * PDP context, we try to deactive and reactive MDM_PDP_ACT_RETRY_COUNT times.
+ * PDP context, we try to deactivate and reactivate MDM_PDP_ACT_RETRY_COUNT times.
  * If it fails, we return an error.
  */
 static int modem_pdp_context_activate(void)

@@ -183,7 +183,7 @@
 
 		/*
 		 * Note that CM7 and CM4 cores do not have the same memory addresses
-		 * for GPIO2 and GPIO3, so those periperals are defined in the SOC
+		 * for GPIO2 and GPIO3, so those peripherals are defined in the SOC
 		 * specific DTS files
 		 */
 

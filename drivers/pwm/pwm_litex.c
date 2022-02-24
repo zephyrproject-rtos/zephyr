@@ -84,7 +84,7 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 
 /* Device Instantiation */
 
-/* LiteX regisers use only first byte from 4-bytes register, that's why they
+/* LiteX registers use only first byte from 4-bytes register, that's why they
  * occupy larger space in memory. We need to know the size that is
  * actually used, that is why the register size from dts is divided by 4.
  */

@@ -59,7 +59,7 @@ struct bt_hfp_hf_cb {
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  connection gets disconnected, including when a connection gets
-	 *  rejected or cancelled or any error in SLC establisment.
+	 *  rejected or cancelled or any error in SLC establishment.
 	 *
 	 *  @param conn Connection object.
 	 */

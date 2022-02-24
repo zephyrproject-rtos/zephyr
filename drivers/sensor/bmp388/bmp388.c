@@ -483,7 +483,7 @@ static uint64_t bmp388_compensate_press(struct bmp388_data *data)
 
 	comp_press = (((uint64_t)partial_data4 * 25) / (uint64_t)1099511627776);
 
-	/* returned value is in hundreths of Pa. */
+	/* returned value is in hundredths of Pa. */
 	return comp_press;
 }
 
@@ -498,7 +498,7 @@ static int bmp388_press_channel_get(const struct device *dev,
 
 	uint64_t tmp = bmp388_compensate_press(data);
 
-	/* tmp is in hundreths of Pa. Convert to kPa as specified in sensor
+	/* tmp is in hundredths of Pa. Convert to kPa as specified in sensor
 	 * interface.
 	 */
 	val->val1 = tmp / 100000;

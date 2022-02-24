@@ -101,7 +101,7 @@ typedef bool (*pcie_ctrl_region_get_allocate_base_t)(const struct device *dev, p
  * When enumerating PCIe Endpoints, Type0 endpoints can require up to 6 memory zones
  * via the Base Address Registers from I/O or Memory types.
  *
- * The bus-centric address set in this BAR register is not necessarely accessible from the CPU,
+ * The bus-centric address set in this BAR register is not necessarily accessible from the CPU,
  * thus must be translated by using the PCI Express Controller memory regions translation
  * ranges to permit mapping from the CPU.
  *
@@ -268,7 +268,7 @@ static inline bool pcie_ctrl_region_get_allocate_base(const struct device *dev, 
  * When enumerating PCIe Endpoints, Type0 endpoints can require up to 6 memory zones
  * via the Base Address Registers from I/O or Memory types.
  *
- * The bus-centric address set in this BAR register is not necessarely accessible from the CPU,
+ * The bus-centric address set in this BAR register is not necessarily accessible from the CPU,
  * thus must be translated by using the PCI Express Controller memory regions translation
  * ranges to permit mapping from the CPU.
  *

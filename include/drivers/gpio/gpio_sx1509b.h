@@ -15,7 +15,7 @@
  *
  * Configure a pin to be controlled by SX1509B LED driver using
  * the LED intensity functionality.
- * To get back normal GPIO funcionality, configure the pin using
+ * To get back normal GPIO functionality, configure the pin using
  * the standard GPIO API.
  *
  * @param dev Pointer to the device structure for the driver instance.

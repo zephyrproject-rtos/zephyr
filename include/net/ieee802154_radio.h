@@ -55,7 +55,7 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_ENERGY_SCAN = BIT(7), /* Energy scan supported */
 	IEEE802154_HW_TXTIME	  = BIT(8), /* TX at specified time supported */
 	IEEE802154_HW_SLEEP_TO_TX = BIT(9), /* TX directly from sleep supported */
-	IEEE802154_HW_TX_SEC	  = BIT(10), /* TX security hadling supported */
+	IEEE802154_HW_TX_SEC	  = BIT(10), /* TX security handling supported */
 	IEEE802154_HW_RXTIME	  = BIT(11), /* RX at specified time supported */
 };
 
@@ -309,7 +309,7 @@ struct ieee802154_radio_api {
 	/** Get the device capabilities */
 	enum ieee802154_hw_caps (*get_capabilities)(const struct device *dev);
 
-	/** Clear Channel Assesment - Check channel's activity */
+	/** Clear Channel Assessment - Check channel's activity */
 	int (*cca)(const struct device *dev);
 
 	/** Set current channel */

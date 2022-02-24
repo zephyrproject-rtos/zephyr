@@ -209,7 +209,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
  * Read data from a ftp get session.
  *
  * @param dst The destination buffer.
- * @param size Initialize to the size of dst. Gets set to the nuber
+ * @param size Initialize to the size of dst. Gets set to the number
  *             of bytes actually read.
  * @return According sim7080_ftp_rc.
  */

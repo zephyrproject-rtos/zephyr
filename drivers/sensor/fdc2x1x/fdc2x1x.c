@@ -256,7 +256,7 @@ static int fdc2x1x_set_offset(const struct device *dev,
 /**
  * Set the Auto-Scan Mode.
  * @param dev - The device structure.
- * @param en - Enable/disable auto-acan mode.
+ * @param en - Enable/disable auto-scan mode.
  * @return 0 in case of success, negative error code otherwise.
  */
 static int fdc2x1x_set_autoscan_mode(const struct device *dev, bool en)
@@ -874,7 +874,7 @@ static int fdc2x1x_probe(const struct device *dev)
 	}
 
 	if (man_id != FDC2X1X_MANUFACTURER_ID_VAL) {
-		LOG_ERR("Wrong manufaturer id");
+		LOG_ERR("Wrong manufacturer id");
 		return -ENODEV;
 	}
 

@@ -69,7 +69,7 @@ static int xt_sim_console_init(const struct device *arg)
 	return 0;
 }
 
-/* UART consloe initializes after the UART device itself */
+/* UART console initializes after the UART device itself */
 SYS_INIT(xt_sim_console_init,
 #if defined(CONFIG_EARLY_CONSOLE)
 	 PRE_KERNEL_1,

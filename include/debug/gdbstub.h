@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DEBUG_GDBSTUB_H_
 #define ZEPHYR_INCLUDE_DEBUG_GDBSTUB_H_
 
-/* Map from CPU excpetions to GDB  */
+/* Map from CPU exceptions to GDB  */
 #define GDB_EXCEPTION_INVALID_INSTRUCTION   4UL
 #define GDB_EXCEPTION_BREAKPOINT            5UL
 #define GDB_EXCEPTION_MEMORY_FAULT          7UL
@@ -45,7 +45,7 @@ struct gdb_mem_region {
  * Memory region descriptions used for GDB memory access.
  *
  * This array specifies which region of memory GDB can access
- * with read/write attribites. This is used to restrict
+ * with read/write attributes. This is used to restrict
  * memory read/write in GDB stub to memory that can be
  * legally accessed without resulting in memory faults.
  */
@@ -62,7 +62,7 @@ extern const size_t gdb_mem_num_regions;
  * @brief Convert a binary array into string representation.
  *
  * Note that this is similar to bin2hex() but does not force
- * a null character at the end of the hexadeciaml output buffer.
+ * a null character at the end of the hexadecimal output buffer.
  *
  * @param buf     The binary array to convert
  * @param buflen  The length of the binary array to convert

@@ -74,7 +74,7 @@ struct sys_multi_heap {
  * @note In general a multiheap is likely to be instantiated
  * semi-statically from system configuration (for example, via
  * linker-provided bounds on available memory in different regions, or
- * from devicetree definitions of hardware-provided addressible
+ * from devicetree definitions of hardware-provided addressable
  * memory, etc...).  The general expectation is that a soc- or
  * board-level platform device will be initialized at system boot from
  * these upstream configuration sources and not that an application

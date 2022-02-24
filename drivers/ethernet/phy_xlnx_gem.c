@@ -250,7 +250,7 @@ static void phy_xlnx_gem_marvell_alaska_cfg(const struct device *dev)
 	if ((dev_data->phy_id & PHY_MRVL_PHY_ID_MODEL_MASK) ==
 			PHY_MRVL_PHY_ID_MODEL_88E151X) {
 		/*
-		 * 88E151x only: onfigure the system interface and media type
+		 * 88E151x only: configure the system interface and media type
 		 * (i.e. "RGMII to Copper", 0x0). On the 88E1111, this setting
 		 * is configured using I/O pins on the device.
 		 * TODO: Make this value configurable via KConfig or DT?
