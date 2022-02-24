@@ -25,7 +25,6 @@ static const struct device *uart_dev;
 static struct k_sem sem;
 static volatile bool in_panic;
 static bool use_async;
-static uint32_t log_format_current = CONFIG_LOG_BACKEND_UART_OUTPUT_DEFAULT;
 
 static void uart_callback(const struct device *dev,
 			  struct uart_event *evt,
@@ -93,7 +92,7 @@ LOG_OUTPUT_DEFINE(log_output_uart, char_out, uart_output_buf, sizeof(uart_output
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_SYST) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
 	log_backend_std_put(&log_output_uart, flag, msg);
@@ -104,15 +103,14 @@ static void process(const struct log_backend *const backend,
 {
 	uint32_t flags = log_backend_std_get_flags();
 
-	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
+	flags |= IS_ENABLED(CONFIG_LOG_BACKEND_UART_SYST_ENABLE) ? LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
-	log_output_func(&log_output_uart, &msg->log, flags);
-}
-
-static int format_set(const struct log_backend *const backend, uint32_t log_type)
-{
-	log_format_current = log_type;
-	return 0;
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY)) {
+		log_dict_output_msg2_process(&log_output_uart,
+					     &msg->log, flags);
+	} else {
+		log_output_msg2_process(&log_output_uart, &msg->log, flags);
+	}
 }
 
 static void log_backend_uart_init(struct log_backend const *const backend)
@@ -167,7 +165,7 @@ static void sync_string(const struct log_backend *const backend,
 		     struct log_msg_ids src_level, uint32_t timestamp,
 		     const char *fmt, va_list ap)
 {
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_SYST) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
 	log_backend_std_sync_string(&log_output_uart, flag, src_level,
@@ -178,7 +176,7 @@ static void sync_hexdump(const struct log_backend *const backend,
 			 struct log_msg_ids src_level, uint32_t timestamp,
 			 const char *metadata, const uint8_t *data, uint32_t length)
 {
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_SYST) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
 	log_backend_std_sync_hexdump(&log_output_uart, flag, src_level,
@@ -195,7 +193,6 @@ const struct log_backend_api log_backend_uart_api = {
 	.panic = panic,
 	.init = log_backend_uart_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api, true);
