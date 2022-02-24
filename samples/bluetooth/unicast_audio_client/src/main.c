@@ -526,8 +526,8 @@ static int enable_stream(struct bt_audio_stream *stream)
 {
 	int err;
 
-	err = bt_audio_stream_enable(stream, preset_16_2_1.codec.meta_count,
-				     preset_16_2_1.codec.meta);
+	err = bt_audio_stream_enable(stream, preset_16_2_1.codec.meta,
+				     preset_16_2_1.codec.meta_count);
 	if (err != 0) {
 		printk("Unable to enable stream: %d", err);
 		return err;

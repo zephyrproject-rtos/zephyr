@@ -1366,8 +1366,8 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 
 	stream = ep->stream;
 	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
-		err = unicast_server_cb->metadata(stream, ep->codec.meta_count,
-						  ep->codec.meta);
+		err = unicast_server_cb->metadata(stream, ep->codec.meta,
+						  ep->codec.meta_count);
 	} else {
 		err = -ENOTSUP;
 	}
@@ -1422,8 +1422,8 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 
 	stream = ep->stream;
 	if (unicast_server_cb != NULL && unicast_server_cb->enable != NULL) {
-		err = unicast_server_cb->enable(stream, ep->codec.meta_count,
-						ep->codec.meta);
+		err = unicast_server_cb->enable(stream, ep->codec.meta,
+						ep->codec.meta_count);
 	} else {
 		err = -ENOTSUP;
 	}

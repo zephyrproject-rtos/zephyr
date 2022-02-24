@@ -982,13 +982,14 @@ struct bt_audio_unicast_server_cb {
 	 *  be enabled to stream.
 	 *
 	 *  @param stream      Stream object being enabled.
-	 *  @param meta_count  Number of metadata entries
 	 *  @param meta        Metadata entries
+	 *  @param meta_count  Number of metadata entries
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*enable)(struct bt_audio_stream *stream, size_t meta_count,
-		      const struct bt_codec_data *meta);
+	int (*enable)(struct bt_audio_stream *stream,
+		      const struct bt_codec_data *meta,
+		      size_t meta_count);
 
 	/** @brief Stream Start request callback
 	 *
@@ -1007,13 +1008,14 @@ struct bt_audio_unicast_server_cb {
 	 *  update its metadata.
 	 *
 	 *  @param stream       Stream object.
-	 *  @param meta_count   Number of metadata entries
 	 *  @param meta         Metadata entries
+	 *  @param meta_count   Number of metadata entries
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*metadata)(struct bt_audio_stream *stream, size_t meta_count,
-			const struct bt_codec_data *meta);
+	int (*metadata)(struct bt_audio_stream *stream,
+			const struct bt_codec_data *meta,
+			size_t meta_count);
 
 	/** @brief Stream Disable request callback
 	 *
@@ -1399,7 +1401,8 @@ int bt_audio_stream_qos(struct bt_conn *conn,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_stream_enable(struct bt_audio_stream *stream,
-			   size_t meta_count, struct bt_codec_data *meta);
+			   struct bt_codec_data *meta,
+			   size_t meta_count);
 
 /** @brief Change Audio Stream Metadata
  *
@@ -1412,7 +1415,8 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_stream_metadata(struct bt_audio_stream *stream,
-			     size_t meta_count, struct bt_codec_data *meta);
+			     struct bt_codec_data *meta,
+			     size_t meta_count);
 
 /** @brief Disable Audio Stream
  *
