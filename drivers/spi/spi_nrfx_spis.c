@@ -7,10 +7,8 @@
 #include <drivers/spi.h>
 #include <nrfx_spis.h>
 
-#define LOG_DOMAIN "spi_nrfx_spis"
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(spi_nrfx_spis);
+LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
@@ -52,9 +50,9 @@ static inline nrf_spis_bit_order_t get_nrf_spis_bit_order(uint16_t operation)
 static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
-	const struct spi_nrfx_config *config = dev->config;
-	struct spi_nrfx_data *data = dev->data;
-	struct spi_context *ctx = &data->ctx;
+	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
+	struct spi_context *ctx = &dev_data->ctx;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		/* Already configured. No need to do it again. */
@@ -94,7 +92,7 @@ static int configure(const struct device *dev,
 
 	ctx->config = spi_cfg;
 
-	nrf_spis_configure(config->spis.p_reg,
+	nrf_spis_configure(dev_config->spis.p_reg,
 			   get_nrf_spis_mode(spi_cfg->operation),
 			   get_nrf_spis_bit_order(spi_cfg->operation));
 
