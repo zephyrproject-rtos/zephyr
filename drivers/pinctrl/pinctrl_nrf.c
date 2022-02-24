@@ -106,11 +106,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if defined(NRF_PSEL_SPIM)
 		case NRF_FUN_SPIM_SCK:
 			NRF_PSEL_SPIM(reg, SCK) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 0);
 			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
 					  NRF_GPIO_PIN_INPUT_CONNECT);
 			break;
 		case NRF_FUN_SPIM_MOSI:
 			NRF_PSEL_SPIM(reg, MOSI) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 0);
 			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
 					  NRF_GPIO_PIN_INPUT_DISCONNECT);
 			break;

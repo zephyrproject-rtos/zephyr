@@ -6,6 +6,8 @@
 
 #include <drivers/spi.h>
 #include <pm/device.h>
+#include <drivers/pinctrl.h>
+#include <soc.h>
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 #include <nrfx_gpiote.h>
 #include <nrfx_ppi.h>
@@ -40,8 +42,11 @@ struct spi_nrfx_config {
 	size_t		   max_chunk_len;
 	uint32_t	   max_freq;
 	nrfx_spim_config_t def_config;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-	bool		   anomaly_58_workaround;
+	bool anomaly_58_workaround;
 #endif
 };
 
@@ -435,8 +440,15 @@ static int spim_nrfx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		/* No action needed at this point, nrfx_spim_init() will be
-		 * called at configuration before the next transfer.
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(dev_config->pcfg,
+					  PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
+		/* nrfx_spim_init() will be called at configuration before
+		 * the next transfer.
 		 */
 		break;
 
@@ -445,6 +457,14 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			nrfx_spim_uninit(&dev_config->spim);
 			dev_data->initialized = false;
 		}
+
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(dev_config->pcfg,
+					  PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
 		break;
 
 	default:
@@ -468,11 +488,11 @@ static int spim_nrfx_pm_action(const struct device *dev,
 #define SPIM_NRFX_MISO_PULL_UP(idx) DT_PROP(SPIM(idx), miso_pull_up)
 
 #define SPIM_NRFX_MISO_PULL(idx)			\
-	(SPIM_NRFX_MISO_PULL_UP(idx)			\
-		? SPIM_NRFX_MISO_PULL_DOWN(idx)		\
+	(SPIM_PROP(idx, miso_pull_up)			\
+		? SPIM_PROP(idx, miso_pull_down)	\
 			? -1 /* invalid configuration */\
 			: NRF_GPIO_PIN_PULLUP		\
-		: SPIM_NRFX_MISO_PULL_DOWN(idx)		\
+		: SPIM_PROP(idx, miso_pull_down)	\
 			? NRF_GPIO_PIN_PULLDOWN		\
 			: NRF_GPIO_PIN_NOPULL)
 
@@ -483,9 +503,22 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			(.rx_delay = CONFIG_SPI_##idx##_NRF_RX_DELAY,))	\
 		))
 
+#define SPI_NRFX_SPIM_PIN_CFG(idx)					\
+	COND_CODE_1(CONFIG_PINCTRL,					\
+		(.skip_gpio_cfg = true,					\
+		 .skip_psel_cfg = true,),				\
+		(.sck_pin   = SPIM_PROP(idx, sck_pin),			\
+		 .mosi_pin  = DT_PROP_OR(SPIM(idx), mosi_pin,		\
+					 NRFX_SPIM_PIN_NOT_USED),	\
+		 .miso_pin  = DT_PROP_OR(SPIM(idx), miso_pin,		\
+					 NRFX_SPIM_PIN_NOT_USED),	\
+		 .miso_pull = SPIM_NRFX_MISO_PULL(idx),))
+
 #define SPI_NRFX_SPIM_DEVICE(idx)					       \
-	BUILD_ASSERT(							       \
-		!SPIM_NRFX_MISO_PULL_UP(idx) || !SPIM_NRFX_MISO_PULL_DOWN(idx),\
+	NRF_DT_ENSURE_PINS_ASSIGNED(SPIM(idx), sck_pin);		       \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
+		     !(SPIM_PROP(idx, miso_pull_up) &&			       \
+		       SPIM_PROP(idx, miso_pull_down)),			       \
 		"SPIM"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
@@ -495,6 +528,14 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
+		IF_ENABLED(CONFIG_PINCTRL, (				       \
+			const struct spi_nrfx_config *dev_config = dev->config;\
+			err = pinctrl_apply_state(dev_config->pcfg,	       \
+						  PINCTRL_STATE_DEFAULT);      \
+			if (err < 0) {					       \
+				return err;				       \
+			}						       \
+		))							       \
 		err = spi_context_cs_configure_all(&dev_data->ctx);	       \
 		if (err < 0) {						       \
 			return err;					       \
@@ -511,23 +552,23 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPIM(idx))));	       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spim = NRFX_SPIM_INSTANCE(idx),			       \
 		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
 		.max_freq = SPIM##idx##_MAX_DATARATE * 1000000,		       \
 		.def_config = {						       \
-			.sck_pin   = SPIM_PROP(idx, sck_pin),		       \
-			.mosi_pin  = SPIM_PROP(idx, mosi_pin),		       \
-			.miso_pin  = SPIM_PROP(idx, miso_pin),		       \
-			.ss_pin    = NRFX_SPIM_PIN_NOT_USED,		       \
-			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
-			.miso_pull = SPIM_NRFX_MISO_PULL(idx),		       \
+			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
+			.ss_pin = NRFX_SPIM_PIN_NOT_USED,		       \
+			.orc    = CONFIG_SPI_##idx##_NRF_ORC,		       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		},							       \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
 				SPIM_PROP(idx, anomaly_58_workaround),),       \
 			())						       \
+		IF_ENABLED(CONFIG_PINCTRL,				       \
+			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),))       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPIM(idx),					       \
