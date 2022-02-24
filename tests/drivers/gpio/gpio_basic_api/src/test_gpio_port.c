@@ -631,6 +631,29 @@ static int bits_logical(void)
 	return TC_PASS;
 }
 
+/* gpio_pin_get_config()
+ */
+static int pin_get_config(void)
+{
+	gpio_flags_t flags_get = 0;
+	gpio_flags_t flags_set;
+	int rc;
+
+	flags_set = GPIO_OUTPUT_HIGH;
+	rc = gpio_pin_configure(dev, PIN_OUT, flags_set);
+	zassert_equal(rc, 0, "pin configure failed");
+
+	rc = gpio_pin_get_config(dev, PIN_OUT, &flags_get);
+	if (rc == -ENOTSUP) {
+		return TC_PASS;
+	}
+
+	zassert_equal(rc, 0, "pin get config failed");
+	zassert_equal(flags_set, flags_get, "flags are different");
+
+	return TC_PASS;
+}
+
 void test_gpio_port(void)
 {
 	zassert_equal(setup(), TC_PASS,
@@ -649,4 +672,6 @@ void test_gpio_port(void)
 		      "bits_logical failed");
 	zassert_equal(check_pulls(), TC_PASS,
 		      "check_pulls failed");
+	zassert_equal(pin_get_config(), TC_PASS,
+		      "pin_get_config failed");
 }
