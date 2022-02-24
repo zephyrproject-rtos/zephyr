@@ -160,4 +160,17 @@ config TEST_BUSY_SIM
 	  It simulates cpu load by using counter device to generate interrupts
 	  with random intervals and random busy looping in the interrupt.
 
+config LOG_BACKEND_MOCK
+	bool "Enable MOCK backend"
+	help
+	  When enabled backend is using MOCK backend to output logs.
+
+if LOG_BACKEND_MOCK
+
+backend = MOCK
+backend-str = mock
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_MOCK
+
 endmenu
