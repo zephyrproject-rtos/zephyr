@@ -73,8 +73,11 @@ struct __esf {
 	ulong_t mepc;		/* machine exception program counter */
 	ulong_t mstatus;	/* machine status register */
 
+#ifdef CONFIG_USERSPACE
+	ulong_t sp;		/* preserved (user or kernel) stack pointer */
+#endif
+
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	uint8_t fp_state;	/* Floating-point saved context state. */
 	RV_FP_TYPE ft0;		/* Caller-saved temporary floating register */
 	RV_FP_TYPE ft1;		/* Caller-saved temporary floating register */
 	RV_FP_TYPE ft2;		/* Caller-saved temporary floating register */
