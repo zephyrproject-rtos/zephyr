@@ -744,6 +744,57 @@ static void test_cbprintf_rw_loc_const_char_ptr(void)
 #undef TEST_FMT
 }
 
+static void test_cbprintf_must_runtime_package(void)
+{
+	int rv;
+
+	if (Z_C_GENERIC == 0) {
+		ztest_test_skip();
+	}
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, "test");
+	zassert_equal(rv, 0, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, "test %x", 100);
+	zassert_equal(rv, 0, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, "test %x %s", 100, "");
+	zassert_equal(rv, 1, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_CONST_CHAR_RO, "test %x", 100);
+	zassert_equal(rv, 0, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_CONST_CHAR_RO,
+					   "test %x %s", 100, (const char *)"s");
+	zassert_equal(rv, 0, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_CONST_CHAR_RO,
+					   "test %x %s %s", 100, (char *)"s", (const char *)"foo");
+	zassert_equal(rv, 1, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(1),
+					   "test %s", (char *)"s");
+	zassert_equal(rv, 0, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(2),
+					   "test %s %s %d", (const char *)"s", (char *)"s", 10);
+	zassert_equal(rv, 0, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(2),
+					   "test %s %s %s", (const char *)"s", (char *)"s", "s");
+	zassert_equal(rv, 1, NULL);
+
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(1) |
+					   CBPRINTF_PACKAGE_CONST_CHAR_RO,
+					   "test %s %s %d", (char *)"s", (const char *)"s", 10);
+	zassert_equal(rv, 0, NULL);
+
+	/* When RW str positions are stored static packaging can always be used */
+	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_ADD_RW_STR_POS,
+					   "test %s %s %d", (char *)"s", (const char *)"s", 10);
+	zassert_equal(rv, 0, NULL);
+}
+
 void test_main(void)
 {
 #ifdef __cplusplus
@@ -766,7 +817,8 @@ void test_main(void)
 			 ztest_unit_test(test_cbprintf_ro_loc_rw_present),
 			 ztest_unit_test(test_cbprintf_ro_rw_loc),
 			 ztest_unit_test(test_cbprintf_ro_rw_loc_const_char_ptr),
-			 ztest_unit_test(test_cbprintf_rw_loc_const_char_ptr)
+			 ztest_unit_test(test_cbprintf_rw_loc_const_char_ptr),
+			 ztest_unit_test(test_cbprintf_must_runtime_package)
 			 );
 
 	ztest_run_test_suite(cbprintf_package);
