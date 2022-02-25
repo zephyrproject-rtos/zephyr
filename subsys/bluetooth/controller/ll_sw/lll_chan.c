@@ -364,7 +364,7 @@ void lll_chan_sel_2_ut(void)
 
 	/* Section 3.1 Sample Data 2 (9 used channels) */
 	m = lll_chan_sel_2(6, chan_id, chan_map_2, chan_map_2_9_used);
-	LL_ASSERT(m == 23U);
+	LL_ASSERT(m == 25U);  // test unittest (m == 23U);
 
 	m = lll_chan_sel_2(7, chan_id, chan_map_2, chan_map_2_9_used);
 	LL_ASSERT(m == 9U);
