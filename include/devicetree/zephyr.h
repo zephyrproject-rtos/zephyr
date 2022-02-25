@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_DEVICETREE_ZEPHYR_H_
 #define ZEPHYR_INCLUDE_DEVICETREE_ZEPHYR_H_
 
+#include <toolchain.h>
+
 /**
  * @defgroup devicetree-zephyr Zephyr's /chosen nodes
  * @ingroup devicetree
@@ -32,6 +34,10 @@
 /**
  * @def DT_CHOSEN_ZEPHYR_ENTROPY_LABEL
  *
+ * @deprecated Use @c DT_LABEL(DT_CHOSEN(zephyr_entropy)) instead. If used to
+ * to obtain a device instance with device_get_binding(), consider using
+ * @c DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy)).
+ *
  * @brief If there is a chosen node zephyr,entropy property which has
  *        a label property, that property's value. Undefined otherwise.
  */
@@ -48,7 +54,8 @@
 #endif /* DT_DOXYGEN */
 
 #if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_entropy), label)
-#define DT_CHOSEN_ZEPHYR_ENTROPY_LABEL DT_LABEL(DT_CHOSEN(zephyr_entropy))
+#define DT_CHOSEN_ZEPHYR_ENTROPY_LABEL \
+	__DEPRECATED_MACRO DT_LABEL(DT_CHOSEN(zephyr_entropy))
 #endif
 
 #if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_flash_controller), label)
