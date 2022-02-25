@@ -26,6 +26,10 @@
 #define TOOLCHAIN_HAS_C_GENERIC 1
 #endif
 
+#if !defined(TOOLCHAIN_HAS_C_AUTO_TYPE) && (GCC_VERSION >= 40900)
+#define TOOLCHAIN_HAS_C_AUTO_TYPE 1
+#endif
+
 /*
  * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually
  * detected and defined using arch-specific definitions.
