@@ -18,6 +18,8 @@
 	((__clang_major__ * 10000) + (__clang_minor__ * 100) + \
 	  __clang_patchlevel__)
 
+#define TOOLCHAIN_HAS_PRAGMA_DIAG 1
+
 #include <toolchain/gcc.h>
 
 
