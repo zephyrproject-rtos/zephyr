@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2021 ZedBlox
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_ZB_BV_L151C8
+
+config BOARD
+	default "zb_bv_l151c8"
+
+endif # BOARD_ZB_BV_L151C8

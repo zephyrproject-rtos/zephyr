@@ -1,0 +1,345 @@
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "Nordic ZedBlox Acrux 04";
+	compatible = "nordic,zbacrux-04";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* Lightwell RGB */
+		led0: led_0 {
+			gpios = <&sx1509b 2 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&sx1509b 1 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+		led2: led_2 {
+			gpios = <&sx1509b 3 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio1 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Push button switch 0";
+		};
+		button1: button_1 {
+			gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Push button switch 1";
+		};
+		button2: button_2 {
+			gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Push button switch 2";
+		};
+		button3: button_3 {
+			gpios = <&gpio1 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Push button switch 3";
+		};
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 1>;
+		output-ohms = <10760>;
+		full-ohms = <(10760 + 97600)>;
+        //power-gpios = <&sx1509b 8 GPIO_ACTIVE_HIGH>;
+	};
+
+    gpio_i2c0: gpio_i2c {
+        compatible = "gpio-i2c";
+        status = "okay";
+        clock-frequency = <I2C_BITRATE_STANDARD>;
+        sda-gpios = <&gpio0 25 (GPIO_OPEN_DRAIN)>;
+        scl-gpios = <&gpio1 0 (GPIO_OPEN_DRAIN)>;
+        label = "GPIO_I2C_0";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        bq40zxx: bq40zxx@b {
+            compatible = "ti,bq40zxx";
+            reg = <0x0b>;
+            label = "BQ40ZXX";
+            design-voltage = <11100>;
+            design-capacity = <16400>;
+            taper-current = <130>;
+            terminate-voltage = <9000>;
+        };
+    };
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <8>;
+	rx-pin = <6>;
+	//rts-pin = <4>;
+	//cts-pin = <7>;
+
+    a9grda {
+        compatible = "rda,a9g";
+	    label = "rda-a9g";
+		mdm-power-gpios = <&gpio1 11 0>;
+		//mdm-reset-gpios = <&sx1509b 8 0>;
+		mdm-reset-gpios = <&sx1509b 9 0>;
+    };
+    quectel-bg9x {
+        compatible = "quectel,bg9x";
+	    label = "quectel-bg9x";
+		mdm-power-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		mdm-reset-gpios = <&sx1509b 9 0>;
+    };
+};
+
+&uart1 {
+    compatible = "nordic,nrf-uarte";
+    status = "okay";
+	current-speed = <9600>;
+	tx-pin = <31>;
+	rx-pin = <30>;
+};
+
+&i2c0 {
+    compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <26>;
+	scl-pin = <27>;
+
+    icm20600: icm20600@68 {
+        compatible = "invensense,icm20xxx";
+        reg = <0x68>;
+        label = "ICM20600";
+    };
+
+    bme280_int: bme280@76 {
+        compatible = "bosch,bme280";
+        reg = <0x76>;
+        label = "BME280_INT";
+    };
+
+    bme280_ext: bme280@77 {
+        compatible = "bosch,bme280";
+        reg = <0x77>;
+        label = "BME280_EXT";
+    };
+
+    hdc2080_int: hdc2080@40 {
+        compatible = "ti,hdc2080";
+        reg = <0x40>;
+        label = "HDC2080_INT";
+    };
+
+    lps22hh_int: lps22hh@5c {
+		compatible = "st,lps22hh";
+		reg = <0x5c>;
+		label = "LPS22HH_INT";
+		//drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+	};
+
+    hdc2080_ext: hdc2080@41 {
+        compatible = "ti,hdc2080";
+        reg = <0x41>;
+        label = "HDC2080_EXT";
+    };
+ 
+    lps22hh_ext: lps22hh@5d {
+		compatible = "st,lps22hh";
+		reg = <0x5d>;
+		label = "LPS22HH_EXT";
+		//drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+	};
+
+    ti_tmp116_int: ti_tmp116@48 {
+		compatible = "ti,tmp116";
+		reg = <0x48>;
+		label = "TMP116_INT";
+	};
+
+    ti_tmp116_ext: ti_tmp116@49 {
+		compatible = "ti,tmp116";
+		reg = <0x49>;
+		label = "TMP116_EXT";
+	};
+};
+
+&i2c1 {
+    compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <12>;
+	scl-pin = <11>;
+
+	sx1509b: sx1509b@3e {
+		compatible = "semtech,sx1509b";
+		reg = <0x3e>;
+		label = "GPIO_P0";
+		gpio-controller;
+		nint-gpios = <&gpio1 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	//ch0-pin = <24>;
+    //ch1-pin = <28>;
+    ch2-pin = <46>;
+};
+
+&spi2 {
+    compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <15>;
+	mosi-pin = <14>;
+	miso-pin = <16>;
+    miso-pull-up;
+	cs-gpios = <&gpio0 13 0>;
+};
+
+/*
+&spi3 {
+    compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <18>;
+	mosi-pin = <41>;
+	miso-pin = <40>;
+	cs-gpios = <&gpio1 1 0>;
+};
+*/
+
+&qspi {
+	status = "okay";
+	sck-pin = <19>;
+	io-pins = <20>, <23>, <22>, <21>;
+	csn-pins = <17>;
+
+	s25_mx25: s25_mx25_64@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		writeoc = "pp4io";
+		readoc = "read4io";
+		sck-frequency = <8000000>;
+		label = "S25-OR-MX25_65";
+		//jedec-id = [01 60 17];
+		jedec-id = [C2 28 17];
+		size = <67108864>;
+		//has-be32k;
+		//has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x000010000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x000010000 0x00006c000>;
+		};
+		slot1_partition: partition@7c000 {
+			label = "image-1";
+			reg = <0x0007c000 0x00006c000>;
+		};
+        scratch_partition: partition@e8000 {
+			label = "image-scratch";
+			reg = <0x000e8000 0x00010000>;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+        /* Storage partition will be used by nvs settings */
+		settings_partition: partition@f8000 {
+			label = "settings_store";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&s25_mx25 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Storage partition will be used by FCB if enabled. */
+		ext_storage_partition: partition@0 {
+			label = "ext_storage";
+			reg = <0x00000000 0x00400000>;
+		};
+
+		/* Storage partition will be used by filesystem if enabled. */
+		fs_partition: partition@400000 {
+			label = "fs_storage";
+			reg = <0x00400000 0x00400000>;
+		};
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

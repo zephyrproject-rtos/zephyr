@@ -1,0 +1,9 @@
+# Kconfig - nRF52840 PCA10056 board configuration
+#
+# Copyright (c) 2016 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_ZB_ACRUX_VP1_0_REVB
+	bool "ZB ACRUX vP1.0 REVB"
+	depends on SOC_NRF52840_QIAA

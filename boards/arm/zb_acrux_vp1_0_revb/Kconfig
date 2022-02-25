@@ -1,0 +1,11 @@
+# Kconfig - ZB_ACRUX_VP1_0_REVB board configuration
+#
+# Copyright (c) 2019 ZedBlox Logitech Pvt Ltd
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ENABLE_DCDC
+    bool "Enable DCDC mode"
+    select SOC_DCDC_NRF52X
+    default y
+    depends on BOARD_ZB_ACRUX_VP1_0_REVB

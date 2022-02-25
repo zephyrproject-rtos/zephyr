@@ -1,0 +1,260 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h743Xi.dtsi>
+#include <st/h7/stm32h743zitx-pinctrl.dtsi>
+//#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H743ZI-ZB_TV board";
+	compatible = "st,stm32h743zi-zb_tv";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,dtcm = &dtcm;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_0 {
+			gpios = <&gpiof 12 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+        /*
+		yellow_led: led_1 {
+			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+        */
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "User1";
+			gpios = <&gpiog 1 GPIO_ACTIVE_HIGH>;
+		};
+		user_button_1: button_1 {
+			label = "User2";
+			gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
+		};
+		user_button_2: button_2 {
+			label = "User3";
+			gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
+		};
+		user_button_3: button_3 {
+			label = "User4";
+			gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		//led1 = &yellow_led;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		sw2 = &user_button_2;
+		sw3 = &user_button_3;
+        gpioa = &gpioa;
+        gpiod = &gpiod;
+        gpiog = &gpiog;
+        gpioe = &gpioe;
+        gpiof = &gpiof;
+	};
+};
+&clk_hsi{
+    hsi-div = <1>;
+	status = "okay";
+};
+
+/*
+&clk_hse {
+	hse-bypass;
+	//clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <24>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+*/
+
+&pll {
+	div-m = <8>;
+	mul-n = <64>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(96)>;
+	d1cpre = <1>;
+	hpre = <4>;
+	d1ppre = <1>;
+	d2ppre1 = <1>;
+	d2ppre2 = <1>;
+	d3ppre = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+    // cts - pa11, rts - pa12
+	current-speed = <115200>;
+	status = "okay";
+    quectel_bg95: quectel_bg95 {
+        compatible = "quectel,bg95";
+	    label = "quectel-bg95";
+		mdm-power-gpios = <&gpiog 7 GPIO_ACTIVE_HIGH>;
+		mdm-reset-gpios = <&gpioe 0 0>;
+    };
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart5 {
+	pinctrl-0 = <&uart5_tx_pb13 &uart5_rx_pb12>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+/*
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+*/
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pf14 &i2c4_sda_pf15>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&timers12 {
+	status = "okay";
+
+	pwm12: pwm {
+		status = "okay";
+		st,prescaler = <10000>;
+		pinctrl-0 = <&tim12_ch1_pb14>;
+	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp15_pa3>;
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&spi5 {
+	status = "okay";
+	pinctrl-0 = <&spi5_sck_pf7 &spi5_miso_pf8 &spi5_mosi_pf9>;
+	cs-gpios = <&gpiof 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
+
+&spi3 {
+	status = "okay";
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+	cs-gpios = <&gpioa 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_sck_pg11 &spi1_miso_pg9 &spi1_mosi_pd7>;
+	cs-gpios = <&gpiog 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
+
+&backup_sram {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 128KB for bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00020000>;
+			read-only;
+		};
+
+		/* storage: 128KB for settings */
+		storage_partition: partition@20000 {
+			label = "storage";
+			reg = <0x00020000 0x00020000>;
+		};
+
+		/* application image slot: 256KB */
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x00040000 0x00040000>;
+		};
+
+		/* backup slot: 256KB */
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 0x00040000>;
+		};
+
+		/* swap slot: 128KB */
+		scratch_partition: partition@c0000 {
+			label = "image-scratch";
+			reg = <0x000c0000 0x00020000>;
+		};
+
+	};
+};
+
+&iwdg1 {
+	status = "okay";
+};

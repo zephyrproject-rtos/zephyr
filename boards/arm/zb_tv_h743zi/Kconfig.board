@@ -1,0 +1,8 @@
+# STM32H743ZI ZB_TV board configuration
+
+# Copyright (c) 
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ZB_TV_H743ZI
+	bool "ZB_TV H743ZI Development Board"
+	depends on SOC_STM32H743XX

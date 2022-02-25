@@ -1,0 +1,21 @@
+identifier: zb_bv_l151c8
+name: ActiPod BV L151C8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 16
+flash: 128
+supported:
+  - eeprom
+  - gpio
+  - i2c
+  - uart
+  - watchdog
+  - counter
+  - adc
+  - dac
+  - pwm
+  - dma
+  - usb
