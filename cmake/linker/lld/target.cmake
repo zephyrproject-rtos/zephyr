@@ -107,7 +107,7 @@ endfunction(toolchain_ld_link_elf)
 
 
 # Load toolchain_ld-family macros
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_base.cmake)
+include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_base.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_baremetal.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
