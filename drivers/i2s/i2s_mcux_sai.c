@@ -450,72 +450,13 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 
 	memset(&config, 0, sizeof(config));
 
-	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
-		if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
-			config.masterSlave = kSAI_Slave;
-		} else {
-			config.masterSlave =
-				kSAI_Bclk_Master_FrameSync_Slave;
-		}
-	} else {
-		if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
-			config.masterSlave =
-				kSAI_Bclk_Slave_FrameSync_Master;
-		} else {
-			config.masterSlave = kSAI_Master;
-		}
-	}
+	const bool is_mclk_master = i2s_cfg->options & I2S_OPT_BIT_CLK_MASTER;
 
-	enable_mclk_direction(dev,
-			      i2s_cfg->options|I2S_OPT_BIT_CLK_MASTER);
+	enable_mclk_direction(dev, is_mclk_master);
+
 	get_mclk_rate(dev, &mclk);
 	LOG_DBG("mclk is %d", mclk);
 
-	/* sync mode configurations */
-	if (dir == I2S_DIR_TX) {
-		/* TX */
-		if (dev_cfg->tx_sync_mode) {
-			config.syncMode = kSAI_ModeSync;
-		} else {
-			config.syncMode = kSAI_ModeAsync;
-		}
-	} else {
-		/* RX */
-		if (dev_cfg->rx_sync_mode) {
-			config.syncMode = kSAI_ModeSync;
-		} else {
-			config.syncMode = kSAI_ModeAsync;
-		}
-	}
-
-	config.frameSync.frameSyncPolarity = kSAI_PolarityActiveLow;
-	config.bitClock.bclkSrcSwap = false;
-	/* clock signal polarity */
-	switch (i2s_cfg->format & I2S_FMT_CLK_FORMAT_MASK) {
-	case I2S_FMT_CLK_NF_NB:
-		config.frameSync.frameSyncPolarity =
-			kSAI_PolarityActiveLow;
-		config.bitClock.bclkSrcSwap = false;
-		break;
-
-	case I2S_FMT_CLK_NF_IB:
-		config.frameSync.frameSyncPolarity =
-			kSAI_PolarityActiveLow;
-		config.bitClock.bclkSrcSwap = true;
-		break;
-
-	case I2S_FMT_CLK_IF_NB:
-		config.frameSync.frameSyncPolarity =
-			kSAI_PolarityActiveHigh;
-		config.bitClock.bclkSrcSwap = false;
-		break;
-
-	case I2S_FMT_CLK_IF_IB:
-		config.frameSync.frameSyncPolarity =
-			kSAI_PolarityActiveHigh;
-		config.bitClock.bclkSrcSwap = true;
-		break;
-	}
 	/* bit clock source is MCLK */
 	config.bitClock.bclkSource = kSAI_BclkSourceMclkDiv;
 	/*
@@ -530,14 +471,14 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	config.frameSync.frameSyncGenerateOnDemand = false;
 #endif
 
-	config.frameSync.frameSyncWidth = (uint8_t)word_size_bits;
-
 	/* serial data default configurations */
-#if defined(FSL_FEATURE_SAI_HAS_CHANNEL_MODE) &&			\
+#if defined(FSL_FEATURE_SAI_HAS_CHANNEL_MODE) && \
 	FSL_FEATURE_SAI_HAS_CHANNEL_MODE
 	config.serialData.dataMode = kSAI_DataPinStateOutputZero;
 #endif
 
+	config.frameSync.frameSyncPolarity = kSAI_PolarityActiveLow;
+	config.bitClock.bclkSrcSwap = false;
 	/* format */
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
 	case I2S_FMT_DATA_FORMAT_I2S:
@@ -570,6 +511,68 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	/* sync mode configurations */
+	if (dir == I2S_DIR_TX) {
+		/* TX */
+		if (dev_cfg->tx_sync_mode) {
+			config.syncMode = kSAI_ModeSync;
+		} else {
+			config.syncMode = kSAI_ModeAsync;
+		}
+	} else {
+		/* RX */
+		if (dev_cfg->rx_sync_mode) {
+			config.syncMode = kSAI_ModeSync;
+		} else {
+			config.syncMode = kSAI_ModeAsync;
+		}
+	}
+
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
+		if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+			config.masterSlave = kSAI_Slave;
+		} else {
+			config.masterSlave =
+				kSAI_Bclk_Master_FrameSync_Slave;
+		}
+	} else {
+		if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+			config.masterSlave =
+				kSAI_Bclk_Slave_FrameSync_Master;
+		} else {
+			config.masterSlave = kSAI_Master;
+		}
+	}
+
+	/* clock signal polarity */
+	switch (i2s_cfg->format & I2S_FMT_CLK_FORMAT_MASK) {
+	case I2S_FMT_CLK_NF_NB:
+		config.frameSync.frameSyncPolarity =
+			kSAI_PolarityActiveLow;
+		config.bitClock.bclkSrcSwap = false;
+		break;
+
+	case I2S_FMT_CLK_NF_IB:
+		config.frameSync.frameSyncPolarity =
+			kSAI_PolarityActiveLow;
+		config.bitClock.bclkSrcSwap = true;
+		break;
+
+	case I2S_FMT_CLK_IF_NB:
+		config.frameSync.frameSyncPolarity =
+			kSAI_PolarityActiveHigh;
+		config.bitClock.bclkSrcSwap = false;
+		break;
+
+	case I2S_FMT_CLK_IF_IB:
+		config.frameSync.frameSyncPolarity =
+			kSAI_PolarityActiveHigh;
+		config.bitClock.bclkSrcSwap = true;
+		break;
+	}
+
+	config.frameSync.frameSyncWidth = (uint8_t)word_size_bits;
+
 	if (dir == I2S_DIR_TX) {
 		memcpy(&dev_data->tx.cfg, i2s_cfg, sizeof(struct i2s_config));
 		LOG_DBG("tx slab free_list = 0x%x",
@@ -592,8 +595,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 				      i2s_cfg->channels);
 		LOG_DBG("tx start_channel = %d", dev_data->tx.start_channel);
 		/*set up dma settings*/
-		dev_data->tx.dma_cfg.source_data_size = 1;
-		dev_data->tx.dma_cfg.dest_data_size = 1;
+		dev_data->tx.dma_cfg.source_data_size = word_size_bits / 8;
+		dev_data->tx.dma_cfg.dest_data_size = word_size_bits / 8;
 		dev_data->tx.dma_cfg.source_burst_length =
 			i2s_cfg->word_size / 8;
 		dev_data->tx.dma_cfg.dest_burst_length =
@@ -620,8 +623,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 				      i2s_cfg->channels);
 		LOG_DBG("rx start_channel = %d", dev_data->rx.start_channel);
 		/*set up dma settings*/
-		dev_data->rx.dma_cfg.source_data_size = 1;
-		dev_data->rx.dma_cfg.dest_data_size = 1;
+		dev_data->rx.dma_cfg.source_data_size = word_size_bits / 8;
+		dev_data->rx.dma_cfg.dest_data_size = word_size_bits / 8;
 		dev_data->rx.dma_cfg.source_burst_length =
 			i2s_cfg->word_size / 8;
 		dev_data->rx.dma_cfg.dest_burst_length =
