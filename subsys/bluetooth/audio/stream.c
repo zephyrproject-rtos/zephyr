@@ -27,14 +27,12 @@
 #define LOG_MODULE_NAME bt_audio_stream
 #include "common/log.h"
 
-int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
+void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 				  const struct bt_codec_qos *codec)
 {
 	io->sdu = codec->sdu;
 	io->phy = codec->phy;
 	io->rtn = codec->rtn;
-
-	return 0;
 }
 
 void bt_audio_stream_attach(struct bt_conn *conn,
@@ -569,12 +567,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 		BT_ERR("iso_qos %p, io %p, qos %p", iso_qos, io, qos);
 
-		err = bt_audio_codec_qos_to_iso_qos(io, qos);
-		if (err) {
-			BT_DBG("Unable to convert codec QoS to ISO QoS: %d",
-			       err);
-			return err;
-		}
+		bt_audio_codec_qos_to_iso_qos(io, qos);
 	}
 
 	if (!conn_stream_found) {

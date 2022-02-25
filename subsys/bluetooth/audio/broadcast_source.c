@@ -242,7 +242,6 @@ static int bt_audio_broadcast_source_setup_stream(uint8_t index,
 						struct bt_codec_qos *qos)
 {
 	struct bt_audio_ep *ep;
-	int err;
 
 	if (stream->group != NULL) {
 		BT_DBG("Channel %p already in group %p", stream, stream->group);
@@ -258,11 +257,7 @@ static int bt_audio_broadcast_source_setup_stream(uint8_t index,
 	bt_audio_stream_attach(NULL, stream, ep, codec);
 	stream->qos = qos;
 	stream->iso->qos->rx = NULL;
-	err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos->tx, qos);
-	if (err) {
-		BT_ERR("Unable to convert codec QoS to ISO QoS");
-		return err;
-	}
+	bt_audio_codec_qos_to_iso_qos(stream->iso->qos->tx, qos);
 
 	return 0;
 }
