@@ -12,19 +12,12 @@
 #include <core_pmp.h>
 
 #ifdef CONFIG_USERSPACE
-
 /*
  * Glogal variable used to know the current mode running.
  * Is not boolean because it must match the PMP granularity of the arch.
  */
 uint32_t is_user_mode;
-bool irq_flag;
 #endif
-
-void z_thread_entry_wrapper(k_thread_entry_t thread,
-			    void *arg1,
-			    void *arg2,
-			    void *arg3);
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
@@ -64,13 +57,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * within the RISCV architecture implementation, initially set:
 	 * 1) MSTATUS to MSTATUS_DEF_RESTORE in the thread stack to enable
 	 *    interrupts when the newly created thread will be scheduled;
-	 * 2) MEPC to the address of the z_thread_entry_wrapper in the thread
+	 * 2) MEPC to the address of the z_thread_entry in the thread
 	 *    stack.
 	 * Hence, when going out of an interrupt/exception/context-switch,
 	 * after scheduling the newly created thread:
 	 * 1) interrupts will be enabled, as the MSTATUS register will be
 	 *    restored following the MSTATUS value set within the thread stack;
-	 * 2) the core will jump to z_thread_entry_wrapper, as the program
+	 * 2) the core will jump to z_thread_entry, as the program
 	 *    counter will be restored following the MEPC value set within the
 	 *    thread stack.
 	 */
@@ -81,7 +74,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		stack_init->mstatus |= MSTATUS_FS_INIT;
 	}
-	stack_init->fp_state = 0;
 	thread->callee_saved.fcsr = 0;
 #elif defined(CONFIG_FPU)
 	/* Unshared FP mode: enable FPU of each thread. */
@@ -96,7 +88,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if defined(CONFIG_USERSPACE)
 	/* Clear user thread context */
 	thread->arch.priv_stack_start = 0;
-	thread->arch.user_sp = 0;
+
+	/* the unwound stack pointer upon exiting exception */
+	stack_init->sp = (ulong_t)(stack_init + 1);
 #endif /* CONFIG_USERSPACE */
 
 	/* Assign thread entry point and mstatus.MPRV mode. */
@@ -107,7 +101,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	} else {
 		/* Supervisor thread */
-		stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
+		stack_init->mepc = (ulong_t)z_thread_entry;
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 		/* Enable PMP in mstatus.MPRV mode for RISC-V machine mode
@@ -197,20 +191,6 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 
 #ifdef CONFIG_USERSPACE
 
-/* Function used by Zephyr to switch a supervisor thread to a user thread */
-FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
-	void *p1, void *p2, void *p3)
-{
-	arch_syscall_invoke5((uintptr_t) arch_user_mode_enter,
-		(uintptr_t) user_entry,
-		(uintptr_t) p1,
-		(uintptr_t) p2,
-		(uintptr_t) p3,
-		FORCE_SYSCALL_ID);
-
-	CODE_UNREACHABLE;
-}
-
 /*
  * User space entry function
  *
@@ -218,34 +198,43 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
  * The conversion is one way, and threads which transition to user mode do
  * not transition back later, unless they are doing system calls.
  */
-FUNC_NORETURN void z_riscv_user_mode_enter_syscall(k_thread_entry_t user_entry,
-	void *p1, void *p2, void *p3)
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
+					void *p1, void *p2, void *p3)
 {
-	ulong_t top_of_user_stack = 0U;
-	uintptr_t status;
+	ulong_t top_of_user_stack, top_of_priv_stack;
+	ulong_t status;
 
 	/* Set up privileged stack */
 #ifdef CONFIG_GEN_PRIV_STACKS
-		_current->arch.priv_stack_start =
+	_current->arch.priv_stack_start =
 			(ulong_t)z_priv_stack_find(_current->stack_obj);
 #else
-		_current->arch.priv_stack_start =
+	_current->arch.priv_stack_start =
 			(ulong_t)(_current->stack_obj) +
 			Z_RISCV_STACK_GUARD_SIZE;
 #endif /* CONFIG_GEN_PRIV_STACKS */
+	top_of_priv_stack = Z_STACK_PTR_ALIGN(_current->arch.priv_stack_start
+					      + CONFIG_PRIVILEGED_STACK_SIZE);
 
 	top_of_user_stack = Z_STACK_PTR_ALIGN(
 				_current->stack_info.start +
 				_current->stack_info.size -
 				_current->stack_info.delta);
 
-	/* Set next CPU status to user mode */
 	status = csr_read(mstatus);
+
+	/* Set next CPU status to user mode */
 	status = INSERT_FIELD(status, MSTATUS_MPP, PRV_U);
-	status = INSERT_FIELD(status, MSTATUS_MPRV, 0);
+	/* Enable IRQs for user mode */
+	status = INSERT_FIELD(status, MSTATUS_MPIE, 1);
+	/* Disable IRQs for m-mode until the mode switch */
+	status = INSERT_FIELD(status, MSTATUS_MIE, 0);
 
 	csr_write(mstatus, status);
-	csr_write(mepc, z_thread_entry_wrapper);
+	csr_write(mepc, z_thread_entry);
+
+	/* exception stack has to be in mscratch */
+	csr_write(mscratch, top_of_priv_stack);
 
 	/* Set up Physical Memory Protection */
 #if defined(CONFIG_PMP_STACK_GUARD)
@@ -257,32 +246,16 @@ FUNC_NORETURN void z_riscv_user_mode_enter_syscall(k_thread_entry_t user_entry,
 
 	is_user_mode = true;
 
-	__asm__ volatile ("mv a0, %1"
-			  : "=r" (user_entry)
-			  : "r" (user_entry)
-			  : "memory");
+	register void *a0 __asm__("a0") = user_entry;
+	register void *a1 __asm__("a1") = p1;
+	register void *a2 __asm__("a2") = p2;
+	register void *a3 __asm__("a3") = p3;
 
-	__asm__ volatile ("mv a1, %1"
-			  : "=r" (p1)
-			  : "r" (p1)
-			  : "memory");
-
-	__asm__ volatile ("mv a2, %1"
-			  : "=r" (p2)
-			  : "r" (p2)
-			  : "memory");
-
-	__asm__ volatile ("mv a3, %1"
-			  : "=r" (p3)
-			  : "r" (p3)
-			  : "memory");
-
-	__asm__ volatile ("mv sp, %1"
-			  : "=r" (top_of_user_stack)
-			  : "r" (top_of_user_stack)
-			  : "memory");
-
-	__asm__ volatile ("mret");
+	__asm__ volatile (
+	"mv sp, %4; mret"
+	:
+	: "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (top_of_user_stack)
+	: "memory");
 
 	CODE_UNREACHABLE;
 }
