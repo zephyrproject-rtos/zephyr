@@ -490,7 +490,8 @@ void lll_conn_isr_tx(void *param)
 		if (df_rx_params->is_enabled) {
 			lll_df_conf_cte_rx_enable(df_rx_params->slot_durations,
 						  df_rx_params->ant_sw_len, df_rx_params->ant_ids,
-						  df_rx_cfg->chan, CTE_INFO_IN_S1_BYTE);
+						  df_rx_cfg->chan, CTE_INFO_IN_S1_BYTE,
+						  lll->phy_rx);
 		} else {
 			lll_df_conf_cte_info_parsing_enable();
 		}
