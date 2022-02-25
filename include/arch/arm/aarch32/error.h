@@ -53,7 +53,8 @@ do { \
 		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
 } while (false)
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
 /*
  * In order to support using svc for an exception while running in an
  * isr, stack $lr_svc before calling svc.  While exiting the isr,
