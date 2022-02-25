@@ -6,6 +6,9 @@
 config IPM_NRFX
 	default IPM
 
+config MBOX_NRFX_IPC
+	default MBOX
+
 config RPMSG_SERVICE_DUAL_IPM_SUPPORT
 	default RPMSG_SERVICE
 

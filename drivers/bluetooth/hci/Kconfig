@@ -33,9 +33,19 @@ config BT_H5
 
 config BT_RPMSG
 	bool "HCI using RPMsg"
+	select IPC_SERVICE
+	select MBOX
 	help
 	  Bluetooth HCI driver for communication with another CPU
 	  using RPMsg framework.
+
+if BT_RPMSG
+
+choice IPC_SERVICE_BACKEND
+	default IPC_SERVICE_BACKEND_RPMSG
+endchoice
+
+endif # BT_RPMSG
 
 config BT_SPI
 	bool "SPI HCI"
@@ -102,27 +112,10 @@ config BT_STM32_IPM_RX_STACK_SIZE
 	depends on BT_STM32_IPM
 	default 512
 
-config BT_RPMSG_NRF53
-	bool "nRF53 configuration of RPMsg"
-	default y if SOC_NRF5340_CPUAPP
-	depends on BT_RPMSG
-	select RPMSG_SERVICE
-	help
-	  Enable RPMsg configuration for nRF53. Two channels of the IPM driver
-	  are used in the HCI driver: channel 0 for TX and channel 1 for RX.
-
-if BT_RPMSG_NRF53
-
-choice RPMSG_SERVICE_MODE
-	default RPMSG_SERVICE_MODE_MASTER
-endchoice
-
-endif # BT_RPMSG_NRF53
-
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
 	depends on BT_AUTO_DATA_LEN_UPDATE
-	default y if BT_RPMSG_NRF53 || BT_ESP32
+	default y if BT_RPMSG || BT_ESP32
 	help
 	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
 	  Update procedure for new connections for controllers that do not
