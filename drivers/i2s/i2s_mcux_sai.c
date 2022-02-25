@@ -27,6 +27,8 @@
 
 #include "i2s_mcux_sai.h"
 
+#include <fsl_cache.h>
+
 #define LOG_DOMAIN dev_i2s_mcux
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
 #include <logging/log.h>
@@ -1041,6 +1043,9 @@ static int i2s_mcux_read(const struct device *dev, void **mem_block,
 
 	*mem_block = buffer;
 	*size = strm->cfg.block_size;
+
+	/* buffer written by DMA, needs to be invalidated before CPU reads it */
+	L1CACHE_InvalidateDCacheByRange((uint32_t)buffer, *size);
 	return 0;
 }
 
@@ -1057,6 +1062,9 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block,
 		LOG_ERR("invalid state (%d)", strm->state);
 		return -EIO;
 	}
+
+	/* buffer written by CPU, needs to be cleaned before DMA reads it */
+	L1CACHE_CleanDCacheByRange((uint32_t)mem_block, size);
 
 	ret = k_msgq_put(&strm->in_queue, &mem_block,
 			 SYS_TIMEOUT_MS(strm->cfg.timeout));
