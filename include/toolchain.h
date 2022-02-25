@@ -92,6 +92,14 @@
 # endif
 #endif
 
+/**
+ * @def TOOLCHAIN_HAS_C_AUTO_TYPE
+ * @brief Indicate if toolchain supports C __auto_type.
+ */
+#ifndef TOOLCHAIN_HAS_C_AUTO_TYPE
+#define TOOLCHAIN_HAS_C_AUTO_TYPE 0
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * as these are often used without checking for definition and doing so can
