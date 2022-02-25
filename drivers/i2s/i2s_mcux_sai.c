@@ -129,20 +129,19 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 
 	LOG_DBG("Stopping DMA channel %u for TX stream", strm->dma_channel);
+
+	/* Disable FIFO DMA request */
+	SAI_TxEnableDMA(dev_cfg->base, kSAI_FIFORequestDMAEnable,
+			false);
+
 	dma_stop(dev_dma, strm->dma_channel);
+
+	/* wait for TX FIFO to drain before disabling */
+	while ((dev_cfg->base->TCSR & I2S_TCSR_FWF_MASK) == 0)
+		;
 
 	/* Disable the channel FIFO */
 	dev_cfg->base->TCR3 &= ~I2S_TCR3_TCE_MASK;
-
-	/* purge buffers queued in the stream */
-	if (drop) {
-		i2s_purge_stream_buffers(strm, dev_data->tx.cfg.mem_slab,
-					 true, true);
-	}
-
-	/* Disable DMA enable bit */
-	SAI_TxEnableDMA(dev_cfg->base, kSAI_FIFORequestDMAEnable,
-			false);
 
 	/* Disable Tx */
 	SAI_TxEnable(dev_cfg->base, false);
@@ -154,6 +153,12 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 		dev_cfg->base->TCSR |=
 			(I2S_TCSR_FR_MASK | I2S_TCSR_SR_MASK);
 		dev_cfg->base->TCSR &= ~I2S_TCSR_SR_MASK;
+	}
+
+	/* purge buffers queued in the stream */
+	if (drop) {
+		i2s_purge_stream_buffers(strm, dev_data->tx.cfg.mem_slab,
+					 true, true);
 	}
 }
 
