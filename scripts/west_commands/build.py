@@ -20,7 +20,7 @@ from zephyr_ext_common import Forceable
 _ARG_SEPARATOR = '--'
 
 BUILD_USAGE = '''\
-west build [-h] [-b BOARD] [-d BUILD_DIR]
+west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [-n] [-o BUILD_OPT] [-f]
            [source_dir] -- [cmake_opt [cmake_opt ...]]
@@ -98,7 +98,8 @@ class Build(Forceable):
         # Remember to update west-completion.bash if you add or remove
         # flags
 
-        parser.add_argument('-b', '--board', help='board to build for')
+        parser.add_argument('-b', '--board',
+                        help='board to build for with optional board revision')
         # Hidden option for backwards compatibility
         parser.add_argument('-s', '--source-dir', help=argparse.SUPPRESS)
         parser.add_argument('-d', '--build-dir',

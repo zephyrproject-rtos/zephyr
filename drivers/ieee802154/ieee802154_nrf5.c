@@ -57,7 +57,6 @@ static struct nrf5_802154_data nrf5_data;
 #define ACK_REQUEST_BIT (1 << 5)
 #define FRAME_PENDING_BYTE 1
 #define FRAME_PENDING_BIT (1 << 4)
-#define TXTIME_OFFSET_US (1 * USEC_PER_MSEC)
 
 #define DRX_SLOT_PH 0 /* Placeholder delayed reception window ID */
 #define DRX_SLOT_RX 1 /* Actual delayed reception window ID */
@@ -473,12 +472,11 @@ static bool nrf5_tx_at(struct net_pkt *pkt, uint8_t *payload, bool cca)
 		.cca = cca,
 		.channel = nrf_802154_channel_get(),
 	};
-	uint32_t tx_at = net_pkt_txtime(pkt) / NSEC_PER_USEC;
+	uint64_t tx_at = net_pkt_txtime(pkt) / NSEC_PER_USEC;
 	bool ret;
 
 	ret = nrf_802154_transmit_raw_at(payload,
-					 tx_at - TXTIME_OFFSET_US,
-					 TXTIME_OFFSET_US,
+					 tx_at,
 					 &metadata);
 	if (nrf5_data.event_handler) {
 		LOG_WRN("TX_STARTED event will be triggered without delay");
@@ -734,9 +732,82 @@ static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
 #endif /* CONFIG_IEEE802154_2015 */
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+/**
+ * @brief Convert 32-bit target time to absolute 64-bit target time.
+ */
+static uint64_t target_time_convert_to_64_bits(uint32_t target_time)
+{
+	/**
+	 * Target time is provided as two 32-bit integers defining a moment in time
+	 * in microsecond domain. In order to use bit-shifting instead of modulo
+	 * division, calculations are performed in microsecond domain, not in RTC ticks.
+	 *
+	 * The target time can point to a moment in the future, but can be overdue
+	 * as well. In order to determine what's the case and correctly set the
+	 * absolute target time, it's necessary to compare the least significant
+	 * 32 bits of the current time, 64-bit time with the provided 32-bit target
+	 * time. Let's assume that half of the 32-bit range can be used for specifying
+	 * target times in the future, and the other half - in the past.
+	 */
+	uint64_t now_us = nrf_802154_time_get();
+	uint32_t now_us_wrapped = (uint32_t)now_us;
+	uint32_t time_diff = target_time - now_us_wrapped;
+	uint64_t result = UINT64_C(0);
+
+	if (time_diff < 0x80000000) {
+		/**
+		 * Target time is assumed to be in the future. Check if a 32-bit overflow
+		 * occurs between the current time and the target time.
+		 */
+		if (now_us_wrapped > target_time) {
+			/**
+			 * Add a 32-bit overflow and replace the least significant 32 bits
+			 * with the provided target time.
+			 */
+			result = now_us + UINT32_MAX + 1;
+			result &= ~(uint64_t)UINT32_MAX;
+			result |= target_time;
+		} else {
+			/**
+			 * Leave the most significant 32 bits and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time;
+		}
+	} else {
+		/**
+		 * Target time is assumed to be in the past. Check if a 32-bit overflow
+		 * occurs between the target time and the current time.
+		 */
+		if (now_us_wrapped > target_time) {
+			/**
+			 * Leave the most significant 32 bits and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = (now_us & (~(uint64_t)UINT32_MAX)) | target_time;
+		} else {
+			/**
+			 * Subtract a 32-bit overflow and replace the least significant
+			 * 32 bits with the provided target time.
+			 */
+			result = now_us - UINT32_MAX - 1;
+			result &= ~(uint64_t)UINT32_MAX;
+			result |= target_time;
+		}
+	}
+
+	return result;
+}
+
 static void nrf5_receive_at(uint32_t start, uint32_t duration, uint8_t channel, uint32_t id)
 {
-	nrf_802154_receive_at(start - TXTIME_OFFSET_US, TXTIME_OFFSET_US, duration, channel, id);
+	/*
+	 * Workaround until OpenThread (the only CSL user in Zephyr so far) is able to schedule
+	 * RX windows using 64-bit time.
+	 */
+	uint64_t rx_time = target_time_convert_to_64_bits(start);
+
+	nrf_802154_receive_at(rx_time, duration, channel, id);
 }
 
 static void nrf5_config_csl_period(uint16_t period)
@@ -890,7 +961,7 @@ static int nrf5_configure(const struct device *dev,
 
 /* nRF5 radio driver callbacks */
 
-void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi, uint32_t time)
+void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi, uint64_t time)
 {
 	for (uint32_t i = 0; i < ARRAY_SIZE(nrf5_data.rx_frames); i++) {
 		if (nrf5_data.rx_frames[i].psdu != NULL) {

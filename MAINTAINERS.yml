@@ -400,7 +400,6 @@ Display drivers:
         - include/drivers/display.h
         - include/display/
         - include/drivers/display.h
-        - lib/gui/
         - subsys/fb/
         - samples/subsys/display/
     labels:

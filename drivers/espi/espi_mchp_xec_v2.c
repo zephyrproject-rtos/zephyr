@@ -910,7 +910,7 @@ static void espi_oob_down_isr(const struct device *dev)
 #ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 		k_sem_give(&data->rx_lock);
 #else
-		evt.evt_details = ESPI_OOB_REGS->RX_LEN &
+		evt.evt_details = regs->OOBRXL &
 				  MCHP_ESPI_OOB_RX_LEN_MASK;
 		espi_send_callbacks(&data->callbacks, dev, evt);
 #endif

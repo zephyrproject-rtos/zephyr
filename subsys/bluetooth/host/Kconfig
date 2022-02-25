@@ -84,6 +84,7 @@ config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 512 if BT_HCI_RAW
+	default 3092 if BT_MESH_GATT_CLIENT
 	default 2048 if BT_MESH
 	default 2048 if BT_AUDIO
 	default 2200 if BT_SETTINGS

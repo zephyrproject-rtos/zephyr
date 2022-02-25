@@ -294,7 +294,6 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_RESET_HIGH_TIME K_MSEC(10)
 #define MDM_WAIT_FOR_DATA_RETRIES 3
 
-#define RSSI_TIMEOUT_SECS 30
 #define RSSI_UNKNOWN -999
 
 #define DNS_WORK_DELAY_SECS 1
@@ -480,10 +479,10 @@ struct hl7800_iface_ctx {
 	struct gpio_callback mdm_uart_dsr_cb;
 	struct gpio_callback mdm_gpio6_cb;
 	struct gpio_callback mdm_uart_cts_cb;
-	uint32_t vgpio_state;
-	uint32_t dsr_state;
-	uint32_t gpio6_state;
-	uint32_t cts_state;
+	int vgpio_state;
+	int dsr_state;
+	int gpio6_state;
+	int cts_state;
 
 	/* RX specific attributes */
 	struct mdm_receiver_context mdm_ctx;
@@ -560,6 +559,9 @@ struct hl7800_iface_ctx {
 	int32_t local_time_offset;
 	bool local_time_valid;
 	bool configured;
+	void (*wake_up_callback)(int state);
+	void (*gpio6_callback)(int state);
+	void (*cts_callback)(int state);
 
 #ifdef CONFIG_MODEM_HL7800_GPS
 	struct k_work_delayable gps_work;
@@ -593,6 +595,7 @@ static int write_apn(char *access_point_name);
 static void mark_sockets_for_reconfig(void);
 #endif
 static void hl7800_build_mac(struct hl7800_iface_ctx *ictx);
+static void rssi_query(void);
 
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 static void initialize_sleep_level(void);
@@ -658,17 +661,26 @@ static struct stale_socket *dequeue_stale_socket(void)
 static bool convert_time_string_to_struct(struct tm *tm, int32_t *offset,
 					  char *time_string);
 
+static int read_pin(int default_state, const struct device *port, gpio_pin_t pin)
+{
+	int state = gpio_pin_get(port, pin);
+
+	if (state < 0) {
+		LOG_ERR("Unable to read port: %s pin: %d status: %d", port->name, pin, state);
+		state = default_state;
+	}
+
+	return state;
+}
+
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 static bool is_cmd_ready(void)
 {
-	ictx.vgpio_state = (uint32_t)gpio_pin_get(ictx.gpio_port_dev[MDM_VGPIO],
-						  pinconfig[MDM_VGPIO].pin);
+	ictx.vgpio_state = read_pin(0, ictx.gpio_port_dev[MDM_VGPIO], pinconfig[MDM_VGPIO].pin);
 
-	ictx.gpio6_state = (uint32_t)gpio_pin_get(ictx.gpio_port_dev[MDM_GPIO6],
-						  pinconfig[MDM_GPIO6].pin);
+	ictx.gpio6_state = read_pin(0, ictx.gpio_port_dev[MDM_GPIO6], pinconfig[MDM_GPIO6].pin);
 
-	ictx.cts_state = (uint32_t)gpio_pin_get(
-		ictx.gpio_port_dev[MDM_UART_CTS], pinconfig[MDM_UART_CTS].pin);
+	ictx.cts_state = read_pin(1, ictx.gpio_port_dev[MDM_UART_CTS], pinconfig[MDM_UART_CTS].pin);
 
 	return ictx.vgpio_state && ictx.gpio6_state && !ictx.cts_state;
 }
@@ -856,16 +868,37 @@ char *hl7800_sprint_ip_addr(const struct sockaddr *addr)
 	}
 }
 
+void mdm_hl7800_register_wake_test_point_callback(void (*func)(int state))
+{
+	ictx.wake_up_callback = func;
+}
+
+void mdm_hl7800_register_gpio6_callback(void (*func)(int state))
+{
+	ictx.gpio6_callback = func;
+}
+
+void mdm_hl7800_register_cts_callback(void (*func)(int state))
+{
+	ictx.cts_callback = func;
+}
+
 static void modem_assert_wake(bool assert)
 {
+	int state;
+
 	if (assert) {
 		HL7800_IO_DBG_LOG("MDM_WAKE_PIN -> ASSERTED");
-		gpio_pin_set(ictx.gpio_port_dev[MDM_WAKE],
-			     pinconfig[MDM_WAKE].pin, MDM_WAKE_ASSERTED);
+		state = MDM_WAKE_ASSERTED;
 	} else {
 		HL7800_IO_DBG_LOG("MDM_WAKE_PIN -> NOT_ASSERTED");
-		gpio_pin_set(ictx.gpio_port_dev[MDM_WAKE],
-			     pinconfig[MDM_WAKE].pin, MDM_WAKE_NOT_ASSERTED);
+		state = MDM_WAKE_NOT_ASSERTED;
+	}
+
+	gpio_pin_set(ictx.gpio_port_dev[MDM_WAKE], pinconfig[MDM_WAKE].pin, state);
+
+	if (ictx.wake_up_callback != NULL) {
+		ictx.wake_up_callback(state);
 	}
 }
 
@@ -932,6 +965,10 @@ static void event_handler(enum mdm_hl7800_event event, void *event_data)
 
 void mdm_hl7800_get_signal_quality(int *rsrp, int *sinr)
 {
+	if (CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS == 0) {
+		rssi_query();
+	}
+
 	*rsrp = ictx.mdm_rssi;
 	*sinr = ictx.mdm_sinr;
 }
@@ -2683,6 +2720,9 @@ static int hl7800_query_rssi(void)
 
 static void hl7800_start_rssi_work(void)
 {
+	/* Rate is not checked here to allow one reading
+	 * when going from network down->up
+	 */
 	k_work_reschedule_for_queue(&hl7800_workq, &ictx.rssi_query_work,
 				    K_NO_WAIT);
 }
@@ -2697,17 +2737,24 @@ static void hl7800_stop_rssi_work(void)
 	}
 }
 
-static void hl7800_rssi_query_work(struct k_work *work)
+static void rssi_query(void)
 {
 	hl7800_lock();
 	wakeup_hl7800();
 	hl7800_query_rssi();
 	allow_sleep(true);
 	hl7800_unlock();
+}
+
+static void hl7800_rssi_query_work(struct k_work *work)
+{
+	rssi_query();
 
 	/* re-start RSSI query work */
-	k_work_reschedule_for_queue(&hl7800_workq, &ictx.rssi_query_work,
-				    K_SECONDS(RSSI_TIMEOUT_SECS));
+	if (CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS > 0) {
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.rssi_query_work,
+					    K_SECONDS(CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS));
+	}
 }
 
 #ifdef CONFIG_MODEM_HL7800_GPS
@@ -4662,8 +4709,7 @@ static void mdm_vgpio_work_cb(struct k_work *item)
 void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb,
 			    uint32_t pins)
 {
-	ictx.vgpio_state = (uint32_t)gpio_pin_get(ictx.gpio_port_dev[MDM_VGPIO],
-						  pinconfig[MDM_VGPIO].pin);
+	ictx.vgpio_state = read_pin(1, ictx.gpio_port_dev[MDM_VGPIO], pinconfig[MDM_VGPIO].pin);
 	HL7800_IO_DBG_LOG("VGPIO:%d", ictx.vgpio_state);
 	if (!ictx.vgpio_state) {
 		prepare_io_for_reset();
@@ -4690,9 +4736,7 @@ void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb,
 void mdm_uart_dsr_callback_isr(const struct device *port,
 			       struct gpio_callback *cb, uint32_t pins)
 {
-	ictx.dsr_state = (uint32_t)gpio_pin_get(
-		ictx.gpio_port_dev[MDM_UART_DSR], pinconfig[MDM_UART_DSR].pin);
-
+	ictx.dsr_state = read_pin(1, ictx.gpio_port_dev[MDM_UART_DSR], pinconfig[MDM_UART_DSR].pin);
 	HL7800_IO_DBG_LOG("MDM_UART_DSR:%d", ictx.dsr_state);
 }
 
@@ -4716,8 +4760,7 @@ void mdm_gpio6_callback_isr(const struct device *port, struct gpio_callback *cb,
 			    uint32_t pins)
 {
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
-	ictx.gpio6_state = (uint32_t)gpio_pin_get(ictx.gpio_port_dev[MDM_GPIO6],
-						  pinconfig[MDM_GPIO6].pin);
+	ictx.gpio6_state = read_pin(1, ictx.gpio_port_dev[MDM_GPIO6], pinconfig[MDM_GPIO6].pin);
 	HL7800_IO_DBG_LOG("MDM_GPIO6:%d", ictx.gpio6_state);
 	if (!ictx.gpio6_state) {
 		/* HL7800 is not awake, shut down UART to save power */
@@ -4731,6 +4774,12 @@ void mdm_gpio6_callback_isr(const struct device *port, struct gpio_callback *cb,
 		power_on_uart();
 	}
 
+	if ((ictx.gpio6_callback != NULL) &&
+	    ((ictx.desired_sleep_level == HL7800_SLEEP_HIBERNATE) ||
+	     (ictx.desired_sleep_level == HL7800_SLEEP_LITE_HIBERNATE))) {
+		ictx.gpio6_callback(ictx.gpio6_state);
+	}
+
 	check_hl7800_awake();
 #else
 	HL7800_IO_DBG_LOG("Spurious gpio6 interrupt from the modem");
@@ -4742,6 +4791,11 @@ void mdm_uart_cts_callback(const struct device *port, struct gpio_callback *cb,
 {
 	ictx.cts_state = (uint32_t)gpio_pin_get(
 		ictx.gpio_port_dev[MDM_UART_CTS], pinconfig[MDM_UART_CTS].pin);
+
+	if ((ictx.cts_callback != NULL) && (ictx.desired_sleep_level == HL7800_SLEEP_SLEEP)) {
+		ictx.cts_callback(ictx.cts_state);
+	}
+
 	/* CTS toggles A LOT,
 	 * comment out the debug print unless we really need it.
 	 */

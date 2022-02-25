@@ -247,22 +247,24 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
-			       SHELL_CMD(scan, &dsub_device_name,
-					 "Scan I2C devices", cmd_i2c_scan),
-			       SHELL_CMD(recover, &dsub_device_name,
-					 "Recover I2C bus", cmd_i2c_recover),
+			       SHELL_CMD_ARG(scan, &dsub_device_name,
+					     "Scan I2C devices",
+					     cmd_i2c_scan, 2, 0),
+			       SHELL_CMD_ARG(recover, &dsub_device_name,
+					     "Recover I2C bus",
+					     cmd_i2c_recover, 2, 0),
 			       SHELL_CMD_ARG(read, &dsub_device_name,
 					     "Read bytes from an I2C device",
-					     cmd_i2c_read, 3, MAX_I2C_BYTES),
+					     cmd_i2c_read, 4, MAX_I2C_BYTES),
 			       SHELL_CMD_ARG(read_byte, &dsub_device_name,
 					     "Read a byte from an I2C device",
-					     cmd_i2c_read_byte, 3, 1),
+					     cmd_i2c_read_byte, 4, 1),
 			       SHELL_CMD_ARG(write, &dsub_device_name,
 					     "Write bytes to an I2C device",
-					     cmd_i2c_write, 3, MAX_I2C_BYTES),
+					     cmd_i2c_write, 4, MAX_I2C_BYTES),
 			       SHELL_CMD_ARG(write_byte, &dsub_device_name,
 					     "Write a byte to an I2C device",
-					     cmd_i2c_write_byte, 4, 1),
+					     cmd_i2c_write_byte, 5, 0),
 			       SHELL_SUBCMD_SET_END     /* Array terminated. */
 			       );
 

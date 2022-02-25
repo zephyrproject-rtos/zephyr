@@ -2,10 +2,14 @@ sample:
   name: CAN driver sample
 tests:
   sample.drivers.can:
-    tags: CAN
+    tags: can
     depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
     harness: console
     harness_config:
       type: one_line
       regex:
         - "Counter received: (.*)"
+  sample.drivers.can.dfrobot_can_bus_v2_0:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=dfrobot_can_bus_v2_0

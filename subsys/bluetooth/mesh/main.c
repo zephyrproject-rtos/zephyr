@@ -39,6 +39,7 @@
 #include "pb_gatt_srv.h"
 #include "settings.h"
 #include "mesh.h"
+#include "gatt_cli.h"
 
 int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		      uint8_t flags, uint32_t iv_index, uint16_t addr,
@@ -141,6 +142,25 @@ int bt_mesh_provision_adv(const uint8_t uuid[16], uint16_t net_idx, uint16_t add
 	return -ENOTSUP;
 }
 
+int bt_mesh_provision_gatt(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
+			   uint8_t attention_duration)
+{
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		return -EINVAL;
+	}
+
+	if (bt_mesh_subnet_get(net_idx) == NULL) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT_CLIENT)) {
+		return bt_mesh_pb_gatt_open(uuid, net_idx, addr,
+					    attention_duration);
+	}
+
+	return -ENOTSUP;
+}
+
 void bt_mesh_reset(void)
 {
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
@@ -183,6 +203,10 @@ void bt_mesh_reset(void)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 		(void)bt_mesh_proxy_gatt_disable();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_CLIENT)) {
+		bt_mesh_gatt_client_deinit();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
@@ -235,6 +259,10 @@ int bt_mesh_suspend(void)
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
 		BT_WARN("Disabling scanning failed (err %d)", err);
 		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_CLIENT)) {
+		bt_mesh_proxy_disconnect(BT_MESH_KEY_ANY);
 	}
 
 	bt_mesh_hb_suspend();
@@ -354,13 +382,17 @@ int bt_mesh_start(void)
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROV) || !bt_mesh_prov_active() ||
 	    bt_mesh_prov_link.bearer->type == BT_MESH_PROV_ADV) {
 		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-			(void)bt_mesh_pb_gatt_disable();
+			(void)bt_mesh_pb_gatt_srv_disable();
 		}
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 			(void)bt_mesh_proxy_gatt_enable();
 			bt_mesh_adv_gatt_update();
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_CLIENT)) {
+		bt_mesh_gatt_client_init();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {

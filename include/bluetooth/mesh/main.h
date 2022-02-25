@@ -213,6 +213,17 @@ struct bt_mesh_prov {
 					    bt_mesh_prov_oob_info_t oob_info,
 					    uint32_t *uri_hash);
 
+	/** @brief PB-GATT Unprovisioned Advertising has been received.
+	 *
+	 *  This callback notifies the application that an PB-GATT
+	 *  unprovisioned Advertising has been received.
+	 *
+	 *  @param uuid     UUID
+	 *  @param oob_info OOB Information
+	 */
+	void        (*unprovisioned_beacon_gatt)(uint8_t uuid[16],
+						 bt_mesh_prov_oob_info_t oob_info);
+
 	/** @brief Provisioning link has been opened.
 	 *
 	 *  This callback notifies the application that a provisioning
@@ -423,6 +434,19 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
  */
 int bt_mesh_provision_adv(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 			  uint8_t attention_duration);
+
+/** @brief Provision a Mesh Node using PB-GATT
+ *
+ *  @param uuid               UUID
+ *  @param net_idx            Network Key Index
+ *  @param addr               Address to assign to remote device. If addr is 0,
+ *                            the lowest available address will be chosen.
+ *  @param attention_duration The attention duration to be send to remote device
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_provision_gatt(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
+			   uint8_t attention_duration);
 
 /** @brief Check if the local node has been provisioned.
  *

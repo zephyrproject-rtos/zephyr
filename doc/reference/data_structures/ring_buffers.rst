@@ -13,13 +13,13 @@ buffer of memory.
 
 Two content data modes are supported:
 
+* **Byte mode**: raw bytes can be enqueued and dequeued.
+
 * **Data item mode**: Multiple 32-bit word data items with metadata
   can be enqueued and dequeued from the ring buffer in
   chunks of up to 1020 bytes.  Each data item also has two
   associated metadata values:  a type identifier and a 16-bit
   integer value, both of which are application-specific.
-
-* **Byte mode**: raw bytes can be enqueued and dequeued.
 
 While the underlying data structure is the same, it is not
 legal to mix these two modes on a single ring buffer instance.  A ring
@@ -40,33 +40,28 @@ ring buffer is referenced by its memory address.
 
 A ring buffer has the following key properties:
 
-* A **data buffer** of 32-bit words or bytes. The data buffer contains the data
-  items or raw bytes that have been added to the ring buffer but not yet
+* A **data buffer** of bytes or 32-bit words. The data buffer contains the raw
+  bytes or 32-bit words that have been added to the ring buffer but not yet
   removed.
 
-* A **data buffer size**, measured in 32-bit words or bytes. This governs the
-  maximum amount of data (including metadata values) the ring buffer can hold.
+* A **data buffer size**, measured in bytes or 32-byte words. This governs
+  the maximum amount of data (including possible metadata values) the ring
+  buffer can hold.
 
 A ring buffer must be initialized before it can be used. This sets its
 data buffer to empty.
 
-
 A ``struct ring_buf`` may be placed anywhere in user-accessible
-memory, and must be initialized with :c:func:`ring_buf_init` before use.
-This must be provided a region of user-controlled memory for use as
-the buffer itself.  Note carefully that the units of the size of the
+memory, and must be initialized with :c:func:`ring_buf_init` or
+:c:func:`ring_buf_element_init` before use. This must be provided a region
+of user-controlled memory for use as the buffer itself.  Note carefully that the units of the size of the
 buffer passed change (either bytes or words) depending on how the ring
 buffer will be used later.  Macros for combining these steps in a
 single static declaration exist for convenience.
 :c:macro:`RING_BUF_DECLARE` will declare and statically initialize a ring
 buffer with a specified byte count, where
-:c:macro:`RING_BUF_ITEM_DECLARE_SIZE` will declare and statically
+:c:macro:`RING_BUF_ITEM_DECLARE` will declare and statically
 initialize a buffer with a given count of 32 bit words.
-:c:macro:`RING_BUF_ITEM_DECLARE_POW2` can be used to initialize an
-items-mode buffer with a memory region guaranteed to be a power of
-two, which enables various optimizations internal to the
-implementation.  No power-of-two initialization is available for
-bytes-mode ring buffers.
 
 "Bytes" data may be copied into the ring buffer using
 :c:func:`ring_buf_put`, passing a data pointer and byte count.  These
@@ -103,8 +98,8 @@ transfer; it will return an error in the case where the provided data
 does not fit in its entirety.
 
 The user can manage the capacity of a ring buffer without modifying it
-using the :c:func:`ring_buf_space_get` call (which returns a value of
-either bytes or items depending on how the ring buffer has been used),
+using either :c:func:`ring_buf_space_get` or :c:func:`ring_buf_item_space_get`
+which returns the number of free bytes or free 32-bit item words respectively,
 or by testing the :c:func:`ring_buf_is_empty` predicate.
 
 Finally, a :c:func:`ring_buf_reset` call exists to immediately empty a
@@ -113,32 +108,11 @@ written to the buffer.  It does not modify the memory contents of the
 buffer itself, however.
 
 
-Data item mode
-==============
-
-A **data item mode** ring buffer instance is declared using
-:c:macro:`RING_BUF_ITEM_DECLARE_POW2()` or
-:c:macro:`RING_BUF_ITEM_DECLARE_SIZE()` and accessed using
-:c:func:`ring_buf_item_put` and :c:func:`ring_buf_item_get`.
-
-A ring buffer **data item** is an array of 32-bit words from 0 to 1020 bytes
-in length. When a data item is **enqueued** (:c:func:`ring_buf_item_put`)
-its contents are copied to the data buffer, along with its associated metadata
-values (which occupy one additional 32-bit word). If the ring buffer has
-insufficient space to hold the new data item the enqueue operation fails.
-
-A data items is **dequeued** (:c:func:`ring_buf_item_get`) from a ring
-buffer by removing the oldest enqueued item. The contents of the dequeued data
-item, as well as its two metadata values, are copied to areas supplied by the
-retriever. If the ring buffer is empty, or if the data array supplied by the
-retriever is not large enough to hold the data item's data, the dequeue
-operation fails.
-
 Byte mode
 =========
 
 A **byte mode** ring buffer instance is declared using
-:c:macro:`RING_BUF_ITEM_DECLARE_SIZE()` and accessed using:
+:c:macro:`RING_BUF_DECLARE()` and accessed using:
 :c:func:`ring_buf_put_claim`, :c:func:`ring_buf_put_finish`,
 :c:func:`ring_buf_get_claim`, :c:func:`ring_buf_get_finish`,
 :c:func:`ring_buf_put` and :c:func:`ring_buf_get`.
@@ -156,14 +130,33 @@ directly by the user. In the latter case, the operation is split into three stag
 
 Data can be retrieved from a ring buffer through copying
 (see :c:func:`ring_buf_get`) or accessed directly by address. In the latter
-case, the operation is split
-into three stages:
+case, the operation is split into three stages:
 
 1. retrieving source location with valid data written to a ring buffer
    (see :c:func:`ring_buf_get_claim`).
 #. processing data
 #. freeing processed data (see :c:func:`ring_buf_get_finish`).
    The amount freed can be less than or equal or to the retrieved amount.
+
+Data item mode
+==============
+
+A **data item mode** ring buffer instance is declared using
+:c:macro:`RING_BUF_ITEM_DECLARE()` and accessed using
+:c:func:`ring_buf_item_put` and :c:func:`ring_buf_item_get`.
+
+A ring buffer **data item** is an array of 32-bit words from 0 to 1020 bytes
+in length. When a data item is **enqueued** (:c:func:`ring_buf_item_put`)
+its contents are copied to the data buffer, along with its associated metadata
+values (which occupy one additional 32-bit word). If the ring buffer has
+insufficient space to hold the new data item the enqueue operation fails.
+
+A data items is **dequeued** (:c:func:`ring_buf_item_get`) from a ring
+buffer by removing the oldest enqueued item. The contents of the dequeued data
+item, as well as its two metadata values, are copied to areas supplied by the
+retriever. If the ring buffer is empty, or if the data array supplied by the
+retriever is not large enough to hold the data item's data, the dequeue
+operation fails.
 
 Concurrency
 ===========
@@ -175,36 +168,25 @@ mutexes and/or use semaphores to notify consumers that there is data to
 read.
 
 For the trivial case of one producer and one consumer, concurrency
-shouldn't be needed.
+control shouldn't be needed.
 
 Internal Operation
 ==================
-
-If the size of the data buffer is a power of two, the ring buffer
-uses efficient masking operations instead of expensive modulo operations
-when enqueuing and dequeuing data items. This option is applicable only for
-data item mode.
 
 Data streamed through a ring buffer is always written to the next byte
 within the buffer, wrapping around to the first element after reaching
 the end, thus the "ring" structure.  Internally, the ``struct
 ring_buf`` contains its own buffer pointer and its size, and also a
-"head" and "tail" index representing where the next read and write
+set of "head" and "tail" indices representing where the next read and write
+operations may occur.
 
 This boundary is invisible to the user using the normal put/get APIs,
 but becomes a barrier to the "claim" API, because obviously no
 contiguous region can be returned that crosses the end of the buffer.
 This can be surprising to application code, and produce performance
-artifacts when transfers need to alias closely to the size of the
-buffer, as the number of calls to claim/finish need to double for such
+artifacts when transfers need to happen close to the end of the
+buffer, as the number of calls to claim/finish needs to double for such
 transfers.
-
-When running in items mode (only), the ring buffer contains two
-implementations for the modular arithmetic required to compute "next
-element" offsets.  One is used for arbitrary sized buffers, but the
-other is optimized for power of two sizes and can replace the compare
-and subtract steps with a simple bitmask in several places, at the
-cost of testing the "mask" value for each call.
 
 
 Implementation
@@ -214,7 +196,8 @@ Defining a Ring Buffer
 ======================
 
 A ring buffer is defined using a variable of type :c:type:`ring_buf`.
-It must then be initialized by calling :c:func:`ring_buf_init`.
+It must then be initialized by calling :c:func:`ring_buf_init` or
+c:func:`ring_buf_item_init`.
 
 The following code defines and initializes an empty **data item mode** ring
 buffer (which is part of a larger data structure). The ring buffer's data buffer
@@ -222,17 +205,17 @@ is capable of holding 64 words of data and metadata information.
 
 .. code-block:: c
 
-    #define MY_RING_BUF_SIZE 64
+    #define MY_RING_BUF_WORDS 64
 
     struct my_struct {
         struct ring_buf rb;
-        uint32_t buffer[MY_RING_BUF_SIZE];
+        uint32_t buffer[MY_RING_BUF_WORDS];
         ...
     };
     struct my_struct ms;
 
     void init_my_struct {
-        ring_buf_init(&ms.rb, sizeof(ms.buffer), ms.buffer);
+        ring_buf_item_init(&ms.rb, MY_RING_BUF_WORDS, ms.buffer);
         ...
     }
 
@@ -240,61 +223,22 @@ Alternatively, a ring buffer can be defined and initialized at compile time
 using one of two macros at file scope. Each macro defines both the ring
 buffer itself and its data buffer.
 
-The following code defines a ring buffer with a power-of-two sized data buffer,
-which can be accessed using efficient masking operations.
-
-.. code-block:: c
-
-    /* Buffer with 2^8 (or 256) words */
-    RING_BUF_ITEM_DECLARE_POW2(my_ring_buf, 8);
-
-The following code defines an application-specific sized **byte mode** ring
-buffer enqueued and dequeued as raw bytes:
+The following code defines a **data item mode** ring buffer:
 
 .. code-block:: c
 
     #define MY_RING_BUF_WORDS 93
-    RING_BUF_ITEM_DECLARE_SIZE(my_ring_buf, MY_RING_BUF_WORDS);
+    RING_BUF_ITEM_DECLARE(my_ring_buf, MY_RING_BUF_WORDS);
 
-The following code defines a ring buffer with an arbitrary-sized data buffer,
-which can be accessed using less efficient modulo operations. Ring buffer is
-intended to be used for raw bytes.
+The following code defines a ring buffer intended to be used for raw bytes:
 
 .. code-block:: c
 
     #define MY_RING_BUF_BYTES 93
-    RING_BUF_DECLARE_SIZE(my_ring_buf, MY_RING_BUF_BYTES);
+    RING_BUF_DECLARE(my_ring_buf, MY_RING_BUF_BYTES);
 
 Enqueuing Data
 ==============
-
-A data item is added to a ring buffer by calling
-:c:func:`ring_buf_item_put`.
-
-.. code-block:: c
-
-    uint32_t data[MY_DATA_WORDS];
-    int ret;
-
-    ret = ring_buf_item_put(&ring_buf, TYPE_FOO, 0, data, SIZE32_OF(data));
-    if (ret == -EMSGSIZE) {
-        /* not enough room for the data item */
-	...
-    }
-
-If the data item requires only the type or application-specific integer value
-(i.e. it has no data array), a size of 0 and data pointer of :c:macro:`NULL`
-can be specified.
-
-.. code-block:: c
-
-    int ret;
-
-    ret = ring_buf_item_put(&ring_buf, TYPE_BAR, 17, NULL, 0);
-    if (ret == -EMSGSIZE) {
-        /* not enough room for the data item */
-	...
-    }
 
 Bytes are copied to a **byte mode** ring buffer by calling
 :c:func:`ring_buf_put`.
@@ -304,8 +248,8 @@ Bytes are copied to a **byte mode** ring buffer by calling
     uint8_t my_data[MY_RING_BUF_BYTES];
     uint32_t ret;
 
-    ret = ring_buf_put(&ring_buf, my_data, SIZE_OF(my_data));
-    if (ret != SIZE_OF(my_data)) {
+    ret = ring_buf_put(&ring_buf, my_data, MY_RING_BUF_BYTES);
+    if (ret != MY_RING_BUF_BYTES) {
         /* not enough room, partial copy. */
 	...
     }
@@ -329,35 +273,40 @@ ring buffer's memory.  For example:
     /* Indicate amount of valid data. rx_size can be equal or less than size. */
     err = ring_buf_put_finish(&ring_buf, rx_size);
     if (err != 0) {
-        /* No space to put requested amount of data to ring buffer. */
+        /* This shouldn't happen unless rx_size > size */
+	...
+    }
+
+A data item is added to a ring buffer by calling
+:c:func:`ring_buf_item_put`.
+
+.. code-block:: c
+
+    uint32_t data[MY_DATA_WORDS];
+    int ret;
+
+    ret = ring_buf_item_put(&ring_buf, TYPE_FOO, 0, data, MY_DATA_WORDS);
+    if (ret == -EMSGSIZE) {
+        /* not enough room for the data item */
+	...
+    }
+
+If the data item requires only the type or application-specific integer value
+(i.e. it has no data array), a size of 0 and data pointer of :c:macro:`NULL`
+can be specified.
+
+.. code-block:: c
+
+    int ret;
+
+    ret = ring_buf_item_put(&ring_buf, TYPE_BAR, 17, NULL, 0);
+    if (ret == -EMSGSIZE) {
+        /* not enough room for the data item */
 	...
     }
 
 Retrieving Data
 ===============
-
-A data item is removed from a ring buffer by calling
-:c:func:`ring_buf_item_get`.
-
-.. code-block:: c
-
-    uint32_t my_data[MY_DATA_WORDS];
-    uint16_t my_type;
-    uint8_t  my_value;
-    uint8_t  my_size;
-    int ret;
-
-    my_size = SIZE32_OF(my_data);
-    ret = ring_buf_item_get(&ring_buf, &my_type, &my_value, my_data, &my_size);
-    if (ret == -EMSGSIZE) {
-        printk("Buffer is too small, need %d uint32_t\n", my_size);
-    } else if (ret == -EAGAIN) {
-        printk("Ring buffer is empty\n");
-    } else {
-        printk("Got item of type %u value &u of size %u dwords\n",
-               my_type, my_value, my_size);
-        ...
-    }
 
 Data bytes are copied out from a **byte mode** ring buffer by calling
 :c:func:`ring_buf_get`. For example:
@@ -368,8 +317,8 @@ Data bytes are copied out from a **byte mode** ring buffer by calling
     size_t  ret;
 
     ret = ring_buf_get(&ring_buf, my_data, sizeof(my_data));
-    if (ret != sizeof(my_size)) {
-        /* Less bytes copied. */
+    if (ret != sizeof(my_data)) {
+        /* Fewer bytes copied. */
     } else {
         /* Requested amount of bytes retrieved. */
         ...
@@ -398,6 +347,29 @@ operations on the ring buffer's memory.  For example:
     if (err != 0) {
         /* proc_size exceeds amount of valid data in a ring buffer. */
 	...
+    }
+
+A data item is removed from a ring buffer by calling
+:c:func:`ring_buf_item_get`.
+
+.. code-block:: c
+
+    uint32_t my_data[MY_DATA_WORDS];
+    uint16_t my_type;
+    uint8_t  my_value;
+    uint8_t  my_size;
+    int ret;
+
+    my_size = MY_DATA_WORDS;
+    ret = ring_buf_item_get(&ring_buf, &my_type, &my_value, my_data, &my_size);
+    if (ret == -EMSGSIZE) {
+        printk("Buffer is too small, need %d uint32_t\n", my_size);
+    } else if (ret == -EAGAIN) {
+        printk("Ring buffer is empty\n");
+    } else {
+        printk("Got item of type %u value &u of size %u dwords\n",
+               my_type, my_value, my_size);
+        ...
     }
 
 Configuration Options

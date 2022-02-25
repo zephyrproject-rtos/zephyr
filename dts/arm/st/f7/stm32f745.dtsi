@@ -75,6 +75,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
 			label = "CAN_2";
+			sjw = <1>;
+			sample-point = <875>;
 		};
 
 		mac: ethernet@40028000 {

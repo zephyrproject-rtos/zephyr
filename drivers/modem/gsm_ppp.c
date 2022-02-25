@@ -408,8 +408,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		LOG_INF("RSSI: %d", rssi);
 	}
 
-	k_sem_give(&gsm.sem_response);
-
 	return 0;
 }
 #endif
@@ -449,16 +447,10 @@ static const struct setup_cmd setup_cmds[] = {
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 {
-	int error = -EAGAIN;
-
 	/* Expected response is "+CGATT: 0|1" so simply look for '1' */
 	if (argc && atoi(argv[0]) == 1) {
-		error = 0;
 		LOG_INF("Attached to packet service!");
 	}
-
-	modem_cmd_handler_set_error(data, error);
-	k_sem_give(&gsm.sem_response);
 
 	return 0;
 }

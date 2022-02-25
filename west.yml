@@ -88,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: eab07c9d86341b9f249afe8188cceab3b0dc90ef
+      revision: 1f9145e8c8359f103b4ac5085c6f5d2e66a2557d
       path: modules/hal/nordic
       groups:
         - hal
@@ -162,7 +162,7 @@ manifest:
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 783c1f78c8e39751fe89d0883c8bce7336f55e94
+      revision: aae1c11102138cf596687e662c0d54b72f72bf9b
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d

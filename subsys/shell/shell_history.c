@@ -116,7 +116,7 @@ static bool remove_from_tail(struct shell_history *history)
 
 	total_len = offsetof(struct shell_history_item, data) +
 			h_item->len + h_item->padding;
-	ring_buf_get_finish(history->ring_buf, total_len);
+	ring_buf_get(history->ring_buf, NULL, total_len);
 
 	return true;
 }

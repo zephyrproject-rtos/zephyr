@@ -62,7 +62,7 @@ config BT_MESH_PB_ADV_RETRANS_TIMEOUT
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	depends on BT_MESH_PROV
-	depends on BT_MESH_PB_ADV
+	depends on BT_MESH_PB_ADV || BT_MESH_PB_GATT_CLIENT
 	help
 	  Enable this option to have support for provisioning remote devices.
 
@@ -114,15 +114,35 @@ config BT_MESH_PROXY_MSG_LEN
 	default 66 if BT_MESH_PB_GATT
 	default 33 if BT_MESH_GATT_PROXY
 
+config BT_MESH_GATT_CLIENT
+	bool
+	select BT_MESH_GATT
+
 config BT_MESH_GATT_SERVER
 	bool
 	select BT_MESH_GATT
 	select BT_GATT_DYNAMIC_DB
 
+config BT_MESH_PB_GATT_COMMON
+	bool
+
+config BT_MESH_PB_GATT_CLIENT
+	bool "Provisioner support using GATT (PB-GATT)"
+	select BT_MESH_PROV
+	select BT_GATT_CLIENT
+	select BT_MESH_GATT_CLIENT
+	select BT_MESH_PB_GATT_COMMON
+	select BT_MESH_PROVISIONER
+	depends on BT_CENTRAL
+	help
+	  Enable this option to allow the provisioner provisioning the
+	  device over GATT.
+
 config BT_MESH_PB_GATT
 	bool "Provisioning support using GATT (PB-GATT)"
 	select BT_MESH_GATT_SERVER
 	select BT_MESH_PROV
+	select BT_MESH_PB_GATT_COMMON
 	help
 	  Enable this option to allow the device to be provisioned over
 	  GATT.
@@ -134,6 +154,16 @@ config BT_MESH_PB_GATT_USE_DEVICE_NAME
 	help
 	  This option includes GAP device name in scan response when
 	  the PB-GATT is enabled.
+
+config BT_MESH_PROXY_CLIENT
+	bool "Proxy client support"
+	select BT_GATT_CLIENT
+	select BT_MESH_GATT_CLIENT
+	depends on BT_CENTRAL
+	help
+	  This option enables support for the Mesh GATT Proxy Client,
+	  i.e. the ability to act as a proxy between a Mesh GATT Service
+	  and a Mesh network.
 
 config BT_MESH_GATT_PROXY
 	bool "GATT Proxy Service support"

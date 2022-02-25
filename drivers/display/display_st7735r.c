@@ -57,9 +57,11 @@ struct st7735r_data {
 	uint16_t y_offset;
 };
 
-static void st7735r_set_lcd_margins(struct st7735r_data *data,
+static void st7735r_set_lcd_margins(const struct device *dev,
 				    uint16_t x_offset, uint16_t y_offset)
 {
+	struct st7735r_data *data = dev->data;
+
 	data->x_offset = x_offset;
 	data->y_offset = y_offset;
 }
@@ -188,7 +190,7 @@ static int st7735r_write(const struct device *dev,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	struct st7735r_config *config = dev->config;
+	const struct st7735r_config *config = dev->config;
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	struct spi_buf tx_buf;
 	struct spi_buf_set tx_bufs;
@@ -438,7 +440,7 @@ static int st7735r_init(const struct device *dev)
 	}
 
 	if (config->reset.port != NULL) {
-		if (!device_is_ready(&config->reset)) {
+		if (!device_is_ready(config->reset.port)) {
 			LOG_ERR("Reset GPIO port for display not ready");
 			return -ENODEV;
 		}
@@ -451,7 +453,7 @@ static int st7735r_init(const struct device *dev)
 		}
 	}
 
-	if (!device_is_ready(&config->cmd_data)) {
+	if (!device_is_ready(config->cmd_data.port)) {
 		LOG_ERR("cmd/DATA GPIO port not ready");
 		return -ENODEV;
 	}

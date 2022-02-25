@@ -13,7 +13,7 @@ config MODEM_GSM_PPP
 
 if MODEM_GSM_PPP
 
-choice
+choice MODEM_GSM_TYPE
 	prompt "Modem type"
 	default MODEM_GSM_GENERIC
 	help

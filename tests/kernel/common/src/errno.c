@@ -51,7 +51,7 @@ static void errno_thread(void *_n, void *_my_errno, void *_unused)
 
 	k_msleep(30 - (n * 10));
 	if (errno == my_errno) {
-		result[n].pass = 1;
+		result[n].pass = TC_PASS;
 	}
 
 	zassert_equal(errno, my_errno, NULL);
@@ -91,7 +91,7 @@ void test_thread_context(void)
 	for (int ii = 0; ii < N_THREADS; ii++) {
 		struct result *p = k_fifo_get(&fifo, K_MSEC(100));
 
-		if (!p || !p->pass) {
+		if (!p || (p->pass != TC_PASS)) {
 			rv = TC_FAIL;
 		}
 	}
@@ -105,6 +105,10 @@ void test_thread_context(void)
 	/* Make sure all the test thread end. */
 	for (int ii = 0; ii < N_THREADS; ii++) {
 		k_thread_join(&threads[ii], K_FOREVER);
+	}
+
+	if (rv != TC_PASS) {
+		ztest_test_fail();
 	}
 }
 
