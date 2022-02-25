@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* heml-ot: test */
-
 #include <stdint.h>
 
 #include "hal/ccm.h"
