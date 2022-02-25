@@ -25,7 +25,6 @@ struct cavs_gpdma_data {
 struct cavs_gpdma_cfg {
 	struct dw_dma_dev_cfg dw_cfg;
 	uint32_t shim;
-	uint32_t irq;
 };
 
 /* Disables automatic clock gating (force disable clock gate) */
@@ -49,12 +48,13 @@ int cavs_gpdma_init(const struct device *dev)
 	dw_dma_setup(dev);
 
 	/* Configure interrupts */
-	irq_enable(dev_cfg->irq);
+	dev_cfg->dw_cfg.irq_config();
 
 	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }
+
 
 static const struct dma_driver_api cavs_gpdma_driver_api = {
 	.config = dw_dma_config,
@@ -102,13 +102,14 @@ static const struct dma_driver_api cavs_gpdma_driver_api = {
 
 #define CAVS_GPDMA_INIT(inst)						\
 	CAVS_GPDMA_CHAN_ARB_DATA(inst);					\
+	static void cavs_gpdma##inst##_irq_config(void);		\
 									\
 	static const struct cavs_gpdma_cfg cavs_gpdma##inst##_config = { \
 		.dw_cfg = {						\
 			.base = DT_INST_REG_ADDR(inst),			\
+			.irq_config = cavs_gpdma##inst##_irq_config,	\
 		},							\
 		.shim = DT_INST_PROP_BY_IDX(inst, shim, 0),		\
-		.irq = DT_INST_IRQN(inst),				\
 	};								\
 									\
 	static struct cavs_gpdma_data cavs_gpdma##inst##_data = {	\
@@ -126,10 +127,13 @@ static const struct dma_driver_api cavs_gpdma_driver_api = {
 			      CONFIG_DMA_INIT_PRIORITY,			\
 			      &cavs_gpdma_driver_api);			\
 									\
-	IRQ_CONNECT(DT_INST_IRQN(inst),					\
-		    DT_INST_IRQ(inst, priority), dw_dma_isr,		\
-		    DEVICE_DT_INST_GET(inst),				\
-		    DT_INST_IRQ(inst, sense));				\
-									\
+	static void cavs_gpdma##inst##_irq_config(void)			\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(inst),				\
+			    DT_INST_IRQ(inst, priority), dw_dma_isr,	\
+			    DEVICE_DT_INST_GET(inst),			\
+			    DT_INST_IRQ(inst, sense));			\
+		irq_enable(DT_INST_IRQN(inst));				\
+	}
 
 DT_INST_FOREACH_STATUS_OKAY(CAVS_GPDMA_INIT)
