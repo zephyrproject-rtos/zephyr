@@ -195,6 +195,61 @@ config BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX
 	  periodic advertising chain. The range is taken from BT Core spec 5.1, Vol 4 Part E
 	  section 7.8.82 HCI_LE_Set_Connectionless_IQ_Sampling_Enable Max_Sampled_CTEs parameter.
 
+config BT_CTLR_DF_SWITCH_OFFSET
+	int "Antenna switch offset relative to end of CRC"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 0
+	help
+	  Offset of start of antenna switching after end of the CRC. It is a signed value in number
+	  of 16M cycles. Decreasing the offset value beyond the trigger of the AoA/AoD procedure
+	  will have no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_1US
+	int "CTE sampling offset relative for PHY 1M and 1US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 1
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duarion
+	  is 1 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_1US
+	int "CTE sampling offset relative for PHY 1M and 1US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 15
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duarion
+	  is 1 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_2US
+	int "CTE sampling offset relative for PHY 1M and 2US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 6
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duarion
+	  is 2 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
+config BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_2US
+	int "CTE sampling offset relative for PHY 1M and 2US samples spacing"
+	depends on SOC_COMPATIBLE_NRF
+	range -2048 2047
+	default 20
+	help
+	  Offset of sampling start from beginning of sampling slot. The value is a signed number
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duarion
+	  is 2 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
+	  no effect.
+
 config BT_CTLR_DF_DEBUG_ENABLE
 	bool "Bluetooth Direction Finding debug support enable"
 	help

@@ -13,6 +13,8 @@
 #include <hal/nrf_gpio.h>
 #include <hal/ccm.h>
 
+#include "ll_sw/pdu.h"
+
 #include "radio_nrf5.h"
 #include "radio.h"
 #include "radio_df.h"
@@ -244,8 +246,10 @@ static void radio_df_cte_inline_set_disabled(void)
 
 static inline void radio_df_ctrl_set(uint8_t cte_len,
 				     uint8_t switch_spacing,
-				     uint8_t sample_spacing)
+				     uint8_t sample_spacing,
+				     uint8_t phy)
 {
+	uint16_t sample_offset;
 	uint32_t conf;
 
 	/* Complete setup is done on purpose, to be sure that there isn't left
@@ -265,6 +269,39 @@ static inline void radio_df_ctrl_set(uint8_t cte_len,
 				 RADIO_DFECTRL1_AGCBACKOFFGAIN_Msk));
 
 	NRF_RADIO->DFECTRL1 = conf;
+
+	switch (phy) {
+	case PHY_1M:
+		if (switch_spacing == RADIO_DFECTRL1_TSWITCHSPACING_2us) {
+			sample_offset = CONFIG_BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_1US;
+		} else if (switch_spacing == RADIO_DFECTRL1_TSWITCHSPACING_4us) {
+			sample_offset = CONFIG_BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_2US;
+		} else {
+			sample_offset = 0;
+		}
+	case PHY_2M:
+		if (switch_spacing == RADIO_DFECTRL1_TSWITCHSPACING_2us) {
+			sample_offset = CONFIG_BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_1US;
+		} else if (switch_spacing == RADIO_DFECTRL1_TSWITCHSPACING_4us) {
+			sample_offset = CONFIG_BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_2US;
+		} else {
+			sample_offset = 0;
+		}
+		break;
+	case PHY_LEGACY:
+	default:
+		/* If phy is set to legacy, the function is called in TX context and actual value
+		 * does not matter, hence it is set to default zero.
+		 */
+		sample_offset = 0;
+	}
+
+	conf = ((((uint32_t)sample_offset << RADIO_DFECTRL2_TSAMPLEOFFSET_Pos) &
+				       RADIO_DFECTRL2_TSAMPLEOFFSET_Msk) |
+		(((uint32_t)CONFIG_BT_CTLR_DF_SWITCH_OFFSET << RADIO_DFECTRL2_TSWITCHOFFSET_Pos) &
+				       RADIO_DFECTRL2_TSWITCHOFFSET_Msk));
+
+	NRF_RADIO->DFECTRL2 = conf;
 }
 
 void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
@@ -272,10 +309,12 @@ void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
 	/* Sample spacing does not matter for AoD Tx. It is set to value
 	 * that is in DFECTRL1 register after reset. That is done instead of
 	 * adding conditions on the value and masking of the field before
-	 * storing configuration in the register.
+	 * storing configuration in the register. Also values in DFECTRL2,
+	 * that depend on PHY, are irrelevand for AoD Tx, hence use of
+	 * PHY_LEGACY here.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_2us,
-			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us, PHY_LEGACY);
 }
 
 void radio_df_cte_tx_aod_4us_set(uint8_t cte_len)
@@ -283,10 +322,12 @@ void radio_df_cte_tx_aod_4us_set(uint8_t cte_len)
 	/* Sample spacing does not matter for AoD Tx. It is set to value
 	 * that is in DFECTRL1 register after reset. That is done instead of
 	 * adding conditions on the value and masking of the field before
-	 * storing configuration in the register.
+	 * storing configuration in the register. Also values in DFECTRL2,
+	 * that depend on PHY, are irrelevand for AoD Tx, hence use of
+	 * PHY_LEGACY here.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us, PHY_LEGACY);
 }
 
 void radio_df_cte_tx_aoa_set(uint8_t cte_len)
@@ -294,31 +335,33 @@ void radio_df_cte_tx_aoa_set(uint8_t cte_len)
 	/* Switch and sample spacing does not matter for AoA Tx. It is set to
 	 * value that is in DFECTRL1 register after reset. That is done instead
 	 * of adding conditions on the value and masking of the field before
-	 * storing configuration in the register.
+	 * storing configuration in the register. Also values in DFECTRL2,
+	 * that depend on PHY, are irrelevand for AoA Tx, hence use of
+	 * PHY_LEGACY here.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us, PHY_LEGACY);
 }
 
-void radio_df_cte_rx_2us_switching(bool cte_info_in_s1)
+void radio_df_cte_rx_2us_switching(bool cte_info_in_s1, uint8_t phy)
 {
 	/* BT spec requires single sample for a single switching slot, so
 	 * spacing for slot and samples is the same.
 	 * CTE duation is used only when CTEINLINE config is disabled.
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_2us,
-			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us, phy);
 	radio_df_cte_inline_set_enabled(cte_info_in_s1);
 }
 
-void radio_df_cte_rx_4us_switching(bool cte_info_in_s1)
+void radio_df_cte_rx_4us_switching(bool cte_info_in_s1, uint8_t phy)
 {
 	/* BT spec requires single sample for a single switching slot, so
 	 * spacing for slot and samples is the same.
 	 * CTE duation is used only when CTEINLINE config is disabled.
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACING_4us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_4us, phy);
 	radio_df_cte_inline_set_enabled(cte_info_in_s1);
 }
 

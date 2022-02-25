@@ -172,7 +172,7 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 
 	if (cfg->is_enabled) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  lll_aux->chan, CTE_INFO_IN_PAYLOAD);
+					  lll_aux->chan, CTE_INFO_IN_PAYLOAD, lll_aux->phy);
 		cfg->cte_count = 0;
 	}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
@@ -280,7 +280,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	} else if (cfg->is_enabled) {
 
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  chan_idx, CTE_INFO_IN_PAYLOAD);
+					  chan_idx, CTE_INFO_IN_PAYLOAD, lll->phy);
 		cfg->cte_count = 0;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_DF_SUPPORT)) {
@@ -339,7 +339,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	if (cfg->is_enabled) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  chan_idx, CTE_INFO_IN_PAYLOAD);
+					  chan_idx, CTE_INFO_IN_PAYLOAD, lll->phy);
 		cfg->cte_count = 0;
 	}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
@@ -570,7 +570,7 @@ static void isr_aux_setup(void *param)
 
 	if (cfg->is_enabled && is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD);
+					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD, aux_ptr->phy);
 	}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	radio_switch_complete_and_disable();
