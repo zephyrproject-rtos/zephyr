@@ -91,7 +91,7 @@ void main(void)
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	rc = nvs_init(&fs, flash_dev->name);
+	rc = nvs_init(&fs, flash_dev);
 	if (rc) {
 		printk("Flash Init failed\n");
 		return;

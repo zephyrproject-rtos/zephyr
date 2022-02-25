@@ -847,7 +847,7 @@ int nvs_clear(struct nvs_fs *fs)
 	return 0;
 }
 
-int nvs_init(struct nvs_fs *fs, const char *dev_name)
+int nvs_init(struct nvs_fs *fs, const struct device *dev)
 {
 
 	int rc;
@@ -856,11 +856,7 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 
 	k_mutex_init(&fs->nvs_lock);
 
-	fs->flash_device = device_get_binding(dev_name);
-	if (!fs->flash_device) {
-		LOG_ERR("No valid flash device found");
-		return -ENXIO;
-	}
+	fs->flash_device = dev;
 
 	fs->flash_parameters = flash_get_parameters(fs->flash_device);
 	if (fs->flash_parameters == NULL) {

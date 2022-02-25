@@ -73,11 +73,11 @@ struct nvs_fs {
  * Initializes a NVS file system in flash.
  *
  * @param fs Pointer to file system
- * @param dev_name Pointer to flash device name
+ * @param dev Pointer to flash device
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int nvs_init(struct nvs_fs *fs, const char *dev_name);
+int nvs_init(struct nvs_fs *fs, const struct device *dev);
 
 /**
  * @brief nvs_clear
