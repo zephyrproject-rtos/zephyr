@@ -286,14 +286,18 @@ zephyr_udc0: &usb1 {
 
 &usdhc1 {
 	status = "okay";
-	no-1-8-v;
-	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	pwr-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&pinmux_usdhc1>;
 	pinctrl-1 = <&pinmux_usdhc1_slow>;
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+		label = "SDMMC_0";
+	};
 };
 
 &edma0 {

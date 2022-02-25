@@ -24,8 +24,6 @@ config SOC_MIMXRT1011
 	select CPU_HAS_ARM_MPU
 	select INIT_ENET_PLL
 	select HAS_MCUX_USB_EHCI
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
@@ -49,8 +47,6 @@ config SOC_MIMXRT1015
 	select CPU_HAS_ARM_MPU
 	select INIT_ENET_PLL
 	select HAS_MCUX_USB_EHCI
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
