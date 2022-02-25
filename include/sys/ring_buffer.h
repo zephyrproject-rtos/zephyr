@@ -251,7 +251,7 @@ static inline uint32_t ring_buf_size_get(struct ring_buf *buf)
  *
  * With this routine, memory copying can be reduced since internal ring buffer
  * can be used directly by the user. Once data is written to allocated area
- * number of bytes written can be confirmed (see @ref ring_buf_put_finish).
+ * number of bytes written must be confirmed (see @ref ring_buf_put_finish).
  *
  * @warning
  * Use cases involving multiple writers to the ring buffer must prevent
@@ -276,6 +276,10 @@ uint32_t ring_buf_put_claim(struct ring_buf *buf,
 
 /**
  * @brief Indicate number of bytes written to allocated buffers.
+ *
+ * The number of bytes must be equal to or lower than the sum corresponding
+ * to all preceding @ref ring_buf_put_claim invocations (or even 0). Surplus
+ * bytes will be returned to the available free buffer space.
  *
  * @warning
  * Use cases involving multiple writers to the ring buffer must prevent
@@ -320,7 +324,7 @@ uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size);
  * @brief Get address of a valid data in a ring buffer.
  *
  * With this routine, memory copying can be reduced since internal ring buffer
- * can be used directly by the user. Once data is processed it can be freed
+ * can be used directly by the user. Once data is processed it must be freed
  * using @ref ring_buf_get_finish.
  *
  * @warning
@@ -346,6 +350,10 @@ uint32_t ring_buf_get_claim(struct ring_buf *buf,
 
 /**
  * @brief Indicate number of bytes read from claimed buffer.
+ *
+ * The number of bytes must be equal or lower than the sum corresponding to
+ * all preceding @ref ring_buf_get_claim invocations (or even 0). Surplus
+ * bytes will remain available in the buffer.
  *
  * @warning
  * Use cases involving multiple reads of the ring buffer must prevent
