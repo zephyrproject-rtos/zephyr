@@ -171,9 +171,8 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 				ring_buf_put_claim(history->ring_buf,
 						   (uint8_t **)&h_item, total_len);
 			if (claim2_len == total_len) {
-				ring_buf_put_finish(history->ring_buf,
-						    claim_len);
 				padding += claim_len;
+				total_len += claim_len;
 				claim_len = total_len;
 			}
 		}

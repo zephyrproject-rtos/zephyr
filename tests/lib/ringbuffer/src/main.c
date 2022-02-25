@@ -569,11 +569,11 @@ void test_ringbuffer_alloc_put(void)
 	zassert_true(err == 0, NULL);
 
 	err = ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE - 1);
-	zassert_true(err == 0, NULL);
+	zassert_true(err == -EINVAL, NULL);
 
 	read_size = ring_buf_get(&ringbuf_raw, outputbuf,
 					     RINGBUFFER_SIZE);
-	zassert_true(read_size == RINGBUFFER_SIZE, NULL);
+	zassert_true(read_size == 1, NULL);
 
 	for (int i = 0; i < 10; i++) {
 		allocated = ring_buf_put_claim(&ringbuf_raw, &data, 2);

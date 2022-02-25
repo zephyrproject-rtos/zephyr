@@ -37,18 +37,13 @@ int ring_buf_put_finish(struct ring_buf *buf, uint32_t size)
 {
 	uint32_t finish_space, wrap_size;
 
-	if (unlikely(size == 0)) {
-		/* claim is cancelled */
-		buf->put_head = buf->put_tail;
-		return 0;
-	}
-
 	finish_space = buf->put_head - buf->put_tail;
 	if (unlikely(size > finish_space)) {
 		return -EINVAL;
 	}
 
 	buf->put_tail += size;
+	buf->put_head = buf->put_tail;
 
 	wrap_size = buf->put_tail - buf->put_base;
 	if (unlikely(wrap_size >= buf->size)) {
@@ -108,18 +103,13 @@ int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
 {
 	uint32_t finish_space, wrap_size;
 
-	if (unlikely(size == 0)) {
-		/* claim is cancelled */
-		buf->get_head = buf->get_tail;
-		return 0;
-	}
-
 	finish_space = buf->get_head - buf->get_tail;
 	if (unlikely(size > finish_space)) {
 		return -EINVAL;
 	}
 
 	buf->get_tail += size;
+	buf->get_head = buf->get_tail;
 
 	wrap_size = buf->get_tail - buf->get_base;
 	if (unlikely(wrap_size >= buf->size)) {
