@@ -56,6 +56,10 @@ config UART_MCUX_LPUART
 	default y if HAS_MCUX_LPUART
 	depends on SERIAL
 
+config IMX_USDHC
+	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+	depends on SDHC
+
 if FLASH_MCUX_FLEXSPI_XIP
 
 # Avoid RWW hazards by defaulting logging to disabled
