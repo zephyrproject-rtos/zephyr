@@ -88,7 +88,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static void test_peripheral_main(void)
 {
 	int err;
-	size_t num_enhanced;
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -109,14 +108,13 @@ static void test_peripheral_main(void)
 		FAIL("Sending credit based connection request failed (err %d)\n", err);
 	}
 
-	/* TODO: Use a flag set by a callback from EATT connection instead of sleeping */
-	/* Wait for EATT channels to be connected */
-	k_sleep(K_MSEC(10000));
-	num_enhanced = bt_eatt_count(default_conn);
-	printk("%d enhanced bearers connected\n", num_enhanced);
-	if (num_enhanced != CONFIG_BT_EATT_MAX) {
-		FAIL("Expected %d enhanced bearers, got %d\n", CONFIG_BT_EATT_MAX, num_enhanced);
+	while (bt_eatt_count(default_conn) < CONFIG_BT_EATT_MAX) {
+		k_sleep(K_MSEC(10));
 	}
+
+	/* Do not disconnect until the central also has connected all channels */
+	k_sleep(K_MSEC(1000));
+
 	/* Disconnect */
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
@@ -152,7 +150,6 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 static void test_central_main(void)
 {
 	int err;
-	size_t num_enhanced;
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -173,13 +170,8 @@ static void test_central_main(void)
 		FAIL("Sending credit based connection request failed (err %d)\n", err);
 	}
 
-	/* TODO: Use a flag set by a callback from EATT connection instead of sleeping */
-	/* Wait for EATT channels to be connected */
-	k_sleep(K_MSEC(10000));
-	num_enhanced = bt_eatt_count(default_conn);
-	printk("%d enhanced bearers connected\n", num_enhanced);
-	if (num_enhanced != CONFIG_BT_EATT_MAX) {
-		FAIL("Expected %d enhanced bearers, got %d\n", CONFIG_BT_EATT_MAX, num_enhanced);
+	while (bt_eatt_count(default_conn) < CONFIG_BT_EATT_MAX) {
+		k_sleep(K_MSEC(10));
 	}
 
 	/* Wait for disconnect */
