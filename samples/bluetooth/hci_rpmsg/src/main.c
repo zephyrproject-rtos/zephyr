@@ -9,18 +9,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <device.h>
 #include <zephyr.h>
-#include <arch/cpu.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
-#include <drivers/ipm.h>
 
-#include <openamp/open_amp.h>
-#include <metal/sys.h>
-#include <metal/device.h>
-#include <metal/alloc.h>
-
-#include <ipc/rpmsg_service.h>
+#include <ipc/ipc_service.h>
 
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>
@@ -33,11 +27,12 @@
 #define LOG_MODULE_NAME hci_rpmsg
 #include "common/log.h"
 
-static int endpoint_id;
+static struct ipc_ept hci_ept;
 
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 static K_FIFO_DEFINE(tx_queue);
+static K_SEM_DEFINE(ipc_bound_sem, 0, 1);
 
 #define HCI_RPMSG_CMD 0x01
 #define HCI_RPMSG_ACL 0x02
@@ -223,7 +218,7 @@ static int hci_rpmsg_send(struct net_buf *buf)
 	net_buf_push_u8(buf, pkt_indicator);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
-	rpmsg_service_send(endpoint_id, buf->data, buf->len);
+	ipc_service_send(&hci_ept, buf->data, buf->len);
 
 	net_buf_unref(buf);
 
@@ -237,18 +232,29 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
-int endpoint_cb(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t src,
-		void *priv)
+static void hci_ept_bound(void *priv)
+{
+	k_sem_give(&ipc_bound_sem);
+}
+
+static void hci_ept_recv(const void *data, size_t len, void *priv)
 {
 	LOG_INF("Received message of %u bytes.", len);
 	hci_rpmsg_rx((uint8_t *) data, len);
-
-	return RPMSG_SUCCESS;
 }
+
+static struct ipc_ept_cfg hci_ept_cfg = {
+	.name = "nrf_bt_hci",
+	.cb = {
+		.bound    = hci_ept_bound,
+		.received = hci_ept_recv,
+	},
+};
 
 void main(void)
 {
 	int err;
+	const struct device *hci_ipc_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
 
 	/* incoming events and data from the controller */
 	static K_FIFO_DEFINE(rx_queue);
@@ -266,6 +272,19 @@ void main(void)
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_name_set(&tx_thread_data, "HCI rpmsg TX");
 
+	/* Initialize IPC service instance and register endpoint. */
+	err = ipc_service_open_instance(hci_ipc_instance);
+	if (err) {
+		LOG_ERR("IPC service instance initialization failed: %d\n", err);
+	}
+
+	err = ipc_service_register_endpoint(hci_ipc_instance, &hci_ept, &hci_ept_cfg);
+	if (err) {
+		LOG_ERR("Registering endpoint failed with %d", err);
+	}
+
+	k_sem_take(&ipc_bound_sem, K_FOREVER);
+
 	while (1) {
 		struct net_buf *buf;
 
@@ -276,22 +295,3 @@ void main(void)
 		}
 	}
 }
-
-/* Make sure we register endpoint before RPMsg Service is initialized. */
-int register_endpoint(const struct device *arg)
-{
-	int status;
-
-	status = rpmsg_service_register_endpoint("nrf_bt_hci", endpoint_cb);
-
-	if (status < 0) {
-		LOG_ERR("Registering endpoint failed with %d", status);
-		return status;
-	}
-
-	endpoint_id = status;
-
-	return 0;
-}
-
-SYS_INIT(register_endpoint, POST_KERNEL, CONFIG_RPMSG_SERVICE_EP_REG_PRIORITY);
