@@ -4,13 +4,20 @@
 
 macro(toolchain_ld_baremetal)
 
-  # LINKERFLAGPREFIX comes from linker/ld/target.cmake
+  # LINKERFLAGPREFIX comes from linker/lld/target.cmake
   zephyr_ld_options(
     -nostdlib
     -static
     ${LINKERFLAGPREFIX},-X
     ${LINKERFLAGPREFIX},-N
   )
+
+  # Force LLVM to use built-in lld linker
+  if(NOT CONFIG_LLVM_USE_LD)
+    zephyr_ld_options(
+      -fuse-ld=lld
+  )
+  endif()
 
   # Funny thing is if this is set to =error, some architectures will
   # skip this flag even though the compiler flag check passes
