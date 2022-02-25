@@ -67,13 +67,12 @@ static int random_entropy(const struct device *dev, char *buffer, char num)
  */
 static int get_entropy(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 	uint8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 
-	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	if (!dev) {
-		TC_PRINT("error: no random device\n");
+	if (!device_is_ready(dev)) {
+		TC_PRINT("error: random device not ready\n");
 		return TC_FAIL;
 	}
 
