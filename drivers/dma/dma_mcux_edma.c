@@ -80,65 +80,6 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param,
 	data->dma_callback(data->dev, data->user_data, channel, ret);
 }
 
-static void channel_irq(edma_handle_t *handle)
-{
-	bool transfer_done;
-
-	/* Clear EDMA interrupt flag */
-	handle->base->CINT = handle->channel;
-	/* Check if transfer is already finished. */
-	transfer_done = ((handle->base->TCD[handle->channel].CSR &
-			  DMA_CSR_DONE_MASK) != 0U);
-
-	if (handle->tcdPool == NULL) {
-		(handle->callback)(handle, handle->userData, transfer_done, 0);
-	} else {
-		uint32_t sga = handle->base->TCD[handle->channel].DLAST_SGA;
-		uint32_t sga_index;
-		int32_t tcds_done;
-		uint8_t new_header;
-
-		sga -= (uint32_t)handle->tcdPool;
-		sga_index = sga / sizeof(edma_tcd_t);
-		/* Adjust header positions. */
-		if (transfer_done) {
-			new_header = (uint8_t)sga_index;
-		} else {
-			new_header = sga_index != 0U ?
-					     (uint8_t)sga_index - 1U :
-					     (uint8_t)handle->tcdSize - 1U;
-		}
-		/* Calculate the number of finished TCDs */
-		if (new_header == (uint8_t)handle->header) {
-			int8_t tmpTcdUsed = handle->tcdUsed;
-			int8_t tmpTcdSize = handle->tcdSize;
-
-			if (tmpTcdUsed == tmpTcdSize) {
-				tcds_done = handle->tcdUsed;
-			} else {
-				tcds_done = 0;
-			}
-		} else {
-			tcds_done = (uint32_t)new_header - (uint32_t)handle->header;
-			if (tcds_done < 0) {
-				tcds_done += handle->tcdSize;
-			}
-		}
-
-		handle->header = (int8_t)new_header;
-		handle->tcdUsed -= (int8_t)tcds_done;
-		/* Invoke callback function. */
-		if (handle->callback != NULL) {
-			(handle->callback)(handle, handle->userData,
-					   transfer_done, tcds_done);
-		}
-
-		if (transfer_done) {
-			handle->base->CDNE = handle->channel;
-		}
-	}
-}
-
 static void dma_mcux_edma_irq_handler(const struct device *dev)
 {
 	int i = 0;
@@ -149,7 +90,7 @@ static void dma_mcux_edma_irq_handler(const struct device *dev)
 
 		if ((flag & (uint32_t)kEDMA_InterruptFlag) != 0U) {
 			LOG_DBG("IRQ OCCURRED");
-			channel_irq(DEV_EDMA_HANDLE(dev, i));
+			EDMA_HandleIRQ(DEV_EDMA_HANDLE(dev, i));
 			LOG_DBG("IRQ DONE");
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
 			__DSB();
