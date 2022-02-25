@@ -60,6 +60,14 @@
 #define GCC_VERSION 0
 #endif
 
+/**
+ * @def CLANG_VERSION
+ * @brief Clang version in xxyyzz for xx.yy.zz. Zero if not Clang compatible.
+ */
+#ifndef CLANG_VERSION
+#define CLANG_VERSION 0
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * as these are often used without checking for definition and doing so can
