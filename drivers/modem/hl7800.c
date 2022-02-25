@@ -4786,20 +4786,71 @@ void mdm_gpio6_callback_isr(const struct device *port, struct gpio_callback *cb,
 #endif
 }
 
-void mdm_uart_cts_callback(const struct device *port, struct gpio_callback *cb,
-			   uint32_t pins)
+/**
+ * @brief Short spikes in CTS can be removed in the signal used by the application
+ */
+static int glitch_filter(int default_state, const struct device *port, gpio_pin_t pin,
+			 uint32_t usec_to_wait, uint32_t max_iterations)
 {
-	ictx.cts_state = (uint32_t)gpio_pin_get(
-		ictx.gpio_port_dev[MDM_UART_CTS], pinconfig[MDM_UART_CTS].pin);
+	int i = 0;
+	int state1;
+	int state2;
+
+	do {
+		state1 = read_pin(-1, port, pin);
+		k_busy_wait(usec_to_wait);
+		state2 = read_pin(-1, port, pin);
+		i += 1;
+	} while (((state1 != state2) || (state1 < 0) || (state2 < 0)) && (i < max_iterations));
+
+	if (i >= max_iterations) {
+		LOG_WRN("glitch filter max iterations exceeded %d", i);
+		if (state1 < 0) {
+			if (state2 < 0) {
+				state1 = read_pin(default_state, port, pin);
+			} else {
+				state1 = state2;
+			}
+		}
+	}
+
+	return state1;
+}
+
+void mdm_uart_cts_callback(const struct device *port, struct gpio_callback *cb, uint32_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(pins);
+
+	ictx.cts_state =
+		glitch_filter(0, ictx.gpio_port_dev[MDM_UART_CTS], pinconfig[MDM_UART_CTS].pin,
+			      CONFIG_MODEM_HL7800_CTS_FILTER_US,
+			      CONFIG_MODEM_HL7800_CTS_FILTER_MAX_ITERATIONS);
+
+	/* CTS toggles A LOT,
+	 * comment out the debug print unless we really need it.
+	 */
+	/* HL7800_IO_DBG_LOG("MDM_UART_CTS:%d", ictx.cts_state); */
 
 	if ((ictx.cts_callback != NULL) && (ictx.desired_sleep_level == HL7800_SLEEP_SLEEP)) {
 		ictx.cts_callback(ictx.cts_state);
 	}
 
-	/* CTS toggles A LOT,
-	 * comment out the debug print unless we really need it.
-	 */
-	/* LOG_DBG("MDM_UART_CTS:%d", val); */
+#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
+	if (ictx.desired_sleep_level == HL7800_SLEEP_SLEEP) {
+		if (ictx.cts_state) {
+			/* HL7800 is not awake, shut down UART to save power */
+			shutdown_uart();
+		} else {
+			power_on_uart();
+			if (ictx.sleep_state == HL7800_SLEEP_SLEEP) {
+				allow_sleep(false);
+			}
+		}
+	}
+#endif
+
 	check_hl7800_awake();
 }
 
