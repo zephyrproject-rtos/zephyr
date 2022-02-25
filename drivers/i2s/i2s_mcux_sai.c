@@ -604,6 +604,9 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		dev_data->tx.dma_cfg.user_data = (void *)dev;
 		dev_data->tx.state = I2S_STATE_READY;
 	} else {
+		/* For RX, DMA reads from FIFO whenever data present */
+		config.fifo.fifoWatermark = 0;
+
 		memcpy(&dev_data->rx.cfg, i2s_cfg, sizeof(struct i2s_config));
 		LOG_DBG("rx slab free_list = 0x%x",
 			(uint32_t)i2s_cfg->mem_slab->free_list);
