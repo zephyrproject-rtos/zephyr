@@ -245,7 +245,7 @@ int settings_nvs_backend_init(struct settings_nvs *cf)
 	int rc;
 	uint16_t last_name_id;
 
-	rc = nvs_init(&cf->cf_nvs, cf->flash_dev_name);
+	rc = nvs_init(&cf->cf_nvs, cf->flash_dev);
 	if (rc) {
 		return rc;
 	}
@@ -304,7 +304,11 @@ int settings_backend_init(void)
 	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
 	default_settings_nvs.cf_nvs.sector_count = cnt;
 	default_settings_nvs.cf_nvs.offset = fa->fa_off;
-	default_settings_nvs.flash_dev_name = fa->fa_dev_name;
+
+	default_settings_nvs.flash_dev = device_get_binding(fa->fa_dev_name);
+	if (default_settings_nvs.flash_dev == NULL) {
+		return -ENODEV;
+	}
 
 	rc = settings_nvs_backend_init(&default_settings_nvs);
 	if (rc) {
