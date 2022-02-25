@@ -52,6 +52,14 @@
 #error "Invalid/unknown toolchain configuration"
 #endif
 
+/**
+ * @def GCC_VERSION
+ * @brief GCC version in xxyyzz for xx.yy.zz. Zero if not GCC compatible.
+ */
+#ifndef GCC_VERSION
+#define GCC_VERSION 0
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * as these are often used without checking for definition and doing so can
