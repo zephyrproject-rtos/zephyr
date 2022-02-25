@@ -234,7 +234,6 @@ Build system:
     collaborators:
         - jeremybettis
         - nashif
-        - SebastianBoe
     files:
         - cmake/
         - CMakeLists.txt
@@ -1679,7 +1678,7 @@ TF-M Integration:
     maintainers:
         - microbuilder
     collaborators:
-        - SebastianBoe
+        - joerchan
     files:
         - samples/tfm_integration/
         - modules/trusted-firmware-m/
