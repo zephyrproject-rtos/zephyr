@@ -8,6 +8,7 @@
 #include <soc.h>
 #include <ace_v1x-regs.h>
 #include <ace-ipc-regs.h>
+#include <cavs-mem.h>
 
 static void ipc_isr(void *arg)
 {
@@ -38,6 +39,16 @@ void soc_mp_init(void)
 
 void soc_start_core(int cpu_num)
 {
+	if (cpu_num > 0) {
+		/* Initialize the ROM jump address */
+		uint32_t *rom_jump_vector = (uint32_t *) ROM_JUMP_ADDR;
+		*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
+		z_xtensa_cache_flush(rom_jump_vector, sizeof(*rom_jump_vector));
+
+		/* Tell the ACE ROM that it should use secondary core flow */
+		MTL_PWRBOOT.bootctl[cpu_num].battr |= MTL_PWRBOOT_BATTR_LPSCTL_BATTR_SLAVE_CORE;
+	}
+
 	MTL_PWRBOOT.capctl[cpu_num].ctl |= MTL_PWRBOOT_CTL_SPA;
 }
 
