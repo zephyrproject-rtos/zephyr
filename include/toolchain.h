@@ -68,6 +68,14 @@
 #define CLANG_VERSION 0
 #endif
 
+/**
+ * @def TOOLCHAIN_HAS_PRAGMA_DIAG
+ * @brief Indicate if toolchain supports \#pragma diagnostics.
+ */
+#ifndef TOOLCHAIN_HAS_PRAGMA_DIAG
+#define TOOLCHAIN_HAS_PRAGMA_DIAG 0
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * as these are often used without checking for definition and doing so can
