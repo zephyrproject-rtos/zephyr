@@ -14,6 +14,9 @@
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 
+#define GCC_VERSION \
+	((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__)
+
 /*
  * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually
  * detected and defined using arch-specific definitions.
