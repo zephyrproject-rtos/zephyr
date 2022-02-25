@@ -49,6 +49,8 @@
 	#define LIS2DH_LP_EN_BIT	0
 #endif
 
+#define LIS2DH_SUSPEND			0
+
 #define LIS2DH_ODR_1			1
 #define LIS2DH_ODR_2			2
 #define LIS2DH_ODR_3			3
@@ -236,6 +238,10 @@ struct lis2dh_data {
 
 #ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
 	struct sensor_value temperature;
+#endif
+
+#ifdef CONFIG_PM_DEVICE
+	uint8_t reg_ctrl1_active_val;
 #endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER

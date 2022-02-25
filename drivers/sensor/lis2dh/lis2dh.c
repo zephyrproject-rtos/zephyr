@@ -11,6 +11,7 @@
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
 #include <logging/log.h>
+#include <pm/device.h>
 
 LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
@@ -430,6 +431,46 @@ int lis2dh_init(const struct device *dev)
 					LIS2DH_ODR_BITS);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int lis2dh_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	int status;
+	struct lis2dh_data *lis2dh = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Resume previous mode. */
+		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
+						  lis2dh->reg_ctrl1_active_val);
+		if (status < 0) {
+			LOG_ERR("failed to write reg_crtl1");
+			return status;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Store current mode, suspend. */
+		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1,
+						 &lis2dh->reg_ctrl1_active_val);
+		if (status < 0) {
+			LOG_ERR("failed to read reg_crtl1");
+			return status;
+		}
+		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
+						  LIS2DH_SUSPEND);
+		if (status < 0) {
+			LOG_ERR("failed to write reg_crtl1");
+			return status;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "LIS2DH driver enabled without any devices"
 #endif
@@ -440,9 +481,10 @@ int lis2dh_init(const struct device *dev)
  */
 
 #define LIS2DH_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2dh_pm_action);		\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2dh_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(inst),		\
 			    &lis2dh_data_##inst,			\
 			    &lis2dh_config_##inst,			\
 			    POST_KERNEL,				\
