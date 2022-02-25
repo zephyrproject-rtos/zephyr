@@ -52,7 +52,7 @@ static struct {
 } event;
 
 /* Entropy device */
-static const struct device *dev_entropy;
+static const struct device *dev_entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 
 static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
@@ -123,9 +123,8 @@ int lll_init(void)
 {
 	int err;
 
-	/* Get reference to entropy device */
-	dev_entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	if (!dev_entropy) {
+	/* Check if entropy device is ready */
+	if (!device_is_ready(dev_entropy)) {
 		return -ENODEV;
 	}
 
