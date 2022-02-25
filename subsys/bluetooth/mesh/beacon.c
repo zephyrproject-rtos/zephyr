@@ -101,12 +101,15 @@ static bool secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 	uint32_t now = k_uptime_get_32();
 	struct net_buf *buf;
 	uint32_t time_diff;
+	uint32_t time_since_last_recv;
 
 	BT_DBG("");
 
 	time_diff = now - sub->beacon_sent;
+	time_since_last_recv = now - sub->beacon_recv;
 	if (time_diff < (600 * MSEC_PER_SEC) &&
-		time_diff < BEACON_THRESHOLD(sub)) {
+		(time_diff < BEACON_THRESHOLD(sub) ||
+		 time_since_last_recv < (10 * MSEC_PER_SEC))) {
 		return false;
 	}
 
@@ -374,6 +377,7 @@ update_stats:
 	if (bt_mesh_beacon_enabled() &&
 	    sub->beacons_cur < 0xff) {
 		sub->beacons_cur++;
+		sub->beacon_recv = k_uptime_get_32();
 	}
 }
 

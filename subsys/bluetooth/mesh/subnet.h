@@ -36,6 +36,7 @@ struct bt_mesh_net_cred {
 /** Subnet instance. */
 struct bt_mesh_subnet {
 	uint32_t beacon_sent;        /* Timestamp of last sent beacon */
+	uint32_t beacon_recv;        /* Timestamp of last received beacon */
 	uint8_t  beacons_last;       /* Number of beacons during last
 				      * observation window
 				      */
