@@ -29,7 +29,6 @@
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 #if defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
-GEN_OFFSET_SYM(_thread_arch_t, user_sp);
 #endif
 
 /* struct coop member offsets */
@@ -85,8 +84,11 @@ GEN_OFFSET_SYM(z_arch_esf_t, a7);
 GEN_OFFSET_SYM(z_arch_esf_t, mepc);
 GEN_OFFSET_SYM(z_arch_esf_t, mstatus);
 
+#ifdef CONFIG_USERSPACE
+GEN_OFFSET_SYM(z_arch_esf_t, sp);
+#endif
+
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-GEN_OFFSET_SYM(z_arch_esf_t, fp_state);
 GEN_OFFSET_SYM(z_arch_esf_t, ft0);
 GEN_OFFSET_SYM(z_arch_esf_t, ft1);
 GEN_OFFSET_SYM(z_arch_esf_t, ft2);

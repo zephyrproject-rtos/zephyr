@@ -8,11 +8,11 @@
 #include <linker/sections.h>
 #include <offsets_short.h>
 #include <arch/cpu.h>
+#include <arch/riscv/syscall.h>
 #include "asm_macros.inc"
 
 /* exports */
 GTEXT(arch_swap)
-GTEXT(z_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
 
@@ -25,6 +25,7 @@ GTEXT(z_thread_entry_wrapper)
 SECTION_FUNC(exception.other, arch_swap)
 
 	/* Make a system call to perform context switch */
+	li a7, RV_ECALL_CONTEXT_SWITCH
 	ecall
 
 	/*
@@ -49,28 +50,10 @@ SECTION_FUNC(exception.other, arch_swap)
 	 * Use atomic instruction csrrs to do so.
 	 */
 	andi a0, a0, MSTATUS_IEN
-	csrrs t0, mstatus, a0
+	csrs mstatus, a0
 
 	/* Set value of return register a0 to value of register t2 */
 	mv a0, t2
 
 	/* Return */
 	ret
-
-
-/*
- * void z_thread_entry_wrapper(k_thread_entry_t, void *, void *, void *)
- */
-SECTION_FUNC(TEXT, z_thread_entry_wrapper)
-	/*
-	 * z_thread_entry_wrapper is called for every new thread upon the return
-	 * of arch_swap or ISR. Its address, as well as its input function
-	 * arguments thread_entry_t, void *, void *, void * are restored from
-	 * the thread stack (initialized via function _thread).
-	 * In this case, thread_entry_t, * void *, void * and void * are stored
-	 * in registers a0, a1, a2 and a3. These registers are used as arguments
-	 * to function z_thread_entry. Hence, just call z_thread_entry with
-	 * return address set to 0 to indicate a non-returning function call.
-	 */
-
-	j z_thread_entry

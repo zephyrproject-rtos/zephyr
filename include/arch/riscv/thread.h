@@ -98,8 +98,6 @@ struct _thread_arch {
 
 #ifdef CONFIG_USERSPACE
 	ulong_t priv_stack_start;
-	ulong_t user_sp;
-	ulong_t unfinished_syscall;
 	ulong_t u_pmpcfg[RISCV_PMP_CFG_NUM];
 	ulong_t u_pmpaddr[CONFIG_PMP_SLOT];
 #endif
