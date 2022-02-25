@@ -362,10 +362,10 @@ __boot_func
 void z_early_boot_rand_get(uint8_t *buf, size_t length)
 {
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
-	const struct device *entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	const struct device *entropy = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
 	int rc;
 
-	if (entropy == NULL) {
+	if (!device_is_ready(entropy)) {
 		goto sys_rand_fallback;
 	}
 
