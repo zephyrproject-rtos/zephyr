@@ -8,6 +8,8 @@
 #include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <pm/device.h>
+#include <drivers/pinctrl.h>
+#include <soc.h>
 #include <nrfx_twim.h>
 #include <sys/util.h>
 
@@ -29,6 +31,9 @@ struct i2c_nrfx_twim_config {
 	nrfx_twim_t twim;
 	uint16_t concat_buf_size;
 	uint16_t flash_buf_max_size;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
 static int init_twim(const struct device *dev);
@@ -317,15 +322,33 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 static int twim_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
+#ifdef CONFIG_PINCTRL
+	const struct i2c_nrfx_twim_config *dev_config = dev->config;
+#endif
 	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(dev_config->pcfg,
+					  PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
 		ret = init_twim(dev);
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
 		deinit_twim(dev);
+
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(dev_config->pcfg,
+					  PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
 		break;
 
 	default:
@@ -362,7 +385,15 @@ static int twim_nrfx_pm_action(const struct device *dev,
 		(1))
 #define MSG_BUF_SIZE(idx)  MAX(CONCAT_BUF_SIZE(idx), FLASH_BUF_MAX_SIZE(idx))
 
+#define I2C_NRFX_TWIM_PIN_CFG(idx)			\
+	COND_CODE_1(CONFIG_PINCTRL,			\
+		(.skip_gpio_cfg = true,			\
+		 .skip_psel_cfg = true,),		\
+		(.scl = DT_PROP(I2C(idx), scl_pin),	\
+		 .sda = DT_PROP(I2C(idx), sda_pin),))
+
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
+	NRF_DT_ENSURE_PINS_ASSIGNED(I2C(idx), scl_pin);			       \
 	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
 		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
@@ -370,14 +401,22 @@ static int twim_nrfx_pm_action(const struct device *dev,
 	{								       \
 		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
+		IF_ENABLED(CONFIG_PINCTRL, (				       \
+			const struct i2c_nrfx_twim_config *dev_config =	       \
+				dev->config;				       \
+			int err = pinctrl_apply_state(dev_config->pcfg,	       \
+						      PINCTRL_STATE_DEFAULT);  \
+			if (err < 0) {					       \
+				return err;				       \
+			}						       \
+		))							       \
 		return init_twim(dev);					       \
 	}								       \
 	IF_ENABLED(USES_MSG_BUF(idx),					       \
 		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)];))     \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
 		.twim_config = {					       \
-			.scl       = DT_PROP(I2C(idx), scl_pin),	       \
-			.sda       = DT_PROP(I2C(idx), sda_pin),	       \
+			I2C_NRFX_TWIM_PIN_CFG(idx)			       \
 			.frequency = I2C_FREQUENCY(idx),		       \
 		},							       \
 		.transfer_sync = Z_SEM_INITIALIZER(			       \
@@ -387,10 +426,13 @@ static int twim_nrfx_pm_action(const struct device *dev,
 		IF_ENABLED(USES_MSG_BUF(idx),				       \
 			(.msg_buf = twim_##idx##_msg_buf,))		       \
 	};								       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(I2C(idx))));	       \
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
 		.concat_buf_size = CONCAT_BUF_SIZE(idx),		       \
 		.flash_buf_max_size = FLASH_BUF_MAX_SIZE(idx),		       \
+		IF_ENABLED(CONFIG_PINCTRL,				       \
+			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),))	       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);		       \
 	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
