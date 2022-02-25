@@ -617,6 +617,10 @@ int hawkbit_init(void)
 	const struct device *flash_dev;
 
 	flash_dev = DEVICE_DT_GET(FLASH_NODE);
+	if (!device_is_ready(flash_dev)) {
+		LOG_ERR("Flash device not ready");
+		return -ENODEV;
+	}
 
 	fs.offset = FLASH_AREA_OFFSET(storage);
 	rc = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);
@@ -628,10 +632,10 @@ int hawkbit_init(void)
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	rc = nvs_init(&fs, flash_dev->name);
+	rc = nvs_init(&fs, flash_dev);
 	if (rc) {
 		LOG_ERR("Storage flash init failed: %d", rc);
-		return -ENODEV;
+		return rc;
 	}
 
 	rc = nvs_read(&fs, ADDRESS_ID, &action_id, sizeof(action_id));
