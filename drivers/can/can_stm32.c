@@ -118,17 +118,46 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 	}
 }
 
-static inline void can_stm32_bus_state_change_isr(const struct device *dev)
+static int can_stm32_get_state(const struct device *dev, enum can_state *state,
+			       struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
+
+	if (state != NULL) {
+		if (can->ESR & CAN_ESR_BOFF) {
+			*state = CAN_BUS_OFF;
+		} else if (can->ESR & CAN_ESR_EPVF) {
+			*state = CAN_ERROR_PASSIVE;
+		} else if (can->ESR & CAN_ESR_EWGF) {
+			*state = CAN_ERROR_WARNING;
+		} else {
+			*state = CAN_ERROR_ACTIVE;
+		}
+	}
+
+	if (err_cnt != NULL) {
+		err_cnt->tx_err_cnt =
+			((can->ESR & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos);
+		err_cnt->rx_err_cnt =
+			((can->ESR & CAN_ESR_REC) >> CAN_ESR_REC_Pos);
+	}
+
+	return 0;
+}
+
+static inline void can_stm32_bus_state_change_isr(const struct device *dev)
+{
 	struct can_stm32_data *data = dev->data;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
 	const can_state_change_callback_t cb = data->state_change_cb;
 	void *state_change_cb_data = data->state_change_cb_data;
-	CAN_TypeDef *can = cfg->can;
 
 #ifdef CONFIG_CAN_STATS
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
+
 	switch (can->ESR & CAN_ESR_LEC) {
 	case (CAN_ESR_LEC_0):
 		CAN_STATS_STUFF_ERROR_INC(dev);
@@ -156,26 +185,14 @@ static inline void can_stm32_bus_state_change_isr(const struct device *dev)
 	can->ESR |= CAN_ESR_LEC;
 #endif /* CONFIG_CAN_STATS */
 
-	if (!(can->ESR & CAN_ESR_EPVF) && !(can->ESR & CAN_ESR_BOFF) &&
-	    !(can->ESR & CAN_ESR_EWGF)) {
-		return;
-	}
+	(void)can_stm32_get_state(dev, &state, &err_cnt);
 
-	err_cnt.tx_err_cnt = ((can->ESR & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos);
-	err_cnt.rx_err_cnt = ((can->ESR & CAN_ESR_REC) >> CAN_ESR_REC_Pos);
+	if (state != data->state) {
+		data->state = state;
 
-	if (can->ESR & CAN_ESR_BOFF) {
-		state = CAN_BUS_OFF;
-	} else if (can->ESR & CAN_ESR_EPVF) {
-		state = CAN_ERROR_PASSIVE;
-	} else if (can->ESR & CAN_ESR_EWGF) {
-		state = CAN_ERROR_WARNING;
-	} else {
-		state = CAN_ERROR_ACTIVE;
-	}
-
-	if (cb != NULL) {
-		cb(state, err_cnt, state_change_cb_data);
+		if (cb != NULL) {
+			cb(state, err_cnt, state_change_cb_data);
+		}
 	}
 }
 
@@ -555,6 +572,8 @@ static int can_stm32_init(const struct device *dev)
 		return ret;
 	}
 
+	(void)can_stm32_get_state(dev, &data->state, NULL);
+
 	cfg->config_irq(can);
 	can->IER |= CAN_IER_TMEIE;
 	LOG_INF("Init of %s done", dev->name);
@@ -577,34 +596,6 @@ static void can_stm32_set_state_change_callback(const struct device *dev,
 	} else {
 		can->IER |= CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE;
 	}
-}
-
-static int can_stm32_get_state(const struct device *dev, enum can_state *state,
-			       struct can_bus_err_cnt *err_cnt)
-{
-	const struct can_stm32_config *cfg = dev->config;
-	CAN_TypeDef *can = cfg->can;
-
-	if (state != NULL) {
-		if (can->ESR & CAN_ESR_BOFF) {
-			*state = CAN_BUS_OFF;
-		} else if (can->ESR & CAN_ESR_EPVF) {
-			*state = CAN_ERROR_PASSIVE;
-		} else if (can->ESR & CAN_ESR_EWGF) {
-			*state = CAN_ERROR_WARNING;
-		} else {
-			*state = CAN_ERROR_ACTIVE;
-		}
-	}
-
-	if (err_cnt != NULL) {
-		err_cnt->tx_err_cnt =
-			((can->ESR & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos);
-		err_cnt->rx_err_cnt =
-			((can->ESR & CAN_ESR_REC) >> CAN_ESR_REC_Pos);
-	}
-
-	return 0;
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
