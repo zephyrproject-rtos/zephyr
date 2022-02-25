@@ -1620,6 +1620,13 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
 	ext_adv = atomic_test_bit(adv->flags, BT_ADV_EXT_ADV);
 	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
 
+	if (ext_adv) {
+		if ((scannable && ad_len) ||
+		    (!scannable && sd_len)) {
+			return -ENOTSUP;
+		}
+	}
+
 	return le_adv_update(adv, ad, ad_len, sd, sd_len, ext_adv, scannable,
 			     get_adv_name_type(adv));
 }
