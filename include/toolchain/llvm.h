@@ -20,6 +20,10 @@
 
 #define TOOLCHAIN_HAS_PRAGMA_DIAG 1
 
+#if CLANG_VERSION >= 30800
+#define TOOLCHAIN_HAS_C_GENERIC 1
+#endif
+
 #include <toolchain/gcc.h>
 
 
