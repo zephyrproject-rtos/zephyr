@@ -76,6 +76,22 @@
 #define TOOLCHAIN_HAS_PRAGMA_DIAG 0
 #endif
 
+/**
+ * @def TOOLCHAIN_HAS_C_GENERIC
+ * @brief Indicate if toolchain supports C Generic.
+ */
+#if __STDC_VERSION__ >= 201112L
+/* _Generic is introduced in C11, so it is supported. */
+# ifdef TOOLCHAIN_HAS_C_GENERIC
+#  undef TOOLCHAIN_HAS_C_GENERIC
+# endif
+# define TOOLCHAIN_HAS_C_GENERIC 1
+#else
+# ifndef TOOLCHAIN_HAS_C_GENERIC
+#  define TOOLCHAIN_HAS_C_GENERIC 0
+# endif
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * as these are often used without checking for definition and doing so can
