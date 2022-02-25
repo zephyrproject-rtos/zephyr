@@ -217,4 +217,21 @@ SECTIONS
 	*(.rel.*)
 	*(.rela.*)
 	}
+/*
+ * eh_frame section won't be removed even with "--gc-sections" by LLVM lld.
+ */
+#if !defined(CONFIG_EXCEPTIONS)
+	/DISCARD/ : { *(.eh_frame) }
+#endif
+
+/*
+ * The sections below are still treated as warnings
+ * with "--orphan-handling=warn" by LLVM lld.
+ */
+#if !defined(CONFIG_LLVM_USE_LD)
+	.symtab 0 : { *(.symtab) }
+	.strtab 0 : { *(.strtab) }
+	.shstrtab 0 : { *(.shstrtab) }
+#endif
+
 }
