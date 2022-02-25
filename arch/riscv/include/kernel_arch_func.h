@@ -24,6 +24,9 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_USERSPACE
+	csr_write(mscratch, 0);
+#endif
 }
 
 static ALWAYS_INLINE void
