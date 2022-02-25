@@ -194,7 +194,7 @@
 /doc/guides/dts/                          @galak @mbolivar-nordic
 /doc/reference/bluetooth/                 @alwa-nordic @jhedberg @Vudentz
 /doc/reference/devicetree/                @galak @mbolivar-nordic
-/doc/reference/canbus/                    @alexanderwachter
+/doc/reference/canbus/                    @alexanderwachter @henrikbrixandersen
 /doc/security/                            @ceolin @d3zd3z
 /drivers/debug/                           @nashif
 /drivers/*/*sam4l*                        @nandojve
@@ -216,7 +216,7 @@
 /drivers/bluetooth/hci/hci_esp32.c        @sylvioalves
 /drivers/cache/                           @carlocaione
 /drivers/syscon/                          @carlocaione @yperess
-/drivers/can/                             @alexanderwachter
+/drivers/can/                             @alexanderwachter @henrikbrixandersen
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/can/*rcar*                       @julien-massot
 /drivers/clock_control/*agilex*           @siclim
@@ -481,7 +481,7 @@
 /dts/xtensa/nxp/                          @iuliana-prodan @dbaluta
 /dts/sparc/                               @martin-aberg
 /dts/bindings/                            @galak
-/dts/bindings/can/                        @alexanderwachter
+/dts/bindings/can/                        @alexanderwachter @henrikbrixandersen
 /dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/modem/*hl7800.yaml          @LairdCP/zephyr
@@ -511,7 +511,7 @@
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
 /include/drivers/adc.h                    @anangl
-/include/drivers/can.h                    @alexanderwachter
+/include/drivers/can.h                    @alexanderwachter @henrikbrixandersen
 /include/drivers/counter.h                @nordic-krch
 /include/drivers/dac.h                    @martinjaeger
 /include/drivers/espi.h                   @albertofloyd @franciscomunoz @sjvasanth1
@@ -554,7 +554,7 @@
 /include/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
 /include/bluetooth/audio/                 @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
 /include/cache.h                          @carlocaione @andyross
-/include/canbus/                          @alexanderwachter
+/include/canbus/                          @alexanderwachter @henrikbrixandersen
 /include/tracing/                         @nashif
 /include/debug/                           @nashif
 /include/debug/coredump.h                 @dcpleung
@@ -623,7 +623,7 @@
 /samples/bluetooth/                       @jhedberg @Vudentz @alwa-nordic
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/compression/                     @Navin-Sankar
-/samples/drivers/can/                     @alexanderwachter
+/samples/drivers/can/                     @alexanderwachter @henrikbrixandersen
 /samples/drivers/clock_control_litex/     @mateusz-holenko @kgugala @pgielda
 /samples/drivers/eeprom/                  @henrikbrixandersen
 /samples/drivers/ht16k33/                 @henrikbrixandersen
@@ -694,7 +694,7 @@ scripts/gen_image_info.py                 @tejlmand
 /subsys/bluetooth/audio/                  @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @alwa-nordic @Vudentz @LingaoM
-/subsys/canbus/                           @alexanderwachter
+/subsys/canbus/                           @alexanderwachter @henrikbrixandersen
 /subsys/debug/                            @nashif
 /subsys/debug/coredump/                   @dcpleung
 /subsys/debug/gdbstub/                    @ceolin
@@ -761,7 +761,7 @@ scripts/gen_image_info.py                 @tejlmand
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin @d3zd3z
-/tests/drivers/can/                       @alexanderwachter
+/tests/drivers/can/                       @alexanderwachter @henrikbrixandersen
 /tests/drivers/counter/                   @nordic-krch
 /tests/drivers/eeprom/                    @henrikbrixandersen @sjg20
 /tests/drivers/flash_simulator/           @nvlsianpu
