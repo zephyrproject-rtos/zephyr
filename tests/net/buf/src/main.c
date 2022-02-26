@@ -722,6 +722,38 @@ static void test_net_buf_user_data(void)
 	net_buf_unref(buf);
 }
 
+static void test_net_buf_recover(void)
+{
+	struct net_buf *b1, *b2;
+	uint8_t *old_buffer_data;
+	uint32_t not_buffer;
+
+
+	b1 = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	b2 = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(b1, "Failed to get buffer");
+	zassert_not_null(b2, "Failed to get buffer");
+
+	old_buffer_data = b1->data;
+
+	/* Recover active buffers from arbitrary pointers */
+	zassert_equal_ptr(b1, net_buf_recover_from_ptr(&fixed_pool, b1->data), "");
+	zassert_equal_ptr(b1, net_buf_recover_from_ptr(&fixed_pool, b1->data + 1), "");
+	zassert_equal_ptr(b1, net_buf_recover_from_ptr(&fixed_pool, b1->data + b1->size - 1), "");
+	zassert_equal_ptr(b2, net_buf_recover_from_ptr(&fixed_pool, b2->data), "");
+	zassert_equal_ptr(b2, net_buf_recover_from_ptr(&fixed_pool, b2->data + 1), "");
+	zassert_equal_ptr(b2, net_buf_recover_from_ptr(&fixed_pool, b2->data + b2->size - 1), "");
+
+	/* Not buffer data */
+	zassert_is_null(net_buf_recover_from_ptr(&fixed_pool, &not_buffer), "");
+
+	net_buf_unref(b1);
+	net_buf_unref(b2);
+
+	/* Inactive buffer data */
+	zassert_is_null(net_buf_recover_from_ptr(&fixed_pool, old_buffer_data), "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_net_buf,
@@ -735,7 +767,8 @@ void test_main(void)
 			 ztest_unit_test(test_net_buf_fixed_pool),
 			 ztest_unit_test(test_net_buf_var_pool),
 			 ztest_unit_test(test_net_buf_byte_order),
-			 ztest_unit_test(test_net_buf_user_data)
+			 ztest_unit_test(test_net_buf_user_data),
+			 ztest_unit_test(test_net_buf_recover)
 			 );
 
 	ztest_run_test_suite(test_net_buf);
