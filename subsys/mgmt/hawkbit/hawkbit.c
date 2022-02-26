@@ -1264,20 +1264,25 @@ enum hawkbit_response hawkbit_probe(void)
 	if (!hb_context.final_data_received) {
 		LOG_ERR("Download is not complete");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else if (memcmp(response_hash, hb_context.dl.file_hash,
-			  mbedtls_md_get_size(hash_info)) != 0) {
+		goto free_md;
+	}
+
+	if (memcmp(response_hash, hb_context.dl.file_hash, mbedtls_md_get_size(hash_info)) != 0) {
 		LOG_ERR("Hash mismatch");
 		LOG_HEXDUMP_DBG(response_hash, sizeof(response_hash), "resp");
-		LOG_HEXDUMP_DBG(hb_context.dl.file_hash,
-				sizeof(hb_context.dl.file_hash), "file");
+		LOG_HEXDUMP_DBG(hb_context.dl.file_hash, sizeof(hb_context.dl.file_hash), "file");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+		goto free_md;
+	}
+
+	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
 		LOG_ERR("Failed to mark the image in slot 1 as pending");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else {
+		goto free_md;
+	}
+
 		hb_context.code_status = HAWKBIT_UPDATE_INSTALLED;
 		hawkbit_device_acid_update(hb_context.json_action_id);
-	}
 
 	hb_context.dl.http_content_size = 0;
 
