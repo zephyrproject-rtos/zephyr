@@ -274,6 +274,11 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		oc_init.CompareValue = pulse_cycles;
 		oc_init.OCPolarity = get_polarity(flags);
 
+#if !defined(CONFIG_SOC_SERIES_STM32L0X) && !defined(CONFIG_SOC_SERIES_STM32L1X)
+		oc_init.OCNState = LL_TIM_OCSTATE_ENABLE;
+		oc_init.OCNPolarity = get_polarity(flags);
+#endif
+
 #ifdef CONFIG_PWM_CAPTURE
 		if (IS_TIM_SLAVE_INSTANCE(cfg->timer)) {
 			LL_TIM_SetSlaveMode(cfg->timer,
