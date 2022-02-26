@@ -14,8 +14,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 /* How many messages can be queued for a single thread */
 #define QUEUE_DEPTH 16
 
-static struct k_spinlock lock;
-
 /* Array of worker threads, and their stacks */
 static struct thread_rec {
 	struct k_thread thread;
@@ -120,10 +118,11 @@ static void record_latencies(struct msg *m, uint32_t latency)
 		return;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	if (stats.num_mirq >= MAX_EVENTS) {
-		k_spin_unlock(&lock, key);
+	/* It might be a potential race condition in this subroutine.
+	 * We check if the msg seqence is reaching the MAX EVENT first.
+	 * To prevent the coming incorrect changes of the array.
+	 */
+	if (m->seq >= MAX_EVENTS) {
 		return;
 	}
 
@@ -135,8 +134,6 @@ static void record_latencies(struct msg *m, uint32_t latency)
 	}
 
 	stats.mirq_latencies[atomic_inc(&stats.num_mirq)] = m->metairq_latency;
-
-	k_spin_unlock(&lock, key);
 
 	/* Once we've logged our final event, print a report.  We use
 	 * a semaphore with an initial count of 1 to ensure that only
