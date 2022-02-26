@@ -41,6 +41,15 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 
 static const struct sx126x_config dev_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+#if HAVE_GPIO_ANTENNA_ENABLE
+	.antenna_enable = GPIO_DT_SPEC_INST_GET(0, antenna_enable_gpios),
+#endif
+#if HAVE_GPIO_TX_ENABLE
+	.tx_enable = GPIO_DT_SPEC_INST_GET(0, tx_enable_gpios),
+#endif
+#if HAVE_GPIO_RX_ENABLE
+	.rx_enable = GPIO_DT_SPEC_INST_GET(0, rx_enable_gpios),
+#endif
 };
 
 static struct sx126x_data dev_data;
