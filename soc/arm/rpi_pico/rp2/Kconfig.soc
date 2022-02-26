@@ -17,6 +17,12 @@ config RP2_REQUIRES_SECOND_STAGE_BOOT
 	bool
 	default y if FLASH_LOAD_OFFSET = 0x100
 
+config RPI_PICO_PIO
+	bool "Pico PIO"
+	select PICOSDK_USE_PIO
+	help
+	  Enable the Programmable I/O driver
+
 # Flash type used by the SoC. The board should select the one used.
 
 config RP2_FLASH_W25Q080

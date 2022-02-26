@@ -18,3 +18,14 @@ config PICOSDK_USE_FLASH
 	bool
 	help
 	  Use the flash driver from pico-sdk
+
+config PICOSDK_USE_PIO
+	bool
+	select PICOSDK_USE_CLAIM
+	help
+	  Use the PIO driver from pico-sdk
+
+config PICOSDK_USE_CLAIM
+	bool
+	help
+	  Use the "claim" driver from pico-sdk
