@@ -691,28 +691,13 @@ static void response_cb(struct http_response *rsp,
 	switch (type) {
 	case HAWKBIT_PROBE:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_frag_start;
-			body_len = rsp->data_len;
-			/*
-			 * subtract the size of the HTTP header from body_len
-			 */
-			body_len -= (rsp->body_frag_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
-		} else {
-			/*
-			 * more general case where body data is set, but no need
-			 * to take the HTTP header into account
-			 */
+		}
+
+		if (rsp->body_found) {
 			body_data = rsp->body_frag_start;
-			body_len = rsp->data_len;
-		}
+			body_len = rsp->body_frag_len;
 
-		if ((rsp->body_found == 1) && (body_data == NULL)) {
-			body_data = rsp->recv_buf;
-			body_len = rsp->data_len;
-		}
-
-		if (body_data != NULL) {
 			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
 				response_buffer_size <<= 1;
 				rsp_tmp = realloc(hb_context.response_data,
@@ -765,28 +750,13 @@ static void response_cb(struct http_response *rsp,
 
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_frag_start;
-			body_len = rsp->data_len;
-			/*
-			 * subtract the size of the HTTP header from body_len
-			 */
-			body_len -= (rsp->body_frag_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
-		} else {
-			/*
-			 * more general case where body data is set, but no need
-			 * to take the HTTP header into account
-			 */
+		}
+
+		if (rsp->body_found) {
 			body_data = rsp->body_frag_start;
-			body_len = rsp->data_len;
-		}
+			body_len = rsp->body_frag_len;
 
-		if ((rsp->body_found == 1) && (body_data == NULL)) {
-			body_data = rsp->recv_buf;
-			body_len = rsp->data_len;
-		}
-
-		if (body_data != NULL) {
 			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
 				response_buffer_size <<= 1;
 				rsp_tmp = realloc(hb_context.response_data,
@@ -828,28 +798,13 @@ static void response_cb(struct http_response *rsp,
 
 	case HAWKBIT_DOWNLOAD:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_frag_start;
-			body_len = rsp->data_len;
-			/*
-			 * subtract the size of the HTTP header from body_len
-			 */
-			body_len -= (rsp->body_frag_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
-		} else {
-			/*
-			 * more general case where body data is set, but no need
-			 * to take the HTTP header into account
-			 */
+		}
+
+		if (rsp->body_found) {
 			body_data = rsp->body_frag_start;
-			body_len = rsp->data_len;
-		}
+			body_len = rsp->body_frag_len;
 
-		if ((rsp->body_found == 1) && (body_data == NULL)) {
-			body_data = rsp->recv_buf;
-			body_len = rsp->data_len;
-		}
-
-		if (body_data != NULL) {
 			ret = mbedtls_md_update(&hb_context.dl.hash_ctx, body_data,
 					  body_len);
 			if (ret != 0) {
