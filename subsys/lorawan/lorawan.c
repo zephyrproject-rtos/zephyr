@@ -212,6 +212,14 @@ static LoRaMacStatus_t lorawan_join_otaa(
 	mlme_req.Req.Join.Datarate = default_datarate;
 	mlme_req.Req.Join.NetworkActivation = ACTIVATION_TYPE_OTAA;
 
+	/* Retrieve the NVM context to store device nonce */
+	mib_req.Type = MIB_NVM_CTXS;
+	if (LoRaMacMibGetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+		LOG_ERR("Could not get NVM context");
+		return -EINVAL;
+	}
+	mib_req.Param.Contexts->Crypto.DevNonce = join_cfg->otaa.dev_nonce;
+
 	mib_req.Type = MIB_DEV_EUI;
 	mib_req.Param.DevEui = join_cfg->dev_eui;
 	LoRaMacMibSetRequestConfirm(&mib_req);
