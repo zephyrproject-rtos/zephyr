@@ -106,8 +106,8 @@ struct http_response {
 	 */
 	http_response_cb_t cb;
 
-	/** Where the body starts */
-	uint8_t *body_start;
+	/** Start address of the body fragment contained in the recv_buf */
+	uint8_t *body_frag_start;
 
 	/** Where the response is stored, this is to be
 	 * provided by the user.
