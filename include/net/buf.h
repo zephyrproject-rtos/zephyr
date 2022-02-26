@@ -1333,6 +1333,23 @@ struct net_buf * __must_check net_buf_alloc_with_data(struct net_buf_pool *pool,
 #endif
 
 /**
+ * @brief Recover a buffer pointer from a data pointer
+ *
+ * This function is intended to be used from callbacks where buffers are used
+ * as a method to ensure memory is valid for the duration of asynchronous calls,
+ * but the callback only provides the raw data pointer.
+ *
+ * @note This function does NOT increment the buffer reference count.
+ *
+ * @param pool Pool that the buffer was potentially allocated from.
+ * @param ptr Pointer to some data address in the buffer.
+ *
+ * @return Buffer that contains the data pointer or NULL if no buffer found.
+ */
+struct net_buf *net_buf_recover_from_ptr(struct net_buf_pool *pool,
+					 const void *ptr);
+
+/**
  * @brief Get a buffer from a FIFO.
  *
  * This function is NOT thread-safe if the buffers in the FIFO contain

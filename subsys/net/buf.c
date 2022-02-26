@@ -405,6 +405,27 @@ struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
 	return buf;
 }
 
+struct net_buf *net_buf_recover_from_ptr(struct net_buf_pool *pool,
+					 const void *ptr)
+{
+	const uint8_t *p = ptr;
+	struct net_buf *buf;
+
+	for (int i = 0; i < pool->buf_count; i++) {
+		buf = &pool->__bufs[i];
+		/* If its not referenced, it can't be the buffer we're looking for */
+		if (buf->ref == 0) {
+			continue;
+		}
+		/* Pointer is in buffer range */
+		if ((buf->__buf <= p) &&
+		    (p < (buf->__buf + buf->size))) {
+			return buf;
+		}
+	}
+	return NULL;
+}
+
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_get_debug(struct k_fifo *fifo, k_timeout_t timeout,
 				  const char *func, int line)
