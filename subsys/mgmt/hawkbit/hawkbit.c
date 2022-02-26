@@ -691,19 +691,19 @@ static void response_cb(struct http_response *rsp,
 	switch (type) {
 	case HAWKBIT_PROBE:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_start;
+			body_data = rsp->body_frag_start;
 			body_len = rsp->data_len;
 			/*
 			 * subtract the size of the HTTP header from body_len
 			 */
-			body_len -= (rsp->body_start - rsp->recv_buf);
+			body_len -= (rsp->body_frag_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
 		} else {
 			/*
 			 * more general case where body data is set, but no need
 			 * to take the HTTP header into account
 			 */
-			body_data = rsp->body_start;
+			body_data = rsp->body_frag_start;
 			body_len = rsp->data_len;
 		}
 
@@ -765,19 +765,19 @@ static void response_cb(struct http_response *rsp,
 
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_start;
+			body_data = rsp->body_frag_start;
 			body_len = rsp->data_len;
 			/*
 			 * subtract the size of the HTTP header from body_len
 			 */
-			body_len -= (rsp->body_start - rsp->recv_buf);
+			body_len -= (rsp->body_frag_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
 		} else {
 			/*
 			 * more general case where body data is set, but no need
 			 * to take the HTTP header into account
 			 */
-			body_data = rsp->body_start;
+			body_data = rsp->body_frag_start;
 			body_len = rsp->data_len;
 		}
 
@@ -828,19 +828,19 @@ static void response_cb(struct http_response *rsp,
 
 	case HAWKBIT_DOWNLOAD:
 		if (hb_context.dl.http_content_size == 0) {
-			body_data = rsp->body_start;
+			body_data = rsp->body_frag_start;
 			body_len = rsp->data_len;
 			/*
 			 * subtract the size of the HTTP header from body_len
 			 */
-			body_len -= (rsp->body_start - rsp->recv_buf);
+			body_len -= (rsp->body_frag_start - rsp->recv_buf);
 			hb_context.dl.http_content_size = rsp->content_length;
 		} else {
 			/*
 			 * more general case where body data is set, but no need
 			 * to take the HTTP header into account
 			 */
-			body_data = rsp->body_start;
+			body_data = rsp->body_frag_start;
 			body_len = rsp->data_len;
 		}
 
