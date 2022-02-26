@@ -78,9 +78,20 @@ enum lorawan_message_type {
  * case the values stored in the secure element will be used instead.
  */
 struct lorawan_join_otaa {
+	/** Join EUI */
 	uint8_t *join_eui;
+	/** Network Key */
 	uint8_t *nwk_key;
+	/** Application Key */
 	uint8_t *app_key;
+	/**
+	 * Device Nonce
+	 *
+	 * Starting with LoRaWAN 1.0.4 the DevNonce must be monotonically
+	 * increasing for each OTAA join with the same EUI. The DevNonce
+	 * should be stored in non-volatile memory by the application.
+	 */
+	uint32_t dev_nonce;
 };
 
 struct lorawan_join_abp {
