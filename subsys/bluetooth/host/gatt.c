@@ -1273,6 +1273,18 @@ void bt_gatt_init(void)
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 	k_work_init_delayable(&gatt_ccc_store.work, ccc_delayed_store);
 #endif
+
+#if defined(CONFIG_BT_GATT_CLIENT) && defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
+	static struct bt_conn_cb gatt_conn_cb = {
+		.identity_resolved = bt_gatt_identity_resolved,
+	};
+
+	/* Register the gatt module for connection callbacks so it can be
+	 * notified when pairing has completed. This is used to enable CCC and
+	 * CF storage on pairing complete.
+	 */
+	bt_conn_cb_register(&gatt_conn_cb);
+#endif /* CONFIG_BT_GATT_CLIENT && CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
@@ -5094,17 +5106,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_CLIENT)
 	add_subscriptions(conn);
 
-#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
-	static struct bt_conn_cb gatt_conn_cb = {
-		.identity_resolved = bt_gatt_identity_resolved,
-	};
-
-	/* Register the gatt module for connection callbacks so it can be
-	 * notified when pairing has completed. This is used to enable CCC and
-	 * CF storage on pairing complete.
-	 */
-	bt_conn_cb_register(&gatt_conn_cb);
-#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 #endif /* CONFIG_BT_GATT_CLIENT */
 }
 
