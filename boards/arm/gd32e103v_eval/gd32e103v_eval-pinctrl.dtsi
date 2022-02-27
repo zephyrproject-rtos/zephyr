@@ -18,6 +18,12 @@
 		};
 	};
 
+	dac_default: dac_default {
+		group1 {
+			pinmux = <DAC_OUT0_PA4>;
+		};
+	};
+
 	i2c0_default: i2c0_default {
 		group1 {
 			pinmux = <I2C0_SCL_PB6_NORMP>, <I2C0_SDA_PB7_NORMP>;
