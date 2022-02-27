@@ -18,6 +18,68 @@
 		zephyr,console = &usart0;
 		zephyr,shell-uart = &usart0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		led2: led2 {
+			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		led3: led3 {
+			gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+		led4: led4 {
+			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+			label = "LED4";
+		};
+		led5: led5 {
+			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+			label = "LED5";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		wakeup_key: wakeup_key {
+			label = "WAKEUP_KEY";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+		};
+		tamper_key: tamper_key {
+			label = "TAMPER_KEY";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+		user_key: user_key {
+			label = "USER_KEY1";
+			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &led2;
+		led1 = &led3;
+		sw0 = &user_key;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
 };
 
 &usart0 {
