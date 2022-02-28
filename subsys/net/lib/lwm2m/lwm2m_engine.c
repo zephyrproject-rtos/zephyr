@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_ip.h>
 #include <net/http_parser_url.h>
 #include <net/socket.h>
+#include <net/lwm2m.h>
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #include <net/tls_credentials.h>
 #endif
@@ -76,14 +77,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 struct observe_node {
 	sys_snode_t node;
-	struct lwm2m_obj_path path;
+	sys_slist_t path_list;		/* List of Observation path */
 	uint8_t token[MAX_TOKEN_LEN];	/* Observation Token */
 	int64_t event_timestamp;	/* Timestamp for trig next Notify  */
-	int64_t last_timestamp;
+	int64_t last_timestamp;		/* Timestamp from last Notify */
 	uint32_t counter;
 	uint16_t format;
 	uint8_t  tkl;
 	bool resource_update : 1;	/* Resource is updated */
+	bool composite : 1;		/* Composite Observation */
 };
 
 struct notification_attrs {
@@ -96,6 +98,13 @@ struct notification_attrs {
 	uint8_t flags;
 };
 
+#ifdef CONFIG_LWM2M_VERSION_1_1
+#define LWM2M_ENGINE_MAX_OBSERVER_PATH CONFIG_LWM2M_ENGINE_MAX_OBSERVER * 3
+#else
+#define LWM2M_ENGINE_MAX_OBSERVER_PATH CONFIG_LWM2M_ENGINE_MAX_OBSERVER
+#endif
+static struct lwm2m_obj_path_list observe_paths[LWM2M_ENGINE_MAX_OBSERVER_PATH];
+static sys_slist_t obs_obj_path_list;
 static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 
 #define MAX_PERIODIC_SERVICE	10
@@ -152,6 +161,15 @@ static int path_to_objs(const struct lwm2m_obj_path *path,
 			struct lwm2m_engine_obj_field **obj_field,
 			struct lwm2m_engine_res **res,
 			struct lwm2m_engine_res_inst **res_inst);
+
+static struct lwm2m_obj_path *lwm2m_read_first_path_ptr(sys_slist_t *lwm2m_path_list);
+static struct lwm2m_obj_path_list *lwm2m_engine_get_from_list(sys_slist_t *path_list);
+static int do_send_op(struct lwm2m_message *msg, uint16_t content_format,
+		      sys_slist_t *lwm2m_path_list);
+static int do_composite_observe_read_path_op(struct lwm2m_message *msg, uint16_t content_format,
+					     sys_slist_t *lwm2m_path_list,
+					     sys_slist_t *lwm2m_path_free_list);
+static void lwm2m_engine_free_list(sys_slist_t *path_list, sys_slist_t *free_list);
 
 /* for debugging: to print IP addresses */
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
@@ -357,7 +375,6 @@ static void clear_attrs(void *ref)
 	}
 }
 
-
 static bool lwm2m_observer_path_compare(struct lwm2m_obj_path *o_p, struct lwm2m_obj_path *p)
 {
 	/* updated path is deeper than obs node, skip */
@@ -393,6 +410,19 @@ static bool lwm2m_observer_path_compare(struct lwm2m_obj_path *o_p, struct lwm2m
 	}
 
 	return true;
+}
+
+static bool lwm2m_notify_observer_list(sys_slist_t *path_list, struct lwm2m_obj_path *path)
+{
+	struct lwm2m_obj_path_list *o_p;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(path_list, o_p, node) {
+		if (lwm2m_observer_path_compare(&o_p->path, path)) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id)
@@ -438,9 +468,9 @@ static int engine_observe_get_attributes(struct lwm2m_obj_path *path,
 		obj_inst = get_engine_obj_inst(path->obj_id,
 					       path->obj_inst_id);
 		if (!obj_inst) {
-			LOG_ERR("unable to find obj_inst: %u/%u",
-				path->obj_id, path->obj_inst_id);
-			return -ENOENT;
+			attrs->pmax = 0;
+			attrs->pmin = 0;
+			return 0;
 		}
 
 		ret = update_attrs(obj_inst, attrs);
@@ -508,6 +538,46 @@ static int engine_observe_get_attributes(struct lwm2m_obj_path *path,
 	return 0;
 }
 
+int engine_observe_attribute_list_get(sys_slist_t *path_list, struct notification_attrs *nattrs,
+				      uint16_t server_obj_inst)
+{
+	struct lwm2m_obj_path_list *o_p;
+	/* Temporary compare values */
+	int32_t pmin = 0;
+	int32_t pmax = 0;
+	int ret;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(path_list, o_p, node) {
+		nattrs->pmin = 0;
+		nattrs->pmax = 0;
+
+		ret = engine_observe_get_attributes(&o_p->path, nattrs, server_obj_inst);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (nattrs->pmin) {
+			if (pmin == 0) {
+				pmin = nattrs->pmin;
+			} else {
+				pmin = MIN(pmin, nattrs->pmin);
+			}
+		}
+
+		if (nattrs->pmax) {
+			if (pmax == 0) {
+				pmax = nattrs->pmax;
+			} else {
+				pmax = MIN(pmax, nattrs->pmax);
+			}
+		}
+	}
+
+	nattrs->pmin = pmin;
+	nattrs->pmax = pmax;
+	return 0;
+}
+
 int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
 {
 	struct observe_node *obs;
@@ -523,13 +593,14 @@ int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
 	/* look for observers which match our resource */
 	for (i = 0; i < sock_nfds; ++i) {
 		SYS_SLIST_FOR_EACH_CONTAINER(&sock_ctx[i]->observer, obs, node) {
-			if (lwm2m_observer_path_compare(&obs->path, path)) {
+			if (lwm2m_notify_observer_list(&obs->path_list, path)) {
 				/* update the event time for this observer */
-				ret = engine_observe_get_attributes(&obs->path, &nattrs,
+				ret = engine_observe_attribute_list_get(&obs->path_list, &nattrs,
 								    sock_ctx[i]->srv_obj_inst);
 				if (ret < 0) {
 					return ret;
 				}
+
 				if (nattrs.pmin) {
 					timestamp =
 						obs->last_timestamp + MSEC_PER_SEC * nattrs.pmin;
@@ -545,7 +616,6 @@ int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
 
 				LOG_DBG("NOTIFY EVENT %u/%u/%u", path->obj_id, path->obj_inst_id,
 					path->res_id);
-
 				ret++;
 			}
 		}
@@ -555,17 +625,187 @@ int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
 
 }
 
-static struct observe_node *engine_allocate_observer(void)
+static struct observe_node *engine_allocate_observer(sys_slist_t *path_list, bool composite)
 {
 	int i;
+	struct lwm2m_obj_path_list *entry, *tmp;
+	struct observe_node *obs = NULL;
 
 	/* find an unused observer index node */
 	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_OBSERVER; i++) {
 		if (!observe_node_data[i].tkl) {
-			return &observe_node_data[i];
+
+			obs =  &observe_node_data[i];
+			break;
 		}
 	}
 
+	if (!obs) {
+		return NULL;
+	}
+
+	sys_slist_init(&obs->path_list);
+	obs->composite = composite;
+
+	/* Allocate and copy path */
+	SYS_SLIST_FOR_EACH_CONTAINER(path_list, tmp, node) {
+		/* Allocate path entry */
+		entry = lwm2m_engine_get_from_list(&obs_obj_path_list);
+		if (!entry) {
+			/* Free list */
+			lwm2m_engine_free_list(&obs->path_list, &obs_obj_path_list);
+			return NULL;
+		}
+
+		/* copy the values and add it to the list */
+		memcpy(&entry->path, &tmp->path, sizeof(tmp->path));
+		/* Add to last by keeping already sorted order */
+		sys_slist_append(&obs->path_list, &entry->node);
+	}
+
+	return obs;
+}
+
+static void engine_observe_node_init(struct observe_node *obs, const uint8_t *token,
+				     struct lwm2m_ctx *ctx, uint8_t tkl, uint16_t format,
+				     int32_t att_pmax)
+{
+	struct lwm2m_obj_path_list *tmp;
+
+	memcpy(obs->token, token, tkl);
+	obs->tkl = tkl;
+
+	obs->last_timestamp = k_uptime_get();
+	if (att_pmax) {
+		obs->event_timestamp = obs->last_timestamp + MSEC_PER_SEC * att_pmax;
+	} else {
+		obs->event_timestamp = 0;
+	}
+	obs->resource_update = false;
+	obs->format = format;
+	obs->counter = OBSERVE_COUNTER_START;
+	sys_slist_append(&ctx->observer,
+			 &obs->node);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&obs->path_list, tmp, node) {
+		LOG_DBG("OBSERVER ADDED %u/%u/%u/%u(%u)", tmp->path.obj_id, tmp->path.obj_inst_id,
+			tmp->path.res_id, tmp->path.res_inst_id, tmp->path.level);
+
+		if (ctx->observe_cb) {
+			ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_ADDED, &tmp->path, NULL);
+		}
+	}
+
+	LOG_DBG("token:'%s' addr:%s", log_strdup(sprint_token(token, tkl)),
+		log_strdup(lwm2m_sprint_ip_addr(&ctx->remote_addr)));
+}
+
+static void remove_observer_path_from_list(struct lwm2m_ctx *ctx, struct observe_node *obs,
+				      struct lwm2m_obj_path_list *o_p, sys_snode_t *prev_node)
+{
+	char buf[LWM2M_MAX_PATH_STR_LEN];
+
+	LOG_DBG("Removing observer %p for path %s", obs, lwm2m_path_log_strdup(buf, &o_p->path));
+	if (ctx->observe_cb) {
+		ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED, &o_p->path, NULL);
+	}
+	/* Remove from the list and add to free list */
+	sys_slist_remove(&obs->path_list, prev_node, &o_p->node);
+	sys_slist_append(&obs_obj_path_list, &o_p->node);
+}
+
+static void engine_observe_single_path_id_remove(struct lwm2m_ctx *ctx, struct observe_node *obs,
+						 uint16_t obj_id, int32_t obj_inst_id)
+{
+	struct lwm2m_obj_path_list *o_p, *tmp;
+	sys_snode_t *prev_node = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obs->path_list, o_p, tmp, node) {
+		if (o_p->path.obj_id != obj_id && o_p->path.obj_inst_id) {
+			prev_node = &o_p->node;
+			continue;
+		}
+
+		if (obj_inst_id == -1 || o_p->path.obj_inst_id == obj_inst_id) {
+			remove_observer_path_from_list(ctx, obs, o_p, prev_node);
+		} else {
+			prev_node = &o_p->node;
+		}
+	}
+}
+
+static bool engine_compare_obs_path_list(sys_slist_t *obs_path_list, sys_slist_t *path_list,
+					 int list_length)
+{
+	sys_snode_t *obs_ptr, *comp_ptr;
+	struct lwm2m_obj_path_list *obs_path, *comp_path;
+
+	obs_ptr = sys_slist_peek_head(obs_path_list);
+	comp_ptr = sys_slist_peek_head(path_list);
+	while (list_length--) {
+		obs_path = (struct lwm2m_obj_path_list *) obs_ptr;
+		comp_path = (struct lwm2m_obj_path_list *) comp_ptr;
+		if (memcmp(&obs_path->path, &comp_path->path, sizeof(struct lwm2m_obj_path))) {
+			return false;
+		}
+		/* Read Next Info from list entry*/
+		obs_ptr = sys_slist_peek_next_no_check(obs_ptr);
+		comp_ptr = sys_slist_peek_next_no_check(comp_ptr);
+	}
+
+	return true;
+}
+
+static int engine_path_list_size(sys_slist_t *lwm2m_path_list)
+{
+	int list_size = 0;
+	struct lwm2m_obj_path_list *entry;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lwm2m_path_list, entry, node) {
+		list_size++;
+	}
+	return list_size;
+}
+
+static struct observe_node *engine_observe_node_discover(sys_slist_t *observe_node_list,
+							sys_snode_t **prev_node,
+							sys_slist_t *lwm2m_path_list,
+							const uint8_t *token, uint8_t tkl)
+{
+	struct observe_node *obs;
+	int obs_list_size, path_list_size;
+
+	if (lwm2m_path_list) {
+		path_list_size = engine_path_list_size(lwm2m_path_list);
+	}
+
+	*prev_node = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(observe_node_list, obs, node) {
+
+		if (lwm2m_path_list) {
+			/* Validate Path for discovery */
+			obs_list_size = engine_path_list_size(&obs->path_list);
+
+			if (obs_list_size != path_list_size) {
+				*prev_node = &obs->node;
+				continue;
+			}
+
+			if (!engine_compare_obs_path_list(&obs->path_list, lwm2m_path_list,
+							  obs_list_size)) {
+				*prev_node = &obs->node;
+				continue;
+			}
+		}
+
+		if (token && memcmp(obs->token, token, tkl)) {
+			/* Token not match */
+			*prev_node = &obs->node;
+			continue;
+		}
+		return obs;
+	}
 	return NULL;
 }
 
@@ -575,6 +815,9 @@ static int engine_add_observer(struct lwm2m_message *msg,
 {
 	struct observe_node *obs;
 	struct notification_attrs attrs;
+	struct lwm2m_obj_path_list obs_path_list_buf;
+	sys_slist_t lwm2m_path_list;
+	sys_snode_t *prev_node = NULL;
 	int ret;
 
 	if (!msg || !msg->ctx) {
@@ -588,82 +831,113 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		return -EINVAL;
 	}
 
-	/* make sure this observer doesn't exist already */
-	SYS_SLIST_FOR_EACH_CONTAINER(&msg->ctx->observer, obs, node) {
-		/* TODO: distinguish server object */
-		if (memcmp(&obs->path, &msg->path, sizeof(msg->path)) == 0) {
-			/* quietly update the token information */
-			memcpy(obs->token, token, tkl);
-			obs->tkl = tkl;
+	/* Create 1 entry linked list for message path */
+	memcpy(&obs_path_list_buf.path, &msg->path, sizeof(struct lwm2m_obj_path));
+	sys_slist_init(&lwm2m_path_list);
+	sys_slist_append(&lwm2m_path_list, &obs_path_list_buf.node);
 
-			LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]",
-				msg->path.obj_id, msg->path.obj_inst_id,
-				msg->path.res_id, msg->path.level,
-				log_strdup(
-				lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
+	obs = engine_observe_node_discover(&msg->ctx->observer, &prev_node, &lwm2m_path_list, NULL,
+					   0);
+	if (obs) {
+		memcpy(obs->token, token, tkl);
+		obs->tkl = tkl;
 
-			return 0;
-		}
+		LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]", msg->path.obj_id,
+			msg->path.obj_inst_id, msg->path.res_id, msg->path.level,
+			log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
+
+		return 0;
 	}
 
+	/* Read attributes and allocate new entry */
 	ret = engine_observe_get_attributes(&msg->path, &attrs, msg->ctx->srv_obj_inst);
 	if (ret < 0) {
 		return ret;
 	}
 
-	obs = engine_allocate_observer();
+	obs = engine_allocate_observer(&lwm2m_path_list, false);
 	if (!obs) {
 		return -ENOMEM;
 	}
 
-	/* copy the values and add it to the list */
-	memcpy(&obs->path, &msg->path, sizeof(msg->path));
-	memcpy(obs->token, token, tkl);
-	obs->tkl = tkl;
+	engine_observe_node_init(obs, token, msg->ctx, tkl, format, attrs.pmax);
+	return 0;
+}
 
-	obs->last_timestamp = k_uptime_get();
-	if (attrs.pmax) {
-		obs->event_timestamp = obs->last_timestamp + MSEC_PER_SEC * attrs.pmax;
-	} else {
-		obs->event_timestamp = 0;
-	}
-	obs->resource_update = false;
-	obs->format = format;
-	obs->counter = OBSERVE_COUNTER_START;
-	sys_slist_append(&msg->ctx->observer,
-			 &obs->node);
+static int engine_add_composite_observer(struct lwm2m_message *msg,
+			       const uint8_t *token, uint8_t tkl,
+			       uint16_t format)
+{
+	struct observe_node *obs;
+	struct notification_attrs attrs;
+	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
+	sys_slist_t lwm2m_path_list;
+	sys_slist_t lwm2m_path_free_list;
+	sys_snode_t *prev_node = NULL;
+	int ret;
 
-	LOG_DBG("OBSERVER ADDED %u/%u/%u/%u(%u) token:'%s' addr:%s",
-		msg->path.obj_id, msg->path.obj_inst_id,
-		msg->path.res_id, msg->path.res_inst_id, msg->path.level,
-		log_strdup(sprint_token(token, tkl)),
-		log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
-
-	if (msg->ctx->observe_cb) {
-		msg->ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_ADDED, &msg->path, NULL);
+	if (!msg || !msg->ctx) {
+		LOG_ERR("valid lwm2m message is required");
+		return -EINVAL;
 	}
 
+	if (!token || (tkl == 0U || tkl > MAX_TOKEN_LEN)) {
+		LOG_ERR("token(%p) and token length(%u) must be valid.",
+			token, tkl);
+		return -EINVAL;
+	}
+
+	/* Init list */
+	lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list, lwm2m_path_list_buf,
+				    CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE);
+
+	/* Read attributes and allocate new entry */
+	ret = do_composite_observe_read_path_op(msg, format, &lwm2m_path_list,
+						&lwm2m_path_free_list);
+	if (ret < 0) {
+		return ret;
+	}
+
+	obs = engine_observe_node_discover(&msg->ctx->observer, &prev_node, &lwm2m_path_list, NULL,
+					   0);
+	if (obs) {
+		memcpy(obs->token, token, tkl);
+		obs->tkl = tkl;
+
+		LOG_DBG("OBSERVER Composite DUPLICATE [%s]",
+			log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
+
+		return 0;
+	}
+
+	ret = engine_observe_attribute_list_get(&lwm2m_path_list, &attrs, msg->ctx->srv_obj_inst);
+	if (ret < 0) {
+		return ret;
+	}
+
+	obs = engine_allocate_observer(&lwm2m_path_list, true);
+	if (!obs) {
+		return -ENOMEM;
+	}
+	engine_observe_node_init(obs, token, msg->ctx, tkl, format, attrs.pmax);
 	return 0;
 }
 
 static void remove_observer_from_list(struct lwm2m_ctx *ctx, sys_snode_t *prev_node,
 				      struct observe_node *obs)
 {
-	char buf[LWM2M_MAX_PATH_STR_LEN];
+	struct lwm2m_obj_path_list *o_p, *tmp;
 
-	LOG_DBG("Removing observer %p for path %s", obs, lwm2m_path_log_strdup(buf, &obs->path));
-
-	if (ctx->observe_cb) {
-		ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED, &obs->path, NULL);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obs->path_list, o_p, tmp, node) {
+		remove_observer_path_from_list(ctx, obs, o_p, NULL);
 	}
-
 	sys_slist_remove(&ctx->observer, prev_node, &obs->node);
 	(void)memset(obs, 0, sizeof(*obs));
 }
 
 static int engine_remove_observer_by_token(struct lwm2m_ctx *ctx, const uint8_t *token, uint8_t tkl)
 {
-	struct observe_node *obs, *found_obj = NULL;
+	struct observe_node *obs;
 	sys_snode_t *prev_node = NULL;
 
 	if (!token || (tkl == 0U || tkl > MAX_TOKEN_LEN)) {
@@ -672,21 +946,51 @@ static int engine_remove_observer_by_token(struct lwm2m_ctx *ctx, const uint8_t 
 		return -EINVAL;
 	}
 
-	/* find the node index */
-	SYS_SLIST_FOR_EACH_CONTAINER(&ctx->observer, obs, node) {
-		if (memcmp(obs->token, token, tkl) == 0) {
-			found_obj = obs;
-			break;
-		}
-
-		prev_node = &obs->node;
-	}
-
-	if (!found_obj) {
+	obs = engine_observe_node_discover(&ctx->observer, &prev_node, NULL, token, tkl);
+	if (!obs) {
 		return -ENOENT;
 	}
 
-	remove_observer_from_list(ctx, prev_node, found_obj);
+	remove_observer_from_list(ctx, prev_node, obs);
+
+	LOG_DBG("observer '%s' removed", log_strdup(sprint_token(token, tkl)));
+
+	return 0;
+}
+
+static int engine_remove_composite_observer(struct lwm2m_message *msg, const uint8_t *token,
+					    uint8_t tkl, uint16_t format)
+{
+	struct observe_node *obs;
+	sys_snode_t *prev_node = NULL;
+	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
+	sys_slist_t lwm2m_path_list;
+	sys_slist_t lwm2m_path_free_list;
+	int ret;
+
+	if (!token || (tkl == 0U || tkl > MAX_TOKEN_LEN)) {
+		LOG_ERR("token(%p) and token length(%u) must be valid.",
+			token, tkl);
+		return -EINVAL;
+	}
+
+	/* Init list */
+	lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list, lwm2m_path_list_buf,
+				    CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE);
+
+	ret = do_composite_observe_read_path_op(msg, format, &lwm2m_path_list,
+						&lwm2m_path_free_list);
+	if (ret < 0) {
+		return ret;
+	}
+
+	obs = engine_observe_node_discover(&msg->ctx->observer, &prev_node, &lwm2m_path_list, token,
+					   tkl);
+	if (!obs) {
+		return -ENOENT;
+	}
+
+	remove_observer_from_list(msg->ctx, prev_node, obs);
 
 	LOG_DBG("observer '%s' removed", log_strdup(sprint_token(token, tkl)));
 
@@ -696,7 +1000,14 @@ static int engine_remove_observer_by_token(struct lwm2m_ctx *ctx, const uint8_t 
 #if defined(CONFIG_LOG)
 char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
 {
-	size_t cur = sprintf(buf, "%u", path->obj_id);
+	size_t cur;
+
+	if (!path) {
+		sprintf(buf, "/");
+		return log_strdup(buf);
+	}
+
+	cur = sprintf(buf, "%u", path->obj_id);
 
 	if (path->level > 1) {
 		cur += sprintf(buf + cur, "/%u", path->obj_inst_id);
@@ -717,27 +1028,25 @@ static int engine_remove_observer_by_path(struct lwm2m_ctx *ctx,
 					  struct lwm2m_obj_path *path)
 {
 	char buf[LWM2M_MAX_PATH_STR_LEN];
-	struct observe_node *obs, *found_obj = NULL;
+	struct observe_node *obs;
+	struct lwm2m_obj_path_list obs_path_list_buf;
+	sys_slist_t lwm2m_path_list;
 	sys_snode_t *prev_node = NULL;
 
-	/* find the node index */
-	SYS_SLIST_FOR_EACH_CONTAINER(&ctx->observer, obs, node) {
-		if (memcmp(path, &obs->path, sizeof(*path)) == 0) {
-			found_obj = obs;
-			break;
-		}
+	/* Create 1 entry linked list for message path */
+	memcpy(&obs_path_list_buf.path, path, sizeof(struct lwm2m_obj_path));
+	sys_slist_init(&lwm2m_path_list);
+	sys_slist_append(&lwm2m_path_list, &obs_path_list_buf.node);
 
-		prev_node = &obs->node;
-	}
-
-	if (!found_obj) {
+	obs = engine_observe_node_discover(&ctx->observer, &prev_node, &lwm2m_path_list, NULL, 0);
+	if (!obs) {
 		return -ENOENT;
 	}
 
 	LOG_INF("Removing observer for path %s",
 		lwm2m_path_log_strdup(buf, path));
 
-	remove_observer_from_list(ctx, prev_node, found_obj);
+	remove_observer_from_list(ctx, prev_node, obs);
 
 	return 0;
 }
@@ -753,13 +1062,14 @@ static void engine_remove_observer_by_id(uint16_t obj_id, int32_t obj_inst_id)
 	for (i = 0; i < sock_nfds; ++i) {
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(
 			&sock_ctx[i]->observer, obs, tmp, node) {
-			if (!(obj_id == obs->path.obj_id &&
-			      obj_inst_id == obs->path.obj_inst_id)) {
-				prev_node = &obs->node;
-				continue;
-			}
+			engine_observe_single_path_id_remove(sock_ctx[i], obs, obj_id,
+							     obj_inst_id);
 
-			remove_observer_from_list(sock_ctx[i], prev_node, obs);
+			if (sys_slist_is_empty(&obs->path_list)) {
+				remove_observer_from_list(sock_ctx[i], prev_node, obs);
+			} else {
+				prev_node = &obs->node;
+			}
 		}
 	}
 }
@@ -2071,7 +2381,6 @@ static int lwm2m_engine_observer_timestamp_update(sys_slist_t *observer,
 	int ret;
 	int64_t timestamp;
 
-
 	/* update observe_node accordingly */
 	SYS_SLIST_FOR_EACH_CONTAINER(observer, obs, node) {
 		if (!obs->resource_update) {
@@ -2079,12 +2388,12 @@ static int lwm2m_engine_observer_timestamp_update(sys_slist_t *observer,
 			continue;
 		}
 		/* Compare Obervation node path to updated one */
-		if (!lwm2m_observer_path_compare(&obs->path, path)) {
+		if (!lwm2m_notify_observer_list(&obs->path_list, path)) {
 			continue;
 		}
 
 		/* Read Atributes after validation Path */
-		ret = engine_observe_get_attributes(&obs->path, &nattrs, srv_obj_inst);
+		ret = engine_observe_attribute_list_get(&obs->path_list, &nattrs, srv_obj_inst);
 		if (ret < 0) {
 			return ret;
 		}
@@ -2416,14 +2725,8 @@ bool lwm2m_engine_path_is_observed(const char *pathstr)
 
 	for (i = 0; i < sock_nfds; ++i) {
 		SYS_SLIST_FOR_EACH_CONTAINER(&sock_ctx[i]->observer, obs, node) {
-			if (obs->path.level <= path.level &&
-			    (obs->path.obj_id == path.obj_id &&
-			     (obs->path.level < LWM2M_PATH_LEVEL_OBJECT_INST ||
-			      (obs->path.obj_inst_id == path.obj_inst_id &&
-			       (obs->path.level < LWM2M_PATH_LEVEL_RESOURCE ||
-				(obs->path.res_id == path.res_id &&
-				 (obs->path.level < LWM2M_PATH_LEVEL_RESOURCE_INST ||
-				  obs->path.res_inst_id == path.res_inst_id))))))) {
+
+			if (lwm2m_notify_observer_list(&obs->path_list, &path)) {
 				return true;
 			}
 		}
@@ -3417,6 +3720,24 @@ static int do_composite_read_op(struct lwm2m_message *msg, uint16_t content_form
 	}
 }
 
+static int do_composite_observe_read_path_op(struct lwm2m_message *msg, uint16_t content_format,
+					     sys_slist_t *lwm2m_path_list,
+					     sys_slist_t *lwm2m_path_free_list)
+{
+	switch (content_format) {
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	case LWM2M_FORMAT_APP_SEML_JSON:
+		return do_composite_observe_parse_path_senml_json(msg, lwm2m_path_list,
+								  lwm2m_path_free_list);
+#endif
+
+	default:
+		LOG_ERR("Unsupported content-format: %u", content_format);
+		return -ENOMSG;
+
+	}
+}
+
 static int lwm2m_perform_read_object_instance(struct lwm2m_message *msg,
 					      struct lwm2m_engine_obj_inst *obj_inst,
 					      uint8_t *num_read)
@@ -4040,7 +4361,8 @@ static bool lwm2m_engine_path_included(uint8_t code, bool bootstrap_mode)
 	return true;
 }
 
-static int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uint16_t accept)
+static int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uint16_t accept,
+					    bool composite)
 {
 	int r;
 
@@ -4053,23 +4375,34 @@ static int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int obser
 			return r;
 		}
 
-		r = engine_add_observer(msg, msg->token, msg->tkl, accept);
+		if (composite) {
+			r = engine_add_composite_observer(msg, msg->token, msg->tkl, accept);
+		} else {
+			r = engine_add_observer(msg, msg->token, msg->tkl, accept);
+		}
+
 		if (r < 0) {
 			LOG_ERR("add OBSERVE error: %d", r);
 		}
 	} else if (observe == 1) {
 		/* remove observer */
-		r = engine_remove_observer_by_token(msg->ctx, msg->token, msg->tkl);
-		if (r < 0) {
+		if (composite) {
+			r = engine_remove_composite_observer(msg, msg->token, msg->tkl,
+							     accept);
+		} else {
+			r = engine_remove_observer_by_token(msg->ctx, msg->token, msg->tkl);
+			if (r < 0) {
 #if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
-			r = engine_remove_observer_by_path(msg->ctx, &msg->path);
-			if (r < 0)
+				r = engine_remove_observer_by_path(msg->ctx, &msg->path);
+				if (r < 0)
 #endif /* CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH */
-			{
-				LOG_ERR("remove observe error: %d", r);
-				r = 0;
+				{
+					LOG_ERR("remove observe error: %d", r);
+					r = 0;
+				}
 			}
 		}
+
 	} else {
 		r = -EINVAL;
 	}
@@ -4382,7 +4715,8 @@ static int handle_request(struct coap_packet *request,
 
 				if ((code & COAP_REQUEST_MASK) == COAP_METHOD_GET) {
 					/* Normal Obeservation Request or Cancel */
-					r = lwm2m_engine_observation_handler(msg, observe, accept);
+					r = lwm2m_engine_observation_handler(msg, observe, accept,
+									     false);
 					if (r < 0) {
 						goto error;
 					}
@@ -4390,9 +4724,12 @@ static int handle_request(struct coap_packet *request,
 					r = do_read_op(msg, accept);
 				} else {
 					/* Composite Observation request & cancel handler */
-					/* TODO add support for Composite observation support */
-					r = -ENOTSUP;
-					goto error;
+					r = lwm2m_engine_observation_handler(msg, observe, accept,
+									     true);
+					if (r < 0) {
+						goto error;
+					}
+					r = do_composite_read_op(msg, accept);
 				}
 			} else {
 				if ((code & COAP_REQUEST_MASK) == COAP_METHOD_GET) {
@@ -4769,7 +5106,8 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 		if (found_obj) {
 			if (msg->ctx->observe_cb) {
 				msg->ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_ACK,
-						     &obs->path, reply->user_data);
+						     lwm2m_read_first_path_ptr(&obs->path_list),
+						     reply->user_data);
 			}
 		}
 	}
@@ -4783,6 +5121,7 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 {
 	struct lwm2m_message *msg;
 	struct lwm2m_engine_obj_inst *obj_inst;
+	struct lwm2m_obj_path *path;
 	int ret = 0;
 
 	msg = lwm2m_get_message(ctx);
@@ -4791,30 +5130,40 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 		return -ENOMEM;
 	}
 
-	/* copy path */
-	memcpy(&msg->path, &obs->path, sizeof(struct lwm2m_obj_path));
-	msg->operation = LWM2M_OP_READ;
 
-	LOG_DBG("[%s] NOTIFY MSG START: %u/%u/%u(%u) token:'%s' [%s] %lld",
+	if (!obs->composite) {
+		path = lwm2m_read_first_path_ptr(&obs->path_list);
+		if (!path) {
+			LOG_ERR("Observation node not include path");
+			ret = -EINVAL;
+		}
+		/* copy path */
+		memcpy(&msg->path, path, sizeof(struct lwm2m_obj_path));
+		LOG_DBG("[%s] NOTIFY MSG START: %u/%u/%u(%u) token:'%s' [%s] %lld",
+			obs->resource_update ? "MANUAL" : "AUTO", path->obj_id, path->obj_inst_id,
+			path->res_id, path->level, log_strdup(sprint_token(obs->token, obs->tkl)),
+			log_strdup(lwm2m_sprint_ip_addr(&ctx->remote_addr)),
+			(long long)k_uptime_get());
+
+		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
+		if (!obj_inst) {
+			LOG_ERR("unable to get engine obj for %u/%u", path->obj_id,
+				path->obj_inst_id);
+			ret = -EINVAL;
+			goto cleanup;
+		}
+	} else {
+		LOG_DBG("[%s] NOTIFY MSG START: (Composite)) token:'%s' [%s] %lld",
 		obs->resource_update ? "MANUAL" : "AUTO",
-		obs->path.obj_id,
-		obs->path.obj_inst_id,
-		obs->path.res_id,
-		obs->path.level,
 		log_strdup(sprint_token(obs->token, obs->tkl)),
 		log_strdup(lwm2m_sprint_ip_addr(&ctx->remote_addr)),
 		(long long)k_uptime_get());
+	}
+
+	msg->operation = LWM2M_OP_READ;
 
 	obs->resource_update = false;
-	obj_inst = get_engine_obj_inst(obs->path.obj_id,
-				       obs->path.obj_inst_id);
-	if (!obj_inst) {
-		LOG_ERR("unable to get engine obj for %u/%u",
-			obs->path.obj_id,
-			obs->path.obj_inst_id);
-		ret = -EINVAL;
-		goto cleanup;
-	}
+
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_RESPONSE_CODE_CONTENT;
@@ -4845,8 +5194,13 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 
 	/* set the output writer */
 	select_writer(&msg->out, obs->format);
+	if (obs->composite) {
+		/* Use do send which actually do Composite read operation */
+		ret = do_send_op(msg, obs->format, &obs->path_list);
+	} else {
+		ret = do_read_op(msg, obs->format);
+	}
 
-	ret = do_read_op(msg, obs->format);
 	if (ret < 0) {
 		LOG_ERR("error in multi-format read (err:%d)", ret);
 		goto cleanup;
@@ -5033,7 +5387,7 @@ static int64_t engine_observe_shedule_next_event(struct observe_node *obs, uint1
 	int64_t t_s = 0;
 	int ret;
 
-	ret = engine_observe_get_attributes(&obs->path, &attrs, srv_obj_inst);
+	ret = engine_observe_attribute_list_get(&obs->path_list, &attrs, srv_obj_inst);
 	if (ret < 0) {
 		return 0;
 	}
@@ -5469,6 +5823,12 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 
 static int lwm2m_engine_init(const struct device *dev)
 {
+	int i;
+
+	for (i = 0; i < LWM2M_ENGINE_MAX_OBSERVER_PATH; i++) {
+		sys_slist_append(&obs_obj_path_list, &observe_paths[i].node);
+	}
+
 	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
 
 	/* start sock receive thread */
@@ -5518,6 +5878,14 @@ static bool lwm2m_path_object_compare(struct lwm2m_obj_path *path,
 		return false;
 	}
 	return true;
+}
+
+static struct lwm2m_obj_path *lwm2m_read_first_path_ptr(sys_slist_t *lwm2m_path_list)
+{
+	struct lwm2m_obj_path_list *entry;
+
+	entry = (struct lwm2m_obj_path_list *)sys_slist_peek_head(lwm2m_path_list);
+	return &entry->path;
 }
 
 void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
@@ -5694,7 +6062,7 @@ static int lwm2m_perform_composite_read_root(struct lwm2m_message *msg, uint8_t 
 }
 
 int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_format,
-				    sys_slist_t *lwm_path_list)
+				    sys_slist_t *lwm2m_path_list)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_obj_path_list *entry;
@@ -5718,7 +6086,7 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 	engine_put_begin(&msg->out, &msg->path);
 
 	/* Read resource from path */
-	SYS_SLIST_FOR_EACH_CONTAINER(lwm_path_list, entry, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(lwm2m_path_list, entry, node) {
 		/* Copy path to message path */
 		memcpy(&msg->path, &entry->path, sizeof(struct lwm2m_obj_path));
 
@@ -5760,12 +6128,12 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 }
 
 static int do_send_op(struct lwm2m_message *msg, uint16_t content_format,
-		      sys_slist_t *lwm_path_list)
+		      sys_slist_t *lwm2m_path_list)
 {
 	switch (content_format) {
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 	case LWM2M_FORMAT_APP_SEML_JSON:
-		return do_send_op_senml_json(msg, lwm_path_list);
+		return do_send_op_senml_json(msg, lwm2m_path_list);
 #endif
 
 	default:
@@ -5812,11 +6180,11 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	/* Path list buffer */
 	struct lwm2m_obj_path temp;
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
-	sys_slist_t lwm_path_list;
-	sys_slist_t lwm_path_free_list;
+	sys_slist_t lwm2m_path_list;
+	sys_slist_t lwm2m_path_free_list;
 
 	/* Init list */
-	lwm2m_engine_path_list_init(&lwm_path_list, &lwm_path_free_list, lwm2m_path_list_buf,
+	lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list, lwm2m_path_list_buf,
 				    CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE);
 
 	if (path_list_size > CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE) {
@@ -5838,12 +6206,12 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 			return ret;
 		}
 		/* Add to linked list */
-		if (lwm2m_engine_add_path_to_list(&lwm_path_list, &lwm_path_free_list, &temp)) {
+		if (lwm2m_engine_add_path_to_list(&lwm2m_path_list, &lwm2m_path_free_list, &temp)) {
 			return -1;
 		}
 	}
 	/* Clear path which are part are part of recursive path /1 will include /1/0/1 */
-	lwm2m_engine_clear_duplicate_path(&lwm_path_list, &lwm_path_free_list);
+	lwm2m_engine_clear_duplicate_path(&lwm2m_path_list, &lwm2m_path_free_list);
 
 	/* Allocate Message buffer */
 	msg = lwm2m_get_message(ctx);
@@ -5885,7 +6253,7 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	}
 
 	/* Write requested path data */
-	ret = do_send_op(msg, content_format, &lwm_path_list);
+	ret = do_send_op(msg, content_format, &lwm2m_path_list);
 	if (ret < 0) {
 		LOG_ERR("Send (err:%d)", ret);
 		goto cleanup;
