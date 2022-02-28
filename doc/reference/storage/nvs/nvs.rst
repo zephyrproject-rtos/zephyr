@@ -41,6 +41,7 @@ For NVS the file system is declared as:
 .. code-block:: c
 
 	static struct nvs_fs fs = {
+	.flash_device = NVS_FLASH_DEVICE,
 	.sector_size = NVS_SECTOR_SIZE,
 	.sector_count = NVS_SECTOR_COUNT,
 	.offset = NVS_STORAGE_OFFSET,
@@ -48,6 +49,8 @@ For NVS the file system is declared as:
 
 where
 
+- ``NVS_FLASH_DEVICE`` is a reference to the flash device that will be used. The
+  device needs to be operational.
 - ``NVS_SECTOR_SIZE`` is the sector size, it has to be a multiple of
   the flash erase page size and a power of 2.
 - ``NVS_SECTOR_COUNT`` is the number of sectors, it is at least 2, one
