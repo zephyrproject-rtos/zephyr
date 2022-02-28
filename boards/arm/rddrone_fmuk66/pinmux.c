@@ -46,32 +46,6 @@ static int rddrone_fmuk66_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portd,  9, PORT_PCR_MUX(kPORT_MuxAlt5));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
-	/* UART0 RX, TX */
-	pinmux_pin_set(porta,  1, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(porta,  2, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay) && CONFIG_SERIAL
-	/* UART1 RX, TX */
-	pinmux_pin_set(portc,  3, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) && CONFIG_SERIAL
-	/* UART1 RX, TX */
-	pinmux_pin_set(portd,  2, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portd,  3, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay) && CONFIG_SERIAL
-	/* UART1 RTS, CTS, RX, TX */
-	pinmux_pin_set(porte, 27, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc, 14, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc, 15, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay) && CONFIG_CAN
 	/* CAN0 TX, RX */
 	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
