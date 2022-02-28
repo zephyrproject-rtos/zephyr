@@ -44,10 +44,10 @@
 	};
 
 	sram1: memory@40140000 {
-		compatible = "mmio-sram";
+		compatible =  "zephyr,memory-region", "mmio-sram";
 		reg = <0x40140000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM1";
 	};
-
 };
 
 &systick {
