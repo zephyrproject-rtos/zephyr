@@ -27,9 +27,5 @@ CONFIG_GPIO_AS_PINRESET=y
 # Use internal oscillator
 CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
 
-# Do not use inverted LEDs
-CONFIG_DK_LIBRARY_INVERT_BUTTONS=y
-CONFIG_DK_LIBRARY_INVERT_LEDS=n
-
 # Bluetooth not enabled by default on nRF52805 due to RAM limitations when
 # running the default set of kernel tests.
