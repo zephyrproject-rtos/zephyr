@@ -142,7 +142,7 @@ struct pinctrl_dev_config {
 	COND_CODE_1(Z_PINCTRL_SKIP_STATE(state_idx, node_id), (),	       \
 	(static const pinctrl_soc_pin_t					       \
 	Z_PINCTRL_STATE_PINS_NAME(state_idx, node_id)[] =		       \
-	Z_PINCTRL_STATE_PINS_INIT(node_id, pinctrl_ ## state_idx);))
+	Z_PINCTRL_STATE_PINS_INIT(node_id, pinctrl_ ## state_idx)))
 
 /**
  * @brief Helper macro to initialize a pin control state.
@@ -157,7 +157,7 @@ struct pinctrl_dev_config {
 		.pins = Z_PINCTRL_STATE_PINS_NAME(state_idx, node_id),	       \
 		.pin_cnt = ARRAY_SIZE(Z_PINCTRL_STATE_PINS_NAME(state_idx,     \
 								node_id))      \
-	},))
+	}))
 
 /**
  * @brief Define all the states for the given node identifier.
@@ -167,8 +167,8 @@ struct pinctrl_dev_config {
 #define Z_PINCTRL_STATES_DEFINE(node_id)				       \
 	static const struct pinctrl_state				       \
 	Z_PINCTRL_STATES_NAME(node_id)[] = {				       \
-		UTIL_LISTIFY(DT_NUM_PINCTRL_STATES(node_id),		       \
-			     Z_PINCTRL_STATE_INIT, node_id)		       \
+		LISTIFY(DT_NUM_PINCTRL_STATES(node_id),			       \
+			     Z_PINCTRL_STATE_INIT, (,), node_id)	       \
 	};
 
 #ifdef CONFIG_PINCTRL_STORE_REG
@@ -235,8 +235,8 @@ struct pinctrl_dev_config {
  * @param node_id Node identifier.
  */
 #define PINCTRL_DT_DEFINE(node_id)					       \
-	UTIL_LISTIFY(DT_NUM_PINCTRL_STATES(node_id),			       \
-		     Z_PINCTRL_STATE_PINS_DEFINE, node_id)		       \
+	LISTIFY(DT_NUM_PINCTRL_STATES(node_id),				       \
+		     Z_PINCTRL_STATE_PINS_DEFINE, (;), node_id);	       \
 	Z_PINCTRL_STATES_DEFINE(node_id)				       \
 	Z_PINCTRL_DEV_CONFIG_CONST Z_PINCTRL_DEV_CONFIG_STATIC		       \
 	struct pinctrl_dev_config Z_PINCTRL_DEV_CONFIG_NAME(node_id) =	       \

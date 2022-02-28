@@ -560,14 +560,14 @@ struct gpios_struct {
 
 /* Helper macro that UTIL_LISTIFY can use and produces an element with comma */
 #define DT_PROP_ELEM_BY_PHANDLE(idx, node_id, ph_prop, prop) \
-	DT_PROP_BY_PHANDLE_IDX(node_id, ph_prop, idx, prop),
+	DT_PROP_BY_PHANDLE_IDX(node_id, ph_prop, idx, prop)
 #define DT_PHANDLE_LISTIFY(node_id, ph_prop, prop) \
 	{ \
-	  UTIL_LISTIFY(DT_PROP_LEN(node_id, ph_prop), \
-		       DT_PROP_ELEM_BY_PHANDLE, \
-		       node_id, \
-		       ph_prop, \
-		       label) \
+	  LISTIFY(DT_PROP_LEN(node_id, ph_prop), \
+		  DT_PROP_ELEM_BY_PHANDLE, (,), \
+		  node_id, \
+		  ph_prop, \
+		  label) \
 	}
 
 /* Helper macro that UTIL_LISTIFY can use and produces an element with comma */
@@ -576,10 +576,10 @@ struct gpios_struct {
 		DT_PROP(DT_PHANDLE_BY_IDX(node_id, prop, idx), label), \
 		DT_PHA_BY_IDX(node_id, prop, idx, pin),\
 		DT_PHA_BY_IDX(node_id, prop, idx, flags),\
-	},
+	}
 #define DT_GPIO_LISTIFY(node_id, prop) \
-	{ UTIL_LISTIFY(DT_PROP_LEN(node_id, prop), DT_GPIO_ELEM, \
-		       node_id, prop) }
+	{ LISTIFY(DT_PROP_LEN(node_id, prop), DT_GPIO_ELEM, (,), \
+		  node_id, prop) }
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_phandle_holder

@@ -162,30 +162,6 @@ skipped:
 	#undef test_IF_ENABLED_FLAG_B
 }
 
-void test_UTIL_LISTIFY(void)
-{
-	int i = 0;
-
-#define INC(x, n, m)		\
-	do {			\
-		i += (x + n + m);\
-	} while (0);
-
-#define DEFINE(x, y) int a##x = x * y;
-#define MARK_UNUSED(x, _) ARG_UNUSED(a##x);
-
-	UTIL_LISTIFY(4, DEFINE, 2)
-	UTIL_LISTIFY(4, MARK_UNUSED, _)
-
-	UTIL_LISTIFY(4, INC, 1, 2)
-
-	zassert_equal(i, 0 + 1 + 2 + 3 + 4 * (1 + 2), NULL);
-	zassert_equal(a0, 0, NULL);
-	zassert_equal(a1, 2, NULL);
-	zassert_equal(a2, 4, NULL);
-	zassert_equal(a3, 6, NULL);
-}
-
 void test_LISTIFY(void)
 {
 	int ab0 = 1;
@@ -473,7 +449,6 @@ void test_cc(void)
 			 ztest_unit_test(test_UTIL_OR),
 			 ztest_unit_test(test_UTIL_AND),
 			 ztest_unit_test(test_IF_ENABLED),
-			 ztest_unit_test(test_UTIL_LISTIFY),
 			 ztest_unit_test(test_LISTIFY),
 			 ztest_unit_test(test_MACRO_MAP_CAT),
 			 ztest_unit_test(test_z_max_z_min_z_clamp),

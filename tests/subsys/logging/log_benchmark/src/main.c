@@ -97,8 +97,8 @@ struct backend_cb backend_ctrl_blk;
 	int _cnt = 0; \
 	test_helpers_log_setup(); \
 	while (!test_helpers_log_dropped_pending()) { \
-		LOG_ERR("test" UTIL_LISTIFY(nargs, TEST_FORMAT_SPEC) \
-				UTIL_LISTIFY(nargs, TEST_VALUE)); \
+		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
+				LISTIFY(nargs, TEST_VALUE, ())); \
 		_cnt++; \
 	} \
 	_cnt--; \
@@ -135,8 +135,8 @@ void test_log_capacity(void)
 	test_helpers_log_setup(); \
 	uint32_t cyc = test_helpers_cycle_get(); \
 	for (int i = 0; i < _msg_cnt; i++) { \
-		LOG_ERR("test" UTIL_LISTIFY(nargs, TEST_FORMAT_SPEC) \
-				UTIL_LISTIFY(nargs, TEST_VALUE)); \
+		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
+				LISTIFY(nargs, TEST_VALUE, ())); \
 	} \
 	cyc = test_helpers_cycle_get() - cyc; \
 	inc_time += cyc; \
@@ -175,8 +175,8 @@ void test_log_message_store_time_no_overwrite(void)
 	TEST_LOG_CAPACITY(nargs, _dummy, 0); \
 	uint32_t cyc = test_helpers_cycle_get(); \
 	for (int i = 0; i < _msg_cnt; i++) { \
-		LOG_ERR("test" UTIL_LISTIFY(nargs, TEST_FORMAT_SPEC) \
-				UTIL_LISTIFY(nargs, TEST_VALUE)); \
+		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
+				LISTIFY(nargs, TEST_VALUE, ())); \
 	} \
 	cyc = test_helpers_cycle_get() - cyc; \
 	inc_time += cyc; \

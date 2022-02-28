@@ -691,7 +691,7 @@ static const struct net_capture_interface_api capture_interface_api = {
 };
 
 #define DEFINE_NET_CAPTURE_DEV_DATA(x, _)				\
-	static struct net_capture capture_dev_data_##x;
+	static struct net_capture capture_dev_data_##x
 
 #define DEFINE_NET_CAPTURE_DEVICE(x, _)					\
 	DEVICE_DEFINE(net_capture_##x,					\
@@ -702,7 +702,7 @@ static const struct net_capture_interface_api capture_interface_api = {
 		      NULL,						\
 		      POST_KERNEL,					\
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-		      &capture_interface_api);
+		      &capture_interface_api)
 
-UTIL_LISTIFY(CONFIG_NET_CAPTURE_DEVICE_COUNT, DEFINE_NET_CAPTURE_DEV_DATA, _)
-UTIL_LISTIFY(CONFIG_NET_CAPTURE_DEVICE_COUNT, DEFINE_NET_CAPTURE_DEVICE, _)
+LISTIFY(CONFIG_NET_CAPTURE_DEVICE_COUNT, DEFINE_NET_CAPTURE_DEV_DATA, (;), _);
+LISTIFY(CONFIG_NET_CAPTURE_DEVICE_COUNT, DEFINE_NET_CAPTURE_DEVICE, (;), _);

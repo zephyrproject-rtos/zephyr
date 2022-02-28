@@ -69,9 +69,9 @@ struct uart_mux {
 	static struct uart_mux uart_mux_##x __used			\
 		__attribute__((__section__(".uart_mux.data"))) = {	\
 			.rx_ringbuf = &uart_rx_ringbuf_##x,		\
-	};
+	}
 
-UTIL_LISTIFY(CONFIG_UART_MUX_REAL_DEVICE_COUNT, DEFINE_UART_MUX, _)
+LISTIFY(CONFIG_UART_MUX_REAL_DEVICE_COUNT, DEFINE_UART_MUX, (;), _)
 
 extern struct uart_mux __uart_mux_start[];
 extern struct uart_mux __uart_mux_end[];
@@ -869,7 +869,7 @@ void uart_mux_foreach(uart_mux_cb_t cb, void *user_data)
 
 #define DEFINE_UART_MUX_CFG_DATA(x, _)					  \
 	struct uart_mux_cfg_data uart_mux_config_##x = {		  \
-	};
+	}
 
 #define DEFINE_UART_MUX_DEV_DATA(x, _)					  \
 	RING_BUF_DECLARE(tx_ringbuf_##x, CONFIG_UART_MUX_RINGBUF_SIZE);	  \
@@ -877,7 +877,7 @@ void uart_mux_foreach(uart_mux_cb_t cb, void *user_data)
 	static struct uart_mux_dev_data uart_mux_dev_data_##x = {	  \
 		.tx_ringbuf = &tx_ringbuf_##x,				  \
 		.rx_ringbuf = &rx_ringbuf_##x,				  \
-	};
+	}
 
 #define DEFINE_UART_MUX_DEVICE(x, _)					  \
 	DEVICE_DEFINE(uart_mux_##x,					  \
@@ -888,11 +888,11 @@ void uart_mux_foreach(uart_mux_cb_t cb, void *user_data)
 			    &uart_mux_config_##x,			  \
 			    POST_KERNEL,				  \
 			    CONFIG_CONSOLE_INIT_PRIORITY,		  \
-			    &uart_mux_driver_api);
+			    &uart_mux_driver_api)
 
-UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, _)
-UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, _)
-UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEVICE, _)
+LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, (;),  _)
+LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, (;), _)
+LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEVICE, (;), _)
 
 static int init_uart_mux(const struct device *dev)
 {

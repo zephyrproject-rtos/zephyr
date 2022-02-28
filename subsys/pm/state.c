@@ -23,7 +23,7 @@ BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
 					  min_residency_us, 0U) >=	       \
 		DT_PROP_BY_PHANDLE_IDX_OR(node_id, cpu_power_states, i,	       \
 					  exit_latency_us, 0U),		       \
-		"Found CPU power state with min_residency < exit_latency");
+		"Found CPU power state with min_residency < exit_latency")
 
 /**
  * @brief Check CPU power states consistency
@@ -33,8 +33,8 @@ BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
  * @param node_id A CPU node identifier.
  */
 #define CHECK_POWER_STATES_CONSISTENCY(node_id)				       \
-	UTIL_LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),			       \
-		     CHECK_POWER_STATE_CONSISTENCY, node_id)		       \
+	LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),			       \
+		CHECK_POWER_STATE_CONSISTENCY, (;), node_id);		       \
 
 /* Check that all power states are consistent */
 DT_FOREACH_CHILD(DT_PATH(cpus), CHECK_POWER_STATES_CONSISTENCY)

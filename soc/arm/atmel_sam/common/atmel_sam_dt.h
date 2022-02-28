@@ -83,12 +83,12 @@
 	ATMEL_SAM_DT_NUM_PINS(DT_DRV_INST(inst))
 
 /* internal macro to structure things for use with UTIL_LISTIFY */
-#define ATMEL_SAM_DT_PIN_ELEM(idx, node_id) ATMEL_SAM_DT_PIN(node_id, idx),
+#define ATMEL_SAM_DT_PIN_ELEM(idx, node_id) ATMEL_SAM_DT_PIN(node_id, idx)
 
 /* Construct an array intializer for soc_gpio_pin for a device instance */
 #define ATMEL_SAM_DT_PINS(node_id)				\
-	{ UTIL_LISTIFY(ATMEL_SAM_DT_NUM_PINS(node_id),		\
-		       ATMEL_SAM_DT_PIN_ELEM, node_id)		\
+	{ LISTIFY(ATMEL_SAM_DT_NUM_PINS(node_id),		\
+		  ATMEL_SAM_DT_PIN_ELEM, (,), node_id)		\
 	}
 
 #define ATMEL_SAM_DT_INST_PINS(inst) \

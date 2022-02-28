@@ -145,10 +145,10 @@ extern DioIrqHandler *DioIrq[];
 	DT_INST_PROP_LEN(inst, dio_gpios)
 
 #define SX127X_DIO_GPIO_ELEM(idx, inst) \
-	GPIO_DT_SPEC_INST_GET_BY_IDX(inst, dio_gpios, idx),
+	GPIO_DT_SPEC_INST_GET_BY_IDX(inst, dio_gpios, idx)
 
 #define SX127X_DIO_GPIO_INIT(n) \
-	UTIL_LISTIFY(SX127X_DIO_GPIO_LEN(n), SX127X_DIO_GPIO_ELEM, n)
+	LISTIFY(SX127X_DIO_GPIO_LEN(n), SX127X_DIO_GPIO_ELEM, (,), n)
 
 static const struct gpio_dt_spec sx127x_dios[] = { SX127X_DIO_GPIO_INIT(0) };
 
