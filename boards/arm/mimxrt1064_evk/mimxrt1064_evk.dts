@@ -273,6 +273,10 @@ zephyr_udc0: &usb1 {
 &flexcan2 {
 	status = "okay";
 	bus-speed = <125000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };
 
 &wdog0 {
