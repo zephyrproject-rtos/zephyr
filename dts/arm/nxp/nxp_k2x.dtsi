@@ -51,6 +51,12 @@
 		reg = <0x20000000 DT_SIZE_K(64)>;
 	};
 
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kinetis-mcg";

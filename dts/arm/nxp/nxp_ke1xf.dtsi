@@ -91,6 +91,12 @@
 		status = "disabled";
 	};
 
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		edma: dma-controller@40008000 {
 			compatible = "nxp,mcux-edma";
