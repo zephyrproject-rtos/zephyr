@@ -210,7 +210,7 @@
 	{							\
 		ST_STM32_DT_INST_PINMUX(inst, x, i),		\
 		ST_STM32_DT_INST_PINCFG(inst, x, i)		\
-	},
+	}
 
 /**
  * @brief Internal: Contruct a soc_gpio_pinctrl element index i of
@@ -225,7 +225,7 @@
 	{						\
 		ST_STM32_DT_PINMUX(name, x, i),		\
 		ST_STM32_DT_PINCFG(name, x, i)		\
-	},
+	}
 
 /**
  * @brief Internal: Return the number of elements of a pinctrl-x property
@@ -267,10 +267,10 @@
  */
 #define ST_STM32_DT_INST_PINCTRL(inst, x)				\
 	{ COND_CODE_1(DT_INST_PINCTRL_HAS_IDX(inst, x),			\
-		      (UTIL_LISTIFY(ST_STM32_DT_INST_NUM_PINS(inst, x),	\
-				   ST_STM32_DT_INST_PIN_ELEM,		\
-				   x,					\
-				   inst)),				\
+		      (LISTIFY(ST_STM32_DT_INST_NUM_PINS(inst, x),	\
+			       ST_STM32_DT_INST_PIN_ELEM, (,),		\
+			       x,					\
+			       inst)),				\
 		      ())						\
 	}
 
@@ -288,10 +288,10 @@
  */
 #define ST_STM32_DT_PINCTRL(name, x)					\
 	{ COND_CODE_1(DT_PINCTRL_HAS_IDX(DT_NODELABEL(name), x),	\
-		      (UTIL_LISTIFY(ST_STM32_DT_NUM_PINS(name, x),	\
-				   ST_STM32_DT_PIN_ELEM,		\
-				   x,					\
-				   name)),				\
+		      (LISTIFY(ST_STM32_DT_NUM_PINS(name, x),		\
+			       ST_STM32_DT_PIN_ELEM, (,),		\
+			       x,					\
+			       name)),					\
 		      ())						\
 	}
 

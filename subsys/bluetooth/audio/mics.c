@@ -86,7 +86,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 
 #define DUMMY_INCLUDE(i, _) BT_GATT_INCLUDE_SERVICE(NULL),
-#define AICS_INCLUDES(cnt) UTIL_LISTIFY(cnt, DUMMY_INCLUDE)
+#define AICS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
 
 #define BT_MICS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MICS), \

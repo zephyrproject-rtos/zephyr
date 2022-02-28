@@ -254,7 +254,7 @@ struct lll_event {
 	uint8_t                  is_aborted:1;
 };
 
-#define DEFINE_NODE_RX_USER_TYPE(i, _) NODE_RX_TYPE_##i,
+#define DEFINE_NODE_RX_USER_TYPE(i, _) NODE_RX_TYPE_##i
 
 enum node_rx_type {
 	/* Unused */
@@ -307,7 +307,7 @@ enum node_rx_type {
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	/* No entries shall be added after the NODE_RX_TYPE_USER_START/END */
 	NODE_RX_TYPE_USER_START,
-	UTIL_LISTIFY(CONFIG_BT_CTLR_USER_EVT_RANGE, DEFINE_NODE_RX_USER_TYPE, _)
+	LISTIFY(CONFIG_BT_CTLR_USER_EVT_RANGE, DEFINE_NODE_RX_USER_TYPE, (,), _),
 	NODE_RX_TYPE_USER_END,
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 };

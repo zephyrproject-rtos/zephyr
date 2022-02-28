@@ -55,13 +55,13 @@ static struct modbus_serial_config modbus_serial_cfg[] = {
 		.iface_name = "RAW_"#x,				\
 		.raw_tx_cb = NULL,				\
 		.mode = MODBUS_MODE_RAW,			\
-	},
+	}
 
 
 static struct modbus_context mb_ctx_tbl[] = {
 	DT_INST_FOREACH_STATUS_OKAY(MODBUS_DT_GET_DEV)
 #ifdef CONFIG_MODBUS_RAW_ADU
-	UTIL_LISTIFY(CONFIG_MODBUS_NUMOF_RAW_ADU, DEFINE_MODBUS_RAW_ADU, _)
+	LISTIFY(CONFIG_MODBUS_NUMOF_RAW_ADU, DEFINE_MODBUS_RAW_ADU, (,), _)
 #endif
 };
 

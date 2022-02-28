@@ -166,7 +166,7 @@ struct pm_state_info {
  * @param node_id A node identifier with compatible zephyr,power-state
  */
 #define Z_PM_STATE_INFO_FROM_DT_CPU(i, node_id) \
-	PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),
+	PM_STATE_INFO_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i))
 
 /**
  * @brief Helper macro to initialize an entry of a struct pm_state array when
@@ -176,7 +176,7 @@ struct pm_state_info {
  * @param node_id A node identifier with compatible zephyr,power-state
  */
 #define Z_PM_STATE_FROM_DT_CPU(i, node_id) \
-	PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i)),
+	PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, cpu_power_states, i))
 
 /** @endcond */
 
@@ -258,8 +258,8 @@ struct pm_state_info {
  */
 #define PM_STATE_INFO_LIST_FROM_DT_CPU(node_id)				       \
 	{								       \
-		UTIL_LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),		       \
-			     Z_PM_STATE_INFO_FROM_DT_CPU, node_id)   \
+		LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),		       \
+			Z_PM_STATE_INFO_FROM_DT_CPU, (,), node_id)	       \
 	}
 
 /**
@@ -306,8 +306,8 @@ struct pm_state_info {
  */
 #define PM_STATE_LIST_FROM_DT_CPU(node_id)				       \
 	{								       \
-		UTIL_LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),		       \
-			     Z_PM_STATE_FROM_DT_CPU, node_id)		       \
+		LISTIFY(DT_NUM_CPU_POWER_STATES(node_id),		       \
+			Z_PM_STATE_FROM_DT_CPU, (,), node_id)		       \
 	}
 
 

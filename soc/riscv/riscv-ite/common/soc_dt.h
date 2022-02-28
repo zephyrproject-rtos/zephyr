@@ -26,7 +26,7 @@
 		.pinctrls = IT8XXX2_DEV_PINMUX(idx, inst),   \
 		.pin = IT8XXX2_DEV_PIN(idx, inst),           \
 		.alt_fun = IT8XXX2_DEV_ALT_FUNC(idx, inst),  \
-	},
+	}
 
 /**
  * @brief Macro function to construct a list of it8xxx2 alt items with
@@ -35,10 +35,10 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return an array of it8xxx2 alt items.
  */
-#define IT8XXX2_DT_ALT_ITEMS_LIST(inst) {			\
-	UTIL_LISTIFY(DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0),	\
-		     IT8XXX2_DT_ALT_ITEMS_FUNC,			\
-		     inst)					\
+#define IT8XXX2_DT_ALT_ITEMS_LIST(inst) {		\
+	LISTIFY(DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0),	\
+		IT8XXX2_DT_ALT_ITEMS_FUNC, (,),		\
+		inst)					\
 	}
 
 #endif /* _ITE_IT8XXX2_SOC_DT_H_ */

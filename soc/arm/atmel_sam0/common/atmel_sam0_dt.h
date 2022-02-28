@@ -90,12 +90,12 @@
 	ATMEL_SAM0_DT_NUM_PINS(DT_DRV_INST(inst))
 
 /* internal macro to structure things for use with UTIL_LISTIFY */
-#define ATMEL_SAM0_DT_PIN_ELEM(idx, node_id) ATMEL_SAM0_DT_PORT(node_id, idx),
+#define ATMEL_SAM0_DT_PIN_ELEM(idx, node_id) ATMEL_SAM0_DT_PORT(node_id, idx)
 
 /* Construct an array intializer for soc_port_pin for a device instance */
 #define ATMEL_SAM0_DT_PINS(node_id)				\
-	{ UTIL_LISTIFY(ATMEL_SAM0_DT_NUM_PINS(node_id),		\
-		       ATMEL_SAM0_DT_PIN_ELEM, node_id)		\
+	{ LISTIFY(ATMEL_SAM0_DT_NUM_PINS(node_id),		\
+		  ATMEL_SAM0_DT_PIN_ELEM, (,), node_id)		\
 	}
 
 #define ATMEL_SAM0_DT_INST_PINS(inst) \

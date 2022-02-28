@@ -363,7 +363,7 @@ extern "C" {
 #define LISTIFY(LEN, F, sep, ...) UTIL_CAT(Z_UTIL_LISTIFY_, LEN)(F, sep, __VA_ARGS__)
 
 /**
- * @brief Generates a sequence of code.
+ * @brief Generates a sequence of code. Deprecated, use @ref LISTIFY.
  *
  * @deprecated Use @ref LISTIFY instead.
  *
@@ -387,7 +387,7 @@ extern "C" {
  * @note Calling UTIL_LISTIFY with undefined arguments has undefined
  * behavior.
  */
-#define UTIL_LISTIFY(LEN, F, ...) LISTIFY(LEN, F, (), __VA_ARGS__)
+#define UTIL_LISTIFY(LEN, F, ...) LISTIFY(LEN, F, (), __VA_ARGS__) __DEPRECATED_MACRO
 
 /**
  * @brief Call a macro @p F on each provided argument with a given
