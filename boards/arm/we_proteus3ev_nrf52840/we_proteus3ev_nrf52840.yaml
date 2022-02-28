@@ -14,12 +14,7 @@ toolchain:
 supported:
   - adc
   - ble
-  - counter
   - gpio
   - i2c
-  - i2s
-  - ieee802154
-  - pwm
   - spi
-  - watchdog
-  - netif:openthread
+  
