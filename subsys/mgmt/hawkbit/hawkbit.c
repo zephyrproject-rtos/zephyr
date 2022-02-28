@@ -614,12 +614,15 @@ int hawkbit_init(void)
 	int ret = 0, rc = 0;
 	struct flash_pages_info info;
 	int32_t action_id;
-	const struct device *flash_dev;
 
-	flash_dev = DEVICE_DT_GET(FLASH_NODE);
+	fs.flash_device = DEVICE_DT_GET(FLASH_NODE);
+	if (!device_is_ready(fs.flash_device)) {
+		LOG_ERR("Flash device not ready");
+		return -ENODEV;
+	}
 
 	fs.offset = FLASH_AREA_OFFSET(storage);
-	rc = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);
+	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
 		LOG_ERR("Unable to get storage page info: %d", rc);
 		return -EIO;
@@ -628,10 +631,10 @@ int hawkbit_init(void)
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	rc = nvs_init(&fs, flash_dev->name);
+	rc = nvs_mount(&fs);
 	if (rc) {
-		LOG_ERR("Storage flash init failed: %d", rc);
-		return -ENODEV;
+		LOG_ERR("Storage flash mount failed: %d", rc);
+		return rc;
 	}
 
 	rc = nvs_read(&fs, ADDRESS_ID, &action_id, sizeof(action_id));
