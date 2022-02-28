@@ -19,6 +19,10 @@
 		bus-speed = <125000>;
 		sjw = <1>;
 		sample-point = <875>;
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
 	};
 };
 
