@@ -465,6 +465,8 @@ __syscall void z_log_msg2_static_create(const void *source,
  *
  * @param dlen Data length.
  *
+ * @param package_flags Package flags.
+ *
  * @param fmt String.
  *
  * @param ap Variable list of string arguments.
@@ -489,6 +491,8 @@ __syscall void z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
  * @param data Data.
  *
  * @param dlen Data length.
+ *
+ * @param package_flags Package flags.
  *
  * @param fmt String.
  *
