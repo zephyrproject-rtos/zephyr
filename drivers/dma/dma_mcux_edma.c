@@ -33,7 +33,7 @@ struct dma_mcux_edma_config {
 	void (*irq_config_func)(const struct device *dev);
 };
 
-static __aligned(32) edma_tcd_t
+static __attribute__((section(".nocache.dma"))) __aligned(32) edma_tcd_t
 	tcdpool[DT_INST_PROP(0, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];
 
 struct call_back {
@@ -331,10 +331,50 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 				uint32_t src, uint32_t dst, size_t size)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
+	edma_transfer_config_t *config = &(data->transferConfig);
+	edma_transfer_type_t transfer_type;
+	int key;
 
-	if (data->busy) {
-		EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
+	switch (data->dir) {
+	case MEMORY_TO_MEMORY:
+		transfer_type = kEDMA_MemoryToMemory;
+		break;
+	case MEMORY_TO_PERIPHERAL:
+		transfer_type = kEDMA_MemoryToPeripheral;
+		break;
+	case PERIPHERAL_TO_MEMORY:
+		transfer_type = kEDMA_PeripheralToMemory;
+		break;
+	case PERIPHERAL_TO_PERIPHERAL:
+		transfer_type = kEDMA_PeripheralToPeripheral;
+		break;
+	default:
+		LOG_ERR("EDMA_SubmitTransfer unsupported transfer direction");
+		return -EINVAL;
 	}
+
+	/* Lock and submit the DMA transfer */
+	key = irq_lock();
+
+	status_t ret;
+
+	EDMA_PrepareTransfer(&(data->transferConfig),
+				 (void *)src,
+				 /* convert SSIZE bitfield to bytes */
+				 1 << config->srcTransferSize,
+				 (void *)dst,
+				 /* convert DSIZE bitfield to bytes */
+				 1 << config->destTransferSize,
+				 config->minorLoopBytes,
+				 size, transfer_type);
+
+	ret = EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
+	if (ret != kStatus_Success) {
+		LOG_ERR("EDMA_SubmitTransfer error 0x%x", ret);
+	}
+
+	irq_unlock(key);
 	return 0;
 }
 
