@@ -37,6 +37,14 @@
 #define CY_CFG_PWR_VDDA_MV 3300
 #define CY_CFG_PWR_USING_ULP 0
 
+/* Dummy symbols, requres for cy_sysint.c module.
+ * NOTE: in this PSoC 6 integration, PSoC 6 Zephyr drivers (uart, spi, gpio)
+ * do not use cy_sysint.c implementation to handle interrupt routine.
+ * Instead this they use IRQ_CONNECT to define ISR.
+ */
+uint32_t __ramVectors;
+uint32_t __Vectors;
+
 static const cy_stc_fll_manual_config_t srss_0__clock_0__fll_0__fllConfig = {
 	.fllMult = 500u,
 	.refDiv = 20u,
