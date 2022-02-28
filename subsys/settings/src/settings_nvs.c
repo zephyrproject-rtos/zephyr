@@ -245,7 +245,12 @@ int settings_nvs_backend_init(struct settings_nvs *cf)
 	int rc;
 	uint16_t last_name_id;
 
-	rc = nvs_init(&cf->cf_nvs, cf->flash_dev_name);
+	cf->cf_nvs.flash_device = device_get_binding(cf->flash_dev_name);
+	if (cf->cf_nvs.flash_device == NULL) {
+		return -ENODEV;
+	}
+
+	rc = nvs_mount(&cf->cf_nvs);
 	if (rc) {
 		return rc;
 	}
