@@ -93,8 +93,24 @@
 	};
 };
 
+&gpio1 {
+	interrupts = <100 0>, <101 0>;
+};
+
+&gpio4 {
+	interrupts = <106 0>, <107 0>;
+};
+
+&gpio5 {
+	interrupts = <108 0>, <109 0>;
+};
+
 &gpio6 {
 	interrupts = <61 0>, <62 0>;
+};
+
+&gpio13 {
+	interrupts = <93 0>;
 };
 
 /* Set default power states for CM7 cpu */
