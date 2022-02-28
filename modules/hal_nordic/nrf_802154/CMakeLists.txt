@@ -67,8 +67,6 @@ target_compile_definitions(zephyr-802154-interface
     # Number of buffers in receive queue.
     NRF_802154_RX_BUFFERS=${CONFIG_NRF_802154_RX_BUFFERS}
 
-    # Enable CSMA/CA
-    NRF_802154_CSMA_CA_ENABLED=1
     NRF_802154_TX_STARTED_NOTIFY_ENABLED=1
 
     # ACK timeout
