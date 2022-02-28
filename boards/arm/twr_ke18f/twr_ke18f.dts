@@ -281,6 +281,10 @@
 	bus-speed = <125000>;
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
 };
 
 &gpioa {
