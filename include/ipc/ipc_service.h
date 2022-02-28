@@ -142,6 +142,8 @@ int ipc_service_open_instance(const struct device *instance);
  *  @param ept Endpoint object.
  *  @param cfg Endpoint configuration.
  *
+ *  @note Keep the variable pointed by @p cfg alive when endpoint is in use.
+ *
  *  @retval -EIO when no backend is registered.
  *  @retval -EINVAL when instance, endpoint or configuration is invalid.
  *  @retval -EBUSY when the instance is busy.
@@ -165,7 +167,7 @@ int ipc_service_register_endpoint(const struct device *instance,
  *  @retval -EBADMSG when the message is invalid.
  *  @retval -EBUSY when the instance is busy.
  *
- *  @retval 0 on success.
+ *  @retval bytes number of bytes sent.
  *  @retval other errno codes depending on the implementation of the backend.
  */
 int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
