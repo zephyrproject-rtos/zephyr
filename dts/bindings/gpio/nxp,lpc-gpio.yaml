@@ -29,6 +29,7 @@ properties:
         - 4
         - 5
         - 6
+        - 7
 
 gpio-cells:
   - pin
