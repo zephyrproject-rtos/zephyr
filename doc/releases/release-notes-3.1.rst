@@ -44,6 +44,15 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
+Bluetooth
+*********
+
+* Host
+
+  * The enum bt_l2cap_chan_state values BT_L2CAP_CONNECT and BT_L2CAP_DISCONNECT
+    has been renamed to BT_L2CAP_CONNECTING and BT_L2CAP_DISCONNECTING.
+
+
 New APIs in this release
 ========================
 
