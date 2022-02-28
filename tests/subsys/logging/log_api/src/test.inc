@@ -357,6 +357,8 @@ static void test_log_overflow(void)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
+	log_setup(false);
+
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		ztest_test_skip();
 	}
@@ -368,8 +370,6 @@ static void test_log_overflow(void)
 	for (int i = 0; i < CONFIG_LOG_BUFFER_SIZE; i++) {
 		data[i] = i;
 	}
-
-	log_setup(false);
 
 	uint32_t hexdump_len = get_long_hexdump();
 
@@ -591,6 +591,8 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
  */
 static void test_log_msg_dropped_notification(void)
 {
+	log_setup(false);
+
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		ztest_test_skip();
 	}
