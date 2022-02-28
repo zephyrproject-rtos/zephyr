@@ -693,7 +693,7 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 static inline void log2_generic(uint8_t level, const char *fmt, va_list ap)
 {
 	z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL, level,
-				   NULL, 0, fmt, ap);
+				   NULL, 0, 0, fmt, ap);
 }
 
 /**
@@ -800,7 +800,7 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
 		z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, _source, \
-					   _level, NULL, 0, _str, _valist); \
+					   _level, NULL, 0, 0, _str, _valist); \
 		break; \
 	} \
 	uint16_t _id = \

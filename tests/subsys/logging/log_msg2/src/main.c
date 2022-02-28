@@ -198,7 +198,7 @@ void test_log_msg2_0_args_msg(void)
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
 	z_log_msg2_runtime_create(domain, source,
-				  level, NULL, 0, TEST_MSG);
+				  level, NULL, 0, 0, TEST_MSG);
 
 	validate_base_message_set(source, domain, level,
 				   TEST_TIMESTAMP_INIT_VALUE,
@@ -231,7 +231,7 @@ void test_log_msg2_various_args(void)
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
 	z_log_msg2_runtime_create(domain, (void *)source, level, NULL,
-				  0, TEST_MSG, s8, u, lld, str, lld, iarray);
+				  0, 0, TEST_MSG, s8, u, lld, str, lld, iarray);
 	snprintfcb(str, sizeof(str), TEST_MSG, s8, u, lld, str, lld, iarray);
 
 	validate_base_message_set(source, domain, level,
@@ -258,7 +258,7 @@ void test_log_msg2_only_data(void)
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
 	z_log_msg2_runtime_create(domain, (void *)source, level, array,
-				  sizeof(array), NULL);
+				  sizeof(array), 0, NULL);
 
 	validate_base_message_set(source, domain, level,
 				   TEST_TIMESTAMP_INIT_VALUE,
@@ -287,7 +287,7 @@ void test_log_msg2_string_and_data(void)
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
 	z_log_msg2_runtime_create(domain, (void *)source, level, array,
-				  sizeof(array), TEST_MSG);
+				  sizeof(array), 0, TEST_MSG);
 
 	validate_base_message_set(source, domain, level,
 				   TEST_TIMESTAMP_INIT_VALUE,
@@ -323,7 +323,7 @@ void test_log_msg2_fp(void)
 			TEST_MSG, i, lli, (double)f, &i, d, source);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
-	z_log_msg2_runtime_create(domain, (void *)source, level, NULL, 0,
+	z_log_msg2_runtime_create(domain, (void *)source, level, NULL, 0, 0,
 				  TEST_MSG, i, lli, (double)f, &i, d, source);
 	snprintfcb(str, sizeof(str), TEST_MSG, i, lli, (double)f, &i, d, source);
 
@@ -554,7 +554,7 @@ void test_saturate(void)
 	/* Message should not fit in and be dropped. */
 	Z_LOG_MSG2_CREATE3(1, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
 	Z_LOG_MSG2_CREATE3(0, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
-	z_log_msg2_runtime_create(0, (void *)1, 2, NULL, 0, "test");
+	z_log_msg2_runtime_create(0, (void *)1, 2, NULL, 0, 0, "test");
 
 	zassert_equal(z_log_dropped_read_and_clear(), 3, "No dropped messages.");
 

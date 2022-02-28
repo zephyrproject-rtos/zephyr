@@ -333,6 +333,7 @@ do {\
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__) \
 	z_log_msg2_runtime_create(_domain_id, (void *)_source, \
 				  _level, (uint8_t *)_data, _dlen,\
+				  0,\
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
@@ -345,6 +346,7 @@ do { \
 		LOG_MSG2_DBG("create runtime message\n");\
 		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
 					  _level, (uint8_t *)_data, _dlen,\
+					  0,\
 					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 	} else if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0)) {\
@@ -455,13 +457,16 @@ __syscall void z_log_msg2_static_create(const void *source,
  *
  * @param dlen Data length.
  *
+ * @param package_flags Package flags.
+ *
  * @param fmt String.
  *
  * @param ap Variable list of string arguments.
  */
 __syscall void z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 					  uint8_t level, const void *data,
-					  size_t dlen, const char *fmt,
+					  size_t dlen, uint32_t package_flags,
+					  const char *fmt,
 					  va_list ap);
 
 /** @brief Create message at runtime.
@@ -479,6 +484,8 @@ __syscall void z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
  *
  * @param dlen Data length.
  *
+ * @param package_flags Package flags.
+ *
  * @param fmt String.
  *
  * @param ... String arguments.
@@ -486,13 +493,14 @@ __syscall void z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 static inline void z_log_msg2_runtime_create(uint8_t domain_id,
 					     const void *source,
 					     uint8_t level, const void *data,
-					     size_t dlen, const char *fmt, ...)
+					     size_t dlen, uint32_t package_flags,
+					     const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
 	z_log_msg2_runtime_vcreate(domain_id, source, level,
-				   data, dlen, fmt, ap);
+				   data, dlen, package_flags, fmt, ap);
 	va_end(ap);
 }
 
