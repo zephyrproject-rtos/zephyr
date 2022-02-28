@@ -85,14 +85,30 @@
 	};
 };
 
-&gpio9 {
-	interrupts = <99 0>;
+&gpio1 {
+	interrupts = <100 0>, <101 0>;
 };
 
-&gpio11 {
-	/* GPIO 7-11 share the same interrupt on the CM4 */
-	interrupts = <99 0>;
-	status = "disabled";
+&gpio4 {
+	interrupts = <106 0>, <107 0>;
+};
+
+&gpio5 {
+	interrupts = <108 0>, <109 0>;
+};
+
+/*
+ * GPIO 7-11 share the same interrupt on the CM4.
+ * the gpio driver only supports one of these gpio devices having an interrupt
+ * populated.
+ */
+
+&gpio12 {
+	interrupts = <61 0>, <62 0>;
+};
+
+&gpio13 {
+	interrupts = <93 0>;
 };
 
 /* Set default power states for CM4 cpu */
