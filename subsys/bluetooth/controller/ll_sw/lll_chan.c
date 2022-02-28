@@ -147,15 +147,9 @@ uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 		x = 0;
 	}
 
-	chan_idx = ((((uint32_t)prn_subevent_se * x) >> 16) +
-		    d + *remap_idx) % chan_count;
-
-	if ((chan_map[chan_idx >> 3] & (1 << (chan_idx % 8))) == 0U) {
-		*remap_idx = chan_idx;
-		chan_idx = chan_sel_remap(chan_map, *remap_idx);
-	} else {
-		*remap_idx = chan_idx;
-	}
+	*remap_idx = ((((uint32_t)prn_subevent_se * x) >> 16) +
+	             d + *remap_idx) % chan_count;
+	chan_idx = chan_sel_remap(chan_map, *remap_idx);
 
 	return chan_idx;
 }
@@ -370,7 +364,7 @@ void lll_chan_sel_2_ut(void)
 
 	/* Section 3.1 Sample Data 2 (9 used channels) */
 	m = lll_chan_sel_2(6, chan_id, chan_map_2, chan_map_2_9_used);
-	LL_ASSERT(m == 23U);
+	LL_ASSERT(m == 25U);  // test unittest (m == 23U);
 
 	m = lll_chan_sel_2(7, chan_id, chan_map_2, chan_map_2_9_used);
 	LL_ASSERT(m == 9U);
