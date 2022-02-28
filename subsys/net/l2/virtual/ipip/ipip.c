@@ -560,13 +560,13 @@ static const struct virtual_interface_api ipip_iface_api = {
 
 #define NET_IPIP_DATA(x, _)						\
 	static struct ipip_context ipip_context_data_##x = {		\
-	};
+	}
 
 #define NET_IPIP_INTERFACE_INIT(x, _)					\
 	NET_VIRTUAL_INTERFACE_INIT(ipip##x, "IP_TUNNEL" #x, ipip_init,	\
 				   NULL, &ipip_context_data_##x, NULL,	\
 				   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-				   &ipip_iface_api, IPIPV4_MTU);
+				   &ipip_iface_api, IPIPV4_MTU)
 
-UTIL_LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_DATA, _)
-UTIL_LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_INTERFACE_INIT, _)
+LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_DATA, (;), _);
+LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_INTERFACE_INIT, (;), _);

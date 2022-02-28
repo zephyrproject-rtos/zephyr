@@ -535,8 +535,8 @@ static struct display_drv_data instance_data = {
 	 ((DT_GPIO_FLAGS_BY_IDX(node_id, pha, idx) & GPIO_ACTIVE_LOW) ? \
 		ACTIVE_LOW_MASK : 0)),
 
-#define ADD_FF(i, _) 0xFF,
-#define FILL_ROW_WITH_FF(node_id, pha, idx)  UTIL_LISTIFY(COL_COUNT, ADD_FF)
+#define ADD_FF(i, _) 0xFF
+#define FILL_ROW_WITH_FF(node_id, pha, idx)  LISTIFY(COL_COUNT, ADD_FF, (,)),
 #define GET_PIXEL_ORDINAL(node_id, pha, idx) \
 	[GET_DT_ROW_IDX(idx) * COL_COUNT + \
 	 GET_DT_COL_IDX(idx)] = idx,

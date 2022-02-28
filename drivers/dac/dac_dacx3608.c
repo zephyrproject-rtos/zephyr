@@ -267,8 +267,8 @@ static const struct dac_driver_api dacx3608_driver_api = {
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
 #define INST_DT_DACX3608_FOREACH(t, inst_expr) \
-	UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
-		     CALL_WITH_ARG, inst_expr)
+	LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
+		     CALL_WITH_ARG, (), inst_expr)
 
 INST_DT_DACX3608_FOREACH(43608, DAC43608_DEVICE);
 INST_DT_DACX3608_FOREACH(53608, DAC53608_DEVICE);
