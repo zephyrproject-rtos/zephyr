@@ -6,7 +6,9 @@
 
 /dts-v1/;
 
-#include <nxp/MK66FN2M0VMD18.dtsi>
+#include <nxp/nxp_k66.dtsi>
+
+#include "ip_k66f-pinctrl.dtsi"
 
 / {
 	model = "SEGGER MK66F IP Switch board";
@@ -103,10 +105,7 @@
 
 &enet {
 	status = "okay";
-	pinctrl-0 = <&RMII0_RXD1_PTA12 &RMII0_RXD0_PTA13
-		     &RMII0_CRS_DV_PTA14 &RMII0_TXEN_PTA15
-		     &RMII0_TXD0_PTA16 &RMII0_TXD1_PTA17
-		     &ENET_1588_CLKIN_PTE26 /* used for RMII ref clk */>;
+	pinctrl-0 = <&enet_default>;
 	pinctrl-names = "default";
 
 	fixed-link {
@@ -117,8 +116,7 @@
 
 &spi1 {
 	status = "okay";
-	pinctrl-0 = <&SPI1_PCS0_PTB10 &SPI1_SCK_PTB11
-		     &SPI1_SOUT_PTB16 &SPI1_SIN_PTB17>;
+	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 
 	clock-frequency = <44000000>;
