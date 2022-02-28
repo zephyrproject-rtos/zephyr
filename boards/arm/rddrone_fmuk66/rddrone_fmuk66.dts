@@ -57,6 +57,20 @@
 			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
 	};
+
+	transceiver0: can-phy0 {
+		compatible = "nxp,tja1042", "can-transceiver-gpio";
+		max-bitrate = <5000000>;
+		standby-gpios = <&gpioc 19 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+	};
+
+	transceiver1: can-phy1 {
+		compatible = "nxp,tja1042", "can-transceiver-gpio";
+		max-bitrate = <5000000>;
+		standby-gpios = <&gpioc 18 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+	};
 };
 
 &sim {
@@ -221,6 +235,7 @@ zephyr_udc0: &usbotg {
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
+	phys = <&transceiver0>;
 };
 
 &flexcan1 {
@@ -228,6 +243,7 @@ zephyr_udc0: &usbotg {
 	pinctrl-0 = <&flexcan1_default>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
+	phys = <&transceiver1>;
 };
 
 /* external i2c port */
