@@ -157,4 +157,8 @@ zephyr_udc0: &usbhs {
 	pinctrl-0 = <&pb3a_can0_rx0 &pb2a_can0_tx0>;
 	bus-speed = <125000>;
 	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };
