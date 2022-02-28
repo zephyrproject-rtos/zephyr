@@ -161,7 +161,7 @@ static int lora_conf_set(const struct shell *sh, const char *param,
 		modem_config.tx_power = lval;
 	} else if (!strcmp("bw", param)) {
 		if (parse_long_range(&lval, sh, value,
-				     "bw", 0, INT8_MAX) < 0) {
+				     "bw", 0, INT16_MAX) < 0) {
 			return -EINVAL;
 		}
 		switch (lval) {
