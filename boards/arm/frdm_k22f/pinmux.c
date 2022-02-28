@@ -38,22 +38,6 @@ static int frdm_k22f_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
-#error "No UART0 is used"
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay) && CONFIG_SERIAL
-	/* UART1 RX, TX */
-	pinmux_pin_set(porte, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(porte, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) && CONFIG_SERIAL
-	/* UART2 RX, TX */
-	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm0), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
 	/* Red, green, blue LEDs as PWM channels*/
 	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
