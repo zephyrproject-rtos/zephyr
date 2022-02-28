@@ -33,6 +33,8 @@ enum {
 	ADV_FLAG_PROXY,
 	/** The send-call has been scheduled. */
 	ADV_FLAG_SCHEDULED,
+	/** The send-call has been pending. */
+	ADV_FLAG_SCHEDULE_PENDING,
 	/** Custom adv params have been set, we need to update the parameters on
 	 *  the next send.
 	 */
@@ -53,6 +55,7 @@ struct bt_mesh_ext_adv {
 };
 
 static void send_pending_adv(struct k_work *work);
+static bool schedule_send(struct bt_mesh_ext_adv *adv);
 
 static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_main) = {
 	.tag = (BT_MESH_LOCAL_ADV |
@@ -220,12 +223,19 @@ static void send_pending_adv(struct k_work *work)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) &&
-	    (adv->tag & BT_MESH_PROXY_ADV) &&
-	    !bt_mesh_adv_gatt_send()) {
-		atomic_set_bit(adv->flags, ADV_FLAG_PROXY);
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) ||
+	    !(adv->tag & BT_MESH_PROXY_ADV)) {
 		return;
 	}
+
+	if (!bt_mesh_adv_gatt_send()) {
+		atomic_set_bit(adv->flags, ADV_FLAG_PROXY);
+	}
+
+	if (atomic_test_and_clear_bit(adv->flags, ADV_FLAG_SCHEDULE_PENDING)) {
+		schedule_send(adv);
+	}
+
 }
 
 static bool schedule_send(struct bt_mesh_ext_adv *adv)
@@ -244,10 +254,14 @@ static bool schedule_send(struct bt_mesh_ext_adv *adv)
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 	}
 
-	if (atomic_test_bit(adv->flags, ADV_FLAG_ACTIVE) ||
-	    atomic_test_and_set_bit(adv->flags, ADV_FLAG_SCHEDULED)) {
+	if (atomic_test_bit(adv->flags, ADV_FLAG_ACTIVE)) {
+		atomic_set_bit(adv->flags, ADV_FLAG_SCHEDULE_PENDING);
+		return false;
+	} else if (atomic_test_and_set_bit(adv->flags, ADV_FLAG_SCHEDULED)) {
 		return false;
 	}
+
+	atomic_clear_bit(adv->flags, ADV_FLAG_SCHEDULE_PENDING);
 
 	/* The controller will send the next advertisement immediately.
 	 * Introduce a delay here to avoid sending the next mesh packet closer
