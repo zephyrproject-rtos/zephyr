@@ -520,6 +520,7 @@
 /include/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
 /include/drivers/adc.h                    @anangl
 /include/drivers/can.h                    @alexanderwachter @henrikbrixandersen
+/include/drivers/can/                     @alexanderwachter @henrikbrixandersen
 /include/drivers/counter.h                @nordic-krch
 /include/drivers/dac.h                    @martinjaeger
 /include/drivers/espi.h                   @albertofloyd @franciscomunoz @sjvasanth1

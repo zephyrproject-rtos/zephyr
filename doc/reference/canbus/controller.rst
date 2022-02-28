@@ -333,7 +333,13 @@ We have two ready-to-build samples demonstrating use of the Zephyr CAN API
 :ref:`SocketCAN sample <socket-can-sample>`.
 
 
-API Reference
-*************
+CAN Controller API Reference
+****************************
 
 .. doxygengroup:: can_interface
+
+
+CAN Transceiver API Reference
+*****************************
+
+.. doxygengroup:: can_transceiver
