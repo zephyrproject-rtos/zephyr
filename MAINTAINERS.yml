@@ -13,9 +13,8 @@
 #             The area has a Maintainer (approved by the TSC) who
 #             looks after the area.
 #
-#         * orphaned:
-#             No current maintainer (but maybe you could take the role as you
-#             write your new code).
+#         * odd fixes:
+#            The ares gets odd fixes and has collaborators.
 #
 #         * obsolete:
 #             Old code. Something being marked obsolete generally means it has
@@ -299,7 +298,7 @@ C library:
          - "area: C Library"
 
 CMSIS API layer:
-    status: orphaned
+    status: odd fixes
     collaborators:
          - nashif
     files:
@@ -323,8 +322,8 @@ CMSIS-DSP integration:
     labels:
         - "area: CMSIS-DSP"
 
-Common arch:
-    status: orphaned
+Common Architecture Interface:
+    status: odd fixes
     collaborators:
         - dcpleung
         - nashif
@@ -417,7 +416,7 @@ Disk:
         - "area: Disk Access"
 
 Display drivers:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - jfischer-no
         - gmarull
@@ -526,7 +525,7 @@ Documentation:
         - "area: Clock control"
 
 "Drivers: Console":
-    status: orphaned
+    status: odd fixes
     collaborators:
         - pfalcon
     files:
@@ -706,7 +705,7 @@ Documentation:
         - "area: IEEE 802.15.4"
 
 "Drivers: Interrupt controllers":
-    status: orphaned
+    status: odd fixes
     files:
         - drivers/interrupt_controller/
         - dts/bindings/interrupt-controller/
@@ -791,7 +790,7 @@ Documentation:
         - "area: Modem"
 
 "Drivers: Neural Networks":
-    status: orphaned
+    status: odd fixes
     collaborators:
         - nashif
     files:
@@ -942,8 +941,8 @@ Documentation:
     labels:
         - "area: Timer"
 
-"Drivers: video":
-    status: orphaned
+"Drivers: Video":
+    status: odd fixes
     collaborators:
         - loicpoulain
     files:
@@ -954,7 +953,7 @@ Documentation:
         - "area: Video"
 
 "Drivers: Watchdog":
-    status: orphaned
+    status: odd fixes
     collaborators:
         - katsuster
         - martinjaeger
@@ -981,7 +980,7 @@ Documentation:
         - "area: Wifi"
 
 "Drivers: WiFi es-WiFi":
-    status: orphaned
+    status: odd fixes
     collaborators:
         - loicpoulain
     files:
@@ -1036,7 +1035,7 @@ IPC:
         - "area: IPC"
 
 JSON Web Token:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - mrfuchs
         - sir-branch
@@ -1048,7 +1047,7 @@ JSON Web Token:
         - "area: JSON"
 
 Kconfig:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - tejlmand
         - nashif
@@ -1099,7 +1098,7 @@ Base OS:
         - "area: Base OS"
 
 Little FS:
-    status: orphaned
+    status: odd fixes
     files:
         - subsys/fs/Kconfig.littlefs
         - subsys/fs/littlefs_fs.c
@@ -1163,7 +1162,7 @@ MCU Manager:
         - "area: mcumgr"
 
 OSDP:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - sidcha
     files:
@@ -1174,7 +1173,7 @@ OSDP:
         - "area: OSDP"
 
 hawkBit:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - ycsin
     files:
@@ -1335,7 +1334,7 @@ nRF52 BSIM:
         - "platform: nrf52_bsim"
 
 POSIX API layer:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - pfalcon
         - enjiamai
@@ -1442,7 +1441,7 @@ Shields:
         - "area: Shields"
 
 SPARC arch:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - martin-aberg
     files:
@@ -1529,7 +1528,7 @@ Nuvoton_NPCX Platforms:
         - "platform: Nuvoton_NPCX"
 
 Nuvoton_Numicro Platforms:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - ssekar15
     files:
@@ -1542,7 +1541,7 @@ Nuvoton_Numicro Platforms:
         - "platform: Nuvoton_Numicro"
 
 SiLabs Platforms:
-    status: orphaned
+    status: odd fixes
     collaborators:
         - chrta
     files:
@@ -1879,7 +1878,7 @@ x86 arch:
     labels:
         - "area: X86"
 
-CI:
+Continuous Integration:
     status: maintained
     maintainers:
         - nashif
@@ -1907,7 +1906,7 @@ ZTest:
         - "area: Testsuite"
 
 Random:
-    status: orphaned
+    status: odd fixes
     collaborators:
          - ceolin
     files:

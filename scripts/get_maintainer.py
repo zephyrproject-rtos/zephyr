@@ -140,9 +140,9 @@ def _parse_args():
         help="Count the number of unique maintainers")
     count_parser.add_argument(
         "-o",
-        "--count-orphaned",
+        "--count-unmaintained",
         action="store_true",
-        help="Count the number of orphaned areas")
+        help="Count the number of unmaintained areas")
     count_parser.set_defaults(cmd_fn=Maintainers._count_cmd)
 
     args = parser.parse_args()
@@ -289,22 +289,22 @@ class Maintainers:
     def _count_cmd(self, args):
         # 'count' subcommand implementation
 
-        if not (args.count_areas or args.count_collaborators or args.count_maintainers or args.count_orphaned):
+        if not (args.count_areas or args.count_collaborators or args.count_maintainers or args.count_unmaintained):
             # if no specific count is provided, print them all
             args.count_areas = True
             args.count_collaborators = True
             args.count_maintainers = True
-            args.count_orphaned = True
+            args.count_unmaintained = True
 
-        orphaned = 0
+        unmaintained = 0
         collaborators = set()
         maintainers = set()
 
         for area in self.areas.values():
             if area.status == 'maintained':
                 maintainers = maintainers.union(set(area.maintainers))
-            elif area.status == 'orphaned':
-                orphaned += 1
+            elif area.status == 'odd fixes':
+                unmaintained += 1
             collaborators = collaborators.union(set(area.collaborators))
 
         if args.count_areas:
@@ -313,8 +313,8 @@ class Maintainers:
             print('{:14}\t{}'.format('maintainers:', len(maintainers)))
         if args.count_collaborators:
             print('{:14}\t{}'.format('collaborators:', len(collaborators)))
-        if args.count_orphaned:
-            print('{:14}\t{}'.format('orphaned:', orphaned))
+        if args.count_unmaintained:
+            print('{:14}\t{}'.format('unmaintained:', unmaintained))
 
     def _list_cmd(self, args):
         # 'list' subcommand implementation
@@ -481,7 +481,7 @@ def _check_maintainers(maints_path, yaml):
                "files-exclude", "files-regex", "files-regex-exclude",
                "labels", "description"}
 
-    ok_status = {"maintained", "odd fixes", "orphaned", "obsolete"}
+    ok_status = {"maintained", "odd fixes", "unmaintained", "obsolete"}
     ok_status_s = ", ".join('"' + s + '"' for s in ok_status)  # For messages
 
     for area_name, area_dict in yaml.items():
