@@ -1,7 +1,7 @@
 .. _we_proteus2ev_nrf52832:
 
 Würth Elektronik Proteus-II-EV
-########
+##############################
 
 Overview
 ********
