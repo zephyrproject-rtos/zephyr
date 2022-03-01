@@ -1606,10 +1606,27 @@ void radio_ar_status_reset(void)
 
 uint32_t radio_ar_has_match(void)
 {
-	return (radio_bc_has_match() &&
-		NRF_AAR->EVENTS_END &&
-		NRF_AAR->EVENTS_RESOLVED &&
-		!NRF_AAR->EVENTS_NOTRESOLVED);
+	if (!radio_bc_has_match()) {
+		return 0U;
+	}
+
+	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
+
+	while (NRF_AAR->EVENTS_END == 0U) {
+		__WFE();
+		__SEV();
+		__WFE();
+	}
+
+	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
+
+	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+
+	if (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) {
+		return 1U;
+	}
+
+	return 0U;
 }
 
 void radio_ar_resolve(const uint8_t *addr)
