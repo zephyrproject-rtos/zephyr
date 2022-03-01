@@ -77,6 +77,24 @@
 #define NRF_FUN_TWIM_SCL 11U
 /** TWI master SDA */
 #define NRF_FUN_TWIM_SDA 12U
+/** I2S SCK in master mode */
+#define NRF_FUN_I2S_SCK_M 13U
+/** I2S SCK in slave mode */
+#define NRF_FUN_I2S_SCK_S 14U
+/** I2S LRCK in master mode */
+#define NRF_FUN_I2S_LRCK_M 15U
+/** I2S LRCK in slave mode */
+#define NRF_FUN_I2S_LRCK_S 16U
+/** I2S SDIN */
+#define NRF_FUN_I2S_SDIN 17U
+/** I2S SDOUT */
+#define NRF_FUN_I2S_SDOUT 18U
+/** I2S MCK */
+#define NRF_FUN_I2S_MCK 19U
+/** PDM CLK */
+#define NRF_FUN_PDM_CLK 20U
+/** PDM DIN */
+#define NRF_FUN_PDM_DIN 21U
 
 /** @} */
 
