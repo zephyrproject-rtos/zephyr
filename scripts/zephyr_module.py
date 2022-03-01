@@ -396,6 +396,8 @@ def parse_modules(zephyr_base, modules=None, extra_modules=None):
         extra_modules = []
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
+
+    all_modules_by_name = {}
     # dep_modules is a list of all modules that has an unresolved dependency
     dep_modules = []
     # start_modules is a list modules with no depends left (no incoming edge)
@@ -410,15 +412,18 @@ def parse_modules(zephyr_base, modules=None, extra_modules=None):
 
         meta = process_module(project)
         if meta:
-            section = meta.get('build', dict())
-            deps = section.get('depends', [])
-            if not deps:
-                start_modules.append(Module(project, meta, []))
-            else:
-                dep_modules.append(Module(project, meta, deps))
+            depends = meta.get('build', {}).get('depends', [])
+            all_modules_by_name[meta['name']] = Module(project, meta, depends)
+
         elif project in extra_modules:
             sys.exit(f'{project}, given in ZEPHYR_EXTRA_MODULES, '
                      'is not a valid zephyr module')
+
+    for module in all_modules_by_name.values():
+        if not module.depends:
+            start_modules.append(module)
+        else:
+            dep_modules.append(module)
 
     # This will do a topological sort to ensure the modules are ordered
     # according to dependency settings.
