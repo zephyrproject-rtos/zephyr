@@ -13,6 +13,7 @@
 #include <device.h>
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
+#include <pm/pm.h>
 
 struct mcux_lpuart_config {
 	LPUART_Type *base;
@@ -20,7 +21,7 @@ struct mcux_lpuart_config {
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
 	void (*irq_config_func)(const struct device *dev);
 #endif
 };
@@ -30,8 +31,35 @@ struct mcux_lpuart_data {
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
+#ifdef CONFIG_PM
+	bool pm_constraint_on;
+	bool tx_poll_stream_on;
+	bool tx_int_stream_on;
+#endif /* CONFIG_PM */
 	struct uart_config uart_config;
 };
+
+#ifdef CONFIG_PM
+static void mcux_lpuart_pm_constraint_set(const struct device *dev)
+{
+	struct mcux_lpuart_data *data = dev->data;
+
+	if (!data->pm_constraint_on) {
+		data->pm_constraint_on = true;
+		pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+	}
+}
+
+static void mcux_lpuart_pm_constraint_release(const struct device *dev)
+{
+	struct mcux_lpuart_data *data = dev->data;
+
+	if (data->pm_constraint_on) {
+		data->pm_constraint_on = false;
+		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+	}
+}
+#endif /* CONFIG_PM */
 
 static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -50,12 +78,35 @@ static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
 static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct mcux_lpuart_config *config = dev->config;
+	int key;
+#ifdef CONFIG_PM
+	struct mcux_lpuart_data *data = dev->data;
+#endif
 
 	while (!(LPUART_GetStatusFlags(config->base)
 		& kLPUART_TxDataRegEmptyFlag)) {
 	}
+	/* Lock interrupts while we send data */
+	key = irq_lock();
+#ifdef CONFIG_PM
+	/*
+	 * We must keep the part from entering lower power mode until the
+	 * tranmission completes. Set the power constraint, and enable
+	 * the tranmission complete interrupt so we know when tranmission is
+	 * completed.
+	 */
+	if (!data->tx_poll_stream_on && !data->tx_int_stream_on) {
+		data->tx_poll_stream_on = true;
+		mcux_lpuart_pm_constraint_set(dev);
+		/* Enable TC interrupt */
+		LPUART_EnableInterrupts(config->base,
+			kLPUART_TransmissionCompleteInterruptEnable);
+
+	}
+#endif /* CONFIG_PM */
 
 	LPUART_WriteByte(config->base, c);
+	irq_unlock(key);
 }
 
 static int mcux_lpuart_err_check(const struct device *dev)
@@ -97,7 +148,6 @@ static int mcux_lpuart_fifo_fill(const struct device *dev,
 
 		LPUART_WriteByte(config->base, tx_data[num_tx++]);
 	}
-
 	return num_tx;
 }
 
@@ -121,16 +171,45 @@ static void mcux_lpuart_irq_tx_enable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
+#ifdef CONFIG_PM
+	struct mcux_lpuart_data *data = dev->data;
+	int key;
+#endif
 
+#ifdef CONFIG_PM
+	key = irq_lock();
+	data->tx_poll_stream_on = false;
+	data->tx_int_stream_on = true;
+	/* Do not allow system to sleep while UART tx is ongoing */
+	mcux_lpuart_pm_constraint_set(dev);
+#endif
 	LPUART_EnableInterrupts(config->base, mask);
+#ifdef CONFIG_PM
+	irq_unlock(key);
+#endif
 }
 
 static void mcux_lpuart_irq_tx_disable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
+#ifdef CONFIG_PM
+	struct mcux_lpuart_data *data = dev->data;
+	int key;
+
+	key = irq_lock();
+#endif
 
 	LPUART_DisableInterrupts(config->base, mask);
+#ifdef CONFIG_PM
+	data->tx_int_stream_on = false;
+	/*
+	 * If transmission IRQ is no longer enabled,
+	 * transmission is complete. Release pm constraint.
+	 */
+	mcux_lpuart_pm_constraint_release(dev);
+	irq_unlock(key);
+#endif
 }
 
 static int mcux_lpuart_irq_tx_complete(const struct device *dev)
@@ -225,15 +304,37 @@ static void mcux_lpuart_irq_callback_set(const struct device *dev,
 	data->cb_data = cb_data;
 }
 
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
 static void mcux_lpuart_isr(const struct device *dev)
 {
 	struct mcux_lpuart_data *data = dev->data;
+#if CONFIG_PM
+	const struct mcux_lpuart_config *config = dev->config;
+#endif
 
+#if CONFIG_PM
+	if (LPUART_GetStatusFlags(config->base) &
+		kLPUART_TransmissionCompleteFlag) {
+
+		if (data->tx_poll_stream_on) {
+			/* Poll transmission complete. Allow system to sleep */
+			LPUART_DisableInterrupts(config->base,
+				kLPUART_TransmissionCompleteInterruptEnable);
+			data->tx_poll_stream_on = false;
+			mcux_lpuart_pm_constraint_release(dev);
+		}
+	}
+#endif /* CONFIG_PM */
+
+#if CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
 	}
+#endif
 }
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_PM */
 
 static int mcux_lpuart_configure_init(const struct device *dev,
 				      const struct uart_config *cfg)
@@ -363,8 +464,14 @@ static int mcux_lpuart_init(const struct device *dev)
 	/* set initial configuration */
 	mcux_lpuart_configure_init(dev, uart_api_config);
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
 	config->irq_config_func(dev);
+#endif
+
+#ifdef CONFIG_PM
+	data->pm_constraint_on = false;
+	data->tx_poll_stream_on = false;
+	data->tx_int_stream_on = false;
 #endif
 
 	return 0;
@@ -397,7 +504,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 };
 
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
 #define MCUX_LPUART_IRQ_INIT(n, i)					\
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
