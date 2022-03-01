@@ -8,6 +8,7 @@
 
 #include <kernel.h>
 #include <device.h>
+#include <drivers/can/transceiver.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
@@ -334,6 +335,15 @@ int mcp2515_get_max_filters(const struct device *dev, enum can_ide id_type)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
+int mcp2515_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+{
+	const struct mcp2515_config *dev_cfg = dev->config;
+
+	*max_bitrate = dev_cfg->max_bitrate;
+
+	return 0;
+}
+
 static int mcp2515_set_timing(const struct device *dev,
 			      const struct can_timing *timing,
 			      const struct can_timing *timing_data)
@@ -452,18 +462,34 @@ done:
 
 static int mcp2515_set_mode(const struct device *dev, enum can_mode mode)
 {
+	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
 	int ret;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
+	if (dev_cfg->phy != NULL) {
+		ret = can_transceiver_enable(dev_cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			goto done;
+		}
+	}
+
 	k_usleep(MCP2515_OSC_STARTUP_US);
 
 	ret = mcp2515_set_mode_int(dev,
 			mcp2515_convert_canmode_to_mcp2515mode(mode));
 	if (ret < 0) {
 		LOG_ERR("Failed to set the mode [%d]", ret);
+
+		if (dev_cfg->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(dev_cfg->phy);
+		}
 	}
 
+done:
 	k_mutex_unlock(&dev_data->mutex);
 	return ret;
 }
@@ -816,6 +842,7 @@ static const struct can_driver_api can_api_funcs = {
 	.set_state_change_callback = mcp2515_set_state_change_callback,
 	.get_core_clock = mcp2515_get_core_clock,
 	.get_max_filters = mcp2515_get_max_filters,
+	.get_max_bitrate = mcp2515_get_max_bitrate,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x01,
@@ -848,6 +875,13 @@ static int mcp2515_init(const struct device *dev)
 	for (i = 0; i < MCP2515_TX_CNT; i++) {
 		k_sem_init(&dev_data->tx_cb[i].sem, 0, 1);
 		dev_data->tx_cb[i].cb = NULL;
+	}
+
+	if (dev_cfg->phy != NULL) {
+		if (!device_is_ready(dev_cfg->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
 	}
 
 	if (!spi_is_ready(&dev_cfg->bus)) {
@@ -948,7 +982,9 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.tq_bs2 = DT_INST_PROP_OR(0, phase_seg2, 0),
 	.bus_speed = DT_INST_PROP(0, bus_speed),
 	.osc_freq = DT_INST_PROP(0, osc_freq),
-	.sample_point = DT_INST_PROP_OR(0, sample_point, 0)
+	.sample_point = DT_INST_PROP_OR(0, sample_point, 0),
+	.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phys)),
+	.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(0, 1000000),
 };
 
 DEVICE_DT_INST_DEFINE(0, &mcp2515_init, NULL,
