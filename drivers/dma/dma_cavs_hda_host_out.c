@@ -7,7 +7,6 @@
 #define DT_DRV_COMPAT intel_cavs_hda_host_out
 
 #include <drivers/dma.h>
-#include <cavs_hda.h>
 #include "dma_cavs_hda.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL

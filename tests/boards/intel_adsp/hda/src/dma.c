@@ -6,7 +6,6 @@
 #include <kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
-#include <cavs_hda.h>
 #include <drivers/dma.h>
 #include "tests.h"
 
@@ -17,6 +16,11 @@
 
 static __aligned(128) uint8_t dma_buf[DMA_BUF_SIZE];
 
+#define HDA_HOST_IN_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_in), reg, 0)
+#define HDA_HOST_OUT_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 0)
+#define HDA_STREAM_COUNT DT_PROP(DT_NODELABEL(hda_host_out), dma_channels)
+#define HDA_REGBLOCK_SIZE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 1)
+#include <cavs_hda.h>
 
 static volatile int msg_cnt;
 static volatile int msg_res;
