@@ -129,7 +129,11 @@ void z_arm64_el2_init(void)
 
 	zero_cntvoff_el2();		/* Set 64-bit virtual timer offset to 0 */
 	zero_cnthctl_el2();
+#ifdef CONFIG_CPU_AARCH64_CORTEX_R
+	zero_cnthps_ctl_el2();
+#else
 	zero_cnthp_ctl_el2();
+#endif
 	/*
 	 * Enable this if/when we use the hypervisor timer.
 	 * write_cnthp_cval_el2(~(uint64_t)0);
