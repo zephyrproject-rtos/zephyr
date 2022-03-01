@@ -10,6 +10,9 @@
 /**
  * @file
  * @brief Public LoRaWAN APIs
+ * @defgroup lorawan_api LoRaWAN APIs
+ * @ingroup subsystem
+ * @{
  */
 
 #include <device.h>
@@ -279,5 +282,9 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_LORAWAN_LORAWAN_H_ */
