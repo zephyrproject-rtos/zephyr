@@ -524,30 +524,32 @@ static int hci_set_ad(uint16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 }
 
 static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
-				    const struct bt_ad *ad, size_t ad_len)
+				    size_t total_data_len, const struct bt_ad *ad, size_t ad_len)
 {
 	struct bt_hci_cp_le_set_ext_adv_data *set_data;
 	struct net_buf *buf;
+	size_t cmd_size;
 	int err;
-	uint8_t max_data_size;
 
-	buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
+	/* Provide the opportunity to truncate the complete name */
+	if (!atomic_test_bit(adv->flags, BT_ADV_EXT_ADV) &&
+	    total_data_len > BT_GAP_ADV_MAX_ADV_DATA_LEN) {
+		total_data_len = BT_GAP_ADV_MAX_ADV_DATA_LEN;
+	}
+
+	cmd_size = total_data_len +
+		   offsetof(struct bt_hci_cp_le_set_ext_adv_data, data);
+
+	buf = bt_hci_cmd_create(hci_op, cmd_size);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	set_data = net_buf_add(buf, sizeof(*set_data));
-	(void)memset(set_data, 0, sizeof(*set_data));
+	set_data = net_buf_add(buf, cmd_size);
+	(void)memset(set_data, 0, cmd_size);
 
-	if (atomic_test_bit(adv->flags, BT_ADV_EXT_ADV)) {
-		max_data_size = BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN;
-	} else {
-		max_data_size = BT_GAP_ADV_MAX_ADV_DATA_LEN;
-	}
-
-	err = set_data_add_complete(set_data->data, max_data_size, ad, ad_len,
-				    &set_data->len);
-
+	err = set_data_add_complete(set_data->data, total_data_len,
+				    ad, ad_len, &set_data->len);
 	if (err) {
 		net_buf_unref(buf);
 		return err;
@@ -629,7 +631,7 @@ static int hci_set_ad_ext(struct bt_le_ext_adv *adv, uint16_t hci_op,
 		/* If possible, set all data at once.
 		 * This allows us to update advertising data while advertising.
 		 */
-		return hci_set_adv_ext_complete(adv, hci_op, ad, ad_len);
+		return hci_set_adv_ext_complete(adv, hci_op, total_len_bytes, ad, ad_len);
 	} else {
 		return hci_set_adv_ext_fragmented(adv, hci_op, ad, ad_len);
 	}
