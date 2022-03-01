@@ -40,3 +40,21 @@ tests:
   drivers.stm32_clock_configuration.common.sysclksrc_48_msi:
     extra_args: DTC_OVERLAY_FILE="boards/wl_clear_clocks.overlay;boards/msi_range11.overlay"
     platform_allow: nucleo_wl55jc
+  drivers.stm32_clock_configuration.common.sysclksrc_wb_48_msi:
+    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/msi_range11.overlay"
+    platform_allow: nucleo_wb55rg
+  drivers.stm32_clock_configuration.common.sysclksrc_wb_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/hsi_16.overlay"
+    platform_allow: nucleo_wb55rg
+  drivers.stm32_clock_configuration.common.sysclksrc_wb_hse_32:
+    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/hse_32.overlay"
+    platform_allow: nucleo_wb55rg
+  drivers.stm32_clock_configuration.common.sysclksrc_wb_pll_48_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/wb_pll_48_hsi_16.overlay"
+    platform_allow: nucleo_wb55rg
+  drivers.stm32_clock_configuration.common.sysclksrc_wb_pll_64_hse_32:
+    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/wb_pll_64_hse_32.overlay"
+    platform_allow: nucleo_wb55rg
+  drivers.stm32_clock_configuration.common.sysclksrc_wb_pll_48_msi_4:
+    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/wb_pll_48_msi_4.overlay"
+    platform_allow: nucleo_wb55rg
