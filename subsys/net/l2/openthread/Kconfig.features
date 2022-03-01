@@ -208,3 +208,12 @@ config OPENTHREAD_SRP_CLIENT
 config OPENTHREAD_SRP_SERVER
 	bool "Enable SRP Server support"
 	select OPENTHREAD_ECDSA
+
+config OPENTHREAD_CSL_DEBUG
+	bool "Enable CSL debugging"
+
+config OPENTHREAD_DATSET_UPDATER
+	bool "Enable dataset updater"
+
+config OPENTHREAD_UPTIME
+	bool "Enable openthread uptime counter"
