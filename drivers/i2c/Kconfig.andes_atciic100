@@ -1,0 +1,15 @@
+# Kconfig Andes ATCGPIO100 configuration option
+#
+# Copyright (c) 2019 Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_ANDES_ATCIIC100
+	bool "Andes ATCIIC100 I2C driver"
+	depends on SOC_SERIES_RISCV_ANDES_V5
+	select HAS_DTS_I2C
+	help
+	  Enable driver for the Andes ATCIIC100 I2C controller.
+
+	  Says n if not sure.
