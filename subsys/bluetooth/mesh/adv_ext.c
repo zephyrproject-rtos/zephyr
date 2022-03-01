@@ -26,6 +26,10 @@
 /* Convert from ms to 0.625ms units */
 #define ADV_INT_FAST_MS    20
 
+#ifndef CONFIG_BT_MESH_RELAY_ADV_SETS
+#define CONFIG_BT_MESH_RELAY_ADV_SETS 0
+#endif
+
 enum {
 	/** Controller is currently advertising */
 	ADV_FLAG_ACTIVE,
