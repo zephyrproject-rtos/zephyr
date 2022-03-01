@@ -138,7 +138,8 @@ endif # NRF_802154_RADIO_DRIVER
 
 config NRF_802154_SERIALIZATION
 	bool
-	select RPMSG_SERVICE
+	select IPC_SERVICE
+	select MBOX
 	help
 	  This helper symbol indicates that the nRF 802.15.4 serialization is available.
 
@@ -173,10 +174,6 @@ config NRF_802154_SER_RADIO_INIT_PRIO
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.
 
-choice RPMSG_SERVICE_MODE
-	default RPMSG_SERVICE_MODE_REMOTE
-endchoice
-
 endif
 
 menu "nRF 802.15.4 serialization"
@@ -203,10 +200,6 @@ config NRF_802154_RX_BUFFERS
 	help
 	  Number of buffers in nRF 802.15.4 driver serialization host's receive queue.
 	  If this value is modified, its remote counterpart must be set to the exact same value.
-
-choice RPMSG_SERVICE_MODE
-	default RPMSG_SERVICE_MODE_MASTER
-endchoice
 
 endif
 
