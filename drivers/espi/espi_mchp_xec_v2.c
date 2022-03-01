@@ -852,6 +852,12 @@ static void espi_pc_isr(const struct device *dev)
 	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
 	uint32_t status = regs->PCSTS;
 
+	LOG_DBG("%s %x", __func__, status);
+	if (status & MCHP_ESPI_PC_STS_BUS_ERR) {
+		LOG_ERR("%s bus error", __func__);
+		regs->PCSTS = MCHP_ESPI_PC_STS_BUS_ERR;
+	}
+
 	if (status & MCHP_ESPI_PC_STS_EN_CHG) {
 		if (status & MCHP_ESPI_PC_STS_EN) {
 			setup_espi_io_config(dev, MCHP_ESPI_IOBAR_INIT_DFLT);
