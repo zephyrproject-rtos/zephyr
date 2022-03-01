@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <drivers/can/transceiver.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <drivers/pinctrl.h>
@@ -372,6 +373,15 @@ int can_stm32_set_mode(const struct device *dev, enum can_mode mode)
 	LOG_DBG("Set mode %d", mode);
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
+
+	if (cfg->phy != NULL) {
+		ret = can_transceiver_enable(cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			goto done;
+		}
+	}
+
 	ret = can_enter_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
@@ -401,8 +411,15 @@ done:
 	ret = can_leave_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
+
+		if (cfg->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(cfg->phy);
+		}
 	}
+
 	k_mutex_unlock(&data->inst_mutex);
+
 	return ret;
 }
 
@@ -472,6 +489,15 @@ int can_stm32_get_max_filters(const struct device *dev, enum can_ide id_type)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
+int can_stm32_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+{
+	const struct can_stm32_config *config = dev->config;
+
+	*max_bitrate = config->max_bitrate;
+
+	return 0;
+}
+
 static int can_stm32_init(const struct device *dev)
 {
 	const struct can_stm32_config *cfg = dev->config;
@@ -498,6 +524,13 @@ static int can_stm32_init(const struct device *dev)
 	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL;
 	(void)memset(data->rx_cb, 0, sizeof(data->rx_cb));
 	(void)memset(data->cb_arg, 0, sizeof(data->cb_arg));
+
+	if (cfg->phy != NULL) {
+		if (!device_is_ready(cfg->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
+	}
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -1146,6 +1179,7 @@ static const struct can_driver_api can_api_funcs = {
 	.set_state_change_callback = can_stm32_set_state_change_callback,
 	.get_core_clock = can_stm32_get_core_clock,
 	.get_max_filters = can_stm32_get_max_filters,
+	.get_max_bitrate = can_stm32_get_max_bitrate,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x00,
@@ -1183,7 +1217,9 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
 	},
 	.config_irq = config_can_1_irq,
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can1))
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can1)),
+	.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_NODELABEL(can1), phys)),
+	.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(DT_NODELABEL(can1), 1000000),
 };
 
 static struct can_stm32_data can_stm32_dev_data_1;
@@ -1284,7 +1320,9 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),
 	},
 	.config_irq = config_can_2_irq,
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can2))
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can2)),
+	.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_NODELABEL(can2), phys)),
+	.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(DT_NODELABEL(can2), 1000000),
 };
 
 static struct can_stm32_data can_stm32_dev_data_2;
