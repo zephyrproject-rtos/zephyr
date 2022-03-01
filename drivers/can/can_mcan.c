@@ -8,6 +8,7 @@
 #include <string.h>
 #include <kernel.h>
 #include <drivers/can.h>
+#include <drivers/can/transceiver.h>
 #include "can_mcan.h"
 #include "can_mcan_int.h"
 #include <logging/log.h>
@@ -212,9 +213,23 @@ int can_mcan_set_mode(const struct can_mcan_config *cfg, enum can_mode mode)
 	struct can_mcan_reg *can = cfg->can;
 	int ret;
 
+	if (cfg->phy != NULL) {
+		ret = can_transceiver_enable(cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			return ret;
+		}
+	}
+
 	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
+
+		if (cfg->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(cfg->phy);
+		}
+
 		return -EIO;
 	}
 
@@ -252,6 +267,11 @@ int can_mcan_set_mode(const struct can_mcan_config *cfg, enum can_mode mode)
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
+
+		if (cfg->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(cfg->phy);
+		}
 	}
 
 	return 0;
@@ -275,16 +295,31 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 		k_sem_init(&data->tx_fin_sem[i], 0, 1);
 	}
 
+	if (cfg->phy != NULL) {
+		if (!device_is_ready(cfg->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
+
+		ret = can_transceiver_enable(cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			return -EIO;
+		}
+	}
+
 	ret = can_exit_sleep_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to exit sleep mode");
-		return -EIO;
+		ret = -EIO;
+		goto done;
 	}
 
 	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
-		return -EIO;
+		ret = -EIO;
+		goto done;
 	}
 
 	/* Configuration Change Enable */
@@ -376,7 +411,8 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 				      cfg->sample_point);
 		if (ret == -EINVAL) {
 			LOG_ERR("Can't find timing for given param");
-			return -EIO;
+			ret = -EIO;
+			goto done;
 		}
 		LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
 			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
@@ -397,7 +433,8 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 					   cfg->sample_point_data);
 		if (ret == -EINVAL) {
 			LOG_ERR("Can't find timing for given dataphase param");
-			return -EIO;
+			ret = -EIO;
+			goto done;
 		}
 
 		LOG_DBG("Sample-point err data phase: %d", ret);
@@ -441,10 +478,17 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
-		return -EIO;
+		ret = -EIO;
+		goto done;
 	}
 
-	return 0;
+done:
+	if (ret != 0 && cfg->phy != NULL) {
+		/* Attempt to disable the CAN transceiver in case of error */
+		(void)can_transceiver_disable(cfg->phy);
+	}
+
+	return ret;
 }
 
 static void can_mcan_state_change_handler(const struct can_mcan_config *cfg,
