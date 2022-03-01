@@ -3,6 +3,7 @@
 
 set(SUPPORTED_EMU_PLATFORMS armfvp)
 set(ARMFVP_BIN_NAME FVP_BaseR_AEMv8R)
+set(ARMFVP_MIN_VERSION 11.16.16)
 
 set(ARMFVP_FLAGS
   -C cluster0.has_aarch64=1
