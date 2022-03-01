@@ -27,6 +27,8 @@ To Run the Fixed Virtual Platform simulation tool you must download "Armv8-R AEM
 FVP" from Arm developer [1]_ (This might require the user to register) and
 install it on your host PC.
 
+The current minimum required version of "Armv8-R AEM FVP" is 11.16.16.
+
 Hardware
 ********
 
