@@ -9,7 +9,7 @@ tests:
     platform_allow: nucleo_g071rb nucleo_g474re
   drivers.stm32_clock_configuration.common.sysclksrc_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_16.overlay"
-    platform_allow: nucleo_g071rb nucleo_l152re nucleo_l073rz
+    platform_allow: nucleo_g071rb nucleo_l152re nucleo_l073rz nucleo_wl55jc
   drivers.stm32_clock_configuration.common.sysclksrc_hse_24:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_24.overlay"
     platform_allow: nucleo_g474re
@@ -28,3 +28,15 @@ tests:
   drivers.stm32_clock_configuration.common.sysclksrc_msi_range6:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/msi_range6.overlay"
     platform_allow: nucleo_l152re nucleo_l073rz
+  drivers.stm32_clock_configuration.common.sysclksrc_pll_48_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/wl_clear_clocks.overlay;boards/pll_48_hsi_16.overlay"
+    platform_allow: nucleo_wl55jc
+  drivers.stm32_clock_configuration.common.sysclksrc_pll_48_hse_32:
+    extra_args: DTC_OVERLAY_FILE="boards/wl_clear_clocks.overlay;boards/wl_pll_48_hse_32.overlay"
+    platform_allow: nucleo_wl55jc
+  drivers.stm32_clock_configuration.common.sysclksrc_32_hse:
+    extra_args: DTC_OVERLAY_FILE="boards/wl_clear_clocks.overlay;boards/wl_32_hse.overlay"
+    platform_allow: nucleo_wl55jc
+  drivers.stm32_clock_configuration.common.sysclksrc_48_msi:
+    extra_args: DTC_OVERLAY_FILE="boards/wl_clear_clocks.overlay;boards/msi_range11.overlay"
+    platform_allow: nucleo_wl55jc
