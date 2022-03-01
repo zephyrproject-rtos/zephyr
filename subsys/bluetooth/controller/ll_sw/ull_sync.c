@@ -296,7 +296,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 	/* It is safe to remove association with scanner as cancelled flag is
 	 * set and sync has not been established.
 	 */
-	scan->periodic.sync = NULL;
+	ull_sync_setup_reset(scan);
 
 	/* Mark the sync context as sync create cancelled */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)) {
@@ -733,7 +733,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-void ull_sync_setup_complete(struct ll_scan_set *scan)
+void ull_sync_setup_reset(struct ll_scan_set *scan)
 {
 	/* Remove the sync context from being associated with scan contexts */
 	scan->periodic.sync = NULL;
