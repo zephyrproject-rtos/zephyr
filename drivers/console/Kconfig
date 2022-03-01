@@ -87,6 +87,15 @@ config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
 	  Fixed amount of time which unit is milliseconds to keep the UART
 	  console in use flag true.
 
+config JAILHOUSE_DEBUG_CONSOLE
+	bool "Use JAILHOUSE_DEBUG console"
+	select CONSOLE_HAS_DRIVER
+	depends on ARM64
+	help
+	  Emit console messages to a jailhouse hypervisor debug console.
+	  Useful in board bring-up if there aren't any working serial
+	  drivers.
+
 config RAM_CONSOLE
 	bool "Use RAM console"
 	select CONSOLE_HAS_DRIVER
