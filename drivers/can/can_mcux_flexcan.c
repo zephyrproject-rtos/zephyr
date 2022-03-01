@@ -9,6 +9,7 @@
 #include <zephyr.h>
 #include <sys/atomic.h>
 #include <drivers/can.h>
+#include <drivers/can/transceiver.h>
 #include <drivers/clock_control.h>
 #include <device.h>
 #include <sys/byteorder.h>
@@ -84,6 +85,8 @@ struct mcux_flexcan_config {
 	uint32_t phase_seg1;
 	uint32_t phase_seg2;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *phy;
+	uint32_t max_bitrate;
 };
 
 struct mcux_flexcan_rx_callback {
@@ -132,6 +135,15 @@ int mcux_flexcan_get_max_filters(const struct device *dev, enum can_ide id_type)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
+int mcux_flexcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+{
+	const struct mcux_flexcan_config *config = dev->config;
+
+	*max_bitrate = config->max_bitrate;
+
+	return 0;
+}
+
 static int mcux_flexcan_set_timing(const struct device *dev,
 				   const struct can_timing *timing,
 				   const struct can_timing *timing_data)
@@ -168,11 +180,19 @@ static int mcux_flexcan_set_mode(const struct device *dev, enum can_mode mode)
 	const struct mcux_flexcan_config *config = dev->config;
 	flexcan_config_t flexcan_config;
 	uint32_t clock_freq;
-	int ret;
+	int err;
 
-	ret = mcux_flexcan_get_core_clock(dev, &clock_freq);
-	if (ret != 0) {
+	err = mcux_flexcan_get_core_clock(dev, &clock_freq);
+	if (err != 0) {
 		return -EIO;
+	}
+
+	if (config->phy != NULL) {
+		err = can_transceiver_enable(config->phy);
+		if (err != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
+			return err;
+		}
 	}
 
 	FLEXCAN_GetDefaultConfig(&flexcan_config);
@@ -667,6 +687,13 @@ static int mcux_flexcan_init(const struct device *dev)
 	int err;
 	int i;
 
+	if (config->phy != NULL) {
+		if (!device_is_ready(config->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
+	}
+
 	k_mutex_init(&data->rx_mutex);
 	k_sem_init(&data->tx_allocs_sem, MCUX_FLEXCAN_MAX_TX,
 		   MCUX_FLEXCAN_MAX_TX);
@@ -731,6 +758,7 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
+	.get_max_bitrate = mcux_flexcan_get_max_bitrate,
 	/*
 	 * FlexCAN timing limits are specified in the "FLEXCANx_CTRL1 field
 	 * descriptions" table in the SoC reference manual.
@@ -785,6 +813,8 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 		.phase_seg2 = DT_INST_PROP_OR(id, phase_seg2, 0),	\
 		.sample_point = DT_INST_PROP_OR(id, sample_point, 0),	\
 		.irq_config_func = mcux_flexcan_irq_config_##id,	\
+		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(id, phys)),\
+		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(id, 1000000), \
 	};								\
 									\
 	static struct mcux_flexcan_data mcux_flexcan_data_##id;		\
