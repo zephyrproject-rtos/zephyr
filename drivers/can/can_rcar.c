@@ -9,6 +9,7 @@
 #include <kernel.h>
 #include <errno.h>
 #include <drivers/can.h>
+#include <drivers/can/transceiver.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/rcar_clock_control.h>
 #include <drivers/pinctrl.h>
@@ -181,6 +182,8 @@ struct can_rcar_cfg {
 	uint8_t phase_seg2;
 	uint16_t sample_point;
 	const struct pinctrl_dev_config *pcfg;
+	const struct device *phy;
+	uint32_t max_bitrate;
 };
 
 struct can_rcar_tx_cb {
@@ -588,6 +591,15 @@ int can_rcar_set_mode(const struct device *dev, enum can_mode mode)
 		goto unlock;
 	}
 
+	/* Enable CAN transceiver */
+	if (config->phy != NULL) {
+		ret = can_transceiver_enable(config->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			goto unlock;
+		}
+	}
+
 	/* Writing to TCR registers must be done in halt mode */
 	ret = can_rcar_enter_halt_mode(config);
 	if (ret) {
@@ -599,6 +611,13 @@ int can_rcar_set_mode(const struct device *dev, enum can_mode mode)
 	ret = can_rcar_enter_operation_mode(config);
 
 unlock:
+	if (ret != 0) {
+		if (config->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(config->phy);
+		}
+	}
+
 	k_mutex_unlock(&data->inst_mutex);
 	return ret;
 }
@@ -870,6 +889,13 @@ static int can_rcar_init(const struct device *dev)
 	data->state_change_cb = NULL;
 	data->state_change_cb_data = NULL;
 
+	if (config->phy != NULL) {
+		if (!device_is_ready(config->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
+	}
+
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -1001,6 +1027,15 @@ int can_rcar_get_max_filters(const struct device *dev, enum can_ide id_type)
 	return CONFIG_CAN_RCAR_MAX_FILTER;
 }
 
+int can_rcar_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+{
+	const struct can_rcar_cfg *config = dev->config;
+
+	*max_bitrate = config->max_bitrate;
+
+	return 0;
+}
+
 static const struct can_driver_api can_rcar_driver_api = {
 	.set_mode = can_rcar_set_mode,
 	.set_timing = can_rcar_set_timing,
@@ -1014,6 +1049,7 @@ static const struct can_driver_api can_rcar_driver_api = {
 	.set_state_change_callback = can_rcar_set_state_change_callback,
 	.get_core_clock = can_rcar_get_core_clock,
 	.get_max_filters = can_rcar_get_max_filters,
+	.get_max_bitrate = can_rcar_get_max_bitrate,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x00,
@@ -1055,6 +1091,8 @@ static const struct can_driver_api can_rcar_driver_api = {
 		.phase_seg2 = DT_INST_PROP_OR(n, phase_seg2, 0),		\
 		.sample_point = DT_INST_PROP_OR(n, sample_point, 0),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phys)),		\
+		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(n, 1000000),	\
 	};									\
 	static struct can_rcar_data can_rcar_data_##n;				\
 										\
