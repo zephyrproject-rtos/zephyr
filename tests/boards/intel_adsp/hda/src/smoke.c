@@ -6,8 +6,14 @@
 #include <kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
-#include <cavs_hda.h>
+#include <devicetree.h>
 #include "tests.h"
+
+#define HDA_HOST_IN_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_in), reg, 0)
+#define HDA_HOST_OUT_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 0)
+#define HDA_STREAM_COUNT DT_PROP(DT_NODELABEL(hda_host_out), dma_channels)
+#define HDA_REGBLOCK_SIZE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 1)
+#include <cavs_hda.h>
 
 #define IPC_TIMEOUT K_MSEC(500)
 #define STREAM_ID 3U

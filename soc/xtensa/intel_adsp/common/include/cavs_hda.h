@@ -17,13 +17,22 @@
  * Provides low level calls to support cAVS HDA streams with
  * minimal abstraction that allows testing the hardware
  * and its demands separately from the intended DMA API
- * usage.
+ * usage. The only requirement is that you define the base
+ * addresses, the stream count, and the size of the ip blocks.
  */
 
-#define HDA_HOST_OUT_BASE 0x72800
-#define HDA_HOST_IN_BASE 0x72c00
-#define HDA_STREAM_COUNT 7
-#define HDA_REGBLOCK_SIZE 0x40
+#ifndef HDA_HOST_OUT_BASE
+#error Must define HDA_HOST_OUT_BASE
+#endif
+#ifndef HDA_HOST_IN_BASE
+#error Must define HDA_HOST_IN_BASE
+#endif
+#ifndef HDA_STREAM_COUNT
+#error Must define HDA_STREAM_COUNT
+#endif
+#ifndef HDA_REGBLOCK_SIZE
+#error Must define HDA_REGBLOCK_SIZE
+#endif
 
 /* The read/write positions are masked to 24 bits */
 #define HDA_RWP_MASK 0x00FFFFFF

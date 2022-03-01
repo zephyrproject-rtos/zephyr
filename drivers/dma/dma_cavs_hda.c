@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/dma.h>
-#include <cavs_hda.h>
-#include "dma_cavs_hda.h"
-
-#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(dma_cavs_hda_dma);
-
 /**
  * @brief Intel CAVS HDA DMA (Stream) driver
  *
@@ -30,6 +22,19 @@ LOG_MODULE_REGISTER(dma_cavs_hda_dma);
  * communicate to or from the Host or Link. Each stream set is uni directional.
  */
 
+#include <drivers/dma.h>
+
+#include "dma_cavs_hda.h"
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(dma_cavs_hda_dma, CONFIG_DMA_LOG_LEVEL);
+
+/* Define low level driver required values */
+#define HDA_HOST_IN_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_in), reg, 0)
+#define HDA_HOST_OUT_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 0)
+#define HDA_STREAM_COUNT DT_PROP(DT_NODELABEL(hda_host_out), dma_channels)
+#define HDA_REGBLOCK_SIZE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 1)
+#include <cavs_hda.h>
 
 int cavs_hda_dma_host_in_config(const struct device *dev,
 				       uint32_t channel,
