@@ -883,7 +883,7 @@ void wait_for_phy_update_instant(uint8_t instant)
 
 void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl_cte_req *cte_req,
 					   struct pdu_data_llctrl_phy_req *phy_req,
-					   uint8_t ctx_num_at_end)
+					   uint8_t ctx_num_at_end, bool dle_ntf)
 {
 	struct pdu_data_llctrl_length_rsp length_ntf = {
 		PDU_PDU_MAX_OCTETS, PDU_DC_MAX_US(PDU_PDU_MAX_OCTETS, phy_req->tx_phys),
@@ -918,7 +918,9 @@ void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl
 
 	/* There should be two host notifications, one pu and one dle */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
+	if (dle_ntf) {
+		ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
+	}
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
@@ -966,7 +968,7 @@ void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl
  */
 static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req *cte_req,
 				   struct pdu_data_llctrl_phy_req *phy_req, uint8_t events_at_start,
-				   uint8_t ctx_num_at_end)
+				   uint8_t ctx_num_at_end, bool dle_ntf)
 {
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_PREFER_ANY,
 					       .tx_phys = PHY_PREFER_ANY };
@@ -1030,7 +1032,7 @@ static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req
 
 	wait_for_phy_update_instant(instant);
 
-	check_phy_update_and_cte_req_complete(is_local, cte_req, phy_req, ctx_num_at_end);
+	check_phy_update_and_cte_req_complete(is_local, cte_req, phy_req, ctx_num_at_end, dle_ntf);
 }
 
 /**
@@ -1050,7 +1052,8 @@ static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req
  */
 static void run_phy_update_peripheral(bool is_local, struct pdu_data_llctrl_cte_req *cte_req,
 				      struct pdu_data_llctrl_phy_req *phy_req,
-				      uint8_t events_at_start, uint8_t ctx_num_at_end)
+				      uint8_t events_at_start, uint8_t ctx_num_at_end,
+				      bool dle_ntf)
 {
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_PREFER_ANY,
 					       .tx_phys = PHY_PREFER_ANY };
@@ -1122,7 +1125,7 @@ static void run_phy_update_peripheral(bool is_local, struct pdu_data_llctrl_cte_
 
 	wait_for_phy_update_instant(instant);
 
-	check_phy_update_and_cte_req_complete(is_local, cte_req, phy_req, ctx_num_at_end);
+	check_phy_update_and_cte_req_complete(is_local, cte_req, phy_req, ctx_num_at_end, dle_ntf);
 }
 
 static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t role)
@@ -1155,10 +1158,10 @@ static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t 
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
-				       test_ctx_buffers_cnt() - 1);
+				       test_ctx_buffers_cnt() - 1, true);
 	} else {
 		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
-					  test_ctx_buffers_cnt() - 1);
+					  test_ctx_buffers_cnt() - 1, true);
 	}
 
 	/* In this test CTE request is local procedure. Local procedures are handled after remote
@@ -1222,10 +1225,10 @@ static void test_local_cte_req_wait_for_phy_update_complete(uint8_t role)
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, &local_cte_req, &phy_req, pu_event_counter(&conn),
-				       test_ctx_buffers_cnt() - 1);
+				       test_ctx_buffers_cnt() - 1, false);
 	} else {
 		run_phy_update_peripheral(true, &local_cte_req, &phy_req, pu_event_counter(&conn),
-					  test_ctx_buffers_cnt() - 1);
+					  test_ctx_buffers_cnt() - 1, false);
 	}
 
 	/* PHY update was completed. Handle CTE request */
@@ -1280,10 +1283,10 @@ static void test_local_phy_update_wait_for_cte_req_complete(uint8_t role)
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
-				       test_ctx_buffers_cnt());
+				       test_ctx_buffers_cnt(), true);
 	} else {
 		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
-					  test_ctx_buffers_cnt());
+					  test_ctx_buffers_cnt(), true);
 	}
 }
 
@@ -1370,10 +1373,10 @@ static void test_phy_update_wait_for_remote_cte_req_complete(uint8_t role)
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
-				       test_ctx_buffers_cnt());
+				       test_ctx_buffers_cnt(), true);
 	} else {
 		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
-					  test_ctx_buffers_cnt());
+					  test_ctx_buffers_cnt(), true);
 	}
 }
 
@@ -1422,10 +1425,10 @@ static void test_cte_req_wait_for_remote_phy_update_complete_and_disable(uint8_t
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(false, NULL, &phy_req, pu_event_counter(&conn),
-				       test_ctx_buffers_cnt());
+				       test_ctx_buffers_cnt(), true);
 	} else {
 		run_phy_update_peripheral(false, NULL, &phy_req, pu_event_counter(&conn),
-					  test_ctx_buffers_cnt());
+					  test_ctx_buffers_cnt(), true);
 	}
 
 	/* There is no special handling of CTE REQ completion. It is done when instant happens just
@@ -1478,10 +1481,10 @@ static void test_cte_req_wait_for_remote_phy_update_complete(uint8_t role)
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(false, &local_cte_req, &phy_req, pu_event_counter(&conn),
-				       test_ctx_buffers_cnt());
+				       test_ctx_buffers_cnt(), false);
 	} else {
 		run_phy_update_peripheral(false, &local_cte_req, &phy_req, pu_event_counter(&conn),
-					  test_ctx_buffers_cnt());
+					  test_ctx_buffers_cnt(), false);
 	}
 
 	/* There is no special handling of CTE REQ completion here. It is done when instant happens
