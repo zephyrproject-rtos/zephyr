@@ -371,6 +371,13 @@ typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
  */
 typedef int (*can_get_max_filters_t)(const struct device *dev, enum can_ide id_type);
 
+/**
+ * @typedef can_get_max_bitrate_t
+ * @brief Callback API upon getting the maximum supported bitrate
+ * See @a can_get_max_bitrate() for argument description
+ */
+typedef int (*can_get_max_bitrate_t)(const struct device *dev, uint32_t *max_bitrate);
+
 __subsystem struct can_driver_api {
 	can_set_mode_t set_mode;
 	can_set_timing_t set_timing;
@@ -384,6 +391,7 @@ __subsystem struct can_driver_api {
 	can_set_state_change_callback_t set_state_change_callback;
 	can_get_core_clock_t get_core_clock;
 	can_get_max_filters_t get_max_filters;
+	can_get_max_bitrate_t get_max_bitrate;
 	/* Min values for the timing registers */
 	struct can_timing timing_min;
 	/* Max values for the timing registers */
@@ -625,6 +633,30 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
 }
 
 /**
+ * @brief Get maximum supported bitrate
+ *
+ * Get the maximum supported bitrate for the CAN controller/transceiver combination.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param[out] max_bitrate Maximum supported bitrate in bits/s
+ *
+ * @retval -EIO General input/output error.
+ * @retval -ENOSYS If this function is not implemented by the driver.
+ */
+__syscall int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
+
+static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	if (api->get_max_bitrate == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_max_bitrate(dev, max_bitrate);
+}
+
+/**
  * @brief Calculate timing parameters from bitrate and sample point
  *
  * Calculate the timing parameters from a given bitrate in bits/s and the
@@ -755,6 +787,7 @@ static inline int z_impl_can_set_mode(const struct device *dev, enum can_mode mo
  * @param bitrate_data Desired data phase bitrate.
  *
  * @retval 0 If successful.
+ * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
  * @retval -EINVAL bitrate cannot be met.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
@@ -766,7 +799,20 @@ static inline int can_set_bitrate(const struct device *dev,
 #ifdef CONFIG_CAN_FD_MODE
 	struct can_timing timing_data;
 #endif
+	uint32_t max_bitrate;
 	int ret;
+
+	ret = can_get_max_bitrate(dev, &max_bitrate);
+	if (ret == -ENOSYS) {
+		/* Maximum bitrate unknown */
+		max_bitrate = 0;
+	} else if (ret < 0) {
+		return ret;
+	}
+
+	if ((max_bitrate > 0) && (bitrate > max_bitrate)) {
+		return -ENOTSUP;
+	}
 
 	ret = can_calc_timing(dev, &timing, bitrate, 875);
 	if (ret < 0) {
@@ -776,6 +822,10 @@ static inline int can_set_bitrate(const struct device *dev,
 	timing.sjw = CAN_SJW_NO_CHANGE;
 
 #ifdef CONFIG_CAN_FD_MODE
+	if ((max_bitrate > 0) && (bitrate_data > max_bitrate)) {
+		return -ENOTSUP;
+	}
+
 	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, 875);
 	if (ret < 0) {
 		return -EINVAL;
