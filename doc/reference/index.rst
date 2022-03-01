@@ -26,6 +26,7 @@ API Reference
    memory_management/index.rst
    misc/index
    data_structures/index.rst
+   lora_lorawan/index.rst
    modbus/index.rst
    networking/index.rst
    peripherals/index.rst

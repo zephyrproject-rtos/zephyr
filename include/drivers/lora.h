@@ -10,6 +10,9 @@
 /**
  * @file
  * @brief Public LoRa APIs
+ * @defgroup lora_api LoRa APIs
+ * @ingroup io_interfaces
+ * @{
  */
 
 #include <zephyr/types.h>
@@ -51,6 +54,12 @@ struct lora_modem_config {
 	int8_t tx_power;
 	bool tx;
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal driver use only, skip these in public documentation.
+ */
 
 /**
  * @typedef lora_recv_cb()
@@ -125,6 +134,8 @@ struct lora_driver_api {
 	lora_api_recv_async recv_async;
 	lora_api_test_cw test_cw;
 };
+
+/** @endcond */
 
 /**
  * @brief Configure the LoRa modem
@@ -260,5 +271,9 @@ static inline int lora_test_cw(const struct device *dev, uint32_t frequency,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif	/* ZEPHYR_INCLUDE_DRIVERS_LORA_H_ */
