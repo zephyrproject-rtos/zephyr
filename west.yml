@@ -240,6 +240,9 @@ manifest:
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
+    - name: zcbor
+      revision: 317d3c6cd6dee23a151a3e7982d8564e7e19b2e2
+      path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
       revision: 12bfe3f0a9fcbfe3edab7eabc9678b6c62875d34
