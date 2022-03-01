@@ -538,7 +538,9 @@ Documentation:
         - "area: Counter"
 
 "Drivers: Crypto":
-    status: orphaned
+    status: maintained
+    maintainers:
+        - ceolin
     files:
         - drivers/crypto/
         - dts/bindings/crypto/
