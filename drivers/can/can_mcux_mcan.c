@@ -6,6 +6,7 @@
 
 #include <device.h>
 #include <drivers/can.h>
+#include <drivers/can/transceiver.h>
 #include <drivers/clock_control.h>
 #include <logging/log.h>
 
@@ -98,6 +99,15 @@ static int mcux_mcan_get_core_clock(const struct device *dev, uint32_t *rate)
 				      rate);
 }
 
+int mcux_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+{
+	const struct mcux_mcan_config *config = dev->config;
+
+	*max_bitrate = config->mcan.max_bitrate;
+
+	return 0;
+}
+
 static void mcux_mcan_line_0_isr(const struct device *dev)
 {
 	const struct mcux_mcan_config *config = dev->config;
@@ -149,6 +159,7 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	.get_state = mcux_mcan_get_state,
 	.set_state_change_callback = mcux_mcan_set_state_change_callback,
 	.get_core_clock = mcux_mcan_get_core_clock,
+	.get_max_bitrate = mcux_mcan_get_max_bitrate,
 	/*
 	 * MCUX MCAN timing limits are specified in the "Nominal bit timing and
 	 * prescaler register (NBTP)" table in the SoC reference manual.
@@ -215,7 +226,9 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 			DT_INST_PROP_OR(n, phase_seg1_data, 0),		\
 		.ts2_data = DT_INST_PROP_OR(n, phase_seg2_data, 0),	\
 		.tx_delay_comp_offset =					\
-			DT_INST_PROP(n, tx_delay_comp_offset)		\
+			DT_INST_PROP(n, tx_delay_comp_offset),		\
+		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phys)),	\
+		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(n, 5000000), \
 	}
 #else /* CONFIG_CAN_FD_MODE */
 #define MCUX_MCAN_MCAN_INIT(n)						\
@@ -227,6 +240,8 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 		.prop_ts1 = DT_INST_PROP_OR(n, prop_seg, 0) +		\
 			DT_INST_PROP_OR(n, phase_seg1, 0),		\
 		.ts2 = DT_INST_PROP_OR(n, phase_seg2, 0),		\
+		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phys)),	\
+		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(n, 1000000), \
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
 

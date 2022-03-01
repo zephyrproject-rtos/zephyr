@@ -200,6 +200,8 @@ struct can_mcan_config {
 	uint8_t ts2_data;
 	uint8_t tx_delay_comp_offset;
 #endif
+	const struct device *phy;
+	uint32_t max_bitrate;
 };
 
 struct can_mcan_reg;
