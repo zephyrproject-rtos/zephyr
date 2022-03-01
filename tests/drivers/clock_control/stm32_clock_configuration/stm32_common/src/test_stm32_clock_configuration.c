@@ -70,10 +70,22 @@ static void test_pll_src(void)
 	zassert_equal(RCC_PLLSOURCE_MSI, pll_src,
 			"Expected PLL src: MSI (%d). Actual PLL src: %d",
 			RCC_PLLSOURCE_MSI, pll_src);
-#else
+#else /* --> RCC_PLLSOURCE_NONE */
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X)
+#define RCC_PLLSOURCE_NONE 0
+	/* check RCC_CR_PLLON bit to enable/disable the PLL, but no status function exist */
+	if (READ_BIT(RCC->CR, RCC_CR_PLLON) == RCC_CR_PLLON) {
+		/* should not happen : PLL must be disabled when not used */
+		pll_src = 0xFFFF; /* error code */
+	} else {
+		pll_src = RCC_PLLSOURCE_NONE;
+	}
+#endif /* RCC_CR_PLLON */
+
 	zassert_equal(RCC_PLLSOURCE_NONE, pll_src,
 			"Expected PLL src: none (%d). Actual PLL src: %d",
 			RCC_PLLSOURCE_NONE, pll_src);
+
 #endif
 
 }
