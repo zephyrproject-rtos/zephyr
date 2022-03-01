@@ -183,13 +183,15 @@ Bluetooth:
         - subsys/bluetooth/host/
         - subsys/bluetooth/services/
         - subsys/bluetooth/shell/
-        - subsys/bluetooth/audio/
         - tests/bluetooth/
     files-exclude:
         - include/bluetooth/mesh/
         - subsys/bluetooth/controller/
         - subsys/bluetooth/mesh/
         - samples/bluetooth/mesh/
+        - subsys/bluetooth/audio/
+        - include/bluetooth/audio/
+        - tests/bluetooth/bsim_bt/bsim_test_audio/
     labels:
         - "area: Bluetooth"
 
@@ -225,6 +227,25 @@ Bluetooth Mesh:
         - tests/bluetooth/mesh*/
     labels:
         - "area: Bluetooth Mesh"
+        - "area: Bluetooth"
+
+Bluetooth Audio:
+    status: maintained
+    maintainers:
+        - Thalley
+        - asbjornsabo
+    collaborators:
+        - Vudentz
+        - jhedberg
+        - Casper-Bonde-Bose
+        - MariuszSkamra
+        - rymanluk
+    files:
+        - subsys/bluetooth/audio/
+        - include/bluetooth/audio/
+        - tests/bluetooth/bsim_bt/bsim_test_audio/
+    labels:
+        - "area: Bluetooth Audio"
         - "area: Bluetooth"
 
 Build system:
