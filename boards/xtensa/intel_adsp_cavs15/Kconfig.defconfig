@@ -35,7 +35,7 @@ config 2ND_LVL_ISR_TBL_OFFSET
 config CAVS_ISR_TBL_OFFSET
 	default 2ND_LVL_ISR_TBL_OFFSET
 
-config DMA_DW
+config DMA_CAVS_GPDMA
 	default y
 	depends on DMA
 
