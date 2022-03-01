@@ -462,55 +462,72 @@ static int mtls_session_free(const struct device *dev, struct cipher_ctx *ctx)
 	return 0;
 }
 
-static int mtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt)
+static int mtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
+			       bool finish)
 {
 	int ret;
 	mbedtls_sha256_context *sha256_ctx = MTLS_GET_CTX(ctx, sha256);
 
 
-	ret = mbedtls_sha256_starts(sha256_ctx,
-			    MTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA224);
-	if (ret != 0) {
-		LOG_ERR("Could not compute the hash");
-		return -EINVAL;
+	if (!ctx->started) {
+		ret = mbedtls_sha256_starts(sha256_ctx,
+					    MTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA224);
+		if (ret != 0) {
+			LOG_ERR("Could not compute the hash");
+			return -EINVAL;
+		}
+		ctx->started = true;
 	}
 
 	ret = mbedtls_sha256_update(sha256_ctx, pkt->in_buf, pkt->in_len);
 	if (ret != 0) {
-		LOG_ERR("Could not compute the hash");
+		LOG_ERR("Could not update the hash");
+		ctx->started = false;
 		return -EINVAL;
 	}
 
-	ret = mbedtls_sha256_finish(sha256_ctx, pkt->out_buf);
-	if (ret != 0) {
-		LOG_ERR("Could not compute the hash");
-		return -EINVAL;
+	if (finish) {
+		ctx->started = false;
+		ret = mbedtls_sha256_finish(sha256_ctx, pkt->out_buf);
+		if (ret != 0) {
+			LOG_ERR("Could not compute the hash");
+			return -EINVAL;
+		}
 	}
 
 	return 0;
 }
 
-static int mtls_sha512_compute(struct hash_ctx *ctx, struct hash_pkt *pkt)
+static int mtls_sha512_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
+			       bool finish)
 {
 	int ret;
 	mbedtls_sha512_context *sha512_ctx = MTLS_GET_CTX(ctx, sha512);
 
-	ret = mbedtls_sha512_starts(sha512_ctx,
-			    MTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA384);
-	if (ret != 0) {
-		LOG_ERR("Could not compute the hash");
-		return -EINVAL;
+	if (!ctx->started) {
+		ret = mbedtls_sha512_starts(sha512_ctx,
+					    MTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA384);
+		if (ret != 0) {
+			LOG_ERR("Could not compute the hash");
+			return -EINVAL;
+		}
+		ctx->started = true;
 	}
+
 	ret = mbedtls_sha512_update(sha512_ctx, pkt->in_buf, pkt->in_len);
 	if (ret != 0) {
-		LOG_ERR("Could not compute the hash");
+		LOG_ERR("Could not update the hash");
+		ctx->started = false;
 		return -EINVAL;
 	}
 
-	ret = mbedtls_sha512_finish(sha512_ctx, pkt->out_buf);
-	if (ret != 0) {
-		LOG_ERR("Could not compute the hash");
-		return -EINVAL;
+	if (finish) {
+		ctx->started = false;
+		ret = mbedtls_sha512_finish(sha512_ctx, pkt->out_buf);
+		if (ret != 0) {
+			LOG_ERR("Could not compute the hash");
+			return -EINVAL;
+		}
 	}
 
 	return 0;
@@ -543,6 +560,7 @@ static int mtls_hash_session_setup(const struct device *dev,
 
 	mtls_sessions[ctx_idx].algo = algo;
 	ctx->drv_sessn_state = &mtls_sessions[ctx_idx];
+	ctx->started = false;
 
 	if ((algo == CRYPTO_HASH_ALGO_SHA224) ||
 	    (algo == CRYPTO_HASH_ALGO_SHA256)) {
