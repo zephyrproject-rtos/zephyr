@@ -35,7 +35,8 @@ struct hash_ctx;
 struct hash_pkt;
 
 
-typedef int (*hash_op_t)(struct hash_ctx *ctx, struct hash_pkt *pkt);
+typedef int (*hash_op_t)(struct hash_ctx *ctx, struct hash_pkt *pkt,
+			 bool finish);
 
 /**
  * Structure encoding session parameters.
@@ -62,6 +63,11 @@ struct hash_ctx {
 	 * Hash handler set up when the session begins.
 	 */
 	hash_op_t hash_hndlr;
+
+	/**
+	 * If it has started a multipart hash operation.
+	 */
+	bool started;
 
 	/** How certain fields are to be interpreted for this session.
 	 * (A bitmask of CAP_* below.)

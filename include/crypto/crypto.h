@@ -465,9 +465,27 @@ static inline int hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt)
 {
 	pkt->ctx = ctx;
 
-	return ctx->hash_hndlr(ctx, pkt);
+	return ctx->hash_hndlr(ctx, pkt, true);
 }
 
+/**
+ * @brief Perform  a cryptographic multipart hash operation.
+ *
+ * This function can be called zero or more times, passing a slice of the
+ * the data. The hash is calculated using all the given pieces.
+ * To calculate the hash call @c hash_compute().
+ *
+ * @param  ctx       Pointer to the hash context of this op.
+ * @param  pkt       Structure holding the input.
+
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int hash_update(struct hash_ctx *ctx, struct hash_pkt *pkt)
+{
+	pkt->ctx = ctx;
+
+	return ctx->hash_hndlr(ctx, pkt, false);
+}
 
 /**
  * @}
