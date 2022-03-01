@@ -41,7 +41,13 @@ jobs:
         uses: actions/checkout@v2
 
       - name: west setup
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          git remote -v
+          git rebase origin/${BASE_REF}
           west init -l . || true
           west config --global update.narrow true
           west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
