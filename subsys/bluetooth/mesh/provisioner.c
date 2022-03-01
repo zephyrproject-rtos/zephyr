@@ -55,7 +55,7 @@ static int reset_state(void)
 		bt_mesh_cdb_node_del(prov_device.node, false);
 	}
 
-	return bt_mesh_prov_reset_state(pub_key_ready);
+	return bt_mesh_prov_reset_state();
 }
 
 static void prov_link_close(enum prov_bearer_link_status status)
@@ -643,6 +643,11 @@ static void prov_link_closed(void)
 
 static void prov_link_opened(void)
 {
+	if (bt_mesh_prov_pub_key_gen(pub_key_ready)) {
+		prov_fail(PROV_ERR_UNEXP_ERR);
+		return;
+	}
+
 	send_invite();
 }
 

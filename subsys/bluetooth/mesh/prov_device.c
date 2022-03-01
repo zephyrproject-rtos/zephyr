@@ -42,11 +42,17 @@
 #include "settings.h"
 
 static void send_pub_key(void);
-static void pub_key_ready(const uint8_t *pkey);
+
+static uint8_t private_key[BT_PRIV_KEY_LEN];
 
 static int reset_state(void)
 {
-	return bt_mesh_prov_reset_state(pub_key_ready);
+	return bt_mesh_prov_reset_state();
+}
+
+int __weak default_CSPRNG(uint8_t *dst, unsigned int len)
+{
+	return !bt_rand(dst, len);
 }
 
 static void prov_send_fail_msg(uint8_t err)
@@ -258,6 +264,14 @@ static void send_pub_key(void)
 	PROV_BUF(buf, PDU_LEN_PUB_KEY);
 	const uint8_t *key;
 
+	bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
+
+#if defined(CONFIG_BT_MESH_PROV_USE_TINYCRYPT_ECC_DH)
+	key = bt_mesh_prov_link.conf_inputs.pub_key_device;
+
+	/* No swap needed since user provides public key in big-endian */
+	(void)memcpy(net_buf_simple_add(&buf, BT_PUB_KEY_LEN), key, BT_PUB_KEY_LEN);
+#else
 	key = bt_pub_key_get();
 	if (!key) {
 		BT_ERR("No public key available");
@@ -265,17 +279,16 @@ static void send_pub_key(void)
 		return;
 	}
 
-	bt_mesh_prov_buf_init(&buf, PROV_PUB_KEY);
-
 	/* Swap X and Y halves independently to big-endian */
 	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), key, BT_PUB_KEY_COORD_LEN);
 	sys_memcpy_swap(net_buf_simple_add(&buf, BT_PUB_KEY_COORD_LEN), &key[BT_PUB_KEY_COORD_LEN],
 			BT_PUB_KEY_COORD_LEN);
 
-	BT_DBG("Local Public Key: %s", bt_hex(buf.data + 1, BT_PUB_KEY_LEN));
-
 	/* PublicKeyDevice */
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, &buf.data[1], PDU_LEN_PUB_KEY);
+#endif
+
+	BT_DBG("Local Public Key: %s", bt_hex(buf.data + 1, BT_PUB_KEY_LEN));
 
 	if (bt_mesh_prov_send(&buf, public_key_sent)) {
 		BT_ERR("Failed to send Public Key");
@@ -334,6 +347,20 @@ static void prov_dh_key_gen(void)
 
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
+	} else if (IS_ENABLED(CONFIG_BT_MESH_PROV_USE_TINYCRYPT_ECC_DH)) {
+		if (uECC_valid_public_key(remote_pk, &curve_secp256r1)) {
+			BT_ERR("Public key is not valid");
+		} else if (uECC_shared_secret(remote_pk, private_key,
+					      bt_mesh_prov_link.dhkey,
+					      &curve_secp256r1) != TC_CRYPTO_SUCCESS) {
+			BT_ERR("DHKey generation failed");
+		} else {
+			dh_key_gen_complete();
+			return;
+		}
+
+		prov_fail(PROV_ERR_UNEXP_ERR);
+		return;
 	}
 
 	/* Copy remote key in little-endian for bt_dh_key_gen().
@@ -372,6 +399,17 @@ static void prov_pub_key(const uint8_t *data)
 		atomic_set_bit(bt_mesh_prov_link.flags, WAIT_DH_KEY);
 
 		start_auth();
+	} else if (IS_ENABLED(CONFIG_BT_MESH_PROV_USE_TINYCRYPT_ECC_DH)) {
+		if (!uECC_make_key(bt_mesh_prov_link.conf_inputs.pub_key_device,
+				   private_key, &curve_secp256r1)) {
+			BT_ERR("Unable generate pub/pri key");
+			prov_fail(PROV_ERR_UNEXP_ERR);
+			return;
+		}
+
+		atomic_set_bit(bt_mesh_prov_link.flags, WAIT_DH_KEY);
+
+		start_auth();
 	} else if (!bt_pub_key_get()) {
 		/* Clear retransmit timer */
 		bt_mesh_prov_link.bearer->clear_tx();
@@ -381,20 +419,6 @@ static void prov_pub_key(const uint8_t *data)
 	}
 
 	prov_dh_key_gen();
-}
-
-static void pub_key_ready(const uint8_t *pkey)
-{
-	if (!pkey) {
-		BT_WARN("Public key not available");
-		return;
-	}
-
-	BT_DBG("Local public key ready");
-
-	if (atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_PUB_KEY)) {
-		prov_dh_key_gen();
-	}
 }
 
 static void notify_input_complete(void)
@@ -584,10 +608,36 @@ static void prov_link_closed(void)
 	reset_state();
 }
 
+#if defined(CONFIG_BT_MESH_PROV_USE_TINYCRYPT_ECC_DH)
 static void prov_link_opened(void)
 {
 	bt_mesh_prov_link.expect = PROV_INVITE;
 }
+#else
+static void pub_key_ready(const uint8_t *pkey)
+{
+	if (!pkey) {
+		BT_WARN("Public key not available");
+		return;
+	}
+
+	BT_DBG("Local public key ready");
+
+	if (atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_PUB_KEY)) {
+		prov_dh_key_gen();
+	}
+}
+
+static void prov_link_opened(void)
+{
+	if (bt_mesh_prov_pub_key_gen(pub_key_ready)) {
+		prov_fail(PROV_ERR_UNEXP_ERR);
+		return;
+	}
+
+	bt_mesh_prov_link.expect = PROV_INVITE;
+}
+#endif
 
 static const struct bt_mesh_prov_role role_device = {
 	.input_complete = local_input_complete,

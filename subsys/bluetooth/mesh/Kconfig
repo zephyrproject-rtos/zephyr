@@ -35,6 +35,13 @@ config BT_MESH_PROV_OOB_PUBLIC_KEY
 	help
 	  Enable this option if public key is to be exchanged via Out of Band (OOB) technology.
 
+config BT_MESH_PROV_USE_TINYCRYPT_ECC_DH
+	bool "Use Tinycrypt ECC for device provision"
+	select TINYCRYPT_ECC_DH
+	depends on BT_MESH_PROV_DEVICE
+	help
+	  Enable this option if use tinycrypt ecc dhkey for mesh provision.
+
 config BT_MESH_PB_ADV
 	bool "Provisioning support using the advertising bearer (PB-ADV)"
 	select BT_MESH_PROV

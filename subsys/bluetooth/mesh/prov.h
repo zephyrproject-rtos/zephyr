@@ -149,7 +149,8 @@ static inline void bt_mesh_prov_buf_init(struct net_buf_simple *buf, uint8_t typ
 	net_buf_simple_add_u8(buf, type);
 }
 
-int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]));
+int bt_mesh_prov_reset_state(void);
+int bt_mesh_prov_pub_key_gen(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]));
 
 bool bt_mesh_prov_active(void);
 
