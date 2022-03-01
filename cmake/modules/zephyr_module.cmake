@@ -146,7 +146,3 @@ else()
     )
 
 endif()
-
-if(DEFINED ZEPHYR_MODULE_NAMES)
-  list(REMOVE_DUPLICATES ZEPHYR_MODULE_NAMES)
-endif()
