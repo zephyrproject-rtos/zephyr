@@ -1456,7 +1456,7 @@ void ll_rx_mem_release(void **node_rx)
 				 */
 				sync = scan->periodic.sync;
 
-				ull_sync_setup_complete(scan);
+				ull_sync_setup_reset(scan);
 
 				if (status != BT_HCI_ERR_SUCCESS) {
 					memq_link_t *link_sync_lost;
