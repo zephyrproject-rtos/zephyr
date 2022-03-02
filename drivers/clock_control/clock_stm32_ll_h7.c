@@ -158,9 +158,8 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 	return clock / prescaler;
 }
 
-#if !defined(CONFIG_CPU_CORTEX_M4)
-
-static inline uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
+__unused
+static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 					    int pllm_div,
 					    int plln_mul,
 					    int pllout_div)
@@ -171,7 +170,8 @@ static inline uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 		(pllm_div * pllout_div);
 }
 
-static inline uint32_t get_pllsrc_frequency(void)
+__unused
+static uint32_t get_pllsrc_frequency(void)
 {
 	switch (LL_RCC_PLL_GetSource()) {
 	case LL_RCC_PLLSOURCE_HSI:
@@ -186,6 +186,7 @@ static inline uint32_t get_pllsrc_frequency(void)
 	}
 }
 
+__unused
 static uint32_t get_hclk_frequency(void)
 {
 	uint32_t sysclk = 0;
@@ -213,6 +214,8 @@ static uint32_t get_hclk_frequency(void)
 
 	return get_bus_clock(sysclk, STM32_HPRE);
 }
+
+#if !defined(CONFIG_CPU_CORTEX_M4)
 
 static int32_t prepare_regulator_voltage_scale(void)
 {
