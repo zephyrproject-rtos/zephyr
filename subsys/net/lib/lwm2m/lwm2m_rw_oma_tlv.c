@@ -336,6 +336,11 @@ static int put_begin_oi(struct lwm2m_output_context *out,
 {
 	struct tlv_out_formatter_data *fd;
 
+	/* No need for oi level TLV constructs */
+	if (path->level > LWM2M_PATH_LEVEL_OBJECT) {
+		return 0;
+	}
+
 	fd = engine_get_out_user_data(out);
 	if (!fd) {
 		return -EINVAL;
@@ -348,6 +353,10 @@ static int put_end_oi(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path)
 {
 	struct tlv_out_formatter_data *fd;
+
+	if (path->level > LWM2M_PATH_LEVEL_OBJECT) {
+		return 0;
+	}
 
 	fd = engine_get_out_user_data(out);
 	if (!fd) {
