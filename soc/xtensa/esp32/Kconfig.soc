@@ -11,6 +11,7 @@ config SOC_ESP32
 	select ARCH_SUPPORTS_COREDUMP
 	select PINCTRL
 	select XIP
+	select HAS_ESPRESSIF_HAL
 
 if SOC_ESP32
 
