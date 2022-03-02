@@ -361,8 +361,8 @@ void lll_chan_sel_2_ut(void)
 
 	m = lll_chan_sel_2(3, chan_id, chan_map_1, chan_map_1_37_used);
 //heml trigger failing ztest
-//    LL_ASSERT(m == 22U);
-	LL_ASSERT(m == 21U);
+//    LL_ASSERT(m == 21U);
+	LL_ASSERT(m == 22U);
 
 	/* Section 3.1 Sample Data 2 (9 used channels) */
 	m = lll_chan_sel_2(6, chan_id, chan_map_2, chan_map_2_9_used);
