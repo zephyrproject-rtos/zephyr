@@ -92,38 +92,46 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 	return clock / prescaler;
 }
 
+static uint32_t get_msis_frequency(void)
+{
+	return __LL_RCC_CALC_MSIS_FREQ(LL_RCC_MSIRANGESEL_RUN,
+				STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
+}
+
+__unused
+static uint32_t get_pllsrc_frequency(void)
+{
+
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return STM32_HSI_FREQ;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return STM32_HSE_FREQ;
+	} else if (IS_ENABLED(STM32_PLL_SRC_MSIS)) {
+		return get_msis_frequency();
+	}
+
+	__ASSERT(0, "No PLL Source configured");
+	return 0;
+}
+
 static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	volatile uint32_t *reg;
+	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
-	switch (pclken->bus) {
-	case STM32_CLOCK_BUS_AHB1:
-		LL_AHB1_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB2:
-		LL_AHB2_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB3:
-		LL_AHB3_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB1:
-		LL_APB1_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB1_2:
-		LL_APB1_GRP2_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB2:
-		LL_APB2_GRP1_EnableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB3:
-		LL_APB3_GRP1_EnableClock(pclken->enr);
-		break;
-	default:
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+		/* Attemp to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
+
+	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	reg_val = *reg;
+	reg_val |= pclken->enr;
+	*reg = reg_val;
 
 	return 0;
 }
@@ -132,34 +140,20 @@ static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	volatile uint32_t *reg;
+	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
-	switch (pclken->bus) {
-	case STM32_CLOCK_BUS_AHB1:
-		LL_AHB1_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB2:
-		LL_AHB2_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_AHB3:
-		LL_AHB3_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB1:
-		LL_APB1_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB1_2:
-		LL_APB1_GRP2_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB2:
-		LL_APB2_GRP1_DisableClock(pclken->enr);
-		break;
-	case STM32_CLOCK_BUS_APB3:
-		LL_APB3_GRP1_DisableClock(pclken->enr);
-		break;
-	default:
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+		/* Attemp to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
+
+	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	reg_val = *reg;
+	reg_val &= ~pclken->enr;
+	*reg = reg_val;
 
 	return 0;
 }
@@ -169,6 +163,12 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					       uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sys);
+
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+		/* Attemp to toggle a wrong periph clock bit */
+		return -ENOTSUP;
+	}
+
 	/*
 	 * Get AHB Clock (= SystemCoreClock = SYSCLK/prescaler)
 	 * SystemCoreClock is preferred to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -185,6 +185,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
 	case STM32_CLOCK_BUS_AHB2:
+	case STM32_CLOCK_BUS_AHB2_2:
 	case STM32_CLOCK_BUS_AHB3:
 		*rate = ahb_clock;
 		break;
@@ -428,8 +429,7 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	/* Calculate new SystemCoreClock variable with MSI freq */
 	/* MSI freq is defined from RUN range selection */
 	new_hclk_freq =	__LL_RCC_CALC_HCLK_FREQ(
-				__LL_RCC_CALC_MSIS_FREQ(LL_RCC_MSIRANGESEL_RUN,
-				STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos),
+				get_msis_frequency(),
 				s_ClkInitStruct.AHBCLKDivider);
 
 	__ASSERT(new_hclk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
