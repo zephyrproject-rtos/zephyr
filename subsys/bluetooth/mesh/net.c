@@ -242,14 +242,58 @@ bool bt_mesh_iv_update(void)
 }
 #endif /* CONFIG_BT_MESH_IV_UPDATE_TEST */
 
+static bool is_iv_recovery(uint32_t iv_index, bool iv_update)
+{
+	if (iv_index < bt_mesh.iv_index ||
+	    iv_index > bt_mesh.iv_index + 42) {
+		BT_ERR("IV Index out of sync: 0x%08x != 0x%08x",
+			   iv_index, bt_mesh.iv_index);
+		return false;
+	}
+
+	if ((iv_index > bt_mesh.iv_index + 1) ||
+	    (iv_index == bt_mesh.iv_index + 1 &&
+	     (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) || !iv_update))) {
+		if (ivi_was_recovered &&
+		    (bt_mesh.ivu_duration < (2 * BT_MESH_IVU_MIN_HOURS))) {
+			BT_ERR("IV Index Recovery before minimum delay");
+			return false;
+		}
+
+		/* The Mesh profile specification allows to initiate an
+		 * IV Index Recovery procedure if previous IV update has
+		 * been missed. This allows the node to remain
+		 * functional.
+		 *
+		 * Upon receiving and successfully authenticating a
+		 * Secure Network beacon for a primary subnet whose
+		 * IV Index is 1 or more higher than the current known IV
+		 * Index, the node shall set its current IV Index and its
+		 * current IV Update procedure state from the values in
+		 * this Secure Network beacon.
+		 */
+		BT_WARN("Performing IV Index Recovery");
+		ivi_was_recovered = true;
+		bt_mesh_rpl_clear();
+		bt_mesh.iv_index = iv_index;
+		bt_mesh.seq = 0U;
+
+		return true;
+	}
+
+	return false;
+}
+
 bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 {
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS)) {
 		/* We're currently in IV Update mode */
 
 		if (iv_index != bt_mesh.iv_index) {
-			BT_WARN("IV Index mismatch: 0x%08x != 0x%08x",
-				iv_index, bt_mesh.iv_index);
+			if (is_iv_recovery(iv_index, iv_update)) {
+				goto do_update;
+			}
+
 			return false;
 		}
 
@@ -261,36 +305,18 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 	} else {
 		/* We're currently in Normal mode */
 
-		if (iv_index == bt_mesh.iv_index) {
-			BT_DBG("Same IV Index in normal mode");
-			return false;
-		}
-
-		if (iv_index < bt_mesh.iv_index ||
-		    iv_index > bt_mesh.iv_index + 42) {
-			BT_ERR("IV Index out of sync: 0x%08x != 0x%08x",
-			       iv_index, bt_mesh.iv_index);
-			return false;
-		}
-
-		if ((iv_index > bt_mesh.iv_index + 1) ||
-		    (iv_index == bt_mesh.iv_index + 1 && !iv_update)) {
-			if (ivi_was_recovered &&
-			    (bt_mesh.ivu_duration < (2 * BT_MESH_IVU_MIN_HOURS))) {
-				BT_ERR("IV Index Recovery before minimum delay");
-				return false;
+		if (iv_index != bt_mesh.iv_index + 1) {
+			if (is_iv_recovery(iv_index, iv_update)) {
+				goto do_update;
 			}
-			/* The Mesh profile specification allows to initiate an
-			 * IV Index Recovery procedure if previous IV update has
-			 * been missed. This allows the node to remain
-			 * functional.
-			 */
-			BT_WARN("Performing IV Index Recovery");
-			ivi_was_recovered = true;
-			bt_mesh_rpl_clear();
-			bt_mesh.iv_index = iv_index;
-			bt_mesh.seq = 0U;
-			goto do_update;
+
+			return false;
+		}
+
+		if (!iv_update) {
+			/* Nothing to do */
+			BT_DBG("Already in IV normal mode");
+			return false;
 		}
 	}
 
