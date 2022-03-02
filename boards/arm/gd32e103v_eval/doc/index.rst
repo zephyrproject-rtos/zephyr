@@ -68,7 +68,7 @@ The board configuration supports the following hardware features:
      - N/A
      - N/A
    * - USART
-     - :kconfig:`CONFIG_SERIAL`
+     - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`gd,gd32-usart`
 
 
