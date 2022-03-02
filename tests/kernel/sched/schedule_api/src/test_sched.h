@@ -54,5 +54,6 @@ void test_k_thread_priority_set_init_null(void);
 void test_k_thread_priority_set_overmax(void);
 void test_k_thread_priority_set_upgrade(void);
 void test_k_wakeup_init_null(void);
+void test_slice_perthread(void);
 
 #endif /* __TEST_SCHED_H__ */
