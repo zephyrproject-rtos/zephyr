@@ -209,6 +209,8 @@ static void telnet_recv(struct net_context *client,
 
 	len = net_pkt_remaining_data(pkt);
 
+	(void)net_context_update_recv_wnd(client, len);
+
 	while (len >= TELNET_MIN_COMMAND_LEN) {
 		ret = telnet_handle_command(pkt);
 		if (ret > 0) {

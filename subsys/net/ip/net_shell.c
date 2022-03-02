@@ -4763,7 +4763,7 @@ static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
 			union net_proto_header *proto_hdr,
 			int status, void *user_data)
 {
-	int ret;
+	int ret, len;
 
 	if (pkt == NULL) {
 		if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
@@ -4782,6 +4782,10 @@ static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
 
 		return;
 	}
+
+	len = net_pkt_remaining_data(pkt);
+
+	(void)net_context_update_recv_wnd(context, len);
 
 	PR_SHELL(tcp_shell, "%zu bytes received\n", net_pkt_get_len(pkt));
 }
