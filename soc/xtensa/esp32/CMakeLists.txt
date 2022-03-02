@@ -6,6 +6,8 @@ zephyr_sources(
   loader.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_NEWLIB_LIBC newlib_fix.c)
+
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 
 # get code-partition slot0 address
