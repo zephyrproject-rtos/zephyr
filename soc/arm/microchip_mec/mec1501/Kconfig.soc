@@ -16,9 +16,6 @@ endchoice
 config RTOS_TIMER
 	bool "MEC1501 RTOS timer"
 
-config SOC_POWER_MANAGEMENT
-	bool "MEC1501 Power Management"
-
 config SOC_MEC1501_PROC_CLK_DIV
 	int "PROC_CLK_DIV"
 	default 1
