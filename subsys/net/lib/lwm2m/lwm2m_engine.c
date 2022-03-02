@@ -3366,12 +3366,9 @@ static int lwm2m_perform_read_object_instance(struct lwm2m_message *msg,
 		/* update the obj_inst_id as we move through the instances */
 		msg->path.obj_inst_id = obj_inst->obj_inst_id;
 
-		if (msg->path.level <= LWM2M_PATH_LEVEL_OBJECT) {
-			/* start instance formatting */
-			ret = engine_put_begin_oi(&msg->out, &msg->path);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = engine_put_begin_oi(&msg->out, &msg->path);
+		if (ret < 0) {
+			return ret;
 		}
 
 		for (int index = 0; index < obj_inst->resource_count; index++) {
@@ -3429,12 +3426,9 @@ static int lwm2m_perform_read_object_instance(struct lwm2m_message *msg,
 		}
 
 move_forward:
-		if (msg->path.level <= LWM2M_PATH_LEVEL_OBJECT) {
-			/* end instance formatting */
-			ret = engine_put_end_oi(&msg->out, &msg->path);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = engine_put_end_oi(&msg->out, &msg->path);
+		if (ret < 0) {
+			return ret;
 		}
 
 		if (msg->path.level <= LWM2M_PATH_LEVEL_OBJECT) {
