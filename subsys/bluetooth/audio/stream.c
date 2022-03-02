@@ -182,9 +182,9 @@ bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
 	const struct bt_codec_qos_pref *qos_pref = &stream->ep->qos_pref;
 
 	if (qos_pref->latency < qos->latency) {
+		/* Latency is a preferred value. Print debug info but do not fail. */
 		BT_DBG("Latency %u higher than preferred max %u",
 			qos->latency, qos_pref->latency);
-		return false;
 	}
 
 	if (!IN_RANGE(qos->pd, qos_pref->pd_min, qos_pref->pd_max)) {
