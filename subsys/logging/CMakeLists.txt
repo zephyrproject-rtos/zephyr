@@ -82,6 +82,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   zephyr_sources_ifdef(
     CONFIG_LOG_BACKEND_ADSP
     log_backend_adsp.c
+    )
+
+  zephyr_sources_ifdef(
+    CONFIG_LOG_BACKEND_CAVS_HDA
+    log_backend_cavs_hda.c
   )
 
   if(CONFIG_LOG_BACKEND_SPINEL)
