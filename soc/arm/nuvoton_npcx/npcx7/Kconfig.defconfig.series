@@ -50,16 +50,6 @@ config TACH_NPCX
 	default y
 	depends on SENSOR
 
-if SOC_POWER_MANAGEMENT
-
-config PM
-	default y if SYS_CLOCK_EXISTS
-
-config PM_DEVICE
-	default y
-
-endif # SOC_POWER_MANAGEMENT
-
 config SPI_NPCX_FIU
 	default y
 	depends on SPI
