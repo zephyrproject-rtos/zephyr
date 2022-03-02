@@ -63,15 +63,24 @@ static void test_pll_src(void)
 			"Expected PLL src: HSE (%d). Actual PLL src: %d",
 			RCC_PLLSOURCE_HSE, pll_src);
 #elif STM32_PLL_SRC_HSI
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	zassert_equal(RCC_PLLSOURCE_HSI_DIV2, pll_src,
+			"Expected PLL src: HSI (%d). Actual PLL src: %d",
+			RCC_PLLSOURCE_HSI_DIV2, pll_src);
+#else
 	zassert_equal(RCC_PLLSOURCE_HSI, pll_src,
 			"Expected PLL src: HSI (%d). Actual PLL src: %d",
 			RCC_PLLSOURCE_HSI, pll_src);
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
 #elif STM32_PLL_SRC_MSI
 	zassert_equal(RCC_PLLSOURCE_MSI, pll_src,
 			"Expected PLL src: MSI (%d). Actual PLL src: %d",
 			RCC_PLLSOURCE_MSI, pll_src);
 #else /* --> RCC_PLLSOURCE_NONE */
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X)
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(CONFIG_SOC_SERIES_STM32F2X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
 #define RCC_PLLSOURCE_NONE 0
 	/* check RCC_CR_PLLON bit to enable/disable the PLL, but no status function exist */
 	if (READ_BIT(RCC->CR, RCC_CR_PLLON) == RCC_CR_PLLON) {
@@ -81,7 +90,6 @@ static void test_pll_src(void)
 		pll_src = RCC_PLLSOURCE_NONE;
 	}
 #endif /* RCC_CR_PLLON */
-
 	zassert_equal(RCC_PLLSOURCE_NONE, pll_src,
 			"Expected PLL src: none (%d). Actual PLL src: %d",
 			RCC_PLLSOURCE_NONE, pll_src);
