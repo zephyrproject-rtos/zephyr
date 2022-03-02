@@ -216,8 +216,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 		scan_pdu = lll_adv_scan_rsp_latest_get(lll_adv, &upd);
 		LL_ASSERT(scan_pdu);
 
+		radio_isr_set(isr_tx_rx, lll);
+		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_switch_complete_and_rx(phy_s);
+
+		if (false) {
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		if (upd) {
+		} else if (upd) {
 			/* Copy the address from the adv packet we will send
 			 * into the scan response.
 			 */
@@ -225,14 +231,29 @@ static int prepare_cb(struct lll_prepare_param *p)
 			       &sec_pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
 			       BDADDR_SIZE);
 		}
-#else
-		ARG_UNUSED(scan_pdu);
-		ARG_UNUSED(upd);
-#endif /* !CONFIG_BT_CTLR_PRIVACY */
 
-		radio_isr_set(isr_tx_rx, lll);
-		radio_tmr_tifs_set(EVENT_IFS_US);
-		radio_switch_complete_and_rx(phy_s);
+		if (ull_filter_lll_rl_enabled()) {
+			struct lll_filter *filter =
+				ull_filter_lll_get(!!(lll_adv->filter_policy));
+
+			radio_filter_configure(filter->enable_bitmask,
+					       filter->addr_type_bitmask,
+					       (uint8_t *)filter->bdaddr);
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
+			   lll_adv->filter_policy) {
+			struct lll_filter *fal = ull_filter_lll_get(true);
+
+			radio_filter_configure(fal->enable_bitmask,
+					       fal->addr_type_bitmask,
+					       (uint8_t *)fal->bdaddr);
+			ARG_UNUSED(scan_pdu);
+			ARG_UNUSED(upd);
+		} else {
+			ARG_UNUSED(scan_pdu);
+			ARG_UNUSED(upd);
+		}
 
 #if defined(CONFIG_BT_CTLR_ADV_PDU_BACK2BACK)
 	} else if (sec_pdu->adv_ext_ind.ext_hdr_len &&
@@ -632,10 +653,10 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 #if defined(CONFIG_BT_PERIPHERAL)
 	} else if ((pdu_rx->type == PDU_ADV_TYPE_AUX_CONNECT_REQ) &&
 		   (pdu_rx->len == sizeof(struct pdu_adv_connect_ind)) &&
+		   lll->conn &&
 		   lll_adv_connect_ind_check(lll, pdu_rx, tx_addr, addr,
 					     rx_addr, tgt_addr,
-					     devmatch_ok, &rl_idx) &&
-		   lll->conn) {
+					     devmatch_ok, &rl_idx)) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
