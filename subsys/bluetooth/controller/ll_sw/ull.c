@@ -674,6 +674,8 @@ int ll_init(struct k_sem *sem_rx)
 	lll_chan_sel_2_ut();
 #endif /* CONFIG_BT_CTLR_TEST */
 
+    LL_ASSERT(0);
+
 	return  0;
 }
 
