@@ -183,7 +183,7 @@ endif # NPCX_HEADER
 # Select SoC Part No. and configuration options
 source "soc/arm/nuvoton_npcx/*/Kconfig.soc"
 
-config SOC_POWER_MANAGEMENT_TRACE
+config NPCX_PM_TRACE
 	bool "Trace System Power Management in NPCX family"
 	depends on PM
 	help
