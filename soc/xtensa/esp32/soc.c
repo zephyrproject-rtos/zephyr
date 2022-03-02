@@ -16,6 +16,8 @@
 #include <string.h>
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
+#include <zephyr/linker/linker-defs.h>
+#include <kernel_internal.h>
 
 #include "esp_private/system_internal.h"
 #include "esp32/rom/cache.h"
@@ -26,8 +28,6 @@
 #include "esp_err.h"
 #include "esp32/spiram.h"
 #include "sys/printk.h"
-
-extern void z_cstart(void);
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -40,8 +40,6 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
 	volatile uint32_t *app_cpu_config_reg = (uint32_t *)DPORT_APPCPU_CTRL_B_REG;
 	extern uint32_t _init_start;
-	extern uint32_t _bss_start;
-	extern uint32_t _bss_end;
 
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__ (
@@ -49,13 +47,12 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 		:
 		: "r"(&_init_start));
 
-	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	(void)memset(&_bss_start, 0,
-		     (&_bss_end - &_bss_start) * sizeof(_bss_start));
+	z_bss_zero();
+
 	__asm__ __volatile__ (
 		""
 		:
-		: "g"(&_bss_start)
+		: "g"(&__bss_start)
 		: "memory");
 
 	/* Disable normal interrupts. */
