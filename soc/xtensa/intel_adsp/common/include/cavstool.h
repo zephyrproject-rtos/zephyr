@@ -40,6 +40,26 @@ enum cavstool_cmd {
 
 	/* The host copies OUTBOX[ext_data >> 16] to INBOX[ext_data & 0xffff] */
 	IPCCMD_WINCOPY,
+
+	/* The host clears the run bit and resets the HDA stream */
+	IPCCMD_HDA_RESET,
+
+	/* The host configures an HDA stream (with provided buffer size and stream id) */
+	IPCCMD_HDA_CONFIG,
+
+	/* The host runs (sets the SDxCTL.RUN bit) for a given HDA stream */
+	IPCCMD_HDA_START,
+
+	/* The host stops (sets the SDxCTL.RUN bit) for a given HDA stream */
+	IPCCMD_HDA_STOP,
+
+	/* The host validates an HDA byte stream contains an 8bit counter and received a given
+	 * number of bytes
+	 */
+	IPCCMD_HDA_VALIDATE,
+
+	/* Host sends some data */
+	IPCCMD_HDA_SEND
 };
 
 #endif /* ZEPHYR_INCLUDE_CAVS_TEST_H */
