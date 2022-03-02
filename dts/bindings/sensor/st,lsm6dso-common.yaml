@@ -114,3 +114,53 @@ properties:
         - 8  # 1667Hz
         - 9  # 3333Hz
         - 10 # 6667Hz
+
+    accel-bdr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default accel batch data rate expressed in samples per second (Hz).
+        Default is not batched.
+      enum:
+        - 0  # Not batched
+        - 1  # 12.5Hz
+        - 2  # 26Hz
+        - 3  # 52Hz
+        - 4  # 104Hz
+        - 5  # 208Hz
+        - 6  # 417Hz
+        - 7  # 833Hz
+        - 8  # 1667Hz
+        - 9  # 3333Hz
+        - 10 # 6667Hz
+        - 11 # 1.6Hz
+
+    gyro-bdr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default gyro batch data rate expressed in samples per second (Hz).
+        Default is not batched.
+      enum:
+        - 0  # Not batched
+        - 1  # 12.5Hz
+        - 2  # 26Hz
+        - 3  # 52Hz
+        - 4  # 104Hz
+        - 5  # 208Hz
+        - 6  # 417Hz
+        - 7  # 833Hz
+        - 8  # 1667Hz
+        - 9  # 3333Hz
+        - 10 # 6667Hz
+        - 11 # 6.5Hz
+
+    batch-cnt-thr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default batch count threshold to trigger interrupt.
+        max value is 2047

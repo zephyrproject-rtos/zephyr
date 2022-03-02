@@ -19,6 +19,7 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 
+#include <drivers/sensor/lsm6dso.h>
 #include "lsm6dso.h"
 
 LOG_MODULE_REGISTER(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
@@ -192,17 +193,29 @@ static int lsm6dso_accel_config(const struct device *dev,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int ret = 0;
+
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-		return lsm6dso_accel_range_set(dev, sensor_ms2_to_g(val));
+		ret = lsm6dso_accel_range_set(dev, sensor_ms2_to_g(val));
+		break;
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return lsm6dso_accel_odr_set(dev, val->val1);
+		ret = lsm6dso_accel_odr_set(dev, val->val1);
+		break;
+	case SENSOR_ATTR_LPF_FREQ:
+		/* En-/disable Accel LPF2 */
+		ret = lsm6dso_xl_filter_lp2_set(ctx, val->val1);
+		/* Configure Accel LPF2 cut-off frequency */
+		ret |= lsm6dso_xl_hp_path_on_out_set(ctx, val->val2);
+		break;
 	default:
 		LOG_DBG("Accel attribute not supported.");
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int lsm6dso_gyro_odr_set(const struct device *dev, uint16_t freq)
@@ -246,17 +259,29 @@ static int lsm6dso_gyro_config(const struct device *dev,
 			       enum sensor_attribute attr,
 			       const struct sensor_value *val)
 {
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int ret = 0;
+
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-		return lsm6dso_gyro_range_set(dev, sensor_rad_to_degrees(val));
+		ret = lsm6dso_gyro_range_set(dev, sensor_rad_to_degrees(val));
+		break;
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return lsm6dso_gyro_odr_set(dev, val->val1);
+		ret = lsm6dso_gyro_odr_set(dev, val->val1);
+		break;
+	case SENSOR_ATTR_LPF_FREQ:
+		/* Enable Gyro LPF 1 */
+		ret = lsm6dso_gy_filter_lp1_set(ctx, val->val1);
+		/* Configure Gyro LPF1 cut-off frequency */
+		ret |= lsm6dso_gy_lp1_bandwidth_set(ctx, val->val2);
+		break;
 	default:
 		LOG_DBG("Gyro attribute not supported.");
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int lsm6dso_attr_set(const struct device *dev,
@@ -330,6 +355,46 @@ static int lsm6dso_sample_fetch_gyro(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_LSM6DSO_ENABLE_FIFO)
+static int lsm6dso_sample_fetch_fifo(const struct device *dev)
+{
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm6dso_data *data = dev->data;
+	uint8_t buff[6];
+	uint16_t num_data_fifo;
+	lsm6dso_fifo_tag_t data_tag;
+
+	lsm6dso_fifo_data_level_get(ctx, &num_data_fifo);
+	for (int i = 0; i < num_data_fifo; i++) {
+		lsm6dso_fifo_sensor_tag_get(ctx, &data_tag);
+		if (lsm6dso_fifo_out_raw_get(ctx, buff) < 0) {
+			LOG_DBG("Failed to read sample");
+			return -EIO;
+		}
+		if (data_tag == LSM6DSO_GYRO_NC_TAG) {
+			data->gyro[0] = (int16_t)buff[1];
+			data->gyro[0] = (data->gyro[0] * 256) + (int16_t)buff[0];
+			data->gyro[1] = (int16_t)buff[3];
+			data->gyro[1] = (data->gyro[1] * 256) + (int16_t)buff[2];
+			data->gyro[2] = (int16_t)buff[5];
+			data->gyro[2] = (data->gyro[2] * 256) + (int16_t)buff[4];
+		} else if (data_tag == LSM6DSO_XL_NC_TAG) {
+			data->acc[0] = (int16_t)buff[1];
+			data->acc[0] = (data->acc[0] * 256) + (int16_t)buff[0];
+			data->acc[1] = (int16_t)buff[3];
+			data->acc[1] = (data->acc[1] * 256) + (int16_t)buff[2];
+			data->acc[2] = (int16_t)buff[5];
+			data->acc[2] = (data->acc[2] * 256) + (int16_t)buff[4];
+		} else {
+			LOG_WRN("Unhandled data: tag=%d", data_tag);
+		}
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
 static int lsm6dso_sample_fetch_temp(const struct device *dev)
 {
@@ -381,8 +446,12 @@ static int lsm6dso_sample_fetch(const struct device *dev,
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
+#if defined(CONFIG_LSM6DSO_ENABLE_FIFO)
+		lsm6dso_sample_fetch_fifo(dev);
+#else
 		lsm6dso_sample_fetch_accel(dev);
 		lsm6dso_sample_fetch_gyro(dev);
+#endif
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
 		lsm6dso_sample_fetch_temp(dev);
 #endif
@@ -803,11 +872,34 @@ static int lsm6dso_init_chip(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(CONFIG_LSM6DSO_ENABLE_FIFO)
+	LOG_DBG("Setting FIFO mode");
+	if (lsm6dso_fifo_mode_set(ctx, LSM6DSO_FIFO_MODE) < 0) {
+		LOG_DBG("failed to set FIFO mode");
+		return -EIO;
+	}
+
+	if (lsm6dso_batch_counter_threshold_set(ctx, cfg->batch_cnt_thr)) {
+		LOG_DBG("Setting FIFO batch count threshold Failed");
+		return -EIO;
+	}
+
+	if (lsm6dso_fifo_xl_batch_set(ctx, cfg->accel_bdr)) {
+		LOG_DBG("Enable Accel FIFO batch mode Failed");
+		return -EIO;
+	}
+
+	if (lsm6dso_fifo_gy_batch_set(ctx, cfg->gyro_bdr)) {
+		LOG_DBG("Enable Gyro FIFO batch mode Failed");
+		return -EIO;
+	}
+#else
 	/* Set FIFO bypass mode */
 	if (lsm6dso_fifo_mode_set(ctx, LSM6DSO_BYPASS_MODE) < 0) {
 		LOG_DBG("failed to set FIFO mode");
 		return -EIO;
 	}
+#endif
 
 	if (lsm6dso_block_data_update_set(ctx, 1) < 0) {
 		LOG_DBG("failed to set BDU mode");
@@ -878,11 +970,20 @@ static int lsm6dso_init(const struct device *dev)
 #ifdef CONFIG_LSM6DSO_TRIGGER
 #define LSM6DSO_CFG_IRQ(inst)						\
 	.trig_enabled = true,						\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
-	.int_pin = DT_INST_PROP(inst, int_pin)
+	.gpio_intr = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
+	.int_pin = DT_INST_PROP(inst, int_pin),
 #else
 #define LSM6DSO_CFG_IRQ(inst)
 #endif /* CONFIG_LSM6DSO_TRIGGER */
+
+#ifdef CONFIG_LSM6DSO_ENABLE_FIFO
+#define LSM6DSO_CFG_FIFO(inst)						\
+	.batch_cnt_thr = DT_INST_PROP(inst, batch_cnt_thr),		\
+	.accel_bdr = DT_INST_PROP(inst, accel_bdr),			\
+	.gyro_bdr = DT_INST_PROP(inst, gyro_bdr),
+#else
+#define LSM6DSO_CFG_FIFO(inst)
+#endif /* CONFIG_LSM6DSO_ENABLE_FIFO */
 
 #define LSM6DSO_SPI_OP  (SPI_WORD_SET(8) |				\
 			 SPI_OP_MODE_MASTER |				\
@@ -912,6 +1013,7 @@ static int lsm6dso_init(const struct device *dev)
 		.gyro_range = DT_INST_PROP(inst, gyro_range),		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LSM6DSO_CFG_IRQ(inst)), ())			\
+		LSM6DSO_CFG_FIFO(inst)					\
 	}
 
 /*
@@ -939,6 +1041,7 @@ static int lsm6dso_init(const struct device *dev)
 		.gyro_range = DT_INST_PROP(inst, gyro_range),		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LSM6DSO_CFG_IRQ(inst)), ())			\
+		LSM6DSO_CFG_FIFO(inst)					\
 	}
 
 /*

@@ -85,4 +85,7 @@ config LSM6DSO_EXT_LPS22HB
 
 endif # LSM6DSO_SENSORHUB
 
+config LSM6DSO_ENABLE_FIFO
+	bool "Use FIFO MODE"
+
 endif # LSM6DSO
