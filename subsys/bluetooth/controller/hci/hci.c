@@ -5852,7 +5852,7 @@ static uint8_t ext_adv_direct_addr_type(struct lll_scan *lll,
 }
 
 static uint8_t ext_adv_data_get(const struct node_rx_pdu *node_rx_data,
-				uint8_t *const sec_phy,
+				uint8_t *const sec_phy, int8_t *const tx_pwr,
 				const uint8_t **const data)
 {
 	const struct pdu_adv *adv = (void *)node_rx_data->pdu;
@@ -5861,6 +5861,8 @@ static uint8_t ext_adv_data_get(const struct node_rx_pdu *node_rx_data,
 	uint8_t hdr_buf_len;
 	const uint8_t *ptr;
 	uint8_t hdr_len;
+
+	*tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 
 	p = (void *)&adv->adv_ext_ind;
 	h = (void *)p->ext_hdr_adv_data;
@@ -5900,6 +5902,7 @@ static uint8_t ext_adv_data_get(const struct node_rx_pdu *node_rx_data,
 	}
 
 	if (h->tx_pwr) {
+		*tx_pwr = *(int8_t *)ptr;
 		ptr++;
 	}
 
@@ -6036,7 +6039,7 @@ static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
 			      uint8_t *const sec_phy, uint8_t adv_addr_type,
 			      const uint8_t *adv_addr, uint8_t direct_addr_type,
 			      const uint8_t *direct_addr, uint8_t rl_idx,
-			      int8_t tx_pwr, int8_t rssi,
+			      int8_t *const tx_pwr, int8_t rssi,
 			      uint16_t interval_le16,
 			      const struct pdu_adv_adi *adi,
 			      uint8_t data_len_max, uint16_t data_len_total,
@@ -6050,7 +6053,7 @@ static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
 		/* Fragment the PDU data */
 		ext_adv_pdu_frag(evt_type, phy, *sec_phy, adv_addr_type,
 				 adv_addr, direct_addr_type, direct_addr,
-				 rl_idx, tx_pwr, rssi, interval_le16, adi,
+				 rl_idx, *tx_pwr, rssi, interval_le16, adi,
 				 data_len_max, &data_len_total, data_len,
 				 data, buf, evt_buf);
 
@@ -6068,7 +6071,7 @@ static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
 				ext_adv_pdu_frag(evt_type, phy, *sec_phy,
 						 adv_addr_type, adv_addr,
 						 direct_addr_type, direct_addr,
-						 rl_idx, tx_pwr, rssi,
+						 rl_idx, *tx_pwr, rssi,
 						 interval_le16, adi,
 						 data_len_max, &data_len_total,
 						 data_len, data, buf, evt_buf);
@@ -6076,7 +6079,7 @@ static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
 
 			/* Get next PDU data in list */
 			*data_len = ext_adv_data_get(node_rx_data, sec_phy,
-						     data);
+						     tx_pwr, data);
 
 			/* Restrict PDU data to maximum scan data length */
 			if (*data_len > data_len_total) {
@@ -6095,6 +6098,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			      struct node_rx_pdu *node_rx,
 			      struct net_buf *buf, uint8_t phy)
 {
+	int8_t scan_rsp_tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct node_rx_pdu *node_rx_scan_data = NULL;
 	struct node_rx_pdu *node_rx_data = NULL;
@@ -6143,6 +6147,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	node_rx_curr = node_rx;
 	node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
 	do {
+		int8_t tx_pwr_curr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 		struct pdu_adv_adi *adi_curr = NULL;
 		uint8_t direct_addr_type_curr = 0U;
 		bool direct_resolved_curr = false;
@@ -6289,10 +6294,10 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		}
 
 		if (h->tx_pwr) {
-			tx_pwr = *(int8_t *)ptr;
+			tx_pwr_curr = *(int8_t *)ptr;
 			ptr++;
 
-			BT_DBG("    Tx pwr= %d dB", tx_pwr);
+			BT_DBG("    Tx pwr= %d dB", tx_pwr_curr);
 		}
 
 		hdr_len = ptr - (uint8_t *)p;
@@ -6330,6 +6335,7 @@ no_ext_hdr:
 			data_len_total = data_len;
 			data = data_curr;
 			scan_data_len_total = 0U;
+			tx_pwr = tx_pwr_curr;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 			rl_idx = rl_idx_curr;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -6349,6 +6355,7 @@ no_ext_hdr:
 				}
 				scan_data_len = data_len_curr;
 				scan_data = data_curr;
+				scan_rsp_tx_pwr = tx_pwr_curr;
 			}
 
 			if (!adv_addr) {
@@ -6368,6 +6375,7 @@ no_ext_hdr:
 				data_len = data_len_curr;
 				data_len_total = data_len;
 				data = data_curr;
+				tx_pwr = tx_pwr_curr;
 			} else {
 				data_len_total += data_len_curr;
 			}
@@ -6463,7 +6471,7 @@ no_ext_hdr:
 	if ((data_len < data_len_total) || (data_len > data_len_max)) {
 		ext_adv_data_frag(node_rx_data, evt_type, phy, &sec_phy,
 				  adv_addr_type, adv_addr, direct_addr_type,
-				  direct_addr, rl_idx, tx_pwr, rssi,
+				  direct_addr, rl_idx, &tx_pwr, rssi,
 				  interval_le16, adi, data_len_max,
 				  data_len_total, &data_len, &data, buf,
 				  &evt_buf);
@@ -6513,10 +6521,10 @@ no_ext_hdr:
 	    (scan_data_len > data_len_max)) {
 		ext_adv_data_frag(node_rx_scan_data, evt_type, phy,
 				  &sec_phy_scan, adv_addr_type, adv_addr,
-				  direct_addr_type, direct_addr, rl_idx, tx_pwr,
-				  rssi, interval_le16, adi, data_len_max,
-				  scan_data_len_total, &scan_data_len,
-				  &scan_data, buf, &evt_buf);
+				  direct_addr_type, direct_addr, rl_idx,
+				  &scan_rsp_tx_pwr, rssi, interval_le16, adi,
+				  data_len_max, scan_data_len_total,
+				  &scan_data_len, &scan_data, buf, &evt_buf);
 	}
 
 	/* set scan data status bits */
@@ -6524,9 +6532,9 @@ no_ext_hdr:
 
 	/* Start constructing the event for remainder of the PDU data */
 	ext_adv_info_fill(evt_type, phy, sec_phy_scan, adv_addr_type, adv_addr,
-			  direct_addr_type, direct_addr, rl_idx, tx_pwr, rssi,
-			  interval_le16, adi, scan_data_len, scan_data,
-			  evt_buf);
+			  direct_addr_type, direct_addr, rl_idx,
+			  scan_rsp_tx_pwr, rssi, interval_le16, adi,
+			  scan_data_len, scan_data, evt_buf);
 
 	node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 }
@@ -6810,6 +6818,25 @@ no_ext_hdr:
 
 	if ((le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) && accept &&
 	    ((data_len_total - data_len) < CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
+
+		/* Pass verdict in LL.TS.p19 section 4.2.3.6 Extended Scanning,
+		 * Passive, Periodic Advertising Report, RSSI and TX_Power
+		 * states:
+		 * TX_Power is set to value of the TxPower field for the
+		 * AUX_SYNC_IND received, and RSSI set to a valid value.
+		 * Subsequent reports with data and the status set to
+		 * "Incomplete, more data to come" or "complete" can have the
+		 * TX_Power field set to 0x7F.
+		 *
+		 * In the implementation data_len_total is the running total
+		 * AD data length so far, data_len is the current PDU's AD data
+		 * length. For AUX_SYNC_IND received, data_len_total ==
+		 * data_len.
+		 */
+		if (data_len_total > data_len) {
+			/* Subsequent reports */
+			tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
+		}
 
 		data_len = MIN(data_len, (CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX +
 					  data_len - data_len_total));
