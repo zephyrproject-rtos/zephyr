@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Brian Bradley
+# SPDX-License-Identifier: Apache-2.0
+
+# STM32 Mini F401 board definitions
+
+if BOARD_STM32F401_MINI
+
+config BOARD
+	default "stm32f401_mini"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_STM32F401_MINI
