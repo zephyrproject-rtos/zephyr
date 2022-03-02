@@ -14,7 +14,8 @@
 	compatible = "st,stm32h743zi-zb_tv";
 
 	chosen {
-		zephyr,console = &usart3;
+		//zephyr,console = &usart3;
+		zephyr,console = &cdc_acm_uart0;
 		zephyr,shell-uart = &usart3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -71,9 +72,23 @@
         gpiof = &gpiof;
 	};
 };
+
 &clk_hsi{
     hsi-div = <1>;
 	status = "okay";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
+    pinctrl-names = "default";
+	status = "okay";
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "CDC_ACM_0";
+	};
 };
 
 /*
@@ -140,11 +155,6 @@
 	pinctrl-0 = <&uart5_tx_pb13 &uart5_rx_pb12>;
     pinctrl-names = "default";
 	current-speed = <115200>;
-	status = "okay";
-};
-
-zephyr_udc0: &usbotg_fs {
-	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
 	status = "okay";
 };
 
@@ -331,7 +341,7 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	width = <480>;
-	height = <272>;
+	height = <80>;
 	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
 	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
 	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
@@ -342,7 +352,7 @@ zephyr_udc0: &usbotg_fs {
 	vbp-duration = <12>;
 	hfp-duration = <8>;
 	vfp-duration = <8>;
-	def-back-color-red = <0xFF>;
+	def-back-color-red = <0x00>;
 	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
+	def-back-color-blue = <0x00>;
 };

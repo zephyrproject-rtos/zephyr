@@ -34,6 +34,20 @@
 			label= "OTG_FS";
 		};
 
+        usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <77 0>, <74 0>, <75 0>;
+			interrupt-names = "otghs", "ep1_out", "ep1_in";
+			num-bidir-endpoints = <6>;
+			ram-size = <4096>;
+			maximum-speed = "full-speed";
+			phys = <&otghs_fs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>;
+			status = "disabled";
+			label= "OTGHS";
+		};
+
 		ltdc: display-controller@50001000 {
 			compatible = "st,stm32-ltdc";
 			reg = <0x50001000 0x200>;
