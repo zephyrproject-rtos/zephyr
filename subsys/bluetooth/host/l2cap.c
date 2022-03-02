@@ -1191,11 +1191,11 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_l2cap_server *server;
 	struct bt_l2cap_ecred_conn_req *req;
 	struct bt_l2cap_ecred_conn_rsp *rsp;
-	uint16_t psm, mtu, mps, credits, result = BT_L2CAP_LE_SUCCESS;
+	uint16_t mtu, mps, credits, result = BT_L2CAP_LE_SUCCESS;
+	uint16_t psm = 0x0000;
 	uint16_t scid, dcid[L2CAP_ECRED_CHAN_MAX_PER_REQ];
 	int i = 0;
 	uint8_t req_cid_count;
-	uint8_t succeeded = 0;
 
 	/* set dcid to zeros here, in case of all connections refused error */
 	memset(dcid, 0, sizeof(dcid));
@@ -1255,7 +1255,6 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		case BT_L2CAP_LE_SUCCESS:
 			ch = BT_L2CAP_LE_CHAN(chan[i]);
 			dcid[i++] = sys_cpu_to_le16(ch->rx.cid);
-			succeeded++;
 			continue;
 		/* Some connections refused – invalid Source CID */
 		/* Some connections refused – Source CID already allocated */
@@ -1294,7 +1293,7 @@ response:
 
 callback:
 	if (ecred_cb && ecred_cb->ecred_conn_req) {
-		ecred_cb->ecred_conn_req(conn, result, req_cid_count, succeeded);
+		ecred_cb->ecred_conn_req(conn, result, psm);
 	}
 }
 
@@ -1539,7 +1538,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_le_chan *chan;
 	struct bt_l2cap_ecred_conn_rsp *rsp;
-	uint16_t dcid, mtu, mps, credits, result;
+	uint16_t dcid, mtu, mps, credits, result, psm;
 	uint8_t attempted = 0;
 	uint8_t succeeded = 0;
 
@@ -1557,10 +1556,18 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	BT_DBG("mtu 0x%04x mps 0x%04x credits 0x%04x result %u", mtu,
 	       mps, credits, result);
 
+	chan = l2cap_lookup_ident(conn, ident);
+	if (chan) {
+		psm = chan->psm;
+	} else {
+		psm = 0x0000;
+	}
+
 	switch (result) {
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
 	case BT_L2CAP_LE_ERR_ENCRYPTION:
 		while ((chan = l2cap_lookup_ident(conn, ident))) {
+
 			/* Cancel RTX work */
 			k_work_cancel_delayable(&chan->rtx_work);
 
@@ -1652,7 +1659,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	if (ecred_cb && ecred_cb->ecred_conn_rsp) {
-		ecred_cb->ecred_conn_rsp(conn, result, attempted, succeeded);
+		ecred_cb->ecred_conn_rsp(conn, result, attempted, succeeded, psm);
 	}
 }
 #endif /* CONFIG_BT_L2CAP_ECRED */
