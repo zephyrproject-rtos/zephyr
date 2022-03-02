@@ -11,10 +11,12 @@
 
 #include <drivers/clock_control.h>
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
-#include <dt-bindings/clock/stm32_clock.h>
-#else
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
 #include <dt-bindings/clock/stm32h7_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#include <dt-bindings/clock/stm32u5_clock.h>
+#else
+#include <dt-bindings/clock/stm32_clock.h>
 #endif
 
 /** Common clock control device node for all STM32 chips */
@@ -160,6 +162,20 @@
 #define STM32_MSIS_ENABLED	1
 #define STM32_MSIS_RANGE	DT_PROP(DT_NODELABEL(clk_msis), msi_range)
 #define STM32_MSIS_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msis), msi_pll_mode)
+#else
+#define STM32_MSIS_ENABLED	0
+#define STM32_MSIS_RANGE	0
+#define STM32_MSIS_PLL_MODE	0
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msik), st_stm32u5_msi_clock, okay)
+#define STM32_MSIK_ENABLED	1
+#define STM32_MSIK_RANGE	DT_PROP(DT_NODELABEL(clk_msik), msi_range)
+#define STM32_MSIK_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msik), msi_pll_mode)
+#else
+#define STM32_MSIK_ENABLED	0
+#define STM32_MSIK_RANGE	0
+#define STM32_MSIK_PLL_MODE	0
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_csi), fixed_clock, okay)
@@ -176,7 +192,10 @@
 #define STM32_LSI_FREQ		0
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32h7_hsi_clock, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), fixed_clock, okay)
+#define STM32_HSI_ENABLED	1
+#define STM32_HSI_FREQ		DT_PROP(DT_NODELABEL(clk_hsi), clock_frequency)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32h7_hsi_clock, okay)
 #define STM32_HSI_ENABLED	1
 #define STM32_HSI_DIVISOR	DT_PROP(DT_NODELABEL(clk_hsi), hsi_div)
 #define STM32_HSI_FREQ		DT_PROP(DT_NODELABEL(clk_hsi), clock_frequency)
