@@ -49,6 +49,11 @@ static void cache_add(uint8_t data[21], struct bt_mesh_subnet *sub)
 	memcpy(sub->beacon_cache, data, 21);
 }
 
+void bt_mesh_beacon_cache_clear(struct bt_mesh_subnet *sub)
+{
+	(void)memset(sub->beacon_cache, 0, 21);
+}
+
 static void beacon_complete(int err, void *user_data)
 {
 	struct bt_mesh_subnet *sub = user_data;

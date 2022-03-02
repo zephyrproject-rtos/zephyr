@@ -247,7 +247,7 @@ static bool is_iv_recovery(uint32_t iv_index, bool iv_update)
 	if (iv_index < bt_mesh.iv_index ||
 	    iv_index > bt_mesh.iv_index + 42) {
 		BT_ERR("IV Index out of sync: 0x%08x != 0x%08x",
-			   iv_index, bt_mesh.iv_index);
+			iv_index, bt_mesh.iv_index);
 		return false;
 	}
 
@@ -916,6 +916,14 @@ static void ivu_refresh(struct k_work *work)
 		}
 
 		goto end;
+	}
+
+	/* Because the beacon may be cached, iv update or iv recovery
+	 * cannot be performed after 96 hours or 192 hours.
+	 * So we need clear beacon cache.
+	 */
+	if (!(bt_mesh.ivu_duration % BT_MESH_IVU_MIN_HOURS)) {
+		bt_mesh_subnet_foreach(bt_mesh_beacon_cache_clear);
 	}
 
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS)) {
