@@ -22,6 +22,10 @@ endif
 config SOC
 	default "esp32"
 
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32"
+
 if SMP
 
 config SCHED_IPI_SUPPORTED
