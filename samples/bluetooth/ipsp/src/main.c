@@ -226,7 +226,7 @@ static void tcp_received(struct net_context *context,
 {
 	static char dbg[MAX_DBG_PRINT + 1];
 	sa_family_t family;
-	int ret;
+	int ret, len;
 
 	if (!pkt) {
 		/* EOF condition */
@@ -234,6 +234,7 @@ static void tcp_received(struct net_context *context,
 	}
 
 	family = net_pkt_family(pkt);
+	len = net_pkt_remaining_data(pkt);
 
 	snprintf(dbg, MAX_DBG_PRINT, "TCP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
@@ -244,6 +245,7 @@ static void tcp_received(struct net_context *context,
 		return;
 	}
 
+	(void)net_context_update_recv_wnd(context, len);
 	net_pkt_unref(pkt);
 
 	ret = net_context_send(context, buf_tx, ret, pkt_sent,
