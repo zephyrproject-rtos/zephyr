@@ -2694,16 +2694,23 @@ int media_proxy_pl_init(void)
 	}
 
 	/* Set up the media control service */
+	/* TODO: Fix initialization - who initializes what
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/42965
+	 * Temporarily only initializing if service is present
+	 */
+#ifdef CONFIG_BT_MCS
 #ifdef CONFIG_BT_MPL_OBJECTS
 	ret = bt_mcs_init(&ots_cbs);
 #else
 	ret = bt_mcs_init(NULL);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
 	if (ret < 0) {
 		BT_ERR("Could not init MCS: %d", ret);
 		return ret;
 	}
+#else
+	BT_WARN("MCS not configured");
+#endif /* CONFIG_BT_MCS */
 
 	/* Get a Content Control ID */
 	pl.content_ctrl_id = bt_ccid_get_value();
