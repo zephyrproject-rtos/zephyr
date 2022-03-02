@@ -105,9 +105,14 @@ struct bt_att {
 	/* Contains bt_att_chan instance(s) */
 	sys_slist_t		chans;
 #if defined(CONFIG_BT_EATT)
-	struct k_work_delayable connection_work;
-	uint16_t previous_ecred_connection_result;
-	uint8_t eatt_chans_to_connect;
+	struct {
+		struct k_work_delayable connection_work;
+		uint8_t chans_to_connect;
+
+		uint16_t prev_conn_rsp_result;
+		uint16_t prev_conn_req_result;
+		uint8_t prev_conn_req_missing_chans;
+	} eatt;
 #endif /* CONFIG_BT_EATT */
 };
 
@@ -2771,7 +2776,7 @@ static void att_reset(struct bt_att *att)
 #if defined(CONFIG_BT_EATT)
 	struct k_work_sync sync;
 
-	(void)k_work_cancel_delayable_sync(&att->connection_work, &sync);
+	(void)k_work_cancel_delayable_sync(&att->eatt.connection_work, &sync);
 #endif /* CONFIG_BT_EATT */
 
 	while ((buf = net_buf_get(&att->tx_queue, K_NO_WAIT))) {
@@ -3123,11 +3128,12 @@ size_t bt_eatt_count(struct bt_conn *conn)
 static void att_enhanced_connection_work_handler(struct k_work *work)
 {
 	const struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	const struct bt_att *att = CONTAINER_OF(dwork, struct bt_att, connection_work);
-	const int err = bt_eatt_connect(att->conn, att->eatt_chans_to_connect);
+	const struct bt_att *att = CONTAINER_OF(dwork, struct bt_att, eatt.connection_work);
+	const int err = bt_eatt_connect(att->conn, att->eatt.chans_to_connect);
 
 	if (err < 0) {
-		BT_WARN("Failed to connect EATT channels (err: %d)", err);
+		BT_WARN("Failed to connect %d EATT channels (err: %d)",
+			att->eatt.chans_to_connect, err);
 	}
 
 }
@@ -3153,7 +3159,8 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 	sys_slist_init(&att->chans);
 
 #if defined(CONFIG_BT_EATT)
-	k_work_init_delayable(&att->connection_work, att_enhanced_connection_work_handler);
+	k_work_init_delayable(&att->eatt.connection_work,
+			      att_enhanced_connection_work_handler);
 #endif /* CONFIG_BT_EATT */
 
 	chan = att_chan_new(att, 0);
@@ -3202,35 +3209,85 @@ static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
 	CODE_UNREACHABLE;
 }
 
-static int att_schedule_eatt_connect(struct bt_conn *conn, uint8_t eatt_chans_to_connect)
+static int att_schedule_eatt_connect(struct bt_conn *conn, uint8_t chans_to_connect)
 {
 	struct bt_att *att = att_get(conn);
 
-	att->eatt_chans_to_connect = eatt_chans_to_connect;
+	if (!att) {
+		return -ENOTCONN;
+	}
 
-	return k_work_reschedule(&att->connection_work, credit_based_connection_delay(conn));
+	att->eatt.chans_to_connect = chans_to_connect;
+
+	return k_work_reschedule(&att->eatt.connection_work,
+				 credit_based_connection_delay(conn));
 }
 
-static void ecred_connect_cb(struct bt_conn *conn, uint16_t result, uint8_t attempted_to_connect,
-			     uint8_t succeeded_to_connect)
+static void handle_potential_collision(struct bt_att *att)
 {
-	struct bt_att *att = att_get(conn);
-	int err;
+	__ASSERT_NO_MSG(att);
 
-	if (att->previous_ecred_connection_result == BT_L2CAP_LE_ERR_NO_RESOURCES &&
-	    result == BT_L2CAP_LE_ERR_NO_RESOURCES) {
+	int err;
+	size_t to_connect = att->eatt.prev_conn_req_missing_chans;
+
+	if (att->eatt.prev_conn_rsp_result == BT_L2CAP_LE_ERR_NO_RESOURCES &&
+	    att->eatt.prev_conn_req_result == BT_L2CAP_LE_ERR_NO_RESOURCES) {
 		BT_DBG("Credit based connection request collision detected");
 
-		err = att_schedule_eatt_connect(conn, attempted_to_connect - succeeded_to_connect);
+		/* Reset to not keep retrying on repeated failures */
+		att->eatt.prev_conn_rsp_result = 0;
+		att->eatt.prev_conn_req_result = 0;
+		att->eatt.prev_conn_req_missing_chans = 0;
+
+		if (to_connect == 0) {
+			return;
+		}
+
+		err = att_schedule_eatt_connect(att->conn, to_connect);
 		if (err < 0) {
 			BT_ERR("Failed to schedule EATT connection retry (err: %d)", err);
 		}
-
-		/* Reset to not keep retrying on repeated failures */
-		att->previous_ecred_connection_result = 0;
-	} else {
-		att->previous_ecred_connection_result = result;
 	}
+}
+
+static void ecred_connect_req_cb(struct bt_conn *conn, uint16_t result, uint16_t psm)
+{
+	struct bt_att *att = att_get(conn);
+
+	if (!att) {
+		return;
+	}
+
+	if (psm != BT_EATT_PSM) {
+		/* Collision mitigation is only a requirement on the EATT PSM */
+		return;
+	}
+
+	att->eatt.prev_conn_rsp_result = result;
+
+	handle_potential_collision(att);
+}
+
+static void ecred_connect_rsp_cb(struct bt_conn *conn, uint16_t result,
+				 uint8_t attempted_to_connect, uint8_t succeeded_to_connect,
+				 uint16_t psm)
+{
+	struct bt_att *att = att_get(conn);
+
+	if (!att) {
+		return;
+	}
+
+	if (psm != BT_EATT_PSM) {
+		/* Collision mitigation is only a requirement on the EATT PSM */
+		return;
+	}
+
+	att->eatt.prev_conn_req_result = result;
+	att->eatt.prev_conn_req_missing_chans =
+		attempted_to_connect - succeeded_to_connect;
+
+	handle_potential_collision(att);
 }
 
 int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
@@ -3410,8 +3467,8 @@ static void bt_eatt_init(void)
 
 #if defined(CONFIG_BT_EATT)
 	static const struct bt_l2cap_ecred_cb cb = {
-		.ecred_conn_rsp = ecred_connect_cb,
-		.ecred_conn_req = ecred_connect_cb,
+		.ecred_conn_rsp = ecred_connect_rsp_cb,
+		.ecred_conn_req = ecred_connect_req_cb,
 	};
 
 	bt_l2cap_register_ecred_cb(&cb);
