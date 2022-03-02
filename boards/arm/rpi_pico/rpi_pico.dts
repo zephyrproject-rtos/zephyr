@@ -28,8 +28,15 @@
 		};
 	};
 
+	xtal_clk: xtal-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <12000000>;
+		#clock-cells = <0>;
+	};
+
 	aliases {
 		led0 = &led0;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -83,6 +90,10 @@
 	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {
