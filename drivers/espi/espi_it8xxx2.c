@@ -188,14 +188,12 @@ static const struct ec2i_t pmc2_settings[] = {
  * Eg. the I/O cycle 800h~8ffh from host can be mapped to x800h~x8ffh.
  * Linker script of h2ram.ld will make the pool 4K aligned.
  */
-#define IT8XXX2_ESPI_H2RAM_POOL_SIZE 0x1000
-static uint8_t h2ram_pool[IT8XXX2_ESPI_H2RAM_POOL_SIZE]
-					__attribute__((section(".h2ram_pool")));
+#define IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX 0x1000
 
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
 #define H2RAM_ACPI_SHM_MAX ((CONFIG_ESPI_IT8XXX2_ACPI_SHM_H2RAM_SIZE) + \
 			(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM))
-#if (H2RAM_ACPI_SHM_MAX > IT8XXX2_ESPI_H2RAM_POOL_SIZE)
+#if (H2RAM_ACPI_SHM_MAX > IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX)
 #error "ACPI shared memory region out of h2ram"
 #endif
 #endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
@@ -203,7 +201,7 @@ static uint8_t h2ram_pool[IT8XXX2_ESPI_H2RAM_POOL_SIZE]
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
 #define H2RAM_EC_HOST_CMD_MAX ((CONFIG_ESPI_IT8XXX2_HC_H2RAM_SIZE) + \
 			(CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM))
-#if (H2RAM_EC_HOST_CMD_MAX > IT8XXX2_ESPI_H2RAM_POOL_SIZE)
+#if (H2RAM_EC_HOST_CMD_MAX > IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX)
 #error "EC host command parameters out of h2ram"
 #endif
 #endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
@@ -216,6 +214,9 @@ static uint8_t h2ram_pool[IT8XXX2_ESPI_H2RAM_POOL_SIZE]
 #error "ACPI and HC sections of h2ram overlap"
 #endif
 #endif
+
+static uint8_t h2ram_pool[MAX(H2RAM_ACPI_SHM_MAX, H2RAM_EC_HOST_CMD_MAX)]
+					__attribute__((section(".h2ram_pool")));
 
 #define H2RAM_WINDOW_SIZE(ram_size) ((find_msb_set((ram_size) / 16) - 1) & 0x7)
 
@@ -240,7 +241,7 @@ static void smfi_it8xxx2_init(const struct device *dev)
 
 	/* Set the host to RAM cycle address offset */
 	h2ram_offset = ((uint32_t)h2ram_pool & 0xffff) /
-				IT8XXX2_ESPI_H2RAM_POOL_SIZE;
+				IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX;
 	gctrl->GCTRL_H2ROFSR |= h2ram_offset;
 
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
