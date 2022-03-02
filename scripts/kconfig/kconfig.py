@@ -198,8 +198,8 @@ up as the choice selection. """ + SYM_INFO_HINT.format(choice.user_selection))
 # Hint on where to find symbol information. Used like
 # SYM_INFO_HINT.format(sym).
 SYM_INFO_HINT = """\
-See http://docs.zephyrproject.org/latest/reference/kconfig/CONFIG_{0.name}.html
-and/or look up {0.name} in the menuconfig/guiconfig interface. The Application
+See http://docs.zephyrproject.org/latest/kconfig.html#CONFIG_{0.name} and/or
+look up {0.name} in the menuconfig/guiconfig interface. The Application
 Development Primer, Setting Configuration Values, and Kconfig - Tips and Best
 Practices sections of the manual might be helpful too.\
 """
