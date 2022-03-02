@@ -26,9 +26,6 @@
 
 #include "dma_cavs_hda.h"
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(dma_cavs_hda_dma, CONFIG_DMA_LOG_LEVEL);
-
 /* Define low level driver required values */
 #define HDA_HOST_IN_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_in), reg, 0)
 #define HDA_HOST_OUT_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 0)
@@ -256,8 +253,6 @@ int cavs_hda_dma_init(const struct device *dev)
 	data->ctx.dma_channels = cfg->dma_channels;
 	data->ctx.atomic = data->channels_atomic;
 	data->ctx.magic = DMA_MAGIC;
-
-	LOG_INF("Intel cAVS HDA %s initialized", dev->name);
 
 	return 0;
 }

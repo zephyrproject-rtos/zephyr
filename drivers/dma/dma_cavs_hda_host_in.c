@@ -9,10 +9,6 @@
 #include <drivers/dma.h>
 #include "dma_cavs_hda.h"
 
-#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(dma_cavs_hda_dma_host_in);
-
 static const struct dma_driver_api cavs_hda_dma_host_in_api = {
 	.config = cavs_hda_dma_host_in_config,
 	.reload = cavs_hda_dma_host_reload,
