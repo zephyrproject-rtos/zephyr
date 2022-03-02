@@ -571,7 +571,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			hal_radio_sw_switch_coded_tx_config_set(ppi_en, ppi_dis,
 				cc_s2, sw_tifs_toggle);
 
-		} else if (!dir_curr) {
+		} else {
 			/* Switching to TX after RX on LE 1M/2M PHY */
 
 			hal_radio_sw_switch_coded_config_clear(ppi_en,
