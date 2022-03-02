@@ -7,8 +7,4 @@ if BOARD_INTEL_ADSP_CAVS25
 config BOARD
 	default "intel_adsp_cavs25"
 
-config I2S_CAVS
-	default y
-	depends on I2S
-
 endif # BOARD_INTEL_ADSP_CAVS25

@@ -88,8 +88,4 @@ config KERNEL_VM_SIZE
 
 endif
 
-config DMA_CAVS_GPDMA
-	default y
-	depends on DMA
-
 endif # SOC_SERIES_INTEL_CAVS_V25

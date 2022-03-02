@@ -12,3 +12,15 @@ config XTENSA_CACHED_REGION
 
 config XTENSA_UNCACHED_REGION
 	default 4
+
+if SOC_FAMILY_INTEL_ADSP
+
+config DMA_CAVS_GPDMA
+	default y
+	depends on DMA
+
+config I2S_CAVS
+	default y
+	depends on I2S
+
+endif # SOC_FAMILY_INTEL_ADSP
