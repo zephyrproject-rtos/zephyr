@@ -2045,7 +2045,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         """
         fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
-        fns = [x for x in fns if not x.endswith('_prebuilt.elf')]
+        fns = [x for x in fns if '_pre' not in x]
         if len(fns) != 1:
             raise BuildError("Missing/multiple output ELF binary")
 
