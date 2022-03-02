@@ -28,8 +28,13 @@ struct gsm_ppp_modem_info {
 
 /** @cond INTERNAL_HIDDEN */
 struct device;
+struct modem_context;
 typedef void (*gsm_modem_power_cb)(const struct device *, void *);
+typedef int (*gsm_setup_cb)(const struct modem_context *, struct k_sem *);
 
+void gsm_ppp_register_setup_hooks(const struct device *dev,
+				  gsm_setup_cb setup_hook,
+				  gsm_setup_cb pre_connect_hook);
 void gsm_ppp_start(const struct device *dev);
 void gsm_ppp_stop(const struct device *dev);
 /** @endcond */

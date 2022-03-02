@@ -102,6 +102,10 @@ static struct gsm_modem {
 	gsm_modem_power_cb modem_on_cb;
 	gsm_modem_power_cb modem_off_cb;
 	struct net_mgmt_event_callback gsm_mgmt_cb;
+#if defined(CONFIG_GSM_PPP_SETUP_HOOKS)
+	gsm_setup_cb setup_hook;
+	gsm_setup_cb pre_connect_hook;
+#endif
 } gsm;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE, 0, NULL);
@@ -443,8 +447,6 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
-	/* create PDP context */
-	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 };
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
@@ -668,6 +670,32 @@ static void gsm_finalize_connection(struct k_work *work)
 		return;
 	}
 
+#if defined(CONFIG_GSM_PPP_SETUP_HOOKS)
+	if (gsm->setup_hook) {
+		ret = gsm->setup_hook(&gsm->context, &gsm->sem_response);
+		if (ret < 0) {
+			LOG_DBG("%s returned %d", "setup_hook", ret);
+			(void)gsm_work_reschedule(&gsm->gsm_configure_work,
+						  GSM_RETRY_DELAY);
+		}
+	}
+#endif
+
+	/* create PDP context */
+	ret = modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler,
+				    &response_cmds[0],
+				    ARRAY_SIZE(response_cmds),
+				    "AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\"",
+				    &gsm->sem_response,
+				    GSM_CMD_AT_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("Couldn't create PDP context (error %d), %s", ret,
+			"retrying...");
+		(void)k_work_reschedule(&gsm->gsm_configure_work, GSM_RETRY_DELAY);
+		return;
+	}
+
 attaching:
 	/* Don't initialize PPP until we're attached to packet service */
 	ret = modem_cmd_send_nolock(&gsm->context.iface,
@@ -725,6 +753,18 @@ attaching:
 	}
 
 	LOG_DBG("modem RSSI: %d, %s", *gsm->context.data_rssi, "enable PPP");
+
+#if defined(CONFIG_GSM_PPP_SETUP_HOOKS)
+	if (gsm->pre_connect_hook) {
+		ret = gsm->pre_connect_hook(&gsm->context, &gsm->sem_response);
+		if (ret < 0) {
+			LOG_DBG("%s returned %d", "setup_hook", ret);
+			(void)gsm_work_reschedule(&gsm->gsm_configure_work,
+						  GSM_RETRY_DELAY);
+			return;
+		}
+	}
+#endif
 
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
@@ -1080,6 +1120,19 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
 
 	gsm->user_data = user_data;
 }
+
+#if defined(CONFIG_GSM_PPP_SETUP_HOOKS)
+void gsm_ppp_register_setup_hooks(const struct device *dev,
+				  gsm_setup_cb setup_hook,
+				  gsm_setup_cb pre_connect_hook)
+{
+	struct gsm_modem *gsm = dev->data;
+
+	gsm->setup_hook = setup_hook;
+	gsm->pre_connect_hook = pre_connect_hook;
+
+}
+#endif
 
 const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev)
 {
