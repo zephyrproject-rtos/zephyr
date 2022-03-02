@@ -478,7 +478,10 @@ def winstream_read(last_seq):
             result += win_read(16, behind - suffix)
         (wlen, start1, end, seq1) = win_hdr()
         if start1 == start and seq1 == seq:
-            return (seq, result.decode("utf-8"))
+            # Best effort attempt at decoding, replacing unusable characters
+            # Found to be useful when it really goes wrong
+            return (seq, result.decode("utf-8", "replace"))
+
 
 async def ipc_delay_done():
     await asyncio.sleep(0.1)
@@ -527,6 +530,7 @@ def ipc_command(data, ext_data):
     elif data == 8: # HDA START
         stream_id = ext_data & 0xFF
         hda_streams[stream_id].start()
+        hda_streams[stream_id].mem.seek(0)
 
     elif data == 9: # HDA STOP
         stream_id = ext_data & 0xFF
@@ -551,6 +555,18 @@ def ipc_command(data, ext_data):
         for i in range(0, 256):
             buf[i] = i
         hda_streams[stream_id].write(buf)
+    elif data == 12: # HDA PRINT
+        log.info("Doing HDA Print")
+        stream_id = ext_data & 0xFF
+        buf_len = ext_data >> 8 & 0xFFFF
+        hda_str = hda_streams[stream_id]
+        pos = hda_str.mem.tell()
+        buf_data = hda_str.mem.read(buf_len).decode("utf-8", "replace")
+        log.info(f"DSP LOG MSG (idx: {pos}, len: {buf_len}): {buf_data}")
+        pos = hda_str.mem.tell()
+        if pos >= hda_str.buf_len*2:
+            log.info(f"Wrapping log reader, pos {pos} len {hda_str.buf_len}")
+            hda_str.mem.seek(0)
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
 
@@ -589,6 +605,7 @@ async def main():
             sys.stdout.write("--\n")
 
     hda_streams = dict()
+
     last_seq = 0
     while True:
         await asyncio.sleep(0.03)
