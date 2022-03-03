@@ -24,7 +24,7 @@
  */
 void test_mb_api(void)
 {
-	z_memory_barrier();
+	z_full_mb();
 	z_read_mb();
 	z_write_mb();
 }
