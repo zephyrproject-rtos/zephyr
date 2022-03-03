@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: feilong
+      url-base: https://github.com/feilongfl
 
   #
   # Please add items below based on alphabetical order
@@ -73,7 +75,8 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 63a72ca90b7e0d7257211ddc5c79e8c0b940371b
+      remote: feilong
+      revision: 086af8de6a6ec9b080c68f9f0356dc612964aa4f
       path: modules/hal/gigadevice
       groups:
         - hal
