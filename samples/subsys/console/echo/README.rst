@@ -14,7 +14,7 @@ characters which are read from standard input.
 Requirements
 ************
 
-A UART console is required to run this simple.
+A UART console is required to run this sample.
 
 
 Building and Running
