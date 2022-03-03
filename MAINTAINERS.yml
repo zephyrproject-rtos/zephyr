@@ -1227,7 +1227,6 @@ Documentation:
     - doc/index-tex.rst
     - doc/index.html
     - doc/index.rst
-    - doc/kconfig.rst
     - doc/templates/sample.tmpl
     - doc/templates/board.tmpl
     - boards/index.rst
