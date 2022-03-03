@@ -6,25 +6,25 @@
 
 /*
  * Warning: This overlay performs configuration from clean sheet.
- * It is assumed that it is applied after clear_clocks.overlay file.
+ * It is assumed that it is applied after wb_clear_clocks.overlay file.
+ * It applies to the stm32xx where the msi is 4MHz
  */
 
-&clk_hse {
-	hse-bypass;
-	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+&clk_msi {
 	status = "okay";
+	msi-range = <6>; /* default value */
 };
 
 &pll {
 	div-m = <1>;
-	mul-n = <16>;
+	mul-n = <24>;
 	div-q = <2>;
 	div-r = <2>;
-	clocks = <&clk_hse>;
+	clocks = <&clk_msi>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(64)>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
