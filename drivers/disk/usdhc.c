@@ -724,10 +724,7 @@ enum usdhc_reset {
 
 static void usdhc_millsec_delay(unsigned int cycles_to_wait)
 {
-	unsigned int start = sys_clock_cycle_get_32();
-
-	while (sys_clock_cycle_get_32() - start < (cycles_to_wait * 1000))
-		;
+	k_msleep(cycles_to_wait);
 }
 
 uint32_t g_usdhc_boot_dummy __aligned(64);
@@ -2702,6 +2699,8 @@ static int usdhc_dat3_pull(bool pullup, struct usdhc_priv *priv)
 			/* Delay for card power off to complete */
 			usdhc_millsec_delay(CONFIG_SDMMC_USDHC_DAT3_PWR_DELAY);
 			ret = gpio_pin_set(priv->pwr_gpio, priv->config->pwr_pin, 1);
+			/* Delay for card power on to complete */
+			usdhc_millsec_delay(CONFIG_SDMMC_USDHC_DAT3_PWR_DELAY);
 			if (ret) {
 				return ret;
 			}
@@ -2753,29 +2752,22 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		k_busy_wait(100000);
 	}
 
-	if (!priv->detect_gpio) {
-		LOG_INF("USDHC detection other than GPIO");
-		if (config->detect_dat3) {
-			LOG_INF("USDHC detection using DAT3 pull");
-			base->PROT_CTRL |= USDHC_PROT_CTRL_D3CD_MASK;
-			/* Pull down DAT3 */
-			usdhc_dat3_pull(USDHC_DAT3_PULL_DOWN, priv);
-		} else {
-			/* DATA3 does not monitor card insertion */
-			base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
-		}
+	if (config->detect_dat3) {
+		LOG_INF("SD detection using DAT3 pull");
+		base->PROT_CTRL |= USDHC_PROT_CTRL_D3CD_MASK;
+		/* Pull down DAT3 */
+		usdhc_dat3_pull(USDHC_DAT3_PULL_DOWN, priv);
 		if ((base->PRES_STATE & USDHC_PRES_STATE_CINST_MASK) != 0) {
 			priv->inserted = true;
-			if (config->detect_dat3) {
-				usdhc_dat3_pull(USDHC_DAT3_PULL_UP, priv);
-				/* Disable DAT3 detect function */
-				base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
-			}
+			usdhc_dat3_pull(USDHC_DAT3_PULL_UP, priv);
+			/* Disable DAT3 detect function */
+			base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
 		} else {
+			LOG_WRN("No SD detected using DAT3 pull");
 			priv->inserted = false;
 			return -ENODEV;
 		}
-	} else {
+	} else if (priv->detect_gpio) {
 		ret = usdhc_cd_gpio_init(priv->detect_gpio,
 				config->detect_pin,
 				config->detect_flags,
@@ -2792,13 +2784,18 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 		if (gpio_level == 0) {
 			priv->inserted = false;
-			LOG_ERR("NO SD inserted!");
+			LOG_ERR("No SD inserted!");
 
 			return -ENODEV;
 		}
 
 		priv->inserted = true;
 		LOG_INF("SD inserted!");
+	} else {
+		/* DATA3 does not monitor card insertion */
+		base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
+		LOG_INF("No SD detection method configured, assuming SD present");
+		priv->inserted = true;
 	}
 	return 0;
 }

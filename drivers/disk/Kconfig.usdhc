@@ -12,7 +12,7 @@ config SDMMC_USDHC_DAT3_PWR_TOGGLE
 
 config SDMMC_USDHC_DAT3_PWR_DELAY
 	int
-	default 0
+	default 400
 	help
 	  Period in milliseconds to delay between powering off the SD card and
 	  applying power again, whenever the SD card power will be cycled.
