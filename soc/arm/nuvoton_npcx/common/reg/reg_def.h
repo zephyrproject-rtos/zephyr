@@ -527,11 +527,15 @@ static inline uint32_t npcx_chndat_offset(uint32_t ch)
 #define NPCX_ASCADD_SADDR_FIELD               FIELD(0, 5)
 #define NPCX_ADCSTS_EOCEV                     0
 #define NPCX_ADCSTS_EOCCEV                    1
+#define NPCX_ADCCNF_ADCEN                     0
 #define NPCX_ADCCNF_ADCMD_FIELD               FIELD(1, 2)
 #define NPCX_ADCCNF_ADCRPTC                   3
-#define NPCX_ADCCNF_INTECEN                   6
 #define NPCX_ADCCNF_START                     4
-#define NPCX_ADCCNF_ADCEN                     0
+#define NPCX_ADCCNF_ADCTTE                    5
+#define NPCX_ADCCNF_INTECEN                   6
+#define NPCX_ADCCNF_INTECCEN                  7
+#define NPCX_ADCCNF_INTETCEN                  8
+#define NPCX_ADCCNF_INTOVFEN                  9
 #define NPCX_ADCCNF_STOP                      11
 #define NPCX_CHNDAT_CHDAT_FIELD               FIELD(0, 10)
 #define NPCX_CHNDAT_NEW                       15
