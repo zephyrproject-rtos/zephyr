@@ -9,13 +9,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#if defined (__GNUC__)
-
-#define z_full_mb()	__asm__ volatile ("dsb 0xF":::"memory")
-#define z_read_mb()	__asm__ volatile ("dsb 0xF":::"memory")
-#define z_write_mb()	__asm__ volatile ("dsb 0xF":::"memory")
-
-#elif defined (__clang__)
+#if defined (__clang__)
 
 #define z_full_mb()	__builtin_arm_dsb(0xF)
 #define z_read_mb()	__builtin_arm_dsb(0xF)
@@ -23,9 +17,11 @@
 
 #else
 
-#error The ARM32 architecture does not have a memory barrier implementation
+#define z_full_mb()	__asm__ volatile ("dsb 0xF":::"memory")
+#define z_read_mb()	__asm__ volatile ("dsb 0xF":::"memory")
+#define z_write_mb()	__asm__ volatile ("dsb 0xF":::"memory")
 
-#endif /* __GNUC__ */
+#endif /* __clang__ */
 
 #endif /* !_ASMLANGUAGE */
 

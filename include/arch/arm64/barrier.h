@@ -9,31 +9,11 @@
 
 #ifndef _ASMLANGUAGE
 
-#ifndef __ISB
-#define __ISB()	__asm__ volatile ("isb")
-#endif
+#include <arch/arm64/lib_helpers.h>
 
-#ifndef __DSB
-#define __DSB()	__asm__ volatile ("dsb sy" : : : "memory")
-#endif
-
-#ifndef __DMB
-#define __DMB()	__asm__ volatile ("dmb sy" : : : "memory")
-#endif
-
-// #if defined(CONFIG_ARCH_HAS_MEMORY_BARRIER)
-
-// #define arch_mb()	__DSB()
-// #define arch_rmb()	__asm__ volatile ("dsb ld" : : : "memory")
-// #define arch_wmb()	__asm__ volatile ("dsb st" : : : "memory")
-
-// #endif /* CONFIG_ARCH_HAS_MEMORY_BARRIER */
-
-#define z_full_mb()	__DSB()
-#define z_read_mb()	__asm__ volatile ("dsb ld" : : : "memory")
-#define z_write_mb()	__asm__ volatile ("dsb st" : : : "memory")
-
-// #include <sys/barrier.h>
+#define z_full_mb()	__dsb(sy)
+#define z_read_mb()	__dsb(ld)
+#define z_write_mb()	__dsb(st)
 
 #endif /* !_ASMLANGUAGE */
 
