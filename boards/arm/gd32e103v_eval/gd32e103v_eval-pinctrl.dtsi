@@ -30,4 +30,50 @@
 			drive-open-drain;
 		};
 	};
+
+	/* temp value for test can driver */
+	/** CAN function is not available in this chip due to hardware issues */
+	/** CAN0 (no remap) */
+	#define GD32_CAN0_NORMP        GD32_REMAP(0U, 13U, 0x3U, 0U)
+	/** CAN0 (partial remap) */
+	#define GD32_CAN0_PRMP        GD32_REMAP(0U, 13U, 0x3U, 2U)
+	/** CAN0 (full remap) */
+	#define GD32_CAN0_FRMP        GD32_REMAP(0U, 13U, 0x3U, 3U)
+	/** CAN1 (no remap) */
+	#define GD32_CAN1_NORMP        GD32_REMAP(0U, 22U, 0x1U, 0U)
+	/** CAN1 (remap) */
+	#define GD32_CAN1_RMP        GD32_REMAP(0U, 22U, 0x1U, 1U)
+	/* CAN0_RX */
+	#define CAN0_RX_PA11_NORMP \
+	GD32_PINMUX_AFIO('A', 11, GPIO_IN, CAN0_NORMP)
+	#define CAN0_RX_PB8_PRMP \
+	GD32_PINMUX_AFIO('B', 8, GPIO_IN, CAN0_PRMP)
+	#define CAN0_RX_PD0_FRMP \
+	GD32_PINMUX_AFIO('D', 0, GPIO_IN, CAN0_FRMP)
+
+	/* CAN0_TX */
+	#define CAN0_TX_PA12_NORMP \
+	GD32_PINMUX_AFIO('A', 12, ALTERNATE, CAN0_NORMP)
+	#define CAN0_TX_PB9_PRMP \
+	GD32_PINMUX_AFIO('B', 9, ALTERNATE, CAN0_PRMP)
+	#define CAN0_TX_PD1_FRMP \
+	GD32_PINMUX_AFIO('D', 1, ALTERNATE, CAN0_FRMP)
+
+	/* CAN1_RX */
+	#define CAN1_RX_PB12_NORMP \
+	GD32_PINMUX_AFIO('B', 12, GPIO_IN, CAN1_NORMP)
+	#define CAN1_RX_PB5_RMP \
+	GD32_PINMUX_AFIO('B', 5, GPIO_IN, CAN1_RMP)
+
+	/* CAN1_TX */
+	#define CAN1_TX_PB13_NORMP \
+	GD32_PINMUX_AFIO('B', 13, ALTERNATE, CAN1_NORMP)
+	#define CAN1_TX_PB6_RMP \
+	GD32_PINMUX_AFIO('B', 6, ALTERNATE, CAN1_RMP)
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <CAN0_TX_PD1_FRMP>, <CAN0_RX_PD0_FRMP>;
+		};
+	};
 };
