@@ -22,9 +22,6 @@ config DISK_DRIVER_SDMMC
 config SDMMC_USDHC_DAT3_PWR_TOGGLE
 	default y
 
-config SDMMC_USDHC_DAT3_PWR_DELAY
-	default 10
-
 endif # DISK_DRIVERS
 
 if FLASH
