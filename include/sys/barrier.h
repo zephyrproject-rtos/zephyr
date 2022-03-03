@@ -43,7 +43,7 @@ extern "C" {
  * instruction stream will be committed before any operations after the mb()
  * are committed.
  */
-#define z_memory_barrier()	__atomic_thread_fence(__ATOMIC_ACQ_REL);
+#define z_memory_barrier()	__atomic_thread_fence(__ATOMIC_ACQ_REL)
 
 /**
  * @brief z_read_mb - Read Memory Barrier
@@ -52,7 +52,7 @@ extern "C" {
  * all read operations before an rmb() will be committed before any read
  * operations after the rmb().
  */
-#define z_read_mb()	__atomic_thread_fence(__ATOMIC_ACQUIRE);
+#define z_read_mb()	__atomic_thread_fence(__ATOMIC_ACQUIRE)
 
 /**
  * @brief z_write_mb - Write Memory Barrier
@@ -61,7 +61,7 @@ extern "C" {
  * all write operations before a wmb() will be committed before any write
  * operations after the wmb().
  */
-#define void z_write_mb()	__atomic_thread_fence(__ATOMIC_RELEASE);
+#define void z_write_mb()	__atomic_thread_fence(__ATOMIC_RELEASE)
 
 #else
 
