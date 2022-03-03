@@ -18,6 +18,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <sys/cbprintf.h>
+#include <sys/util_macro.h>
 
 #if defined(CONFIG_ARCH_POSIX)
 /* On some platforms all strings are considered RW, that impacts size of the
@@ -443,6 +444,9 @@ void test_mode_size_plain_str_data(void)
 
 void test_mode_size_str_with_strings(void)
 {
+#undef TEST_STR
+#define TEST_STR "test %s"
+
 	static const uint8_t domain = 3;
 	static const uint8_t level = 2;
 	const void *source = (const void *)123;
@@ -453,13 +457,13 @@ void test_mode_size_str_with_strings(void)
 	Z_LOG_MSG2_CREATE3(1, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
-			   NULL, 0, "test %s", prefix);
+			   NULL, 0, TEST_STR, prefix);
 	zassert_equal(mode, EXP_MODE(ZERO_COPY),
 			"Unexpected creation mode");
 	Z_LOG_MSG2_CREATE3(0, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
-			   NULL, 0, "test %s", prefix);
+			   NULL, 0, TEST_STR, prefix);
 	zassert_equal(mode, EXP_MODE(FROM_STACK),
 			"Unexpected creation mode");
 
@@ -472,6 +476,20 @@ void test_mode_size_str_with_strings(void)
 	exp_len = sizeof(struct log_msg2_hdr) +
 			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
 				      sizeof(const char *);
+
+	if (IS_ENABLED(CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS) &&
+	    (CBPRINTF_MUST_RUNTIME_PACKAGE(1, 0, TEST_STR, prefix) > 0)) {
+		/*
+		 * A tag for string, and a tag for end of arguments.
+		 * The tag for string needs to be rounded up to
+		 * alignment since the next argument starts at this
+		 * alignment. But the end tag is at the end so there is
+		 * no need to pad for next argument.
+		 */
+		exp_len += ROUND_UP(sizeof(int), VA_STACK_MIN_ALIGN);
+		exp_len += sizeof(int);
+	}
+
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 
 	get_msg_validate_length(exp_len);
@@ -482,6 +500,7 @@ void test_mode_size_str_with_2strings(void)
 {
 #undef TEST_STR
 #define TEST_STR "%s test %s"
+#define SUFFIX_STR "suffix"
 
 	static const uint8_t domain = 3;
 	static const uint8_t level = 2;
@@ -493,13 +512,13 @@ void test_mode_size_str_with_2strings(void)
 	Z_LOG_MSG2_CREATE3(1, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
-			   NULL, 0, TEST_STR, prefix, "sufix");
+			   NULL, 0, TEST_STR, prefix, SUFFIX_STR);
 	zassert_equal(mode, EXP_MODE(RUNTIME),
 			"Unexpected creation mode");
 	Z_LOG_MSG2_CREATE3(0, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
-			   NULL, 0, TEST_STR, prefix, "sufix");
+			   NULL, 0, TEST_STR, prefix, SUFFIX_STR);
 	zassert_equal(mode, EXP_MODE(RUNTIME),
 			"Unexpected creation mode");
 
@@ -514,12 +533,27 @@ void test_mode_size_str_with_2strings(void)
 			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
 				      2 * sizeof(const char *);
 	if (TEST_LOG_MSG2_RW_STRINGS) {
-		exp_len += strlen("sufix") + 2 /* null + header */ +
+		exp_len += strlen(SUFFIX_STR) + 2 /* null + header */ +
 			  strlen(prefix) + 2 /* null + header */+
 			  strlen(TEST_STR) + 2 /* null + header */;
 	}
 
-	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
+	if (IS_ENABLED(CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS) &&
+	    (CBPRINTF_MUST_RUNTIME_PACKAGE(1, 0, TEST_STR, prefix, SUFFIX_STR) > 0)) {
+		/*
+		 * Two tags for 2 strings, and a tag for end of arguments.
+		 * The tag for strings need to be rounded up to
+		 * alignment since the next argument starts at this
+		 * alignment. But the end tag is at the end so there is
+		 * no need to pad for next argument.
+		 */
+		exp_len += 2 * ROUND_UP(sizeof(int), VA_STACK_MIN_ALIGN);
+		exp_len += sizeof(int);
+	}
+
+	exp_len = ceiling_fraction(
+			ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT),
+			sizeof(uint32_t));
 
 	get_msg_validate_length(exp_len);
 	get_msg_validate_length(exp_len);

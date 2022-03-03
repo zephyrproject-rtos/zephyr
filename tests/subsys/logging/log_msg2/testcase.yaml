@@ -29,3 +29,32 @@ tests:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_CBPRINTF_FP_SUPPORT=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
+
+  logging.log_msg2.runtime_tagged:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log_msg2_no_overflow.runtime_tagged:
+    extra_configs:
+      - CONFIG_LOG_MODE_OVERFLOW=n
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log_msg2_64b_timestamp.runtime_tagged:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log_msg2_fp.runtime_tagged:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log_msg2_fp_64b_timestamp.runtime_tagged:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
