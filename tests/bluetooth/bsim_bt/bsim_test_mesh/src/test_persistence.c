@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define WAIT_TIME 60 /*seconds*/
 
+static bool provisioner_ready;
+
 extern const struct bt_mesh_comp comp;
 
 struct test_va_t {
@@ -265,6 +267,12 @@ static void unprovisioned_beacon(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_i
 {
 	static bool once;
 
+	/* Subnet may not be ready yet when provisioner receives a beacon. */
+	if (!provisioner_ready) {
+		LOG_INF("Provisioner is not ready yet");
+		return;
+	}
+
 	if (once) {
 		return;
 	}
@@ -404,6 +412,8 @@ static void provisioner_setup(void)
 	if (err || status) {
 		FAIL("Failed to add test_netkey (err: %d, status: %d)", err, status);
 	}
+
+	provisioner_ready = true;
 }
 
 static void test_provisioning_data_save(void)
