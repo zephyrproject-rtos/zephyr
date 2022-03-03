@@ -11,13 +11,13 @@
 
 #if defined (__GNUC__)
 
-#define z_memory_barrier()	__asm__ volatile ("dsb 0xF":::"memory")
+#define z_full_mb()	__asm__ volatile ("dsb 0xF":::"memory")
 #define z_read_mb()	__asm__ volatile ("dsb 0xF":::"memory")
 #define z_write_mb()	__asm__ volatile ("dsb 0xF":::"memory")
 
 #elif defined (__clang__)
 
-#define z_memory_barrier()	__builtin_arm_dsb(0xF)
+#define z_full_mb()	__builtin_arm_dsb(0xF)
 #define z_read_mb()	__builtin_arm_dsb(0xF)
 #define z_write_mb()	__builtin_arm_dsb(0xF)
 

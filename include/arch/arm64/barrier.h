@@ -29,7 +29,7 @@
 
 // #endif /* CONFIG_ARCH_HAS_MEMORY_BARRIER */
 
-#define z_memory_barrier()	__DSB()
+#define z_full_mb()	__DSB()
 #define z_read_mb()	__asm__ volatile ("dsb ld" : : : "memory")
 #define z_write_mb()	__asm__ volatile ("dsb st" : : : "memory")
 
