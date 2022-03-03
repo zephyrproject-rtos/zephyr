@@ -29,6 +29,7 @@
 #include <sys/sys_heap.h>
 #include <arch/structs.h>
 #include <kernel/stats.h>
+#include <sys_clock.h>
 #endif
 
 #ifdef __cplusplus
@@ -155,7 +156,7 @@ struct z_kernel {
 	struct _cpu cpus[CONFIG_MP_NUM_CPUS];
 
 #ifdef CONFIG_PM
-	int32_t idle; /* Number of ticks for kernel idling */
+	k_ticks_t idle; /* Number of ticks for kernel idling */
 #endif
 
 	/*

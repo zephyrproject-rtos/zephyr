@@ -62,7 +62,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		(void) arch_irq_lock();
 
 #ifdef CONFIG_PM
-		_kernel.idle = z_get_next_timeout_expiry();
+		_kernel.idle = (k_ticks_t)z_get_next_timeout_expiry();
 
 		/*
 		 * Call the suspend hook function of the soc interface
@@ -79,7 +79,8 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * which is essential for the kernel's scheduling
 		 * logic.
 		 */
-		if (k_is_pre_kernel() || !pm_system_suspend(_kernel.idle)) {
+		if (k_is_pre_kernel() ||
+		    !pm_system_suspend((int32_t)_kernel.idle)) {
 			k_cpu_idle();
 		}
 #else
