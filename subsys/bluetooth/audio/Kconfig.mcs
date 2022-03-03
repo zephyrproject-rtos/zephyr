@@ -44,7 +44,7 @@ config BT_MCC_MEDIA_PLAYER_NAME_MAX
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
-	  the name of the media player.  If the name is longer, the media
+	  the name of the media player. If the name is longer, the media
 	  control client will truncate the name when reading it.
 
 config BT_MCC_ICON_URL_MAX
@@ -53,7 +53,7 @@ config BT_MCC_ICON_URL_MAX
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
-	  the media player icon URL.  If the URL is longer, the media control
+	  the media player icon URL. If the URL is longer, the media control
 	  client will truncate the name when reading it.
 
 config BT_MCC_TRACK_TITLE_MAX
@@ -62,7 +62,7 @@ config BT_MCC_TRACK_TITLE_MAX
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
-	  the title of any track in the media player.  If the title is longer,
+	  the title of any track in the media player. If the title is longer,
 	  the media control client will truncate the title when reading it.
 
 config BT_MCC_SEGMENT_NAME_MAX
