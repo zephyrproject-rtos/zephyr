@@ -61,7 +61,7 @@ extern "C" {
  * all write operations before a wmb() will be committed before any write
  * operations after the wmb().
  */
-#define void z_write_mb()	__atomic_thread_fence(__ATOMIC_RELEASE)
+#define z_write_mb()	__atomic_thread_fence(__ATOMIC_RELEASE)
 
 #else
 
