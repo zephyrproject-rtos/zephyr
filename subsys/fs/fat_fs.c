@@ -426,7 +426,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 	    (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
 		uint8_t work[FF_MAX_SS];
 		MKFS_PARM mkfs_opt = {
-			.fmt = FM_FAT | FM_SFD,	/* Any suitable FAT */
+			.fmt = FM_ANY | FM_SFD,	/* Any suitable FAT */
 			.n_fat = 1,		/* One FAT fs table */
 			.align = 0,		/* Get sector size via diskio query */
 			.n_root = CONFIG_FS_FATFS_MAX_ROOT_ENTRIES,
