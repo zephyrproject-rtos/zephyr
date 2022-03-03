@@ -10,6 +10,20 @@ find_program(
   NAMES ${ARMFVP_BIN_NAME}
   )
 
+if ((NOT "${ARMFVP}" STREQUAL "ARMFVP-NOTFOUND") AND (DEFINED ARMFVP_MIN_VERSION))
+  execute_process(
+    COMMAND ${ARMFVP} --version
+    OUTPUT_VARIABLE out
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  string(REPLACE "\n" "" out ${out})
+  string(REGEX MATCH "[0-9]+\.[0-9]+\.[0-9]+" armfvp_version ${out})
+  if(${armfvp_version} VERSION_LESS ${ARMFVP_MIN_VERSION})
+    message(WARNING "Found FVP version is \"${armfvp_version}\", "
+      "the minimum required by the current board is \"${ARMFVP_MIN_VERSION}\".")
+  endif()
+endif()
+
 if(CONFIG_ARMV8_A_NS)
   foreach(filetype BL1 FIP)
     if ((NOT DEFINED ARMFVP_${filetype}_FILE) AND (EXISTS "$ENV{ARMFVP_${filetype}_FILE}"))
