@@ -19,6 +19,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <sys/atomic.h>
+#include <sys/barrier.h>
 #include <sys/__assert.h>
 #include <kernel/sched_priq.h>
 #include <sys/dlist.h>
