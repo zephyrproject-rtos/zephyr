@@ -55,16 +55,17 @@ struct mprx {
 	struct media_player  local_player;
 #endif /* CONFIG_MCTL_LOCAL_PLAYER_CONTROL */
 
+	/* Control of remote players is currently only supported over Bluetooth, via MCC */
 #if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
-	/* Remote media player - to have a player instance for the user, accessed via MCC */
+	/* Remote media player - to have a player instance for the user */
 	struct media_player  remote_player;
+
+	/* MCC callbacks */
+	struct bt_mcc_cb mcc_cbs;
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 };
 
 static struct mprx mprx = { 0 };
-#ifdef CONFIG_BT_MCC
-static struct bt_mcc_cb mcc_cbs;
-#endif /* CONFIG_BT_MCC */
 
 
 #if defined(CONFIG_MCTL_LOCAL_PLAYER_REMOTE_CONTROL)
@@ -667,42 +668,42 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 	}
 
 	/* Initialize MCC */
-	mcc_cbs.discover_mcs                  = mcc_discover_mcs_cb;
-	mcc_cbs.read_player_name              = mcc_read_player_name_cb;
+	mprx.mcc_cbs.discover_mcs                  = mcc_discover_mcs_cb;
+	mprx.mcc_cbs.read_player_name              = mcc_read_player_name_cb;
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
-	mcc_cbs.read_icon_obj_id              = mcc_read_icon_obj_id_cb;
+	mprx.mcc_cbs.read_icon_obj_id              = mcc_read_icon_obj_id_cb;
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
-	mcc_cbs.read_icon_url                 = mcc_read_icon_url_cb;
-	mcc_cbs.track_changed_ntf             = mcc_track_changed_ntf_cb;
-	mcc_cbs.read_track_title              = mcc_read_track_title_cb;
-	mcc_cbs.read_track_duration           = mcc_read_track_duration_cb;
-	mcc_cbs.read_track_position           = mcc_read_track_position_cb;
-	mcc_cbs.set_track_position            = mcc_set_track_position_cb;
-	mcc_cbs.read_playback_speed           = mcc_read_playback_speed_cb;
-	mcc_cbs.set_playback_speed            = mcc_set_playback_speed_cb;
-	mcc_cbs.read_seeking_speed            = mcc_read_seeking_speed_cb;
+	mprx.mcc_cbs.read_icon_url                 = mcc_read_icon_url_cb;
+	mprx.mcc_cbs.track_changed_ntf             = mcc_track_changed_ntf_cb;
+	mprx.mcc_cbs.read_track_title              = mcc_read_track_title_cb;
+	mprx.mcc_cbs.read_track_duration           = mcc_read_track_duration_cb;
+	mprx.mcc_cbs.read_track_position           = mcc_read_track_position_cb;
+	mprx.mcc_cbs.set_track_position            = mcc_set_track_position_cb;
+	mprx.mcc_cbs.read_playback_speed           = mcc_read_playback_speed_cb;
+	mprx.mcc_cbs.set_playback_speed            = mcc_set_playback_speed_cb;
+	mprx.mcc_cbs.read_seeking_speed            = mcc_read_seeking_speed_cb;
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
-	mcc_cbs.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
-	mcc_cbs.read_current_track_obj_id     = mcc_read_current_track_obj_id_cb;
-	mcc_cbs.read_next_track_obj_id        = mcc_read_next_track_obj_id_cb;
-	mcc_cbs.read_parent_group_obj_id      = mcc_read_parent_group_obj_id_cb;
-	mcc_cbs.read_current_group_obj_id     = mcc_read_current_group_obj_id_cb;
+	mprx.mcc_cbs.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
+	mprx.mcc_cbs.read_current_track_obj_id     = mcc_read_current_track_obj_id_cb;
+	mprx.mcc_cbs.read_next_track_obj_id        = mcc_read_next_track_obj_id_cb;
+	mprx.mcc_cbs.read_parent_group_obj_id      = mcc_read_parent_group_obj_id_cb;
+	mprx.mcc_cbs.read_current_group_obj_id     = mcc_read_current_group_obj_id_cb;
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
-	mcc_cbs.read_playing_order	      = mcc_read_playing_order_cb;
-	mcc_cbs.set_playing_order             = mcc_set_playing_order_cb;
-	mcc_cbs.read_playing_orders_supported = mcc_read_playing_orders_supported_cb;
-	mcc_cbs.read_media_state              = mcc_read_media_state_cb;
-	mcc_cbs.send_cmd                      = mcc_send_cmd_cb;
-	mcc_cbs.cmd_ntf                       = mcc_cmd_ntf_cb;
-	mcc_cbs.read_opcodes_supported        = mcc_read_opcodes_supported_cb;
+	mprx.mcc_cbs.read_playing_order	      = mcc_read_playing_order_cb;
+	mprx.mcc_cbs.set_playing_order             = mcc_set_playing_order_cb;
+	mprx.mcc_cbs.read_playing_orders_supported = mcc_read_playing_orders_supported_cb;
+	mprx.mcc_cbs.read_media_state              = mcc_read_media_state_cb;
+	mprx.mcc_cbs.send_cmd                      = mcc_send_cmd_cb;
+	mprx.mcc_cbs.cmd_ntf                       = mcc_cmd_ntf_cb;
+	mprx.mcc_cbs.read_opcodes_supported        = mcc_read_opcodes_supported_cb;
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
-	mcc_cbs.send_search                   = mcc_send_search_cb;
-	mcc_cbs.search_ntf                    = mcc_search_ntf_cb;
-	mcc_cbs.read_search_results_obj_id    = mcc_read_search_results_obj_id_cb;
+	mprx.mcc_cbs.send_search                   = mcc_send_search_cb;
+	mprx.mcc_cbs.search_ntf                    = mcc_search_ntf_cb;
+	mprx.mcc_cbs.read_search_results_obj_id    = mcc_read_search_results_obj_id_cb;
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
-	mcc_cbs.read_content_control_id       = mcc_read_content_control_id_cb;
+	mprx.mcc_cbs.read_content_control_id       = mcc_read_content_control_id_cb;
 
-	err = bt_mcc_init(&mcc_cbs);
+	err = bt_mcc_init(&mprx.mcc_cbs);
 	if (err) {
 		BT_ERR("Failed to initialize MCC");
 		return err;
