@@ -21,6 +21,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
+#include "util/mayfly.h"
 #include "util/dbuf.h"
 
 #include "ticker/ticker.h"
@@ -52,11 +53,13 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
+static void pdu_free_sem_give(void);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx);
 static void *adv_extra_data_allocate(struct lll_adv_pdu *pdu, uint8_t last);
 static int adv_extra_data_free(struct lll_adv_pdu *pdu, uint8_t last);
+static void extra_data_free_sem_give(void);
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 
 static int prepare_cb(struct lll_prepare_param *p);
@@ -482,7 +485,7 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 #endif
 
 			MFIFO_BY_IDX_ENQUEUE(pdu_free, free_idx, p);
-			k_sem_give(&sem_pdu_free);
+			pdu_free_sem_give();
 
 			p = next;
 		} while (p);
@@ -617,7 +620,7 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 #endif
 
 			MFIFO_BY_IDX_ENQUEUE(pdu_free, pdu_free_idx, p);
-			k_sem_give(&sem_pdu_free);
+			pdu_free_sem_give();
 
 			p = next;
 		} while (p);
@@ -646,7 +649,7 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 			pdu->extra_data[pdu_idx] = NULL;
 
 			MFIFO_BY_IDX_ENQUEUE(extra_data_free, ed_free_idx, ed);
-			k_sem_give(&sem_extra_data_free);
+			extra_data_free_sem_give();
 		}
 	}
 
@@ -780,6 +783,32 @@ static int init_reset(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_ZLI)
+static void mfy_pdu_free_sem_give(void *param)
+{
+	ARG_UNUSED(param);
+
+	k_sem_give(&sem_pdu_free);
+}
+
+static void pdu_free_sem_give(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_pdu_free_sem_give};
+	uint32_t retval;
+
+	retval = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 0,
+				&mfy);
+	LL_ASSERT(!retval);
+}
+
+#else /* !CONFIG_BT_CTLR_ZLI */
+static void pdu_free_sem_give(void)
+{
+	k_sem_give(&sem_pdu_free);
+}
+#endif /* !CONFIG_BT_CTLR_ZLI */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static void *adv_extra_data_allocate(struct lll_adv_pdu *pdu, uint8_t last)
 {
@@ -837,7 +866,7 @@ static int adv_extra_data_free(struct lll_adv_pdu *pdu, uint8_t last)
 		pdu->extra_data[last] = NULL;
 
 		MFIFO_BY_IDX_ENQUEUE(extra_data_free, ed_free_idx, ed);
-		k_sem_give(&sem_extra_data_free);
+		extra_data_free_sem_give();
 	}
 
 	return 0;
@@ -853,6 +882,33 @@ static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx)
 		mem_release(extra_data, &mem_extra_data.free);
 	}
 }
+
+#if defined(CONFIG_BT_CTLR_ZLI)
+static void mfy_extra_data_free_sem_give(void *param)
+{
+	ARG_UNUSED(param);
+
+	k_sem_give(&sem_extra_data_free);
+}
+
+static void extra_data_free_sem_give(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL,
+				    mfy_extra_data_free_sem_give};
+	uint32_t retval;
+
+	retval = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 0,
+				&mfy);
+	LL_ASSERT(!retval);
+}
+
+#else /* !CONFIG_BT_CTLR_ZLI */
+static void extra_data_free_sem_give(void)
+{
+	k_sem_give(&sem_extra_data_free);
+}
+#endif /* !CONFIG_BT_CTLR_ZLI */
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 
 static int prepare_cb(struct lll_prepare_param *p)
