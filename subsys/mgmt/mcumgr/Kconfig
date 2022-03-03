@@ -278,8 +278,8 @@ config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
 	range 3 THREAD_MAX_NAME_LEN if THREAD_NAME
 	range 3 6 if !THREAD_NAME
 	help
-	  The length, including terminating 0, of the string that is sent in response
-	  to taskstat command, as a thread name.
+	  The length of the string that is sent in response to taskstat command,
+	  as a thread name.
 	  When THREAD_NAME is enabled then this defaults to THREAD_MAX_NAME_LEN.
 	  When THREAD_NAME is disabled the name is generated from thread priority,
 	  signed integer, and this number regulates how many digits will be used;
