@@ -1034,7 +1034,6 @@ Documentation:
     - doc/images/Zephyr-Kite-in-tree.png
     - doc/index-tex.rst
     - doc/index.rst
-    - doc/kconfig.rst
     - doc/templates/sample.tmpl
     - doc/templates/board.tmpl
     - boards/index.rst
