@@ -41,7 +41,7 @@ config BT_MPL_ICON_URL
 
 config BT_MPL_ICON_URL_MAX
 	int "Max length of media player icon URL"
-	default 30
+	default 40
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
@@ -49,7 +49,7 @@ config BT_MPL_ICON_URL_MAX
 
 config BT_MPL_TRACK_TITLE_MAX
 	int "Max length of the title of a track"
-	default 25
+	default 40
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
