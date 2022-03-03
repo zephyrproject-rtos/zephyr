@@ -63,6 +63,14 @@
 
 #include "hci_internal.h"
 
+#define RCV_FIFO_DATA 0
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+#define FLOW_SIGNAL   1
+#define RESET_SIGNAL  2
+#else
+#define RESET_SIGNAL  1
+#endif
+
 static struct k_sem sem_prio_recv;
 static struct k_fifo recv_fifo;
 
@@ -76,6 +84,10 @@ static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_poll_signal hbuf_signal;
 static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
+#endif
+
+#if defined(CONFIG_BT_HCI_RESET_SIGNAL)
+static struct k_poll_signal reset_signal;
 #endif
 
 #if defined(CONFIG_BT_CTLR_ISO)
@@ -572,13 +584,28 @@ static void recv_thread(void *p1, void *p2, void *p3)
 {
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	/* @todo: check if the events structure really needs to be static */
-	static struct k_poll_event events[2] = {
-		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
-						K_POLL_MODE_NOTIFY_ONLY,
-						&hbuf_signal, 0),
+	static struct k_poll_event events[] = {
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 						K_POLL_MODE_NOTIFY_ONLY,
 						&recv_fifo, 0),
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&hbuf_signal, 0),
+#if defined(CONFIG_BT_HCI_RESET_SIGNAL)
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&reset_signal, 0),
+#endif
+	};
+#elif defined(CONFIG_BT_HCI_RESET_SIGNAL)
+	static struct k_poll_event events[] = {
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&recv_fifo, 0),
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&reset_signal, 0),
+
 	};
 #endif
 
@@ -587,27 +614,43 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf = NULL;
 
 		BT_DBG("blocking");
-#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) || \
+	defined(CONFIG_BT_HCI_RESET_SIGNAL)
 		int err;
 
-		err = k_poll(events, 2, K_FOREVER);
+		err = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 		LL_ASSERT(err == 0);
-		if (events[0].state == K_POLL_STATE_SIGNALED) {
-			events[0].signal->signaled = 0U;
-		} else if (events[1].state ==
-			   K_POLL_STATE_FIFO_DATA_AVAILABLE) {
-			node_rx = k_fifo_get(events[1].fifo, K_NO_WAIT);
+
+		if (0) {
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+		} else if (events[FLOW_SIGNAL].state == K_POLL_STATE_SIGNALED) {
+			events[FLOW_SIGNAL].signal->signaled = 0U;
+#endif
+#if defined(CONFIG_BT_HCI_RESET_SIGNAL)
+		} else if (events[RESET_SIGNAL].state == K_POLL_STATE_SIGNALED) {
+			events[RESET_SIGNAL].signal->signaled = 0U;
+			events[RESET_SIGNAL].state = K_POLL_STATE_NOT_READY;
+			/* flush fifo, no need to free, the LL has already done it */
+			k_fifo_init(&recv_fifo);
+			continue;
+#endif
+		} else if (events[RCV_FIFO_DATA].state ==
+			K_POLL_STATE_FIFO_DATA_AVAILABLE) {
+			node_rx = k_fifo_get(events[RCV_FIFO_DATA].fifo, K_NO_WAIT);
 		}
 
-		events[0].state = K_POLL_STATE_NOT_READY;
-		events[1].state = K_POLL_STATE_NOT_READY;
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+		events[RCV_FIFO_DATA].state = K_POLL_STATE_NOT_READY;
+		events[FLOW_SIGNAL].state = K_POLL_STATE_NOT_READY;
 
 		/* process host buffers first if any */
 		buf = process_hbuf(node_rx);
-
+#endif
 #else
 		node_rx = k_fifo_get(&recv_fifo, K_FOREVER);
 #endif
+
 		BT_DBG("unblocked");
 
 		if (node_rx && !buf) {
@@ -734,6 +777,8 @@ static int hci_driver_send(struct net_buf *buf)
 
 static int hci_driver_open(void)
 {
+	struct k_poll_signal *signal_reset = NULL;
+	struct k_poll_signal *signal_hbuf = NULL;
 	uint32_t err;
 
 	DEBUG_INIT();
@@ -747,12 +792,16 @@ static int hci_driver_open(void)
 		return err;
 	}
 
+#if defined(CONFIG_BT_HCI_RESET_SIGNAL)
+	k_poll_signal_init(&reset_signal);
+	signal_reset = &reset_signal;
+#endif
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	k_poll_signal_init(&hbuf_signal);
-	hci_init(&hbuf_signal);
-#else
-	hci_init(NULL);
+	signal_hbuf = &hbuf_signal;
 #endif
+
+	hci_init(signal_reset, signal_hbuf);
 
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
 			K_KERNEL_STACK_SIZEOF(prio_recv_thread_stack),

@@ -142,6 +142,11 @@ config BT_HCI_ACL_FLOW_CONTROL
 	  controller are on separate cores since it ensures that we do
 	  not run out of incoming ACL buffers.
 
+config BT_HCI_RESET_SIGNAL
+	bool "Synchronization of HCI reset between threads"
+	select POLL
+	default y if BT_HCI_RAW
+
 config BT_REMOTE_VERSION
 	bool "Allow fetching of remote version"
 	# Enable if building a Controller-only build
