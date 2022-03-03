@@ -19,6 +19,10 @@ API Changes
 Changes in this release
 =======================
 
+* LoRaWAN: The message type parameter in :c:func:`lorawan_send` was changed
+  from ``uint8_t`` to ``enum lorawan_message_type``. If ``0`` was passed for
+  unconfirmed message, this has to be changed to ``LORAWAN_MSG_UNCONFIRMED``.
+
 Removed APIs in this release
 ============================
 
