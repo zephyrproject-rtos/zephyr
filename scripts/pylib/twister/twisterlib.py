@@ -3634,6 +3634,14 @@ class TestSuite(DisablePyTestCollectionMixin):
             skips = 0
             duration = 0
 
+            eleTestsuite = None
+            if os.path.exists(filename) and append:
+                ts = eleTestsuites.findall(f'testsuite/[@name="{p}"]')
+                if ts:
+                    eleTestsuite = ts[0]
+                else:
+                    logger.info(f"Did not find any existing results for {p}")
+
             for _, instance in inst.items():
                 handler_time = instance.metrics.get('handler_time', 0)
                 duration += handler_time
@@ -3644,7 +3652,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                         elif instance.results[k] == 'BLOCK':
                             errors += 1
                         elif instance.results[k] == 'SKIP' or instance.status in ['skipped']:
-                            skips += 1
+                            if not eleTestsuite or not eleTestsuite.findall(f'testcase/[@name="{k}"]'):
+                                skips += 1
                         else:
                             fails += 1
                 else:
@@ -3669,26 +3678,15 @@ class TestSuite(DisablePyTestCollectionMixin):
                 continue
 
             run = p
-            eleTestsuite = None
             if not report_skipped and total == skips:
                 continue
 
             # When we re-run the tests, we re-use the results and update only with
             # the newly run tests.
-            if os.path.exists(filename) and append:
-                ts = eleTestsuites.findall(f'testsuite/[@name="{p}"]')
-                if ts:
-                    eleTestsuite = ts[0]
-                    eleTestsuite.attrib['failures'] = "%d" % fails
-                    eleTestsuite.attrib['errors'] = "%d" % errors
-                    eleTestsuite.attrib['skipped'] = "%d" % skips
-                else:
-                    logger.info(f"Did not find any existing results for {p}")
-                    eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
-                                name=run, time="%f" % duration,
-                                tests="%d" % (total),
-                                failures="%d" % fails,
-                                errors="%d" % (errors), skipped="%s" % (skips))
+            if eleTestsuite:
+                eleTestsuite.attrib['failures'] = "%d" % fails
+                eleTestsuite.attrib['errors'] = "%d" % errors
+                eleTestsuite.attrib['skipped'] = "%d" % (skips + int(eleTestsuite.attrib['skipped']))
             else:
                 eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
                                                 name=run, time="%f" % duration,
