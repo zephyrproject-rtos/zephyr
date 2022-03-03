@@ -99,6 +99,12 @@ static inline int setsockopt(int sock, int level, int optname,
 	return zsock_setsockopt(sock, level, optname, optval, optlen);
 }
 
+static inline int getpeername(int sock, struct sockaddr *addr,
+			      socklen_t *addrlen)
+{
+	return zsock_getpeername(sock, addr, addrlen);
+}
+
 static inline int getsockname(int sock, struct sockaddr *addr,
 			      socklen_t *addrlen)
 {
