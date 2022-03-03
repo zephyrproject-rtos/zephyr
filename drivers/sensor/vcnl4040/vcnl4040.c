@@ -267,7 +267,7 @@ static int vcnl4040_pm_action(const struct device *dev,
 		als_conf |= VCNL4040_ALS_SD_MASK;
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
-					als_conf)
+					als_conf);
 		if (ret < 0)
 			return ret;
 #endif
