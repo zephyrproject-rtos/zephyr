@@ -196,7 +196,7 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 	return ret;
 }
 
-bool pm_system_suspend(int32_t ticks)
+bool pm_system_suspend(k_ticks_t ticks)
 {
 	bool ret = true;
 	uint8_t id = _current_cpu->id;
@@ -206,7 +206,7 @@ bool pm_system_suspend(int32_t ticks)
 	if (!atomic_test_bit(z_cpus_pm_state_forced, id)) {
 		const struct pm_state_info *info;
 
-		info = pm_policy_next_state(id, ticks);
+		info = pm_policy_next_state(id, (int32_t)ticks);
 		if (info != NULL) {
 			z_cpus_pm_state[id] = *info;
 		}
@@ -226,10 +226,10 @@ bool pm_system_suspend(int32_t ticks)
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
 		 */
-		z_set_timeout_expiry(ticks -
-		     k_us_to_ticks_ceil32(
-			     z_cpus_pm_state[id].exit_latency_us),
-				     true);
+		z_set_timeout_expiry((int32_t)(uint32_t)(ticks -
+				k_us_to_ticks_ceil32(
+				z_cpus_pm_state[id].exit_latency_us)),
+				true);
 	}
 
 #if CONFIG_PM_DEVICE

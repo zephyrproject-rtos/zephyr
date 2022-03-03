@@ -80,7 +80,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * logic.
 		 */
 		if (k_is_pre_kernel() ||
-		    !pm_system_suspend((int32_t)_kernel.idle)) {
+		    !pm_system_suspend(_kernel.idle)) {
 			k_cpu_idle();
 		}
 #else

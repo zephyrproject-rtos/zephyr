@@ -249,7 +249,7 @@ void z_mem_manage_boot_finish(void);
  *
  * @return True if the system suspended, otherwise return false
  */
-bool pm_system_suspend(int32_t ticks);
+bool pm_system_suspend(k_ticks_t ticks);
 
 /**
  * Notify exit from kernel idling after PM operations
