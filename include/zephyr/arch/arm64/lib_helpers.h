@@ -152,8 +152,10 @@ static ALWAYS_INLINE void disable_fiq(void)
 #define wfe()	__asm__ volatile("wfe" : : : "memory")
 #define wfi()	__asm__ volatile("wfi" : : : "memory")
 
-#define dsb()	__asm__ volatile ("dsb sy" ::: "memory")
-#define dmb()	__asm__ volatile ("dmb sy" ::: "memory")
+#define __dsb(opt)	__asm__ volatile("dsb " #opt : : : "memory")
+#define dsb()	__dsb(sy)
+#define __dmb(opt)	__asm__ volatile("dmb " #opt : : : "memory")
+#define dmb()	__dmb(sy)
 #define isb()	__asm__ volatile ("isb" ::: "memory")
 
 /* Zephyr needs these as well */
