@@ -9,15 +9,15 @@
 
 #ifndef _ASMLANGUAGE
 
-#if defined(CONFIG_ARCH_HAS_MEMORY_BARRIER)
+// #if defined(CONFIG_ARCH_HAS_MEMORY_BARRIER)
 
-#define arch_mb()	__asm__ volatile ("fence iorw, iorw" : : : "memory")
-#define arch_rmb()	__asm__ volatile ("fence ir, ir" : : : "memory")
-#define arch_wmb()	__asm__ volatile ("fence ow, ow" : : : "memory")
+#define z_memory_barrier()	__asm__ volatile ("fence iorw, iorw" : : : "memory")
+#define z_read_mb()	__asm__ volatile ("fence ir, ir" : : : "memory")
+#define z_write_mb()	__asm__ volatile ("fence ow, ow" : : : "memory")
 
-#endif /* !CONFIG_ARCH_HAS_MEMORY_BARRIER */
+// #endif /* !CONFIG_ARCH_HAS_MEMORY_BARRIER */
 
-#include <sys/barrier.h>
+// #include <sys/barrier.h>
 
 #endif /* !_ASMLANGUAGE */
 

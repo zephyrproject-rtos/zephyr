@@ -22,7 +22,6 @@
 #include <irq.h>
 #include <arch/x86/mmustructs.h>
 #include <arch/x86/thread_stack.h>
-#include <arch/x86/barrier.h>
 #include <linker/sections.h>
 
 #ifdef __cplusplus

@@ -30,15 +30,15 @@
 #define __DMB()	__asm__ volatile ("dmb 0xF" : : : "memory")
 #endif
 
-#if defined(CONFIG_ARCH_HAS_MEMORY_BARRIER)
+// #if defined(CONFIG_ARCH_HAS_MEMORY_BARRIER)
 
-#define arch_mb()	__DSB()
-#define arch_rmb()	__DSB()
-#define arch_wmb()	__DSB()
+#define z_memory_barrier()	__DSB()
+#define z_read_mb()	__DSB()
+#define z_write_mb()	__DSB()
 
-#endif /* CONFIG_ARCH_HAS_MEMORY_BARRIER */
+// #endif /* CONFIG_ARCH_HAS_MEMORY_BARRIER */
 
-#include <sys/barrier.h>
+// #include <sys/barrier.h>
 
 #endif /* !_ASMLANGUAGE */
 

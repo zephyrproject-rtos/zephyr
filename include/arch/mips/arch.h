@@ -11,7 +11,6 @@
 
 #include <arch/mips/thread.h>
 #include <arch/mips/exp.h>
-#include <arch/mips/barrier.h>
 #include <arch/common/sys_bitops.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
