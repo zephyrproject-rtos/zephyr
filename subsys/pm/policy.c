@@ -57,7 +57,7 @@ static void update_max_latency(void)
 }
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
-const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, k_ticks_t ticks)
 {
 	uint8_t num_cpu_states;
 	const struct pm_state_info *cpu_states;
@@ -82,7 +82,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 		}
 
 		if ((ticks == K_TICKS_FOREVER) ||
-		    (ticks >= (min_residency + exit_latency))) {
+		    (ticks >= (k_ticks_t)(min_residency + exit_latency))) {
 			return state;
 		}
 	}

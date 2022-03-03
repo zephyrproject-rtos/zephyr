@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <sys_clock.h>
 #include <pm/state.h>
 #include <sys/slist.h>
 
@@ -55,7 +56,7 @@ struct pm_policy_latency_request {
  * @return The power state the system should use for the given cpu. The function
  * will return NULL if system should remain into PM_STATE_ACTIVE.
  */
-const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, k_ticks_t ticks);
 
 /** @endcond */
 

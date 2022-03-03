@@ -226,7 +226,7 @@ static void test_pm_policy_next_state_default_latency(void)
 #endif /* CONFIG_PM_POLICY_DEFAULT */
 
 #ifdef CONFIG_PM_POLICY_CUSTOM
-const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, k_ticks_t ticks)
 {
 	static const struct pm_state_info state = {.state = PM_STATE_SOFT_OFF};
 

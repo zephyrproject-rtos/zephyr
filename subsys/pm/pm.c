@@ -206,7 +206,7 @@ bool pm_system_suspend(k_ticks_t ticks)
 	if (!atomic_test_bit(z_cpus_pm_state_forced, id)) {
 		const struct pm_state_info *info;
 
-		info = pm_policy_next_state(id, (int32_t)ticks);
+		info = pm_policy_next_state(id, ticks);
 		if (info != NULL) {
 			z_cpus_pm_state[id] = *info;
 		}
