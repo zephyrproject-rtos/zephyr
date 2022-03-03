@@ -7,6 +7,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/timer/riscv-machine-timer.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/can/can.h>
 
 #include <dt-bindings/pwm/pwm.h>
 
@@ -331,5 +332,34 @@
 			status = "disabled";
 			label = "TIMER_6";
 		};
+
+		can0: can@40006400 {
+			compatible = "gd,gd32-can";
+			reg = <0x40006400 0x400>;
+			interrupt-parent = <&eclic>;
+			interrupts = <38 0>, <39 0>, <40 0>, <41 0>;
+			interrupt-names = "tx", "rx0", "rx1", "ewmc";
+			rcu-periph-clock = <0x719>;
+			rcu-periph-reset = <0x419>;
+			status = "disabled";
+			label = "CAN_0";
+			sjw = <1>;
+			sample-point = <875>;
+		};
+
+		can1: can@40006800 {
+			compatible = "gd,gd32-can";
+			reg = <0x40006800 0x400>;
+			interrupt-parent = <&eclic>;
+			interrupts = <82 0>, <83 0>, <84 0>, <85 0>;
+			interrupt-names = "tx", "rx0", "rx1", "ewmc";
+			rcu-periph-clock = <0x71a>;
+			rcu-periph-reset = <0x41a>;
+			status = "disabled";
+			label = "CAN_1";
+			sjw = <1>;
+			sample-point = <875>;
+		};
+
 	};
 };
