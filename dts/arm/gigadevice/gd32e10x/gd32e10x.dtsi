@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/can/can.h>
 
 / {
 	cpus {
@@ -458,6 +459,40 @@
 				label = "PWM_13";
 				#pwm-cells = <2>;
 			};
+		};
+
+		can0: can@40006400 {
+			compatible = "gd,gd32-fdcan";
+			reg = <0x40006400 0x400>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
+			interrupt-names = "tx", "rx0", "rx1", "ewmc";
+			rcu-periph-clock = <0x719>;
+			rcu-periph-reset = <0x419>;
+			status = "disabled";
+			label = "CAN_0";
+			sjw = <1>;
+			sample-point = <875>;
+			sjw-data = <1>;
+			sample-point-data = <875>;
+			fd-standard = <CAN_FD_STANDARD_ISO>;
+			esi-mode = <0>;
+		};
+
+		can1: can@40006800 {
+			compatible = "gd,gd32-fdcan";
+			reg = <0x40006800 0x400>;
+			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
+			interrupt-names = "tx", "rx0", "rx1", "ewmc";
+			rcu-periph-clock = <0x71a>;
+			rcu-periph-reset = <0x41a>;
+			status = "disabled";
+			label = "CAN_1";
+			sjw = <1>;
+			sample-point = <875>;
+			sjw-data = <1>;
+			sample-point-data = <875>;
+			fd-standard = <CAN_FD_STANDARD_ISO>;
+			esi-mode = <0>;
 		};
 
 	};
