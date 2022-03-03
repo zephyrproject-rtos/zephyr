@@ -561,6 +561,7 @@ void test_main(void)
 		ztest_unit_test(test_mode_size_plain_string),
 		ztest_unit_test(test_mode_size_data_only),
 		ztest_unit_test(test_mode_size_plain_str_data),
+		ztest_unit_test(test_mode_size_str_with_strings),
 		ztest_unit_test(test_mode_size_str_with_2strings),
 		ztest_unit_test(test_saturate)
 		);
