@@ -9,36 +9,23 @@
 
 #ifndef _ASMLANGUAGE
 
-/*
- * Fallback on CMSIS when possible
- */
-#include <cmsis_compiler.h>
+#if defined (__GNUC__)
 
-/*
- * Provide a default implementation for un-supported compilers.
- */
+#define z_memory_barrier()	__asm__ volatile ("dsb 0xF":::"memory")
+#define z_read_mb()	__asm__ volatile ("dsb 0xF":::"memory")
+#define z_write_mb()	__asm__ volatile ("dsb 0xF":::"memory")
 
-#ifndef __ISB
-#define __ISB()	__asm__ volatile ("isb 0xF" : : : "memory")
-#endif
+#elif defined (__clang__)
 
-#ifndef __DSB
-#define __DSB()	__asm__ volatile ("dsb 0xF" : : : "memory")
-#endif
+#define z_memory_barrier()	__builtin_arm_dsb(0xF)
+#define z_read_mb()	__builtin_arm_dsb(0xF)
+#define z_write_mb()	__builtin_arm_dsb(0xF)
 
-#ifndef __DMB
-#define __DMB()	__asm__ volatile ("dmb 0xF" : : : "memory")
-#endif
+#else
 
-// #if defined(CONFIG_ARCH_HAS_MEMORY_BARRIER)
+#error The ARM32 architecture does not have a memory barrier implementation
 
-#define z_memory_barrier()	__DSB()
-#define z_read_mb()	__DSB()
-#define z_write_mb()	__DSB()
-
-// #endif /* CONFIG_ARCH_HAS_MEMORY_BARRIER */
-
-// #include <sys/barrier.h>
+#endif /* __GNUC__ */
 
 #endif /* !_ASMLANGUAGE */
 
