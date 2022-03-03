@@ -1,0 +1,27 @@
+# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice GD32 series CAN-FD module
+
+compatible: "gd,gd32-fdcan"
+
+include: ["gd,gd32-can.yaml", can-fd-controller.yaml]
+
+properties:
+  fd-standard:
+    type: int
+    required: true
+    description: Select CAN-FD standard, ISO CAN or Non-ISO CAN.
+
+  esi-mode:
+    type: int
+    required: true
+    description: |
+      Error state indicator mode
+      0: Always displays the node error state. Transmit the dominant bit by error active
+      nodes and transmit the recessive bit by error passive nodes.
+      1: When the node is not in the error passive state:
+      Displays the message buffer error state by configuring ESI bit in CAN_TMPx
+      registers.
+      When the node is in the error passive state:
+      Displays the node error state.
