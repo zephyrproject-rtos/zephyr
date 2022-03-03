@@ -9,6 +9,7 @@ choice LOG_MODE
 
 config LOG_MODE_DEFERRED
 	bool "Deferred logging"
+	depends on !LOG2_MODE_IMMEDIATE
 	help
 	  Log messages are buffered and processed later. This mode has the
 	  least impact on the application. Time consuming processing is
@@ -16,6 +17,7 @@ config LOG_MODE_DEFERRED
 
 config LOG_MODE_IMMEDIATE
 	bool "Synchronous"
+	depends on !LOG2_MODE_DEFERRED
 	help
 	  When enabled log is processed in the context of the call. It impacts
 	  performance of the system since time consuming operations are
@@ -27,6 +29,8 @@ config LOG_MODE_IMMEDIATE
 config LOG_MODE_MINIMAL
 	bool "Minimal-footprint"
 	imply PRINTK
+	depends on !LOG2_MODE_DEFERRED
+	depends on !LOG2_MODE_IMMEDIATE
 	help
 	  Enable minimal logging implementation. This has very little footprint
 	  overhead on top of the printk() implementation for standard
@@ -38,6 +42,8 @@ config LOG_MODE_MINIMAL
 
 config LOG_FRONTEND
 	bool "Frontend"
+	depends on !LOG2_MODE_DEFERRED
+	depends on !LOG2_MODE_IMMEDIATE
 	help
 	  When enabled, logs are redirected to a custom frontend instead
 	  of being processed by the logger. In this mode runtime filtering and
