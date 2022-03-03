@@ -37,18 +37,18 @@ extern "C" {
  */
 
 /**
- * @brief z_memory_barrier - Memory Barrier
+ * @brief z_full_mb - Memory Barrier
  *
  * A full system memory barrier. All memory operations before the mb() in the
  * instruction stream will be committed before any operations after the mb()
  * are committed.
  */
-#define z_memory_barrier()	__atomic_thread_fence(__ATOMIC_ACQ_REL)
+#define z_full_mb()	__atomic_thread_fence(__ATOMIC_ACQ_REL)
 
 /**
  * @brief z_read_mb - Read Memory Barrier
  *
- * Like z_memory_barrier(), but only guarantees ordering between read accesses. That is,
+ * Like z_full_mb(), but only guarantees ordering between read accesses. That is,
  * all read operations before an rmb() will be committed before any read
  * operations after the rmb().
  */
@@ -57,7 +57,7 @@ extern "C" {
 /**
  * @brief z_write_mb - Write Memory Barrier
  *
- * Like z_memory_barrier(), but only guarantees ordering between write accesses. That is,
+ * Like z_full_mb(), but only guarantees ordering between write accesses. That is,
  * all write operations before a wmb() will be committed before any write
  * operations after the wmb().
  */
