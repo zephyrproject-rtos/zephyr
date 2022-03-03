@@ -68,6 +68,7 @@ static int update_sampling_pnt(uint32_t ts, uint32_t sp, struct can_timing *res,
 	res->phase_seg1 = ts1 - res->prop_seg;
 	res->phase_seg2 = ts2;
 
+	__ASSERT(ts > 0, "prescaler calc fault");
 	sp_calc = (CAN_SYNC_SEG + ts1) * 1000 / ts;
 
 	return sp_calc > sp ? sp_calc - sp : sp - sp_calc;
@@ -91,6 +92,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 		return -EINVAL;
 	}
 
+	__ASSERT((bitrate * ts) > 0, "prescaler calc fault");
 	for (int prescaler = MAX(core_clock / (ts * bitrate), 1);
 	     prescaler <= max->prescaler; ++prescaler) {
 		if (core_clock % (prescaler * bitrate)) {
@@ -174,9 +176,14 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 		return ret;
 	}
 
+	__ASSERT((bitrate * ts) > 0, "prescaler calc fault");
 	timing->prescaler = core_clock / (bitrate * ts);
 
-	return core_clock % (ts * timing->prescaler);
+	if (ts * timing->prescaler > 0) {
+		return core_clock % (ts * timing->prescaler);
+	} else {
+		return -EINVAL;
+	}
 }
 
 int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data)

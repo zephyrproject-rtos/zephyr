@@ -1067,6 +1067,7 @@ static inline void can_set_state_change_callback(const struct device *dev,
  */
 static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
 {
+	__ASSERT(dlc <= 0xf, "DLC OVERFLOW");
 	static const uint8_t dlc_table[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12,
 					    16, 20, 24, 32, 48, 64};
 
@@ -1082,6 +1083,7 @@ static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
  */
 static inline uint8_t can_bytes_to_dlc(uint8_t num_bytes)
 {
+	__ASSERT(dlc <= 64, "MAX is 64 byte");
 	return num_bytes <= 8  ? num_bytes :
 	       num_bytes <= 12 ? 9 :
 	       num_bytes <= 16 ? 10 :
