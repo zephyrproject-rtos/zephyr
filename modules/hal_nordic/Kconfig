@@ -179,6 +179,10 @@ endif
 menu "nRF 802.15.4 serialization"
 	depends on NRF_802154_SER_HOST || NRF_802154_SER_RADIO
 
+choice IPC_SERVICE_BACKEND
+	default IPC_SERVICE_BACKEND_RPMSG
+endchoice
+
 config NRF_802154_SER_LOG
 	bool "802.15.4 serialization logs"
 	default n
