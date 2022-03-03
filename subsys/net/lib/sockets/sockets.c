@@ -2024,6 +2024,91 @@ int z_vrfy_zsock_setsockopt(int sock, int level, int optname,
 #include <syscalls/zsock_setsockopt_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+int zsock_getpeername_ctx(struct net_context *ctx, struct sockaddr *addr,
+			  socklen_t *addrlen)
+{
+	socklen_t newlen = 0;
+
+	if (addr == NULL || addrlen == NULL) {
+		SET_ERRNO(-EINVAL);
+	}
+
+	if (!(ctx->flags & NET_CONTEXT_REMOTE_ADDR_SET)) {
+		SET_ERRNO(-ENOTCONN);
+	}
+
+	if (net_context_get_type(ctx) == SOCK_STREAM &&
+	    net_context_get_state(ctx) != NET_CONTEXT_CONNECTED) {
+		SET_ERRNO(-ENOTCONN);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->remote.sa_family == AF_INET) {
+		struct sockaddr_in addr4 = { 0 };
+
+		addr4.sin_family = AF_INET;
+		addr4.sin_port = net_sin(&ctx->remote)->sin_port;
+		memcpy(&addr4.sin_addr, &net_sin(&ctx->remote)->sin_addr,
+		       sizeof(struct in_addr));
+		newlen = sizeof(struct sockaddr_in);
+
+		memcpy(addr, &addr4, MIN(*addrlen, newlen));
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   ctx->remote.sa_family == AF_INET6) {
+		struct sockaddr_in6 addr6 = { 0 };
+
+		addr6.sin6_family = AF_INET6;
+		addr6.sin6_port = net_sin6(&ctx->remote)->sin6_port;
+		memcpy(&addr6.sin6_addr, &net_sin6(&ctx->remote)->sin6_addr,
+		       sizeof(struct in6_addr));
+		newlen = sizeof(struct sockaddr_in6);
+
+		memcpy(addr, &addr6, MIN(*addrlen, newlen));
+	} else {
+		SET_ERRNO(-EINVAL);
+	}
+
+	*addrlen = newlen;
+
+	return 0;
+}
+
+int z_impl_zsock_getpeername(int sock, struct sockaddr *addr,
+			     socklen_t *addrlen)
+{
+	VTABLE_CALL(getpeername, sock, addr, addrlen);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_zsock_getpeername(int sock, struct sockaddr *addr,
+					   socklen_t *addrlen)
+{
+	socklen_t addrlen_copy;
+	int ret;
+
+	Z_OOPS(z_user_from_copy(&addrlen_copy, (void *)addrlen,
+				sizeof(socklen_t)));
+
+	if (Z_SYSCALL_MEMORY_WRITE(addr, addrlen_copy)) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	ret = z_impl_zsock_getpeername(sock, (struct sockaddr *)addr,
+				       &addrlen_copy);
+
+	if (ret == 0 &&
+	    z_user_to_copy((void *)addrlen, &addrlen_copy,
+			   sizeof(socklen_t))) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	return ret;
+}
+#include <syscalls/zsock_getpeername_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+
 int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 			  socklen_t *addrlen)
 {
@@ -2243,6 +2328,11 @@ static int sock_close_vmeth(void *obj)
 {
 	return zsock_close_ctx(obj);
 }
+static int sock_getpeername_vmeth(void *obj, struct sockaddr *addr,
+				  socklen_t *addrlen)
+{
+	return zsock_getpeername_ctx(obj, addr, addrlen);
+}
 
 static int sock_getsockname_vmeth(void *obj, struct sockaddr *addr,
 				  socklen_t *addrlen)
@@ -2267,6 +2357,7 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.recvfrom = sock_recvfrom_vmeth,
 	.getsockopt = sock_getsockopt_vmeth,
 	.setsockopt = sock_setsockopt_vmeth,
+	.getpeername = sock_getpeername_vmeth,
 	.getsockname = sock_getsockname_vmeth,
 };
 
