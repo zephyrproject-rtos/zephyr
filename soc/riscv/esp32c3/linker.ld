@@ -142,26 +142,7 @@ SECTIONS
     __eh_frame = ABSOLUTE(.);
     KEEP(*(.eh_frame))
     . = (. + 7) & ~ 3;
-    /*
-     * C++ constructor and destructor tables
-     * Don't include anything from crtbegin.o or crtend.o, as IDF doesn't use toolchain crt.
-     *
-     * RISC-V gcc is configured with --enable-initfini-array so it emits an .init_array section instead.
-     * But the init_priority sections will be sorted for iteration in ascending order during startup.
-     * The rest of the init_array sections is sorted for iteration in descending order during startup, however.
-     * Hence a different section is generated for the init_priority functions which is iterated in
-     * ascending order during startup. The corresponding code can be found in startup.c.
-     */
-    __init_priority_array_start = ABSOLUTE(.);
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*))
-    __init_priority_array_end = ABSOLUTE(.);
-    __init_array_start = ABSOLUTE(.);
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
-    __init_array_end = ABSOLUTE(.);
-    KEEP (*crtbegin.*(.dtors))
-    KEEP (*(EXCLUDE_FILE (*crtend.*) .dtors))
-    KEEP (*(SORT(.dtors.*)))
-    KEEP (*(.dtors))
+
     /* C++ exception handlers table: */
     __XT_EXCEPTION_DESCS_ = ABSOLUTE(.);
     *(.xt_except_desc)
@@ -185,7 +166,7 @@ SECTIONS
     *(.tbss)
     *(.tbss.*)
     *(.srodata)
-    *(".srodata.*")
+    *(.srodata.*)
     *(.rodata)
     *(.rodata.*)
     *(.rodata_wlog)
@@ -200,12 +181,12 @@ SECTIONS
   #pragma push_macro("GROUP_ROM_LINK_IN")
   #undef GROUP_ROM_LINK_IN
   #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
-  #include "linker/common-rom/common-rom-kernel-devices.ld"
-  #include "linker/common-rom/common-rom-cpp.ld"
-  #include "linker/common-rom/common-rom-net.ld"
-  #include "linker/common-rom/common-rom-bt.ld"
-  #include "linker/common-rom/common-rom-debug.ld"
-  #include "linker/common-rom/common-rom-misc.ld"
+  #include <zephyr/linker/common-rom/common-rom-cpp.ld>
+  #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
+  #include <zephyr/linker/common-rom/common-rom-net.ld>
+  #include <zephyr/linker/common-rom/common-rom-bt.ld>
+  #include <zephyr/linker/common-rom/common-rom-debug.ld>
+  #include <zephyr/linker/common-rom/common-rom-misc.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
 
   .iram0.text : ALIGN(4)
@@ -254,6 +235,7 @@ SECTIONS
     *libzephyr.a:loader.*(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
+    *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
@@ -350,21 +332,25 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+  #include <zephyr/linker/cplusplus-rom.ld>
+  #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-data-sections.ld>
   #include <zephyr/linker/common-ram.ld>
   #include <snippets-ram-sections.ld>
+  #include <zephyr/linker/cplusplus-ram.ld>
 
   /* logging sections should be placed in RAM area to avoid flash cache disabled issues */
   #pragma push_macro("GROUP_ROM_LINK_IN")
   #undef GROUP_ROM_LINK_IN
   #define GROUP_ROM_LINK_IN GROUP_DATA_LINK_IN
-  #include "linker/common-rom/common-rom-logging.ld"
+  #include <zephyr/linker/common-rom/common-rom-logging.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
 
   .dummy.dram.data :
   {
     . = ALIGN(4);
     #include <snippets-rwdata.ld>
+    _end = ABSOLUTE(.);
     _data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
