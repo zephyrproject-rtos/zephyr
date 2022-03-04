@@ -207,18 +207,25 @@ static void set_regu_voltage(uint32_t hclk_freq)
 	}
 }
 
-/*
- * Unconditionally switch the system clock source to HSI.
- */
 __unused
-static void clock_switch_to_hsi(uint32_t ahb_prescaler)
+static void clock_switch_to_hsi(void)
 {
+	/* Enable HSI if not enabled */
+	if (LL_RCC_HSI_IsReady() != 1) {
+		/* Enable HSI */
+		LL_RCC_HSI_Enable();
+		while (LL_RCC_HSI_IsReady() != 1) {
+		/* Wait for HSI ready */
+		}
+	}
+
+	LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+
 	/* Set HSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
 }
-
 
 /*
  * Configure PLL as source of SYSCLK
@@ -236,12 +243,9 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	 * (Switching to HSI makes sure we have a SYSCLK source in
 	 * case we're currently running from the PLL we're about to
 	 * turn off and reconfigure.)
-	 *
-	 * Don't use s_ClkInitStruct.AHBCLKDivider as the AHB
-	 * prescaler here. In this configuration, that's the value to
-	 * use when the SYSCLK source is the PLL, not HSI.
 	 */
-	clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
+	clock_switch_to_hsi();
+
 	LL_RCC_PLL1_Disable();
 
 	if (IS_ENABLED(STM32_PLL_Q_DIVISOR)) {
@@ -272,49 +276,6 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	}
 
 #endif /* STM32_SYSCLK_SRC_PLL */
-}
-
-
-/*
- * Configure HSE as source of SYSCLK
- */
-void config_src_sysclk_hse(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
-{
-#ifdef STM32_SYSCLK_SRC_HSE
-
-	/* Set HSE as SYSCLCK source */
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
-	}
-
-#endif	/* STM32_SYSCLK_SRC_HSE */
-}
-
-/*
- * Configure MSI as source of SYSCLK
- */
-void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
-{
-#ifdef STM32_SYSCLK_SRC_MSIS
-
-	/* Set MSIS as SYSCLCK source */
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
-	}
-
-#endif	/* STM32_SYSCLK_SRC_MSIS */
-}
-
-/*
- * Configure HSI as source of SYSCLK
- */
-void config_src_sysclk_hsi(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
-{
-#ifdef STM32_SYSCLK_SRC_HSI
-
-	clock_switch_to_hsi(s_ClkInitStruct.AHBCLKDivider);
-
-#endif	/* STM32_SYSCLK_SRC_HSI */
 }
 
 static void set_up_fixed_clock_sources(void)
@@ -466,14 +427,20 @@ int stm32_clock_control_init(const struct device *dev)
 		/* Configure PLL as source of SYSCLK */
 		config_src_sysclk_pll(s_ClkInitStruct);
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
-		/* Configure HSE as source of SYSCLK */
-		config_src_sysclk_hse(s_ClkInitStruct);
+		/* Set HSE as SYSCLCK source */
+		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
+		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
+		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_MSIS)) {
-		/* Configure MSIS as source of SYSCLK */
-		config_src_sysclk_msis(s_ClkInitStruct);
+		/* Set MSIS as SYSCLCK source */
+		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
+		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
+		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
-		/* Configure HSI as source of SYSCLK */
-		config_src_sysclk_hsi(s_ClkInitStruct);
+		/* Set HSI as SYSCLCK source */
+		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+		}
 	} else {
 		return -ENOTSUP;
 	}
