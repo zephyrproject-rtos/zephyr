@@ -381,7 +381,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* TODO: if coded we use S8? */
-	radio_phy_set(lll->phy, 1);
+	radio_phy_set(lll->phy, PHY_FLAGS_S8);
 	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, PDU_AC_LEG_PAYLOAD_SIZE_MAX,
 			    RADIO_PKT_CONF_PHY(lll->phy));
 

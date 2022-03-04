@@ -147,7 +147,7 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 	/* Start setting up Radio h/w */
 	radio_reset();
 
-	radio_phy_set(lll_aux->phy, 1);
+	radio_phy_set(lll_aux->phy, PHY_FLAGS_S8);
 	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, LL_EXT_OCTETS_RX_MAX,
 			    RADIO_PKT_CONF_PHY(lll_aux->phy));
 
@@ -387,7 +387,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	/* Start setting up Radio h/w */
 	radio_reset();
 
-	radio_phy_set(lll->phy, 1);
+	radio_phy_set(lll->phy, PHY_FLAGS_S8);
 	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, LL_EXT_OCTETS_RX_MAX,
 			    RADIO_PKT_CONF_PHY(lll->phy));
 	radio_aa_set(lll->access_addr);
@@ -417,9 +417,9 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US + lll->window_widening_event_us)
 		<< 1) +
 	       lll->window_size_event_us;
-	hcto += radio_rx_ready_delay_get(lll->phy, 1);
+	hcto += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy);
-	hcto += radio_rx_chain_delay_get(lll->phy, 1);
+	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
 	radio_tmr_end_capture();
@@ -428,7 +428,8 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	radio_gpio_lna_setup();
 
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(lll->phy, 1) -
+				 radio_rx_ready_delay_get(lll->phy,
+							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
@@ -553,7 +554,7 @@ static void isr_aux_setup(void *param)
 	}
 
 	/* Setup radio for auxiliary PDU scan */
-	radio_phy_set(phy_aux, 1);
+	radio_phy_set(phy_aux, PHY_FLAGS_S8);
 	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, LL_EXT_OCTETS_RX_MAX,
 			    RADIO_PKT_CONF_PHY(phy_aux));
 
@@ -579,7 +580,7 @@ static void isr_aux_setup(void *param)
 	 * PDU start time in this case.
 	 */
 	aux_start_us = ftr->radio_end_us + aux_offset_us;
-	aux_start_us -= lll_radio_rx_ready_delay_get(phy_aux, 1);
+	aux_start_us -= lll_radio_rx_ready_delay_get(phy_aux, PHY_FLAGS_S8);
 	aux_start_us -= window_widening_us;
 	aux_start_us -= EVENT_JITTER_US;
 	radio_tmr_start_us(0, aux_start_us);
@@ -589,7 +590,7 @@ static void isr_aux_setup(void *param)
 	hcto += window_size_us;
 	hcto += window_widening_us;
 	hcto += EVENT_JITTER_US;
-	hcto += radio_rx_chain_delay_get(phy_aux, 1);
+	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
 	radio_tmr_hcto_configure(hcto);
 
@@ -605,7 +606,8 @@ static void isr_aux_setup(void *param)
 	radio_gpio_lna_setup();
 
 	radio_gpio_pa_lna_enable(aux_start_us +
-				 radio_rx_ready_delay_get(phy_aux, 1) -
+				 radio_rx_ready_delay_get(phy_aux,
+							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 }
