@@ -425,6 +425,9 @@ static void hci_num_completed_packets(struct net_buf *buf)
 #endif /* CONFIG_BT_CONN_TX */
 
 #if defined(CONFIG_BT_CONN)
+
+k_tid_t bt_recv_thread_id;
+
 static void hci_acl(struct net_buf *buf)
 {
 	struct bt_hci_acl_hdr *hdr;
@@ -433,6 +436,10 @@ static void hci_acl(struct net_buf *buf)
 	uint8_t flags;
 
 	BT_DBG("buf %p", buf);
+
+	if (bt_recv_thread_id == NULL) {
+		bt_recv_thread_id = k_current_get();
+	}
 
 	BT_ASSERT(buf->len >= sizeof(*hdr));
 
@@ -3373,14 +3380,8 @@ void hci_event_prio(struct net_buf *buf)
 	}
 }
 
-k_tid_t bt_recv_thread_id;
-
 int bt_recv(struct net_buf *buf)
 {
-	if (bt_recv_thread_id == NULL) {
-		bt_recv_thread_id = k_current_get();
-	}
-
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
