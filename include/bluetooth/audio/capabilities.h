@@ -107,6 +107,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @param conn Connection object
 	 *  @param ep Remote Audio Endpoint being configured
+	 *  @param type Type of the endpoint.
 	 *  @param cap Local Audio Capability being configured
 	 *  @param codec Codec configuration
 	 *
@@ -114,6 +115,7 @@ struct bt_audio_capability_ops {
 	 */
 	struct bt_audio_stream *(*config)(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
+					  enum bt_audio_pac_type type,
 					  struct bt_audio_capability *cap,
 					  struct bt_codec *codec);
 

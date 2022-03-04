@@ -35,7 +35,7 @@ static sys_slist_t srcs;
  */
 static int unicast_server_config_cb(struct bt_conn *conn,
 				    const struct bt_audio_ep *ep,
-				    uint8_t type,
+				    enum bt_audio_pac_type type,
 				    const struct bt_codec *codec,
 				    struct bt_audio_stream **stream,
 				    struct bt_codec_qos_pref *const pref)
@@ -63,7 +63,7 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 		}
 
 		*stream = cap->ops->config(conn, (struct bt_audio_ep *)ep,
-					   cap, (struct bt_codec *)codec);
+					   type, cap, (struct bt_codec *)codec);
 
 		if (*stream == NULL) {
 			return -ENOMEM;

@@ -101,10 +101,12 @@ static void print_qos(struct bt_codec_qos *qos)
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
+					  enum bt_audio_pac_type type,
 					  struct bt_audio_capability *cap,
 					  struct bt_codec *codec)
 {
-	printk("ASE Codec Config: conn %p ep %p cap %p\n", conn, ep, cap);
+	printk("ASE Codec Config: conn %p ep %p type %u, cap %p\n",
+	       conn, ep, type, cap);
 
 	print_codec(codec);
 
