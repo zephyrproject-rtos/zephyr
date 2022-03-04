@@ -396,7 +396,19 @@ static int http_wait_data(int sock, struct http_request *req)
 			ret = total_received;
 
 			if (req->internal.response.cb) {
-				NET_DBG("Calling callback for closed connection");
+				NET_DBG("Calling callback for closed connection "
+					"(NULL HTTP response)");
+
+				/* Status code 0 representing a null response */
+				req->internal.response.http_status_code = 0;
+
+				/* Zero out related response metrics */
+				req->internal.response.processed = 0;
+				req->internal.response.data_len = 0;
+				req->internal.response.content_length = 0;
+				req->internal.response.body_start = NULL;
+				memset(req->internal.response.http_status, 0,
+				       HTTP_STATUS_STR_SIZE);
 
 				req->internal.response.cb(&req->internal.response,
 							  HTTP_DATA_FINAL,
