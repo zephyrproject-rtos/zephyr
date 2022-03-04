@@ -379,6 +379,26 @@ static void acpi_ec0_ibf_isr(const struct device *dev)
 	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION,
 		ESPI_PERIPHERAL_HOST_IO, ESPI_PERIPHERAL_NODATA
 	};
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+	struct acpi_ec_regs *acpi_ec0_hw = (struct acpi_ec_regs *)xec_acpi_ec0_cfg.regbase;
+
+	/* Updates to fit Chrome shim layer design */
+	struct espi_evt_data_acpi *acpi_evt =
+				(struct espi_evt_data_acpi *)&evt.evt_data;
+
+	/* Host put data on input buffer of ACPI EC0 channel */
+	if (acpi_ec0_hw->EC_STS & MCHP_ACPI_EC_STS_IBF) {
+		/* Set processing flag before reading command byte */
+		acpi_ec0_hw->EC_STS |= MCHP_ACPI_EC_STS_UD1A;
+		/*
+		 * Indicates if the host sent a command or data.
+		 * 0 = data
+		 * 1 = Command.
+		 */
+		acpi_evt->type = acpi_ec0_hw->EC_STS & MCHP_ACPI_EC_STS_CMD ? 1 : 0;
+		acpi_evt->data = acpi_ec0_hw->OS2EC_DATA;
+	}
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA */
 
 	espi_send_callbacks(&data->callbacks, dev, evt);
 
@@ -514,6 +534,19 @@ static void acpi_ec1_ibf_isr(const struct device *dev)
 #endif
 		.evt_data = ESPI_PERIPHERAL_NODATA
 	};
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+	struct acpi_ec_regs *acpi_ec1_hw = (struct acpi_ec_regs *)xec_acpi_ec1_cfg.regbase;
+
+	/* Updates to fit Chrome shim layer design.
+	 * Host put data on input buffer of ACPI EC1 channel.
+	 */
+	if (acpi_ec1_hw->EC_STS & MCHP_ACPI_EC_STS_IBF) {
+		/* Set processing flag before reading command byte */
+		acpi_ec1_hw->EC_STS |= MCHP_ACPI_EC_STS_UD1A;
+		/* Read out input data and clear IBF pending bit */
+		evt.evt_data = acpi_ec1_hw->OS2EC_DATA;
+	}
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA */
 
 	espi_send_callbacks(&data->callbacks, dev, evt);
 
