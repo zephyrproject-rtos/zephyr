@@ -108,3 +108,9 @@ child-binding:
           nrf-pinctrl.h. Note that extra modes may not be available on certain
           devices. Defaults to standard mode for 0 and 1 (NRF_DRIVE_S0S1), the
           SoC default.
+
+      nordic,invert:
+        type: boolean
+        description: |
+          Invert pin polarity (set the active state to low).
+          Only valid for PWM channel output pins.
