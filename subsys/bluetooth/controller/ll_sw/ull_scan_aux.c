@@ -620,7 +620,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	lll_aux->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
 				    ((EVENT_JITTER_US + window_widening_us) << 1));
 
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll_aux->phy, 1);
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll_aux->phy,
+						      PHY_FLAGS_S8);
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
