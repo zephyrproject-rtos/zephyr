@@ -241,8 +241,8 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_SEND_OK_ENABLED 0
 #define MDM_SEND_OK_DISABLED 1
 
-#define MDM_CMD_SEND_TIMEOUT K_SECONDS(5)
-#define MDM_IP_SEND_RX_TIMEOUT K_SECONDS(60)
+#define MDM_CMD_SEND_TIMEOUT K_SECONDS(6)
+#define MDM_IP_SEND_RX_TIMEOUT K_SECONDS(62)
 #define MDM_SOCK_NOTIF_DELAY K_MSEC(150)
 #define MDM_CMD_CONN_TIMEOUT K_SECONDS(31)
 
@@ -1432,7 +1432,7 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 	/* Send EOF pattern to terminate data */
 	k_sem_reset(&sock->sock_send_sem);
 	mdm_receiver_send(&ictx.mdm_ctx, EOF_PATTERN, strlen(EOF_PATTERN));
-	ret = k_sem_take(&sock->sock_send_sem, MDM_CMD_SEND_TIMEOUT);
+	ret = k_sem_take(&sock->sock_send_sem, MDM_IP_SEND_RX_TIMEOUT);
 	if (ret == 0) {
 		ret = ictx.last_error;
 	} else if (ret == -EAGAIN) {
