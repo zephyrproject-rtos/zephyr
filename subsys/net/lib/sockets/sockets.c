@@ -631,22 +631,14 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 	socklen_t addrlen_copy;
 	int ret;
 
-	Z_OOPS(z_user_from_copy(&addrlen_copy, (void *)addrlen,
-			     sizeof(socklen_t)));
-
-	if (Z_SYSCALL_MEMORY_WRITE(addr, addrlen_copy)) {
-		errno = EFAULT;
-		return -1;
-	}
+	Z_OOPS(addrlen && z_user_from_copy(&addrlen_copy, addrlen,
+					   sizeof(socklen_t)));
+	Z_OOPS(addr && Z_SYSCALL_MEMORY_WRITE(addr, addrlen_copy));
 
 	ret = z_impl_zsock_accept(sock, (struct sockaddr *)addr, &addrlen_copy);
 
-	if (ret >= 0 &&
-	    z_user_to_copy((void *)addrlen, &addrlen_copy,
-			   sizeof(socklen_t))) {
-		errno = EINVAL;
-		return -1;
-	}
+	Z_OOPS(ret >= 0 && addrlen && z_user_to_copy(addrlen, &addrlen_copy,
+						     sizeof(socklen_t)));
 
 	return ret;
 }
