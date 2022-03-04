@@ -308,19 +308,9 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 
 		/* Switch to PLL with MSI as clock source */
 		LL_PLL_ConfigSystemClock_MSI(&s_PLLInitStruct, &s_ClkInitStruct);
-
-		/* Disable other clocks */
-		LL_RCC_HSI_Disable();
-		LL_RCC_HSE_Disable();
-
 	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
 		/* Switch to PLL with HSI as clock source */
 		LL_PLL_ConfigSystemClock_HSI(&s_PLLInitStruct, &s_ClkInitStruct);
-
-		/* Disable other clocks */
-		LL_RCC_HSE_Disable();
-		LL_RCC_MSIS_Disable();
-
 	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
 		int hse_bypass;
 
@@ -335,10 +325,6 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 					      hse_bypass,
 					      &s_PLLInitStruct,
 					      &s_ClkInitStruct);
-
-		/* Disable other clocks */
-		LL_RCC_HSI_Disable();
-		LL_RCC_MSIS_Disable();
 	}
 
 #endif /* STM32_SYSCLK_SRC_PLL */
@@ -396,11 +382,6 @@ void config_src_sysclk_hse(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
-	/* Disable other clocks */
-	LL_RCC_HSI_Disable();
-	LL_RCC_MSIS_Disable();
-	LL_RCC_PLL1_Disable();
-
 #endif	/* STM32_SYSCLK_SRC_HSE */
 }
 
@@ -444,11 +425,6 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
-	/* Disable other clocks */
-	LL_RCC_HSE_Disable();
-	LL_RCC_HSI_Disable();
-	LL_RCC_PLL1_Disable();
-
 #endif	/* STM32_SYSCLK_SRC_MSIS */
 }
 
@@ -464,11 +440,6 @@ void config_src_sysclk_hsi(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	/* Set flash latency */
 	/* HSI used as SYSCLK, set latency to 0 */
 	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
-
-	/* Disable other clocks */
-	LL_RCC_HSE_Disable();
-	LL_RCC_MSIS_Disable();
-	LL_RCC_PLL1_Disable();
 
 #endif	/* STM32_SYSCLK_SRC_HSI */
 }
