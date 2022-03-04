@@ -10,6 +10,9 @@
 #include <ace-ipc-regs.h>
 #include <cavs-mem.h>
 
+#define CORE_POWER_CHECK_NUM 32
+#define CORE_POWER_CHECK_DELAY 256
+
 static void ipc_isr(void *arg)
 {
 	MTL_P2P_IPC[arch_proc_id()].agents[0].ipc.tdr = BIT(31); /* clear BUSY bit */
@@ -39,6 +42,8 @@ void soc_mp_init(void)
 
 void soc_start_core(int cpu_num)
 {
+	int retry = CORE_POWER_CHECK_NUM;
+
 	if (cpu_num > 0) {
 		/* Initialize the ROM jump address */
 		uint32_t *rom_jump_vector = (uint32_t *) ROM_JUMP_ADDR;
@@ -50,6 +55,15 @@ void soc_start_core(int cpu_num)
 	}
 
 	MTL_PWRBOOT.capctl[cpu_num].ctl |= MTL_PWRBOOT_CTL_SPA;
+
+	/* Waiting for power up */
+	while (~(MTL_PWRBOOT.capctl[cpu_num].ctl & MTL_PWRBOOT_CTL_CPA) && --retry) {
+		k_busy_wait(CORE_POWER_CHECK_DELAY);
+	}
+
+	if (!retry) {
+		__ASSERT(false, "%s secondary core has not powered up", __func__);
+	}
 }
 
 void soc_mp_startup(uint32_t cpu)
