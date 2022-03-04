@@ -226,9 +226,9 @@ bool pm_system_suspend(k_ticks_t ticks)
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
 		 */
-		z_set_timeout_expiry((int32_t)(uint32_t)(ticks -
-				k_us_to_ticks_ceil32(
-				z_cpus_pm_state[id].exit_latency_us)),
+		z_set_timeout_expiry(ticks -
+				(k_ticks_t)k_us_to_ticks_ceil32(
+				z_cpus_pm_state[id].exit_latency_us),
 				true);
 	}
 

@@ -18,6 +18,7 @@
 #include <sys/atomic.h>
 #include <sys/math_extras.h>
 #include <timing/timing.h>
+#include <sys_clock.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -413,7 +414,7 @@ void z_reset_time_slice(struct k_thread *curr)
 	 */
 	if (slice_time(curr) != 0) {
 		_current_cpu->slice_ticks = slice_time(curr) + sys_clock_elapsed();
-		z_set_timeout_expiry(slice_time(curr), false);
+		z_set_timeout_expiry((k_ticks_t)slice_time(curr), false);
 	}
 }
 

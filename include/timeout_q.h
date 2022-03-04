@@ -13,7 +13,7 @@
  */
 
 #include <kernel.h>
-
+#include <sys_clock.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -56,7 +56,7 @@ static inline int z_abort_thread_timeout(struct k_thread *thread)
 
 int32_t z_get_next_timeout_expiry(void);
 
-void z_set_timeout_expiry(int32_t ticks, bool is_idle);
+void z_set_timeout_expiry(k_ticks_t ticks, bool is_idle);
 
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 
