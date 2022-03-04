@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'lib/libc/minimal/include/errno.h'
+      - 'scripts/ci/errno.py'
 
 jobs:
   check-errno:
