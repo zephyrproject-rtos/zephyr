@@ -3,6 +3,7 @@ name: Bluetooth Tests
 on:
   pull_request:
     paths:
+      - ".github/workflows/bluetooth-test*.yaml"
       - "west.yml"
       - "subsys/bluetooth/**"
       - "tests/bluetooth/bsim_bt/**"
