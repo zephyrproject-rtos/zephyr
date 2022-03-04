@@ -775,21 +775,29 @@
 		};
 
 		usdhc1: usdhc@40418000 {
-			compatible = "nxp,imx-usdhc";
+			compatible = "nxp,imx-sdhc";
 			reg = <0x40418000 0x4000>;
 			status = "disabled";
 			interrupts = <133 0>;
 			clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
-			label = "USDHC_1";
+			label = "SDHC_0";
+			max-current-330 = <1020>;
+			max-current-180 = <1020>;
+			max-bus-freq = <208000000>;
+			min-bus-freq = <400000>;
 		};
 
 		usdhc2: usdhc@4041c000 {
-			compatible = "nxp,imx-usdhc";
+			compatible = "nxp,imx-sdhc";
 			reg = <0x4041c000 0x4000>;
 			status = "disabled";
 			interrupts = <134 0>;
 			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
-			label = "USDHC_2";
+			label = "SDHC_1";
+			max-current-330 = <1020>;
+			max-current-180 = <1020>;
+			max-bus-freq = <208000000>;
+			min-bus-freq = <400000>;
 		};
 
 		csi: csi@40800000 {

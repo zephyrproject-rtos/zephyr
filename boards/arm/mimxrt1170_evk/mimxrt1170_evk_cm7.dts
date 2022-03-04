@@ -106,9 +106,13 @@
 
 &usdhc1 {
 	status = "okay";
-	no-1-8-v;
 	detect-dat3;
 	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+		label = "SDMMC_0";
+	};
 };
 
 &edma0 {
