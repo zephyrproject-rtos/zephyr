@@ -114,6 +114,19 @@ static uint32_t get_pllsrc_frequency(void)
 	return 0;
 }
 
+static uint32_t get_startup_frequency(void)
+{
+	switch (LL_RCC_GetSysClkSource()) {
+	case LL_RCC_SYS_CLKSOURCE_STATUS_MSIS:
+		return get_msis_frequency();
+	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
+		return STM32_HSI_FREQ;
+	default:
+		__ASSERT(0, "Unexpected startup freq");
+		return 0;
+	}
+}
+
 static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
@@ -338,24 +351,6 @@ void config_src_sysclk_hse(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 {
 #ifdef STM32_SYSCLK_SRC_HSE
 
-	uint32_t old_hclk_freq;
-	uint32_t new_hclk_freq;
-
-	old_hclk_freq = HAL_RCC_GetHCLKFreq();
-
-	/* Calculate new SystemCoreClock variable based on HSE freq */
-	new_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(CONFIG_CLOCK_STM32_HSE_CLOCK,
-						s_ClkInitStruct.AHBCLKDivider);
-
-	__ASSERT(new_hclk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-			 "Config mismatch HCLK frequency %u %u",
-			 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, new_hclk_freq);
-
-	/* If freq increases, set flash latency before any clock setting */
-	if (new_hclk_freq > old_hclk_freq) {
-		LL_SetFlashLatency(new_hclk_freq);
-	}
-
 	/* Enable HSE if not enabled */
 	if (LL_RCC_HSE_IsReady() != 1) {
 		/* Check if need to enable HSE bypass feature or not */
@@ -377,11 +372,6 @@ void config_src_sysclk_hse(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
 
-	/* If freq not increased, set flash latency after all clock setting */
-	if (new_hclk_freq <= old_hclk_freq) {
-		LL_SetFlashLatency(new_hclk_freq);
-	}
-
 #endif	/* STM32_SYSCLK_SRC_HSE */
 }
 
@@ -392,37 +382,12 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 {
 #ifdef STM32_SYSCLK_SRC_MSIS
 
-	uint32_t old_hclk_freq;
-	uint32_t new_hclk_freq;
-
-	old_hclk_freq = HAL_RCC_GetHCLKFreq();
-
-	/* Calculate new SystemCoreClock variable with MSI freq */
-	/* MSI freq is defined from RUN range selection */
-	new_hclk_freq =	__LL_RCC_CALC_HCLK_FREQ(
-				get_msis_frequency(),
-				s_ClkInitStruct.AHBCLKDivider);
-
-	__ASSERT(new_hclk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-			 "Config mismatch HCLK frequency %u %u",
-			 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, new_hclk_freq);
-
-	/* If freq increases, set flash latency before any clock setting */
-	if (new_hclk_freq > old_hclk_freq) {
-		LL_SetFlashLatency(new_hclk_freq);
-	}
-
 	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	/* Set MSIS as SYSCLCK source */
 	set_up_clk_msis();
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
-	}
-
-	/* If freq not increased, set flash latency after all clock setting */
-	if (new_hclk_freq <= old_hclk_freq) {
-		LL_SetFlashLatency(new_hclk_freq);
 	}
 
 #endif	/* STM32_SYSCLK_SRC_MSIS */
@@ -437,21 +402,27 @@ void config_src_sysclk_hsi(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 
 	clock_switch_to_hsi(s_ClkInitStruct.AHBCLKDivider);
 
-	/* Set flash latency */
-	/* HSI used as SYSCLK, set latency to 0 */
-	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
-
 #endif	/* STM32_SYSCLK_SRC_HSI */
 }
 
 int stm32_clock_control_init(const struct device *dev)
 {
-	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
+	uint32_t old_hclk_freq = 0;
+	int r = 0;
 
 	ARG_UNUSED(dev);
 
 	/* configure clock for AHB/APB buses */
 	config_bus_clk_init((LL_UTILS_ClkInitTypeDef *)&s_ClkInitStruct);
+
+	/* Current hclk value */
+	old_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(get_startup_frequency(), LL_RCC_GetAHBPrescaler());
+
+	/* Set flash latency */
+	/* If freq increases, set flash latency before any clock setting */
+	if (old_hclk_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	}
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
@@ -476,6 +447,12 @@ int stm32_clock_control_init(const struct device *dev)
 		config_src_sysclk_hsi(s_ClkInitStruct);
 	} else {
 		return -ENOTSUP;
+	}
+
+	/* Set FLASH latency */
+	/* If freq not increased, set flash latency after all clock setting */
+	if (old_hclk_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 
 	/* Update CMSIS variable */
