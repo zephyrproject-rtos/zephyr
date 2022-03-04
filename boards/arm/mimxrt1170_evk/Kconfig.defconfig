@@ -19,11 +19,8 @@ if DISK_DRIVERS
 config DISK_DRIVER_SDMMC
 	default y
 
-config SDMMC_USDHC_DAT3_PWR_TOGGLE
+config IMX_USDHC_DAT3_PWR_TOGGLE
 	default y
-
-config SDMMC_USDHC_DAT3_PWR_DELAY
-	default 10
 
 endif # DISK_DRIVERS
 
