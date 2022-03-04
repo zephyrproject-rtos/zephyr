@@ -38,19 +38,27 @@ struct controller {
 /* Media proxy */
 struct mprx {
 
+#if defined(CONFIG_MCTL_LOCAL_PLAYER_REMOTE_CONTROL)
 	/* Controller using the synchronous interface - e.g. remote controller via
 	 * the media control service
 	 */
 	struct scontroller   sctrlr;
+#endif /* CONFIG_MCTL_LOCAL_PLAYER_REMOTE_CONTROL */
 
+#if defined(CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL)
 	/* Controller using the callback interface - i.e. upper layer */
 	struct controller    ctrlr;
+#endif /* CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL */
 
+#if defined(CONFIG_MCTL_LOCAL_PLAYER_CONTROL)
 	/* The local media player */
 	struct media_player  local_player;
+#endif /* CONFIG_MCTL_LOCAL_PLAYER_CONTROL */
 
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
 	/* Remote media player - to have a player instance for the user, accessed via MCC */
 	struct media_player  remote_player;
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 };
 
 static struct mprx mprx = { 0 };
@@ -744,11 +752,12 @@ int media_proxy_ctrl_get_player_name(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		BT_DBG("Remote player");
 		return bt_mcc_read_player_name(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -777,10 +786,11 @@ int media_proxy_ctrl_get_icon_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_icon_obj_id(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -809,10 +819,11 @@ int media_proxy_ctrl_get_icon_url(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_icon_url(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -841,10 +852,11 @@ int media_proxy_ctrl_get_track_title(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_track_title(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -872,10 +884,12 @@ int media_proxy_ctrl_get_track_duration(struct media_player *player)
 		BT_DBG("No call");
 		return -EOPNOTSUPP;
 	}
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_track_duration(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -904,10 +918,11 @@ int media_proxy_ctrl_get_track_position(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_track_position(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -936,10 +951,11 @@ int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t pos
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_set_track_position(mprx.remote_player.conn, position);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -968,10 +984,11 @@ int media_proxy_ctrl_get_playback_speed(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_playback_speed(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1000,10 +1017,11 @@ int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t spee
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_set_playback_speed(mprx.remote_player.conn, speed);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1032,10 +1050,11 @@ int media_proxy_ctrl_get_seeking_speed(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_seeking_speed(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1064,10 +1083,11 @@ int media_proxy_ctrl_get_track_segments_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_segments_obj_id(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1096,10 +1116,11 @@ int media_proxy_ctrl_get_current_track_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_current_track_obj_id(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1133,11 +1154,12 @@ int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t 
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		/* TODO: Uncomment when function is implemented */
 		/* return bt_mcc_set_current_track_obj_id(mprx.remote_player.conn, position); */
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1166,10 +1188,11 @@ int media_proxy_ctrl_get_next_track_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_next_track_obj_id(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1203,11 +1226,12 @@ int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		/* TODO: Uncomment when function is implemented */
 		/* return bt_mcc_set_next_track_obj_id(mprx.remote_player.conn, position); */
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1236,10 +1260,11 @@ int media_proxy_ctrl_get_parent_group_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_parent_group_obj_id(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1268,10 +1293,11 @@ int media_proxy_ctrl_get_current_group_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_current_group_obj_id(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1305,11 +1331,12 @@ int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t 
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		/* TODO: Uncomment when function is implemented */
 		/* return bt_mcc_set_current_group_obj_id(mprx.remote_player.conn, position); */
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1338,11 +1365,12 @@ int media_proxy_ctrl_get_playing_order(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		BT_DBG("Remote player");
 		return bt_mcc_read_playing_order(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1371,10 +1399,11 @@ int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t orde
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_set_playing_order(mprx.remote_player.conn, order);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1403,10 +1432,11 @@ int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_playing_orders_supported(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1435,10 +1465,11 @@ int media_proxy_ctrl_get_media_state(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_media_state(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1467,10 +1498,11 @@ int media_proxy_ctrl_send_command(struct media_player *player, struct mpl_cmd cm
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_send_cmd(mprx.remote_player.conn, cmd);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1499,10 +1531,11 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_opcodes_supported(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
@@ -1531,10 +1564,11 @@ int media_proxy_ctrl_send_search(struct media_player *player, struct mpl_search 
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_send_search(mprx.remote_player.conn, search);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1563,10 +1597,11 @@ int media_proxy_ctrl_get_search_results_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_search_results_obj_id(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
 	return -EOPNOTSUPP;
 }
@@ -1595,10 +1630,11 @@ uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
 		return -EOPNOTSUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_MCTL_REMOTE_PLAYER_CONTROL) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
+#if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
+	if (mprx.remote_player.registered && player == &mprx.remote_player) {
 		return bt_mcc_read_content_control_id(mprx.remote_player.conn);
 	}
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	return -EOPNOTSUPP;
 }
