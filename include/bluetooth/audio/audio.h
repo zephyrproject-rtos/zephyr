@@ -250,6 +250,12 @@ struct bt_audio_base {
 	struct bt_audio_base_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
 };
 
+/** @brief Audio Capability type */
+enum bt_audio_pac_type {
+	BT_AUDIO_SINK = 0x01,
+	BT_AUDIO_SOURCE = 0x02,
+};
+
 /** @def BT_CODEC_QOS
  *  @brief Helper to declare elements of bt_codec_qos
  *
@@ -872,7 +878,7 @@ struct bt_audio_unicast_server_cb {
 	 */
 	int (*config)(struct bt_conn *conn,
 		      const struct bt_audio_ep *ep,
-		      uint8_t type,
+		      enum bt_audio_pac_type type,
 		      const struct bt_codec *codec,
 		      struct bt_audio_stream **stream,
 		      struct bt_codec_qos_pref *const pref);
@@ -1184,12 +1190,6 @@ struct bt_audio_stream_ops {
 	 */
 	void (*recv)(struct bt_audio_stream *stream, struct net_buf *buf);
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
-};
-
-/** @brief Audio Capability type */
-enum bt_audio_pac_type {
-	BT_AUDIO_SINK = 0x01,
-	BT_AUDIO_SOURCE = 0x02,
 };
 
 /** @brief Register Audio callbacks for a stream.

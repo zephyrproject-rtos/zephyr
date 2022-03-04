@@ -269,13 +269,14 @@ static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
+					enum bt_audio_pac_type type,
 					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
 {
 	int i;
 
-	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p cap %p", conn,
-		    ep, cap);
+	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p type %u, cap %p",
+		    conn, ep, type, cap);
 
 	print_codec(codec);
 
