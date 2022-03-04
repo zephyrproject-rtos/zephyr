@@ -21,6 +21,9 @@
 #include <fsl_usart.h>
 #include <soc.h>
 #include <fsl_device_registers.h>
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#endif
 
 struct mcux_flexcomm_config {
 	USART_Type *base;
@@ -30,6 +33,9 @@ struct mcux_flexcomm_config {
 	uint8_t parity;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
+#endif
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
 #endif
 };
 
@@ -250,6 +256,14 @@ static int mcux_flexcomm_init(const struct device *dev)
 	usart_config_t usart_config;
 	usart_parity_mode_t parity_mode;
 	uint32_t clock_freq;
+#ifdef CONFIG_PINCTRL
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 	/* Get the clock frequency */
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
@@ -325,6 +339,15 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 	UART_MCUX_FLEXCOMM_DECLARE_CFG(n, UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT)
 #endif
 
+#ifdef CONFIG_PINCTRL
+#define UART_MCUX_FLEXCOMM_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
+#define UART_MCUX_FLEXCOMM_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define UART_MCUX_FLEXCOMM_PINCTRL_DEFINE(n)
+#define UART_MCUX_FLEXCOMM_PINCTRL_INIT(n)
+#endif
+
+
 #define UART_MCUX_FLEXCOMM_DECLARE_CFG(n, IRQ_FUNC_INIT)		\
 static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 	.base = (USART_Type *)DT_INST_REG_ADDR(n),			\
@@ -333,10 +356,13 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
 	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE), \
+	UART_MCUX_FLEXCOMM_PINCTRL_INIT(n)				\
 	IRQ_FUNC_INIT							\
 }
 
 #define UART_MCUX_FLEXCOMM_INIT(n)					\
+									\
+	UART_MCUX_FLEXCOMM_PINCTRL_DEFINE(n);				\
 									\
 	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;	\
 									\
