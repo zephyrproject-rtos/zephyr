@@ -1532,6 +1532,7 @@ Intel Platforms (X86):
         - jhedberg
         - aasthagr
         - laurenmurphyx64
+        - MaureenHelm
     files:
         - boards/x86/
         - soc/x86/
@@ -1550,6 +1551,7 @@ Intel Platforms (Xtensa):
         - mengxianglinx
         - marc-hb
         - kv2019i
+        - MaureenHelm
     files:
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
