@@ -145,4 +145,12 @@ config ESPI_SAF_INIT_PRIORITY
 	help
 	  Driver initialization priority for eSPI SAF driver.
 
+config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+	bool "Read ACPI EC Event Data in IBF ISR"
+	depends on ESPI_PERIPHERAL_CHANNEL
+	help
+	  Enable reading event data in ACPI EC IBF ISR. This is used in OS
+	  environment where application expects IBF ISR to read data and pass
+	  to callback.
+
 endif #ESPI_XEC_V2
