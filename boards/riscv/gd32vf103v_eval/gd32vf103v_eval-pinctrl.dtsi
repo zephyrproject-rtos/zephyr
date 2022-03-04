@@ -23,4 +23,10 @@
 			pinmux = <TIMER0_CH0_PA8_OUT_NORMP>;
 		};
 	};
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <CAN0_TX_PD1_FRMP>, <CAN0_RX_PD0_FRMP>;
+		};
+	};
 };
