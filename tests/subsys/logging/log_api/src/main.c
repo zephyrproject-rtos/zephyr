@@ -22,9 +22,17 @@
 
 LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 
+#ifdef CONFIG_LOG2_USE_TAGGED_ARGUMENTS
+/* The extra sizeof(int) is the end of arguments tag. */
+#define LOG2_SIMPLE_MSG_LEN \
+	ROUND_UP(sizeof(struct log_msg2_hdr) + \
+		 sizeof(struct cbprintf_package_hdr_ext) + \
+		 sizeof(int), sizeof(long long))
+#else
 #define LOG2_SIMPLE_MSG_LEN \
 	ROUND_UP(sizeof(struct log_msg2_hdr) + \
 		 sizeof(struct cbprintf_package_hdr_ext), sizeof(long long))
+#endif
 
 #ifdef CONFIG_LOG_TIMESTAMP_64BIT
 #define TIMESTAMP_INIT_VAL 0x100000000
@@ -375,12 +383,27 @@ static size_t get_max_hexdump(void)
 static size_t get_long_hexdump(void)
 {
 	if (IS_ENABLED(CONFIG_LOG2)) {
+		size_t extra_msg_sz = 0;
+		size_t extra_hexdump_sz = 0;
+
+		if (IS_ENABLED(CONFIG_LOG2_USE_TAGGED_ARGUMENTS)) {
+			/* First message with 2 arguments => 2 tags */
+			extra_msg_sz = 2 * sizeof(int);
+
+			/*
+			 * Hexdump with an implicit "%s" and the "hexdump" string
+			 * as argument => 1 tag.
+			 */
+			extra_hexdump_sz = sizeof(int);
+		}
+
 		return CONFIG_LOG_BUFFER_SIZE -
 			/* First message */
-			ROUND_UP(LOG2_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d"),
+			ROUND_UP(LOG2_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d") +
+				 extra_msg_sz,
 				 sizeof(long long)) -
 			/* Hexdump message excluding data */
-			ROUND_UP(LOG2_SIMPLE_MSG_LEN + STR_SIZE("hexdump"),
+			ROUND_UP(LOG2_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
 				 sizeof(long long)) - 2 * sizeof(int);
 	}
 
