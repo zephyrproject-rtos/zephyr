@@ -16,8 +16,6 @@
 #include <zephyr/bluetooth/audio/capabilities.h>
 #include <zephyr/sys/byteorder.h>
 
-#define MAX_PAC 1
-
 #define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
 				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
 				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
@@ -37,7 +35,7 @@ static struct bt_codec lc3_codec =
 		     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static struct bt_conn *default_conn;
-static struct bt_audio_stream streams[MAX_PAC];
+static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
