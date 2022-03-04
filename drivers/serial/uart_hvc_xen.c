@@ -16,10 +16,10 @@
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
-#include <logging/log.h>
 #include <sys/device_mmio.h>
 
-LOG_MODULE_REGISTER(uart_hvc_xen);
+#include <logging/log.h>
+LOG_MODULE_REGISTER(uart_hvc_xen, CONFIG_UART_LOG_LEVEL);
 
 static struct hvc_xen_data hvc_data = {0};
 

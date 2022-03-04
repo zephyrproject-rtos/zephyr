@@ -15,9 +15,10 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
-#include <logging/log.h>
 #include <helpers/nrfx_gppi.h>
-LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
 #ifdef CONFIG_PINCTRL
 #include <drivers/pinctrl.h>

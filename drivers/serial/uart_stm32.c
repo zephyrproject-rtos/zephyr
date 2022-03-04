@@ -36,7 +36,7 @@
 #include <stm32_ll_lpuart.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_stm32);
+LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 
 #define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), \
 					 st_stm32_lpuart, okay))
