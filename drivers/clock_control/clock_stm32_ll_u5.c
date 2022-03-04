@@ -244,7 +244,6 @@ static void clock_switch_to_hsi(uint32_t ahb_prescaler)
 
 	/* Set HSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-	LL_RCC_SetAHBPrescaler(ahb_prescaler);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
 }
@@ -389,14 +388,8 @@ void config_src_sysclk_hse(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 
 	/* Set HSE as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
-	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
-
-	/* Set peripheral busses prescalers */
-	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-	LL_RCC_SetAPB3Prescaler(s_ClkInitStruct.APB3CLKDivider);
 
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_hclk_freq <= old_hclk_freq) {
@@ -443,14 +436,8 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	/* Set MSIS as SYSCLCK source */
 	set_up_clk_msis();
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
-	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
 	}
-
-	/* Set peripheral busses prescalers */
-	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-	LL_RCC_SetAPB3Prescaler(s_ClkInitStruct.APB3CLKDivider);
 
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_hclk_freq <= old_hclk_freq) {
@@ -473,11 +460,6 @@ void config_src_sysclk_hsi(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 #ifdef STM32_SYSCLK_SRC_HSI
 
 	clock_switch_to_hsi(s_ClkInitStruct.AHBCLKDivider);
-
-	/* Set peripheral busses prescalers */
-	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-	LL_RCC_SetAPB3Prescaler(s_ClkInitStruct.APB3CLKDivider);
 
 	/* Set flash latency */
 	/* HSI used as SYSCLK, set latency to 0 */
@@ -502,6 +484,12 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
+
+	/* Set peripheral busses prescalers */
+	LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_AHB_PRESCALER));
+	LL_RCC_SetAPB1Prescaler(apb1_prescaler(STM32_APB1_PRESCALER));
+	LL_RCC_SetAPB2Prescaler(apb2_prescaler(STM32_APB2_PRESCALER));
+	LL_RCC_SetAPB3Prescaler(apb3_prescaler(STM32_APB3_PRESCALER));
 
 	if (IS_ENABLED(STM32_SYSCLK_SRC_PLL)) {
 		/* Configure PLL as source of SYSCLK */
