@@ -1825,11 +1825,13 @@ next_state:
 					      NET_CONTEXT_CONNECTED);
 
 			if (conn->accepted_conn) {
-				conn->accepted_conn->accept_cb(
-					conn->context,
-					&conn->accepted_conn->context->remote,
-					sizeof(struct sockaddr), 0,
-					conn->accepted_conn->context);
+				if (conn->accepted_conn->accept_cb) {
+					conn->accepted_conn->accept_cb(
+						conn->context,
+						&conn->accepted_conn->context->remote,
+						sizeof(struct sockaddr), 0,
+						conn->accepted_conn->context);
+				}
 
 				/* Make sure the accept_cb is only called once.
 				 */
