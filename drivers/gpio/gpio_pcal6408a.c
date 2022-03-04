@@ -124,11 +124,9 @@ static int pcal6408a_pin_configure(const struct device *dev,
 	int rc;
 
 	/* This device does not support open-source outputs, and open-drain
-	 * outputs can be only configured port-wise. It also does not support
-	 * debouncing.
+	 * outputs can be only configured port-wise.
 	 */
-	if ((flags & GPIO_SINGLE_ENDED) != 0 ||
-	    (flags & GPIO_INT_DEBOUNCE) != 0) {
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		return -ENOTSUP;
 	}
 
