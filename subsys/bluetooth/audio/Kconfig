@@ -10,6 +10,7 @@
 menuconfig BT_AUDIO
 	bool "Bluetooth Audio support [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select SYSTEM_WORKQUEUE_STACK_SIZE_CUSTOM if !BT_RECV_IS_RX_THREAD
 	help
 	  This option enables Bluetooth Audio support. The specific
 	  features that are available may depend on other features

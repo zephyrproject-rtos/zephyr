@@ -1217,10 +1217,11 @@ struct bt_gatt_exchange_params {
  *  @note Shall only be used once per connection.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback.
+ *  the BT RX thread or System work queue when @kconfig{CONFIG_BT_RECV_IS_RX_THREAD}
+ *  not selected. @p params must remain valid until start of callback.
  *
  *  This function will block while the ATT request queue is full, except when
- *  called from the BT RX thread, as this would cause a deadlock.
+ *  called from a Bluetooth callback thread, as this would cause a deadlock.
  *
  *  @param conn Connection object.
  *  @param params Exchange MTU parameters.
@@ -1230,8 +1231,8 @@ struct bt_gatt_exchange_params {
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
- *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  outside a Bluetooth callback thread to get blocking behavior.
+ *  Queue size is controlled by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn,
 			 struct bt_gatt_exchange_params *params);
@@ -1361,11 +1362,12 @@ struct bt_gatt_discover_params {
  *  whether to continue discovering or stop.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback where
+ *  the BT RX thread or System work queue when @kconfig{CONFIG_BT_RECV_IS_RX_THREAD}
+ *  not selected. @p params must remain valid until start of callback where
  *  iter `attr` is `NULL` or callback will return `BT_GATT_ITER_STOP`.
  *
  *  This function will block while the ATT request queue is full, except when
- *  called from the BT RX thread, as this would cause a deadlock.
+ *  called from a Bluetooth callback thread, as this would cause a deadlock.
  *
  *  @param conn Connection object.
  *  @param params Discover parameters.
@@ -1375,8 +1377,8 @@ struct bt_gatt_discover_params {
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
- *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  outside a Bluetooth callback thread to get blocking behavior.
+ *  Queue size is controlled by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
  */
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params);
@@ -1456,10 +1458,11 @@ struct bt_gatt_read_params {
  *  offset.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback.
+ *  the BT RX thread or System work queue when @kconfig{CONFIG_BT_RECV_IS_RX_THREAD}
+ *  not selected. @p params must remain valid until start of callback.
  *
  *  This function will block while the ATT request queue is full, except when
- *  called from the BT RX thread, as this would cause a deadlock.
+ *  called from a Bluetooth callback thread, as this would cause a deadlock.
  *
  *  @param conn Connection object.
  *  @param params Read parameters.
@@ -1469,8 +1472,8 @@ struct bt_gatt_read_params {
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
- *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  outside a Bluetooth callback thread to get blocking behavior.
+ *  Queue size is controlled by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
  */
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
@@ -1541,7 +1544,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *        shall not submit more data until the callback is called.
  *
  *  This function will block while the ATT request queue is full, except when
- *  called from the BT RX thread, as this would cause a deadlock.
+ *  called from a Bluetooth callback thread, as this would cause a deadlock.
  *
  *  @param conn Connection object.
  *  @param handle Attribute handle.
@@ -1555,8 +1558,8 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
- *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  outside a Bluetooth callback thread to get blocking behavior.
+ *  Queue size is controlled by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
  */
 int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 				      const void *data, uint16_t length,
@@ -1569,7 +1572,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
  *  acknowledgment that the write was successfully performed
  *
  *  This function will block while the ATT request queue is full, except when
- *  called from the BT RX thread, as this would cause a deadlock.
+ *  called from a Bluetooth callback thread, as this would cause a deadlock.
  *
  *  @param conn Connection object.
  *  @param handle Attribute handle.
@@ -1581,8 +1584,8 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
- *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  outside a Bluetooth callback thread to get blocking behavior.
+ *  Queue size is controlled by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
  */
 static inline int bt_gatt_write_without_response(struct bt_conn *conn,
 						 uint16_t handle, const void *data,
@@ -1685,15 +1688,17 @@ struct bt_gatt_subscribe_params {
  *  subscription was removed by this method.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback.
+ *  the BT RX thread or System work queue when @kconfig{CONFIG_BT_RECV_IS_RX_THREAD}
+ *  not selected. @p params must remain valid until start of callback.
  *  The Notification callback @p params->notify is also called from the BT RX
- *  thread.
+ *  thread or System work queue when @kconfig{CONFIG_BT_RECV_IS_RX_THREAD}
+ *  not selected.
  *
  *  @note Notifications are asynchronous therefore the parameters need to
  *        remain valid while subscribed.
  *
  *  This function will block while the ATT request queue is full, except when
- *  called from the BT RX thread, as this would cause a deadlock.
+ *  called from a Bluetooth callback thread, as this would cause a deadlock.
  *
  *  @param conn Connection object.
  *  @param params Subscribe parameters.
@@ -1703,8 +1708,8 @@ struct bt_gatt_subscribe_params {
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
- *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  outside a Bluetooth callback thread to get blocking behavior.
+ *  Queue size is controlled by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
  */
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params);
@@ -1736,10 +1741,11 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
  *  parameters cannot be reused.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread.
+ *  the BT RX thread or System work queue when @kconfig{CONFIG_BT_RECV_IS_RX_THREAD}
+ *  not selected.
  *
  *  This function will block while the ATT request queue is full, except when
- *  called from the BT RX thread, as this would cause a deadlock.
+ *  called from a Bluetooth callback thread, as this would cause a deadlock.
  *
  *  @param conn Connection object.
  *  @param params Subscribe parameters.
@@ -1749,8 +1755,8 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
- *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  outside a Bluetooth callback thread to get blocking behavior.
+ *  Queue size is controlled by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
  */
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params);

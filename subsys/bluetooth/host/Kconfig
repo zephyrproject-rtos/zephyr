@@ -82,7 +82,7 @@ config BT_RECV_IS_RX_THREAD
 
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
-	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
+	depends on BT_RECV_IS_RX_THREAD
 	default 512 if BT_HCI_RAW
 	default 3092 if BT_MESH_GATT_CLIENT
 	default 2048 if BT_MESH
@@ -126,6 +126,7 @@ config BT_SETTINGS
 	bool "Store Bluetooth state and configuration persistently"
 	depends on SETTINGS
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	select SYSTEM_WORKQUEUE_STACK_SIZE_CUSTOM if !BT_RECV_IS_RX_THREAD
 	help
 	  When selected, the Bluetooth stack will take care of storing
 	  (and restoring) the Bluetooth state (e.g. pairing keys) and

@@ -62,8 +62,8 @@
 
 /* Stacks for the threads */
 #if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
-static struct k_thread rx_thread_data;
-static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+static void rx_work_handler(struct k_work *work);
+K_WORK_DEFINE(rx_work, rx_work_handler);
 #endif
 static struct k_thread tx_thread_data;
 static K_KERNEL_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
@@ -3380,6 +3380,20 @@ void hci_event_prio(struct net_buf *buf)
 	}
 }
 
+#if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
+static void rx_queue_put(struct net_buf *buf)
+{
+	int err;
+
+	net_buf_put(&bt_dev.rx_queue, buf);
+
+	err = k_work_submit(&rx_work);
+	if (err < 0) {
+		BT_ERR("Could not submit rx_work: %d", err);
+	}
+}
+#endif
+
 int bt_recv(struct net_buf *buf)
 {
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
@@ -3392,7 +3406,7 @@ int bt_recv(struct net_buf *buf)
 #if defined(CONFIG_BT_RECV_IS_RX_THREAD)
 		hci_acl(buf);
 #else
-		net_buf_put(&bt_dev.rx_queue, buf);
+		rx_queue_put(buf);
 #endif
 		return 0;
 #endif /* BT_CONN */
@@ -3409,7 +3423,7 @@ int bt_recv(struct net_buf *buf)
 		}
 
 		if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
-			net_buf_put(&bt_dev.rx_queue, buf);
+			rx_queue_put(buf);
 		}
 #endif
 		return 0;
@@ -3420,7 +3434,7 @@ int bt_recv(struct net_buf *buf)
 #if defined(CONFIG_BT_RECV_IS_RX_THREAD)
 		hci_iso(buf);
 #else
-		net_buf_put(&bt_dev.rx_queue, buf);
+		rx_queue_put(buf);
 #endif
 		return 0;
 #endif /* CONFIG_BT_ISO */
@@ -3522,20 +3536,20 @@ static void init_work(struct k_work *work)
 }
 
 #if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
-static void hci_rx_thread(void)
+static void rx_work_handler(struct k_work *work)
 {
+	int err;
 	struct net_buf *buf;
 
-	BT_DBG("started");
+	buf = net_buf_get(&bt_dev.rx_queue, K_NO_WAIT);
+	if (!buf) {
+		return;
+	}
 
-	while (1) {
-		BT_DBG("calling fifo_get_wait");
-		buf = net_buf_get(&bt_dev.rx_queue, K_FOREVER);
+	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
+		buf->len);
 
-		BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
-		       buf->len);
-
-		switch (bt_buf_get_type(buf)) {
+	switch (bt_buf_get_type(buf)) {
 #if defined(CONFIG_BT_CONN)
 		case BT_BUF_ACL_IN:
 			hci_acl(buf);
@@ -3553,12 +3567,18 @@ static void hci_rx_thread(void)
 			BT_ERR("Unknown buf type %u", bt_buf_get_type(buf));
 			net_buf_unref(buf);
 			break;
-		}
+	}
 
-		/* Make sure we don't hog the CPU if the rx_queue never
-		 * gets empty.
-		 */
-		k_yield();
+	/* Make sure we don't hog the CPU if the rx_queue never
+	 * gets empty.
+	 */
+	if (k_fifo_is_empty(&bt_dev.rx_queue)) {
+		return;
+	}
+
+	err = k_work_submit(&rx_work);
+	if (err < 0) {
+		BT_ERR("Could not submit rx_work: %d", err);
 	}
 }
 #endif /* !CONFIG_BT_RECV_IS_RX_THREAD */
@@ -3597,16 +3617,6 @@ int bt_enable(bt_ready_cb_t cb)
 			K_PRIO_COOP(CONFIG_BT_HCI_TX_PRIO),
 			0, K_NO_WAIT);
 	k_thread_name_set(&tx_thread_data, "BT TX");
-
-#if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
-	/* RX thread */
-	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO),
-			0, K_NO_WAIT);
-	k_thread_name_set(&rx_thread_data, "BT RX");
-#endif
 
 	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
 		bt_hci_ecc_init();

@@ -39,6 +39,13 @@ config BT_CUSTOM
 
 endchoice
 
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 3092 if BT_MESH_GATT_CLIENT
+	default 2200 if BT_SETTINGS
+	default 2048 if BT_MESH
+	default 2048 if BT_AUDIO
+	depends on !BT_RECV_IS_RX_THREAD
+
 # The Bluetooth subsystem requires the system workqueue to execute at
 # a cooperative priority.
 config SYSTEM_WORKQUEUE_PRIORITY
