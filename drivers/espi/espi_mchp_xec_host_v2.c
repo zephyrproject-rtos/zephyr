@@ -94,6 +94,16 @@ struct xec_acpi_ec_config {
 	uint32_t obe_ecia_info;
 };
 
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE +
+			CONFIG_ESPI_XEC_PERIPHERAL_ACPI_SHD_MEM_SIZE] __aligned(8);
+#else
+static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE] __aligned(8);
+#endif
+
+#endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
 
 #ifdef CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX
 
@@ -548,13 +558,6 @@ struct xec_emi_config {
 static const struct xec_emi_config xec_emi0_cfg = {
 	.regbase = DT_REG_ADDR(DT_NODELABEL(emi0)),
 };
-
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
-static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE +
-						CONFIG_ESPI_XEC_PERIPHERAL_ACPI_SHD_MEM_SIZE];
-#else
-static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE];
-#endif
 
 static int init_emi0(const struct device *dev)
 {
