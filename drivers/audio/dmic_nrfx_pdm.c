@@ -541,7 +541,6 @@ static const struct _dmic_ops dmic_ops = {
 	{								     \
 		IRQ_CONNECT(DT_IRQN(PDM(idx)), DT_IRQ(PDM(idx), priority),   \
 			    nrfx_isr, nrfx_pdm_irq_handler, 0);		     \
-		irq_enable(DT_IRQN(PDM(idx)));				     \
 		k_msgq_init(&dmic_nrfx_pdm_data##idx.rx_queue,		     \
 			    (char *)rx_msgs##idx, sizeof(void *),	     \
 			    ARRAY_SIZE(rx_msgs##idx));			     \
