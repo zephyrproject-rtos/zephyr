@@ -295,17 +295,6 @@
 #endif /* CONFIG_OPENTHREAD_RADIO_LINK_TREL_ENABLE */
 
 /**
- * @def OPENTHREAD_CONFIG_CSL_SAMPLE_WINDOW
- *
- * CSL sample window in units of 10 symbols.
- *
- */
-#ifdef CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW
-#define OPENTHREAD_CONFIG_CSL_SAMPLE_WINDOW \
-	CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW
-#endif /* CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW */
-
-/**
  * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
  *
  * For some reasons, CSL receivers wake up a little later than expected. This

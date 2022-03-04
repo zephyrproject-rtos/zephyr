@@ -86,10 +86,6 @@ config OPENTHREAD_CSL_AUTO_SYNC
 	bool "Enable CSL autosync"
 	default y if OPENTHREAD_CSL_RECEIVER
 
-config OPENTHREAD_CSL_SAMPLE_WINDOW
-	int "CSL sample window in units of 10 symbols"
-	default 30
-
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in units of 10 symbols"
 	default 480
