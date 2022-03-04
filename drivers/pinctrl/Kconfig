@@ -41,5 +41,6 @@ source "drivers/pinctrl/Kconfig.kinetis"
 source "drivers/pinctrl/Kconfig.xec"
 source "drivers/pinctrl/Kconfig.mcux"
 source "drivers/pinctrl/Kconfig.sifive"
+source "drivers/pinctrl/Kconfig.lpc_iocon"
 
 endif # PINCTRL
