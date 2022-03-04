@@ -397,22 +397,56 @@ static int eacpi_rd_req(const struct device *dev,
 			enum lpc_peripheral_opcode op,
 			uint32_t *data)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(op);
-	ARG_UNUSED(data);
+	struct acpi_ec_regs *acpi_ec0_hw = (struct acpi_ec_regs *)xec_acpi_ec0_cfg.regbase;
 
-	return -EINVAL;
+	ARG_UNUSED(dev);
+
+	switch (op) {
+	case EACPI_OBF_HAS_CHAR:
+		/* EC has written data back to host. OBF is
+		 * automatically cleared after host reads
+		 * the data
+		 */
+		*data = acpi_ec0_hw->EC_STS & MCHP_ACPI_EC_STS_OBF ? 1 : 0;
+		break;
+	case EACPI_IBF_HAS_CHAR:
+		*data = acpi_ec0_hw->EC_STS & MCHP_ACPI_EC_STS_IBF ? 1 : 0;
+		break;
+	case EACPI_READ_STS:
+		*data = acpi_ec0_hw->EC_STS;
+		break;
+#if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
+	case EACPI_GET_SHARED_MEMORY:
+		*data = (uint32_t)ec_host_cmd_sram + CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE;
+		break;
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int eacpi_wr_req(const struct device *dev,
 			enum lpc_peripheral_opcode op,
 			uint32_t *data)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(op);
-	ARG_UNUSED(data);
+	struct acpi_ec_regs *acpi_ec0_hw = (struct acpi_ec_regs *)xec_acpi_ec0_cfg.regbase;
 
-	return -EINVAL;
+	ARG_UNUSED(dev);
+
+	switch (op) {
+	case EACPI_WRITE_CHAR:
+		acpi_ec0_hw->EC2OS_DATA = (*data & 0xff);
+		break;
+	case EACPI_WRITE_STS:
+		acpi_ec0_hw->EC_STS = (*data & 0xff);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int connect_irq_acpi_ec0(const struct device *dev)
@@ -589,6 +623,9 @@ static int init_emi0(const struct device *dev)
 
 #ifdef CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE
 
+static void host_cus_opcode_enable_interrupts(void);
+static void host_cus_opcode_disable_interrupts(void);
+
 static int ecust_rd_req(const struct device *dev,
 			enum lpc_peripheral_opcode op,
 			uint32_t *data)
@@ -612,11 +649,32 @@ static int ecust_wr_req(const struct device *dev,
 			enum lpc_peripheral_opcode op,
 			uint32_t *data)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(op);
-	ARG_UNUSED(data);
+	struct acpi_ec_regs *acpi_ec1_hw = (struct acpi_ec_regs *)xec_acpi_ec1_cfg.regbase;
 
-	return -EINVAL;
+	ARG_UNUSED(dev);
+
+	switch (op) {
+	case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
+		if (*data != 0) {
+			host_cus_opcode_enable_interrupts();
+		} else {
+			host_cus_opcode_disable_interrupts();
+		}
+		break;
+	case ECUSTOM_HOST_CMD_SEND_RESULT:
+		/*
+		 * Write result to the data byte.  This sets the OBF
+		 * status bit.
+		 */
+		acpi_ec1_hw->EC2OS_DATA = (*data & 0xff);
+		/* Clear processing flag */
+		acpi_ec1_hw->EC_STS &= ~MCHP_ACPI_EC_STS_UD1A;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
@@ -951,3 +1009,53 @@ int espi_xec_read_lpc_request(const struct device *dev,
 	return -ENOTSUP;
 }
 #endif /* CONFIG_ESPI_PERIPHERAL_CHANNEL */
+
+#if defined(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)
+static void host_cus_opcode_enable_interrupts(void)
+{
+	/* Enable host KBC sub-device interrupt */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_8042_KBC)) {
+		mchp_xec_ecia_info_girq_src_en(xec_kbc0_cfg.ibf_ecia_info);
+		mchp_xec_ecia_info_girq_src_en(xec_kbc0_cfg.obe_ecia_info);
+	}
+
+	/* Enable host ACPI EC0 (Host IO) and
+	 * ACPI EC1 (Host CMD) sub-device interrupt
+	 */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO) ||
+	    IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		mchp_xec_ecia_info_girq_src_en(xec_acpi_ec0_cfg.ibf_ecia_info);
+		mchp_xec_ecia_info_girq_src_en(xec_acpi_ec0_cfg.obe_ecia_info);
+		mchp_xec_ecia_info_girq_src_en(xec_acpi_ec1_cfg.ibf_ecia_info);
+	}
+
+	/* Enable host Port80 sub-device interrupt installation */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)) {
+		mchp_xec_ecia_info_girq_src_en(xec_p80bd0_cfg.ecia_info);
+	}
+}
+
+static void host_cus_opcode_disable_interrupts(void)
+{
+	/* Disable host KBC sub-device interrupt */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_8042_KBC)) {
+		mchp_xec_ecia_info_girq_src_dis(xec_kbc0_cfg.ibf_ecia_info);
+		mchp_xec_ecia_info_girq_src_dis(xec_kbc0_cfg.obe_ecia_info);
+	}
+
+	/* Disable host ACPI EC0 (Host IO) and
+	 * ACPI EC1 (Host CMD) sub-device interrupt
+	 */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO) ||
+		IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		mchp_xec_ecia_info_girq_src_dis(xec_acpi_ec0_cfg.ibf_ecia_info);
+		mchp_xec_ecia_info_girq_src_dis(xec_acpi_ec0_cfg.obe_ecia_info);
+		mchp_xec_ecia_info_girq_src_dis(xec_acpi_ec1_cfg.ibf_ecia_info);
+	}
+
+	/* Disable host Port80 sub-device interrupt installation */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)) {
+		mchp_xec_ecia_info_girq_src_dis(xec_p80bd0_cfg.ecia_info);
+	}
+}
+#endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
