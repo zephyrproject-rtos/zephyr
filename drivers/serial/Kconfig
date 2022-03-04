@@ -37,6 +37,10 @@ config SERIAL_INIT_PRIORITY
 	help
 	  Serial driver device initialization priority.
 
+module = UART
+module-str = uart
+source "subsys/logging/Kconfig.template.log_config"
+
 config SERIAL_SUPPORT_WIDE_DATA
 	bool
 	help

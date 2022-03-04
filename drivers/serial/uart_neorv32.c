@@ -13,7 +13,7 @@
 #include <sys/sys_io.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_neorv32, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 
 /* NEORV32 UART registers offsets */
 #define NEORV32_UART_CTRL_OFFSET 0x00
