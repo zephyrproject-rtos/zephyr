@@ -17,4 +17,10 @@
 			pinmux = <TIMER2_CH1_PA7_OUT_NORMP>;
 		};
 	};
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <CAN0_TX_PB9_PRMP>, <CAN0_RX_PB8_PRMP>;
+		};
+	};
 };
