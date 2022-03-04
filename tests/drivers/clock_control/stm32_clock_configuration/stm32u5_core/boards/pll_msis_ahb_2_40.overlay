@@ -21,9 +21,9 @@
 
 &pll1 {
 	div-m = <1>;
-	mul-n = <40>;
-	div-q = <1>;
-	div-r = <1>;
+	mul-n = <80>;
+	div-q = <4>;
+	div-r = <4>;
 	clocks = <&clk_msis>;
 	status = "okay";
 };
@@ -31,7 +31,7 @@
 &rcc {
 	clocks = <&pll1>;
 	ahb-prescaler = <2>;              /* Use AHB prescaler to reduce HCLK */
-	clock-frequency = <DT_FREQ_M(80)>;
+	clock-frequency = <DT_FREQ_M(40)>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
 	apb3-prescaler = <1>;
