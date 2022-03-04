@@ -18,7 +18,7 @@
 #include "soc_power.h"
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_npcx, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(uart_npcx, CONFIG_UART_LOG_LEVEL);
 
 /* Driver config */
 struct uart_npcx_config {
