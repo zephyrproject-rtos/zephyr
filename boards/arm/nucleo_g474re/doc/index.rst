@@ -163,6 +163,7 @@ Default Zephyr Peripheral Mapping:
 - SPI_3_SCK : PC10
 - SPI_3_MISO : PC11
 - SPI_3_MOSI : PC12
+- PWM_2_CH1 : PA5 (might conflict with SPI1)
 - PWM_3_CH1 : PB4
 - USER_PB : PC13
 - LD2 : PA5
