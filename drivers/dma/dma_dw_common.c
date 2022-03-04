@@ -39,12 +39,12 @@ LOG_MODULE_REGISTER(dma_dw_common);
 
 static ALWAYS_INLINE void dw_write(uint32_t dma_base, uint32_t reg, uint32_t value)
 {
-	*((volatile uint32_t*)(dma_base + reg)) = value;
+	*((volatile uint32_t *)(dma_base + reg)) = value;
 }
 
 static ALWAYS_INLINE uint32_t dw_read(uint32_t dma_base, uint32_t reg)
 {
-	return *((volatile uint32_t*)(dma_base + reg));
+	return *((volatile uint32_t *)(dma_base + reg));
 }
 
 void dw_dma_isr(const struct device *dev)
