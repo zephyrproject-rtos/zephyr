@@ -393,9 +393,6 @@ void config_src_sysclk_hse(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
 
-	/* Update SystemCoreClock variable */
-	LL_SetSystemCoreClock(new_hclk_freq);
-
 	/* Set peripheral busses prescalers */
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
@@ -450,9 +447,6 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
 	}
 
-	/* Update SystemCoreClock variable */
-	LL_SetSystemCoreClock(new_hclk_freq);
-
 	/* Set peripheral busses prescalers */
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
@@ -479,10 +473,6 @@ void config_src_sysclk_hsi(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 #ifdef STM32_SYSCLK_SRC_HSI
 
 	clock_switch_to_hsi(s_ClkInitStruct.AHBCLKDivider);
-
-	/* Update SystemCoreClock variable */
-	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(HSI_VALUE,
-						s_ClkInitStruct.AHBCLKDivider));
 
 	/* Set peripheral busses prescalers */
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
@@ -528,6 +518,9 @@ int stm32_clock_control_init(const struct device *dev)
 	} else {
 		return -ENOTSUP;
 	}
+
+	/* Update CMSIS variable */
+	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	return 0;
 }
