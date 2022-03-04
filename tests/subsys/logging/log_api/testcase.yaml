@@ -139,3 +139,84 @@ tests:
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
+
+  logging.log2_api_deferred_overflow_rt_filter.runtime_tagged:
+    # FIXME.runtime_tagged:see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_deferred_overflow.runtime_tagged:
+    # FIXME:see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_deferred_no_overflow.runtime_tagged:
+    # FIXME:see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=n
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_deferred_static_filter.runtime_tagged:
+    # FIXME:see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_deferred_func_prefix.runtime_tagged:
+    # FIXME:see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_deferred_64b_timestamp.runtime_tagged:
+    # FIXME:see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_immediate.runtime_tagged:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_immediate_rt_filter.runtime_tagged:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_immediate_static_filter.runtime_tagged:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
+
+  logging.log2_api_immediate_64b_timestamp.runtime_tagged:
+    # FIXME: qemu_arc_hs6x excluded, see #38041
+    platform_exclude: qemu_arc_hs6x
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG2_RUNTIME_USE_TAGGED_ARGUMENTS=y
