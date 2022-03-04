@@ -890,7 +890,6 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 	{								     \
 		IRQ_CONNECT(DT_IRQN(I2S(idx)), DT_IRQ(I2S(idx), priority),   \
 			    nrfx_isr, nrfx_i2s_irq_handler, 0);		     \
-		irq_enable(DT_IRQN(I2S(idx)));				     \
 		k_msgq_init(&i2s_nrfx_data##idx.tx_queue,		     \
 			    (char *)tx_msgs##idx, sizeof(void *),	     \
 			    ARRAY_SIZE(tx_msgs##idx));			     \
