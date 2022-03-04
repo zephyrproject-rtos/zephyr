@@ -64,6 +64,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
+static void adv_sync_pdu_chain_check_and_duplicate(struct pdu_adv *new_pdu,
+						   struct pdu_adv *prev_pdu);
 
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
@@ -481,23 +483,12 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		return err;
 	}
 
-#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
 	/* alloc() will return the same PDU as peek() in case there was PDU
 	 * queued but not switched to current before alloc() - no need to deal
 	 * with chain as it's already there. In other case we need to duplicate
 	 * chain from current PDU and append it to new PDU.
 	 */
-	if (pdu != pdu_prev) {
-		struct pdu_adv *next, *next_dup;
-
-		LL_ASSERT(lll_adv_pdu_linked_next_get(pdu) == NULL);
-
-		next = lll_adv_pdu_linked_next_get(pdu_prev);
-		next_dup = adv_sync_pdu_duplicate_chain(next);
-
-		lll_adv_pdu_linked_append(next_dup, pdu);
-	}
-#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+	adv_sync_pdu_chain_check_and_duplicate(pdu, pdu_prev);
 
 	sync = HDR_LLL2ULL(lll_sync);
 	if (sync->is_started) {
@@ -605,6 +596,13 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		if (err) {
 			return err;
 		}
+
+		/* alloc() will return the same PDU as peek() in case there was PDU
+		 * queued but not switched to current before alloc() - no need to deal
+		 * with chain as it's already there. In other case we need to duplicate
+		 * chain from current PDU and append it to new PDU.
+		 */
+		adv_sync_pdu_chain_check_and_duplicate(pdu, pdu_prev);
 	}
 
 	if (adv->is_enabled && !sync->is_started) {
@@ -1817,4 +1815,28 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_op_cb(uint32_t status, void *param)
 {
 	*((uint32_t volatile *)param) = status;
+}
+
+/**
+ * @brief Set a periodic advertising chained PDUs in a new periodic advertising data if there are
+ *        chained PDUs in former periodic advertising data.
+ *
+ * @param pdu_new  Pointer to new pdu_adv where to add chained pdu_adv.
+ * @param pdu_prev Pointer to former pdu_adv where to add chained pdu_adv.
+ */
+static void adv_sync_pdu_chain_check_and_duplicate(struct pdu_adv *pdu_new,
+						   struct pdu_adv *pdu_prev)
+{
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	if (pdu_new != pdu_prev) {
+		struct pdu_adv *next, *next_dup;
+
+		LL_ASSERT(lll_adv_pdu_linked_next_get(pdu_new) == NULL);
+
+		next = lll_adv_pdu_linked_next_get(pdu_prev);
+		next_dup = adv_sync_pdu_duplicate_chain(next);
+
+		lll_adv_pdu_linked_append(next_dup, pdu_new);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
 }
