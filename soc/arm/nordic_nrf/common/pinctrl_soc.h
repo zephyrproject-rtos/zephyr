@@ -37,7 +37,8 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 ((NRF_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << NRF_PULL_POS) |\
 	 ((NRF_PULL_UP * DT_PROP(node_id, bias_pull_up)) << NRF_PULL_POS) |    \
 	 (DT_PROP(node_id, drive_mode) << NRF_DRIVE_POS) |		       \
-	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS)  \
+	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS) |\
+	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS)		       \
 	),
 
 /**
@@ -57,6 +58,13 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param pincfg Pin configuration bit field.
  */
 #define NRF_GET_FUN(pincfg) (((pincfg) >> NRF_FUN_POS) & NRF_FUN_MSK)
+
+/**
+ * @brief Utility macro to obtain pin inversion flag.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_INVERT(pincfg) (((pincfg) >> NRF_INVERT_POS) & NRF_INVERT_MSK)
 
 /**
  * @brief Utility macro to obtain pin low power flag.
