@@ -187,7 +187,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->last_pdu = pdu;
 
 		radio_isr_set(isr_tx, lll);
-		radio_tmr_tifs_set(EVENT_SYNC_B2B_MAFS_US);
+		radio_tmr_tifs_set(1000U);
 		switch_radio_complete_and_b2b_tx(lll, phy_s);
 	} else
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
