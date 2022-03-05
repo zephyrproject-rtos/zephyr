@@ -59,9 +59,7 @@ struct stream {
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_block;
 	struct k_msgq in_queue;
-	void *in_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
 	struct k_msgq out_queue;
-	void *out_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
 	uint32_t stream_starving;
 };
 
@@ -92,7 +90,11 @@ struct i2s_mcux_config {
 struct i2s_dev_data {
 	const struct device *dev_dma;
 	struct stream tx;
+	void *tx_in_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
+	void *tx_out_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
 	struct stream rx;
+	void *rx_in_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
+	void *rx_out_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
 };
 
 
@@ -1007,13 +1009,13 @@ static int i2s_mcux_initialize(const struct device *dev)
 	}
 
 	/* Initialize the buffer queues */
-	k_msgq_init(&dev_data->tx.in_queue, (char *)dev_data->tx.in_msgs,
+	k_msgq_init(&dev_data->tx.in_queue, (char *)dev_data->tx_in_msgs,
 		    sizeof(void *), CONFIG_I2S_TX_BLOCK_COUNT);
-	k_msgq_init(&dev_data->rx.in_queue, (char *)dev_data->rx.in_msgs,
+	k_msgq_init(&dev_data->rx.in_queue, (char *)dev_data->rx_in_msgs,
 		    sizeof(void *), CONFIG_I2S_RX_BLOCK_COUNT);
-	k_msgq_init(&dev_data->tx.out_queue, (char *)dev_data->tx.out_msgs,
+	k_msgq_init(&dev_data->tx.out_queue, (char *)dev_data->tx_out_msgs,
 		    sizeof(void *), CONFIG_I2S_TX_BLOCK_COUNT);
-	k_msgq_init(&dev_data->rx.out_queue, (char *)dev_data->rx.out_msgs,
+	k_msgq_init(&dev_data->rx.out_queue, (char *)dev_data->rx_out_msgs,
 		    sizeof(void *), CONFIG_I2S_RX_BLOCK_COUNT);
 
 	/* register ISR */
