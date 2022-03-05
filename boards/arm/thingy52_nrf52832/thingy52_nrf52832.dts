@@ -167,6 +167,13 @@
 		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
 		wake-gpios = <&sx1509b 12 GPIO_ACTIVE_LOW>;
 	};
+
+	bh1745: bh1745@38 {
+		compatible = "rohm,bh1745";
+		label = "BH1745";
+		reg = <0x38>;
+		int-gpios = <&gpio0 31 0>;
+	};
 };
 
 &i2c1 {
