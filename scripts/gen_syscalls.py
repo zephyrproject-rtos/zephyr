@@ -335,7 +335,7 @@ def marshall_defs(func_name, func_type, args):
 
     if nmrsh > 6:
         mrsh += ("\tZ_OOPS(Z_SYSCALL_MEMORY_READ(more, "
-                 + str(nmrsh - 6) + " * sizeof(uintptr_t)));\n")
+                 + str(nmrsh - 5) + " * sizeof(uintptr_t)));\n")
 
     for i, split_rec in enumerate(split_parms):
         arg_num, mrsh_num = split_rec
