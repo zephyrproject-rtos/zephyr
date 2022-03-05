@@ -919,7 +919,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 			}
 
 			if (rc != 0) {
-				LOG_INF("SFDP BFP failed: %d", rc);
+				LOG_ERR("SFDP BFP failed: %d", rc);
 				break;
 			}
 		}
@@ -950,7 +950,7 @@ static int setup_pages_layout(const struct device *dev)
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 	struct spi_nor_data *data = dev->data;
 	const size_t flash_size = dev_flash_size(dev);
-	const uint32_t layout_page_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE;
+	const uint32_t layout_page_size = dev_page_size(dev);
 	uint8_t exp = 0;
 
 	/* Find the smallest erase size. */
@@ -969,10 +969,10 @@ static int setup_pages_layout(const struct device *dev)
 
 	uint32_t erase_size = BIT(exp);
 
-	/* Error if layout page size is not a multiple of smallest
-	 * erase size.
+	/* Error if erase size is not a multiple of
+	 * layout page size.
 	 */
-	if ((layout_page_size % erase_size) != 0) {
+	if ((erase_size % layout_page_size) != 0) {
 		LOG_ERR("layout page %u not compatible with erase size %u",
 			layout_page_size, erase_size);
 		return -EINVAL;

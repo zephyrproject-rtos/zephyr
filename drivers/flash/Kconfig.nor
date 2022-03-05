@@ -53,6 +53,7 @@ config SPI_NOR_CS_WAIT_DELAY
 
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"
+	depends on !SPI_NOR_SFDP_RUNTIME
 	default 65536
 	help
 	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support
