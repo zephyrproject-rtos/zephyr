@@ -185,10 +185,11 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 	/* Enable all floating point capabilities for the thread. */
 	thread->base.user_options |= K_FP_REGS;
 
-	/* Set the FS bits to Initial to enable the FPU. */
+	/* Set the FS bits to Initial and clear the fcsr to enable the FPU. */
 	__asm__ volatile (
 		"mv t0, %0\n"
 		"csrrs x0, mstatus, t0\n"
+		"fscsr x0, x0\n"
 		:
 		: "r" (MSTATUS_FS_INIT)
 		);
