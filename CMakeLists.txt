@@ -672,7 +672,7 @@ if(CONFIG_64BIT)
 endif()
 
 if(CONFIG_TIMEOUT_64BIT)
-  set(SYSCALL_SPLIT_TIMEOUT_ARG --split-type k_timeout_t)
+  set(SYSCALL_SPLIT_TIMEOUT_ARG --split-type k_timeout_t --split-type k_ticks_t)
 endif()
 
 add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
