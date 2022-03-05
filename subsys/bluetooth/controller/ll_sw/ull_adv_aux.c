@@ -1309,8 +1309,12 @@ void ull_adv_aux_chain_pdu_append(struct pdu_adv *pdu,
 	struct pdu_adv_com_ext_adv *com_hdr;
 	struct pdu_adv_ext_hdr *hdr;
 	struct pdu_adv *pdu_chain;
+	uint32_t curr_mafs_us;
 	uint32_t offs_us;
 	uint8_t *dptr;
+
+	/* First MAFS */
+	curr_mafs_us = 1000;
 
 chain_add:
 	pdu_chain = lll_adv_pdu_linked_next_get(pdu);
@@ -1323,7 +1327,7 @@ chain_add:
 	}
 
 	/* Fill the aux offset in the previous AUX_SYNC_IND/AUX_CHAIN_IND PDU */
-	offs_us = PDU_AC_US(pdu->len, phy_s, phy_flags) + mafs_us;
+	offs_us = PDU_AC_US(pdu->len, phy_s, phy_flags) + curr_mafs_us;
 	ull_adv_aux_ptr_fill(aux_ptr, offs_us, phy_s);
 
 	/* Populate the appended chain PDU */
@@ -1374,6 +1378,8 @@ chain_add:
 	if (chain_count) {
 		chain_count--;
 
+		curr_mafs_us = mafs_us;
+
 		pdu = pdu_chain;
 
 		goto chain_add;
@@ -1386,6 +1392,8 @@ void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
 				     uint8_t phy_s, uint8_t phy_flags,
 				     uint32_t mafs_us)
 {
+	uint32_t curr_mafs_us = 1000U;
+
 	/* Duplicate any chain PDUs */
 	while (aux_ptr) {
 		struct pdu_adv_com_ext_adv *com_hdr;
@@ -1417,7 +1425,8 @@ void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
 			     pdu_chain_prev->len);
 
 		/* Fill the aux offset in the AUX_ADV_IND PDU */
-		offs_us = PDU_AC_US(pdu->len, phy_s, phy_flags) + mafs_us;
+		offs_us = PDU_AC_US(pdu->len, phy_s, phy_flags) +
+			  curr_mafs_us;
 		ull_adv_aux_ptr_fill(aux_ptr, offs_us, phy_s);
 
 		/* Find next Aux Ptr */
@@ -1445,6 +1454,7 @@ void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
 		aux_ptr = (void *)dptr;
 		pdu_prev = pdu_chain_prev;
 		pdu = pdu_chain;
+		curr_mafs_us = mafs_us;
 	}
 }
 #endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */

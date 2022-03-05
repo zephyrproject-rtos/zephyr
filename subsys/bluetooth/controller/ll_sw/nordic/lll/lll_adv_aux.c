@@ -261,7 +261,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->last_pdu = sec_pdu;
 
 		radio_isr_set(isr_tx_chain, lll);
-		radio_tmr_tifs_set(EVENT_B2B_MAFS_US);
+		radio_tmr_tifs_set(1000U);
 		radio_switch_complete_and_b2b_tx(phy_s, lll_adv->phy_flags,
 						 phy_s, lll_adv->phy_flags);
 #endif /* CONFIG_BT_CTLR_ADV_PDU_BACK2BACK */
@@ -600,7 +600,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 			lll_aux->last_pdu = sr_pdu;
 
 			radio_isr_set(isr_tx_chain, lll_aux);
-			radio_tmr_tifs_set(EVENT_B2B_MAFS_US);
+			radio_tmr_tifs_set(1000U);
 			radio_switch_complete_and_b2b_tx(lll->phy_s,
 							 lll->phy_flags,
 							 lll->phy_s,
