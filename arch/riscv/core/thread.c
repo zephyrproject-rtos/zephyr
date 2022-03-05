@@ -82,6 +82,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		stack_init->mstatus |= MSTATUS_FS_INIT;
 	}
 	stack_init->fp_state = 0;
+	thread->callee_saved.fcsr = 0;
 #elif defined(CONFIG_FPU)
 	/* Unshared FP mode: enable FPU of each thread. */
 	stack_init->mstatus |= MSTATUS_FS_INIT;
@@ -180,10 +181,11 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 	/* Enable all floating point capabilities for the thread. */
 	thread->base.user_options |= K_FP_REGS;
 
-	/* Set the FS bits to Initial to enable the FPU. */
+	/* Set the FS bits to Initial and clear the fcsr to enable the FPU. */
 	__asm__ volatile (
 		"mv t0, %0\n"
 		"csrrs x0, mstatus, t0\n"
+		"fscsr x0, x0\n"
 		:
 		: "r" (MSTATUS_FS_INIT)
 		);
