@@ -22,6 +22,8 @@ config W1_INIT_PRIORITY
 	help
 	  1-Wire device driver initialization priority.
 
+rsource "Kconfig.test"
+
 config W1_NET
 	bool "1-Wire network layer"
 	default y
