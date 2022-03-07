@@ -933,6 +933,9 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one
 		 * LL_VERSION_IND PDU during a connection.
+		 * If the Link Layer receives an LL_VERSION_IND PDU and has already sent an
+		 * LL_VERSION_IND PDU then the Link Layer shall not send another
+		 * LL_VERSION_IND PDU to the peer device.
 		 */
 		if (!conn->llcp.vex.sent) {
 			if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
@@ -944,13 +947,12 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 				ctx->state = RP_COMMON_STATE_IDLE;
 			}
 		} else {
-			/* Protocol Error.
-			 *
+			/* Invalid behaviour
 			 * A procedure already sent a LL_VERSION_IND and received a LL_VERSION_IND.
+			 * For now we chose to ignore the 'out of order' PDU
 			 */
-			/* TODO */
-			LL_ASSERT(0);
 		}
+
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	case PROC_MIN_USED_CHANS:
@@ -959,17 +961,18 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		 *     The procedure has completed when the Link Layer acknowledgment of the
 		 *     LL_MIN_USED_CHANNELS_IND PDU is sent or received.
 		 * In effect, for this procedure, this is equivalent to RX of PDU
+		 *
+		 * Also:
+		 *     If the Link Layer receives an LL_MIN_USED_CHANNELS_IND PDU, it should ensure
+		 *     that, whenever the Peripheral-to-Central PHY is one of those specified,
+		 *     the connection uses at least the number of channels given in the
+		 *     MinUsedChannels field of the PDU.
+		 *
+		 * The 'should' is here interpreted as 'permission' to do nothing
+		 *
+		 * Future improvement could implement logic to support this
 		 */
-		/* Inititate a chmap update, but only if acting as central, just in case ... */
-		if (conn->lll.role == BT_HCI_ROLE_CENTRAL &&
-		    ull_conn_lll_phy_active(conn, conn->llcp.muc.phys)) {
-			uint8_t chmap[5];
 
-			ull_chan_map_get((uint8_t *const)chmap);
-			ull_cp_chan_map_update(conn, chmap);
-			/* TODO - what to do on failure of ull_cp_chan_map_update() */
-		}
-		/* No response */
 		llcp_rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
 		break;
