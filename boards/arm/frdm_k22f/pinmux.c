@@ -38,13 +38,6 @@ static int frdm_k22f_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm0), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
-	/* Red, green, blue LEDs as PWM channels*/
-	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAlt4));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portc, 4, PORT_PCR_MUX(kPORT_MuxAlt2));
