@@ -80,6 +80,18 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 	}
 }
 
+static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
+{
+	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_stream_ops *ops = ep->stream->ops;
+
+	BT_DBG("stream %p ep %p", chan, ep);
+
+	if (ops != NULL && ops->sent != NULL) {
+		ops->sent(ep->stream);
+	}
+}
+
 static void unicast_client_ep_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
@@ -125,6 +137,7 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 
 static struct bt_iso_chan_ops unicast_client_iso_ops = {
 	.recv		= unicast_client_ep_iso_recv,
+	.sent		= unicast_client_ep_iso_sent,
 	.connected	= unicast_client_ep_iso_connected,
 	.disconnected	= unicast_client_ep_iso_disconnected,
 };
