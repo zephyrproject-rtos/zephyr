@@ -23,7 +23,7 @@ Images Created by the TF-M Build
 The TF-M build system creates the following executable files:
 
 * tfm_s - TF-M secure firmware
-* tfm_ns - a nonsecure app which is discarded in favor of the Zephyr app
+* tfm_ns - TF-M non-secure app (only used by regression tests).
 * bl2 - TF-M MCUboot, if enabled
 
 For each of these, it creates .bin, .hex, .elf, and .axf files.
@@ -37,7 +37,10 @@ file which combines them:
 
 For each of these, only .bin files are created.
 
-The Zephyr build system usually signs both tfm_s and the Zephyr ns app itself.
+The TF-M non-secure app is discarded in favor of Zephyr non-secure app except
+when running the TF-M regression test suite.
+
+The Zephyr build system usually signs both tfm_s and the Zephyr non-secure app itself.
 See below for details.
 
 The 'tfm' target contains properties for all these paths.
