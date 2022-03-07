@@ -92,12 +92,6 @@ static int twr_ke18f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portd, 8, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay) && CONFIG_CAN
-	/* FlexCAN0 RX, TX */
-	pinmux_pin_set(porte, 4, PORT_PCR_MUX(kPORT_MuxAlt5));
-	pinmux_pin_set(porte, 5, PORT_PCR_MUX(kPORT_MuxAlt5));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay) && CONFIG_ADC
 	/* Thermistor A, B */
 	pinmux_pin_set(porta, 0, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
