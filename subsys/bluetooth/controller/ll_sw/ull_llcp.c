@@ -54,16 +54,13 @@ sys_slist_t tx_buffer_wait_list;
 static uint8_t common_tx_buffer_alloc;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-/* TODO: Determine 'correct' number of tx nodes */
 static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * LLCP_TX_CTRL_BUF_COUNT];
 static struct llcp_mem_pool mem_tx = { .pool = buffer_mem_tx };
 
-/* TODO: Determine 'correct' number of ctx */
 static uint8_t buffer_mem_local_ctx[PROC_CTX_BUF_SIZE *
 				    CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_local_ctx = { .pool = buffer_mem_local_ctx };
 
-/* TODO(thoh-ot): Determine 'correct' number of ctx */
 static uint8_t buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
 				     CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_remote_ctx = { .pool = buffer_mem_remote_ctx };
@@ -693,8 +690,6 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 {
 	struct proc_ctx *ctx;
 
-	/* TODO(thoh): Proper checks for role, parameters etc. */
-
 	ctx = llcp_create_local_procedure(PROC_PHY_UPDATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -724,10 +719,6 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 
 	ctx->data.term.error_code = error_code;
 
-	/* TODO
-	 * Termination procedure may be initiated at any time, even if other
-	 * LLCP is active.
-	 */
 	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
@@ -865,9 +856,6 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		LL_ASSERT(0); /* Unknown procedure */
 	}
 
-	/* TODO(tosk): Check what to handle (ADV_SCHED) from this legacy fct. */
-	/* event_conn_upd_prep() (event_conn_upd_init()) */
-
 	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
@@ -971,7 +959,9 @@ static bool pdu_is_unknown(struct pdu_data *pdu, struct proc_ctx *ctx)
 
 static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
-	/* TODO(thoh): For LL_REJECT_IND check if the active procedure is supporting the PDU */
+	/* For LL_REJECT_IND there is no simple way of confirming protocol validity of the PDU
+	 * for the given procedure, so simply pass it on and let procedure engine deal with it
+	 */
 	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) &&
 		 (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) ||
 		(pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));

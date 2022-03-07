@@ -339,7 +339,6 @@ static void lp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 static void lp_enc_st_unencrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
 		/* Pause Tx data */
@@ -462,7 +461,6 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 
 static void lp_enc_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
 		lp_enc_complete(conn, ctx, evt, param);
@@ -476,7 +474,6 @@ static void lp_enc_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
 		/* Pause Tx data */
@@ -930,7 +927,6 @@ static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *
 static void rp_enc_state_wait_tx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					 void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_enc_rsp(conn, ctx, evt, param);
@@ -944,7 +940,6 @@ static void rp_enc_state_wait_tx_enc_rsp(struct ll_conn *conn, struct proc_ctx *
 static void rp_enc_state_wait_ntf_ltk_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_ltk_ntf(conn, ctx, evt, param);
@@ -958,7 +953,6 @@ static void rp_enc_state_wait_ntf_ltk_req(struct ll_conn *conn, struct proc_ctx 
 static void rp_enc_state_wait_ltk_reply(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_LTK_REQ_REPLY:
 		rp_enc_send_start_enc_req(conn, ctx, evt, param);
@@ -975,7 +969,6 @@ static void rp_enc_state_wait_ltk_reply(struct ll_conn *conn, struct proc_ctx *c
 static void rp_enc_state_wait_tx_start_enc_req(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_start_enc_req(conn, ctx, evt, param);
@@ -989,7 +982,6 @@ static void rp_enc_state_wait_tx_start_enc_req(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_tx_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_reject_ind(conn, ctx, evt, param);
@@ -1003,7 +995,6 @@ static void rp_enc_state_wait_tx_reject_ind(struct ll_conn *conn, struct proc_ct
 static void rp_enc_state_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_START_ENC_RSP:
 		rp_enc_complete(conn, ctx, evt, param);
@@ -1017,7 +1008,6 @@ static void rp_enc_state_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_complete(conn, ctx, evt, param);
@@ -1031,7 +1021,6 @@ static void rp_enc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, ui
 static void rp_enc_state_wait_tx_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_start_enc_rsp(conn, ctx, evt, param);
@@ -1058,7 +1047,6 @@ static void rp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, u
 static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_PAUSE_ENC_REQ:
 		/* Pause Tx data */
@@ -1080,7 +1068,6 @@ static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_tx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
@@ -1094,7 +1081,6 @@ static void rp_enc_state_wait_tx_pause_enc_rsp(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_PAUSE_ENC_RSP:
 		/* Continue with an encapsulated Start Procedure */
