@@ -136,7 +136,5 @@
 		     &kso05_gp14 /* KSO05 PIN14 */
 		     >;
 	pinctrl-names = "default";
-	row-size = <8>;
-	col-size = <6>;
 	status = "okay";
 };

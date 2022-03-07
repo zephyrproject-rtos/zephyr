@@ -28,6 +28,8 @@
 		pwm-0 = &pwm6;
 		/* For i2c test suites */
 		i2c-0 = &i2c0_0;
+		/* For kscan test suites */
+		kscan0 = &kscan0;
 		/* For watchdog sample */
 		watchdog0 = &twd0;
 		peci-0 = &peci0;
@@ -155,7 +157,5 @@
 		     &kso12_gp05 /* KSO12 PIN05 */
 		     >;
 	pinctrl-names = "default";
-	row-size = <8>;
-	col-size = <13>;
 	status = "okay";
 };
