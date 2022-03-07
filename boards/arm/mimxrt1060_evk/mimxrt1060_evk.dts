@@ -183,7 +183,11 @@ arduino_serial: &lpuart3 {};
 
 &enet {
 	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
 	ptp {
+		pinctrl-0 = <&pinmux_ptp>;
+		pinctrl-names = "default";
 		status = "okay";
 	};
 };
