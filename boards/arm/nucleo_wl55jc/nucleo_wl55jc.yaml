@@ -16,5 +16,6 @@ supported:
   - arduino_i2c
   - arduino_spi
   - adc
+  - dac
   - pwm
   - dma
