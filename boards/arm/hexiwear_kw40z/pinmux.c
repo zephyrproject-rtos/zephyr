@@ -29,11 +29,6 @@ static int hexiwear_kw40z_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portc,  7, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay) && CONFIG_ADC
-	/* ADC0_SE1 */
-	pinmux_pin_set(portb,  1, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
-#endif
-
 	return 0;
 }
 

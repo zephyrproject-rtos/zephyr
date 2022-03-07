@@ -38,11 +38,6 @@ static int frdm_k82f_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay) && CONFIG_ADC
-	/* ADC0_SE15 */
-	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
-#endif
-
 	return 0;
 }
 
