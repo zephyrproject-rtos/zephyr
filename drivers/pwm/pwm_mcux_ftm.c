@@ -13,6 +13,7 @@
 #include <soc.h>
 #include <fsl_ftm.h>
 #include <fsl_clock.h>
+#include <drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
@@ -36,6 +37,7 @@ struct mcux_ftm_config {
 #ifdef CONFIG_PWM_CAPTURE
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_PWM_CAPTURE */
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct mcux_ftm_capture_data {
@@ -390,6 +392,12 @@ static int mcux_ftm_init(const struct device *dev)
 	ftm_chnl_pwm_config_param_t *channel = data->channel;
 	ftm_config_t ftm_config;
 	int i;
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err != 0) {
+		return err;
+	}
 
 	if (config->channel_count > ARRAY_SIZE(data->channel)) {
 		LOG_ERR("Invalid channel count");
@@ -469,10 +477,12 @@ static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
 		DT_INST_REG_ADDR(n)), \
 	.mode = kFTM_EdgeAlignedPwm, \
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	CAPTURE_INIT \
 }
 
 #define FTM_DEVICE(n) \
+	PINCTRL_DT_INST_DEFINE(n); \
 	static struct mcux_ftm_data mcux_ftm_data_##n; \
 	static const struct mcux_ftm_config mcux_ftm_config_##n; \
 	DEVICE_DT_INST_DEFINE(n, &mcux_ftm_init,		       \
