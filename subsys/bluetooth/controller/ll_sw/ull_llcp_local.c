@@ -293,7 +293,7 @@ static void lr_act_complete(struct ll_conn *conn)
 
 static void lr_act_connect(struct ll_conn *conn)
 {
-	/* TODO */
+	/* Empty on purpose */
 }
 
 static void lr_act_disconnect(struct ll_conn *conn)
@@ -459,7 +459,6 @@ void llcp_lr_abort(struct ll_conn *conn)
 		ctx = lr_dequeue(conn);
 	}
 
-	/* TODO(thoh): Whats missing here ??? */
 	ull_conn_prt_clear(conn);
 	llcp_rr_set_incompat(conn, 0U);
 	lr_set_state(conn, LR_STATE_IDLE);

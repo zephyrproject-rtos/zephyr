@@ -240,9 +240,6 @@ static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 	return (ctx->data.pu.c_to_p_phy || ctx->data.pu.p_to_c_phy);
 }
 
-/*
- * TODO: this is the same as calc_eff_time in ull_connections.c
- */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static uint16_t pu_calc_eff_time(uint8_t max_octets, uint8_t phy, uint16_t default_time)
 {
@@ -470,7 +467,6 @@ static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 
 static void lp_pu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_PU_EVT_RUN:
 		lp_pu_send_phy_req(conn, ctx, evt, param);
@@ -500,7 +496,6 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 {
 	switch (evt) {
 	case LP_PU_EVT_PHY_RSP:
-		/* TODO: should we swap the function call with variable declaration? */
 		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		/* 'Prefer' the phys from the REQ */
 		uint8_t tx_pref = ctx->data.pu.tx;
@@ -668,7 +663,6 @@ static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 static void lp_pu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_PU_EVT_RUN:
 		lp_pu_check_instant(conn, ctx, evt, param);
@@ -875,7 +869,6 @@ static void rp_pu_send_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 
 static void rp_pu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_PU_EVT_RUN:
 		ctx->state = RP_PU_STATE_WAIT_RX_PHY_REQ;
@@ -1035,7 +1028,6 @@ static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 static void rp_pu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_PU_EVT_RUN:
 		rp_pu_check_instant(conn, ctx, evt, param);

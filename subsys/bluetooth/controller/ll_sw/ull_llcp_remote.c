@@ -444,7 +444,7 @@ static void rr_act_complete(struct ll_conn *conn)
 
 static void rr_act_connect(struct ll_conn *conn)
 {
-	/* TODO */
+	/* Empty on purpose */
 }
 
 static void rr_act_disconnect(struct ll_conn *conn)
@@ -814,7 +814,6 @@ static void rr_abort(struct ll_conn *conn)
 		ctx = rr_dequeue(conn);
 	}
 
-	/* TODO(thoh): Whats missing here ??? */
 	rr_set_collision(conn, 0U);
 	rr_set_state(conn, RR_STATE_IDLE);
 }

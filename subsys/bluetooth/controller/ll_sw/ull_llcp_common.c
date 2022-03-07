@@ -578,7 +578,6 @@ static void lp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 		/* Ignore other evts */
 		break;
 	}
-	/* TODO */
 }
 
 static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -644,7 +643,6 @@ static void lp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_COMMON_EVT_RUN:
 		switch (ctx->proc) {
