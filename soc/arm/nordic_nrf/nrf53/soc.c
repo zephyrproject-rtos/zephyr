@@ -48,8 +48,9 @@ extern void z_arm_nmi_init(void);
 #error "Unknown nRF53 SoC."
 #endif
 
-#if (!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM)) && \
-	defined(CONFIG_SOC_NRF5340_CPUAPP) && DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gpio_forwarder)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gpio_forwarder) && \
+	defined(CONFIG_BOARD_ENABLE_CPUNET) && \
+	(!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(CONFIG_BUILD_WITH_TFM))
 #define NRF_GPIO_FORWARDER_FOR_NRF5340_CPUAPP_ENABLED
 #endif
 
