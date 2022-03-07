@@ -126,10 +126,6 @@ void test_min_used_chans_central_rem(void)
 {
 	struct pdu_data_llctrl_min_used_chans_ind remote_muc_ind = { .phys = 1,
 		.min_used_chans = 2 };
-	struct pdu_data_llctrl_chan_map_ind ch_map_ind = { .chm = { 0xff, 0xff, 0xff, 0xff, 0x1f },
-		.instant = 7 };
-
-	struct node_tx *tx;
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
@@ -143,17 +139,13 @@ void test_min_used_chans_central_rem(void)
 	/* Rx */
 	lt_tx(LL_MIN_USED_CHANS_IND, &conn,  &remote_muc_ind);
 
-	/* Emulate a phy to trigger channel map update */
-	conn.lll.phy_tx = 0x7;
-
 	/* Done */
 	event_done(&conn);
 
 	/* Prepare */
 	event_prepare(&conn);
 
-	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_CHAN_MAP_UPDATE_IND, &conn,  &tx, &ch_map_ind);
+	/* Tx Queue should have no LL Control PDU */
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
@@ -162,7 +154,7 @@ void test_min_used_chans_central_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
