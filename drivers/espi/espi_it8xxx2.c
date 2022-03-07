@@ -992,14 +992,12 @@ static int espi_it8xxx2_receive_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
 	const struct espi_it8xxx2_config *const config = dev->config;
-	struct espi_it8xxx2_data *const data = dev->data;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 	struct espi_queue0_regs *const queue0_reg =
 		(struct espi_queue0_regs *)config->base_espi_queue0;
 	struct espi_oob_msg_packet *oob_pckt =
 		(struct espi_oob_msg_packet *)pckt->buf;
-	int ret;
 	uint8_t oob_len;
 
 	if (!(slave_reg->CH_OOB_CAPCFG3 & IT8XXX2_ESPI_OOB_READY_MASK)) {
@@ -1007,12 +1005,17 @@ static int espi_it8xxx2_receive_oob(const struct device *dev,
 		return -EIO;
 	}
 
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	struct espi_it8xxx2_data *const data = dev->data;
+	int ret;
+
 	/* Wait until receive OOB message or timeout */
 	ret = k_sem_take(&data->oob_upstream_go, K_MSEC(ESPI_OOB_TIMEOUT_MS));
 	if (ret == -EAGAIN) {
 		LOG_ERR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
+#endif
 
 	/* Get length */
 	oob_len = (slave_reg->ESOCTRL4 & IT8XXX2_ESPI_PUT_OOB_LEN_MASK);
@@ -1041,11 +1044,14 @@ static int espi_it8xxx2_receive_oob(const struct device *dev,
 static void espi_it8xxx2_oob_init(const struct device *dev)
 {
 	const struct espi_it8xxx2_config *const config = dev->config;
-	struct espi_it8xxx2_data *const data = dev->data;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	struct espi_it8xxx2_data *const data = dev->data;
+
 	k_sem_init(&data->oob_upstream_go, 0, 1);
+#endif
 
 	/* Upstream interrupt enable */
 	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_INTERRUPT_ENABLE;
@@ -1655,11 +1661,22 @@ static void espi_it8xxx2_put_oob_status_isr(const struct device *dev)
 	struct espi_it8xxx2_data *const data = dev->data;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
+#ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_OOB_RECEIVED,
+				  .evt_details = 0,
+				  .evt_data = 0 };
+#endif
 
 	/* Write-1 to clear this bit for the next coming posted transaction. */
 	slave_reg->ESOCTRL0 |= IT8XXX2_ESPI_PUT_OOB_STATUS;
 
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 	k_sem_give(&data->oob_upstream_go);
+#else
+	/* Additional detail is length field of PUT_OOB message packet. */
+	evt.evt_details = (slave_reg->ESOCTRL4 & IT8XXX2_ESPI_PUT_OOB_LEN_MASK);
+	espi_send_callbacks(&data->callbacks, dev, evt);
+#endif
 }
 #endif
 
