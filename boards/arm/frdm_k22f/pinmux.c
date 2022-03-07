@@ -46,14 +46,6 @@ static int frdm_k22f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay) && CONFIG_I2C
-	/* I2C0 SCL, SDA */
-	pinmux_pin_set(portb, 2, PORT_PCR_MUX(kPORT_MuxAlt2)
-					| PORT_PCR_ODE_MASK);
-	pinmux_pin_set(portb, 3, PORT_PCR_MUX(kPORT_MuxAlt2)
-					| PORT_PCR_ODE_MASK);
-#endif
-
 	return 0;
 }
 
