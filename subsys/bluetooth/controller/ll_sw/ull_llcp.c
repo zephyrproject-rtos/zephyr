@@ -622,7 +622,9 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 {
 	struct proc_ctx *ctx;
 
-	/* TODO(thoh): Proper checks for role, parameters etc. */
+	if (conn->lll.role != BT_HCI_ROLE_CENTRAL) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 	ctx = llcp_create_local_procedure(PROC_ENCRYPTION_START);
 	if (!ctx) {
@@ -646,7 +648,9 @@ uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], con
 {
 	struct proc_ctx *ctx;
 
-	/* TODO(thoh): Proper checks for role, parameters etc. */
+	if (conn->lll.role != BT_HCI_ROLE_CENTRAL) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 	ctx = llcp_create_local_procedure(PROC_ENCRYPTION_PAUSE);
 	if (!ctx) {
