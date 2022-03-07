@@ -40,11 +40,6 @@ static int frdm_kw41z_pinmux_init(const struct device *dev)
 	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAlt5));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay) && CONFIG_ADC
-	/* ADC0_SE3 */
-	pinmux_pin_set(portb,  2, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay) && CONFIG_SERIAL
 	/* UART0 RX, TX */
 	pinmux_pin_set(portc,  6, PORT_PCR_MUX(kPORT_MuxAlt4));
