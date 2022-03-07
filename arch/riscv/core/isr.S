@@ -135,14 +135,6 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 	DO_CALLER_SAVED(sr)		;
 
-	/* Save MEPC register */
-	csrr t0, mepc
-	sr t0, __z_arch_esf_t_mepc_OFFSET(sp)
-
-	/* Save MSTATUS register */
-	csrr t0, mstatus
-	sr t0, __z_arch_esf_t_mstatus_OFFSET(sp)
-
 #ifdef CONFIG_USERSPACE
 	/*
 	 * The scratch register now contains either the user mode stack
@@ -163,12 +155,18 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	sw zero, 0(t0)
 #endif
 
+	/* Save MEPC register */
+	csrr t0, mepc
+	sr t0, __z_arch_esf_t_mepc_OFFSET(sp)
+
+	/* Save MSTATUS register */
+	csrr t4, mstatus
+	sr t4, __z_arch_esf_t_mstatus_OFFSET(sp)
+
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
-	la t0, _kernel
-	lr t0, _kernel_offset_to_current(t0)
-	lb t0, _thread_offset_to_user_options(t0)
-	andi t0, t0, K_FP_REGS
+	li t1, MSTATUS_FS_INIT
+	and t0, t4, t1
 	beqz t0, skip_store_fp_caller_saved
 	DO_FP_CALLER_SAVED(fsr, sp)
 skip_store_fp_caller_saved:
@@ -457,28 +455,32 @@ no_reschedule:
 	jal ra, __soc_restore_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/*
-	 * Determine if we need to restore floating-point registers. This needs
-	 * to happen before restoring integer registers to avoid stomping on
-	 * t0.
-	 */
-	la t0, _kernel
-	lr t0, _kernel_offset_to_current(t0)
-	lb t0, _thread_offset_to_user_options(t0)
-	andi t0, t0, K_FP_REGS
-	beqz t0, skip_load_fp_caller_saved
-	DO_FP_CALLER_SAVED(flr, sp)
-skip_load_fp_caller_saved:
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
-
 	/* Restore MEPC register */
 	lr t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	csrw mepc, t0
 
 	/* Restore MSTATUS register */
 	lr t4, __z_arch_esf_t_mstatus_OFFSET(sp)
-	csrw mstatus, t4
+	csrrw t5, mstatus, t4
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	/*
+	 * Determine if we need to restore FP regs based on the previous
+	 * (before the csr above) mstatus value available in t5.
+	 */
+	li t1, MSTATUS_FS_INIT
+	and t0, t5, t1
+	beqz t0, no_fp
+
+	/* make sure FP is enabled in the restored mstatus */
+	csrs mstatus, t1
+	DO_FP_CALLER_SAVED(flr, sp)
+	j 1f
+
+no_fp:	/* make sure this is reflected in the restored mstatus */
+	csrc mstatus, t1
+1:
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 #ifdef CONFIG_USERSPACE
 	/*
