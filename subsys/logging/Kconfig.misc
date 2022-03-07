@@ -35,17 +35,17 @@ config LOG2_USE_VLA
 	  compile time so at runtime arrays have fixed size.
 
 config LOG2_ALWAYS_RUNTIME
-	bool
+	bool "Always use runtime message creation (v2)"
 	default y if NO_OPTIMIZATIONS
 	default y if LOG_MODE_IMMEDIATE
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xcc"
 	help
 	  If enabled, runtime method is always used for message creation. Static
 	  creation relies on compiler being able to optimize and remove code
-	  based on information known at compile time. Runtime only approach is
-	  used when optimization is disabled because some compilers
+	  based on information known at compile time. Runtime only approach must
+	  be used when optimization is disabled because some compilers
 	  (seen on arm_cortex_m and x86) were using unrealistic amount of stack
-	  for dead code. It is also used in immediate mode since it requires
+	  for dead code. It is also required in immediate mode since it requires
 	  less stack than static message creation and speed has lower priority
 	  in that mode.
 
