@@ -33,7 +33,7 @@ static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size
 
 	heap_ref = mem;
 	*heap_ref = heap;
-	mem = ++heap_ref;
+	mem = heap_ref + 1;
 	__ASSERT(align == 0 || ((uintptr_t)mem & (align - 1)) == 0,
 		 "misaligned memory at %p (align = %zu)", mem, align);
 
@@ -46,7 +46,8 @@ void k_free(void *ptr)
 
 	if (ptr != NULL) {
 		heap_ref = ptr;
-		ptr = --heap_ref;
+		--heap_ref;
+		ptr = heap_ref;
 
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_free, *heap_ref);
 

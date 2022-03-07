@@ -97,7 +97,8 @@ static int buf_char_out(int c, void *ctx_p)
 	struct buf_out_context *ctx = ctx_p;
 
 	ctx->count++;
-	ctx->buf[ctx->buf_count++] = (char)c;
+	ctx->buf[ctx->buf_count] = (char)c;
+	++ctx->buf_count;
 	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
 		buf_flush(ctx);
 	}
@@ -232,15 +233,16 @@ struct str_context {
 static int str_out(int c, struct str_context *ctx)
 {
 	if (ctx->str == NULL || ctx->count >= ctx->max) {
-		ctx->count++;
+		++ctx->count;
 		return c;
 	}
 
 	if (ctx->count == ctx->max - 1) {
-		ctx->str[ctx->count++] = '\0';
+		ctx->str[ctx->count] = '\0';
 	} else {
-		ctx->str[ctx->count++] = (char)c;
+		ctx->str[ctx->count] = (char)c;
 	}
+	++ctx->count;
 
 	return c;
 }

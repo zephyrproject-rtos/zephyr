@@ -274,7 +274,8 @@ do { \
 	} \
 	size_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
 	if (Z_CBPRINTF_IS_PCHAR(_arg) != 0) { \
-		(_s_buf)[(_s_idx)++] = (uint16_t)((_idx) / sizeof(int)); \
+		(_s_buf)[(_s_idx)] = (uint16_t)((_idx) / sizeof(int)); \
+		++(_s_idx); \
 	} \
 	if ((_buf) != NULL && (_idx) < (_max)) { \
 		Z_CBPRINTF_STORE_ARG(&(_buf)[(_idx)], _arg); \
