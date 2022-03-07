@@ -623,7 +623,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		cur_inst->cli.idx = client->inst_count;
 		cur_inst->cli.start_handle = attr->handle + 1;
 		cur_inst->cli.end_handle = prim_service->end_handle;
-		cur_inst->cli.conn = conn;
+		cur_inst->cli.conn = bt_conn_ref(conn);
 		client->inst_count++;
 	}
 
@@ -1223,6 +1223,55 @@ static int csis_client_read_set_lock(struct bt_csis *inst)
 
 	return bt_gatt_read(inst->cli.conn, &read_params);
 }
+
+static void csis_client_reset(struct bt_csis_client_inst *inst)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(inst->csis_insts); i++) {
+		struct bt_csis_client_svc_inst *cli = &inst->csis_insts[i].cli;
+
+		cli->idx = 0;
+		cli->rank = 0;
+		cli->set_lock = 0;
+		cli->start_handle = 0;
+		cli->end_handle = 0;
+		cli->set_sirk_handle = 0;
+		cli->set_size_handle = 0;
+		cli->set_lock_handle = 0;
+		cli->rank_handle = 0;
+
+		if (cli->conn != NULL) {
+			struct bt_conn *conn = cli->conn;
+
+			/* It's okay if these fail. In case of disconnect,
+			 * we can't unsubscribe and they will just fail.
+			 * In case that we reset due to another call of the
+			 * discover function, we will unsubscribe (regardless of
+			 * bonding state) to accommodate the new discovery
+			 * values.
+			 */
+			(void)bt_gatt_unsubscribe(conn, &cli->sirk_sub_params);
+			(void)bt_gatt_unsubscribe(conn, &cli->size_sub_params);
+			(void)bt_gatt_unsubscribe(conn, &cli->lock_sub_params);
+
+			bt_conn_unref(conn);
+			cli->conn = NULL;
+		}
+	}
+}
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_csis_client_inst *inst = &client_insts[bt_conn_index(conn)];
+
+	/* All csis_insts share the same conn pointer */
+	if (inst->csis_insts[0].cli.conn == conn) {
+		csis_client_reset(inst);
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
 
 /*************************** PUBLIC FUNCTIONS ***************************/
 void bt_csis_client_register_cb(struct bt_csis_client_cb *cb)
