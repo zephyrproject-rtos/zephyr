@@ -46,18 +46,6 @@ static int rddrone_fmuk66_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portd,  9, PORT_PCR_MUX(kPORT_MuxAlt5));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay) && CONFIG_CAN
-	/* CAN0 TX, RX */
-	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay) && CONFIG_CAN
-	/* CAN1 TX, RX */
-	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 	return 0;
 }
 

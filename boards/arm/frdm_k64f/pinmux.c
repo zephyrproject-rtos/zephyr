@@ -43,13 +43,6 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay) && CONFIG_CAN
-	/* FlexCAN0 RX, TX */
-	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAlt2) |
-		       PORT_PCR_PE_MASK | PORT_PCR_PS_MASK);
-#endif
-
 	return 0;
 }
 
