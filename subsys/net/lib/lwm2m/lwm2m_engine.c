@@ -867,21 +867,6 @@ int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 
 /* utility functions */
 
-static uint16_t atou16(const uint8_t *buf, uint16_t buflen, uint16_t *len)
-{
-	uint16_t val = 0U;
-	uint16_t pos = 0U;
-
-	/* we should get a value first - consume all numbers */
-	while (pos < buflen && isdigit(buf[pos])) {
-		val = val * 10U + (buf[pos] - '0');
-		pos++;
-	}
-
-	*len = pos;
-	return val;
-}
-
 static int coap_options_to_path(struct coap_option *opt, int options_count,
 				struct lwm2m_obj_path *path)
 {
@@ -891,7 +876,7 @@ static int coap_options_to_path(struct coap_option *opt, int options_count,
 	path->level = options_count;
 
 	for (int i = 0; i < options_count; i++) {
-		*id[i] = atou16(opt[i].value, opt[i].len, &len);
+		*id[i] = lwm2m_atou16(opt[i].value, opt[i].len, &len);
 		if (len == 0U || opt[i].len != len) {
 			path->level = i;
 			break;
@@ -1266,71 +1251,6 @@ static int select_reader(struct lwm2m_input_context *in, uint16_t format)
 
 /* user data setter functions */
 
-static int string_to_path(const char *pathstr, struct lwm2m_obj_path *path,
-			  char delim)
-{
-	uint16_t value, len;
-	int i, tokstart = -1, toklen;
-	int end_index = strlen(pathstr) - 1;
-
-	(void)memset(path, 0, sizeof(*path));
-	for (i = 0; i <= end_index; i++) {
-		/* search for first numeric */
-		if (tokstart == -1) {
-			if (!isdigit((unsigned char)pathstr[i])) {
-				continue;
-			}
-
-			tokstart = i;
-		}
-
-		/* find delimiter char or end of string */
-		if (pathstr[i] == delim || i == end_index) {
-			toklen = i - tokstart + 1;
-
-			/* don't process delimiter char */
-			if (pathstr[i] == delim) {
-				toklen--;
-			}
-
-			if (toklen <= 0) {
-				continue;
-			}
-
-			value = atou16(&pathstr[tokstart], toklen, &len);
-			switch (path->level) {
-
-			case 0:
-				path->obj_id = value;
-				break;
-
-			case 1:
-				path->obj_inst_id = value;
-				break;
-
-			case 2:
-				path->res_id = value;
-				break;
-
-			case 3:
-				path->res_inst_id = value;
-				break;
-
-			default:
-				LOG_ERR("invalid level (%d)", path->level);
-				return -EINVAL;
-
-			}
-
-			/* increase the path level for each token found */
-			path->level++;
-			tokstart = -1;
-		}
-	}
-
-	return 0;
-}
-
 static int path_to_objs(const struct lwm2m_obj_path *path,
 			struct lwm2m_engine_obj_inst **obj_inst,
 			struct lwm2m_engine_obj_field **obj_field,
@@ -1445,7 +1365,7 @@ int lwm2m_engine_create_obj_inst(const char *pathstr)
 	LOG_DBG("path:%s", log_strdup(pathstr));
 
 	/* translate path -> path_obj */
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -1475,7 +1395,7 @@ int lwm2m_engine_delete_obj_inst(const char *pathstr)
 	LOG_DBG("path: %s", log_strdup(pathstr));
 
 	/* translate path -> path_obj */
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -1506,7 +1426,7 @@ int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data
 	int ret = 0;
 
 	/* translate path -> path_obj */
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -1551,7 +1471,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 	LOG_DBG("path:%s, value:%p, len:%d", log_strdup(pathstr), value, len);
 
 	/* translate path -> path_obj */
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -1771,7 +1691,7 @@ int lwm2m_engine_get_res_data(const char *pathstr, void **data_ptr, uint16_t *da
 	int ret = 0;
 
 	/* translate path -> path_obj */
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -1813,7 +1733,7 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 	LOG_DBG("path:%s, buf:%p, buflen:%d", log_strdup(pathstr), buf, buflen);
 
 	/* translate path -> path_obj */
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -1993,7 +1913,7 @@ int lwm2m_engine_get_resource(const char *pathstr, struct lwm2m_engine_res **res
 	int ret;
 	struct lwm2m_obj_path path;
 
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -2011,7 +1931,7 @@ int lwm2m_engine_update_observer_min_period(const char *pathstr, uint32_t period
 	int i, ret;
 	struct lwm2m_obj_path path;
 
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -2037,7 +1957,7 @@ int lwm2m_engine_update_observer_max_period(const char *pathstr, uint32_t period
 	int i, ret;
 	struct lwm2m_obj_path path;
 
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -2147,7 +2067,7 @@ int lwm2m_engine_create_res_inst(const char *pathstr)
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_obj_path path;
 
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -2181,7 +2101,7 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_obj_path path;
 
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
 	}
@@ -2216,7 +2136,7 @@ bool lwm2m_engine_path_is_observed(const char *pathstr)
 	int ret;
 	int i;
 
-	ret = string_to_path(pathstr, &path, '/');
+	ret = lwm2m_string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return false;
 	}
@@ -5767,7 +5687,7 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 
 	/* Parse Path to internal used object path format */
 	for (int i = 0; i < path_list_size; i++) {
-		ret = string_to_path(path_list[i], &temp, '/');
+		ret = lwm2m_string_to_path(path_list[i], &temp, '/');
 		if (ret < 0) {
 			return ret;
 		}
