@@ -58,18 +58,6 @@ static int rddrone_fmuk66_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay) && CONFIG_I2C
-	/* I2C0 SCL, SDA */
-	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt5));
-	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt5));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay) && CONFIG_I2C
-	/* I2C0 SCL, SDA */
-	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
 	/* SPI0 CS2, SCK, SIN, SOUT */
 	pinmux_pin_set(portc, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
