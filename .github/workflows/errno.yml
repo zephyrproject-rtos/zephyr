@@ -2,6 +2,7 @@ name: Error numbers
 on:
   pull_request:
     paths:
+      - '.github/workflows/errno.yml'
       - 'lib/libc/minimal/include/errno.h'
       - 'scripts/ci/errno.py'
 
