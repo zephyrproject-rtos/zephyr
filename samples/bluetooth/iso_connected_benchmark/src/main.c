@@ -426,7 +426,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		default_conn = NULL;
 		return;
 	} else if (role == ROLE_PERIPHERAL) {
-		default_conn = conn;
+		default_conn = bt_conn_ref(conn);
 	}
 
 	LOG_INF("Connected: %s", addr);
