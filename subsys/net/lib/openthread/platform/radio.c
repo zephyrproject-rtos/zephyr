@@ -54,6 +54,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_WORKER_PRIORITY K_PRIO_PREEMPT(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 #endif
 
+#define CHANNEL_COUNT OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1
+
 enum pending_events {
 	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
 	PENDING_EVENT_FRAME_RECEIVED, /* Radio has received new frame */
@@ -88,6 +90,8 @@ static uint16_t energy_detection_time;
 static uint8_t energy_detection_channel;
 static int16_t energy_detected_value;
 
+static int8_t max_tx_power_table[CHANNEL_COUNT];
+
 ATOMIC_DEFINE(pending_events, PENDING_EVENT_COUNT);
 K_KERNEL_STACK_DEFINE(ot_task_stack,
 		      CONFIG_OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE);
@@ -97,6 +101,26 @@ static otError tx_result;
 
 K_FIFO_DEFINE(rx_pkt_fifo);
 K_FIFO_DEFINE(tx_pkt_fifo);
+
+static int8_t get_transmit_power_for_channel(uint8_t aChannel)
+{
+	int8_t channel_max_power = OT_RADIO_POWER_INVALID;
+	int8_t power = 0; /* 0 dbm as default value */
+
+	if (aChannel >= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN &&
+	    aChannel <= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX) {
+		channel_max_power =
+			max_tx_power_table[aChannel - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN];
+	}
+
+	if (tx_power != OT_RADIO_POWER_INVALID) {
+		power = (channel_max_power < tx_power) ? channel_max_power : tx_power;
+	} else if (channel_max_power != OT_RADIO_POWER_INVALID) {
+		power = channel_max_power;
+	}
+
+	return power;
+}
 
 static inline bool is_pending_event_set(enum pending_events event)
 {
@@ -220,6 +244,10 @@ static void dataInit(void)
 	net_pkt_append_buffer(tx_pkt, tx_payload);
 
 	sTransmitFrame.mPsdu = tx_payload->data;
+
+	for (size_t i = 0; i < CHANNEL_COUNT; i++) {
+		max_tx_power_table[i] = OT_RADIO_POWER_INVALID;
+	}
 }
 
 void platformRadioInit(void)
@@ -270,7 +298,7 @@ void transmit_message(struct k_work *tx_job)
 	channel = sTransmitFrame.mChannel;
 
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
-	radio_api->set_txpower(radio_dev, tx_power);
+	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
 
 	net_pkt_set_ieee802154_frame_secured(tx_pkt,
 					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);
@@ -611,7 +639,7 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 	channel = aChannel;
 
 	radio_api->set_channel(radio_dev, aChannel);
-	radio_api->set_txpower(radio_dev, tx_power);
+	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
 	radio_api->start(radio_dev);
 	sState = OT_RADIO_STATE_RECEIVE;
 
@@ -1223,3 +1251,22 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 }
 
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
+
+otError otPlatRadioSetChannelMaxTransmitPower(otInstance *aInstance, uint8_t aChannel,
+					      int8_t aMaxPower)
+{
+	ARG_UNUSED(aInstance);
+
+	if (aChannel < OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN ||
+	    aChannel > OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX) {
+		return OT_ERROR_INVALID_ARGS;
+	}
+
+	max_tx_power_table[aChannel - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN] = aMaxPower;
+
+	if (aChannel == channel) {
+		radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(aChannel));
+	}
+
+	return OT_ERROR_NONE;
+}
