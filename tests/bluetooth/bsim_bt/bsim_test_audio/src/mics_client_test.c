@@ -37,7 +37,6 @@ static volatile uint8_t g_aics_gain_min;
 static volatile bool g_aics_active = true;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
-static struct bt_conn *g_conn;
 
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
@@ -202,12 +201,13 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
 		FAIL("Failed to connect to %s (%u)\n", addr, err);
 		return;
 	}
 
 	printk("Connected to %s\n", addr);
-	g_conn = conn;
 	g_is_connected = true;
 }
 
@@ -242,7 +242,7 @@ static int test_aics(void)
 		FAIL("Could not get AICS client conn (err %d)\n", err);
 		return err;
 	}
-	if (cached_conn != g_conn) {
+	if (cached_conn != default_conn) {
 		FAIL("Cached conn was not the conn used to discover");
 		return -ENOTCONN;
 	}
@@ -401,13 +401,13 @@ static void test_main(void)
 	printk("Scanning successfully started\n");
 	WAIT_FOR(g_is_connected);
 
-	err = bt_gatt_exchange_mtu(g_conn, &mtu_params);
+	err = bt_gatt_exchange_mtu(default_conn, &mtu_params);
 	if (err != 0) {
 		FAIL("Failed to exchange MTU %d", err);
 	}
 	WAIT_FOR(g_mtu_exchanged);
 
-	err = bt_mics_discover(g_conn, &mics);
+	err = bt_mics_discover(default_conn, &mics);
 	if (err != 0) {
 		FAIL("Failed to discover MICS %d", err);
 	}
@@ -425,7 +425,7 @@ static void test_main(void)
 		FAIL("Failed to get MICS client conn (err %d)\n", err);
 		return;
 	}
-	if (cached_conn != g_conn) {
+	if (cached_conn != default_conn) {
 		FAIL("Cached conn was not the conn used to discover");
 		return;
 	}
