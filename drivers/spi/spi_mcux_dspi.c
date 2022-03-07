@@ -11,6 +11,7 @@
 #include <drivers/spi.h>
 #include <drivers/clock_control.h>
 #include <fsl_dspi.h>
+#include <drivers/pinctrl.h>
 #ifdef CONFIG_DSPI_MCUX_EDMA
 #include <drivers/dma.h>
 #include <fsl_edma.h>
@@ -47,6 +48,7 @@ struct spi_mcux_config {
 	bool enable_rxfifo_overwrite;
 	bool enable_modified_timing_format;
 	bool is_dma_chn_shared;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct spi_mcux_data {
@@ -767,6 +769,11 @@ static int spi_mcux_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 #endif
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err != 0) {
+		return err;
+	}
+
 	data->dev = dev;
 
 	err = spi_context_cs_configure_all(&data->ctx);
@@ -861,6 +868,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 #endif
 
 #define SPI_MCUX_DSPI_DEVICE(id)					\
+	PINCTRL_DT_INST_DEFINE(id);					\
 	static void spi_mcux_config_func_##id(const struct device *dev);\
 	TX_BUFFER(id);							\
 	RX_BUFFER(id);							\
@@ -894,6 +902,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		    DT_INST_PROP(id, modified_timing_format),		\
 		.is_dma_chn_shared =					\
 		    DT_INST_PROP(id, nxp_rx_tx_chn_share),		\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
 	DEVICE_DT_INST_DEFINE(id,					\
 			    &spi_mcux_init,				\
