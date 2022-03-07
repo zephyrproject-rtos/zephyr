@@ -1190,6 +1190,20 @@ struct bt_audio_stream_ops {
 	 */
 	void (*recv)(struct bt_audio_stream *stream, struct net_buf *buf);
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
+
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+	/** @brief Stream audio HCI sent callback
+	 *
+	 *  If this callback is provided it will be called whenever a SDU has
+	 *  been completely sent, or otherwise flushed due to transmission
+	 *  issues.
+	 *  This callback is only used if the ISO data path is HCI.
+	 *
+	 *  @param chan The channel which has sent data.
+	 */
+	void (*sent)(struct bt_audio_stream *stream);
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+
 };
 
 /** @brief Register Audio callbacks for a stream.
