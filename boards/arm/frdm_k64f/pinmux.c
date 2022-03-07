@@ -59,17 +59,6 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm0), nxp_kinetis_ftm_pwm, okay) \
-	&& CONFIG_PWM
-	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAlt4));
-#endif
-
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm, okay) \
-	&& CONFIG_PWM
-	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 	pinmux_pin_set(porta,  5, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 12, PORT_PCR_MUX(kPORT_MuxAlt4));

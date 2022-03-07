@@ -34,13 +34,6 @@ static int hexiwear_k64_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
-	/* Red, green, blue LEDs as PWM channels */
-	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAlt4));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay) && CONFIG_I2C
 	/* I2C0 SCL, SDA - heart rate, light, humidity */
 	pinmux_pin_set(portb,  0, PORT_PCR_MUX(kPORT_MuxAlt2)
