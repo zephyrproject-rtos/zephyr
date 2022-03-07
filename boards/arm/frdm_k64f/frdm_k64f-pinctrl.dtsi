@@ -12,19 +12,15 @@
 &pinctrl {
 	enet_default: enet_default {
 		group0 {
-			pinmux = <RMII0_RXER_PTA5>;
-			drive-strength = "high";
-			slew-rate = "fast";
-		};
-		group1 {
 			pinmux = <RMII0_MDIO_PTB0>;
 			drive-strength = "low";
 			drive-open-drain;
 			bias-pull-up;
 			slew-rate = "fast";
 		};
-		group2 {
-			pinmux = <RMII0_RXD1_PTA12>,
+		group1 {
+			pinmux = <RMII0_RXER_PTA5>,
+				<RMII0_RXD1_PTA12>,
 				<RMII0_RXD0_PTA13>,
 				<RMII0_CRS_DV_PTA14>,
 				<RMII0_TXEN_PTA15>,
