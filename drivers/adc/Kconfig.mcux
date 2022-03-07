@@ -12,6 +12,7 @@ config ADC_MCUX_ADC12
 config ADC_MCUX_ADC16
 	bool "MCUX ADC16 driver"
 	depends on HAS_MCUX_ADC16
+	select PINCTRL
 	help
 	  Enable the MCUX ADC16 driver.
 
