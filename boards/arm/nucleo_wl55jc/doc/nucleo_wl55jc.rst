@@ -206,6 +206,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -234,6 +236,7 @@ Default Zephyr Peripheral Mapping:
 - SPI_1_MISO : PA6 (arduino_spi)
 - SPI_1_MOSI : PA7 (arduino_spi)
 - ADC1_IN5 : PB1 (Arduino pin A0)
+- DAC1_OUT1 : PA10 (Arduino pin A2)
 
 System Clock
 ------------
