@@ -697,21 +697,22 @@ void ll_reset(void)
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
-	/* Reset scan state */
-	err = ull_scan_reset();
-	LL_ASSERT(!err);
-#endif /* CONFIG_BT_OBSERVER */
-
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	/* Reset periodic sync sets */
-	err = ull_sync_reset();
-	LL_ASSERT(!err);
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	/* Reset periodic sync sets */
 	err = ull_sync_iso_reset();
 	LL_ASSERT(!err);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
+	/* Reset periodic sync sets */
+	err = ull_sync_reset();
+	LL_ASSERT(!err);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+	/* Reset scan state */
+	err = ull_scan_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 	err = ull_iso_reset();
