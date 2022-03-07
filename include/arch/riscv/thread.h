@@ -52,10 +52,11 @@
 
 /*
  * The following structure defines the list of registers that need to be
- * saved/restored when a cooperative context switch occurs.
+ * saved/restored when a context switch occurs.
  */
 struct _callee_saved {
 	ulong_t sp;	/* Stack pointer, (x2 register) */
+	ulong_t ra;	/* return address */
 	ulong_t tp;	/* thread pointer */
 
 	ulong_t s0;	/* saved register/frame pointer */
@@ -90,8 +91,6 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
-	uint32_t swap_return_value; /* Return value of z_swap() */
-
 #ifdef CONFIG_PMP_STACK_GUARD
 	ulong_t s_pmpcfg[PMP_CFG_CSR_NUM_FOR_STACK_GUARD];
 	ulong_t s_pmpaddr[PMP_REGION_NUM_FOR_STACK_GUARD];
