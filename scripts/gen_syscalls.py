@@ -168,7 +168,7 @@ def wrapper_defs(func_name, func_type, args):
             mrsh_args.append("parm%d.split.hi" % nsplit)
             nsplit += 1
         else:
-            mrsh_args.append("*(uintptr_t *)&" + argname)
+            mrsh_args.append("*(const uintptr_t *)&" + argname)
 
     if ret64:
         mrsh_args.append("(uintptr_t)&ret64")

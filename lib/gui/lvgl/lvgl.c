@@ -60,7 +60,7 @@ static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
 	 * * LOG_LEVEL_INF 3
 	 * * LOG_LEVEL_DBG 4
 	 */
-	char *dupdsc = log_strdup(dsc);
+	const char *dupdsc = log_strdup(dsc);
 
 	ARG_UNUSED(file);
 	ARG_UNUSED(line);

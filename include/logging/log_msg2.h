@@ -233,7 +233,7 @@ do { \
 					   _plen, _dlen); \
 	LOG_MSG2_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
-	z_log_msg2_static_create((void *)(_source), _desc, _msg->data, (_data)); \
+	z_log_msg2_static_create((_source), _desc, _msg->data, (_data)); \
 } while (false)
 
 #if CONFIG_LOG_SPEED
@@ -252,7 +252,7 @@ do { \
 					Z_LOG_MSG2_ALIGN_OFFSET, \
 					0U, __VA_ARGS__); \
 	} \
-	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
+	z_log_msg2_finalize(_msg, (const void *)_source, _desc, NULL); \
 } while (false)
 #else
 /* Alternative empty macro created to speed up compilation when LOG_SPEED is
@@ -349,8 +349,8 @@ do { \
 			  _level, _data, _dlen, ...) \
 do {\
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__) \
-	z_log_msg2_runtime_create(_domain_id, (void *)_source, \
-				  _level, (uint8_t *)_data, _dlen,\
+	z_log_msg2_runtime_create(_domain_id, _source, \
+				  _level, _data, _dlen,\
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (false)
@@ -361,8 +361,8 @@ do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
 	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, __VA_ARGS__)) { \
 		LOG_MSG2_DBG("create runtime message\n");\
-		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
-					  _level, (uint8_t *)_data, _dlen,\
+		z_log_msg2_runtime_create(_domain_id, _source, \
+					  _level, _data, _dlen,\
 					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 	} else {\
@@ -378,8 +378,8 @@ do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
 	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, __VA_ARGS__)) { \
 		LOG_MSG2_DBG("create runtime message\n");\
-		z_log_msg2_runtime_create((_domain_id), (void *)(_source), \
-					  (_level), (uint8_t *)(_data), (_dlen),\
+		z_log_msg2_runtime_create((_domain_id), (_source), \
+					  (_level), (_data), (_dlen),\
 					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 		(_mode) = Z_LOG_MSG2_MODE_RUNTIME; \
 	} else if ((IS_ENABLED(CONFIG_LOG_SPEED)) && (_try_0cpy) && ((_dlen) == 0)) {\
@@ -489,7 +489,7 @@ static inline void z_log_msg2_runtime_create(uint8_t domain_id,
 	va_end(ap);
 }
 
-static inline bool z_log_item_is_msg(union log_msg2_generic *msg)
+static inline bool z_log_item_is_msg(const union log_msg2_generic *msg)
 {
 	return msg->generic.type == Z_LOG_MSG2_LOG;
 }
@@ -513,10 +513,10 @@ static inline uint32_t log_msg2_get_total_wlen(const struct log_msg2_desc desc)
  */
 static inline uint32_t log_msg2_generic_get_wlen(const union mpsc_pbuf_generic *item)
 {
-	union log_msg2_generic *generic_msg = (union log_msg2_generic *)item;
+	const union log_msg2_generic *generic_msg = (const union log_msg2_generic *)item;
 
 	if (z_log_item_is_msg(generic_msg)) {
-		struct log_msg2 *msg = (struct log_msg2 *)generic_msg;
+		const struct log_msg2 *msg = (const struct log_msg2 *)generic_msg;
 
 		return log_msg2_get_total_wlen(msg->hdr.desc);
 	}

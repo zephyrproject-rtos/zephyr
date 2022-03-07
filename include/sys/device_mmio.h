@@ -217,7 +217,7 @@ struct z_device_mmio_rom {
  * @retval struct device_mmio_rom * pointer to storage location
  */
 #define DEVICE_MMIO_ROM_PTR(dev) \
-	((struct z_device_mmio_rom *)((dev)->config))
+	((const struct z_device_mmio_rom *)((dev)->config))
 
 /**
  * @def DEVICE_MMIO_ROM_INIT(node_id)

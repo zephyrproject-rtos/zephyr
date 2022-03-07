@@ -286,11 +286,11 @@ static inline void log_printk(const char *fmt, va_list ap)
  *	   a buffer from the pool (see CONFIG_LOG_STRDUP_MAX_STRING). In
  *	   some configurations, the original string pointer is returned.
  */
-char *z_log_strdup(const char *str);
-static inline char *log_strdup(const char *str)
+const char *z_log_strdup(const char *str);
+static inline const char *log_strdup(const char *str)
 {
 	if ((IS_ENABLED(CONFIG_LOG_MINIMAL)) || (IS_ENABLED(CONFIG_LOG2))) {
-		return (char *)str;
+		return str;
 	}
 
 	return z_log_strdup(str);

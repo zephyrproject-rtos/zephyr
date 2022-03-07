@@ -40,7 +40,7 @@ void test_arm_ramfunc(void)
 	 * arm_ram_function(.) is user (read) accessible.
 	 */
 #if defined(CONFIG_USERSPACE)
-	zassert_true(arch_buffer_validate((void *)&__ramfunc_start,
+	zassert_true(arch_buffer_validate((const void *)&__ramfunc_start,
 			(size_t)&__ramfunc_size, 0) == 0 /* Success */,
 		".ramfunc section not user accessible");
 #endif /* CONFIG_USERSPACE */

@@ -50,7 +50,7 @@ strlen_done:
 	ret
 
 /*
- * int arch_buffer_validate(void *addr, size_t size, bool write)
+ * int arch_buffer_validate(const void *addr, size_t size, bool write)
  */
 
 GTEXT(arch_buffer_validate)
