@@ -61,11 +61,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     ldr r0, =HACTLR_INIT
     mcr p15, 4, r0, c1, c0, 1
 
-    /* Change EL1 exception base address */
-    ldr r0,=_vector_table
-    mcr p15, 0, r0, c12, c0, 0 /* Write to VBAR */
-
-    /* Go to SVC mode */
+   /* Go to SVC mode */
     mrs r0, cpsr
     bic r0, #MODE_MASK
     orr r0, #MODE_SVC
