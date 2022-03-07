@@ -29,7 +29,6 @@
 
 extern enum bst_result_t bst_result;
 
-static struct bt_conn *default_conn;
 static struct bt_mcc_cb mcc_cb;
 
 static uint64_t g_icon_object_id;
@@ -570,11 +569,12 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
 		FAIL("Failed to connect to %s (%u)\n", addr, err);
 		return;
 	}
 
-	default_conn = conn;
 	SET_FLAG(ble_link_is_ready);
 }
 
