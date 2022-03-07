@@ -318,6 +318,14 @@ do_fault:
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:
+	/*
+	 * Retrieve provided routine and argument from the stack.
+	 * Routine pointer is in saved a0, argument in saved a1
+	 * so we load them with a1/a0 (reversed).
+	 */
+	lr a1, __z_arch_esf_t_a0_OFFSET(sp)
+	lr a0, __z_arch_esf_t_a1_OFFSET(sp)
+
 	/* Set _kernel.cpus[0].nested variable to 1 */
 	la t1, _kernel
 	li t0, 1
@@ -331,16 +339,11 @@ do_irq_offload:
 	addi sp, sp, -16
 	sr t0, 0(sp)
 
-	call z_irq_do_offload
+	/* Execute provided routine (argument is in a0 already). */
+	jalr ra, a1, 0
 
-	/* Set _kernel.cpus[0].nested variable back to 0 */
-	la t1, _kernel
-	sw zero, _kernel_offset_to_nested(t1)
-
-	/* return to the regular stack */
-	lr sp, 0(sp)
-
-	j no_reschedule
+	/* Leave through the regular IRQ exit path */
+	j irq_done
 #endif /* CONFIG_IRQ_OFFLOAD */
 
 #ifdef CONFIG_USERSPACE
@@ -446,6 +449,7 @@ on_irq_stack:
 	/* Call ISR function */
 	jalr ra, t1, 0
 
+irq_done:
 	/* Decrement _kernel.cpus[0].nested variable */
 	la t1, _kernel
 	lw t2, _kernel_offset_to_nested(t1)
