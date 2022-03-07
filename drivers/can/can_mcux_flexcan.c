@@ -16,6 +16,10 @@
 #include <fsl_flexcan.h>
 #include <logging/log.h>
 
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#endif
+
 LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 
 #define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
@@ -87,6 +91,9 @@ struct mcux_flexcan_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct device *phy;
 	uint32_t max_bitrate;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 struct mcux_flexcan_rx_callback {
@@ -724,6 +731,13 @@ static int mcux_flexcan_init(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err != 0) {
+		return err;
+	}
+#endif
+
 	err = mcux_flexcan_set_mode(dev, CAN_NORMAL_MODE);
 	if (err) {
 		return err;
@@ -797,7 +811,18 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(id, name), \
 		(FLEXCAN_IRQ_CODE(id, name)), ())
 
+#ifdef CONFIG_PINCTRL
+#define FLEXCAN_PINCTRL_DEFINE(id) PINCTRL_DT_INST_DEFINE(id);
+#define FLEXCAN_PINCTRL_INIT(id) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),
+#else
+#define FLEXCAN_PINCTRL_DEFINE(id)
+#define FLEXCAN_PINCTRL_INIT(id)
+#endif /* CONFIG_PINCTRL */
+
+
 #define FLEXCAN_DEVICE_INIT_MCUX(id)					\
+	FLEXCAN_PINCTRL_DEFINE(id)					\
+									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev); \
 									\
 	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
@@ -815,6 +840,7 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 		.irq_config_func = mcux_flexcan_irq_config_##id,	\
 		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(id, phys)),\
 		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(id, 1000000), \
+		FLEXCAN_PINCTRL_INIT(id)				\
 	};								\
 									\
 	static struct mcux_flexcan_data mcux_flexcan_data_##id;		\
