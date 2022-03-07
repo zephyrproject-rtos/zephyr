@@ -296,6 +296,18 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 	}
 }
 
+static void ascs_iso_sent(struct bt_iso_chan *chan)
+{
+	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_stream_ops *ops = ep->stream->ops;
+
+	BT_DBG("stream %p ep %p", chan, ep);
+
+	if (ops != NULL && ops->sent != NULL) {
+		ops->sent(ep->stream);
+	}
+}
+
 static void ascs_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
@@ -336,6 +348,7 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 static struct bt_iso_chan_ops ascs_iso_ops = {
 	.recv = ascs_iso_recv,
+	.sent = ascs_iso_sent,
 	.connected = ascs_iso_connected,
 	.disconnected = ascs_iso_disconnected,
 };
