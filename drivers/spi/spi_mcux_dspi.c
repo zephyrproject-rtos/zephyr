@@ -754,6 +754,8 @@ static int spi_mcux_init(const struct device *dev)
 {
 	int err;
 	struct spi_mcux_data *data = dev->data;
+	const struct spi_mcux_config *config = dev->config;
+
 #ifdef CONFIG_DSPI_MCUX_EDMA
 	enum dma_channel_filter spi_filter = DMA_CHANNEL_NORMAL;
 	const struct device *dma_dev;
@@ -765,8 +767,6 @@ static int spi_mcux_init(const struct device *dev)
 	data->tx_dma_config.dma_channel =
 	  dma_request_channel(dma_dev, (void *)&spi_filter);
 #else
-	const struct spi_mcux_config *config = dev->config;
-
 	config->irq_config_func(dev);
 #endif
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
