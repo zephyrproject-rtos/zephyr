@@ -967,14 +967,14 @@ static void uart_stm32_isr(const struct device *dev)
 		LL_USART_IsActiveFlag_TC(config->usart)) {
 
 		if (data->tx_poll_stream_on) {
-			/* A poll stream transmition just completed,
+			/* A poll stream transmission just completed,
 			 * allow system to suspend
 			 */
 			LL_USART_DisableIT_TC(config->usart);
 			data->tx_poll_stream_on = false;
 			uart_stm32_pm_constraint_release(dev);
 		}
-		/* Stream transmition was either async or IRQ based,
+		/* Stream transmission was either async or IRQ based,
 		 * constraint will be released at the same time TC IT
 		 * is disabled
 		 */
@@ -1103,7 +1103,7 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
 
-	/* When async rx is disabled, enable interruptable instance of uart to function normally*/
+	/* When async rx is disabled, enable interruptible instance of uart to function normally */
 	LL_USART_EnableIT_RXNE(config->usart);
 
 	LOG_DBG("rx: disabled");
@@ -1142,7 +1142,7 @@ static void uart_stm32_dma_replace_buffer(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
 
-	/* Replace the buffer and relod the DMA */
+	/* Replace the buffer and reload the DMA */
 	LOG_DBG("Replacing RX buffer: %d", data->rx_next_buffer_len);
 
 	/* reload DMA */

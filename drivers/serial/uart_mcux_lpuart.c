@@ -91,8 +91,8 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 #ifdef CONFIG_PM
 	/*
 	 * We must keep the part from entering lower power mode until the
-	 * tranmission completes. Set the power constraint, and enable
-	 * the tranmission complete interrupt so we know when tranmission is
+	 * transmission completes. Set the power constraint, and enable
+	 * the transmission complete interrupt so we know when transmission is
 	 * completed.
 	 */
 	if (!data->tx_poll_stream_on && !data->tx_int_stream_on) {
