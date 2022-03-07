@@ -40,7 +40,11 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 {
 	BT_DBG("conn %p stream %p ep %p codec %p", conn, stream, ep, codec);
 
-	stream->conn = conn;
+	if (conn != NULL) {
+		__ASSERT(stream->conn == NULL || stream->conn == conn,
+			 "stream->conn already attached");
+		stream->conn = bt_conn_ref(conn);
+	}
 	stream->codec = codec;
 	stream->ep = ep;
 	ep->stream = stream;
@@ -217,7 +221,10 @@ void bt_audio_stream_detach(struct bt_audio_stream *stream)
 
 	BT_DBG("stream %p", stream);
 
-	stream->conn = NULL;
+	if (stream->conn != NULL) {
+		bt_conn_unref(stream->conn);
+		stream->conn = NULL;
+	}
 	stream->codec = NULL;
 	stream->ep->stream = NULL;
 	stream->ep = NULL;

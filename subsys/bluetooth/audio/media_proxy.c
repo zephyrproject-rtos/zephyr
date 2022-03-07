@@ -631,6 +631,18 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 };
 
 #ifdef CONFIG_BT_MCC
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	if (mprx.remote_player.conn == conn) {
+		bt_conn_unref(mprx.remote_player.conn);
+		mprx.remote_player.conn = NULL;
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
+
 int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 {
 	int err;
@@ -689,7 +701,10 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 		return err;
 	}
 
-	mprx.remote_player.conn = conn;
+	if (mprx.remote_player.conn != NULL) {
+		bt_conn_unref(mprx.remote_player.conn);
+	}
+	mprx.remote_player.conn = bt_conn_ref(conn);
 	mprx.remote_player.registered = true;  /* TODO: Do MCC init and "registration" at startup */
 
 	return 0;

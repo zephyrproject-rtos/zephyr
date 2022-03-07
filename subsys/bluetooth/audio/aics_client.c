@@ -621,7 +621,7 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void aics_client_reset(struct bt_aics *inst, struct bt_conn *conn)
+static void aics_client_reset(struct bt_aics *inst)
 {
 	inst->cli.desc_writable = 0;
 	inst->cli.change_counter = 0;
@@ -635,12 +635,36 @@ static void aics_client_reset(struct bt_aics *inst, struct bt_conn *conn)
 	inst->cli.control_handle = 0;
 	inst->cli.desc_handle = 0;
 
-	/* It's okay if these fail */
-	(void)bt_gatt_unsubscribe(conn, &inst->cli.state_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &inst->cli.status_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &inst->cli.desc_sub_params);
+	if (inst->cli.conn != NULL) {
+		struct bt_conn *conn = inst->cli.conn;
+
+		/* It's okay if these fail. In case of disconnect, we can't
+		 * unsubscribe and they will just fail.
+		 * In case that we reset due to another call of the discover
+		 * function, we will unsubscribe (regardless of bonding state)
+		 * to accommodate the new discovery values.
+		 */
+		(void)bt_gatt_unsubscribe(conn, &inst->cli.state_sub_params);
+		(void)bt_gatt_unsubscribe(conn, &inst->cli.status_sub_params);
+		(void)bt_gatt_unsubscribe(conn, &inst->cli.desc_sub_params);
+
+		bt_conn_unref(conn);
+		inst->cli.conn = NULL;
+	}
 }
 
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(aics_insts); i++) {
+		if (aics_insts[i].cli.conn == conn) {
+			aics_client_reset(&aics_insts[i]);
+		}
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
 
 int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
 		     const struct bt_aics_discover_param *param)
@@ -669,11 +693,11 @@ int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
 		return -EBUSY;
 	}
 
-	aics_client_reset(inst, conn);
+	aics_client_reset(inst);
 
 	(void)memset(&inst->cli.discover_params, 0, sizeof(inst->cli.discover_params));
 
-	inst->cli.conn = conn;
+	inst->cli.conn = bt_conn_ref(conn);
 	inst->cli.discover_params.start_handle = param->start_handle;
 	inst->cli.discover_params.end_handle = param->end_handle;
 	inst->cli.discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
