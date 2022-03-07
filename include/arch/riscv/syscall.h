@@ -19,9 +19,8 @@
 /*
  * Privileged mode system calls
  */
-#define RV_ECALL_CONTEXT_SWITCH		0
+#define RV_ECALL_RUNTIME_EXCEPT		0
 #define RV_ECALL_IRQ_OFFLOAD		1
-#define RV_ECALL_RUNTIME_EXCEPT		2
 
 #ifndef _ASMLANGUAGE
 
