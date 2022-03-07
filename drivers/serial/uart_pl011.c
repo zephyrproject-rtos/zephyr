@@ -79,7 +79,7 @@ struct pl011_data {
 
 /* PL011 Receive status register / error clear register */
 #define PL011_RSR_ECR_FE	BIT(0)	/* framing error */
-#define PL011_RSR_ECR_PE	BIT(1)	/* parity erorr */
+#define PL011_RSR_ECR_PE	BIT(1)	/* parity error */
 #define PL011_RSR_ECR_BE	BIT(2)	/* break error */
 #define PL011_RSR_ECR_OE	BIT(3)	/* overrun error */
 
@@ -108,7 +108,7 @@ struct pl011_data {
 
 /* PL011 Control Register */
 #define PL011_CR_UARTEN		BIT(0)	/* enable uart operations */
-#define PL011_CR_SIREN		BIT(1)	/* enable  IrDA SIR */
+#define PL011_CR_SIREN		BIT(1)	/* enable IrDA SIR */
 #define PL011_CR_SIRLP		BIT(2)	/* IrDA SIR low power mode */
 #define PL011_CR_LBE		BIT(7)	/* loop back enable */
 #define PL011_CR_TXE		BIT(8)	/* transmit enable */
@@ -134,10 +134,10 @@ struct pl011_data {
 #define PL011_IMSC_RXIM		BIT(4)	/* receive interrupt mask */
 #define PL011_IMSC_TXIM		BIT(5)	/* transmit interrupt mask */
 #define PL011_IMSC_RTIM		BIT(6)	/* receive timeout interrupt mask */
-#define PL011_IMSC_FEIM		BIT(7)	/* framine error interrupt mask */
+#define PL011_IMSC_FEIM		BIT(7)	/* framing error interrupt mask */
 #define PL011_IMSC_PEIM		BIT(8)	/* parity error interrupt mask */
 #define PL011_IMSC_BEIM		BIT(9)	/* break error interrupt mask */
-#define PL011_IMSC_OEIM		BIT(10)	/* overrun error interrutpt mask */
+#define PL011_IMSC_OEIM		BIT(10)	/* overrun error interrupt mask */
 
 #define PL011_IMSC_ERROR_MASK	(PL011_IMSC_FEIM | \
 		PL011_IMSC_PEIM | PL011_IMSC_BEIM | \
