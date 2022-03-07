@@ -40,4 +40,4 @@ static int board_esp_wrover_kit_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(board_esp_wrover_kit_init, PRE_KERNEL_2, CONFIG_PINMUX_INIT_PRIORITY);
+SYS_INIT(board_esp_wrover_kit_init, APPLICATION, CONFIG_GPIO_INIT_PRIORITY);
