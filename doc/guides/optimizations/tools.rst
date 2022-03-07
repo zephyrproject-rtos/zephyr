@@ -79,17 +79,17 @@ which will generate something similar to the output below::
     z_idle_threads                                                                         128     2.65%
     z_interrupt_stacks                                                                    2048    42.36%
     z_main_thread                                                                          128     2.65%
-    arch                                                                                       1     0.02%
+    arch                                                                                     1     0.02%
     arm                                                                                      1     0.02%
-        core                                                                                   1     0.02%
+        core                                                                                 1     0.02%
         aarch32                                                                              1     0.02%
-            cortex_m                                                                           1     0.02%
+            cortex_m                                                                         1     0.02%
             mpu                                                                              1     0.02%
-                arm_mpu.c                                                                      1     0.02%
+                arm_mpu.c                                                                    1     0.02%
                 static_regions_num                                                           1     0.02%
-    drivers                                                                                  536    11.09%
+    drivers                                                                                536    11.09%
     clock_control                                                                          100     2.07%
-        nrf_power_clock.c                                                                    100     2.07%
+        nrf_power_clock.c                                                                  100     2.07%
         __device_clock_nrf                                                                  16     0.33%
         data                                                                                80     1.65%
         hfclk_users                                                                          4     0.08%
@@ -127,23 +127,23 @@ which will generate something similar to the output below::
     levels.8826                                                                             20     0.10%
     mpu_config                                                                               8     0.04%
     transitions.10558                                                                       12     0.06%
-    arch                                                                                    1194     5.74%
+    arch                                                                                  1194     5.74%
     arm                                                                                   1194     5.74%
-        core                                                                                1194     5.74%
+        core                                                                              1194     5.74%
         aarch32                                                                           1194     5.74%
-            cortex_m                                                                         852     4.09%
+            cortex_m                                                                       852     4.09%
             fault.c                                                                        400     1.92%
-                bus_fault.isra.0                                                              60     0.29%
-                mem_manage_fault.isra.0                                                       56     0.27%
-                usage_fault.isra.0                                                            36     0.17%
-                z_arm_fault                                                                  232     1.11%
-                z_arm_fault_init                                                              16     0.08%
+                bus_fault.isra.0                                                            60     0.29%
+                mem_manage_fault.isra.0                                                     56     0.27%
+                usage_fault.isra.0                                                          36     0.17%
+                z_arm_fault                                                                232     1.11%
+                z_arm_fault_init                                                            16     0.08%
             irq_init.c                                                                      24     0.12%
-                z_arm_interrupt_init                                                          24     0.12%
+                z_arm_interrupt_init                                                        24     0.12%
             mpu                                                                            352     1.69%
-                arm_core_mpu.c                                                                56     0.27%
+                arm_core_mpu.c                                                              56     0.27%
                 z_arm_configure_static_mpu_regions                                          56     0.27%
-                arm_mpu.c                                                                    296     1.42%
+                arm_mpu.c                                                                  296     1.42%
                 __init_sys_init_arm_mpu_init0                                                8     0.04%
                 arm_core_mpu_configure_static_mpu_regions                                   20     0.10%
                 arm_core_mpu_disable                                                        16     0.08%
