@@ -94,12 +94,12 @@ bool sys_heap_validate(struct sys_heap *heap)
 
 		check_nexts(h, b);
 
-		for (c = c0; c != 0 && (n == 0 || c != c0);
-		     n++, c = next_free_chunk(h, c)) {
+		for (c = c0; c != 0 && (n == 0 || c != c0); n++) {
 			if (!valid_chunk(h, c)) {
 				return false;
 			}
 			set_chunk_used(h, c, true);
+			c = next_free_chunk(h, c);
 		}
 
 		bool empty = (h->avail_buckets & ((uint32_t)1 << b)) == 0;
@@ -148,11 +148,12 @@ bool sys_heap_validate(struct sys_heap *heap)
 			continue;
 		}
 
-		for (c = c0; n == 0 || c != c0; n++, c = next_free_chunk(h, c)) {
+		for (c = c0; n == 0 || c != c0; n++) {
 			if (chunk_used(h, c)) {
 				return false;
 			}
 			set_chunk_used(h, c, true);
+			c = next_free_chunk(h, c);
 		}
 	}
 

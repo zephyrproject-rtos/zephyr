@@ -215,7 +215,7 @@ extern size_t z_free_page_count;
 #define Z_PAGE_FRAME_FOREACH(_phys, _pageframe) \
 	for ((_phys) = Z_PHYS_RAM_START, (_pageframe) = z_page_frames; \
 	     (_phys) < Z_PHYS_RAM_END; \
-	     (_phys) += CONFIG_MMU_PAGE_SIZE, (_pageframe)++)
+	     (_phys) += CONFIG_MMU_PAGE_SIZE, (_pageframe) += 1)
 
 #ifdef CONFIG_DEMAND_PAGING
 /* We reserve a virtual page as a scratch area for page-ins/outs at the end

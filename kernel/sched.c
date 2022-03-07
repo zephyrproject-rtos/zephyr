@@ -993,7 +993,8 @@ void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *thread)
 
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
-	thread->base.order_key = pq->next_order_key++;
+	thread->base.order_key = pq->next_order_key;
+	++pq->next_order_key;
 
 	/* Renumber at wraparound.  This is tiny code, and in practice
 	 * will almost never be hit on real systems.  BUT on very
@@ -1003,7 +1004,8 @@ void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *thread)
 	 */
 	if (pq->next_order_key == 0) {
 		RB_FOR_EACH_CONTAINER(&pq->tree, t, base.qnode_rb) {
-			t->base.order_key = pq->next_order_key++;
+			t->base.order_key = pq->next_order_key;
+			++pq->next_order_key;
 		}
 	}
 

@@ -33,7 +33,8 @@ static void efi_putchar(int c)
 		efi_putchar((int)'\r');
 	}
 
-	efibuf[n++] = (uint16_t)c;
+	efibuf[n] = (uint16_t)c;
+	++n;
 
 	if (c == (int)'\n' || n == PUTCHAR_BUFSZ) {
 		efibuf[n] = 0U;
@@ -120,7 +121,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	 * to drain before we start banging on the same UART from the
 	 * OS.
 	 */
-	for (volatile int i = 0; i < 50000000; i++) {
+	for (volatile int i = 0; i < 50000000; i += 1) {
 	}
 
 	__asm__ volatile("cli; jmp *%0" :: "r"(code));

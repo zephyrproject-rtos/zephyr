@@ -257,7 +257,8 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * reason for the post-decrement on fmt as it will be incremented
 	 * prior to the next (actually first) round of that loop.
 	 */
-	s = fmt--;
+	s = fmt;
+	--fmt;
 	align = VA_STACK_ALIGN(char *);
 	size = sizeof(char *);
 	goto process_string;
@@ -442,8 +443,9 @@ process_string:
 				}
 
 				/* Use same multiple as the arg list size. */
-				str_ptr_pos[s_idx++] = ro_flag |
+				str_ptr_pos[s_idx] = ro_flag |
 					(uint8_t)((size_t)(buf - buf0) / sizeof(int));
+				++s_idx;
 			} else {
 				if (!is_ro) {
 					/*
@@ -533,7 +535,8 @@ process_string:
 				return -ENOSPC;
 			}
 			/* store the pointer position prefix */
-			*buf++ = pos;
+			*buf = pos;
+			++buf;
 		}
 	}
 
@@ -555,7 +558,8 @@ process_string:
 			return -ENOSPC;
 		}
 		/* store the pointer position prefix */
-		*buf++ = str_ptr_pos[i];
+		*buf = str_ptr_pos[i];
+		++buf;
 		/* copy the string with its terminating '\0' */
 		memcpy(buf, s, size);
 		buf += size;
@@ -607,7 +611,8 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 	 */
 	for (uint8_t i = 0; i < s_nbr; i++) {
 		/* Locate pointer location for this string */
-		s_idx = *(uint8_t *)s++;
+		s_idx = *(uint8_t *)s;
+		++s;
 		ps = (char **)(buf + s_idx * sizeof(int));
 		/* update the pointer with current string location */
 		*ps = s;
@@ -679,7 +684,8 @@ int cbprintf_fsc_package(void *in_packaged,
 			if (out_len > len) {
 				return -ENOSPC;
 			}
-			*out++ = s_idx;
+			*out = s_idx;
+			++out;
 			memcpy(out, *ps, slen);
 			out += slen;
 		}

@@ -46,14 +46,18 @@ static void prdec(struct _pfr *r, long v)
 	char digs[11U * sizeof(long) / 4];
 	size_t i = sizeof(digs) - 1;
 
-	digs[i--] = '\0';
+	digs[i] = '\0';
+	--i;
 	while ((v != 0) || (i == 9)) {
-		digs[i--] = '0' + (v % 10);
+		digs[i] = '0' + (v % 10);
+		--i;
 		v /= 10;
 	}
 
-	while (digs[++i] != '\0') {
+	++i;
+	while (digs[i] != '\0') {
 		pc(r, digs[i]);
+		++i;
 	}
 }
 
@@ -102,8 +106,10 @@ static size_t vpf(struct _pfr *r, const char *f, va_list ap)
 		case 's': {
 			char *s = va_arg(ap, char *);
 
-			while (*s != '\0')
-				pc(r, *s++);
+			while (*s != '\0') {
+				pc(r, *s);
+				++s;
+			}
 			break;
 		}
 		case 'p':
