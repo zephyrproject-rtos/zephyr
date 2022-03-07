@@ -190,13 +190,13 @@ static int configure_cs(void)
 
 static void kick_cs(void)
 {
-	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
 	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
 }
 
 static void release_cs(void)
 {
-	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
 }
 
 static bool irq_pin_high(void)
