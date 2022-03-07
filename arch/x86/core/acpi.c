@@ -57,8 +57,8 @@ static void find_rsdp(void)
 	/* Might be nothing there, check before we inspect.
 	 * Note that EBDA usually is in 0x80000 to 0x100000.
 	 */
-	if ((POINTER_TO_UINT(search_phys) >= 0x80000UL) &&
-	    (POINTER_TO_UINT(search_phys) < 0x100000UL)) {
+	if ((search_phys >= 0x80000UL) &&
+	    (search_phys < 0x100000UL)) {
 		search_length = 1024;
 		z_phys_map((uint8_t **)&search, search_phys, search_length, 0);
 

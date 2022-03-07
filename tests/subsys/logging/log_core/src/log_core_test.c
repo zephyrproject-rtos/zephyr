@@ -163,7 +163,7 @@ static void log_setup(bool backend2_enable)
 static void test_log_strdup_gc(void)
 {
 	char test_str[] = "test string";
-	char *dstr;
+	const char *dstr;
 	uint32_t size_u0, size_u1, size_cu0, size_cu1, size_l0, size_l1;
 
 	log_setup(false);

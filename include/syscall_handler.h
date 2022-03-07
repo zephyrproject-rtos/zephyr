@@ -346,10 +346,10 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @return false on success, true on failure
  */
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
-	Z_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)(ptr), (size), (write)) \
+	Z_SYSCALL_VERIFY_MSG(arch_buffer_validate((ptr), (size), (write)) \
 			     == 0, \
 			     "Memory region %p (size %zu) %s access denied", \
-			     (void *)(ptr), (size_t)(size), \
+			     (ptr), (size_t)(size), \
 			     (write) ? "write" : "read")
 
 /**
@@ -463,7 +463,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
  */
 #define Z_SYSCALL_DRIVER_OP(ptr, api_name, op) \
 	({ \
-		struct api_name *__device__ = (struct api_name *) \
+		const struct api_name *__device__ = (const struct api_name *) \
 			((const struct device *)(ptr))->api; \
 		Z_SYSCALL_VERIFY_MSG(__device__->op != NULL, \
 				    "Operation %s not defined for driver " \

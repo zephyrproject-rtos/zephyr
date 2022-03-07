@@ -180,8 +180,7 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
 
 			local_delta = (int64_t)dlocal_delta;
 		}
-		int64_t local_abs = (int64_t)tsp->base.local
-				    + (int64_t)local_delta;
+		int64_t local_abs = (int64_t)tsp->base.local + local_delta;
 
 		*localp = local_abs;
 		rv = (tsp->skew != 1.0f) ? 1 : 0;

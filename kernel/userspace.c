@@ -218,7 +218,7 @@ static inline struct rbnode *dyn_obj_to_node(void *obj)
 	return &dobj->node;
 }
 
-static struct dyn_obj *dyn_object_find(void *obj)
+static struct dyn_obj *dyn_object_find(const void *obj)
 {
 	struct rbnode *node;
 	struct dyn_obj *ret;
@@ -228,7 +228,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
 	 * so just a little arithmetic is necessary to locate the
 	 * corresponding struct rbnode
 	 */
-	node = dyn_obj_to_node(obj);
+	node = dyn_obj_to_node((void *)obj);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 	if (rb_contains(&obj_rb_tree, node)) {
@@ -422,7 +422,7 @@ struct z_object *z_object_find(const void *obj)
 		 * 11.8 but is justified since we know dynamic objects
 		 * were not declared with a const qualifier.
 		 */
-		dynamic_obj = dyn_object_find((void *)obj);
+		dynamic_obj = dyn_object_find(obj);
 		if (dynamic_obj != NULL) {
 			ret = &dynamic_obj->kobj;
 		}

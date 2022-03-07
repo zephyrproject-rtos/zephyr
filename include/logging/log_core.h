@@ -310,8 +310,8 @@ static inline char z_log_minimal_level_to_char(unsigned int level)
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
 		enum z_log_msg2_mode _mode; \
-		void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-			(void *)(_dsource) : (void *)(_source); \
+		const void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
+			(const void *)(_dsource) : (const void *)(_source); \
 		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 				  CONFIG_LOG_DOMAIN_ID, _src, _level, NULL,\
 				  0U, __VA_ARGS__); \
@@ -362,8 +362,8 @@ static inline char z_log_minimal_level_to_char(unsigned int level)
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
 		enum z_log_msg2_mode mode; \
-		void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-			(void *)(_dsource) : (void *)(_source); \
+		const void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
+			(const void *)(_dsource) : (const void *)(_source); \
 		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
 				  CONFIG_LOG_DOMAIN_ID, _src, _level, \
 				  _data, _len, \
@@ -512,7 +512,7 @@ static inline uint8_t log_compiled_level_get(uint32_t source_id)
 static inline uint16_t log_const_source_id(
 				const struct log_source_const_data *data)
 {
-	return (uint16_t)((size_t)((uint8_t *)data - (uint8_t *)__log_const_start) /
+	return (uint16_t)((size_t)((const uint8_t *)data - (const uint8_t *)__log_const_start) /
 			sizeof(struct log_source_const_data));
 }
 
@@ -863,7 +863,7 @@ static inline log_arg_t z_log_do_strdup(uint32_t msk, uint32_t idx,
 					enum log_strdup_action action)
 {
 #ifndef CONFIG_LOG_MINIMAL
-	char *z_log_strdup(const char *str);
+	const char *z_log_strdup(const char *str);
 
 	if (msk & (1 << idx)) {
 		const char *str = (const char *)param;

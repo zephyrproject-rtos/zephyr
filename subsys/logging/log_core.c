@@ -869,7 +869,7 @@ static void notify_drop(const struct mpsc_pbuf_buffer *buffer,
 }
 
 
-char *z_log_strdup(const char *str)
+const char *z_log_strdup(const char *str)
 {
 	struct log_strdup_buf *dup;
 	int err;
@@ -882,7 +882,7 @@ char *z_log_strdup(const char *str)
 	err = k_mem_slab_alloc(&log_strdup_pool, (void **)&dup, K_NO_WAIT);
 	if (err != 0) {
 		/* failed to allocate */
-		return (char *)log_strdup_fail_msg;
+		return log_strdup_fail_msg;
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING)) {

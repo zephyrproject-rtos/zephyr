@@ -38,14 +38,12 @@ static inline int z_vrfy_can_send(const struct device *dev,
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, send));
 
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((const struct zcan_frame *)msg,
-				      sizeof(struct zcan_frame)));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(((struct zcan_frame *)msg)->data,
-				     sizeof((struct zcan_frame *)msg)->data));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(msg, sizeof(struct zcan_frame)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(msg->data, sizeof(msg->data)));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback_isr == 0,
 				    "callbacks may not be set from user mode"));
 
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)callback_arg, sizeof(void *)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(callback_arg, sizeof(void *)));
 
 	return z_impl_can_send((const struct device *)dev,
 			       (const struct zcan_frame *)msg,
@@ -61,8 +59,7 @@ static inline int z_vrfy_can_attach_msgq(const struct device *dev,
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((struct zcan_filter *)filter,
-				     sizeof(struct zcan_filter)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(filter, sizeof(struct zcan_filter)));
 	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
 
 	return z_impl_can_attach_msgq((const struct device *)dev,

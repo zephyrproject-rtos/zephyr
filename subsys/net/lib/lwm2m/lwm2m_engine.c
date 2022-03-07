@@ -558,7 +558,7 @@ static int engine_remove_observer(struct lwm2m_ctx *ctx, const uint8_t *token, u
 }
 
 #if defined(CONFIG_LOG)
-char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
+const char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
 {
 	size_t cur = sprintf(buf, "%u", path->obj_id);
 

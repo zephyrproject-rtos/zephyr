@@ -178,7 +178,7 @@ void z_impl_k_str_out(char *c, size_t n)
 static inline void z_vrfy_k_str_out(char *c, size_t n)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(c, n));
-	z_impl_k_str_out((char *)c, n);
+	z_impl_k_str_out(c, n);
 }
 #include <syscalls/k_str_out_mrsh.c>
 #endif /* CONFIG_USERSPACE */
