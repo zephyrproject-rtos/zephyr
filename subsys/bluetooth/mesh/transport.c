@@ -441,6 +441,11 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	tx->attempts--;
 
 end:
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
+	    bt_mesh_lpn_established()) {
+		bt_mesh_lpn_poll();
+	}
+
 	if (!tx->seg_pending) {
 		k_work_reschedule(&tx->retransmit,
 				  K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
@@ -595,11 +600,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	}
 
 	seg_tx_send_unacked(tx);
-
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    bt_mesh_lpn_established()) {
-		bt_mesh_lpn_poll();
-	}
 
 	return 0;
 }
