@@ -38,14 +38,6 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
-	/* SPI0 CS0, SCK, SOUT, SIN */
-	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portd,  1, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portd,  2, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portd,  3, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
 	/* ADC1_SE14 */
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
