@@ -25,14 +25,9 @@
 #include <soc_offsets.h>
 #endif
 
-/* thread_arch_t member offsets */
-GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
-#if defined(CONFIG_USERSPACE)
-GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
-#endif
-
 /* struct _callee_saved member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);
+GEN_OFFSET_SYM(_callee_saved_t, ra);
 GEN_OFFSET_SYM(_callee_saved_t, tp);
 GEN_OFFSET_SYM(_callee_saved_t, s0);
 GEN_OFFSET_SYM(_callee_saved_t, s1);

@@ -23,6 +23,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
+	extern void z_riscv_thread_start(void);
 	struct __esf *stack_init;
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -53,8 +54,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * and restored prior to returning from the interrupt/exception.
 	 * This shall allow to handle nested interrupts.
 	 *
-	 * Given that context switching is performed via a system call exception
-	 * within the RISCV architecture implementation, initially set:
+	 * Given that thread startup happens through the exception exit
+	 * path, initially set:
 	 * 1) MSTATUS to MSTATUS_DEF_RESTORE in the thread stack to enable
 	 *    interrupts when the newly created thread will be scheduled;
 	 * 2) MEPC to the address of the z_thread_entry in the thread
@@ -121,6 +122,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 	thread->callee_saved.sp = (ulong_t)stack_init;
+
+	/* where to go when returning from z_riscv_switch() */
+	thread->callee_saved.ra = (ulong_t)z_riscv_thread_start;
+
+	/* our switch handle is the thread pointer itself */
+	thread->switch_handle = thread;
 }
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
