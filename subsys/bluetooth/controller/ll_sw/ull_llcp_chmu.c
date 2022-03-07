@@ -119,7 +119,6 @@ static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct pro
 	} else {
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
 
-		/* TODO Hardcoded instant delta */
 		ctx->data.chmu.instant = lp_event_counter(conn) + CHMU_INSTANT_DELTA;
 
 		lp_chmu_tx(conn, ctx);
@@ -230,7 +229,6 @@ static void rp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 
 static void rp_chmu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_CHMU_EVT_RUN:
 		ctx->state = RP_CHMU_STATE_WAIT_RX_CHAN_MAP_IND;

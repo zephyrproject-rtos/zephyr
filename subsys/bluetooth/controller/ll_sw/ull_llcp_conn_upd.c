@@ -45,7 +45,7 @@
 #define CONN_UPDATE_INSTANT_DELTA 6U
 
 /* TODO: Known, missing items (missing implementation):
- *	LL/CON/MAS/BV-34-C [Accepting Connection Parameter Request – event masked]
+ *	LL/CON/MAS/BV-34-C [Accepting Connection Parameter Request ? event masked]
  */
 
 /* LLCP Local Procedure Connection Update FSM states */
@@ -423,7 +423,6 @@ static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 static void lp_cu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_CU_EVT_RUN:
 		lp_cu_check_instant(conn, ctx, evt, param);

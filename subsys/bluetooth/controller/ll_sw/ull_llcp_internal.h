@@ -56,14 +56,8 @@ struct llcp_enc {
 	/* NOTE: To save memory, SKD(m|s) and IV(m|s) are
 	 * generated just-in-time for PDU enqueuing and are
 	 * therefore not present in this structure.
-	 */
-
-	/* TODO(thoh): Do we want a version without JIT vector
-	 * generation?
-	 */
-
-	/* TODO(thoh): Optimize memory layout.
-	 *	* Overlay memory?
+	 * Further candidates for optimizing memory layout.
+	 *	* Overlay memory
 	 *	* Repurpose memory used by lll.ccm_tx/rx?
 	 */
 
