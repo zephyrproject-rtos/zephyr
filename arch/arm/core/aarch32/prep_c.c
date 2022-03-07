@@ -53,8 +53,17 @@ static inline void relocate_vector_table(void)
 	__ISB();
 }
 
-#else
+#elif defined(CONFIG_AARCH32_ARMV8_R)
 
+#define VECTOR_ADDRESS ((uintptr_t)_vector_start)
+
+static inline void relocate_vector_table(void)
+{
+	write_vbar(VECTOR_ADDRESS & VBAR_MASK);
+	__ISB();
+}
+
+#else
 #define VECTOR_ADDRESS 0
 
 void __weak relocate_vector_table(void)
