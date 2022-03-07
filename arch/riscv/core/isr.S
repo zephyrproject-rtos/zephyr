@@ -41,35 +41,6 @@
 	op fa6, __z_arch_esf_t_fa6_OFFSET(reg)	 ;\
 	op fa7, __z_arch_esf_t_fa7_OFFSET(reg)	 ;
 
-#define DO_FP_CALLEE_SAVED(op, reg) \
-	op fs0, _thread_offset_to_fs0(reg)   ;\
-	op fs1, _thread_offset_to_fs1(reg)   ;\
-	op fs2, _thread_offset_to_fs2(reg)   ;\
-	op fs3, _thread_offset_to_fs3(reg)   ;\
-	op fs4, _thread_offset_to_fs4(reg)   ;\
-	op fs5, _thread_offset_to_fs5(reg)   ;\
-	op fs6, _thread_offset_to_fs6(reg)   ;\
-	op fs7, _thread_offset_to_fs7(reg)   ;\
-	op fs8, _thread_offset_to_fs8(reg)   ;\
-	op fs9, _thread_offset_to_fs9(reg)   ;\
-	op fs10, _thread_offset_to_fs10(reg) ;\
-	op fs11, _thread_offset_to_fs11(reg) ;
-
-#define DO_CALLEE_SAVED(op, reg) \
-	op s0, _thread_offset_to_tp(reg)		;\
-	op s0, _thread_offset_to_s0(reg)		;\
-	op s1, _thread_offset_to_s1(reg)		;\
-	op s2, _thread_offset_to_s2(reg)		;\
-	op s3, _thread_offset_to_s3(reg)		;\
-	op s4, _thread_offset_to_s4(reg)		;\
-	op s5, _thread_offset_to_s5(reg)		;\
-	op s6, _thread_offset_to_s6(reg)		;\
-	op s7, _thread_offset_to_s7(reg)		;\
-	op s8, _thread_offset_to_s8(reg)		;\
-	op s9, _thread_offset_to_s9(reg)		;\
-	op s10, _thread_offset_to_s10(reg)		;\
-	op s11, _thread_offset_to_s11(reg)		;
-
 #define DO_CALLER_SAVED(op) \
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
 	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
@@ -101,25 +72,16 @@ GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 GTEXT(z_riscv_fatal_error)
-GTEXT(_k_neg_eagain)
-GTEXT(_is_next_thread_current)
-GTEXT(z_get_next_ready_thread)
+GTEXT(z_get_next_switch_handle)
+GTEXT(z_riscv_switch)
+GTEXT(z_riscv_thread_start)
 
-#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-GTEXT(z_thread_mark_switched_in)
-GTEXT(z_thread_mark_switched_out)
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
-#endif
 #endif
 
 #ifdef CONFIG_USERSPACE
 GDATA(_k_syscall_table)
-GTEXT(z_riscv_configure_user_allowed_stack)
-#endif
-
-#ifdef CONFIG_PMP_STACK_GUARD
-GTEXT(z_riscv_configure_stack_guard)
 #endif
 
 /* exports */
@@ -291,20 +253,14 @@ is_kernel_syscall:
 	/* Determine what to do. Operation code is in a7. */
 	lr a7, __z_arch_esf_t_a7_OFFSET(sp)
 
-	ASSUME_EQUAL(RV_ECALL_CONTEXT_SWITCH, 0)
-	beqz a7, reschedule
+	ASSUME_EQUAL(RV_ECALL_RUNTIME_EXCEPT, 0)
+	beqz a7, do_fault
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 	addi a7, a7, -1
 	ASSUME_EQUAL(RV_ECALL_IRQ_OFFLOAD, 1)
 	beqz a7, do_irq_offload
-	addi a7, a7, -1
-#else
-	addi a7, a7, -2
 #endif
-
-	ASSUME_EQUAL(RV_ECALL_RUNTIME_EXCEPT, 2)
-	beqz a7, do_fault
 
 	/* default fault code is K_ERR_KERNEL_OOPS */
 	li a0, 3
@@ -467,102 +423,32 @@ irq_done:
 #endif
 
 reschedule:
-	/* Get reference to _kernel */
-	la t1, _kernel
-
-	/*
-	 * Check if next thread to schedule is current thread.
-	 * If yes do not perform a reschedule
-	 */
-	lr t2, _kernel_offset_to_current(t1)
-	lr t3, _kernel_offset_to_ready_q_cache(t1)
-	beq t3, t2, no_reschedule
-
-#if CONFIG_INSTRUMENT_THREAD_SWITCHING
-	call z_thread_mark_switched_out
-#endif
-
-	/* Get reference to _kernel */
-	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
-	lr t1, _kernel_offset_to_current(t0)
-
-	/*
-	 * Save callee-saved registers of current kernel thread
-	 * prior to handle context-switching
-	 */
-	DO_CALLEE_SAVED(sr, t1)
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/* Assess whether floating-point registers need to be saved. */
-	lb t2, _thread_offset_to_user_options(t1)
-	andi t2, t2, K_FP_REGS
-	beqz t2, skip_store_fp_callee_saved
-	frcsr t2
-	sw t2, _thread_offset_to_fcsr(t1)
-	DO_FP_CALLEE_SAVED(fsr, t1)
-skip_store_fp_callee_saved:
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
-
-	/*
-	 * Save stack pointer of current thread and set the default return value
-	 * of z_swap to _k_neg_eagain for the thread.
-	 */
-	sr sp, _thread_offset_to_sp(t1)
-	la t2, _k_neg_eagain
-	lw t3, 0(t2)
-	sw t3, _thread_offset_to_swap_return_value(t1)
-
-	/* Get next thread to schedule. */
-	lr t1, _kernel_offset_to_ready_q_cache(t0)
-
-	/* Set _kernel.current to new thread loaded in t1 */
-	sr t1, _kernel_offset_to_current(t0)
-
-	/* Switch to new thread stack */
-	lr sp, _thread_offset_to_sp(t1)
-
-	/* Restore callee-saved registers of new thread */
-	DO_CALLEE_SAVED(lr, t1)
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/* Determine if we need to restore floating-point registers. */
-	lb t2, _thread_offset_to_user_options(t1)
-	andi t2, t2, K_FP_REGS
-	beqz t2, skip_load_fp_callee_saved
-
-	/*
-	 * If we are switching from a thread with floating-point disabled the
-	 * mstatus FS bits will still be cleared, which can cause an illegal
-	 * instruction fault. Set the FS state before restoring the registers.
-	 * mstatus will be restored later on.
-	 */
-	li t2, MSTATUS_FS_INIT
-	csrs mstatus, t2
-
-	lw t2, _thread_offset_to_fcsr(t1)
-	fscsr t2
-	DO_FP_CALLEE_SAVED(flr, t1)
-
-skip_load_fp_callee_saved:
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
-
-#ifdef CONFIG_PMP_STACK_GUARD
-	mv a0, t1	/* kernel current */
-	jal ra, z_riscv_configure_stack_guard
-#endif /* CONFIG_PMP_STACK_GUARD */
-
-#ifdef CONFIG_USERSPACE
 	la t0, _kernel
-	lr a0, _kernel_offset_to_current(t0)
-	jal ra, z_riscv_configure_user_allowed_stack
-#endif /* CONFIG_USERSPACE */
+	lr a1, _kernel_offset_to_current(t0)
 
-#if CONFIG_INSTRUMENT_THREAD_SWITCHING
-	call z_thread_mark_switched_in
-#endif
+	/*
+	 * Get next thread to schedule with z_get_next_switch_handle().
+	 * We pass it a NULL as we didn't save the whole thread context yet.
+	 * If no scheduling is necessary then NULL will be returned.
+	 */
+	addi sp, sp, -16
+	sr a1, 0(sp)
+	mv a0, zero
+	call z_get_next_switch_handle
+	lr a1, 0(sp)
+	addi sp, sp, 16
+	beqz a0, no_reschedule
 
+	/*
+	 * Perform context switch:
+	 * a0 = new thread
+	 * a1 = old thread
+	 */
+	call z_riscv_switch
+
+z_riscv_thread_start:
 no_reschedule:
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
