@@ -715,7 +715,7 @@
 			status = "disabled";
 			label = "ETH_0";
 			phy-addr = <2>;
-			ptp {
+			ptp: ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";
 				interrupts = <138 0>;

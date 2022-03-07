@@ -49,6 +49,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/clock_control.h>
 #endif
 #include <devicetree.h>
+#if defined(CONFIG_PINCTRL)
+#include <drivers/pinctrl.h>
+#endif
 
 #include "eth.h"
 
@@ -209,6 +212,9 @@ struct eth_context {
 	struct k_mutex rx_frame_buf_mutex;
 	uint8_t *tx_frame_buf; /* Max MTU + ethernet header */
 	uint8_t *rx_frame_buf; /* Max MTU + ethernet header */
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 /* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
@@ -1092,6 +1098,9 @@ static void eth_mcux_init(const struct device *dev)
 static int eth_init(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
+#if defined(CONFIG_PINCTRL)
+	int err;
+#endif
 
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	const uint32_t inst = ENET_GetInstance(context->base);
@@ -1138,6 +1147,13 @@ static int eth_init(const struct device *dev)
 		context->mac_addr[0], context->mac_addr[1],
 		context->mac_addr[2], context->mac_addr[3],
 		context->mac_addr[4], context->mac_addr[5]);
+
+#if defined(CONFIG_PINCTRL)
+	err = pinctrl_apply_state(context->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 	return 0;
 }
@@ -1505,8 +1521,18 @@ static void eth_mcux_err_isr(const struct device *dev)
 #endif
 #define ETH_MCUX_MAC_ADDR_TO_BOOL(n) ETH_MCUX_MAC_ADDR_TO_BOOL_##n
 
+#if defined(CONFIG_PINCTRL)
+#define ETH_MCUX_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#define ETH_MCUX_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define ETH_MCUX_PINCTRL_DEFINE(n)
+#define ETH_MCUX_PINCTRL_INIT(n)
+#endif
+
 #define ETH_MCUX_INIT(n)						\
 	ETH_MCUX_GEN_MAC(n)                                             \
+									\
+	ETH_MCUX_PINCTRL_DEFINE(n)					\
 									\
 	static void eth##n##_config_func(void);				\
 	static NOCACHE uint8_t						\
@@ -1531,6 +1557,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 		.phy_handle = &eth##n##_phy_handle,			\
 		.tx_frame_buf = tx_enet_frame_##n##_buf,		\
 		.rx_frame_buf = rx_enet_frame_##n##_buf,		\
+		ETH_MCUX_PINCTRL_INIT(n)				\
 		ETH_MCUX_MAC_ADDR(n)					\
 		ETH_MCUX_POWER(n)					\
 	};								\
@@ -1592,9 +1619,24 @@ DT_INST_FOREACH_STATUS_OKAY(ETH_MCUX_INIT)
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 struct ptp_context {
 	struct eth_context *eth_context;
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pincfg;
+#endif /* CONFIG_PINCTRL */
 };
 
-static struct ptp_context ptp_mcux_0_context;
+#if defined(CONFIG_PINCTRL)
+#define ETH_MCUX_PTP_PINCTRL_DEFINE(n) PINCTRL_DT_DEFINE(n);
+#define ETH_MCUX_PTP_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_DEV_CONFIG_GET(n),
+#else
+#define ETH_MCUX_PTP_PINCTRL_DEFINE(n)
+#define ETH_MCUX_PTP_PINCTRL_INIT(n)
+#endif /* CONFIG_PINCTRL */
+
+ETH_MCUX_PTP_PINCTRL_DEFINE(DT_NODELABEL(ptp))
+
+static struct ptp_context ptp_mcux_0_context = {
+	ETH_MCUX_PTP_PINCTRL_INIT(DT_NODELABEL(ptp))
+};
 
 static int ptp_clock_mcux_set(const struct device *dev,
 			      struct net_ptp_time *tm)
@@ -1716,6 +1758,14 @@ static int ptp_mcux_init(const struct device *port)
 	const struct device *eth_dev = DEVICE_DT_GET(DT_NODELABEL(enet));
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
+#if defined(CONFIG_PINCTRL)
+	int err;
+
+	err = pinctrl_apply_state(ptp_context->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 	context->ptp_clock = port;
 	ptp_context->eth_context = context;
