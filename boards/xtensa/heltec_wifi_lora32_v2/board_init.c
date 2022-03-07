@@ -30,4 +30,4 @@ static int board_heltec_wifi_lora32_v2_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(board_heltec_wifi_lora32_v2_init, PRE_KERNEL_2, CONFIG_PINMUX_INIT_PRIORITY);
+SYS_INIT(board_heltec_wifi_lora32_v2_init, PRE_KERNEL_2, CONFIG_GPIO_INIT_PRIORITY);
