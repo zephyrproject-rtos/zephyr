@@ -24,6 +24,7 @@ choice GD32_HXTAL_FREQUENCY
 	prompt "High speed external oscillator clock frequency"
 	default GD32_HXTAL_FIRMWARE_DEFINED if !SOC_SERIES_GD32VF103
 	default GD32_HXTAL_25MHZ if SOC_SERIES_GD32VF103
+	default GD32_HXTAL_8MHZ if SOC_SERIES_GD32E10X
 	help
 	  Define value of high speed crystal oscillator (HXTAL) in Hz
 	  This value sets the frequency of the oscillator.
@@ -31,6 +32,7 @@ choice GD32_HXTAL_FREQUENCY
 config GD32_HXTAL_FIRMWARE_DEFINED
 	bool "Firmware defined"
 	depends on !SOC_SERIES_GD32VF103
+	depends on !SOC_SERIES_GD32E10X
 	help
 	  Use default frequency defined in firmware for HXTAL
 	  This is using for SoCs (e.g. gd32f4xx, gd32f3x0, etc ...)
@@ -38,13 +40,13 @@ config GD32_HXTAL_FIRMWARE_DEFINED
 
 config GD32_HXTAL_8MHZ
 	bool "8MHz"
-	depends on SOC_SERIES_GD32VF103
+	depends on SOC_SERIES_GD32VF103 || SOC_SERIES_GD32E10X
 	help
 	  Use 8MHz oscillator for HXTAL
 
 config GD32_HXTAL_25MHZ
 	bool "25MHz"
-	depends on SOC_SERIES_GD32VF103
+	depends on SOC_SERIES_GD32VF103 || SOC_SERIES_GD32E10X
 	help
 	  Use 25MHz oscillator for HXTAL
 

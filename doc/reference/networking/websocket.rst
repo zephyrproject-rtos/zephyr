@@ -27,8 +27,8 @@ Websocket Transport
 
 The Websocket API allows it to be used as a transport for other high level
 protocols like MQTT. The Zephyr MQTT client library can be configured to use
-Websocket transport by enabling :kconfig:`CONFIG_MQTT_LIB_WEBSOCKET` and
-:kconfig:`CONFIG_WEBSOCKET_CLIENT` Kconfig options.
+Websocket transport by enabling :kconfig:option:`CONFIG_MQTT_LIB_WEBSOCKET` and
+:kconfig:option:`CONFIG_WEBSOCKET_CLIENT` Kconfig options.
 
 First a socket needs to be created and connected to the Websocket server:
 

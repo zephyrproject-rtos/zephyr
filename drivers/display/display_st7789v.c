@@ -409,6 +409,10 @@ static const struct display_driver_api st7789v_api = {
 
 static const struct st7789v_config st7789v_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),
+	.cmd_data_gpio = GPIO_DT_SPEC_INST_GET(0, cmd_data_gpios),
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#endif
 };
 
 static struct st7789v_data st7789v_data = {

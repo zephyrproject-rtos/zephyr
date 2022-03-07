@@ -25,7 +25,7 @@ struct bbram_xec_config {
 static int bbram_xec_check_invalid(const struct device *dev)
 {
 	struct vbatr_regs *const regs = (struct vbatr_regs *)(DT_REG_ADDR_BY_NAME(
-					DT_INST(0, microchip_xec_pcr), vbatr));
+					DT_NODELABEL(pcr), vbatr));
 
 	if (regs->PFRS & BIT(MCHP_VBATR_PFRS_VBAT_RST_POS)) {
 		regs->PFRS |= BIT(MCHP_VBATR_PFRS_VBAT_RST_POS);

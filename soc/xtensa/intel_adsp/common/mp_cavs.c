@@ -19,12 +19,6 @@
 
 #define CAVS15_ROM_IDC_DELAY 500
 
-extern void z_sched_ipi(void);
-extern void z_reinit_idle_thread(int i);
-extern void z_smp_start_cpu(int id);
-
-static struct k_spinlock mplock;
-
 __imr void soc_mp_startup(uint32_t cpu)
 {
 	/* We got here via an IDC interrupt.  Clear the TFC high bit
@@ -193,65 +187,10 @@ __imr void soc_mp_init(void)
 	soc_cpus_active[0] = true;
 }
 
-/**
- * @brief Restart halted SMP CPU
- *
- * Relaunches a CPU that has entered an idle power state via
- * soc_halt_cpu().  Returns -EINVAL if the CPU is not in a power-gated
- * idle state.  Upon successful return, the CPU is online and
- * available to run any Zephyr thread.
- *
- * @param id CPU to start, in the range [1:CONFIG_MP_NUM_CPUS)
- */
-__imr int soc_relaunch_cpu(int id)
+int soc_adsp_halt_cpu(int id)
 {
-	int ret = 0;
-	k_spinlock_key_t k = k_spin_lock(&mplock);
-
-	if (id < 1 || id >= CONFIG_MP_NUM_CPUS) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	if (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	__ASSERT_NO_MSG(!soc_cpus_active[id]);
-
-	CAVS_INTCTRL[id].l2.clear = CAVS_L2_IDC;
-	z_reinit_idle_thread(id);
-	z_smp_start_cpu(id);
-
- out:
-	k_spin_unlock(&mplock, k);
-	return ret;
-}
-
-/**
- * @brief Halts and offlines a running CPU
- *
- * Enables power gating on the specified CPU, which cannot be the
- * current CPU or CPU 0.  The CPU must be idle; no application threads
- * may be runnable on it when this function is called (or at least the
- * CPU must be guaranteed to reach idle in finite time without
- * deadlock).  Actual CPU shutdown can only happen in the context of
- * the idle thread, and synchronization is an application
- * responsibility.  This function will hang if the other CPU fails to
- * reach idle.
- *
- * @param id CPU to halt, not current cpu or cpu 0
- * @return 0 on success, -EINVAL on error
- */
-__imr int soc_halt_cpu(int id)
-{
-	int ret = 0;
-	k_spinlock_key_t k = k_spin_lock(&mplock);
-
-	if (id == 0 || id == _current_cpu->id) {
-		ret = -EINVAL;
-		goto out;
+	if (id == 0 || id == arch_curr_cpu()->id) {
+		return -EINVAL;
 	}
 
 	/* Stop sending IPIs to this core */
@@ -263,11 +202,13 @@ __imr int soc_halt_cpu(int id)
 	CAVS_SHIM.pwrctl &= ~CAVS_PWRCTL_TCPDSPPG(id);
 	CAVS_SHIM.clkctl &= ~CAVS_CLKCTL_TCPLCG(id);
 
-	/* Wait for the CPU to reach an idle state before returing */
-	while (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id)) {
+	/* If possible, wait for the other CPU to reach an idle state
+	 * before returning.  On older hardware this doesn't work
+	 * because power is controlled by the host, so synchronization
+	 * needs to be part of the application layer.
+	 */
+	while (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25) &&
+	       (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id))) {
 	}
-
- out:
-	k_spin_unlock(&mplock, k);
-	return ret;
+	return 0;
 }

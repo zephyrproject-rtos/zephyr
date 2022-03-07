@@ -13,8 +13,8 @@ to classify both received and sent network packets. See more information about
 VLAN priority at `IEEE 802.1Q <https://en.wikipedia.org/wiki/IEEE_802.1Q>`_.
 
 By default, all network traffic is treated equal in Zephyr. If desired, the
-option :kconfig:`CONFIG_NET_TC_TX_COUNT` can be used to set the number of
-transmit queues. The option :kconfig:`CONFIG_NET_TC_RX_COUNT` can be used to set
+option :kconfig:option:`CONFIG_NET_TC_TX_COUNT` can be used to set the number of
+transmit queues. The option :kconfig:option:`CONFIG_NET_TC_RX_COUNT` can be used to set
 the number of receive queues. Each traffic class queue corresponds to a
 specific kernel work queue. Each kernel work queue has a priority.
 The VLAN priority is mapped to a certain traffic class according to rules

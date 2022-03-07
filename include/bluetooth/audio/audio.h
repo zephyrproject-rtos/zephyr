@@ -1158,6 +1158,7 @@ struct bt_audio_broadcast_sink_cb {
 
 /** @brief Stream operation. */
 struct bt_audio_stream_ops {
+#if defined(CONFIG_BT_AUDIO_UNICAST)
 	/** @brief Stream configured callback
 	 *
 	 *  Configured callback is called whenever an Audio Stream has been
@@ -1187,15 +1188,6 @@ struct bt_audio_stream_ops {
 	 */
 	void (*enabled)(struct bt_audio_stream *stream);
 
-	/** @brief Stream started callback
-	 *
-	 *  Started callback is called whenever an Audio Stream has been started
-	 *  and will be usable for streaming.
-	 *
-	 *  @param stream Stream object that has been started.
-	 */
-	void (*started)(struct bt_audio_stream *stream);
-
 	/** @brief Stream metadata updated callback
 	 *
 	 *  Metadata Updated callback is called whenever an Audio Stream's
@@ -1214,6 +1206,25 @@ struct bt_audio_stream_ops {
 	 */
 	void (*disabled)(struct bt_audio_stream *stream);
 
+	/** @brief Stream released callback
+	 *
+	 *  Released callback is called whenever a Audio Stream has been
+	 *  released and can be deallocated.
+	 *
+	 *  @param stream Stream object that has been released.
+	 */
+	void (*released)(struct bt_audio_stream *stream);
+#endif /* CONFIG_BT_AUDIO_UNICAST */
+
+	/** @brief Stream started callback
+	 *
+	 *  Started callback is called whenever an Audio Stream has been started
+	 *  and will be usable for streaming.
+	 *
+	 *  @param stream Stream object that has been started.
+	 */
+	void (*started)(struct bt_audio_stream *stream);
+
 	/** @brief Stream stopped callback
 	 *
 	 *  Stopped callback is called whenever an Audio Stream has been
@@ -1223,35 +1234,7 @@ struct bt_audio_stream_ops {
 	 */
 	void (*stopped)(struct bt_audio_stream *stream);
 
-	/** @brief Stream released callback
-	 *
-	 *  Released callback is called whenever a Audio Stream has been
-	 *  released and can be deallocated.
-	 *
-	 *  @param stream Stream object that has been released.
-	 */
-	void (*released)(struct bt_audio_stream *stream);
-
-	/** @brief Stream connected callback
-	 *
-	 *  If this callback is provided it will be called when the
-	 *  isochronous stream is connected.
-	 *
-	 *  @param stream The stream that has been connected
-	 */
-	void (*connected)(struct bt_audio_stream *stream);
-
-	/** @brief Stream disconnected callback
-	 *
-	 *  If this callback is provided it will be called when the
-	 *  isochronous stream is disconnected, including when a connection gets
-	 *  rejected.
-	 *
-	 *  @param stream The stream that has been Disconnected
-	 *  @param reason HCI reason for the disconnection.
-	 */
-	void (*disconnected)(struct bt_audio_stream *stream, uint8_t reason);
-
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 	/** @brief Stream audio HCI receive callback.
 	 *
 	 *  This callback is only used if the ISO data path is HCI.
@@ -1260,6 +1243,7 @@ struct bt_audio_stream_ops {
 	 *  @param buf  Buffer containing incoming audio data.
 	 */
 	void (*recv)(struct bt_audio_stream *stream, struct net_buf *buf);
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
 };
 
 /** @brief Audio Capability type */

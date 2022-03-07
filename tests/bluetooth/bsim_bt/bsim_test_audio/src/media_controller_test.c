@@ -23,7 +23,7 @@
 #include <bluetooth/audio/mcc.h>
 
 #include <bluetooth/audio/media_proxy.h>
-#include "../../../../../subsys/bluetooth/audio/otc.h"
+#include <bluetooth/services/ots.h>
 
 #include "common.h"
 

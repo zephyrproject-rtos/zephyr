@@ -739,9 +739,11 @@ static void i2c_ctrl_isr(const struct device *dev)
 	}
 
 	/* Clear unexpected status bits */
-	inst_fifo->SMBST = status;
-	LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c port%02x!", status,
-								data->port);
+	if (status != 0) {
+		inst_fifo->SMBST = status;
+		LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c port%02x!",
+			status, data->port);
+	}
 }
 
 /* NPCX specific I2C controller functions */

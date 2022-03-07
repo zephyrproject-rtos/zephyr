@@ -16,7 +16,7 @@ static const struct device *dev;
 static uint8_t sleep_count;
 
 
-void pm_power_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -52,7 +52,7 @@ void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 	}
 }
 
-void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
@@ -106,7 +106,7 @@ void test_wakeup_device_system_pm(void)
 	 * PM_STATE_SUSPEND_TO_RAM and then the PM subsystem will
 	 * suspend all devices. As gpio is wakeup capability is not
 	 * enabled, the device will be suspended.  This will be
-	 * confirmed in pm_power_state_set().
+	 * confirmed in pm_state_set().
 	 *
 	 * As the native posix implementation does not properly sleeps,
 	 * the idle thread will call several times the PM subsystem. This

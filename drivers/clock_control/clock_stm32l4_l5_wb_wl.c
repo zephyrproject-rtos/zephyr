@@ -53,7 +53,7 @@ void config_enable_default_clocks(void)
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif
 
-#if STM32_LSE_CLOCK
+#if STM32_LSE_ENABLED
 	/* LSE belongs to the back-up domain, enable access.*/
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX)

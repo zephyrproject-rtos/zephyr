@@ -108,7 +108,7 @@ the definition of macros :c:macro:`__ZEPHYR_SUPERVISOR__` or
 :c:macro:`__ZEPHYR_USER__`, typically these will be added to the compiler
 flags in the build system for the related files.
 
-* If :kconfig:`CONFIG_USERSPACE` is not enabled, all APIs just directly call
+* If :kconfig:option:`CONFIG_USERSPACE` is not enabled, all APIs just directly call
   the implementation function.
 
 * Otherwise, the default case is to make a runtime check to see if the
@@ -565,7 +565,7 @@ conventions are as follows:
    in most cases using ``CHECKIF()``.
 
    * The behavior of ``CHECKIF()`` depends on the kernel configuration, but if
-     user mode is enabled, :kconfig:`CONFIG_RUNTIME_ERROR_CHECKS` is enforced,
+     user mode is enabled, :kconfig:option:`CONFIG_RUNTIME_ERROR_CHECKS` is enforced,
      which guarantees that these checks will be made and a return value
      propagated.
 
@@ -602,7 +602,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_USERSPACE`
+* :kconfig:option:`CONFIG_USERSPACE`
 
 APIs
 ****

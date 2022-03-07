@@ -1,0 +1,3 @@
+tests:
+  boards.intel_adsp:
+    platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25

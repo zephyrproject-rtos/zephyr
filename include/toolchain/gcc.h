@@ -14,6 +14,22 @@
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 
+#define GCC_VERSION \
+	((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__)
+
+/* GCC supports #pragma diagnostics since 4.6.0 */
+#if !defined(TOOLCHAIN_HAS_PRAGMA_DIAG) && (GCC_VERSION >= 40600)
+#define TOOLCHAIN_HAS_PRAGMA_DIAG 1
+#endif
+
+#if !defined(TOOLCHAIN_HAS_C_GENERIC) && (GCC_VERSION >= 40900)
+#define TOOLCHAIN_HAS_C_GENERIC 1
+#endif
+
+#if !defined(TOOLCHAIN_HAS_C_AUTO_TYPE) && (GCC_VERSION >= 40900)
+#define TOOLCHAIN_HAS_C_AUTO_TYPE 1
+#endif
+
 /*
  * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually
  * detected and defined using arch-specific definitions.

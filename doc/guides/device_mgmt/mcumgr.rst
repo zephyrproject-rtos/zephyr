@@ -91,7 +91,7 @@ transport expects a different set of key/value options:
          * - ``own_addr_type``
            - can be one of ``public``, ``random``, ``rpa_pub``, ``rpa_rnd``, where ``random`` is the default.
          * - ``peer_name``
-           - the name the peer BLE device advertises, this should match the configuration specified with :kconfig:`CONFIG_BT_DEVICE_NAME`.
+           - the name the peer BLE device advertises, this should match the configuration specified with :kconfig:option:`CONFIG_BT_DEVICE_NAME`.
          * - ``peer_id``
            - the peer BLE device address or UUID. Only required when ``peer_name`` was not given. The format depends on the OS where ``mcumgr`` is run, it is a 6 bytes hexadecimal string separated by colons on Linux, or a 128-bit UUID on macOS.
          * - ``conn_timeout``
@@ -106,7 +106,7 @@ transport expects a different set of key/value options:
          :widths: 10 60
 
          * - ``addr``
-           - can be a DNS name (if it can be resolved to the device IP), IPv4 addr (app must be built with :kconfig:`CONFIG_MCUMGR_SMP_UDP_IPV4`), or IPv6 addr (app must be built with :kconfig:`CONFIG_MCUMGR_SMP_UDP_IPV6`)
+           - can be a DNS name (if it can be resolved to the device IP), IPv4 addr (app must be built with :kconfig:option:`CONFIG_MCUMGR_SMP_UDP_IPV4`), or IPv6 addr (app must be built with :kconfig:option:`CONFIG_MCUMGR_SMP_UDP_IPV6`)
          * - ``port``
            - any valid UDP port.
 
@@ -169,44 +169,44 @@ on Zephyr. The ones that are supported are described in the following table:
    * - ``echo``
      - Send data to a device and display the echoed back data. This command is
        part of the ``OS`` group, which must be enabled by setting
-       :kconfig:`CONFIG_MCUMGR_CMD_OS_MGMT`. The ``echo`` command itself can be
-       enabled by setting :kconfig:`CONFIG_OS_MGMT_ECHO`.
+       :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`. The ``echo`` command itself can be
+       enabled by setting :kconfig:option:`CONFIG_OS_MGMT_ECHO`.
    * - ``fs``
      - Access files on a device. More info in :ref:`fs_mgmt`.
    * - ``image``
      - Manage images on a device. More info in :ref:`image_mgmt`.
    * - ``reset``
      - Perform a soft reset of a device. This command is part of the ``OS``
-       group, which must be enabled by setting :kconfig:`CONFIG_MCUMGR_CMD_OS_MGMT`.
+       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`.
        The ``reset`` command itself is always enabled and the time taken for a
-       reset to happen can be set with :kconfig:`CONFIG_OS_MGMT_RESET_MS` (in ms).
+       reset to happen can be set with :kconfig:option:`CONFIG_OS_MGMT_RESET_MS` (in ms).
    * - ``shell``
      - Execute a command in the remote shell. This option is disabled by default
-       and can be enabled with :kconfig:`CONFIG_MCUMGR_CMD_SHELL_MGMT` = ``y``.
+       and can be enabled with :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT` = ``y``.
        To know more about the shell in Zephyr check :ref:`shell_api`.
    * - ``stat``
      - Read statistics from a device. More info in :ref:`stats_mgmt`.
    * - ``taskstat``
      - Read task statistics from a device. This command is part of the ``OS``
-       group, which must be enabled by setting :kconfig:`CONFIG_MCUMGR_CMD_OS_MGMT`.
+       group, which must be enabled by setting :kconfig:option:`CONFIG_MCUMGR_CMD_OS_MGMT`.
        The ``taskstat`` command itself can be enabled by setting
-       :kconfig:`CONFIG_OS_MGMT_TASKSTAT`. :kconfig:`CONFIG_THREAD_MONITOR` also
+       :kconfig:option:`CONFIG_OS_MGMT_TASKSTAT`. :kconfig:option:`CONFIG_THREAD_MONITOR` also
        needs to be enabled otherwise a ``-8`` (``MGMT_ERR_ENOTSUP``) will be
        returned.
 
 .. tip::
 
     ``taskstat`` has a few options that might require tweaking. The
-    :kconfig:`CONFIG_THREAD_NAME` must be set to display the task names, otherwise
+    :kconfig:option:`CONFIG_THREAD_NAME` must be set to display the task names, otherwise
     the priority is displayed. Since the ``taskstat`` packets are large, they
-    might need increasing the :kconfig:`CONFIG_MCUMGR_BUF_SIZE` option.
+    might need increasing the :kconfig:option:`CONFIG_MCUMGR_BUF_SIZE` option.
 
 .. warning::
 
     To display the correct stack size in the ``taskstat`` command, the
-    :kconfig:`CONFIG_THREAD_STACK_INFO` option must be set.
+    :kconfig:option:`CONFIG_THREAD_STACK_INFO` option must be set.
     To display the correct stack usage in the ``taskstat`` command, both
-    :kconfig:`CONFIG_THREAD_STACK_INFO` and :kconfig:`CONFIG_INIT_STACKS` options
+    :kconfig:option:`CONFIG_THREAD_STACK_INFO` and :kconfig:option:`CONFIG_INIT_STACKS` options
     must be set.
 
 .. _image_mgmt:
@@ -261,7 +261,7 @@ To upload a new image::
 
    The ``-e`` option should always be passed in because the ``upload`` command
    already checks if an erase is required, respecting the
-   :kconfig:`CONFIG_IMG_ERASE_PROGRESSIVELY` setting.
+   :kconfig:option:`CONFIG_IMG_ERASE_PROGRESSIVELY` setting.
 
 .. tip::
 
@@ -379,13 +379,13 @@ directly upgraded to.
 .. tip::
 
     The maximum size of a chunk communicated between the client and server is set
-    with :kconfig:`CONFIG_IMG_MGMT_UL_CHUNK_SIZE`. The default is 512 but can be
+    with :kconfig:option:`CONFIG_IMG_MGMT_UL_CHUNK_SIZE`. The default is 512 but can be
     decreased for systems with low amount of RAM downto 128. When this value is
     changed, the ``mtu`` of the port must be smaller than or equal to this value.
 
 .. tip::
 
-    Building with :kconfig:`CONFIG_IMG_MGMT_VERBOSE_ERR` enables better error
+    Building with :kconfig:option:`CONFIG_IMG_MGMT_VERBOSE_ERR` enables better error
     messages when failures happen (but increases the application size).
 
 .. _stats_mgmt:
@@ -421,7 +421,7 @@ Each entry can be declared with ``STATS_SECT_ENTRY`` (or the equivalent
 All statistics in a section must be declared with the same size.
 
 The statistics counters can either have names or not, depending on the setting
-of the :kconfig:`CONFIG_STATS_NAMES` option. Using names requires an extra
+of the :kconfig:option:`CONFIG_STATS_NAMES` option. Using names requires an extra
 declaration step::
 
   STATS_NAME_START(my_stats)
@@ -432,13 +432,13 @@ declaration step::
 
 .. tip::
 
-   Disabling :kconfig:`CONFIG_STATS_NAMES` will free resources. When this option
+   Disabling :kconfig:option:`CONFIG_STATS_NAMES` will free resources. When this option
    is disabled the ``STATS_NAME*`` macros output nothing, so adding them in the
    code does not increase the binary size.
 
 .. tip::
 
-   :kconfig:`CONFIG_STAT_MGMT_MAX_NAME_LEN` sets the maximum length of a section
+   :kconfig:option:`CONFIG_STAT_MGMT_MAX_NAME_LEN` sets the maximum length of a section
    name that can can be accepted as parameter for showing the section data, and
    might require tweaking for long section names.
 
@@ -471,7 +471,7 @@ To get the current value of the counters in ``my_stats``::
         32 my_stat_counter2
         48 my_stat_counter3
 
-When :kconfig:`CONFIG_STATS_NAMES` is disabled the output will look like this::
+When :kconfig:option:`CONFIG_STATS_NAMES` is disabled the output will look like this::
 
   $ mcumgr --conn acm0 stat my_stats
   stat group: my_stats
@@ -486,16 +486,16 @@ Filesystem Management
 
 The filesystem module is disabled by default due to security concerns:
 because of a lack of access control every file in the FS will be accessible,
-including secrets, etc. To enable it :kconfig:`CONFIG_MCUMGR_CMD_FS_MGMT` must
+including secrets, etc. To enable it :kconfig:option:`CONFIG_MCUMGR_CMD_FS_MGMT` must
 be set (``y``). Once enabled the following sub-commands can be used::
 
   mcumgr <connection-options> fs download <remote-file> <local-file>
   mcumgr <connection-options> fs upload <local-file> <remote-file>
 
-Using the ``fs`` command, requires :kconfig:`CONFIG_FILE_SYSTEM` to be enabled,
+Using the ``fs`` command, requires :kconfig:option:`CONFIG_FILE_SYSTEM` to be enabled,
 and that some particular filesystem is enabled and properly mounted by the running
 application, eg for littefs this would mean enabling
-:kconfig:`CONFIG_FILE_SYSTEM_LITTLEFS`, defining a storage partition :ref:`flash_map_api`
+:kconfig:option:`CONFIG_FILE_SYSTEM_LITTLEFS`, defining a storage partition :ref:`flash_map_api`
 and mounting the filesystem in the startup (:c:func:`fs_mount`).
 
 Uploading a new file to a littlefs storage, mounted under ``/lfs``, can be done with::
@@ -507,7 +507,7 @@ Uploading a new file to a littlefs storage, mounted under ``/lfs``, can be done 
 Where ``25`` is the size of the file.
 
 For downloading a file, let's first use the ``fs`` command
-(:kconfig:`CONFIG_FILE_SYSTEM_SHELL` must be enabled) in a remote shell to create
+(:kconfig:option:`CONFIG_FILE_SYSTEM_SHELL` must be enabled) in a remote shell to create
 a new file::
 
   uart:~$ fs write /lfs/bar.txt 41 42 43 44 31 32 33 34 0a
@@ -529,16 +529,16 @@ Where ``0`` is the return code, and ``9`` is the size of the file.
 .. warning::
 
    The commands might exhaust the system workqueue, if its size is not large
-   enough, so increasing :kconfig:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` might be
+   enough, so increasing :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` might be
    required for correct behavior.
 
 The size of the stack allocated buffer used to store the blocks, while transffering
-a file can be adjusted with :kconfig:`CONFIG_FS_MGMT_DL_CHUNK_SIZE`; this allows
+a file can be adjusted with :kconfig:option:`CONFIG_FS_MGMT_DL_CHUNK_SIZE`; this allows
 saving RAM resources.
 
 .. tip::
 
-   :kconfig:`CONFIG_FS_MGMT_PATH_SIZE` sets the maximum PATH accepted for a file
+   :kconfig:option:`CONFIG_FS_MGMT_PATH_SIZE` sets the maximum PATH accepted for a file
    name. It might require tweaking for longer file names.
 
 Bootloader integration

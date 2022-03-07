@@ -55,6 +55,7 @@ jobs:
           git remote -v
           git rebase origin/${BASE_REF}
           git checkout -b this_pr
+          west update
           west build -b frdm_k64f  tests/benchmarks/footprints -t ram_report
           cp build/ram.json ram2.json
           west build -b frdm_k64f  tests/benchmarks/footprints -t rom_report

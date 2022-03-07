@@ -66,6 +66,7 @@
 			#gpio-cells = <2>;
 			label = "GPIO_0";
 			status = "disabled";
+			ngpios = <30>;
 		};
 
 		uart0: uart@40034000 {

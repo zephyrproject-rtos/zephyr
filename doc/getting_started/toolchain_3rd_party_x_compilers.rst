@@ -233,14 +233,12 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
 
      * Clang-based compiler: ``xt-clang`` and its friends.
 
-     * By default, Zephyr would use GCC-based ``xt-xcc``.
-
 #. Make sure you have obtained a license to use the SDK, or has access to
    a remote licensing server.
 
 #. :ref:`Set these environment variables <env_vars>`:
 
-   * Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc``.
+   * Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc`` or ``xcc-clang``.
    * Set :envvar:`XTENSA_TOOLCHAIN_PATH` to the toolchain installation
      directory.
    * Set :envvar:`XTENSA_CORE` to the SoC ID where application is being
@@ -261,14 +259,7 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
 
 #. To use Clang-based compiler:
 
-   * Set :envvar:`XCC_USE_CLANG` to ``1``.
-
-     * For example:
-
-       .. code-block:: console
-
-          # Linux
-          export XCC_USE_CLANG=1
+   * Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc-clang``.
 
    * Note that the Clang-based compiler may contain an old LLVM bug which
      results in the following error:
@@ -287,6 +278,10 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
 
           # Linux
           export XCC_NO_G_FLAG=1
+
+   * Also note that setting :envvar:`XCC_USE_CLANG` to ``1`` and
+     :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc`` is deprecated.
+     Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xcc-clang`` instead.
 
 .. _GNU Arm Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
 .. _crosstool-ng site: http://crosstool-ng.org

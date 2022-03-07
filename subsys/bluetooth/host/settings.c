@@ -184,6 +184,22 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	}
 #endif
 
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	if (!strncmp(name, "appearance", len)) {
+		if (len != sizeof(bt_dev.appearance)) {
+			BT_ERR("Ignoring settings entry 'bt/appearance'. Wrong length.");
+			return -EINVAL;
+		}
+
+		len = read_cb(cb_arg, &bt_dev.appearance, sizeof(bt_dev.appearance));
+		if (len < 0) {
+			return len;
+		}
+
+		return 0;
+	}
+#endif
+
 #if defined(CONFIG_BT_PRIVACY)
 	if (!strncmp(name, "irk", len)) {
 		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));

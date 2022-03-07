@@ -640,6 +640,13 @@ static void test_phandles(void)
 	zassert_true(DT_PROP_HAS_IDX(TEST_PH, gpios, 1), "");
 	zassert_false(DT_PROP_HAS_IDX(TEST_PH, gpios, 2), "");
 
+	/* DT_PROP_HAS_NAME */
+	zassert_false(DT_PROP_HAS_NAME(TEST_PH, foos, A), "");
+	zassert_true(DT_PROP_HAS_NAME(TEST_PH, foos, a), "");
+	zassert_false(DT_PROP_HAS_NAME(TEST_PH, foos, b-c), "");
+	zassert_true(DT_PROP_HAS_NAME(TEST_PH, foos, b_c), "");
+	zassert_false(DT_PROP_HAS_NAME(TEST_PH, bazs, jane), "");
+
 	/* DT_PHA_HAS_CELL_AT_IDX */
 	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, pin), "");
 	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, flags), "");
@@ -736,6 +743,13 @@ static void test_phandles(void)
 	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 0), "");
 	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 1), "");
 	zassert_false(DT_INST_PROP_HAS_IDX(0, gpios, 2), "");
+
+	/* DT_INST_PROP_HAS_NAME */
+	zassert_false(DT_INST_PROP_HAS_NAME(0, foos, A), "");
+	zassert_true(DT_INST_PROP_HAS_NAME(0, foos, a), "");
+	zassert_false(DT_INST_PROP_HAS_NAME(0, foos, b-c), "");
+	zassert_true(DT_INST_PROP_HAS_NAME(0, foos, b_c), "");
+	zassert_false(DT_INST_PROP_HAS_NAME(0, bazs, jane), "");
 
 	/* DT_INST_PHA_HAS_CELL_AT_IDX */
 	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, gpios, 1, pin), "");
@@ -1470,6 +1484,17 @@ static void test_clocks(void)
 	zassert_true(DT_SAME_NODE(DT_CLOCKS_CTLR_BY_NAME(TEST_TEMP, clk_b),
 				  DT_NODELABEL(test_clk)), "");
 
+	/* DT_NUM_CLOCKS */
+	zassert_equal(DT_NUM_CLOCKS(TEST_TEMP), 3, "");
+
+	/* DT_CLOCKS_HAS_IDX */
+	zassert_true(DT_CLOCKS_HAS_IDX(TEST_TEMP, 2), "");
+	zassert_false(DT_CLOCKS_HAS_IDX(TEST_TEMP, 3), "");
+
+	/* DT_CLOCKS_HAS_NAME */
+	zassert_true(DT_CLOCKS_HAS_NAME(TEST_TEMP, clk_a), "");
+	zassert_false(DT_CLOCKS_HAS_NAME(TEST_TEMP, clk_z), "");
+
 	/* DT_CLOCKS_CELL_BY_IDX */
 	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, 2, bits), 2, "");
 	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, 2, bus), 8, "");
@@ -1501,6 +1526,17 @@ static void test_clocks(void)
 	/* DT_INST_CLOCKS_CTLR_BY_NAME */
 	zassert_true(DT_SAME_NODE(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk_b),
 				  DT_NODELABEL(test_clk)), "");
+
+	/* DT_INST_NUM_CLOCKS */
+	zassert_equal(DT_INST_NUM_CLOCKS(0), 3, "");
+
+	/* DT_INST_CLOCKS_HAS_IDX */
+	zassert_true(DT_INST_CLOCKS_HAS_IDX(0, 2), "");
+	zassert_false(DT_INST_CLOCKS_HAS_IDX(0, 3), "");
+
+	/* DT_INST_CLOCKS_HAS_NAME */
+	zassert_true(DT_INST_CLOCKS_HAS_NAME(0, clk_a), "");
+	zassert_false(DT_INST_CLOCKS_HAS_NAME(0, clk_z), "");
 
 	/* DT_INST_CLOCKS_CELL_BY_IDX */
 	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, 2, bits), 2, "");

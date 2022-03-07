@@ -7,8 +7,8 @@ The :ref:`menuconfig and guiconfig interfaces <menuconfig>` can be used to test
 out configurations during application development. This page explains how to
 make settings permanent.
 
-An auto-generated list of all Kconfig options can be found in the :ref:`Kconfig
-symbol reference <configuration_options>`.
+All Kconfig options can be searched in the :ref:`Kconfig search page
+<kconfig-search>`.
 
 .. note::
 
@@ -115,8 +115,8 @@ Assignments in configuration files are only respected if the dependencies for
 the symbol are satisfied. A warning is printed otherwise. To figure out what
 the dependencies of a symbol are, use one of the :ref:`interactive
 configuration interfaces <menuconfig>` (you can jump directly to a symbol with
-:kbd:`/`), or look up the symbol in the :ref:`Kconfig symbol reference
-<configuration_options>`.
+:kbd:`/`), or look up the symbol in the :ref:`Kconfig search page
+<kconfig-search>`.
 
 
 .. _initial-conf:

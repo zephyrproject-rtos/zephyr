@@ -256,15 +256,8 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 static void ascs_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
-	struct bt_audio_stream_ops *ops = ep->stream->ops;
 
 	BT_DBG("stream %p ep %p type %u", chan, ep, ep != NULL ? ep->type : 0);
-
-	if (ops != NULL && ops->connected != NULL) {
-		ops->connected(ep->stream);
-	} else {
-		BT_WARN("No callback for connected set");
-	}
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		BT_DBG("endpoint not in enabling state: %s",
@@ -284,10 +277,10 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
 
-	if (ops != NULL && ops->disconnected != NULL) {
-		ops->disconnected(stream, reason);
+	if (ops != NULL && ops->stopped != NULL) {
+		ops->stopped(stream);
 	} else {
-		BT_WARN("No callback for disconnected set");
+		BT_WARN("No callback for stopped set");
 	}
 
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);

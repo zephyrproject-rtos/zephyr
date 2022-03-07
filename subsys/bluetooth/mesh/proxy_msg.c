@@ -52,6 +52,8 @@ static uint8_t __noinit bufs[CONFIG_BT_MAX_CONN * CONFIG_BT_MESH_PROXY_MSG_LEN];
 
 static struct bt_mesh_proxy_role roles[CONFIG_BT_MAX_CONN];
 
+static int conn_count;
+
 static void proxy_sar_timeout(struct k_work *work)
 {
 	struct bt_mesh_proxy_role *role;
@@ -66,10 +68,11 @@ static void proxy_sar_timeout(struct k_work *work)
 	}
 }
 
-ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
+ssize_t bt_mesh_proxy_msg_recv(struct bt_conn *conn,
 			       const void *buf, uint16_t len)
 {
 	const uint8_t *data = buf;
+	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
 	switch (PDU_SAR(data)) {
 	case SAR_COMPLETE:
@@ -134,13 +137,13 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
 	return len;
 }
 
-int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
+int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 			   struct net_buf_simple *msg,
 			   bt_gatt_complete_func_t end, void *user_data)
 {
 	int err;
 	uint16_t mtu;
-	struct bt_conn *conn = role->conn;
+	struct bt_mesh_proxy_role *role = &roles[bt_conn_index(conn)];
 
 	BT_DBG("conn %p type 0x%02x len %u: %s", (void *)conn, type, msg->len,
 	       bt_hex(msg->data, msg->len));
@@ -183,6 +186,43 @@ int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
 	return 0;
 }
 
+static void buf_send_end(struct bt_conn *conn, void *user_data)
+{
+	struct net_buf *buf = user_data;
+
+	net_buf_unref(buf);
+}
+
+int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct net_buf *buf)
+{
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(msg, 1 + BT_MESH_NET_MAX_PDU_LEN);
+
+	/* Proxy PDU sending modifies the original buffer,
+	 * so we need to make a copy.
+	 */
+	net_buf_simple_reserve(&msg, 1);
+	net_buf_simple_add_mem(&msg, buf->data, buf->len);
+
+	err = bt_mesh_proxy_msg_send(conn, BT_MESH_PROXY_NET_PDU,
+				     &msg, buf_send_end, net_buf_ref(buf));
+
+	bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
+	if (err) {
+		BT_ERR("Failed to send proxy message (err %d)", err);
+
+		/* If segment_and_send() fails the buf_send_end() callback will
+		 * not be called, so we need to clear the user data (net_buf,
+		 * which is just opaque data to segment_and send) reference given
+		 * to segment_and_send() here.
+		 */
+		net_buf_unref(buf);
+	}
+
+	return err;
+}
+
 static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 {
 	/* Check if buf has been allocated, in this way, we no longer need
@@ -209,6 +249,8 @@ struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
 {
 	struct bt_mesh_proxy_role *role;
 
+	conn_count++;
+
 	role = &roles[bt_conn_index(conn)];
 
 	role->conn = bt_conn_ref(conn);
@@ -229,5 +271,12 @@ void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role)
 	bt_conn_unref(role->conn);
 	role->conn = NULL;
 
+	conn_count--;
+
 	bt_mesh_adv_gatt_update();
+}
+
+int bt_mesh_proxy_conn_count_get(void)
+{
+	return conn_count;
 }

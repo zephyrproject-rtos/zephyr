@@ -13,12 +13,12 @@ No special application code needs to be written to take advantage of
 this feature.  If there are two Zephyr application threads runnable on
 a supported dual processor device, they will both run simultaneously.
 
-SMP configuration is controlled under the :kconfig:`CONFIG_SMP` kconfig
+SMP configuration is controlled under the :kconfig:option:`CONFIG_SMP` kconfig
 variable.  This must be set to "y" to enable SMP features, otherwise
 a uniprocessor kernel will be built.  In general the platform default
 will have enabled this anywhere it's supported. When enabled, the
 number of physical CPUs available is visible at build time as
-:kconfig:`CONFIG_MP_NUM_CPUS`.  Likewise, the default for this will be the
+:kconfig:option:`CONFIG_MP_NUM_CPUS`.  Likewise, the default for this will be the
 number of available CPUs on the platform and it is not expected that
 typical apps will change it.  But it is legal and supported to set
 this to a smaller (but obviously not larger) number for special
@@ -99,7 +99,7 @@ CPU Mask
 It is often desirable for real time applications to deliberately
 partition work across physical CPUs instead of relying solely on the
 kernel scheduler to decide on which threads to execute.  Zephyr
-provides an API, controlled by the :kconfig:`CONFIG_SCHED_CPU_MASK`
+provides an API, controlled by the :kconfig:option:`CONFIG_SCHED_CPU_MASK`
 kconfig variable, which can associate a specific set of CPUs with each
 thread, indicating on which CPUs it can run.
 
@@ -116,9 +116,9 @@ Note that when this feature is enabled, the scheduler algorithm
 involved in doing the per-CPU mask test requires that the list be
 traversed in full.  The kernel does not keep a per-CPU run queue.
 That means that the performance benefits from the
-:kconfig:`CONFIG_SCHED_SCALABLE` and :kconfig:`CONFIG_SCHED_MULTIQ`
+:kconfig:option:`CONFIG_SCHED_SCALABLE` and :kconfig:option:`CONFIG_SCHED_MULTIQ`
 scheduler backends cannot be realized.  CPU mask processing is
-available only when :kconfig:`CONFIG_SCHED_DUMB` is the selected
+available only when :kconfig:option:`CONFIG_SCHED_DUMB` is the selected
 backend.  This requirement is enforced in the configuration layer.
 
 SMP Boot Process
@@ -293,8 +293,8 @@ run from the scheduler, passing in an "interrupted" handle reflecting
 the same opaque type used by switch, which the kernel will then save
 in the interrupted thread struct.
 
-Note that while SMP requires :kconfig:`CONFIG_USE_SWITCH`, the reverse is not
-true.  A uniprocessor architecture built with :kconfig:`CONFIG_SMP` set to No might
+Note that while SMP requires :kconfig:option:`CONFIG_USE_SWITCH`, the reverse is not
+true.  A uniprocessor architecture built with :kconfig:option:`CONFIG_SMP` set to No might
 still decide to implement its context switching using
 :c:func:`arch_switch`.
 

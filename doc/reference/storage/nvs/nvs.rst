@@ -41,6 +41,7 @@ For NVS the file system is declared as:
 .. code-block:: c
 
 	static struct nvs_fs fs = {
+	.flash_device = NVS_FLASH_DEVICE,
 	.sector_size = NVS_SECTOR_SIZE,
 	.sector_count = NVS_SECTOR_COUNT,
 	.offset = NVS_STORAGE_OFFSET,
@@ -48,6 +49,8 @@ For NVS the file system is declared as:
 
 where
 
+- ``NVS_FLASH_DEVICE`` is a reference to the flash device that will be used. The
+  device needs to be operational.
 - ``NVS_SECTOR_SIZE`` is the sector size, it has to be a multiple of
   the flash erase page size and a power of 2.
 - ``NVS_SECTOR_COUNT`` is the number of sectors, it is at least 2, one
@@ -113,7 +116,7 @@ Troubleshooting
 MPU fault while using NVS, or ``-ETIMEDOUT`` error returned
    NVS can use the internal flash of the SoC.  While the MPU is enabled,
    the flash driver requires MPU RWX access to flash memory, configured
-   using :kconfig:`CONFIG_MPU_ALLOW_FLASH_WRITE`.  If this option is
+   using :kconfig:option:`CONFIG_MPU_ALLOW_FLASH_WRITE`.  If this option is
    disabled, the NVS application will get an MPU fault if it references
    the internal SoC flash and it's the only thread running.  In a
    multi-threaded application, another thread might intercept the fault

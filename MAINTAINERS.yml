@@ -183,13 +183,15 @@ Bluetooth:
         - subsys/bluetooth/host/
         - subsys/bluetooth/services/
         - subsys/bluetooth/shell/
-        - subsys/bluetooth/audio/
         - tests/bluetooth/
     files-exclude:
         - include/bluetooth/mesh/
         - subsys/bluetooth/controller/
         - subsys/bluetooth/mesh/
         - samples/bluetooth/mesh/
+        - subsys/bluetooth/audio/
+        - include/bluetooth/audio/
+        - tests/bluetooth/bsim_bt/bsim_test_audio/
     labels:
         - "area: Bluetooth"
 
@@ -227,6 +229,25 @@ Bluetooth Mesh:
         - "area: Bluetooth Mesh"
         - "area: Bluetooth"
 
+Bluetooth Audio:
+    status: maintained
+    maintainers:
+        - Thalley
+        - asbjornsabo
+    collaborators:
+        - Vudentz
+        - jhedberg
+        - Casper-Bonde-Bose
+        - MariuszSkamra
+        - rymanluk
+    files:
+        - subsys/bluetooth/audio/
+        - include/bluetooth/audio/
+        - tests/bluetooth/bsim_bt/bsim_test_audio/
+    labels:
+        - "area: Bluetooth Audio"
+        - "area: Bluetooth"
+
 Build system:
     status: maintained
     maintainers:
@@ -234,7 +255,6 @@ Build system:
     collaborators:
         - jeremybettis
         - nashif
-        - SebastianBoe
     files:
         - cmake/
         - CMakeLists.txt
@@ -381,6 +401,8 @@ Disk:
     status: maintained
     maintainers:
         - jfischer-no
+    collaborators:
+        - danieldegrasse
     files:
         - include/storage/disk_access.h
         - include/drivers/disk.h
@@ -400,7 +422,6 @@ Display drivers:
         - include/drivers/display.h
         - include/display/
         - include/drivers/display.h
-        - lib/gui/
         - subsys/fb/
         - samples/subsys/display/
     labels:
@@ -519,7 +540,9 @@ Documentation:
         - "area: Counter"
 
 "Drivers: Crypto":
-    status: orphaned
+    status: maintained
+    maintainers:
+        - ceolin
     files:
         - drivers/crypto/
         - dts/bindings/crypto/
@@ -792,6 +815,18 @@ Documentation:
         - samples/drivers/peci/
     labels:
         - "area: PECI"
+
+"Drivers: Pin Control":
+    status: maintained
+    maintainers:
+        - gmarull
+    files:
+        - doc/reference/pinctrl/
+        - include/drivers/pinctrl/
+        - include/drivers/pinctrl.h
+        - drivers/pinctrl/
+    labels:
+        - "area: Pinctrl"
 
 "Drivers: Pinmux":
     status: maintained
@@ -1497,6 +1532,7 @@ Intel Platforms (X86):
         - jhedberg
         - aasthagr
         - laurenmurphyx64
+        - MaureenHelm
     files:
         - boards/x86/
         - soc/x86/
@@ -1515,6 +1551,7 @@ Intel Platforms (Xtensa):
         - mengxianglinx
         - marc-hb
         - kv2019i
+        - MaureenHelm
     files:
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
@@ -1570,6 +1607,24 @@ nRF Platforms:
         - dts/arm/nordic/
     labels:
         - "platform: nRF"
+
+Renesas R-Car Platforms:
+    status: maintained
+    maintainers:
+        - aaillet
+    collaborators:
+        - pmarzin
+    files:
+        - boards/arm/rcar_*/
+        - drivers/*/*rcar*
+        - dts/arm/renesas/
+        - dts/bindings/*/*rcar*
+        - soc/arm/renesas_rcar/
+    labels:
+        - "platform: Renesas R-Car"
+    description: >-
+        Renesas R-Car SOCs, dts files and related drivers. Renesas boards based
+        on R-Car SOCs.
 
 STM32 Platforms:
     status: maintained
@@ -1668,7 +1723,7 @@ TF-M Integration:
     maintainers:
         - microbuilder
     collaborators:
-        - SebastianBoe
+        - joerchan
     files:
         - samples/tfm_integration/
         - modules/trusted-firmware-m/

@@ -6,307 +6,242 @@
 
 /**
  * @file
- * @brief Crypto Cipher APIs
+ * @brief Crypto Cipher structure definitions
  *
- * This file contains the Crypto Abstraction layer APIs.
+ * This file contains the Crypto Abstraction layer structures.
  *
- * [Experimental] Users should note that the APIs can change
+ * [Experimental] Users should note that the Structures can change
  * as a part of ongoing development.
- */
-
-/**
- * @brief Crypto APIs
- * @defgroup crypto Crypto
- * @{
- * @}
- */
-
-
-/**
- * @brief Crypto Cipher APIs
- * @defgroup crypto_cipher Cipher
- * @ingroup crypto
- * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
 #define ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
 
 #include <device.h>
-#include <errno.h>
 #include <sys/util.h>
-#include <sys/__assert.h>
-#include "cipher_structs.h"
+/**
+ * @addtogroup crypto_cipher
+ * @{
+ */
 
-/* The API a crypto driver should implement */
-__subsystem struct crypto_driver_api {
-	int (*query_hw_caps)(const struct device *dev);
 
-	/* Setup a crypto session */
-	int (*begin_session)(const struct device *dev, struct cipher_ctx *ctx,
-			     enum cipher_algo algo, enum cipher_mode mode,
-			     enum cipher_op op_type);
-
-	/* Tear down an established session */
-	int (*free_session)(const struct device *dev, struct cipher_ctx *ctx);
-
-	/* Register async crypto op completion callback with the driver */
-	int (*crypto_async_callback_set)(const struct device *dev,
-					 crypto_completion_cb cb);
+/** Cipher Algorithm */
+enum cipher_algo {
+	CRYPTO_CIPHER_ALGO_AES = 1,
 };
 
-/* Following are the public API a user app may call.
- * The first two relate to crypto "session" setup / teardown. Further we
- * have four cipher mode specific (CTR, CCM, CBC ...) calls to perform the
- * actual crypto operation in the context of a session. Also we have an
- * API to provide the callback for async operations.
- */
+/** Cipher Operation */
+enum cipher_op {
+	CRYPTO_CIPHER_OP_DECRYPT = 0,
+	CRYPTO_CIPHER_OP_ENCRYPT = 1,
+};
 
 /**
- * @brief Query the crypto hardware capabilities
+ * Possible cipher mode options.
  *
- * This API is used by the app to query the capabilities supported by the
- * crypto device. Based on this the app can specify a subset of the supported
- * options to be honored for a session during cipher_begin_session().
- *
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @return bitmask of supported options.
+ * More to be added as required.
  */
-static inline int cipher_query_hwcaps(const struct device *dev)
-{
-	struct crypto_driver_api *api;
-	int tmp;
+enum cipher_mode {
+	CRYPTO_CIPHER_MODE_ECB = 1,
+	CRYPTO_CIPHER_MODE_CBC = 2,
+	CRYPTO_CIPHER_MODE_CTR = 3,
+	CRYPTO_CIPHER_MODE_CCM = 4,
+	CRYPTO_CIPHER_MODE_GCM = 5,
+};
 
-	api = (struct crypto_driver_api *) dev->api;
+/* Forward declarations */
+struct cipher_aead_pkt;
+struct cipher_ctx;
+struct cipher_pkt;
 
-	tmp = api->query_hw_caps(dev);
+typedef int (*block_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt);
 
-	__ASSERT((tmp & (CAP_OPAQUE_KEY_HNDL | CAP_RAW_KEY)) != 0,
-		 "Driver should support at least one key type: RAW/Opaque");
+/* Function signatures for encryption/ decryption using standard cipher modes
+ * like  CBC, CTR, CCM.
+ */
+typedef int (*cbc_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *iv);
 
-	__ASSERT((tmp & (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS)) != 0,
-	     "Driver should support at least one IO buf type: Inplace/separate");
+typedef int (*ctr_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *ctr);
 
-	__ASSERT((tmp & (CAP_SYNC_OPS | CAP_ASYNC_OPS)) != 0,
-		"Driver should support at least one op-type: sync/async");
-	return tmp;
+typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 uint8_t *nonce);
 
-}
+typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 uint8_t *nonce);
+
+struct cipher_ops {
+
+	enum cipher_mode cipher_mode;
+
+	union {
+		block_op_t	block_crypt_hndlr;
+		cbc_op_t	cbc_crypt_hndlr;
+		ctr_op_t	ctr_crypt_hndlr;
+		ccm_op_t	ccm_crypt_hndlr;
+		gcm_op_t	gcm_crypt_hndlr;
+	};
+};
+
+struct ccm_params {
+	uint16_t tag_len;
+	uint16_t nonce_len;
+};
+
+struct ctr_params {
+	/* CTR mode counter is a split counter composed of iv and counter
+	 * such that ivlen + ctr_len = keylen
+	 */
+	uint32_t ctr_len;
+};
+
+struct gcm_params {
+	uint16_t tag_len;
+	uint16_t nonce_len;
+};
 
 /**
- * @brief Setup a crypto session
+ * Structure encoding session parameters.
  *
- * Initializes one time parameters, like the session key, algorithm and cipher
- * mode which may remain constant for all operations in the session. The state
- * may be cached in hardware and/or driver data state variables.
- *
- * @param  dev      Pointer to the device structure for the driver instance.
- * @param  ctx      Pointer to the context structure. Various one time
- *			parameters like key, keylength, etc. are supplied via
- *			this structure. The structure documentation specifies
- *			which fields are to be populated by the app before
- *			making this call.
- * @param  algo     The crypto algorithm to be used in this session. e.g AES
- * @param  mode     The cipher mode to be used in this session. e.g CBC, CTR
- * @param  optype   Whether we should encrypt or decrypt in this session
- *
- * @return 0 on success, negative errno code on fail.
+ * Refer to comments for individual fields to know the contract
+ * in terms of who fills what and when w.r.t begin_session() call.
  */
-static inline int cipher_begin_session(const struct device *dev,
-				       struct cipher_ctx *ctx,
-				       enum cipher_algo algo,
-				       enum cipher_mode  mode,
-				       enum cipher_op optype)
-{
-	struct crypto_driver_api *api;
-	uint32_t flags;
+struct cipher_ctx {
 
-	api = (struct crypto_driver_api *) dev->api;
-	ctx->device = dev;
-	ctx->ops.cipher_mode = mode;
+	/** Place for driver to return function pointers to be invoked per
+	 * cipher operation. To be populated by crypto driver on return from
+	 * begin_session() based on the algo/mode chosen by the app.
+	 */
+	struct cipher_ops ops;
 
-	flags = (ctx->flags & (CAP_OPAQUE_KEY_HNDL | CAP_RAW_KEY));
-	__ASSERT(flags != 0U, "Keytype missing: RAW Key or OPAQUE handle");
-	__ASSERT(flags != (CAP_OPAQUE_KEY_HNDL | CAP_RAW_KEY),
-			 "conflicting options for keytype");
+	/** To be populated by the app before calling begin_session() */
+	union {
+		/* Cryptographic key to be used in this session */
+		uint8_t *bit_stream;
+		/* For cases where  key is protected and is not
+		 * available to caller
+		 */
+		void *handle;
+	} key;
 
-	flags = (ctx->flags & (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS));
-	__ASSERT(flags != 0U, "IO buffer type missing");
-	__ASSERT(flags != (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS),
-			"conflicting options for IO buffer type");
+	/** The device driver instance this crypto context relates to. Will be
+	 * populated by the begin_session() API.
+	 */
+	const struct device *device;
 
-	flags = (ctx->flags & (CAP_SYNC_OPS | CAP_ASYNC_OPS));
-	__ASSERT(flags != 0U, "sync/async type missing");
-	__ASSERT(flags != (CAP_SYNC_OPS |  CAP_ASYNC_OPS),
-			"conflicting options for sync/async");
+	/** If the driver supports multiple simultaneously crypto sessions, this
+	 * will identify the specific driver state this crypto session relates
+	 * to. Since dynamic memory allocation is not possible, it is
+	 * suggested that at build time drivers allocate space for the
+	 * max simultaneous sessions they intend to support. To be populated
+	 * by the driver on return from begin_session().
+	 */
+	void *drv_sessn_state;
 
-	return api->begin_session(dev, ctx, algo, mode, optype);
-}
+	/** Place for the user app to put info relevant stuff for resuming when
+	 * completion callback happens for async ops. Totally managed by the
+	 * app.
+	 */
+	void *app_sessn_state;
+
+	/** Cypher mode parameters, which remain constant for all ops
+	 * in a session. To be populated by the app before calling
+	 * begin_session().
+	 */
+	union {
+		struct ccm_params ccm_info;
+		struct ctr_params ctr_info;
+		struct gcm_params gcm_info;
+	} mode_params;
+
+	/** Cryptographic keylength in bytes. To be populated by the app
+	 * before calling begin_session()
+	 */
+	uint16_t  keylen;
+
+	/** How certain fields are to be interpreted for this session.
+	 * (A bitmask of CAP_* below.)
+	 * To be populated by the app before calling begin_session().
+	 * An app can obtain the capability flags supported by a hw/driver
+	 * by calling crypto_query_hwcaps().
+	 */
+	uint16_t flags;
+};
 
 /**
- * @brief Cleanup a crypto session
+ * Structure encoding IO parameters of one cryptographic
+ * operation like encrypt/decrypt.
  *
- * Clears the hardware and/or driver state of a previous session.
- *
- * @param  dev      Pointer to the device structure for the driver instance.
- * @param  ctx      Pointer to the crypto context structure of the session
- *			to be freed.
- *
- * @return 0 on success, negative errno code on fail.
+ * The fields which has not been explicitly called out has to
+ * be filled up by the app before making the cipher_xxx_op()
+ * call.
  */
-static inline int cipher_free_session(const struct device *dev,
-				      struct cipher_ctx *ctx)
-{
-	struct crypto_driver_api *api;
+struct cipher_pkt {
 
-	api = (struct crypto_driver_api *) dev->api;
+	/** Start address of input buffer */
+	uint8_t *in_buf;
 
-	return api->free_session(dev, ctx);
-}
+	/** Bytes to be operated upon */
+	int  in_len;
+
+	/** Start of the output buffer, to be allocated by
+	 * the application. Can be NULL for in-place ops. To be populated
+	 * with contents by the driver on return from op / async callback.
+	 */
+	uint8_t *out_buf;
+
+	/** Size of the out_buf area allocated by the application. Drivers
+	 * should not write past the size of output buffer.
+	 */
+	int out_buf_max;
+
+	/** To be populated by driver on return from cipher_xxx_op() and
+	 * holds the size of the actual result.
+	 */
+	int out_len;
+
+	/** Context this packet relates to. This can be useful to get the
+	 * session details, especially for async ops. Will be populated by the
+	 * cipher_xxx_op() API based on the ctx parameter.
+	 */
+	struct cipher_ctx *ctx;
+};
 
 /**
- * @brief Registers an async crypto op completion callback with the driver
+ * Structure encoding IO parameters in AEAD (Authenticated Encryption
+ * with Associated Data) scenario like in CCM.
  *
- * The application can register an async crypto op completion callback handler
- * to be invoked by the driver, on completion of a prior request submitted via
- * crypto_do_op(). Based on crypto device hardware semantics, this is likely to
- * be invoked from an ISR context.
- *
- * @param  dev   Pointer to the device structure for the driver instance.
- * @param  cb    Pointer to application callback to be called by the driver.
- *
- * @return 0 on success, -ENOTSUP if the driver does not support async op,
- *			  negative errno code on other error.
+ * App has to furnish valid contents prior to making cipher_ccm_op() call.
  */
-static inline int cipher_callback_set(const struct device *dev,
-				      crypto_completion_cb cb)
-{
-	struct crypto_driver_api *api;
+struct cipher_aead_pkt {
+	/* IO buffers for encryption. This has to be supplied by the app. */
+	struct cipher_pkt *pkt;
 
-	api = (struct crypto_driver_api *) dev->api;
+	/**
+	 * Start address for Associated Data. This has to be supplied by app.
+	 */
+	uint8_t *ad;
 
-	if (api->crypto_async_callback_set) {
-		return api->crypto_async_callback_set(dev, cb);
-	}
+	/** Size of  Associated Data. This has to be supplied by the app. */
+	uint32_t ad_len;
 
-	return -ENOTSUP;
+	/** Start address for the auth hash. For an encryption op this will
+	 * be populated by the driver when it returns from cipher_ccm_op call.
+	 * For a decryption op this has to be supplied by the app.
+	 */
+	uint8_t *tag;
+};
 
-}
-
-/**
- * @brief Perform single-block crypto operation (ECB cipher mode). This
- * should not be overloaded to operate on multiple blocks for security reasons.
- *
- * @param  ctx       Pointer to the crypto context of this op.
- * @param  pkt   Structure holding the input/output buffer pointers.
- *
- * @return 0 on success, negative errno code on fail.
+/* Prototype for the application function to be invoked by the crypto driver
+ * on completion of an async request. The app may get the session context
+ * via the pkt->ctx field. For CCM ops the encompassing AEAD packet may be
+ * accessed via container_of(). The type of a packet can be determined via
+ * pkt->ctx.ops.mode .
  */
-static inline int cipher_block_op(struct cipher_ctx *ctx,
-				     struct cipher_pkt *pkt)
-{
-	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_ECB, "ECB mode "
-		 "session invoking a different mode handler");
-
-	pkt->ctx = ctx;
-	return ctx->ops.block_crypt_hndlr(ctx, pkt);
-}
-
-/**
- * @brief Perform Cipher Block Chaining (CBC) crypto operation.
- *
- * @param  ctx       Pointer to the crypto context of this op.
- * @param  pkt   Structure holding the input/output buffer pointers.
- * @param  iv        Initialization Vector (IV) for the operation. Same
- *			 IV value should not be reused across multiple
- *			 operations (within a session context) for security.
- *
- * @return 0 on success, negative errno code on fail.
- */
-static inline int cipher_cbc_op(struct cipher_ctx *ctx,
-				struct cipher_pkt *pkt, uint8_t *iv)
-{
-	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CBC, "CBC mode "
-		 "session invoking a different mode handler");
-
-	pkt->ctx = ctx;
-	return ctx->ops.cbc_crypt_hndlr(ctx, pkt, iv);
-}
-
-/**
- * @brief Perform Counter (CTR) mode crypto operation.
- *
- * @param  ctx       Pointer to the crypto context of this op.
- * @param  pkt   Structure holding the input/output buffer pointers.
- * @param  iv        Initialization Vector (IV) for the operation. We use a
- *			 split counter formed by appending IV and ctr.
- *			 Consequently  ivlen = keylen - ctrlen. 'ctrlen' is
- *			 specified during session setup through the
- *			 'ctx.mode_params.ctr_params.ctr_len' parameter. IV
- *			 should not be reused across multiple operations
- *			 (within a session context) for security. The non-IV
- *			 part of the split counter is transparent to the caller
- *			 and is fully managed by the crypto provider.
- *
- * @return 0 on success, negative errno code on fail.
- */
-static inline int cipher_ctr_op(struct cipher_ctx *ctx,
-				struct cipher_pkt *pkt, uint8_t *iv)
-{
-	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CTR, "CTR mode "
-		 "session invoking a different mode handler");
-
-	pkt->ctx = ctx;
-	return ctx->ops.ctr_crypt_hndlr(ctx, pkt, iv);
-}
-
-/**
- * @brief Perform Counter with CBC-MAC (CCM) mode crypto operation
- *
- * @param  ctx       Pointer to the crypto context of this op.
- * @param  pkt   Structure holding the input/output, Assosciated
- *			 Data (AD) and auth tag buffer pointers.
- * @param  nonce     Nonce for the operation. Same nonce value should not
- *			 be reused across multiple operations (within a
- *			 session context) for security.
- *
- * @return 0 on success, negative errno code on fail.
- */
-static inline int cipher_ccm_op(struct cipher_ctx *ctx,
-				struct cipher_aead_pkt *pkt, uint8_t *nonce)
-{
-	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CCM, "CCM mode "
-		 "session invoking a different mode handler");
-
-	pkt->pkt->ctx = ctx;
-	return ctx->ops.ccm_crypt_hndlr(ctx, pkt, nonce);
-}
-
-/**
- * @brief Perform Galois/Counter Mode (GCM) crypto operation
- *
- * @param  ctx       Pointer to the crypto context of this op.
- * @param  pkt   Structure holding the input/output, Associated
- *			 Data (AD) and auth tag buffer pointers.
- * @param  nonce     Nonce for the operation. Same nonce value should not
- *			 be reused across multiple operations (within a
- *			 session context) for security.
- *
- * @return 0 on success, negative errno code on fail.
- */
-static inline int cipher_gcm_op(struct cipher_ctx *ctx,
-				struct cipher_aead_pkt *pkt, uint8_t *nonce)
-{
-	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_GCM, "GCM mode "
-		 "session invoking a different mode handler");
-
-	pkt->pkt->ctx = ctx;
-	return ctx->ops.gcm_crypt_hndlr(ctx, pkt, nonce);
-}
+typedef void (*cipher_completion_cb)(struct cipher_pkt *completed, int status);
 
 /**
  * @}
  */
-
 #endif /* ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_ */

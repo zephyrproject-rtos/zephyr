@@ -47,6 +47,7 @@ static void rr_abort(struct ll_conn *conn);
 enum rr_state {
 	RR_STATE_IDLE,
 	RR_STATE_REJECT,
+	RR_STATE_UNSUPPORTED,
 	RR_STATE_ACTIVE,
 	RR_STATE_DISCONNECT,
 	RR_STATE_TERMINATE,
@@ -77,6 +78,8 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	 * and all the cases that return 1?
 	 */
 	switch (ctx->proc) {
+	case PROC_UNKNOWN:
+		return 0U;
 	case PROC_FEATURE_EXCHANGE:
 		return 0U;
 	case PROC_MIN_USED_CHANS:
@@ -212,6 +215,9 @@ void llcp_rr_resume(struct ll_conn *conn)
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
+	case PROC_UNKNOWN:
+		/* Do nothing */
+		break;
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		llcp_rp_comm_rx(conn, ctx, rx);
@@ -378,6 +384,9 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		llcp_pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode,
 					       BT_HCI_ERR_LL_PROC_COLLISION);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		llcp_pdu_encode_unknown_rsp(ctx, pdu);
+		break;
 	default:
 		LL_ASSERT(0);
 	}
@@ -398,6 +407,22 @@ static void rr_act_reject(struct ll_conn *conn)
 		rr_set_state(conn, RR_STATE_REJECT);
 	} else {
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
+
+		ctx->done = 1U;
+		rr_set_state(conn, RR_STATE_IDLE);
+	}
+}
+
+static void rr_act_unsupported(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx = llcp_rr_peek(conn);
+
+	LL_ASSERT(ctx != NULL);
+
+	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+		rr_set_state(conn, RR_STATE_UNSUPPORTED);
+	} else {
+		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP);
 
 		ctx->done = 1U;
 		rr_set_state(conn, RR_STATE_IDLE);
@@ -471,6 +496,15 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				/* Run remote procedure */
 				rr_act_run(conn);
 				rr_set_state(conn, RR_STATE_TERMINATE);
+			} else if (ctx->proc == PROC_UNKNOWN) {
+				/* Unsupported procedure */
+
+				/* Send LL_UNKNOWN_RSP */
+				struct node_rx_pdu *rx = (struct node_rx_pdu *)param;
+				struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
+
+				ctx->unknown_response.type = pdu->llctrl.opcode;
+				rr_act_unsupported(conn);
 			} else if (!with_instant || incompat == INCOMPAT_NO_COLLISION) {
 				/* No collision
 				 * => Run procedure
@@ -539,6 +573,11 @@ static void rr_st_reject(struct ll_conn *conn, uint8_t evt, void *param)
 	LL_ASSERT(0);
 }
 
+static void rr_st_unsupported(struct ll_conn *conn, uint8_t evt, void *param)
+{
+	rr_act_unsupported(conn);
+}
+
 static void rr_st_active(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
@@ -595,6 +634,9 @@ static void rr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 	case RR_STATE_REJECT:
 		rr_st_reject(conn, evt, param);
 		break;
+	case RR_STATE_UNSUPPORTED:
+		rr_st_unsupported(conn, evt, param);
+		break;
 	case RR_STATE_ACTIVE:
 		rr_st_active(conn, evt, param);
 		break;
@@ -637,6 +679,86 @@ void llcp_rr_disconnect(struct ll_conn *conn)
 	rr_execute_fsm(conn, RR_EVT_DISCONNECT, NULL);
 }
 
+/*
+ * Create procedure lookup table for any given PDU opcode, these are the opcodes
+ * that can initiate a new remote procedure.
+ *
+ * NOTE: All array elements that are not initialized explicitly are
+ * zero-initialized, which matches PROC_UNKNOWN.
+ *
+ * NOTE: When initializing an array of unknown size, the largest subscript for
+ * which an initializer is specified determines the size of the array being
+ * declared.
+ */
+BUILD_ASSERT(0 == PROC_UNKNOWN, "PROC_UNKNOWN must have the value ZERO");
+
+enum accept_role {
+	/* No role accepts this opcode */
+	ACCEPT_ROLE_NONE = 0,
+	/* Central role accepts this opcode */
+	ACCEPT_ROLE_CENTRAL = (1 << BT_HCI_ROLE_CENTRAL),
+	/* Peripheral role accepts this opcode */
+	ACCEPT_ROLE_PERIPHERAL = (1 << BT_HCI_ROLE_PERIPHERAL),
+	/* Both roles accepts this opcode */
+	ACCEPT_ROLE_BOTH = (ACCEPT_ROLE_CENTRAL | ACCEPT_ROLE_PERIPHERAL),
+};
+
+struct proc_role {
+	enum llcp_proc proc;
+	enum accept_role accept;
+};
+
+static const struct proc_role new_proc_lut[] = {
+#if defined(CONFIG_BT_PERIPHERAL)
+	[PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND] = { PROC_CONN_UPDATE, ACCEPT_ROLE_PERIPHERAL },
+	[PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND] = { PROC_CHAN_MAP_UPDATE, ACCEPT_ROLE_PERIPHERAL },
+#endif /* CONFIG_BT_PERIPHERAL */
+	[PDU_DATA_LLCTRL_TYPE_TERMINATE_IND] = { PROC_TERMINATE, ACCEPT_ROLE_BOTH },
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
+	[PDU_DATA_LLCTRL_TYPE_ENC_REQ] = { PROC_ENCRYPTION_START, ACCEPT_ROLE_PERIPHERAL },
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
+	[PDU_DATA_LLCTRL_TYPE_ENC_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+	[PDU_DATA_LLCTRL_TYPE_START_ENC_REQ] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+	[PDU_DATA_LLCTRL_TYPE_START_ENC_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+	[PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+	[PDU_DATA_LLCTRL_TYPE_FEATURE_REQ] = { PROC_FEATURE_EXCHANGE, ACCEPT_ROLE_PERIPHERAL },
+	[PDU_DATA_LLCTRL_TYPE_FEATURE_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
+	[PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ] = { PROC_ENCRYPTION_PAUSE, ACCEPT_ROLE_PERIPHERAL },
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
+	[PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+	[PDU_DATA_LLCTRL_TYPE_VERSION_IND] = { PROC_VERSION_EXCHANGE, ACCEPT_ROLE_BOTH },
+	[PDU_DATA_LLCTRL_TYPE_REJECT_IND] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_CENTRAL)
+	[PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG] = { PROC_FEATURE_EXCHANGE, ACCEPT_ROLE_CENTRAL },
+#endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	[PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ] = { PROC_CONN_PARAM_REQ, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	[PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+	[PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_LE_PING)
+	[PDU_DATA_LLCTRL_TYPE_PING_REQ]	= { PROC_LE_PING, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_LE_PING */
+	[PDU_DATA_LLCTRL_TYPE_PING_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = { PROC_DATA_LENGTH_UPDATE, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_PHY)
+	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = { PROC_PHY_UPDATE, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_PHY */
+	[PDU_DATA_LLCTRL_TYPE_PHY_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+	[PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
+	[PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND] = { PROC_MIN_USED_CHANS, ACCEPT_ROLE_CENTRAL },
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	[PDU_DATA_LLCTRL_TYPE_CTE_REQ] = { PROC_CTE_REQ, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+};
+
 void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
 	struct proc_ctx *ctx;
@@ -645,51 +767,16 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 	pdu = (struct pdu_data *)rx->pdu;
 
-	switch (pdu->llctrl.opcode) {
-	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
-		proc = PROC_CONN_UPDATE;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
-	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
-		proc = PROC_FEATURE_EXCHANGE;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_PING_REQ:
-		proc = PROC_LE_PING;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
-		proc = PROC_VERSION_EXCHANGE;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-		proc = PROC_ENCRYPTION_START;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
-		proc = PROC_ENCRYPTION_PAUSE;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
-		proc = PROC_PHY_UPDATE;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
-		proc = PROC_MIN_USED_CHANS;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
-		proc = PROC_CONN_PARAM_REQ;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
-		proc = PROC_TERMINATE;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND:
-		proc = PROC_CHAN_MAP_UPDATE;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
-		proc = PROC_DATA_LENGTH_UPDATE;
-		break;
-	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
-		proc = PROC_CTE_REQ;
-		break;
-	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
-		break;
+
+	/* Is this a valid opcode */
+	if (pdu->llctrl.opcode < ARRAY_SIZE(new_proc_lut)) {
+		/* Lookup procedure */
+		uint8_t role_mask  = (1 << conn->lll.role);
+		struct proc_role pr = new_proc_lut[pdu->llctrl.opcode];
+
+		if (pr.accept & role_mask) {
+			proc = pr.proc;
+		}
 	}
 
 	if (proc == PROC_TERMINATE) {
@@ -706,6 +793,8 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 	/* Prepare procedure */
 	llcp_rr_prepare(conn, rx);
+
+	rr_check_done(conn, ctx);
 
 	/* Handle PDU */
 	ctx = llcp_rr_peek(conn);

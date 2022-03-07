@@ -1146,10 +1146,9 @@ static bool is_UI(struct gsm_mux *mux)
 	return (mux->control & ~PF) == FT_UI;
 }
 
-const char *gsm_mux_state_str(enum gsm_mux_state state)
+static const char *gsm_mux_state_str(enum gsm_mux_state state)
 {
-#if (CONFIG_GSM_MUX_LOG_LEVEL >= LOG_LEVEL_DBG) || \
-					defined(CONFIG_NET_SHELL)
+#if (CONFIG_GSM_MUX_LOG_LEVEL >= LOG_LEVEL_DBG) || defined(CONFIG_NET_SHELL)
 	switch (state) {
 	case GSM_MUX_SOF:
 		return "Start-Of-Frame";

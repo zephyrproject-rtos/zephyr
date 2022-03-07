@@ -10,10 +10,9 @@
 #include <device.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-
-#define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(mcp2515_can);
+
+LOG_MODULE_REGISTER(can_mcp2515, CONFIG_CAN_LOG_LEVEL);
 
 #include "can_mcp2515.h"
 #include "can_utils.h"
@@ -869,7 +868,7 @@ static int mcp2515_init(const struct device *dev)
 	}
 
 	if (gpio_pin_configure_dt(&dev_cfg->int_gpio, GPIO_INPUT)) {
-		LOG_ERR("Unable to configure GPIO pin %u", dev_cfg->int_pin);
+		LOG_ERR("Unable to configure interrupt GPIO");
 		return -EINVAL;
 	}
 
@@ -940,7 +939,7 @@ static struct mcp2515_data mcp2515_data_1 = {
 
 static const struct mcp2515_config mcp2515_config_1 = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,
 	.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,
 	.tq_sjw = DT_INST_PROP(0, sjw),

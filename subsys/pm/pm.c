@@ -105,10 +105,10 @@ static void pm_resume_devices(void)
 static inline void pm_exit_pos_ops(struct pm_state_info *info)
 {
 	extern __weak void
-		pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
+		pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 
-	if (pm_power_state_exit_post_ops != NULL) {
-		pm_power_state_exit_post_ops(info->state, info->substate_id);
+	if (pm_state_exit_post_ops != NULL) {
+		pm_state_exit_post_ops(info->state, info->substate_id);
 	} else {
 		/*
 		 * This function is supposed to be overridden to do SoC or
@@ -121,13 +121,13 @@ static inline void pm_exit_pos_ops(struct pm_state_info *info)
 	}
 }
 
-static inline void pm_state_set(struct pm_state_info *info)
+static inline void state_set(struct pm_state_info *info)
 {
 	extern __weak void
-		pm_power_state_set(enum pm_state state, uint8_t substate_id);
+		pm_state_set(enum pm_state state, uint8_t substate_id);
 
-	if (pm_power_state_set != NULL) {
-		pm_power_state_set(info->state, info->substate_id);
+	if (pm_state_set != NULL) {
+		pm_state_set(info->state, info->substate_id);
 	}
 }
 
@@ -180,7 +180,7 @@ void pm_system_resume(void)
 	}
 }
 
-bool pm_power_state_force(uint8_t cpu, const struct pm_state_info *info)
+bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 {
 	bool ret = false;
 
@@ -250,7 +250,7 @@ bool pm_system_suspend(int32_t ticks)
 	/*
 	 * This function runs with interruptions locked but it is
 	 * expected the SoC to unlock them in
-	 * pm_power_state_exit_post_ops() when returning to active
+	 * pm_state_exit_post_ops() when returning to active
 	 * state. We don't want to be scheduled out yet, first we need
 	 * to send a notification about leaving the idle state. So,
 	 * we lock the scheduler here and unlock just after we have
@@ -261,7 +261,7 @@ bool pm_system_suspend(int32_t ticks)
 	/* Enter power state */
 	pm_state_notify(true);
 	atomic_set_bit(z_post_ops_required, id);
-	pm_state_set(&z_cpus_pm_state[id]);
+	state_set(&z_cpus_pm_state[id]);
 	pm_stats_stop();
 
 	/* Wake up sequence starts here */
@@ -303,7 +303,7 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 	return ret;
 }
 
-const struct pm_state_info *pm_power_state_next_get(uint8_t cpu)
+const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 {
 	return &z_cpus_pm_state[cpu];
 }

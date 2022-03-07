@@ -114,8 +114,8 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 
 	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 
-	if (ops != NULL && ops->connected != NULL) {
-		ops->connected(ep->stream);
+	if (ops != NULL && ops->started != NULL) {
+		ops->started(ep->stream);
 	} else {
 		BT_WARN("No callback for connected set");
 	}
@@ -132,10 +132,10 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 
 	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_IDLE);
 
-	if (ops != NULL && ops->disconnected != NULL) {
-		ops->disconnected(stream, reason);
+	if (ops != NULL && ops->stopped != NULL) {
+		ops->stopped(stream);
 	} else {
-		BT_WARN("No callback for disconnected set");
+		BT_WARN("No callback for stopped set");
 	}
 }
 

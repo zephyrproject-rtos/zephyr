@@ -352,6 +352,9 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+	case PROC_UNKNOWN:
+		/* Nothing to do */
+		break;
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		llcp_rp_comm_init_proc(ctx);

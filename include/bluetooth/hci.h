@@ -2154,6 +2154,7 @@ struct bt_hci_evt_link_key_notify {
 /* Overflow link types */
 #define BT_OVERFLOW_LINK_SYNCH                  0x00
 #define BT_OVERFLOW_LINK_ACL                    0x01
+#define BT_OVERFLOW_LINK_ISO                    0x02
 
 #define BT_HCI_EVT_DATA_BUF_OVERFLOW            0x1a
 struct bt_hci_evt_data_buf_overflow {

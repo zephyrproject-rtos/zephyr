@@ -221,7 +221,9 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Set FRGPLLCLKDIV divider to value 12 */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 12U);
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM0);
+#endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 	usb_device_clock_init();

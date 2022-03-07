@@ -49,7 +49,7 @@ Enabling the stack
 
 The following configuration option must me enabled in :file:`prj.conf` file.
 
-- :kconfig:`CONFIG_NET_GPTP`
+- :kconfig:option:`CONFIG_NET_GPTP`
 
 Application interfaces
 **********************

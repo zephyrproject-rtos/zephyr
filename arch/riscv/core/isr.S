@@ -215,6 +215,20 @@
 	li temp, MSTATUS_MPP					;\
 	and ret, ret, temp					;
 
+#define GET_CPU(ret, temp) \
+	csrr ret, mhartid		;\
+	li temp, ___cpu_t_SIZEOF	;\
+	mul temp, temp, ret		;\
+	la ret, _kernel			;\
+	add ret, ret, temp		;
+
+#define RISCV_IRQ_INTERRUPT		0x1
+#define RISCV_IRQ_USER_ECALL		0x2
+#define RISCV_IRQ_EXCEPTION		0x3
+#define RISCV_IRQ_RETURN_FROM_SYSCALL	0x4
+#define RISCV_IRQ_FORCED_SYSCALL	0x5
+#define RISCV_IRQ_OFFLOAD		0x6
+#define RISCV_IRQ_CONTEXT_SWITCH	0x7
 
 /* imports */
 GDATA(_sw_isr_table)
@@ -226,9 +240,7 @@ GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-GTEXT(_k_neg_eagain)
-GTEXT(_is_next_thread_current)
-GTEXT(z_get_next_ready_thread)
+GTEXT(z_get_next_switch_handle)
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 GTEXT(z_thread_mark_switched_in)
@@ -294,22 +306,110 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 	/*
 	 * Save caller-saved registers on current thread stack.
-	 * NOTE: need to be updated to account for floating-point registers
-	 * floating-point registers should be accounted for when corresponding
-	 * config variable is set
 	 */
 	STORE_CALLER_SAVED()
 
+	/* Let's quickly figure out why we're here: context switch, IRQ offload,
+	 * user syscall, forced syscall, IRQ or returning from syscall.
+	 * Save this information in a0 to guide flow after.
+	 */
+
+	/*
+	 * Check if exception is the result of an interrupt or not.
+	 * (SOC dependent). Following the RISC-V architecture spec, the MSB
+	 * of the mcause register is used to indicate whether an exception
+	 * is the result of an interrupt or an exception/fault. But for some
+	 * SOCs (like pulpino or riscv-qemu), the MSB is never set to indicate
+	 * interrupt. Hence, check for interrupt/exception via the __soc_is_irq
+	 * function (that needs to be implemented by each SOC). The result is
+	 * returned via register a0 (1: interrupt, 0 exception)
+	 */
+	jal ra, __soc_is_irq
+	bnez a0, dispatch_end
+
+	/* Is our exception an ECALL? From machine or user mode? */
+	csrr t0, mcause
+	li t1, SOC_MCAUSE_EXP_MASK
+	and t0, t1, t0
+
+	li t1, SOC_MCAUSE_ECALL_EXP
+	beq t0, t1, dispatch_kernel_syscall
+
+#ifdef CONFIG_USERSPACE
+	li t1, SOC_MCAUSE_USER_ECALL_EXP
+	bne t0, t1, dispatch_exception
+	li a0, RISCV_IRQ_USER_ECALL
+	j dispatch_end
+dispatch_exception:
+#endif
+
+	/* If nothing else, this is an exception */
+	li a0, RISCV_IRQ_EXCEPTION
+	j dispatch_end
+
+dispatch_kernel_syscall:
+	/* Kernel syscall, it can still be context switch, IRQ offload,
+	 forced syscall or returning from syscall. */
+
+#ifdef CONFIG_USERSPACE
+	/* Check if it is a return from user syscall */
+	csrr t0, mepc
+	la t1, z_riscv_do_syscall_start
+	bltu t0, t1, dispatch_not_return_from_syscall
+	la t1, z_riscv_do_syscall_end
+	bgtu t0, t1, dispatch_not_return_from_syscall
+	li a0, RISCV_IRQ_RETURN_FROM_SYSCALL
+	j dispatch_end
+dispatch_not_return_from_syscall:
+	/* Could still be forced syscall. */
+	li t0, FORCE_SYSCALL_ID
+	bne a7, t0, dispatch_not_forced_syscall
+	li a0, RISCV_IRQ_FORCED_SYSCALL
+	j dispatch_end
+dispatch_not_forced_syscall:
+#endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_IRQ_OFFLOAD
+	/*
+	 * Determine if the system call is the result of an IRQ offloading.
+	 * Done by checking if _offload_routine is not pointing to NULL.
+	 */
+	la t0, _offload_routine
+	RV_OP_LOADREG t1, 0x00(t0)
+	beqz t1, dispatch_not_irq_offload
+	li a0, RISCV_IRQ_OFFLOAD
+	j dispatch_end
+dispatch_not_irq_offload:
+#endif
+
+	/* Context switch be it then. */
+	li a0, RISCV_IRQ_CONTEXT_SWITCH
+
+dispatch_end:
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/* Assess whether floating-point registers need to be saved. */
-	la t0, _kernel
-	RV_OP_LOADREG t0, _kernel_offset_to_current(t0)
+	/* Assess whether floating-point registers need to be saved.
+	 * Note that there's a catch here: if we're performing a
+	 * context switch, _current is *not* the outgoing thread - that
+	 * can be found via CONTAINER_OF(a1).
+	 */
+	li t0, RISCV_IRQ_CONTEXT_SWITCH
+	beq a0, t0, store_fp_caller_context_switch
+
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG t0, ___cpu_t_current_OFFSET(t0)
+	j store_fp_caller_saved
+
+store_fp_caller_context_switch:
+	RV_OP_LOADREG a1, __z_arch_esf_t_a1_OFFSET(sp)
+	addi t0, a1, -___thread_t_switch_handle_OFFSET
+
+store_fp_caller_saved:
+	/* t0 should be the thread to have its context saved */
 	RV_OP_LOADREG t0, _thread_offset_to_user_options(t0)
 	andi t0, t0, K_FP_REGS
 	RV_OP_STOREREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
 	beqz t0, skip_store_fp_caller_saved
 	STORE_FP_CALLER_SAVED(sp)
-
 skip_store_fp_caller_saved:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
@@ -323,8 +423,14 @@ skip_store_fp_caller_saved:
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Handle context saving at SOC level. */
+	addi sp, sp, -16
+	RV_OP_STOREREG a0, 0x00(sp)
+
 	addi a0, sp, __z_arch_esf_t_soc_context_OFFSET
 	jal ra, __soc_save_context
+
+	RV_OP_LOADREG a0, 0x00(sp)
+	addi sp, sp, 16
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 #ifdef CONFIG_USERSPACE
@@ -332,8 +438,8 @@ skip_store_fp_caller_saved:
 	WAS_NOT_USER(t0, t1)
 	bnez t0, is_priv_sp
 
-	la t0, _kernel
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
 
 	/* Save user stack pointer */
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -365,21 +471,9 @@ is_priv_sp:
 	sb zero, 0x00(t0)
 #endif /* CONFIG_USERSPACE */
 
-	/*
-	 * Check if exception is the result of an interrupt or not.
-	 * (SOC dependent). Following the RISC-V architecture spec, the MSB
-	 * of the mcause register is used to indicate whether an exception
-	 * is the result of an interrupt or an exception/fault. But for some
-	 * SOCs (like pulpino or riscv-qemu), the MSB is never set to indicate
-	 * interrupt. Hence, check for interrupt/exception via the __soc_is_irq
-	 * function (that needs to be implemented by each SOC). The result is
-	 * returned via register a0 (1: interrupt, 0 exception)
-	 */
-	jal ra, __soc_is_irq
-
-	/* If a0 != 0, jump to is_interrupt */
-	addi t1, x0, 0
-	bnez a0, is_interrupt
+	/* Jump to is_interrupt to handle interrupts. */
+	li t0, RISCV_IRQ_INTERRUPT
+	beq a0, t0, is_interrupt
 
 #ifdef CONFIG_USERSPACE
 	/* Reset IRQ flag */
@@ -387,32 +481,41 @@ is_priv_sp:
 	sb zero, 0x00(t1)
 #endif /* CONFIG_USERSPACE */
 
-	/*
-	 * If the exception is the result of an ECALL, check whether to
-	 * perform a context-switch or an IRQ offload. Otherwise call _Fault
-	 * to report the exception.
-	 */
-	csrr t0, mcause
-	li t2, SOC_MCAUSE_EXP_MASK
-	and t0, t0, t2
-	li t1, SOC_MCAUSE_ECALL_EXP
-
-	/*
-	 * If mcause == SOC_MCAUSE_ECALL_EXP, handle system call from
-	 * kernel thread.
-	 */
-	beq t0, t1, is_kernel_syscall
+	li t0, RISCV_IRQ_EXCEPTION
+	beq a0, t0, handle_exception
 
 #ifdef CONFIG_USERSPACE
-	li t1, SOC_MCAUSE_USER_ECALL_EXP
-
-	/*
-	 * If mcause == SOC_MCAUSE_USER_ECALL_EXP, handle system call from
-	 * user thread, otherwise handle fault.
-	 */
-	beq t0, t1, is_user_syscall
+	li t0, RISCV_IRQ_RETURN_FROM_SYSCALL
+	beq a0, t0, return_from_syscall
 #endif /* CONFIG_USERSPACE */
 
+	/* At this point, we're sure to be handling a syscall, which
+	 * is a result of an ECALL instruction. Increment MEPC to
+	 * to avoid triggering the same ECALL again when leaving the
+	 * ISR.
+	 *
+	 * It's safe to always increment by 4, even with compressed
+	 * instructions, because the ecall instruction is always 4 bytes.
+	 */
+	RV_OP_LOADREG t1, __z_arch_esf_t_mepc_OFFSET(sp)
+	addi t1, t1, 4
+	RV_OP_STOREREG t1, __z_arch_esf_t_mepc_OFFSET(sp)
+
+#ifdef CONFIG_USERSPACE
+	li t0, RISCV_IRQ_USER_ECALL
+	beq a0, t0, is_user_syscall
+#endif
+
+	/* IRQ offload is handled by is_interrupt */
+	li t0, RISCV_IRQ_OFFLOAD
+	beq a0, t0, is_interrupt
+
+	/* Both forced syscall and context switches are handled by
+	 * handle_kernel_syscall.
+	 */
+	j handle_kernel_syscall
+
+handle_exception:
 	/*
 	 * Call _Fault to handle exception.
 	 * Stack pointer is pointing to a z_arch_esf_t structure, pass it
@@ -432,11 +535,12 @@ user_fault:
 	la ra, no_reschedule_user_fault
 
 	/* Switch to privilege stack */
-	la t0, _kernel
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
 	RV_OP_LOADREG t0, _thread_offset_to_priv_stack_start(t1)
 	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Update user SP */
-	addi sp, t0, CONFIG_PRIVILEGED_STACK_SIZE
+	li t2, CONFIG_PRIVILEGED_STACK_SIZE
+	add sp, t0, t2
 	tail _Fault
 
 supervisor_fault:
@@ -445,41 +549,7 @@ supervisor_fault:
 	la ra, no_reschedule
 	tail _Fault
 
-is_kernel_syscall:
-#ifdef CONFIG_USERSPACE
-	/* Check if it is a return from user syscall */
-	csrr t0, mepc
-	la t1, z_riscv_do_syscall_start
-	bltu t0, t1, not_user_syscall
-	la t1, z_riscv_do_syscall_end
-	bleu t0, t1, return_from_syscall
-not_user_syscall:
-#endif /* CONFIG_USERSPACE */
-	/*
-	 * A syscall is the result of an ecall instruction, in which case the
-	 * MEPC will contain the address of the ecall instruction.
-	 * Increment saved MEPC by 4 to prevent triggering the same ecall
-	 * again upon exiting the ISR.
-	 *
-	 * It's safe to always increment by 4, even with compressed
-	 * instructions, because the ecall instruction is always 4 bytes.
-	 */
-	RV_OP_LOADREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
-	addi t0, t0, 4
-	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
-
-#ifdef CONFIG_IRQ_OFFLOAD
-	/*
-	 * Determine if the system call is the result of an IRQ offloading.
-	 * Done by checking if _offload_routine is not pointing to NULL.
-	 * If NULL, jump to reschedule to perform a context-switch, otherwise,
-	 * jump to is_interrupt to handle the IRQ offload.
-	 */
-	la t0, _offload_routine
-	RV_OP_LOADREG t1, 0x00(t0)
-	bnez t1, is_interrupt
-#endif /* CONFIG_IRQ_OFFLOAD */
-
+handle_kernel_syscall:
 #ifdef CONFIG_PMP_STACK_GUARD
 	li t0, MSTATUS_MPRV
 	csrs mstatus, t0
@@ -488,6 +558,7 @@ not_user_syscall:
 	csrrw sp, mscratch, sp
 	csrr t0, mscratch
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
+
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	RV_OP_LOADREG t1, __z_arch_esf_t_fp_state_OFFSET(t0)
 	beqz t1, skip_fp_move_kernel_syscall
@@ -504,16 +575,16 @@ skip_fp_move_kernel_syscall:
 #ifdef CONFIG_USERSPACE
 	/*
 	 * Check for forced syscall,
-	 * otherwise go to reschedule to handle context-switch
+	 * otherwise go to riscv_switch to handle context-switch
 	 */
 	li t0, FORCE_SYSCALL_ID
-	bne a7, t0, reschedule
+	bne a7, t0, riscv_switch
 
 	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
 
 	/* Check for user_mode_enter function */
 	la t0, arch_user_mode_enter
-	bne t0, a0, reschedule
+	bne t0, a0, riscv_switch
 
 	RV_OP_LOADREG a0, __z_arch_esf_t_a1_OFFSET(sp)
 	RV_OP_LOADREG a1, __z_arch_esf_t_a2_OFFSET(sp)
@@ -528,32 +599,22 @@ skip_fp_move_kernel_syscall:
 	j z_riscv_user_mode_enter_syscall
 #endif /* CONFIG_USERSPACE */
 	/*
-	 * Go to reschedule to handle context-switch
+	 * Handle context-switch.
 	 */
-	j reschedule
+
+riscv_switch:
+	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
+	RV_OP_LOADREG a1, __z_arch_esf_t_a1_OFFSET(sp)
+	addi t1, a1, -___thread_t_switch_handle_OFFSET
+	j do_switch
 
 #ifdef CONFIG_USERSPACE
 is_user_syscall:
-
 #ifdef CONFIG_PMP_STACK_GUARD
-	la t0, _kernel
-	RV_OP_LOADREG a0, _kernel_offset_to_current(t0)
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG a0, ___cpu_t_current_OFFSET(t0)
 	jal ra, z_riscv_configure_stack_guard
-#endif /* CONFIG_PMP_STACK_GUARD */
 
-	/*
-	 * A syscall is the result of an ecall instruction, in which case the
-	 * MEPC will contain the address of the ecall instruction.
-	 * Increment saved MEPC by 4 to prevent triggering the same ecall
-	 * again upon exiting the ISR.
-	 *
-	 * It is safe to always increment by 4, even with compressed
-	 * instructions, because the ecall instruction is always 4 bytes.
-	 */
-	RV_OP_LOADREG t1, __z_arch_esf_t_mepc_OFFSET(sp)
-	addi t1, t1, 4
-	RV_OP_STOREREG t1, __z_arch_esf_t_mepc_OFFSET(sp)
-#ifdef CONFIG_PMP_STACK_GUARD
 	/*
 	 * Copy ESF to user stack in case of rescheduling
 	 * directly from kernel ECALL (nested ECALL)
@@ -581,11 +642,12 @@ skip_fp_copy_user_syscall:
 	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* Switch to privilege stack */
-	la t0, _kernel
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
 	RV_OP_LOADREG t0, _thread_offset_to_priv_stack_start(t1)
 	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Update user SP */
-	addi sp, t0, CONFIG_PRIVILEGED_STACK_SIZE
+	li t2, CONFIG_PRIVILEGED_STACK_SIZE
+	add sp, t0, t2
 
 	/* validate syscall limit */
 	li t0, K_SYSCALL_LIMIT
@@ -615,8 +677,8 @@ return_from_syscall:
 
 no_reschedule_user_fault:
 	/* Restore user stack */
-	la t0, _kernel
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
 	RV_OP_LOADREG sp, _thread_offset_to_user_sp(t1)
 
 	/* Update a0 (return value) to user stack. */
@@ -667,8 +729,8 @@ is_interrupt:
 	addi t0, sp, 0
 
 	/* Switch to interrupt stack */
-	la t2, _kernel
-	RV_OP_LOADREG sp, _kernel_offset_to_irq_stack(t2)
+	GET_CPU(t2, t3)
+	RV_OP_LOADREG sp, ___cpu_t_irq_stack_OFFSET(t2)
 
 	/*
 	 * Save thread stack pointer on interrupt stack
@@ -677,21 +739,21 @@ is_interrupt:
 	addi sp, sp, -16
 	RV_OP_STOREREG t0, 0x00(sp)
 #else
-	la t2, _kernel
+	GET_CPU(t2, t3)
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
 
 on_irq_stack:
-	/* Increment _kernel.cpus[0].nested variable */
-	lw t3, _kernel_offset_to_nested(t2)
+	/* Increment _current_cpu.nested variable */
+	lw t3, ___cpu_t_nested_OFFSET(t2)
 	addi t3, t3, 1
-	sw t3, _kernel_offset_to_nested(t2)
+	sw t3, ___cpu_t_nested_OFFSET(t2)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
-	 * If we are here due to a system call, t1 register should != 0.
-	 * In this case, perform IRQ offloading, otherwise jump to call_irq
+	 * Are we here to perform IRQ offloading?
 	 */
-	beqz t1, call_irq
+	li t0, RISCV_IRQ_OFFLOAD
+	bne a0, t0, call_irq
 
 	/*
 	 * Call z_irq_do_offload to handle IRQ offloading.
@@ -736,13 +798,13 @@ call_irq:
 	jalr ra, t1, 0
 
 on_thread_stack:
-	/* Get reference to _kernel */
-	la t1, _kernel
+	/* Get reference to _current_cpu */
+	GET_CPU(t1, t2)
 
-	/* Decrement _kernel.cpus[0].nested variable */
-	lw t2, _kernel_offset_to_nested(t1)
+	/* Decrement _current_cpu.nested variable */
+	lw t2, ___cpu_t_nested_OFFSET(t1)
 	addi t2, t2, -1
-	sw t2, _kernel_offset_to_nested(t1)
+	sw t2, ___cpu_t_nested_OFFSET(t1)
 
 #if !defined(CONFIG_USERSPACE) && !defined(CONFIG_PMP_STACK_GUARD)
 	/* Restore thread stack pointer */
@@ -752,31 +814,51 @@ on_thread_stack:
 
 #ifdef CONFIG_STACK_SENTINEL
 	call z_check_stack_sentinel
-	la t1, _kernel
 #endif
 
-#ifdef CONFIG_PREEMPT_ENABLED
-	/*
-	 * Check if we need to perform a reschedule
-	 */
+reschedule:
+	/* Get next thread to run and switch to it - or not, if the same */
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
 
-	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG t2, _kernel_offset_to_current(t1)
+	addi sp, sp, -16
+	RV_OP_STOREREG t1, 0x00(sp)
 
-	/*
-	 * Check if next thread to schedule is current thread.
-	 * If yes do not perform a reschedule
+#ifdef CONFIG_SMP
+	/* Send NULL so this function doesn't mark outgoing thread
+	 * as available for pickup by another CPU. The catch: it will
+	 * also return NULL. But luckily, it will update _current.
 	 */
-	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t1)
-	beq t3, t2, no_reschedule
+	li a0, 0
+	call z_get_next_switch_handle
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG a0, ___cpu_t_current_OFFSET(t0)
 #else
-	j no_reschedule
-#endif /* CONFIG_PREEMPT_ENABLED */
+	mv a0, t1
+	call z_get_next_switch_handle
+#endif
+
+	RV_OP_LOADREG t1, 0x00(sp)
+	addi sp, sp, 16
+
+	/* From now on, t1 is the outgoing thread */
+	beq a0, t1, no_reschedule
+	mv a1, x0
 
 #ifdef CONFIG_PMP_STACK_GUARD
-	RV_OP_LOADREG a0, _kernel_offset_to_current(t1)
+	addi sp, sp, -32
+	RV_OP_STOREREG a0, 0x00(sp)
+	RV_OP_STOREREG a1, 0x08(sp)
+	RV_OP_STOREREG t1, 0x10(sp)
+
+	GET_CPU(t2, t3)
+	mv a0, t1
 	jal ra, z_riscv_configure_stack_guard
 
+	RV_OP_LOADREG a0, 0x00(sp)
+	RV_OP_LOADREG a1, 0x08(sp)
+	RV_OP_LOADREG t1, 0x10(sp)
+	addi sp, sp, 32
 	/*
 	 * Move to saved SP and move ESF to retrieve it
 	 * after reschedule.
@@ -785,13 +867,13 @@ on_thread_stack:
 	csrr t0, mscratch
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	RV_OP_LOADREG t1, __z_arch_esf_t_fp_state_OFFSET(t0)
-	beqz t1, skip_fp_move_irq
-	COPY_ESF_FP(sp, t0, t1)
+	RV_OP_LOADREG t2, __z_arch_esf_t_fp_state_OFFSET(t0)
+	beqz t2, skip_fp_move_irq
+	COPY_ESF_FP(sp, t0, t2)
 skip_fp_move_irq:
-	COPY_ESF_FP_STATE(sp, t0, t1)
+	COPY_ESF_FP_STATE(sp, t0, t2)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
-	COPY_ESF(sp, t0, t1)
+	COPY_ESF(sp, t0, t2)
 	addi t0, t0, __z_arch_esf_t_SIZEOF
 	csrw mscratch, t0
 #endif /* CONFIG_PMP_STACK_GUARD */
@@ -799,48 +881,33 @@ skip_fp_move_irq:
 #ifdef CONFIG_USERSPACE
 	/* Check if we are in user thread */
 	WAS_NOT_USER(t3, t4)
-	bnez t3, reschedule
+	bnez t3, do_switch
 
 	/*
 	 * Switch to privilege stack because we want
 	 * this starting point after reschedule.
 	 */
-	RV_OP_LOADREG t3, _thread_offset_to_priv_stack_start(t2)
-	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t2) /* Save user SP */
+	RV_OP_LOADREG t2, _thread_offset_to_priv_stack_start(t1)
+	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Save user SP */
 	mv t0, sp
-	addi sp, t3, CONFIG_PRIVILEGED_STACK_SIZE
+	li t3, CONFIG_PRIVILEGED_STACK_SIZE
+	add sp, t2, t3
 
 	/*
 	 * Copy Saved ESF to priv stack, that will allow us to know during
 	 * rescheduling if the thread was working on user mode.
 	 */
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
-	COPY_ESF(sp, t0, t1)
+	COPY_ESF(sp, t0, t2)
 
 #endif /* CONFIG_USERSPACE */
 
-reschedule:
-	/*
-	 * Check if the current thread is the same as the thread on the ready Q. If
-	 * so, do not reschedule.
-	 * Note:
-	 *   Sometimes this code is execute back-to-back before the target thread
-	 *   has a chance to run. If this happens, the current thread and the
-	 *   target thread will be the same.
+do_switch:
+	/* Expectations:
+	 * a0: handle for next thread
+	 * a1: address of handle for outgoing thread or 0, if not handling arch_switch
+	 * t1: k_thread for outgoing thread
 	 */
-	la t0, _kernel
-	RV_OP_LOADREG t2, _kernel_offset_to_current(t0)
-	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t0)
-	beq t2, t3, no_reschedule_resched
-
-#if CONFIG_INSTRUMENT_THREAD_SWITCHING
-	call z_thread_mark_switched_out
-#endif
-	/* Get reference to _kernel */
-	la t0, _kernel
-
-	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
 
 #ifdef CONFIG_USERSPACE
 	/*
@@ -877,25 +944,34 @@ skip_callee_saved_reg:
 	li t3, CONFIG_ISR_STACK_SIZE
 	add t2, t2, t3
 	csrw mscratch, t2
-
 #endif /* CONFIG_PMP_STACK_GUARD */
 
-	/*
-	 * Save stack pointer of current thread and set the default return value
-	 * of z_swap to _k_neg_eagain for the thread.
-	 */
+	/* Save stack pointer of current thread. */
 	RV_OP_STOREREG sp, _thread_offset_to_sp(t1)
-	la t2, _k_neg_eagain
-	lw t3, 0x00(t2)
-	sw t3, _thread_offset_to_swap_return_value(t1)
-
-	/* Get next thread to schedule. */
-	RV_OP_LOADREG t1, _kernel_offset_to_ready_q_cache(t0)
 
 	/*
-	 * Set _kernel.current to new thread loaded in t1
+	 * Current thread is saved. If a1 != 0, we're coming from riscv_switch
+	 * and need to update switched_from, as it's a synchronization signal
+	 * that old thread is saved.
 	 */
-	RV_OP_STOREREG t1, _kernel_offset_to_current(t0)
+	beqz a1, clear_old_thread_switch_handle
+	addi t2, a1, -___thread_t_switch_handle_OFFSET
+	RV_OP_STOREREG t2, 0x00(a1)
+	j load_new_thread
+
+clear_old_thread_switch_handle:
+#ifdef CONFIG_SMP
+	/* Signal that old thread can be picked up by any CPU to be run again */
+	RV_OP_STOREREG t1, ___thread_t_switch_handle_OFFSET(t1)
+#endif
+
+load_new_thread:
+	/*
+	 * At this point, a0 contains the new thread. Set
+	 * t0 to be current CPU and t1 to be the new thread.
+	 */
+	GET_CPU(t0, t1)
+	mv t1, a0
 
 	/* Switch to new thread stack */
 	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)
@@ -937,8 +1013,8 @@ skip_load_fp_callee_saved:
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_USERSPACE
-	/* t0 still reference to _kernel */
-	/* t1 still pointer to _kernel.current */
+	/* t0 still reference to _current_cpu */
+	/* t1 still pointer to _current_cpu.current */
 
 	/* Check the thread mode */
 	WAS_NOT_USER(t2, t4)
@@ -1018,8 +1094,8 @@ no_reschedule:
 	li t0, MSTATUS_MPRV
 	csrc mstatus, t0
 
-	la t0, _kernel
-	RV_OP_LOADREG a0, _kernel_offset_to_current(t0)
+	GET_CPU(t0, t1)
+	RV_OP_LOADREG a0, ___cpu_t_current_OFFSET(t0)
 	jal ra, z_riscv_configure_user_allowed_stack
 
 	/* Set user mode variable */

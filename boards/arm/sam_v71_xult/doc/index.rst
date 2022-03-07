@@ -73,6 +73,8 @@ features:
 +-----------+------------+-------------------------------------+
 | CAN-FD    | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 

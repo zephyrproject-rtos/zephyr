@@ -44,6 +44,7 @@
 #include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_conn.h"
 #include "ll_sw/lll_conn_iso.h"
+#include "ll_sw/lll_iso_tx.h"
 
 #include "ll_sw/isoal.h"
 
@@ -206,6 +207,34 @@ static uint64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
 static struct net_buf *cmd_complete_status(uint8_t status);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_HCI_RAW)
+static uint8_t ll_adv_cmds;
+
+__weak int ll_adv_cmds_set(uint8_t adv_cmds)
+{
+	if (!ll_adv_cmds) {
+		ll_adv_cmds = adv_cmds;
+	}
+
+	if (ll_adv_cmds != adv_cmds) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+__weak int ll_adv_cmds_is_ext(void)
+{
+	return ll_adv_cmds == LL_ADV_CMDS_EXT;
+}
+
+#else /* !CONFIG_BT_HCI_RAW */
+__weak int ll_adv_cmds_is_ext(void)
+{
+	return 1;
+}
+#endif /* !CONFIG_BT_HCI_RAW */
+
 static int adv_cmds_legacy_check(struct net_buf **cc_evt)
 {
 	int err;
@@ -4887,8 +4916,9 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 	return evt;
 }
 
-#if defined(CONFIG_BT_CONN)
-static void data_buf_overflow(struct net_buf **buf)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO) || \
+	defined(CONFIG_BT_CTLR_CONN_ISO)
+static void data_buf_overflow(struct net_buf **buf, uint8_t link_type)
 {
 	struct bt_hci_evt_data_buf_overflow *ep;
 
@@ -4900,9 +4930,13 @@ static void data_buf_overflow(struct net_buf **buf)
 	hci_evt_create(*buf, BT_HCI_EVT_DATA_BUF_OVERFLOW, sizeof(*ep));
 	ep = net_buf_add(*buf, sizeof(*ep));
 
-	ep->link_type = BT_OVERFLOW_LINK_ACL;
+	ep->link_type = link_type;
 }
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_SYNC_ISO ||
+	* CONFIG_BT_CTLR_CONN_ISO
+	*/
 
+#if defined(CONFIG_BT_CONN)
 int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 {
 	struct node_tx *node_tx;
@@ -4940,7 +4974,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	node_tx = ll_tx_mem_acquire();
 	if (!node_tx) {
 		BT_ERR("Tx Buffer Overflow");
-		data_buf_overflow(evt);
+		data_buf_overflow(evt, BT_OVERFLOW_LINK_ACL);
 		return -ENOBUFS;
 	}
 
@@ -4976,6 +5010,144 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	return 0;
 }
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_iso_data_hdr *iso_data_hdr;
+	struct bt_hci_iso_hdr *iso_hdr;
+	uint16_t stream_handle;
+	struct node_tx_iso *tx;
+	uint16_t handle;
+	uint8_t flags;
+	uint16_t slen;
+	uint16_t len;
+
+	*evt = NULL;
+
+	if (buf->len < sizeof(*iso_hdr)) {
+		BT_ERR("No HCI ISO header");
+		return -EINVAL;
+	}
+
+	iso_hdr = net_buf_pull_mem(buf, sizeof(*iso_hdr));
+	handle = sys_le16_to_cpu(iso_hdr->handle);
+	len = sys_le16_to_cpu(iso_hdr->len);
+
+	if (buf->len < len) {
+		BT_ERR("Invalid HCI ISO packet length");
+		return -EINVAL;
+	}
+
+	/* assigning flags first because handle will be overwritten */
+	flags = bt_iso_flags(handle);
+	if (bt_iso_flags_ts(flags)) {
+		struct bt_hci_iso_ts_data_hdr *iso_ts_data_hdr;
+
+		iso_ts_data_hdr = net_buf_pull_mem(buf,
+						   sizeof(*iso_ts_data_hdr));
+	}
+
+	iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
+	slen = iso_data_hdr->slen;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	/* Check invalid BIS PDU length */
+	if (slen > LL_BIS_OCTETS_TX_MAX) {
+		BT_ERR("Invalid HCI ISO Data length");
+		return -EINVAL;
+	}
+
+	/* Get BIS stream handle and stream context */
+	handle = bt_iso_handle(handle);
+	if (handle < BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) {
+		return -EINVAL;
+	}
+	stream_handle = handle - BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+
+	struct lll_adv_iso_stream *stream;
+
+	stream = ull_adv_iso_stream_get(stream_handle);
+	if (!stream) {
+		BT_ERR("Invalid BIS stream");
+		return -EINVAL;
+	}
+
+	struct ll_adv_iso_set *adv_iso;
+
+	adv_iso = ull_adv_iso_by_stream_get(stream_handle);
+	if (!adv_iso) {
+		BT_ERR("No BIG associated with stream handle");
+		return -EINVAL;
+	}
+
+	/* Get free node tx */
+	tx = ll_iso_tx_mem_acquire();
+	if (!tx) {
+		BT_ERR("ISO Tx Buffer Overflow");
+		data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+		return -ENOBUFS;
+	}
+
+	struct pdu_bis *pdu = (void *)tx->pdu;
+
+	/* FIXME: Update to use correct LLID for BIS and CIS */
+	switch (bt_iso_flags_pb(flags)) {
+	case BT_ISO_SINGLE:
+		pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
+		break;
+	default:
+		ll_iso_tx_mem_release(tx);
+		return -EINVAL;
+	}
+
+	pdu->len = slen;
+	memcpy(pdu->payload, buf->data, slen);
+
+	struct lll_adv_iso *lll_iso;
+
+	lll_iso = &adv_iso->lll;
+
+	uint64_t pkt_seq_num;
+
+	pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
+	if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
+	    BIT64_MASK(38)) {
+		stream->pkt_seq_num = pkt_seq_num;
+	} else {
+		pkt_seq_num = stream->pkt_seq_num;
+	}
+
+	tx->payload_count = pkt_seq_num * lll_iso->bn;
+
+	stream->pkt_seq_num++;
+
+#else /* CONFIG_BT_CTLR_CONN_ISO */
+	/* FIXME: Add Connected ISO implementation */
+	stream_handle = 0U;
+
+	/* NOTE: Keeping the code below to pass compilation until Connected ISO
+	 *       integration.
+	 */
+	/* Get free node tx */
+	tx = ll_iso_tx_mem_acquire();
+	if (!tx) {
+		BT_ERR("ISO Tx Buffer Overflow");
+		data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+		return -ENOBUFS;
+	}
+
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+	if (ll_iso_tx_mem_enqueue(stream_handle, tx)) {
+		BT_ERR("Invalid ISO Tx Enqueue");
+		ll_iso_tx_mem_release(tx);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -7625,7 +7797,8 @@ void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 	}
 }
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO) || \
+	defined(CONFIG_BT_CTLR_CONN_ISO)
 void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num)
 {
 	struct bt_hci_evt_num_completed_packets *ep;
@@ -7644,7 +7817,7 @@ void hci_num_cmplt_encode(struct net_buf *buf, uint16_t handle, uint8_t num)
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count = sys_cpu_to_le16(num);
 }
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 {

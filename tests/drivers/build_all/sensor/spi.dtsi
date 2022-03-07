@@ -137,9 +137,7 @@ test_spi_mcp2515: mcp2515@12 {
 	int-gpios = <&test_gpio 0 0>;
 	bus-speed = <0>;
 	sjw = <0>;
-	prop-seg = <0>;
-	phase-seg1 = <0>;
-	phase-seg2 = <0>;
+	sample-point = <875>;
 };
 
 test_spi_mcr20a: mcr20a@13 {

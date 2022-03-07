@@ -657,29 +657,6 @@ static int dsa_ksz8xxx_gpio_reset(void)
 }
 #endif
 
-static int dsa_ksz8xxx_configure_bus(struct ksz8xxx_data *pdev)
-{
-#if defined(CONFIG_DSA_SPI)
-	/* SPI config */
-	pdev->spi = (struct spi_dt_spec) SPI_DT_SPEC_INST_GET(0,
-#if DT_INST_PROP(0, spi_cpol)
-		SPI_MODE_CPOL |
-#endif
-#if DT_INST_PROP(0, spi_cpha)
-		SPI_MODE_CPHA |
-#endif
-		SPI_WORD_SET(8),
-		0U);
-
-	if (!spi_is_ready(&pdev->spi)) {
-		LOG_ERR("SPI bus %s is not ready",
-			pdev->spi.bus->name);
-		return -ENODEV;
-	}
-#endif
-	return 0;
-}
-
 /* Low level initialization code for DSA PHY */
 int dsa_hw_init(struct ksz8xxx_data *pdev)
 {
@@ -697,11 +674,13 @@ int dsa_hw_init(struct ksz8xxx_data *pdev)
 	k_busy_wait(KSZ8XXX_HARD_RESET_WAIT);
 #endif
 
-	/* Configure communication bus */
-	rc = dsa_ksz8xxx_configure_bus(pdev);
-	if (rc < 0) {
-		return rc;
+#if defined(CONFIG_DSA_SPI)
+	if (!spi_is_ready(&pdev->spi)) {
+		LOG_ERR("SPI bus %s is not ready",
+			pdev->spi.bus->name);
+		return -ENODEV;
 	}
+#endif
 
 	/* Probe attached PHY */
 	rc = dsa_ksz8xxx_probe(pdev);
@@ -1109,10 +1088,22 @@ static struct dsa_api dsa_api_f = {
 #define NET_SLAVE_DEVICE_4_INIT_INSTANCE(slave)				\
 		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 4)
 
+#if defined(CONFIG_DSA_SPI)
+#define DSA_SPI_BUS_CONFIGURATION(n)					\
+	.spi = SPI_DT_SPEC_INST_GET(n,					\
+			COND_CODE_1(DT_INST_PROP(n, spi_cpol), (SPI_MODE_CPOL), ()) | \
+			COND_CODE_1(DT_INST_PROP(n, spi_cpha), (SPI_MODE_CPHA), ()) | \
+			SPI_WORD_SET(8),				\
+			0U)
+#else
+#define DSA_SPI_BUS_CONFIGURATION(n)
+#endif
+
 #define DSA_DEVICE(n)							\
 	static struct ksz8xxx_data dsa_device_prv_data_##n = {		\
 		.iface_init_count = 0,					\
 		.is_init = false,					\
+		DSA_SPI_BUS_CONFIGURATION(n),				\
 	};								\
 	static struct dsa_context dsa_context_##n = {			\
 		.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),	\

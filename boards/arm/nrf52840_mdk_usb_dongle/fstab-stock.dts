@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Flash partition table compatible with Nordic nRF5 bootloader */
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* MCUboot placed after Nordic MBR.
+		 * The size of this partition ensures that MCUBoot
+		 * can be built with CDC ACM support and w/o optimizations.
+		 */
+		boot_partition: partition@1000 {
+			label = "mcuboot";
+			reg = <0x00001000 0x000f000>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00005e000>;
+		};
+		slot1_partition: partition@6e000 {
+			label = "image-1";
+			reg = <0x006e000 0x00005e000>;
+		};
+		storage_partition: partition@cc000 {
+			label = "storage";
+			reg = <0x000cc000 0x00004000>;
+		};
+		scratch_partition: partition@d0000 {
+			label = "image-scratch";
+			reg = <0x000d0000 0x00010000>;
+		};
+
+		/* Nordic nRF5 bootloader <0xe0000 0x1c000>
+		 *
+		 * In addition, the last and second last flash pages
+		 * are used by the nRF5 bootloader and MBR to store settings.
+		 */
+	};
+};

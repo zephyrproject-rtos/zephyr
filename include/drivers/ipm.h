@@ -87,12 +87,23 @@ typedef void (*ipm_register_callback_t)(const struct device *port,
  */
 typedef int (*ipm_set_enabled_t)(const struct device *ipmdev, int enable);
 
+/**
+ * @typedef ipm_complete_t
+ * @brief Callback API upon command completion
+ *
+ * See @a ipm_complete() for argument definitions.
+ */
+typedef void (*ipm_complete_t)(const struct device *ipmdev);
+
 __subsystem struct ipm_driver_api {
 	ipm_send_t send;
 	ipm_register_callback_t register_callback;
 	ipm_max_data_size_get_t max_data_size_get;
 	ipm_max_id_val_get_t max_id_val_get;
 	ipm_set_enabled_t set_enabled;
+#ifdef CONFIG_IPM_CALLBACK_ASYNC
+	ipm_complete_t complete;
+#endif
 };
 
 /**
@@ -219,6 +230,34 @@ static inline int z_impl_ipm_set_enabled(const struct device *ipmdev,
 		(const struct ipm_driver_api *)ipmdev->api;
 
 	return api->set_enabled(ipmdev, enable);
+}
+
+/**
+ * @brief Signal asynchronous command completion
+ *
+ * Some IPM backends have an ability to deliver a command
+ * asynchronously.  The callback will be invoked in interrupt context,
+ * but the message (including the provided data pointer) will stay
+ * "active" and unacknowledged until later code (presumably in thread
+ * mode) calls ipm_complete().
+ *
+ * This function is, obviously, a noop on drivers without async
+ * support.
+ *
+ * @param ipmdev Driver instance pointer.
+ */
+__syscall void ipm_complete(const struct device *ipmdev);
+
+static inline void z_impl_ipm_complete(const struct device *ipmdev)
+{
+#ifdef CONFIG_IPM_CALLBACK_ASYNC
+	const struct ipm_driver_api *api =
+		(const struct ipm_driver_api *)ipmdev->api;
+
+	if (api->complete != NULL) {
+		api->complete(ipmdev);
+	}
+#endif
 }
 
 #ifdef __cplusplus

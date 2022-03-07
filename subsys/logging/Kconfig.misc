@@ -38,6 +38,7 @@ config LOG2_ALWAYS_RUNTIME
 	bool
 	default y if NO_OPTIMIZATIONS
 	default y if LOG_MODE_IMMEDIATE
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xcc"
 	help
 	  If enabled, runtime method is always used for message creation. Static
 	  creation relies on compiler being able to optimize and remove code

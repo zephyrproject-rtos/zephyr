@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <microchip/mec172xnsz.dtsi>
+#include <microchip/mec172x/mec172xnsz-pinctrl.dtsi>
 
 / {
 	model = "Microchip MEC172XEVB_ASSY6906 evaluation board";
@@ -76,14 +77,24 @@
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart1_tx_gpio170 &uart1_rx_gpio171>;
+	pinctrl-names = "default";
 };
 
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&adc00_gpio200 &adc03_gpio203
+		     &adc04_gpio204 &adc05_gpio205>;
+	pinctrl-names = "default";
 };
 
 &espi0 {
 	status = "okay";
+	pinctrl-0 = < &espi_reset_n_gpio061 &espi_cs_n_gpio066
+		      &espi_alert_n_gpio063 &espi_clk_gpio065
+		      &espi_io0_gpio070 &espi_io1_gpio071
+		      &espi_io2_gpio072 &espi_io3_gpio073 >;
+	pinctrl-names = "default";
 };
 
 /* enable various eSPI child devices (host facing) */
@@ -107,10 +118,14 @@
 	status = "okay";
 };
 
+/* I2C */
 &i2c_smb_0 {
 	status = "okay";
 	label = "I2C0";
 	port_sel = <0>;
+
+	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
+	pinctrl-names = "default";
 
 	pca9555@26 {
 		compatible = "nxp,pca95xx";
@@ -130,16 +145,50 @@
 	};
 };
 
+&i2c00_scl_gpio004 {
+	drive-open-drain;
+	output-high;
+};
+
+&i2c00_sda_gpio003 {
+	drive-open-drain;
+	output-high;
+};
+
 &i2c_smb_1 {
 	status = "okay";
 	label = "I2C1";
 	port_sel = <1>;
+	pinctrl-0 = <&i2c01_scl_gpio131 &i2c01_sda_gpio130>;
+	pinctrl-names = "default";
+};
+
+&i2c01_scl_gpio131 {
+	drive-open-drain;
+	output-high;
+};
+
+&i2c01_sda_gpio130 {
+	drive-open-drain;
+	output-high;
 };
 
 &i2c_smb_2 {
 	status = "okay";
 	label = "I2C7";
 	port_sel = <7>;
+	pinctrl-0 = <&i2c07_scl_gpio013 &i2c07_sda_gpio012>;
+	pinctrl-names = "default";
+};
+
+&i2c07_scl_gpio013 {
+	drive-open-drain;
+	output-high;
+};
+
+&i2c07_sda_gpio012 {
+	drive-open-drain;
+	output-high;
 };
 
 &spi0 {
@@ -147,8 +196,41 @@
 	clock-frequency = <4000000>;
 	lines = <4>;
 	chip-select = <0>;
+	port-sel = <0>; /* Shared SPI */
+
+	pinctrl-0 = < &shd_cs0_n_gpio055
+		      &shd_clk_gpio056
+		      &shd_io0_gpio223
+		      &shd_io1_gpio224
+		      &shd_io2_gpio227
+		      &shd_io3_gpio016 >;
+	pinctrl-names = "default";
 };
 
 &kscan0 {
 	status = "okay";
+
+	pinctrl-0 = < &ksi0_gpio017
+		      &ksi1_gpio020
+		      &ksi2_gpio021
+		      &ksi3_gpio026
+		      &ksi4_gpio027
+		      &ksi5_gpio030
+		      &ksi6_gpio031
+		      &ksi7_gpio032
+		      &kso00_gpio040
+		      &kso01_gpio045
+		      &kso02_gpio046
+		      &kso03_gpio047
+		      &kso04_gpio107
+		      &kso05_gpio112
+		      &kso06_gpio113
+		      &kso07_gpio120
+		      &kso08_gpio121
+		      &kso09_gpio122
+		      &kso10_gpio123
+		      &kso11_gpio124
+		      &kso12_gpio125
+		      &kso13_gpio126 >;
+	pinctrl-names = "default";
 };

@@ -44,10 +44,10 @@
 	};
 
 	sram1: memory@40140000 {
-		compatible = "mmio-sram";
+		compatible =  "zephyr,memory-region", "mmio-sram";
 		reg = <0x40140000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM1";
 	};
-
 };
 
 &systick {
@@ -116,6 +116,32 @@
 		port = <2>;
 	};
 
+	gpio3: gpio@3 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		label = "GPIO_3";
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <3>;
+	};
+
+	gpio4: gpio@4 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		label = "GPIO_4";
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <4>;
+	};
+
+	gpio7: gpio@7 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		label = "GPIO_7";
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <7>;
+	};
 
 	flexcomm0: flexcomm@106000 {
 		compatible = "nxp,lpc-flexcomm";

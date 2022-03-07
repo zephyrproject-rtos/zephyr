@@ -35,6 +35,18 @@
 		pinctrl_adc7: adc7 {
 			pinctrls = <&pinmuxi 7 IT8XXX2_PINMUX_FUNC_1>;
 		};
+		pinctrl_adc13: adc13 {
+			pinctrls = <&pinmuxl 0 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc14: adc14 {
+			pinctrls = <&pinmuxl 1 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc15: adc15 {
+			pinctrls = <&pinmuxl 2 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc16: adc16 {
+			pinctrls = <&pinmuxl 3 IT8XXX2_PINMUX_FUNC_1>;
+		};
 
 		/* PWM alternate function */
 		pinctrl_pwm0: pwm0 {

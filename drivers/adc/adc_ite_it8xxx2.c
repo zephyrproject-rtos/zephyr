@@ -28,6 +28,9 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #define IT8XXX2_ADC_SAMPLE_TIME_US 200
 /* Wait next clock rising (Clock source 32.768K) */
 #define IT8XXX2_WAIT_NEXT_CLOCK_TIME_US 31
+/* ADC channels offset */
+#define ADC_CHANNEL_SHIFT 5
+#define ADC_CHANNEL_OFFSET(ch) ((ch)-CHIP_ADC_CH13-ADC_CHANNEL_SHIFT)
 
 /* List of ADC channels. */
 enum chip_adc_channel {
@@ -39,6 +42,10 @@ enum chip_adc_channel {
 	CHIP_ADC_CH5,
 	CHIP_ADC_CH6,
 	CHIP_ADC_CH7,
+	CHIP_ADC_CH13,
+	CHIP_ADC_CH14,
+	CHIP_ADC_CH15,
+	CHIP_ADC_CH16,
 	CHIP_ADC_COUNT,
 };
 
@@ -76,15 +83,23 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_it8xxx2_cfg *config = dev->config;
+	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
 		LOG_ERR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 
-	if (channel_cfg->channel_id >= CHIP_ADC_COUNT) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
+	/* Support channels 0~7 and 13~16 */
+	if (!((channel_id >= 0 && channel_id <= 7) ||
+	    (channel_id >= 13 && channel_id <= 16))) {
+		LOG_ERR("Channel %d is not valid", channel_id);
 		return -EINVAL;
+	}
+
+	/* Channels 13~16 should be shifted by 5 */
+	if (channel_id > CHIP_ADC_CH7) {
+		channel_id -= ADC_CHANNEL_SHIFT;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
@@ -98,22 +113,33 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 	}
 
 	/* The channel is set to ADC alternate function */
-	pinmux_pin_set(config[channel_cfg->channel_id].pinctrls,
-		config[channel_cfg->channel_id].pin,
-		config[channel_cfg->channel_id].alt_fun);
+	pinmux_pin_set(config[channel_id].pinctrls,
+		       config[channel_id].pin,
+		       config[channel_id].alt_fun);
 	LOG_DBG("Channel setup succeeded!");
 	return 0;
 }
 
-static void adc_disable_measurement(void)
+static void adc_disable_measurement(uint32_t ch)
 {
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
 
-	/*
-	 * Disable measurement.
-	 * bit(4:0) = 0x1f : channel disable
-	 */
-	adc_regs->VCH0CTL = IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_CHANNEL_DISABLED;
+	if (ch <= CHIP_ADC_CH7) {
+		/*
+		 * Disable measurement.
+		 * bit(4:0) = 0x1f : channel disable
+		 */
+		adc_regs->VCH0CTL = IT8XXX2_ADC_DATVAL |
+			IT8XXX2_ADC_CHANNEL_DISABLED;
+	} else {
+		/*
+		 * Channels 13~16 controller setting.
+		 * bit7 = 1: End of conversion. New data is available in
+		 *           VCHDATL/VCHDATM.
+		 */
+		adc_regs->adc_vchs_ctrl[ADC_CHANNEL_OFFSET(ch)].VCHCTL =
+			IT8XXX2_ADC_DATVAL;
+	}
 
 	/* ADC module disable */
 	adc_regs->ADCCFG &= ~IT8XXX2_ADC_ADCEN;
@@ -122,26 +148,43 @@ static void adc_disable_measurement(void)
 	irq_disable(DT_INST_IRQN(0));
 }
 
+static int adc_data_valid(const struct device *dev)
+{
+	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+	struct adc_it8xxx2_data *data = dev->data;
+
+	return (data->ch <= CHIP_ADC_CH7) ?
+		(adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL) :
+		(adc_regs->ADCDVSTS2 & BIT(ADC_CHANNEL_OFFSET(data->ch)));
+}
+
 /* Get result for each ADC selected channel. */
 static void adc_it8xxx2_get_sample(const struct device *dev)
 {
 	struct adc_it8xxx2_data *data = dev->data;
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
 
-	if (adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL) {
-		/* Read adc raw data of msb and lsb */
-		*data->buffer++ = adc_regs->VCH0DATM << 8 | adc_regs->VCH0DATL;
+	if (adc_data_valid(dev)) {
+		if (data->ch <= CHIP_ADC_CH7) {
+			/* Read adc raw data of msb and lsb */
+			*data->buffer++ = adc_regs->VCH0DATM << 8 |
+				adc_regs->VCH0DATL;
+		} else {
+			/* Read adc channels 13~16 raw data of msb and lsb */
+			*data->buffer++ =
+				adc_regs->adc_vchs_ctrl[ADC_CHANNEL_OFFSET(data->ch)].VCHDATM << 8 |
+				adc_regs->adc_vchs_ctrl[ADC_CHANNEL_OFFSET(data->ch)].VCHDATL;
+		}
 	} else {
 		LOG_WRN("ADC failed to read (regs=%x, ch=%d)",
 			adc_regs->ADCDVSTS, data->ch);
 	}
 
-	adc_disable_measurement();
+	adc_disable_measurement(data->ch);
 }
 
 static void adc_poll_valid_data(void)
 {
-	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
 	const struct device *dev = DEVICE_DT_INST_GET(0);
 	int valid = 0;
 
@@ -154,7 +197,7 @@ static void adc_poll_valid_data(void)
 		/* Wait next clock time (1/32.768K~=30.5us) */
 		k_busy_wait(IT8XXX2_WAIT_NEXT_CLOCK_TIME_US);
 
-		if (adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL) {
+		if (adc_data_valid(dev)) {
 			valid = 1;
 			break;
 		}
@@ -174,8 +217,14 @@ static void adc_enable_measurement(uint32_t ch)
 	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct adc_it8xxx2_data *data = dev->data;
 
-	/* Select and enable a voltage channel input for measurement */
-	adc_regs->VCH0CTL = (IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_INTDVEN) + ch;
+	if (ch <= CHIP_ADC_CH7) {
+		/* Select and enable a voltage channel input for measurement */
+		adc_regs->VCH0CTL = (IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_INTDVEN) + ch;
+	} else {
+		/* Channels 13~16 controller setting */
+		adc_regs->adc_vchs_ctrl[ADC_CHANNEL_OFFSET(ch)].VCHCTL =
+			IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_INTDVEN | IT8XXX2_ADC_VCHEN;
+	}
 
 	/* ADC module enable */
 	adc_regs->ADCCFG |= IT8XXX2_ADC_ADCEN;
@@ -229,6 +278,11 @@ static int adc_it8xxx2_start_read(const struct device *dev,
 {
 	struct adc_it8xxx2_data *data = dev->data;
 	uint32_t channel_mask = sequence->channels;
+
+	/* Channels 13~16 should be shifted to the right by 5 */
+	if (channel_mask > BIT(CHIP_ADC_CH7)) {
+		channel_mask >>= ADC_CHANNEL_SHIFT;
+	}
 
 	if (!channel_mask || channel_mask & ~BIT_MASK(CHIP_ADC_COUNT)) {
 		LOG_ERR("Invalid selection of channels");

@@ -62,6 +62,7 @@ static void rng_pool_work_handler(struct k_work *work)
 			ring_buf_put_finish(&rnd_rbuf, len);
 			return;
 		}
+		ring_buf_put_finish(&rnd_rbuf, 0);
 	}
 
 	k_work_submit(work);

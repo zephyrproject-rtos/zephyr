@@ -183,19 +183,9 @@ endif # NPCX_HEADER
 # Select SoC Part No. and configuration options
 source "soc/arm/nuvoton_npcx/*/Kconfig.soc"
 
-config SOC_POWER_MANAGEMENT
-	bool "System Power Management in NPCX family"
-	depends on SOC_FAMILY_NPCX
-	help
-	  This option enables the board to implement SoC-specific power
-	  management policies whenever the kernel becomes idle. The power
-	  management subsystem will restore to the active state until an
-	  wake-up event is received no matter the system timer is expired or
-	  the other signals occurred such as GPIO, host access, and so on.
-
-config SOC_POWER_MANAGEMENT_TRACE
+config NPCX_PM_TRACE
 	bool "Trace System Power Management in NPCX family"
-	depends on SOC_POWER_MANAGEMENT
+	depends on PM
 	help
 	  Internal config to enable runtime power management traces.
 

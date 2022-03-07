@@ -6,13 +6,13 @@
 
 import re, os
 import argparse
-import glob
 import yaml
 import json
 import fnmatch
 import subprocess
 import csv
 import logging
+import sys
 from git import Repo
 
 if "ZEPHYR_BASE" not in os.environ:
@@ -20,6 +20,9 @@ if "ZEPHYR_BASE" not in os.environ:
 
 repository_path = os.environ['ZEPHYR_BASE']
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+
+sys.path.append(os.path.join(repository_path, 'scripts'))
+import list_boards
 
 def _get_match_fn(globs, regexes):
     # Constructs a single regex that tests for matches against the globs in
@@ -159,12 +162,14 @@ class Filters:
             if p and p.groups():
                 boards.add(p.group(1))
 
+        # Limit search to $ZEPHYR_BASE since this is where the changed files are
+        lb_args = argparse.Namespace(**{ 'arch_roots': [], 'board_roots': [] })
+        known_boards = list_boards.find_boards(lb_args)
         for b in boards:
-            suboards = glob.glob("boards/*/%s/*.yaml" %(b))
-            for subboard in suboards:
-                name = os.path.splitext(os.path.basename(subboard))[0]
-                if name:
-                    all_boards.add(name)
+            name_re = re.compile(b)
+            for kb in known_boards:
+                if name_re.search(kb.name):
+                    all_boards.add(kb.name)
 
         _options = []
         for board in all_boards:

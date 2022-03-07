@@ -34,18 +34,22 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif
 }
 
-static ALWAYS_INLINE void
-arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
-{
-	thread->arch.swap_return_value = value;
-}
+void arch_switch(void *switch_to, void **switched_from);
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf);
 
 static inline bool arch_is_in_isr(void)
 {
+#ifdef CONFIG_SMP
+	unsigned int key = arch_irq_lock();
+	bool ret = arch_curr_cpu()->nested != 0U;
+
+	arch_irq_unlock(key);
+	return ret;
+#else
 	return _kernel.cpus[0].nested != 0U;
+#endif
 }
 
 extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,

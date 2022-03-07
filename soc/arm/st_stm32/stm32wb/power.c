@@ -84,7 +84,7 @@ static void shutdown_ble_stack(void)
 }
 
 /* Invoke Low Power/System Off specific Tasks */
-__weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	if (state == PM_STATE_SOFT_OFF) {
 
@@ -141,7 +141,7 @@ __weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	/* Implementation of STM32 AN5289 algorithm to enter/exit lowpower */
 	/* Release ENTRY_STOP_MODE semaphore */

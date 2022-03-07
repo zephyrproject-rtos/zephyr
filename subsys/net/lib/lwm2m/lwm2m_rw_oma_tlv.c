@@ -336,6 +336,11 @@ static int put_begin_oi(struct lwm2m_output_context *out,
 {
 	struct tlv_out_formatter_data *fd;
 
+	/* No need for oi level TLV constructs */
+	if (path->level > LWM2M_PATH_LEVEL_OBJECT) {
+		return 0;
+	}
+
 	fd = engine_get_out_user_data(out);
 	if (!fd) {
 		return -EINVAL;
@@ -348,6 +353,10 @@ static int put_end_oi(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path)
 {
 	struct tlv_out_formatter_data *fd;
+
+	if (path->level > LWM2M_PATH_LEVEL_OBJECT) {
+		return 0;
+	}
 
 	fd = engine_get_out_user_data(out);
 	if (!fd) {
@@ -380,6 +389,12 @@ static int put_end_ri(struct lwm2m_output_context *out,
 	fd = engine_get_out_user_data(out);
 	if (!fd) {
 		return -EINVAL;
+	}
+
+	/* Skip writing Multiple Resource TLV if path level is 4 */
+	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1) &&
+		path->level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		return 0;
 	}
 
 	return put_end_tlv(out, fd->mark_pos_ri, &fd->writer_flags,

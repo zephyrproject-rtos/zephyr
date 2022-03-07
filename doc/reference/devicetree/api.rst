@@ -374,7 +374,7 @@ device.
      - A device which can be used as a system-wide entropy source
    * - zephyr,flash
      - A node whose ``reg`` is sometimes used to set the defaults for
-       :kconfig:`CONFIG_FLASH_BASE_ADDRESS` and :kconfig:`CONFIG_FLASH_SIZE`
+       :kconfig:option:`CONFIG_FLASH_BASE_ADDRESS` and :kconfig:option:`CONFIG_FLASH_SIZE`
    * - zephyr,flash-controller
      - The node corresponding to the flash controller device for
        the ``zephyr,flash`` node
@@ -387,6 +387,8 @@ device.
        interprocess-communication (IPC)
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,ocm
+     - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
    * - zephyr,ot-uart
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
@@ -399,7 +401,7 @@ device.
    * - zephyr,uart-mcumgr
      - UART used for :ref:`device_mgmt`
    * - zephyr,uart-pipe
-     - Sets default :kconfig:`CONFIG_UART_PIPE_ON_DEV_NAME`
+     - Sets default :kconfig:option:`CONFIG_UART_PIPE_ON_DEV_NAME`
    * - zephyr,usb-device
      - USB device node. If defined and has a ``vbus-gpios`` property, these
        will be used by the USB subsystem to enable/disable VBUS

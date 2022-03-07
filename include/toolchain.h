@@ -52,6 +52,54 @@
 #error "Invalid/unknown toolchain configuration"
 #endif
 
+/**
+ * @def GCC_VERSION
+ * @brief GCC version in xxyyzz for xx.yy.zz. Zero if not GCC compatible.
+ */
+#ifndef GCC_VERSION
+#define GCC_VERSION 0
+#endif
+
+/**
+ * @def CLANG_VERSION
+ * @brief Clang version in xxyyzz for xx.yy.zz. Zero if not Clang compatible.
+ */
+#ifndef CLANG_VERSION
+#define CLANG_VERSION 0
+#endif
+
+/**
+ * @def TOOLCHAIN_HAS_PRAGMA_DIAG
+ * @brief Indicate if toolchain supports \#pragma diagnostics.
+ */
+#ifndef TOOLCHAIN_HAS_PRAGMA_DIAG
+#define TOOLCHAIN_HAS_PRAGMA_DIAG 0
+#endif
+
+/**
+ * @def TOOLCHAIN_HAS_C_GENERIC
+ * @brief Indicate if toolchain supports C Generic.
+ */
+#if __STDC_VERSION__ >= 201112L
+/* _Generic is introduced in C11, so it is supported. */
+# ifdef TOOLCHAIN_HAS_C_GENERIC
+#  undef TOOLCHAIN_HAS_C_GENERIC
+# endif
+# define TOOLCHAIN_HAS_C_GENERIC 1
+#else
+# ifndef TOOLCHAIN_HAS_C_GENERIC
+#  define TOOLCHAIN_HAS_C_GENERIC 0
+# endif
+#endif
+
+/**
+ * @def TOOLCHAIN_HAS_C_AUTO_TYPE
+ * @brief Indicate if toolchain supports C __auto_type.
+ */
+#ifndef TOOLCHAIN_HAS_C_AUTO_TYPE
+#define TOOLCHAIN_HAS_C_AUTO_TYPE 0
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * as these are often used without checking for definition and doing so can

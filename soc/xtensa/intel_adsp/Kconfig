@@ -13,6 +13,18 @@ config SOC_FAMILY
 	string
 	default "intel_adsp"
 
+config CAVS_IPC
+	bool
+	default y if !SOF
+	help
+	  Driver for the host IPC interrupt delivery mechanism.
+	  Currently SOF has its own driver for this hardware.
+
+config INTEL_ADSP_CAVS
+	bool
+	help
+	  Indicates a CAVS SoC
+
 config HP_SRAM_RESERVE
 	int "Bytes to reserve at start of HP-SRAM"
 	default 65536

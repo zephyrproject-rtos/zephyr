@@ -35,13 +35,13 @@ features you need in order to minimize memory footprint.
 
 Related configuration options:
 
-* :kconfig:`CONFIG_SERIAL`
-* :kconfig:`CONFIG_UART_INTERRUPT_DRIVEN`
-* :kconfig:`CONFIG_UART_ASYNC_API`
-* :kconfig:`CONFIG_UART_WIDE_DATA`
-* :kconfig:`CONFIG_UART_USE_RUNTIME_CONFIGURE`
-* :kconfig:`CONFIG_UART_LINE_CTRL`
-* :kconfig:`CONFIG_UART_DRV_CMD`
+* :kconfig:option:`CONFIG_SERIAL`
+* :kconfig:option:`CONFIG_UART_INTERRUPT_DRIVEN`
+* :kconfig:option:`CONFIG_UART_ASYNC_API`
+* :kconfig:option:`CONFIG_UART_WIDE_DATA`
+* :kconfig:option:`CONFIG_UART_USE_RUNTIME_CONFIGURE`
+* :kconfig:option:`CONFIG_UART_LINE_CTRL`
+* :kconfig:option:`CONFIG_UART_DRV_CMD`
 
 
 API Reference

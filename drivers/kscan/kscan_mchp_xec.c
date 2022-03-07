@@ -6,16 +6,21 @@
 
 #define DT_DRV_COMPAT microchip_xec_kscan
 
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <errno.h>
 #include <device.h>
+#ifdef CONFIG_SOC_SERIES_MEC172X
 #include <drivers/clock_control/mchp_xec_clock_control.h>
 #include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#endif
 #include <drivers/kscan.h>
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#endif
 #include <kernel.h>
 #include <soc.h>
 #include <sys/atomic.h>
 #include <logging/log.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #define LOG_LEVEL CONFIG_KSCAN_LOG_LEVEL
 LOG_MODULE_REGISTER(kscan_mchp_xec);
@@ -44,6 +49,9 @@ struct kscan_xec_config {
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
 	uint8_t rsvd[3];
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
 struct kscan_xec_data {
@@ -99,17 +107,19 @@ static void kscan_clr_slp_en(const struct device *dev)
 #else
 static void kscan_clear_girq_status(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct kscan_xec_config const *cfg = dev->config;
 
-	MCHP_GIRQ_SRC(MCHP_KSCAN_GIRQ) = BIT(MCHP_KSCAN_GIRQ_POS);
+	MCHP_GIRQ_SRC(cfg->girq) = BIT(cfg->girq_pos);
 }
 
 static void kscan_configure_girq(const struct device *dev, bool enable)
 {
+	struct kscan_xec_config const *cfg = dev->config;
+
 	if (enable) {
-		MCHP_GIRQ_ENSET(MCHP_KSCAN_GIRQ) = BIT(MCHP_KSCAN_GIRQ_POS);
+		MCHP_GIRQ_ENSET(cfg->girq) = BIT(cfg->girq_pos);
 	} else {
-		MCHP_GIRQ_ENCLR(MCHP_KSCAN_GIRQ) = BIT(MCHP_KSCAN_GIRQ_POS);
+		MCHP_GIRQ_ENCLR(cfg->girq) = BIT(cfg->girq_pos);
 	}
 }
 
@@ -454,6 +464,15 @@ static int kscan_xec_init(const struct device *dev)
 	struct kscan_xec_data *const data = dev->data;
 	struct kscan_regs *regs = cfg->regs;
 
+#ifdef CONFIG_PINCTRL
+	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+
+	if (ret != 0) {
+		LOG_ERR("XEC KSCAN pinctrl init failed (%d)", ret);
+		return ret;
+	}
+#endif
+
 	kscan_clr_slp_en(dev);
 
 	/* Enable predrive */
@@ -489,18 +508,18 @@ static int kscan_xec_init(const struct device *dev)
 
 static struct kscan_xec_data kbd_data;
 
+#ifdef CONFIG_PINCTRL
+PINCTRL_DT_INST_DEFINE(0);
+#endif
+
 static struct kscan_xec_config kscan_xec_cfg_0 = {
 	.regs = (struct kscan_regs *)(DT_INST_REG_ADDR(0)),
-#ifdef CONFIG_SOC_SERIES_MEC172X
 	.girq = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),
 	.girq_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),
 	.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 0)),
 	.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 1)),
-#else
-	.girq = MCHP_KSCAN_GIRQ,
-	.girq_pos = MCHP_KSCAN_GIRQ_POS,
-	.pcr_idx = 3u,
-	.pcr_pos = MCHP_PCR3_KEYSCAN_POS,
+#ifdef CONFIG_PINCTRL
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 #endif
 };
 

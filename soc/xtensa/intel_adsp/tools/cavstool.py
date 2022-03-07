@@ -20,7 +20,14 @@ PAGESZ = 4096
 HUGEPAGESZ = 2 * 1024 * 1024
 HUGEPAGE_FILE = "/dev/hugepages/cavs-fw-dma.tmp"
 
-# Log is in the fourth window, they appear in 128k regions starting at 512k
+# SRAM windows.  Each appears in a 128k region starting at 512k.
+#
+# Window 0 is the FW_STATUS area, and 4k after that the IPC "outbox"
+# Window 1 is the IPC "inbox" (host-writable memory, just 384 bytes currently)
+# Window 2 is unused by this script
+# Window 3 is winstream-formatted log output
+OUTBOX_OFFSET    = (512 + (0 * 128)) * 1024 + 4096
+INBOX_OFFSET     = (512 + (1 * 128)) * 1024
 WINSTREAM_OFFSET = (512 + (3 * 128)) * 1024
 
 def map_regs():
@@ -82,7 +89,12 @@ def map_regs():
     (bar4_mem, bar4_mmap) = bar_map(pcidir, 4)
     dsp = Regs(bar4_mem)
     dsp.ADSPCS         = 0x00004
+    dsp.HIPCTDR        = 0x00040 if cavs15 else 0x000c0
+    dsp.HIPCTDA        =                        0x000c4 # 1.8+ only
+    dsp.HIPCTDD        = 0x00044 if cavs15 else 0x000c8
     dsp.HIPCIDR        = 0x00048 if cavs15 else 0x000d0
+    dsp.HIPCIDA        =                        0x000d4 # 1.8+ only
+    dsp.HIPCIDD        = 0x0004c if cavs15 else 0x000d8
     dsp.SRAM_FW_STATUS = 0x80000 # Start of first SRAM window
     dsp.freeze()
 
@@ -246,7 +258,7 @@ def load_firmware(fw_file):
                 | (0x01 << 24)       # type = PURGE_FW
                 | (1 << 14)          # purge_fw = 1
                 | (stream_idx << 9)) # dma_id
-    log.info(f"Sending IPC command, HIPCR = 0x{ipcval:x}")
+    log.info(f"Sending IPC command, HIPIDR = 0x{ipcval:x}")
     dsp.HIPCIDR = ipcval
 
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
@@ -315,6 +327,50 @@ def winstream_read(last_seq):
         if start1 == start and seq1 == seq:
             return (seq, result.decode("utf-8"))
 
+async def ipc_delay_done():
+    await asyncio.sleep(0.1)
+    dsp.HIPCTDA = 1<<31
+
+ipc_timestamp = 0
+
+# Super-simple command language, driven by the test code on the DSP
+def ipc_command(data, ext_data):
+    send_msg = False
+    done = True
+    if data == 0: # noop, with synchronous DONE
+        pass
+    elif data == 1: # async command: signal DONE after a delay (on 1.8+)
+        if not cavs15:
+            done = False
+            asyncio.ensure_future(ipc_delay_done())
+    elif data == 2: # echo back ext_data as a message command
+        send_msg = True
+    elif data == 3: # set ADSPCS
+        dsp.ADSPCS = ext_data
+    elif data == 4: # echo back microseconds since last timestamp command
+        global ipc_timestamp
+        t = round(time.time() * 1e6)
+        ext_data = t - ipc_timestamp
+        ipc_timestamp = t
+        send_msg = True
+    elif data == 5: # copy word at outbox[ext_data >> 16] to inbox[ext_data & 0xffff]
+        src = OUTBOX_OFFSET + 4 * (ext_data >> 16)
+        dst =  INBOX_OFFSET + 4 * (ext_data & 0xffff)
+        for i in range(4):
+            bar4_mmap[dst + i] = bar4_mmap[src + i]
+    else:
+        log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
+
+    dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+    if cavs18:
+        time.sleep(0.01) # Needed on 1.8, or the command below won't send!
+
+    if done and not cavs15:
+        dsp.HIPCTDA = 1<<31 # Signal done
+    if send_msg:
+        dsp.HIPCIDD = ext_data
+        dsp.HIPCIDR = (1<<31) | ext_data
+
 async def main():
     global hda, sd, dsp, hda_ostream_id
     try:
@@ -345,6 +401,11 @@ async def main():
         if output:
             sys.stdout.write(output)
             sys.stdout.flush()
+        if dsp.HIPCTDR & 0x80000000:
+            ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
+        if dsp.HIPCIDA & 0x80000000:
+            dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
 ap.add_argument("-q", "--quiet", action="store_true",

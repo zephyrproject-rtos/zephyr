@@ -65,6 +65,11 @@ mapping:
           "pytest_root":
             type: str
             required: false
+          "pytest_args":
+            type: seq
+            required: false
+            sequence:
+              - type: str
           "regex":
             type: seq
             required: false
@@ -193,6 +198,11 @@ mapping:
               "pytest_root":
                 type: str
                 required: false
+              "pytest_args":
+                type: seq
+                required: false
+                sequence:
+                  - type: str
               "regex":
                 type: seq
                 required: false

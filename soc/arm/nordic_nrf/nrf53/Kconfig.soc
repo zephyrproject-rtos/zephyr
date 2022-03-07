@@ -232,13 +232,19 @@ config NRF53_SYNC_RTC
 	default y if LOG && !LOG_MODE_MINIMAL
 	depends on NRF_RTC_TIMER
 	select NRFX_DPPI
-	select IPM if !MBOX
+	select MBOX if !IPM
 
 if NRF53_SYNC_RTC
 
 module = SYNC_RTC
 module-str = Synchronized RTC
 source "subsys/logging/Kconfig.template.log_config"
+
+config NRF53_SYNC_RTC_INIT_PRIORITY
+	int "nRF53 Synchronized RTC init priority"
+	default APPLICATION_INIT_PRIORITY
+	help
+	  nRF53 Synchronized RTC initialization priority.
 
 config NRF_RTC_TIMER_USER_CHAN_COUNT
 	default 1

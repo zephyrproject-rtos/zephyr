@@ -26,7 +26,7 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: canopennode
-      revision: 1052dae561497bef901f931ef75e117c9224aecd
+      revision: 53d3415c14d60f8f4bfca54bfbc5d5a667d7e724
       path: modules/lib/canopennode
     - name: civetweb
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
@@ -73,7 +73,7 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 242a7f4be7a3136606c7a65169775f7ef85ad444
+      revision: cc85acbd635f02122c54df11fa55458269ce1bdd
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -88,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: a42b016d7c7610489f5f8c79773fedc05ba352ee
+      revision: 1f9145e8c8359f103b4ac5085c6f5d2e66a2557d
       path: modules/hal/nordic
       groups:
         - hal
@@ -98,7 +98,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 9629f15fd80169cc9669e3fbb1260467c3aeb175
+      revision: 072bf81d2ffcb764a6c63041cec876cbfb614c6a
       path: modules/hal/nxp
       groups:
         - hal
@@ -139,7 +139,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 1992a4c536554c4f409c36896eda6abdc414d277
+      revision: ba4823f6beb8629d94aab1426bd8afa8127a1da2
       path: modules/hal/ti
       groups:
         - hal
@@ -149,7 +149,7 @@ manifest:
       groups:
         - hal
     - name: libmetal
-      revision: f237c9d420a51cc43bc37d744e41191ad613f348
+      revision: c6efe091dfe02704097586a522969b5a4cc197bd
       path: modules/hal/libmetal
       groups:
         - hal
@@ -157,12 +157,12 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: 33509ed9c3d369cdb9d909cd40c5eea8f64a902c
+      revision: 7b2cf4ba759bd530b543644e2790b07cf20cd6aa
     - name: loramac-node
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 783c1f78c8e39751fe89d0883c8bce7336f55e94
+      revision: aae1c11102138cf596687e662c0d54b72f72bf9b
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
@@ -195,7 +195,7 @@ manifest:
       revision: cfd050ff38a9d028dc211690b2ec35971128e45e
       path: modules/lib/open-amp
     - name: openthread
-      revision: b7aa7686d3f4e326bd25abc234b209159977c26d
+      revision: 0e141a556a11d82b1ee7fda00be9d1553375a687
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -203,7 +203,7 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: 500d77e0ac84ac2c969e0d4b2142cca192e893bc
+      revision: ab715d8e347fcbbc253ec5cae1c5295043821727
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6

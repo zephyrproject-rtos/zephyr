@@ -14,10 +14,11 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <drivers/can.h>
+#include <logging/log.h>
+
 #include "can_stm32.h"
 
-#include <logging/log.h>
-LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 

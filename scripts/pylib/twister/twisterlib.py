@@ -723,8 +723,10 @@ class DeviceHandler(Handler):
     def run_custom_script(script, timeout):
         with subprocess.Popen(script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
             try:
-                stdout, _ = proc.communicate(timeout=timeout)
+                stdout, stderr = proc.communicate(timeout=timeout)
                 logger.debug(stdout.decode())
+                if proc.returncode != 0:
+                    logger.error(f"Custom script failure: {stderr.decode(errors='ignore')}")
 
             except subprocess.TimeoutExpired:
                 proc.kill()
@@ -2043,7 +2045,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         """
         fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
-        fns = [x for x in fns if not x.endswith('_prebuilt.elf')]
+        fns = [x for x in fns if '_pre' not in x]
         if len(fns) != 1:
             raise BuildError("Missing/multiple output ELF binary")
 
@@ -2978,7 +2980,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {Fore.RED}{results.total - run - results.skipped_configs}{Fore.RESET} test configurations were only built.")
 
-    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed, platform_reports, json_report):
+    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed, platform_reports, json_report, report_skipped):
         if not self.instances:
             return
 
@@ -3001,9 +3003,9 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         if not no_update:
             self.xunit_report(filename + ".xml", full_report=False,
-                              append=only_failed, version=self.version)
+                              append=only_failed, version=self.version, report_skipped=report_skipped)
             self.xunit_report(filename + "_report.xml", full_report=True,
-                              append=only_failed, version=self.version)
+                              append=only_failed, version=self.version, report_skipped=report_skipped)
             self.csv_report(filename + ".csv")
 
             if json_report:
@@ -3053,7 +3055,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     @staticmethod
     def get_toolchain():
-        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
+        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/modules/verify-toolchain.cmake')
         result = CMake.run_cmake_script([toolchain_script, "FORMAT=json"])
 
         try:
@@ -3586,7 +3588,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                            "reason": reason}
                 cw.writerow(rowdict)
 
-    def target_report(self, outdir, suffix, append=False):
+    def target_report(self, outdir, suffix, append=False, report_skipped=True):
         platforms = {inst.platform.name for _, inst in self.instances.items()}
         for platform in platforms:
             if suffix:
@@ -3594,7 +3596,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             else:
                 filename = os.path.join(outdir,"{}.xml".format(platform))
             self.xunit_report(filename, platform, full_report=True,
-                              append=append, version=self.version)
+                              append=append, version=self.version, report_skipped=report_skipped)
 
 
     @staticmethod
@@ -3608,7 +3610,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         return filtered_string
 
 
-    def xunit_report(self, filename, platform=None, full_report=False, append=False, version="NA"):
+    def xunit_report(self, filename, platform=None, full_report=False, append=False, version="NA", report_skipped=True):
         total = 0
         fails = passes = errors = skips = 0
         if platform:
@@ -3668,6 +3670,8 @@ class TestSuite(DisablePyTestCollectionMixin):
 
             run = p
             eleTestsuite = None
+            if not report_skipped and total == skips:
+                continue
 
             # When we re-run the tests, we re-use the results and update only with
             # the newly run tests.
@@ -3685,23 +3689,21 @@ class TestSuite(DisablePyTestCollectionMixin):
                                 tests="%d" % (total),
                                 failures="%d" % fails,
                                 errors="%d" % (errors), skipped="%s" % (skips))
-                    eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
-                    # Multiple 'property' can be added to 'properties'
-                    # differing by name and value
-                    ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
-
             else:
                 eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
-                                             name=run, time="%f" % duration,
-                                             tests="%d" % (total),
-                                             failures="%d" % fails,
-                                             errors="%d" % (errors), skipped="%s" % (skips))
-                eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
-                # Multiple 'property' can be added to 'properties'
-                # differing by name and value
-                ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
+                                                name=run, time="%f" % duration,
+                                                tests="%d" % (total),
+                                                failures="%d" % fails,
+                                                errors="%d" % (errors), skipped="%s" % (skips))
+
+            eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
+            # Multiple 'property' can be added to 'properties'
+            # differing by name and value
+            ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
 
             for _, instance in inst.items():
+                if instance.status == 'skipped' and not report_skipped:
+                    continue
                 if full_report:
                     tname = os.path.basename(instance.testcase.name)
                 else:

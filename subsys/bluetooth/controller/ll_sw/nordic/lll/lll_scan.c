@@ -514,16 +514,16 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		 */
 		if (lll->conn) {
 			static memq_link_t link;
-			static struct mayfly mfy_after_mstr_offset_get = {
+			static struct mayfly mfy_after_cen_offset_get = {
 				0, 0, &link, NULL,
-				ull_sched_mfy_after_mstr_offset_get};
+				ull_sched_mfy_after_cen_offset_get};
 			uint32_t retval;
 
-			mfy_after_mstr_offset_get.param = p;
+			mfy_after_cen_offset_get.param = p;
 
 			retval = mayfly_enqueue(TICKER_USER_ID_LLL,
 						TICKER_USER_ID_ULL_LOW, 1,
-						&mfy_after_mstr_offset_get);
+						&mfy_after_cen_offset_get);
 			LL_ASSERT(!retval);
 		}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */

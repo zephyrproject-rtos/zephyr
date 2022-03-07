@@ -30,7 +30,7 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS == 2, "Invalid number of cpus");
 
 static enum pm_state state_testing[2];
 
-void pm_power_state_set(enum pm_state state, uint8_t substate_id)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
@@ -54,7 +54,7 @@ void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 	}
 }
 
-void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
@@ -99,7 +99,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
  *  - Iterate a number of times to stress it.
  *
  * @see pm_policy_next_state()
- * @see pm_power_state_set()
+ * @see pm_state_set()
  *
  * @ingroup power_tests
  */

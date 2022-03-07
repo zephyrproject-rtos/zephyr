@@ -417,17 +417,18 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	if (!lll->conn) {
 		uint32_t ticks_ref = 0U;
 		uint32_t offset_us = 0U;
+		int err;
 
-		ull_sched_after_mstr_slot_get(TICKER_USER_ID_THREAD,
-					      (scan->ull.ticks_slot +
-					       ticks_slot_overhead),
-					      &ticks_ref, &offset_us);
+		err = ull_sched_after_cen_slot_get(TICKER_USER_ID_THREAD,
+						   (scan->ull.ticks_slot +
+						    ticks_slot_overhead),
+						   &ticks_ref, &offset_us);
 
 		/* Use the ticks_ref as scanner's anchor if a free time space
 		 * after any central role is available (indicated by a non-zero
 		 * offset_us value).
 		 */
-		if (offset_us) {
+		if (!err) {
 			ticks_anchor = ticks_ref +
 				       HAL_TICKER_US_TO_TICKS(offset_us);
 		}

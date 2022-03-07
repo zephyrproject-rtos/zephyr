@@ -1550,21 +1550,52 @@ struct flash_it8xxx2_regs {
 #define IT8XXX2_GPIO_GPCRP0     ECREG(IT8XXX2_GPIO2_BASE + 0x18)
 #define IT8XXX2_GPIO_GPCRP1     ECREG(IT8XXX2_GPIO2_BASE + 0x19)
 
-/* Analog to Digital Converter (ADC) */
-
+/**
+ *
+ * (19xxh) Analog to Digital Converter (ADC) registers
+ *
+ */
 #ifndef __ASSEMBLER__
+
+/* Data structure to define ADC channel 13-16 control registers. */
+struct adc_vchs_ctrl_t {
+	/* 0x60: Voltage Channel Control */
+	volatile uint8_t VCHCTL;
+	/* 0x61: Voltage Channel Data Buffer MSB */
+	volatile uint8_t VCHDATM;
+	/* 0x62: Voltage Channel Data Buffer LSB */
+	volatile uint8_t VCHDATL;
+};
+
 struct adc_it8xxx2_regs {
+	/* 0x00: ADC Status */
 	volatile uint8_t ADCSTS;
+	/* 0x01: ADC Configuration */
 	volatile uint8_t ADCCFG;
+	/* 0x02: ADC Clock Control */
 	volatile uint8_t ADCCTL;
+	/* 0x03: General Control */
 	volatile uint8_t ADCGCR;
+	/* 0x04: Voltage Channel 0 Control */
 	volatile uint8_t VCH0CTL;
+	/* 0x05: Calibration Data Control */
 	volatile uint8_t KDCTL;
+	/* 0x06-0x17: Reserved1 */
 	volatile uint8_t reserved1[18];
+	/* 0x18: Voltage Channel 0 Data Buffer LSB */
 	volatile uint8_t VCH0DATL;
+	/* 0x19: Voltage Channel 0 Data Buffer MSB */
 	volatile uint8_t VCH0DATM;
+	/* 0x1a-0x43: Reserved2 */
 	volatile uint8_t reserved2[42];
+	/* 0x44: ADC Data Valid Status */
 	volatile uint8_t ADCDVSTS;
+	/* 0x45-0x5f: Reserved3 */
+	volatile uint8_t reserved3[27];
+	/* 0x60-0x6b: ADC channel 13~16 controller */
+	struct adc_vchs_ctrl_t adc_vchs_ctrl[4];
+	/* 0x6c: ADC Data Valid Status 2 */
+	volatile uint8_t ADCDVSTS2;
 };
 #endif /* !__ASSEMBLER__ */
 
@@ -1582,6 +1613,8 @@ struct adc_it8xxx2_regs {
 #define IT8XXX2_ADC_DATVAL			BIT(7)
 /* Data valid interrupt of adc */
 #define IT8XXX2_ADC_INTDVEN			BIT(5)
+/* Voltage channel enable (Channel 4~7 and 13~16) */
+#define IT8XXX2_ADC_VCHEN			BIT(4)
 /* Automatic hardware calibration enable */
 #define IT8XXX2_ADC_AHCE			BIT(7)
 

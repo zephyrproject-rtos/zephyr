@@ -57,7 +57,7 @@ Disk Access API Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_DISK_ACCESS`
+* :kconfig:option:`CONFIG_DISK_ACCESS`
 
 API Reference
 *************
@@ -69,7 +69,7 @@ Disk Driver Configuration Options
 
 Related driver configuration options:
 
-* :kconfig:`CONFIG_DISK_DRIVERS`
+* :kconfig:option:`CONFIG_DISK_DRIVERS`
 
 Disk Driver Interface
 *********************

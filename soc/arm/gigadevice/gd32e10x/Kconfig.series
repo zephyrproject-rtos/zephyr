@@ -1,0 +1,14 @@
+# Copyright (c) 2021 YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32E10X
+	bool "GigaDevice GD32E10X series Cortex-M4F MCU"
+	select ARM
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select SOC_FAMILY_GD32_ARM
+	select GD32_HAS_AFIO_PINMUX
+	help
+	  Enable support for GigaDevice GD32E10X MCU series

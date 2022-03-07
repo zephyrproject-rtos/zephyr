@@ -144,13 +144,27 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			uint32_t ticks_anchor;
 			uint32_t ret;
 
-			aux->interval =	adv->interval +
-					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY) /
-						ADV_INT_UNIT_US);
+			/* Keep aux interval equal or higher than primary PDU
+			 * interval.
+			 * Use periodic interval units to represent the
+			 * periodic behavior of scheduling of AUX_ADV_IND PDUs
+			 * so that it is grouped with similar interval units
+			 * used for ACL Connections, Periodic Advertising and
+			 * BIG radio events.
+			 */
+			aux->interval =
+				ceiling_fraction(((uint64_t)adv->interval *
+						  ADV_INT_UNIT_US) +
+						 HAL_TICKER_TICKS_TO_US(
+							ULL_ADV_RANDOM_DELAY),
+						 PERIODIC_INT_UNIT_US);
 
-			/* FIXME: Find absolute ticks until after primary PDU
-			 *        on air to place the auxiliary advertising PDU.
+			/* TODO: Find the anchor before the group of
+			 *       active Periodic Advertising events, so
+			 *       that auxiliary sets are grouped such
+			 *       that auxiliary sets and Periodic
+			 *       Advertising sets are non-overlapping
+			 *       for the same event interval.
 			 */
 			ticks_anchor = ticker_ticks_now_get();
 
@@ -1052,8 +1066,11 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   uint32_t ticks_slot_overhead)
 {
 	uint32_t volatile ret_cb;
+	uint32_t interval_us;
 	uint8_t aux_handle;
 	uint32_t ret;
+
+	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
 	ull_hdr_init(&aux->ull);
 	aux_handle = ull_adv_aux_handle_get(aux);
@@ -1062,9 +1079,8 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0,
-			   HAL_TICKER_US_TO_TICKS((uint64_t)aux->interval *
-						  ADV_INT_UNIT_US),
-			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+			   HAL_TICKER_US_TO_TICKS(interval_us),
+			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
 			   ull_ticker_status_give, (void *)&ret_cb);

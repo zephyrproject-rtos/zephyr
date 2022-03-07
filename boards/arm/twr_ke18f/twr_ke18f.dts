@@ -6,9 +6,10 @@
 
 /dts-v1/;
 
-#include <nxp/MKE18F512VLL16.dtsi>
+#include <nxp/nxp_ke18f512vlx16.dtsi>
 #include <dt-bindings/clock/kinetis_scg.h>
 #include <dt-bindings/pwm/pwm.h>
+#include "twr_ke18f-pinctrl.dtsi"
 
 / {
 	model = "NXP Kinetis KE18 MCU Tower System Module";
@@ -139,7 +140,7 @@
 &sim {
 	clkout-source = <1>;
 	clkout-divider = <0>;
-	pinctrl-0 = <&CLKOUT_PTE10>;
+	pinctrl-0 = <&sim0_default>;
 	pinctrl-names = "default";
 };
 
@@ -207,7 +208,7 @@
 &lpuart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&LPUART0_RX_PTB0 &LPUART0_TX_PTB1>;
+	pinctrl-0 = <&lpuart0_default>;
 	pinctrl-names = "default";
 };
 
@@ -215,7 +216,7 @@
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
-	pinctrl-0 = <&FTM0_CH0_PTD15 &FTM0_CH1_PTD16 &FTM0_CH5_PTB5>;
+	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
 };
 
@@ -223,14 +224,13 @@
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
-	pinctrl-0 = <&FTM3_CH4_PTC10 &FTM3_CH5_PTC11
-		     &FTM3_CH6_PTC12 &FTM3_CH7_PTC13>;
+	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
 };
 
 &lpi2c0 {
 	status = "okay";
-	pinctrl-0 = <&LPI2C0_SDA_PTA2 &LPI2C0_SCL_PTA3>;
+	pinctrl-0 = <&lpi2c0_default>;
 	pinctrl-names = "default";
 
 	fxos8700: fxos8700@1d {
@@ -243,34 +243,32 @@
 
 &lpi2c1 {
 	status = "okay";
-	pinctrl-0 = <&LPI2C1_SDA_PTD8 &LPI2C1_SCL_PTD9>;
+	pinctrl-0 = <&lpi2c1_default>;
 	pinctrl-names = "default";
 };
 
 &lpspi0 {
 	status = "okay";
-	pinctrl-0 = <&LPSPI0_SCK_PTE0 &LPSPI0_SIN_PTE1
-		     &LPSPI0_SOUT_PTE2 &LPSPI0_PCS2_PTE6>;
+	pinctrl-0 = <&lpspi0_default>;
 	pinctrl-names = "default";
 };
 
 &lpspi1 {
 	status = "okay";
-	pinctrl-0 = <&LPSPI1_SCK_PTD0 &LPSPI1_SIN_PTD1
-		     &LPSPI1_SOUT_PTD2 &LPSPI1_PCS0_PTD3>;
+	pinctrl-0 = <&lpspi1_default>;
 	pinctrl-names = "default";
 };
 
 &dac0 {
 	status = "okay";
-	pinctrl-0 = <&DAC0_OUT_PTE9>;
+	pinctrl-0 = <&dac0_default>;
 	pinctrl-names = "default";
 };
 
 &adc0 {
 	status = "okay";
 	sample-time = <12>;
-	pinctrl-0 = <&ADC0_SE0_PTA0 &ADC0_SE1_PTA1 &ADC0_SE12_PTC14>;
+	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 };
 
@@ -281,7 +279,7 @@
 &flexcan0 {
 	status = "okay";
 	bus-speed = <125000>;
-	pinctrl-0 = <&CAN0_RX_PTE4 &CAN0_TX_PTE5>;
+	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
 };
 

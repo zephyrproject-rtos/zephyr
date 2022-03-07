@@ -283,7 +283,7 @@ void cpu_mode_transition(gpc_cpu_mode_t mode, bool enable_standby)
  * SOC specific low power mode implementation
  * Drop to lowest power state possible given system's request
  */
-__weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 
@@ -306,7 +306,7 @@ __weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 	}
 }
 
-__weak void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);

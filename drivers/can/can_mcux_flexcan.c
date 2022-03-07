@@ -13,10 +13,9 @@
 #include <device.h>
 #include <sys/byteorder.h>
 #include <fsl_flexcan.h>
-
-#define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(can_mcux_flexcan);
+
+LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 
 #define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
 
@@ -499,24 +498,28 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
 
-	if ((error & (kFLEXCAN_Bit0Error & kFLEXCAN_Bit1Error)) != 0U) {
-		LOG_DBG("TX arbitration lost (error 0x%016llx)", error);
+	if ((error & kFLEXCAN_Bit0Error) != 0U) {
+		CAN_STATS_BIT0_ERROR_INC(dev);
+	}
+
+	if ((error & kFLEXCAN_Bit1Error) != 0U) {
+		CAN_STATS_BIT1_ERROR_INC(dev);
 	}
 
 	if ((error & kFLEXCAN_AckError) != 0U) {
-		LOG_DBG("TX no ACK received (error 0x%016llx)", error);
+		CAN_STATS_ACK_ERROR_INC(dev);
 	}
 
 	if ((error & kFLEXCAN_StuffingError) != 0U) {
-		LOG_DBG("RX stuffing error (error 0x%016llx)", error);
+		CAN_STATS_STUFF_ERROR_INC(dev);
 	}
 
 	if ((error & kFLEXCAN_FormError) != 0U) {
-		LOG_DBG("RX form error (error 0x%016llx)", error);
+		CAN_STATS_FORM_ERROR_INC(dev);
 	}
 
 	if ((error & kFLEXCAN_CrcError) != 0U) {
-		LOG_DBG("RX CRC error (error 0x%016llx)", error);
+		CAN_STATS_CRC_ERROR_INC(dev);
 	}
 
 	(void)mcux_flexcan_get_state(dev, &state, &err_cnt);
@@ -786,11 +789,11 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 									\
 	static struct mcux_flexcan_data mcux_flexcan_data_##id;		\
 									\
-	DEVICE_DT_INST_DEFINE(id, &mcux_flexcan_init,			\
-			NULL, &mcux_flexcan_data_##id,	\
-			&mcux_flexcan_config_##id, POST_KERNEL,		\
-			CONFIG_CAN_INIT_PRIORITY,			\
-			&mcux_flexcan_driver_api);			\
+	CAN_DEVICE_DT_INST_DEFINE(id, mcux_flexcan_init,		\
+				  NULL, &mcux_flexcan_data_##id,	\
+				  &mcux_flexcan_config_##id,		\
+				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,\
+				  &mcux_flexcan_driver_api);		\
 									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev) \
 	{								\

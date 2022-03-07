@@ -38,18 +38,18 @@ The following features are supported:
 Enabling GDB Stub
 *****************
 
-GDB stub can be enabled with the :kconfig:`CONFIG_GDBSTUB` option.
+GDB stub can be enabled with the :kconfig:option:`CONFIG_GDBSTUB` option.
 
 Using Serial Backend
 ====================
 
 The serial backend for GDB stub can be enabled with
-the :kconfig:`CONFIG_GDBSTUB_SERIAL_BACKEND` option.
+the :kconfig:option:`CONFIG_GDBSTUB_SERIAL_BACKEND` option.
 
 Since serial backend utilizes UART devices to send and receive GDB commands,
 
 * If there are spare UART devices on the board, set
-  :kconfig:`CONFIG_GDBSTUB_SERIAL_BACKEND_NAME` to the spare UART device
+  :kconfig:option:`CONFIG_GDBSTUB_SERIAL_BACKEND_NAME` to the spare UART device
   so that :c:func:`printk` and log messages are not being printed to
   the same UART device used for GDB.
 
@@ -57,7 +57,7 @@ Since serial backend utilizes UART devices to send and receive GDB commands,
   must be disabled if they are also using the same UART device for output.
   GDB related messages may interleave with log messages which may have
   unintended consequences. Usually this can be done by disabling
-  :kconfig:`CONFIG_PRINTK` and :kconfig:`CONFIG_LOG`.
+  :kconfig:option:`CONFIG_PRINTK` and :kconfig:option:`CONFIG_LOG`.
 
 Debugging
 *********

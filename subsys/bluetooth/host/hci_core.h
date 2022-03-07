@@ -363,6 +363,10 @@ struct bt_dev {
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	char			name[CONFIG_BT_DEVICE_NAME_MAX + 1];
 #endif
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	/* Appearance Value */
+	uint16_t		appearance;
+#endif
 };
 
 extern struct bt_dev bt_dev;

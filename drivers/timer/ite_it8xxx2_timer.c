@@ -122,6 +122,13 @@ void timer_5ms_one_shot(void)
 }
 #endif /* CONFIG_SOC_IT8XXX2_PLL_FLASH_48M */
 
+static void evt_timer_enable(void)
+{
+	/* Enable and re-start event timer */
+	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= (IT8XXX2_EXT_ETXEN |
+					   IT8XXX2_EXT_ETXRST);
+}
+
 static void evt_timer_isr(const void *unused)
 {
 	ARG_UNUSED(unused);
@@ -142,10 +149,8 @@ static void evt_timer_isr(const void *unused)
 
 		sys_clock_announce(dticks);
 	} else {
-		/* Enable and re-start event timer */
-		IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= (IT8XXX2_EXT_ETXEN |
-						   IT8XXX2_EXT_ETXRST);
-
+		/* enable event timer */
+		evt_timer_enable();
 		/* Informs kernel that one system tick has elapsed */
 		sys_clock_announce(1);
 	}
@@ -215,11 +220,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* W/C event timer interrupt status */
 	ite_intc_isr_clear(EVENT_TIMER_IRQ);
 
-	/*
-	 * When timer enable bit is from 0->1, timer will reload counts and
-	 * start countdown.
-	 */
-	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= IT8XXX2_EXT_ETXEN;
+	/* enable event timer */
+	evt_timer_enable();
 
 	k_spin_unlock(&lock, key);
 

@@ -131,11 +131,13 @@ class Pytest(Harness):
         self.running_dir = instance.build_dir
         self.source_dir = instance.testcase.source_dir
         self.pytest_root = 'pytest'
+        self.pytest_args = []
         self.is_pytest = True
         config = instance.testcase.harness_config
 
         if config:
             self.pytest_root = config.get('pytest_root', 'pytest')
+            self.pytest_args = config.get('pytest_args', [])
 
     def handle(self, line):
         ''' Test cases that make use of pytest more care about results given
@@ -163,6 +165,9 @@ class Pytest(Harness):
 			os.path.join(self.running_dir, 'report.xml'),
 			'-q'
         ]
+
+        for arg in self.pytest_args:
+            cmd.append(arg)
 
         log = open(log_file, "a")
         outs = []

@@ -408,6 +408,19 @@ config LWM2M_RW_JSON_SUPPORT
 	help
 	  Include support for writing JSON data
 
+
+config LWM2M_RW_SENML_JSON_SUPPORT
+	bool "SENML JSON data format"
+	depends on BASE64
+	help
+	  Include support for write / parse SENML JSON data
+
+config LWM2M_COMPOSITE_PATH_LIST_SIZE
+	int "Maximum # of composite read and send operation URL path"
+	default 6
+	help
+	  Define path list size for Composite Read and send operation.
+
 config LWM2M_DEVICE_PWRSRC_MAX
 	int "Maximum # of device power source records"
 	default 5

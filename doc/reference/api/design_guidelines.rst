@@ -71,8 +71,8 @@ Conditional Data and APIs
 APIs and libraries may provide features that are expensive in RAM or
 code size but are optional in the sense that some applications can be
 implemented without them.  Examples of such feature include
-:kconfig:`capturing a timestamp <CONFIG_CAN_RX_TIMESTAMP>` or
-:kconfig:`providing an alternative interface <CONFIG_SPI_ASYNC>`.  The
+:kconfig:option:`capturing a timestamp <CONFIG_CAN_RX_TIMESTAMP>` or
+:kconfig:option:`providing an alternative interface <CONFIG_SPI_ASYNC>`.  The
 developer in coordination with the community must determine whether
 enabling the features is to be controllable through a Kconfig option.
 

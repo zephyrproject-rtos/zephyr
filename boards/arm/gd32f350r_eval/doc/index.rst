@@ -57,10 +57,10 @@ The board configuration supports the following hardware features:
      - N/A
      - N/A
    * - USART
-     - :kconfig:`CONFIG_SERIAL`
+     - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`gd,gd32-usart`
    * - PINMUX
-     - :kconfig:`CONFIG_PINCTRL`
+     - :kconfig:option:`CONFIG_PINCTRL`
      - :dtcompatible:`gd,gd32-pinctrl-af`
 
 Serial Port

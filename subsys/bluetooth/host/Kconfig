@@ -84,6 +84,7 @@ config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 512 if BT_HCI_RAW
+	default 3092 if BT_MESH_GATT_CLIENT
 	default 2048 if BT_MESH
 	default 2048 if BT_AUDIO
 	default 2200 if BT_SETTINGS
@@ -532,6 +533,16 @@ config BT_DEVICE_NAME
 	help
 	  Bluetooth device name. Name can be up to 248 bytes long (excluding
 	  NULL termination). Can be empty string.
+
+config BT_DEVICE_APPEARANCE_DYNAMIC
+	bool "Runtime Bluetooth Appearance changing"
+	help
+	  Enables use of bt_set_appearance.
+	  If CONFIG_BT_SETTINGS is set, the appearance is persistently stored.
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	bool "Allow authenticated peers to set GAP Appearance"
+	depends on BT_DEVICE_APPEARANCE_DYNAMIC
 
 config BT_DEVICE_APPEARANCE
 	int "Bluetooth device appearance"

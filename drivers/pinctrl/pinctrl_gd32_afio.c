@@ -5,6 +5,7 @@
  */
 
 #include <drivers/pinctrl.h>
+#include <soc.h>
 
 /** AFIO DT node */
 #define AFIO_NODE DT_NODELABEL(afio)

@@ -110,6 +110,7 @@ struct dw_dma_dev_data {
 /* Device constant configuration parameters */
 struct dw_dma_dev_cfg {
 	uint32_t base;
+	void (*irq_config)(void);
 };
 
 void dw_dma_setup(const struct device *dev);
@@ -130,4 +131,4 @@ void dw_dma_isr(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_DMA_DMA_DW_H_ */
+#endif /* ZEPHYR_DRIVERS_DMA_DMA_DW_COMMON_H_ */

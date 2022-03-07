@@ -25,7 +25,7 @@ __ramfunc static void wait_for_flash_prefetch_and_idle(void)
 }
 #endif /* CONFIG_XIP */
 
-__weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
@@ -51,7 +51,7 @@ __weak void pm_power_state_set(enum pm_state state, uint8_t substate_id)
 	}
 }
 
-__weak void pm_power_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 

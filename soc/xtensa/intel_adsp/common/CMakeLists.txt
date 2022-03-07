@@ -11,12 +11,17 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
 zephyr_library_sources(soc.c)
 zephyr_library_sources(trace_out.c)
-zephyr_library_sources(rimage_modules.c)
-zephyr_library_sources(boot.c)
+zephyr_library_sources(cavs_ipc.c)
 
-if(CONFIG_MP_NUM_CPUS GREATER 1)
+zephyr_library_sources_ifdef(CONFIG_INTEL_ADSP_CAVS
+    rimage_modules.c
+    boot.c)
+
+if(CONFIG_SMP OR CONFIG_MP_NUM_CPUS GREATER 1)
   zephyr_library_sources(soc_mp.c)
-  zephyr_library_sources(mp_cavs.c)
+  if(CONFIG_INTEL_ADSP_CAVS)
+    zephyr_library_sources(mp_cavs.c)
+  endif()
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq-cavs.c)
