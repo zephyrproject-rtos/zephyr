@@ -17,7 +17,6 @@ extern enum bst_result_t bst_result;
 static struct bt_audio_stream g_streams[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_codec *g_remote_codecs[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_ep *g_sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_conn *g_conn;
 
 /* Mandatory support preset by both client and server */
 static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
@@ -173,15 +172,14 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		bt_conn_unref(conn);
-		g_conn = NULL;
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
 
 		FAIL("Failed to connect to %s (%u)\n", addr, err);
 		return;
 	}
 
 	printk("Connected to %s\n", addr);
-	g_conn = conn;
 	SET_FLAG(flag_connected);
 }
 
@@ -226,7 +224,7 @@ static void exchange_mtu(void)
 	};
 	int err;
 
-	err = bt_gatt_exchange_mtu(g_conn, &mtu_params);
+	err = bt_gatt_exchange_mtu(default_conn, &mtu_params);
 	if (err != 0) {
 		FAIL("Failed to exchange MTU %d\n", err);
 		return;
@@ -243,7 +241,7 @@ static void discover_sink(void)
 	params.func = discover_sink_cb;
 	params.type = BT_AUDIO_SINK;
 
-	err = bt_audio_discover(g_conn, &params);
+	err = bt_audio_discover(default_conn, &params);
 	if (err != 0) {
 		printk("Failed to discover sink: %d\n", err);
 		return;
@@ -259,7 +257,7 @@ static int configure_stream(struct bt_audio_stream *stream,
 
 	UNSET_FLAG(flag_stream_configured);
 
-	err = bt_audio_stream_config(g_conn, stream, ep,
+	err = bt_audio_stream_config(default_conn, stream, ep,
 				     &preset_16_2_1.codec);
 	if (err != 0) {
 		FAIL("Could not configure stream: %d\n", err);
