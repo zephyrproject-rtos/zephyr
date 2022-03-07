@@ -95,33 +95,6 @@ static int rddrone_fmuk66_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portb, 23, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm0), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
-	/* FlexTimer0 Channels for FMU (servo control) */
-	/* fmu ch1 */
-	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAlt4));
-	/* fmu ch2 */
-	pinmux_pin_set(porta,  4, PORT_PCR_MUX(kPORT_MuxAlt3));
-	/* fmu ch3 */
-	pinmux_pin_set(portd,  4, PORT_PCR_MUX(kPORT_MuxAlt4));
-	/* fmu ch4 */
-	pinmux_pin_set(portd,  5, PORT_PCR_MUX(kPORT_MuxAlt4));
-#endif
-
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
-	/* FlexTimer3 Channels for PWM controlled RGB light and FMU (servo control) */
-	/* red */
-	pinmux_pin_set(portd,  1, PORT_PCR_MUX(kPORT_MuxAlt4));
-	/* green */
-	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
-	/* blue */
-	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
-	/* fmu ch5 */
-	pinmux_pin_set(porte, 11, PORT_PCR_MUX(kPORT_MuxAlt6));
-	/* fmu ch6 */
-	pinmux_pin_set(porte, 12, PORT_PCR_MUX(kPORT_MuxAlt6));
-#endif
-
 	return 0;
 }
 
