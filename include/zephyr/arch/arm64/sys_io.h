@@ -91,11 +91,15 @@ static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
 	return val;
 }
 
+#define sys_read64_nonatomic sys_read64
+
 static ALWAYS_INLINE void sys_write64(uint64_t data, mem_addr_t addr)
 {
 	__DMB();
 	__asm__ volatile("str %x0, [%1]" : : "r" (data), "r" (addr));
 }
+
+#define sys_write64_nonatomic sys_write64
 
 #ifdef __cplusplus
 }

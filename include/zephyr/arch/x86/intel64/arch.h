@@ -28,6 +28,8 @@ static ALWAYS_INLINE void sys_write64(uint64_t data, mm_reg_t addr)
 			 : "memory");
 }
 
+#define sys_write64_nonatomic sys_write64
+
 static ALWAYS_INLINE uint64_t sys_read64(mm_reg_t addr)
 {
 	uint64_t ret;
@@ -39,6 +41,8 @@ static ALWAYS_INLINE uint64_t sys_read64(mm_reg_t addr)
 
 	return ret;
 }
+
+#define sys_read64_nonatomic sys_read64
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {

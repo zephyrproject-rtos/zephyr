@@ -74,6 +74,28 @@ static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 	compiler_barrier();
 }
 
+static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
+{
+	uint64_t value;
+
+	compiler_barrier();
+	value = *(volatile uint64_t *)addr;
+	compiler_barrier();
+
+	return value;
+}
+
+#define sys_read64_nonatomic sys_read64
+
+static ALWAYS_INLINE void sys_write64(uint64_t data, mem_addr_t addr)
+{
+	compiler_barrier();
+	*(volatile uint64_t *)addr = data;
+	compiler_barrier();
+}
+
+#define sys_write64_nonatomic sys_write64
+
 #ifdef __cplusplus
 }
 #endif
