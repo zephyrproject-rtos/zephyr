@@ -44,14 +44,6 @@ static int usb_kw24d512_pinmux_init(const struct device *dev)
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
-	/* SPI1 CS0, SCK, SOUT, SIN */
-	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 	return 0;
 }
 

@@ -51,14 +51,6 @@ static int ip_k66f_pinmux_init(const struct device *dev)
 #endif
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
-	/* SPI1 CS0, SCK, SOUT, SIN - Control of KSZ8794 */
-	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 	return 0;
 }
 

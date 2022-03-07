@@ -58,31 +58,6 @@ static int rddrone_fmuk66_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
-	/* SPI0 CS2, SCK, SIN, SOUT */
-	pinmux_pin_set(portc, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portc, 5, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portc, 6, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portc, 7, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
-	/* SPI1 CS0, CS1, SCK, SIN, SOUT */
-	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb,  9, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi2), okay) && CONFIG_SPI
-	/* SPI2 CS0, SCK, SIN, SOUT */
-	pinmux_pin_set(portb, 20, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 21, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 22, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portb, 23, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 	return 0;
 }
 

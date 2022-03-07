@@ -38,14 +38,6 @@ static int frdm_k22f_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
-	/* SPI0 CS0, SCK, SOUT, SIN */
-	pinmux_pin_set(portc, 4, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 	return 0;
 }
 
