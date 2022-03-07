@@ -35,24 +35,10 @@ static int hexiwear_k64_pinmux_init(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay) && CONFIG_I2C
-	/* I2C0 SCL, SDA - heart rate, light, humidity */
-	pinmux_pin_set(portb,  0, PORT_PCR_MUX(kPORT_MuxAlt2)
-					| PORT_PCR_ODE_MASK);
-	pinmux_pin_set(portb,  1, PORT_PCR_MUX(kPORT_MuxAlt2)
-					| PORT_PCR_ODE_MASK);
-
 	const struct device *gpiob =
 	       device_get_binding(DT_LABEL(DT_NODELABEL(gpiob)));
 
 	gpio_pin_configure(gpiob, 12, GPIO_OUTPUT_LOW);
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay) && CONFIG_I2C
-	/* I2C1 SCL, SDA - accel/mag, gyro, pressure */
-	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2)
-					| PORT_PCR_ODE_MASK);
-	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt2)
-					| PORT_PCR_ODE_MASK);
 #endif
 
 #if defined(CONFIG_MAX30101) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay)
