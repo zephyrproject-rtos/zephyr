@@ -19,8 +19,6 @@
 #include <sys/byteorder.h>
 #include <net/buf.h>
 
-#include <hci_core.h>
-
 #include <logging/log.h>
 #define LOG_MODULE_NAME bttester_gap
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -896,13 +894,26 @@ static void auth_cancel(struct bt_conn *conn)
 	/* TODO */
 }
 
+static bool is_bonded(const struct bt_conn *conn)
+{
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		return false;
+	}
+
+	return info.le.bonded;
+}
+
 enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 					 const struct bt_conn_pairing_feat *const feat)
 {
 	struct gap_bond_lost_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
-	if (!bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
+	if (!is_bonded(conn)) {
 		return BT_SECURITY_ERR_SUCCESS;
 	}
 
