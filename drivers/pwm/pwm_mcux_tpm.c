@@ -16,6 +16,7 @@
 #include <soc.h>
 #include <fsl_tpm.h>
 #include <fsl_clock.h>
+#include <drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
@@ -31,6 +32,7 @@ struct mcux_tpm_config {
 	tpm_clock_prescale_t prescale;
 	uint8_t channel_count;
 	tpm_pwm_mode_t mode;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct mcux_tpm_data {
@@ -134,6 +136,7 @@ static int mcux_tpm_init(const struct device *dev)
 	tpm_chnl_pwm_signal_param_t *channel = data->channel;
 	tpm_config_t tpm_config;
 	int i;
+	int err;
 
 	if (config->channel_count > ARRAY_SIZE(data->channel)) {
 		LOG_ERR("Invalid channel count");
@@ -159,6 +162,11 @@ static int mcux_tpm_init(const struct device *dev)
 		channel++;
 	}
 
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+
 	TPM_GetDefaultConfig(&tpm_config);
 	tpm_config.prescale = config->prescale;
 
@@ -173,6 +181,7 @@ static const struct pwm_driver_api mcux_tpm_driver_api = {
 };
 
 #define TPM_DEVICE(n) \
+	PINCTRL_DT_INST_DEFINE(n); \
 	static const struct mcux_tpm_config mcux_tpm_config_##n = { \
 		.base =	(TPM_Type *) \
 			DT_INST_REG_ADDR(n), \
@@ -184,6 +193,7 @@ static const struct pwm_driver_api mcux_tpm_driver_api = {
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \
 			DT_INST_REG_ADDR(n)), \
 		.mode = kTPM_EdgeAlignedPwm, \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	}; \
 	static struct mcux_tpm_data mcux_tpm_data_##n; \
 	DEVICE_DT_INST_DEFINE(n, &mcux_tpm_init, NULL, \

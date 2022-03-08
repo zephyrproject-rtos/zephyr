@@ -6,5 +6,6 @@
 config PWM_MCUX_TPM
 	bool "MCUX TPM PWM driver"
 	depends on HAS_MCUX_TPM && CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable the MCUX TPM PWM driver.
