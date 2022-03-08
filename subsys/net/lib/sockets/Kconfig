@@ -152,6 +152,14 @@ config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 	  protocols over TLS/DTL that can be set explicitly by a socket option.
 	  By default, no supported application layer protocol is set.
 
+config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
+	  int "Maximum number of stored client TLS/DTLS sessions"
+	  default 1
+	  depends on NET_SOCKETS_SOCKOPT_TLS
+	  help
+	    This variable specifies maximum number of stored TLS/DTLS sessions,
+	    used for TLS/DTLS session resumption.
+
 config NET_SOCKETS_OFFLOAD
 	bool "Offload Socket APIs [EXPERIMENTAL]"
 	select EXPERIMENTAL
