@@ -29,8 +29,6 @@
 
 #define SDP_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp, chan.chan)
 
-#define IN_RANGE(val, min, max) (val >= min && val <= max)
-
 #define SDP_DATA_MTU 200
 
 #define SDP_MTU (SDP_DATA_MTU + sizeof(struct bt_sdp_hdr))
