@@ -44,7 +44,8 @@ config BT_EXT_ADV_MAX_ADV_SET
 	  supported.
 
 config BT_PER_ADV
-	bool "Periodic Advertising and Scanning support"
+	bool "Periodic Advertising and Scanning support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Select this to enable Periodic Advertising API support. This allows
 	  the device to send advertising data periodically at deterministic
@@ -52,8 +53,9 @@ config BT_PER_ADV
 	  to periodically get the data.
 
 config BT_PER_ADV_SYNC
-	bool "Periodic advertising sync support"
+	bool "Periodic advertising sync support [EXPERIMENTAL]"
 	depends on BT_OBSERVER
+	select EXPERIMENTAL
 	help
 	  Select this to enable Periodic Advertising Sync API support.
 	  Syncing with a periodic advertiser allows the device to periodically
