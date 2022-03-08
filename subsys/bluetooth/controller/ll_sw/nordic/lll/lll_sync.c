@@ -1000,7 +1000,6 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 	struct node_rx_iq_report *iq_report;
 	struct lll_df_sync_cfg *cfg;
 	struct node_rx_ftr *ftr;
-	uint8_t sample_cnt;
 	uint8_t cte_info;
 	uint8_t ant;
 
@@ -1008,19 +1007,17 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 
 	if (cfg->is_enabled) {
 		if (is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
-			sample_cnt = radio_df_iq_samples_amount_get();
-
-			/* If there are no samples available, the CTEInfo was
+			/* If the CTEPRESENT event didn't fire, the CTEInfo was
 			 * not detected and sampling was not started.
 			 */
-			if (sample_cnt > 0) {
+			if (radio_df_cte_ready()) {
 				cte_info = radio_df_cte_status_get();
 				ant = radio_df_pdu_antenna_switch_pattern_get();
 				iq_report = ull_df_iq_report_alloc();
 				LL_ASSERT(iq_report);
 
 				iq_report->hdr.type = NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT;
-				iq_report->sample_count = sample_cnt;
+				iq_report->sample_count = radio_df_iq_samples_amount_get();
 				iq_report->packet_status = packet_status;
 				iq_report->rssi_ant_id = ant;
 				iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
