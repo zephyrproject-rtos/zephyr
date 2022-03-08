@@ -38,14 +38,6 @@ static int rddrone_fmuk66_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay) && CONFIG_SERIAL
-	/* LPUART0 RX, TX */
-	pinmux_pin_set(portd,  8, PORT_PCR_MUX(kPORT_MuxAlt5));
-	pinmux_pin_set(portd,  9, PORT_PCR_MUX(kPORT_MuxAlt5));
-#endif
-
 	return 0;
 }
 
