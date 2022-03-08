@@ -56,6 +56,7 @@
 	op fs11, _thread_offset_to_fs11(reg) ;
 
 #define DO_CALLEE_SAVED(op, reg) \
+	op s0, _thread_offset_to_tp(reg)		;\
 	op s0, _thread_offset_to_s0(reg)		;\
 	op s1, _thread_offset_to_s1(reg)		;\
 	op s2, _thread_offset_to_s2(reg)		;\
@@ -71,7 +72,6 @@
 
 #define DO_CALLER_SAVED(op) \
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
-	op tp, __z_arch_esf_t_tp_OFFSET(sp)		;\
 	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
 	op t1, __z_arch_esf_t_t1_OFFSET(sp)		;\
 	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\

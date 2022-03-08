@@ -56,6 +56,7 @@
  */
 struct _callee_saved {
 	ulong_t sp;	/* Stack pointer, (x2 register) */
+	ulong_t tp;	/* thread pointer */
 
 	ulong_t s0;	/* saved register/frame pointer */
 	ulong_t s1;	/* saved register */
