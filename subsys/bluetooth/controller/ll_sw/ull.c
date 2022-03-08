@@ -353,21 +353,15 @@ static RXFIFO_DEFINE(done, sizeof(struct node_rx_event_done),
  * Increasing this by times the max. simultaneous connection count will permit
  * simultaneous parallel PHY update or Connection Update procedures amongst
  * active connections.
- * Minimum node rx of 2 that can be reserved happens when:
- * - for legacy LLCPs:
- *   Local central initiated PHY Update reserves 2 node rx,
- *   one for PHY update complete and another for Data Length Update complete
- *   notification. Otherwise, a peripheral only needs 1 additional node rx to
- *   generate Data Length Update complete when PHY Update completes; node rx for
- *   PHY update complete is reserved as the received PHY Update Ind PDU.
- * - for new LLCPs:
- *   Central and peripheral always use two new nodes for handling completion
- *   notification one for PHY update complete and another for Data Length Update
- *   complete.
+ * Minimum node rx of 2 that can be reserved happens when local central
+ * initiated PHY Update reserves 2 node rx, one for PHY update complete and
+ * another for Data Length Update complete notification. Otherwise, a
+ * peripheral only needs 1 additional node rx to generate Data Length Update
+ * complete when PHY Update completes; node rx for PHY update complete is
+ * reserved as the received PHY Update Ind PDU.
  */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY) &&  \
-	(defined(CONFIG_BT_LL_SW_LLCP_LEGACY) && defined(CONFIG_BT_CENTRAL) || \
-	 !defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_PHY) && \
+	defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #define LL_PDU_RX_CNT (2 * (CONFIG_BT_CTLR_LLCP_CONN))
 #elif defined(CONFIG_BT_CONN)
 #define LL_PDU_RX_CNT (CONFIG_BT_CTLR_LLCP_CONN)
