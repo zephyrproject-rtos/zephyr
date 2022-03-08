@@ -422,7 +422,6 @@ struct llcp_struct {
 		/* Minimum requested CTE length in 8us units */
 		uint8_t min_cte_len;
 		uint16_t req_interval;
-		uint16_t req_expire;
 	} cte_req;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)

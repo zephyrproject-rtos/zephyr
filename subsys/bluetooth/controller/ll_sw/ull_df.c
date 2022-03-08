@@ -1153,22 +1153,17 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 	}
 
 	if (!enable) {
-		conn->llcp.cte_req.is_enabled = false;
-		conn->llcp.cte_req.req_interval = 0U;
+		/* There is no parameter validation for disable operation. */
 
-		/* There is no verification if the command is pending. If it is already disabled
-		 * there is no change to the state.
+		/* TODO: Add missing implementation of disable CTE reques.
+		 * Requires refactored LLCPs.
 		 */
-		/* TODO: How handle command pending in LLL? */
-		return BT_HCI_ERR_SUCCESS;
 	} else {
-		if (!conn->lll.df_rx_cfg.is_initialized) {
+		if (!conn->df_rx_params.is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		if (conn->llcp.cte_req.is_enabled) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
+		/* TODO: check if CTE_REQ LLCP is active. Add when merged with refactored LLCPs */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		/* Phy may be changed to CODED only if PHY update procedure is supproted. In other
@@ -1205,14 +1200,11 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 			BIT64(BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD))))) {
 			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		}
-
-		conn->llcp.cte_req.is_enabled = true;
-		conn->llcp.cte_req.req_interval = cte_request_interval;
-		conn->llcp.cte_req.cte_type = requested_cte_type;
-		conn->llcp.cte_req.min_cte_len = requested_cte_length;
 	}
 
-	return ull_cp_cte_req(conn, requested_cte_length, requested_cte_type);
+	/* TODO: implement disable of the CTE if PHY is changed to coded */
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
